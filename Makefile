@@ -47,7 +47,11 @@ all: dtcyber fonts pterm
 
 fonts: $(PCFS)
 
+.PHONY : CLEAN
+
 ifeq ("$(HOST)","Darwin")
+.PHONY : dtcyber 
+
 dtcyber:
 	mkdir -p g3; \
 	cd g3; \
