@@ -109,7 +109,8 @@ static const int WeFunc[] =
 };
 
 static XRectangle platoRect[] = 
-{ { XADJUST (0), YADJUST (511), 512, 512 },
+{ { DisplayMargin + 512, DisplayMargin - 16, 8, 16 },
+  { XADJUST (0), YADJUST (511), 512, 512 },
   { 0, YSize, 512, 32 } };
 
 /*
@@ -291,12 +292,12 @@ void ptermInit(const char *winName)
     ptermSetWeMode (1);
 
     /*
-    **  Set clipping rectangle(s)
-    **  (one for the display, two for the bitmap so the second one will
-    **  allow writing the loadable font buffer area)
+    **  Set clipping rectangles
+    **  The display gets two: one for the PLATO screen, one for the trace marker.
+    **  The bitmap gets a third one for the loadable chars bitmap.
     */
-    XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
-    XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
+    XSetClipRectangles (disp, wgc, 0, 0, platoRect, 2, YXSorted);
+    XSetClipRectangles (disp, pgc, 0, 0, platoRect, 3, YXSorted);
     
     /*
     **  Initialise input.
