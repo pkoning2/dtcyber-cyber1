@@ -20,6 +20,9 @@ MACHINECFLAGS = -DCPU_THREADS
 else
 LDFLAGS = -g2 -L/usr/X11R6/lib
 endif
+ifeq ("$(MACHINE:i%86=i386)","i386")
+MACHINECFLAGS = -march=$(MACHINE)
+endif
 INCL    = -I/usr/X11R6/include -I/usr/local/include
 
 ifeq ("$(HOST)","Darwin")
@@ -38,8 +41,7 @@ CFLAGS  = -O2 -g2 -I. $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(EXTRACFLAGS)
 
 PCFS	= seymour8b.pcf seymour8m.pcf \
 	seymour16b.pcf seymour16m.pcf \
-	seymour32b.pcf seymour32m.pcf \
-	plato.pcf
+	seymour32b.pcf seymour32m.pcf
 
 SOBJS	= pterm_x11.o ptermcom.o charset.o
 

@@ -306,3 +306,9 @@ Since jan21 2004 drop:
   then send that at frame end.  This fixes the -erase abort- problem -- in that
   situation, PLATO sends several words per frame and apparently relies on only
   the last of those words making it out the door.
+- Changed pterm_x11 to draw the "ROM" character set in the same way as the
+  loadable characters, with the patterns set up at startup.  That way you 
+  don't need to install any X fonts if you just want to run pterm.
+  (Note that you do still need to install fonts for DtCyber.)
+- Change Makefile to send -march=<this machine> to gcc for Intel x86 builds.
+  That should give us modern code rather than 386 compatible code.

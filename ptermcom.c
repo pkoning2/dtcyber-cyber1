@@ -462,7 +462,7 @@ static void mode2 (u32 d)
         {
             // character is done -- load it to display 
             ch = (memaddr / 8) - 1;
-            ptermLoadChar (ch / 64, ch % 64, &plato_m23[memaddr - 8]);
+            ptermLoadChar (2 + (ch / 64), ch % 64, &plato_m23[memaddr - 8]);
         }
     }
 }
