@@ -102,14 +102,12 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 **  lp1612.c
 */
 void lp1612Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-void lp1612RemovePaper(char *params);
 
 /*
 **  lp3000.c
 */
 void lp501Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void lp512Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-void lp3000RemovePaper(char *params);
 
 /*
 **  console.c
@@ -126,9 +124,14 @@ void dd6603Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 */
 void dd844Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void dd844Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-void dd885Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-void dd885Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
+/*
+**  dc7155.c
+*/
+void dc7155Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dc7155Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dc7155Init_3(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dc7155Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 /*
 **  dcc6681.c
 */

@@ -64,7 +64,7 @@
 **  Debug support
 */
 #ifndef CcDebug
-#define CcDebug                 0
+#define CcDebug                 1
 #endif
 
 /*
@@ -87,6 +87,7 @@
 #define DtDcc6681               14
 #define DtDdp                   15
 #define DtNiu                   16
+#define DtDd7155                17
 
 /*
 **  Special channels.
