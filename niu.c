@@ -102,7 +102,6 @@ static DevSlot *out;
 static PortParam *portVector;
 static int currInPort;
 static int lastInPort;
-static int currOutPort;
 static int obytes;
 static u32 currOutput;
 
@@ -171,7 +170,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         mp++;
     }
 
-    currInPort = currOutPort = -1;
+    currInPort = -1;
     lastInPort = 0;
     
     /*
@@ -227,7 +226,7 @@ static FcStatus niuOutFunc(PpWord funcCode)
         return(FcDeclined);
 
     case FcNiuOutput:
-        currOutPort = -1;
+        obytes = 0;
         break;
     }
 
@@ -338,46 +337,44 @@ static void niuOutIo(void)
     */
     activeChannel->full = FALSE;
     d = activeChannel->data;
-    if (currOutPort < 0)
-    {
-        // First word of the triple
-        if ((d & 04000) == 0)
-        {
-            printf ("niu output out of sync, first word %04o\n", d);
-            return;
-        }
-        d = (d & 3777) - NiuFirstStation;
-        currOutPort = d;
-        obytes = 0;
-        return;
-    }
     if (obytes == 0)
     {
-        // second word of the triple
+        // first word of the triple
         if ((d & 06000) != 04000)
         {
-            printf ("niu output out of sync, second word %04o\n", d);
+            printf ("niu output out of sync, first word %04o\n", d);
             return;
         }
         currOutput = (d & 1777) << 9;
         obytes = 1;
         return;
     }
-    // third word of the triple
-    if ((d & 06001) != 0)
+    if (obytes == 1)
+    {
+        // second word of the triple
+        if ((d & 06001) != 0)
+        {
+            printf ("niu output out of sync, second word %04o\n", d);
+            return;
+        }
+        currOutput |= d >> 1;
+        obytes = 2;
+        return;
+    }
+    // Third word of the triple
+    if ((d & 04000) != 0)
     {
         printf ("niu output out of sync, third word %04o\n", d);
         return;
     }
-    currOutput |= d >> 1;
+    port = (d & 01777) - NiuFirstStation;
     
     // Now that we have a complete output triple, discard it
     // if it's for a station number out of range (larger than
     // what we're configured to support) or without an 
     // active TCP connections
-    port = currOutPort;
-    currOutPort = -1;       // next output word we're looking for another port number
-    if (port >= platoConns)
+    obytes = 0;
+    if (port >= platoConns || port < 0)
         return;
     mp = portVector + port;
     if (!mp->active)
