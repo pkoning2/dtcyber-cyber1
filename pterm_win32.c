@@ -811,7 +811,7 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
             {
             pc = 015 | shift;       // assignment arrow
             }
-        else if (wParam > 0 && wParam < sizeof (altKeyToPlato))
+        else if (wParam > 0 && wParam < sizeof (altKeyToPlato) / sizeof (altKeyToPlato[0]))
             {
             pc = altKeyToPlato[wParam] | shift;
             }

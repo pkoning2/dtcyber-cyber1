@@ -738,7 +738,7 @@ bool platoKeypress (XKeyEvent *kp)
         ptermSendKey (pc);
         return TRUE;
         }
-    if (key < sizeof (asciiToPlato))
+    if (key < sizeof (asciiToPlato) / sizeof (asciiToPlato[0]))
         {
         if (state & MODMASK)
             {
