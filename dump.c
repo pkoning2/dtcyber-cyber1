@@ -46,7 +46,7 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void dumpMem(FILE *f, u32 start, u32 end, CpWord *mem);
+static void dumpMem(FILE *f, u32 start, u32 end, u32 ra, CpWord *mem);
 
 /*
 **  ----------------
@@ -226,7 +226,7 @@ void dumpCpu(void)
         fprintf(cpuDF, "\n");
         }
 
-    dumpCpuMem (cpuDF, 0, cpuMaxMemory);
+    dumpCpuMem (cpuDF, 0, cpuMaxMemory, 0);
     }
 
 
@@ -236,13 +236,14 @@ void dumpCpu(void)
 **  Parameters:     Name        Description.
 **                  start       Start address.
 **                  end         LWA + 1 of dump.
+**                  ra          RA to apply to start and end addresses
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void dumpCpuMem(FILE *f, u32 start, u32 end)
+void dumpCpuMem(FILE *f, u32 start, u32 end, u32 ra)
     {
-    dumpMem(f, start, end, cpMem);
+    dumpMem(f, start, end, ra, cpMem);
     }
 
 /*--------------------------------------------------------------------------
@@ -257,7 +258,7 @@ void dumpCpuMem(FILE *f, u32 start, u32 end)
 **------------------------------------------------------------------------*/
 void dumpEcs(FILE *f, u32 start, u32 end)
     {
-    dumpMem(f, start, end, ecsMem);
+    dumpMem(f, start, end, 0, ecsMem);
     }
 
 /*--------------------------------------------------------------------------
@@ -480,13 +481,16 @@ void dumpDisassemblePpu(u8 pp)
 **  Purpose:        Dump a range of 60-bit memory.
 **
 **  Parameters:     Name        Description.
+**                  file        File descriptor to write to
 **                  start       Start address.
 **                  end         LWA + 1 of dump.
+**                  ra          RA to apply to start and end addresses
+**                  mem         Start of memory array
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dumpMem(FILE *f, u32 start, u32 end, CpWord *mem)
+static void dumpMem(FILE *f, u32 start, u32 end, u32 ra, CpWord *mem)
     {
     u32 addr;
     CpWord data, data2;
@@ -508,11 +512,11 @@ static void dumpMem(FILE *f, u32 start, u32 end, CpWord *mem)
             }
         f = cpuDF;
         }
-    lastData = ~mem[start];
+    lastData = ~mem[start + ra];
     duplicateLine = FALSE;
     for (addr = start; addr < end; addr += 2)
         {
-        data = mem[addr];
+        data = mem[addr + ra];
         if (addr + 1 == end)
             {
             /* odd dump length */
@@ -536,7 +540,7 @@ static void dumpMem(FILE *f, u32 start, u32 end, CpWord *mem)
             fprintf(f, "\n");
             break;
             }
-        data2 = mem[addr + 1];        
+        data2 = mem[addr + 1 + ra];        
         if (data == lastData && data2 == lastData2)
             {
             if (!duplicateLine)

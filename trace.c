@@ -52,6 +52,7 @@
 #define Cikj            9
 #define CijK            10
 #define Cmv             11
+#define Cjk             12
 #define CLINK           100
 
 /*
@@ -84,6 +85,7 @@
 #define RXNX            25
 #define RB              26
 #define RBD             27
+#define RNXX            28
 
 /*
 **  -----------------------
@@ -131,6 +133,7 @@ FILE *devF;
 FILE **cpuTF;
 FILE **ppuTF;
 FILE *dataTF[MAXDATANUM];
+u32 traceSequenceNo;
 
 /*
 **  -----------------
@@ -138,7 +141,6 @@ FILE *dataTF[MAXDATANUM];
 **  -----------------
 */
 //static FILE *devF;
-u32 sequence;
 
 static const char *monState[] = 
 { "none", "cpu 0", "cpu 1" };
@@ -224,6 +226,8 @@ static DecCpControl rjDecode[010] =
     CjK,        "RE    B%o+%6.6o",      RZB,    // 1
     CjK,        "WE    B%o+%6.6o",      RZB,    // 2
     CK,         "XJ    %6.6o",          R,      // 3
+    Cjk,        "RX%o   X%o",           RNXX,   // 4
+    Cjk,        "WX%o   X%o",           RNXX,   // 5
     };
 
 static DecCpControl cjDecode[010] =
@@ -359,7 +363,7 @@ void traceInit(void)
         exit(1);
         }
 
-    sequence = 0;
+    traceSequenceNo = 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -392,7 +396,8 @@ void traceCpu(CpuContext *activeCpu,
     */
     if (!(((traceMask & TraceCpu (cpuNum)) != 0) ||
           ((traceMask & TraceXj) != 0 && opFm == 01 && opI == 3) ||
-          ((traceMask & TraceEcs) != 0 && opFm == 01 && (opI == 1 || opI == 2))))
+          ((traceMask & TraceEcs) != 0 && opFm == 01 &&
+           (opI == 1 || opI == 2 || opI == 4 || opI == 5))))
         {
         return;
         }
@@ -440,7 +445,7 @@ void traceCpu(CpuContext *activeCpu,
         }
 #endif
 
-    fprintf(cpuTF[cpuNum], "%06d [%d] %6.6o  ", sequence, cpuNum, p);
+    fprintf(cpuTF[cpuNum], "%06d [%d] %6.6o  ", traceSequenceNo, cpuNum, p);
     fprintf(cpuTF[cpuNum], "%02o%o%o%o   ", opFm, opI, opJ, opK);        // << not quite correct, but still nice for debugging
 
     /*
@@ -476,6 +481,10 @@ void traceCpu(CpuContext *activeCpu,
 
         case CjK:
             sprintf(str, decode[opFm].mnemonic, opJ, opAddress);
+            break;
+
+        case Cjk:
+            sprintf(str, decode[opFm].mnemonic, opJ, opK);
             break;
 
         case Cijk:
@@ -751,19 +760,32 @@ void traceCpu(CpuContext *activeCpu,
         fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opK, activeCpu->regX[opK]);
         break;
 
+    case RNXX:
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opK, activeCpu->regX[opK]);
+        break;
+
     default:
         fprintf(cpuTF[cpuNum],"unsupported register set %d", decode[opFm].regSet);
         break;
         }
 
     fprintf(cpuTF[cpuNum], "\n");
-    if (decode == rjDecode && (opI == 1 || opI == 2))
+    if (decode == rjDecode &&
+        (opI == 1 || opI == 2))
         {
-        // ECS read/write, show what memory was touched
+        /*
+        **  ECS block read/write, show what memory was touched
+        */
+#if 0
         fprintf(cpuTF[cpuNum], " ECS FWA %08llo RAX %08o FLX %08o\n", 
                 activeCpu->regX[0] & 077777777,
                 activeCpu->regRaEcs, activeCpu->regFlEcs);
-        dumpCpuMem (cpuTF[cpuNum], activeCpu->regA[0], activeCpu->regA[0] + activeCpu->regB[opJ] + opAddress);
+#endif
+        dumpCpuMem (cpuTF[cpuNum], 
+                    activeCpu->regA[0], 
+                    activeCpu->regA[0] + activeCpu->regB[opJ] + opAddress,
+                    activeCpu->regRaCm);
         }
     }
 
@@ -807,7 +829,7 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
             }
         }
 
-    fprintf(cpuTF[cpn], "\n%6d: Exchange jump CPU %d with package address %06o (%s)\n\n", sequence, cpn, addr, title);
+    fprintf(cpuTF[cpn], "\n%6d: Exchange jump CPU %d with package address %06o (%s)\n\n", traceSequenceNo, cpn, addr, title);
     fprintf(cpuTF[cpn], "P       %06o  ", cc->regP);
     fprintf(cpuTF[cpn], "A%d %06o  ", 0, cc->regA[0]);
     fprintf(cpuTF[cpn], "B%d %06o", 0, cc->regB[0]);
@@ -1016,7 +1038,7 @@ void traceSequence(void)
     /*
     **  Increment sequence number here.
     */
-    sequence += 1;
+    traceSequenceNo += 1;
 
     /*
     **  Bail out if no trace of this PPU is requested.
@@ -1045,7 +1067,7 @@ void traceSequence(void)
     /*
     **  Print sequence no and PPU number.
     */
-    fprintf(ppuTF[activePpu->id], "%06d [%2o]    ", sequence, activePpu->id);
+    fprintf(ppuTF[activePpu->id], "%06d [%2o]    ", traceSequenceNo, activePpu->id);
     }
 
 /*--------------------------------------------------------------------------
@@ -1222,7 +1244,7 @@ void traceChannelFunction(PpWord funcCode)
         return;
         }
     
-    fprintf(devF, "%06d [%02o]    ", sequence, activePpu->id);
+    fprintf(devF, "%06d [%02o]    ", traceSequenceNo, activePpu->id);
     fprintf(devF, "Unclaimed function code %04o on CH%02o\n", funcCode, activeChannel->id);
     }
 
@@ -1332,7 +1354,7 @@ void traceCM(u32 start, u32 len)
         return;
         }
     // Note that this goes to the PPU trace file, not the CPU trace file!
-    dumpCpuMem (ppuTF[activePpu->id], start, start + len);
+    dumpCpuMem (ppuTF[activePpu->id], start, start + len, 0);
     }
 
 /*--------------------------------------------------------------------------
@@ -1427,7 +1449,7 @@ void traceData (CpWord data, int stream)
             }
         }
     
-    fprintf(dataTF[stream], "%06d %20.20llo\n", sequence, data);
+    fprintf(dataTF[stream], "%06d %20.20llo\n", traceSequenceNo, data);
     }
 
 /*
