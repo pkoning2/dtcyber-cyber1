@@ -38,10 +38,29 @@
     { \
         fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc); \
     }
-#define TRACE(str, arg...) \
+
+#define TRACE(str, arg) \
     if (tracePterm) \
     { \
         fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg); \
+    }
+
+#define TRACE2(str, arg, arg2) \
+    if (tracePterm) \
+    { \
+        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg, arg2); \
+    }
+
+#define TRACE3(str, arg, arg2, arg3) \
+    if (tracePterm) \
+    { \
+        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg, arg2, arg3); \
+    }
+
+#define TRACE6(str, a, a2, a3, a4, a5, a6) \
+    if (tracePterm) \
+    { \
+        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, a, a2, a3, a4, a5, a6); \
     }
 
 /*
@@ -221,7 +240,7 @@ static void procNiuWord (int stat, u32 d)
                 ptermFullErase ();
             }
             ptermSetWeMode (wemode);
-            TRACE ("load mode %d wemode %d screen %d",
+            TRACE3 ("load mode %d wemode %d screen %d",
                    mode, wemode, (d & 1));
             break;
             
@@ -241,7 +260,7 @@ static void procNiuWord (int stat, u32 d)
                 }
 #endif
             }
-            TRACE ("load coord %c %d %s",
+            TRACE3 ("load coord %c %d %s",
                    (d & 01000) ? 'Y' : 'X', d & 0777, msg);
             break;
         case 3:     // echo
@@ -379,7 +398,7 @@ static void mode0 (u32 d)
     
     x = (d >> 9) & 0777;
     y = d & 0777;
-    TRACE ("dot %d %d", x, y);
+    TRACE2 ("dot %d %d", x, y);
     ptermDrawPoint (x, y);
     currentX = x;
     currentY = y;
@@ -400,7 +419,7 @@ static void mode1 (u32 d)
     
     x = (d >> 9) & 0777;
     y = d & 0777;
-    TRACE ("lineto %d %d", x, y);
+    TRACE2 ("lineto %d %d", x, y);
     ptermDrawLine (currentX, currentY, x, y);
     currentX = x;
     currentY = y;
@@ -427,7 +446,7 @@ static void mode2 (u32 d)
     if (((d >> 16) & 3) == 0)
     {
         // load data
-        TRACE ("memdata %06o to %04o", d & 0xffff, memaddr);
+        TRACE2 ("memdata %06o to %04o", d & 0xffff, memaddr);
         plato_m23[memaddr] = d & 0xffff;
         if ((++memaddr & 7) == 0)
         {
@@ -449,7 +468,7 @@ static void mode2 (u32 d)
 **------------------------------------------------------------------------*/
 static void mode3 (u32 d)
 {
-    TRACE ("char %02o %02o %02o (%c%c%c)",
+    TRACE6 ("char %02o %02o %02o (%c%c%c)",
            (d >> 12) & 077, (d >> 6) & 077, d & 077,
            rom0char[(d >> 12) & 077], 
            rom0char[(d >> 6) & 077], 

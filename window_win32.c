@@ -32,8 +32,8 @@
 **  -----------------
 */
 #define ListSize            10000
-#define KeyBufSize          50  // MUST be even
-#define MaxPolls        10      // number of poll cycles we track
+#define KeyBufSize          50
+#define MaxPolls			10      // number of poll cycles we track
 #define DisplayBufSize      64
 #define DisplayMargin       20
 // These are used only for the operator interface font
@@ -114,8 +114,8 @@ static i16 currentX = -1;
 static i16 currentY = -1;
 static DispList display[ListSize];
 static int listGet, listPut, prevPut, listPutAtGetChar;
-static char keybuf[KeyBufSize];
-static u32 keyListPut, keyListGet;
+static char keybuf[KeyBufSize+4];
+volatile static u32 keyListPut, keyListGet;
 static char dchars[DisplayBufSize];
 static u8 dhits[DisplayBufSize];
 static int dcnt, xpos, xstart, ypos;
@@ -140,11 +140,23 @@ static bool displayOff = FALSE;
 static const i8 dotdx[] = { 0, 1, 0, 1, -1, -1,  0, -1,  1 };
 static const i8 dotdy[] = { 0, 0, 1, 1, -1,  0, -1,  1, -1 };
 //static XKeyboardControl kbPrefs;
-static bool keyboardTrue, keyboardSendUp;
 static bool platoActive;
 #if CcHersheyFont == 1
 static HPEN hPen = 0;
 #endif
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Public Functions
+**
+**--------------------------------------------------------------------------
+*/
+
+/* These functions are declared extern here rather than in proto.h,
+** otherwise proto.h would have to #include X.h...
+*/
+extern bool platoKeypress (WPARAM wParam, int alt, int stat);
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Create WIN32 thread which will deal with all windows
@@ -167,6 +179,11 @@ void windowInit(void)
     listPutAtGetChar = -1;
     sumListGet = sumListPut = 0;
     s1 = s2 = 0;
+    
+    /*
+    **  Initialize the input list
+    */
+    keyListGet = keyListPut = 0;
 
     /*
     **  Get our instance
@@ -228,14 +245,7 @@ int windowGetOperFontWidth(int font)
 **------------------------------------------------------------------------*/
 void windowSetKeyboardTrue (bool flag)
     {
-    if ((keyboardTrue = flag))
-        {
-        // ** tbd
-        }
-    else
-        {
-        // **tbd
-        }
+    /* we don't actually need to do any setup here */
     }
 
 /*--------------------------------------------------------------------------
@@ -352,10 +362,6 @@ void windowOperEnd(void)
     {
     currentX = currentY = currentFont = listPutAtGetChar = -1;
     listGet = listPut;
-    if (keyboardTrue)
-        {
-        // ***tbd
-        }
     }
 
 /*--------------------------------------------------------------------------
@@ -415,14 +421,34 @@ void windowGetChar(void)
     listPutAtGetChar = listPut;
     windowCheckOutput();
     
-    if (keyListGet == keyListPut)
-    return;
+    if (keyboardSendUp || keyListGet == keyListPut)
+        {
+        ppKeyIn = 0;
+        keyboardSendUp = FALSE;
+        return;
+        }
 
     nextget = keyListGet + 1;
     if (nextget == KeyBufSize)
-    nextget = 0;
+        {
+        nextget = 0;
+        }
     ppKeyIn = keybuf[keyListGet];
     keyListGet = nextget;
+    if (!keyboardTrue)
+        {
+        // We're not doing the precise emulation, instead doing
+        // regular key rollover.  So ignore key up events,
+        // and send a zero code (all up) in between each key code.
+        if (ppKeyIn & 0200)
+            {
+            ppKeyIn = 0;
+            }
+        else
+            {
+            keyboardSendUp = TRUE;
+            }
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -718,7 +744,6 @@ static void windowThread(void)
         {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-        Sleep(25);
         }
     }
 
@@ -807,6 +832,8 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
     u32 nextput;
     TEXTMETRIC tm;
     HDC hdc;
+	SHORT keystate;
+	UINT i;
 
     switch (message) 
         {
@@ -866,10 +893,12 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         */
         fontBitmap = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_FONTBITMAP));
         if (fontBitmap == NULL)
+			{
             fprintf (stderr, "Failed to load font bitmap");
-        
-            /*
-            **  Select the bitmap into the font dc.
+			}
+
+        /*
+        **  Select the bitmap into the font dc.
         */
         SelectObject(hdcFont, fontBitmap);
         
@@ -924,6 +953,11 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
     **  Handle input characters.
     */
     case WM_SYSCHAR:
+		if (platoActive &&
+			platoKeypress (wParam, 1, 0))
+		{
+			return 0;
+		}
         switch (wParam)
             {
         case '0':
@@ -1004,22 +1038,68 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         break;
 
     case WM_CHAR:
-        nextput = keyListPut + 2;
+		if (!opActive)
+            {
+			/* Non-operator keystrokes are handled in KEYUP/KEYDOWN */
+			break;
+            }
+        nextput = keyListPut + 1;
         if (nextput == KeyBufSize)
+			{
             nextput = 0;
+			}
         if (nextput != keyListGet)
-        {
+            {
             keybuf[keyListPut] = wParam;
-            /*
-            ** Stick a null after the real character 
-            ** to represent "key up" after the key down.
-            ** Without this, NOS DSD loses many keystrokes.
-            */
-            keybuf[keyListPut + 1] = 0;
             keyListPut = nextput;
-        }
+            }
         break;
-
+        
+	case WM_KEYUP:
+		if (platoActive || !keyboardTrue)
+            {
+			return 0;
+            }
+		/* fall through */
+	case WM_KEYDOWN:
+		if (opActive)
+            {
+			return 0;
+            }
+		/* Not operator mode -- ignore control keys */
+		keystate = GetKeyState (VK_CONTROL);
+		if ((signed) keystate < 0)
+            {
+			/* Ignore control keys */
+			return 0;
+            }
+		if (platoActive)
+            {
+			platoKeypress (wParam, 0, 0);
+			return 0;
+            }
+		/* Not Plato, not operator mode -- translate the key to display code */
+		i = MapVirtualKey (wParam, 2);
+		if (i != 0 && i <= 127)
+            {
+			if ((lParam & (1 << 31)) != 0)
+                {
+				/* this is a "key up" message */
+				i |= 0200;
+                }
+			nextput = keyListPut + 1;
+            if (nextput == KeyBufSize)
+                {
+                nextput = 0;
+                }
+            if (nextput != keyListGet)
+				{
+				keybuf[keyListPut] = i;
+                keyListPut = nextput;
+                }
+            }
+		break;
+        
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
         }
