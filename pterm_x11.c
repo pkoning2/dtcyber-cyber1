@@ -65,6 +65,10 @@
 #define XADJUST(x) ((x) + DisplayMargin)
 #define YADJUST(y) (YSize - 1 - DisplayMargin - (y))
 
+// inverse mapping (for processing touch input)
+#define XUNADJUST(x) ((x) - DisplayMargin)
+#define YUNADJUST(y) (YSize - 1 - DisplayMargin - (y))
+
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
@@ -261,6 +265,7 @@ const unsigned short plato_m1[] = {
 */
 
 bool platoKeypress (XKeyEvent *kp, int stat);
+bool platoTouch (XButtonPressedEvent *bp, int stat);
 void ptermInput(XEvent *event);
 void ptermXinit(void);
 
@@ -446,7 +451,8 @@ void ptermInit(const char *winName, bool closeOk)
     wmhints.input = True;
     XSetWMHints (disp, ptermWindow, &wmhints);
     XSelectInput (disp, ptermWindow,
-                  ExposureMask | KeyPressMask | StructureNotifyMask);
+                  ExposureMask | KeyPressMask |
+                  ButtonPressMask | StructureNotifyMask);
 
     /*
     **  Find the "hand" cursor
@@ -655,6 +661,39 @@ void ptermLoadChar (int snum, int cnum, const u16 *data)
 }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Process XButtonPressedEvent for Plato touch panel
+**
+**  Parameters:     Name        Description.
+**                  bp          XButtonPressedEvent for the touch
+**                  stat        Station number
+**
+**  Returns:        TRUE if key event was a valid Plato touch input.
+**
+**------------------------------------------------------------------------*/
+bool platoTouch (XButtonPressedEvent *bp, int stat)
+{
+    int x, y;
+    
+    if (!touchEnabled)
+    {
+        return FALSE;
+    }
+    x = XUNADJUST (bp->x);
+    y = YUNADJUST (bp->y);
+    
+    if (x < 0 || x > 511 ||
+        y < 0 || y > 511)
+    {
+        return FALSE;
+    }
+    x /= 32;
+    y /= 32;
+
+    niuLocalKey (0x100 | (x << 4) | y, stat);
+    return TRUE;
+}
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Process XKeyEvent for Plato keyboard
 **
 **  Parameters:     Name        Description.
@@ -847,6 +886,10 @@ void ptermInput(XEvent *event)
         platoKeypress ((XKeyEvent *) event, 1);
         break;
 
+    case ButtonPress:
+        platoTouch ((XButtonPressedEvent *) event, 1);
+        break;
+        
     case Expose:
         ptermSetWeMode (0);
         XFillRectangle (disp, ptermWindow, wgc,

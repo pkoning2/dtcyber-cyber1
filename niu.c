@@ -69,7 +69,7 @@ typedef struct portParam
 
 typedef struct localRing
 {
-    u8 buf[NiuLocalBufSize];
+    u16 buf[NiuLocalBufSize];
     int get;
     int put;
 } LocalRing;
@@ -433,7 +433,7 @@ static void niuInIo(void)
                     else
                     {
                         // first byte of key data, save it for later
-                        if ((in & 370) != 0)
+                        if ((in & 0370) != 0)
                         {
                             // sequence error, drop the byte
                             printf ("niu input sequence error, first byte %03o, port %d\n",

@@ -316,3 +316,4 @@ Since jan21 2004 drop:
   end up with dozens of files cluttering up things.  This is most important
   for the pterm trace file because its name is formed from the PID, so
   successive runs will in general NOT reuse the same file.
+- Added touch support to pterm (X only at the moment).

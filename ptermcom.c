@@ -59,6 +59,12 @@
         fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg, arg2, arg3); \
     }
 
+#define TRACE4(str, a, a2, a3, a4) \
+    if (tracePterm) \
+    { \
+        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, a, a2, a3, a4); \
+    }
+
 #define TRACE6(str, a, a2, a3, a4, a5, a6) \
     if (tracePterm) \
     { \
@@ -248,8 +254,10 @@ static void procNiuWord (int stat, u32 d)
                 ptermFullErase ();
             }
             ptermSetWeMode (wemode);
-            TRACE3 ("load mode %d wemode %d screen %d",
-                   mode, wemode, (d & 1));
+            // bit 15 set is DISable
+            ptermTouchPanel ((d & 040000) == 0);
+            TRACE4 ("load mode %d inhibit %d wemode %d screen %d",
+                    mode, (d >> 14) & 1, wemode, (d & 1));
             break;
             
         case 2:     // load coordinate
@@ -294,19 +302,23 @@ static void procNiuWord (int stat, u32 d)
             TRACE ("load address %o", memaddr);
             break;
             
-        case 5:     // SSF
+#ifdef PPT
+        case 5:     // SSF on PPT, Load Slide on PLATO IV
             switch ((d >> 10) & 037)
             {
-            case 1: // Touch panel control
+#if 0
+            case 1: // Touch panel control ?
                 TRACE ("ssf touch %o", d);
                 ptermTouchPanel ((d & 040) != 0);
                 break;
+#endif
             default:
                 TRACE ("ssf %o", d);
                 break;  // ignore
             }
             break;
-            
+#endif
+
         default:    // ignore
             TRACE ("ignored command word %07o", d);
             break;
