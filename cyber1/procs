@@ -97,7 +97,8 @@ plato(ax)
 dayfile. 
 *
 exit.
-dmp. 
+dmd.
+dmd,0,170000.
 ~
 .proc,framx,dis=$*dis$/dis,cp=,v=cybis,pn=pcez.
 .* 
@@ -135,7 +136,8 @@ route(output,dc=lp)
 framx(#v=v,#pn=pn) 
 endif(reload)
 exit.
-dmp. 
+dmd.
+dmd,0,60000.
 ~
 .proc,condx,dis=$*dis$/dis,cp=,pr=,v=cybis,pn=pcez.
 .* 
@@ -187,7 +189,8 @@ condx(#v=v,#pn=pn,#pr=pr)
 endif(reload)
 *
 exit.
-dmp. 
+dmd. 
+dmd,0,140000.
 ~
 .proc,plfx,dis=$*dis$/dis,cp=,v=cybis,pn=pcez. 
 .* 
@@ -244,7 +247,8 @@ dis.
 plf. 
 *
 exit.
-dmp. 
+dmd. 
+dmd,0,100000.
 ~
 .proc,versx,l,b,m=,v=cybis,pn=pcez.
 .* 
