@@ -630,7 +630,7 @@ void ptermLoadChar (int snum, int cnum, const u16 *data)
 {
     int i, j;
     int x = cnum * 8;
-    int y = YSize + (snum & 1) * 16 + 15;
+    int y = YSize + snum * 16 + 15;
     u16 col;
 
     XSetForeground (disp, pgc, pbg);
