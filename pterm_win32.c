@@ -137,13 +137,9 @@ static const DWORD MWeFunc[] =
 */
 
 void ptermSetName (const char *winName);
-void ptermLoadChar (int snum, int cnum, const u16 *data);
-void ptermSetWeMode (u8 we);
-void ptermDrawChar (int x, int y, int snum, int cnum);
 bool platoKeypress (WPARAM wParam, int alt, int stat);
 bool platoTouch (LPARAM lParam, int stat);
 extern void ptermComInit(void);
-extern void niuLocalKey(u16 key, int stat);
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize the Plato terminal window.
@@ -817,7 +813,7 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
             }
         if (pc >= 0)
             {
-            niuLocalKey (pc, stat);
+            ptermSendKey (pc);
             return TRUE;
             }
         }
@@ -963,7 +959,7 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
         if (pc >= 0)
             {
             pc |= shift;
-            niuLocalKey (pc, stat);
+            ptermSendKey (pc);
             return TRUE;
             }
         }
@@ -1000,8 +996,21 @@ bool platoTouch (LPARAM lParam, int stat)
     x /= 32;
     y /= 32;
 
-    niuLocalKey (0x100 | (x << 4) | y, stat);
+    ptermSendKey (0x100 | (x << 4) | y);
     return TRUE;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Enable or disable the PLATO screen clipping region
+**
+**  Parameters:     Name        Description.
+**                  enable      true or false for enable or disable.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermSetClip (bool enable)
+    {
     }
 
 /*--------------------------------------------------------------------------
