@@ -13,9 +13,9 @@ include Makefile.common
 
 CXX = $(shell wx-config --cxx)
 
-PTOBJS	= $(SOBJS) $(SXOBJS) pterm_wx.o ptermcom.o 
+PTOBJS	= $(SOBJS) pterm_wx.o ptermcom.o 
 pterm_wx:	$(PTOBJS)
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(XLIBS) $(THRLIBS)  `wx-config --libs`
+	$(CXX) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)  `wx-config --libs`
 
 pterm.dep: $(PTOBJS:.o=.d)
 
