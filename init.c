@@ -109,6 +109,8 @@ const intParam intParamList[] =
     { "consoleconns", &dd60Conns, 4 },
     { "doelzport", &doelzPort, DefDoelzPort },
     { "doelzconns", &doelzConns, 4 },
+    { "tpmuxport", &tpmuxPort, DefTpmuxPort },
+    { "tpmuxconns", &tpmuxConns, 2 },
     { NULL, NULL, 0 }                   /* End marker */
 };
 
@@ -367,7 +369,7 @@ static void initEquipment(void)
     int unitNo;
     int channelNo;
     u8 deviceIndex;
-    u16 lineNo;
+    int lineNo;
 
 
     if (!initOpenSection(equipment))
@@ -379,9 +381,11 @@ static void initEquipment(void)
     /*
     **  Process all equipment entries.
     */
-    lineNo = 0;
+    lineNo = -1;
     while  ((line = initGetNextLine()) != NULL)
         {
+        lineNo += 1;
+
         /*
         **  Parse device type.
         */

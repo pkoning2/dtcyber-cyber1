@@ -382,7 +382,6 @@ static void mt607Io(void)
     case Fc607StatusReq:
         activeChannel->data = activeChannel->status;
         activeChannel->full = TRUE;
-//        activeChannel->discAfterInput = TRUE;  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< fixed COS 
         break;
 
     case Fc607RdBinary:

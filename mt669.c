@@ -12,6 +12,8 @@
 **--------------------------------------------------------------------------
 */
 
+#define DEBUG 0
+
 /*
 **  -------------
 **  Include Files
@@ -86,7 +88,6 @@
 **  0036   send tcu command
 **  0040   read forward
 **  0140   read backward
-**  0150   write odd length (NOS 1.2)
 **  0340   read backward with odd length parity
 **  0041   reread forward
 **  0141   reread backward
@@ -110,6 +111,7 @@
 #define Fc669ClearUnit          00000
 #define Fc669Release            00001
 #define Fc669ClearReserve       00002
+#define Fc669ClearOtherReserve  00003
 #define Fc669SetReadClipNorm    00006
 #define Fc669SetReadClipHigh    00106
 #define Fc669SetReadClipLow     00206
@@ -239,7 +241,6 @@
 */
 typedef struct tapeBuf
     {
-    bool        newTape;
     u8          unitMode;
     u32         blockNo;
     void        *statusBuf;
@@ -269,6 +270,7 @@ static void mt669FuncBackspace(void);
 static void mt669FuncReadBkw(void);
 static void mt669FuncReposition(void);
 static void mt669Load(DevSlot *dp, int unitNo, char *fn);
+static char *mt669Func2String(PpWord funcCode);
 
 /*
 **  ----------------
@@ -295,7 +297,11 @@ static u8 convTab3in[64];
 static u8 convTab3out[64];
 static int convMode = 0;
 
-int anyWrite = 0;
+static int anyWrite = 0;
+
+#if DEBUG
+static FILE *mt669Log = NULL;
+#endif
 
 /*
 **--------------------------------------------------------------------------
@@ -324,6 +330,16 @@ void mt669Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 
     (void)eqNo;
 
+#if DEBUG
+    if (mt669Log == NULL)
+        {
+        mt669Log = fopen("mt669log.txt", "wt");
+        }
+#endif
+
+    /*
+    **  Setup channel functions.
+    */
     dp = channelAttach(channelNo, eqNo, DtMt669);
 
     dp->activate = mt669Activate;
@@ -375,7 +391,6 @@ void mt669Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     tp->detailedStatus[4] = 01200 + unitNo;
 
     tp->unitMode = 'r';
-    tp->newTape = FALSE;
 
     /*
     **  Print a friendly message.
@@ -392,7 +407,7 @@ void mt669Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **
 **------------------------------------------------------------------------*/
 static void mt669Load(DevSlot *dp, int unitNo, char *fn)
-{
+    {
     TapeBuf *tp;
     FILE *fcb;
     u8 unitMode = 'r';
@@ -473,7 +488,15 @@ static void mt669Load(DevSlot *dp, int unitNo, char *fn)
     dp->fcb[unitNo] = fcb;
     tp = (TapeBuf *)dp->context[unitNo];
     tp->unitMode = unitMode;
-    tp->newTape = TRUE;
+    tp->deviceStatus = St669NineTrack | St669LoadPoint| St669Ready;
+    tp->initialStatus =  St669NineTrack | St669Ready;
+
+    if (tp->unitMode == 'w')
+        {
+        tp->deviceStatus  |= St669WriteEnabled;
+        tp->initialStatus |= St669WriteEnabled;
+        }
+
     sprintf (msgBuf, "%s%s",
              fn, ((unitMode == 'w') ? " (W)" : ""));
     opSetStatus (tp->statusBuf, msgBuf);
@@ -487,7 +510,7 @@ static void mt669Load(DevSlot *dp, int unitNo, char *fn)
                  fn, ((unitMode == 'w') ? "in" : "out"));
         }
     opSetMsg (msgBuf);
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Execute function code on 669 tape drives.
@@ -508,9 +531,23 @@ static FcStatus mt669Func(PpWord funcCode)
     unitNo = activeDevice->selectedUnit;
     tp = (TapeBuf *)activeDevice->context[unitNo];
  
+#if DEBUG
+    fprintf(mt669Log, "\nPP:%02o CH:%02o f:%04o T:%-25s  >   ", 
+        activePpu->id,
+        activeDevice->channel->id,
+        funcCode,
+        mt669Func2String(funcCode));
+#endif
+
+    /*
+    **  Process tape function.
+    */
     switch (funcCode)
         {
     default:
+#if DEBUG
+        fprintf(mt669Log, " !!!!!FUNC not implemented & declined!!!!!! ");
+#endif
         return(FcDeclined);
 
     case Fc669Release:
@@ -519,6 +556,7 @@ static FcStatus mt669Func(PpWord funcCode)
 
     case Fc669ClearUnit:
     case Fc669ClearReserve:
+	case Fc669ClearOtherReserve:
         activeDevice->fcode = 0;
         activeDevice->recordLength = 0;
         tp->recordLength = 0;
@@ -782,9 +820,27 @@ static void mt669Io(void)
     TapeBuf *tp;
     int indx;
 
+    /*
+    **  The following avoids too rapid changes of the full/empty status
+    **  when probed via FJM and EJM PP opcodes. It has no effect on real
+    **  I/O timing.
+    */
+    if (activeChannel->delayStatus != 0)
+        {
+        activeChannel->delayStatus -= 1;
+        }
+
+    if (activeChannel->delayStatus != 0)
+        {
+        return;
+        }
+
     unitNo = activeDevice->selectedUnit;
     tp = (TapeBuf *)activeDevice->context[unitNo];
 
+    /*
+    **  Perform actual tape I/O according to function issued.
+    */
     switch (activeDevice->fcode)
         {
     default:
@@ -807,6 +863,10 @@ static void mt669Io(void)
         activeChannel->data = tp->deviceStatus;
         activeChannel->full = TRUE;
         activeChannel->discAfterInput = TRUE;
+#if DEBUG
+        fprintf(mt669Log, " %04o", activeChannel->data);
+#endif
+
         break;
 
     case 01200:
@@ -836,7 +896,12 @@ static void mt669Io(void)
                 {
                 activeChannel->discAfterInput = TRUE;
                 }
+
             activeChannel->full = TRUE;
+#if DEBUG
+            fprintf(mt669Log, " %04o", activeChannel->data);
+#endif
+
             }
         break;
 
@@ -932,13 +997,10 @@ static void mt669Io(void)
                     activeDevice->selectedUnit = unitNo;
                     tp = (TapeBuf *)activeDevice->context[unitNo];
                     }
+
                 activeChannel->full = FALSE;
                 activeDevice->recordLength -= 1;
                 }
-             }
-         else
-             {
-//             activeChannel->active = FALSE;       // NOS 1.4 hates this
              }
          break;
 
@@ -1039,6 +1101,7 @@ static void mt669Disconnect(void)
         switch (convMode)
             {
         case 0:
+#if 0
             /*
             **  Convert the PP Word data into raw  data.
             */
@@ -1055,6 +1118,36 @@ static void mt669Disconnect(void)
 
             recLen0 = rp - rawBuffer;
             break;
+#else
+
+//// >>>>>>>>>>>>>>>>  I don't yet understand this  <<<<<<<<<<<<<<<<<<<<<<<<<<
+            for (i = 0; i < recLen2 - 2; i += 2)
+                {
+                *rp++ = (*iop >> 4) & 0xff;
+                c1 = (*iop << 4) & 0xf0;
+                iop++;
+                c2 = (*iop >> 8) & 0x0f;
+                *rp++ = (c1 | c2) & 0xff;
+                *rp++ = *iop & 0xff;
+                iop++;
+                }
+
+            *rp++ = (*iop >> 4) & 0xff;
+            c1 = (*iop << 4) & 0xf0;
+            iop++;
+            c2 = (*iop >> 8) & 0x0f;
+            *rp++ = (c1 | c2) & 0xff;
+            recLen0 = rp - rawBuffer;
+
+            if ((0 == (1 & recLen0)) != (anyWrite == Fc669Write))
+                {
+            	*rp = *iop & 0xff;
+            	recLen0++;
+                }
+
+            break;
+
+#endif
 
         case 1:
             /*
@@ -1168,24 +1261,6 @@ static void mt669FuncRelease(void)
 
     activeDevice->fcode = 0;
     activeDevice->status = St669NoUnit;
-
-    if (tp->newTape)
-        {
-        /*
-        **  Operator has inserted a new tape.
-        */
-        tp->newTape = FALSE;
-        /*
-        **  Setup status.
-        */
-        tp->deviceStatus = St669NineTrack | St669LoadPoint| St669Ready;
-        tp->initialStatus =  St669NineTrack | St669Ready;
-        if (tp->unitMode == 'w')
-            {
-            tp->deviceStatus  |= St669WriteEnabled;
-            tp->initialStatus |= St669WriteEnabled;
-            }
-        }
     }
 
 /*--------------------------------------------------------------------------
@@ -1382,6 +1457,10 @@ static void mt669FuncRead(void)
         else
             {
             tp->deviceStatus = tp->initialStatus | St669EOT;
+#if DEBUG
+            fprintf(mt669Log, "EOT\n");
+#endif
+
             }
 
         activeDevice->recordLength = 0;
@@ -1427,6 +1506,11 @@ static void mt669FuncRead(void)
         activeDevice->recordLength = 0;
         tp->recordLength = 0;
         tp->blockNo += 1;
+
+#if DEBUG
+            fprintf(mt669Log, "Tape mark\n");
+#endif
+
         return;
         }
 
@@ -1498,6 +1582,10 @@ static void mt669FuncRead(void)
     /*
     **  Setup length, buffer pointer and block number.
     */
+#if DEBUG
+    fprintf(mt669Log, "Read fwd %d bytes\n", activeDevice->recordLength);
+#endif
+
     tp->recordLength = activeDevice->recordLength;
     tp->lastLength = (PpWord)recLen1;
     tp->bp = tp->ioBuffer;
@@ -1656,6 +1744,10 @@ static void mt669FuncReadBkw(void)
         /*
         **  Setup length and buffer pointer.
         */
+#if DEBUG
+        fprintf(mt669Log, "Read bkwd %d bytes\n", activeDevice->recordLength);
+#endif
+
         tp->recordLength = activeDevice->recordLength;
         tp->bp = tp->ioBuffer + activeDevice->recordLength;
         }
@@ -1665,6 +1757,10 @@ static void mt669FuncReadBkw(void)
         **  A tape mark consists of only a single TAP record header of zero.
         */
         tp->deviceStatus |= St669TapeMark;
+
+#if DEBUG
+        fprintf(mt669Log, "Tape mark\n");
+#endif
         }
 
     /*
@@ -2060,6 +2156,74 @@ static void mt669FuncReposition(void)
             tp->blockNo = 0;
             }
         }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Convert function code to string.
+**
+**  Parameters:     Name        Description.
+**                  funcCode    function code
+**
+**  Returns:        String equivalent of function code.
+**
+**------------------------------------------------------------------------*/
+static char *mt669Func2String(PpWord funcCode)
+    {
+#if DEBUG
+    switch(funcCode)
+        {
+    case Fc669ClearUnit             :  return "ClearUnit";        
+    case Fc669Release               :  return "Release";          
+    case Fc669ClearReserve          :  return "ClearReserve";     
+	case Fc669ClearOtherReserve		:  return "ClearOtherReserve";
+    case Fc669SetReadClipNorm       :  return "SetReadClipNorm";  
+    case Fc669SetReadClipHigh       :  return "SetReadClipHigh";  
+    case Fc669SetReadClipLow        :  return "SetReadClipLow";   
+    case Fc669Rewind                :  return "Rewind";           
+    case Fc669RewindUnload          :  return "RewindUnload";     
+    case Fc669StopMotion            :  return "StopMotion";       
+    case Fc669GeneralStatus         :  return "GeneralStatus";    
+    case Fc669DetailedStatus        :  return "DetailedStatus";   
+    case Fc669CumulativeStatus      :  return "CumulativeStatus"; 
+    case Fc669ReadyStatus           :  return "ReadyStatus";      
+    case Fc669Forespace             :  return "Forespace";        
+    case Fc669Backspace             :  return "Backspace";        
+    case Fc669SearchTapeMarkF       :  return "SearchTapeMarkF";  
+    case Fc669SearchTapeMarkB       :  return "SearchTapeMarkB";  
+    case Fc669Reposition            :  return "Reposition";       
+    case Fc669Connect + 0           :  return "Connect 0";          
+    case Fc669Connect + 1           :  return "Connect 1";          
+    case Fc669Connect + 2           :  return "Connect 2";          
+    case Fc669Connect + 3           :  return "Connect 3";          
+    case Fc669Connect + 4           :  return "Connect 4";          
+    case Fc669Connect + 5           :  return "Connect 5";          
+    case Fc669Connect + 6           :  return "Connect 6";          
+    case Fc669Connect + 7           :  return "Connect 7";          
+    case Fc669FormatUnit            :  return "FormatUnit";       
+    case Fc669LoadConversion1       :  return "LoadConversion1";  
+    case Fc669LoadConversion2       :  return "LoadConversion2";  
+    case Fc669LoadConversion3       :  return "LoadConversion3";  
+    case Fc669ReadFwd               :  return "ReadFwd";          
+    case Fc669ReadBkw               :  return "ReadBkw";          
+    case Fc669Write                 :  return "Write";            
+    case Fc669WriteOdd12            :  return "WriteOdd12";       
+    case Fc669WriteOdd              :  return "WriteOdd";         
+    case Fc669WriteEOF              :  return "WriteEOF";         
+    case Fc669Erase                 :  return "Erase";            
+    case Fc669EraseToEOT            :  return "EraseToEOT";       
+    case Fc669ConnectRewindRead + 0 :  return "ConnectRewindRead 0";
+    case Fc669ConnectRewindRead + 1 :  return "ConnectRewindRead 1";
+    case Fc669ConnectRewindRead + 2 :  return "ConnectRewindRead 2";
+    case Fc669ConnectRewindRead + 3 :  return "ConnectRewindRead 3";
+    case Fc669ConnectRewindRead + 4 :  return "ConnectRewindRead 4";
+    case Fc669ConnectRewindRead + 5 :  return "ConnectRewindRead 5";
+    case Fc669ConnectRewindRead + 6 :  return "ConnectRewindRead 6";
+    case Fc669ConnectRewindRead + 7 :  return "ConnectRewindRead 7";
+    case Fc669MasterClear           :  return "MasterClear";      
+    case Fc6681Read2EOR             :  return "6681Read2EOR";        
+        }
+#endif
+    return "UNKNOWN";
     }
 
 /*---------------------------  End Of File  ------------------------------*/

@@ -253,8 +253,8 @@ static void *tpMuxThread(void *param);
 **  Public Variables
 **  ----------------
 */
-static u16 telnetPort = 6602;
-static u16 telnetConns = 2;
+long tpmuxPort;
+long tpmuxConns;
 /*
 **  -----------------
 **  Private Variables
@@ -296,7 +296,7 @@ void tpMuxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     dp->io = tpMuxIo;
     dp->selectedUnit = -1;
 
-    mp = calloc(1, sizeof(PortParam) * telnetConns);
+    mp = calloc(1, sizeof(PortParam) * tpmuxConns);
     if (mp == NULL)
         {
         fprintf(stderr, "Failed to allocate two port mux context block\n");
@@ -308,7 +308,7 @@ void tpMuxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     /*
     **  Initialise port control blocks.
     */
-    for (i = 0; i < telnetConns; i++)
+    for (i = 0; i < tpmuxConns; i++)
         {
         mp->status = 00026;
         mp->active = FALSE;
@@ -625,7 +625,7 @@ static void *tpMuxThread(void *param)
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = inet_addr("0.0.0.0");
-    server.sin_port = htons(telnetPort);
+    server.sin_port = htons(tpmuxPort);
 
     if (bind(listenFd, (struct sockaddr *)&server, sizeof(server)) < 0)
         {
@@ -645,7 +645,7 @@ static void *tpMuxThread(void *param)
         **  Find a free port control block.
         */
         mp = (PortParam *)dp->context[0];
-        for (i = 0; i < telnetConns; i++)
+        for (i = 0; i < tpmuxConns; i++)
             {
             if (!mp->active)
                 {
@@ -654,7 +654,7 @@ static void *tpMuxThread(void *param)
             mp += 1;
             }
 
-        if (i == telnetConns)
+        if (i == tpmuxConns)
             {
             /*
             **  No free port found - wait a bit and try again.

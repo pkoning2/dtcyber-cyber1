@@ -341,6 +341,19 @@ void ppInit(u8 count)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Terminate PP subsystem.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ppTerminate(void)
+    {
+    free(ppu);
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Execute one instruction in an active PPU.
 **
 **  Parameters:     Name        Description.
@@ -1463,6 +1476,12 @@ static void ppOpCRM(void)     // 61
     cpuMemStart = activePpu->regA & Mask18;
     cpuMemLen = length = activePpu->mem[opD] & Mask12;
 
+    /*
+    **  Delay one major cycle per cm word.
+    */
+//    activePpu->delay = length;
+    activePpu->delay = 0;
+    
     while (length--)
         {
         if (cpuPpReadMem(activePpu->regA & Mask18, &data))
@@ -1516,9 +1535,9 @@ static void ppOpCWM(void)     // 63
     cpuMemLen = length = activePpu->mem[opD] & Mask12;
 
     /*
-    **  We're cheap -- charge one major cycle per 8 cm words.
+    **  Delay one major cycle per cm word.
     */
-//    activePpu->delay = length / 8;
+//    activePpu->delay = length;
     activePpu->delay = 0;
     
     while (length--)
@@ -1581,7 +1600,8 @@ static void ppOpFJM(void)     // 66
     opD &= 037;
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
-    channelIo();
+
+    channelProbe();
 
     if (opD < channelCount && activeChannel->full)
         {
@@ -1598,7 +1618,8 @@ static void ppOpEJM(void)     // 67
     opD &= 037;
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
-    channelIo();
+
+    channelProbe();
 
     if (opD >= channelCount || !activeChannel->full)
         {
@@ -1622,6 +1643,7 @@ static void ppOpIAN(void)     // 70
         return;
         }
 
+    activeChannel->delayStatus = 0;
     activePpu->ioWaitType = WaitInOne;
     activePpu->stopped = TRUE;
     activePpu->ioFlag = TRUE;
@@ -1645,6 +1667,7 @@ static void ppOpIAM(void)     // 71
         {
         activePpu->mem[0] = activePpu->regP;
         activePpu->regP = location;
+        activeChannel->delayStatus = 0;
         activePpu->ioWaitType = WaitInMany;
         activePpu->stopped = TRUE;
         }
@@ -1684,6 +1707,7 @@ static void ppOpOAN(void)     // 72
         return;
         }
 
+    activeChannel->delayStatus = 0;
     activePpu->ioWaitType = WaitOutOne;
     activePpu->stopped = TRUE;
     activePpu->ioFlag = TRUE;
@@ -1696,6 +1720,7 @@ static void ppOpOAM(void)     // 73
     activePpu->channel = activeChannel;
     activePpu->mem[0] = activePpu->regP;
     activePpu->ppMemStart = activePpu->regP = activePpu->mem[activePpu->regP] & Mask12;
+    activeChannel->delayStatus = 0;
     activePpu->ioWaitType = WaitOutMany;
     activePpu->stopped = TRUE;
     activePpu->ioFlag = TRUE;

@@ -160,7 +160,7 @@ typedef struct lpContext
     int flags;
     bool printed;
     bool keepInt;
-} LpContext;
+    } LpContext;
 
 
 /*

@@ -333,6 +333,7 @@ void windowProcessChar (int ch)
 void windowClose(void)
     {
     SendMessage(hWnd, WM_DESTROY, 0, 0);
+    Sleep(100);
     }
 
 /*--------------------------------------------------------------------------
@@ -615,7 +616,7 @@ ATOM windowRegisterClass(HINSTANCE hInstance)
     wcex.hbrBackground  = bgBrush;
     wcex.lpszMenuName   = (LPCSTR)IDC_CONSOLE;
     wcex.lpszClassName  = "CONSOLE";
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
+    wcex.hIconSm        = LoadIcon(hInstance, (LPCTSTR)IDI_SMALL);
 
     return RegisterClassEx(&wcex);
     }

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003-2004, Tom Hunter, Gerard van der Grinten, Paul Koning
+**  Copyright (c) 2003-2004, Tom Hunter and Gerard van der Grinten
 **  (see license.txt)
 **
 **  Name: dd8xx.c
@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -62,6 +63,7 @@
 #define Fc8xxReadUtilityMap         00031
 #define Fc8xxReadFlawedSector       00034
 #define Fc8xxWriteLastSector        00035
+#define Fc8xxWriteVerifyLastSector  00036
 #define Fc8xxWriteFlawedSector      00037
 #define Fc8xxManipulateProcessor    00062
 #define Fc8xxDeadstart              00300
@@ -69,7 +71,7 @@
 
 /*
 **  
-**  Status Reply:
+**  General status bits.
 **
 **  4000    Abnormal termination
 **  2000    Dual access coupler reserved
@@ -84,9 +86,22 @@
 **  0002    Busy
 **  0001    Noncorrectable data error
 */
-#define St844Abnormal           04000
-#define St844NonRecoverable     01000
-#define St844Busy               00002
+#define St8xxAbnormal           04000
+#define St8xxOppositeReserved   02000
+#define St8xxNonRecoverable     01000
+#define St8xxRecovering         00400
+#define St8xxCheckwordError     00200
+#define St8xxCorrectableAddress 00100
+#define St8xxCorrectableData    00040
+#define St8xxDSUmalfunction     00020
+#define St8xxDSUreserved        00010
+#define St8xxMiscError          00004
+#define St8xxBusy               00002
+#define St8xxDataError          00001
+
+/*
+**  Detailed status.
+*/
 
 /*
 **  Physical dimensions of 844 disks.
@@ -97,26 +112,51 @@
 **  411 cylinders/unit on 844-2  and 844-21                          
 **  823 cylinders/unit on 844-41 and 844-44                         
 */
-#define MaxCylinders844_2       410
-#define MaxCylinders844_4       822
+#define MaxCylinders844_2       411
+#define MaxCylinders844_4       823
 #define MaxTracks844            19
 #define MaxSectors844           24
 #define SectorSize              322
-#define SectorBytes             512
 
 /*
-**  Physical dimensions of disk 885.
+**  Address of 844 deadstart sector.
+*/
+#define DsCylinder844_2         410
+#define DsCylinder844_4         822
+#define DsTrack844              0
+#define DsSector844             3
+
+/*
+**  Physical dimensions of 885 disk.
 **  322 12-bit bytes per sector (64 cm wds + 2 bytes).  1st
 **      byte is unused. 2nd byte contains byte count of data.                                              
 **   32 sectors/track                                     
 **   40 tracks/cylinder                                    
-**  886 cylinders/unit on 885-2
-** 1772 cylinders/unit on 885-4
+**  843 cylinders/unit on 885-11 and 885-12
 */
-#define MaxCylinders885_2       841
-#define MaxCylinders885_4       1682
-#define MaxTracks885            40  /* spec says 20  1MV goes to 40 */
+#define MaxCylinders885_1       843
+#define MaxTracks885            40
 #define MaxSectors885           32
+
+/*
+**  Address of 885 deadstart sector.
+*/
+#define DsCylinder885           841
+#define DsTrack885              1
+#define DsSector885             30
+
+/*
+**  Disk drive types.
+*/
+#define DiskType844             1
+#define DiskType885             2
+
+/*
+**  Disk container types.
+*/
+#define CtUndefined             0
+#define CtClassic               1
+#define CtPacked                2
 
 /*
 **  -----------------------
@@ -138,18 +178,20 @@ typedef struct diskSize
 
 typedef struct diskParam
     {
-    u8          *bp;
+    PpWord      (*read)(struct diskParam *, FILE *fcb);
+    void        (*write)(struct diskParam *, FILE *fcb, PpWord);
     i32         sector;
     i32         track;
     i32         cylinder;
+    i32         sectorSize;
     DiskSize    size;
-    u16         sectorSize;
-    u8          sec[SectorSize * 2];
-    bool        oldFormat;
+    PpWord      *bufPtr;
+    u16         detailedStatus[20];
+    u8          diskNo;
+    u8          unitNo;
+    u8          diskType;
     i8          interlace;
-    bool        seekNeeded;
-    u8          lastFunc;
-    bool        even;
+    PpWord      buffer[SectorSize];
     } DiskParam;
 
 /*
@@ -157,38 +199,45 @@ typedef struct diskParam
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSize *size);
+static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSize *size, u8 diskType);
 static FcStatus dd8xxFunc(PpWord funcCode);
 static void dd8xxIo(void);
 static void dd8xxActivate(void);
 static void dd8xxDisconnect(void);
-static void dd8xxLoad(DevSlot *, int, char *);
-static void dd8xxSeek(FILE *fcb, DiskParam *dp, u8 func);
-static void dd8xxSeekNextSector(DiskParam *dp);
+static i32 dd8xxSeek(DiskParam *dp);
+static i32 dd8xxSeekNextSector(DiskParam *dp);
 static void dd8xxDump(PpWord data);
 static void dd8xxFlush(void);
-static void dd8xxReadSector(FILE *fcb, DiskParam *dp, void *buf);
-static void dd8xxWriteSector(FILE *fcb, DiskParam *dp, const void *buf);
-static void dd8xxSetClearFlaw(DiskParam *dp, u32 flaw, PpWord flawState);
+static PpWord dd8xxReadClassic(DiskParam *dp, FILE *fcb);
+static PpWord dd8xxReadPacked(DiskParam *dp, FILE *fcb);
+static void dd8xxWriteClassic(DiskParam *dp, FILE *fcb, PpWord data);
+static void dd8xxWritePacked(DiskParam *dp, FILE *fcb, PpWord data);
+static void dd8xxSectorRead(DiskParam *dp, FILE *fcb, PpWord *sector);
+static void dd8xxSectorWrite(DiskParam *dp, FILE *fcb, PpWord *sector);
+static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState);
+static char *dd8xxFunc2String(PpWord funcCode);
 
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
-FILE *devF;
 
 /*
 **  -----------------
 **  Private Variables
 **  -----------------
 */
+static int diskCount = 0;
 static PpWord mySector[SectorSize];
 
 static DiskSize sizeDd844_2 = {MaxCylinders844_2, MaxTracks844, MaxSectors844};
 static DiskSize sizeDd844_4 = {MaxCylinders844_4, MaxTracks844, MaxSectors844};
-static DiskSize sizeDd885_2 = {MaxCylinders885_2, MaxTracks885, MaxSectors885};
-static DiskSize sizeDd885_4 = {MaxCylinders885_4, MaxTracks885, MaxSectors885};
+static DiskSize sizeDd885_1 = {MaxCylinders885_1, MaxTracks885, MaxSectors885};
+
+#if DEBUG
+static FILE *dd8xxLog = NULL;
+#endif
 
 /*
 **--------------------------------------------------------------------------
@@ -213,22 +262,17 @@ static DiskSize sizeDd885_4 = {MaxCylinders885_4, MaxTracks885, MaxSectors885};
 **------------------------------------------------------------------------*/
 void dd844Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     {
-    dd8xxInit(eqNo, unitNo, channelNo, deviceName, &sizeDd844_2);
+    dd8xxInit(eqNo, unitNo, channelNo, deviceName, &sizeDd844_2, DiskType844);
     }
 
 void dd844Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     {
-    dd8xxInit(eqNo, unitNo, channelNo, deviceName, &sizeDd844_4);
+    dd8xxInit(eqNo, unitNo, channelNo, deviceName, &sizeDd844_4, DiskType844);
     }
 
-void dd885Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
+void dd885Init_1(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     {
-    dd8xxInit(eqNo, unitNo, channelNo, deviceName, &sizeDd885_2);
-    }
-
-void dd885Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
-    {
-    dd8xxInit(eqNo, unitNo, channelNo, deviceName, &sizeDd885_4);
+    dd8xxInit(eqNo, unitNo, channelNo, deviceName, &sizeDd885_1, DiskType885);
     }
 
 /*
@@ -252,21 +296,27 @@ void dd885Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSize *size)
+static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSize *size, u8 diskType)
     {
     DevSlot *ds;
     FILE *fcb;
     char fname[80];
     DiskParam *dp;
-    char *opt;
+    time_t mTime;
+    struct tm *lTime;
+    u8 yy, mm, dd;
+    u8 containerType;
+    char *opt = NULL;
 
     (void)eqNo;
 
-    /*
-    **  Trim unit to 3 bits
-    */
-    unitNo &= 7;
-    
+#if DEBUG
+    if (dd8xxLog == NULL)
+        {
+        dd8xxLog = fopen("dd8xxlog.txt", "wt");
+        }
+#endif
+
     /*
     **  Setup channel functions.
     */
@@ -276,7 +326,6 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     ds->disconnect = dd8xxDisconnect;
     ds->func = dd8xxFunc;
     ds->io = dd8xxIo;
-    ds->load = dd8xxLoad;
 
     /*
     **  Save disk parameters.
@@ -288,9 +337,133 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
         fprintf(stderr, "Failed to allocate dd8xx context block\n");
         exit(1);
         }
-    dp->seekNeeded = TRUE;
-    dp->size = *size;
 
+    dp->size = *size;
+    dp->diskNo = diskCount++;
+    dp->diskType = diskType;
+    dp->unitNo = unitNo;
+
+    /*
+    **  Determine if any options have been specified.
+    */
+    if (deviceName != NULL)
+        {
+        opt = strchr (deviceName, ',');
+        }
+
+    if (opt != NULL)
+        {
+        /*
+        **  Process options.
+        */
+        *opt++ = '\0';
+
+        if (   strcmp (opt, "old")     == 0
+            || strcmp (opt, "classic") == 0)
+            {
+            containerType = CtClassic;
+            }
+        else if (   strcmp (opt, "new")    == 0
+                 || strcmp (opt, "packed") == 0)
+            {
+            containerType = CtPacked;
+            }
+        else
+            {
+            fprintf (stderr, "Unrecognized option name %s\n", opt);
+            exit (1);
+            }
+        }
+    else
+        {
+        /*
+        **  No options specified - use default values.
+        */
+        switch (diskType)
+            {
+        case DiskType885:
+            containerType = CtPacked;
+            break;
+
+        case DiskType844:
+            containerType = CtClassic;
+            break;
+            }
+        }
+
+    /*
+    **  Setup environment for disk container type.
+    */
+    switch (containerType)
+        {
+    case CtClassic:
+        dp->read = dd8xxReadClassic;
+        dp->write = dd8xxWriteClassic;
+        dp->sectorSize = SectorSize * 2;
+        break;
+
+    case CtPacked:
+        dp->read = dd8xxReadPacked;
+        dp->write = dd8xxWritePacked;
+        dp->sectorSize = 512;
+        break;
+        }
+
+    /*
+    **  Initialize detailed status.
+    */
+    switch (diskType)
+        {
+    case DiskType885:
+        dp->detailedStatus[ 0] =     0;             // strobe offset & address error status
+        dp->detailedStatus[ 1] =  0340;             // checkword error status & sector count
+        dp->detailedStatus[ 2] =     0;             // command code & error bits
+        dp->detailedStatus[ 3] = 07440 + unitNo;    // dsu number
+        dp->detailedStatus[ 4] =     0;             // address 1 of failing sector
+        dp->detailedStatus[ 5] =     0;             // address 2 of failing sector
+        dp->detailedStatus[ 6] =   010;             // non recoverable error status
+        dp->detailedStatus[ 7] =   037;             // 11 bit correction factor
+        dp->detailedStatus[ 8] = 01640;             // DSU status
+        dp->detailedStatus[ 9] = 07201;             // DSU fault status
+        dp->detailedStatus[10] =     0;             // DSU interlock status
+        dp->detailedStatus[11] =     0;             // bit address of correctable read error
+        dp->detailedStatus[12] =     0;             // PP address of correctable read error
+        dp->detailedStatus[13] =     0;             // first word of correction vector
+        dp->detailedStatus[14] =     0;             // second word of correction vector
+        dp->detailedStatus[15] =     0;             // DSC operating status word
+        dp->detailedStatus[16] =     0;             // coupler buffer status
+        dp->detailedStatus[17] =  0400;             // access A is connected & last command
+        dp->detailedStatus[18] =     0;             // last command 2 and 3
+        dp->detailedStatus[19] =     0;             // last command 4
+        break;
+
+    case DiskType844:
+        dp->detailedStatus[ 0] =     0;             // strobe offset & address error status
+        dp->detailedStatus[ 1] =     0;             // checkword error status & sector count
+        dp->detailedStatus[ 2] =     0;             // command code & error bits
+        dp->detailedStatus[ 3] = 04440 + unitNo;    // dsu number
+        dp->detailedStatus[ 4] =     0;             // address 1 of failing sector
+        dp->detailedStatus[ 5] =     0;             // address 2 of failing sector
+        dp->detailedStatus[ 6] =   010;             // non recoverable error status
+        dp->detailedStatus[ 7] =     0;             // 11 bit correction factor
+        dp->detailedStatus[ 8] = 00740;             // DSU status
+        dp->detailedStatus[ 9] = 04001;             // DSU fault status
+        dp->detailedStatus[10] = 07520;             // DSU interlock status
+        dp->detailedStatus[11] =     0;             // bit address of correctable read error
+        dp->detailedStatus[12] =     0;             // PP address of correctable read error
+        dp->detailedStatus[13] =     0;             // first word of correction vector
+        dp->detailedStatus[14] =     0;             // second word of correction vector
+        dp->detailedStatus[15] = 00020;             // DSC operating status word
+        dp->detailedStatus[16] =     0;             // coupler buffer status
+        dp->detailedStatus[17] =  0400;             // access A is connected & last command
+        dp->detailedStatus[18] =     0;             // last command 2 and 3
+        dp->detailedStatus[19] =     0;             // last command 4
+        break;
+        }
+
+    /*
+    **  Link device parameters.
+    */
     ds->context[unitNo] = dp;
 
     /*
@@ -298,21 +471,34 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     */
     if (deviceName == NULL)
         {
-        sprintf(fname, "DD844_C%02ou%1o", channelNo, unitNo);
+        /*
+        **  Construct a name.
+        */
+        switch (diskType)
+            {
+        case DiskType844:
+            sprintf(fname, "DD844_C%02ou%1o", channelNo, unitNo);
+            break;
+
+        case DiskType885:
+            sprintf(fname, "DD885_C%02ou%1o", channelNo, unitNo);
+            break;
+            }
         }
     else
         {
-        opt = strchr (deviceName, ',');
-        if (opt != NULL)
-            {
-            *opt++ = '\0';
-            }
         strcpy(fname, deviceName);
         }
 
+    /*
+    **  Try to open existing disk image.
+    */
     fcb = fopen(fname, "r+b");
     if (fcb == NULL)
         {
+        /*
+        **  Disk does not yet exist - manufacture one.
+        */
         fcb = fopen(fname, "w+b");
         if (fcb == NULL)
             {
@@ -321,40 +507,66 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
             }
 
         /*
-        **  Initialise factory data
+        **  Write last disk sector to reserve the space.
         */
-        dp->cylinder = size->maxCylinders;
+        memset(mySector, 0, SectorSize * 2);
+        dp->cylinder = size->maxCylinders - 1;
+        dp->track = size->maxTracks - 1;
+        dp->sector = size->maxSectors - 1;
+        fseek(fcb, dd8xxSeek(dp), SEEK_SET);
+        dd8xxSectorWrite(dp, fcb, mySector);
+
+        /*
+        **  Position to cylinder with the disk's factory and utility
+        **  data areas.
+        */
+        switch (diskType)
+            {
+        case DiskType885:
+            dp->cylinder = size->maxCylinders - 2;
+            break;
+
+        case DiskType844:
+            dp->cylinder = size->maxCylinders - 1;
+            break;
+            }
+
+        /*
+        **  Zero entire cylinder containing factory and utility data areas.
+        */
+        memset(mySector, 0, SectorSize * 2);
+        for (dp->track = 0; dp->track < size->maxTracks; dp->track++)
+            {
+            for (dp->sector = 0; dp->sector < size->maxSectors; dp->sector++)
+                {
+                fseek(fcb, dd8xxSeek(dp), SEEK_SET);
+                dd8xxSectorWrite(dp, fcb, mySector);
+                }
+            }
+
+        /*
+        **  Write serial number and date of manufacture.
+        */
+        mySector[0]  = (channelNo & 070) << (8 - 3);
+        mySector[0] |= (channelNo & 007) << (4 - 0);
+        mySector[0] |= (unitNo    & 070) >> (3 - 0);
+        mySector[1]  = (unitNo    & 007) << (8 - 0);
+        mySector[1] |= (diskType  & 070) << (4 - 3);
+        mySector[1] |= (diskType  & 007) << (0 - 0);
+
+        time(&mTime);
+        lTime = localtime(&mTime);
+        yy = lTime->tm_year % 100;
+        mm = lTime->tm_mon + 1;
+        dd = lTime->tm_mday;
+
+        mySector[2] = (dd / 10) << 8 | (dd % 10) << 4 | mm / 10;
+        mySector[3] = (mm % 10) << 8 | (yy / 10) << 4 | yy % 10;
+
         dp->track = 0;
         dp->sector = 0;
-
-        memset(mySector, 0, SectorSize * 2);
-
-        /*
-        **  Assemble serial number.
-        */
-        if (size->maxTracks == MaxTracks844)
-            {
-            mySector[0] = 8 << 8 | 4 << 4 | 4;
-            }
-        else
-            {
-            mySector[0] = 8 << 8 | 8 << 4 | 5;
-            }
-
-        mySector[1] = channelNo << 8 | eqNo << 4 | unitNo;
-        mySector[2] = 4 << 8 | 8 << 4 | 0;
-        mySector[3] = 1 << 8 | 1 << 4 | 6;
-
-        dd8xxWriteSector(fcb, dp, &mySector);
-
-        dp->sector += 1;
-        dd8xxWriteSector(fcb, dp, &mySector);
-
-        /*
-        **  Initialize utility map
-        */
-        dp->sector += 1;
-        dd8xxWriteSector(fcb, dp, &mySector);
+        fseek(fcb, dd8xxSeek(dp), SEEK_SET);
+        dd8xxSectorWrite(dp, fcb, mySector);
         }
 
     ds->fcb[unitNo] = fcb;
@@ -366,36 +578,17 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     dp->track = 0;
     dp->sector = 0;
     dp->interlace = 1;
-    dp->seekNeeded = TRUE;
-
-    /*
-    **  Parse option, if any.
-    */
-    if (opt != NULL)
-        {
-        if (strcmp (opt, "old") == 0)
-            {
-            dp->oldFormat = TRUE;
-            }
-        else if (strcmp (opt, "new") != 0 &&
-                 strcmp (opt, "packed") != 0)
-            {
-            fprintf (stderr, "Unrecognized option name %s\n", opt);
-            exit (1);
-            }
-        }
-    dp->sectorSize = (dp->oldFormat) ? SectorSize * 2 : SectorBytes;
+    fseek(fcb, dd8xxSeek(dp), SEEK_SET);
 
     /*
     **  Print a friendly message.
     */
-    printf("DD844 with %d cylinders initialised on channel %o unit %o, %s sector format\n",
-           dp->size.maxCylinders, channelNo, unitNo,
-           (dp->oldFormat) ? "old (622 byte)" : "packed (512 byte)");
+    printf("Disk with %d cylinders initialised on channel %o unit %o\n",
+        dp->size.maxCylinders, channelNo, unitNo);
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Execute function code on 844 disk drive.
+**  Purpose:        Execute function code on 8xx disk drive.
 **
 **  Parameters:     Name        Description.
 **                  funcCode    function code
@@ -405,23 +598,41 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
 **------------------------------------------------------------------------*/
 static FcStatus dd8xxFunc(PpWord funcCode)
     {
-    u8 unitNo;
-    FILE *fcb;
-    DiskParam *dp;
-    PpWord dsSecSize;
+    u8 unitNo = activeDevice->selectedUnit;
+    FILE *fcb = activeDevice->fcb[unitNo];
+    DiskParam *dp = (DiskParam *)activeDevice->context[unitNo];
+
+    /*
+    **  Decline functions for units which are not configured.
+    */
+    if (fcb == NULL)
+        {
+        return(FcDeclined);
+        }
 
     /*
     **  Deal with deadstart function.
     */
     if ((funcCode & 0700) == Fc8xxDeadstart )
         {
-        activeDevice->selectedUnit = funcCode & 077;
         funcCode = Fc8xxDeadstart;
+        activeDevice->selectedUnit = funcCode & 07;
+        unitNo = activeDevice->selectedUnit;
+        fcb = activeDevice->fcb[unitNo];
+        dp = (DiskParam *)activeDevice->context[unitNo];
         }
 
-    unitNo = activeDevice->selectedUnit;
-    fcb = activeDevice->fcb[unitNo];
-    dp = (DiskParam *)activeDevice->context[unitNo];
+#if DEBUG
+    fprintf(dd8xxLog, "\nPP:%02o CH:%02o DSK:%d f:%04o T:%-25s   c:%3d t:%2d s:%2d  >   ", 
+        activePpu->id,
+        activeDevice->channel->id,
+        dp->diskNo,
+        funcCode,
+        dd8xxFunc2String(funcCode),
+        dp->cylinder,
+        dp->track,
+        dp->sector);
+#endif
 
     /*
     **  Process function request.
@@ -429,13 +640,15 @@ static FcStatus dd8xxFunc(PpWord funcCode)
     switch (funcCode)
         {
     default:
+#if DEBUG
+        fprintf(dd8xxLog, " !!!!!FUNC not implemented & declined!!!!!! ");
+#endif
         return(FcDeclined);
 
     case Fc8xxConnect:
         /*
         **  Expect drive number.
         */
-        activeDevice->fcode = funcCode;
         activeDevice->recordLength = 1;     
         break;
 
@@ -444,7 +657,6 @@ static FcStatus dd8xxFunc(PpWord funcCode)
         **  Expect drive number, cylinder, track and sector.
         */
         dp->interlace = 1;
-        activeDevice->fcode = funcCode;
         activeDevice->recordLength = 4;
         break;
 
@@ -453,98 +665,122 @@ static FcStatus dd8xxFunc(PpWord funcCode)
         **  Expect drive number, cylinder, track and sector.
         */
         dp->interlace = 2;
-        activeDevice->fcode = funcCode;
         activeDevice->recordLength = 4;
         break;
 
     case Fc8xxRead:
     case Fc8xxReadFlawedSector:
-    case Fc8xxReadUtilityMap:
-    case Fc8xxReadFactoryData:
-        activeDevice->fcode = funcCode;
         activeDevice->recordLength = SectorSize;
-        dd8xxSeek(fcb, dp, Fc8xxRead);
-        fread(dp->sec, 1, dp->sectorSize, fcb);
-        dp->bp = dp->sec;
-        dp->even = TRUE;
         break;
 
     case Fc8xxWrite:
     case Fc8xxWriteFlawedSector:
     case Fc8xxWriteLastSector:
     case Fc8xxWriteVerify:
-        activeDevice->fcode = funcCode;
         activeDevice->recordLength = SectorSize;
-        dd8xxSeek(fcb, dp, Fc8xxWrite);
-        dp->bp = dp->sec;
-        dp->even = TRUE;
         break;
 
     case Fc8xxReadCheckword:
-        activeDevice->fcode = funcCode;
         activeDevice->recordLength = 2;
         break;
 
     case Fc8xxOpComplete:
     case Fc8xxDropSeeks:
+        return(FcProcessed);
         break;
 
     case Fc8xxGeneralStatus:
-        activeDevice->fcode = funcCode;
         activeDevice->recordLength = 1;
         break;
  
     case Fc8xxDetailedStatus:
-        activeDevice->fcode = funcCode;
-        activeDevice->recordLength = 12;
-        break;
- 
     case Fc8xxDetailedStatus2:
-        activeDevice->fcode = funcCode;
-        activeDevice->recordLength = 20;
-        break;
- 
-    case Fc8xxStartMemLoad:
-        activeDevice->fcode = funcCode;
-        break;
+        dp->detailedStatus[2] = (funcCode << 4) & 07760;
 
-    case Fc8xxDriveRelease:
-        /*
-        **  Silently ignore.
-        */
-        break;
-
-    case Fc8xxDeadstart:
-        activeDevice->fcode = funcCode;
-        dp->cylinder = dp->size.maxCylinders;
-        dp->track = 0;
-        dp->sector = 3;
-        dp->seekNeeded = TRUE;
-        dd8xxSeek(fcb, dp, Fc8xxRead);
-        fread(dp->sec, 1, dp->sectorSize, fcb);
-        dp->bp = dp->sec;
-        dp->even = TRUE;
-        activeDevice->fcode = funcCode;
-        /* the first word in the sector contains data length */
-        if (dp->oldFormat)
+        switch (dp->diskType)
             {
-            dsSecSize = *(PpWord *) (dp->bp);
+        case DiskType885:
+            dp->detailedStatus[4] = (dp->cylinder >> 4) & 077;
+            dp->detailedStatus[5] = ((dp->cylinder << 8) | dp->track) & 07777;
+            dp->detailedStatus[6] = (dp->sector << 4) | 010;
+            if ((dp->track & 1) != 0)
+                {
+                dp->detailedStatus[9] |= 2;  /* odd track */
+                }
+            else
+                {
+                dp->detailedStatus[9] &= ~2;
+                }
+
+            break;
+
+        case DiskType844:
+            dp->detailedStatus[4] = ((dp->cylinder & 0777) << 3) | ((dp->track >> 2) & 07);
+            dp->detailedStatus[5] = ((dp->track & 03) << 10) | ((dp->sector & 017) << 5) | ((dp->cylinder >> 9) & 01);
+            dp->detailedStatus[6] = (dp->sector << 4) | 010;
+            break;
+            }
+
+        if (funcCode == Fc8xxDetailedStatus)
+            {
+            activeDevice->recordLength = 12;
             }
         else
             {
-            dsSecSize = (dp->sec[0] << 4) + (dp->sec[1] >> 4);
+            activeDevice->recordLength = 20;
             }
-        activeDevice->recordLength = dsSecSize;
+        break;
+ 
+    case Fc8xxStartMemLoad:
+        break;
+
+    case Fc8xxReadUtilityMap:
+    case Fc8xxReadFactoryData:
+        activeDevice->recordLength = SectorSize;
+        break;
+
+    case Fc8xxDriveRelease:
+        return(FcProcessed);
+
+    case Fc8xxDeadstart:
+        switch (dp->diskType)
+            {
+        case DiskType844:
+            if (dp->size.maxCylinders == MaxCylinders844_2)
+                {
+                dp->cylinder = DsCylinder844_2;
+                }
+            else
+                {
+                dp->cylinder = DsCylinder844_4;
+                }
+
+            dp->track = DsTrack844;
+            dp->sector = DsSector844;
+            break;
+
+        case DiskType885:
+            dp->cylinder = DsCylinder885;
+            dp->track = DsTrack885;
+            dp->sector = DsSector885;
+            break;
+            }
+
+        fseek(fcb, dd8xxSeek(dp), SEEK_SET);
+        activeDevice->recordLength = SectorSize;
         break;
 
     case Fc8xxSetClearFlaw:
-        activeDevice->fcode = funcCode;
+        if (dp->diskType != DiskType844)
+            {
+            return(FcDeclined);
+            }
+
         activeDevice->recordLength = 1;
         break;
 
     case Fc8xxFormatPack:
-        activeDevice->fcode = funcCode;
-        if (dp->size.maxTracks == MaxTracks844)
+        if (dp->size.maxTracks == MaxTracks844) // use diskType instead?
             {
             activeDevice->recordLength = 7;
             }
@@ -555,7 +791,7 @@ static FcStatus dd8xxFunc(PpWord funcCode)
         break;
 
     case Fc8xxManipulateProcessor:
-        activeDevice->fcode = funcCode;
+        activeDevice->recordLength = 5;
         break;
 
     case Fc8xxIoLength:
@@ -567,19 +803,19 @@ static FcStatus dd8xxFunc(PpWord funcCode)
     case Fc8xxGapWrite:
     case Fc8xxGapWriteVerify:
     case Fc8xxGapReadCheckword:
-        logError(LogErrorLocation, "ch %o, function %o not implemented\n", activeChannel->id, funcCode);
+#if DEBUG
+        fprintf(dd8xxLog, " !!!!!FUNC not implemented but accepted!!!!!! ");
+#endif
+        logError(LogErrorLocation, "ch %o, function %04o not implemented\n", activeChannel->id, funcCode);
         break;
         }
 
-#if DEBUG
-    fprintf(devF, "pp %o ch %o, dd8xx u%o - function %04o issued\n",
-            activePpu->id, activeChannel->id, unitNo, funcCode);
-#endif
+    activeDevice->fcode = funcCode;
     return(FcAccepted);
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Perform I/O on 844 disk drive.
+**  Purpose:        Perform I/O on 8xx disk drive.
 **
 **  Parameters:     Name        Description.
 **
@@ -588,28 +824,20 @@ static FcStatus dd8xxFunc(PpWord funcCode)
 **------------------------------------------------------------------------*/
 static void dd8xxIo(void)
     {
-    u8 unitNo;
-    FILE *fcb;
-    DiskParam *dp;
-    u32 flaw;
-
-    unitNo = activeDevice->selectedUnit;
-    fcb = activeDevice->fcb[unitNo];
-    dp = (DiskParam *)activeDevice->context[unitNo];
+    u8 unitNo = activeDevice->selectedUnit;
+    FILE *fcb = activeDevice->fcb[unitNo];
+    DiskParam *dp = (DiskParam *)activeDevice->context[unitNo];
+    i32 pos;
 
     switch (activeDevice->fcode)
         {
-    default:
-        logError(LogErrorLocation, "channel %02o - invalid function code: %4.4o\n", activeChannel->id, (u32)activeDevice->fcode);
-        break;
-
     case Fc8xxConnect:
         if (activeChannel->full)
             {
             activeDevice->selectedUnit = activeChannel->data & 07;
             if (activeDevice->fcb[activeDevice->selectedUnit] == NULL)
                 {
-                logError(LogErrorLocation, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeChannel->data);
+                logError(LogErrorLocation, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeDevice->fcode);
                 }
 
             activeChannel->full = FALSE;
@@ -625,40 +853,28 @@ static void dd8xxIo(void)
             case 4:
                 activeDevice->selectedUnit = activeChannel->data & 07;
                 unitNo = activeDevice->selectedUnit;
-                if (activeDevice->fcb[activeDevice->selectedUnit] == NULL)
+                if (activeDevice->fcb[unitNo] == NULL)
                     {
-                    logError(LogErrorLocation, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeChannel->data);
-                    activeChannel->active = FALSE;
-                    break;
+                    logError(LogErrorLocation, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeDevice->fcode);
                     }
 
-                fcb = activeDevice->fcb[unitNo];
-                dp = activeDevice->context[unitNo];
                 break;
 
             case 3:
-                if (dp->cylinder != activeChannel->data)
-                    {
-                    dp->cylinder = activeChannel->data;
-                    dp->seekNeeded = TRUE;
-                    }
+                dp->cylinder = activeChannel->data;
                 break;
 
             case 2:
-                if (dp->track != activeChannel->data)
-                    {
-                    dp->track = activeChannel->data;
-                    dp->seekNeeded = TRUE;
-                    }
+                dp->track = activeChannel->data;
                 break;
 
             case 1:
-                if (dp->sector != activeChannel->data)
+                dp->sector = activeChannel->data;
+                pos = dd8xxSeek(dp);
+                if (pos >= 0 && fcb != NULL)
                     {
-                    dp->sector = activeChannel->data;
-                    dp->seekNeeded = TRUE;
+                    fseek(fcb, pos, SEEK_SET);
                     }
-                dd8xxSeek(fcb, dp, Fc8xxRead);
                 break;
 
             default:
@@ -666,45 +882,63 @@ static void dd8xxIo(void)
                 break;
                 }
 
+#if DEBUG
+            fprintf(dd8xxLog, " %04o[%d]", activeChannel->data, activeChannel->data);
+#endif
+
             activeChannel->full = FALSE;
             }
         break;
 
     case Fc8xxDeadstart:
-    case Fc8xxRead:
-    case Fc8xxReadFlawedSector:
-    case Fc8xxReadUtilityMap:
-    case Fc8xxReadFactoryData:
         if (!activeChannel->full)
             {
-            if (dp->oldFormat)
+            if (activeDevice->recordLength == SectorSize)
                 {
-                activeChannel->data = *(PpWord *) (dp->bp) & Mask12;
-                dp->bp += sizeof (PpWord);
+                /*
+                **  The first word in the sector contains the data length.
+                */
+                activeDevice->recordLength = dp->read(dp, fcb);
+                if (activeDevice->recordLength > SectorSize)
+                    {
+                    activeDevice->recordLength = SectorSize;
+                    }
+
+                activeChannel->data = activeDevice->recordLength;
                 }
             else
                 {
-                if (dp->even)
-                    {
-                    activeChannel->data = (*(dp->bp) << 4) + (*(dp->bp + 1) >> 4);
-                    dp->bp++;
-                    }
-                else
-                    {
-                    activeChannel->data = (*(dp->bp) << 8) + *(dp->bp + 1);
-                    dp->bp += 2;
-                    }
-                dp->even = !dp->even;
+                activeChannel->data = dp->read(dp, fcb);
                 }
+
+            activeChannel->full = TRUE;
+            
+            if (--activeDevice->recordLength == 0)
+                {
+                activeChannel->discAfterInput = TRUE;
+                pos = dd8xxSeekNextSector(dp);
+                if (pos >= 0)
+                    {
+                    fseek(fcb, pos, SEEK_SET);
+                    }
+                }
+            }
+        break;
+
+    case Fc8xxRead:
+    case Fc8xxReadFlawedSector:
+        if (!activeChannel->full)
+            {
+            activeChannel->data = dp->read(dp, fcb);
             activeChannel->full = TRUE;
 
             if (--activeDevice->recordLength == 0)
                 {
                 activeChannel->discAfterInput = TRUE;
-                if (activeDevice->fcode == Fc8xxRead ||
-                    activeDevice->fcode == Fc8xxReadFlawedSector)
+                pos = dd8xxSeekNextSector(dp);
+                if (pos >= 0)
                     {
-                    dd8xxSeekNextSector(dp);
+                    fseek(fcb, pos, SEEK_SET);
                     }
                 }
             }
@@ -716,31 +950,16 @@ static void dd8xxIo(void)
     case Fc8xxWriteVerify:
         if (activeChannel->full)
             {
-            if (dp->oldFormat)
-                {
-                *(PpWord *) (dp->bp) = activeChannel->data & Mask12;
-                dp->bp += sizeof (PpWord);
-                }
-            else
-                {
-                if (dp->even)
-                    {
-                    *dp->bp++ = activeChannel->data >> 4;
-                    *dp->bp = activeChannel->data << 4;
-                    }
-                else
-                    {
-                    *dp->bp++ |= activeChannel->data >> 8;
-                    *dp->bp++ = activeChannel->data;
-                    }
-                dp->even = !dp->even;
-                }
+            dp->write(dp, fcb, activeChannel->data);
             activeChannel->full = FALSE;
 
             if (--activeDevice->recordLength == 0)
                 {
-                fwrite(dp->sec, 1, dp->sectorSize, fcb);
-                dd8xxSeekNextSector(dp);
+                pos = dd8xxSeekNextSector(dp);
+                if (pos >= 0)
+                    {
+                    fseek(fcb, pos, SEEK_SET);
+                    }
                 }
             }
         break;
@@ -748,9 +967,12 @@ static void dd8xxIo(void)
     case Fc8xxGeneralStatus:
         if (!activeChannel->full)
             {
-//            activeChannel->data = activeDevice->status;   // <<<<<< needs more thought >>>>>>>>
-            activeChannel->data = 0;
+            activeChannel->data = activeDevice->status;
             activeChannel->full = TRUE;
+
+#if DEBUG
+            fprintf(dd8xxLog, " %04o[%d]", activeChannel->data, activeChannel->data);
+#endif
 
             if (--activeDevice->recordLength == 0)
                 {
@@ -760,11 +982,55 @@ static void dd8xxIo(void)
         break;
 
     case Fc8xxReadCheckword:
-    case Fc8xxDetailedStatus:
-    case Fc8xxDetailedStatus2:
         if (!activeChannel->full)
             {
             activeChannel->data = 0;
+            activeChannel->full = TRUE;
+
+            if (--activeDevice->recordLength == 0)
+                {
+                activeChannel->discAfterInput = TRUE;
+                }
+            }
+        break;
+    case Fc8xxDetailedStatus:
+        if (!activeChannel->full)
+            {
+            activeChannel->data = dp->detailedStatus[12 - activeDevice->recordLength];
+            activeChannel->full = TRUE;
+
+#if DEBUG
+            fprintf(dd8xxLog, " %04o[%d]", activeChannel->data, activeChannel->data);
+#endif
+
+            if (--activeDevice->recordLength == 0)
+                {
+                activeChannel->discAfterInput = TRUE;
+                }
+            }
+        break;
+
+    case Fc8xxDetailedStatus2:
+        if (!activeChannel->full)
+            {
+            activeChannel->data = dp->detailedStatus[20 - activeDevice->recordLength];
+            activeChannel->full = TRUE;
+#if DEBUG
+            fprintf(dd8xxLog, " %04o[%d]", activeChannel->data, activeChannel->data);
+#endif
+
+            if (--activeDevice->recordLength == 0)
+                {
+                activeChannel->discAfterInput = TRUE;
+                }
+            }
+        break;
+
+    case Fc8xxReadFactoryData:
+    case Fc8xxReadUtilityMap:
+        if (!activeChannel->full)
+            {
+            activeChannel->data = dp->read(dp, fcb);
             activeChannel->full = TRUE;
 
             if (--activeDevice->recordLength == 0)
@@ -777,8 +1043,10 @@ static void dd8xxIo(void)
     case Fc8xxSetClearFlaw:
         if (activeChannel->full)
             {
-            flaw = (dp->cylinder << 12) | (dp->track <<6) | dp->sector;
-            dd8xxSetClearFlaw(dp, flaw, activeChannel->data);
+#if DEBUG
+            fprintf(dd8xxLog, " %04o[%d]", activeChannel->data, activeChannel->data);
+#endif
+            dd844SetClearFlaw(dp, activeChannel->data);
             activeChannel->full = FALSE;
             }
         break;
@@ -798,6 +1066,7 @@ static void dd8xxIo(void)
     case Fc8xxGapWrite:
     case Fc8xxGapWriteVerify:
     case Fc8xxGapReadCheckword:
+    default:
         activeChannel->full = FALSE;
         break;
         }
@@ -828,63 +1097,59 @@ static void dd8xxDisconnect(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Seek to the currently set cyl/track/sector
+**  Purpose:        Work out seek offset.
 **
 **  Parameters:     Name        Description.
-**                  fcb         pointer to FILE struct.
-**                  dp          pointer to DiskParam struct.
-**                  func        function code (read or write).
+**                  dp          Disk parameters (context).
 **
-**  Returns:        nothing
+**  Returns:        Byte offset (not word!) or -1 when seek target
+**                  is invalid.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxSeek(FILE *fcb, DiskParam *dp, u8 func)
+static i32 dd8xxSeek(DiskParam *dp)
     {
     i32 result;
 
-#if DEBUG
-    fprintf(devF, "pp %o ch %o - seek c:%d t:%d S:%d\n",
-            activePpu->id, activeChannel->id,
-            dp->cylinder,
-            dp->track,
-            dp->sector);
-#endif
+    dp->bufPtr = NULL;
+
     activeDevice->status = 0;
 
-    if (dp->cylinder > dp->size.maxCylinders)
+    if (dp->cylinder >= dp->size.maxCylinders)
         {
-        logError(LogErrorLocation, "ch %o, cylinder %o invalid\n", activeChannel->id, dp->cylinder);
-//        activeDevice->status = St844NonRecoverable;
-        activeDevice->status = St844NonRecoverable | St844Abnormal;
-        return;
+#if DEBUG
+        fprintf(dd8xxLog, "ch %o, cylinder %d invalid\n", activeChannel->id, dp->cylinder); 
+#endif
+        logError(LogErrorLocation, "ch %o, cylinder %d invalid\n", activeChannel->id, dp->cylinder);
+        activeDevice->status = 01000;
+        return(-1);
         }
 
     if (dp->track >= dp->size.maxTracks)
         {
-        logError(LogErrorLocation, "ch %o, track %o invalid\n", activeChannel->id, dp->track);
-//        activeDevice->status = St844NonRecoverable;
-        activeDevice->status = St844NonRecoverable | St844Abnormal;
-        return;
+#if DEBUG
+        fprintf(dd8xxLog, "ch %o, track %d invalid\n", activeChannel->id, dp->track);
+#endif
+        logError(LogErrorLocation, "ch %o, track %d invalid\n", activeChannel->id, dp->track);
+        activeDevice->status = 01000;
+        return(-1);
         }
 
     if (dp->sector >= dp->size.maxSectors)
         {
-        logError(LogErrorLocation, "ch %o, sector %o invalid\n", activeChannel->id, dp->sector);
-//        activeDevice->status = St844NonRecoverable;
-        activeDevice->status = St844NonRecoverable | St844Abnormal;
-        return;
+#if DEBUG
+        fprintf(dd8xxLog, "ch %o, sector %d invalid\n", activeChannel->id, dp->sector);
+#endif
+        logError(LogErrorLocation, "ch %o, sector %d invalid\n", activeChannel->id, dp->sector);
+        activeDevice->status = 01000;
+        return(-1);
         }
-    
-    if (dp->seekNeeded || dp->lastFunc != func)
-        {
-        result  = dp->cylinder * dp->size.maxTracks * dp->size.maxSectors;
-        result += dp->track * dp->size.maxSectors;
-        result += dp->sector;
-        result *= dp->sectorSize;
-        fseek(fcb, result, SEEK_SET);
-        dp->seekNeeded = FALSE;
-        dp->lastFunc = func;
-        }
+
+    result  = dp->cylinder * dp->size.maxTracks * dp->size.maxSectors;
+    result += dp->track * dp->size.maxSectors;
+    result += dp->sector;
+    result *= dp->sectorSize;
+
+    return(result);
     }
 
 /*--------------------------------------------------------------------------
@@ -893,10 +1158,11 @@ static void dd8xxSeek(FILE *fcb, DiskParam *dp, u8 func)
 **  Parameters:     Name        Description.
 **                  dp          Disk parameters (context).
 **
-**  Returns:        nothing
+**  Returns:        Byte offset (not word!) or -1 when seek target
+**                  is invalid.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxSeekNextSector(DiskParam *dp)
+static i32 dd8xxSeekNextSector(DiskParam *dp)
     {
     dp->sector += dp->interlace;
 
@@ -906,17 +1172,28 @@ static void dd8xxSeekNextSector(DiskParam *dp)
             {
             dp->sector = 0;
             dp->track += 1;
+
+            if (dp->track == dp->size.maxTracks)
+                {
+                /*
+                **  Wrap to the start of the current cylinder.
+                */
+                dp->track = 0;
+                dp->sector = 0;
+                }
             }
         }
     else
         {
-        dp->seekNeeded = TRUE;
         if (dp->sector == dp->size.maxSectors)
             {
             dp->sector = 0;
             dp->track += 1;
             if (dp->track == dp->size.maxTracks)
                 {
+                /*
+                **  Now start all odd sectors.
+                */
                 dp->track = 0;
                 dp->sector = 1;
                 }
@@ -925,208 +1202,412 @@ static void dd8xxSeekNextSector(DiskParam *dp)
             {
             dp->sector = 1;
             dp->track += 1;
+
+            if (dp->track == dp->size.maxTracks)
+                {
+                /*
+                **  Wrap to the start of the current cylinder.
+                */
+                dp->track = 0;
+                dp->sector = 0;
+                }
             }
         }
+
+    return(dd8xxSeek(dp));
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Perform load/unload on disk unit.
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void dd8xxLoad(DevSlot *dp, int unitNo, char *fn)
-    {
-    FILE *fcb;
-
-    if (fn != NULL)
-        {
-        opSetMsg ("$LOAD NOT SUPPORTED ON DD8xx");
-        return;
-        }
-    
-    if (unitNo < 0 || unitNo >= MaxUnits)
-        {
-        opSetMsg ("$INVALID UNIT NO");
-        return;
-        }
-    fcb = dp->fcb[unitNo];
-
-    if (fcb == NULL)
-        {
-        opSetMsg ("$UNIT NOT ALLOCATED");
-        return;
-        }
-
-    fflush (fcb);
-    opSetMsg ("BUFFERS FLUSHED");
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Read sector to a local buffer
+**  Purpose:        Perform a 12 bit PP word read from a classic disk container.
 **
 **  Parameters:     Name        Description.
 **                  dp          Disk parameters (context).
-**                  buf         buffer pointer (PpWord[322])
+**                  fcb         File control block.
+**
+**  Returns:        PP word read.
+**
+**------------------------------------------------------------------------*/
+static PpWord dd8xxReadClassic(DiskParam *dp, FILE *fcb)
+    {
+    /*
+    **  Read an entire sector if the current buffer is empty.
+    */
+    if (dp->bufPtr == NULL)
+        {
+        dp->bufPtr = dp->buffer;
+        fread(dp->buffer, 1, dp->sectorSize, fcb);
+        }
+
+    /*
+    **  Fail gracefully if we read too much data.
+    */
+    if (dp->bufPtr >= dp->buffer + SectorSize)
+        {
+        return(0);
+        }
+
+    return(*dp->bufPtr++);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Perform a 12 bit PP word write to a classic disk container.
+**
+**  Parameters:     Name        Description.
+**                  dp          Disk parameters (context).
+**                  fcb         File control block.
+**                  data        PP word to be written.
 **
 **  Returns:        Nothing.
 **
-**  This routine reads the sector set by the most recent seek.
-**  Note that it does NOT advance the current sector.
+**------------------------------------------------------------------------*/
+static void dd8xxWriteClassic(DiskParam *dp, FILE *fcb, PpWord data)
+    {
+    /*
+    **  Fail gracefully if we write too much data.
+    */
+    if (dp->bufPtr >= dp->buffer + SectorSize)
+        {
+        return;
+        }
+
+    /*
+    **  Reset pointer if the current buffer is empty.
+    */
+    if (dp->bufPtr == NULL)
+        {
+        dp->bufPtr = dp->buffer;
+        }
+
+    *dp->bufPtr++ = data;
+
+    /*
+    **  Write the data if we got a full sector.
+    */
+    if (dp->bufPtr == dp->buffer + SectorSize)
+        {
+        fwrite(dp->buffer, 1, dp->sectorSize, fcb);
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Perform a 12 bit PP word read from a packed disk container.
+**
+**  Parameters:     Name        Description.
+**                  dp          Disk parameters (context).
+**                  fcb         File control block.
+**
+**  Returns:        PP word read.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxReadSector(FILE *fcb, DiskParam *dp, void *buf)
+static PpWord dd8xxReadPacked(DiskParam *dp, FILE *fcb)
     {
-    int i;
-    u8 *bp;
+    u16 byteCount;
+    static u8 sector[512];
+    u8 *sp;
     PpWord *pp;
-    
-    dd8xxSeek(fcb, dp, Fc8xxRead);
-    fread(dp->sec, 1, dp->sectorSize, fcb);
-    bp = dp->sec;
-    pp = (PpWord *) buf;
-    if (dp->oldFormat)
+
+    /*
+    **  Read an entire sector if the current buffer is empty.
+    */
+    if (dp->bufPtr == NULL)
         {
-        for (i = 0; i < SectorSize; i++)
+        dp->bufPtr = dp->buffer;
+        fread(sector, 1, dp->sectorSize, fcb);
+
+        /*
+        **  Unpack the sector into the buffer.
+        */
+        sp = sector;
+        pp = dp->buffer;
+        for (byteCount = SectorSize; byteCount > 0; byteCount -= 2)
             {
-            *pp++ = *(PpWord *) bp;
-            bp += sizeof (PpWord);
+            *pp++ = (sp[0] << 4) + (sp[1] >> 4);
+            *pp++ = (sp[1] << 8) + (sp[2] >> 0);
+            sp += 3;
             }
         }
-    else
+
+    /*
+    **  Fail gracefully if we read too much data.
+    */
+    if (dp->bufPtr >= dp->buffer + SectorSize)
         {
-        for (i = 0; i < SectorSize; i += 2)
-            {
-            *pp++ = (*bp << 4) + (*(bp + 1) >> 4);
-            *pp++ = (*(bp + 1) << 8) + *(bp + 2);
-            bp += 3;
-            }
+        return(0);
         }
+
+    /*
+    **  Return one data word.
+    */
+    return((*dp->bufPtr++) & Mask12);
     }
 
-
 /*--------------------------------------------------------------------------
-**  Purpose:        Write sector from a local buffer
+**  Purpose:        Perform a 12 bit PP word write to a packed disk container.
 **
 **  Parameters:     Name        Description.
 **                  dp          Disk parameters (context).
-**                  buf         buffer pointer (PpWord[322])
+**                  fcb         File control block.
+**                  data        PP word to be written.
 **
 **  Returns:        Nothing.
 **
-**  This routine writes the sector set by the most recent seek.
-**  Note that it does NOT advance the current sector.
-**
 **------------------------------------------------------------------------*/
-static void dd8xxWriteSector(FILE *fcb, DiskParam *dp, const void *buf)
+static void dd8xxWritePacked(DiskParam *dp, FILE *fcb, PpWord data)
     {
-    int i;
-    u8 *bp;
-    const PpWord *pp;
-    
-    bp = dp->sec;
-    pp = (const PpWord *) buf;
-    if (dp->oldFormat)
+    u16 byteCount;
+    static u8 sector[512];
+    u8 *sp;
+    PpWord *pp;
+
+    /*
+    **  Fail gracefully if we write too much data.
+    */
+    if (dp->bufPtr >= dp->buffer + SectorSize)
         {
-        for (i = 0; i < SectorSize; i++)
-            {
-            *(PpWord *) bp = *pp++ & Mask12;
-            bp += sizeof (PpWord);
-            }
+        return;
         }
-    else
+
+    /*
+    **  Reset pointer if the current buffer is empty.
+    */
+    if (dp->bufPtr == NULL)
         {
-        for (i = 0; i < SectorSize; i += 2)
-            {
-            *bp++ = *pp >> 4;
-            *bp = *pp++ << 4;
-            *bp++ |= *pp >> 8;
-            *bp++ = *pp++;
-            }
+        dp->bufPtr = dp->buffer;
         }
-    dd8xxSeek(fcb, dp, Fc8xxWrite);
-    fwrite(dp->sec, 1, dp->sectorSize, fcb);
+
+    *dp->bufPtr++ = data;
+
+    /*
+    **  Write the data if we got a full sector.
+    */
+    if (dp->bufPtr == dp->buffer + SectorSize)
+        {
+        /*
+        **  Pack the buffer into a sector.
+        */
+        sp = sector;
+        pp = dp->buffer;
+        for (byteCount = SectorSize; byteCount > 0; byteCount -= 2)
+            {
+            *sp++  = (u8)(pp[0] >> 4);
+            *sp    = (u8)(pp[0] << 4);
+            *sp++ |= (u8)(pp[1] >> 8);
+            *sp++  = (u8)(pp[1] >> 0);
+            pp += 2;
+            }
+
+        /*
+        **  Write the sector.
+        */
+        fwrite(sector, 1, dp->sectorSize, fcb);
+        }
     }
 
-
 /*--------------------------------------------------------------------------
-**  Purpose:        Manipulate sector flaw map.
+**  Purpose:        Perform a sector read from a disk container.
 **
 **  Parameters:     Name        Description.
 **                  dp          Disk parameters (context).
-**                  flaw
-**                  flawState
+**                  fcb         File control block.
+**                  sector      Pointer to sector to read into.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxSetClearFlaw(DiskParam *dp, u32 flaw, PpWord flawState)
+static void dd8xxSectorRead(DiskParam *dp, FILE *fcb, PpWord *sector)
+    {
+    u16 byteCount;
+
+    for (byteCount = SectorSize; byteCount > 0; byteCount--)
+        {
+        *sector++ = dp->read(dp, fcb);
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Perform a sector write to a disk container.
+**
+**  Parameters:     Name        Description.
+**                  dp          Disk parameters (context).
+**                  fcb         File control block.
+**                  sector      Pointer to sector to write.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void dd8xxSectorWrite(DiskParam *dp, FILE *fcb, PpWord *sector)
+    {
+    u16 byteCount;
+
+    for (byteCount = SectorSize; byteCount > 0; byteCount--)
+        {
+        dp->write(dp, fcb, *sector++);
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Manipulate 844 utility (flaw) map.
+**
+**  Parameters:     Name        Description.
+**                  dp          Disk parameters (context).
+**                  flawState   Flaw state from PP.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState)
     {
     u8 unitNo;
     FILE *fcb;
     int index;
-    PpWord word0;
-    PpWord word1;
+    PpWord flawWord0;
+    PpWord flawWord1;
+	PpWord sectorFlaw;
+	PpWord trackFlaw;
+    bool setFlaw;
 
     unitNo = activeDevice->selectedUnit;
     fcb = activeDevice->fcb[unitNo];
 
-    index = 23 - (flawState & 01);
-    word0 = (PpWord)(flaw >> 12) | (1 << 11) - (flawState & 01);
-    word1 = (PpWord)flaw & 07777;
+    /*
+    **  Assemble flaw words.
+    */
+	if ((flawState & 1) == 1)
+        {
+	    trackFlaw  = 1;
+	    sectorFlaw = 0;
+        }
+    else
+        {
+	    trackFlaw  = 0;
+	    sectorFlaw = 1;
+        }
 
-    dp->cylinder = dp->size.maxCylinders;
+    setFlaw = (flawState & 2) != 0;
+
+    flawWord0 = (PpWord)((sectorFlaw << 11) | (trackFlaw << 10) | (dp->cylinder & Mask10));
+    flawWord1 = (PpWord)(((dp->track & Mask6) << 6) | (dp->sector & Mask6));
+
+    /*
+    **  Read the 844 utility map sector.
+    */
+    dp->cylinder = dp->size.maxCylinders - 1;
     dp->track = 0;
-    dp->sector = 0;
-    dp->seekNeeded = TRUE;
-    dd8xxReadSector(fcb, dp, &mySector);
+    dp->sector = 2;
+    fseek(fcb, dd8xxSeek(dp), SEEK_SET);
+    fread(mySector, 2, SectorSize, fcb);
 
-    if (flawState & 02)
-        {  /* set part */
-        index = 4;
-        while (mySector[index] != 0 ) 
+    /*
+    **  Process request.
+    */
+    if (setFlaw)
+        {
+        /*
+        **  Find a free flaw entry.
+        */
+        index = 0;
+        while (index < SectorSize) 
             {
             index += 2;
-            if (index > (SectorSize - 2))
+            if (mySector[index] == 0)
+                {
                 break;
+                }
             }
+
+        /*
+        **  If a free flaw entry was found, set it.
+        */
         if (index < SectorSize)
             {
-#if DEBUG
-            fprintf(devF,"DD844 set flaw , sector = %08o %04o %04o - %04o at %d\n",
-                flaw, word0, word1, flawState, index);
-#endif
-            mySector[index] = word0;
-            index += 1;
-            mySector[index] = word1;
+            mySector[index + 0] = flawWord0;
+            mySector[index + 1] = flawWord1;
             }
         }
     else
         {
-        index = 4;
-        while (mySector[index] != 0 ) 
+        /*
+        **  Find the matching entry.
+        */
+        index = 0;
+        while (index < SectorSize) 
             {
-            if (mySector[index] == word0 &&
-                mySector[index + 1] == word1)
-               break; 
+            if (   mySector[index + 0] == flawWord0
+                && mySector[index + 1] == flawWord1)
+                {
+                break; 
+                }
+
             index += 2;
-            if (index > (SectorSize - 2))
-                break;
             }
+
+        /*
+        **  If a matching entry was found, clear it.
+        */
         if (index < SectorSize)
             {
-#if DEBUG
-            fprintf(devF,"DD844 clear flaw , sector = %08o %04o %04o - %04o at %d\n",
-                flaw, word0, word1, flawState, index);
-#endif
-            mySector[index] = 0;
-            index += 1;
-            mySector[index] = 0;
+            mySector[index + 0] = 0;
+            mySector[index + 1] = 0;
             }
         }
-    dd8xxWriteSector(fcb, dp, &mySector);
+
+    /*
+    **  Update the 844 utility map sector.
+    */
+    fseek(fcb, dd8xxSeek(dp), SEEK_SET);
+    dd8xxSectorWrite(dp, fcb, mySector);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Convert function code to string.
+**
+**  Parameters:     Name        Description.
+**                  funcCode    function code
+**
+**  Returns:        String equivalent of function code.
+**
+**------------------------------------------------------------------------*/
+static char *dd8xxFunc2String(PpWord funcCode)
+    {
+#if DEBUG
+    switch(funcCode)
+        {
+    case Fc8xxConnect                :  return "Connect";              
+    case Fc8xxSeekFull               :  return "SeekFull";             
+    case Fc8xxSeekHalf               :  return "SeekHalf";             
+    case Fc8xxIoLength               :  return "IoLength";             
+    case Fc8xxRead                   :  return "Read";                 
+    case Fc8xxWrite                  :  return "Write";                
+    case Fc8xxWriteVerify            :  return "WriteVerify";          
+    case Fc8xxReadCheckword          :  return "ReadCheckword";        
+    case Fc8xxOpComplete             :  return "OpComplete";           
+    case Fc8xxDisableReserve         :  return "DisableReserve";       
+    case Fc8xxGeneralStatus          :  return "GeneralStatus";        
+    case Fc8xxDetailedStatus         :  return "DetailedStatus";       
+    case Fc8xxContinue               :  return "Continue";             
+    case Fc8xxDropSeeks              :  return "DropSeeks";            
+    case Fc8xxFormatPack             :  return "FormatPack";           
+    case Fc8xxOnSectorStatus         :  return "OnSectorStatus";       
+    case Fc8xxDriveRelease           :  return "DriveRelease";         
+    case Fc8xxReturnCylAddr          :  return "ReturnCylAddr";        
+    case Fc8xxSetClearFlaw           :  return "SetClearFlaw";         
+    case Fc8xxDetailedStatus2        :  return "DetailedStatus2";      
+    case Fc8xxGapRead                :  return "GapRead";              
+    case Fc8xxGapWrite               :  return "GapWrite";             
+    case Fc8xxGapWriteVerify         :  return "GapWriteVerify";       
+    case Fc8xxGapReadCheckword       :  return "GapReadCheckword";     
+    case Fc8xxReadFactoryData        :  return "ReadFactoryData";      
+    case Fc8xxReadUtilityMap         :  return "ReadUtilityMap";       
+    case Fc8xxReadFlawedSector       :  return "ReadFlawedSector";     
+    case Fc8xxWriteLastSector        :  return "WriteLastSector";      
+    case Fc8xxWriteVerifyLastSector  :  return "WriteVerifyLastSector";
+    case Fc8xxWriteFlawedSector      :  return "WriteFlawedSector";    
+    case Fc8xxManipulateProcessor    :  return "ManipulateProcessor";  
+    case Fc8xxDeadstart              :  return "Deadstart";            
+    case Fc8xxStartMemLoad           :  return "StartMemLoad";         
+        }
+#endif
+    return "UNKNOWN";
     }
 
 /*---------------------------  End Of File  ------------------------------*/

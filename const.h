@@ -17,7 +17,7 @@
 **  Public Constants
 **  ----------------
 */
-#define DtCyberVersion          "Desktop CYBER 2.1 BETA 0"
+#define DtCyberVersion          "Desktop CYBER 2.2 ALPHA 3 (GPK)"
 
 #ifndef NULL                    
 #define NULL                    ((void *) 0)
@@ -85,9 +85,9 @@
 #define DtCp3446                12
 #define DtCr3447                13
 #define DtDcc6681               14
-#define DtDdp                   15
-#define DtNiu                   16
-#define DtDd7155                17
+#define DtTpm                   15
+#define DtDdp                   16
+#define DtNiu                   17
 #define DtDoelz                 18
 
 /*
@@ -127,6 +127,7 @@
 **  TCP port numbers
 */
 #define DefTelnetPort   5000        /* mux6676 default port */
+#define DefTpmuxPort    5002        /* tpmux default port */
 #define DefNiuPort      5004        /* Plato NIU default port */
 #define DefOpPort       5006        /* Operator interface default port */
 #define DefDd60Port     5007        /* DD60 interface default port */

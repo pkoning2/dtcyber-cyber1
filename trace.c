@@ -868,14 +868,14 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Finish execution trace.
+**  Purpose:        Terminate all traces.
 **
 **  Parameters:     Name        Description.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void traceFinish(void)
+void traceTerminate(void)
     {
     u8 i;
 

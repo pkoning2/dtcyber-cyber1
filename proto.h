@@ -39,26 +39,31 @@ void rtcTick(void);
 **  channel.c
 */
 void channelInit(u8 count);
+void channelTerminate(void);
 DevSlot *channelFindDevice(u8 channelNo, u8 devType);
 DevSlot *channelAttach(u8 channelNo, u8 eqNo, u8 devType);
 void channelFunction(PpWord funcCode);
 void channelActivate(void);
 void channelDisconnect(void);
+void channelProbe(void);
 void channelIo(void);
 
 /*
 **  pp.c
 */
 void ppInit(u8 count);
+void ppTerminate(void);
 void ppStep(void);
 
 /*
 **  cpu.c
 */
 void cpuInit(char *model, u32 cpus, u32 memory, u32 ecsBanks, char *cmFile, char *ecsFile);
-void cpuExit(void);
+void cpuTerminate(void);
 u32 cpuGetP(u8 cpnum);
 void cpuStepAll(void);
+bool cpuEcsFlagRegister(u32 ecsAddress);
+bool cpuDdpTransfer(u32 ecsAddress, CpWord *data, bool writeToEcs);
 bool cpuPpReadMem(u32 address, CpWord *data);
 void cpuPpWriteMem(u32 address, CpWord data);
 bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs);
@@ -125,6 +130,7 @@ void dd6603Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 */
 void dd844Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void dd844Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dd885Init_1(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
 **  dc7155.c
@@ -136,6 +142,7 @@ void dc7155Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 /*
 **  dcc6681.c
 */
+void dcc6681Terminate(DevSlot *dp);
 void dcc6681Interrupt(bool status);
 
 /*
@@ -167,8 +174,8 @@ void tpMuxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 **  trace.c
 */
 void traceInit(void);
-void traceFinish(void);
 void traceStop(void);
+void traceTerminate(void);
 void traceSequence(void);
 void traceRegisters(void);
 void traceOpcode(void);
@@ -190,6 +197,7 @@ void traceData(CpWord d, int stream);
 **  dump.c
 */
 void dumpInit(void);
+void dumpTerminate(void);
 void dumpAll(void);
 void dumpCpu(void);
 void dumpCpuMem(FILE *f, u32 start, u32 end);
@@ -320,6 +328,8 @@ extern long dd60Port;
 extern long dd60Conns;
 extern long doelzPort;
 extern long doelzConns;
+extern long tpmuxPort;
+extern long tpmuxConns;
 extern FILE **ppuTF;
 extern u32 cycles;
 extern long cpuRatio;

@@ -91,6 +91,34 @@ void dumpInit(void)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Termiante dumping.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void dumpTerminate(void)
+    {
+    u8 pp;
+
+    if (cpuDF != NULL)
+        {
+        fclose(cpuDF);
+        }
+
+    for (pp = 0; pp < ppuCount; pp++)
+        {
+        if (ppuDF[pp] != NULL)
+            {
+            fclose(ppuDF[pp]);
+            }
+        }
+
+    free(ppuDF);
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Dump all PPs and CPU.
 **
 **  Parameters:     Name        Description.

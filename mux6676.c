@@ -107,7 +107,7 @@ static pthread_t mux6676_thread;
 **--------------------------------------------------------------------------
 */
 /*--------------------------------------------------------------------------
-**  Purpose:        Initialise 844 disk drive.
+**  Purpose:        Initialise terminal multiplexer.
 **
 **  Parameters:     Name        Description.
 **                  eqNo        equipment number
