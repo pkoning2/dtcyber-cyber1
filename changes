@@ -150,3 +150,49 @@ Since oct14 drop:
 - Fix typo in 026 card code translation (< was translated to ] !)
 - Added code to cpu.c, trace.c, proto.h to let a program turn on CPU
   tracing for K cycles (sb0 b2+K)
+- Added better trace support to pterm.c, it now sends debug traces
+  to a file (pterm.c), control/T toggles it on and off, and the
+  trace is formatted so it's reasonably readable.
+- Added support to niu.c (turned off after testing) to pace output
+  frames to 60 per second, matching the real hardware.
+- Added support in rtc.c for the high resolution hardware time in Apple 
+  systems.
+
+Since nov19 drop:
+- fix rtc.c so it doesn't crash if non-zero clock increment is used
+  on platforms that have hardware fine grain clock support.  Ugh...
+- fix pterm_x11.c so it doesn't crash on shutdown if niu is not
+  part of the system configuration.
+
+---
+Nov 26: started multi-cpu version, with threads for each CPU and one
+for the PPUs.
+
+- Initial version works -- two CPU support with per-CPU context separated
+  out, but no multi-threading yet.  So the semaphores that will make
+  that safe aren't there yet, but the rest is in place.  NOS 1.4 seems
+  happy with it.
+  It appears that NOS schedules CPs to the CPU in no particular pattern...
+- Changed niu and mux6676 to explicit returns in the thread function to
+  silence some compiler warnings.  Also changed these so the pthread
+  struct is not a stack local variable that evaporates after thread 
+  startup.  Somehow, that doesn't seem right, even though it doesn't
+  appear to break things.
+- Changed types.h to work with powerpc (Mac).
+- Added semaphores and condition variables around the multi-CPU support.
+  It appears to work, roughly.  NOS is able to start but it hangs 
+  early in the deadstart library load procedure, with both CPUs in
+  the idle loop.
+  It seems that CPU0 needs to run closely synchronized with the PPUs,
+  otherwise the deadstart memory test aborts.  So the current design
+  has CPU1 in a separate thread but not CPU0.  That fits better with typical
+  two-CPU hosts platforms anyway.
+  Still to be done:
+  - Selective creation of threads so CPU1 only gets a separate thread
+    if there is a second host CPU.
+  - Per-CPU trace control via the keyboard (it already works via 
+    the operator interface).
+- Changed the "time to paint the display" checking code in window_x11 to
+  use the hardware fine grained timer rather than the gettimeofday() call.
+  That should make it more efficient.
+- Renamed Makefile.x11 to Makefile because I'm tired of typing -f xxx.
