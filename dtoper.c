@@ -23,7 +23,7 @@
 #include "const.h"
 #include "types.h"
 #include "operator.h"
-//#include "proto.h"
+#include "proto.h"
 #if defined(_WIN32)
 #include <windows.h>
 #include <winsock.h>
@@ -88,9 +88,7 @@ typedef struct opMsg
 **  ---------------------------
 */
 static void opSendString (OpMsg *m, bool blank);
-static void opDisplay(void);
 static void opRequest(void);
-static void opSetMsg (char *p);
 static int opScanCmd (void);
 
 /*
@@ -111,12 +109,14 @@ bool emulationActive = TRUE;
 **  Public Functions
 **  ----------------
 */
-#if !defined(_WIN32)
 extern char opWindowInput(void);
-#endif
 extern void windowInit(void);
+extern void windowClose(void);
 extern void windowSendString (int x, int y, int font,
                               bool bold, const char *str, bool blank);
+extern int windowGetOperFontWidth(int font);
+
+void opDisplay(void);
 
 /*
 **  -----------------
@@ -163,6 +163,7 @@ int main (int argc, char **argv)
     OpMsg *msgp;
     u8 *p;
     char *cp;
+    int true_opt = 1;
     
     if (argc > 2)
         {
@@ -186,6 +187,16 @@ int main (int argc, char **argv)
         }
 
 #if defined(_WIN32)
+    ioctlsocket (fet.connFd, FIONBIO, &true_opt);
+#else
+    fcntl (fet.connFd, F_SETFL, O_NONBLOCK);
+#endif
+#ifdef __APPLE__
+    setsockopt (fet.connFd, SOL_SOCKET, SO_NOSIGPIPE,
+                (char *)&true_opt, sizeof(true_opt));
+#endif
+
+#if defined(_WIN32)
     /*
     **  Get our instance
     */
@@ -196,10 +207,14 @@ int main (int argc, char **argv)
     
     while (emulationActive)
         {
-        i = dtRead (&fet, 10);
+        i = dtRead (&fet, 30);
         if (i < 0)
             {
+#if defined(_WIN32)
+            Sleep (30);
+#else
             usleep (30000);
+#endif
             }
         else
             {
@@ -296,7 +311,6 @@ int main (int argc, char **argv)
                     }
                 }
             }
-        
         /*
         **  We've processed all pending data from the system;
         **  now look for keyboard data -- but only after we have
@@ -304,15 +318,11 @@ int main (int argc, char **argv)
         */
         if (initDone)
             {
-#if !defined(_WIN32)
             c = opWindowInput ();
             if (c != 0)
                 {
                 userKey = c;
                 }
-#else
-            //tbd
-#endif
             if (userKey != 0)
                 {
                 do
@@ -325,16 +335,8 @@ int main (int argc, char **argv)
         
         }
     windowClose ();
-	return 0;
+    return 0;
     }
-
-/*
-**--------------------------------------------------------------------------
-**
-**  Private Functions
-**
-**--------------------------------------------------------------------------
-*/
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Display the operator window content
@@ -344,10 +346,8 @@ int main (int argc, char **argv)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void opDisplay(void)
+void opDisplay(void)
     {
-    OpCmd *cp;
-    OpMsg *m;
     int i;
 
     smallFontWidth = windowGetOperFontWidth(FontSmall);
@@ -374,6 +374,14 @@ static void opDisplay(void)
     opSendString (&errmsg, TRUE);
     }
 
+/*
+**--------------------------------------------------------------------------
+**
+**  Private Functions
+**
+**--------------------------------------------------------------------------
+*/
+
 /*--------------------------------------------------------------------------
 **  Purpose:        Process a keystroke.
 **
@@ -384,9 +392,7 @@ static void opDisplay(void)
 **------------------------------------------------------------------------*/
 static void opRequest(void)
     {
-    OpCmd *cp;
-    OpMsg *m;
-    int i, j;
+    int i;
 
     if (nextKey)
         {
@@ -470,7 +476,7 @@ static void opRequest(void)
 **  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-static void opSetMsg (char *p)
+void opSetMsg (const char *p)
     {
     if (p != NULL && *p == '$')
         {

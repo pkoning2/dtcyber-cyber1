@@ -115,6 +115,9 @@ static HBITMAP hbmMem, hbmOld;
 static HDC hdc;
 static HDC hdcFont;
 static HBRUSH hBrush;
+static HBRUSH bgBrush;
+static COLORREF green;
+static COLORREF black;
 static RECT rect;
 static const i8 dotdx[] = { 0, 1, 0, 1, -1, -1,  0, -1,  1 };
 static const i8 dotdy[] = { 0, 0, 1, 1, -1,  0, -1,  1, -1 };
@@ -599,6 +602,9 @@ ATOM windowRegisterClass(HINSTANCE hInstance)
 
     wcex.cbSize = sizeof(WNDCLASSEX); 
 
+    black = RGB(0, 0, 0);
+    green = RGB(0, 0xff, 0);
+    bgBrush = CreateSolidBrush (black);
     wcex.style          = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc    = (WNDPROC)windowProcedure;
     wcex.cbClsExtra     = 0;
@@ -606,7 +612,7 @@ ATOM windowRegisterClass(HINSTANCE hInstance)
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, (LPCTSTR)IDI_CONSOLE);
     wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
+    wcex.hbrBackground  = bgBrush;
     wcex.lpszMenuName   = (LPCSTR)IDC_CONSOLE;
     wcex.lpszClassName  = "CONSOLE";
     wcex.hIconSm        = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
@@ -737,8 +743,8 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         SelectObject(hdcFont, fontBitmap);
         
         SetBkMode(hdcMem, OPAQUE);
-        SetBkColor(hdcMem, RGB(0, 0, 0));
-        SetTextColor(hdcMem, RGB(0, 255, 0));
+        SetBkColor(hdcMem, black);
+        SetTextColor(hdcMem, green);
         ReleaseDC(hWnd, hdc);
         hPen = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
         if (!hPen)
