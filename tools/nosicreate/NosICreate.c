@@ -72,7 +72,7 @@ typedef int bool;
 **  Private Variables
 **  -----------------
 */
-static char inFileName[80];
+static char *inFileName;
 static u8 buf[BlockSize + 10];
 static u32 blockNumber = 0;
 static FILE *ifd;
@@ -109,7 +109,7 @@ static bool bigEndian;
 **------------------------------------------------------------------------*/
 void usage(void)
     {
-	fprintf(stderr,"usage: NosICreate <new-tap-image> [optional file count]\n");
+	fprintf(stderr,"usage: nosicreate <new-tap-image> <input file>...\n");
     }
 
 /*--------------------------------------------------------------------------
@@ -175,7 +175,7 @@ void writeNosItoTap(void)
             buf[byteCount + 5]  = (u8)(blockTerm >>  0);
             byteCount += 6;
             }
-        else if (byteCount % 15 == 9)
+        else if (1) //if (byteCount % 15 == 9)
             {
             ppWordCount = ((byteCount - 9) / 15) * 10;
 //            ppWordCount += (6 + 4);
@@ -310,20 +310,11 @@ int main (int argc, char *argv[])
     u16 fileNumber = 0;
     int fileCount = 1;
 
-	if (argc < 2 || argc > 3)
+	if (argc < 3)
         {
 	    usage();
 	    exit(EXIT_FAILURE);
 	    }
-
-    /*
-    **  Convert optional file count.
-    */
-    if (argc == 3 && sscanf(argv[2],"%d", &fileCount) != 1)
-        {
-	    usage();
-	    exit(EXIT_FAILURE);
-        }
 
     /*
     **  Open TAP file.
@@ -343,12 +334,9 @@ int main (int argc, char *argv[])
     endianCheck.bytes[3] = 1;
     bigEndian = endianCheck.number == 1;
 
-    for (fileNumber = 1; fileNumber <= fileCount; fileNumber++)
+    for (fileNumber = 2; fileNumber <= argc; fileNumber++)
         {
-        /*
-        **  Process all files in the format ir%04d.
-        */
-        sprintf(inFileName, "ir%04d", fileNumber);
+        inFileName = argv[fileNumber];
 
         /*
         **  Open a file and write zero length NOS I-format record if open fails.
@@ -363,7 +351,7 @@ int main (int argc, char *argv[])
             continue;
             }
 
-        printf("processing %d\n", fileNumber);
+        printf("processing %s\n", inFileName);
 
         writeNosItoTap();
 
