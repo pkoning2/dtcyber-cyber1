@@ -132,7 +132,7 @@ static u8 dhits[DisplayBufSize];
 static int dcnt, xpos, xstart, ypos;
 static Pixmap pixmap;
 static GC wgc, pgc;
-static u64 lastDisplayUs;
+static u32 lastDisplayUs;
 static unsigned long fg, bg, pfg, pbg;
 static bool displayOff = FALSE;
 static const i8 dotdx[] = { 0, 1, 0, 1, -1, -1,  0, -1,  1 };
@@ -435,14 +435,10 @@ void windowCheckOutput(void)
     {
     struct timeval tm;
     int i;
-    u64 us;
+    u32 us;
     
-    us = rtcMicroSec ();
-    if (us == 0)
-        {
-        gettimeofday (&tm, NULL);
-        us = tm.tv_sec * ULL(1000000) + tm.tv_usec;
-        }
+    gettimeofday (&tm, NULL);
+    us = tm.tv_sec * ULL(1000000) + tm.tv_usec;
     
     // Check if it's time for another display update
     if (us - lastDisplayUs > RefreshInterval)
@@ -1006,6 +1002,7 @@ static void showDisplay (void)
     DispList *end;
     u8 oldFont = 0;
     int dotx, doty, doti;
+    char buf[160];
     
     currentFontInfo = &smallFont;
     oldFont = FontSmall;
@@ -1019,61 +1016,55 @@ static void showDisplay (void)
         return;
         }
 
-#if CcDebug == 1
-    {
-        char buf[160];
+    if (debugDisplay)
+        {
+        /*
+        **  Display P registers of PPUs and CPU and current trace mask.
+        */
+        XSetFont(disp, pgc, smallOperFont.normalId);
+        sprintf(buf, "Refresh: %-10d  PP P-reg: %04o %04o %04o %04o %04o %04o %04o %04o %04o %04o   CPU P-reg: %06o",
+                refreshCount++,
+                ppu[0].regP, ppu[1].regP, ppu[2].regP, ppu[3].regP, ppu[4].regP,
+                ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
+                cpu[0].regP); 
 
-        if (debugDisplay)
+        if (cpuCount > 1)
             {
-            /*
-            **  Display P registers of PPUs and CPU and current trace mask.
-            */
-            XSetFont(disp, pgc, smallOperFont.normalId);
-            sprintf(buf, "Refresh: %-10d  PP P-reg: %04o %04o %04o %04o %04o %04o %04o %04o %04o %04o   CPU P-reg: %06o",
-                    refreshCount++,
-                    ppu[0].regP, ppu[1].regP, ppu[2].regP, ppu[3].regP, ppu[4].regP,
-                    ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
-                    cpu[0].regP); 
-
-            if (cpuCount > 1)
-                {
-                sprintf(buf + strlen(buf), " %06o", cpu[1].regP);
-                }
-            
-            sprintf(buf + strlen(buf),
-                    "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
-                    (traceMask >> 0) & 1 ? '0' : '_',
-                    (traceMask >> 1) & 1 ? '1' : '_',
-                    (traceMask >> 2) & 1 ? '2' : '_',
-                    (traceMask >> 3) & 1 ? '3' : '_',
-                    (traceMask >> 4) & 1 ? '4' : '_',
-                    (traceMask >> 5) & 1 ? '5' : '_',
-                    (traceMask >> 6) & 1 ? '6' : '_',
-                    (traceMask >> 7) & 1 ? '7' : '_',
-                    (traceMask >> 8) & 1 ? '8' : '_',
-                    (traceMask >> 9) & 1 ? '9' : '_',
-                    (traceMask & TraceCpu0) ? 'c' : '_',
-                    (traceMask & TraceCpu1) ? 'C' : '_',
-                    (traceMask & TraceEcs) ? 'E' : '_',
-                    (traceMask & TraceXj) ? 'J' : '_',
-                    (chTraceMask >> 0) & 1 ? '0' : '_',
-                    (chTraceMask >> 1) & 1 ? '1' : '_',
-                    (chTraceMask >> 2) & 1 ? '2' : '_',
-                    (chTraceMask >> 3) & 1 ? '3' : '_',
-                    (chTraceMask >> 4) & 1 ? '4' : '_',
-                    (chTraceMask >> 5) & 1 ? '5' : '_',
-                    (chTraceMask >> 6) & 1 ? '6' : '_',
-                    (chTraceMask >> 7) & 1 ? '7' : '_',
-                    (chTraceMask >> 8) & 1 ? '8' : '_',
-                    (chTraceMask >> 9) & 1 ? '9' : '_',
-                    (chTraceMask >> 10) & 1 ? 'A' : '_',
-                    (chTraceMask >> 11) & 1 ? 'B' : '_',
-                    (platoActive) ? 'P' : ' ');
-
-            XDrawString(disp, pixmap, pgc, 10, 10, buf, strlen(buf));
+            sprintf(buf + strlen(buf), " %06o", cpu[1].regP);
             }
-    }
-#endif
+            
+        sprintf(buf + strlen(buf),
+                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
+                (traceMask >> 0) & 1 ? '0' : '_',
+                (traceMask >> 1) & 1 ? '1' : '_',
+                (traceMask >> 2) & 1 ? '2' : '_',
+                (traceMask >> 3) & 1 ? '3' : '_',
+                (traceMask >> 4) & 1 ? '4' : '_',
+                (traceMask >> 5) & 1 ? '5' : '_',
+                (traceMask >> 6) & 1 ? '6' : '_',
+                (traceMask >> 7) & 1 ? '7' : '_',
+                (traceMask >> 8) & 1 ? '8' : '_',
+                (traceMask >> 9) & 1 ? '9' : '_',
+                (traceMask & TraceCpu0) ? 'c' : '_',
+                (traceMask & TraceCpu1) ? 'C' : '_',
+                (traceMask & TraceEcs) ? 'E' : '_',
+                (traceMask & TraceXj) ? 'J' : '_',
+                (chTraceMask >> 0) & 1 ? '0' : '_',
+                (chTraceMask >> 1) & 1 ? '1' : '_',
+                (chTraceMask >> 2) & 1 ? '2' : '_',
+                (chTraceMask >> 3) & 1 ? '3' : '_',
+                (chTraceMask >> 4) & 1 ? '4' : '_',
+                (chTraceMask >> 5) & 1 ? '5' : '_',
+                (chTraceMask >> 6) & 1 ? '6' : '_',
+                (chTraceMask >> 7) & 1 ? '7' : '_',
+                (chTraceMask >> 8) & 1 ? '8' : '_',
+                (chTraceMask >> 9) & 1 ? '9' : '_',
+                (chTraceMask >> 10) & 1 ? 'A' : '_',
+                (chTraceMask >> 11) & 1 ? 'B' : '_',
+                (platoActive) ? 'P' : ' ');
+
+        XDrawString(disp, pixmap, pgc, 10, 10, buf, strlen(buf));
+        }
 
     XSetFont(disp, pgc, currentFontInfo->normalId);
 

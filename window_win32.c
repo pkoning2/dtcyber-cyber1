@@ -1151,6 +1151,7 @@ void windowDisplay(HWND hWnd)
     PAINTSTRUCT ps;
     HFONT hfntOld;
     int dotx, doty, doti;
+    char buf[160];
 
     if (displayOff)
         {
@@ -1176,20 +1177,17 @@ void windowDisplay(HWND hWnd)
     hfntOld = SelectObject(hdcMem, smallOperFont.normalId);
     oldFont = FontSmall;
 
-#if CcDebug == 1
-    {
-    char buf[160];
 
-        if (debugDisplay)
-            {
-            /*
-            **  Display P registers of PPUs and CPU and current trace mask.
-            */
-            sprintf(buf, "Refresh: %-10d  PP P-reg: %04o %04o %04o %04o %04o %04o %04o %04o %04o %04o   CPU P-reg: %06o",
-                    refreshCount++,
-                    ppu[0].regP, ppu[1].regP, ppu[2].regP, ppu[3].regP, ppu[4].regP,
-                    ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
-                    cpu[0].regP); 
+    if (debugDisplay)
+        {
+        /*
+        **  Display P registers of PPUs and CPU and current trace mask.
+        */
+        sprintf(buf, "Refresh: %-10d  PP P-reg: %04o %04o %04o %04o %04o %04o %04o %04o %04o %04o   CPU P-reg: %06o",
+                refreshCount++,
+                ppu[0].regP, ppu[1].regP, ppu[2].regP, ppu[3].regP, ppu[4].regP,
+                ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
+                cpu[0].regP); 
 
             if (cpuCount > 1)
                 {
@@ -1226,10 +1224,8 @@ void windowDisplay(HWND hWnd)
                     (chTraceMask >> 11) & 1 ? 'B' : '_',
                     (platoActive) ? 'P' : ' ');
 
-            TextOut(hdcMem, 0, 0, buf, strlen(buf));
-            }
-    }
-#endif
+        TextOut(hdcMem, 0, 0, buf, strlen(buf));
+		}
 
     if (listPutAtGetChar >= 0)
         {

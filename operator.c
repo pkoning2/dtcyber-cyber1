@@ -107,10 +107,7 @@ static void opDebugDisplay(char *cmdParams);
 **  ----------------
 */
 bool opActive = FALSE;
-
-#if CcDebug == 1
-bool debugDisplay = TRUE;
-#endif
+bool debugDisplay = FALSE;
 /*
 **  -----------------
 **  Private Variables
@@ -143,9 +140,9 @@ static char *syntax[] =
     "DISASSEMBLE,PPU7.\n",
     "SET,KEYBOARD=TRUE.\n",
     "SET,KEYBOARD=EASY.\n",
-#if CcDebug == 1
     "DEBUG,DISPLAY=ON.\n",
     "DEBUG,DISPLAY=OFF.\n",
+#if CcDebug == 1
     "TRACE,PPU7.\n",
     "TRACE,CHANNEL7.\n",
     "TRACE,CPU7.\n",
@@ -184,8 +181,8 @@ static OpCmd decode[] =
     "DUMP,PPU",                 opDumpPpu,
     "DISASSEMBLE,PPU",          opDisPpu,
     "SET,KEYBOARD=",            opKeyboard,
-#if CcDebug == 1
     "DEBUG,DISPLAY=",           opDebugDisplay,
+#if CcDebug == 1
     "TRACE,PPU",                opTracePpu,
     "TRACE,CHANNEL",            opTraceCh,
     "TRACE,CPU",                opTraceCpu,
@@ -216,8 +213,8 @@ static OpMsg msg[] =
       { 0020,    0, 0010, "DISASSEMBLE,PPUNN. Disassemble specified PPU." },
       { 0020,    0, 0010, "SET,KEYBOARD=TRUE. Emulate console keyboard accurately." },
       { 0020,    0, 0010, "SET,KEYBOARD=EASY. Make console keyboard easy (rollover)." },
-#if CcDebug == 1
       { 0020,    0, 0010, "DEBUG,DISPLAY=[ON,OFF]. Turn CP/PP debug display on/off." },
+#if CcDebug == 1
       { 0020,    0, 0010, "TRACE,CPUN.        Trace specified CPU activity." },
       { 0020,    0, 0010, "TRACE,CPNN.        Trace CPU activity for CP NN." },
       { 0020,    0, 0010, "TRACE,XJ.          Trace exchange jumps." },
@@ -960,7 +957,6 @@ static void opKeyboard(char *cmdParams)
         }
     }
 
-#if CcDebug == 1
 /*--------------------------------------------------------------------------
 **  Purpose:        Turn console display of CPU/PPU/Channel status on or off
 **
@@ -989,6 +985,7 @@ static void opDebugDisplay(char *cmdParams)
         }
     }
 
+#if CcDebug == 1
 /*--------------------------------------------------------------------------
 **  Purpose:        Trace a PPU
 **
