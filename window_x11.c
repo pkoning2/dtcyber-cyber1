@@ -23,6 +23,7 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
+#include <X11/Xresource.h>
 #include <sys/time.h>
 #include <pthread.h>
 #include "const.h"
@@ -94,7 +95,8 @@ static void sum (u16 x);
 **  Public Variables
 **  ----------------
 */
-Display *disp;
+extern Display *disp;
+extern XrmDatabase XrmDb;
 extern Window ptermWindow;
 
 /*
@@ -148,6 +150,7 @@ static bool platoActive;
 */
 extern bool platoKeypress (XKeyEvent *kp, int stat);
 extern void ptermInput(XEvent *event);
+extern void ptermXinit(void);
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize the display window.
@@ -165,7 +168,10 @@ void windowInit(void)
     int screen;
     XWindowAttributes a;
     XColor b,c;
-
+    XrmValue value;
+    char *type[20];
+    char fgcolor[40], bgcolor[40];
+    
     /*
     **  Create display list pool.
     */
@@ -191,19 +197,43 @@ void windowInit(void)
     keyListGet = keyListPut = 0;
     
     /*
-    **  Open the X11 display.
+    **  Do common X initialization
     */
-    if (disp == NULL)
-        {
-        disp = XOpenDisplay(0);
-        }
-    if (disp == (Display *) NULL)
-        {
-        fprintf(stderr, "Could not open display\n");
-        exit(1);
-        }
+    ptermXinit ();
 
     screen = DefaultScreen(disp);
+
+    /*
+    **  Look for resources
+    */
+    if (XrmDb == NULL)
+    {
+        XrmInitialize ();
+        XrmDb = XrmGetFileDatabase ("/usr/lib/X11/app-defaults/Dtcyber");
+        if (XrmDb == NULL)
+        {
+            fprintf (stderr, "no app default database for dtcyber\n");
+        }
+    }
+    
+    if (XrmGetResource (XrmDb, "dtcyber.foreground",
+                        "Dtcyber.Foreground", type, &value))
+    {
+        strncpy (fgcolor, value.addr, (int) value.size);
+    }
+    else
+    {
+        strcpy (fgcolor, "green");
+    }
+    if (XrmGetResource (XrmDb, "dtcyber.background",
+                        "Dtcyber.Background", type, &value))
+    {
+        strncpy (bgcolor, value.addr, (int) value.size);
+    }
+    else
+    {
+        strcpy (bgcolor, "#000000");
+    }
 
     /*
     **  Create a window using the following hints.
@@ -269,9 +299,10 @@ void windowInit(void)
     **  Setup fore- and back-ground colors.
     */
     XGetWindowAttributes(disp,window,&a);
-    XAllocNamedColor(disp, a.colormap,"green",&b,&c);
+    XAllocNamedColor(disp, a.colormap, fgcolor, &b, &c);
     fg=b.pixel;
-    bg = BlackPixel(disp, screen);
+    XAllocNamedColor(disp, a.colormap, bgcolor, &b, &c);
+    bg=b.pixel;
     XSetBackground(disp, wgc, bg);
     XSetForeground(disp, wgc, fg);
 
@@ -866,12 +897,12 @@ static void windowInput(void)
                     break;
 
                 case 'c':
-                    traceMask ^= (1 << 14);
+                    traceMask ^= TraceCpu;
                     traceStop ();
                     break;
 
                 case 'e':
-                    traceMask ^= (1 << 15);
+                    traceMask ^= TraceXj;
                     traceStop ();
                     break;
 
@@ -975,8 +1006,8 @@ static void showDisplay (void)
                 (traceMask >> 7) & 1 ? '7' : '_',
                 (traceMask >> 8) & 1 ? '8' : '_',
                 (traceMask >> 9) & 1 ? '9' : '_',
-                (traceMask >> 14) & 1 ? 'C' : '_',
-                (traceMask >> 15) & 1 ? 'E' : '_',
+                (traceMask & TraceCpu) ? 'C' : '_',
+                (traceMask & TraceXj) ? 'E' : '_',
                 (chTraceMask >> 0) & 1 ? '0' : '_',
                 (chTraceMask >> 1) & 1 ? '1' : '_',
                 (chTraceMask >> 2) & 1 ? '2' : '_',
