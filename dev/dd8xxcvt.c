@@ -141,7 +141,7 @@ int main (int argc, char **argv)
     }
     else
     {
-        fprintf (stderr, "need -n (convert to new) or -o (conver to old)\n");
+        fprintf (stderr, "need -n (convert to new) or -o (convert to old)\n");
         exit (1);
     }
     inf = fopen (argv[2], "rb");
