@@ -101,39 +101,50 @@ and so on.  Many of these can be shifted, which changes the meaning.
 PLATO refers to these either as SHIFT-NEXT etc., or (older convention)
 as NEXT1 etc.
 
-Most of these extra keys are accessible as ALT-x keystrokes.  (On the
-MAC, these are Option-x -- not Command-x because I haven't found a way
-to override the standard Command codes like Command-Q.)  Some are keys
-on the numeric keypad.  Here's the list:
+Most of these extra keys in several different ways.  In my original
+implementation, I provided ALT-x keystrokes.  (On the MAC, these are
+Option-x -- not Command-x because I haven't found a way to override
+the standard Command codes like Command-Q.)  In addition, for those
+who are used to that way, the Portal key conventions (both control
+keys and function keys) are available.  Here is the whole set:
 
-   Keyboard    PLATO
-   ALT a       ANS
-   ALT b       BACK
-   ALT c       COPY
-   ALT d       DATA
-   ALT e       EDIT
-   ALT f       FONT
-   ALT h       HELP
-   ALT l       LAB
-   ALT m       MICRO
-   ALT n       NEXT	(Enter key also works)
-   ALT q       "square" (also called "access")
-   ALT r       ERASE	(Backspace key also works)
-   ALT s       STOP
-   ALT t       TERM
-   KP +	       +	(+ key also works for unshifted +)
-   KP -	       -	(- key also works for unshifted -)
-   KP *	       multiply
-   KP /	       divide
-   KP left     assignment arrow
-   KP up       SUPER
-   KP down     SUB
+    ---- Style ----
+  Ctrl   Funkey   ALT        PLATO
+  CTRL a   F2    ALT a       ANS
+  CTRL b   F8    ALT b       BACK
+  CTRL c   F11   ALT c       COPY
+  CTRL d   F9    ALT d       DATA
+  CTRL e   F5    ALT e       EDIT
+  CTRL f   Sh-F4 ALT f       FONT
+  CTRL h   F6    ALT h       HELP
+  CTRL l   F7    ALT l       LAB
+  CTRL m   F4    ALT m       MICRO
+                 ALT n       NEXT	(Enter key also works)
+  CTRL q   F3    ALT q       "square" (also called "access")
+                 ALT r       ERASE	(Backspace key also works)
+  CTRL s   F10   ALT s       STOP
+  CTRL t   Sh-F2 ALT t       TERM
+                 KP +	       +	(+ key also works for unshifted +)
+                 KP -	       -	(- key also works for unshifted -)
+  CTRL x   DEL   KP *	       multiply
+  CTRL g   INS   KP /	       divide
+                 KP left     assignment arrow
+  CTRL p   PgUp  PgUp        SUPER
+  CTRL y   PgDn  PgDown      SUB
+
+There is also CTRL Keypad - for Delta, and CTRL Keypad + for Sigma --
+those are just the shifted - and + keys and SHIFT Keypad + or -
+reaches them just as well.
 
 Nearly all of these can be shifted (which is why + and - are
 accessible via the numeric keypad -- that's how you can reach the
 shifted forms).  TERM and FONT are the same shifted or not because
 those correspond to shifted keys (shifted ANS and MICRO respectively)
 on the PLATO keyboard.
+
+Please note: for reasons I do not understand and can't find in the
+documentation, Windows appears to reserve F10 for its own use.  So F10
+for STOP work on X but not on Windows.
 
 5. Basic PLATO navigation.
 
@@ -274,7 +285,7 @@ you can increase this.  The PLATO site setup will handle up to 64
 remote terminals.  (If you try a lot of terminals, please let me know
 how it worked out.)
 
-To close the pterm terminal, first log out, then enter Control/D to
+To close the pterm terminal, first log out, then enter Control/Z to
 disconnect and close the program.
 
 12. Console PLATO terminal emulation.
