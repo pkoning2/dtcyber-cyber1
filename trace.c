@@ -78,6 +78,7 @@
 #define RXXX            22
 #define RZB             23
 #define RZX             24
+#define RB              25
 
 /*
 **  -----------------------
@@ -109,6 +110,7 @@ typedef struct decCpControl
 **  ---------------------------
 */
 static bool ppuTraced (void);
+static void freset (FILE **f, const char *fn);
 
 /*
 **  ----------------
@@ -230,7 +232,7 @@ static DecCpControl cpDecode[0100] =
     {
     CN,         "PS",                   R,      // 00
     CLINK, (char *)rjDecode,            R,      // 01
-    CiK,        "JP    %6.6o",          R,      // 02
+    CiK,        "JP    B%o+%6.6o",      RB,     // 02
     CLINK, (char *)cjDecode,            R,      // 03
     CijK,       "EQ    B%o,B%o,%6.6o",  RBB,    // 04
     CijK,       "NE    B%o,B%o,%6.6o",  RBB,    // 05
@@ -428,7 +430,7 @@ void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress)
             break;
 
         case CiK:
-            sprintf(str, decode[opFm].mnemonic, cpu.regB[opI] + opAddress);
+            sprintf(str, decode[opFm].mnemonic, opI, opAddress);
             break;
 
         case CjK:
@@ -526,6 +528,13 @@ void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress)
             fprintf(cpuTF, "B%d=%06o    ", opK, cpu.regB[opK]);
             }
         fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        break;
+
+    case RB:
+        if (opI != 0)
+            {
+            fprintf(cpuTF, "B%d=%06o    ", opI, cpu.regB[opI]);
+            }
         break;
 
     case RBA:
@@ -806,6 +815,29 @@ void traceStop(void)
     for (pp = 0; pp < ppuCount; pp++)
         {
         fflush(ppuTF[pp]);
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Reset trace data (truncate any trace files to 0 bytes)
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void traceReset(void)
+    {
+    u8 pp;
+    char ppTraceName[20];
+
+    freset (&cpuTF, "cpu.trc");
+    freset (&devF, "device.trc");
+    
+    for (pp = 0; pp < ppuCount; pp++)
+        {
+        sprintf(ppTraceName, "ppu%02o.trc", pp);
+        freset (&ppuTF[pp], ppTraceName);
         }
     }
 
@@ -1149,6 +1181,37 @@ void traceEnd(void)
 **
 **--------------------------------------------------------------------------
 */
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Reset (truncate to 0) a file
+**
+**  Parameters:     Name        Description.
+**                  file        Address of file descriptor pointer.
+**                  fn          File name (needed only for Win32).
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+static void freset (FILE **f, const char *fn)
+    {
+    if (ftell (*f) != 0)
+        {
+#if defined(_WIN32)
+        // Win32 doesn't have "ftruncate" -- so much for Posix...
+        // So close and re-open the file instead.
+        fclose (*f);
+        *f = fopen (fn, "wt");
+        if (*f == NULL)
+            {
+            fprintf (stderr, "error reopening %s\n", fn);
+            }
+#else
+        rewind (*f);
+        ftruncate (fileno (*f), 0);
+#endif
+        }
+    }
+    
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Test if we want to trace the current PPU

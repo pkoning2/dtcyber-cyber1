@@ -92,6 +92,7 @@ static void opUntracePpu(char *cmdParams);
 static void opUntraceCh(char *cmdParams);
 static void opUntraceCpu(char *cmdParams);
 static void opUntraceXj(char *cmdParams);
+static void opResetTrace(char *cmdParams);
 #endif
 /*
 **  ----------------
@@ -136,6 +137,7 @@ static char *syntax[] =
     "UNTRACE,CHANNEL7.\n",
     "UNTRACE,CPU.\n",
     "UNTRACE,XJ.\n",
+    "UNTRACE,RESET.\n",
 #endif
     NULL,
     };
@@ -169,6 +171,7 @@ static OpCmd decode[] =
     "UNTRACE,CHANNEL",          opUntraceCh,
     "UNTRACE,CPU.",             opUntraceCpu,
     "UNTRACE,XJ.",              opUntraceXj,
+    "UNTRACE,RESET.",           opResetTrace,
 #endif
     NULL,                       NULL
     };
@@ -192,6 +195,7 @@ static OpMsg msg[] =
       { 0020,    0, 0010, "TRACE,CHANNELNN.   Trace specified channel activity." },
       { 0020,    0, 0010, "UNTRACE,XXX        Stop trace of XXX." },
       { 0020,    0, 0010, "UNTRACE,.          Stop all tracing." },
+//      { 0020,    0, 0010, "UNTRACE,RESET.     Stop tracing, discard trace data." },
 #endif
       { 0020,    0, 0010, "" },      // blank line to separate these last two from the above
       { 0020,    0, 0010, "END.               End operator mode." },
@@ -1008,6 +1012,7 @@ static void opUntraceCh(char *cmdParams)
 static void opUntraceCpu(char *cmdParams)
     {
     traceMask &= ~(1 << 14);
+    traceCp = 0;
     traceStop ();
     }
 
@@ -1037,8 +1042,23 @@ static void opUntraceXj(char *cmdParams)
 **------------------------------------------------------------------------*/
 static void opUntrace(char *cmdParams)
     {
-    traceMask =chTraceMask = 0;
+    traceMask = chTraceMask = traceCp = 0;
     traceStop ();
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Stop all tracing
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opResetTrace(char *cmdParams)
+    {
+    traceMask = chTraceMask = traceCp = 0;
+    traceReset ();
     }
 
 #endif  // CcDebug=1
