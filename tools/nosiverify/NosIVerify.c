@@ -55,8 +55,13 @@ typedef signed long  i32;
 typedef unsigned char  u8;
 typedef unsigned short u16;
 typedef unsigned long  u32;
+#ifdef __GNUC__
+typedef long long i64;
+typedef unsigned long long u64;
+#else
 typedef __int64 i64;
 typedef unsigned __int64 u64;
+#endif
 #ifndef __cplusplus
 typedef int bool;
 #endif
@@ -153,7 +158,8 @@ int main (int argc, char *argv[])
     u32 blockNumber;
     u32 expectedBlockNumber = 0;
     u16 levelNumber;
-
+    int begin = 1;
+    
 	if (argc != 2)
         {
 	    usage();
@@ -184,6 +190,10 @@ int main (int argc, char *argv[])
 
         if (len != 1)
             {
+                if (feof (ifd))
+                {
+                    break;
+                }
     		perror("reading TAP header");
             break;
             }
@@ -200,6 +210,12 @@ int main (int argc, char *argv[])
             recLen1 = recLen0;
             }
 
+        if (recLen1 == 0)
+            {
+            printf ("tape mark\n");
+            continue;
+            }
+        
         if (recLen1 != 0)
             {
             if (recLen1 > MaxByteBuf)
@@ -225,12 +241,44 @@ int main (int argc, char *argv[])
             */
             len = fread(&recLen2, sizeof(recLen2), 1, ifd);
 
-            if (len != 1 || recLen1 != recLen2)
+            if (len != 1 || recLen0 != recLen2)
+            {
+                /*
+                **  This is some weird shit to deal with "padded" TAP records. My brain refuses to understand
+                **  why anyone would have the precise length of a record and then make the reader guess what
+                **  the real length is.
+                */
+                if (bigEndian)
                 {
-                fprintf(stderr, "invalid tape record trailer: %d", recLen2);
-                break;
+                    /*
+                    **  The TAP record length is little endian - convert if necessary.
+                    */
+                    recLen2 = convertEndian(recLen2);
                 }
 
+                if (recLen1 == ((recLen2 >> 8) & 0xFFFFFF))
+                {
+                    fseek(ifd, 1, SEEK_CUR);
+                }
+                else
+                {
+                    fprintf(stderr, "invalid tape record trailer: %d", recLen2);
+                    break;
+                }
+            }
+
+            if (begin)
+                {
+                if (recLen1 == 80)
+                    {
+                    printf ("ANSI label: %c%c%c%c\n", 
+                            rawBuffer[0], rawBuffer[1],
+                            rawBuffer[2], rawBuffer[3]);
+                    continue;
+                    }
+                begin = 0;
+                }
+            
             recLen1 -= 6;
 
             if (recLen1 % 15 == 0)
@@ -291,9 +339,8 @@ int main (int argc, char *argv[])
 
             expectedBlockNumber += 1;
 
-            fprintf(stdout, "record length %5d, term %016I64o   ",
-                recLen1 + 6,
-                blockTerm);
+            fprintf(stdout, "record length %5d, seq %5d, term %016I64o   ",
+                    recLen1 + 6, blockNumber, blockTerm);
 
                 {
                 int j;
