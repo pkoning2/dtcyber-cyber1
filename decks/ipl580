@@ -13,6 +13,15 @@ return(opl)
 ~
 **/---   block=01-e opl2              83/09/22. 20.24    source
 *oplfile opl2
+**/---   block=01-e signoff              05/01/13. 12.19    source
+*ident signof2
+*deck pio
+*i PIO.937
+          ldd    key
+          lmc    1753B*2     check *offky2* value (immediate off)
+          zjn    kyo227      if *offky2*, overwrite last key
+*/ end pio
+*/
 **/---   block=01-e no acct              04/12/06. 12.19    source
 */ -------------------------------------------------------------------
 */
