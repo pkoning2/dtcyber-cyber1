@@ -33,8 +33,8 @@
 **  Private Constants
 **  -----------------
 */
-#define KeyBufSize	    50
-#define DisplayMargin	20
+#define KeyBufSize      50
+#define DisplayMargin   20
 
 // Size of the window and pixmap.
 // This is: a screen high with marging top and botton.
@@ -99,7 +99,9 @@ static HBITMAP hbmMem, hbmOld;
 static HDC hdcFont;
 static RECT rect;
 static COLORREF orange;
+static COLORREF black;
 static HPEN hPen = 0;
+static HPEN hPenBg = 0;
 static HBITMAP fontBitmap;
 static bool allowClose = FALSE;
 static HCURSOR hcNormal, hcTouch;
@@ -109,15 +111,15 @@ static char ptermWinName[100] = "Pterm" ;
 // See Win32 rasterops (ternary ops) appendix for explanations...
 //            0=inverse, 1=rewrite, 2=erase, 3=write
 static const DWORD WeFunc[] = 
-{ 0x003F00EA,	// PSan
+{ 0x003F00EA,   // PSan
   MERGECOPY,
-  0x002A0CC9,	// DPSana
-  0x00EA02E9,	// DPSao
+  0x002A0CC9,   // DPSana
+  0x00EA02E9,   // DPSao
 };
 static const DWORD MWeFunc[] = 
 { NOTSRCCOPY,
   SRCCOPY,
-  0x00220326,	// DSna
+  0x00220326,   // DSna
   SRCPAINT,
 };
 
@@ -145,8 +147,8 @@ void ptermInit(const char *winName, bool closeOk)
     DWORD dwThreadId; 
     HANDLE hThread;
 
-	allowClose = closeOk;							// Remember whether to honor Ctrl/Z
-	strcpy (ptermWinName, winName);
+    allowClose = closeOk;                           // Remember whether to honor Ctrl/Z
+    strcpy (ptermWinName, winName);
 
     /*
     **  Create windowing thread.
@@ -170,7 +172,7 @@ void ptermInit(const char *winName, bool closeOk)
     **  Now do common init stuff
     */
     ptermComInit ();
-	while (!ptermActive) ;		// spin until thread is done setting things up
+    while (!ptermActive) ;      // spin until thread is done setting things up
 }
 
 /*--------------------------------------------------------------------------
@@ -187,11 +189,11 @@ void ptermSetName (const char *winName)
     /*
     **  Set window title.
     */
-	if (hWnd != 0)
-		{
+    if (hWnd != 0)
+        {
         SetWindowText (hWnd, winName);
-		}
-	strcpy (ptermWinName, winName);
+        }
+    strcpy (ptermWinName, winName);
     }
 
 /*--------------------------------------------------------------------------
@@ -310,7 +312,7 @@ static BOOL ptermCreate(void)
     {
         return FALSE;
     }
-	ptermSetName (ptermWinName);
+    ptermSetName (ptermWinName);
     ShowWindow(hWnd, SW_SHOWNORMAL);
     UpdateWindow(hWnd);
 
@@ -380,28 +382,29 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         /*
         **  Load the bitmap for the fonts
         */
-	    fontBitmap = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_FONTBITMAP));
+        fontBitmap = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_FONTBITMAP));
         if (fontBitmap == NULL)
-		{
+        {
             fprintf (stderr, "Failed to load font bitmap");
         }
 
-		/*
-		**  Load the cursors
-		*/
-		hcNormal = LoadCursor (NULL, MAKEINTRESOURCE (IDC_ARROW));
-		hcTouch = LoadCursor (NULL, MAKEINTRESOURCE (IDC_CROSS));
+        /*
+        **  Load the cursors
+        */
+        hcNormal = LoadCursor (NULL, MAKEINTRESOURCE (IDC_ARROW));
+        hcTouch = LoadCursor (NULL, MAKEINTRESOURCE (IDC_CROSS));
 
         /*
         **  Select the bitmap into the font dc.
         */
         SelectObject(hdcFont, fontBitmap);
-		orange = RGB(0xff, 0x90, 0);
+        black = RGB(0, 0, 0);
+        orange = RGB(0xff, 0x90, 0);
         SetBkMode(hdcMem, OPAQUE);
-        SetBkColor(hdcMem, RGB(0, 0, 0));
+        SetBkColor(hdcMem, black);
         SetTextColor(hdcMem, orange);
         SetBkMode(hdc, OPAQUE);
-        SetBkColor(hdc, RGB(0, 0, 0));
+        SetBkColor(hdc, black);
         SetTextColor(hdc, orange);
         ReleaseDC(hWnd, hdc);
         hPen = CreatePen(PS_SOLID, 1, orange);
@@ -412,14 +415,22 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
                 "CreatePen Error",
                 MB_OK);
         }
-	    ptermActive = TRUE;
+        hPenBg = CreatePen(PS_SOLID, 1, black);
+        if (!hPen)
+        {
+            MessageBox (GetFocus(),
+                "Unable to get black pen", 
+                "CreatePen Error",
+                MB_OK);
+        }
+        ptermActive = TRUE;
         return DefWindowProc (hWnd, message, wParam, lParam);
 
     case WM_DESTROY:
         /*
         **  Done with off screen bitmap and dc.
         */
-	    ptermActive = FALSE;
+        ptermActive = FALSE;
         SelectObject(hdcMem, hbmOld);
         DeleteObject(hbmMem);
         DeleteObject(fontBitmap);
@@ -428,6 +439,10 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         if (hPen)
         {
             DeleteObject(hPen);
+        }
+        if (hPenBg)
+        {
+            DeleteObject(hPenBg);
         }
         PostQuitMessage(0);
         break;
@@ -453,59 +468,59 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         **  Handle input characters.
         */
     case WM_CHAR:
-		if (wParam == 032 && allowClose)
-		{
+        if (wParam == 032 && allowClose)
+        {
             DestroyWindow(hWnd);
-		}
-		else if (wParam == 035) // control-] : trace
-                    {
-                        tracePterm = !tracePterm;
-                        savemode = wemode;
-                        if (!tracePterm)
-                        {
-                            wemode = 2;
-                            fflush (traceF);
-                        }
-                        else
-                        {
-                            if (traceF == NULL)
-                            {
-                                traceF = fopen (traceFn, "w");
-                            }
-                            wemode = 3;
-                        }
-                        ptermSetWeMode (wemode);
-                        // The 1024 is a strange hack to circumvent the
-                        // screen edge wrap checking.
-                        ptermDrawChar (1024 + 512, 512, 1, 024);
-                        wemode = savemode;
-                        ptermSetWeMode (wemode);
-                        return;
-                    }
+        }
+        else if (wParam == 035) // control-] : trace
+        {
+            tracePterm = !tracePterm;
+            savemode = wemode;
+            if (!tracePterm)
+            {
+                wemode = 2;
+                fflush (traceF);
+            }
+            else
+            {
+                if (traceF == NULL)
+                {
+                    traceF = fopen (traceFn, "w");
+                }
+                wemode = 3;
+            }
+            ptermSetWeMode (wemode);
+            // The 1024 is a strange hack to circumvent the
+            // screen edge wrap checking.
+            ptermDrawChar (1024 + 512, 512, 1, 024);
+            wemode = savemode;
+            ptermSetWeMode (wemode);
+            return;
+        }
         break;
 
     case WM_SYSCHAR:
         platoKeypress (wParam, 1, 1);
         break;
 
-	case WM_KEYDOWN:
+    case WM_KEYDOWN:
         platoKeypress (wParam, 0, 1);
         break;
 
-	case WM_LBUTTONDOWN:
-		platoTouch (lParam, 1);
-		break;
+    case WM_LBUTTONDOWN:
+        platoTouch (lParam, 1);
+        break;
         
-	case WM_SYSKEYDOWN:
-		// F10 comes in as a syskey because it is used by Win keyboard
-		// conventions to access the menus.  We don't do that, just
-		// divert it to regular keyboard processing.
-		if (wParam == VK_F10)
-		{
-	        platoKeypress (wParam, 0, 1);
-		    break;
-		}
-		// Fall through to default action
+    case WM_SYSKEYDOWN:
+        // F10 comes in as a syskey because it is used by Win keyboard
+        // conventions to access the menus.  We don't do that, just
+        // divert it to regular keyboard processing.
+        if (wParam == VK_F10)
+        {
+            platoKeypress (wParam, 0, 1);
+            break;
+        }
+        // Fall through to default action
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -542,17 +557,17 @@ void ptermSetWeMode (u8 we)
 **------------------------------------------------------------------------*/
 void ptermDrawChar (int x, int y, int snum, int cnum)
 {
-	HDC hdc;
+    HDC hdc;
 
-	if (hWnd == 0)
-		{
+    if (hWnd == 0)
+        {
         return;
-		}
-	hdc = GetDC(hWnd);
+        }
+    hdc = GetDC(hWnd);
     SelectObject(hdc, hPen);
     SelectObject(hdcMem, hPen);
     drawChar (hdc, x, y, snum, cnum);
-	ReleaseDC (hWnd, hdc);
+    ReleaseDC (hWnd, hdc);
 }
 
 
@@ -568,16 +583,24 @@ void ptermDrawChar (int x, int y, int snum, int cnum)
 **------------------------------------------------------------------------*/
 void ptermDrawPoint (int x, int y)
 {
-	HDC hdc;
+    HDC hdc;
 
-	if (hWnd == 0)
-		{
+    if (hWnd == 0)
+        {
         return;
-		}
-	hdc = GetDC(hWnd);
-    SetPixel (hdcMem, XADJUST (x), YADJUST (y), orange);
-    SetPixel (hdc, XADJUST (x), YADJUST (y), orange);
-	ReleaseDC (hWnd, hdc);
+        }
+    hdc = GetDC(hWnd);
+    if (wemode & 1)
+    {
+        SetPixel (hdcMem, XADJUST (x), YADJUST (y), orange);
+        SetPixel (hdc, XADJUST (x), YADJUST (y), orange);
+    }
+    else
+    {
+        SetPixel (hdcMem, XADJUST (x), YADJUST (y), black);
+        SetPixel (hdc, XADJUST (x), YADJUST (y), black);
+    }
+    ReleaseDC (hWnd, hdc);
 }
 
 /*--------------------------------------------------------------------------
@@ -594,20 +617,28 @@ void ptermDrawPoint (int x, int y)
 **------------------------------------------------------------------------*/
 void ptermDrawLine(int x1, int y1, int x2, int y2)
 {
-	HDC hdc;
+    HDC hdc;
 
-	if (hWnd == 0)
-		{
+    if (hWnd == 0)
+        {
         return;
-		}
-	hdc = GetDC(hWnd);
-    SelectObject(hdc, hPen);
-    SelectObject(hdcMem, hPen);
+        }
+    hdc = GetDC(hWnd);
+    if (wemode & 1)
+    {
+        SelectObject(hdc, hPen);
+        SelectObject(hdcMem, hPen);
+    }
+    else
+    {
+        SelectObject(hdc, hPenBg);
+        SelectObject(hdcMem, hPenBg);
+    }
     MoveToEx (hdcMem, XADJUST (x1), YADJUST (y1), NULL);
     LineTo (hdcMem, XADJUST (x2), YADJUST (y2));
     MoveToEx (hdc, XADJUST (x1), YADJUST (y1), NULL);
     LineTo (hdc, XADJUST (x2), YADJUST (y2));
-	ReleaseDC (hWnd, hdc);
+    ReleaseDC (hWnd, hdc);
 }
 
 
@@ -622,16 +653,16 @@ void ptermDrawLine(int x1, int y1, int x2, int y2)
 **------------------------------------------------------------------------*/
 void ptermFullErase (void)
 {
-	HDC hdc;
+    HDC hdc;
 
-	if (hWnd == 0)
-		{
+    if (hWnd == 0)
+        {
         return;
-		}
-	hdc = GetDC(hWnd);
+        }
+    hdc = GetDC(hWnd);
     BitBlt(hdcMem, DisplayMargin, DisplayMargin, 512, 512, hdcMem, 0, 0, BLACKNESS);
     BitBlt(hdc, DisplayMargin, DisplayMargin, 512, 512, hdcMem, 0, 0, BLACKNESS);
-	ReleaseDC (hWnd, hdc);
+    ReleaseDC (hWnd, hdc);
 }
 
 /*--------------------------------------------------------------------------
@@ -676,8 +707,8 @@ void ptermLoadChar (int snum, int cnum, const u16 *data)
 **
 **  Parameters:     Name        Description.
 **                  wParam      Virtual Key for the keypress if alt==0,
-**								character code if alt==1.
-**					alt			1 if ALT was active, 0 otherwise
+**                              character code if alt==1.
+**                  alt         1 if ALT was active, 0 otherwise
 **                  stat        Station number
 **
 **  Returns:        TRUE if key event was a valid Plato keycode.
@@ -742,7 +773,7 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
         case VK_ADD:
             if (ctrl)
             {
-                pc = 056;	// Sigma
+                pc = 056;   // Sigma
             }
             else
             {
@@ -752,7 +783,7 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
         case VK_SUBTRACT:
             if (ctrl)
             {
-                pc = 057;	// Delta
+                pc = 057;   // Delta
             }
             else
             {
@@ -811,7 +842,7 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
                     pc = asciiToPlato[key];
                     if (!ctrl)
                     {
-                        shift = 0;		// shift is accounted for in lookup table
+                        shift = 0;      // shift is accounted for in lookup table
                     }
                 }
 }
@@ -873,11 +904,11 @@ void ptermTouchPanel(bool enable)
 {
     if (enable)
     {
-		SetClassLong(hWnd, GCL_HCURSOR, (LONG) hcTouch);
+        SetClassLong(hWnd, GCL_HCURSOR, (LONG) hcTouch);
     }
     else
     {
-		SetClassLong(hWnd, GCL_HCURSOR, (LONG) hcNormal);
+        SetClassLong(hWnd, GCL_HCURSOR, (LONG) hcNormal);
     }
     touchEnabled = enable;
 }
@@ -907,30 +938,30 @@ static void drawChar (HDC hdc, int x, int y, int snum, int cnum)
 {
     int charX, charY;
     int xb = 8, yb = 16;
-	int xoff = 0, yoff = 0;
-	int yt = YADJUST (y) - 15;
+    int xoff = 0, yoff = 0;
+    int yt = YADJUST (y) - 15;
 
-	// Clip path has bizarre side effects, so do clipping manually.
-	if (x < 1024 && x > 512 - 8)
-	{
-		xb = 512 - x;
-	}
-	else if (x < 0)
-	{
-		xoff = -x;
-		xb = 8 - xoff;
-		x = 0;
-	}
-	if (yt > DisplayMargin + 512 - 16)
-	{
-		yb = 512 - (yt - DisplayMargin);
-	}
-	else if (yt < DisplayMargin)
-	{
-		yoff = DisplayMargin - yt;
-		yb = 16 - yoff;
-		yt = DisplayMargin;
-	}
+    // Clip path has bizarre side effects, so do clipping manually.
+    if (x < 1024 && x > 512 - 8)
+    {
+        xb = 512 - x;
+    }
+    else if (x < 0)
+    {
+        xoff = -x;
+        xb = 8 - xoff;
+        x = 0;
+    }
+    if (yt > DisplayMargin + 512 - 16)
+    {
+        yb = 512 - (yt - DisplayMargin);
+    }
+    else if (yt < DisplayMargin)
+    {
+        yoff = DisplayMargin - yt;
+        yb = 16 - yoff;
+        yt = DisplayMargin;
+    }
     charX = cnum * 8;
     if (snum < 2)
     {
@@ -945,8 +976,8 @@ static void drawChar (HDC hdc, int x, int y, int snum, int cnum)
         BitBlt (hdcMem, XADJUST (x & 1023), yt, xb, yb,
                 hdcMem, charX + xoff, charY + yoff, MWeFunc[wemode]);
     }
-	BitBlt(hdc, XADJUST (x & 1023), yt, xb, yb,
-		   hdcMem, XADJUST (x & 1023), yt, SRCCOPY);
+    BitBlt(hdc, XADJUST (x & 1023), yt, xb, yb,
+           hdcMem, XADJUST (x & 1023), yt, SRCCOPY);
     // Handle screen edge wraparound by recursion...
     if (x < 1024)
     {
