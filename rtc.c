@@ -20,7 +20,12 @@
 #include <string.h>
 #if defined(_WIN32)
 #include <winsock.h>
+#elif defined(__APPLE__)
+#include <DriverServices.h>
+#include <Timer.h>
+#include <Math64.h>
 #endif
+
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -34,6 +39,8 @@
 #define RDTSC 1
 #elif defined(_WIN32)
 #define RDTSC 1
+#elif defined(__GNUC__) && defined(__APPLE__)
+#define RDTSC 1
 #else
 #define RDTSC 0
 #endif
@@ -43,11 +50,13 @@
 **  -----------------------
 */
 #if RDTSC
-#if defined(__GNUC__)
+#if defined(__GNUC__) && defined(__i386)
 #define rdtscll(val) \
     __asm__ __volatile__("rdtsc" : "=A" (val))
-#endif
-#if defined(_WIN32)
+#elif defined(__GNUC__) && defined(__APPLE__)
+#define rdtscll(val) \
+    val = AbsoluteToNanoseconds (UpTime ())
+#elif defined(_WIN32)
 #define rdtscll(val) \
 	do { \
 		LARGE_INTEGER foo; \
@@ -254,7 +263,7 @@ static void rtcInit2(long setMHz)
     u64 hz = 0;
 #if defined(_WIN32)
 	LARGE_INTEGER lhz;
-#else
+#elif !defined(__APPLE__)
     FILE *procf;
     char procbuf[512];
     u64 now, prev;
@@ -271,6 +280,8 @@ static void rtcInit2(long setMHz)
 			exit (1);
 			}
 		hz = lhz.QuadPart;
+#elif defined(__APPLE__)
+        hz = 1000000000ULL;     // 10^9, because timer is in ns
 #else
         procf = fopen ("/proc/cpuinfo", "r");
         if (procf != NULL)
@@ -298,15 +309,15 @@ static void rtcInit2(long setMHz)
             }
 #endif
         Hz = hz;
-        MHz = hz / 1000000;
+        MHz = hz / ULL(1000000);
         }
     else
         {
         MHz = setMHz;
-        Hz = MHz * 1000000;
+        Hz = MHz * ULL(1000000);
         }
     maxDelta = 900 * MHz;   // less than 1 ms to keep mtr happy
-    printf ("using RDTSC at %d MHz\n", MHz);
+    printf ("using high resolution hardware clock at %d MHz\n", MHz);
     }
 #endif
 
