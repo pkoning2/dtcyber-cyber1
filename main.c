@@ -160,6 +160,7 @@ int main(int argc, char **argv)
             cpuStep(cpu);
 #endif
             }
+        channelStep();
         rtcTick();
         /*
         **  Count a major cycle

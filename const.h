@@ -89,6 +89,7 @@
 #define DtDdp                   16
 #define DtNiu                   17
 #define DtDoelz                 18
+#define DtMt679                 19
 
 /*
 **  Special channels.
@@ -104,6 +105,7 @@
 #define PpMemSize               010000
                                 
 #define MaxUnits                010
+#define MaxUnits2               020
 #define MaxEquipment            010
 #define MaxDeadStart            020
 #define MaxChannels             040
@@ -153,8 +155,10 @@
 /*
 **  Bit masks.
 */
+#define Mask2                   03
 #define Mask3                   07
 #define Mask4                   017
+#define Mask5                   037
 #define Mask6                   077
 #define Mask9                   0777
 #define Mask10                  01777

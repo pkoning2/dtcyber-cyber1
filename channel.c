@@ -268,6 +268,7 @@ void channelFunction(PpWord funcCode)
     {
     FcStatus status = FcDeclined;
 
+    activeChannel->full = FALSE;
     for (activeDevice = activeChannel->firstDevice; activeDevice != NULL; activeDevice = activeDevice->next)
         {
         status = activeDevice->func(funcCode);
@@ -331,12 +332,15 @@ void channelActivate(void)
 void channelDisconnect(void)
     {
     activeChannel->active = FALSE;
-    activeChannel->full = FALSE;
 
     if (activeChannel->ioDevice != NULL)
         {
         activeDevice = activeChannel->ioDevice;
         activeDevice->disconnect();
+        }
+    else
+        {
+        activeChannel->full = FALSE;
         }
     }
 
@@ -353,7 +357,8 @@ void channelProbe(void)
     /*
     **  The following gives individual drivers an opportunity to delay
     **  too rapid changes of the channel status when probed via FJM and
-    **  EJM PP opcodes. Initially this will be used by mt669.c only.
+    **  EJM PP opcodes. Initially this will be used by mt669.c and mt679.c
+    **  only.
     */
     if (activeChannel->delayStatus == 0)
         {
@@ -381,6 +386,34 @@ void channelIo(void)
         {
         activeDevice = activeChannel->ioDevice;
         activeDevice->io();
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Handle delayed channel disconnect.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void channelStep(void)
+    {
+    ChSlot *cc;
+    /*
+    **  Process any delayed disconnects.
+    */
+    for (ch = 0; ch < channelCount; ch++)
+        {
+        cc = &channel[ch];
+        if (cc->delayDisconnect != 0)
+            {
+            cc->delayDisconnect -= 1;
+            if (cc->delayDisconnect == 0)
+                {
+                cc->active = FALSE;
+                }
+            }
         }
     }
 

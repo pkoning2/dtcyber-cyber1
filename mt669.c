@@ -502,7 +502,7 @@ static void mt669Load(DevSlot *dp, int unitNo, char *fn)
     opSetStatus (tp->statusBuf, msgBuf);
     if (endPos != 0)
         {
-        sprintf (msgBuf, "$MT668 loaded, warning, file is not empty.");
+        sprintf (msgBuf, "$MT669 loaded, warning, file is not empty.");
         }
     else
         {

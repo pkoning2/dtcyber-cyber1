@@ -575,6 +575,7 @@ void ppStep(void)
                         activePpu->mem[activePpu->regP] = activeChannel->data & Mask12;
                         activePpu->regP = (activePpu->regP + 1) & Mask12;
                         activePpu->regA = (activePpu->regA - 1) & Mask18;
+                        activeChannel->full = FALSE;
                         activePpu->ppMemLen++;
                     
                         if (activeChannel->discAfterInput)
@@ -599,7 +600,6 @@ void ppStep(void)
                             PpIncrement(activePpu->regP);
                             }
 
-                        activeChannel->full = FALSE;
                         break;
                         }
                     }
@@ -1471,10 +1471,10 @@ static void ppOpCRM(void)     // 61
     CpWord data;
     PpWord length;
 
-    activePpu->mem[0] = activePpu->regP;
     location = activePpu->mem[activePpu->regP] & Mask12;
     cpuMemStart = activePpu->regA & Mask18;
     cpuMemLen = length = activePpu->mem[opD] & Mask12;
+    activePpu->mem[0] = activePpu->regP;
 
     /*
     **  Delay one major cycle per cm word.
@@ -1529,10 +1529,10 @@ static void ppOpCWM(void)     // 63
     CpWord data;
     PpWord length;
 
-    activePpu->mem[0] = activePpu->regP;
     location = activePpu->mem[activePpu->regP] & Mask12;
     cpuMemStart = activePpu->regA & Mask18;
     cpuMemLen = length = activePpu->mem[opD] & Mask12;
+    activePpu->mem[0] = activePpu->regP;
 
     /*
     **  Delay one major cycle per cm word.

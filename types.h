@@ -112,7 +112,7 @@ typedef struct
 */                                        
 typedef struct devSlot                  
     {                                   
-    struct devSlot  *next;              /* next device attached to this channel */
+    struct devSlot  *next;              /* next device attached to this channel or converter */
     struct chSlot   *channel;           /* channel this device is attached to */
     FILE            *fcb[MaxUnits];     /* unit data file control block */
     void            (*activate)(void);  /* channel activation function */        
@@ -120,7 +120,8 @@ typedef struct devSlot
     FcStatus        (*func)(PpWord);    /* function request handler */
     void            (*io)(void);        /* output request handler */
     void            (*load)(struct devSlot *, int, char *); /* load/unload request handler */
-    void            *context[MaxUnits]; /* device specific context data */
+    void            *context[MaxUnits2];/* device specific context data */
+    void            *controllerContext; /* controller specific context data */
     PpWord          status;             /* device status */
     PpWord          fcode;              /* device function code */
     PpWord          recordLength;       /* length of read record */
@@ -143,6 +144,7 @@ typedef struct chSlot
     bool            discAfterInput;     /* disconnect channel after input flag */
     u8              id;                 /* channel number */
     u8              delayStatus;        /* time to delay change of empty/full status */
+    u8              delayDisconnect;    /* time to delay disconnect */
     } ChSlot;                           
                                         
 /*
