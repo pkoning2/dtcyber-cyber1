@@ -168,6 +168,8 @@
 **  Private Macro Functions
 **  -----------------------
 */
+//#define DBG(dev) ((chTraceMask & (1 << (dev)->channel->id)) != 0)
+#define DBG(x) (0)
 
 /*
 **  -----------------------------------------
@@ -183,6 +185,7 @@ typedef struct diskParam
     u8          interlace;
     u8          sec[SectorBytes];
     bool        seekNeeded;
+    u8          lastFunc;
     bool        even;
     } DiskParam;
 
@@ -196,7 +199,7 @@ static void dd844Io(void);
 static void dd844Activate(void);
 static void dd844Disconnect(void);
 static void dd844Load(DevSlot *, int, char *);
-static void dd844Seek(FILE *fcb, DiskParam *dp);
+static void dd844Seek(FILE *fcb, DiskParam *dp, u8 func);
 static void dd844SeekNextSector(DiskParam *dp);
 
 /*
@@ -349,8 +352,9 @@ static FcStatus dd844Func(PpWord funcCode)
     case Fc844ReadFlawedSector:
         activeDevice->fcode = funcCode;
         activeDevice->recordLength = SectorSize;
-//        printf (" reading u%d c%d t%d s%d\n", unitNo, dp->cylinder, dp->track, dp->sector);
-        dd844Seek(fcb, dp);
+        if (DBG(activeDevice))
+            printf (" reading u%d c%d t%d s%d\n", unitNo, dp->cylinder, dp->track, dp->sector);
+        dd844Seek(fcb, dp, Fc844Read);
         fread(dp->sec, 1, SectorBytes, fcb);
         dp->bp = dp->sec;
         dp->even = TRUE;
@@ -362,8 +366,9 @@ static FcStatus dd844Func(PpWord funcCode)
     case Fc844WriteVerify:
         activeDevice->fcode = funcCode;
         activeDevice->recordLength = SectorSize;
-//        printf (" writing u%d c%d t%d s%d\n", unitNo, dp->cylinder, dp->track, dp->sector);
-        dd844Seek(fcb, dp);
+        if (DBG(activeDevice))
+            printf (" writing u%d c%d t%d s%d\n", unitNo, dp->cylinder, dp->track, dp->sector);
+        dd844Seek(fcb, dp, Fc844Write);
         dp->bp = dp->sec;
         dp->even = TRUE;
         break;
@@ -419,7 +424,7 @@ static FcStatus dd844Func(PpWord funcCode)
             dp->sector = 2;
         #endif
         dp->seekNeeded = TRUE;
-        dd844Seek(fcb, dp);
+        dd844Seek(fcb, dp, Fc844Read);
         fread(dp->sec, 1, SectorBytes, fcb);
         dp->bp = dp->sec;
         dp->even = TRUE;
@@ -536,7 +541,7 @@ static void dd844Io(void)
                     dp->seekNeeded = TRUE;
                     }
                 activeChannel->ioDevice = NULL;
-                dd844Seek(fcb, dp);
+                dd844Seek(fcb, dp, Fc844Read);
                 break;
 
             default:
@@ -682,11 +687,12 @@ static void dd844Disconnect(void)
 **  Parameters:     Name        Description.
 **                  fcb         pointer to FILE struct.
 **                  dp          pointer to DiskParam struct.
+**                  func        function code (read or write).
 **
 **  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-static void dd844Seek(FILE *fcb, DiskParam *dp)
+static void dd844Seek(FILE *fcb, DiskParam *dp, u8 func)
     {
     u32 result;
 
@@ -705,7 +711,11 @@ static void dd844Seek(FILE *fcb, DiskParam *dp)
         ppAbort((stderr, "ch %o, sector %o invalid\n", activeChannel->id, dp->sector));
         }
 
-    if (dp->seekNeeded)
+    if (DBG(activeDevice))
+        printf ("seek: needed=%d, cyl=%d, trk=%d, sec=%d\n", 
+                dp->seekNeeded, dp->cylinder, dp->track, dp->sector);
+    
+    if (dp->seekNeeded || dp->lastFunc != func)
         {
         result  = dp->cylinder * MaxTracks * MaxSectors;
         result += dp->track * MaxSectors;
@@ -713,6 +723,7 @@ static void dd844Seek(FILE *fcb, DiskParam *dp)
         result *= SectorBytes;
         fseek(fcb, result, SEEK_SET);
         dp->seekNeeded = FALSE;
+        dp->lastFunc = func;
         }
     }
 
@@ -759,7 +770,7 @@ static void dd844SeekNextSector(DiskParam *dp)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Perform load/unload on printer.
+**  Purpose:        Perform load/unload on disk unit.
 **
 **  Parameters:     Name        Description.
 **
