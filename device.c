@@ -66,6 +66,7 @@ DevDesc deviceDesc[] =
     "CR3447",   cr3447Init,
     "DDP",      ddpInit,
     "NIU",      niuInit,
+    "CP3446",   cp3446Init,
     };
 
 u8 deviceCount = sizeof(deviceDesc) / sizeof(deviceDesc[0]);

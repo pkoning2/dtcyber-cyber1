@@ -81,6 +81,7 @@
 #define DtDdp                   15
 #define DtNiu                   16
 #define DtLp3000                17
+#define DtCp3446                20
 
 /*
 **  Special channels.

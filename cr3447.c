@@ -209,12 +209,16 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
             exit (1);
         }
     }
+    else
+    {
+        opt = "026";
+    }
     
     /*
     **  Print a friendly message.
     */
-    printf("CR3447 initialised on channel %o equipment %o\n", 
-           channelNo, unitNo);
+    printf("CR3447 initialised on channel %o equipment %o, default code %s\n", 
+           channelNo, unitNo, opt);
 }
 
 /*--------------------------------------------------------------------------

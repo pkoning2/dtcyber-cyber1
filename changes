@@ -210,3 +210,5 @@ Since jan02 2004 drop:
   end up at 0 instead.  That correctly emulates the subtractive adder
   behavior of the DM address handling, and apparently is required for SMM
   to work correctly.  (Thanks Jeff Woolsey for this information.)
+- Added cp3446.c for 3446 card punch support, and changed cr3447.c to
+  print default card code chosen at startup.

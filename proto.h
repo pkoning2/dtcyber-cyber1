@@ -91,6 +91,11 @@ void cr405Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
+**  cp3446.c
+*/
+void cp3446Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+
+/*
 **  lp1612.c
 */
 void lp1612Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
