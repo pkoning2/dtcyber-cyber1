@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Paul Koning, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Paul Koning, Tom Hunter (see license.txt)
 **
 **  Name: cp3446.c
 **
@@ -92,7 +92,7 @@ typedef struct
     int	    status;
     int     col;
     int     lastnbcol;
-    const unsigned short *table;
+    const u16 *table;
     u32     getcardcycle;
     char    card[82];
 } CrContext;
@@ -105,10 +105,10 @@ typedef struct
 */
 static FcStatus cp3446Func(PpWord funcCode);
 static void cp3446Io(void);
-static void cp3446Load(Dev3kSlot *, char *);
+static void cp3446Load(DevSlot *, int, char *);
 static void cp3446Activate(void);
 static void cp3446Disconnect(void);
-static void cp3446FlushCard (Dev3kSlot *up, CrContext *cc);
+static void cp3446FlushCard (DevSlot *up, CrContext *cc);
 /*
 **  ----------------
 **  Public Variables
@@ -143,32 +143,41 @@ static void cp3446FlushCard (Dev3kSlot *up, CrContext *cc);
 **
 **------------------------------------------------------------------------*/
 void cp3446Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
-{
-    Dev3kSlot *up;
+    {
+    DevSlot *up;
     char fname[80];
     CrContext *cc;
     FILE *fcb;
     char *opt;
     
-    (void)eqNo;
-
-    up = dcc6681Attach(channelNo, unitNo, DtCp3446);
+    up = dcc6681Attach(channelNo, eqNo, 0, DtCp3446);
 
     up->activate = cp3446Activate;
     up->disconnect = cp3446Disconnect;
     up->func = cp3446Func;
     up->io = cp3446Io;
     up->load = cp3446Load;
+
+    /*
+    **  Only one card punch unit is possible per equipment.
+    */
+    if (up->context[0] != NULL)
+        {
+        fprintf (stderr, "Only one CP3446 unit is possible per equipment\n");
+        exit (1);
+        }
+
     cc = calloc (1, sizeof (CrContext));
     if (cc == NULL)
-    {
+        {
         fprintf (stderr, "Failed to allocate CP3446 context block\n");
         exit (1);
-    }
-    up->context = cc;
+        }
+
+    up->context[0] = cc;
     cc->lastnbcol = -1;
     
-    sprintf(fname, "CP3446_C%02o_E%o", channelNo, unitNo);
+    sprintf(fname, "CP3446_C%02o_E%o", channelNo, eqNo);
 
     if (deviceName != NULL)
     {
@@ -190,7 +199,7 @@ void cp3446Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         fprintf(stderr, "Failed to open %s\n", deviceName);
         exit(1);
     }
-    up->fcb = fcb;
+    up->fcb[0] = fcb;
     cc->status = StCp3446Ready;
 
     cc->table = asciiTo026;     // default translation table
@@ -215,7 +224,7 @@ void cp3446Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     **  Print a friendly message.
     */
     printf("CP3446 initialised on channel %o equipment %o, default code %s\n", 
-           channelNo, unitNo, opt);
+           channelNo, eqNo, opt);
 }
 
 /*--------------------------------------------------------------------------
@@ -228,23 +237,23 @@ void cp3446Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **
 **------------------------------------------------------------------------*/
 static FcStatus cp3446Func(PpWord funcCode)
-{
+    {
     CrContext *cc;
     FcStatus st;
     
     if (DEBUG)
         printf ("cp3446: function %04o\n", funcCode);
     
-    cc = (CrContext *)activeUnit->context;
+    cc = (CrContext *)active3000Device->context[0];
 
     switch (funcCode)
-    {
+        {
     default:                    // all unrecognized codes are NOPs
         st = FcProcessed;
         break;
 
     case FcCp3446CheckLastCard: // this is sent at end of deck, so flush
-        fflush (activeUnit->fcb);
+        fflush(active3000Device->fcb[0]);
         // fall through
     case FcCp3446SelectOffset:
     case Fc6681MasterClear:
@@ -256,7 +265,7 @@ static FcStatus cp3446Func(PpWord funcCode)
         // fall through
     case Fc6681DevStatusReq:
         st = FcAccepted;
-        activeUnit->fcode = funcCode;
+        active3000Device->fcode = funcCode;
         break;
 
     case FcCp3446Binary:
@@ -308,11 +317,11 @@ static FcStatus cp3446Func(PpWord funcCode)
         cc->status &= ~StCp3446ErrorInt;
         st = FcProcessed;
         break;
-    }
-    activeUnit->intr = (cc->status & cc->intmask) != 0;
+        }
 
+    dcc6681Interrupt((cc->status & cc->intmask) != 0);
     return(st);
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Perform I/O on 3446 card punch.
@@ -323,21 +332,21 @@ static FcStatus cp3446Func(PpWord funcCode)
 **
 **------------------------------------------------------------------------*/
 static void cp3446Io(void)
-{
+    {
     CrContext *cc;
     char c;
     PpWord p;
     int i;
     
-    cc = (CrContext *)activeUnit->context;
+    cc = (CrContext *)active3000Device->context[0];
 
     if (DEBUG)
-        printf ("cp3446: i/o %04o ", activeUnit->fcode);
+        printf ("cp3446: i/o %04o ", active3000Device->fcode);
 
-    switch (activeUnit->fcode)
-    {
+    switch (active3000Device->fcode)
+        {
     default:
-        printf("unexpected IO for function %04o\n", activeDevice->fcode); 
+        printf("unexpected IO for function %04o\n", active3000Device->fcode); 
         break;
 
     case 0:
@@ -345,10 +354,10 @@ static void cp3446Io(void)
 
     case Fc6681DevStatusReq:
         if (!activeChannel->full)
-        {
+            {
             activeChannel->data = (cc->status & (cc->intmask | StCp3446NonIntStatus));
             activeChannel->full = TRUE;
-        }
+            }
         break;
         
     case Fc6681Output:
@@ -357,64 +366,66 @@ static void cp3446Io(void)
         // So we simulate card in motion for 20 major cycles.
         if (!activeChannel->full ||
             cycles - cc->getcardcycle < 20)
-        {
+            {
             break;
-        }
+            }
 
         if (cc->col >= 80)
-        {
+            {
             // Write the card we just finished.
-            cp3446FlushCard (activeUnit, cc);
-        }
+            cp3446FlushCard (active3000Device, cc);
+            }
         else
-        {
+            {
             p = activeChannel->data;
             activeChannel->full = FALSE;
             
             if (cc->binary)
-            {
+                {
                 c = ' ';
                 // Sorry about the linear search; it's either that
                 // or a substantially hairier translation.
                 for (i = 040; i < 0177; i++)
-                {
-                    if (cc->table[i] == p)
                     {
+                    if (cc->table[i] == p)
+                        {
                         c = i;
                         break;
-                    }
-                }    
-            }
+                        }
+                    }    
+                }
             else
-            {
+                {
                 c = bcdToAscii[p >> 6];
-#ifdef CP_LC
+#if (CP_LC == 1)
                 c = tolower (c);
 #endif
                 if ((cc->card[cc->col] = c) != ' ')
-                {
+                    {
                     cc->lastnbcol = cc->col;
-                }
+                    }
+
                 cc->col++;
                 c = bcdToAscii[p & 077];
-            }
-#ifdef CP_LC
+                }
+#if (CP_LC == 1)
             c = tolower (c);
 #endif
             if ((cc->card[cc->col] = c) != ' ')
-            {
+                {
                 cc->lastnbcol = cc->col;
-            }
+                }
+
             cc->col++;
-        }
+            }
         break;
-    }
+        }
     
     if (DEBUG)
         printf ("data %04o, status now %04o\n",
                 activeChannel->data, cc->status);
-    activeUnit->intr = (cc->status & cc->intmask) != 0;
-}
+    dcc6681Interrupt((cc->status & cc->intmask) != 0);
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Perform load/unload on 3446 card punch.
@@ -424,7 +435,7 @@ static void cp3446Io(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cp3446Load(Dev3kSlot *up, char *fn)
+static void cp3446Load(DevSlot *up, int eqNo, char *fn)
 {
     CrContext *cc;
     FILE *fcb;
@@ -434,7 +445,7 @@ static void cp3446Load(Dev3kSlot *up, char *fn)
     char fnameNew[80];
     static char msgBuf[80];
 
-    cc = (CrContext *) (up->context);
+    cc = (CrContext *) (up->context[0]);
 
     if (fn != NULL)
     {
@@ -446,14 +457,14 @@ static void cp3446Load(Dev3kSlot *up, char *fn)
     **  Close the old device file.
     */
     cp3446FlushCard (up, cc);
-    fflush(up->fcb);
-    fclose(up->fcb);
-    up->fcb = NULL;
+    fflush(up->fcb[0]);
+    fclose(up->fcb[0]);
+    up->fcb[0] = NULL;
 
     /*
     **  Rename the device file to the format "CP3446_yyyymmdd_hhmmss".
     */
-    sprintf(fname, "CP3446_C%02o_E%o", up->conv->channel->id, up->id);
+    sprintf(fname, "CP3446_C%02o_E%o", up->channel->id, up->eqNo);
 
     time(&currentTime);
     t = *localtime(&currentTime);
@@ -492,7 +503,7 @@ static void cp3446Load(Dev3kSlot *up, char *fn)
     /*
     **  Setup status.
     */
-    up->fcb = fcb;
+    up->fcb[0] = fcb;
     sprintf (msgBuf, "CP3446 unloaded to %s", fnameNew);
     opSetMsg (msgBuf);
 }
@@ -518,18 +529,20 @@ static void cp3446Activate(void)
 **
 **------------------------------------------------------------------------*/
 static void cp3446Disconnect(void)
-{
+    {
     CrContext *cc;
     
-    cc = (CrContext *)activeUnit->context;
+    cc = (CrContext *)active3000Device->context[0];
     if (cc != NULL)
-    {
+        {
         cc->status |= StCp3446EoiInt;
-        activeUnit->intr = (cc->status & cc->intmask) != 0;
-        if (activeUnit->fcb != NULL && cc->col != 0)
-            cp3446FlushCard (activeUnit, cc);
+        dcc6681Interrupt((cc->status & cc->intmask) != 0);
+        if (active3000Device->fcb[0] != NULL && cc->col != 0)
+            {
+            cp3446FlushCard(active3000Device, cc);
+            }
+        }
     }
-}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Punch current card, update card punch status.
@@ -539,16 +552,14 @@ static void cp3446Disconnect(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cp3446FlushCard (Dev3kSlot *up, CrContext *cc)
-{
-    char *cp;
-    char c;
+static void cp3446FlushCard(DevSlot *up, CrContext *cc)
+    {
     int lc;
     
     if (cc->col == 0)
-    {
+        {
         return;
-    }
+        }
     
     // Remember the cycle counter when the card punch started
     cc->getcardcycle = cycles;
@@ -558,9 +569,9 @@ static void cp3446FlushCard (Dev3kSlot *up, CrContext *cc)
     cc->card[lc++] = '\n';
 
     // Write the line and reset things for next card
-    fwrite (cc->card, 1, lc, up->fcb);
+    fwrite(cc->card, 1, lc, up->fcb[0]);
     cc->col = 0;
     cc->lastnbcol = -1;
-}
+    }
 
 /*---------------------------  End Of File  ------------------------------*/

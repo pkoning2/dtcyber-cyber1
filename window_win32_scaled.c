@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: window_win32_scaled.c
 **
@@ -680,7 +680,7 @@ void windowDisplay(HWND hWnd)
             }
         else
             {
-            str[0] = curr->ch;
+            str[0] = consoleToAscii[curr->ch];
             TextOut(hdcMem, curr->xPos, curr->yPos + 10, str, 1);
             }
         }

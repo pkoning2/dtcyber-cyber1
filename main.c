@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: main.c
 **
@@ -87,7 +87,12 @@ int main(int argc, char **argv)
     (void)argv;
 
     /*
-    **  Allow optional command line parameter to specifiy section to run in "cyber.ini".
+    **  Setup error logging.
+    */
+    logInit();
+
+    /*
+    **  Allow optional command line parameter to specify section to run in "cyber.ini".
     */
     if (argc == 2)
         {
@@ -119,6 +124,11 @@ int main(int argc, char **argv)
     */
     while (emulationActive)
         {
+        /*
+        **  Count major cycles.
+        */
+        cycles++;
+
         /*
         **  Deal with operator interface requests.
         */
@@ -156,6 +166,7 @@ int main(int argc, char **argv)
     ptermClose();
 #endif
     windowClose();
+    cpuExit();
 
 #if 0
     /*

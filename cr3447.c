@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Paul Koning, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Paul Koning, Tom Hunter (see license.txt)
 **
 **  Name: cr3447.c
 **
@@ -28,8 +28,6 @@
 **  Private Constants
 **  -----------------
 */
-
-#define DEBUG 0
 
 /*
 **  CDC 3447 card reader function and status codes.
@@ -91,16 +89,16 @@
 */
 
 typedef struct
-{
+    {
     bool    binary;
     bool    bincard;
     int     intmask;
     int	    status;
     int     col;
-    const unsigned short *table;
+    const u16 *table;
     u32     getcardcycle;
     char    card[82];
-} CrContext;
+    } CrContext;
 
     
 /*
@@ -110,10 +108,10 @@ typedef struct
 */
 static FcStatus cr3447Func(PpWord funcCode);
 static void cr3447Io(void);
-static void cr3447Load(Dev3kSlot *, char *);
+static void cr3447Load(DevSlot *, int, char *);
 static void cr3447Activate(void);
 static void cr3447Disconnect(void);
-static void cr3447NextCard (Dev3kSlot *up, CrContext *cc);
+static void cr3447NextCard (DevSlot *up, CrContext *cc);
 /*
 **  ----------------
 **  Public Variables
@@ -148,78 +146,86 @@ static void cr3447NextCard (Dev3kSlot *up, CrContext *cc);
 **
 **------------------------------------------------------------------------*/
 void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
-{
-    Dev3kSlot *up;
+    {
+    DevSlot *up;
     CrContext *cc;
     FILE *fcb;
     char *opt;
     
-    (void)eqNo;
-
-    up = dcc6681Attach(channelNo, unitNo, DtCr3447);
+    up = dcc6681Attach(channelNo, eqNo, 0, DtCr3447);
 
     up->activate = cr3447Activate;
     up->disconnect = cr3447Disconnect;
     up->func = cr3447Func;
     up->io = cr3447Io;
     up->load = cr3447Load;
+
+    /*
+    **  Only one card reader unit is possible per equipment.
+    */
+    if (up->context[0] != NULL)
+        {
+        fprintf (stderr, "Only one CR3447 unit is possible per equipment\n");
+        exit (1);
+        }
+
     cc = calloc (1, sizeof (CrContext));
     if (cc == NULL)
-    {
+        {
         fprintf (stderr, "Failed to allocate CR3447 context block\n");
         exit (1);
-    }
-    up->context = cc;
+        }
+    up->context[0] = cc;
 
     if (deviceName != NULL)
-    {
+        {
         opt = strchr (deviceName, ',');
         if (opt != NULL)
-        {
+            {
             *opt++ = '\0';
-        }
+            }
         fcb = fopen(deviceName, "r");
         if (fcb == NULL)
-        {
+            {
             fprintf(stderr, "Failed to open %s\n", deviceName);
             exit(1);
-        }
+            }
 
-        up->fcb = fcb;
+        up->fcb[0] = fcb;
         cc->status = StCr3447Ready;
         cr3447NextCard (up, cc);        // Read the first card
-    }
+        }
     else
-    {
+        {
         opt = NULL;
-        up->fcb = NULL;
+        up->fcb[0] = NULL;
         cc->status = StCr3447Eof;
-    }
+        }
 
     cc->table = asciiTo026;     // default translation table
     if (opt != NULL)
-    {
+        {
         if (strcmp (opt, "029") == 0)
-        {
+            {
             cc->table = asciiTo029;
-        }
+            }
         else if (strcmp (opt, "026") != 0)
-        {
+            {
             fprintf (stderr, "Unrecognized card code name %s\n", opt);
             exit (1);
+            }
         }
-    }
     else
-    {
+        {
         opt = "026";
-    }
+        }
     
     /*
     **  Print a friendly message.
     */
     printf("CR3447 initialised on channel %o equipment %o, default code %s\n", 
-           channelNo, unitNo, opt);
-}
+           channelNo, eqNo, opt);
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Execute function code on 3447 card reader.
@@ -231,17 +237,14 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **
 **------------------------------------------------------------------------*/
 static FcStatus cr3447Func(PpWord funcCode)
-{
+    {
     CrContext *cc;
     FcStatus st;
     
-    if (DEBUG)
-        printf ("cr3447: function %04o\n", funcCode);
-    
-    cc = (CrContext *)activeUnit->context;
+    cc = (CrContext *)active3000Device->context[0];
 
     switch (funcCode)
-    {
+        {
     default:                    // all unrecognized codes are NOPs
         st = FcProcessed;
         break;
@@ -256,7 +259,7 @@ static FcStatus cr3447Func(PpWord funcCode)
         // fall through
     case Fc6681DevStatusReq:
         st = FcAccepted;
-        activeUnit->fcode = funcCode;
+        active3000Device->fcode = funcCode;
         break;
 
     case FcCr3447Binary:
@@ -308,11 +311,11 @@ static FcStatus cr3447Func(PpWord funcCode)
         cc->status &= ~StCr3447ErrorInt;
         st = FcProcessed;
         break;
-    }
-    activeUnit->intr = (cc->status & cc->intmask) != 0;
+        }
 
+    dcc6681Interrupt((cc->status & cc->intmask) != 0);
     return(st);
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Perform I/O on 3447 card reader.
@@ -323,20 +326,17 @@ static FcStatus cr3447Func(PpWord funcCode)
 **
 **------------------------------------------------------------------------*/
 static void cr3447Io(void)
-{
+    {
     CrContext *cc;
     char c;
     PpWord p;
     
-    cc = (CrContext *)activeUnit->context;
+    cc = (CrContext *)active3000Device->context[0];
 
-    if (DEBUG)
-        printf ("cr3447: i/o %04o ", activeUnit->fcode);
-
-    switch (activeUnit->fcode)
-    {
+    switch (active3000Device->fcode)
+        {
     default:
-        printf("unexpected IO for function %04o\n", activeDevice->fcode); 
+        printf("unexpected IO for function %04o\n", active3000Device->fcode); 
         break;
 
     case 0:
@@ -344,10 +344,10 @@ static void cr3447Io(void)
 
     case Fc6681DevStatusReq:
         if (!activeChannel->full)
-        {
+            {
             activeChannel->data = (cc->status & (cc->intmask | StCr3447NonIntStatus));
             activeChannel->full = TRUE;
-        }
+            }
         break;
         
     case Fc6681InputToEor:
@@ -355,56 +355,53 @@ static void cr3447Io(void)
         // Don't admit to having new data immediately after completing
         // a card, otherwise 1CD may get stuck occasionally.
         // So we simulate card in motion for 20 major cycles.
-        if (activeChannel->full ||
-            cycles - cc->getcardcycle < 20)
-        {
+        if (   activeChannel->full
+            || cycles - cc->getcardcycle < 20)
+            {
             break;
-        }
+            }
 
-        if (activeUnit->fcb == NULL)
-        {
+        if (active3000Device->fcb[0] == NULL)
+            {
             cc->status = StCr3447Eof;
             break;
-        }
+            }
         
         if (cc->col >= 80)
-        {
+            {
             // Read the next card.
             // If the function is input to EOR, disconnect to indicate EOR
-            cr3447NextCard (activeUnit, cc);
+            cr3447NextCard (active3000Device, cc);
             if (activeDevice->fcode == Fc6681InputToEor)
-            {
+                {
                 // End of card but we're still ready
                 cc->status |= StCr3447EoiInt | StCr3447Ready;
                 if (cc->status & StCr3447File)
                     cc->status |= StCr3447ErrorInt;
                 activeChannel->discAfterInput = TRUE;
+                }
             }
-        }
         else
-        {
+            {
             c = cc->card[cc->col++];
             if (cc->binary || cc->bincard)
-            {
-                p = *(cc->table + c);
-            }
+                {
+                p = cc->table[c];
+                }
             else
-            {
+                {
                 p = asciiToBcd[c] << 6;
                 c = cc->card[cc->col++];
                 p += asciiToBcd[c];
-            }
+                }
             activeChannel->data = p;
             activeChannel->full = TRUE;
-        }
+            }
         break;
-    }
+        }
     
-    if (DEBUG)
-        printf ("data %04o, status now %04o\n",
-                activeChannel->data, cc->status);
-    activeUnit->intr = (cc->status & cc->intmask) != 0;
-}
+    dcc6681Interrupt((cc->status & cc->intmask) != 0);
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Perform load/unload on 3447 card reader.
@@ -414,44 +411,44 @@ static void cr3447Io(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cr3447Load(Dev3kSlot *up, char *fn)
-{
+static void cr3447Load(DevSlot *up, int eqNo, char *fn)
+    {
     CrContext *cc;
     FILE *fcb;
     static char msgBuf[80];
     
     cc = (CrContext *) (up->context);
 
-    if (up->fcb != NULL)
-        fclose (up->fcb);
+    if (up->fcb[0] != NULL)
+        fclose (up->fcb[0]);
     
-    up->fcb = NULL;
+    up->fcb[0] = NULL;
     cc->status = StCr3447Eof;
 
     if (fn != NULL)
-    {
+        {
         fcb = fopen(fn, "r");
         if (fcb == NULL)
-        {
+            {
             sprintf (msgBuf, "$Open error: %s", strerror (errno));
             opSetMsg(msgBuf);
             return;
-        }
+            }
 
-        up->fcb = fcb;
+        up->fcb[0] = fcb;
         cc->status = StCr3447Ready;
         cr3447NextCard (up, cc);
-    }
+        }
     
-    up->intr = (cc->status & cc->intmask) != 0;
+    dcc6681Interrupt((cc->status & cc->intmask) != 0);
     if (fn == NULL)
         opSetMsg ("CR3447 unloaded");
     else
-    {
+        {
         sprintf (msgBuf, "CR3447 loaded with %s", fn);
         opSetMsg (msgBuf);
+        }
     }
-}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Handle channel activation.
@@ -462,8 +459,8 @@ static void cr3447Load(Dev3kSlot *up, char *fn)
 **
 **------------------------------------------------------------------------*/
 static void cr3447Activate(void)
-{
-}
+    {
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Handle disconnecting of channel.
@@ -474,18 +471,20 @@ static void cr3447Activate(void)
 **
 **------------------------------------------------------------------------*/
 static void cr3447Disconnect(void)
-{
+    {
     CrContext *cc;
     
-    cc = (CrContext *)activeUnit->context;
+    cc = (CrContext *)active3000Device->context[0];
     if (cc != NULL)
-    {
+        {
         cc->status |= StCr3447EoiInt;
-        activeUnit->intr = (cc->status & cc->intmask) != 0;
-        if (activeUnit->fcb != NULL && cc->col != 0)
-            cr3447NextCard (activeUnit, cc);
+        dcc6681Interrupt((cc->status & cc->intmask) != 0);
+        if (active3000Device->fcb[0] != NULL && cc->col != 0)
+            {
+            cr3447NextCard(active3000Device, cc);
+            }
+        }
     }
-}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Read next card, update card reader status.
@@ -495,56 +494,74 @@ static void cr3447Disconnect(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cr3447NextCard (Dev3kSlot *up, CrContext *cc)
-{
+static void cr3447NextCard (DevSlot *up, CrContext *cc)
+    {
     char *cp;
     char c;
 
-    // Remember the cycle counter when the card was called for
+    /* 
+    **  Remember the cycle counter when the card was called for.
+    */
     cc->getcardcycle = cycles;
     
-    // Read the next card.
-    cp = fgets (cc->card, sizeof (cc->card),
-                up->fcb);
+    /*
+    **  Read the next card.
+    */
+    cp = fgets (cc->card, sizeof (cc->card), up->fcb[0]);
     if (cp == NULL)
-    {
-        // If the last card wasn't a 6/7/8/9 card, fake one.
+        {
+        /*
+        **  If the last card wasn't a 6/7/8/9 card, fake one.
+        */
         if (cc->card[0] != '}')
-        {
+            {
             strcpy (cc->card, "}\n");
-        }
+            }
         else
-        {
-            fclose (up->fcb);
-            up->fcb = NULL;
+            {
+            fclose (up->fcb[0]);
+            up->fcb[0] = NULL;
             cc->status = StCr3447Eof;
             return;
+            }
+        }
+
+    /* 
+    **  Set "this card is binary" if rows 7 and 9 are punched in column 1.
+    */
+    cc->bincard = (cc->table[cc->card[0]] & 005) == 005;
+
+    /*
+    **  Skip over any characters past column 80 (if line is longer).
+    */
+    if ((cp = strchr (cc->card, '\n')) == NULL)
+        {
+        do 
+            {
+            c = fgetc(up->fcb[0]);
+            } while (c != '\n' && c != EOF);
+        cp = &cc->card[80];
+        }
+
+    /*
+    **  Blank fill line shorter then 80 characters.
+    */
+    for ( ; cp <= &cc->card[80]; cp++)
+        {
+        *cp = ' ';
+        }
+
+    cc->col = 0;
+    if (   !cc->binary
+        && (cc->table[cc->card[0]] & 006) == 006)
+        {
+        cc->status |= StCr3447File;
+        }
+
+    if (cc->bincard)
+        {
+        cc->status |= StCr3447Binary;
         }
     }
-    // Set "this card is binary" if rows 7 and 9 are punched in column 1.
-    cc->bincard = ((*(cc->table + cc->card[0]) & 005) == 005);
-    if (DEBUG)
-        printf ("read card (binary: %d): %s", cc->bincard, cc->card);
-    if ((cp = strchr (cc->card, '\n')) == NULL)
-    {
-        do 
-        {
-            c = fgetc (up->fcb);
-        } while (c != '\n');
-        cp = &cc->card[80];
-    }
-    for ( ; cp <= &cc->card[80]; cp++)
-        *cp = ' ';
-    cc->col = 0;
-    if (!cc->binary &&
-        (*(cc->table + cc->card[0]) & 006) == 006)
-    {
-        cc->status |= StCr3447File;
-    }
-    if (cc->bincard)
-        cc->status |= StCr3447Binary;
-    if (DEBUG)
-        printf ("status for card: %04o\n", cc->status);
-}
 
 /*---------------------------  End Of File  ------------------------------*/

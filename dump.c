@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: dump.c
 **
@@ -93,7 +93,7 @@ void dumpInit(void)
     cpuDF = fopen("cpu.dmp", "wt");
     if (cpuDF == NULL)
         {
-        ppAbort((stderr, "can't open cpu dump"));
+        logError(LogErrorLocation, "can't open cpu dump");
         }
 
     for (pp = 0; pp < ppuCount; pp++)
@@ -102,7 +102,7 @@ void dumpInit(void)
         ppuDF[pp] = fopen(ppDumpName, "wt");
         if (ppuDF[pp] == NULL)
             {
-            ppAbort((stderr, "can't open ppu[%02o] dump", pp));
+            logError(LogErrorLocation, "can't open ppu[%02o] dump", pp);
             }
         }
     }
@@ -369,7 +369,7 @@ void dumpDisassemblePpu(u8 pp)
     pf = fopen(ppDisName, "wt");
     if (pf == NULL)
         {
-        ppAbort((stderr, "can't open %s", ppDisName));
+        logError(LogErrorLocation, "can't open %s", ppDisName);
         return;
         }
 

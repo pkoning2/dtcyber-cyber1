@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: deadstart.c
 **
@@ -87,7 +87,7 @@ void deadStart(void)
     DevSlot *dp;
     u8 pp;
 
-    dp = channelAttach(0, DtDeadStartPanel);
+    dp = channelAttach(0, 0, DtDeadStartPanel);
 
     dp->activate = deadActivate;
     dp->disconnect = deadDisconnect;

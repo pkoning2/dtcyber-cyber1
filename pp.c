@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: pp.c
 **
@@ -363,8 +363,7 @@ void ppStep(void)
         /*
         **  Advance to next PPU.
         */
-        pp = (pp + 1) % ppuCount;
-        activePpu = ppu + pp;
+        activePpu = ppu + i;
 
         /*
         **  Check if this one is active.
@@ -619,6 +618,9 @@ void ppStep(void)
 
             if (activeChannel->full)
                 {
+                /*
+                **  Discard data for channels we don't yet know how to deal with.
+                */
                 if (activeChannel->id > 014 && activeChannel->id < 020)
                     {
                     activeChannel->full = FALSE;
@@ -1607,7 +1609,7 @@ static void ppOpOAN(void)     // 72
     activePpu->channel = activeChannel;
 
     /*
-    **  Interlock register function.
+    **  S/C register function.
     */
     if (opD == ChStatusAndControl)
         {
@@ -1616,7 +1618,7 @@ static void ppOpOAN(void)     // 72
         }
 
     /*
-    **  S/C register function.
+    **  Interlock register function.
     */
     if (opD == ChInterlock)
         {
