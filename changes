@@ -257,3 +257,5 @@ Since jan21 2004 drop:
   Plato mode on/off/display.  Added dot mode intensification.
 - Added Hershey (stroke) font support to window_x11.c
 - Removed a few unused variables.
+- Added plato terminal window handling for Win32.
+- Added "true" keyboard emulation for Win32 (may not be quite right yet?)
