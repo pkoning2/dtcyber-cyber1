@@ -27,6 +27,7 @@
 #include "types.h"
 #include "proto.h"
 #include "ptermversion.h"
+#include "pterm.h"
 
 /*
 **  -----------------
@@ -343,7 +344,6 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
     int wmId, wmEvent;
     HDC hdc;
     PAINTSTRUCT paint;
-    int savemode;
     
     switch (message) 
         {
@@ -492,28 +492,7 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         else if (wParam == 035) // control-] : trace
             {
             tracePterm = !tracePterm;
-            savemode = wemode;
-            if (!tracePterm)
-                {
-                wemode = 2;
-                fflush (traceF);
-                }
-            else
-                {
-                if (traceF == NULL)
-                    {
-                    traceF = fopen (traceFn, "w");
-                    }
-                wemode = 3;
-                }
-            ptermSetWeMode (wemode);
-            /*
-            **  The 1024 is a strange hack to circumvent the
-            **  screen edge wrap checking.
-            */
-            ptermDrawChar (1024 + 512, 512, 1, 024);
-            wemode = savemode;
-            ptermSetWeMode (wemode);
+            ptermSetTrace (TRUE);
             return 0;
             }
         break;

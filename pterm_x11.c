@@ -31,6 +31,8 @@
 #include "const.h"
 #include "types.h"
 #include "proto.h"
+#define PTERM_DEFINE_X
+#include "pterm.h"
 
 /*
 **  -----------------
@@ -270,13 +272,7 @@ const unsigned short plato_m1[] = {
 **--------------------------------------------------------------------------
 */
 
-bool platoKeypress (XKeyEvent *kp, int stat);
-bool platoTouch (XButtonPressedEvent *bp, int stat);
-void ptermInput(XEvent *event);
-void dtXinit(void);
-void ptermSetName (const char *winName);
-void ptermLoadChar (int snum, int cnum, const u16 *data);
-void ptermSetWeMode (u8 we);
+extern void dtXinit(void);
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize the Plato terminal window.
@@ -946,16 +942,7 @@ void ptermInput(XEvent *event)
         // copy the trace marker
         if (tracePterm)
             {
-            XSetClipMask (disp, wgc, None);
-            XSetClipMask (disp, pgc, None);
-            XCopyPlane(disp, pixmap, ptermWindow, wgc, 
-                       (DisplayMargin + 512) * scale,
-                       (DisplayMargin - 16) * scale,
-                       8 * scale, 16 * scale,
-                       (DisplayMargin + 512) * scale,
-                       (DisplayMargin - 16) * scale, 1);
-            XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
-            XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
+            ptermSetTrace (FALSE);
             }
         ptermSetWeMode (savemode);
         XSync (disp, FALSE);
@@ -983,6 +970,29 @@ void ptermTouchPanel(bool enable)
         XUndefineCursor (disp, ptermWindow);
         }
     touchEnabled = enable;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Enable or disable the PLATO screen clipping region
+**
+**  Parameters:     Name        Description.
+**                  enable      true or false for enable or disable.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermSetClip (bool enable)
+    {
+    if (enable)
+        {
+        XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
+        XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
+        }
+    else
+        {
+        XSetClipMask (disp, wgc, None);
+        XSetClipMask (disp, pgc, None);
+        }
     }
 
 /*
@@ -1013,18 +1023,11 @@ static void drawChar (Drawable d, GC gc, int x, int y, int snum, int cnum)
     char c;
     int savemode = wemode;
 
-    if (x >= 1024)
-        {
-        // Special flag coordinate to write to the status field
-        XSetClipMask (disp, wgc, None);
-        XSetClipMask (disp, pgc, None);
-        }
-    
     charX = cnum * 8 * scale;
     charY = YSize + snum * 16 * scale;
     sizeX = 8;
     sizeY = 16;
-    screenX = XADJUST (x & 1023);
+    screenX = XADJUST (x);
     screenY = YADJUST (y) - 15 * scale;
     
     if (x < 0)
@@ -1047,22 +1050,13 @@ static void drawChar (Drawable d, GC gc, int x, int y, int snum, int cnum)
 	ptermSetWeMode (savemode);
     
     // Handle screen edge wraparound by recursion...
-    if (x >= 1024)
+    if (x > 512 - 8)
         {
-        // Restore normal clipping
-        XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
-        XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
+        drawChar (d, gc, x - 512, y, snum, cnum);
         }
-    else 
+    if (y > 512 - 16)
         {
-        if (x > 512 - 8)
-            {
-            drawChar (d, gc, x - 512, y, snum, cnum);
-            }
-        if (y > 512 - 16)
-            {
-            drawChar (d, gc, x, y - 512, snum, cnum);
-            }
+        drawChar (d, gc, x, y - 512, snum, cnum);
         }
     }
 

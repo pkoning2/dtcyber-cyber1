@@ -36,8 +36,10 @@
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
 #include <X11/Xresource.h>
+#define PTERM_DEFINE_X
 #endif
 #include "ptermversion.h"
+#include "pterm.h"
 
 /*
 **  -----------------
@@ -46,6 +48,15 @@
 */
 #define DEFAULTHOST "cyberserv.org"
 #define BufSiz      256
+#define RINGSIZE    5000
+#define RINGXOFF1   1000
+#define RINGXOFF2   1100
+#define RINGXON1    400
+#define RINGXON2    200
+#define xonkey      01606
+#define xofkey      01607
+
+#define niuRingCount ((niuIn >= niuOut) ? (niuIn - niuOut) : (RINGSIZE + niuIn - niuOut))
 
 /*
 **  -----------------------------------------
@@ -90,6 +101,8 @@ static int obytes;
 static u32 currOutput;
 static NetFet fet;
 static u16 currInput;
+static u32 niuRing[RINGSIZE];
+static int niuIn, niuOut;
 
 /*
 **--------------------------------------------------------------------------
@@ -104,17 +117,20 @@ extern void ptermInput(XEvent *event);
 #endif
 extern void ptermInit(const char *winName, bool closeOk);
 extern void ptermClose (void);
-extern void procNiuWord (int stat, u32 d);
+extern int procNiuWord (int stat, u32 d);
 extern void ptermSetWeMode (u8 we);
+
+void niuLocalKey(u16 key, int stat);
 
 int main (int argc, char **argv)
     {
     u8 ibuf[3];
     u32 niuwd;
-    int i;
+    int i, j, k;
     char name[100];
     int port;
     int true_opt = 1;
+    int next;
     
     argc--;
     argv++;
@@ -183,32 +199,111 @@ int main (int argc, char **argv)
             }
         
         for (;;)
+        {
+            /*
+            **  Assemble words from the network buffer, all the
+            **  while looking for "abort output" codes (word == 2).
+            */
+            next = niuIn + 1;
+            if (next == RINGSIZE)
+                {
+                next = 0;
+                }
+            if (next == niuOut)
+                {
+                break;
+                }
+            if (dtFetData (&fet) < 3)
+                {
+                break;
+                }
+            i = dtReado (&fet);
+            if (i & 0200)
+                {
+                printf ("Plato output out of sync byte 0: %03o\n", i);
+                continue;
+                }
+    newj:
+            j = dtReado (&fet);
+            if ((j & 0300) != 0200)
+                {
+                printf ("Plato output out of sync byte 1: %03o\n", j);
+                if ((j & 0200) == 0)
+                    {
+                    i = j;
+                    goto newj;
+                    }
+                continue;
+                }
+            k = dtReado (&fet);
+            if ((k & 0300) != 0300)
+                {
+                printf ("Plato output out of sync byte 2: %03o\n", k);
+                if ((k & 0200) == 0)
+                    {
+                    i = k;
+                    goto newj;
+                    }
+                continue;
+                }
+            niuwd = (i << 12) | ((j & 077) << 6) | (k & 077);
+            if (niuwd == 2)
+                {
+                niuOut = niuIn;
+                }
+            niuRing[niuIn] = niuwd;
+            niuIn = next;
+            i = niuRingCount;
+            if (i == RINGXOFF1 || i == RINGXOFF2)
+                {
+                niuLocalKey (xofkey, 0);
+#if 0
+                printf ("off ");
+                fflush (stdout);
+#endif
+                }
+        }
+#if 0
+        if (niuRingCount > 0 &&
+            ((niuRingCount % 100) == 0))
             {
+            printf ("%d ", niuRingCount);
+            fflush (stdout);
+            }
+#endif
+        for (;;)
+            {
+            /*
+            **  Process words until we hit some point that causes output delay.
+            **  That way we see an abort code as soon as possible.
+            */
 #if !defined(_WIN32)
             ptermWindowInput ();
 #endif
-            i = dtReadw (&fet, ibuf, 3);
-            if (i < 0)
+            if (niuIn == niuOut)
                 {
-                break;              /* don't have 3 bytes yet */
-                }
-            if (ibuf[0] & 0200)
-                {
-                printf ("Plato output out of sync byte 0: %03o\n", ibuf[0]);
                 break;
                 }
-            if ((ibuf[1] & 0300) != 0200)
+            next = niuOut + 1;
+            if (next == RINGSIZE)
                 {
-                printf ("Plato output out of sync byte 1: %03o\n", ibuf[1]);
+                next = 0;
+                }
+            j = procNiuWord (1, niuRing[niuOut]);
+            niuOut = next;
+            i = niuRingCount;
+            if (i == RINGXON1 || i == RINGXON2)
+                {
+                niuLocalKey (xonkey, 0);
+#if 0
+                printf ("on ");
+                fflush (stdout);
+#endif
+                }
+            if (j)
+                {
                 break;
                 }
-            if ((ibuf[2] & 0300) != 0300)
-                {
-                printf ("Plato output out of sync byte 2: %03o\n", ibuf[2]);
-                break;
-                }
-            niuwd = (ibuf[0] << 12) | ((ibuf[1] & 077) << 6) | (ibuf[2] & 077);
-            procNiuWord (1, niuwd);
             }
         }
     ptermClose ();
@@ -229,21 +324,6 @@ void niuLocalKey(u16 key, int stat)
     {
     u8 data[2];
     
-#if 0   // this doesn't seem to work quite the way I want it to...
-    if (key == 032 || key == 072)
-        {
-        /*
-        **  STOP or SHIFT-STOP keys -- discard any pending
-        **  data from the network.
-        **
-        **  Usually that doesn't matter much, but if there are -delay-
-        **  words pending, there could be quite a lot of stuff backed
-        **  up, and we want to abort all that delaying.
-        */
-        fet.out = fet.in;
-        }
-#endif
-
     data[0] = key >> 7;
     data[1] = 0200 | key;
 
@@ -292,7 +372,7 @@ static void ptermWindowInput(void)
             break;
 
         case KeyPress:
-            // Special case: check for Control/D (disconnect)
+            // Special case: check for Control/Z (disconnect)
             kp = (XKeyEvent *) &event;
             if (kp->state & ControlMask)
                 {
@@ -303,29 +383,17 @@ static void ptermWindowInput(void)
                     emulationActive = FALSE;
                     return;
                     }
+#if 0
+                else if (key == XK_s || key == XK_q)
+                    {
+                    niuLocalKey (key == XK_s ? xofkey : xonkey, 0);
+                    return;
+                    }
+#endif
                 else if (key == XK_bracketright)    // control-] : trace
                     {
                     tracePterm = !tracePterm;
-                    savemode = wemode;
-                    if (!tracePterm)
-                        {
-                        wemode = 2;
-                        fflush (traceF);
-                        }
-                    else
-                        {
-                        if (traceF == NULL)
-                            {
-                            traceF = fopen (traceFn, "w");
-                            }
-                        wemode = 3;
-                        }
-                    ptermSetWeMode (wemode);
-                    // The 1024 is a strange hack to circumvent the
-                    // screen edge wrap checking.
-                    ptermDrawChar (1024 + 512, 512, 1, 024);
-                    wemode = savemode;
-                    ptermSetWeMode (wemode);
+                    ptermSetTrace (TRUE);
                     return;
                     }
                 }
