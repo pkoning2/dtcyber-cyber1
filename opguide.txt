@@ -108,3 +108,27 @@ analysis.
 If DtCyber dies, hopefully we'll have a corefile; save that for
 analysis.  In all cases, if you do a restart, make it a level zero
 deadstart, with ECS initialized.
+
+4. The "black box"
+
+Some PLATO systems had a black box (earlier, a tape, if I remember
+right) that would transmit a fixed message periodically to all
+terminals.  This is useful if the system is down for some reason; that
+might be backups, or some planned (or unplanned) downtime of another
+kind.
+
+The DtCyber equivalent is the utility program "blackbox".  You can run
+this when DtCyber is NOT running.  It takes one argument, which is the
+message to be displayed.  It accepts connections from pterms, just as
+DtCyber does.  It will ignore any input, and send the supplied message
+to every connected terminal every 5 seconds. 
+
+For example:
+
+    ./blackbox "Backups in progress, expect PLATO back at 9:00 PST"
+
+If no argument is given, the default is: "PLATO is down for the moment".
+
+The black box runs until terminated (by control/C).  It takes very
+little CPU time, so it can easily be used while the system is busy
+doing backups or the like.
