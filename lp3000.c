@@ -47,6 +47,7 @@
 #define Lp3000IntEnd            00400   /* ditto */
 #define Lp3000IntReadyEna       02000
 #define Lp3000IntEndEna         04000
+#define Lp3000Separate          010000  /* Split into separate files per job */
 
 /*
 **      Function codes
@@ -168,12 +169,14 @@ typedef struct lpContext
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void lp3000Init(u8 unitNo, u8 eqNo, u8 channelNo, int flags);
+static void lp3000Init(u8 unitNo, u8 eqNo, u8 channelNo, int flags,
+                       const char *deviceName);
 static FcStatus lp3000Func(PpWord funcCode);
 static void lp3000Io(void);
 static void lp3000Activate(void);
 static void lp3000Disconnect(void);
 static void lp3000Load(DevSlot *up, int, char *fn);
+static void lp3000Unload(DevSlot *up, char *newFn);
 
 
 /*
@@ -210,28 +213,9 @@ static void lp3000Load(DevSlot *up, int, char *fn);
 **------------------------------------------------------------------------*/
 void lp501Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     {
-    int flags = Lp3000Type501;
-    
     (void)eqNo;
-    (void)deviceName;
 
-    if (deviceName == NULL ||
-        strcmp (deviceName, "3555") == 0)
-        {
-        flags |= Lp3000Type3555;
-        }
-    else if (strcmp (deviceName, "3152") == 0)
-        {
-        flags |= Lp3000Type3152;
-        }
-    else
-        {
-        fprintf (stderr, "Unrecognized LP501 controller type %s\n",
-                 deviceName);
-        exit (1);
-        }
-
-    lp3000Init (unitNo, eqNo, channelNo, flags);
+    lp3000Init (unitNo, eqNo, channelNo, Lp3000Type501, deviceName);
     }
 
 /*--------------------------------------------------------------------------
@@ -241,35 +225,16 @@ void lp501Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **                  eqNo        equipment number
 **                  unitNo      unit number
 **                  channelNo   channel number the device is attached to
-**                  deviceName  "3152" to get 3152 controller, null or "3555" for 3555
+**                  deviceName  Options, see under lp3000Init
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
 void lp512Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     {
-    int flags = Lp3000Type512;
-    
     (void)eqNo;
-    (void)deviceName;
 
-    if (deviceName == NULL ||
-        strcmp (deviceName, "3555") == 0)
-        {
-        flags |= Lp3000Type3555;
-        }
-    else if (strcmp (deviceName, "3152") == 0)
-        {
-        flags |= Lp3000Type3152;
-        }
-    else
-        {
-        fprintf (stderr, "Unrecognized LP512 controller type %s\n",
-                 deviceName);
-        exit (1);
-        }
-
-    lp3000Init (unitNo, eqNo, channelNo, flags);
+    lp3000Init (unitNo, eqNo, channelNo, Lp3000Type512, deviceName);
     }
  
 /*
@@ -286,16 +251,53 @@ void lp512Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **                  unitNo      unit number
 **                  eqNo        equipment number
 **                  channelNo   channel number the device is attached to
-**                  flags       Printer type flags
+**                  flags       Printer type flags (510 or 512)
+**                  deviceName  Options, separated by commas
+**                              "3152" to get 3152 controller
+**                              "3555" for 3555 controller
+**                              "separate" to make each job its own file
+**                              Default is 3555 and not separate.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void lp3000Init(u8 unitNo, u8 eqNo, u8 channelNo, int flags)
+static void lp3000Init(u8 unitNo, u8 eqNo, u8 channelNo, int flags,
+                       const char *deviceName)
     {
     DevSlot *up;
     char fname[80];
     LpContext *lc;
+    int ctlFlags = Lp3000Type3555;
+    char *p;
+    
+    while (deviceName != NULL)
+        {
+        p = strchr (deviceName, ',');
+        if (p != NULL)
+            {
+            *p++ = '\0';
+            }
+        if (strcmp (deviceName, "3555") == 0)
+            {
+            ctlFlags = Lp3000Type3555;
+            }
+        else if (strcmp (deviceName, "3152") == 0)
+            {
+            ctlFlags = Lp3000Type3152;
+            }
+        else if (strcmp (deviceName, "separate") == 0)
+            {
+            flags |= Lp3000Separate;
+            }
+        else
+            {
+            fprintf (stderr, "Unrecognized LP3000 option %s\n",
+                     deviceName);
+            exit (1);
+            }
+        deviceName = p;
+        }
+    flags |= ctlFlags;
     
     up = dcc6681Attach(channelNo, eqNo, unitNo, DtLp5xx);
 
@@ -345,19 +347,18 @@ static void lp3000Init(u8 unitNo, u8 eqNo, u8 channelNo, int flags)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Perform load/unload on printer.
+**  Purpose:        Perform operator load/unload command on printer.
 **
 **  Parameters:     Name        Description.
+**                  up          Pointer to DevSlot of the device
+**                  eqNo        Equipment number (not used)
+**                  fn          File name to load, or NULL for unload
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
 static void lp3000Load(DevSlot *up, int eqNo, char *fn)
     {
-    FILE *fcb;
-    time_t currentTime;
-    struct tm t;
-    char fname[80];
     char fnameNew[80];
     static char msgBuf[80];
 
@@ -367,6 +368,37 @@ static void lp3000Load(DevSlot *up, int eqNo, char *fn)
         return;
         }
     
+    /*
+    **  Do the actual unload processing.
+    */
+    lp3000Unload (up, fnameNew);
+
+    /*
+    **  Set the completion message.
+    */
+    sprintf (msgBuf, "LP5xx unloaded to %s", fnameNew);
+    opSetMsg (msgBuf);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Perform unload on printer.
+**
+**  Parameters:     Name        Description.
+**                  up          Pointer to DevSlot of the device
+**                  newFn       Pointer to buffer where new filename is returned
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void lp3000Unload(DevSlot *up, char *newFn)
+    {
+    FILE *fcb;
+    time_t currentTime;
+    struct tm t;
+    char fname[80];
+    char fnameNew[80];
+    static char msgBuf[80];
+
     /*
     **  Close the old device file.
     */
@@ -414,11 +446,13 @@ static void lp3000Load(DevSlot *up, int eqNo, char *fn)
         }
 
     /*
-    **  Setup status.
+    **  Setup the FCB, and return the new filename.
     */
     up->fcb[0] = fcb;
-    sprintf (msgBuf, "LP5xx unloaded to %s", fnameNew);
-    opSetMsg (msgBuf);
+    if (newFn != NULL)
+        {
+        strcpy (newFn, fnameNew);
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -459,7 +493,14 @@ static FcStatus lp3000Func(PpWord funcCode)
         /* Release is sent at end of job, so flush the print file */
         if (lc->printed)
             {
-            fflush (fcb);
+            if (lc->flags & Lp3000Separate)
+                {
+                lp3000Unload (active3000Device, NULL);
+                }
+            else
+                {
+                fflush (fcb);
+                }
             lc->printed = FALSE;
             }
         return(FcProcessed);
