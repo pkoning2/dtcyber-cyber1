@@ -69,6 +69,10 @@
     else                                                                    \
         {                                                                   \
         location = activePpu->mem[activePpu->regP];                         \
+        if (location == 07777)                                              \
+            {                                                               \
+            location = 0;                                                   \
+            }                                                               \
         }                                                                   \
     PpIncrement(activePpu->regP);
 

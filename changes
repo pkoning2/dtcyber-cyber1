@@ -210,3 +210,7 @@ Since jan02 2004 drop:
   This isn't quite right yet for dependencies; it works correctly for
   an empty binary directory but not when a source file changes.  Also,
   need the same for pterm and clean targets.
+- Fix DM mode PP instructions with D==0 so references to location 7777
+  end up at 0 instead.  That correctly emulates the subtractive adder
+  behavior of the DM address handling, and apparently is required for SMM
+  to work correctly.  (Thanks Jeff Woolsey for this information.)
