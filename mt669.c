@@ -322,7 +322,7 @@ void mt669Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 
     (void)eqNo;
 
-    dp = channelAttach(channelNo, eqNo, DtMt669); /* get a device entry on this channel */
+    dp = channelAttach(channelNo, eqNo, DtMt669);
 
     dp->activate = mt669Activate;
     dp->disconnect = mt669Disconnect;
@@ -543,10 +543,10 @@ static FcStatus mt669Func(PpWord funcCode)
             /*
             **  This is a horrible hack to get SCOPE/Hustler started.
             */
-			if (unitNo == 3)
-				tp->deviceStatus = tp->initialStatus;
-			else
-				tp->deviceStatus = tp->initialStatus | St669LoadPoint;
+            if (unitNo == 3)
+                tp->deviceStatus = tp->initialStatus;
+            else
+                tp->deviceStatus = tp->initialStatus | St669LoadPoint;
 #endif
             tp->blockNo = 0;
             fseek(activeDevice->fcb[unitNo], 0, SEEK_SET);
@@ -911,7 +911,10 @@ static void mt669Io(void)
                     case 07:
                         break;
                         }
-                    tp = activeDevice->context[activeChannel->data & 07];
+
+                    unitNo = activeChannel->data & 07;
+                    activeDevice->selectedUnit = unitNo;
+                    tp = (TapeBuf *)activeDevice->context[unitNo];
                     }
                 activeChannel->full = FALSE;
                 activeDevice->recordLength -= 1;
