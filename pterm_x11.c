@@ -197,7 +197,7 @@ void ptermInit(const char *winName)
     **  Look for resources
     */
     if (XrmGetResource (XrmDb, "dtcyber.platoforeground",
-                        "Dtcyber.Foreground", type, &value))
+                        "Dtcyber.PlatoForeground", type, &value))
     {
         strncpy (fgcolor, value.addr, (int) value.size);
     }
@@ -205,7 +205,12 @@ void ptermInit(const char *winName)
     {
         strcpy (fgcolor, "#ff9000");
     }
-    if (XrmGetResource (XrmDb, "dtcyber.background",
+    if (XrmGetResource (XrmDb, "dtcyber.platobackground",
+                        "Dtcyber.PlatoBackground", type, &value))
+    {
+        strncpy (bgcolor, value.addr, (int) value.size);
+    }
+    else if (XrmGetResource (XrmDb, "dtcyber.background",
                         "Dtcyber.Background", type, &value))
     {
         strncpy (bgcolor, value.addr, (int) value.size);
@@ -303,9 +308,10 @@ void ptermInit(const char *winName)
     XSetFont(disp, pgc, fontId);
 
     /*
-    **  We like to be on top.
+    **  Should we be on top?  Probably not...
     */
-    XMapRaised (disp, ptermWindow);
+//    XMapRaised (disp, ptermWindow);
+    XMapWindow (disp, ptermWindow);
     XSync (disp, FALSE);
 
     /*
@@ -637,7 +643,11 @@ void ptermInput(XEvent *event)
         break;
 
     case Expose:
+        ptermSetWeMode (0);
+        XFillRectangle (disp, ptermWindow, wgc,
+                        0, 0, XSize, YSize);
         XSetForeground (disp, wgc, fg);
+        XSetBackground (disp, wgc, bg);
         XSetFunction (disp, wgc, GXcopy);
         XCopyPlane(disp, pixmap, ptermWindow, wgc, 
                    DisplayMargin, DisplayMargin,
