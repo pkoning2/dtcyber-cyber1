@@ -1171,6 +1171,7 @@ void pfread (int argc, char **argv)
             if (wild || memcmp (pdbuf + ep, pfnw, 10) == 0)
             {
                 dtoa (pfn, pdbuf + ep, 10);
+                pfn[10] = '\0';
                 get60 (fiw, pdbuf + ep + ftotal * 10);
                 startblk =  (fiw & 07777) * dsblks;
                 blks = ((fiw >> 24) & 077) * dsblks;
