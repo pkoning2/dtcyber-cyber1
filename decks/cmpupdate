@@ -7,7 +7,14 @@ compass,i,l,s=iptext,s=psstext,s=scptext,s=cpctext,s=cputext,b=cmp2.
 ~
 *ident cmtext
 *i f4810b.4
-*         version 3.6p  03/08/22.  p. koning
+*         version 3.6p  03/08/22.  p. koning.
+*
+*
+*         version 3.6p is inspired by the work of don lee at cerl,
+*         the university of illinois plato group.  this version
+*         implements the *cmtext* and *cst* pseudo ops, as used
+*         in plato.  the implementation is new, since I did not
+*         have the cerl version available.
 *i cmp30.18
 *
 *             c              cmtext from file *cmtext*.
@@ -25,7 +32,7 @@ version   micro  1,4,*3.6p*
 **        fet/fit for common text output file.
 
 
- cp.cfet  fet    ,ibuf,ibufl
+ cp.cfet  fet    ,cmbuf,cmbufl
           bssz   cp.cfet+8-*
 
  rm       ifne   cp#rm,0
@@ -40,14 +47,15 @@ version   micro  1,4,*3.6p*
  cm       equ    cp.cfet
  rm       endif
 
+*i cmp30.365
+ cmbufl   equ    "bufl"      common text buffer length
 *i cmp30.1145
  lcmcsm   data   0           lcm csyms  pointer
  lcmccm   data   0           lcm ccom   pointer
+ lcmcex   data   0           lcm cext   pointer
 *i compass.656
  cmname   data   0           cmtext generation name
  cmbias   equ    3           bias from csyms ccom ordinal to reloc value
-*i cmp25.2
- cstcnt   data   0           number of common symbols defined
 *i compass.1037
 **        csyms - common symbols.
 *         stores the symbols defined by the *cst* pseudo operation.
@@ -80,13 +88,22 @@ version   micro  1,4,*3.6p*
 
  ccom     table
 
+**        cext - common external names.
+*         stores the portion of the external name table 
+*         defined by common text.
+*
+*         entry = 1 word.
+*
+*         word 1.
+*
+*         bit    59          set if weak external (=y type).
+*         bits   58-00       symbol name right justified with 00 fill.
+
+ cext     table
+
 *d cmp30.1204
 *         bits   41-40       unused.
 *         bit    39          cst flag.
-*d compass.1097
-*         bits   59-18       unused.
-*         bits   17-0        ccom table index + 1 if common text common,
-*                            1 if other common, 0 otherwise.
 *d cpsa126.16
           sb3    l.cmptab-l.inter  else empty all tables except cmptab
 *i cmp26.16 
@@ -329,6 +346,15 @@ version   micro  1,4,*3.6p*
           sb2    a2+b2
           ge     b2,b3,lct8  if bad cmtext
           mi     b2,lct8
+          sa2    b2          external table length
+          sb2    x2+b1
+          ax2    18          verify cmtext format
+          nz     x2,lct8     if bad cmtext
+          sa4    o.endtab
+          sb3    x4          find end of overlay
+          sb2    a2+b2
+          ge     b2,b3,lct8  if bad cmtext
+          mi     b2,lct8
           sa2    b2          common symbol table length
           sb2    x2+b1
           ax2    18          verify cmtext format
@@ -368,6 +394,23 @@ version   micro  1,4,*3.6p*
           sa5    l.memory
           sa3    x4+b1
           sx6    x3+2
+          ix7    x4+x6
+          ix6    x5-x6
+          sa7    a4
+          sa6    a5
+          sa1    x7
+          manage cext,x1     allocate common externals table
+          sa4    o.memory
+          sa1    x4
+          bx3    x2
+          zr     x1,lct1b    if no external symbols
+          sx2    a1+b1
+          rj     move
+          rj     asu         accumulate storage used
+ lct1b    sa4    o.memory    reduce memory
+          sa5    l.memory
+          sa3    x4
+          sx6    x3+b1
           ix7    x4+x6
           ix6    x5-x6
           sa7    a4
@@ -462,9 +505,26 @@ version   micro  1,4,*3.6p*
           sa6    a5
           nz     x6,lct5     if more system opcodes
 
- lct6     sa2    cp.afll
+ lct6     sa3    l.macdef
+          sa2    cp.afll
+          bx6    x3
+          sa6    lsysmac
           zr     x2,lct6f    if no lcm
-          sa1    l.ccom
+          sa1    l.cext
+          zr     x1,lct6aa   if no common externals
+          rj     ilf         increase lcm field length
+          mi     x6,lct6aa   if no room in lcm
+          sa3    l.cext
+          mx7    0
+          ix1    x6-x1
+          sa7    a3          clear scm copy of common ext table
+          lx3    30
+          bx6    x3+x1
+          lx3    30          set lcm table pointer
+          sa6    lcmcex
+          sa2    o.cext
+          rj     wlc         write common names to lcm
+ lct6aa   sa1    l.ccom
           zr     x1,lct6a    if no common names
           rj     ilf         increase lcm field length
           mi     x6,lct6a    if no room in lcm
@@ -681,16 +741,34 @@ version   micro  1,4,*3.6p*
           manage ccom,x1     allocate table in scm
           sa1    lcmccm
           rj     rlc         copy table to scm
- csta     sa1    l.usetab    get current usetab size
+ csta     sa1    lcmcex
+          zr     x1,cstb     if common externals not in lcm
+          ax1    30
+          manage cext,x1     allocate table in scm
+          sa1    lcmcex
+          rj     rlc         copy table to scm
+ cstb     sa1    l.extab     get current extab size
+          nz     x1,-6       should be zero
+          sa1    l.cext
+          manage extab,x1    allocate space in extab
+          bx1    x3
+          bx3    x2
+          sa2    o.cext
+          rj     move
+          sa1    l.usetab    get current usetab size
           sb2    x1-cmbias*4 expect it to be 12 (3 blocks)
 +         eq     b2,*+1
--         ps
+-         sa1    -4
           sa1    l.ccom
           lx1    2
           manage usetab,x1   make room for common blocks
           sa1    l.ccom
           zr     x1,csts     if no common blocks
           sb5    x1          count of common blocks to set up
+          sa3    usecnt
+          ix6    x1+x3
+          sa6    a3          update count of used blocks
+          sa6    ui+2        here also
           sa1    lword       set position counter
           sb7    x2+3*4
           sa3    o.ccom
@@ -698,19 +776,17 @@ version   micro  1,4,*3.6p*
           bx6    x1
           lx6    24
           sx7    b0
-          sb2    b1
- cstb     bx7    x3
+ cstc     bx7    x3
           sa7    b7          set name
-          sx7    b2
-          sb2    b2+b1
+          sx7    b1
           sa6    a7+b1       set position
-          sa7    a6+b1       set common name block index
+          sa7    a6+b1       set common flag
           sx7    b0
           sa7    a7+b1       clear max org
           sa3    a3+b1       get next common name
           sb7    b7+4
           sb5    b5-b1
-          gt     b5,cstb
+          gt     b5,cstc
  csts     sa1    lcmcsm
           zr     x1,cst0     if common symbols not in lcm
           ax1    30
@@ -721,7 +797,9 @@ version   micro  1,4,*3.6p*
           sa1    qval
           sa6    p1temp
           sa6    a6+b1       p1tempa
-          sa6    a6+b1       p1tempb
+*         p1temp  = number of arguments (symbols to ignore).
+*         p1tempa = csyms entry offset.
+*         qval+1  = saved qualifier.
           bx7    x1
           sa6    a1          set blank qualifier
           sa7    a1+b1
@@ -745,51 +823,35 @@ version   micro  1,4,*3.6p*
           sx2    x2-1
           bx6    x1-x4
           nz     x6,cst4     if not ignored
-          eq     cst6
+          eq     cst7
  cst5     sa2    a1+b1
-          mx4    0
+          bx4    x2
+          lx4    59-31
           bx3    x2
           ax3    21
-          zr     x3,cst5a    if absolute
+          pl     x4,cst5a    if not external
+          sx4    x3-1s10     set external number
+          sx3    b0
+          eq     cst5b
+          
+ cst5a    sx4    b0
+          zr     x3,cst5b    if absolute
           sx3    x3+cmbias
- cst5a    sx5    1s6         set cst bit
+ cst5b    sx5    1s6         set cst bit
           rj     ydefsym
-          nz     x6,cst6     if bad symbol
-          sa1    cstcnt
-          sx6    x1+b1       bump defined common symbol count
-          sa6    a1
-          eq     cst7
- cst6     sa1    o.csyms     close up common symbol table so
-          sa2    p1tempa     it contains only ignored entries
-          sa3    a2+b1
-          sb7    x1-2
-          sa1    x2+b7
-          sa2    a1+b1
-          sx4    x3+2
-          no
-          bx6    x1
-          lx7    x2
-          sa6    x4+b7
-          sa7    a6+b1
-          bx6    x4
-          sa6    a3
  cst7     sa1    p1tempa
           sa2    l.csyms
           sx6    x1+2
           ix2    x1-x2
           nz     x2,cst3     loop to end of common symbol table
           rj     asu         accumulate storage used
-          sa1    p1tempb
           sa2    lcmcsm
-          sa3    qval+1      store new l.csyms and
-          bx6    x1          restore qualifier
-          lx7    x3
-          sa6    l.csyms
+          sa3    qval+1      restore qualifier
+          bx7    x3
           sa7    a3-b1
           zr     x2,ctl300   if common symbols not in lcm
           mx6    0
           sa6    a6          clear scm table
-          sa6    cstcnt
           eq     ctl300      return
           space  4
 **        cst - common symbol table.
@@ -800,51 +862,9 @@ version   micro  1,4,*3.6p*
 *i compass.7490
           rj     gcm         generate common macro text
 *i cmp30.2746
-          sa7    l.csyms     clear common symbols table
-*i cmp30.2749
-          sa6    cstcnt
-*i cmp042.202
- zend20   sa1    cstcnt
-          zr     x1,zend29   if no common symbols defined
-          lx1    1
-          manage csyms,x1    make room in common symbol table
-          ix2    x2+x3
-          sa3    cstcnt
-          sb7    x3
-          sa1    o.symtab
-          sa3    o.usetab
-          sb3    x3-2
-          sb5    -b1
-          sb6    59-39
-          mx3    60-21
-          sx1    x1+b1
- zend21   rx5    x1
-          sx4    x1+b5
-          sx1    x1+2
-          lx6    x5,b6
-          pl     x6,zend21   if not a common symbol
-          rx4    x4
-          bx6    x4
-          sx2    x2-2
-          sa6    x2
-          sb7    b7-b1
-          bx7    -x3*x5      copy symbol value
-          mx6    60-9
-          ax5    21
-          bx6    -x6*x5      get relocation
-          zr     x6,zend22   if absolute
-          lx6    2
-          sa5    x6+b3
-          lx5    21          position common block ordinal
-          bx7    x7+x5
- zend22   sa7    x2+b1
-          nz     b7,zend21
-          rj     asu         accumulate storage used
-
- zend29   mx6    0
-          sa6    cmbias      mark no common blocks defined from cmtext
-*d compass.7738
-          sa1    =h*storage used*
+          sa7    l.csyms     clear common text related tables
+          sa7    l.ccom
+          sa7    l.cext
 *i compass.12655
  gcm      space  4
 **        gcm - generate common macro text.
@@ -855,6 +875,7 @@ version   micro  1,4,*3.6p*
 *         - absolute symbols
 *         - symbols from xtext
 *         - common symbols
+*         - external symbols
 *
 *         the following classes are excluded --
 *         - symbols from system text
@@ -862,13 +883,16 @@ version   micro  1,4,*3.6p*
 *         - qualified symbols
 *         - invented symbols (8 chars starting with '?)
 *         - relocatable symbols (i.e., block is not a common block)
-*         - external symbols
 *
 *         because common symbols are included in the common
-*         text, the names of common blocks are also included in 
-*         an additional table in the common text overlay record.
-*         it precedes the other four records (which are essentially
-*         the same as in a system text overlay).
+*         text, the names of common blocks are also included as
+*         the first table in the common text overlay record.
+*         similarly, the external symbols table is also included
+*         in the common text, as the second table.
+*         the four tables after that are essentially the same as
+*         in an stext, other than that the symbol entries can
+*         have the external or common flags and relocation number
+*         fields set.
 *
 *         note that the location field of the cmtext pseudo specifies
 *         the common text output file name, not the overlay name
@@ -984,20 +1008,24 @@ version   micro  1,4,*3.6p*
           ax2    2
           ix3    x3+x2       address of common names buffer
           writew cm,x3,b5+b1
+          writew cm,l.extab,b1 write external table length
+          sa2    l.extab
+          sa3    o.extab
+          writew cm,x3,x2
  rm       else
           err                no rm support yet... if ever...
  rm       endif
           sa1    l.symtab    generate system symbol table
           manage duptab,x1+b1
           sb7    x3-1
-          sa7    x2
+          sa6    x2
           sb6    x2
           sa4    o.symtab
           sb4    x4+b7
           mx0    12
-          mx1    60-21
+          sa1    =27777777777b external bit, rel/ext num, value
           sb2    b1+b1
-          sa5    =1016bs30
+          sa5    =1014bs30
           sb5    59-30
           sb3    -2r'?
 
@@ -1012,29 +1040,33 @@ version   micro  1,4,*3.6p*
           rx3    x7
           bx6    x0*x2
           nz     x6,gcm1     if qualified symbol
-          bx6    x2
-          ax2    36
-          sx4    x2+b3
-          sa6    a7+b1
+          bx4    x2
+          ax4    36
+          sx4    x4+b3
           zr     x4,gcm1     if local symbol
           bx4    x5*x3
           lx7    x3,b5
-          nz     x4,gcm1     if set, external, common, or systext
+          nz     x4,gcm1     if set, common text, or systext
           pl     x7,gcm1     if not defined
-          bx7    -x1*x3
-          mx4    60-30
-          bx4    -x4*x3
+          bx6    x1*x3
+          lx7    30-31
+          ng     x7,gcm1x    if external
+          mx7    60-21
+          bx4    x6
+          bx6    -x7*x6
           ax4    21
-          zr     x4,gcm1x    absolute, ok
+          zr     x4,gcm1x    if absolute
           sa3    o.temtab
           ix3    x3+x4
           sa4    x3-1        common map entry for this block
           ng     x4,gcm1     if not common block
           lx4    21          position common block ordinal
-          ix7    x7+x4
- gcm1x    sa7    a6+b1
+          ix6    x6+x4
+ gcm1x    bx7    x2
+          sa7    a6+b1
+          sa6    a7+b1
           eq     gcm1        loop
- gcm2     sx6    a7-b6
+ gcm2     sx6    a6-b6
           sa6    b6
 
  rm       ifeq   cp#rm,0
@@ -1259,3 +1291,5 @@ version   micro  1,4,*3.6p*
           sa6    l.duptab
           sa6    l.temtab
           eq     gcm         return
+*i cmp1.54
+ cmbuf    bss    cmbufl      common text buffer
