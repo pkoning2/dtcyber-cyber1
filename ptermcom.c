@@ -17,6 +17,8 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -141,10 +143,13 @@ const char rom0char[] =
 **------------------------------------------------------------------------*/
 void ptermComInit(void)
 {
+    char fn[20];
+    
     /*
     **  Open trace file
     */
-    traceF = fopen ("pterm.trc", "w");
+    sprintf (fn, "pterm%d.trc", getpid ());
+    traceF = fopen (fn, "w");
     
     /*
     **  Register with NIU for local output.
@@ -190,6 +195,10 @@ static void procNiuWord (int stat, u32 d)
     }
 
     seq++;
+    if (tracePterm)
+    {
+        fprintf (traceF, "%07o ", d);
+    }
 	if ((d & 01700000) == 0)
     {
         // NOP command...
