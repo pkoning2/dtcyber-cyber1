@@ -168,7 +168,6 @@
 **  Private Macro Functions
 **  -----------------------
 */
-#define StdErr                  devF
 
 /*
 **  -----------------------------------------
@@ -257,7 +256,7 @@ void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     dp->context[unitNo] = dskp;
     if (dp->context[unitNo] == NULL)
         {
-        fprintf(StdErr, "Failed to allocate dd844 context block\n");
+        fprintf(stderr, "failed to allocate dd844 context block\n");
         exit(1);
         }
     dskp->seekNeeded = TRUE;
@@ -276,7 +275,7 @@ void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         fcb = fopen(fname, "w+b");
         if (fcb == NULL)
             {
-            fprintf(StdErr, "Failed to open %s\n", fname);
+            fprintf(stderr, "Failed to open %s\n", fname);
             exit(1);
             }
         }
@@ -450,7 +449,7 @@ static FcStatus dd844Func(PpWord funcCode)
     case Fc844GapWrite:
     case Fc844GapWriteVerify:
     case Fc844GapReadCheckword:
-        ppAbort((StdErr, "ch %o, function %o not implemented\n", activeChannel->id, funcCode));
+        ppAbort((stderr, "ch %o, function %o not implemented\n", activeChannel->id, funcCode));
         break;
         }
 
@@ -479,7 +478,7 @@ static void dd844Io(void)
     switch (activeDevice->fcode)
         {
     default:
-        ppAbort((StdErr, "channel %02o - invalid function code: %4.4o\n", activeChannel->id, (u32)activeDevice->fcode));
+        ppAbort((stderr, "channel %02o - invalid function code: %4.4o\n", activeChannel->id, (u32)activeDevice->fcode));
         break;
 
     case Fc844Connect:
@@ -488,11 +487,10 @@ static void dd844Io(void)
             activeDevice->selectedUnit = activeChannel->data & 07;
             if (activeDevice->fcb[activeDevice->selectedUnit] == NULL)
                 {
-                ppAbort((StdErr, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeDevice->fcode));
+                ppAbort((stderr, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeDevice->fcode));
                 }
 
             activeChannel->full = FALSE;
-            activeChannel->active = FALSE;
             activeChannel->ioDevice = NULL;
             }
         break;
@@ -508,7 +506,7 @@ static void dd844Io(void)
                 unitNo = activeDevice->selectedUnit;
                 if (activeDevice->fcb[activeDevice->selectedUnit] == NULL)
                     {
-                    ppAbort((StdErr, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeDevice->fcode));
+                    ppAbort((stderr, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeDevice->fcode));
                     }
 
                 fcb = activeDevice->fcb[unitNo];
@@ -537,7 +535,6 @@ static void dd844Io(void)
                     dp->sector = activeChannel->data;
                     dp->seekNeeded = TRUE;
                     }
-                activeChannel->active = FALSE;
                 activeChannel->ioDevice = NULL;
                 dd844Seek(fcb, dp);
                 break;
@@ -598,7 +595,6 @@ static void dd844Io(void)
 
             if (--activeDevice->recordLength == 0)
                 {
-                activeChannel->active = FALSE;
                 activeChannel->ioDevice = NULL;
                 fwrite(dp->sec, 1, SectorBytes, fcb);
                 dd844SeekNextSector(dp);
@@ -637,24 +633,8 @@ static void dd844Io(void)
         break;
 
     case Fc844StartMemLoad:
-        if (activeChannel->full)
-            {
-            activeChannel->full = FALSE;
-            }
-        break;
-
     case Fc844SetClearFlaw:
     case Fc844FormatPack:
-        if (activeChannel->full)
-            {
-            activeChannel->full = FALSE;
-            if (--activeDevice->recordLength == 0)
-                {
-                activeChannel->discAfterInput = TRUE;
-                }
-            }
-        break;
-
     case Fc844IoLength:
     case Fc844OpComplete:
     case Fc844DisableReserve:
@@ -712,17 +692,17 @@ static void dd844Seek(FILE *fcb, DiskParam *dp)
 
     if (dp->cylinder >= MaxCylinders)
         {
-        ppAbort((StdErr, "ch %o, cylinder %o invalid\n", activeChannel->id, dp->cylinder));
+        ppAbort((stderr, "ch %o, cylinder %o invalid\n", activeChannel->id, dp->cylinder));
         }
 
     if (dp->track >= MaxTracks)
         {
-        ppAbort((StdErr, "ch %o, track %o invalid\n", activeChannel->id, dp->track));
+        ppAbort((stderr, "ch %o, track %o invalid\n", activeChannel->id, dp->track));
         }
 
     if (dp->sector >= MaxSectors)
         {
-        ppAbort((StdErr, "ch %o, sector %o invalid\n", activeChannel->id, dp->sector));
+        ppAbort((stderr, "ch %o, sector %o invalid\n", activeChannel->id, dp->sector));
         }
 
     if (dp->seekNeeded)
