@@ -338,7 +338,6 @@ void windowCheckOutput(void)
 **------------------------------------------------------------------------*/
 void windowOperEnd(void)
     {
-    opActive = FALSE;
     currentX = currentY = currentFont = listPutAtGetChar = -1;
     listGet = listPut;
     if (keyboardTrue)
