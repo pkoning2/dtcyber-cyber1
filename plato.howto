@@ -112,7 +112,7 @@ keys and function keys) are available.  Here is the whole set:
   Ctrl   Funkey   ALT        PLATO
   CTRL a   F2    ALT a       ANS
   CTRL b   F8    ALT b       BACK
-  CTRL c   F11   ALT c       COPY
+  CTRL c   F1    ALT c       COPY	(F11 also works)
   CTRL d   F9    ALT d       DATA
   CTRL e   F5    ALT e       EDIT
   CTRL f   Sh-F4 ALT f       FONT

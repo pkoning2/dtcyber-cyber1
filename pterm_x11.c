@@ -739,6 +739,8 @@ bool platoKeypress (XKeyEvent *kp, int stat)
         shift = 040;
     }
     key = XKeycodeToKeysym (disp, kp->keycode, 0);
+
+    // ALT leftarrow is assignment arrow
     if ((state & MODMASK) != 0 && key == XK_Left)
     {
         pc = 015 | shift;       // assignment arrow
@@ -877,6 +879,7 @@ bool platoKeypress (XKeyEvent *kp, int stat)
     case XK_F2:
         pc = 022;       // ans
         break;
+    case XK_F1:
     case XK_F11:
         pc = 033;       // copy
         break;
