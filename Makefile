@@ -9,20 +9,22 @@
 #
 #--------------------------------------------------------------------------
 
-LIBS    = -lm -lX11 -lpthread
-LIBS    +=  /System/Library/Frameworks/Carbon.framework/Carbon
-#LIBS    = -lm -lX11
-#LDFLAGS = -s -L/usr/X11R6/lib
-LDFLAGS = -L/usr/X11R6/lib 
-#LDFLAGS += -L/usr/local/lib
-INCL    = -I/usr/X11R6/include -I/usr/local/include -I/System/Library/Frameworks/Carbon.framework/Headers
+HOST = $(shell uname)
 
-#CFLAGS  = -O2 -I. $(INCL) -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes 
-CFLAGS  = -O2 -g2 -I. $(INCL)
-CFLAGS += -mcpu=970 -mtune=970 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64
-CFLAGS += -DCcDebug=1
-CFLAGS += -DCPU_THREADS
-VPATH = /Users/koning/dtcyber
+LIBS    = -lm -lX11 -lpthread
+LDFLAGS = -L/usr/X11R6/lib -g2
+INCL    = -I/usr/X11R6/include -I/usr/local/include
+
+ifeq ($(HOST),"darwin")
+LIBS    +=  /System/Library/Frameworks/Carbon.framework/Carbon
+INCL    += -I/System/Library/Frameworks/Carbon.framework/Headers
+G5CFLAGS = -mcpu=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64 -DCPU_THREADS
+G4CFLAGS = -mcpu=G4 -mtune=G4
+endif
+
+CDEBUG = -DCcDebug=1
+
+CFLAGS  = -O2 -g2 -I. $(INCL) $(CDEBUG) $(EXTRACFLAGS)
 
 PCFS	= seymour8b.pcf seymour8m.pcf \
 	seymour16b.pcf seymour16m.pcf \
@@ -41,22 +43,36 @@ all: dtcyber fonts pterm
 
 fonts: $(PCFS)
 
-dtcyber: g4/dtcyber g5/dtcyber
+ifeq ($(HOST),"darwin")
+dtcyber:
+	mkdir -p g4; \
+	cd g4; \
+	$(MAKE) -f ../Makefile g4dtcyber EXTRACFLAGS="$(G4CFLAGS)" VPATH=..
+	mkdir -p g5; \
+	cd g5; \
+	$(MAKE) -f ../Makefile g5dtcyber EXTRACFLAGS="$(G5CFLAGS)" VPATH=..
 	lipo -create -output dtcyber g4/dtcyber g5/dtcyber
 
-g4/dtcyber:
-	cd g4; $(MAKE) dtcyber
+g4dtcyber: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
 
-g5/dtcyber:
-	cd g5; $(MAKE) dtcyber
+g5dtcyber: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
+
+clean:
+	rm -f *.o *.pcf g4/*.o g4/dcyber g5/*.o g5/dtcyber
+else
+dtcyber: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
+
+clean:
+	rm -f *.o *.pcf dtcyber
+endif
 
 pterm:	$(SOBJS) pterm.o
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
 
 buildall: clean all
-
-clean:
-	rm -f *.o *.pcf
 
 %.o : %.c
 	$(CC) $(CFLAGS) -c $<
