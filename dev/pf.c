@@ -1114,7 +1114,7 @@ void pflist (int argc, char **argv)
         if (strcmp (fn, pdname) == 0)
             break;
         get60 (fiw, pdbuf + ep + ftotal * 10);
-        startblk =  (fiw & 07777) * dsblks;
+        startblk =  (fiw & 077777) * dsblks;
         blks = ((fiw >> 24) & 077) * dsblks;
         type = ((fiw >> 30) & 077);
         if (verbose)
@@ -1173,7 +1173,7 @@ void pfread (int argc, char **argv)
                 dtoa (pfn, pdbuf + ep, 10);
                 pfn[10] = '\0';
                 get60 (fiw, pdbuf + ep + ftotal * 10);
-                startblk =  (fiw & 07777) * dsblks;
+                startblk =  (fiw & 077777) * dsblks;
                 blks = ((fiw >> 24) & 077) * dsblks;
                 type = ((fiw >> 30) & 077);
                 readblk (startblk, lhbuf);
@@ -1269,7 +1269,7 @@ void pfread (int argc, char **argv)
                 if (verbose)
                 {
                     fprintf (logfile, "%s, type %c, %d blocks\n",
-                             pfn, 'a' + ftype[9], cblks);
+                             pfn, 'a' + ftype[9] - 1, cblks);
                 }
                 if (!wild)
                     break;
