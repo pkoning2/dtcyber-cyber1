@@ -739,11 +739,18 @@ bool platoKeypress (XKeyEvent *kp, int stat)
         shift = 040;
     }
     key = XKeycodeToKeysym (disp, kp->keycode, 0);
+    if ((state & MODMASK) != 0 && key == XK_Left)
+    {
+        pc = 015 | shift;       // assignment arrow
+        niuLocalKey (pc, stat);
+        return TRUE;
+    }
     if (key < sizeof (asciiToPlato))
     {
         if (state & MODMASK)
         {
             pc = altKeyToPlato[key] | shift;
+            
             if (pc >= 0)
             {
                 niuLocalKey (pc, stat);
@@ -844,15 +851,23 @@ bool platoKeypress (XKeyEvent *kp, int stat)
         break;
     case XK_Left:
     case XK_KP_Left:
-        pc = 015;       // assignment arrow
+        pc = 0101;      // left arrow (a)
+        break;
+    case XK_Right:
+    case XK_KP_Right:
+        pc = 0104;      // right arrow (d)
         break;
     case XK_Up:
     case XK_KP_Up:
-    case XK_Page_Up:
-        pc = 020;       // super
+        pc = 0127;      // up arrow (w)
         break;
     case XK_Down:
     case XK_KP_Down:
+        pc = 0130;      // down arrow (x)
+        break;
+    case XK_Page_Up:
+        pc = 020;       // super
+        break;
     case XK_Page_Down:
         pc = 021;       // sub
         break;
