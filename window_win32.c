@@ -1147,7 +1147,6 @@ void windowDisplay(HWND hWnd)
         if (curr == end)
             break;
 
-#if CcHersheyFont == 0
         if (oldFont != curr->fontSize)
             {
             dflush (hdcMem, currentFontInfo->width);
@@ -1182,13 +1181,10 @@ void windowDisplay(HWND hWnd)
                 break;
                 }
             }
-#endif
 
         if (curr->fontSize == FontDot)
             {
-#if CcHersheyFont == 0
             dflush ();
-#endif
             if (curr->xPos == dotx && curr->yPos == doty &&
                 doti < sizeof (dotdx) - 1)
                 {
@@ -1209,8 +1205,16 @@ void windowDisplay(HWND hWnd)
             dput (hdcMem, curr->ch, curr->xPos, curr->yPos,
                   currentFontInfo->width);
 #else
-            windowTextPlot(hdcMem, XADJUST (curr->xPos), YADJUST (curr->yPos),
-                           curr->ch, curr->fontSize);
+            if (opActive)
+                {
+                dput (hdcMem, curr->ch, curr->xPos, curr->yPos,
+                      currentFontInfo->width);
+                }
+            else
+                {
+                windowTextPlot(hdcMem, XADJUST (curr->xPos), YADJUST (curr->yPos),
+                               curr->ch, curr->fontSize);
+                }
 #endif
             }
         curr++;
