@@ -141,7 +141,8 @@ static void cr3447NextCard (Dev3kSlot *up, CrContext *cc);
 **                  unitCount   number of units to initialise
 **                  channelNo   channel number the device is attached to
 **                  deviceName  optional card source file name, 
-"026" (default) or "029" to select translation mode
+**                              may be followed by comma and"026" (default)
+**                              or "029" to select translation mode
 **
 **  Returns:        Nothing.
 **
@@ -378,12 +379,6 @@ static void cr3447Io(void)
         }
         else
         {
-            if (activeUnit->fcode == Fc6681Input &&
-                activePpu->regP == 06071 && activePpu->mem[06067] == 06611)
-            {
-                traceMask |= 1 << activePpu->id;
-                printf ("gotcha!\n");
-            }
             c = cc->card[cc->col++];
             if (cc->binary || cc->bincard)
             {
