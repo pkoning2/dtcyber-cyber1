@@ -181,7 +181,7 @@ void ptermXinit (void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void ptermInit(const char *winName)
+void ptermInit(const char *winName, bool closeOk)
 {
     int i;
     XWMHints wmhints;

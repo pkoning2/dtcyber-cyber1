@@ -234,7 +234,7 @@ void ptermComClose(void);
 /*
 **  pterm_{win32,x11}.c
 */
-void ptermInit(const char *windowName);
+void ptermInit(const char *windowName, bool closeOk);
 void ptermClose(void);
 void ptermSetWeMode(u8 wemode);
 void ptermDrawChar(int x, int y, int snum, int cnum);

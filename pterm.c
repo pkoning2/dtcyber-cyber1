@@ -69,6 +69,8 @@ static void ptermWindowInput(void);
 #if !defined(_WIN32)
 Display *disp;
 XrmDatabase XrmDb;
+#else
+HINSTANCE hInstance;
 #endif
 extern FILE *traceF;
 extern bool tracePterm;
@@ -95,6 +97,7 @@ static niuProcessOutput *outh;
 **--------------------------------------------------------------------------
 */
 #if !defined(_WIN32)
+
 extern void ptermInput(XEvent *event);
 #endif
 
@@ -118,9 +121,16 @@ int main (int argc, char **argv)
     {
         ptermConnect (argv[1], NULL);
     }
-    
+
+#if defined(_WIN32)
+    /*
+    **  Get our instance
+    */
+    hInstance = GetModuleHandle(NULL);
+#endif
+
     sprintf (name, "Plato terminal -- %s", argv[1]);
-    ptermInit (name);
+    ptermInit (name, TRUE);
     while (active)
     {
         d = ptermCheckInput ();

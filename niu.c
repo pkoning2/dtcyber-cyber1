@@ -207,7 +207,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     /*
     **  Fire up the 0-1 Plato terminal window
     */
-    ptermInit ("Plato station 0-1");
+    ptermInit ("Plato station 0-1", FALSE);
 
     /*
     **  Print a friendly message.

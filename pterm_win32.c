@@ -83,7 +83,7 @@ extern HINSTANCE hInstance;
 **  Private Variables
 **  -----------------
 */
-static bool ptermActive = FALSE;
+static volatile bool ptermActive = FALSE;
 static u8 wemode;       // local copy of most recently set wemode
 static bool touchEnabled;
 static HWND hWnd;
@@ -94,6 +94,7 @@ static RECT rect;
 static COLORREF orange;
 static HPEN hPen = 0;
 static HBITMAP fontBitmap;
+static bool allowClose = FALSE;
 
 // rasterop codes for a given W/E mode
 // See Win32 rasterops (ternary ops) appendix for explanations...
@@ -135,10 +136,12 @@ bool platoKeypress (WPARAM wParam, int alt, int stat);
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void ptermInit(const char *winName)
+void ptermInit(const char *winName, bool closeOk)
 {
     DWORD dwThreadId; 
     HANDLE hThread;
+
+	allowClose = closeOk;							// Remember whether to honor Ctrl/D
 
     /*
     **  Create windowing thread.
@@ -162,7 +165,7 @@ void ptermInit(const char *winName)
     **  Now do common init stuff
     */
     ptermComInit ();
-    ptermActive = TRUE;
+	while (!ptermActive) ;		// spin until thread is done setting things up
 }
 
 /*--------------------------------------------------------------------------
@@ -379,12 +382,14 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
                 "CreatePen Error",
                 MB_OK);
         }
+	    ptermActive = TRUE;
         return DefWindowProc (hWnd, message, wParam, lParam);
 
     case WM_DESTROY:
         /*
         **  Done with off screen bitmap and dc.
         */
+	    ptermActive = FALSE;
         SelectObject(hdcMem, hbmOld);
         DeleteObject(hbmMem);
         DeleteObject(fontBitmap);
@@ -417,6 +422,13 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         /*
         **  Handle input characters.
         */
+    case WM_CHAR:
+		if (allowClose && wParam == '\004')
+		{
+            DestroyWindow(hWnd);
+		}
+        break;
+
     case WM_SYSCHAR:
         platoKeypress (wParam, 1, 1);
         break;
