@@ -602,6 +602,106 @@ void cpuStep(void)
         } while (opOffset != 60);
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Transfer one word to/from ECS.
+**
+**  Parameters:     Name        Description.
+**                  address     ECS word address
+**                  data        Pointer to CM word to access
+**                  writeToEcs  TRUE if this is a write to ECS, FALSE if
+**                              this is a read.
+**
+**  Returns:        TRUE if access failed, FALSE otherwise.
+**
+**------------------------------------------------------------------------*/
+bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs)
+    {
+    /*
+    **  Check if this is a flag register access.
+    */
+    if ((address & ((u32)1 << 23)) != 0)
+        {
+        u32 flagFunction = (address >> 21) & Mask3;
+        u32 flagWord = address & Mask18;
+
+        switch (flagFunction)
+            {
+        case 4:
+            /*
+            **  Ready/Select.
+            */
+            if ((ecsFlagRegister & flagWord ) != 0)
+                {
+                /*
+                **  Error exit.
+                */
+                return TRUE;
+                }
+
+            ecsFlagRegister |= flagWord;
+            break;
+
+        case 5:
+            /*
+            **  Selective set.
+            */
+            ecsFlagRegister |= flagWord;
+            break;
+
+        case 6:
+            /*
+            **  Status.
+            */
+            if ((ecsFlagRegister & flagWord ) != 0)
+                {
+                /*
+                **  Error exit.
+                */
+                return TRUE;
+                }
+
+            break;
+
+        case 7:
+            /*
+            **  Selective clear,
+            */
+            ecsFlagRegister = (ecsFlagRegister & ~flagWord) & Mask18;
+            break;
+            }
+
+        return FALSE;
+        }
+    /*
+    **  Perform the transfer.
+    */
+    if (writeToEcs)
+        {
+        if (address >= ecsMaxMemory)
+            {
+            /*
+            **  Error exit.
+            */
+            return TRUE;
+            }
+
+        ecsMem[address] = *data;
+        }
+    else
+        {
+        if (address >= ecsMaxMemory)
+            {
+                *data = 0;
+                return TRUE;
+            }
+        else
+            {
+            *data = ecsMem[address];
+            }
+        }
+    return FALSE;
+    }
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -826,6 +926,7 @@ static void cpuEcsTransfer(bool writeToEcs)
     u32 wordCount;
     u32 ecsAddress;
     u32 cmAddress;
+    bool takeErrorExit = FALSE;
 
     /*
     **  ECS must exist and instruction must be located in the upper 30 bits.
@@ -845,62 +946,22 @@ static void cpuEcsTransfer(bool writeToEcs)
     ecsAddress = (u32)(cpu.regX[0] & Mask24);
     cmAddress = cpu.regA[0] & Mask18;
 
-    {
-    u32 flagOp;
-
     /*
     **  Check if this is a flag register access.
+    **
+    **  The ECS book (60225100) says that a flag register reference occurs
+    **  when bit 23 is set in the relative address AND in the ECS FL.
+    **  But the ECS RA is NOT added to the relative address.
     */
-    flagOp = ecsAddress + cpu.regRaEcs;
-    if ((flagOp & ((u32)1 << 23)) != 0)
+    if ((ecsAddress & ((u32)1 << 23)) != 0 &&
+        (cpu.regFlEcs & ((u32)1 << 23)) != 0)
         {
-        u32 flagFunction = (flagOp >> 21) & Mask3;
-        u32 flagWord = flagOp & Mask18;
-
-        switch (flagFunction)
+        if (cpuEcsAccess (ecsAddress, NULL, writeToEcs))
             {
-        case 4:
             /*
-            **  Ready/Select.
+            **  Error exit.
             */
-            if ((ecsFlagRegister & flagWord ) != 0)
-                {
-                /*
-                **  Error exit.
-                */
-                return;
-                }
-
-            ecsFlagRegister |= flagWord;
-            break;
-
-        case 5:
-            /*
-            **  Selective set.
-            */
-            ecsFlagRegister |= flagWord;
-            break;
-
-        case 6:
-            /*
-            **  Status.
-            */
-            if ((ecsFlagRegister & flagWord ) != 0)
-                {
-                /*
-                **  Error exit.
-                */
-                return;
-                }
-
-            break;
-
-        case 7:
-            /*
-            **  Selective clear,
-            */
-            ecsFlagRegister = (ecsFlagRegister & ~flagWord) & Mask18;
-            break;
+            return;
             }
 
         /*
@@ -911,7 +972,6 @@ static void cpuEcsTransfer(bool writeToEcs)
         opOffset = 60;
         return;
         }
-    }
 
     /*
     **  Deal with possible negative zero word count.
@@ -957,47 +1017,25 @@ static void cpuEcsTransfer(bool writeToEcs)
     /*
     **  Perform the transfer.
     */
-    if (writeToEcs)
-        {
-        while (wordCount--)
-            {
-            cmAddress  %= cpuMaxMemory;
-            if (ecsAddress >= ecsMaxMemory)
-                {
-                /*
-                **  Error exit to lower 30 bits of instruction word.
-                */
-                return;
-                }
 
-            ecsMem[ecsAddress++] = cpMem[cmAddress++];
+    while (wordCount--)
+        {
+        cmAddress  %= cpuMaxMemory;
+        takeErrorExit = cpuEcsAccess (ecsAddress, cpMem + cmAddress, writeToEcs);
+        if (takeErrorExit && writeToEcs)
+            {
+            break;
             }
+        cmAddress++;
+        ecsAddress++;
         }
-    else
+    
+    if (takeErrorExit)
         {
-        bool takeErrorExit = FALSE;
-
-        while (wordCount--)
-            {
-            cmAddress  %= cpuMaxMemory;
-            if (ecsAddress >= ecsMaxMemory)
-                {
-                cpMem[cmAddress++] = 0;
-                takeErrorExit = TRUE;
-                }
-            else
-                {
-                cpMem[cmAddress++] = ecsMem[ecsAddress++];
-                }
-            }
-
-        if (takeErrorExit)
-            {
-            /*
-            **  Error exit to lower 30 bits of instruction word.
-            */
-            return;
-            }
+        /*
+        **  Error exit to lower 30 bits of instruction word.
+        */
+        return;
         }
 
     /*

@@ -46,9 +46,9 @@ OBJS    = main.o window_x11.o init.o trace.o charset.o dump.o \
 
           deadstart.o console.o cr405.o dd6603.o dd844.o mux6676.o \
 
-          lp1612.o lp501.o lp512.o mt607.o mt669.o dcc6681.o rtc.o \
+          lp1612.o mt607.o mt669.o dcc6681.o rtc.o \
 
-	  cr3447.o
+	  cr3447.o ddp.o niu.o lp3000.o
 
 
 

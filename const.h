@@ -130,10 +130,6 @@
 
 #define DtLp1612                7
 
-#define DtLp501                 8
-
-#define DtLp512                 9
-
 #define DtRtc                   10
 
 #define DtConsole               11
@@ -143,6 +139,12 @@
 #define DtCr3447                13
 
 #define DtDdc6681               14
+
+#define DtDdp                   15
+
+#define DtNiu                   16
+
+#define DtLp3000                17
 
 
 

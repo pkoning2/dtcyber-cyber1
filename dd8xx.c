@@ -152,10 +152,11 @@
 **      byte is unused. 2nd byte contains byte count of data.                                              
 **   24 sectors/track                                     
 **   19 tracks/cylinder                                    
-**  404 cylinders/unit on 844-21                           
-**  808 cylinders/unit on 844-41                           
+**  411 cylinders/unit on 844-21
+**  823 cylinders/unit on 844-41
+**  Note that the last cylinder is reserved for "factory data".
 */
-//#define MaxCylinders            808
+//#define MaxCylinders            823
 #define MaxCylinders            1682
 #define MaxTracks               19
 #define MaxSectors              24

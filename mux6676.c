@@ -423,7 +423,7 @@ static void *mux6676Thread(void *param)
     listenFd = socket(AF_INET, SOCK_STREAM, 0);
     if (listenFd < 0)
         {
-        printf("Can't create socket\n");
+        printf("mux6676: Can't create socket\n");
         return;
         }
 
@@ -434,13 +434,13 @@ static void *mux6676Thread(void *param)
 
     if (bind(listenFd, (struct sockaddr *)&server, sizeof(server)) < 0)
         {
-        printf("Can't bind to socket\n");
+        printf("mux6676: Can't bind to socket\n");
         return;
         }
 
     if (listen(listenFd, 5) < 0)
         {
-        printf("Can't listen\n");
+        printf("mux6676: Can't listen\n");
         return;
         }
 
@@ -483,7 +483,7 @@ static void *mux6676Thread(void *param)
         **  Mark connection as active.
         */
         mp->active = TRUE;
-        printf("Received connection on port %d\n", mp->id);
+        printf("mux6676: Received connection on port %d\n", mp->id);
         }
     }
 
@@ -528,7 +528,7 @@ static int mux6676CheckInput(PortParam *mp)
             close(mp->connFd);
         #endif
             mp->active = FALSE;
-            printf("Connection dropped on port %d\n", mp->id);
+            printf("mux6676: Connection dropped on port %d\n", mp->id);
             return(-1);
             }
         }
@@ -540,7 +540,7 @@ static int mux6676CheckInput(PortParam *mp)
         close(mp->connFd);
     #endif
         mp->active = FALSE;
-        printf("Connection dropped on port %d\n", mp->id);
+        printf("mux6676: Connection dropped on port %d\n", mp->id);
         return(-1);
         }
     else

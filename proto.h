@@ -61,6 +61,7 @@ bool cpuExchangeJump(u32 addr);
 void cpuStep(void);
 bool cpuPpReadMem(u32 address, CpWord *data);
 void cpuPpWriteMem(u32 address, CpWord data);
+bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs);
 
 /*
 **  dcc6681.c
@@ -121,9 +122,19 @@ void dd6603Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
+**  ddp.c
+*/
+void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+
+/*
 **  mux6676.c
 */
 void mux6676Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+
+/*
+**  niu.c
+*/
+void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
 **  trace.c
@@ -209,6 +220,7 @@ extern CpuContext cpu;
 extern bool cpuStopped;
 extern CpWord *cpMem;
 extern u32 cpuMaxMemory;
+extern u32 ecsMaxMemory;
 extern char ppKeyIn;
 extern const char asciiToCdc[];
 extern const char cdcToAscii[];
@@ -225,6 +237,8 @@ extern bool bigEndian;
 extern bool opActive;
 extern u16 telnetPort;
 extern u16 telnetConns;
+extern u16 platoPort;
+extern u16 platoConns;
 extern FILE **ppuTF;
 extern Dev3kSlot *activeUnit;
 

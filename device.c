@@ -64,6 +64,8 @@ DevDesc deviceDesc[] =
     "CO6612",   consoleInit,
     "MUX6676",  mux6676Init,
     "CR3447",   cr3447Init,
+    "DDP",      ddpInit,
+    "NIU",      niuInit,
     };
 
 u8 deviceCount = sizeof(deviceDesc) / sizeof(deviceDesc[0]);

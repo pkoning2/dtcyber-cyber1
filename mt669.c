@@ -1385,10 +1385,6 @@ static void mt669FuncRead(void)
 
     if(DEBUG)
         printf("---- record with %d bytes  and %d PP words----\n", recLen1, activeDevice->recordLength);
-#if CcDebug == 1
-    sprintf(str, "---- record with %d bytes  and %d PP words----\n", recLen1, activeDevice->recordLength);
-    tracePrint(str);
-#endif
     }
 
 /*--------------------------------------------------------------------------
@@ -1819,8 +1815,6 @@ static void mt669FuncReadBkw(void)
         if(DEBUG)
             printf("---- rev record with %d bytes  and %d PP words----\n",
               recLen1, activeDevice->recordLength);
-        sprintf(str, "---- rev record with %d bytes  and %d PP words----\n",
-                recLen1, activeDevice->recordLength);
         fseek(activeDevice->fcb[unitNo], position, SEEK_SET);
         }
     else

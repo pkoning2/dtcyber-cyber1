@@ -347,11 +347,6 @@ static FcStatus mt607Func(PpWord funcCode)
 
         activeDevice->recordLength = op - tp->ioBuffer;
         activeChannel->status = St607Ready;
-
-#if CcDebug == 1
-        sprintf(str, "--------------------- record with %d bytes  and %d PP words-----------------------------\n", recLen1, activeDevice->recordLength);
-        tracePrint(str);
-#endif
         break;
         }
 
