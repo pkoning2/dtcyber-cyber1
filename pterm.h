@@ -24,6 +24,7 @@ extern bool platoTouch (XButtonPressedEvent *bp);
 extern void ptermInput(XEvent *event);
 extern void dtXinit(void);
 #endif
+extern void ptermComInit(void);
 extern void ptermSetName (const char *winName);
 extern void ptermLoadChar (int snum, int cnum, const u16 *data);
 extern void ptermSetWeMode (u8 we);
@@ -31,5 +32,10 @@ extern void ptermSetClip (bool enable);
 extern void ptermSetTrace (bool fileaction);
 extern void ptermSendKey(int key);
 extern int procNiuWord (u32 d);
+extern void ptermDrawChar (int x, int y, int snum, int cnum);
+extern void ptermDrawPoint (int x, int y);
+extern void ptermDrawLine(int x1, int y1, int x2, int y2);
+extern void ptermFullErase (void);
+extern void ptermTouchPanel(bool enable);
 
 #endif  /* PTERM_H */
