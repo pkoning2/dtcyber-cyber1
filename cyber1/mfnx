@@ -3,7 +3,7 @@
 .*        attach plato master files
 .* 
 setpun.   set plato user name
-resourc(dm=6) 
+resourc(dm=9) 
 *. 
 packnam(pn=binary,r=dm1) 
 attach(binary1/#m=m) 
@@ -13,12 +13,25 @@ attach(binary2/#m=m)
 .* 
 packnam(pn=dtcybis,r=dm1)
 attach(cybis1/#m=m)
+.*attach(s0files/#m=m)
+.*
+.* cerl
+.*
+.*attach(one/#m=m)
+.*attach(two/#m=m)
+.*attach(three/#m=m)
+packnam(pn=cybdev,r=dm1) 
+.*attach(four/#m=m)
+.*attach(five/#m=m)
+.*attach(michael/#m=m)
+.*attach(minerva/#m=m)
 .* 
 .*    general pack access starts here
 .* 
 packnam(pn=faa0,r=dm1) 
 attach(system/#m=m)
-*. 
+.*attach(s0stuff/#m=m)
+.* 
 .* 
 .*  uol specific files 
 .* 
@@ -40,6 +53,23 @@ attach(pubg/#m=m)
 attach(pubh/#m=m)
 attach(pubi/#m=m)
 attach(pubj/#m=m)
+.* 
+.*  nsf packs
+.* 
+packnam(pn=misc2,r=dm1)
+attach(nsf1/#m=m) 
+attach(nsfa/#m=m) 
+attach(nsfb/#m=m) 
+attach(nsfc/#m=m) 
+attach(nsfd/#m=m) 
+attach(nsfe/#m=m) 
+*. 
+packnam(pn=misc7,r=dm1)
+attach(nsff/#m=m) 
+attach(nsfg/#m=m) 
+attach(nsfh/#m=m) 
+attach(nsfi/#m=m) 
+attach(nsfj/#m=m) 
 *. 
 packnam. 
 revert.
