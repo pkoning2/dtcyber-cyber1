@@ -81,6 +81,7 @@ typedef struct
     u32     addr;
     int     dbyte;
     int     abyte;
+    int     endaddrcycle;
     PpWord  stat;
 } DdpContext;
 
@@ -240,14 +241,33 @@ static void ddpIo(void)
                 dc->abyte++;
                 activeChannel->full = FALSE;
             }
+            if (dc->abyte == 2 && activeDevice->fcode == FcDdpReadECS)
+            {
+                // we'll delay a bit before we set channel full
+                dc->endaddrcycle = cycles;
+                // we have a complete address; if this is read, 
+                // read the first word.  We need to do that
+                // unconditionally in case it's a flag
+                // register operation, because then the PPU
+                // is probably not going to read the data.
+                if (cpuEcsAccess (dc->addr, &dc->curword, FALSE))
+                {
+                    if (DEBUGE)
+                        printf ("ddp read abort addr %08o\n", dc->addr);
+                    activeChannel->discAfterInput = TRUE;
+                    dc->stat = StDdpAbort;
+                }
+                dc->dbyte == 0;
+            }
             break;
         }
         if (activeDevice->fcode == FcDdpReadECS)
         {
-            if (!activeChannel->full)
+            if (!activeChannel->full &&
+                cycles - dc->endaddrcycle > 20)
             {
                 dc->stat = StDdpAccept;
-                if (dc->dbyte == 0)
+                if (dc->dbyte == -1)
                 {
                     if (cpuEcsAccess (dc->addr, &dc->curword, FALSE))
                     {
@@ -256,6 +276,7 @@ static void ddpIo(void)
                         activeChannel->discAfterInput = TRUE;
                         dc->stat = StDdpAbort;
                     }
+                    dc->dbyte == 0;
                 }
                 activeChannel->data = dc->curword >> 48;
                 if (DEBUG)
@@ -267,7 +288,7 @@ static void ddpIo(void)
                 {
                     if (dc->addr & (DdpAddrReadOne | DdpAddrFlagReg))
                         activeChannel->discAfterInput = TRUE;
-                    dc->dbyte = 0;
+                    dc->dbyte = -1;
                     dc->addr++;
                 }
             }
