@@ -1,5 +1,10 @@
 How to run and use PLATO on DtCyber
 
+0. Edit history
+
+04.04.14.  Updated to reflect fixes/improvements in my latest
+	   DtCyber, which is based on Tom Hunter's version 2.1.
+
 1. Things you need.
 
 Much of PLATO is on disk, not the deadstart tape, so you need a bunch
@@ -46,7 +51,10 @@ starts.
 Deadstart NOS 1.4 pretty much as usual.  One change: at the CMRDECK
 entry display, type:
       INITIALIZE,11,AL.
-to initialize the ECS.
+to initialize the ECS.  Note: this is necessary only if you do a Level
+0 deadstart.  If you use the new DtCyber feature for saving CM/ECS in
+files, you can do level 3 deadstart after the initial startup.  If so,
+leave off the INITIALIZE (and your startups will be a LOT faster).
 
 After startup completes, start up MASTOR:
       X. MASTOR.
@@ -54,6 +62,14 @@ It should come up at CP20.  If it comes up at CP1 (which can happen if
 CMS decided to come to CP20 right that instant), stop it (K,1. then
 K.STOP) and retry.  For some reason, MASTOR doesn't work right if it
 runs at a low CP.
+
+This doesn't usually happen after a level 0 deadstart, but it seems to
+be the norm after a level 3 deadstart.  Something odd about the way
+NOS assigns CPs, I guess.  It turns out that the MECC 1.4 I've been
+using has a workaround -- use this command instead:
+      20=MASTOR.
+
+That tells NOS you want to execute MASTOR and it must be at CP 20.
 
 When MASTOR initialization is done (LDR stops flashing at the CP and
 PNG appears), start PLATO:
