@@ -28,6 +28,7 @@
 #include <windows.h>
 #include <winsock.h>
 #else
+#include <fcntl.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <sys/socket.h>
