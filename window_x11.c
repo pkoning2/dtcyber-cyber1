@@ -128,7 +128,7 @@ static u8 dhits[DisplayBufSize];
 static int dcnt, xpos, xstart, ypos;
 static Pixmap pixmap;
 static GC wgc, pgc;
-static struct timeval lastDisplay;
+static u64 lastDisplayUs;
 static unsigned long fg, bg, pfg, pbg;
 static bool displayOff = FALSE;
 static const i8 dotdx[] = { 0, 1, 0, 1, -1, -1,  0, -1,  1 };
@@ -171,6 +171,7 @@ void windowInit(void)
     XrmValue value;
     char *type[20];
     char fgcolor[40], bgcolor[40];
+    struct timeval lastDisplay;
     
     /*
     **  Create display list pool.
@@ -190,7 +191,9 @@ void windowInit(void)
         dbuf[rc].font = None;
         }
     gettimeofday (&lastDisplay, NULL);
-
+    lastDisplayUs = lastDisplay.tv_usec + 
+                    lastDisplay.tv_sec * ULL(1000000);
+    
     /*
     **  Initialize the input list
     */
@@ -429,15 +432,21 @@ void windowSetFont(u8 font)
 void windowCheckOutput(void)
     {
     struct timeval tm;
-    int us, i;
+    int i;
+    u64 us;
     
-    gettimeofday (&tm, NULL);
-    us = (tm.tv_sec - lastDisplay.tv_sec) * 1000000 +
-         (tm.tv_usec - lastDisplay.tv_usec);
-
-    // Check if it's time for another display update
-    if (us > RefreshInterval)
+    us = rtcMicroSec ();
+    if (us == 0)
         {
+        gettimeofday (&tm, NULL);
+        us = tm.tv_sec * ULL(1000000) + tm.tv_usec;
+        }
+    
+    // Check if it's time for another display update
+    if (us - lastDisplayUs > RefreshInterval)
+        {
+        lastDisplayUs = us;
+        
         // If a keyboard poll has been done since the last display update,
         // display up to that point (since it's a cycle point of the
         // display refresh).  Otherwise (strange code that doesn't do
@@ -455,10 +464,14 @@ void windowCheckOutput(void)
         windowInput();
 
         // This next line is necessary at least on NetBSD, because
-        // pthreads is (as documented) non-preemptive, so other
-        // threads like the socket listener threads in mux6676 and niu
-        // don't get a chance to run -- since we're CPU bound here.
+        // that uses the pth version of pthreads, which is non-preemptive,
+        // so other threads like the socket listener threads in mux6676
+        // and niu don't get a chance to run; we're CPU bound here.
+        //
+        // Don't do it on Linux because Linux has kernel based threads,
+#if !defined(__linux__)
         sched_yield();
+#endif
         }
     }
 
@@ -546,7 +559,6 @@ void windowQueue(char ch)
 **------------------------------------------------------------------------*/
 void windowOperEnd(void)
     {
-    opActive = FALSE;
     currentX = currentY = currentFont = listPutAtGetChar = -1;
     listGet = listPut;
     if (keyboardTrue)
@@ -897,7 +909,8 @@ static void windowInput(void)
                     break;
 
                 case 'c':
-                    traceMask ^= TraceCpu;
+                    /* *** TODO *** per CPU control */
+                    traceMask ^= TraceCpu0 | TraceCpu1;
                     traceStop ();
                     break;
 
@@ -976,7 +989,6 @@ static void showDisplay (void)
     if (displayOff)
         {
         listGet = prevPut;
-        gettimeofday (&lastDisplay, NULL);
         return;
         }
 
@@ -992,8 +1004,13 @@ static void showDisplay (void)
                 refreshCount++,
                 ppu[0].regP, ppu[1].regP, ppu[2].regP, ppu[3].regP, ppu[4].regP,
                 ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
-                cpu.regP); 
+                cpu[0].regP); 
 
+        if (cpuCount > 1)
+            {
+            sprintf(buf + strlen(buf), " %06o", cpu[1].regP);
+            }
+            
         sprintf(buf + strlen(buf),
                 "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
                 (traceMask >> 0) & 1 ? '0' : '_',
@@ -1006,7 +1023,8 @@ static void showDisplay (void)
                 (traceMask >> 7) & 1 ? '7' : '_',
                 (traceMask >> 8) & 1 ? '8' : '_',
                 (traceMask >> 9) & 1 ? '9' : '_',
-                (traceMask & TraceCpu) ? 'C' : '_',
+                /* *** TODO CPU 1 */
+                (traceMask & TraceCpu0) ? 'C' : '_',
                 (traceMask & TraceXj) ? 'E' : '_',
                 (chTraceMask >> 0) & 1 ? '0' : '_',
                 (chTraceMask >> 1) & 1 ? '1' : '_',
@@ -1131,11 +1149,6 @@ static void showDisplay (void)
     XSetForeground (disp, pgc, pbg);
     XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
     XSetForeground (disp, pgc, pfg);
-
-    /*
-    **  Remember when we did the most recent display.
-    */
-    gettimeofday (&lastDisplay, NULL);
     }
 
 /*---------------------------  End Of File  ------------------------------*/
