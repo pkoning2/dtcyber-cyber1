@@ -64,6 +64,9 @@ gxdtcyber: $(OBJS)
 clean:
 	rm -rf *.o *.pcf g3 g5 dd60 dtoper pterm
 
+blackbox: blackbox.o g3/niu.o g3/charset.o g3/dtnetsubs.o
+	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
+
 else
 
 # not Mac
@@ -71,7 +74,7 @@ else
 dtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
-blackbox: blackbox.o niu.o charset.o dtnetsubs.o
+blackbox: blackbox.o dtcyber
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 clean:
