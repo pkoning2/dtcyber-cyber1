@@ -983,40 +983,47 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         case '8':
         case '9':
             traceMask ^= (1 << (wParam - '0'));
+            debugDisplay |= (traceMask != 0);
             traceStop ();
             break;
 
         case 'c':
             traceMask ^= TraceCpu0;
+            debugDisplay |= (traceMask != 0);
             traceStop ();
             break;
 
         case 'C':
             traceMask ^= TraceCpu1;
+            debugDisplay |= (traceMask != 0);
             traceStop ();
             break;
 
         case 'E':
         case 'e':
             traceMask ^= TraceEcs;
+            debugDisplay |= (traceMask != 0);
             traceStop ();
             break;
 
         case 'J':
         case 'j':
             traceMask ^= TraceXj;
+            debugDisplay |= (traceMask != 0);
             traceStop ();
             break;
 
         case 'X':
         case 'x':
-            if (traceMask == 0)
+            if (traceMask == 0 && chTraceMask == 0)
                 {
                 traceMask = ~0;
+                debugDisplay = TRUE;
                 }
             else
                 {
                 traceMask = 0;
+                chTraceMask = 0;
                 traceStop ();
                 }
             break;
@@ -1173,51 +1180,54 @@ void windowDisplay(HWND hWnd)
     {
     char buf[160];
 
-    /*
-    **  Display P registers of PPUs and CPU and current trace mask.
-    */
-    sprintf(buf, "Refresh: %-10d  PP P-reg: %04o %04o %04o %04o %04o %04o %04o %04o %04o %04o   CPU P-reg: %06o",
-        refreshCount++,
-        ppu[0].regP, ppu[1].regP, ppu[2].regP, ppu[3].regP, ppu[4].regP,
-        ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
-        cpu[0].regP); 
-
-        if (cpuCount > 1)
+        if (debugDisplay)
             {
-            sprintf(buf + strlen(buf), " %06o", cpu[1].regP);
-            }
-            
-        sprintf(buf + strlen(buf),
-                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
-                (traceMask >> 0) & 1 ? '0' : '_',
-                (traceMask >> 1) & 1 ? '1' : '_',
-                (traceMask >> 2) & 1 ? '2' : '_',
-                (traceMask >> 3) & 1 ? '3' : '_',
-                (traceMask >> 4) & 1 ? '4' : '_',
-                (traceMask >> 5) & 1 ? '5' : '_',
-                (traceMask >> 6) & 1 ? '6' : '_',
-                (traceMask >> 7) & 1 ? '7' : '_',
-                (traceMask >> 8) & 1 ? '8' : '_',
-                (traceMask >> 9) & 1 ? '9' : '_',
-                (traceMask & TraceCpu0) ? 'c' : '_',
-                (traceMask & TraceCpu1) ? 'C' : '_',
-                (traceMask & TraceEcs) ? 'E' : '_',
-                (traceMask & TraceXj) ? 'J' : '_',
-                (chTraceMask >> 0) & 1 ? '0' : '_',
-                (chTraceMask >> 1) & 1 ? '1' : '_',
-                (chTraceMask >> 2) & 1 ? '2' : '_',
-                (chTraceMask >> 3) & 1 ? '3' : '_',
-                (chTraceMask >> 4) & 1 ? '4' : '_',
-                (chTraceMask >> 5) & 1 ? '5' : '_',
-                (chTraceMask >> 6) & 1 ? '6' : '_',
-                (chTraceMask >> 7) & 1 ? '7' : '_',
-                (chTraceMask >> 8) & 1 ? '8' : '_',
-                (chTraceMask >> 9) & 1 ? '9' : '_',
-                (chTraceMask >> 10) & 1 ? 'A' : '_',
-                (chTraceMask >> 11) & 1 ? 'B' : '_',
-                (platoActive) ? 'P' : ' ');
+            /*
+            **  Display P registers of PPUs and CPU and current trace mask.
+            */
+            sprintf(buf, "Refresh: %-10d  PP P-reg: %04o %04o %04o %04o %04o %04o %04o %04o %04o %04o   CPU P-reg: %06o",
+                    refreshCount++,
+                    ppu[0].regP, ppu[1].regP, ppu[2].regP, ppu[3].regP, ppu[4].regP,
+                    ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
+                    cpu[0].regP); 
 
-    TextOut(hdcMem, 0, 0, buf, strlen(buf));
+            if (cpuCount > 1)
+                {
+                sprintf(buf + strlen(buf), " %06o", cpu[1].regP);
+                }
+            
+            sprintf(buf + strlen(buf),
+                    "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
+                    (traceMask >> 0) & 1 ? '0' : '_',
+                    (traceMask >> 1) & 1 ? '1' : '_',
+                    (traceMask >> 2) & 1 ? '2' : '_',
+                    (traceMask >> 3) & 1 ? '3' : '_',
+                    (traceMask >> 4) & 1 ? '4' : '_',
+                    (traceMask >> 5) & 1 ? '5' : '_',
+                    (traceMask >> 6) & 1 ? '6' : '_',
+                    (traceMask >> 7) & 1 ? '7' : '_',
+                    (traceMask >> 8) & 1 ? '8' : '_',
+                    (traceMask >> 9) & 1 ? '9' : '_',
+                    (traceMask & TraceCpu0) ? 'c' : '_',
+                    (traceMask & TraceCpu1) ? 'C' : '_',
+                    (traceMask & TraceEcs) ? 'E' : '_',
+                    (traceMask & TraceXj) ? 'J' : '_',
+                    (chTraceMask >> 0) & 1 ? '0' : '_',
+                    (chTraceMask >> 1) & 1 ? '1' : '_',
+                    (chTraceMask >> 2) & 1 ? '2' : '_',
+                    (chTraceMask >> 3) & 1 ? '3' : '_',
+                    (chTraceMask >> 4) & 1 ? '4' : '_',
+                    (chTraceMask >> 5) & 1 ? '5' : '_',
+                    (chTraceMask >> 6) & 1 ? '6' : '_',
+                    (chTraceMask >> 7) & 1 ? '7' : '_',
+                    (chTraceMask >> 8) & 1 ? '8' : '_',
+                    (chTraceMask >> 9) & 1 ? '9' : '_',
+                    (chTraceMask >> 10) & 1 ? 'A' : '_',
+                    (chTraceMask >> 11) & 1 ? 'B' : '_',
+                    (platoActive) ? 'P' : ' ');
+
+            TextOut(hdcMem, 0, 0, buf, strlen(buf));
+            }
     }
 #endif
 

@@ -916,37 +916,44 @@ static void windowInput(void)
                 case '8':
                 case '9':
                     traceMask ^= (1 << (text[1] - '0'));
+                    debugDisplay |= (traceMask != 0);
                     traceStop ();
                     break;
 
                 case 'c':
                     traceMask ^= TraceCpu0;
+                    debugDisplay |= (traceMask != 0);
                     traceStop ();
                     break;
 
                 case 'C':
                     traceMask ^= TraceCpu1;
+                    debugDisplay |= (traceMask != 0);
                     traceStop ();
                     break;
 
                 case 'e':
                     traceMask ^= TraceEcs;
+                    debugDisplay |= (traceMask != 0);
                     traceStop ();
                     break;
 
                 case 'j':
                     traceMask ^= TraceXj;
+                    debugDisplay |= (traceMask != 0);
                     traceStop ();
                     break;
 
                 case 'x':
-                    if (traceMask == 0)
+                    if (traceMask == 0 && chTraceMask == 0)
                         {
                         traceMask = ~0;
+                        debugDisplay = TRUE;
                         }
                     else
                         {
                         traceMask = 0;
+                        chTraceMask = 0;
                         traceStop ();
                         }
                     break;
