@@ -32,6 +32,15 @@
 #endif
 
 /*
+**  Macro for defining > 32 bit constants
+*/
+#if defined(__GNUC__)
+#define ULL(x) x ## ULL
+#else
+#define ULL(x) ((u64)(x))
+#endif
+
+/*
 **  Conditional compiles:
 **  ====================
 */
@@ -98,7 +107,7 @@
 #define FontSmall               8
 #define FontDot                 0
 
-#define RefreshInterval         100000  /* microseconds */
+#define RefreshInterval         ULL(100000)  /* microseconds */
 
 #define TraceCpu0               (1 << 29)
 #define TraceCpu1               (TraceCpu0 << 1)
@@ -121,15 +130,6 @@
 #define WaitMany                (WaitInMany | WaitOutMany)
                                 
 #define WaitHung                0x20
-
-/*
-**  Macro for defining > 32 bit constants
-*/
-#if defined(__GNUC__)
-#define ULL(x) x ## ULL
-#else
-#define ULL(x) ((u64)(x))
-#endif
 
 /*
 **  Bit masks.

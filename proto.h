@@ -63,7 +63,7 @@ void cpuStep(CpuContext *activeCpu);
 bool cpuPpReadMem(u32 address, CpWord *data);
 void cpuPpWriteMem(u32 address, CpWord data);
 bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs);
-bool cpuIssueExchange(u8 cpnum, u32 addr, int monitor);
+int cpuIssueExchange(u8 cpnum, u32 addr, int monitor);
 
 /*
 **  dcc6681.c
@@ -255,9 +255,11 @@ extern DevSlot *activeDevice;
 extern CpuContext *cpu;
 extern u8 cpuCount;
 extern volatile int monitorCpu;
+extern volatile int exchangeCpu;
 extern CpWord *cpMem;
 extern CpWord *ecsMem;
 extern u32 cpuMaxMemory;
+extern u32 cpuMemMask;
 extern u32 ecsMaxMemory;
 extern i8 ppKeyIn;
 extern const char asciiToCdc[256];

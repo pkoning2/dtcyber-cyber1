@@ -21,9 +21,7 @@
 #if defined(_WIN32)
 #include <winsock.h>
 #elif defined(__APPLE__)
-#include <DriverServices.h>
-#include <Timer.h>
-#include <Math64.h>
+#include <Carbon.h>
 #endif
 
 #include "const.h"
@@ -40,7 +38,7 @@
 #elif defined(_WIN32)
 #define RDTSC 1
 #elif defined(__GNUC__) && defined(__APPLE__)
-#define RDTSC 0
+#define RDTSC 1
 #else
 #define RDTSC 0
 #endif
@@ -190,7 +188,7 @@ void rtcTick(void)
 **------------------------------------------------------------------------*/
 u64 rtcMicroSec(void)
     {
-#if RDTSC
+#if RDTSC==777
     u64 now;
     
     if (MHz == 0)

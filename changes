@@ -195,4 +195,9 @@ for the PPUs.
 - Changed the "time to paint the display" checking code in window_x11 to
   use the hardware fine grained timer rather than the gettimeofday() call.
   That should make it more efficient.
+  Note: there's something strange on the Mac that makes this not work
+  right, so I've turned it off there.
 - Renamed Makefile.x11 to Makefile because I'm tired of typing -f xxx.
+
+- Dual host CPU seems to work correctly now.  Tweaked the Makefile a bit
+  to clarify the various build choices.

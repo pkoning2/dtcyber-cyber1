@@ -185,6 +185,7 @@ u8 cpuCount;
 volatile int monitorCpu;
 volatile int exchangeCpu = -1;
 u32 cpuMaxMemory;
+u32 cpuMemMask;
 u32 ecsMaxMemory;
 
 /*
@@ -197,7 +198,7 @@ volatile u32 exchangeTo;
 #ifdef CPU_THREADS
 #if !defined(_WIN32)
 static pthread_t cpu_thread;
-pthread_cond_t exchange_cond = PTHREAD_COND_INITIALIZER;
+//pthread_cond_t exchange_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t exchange_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t flagreg_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
@@ -412,6 +413,7 @@ void cpuInit(char *model, u32 count, u32 memory, u32 ecsBanks)
         }
 
     cpuMaxMemory = memory;
+    cpuMemMask = memory - 1;
 
     /*
     **  Allocate configured ECS memory.
@@ -481,12 +483,10 @@ u32 cpuGetP(u8 cp)
 **                              monitor == 2 means exchange to MA.
 **
 **  Returns:
-**      TRUE if the CPU is ready to exchange, FALSE to tell caller to
+**      0 if the CPU is ready to exchange, non-0 to tell caller to
 **      retry. 
-**      The FALSE case happens for two reasons:
-**      1. Another exchange is pending and this isn't a multi-threaded
-**         flavor of DtCyber.  (The multi-threaded one just stalls
-**         the thread in this case.)
+**      The non-0 value is a reason code:
+**      1. Another exchange is pending.
 **      2. monitor is 1 (enter monitor mode) but another CPU is currently
 **         in monitor mode.  CPU XJ will stall for that case, PP MXN/MAN
 **         turns into a pass.
@@ -494,7 +494,7 @@ u32 cpuGetP(u8 cp)
 **------------------------------------------------------------------------*/
 FILE **cpuTF;
 int foo;
-bool cpuIssueExchange(u8 cp, u32 addr, bool monitor)
+int cpuIssueExchange(u8 cp, u32 addr, bool monitor)
     {
     if (cp >= cpuCount)
         {
@@ -506,25 +506,21 @@ bool cpuIssueExchange(u8 cp, u32 addr, bool monitor)
       }
 #ifdef CPU_THREADS
     pthread_mutex_lock (&exchange_mutex);
-    for (;;)
-        {
-        if (monitor > 0 && monitorCpu != -1)
-            {
-            pthread_mutex_unlock (&exchange_mutex);
-            return FALSE;
-            }
-        if (exchangeCpu == -1)
-            {
-            break;
-            }
-        pthread_cond_wait (&exchange_cond, &exchange_mutex);
-        }
-#else
-    if (exchangeCpu != -1 || (monitor > 0 && monitorCpu != -1))
-        {
-        return FALSE;
-        }
 #endif
+    if (monitor > 0 && monitorCpu != -1)
+      {
+#ifdef CPU_THREADS
+	pthread_mutex_unlock (&exchange_mutex);
+#endif
+	return 2;
+      }
+    if (exchangeCpu != -1)
+      {
+#ifdef CPU_THREADS
+	pthread_mutex_unlock (&exchange_mutex);
+#endif
+	return 1;
+      }
     if (monitor == 2)
         {
         exchangeTo = cpu[cp].regMa;
@@ -545,7 +541,7 @@ bool cpuIssueExchange(u8 cp, u32 addr, bool monitor)
 #ifdef CPU_THREADS
     pthread_mutex_unlock (&exchange_mutex);
 #endif
-    return TRUE;
+    return 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -974,61 +970,61 @@ void cpuExchangeJump(CpuContext *activeCpu)
     /*
     **  Setup new context.
     */
-    mem = cpMem + (addr % cpuMaxMemory);
+    mem = cpMem + (addr & cpuMemMask);
 
     activeCpu->regP     = (u32)((*mem >> 36) & Mask18);
     activeCpu->regA[0]  = (u32)((*mem >> 18) & Mask18);
     activeCpu->regB[0]  = 0;
 
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regRaCm  = (u32)((*mem >> 36) & Mask18);
     activeCpu->regA[1]  = (u32)((*mem >> 18) & Mask18);
     activeCpu->regB[1]  = (u32)((*mem      ) & Mask18);
 
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regFlCm  = (u32)((*mem >> 36) & Mask18);
     activeCpu->regA[2]  = (u32)((*mem >> 18) & Mask18);
     activeCpu->regB[2]  = (u32)((*mem      ) & Mask18);
 
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->exitMode = (u32)((*mem >> 36) & Mask24);
     activeCpu->regA[3]  = (u32)((*mem >> 18) & Mask18);
     activeCpu->regB[3]  = (u32)((*mem      ) & Mask18);
 
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regRaEcs = (u32)((*mem >> 36) & Mask24Ecs);
     activeCpu->regA[4]  = (u32)((*mem >> 18) & Mask18);
     activeCpu->regB[4]  = (u32)((*mem      ) & Mask18);
 
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regFlEcs = (u32)((*mem >> 36) & Mask24Ecs);
     activeCpu->regA[5]  = (u32)((*mem >> 18) & Mask18);
     activeCpu->regB[5]  = (u32)((*mem      ) & Mask18);
 
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regMa    = (u32)((*mem >> 36) & Mask18);
     activeCpu->regA[6]  = (u32)((*mem >> 18) & Mask18);
     activeCpu->regB[6]  = (u32)((*mem      ) & Mask18);
 
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regA[7]  = (u32)((*mem >> 18) & Mask18);
     activeCpu->regB[7]  = (u32)((*mem      ) & Mask18);
 
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regX[0]  = *mem & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regX[1]  = *mem & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regX[2]  = *mem & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regX[3]  = *mem & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regX[4]  = *mem & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regX[5]  = *mem & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regX[6]  = *mem & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     activeCpu->regX[7]  = *mem & Mask60;
 
     activeCpu->exitCondition = EcNone;
@@ -1041,51 +1037,51 @@ void cpuExchangeJump(CpuContext *activeCpu)
     **  Save old context.
     */
     addr = exchangeTo;
-    mem = cpMem + (addr % cpuMaxMemory);
+    mem = cpMem + (addr & cpuMemMask);
     *mem = ((CpWord)(tmp.regP     & Mask18) << 36) |
            ((CpWord)(tmp.regA[0] & Mask18) << 18);
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = ((CpWord)(tmp.regRaCm  & Mask24) << 36) |
            ((CpWord)(tmp.regA[1] & Mask18) << 18) |
            ((CpWord)(tmp.regB[1] & Mask18));
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = ((CpWord)(tmp.regFlCm  & Mask24) << 36) |
            ((CpWord)(tmp.regA[2] & Mask18) << 18) |
            ((CpWord)(tmp.regB[2] & Mask18));
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = ((CpWord)(tmp.exitMode & Mask24) << 36) |
            ((CpWord)(tmp.regA[3] & Mask18) << 18) |
            ((CpWord)(tmp.regB[3] & Mask18));
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = ((CpWord)(tmp.regRaEcs & Mask24) << 36) |
            ((CpWord)(tmp.regA[4] & Mask18) << 18) |
            ((CpWord)(tmp.regB[4] & Mask18));
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = ((CpWord)(tmp.regFlEcs & Mask24) << 36) |
            ((CpWord)(tmp.regA[5] & Mask18) << 18) |
            ((CpWord)(tmp.regB[5] & Mask18));
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = ((CpWord)(tmp.regMa    & Mask24) << 36) |
            ((CpWord)(tmp.regA[6] & Mask18) << 18) |
            ((CpWord)(tmp.regB[6] & Mask18));
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = ((CpWord)(tmp.regA[7] & Mask18) << 18) |
            ((CpWord)(tmp.regB[7] & Mask18));
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = tmp.regX[0] & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = tmp.regX[1] & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = tmp.regX[2] & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = tmp.regX[3] & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = tmp.regX[4] & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = tmp.regX[5] & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = tmp.regX[6] & Mask60;
-    mem = cpMem + (++addr % cpuMaxMemory);
+    mem = cpMem + (++addr & cpuMemMask);
     *mem = tmp.regX[7] & Mask60;
 
     /*
@@ -1094,7 +1090,7 @@ void cpuExchangeJump(CpuContext *activeCpu)
 #ifdef CPU_THREADS
     pthread_mutex_lock (&exchange_mutex);
     exchangeCpu = -1;
-    pthread_cond_broadcast (&exchange_cond);
+//    pthread_cond_broadcast (&exchange_cond);
     pthread_mutex_unlock (&exchange_mutex);
 #else
     exchangeCpu = -1;
@@ -2010,7 +2006,8 @@ static void cpOp01(CpuContext *activeCpu)
     int monitor;
     u32 addr, oldP;
     u8 oldOffset;
-    
+    int ret;
+
     if (activeCpu->opI == 0)
         {
         /*
@@ -2061,13 +2058,11 @@ static void cpOp01(CpuContext *activeCpu)
         **  be done when we exchange back to this point.
         */
 
-      fprintf(cpuTF[0],"cpu issue exchange cpu%d to %06o monitor %d\n", (int) (activeCpu->id), addr, (int)monitor);
-        if (!cpuIssueExchange (activeCpu->id, addr, monitor))
+        if ((ret = cpuIssueExchange (activeCpu->id, addr, monitor)) != 0)
             {
             /*
             **  Need to retry until ready to exchange.
-            **  In the multi-threaded version, we get here only
-            **  because of a monitor mode conflict; if so,
+            **  In the multi-threaded version,
             **  wait on the exchange condition variable.
             **  That variable is signaled at each exchange, so
             **  it's a good time to drive the retry.
@@ -2075,9 +2070,9 @@ static void cpOp01(CpuContext *activeCpu)
 #ifdef CPU_THREADS
             pthread_mutex_lock (&exchange_mutex);
             if (monitorCpu != -1)
-                    {
-                    pthread_cond_wait (&exchange_cond, &exchange_mutex);
-                    }
+                {
+//                pthread_cond_wait (&exchange_cond, &exchange_mutex);
+                }
             pthread_mutex_unlock (&exchange_mutex);
 #endif
             /*

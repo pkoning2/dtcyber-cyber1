@@ -171,7 +171,6 @@ void windowInit(void)
     XrmValue value;
     char *type[20];
     char fgcolor[40], bgcolor[40];
-    struct timeval lastDisplay;
     
     /*
     **  Create display list pool.
@@ -190,9 +189,6 @@ void windowInit(void)
         dbuf[rc].nchars = 1;
         dbuf[rc].font = None;
         }
-    gettimeofday (&lastDisplay, NULL);
-    lastDisplayUs = lastDisplay.tv_usec + 
-                    lastDisplay.tv_sec * ULL(1000000);
     
     /*
     **  Initialize the input list

@@ -199,6 +199,10 @@ static void initCyber(char *config)
         fprintf(stderr, "Entry 'memory' less then 40000B in section [%s] in %s\n", config, startupFile);
         exit(1);
         }
+    if ((memory & (-memory)) != memory)
+      {
+	fprintf(stderr, "Entry 'memory' is not a power of 2 in section [%s] in %s\n", config, startupFile);
+      }
 
     (void)initGetInteger("ecsbanks", 0, &ecsBanks);
     switch(ecsBanks)
