@@ -195,6 +195,7 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
     void OnPref (wxCommandEvent& event);
+    wxColour SelectColor (wxColour &initcol);
 
     void PrepareDC(wxDC& dc);
 
@@ -290,7 +291,7 @@ public:
 private:
     void paintBitmap (wxBitmap *bm, wxColour &color);
     
-//    PtermFrame *m_owner;
+    PtermFrame *m_owner;
 
     DECLARE_EVENT_TABLE ()
 };
@@ -542,10 +543,11 @@ bool PtermApp::OnInit (void)
     emulationActive = TRUE;
 
 	m_config = new wxConfig (wxT ("Pterm"));
+    // 255 144 0 is RGB for Plato Orange
 	m_config->Read (wxT ("foreground"), &rgb, wxT ("255 144 0"));
 	sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
     m_fgColor = wxColour (r, g, b);
-	m_config->Read (wxT ("background"), &rgb, wxT ("30 100 100"));
+	m_config->Read (wxT ("background"), &rgb, wxT ("0 0 0"));
 	sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
     m_bgColor = wxColour (r, g, b);
 	scale = m_config->Read (wxT ("scale"), 1);
@@ -687,8 +689,8 @@ void PtermFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 
     msg.Printf (wxT("PLATO terminal emulator %s.\n")
 // temp: need to figure out how to get gcc to understant this:
-                wxT("Copyright © 2005 by Paul Koning."),
-//                wxT("Copyright (c) 2005 by Paul Koning."),
+//                wxT("Copyright © 2005 by Paul Koning."),
+                wxT("Copyright (c) 2005 by Paul Koning."),
                 wxT (PTERMVERSION));
     
     wxMessageBox(msg, _T("About Pterm"), wxOK | wxICON_INFORMATION, this);
@@ -703,11 +705,15 @@ void PtermFrame::OnPref (wxCommandEvent& WXUNUSED(event))
     dlg.ShowModal ();
 }
 
-#if 0
-wxColour PtermFrame::SelectColor (void)
+wxColour PtermFrame::SelectColor (wxColour &initcol)
 {
-    wxColour col;
+    wxColour col (initcol);
+    wxColour orange (255, 144, 0);
     wxColourData data;
+
+    data.SetColour (initcol);
+    data.SetCustomColour (0, orange);
+    
     wxColourDialog dialog(this, &data);
 
     if (dialog.ShowModal () == wxID_OK)
@@ -717,7 +723,6 @@ wxColour PtermFrame::SelectColor (void)
 
     return col;
 }
-#endif
 
 void PtermFrame::PrepareDC(wxDC& dc)
 {
@@ -735,7 +740,8 @@ BEGIN_EVENT_TABLE(PtermPrefdialog, wxDialog)
     END_EVENT_TABLE()
 
 PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxString &title)
-    : wxDialog (parent, id, title)
+    : wxDialog (parent, id, title),
+      m_owner (parent)
 {
     m_scale2 = (scale != 1);
     m_fgColor = ptermApp->m_fgColor;
@@ -762,26 +768,34 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_prefButtons = new wxBoxSizer (wxHORIZONTAL);
     m_dialogContent = new wxBoxSizer (wxVERTICAL);
       
-    m_fgSizer->Add (m_fgButton, 0, 0, 5);
-    m_fgSizer->Add (m_fgLabel, 0, 0, 5);
-    m_bgSizer->Add (m_bgButton, 0, 0, 5);
-    m_bgSizer->Add (m_bgLabel, 0, 0, 5);
+    m_fgSizer->Add (m_fgButton, 0, wxALL, 5);
+    m_fgSizer->Add (m_fgLabel, 0, wxALL, 5);
+    m_bgSizer->Add (m_bgButton, 0, wxALL, 5);
+    m_bgSizer->Add (m_bgLabel, 0, wxALL, 5);
     m_colorsSizer->Add (m_fgSizer);
     m_colorsSizer->Add (m_bgSizer);
-    m_prefItems->Add (m_scaleCheck, 0, 0, 5);
-    m_prefItems->Add (m_colorsSizer);
-    m_prefButtons->Add (m_okButton, 0, 0, 5);
-    m_prefButtons->Add (m_cancelButton, 0, 0, 5);
-    m_prefButtons->Add (m_resetButton, 0, 0, 5);
-    m_dialogContent->Add (m_prefItems);
-    m_dialogContent->Add (m_prefButtons);
-    
+    m_prefItems->Add (m_scaleCheck, 0, wxALL, 5);
+    m_prefItems->Add (m_colorsSizer, 0, wxALL, 10);
+    m_prefButtons->Add (m_okButton, 0, wxALL, 5);
+    m_prefButtons->Add (m_cancelButton, 0, wxALL, 5);
+    m_prefButtons->Add (m_resetButton, 0, wxALL, 5);
+    m_dialogContent->Add (m_prefItems, 0, wxTOP | wxLEFT | wxRIGHT, 5);
+    m_dialogContent->Add (m_prefButtons, 0, wxALL, 10);
 }
 
 void PtermPrefdialog::OnButton (wxCommandEvent& event)
 {
+    wxColour fgcol, bgcol;
+    
     if (event.m_eventObject == m_fgButton)
-        printf ("fg button\n");
+    {
+        m_fgColor = m_owner->SelectColor (m_fgColor);
+    }
+    else if (event.m_eventObject == m_bgButton)
+    {
+        m_bgColor = m_owner->SelectColor (m_bgColor);
+    }
+    
     else if (event.m_eventObject == m_okButton)
     {
         printf ("ok button\n");
@@ -792,8 +806,15 @@ void PtermPrefdialog::OnButton (wxCommandEvent& event)
         printf ("cancel button\n");
         EndModal (1);
     }
-    
-    
+    else if (event.m_eventObject == m_resetButton)
+    {
+        m_fgColor = wxColour (255, 144, 0);
+        m_bgColor = *wxBLACK;
+        m_scale2 = FALSE;
+        m_scaleCheck->SetValue (FALSE);
+    }
+    paintBitmap (m_fgBitmap, m_fgColor);
+    paintBitmap (m_bgBitmap, m_bgColor);
 }
 
 void PtermPrefdialog::OnCheckbox (wxCommandEvent& event)
@@ -959,8 +980,8 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     }
     key = event.m_keyCode;
 
-#if 1
-//	if (tracePterm)
+#if 0
+	if (tracePterm)
     {
         /*fprintf (traceF,*/printf( "ctrl %d shift %d alt %d key %d\n", event.m_controlDown, event.m_shiftDown, event.m_altDown, key);
     }
