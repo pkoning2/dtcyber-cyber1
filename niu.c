@@ -20,7 +20,7 @@
 #include "const.h"
 #include "types.h"
 #include "proto.h"
-#include <sys/types.h>
+#include <time.h>
 #if defined(_WIN32)
 #include <winsock.h>
 #else
