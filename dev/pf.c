@@ -276,7 +276,7 @@ u8 lhbuf[3200];
 leshdr * const lh = (leshdr * const) lhbuf;
 u8 pdbuf[3200 * pdmax];
 packdir * const pd = (packdir * const) pdbuf;
-u64 fused, ftotal, sused, pinflth;
+u64 fused, ftotal, sused, stotal, pinflth;
 int pdblks;
 int nextpart;       // next space number to allocate
 
@@ -791,6 +791,7 @@ void readpd (void)
     getval (fused, pd->fused);
     getval (ftotal, pd->ftotal);
     getval (sused, pd->sused);
+    getval (stotal, pd->stotal);
     get60 (pinflth,pd->inflth);
     
     pdblks = (pinflth + (ftotal * 2) + 320 - 1) / 320;
@@ -1137,6 +1138,16 @@ void pflist (int argc, char **argv)
         exit (1);
     }
     readpd ();
+    if (verbose)
+    {
+        printf ("pack directory size %d blocks (%d parts)\n",
+                pdblks, (pdblks + 6) / 7);
+        printf (" %lld files used, %lld total\n", fused, ftotal);
+        printf (" %lld parts used, %lld total\n", sused, stotal);
+        printf (" pack model number %d, pack dir size %d\n",
+                pd->f[0], pd->f[1]);
+    }
+        
     fn[10] = '\0';
     ep = pinflth * 10;
     for (entry = 0; entry < fused; entry++)
