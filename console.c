@@ -335,6 +335,7 @@ static void consoleIo(void)
             activeChannel->data = currentKey;
             activeChannel->full = TRUE;
             activeChannel->status = 0;
+            activeDevice->fcode = 0;
             ppKeyIn = 0;
             }
         break;
