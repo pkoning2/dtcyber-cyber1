@@ -133,3 +133,20 @@ Since oct09 drop:
 - Cleaned up the Windows version.  It now runs at a reasonable speed
   (as opposed to being very sluggish before).  It also has bitmap based
   fonts that match the classic CDC console, same as the X11 version.
+
+Since oct14 drop:
+- Updated BDF (X format) Seymour fonts to match the Windows bitmap font
+  (from fonts.bmp).
+- Bugfix in dd844.c to force seek on the container file when switching 
+  between reading and writing.  Without that, the buffered I/O causes
+  the I/O to be done to the wrong location.
+- Added Xresource support, so colors can be customized.  
+- Bugfix in niu.c (off by 1 error in input polling loop).
+- Changed trace mask layouts so they work with 20 PPU config.
+  Ignore NoHang bit when doing channel number matches in channel trace check.
+- Added tracing to pterm.
+- Fixed dot display in pterm to set current X/Y.
+- Fixed off by 1 error in YADJUST for Xwindows output in pterm.
+- Fix typo in 026 card code translation (< was translated to ] !)
+- Added code to cpu.c, trace.c, proto.h to let a program turn on CPU
+  tracing for K cycles (sb0 b2+K)
