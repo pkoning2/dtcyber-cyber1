@@ -343,8 +343,8 @@ NetPort * dtFindInput (NetPortSet *ps, int time)
 
     readFds = ps->activeSet;
     exceptFds = ps->activeSet;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = time * 1000;
+    timeout.tv_sec = time / 1000;
+    timeout.tv_usec = (time * 1000) % 1000000;
     
     for (;;)
         {
