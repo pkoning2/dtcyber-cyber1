@@ -1224,7 +1224,7 @@ static void consoleSendOutput (int start, int end)
                 (chTraceMask >> 7) & 1 ? '7' : '-',
                 (chTraceMask >> 8) & 1 ? '8' : '-',
                 (chTraceMask >> 9) & 1 ? '9' : '-',
-                (chTraceMask >> 10) & 1 ? 'A' : '-',
+                (chTraceMask >> 10) & 1 ? 'A' : '-', 
                 (chTraceMask >> 11) & 1 ? 'B' : '-');
         for (i = 1; buf[i] != '\0'; i++)
             {
