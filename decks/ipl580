@@ -14,20 +14,125 @@ return(opl)
 *oplfile opl2
 */ -------------------------------------------------------------------
 */
-*/ make frame length tables updates go fast, so the high speed
-*/ emulated niu on DtCyber works.
-*/ This is not a *correct* fix but it helps a whole lot.
+*/ increase frame count to 1024 (was 128) and mout buffer to 1000
+*/ (was 512)
+*/
+*/ -------------------------------------------------------------------
+*ident fram1k
+*deck pftext
+*delete vgtext.1
+ MOUTLTH  EQU    1000d       USABLE *MOUT* AREA (ARBITRARY)
+*delete pftext.33,pftext.34
+ NFRAMS   EQU    1024d        NUMBER OF FRAMES
+ NFRMSHF  EQU    10d
+*/ end pftext
+*/
+*deck pio
+*delete pio.72
+*         FMASK   - NFRMSHF/NFRAMS
+*delete pio.80
+ FMASK    EQU    1777B       MASK FOR FRAME INDEX
+*/ end pio
+*/
+*deck ftext
+*delete ftext.362
+* this takes two steps because *max* produces a redefinable
+* symbol, and those are not saved in the cmtext.
+ OUTBL.   MAX    MDISMAX+4,NFRAMS
+ outblth  equ    outbl.
+*/ end ftext
+*/
+*/ -------------------------------------------------------------------
+*/
+*/ Change framat-pio interface so DtCyber emulated niu works correctly
+*/ when running without rate limiting.
+*/
+*/ The effect of the lack of rate limiting is that pio can get ahead
+*/ of framat, unlike the classic hardware which needed 16.66 ms to
+*/ send a frame and would not accept another one until that time is up.
+*/ The framat-pio communication assumed that it would not be possible
+*/ for pio to finish one frame and go on to the next in less time than
+*/ it would take framat to frame all the pending output for a station.
+*/ If there is a lot of output to frame, that is no longer true when
+*/ the niu frame pacing is taken out of the picture.
+*/
+*/ Solution: (a) update the frame counters all the time.  (b) add
+*/ a framat-pio interlock variable, 2 ecs words right after the
+*/ pio frame counter words (one per niu).  Framat sets that word
+*/ non-zero while it is filling the frame buffer chain for a station,
+*/ starting just before it reads the ppu frame counter, and ending
+*/ after it has written the updated frame lengths.  If the interlock
+*/ is set, pio waits exactly as it would clasically when the niu is
+*/ not yet ready for a new frame.
+*/
+*/ Note that the error correction code paths are not handled in this
+*/ patch, because they are not used in the emulated environment.
 */
 */ -------------------------------------------------------------------
 *ident fastniu
 *deck format
 *delete format.297,format.304
-*/ end outform
+*/ end format
 */
 *deck pio
-*delete pio.598,pio.602
- I700      LDN    4
+*insert pio.28
+*             The framat-pio framing interlock is at offset +2 from here.
+*delete pio.268,pio.270
+*         wait for framat-pio framing interlock to be clear
+*
+ m110     ldc    ecsbuff
+          STD    D.T0        D.T0 = PPU MEMORY ADDRESS
+          LDM    ECRA+1      COMPUTE ECS ADDR OF interlock
+          ADM    OUTPNT+1
+          adn    2           +2 for interlock
+          STD    D.T2        D.T2 = LOWER PART OF ECS ADDR
+          SHN    -12
+          ADM    ECRA
+          ADM    OUTPNT
+          STD    D.T1        D.T1 = UPPER PART OF ECS ADDR
+          LDN    5
+          STD    D.T3        D.T3 = NUMBER WORDS TO read
+          call   readecs     read interlock
+          ldm    ecsbuff+4   
+          njp    main        if interlock set
+*
+*         ATTEMPT TO SELECT CIU AND OUTPUT NO-OP
+*
+          IJM    M112,O=NIU
 */ end pio
+*/
+*deck platxt
+*delete platxt.671
+ AFRAMPT  ECSBUF 4           FRAME COUNTERS and framer-pio interlocks
+*/ end platxt
+*/
+*deck format
+*insert FORMAT.2034
+          sa2    xfrmpnt
+          sx3    2
+          mx6    0
+          ix3    x2+x3       form address of interlock
+          wx6    x3          clear pio interlock (MAY CHG *A6*)
+
+*delete format.2042
+          sa2    xfrmpnt
+          sx3    2
+          sx6    1
+          ix3    x2+x3       form address of interlock
+          wx6    x3          set pio interlock (MAY CHG *A6*)
+          rx2    x2          read current pio frame ctr (MAY CHG *A2*)
+          ix3    x1-x2       check pio against framat pointers
+          pl     x3,ftw050   if framat not behind
+          bx1    x2          start framing from next pio frame
+          bx3    -x3         number of frames pio is ahead
+          sb6    x3          pretend to caller we used that much extra
+
+ ftw050   MX0    -NFRMSHF
+*/ this one line change is a documentation fix
+*delete for180.35
+ SETF     SA2    XFRMPNT     ECS ADDRESS OF pio frame counter
+*/ end format
+*/
 */ -------------------------------------------------------------------
 */
 */ Remove "press -BACK- to exit" 
@@ -35,6 +140,8 @@ return(opl)
 */ -------------------------------------------------------------------
 *deck mainov
 *yank pbte
+*/ end mainov
+*/
 */ -------------------------------------------------------------------
 */
 */ make dd60 assemble on NOS 2.1
@@ -238,12 +345,15 @@ return(opl)
 */ -------------------------------------------------------------------
 */ -------------------------------------------------------------------
 *ident,faadev 
+*/ added cyber1 and cyber2 -- gpk 04.08.23.
 *deck,msubs 
 *d,msubsa.6,msubsa.8
- ndevsys  equ    3           maximum number of dev systems
+ ndevsys  equ    5           maximum number of dev systems
           data   0luol       university online system 
           data   0lcybdev    cybis development system 
           data   0lfaa       faa system (used by uol) 
+          data   0lcyber1    cyber1.org system
+          data   0lcyber2    second cyber1.org system
 *d,msubsa.15,msubsa.17
  nuolsys  equ    3           maximum number of uol systems
           data   0luol       university online system 
