@@ -312,8 +312,11 @@ enum
 
     // menu items
     Pterm_Quit = wxID_EXIT,
+#ifdef wxID_PREFERENCES
     Pterm_Pref = wxID_PREFERENCES,
-
+#else
+    Pterm_Pref,
+#endif
     // it is important for the id corresponding to the "About" command to have
     // this standard value as otherwise it won't be handled properly under Mac
     // (where it is special and put into the "Apple" menu)

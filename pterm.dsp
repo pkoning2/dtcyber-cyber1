@@ -41,15 +41,16 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /W3 /GX /O2 /I "c:\wxWindows-2.4.2\include" /I "c:\wxWindows-2.4.2\lib\msw" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
-# ADD RSC /l 0x409 /d "NDEBUG"
+# ADD RSC /l 0x409 /i "c:\wxWidgets-2.5.5\include" /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib /nologo /subsystem:console /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib regex.lib png.lib jpeg.lib tiff.lib wxmsw.lib /nologo /subsystem:windows /map /machine:I386 /nodefaultlib:"libc.lib" /libpath:"c:\wxWindows-2.4.2\lib"
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "pterm - Win32 Debug"
 
@@ -65,15 +66,16 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /W3 /Gm /GX /Zi /Od /I "c:\wxWindows-2.4.2\include" /I "c:\wxWindows-2.4.2\lib\msw" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
-# ADD RSC /l 0x409 /d "_DEBUG"
+# ADD RSC /l 0x409 /i "c:\wxWindows-2.5.5\include" /i "c:\wxWidgets-2.5.5\include" /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib regex.lib png.lib jpeg.lib tiff.lib wxmsw.lib /nologo /subsystem:windows /incremental:no /debug /machine:I386 /nodefaultlib:"libcd.lib" /pdbtype:sept /libpath:"c:\wxWindows-2.4.2\lib"
+# SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
 
@@ -83,7 +85,27 @@ LINK32=link.exe
 # Name "pterm - Win32 Debug"
 # Begin Source File
 
+SOURCE=.\wx\msw\blank.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\bullseye.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\cdrom.ico
+# End Source File
+# Begin Source File
+
 SOURCE=charset.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\computer.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\drive.ico
 # End Source File
 # Begin Source File
 
@@ -91,15 +113,84 @@ SOURCE=.\dtnetsubs.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\wx\msw\file1.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\floppy.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\folder1.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\folder2.ico
+# End Source File
+# Begin Source File
+
 SOURCE=fonts.bmp
 # End Source File
 # Begin Source File
 
+SOURCE=.\wx\msw\hand.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\icon1.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\magnif1.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\noentry.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\pbrush.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\pencil.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\pntleft.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\pntright.cur
+# End Source File
+# Begin Source File
+
 SOURCE=pterm.c
+# PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=.\pterm.rc
+
+!IF  "$(CFG)" == "pterm - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "pterm - Win32 Debug"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\pterm_32.ico
 # End Source File
 # Begin Source File
 
 SOURCE=pterm_win32.c
+# PROP Exclude_From_Build 1
+# End Source File
+# Begin Source File
+
+SOURCE=.\pterm_wx.cpp
 # End Source File
 # Begin Source File
 
@@ -111,18 +202,36 @@ SOURCE=.\ptermversion.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\wx\msw\query.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\removble.ico
+# End Source File
+# Begin Source File
+
 SOURCE=resource.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\wx\msw\rightarr.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\roller.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\size.cur
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\watch1.cur
+# End Source File
+# Begin Source File
+
 SOURCE=window.rc
-
-!IF  "$(CFG)" == "pterm - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "pterm - Win32 Debug"
-
-!ENDIF 
-
+# PROP Exclude_From_Build 1
 # End Source File
 # End Target
 # End Project
