@@ -1,0 +1,23 @@
+job(cm72000,t77770,p17)
+user(plato,plato)
+get,h.
+*a,deckdir.
+copybr,input,deckdir.
+a,modsdir,dsmac,ma710x.
+attach,cwoldpl/m=w.
+rewind,h,deckdir.
+copybr,h,t.
+copybr,modsdir,t.
+copybr,deckdir,t.
+copybr,dsmac,t.
+copybr,ma710x,t.
+rewind,t.
+pack,t,cwoldpl.
+tdump,i=cwoldpl,n=1000.
+update,s=s,p=cwoldpl,*=$$$$.
+copysbf,s,output.
+~
+dsmac
+ma710x
+~
+$compile dsmac

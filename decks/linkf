@@ -1,0 +1,10 @@
+job(cm72000,t77770,p17)
+user(plato,plato)
+attach,framat=fram/m=w.
+attach,frambin.
+loader,cyber.
+*
+map,on.
+ldset,preset=zero.
+load,frambin.
+nogo,framat.

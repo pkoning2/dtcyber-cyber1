@@ -1,0 +1,10 @@
+job(cm72000,t77770,p17)
+user(plato,plato)
+attach,plato/m=w.
+attach,platbin.
+loader,cyber.
+*
+map,on.
+ldset,preset=zero.
+load,platbin.
+nogo,plato.

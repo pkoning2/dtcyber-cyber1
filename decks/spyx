@@ -1,0 +1,22 @@
+job(cm70000,t77770)
+user(sys)
+setid,output=6.
+attach(opl=comcopl)
+attach(spybin/m=w,na)
+if(.not.file(spybin,as))define(spybin)
+pf(ptext)
+*       
+pf(spyx)
+compass(i=spyx,s=nostext,b=spybin,a,l=0)
+sysedit,b=spybin,c.
+return,spybin.
+*       
+exit.   
+setid,output=0.
+*** something went wrong...
+exit.   
+user(sys)
+attach,spybin.
+sysedit,b=spybin,c.
+exit.
+exit.
