@@ -344,29 +344,12 @@ static DecCpControl cpDecode[0100] =
 void traceInit(void)
     {
     u8 i;
-    char traceName[20];
-
-    devF = fopen("device.trc", "wt");
-    if (devF == NULL)
-        {
-        logError(LogErrorLocation, "can't open dev trace");
-        }
 
     cpuTF = calloc(cpuCount, sizeof(FILE *));
     if (cpuTF == NULL)
         {
-        logError(LogErrorLocation, "can't open cpu trace");
-        }
-
-    for (i = 0; i < cpuCount; i++)
-        {
-        sprintf(traceName, "cpu%d.trc", i);
-        cpuTF[i] = fopen(traceName, "wt");
-        if (cpuTF[i] == NULL)
-            {
-            logError(LogErrorLocation, "can't open cpu%d trace (%s)\n",
-                     i, traceName);
-            }
+        fprintf(stderr, "Failed to allocate CPU trace FILE pointers\n");
+        exit(1);
         }
 
     ppuTF = calloc(ppuCount, sizeof(FILE *));
@@ -374,17 +357,6 @@ void traceInit(void)
         {
         fprintf(stderr, "Failed to allocate PP trace FILE pointers\n");
         exit(1);
-        }
-
-    for (i = 0; i < ppuCount; i++)
-        {
-        sprintf(traceName, "ppu%02o.trc", i);
-        ppuTF[i] = fopen(traceName, "wt");
-        if (ppuTF[i] == NULL)
-            {
-            logError(LogErrorLocation, "can't open ppu[%02o] trace (%s)\n",
-                     i, traceName);
-            }
         }
 
     sequence = 0;
@@ -413,6 +385,7 @@ void traceCpu(CpuContext *activeCpu,
     int i;
     int cpuNum = activeCpu ->id;
     CpWord data;
+    char traceName[20];
 
     /*
     **  Bail out if no trace of the current CPU is requested.
@@ -422,6 +395,21 @@ void traceCpu(CpuContext *activeCpu,
           ((traceMask & TraceEcs) != 0 && opFm == 01 && (opI == 1 || opI == 2))))
         {
         return;
+        }
+
+    /*
+    **  If the trace file hasn't been opened yet, open it now.
+    */
+    if (cpuTF[cpuNum] == NULL)
+        {
+        sprintf(traceName, "cpu%d.trc", cpuNum);
+        cpuTF[cpuNum] = fopen(traceName, "wt");
+        if (cpuTF[cpuNum] == NULL)
+            {
+            logError(LogErrorLocation, "can't open cpu%d trace (%s)\n",
+                     cpuNum, traceName);
+            return;
+            }
         }
 
     /*
@@ -794,6 +782,7 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
     CpWord data;
     u8 i;
     int cpn = cc->id;
+    char traceName[20];
     
     /*
     **  Bail out if no trace of exchange jumps is requested.
@@ -801,6 +790,21 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
     if ((traceMask & TraceXj) == 0)
         {
         return;
+        }
+
+    /*
+    **  If the trace file hasn't been opened yet, open it now.
+    */
+    if (cpuTF[cpn] == NULL)
+        {
+        sprintf(traceName, "cpu%d.trc", cpn);
+        cpuTF[cpn] = fopen(traceName, "wt");
+        if (cpuTF[cpn] == NULL)
+            {
+            logError(LogErrorLocation, "can't open cpu%d trace (%s)\n",
+                     cpn, traceName);
+            return;
+            }
         }
 
     fprintf(cpuTF[cpn], "\n%6d: Exchange jump CPU %d with package address %06o (%s)\n\n", sequence, cpn, addr, title);
@@ -875,14 +879,28 @@ void traceFinish(void)
     {
     u8 i;
 
+    if (devF != NULL)
+        {
+        fclose (devF);
+        devF = NULL;
+        }
+    
     for (i = 0; i < cpuCount; i++)
         {
-        fflush(cpuTF[i]);
+        if (cpuTF[i] != NULL)
+            {
+            fclose(cpuTF[i]);
+            cpuTF[i] = NULL;
+            }
         }
 
     for (i = 0; i < ppuCount; i++)
         {
-        fclose(ppuTF[i]);
+        if (ppuTF[i] != NULL)
+            {
+            fclose(ppuTF[i]);
+            ppuTF[i] = NULL;
+            }
         }
 
     for (i = 0; i < MAXDATANUM; i++)
@@ -909,14 +927,23 @@ void traceStop(void)
 
     for (i = 0; i < cpuCount; i++)
         {
-        fflush(cpuTF[i]);
+        if (cpuTF[i] != NULL)
+            {
+            fflush(cpuTF[i]);
+            }
         }
 
-    fflush(devF);
+    if (devF != NULL)
+        {
+        fflush(devF);
+        }
     
     for (i = 0; i < ppuCount; i++)
         {
-        fflush(ppuTF[i]);
+        if (ppuTF[i] != NULL)
+            {
+            fflush(ppuTF[i]);
+            }
         }
 
     for (i = 0; i < MAXDATANUM; i++)
@@ -943,16 +970,25 @@ void traceReset(void)
 
     for (i = 0; i < cpuCount; i++)
         {
-        sprintf(traceName, "cpu%d.trc", i);
-        freset (&cpuTF[i], traceName);
+        if (cpuTF[i] != NULL)
+            {
+            sprintf(traceName, "cpu%d.trc", i);
+            freset (&cpuTF[i], traceName);
+            }
         }
 
-    freset (&devF, "device.trc");
+    if (devF != NULL)
+        {
+        freset (&devF, "device.trc");
+        }
     
     for (i = 0; i < ppuCount; i++)
         {
-        sprintf(traceName, "ppu%02o.trc", i);
-        freset (&ppuTF[i], traceName);
+        if (ppuTF[i] != NULL)
+            {
+            sprintf(traceName, "ppu%02o.trc", i);
+            freset (&ppuTF[i], traceName);
+            }
         }
 
     for (i = 0; i < MAXDATANUM; i++)
@@ -975,6 +1011,8 @@ void traceReset(void)
 **------------------------------------------------------------------------*/
 void traceSequence(void)
     {
+    char traceName[20];
+
     /*
     **  Increment sequence number here.
     */
@@ -987,6 +1025,21 @@ void traceSequence(void)
     if (!activePpu->traceLine)
         {
         return;
+        }
+
+    /*
+    **  If the trace file hasn't been opened yet, open it now.
+    */
+    if (ppuTF[activePpu->id] == NULL)
+        {
+        sprintf(traceName, "ppu%02o.trc", activePpu->id);
+        ppuTF[activePpu->id] = fopen(traceName, "wt");
+        if (ppuTF[activePpu->id] == NULL)
+            {
+            logError(LogErrorLocation, "can't open ppu[%02o] trace (%s)\n",
+                     activePpu->id, traceName);
+            return;
+            }
         }
 
     /*
@@ -1159,6 +1212,16 @@ u8 traceDisassembleOpcode(char *str, PpWord *pm)
 **------------------------------------------------------------------------*/
 void traceChannelFunction(PpWord funcCode)
     {
+    if (devF == NULL)
+        {
+        devF = fopen("device.trc", "wt");
+        if (devF == NULL)
+            {
+            logError(LogErrorLocation, "can't open dev trace");
+            }
+        return;
+        }
+    
     fprintf(devF, "%06d [%02o]    ", sequence, activePpu->id);
     fprintf(devF, "Unclaimed function code %04o on CH%02o\n", funcCode, activeChannel->id);
     }

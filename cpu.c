@@ -2163,8 +2163,9 @@ static void cpOp01(CpuContext *activeCpu)
     u8 oldOffset;
     int ret;
 
-    if (activeCpu->opI == 0)
+    switch (activeCpu->opI)
         {
+    case 0:
         /*
         **  RJ  K
         */
@@ -2172,23 +2173,23 @@ static void cpOp01(CpuContext *activeCpu)
         activeCpu->cpuStopped = cpuWriteMem(activeCpu, activeCpu->opAddress, &acc60);
         activeCpu->regP = activeCpu->opAddress;
         activeCpu->opOffset = 0;
-        }
-    else if (activeCpu->opI == 1)
-        {
+        break;
+        
+    case 1:
         /*
         **  RE  Bj+K
         */
         cpuEcsTransfer(activeCpu, FALSE, FALSE);
-        }
-    else if (activeCpu->opI == 2)
-        {
+        break;
+        
+    case 2:
         /*
         **  WE  Bj+K
         */
         cpuEcsTransfer(activeCpu, TRUE, FALSE);
-        }
-    else if (activeCpu->opI == 3)
-        {
+        break;
+        
+    case 3:
         /*
         **  XJ  K
         */
@@ -2237,20 +2238,33 @@ static void cpOp01(CpuContext *activeCpu)
             activeCpu->opOffset = oldOffset + 30;
             return;
             }
-        }
-    else if (activeCpu->opI == 4)
-        {
+        break;
+        
+    case 4:
         /*
         **  RXj Xj
         */
         cpuEcsTransfer(activeCpu, FALSE, TRUE);
-        }
-    else if (activeCpu->opI == 5)
-        {
+        break;
+        
+    case 5:
         /*
         **  WXj Xk
         */
         cpuEcsTransfer(activeCpu, TRUE, TRUE);
+        break;
+        
+#if CcDebug == 1
+    case 6:
+        /*
+        **  RI or IBj -- which is 7600 only.  So we steal it for 
+        **  use in tracing data flows.
+        **  Instruction format: 017jk to send the current value of Xj
+        **  to data trace stream k.
+        */
+        traceData (activeCpu->regX[activeCpu->opJ], activeCpu->opK);
+        break;
+#endif
         }
     }
 

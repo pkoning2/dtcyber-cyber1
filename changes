@@ -312,3 +312,7 @@ Since jan21 2004 drop:
   (Note that you do still need to install fonts for DtCyber.)
 - Change Makefile to send -march=<this machine> to gcc for Intel x86 builds.
   That should give us modern code rather than 386 compatible code.
+- Create *.dmp and *.trc files only when they are first used, so we don't
+  end up with dozens of files cluttering up things.  This is most important
+  for the pterm trace file because its name is formed from the PID, so
+  successive runs will in general NOT reuse the same file.

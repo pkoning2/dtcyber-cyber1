@@ -160,10 +160,6 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 
     (void)eqNo;
 
-#ifdef TRACE
-    niuF = fopen("niu.trc", "wt");
-#endif
-
     if (in != NULL)
     {
         fprintf (stderr, "Multiple NIUs not supported\n");
@@ -562,6 +558,10 @@ static void niuOutIo(void)
 #ifdef TRACE
         if (traced)
         {
+            if (niuF == NULL)
+            {
+                niuF = fopen("niu.trc", "wt");
+            }
             fprintf (niuF, "%06d frame end\n", sequence);
             traced = FALSE;
         }
@@ -998,6 +998,10 @@ static void niuSendWord(int stat, int word)
     if (stat > 0 && stat < STATIONS)
     {
         traced = TRUE;
+        if (niuF == NULL)
+        {
+            niuF = fopen("niu.trc", "wt");
+        }
         fprintf (niuF, "%06d %2d-%2d %07o\n", sequence, stat / 32, stat % 32, word);
     }
 #endif

@@ -96,6 +96,7 @@ bool tracePterm = FALSE;
 volatile bool ptermActive = FALSE;
 u8 wemode;
 FILE *traceF;
+char traceFn[20];
 
 /*
 **  -----------------
@@ -143,13 +144,10 @@ const char rom0char[] =
 **------------------------------------------------------------------------*/
 void ptermComInit(void)
 {
-    char fn[20];
-    
     /*
-    **  Open trace file
+    **  Set trace file name
     */
-    sprintf (fn, "pterm%d.trc", getpid ());
-    traceF = fopen (fn, "w");
+    sprintf (traceFn, "pterm%d.trc", getpid ());
     
     /*
     **  Register with NIU for local output.

@@ -80,8 +80,6 @@ static FILE **ppuDF;
 **------------------------------------------------------------------------*/
 void dumpInit(void)
     {
-    u8 pp;
-    char ppDumpName[20];
 
     ppuDF = calloc(ppuCount, sizeof(FILE *));
     if (ppuDF == NULL)
@@ -90,21 +88,6 @@ void dumpInit(void)
         exit(1);
         }
 
-    cpuDF = fopen("cpu.dmp", "wt");
-    if (cpuDF == NULL)
-        {
-        logError(LogErrorLocation, "can't open cpu dump");
-        }
-
-    for (pp = 0; pp < ppuCount; pp++)
-        {
-        sprintf(ppDumpName, "ppu%02o.dmp", pp);
-        ppuDF[pp] = fopen(ppDumpName, "wt");
-        if (ppuDF[pp] == NULL)
-            {
-            logError(LogErrorLocation, "can't open ppu[%02o] dump", pp);
-            }
-        }
     }
 
 /*--------------------------------------------------------------------------
@@ -141,6 +124,15 @@ void dumpCpu(void)
     {
     u8 i, j;
     CpWord data;
+
+    if (cpuDF == NULL)
+        {
+        cpuDF = fopen("cpu.dmp", "wt");
+        if (cpuDF == NULL)
+            {
+            logError(LogErrorLocation, "can't open cpu dump");
+            }
+        }
 
     for (i = 0; i < cpuCount; i++)
         {
@@ -251,7 +243,20 @@ void dumpEcs(FILE *f, u32 start, u32 end)
 **------------------------------------------------------------------------*/
 void dumpPpu(u8 pp)
     {
-    FILE *pf = ppuDF[pp];
+    char ppDumpName[20];
+    FILE *pf;
+
+    if (ppuDF[pp] == NULL)
+        {
+        sprintf(ppDumpName, "ppu%02o.dmp", pp);
+        ppuDF[pp] = fopen(ppDumpName, "wt");
+        if (ppuDF[pp] == NULL)
+            {
+            logError(LogErrorLocation, "can't open ppu[%02o] dump", pp);
+            return;
+            }
+        }
+    pf = ppuDF[pp];
 
     fprintf(pf, "P   %04o\n", ppu[pp].regP);
     fprintf(pf, "A %06o\n", ppu[pp].regA);
@@ -280,9 +285,20 @@ void dumpPpuMem(FILE *f, u8 pp, u32 start, u32 end)
     PpWord pw;
     bool duplicateLine = FALSE;
     bool dl;
+    char ppDumpName[20];
     
     if (f == NULL)
         {
+        if (ppuDF[pp] == NULL)
+            {
+            sprintf(ppDumpName, "ppu%02o.dmp", pp);
+            ppuDF[pp] = fopen(ppDumpName, "wt");
+            if (ppuDF[pp] == NULL)
+                {
+                logError(LogErrorLocation, "can't open ppu[%02o] dump", pp);
+                return;
+                }
+            }
         f = ppuDF[pp];
         }
     for (addr = start; addr < end; addr += 8)
@@ -454,6 +470,14 @@ static void dumpMem(FILE *f, u32 start, u32 end, CpWord *mem)
 
     if (f == NULL)
         {
+        if (cpuDF == NULL)
+            {
+            cpuDF = fopen("cpu.dmp", "wt");
+            if (cpuDF == NULL)
+                {
+                logError(LogErrorLocation, "can't open cpu dump");
+                }
+            }
         f = cpuDF;
         }
     lastData = ~mem[start];

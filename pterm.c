@@ -73,6 +73,7 @@ XrmDatabase XrmDb;
 HINSTANCE hInstance;
 #endif
 extern FILE *traceF;
+extern char traceFn[];
 extern bool tracePterm;
 extern u8 wemode;
 extern volatile bool ptermActive;
@@ -403,6 +404,10 @@ static void ptermWindowInput(void)
                         }
                         else
                         {
+                            if (traceF == NULL)
+                            {
+                                traceF = fopen (traceFn, "w");
+                            }
                             wemode = 3;
                         }
                         ptermSetWeMode (wemode);
