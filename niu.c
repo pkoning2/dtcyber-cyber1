@@ -335,39 +335,7 @@ static void niuInIo(void)
         /*
         **  We're at the first of the two-word input sequence.
         **
-        **  First, get any additional network data .
-        */
-        for (;;)
-            {
-            np = dtFindInput (&niuPorts, 0);
-            if (np == NULL)
-                {
-                break;
-                }
-            i = dtRead  (&np->fet, -1);
-            if (i < 0)
-                {
-                portVector[NiuRemoteOffset + (np - niuPorts.portVec)].sendOffkey = TRUE;
-                dtClose (np, &niuPorts);
-                }
-            }
-        for (;;)
-            {
-            np = dtFindInput (&niuLocalPorts, 0);
-            if (np == NULL)
-                {
-                break;
-                }
-            i = dtRead  (&np->fet, -1);
-            if (i < 0)
-                {
-                portVector[NiuRemoteOffset + (np - niuLocalPorts.portVec)].sendOffkey = TRUE;
-                dtClose (np, &niuLocalPorts);
-                }
-            }
-
-        /*
-        **  Now scan the active connections, round robin, looking
+        **  Scan the active connections, round robin, looking
         **  for one that has pending input.  We need two bytes of
         **  data to be waiting in order to proceed with a given
         **  connection.
@@ -377,8 +345,41 @@ static void niuInIo(void)
             {
             if (++port == STATIONS)
                 {
-                port = NiuLocalOffset;      /* wrap around */
+                /*
+                **  Whenever we finish a scan pass through the ports
+                **  (i.e., we've wrapped around) look for more data.
+                */
+                port = NiuLocalOffset;
+                for (;;)
+                    {
+                    np = dtFindInput (&niuPorts, 0);
+                    if (np == NULL)
+                        {
+                        break;
+                        }
+                    i = dtRead  (&np->fet, -1);
+                    if (i < 0)
+                        {
+                        portVector[NiuRemoteOffset + (np - niuPorts.portVec)].sendOffkey = TRUE;
+                        dtClose (np, &niuPorts);
+                        }
+                    }
+                for (;;)
+                    {
+                    np = dtFindInput (&niuLocalPorts, 0);
+                    if (np == NULL)
+                        {
+                        break;
+                        }
+                    i = dtRead  (&np->fet, -1);
+                    if (i < 0)
+                        {
+                        portVector[NiuRemoteOffset + (np - niuLocalPorts.portVec)].sendOffkey = TRUE;
+                        dtClose (np, &niuLocalPorts);
+                        }
+                    }
                 }
+
             mp = portVector + port;
             np = mp->np;
             
