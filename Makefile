@@ -16,8 +16,15 @@ LIBS    = -lm -lX11 -lpthread
 LDFLAGS = -L/usr/X11R6/lib -L/usr/local/lib
 INCL    = -I/usr/X11R6/include -I/usr/local/include
 
-#CFLAGS  = -O2 -I. $(INCL) -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes 
-CFLAGS  = -O2 -I. $(INCL)
+# for Apple:
+#INCL    += -I/Developer/Headers/FlatCarbon
+
+CFLAGS  = -O2 -g2 -I. $(INCL)
+CFLAGS += -DCcDebug=1
+CFLAGS += -DCPU_THREADS
+
+# for Mac G5:
+#CFLAGS += -mcpu=970 -mtune=970 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64
 
 PCFS	= seymour8b.pcf seymour8m.pcf \
 	seymour16b.pcf seymour16m.pcf \
