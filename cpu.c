@@ -66,7 +66,7 @@
 typedef struct opDispatch
     {
     void (*execute)(CpuContext *activeCpu);
-    u8   length;
+    u32   length;
     } OpDispatch;
 
 /*
@@ -83,7 +83,7 @@ static INLINE bool cpuWriteMem(CpuContext *activeCpu,
 static INLINE void cpuRegASemantics(CpuContext *activeCpu);
 static INLINE u32 cpuAdd18(u32 op1, u32 op2);
 static INLINE u32 cpuSubtract18(u32 op1, u32 op2);
-static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs);
+static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs, bool toReg);
 static bool cpuCmuGetByte(CpuContext *activeCpu, 
                           u32 address, u32 pos, u8 *byte);
 static bool cpuCmuPutByte(CpuContext *activeCpu, 
@@ -207,13 +207,15 @@ pthread_mutex_t flagreg_mutex = PTHREAD_MUTEX_INITIALIZER;
 static FILE *cmHandle;
 static FILE *ecsHandle;
 
+static const u32 cpOp01Length[8] = { 30, 30, 30, 30, 15, 15, 15, 15 };
+
 /*
 **  Opcode decode and dispatch table.
 */
 static OpDispatch decodeCpuOpcode[] =
     {
     cpOp00, 15,
-    cpOp01, 30,
+    cpOp01, (u32)cpOp01Length,
     cpOp02, 30,
     cpOp03, 30,
     cpOp04, 30,
@@ -905,7 +907,8 @@ static void *cpuThread(void *param)
 void cpuStep(CpuContext *activeCpu)
     {
     u32 oldRegP;
-
+    u32 length;
+    
     /*
     **  If this CPU needs to be exchanged, do that first.
     **  (It may not happen right now, if we're in the middle
@@ -931,10 +934,16 @@ void cpuStep(CpuContext *activeCpu)
         **  Decode based on type.
         */
         activeCpu->opFm = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 6)) & Mask6);
-        if (decodeCpuOpcode[activeCpu->opFm].length == 15)
+        activeCpu->opI       = (u8)((activeCpu->opWord >> (activeCpu->opOffset -  9)) & Mask3);
+        activeCpu->opJ       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 12)) & Mask3);
+        length = decodeCpuOpcode[activeCpu->opFm].length;
+        if (length != 15 && length != 30)
             {
-            activeCpu->opI       = (u8)((activeCpu->opWord >> (activeCpu->opOffset -  9)) & Mask3);
-            activeCpu->opJ       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 12)) & Mask3);
+            length = *((u32 *) length + activeCpu->opI);
+            }
+        
+        if (length == 15)
+            {
             activeCpu->opK       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 15)) & Mask3);
             activeCpu->opAddress = 0;
 
@@ -955,8 +964,6 @@ void cpuStep(CpuContext *activeCpu)
                 return;
                 }
 
-            activeCpu->opI       = (u8)((activeCpu->opWord >> (activeCpu->opOffset -  9)) & Mask3);
-            activeCpu->opJ       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 12)) & Mask3);
             activeCpu->opK       = 0;
             activeCpu->opAddress = (u32)((activeCpu->opWord >> (activeCpu->opOffset - 30)) & Mask18);
 
@@ -1348,21 +1355,24 @@ static INLINE u32 cpuSubtract18(u32 op1, u32 op2)
 **                  activeCpu   CPU context pointer
 **                  writeToEcs  TRUE if this is a write to ECS, FALSE if
 **                              this is a read.
+**                  toReg       TRUE if this is a register transfer (RX/WX),
+**                              FALSE if it is a CM transfer (RE/WE).
 **
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs)
+static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs, bool toReg)
     {
     u32 wordCount;
     u32 ecsAddress;
     u32 cmAddress;
     bool takeErrorExit = FALSE;
-
+    CpWord *cmPtr;
+    
     /*
-    **  ECS must exist and instruction must be located in the upper 30 bits.
+    **  ECS must exist and instruction (if RE/WE) must be located in the upper 30 bits.
     */
-    if (ecsMaxMemory == 0 || activeCpu->opOffset != 30)
+    if (ecsMaxMemory == 0 || (!toReg && activeCpu->opOffset != 30))
         {
         activeCpu->exitCondition |= EcAddressOutOfRange;       // <<<<<<<<<<<<< this may be wrong - manual does not specify
         activeCpu->regP = 0;
@@ -1373,9 +1383,19 @@ static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs)
     /*
     **  Calculate word count, source and destination addresses.
     */
-    wordCount = cpuAdd18(activeCpu->regB[activeCpu->opJ], activeCpu->opAddress);
-    ecsAddress = (u32)(activeCpu->regX[0] & Mask24);
-    cmAddress = activeCpu->regA[0] & Mask18;
+    if (toReg)
+        {
+        wordCount = 1;
+        ecsAddress = ecsAddress = (u32)(activeCpu->regX[activeCpu->opK] & Mask24);
+        cmAddress = activeCpu->opJ;
+        cmPtr = activeCpu->regX + cmAddress;
+        }
+    else
+        {
+        wordCount = cpuAdd18(activeCpu->regB[activeCpu->opJ], activeCpu->opAddress);
+        ecsAddress = (u32)(activeCpu->regX[0] & Mask24);
+        cmAddress = activeCpu->regA[0] & Mask18;
+        }
 
     /*
     **  Check if this is a flag register access.
@@ -1417,8 +1437,8 @@ static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs)
     **  Check for positive word count, CM and ECS range.
     */
     if (   (wordCount & Sign18) != 0
-        || activeCpu->regFlCm  < cmAddress + wordCount
-        || activeCpu->regFlEcs < ecsAddress + wordCount)
+           || (!toReg && activeCpu->regFlCm  < cmAddress + wordCount)
+           || activeCpu->regFlEcs < ecsAddress + wordCount)
         {
         activeCpu->exitCondition |= EcAddressOutOfRange;
         if ((activeCpu->exitMode & EmAddressOutOfRange) != 0)
@@ -1452,17 +1472,22 @@ static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs)
     while (wordCount--)
         {
         cmAddress  &= cpuMemMask;
+        if (!toReg)
+            {
+            cmPtr = cpMem + cmAddress;
+            }
+        
         if (ecsAddress >= ecsMaxMemory && !writeToEcs)
             {
             /*
             **  Zero CM, but take error exit once zeroing is finished.
             */
-            cpMem[cmAddress] = 0;
+            *cmPtr = 0;
             takeErrorExit = TRUE;
             }
         else
             {
-            takeErrorExit = cpuEcsAccess (ecsAddress, cpMem + cmAddress, writeToEcs);
+            takeErrorExit = cpuEcsAccess (ecsAddress, cmPtr, writeToEcs);
             }
 
         if (takeErrorExit && writeToEcs)
@@ -1476,10 +1501,11 @@ static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs)
         ecsAddress++;
         }
     
-    if (takeErrorExit)
+    if (takeErrorExit || toReg)
         {
         /*
         **  Error exit to lower 30 bits of instruction word.
+        **  RX/WX also exit to next instruction parcel.
         */
         return;
         }
@@ -2152,14 +2178,14 @@ static void cpOp01(CpuContext *activeCpu)
         /*
         **  RE  Bj+K
         */
-        cpuEcsTransfer(activeCpu, FALSE);
+        cpuEcsTransfer(activeCpu, FALSE, FALSE);
         }
     else if (activeCpu->opI == 2)
         {
         /*
         **  WE  Bj+K
         */
-        cpuEcsTransfer(activeCpu, TRUE);
+        cpuEcsTransfer(activeCpu, TRUE, FALSE);
         }
     else if (activeCpu->opI == 3)
         {
@@ -2211,6 +2237,20 @@ static void cpOp01(CpuContext *activeCpu)
             activeCpu->opOffset = oldOffset + 30;
             return;
             }
+        }
+    else if (activeCpu->opI == 4)
+        {
+        /*
+        **  RXj Xj
+        */
+        cpuEcsTransfer(activeCpu, FALSE, TRUE);
+        }
+    else if (activeCpu->opI == 5)
+        {
+        /*
+        **  WXj Xk
+        */
+        cpuEcsTransfer(activeCpu, TRUE, TRUE);
         }
     }
 
