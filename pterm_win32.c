@@ -501,7 +501,7 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
             ptermDrawChar (1024 + 512, 512, 1, 024);
             wemode = savemode;
             ptermSetWeMode (wemode);
-            return;
+            return 0;
         }
         break;
 
@@ -838,20 +838,44 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
             pc = 035;       // lab
             break;
         default:
-            GetKeyboardState (keystatebuf);
-            buf[0] = 0;
-            if (ToAscii (wParam, 0, keystatebuf, buf, 0) == 1)
+            pc = -1;
+            if (ctrl)
             {
-                key = buf[0];
+                key = MapVirtualKey (wParam, 2);
+                if (isalpha (key))
+                {
+                    key &= 037;     // form control-letter key value
+                }
+                else
+                {
+                    if (key == ']')
+                    {
+                        // trace toggle was already handled
+                        return 0;
+                    }
+                    // control-nonletter produces the shift of
+                    // what PLATO has on that keycap
+                    shift = 040;
+                }
                 if (key > 0 && key <= 127)
                 {
                     pc = asciiToPlato[key];
-                    if (!ctrl)
-                    {
-                        shift = 0;      // shift is accounted for in lookup table
-                    }
                 }
-}
+            }
+            else
+            {
+                GetKeyboardState (keystatebuf);
+                buf[0] = 0;
+                if (ToAscii (wParam, 0, keystatebuf, buf, 0) == 1)
+                {
+                    key = buf[0];
+                    if (key > 0 && key <= 127)
+                    {
+                        pc = asciiToPlato[key];
+                    }
+                    shift = 0;      // shift is accounted for in lookup table
+                }
+            }
         }
         if (pc >= 0)
         {
@@ -948,26 +972,32 @@ static void drawChar (HDC hdc, int x, int y, int snum, int cnum)
     int yt = YADJUST (y) - 15;
 
     // Clip path has bizarre side effects, so do clipping manually.
-    if (x < 1024 && x > 512 - 8)
+    // If X is 1024 or more, that's the special internal "don't clip"
+    // marker used for displaying the Trace indicator.
+    if (x < 1024)
     {
-        xb = 512 - x;
+        if (x > 512 - 8)
+        {
+            xb = 512 - x;
+        }
+        else if (x < 0)
+        {
+            xoff = -x;
+            xb = 8 - xoff;
+            x = 0;
+        }
+        if (yt > DisplayMargin + 512 - 16)
+        {
+            yb = 512 - (yt - DisplayMargin);
+        }
+        else if (yt < DisplayMargin)
+        {
+            yoff = DisplayMargin - yt;
+            yb = 16 - yoff;
+            yt = DisplayMargin;
+        }
     }
-    else if (x < 0)
-    {
-        xoff = -x;
-        xb = 8 - xoff;
-        x = 0;
-    }
-    if (yt > DisplayMargin + 512 - 16)
-    {
-        yb = 512 - (yt - DisplayMargin);
-    }
-    else if (yt < DisplayMargin)
-    {
-        yoff = DisplayMargin - yt;
-        yb = 16 - yoff;
-        yt = DisplayMargin;
-    }
+    
     charX = cnum * 8;
     if (snum < 2)
     {
