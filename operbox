@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# This script is invoked by DtCyber out of the niu operator box
+# watcher thread (if enabled).  It is passed a single string
+# argument:
+#
+#	up	operator box was turned on (i.e., PLATO started)
+#	down	operator box was turned off (PLATO planned shutdown)
+#	crash	operator box keepalive timeout (PLATO crashed)
+
+# These three strings define the list of email addresses to send
+# to on a status change report.  Null string means don't send.
+
+to_up="paul@cyber1.org"
+to_down="paul@cyber1.org"
+to_crash="paul@cyber1.org,6038010176@vtext.com"
+
+echo "`date "+%y/%m/%d %H.%M.%S"`. PLATO $1."
+
+case "$1" in
+    up)         to="${to_up}";;
+    down)       to="${to_down}";;
+    crash)      to="${to_crash}";;
+    *)          echo "$0: unexpected argument $1";
+		exit 1;;
+esac
+
+if [ -n "${to}" ]; then
+    echo "Subject: PLATO $1" > /tmp/opermsg
+    sendmail ${to} < /tmp/opermsg
+    rm -f /tmp/opermsg
+fi

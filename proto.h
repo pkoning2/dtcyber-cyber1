@@ -342,6 +342,7 @@ extern char autoDateString[];
 extern char autoString[];
 extern u32 channelDelayMask;
 extern long cmWaitRatio;
+extern long niuOpstat;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

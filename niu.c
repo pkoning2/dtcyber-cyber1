@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #endif
 #include <errno.h>
 
@@ -39,6 +40,22 @@
 #define NiuRemoteOffset         32          /* starting station for remotes */
 #define NiuLocalBufSize         50          /* size of local input buffer */
 #define NetBufSize              256
+
+/* -ext- words for operator box */
+#define resett 0170000      /* keepalive (should show up every 10 seconds) */
+#define resetb 0130000      /* disable (at system shutdown */
+#define ext    0600000
+
+/* keepalive timeout */
+#define ALERT_TIMEOUT           15          /* seconds */
+
+/* program to for operator box actions */
+#define OPERBOX_EXEC            "./operbox"
+
+/* Argument strings for the operator box program */
+#define OPERBOX_UP              "up"
+#define OPERBOX_DOWN            "down"
+#define OPERBOX_CRASH           "crash"
 
 /*
 **  Function codes.
@@ -94,6 +111,12 @@ void niuSendstr(int stat, const char *p);
 void niuSendWord(int stat, int word);
 static void niuSend(int stat, int word);
 static void niuUpdateStatus (void);
+static void niuOpdata (int word);
+#if !defined(_WIN32)
+static ThreadFunRet niuThread (void *param);
+#endif
+static void niuCheckAlert (void);
+static void niuDoAlert (const char *msg);
 
 /*
 **  ----------------
@@ -104,6 +127,7 @@ long platoPort;
 long platoConns;
 long platoLocalPort;
 long platoLocalConns;
+long niuOpstat;
 extern u32 sequence;
 
 /*
@@ -129,6 +153,7 @@ static bool traced=FALSE;
 #endif
 static void *statusBuf;
 static int niuActiveConns;
+static u32 niuLastAlertReset;
 
 /*
 **--------------------------------------------------------------------------
@@ -227,6 +252,19 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     **  Allocate the operator status buffer
     */
     statusBuf = opInitStatus ("NIU", channelNo, 0);
+
+    /*
+    **  Start the operator alert box thread, if needed.
+    **
+    **  Note that this is currently only supported on Unix-like
+    **  platforms because of the need for fork and exec.
+    */
+#if !defined(_WIN32)
+    if (niuOpstat > 0)
+        {
+        dtCreateThread (niuThread, NULL);
+        }
+#endif
 
     /*
     **  Print a friendly message.
@@ -363,7 +401,6 @@ static void niuInIo(void)
                     i = dtRead  (&np->fet, -1);
                     if (i < 0)
                         {
-                        portVector[NiuRemoteOffset + (np - niuPorts.portVec)].sendOffkey = TRUE;
                         dtClose (np, &niuPorts);
                         }
                     }
@@ -377,7 +414,6 @@ static void niuInIo(void)
                     i = dtRead  (&np->fet, -1);
                     if (i < 0)
                         {
-                        portVector[NiuLocalOffset + (np - niuLocalPorts.portVec)].sendOffkey = TRUE;
                         dtClose (np, &niuLocalPorts);
                         }
                     }
@@ -639,6 +675,7 @@ static void niuWelcome(NetPort *np, int stat)
     
     if (np->fet.connFd == 0)
         {
+        mp->sendOffkey = TRUE;
         printf("%s niu: Connection dropped from %s for station %d-%d\n",
                dtNowString (), inet_ntoa (np->from), 
                stat / 32, stat % 32);
@@ -831,6 +868,15 @@ void niuSendWord(int stat, int word)
         }
 #endif
 
+    /*
+    **  If we have an operator station defined and this word is going there,
+    **  take a look at it.  It may be the operator alert box control codes.
+    */
+    if (stat == niuOpstat)
+        {
+        niuOpdata (word);
+        }
+    
     if (stat < NiuRemoteOffset)
         {
         stat -= NiuLocalOffset;
@@ -870,5 +916,124 @@ void niuSendWord(int stat, int word)
         send(fd, data, 3, MSG_NOSIGNAL);
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Do operator station specific processing
+**
+**  Parameters:     Name        Description.
+**                  word        NIU data word
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void niuOpdata(int word)
+    {
+    /*
+    **  This is where we implement the special handling of the operator
+    **  station.  We emulate the operator's alert box.  That reacts
+    **  to -ext- command words.
+    **  The specific command format can be seen by reading lesson "stats1".
+    **  For now, we handle just two things:
+    **  ext 0170000  keepalive
+    **  ext 0130000  shutdown
+    **
+    **  Keepalive enables the status watcher, and resets the timeout.  If
+    **  no keepalives are then seen for the timeout period, we issue an alert.
+    **  Shutdown turns off the status watcher; this happens (in lesson stats1)
+    **  in a controlled PLATO shutdown.
+    */
+    if (word == ext + resett)
+        {
+        if (niuLastAlertReset == 0)
+            {
+            /*
+            **  First keepalive message since startup or since it was shut off,
+            **  so report a startup.
+            */
+            niuDoAlert (OPERBOX_UP);
+            }
+        niuLastAlertReset = rtcClock;
+        }
+    else if (word == ext + resetb)
+        {
+        /*
+        **  Report a shutdown
+        */
+        niuDoAlert (OPERBOX_DOWN);
+        niuLastAlertReset = 0;
+        }
+    }
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Operator alert box thread
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+#if !defined(_WIN32)    /* only non-Windows for now */
+
+#if defined(_WIN32)
+static void niuThread(void *param)
+#else
+static void *niuThread(void *param)
+#endif
+    {
+    while (emulationActive)
+        {
+        niuCheckAlert ();
+        sleep (ALERT_TIMEOUT / 2);
+        }
+
+    /*
+    **  If the alert wasn't shut off, raise the alarm now as part
+    **  of DtCyber termination.
+    */
+    if (niuLastAlertReset != 0)
+        {
+        niuDoAlert (OPERBOX_CRASH);
+        }
+    }
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Check for operator alert timeout
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void niuCheckAlert (void)
+    {
+    if (niuLastAlertReset != 0 &&
+        (rtcClock - niuLastAlertReset) / 1000000 > ALERT_TIMEOUT)
+        {
+        /* Only raise the alarm once */
+        niuLastAlertReset = 0;
+        niuDoAlert (OPERBOX_CRASH);
+        }
+    }
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Issue the operator alarm
+**
+**  Parameters:     Name        Description.
+**                  msg         A string to pass to the operbox program
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void niuDoAlert (const char *msg)
+    {
+    if (fork () == 0)
+        {
+        execlp (OPERBOX_EXEC, OPERBOX_EXEC, msg, NULL);
+        }
+    }
+
+#endif  /* !WIN32 */
 
 /*---------------------------  End Of File  ------------------------------*/
