@@ -666,8 +666,6 @@ static BOOL windowCreate(void)
 static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     int wmId, wmEvent;
-    u32 nextput;
-    TEXTMETRIC tm;
     HDC hdc;
     SHORT keystate;
     BYTE keystatebuf[256];
@@ -770,17 +768,6 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         PostQuitMessage(0);
         break;
 
-    case WM_TIMER:
-        windowDisplay(hWnd);
-        break;
-
-        /*
-        **  Paint the main window.
-        */
-    case WM_PAINT:
-        windowDisplay(hWnd);
-        break;
-
         /*
         **  Handle input characters.
         */
@@ -880,12 +867,15 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
             i = buf[0];
             if (i != 0 && i <= 127)
                 {
+                i = asciiToConsole[i];
+                }
+            if (i != 0)
+                {
                 if ((lParam & (1 << 31)) != 0)
                     {
-/* this is a "key up" message */
+                    /* this is a "key up" message */
                     i |= 0200;
                     }
-//              printf ("keycode %03o lparam %x\n", i, lParam);
                 windowQueueKey (i);
                 }
             }
@@ -909,7 +899,6 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
 void windowShowDisplay (void)
     {
     PAINTSTRUCT ps;
-    HFONT hfntOld;
 
     BeginPaint(hWnd, &ps);
     hdc = GetDC(hWnd);

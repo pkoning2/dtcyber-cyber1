@@ -230,7 +230,6 @@ int main (int argc, char **argv)
         {
         intervalCode += Dd60FastRate;
         }
-    
     dtInitFet (&fet, NetBufSize);
     
     if (dtConnect (&fet.connFd, "localhost", port) < 0)
@@ -253,7 +252,7 @@ int main (int argc, char **argv)
     */
     initBuf[0] = intervalCode;
     initBuf[1] = Dd60KeyXon;
-    send (fet.connFd, initBuf, sizeof (initBuf), 0);
+    send (fet.connFd, initBuf, 2, 0);
 
     while (emulationActive)
         {
@@ -334,11 +333,7 @@ int main (int argc, char **argv)
         **  We've processed all pending data from the system;
         **  now look for keyboard data.
         */
-#if !defined(_WIN32)
         c = windowInput ();
-#else
-        //tbd
-#endif
         if (c != 0)
             {
             if (c & 0200)
