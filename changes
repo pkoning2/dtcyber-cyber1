@@ -205,11 +205,7 @@ for the PPUs.
 Since jan02 2004 drop:
 - Changed pterm_x11.c to add platobackground property.  Make it work right
   for the whole window, not just the 512 pixel area inside the margins.
-- Changed Makefile, added g4/Makefile and g5/Makefile for Apple "fat binary"
-  build.  
-  This isn't quite right yet for dependencies; it works correctly for
-  an empty binary directory but not when a source file changes.  Also,
-  need the same for pterm and clean targets.
+- Changed Makefile for Apple "fat binary" build.  
 - Fix DM mode PP instructions with D==0 so references to location 7777
   end up at 0 instead.  That correctly emulates the subtractive adder
   behavior of the DM address handling, and apparently is required for SMM
