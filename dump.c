@@ -91,7 +91,7 @@ void dumpInit(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Termiante dumping.
+**  Purpose:        Terminate dumping.
 **
 **  Parameters:     Name        Description.
 **
