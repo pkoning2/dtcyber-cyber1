@@ -266,3 +266,6 @@ Since jan21 2004 drop:
 - Added dd8xxcvt.c
 - Added cpuratio=n (n = 1..50) cyber.ini entry, based on an idea from
   Gerard v.d. Grinten.
+- Add "DEBUG,DISPLAY=[ON,OFF]" to toggle PP/CP/Channel status display (in the
+  debug build) on or off.  This doesn't make any real difference in performance
+  but it makes the display less busy.

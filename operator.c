@@ -99,6 +99,7 @@ static void opUntraceCpu(char *cmdParams);
 static void opUntraceXj(char *cmdParams);
 static void opUntraceEcs(char *cmdParams);
 static void opResetTrace(char *cmdParams);
+static void opDebugDisplay(char *cmdParams);
 #endif
 /*
 **  ----------------
@@ -107,6 +108,9 @@ static void opResetTrace(char *cmdParams);
 */
 bool opActive = FALSE;
 
+#if CcDebug == 1
+bool debugDisplay = TRUE;
+#endif
 /*
 **  -----------------
 **  Private Variables
@@ -140,6 +144,8 @@ static char *syntax[] =
     "SET,KEYBOARD=TRUE.\n",
     "SET,KEYBOARD=EASY.\n",
 #if CcDebug == 1
+    "DEBUG,DISPLAY=ON.\n",
+    "DEBUG,DISPLAY=OFF.\n",
     "TRACE,PPU7.\n",
     "TRACE,CHANNEL7.\n",
     "TRACE,CPU7.\n",
@@ -179,6 +185,7 @@ static OpCmd decode[] =
     "DISASSEMBLE,PPU",          opDisPpu,
     "SET,KEYBOARD=",            opKeyboard,
 #if CcDebug == 1
+    "DEBUG,DISPLAY=",           opDebugDisplay,
     "TRACE,PPU",                opTracePpu,
     "TRACE,CHANNEL",            opTraceCh,
     "TRACE,CPU",                opTraceCpu,
@@ -210,6 +217,7 @@ static OpMsg msg[] =
       { 0020,    0, 0010, "SET,KEYBOARD=TRUE. Emulate console keyboard accurately." },
       { 0020,    0, 0010, "SET,KEYBOARD=EASY. Make console keyboard easy (rollover)." },
 #if CcDebug == 1
+      { 0020,    0, 0010, "DEBUG,DISPLAY=[ON,OFF]. Turn CP/PP debug display on/off." },
       { 0020,    0, 0010, "TRACE,CPUN.        Trace specified CPU activity." },
       { 0020,    0, 0010, "TRACE,CPNN.        Trace CPU activity for CP NN." },
       { 0020,    0, 0010, "TRACE,XJ.          Trace exchange jumps." },
@@ -925,7 +933,7 @@ static void opDisPpu(char *cmdParams)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Disassemble memory of selected PPU
+**  Purpose:        Set keyboard mode to easy or true emulation
 **
 **  Parameters:     Name        Description.
 **                  cmdParams   Command parameters
@@ -953,6 +961,34 @@ static void opKeyboard(char *cmdParams)
     }
 
 #if CcDebug == 1
+/*--------------------------------------------------------------------------
+**  Purpose:        Turn console display of CPU/PPU/Channel status on or off
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opDebugDisplay(char *cmdParams)
+    {
+    /*
+    **  Process commands.
+    */
+    if (strcmp (cmdParams, "ON.") == 0)
+        {
+        debugDisplay = TRUE;
+        }
+    else if (strcmp (cmdParams, "OFF.") != 0)
+        {
+        opSetMsg ("$INVALID PARAMETER");
+        }
+    else
+        {
+        debugDisplay = FALSE;
+        }
+    }
+
 /*--------------------------------------------------------------------------
 **  Purpose:        Trace a PPU
 **

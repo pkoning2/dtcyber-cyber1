@@ -312,6 +312,7 @@ extern u16 platoConns;
 extern FILE **ppuTF;
 extern u32 cycles;
 extern int cpuRatio;
+extern bool debugDisplay;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */
