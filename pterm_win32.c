@@ -1026,6 +1026,42 @@ void ptermTouchPanel(bool enable)
     touchEnabled = enable;
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Show the current trace state
+**
+**  Parameters:     Name        Description.
+**                  enable      true or false for enable or disable.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermShowTrace (bool enable)
+    {
+    int savemode = wemode;
+    
+    if (enable)
+        {
+        wemode = 3;
+        }
+    else
+        {
+        wemode = 2;
+        }
+    ptermSetWeMode (wemode);
+    ptermSetClip (FALSE);
+    ptermDrawLine (-2, -2, 513, -2);
+    ptermDrawLine (513, -2, 513, 513);
+    ptermDrawLine (513, 513, -2, 513);
+    ptermDrawLine (-2, 513, -2, -2);
+    ptermDrawLine (-3, -3, 514, -3);
+    ptermDrawLine (514, -3, 514, 514);
+    ptermDrawLine (514, 514, -3, 514);
+    ptermDrawLine (-3, 514, -3, -3);
+    ptermSetClip (TRUE);
+    wemode = savemode;
+    ptermSetWeMode (wemode);
+    }
+
 /*
 **--------------------------------------------------------------------------
 **

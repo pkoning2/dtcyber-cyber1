@@ -30,6 +30,7 @@ extern void ptermLoadChar (int snum, int cnum, const u16 *data);
 extern void ptermSetWeMode (u8 we);
 extern void ptermSetClip (bool enable);
 extern void ptermSetTrace (bool fileaction);
+extern void ptermShowTrace (bool enable);
 extern void ptermSendKey(int key);
 extern int procNiuWord (u32 d);
 extern void ptermDrawChar (int x, int y, int snum, int cnum);

@@ -371,19 +371,14 @@ int procNiuWord (u32 d)
 **  Returns:        nothing
 **
 **  This function opens or flushes the trace file depending on trace
-**  setting, if fileaction is TRUE.  It then displays or erases
-**  a square around the terminal display area (i.e., within the window margin)
-**  to indicate the status of tracing.
+**  setting, if fileaction is TRUE.  It then redraws (on or off) the trace
+**  indication.
 **
 **------------------------------------------------------------------------*/
 void ptermSetTrace (bool fileaction)
     {
-    int savemode;
-
-    savemode = wemode;
     if (!tracePterm)
         {
-        wemode = 2;
         if (fileaction)
             {
             fflush (traceF);
@@ -395,21 +390,8 @@ void ptermSetTrace (bool fileaction)
             {
             traceF = fopen (traceFn, "w");
             }
-        wemode = 3;
         }
-    ptermSetWeMode (wemode);
-    ptermSetClip (FALSE);
-    ptermDrawLine (-2, -2, 513, -2);
-    ptermDrawLine (513, -2, 513, 513);
-    ptermDrawLine (513, 513, -2, 513);
-    ptermDrawLine (-2, 513, -2, -2);
-    ptermDrawLine (-3, -3, 514, -3);
-    ptermDrawLine (514, -3, 514, 514);
-    ptermDrawLine (514, 514, -3, 514);
-    ptermDrawLine (-3, 514, -3, -3);
-    ptermSetClip (TRUE);
-    wemode = savemode;
-    ptermSetWeMode (wemode);
+    ptermShowTrace (tracePterm);
     }
 
 /*
