@@ -136,6 +136,12 @@ static u32 s1,s2;
 static u32 s1list[MaxPolls], s2list[MaxPolls];
 static int listPutsAtGetChar[MaxPolls];
 static int sumListGet, sumListPut;
+static bool displayOff = FALSE;
+static const i8 dotdx[] = { 0, 1, 0, 1, -1, -1,  0, -1,  1 };
+static const i8 dotdy[] = { 0, 0, 1, 1, -1,  0, -1,  1, -1 };
+//static XKeyboardControl kbPrefs;
+static bool keyboardTrue, keyboardSendUp;
+static bool platoActive;
 #if CcHersheyFont == 1
 static HPEN hPen = 0;
 #endif
@@ -935,14 +941,24 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
             traceStop ();
             break;
 
-        case 'C':
         case 'c':
-            traceMask ^= TraceCpu;
+            traceMask ^= TraceCpu0;
             traceStop ();
+            break;
+
+        case 'C':
+            tracemask ^= tracecpu1;
+            tracestop ();
             break;
 
         case 'E':
         case 'e':
+            traceMask ^= TraceEcs;
+            traceStop ();
+            break;
+
+        case 'J':
+        case 'j':
             traceMask ^= TraceXj;
             traceStop ();
             break;
@@ -963,6 +979,27 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         case 'O':
         case 'o':
             opActive = TRUE;
+            break;
+
+        case 'p':
+            if (niuPresent ())
+                {
+                platoActive = !platoActive;
+                }
+            break;
+
+        case 'q':
+            displayOff = FALSE;
+            break;
+
+        case 's':
+            displayOff = TRUE;
+            break;
+
+        case 't':
+            // this is useful in Plato mode when Alt-S and Alt-Q
+            // have other meanings.
+            displayOff = !displayOff;
             break;
             }
         break;
@@ -1009,6 +1046,13 @@ void windowDisplay(HWND hWnd)
     u8 oldFont = 0;
     PAINTSTRUCT ps;
     HFONT hfntOld;
+    int dotx, doty, doti;
+
+    if (displayOff)
+        {
+        listGet = prevPut;
+        return;
+        }
 
     BeginPaint(hWnd, &ps);
     hdc = GetDC(hWnd);
@@ -1041,8 +1085,13 @@ void windowDisplay(HWND hWnd)
         ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
         cpu.regP); 
 
+        if (cpuCount > 1)
+            {
+            sprintf(buf + strlen(buf), " %06o", cpu[1].regP);
+            }
+            
         sprintf(buf + strlen(buf),
-                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c",
+                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
                 (traceMask >> 0) & 1 ? '0' : '_',
                 (traceMask >> 1) & 1 ? '1' : '_',
                 (traceMask >> 2) & 1 ? '2' : '_',
@@ -1053,8 +1102,10 @@ void windowDisplay(HWND hWnd)
                 (traceMask >> 7) & 1 ? '7' : '_',
                 (traceMask >> 8) & 1 ? '8' : '_',
                 (traceMask >> 9) & 1 ? '9' : '_',
-                (traceMask & TraceCpu) ? 'C' : '_',
-                (traceMask & TraceXj) ? 'E' : '_',
+                (traceMask & TraceCpu0) ? 'c' : '_',
+                (traceMask & TraceCpu1) ? 'C' : '_',
+                (traceMask & TraceEcs) ? 'E' : '_',
+                (traceMask & TraceXj) ? 'J' : '_',
                 (chTraceMask >> 0) & 1 ? '0' : '_',
                 (chTraceMask >> 1) & 1 ? '1' : '_',
                 (chTraceMask >> 2) & 1 ? '2' : '_',
@@ -1066,7 +1117,8 @@ void windowDisplay(HWND hWnd)
                 (chTraceMask >> 8) & 1 ? '8' : '_',
                 (chTraceMask >> 9) & 1 ? '9' : '_',
                 (chTraceMask >> 10) & 1 ? 'A' : '_',
-                (chTraceMask >> 11) & 1 ? 'B' : '_');
+                (chTraceMask >> 11) & 1 ? 'B' : '_',
+                (platoActive) ? 'P' : ' ');
 
     TextOut(hdcMem, 0, 0, buf, strlen(buf));
     }
@@ -1134,7 +1186,22 @@ void windowDisplay(HWND hWnd)
 
         if (curr->fontSize == FontDot)
             {
-            SetPixel(hdcMem, XADJUST (curr->xPos), YADJUST (curr->yPos), RGB(0, 255, 0));
+#if CcHersheyFont == 0
+            dflush ();
+#endif
+            if (curr->xPos == dotx && curr->yPos == doty &&
+                doti < sizeof (dotdx) - 1)
+                {
+                doti++;
+                }
+            else
+                {
+                dotx = curr->xPos;
+                doty = curr->yPos;
+                doti = 0;
+                }
+            SetPixel(hdcMem, XADJUST (curr->xPos + dotdx[doti]),
+                     YADJUST (curr->yPos + dotdy[doti]), RGB(0, 255, 0));
             }
         else
             {
