@@ -18,7 +18,7 @@
 */
 
 #ifndef DEBUG
-#define DEBUG 01
+#define DEBUG 0
 #endif
 
 #define OPTION_10398 1
