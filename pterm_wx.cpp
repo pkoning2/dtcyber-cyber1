@@ -42,6 +42,7 @@
 #define XSize           ((512 + 2 * DisplayMargin) * scale)
 #define YSize           ((512 + 2 * DisplayMargin) * scale)
 #define YPMSize         ((512 + 2 * DisplayMargin + CSETS * 16) * scale)
+#define ScreenSize      (512 * scale)
 
 // Size of frame decoration, used to adjust the frame size
 #define XFrameAdj       2
@@ -180,10 +181,10 @@ public:
     // PLATO drawing primitives
     void ptermDrawChar (int x, int y, int snum, int cnum);
     void ptermDrawPoint (int x, int y);
-    void ptermDrawLine(int x1, int y1, int x2, int y2);
+    void ptermDrawLine(int x1, int y1, int x2, int y2, bool nomutex = FALSE);
     void ptermFullErase (void);
     void ptermSetName (const char *winName);
-    void ptermLoadChar (int snum, int cnum, const u16 *data, bool init);
+    void ptermLoadChar (int snum, int cnum, const u16 *data, bool init = FALSE);
     void ptermSetClip (bool enable);
     
     wxColour    m_colorForeground,    // these are _text_ colors
@@ -405,11 +406,16 @@ bool PtermApp::OnInit (void)
     int port;
     int true_opt = 1;
 
-    printf ("argc %d argv %s %s\n", argc, argv[1], argv[2]);
+    if (argc > 1 && strcmp (argv[1], "-s") == 0)
+    {
+        argv++;
+        argc--;
+        scale = 2;
+    }
     
     if (argc > 3)
     {
-        printf ("usage: pterm [ hostname [ portnum ]]\n");
+        printf ("usage: pterm [-s] [ hostname [ portnum ]]\n");
         exit (1);
     }
     if (argc > 2)
@@ -487,9 +493,9 @@ int PtermApp::OnExit (void)
 PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& size, long style)
     : wxFrame(NULL, -1, title, pos, size, style),
       m_bitmap (XSize, YPMSize, 1),
-      m_memPen (*wxBLACK, 1, wxSOLID),
-      m_foregroundPen (*wxRED, 1, wxSOLID),     // color will be overridden later
-      m_backgroundPen (*wxBLACK, 1, wxSOLID)
+      m_memPen (*wxBLACK, scale, wxSOLID),
+      m_foregroundPen (*wxRED, scale, wxSOLID),     // color will be overridden later
+      m_backgroundPen (*wxBLACK, scale, wxSOLID)
 {
     int i;
     
@@ -723,9 +729,12 @@ PtermCanvas::PtermCanvas(PtermFrame *parent)
                            wxSize (XSize, YSize),
                            wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE)
 {
+    wxClientDC dc(this);
+
     m_owner = parent;
     SetVirtualSize (wxSize (XSize, YSize));
     SetScrollbars (1, 1, XSize, YSize);
+    dc.SetClippingRegion (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize);
     SetFocus ();
 }
 
@@ -733,7 +742,7 @@ void PtermCanvas::OnDraw(wxDC &dc)
 {
     m_owner->PrepareDC (dc);
     dc.Clear ();
-    dc.Blit (XADJUST (0), YADJUST (511), 512, 512,
+    dc.Blit (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize,
              m_owner->m_memDC, XADJUST (0), YADJUST (511), wxCOPY);
 }
 
@@ -959,9 +968,17 @@ void PtermFrame::ptermDrawPoint (int x, int y)
     wxMutexGuiLeave ();
 }
 
-void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
+void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2, bool nomutex)
 {
-    wxMutexGuiEnter ();
+    // the nomutex argument is passed as TRUE when this method is called from
+    // the context of the main (GUI) thread.  That is the case for the 
+    // ptermShowTrace function, because it executes as a consequence of a 
+    // keystroke.  We don't want to wait for the GUI mutex then because we'd
+    // wait forever.
+    if (!nomutex)
+    {
+        wxMutexGuiEnter ();
+    }
     
     wxClientDC dc(m_canvas);
 
@@ -985,7 +1002,10 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
     m_memDC->SetPen (m_memPen);
     m_memDC->DrawLine (x1, y1, x2, y2);
     dc.EndDrawing ();
-    wxMutexGuiLeave ();
+    if (!nomutex)
+    {
+        wxMutexGuiLeave ();
+    }
 }
 
 void PtermFrame::ptermFullErase (void)
@@ -996,9 +1016,9 @@ void PtermFrame::ptermFullErase (void)
 
     dc.BeginDrawing ();
     PrepareDC (dc);
-    dc.Blit (XADJUST (0), YADJUST (511), 512, 512, 
+    dc.Blit (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize, 
              m_memDC, XADJUST (0), YADJUST (511), wxCLEAR);
-    m_memDC->Blit (XADJUST (0), YADJUST (511), 512, 512,
+    m_memDC->Blit (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize,
                    m_memDC, XADJUST (0), YADJUST (511), wxCLEAR);
     dc.EndDrawing ();
     wxMutexGuiLeave ();
@@ -1018,6 +1038,10 @@ void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *data, bool init)
     int y = YSize + (snum * 16 + 15) * scale;
     u16 col;
 
+    // the init argument is passed as TRUE when this method is called from
+    // the context of the main (GUI) thread.  That is the case for the 
+    // program initialization, when we're loading the "rom" character patterns.
+    // We don't want to wait for the GUI mutex then because we'd wait forever.
     if (!init)
     {
         wxMutexGuiEnter ();
@@ -1058,7 +1082,7 @@ void PtermFrame::ptermSetClip (bool enable)
     dc.DestroyClippingRegion();
     if (enable)
     {
-        dc.SetClippingRegion (XADJUST (0), YADJUST (511), 512, 512);
+        dc.SetClippingRegion (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize);
     }
 }
 
@@ -1175,7 +1199,7 @@ void ptermSetName (const char *winName)
 
 void ptermLoadChar (int snum, int cnum, const u16 *data)
 {
-    pterm_frame->ptermLoadChar (snum, cnum, data, FALSE);
+    pterm_frame->ptermLoadChar (snum, cnum, data);
 }
 
 void ptermSetWeMode (u8 we)
@@ -1183,12 +1207,32 @@ void ptermSetWeMode (u8 we)
 //    pterm_frame->ptermSetWeMode (we);
 }
 
-void ptermSetClip (bool enable)
-{
-    pterm_frame->ptermSetClip (enable);
-}
-
 void ptermTouchPanel(bool enable)
 {
+}
+
+void ptermShowTrace (bool enable)
+{
+    int savemode = wemode;
+    
+    if (enable)
+    {
+        wemode = 3;
+    }
+    else
+    {
+        wemode = 2;
+    }
+    pterm_frame->ptermSetClip (FALSE);
+    pterm_frame->ptermDrawLine (-2, -2, 513, -2, TRUE);
+    pterm_frame->ptermDrawLine (513, -2, 513, 513, TRUE);
+    pterm_frame->ptermDrawLine (513, 513, -2, 513, TRUE);
+    pterm_frame->ptermDrawLine (-2, 513, -2, -2, TRUE);
+    pterm_frame->ptermDrawLine (-3, -3, 514, -3, TRUE);
+    pterm_frame->ptermDrawLine (514, -3, 514, 514, TRUE);
+    pterm_frame->ptermDrawLine (514, 514, -3, 514, TRUE);
+    pterm_frame->ptermDrawLine (-3, 514, -3, -3, TRUE);
+    pterm_frame->ptermSetClip (TRUE);
+    wemode = savemode;
 }
 
