@@ -13,6 +13,402 @@ return(opl)
 ~
 */ **/---   block=01-e opl2              83/09/22. 20.24    source
 *oplfile opl2
+*/
+*/ **/---   block=01-e dterase              05/02/08. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Send nop code with data 2 to indicate output has been aborted
+*/ (for -erase abort- and stop key).  That allows pterm to discard
+*/ buffered output.  There can be a lot of that when it is processing
+*/ -delay- nops or other timed data.
+*/
+*/ -------------------------------------------------------------------
+*ident dterase
+*deck putilty
+*i putilty.276
+          sx7    2
+          packwrd x7         send "abort output" pterm nop
+*/ end putilty
+*/
+*/ **/---   block=01-e bdspsdm              05/01/22. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Remove check for SDM= entry point in B display retrieval
+*/
+*/ -------------------------------------------------------------------
+*ident bdspsdm
+*deck mrq1
+*d mrq1.2683,mrq1.2684
+*d mrq1.2937,mrq1.2949
+*d mrq1.2985,mrq1.2986
+*/ end mrq1
+*/
+*/ **/---   block=01-e cfo              05/01/21. 15.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Reinstate the "CFO type-in" MRQ request, so chess4p2 will work.
+*/
+*/ -------------------------------------------------------------------
+*ident cfo
+*deck plasmrq
+*i PLASMRQ.39
+ mr.jcfo  EQU    21          enter CFO type-in
+*/ end plasmrq
+*/
+*deck mastor
+*d mastor.2234
+ MRQREQ   BSSZ   6           *MRQ* REQUEST AREA
+*deck mastor2
+*i mastor2.629
+          SA1    PARAM4
+          BX6    X1
+          SA6    MRQREQ+3
+          SA1    PARAM5
+          BX6    X1
+          SA6    MRQREQ+4
+          SA1    PARAM6
+          BX6    X1
+          SA6    MRQREQ+5
+*i mastor2.659
++         VFD    48/0LCFO,12/mr.jcfo
+*/ end mastor2
+*/
+*deck mrq
+*i mrq.147
+*         REQUEST TYPE = 21 = enter CFO message
+*         12/21, 36/0, 12/0
+*         42/JOB NAME, 18/0
+*         60/msg
+*         60/msg
+*         60/msg
+*         36/msg, 24/0
+*
+*i mrq.508
+          REQTAB JMACT,0,1     21 = enter CFO type-in
+*d mrq.511
+*i mrq.512
+ .NOSV2   ENDIF
+*/ end mrq
+*/
+*deck mrq1
+*d mrq1.4807
+*                   20 = PURGE QUEUE FILE (NOS 1 only)
+*                   21 = Enter CFO type-in (NOS 2 only)
+*d mrq1.4814
+          sbn    2
+          mjn    *+3         if abort or cfo
+*i mrq1.4839
+
+          ldm    ii
+          njn    jma200      CFO type-in
+*i mrq1.4852
+
+*
+*         Enter CFO type-in for specified job
+*
+
+ jma200   ldd    cn+4        pick up job status
+          lpn    76b
+          lmn    /ejt/exjs*2   check for executing
+          njn    jmerr2      if not executing
+          ldn    4
+          std    d.t0
+          RJM    LOADPPW     GET ADDRESS OF REQUEST WORD
+          adn    2           point to the typein data
+          crm    cfobuf,d.t0 read four words of typein data
+          SFA    EJT,CM+2    COMPUTE ADDR OF EJT ENTRY
+          ADK    SCHE        PLUS BIAS FOR scheduling data
+          CRD    CN
+          ldd    cn+3        get cp number
+          shn    7
+          adn    flsw
+          crd    cm          read ra from cp area
+          ldd    cm+3
+          shn    6
+          adn    ccdr        form address of cfo area
+          cwm    cfobuf,d.t0 write cfo message
+          ldd    cm+3
+          shn    6
+          crd    cn          read job ra+0
+          ldd    cn+3
+          lpc    -5          clear cfo and pause bits
+          std    cn+3
+          ldd    cm+3
+          shn    6
+          cwd    cn          rewrite ra+0 for job
+          ujp    mrqrx       success
+
+ cfobuf   bss    4*5         space for cfo data (36 chars max)
+*/ end mrq1
+*/
+*/ **/---   block=01-e bigkeys              05/01/13. 12.19    source
+*/ -------------------------------------------------------------------
+*/
+*/ Make the key buffer larger and parameterize things right to get
+*/ rid of hardwired constant offsets.
+*/
+*/ The old key buffer layout goes like this
+*/        vfd    12/key0, 12/key1, 12/key2, 12/key3, 12/ppuindex
+*/        vfd    36/ , 12/stop1code, 12/cpuindex
+*/ and the offsets to the index fields (cpu offsets 0 and 1, ppu
+*/ offsets 4 and 9) were written as simple numbers.  For that matter
+*/ the wraparound was by masking the index with literal 3... and the
+*/ size of the keybuf entry was handled as hardwired 2 via a shift of 1.
+*/
+*/ The new code does everything symbolically.  All you have to do to
+*/ change the key buffer size is to specify a new value for NKEYSHF.
+*/ (The key buffer size is a power of two, NKEYSHF is that power.)
+*/
+*/ -------------------------------------------------------------------
+*ident bigkeys
+*/
+*/ the symbol definitions come first, then the actual code.
+*/
+*deck syscon
+*i syscon.72
+*
+*         key buffer length related parameters.
+*         these were formerly defined in polls and several other
+*         plato source files.
+
+ NKEYSHF  EQU    3           STATION SHIFT COUNT TO ADDRESS KEY BUFFER
+
+* derived values
+
+ mkeyshf  decmic nkeyshf
+ nkeylth  equ    1S"mkeyshf" length of key input buffer (cp words)
+ pkeylth  equ    nkeylth*5   length of key input buffer (pp words)
+ nkcpidx  equ    nkeylth-1   cp offset to word with cp index
+ pkcpidx  equ    pkeylth-1   pp offset to cp index word
+ pkstop1  equ    pkeylth-2   pp offset to stop1 and fastkey word
+ nkppidx  equ    nkeylth-2   cp offset to word with pp index
+ pkppidx  equ    pkeylth-6   pp offset to pp index word
+ idxlim   equ    pkppidx     index limit (highest value + 1)
+
+* macro for building table of cpu offset and shift given index
+
+ kxmac    if     -mac,kidxtb  avoids warning in psys
+ kidxtb   macro
+ zzzzix   set    0
+ zzzzwd   set    0
+ zzzzsh   set    12
+ kidxwd   dup    idxlim
+          vfd    12/2000b+zzzzsh,48/zzzzwd
+ zzzzsh   set    zzzzsh+12
+          ifgt   zzzzsh,60,2
+ zzzzsh   set    12
+ zzzzwd   set    zzzzwd+1
+ kidxwd   endd
+ kidxtb   endm
+ kxmac    endif
+*/
+*/ Now the code changes
+*/
+*deck pftext
+*d pftext.67
+*/ end pftext
+*/
+*deck pio
+*d PIO.81
+ KEYBSHF  EQU    nkeyshf       SHIFT FOR KEY BUFFER DIMENSION
+*d pio.772
+          LDN    pkeylth
+*d pio.781
+          LDM    ECSBUFF+pkstop1  GET STOP1 CODE
+*d pio.866
+          LDM    ECSBUFF+pkstop1  FIRST CHECK FOR STOP1
+*d pio.925
+          LDN    pkeylth
+*d pio.930,pio.931
+ KYO210   LDM    ECSBUFF+pkppidx  PPU INDEX IN KEY BUFFER
+          SBM    ECSBUFF+pkcpidx  CPU INDEX IN KEY BUFFER
+*d pio.934
+          ADC    idxlim      adjust for wrap
+*d pio.936
+ KYO220   lmn    idxlim-1    check for index limit
+*d pio.938
+          LDM    ECSBUFF+pkstop1  LOAD -STOP1- KEY VALUE
+*d pio.942
+*d pio.947,pio.949
+ KYO225   AOM    ECSBUFF+pkppidx  INCREMENT PPU KEY BUFFER INDEX
+          lmn    idxlim      check for wrap
+          njn    kyo227      if not wrap
+          stm    ecsbuff+pkppidx  wrap back to start of buffer
+ KYO227   LDM    ECSBUFF+pkppidx
+          STD    D.T4        set keybuf offset
+*d pio.952
+*/ ideally we'd write just the one word that changed, but that
+*/ involves a divide by 5 so we won't bother for now.
+          LDN    pkeylth-5   D.T3 = NUMBER WORDS TO WRITE
+*d pio.1874
+ ecsbsz   max    pkeylth,10
+ ECSBUFF  BSS    ecsbsz      BUFFER FOR ECS READ/WRITE
+*/ end pio
+*/
+*deck dd60
+*d dd60.568
+ KB2A     bssz   nkeylth     KEY BUFFER
+*d dd60.644,dd60.648
+          SX0    X4+LSTUD*nkeylth
++         re     nkeylth
+-         RJ     ECSPRTY
+          sa3    a0+nkppidx  get ppu index word
+          sa4    a0+nkcpidx  get cpu index word
+*d dd60.652,dd60.653
+          sx6    X6+1        INCREMENT PP index
+*d dd60.655,dd60.662
+          sb6    x6-idxlim
+          mi     b6,kbi1     if not time to wrap
+          sx6    0           wrap to start
+ kbi1     bx7    x5*x3       get rest of word with pp index
+          bx7    x7+x6       merge updated index
+          sa7    a3          update pp index word
+          sa3    x6+kidxtb   read word and shift for this index
+          ux3,b7 x3
+          sa3    x3+kb2a     fetch the right word
+*d dd60.669,dd60.674
+          SA6    a3
+*d dd60.676,dd60.677
+          SX0    X4+LSTUD*nkeylth
++         we     nkeylth-1   write ecs keybuf except for cpu index word
+*i dd60.682
+
+ kidxtb   kidxtb
+*/ end dd60
+*/
+*deck msubs
+*d msubs.293
+          SX3    nkeylth     NUMBER OF WORDS PER KEY BUFFER.
+*d msubs.297
++         WE     nkeylth     WRITE OUT NEW BUFFER
+*d msubs.477
+ IIIKEY   BSSZ   nkeylth-1
+*d msubs.2054
+          SX7    nkeylth
+*/ end msubs
+*/
+*deck polls
+*d polls.12,polls.25
+*d polls.64,polls.70
+*    WORD 0    12 / key 0
+*              12 / key 1
+*              12 / key 2
+*              12 / key 3
+*              12 / key 4
+*    ... ditto words 1 .. n-2
+*
+*    WORD N-1  12 / KEY K-3
+*              12 / KEY K-2
+*              12 / KEY K-1
+*              12 / KEY K
+*              12 / PPU KEY POINTER
+*
+*    WORD N    36 / TIME AND PRESS KEY INFORMATION
+*i polls.79
+*    where n is (1 $cls$ nkeyshf) - 1.
+*d polls.279
+          SA2    A0+nkppidx  X2 = KEY STORAGE WORD (AND PPU KEY INDEX)
+          SA4    A0+nkcpidx  X4 = CPU KEY WORD
+*d polls.281
+*d polls.362
+          sx7    x5-idxlim   test for index limit
+          mi     x7,notimw   if not wrap
+          sx5    0           wrap back to start of buffer
+ notimw   SA1    STFLAG1     TEST FOR NEW-TYPE KEY PROCESSING
+*d polls.369,polls.376
+ notima   sa2    x5+kidxtb   read word and shift for this index
+          ux2,b2 x2
+          sa2    x2+keyinfo  fetch the right word
+          lx6    x2,b2       shift key into bottom 12 bits
+*i polls.383
+          sx7    x5-idxlim   test for buffer wrap
+          mi     x7,notima   if not wrap
+          sx5    0           wrap back to start of buffer
+*d polls.391,polls.398
+          sa2    x5+kidxtb   read word and shift for this index
+          ux2,b2 x2
+          sa2    x2+keyinfo  fetch the right word
+          lx6    x2,b2       shift key into bottom 12 bits
+*d polls.457
+ RETCP    SX1    nkcpidx     offset to cpu index
+*d pollrwx.14
+          SA1    A0+nkcpidx  UPDATED CPU KEY INDEX WORD
+*i polls.480
+
+ kidxtb   kidxtb
+*d polls.503,polls.504
+          SA1    A0+nkppidx  PPU KEY WORD
+          SA2    A1+nkcpidx  CPU KEY WORD
+*d UQ9600.21,UQ9600.22
+          SA1    A0+nkppidx  PPU KEY WORD
+          SA2    A1+nkcpidx  CPU KEY WORD
+*i UQ9600.25
+          pl     x6,keycnt   if no wrap
+          sx6    x6+idxlim   adjust count for wrapped index
+*d polls.570
+          SA2    A0+nkcpidx  X2 = CPU KEY WORD
+*d pollrwx.17
+          SX1    nkcpidx     offset to cpu index
+*d polls.1041
+          SA1    KEYINFO+nkcpidx  (X1) = CPU KEY BUFFER WORD
+*d polls.1053
+          SX1    nkcpidx     offset to cpu index
+*d polls.1168
+          SA5    A0+nkcpidx  X5 = CP WORD OF BUFFER
+*d pollrwx.40
+          sx4    nkcpidx     offset to cpu index
+*d polls.1232
+          SA1    A0+nkppidx  LOAD PPU KEY BUFFER WORD
+*d polls.1234
+          SA2    A0+nkcpidx  LOAD CPU KEY BUFFER WORD
+*d polls.1266
+          WE     nkeylth
+*d polls.1269
+          RE     nkeylth
+*d polls.1273
+ IIIKEY   BSSZ   nkeylth-1
+*/ end polls
+*/
+*deck exec6
+*d exec6.4158
+          SA1    A0+nkcpidx  X1 = CPU index word OF KEYBUFFER
+*d exec6.4163
+          SX1    nkcpidx     offset to cpu index
+*d exec6.4165,exec6.4166
+          sa0    a0+nkcpidx
++         we     1           write it back to ecs
+*d exec6.4292
+          SA1    A0+nkcpidx  X1 = CPU index word OF KEYBUFFER
+*d exec6.4297
+          SX1    nkcpidx     offset to cpu index
+*d exec6.4299,exec6.4300
+          sa0    a0+nkcpidx
++         we     1           write it back to ecs
+*d exec6.4320,exec6.4322
+*d exec6.4327
+ FKKEYBF  OVDATA nkeylth
+*/ end exec6
+*/
+*/ **/---   block=01-e signoff              05/01/13. 12.19    source
+*/ -------------------------------------------------------------------
+*/
+*/ Treat the disconnect key as special, so it always gets through
+*/
+*/ -------------------------------------------------------------------
+*ident signof2
+*deck pio
+*i PIO.740
+          LDM    KEYBUFF+1,D.T0   LOAD KEY WORD
+          STD    KEY
+          lmc    1753B*2     check *offky2* value (immediate off)
+          zjn    kyo150      if *offky2*, bypass flooding check
+*d PIO.754,PIO.755
+*i PIO.937
+          ldd    key
+          lmc    1753B*2     check *offky2* value (immediate off)
+          zjn    kyo227      if *offky2*, overwrite last key
+*/ end pio
+*/
 */ **/---   block=01-e no acct              04/12/06. 12.19    source
 */ -------------------------------------------------------------------
 */
@@ -212,16 +608,27 @@ return(opl)
 */
 */ some edits needed to make things build on nos 2.1-580.
 */
-*/ it turns out that one of these is required for 2.8.7 too -- perhaps
+*/ it turns out that some of these are required for 2.8.7 too -- perhaps
 */ the code in dsn was simply just wrong.
 */
 */ -------------------------------------------------------------------
-*ident dsnfix
+*ident miscfix
 *deck dsn1
 *delete dsn1.191
           errnz  stbkl-28d  station bank length .ne. 28d
 *delete dsn1.204
 */ end dsn
+*deck pms
+*yank pms800
+*/ delete 180 specific code to make room
+*d PMS.2095,PMS.2136
+ rlp1     equ    relddpx
+*/ we do need a few lines from that mod:
+*i pms.2477
+ .NOS282  IFGE   OSLEV,826D
+ PDA      HERE               INSERT *PDA* SUBR FROM COMPLDA
+ .NOS282  ENDIF
+*/ end pms
 */
 */ -------------------------------------------------------------------
 */ **/---   block=01-e restfaa              83/09/22. 20.24    text
