@@ -65,7 +65,7 @@
 **      4000 = Reserved by other controller (3644 only)
 **
 */
-#define StCp3446Ready            00201  // includes ReadyInt
+#define StCp3446Ready            00201  /* includes ReadyInt */
 #define StCp3446Busy             00002
 #define StCp3446ReadyInt         00200
 #define StCp3446EoiInt           00400
@@ -202,7 +202,7 @@ void cp3446Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     up->fcb[0] = fcb;
     cc->status = StCp3446Ready;
 
-    cc->table = asciiTo026;     // default translation table
+    cc->table = asciiTo026;     /* default translation table */
     if (opt != NULL)
     {
         if (strcmp (opt, "029") == 0)
@@ -248,13 +248,13 @@ static FcStatus cp3446Func(PpWord funcCode)
 
     switch (funcCode)
         {
-    default:                    // all unrecognized codes are NOPs
+    default:                    /* all unrecognized codes are NOPs */
         st = FcProcessed;
         break;
 
-    case FcCp3446CheckLastCard: // this is sent at end of deck, so flush
+    case FcCp3446CheckLastCard: /* this is sent at end of deck, so flush */
         fflush(active3000Device->fcb[0]);
-        // fall through
+        /* fall through */
     case FcCp3446SelectOffset:
     case Fc6681MasterClear:
         st = FcProcessed;
@@ -262,7 +262,7 @@ static FcStatus cp3446Func(PpWord funcCode)
 
     case Fc6681Output:
         cc->status = StCp3446Ready;
-        // fall through
+        /* fall through */
     case Fc6681DevStatusReq:
         st = FcAccepted;
         active3000Device->fcode = funcCode;
@@ -276,7 +276,7 @@ static FcStatus cp3446Func(PpWord funcCode)
     case FcCp3446Deselect:
     case FcCp3446Clear:
         cc->intmask = 0;
-        // fall through
+        /* fall through */
     case FcCp3446BCD:
         cc->binary = FALSE;
         st = FcProcessed;
@@ -361,9 +361,11 @@ static void cp3446Io(void)
         break;
         
     case Fc6681Output:
-        // Don't admit to having new data immediately after completing
-        // a card, otherwise 1CD may get stuck occasionally.
-        // So we simulate card in motion for 20 major cycles.
+        /*
+        **  Don't admit to having new data immediately after completing
+        **  a card, otherwise 1CD may get stuck occasionally.
+        **  So we simulate card in motion for 20 major cycles.
+        */
         if (!activeChannel->full ||
             cycles - cc->getcardcycle < 20)
             {
@@ -372,7 +374,7 @@ static void cp3446Io(void)
 
         if (cc->col >= 80)
             {
-            // Write the card we just finished.
+            /* Write the card we just finished. */
             cp3446FlushCard (active3000Device, cc);
             }
         else
@@ -383,8 +385,10 @@ static void cp3446Io(void)
             if (cc->binary)
                 {
                 c = ' ';
-                // Sorry about the linear search; it's either that
-                // or a substantially hairier translation.
+                /*
+                **  Sorry about the linear search; it's either that
+                **  or a substantially hairier translation.
+                */
                 for (i = 040; i < 0177; i++)
                     {
                     if (cc->table[i] == p)
@@ -561,14 +565,14 @@ static void cp3446FlushCard(DevSlot *up, CrContext *cc)
         return;
         }
     
-    // Remember the cycle counter when the card punch started
+    /* Remember the cycle counter when the card punch started */
     cc->getcardcycle = cycles;
     
-    // Put in the line terminator, omitting trailing blanks
+    /* Put in the line terminator, omitting trailing blanks */
     lc = cc->lastnbcol + 1;
     cc->card[lc++] = '\n';
 
-    // Write the line and reset things for next card
+    /* Write the line and reset things for next card */
     fwrite(cc->card, 1, lc, up->fcb[0]);
     cc->col = 0;
     cc->lastnbcol = -1;

@@ -37,14 +37,54 @@
 
 #define DEBUG       1
 
-#define BLKMAX      330     // max 320 bytes of data plus header plus a few
-#define MAXADDR     07777   // max Doelz "network" address (really connection number)
+#define BLKMAX      330     /* max 320 bytes of data plus header plus a few */
+#define MAXADDR     07777   /* max Doelz "network" address (really connection number) */
 
 /*
 **  Function codes.
 */
 #define FcDlzOff                00000
 #define FcDlzOn                 00001
+
+/*
+**  Flags in messages
+*/
+#define SUPFLGS 0x80            /* flags in flags/address field of supervisory message */
+
+/*
+**  Supervisory message function codes
+*/
+#define ALCALM0     0            /* all call message (types 0 - 5) */
+#define ALCALM5     5
+#define ALCLRM0     8            /* all call response (types 8 - 13) */
+#define ALCLRM5     13           /* all call response (types 8 - 13) */
+#define ALCGRM      16           /* all call group response */
+#define SOLR        17           /* solicit response */
+#define ESTL        18           /* establish link */
+#define NAV1        19           /* node available (1) */
+#define NAV2        20           /* node available (2) */
+#define BUSY        21           /* busy */
+#define NO          22           /* no */
+#define DRPL        23           /* drop link */
+#define ABORTR      25           /* abort response */
+#define ABORTM      32           /* abort */
+#define PTS         36           /* permission to send */
+#define ABORTR      25           /* abort response */
+#define ABORTM      32           /* abort */
+#define NCRDM       33           /* network control read */
+#define NCWRM       35           /* net control write */
+#define PTS         36           /* permission to send */
+#define NCRSPM      37           /* network control response */
+
+/*
+**  Input flags
+*/
+#define DOALCALM    1           /* deliver ALCALM0 message to channel */
+
+/*
+**  Misc
+*/
+#define ALCALDELAY  ULL(45000)  /* delay (microsec) between ALCALM0 messages */
 
 /*
 **  -----------------------
@@ -58,32 +98,66 @@
 **  -----------------------------------------
 */
 typedef struct doelzNode
-{
+    {
     u32         ipAddr;
     u16         tcpPort;
     char        rid[3 + 1];
     char        name[7 + 1];
-} DoelzNode;
+    } DoelzNode;
 
 typedef struct linkParam
-{
+    {
     DoelzNode   *node;
     int         connFd;
-    int         curBlkSiz;
+    int         curBlkSize;
     int         curBlkType;
     int         curBlkOff;
     u8          curBlk[BLKMAX];
     bool        active;
-} LinkParam;
+    } LinkParam;
 
 typedef struct connParam
-{
+    {
     LinkParam   *link;
-    struct connParam *next;     // Next connection with pending input data
+    struct connParam *next;     /* Next connection with pending input data */
     u16         addr;
-} ConnParam;
+    } ConnParam;
 
-    
+/* Abort message (outbound) or permission to send (inbound) */
+
+typedef struct abortMsg
+    {
+    u8          addrhi;         /* high order address */
+    u8          addrlo;         /* low order address */
+    } AbortMsg;
+#define PrmsMsg AbortMsg
+
+/* Key message */
+
+typedef struct keyMsg
+    {
+    u8          addrhi;         /* high order address */
+    u8          addrlo;         /* low order address */
+    u8          key[2];         /* key data (two bytes) */
+    u8          pad[7];         /* unused key data field and pad */
+    } KeyMsg;
+
+/*
+**  Supervisory message (not counting the 2 ppu words at the end in 
+**  the received message format)
+*/
+
+typedef struct supMsg
+    {
+    u8          zero;           /* a byte of zero (high order sup msg ident) */
+    u8          one;            /* byte of one (low order ident) */
+    u8          flaghi;         /* flags and high order address */
+    u8          addrlo;         /* low order address */
+    u8          data[9];        /* data bytes 2 to 10 */
+    u8          pad;
+    } SupMsg;
+#define supfun  data[1]         /* supervisory message function code */
+
 /*
 **  ---------------------------
 **  Private Function Prototypes
@@ -125,16 +199,27 @@ static DevSlot *in;
 static DevSlot *out;
 static LinkParam *linkVector;
 static ConnParam *connTable[MAXADDR + 1];
-static ConnParam *first, *last;         // list heads for pending input list
-static int incnt;                       // byte index of next input byte of "first"
+static ConnParam *first, *last;         /* list heads for pending input list */
+static int incnt;                       /* byte index of next input byte  */
+static int inflags;                     /* various input state flags */
+static int ppiwc;                       /* count of input pp words in block */
+
 static u8 outbuf[BLKMAX];
-static int outcnt;                      // byte index of next output byte in outbuf
-static int ppwc;                        // count of pp words in outbuf
+static int outcnt;                      /* byte index of next output byte in outbuf */
+static int ppowc;                       /* count of pp words in outbuf */
+
+static u32 lastAlCalm;
 
 #if !defined(_WIN32)
 static pthread_t doelz_thread;
 #endif
 
+static const SupMsg allCallMsg =
+{
+    0, 1, SUPFLGS, 0, 
+    { 0, ALCALM0, 0, 0, 0, 0, 0, 0, 0 },
+    0
+};
 
 /*
 **--------------------------------------------------------------------------
@@ -168,9 +253,11 @@ void doelzInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         exit (1);
     }
 
-    // We use two channels, one for input, one for output.
-    // The input channel number is given by what is normally
-    // the unit number in the cyber.ini file.
+    /*
+    **  We use two channels, one for input, one for output.
+    **  The input channel number is given by what is normally
+    **  the unit number in the cyber.ini file.
+    */
     in = channelAttach(unitNo, eqNo, DtDoelz);
     in->activate = doelzActivate;
     in->disconnect = doelzInDisconnect;
@@ -242,9 +329,11 @@ static FcStatus doelzOutFunc(PpWord funcCode)
         return(FcProcessed);
         
     case FcDlzOn:
-        // Connect the input channel to the input device, because there are NO
-        // functions on the input channel, so the normal way for that association
-        // to be made doesn't work here.
+        /*
+        **  Connect the input channel to the input device, because there are NO
+        **  functions on the input channel, so the normal way for that 
+        **  association to be made doesn't work here.
+        */
         in->channel->ioDevice = in;
 
         return(FcAccepted);
@@ -263,18 +352,86 @@ static void doelzInIo(void)
 {
     int port;
     LinkParam *mp;
+    PpWord d;
+    u8 *p;
+    int len;
     
     if (activeChannel->full)
         return;
 
-    if (first == NULL)
+    /*
+    **  If we're not in the middle of a message and it has been
+    **  long enough since the last one, send an All Call message
+    **  to the PPU.  No, I don't know why.
+    */
+    if (incnt == 0 &&
+        (inflags & DOALCALM) == 0 &&
+        rtcClock - lastAlCalm > ALCALDELAY )
     {
-        // If no data, the channel disconnects (!)
+        inflags |= DOALCALM;
+    }
+    
+    /* If we need to send an All Call message, that takes precedence */
+    if (inflags & DOALCALM)
+    {
+        p = (u8 *) &allCallMsg + incnt;
+        len = sizeof (allCallMsg);
+    }
+    else if (first != NULL)
+    {
+        p = first->link->curBlk + incnt;
+        len = first->link->curBlkSize;
+    }
+    else
+    {
+        /* If no data, the channel disconnects (!) */
         activeChannel->active = FALSE;
         return;
     }
 
-    return; // for now
+    /*
+    **  Output data.
+    */
+    if ((ppiwc & 1) == 0)
+    {
+        /*
+        **  Even word.  Note that we have the even words ending on byte 
+        **  boundaries, which means that the first word skips the first
+        **  4 bits of the first byte.  That is done to keep the payload
+        **  (starting at word 2) aligned on byte boundaries.  The payload
+        **  is often byte-oriented, for example in supervisory messages,
+        **  and doing it this way makes picking things apart easier.
+        */
+        d = p[incnt++] << 8;
+        d |= p[incnt++];
+    }
+    else
+    {
+        /* Odd word */
+        d = p[incnt++] << 4;
+        d |= p[incnt] >> 4;
+    }
+    ppiwc++;
+    activeChannel->data = d & Mask12;
+    activeChannel->full = TRUE;
+    if (incnt >= len)
+    {
+        activeChannel->discAfterInput = TRUE;
+        incnt = 0;
+        if (inflags & DOALCALM)
+        {
+            inflags &= ~DOALCALM;
+        }
+        else
+        {
+            first = first->next;
+            if (first == NULL)
+            {
+                last == NULL;
+            }
+        }
+    }
+    
 }
 
 /*--------------------------------------------------------------------------
@@ -312,23 +469,26 @@ static void doelzOutIo(void)
     **  Output data.
     */
     d = activeChannel->data & Mask12;
-    if ((ppwc & 1) == 0)
+    if ((ppowc & 1) == 0)
     {
-        // Even word.  Note that we have the even words ending on byte boundaries,
-        // which means that the first word skips the first 4 bits of the first byte.
-        // That is done to keep the payload (starting at word 2) aligned on byte
-        // boundaries.  The payload is often byte-oriented, for example in supervisory
-        // messages, and doing it this way makes picking things apart easier.
+        /*
+        **  Even word.  Note that we have the even words ending on byte
+        **  boundaries, which means that the first word skips the first
+        **  4 bits of the first byte.  That is done to keep the payload
+        **  (starting at word 2) aligned on byte boundaries.  The payload
+        **  is often byte-oriented, for example in supervisory messages, 
+        **  and doing it this way makes picking things apart easier.
+        */
         outbuf[outcnt++] |= d >> 8;
         outbuf[outcnt++] = d;
     }
     else
     {
-        // Odd word
+        /* Odd word */
         outbuf[outcnt++] = d >> 4;
         outbuf[outcnt] = d << 4;
     }
-    ppwc++;
+    ppowc++;
     activeChannel->full = FALSE;
 }
 
@@ -368,10 +528,14 @@ static void doelzOutDisconnect(void)
 {
     int addr = (outbuf[0] << 8) + outbuf[1];
     int i;
-    
+    AbortMsg *am;
+    KeyMsg *km;
+    SupMsg *sm;
+    /* DataMsg *dm; */
+
 #ifdef DEBUG
     printf ("doelz: output block len %d (%d ppwords), addr %04o",
-            outcnt, ppwc, addr);
+            outcnt, ppowc, addr);
     for (i = 0; i < outcnt; i++)
     {
         if ((i % 16) == 0)
@@ -392,25 +556,28 @@ static void doelzOutDisconnect(void)
         return;
     }
     
-    // Use the length to sort out what's what.  Note that data messages
-    // contain a 12 bit address plus some number of 20 bit data words, which
-    // means the length cannot match the magic numbers for abort, key, or 
-    // supervisory messages.
-    if (ppwc == 1)
+    /*
+    **  Use the length to sort out what's what.  Note that data messages
+    **  contain a 12 bit address plus some number of 20 bit data words, which
+    **  means the length cannot match the magic numbers for abort, key, or 
+    **  supervisory messages.
+    */
+    if (ppowc == 1)
     {
-        // Abort
+        /* Abort */
 #ifdef DEBUG
         printf ("doelz: abort from host\n");
 #endif
     }
-    else if (ppwc == 7)
+    else if (ppowc == 7)
     {
-        // Key
+        /* Key */
 #ifdef DEBUG
-        printf ("doelz: key %04o\n", (outbuf[1] << 4) + (outbuf[2] >> 4));
+        km = (KeyMsg *) outbuf;
+        printf ("doelz: key %04o\n", (km->key[0] << 4) + (km->key[1] >> 4));
 #endif
     }
-    else if (ppwc == 11)
+    else if (ppowc == 11)
     {
         if (addr != 1)
         {
@@ -419,14 +586,15 @@ static void doelzOutDisconnect(void)
             return;
         }
 #ifdef DEBUG
-        printf ("doelz: supervisory message code %d\n", outbuf[5]);
+        sm = (SupMsg *) outbuf;
+        printf ("doelz: supervisory message code %d\n", sm->supfun);
 #endif
     }
     else
     {
-        // Data block -- note that data block length cannot be 7
+        /* Data block -- note that data block length cannot be 7 */
     }
-    outcnt = ppwc = 0;
+    outcnt = ppowc = 0;
 }
 
 /*--------------------------------------------------------------------------
@@ -469,12 +637,12 @@ static void doelzCreateThread(void)
     **  Create TCP thread.
     */
     hThread = CreateThread( 
-        NULL,                                       // no security attribute 
-        0,                                          // default stack size 
+        NULL,                                       /* no security attribute  */
+        0,                                          /* default stack size  */
         (LPTHREAD_START_ROUTINE)doelzThread, 
-        (LPVOID)0,                                  // thread parameter 
-        0,                                          // not suspended 
-        &dwThreadId);                               // returns thread ID 
+        (LPVOID)0,                                  /* thread parameter  */
+        0,                                          /* not suspended  */
+        &dwThreadId);                               /* returns thread ID  */
 
     if (hThread == NULL)
     {
@@ -570,7 +738,7 @@ static void *doelzThread(void *param)
 #if defined(_WIN32)
             Sleep(1000);
 #else
-            //usleep(10000000);
+            /*usleep(10000000); */
             sleep(1);
 #endif
             continue;

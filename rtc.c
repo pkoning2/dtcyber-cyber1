@@ -247,13 +247,15 @@ static void rtcIo(void)
         rtcCycles = now - rtcPrev;
         if (rtcCycles > maxDelta)
             {
-            // print a message if more than 1 second behind
+#ifdef DEBUG
+            /* print a message if more than 1 second behind */
             if (caughtUp && rtcCycles > Hz)
                 {
                 printf ("Clock in catch-up mode, %lld cycles behind (%lld microseconds)\n",
                         now - rtcPrev, (now - rtcPrev) / MHz);
                 caughtUp = FALSE;
                 }
+#endif  /* DEBUG */
             rtcCycles = maxDelta;
             }
         else
@@ -330,7 +332,7 @@ static void rtcInit2(long setMHz)
 			}
 		hz = lhz.QuadPart;
 #elif defined(__APPLE__)
-        hz = 1000000000ULL;     // 10^9, because timer is in ns
+        hz = 1000000000ULL;     /* 10^9, because timer is in ns */
 #else
         procf = fopen ("/proc/cpuinfo", "r");
         if (procf != NULL)
@@ -356,7 +358,7 @@ static void rtcInit2(long setMHz)
             rdtscll (now);
             hz = now - prev;
             }
-#endif  // !__APPLE__
+#endif  /* !__APPLE__ */
         Hz = hz;
         MHz = hz / ULL(1000000);
         }
@@ -365,8 +367,8 @@ static void rtcInit2(long setMHz)
         MHz = setMHz;
         Hz = MHz * ULL(1000000);
         }
-#endif  // !__x86_64
-    maxDelta = 900 * MHz;   // less than 1 ms to keep mtr happy
+#endif  /* !__x86_64 */
+    maxDelta = 900 * MHz;   /* less than 1 ms to keep mtr happy */
     printf ("using high resolution hardware clock at %d MHz\n", MHz);
     }
 #endif

@@ -37,14 +37,14 @@
 **  -----------------
 */
 
-// Flags stored in the context field:
+/* Flags stored in the context field: */
 #define Lp3000Type501           00001
 #define Lp3000Type512           00002
 #define Lp3000Type3152          00010
 #define Lp3000Type3555          00020
 #define Lp3555FillImageMem      00100
-#define Lp3000IntReady          00200   // Same code as int status bit
-#define Lp3000IntEnd            00400   // ditto
+#define Lp3000IntReady          00200   /* Same code as int status bit */
+#define Lp3000IntEnd            00400   /* ditto */
 #define Lp3000IntReadyEna       02000
 #define Lp3000IntEndEna         04000
 
@@ -53,7 +53,7 @@
 **
 */
 
-// Codes common to 3152/3256/3659 and 3555
+/* Codes common to 3152/3256/3659 and 3555 */
 #define FcPrintRelease          00000
 #define FcPrintSingle           00001
 #define FcPrintDouble           00002
@@ -66,7 +66,7 @@
 #define FcControllerOutputEna   01600
 #define Fc6681MasterClear       01700
 
-// Codes for 3152/3256/3659
+/* Codes for 3152/3256/3659 */
 #define Fc3152ClearFormat       00010
 #define Fc3152PostVFU1          00011
 #define Fc3152PostVFU2          00012
@@ -89,7 +89,7 @@
 #define Fc3152RelIntError       00035
 #define Fc3152Release2          00040
 
-// Codes for 3555
+/* Codes for 3555 */
 #define Fc3555CondClearFormat   00007
 #define Fc3555Sel8Lpi           00010
 #define Fc3555Sel6Lpi           00011
@@ -443,20 +443,20 @@ static FcStatus lp3000Func(PpWord funcCode)
     **  are implemented as NOPs.
     */
 
-    // Start with the common codes
+    /* Start with the common codes */
     switch (funcCode)
         {
     case FcPrintAutoEject:
     case FcPrintNoSpace:
     case Fc6681MasterClear:
-        // Treat these as NOPs
+        /* Treat these as NOPs */
         return(FcProcessed);
 
     case FcPrintRelease:
-        // clear all interrupt conditions
+        /* clear all interrupt conditions */
         lc->flags &= ~(StPrintIntReady | StPrintIntEnd);
 
-        // Release is sent at end of job, so flush the print file
+        /* Release is sent at end of job, so flush the print file */
         if (lc->printed)
             {
             fflush (fcb);
@@ -466,12 +466,12 @@ static FcStatus lp3000Func(PpWord funcCode)
         
     case FcPrintSingle:
     case FcPrintLastLine:
-        // Treat last-line codes as a single blank line
+        /* Treat last-line codes as a single blank line */
         fputc('\n', fcb);
         return(FcProcessed);
 
     case FcPrintEject:
-        // Turn eject into a formfeed character
+        /* Turn eject into a formfeed character */
         fputc('\f', fcb);
         return(FcProcessed);
 
@@ -482,17 +482,19 @@ static FcStatus lp3000Func(PpWord funcCode)
     case FcControllerOutputEna:
         if (lc->flags & Lp3555FillImageMem)
             {
-            // Tweak the function code to tell I/O handler to toss this data
+            /* Tweak the function code to tell I/O handler to toss this data */
             funcCode++;
-            // Now clear the flag
+            /* Now clear the flag */
             lc->flags &= ~Lp3555FillImageMem;
             }
-        // Initially clear interrupt status flags
+        /* Initially clear interrupt status flags */
         lc->flags &= ~(StPrintIntReady | StPrintIntEnd);
 
-        // Update interrupt status to reflect what status
-        // will be when this transfer is finished.
-        // Ok, so that's cheating a bit...
+        /*
+        **  Update interrupt status to reflect what status
+        **  will be when this transfer is finished.
+        **  Ok, so that's cheating a bit...
+        */
         if (lc->flags & Lp3000IntReadyEna)
             {
             lc->flags |= Lp3000IntReady;
@@ -502,10 +504,10 @@ static FcStatus lp3000Func(PpWord funcCode)
             lc->flags |= Lp3000IntEnd;
             }
     
-        // Update interrupt summary flag in unit block
+        /* Update interrupt summary flag in unit block */
         dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
 
-        // fall through
+        /* fall through */
     case Fc6681DevStatusReq:
         active3000Device->fcode = funcCode;
         return(FcAccepted);
@@ -555,22 +557,26 @@ static FcStatus lp3000Func(PpWord funcCode)
         case Fc3555PreVFU12:
         case Fc3555MaintStatus:
         case Fc3555ClearMaint:
-            // All of the above are NOPs
+            /* All of the above are NOPs */
             return(FcProcessed);
 
         case Fc3555FillMemory:
-            // Remember that we saw this function, but this doesn't actually
-            // start any I/O yet.
+            /*
+            **  Remember that we saw this function, but this doesn't actually
+            **  start any I/O yet.
+            */
             lc->flags |= Lp3555FillImageMem;
             return(FcProcessed);
 
         case Fc3555SelIntReady:
-            // Enable next int.  If an I/O was done since the last
-            // time an int enable was issued, don't clear the
-            // current int.  That's because things go very slowly
-            // otherwise; printer drivers typically issue the write,
-            // then enable the int shortly after.  We've already set
-            // "ready" by then, unlike physical printers.
+            /*
+            **  Enable next int.  If an I/O was done since the last
+            **  time an int enable was issued, don't clear the
+            **  current int.  That's because things go very slowly
+            **  otherwise; printer drivers typically issue the write,
+            **  then enable the int shortly after.  We've already set
+            **  "ready" by then, unlike physical printers.
+            */
             lc->flags |= Lp3000IntReady | Lp3000IntReadyEna;
             if (lc->keepInt)
                 {
@@ -580,13 +586,13 @@ static FcStatus lp3000Func(PpWord funcCode)
                 {
                 lc->flags &= ~Lp3000IntReady;
                 }
-            // Update interrupt summary flag in unit block
+            /* Update interrupt summary flag in unit block */
             dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
         case Fc3555RelIntReady:
             lc->flags &= ~(Lp3000IntReadyEna | Lp3000IntReady);
-            // Update interrupt summary flag in unit block
+            /* Update interrupt summary flag in unit block */
             dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
@@ -600,13 +606,13 @@ static FcStatus lp3000Func(PpWord funcCode)
                 {
                 lc->flags &= ~Lp3000IntEnd;
                 }
-            // Update interrupt summary flag in unit block
+            /* Update interrupt summary flag in unit block */
             dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
         case Fc3555RelIntEnd:
             lc->flags &= ~(Lp3000IntEndEna | Lp3000IntEnd);
-            // Update interrupt summary flag in unit block
+            /* Update interrupt summary flag in unit block */
             dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
             }
@@ -636,16 +642,18 @@ static FcStatus lp3000Func(PpWord funcCode)
         case Fc3152SelIntError:
         case Fc3152RelIntError:
         case Fc3152Release2:
-            // All of the above are NOPs
+            /* All of the above are NOPs */
             return(FcProcessed);
 
         case Fc3152SelIntReady:
-            // Enable next int.  If an I/O was done since the last
-            // time an int enable was issued, don't clear the
-            // current int.  That's because things go very slowly
-            // otherwise; printer drivers typically issue the write,
-            // then enable the int shortly after.  We've already set
-            // "ready" by then, unlike physical printers.
+            /*
+            **  Enable next int.  If an I/O was done since the last
+            **  time an int enable was issued, don't clear the
+            **  current int.  That's because things go very slowly
+            **  otherwise; printer drivers typically issue the write,
+            **  then enable the int shortly after.  We've already set
+            **  "ready" by then, unlike physical printers.
+            */
             lc->flags |= Lp3000IntReady | Lp3000IntReadyEna;
             if (lc->keepInt)
                 {
@@ -655,13 +663,13 @@ static FcStatus lp3000Func(PpWord funcCode)
                 {
                 lc->flags &= ~Lp3000IntReady;
                 }
-            // Update interrupt summary flag in unit block
+            /* Update interrupt summary flag in unit block */
             dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
         case Fc3152RelIntReady:
             lc->flags &= ~(Lp3000IntReadyEna | Lp3000IntReady);
-            // Update interrupt summary flag in unit block
+            /* Update interrupt summary flag in unit block */
             dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
@@ -675,13 +683,13 @@ static FcStatus lp3000Func(PpWord funcCode)
                 {
                 lc->flags &= ~Lp3000IntEnd;
                 }
-            // Update interrupt summary flag in unit block
+            /* Update interrupt summary flag in unit block */
             dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
         case Fc3152RelIntEnd:
             lc->flags &= ~(Lp3000IntEndEna | Lp3000IntEnd);
-            // Update interrupt summary flag in unit block
+            /* Update interrupt summary flag in unit block */
             dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
             }
@@ -720,13 +728,13 @@ static void lp3000Io(void)
             {
             if (lc->flags & Lp3000Type501)
                 {
-                // 501 printer, output display code
+                /* 501 printer, output display code */
                 fputc(bcdToAscii[(activeChannel->data >> 6) & 077], fcb);
                 fputc(bcdToAscii[activeChannel->data & 077], fcb);
                 }
             else
                 {
-                // 512 printer, output ASCII
+                /* 512 printer, output ASCII */
                 fputc(activeChannel->data & 0377, fcb);
                 }
             activeChannel->full = FALSE;
@@ -736,12 +744,12 @@ static void lp3000Io(void)
         break;
 
     case FcControllerOutputEna + 1:
-        // Fill image memory, just ignore that data
+        /* Fill image memory, just ignore that data */
         activeChannel->full = FALSE;
         break;
 
     case Fc6681DevStatusReq:
-        // Indicate ready plus whatever interrupts are enabled
+        /* Indicate ready plus whatever interrupts are enabled */
         activeChannel->data = StPrintReady | 
                               (lc->flags &
                                (StPrintIntReady | StPrintIntEnd));
@@ -777,7 +785,7 @@ static void lp3000Disconnect(void)
 
     if (active3000Device->fcode == FcControllerOutputEna)
         {
-        // Rule is "space after the line is printed" so do that here
+        /* Rule is "space after the line is printed" so do that here */
         fputc('\n', fcb);
         active3000Device->fcode = 0;
         }

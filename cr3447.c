@@ -64,12 +64,12 @@
 **      4000 = Reserved by other controller (3649 only)
 **
 */
-#define StCr3447Ready            00201  // includes ReadyInt
+#define StCr3447Ready            00201  /* includes ReadyInt */
 #define StCr3447Busy             00002
 #define StCr3447Binary           00004
 #define StCr3447File             00010
 #define StCr3447Empty            00040
-#define StCr3447Eof              01540  // includes Empty, EoiInt, ErrorInt
+#define StCr3447Eof              01540  /* includes Empty, EoiInt, ErrorInt */
 #define StCr3447ReadyInt         00200
 #define StCr3447EoiInt           00400
 #define StCr3447ErrorInt         01000
@@ -202,7 +202,7 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 
         up->fcb[0] = fcb;
         cc->status = StCr3447Ready;
-        cr3447NextCard (up, cc);        // Read the first card
+        cr3447NextCard (up, cc);        /* Read the first card */
         }
     else
         {
@@ -211,7 +211,7 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         cc->status = StCr3447Eof;
         }
 
-    cc->table = asciiTo026;     // default translation table
+    cc->table = asciiTo026;     /* default translation table */
     if (opt != NULL)
         {
         if (strcmp (opt, "029") == 0)
@@ -254,7 +254,7 @@ static FcStatus cr3447Func(PpWord funcCode)
 
     switch (funcCode)
         {
-    default:                    // all unrecognized codes are NOPs
+    default:                    /* all unrecognized codes are NOPs */
         st = FcProcessed;
         break;
 
@@ -265,7 +265,7 @@ static FcStatus cr3447Func(PpWord funcCode)
     case Fc6681InputToEor:
     case Fc6681Input:
         cc->status = StCr3447Ready;
-        // fall through
+        /* fall through */
     case Fc6681DevStatusReq:
         st = FcAccepted;
         active3000Device->fcode = funcCode;
@@ -279,7 +279,7 @@ static FcStatus cr3447Func(PpWord funcCode)
     case FcCr3447Deselect:
     case FcCr3447Clear:
         cc->intmask = 0;
-        // fall through
+        /* fall through */
     case FcCr3447BCD:
         cc->binary = FALSE;
         st = FcProcessed;
@@ -361,9 +361,11 @@ static void cr3447Io(void)
         
     case Fc6681InputToEor:
     case Fc6681Input:
-        // Don't admit to having new data immediately after completing
-        // a card, otherwise 1CD may get stuck occasionally.
-        // So we simulate card in motion for 20 major cycles.
+        /*
+        **  Don't admit to having new data immediately after completing
+        **  a card, otherwise 1CD may get stuck occasionally.
+        **  So we simulate card in motion for 20 major cycles.
+        */
         if (   activeChannel->full
             || cycles - cc->getcardcycle < 20)
             {
@@ -378,12 +380,14 @@ static void cr3447Io(void)
         
         if (cc->col >= 80)
             {
-            // Read the next card.
-            // If the function is input to EOR, disconnect to indicate EOR
+            /*
+            **  Read the next card.
+            **  If the function is input to EOR, disconnect to indicate EOR.
+            */
             cr3447NextCard (active3000Device, cc);
             if (activeDevice->fcode == Fc6681InputToEor)
                 {
-                // End of card but we're still ready
+                /* End of card but we're still ready */
                 cc->status |= StCr3447EoiInt | StCr3447Ready;
                 if (cc->status & StCr3447File)
                     cc->status |= StCr3447ErrorInt;

@@ -395,7 +395,7 @@ void dumpDisassemblePpu(u8 pp)
     fprintf(pf, "STOP  %02o\n", ppu[pp].stopped);
     fprintf(pf, "\n");
 
-    // Dump the direct cells as data (not disassembly)
+    /* Dump the direct cells as data (not disassembly) */
     dumpPpuMem(pf, pp, 0, 077);
     fprintf(pf, "\n");
     for (addr = 0100; addr < PpMemSize; addr += cnt)
@@ -487,7 +487,7 @@ static void dumpMem(FILE *f, u32 start, u32 end, CpWord *mem)
         data = mem[addr];
         if (addr + 1 == end)
             {
-            // odd dump length
+            /* odd dump length */
             fprintf(f, "%06o  ", addr & Mask18);
             fprintf(f, 
                     "%04o %04o %04o %04o %04o   "

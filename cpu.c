@@ -74,7 +74,6 @@ typedef struct opDispatch
 **  Private Function Prototypes
 **  ---------------------------
 */
-//static bool cpuFetchOpWord(u32 address, CpWord *data);
 #define cpuFetchOpWord cpuReadMem
 static INLINE bool cpuReadMem(CpuContext *activeCpu, 
                               u32 address, CpWord *data);
@@ -105,7 +104,7 @@ static void cpuThread(void *param);
 static void *cpuThread(void *param);
 #define RETURN return 0
 #endif
-#endif // CPU_THREADS
+#endif /* CPU_THREADS */
 
 static void cpOp00(CpuContext *activeCpu);
 static void cpOp01(CpuContext *activeCpu);
@@ -324,7 +323,7 @@ static INLINE bool cpuReadMem(CpuContext *activeCpu,
             }
         else
             {
-            // out of range address and exit not selected is a NOP
+            /* out of range address and exit not selected is a NOP */
             return(FALSE);
             }
         }
@@ -893,7 +892,7 @@ static void *cpuThread(void *param)
         cpuStep (activeCpu);
         }
     }
-#endif // CPU_THREADS
+#endif /* CPU_THREADS */
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Execute next instruction in some CPU.
@@ -1251,7 +1250,7 @@ static void cpuTraceCtl (CpuContext *activeCpu)
     {
     if (activeCpu->opJ == 1 && activeCpu->opAddress == 000042)
         {
-        // sb0 b1+42 is the magic word to turn on tracing
+        /* sb0 b1+42 is the magic word to turn on tracing */
         traceCp = (cpMem[060] >> 31) & 037;
         traceMask |= TraceCpu (activeCpu->id);
         }

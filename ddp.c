@@ -76,14 +76,14 @@
 */
 
 typedef struct
-{
+    {
     CpWord  curword;
     u32     addr;
     int     dbyte;
     int     abyte;
     int     endaddrcycle;
     PpWord  stat;
-} DdpContext;
+    } DdpContext;
 
 /*
 **  ---------------------------
@@ -126,7 +126,7 @@ static void ddpDisconnect(void);
 **
 **------------------------------------------------------------------------*/
 void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
-{
+    {
     DevSlot *dp;
     DdpContext *dc;
     
@@ -135,10 +135,10 @@ void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     (void)deviceName;
 
     if (ecsMaxMemory == 0)
-    {
+        {
         fprintf (stderr, "Cannot configure DDP, no ECS configured\n");
         exit (1);
-    }
+        }
     
     dp = channelAttach(channelNo, eqNo, DtDdp);
 
@@ -149,10 +149,10 @@ void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 
     dc = calloc (1, sizeof (DdpContext));
     if (dc == NULL)
-    {
+        {
         fprintf (stderr, "Failed to allocate DDP context block\n");
         exit (1);
-    }
+        }
     dp->context[unitNo] = dc;
     dc->stat = StDdpAccept;
 
@@ -160,7 +160,7 @@ void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     **  Print a friendly message.
     */
     printf ("DDP initialised on channel %o\n", channelNo);
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Execute function code on DDP device.
@@ -172,13 +172,13 @@ void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **
 **------------------------------------------------------------------------*/
 static FcStatus ddpFunc(PpWord funcCode)
-{
+    {
     DdpContext *dc;
 
     dc = (DdpContext *) (activeDevice->context[activeDevice->selectedUnit]);
 
     switch (funcCode)
-    {
+        {
     default:
         return (FcDeclined);
 
@@ -196,8 +196,8 @@ static FcStatus ddpFunc(PpWord funcCode)
         dc->stat = StDdpAccept;
         activeChannel->discAfterInput = FALSE;
         return (FcProcessed);
+        }
     }
-}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Perform I/O.
@@ -208,79 +208,81 @@ static FcStatus ddpFunc(PpWord funcCode)
 **
 **------------------------------------------------------------------------*/
 static void ddpIo(void)
-{
+    {
     DdpContext *dc;
 
     dc = (DdpContext *) (activeDevice->context[activeDevice->selectedUnit]);
 
     switch (activeDevice->fcode)
-    {
+        {
     default:
         return;
         
     case FcDdpStatus:
         if (!activeChannel->full)
-        {
+            {
             if (DEBUG)
                 printf ("ddp status %04o\n", dc->stat);
             activeChannel->data = dc->stat;
             activeChannel->full = TRUE;
             activeDevice->fcode = 0;
-        }
+            }
         break;
         
     case FcDdpReadECS:
     case FcDdpWriteECS:
         if (dc->abyte < 2)
-        {
-            // We need to get the address from the PPU
-            if (activeChannel->full)
             {
+            /* We need to get the address from the PPU */
+            if (activeChannel->full)
+                {
                 dc->addr <<= 12;
                 dc->addr += activeChannel->data;
                 if (DEBUG)
                     printf ("address %08o byte %d\n", dc->addr, dc->abyte);
                 dc->abyte++;
                 activeChannel->full = FALSE;
-            }
+                }
             if (dc->abyte == 2 && activeDevice->fcode == FcDdpReadECS)
-            {
-                // we'll delay a bit before we set channel full
+                {
+                /* we'll delay a bit before we set channel full */
                 dc->endaddrcycle = cycles;
-                // we have a complete address; if this is read, 
-                // read the first word.  We need to do that
-                // unconditionally in case it's a flag
-                // register operation, because then the PPU
-                // is probably not going to read the data.
+                /*
+                **  we have a complete address; if this is read, 
+                **  read the first word.  We need to do that
+                **  unconditionally in case it's a flag
+                **  register operation, because then the PPU
+                **  is probably not going to read the data.
+                */
                 dc->stat = StDdpAccept;
                 if (cpuEcsAccess (dc->addr, &dc->curword, FALSE))
-                {
+                    {
                     if (DEBUGE)
                         printf ("ddp read abort addr %08o\n", dc->addr);
                     activeChannel->discAfterInput = TRUE;
                     dc->stat = StDdpAbort;
-                }
+                    }
                 dc->dbyte = 0;
-            }
+                }
             break;
-        }
+            }
         if (activeDevice->fcode == FcDdpReadECS)
-        {
+            {
             if (!activeChannel->full &&
                 cycles - dc->endaddrcycle > 20)
-            {
-                if (dc->dbyte == -1)
                 {
+                if (dc->dbyte == -1)
+                    {
                     dc->stat = StDdpAccept;
                     if (cpuEcsAccess (dc->addr, &dc->curword, FALSE))
-                    {
+                        {
                         if (DEBUGE)
                             printf ("ddp read abort addr %08o\n", dc->addr);
                         activeChannel->discAfterInput = TRUE;
                         dc->stat = StDdpAbort;
-                    }
+                        }
                     dc->dbyte = 0;
-                }
+                    }
                 activeChannel->data = (dc->curword >> 48) & Mask12;
                 if (DEBUG)
                     printf ("ddp read addr %08o data %04o byte %d\n",
@@ -288,17 +290,17 @@ static void ddpIo(void)
                 activeChannel->full = TRUE;
                 dc->curword <<= 12;
                 if (++dc->dbyte == 5)
-                {
+                    {
                     if (dc->addr & (DdpAddrReadOne | DdpAddrFlagReg))
                         activeChannel->discAfterInput = TRUE;
                     dc->dbyte = -1;
                     dc->addr++;
+                    }
                 }
-            }
             
-        }
+            }
         else if (activeChannel->full)
-        {
+            {
             dc->stat = StDdpAccept;
             dc->curword <<= 12;
             dc->curword += activeChannel->data;
@@ -307,23 +309,23 @@ static void ddpIo(void)
                 printf ("ddp write addr %08o data %04o byte %d\n",
                         dc->addr, activeChannel->data, dc->dbyte);
             if (++dc->dbyte == 5)
-            {
-                if (cpuEcsAccess (dc->addr, &dc->curword, TRUE))
                 {
+                if (cpuEcsAccess (dc->addr, &dc->curword, TRUE))
+                    {
                     if (DEBUGE)
                         printf ("ddp write abort addr %08o\n", dc->addr);
                     activeChannel->active = FALSE;
                     dc->stat = StDdpAbort;
                     return;
-                }
+                    }
                 if (dc->addr & DdpAddrFlagReg)
                     activeChannel->active = FALSE;
                 dc->dbyte = 0;
                 dc->addr++;
+                }
             }
         }
     }
-}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Handle channel activation.
@@ -334,8 +336,8 @@ static void ddpIo(void)
 **
 **------------------------------------------------------------------------*/
 static void ddpActivate(void)
-{
-}
+    {
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Handle disconnecting of channel.
@@ -346,7 +348,7 @@ static void ddpActivate(void)
 **
 **------------------------------------------------------------------------*/
 static void ddpDisconnect(void)
-{
-}
+    {
+    }
 
 /*---------------------------  End Of File  ------------------------------*/

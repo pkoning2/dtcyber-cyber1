@@ -110,6 +110,7 @@ Message layouts in detail (from plftext):
 *                48 / padding to make length 21 pp words.
 
 ****      pcn message type values.
+	  These go in data byte 3 of the supervisory message.
  
  alcalm0  equ    0           all call message (types 0 - 5)
  alcalm5  equ    5
@@ -234,6 +235,19 @@ Message layouts in detail (from plftext):
 *                6  get remote host name link.
 *                7  get nodes available link.
 *
+
+Doelz exchanges:
+
+PLF expects to hear an All Call message periodically -- the timeout is
+50 ms.  Go figure.  It doesn't seem to do anything useful with these,
+but it insists on them.  Any All Call message (ALCALM0 through 5) will
+serve.
+
+
+
+
+
+
 
 Protocol for Doelz over TCP:
 
