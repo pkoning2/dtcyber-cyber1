@@ -320,3 +320,4 @@ Since jan21 2004 drop:
 - Added touch support and trace support for Win32 pterm.
 - Add automatic date/time entry at deadstart if "clock=0" specified.
 - Put station number in pterm window titlebar.
+- Support control-digit for "PLATO layout" shifted digit codes

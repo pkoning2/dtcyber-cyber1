@@ -364,9 +364,8 @@ static void ptermWindowInput(void)
 {
     XEvent event;
     XKeyEvent *kp;
+    int key;
     KeySym ks;
-    char text[30];
-    int len;
     int savemode;
     
     /*
@@ -387,40 +386,37 @@ static void ptermWindowInput(void)
             kp = (XKeyEvent *) &event;
             if (kp->state & ControlMask)
             {
-                len = XLookupString (kp, text, 10, &ks, 0);
-                if (len == 1)
+                key = XKeycodeToKeysym (disp, kp->keycode, 0);
+                if (key == XK_z)        // control-Z : exit
                 {
-                    if (text[0] == '\032')  // control-Z : exit
+                    close(connFd);
+                    ptermActive = FALSE;
+                    return;
+                }
+                else if (key == XK_bracketright)    // control-] : trace
+                {
+                    tracePterm = !tracePterm;
+                    savemode = wemode;
+                    if (!tracePterm)
                     {
-                        close(connFd);
-                        ptermActive = FALSE;
-                        return;
+                        wemode = 2;
+                        fflush (traceF);
                     }
-                    else if (text[0] == '\035') // control-] : trace
+                    else
                     {
-                        tracePterm = !tracePterm;
-                        savemode = wemode;
-                        if (!tracePterm)
+                        if (traceF == NULL)
                         {
-                            wemode = 2;
-                            fflush (traceF);
+                            traceF = fopen (traceFn, "w");
                         }
-                        else
-                        {
-                            if (traceF == NULL)
-                            {
-                                traceF = fopen (traceFn, "w");
-                            }
-                            wemode = 3;
-                        }
-                        ptermSetWeMode (wemode);
-                        // The 1024 is a strange hack to circumvent the
-                        // screen edge wrap checking.
-                        ptermDrawChar (1024 + 512, 512, 1, 024);
-                        wemode = savemode;
-                        ptermSetWeMode (wemode);
-                        return;
+                        wemode = 3;
                     }
+                    ptermSetWeMode (wemode);
+                    // The 1024 is a strange hack to circumvent the
+                    // screen edge wrap checking.
+                    ptermDrawChar (1024 + 512, 512, 1, 024);
+                    wemode = savemode;
+                    ptermSetWeMode (wemode);
+                    return;
                 }
             }
             // Fall through to default handler

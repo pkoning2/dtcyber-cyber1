@@ -756,12 +756,23 @@ bool platoKeypress (XKeyEvent *kp, int stat)
         }
         else
         {
-            len = XLookupString (kp, text, 10, &ks, 0);
-            if (len > 1)
+            if (ctrl && !isalpha (key))
             {
-                return FALSE;
+                // control but not a letter -- 
+                // translate to what a PLATO keyboard
+                // would have on the shifted position for that key
+                pc = asciiToPlato[key];
+                shift = 040;
             }
-            pc = asciiToPlato[text[0]];
+            else
+            {
+                len = XLookupString (kp, text, 10, &ks, 0);
+                if (len > 1)
+                {
+                    return FALSE;
+                }
+                pc = asciiToPlato[text[0]];
+            }
             if (pc >= 0)
             {
                 if (ctrl)
