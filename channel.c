@@ -71,7 +71,6 @@ static u8 ch = 0;
 **--------------------------------------------------------------------------
 */
 
-
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialise channels.
 **
@@ -106,6 +105,66 @@ void channelInit(u8 count)
     **  Print a friendly message.
     */
     printf("Channels initialised (number of channels %o)\n", channelCount);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Terminate channels.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void channelTerminate(void)
+    {
+    DevSlot *dp;
+    DevSlot *fp;
+    u8 i;
+
+    /*
+    **  Free allocated memory of all devices hanging of this channel.
+    */
+    for (ch = 0; ch < channelCount; ch++)
+        {
+        for (dp = channel[ch].firstDevice; dp != NULL; dp = dp->next)
+            {
+            if (dp->devType == DtDcc6681)
+                {
+                dcc6681Terminate(dp);
+                }
+
+            /*
+            **  Free all unit contexts and close all open files.
+            */
+            for (i = 0; i < MaxUnits; i++)
+                {
+                if (dp->context[i] != NULL)
+                    {
+                    free(dp->context[i]);
+                    }
+
+                if (dp->fcb[i] != NULL)
+                    {
+                    fclose(dp->fcb[i]);
+                    }
+                }
+            }
+
+        for (dp = channel[ch].firstDevice; dp != NULL;)
+            {
+            /*
+            **  Free all device control blocks.
+            */
+            fp = dp;
+            dp = dp->next;
+            free(fp);
+            }
+        }
+
+    /*
+    **  Free all channel control blocks.
+    */
+    free(channel);
     }
 
 /*--------------------------------------------------------------------------
@@ -246,7 +305,6 @@ void channelFunction(PpWord funcCode)
 **  Purpose:        Activate a channel and let attached device know.
 **
 **  Parameters:     Name        Description.
-**                  channelNo   channel number activated
 **
 **  Returns:        Nothing.
 **
@@ -280,6 +338,29 @@ void channelDisconnect(void)
         activeDevice = activeChannel->ioDevice;
         activeDevice->disconnect();
         }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Probe channel status.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing
+**
+**------------------------------------------------------------------------*/
+void channelProbe(void)
+    {
+    /*
+    **  The following gives individual drivers an opportunity to delay
+    **  too rapid changes of the channel status when probed via FJM and
+    **  EJM PP opcodes. Initially this will be used by mt669.c only.
+    */
+    if (activeChannel->delayStatus == 0)
+        {
+        activeChannel->delayStatus = 5;
+        }
+
+    channelIo();
     }
 
 /*--------------------------------------------------------------------------
