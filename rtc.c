@@ -114,6 +114,7 @@ static u32 MHz;
 static u32 maxDelta;
 static u64 rtcPrev;
 static bool caughtUp = FALSE;
+static bool mtr = FALSE;
 #endif
 /*
 **--------------------------------------------------------------------------
@@ -267,10 +268,14 @@ static void rtcIo(void)
         us = rtcCycles / MHz;
         clock = rtcClock + us;
         
-        if (activePpu->id == 0)
+        if (activePpu->id == 0 || !mtr)
             {
             rtcPrev += us * MHz;
             rtcClock = clock;
+            }
+        else if (activePpu->id == 0)
+            {
+            mtr = TRUE;
             }
         }
 #else
