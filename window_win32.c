@@ -108,6 +108,18 @@ static void dflush (HDC hdcMem, int dx);
 **  Private Variables
 **  -----------------
 */
+static char consoleToAscii[64] =
+    {
+    /* 00-07 */ 0,      'A',    'B',    'C',    'D',    'E',    'F',    'G',
+    /* 10-17 */ 'H',    'I',    'J',    'K',    'L',    'M',    'N',    'O',
+    /* 20-27 */ 'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',
+    /* 30-37 */ 'X',    'Y',    'Z',    '0',    '1',    '2',    '3',    '4',
+    /* 40-47 */ '5',    '6',    '7',    '8',    '9',    '+',    '-',    '*',
+    /* 50-57 */ '/',    '(',    ')',    ' ',    '=',    ' ',    ',',    '.',
+    /* 60-67 */  0,      0,      0,      0,      0,      0,      0,      0,
+    /* 70-77 */  0,      0,      0,      0,      0,      0,      0,      0
+    };
+
 static u8 currentFont;
 static FontInfo *currentFontInfo;
 static i16 currentX = -1;
@@ -195,7 +207,7 @@ void windowSetX(u16 x)
 **  Purpose:        Set Y coordinate.
 **
 **  Parameters:     Name        Description.
-**                  y           horinzontal coordinate (0 - 0777)
+**                  y           vertical coordinate (0 - 0777)
 **
 **  Returns:        Nothing.
 **
@@ -223,6 +235,11 @@ void windowQueue(char ch)
         || currentY == -1)
         {
         return;
+        }
+
+    if (!opActive)
+        {
+        ch = consoleToASscii[ch];
         }
 
     if (ch != 0)
@@ -379,9 +396,14 @@ static void dflush (HDC hdcMem, int dx)
 **------------------------------------------------------------------------*/
 static void dput (HDC hdcMem, char c, int x, int y, int dx)
     {
-    int dindx = (x - xstart) / dx;
+    int dindx;
+    
+    // Center the character on the supplied x/y.
+    x -= dx / 2;
+    y += dx * 3 / 8;    // approximation for 1/2 ascent...
     
     // Count hits on this position (for intensify)
+    dindx = (x - xstart) / dx;
     if (y == ypos &&
         x < xpos && x >= xstart &&
             dindx * dx == x - xstart &&
