@@ -15,11 +15,13 @@
 **  Include Files
 **  -------------
 */
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if !defined (_WIN32)
+#include <unistd.h>
 #include <sys/time.h>
+#endif
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -36,7 +38,7 @@
 /*
 **  Screen related definitions
 */
-#define DisplayMargin	        20
+#define DisplayMargin           20
 #define OffLeftScreen           0
 #define OffRightScreen          01020
 #define TraceX                  (10 - DisplayMargin)
@@ -103,6 +105,9 @@ typedef struct
 **  Public Variables
 **  ----------------
 */
+#if defined(_WIN32)
+HINSTANCE hInstance;
+#endif
 bool emulationActive = TRUE;
 bool hersheyMode = FALSE;
 int scaleX = 10;
@@ -146,6 +151,7 @@ int main (int argc, char **argv)
     int readDelay;
     char opt;
     
+#if !defined(_WIN32)
     for (;;)
         {
         opt = getopt (argc, argv, "hs");
@@ -164,10 +170,14 @@ int main (int argc, char **argv)
         }
     argc -= optind;
     argv += optind;
+#else
+    argc--; // temp
+    argv++;
+#endif
 
     if (argc > 2)
         {
-        fprintf (stderr, "usage: dd60 [-h] [ interval [ portnum ]]\n");
+        fprintf (stderr, "usage: dd60 [-hs] [ interval [ portnum ]]\n");
         exit (1);
         }
     if (argc > 1)
@@ -344,7 +354,7 @@ int main (int argc, char **argv)
             }
         }
     windowClose ();
-	return 0;
+    return 0;
     }
 
 

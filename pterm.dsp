@@ -87,6 +87,10 @@ SOURCE=charset.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\dtnetsubs.c
+# End Source File
+# Begin Source File
+
 SOURCE=fonts.bmp
 # End Source File
 # Begin Source File

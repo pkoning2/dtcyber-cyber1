@@ -147,6 +147,10 @@ SOURCE=.\doelz.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\dtnetsubs.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\dump.c
 # End Source File
 # Begin Source File
@@ -199,14 +203,6 @@ SOURCE=.\pp.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\pterm_win32.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\ptermcom.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\rtc.c
 # End Source File
 # Begin Source File
@@ -216,20 +212,6 @@ SOURCE=.\shift.c
 # Begin Source File
 
 SOURCE=.\trace.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\window_win32.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\window_win32_scaled.c
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
-SOURCE=.\window_x11.c
-# PROP Exclude_From_Build 1
 # End Source File
 # End Group
 # Begin Group "Header Files"

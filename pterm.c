@@ -18,7 +18,6 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -26,6 +25,7 @@
 #if defined(_WIN32)
 #include <winsock.h>
 #else
+#include <fcntl.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -101,6 +101,8 @@ static u16 currInput;
 
 extern void ptermInput(XEvent *event);
 #endif
+extern void ptermInit(const char *winName, bool closeOk);
+extern void ptermClose (void);
 extern void procNiuWord (int stat, u32 d);
 extern void ptermSetWeMode (u8 we);
 
@@ -142,7 +144,11 @@ int main (int argc, char **argv)
         }
     setsockopt (fet.connFd, SOL_SOCKET, SO_KEEPALIVE,
                 (char *)&true_opt, sizeof(true_opt));
+#if defined(_WIN32)
+    ioctlsocket (fet.connFd, FIONBIO, &true_opt);
+#else
     fcntl (fet.connFd, F_SETFL, O_NONBLOCK);
+#endif
 #ifdef __APPLE__
     setsockopt (fet.connFd, SOL_SOCKET, SO_NOSIGPIPE,
                 (char *)&true_opt, sizeof(true_opt));
@@ -197,7 +203,7 @@ int main (int argc, char **argv)
             }
         }
     ptermClose ();
-	return 0;
+    return 0;
     }
 
 /*--------------------------------------------------------------------------

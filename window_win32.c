@@ -72,7 +72,6 @@ static void windowThread(void);
 ATOM windowRegisterClass(HINSTANCE hInstance);
 BOOL windowCreate(void);
 LRESULT CALLBACK windowProcedure(HWND, UINT, WPARAM, LPARAM);
-static void initFont (int size, FontInfo *fi);
 static void freeFont (FontInfo *fi);
 static void windowStoreChar (HDC hdcMem, char c, int x, int y, int dx);
 static void windowShowLine (HDC hdcMem, int dx);
@@ -86,16 +85,22 @@ static void windowTextPlot(HDC hdc, int xPos, int yPos, char ch, u8 fontSize);
 HBITMAP fontBitmap;
 HINSTANCE hInstance;
 bool keyboardTrue;
+extern const char * const consoleHersheyGlyphs[64];
+extern bool emulationActive;
+extern bool hersheyMode;
+extern int scaleX;
+extern int scaleY;
 
 /*
 **  -----------------
 **  Private Variables
 **  -----------------
 */
-static u8 currentFont;
+static int currentFont;
 static FontInfo *currentFontInfo;
-static i16 currentX = -1;
-static i16 currentY = -1;
+static int currentX = -1;
+static int currentY = -1;
+static int currentXOffset = 0;
 static CharData lineBuf[LineBufSize];
 static int lineBufCnt, xpos, xstart, ypos;
 static char keybuf[KeyBufSize+4];
@@ -104,8 +109,6 @@ static HWND hWnd;
 static FontInfo smallFont;
 static FontInfo mediumFont;
 static FontInfo largeFont;
-static FontInfo smallOperFont;
-static FontInfo mediumOperFont;
 static bool keyboardSendUp;
 static HDC hdcMem;
 static HBITMAP hbmMem, hbmOld;
@@ -113,17 +116,9 @@ static HDC hdc;
 static HDC hdcFont;
 static HBRUSH hBrush;
 static RECT rect;
-static u32 s1,s2;
-static u32 s1list[MaxPolls], s2list[MaxPolls];
-static int listPutsAtGetChar[MaxPolls];
-static int sumListGet, sumListPut;
-static bool displayOff = FALSE;
 static const i8 dotdx[] = { 0, 1, 0, 1, -1, -1,  0, -1,  1 };
 static const i8 dotdy[] = { 0, 0, 1, 1, -1,  0, -1,  1, -1 };
-//static XKeyboardControl kbPrefs;
-#if CcHersheyFont == 1
 static HPEN hPen = 0;
-#endif
 
 /*
 **--------------------------------------------------------------------------
@@ -249,7 +244,7 @@ void windowSetMode (int mode)
         /*
         **  Send out any buffered line of text.
         */
-        windowShowLine ();
+        windowShowLine (hdcMem, currentFont);
         currentXOffset = newOffset;
         }
         
@@ -274,7 +269,7 @@ void windowSetMode (int mode)
 
         if (currentFont != newFont)
         {
-            windowShowLine ();
+            windowShowLine (hdcMem, currentFont);
             currentFont = newFont;
             switch (newFont)
             {
@@ -313,12 +308,12 @@ void windowProcessChar (int ch)
         }
     if (hersheyMode)
         {
-        windowTextPlot(XADJUST (currentX), YADJUST (currentY),
+        windowTextPlot(hdcMem, XADJUST (currentX), YADJUST (currentY),
                        ch, currentFont);
         }
     else
         {
-        windowStoreChar (ch, currentX, currentY,
+        windowStoreChar (hdcMem, ch, currentX, currentY,
                          currentFont);
         }
     currentX += currentFont;
@@ -511,10 +506,10 @@ static void windowStoreChar (HDC hdcMem, char c, int x, int y, int dx)
         ++lineBuf[dindx].hits;
         return;
         }
-    if (lineBufCnt == DisplayBufSize ||
+    if (lineBufCnt == LineBufSize ||
         y != ypos ||
         x < xpos || 
-        dindx >= DisplayBufSize ||
+        dindx >= LineBufSize ||
         dindx * dx != x - xstart)
         {
         windowShowLine (hdcMem, dx);
@@ -534,50 +529,6 @@ static void windowStoreChar (HDC hdcMem, char c, int x, int y, int dx)
     lineBuf[lineBufCnt].hits = 1;
     lineBuf[lineBufCnt++].c = c;
     xpos += dx;
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Initialize a FontInfo struct.
-**
-**  Parameters:     Name        Description.
-**                  size        pointsize of font
-**                  fi          pointer to FontInfo struct to fill in
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void initFont (int size, FontInfo *fi)
-    {
-    LOGFONT lfTmp;
-
-    memset(&lfTmp, 0, sizeof(lfTmp));
-    lfTmp.lfPitchAndFamily = FIXED_PITCH;
-    strcpy(lfTmp.lfFaceName, FontName);
-    lfTmp.lfWeight = FW_THIN;
-    lfTmp.lfOutPrecision = OUT_TT_PRECIS;
-    lfTmp.lfHeight = size;
-    fi->normalId = CreateFontIndirect (&lfTmp);
-    if (!fi->normalId)
-        {
-        MessageBox (GetFocus(),
-                    "Unable to get regular font", 
-                    "CreateFont Error",
-                    MB_OK);
-        }
-    memset(&lfTmp, 0, sizeof(lfTmp));
-    lfTmp.lfPitchAndFamily = FIXED_PITCH;
-    strcpy(lfTmp.lfFaceName, FontName);
-    lfTmp.lfWeight = FW_BOLD;
-    lfTmp.lfOutPrecision = OUT_TT_PRECIS;
-    lfTmp.lfHeight = size;
-    fi->boldId = CreateFontIndirect (&lfTmp);
-    if (!fi->boldId)
-        {
-        MessageBox (GetFocus(),
-                    "Unable to get bold font", 
-                    "CreateFont Error",
-                    MB_OK);
-        }
     }
 
 /*--------------------------------------------------------------------------
@@ -748,16 +699,8 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         break;
 
     case WM_CREATE:
-        initFont (FontSmallHeight, &smallOperFont);
-        initFont (FontMediumHeight, &mediumOperFont);
         hdc = GetDC(hWnd);
         GetClientRect(hWnd, &rect);
-        SelectObject(hdc, smallOperFont.boldId);
-        GetTextMetrics(hdc, &tm);
-        smallOperFont.width = tm.tmAveCharWidth;
-        SelectObject(hdc, mediumOperFont.boldId);
-        GetTextMetrics(hdc, &tm);
-        mediumOperFont.width = tm.tmAveCharWidth;
         
         /*
         **  Create a compatible DC.
@@ -771,7 +714,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         */
         hbmMem = CreateCompatibleBitmap(hdc, XSize, YSize);
         BitBlt(hdcMem, 
-               0, 0, DefWinWidth, DefWinHeight,
+               0, 0, XSize, YSize,
                hdcMem,
                0, 0,
                BLACKNESS);
@@ -844,6 +787,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
     case WM_SYSCHAR:
         switch (wParam)
             {
+#if 0
         case '0':
         case '1':
         case '2':
@@ -899,20 +843,16 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
                 traceStop ();
                 }
             break;
-
+#endif // 0
         case 'q':
-            displayOff = FALSE;
-            break;
+            return Dd60KeyXon;
 
         case 's':
-            displayOff = TRUE;
-            break;
+            return Dd60KeyXoff;
 
-        case 't':
-            // this is useful in Plato mode when Alt-S and Alt-Q
-            // have other meanings.
-            displayOff = !displayOff;
-            break;
+        case 'z':
+            emulationActive = FALSE;
+            return Dd60KeyXoff;
             }
         break;
 
@@ -945,7 +885,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
 /* this is a "key up" message */
                     i |= 0200;
                     }
-//				printf ("keycode %03o lparam %x\n", i, lParam);
+//              printf ("keycode %03o lparam %x\n", i, lParam);
                 windowQueueKey (i);
                 }
             }
@@ -993,7 +933,7 @@ void windowShowDisplay (void)
     **  Make a clean bitmap for next block of data
     */
     BitBlt(hdcMem, 
-           0, 0, DefWinWidth, DefWinHeight,
+           0, 0, XSize, YSize,
            hdcMem,
            0, 0,
            BLACKNESS);

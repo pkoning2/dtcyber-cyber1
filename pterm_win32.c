@@ -86,7 +86,7 @@ extern FILE *traceF;
 extern char traceFn[];
 extern bool tracePterm;
 extern HINSTANCE hInstance;
-extern volatile bool ptermActive;
+extern bool emulationActive;
 
 /*
 **  -----------------
@@ -135,8 +135,14 @@ static const DWORD MWeFunc[] =
 **--------------------------------------------------------------------------
 */
 
+void ptermSetName (const char *winName);
+void ptermLoadChar (int snum, int cnum, const u16 *data);
+void ptermSetWeMode (u8 we);
+void ptermDrawChar (int x, int y, int snum, int cnum);
 bool platoKeypress (WPARAM wParam, int alt, int stat);
 bool platoTouch (LPARAM lParam, int stat);
+extern void ptermComInit(void);
+extern void niuLocalKey(u16 key, int stat);
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize the Plato terminal window.
@@ -176,7 +182,7 @@ void ptermInit(const char *winName, bool closeOk)
     **  Now do common init stuff
     */
     ptermComInit ();
-    while (!ptermActive) ;      // spin until thread is done setting things up
+    while (!emulationActive) ;      // spin until thread is done setting things up
     }
 
 /*--------------------------------------------------------------------------
@@ -210,7 +216,7 @@ void ptermSetName (const char *winName)
 **------------------------------------------------------------------------*/
 void ptermClose(void)
     {
-    if (!ptermActive)
+    if (!emulationActive)
         {
         return;
         }
@@ -433,14 +439,14 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
                         "CreatePen Error",
                         MB_OK);
             }
-        ptermActive = TRUE;
+        emulationActive = TRUE;
         return DefWindowProc (hWnd, message, wParam, lParam);
 
     case WM_DESTROY:
         /*
         **  Done with off screen bitmap and dc.
         */
-        ptermActive = FALSE;
+        emulationActive = FALSE;
         SelectObject(hdcMem, hbmOld);
         DeleteObject(hbmMem);
         DeleteObject(fontBitmap);

@@ -197,7 +197,11 @@
 #include "proto.h"
 #include "dd60.h"
 #include <time.h>
+#if defined(_WIN32)
+#include <sys/timeb.h>
+#else
 #include <sys/time.h>
+#endif
 
 /*
 **  -----------------
@@ -224,7 +228,7 @@
 #define OffRightScreen          01020
 
 #define DispBufSize             20000   /* Display buffer size */
-#define KeyBufSize	            50      /* Input buffer size */
+#define KeyBufSize              50      /* Input buffer size */
 #define MaxPolls                5       /* Number of poll cycles we track */
 #define NetBufSize              256
 
@@ -347,7 +351,6 @@ static bool sendToAll;
 void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     {
     DevSlot *dp;
-    int i;
     char *p;
     
     (void)eqNo;
@@ -436,12 +439,20 @@ void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **------------------------------------------------------------------------*/
 void consoleCheckOutput(void)
     {
+#if defined(_WIN32)
+    struct _timeb tm;
+#else
     struct timeval tm;
-    int i;
+#endif
     u32 us;
     
+#if defined(_WIN32)
+    _ftime (&tm);
+    us = (tm.time * 1000 + tm.millitm) * 1000;
+#else
     gettimeofday (&tm, NULL);
     us = tm.tv_sec * ULL(1000000) + tm.tv_usec;
+#endif
     
     /* Check if it's time for another display update */
     if (us - lastDisplayUs > RefreshInterval)
@@ -494,7 +505,7 @@ void consoleCheckOutput(void)
         ** 
         **  Don't do it on Linux because Linux has kernel based threads,
         */
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(_WIN32)
         sched_yield();
 #endif
         }
@@ -953,9 +964,6 @@ static void consoleByte2 (int byte1, int byte2)
 static int consoleGetKey (void)
     {
     int nextout;
-    struct timeval tm;
-    u32 us;
-    int nextin, i, j, k;
     int key;
     
     if (keyboardSendUp || keyOut == keyIn)
@@ -1056,7 +1064,7 @@ static void consoleSetXY (int code, int data)
 **------------------------------------------------------------------------*/
 static void consolePoll (void)
     {
-    int i, j, k;
+    int i;
     
     /* If the buffer is full, just exit. */
     if (pollIn == MaxPolls - 1)
@@ -1160,10 +1168,19 @@ static void consoleSendOutput (int start, int end)
     PortParam *mp;
     NetPort *np;
     int i;
+#if defined(_WIN32)
+    struct _timeb tm;
+#else
     struct timeval tm;
+#endif
     u32 us;
     char buf[160];
     u8 endBlock = Dd60EndBlock;
+    
+#if defined(_WIN32)
+    _ftime (&tm);
+    us = (tm.time * 1000 + tm.millitm) * 1000;
+#endif
     
     if (debugDisplay)
         {
@@ -1215,9 +1232,14 @@ static void consoleSendOutput (int start, int end)
             }
         }
 
+#if defined(_WIN32)
+    _ftime (&tm);
+    us = (tm.time * 1000 + tm.millitm) * 1000;
+#else
     gettimeofday (&tm, NULL);
     us = tm.tv_sec * ULL(1000000) + tm.tv_usec;
-    
+#endif
+
     for (i = 0; i < dd60Conns; i++)
         {
         mp = portVector + i;

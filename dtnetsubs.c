@@ -17,15 +17,16 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
+#include <time.h>
 #include <sys/types.h>
 #if defined(_WIN32)
 #include <winsock.h>
 #else
 #include <sys/time.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -151,7 +152,6 @@ int dtConnect (int *connFd, const char *hostname, int port)
 void dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
     {
 #if defined(_WIN32)
-    int err;
     DWORD dwThreadId; 
     HANDLE hThread;
 
@@ -228,8 +228,6 @@ void dtCreateListener(NetPortSet *ps, int ringSize)
     WORD versionRequested;
     WSADATA wsaData;
     int err;
-    DWORD dwThreadId; 
-    HANDLE hThread;
 #else
     int rc;
 #endif
@@ -299,7 +297,7 @@ void dtClose (NetPort *np, NetPortSet *ps)
         {
         (*ps->callBack) (np, np - ps->portVec);
         }
-    if (i == ps->maxFd)
+    if (fd == ps->maxFd)
         {
         j = 0;
         for (i = 0; i < ps->maxPorts; i++)
@@ -727,7 +725,6 @@ static void *dtThread(void *param)
     struct sockaddr_in server;
     struct sockaddr_in from;
     int fromLen;
-    int i;
     int true_opt = 1;
     
     /*
@@ -817,7 +814,11 @@ static void *dtThread(void *param)
         */
         setsockopt(connFd, SOL_SOCKET, SO_KEEPALIVE,
                    (char *)&true_opt, sizeof(true_opt));
+#if defined(_WIN32)
+        ioctlsocket (connFd, FIONBIO, &true_opt);
+#else
         fcntl (connFd, F_SETFL, O_NONBLOCK);
+#endif
 #ifdef __APPLE__
         setsockopt(connFd, SOL_SOCKET, SO_NOSIGPIPE,
                    (char *)&true_opt, sizeof(true_opt));
