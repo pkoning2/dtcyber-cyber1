@@ -48,7 +48,10 @@ int main (int argc, u8 *argv[])
 	int addr = 0;
     u8 *d;
     
-    pd = fopen (argv[1], "rb");
+    if (argc < 2)
+        pd = stdin;
+    else
+        pd = fopen (argv[1], "rb");
     
     for (;;)
 	{
