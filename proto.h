@@ -194,6 +194,7 @@ void windowUpdate(void);
 void windowGetChar(void);
 void windowClose(void);
 void windowCheckOutput(void);
+int windowGetOperFontWidth(int font);
 
 /*
 **  operator.c
@@ -221,7 +222,7 @@ extern bool cpuStopped;
 extern CpWord *cpMem;
 extern u32 cpuMaxMemory;
 extern u32 ecsMaxMemory;
-extern char ppKeyIn;
+extern i8 ppKeyIn;
 extern const char asciiToCdc[];
 extern const char cdcToAscii[];
 extern const unsigned short asciiTo026[];

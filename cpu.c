@@ -179,7 +179,6 @@ static u32 opAddress;
 static u32 oldRegP;
 static CpWord acc60;
 static u32 acc18;
-static u32 cpuMemMask;
 
 /*
 **  Opcode decode and dispatch table.
@@ -366,11 +365,6 @@ void cpuInit(char *model, u32 memory, u32 ecsBanks)
     /*
     **  Allocate configured central memory.
     */
-    if ((memory & -memory) != memory)
-        {
-        fprintf(stderr, "CM size must be a power of 2\n");
-        exit(1);
-        }
     cpMem = calloc(memory, sizeof(CpWord));
     if (cpMem == NULL)
         {
@@ -379,8 +373,7 @@ void cpuInit(char *model, u32 memory, u32 ecsBanks)
         }
 
     cpuMaxMemory = memory;
-    cpuMemMask = memory - 1;
-    
+
     /*
     **  Allocate configured ECS memory.
     */
@@ -425,7 +418,7 @@ u32 cpuGetP(void)
 **------------------------------------------------------------------------*/
 bool cpuPpReadMem(u32 address, CpWord *data)
     {
-    address &= cpuMemMask;
+    address %= cpuMaxMemory;
     *data = cpMem[address] & Mask60;
     return(TRUE);
     }
@@ -443,7 +436,7 @@ bool cpuPpReadMem(u32 address, CpWord *data)
 **------------------------------------------------------------------------*/
 void cpuPpWriteMem(u32 address, CpWord data)
     {
-    address &= cpuMemMask;
+    address %= cpuMaxMemory;
     cpMem[address] = data & Mask60;
     }
 
@@ -669,7 +662,7 @@ void cpuStep(void)
         /*
         **  Don't trace NOS's idle loop and CPUMTR.
         */
-        if (/*cpu.regRaCm != 0 && */ cpu.regP > 0100)
+        if (cpu.regRaCm != 0 && cpu.regP > 0100)
             {
             traceCpu(oldRegP, opFm, opI, opJ, opK, opAddress);
             }
@@ -1040,7 +1033,7 @@ static void cpuEcsTransfer(bool writeToEcs)
 
     while (wordCount--)
         {
-        cmAddress  &= cpuMemMask;
+        cmAddress  %= cpuMaxMemory;
         takeErrorExit = cpuEcsAccess (ecsAddress, cpMem + cmAddress, writeToEcs);
         if (takeErrorExit && writeToEcs)
             {

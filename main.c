@@ -52,7 +52,7 @@
 **  Public Variables
 **  ----------------
 */
-char ppKeyIn;
+i8 ppKeyIn;
 bool emulationActive = TRUE;
 u32 cycles;
 
