@@ -108,6 +108,10 @@ static const int WeFunc[] =
   GXor 
 };
 
+static XRectangle platoRect[] = 
+{ { XADJUST (0), YADJUST (511), 512, 512 },
+  { 0, YSize, 512, 32 } };
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -286,6 +290,14 @@ void ptermInit(const char *winName)
     XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YPMSize);
     ptermSetWeMode (1);
 
+    /*
+    **  Set clipping rectangle(s)
+    **  (one for the display, two for the bitmap so the second one will
+    **  allow writing the loadable font buffer area)
+    */
+    XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
+    XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
+    
     /*
     **  Initialise input.
     */
@@ -736,6 +748,15 @@ static void drawChar (Drawable d, GC gc, int x, int y, int snum, int cnum)
         charY = YSize + (snum - 2) * 16;
         XCopyPlane (disp, pixmap, d, gc, charX, charY, 8, 16, 
                     XADJUST (x), YADJUST (y) - 15, 1);
+    }
+    // Handle screen edge wraparound by recursion...
+    if (x > 512 - 8)
+    {
+        drawChar (d, gc, x - 512, y, snum, cnum);
+    }
+    if (y > 512 - 16)
+    {
+        drawChar (d, gc, x, y - 512, snum, cnum);
     }
 }
 
