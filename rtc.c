@@ -345,8 +345,6 @@ static void rtcInit2(long setMHz)
         MHz = setMHz;
         Hz = MHz * ULL(1000000);
         }
-    maxDelta = 900 * MHz;   // less than 1 ms to keep mtr happy
-    printf ("using high resolution hardware clock at %d MHz\n", MHz);
 #endif  // !__x86_64
     maxDelta = 900 * MHz;   // less than 1 ms to keep mtr happy
     printf ("using high resolution hardware clock at %d MHz\n", MHz);
