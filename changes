@@ -264,3 +264,5 @@ Since jan21 2004 drop:
 - True keyboard handling now appears to work correctly on both platforms.
 - Fixed crash in cr3447.c (also change to operator.c)
 - Added dd8xxcvt.c
+- Added cpuratio=n (n = 1..50) cyber.ini entry, based on an idea from
+  Gerard v.d. Grinten.

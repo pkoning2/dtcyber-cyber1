@@ -66,6 +66,7 @@ static bool initGetString(char *entry, char *defString, char *str, int strLen);
 bool bigEndian;
 extern u16 deadstartPanel[];
 extern u8 deadstartCount;
+int cpuRatio;
 
 /*
 **  -----------------
@@ -227,6 +228,18 @@ static void initCyber(char *config)
         {
         fprintf (stderr, "Entry 'cpus' invalid in section [%s] in %s -- correct values are 1 or 2\n", config, startupFile);
         exit (1);
+        }
+    
+    initGetInteger ("cpuratio", 1, &cpuRatio);
+    if (cpuRatio < 1 || cpuRatio > 50)
+        {
+        fprintf (stderr, "Entry 'cpuratio' invalid in section [%s] in %s -- correct value is between 1 and 50\n", config, startupFile);
+        exit (1);
+        }
+    else
+        {
+        printf ("Running with %d CPU instructions per PPU instruction\n",
+                cpuRatio);
         }
     
     (void)initGetString("cmFile", "", cmFile, sizeof(cmFile));
