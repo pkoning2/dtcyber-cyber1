@@ -37,7 +37,7 @@
 #define NiuLocalStations        32          // range reserved for local stations
 #define NiuLocalBufSize         50          // size of local input buffer
 
-//#define REAL_TIMING  // define this to do real NIU timing (16 ms per frame)
+#define REAL_TIMING  // define this to do real NIU timing (16 ms per frame)
 //#define DEBUG
 
 /*
