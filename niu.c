@@ -374,7 +374,7 @@ static void niuInIo(void)
                     i = dtRead  (&np->fet, -1);
                     if (i < 0)
                         {
-                        portVector[NiuRemoteOffset + (np - niuLocalPorts.portVec)].sendOffkey = TRUE;
+                        portVector[NiuLocalOffset + (np - niuLocalPorts.portVec)].sendOffkey = TRUE;
                         dtClose (np, &niuLocalPorts);
                         }
                     }
