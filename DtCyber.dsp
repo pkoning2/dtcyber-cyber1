@@ -262,13 +262,6 @@ SOURCE=.\small.ico
 # Begin Source File
 
 SOURCE=.\window.rc
-
-!IF  "$(CFG)" == "DtCyber - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "DtCyber - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # End Group
 # Begin Group "Other Files"
