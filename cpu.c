@@ -1002,12 +1002,12 @@ static void cpuEcsTransfer(bool writeToEcs)
         }
 
     /*
-    **  Check for positive word count, CM and ECS range and top ECS location reference.
+    **  Check for positive word count, CM and ECS range.
+    **  (removed "and top ECS location reference." ??? -- gpk)
     */
     if (   (wordCount & Sign18) != 0
-        || cpu.regFlCm  <= cmAddress + wordCount
-        || cpu.regFlEcs <= ecsAddress + wordCount
-        || cpu.regFlEcs == ecsAddress + 1)
+        || cpu.regFlCm  < cmAddress + wordCount
+        || cpu.regFlEcs < ecsAddress + wordCount)
         {
         cpu.exitCondition |= EcAddressOutOfRange;
         if ((cpu.exitMode & EmAddressOutOfRange) != 0)
