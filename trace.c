@@ -1237,6 +1237,23 @@ void traceChannelFunction(PpWord funcCode)
 **------------------------------------------------------------------------*/
 void tracePrint(char *str)
     {
+    char traceName[20];
+
+    /*
+    **  If the trace file hasn't been opened yet, open it now.
+    */
+    if (ppuTF[activePpu->id] == NULL)
+        {
+        sprintf(traceName, "ppu%02o.trc", activePpu->id);
+        ppuTF[activePpu->id] = fopen(traceName, "wt");
+        if (ppuTF[activePpu->id] == NULL)
+            {
+            logError(LogErrorLocation, "can't open ppu[%02o] trace (%s)\n",
+                     activePpu->id, traceName);
+            return;
+            }
+        }
+
     fputs(str, ppuTF[activePpu->id]);
     }
 
@@ -1251,7 +1268,24 @@ void tracePrint(char *str)
 **------------------------------------------------------------------------*/
 void traceCpuPrint(CpuContext *activeCpu, char *str)
     {
-    fputs(str, cpuTF[activeCpu->id]);
+    int cpuNum = activeCpu->id;
+    char traceName[20];
+    
+    /*
+    **  If the trace file hasn't been opened yet, open it now.
+    */
+    if (cpuTF[cpuNum] == NULL)
+        {
+        sprintf(traceName, "cpu%d.trc", cpuNum);
+        cpuTF[cpuNum] = fopen(traceName, "wt");
+        if (cpuTF[cpuNum] == NULL)
+            {
+            logError(LogErrorLocation, "can't open cpu%d trace (%s)\n",
+                     cpuNum, traceName);
+            return;
+            }
+        }
+    fputs(str, cpuTF[cpuNum]);
     }
 
 /*--------------------------------------------------------------------------
