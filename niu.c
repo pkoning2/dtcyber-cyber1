@@ -117,7 +117,7 @@ static int obytes;
 static u32 currOutput;
 static LocalRing localInput[NiuLocalStations];
 static niuProcessOutput *outputHandler[NiuLocalStations];
-static u64 lastFrame;
+static u32 lastFrame;
 bool frameStart;
 #if !defined(_WIN32)
 static pthread_t niu_thread;
@@ -483,8 +483,6 @@ static void niuOutIo(void)
 {
     PpWord d;
     int port;
-    struct timeval tm;
-    u64 us;
 
     if (activeDevice->fcode != FcNiuOutput ||
         !activeChannel->full)
@@ -503,13 +501,11 @@ static void niuOutIo(void)
         // it until it's a frame time later than the previous one.
         if (realTiming && frameStart)
         {
-            gettimeofday (&tm, NULL);
-            us = tm.tv_sec * ULL(1000000) + tm.tv_usec;
-            if (us - lastFrame < ULL(16667))
+            if (rtcClock - lastFrame < ULL(16667))
             {
                 return;
             }
-            lastFrame = us;
+            lastFrame = rtcClock;
             frameStart = FALSE;
         }
 
