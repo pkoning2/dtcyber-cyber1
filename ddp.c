@@ -250,6 +250,7 @@ static void ddpIo(void)
                 // unconditionally in case it's a flag
                 // register operation, because then the PPU
                 // is probably not going to read the data.
+                dc->stat = StDdpAccept;
                 if (cpuEcsAccess (dc->addr, &dc->curword, FALSE))
                 {
                     if (DEBUGE)
@@ -266,9 +267,9 @@ static void ddpIo(void)
             if (!activeChannel->full &&
                 cycles - dc->endaddrcycle > 20)
             {
-                dc->stat = StDdpAccept;
                 if (dc->dbyte == -1)
                 {
+                    dc->stat = StDdpAccept;
                     if (cpuEcsAccess (dc->addr, &dc->curword, FALSE))
                     {
                         if (DEBUGE)
@@ -276,9 +277,9 @@ static void ddpIo(void)
                         activeChannel->discAfterInput = TRUE;
                         dc->stat = StDdpAbort;
                     }
-                    dc->dbyte == 0;
+                    dc->dbyte = 0;
                 }
-                activeChannel->data = dc->curword >> 48;
+                activeChannel->data = (dc->curword >> 48) & Mask12;
                 if (DEBUG)
                     printf ("ddp read addr %08o data %04o byte %d\n",
                             dc->addr, activeChannel->data, dc->dbyte);
