@@ -383,12 +383,8 @@ void ptermInit(const char *winName, bool closeOk)
     */
     pixmap = XCreatePixmap (disp, ptermWindow, XSize, YPMSize, 1);
 
-    /*
-    **  Set window and icon titles.
-    */
-    XSetStandardProperties (disp, ptermWindow, winName, "Pterm",
-                            None, NULL, 0, NULL);
-
+    ptermSetName (winName);
+    
     /*
     **  Create the graphics contexts for window and pixmap.
     */
@@ -505,6 +501,24 @@ void ptermClose(void)
     XDestroyWindow (disp, ptermWindow);
 }
 
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set window name
+**
+**  Parameters:     Name        Description.
+**                  winName     name to set.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermSetName (const char *winName)
+    {
+    /*
+    **  Set window and icon titles.
+    */
+    XSetStandardProperties (disp, ptermWindow, winName, "Pterm",
+                            None, NULL, 0, NULL);
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Set W/E mode

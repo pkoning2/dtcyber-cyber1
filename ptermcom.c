@@ -105,6 +105,7 @@ volatile bool ptermActive = FALSE;
 u8 wemode;
 FILE *traceF;
 char traceFn[20];
+const char *hostName;
 
 /*
 **  -----------------
@@ -194,6 +195,7 @@ static void procNiuWord (int stat, u32 d)
 {
     mptr mp;
     char *msg = "";
+    char name[100];
     
     if (stat != 1)
     {
@@ -230,6 +232,22 @@ static void procNiuWord (int stat, u32 d)
         switch ((d >> 15) & 7)
         {
         case 0:     // nop
+            if ((d & 077000) == 042000)
+                {
+                // Special code to tell pterm the station number
+                d &= 0777;
+                if (hostName != NULL)
+                    {
+                    sprintf (name, "Plato station %d-%d -- %s",
+                             d >> 5, d & 31, hostName);
+                    }
+                else
+                    {
+                    sprintf (name, "Plato station %d-%d",
+                             d >> 5, d & 31);
+                    }
+                ptermSetName (name);
+                }
             TRACEN ("nop");
             break;
 

@@ -864,6 +864,7 @@ static void niuWelcome(int stat)
     char msg[100];
     
     sprintf (msg, "Connected to Plato station %d-%d", stat >> 5, stat & 037);
+    niuSendWord (stat, 0042000 + stat); // NOP, with station number data in it
     niuSendWord (stat, 0100033);        // mode 3, mode rewrite, screen
     niuSendWord (stat, 0201200);        // load Y = 128
     niuSendWord (stat, 0200200);        // load X = 128

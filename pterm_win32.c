@@ -177,6 +177,24 @@ void ptermInit(const char *winName, bool closeOk)
 }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Set window name
+**
+**  Parameters:     Name        Description.
+**                  winName     name to set.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermSetName (const char *winName)
+    {
+    /*
+    **  Set window and icon titles.
+    */
+//    XSetStandardProperties (disp, ptermWindow, winName, "Pterm",
+//                            None, NULL, 0, NULL);
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Close window.
 **
 **  Parameters:     Name        Description.

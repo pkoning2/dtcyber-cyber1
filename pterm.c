@@ -77,6 +77,7 @@ extern char traceFn[];
 extern bool tracePterm;
 extern u8 wemode;
 extern volatile bool ptermActive;
+extern const char *hostName;
 
 /*
 **  -----------------
@@ -131,6 +132,7 @@ int main (int argc, char **argv)
 #endif
 
     sprintf (name, "Plato terminal -- %s", argv[1]);
+    hostName = argv[1];
     ptermInit (name, TRUE);
     while (ptermActive)
     {
