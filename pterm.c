@@ -386,13 +386,13 @@ static void ptermWindowInput(void)
                 len = XLookupString (kp, text, 10, &ks, 0);
                 if (len == 1)
                 {
-                    if (text[0] == '\004')  // control-D : exit
+                    if (text[0] == '\032')  // control-Z : exit
                     {
                         close(connFd);
                         ptermActive = FALSE;
                         return;
                     }
-                    else if (text[0] == '\024') // control-T : trace
+                    else if (text[0] == '\035') // control-] : trace
                     {
                         tracePterm = !tracePterm;
                         savemode = wemode;

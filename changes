@@ -294,3 +294,9 @@ Since jan21 2004 drop:
 - Changed window_* so ALT/X is a "trace off" whenever any kind of trace,
   including channel trace, is in effect.
 - Changed Makefile to do dependencies, so changes to .h files are handled right.
+- Added Portal keyboard conventions to the PLATO keyboard handling.
+  Both Portal conventions (function keys and control keys) are supported, and
+  for that matter the previous conventions (ALT keys) still work too.  The
+  only change is in pterm (not in the PLATO keyboard within DtCyber) -- 
+  program exit is now Control-Z (was Control-D) and trace toggle is now 
+  Control-] (was Control-T).

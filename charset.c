@@ -231,17 +231,19 @@ const char extBcdToAscii[64] = {
 /* Note that we have valid entries (entry != -1) here only for those keys
 ** where we do not need to do anything unusual for Shift.  For example,
 ** "space" is not decoded here because Shift-Space gets a different code.
+** However, that doesn't apply to control keystrokes; those are shown
+** here even though shift affects them in the PLATO/Portal key conventions.
 */
 const i8 asciiToPlato[128] =
 {
  /*                                                                         */
- /* 000- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /* 000- */ -1,    022,    030,    033,    031,    027,    064,    013,
  /*                                                                         */
- /* 010- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /* 010- */025,     -1,     -1,     -1,    035,    024,     -1,     -1,
  /*                                                                         */
- /* 020- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /* 020- */020,    034,     -1,    032,    062,     -1,     -1,     -1,
  /*                                                                         */
- /* 040- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /* 030- */012,    021,     -1,     -1,     -1,     -1,     -1,     -1,
  /*          space   !       "       #       $       %       &       '      */
  /* 040- */ -1,      0176,   0177,  -1,      0044,   0045,  -1,      0047,
  /*          (       )       *       +       ,       -       .       /      */
@@ -278,7 +280,7 @@ const i8 altKeyToPlato[128] =
  /*                                                                         */
  /* 020- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
  /*                                                                         */
- /* 040- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /* 030- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
  /*          space   !       "       #       $       %       &       '      */
  /* 040- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,   
  /*          (       )       *       +       ,       -       .       /      */

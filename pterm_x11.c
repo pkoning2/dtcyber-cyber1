@@ -533,10 +533,12 @@ bool platoKeypress (XKeyEvent *kp, int stat)
     int pc;
     char text[30];
     int len;
+    bool ctrl = FALSE;
     
     if (state & ControlMask)
     {
-        return FALSE;
+        ctrl = TRUE;
+        state &= ~ControlMask;
     }
     if (state & ShiftMask)
     {
@@ -569,6 +571,10 @@ bool platoKeypress (XKeyEvent *kp, int stat)
             pc = asciiToPlato[text[0]];
             if (pc >= 0)
             {
+                if (ctrl)
+                {
+                    pc |= shift;
+                }
                 niuLocalKey (pc, stat);
                 return TRUE;
             }
@@ -582,8 +588,6 @@ bool platoKeypress (XKeyEvent *kp, int stat)
         pc = 0100;      // space
         break;
     case XK_BackSpace:
-    case XK_Delete:
-    case XK_KP_Delete:
         pc = 023;       // erase
         break;
     case XK_Return:
@@ -593,25 +597,45 @@ bool platoKeypress (XKeyEvent *kp, int stat)
         break;
     case XK_Home:
     case XK_KP_Home:
+    case XK_F8:
         pc = 030;       // back
         break;
     case XK_Pause:
     case XK_Break:
+    case XK_F10:
         pc = 032;       // stop
         break;
     case XK_Tab:
         pc = 014;       // tab
         break;
     case XK_KP_Add:
-        pc = 016;       // +
+        if (ctrl)
+        {
+            pc = 056;   // Sigma
+        }
+        else
+        {
+            pc = 016;   // +
+        }
         break;
     case XK_KP_Subtract:
-        pc = 017;       // -
+        if (ctrl)
+        {
+            pc = 057;   // Delta
+        }
+        else
+        {
+            pc = 017;   // -
+        }
         break;
     case XK_KP_Multiply:
+    case XK_Delete:
+    case XK_KP_Delete:
         pc = 012;       // multiply sign
         break;
     case XK_KP_Divide:
+    case XK_Insert:
+    case XK_KP_Insert:
         pc = 013;       // divide sign
         break;
     case XK_Left:
@@ -627,6 +651,30 @@ bool platoKeypress (XKeyEvent *kp, int stat)
     case XK_KP_Down:
     case XK_Page_Down:
         pc = 021;       // sub
+        break;
+    case XK_F3:
+        pc = 034;       // square
+        break;
+    case XK_F2:
+        pc = 022;       // ans
+        break;
+    case XK_F11:
+        pc = 033;       // copy
+        break;
+    case XK_F9:
+        pc = 031;       // data
+        break;
+    case XK_F5:
+        pc = 027;       // edit
+        break;
+    case XK_F4:
+        pc = 024;       // micro/font
+        break;
+    case XK_F6:
+        pc = 025;       // help
+        break;
+    case XK_F7:
+        pc = 035;       // lab
         break;
     default:
         return FALSE;
