@@ -32,7 +32,7 @@ void deadStart(void);
 /*
 **  rtc.c
 */
-void rtcInit(char *model, u8 increment);
+void rtcInit(char *model, u8 increment, long setMHz);
 void rtcTick(void);
 
 /*
@@ -135,6 +135,8 @@ void mux6676Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 **  niu.c
 */
 void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+bool niuPresent(void);
+void niuLocalChar(u8 ch, int stat);
 
 /*
 **  trace.c
@@ -152,6 +154,7 @@ void tracePrint(char *str);
 void traceCpuPrint(char *str);
 void traceChannel(u8 ch);
 void traceEnd(void);
+void traceReset(void);
 void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress);
 void traceExchange(CpuContext *cc, u32 addr, char *title);
 void traceCM(u32 start, u32 end);
@@ -200,6 +203,13 @@ int windowGetOperFontWidth(int font);
 void windowSetKeyboardTrue(bool flag);
 
 /*
+**  pterm_{win32,x11}.c
+*/
+void ptermInit(const char *windowName);
+void ptermClose(void);
+void procNiuWord (int stat, u32 d);
+
+/*
 **  operator.c
 */
 void opInit(void);
@@ -226,13 +236,15 @@ extern CpWord *cpMem;
 extern u32 cpuMaxMemory;
 extern u32 ecsMaxMemory;
 extern i8 ppKeyIn;
-extern const char asciiToCdc[];
-extern const char cdcToAscii[];
-extern const unsigned short asciiTo026[];
-extern const unsigned short asciiTo029[];
-extern const unsigned char  asciiToBcd[];
-extern const unsigned char bcdToAscii[];
-extern const unsigned char extBcdToAscii[];
+extern const char asciiToCdc[256];
+extern const char cdcToAscii[64];
+extern const unsigned short asciiTo026[256];
+extern const unsigned short asciiTo029[256];
+extern const unsigned char  asciiToBcd[256];
+extern const signed char  asciiToPlato[128];
+extern const signed char  altKeyToPlato[128];
+extern const unsigned char bcdToAscii[64];
+extern const unsigned char extBcdToAscii[64];
 extern u16 traceMask;
 extern u16 traceClearMask;
 extern u16 chTraceMask;
