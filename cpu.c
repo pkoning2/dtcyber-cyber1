@@ -663,12 +663,27 @@ void cpuStep(void)
         **  Don't trace NOS's idle loop and CPUMTR.
         **  If control point tracing is set, act accordingly.
         */
-        if (cpu.regRaCm != 0 && cpu.regP > 0100 &&
-            (traceCp == 0 || 
-             (!cpu.monitorMode &&
-              ((cpMem[060] >> 31) & 037) == traceCp)))
+        if (cpu.regRaCm != 0 && cpu.regP > 0100)
             {
-            traceCpu(oldRegP, opFm, opI, opJ, opK, opAddress);
+            if (traceCp == 0 && (traceMask & 0x4000) == 0 &&
+                opFm == 061 && opI == 0 &&
+                opJ == 1 && opAddress == 000042)
+                {
+                // sb0 b1+42 is the magic word to turn on tracing
+                traceCp = (cpMem[060] >> 31) & 037;
+                traceMask |= 0x4000;
+                }
+            if (traceCp == 0 || 
+                (!cpu.monitorMode &&
+                 ((cpMem[060] >> 31) & 037) == traceCp))
+                {
+                traceCpu(oldRegP, opFm, opI, opJ, opK, opAddress);
+                if (opFm == 061 && opI == 0 &&
+                    opJ == 1 && opAddress == 000076)
+                    {
+                    traceMask &= ~0x04000;
+                    }
+                }
             }
 #endif
 
