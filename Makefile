@@ -9,7 +9,9 @@
 #
 #--------------------------------------------------------------------------
 
-all: dtcyber fonts pterm dtoper dd60
+all: dtcyber pterm dtoper dd60
+
+include Makefile.common
 
 include Makefile.pterm
 
@@ -31,10 +33,6 @@ CDEBUG = -DCcDebug=1
 
 CFLAGS  = -O2 -g2 -I. $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCFLAGS) $(EXTRACFLAGS)
 
-PCFS	= seymour8b.pcf seymour8m.pcf \
-	seymour16b.pcf seymour16m.pcf \
-	seymour32b.pcf seymour32m.pcf
-
 OBJS    = main.o init.o trace.o dump.o \
           device.o channel.o cpu.o pp.o float.o shift.o operator.o \
           deadstart.o console.o cr405.o dd6603.o dd8xx.o mux6676.o \
@@ -43,11 +41,12 @@ OBJS    = main.o init.o trace.o dump.o \
 	  dc7155.o doelz.o \
 	  $(SOBJS)
 
-fonts: $(PCFS)
-
 .PHONY : CLEAN dep
 
 ifeq ("$(HOST)","Darwin")
+
+# Mac
+
 .PHONY : dtcyber 
 
 dtcyber:
@@ -63,31 +62,10 @@ dtcyber:
 	lipo -create -output dtcyber g3/gxdtcyber g5/gxdtcyber
 
 gxdtcyber: $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
+	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)
 
 clean:
-	rm -f *.o *.pcf g3/*.o g3/gxdcyber g4/*.o g4/gxdcyber g5/*.o g5/gxdtcyber
-else
-dtcyber: $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
-
-clean:
-	rm -f *.d *.o *.pcf dtcyber
-endif
-
-buildall: clean all
-
-dep:	pterm.d $(SOBJS:.o=.d) $(OBJS:.o=.d)
-
-%.o : %.c
-	$(CC) $(CFLAGS) -c $<
-
-%.pcf : %.bdf
-	bdftopcf -o $@ $<
-
-%.d : %.c
-	echo -n "$@ " > $@
-	$(CC) -MM $< >> $@
+	rm -f *.o *.pcf g3/*.o g3/gxdcyber g4/*.o g4/gxdcyber g5/*.o g5/gxdtcyber dd60 dtoper pterm
 
 Makefile.pterm:
 	ln -s ../Makefile.pterm .
@@ -97,6 +75,21 @@ Makefile.dd60:
 
 Makefile.dtoper:
 	ln -s ../Makefile.dtoper .
+
+else
+
+# not Mac
+
+dtcyber: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
+
+clean:
+	rm -f *.d *.o *.pcf dtcyber dd60 dtoper pterm
+endif
+
+buildall: clean all
+
+dep:	pterm.dep dd60.dep dtoper.dep $(OBJS:.o=.d)
 
 include  $(OBJS:.o=.d)
 

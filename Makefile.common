@@ -1,0 +1,45 @@
+#--------------------------------------------------------------------------
+#
+#   Copyright (c) 2002, Tom Hunter (see license.txt)
+#
+#   Name: Makefile.common
+#
+#   Description:
+#       Common make stuff
+#
+#--------------------------------------------------------------------------
+
+HOST := $(shell uname)
+MACHINE := $(shell uname -m)
+
+STDLIBS    = -lm
+XLIBS      = -lX11
+THRLIBS    = -lpthread
+MACHINECFLAGS =
+ifeq ("$(MACHINE)","x86_64")
+LDFLAGS = -g2
+XLIBS      += -L/usr/X11R6/lib64
+MACHINECFLAGS = -DCPU_THREADS
+else
+LDFLAGS = -g2
+XLIBS      += -L/usr/X11R6/lib
+endif
+ifeq ("$(MACHINE:i%86=i386)","i386")
+ARCHCFLAGS ?= -march=$(MACHINE)
+endif
+INCL    = -I/usr/X11R6/include -I/usr/local/include
+
+SOBJS	= charset.o dtnetsubs.o
+SXOBJS  = dt_x11.o
+
+%.o : %.c
+	$(CC) $(CFLAGS) -c $<
+
+%.pcf : %.bdf
+	bdftopcf -o $@ $<
+
+%.d : %.c
+	echo -n "$@ " > $@
+	$(CC) -MM $< >> $@
+
+#---------------------------  End Of File  --------------------------------

@@ -9,25 +9,15 @@
 #
 #--------------------------------------------------------------------------
 
-HOST := $(shell uname)
-MACHINE := $(shell uname -m)
+include Makefile.common
 
-LIBS    = -lm -lX11 -lpthread
-MACHINECFLAGS =
-ifeq ("$(MACHINE)","x86_64")
-LDFLAGS = -g2 -L/usr/X11R6/lib64
-MACHINECFLAGS = -DCPU_THREADS
-else
-LDFLAGS = -g2 -L/usr/X11R6/lib
-endif
-ifeq ("$(MACHINE:i%86=i386)","i386")
-ARCHCFLAGS ?= -march=$(MACHINE)
-endif
-INCL    = -I/usr/X11R6/include -I/usr/local/include
+DTOBJS	= $(SOBJS) $(SXOBJS) dtoper.o dtoper_x11.o
 
-dtoper:	$(SOBJS) dtoper.o dtoper_x11.o
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
+dtoper:	$(DTOBJS) 
+	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(XLIBS) $(THRLIBS)
 
-include  dtoper.d dtoper_x11.d $(SOBJS:.o=.d) 
+dtoper.dep: $(DTOBJS:.o=.d) 
+
+include  $(DTOBJS:.o=.d) 
 
 #---------------------------  End Of File  --------------------------------

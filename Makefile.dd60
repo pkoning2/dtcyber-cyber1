@@ -9,25 +9,23 @@
 #
 #--------------------------------------------------------------------------
 
-HOST := $(shell uname)
-MACHINE := $(shell uname -m)
+include Makefile.common
 
-LIBS    = -lm -lX11 -lpthread
-MACHINECFLAGS =
-ifeq ("$(MACHINE)","x86_64")
-LDFLAGS = -g2 -L/usr/X11R6/lib64
-MACHINECFLAGS = -DCPU_THREADS
-else
-LDFLAGS = -g2 -L/usr/X11R6/lib
-endif
-ifeq ("$(MACHINE:i%86=i386)","i386")
-ARCHCFLAGS ?= -march=$(MACHINE)
-endif
-INCL    = -I/usr/X11R6/include -I/usr/local/include
+.PHONY:	fonts
 
-dd60:	$(SOBJS) window_x11.o
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
+DDOBJS  = $(SOBJS) $(SXOBJS) window_x11.o
 
-include  window_x11.d $(SOBJS:.o=.d) 
+PCFS	= seymour8b.pcf seymour8m.pcf \
+	seymour16b.pcf seymour16m.pcf \
+	seymour32b.pcf seymour32m.pcf
+
+dd60:	$(DDOBJS) fonts
+	$(CC) $(LDFLAGS) -o $@ $(DDOBJS) $(LIBS) $(XLIBS) $(THRLIBS)
+
+fonts: $(PCFS)
+
+dd60.dep: $(DDOBJS:.o=.d) 
+
+include  $(DDOBJS:.o=.d) 
 
 #---------------------------  End Of File  --------------------------------
