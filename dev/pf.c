@@ -1118,11 +1118,14 @@ void pflist (int argc, char **argv)
         startblk =  (fiw & 077777) * dsblks;
         blks = ((fiw >> 24) & 077) * dsblks;
         type = ((fiw >> 30) & 077);
-        if (verbose)
-            printf ("%-10s  %3d %c  %5d %020llo\n", fn, blks, 
-                    'a' + type - 1, startblk, fiw);
-        else
-            printf ("%s\n", fn);
+        if (type < 040)
+        {
+            if (verbose)
+                printf ("%-10s  %3d %c  %5d %020llo\n", fn, blks, 
+                        'a' + type - 1, startblk, fiw);
+            else
+                printf ("%s\n", fn);
+        }
         ep += 10;
     }
 }
@@ -1177,6 +1180,14 @@ void pfread (int argc, char **argv)
                 startblk =  (fiw & 077777) * dsblks;
                 blks = ((fiw >> 24) & 077) * dsblks;
                 type = ((fiw >> 30) & 077);
+                if (type >= 040)
+                {
+                    // skip spares, flaws
+                    if (!wild)
+                        break;
+                    ep += 10;
+                    continue;
+                }
                 readblk (startblk, lhbuf);
                 if (memcmp (lh->lname, pdbuf + ep, 10) != 0)
                 {
