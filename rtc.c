@@ -40,7 +40,7 @@
 #elif defined(_WIN32)
 #define RDTSC 1
 #elif defined(__GNUC__) && defined(__APPLE__)
-#define RDTSC 1
+#define RDTSC 0
 #else
 #define RDTSC 0
 #endif
@@ -55,7 +55,7 @@
     __asm__ __volatile__("rdtsc" : "=A" (val))
 #elif defined(__GNUC__) && defined(__APPLE__)
 #define rdtscll(val) \
-    val = AbsoluteToNanoseconds (UpTime ())
+    val = UnsignedWideToUInt64 (AbsoluteToNanoseconds (UpTime ()))
 #elif defined(_WIN32)
 #define rdtscll(val) \
 	do { \
@@ -163,18 +163,54 @@ void rtcInit(char *model, u8 increment, long setMHz)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Execute deadstart function.
+**  Purpose:        Do a clock tick
 **
 **  Parameters:     Name        Description.
-**                  increment   clock increment per iteration.
 **
 **  Returns:        Nothing.
+**
+**  Note that this just counts simulator cycles, so it doesn't give
+**  an accurate measure of elapsed time.  If you have a platform that
+**  supports a fine grained hardware clock, setting "increment=0" will
+**  use that clock, and the cycle counter maintained here is ignored.
 **
 **------------------------------------------------------------------------*/
 void rtcTick(void)
     {
     rtcClock = (rtcClock + rtcIncrement) & Mask12;
     }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Return a microsecond timer value
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Time in microseconds, or 0 if no hardware timer.
+**
+**------------------------------------------------------------------------*/
+u64 rtcMicroSec(void)
+    {
+#if RDTSC
+    u64 now;
+    
+    if (MHz == 0)
+        {
+        return ULL(0);
+        }
+    rdtscll (now);
+    return now / MHz;
+#else
+    return ULL(0);
+#endif
+    }
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Private Functions
+**
+**--------------------------------------------------------------------------
+*/
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Execute function code on RTC pseudo device.
@@ -206,19 +242,22 @@ static void rtcIo(void)
     u32 us;
     u64 cycles, now;
     
-    if (rtcPrev == 0)
+    if (rtcIncrement == 0)
         {
-        rdtscll (rtcPrev);
+        if (rtcPrev == 0)
+            {
+            rdtscll (rtcPrev);
+            }
+        rdtscll (now);
+        cycles = now - rtcPrev;
+        if (cycles > maxDelta)
+            {
+            cycles = maxDelta;
+            }
+        us = cycles / MHz;
+        rtcPrev += us * MHz;
+        rtcClock += us;
         }
-    rdtscll (now);
-    cycles = now - rtcPrev;
-    if (cycles > maxDelta)
-        {
-        cycles = maxDelta;
-        }
-    us = cycles / MHz;
-    rtcPrev += us * MHz;
-    rtcClock += us;
 #endif    
     activeChannel->full = rtcFull;
     activeChannel->data = rtcClock;
