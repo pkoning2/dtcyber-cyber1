@@ -885,10 +885,6 @@ static void *cpuThread(void *param)
     
     for (;;)
         {
-        while (opActive)
-            {
-            opWait ();
-            }
         cpuStep (activeCpu);
         }
     }
