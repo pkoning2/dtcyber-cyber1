@@ -316,7 +316,7 @@ void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     */
     printf("DD844 initialised on channel %o unit %o, %s sector format\n",
            channelNo, unitNo,
-           (dskp->oldFormat) ? "old (622 byte)" : "new packed (512 byte");
+           (dskp->oldFormat) ? "old (622 byte)" : "new packed (512 byte)");
     }
 
 /*--------------------------------------------------------------------------
