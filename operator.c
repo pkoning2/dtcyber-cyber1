@@ -30,7 +30,11 @@
 **  Private Constants
 **  -----------------
 */
-
+#define OpCmdSize 64
+#define BoldMediumRepaints 8
+#define TwinkleRate 2
+#define CmdX 0020
+#define CmdY 0100
 /*
 **  -----------------------
 **  Private Macro Functions
@@ -45,9 +49,16 @@
 typedef struct opCmd
     {
     char            *name;               /* command name */
-    void            (*handler)(bool help, char *cmdParams);
+    void            (*handler)(char *cmdParams);
     } OpCmd;
 
+typedef struct opMsg
+    {
+    int     x;
+    int     y;
+    int     fontSize;
+    char    *text;
+    } OpMsg;
 
 /*
 **  ---------------------------
@@ -55,22 +66,16 @@ typedef struct opCmd
 **  ---------------------------
 */
 char *opGetString(char *inStr, char *outStr, int outSize);
-//static void opCmdLoadTape(bool help, char *cmdParams);
-//static void opCmdRemovePaper(bool help, char *cmdParams);
-static void opCmdHelp(bool help, char *cmdParams);
-static void opHelpHelp(void);
+static void opSendString (OpMsg *m);
+static int opScanCmd (void);
 
-static void opCmdEnd(bool help, char *cmdParams);
-static void opHelpEnd(void);
-
-static void opCmdLoadTape(bool help, char *cmdParams);
-static void opHelpLoadTape(void);
-
-static void opCmdRemovePaper(bool help, char *cmdParams);
-static void opHelpRemovePaper(void);
-
-static void opCmdShutdown(bool help, char *cmdParams);
-static void opHelpShutdown(void);
+static void opCmdEnd(char *cmdParams);
+static void opCmdShutdown(char *cmdParams);
+static void opCmdLoad(char *cmdParams);
+static void opCmdUnload(char *cmdParams);
+static void opDumpCpu (char *cmdParams);
+static void opDumpPpu (char *cmdParams);
+static void opDisPpu (char *cmdParams);
 
 /*
 **  ----------------
@@ -84,18 +89,63 @@ bool opActive = FALSE;
 **  Private Variables
 **  -----------------
 */
-static OpCmd decode[] = 
+static char cmdBuf[OpCmdSize];
+static char *syntax[] = 
+    /*
+    ** Simple command decode table with DSD style completion.
+    ** 7 means one or more octal digits.
+    ** x means any character other than comma (case preserved).
+    ** anything else means that character (case insensitive if letter).
+    ** command is complete if matched to end of some entry.
+    */
     {
-    "load_tape",                opCmdLoadTape,
-    "remove_paper",             opCmdRemovePaper,
-    "?",                        opCmdHelp,
-    "help",                     opCmdHelp,
-    "end",                      opCmdEnd,
-    "bye",                      opCmdEnd,
-    "shutdown",                 opCmdShutdown,
+    "END.\n",
+    "SHUTDOWN.\n",
+    "LOAD,7,7,x,W.\n",
+    "LOAD,7,7,x\n",
+    "UNLOAD,7,7.\n",
+    "DUMP,CPU.\n",
+    "DUMP,PPU7.\n",
+    "DISASSEMBLE,PPU7.\n",
+    NULL,
+    };
+static OpCmd decode[] = 
+    /*
+    ** Simple command decode table.
+    ** This contains the portion of the command string that 
+    ** distinguishes this command from others; that may be just
+    ** the keyword, or it may be that plus some of the arguments.
+    ** The action routine is handed the rest of the command line
+    ** (everything past what matched here).
+    ** Note that the matches must be unique -- the first match is used.
+    */
+    {
+    "END.",                     opCmdEnd,
+    "SHUTDOWN.",                opCmdShutdown,
+    "LOAD,",                    opCmdLoad,
+    "UNLOAD,",                  opCmdUnload,
+    "DUMP,CPU",                 opDumpCpu,
+    "DUMP,PPU",                 opDumpPpu,
+    "DISASSEMBLE,PPU",          opDisPpu,
     NULL,                       NULL
     };
 
+static OpMsg msg[] =
+    { { 0120, 0700, 0020, "OPERATOR INTERFACE" },
+      { 0760 - (sizeof(DtCyberVersion) * 010), 0760, 0010, DtCyberVersion },
+      { 0020, 0640, 0010, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
+      { 0020, 0620, 0010, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
+      { 0020, 0600, 0010, "UNLOAD,CH,EQ.      Unload ch/eq." },
+      { 0020, 0560, 0010, "DUMP,CPU.          Dump CPU state." },
+      { 0020, 0540, 0010, "DUMP,PPUNN.        Dump specified PPU state." },
+      { 0020, 0520, 0010, "DISASSEMBLE,PPUNN. Disassemble specified PPU." },
+      { 0020, 0460, 0010, "END.               End operator mode." },
+      { 0020, 0440, 0010, "SHUTDOWN.          Close DtCyber." },
+      { CmdX, CmdY, 0020, cmdBuf },  // echo, MUST be last
+      { 0, 0, 0, NULL },
+    };
+static OpMsg errmsg = { 0020, 0040, 0020, NULL };   // pointer filled in
+static bool complete;
 /*
 **--------------------------------------------------------------------------
 **
@@ -116,6 +166,7 @@ void opInit(void)
     {
     }
 
+
 /*--------------------------------------------------------------------------
 **  Purpose:        Operator interface activation.
 **
@@ -127,60 +178,150 @@ void opInit(void)
 void opRequest(void)
     {
     OpCmd *cp;
-    char cmd[80];
-    char name[80];
-    char *params;
-    char *pos;
+    char nextKey;
+    int cmdLen;
+    OpMsg *m;
+    int i, j;
+    int twRate = 0;     // number of repaints between twinkles
+    int twPos = 0;      // Twinkle position mod 4
 
-    printf("\nOperator interface (%s)\nPlease enter 'help' to get a list of commands\n", DtCyberVersion);
-
+    cmdBuf[0] = '\0';
+    cmdLen = 0;
     while (opActive)
         {
-        /*
-        **  Prompt operator for a command.
-        */
-        printf("\nOperator> ");
-        fflush(stdout);
-        if (fgets(cmd, sizeof(cmd), stdin) == NULL || strlen(cmd) == 0)
+        for (m = msg; m->text; m++)
             {
-            continue;
+            opSendString (m);
             }
-
-        /*
-        **  Replace newline by zero terminator.
-        */
-        pos = strchr(cmd, '\n');
-        if (pos != NULL)
+        // Do this right after displaying all the message lines,
+        // because the command line echo buffer is the last line
+        // displayed so now is the time to highlight it.
+        if (complete)
             {
-            *pos = 0;
-            }
-
-        /*
-        **  Extract the command name.
-        */
-        params = opGetString(cmd, name, sizeof(name));
-        if (*name == 0)
-            {
-            continue;
-            }
-
-        /*
-        **  Find the command handler.
-        */
-        for (cp = decode; cp->name != NULL; cp++)
-            {
-            if (strcmp(cp->name, name) == 0)
+            windowSetY (CmdY);
+            windowSetFont (FontMedium);
+            for (i = 0; i < BoldMediumRepaints - 1; i++)
                 {
-                cp->handler(FALSE, params);
-                break;
+                for (j = twPos; j < cmdLen; j += 4)
+                    {
+                    windowSetX (CmdX + (FontMedium * j));
+                    windowQueue (cmdBuf[j]);
+                    }
                 }
             }
-
-        if (cp->name == NULL)
+        if (errmsg.text != NULL)
             {
-            printf("Command not implemented: %s\n", name);
+            for (i = 0; i < BoldMediumRepaints; i++)
+                {
+                opSendString (&errmsg);
+                }
             }
+        if (nextKey)
+            {
+            ppKeyIn = nextKey;
+            nextKey = 0;
+            }
+        else
+            {
+            windowGetChar();
+            }
+        if (--twRate < 0)
+            {
+            twRate = TwinkleRate;
+            twPos = (twPos + 1) & 3;
+            }
+        if (ppKeyIn == 0) 
+            {
+            usleep (RefreshInterval / 2);
+            continue;
+            }
+        opSetError (NULL);
+        if (ppKeyIn == '\r')
+            {
+            ppKeyIn = '\n';
+            }
+        if (ppKeyIn == '[' || ppKeyIn == ('U' & 037))
+            {
+            cmdBuf[0] = '\0';
+            cmdLen = 0;
+            complete = FALSE;
+            }
+        else if (ppKeyIn == 0177 || ppKeyIn == '\b')
+            {
+            if (cmdLen != 0)
+                {
+                cmdBuf[--cmdLen] = '\0';
+                complete = FALSE;
+                }
+            }
+        else
+            {
+            cmdBuf[cmdLen++] = ppKeyIn;
+            cmdBuf[cmdLen] = '\0';
+            i = opScanCmd ();
+            if (i < 0)
+                {
+                cmdBuf[--cmdLen] = '\0';
+                }
+            else if (ppKeyIn == '\n')
+                {
+                /*
+                **  Find the command handler.
+                */
+                /*
+                **  Complete command, find its processor
+                */
+                cmdBuf[--cmdLen] = '\0';
+                for (cp = decode; cp->name != NULL; cp++)
+                    {
+                    j = strlen (cp->name);
+                    if (strncmp(cp->name, cmdBuf, j) == 0)
+                        {
+                        cp->handler(cmdBuf + j);
+                        if (errmsg.text == NULL)
+                            {
+                            cmdBuf[0] = '\0';
+                            cmdLen = 0;
+                            }
+                        complete = FALSE;
+                        break;
+                        }
+                    }
+                if (cp->name == NULL)
+                    {
+                    opSetError ("INVALID COMMAND");
+                    }
+                }
+            else 
+                {
+                if (i == '\n')
+                    {
+                    complete = TRUE;
+                    i = 0;
+                    }
+                else
+                    {
+                    complete = FALSE;
+                    }
+                nextKey = i;
+                }
+            }
+        usleep (RefreshInterval / 2);
         }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set operator error message
+**
+**  Parameters:     Name        Description.
+**                  p           string pointer
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void opSetError (char *p)
+    {
+    errmsg.text = p;
     }
 
 /*
@@ -192,8 +333,115 @@ void opRequest(void)
 */
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Send a string to the console.
+**
+**  Parameters:     Name        Description.
+**                  m           message structure pointer
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+static void opSendString (OpMsg *m)
+    {
+    char *c;
+    
+    windowSetX (m->x);
+    windowSetY (m->y);
+    windowSetFont (m->fontSize);
+    for (c = m->text; *c; c++)
+        {
+        windowQueue (*c);
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Scan the command table to match against a partial command
+**
+**  Parameters:     Name        Description.
+**                  none
+**
+**  Returns:        -1 for bad string.
+**                  0 for multiple matches, different next character.
+**                  c > 0 means next legal character is always c.
+**
+**------------------------------------------------------------------------*/
+static int opScanCmd (void)
+    {
+    char *p, *b;
+    char **c;
+    int match = -1;
+    
+    for (c = syntax; *c != NULL; c++)
+        {
+        for (b = cmdBuf, p = *c; ; b++)
+            {
+            if (*b == '\0')
+                {
+                if (match == -1 || match == *p)
+                    {
+                    match = *p;
+                    if (match == 'x' || match == '7')
+                        {
+                        match = 0;
+                        }
+                    }
+                else
+                    {
+                    match = 0;
+                    }
+                break;
+                }
+            else if (*p == '7')     // octal digit match
+                {
+                if (*b < '0' || *b > '7')
+                    {
+                    break;          // no match on this pattern
+                    }
+                if (b[1] != '\0' &&
+                    (b[1] < '0' || b[1] > '7'))
+                    {
+                    p++;        // if next is not digit, advance pattern
+                    }
+                }
+            else if (*p == 'x')
+                {
+                // 'x' matches any character other than the argument
+                // separator (comma).
+                if (*b == ',')
+                    {
+                    break;
+                    }
+                if (b[1] != '\0' &&
+                    b[1] == p[1])
+                    {
+                    p++;        // if next input == next pattern, advance
+                    }
+                }
+            else if (*p == '\0')
+                {
+                break;
+                }
+            else
+                {
+                if (isupper (*p))
+                    {
+                    *b = toupper (*b);
+                    }
+                if (*b != *p)
+                    {
+                    break;          // no match on this pattern
+                    }
+                p++;
+                }
+            }   
+        }
+    
+    return match;
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Parse command string and return the first string
-**                  terminated by whitespace
+**                  terminated by comma.
 **
 **  Parameters:     Name        Description.
 **                  inStr       Input string
@@ -230,7 +478,7 @@ char *opGetString(char *inStr, char *outStr, int outSize)
     /*
     **  Copy string to output buffer.
     */
-    while (inStr[pos] != 0 && !isspace(inStr[pos]))
+    while (inStr[pos] != 0 && inStr[pos] != ',')
         {
         if (len >= outSize - 1)
             {
@@ -243,12 +491,9 @@ char *opGetString(char *inStr, char *outStr, int outSize)
     outStr[len] = 0;
 
     /*
-    **  Skip trailing whitespace.
+    **  Skip the comma.
     */
-    while (inStr[pos] != 0 && isspace(inStr[pos]))
-        {
-        pos += 1;
-        }
+    pos += 1;
 
     return(inStr + pos);
     }
@@ -257,33 +502,13 @@ char *opGetString(char *inStr, char *outStr, int outSize)
 **  Purpose:        Terminate emulation.
 **
 **  Parameters:     Name        Description.
-**                  help        Request only help on this command.
 **                  cmdParams   Command parameters
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void opCmdShutdown(bool help, char *cmdParams)
+static void opCmdShutdown(char *cmdParams)
     {
-    /*
-    **  Process help request.
-    */
-    if (help)
-        {
-        opHelpShutdown();
-        return;
-        }
-
-    /*
-    **  Check parameters.
-    */
-    if (strlen(cmdParams) != 0)
-        {
-        printf("no parameters expected\n");
-        opHelpShutdown();
-        return;
-        }
-
     /*
     **  Process command.
     */
@@ -293,196 +518,153 @@ static void opCmdShutdown(bool help, char *cmdParams)
     printf("\nThanks for using %s - Goodbye for now.\n\n", DtCyberVersion);
     }
 
-static void opHelpShutdown(void)
-    {
-    printf("'shutdown' terminates emulation.\n");
-    }
-
 /*--------------------------------------------------------------------------
 **  Purpose:        Terminate operator interface.
 **
 **  Parameters:     Name        Description.
-**                  help        Request only help on this command.
 **                  cmdParams   Command parameters
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void opCmdEnd(bool help, char *cmdParams)
+static void opCmdEnd(char *cmdParams)
     {
-    /*
-    **  Process help request.
-    */
-    if (help)
-        {
-        opHelpEnd();
-        return;
-        }
-
-    /*
-    **  Check parameters.
-    */
-    if (strlen(cmdParams) != 0)
-        {
-        printf("no parameters expected\n");
-        opHelpEnd();
-        return;
-        }
-
     /*
     **  Process commands.
     */
     opActive = FALSE;
-
-    printf("\nTerminating operator interface - type ALT-O to re-enter.\n\n");
-    }
-
-static void opHelpEnd(void)
-    {
-    printf("'end' terminates operator interface - type ALT-O to re-enter.\n");
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Provide command help.
+**  Purpose:        Load new media (cards, tape, etc.)
 **
 **  Parameters:     Name        Description.
-**                  help        Request only help on this command.
 **                  cmdParams   Command parameters
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void opCmdHelp(bool help, char *cmdParams)
+static void opCmdLoad(char *cmdParams)
     {
-    OpCmd *cp;
+    int chnum, unit, np;
+    int rest;
+    ChSlot *ch;
+    DevSlot *dp;
 
-    /*
-    **  Process help request.
-    */
-    if (help)
+    rest = 0;
+    np = sscanf (cmdParams, "%o,%o,%n", &chnum, &unit, &rest);
+    if ((np != 3 && np != 2) || rest == 0)
         {
-        opHelpHelp();
+        opSetError ("INSUFFICENT PARAMETERS");
         return;
         }
-
-    /*
-    **  Check parameters and process command.
-    */
-    if (strlen(cmdParams) == 0)
+    ch = channel + chnum;
+    dp = ch->firstDevice;
+    while (dp != NULL)
         {
-        /*
-        **  List all available commands.
-        */
-        printf("\nList of available commands:\n\n");
-        for (cp = decode; cp->name != NULL; cp++)
-            {
-            printf("%s\n", cp->name);
-            }
-
-        return;
+        if (dp->load)
+            dp->load (dp, unit, cmdParams + rest);
+        dp = dp->next;
         }
-    else
-        {
-        /*
-        **  Provide help for specified command.
-        */
-        for (cp = decode; cp->name != NULL; cp++)
-            {
-            if (strcmp(cp->name, cmdParams) == 0)
-                {
-                printf("\n");
-                cp->handler(TRUE, NULL);
-                return;
-                }
-            }
-
-        printf("Command not implemented: %s\n", cmdParams);
-        }
-    }
-
-static void opHelpHelp(void)
-    {
-    printf("'help'       list all available commands.\n");
-    printf("'help <cmd>' provide help for <cmd>.\n");
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Load a new tape
+**  Purpose:        Unload media (cards, tape, etc.)
 **
 **  Parameters:     Name        Description.
-**                  help        Request only help on this command.
 **                  cmdParams   Command parameters
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void opCmdLoadTape(bool help, char *cmdParams)
+static void opCmdUnload(char *cmdParams)
     {
-    /*
-    **  Process help request.
-    */
-    if (help)
+    int chnum, unit, np;
+    ChSlot *ch;
+    DevSlot *dp;
+
+    np = sscanf (cmdParams, "%o,%o", &chnum, &unit);
+    if (np != 2)
         {
-        opHelpLoadTape();
+        opSetError ("INSUFFICENT PARAMETERS");
         return;
         }
-
-    /*
-    **  Check parameters and process command.
-    */
-    if (strlen(cmdParams) == 0)
+    ch = channel + chnum;
+    dp = ch->firstDevice;
+    while (dp != NULL)
         {
-        printf("parameters expected\n");
-        opHelpLoadTape();
-        return;
+        if (dp->load)
+            dp->load (dp, unit, NULL);
+        dp = dp->next;
         }
-
-    mt669LoadTape(cmdParams);
-    }
-
-static void opHelpLoadTape(void)
-    {
-    printf("'load_tape <channel>,<unit>,<r|w>,<filename>' load specified tape on unit.\n");
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Remove paper from printer.
+**  Purpose:        Dump CPU state
 **
 **  Parameters:     Name        Description.
-**                  help        Request only help on this command.
 **                  cmdParams   Command parameters
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void opCmdRemovePaper(bool help, char *cmdParams)
+static void opDumpCpu(char *cmdParams)
     {
     /*
-    **  Process help request.
+    **  Process commands.
     */
-    if (help)
-        {
-        opHelpRemovePaper();
-        return;
-        }
-
-    /*
-    **  Check parameters and process command.
-    */
-    if (strlen(cmdParams) == 0)
-        {
-        printf("parameters expected\n");
-        opHelpRemovePaper();
-        return;
-        }
-
-    lp501RemovePaper(cmdParams);
-    lp512RemovePaper(cmdParams);
+    dumpCpu ();
     }
 
-static void opHelpRemovePaper(void)
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Dump selected PPU state
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opDumpPpu(char *cmdParams)
     {
-    printf("'remove_paper <channel>,<equipment>' remover paper from printer.\n");
+    int     np, pp;
+    /*
+    **  Process commands.
+    */
+    np = sscanf (cmdParams, "%o", &pp);
+    if (np != 1)
+        {
+        opSetError ("INSUFFICENT PARAMETERS");
+        return;
+        }
+    dumpPpu (pp);
     }
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Disassemble memory of selected PPU
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opDisPpu(char *cmdParams)
+    {
+    int     np, pp;
+    /*
+    **  Process commands.
+    */
+    np = sscanf (cmdParams, "%o", &pp);
+    if (np != 1)
+        {
+        opSetError ("INSUFFICENT PARAMETERS");
+        return;
+        }
+    dumpDisassemblePpu (pp);
+    }
+
 
 /*---------------------------  End Of File  ------------------------------*/

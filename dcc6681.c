@@ -59,6 +59,8 @@
 **      Status reply
 */
 #define StFc6681Ready           00000
+#define StFc6681Reject          00001
+#define StFc6681IntReject       00003
 
 /*
 **  -----------------------
@@ -78,6 +80,8 @@ typedef struct dccControl
     bool        connected;
     PpWord      ios;
     PpWord      bcd;
+    int 	status;
+    int 	ints;
     } DccControl;
 
 /*
@@ -149,20 +153,23 @@ FcStatus dcc6681Func(PpWord funcCode)
         {
     case Fc6681Select:
         mp->selected = TRUE;
+        mp->status = StFc6681Ready;
         return(FcProcessed);
         
     case Fc6681DeSelect:
         mp->selected = FALSE;
+        mp->status = StFc6681Ready;
         return(FcProcessed);
         
     case Fc6681Connect1:
     case Fc6681Function:
     case Fc6681StatusReq:
-    case Fc6681DevStatusReq:
         activeDevice->fcode = funcCode;
         return(FcAccepted);
 
     case Fc6681MasterClear:
+        mp->status = StFc6681Ready;
+	mp->ints = 0;
         return(FcProcessed);
         }
 
@@ -186,15 +193,15 @@ FcStatus dcc6681Func(PpWord funcCode)
         activeDevice->selectedUnit = (funcCode & Fc6681ConnectUnitMask) >> 9;
         if (activeDevice->context[activeDevice->selectedUnit] == NULL)
             {
-            ppAbort((stderr, "channel %02o - invalid select: %04o", activeChannel->id, (u32)funcCode));
-            return(FcDeclined);
+            mp->status = StFc6681IntReject;
+            return(FcProcessed);
             }
         activeDevice->fcode        = funcCode & Fc6681ConnectFuncMask;
         if (DEBUG)
             {
             printf("Fc6681ConnectX %04o %o\n",funcCode, activeDevice->selectedUnit);
             }
-
+        mp->status = StFc6681Ready;
         return(FcProcessed);
         }
 
@@ -211,6 +218,8 @@ FcStatus dcc6681Func(PpWord funcCode)
 **------------------------------------------------------------------------*/
 bool dcc6681Io(void)
     {
+    DccControl *mp = dccMap + activeChannel->id;
+
     switch (activeDevice->fcode)
         {
     default:
@@ -233,9 +242,8 @@ bool dcc6681Io(void)
                 (activeChannel->data & Fc6681ConnectUnitMask) >> 9;
             if (activeDevice->context[activeDevice->selectedUnit] == NULL)
                 {
-                ppAbort((stderr, "channel %02o - invalid select: %04o",
-                     activeChannel->data, activeDevice->selectedUnit));
-                return(FALSE);
+                mp->status = StFc6681IntReject;
+                break;
                 }
             if (DEBUG)
                 {
@@ -245,6 +253,7 @@ bool dcc6681Io(void)
 
         activeChannel->full = FALSE;
         activeDevice->fcode = 0;
+        mp->status = StFc6681Ready;
         break;
 
     case Fc6681Function:
@@ -263,16 +272,7 @@ bool dcc6681Io(void)
     case Fc6681StatusReq:
         if (!activeChannel->full)
             {
-            activeChannel->data = StFc6681Ready;
-            activeChannel->full = TRUE;
-            activeDevice->fcode = 0;
-            }
-        break;
-
-    case Fc6681DevStatusReq:
-        if (!activeChannel->full)
-            {
-            activeChannel->data = activeDevice->status;
+            activeChannel->data = mp->status | mp->ints;
             activeChannel->full = TRUE;
             activeDevice->fcode = 0;
             }
@@ -304,6 +304,34 @@ static void dcc6681Activate(void)
 **------------------------------------------------------------------------*/
 static void dcc6681Disconnect(void)
     {
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Handle raising an interrupt signal for equipment
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void dcc6681SetInt(u8 eqNo)
+    {
+    DccControl *mp = dccMap + activeChannel->id;
+    mp->ints |= (8 << eqNo);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Handle dropping an interrupt signal for equipment
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void dcc6681ClearInt(u8 eqNo)
+    {
+    DccControl *mp = dccMap + activeChannel->id;
+    mp->ints &= ~(8 << eqNo);
     }
 
 /*---------------------------  End Of File  ------------------------------*/

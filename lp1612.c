@@ -17,6 +17,8 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <errno.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -106,16 +108,18 @@ static void lp1612Disconnect(void);
 **  Character set translation table (question marks as placeholders for
 **  scientific char set glyphs that could be mapped in any of several
 **  different ways).
+**  Changed to use the "ASCII subset" glyphs from the NOS Compass Instant.
+**  p. koning. 03.06.23.
 */
 static char printerToAscii[] = {
     /* 00-07 */     ':',    '1',    '2',    '3',    '4',    '5',    '6',    '7',
-    /* 10-17 */     '8',    '9',    '0',    '=',    '?',    '?',    '%',    '[',
+    /* 10-17 */     '8',    '9',    '0',    '=',    '"',    '@',    '%',    '[',
     /* 20-27 */     ' ',    '/',    'S',    'T',    'U',    'V',    'W',    'X',
-    /* 30-37 */     'Y',    'Z',    ']',    ',',    '(',    '?',    '?',    '?',
+    /* 30-37 */     'Y',    'Z',    ']',    ',',    '(',    '_',    '#',    '&',
     /* 40-47 */     '-',    'J',    'K',    'L',    'M',    'N',    'O',    'P',
-    /* 50-57 */     'Q',    'R',    '?',    '$',    '*',    '?',    '?',    '>',
+    /* 50-57 */     'Q',    'R',    '!',    '$',    '*',   '\'',    '?',    '>',
     /* 60-67 */     '+',    'A',    'B',    'C',    'D',    'E',    'F',    'G',
-    /* 70-77 */     'H',    'I',    '<',    '.',    ')',    '?',    '?',    ';'
+    /* 70-77 */     'H',    'I',    '<',    '.',    ')',   '\\',    '^',    ';'
     };
 
 /*
@@ -168,6 +172,122 @@ void lp1612Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     **  Print a friendly message.
     */
     printf("LP1612 initialised on channel %o unit %o\n", channelNo, unitNo);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Remove the paper (operator interface).
+**
+**  Parameters:     Name        Description.
+**                  params      parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void lp1612RemovePaper(char *params)
+    {
+    DevSlot *dp;
+    int numParam;
+    int channelNo;
+    int unitNo;
+    FILE *fcb;
+    time_t currentTime;
+    struct tm t;
+    char fname[80];
+    char fnameNew[80];
+
+    /*
+    **  Operator inserted a new tape.
+    */
+    numParam = sscanf(params,"%o,%o",&channelNo, &unitNo);
+
+    /*
+    **  Check parameters.
+    */
+    if (numParam != 2)
+        {
+        printf("Not enough or invalid parameters\n");
+        return;
+        }
+
+    if (channelNo < 0 || channelNo >= MaxChannels)
+        {
+        printf("Invalid channel no\n");
+        return;
+        }
+
+    if (unitNo < 0 || unitNo >= MaxUnits)
+        {
+        printf("Invalid equipment no\n");
+        return;
+        }
+
+    /*
+    **  Locate the device control block.
+    */
+    dp = channelFindDevice((u8)channelNo, DtLp1612);
+    if (dp == NULL)
+        {
+        printf("No 1612 printer on channel %o\n", channelNo);
+        return;
+        }
+
+    /*
+    **  Check if the unit is even configured.
+    */
+    if (dp->fcb[unitNo] == NULL)
+        {
+        printf("Equipment %d not allocated\n", unitNo);
+        return;
+        }
+
+    /*
+    **  Close the old device file.
+    */
+    fflush(dp->fcb[unitNo]);
+    fclose(dp->fcb[unitNo]);
+    dp->fcb[unitNo] = NULL;
+
+    /*
+    **  Rename the device file to the format "LP1612_yyyymmdd_hhmmss".
+    */
+    sprintf(fname, "LP1612_C%02o_E%o", channelNo, unitNo);
+
+    time(&currentTime);
+    t = *localtime(&currentTime);
+    sprintf(fnameNew, "LP1612_%04d%02d%02d_%02d%02d%02d",
+        t.tm_year + 1900,
+        t.tm_mon + 1,
+        t.tm_mday,
+        t.tm_hour,
+        t.tm_min,
+        t.tm_sec);
+
+    if (rename(fname, fnameNew) != 0)
+        {
+        printf("Could not rename %s to %s - %s\n", fname, fnameNew, strerror(errno));
+        return;
+        }
+
+    /*
+    **  Open the device file.
+    */
+    fcb = fopen(fname, "w");
+
+    /*
+    **  Check if the open succeeded.
+    */
+    if (fcb == NULL)
+        {
+        printf("Failed to open %s\n", fname);
+        return;
+        }
+
+    printf("Paper removed from 1612 printer\n");
+
+    /*
+    **  Setup status.
+    */
+    dp->fcb[unitNo] = fcb;
     }
 
 /*--------------------------------------------------------------------------

@@ -78,6 +78,7 @@
 #define FcPrintSelVFUChan6      00060
 
 
+#define Fc6681DevStatusReq      01300
 #define FcControllerOutputEna   01600
 
 /*
@@ -104,7 +105,6 @@
 **
 */
 #define StPrintReady            00001
-#define StPrintNotReady         00020
 
 /*
 **  -----------------------
@@ -177,8 +177,6 @@ void lp512Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     dp->func = lp512Func;
     dp->io = lp512Io;
     dp->selectedUnit = unitNo;
-
-    dp->status = StPrintReady;
 
     /*
     **  Open the device file.
@@ -346,7 +344,6 @@ static FcStatus lp512Func(PpWord funcCode)
     /*
     **  Now process the printer function code.
     */
-    activeDevice->status = StPrintReady;
     switch (funcCode)
         {
     default:
@@ -414,6 +411,7 @@ static FcStatus lp512Func(PpWord funcCode)
 
     case FcPrintStatusReq:
     case FcPrintReturnStatus:
+    case Fc6681DevStatusReq:
         break;
         }
         
@@ -487,7 +485,8 @@ static void lp512Io(void)
 
     case FcPrintStatusReq:
     case FcPrintReturnStatus:
-        activeChannel->data = activeDevice->status;
+    case Fc6681DevStatusReq:
+        activeChannel->data = StPrintReady;
         activeChannel->full = TRUE;
         activeDevice->fcode = 0;
         break;

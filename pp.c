@@ -171,6 +171,7 @@ static PpByte opD;
 static PpWord location;
 static u32 acc18;
 static bool noHang;
+static u32 cpuMemStart, cpuMemLen;  // for tracing CRD/CRM/CWD/CWM
 
 static void (*decodePpuOpcode[])(void) = 
     {
@@ -355,6 +356,20 @@ void ppStep(void)
                 }
 
             traceEnd();
+            /*
+            **  Trace memory touched by central read/write or by IAM/OAM
+            */
+            if (cpuMemLen > 0)
+                {
+                traceCM (cpuMemStart, cpuMemLen);
+                cpuMemLen = 0;
+                }
+            if (activePpu->ppMemLen > 0)
+                {
+                tracePM ();
+                activePpu->ppMemLen = 0;
+                }
+
 #endif
             }
 
@@ -440,7 +455,8 @@ void ppStep(void)
                     activePpu->mem[activePpu->regP] = activeChannel->data & Mask12;
                     activePpu->regP = (activePpu->regP + 1) & Mask12;
                     activePpu->regA = (activePpu->regA - 1) & Mask18;
-
+                    activePpu->ppMemLen++;
+                    
                     if (activeChannel->discAfterInput)
                         {
                         activeChannel->discAfterInput = FALSE;
@@ -490,6 +506,7 @@ void ppStep(void)
                     activeChannel->data = activePpu->mem[activePpu->regP] & Mask12;
                     activePpu->regP = (activePpu->regP + 1) & Mask12;
                     activePpu->regA = (activePpu->regA - 1) & Mask18;
+                    activePpu->ppMemLen++;
                     activeChannel->full = TRUE;
 
                     if (activePpu->regA == 0)
@@ -1279,6 +1296,8 @@ static void ppOpCRD(void)     // 60
     {
     CpWord data;
 
+    cpuMemStart = activePpu->regA & Mask18;
+    cpuMemLen = 1;
     if (cpuPpReadMem(activePpu->regA & Mask18, &data))
         {
         activePpu->mem[opD++ & Mask12] = (PpWord)((data >> 48) & Mask12);
@@ -1296,7 +1315,8 @@ static void ppOpCRM(void)     // 61
 
     activePpu->mem[0] = activePpu->regP;
     location = activePpu->mem[activePpu->regP] & Mask12;
-    length = activePpu->mem[opD] & Mask12;
+    cpuMemStart = activePpu->regA & Mask18;
+    cpuMemLen = length = activePpu->mem[opD] & Mask12;
 
     while (length--)
         {
@@ -1335,6 +1355,8 @@ static void ppOpCWD(void)     // 62
 
     data |= activePpu->mem[opD   & Mask12] & Mask12;
 
+    cpuMemStart = activePpu->regA & Mask18;
+    cpuMemLen = 1;
     cpuPpWriteMem(activePpu->regA & Mask18, data); 
     }
 
@@ -1345,7 +1367,8 @@ static void ppOpCWM(void)     // 63
 
     activePpu->mem[0] = activePpu->regP;
     location = activePpu->mem[activePpu->regP] & Mask12;
-    length = activePpu->mem[opD] & Mask12;
+    cpuMemStart = activePpu->regA & Mask18;
+    cpuMemLen = length = activePpu->mem[opD] & Mask12;
 
     while (length--)
         {
@@ -1457,7 +1480,7 @@ static void ppOpIAM(void)     // 71
     opD &= 037;
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
-    location = activePpu->mem[activePpu->regP] & Mask12;
+    activePpu->ppMemStart = location = activePpu->mem[activePpu->regP] & Mask12;
 
     if (!activeChannel->active)
         {
@@ -1518,7 +1541,7 @@ static void ppOpOAM(void)     // 73
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
     activePpu->mem[0] = activePpu->regP;
-    activePpu->regP = activePpu->mem[activePpu->regP] & Mask12;
+    activePpu->ppMemStart = activePpu->regP = activePpu->mem[activePpu->regP] & Mask12;
     activePpu->ioWaitType = WaitOutMany;
     activePpu->stopped = TRUE;
     }

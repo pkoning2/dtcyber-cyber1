@@ -42,7 +42,7 @@
 #define Fc6612Sel32CharRight    07101
 #define Fc6612Sel16CharRight    07102
 
-#define OffLeftScreen           010
+#define OffLeftScreen           0
 #define OffRightScreen          01020
 
 /*
@@ -328,12 +328,14 @@ static void consoleIo(void)
         break;
 
     case Fc6612SelKeyIn:
-        windowGetChar();
-        activeChannel->data = asciiToConsole[ppKeyIn];
-        activeChannel->full = TRUE;
-        activeChannel->status = 0;
-        activeDevice->fcode = 0;
-        ppKeyIn = 0;
+        if (!activeChannel->full)
+            {
+            windowGetChar();
+            activeChannel->data = asciiToConsole[ppKeyIn];
+            activeChannel->full = TRUE;
+            activeChannel->status = 0;
+            ppKeyIn = 0;
+            }
         break;
         }
     }
