@@ -29,7 +29,7 @@
 */
 
 #define DEBUG                    0
-#define DEBUGE                   1
+#define DEBUGE                   0
 
 /*
 **  DDP function and status codes.

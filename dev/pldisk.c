@@ -151,6 +151,7 @@ const char cdcToAscii[64] =
 const char date[] =   " 09/02/03.";
 const char *ptype;
 char pname[10];
+int aidsflag = 0;
 
 cw ccode;
 cw icode;
@@ -447,7 +448,9 @@ static leshdr lh;
 void copyfile (const char *fn)
 {
     FILE *inf;
-    int blk = 1, words = 0, unitw = -1;
+    int blk = 1, words = 0, unitw = -1, unitpos = -1;
+    int lastaunit = -2;
+    int units = 0, aunits = 0;
     int i, j, llen, lw;
     int parts = 1;
     char blkname[11] = "x";
@@ -459,6 +462,7 @@ void copyfile (const char *fn)
     int comlth[MAXCOM];
     cw comname[MAXCOM];
     char cname[100];
+    char uname[10];
     
     inf = fopen (fn, "r");
     if (inf == NULL)
@@ -550,16 +554,69 @@ void copyfile (const char *fn)
             nextpart++;
             extpf (parts - 1, parts);
         }
-        if (strncmp (line, "unit    ", 8) == 0 && words > UMIN)
-            unitw = words;
+        if (strncmp (line, "unit    ", 8) == 0)
+        {
+            units++;
+            unitpos = words;
+            memset (uname, 0, sizeof (uname));
+            strncpy (uname, line + 8, sizeof (uname) - 1);
+            if (words > UMIN)
+                unitw = words;
+        }
+        if (aidsflag)
+        {
+            if (strncmp (line, "*end ", 5) == 0 ||
+                strcmp (line, "*end") == 0)
+            {
+                endblk = 1;
+                unitw = 0;
+#if 0
+                if (unitpos < 0)
+                    printf ("*end but no unit\n");
+#endif
+            }
+            else if (lastaunit != unitpos &&
+                     (strncmp (line, "*titlet ", 8) == 0 ||
+                      strncmp (line, "*back1t ", 8) == 0 ||
+                      strncmp (line, "*backt ",  7) == 0 ||
+                      strncmp (line, "*next1t ", 8) == 0 ||
+                      strncmp (line, "*nextt ",  7) == 0))
+            {
+                aunits++;
+                lastaunit = unitpos;
+                if (units > aunits)
+                {
+                    endblk = 2;
+                    unitw = unitpos;
+                }
+                if (aunits == 1)
+                    strcpy (blkname, uname);
+                partial = 1;
+            }
+        }
         atod (blkbuf + (10 * words), line, llen);
+#if 0
+        printf ("%d(%d) %s\n", words, lw, line);
+#endif
         words += lw;
         if (words > WMAX || endblk)
         {
             if (unitw > 0)
+            {
+                if (aunits > 0) 
+                    aunits = 1;
+                units = 1;
                 lw = unitw;
+                unitpos = 0;
+                lastaunit = 0;
+            }
             else
+            {
+                units = aunits = 0;
                 lw = words;
+                unitpos = -1;
+                lastaunit = -2;
+            }
             setval (lh.binfo[blk], 
                     (((u64) partial) << 59) |
                     (1 << 18) | (lw << 9) | blk);
@@ -568,7 +625,14 @@ void copyfile (const char *fn)
             printf ("block %d (%s), %d words\n", blk, blkname, lw);
 #endif
             writeblk (startblk + blk, blkbuf);
+            if (endblk == 2)
+            {
+                // special flag for aids case, set next block name
+                strcpy (blkname, uname);
+                partial = 1;
+            }
             endblk = 0;
+            unitw = -1;
             blk++;
             if (lw < words)
             {
@@ -602,7 +666,7 @@ void copyfile (const char *fn)
         for (j = 0; j < lw; j++)
         {
             setval (lh.binfo[blk], 
-                    (1ULL << 54) |
+                    (041ULL << 54) |
                     (((j == 0) ? lw : 0) << 18) |
                     (blklth << 9) | blk);
             setstr (lh.bname[blk], comname[i]);
@@ -692,6 +756,9 @@ int main (int argc, char **argv)
             case 'c': 
                 setcode (ccode, p);
                 break;
+            case 'd':
+                aidsflag = 1;
+                break;
             case 'i':
                 setcode (icode, p);
                 break;
@@ -702,6 +769,7 @@ int main (int argc, char **argv)
                 setstr (useles, p);
                 break;
             case 't':
+                aidsflag = 0;
                 switch (tolower (*p))
                 {
                 case 't':

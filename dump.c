@@ -46,6 +46,7 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
+static void dumpMem(FILE *f, u32 start, u32 end, CpWord *mem);
 
 /*
 **  ----------------
@@ -214,96 +215,22 @@ void dumpCpu(void)
 **------------------------------------------------------------------------*/
 void dumpCpuMem(FILE *f, u32 start, u32 end)
     {
-    u32 addr;
-    CpWord data, data2;
-    CpWord lastData, lastData2;
-    bool duplicateLine;
-    u8 ch;
-    u8 i;
-    u8 shiftCount;
+    dumpMem(f, start, end, cpMem);
+    }
 
-    if (f == NULL)
-        {
-        f = cpuDF;
-        }
-    lastData = ~cpMem[start];
-    duplicateLine = FALSE;
-    for (addr = start; addr < end; addr += 2)
-        {
-        data = cpMem[addr];
-        if (addr + 1 == end)
-            {
-            // odd dump length
-            fprintf(f, "%06o  ", addr & Mask18);
-            fprintf(f, 
-                    "%04o %04o %04o %04o %04o   "
-                    "                          ",
-                    (PpWord)((data >> 48) & Mask12),
-                    (PpWord)((data >> 36) & Mask12),
-                    (PpWord)((data >> 24) & Mask12),
-                    (PpWord)((data >> 12) & Mask12),
-                    (PpWord)((data      ) & Mask12));
-
-            shiftCount = 60;
-            for (i = 0; i < 10; i++)
-                {
-                shiftCount -= 6;
-                ch = (u8)((data >> shiftCount) & Mask6);
-                fprintf(f, "%c", cdcToAscii[ch]);
-                }
-            fprintf(f, "\n");
-            break;
-            }
-        data2 = cpMem[addr + 1];        
-        if (data == lastData && data2 == lastData2)
-            {
-            if (!duplicateLine)
-                {
-                fprintf(f, "     DUPLICATED LINES.\n");
-                duplicateLine = TRUE;
-                }
-            }
-        else
-            {
-            duplicateLine = FALSE;
-            lastData = data;
-            lastData2 = data2;
-            fprintf(f, "%06o  ", addr & Mask18);
-            fprintf(f,
-                    "%04o %04o %04o %04o %04o  "
-                    "%04o %04o %04o %04o %04o ",
-                (PpWord)((data >> 48) & Mask12),
-                (PpWord)((data >> 36) & Mask12),
-                (PpWord)((data >> 24) & Mask12),
-                (PpWord)((data >> 12) & Mask12),
-                (PpWord)((data      ) & Mask12),
-                (PpWord)((data2 >> 48) & Mask12),
-                (PpWord)((data2 >> 36) & Mask12),
-                (PpWord)((data2 >> 24) & Mask12),
-                (PpWord)((data2 >> 12) & Mask12),
-                (PpWord)((data2      ) & Mask12));
-
-            shiftCount = 60;
-            for (i = 0; i < 10; i++)
-                {
-                shiftCount -= 6;
-                ch = (u8)((data >> shiftCount) & Mask6);
-                fprintf(f, "%c", cdcToAscii[ch]);
-                }
-            shiftCount = 60;
-            for (i = 0; i < 10; i++)
-                {
-                shiftCount -= 6;
-                ch = (u8)((data2 >> shiftCount) & Mask6);
-                fprintf(f, "%c", cdcToAscii[ch]);
-                }
-            }
-
-        if (!duplicateLine) 
-            {
-            fprintf(f, "\n");
-            }
-        }
+/*--------------------------------------------------------------------------
+**  Purpose:        Dump a range of ECS memory.
+**
+**  Parameters:     Name        Description.
+**                  start       Start address.
+**                  end         LWA + 1 of dump.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void dumpEcs(FILE *f, u32 start, u32 end)
+    {
+    dumpMem(f, start, end, ecsMem);
     }
 
 /*--------------------------------------------------------------------------
@@ -408,6 +335,7 @@ void dumpPpuMem(FILE *f, u8 pp, u32 start, u32 end)
 
         fprintf(f, "\n");
         }
+    fflush (f);
     }
 
 /*--------------------------------------------------------------------------
@@ -487,6 +415,120 @@ void dumpDisassemblePpu(u8 pp)
 
         fprintf(pf, "\n");
         }
+    fflush (pf);
     }
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Private Functions
+**
+**--------------------------------------------------------------------------
+*/
+/*--------------------------------------------------------------------------
+**  Purpose:        Dump a range of 60-bit memory.
+**
+**  Parameters:     Name        Description.
+**                  start       Start address.
+**                  end         LWA + 1 of dump.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void dumpMem(FILE *f, u32 start, u32 end, CpWord *mem)
+    {
+    u32 addr;
+    CpWord data, data2;
+    CpWord lastData, lastData2;
+    bool duplicateLine;
+    u8 ch;
+    u8 i;
+    u8 shiftCount;
+
+    if (f == NULL)
+        {
+        f = cpuDF;
+        }
+    lastData = mem[start];
+    duplicateLine = FALSE;
+    for (addr = start; addr < end; addr += 2)
+        {
+        data = mem[addr];
+        if (addr + 1 == end)
+            {
+            // odd dump length
+            fprintf(f, "%06o  ", addr & Mask18);
+            fprintf(f, 
+                    "%04o %04o %04o %04o %04o   "
+                    "                          ",
+                    (PpWord)((data >> 48) & Mask12),
+                    (PpWord)((data >> 36) & Mask12),
+                    (PpWord)((data >> 24) & Mask12),
+                    (PpWord)((data >> 12) & Mask12),
+                    (PpWord)((data      ) & Mask12));
+
+            shiftCount = 60;
+            for (i = 0; i < 10; i++)
+                {
+                shiftCount -= 6;
+                ch = (u8)((data >> shiftCount) & Mask6);
+                fprintf(f, "%c", cdcToAscii[ch]);
+                }
+            fprintf(f, "\n");
+            break;
+            }
+        data2 = mem[addr + 1];        
+        if (data == lastData && data2 == lastData2)
+            {
+            if (!duplicateLine)
+                {
+                fprintf(f, "     DUPLICATED LINES.\n");
+                duplicateLine = TRUE;
+                }
+            }
+        else
+            {
+            duplicateLine = FALSE;
+            lastData = data;
+            lastData2 = data2;
+            fprintf(f, "%06o  ", addr & Mask18);
+            fprintf(f,
+                    "%04o %04o %04o %04o %04o  "
+                    "%04o %04o %04o %04o %04o ",
+                (PpWord)((data >> 48) & Mask12),
+                (PpWord)((data >> 36) & Mask12),
+                (PpWord)((data >> 24) & Mask12),
+                (PpWord)((data >> 12) & Mask12),
+                (PpWord)((data      ) & Mask12),
+                (PpWord)((data2 >> 48) & Mask12),
+                (PpWord)((data2 >> 36) & Mask12),
+                (PpWord)((data2 >> 24) & Mask12),
+                (PpWord)((data2 >> 12) & Mask12),
+                (PpWord)((data2      ) & Mask12));
+
+            shiftCount = 60;
+            for (i = 0; i < 10; i++)
+                {
+                shiftCount -= 6;
+                ch = (u8)((data >> shiftCount) & Mask6);
+                fprintf(f, "%c", cdcToAscii[ch]);
+                }
+            shiftCount = 60;
+            for (i = 0; i < 10; i++)
+                {
+                shiftCount -= 6;
+                ch = (u8)((data2 >> shiftCount) & Mask6);
+                fprintf(f, "%c", cdcToAscii[ch]);
+                }
+            }
+
+        if (!duplicateLine) 
+            {
+            fprintf(f, "\n");
+            }
+        }
+    fflush (f);
+    }
+
 
 /*---------------------------  End Of File  ------------------------------*/

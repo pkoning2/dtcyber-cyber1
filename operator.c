@@ -77,6 +77,8 @@ static void opCmdShutdown(char *cmdParams);
 static void opCmdLoad(char *cmdParams);
 static void opCmdUnload(char *cmdParams);
 static void opDumpCpu (char *cmdParams);
+static void opDumpCMem (char *cmdParams);
+static void opDumpEcs (char *cmdParams);
 static void opDumpPpu (char *cmdParams);
 static void opDisPpu (char *cmdParams);
 static void opKeyboard (char *cmdParams);
@@ -121,6 +123,8 @@ static char *syntax[] =
     "LOAD,7,7,x\n",
     "UNLOAD,7,7.\n",
     "DUMP,CPU.\n",
+    "DUMP,CM,7,7.\n",
+    "DUMP,ECS,7,7.\n",
     "DUMP,PPU7.\n",
     "DISASSEMBLE,PPU7.\n",
     "SET,KEYBOARD=TRUE.\n",
@@ -156,6 +160,8 @@ static OpCmd decode[] =
     "LOAD,",                    opCmdLoad,
     "UNLOAD,",                  opCmdUnload,
     "DUMP,CPU",                 opDumpCpu,
+    "DUMP,CM,",                 opDumpCMem,
+    "DUMP,ECS,",                opDumpEcs,
     "DUMP,PPU",                 opDumpPpu,
     "DISASSEMBLE,PPU",          opDisPpu,
     "SET,KEYBOARD=",            opKeyboard,
@@ -182,6 +188,8 @@ static OpMsg msg[] =
       { 0020,    0, 0010, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
       { 0020,    0, 0010, "UNLOAD,CH,EQ.      Unload ch/eq." },
       { 0020,    0, 0010, "DUMP,CPU.          Dump CPU state." },
+      { 0020,    0, 0010, "DUMP,CM,X,Y.       Dump CM from X to Y." },
+      { 0020,    0, 0010, "DUMP,ECS,X,Y.      Dump ECS from X to Y." },
       { 0020,    0, 0010, "DUMP,PPUNN.        Dump specified PPU state." },
       { 0020,    0, 0010, "DISASSEMBLE,PPUNN. Disassemble specified PPU." },
       { 0020,    0, 0010, "SET,KEYBOARD=TRUE. Emulate console keyboard accurately." },
@@ -738,6 +746,68 @@ static void opDumpCpu(char *cmdParams)
 
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Dump a range of central memory.
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opDumpCMem(char *cmdParams)
+    {
+    int     np, start, end;
+    /*
+    **  Process commands.
+    */
+    np = sscanf (cmdParams, "%o,%o", &start, &end);
+    if (np != 2)
+        {
+        opSetMsg ("$INSUFFICENT PARAMETERS");
+        return;
+        }
+    if (start > end || end >= cpuMaxMemory)
+        {
+        opSetMsg ("$INVALID ADDRESS");
+        return;
+        }
+    dumpCpuMem (NULL, start, end);
+    opSetMsg ("COMPLETED");
+    }
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Dump a range of ECS.
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opDumpEcs(char *cmdParams)
+    {
+    int     np, start, end;
+    /*
+    **  Process commands.
+    */
+    np = sscanf (cmdParams, "%o,%o", &start, &end);
+    if (np != 2)
+        {
+        opSetMsg ("$INSUFFICENT PARAMETERS");
+        return;
+        }
+    if (start > end || end >= ecsMaxMemory)
+        {
+        opSetMsg ("$INVALID ADDRESS");
+        return;
+        }
+    dumpEcs (NULL, start, end);
+    opSetMsg ("COMPLETED");
+    }
+
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Dump selected PPU state
 **
 **  Parameters:     Name        Description.
@@ -882,7 +952,7 @@ static void opTraceCh(char *cmdParams)
         opSetMsg ("$INVALID CHANNEL NUMBER");
         return;
         }
-    chTraceMask |= 1 << ch;
+    chTraceMask |= ULL(1) << ch;
     }
 
 /*--------------------------------------------------------------------------
@@ -911,7 +981,7 @@ static void opTraceCp(char *cmdParams)
         opSetMsg ("$INVALID CP NUMBER");
         return;
         }
-    traceMask |= 1 << 14;
+    traceMask |= TraceCpu;
     traceCp = cp;
     }
 
@@ -926,7 +996,7 @@ static void opTraceCp(char *cmdParams)
 **------------------------------------------------------------------------*/
 static void opTraceCpu(char *cmdParams)
     {
-    traceMask |= 1 << 14;
+    traceMask |= TraceCpu;
     traceCp = 0;
     }
 
@@ -941,7 +1011,7 @@ static void opTraceCpu(char *cmdParams)
 **------------------------------------------------------------------------*/
 static void opTraceXj(char *cmdParams)
     {
-    traceMask |= 1 << 15;
+    traceMask |= TraceXj;
     }
 
 /*--------------------------------------------------------------------------
@@ -1000,7 +1070,7 @@ static void opUntraceCh(char *cmdParams)
         opSetMsg ("$INVALID CHANNEL NUMBER");
         return;
         }
-    chTraceMask &= ~(1 << ch);
+    chTraceMask &= ~(ULL(1) << ch);
     traceStop ();
     }
 
@@ -1015,7 +1085,7 @@ static void opUntraceCh(char *cmdParams)
 **------------------------------------------------------------------------*/
 static void opUntraceCpu(char *cmdParams)
     {
-    traceMask &= ~(1 << 14);
+    traceMask &= ~(TraceCpu);
     traceCp = 0;
     traceStop ();
     }
@@ -1031,7 +1101,7 @@ static void opUntraceCpu(char *cmdParams)
 **------------------------------------------------------------------------*/
 static void opUntraceXj(char *cmdParams)
     {
-    traceMask &= ~(1 << 15);
+    traceMask &= ~(TraceXj);
     traceStop ();
     }
 

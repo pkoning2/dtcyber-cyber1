@@ -917,13 +917,13 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
 
         case 'C':
         case 'c':
-            traceMask ^= (1 << 14);
+            traceMask ^= TraceCpu;
             traceStop ();
             break;
 
         case 'E':
         case 'e':
-            traceMask ^= (1 << 15);
+            traceMask ^= TraceXj;
             traceStop ();
             break;
 
@@ -1031,8 +1031,8 @@ void windowDisplay(HWND hWnd)
                 (traceMask >> 7) & 1 ? '7' : '_',
                 (traceMask >> 8) & 1 ? '8' : '_',
                 (traceMask >> 9) & 1 ? '9' : '_',
-                (traceMask >> 14) & 1 ? 'C' : '_',
-                (traceMask >> 15) & 1 ? 'E' : '_',
+                (traceMask & TraceCpu) ? 'C' : '_',
+                (traceMask & TraceXj) ? 'E' : '_',
                 (chTraceMask >> 0) & 1 ? '0' : '_',
                 (chTraceMask >> 1) & 1 ? '1' : '_',
                 (chTraceMask >> 2) & 1 ? '2' : '_',

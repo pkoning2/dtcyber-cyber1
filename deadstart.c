@@ -86,7 +86,6 @@ void deadStart(void)
     {
     DevSlot *dp;
     u8 pp;
-    u8 ch;
 
     dp = channelAttach(0, DtDeadStartPanel);
 
@@ -97,20 +96,10 @@ void deadStart(void)
     dp->selectedUnit = 0;
 
     /*
-    **  Set lower channels to active.
-    */
-    for (ch = 0; ch < channelCount; ch++)
-        {
-        if (ch < 014)
-            {
-            channel[ch].active = TRUE;
-            }
-        }
-
-    /*
     **  Set special channels appropriately.
     */
-//    channel[ChInterlock       ].active = FALSE;
+    channel[012               ].active = TRUE;
+    channel[013               ].active = TRUE;
     channel[ChInterlock       ].active = TRUE;
     channel[ChStatusAndControl].active = FALSE;
     channel[ChMaintenance     ].active = FALSE;
@@ -131,8 +120,16 @@ void deadStart(void)
         /*
         **  Assign PPs to the corresponding channels.
         */
-        ppu[pp].channel = channel + pp;
-        channel[pp].active = TRUE;
+        if (pp < 012)
+            {
+            ppu[pp].channel = channel + pp;
+            channel[pp].active = TRUE;
+            }
+        else
+            {
+            ppu[pp].channel = channel + (pp - 012 + 020);
+            channel[pp - 012 + 020].active = TRUE;
+            }
 
         /*
         **  Set all PPs to INPUT (71) instruction.
