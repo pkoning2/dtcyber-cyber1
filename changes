@@ -212,3 +212,8 @@ Since jan02 2004 drop:
   to work correctly.  (Thanks Jeff Woolsey for this information.)
 - Added cp3446.c for 3446 card punch support, and changed cr3447.c to
   print default card code chosen at startup.
+
+Since jan16 2004 drop:
+- Added missing cp3446.c  :-(
+- Changed Makefile for Mac to build G3 flavor as well.
+- Reverted index addressing in pp.c to what Tom had.
