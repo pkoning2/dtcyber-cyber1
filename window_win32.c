@@ -833,6 +833,8 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
     TEXTMETRIC tm;
     HDC hdc;
 	SHORT keystate;
+    BYTE keystatebuf[256];
+	WORD buf[4];
 	UINT i;
 
     switch (message) 
@@ -1079,23 +1081,29 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
 			return 0;
             }
 		/* Not Plato, not operator mode -- translate the key to display code */
-		i = MapVirtualKey (wParam, 2);
-		if (i != 0 && i <= 127)
-            {
-			if ((lParam & (1 << 31)) != 0)
-                {
-				/* this is a "key up" message */
-				i |= 0200;
-                }
-			nextput = keyListPut + 1;
-            if (nextput == KeyBufSize)
-                {
-                nextput = 0;
-                }
-            if (nextput != keyListGet)
-				{
-				keybuf[keyListPut] = i;
-                keyListPut = nextput;
+		GetKeyboardState (keystatebuf);
+		buf[0] = 0;
+		if (ToAscii (wParam, 0, keystatebuf, buf, 0) == 1)
+			{
+			i = buf[0];
+			if (i != 0 && i <= 127)
+        	    {
+				if ((lParam & (1 << 31)) != 0)
+                	{
+					/* this is a "key up" message */
+					i |= 0200;
+                	}
+//				printf ("keycode %03o lparam %x\n", i, lParam);
+				nextput = keyListPut + 1;
+            	if (nextput == KeyBufSize)
+	                {
+    	            nextput = 0;
+        	        }
+            	if (nextput != keyListGet)
+					{
+					keybuf[keyListPut] = i;
+                	keyListPut = nextput;
+					}
                 }
             }
 		break;

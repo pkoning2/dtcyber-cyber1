@@ -676,6 +676,7 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
             break;
         default:
 			GetKeyboardState (keystatebuf);
+			buf[0] = 0;
 			if (ToAscii (wParam, 0, keystatebuf, buf, 0) == 1)
 			{
 				key = buf[0];
