@@ -121,12 +121,6 @@ static const DWORD MWeFunc[] =
   SRCPAINT,
 };
 
-// PLATO terminal clip region
-static const RECT PlatoRect = 
-{ XADJUST (0), YADJUST (0),
-  XADJUST (511), YADJUST (511)
-};
-
 /*
 **--------------------------------------------------------------------------
 **
@@ -406,11 +400,9 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         SetBkMode(hdcMem, OPAQUE);
         SetBkColor(hdcMem, RGB(0, 0, 0));
         SetTextColor(hdcMem, orange);
-		SetBoundsRect(hdcMem, &PlatoRect, DCB_RESET | DCB_ACCUMULATE);
         SetBkMode(hdc, OPAQUE);
         SetBkColor(hdc, RGB(0, 0, 0));
         SetTextColor(hdc, orange);
-		SetBoundsRect(hdc, &PlatoRect, DCB_RESET | DCB_ACCUMULATE);
         ReleaseDC(hWnd, hdc);
         hPen = CreatePen(PS_SOLID, 1, orange);
         if (!hPen)
@@ -501,10 +493,19 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         break;
 
 	case WM_LBUTTONDOWN:
-
 		platoTouch (lParam, 1);
 		break;
         
+	case WM_SYSKEYDOWN:
+		// F10 comes in as a syskey because it is used by Win keyboard
+		// conventions to access the menus.  We don't do that, just
+		// divert it to regular keyboard processing.
+		if (wParam == VK_F10)
+		{
+	        platoKeypress (wParam, 0, 1);
+		    break;
+		}
+		// Fall through to default action
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -905,38 +906,49 @@ void ptermTouchPanel(bool enable)
 static void drawChar (HDC hdc, int x, int y, int snum, int cnum)
 {
     int charX, charY;
-    
-    if (x >= 1024)
-    {
-        // Special flag coordinate to write to the status field
-		SetBoundsRect(hdc, NULL, DCB_RESET);
-		SetBoundsRect(hdcMem, NULL, DCB_RESET);
-    }
-    
+    int xb = 8, yb = 16;
+	int xoff = 0, yoff = 0;
+	int yt = YADJUST (y) - 15;
+
+	// Clip path has bizarre side effects, so do clipping manually.
+	if (x < 1024 && x > 512 - 8)
+	{
+		xb = 512 - x;
+	}
+	else if (x < 0)
+	{
+		xoff = -x;
+		xb = 8 - xoff;
+		x = 0;
+	}
+	if (yt > DisplayMargin + 512 - 16)
+	{
+		yb = 512 - (yt - DisplayMargin);
+	}
+	else if (yt < DisplayMargin)
+	{
+		yoff = DisplayMargin - yt;
+		yb = 16 - yoff;
+		yt = DisplayMargin;
+	}
     charX = cnum * 8;
     if (snum < 2)
     {
         // "ROM" characters
         charY = snum * 16;
-        BitBlt (hdcMem, XADJUST (x & 1023), YADJUST (y) - 15, 8, 16,
-                hdcFont, charX, charY, WeFunc[wemode]);
+        BitBlt (hdcMem, XADJUST (x & 1023), yt, xb, yb,
+                hdcFont, charX + xoff, charY + yoff, WeFunc[wemode]);
     }
     else
     {
         charY = YSize + (snum - 2) * 16;
-        BitBlt (hdcMem, XADJUST (x & 1023), YADJUST (y) - 15, 8, 16,
-                hdcMem, charX, charY, MWeFunc[wemode]);
+        BitBlt (hdcMem, XADJUST (x & 1023), yt, xb, yb,
+                hdcMem, charX + xoff, charY + yoff, MWeFunc[wemode]);
     }
-	BitBlt(hdc, XADJUST (x & 1023), YADJUST (y)- 15, 8, 16,
-		   hdcMem, XADJUST (x & 1023), YADJUST (y) - 15, SRCCOPY);
+	BitBlt(hdc, XADJUST (x & 1023), yt, xb, yb,
+		   hdcMem, XADJUST (x & 1023), yt, SRCCOPY);
     // Handle screen edge wraparound by recursion...
-    if (x >= 1024)
-    {
-        // Restore normal clipping
-		SetBoundsRect(hdc, &PlatoRect, DCB_RESET | DCB_ACCUMULATE);
-		SetBoundsRect(hdcMem, &PlatoRect, DCB_RESET | DCB_ACCUMULATE);
-    }
-    else 
+    if (x < 1024)
     {
         if (x > 512 - 8)
         {
