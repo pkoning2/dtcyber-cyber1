@@ -230,6 +230,7 @@ const char *ptype;
 char pname[10];
 int aidsflag = 0;
 bool force;
+bool image;
 bool topipe;
 bool sourceonly;
 bool verbose;
@@ -566,6 +567,35 @@ void writeblk (int blk, const u8 *buf)
     
     for (i = 0; i < 5; i++)
         writesec (blk * 5 + i, buf + (640 * i));
+}
+
+void writeimg (FILE *outf)
+{
+    int w, i;
+    u64 w1, w2;
+    u8 buf[15];
+    
+    for (w = 0; w < blklth; w += 2)
+    {
+        get60 (w1, blkbuf + w * 10);
+        get60 (w2, blkbuf + w * 10 + 10);
+        for (i = 0; i < 7; i++)
+        {
+            buf[i] = w1 >> 52;
+            w1 <<= 8;
+        }
+        buf[7] = ((w1 >> 52) & 0xf0) | ((w2 >> 56) & 0x0f);
+        w2 <<= 4;
+        for (i = 0; i < 7; i++)
+        {
+            buf[i + 8] = w2 >> 52;
+            w2 <<= 8;
+        }
+        if (fwrite (buf, 15, 1, outf) != 1)
+        {
+            perror ("writeimg");
+        }
+    }
 }
 
 void dumpblk (FILE *outf, int base)
@@ -1208,7 +1238,7 @@ void pfread (int argc, char **argv)
                     ep += 10;
                     continue;
                 }
-                if ((lh->lastblk[0] & 040) == 0)
+                if (!image && (lh->lastblk[0] & 040) == 0)
                 {
                     fprintf (stderr, "old format block directory for %s\n", pfn);
                     if (!wild)
@@ -1216,7 +1246,7 @@ void pfread (int argc, char **argv)
                     ep += 10;
                     continue;
                 }
-                if (type == 1 || type == 5)     // lesson or compass file
+                if (!image &&(type == 1 || type == 5))     // lesson or compass file
                 {
                     if (!topipe)
                         outf = fopen (pfn, "w");
@@ -1276,7 +1306,10 @@ void pfread (int argc, char **argv)
                     for (b = 0; b < blks; b++)
                     {
                         readblk (b + startblk, blkbuf);
-                        dumpblk (outf, b * blklth);
+                        if (image)
+                            writeimg (outf);
+                        else
+                            dumpblk (outf, b * blklth);
                     }
                 }
                 if (!topipe)
@@ -1337,15 +1370,17 @@ void pfinit (int argc, char **argv)
 void usage (void)
 {
     fprintf (stderr, "usage:\n"
-             "pf [-pmMD] pdisk pfile ...        read files\n"
-             "pf [-m] -l pdisk                  list directory\n"
+             "pf [-pmivMD] pdisk pfile ...      read files\n"
+             "pf [-mv] -l pdisk                 list directory\n"
              "pf [-m] -w pdisk pfile ...        write files\n"
              "pf [-m] -p -w pdisk pfile         write file from stdin\n"
              "pf [-mf] -c parts pdisk pfile ... create files\n"
 
              "pf [-mf] -p -c parts pdisk pfile  create file from stdin\n"
-             "pf [-mf] -i pdisk plabel ptype    initialize plato disk\n"
+             "pf [-mf] -I pdisk plabel ptype    initialize plato disk\n"
              "   -p                             pipe output to stdout\n"
+             "   -i                             image output mode\n"
+             "   -v                             verbose\n"
              "   -m                             pdisk is a masterfile\n"
              "   -M                             display modwords\n"
              "   -D                             include deleted lines\n");
@@ -1368,7 +1403,7 @@ int main (int argc, char **argv)
     parts = 0;
     for (;;)
     {
-        opt = getopt (argc, argv, "w:cifpslvmMD");
+        opt = getopt (argc, argv, "w:ciIfpslvmMD");
         if (opt == (char) (-1))
             break;
         switch (opt)
@@ -1386,11 +1421,14 @@ int main (int argc, char **argv)
             }
             act = Create;            
             break;
-        case 'i':
+        case 'I':
             act = Packinit;
             break;
         case 'f':
             force = true;
+            break;
+        case 'i':
+            image = true;
             break;
         case 'l':
             act = List;
