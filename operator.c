@@ -140,7 +140,7 @@ static char *syntax[] =
 #if CcDebug == 1
     "TRACE,PPU7.\n",
     "TRACE,CHANNEL7.\n",
-    "TRACE,CPU.\n",
+    "TRACE,CPU7.\n",
     "TRACE,CP7.\n",
     "TRACE,XJ.\n",
     "UNTRACE,.\n",
@@ -160,7 +160,8 @@ static OpCmd decode[] =
     ** the keyword, or it may be that plus some of the arguments.
     ** The action routine is handed the rest of the command line
     ** (everything past what matched here).
-    ** Note that the matches must be unique -- the first match is used.
+    ** Note that the matches must in order from longest to shortest
+    ** possible matching string.  The first match is used.
     */
     {
     "END.",                     opCmdEnd,

@@ -229,3 +229,4 @@ Since jan21 2004 drop:
 - Fix cpuReadMem and cpuWriteMem to use cpuAdd18 for adding in RA.
   Now EJT no longer complains about P + RA adder being broken.
   Thanks Gerard!
+- Fix TRACE,CPUxx. command to accept the argument as documented.
