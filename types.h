@@ -147,6 +147,7 @@ typedef struct
     u32             regA;               /* Register A (18 bit) */
     PpWord          regP;               /* Program counter (12 bit) */
     PpWord          mem[PpMemSize];     /* PP memory */
+    int             delay;              /* Time to delay before next instruction */
     u16             ppMemStart;         /* Start of IAM/OAM for tracing */
     u16             ppMemLen;           /* Length of IAM/OAM for tracing */
     u8              ioWaitType;         /* Indicates what kind of I/O we wait for */

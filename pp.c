@@ -371,6 +371,18 @@ void ppStep(void)
         if (!activePpu->stopped)
             {
             /*
+            **  If we need to make this PP wait a bit, do so.
+            **  (We do that for CWM, not as much as the real
+            **  hardware would but enough that some delay
+            **  sensitive crud like 1MT/1LT interaction works.)
+            */
+            if (activePpu->delay)
+                {
+                --activePpu->delay;
+                continue;
+                }
+            
+            /*
             **  Extract next PPU instruction.
             */
             opCode = activePpu->mem[activePpu->regP];
@@ -516,64 +528,76 @@ void ppStep(void)
             {
             activeChannel = activePpu->channel;
 
-
-            if (!activeChannel->full)
+            while ((activePpu->ioWaitType & WaitIn) != 0)
                 {
                 /*
-                **  Handle possible input.
+                **  Loop so long as we want input and have some
                 */
-                channelIo();
-                }
-
-            if (activeChannel->full || activeChannel->id == 014)
-                {
-                /*
-                **  Handle input.
-                */
-                switch (activePpu->ioWaitType)
+                if (!activeChannel->full)
                     {
-                case WaitInOne:
-                    activePpu->regA = activeChannel->data & Mask12;
-                    activePpu->ioWaitType = WaitNone;
-                    activePpu->stopped = FALSE;
-                    activeChannel->full = FALSE;
-                    if (activeChannel->discAfterInput)
-                        {
-                        activeChannel->discAfterInput = FALSE;
-                        activeChannel->active = FALSE;
-                        activeChannel->ioDevice = NULL;
-                        }
-                    break;
+                    /*
+                    **  Handle possible input.
+                    */
+                    channelIo();
+                    }
 
-                case WaitInMany:
-                    activePpu->mem[activePpu->regP] = activeChannel->data & Mask12;
-                    activePpu->regP = (activePpu->regP + 1) & Mask12;
-                    activePpu->regA = (activePpu->regA - 1) & Mask18;
-                    activePpu->ppMemLen++;
-                    
-                    if (activeChannel->discAfterInput)
+                if (activeChannel->full || activeChannel->id == 014)
+                    {
+                    /*
+                    **  Handle input.
+                    */
+                    switch (activePpu->ioWaitType)
                         {
-                        activeChannel->discAfterInput = FALSE;
-                        activeChannel->active = FALSE;
-                        activeChannel->ioDevice = NULL;
-                        if (activePpu->regA != 0)
+                    case WaitInOne:
+                        activePpu->regA = activeChannel->data & Mask12;
+                        activePpu->ioWaitType = WaitNone;
+                        activePpu->stopped = FALSE;
+                        activeChannel->full = FALSE;
+                        if (activeChannel->discAfterInput)
                             {
-                            activePpu->mem[activePpu->regP] = 0;
+                            activeChannel->discAfterInput = FALSE;
+                            activeChannel->active = FALSE;
+                            activeChannel->ioDevice = NULL;
                             }
-                        activePpu->ioWaitType = WaitNone;
-                        activePpu->stopped = FALSE;
-                        activePpu->regP = activePpu->mem[0];
-                        PpIncrement(activePpu->regP);
-                        }
-                    else if (activePpu->regA == 0)
-                        {
-                        activePpu->ioWaitType = WaitNone;
-                        activePpu->stopped = FALSE;
-                        activePpu->regP = activePpu->mem[0];
-                        PpIncrement(activePpu->regP);
-                        }
+                        break;
 
-                    activeChannel->full = FALSE;
+                    case WaitInMany:
+                        activePpu->mem[activePpu->regP] = activeChannel->data & Mask12;
+                        activePpu->regP = (activePpu->regP + 1) & Mask12;
+                        activePpu->regA = (activePpu->regA - 1) & Mask18;
+                        activePpu->ppMemLen++;
+                    
+                        if (activeChannel->discAfterInput)
+                            {
+                            activeChannel->discAfterInput = FALSE;
+                            activeChannel->active = FALSE;
+                            activeChannel->ioDevice = NULL;
+                            if (activePpu->regA != 0)
+                                {
+                                activePpu->mem[activePpu->regP] = 0;
+                                }
+                            activePpu->ioWaitType = WaitNone;
+                            activePpu->stopped = FALSE;
+                            activePpu->regP = activePpu->mem[0];
+                            PpIncrement(activePpu->regP);
+                            }
+                        else if (activePpu->regA == 0)
+                            {
+                            activePpu->ioWaitType = WaitNone;
+                            activePpu->stopped = FALSE;
+                            activePpu->regP = activePpu->mem[0];
+                            PpIncrement(activePpu->regP);
+                            }
+
+                        activeChannel->full = FALSE;
+                        break;
+                        }
+                    }
+                else
+                    {
+                    /*
+                    **  No more data right now, look again next cycle.
+                    */
                     break;
                     }
                 }
@@ -585,51 +609,73 @@ void ppStep(void)
             **  Handle output.
             */
             activeChannel = activePpu->channel;
-            if (!activeChannel->full)
+            while ((activePpu->ioWaitType & WaitOut) != 0)
                 {
-                switch (activePpu->ioWaitType)
+                /*
+                **  Loop so long as we want more output and the channel can take it.
+                */
+
+                if (!activeChannel->full)
                     {
-                case WaitOutOne:
-                    activeChannel->data = (PpWord)activePpu->regA & Mask12;
-                    activePpu->ioWaitType = WaitNone;
-                    activePpu->stopped = FALSE;
-                    activeChannel->full = TRUE;
-                    break;
-
-                case WaitOutMany:
-                    activeChannel->data = activePpu->mem[activePpu->regP] & Mask12;
-                    activePpu->regP = (activePpu->regP + 1) & Mask12;
-                    activePpu->regA = (activePpu->regA - 1) & Mask18;
-                    activePpu->ppMemLen++;
-                    activeChannel->full = TRUE;
-
-                    if (activePpu->regA == 0)
+                    switch (activePpu->ioWaitType)
                         {
+                    case WaitOutOne:
+                        activeChannel->data = (PpWord)activePpu->regA & Mask12;
                         activePpu->ioWaitType = WaitNone;
                         activePpu->stopped = FALSE;
-                        activePpu->regP = activePpu->mem[0];
-                        PpIncrement(activePpu->regP);
+                        activeChannel->full = TRUE;
+                        break;
+
+                    case WaitOutMany:
+                        activeChannel->data = activePpu->mem[activePpu->regP] & Mask12;
+                        activePpu->regP = (activePpu->regP + 1) & Mask12;
+                        activePpu->regA = (activePpu->regA - 1) & Mask18;
+                        activePpu->ppMemLen++;
+                        activeChannel->full = TRUE;
+
+                        if (activePpu->regA == 0)
+                            {
+                            activePpu->ioWaitType = WaitNone;
+                            activePpu->stopped = FALSE;
+                            activePpu->regP = activePpu->mem[0];
+                            PpIncrement(activePpu->regP);
+                            break;
+                            }
+
                         break;
                         }
-
+                    }
+                else
+                    {
+                    /*
+                    **  Channel is not ready for more data, stop looping
+                    */
                     break;
                     }
-                }
+                
 
-            if (activeChannel->full)
-                {
-                /*
-                **  Discard data for channels we don't yet know how to deal with.
-                */
-                if (activeChannel->id > 014 && activeChannel->id < 020)
+                if (activeChannel->full)
                     {
-                    activeChannel->full = FALSE;
-                    } 
+                    /*
+                    **  Discard data for channels we don't yet know how to deal with.
+                    */
+                    if (activeChannel->id > 014 && activeChannel->id < 020)
+                        {
+                        activeChannel->full = FALSE;
+                        } 
 
-                /*
-                **  Handle possible output.
-                */
-                channelIo();
+                    /*
+                    **  Handle possible output.
+                    */
+                    channelIo();
+                    }
+                else
+                    {
+                    /*
+                    **  We have no more data, stop looping
+                    */
+                    break;
+                    }
                 }
             }
         }
@@ -1472,6 +1518,11 @@ static void ppOpCWM(void)     // 63
     cpuMemStart = activePpu->regA & Mask18;
     cpuMemLen = length = activePpu->mem[opD] & Mask12;
 
+    /*
+    **  We're cheap -- charge one major cycle per 8 cm words.
+    */
+    activePpu->delay = length / 8;
+    
     while (length--)
         {
         data = activePpu->mem[location++ & Mask12] & Mask12;
