@@ -110,6 +110,7 @@ static void mode7 (u32 d);
 */
 bool tracePterm = FALSE;
 volatile bool ptermActive = FALSE;
+u8 mode;
 u8 wemode;
 FILE *traceF;
 char traceFn[20];
@@ -123,7 +124,6 @@ const char *hostName;
 static u16 currentX;
 static u16 currentY;
 static u16 margin = 0;
-static u8 mode;
 static u16 memaddr;
 static u16 plato_m23[128 * 8];
 static u16 memlpc;

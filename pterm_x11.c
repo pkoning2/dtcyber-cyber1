@@ -92,6 +92,7 @@ XrmDatabase XrmDb;
 Window ptermWindow;
 
 extern bool tracePterm;
+extern u8 mode;
 
 /*
 **  -----------------
@@ -108,11 +109,17 @@ static Cursor curs;
 static bool touchEnabled;
 static int sts;
 
-// X gc function codes for a given W/E mode:
+/*
+**  X gc function codes for a given W/E mode, used on the pixmap only.
+**  (window mode is always GXcopy).  The modes are:
+**  inverse, rewrite, erase, write.
+**  The erasing modes don't have an "Inverse" in the function code because
+**  they are handled by reversing the foreground and background colors.
+*/
 static const int WeFunc[] = 
 { GXcopy,
   GXcopy,
-  GXandInverted,
+  GXand,
   GXor 
 };
 
@@ -487,11 +494,13 @@ void ptermSetName (const char *winName)
 **------------------------------------------------------------------------*/
 void ptermSetWeMode (u8 we)
 {
-    // Unfortunately we can't just do wemode == 0 with GXcopyInverted,
-    // partly because that produces wrong colors when writing to the
-    // (orange) window, and partly because XDrawImageString doesn't 
-    // pay attention to the GC function.
-    if (we == 0)
+    /*
+    **  We set the window foreground and background to the writing colors,
+    **  or to the reverse for the erasing modes, and the writing mode is
+    **  always GXcopy.
+    **  The pixmap writing varies according to what the Plato mode is.
+    */
+    if ( (we & 1) == 0)    /* inverse or erase, not char mode */
     {
         XSetBackground (disp, wgc, fg);
         XSetForeground (disp, wgc, bg);
@@ -506,7 +515,7 @@ void ptermSetWeMode (u8 we)
         XSetForeground (disp, pgc, pfg);
     }
     XSetFunction (disp, pgc, WeFunc[we]);
-    XSetFunction (disp, wgc, WeFunc[we]);
+    XSetFunction (disp, wgc, GXcopy);
     wemode = we;
 }
 
@@ -524,8 +533,14 @@ void ptermSetWeMode (u8 we)
 **------------------------------------------------------------------------*/
 void ptermDrawChar (int x, int y, int snum, int cnum)
 {
-    drawChar (ptermWindow, wgc, x, y, snum, cnum);
-    drawChar (pixmap, pgc, x, y, snum, cnum);
+  int savemode = wemode;
+  //    drawChar (ptermWindow, wgc, x, y, snum, cnum);
+        drawChar (pixmap, pgc, x, y, snum, cnum);
+	ptermSetWeMode (1);
+    XCopyPlane (disp, pixmap, ptermWindow, wgc, XADJUST (x & 1023), YADJUST (y) - 15,
+		8, 16, 
+                XADJUST (x & 1023), YADJUST (y) - 15, 1);
+    ptermSetWeMode (savemode);
 }
 
 
