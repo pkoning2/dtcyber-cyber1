@@ -1,0 +1,11 @@
+Installation procedure for X-windows system:
+
+1. make -f Makefile.x11
+2. Copy *.pcf to your font directory, for example
+   /usr/X11R6/lib/X11/fonts/100dpi/.
+3. cd to that directory and do "mkfontdir".
+4. Restart your X server and/or xfs to let it
+   discover the new fonts.
+5. You're now ready to run DtCyber.
+
+	paul koning

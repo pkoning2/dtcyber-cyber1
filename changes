@@ -38,3 +38,34 @@ Since aug07 drop:
   boundaries.
   This change is INCOMPATIBLE with existing disk container files,
   so I used pfdump/pfload to carry data between versions.
+
+Since aug11 drop:
+- Changed character positioning in window_x11.c so the supplied 
+  x/y is the position of the center of the character.  That seems 
+  right for several reasons.  DS1 now shows the O centered on the
+  crosshairs; it doesn't say if that is right but at least it now
+  matches ONE of the two possibilities it mentions rather than
+  neither of them.  Second, the positioning of the B relative
+  to the body of the B-display matches what the screenshot of a
+  6612 on the Twiki shows.
+- Changed window_win32.c similarly, except that I cheated on
+  the ascent.  Need to test this.
+- Changed window_x11 to use "Seymour" font, which is encoded by
+  display code and is 8/16/32 pixels wide so no positioning is
+  needed.  Operator window still uses Lucida Typewriter.
+  *** need to make corresponding changes to window_win32.c ***
+- Changed Makefile to include creating of pcf files.
+- Fixed ddp.c so it works for flag register operations
+  where the PPU doesn't read any data at all.
+- Changed window_x11 to track the coordinates referenced in output
+  between each pair of input polls.  If the coordinates repeat
+  (indicating a full refresh cycle) discard the old stuff.
+  This is like what I did before but works correctly with WRM.
+  Also increased the display buffer ring size.  It needs to be
+  big enough to hold two complete repeats of output, otherwise
+  you sometimes get flickering with the other optimization.
+  The CMRINST display shows this issue clearly.  
+- Changed window_x11 to do intensity control of dot output.
+- Changed window_x11, operator, and console to handle multiple
+  simultaneous keypresses in the authentic manner. Starwar now seems
+  to work as it should.
