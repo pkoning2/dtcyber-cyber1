@@ -114,7 +114,7 @@ static const int WeFunc[] =
 
 static XRectangle platoRect[] = 
 { { XADJUST (0), YADJUST (511), 512, 512 },
-  { 0, YSize, 512, 32 } };
+  { 0, YSize, 512, 16 * CSETS } };
 
 /* data for plato font, set 0. */
 const unsigned short plato_m0[] = {
@@ -935,7 +935,7 @@ static void drawChar (Drawable d, GC gc, int x, int y, int snum, int cnum)
     charX = cnum * 8;
     charY = YSize + snum * 16;
     XCopyPlane (disp, pixmap, d, gc, charX, charY, 8, 16, 
-                XADJUST (x), YADJUST (y) - 15, 1);
+                XADJUST (x & 1023), YADJUST (y) - 15, 1);
     
     // Handle screen edge wraparound by recursion...
     if (x >= 1024)
