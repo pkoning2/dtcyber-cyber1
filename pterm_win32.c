@@ -52,6 +52,10 @@
 #define XADJUST(x) ((x) + DisplayMargin)
 #define YADJUST(y) (YSize - 1 - DisplayMargin - (y))
 
+// inverse mapping (for processing touch input)
+#define XUNADJUST(x) ((x) - DisplayMargin)
+#define YUNADJUST(y) (YSize - 1 - DisplayMargin - (y))
+
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
@@ -75,6 +79,8 @@ static void drawChar (HDC hdc, int x, int y, int snum, int cnum);
 **  ----------------
 */
 
+extern FILE *traceF;
+extern char traceFn[];
 extern bool tracePterm;
 extern HINSTANCE hInstance;
 extern volatile bool ptermActive;
@@ -95,6 +101,7 @@ static COLORREF orange;
 static HPEN hPen = 0;
 static HBITMAP fontBitmap;
 static bool allowClose = FALSE;
+static HCURSOR hcNormal, hcTouch;
 
 // rasterop codes for a given W/E mode
 // See Win32 rasterops (ternary ops) appendix for explanations...
@@ -127,6 +134,7 @@ static const RECT PlatoRect =
 */
 
 bool platoKeypress (WPARAM wParam, int alt, int stat);
+bool platoTouch (LPARAM lParam, int stat);
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize the Plato terminal window.
@@ -305,6 +313,7 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
     int wmId, wmEvent;
     HDC hdc;
     PAINTSTRUCT paint;
+    int savemode;
     
     switch (message) 
     {
@@ -358,6 +367,12 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
 		{
             fprintf (stderr, "Failed to load font bitmap");
         }
+
+		/*
+		**  Load the cursors
+		*/
+		hcNormal = LoadCursor (NULL, MAKEINTRESOURCE (IDC_ARROW));
+		hcTouch = LoadCursor (NULL, MAKEINTRESOURCE (IDC_CROSS));
 
         /*
         **  Select the bitmap into the font dc.
@@ -426,6 +441,31 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
 		{
             DestroyWindow(hWnd);
 		}
+		else if (wParam == 035) // control-] : trace
+                    {
+                        tracePterm = !tracePterm;
+                        savemode = wemode;
+                        if (!tracePterm)
+                        {
+                            wemode = 2;
+                            fflush (traceF);
+                        }
+                        else
+                        {
+                            if (traceF == NULL)
+                            {
+                                traceF = fopen (traceFn, "w");
+                            }
+                            wemode = 3;
+                        }
+                        ptermSetWeMode (wemode);
+                        // The 1024 is a strange hack to circumvent the
+                        // screen edge wrap checking.
+                        ptermDrawChar (1024 + 512, 512, 1, 024);
+                        wemode = savemode;
+                        ptermSetWeMode (wemode);
+                        return;
+                    }
         break;
 
     case WM_SYSCHAR:
@@ -435,6 +475,11 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
 	case WM_KEYDOWN:
         platoKeypress (wParam, 0, 1);
         break;
+
+	case WM_LBUTTONDOWN:
+
+		platoTouch (lParam, 1);
+		break;
         
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
@@ -741,6 +786,38 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
     return FALSE;
 }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Process mouse click for Plato terminal
+**
+**  Parameters:     Name        Description.
+**                  lParam      Mouse click parameter word
+**                  stat        Station number
+**
+**  Returns:        TRUE if mouse event was valid.
+**
+**------------------------------------------------------------------------*/
+bool platoTouch (LPARAM lParam, int stat)
+{
+    int x, y;
+    
+    if (!touchEnabled)
+    {
+        return FALSE;
+    }
+    x = XUNADJUST (lParam & 0xffff);
+    y = YUNADJUST (lParam >> 16);
+    
+    if (x < 0 || x > 511 ||
+        y < 0 || y > 511)
+    {
+        return FALSE;
+    }
+    x /= 32;
+    y /= 32;
+
+    niuLocalKey (0x100 | (x << 4) | y, stat);
+    return TRUE;
+}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Enable or disable "touch" input
@@ -755,11 +832,11 @@ void ptermTouchPanel(bool enable)
 {
     if (enable)
     {
-//        XDefineCursor (disp, ptermWindow, curs);
+		SetClassLong(hWnd, GCL_HCURSOR, (LONG) hcTouch);
     }
     else
     {
-//        XUndefineCursor (disp, ptermWindow);
+		SetClassLong(hWnd, GCL_HCURSOR, (LONG) hcNormal);
     }
     touchEnabled = enable;
 }
