@@ -63,9 +63,10 @@ PWNOT=10.        MISSED PASSWORD GENERATES NOTE
 *
 CMP=ON.          TURN ON CENTRAL PLATO EXECUTOR
 *
-PLF=ON.          Turn on PLATO LINK FACILITY
-NLBNK=32.        Number of link banks
-NETAG=D,3072,16. call destination address group.
-NETAG=L,264,16.  local distribution address group
-NETAG=O,3136,16. call origin address group.
-PLFPR=56,55.     interactive and bulk transfer priorities (decimal?)
+PLF=OFF.
+*PLF=ON.          Turn on PLATO LINK FACILITY
+*NLBNK=32.        Number of link banks
+*NETAG=D,3072,16. call destination address group.
+*NETAG=L,264,16.  local distribution address group
+*NETAG=O,3136,16. call origin address group.
+*PLFPR=56,55.     interactive and bulk transfer priorities (decimal?)
