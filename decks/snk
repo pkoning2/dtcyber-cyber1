@@ -1,9 +1,0 @@
-user(sys)
-attach,snkbin/m=w,na.
-if(.not.file(snkbin,as))define,snkbin.
-pf(snk),-blabel
-compass(i=snk,b=snkbin,s=nostext,l)
-*sysedit,b=snkbin,c.
-*setid(output=6)
-exit.
-exit.
