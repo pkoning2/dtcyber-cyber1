@@ -231,6 +231,7 @@ char pname[10];
 int aidsflag = 0;
 bool force;
 bool image;
+bool fiw_image;
 bool topipe;
 bool sourceonly;
 bool verbose;
@@ -1168,7 +1169,7 @@ void pfread (int argc, char **argv)
     char pfn[11];
     cw pfnw;
     int entry, ep;
-    u64 fiw, blkinfo;
+    u64 fiw, blkinfo, bfiw;
     int startblk, blks, type, blen, cblks, fblk;
     FILE *outf;
     int wild;
@@ -1307,7 +1308,14 @@ void pfread (int argc, char **argv)
                     {
                         readblk (b + startblk, blkbuf);
                         if (image)
+                        {
+                            if (fiw_image && b == 0)
+                            {
+                                bfiw = (fiw & ~0777777ULL) | blks;
+                                set60 (blkbuf + 2 * 10, bfiw);
+                            }
                             writeimg (outf);
+                        }
                         else
                             dumpblk (outf, b * blklth);
                     }
@@ -1380,6 +1388,7 @@ void usage (void)
              "pf [-mf] -I pdisk plabel ptype    initialize plato disk\n"
              "   -p                             pipe output to stdout\n"
              "   -i                             image output mode\n"
+             "   -f                             include FIW data in image output\n"
              "   -v                             verbose\n"
              "   -m                             pdisk is a masterfile\n"
              "   -M                             display modwords\n"
@@ -1426,6 +1435,7 @@ int main (int argc, char **argv)
             break;
         case 'f':
             force = true;
+            fiw_image = true;
             break;
         case 'i':
             image = true;
