@@ -1,0 +1,1457 @@
+procs.
+user(plato,plato)
+settl(*)
+setasl(*)
+setjsl(*)
+attach,procfil/m=w,na.
+if(.not.file(procfil,as))define,procfil.
+copycf,input,procfil.
+~
+.proc,ulib,abs,ulib,unam.
+.*
+.*        procedure to build *ulib* from absolute
+.*
+.*        abs - file containing absolute.
+.*              will contain ulib
+.*
+.*        ulib - file containing *ulib* header.
+.*
+.*        unam - *ulib* name.
+.*
+rewind,old,abs.
+skipr,abs.
+copyei,abs,old.
+note(dir)+*build unam
+libedit(i=dir,p=old,lo=e,b=0)
+rewind,abs,new,ulib.
+skipr,abs.
+compass(i=ulib,s=0,l=0,b=ulhdr)
+rewind(ulhdr)
+copybr,ulhdr,abs.
+copyei,new,abs.
+unload,dir,old,new,ulhdr.
+revert. ulib
+.data,ulibm.
+          ident  ulib
+          #abs
+          nolabel
+ 
+*         form a prefix table
+ 
+ prefix   data   77000016000000000000b
+          dis    ,*mastor*
+          data   10h"date"
+          data   10h"time"
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    ,* library for mastor.*
+          bssz   17b+prefix-*   complete the prefix table
+ 
+*         make a ulib table
+ 
+          data   76000001000000000000b
+ 
+          end
+.data,ulibmn.
+          ident  ulib
+          #abs
+          nolabel
+ 
+*         form a prefix table
+ 
+ prefix   data   77000016000000000000b
+          dis    ,*mastorn*
+          data   10h"date"
+          data   10h"time"
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    ,* library for mastorn.*
+          bssz   17b+prefix-*   complete the prefix table
+ 
+*         make a ulib table
+ 
+          data   76000001000000000000b
+ 
+          end
+.data,ulibp.
+          ident  ulib
+          #abs
+          nolabel
+ 
+*         form a prefix table
+ 
+ prefix   data   77000016000000000000b
+          dis    ,*plato*
+          data   10h"date"
+          data   10h"time"
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    ,* library for plato.*
+          bssz   17b+prefix-*   complete the prefix table
+ 
+*         make a ulib table
+ 
+          data   76000001000000000000b
+ 
+          end
+.data,ulibf.
+          ident  ulib
+          #abs
+          nolabel
+ 
+*         form a prefix table
+ 
+ prefix   data   77000016000000000000b
+          dis    ,*framat*
+          data   10h"date"
+          data   10h"time"
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    ,* library for framat.*
+          bssz   17b+prefix-*   complete the prefix table
+ 
+*         make a ulib table
+ 
+          data   76000001000000000000b
+ 
+          end
+.data,ulibc.
+          ident  ulib
+          #abs
+          nolabel
+ 
+*         form a prefix table
+ 
+ prefix   data   77000016000000000000b
+          dis    ,*conden*
+          data   10h"date"
+          data   10h"time"
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    ,* library for condensor.*
+          bssz   17b+prefix-*   complete the prefix table
+ 
+*         make a ulib table
+ 
+          data   76000001000000000000b
+ 
+          end
+.data,ulibplf.
+          ident  ulib
+          #abs
+          nolabel
+ 
+*         form a prefix table
+ 
+ prefix   data   77000016000000000000b
+          dis    ,*plf*
+          data   10h"date"
+          data   10h"time"
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    1,
+          dis    ,* library for plf.*
+          bssz   17b+prefix-*   complete the prefix table
+ 
+*         make a ulib table
+ 
+          data   76000001000000000000b
+ 
+          end
+~
+.proc,loader,rel,abs,rfl=70000,map=0,mo=sbex.
+.*
+.*        load relocatable binary, create absolute binary
+.*        and save the map.
+.*
+.*        rel = relocatable binary.
+.*
+.*        abs = absolute binary.
+.*
+.*        rfl = running field length for load.
+.*
+.*        map = pfn, map saved on pfn.
+.*        map = 0, map printed, but not saved.
+.*
+.*        mo = -ldset- map options, default = sb.
+.*
+unload(#abs)
+#rfl(rfl)
+ldset(preset=zero,err=all,#map=mo/#map)
+load(rel)
+nogo(#abs)
+purge(abs/na)
+define(abs/ct=pu,m=r)
+rewind(#abs)
+copyei(#abs,abs)
+unload(#abs)
+.*
+.*        copy map to full output file
+.*
+rewind,#map.
+copyei,#map,full.
+.*
+.*        copy map to permanent file if requested.
+.*
+ife,(num(map).ne.true),list.
+rewind(#map)
+purge(map/na)
+define(map/ct=pu,m=r)
+copyei(#map,map)
+endif(list)
+.*
+unload(#map)
+.*
+revert. loader
+.*
+exit.
+.*
+.*        if errors, copy errors to file *errs* and
+.*        copy full map to full output file.
+.*
+ife(file(#map,eq).ne.0,xedt)
+xedit(#map,l=errs)$l.///.*$t$l.***.*$e
+rewind,#map.
+copy,#map,output.
+unload,#map.
+endif(xedt)
+.*
+revert,abort. loader.
+~
+.proc,condldr,lo=sbex,el=all.
+.*
+.*  load the condensor.  writes the abs binary to cbin
+.*  and the map to cmap.
+.*
+.*  lo    = ses. link170 list options (default = n).
+.*  el    = abort error level (default = all).
+.*
+.*attach(cmp/m=w,na)
+.*if(.not.file(cmp,as))define(cmp/ct=pu)
+.*begin(cmpbin,,p=cmp)
+.*unload(cmpbin)
+.*
+.*        on corporate dev systems, include experimental
+.*        micro plato version.
+.*
+ife((r1g.and.200000b)=200000b,exp)
+attach(conden,cmp,cl2,cl3,cl4,cl5,cl6/m=r,na)
+begin,sespack.
+ses. link170 cybclib #lo=lo l=map #el=el ..
+xld='ldset(preset=zero)' ..
+f=(conden,cmp,cl2,cl3,cl4,cl5,cl6)
+unload(conden,cmp,cl2,cl3,cl4,cl5,cl6)
+ife(efg.ne.0,loaderr)
+xedit(map,l=errs)$l.///.*$t$l.***.*$e
+rewind,map.
+copy,map,full.
+unload,map.
+revert(abort) loader errors
+endif(loaderr)
+.*
+.*        otherwise do not include it.
+.*
+else(exp)
+attach(conden,cmp,cl2,cl3,cl4,cl5/m=r)
+.*begin,sespack.
+.*ses. link170 cybclib #lo=lo l=map #el=el ..
+.*xld='ldset(preset=zero)' ..
+.*f=(conden,cmp,cl2,cl3,cl4,cl5)
+ldset(preset=zero,err=all,map=cmap)
+load(conden,cl2,cl3,cl4,cl5)
+nogo(cbin)
+unload(conden,cmp,cl2,cl3,cl4,cl5)
+rewind,map.
+copy,map,full.
+unload,map.
+endif(exp)
+.*
+purge(cbin,cmap/na)
+define(cbin,cmap)
+*rewind(lgob,cbin)
+*copyei(lgob,cbin,v)
+rewind(map,cmap)
+copyei(map,cmap,v)
+rewind(map)
+copyei(map,full)
+*
+rfl,60000.
+begin(ulib,,cbin,ulibc,conden)
+catalog(cbin,r,n,u)
+.*
+.*
+unload(lgob,cbin,cmap,map)
+.*
+revert. condldr
+~
+.proc,psm,ml=871,list=0/output.
+.*
+.*        build plato system modules
+.*
+.*        entry  ml = nos update level.
+.*
+unload(lgo)
+.*
+begin,psmbld,,option=orient,binfile=psma,#list.
+begin,psmbld,,option=psplus,binfile=psmb,#list.
+begin,psmbld,,option=author,binfile=psmc,#list.
+begin,psmbld,,option=pcd2,binfile=psmd,#list.
+begin,psmbld,,option=srvsys,binfile=psme,#list.
+.*
+revert.  psm
+~
+.proc,psmbld,option,binfile,list=0/output.
+.*
+.*        build plato system modifier
+.*
+.*        entry  option = option name
+.*               binfile = file name to store binary on
+.*
+modify(z,lo=e)/*define option/*oplfile nos,ipl/*edit psmd
+compass(i,s=nostext,l=list,a)
+.*
+.*        create new permanent file.
+.*
+purge(binfile/na)
+define(binfile/ct=pu)
+rewind,lgo.
+copyei,lgo,binfile.
+unload,lgo,binfile.
+.*
+revert.  psmbld
+~
+.proc,conden,ml=871,list=0/output.
+.*
+.*  central condensor full assembly.
+.*
+.*  exit - conden = relocatable binary.
+.*         ccommon = common text.
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit1
+cstc(a,i,l=list,s=0,#ml=ml)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit2
+cstc(a,i,l=list,s=nostext,s=psstext,#ml=ml)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit3
+cstc(a,i,l=list,s=0,#ml=ml)
+*
+*  main overlay.
+*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit4
+cstc(i,l=list,c=ccommon,s=nostext,d,#ml=ml)
+*
+*  central overlays.
+*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit5
+cstc(i,l=list,c=ccommon,s=0,d,#ml=ml)
+*---
+rewind(ccommon)
+rename(com=ccommon)
+purge(ccommon/na)
+define(ccommon/ct=pu,m=r)
+copy(com,ccommon)
+unload(ccommon,com)
+.*
+purge(conden/na)
+define(conden/ct=pu,m=r)
+rewind(lgo)
+copyei(lgo,conden)
+unload(lgo,ccommon,compile,com,edit1,edit2,edit3,edit4,edit5,conden)
+revert. conden
+.data,edit1.
+*edit     conden
+.data,edit2.
+*edit     csys
+.data,edit3.
+*edit     defccom
+.data,edit4.
+*edit     cond
+*edit     loadov
+*edit     condi
+*edit     condc
+*edit     consub
+*edit     getlin
+*edit     conten
+*edit     embed
+*edit     calcs
+*edit     compile
+*edit     lex
+*edit     deflex
+*edit     defsub
+*edit     mcond
+.data,edit5.
+*edit     covlay1
+*edit     grafsc
+*edit     ansin
+*edit     define
+*edit     covlay2
+*edit     answin
+*edit     touchov
+*edit     covlay3
+*edit     recordc
+*edit     sitec
+*edit     pptc
+*edit     covlay4
+*edit     cwrite
+.*
+.*        in addition to a normal (1,1) plato overlay,
+.*        deck *tagov* contains a (1,2) overlay to denote
+.*        the end of the central plato overlays.  a *edit
+.*        for any new central plato overlay files must be
+.*        added before the *edit for *tagov*; otherwise
+.*        the new overlay file will not be loaded as part
+.*        of the central condensor.
+.*
+*edit     tagov
+~
+.proc,conden1,ml=871,list=0/output.
+.*
+.*  level 1 micro plato full assembly.
+.*
+.*  exit - cl1 = relocatable binary.
+.*         ccom1 = common text.
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit1
+cstc(a,i,l=list,s=0,b=0,#ml=ml)
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit2
+cstc(i,l=list,c=ccom1,s=0,d,b=lgo1,#ml=ml)
+.*
+rename(c1=ccom1)
+purge(ccom1/na)
+define(ccom1/ct=pu,m=r)
+rewind(c1)
+copyei(c1,ccom1)
+.*
+begin(liblvl,,p=lgo1,lvl=1)
+.*
+unload(edit1,edit2,c1,lgo1,compile,ccom1)
+revert. conden1
+.*
+.data,edit1
+*edit     mctxt1
+.data,edit2.
+*edit     mcond1
+*edit     mcond1a
+*edit     mcond1b
+*edit     mcond1c
+*edit     mcond1d
+*edit     mcond1e
+~
+.proc,conden2,ml=871,list=0/output.
+.*
+.*  level 2 micro plato full assembly.
+.*
+.*  exit - cl2 = relocatable binary.
+.*         ccom2 = common text.
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit1
+cstc(a,i,l=list,s=0,b=0,#ml=ml)
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit2
+cstc(i,l=list,c=ccom2,s=0,d,b=lgo2,#ml=ml)
+.*
+rename(c2=ccom2)
+purge(ccom2/na)
+define(ccom2/ct=pu,m=r)
+rewind(c2)
+copyei(c2,ccom2)
+.*
+begin(liblvl,,p=lgo2,lvl=2)
+.*
+unload(edit1,edit2,c2,compile,ccom2,lgo2) 
+revert. conden2
+.*
+.data,edit1
+*edit     mctxt2
+.data,edit2.
+*edit     mcond2
+*edit     mget2
+*edit     mcond2a
+*edit     mcond2b
+*edit     mcond2c
+*edit     mcond2d
+*edit     mcond2e
+~
+.proc,conden3,ml=871,list=0/output.
+.*
+.*  level 3 micro plato full assembly.
+.*
+.*  exit - cl3 = relocatable binary.
+.*         ccom3 = common text.
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit1
+cstc(a,i,l=list,s=0,b=0,#ml=ml)
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit2
+cstc(i,l=list,c=ccom3,s=0,d,b=lgo3,#ml=ml)
+.*
+unload(compile,edit1,edit2)
+.*
+rename(c3=ccom3)
+purge(ccom3/na)
+define(ccom3/ct=pu,m=r)
+rewind(c3)
+copyei(c3,ccom3)
+.*
+begin(liblvl,,p=lgo3,lvl=3)
+.*
+unload(c3,lgo3,ccom3)
+revert. conden3
+.*
+.data,edit1
+*edit     mctxt3
+.data,edit2.
+*edit     mcond3
+*edit     mget3
+*edit     mcond3a
+*edit     mcond3b
+*edit     mcond3c
+*edit     mcond3d
+*edit     mcond3e
+~
+.proc,conden4,ml=871,list=0/output.
+.*
+.*  level 4 micro plato full assembly.
+.*
+.*  exit - cl4 = relocatable binary.
+.*         ccom4 = common text.
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit1
+cstc(a,i,l=list,s=0,b=0,#ml=ml)
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit2
+cstc(i,l=list,c=ccom4,s=nostext,s=psstext,d,b=lgo4,#ml=ml)
+.*
+unload(compile,edit1,edit2)
+.*
+rename(c4=ccom4)
+purge(ccom4/na)
+define(ccom4/ct=pu,m=r)
+rewind(c4)
+copyei(c4,ccom4)
+.*
+begin(liblvl,,p=lgo4,lvl=4)
+.*
+unload(c4,lgo4,ccom4)
+revert. conden4
+.*
+.data,edit1
+*edit     mctxt4
+.data,edit2.
+*edit     mcond4
+*edit     mget4
+*edit     mcond4a
+*edit     mcond4b
+*edit     mcond4c
+*edit     mcond4d
+*edit     mcond4e
+~
+.proc,conden5,ml=871,list=0/output.
+.*
+.*  level 5 micro plato full assembly.
+.*
+.*  exit - cl5 = relocatable binary.
+.*         ccom5 = common text.
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit1
+cstc(a,i,l=list,s=0,b=0,#ml=ml)
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit2
+cstc(i,l=list,c=ccom5,s=nostext,s=psstext,d,b=lgo5,#ml=ml)
+.*
+unload(compile,edit1,edit2)
+.*
+rename(c5=ccom5)
+purge(ccom5/na)
+define(ccom5/ct=pu,m=r)
+rewind(c5)
+copyei(c5,ccom5)
+.*
+begin(liblvl,,p=lgo5,lvl=5)
+.*
+unload(c5,lgo5,ccom5)
+revert. conden5
+.*
+.data,edit1
+*edit     mctxt5
+.data,edit2.
+*edit     mcond5
+*edit     mget5
+*edit     mcond5a
+*edit     mcond5b
+*edit     mcond5c
+*edit     mcond5d
+*edit     mcond5e
+~
+.proc,conden6,ml=871,list=0/output.
+.*
+.*  level 6 micro plato full assembly.
+.*
+.*  exit - cl6 = relocatable binary.
+.*         ccom6 = common text.
+.*
+begin(level6,,oplfile=$nos,ipl$)
+.*
+modify(z,lo=e)/*oplfile nos,ipl,l6pl/*read edit1
+cstc(a,i,l=list,s=0,b=0,#ml=ml)
+modify(z,lo=e)/*oplfile nos,ipl,l6pl/*read edit2
+cstc(i,l=list,c=ccom6,s=nostext,s=psstext,d,b=lgo6,#ml=ml)
+unload(compile,l6pl,edit1,edit2)
+.*
+rename(c6=ccom6)
+purge(ccom6/na)
+define(ccom6/ct=pu,m=r)
+rewind(c6)
+copyei(c6,ccom6)
+.*
+begin(liblvl,,p=lgo6,lvl=6)
+.*
+unload(c6,lgo6,ccom6)
+revert. conden6
+.*
+.data,edit1
+*edit     mctxt5
+.data,edit2.
+*edit     mcond5
+*edit     mget5
+*edit     mcond5a
+*edit     mcond5b
+*edit     mcond5c
+*edit     mcond5d
+*edit     mcond5e
+~
+.proc,condens,ml=871,list=0/output.
+.*
+.*  condensor full assembly.
+.*
+.*  exit - cbin = absolute binary.
+.*
+begin(conden,,#ml=ml,#list=list)
+*begin(conden1,,#ml=ml,#list=list)
+begin(conden2,,#ml=ml,#list=list)
+begin(conden3,,#ml=ml,#list=list)
+begin(conden4,,#ml=ml,#list=list)
+begin(conden5,,#ml=ml,#list=list)
+.*
+.*        only assemble the experimental version on the
+.*        corporate dev system.
+.*
+*ife((r1g.and.200000b)=200000b,exp)   if corp dev system
+*begin(conden6,,#ml=ml,#list=list)
+*endif(exp)
+*
+*begin(condcmp,,#list)
+.*
+begin(condldr,,lo=sbex)
+.*
+revert. condens
+~
+.proc,liblvl,p=,lvl=.
+.*
+.*  move common relocatable code from the central system
+.*  condensor to a micro plato condensor.
+.*
+.*  p   = micro plato condensor relocatable binary.
+.*  lvl = micro plato level.
+.*
+.*  if p is omitted, cl1, cl2, cl3, cl4, cl5 or cl6 assumed.
+.*
+attach(conden)
+ife($p$.ne.$$,libed)
+purge(cl_lvl/na)
+define(cl_lvl/ct=pu,m=r)
+libedit(#p=p,b=conden,n=cl_lvl,i=edit_lvl,lo=cem)
+else(libed)
+attach(cl_lvl/m=w)
+libedit(#p=cl_lvl,b=conden,c,i=edit_lvl,lo=cem)
+endif(libed)
+unload(conden,edit1,edit2,edit3,edit4,edit5,edit6,cl_lvl)
+revert. liblvl
+.data,edit1.
+*norep conden
+*a rel/mcond1,condc1,getlin,content,embed
+*a rel/mcond1,calcs,compile,lex,deflex,defsub
+*a rel/mcond1,mcond
+.data,edit2.
+*norep conden
+*a rel/mget2,condc1,lex,mcond
+.data,edit3.
+*norep conden
+*a rel/mget3,condc1,lex,mcond
+.data,edit4.
+*norep conden
+*a rel/mget4,condc1,lex,mcond
+.data,edit5.
+*norep conden
+*a rel/mget5,condc1,lex,mcond
+.data,edit6.
+*norep conden
+*a rel/mget6,condc1,lex,mcond
+~
+.proc,cmpbin,p=old.
+.*
+.*  add other condensor idents to the
+.*  cmp relocatable binary.
+.*
+.*  p = cmp relocatable binary file.
+.*
+attach(cl4/m=r)
+attach(conden/m=r)
+unload(i)
+note(i,nr).*norep conden
+note(i,nr).*file conden
+note(i,nr).*insert rel/cmpipio,condc1,lex,mcond
+note(i,nr).*norep cl4
+note(i,nr).*file cl4
+note(i,nr).*insert rel/cmpipio,mcond4,mget4
+pack(i)
+libedit(i=i,#p=p,b=0,lo=cem,c)
+unload(cl4,conden,i)
+revert. cmpbin
+~
+.proc,lc.
+.*        load and copy to ubin
+load(lgo)
+nogo(lgob)
+rewind(lgob)
+copybf(lgob,tbin)
+bksp(tbin)
+unload(lgo,lgob,compile)
+revert. lc
+~
+.proc,lcp.
+.*        load with presets and copy to ubin
+ldset(err=all)
+ldset(preset=zero)
+load(lgo)
+nogo(lgob)
+rewind(lgob)
+copybf(lgob,tbin)
+bksp(tbin)
+unload(lgo,lgob,compile)
+revert. lcp
+~
+.proc,cabs.
+.*        copy abs programs to ubin
+rewind(lgo)
+copybf(lgo,tbin)
+bksp(tbin)
+unload(lgo,compile)
+revert. cabs
+~
+.proc,setupg,noslvl=871.
+attach,opl=plaopl.
+attach,nos=opl_noslvl.
+attach,ipl.
+attach,cstc.
+revert. setupg
+~
+.proc,plato,ml=871,list=0/output.
+*---
+*         master
+*
+unload(lgo)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit1
+cstc(a,i,l=list,s=0,#ml=ml)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit2
+compass(a,i,l=list,s=0,#ml=ml)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit3
+cstc(i,l=list,c=pcommon,s=nostext,d,#ml=ml)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit4
+cstc(i,l=list,c=pcommon,s=0,d,#ml=ml)
+*---
+*         tutor
+*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit5
+cstc(i,l=list,c=pcommon,s=0,d,#ml=ml)
+*---
+*         overlays
+*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit6
+cstc(i,l=list,c=pcommon,s=0,d,#ml=ml)
+*---
+*         genfig
+*
+purge(genfig/na)
+define(genfig/ct=pu,m=r)
+modify(z,lo=e)/*oplfile nos,ipl/*edit genfigx
+compass,i,l=list,d,b=genfig.
+unload,genfig.
+*
+rewind(lgo)
+purge(plato/na)
+define(plato/ct=pu,m=r)
+copybf(lgo,plato)
+unload(plato)
+rewind(pcommon)
+rename(com=pcommon)
+purge(pcommon/na)
+define(pcommon/ct=pu,m=r)
+copy(com,pcommon)
+unload(pcommon)
+*---
+attach(genfig)
+attach(plato)
+unload(lgo,compile)
+genfig,plato.
+compass,i,s=0,l=0.
+unload,genfig.
+*---
+begin(loader,,rel=$plato,lgo$,abs=pbin,rfl=0,map=pmap)
+rfl,60000.
+note(dir)+*i abs/plato,ovl/*
+unload,lgo.
+gtr(pbin,lgo)ovl/plat00$
+libedit(p=pbin,c,i=dir,lo=e)
+begin(ulib,,pbin,ulibp,plato)
+catalog(pbin,r,n,u)
+unload(pbin,plato,pmap)
+*---
+*         plato system modifier modules
+*
+begin(psm,,#list)
+revert. plato
+*---
+.data,edit1.
+*edit     lowcor
+.data,edit2.
+*edit     instalp
+.data,edit3.
+*edit     datime
+*edit     msubs
+*edit     psys
+.data,edit4.
+*edit     main
+*edit     multix
+*edit     polls
+*edit     eformat
+*edit     keysin
+*edit     simplt
+*edit     loadov
+.data,edit5.
+*edit     tutorx
+*edit     getles
+*edit     lesson
+*edit     getcom
+*edit     getunit
+*edit     ecsmgr
+*edit     allot
+*edit     datax
+*edit     account
+*edit     tutsub
+*edit     logicx
+*edit     exec1
+*edit     exec2
+*edit     exec3
+*edit     lcomnd
+*edit     autload
+*edit     ioput
+*edit     filex
+*edit     diskfio
+*edit     packchk
+*edit     subfile
+*edit     binaryx
+*edit     conten
+*edit     answer
+*edit     writex
+*edit     showx
+*edit     tutout
+*edit     linwrt
+*edit     linchr
+*edit     compile
+*edit     lex
+*edit     getvar
+*edit     tfunct
+*edit     deflex
+.data,edit6.
+*edit     sysless
+*edit     comput
+*edit     exec4
+*edit     exec5
+*edit     exec6
+*edit     exec7
+*edit     tovlay
+*edit     lex1
+*edit     grafs
+*edit     grafs2
+*edit     tutor1
+*edit     ans1
+*edit     ppus
+*edit     answ1
+*edit     toucho
+*edit     draws
+*edit     sorts
+*edit     exec8
+*edit     mtutx
+*edit     pptx
+*edit     namex
+*edit     exec9
+*edit     logsitx
+*edit     recordx
+*edit     subfilv
+*edit     record2
+*edit     reservx
+*edit     mainov
+*edit     lodist
+*edit     exec10
+~
+.proc,framat,ml=871,list=0/output.
+*
+*         formatter
+*
+unload(lgo)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit1
+cstc(a,i,l=list,s=0,#ml=ml)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit2
+cstc(a,i,l=list,c=fcommon,s=nostext,#ml=ml)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit3
+cstc(i,l=list,c=fcommon,s=nostext,d,#ml=ml)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit4
+cstc(i,l=list,c=fcommon,s=0,d,#ml=ml)
+*---
+*         overlays
+*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit5
+cstc(i,l=list,c=fcommon,s=0,d,#ml=ml)
+purge(genfig/na)
+define(genfig/ct=pu,m=r)
+modify(z,lo=e)/*oplfile nos,ipl/*edit genfigx
+compass,i,l=0,d,b=genfig.
+unload,genfig.
+*---
+rewind(lgo)
+purge(framat/na)
+define(framat/ct=pu,m=r)
+copybf(lgo,framat)
+unload(framat)
+rewind(fcommon)
+rename(com=fcommon)
+purge(fcommon/na)
+define(fcommon/ct=pu,m=r)
+copy(com,fcommon)
+unload(fcommon)
+*---
+attach(genfig)
+attach(framat)
+unload(lgo,compile)
+genfig,framat.
+compass,i,s=0,l=0.
+unload,genfig.
+*---
+begin(loader,,rel=$framat,lgo$,abs=fbin,rfl=0,map=fmap,mo=sbex)
+rfl,60000.
+note(dir)+*i abs/framat,ovl/*
+unload,lgo.
+gtr(fbin,lgo)ovl/fram00$
+libedit(p=fbin,c,i=dir,lo=e)
+begin(ulib,,fbin,ulibf,framat)
+catalog(fbin,r,n,u)
+revert. framat
+*---
+.data,edit1.
+*edit     framat
+.data,edit2.
+*edit     setup
+*edit     instalf
+.data,edit3.
+*edit     fsys
+.data,edit4.
+*edit     format
+*edit     outform
+*edit     loadov
+.data,edit5.
+*edit     fovlay1
+*edit     fovlay2
+*edit     fovlay3
+*edit     fovlay4
+*edit     fovlay5
+~
+.proc,plf,list=0/output,ml=871.
+*
+*         plato link facility.
+*
+unload(lgo)
+*
+*         plfcom.
+*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit1
+cstc(a,i,s=nostext,l=list,#ml=ml)
+*
+*         main  ident.
+*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit2
+cstc(d,i,c=plfcom,s=nostext,l=list,#ml=ml)
+*
+*         other main overlay idents.
+*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit3
+cstc(d,i,c=plfcom,s=nostext,l=list,#ml=ml)
+*
+*         overlays.
+*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit4
+cstc(d,i,c=plfcom,s=nostext,l=list,#ml=ml)
+*
+rewind(plfcom)
+rename(plfc=plfcom)
+purge(plfcom/na)
+define(plfcom/ct=pu,m=r)
+copyei(plfc,plfcom)
+*
+purge(plf/na)
+define(plf/ct=pu,m=r)
+rewind(lgo)
+copyei(lgo,plf)
+catalog(plf,r,u,n)
+*
+begin(loader,,rel=plf,abs=plfbin,rfl=30000,mo=sbex,map=plfmap)
+rewind(plfmap)
+copyei(plfmap)
+*
+rfl(60000)
+begin(ulib,,plfbin,ulibplf,plf)
+catalog(plfbin,r,u,n)
+*
+revert. plf
+*
+.data,edit1.
+*edit plfcom
+.data,edit2.
+*edit     plfmain
+*edit     plfsubs
+.data,edit3.
+*edit     plfbdd
+*edit     plfbds
+*edit     plfncr
+*edit     plfoeb
+.data,edit4.
+*edit plfbst
+*edit plfddl
+*edit plfdei
+*edit plfdel
+*edit plfden
+*edit plfdes
+*edit plfdgn
+*edit plfdll
+*edit plfdpr
+*edit plfebd
+*edit plfetl
+*edit plfenp
+*edit plfesr
+*edit plfhlo
+*edit plfint
+*edit plfin1
+*edit plfisd
+*edit plfiso
+*edit plflds
+*edit plflsi
+*edit plfnam
+*edit plfncw
+*edit plfoei
+*edit plfoen
+*edit plfoes
+*edit plfprn
+*edit plfsdp
+*edit plfsel
+*edit plfsli
+*edit plfsts
+*edit plfwfp
+~
+.proc,mastor,ml=871,list=0/full.
+*---
+unload(mast,mastn,ppus)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit1
+unload(edit1)
+compass(i,#ml=ml,l=list,s=nostext,d,b=mast)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit2
+unload(edit2)
+compass(i,l=list,#ml=ml,s=nostext,d,b=mastn)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit3
+unload(edit3)
+compass(i,#ml=ml_d,l=list,s=nostext,d,b=ppus)
+*---
+rfl,60000.
+begin(ulib,,mast,ulibm,mastor)
+begin(ulib,,mastn,ulibmn,mastorn)
+purge(mbin/na)
+define(mbin/ct=pu,m=r)
+rewind,mast,mastn,ppus.
+copybf(mast,mbin)
+bksp(mbin)
+copybf(mastn,mbin)
+bksp(mbin)
+copybf(ppus,mbin)
+catalog(mbin,r,n,u)
+.*
+unload(mbin,mast,mastn,ppus)
+.*
+revert. mastor
+*---
+.data,edit1.
+*edit     mastor
+*edit     mastor1
+*edit     mastor2
+*edit     mastor3
+*edit     mastr3b
+*edit     mastor4
+.data,edit2.
+*edit     mastorn
+.data,edit3.
+*edit     pms
+*edit     mrq,mrq1
+*edit     mas
+*edit     mxx
+*edit     epe
+~
+.proc,ppus,ml=871d,list=0/output.
+*---
+unload(lgo)
+rfl(60000)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit1
+compass(i,l=list,s=nostext,d,#ml=ml)
+.*
+.*        only dev system gets some utilities
+.*
+.*ife((r1g.and.200000b)=200000b,dev)
+modify(z,lo=e)/*oplfile nos,ipl/*read edit2
+compass(i,l=list,s=nostext,d,#ml=ml)
+.*endif(dev)
+.*
+modify(z,lo=e)/*oplfile nos,ipl/*read edit3
+compass(i,l=list,s=nostext,d,#ml=ml)
+*---
+rewind(lgo)
+purge(ppubin/na)
+define(ppubin/ct=pu,m=r)
+copybf(lgo,ppubin)
+catalog(ppubin,r,n)
+revert. ppus
+*---
+.data,edit1.
+*edit     pio
+*edit     net
+*edit     pna
+.data,edit2.
+*edit     spy
+.data,edit3.
+*edit     dsn,dsn1
+~
+.proc,utility,ml=871d,list=0/output.
+*---
+unload(lgo)
+*** console/plt ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit dd60
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** platlib ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit platlib
+compass(i,l=list,s=nostext,d,#ml=ml)
+rewind(lgo)
+attach(platlib/m=w,na)
+if(.not.file(platlib,as))define(platlib/ct=pu,m=r)
+libgen(p=platlib)
+unload(lgo,compile)
+unload(platlib)
+attach(platlib)
+*** dprint ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit dprt
+ftn(a,i,opt=2,l=list,pl=70000)
+library(platlib)
+begin(lcp)
+*** nprint ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit nprt
+ftn(a,i,opt=2,l=list,pl=70000)
+library(platlib)
+begin(lcp)
+*** modprt ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit modprt
+ftn(a,i,opt=2,l=list,pl=70000)
+library(platlib)
+begin(lcp)
+*** plmprt ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit plmprt
+ftn(a,i,opt=2,l=list,pl=70000)
+library(platlib)
+begin(lcp)
+*** docprt ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit docprt
+ftn(a,i,opt=2,l=list,pl=70000)
+library(platlib)
+begin(lcp)
+*** netprt ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit netprt
+ftn(a,i,opt=2,l=list,pl=70000)
+library(platlib)
+rfl(100000)
+.*file(incom,rt=s)
+.*ldset(files=incom/tape1)
+ldset(lib=srt5lib/bamlib)
+ldset(err=all)
+ldset(preset=zero)
+load(lgo)
+nogo(lgob)
+rewind(lgob)
+copybf(lgob,tbin)
+bksp(tbin)
+unload(lgo,lgob,compile)
+*** tprint ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit tprta,tprtb,tprtc
+compass(i,l=list,s=nostext,d,#ml=ml)
+library(platlib)
+begin(lcp)
+*** pprint ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit pprint
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** pdprt ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit pdprt
+compass(i,l=list,s=nostext,d,#ml=ml)
+library(platlib)
+begin(lcp)
+*** aprt ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit aprt
+ftn(a,i,opt=2,l=list,pl=100000)
+library(platlib)
+begin(lcp)
+*** efrdmp ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit efrdmp
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** abs/esm,pp/esm ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit esmcp,esmpp
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** pf / pcode / ppack ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit pf,pcode,ppack
+.*
+.*  following is *cstc* instead of *compass* to get around
+.*  error which creates *errs* when there are no errors.
+.*
+cstc(i,l=list,s=nostext,c=0,d,#ml=ml)
+begin(cabs)
+*** submitm / masjob ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit submitm,masjob
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** tform ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit tform
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** emdmp/emprt/memprt ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit memprt,emdmp,cmdmp
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** wait ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit waitx
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** mfutil ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit mfutil
+.*
+.*  following is *cstc* instead of *compass* to get around
+.*  error which creates *errs* when there are no errors.
+.*
+cstc(i,l=list,s=nostext,c=0,d,#ml=ml)
+begin(cabs)
+*** ecstst / ddpt ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit ecstst,ddpt
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** backlib ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit backlib
+compass(i,l=list,s=nostext,d,#ml=ml)
+library(platlib)
+begin(lc)
+*** backlst ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit backlst
+compass(i,l=list,s=nostext,d,#ml=ml)
+library(platlib)
+begin(lc)
+*** copypf ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit copypf
+compass(i,l=list,s=nostext,d,#ml=ml)
+library(platlib)
+begin(lc)
+*** copymf ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit copymf
+cstc(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** backone ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit backone
+compass(i,l=list,s=nostext,d,#ml=ml)
+library(platlib)
+begin(lc)
+*** backtwo ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit backtwo
+compass(i,l=list,s=nostext,d,#ml=ml)
+library(platlib)
+begin(lc)
+*** backcpy ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit backcpy
+compass(i,l=list,s=nostext,d,#ml=ml)
+library(platlib)
+begin(lc)
+*** backmod ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit backmod
+compass(i,l=list,s=nostext,d,#ml=ml)
+library(platlib)
+begin(lc)
+*** reqpack/spf ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit reqpack,spf
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** rafpbc ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit rafpbc
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*** rafpdd ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit rafpdd
+ftn(a,i,l=list,pl=777777)
+begin(lc)
+*** asm1 ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit asm1
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*** uurbc ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit uurbc
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*** lurbc ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit lurbc
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*** portx ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit portx
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*** datescn ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit datescn
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*** royalty ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit royalty
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+.**** porafm ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit porafm
+pascal(i,l=list,pl=0/u+)
+begin(lc)
+*** npudmp/npudpp/npd ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit npudmp,npudpp,npd
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** abs/rmfconv ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit rmfconv
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*---
+.*
+.*        the following utilities are only used  by
+.*        dev systems running corporate nos.
+.*
+ife((r1g.and.200000b).eq.200000b,devutil)
+*---
+*** refprt / comprt ***
+modify(z,lo=e,c=prta)/*oplfile nos/*edit refprt
+modify(z,lo=e,c=prtb)/*oplfile nos/*edit comprt
+modify(z,lo=e,c=prtx)/*oplfile nos/*edit gprtx
+library(platlib)
+ftn(i=prtx,b=misc,l=list,pl=7777777)
+*       
+ftn(i=prta,l=list,pl=777777)
+load(lgo,misc)
+nogo(lgob)
+rewind(lgob)
+copybf(lgob,tbin)
+bksp(tbin)
+unload(lgo,lgob,prta)
+*       
+ftn(i=prtb,l=list,pl=777777)
+load(lgo,misc)
+nogo(lgob)
+rewind(lgob)
+copybf(lgob,tbin)
+bksp(tbin)
+unload(lgo,lgob,prtb)
+unload(prtx,misc)
+*---
+*** pmod ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit pmod
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*---
+*** scm ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit scm
+ftn(a,i,opt=2,l=list)
+begin(lcp)
+*** modfrm ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit modfrm
+compass(i,l=list,s=systext,d,#ml=ml)
+library.
+ldset(err=all)
+ldset(lib=srt5lib/bamlib)
+ldset(preset=zero)
+load(lgo)
+nogo(lgob)
+rewind(lgob)
+copybf(lgob,tbin)
+bksp(tbin)
+unload(lgo,lgob,compile)
+*** pptldr ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit pptldr
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+*** rafpp ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit rafpp
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*** prpt ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit prpt
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*** bcuse ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit bcuse
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*** hqdata ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit hqdata
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*** acpage ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit acpage
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*** rafrp ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit rafrp
+ftn(a,i,opt=2,l=list,pl=777777)
+begin(lc)
+*---
+*** itcopy ***
+modify(z,lo=e)/*oplfile nos,ipl/*edit itcopy
+compass(i,l=list,s=nostext,d,#ml=ml)
+begin(cabs)
+.*
+endif(devutil)
+*
+*         save binaries on *ubin*
+*
+rewind(tbin)
+purge(ubin/na)
+define(ubin/ct=pu,m=r)
+copy(tbin,ubin)
+catalog(ubin,r,n)
+unload(lgo,compile)
+unload(ubin)
+.*
+revert. utility
