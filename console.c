@@ -197,6 +197,7 @@
 #include "proto.h"
 #include "dd60.h"
 #include <time.h>
+#include <sys/time.h>
 
 /*
 **  -----------------
