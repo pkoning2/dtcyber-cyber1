@@ -526,6 +526,14 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
             platoKeypress (wParam, 0, 1);
             break;
         }
+
+        // ALT leftarrow is assignment arrow:
+        if (wParam == VK_LEFT)
+        {
+            platoKeypress (wParam, 1, 1);
+            break;
+        }
+
         // Fall through to default action
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
@@ -742,7 +750,11 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
     }
     if (alt)
     {
-        if (wParam > 0 && wParam < sizeof (altKeyToPlato))
+        if (wParam == VK_LEFT)
+        {
+            pc = 015 | shift;       // assignment arrow
+        }
+        else if (wParam > 0 && wParam < sizeof (altKeyToPlato))
         {
             pc = altKeyToPlato[wParam] | shift;
         }
@@ -805,12 +817,21 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
             pc = 013;       // divide sign
             break;
         case VK_LEFT:
-            pc = 015;       // assignment arrow
+            pc = 0101;      // a (left arrow)
+            break;
+        case VK_RIGHT:
+            pc = 0104;      // d (right arrow)
             break;
         case VK_UP:
-            pc = 020;       // super
+            pc = 0127;      // w (up arrow)
             break;
         case VK_DOWN:
+            pc = 0130;      // x (down arrow)
+            break;
+        case VK_PRIOR:
+            pc = 020;       // super
+            break;
+        case VK_NEXT:
             pc = 021;       // sub
             break;
         case VK_F3:
