@@ -88,10 +88,18 @@
 **  -----------------------------------------
 */
 
+typedef struct deckname_s
+    {
+    struct deckname_s *next;
+    char *name;
+    } DeckName;
+
 typedef struct
     {
     bool    binary;
     bool    bincard;
+    DeckName *waiting_decks;
+    DeckName *last_deck;
     int     intmask;
     int	    status;
     int     col;
@@ -100,7 +108,6 @@ typedef struct
     char    card[82];
     } CrContext;
 
-    
 /*
 **  ---------------------------
 **  Private Function Prototypes
@@ -112,6 +119,8 @@ static void cr3447Load(DevSlot *, int, char *);
 static void cr3447Activate(void);
 static void cr3447Disconnect(void);
 static void cr3447NextCard (DevSlot *up, CrContext *cc);
+static void cr3447NextDeck (DevSlot *up, CrContext *cc);
+
 /*
 **  ----------------
 **  Public Variables
@@ -414,16 +423,12 @@ static void cr3447Io(void)
 static void cr3447Load(DevSlot *up, int eqNo, char *fn)
     {
     CrContext *cc;
+    char *fn2;
+    DeckName *d, *d2;
     FILE *fcb;
     static char msgBuf[80];
     
     cc = (CrContext *) (up->context[0]);
-
-    if (up->fcb[0] != NULL)
-        fclose (up->fcb[0]);
-    
-    up->fcb[0] = NULL;
-    cc->status = StCr3447Eof;
 
     if (fn != NULL)
         {
@@ -435,19 +440,61 @@ static void cr3447Load(DevSlot *up, int eqNo, char *fn)
             return;
             }
 
-        up->fcb[0] = fcb;
-        cc->status = StCr3447Ready;
-        cr3447NextCard (up, cc);
-        }
-    
-    dcc6681Interrupt((cc->status & cc->intmask) != 0);
-    if (fn == NULL)
-        opSetMsg ("CR3447 unloaded");
-    else
-        {
+        fn2 = strdup (fn);
+        if (fn2 == NULL)
+            {
+            opSetMsg ("$malloc failure");
+            return;
+            }
+
+        d = (DeckName *) malloc (sizeof (*d));
+        if (fn2 == NULL)
+            {
+            free (fn2);
+            opSetMsg ("$malloc failure");
+            return;
+            }
+        
+        d->next = NULL;
+        d->name = fn2;
+        if (cc->waiting_decks == NULL)
+            {
+            /* This is the first deck */
+            cc->waiting_decks = cc->last_deck = d;
+            }
+        else
+            {
+            cc->last_deck->next = d;
+            cc->last_deck = d;
+            }
+        
+        if (up->fcb[0] == NULL)
+            {
+            cr3447NextDeck (up, cc);
+            }
+        
         sprintf (msgBuf, "CR3447 loaded with %s", fn);
         opSetMsg (msgBuf);
         }
+    else
+        {
+        if (up->fcb[0] != NULL)
+            fclose (up->fcb[0]);
+    
+        up->fcb[0] = NULL;
+        cc->status = StCr3447Eof;
+        d = cc->waiting_decks;
+        while (d)
+            {
+            d2 = d;
+            d = d->next;
+            free (d2->name);
+            free (d2->next);
+            }
+        cc->waiting_decks = cc->last_deck = NULL;
+        opSetMsg ("CR3447 unloaded");
+        }
+    dcc6681Interrupt((cc->status & cc->intmask) != 0);
     }
 
 /*--------------------------------------------------------------------------
@@ -519,9 +566,7 @@ static void cr3447NextCard (DevSlot *up, CrContext *cc)
             }
         else
             {
-            fclose (up->fcb[0]);
-            up->fcb[0] = NULL;
-            cc->status = StCr3447Eof;
+            cr3447NextDeck (up, cc);
             return;
             }
         }
@@ -561,6 +606,46 @@ static void cr3447NextCard (DevSlot *up, CrContext *cc)
     if (cc->bincard)
         {
         cc->status |= StCr3447Binary;
+        }
+    }
+
+static void cr3447NextDeck (DevSlot *up, CrContext *cc)
+    {
+    DeckName *d;
+    FILE *fcb;
+
+    fclose (up->fcb[0]);
+
+    d = cc->waiting_decks;
+    
+    if (d != NULL)
+        {
+        cc->waiting_decks = d->next;
+        if (d->next == NULL)
+            {
+            cc->last_deck = NULL;
+            }
+        fcb = fopen(d->name, "r");
+        if (fcb == NULL)
+            {
+            logError (LogErrorLocation, "cr3447: deck open failure, file %s, %s",
+                      d->name, strerror (errno));
+            cr3447NextDeck (up, cc);
+            }
+        else
+            {
+            up->fcb[0] = fcb;
+            cc->status = StCr3447Ready;
+            cr3447NextCard (up, cc);
+            }
+        free (d->name);
+        free (d);
+        }
+    else
+        {
+        /* No more decks */
+        up->fcb[0] = NULL;
+        cc->status = StCr3447Eof;
         }
     }
 
