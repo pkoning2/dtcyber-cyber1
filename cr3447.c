@@ -440,6 +440,8 @@ static void cr3447Load(DevSlot *up, int eqNo, char *fn)
             return;
             }
 
+        fclose (fcb);
+        
         fn2 = strdup (fn);
         if (fn2 == NULL)
             {
@@ -614,8 +616,11 @@ static void cr3447NextDeck (DevSlot *up, CrContext *cc)
     DeckName *d;
     FILE *fcb;
 
-    fclose (up->fcb[0]);
-
+    if (up->fcb[0] != NULL)
+        {
+        fclose (up->fcb[0]);
+        }
+    
     d = cc->waiting_decks;
     
     if (d != NULL)
