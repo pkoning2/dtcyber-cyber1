@@ -89,6 +89,7 @@
 
 extern "C"
 {
+#include <ctype.h>
 #if defined(_WIN32)
 #include <winsock.h>
 #else
@@ -104,6 +105,10 @@ extern "C"
 #include "ptermversion.h"
 }
     
+#if wxUSE_UNICODE
+#warning "Unicode support isn't fully baked yet"
+#endif
+
 // ----------------------------------------------------------------------------
 // resources
 // ----------------------------------------------------------------------------
@@ -125,7 +130,6 @@ extern "C" {
     extern bool tracePterm;
     extern u8 wemode;
     extern bool emulationActive;
-    extern const char *hostName;
     int scale = 1;
 }
 
@@ -143,6 +147,7 @@ static NetFet fet;
 static u16 currInput;
 static u32 niuRing[RINGSIZE];
 static volatile int niuIn, niuOut;
+static char *hostName;
 
 // ----------------------------------------------------------------------------
 // private classes
@@ -171,8 +176,8 @@ public:
     virtual bool OnInit (void);
     virtual int OnExit (void);
 
-    wxColour    m_colorForeground;
-	wxColour	m_colorBackground;
+    wxColour    m_fgColor;
+	wxColour	m_bgColor;
 	wxConfig	*m_config;
 };
 
@@ -189,6 +194,7 @@ public:
     // event handlers (these functions should _not_ be virtual)
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
+    void OnPref (wxCommandEvent& event);
 
     void PrepareDC(wxDC& dc);
 
@@ -204,12 +210,28 @@ public:
     PtermThread *m_thread;
     wxBrush     m_backgroundBrush;
     wxBitmap    m_bitmap;
-    wxBitmap    m_charmap;
     wxPen       m_foregroundPen;
     wxPen       m_backgroundPen;
     PtermCanvas *m_canvas;
     wxMemoryDC  *m_memDC;
-    wxMemoryDC  *m_charDC;
+
+    // Character patterns are stored in three DCs because we want to
+    // BLIT them in various ways, and the OR/AND type ops don't work
+    // the way you'd want for color bitmaps.  Monochrome bitmaps would
+    // be great, except that they don't work in Windows...
+    //
+    // So what we do is this:
+    // m_charmap[i] contains the character patterns for mode i -- 
+    // the right color pixels where we want color, and black where
+    // we leave the screen untouched.
+    //
+    // m_charmap[4] contains a mask -- white for the character background,
+    // black for the character foreground.  So we AND with that to erase the
+    // character pixels (we need to do that for modes erase and write only).
+    //
+    // m_charDC[i] is the device context into which m_charmap[i] is mapped.
+    wxBitmap    *m_charmap[5];
+    wxMemoryDC  *m_charDC[5];
 
 private:
     void drawChar (wxDC &dc, int x, int y, int snum, int cnum);
@@ -234,6 +256,45 @@ private:
     DECLARE_EVENT_TABLE ()
 };
 
+// define the preferences dialog
+class PtermPrefdialog : public wxDialog
+{
+public:
+    PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxString &title);
+    
+    void OnButton (wxCommandEvent& event);
+    void OnCheckbox (wxCommandEvent& event);
+
+    wxBitmap        *m_fgBitmap;
+    wxBitmap        *m_bgBitmap;
+    wxBitmapButton  *m_fgButton;
+    wxBitmapButton  *m_bgButton;
+    wxButton        *m_okButton;
+    wxButton        *m_cancelButton;
+    wxButton        *m_resetButton;
+    wxStaticText    *m_fgLabel;
+    wxStaticText    *m_bgLabel;
+    wxBoxSizer      *m_fgSizer;
+    wxBoxSizer      *m_bgSizer;
+    wxStaticBox     *m_colorsBox;
+    wxStaticBoxSizer *m_colorsSizer;
+    wxCheckBox      *m_scaleCheck;
+    wxBoxSizer      *m_prefItems;
+    wxBoxSizer      *m_prefButtons;
+    wxBoxSizer      *m_dialogContent;
+
+    wxColour        m_fgColor;
+    wxColour        m_bgColor;
+    bool            m_scale2;
+    
+private:
+    void paintBitmap (wxBitmap *bm, wxColour &color);
+    
+//    PtermFrame *m_owner;
+
+    DECLARE_EVENT_TABLE ()
+};
+
 // ----------------------------------------------------------------------------
 // constants
 // ----------------------------------------------------------------------------
@@ -241,8 +302,17 @@ private:
 // IDs for the controls and the menu commands
 enum
 {
+    // Buttons and checkboxes
+    Pterm_Pref_Ok = 1,
+    Pterm_Pref_Reset,
+    Pterm_Pref_Cancel,
+    Pterm_Pref_Fg,
+    Pterm_Pref_Bg,
+    Pterm_Pref_Scale2,
+
     // menu items
-    Pterm_Quit = 1,
+    Pterm_Quit = wxID_EXIT,
+    Pterm_Pref = wxID_PREFERENCES,
 
     // it is important for the id corresponding to the "About" command to have
     // this standard value as otherwise it won't be handled properly under Mac
@@ -397,6 +467,7 @@ const unsigned short plato_m1[] = {
 BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Quit,  PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
+    EVT_MENU(Pterm_Pref,  PtermFrame::OnPref)
     END_EVENT_TABLE ()
 
 // Create a new application object: this macro will allow wxWindows to create
@@ -424,7 +495,7 @@ bool PtermApp::OnInit (void)
 
 	ptermApp = this;
 
-    if (argc > 1 && strcmp (argv[1], "-s") == 0)
+    if (argc > 1 && strcmp (wxString (argv[1]).mb_str (), "-s") == 0)
     {
         argv++;
         argc--;
@@ -438,7 +509,7 @@ bool PtermApp::OnInit (void)
     }
     if (argc > 2)
     {
-        port = atoi (argv[2]);
+        port = atoi (wxString (argv[2]).mb_str ());
     }
     else
     {
@@ -446,16 +517,17 @@ bool PtermApp::OnInit (void)
     }
     if (argc > 1)
     {
-        hostName = argv[1];
+        hostName = strdup (wxString (argv[1]).mb_str ());
     }
     else
     {
-        hostName = DEFAULTHOST;
+        hostName = strdup (DEFAULTHOST);
     }
 
     dtInitFet (&fet, BufSiz);
     if (dtConnect (&fet.connFd, hostName, port) < 0)
     {
+        free (hostName);
         return FALSE;
     }
     setsockopt (fet.connFd, SOL_SOCKET, SO_KEEPALIVE,
@@ -466,21 +538,21 @@ bool PtermApp::OnInit (void)
 #endif
     emulationActive = TRUE;
 
-	m_config = new wxConfig ("Pterm");
-	m_config->Read ("foreground", &rgb, "255 144 0");
-	sscanf (rgb.c_str (), "%d %d %d", &r, &g, &b);
-    m_colorForeground = wxColour (r, g, b);
-	m_config->Read ("background", &rgb, "0 0 0");
-	sscanf (rgb.c_str (), "%d %d %d", &r, &g, &b);
-    m_colorBackground = wxColour (r, g, b);
-	scale = m_config->Read ("scale", 1);
+	m_config = new wxConfig (wxT ("Pterm"));
+	m_config->Read (wxT ("foreground"), &rgb, wxT ("255 144 0"));
+	sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
+    m_fgColor = wxColour (r, g, b);
+	m_config->Read (wxT ("background"), &rgb, wxT ("30 100 100"));
+	sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
+    m_bgColor = wxColour (r, g, b);
+	scale = m_config->Read (wxT ("scale"), 1);
 	if (scale != 1 && scale != 2)
 	{
 		scale = 1;
 	}
 
     // create the main application window
-    pterm_frame = new PtermFrame(_T("Pterm ") PTERMVERSION,
+    pterm_frame = new PtermFrame(wxT("Pterm ") PTERMVERSION,
                                  wxDefaultPosition,
                                  wxSize (XSize + XFrameAdj, YSize + YFrameAdj));
 
@@ -499,6 +571,8 @@ bool PtermApp::OnInit (void)
 
 int PtermApp::OnExit (void)
 {
+    free (hostName);
+
     return 0;
 }
 
@@ -510,10 +584,9 @@ int PtermApp::OnExit (void)
 PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& size, long style)
     : wxFrame(NULL, -1, title, pos, size, style),
       m_bitmap (XSize, YSize, -1),
-      m_charmap (XSize, CharYSize, -1),
-      m_foregroundPen (ptermApp->m_colorForeground, scale, wxSOLID),
-      m_backgroundPen (ptermApp->m_colorBackground, scale, wxSOLID),
-	  m_backgroundBrush (ptermApp->m_colorBackground, wxSOLID)
+      m_foregroundPen (ptermApp->m_fgColor, scale, wxSOLID),
+      m_backgroundPen (ptermApp->m_bgColor, scale, wxSOLID),
+	  m_backgroundBrush (ptermApp->m_bgColor, wxSOLID)
 {
     int i;
     
@@ -528,6 +601,7 @@ PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& 
     wxMenu *helpMenu = new wxMenu;
     helpMenu->Append(Pterm_About, _T("&About..."), _T("Show about dialog"));
 
+    menuFile->Append(Pterm_Pref, _T("P&references..."), _T("Set program configuration"));
     menuFile->Append(Pterm_Quit, _T("E&xit\tCtrl-Z"), _T("Quit this program"));
 
     // now append the freshly created menu to the menu bar...
@@ -545,10 +619,14 @@ PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& 
     SetStatusText(_T(" Not connected"), STATUS_CONN);
 #endif // wxUSE_STATUSBAR
 
-    m_charDC = new wxMemoryDC ();
-    m_charDC->SelectObject (m_charmap);
-	m_charDC->SetBackground (m_backgroundBrush);
-    m_charDC->Clear ();
+    for (i = 0; i < 5; i++)
+    {
+        m_charDC[i] = new wxMemoryDC ();
+        m_charmap[i] = new wxBitmap (XSize, CharYSize, -1);
+        m_charDC[i]->SelectObject (*m_charmap[i]);
+        m_charDC[i]->SetBackground (*wxBLACK_BRUSH);
+        m_charDC[i]->Clear ();
+    }
     m_memDC = new wxMemoryDC ();
     m_memDC->SelectObject (m_bitmap);
 	m_memDC->SetBackground (m_backgroundBrush);
@@ -579,7 +657,22 @@ PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& 
 
 void PtermFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
 {
+    int i;
+    
 	m_thread->Kill ();
+    m_memDC->SelectObject (wxNullBitmap);
+    m_memDC->SetBackground (wxNullBrush);
+    m_memDC->SetPen (wxNullPen);
+    delete m_memDC;
+    m_memDC = NULL;
+    for (i = 0; i < 5; i++)
+    {
+        m_charDC[i]->SelectObject (wxNullBitmap);
+        m_charDC[i]->SetBackground (wxNullBrush);
+        m_charDC[i]->SetPen (wxNullPen);
+        delete m_charDC[i];
+        delete m_charmap[i];
+    }
 
     // TRUE is to force the frame to close
     Close (TRUE);
@@ -588,11 +681,23 @@ void PtermFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
 void PtermFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
     wxString msg;
-    msg.Printf (_T("PLATO terminal emulator %s.\n")
-                _T("Copyright © 2005 by Paul Koning."),
-                PTERMVERSION);
 
+    msg.Printf (wxT("PLATO terminal emulator %s.\n")
+// temp: need to figure out how to get gcc to understant this:
+                wxT("Copyright © 2005 by Paul Koning."),
+//                wxT("Copyright (c) 2005 by Paul Koning."),
+                wxT (PTERMVERSION));
+    
     wxMessageBox(msg, _T("About Pterm"), wxOK | wxICON_INFORMATION, this);
+}
+
+void PtermFrame::OnPref (wxCommandEvent& WXUNUSED(event))
+{
+    PtermPrefdialog dlg (this, wxID_ANY, _("Pterm Preferences"));
+    
+    dlg.SetSizer (dlg.m_dialogContent);
+    dlg.m_dialogContent->Fit (&dlg);
+    dlg.ShowModal ();
 }
 
 #if 0
@@ -616,6 +721,98 @@ void PtermFrame::PrepareDC(wxDC& dc)
     dc.SetAxisOrientation (TRUE, FALSE);
     dc.SetBackground (m_backgroundBrush);
 }
+
+// ----------------------------------------------------------------------------
+// PtermPrefdialog
+// ----------------------------------------------------------------------------
+
+BEGIN_EVENT_TABLE(PtermPrefdialog, wxDialog)
+    EVT_BUTTON(wxID_ANY,   PtermPrefdialog::OnButton)
+    EVT_CHECKBOX(wxID_ANY, PtermPrefdialog::OnCheckbox)
+    END_EVENT_TABLE()
+
+PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxString &title)
+    : wxDialog (parent, id, title)
+{
+    m_scale2 = (scale != 1);
+    m_fgColor = ptermApp->m_fgColor;
+    m_bgColor = ptermApp->m_bgColor;
+
+    m_fgBitmap = new wxBitmap (20, 12);
+    m_bgBitmap = new wxBitmap (20, 12);
+    paintBitmap (m_fgBitmap, m_fgColor);
+    paintBitmap (m_bgBitmap, m_bgColor);
+    
+    m_fgButton = new wxBitmapButton (this, wxID_ANY, *m_fgBitmap);
+    m_bgButton = new wxBitmapButton (this, wxID_ANY, *m_bgBitmap);
+    m_okButton = new wxButton (this, wxID_ANY, _("OK"));
+    m_cancelButton = new wxButton (this, wxID_ANY, _("Cancel"));
+    m_resetButton = new wxButton (this, wxID_ANY, _("Defaults"));
+    m_fgLabel = new wxStaticText (this, wxID_ANY, _("Foreground"));
+    m_bgLabel = new wxStaticText (this, wxID_ANY, _("Background"));
+    m_fgSizer = new wxBoxSizer (wxHORIZONTAL);
+    m_bgSizer = new wxBoxSizer (wxHORIZONTAL);
+    m_colorsBox = new wxStaticBox (this, wxID_ANY, _("Display colors"));
+    m_colorsSizer = new wxStaticBoxSizer (m_colorsBox, wxVERTICAL);
+    m_scaleCheck = new wxCheckBox (this, -1, _("Zoom display 200%"));
+    m_prefItems = new wxBoxSizer (wxVERTICAL);
+    m_prefButtons = new wxBoxSizer (wxHORIZONTAL);
+    m_dialogContent = new wxBoxSizer (wxVERTICAL);
+      
+    m_fgSizer->Add (m_fgButton, 0, 0, 5);
+    m_fgSizer->Add (m_fgLabel, 0, 0, 5);
+    m_bgSizer->Add (m_bgButton, 0, 0, 5);
+    m_bgSizer->Add (m_bgLabel, 0, 0, 5);
+    m_colorsSizer->Add (m_fgSizer);
+    m_colorsSizer->Add (m_bgSizer);
+    m_prefItems->Add (m_scaleCheck, 0, 0, 5);
+    m_prefItems->Add (m_colorsSizer);
+    m_prefButtons->Add (m_okButton, 0, 0, 5);
+    m_prefButtons->Add (m_cancelButton, 0, 0, 5);
+    m_prefButtons->Add (m_resetButton, 0, 0, 5);
+    m_dialogContent->Add (m_prefItems);
+    m_dialogContent->Add (m_prefButtons);
+    
+}
+
+void PtermPrefdialog::OnButton (wxCommandEvent& event)
+{
+    if (event.m_eventObject == m_fgButton)
+        printf ("fg button\n");
+    else if (event.m_eventObject == m_okButton)
+    {
+        printf ("ok button\n");
+        EndModal (0);
+    }
+    else if (event.m_eventObject == m_cancelButton)
+    {
+        printf ("cancel button\n");
+        EndModal (1);
+    }
+    
+    
+}
+
+void PtermPrefdialog::OnCheckbox (wxCommandEvent& event)
+{
+    m_scale2 = event.IsChecked ();
+    printf ("checked: %s\n", m_scale2 ? "yes" : "no");
+}
+
+void PtermPrefdialog::paintBitmap (wxBitmap *bm, wxColour &color)
+{
+    wxBrush bitmapBrush (color, wxSOLID);
+    wxMemoryDC memDC;
+    
+    memDC.SelectObject (*bm);
+    memDC.BeginDrawing ();
+    memDC.SetBackground (bitmapBrush);
+    memDC.Clear ();
+    memDC.EndDrawing ();
+    memDC.SetBackground (wxNullBrush);
+    memDC.SelectObject (wxNullBitmap);
+}
+
 
 // ----------------------------------------------------------------------------
 // PtermThread
@@ -734,6 +931,12 @@ void PtermCanvas::OnDraw(wxDC &dc)
     m_owner->PrepareDC (dc);
     dc.Clear ();
     dc.Blit (0, 0, XSize, YSize, m_owner->m_memDC, 0, 0, wxCOPY);
+#if 0
+    int i;
+    
+    for (i = 0; i < 5; i++)
+        dc.Blit (0, i * CharYSize, XSize, YSize, m_owner->m_charDC[i], 0, 0, wxCOPY);
+#endif
 }
 
 void PtermCanvas::OnChar(wxKeyEvent& event)
@@ -753,10 +956,10 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     }
     key = event.m_keyCode;
 
-#if 0
-	if (tracePterm)
+#if 1
+//	if (tracePterm)
     {
-        fprintf (traceF, "ctrl %d shift %d alt %d key %d\n", event.m_controlDown, event.m_shiftDown, event.m_altDown, key);
+        /*fprintf (traceF,*/printf( "ctrl %d shift %d alt %d key %d\n", event.m_controlDown, event.m_shiftDown, event.m_altDown, key);
     }
 #endif
 
@@ -1037,12 +1240,12 @@ void PtermFrame::ptermFullErase (void)
 
     dc.BeginDrawing ();
     PrepareDC (dc);
-    dc.Blit (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize, 
-             m_memDC, XADJUST (0), YADJUST (511), wxCLEAR);
-	m_memDC->SetBackground (m_backgroundBrush);
-    m_memDC->Blit (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize,
-                   m_memDC, XADJUST (0), YADJUST (511), wxCLEAR);
+    dc.Clear ();
     dc.EndDrawing ();
+    m_memDC->BeginDrawing ();
+	m_memDC->SetBackground (m_backgroundBrush);
+    m_memDC->Clear ();
+    m_memDC->EndDrawing ();
 }
 
 void PtermFrame::ptermSetName (const char *winName)
@@ -1051,64 +1254,87 @@ void PtermFrame::ptermSetName (const char *winName)
 
 void PtermFrame::ptermSetStatus (const char *str)
 {
-    SetStatusText(str, STATUS_CONN);
+    wxString wxstr (str, *wxConvCurrent);
+    
+    SetStatusText(wxstr, STATUS_CONN);
 }
 
-void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *data)
+void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *chardata)
 {
-    int i, j;
-    int x = cnum * 8 * scale;
-    int y = (snum * 16 + 15) * scale;
+    int i, j, m;
+    int x, y;
     u16 col;
-    wxClientDC dc(m_canvas);
-
-    dc.BeginDrawing ();
-    PrepareDC (dc);
+    const u16 *data;
     
-    m_charDC->BeginDrawing ();
-	m_charDC->SetBackground (m_backgroundBrush);
-    m_charDC->Blit (x, y - 15 * scale, 8 * scale, 16 * scale,
-                   m_charDC, 0, 0, wxCLEAR);
-    m_charDC->SetPen (m_foregroundPen);
-
-    for (i = 0; i < 8; i++)
+    for (m = 0; m < 5; m++)
     {
-        col = *data++;
-        for (j = 0; j < 16; j++)
+        m_charDC[m]->BeginDrawing ();
+        data = chardata;
+        x = cnum * 8 * scale;
+        y = (snum * 16 + 15) * scale;
+        for (i = 0; i < 8; i++)
         {
-            if (col & 1)
+            col = *data++;
+            for (j = 0; j < 16; j++)
             {
-                m_charDC->DrawPoint(x, y - j * scale);
-                dc.DrawPoint(x, y - j * scale);
+                if (col & 1)
+                {
+                    // drawing char pixel
+                    switch (m)
+                    {
+                    case 0:
+                        m_charDC[m]->SetPen (m_backgroundPen);
+                        break;
+                    case 1:
+                        m_charDC[m]->SetPen (m_foregroundPen);
+                        break;
+                    case 2:
+                        m_charDC[m]->SetPen (m_backgroundPen);
+                        break;
+                    case 3:
+                        m_charDC[m]->SetPen (m_foregroundPen);
+                        break;
+                    case 4:
+                        m_charDC[m]->SetPen (*wxBLACK_PEN);
+                        break;
+                    }
+                }
+                else
+                {
+                    // drawing background pixel
+                    switch (m)
+                    {
+                    case 0:
+                        m_charDC[m]->SetPen (m_foregroundPen);
+                        break;
+                    case 1:
+                        m_charDC[m]->SetPen (m_backgroundPen);
+                        break;
+                    case 2:
+                        m_charDC[m]->SetPen (*wxBLACK_PEN);
+                        break;
+                    case 3:
+                        m_charDC[m]->SetPen (*wxBLACK_PEN);
+                        break;
+                    case 4:
+                        m_charDC[m]->SetPen (*wxWHITE_PEN);
+                        break;
+                    }
+                }
+                m_charDC[m]->DrawPoint(x, y - j * scale);
                 if (scale == 2)
                 {
-                    m_charDC->DrawPoint(x + 1, y - j * scale);
-                    m_charDC->DrawPoint(x, y - j * scale + 1);
-                    m_charDC->DrawPoint(x + 1, y - j * scale + 1);
+                    m_charDC[m]->DrawPoint(x + 1, y - j * scale);
+                    m_charDC[m]->DrawPoint(x, y - j * scale + 1);
+                    m_charDC[m]->DrawPoint(x + 1, y - j * scale + 1);
                 }
+                col >>= 1;
             }
-            col >>= 1;
+            x += scale;
         }
-        x += scale;
+        m_charDC[m]->EndDrawing ();
     }
-    m_charDC->EndDrawing ();
 }
-
-#if 0
-static const int blitFunction[4] =
-{ wxCOPY,               // mode inverse
-  wxSRC_INVERT,         // mode rewrite
-  wxAND,                // mode erase
-  wxOR_INVERT           // mode write
-};
-#else
-static const int blitFunction[4] =
-{ wxSRC_INVERT,         // mode inverse
-  wxCOPY,               // mode rewrite
-  wxAND_INVERT,         // mode erase
-  wxOR                  // mode write
-};
-#endif
 
 void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
 {
@@ -1131,8 +1357,21 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     {
         sizeY += y;
     }
-    m_memDC->Blit (screenX, screenY, sizeX * scale, sizeY * scale, 
-                   m_charDC, charX, charY, blitFunction[wemode]);
+    if (wemode & 2)
+    {
+        // write or erase -- need to zap old pixels and OR in new pixels
+        m_memDC->Blit (screenX, screenY, sizeX * scale, sizeY * scale, 
+                       m_charDC[4], charX, charY, wxAND);
+        m_memDC->Blit (screenX, screenY, sizeX * scale, sizeY * scale, 
+                       m_charDC[wemode], charX, charY, wxOR);
+    }
+    else
+    {
+        // inverse or rewrite, just blit in the appropriate pattern
+        m_memDC->Blit (screenX, screenY, sizeX * scale, sizeY * scale, 
+                       m_charDC[wemode], charX, charY, wxCOPY);
+    }
+        
     // Now copy the resulting state of the character area into the screen dc
     dc.Blit (screenX, screenY, sizeX * scale, sizeY * scale,
              m_memDC, screenX, screenY, wxCOPY);
@@ -1209,7 +1448,7 @@ void ptermSetName (const char *winName)
     pterm_frame->ptermSetName (winName);
 }
 
-void ptermSetStation (const char *hostName, int station)
+void ptermSetStation (const char *unused_hostname, int station)
     {
     char name[100];
     
