@@ -40,6 +40,12 @@
 #define KeyBufSize	    50
 #define DisplayMargin	20
 
+#ifdef __APPLE__
+#define MODMASK 8192    // Option key
+#else
+#define MODMASK Mod1Mask
+#endif
+
 // Size of the window and pixmap.
 // This is: a screen high with marging top and botton.
 // Pixmap has two rows added, which are storage for the
@@ -84,6 +90,7 @@ Window ptermWindow;
 **  Private Variables
 **  -----------------
 */
+static bool ptermActive = FALSE;
 static int fontId;
 static Pixmap pixmap;
 static GC wgc, pgc;
@@ -157,7 +164,7 @@ void ptermXinit (void)
     {
         xdef = appdef;
     }
-    XrmDb = xdef;    
+    XrmDb = xdef;
 }
 
 /*--------------------------------------------------------------------------
@@ -305,6 +312,7 @@ void ptermInit(const char *winName)
     **  Now do common init stuff
     */
     ptermComInit ();
+    ptermActive = TRUE;
 }
 
 /*--------------------------------------------------------------------------
@@ -317,6 +325,11 @@ void ptermInit(const char *winName)
 **------------------------------------------------------------------------*/
 void ptermClose(void)
 {
+    if (!ptermActive)
+    {
+        return;
+    }
+    
     ptermComClose ();
     XFreeCursor (disp, curs);
     XFreeGC (disp, wgc);
@@ -512,7 +525,7 @@ bool platoKeypress (XKeyEvent *kp, int stat)
     key = XKeycodeToKeysym (disp, kp->keycode, 0);
     if (key < sizeof (asciiToPlato))
     {
-        if (state & Mod1Mask)
+        if (state & MODMASK)
         {
             pc = altKeyToPlato[key] | shift;
             if (pc >= 0)
