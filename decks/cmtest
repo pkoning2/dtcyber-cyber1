@@ -1,10 +1,10 @@
-job(cm100000,t10,p17)
+test.
 user(plato,plato)
 rfl,100000.
-*attach,cmp2.
-compass,l,s=nostext,b=0,l=0.
+attach,cstc.
+cstc,l,s=nostext,b=0,l.
 *tdump,i=test.
-compass,l,c=test.
+cstc,l,c=test.
 *catalog,lgo,n,r.
 tdump,i=cmfoo.
 exit.

@@ -6,5 +6,5 @@ setjsl(*)
 rfl,170000.
 attach,procfil.
 begin(setupg,,noslvl=580)
-*begin(plato,,ml=580,list=0)
-begin(plato,,ml=580,list=output)
+begin(plato,,ml=580,list=0)
+*begin(plato,,ml=580,list=output)

@@ -1,12 +1,33 @@
-job(cm72000,t77770,p17)
+job(cm140000,t77770)
 user(plato,plato)
-attach,framat=fram.
-attach,conden=condn.
-attach,plato,pngbin,mrqbin,piobin.
-attach,tutprt,packprt,mjbin.
-attach,mtrbin,masbin.
 common,system.
-assign,51,new.
+*
+attach,cmrdck5.
+attach,cmrdck6.
+attach,cmrdc10.
+attach,cmrdck7.
+attach,libdck2.
+attach,iprdck3.
+attach,iprdck4.
+attach,procs.
+get,config.
+attach,mfnx.
+attach,ubin.
+attach,mbin.
+attach,pbin.
+attach,fbin.
+attach,cbin.
+attach,ppubin.
+attach,plfbin.
+*
 libedit,p=system.
+return,output.
+rewind,new.
+itemize,new.
+request,tape,d=pe,po=w.
+rewind,new.
+copyei,new,tape.
 ~
-*file framat
+*file mfnx
+*file cmrdc10
+*after text/cmrdck7,text/cmrdc10

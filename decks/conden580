@@ -9,5 +9,5 @@ attach,procfil.
 set(r1g=0)
 *
 begin(setupg,,noslvl=580)
-*begin(condens,,ml=580,list=0)
-begin(condens,,ml=580,list=output)
+begin(condens,,ml=580,list=0)
+*begin(condens,,ml=580,list=output)

@@ -7,5 +7,5 @@ rfl,170000.
 attach,procfil.
 *
 begin(setupg,,noslvl=580)
-*begin(ppus,,ml=580d,list=0)
-begin(ppus,,ml=580d,list=output)
+begin(ppus,,ml=580d,list=0)
+*begin(ppus,,ml=580d,list=output)
