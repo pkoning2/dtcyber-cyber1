@@ -24,6 +24,7 @@
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
 #include <sys/time.h>
+#include <pthread.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -93,6 +94,8 @@ static void sum (u16 x);
 **  Public Variables
 **  ----------------
 */
+Display *disp;
+extern Window ptermWindow;
 
 /*
 **  -----------------
@@ -116,7 +119,6 @@ static FontInfo mediumFont;
 static FontInfo largeFont;
 static FontInfo smallOperFont;
 static FontInfo mediumOperFont;
-static Display *disp;
 static Window window;
 static XTextItem dbuf[DisplayBufSize];
 static char dchars[DisplayBufSize];
@@ -131,6 +133,7 @@ static const i8 dotdx[] = { 0, 1, 0, 1, -1, -1,  0, -1,  1 };
 static const i8 dotdy[] = { 0, 0, 1, 1, -1,  0, -1,  1, -1 };
 static XKeyboardControl kbPrefs;
 static bool keyboardTrue, keyboardSendUp;
+static bool platoActive;
 
 /*
 **--------------------------------------------------------------------------
@@ -139,6 +142,12 @@ static bool keyboardTrue, keyboardSendUp;
 **
 **--------------------------------------------------------------------------
 */
+
+/* These functions are declared extern here rather than in proto.h,
+** otherwise proto.h would have to #include X.h...
+*/
+extern bool platoKeypress (XKeyEvent *kp, int stat);
+extern void ptermInput(XEvent *event);
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize the display window.
@@ -184,7 +193,10 @@ void windowInit(void)
     /*
     **  Open the X11 display.
     */
-    disp = XOpenDisplay(0);
+    if (disp == NULL)
+        {
+        disp = XOpenDisplay(0);
+        }
     if (disp == (Display *) NULL)
         {
         fprintf(stderr, "Could not open display\n");
@@ -293,18 +305,21 @@ void windowInit(void)
     XRebindKeysym(disp, 'X', modList, 1, "$x", 2);
     XRebindKeysym(disp, 'o', modList, 1, "$o", 2);
     XRebindKeysym(disp, 'O', modList, 1, "$o", 2);
-    XRebindKeysym(disp, 's', modList, 1, "$s", 2);
-    XRebindKeysym(disp, 'S', modList, 1, "$s", 2);
+    XRebindKeysym(disp, 'p', modList, 1, "$p", 2);
+    XRebindKeysym(disp, 'P', modList, 1, "$p", 2);
     XRebindKeysym(disp, 'q', modList, 1, "$q", 2);
     XRebindKeysym(disp, 'Q', modList, 1, "$q", 2);
-
+    XRebindKeysym(disp, 's', modList, 1, "$s", 2);
+    XRebindKeysym(disp, 'S', modList, 1, "$s", 2);
+    XRebindKeysym(disp, XK_Scroll_Lock, 0, 0, "$t", 2);
+    
     /*
     **  Initialise input.
     */
     wmhints.flags = InputHint;
     wmhints.input = True;
     XSetWMHints(disp, window, &wmhints);
-    XSelectInput (disp, window, KeyPressMask | KeyReleaseMask | StructureNotifyMask);
+    XSelectInput (disp, window, KeyPressMask | StructureNotifyMask);
 
     /*
     **  We like to be on top.
@@ -346,11 +361,13 @@ void windowSetKeyboardTrue (bool flag)
         {
         kbPrefs.auto_repeat_mode = AutoRepeatModeOff;
         XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
+        XSelectInput (disp, window, KeyPressMask | KeyReleaseMask | StructureNotifyMask);
         }
     else
         {
         kbPrefs.auto_repeat_mode = AutoRepeatModeDefault;
         XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
+        XSelectInput (disp, window, KeyPressMask | StructureNotifyMask);
         }
     }
 
@@ -405,6 +422,12 @@ void windowCheckOutput(void)
 
         showDisplay ();
         windowInput();
+
+        // This next line is necessary at least on NetBSD, because
+        // pthreads is (as documented) non-preemptive, so other
+        // threads like the socket listener threads in mux6676 and niu
+        // don't get a chance to run -- since we're CPU bound here.
+        sched_yield();
         }
     }
 
@@ -784,6 +807,11 @@ static void windowInput(void)
         {
         XNextEvent(disp, &event);
 
+        if (((XAnyEvent *) &event)->window == ptermWindow)
+            {
+            ptermInput (&event);
+            continue;
+            }
         switch (event.type)
             {
         case MappingNotify:
@@ -791,11 +819,29 @@ static void windowInput(void)
             break;
 
         case KeyRelease:
+            // Note that we only get key release events in "true" 
+            // keyboard mode.  The code is mostly common with 
+            // keypresses.
         case KeyPress:
-            len = XLookupString ((XKeyEvent *)&event, text, 10, &key, 0);
+            if (platoActive && !opActive &&
+                event.type == KeyPress &&
+                platoKeypress ((XKeyEvent *)&event, 0))
+                {
+                // If it's a valid Plato keypress, we're done now.
+                return;
+                }
+            else
+                {
+                len = XLookupString ((XKeyEvent *)&event, text, 10, &key, 0);
+                if (platoActive && !opActive && len == 1)
+                    {
+                    // Unrecognized non-Alt keypresses in Plato mode are ignored.
+                    break;
+                    }
+                c = text[0];
+                }
             if (len == 1)
                 {
-                c = text[0];
                 if (c > 127)
                     {
                     break;
@@ -860,11 +906,22 @@ static void windowInput(void)
                     kbPrefs.auto_repeat_mode = AutoRepeatModeDefault;
                     XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
                     break;
-                case 's':
-                    displayOff = TRUE;
+                case 'p':
+                    if (niuPresent ())
+                    {
+                        platoActive = !platoActive;
+                    }
                     break;
                 case 'q':
                     displayOff = FALSE;
+                    break;
+                case 's':
+                    displayOff = TRUE;
+                    break;
+                case 't':
+                    // this is useful in Plato mode when Alt-S and Alt-Q
+                    // have other meanings.
+                    displayOff = !displayOff;
                     break;
                     }
                 }
@@ -919,7 +976,7 @@ static void showDisplay (void)
                 cpu.regP); 
 
         sprintf(buf + strlen(buf),
-                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c",
+                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
                 (traceMask >> 0) & 1 ? '0' : '_',
                 (traceMask >> 1) & 1 ? '1' : '_',
                 (traceMask >> 2) & 1 ? '2' : '_',
@@ -943,7 +1000,8 @@ static void showDisplay (void)
                 (chTraceMask >> 8) & 1 ? '8' : '_',
                 (chTraceMask >> 9) & 1 ? '9' : '_',
                 (chTraceMask >> 10) & 1 ? 'A' : '_',
-                (chTraceMask >> 11) & 1 ? 'B' : '_');
+                (chTraceMask >> 11) & 1 ? 'B' : '_',
+                (platoActive) ? 'P' : ' ');
 
         XDrawString(disp, pixmap, pgc, 10, 10, buf, strlen(buf));
     }
