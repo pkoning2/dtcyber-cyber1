@@ -1,0 +1,314 @@
+/*--------------------------------------------------------------------------
+**
+**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**
+**  Name: channel.c
+**
+**  Description:
+**      Perform simulation of CDC 6600 channels.
+**
+**--------------------------------------------------------------------------
+*/
+
+/*
+**  -------------
+**  Include Files
+**  -------------
+*/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "const.h"
+#include "types.h"
+#include "proto.h"
+
+/*
+**  -----------------
+**  Private Constants
+**  -----------------
+*/
+
+/*
+**  -----------------------
+**  Private Macro Functions
+**  -----------------------
+*/
+
+/*
+**  -----------------------------------------
+**  Private Typedef and Structure Definitions
+**  -----------------------------------------
+*/
+
+/*
+**  ---------------------------
+**  Private Function Prototypes
+**  ---------------------------
+*/
+
+/*
+**  ----------------
+**  Public Variables
+**  ----------------
+*/
+ChSlot *channel;
+ChSlot *activeChannel;
+DevSlot *activeDevice;
+u8 channelCount;
+
+/*
+**  -----------------
+**  Private Variables
+**  -----------------
+*/
+static u8 ch = 0;
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Public Functions
+**
+**--------------------------------------------------------------------------
+*/
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Initialise channels.
+**
+**  Parameters:     Name        Description.
+**                  count       channel count
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void channelInit(u8 count)
+    {
+    /*
+    **  Allocate channel structures.
+    */
+    channelCount = count;
+    channel = calloc(count, sizeof(ChSlot));
+    if (channel == NULL)
+        {
+        fprintf(stderr, "Failed to allocate channel control blocks\n");
+        exit(1);
+        }
+
+    /*
+    **  Initialise all channels.
+    */
+    for (ch = 0; ch < channelCount; ch++)
+        {
+        channel[ch].id = ch;
+        }
+
+    /*
+    **  Print a friendly message.
+    */
+    printf("Channels initialised (number of channels %o)\n", channelCount);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Return device control block attached to a channel.
+**
+**  Parameters:     Name        Description.
+**                  channelNo   channel number to attach to.
+**                  devType     device type
+**
+**  Returns:        Pointer to device slot.
+**
+**------------------------------------------------------------------------*/
+DevSlot *channelFindDevice(u8 channelNo, u8 devType)
+    {
+    DevSlot *device;
+    ChSlot *cp;
+
+    cp = channel + channelNo;
+    device = cp->firstDevice;
+
+    /*
+    **  Try to locate device control block.
+    */
+    while (device != NULL) 
+        {
+        if (device->devType == devType)
+            {
+            return(device);
+            }
+
+        device = device->next;
+        }
+
+    return(NULL);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Attach device to channel.
+**
+**  Parameters:     Name        Description.
+**                  channelNo   channel number to attach to.
+**                  devType     device type
+**
+**  Returns:        Pointer to device slot.
+**
+**------------------------------------------------------------------------*/
+DevSlot *channelAttach(u8 channelNo, u8 devType)
+    {
+    DevSlot *device;
+
+    activeChannel = channel + channelNo;
+    device = activeChannel->firstDevice;
+
+    /*
+    **  Try to locate existing device control block.
+    */
+    while (device != NULL) 
+        {
+        if (device->devType == devType)
+            {
+            return(device);
+            }
+
+        device = device->next;
+        }
+
+    /*
+    **  No device control block of this type found, allocate new one.
+    */
+    device = calloc(1, sizeof(DevSlot));
+    if (device == NULL)
+        {
+        fprintf(stderr, "Failed to allocate control block for Channel %d\n",channelNo);
+        exit(1);
+        }
+
+    /*
+    **  Link device control block into the chain of devices hanging of this channel.
+    */
+    device->next = activeChannel->firstDevice;
+    activeChannel->firstDevice = device;
+    device->channel = activeChannel;
+    device->devType = devType;
+
+    return(device);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Issue a function code to all attached devices.
+**
+**  Parameters:     Name        Description.
+**                  funcCode    function code
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void channelFunction(PpWord funcCode)
+    {
+    FcStatus status = FcDeclined;
+
+#if 0
+    if (activeChannel->id == 010 && funcCode == 0)
+        {
+        activeChannel->ioDevice = NULL;
+        activeChannel->full = TRUE;
+        activeChannel->active = TRUE;
+        return;
+        }
+#endif
+
+    for (activeDevice = activeChannel->firstDevice; activeDevice != NULL; activeDevice = activeDevice->next)
+        {
+        status = activeDevice->func(funcCode);
+        if (status == FcAccepted)
+            {
+            /*
+            **  Device has claimed function code - select it for I/O.
+            */
+            activeChannel->ioDevice = activeDevice;
+            break;
+            }
+
+        if (status == FcProcessed)
+            {
+            /*
+            **  Device has processed function code - no need for I/O.
+            */
+            break;
+            }
+        }
+
+    if (activeDevice == NULL || status == FcDeclined)
+        {
+        /*
+        **  No device has claimed the function code - keep channel active
+        **  and full, but disconnect device.
+        */
+//        traceChannelFunction(funcCode);
+        activeChannel->ioDevice = NULL;
+        activeChannel->full = TRUE;
+        activeChannel->active = TRUE;
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Activate a channel and let attached device know.
+**
+**  Parameters:     Name        Description.
+**                  channelNo   channel number activated
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void channelActivate(void)
+    {
+    activeChannel->active = TRUE;
+
+    if (activeChannel->ioDevice != NULL)
+        {
+        activeDevice = activeChannel->ioDevice;
+        activeDevice->activate();
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Disconnect a channel and let active device know.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void channelDisconnect(void)
+    {
+    activeChannel->active = FALSE;
+    activeChannel->full = FALSE;
+
+    if (activeChannel->ioDevice != NULL)
+        {
+        activeDevice = activeChannel->ioDevice;
+        activeDevice->disconnect();
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        IO on a channel.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing
+**
+**------------------------------------------------------------------------*/
+void channelIo(void)
+    {
+    /*
+    **  Perform request.
+    */
+    if (   (activeChannel->active || activeChannel->id == 014)
+        && activeChannel->ioDevice != NULL)
+        {
+        activeDevice = activeChannel->ioDevice;
+        activeDevice->io();
+        }
+    }
+
+/*---------------------------  End Of File  ------------------------------*/
