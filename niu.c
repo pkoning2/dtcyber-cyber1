@@ -969,6 +969,13 @@ static void niuSend(int stat, int word)
         return;
     }
     mp = portVector + stat;
+#if 0
+    if (mp->currOutput)
+    {
+        printf ("niu: station %d frame word was %07o replaced by %07o\n",
+                stat, mp->currOutput, word);
+    }
+#endif
     mp->currOutput = word;
 }
 
