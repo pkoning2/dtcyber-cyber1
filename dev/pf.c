@@ -605,7 +605,8 @@ void printblk (FILE *outf, int len)
         if (linelen > 399)
             linelen = 399;
         if (blkbuf[w * 10] == 0 &&
-            blkbuf[w * 10 + 1] == 0)
+            blkbuf[w * 10 + 1] == 0 &&
+            blkbuf[w * 10 + 9] != 0)
         {
             // Modword... decode it
             get60 (m, blkbuf + w * 10);
