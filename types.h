@@ -35,34 +35,45 @@
     typedef unsigned __int64 u64;
     #define FMT60_020o "%020I64o"
 #elif defined (__GNUC__)
-    #if defined(__alpha__) || defined(__powerpc64__) || (defined(__sparc64__) && defined(__arch64__))
+    #if defined(__LONG_MAX__)
+        #if (__LONG_MAX__ == __INT_MAX__)
+        #define LSIZE 32
+        #else
+        #define LSIZE 64
+        #endif
+    #elif defined(__alpha__) || defined(__powerpc64__) || (defined(__sparc64__) && defined(__arch64__))
+    #define LSIZE 64
+    #elif defined(__i386__) || defined(__powerpc__) || defined(__sparc__) || defined(__hppa__)
+    #define LSIZE 32
+    #else
+        #error "Unable to determine size of basic data types"
+    #endif
+    #if (LSIZE == 64)
         /*
         **  64 bit systems
         */
         typedef signed char i8;
         typedef signed short i16;
         typedef signed int i32;
-        typedef unsigned long int i64;
+        typedef signed long int i64;
         typedef unsigned char u8;
         typedef unsigned short u16;
         typedef unsigned int u32;
         typedef unsigned long int u64;
         #define FMT60_020o "%020lo"
-    #elif defined(__i386__) || defined(__powerpc__) || defined(__sparc__) || defined(__hppa__)
+    #else
         /*
         **  32 bit systems
         */
         typedef signed char i8;
         typedef signed short i16;
         typedef signed int i32;
-        typedef unsigned long long int i64;
+        typedef signed long long int i64;
         typedef unsigned char u8;
         typedef unsigned short u16;
         typedef unsigned int u32;
         typedef unsigned long long int u64;
         #define FMT60_020o "%020llo"
-    #else
-        #error "Unable to determine size of basic data types"
     #endif
 #else
     #error "Unable to determine size of basic data types"
@@ -173,6 +184,8 @@ typedef struct
 typedef struct                          
     {                                   
     CpWord          regX[010];          /* Data registers (60 bit) */
+    CpWord          opWord;             /* Current opcode word (60 bit) */
+    u32             opAddress;          /* Current opcode address (18 bit) */
     u32             regA[010];          /* Address registers (18 bit) */
     u32             regB[010];          /* Index registers (18 bit) */
     u32             regP;               /* Program counter */
@@ -183,8 +196,15 @@ typedef struct
     u32             regMa;              /* Monitor address */
     u32             regSpare;           /* Reserved */
     u32             exitMode;           /* CPU exit mode (24 bit) */
-    bool            monitorMode;        /* Monitor mode bit */
+    u32             exchangeTo;         /* Address to exchange to */
     u8              exitCondition;      /* Recorded exit conditions since XJ */
+    u8              id;                 /* CPU number */
+    bool            cpuStopped;         /* CPU stop flag */
+    u8              opOffset;           /* Bit offset to current instruction */
+    u8              opFm;               /* Opcode field (first 6 bits) */
+    u8              opI;                /* I field of current instruction */
+    u8              opJ;                /* J field of current instruction */
+    u8              opK;                /* K field (first 3 bits only) */
     } CpuContext;
 
 /*---------------------------  End Of File  ------------------------------*/
