@@ -632,6 +632,8 @@ bool platoKeypress (XKeyEvent *kp, int stat)
 **------------------------------------------------------------------------*/
 void ptermInput(XEvent *event)
 {
+    u8 savemode = wemode;
+
     switch (event->type)
     {
     case MappingNotify:
@@ -658,7 +660,7 @@ void ptermInput(XEvent *event)
                    DisplayMargin + 512, DisplayMargin - 16,
                    8, 16,
                    DisplayMargin + 512, DisplayMargin - 16, 1);
-        ptermSetWeMode (wemode);
+        ptermSetWeMode (savemode);
         XSync (disp, FALSE);
         break;
     }

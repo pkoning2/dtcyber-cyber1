@@ -219,3 +219,5 @@ Since jan16 2004 drop:
 - Reverted index addressing in pp.c to what Tom had.
 
 Since jan21 2004 drop:
+- Fix wrong display mode in pterm after expose event (it was setting
+  inverse mode unconditionally).
