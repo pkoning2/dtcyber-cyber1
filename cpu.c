@@ -97,13 +97,7 @@ static void cpuTraceCtl(CpuContext *activeCpu);
 static void cpuExchangeJump(CpuContext *activeCpu);
 #ifdef CPU_THREADS
 static void cpuCreateThread(int cpuNum);
-#if defined(_WIN32)
-static void cpuThread(void *param);
-#define RETURN return
-#else
-static void *cpuThread(void *param);
-#define RETURN return 0
-#endif
+static ThreadFunRet cpuThread(void *param);
 #endif /* CPU_THREADS */
 
 static void cpOp00(CpuContext *activeCpu);
@@ -452,8 +446,8 @@ void cpuInit(char *model, u32 count, u32 memory, u32 ecsBanks,
         cpu[cpuNum].id = cpuNum;
         cpu[cpuNum].cpuStopped = TRUE;
 #ifdef CPU_THREADS
-	if (cpuNum > 0)
-	    {
+        if (cpuNum > 0)
+            {
             cpuCreateThread(cpuNum);
             }
 #endif
@@ -614,26 +608,26 @@ int cpuIssueExchange(u8 cp, u32 addr, bool monitor)
         cp = 0;
         }
     if (monitor > 0 && cp > 0)
-      {
-	foo++;
-      }
+        {
+        foo++;
+        }
 #ifdef CPU_THREADS
     pthread_mutex_lock (&exchange_mutex);
 #endif
     if (monitor > 0 && monitorCpu != -1)
-      {
+        {
 #ifdef CPU_THREADS
-	pthread_mutex_unlock (&exchange_mutex);
+        pthread_mutex_unlock (&exchange_mutex);
 #endif
-	return 2;
-      }
+        return 2;
+        }
     if (exchangeCpu != -1)
-      {
+        {
 #ifdef CPU_THREADS
-	pthread_mutex_unlock (&exchange_mutex);
+        pthread_mutex_unlock (&exchange_mutex);
 #endif
-	return 1;
-      }
+        return 1;
+        }
     if (monitor == 2)
         {
         exchangeTo = cpu[cp].regMa;
@@ -818,8 +812,8 @@ bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs)
         {
         if (address >= ecsMaxMemory)
             {
-                *data = 0;
-                return TRUE;
+            *data = 0;
+            return TRUE;
             }
         else
             {
@@ -875,11 +869,7 @@ void cpuCreateThread(int cpuNum)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-#if defined(_WIN32)
-static void cpuThread(void *param)
-#else
-static void *cpuThread(void *param)
-#endif
+static ThreadFunRet cpuThread(void *param)
     {
     CpuContext *activeCpu = (CpuContext *) param;
     
@@ -2141,11 +2131,11 @@ static void cpOp00(CpuContext *activeCpu)
 
 #if NeedToUnderstandPSBetter
 
-??? how should this behave if CEJ/MEJ is enabled ???
+    ??? how should this behave if CEJ/MEJ is enabled ???
 
-activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-activeCpu->monitorMode = TRUE;
-cpuExchangeJump(activeCpu->regMa);
+            activeCpu->regP = (activeCpu->regP + 1) & Mask18;
+    activeCpu->monitorMode = TRUE;
+    cpuExchangeJump(activeCpu->regMa);
 
 #endif
     }
