@@ -259,9 +259,10 @@ const char *btypes[] =
   "llist", 
   "vocab", 
   "lines", 
-  "(7)",
+  "text",
   "binary",
   "list",
+  "access",
 };
 
 FILE *pdisk;
@@ -1241,13 +1242,13 @@ void pfread (int argc, char **argv)
                         if (sourceonly)
                         {
                             if (((blkinfo >> 59) & 1) != 0 || 
-                                (type != 0 && type != 9))
+                                (type != 0 && type != 7 && type != 9))
                                 continue;
                         }
                         else
                             printblabel (outf, b, false);
                         readblk (fblk + startblk, blkbuf);
-                        if (type == 0 || type == 9)
+                        if (type == 0 || type == 7 || type == 9)
                             printblk (outf, blen);
                         else
                             dumpblk (outf, 0);
@@ -1258,7 +1259,10 @@ void pfread (int argc, char **argv)
                 {
                     if (sourceonly)
                     {
-                        fprintf (stderr, "%s it not a source file\n", pfn);
+                        fprintf (stderr, "%s is not a source file\n", pfn);
+                        if (!wild)
+                            break;
+                        ep += 10;
                         continue;
                     }
                     if (!topipe)
