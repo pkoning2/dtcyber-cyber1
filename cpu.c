@@ -15,6 +15,10 @@
 **  Include Files
 **  -------------
 */
+#ifndef DUAL_CPU
+#undef CPU_THREADS
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,6 +62,31 @@
 **  -----------------------
 */
 
+/* 
+**  Macros for enabling dual CPU emulation.  These are constructed
+**  so the case when dual CPU emulation is turned off do NOT get the
+**  added (even if small) overhead of passing a cpu context pointer
+**  to all the emulation primitives.
+*/
+#ifdef DUAL_CPU
+#define CPUVARG         CpuContext *activeCpu
+#define CPUVARGS2(x, y) CpuContext *activeCpu, x, y
+#define CPUVARGS3(x, y, z) CpuContext *activeCpu, x, y, z
+#define CPUARG          activeCpu
+#define CPUARGS2(x, y)  activeCpu, x, y
+#define CPUARGS3(x, y, z) activeCpu, x, y, z
+#define MAXCPUS         2
+#else
+#define CPUVARG         void
+#define CPUVARGS2(x, y) x, y
+#define CPUVARGS3(x, y, z) x, y, z
+#define CPUARG
+#define CPUARGS2(x, y)  x, y
+#define CPUARGS3(x, y, z) x, y, z
+#define MAXCPUS         1
+#define cpuStep         cpuStepAll
+#endif
+
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
@@ -65,7 +94,7 @@
 */
 typedef struct opDispatch
     {
-    void (*execute)(CpuContext *activeCpu);
+    void (*execute)(CPUVARG);
     u32   length;
     } OpDispatch;
 
@@ -75,95 +104,93 @@ typedef struct opDispatch
 **  ---------------------------
 */
 #define cpuFetchOpWord cpuReadMem
-static INLINE bool cpuReadMem(CpuContext *activeCpu, 
-                              u32 address, CpWord *data);
-static INLINE bool cpuWriteMem(CpuContext *activeCpu,
-                               u32 address, CpWord *data);
-static INLINE void cpuRegASemantics(CpuContext *activeCpu);
+static INLINE bool cpuReadMem(CPUVARGS2 (u32 address, CpWord *data));
+static INLINE bool cpuWriteMem(CPUVARGS2 (u32 address, CpWord *data));
+static INLINE void cpuRegASemantics(CPUVARG);
 static INLINE u32 cpuAdd18(u32 op1, u32 op2);
 static INLINE u32 cpuSubtract18(u32 op1, u32 op2);
-static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs, bool toReg);
-static bool cpuCmuGetByte(CpuContext *activeCpu, 
-                          u32 address, u32 pos, u8 *byte);
-static bool cpuCmuPutByte(CpuContext *activeCpu, 
-                          u32 address, u32 pos, u8 byte);
-static void cpuCmuMoveIndirect(CpuContext *activeCpu);
-static void cpuCmuMoveDirect(CpuContext *activeCpu);
-static void cpuCmuCompareCollated(CpuContext *activeCpu);
-static void cpuCmuCompareUncollated(CpuContext *activeCpu);
+static void cpuEcsTransfer(CPUVARGS2 (bool writeToEcs, bool toReg));
+static bool cpuCmuGetByte(CPUVARGS3 (u32 address, u32 pos, u8 *byte));
+static bool cpuCmuPutByte(CPUVARGS3 (u32 address, u32 pos, u8 byte));
+static void cpuCmuMoveIndirect(CPUVARG);
+static void cpuCmuMoveDirect(CPUVARG);
+static void cpuCmuCompareCollated(CPUVARG);
+static void cpuCmuCompareUncollated(CPUVARG);
 #if DebugOps == 1
-static void cpuTraceCtl(CpuContext *activeCpu);
+static void cpuTraceCtl(CPUVARG);
 #endif
-static void cpuExchangeJump(CpuContext *activeCpu);
+static void cpuExchangeJump(CPUVARG);
 #ifdef CPU_THREADS
 static void cpuCreateThread(int cpuNum);
 static ThreadFunRet cpuThread(void *param);
+#elif defined (DUAL_CPU)
+static void cpuStep(CPUVARG);
 #endif /* CPU_THREADS */
 
-static void cpOp00(CpuContext *activeCpu);
-static void cpOp01(CpuContext *activeCpu);
-static void cpOp02(CpuContext *activeCpu);
-static void cpOp03(CpuContext *activeCpu);
-static void cpOp04(CpuContext *activeCpu);
-static void cpOp05(CpuContext *activeCpu);
-static void cpOp06(CpuContext *activeCpu);
-static void cpOp07(CpuContext *activeCpu);
-static void cpOp10(CpuContext *activeCpu);
-static void cpOp11(CpuContext *activeCpu);
-static void cpOp12(CpuContext *activeCpu);
-static void cpOp13(CpuContext *activeCpu);
-static void cpOp14(CpuContext *activeCpu);
-static void cpOp15(CpuContext *activeCpu);
-static void cpOp16(CpuContext *activeCpu);
-static void cpOp17(CpuContext *activeCpu);
-static void cpOp20(CpuContext *activeCpu);
-static void cpOp21(CpuContext *activeCpu);
-static void cpOp22(CpuContext *activeCpu);
-static void cpOp23(CpuContext *activeCpu);
-static void cpOp24(CpuContext *activeCpu);
-static void cpOp25(CpuContext *activeCpu);
-static void cpOp26(CpuContext *activeCpu);
-static void cpOp27(CpuContext *activeCpu);
-static void cpOp30(CpuContext *activeCpu);
-static void cpOp31(CpuContext *activeCpu);
-static void cpOp32(CpuContext *activeCpu);
-static void cpOp33(CpuContext *activeCpu);
-static void cpOp34(CpuContext *activeCpu);
-static void cpOp35(CpuContext *activeCpu);
-static void cpOp36(CpuContext *activeCpu);
-static void cpOp37(CpuContext *activeCpu);
-static void cpOp40(CpuContext *activeCpu);
-static void cpOp41(CpuContext *activeCpu);
-static void cpOp42(CpuContext *activeCpu);
-static void cpOp43(CpuContext *activeCpu);
-static void cpOp44(CpuContext *activeCpu);
-static void cpOp45(CpuContext *activeCpu);
-static void cpOp46(CpuContext *activeCpu);
-static void cpOp47(CpuContext *activeCpu);
-static void cpOp50(CpuContext *activeCpu);
-static void cpOp51(CpuContext *activeCpu);
-static void cpOp52(CpuContext *activeCpu);
-static void cpOp53(CpuContext *activeCpu);
-static void cpOp54(CpuContext *activeCpu);
-static void cpOp55(CpuContext *activeCpu);
-static void cpOp56(CpuContext *activeCpu);
-static void cpOp57(CpuContext *activeCpu);
-static void cpOp60(CpuContext *activeCpu);
-static void cpOp61(CpuContext *activeCpu);
-static void cpOp62(CpuContext *activeCpu);
-static void cpOp63(CpuContext *activeCpu);
-static void cpOp64(CpuContext *activeCpu);
-static void cpOp65(CpuContext *activeCpu);
-static void cpOp66(CpuContext *activeCpu);
-static void cpOp67(CpuContext *activeCpu);
-static void cpOp70(CpuContext *activeCpu);
-static void cpOp71(CpuContext *activeCpu);
-static void cpOp72(CpuContext *activeCpu);
-static void cpOp73(CpuContext *activeCpu);
-static void cpOp74(CpuContext *activeCpu);
-static void cpOp75(CpuContext *activeCpu);
-static void cpOp76(CpuContext *activeCpu);
-static void cpOp77(CpuContext *activeCpu);
+static void cpOp00(CPUVARG);
+static void cpOp01(CPUVARG);
+static void cpOp02(CPUVARG);
+static void cpOp03(CPUVARG);
+static void cpOp04(CPUVARG);
+static void cpOp05(CPUVARG);
+static void cpOp06(CPUVARG);
+static void cpOp07(CPUVARG);
+static void cpOp10(CPUVARG);
+static void cpOp11(CPUVARG);
+static void cpOp12(CPUVARG);
+static void cpOp13(CPUVARG);
+static void cpOp14(CPUVARG);
+static void cpOp15(CPUVARG);
+static void cpOp16(CPUVARG);
+static void cpOp17(CPUVARG);
+static void cpOp20(CPUVARG);
+static void cpOp21(CPUVARG);
+static void cpOp22(CPUVARG);
+static void cpOp23(CPUVARG);
+static void cpOp24(CPUVARG);
+static void cpOp25(CPUVARG);
+static void cpOp26(CPUVARG);
+static void cpOp27(CPUVARG);
+static void cpOp30(CPUVARG);
+static void cpOp31(CPUVARG);
+static void cpOp32(CPUVARG);
+static void cpOp33(CPUVARG);
+static void cpOp34(CPUVARG);
+static void cpOp35(CPUVARG);
+static void cpOp36(CPUVARG);
+static void cpOp37(CPUVARG);
+static void cpOp40(CPUVARG);
+static void cpOp41(CPUVARG);
+static void cpOp42(CPUVARG);
+static void cpOp43(CPUVARG);
+static void cpOp44(CPUVARG);
+static void cpOp45(CPUVARG);
+static void cpOp46(CPUVARG);
+static void cpOp47(CPUVARG);
+static void cpOp50(CPUVARG);
+static void cpOp51(CPUVARG);
+static void cpOp52(CPUVARG);
+static void cpOp53(CPUVARG);
+static void cpOp54(CPUVARG);
+static void cpOp55(CPUVARG);
+static void cpOp56(CPUVARG);
+static void cpOp57(CPUVARG);
+static void cpOp60(CPUVARG);
+static void cpOp61(CPUVARG);
+static void cpOp62(CPUVARG);
+static void cpOp63(CPUVARG);
+static void cpOp64(CPUVARG);
+static void cpOp65(CPUVARG);
+static void cpOp66(CPUVARG);
+static void cpOp67(CPUVARG);
+static void cpOp70(CPUVARG);
+static void cpOp71(CPUVARG);
+static void cpOp72(CPUVARG);
+static void cpOp73(CPUVARG);
+static void cpOp74(CPUVARG);
+static void cpOp75(CPUVARG);
+static void cpOp76(CPUVARG);
+static void cpOp77(CPUVARG);
 
 /*
 **  ----------------
@@ -173,8 +200,8 @@ static void cpOp77(CpuContext *activeCpu);
 CpWord *cpMem;
 CpWord *ecsMem;
 u32 ecsFlagRegister;
-CpuContext *cpu;
 u8 cpuCount;
+CpuContext cpu[MAXCPUS];
 volatile int monitorCpu;
 volatile int exchangeCpu = -1;
 u32 cpuMaxMemory;
@@ -187,13 +214,17 @@ u32 ecsMaxMemory;
 **  -----------------
 */
 
-volatile u32 exchangeTo;
+#ifndef DUAL_CPU
+#define activeCpu (&cpu[0])
+#endif
+
+static volatile u32 exchangeTo;
 #ifdef CPU_THREADS
 #if !defined(_WIN32)
 static pthread_t cpu_thread;
 //pthread_cond_t exchange_cond = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t exchange_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t flagreg_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t exchange_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t flagreg_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 #endif
 
@@ -292,8 +323,7 @@ static OpDispatch decodeCpuOpcode[] =
 **  Returns:        TRUE if access failed, FALSE otherwise;
 **
 **------------------------------------------------------------------------*/
-static INLINE bool cpuReadMem(CpuContext *activeCpu,
-                              u32 address, CpWord *data)
+static INLINE bool cpuReadMem(CPUVARGS2 (u32 address, CpWord *data))
     {
     u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm) & cpuMemMask;
     
@@ -337,8 +367,7 @@ static INLINE bool cpuReadMem(CpuContext *activeCpu,
 **  Returns:        TRUE if access failed, FALSE otherwise;
 **
 **------------------------------------------------------------------------*/
-static INLINE bool cpuWriteMem(CpuContext *activeCpu, 
-                               u32 address, CpWord *data)
+static INLINE bool cpuWriteMem(CPUVARGS2 (u32 address, CpWord *data))
     {
     u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm) & cpuMemMask;
     
@@ -398,15 +427,15 @@ void cpuInit(char *model, u32 count, u32 memory, u32 ecsBanks,
     int cpuNum;
     
     /*
-    **  Allocate cpu structures.
+    **  Initialize cpu count.
     */
-    cpuCount = count;
-    cpu = calloc(count, sizeof(CpuContext));
-    if (cpu == NULL)
+    if (count > MAXCPUS)
         {
-        fprintf(stderr, "Failed to allocate cpu control blocks\n");
-        exit(1);
+        fprintf (stderr, "CPU count %d too large, max is %d\n",
+                 count, MAXCPUS);
+        exit (1);
         }
+    cpuCount = count;
 
     /*
     **  Allocate configured central memory.
@@ -694,7 +723,7 @@ void cpuPpWriteMem(u32 address, CpWord data)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-#ifndef CPU_THREADS
+#if !defined (CPU_THREADS) && defined (DUAL_CPU)
 void cpuStepAll (void)
     {
     int cpuNum;
@@ -889,7 +918,7 @@ static ThreadFunRet cpuThread(void *param)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void cpuStep(CpuContext *activeCpu)
+void cpuStep(CPUVARG)
     {
     u32 oldRegP;
     u32 length;
@@ -902,7 +931,7 @@ void cpuStep(CpuContext *activeCpu)
     */
     if (activeCpu->id == exchangeCpu)
         {
-        cpuExchangeJump (activeCpu);
+        cpuExchangeJump (CPUARG);
         }
         
     if (activeCpu->cpuStopped)
@@ -965,7 +994,7 @@ void cpuStep(CpuContext *activeCpu)
         /*
         **  Execute instruction.
         */
-        decodeCpuOpcode[activeCpu->opFm].execute (activeCpu);
+        decodeCpuOpcode[activeCpu->opFm].execute (CPUARG);
 
         /*
         **  Force B0 to 0.
@@ -979,21 +1008,29 @@ void cpuStep(CpuContext *activeCpu)
         //    if ((activeCpu->regRaCm + activeCpu->regP) > 02062)
 
         /*
-        **  Don't trace NOS's idle loop and CPUMTR.
+        **  To make things faster, do a quick check first to see if any
+        **  tracing at all has been requested (i.e., trace mask != 0).
+        **  That makes a surprisingly large difference.
+        **
+        **  Don't trace NOS's idle loop.
         **  If control point tracing is set, act accordingly.
         */
-        if (/*activeCpu->regRaCm != 0 && */ activeCpu->regP > 0100)
+        if (traceMask != 0 &&
+            /*activeCpu->regRaCm != 0 && */
+            activeCpu->regP > 0100)
             {
             if (traceCp == 0 || 
                 (activeCpu->id != monitorCpu &&
                  ((cpMem[060] >> 31) & 037) == traceCp))
                 {
-                traceCpu(activeCpu, oldRegP, activeCpu->opFm, activeCpu->opI, activeCpu->opJ, activeCpu->opK, activeCpu->opAddress);
+                traceCpu(activeCpu, oldRegP, activeCpu->opFm,
+                         activeCpu->opI, activeCpu->opJ,
+                         activeCpu->opK, activeCpu->opAddress);
                 }
 #if DebugOps == 1
             if (activeCpu->opFm == 061 && activeCpu->opI == 0 && activeCpu->opJ != 0)
                 {
-                cpuTraceCtl (activeCpu);
+                cpuTraceCtl (CPUARG);
                 }
 #endif
             }
@@ -1017,7 +1054,7 @@ void cpuStep(CpuContext *activeCpu)
         if (activeCpu->opOffset == 0)
             {
             activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-            activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+            activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
             activeCpu->opOffset = 60;
             }
         } while (activeCpu->opOffset != 60);
@@ -1039,7 +1076,7 @@ void cpuStep(CpuContext *activeCpu)
 **  completed are signaled to wake up.
 **
 **------------------------------------------------------------------------*/
-void cpuExchangeJump(CpuContext *activeCpu)
+void cpuExchangeJump(CPUVARG)
     {
     CpuContext tmp;
     CpWord *mem;
@@ -1205,7 +1242,7 @@ void cpuExchangeJump(CpuContext *activeCpu)
     /*
     **  Activate CPU.
     */
-    activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+    activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
     if (activeCpu->cpuStopped)
         {
         printf ("huh?\n");
@@ -1238,7 +1275,7 @@ void cpuExchangeJump(CpuContext *activeCpu)
 **------------------------------------------------------------------------
 */
 #if DebugOps == 1
-static void cpuTraceCtl (CpuContext *activeCpu)
+static void cpuTraceCtl (CPUVARG)
     {
     if (activeCpu->opJ == 1 && activeCpu->opAddress == 000042)
         {
@@ -1268,7 +1305,7 @@ static void cpuTraceCtl (CpuContext *activeCpu)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static INLINE void cpuRegASemantics(CpuContext *activeCpu)
+static INLINE void cpuRegASemantics(CPUVARG)
     {
     if (activeCpu->opI == 0)
         {
@@ -1280,14 +1317,14 @@ static INLINE void cpuRegASemantics(CpuContext *activeCpu)
         /*
         **  Read semantics.
         */
-        activeCpu->cpuStopped = cpuReadMem(activeCpu, activeCpu->regA[activeCpu->opI], activeCpu->regX + activeCpu->opI);
+        activeCpu->cpuStopped = cpuReadMem(CPUARGS2 (activeCpu->regA[activeCpu->opI], activeCpu->regX + activeCpu->opI));
         }
     else
         {
         /*
         **  Write semantics.
         */
-        activeCpu->cpuStopped = cpuWriteMem(activeCpu, activeCpu->regA[activeCpu->opI], activeCpu->regX + activeCpu->opI);
+        activeCpu->cpuStopped = cpuWriteMem(CPUARGS2 (activeCpu->regA[activeCpu->opI], activeCpu->regX + activeCpu->opI));
         }
     }
 
@@ -1352,7 +1389,7 @@ static INLINE u32 cpuSubtract18(u32 op1, u32 op2)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs, bool toReg)
+static void cpuEcsTransfer(CPUVARGS2 (bool writeToEcs, bool toReg))
     {
     u32 wordCount;
     u32 ecsAddress;
@@ -1411,7 +1448,7 @@ static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs, bool toReg)
         **  Normal exit.
         */
         activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-        activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+        activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
         activeCpu->opOffset = 60;
         return;
         }
@@ -1443,7 +1480,7 @@ static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs, bool toReg)
         else
             {
             activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-            activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+            activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
             activeCpu->opOffset = 60;
             }
 
@@ -1505,7 +1542,7 @@ static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs, bool toReg)
     **  Normal exit to next instruction word.
     */
     activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-    activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+    activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
     activeCpu->opOffset = 60;
     }
 
@@ -1521,8 +1558,7 @@ static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs, bool toReg)
 **  Returns:        TRUE if access failed, FALSE otherwise.
 **
 **------------------------------------------------------------------------*/
-static bool cpuCmuGetByte(CpuContext *activeCpu, 
-                          u32 address, u32 pos, u8 *byte)
+static bool cpuCmuGetByte(CPUVARGS3 (u32 address, u32 pos, u8 *byte))
     {
     CpWord data;
     u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm) & cpuMemMask;
@@ -1576,7 +1612,7 @@ static bool cpuCmuGetByte(CpuContext *activeCpu,
 **  Returns:        TRUE if access failed, FALSE otherwise.
 **
 **------------------------------------------------------------------------*/
-static bool cpuCmuPutByte(CpuContext *activeCpu, u32 address, u32 pos, u8 byte)
+static bool cpuCmuPutByte(CPUVARGS3 (u32 address, u32 pos, u8 byte))
     {
     CpWord data;
     u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm) & cpuMemMask;
@@ -1637,7 +1673,7 @@ static bool cpuCmuPutByte(CpuContext *activeCpu, u32 address, u32 pos, u8 byte)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-static void cpuCmuMoveIndirect(CpuContext *activeCpu)
+static void cpuCmuMoveIndirect(CPUVARG)
     {
     CpWord descWord;
     u32 k1, k2;
@@ -1652,7 +1688,7 @@ static void cpuCmuMoveIndirect(CpuContext *activeCpu)
     */
     activeCpu->opAddress = (u32)((activeCpu->opWord >> 30) & Mask18);
     activeCpu->opAddress = cpuAdd18(activeCpu->regB[activeCpu->opJ], activeCpu->opAddress);
-    activeCpu->cpuStopped = cpuReadMem(activeCpu, activeCpu->opAddress, &descWord);
+    activeCpu->cpuStopped = cpuReadMem(CPUARGS2 (activeCpu->opAddress, &descWord));
     if (activeCpu->cpuStopped)
         {
         return;
@@ -1703,8 +1739,8 @@ static void cpuCmuMoveIndirect(CpuContext *activeCpu)
         /*
         **  Transfer one byte, but abort if access fails.
         */
-        if (   cpuCmuGetByte(activeCpu, k1, c1, &byte)
-            || cpuCmuPutByte(activeCpu, k2, c2, byte))
+        if (   cpuCmuGetByte(CPUARGS3 (k1, c1, &byte))
+            || cpuCmuPutByte(CPUARGS3 (k2, c2, byte)))
             {
             if (activeCpu->cpuStopped)
                 {
@@ -1742,7 +1778,7 @@ static void cpuCmuMoveIndirect(CpuContext *activeCpu)
     **  Normal exit to next instruction word.
     */
     activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-    activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+    activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
     activeCpu->opOffset = 60;
     }
 
@@ -1755,7 +1791,7 @@ static void cpuCmuMoveIndirect(CpuContext *activeCpu)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-static void cpuCmuMoveDirect(CpuContext *activeCpu)
+static void cpuCmuMoveDirect(CPUVARG)
     {
     u32 k1, k2;
     u32 c1, c2;
@@ -1809,8 +1845,8 @@ static void cpuCmuMoveDirect(CpuContext *activeCpu)
         /*
         **  Transfer one byte, but abort if access fails.
         */
-        if (   cpuCmuGetByte(activeCpu, k1, c1, &byte)
-            || cpuCmuPutByte(activeCpu, k2, c2, byte))
+        if (   cpuCmuGetByte(CPUARGS3 (k1, c1, &byte))
+            || cpuCmuPutByte(CPUARGS3 (k2, c2, byte)))
             {
             if (activeCpu->cpuStopped)
                 {
@@ -1848,7 +1884,7 @@ static void cpuCmuMoveDirect(CpuContext *activeCpu)
     **  Normal exit to next instruction word.
     */
     activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-    activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+    activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
     activeCpu->opOffset = 60;
     }
 
@@ -1861,7 +1897,7 @@ static void cpuCmuMoveDirect(CpuContext *activeCpu)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-static void cpuCmuCompareCollated(CpuContext *activeCpu)
+static void cpuCmuCompareCollated(CPUVARG)
     {
     CpWord result = 0;
     u32 k1, k2;
@@ -1920,8 +1956,8 @@ static void cpuCmuCompareCollated(CpuContext *activeCpu)
         /*
         **  Check the two bytes raw.
         */
-        if (   cpuCmuGetByte(activeCpu, k1, c1, &byte1)
-            || cpuCmuGetByte(activeCpu, k2, c2, &byte2))
+        if (   cpuCmuGetByte(CPUARGS3 (k1, c1, &byte1))
+            || cpuCmuGetByte(CPUARGS3 (k2, c2, &byte2)))
             {
             if (activeCpu->cpuStopped)
                 {
@@ -1939,8 +1975,10 @@ static void cpuCmuCompareCollated(CpuContext *activeCpu)
             /*
             **  Bytes differ - check using collating table.
             */
-            if (   cpuCmuGetByte(activeCpu, collTable + ((byte1 >> 3) & Mask3), byte1 & Mask3, &byte1)
-                || cpuCmuGetByte(activeCpu, collTable + ((byte2 >> 3) & Mask3), byte2 & Mask3, &byte2))
+            if (   cpuCmuGetByte(CPUARGS3((collTable + ((byte1 >> 3 & Mask3))),
+                                            byte1 & Mask3, &byte1))
+                || cpuCmuGetByte(CPUARGS3((collTable + ((byte2 >> 3 & Mask3))),
+                                            byte2 & Mask3, &byte2)))
                 {
                 if (activeCpu->cpuStopped)
                     {
@@ -1994,7 +2032,7 @@ static void cpuCmuCompareCollated(CpuContext *activeCpu)
     **  Normal exit to next instruction word.
     */
     activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-    activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+    activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
     activeCpu->opOffset = 60;
     }
 
@@ -2007,7 +2045,7 @@ static void cpuCmuCompareCollated(CpuContext *activeCpu)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-static void cpuCmuCompareUncollated(CpuContext *activeCpu)
+static void cpuCmuCompareUncollated(CPUVARG)
     {
     CpWord result = 0;
     u32 k1, k2;
@@ -2060,8 +2098,8 @@ static void cpuCmuCompareUncollated(CpuContext *activeCpu)
         /*
         **  Check the two bytes raw.
         */
-        if (   cpuCmuGetByte(activeCpu, k1, c1, &byte1)
-            || cpuCmuGetByte(activeCpu, k2, c2, &byte2))
+        if (   cpuCmuGetByte(CPUARGS3 (k1, c1, &byte1))
+            || cpuCmuGetByte(CPUARGS3 (k2, c2, &byte2)))
             {
             if (activeCpu->cpuStopped)
                 {
@@ -2114,7 +2152,7 @@ static void cpuCmuCompareUncollated(CpuContext *activeCpu)
     **  Normal exit to next instruction word.
     */
     activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-    activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+    activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
     activeCpu->opOffset = 60;
     }
 
@@ -2128,7 +2166,7 @@ static void cpuCmuCompareUncollated(CpuContext *activeCpu)
 **
 **------------------------------------------------------------------------*/
 
-static void cpOp00(CpuContext *activeCpu)
+static void cpOp00(CPUVARG)
     {
     /*
     **  PS.
@@ -2146,7 +2184,7 @@ static void cpOp00(CpuContext *activeCpu)
 #endif
     }
 
-static void cpOp01(CpuContext *activeCpu)
+static void cpOp01(CPUVARG)
     {
     CpWord acc60;
     int monitor;
@@ -2161,7 +2199,7 @@ static void cpOp01(CpuContext *activeCpu)
         **  RJ  K
         */
         acc60 = ((CpWord)0400 << 48) | ((CpWord)((activeCpu->regP + 1) & Mask18) << 30);
-        activeCpu->cpuStopped = cpuWriteMem(activeCpu, activeCpu->opAddress, &acc60);
+        activeCpu->cpuStopped = cpuWriteMem(CPUARGS2 (activeCpu->opAddress, &acc60));
         activeCpu->regP = activeCpu->opAddress;
         activeCpu->opOffset = 0;
         break;
@@ -2170,14 +2208,14 @@ static void cpOp01(CpuContext *activeCpu)
         /*
         **  RE  Bj+K
         */
-        cpuEcsTransfer(activeCpu, FALSE, FALSE);
+        cpuEcsTransfer(CPUARGS2 (FALSE, FALSE));
         break;
         
     case 2:
         /*
         **  WE  Bj+K
         */
-        cpuEcsTransfer(activeCpu, TRUE, FALSE);
+        cpuEcsTransfer(CPUARGS2 (TRUE, FALSE));
         break;
         
     case 3:
@@ -2235,14 +2273,14 @@ static void cpOp01(CpuContext *activeCpu)
         /*
         **  RXj Xj
         */
-        cpuEcsTransfer(activeCpu, FALSE, TRUE);
+        cpuEcsTransfer(CPUARGS2 (FALSE, TRUE));
         break;
         
     case 5:
         /*
         **  WXj Xk
         */
-        cpuEcsTransfer(activeCpu, TRUE, TRUE);
+        cpuEcsTransfer(CPUARGS2 (TRUE, TRUE));
         break;
         
 #if CcDebug == 1
@@ -2259,17 +2297,17 @@ static void cpOp01(CpuContext *activeCpu)
         }
     }
 
-static void cpOp02(CpuContext *activeCpu)
+static void cpOp02(CPUVARG)
     {
     /*
     **  JP  Bi+K
     */
     activeCpu->regP = cpuAdd18(activeCpu->regB[activeCpu->opI], activeCpu->opAddress);
-    activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+    activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
     activeCpu->opOffset = 60;
     }
 
-static void cpOp03(CpuContext *activeCpu)
+static void cpOp03(CPUVARG)
     {
     bool jump = FALSE;
     CpWord acc60;
@@ -2340,12 +2378,12 @@ static void cpOp03(CpuContext *activeCpu)
     if (jump)
         {
         activeCpu->regP = activeCpu->opAddress;
-        activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+        activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
         activeCpu->opOffset = 60;
         }
     }
 
-static void cpOp04(CpuContext *activeCpu)
+static void cpOp04(CPUVARG)
     {
     /*
     **  EQ  Bi Bj K
@@ -2353,12 +2391,12 @@ static void cpOp04(CpuContext *activeCpu)
     if (activeCpu->regB[activeCpu->opI] == activeCpu->regB[activeCpu->opJ])
         {
         activeCpu->regP = activeCpu->opAddress;
-        activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+        activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
         activeCpu->opOffset = 60;
         }
     }
 
-static void cpOp05(CpuContext *activeCpu)
+static void cpOp05(CPUVARG)
     {
     /*
     **  NE  Bi Bj K
@@ -2366,12 +2404,12 @@ static void cpOp05(CpuContext *activeCpu)
     if (activeCpu->regB[activeCpu->opI] != activeCpu->regB[activeCpu->opJ])
         {
         activeCpu->regP = activeCpu->opAddress;
-        activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+        activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
         activeCpu->opOffset = 60;
         }
     }
 
-static void cpOp06(CpuContext *activeCpu)
+static void cpOp06(CPUVARG)
     {
     /*
     **  GE  Bi Bj K
@@ -2398,11 +2436,11 @@ static void cpOp06(CpuContext *activeCpu)
         }
 
     activeCpu->regP = activeCpu->opAddress;
-    activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+    activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
     activeCpu->opOffset = 60;
     }
 
-static void cpOp07(CpuContext *activeCpu)
+static void cpOp07(CPUVARG)
     {
     /*
     **  LT  Bi Bj K
@@ -2430,11 +2468,11 @@ static void cpOp07(CpuContext *activeCpu)
         }
 
     activeCpu->regP = activeCpu->opAddress;
-    activeCpu->cpuStopped = cpuFetchOpWord(activeCpu, activeCpu->regP, &activeCpu->opWord);
+    activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
     activeCpu->opOffset = 60;
     }
 
-static void cpOp10(CpuContext *activeCpu)
+static void cpOp10(CPUVARG)
     {
     /*
     **  BXi Xj
@@ -2442,7 +2480,7 @@ static void cpOp10(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = activeCpu->regX[activeCpu->opJ] & Mask60;
     }
 
-static void cpOp11(CpuContext *activeCpu)
+static void cpOp11(CPUVARG)
     {
     /*
     **  BXi Xj*Xk
@@ -2450,7 +2488,7 @@ static void cpOp11(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = (activeCpu->regX[activeCpu->opJ] & activeCpu->regX[activeCpu->opK]) & Mask60;
     }
 
-static void cpOp12(CpuContext *activeCpu)
+static void cpOp12(CPUVARG)
     {
     /*
     **  BXi Xj+Xk
@@ -2458,7 +2496,7 @@ static void cpOp12(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = (activeCpu->regX[activeCpu->opJ] | activeCpu->regX[activeCpu->opK]) & Mask60;
     }
 
-static void cpOp13(CpuContext *activeCpu)
+static void cpOp13(CPUVARG)
     {
     /*
     **  BXi Xj-Xk
@@ -2466,7 +2504,7 @@ static void cpOp13(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = (activeCpu->regX[activeCpu->opJ] ^ activeCpu->regX[activeCpu->opK]) & Mask60;
     }
 
-static void cpOp14(CpuContext *activeCpu)
+static void cpOp14(CPUVARG)
     {
     /*
     **  BXi -Xj
@@ -2474,7 +2512,7 @@ static void cpOp14(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = ~activeCpu->regX[activeCpu->opK] & Mask60;
     }
 
-static void cpOp15(CpuContext *activeCpu)
+static void cpOp15(CPUVARG)
     {
     /*
     **  BXi -Xk*Xj
@@ -2482,7 +2520,7 @@ static void cpOp15(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = (activeCpu->regX[activeCpu->opJ] & ~activeCpu->regX[activeCpu->opK]) & Mask60;
     }
 
-static void cpOp16(CpuContext *activeCpu)
+static void cpOp16(CPUVARG)
     {
     /*
     **  BXi -Xk+Xj
@@ -2490,7 +2528,7 @@ static void cpOp16(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = (activeCpu->regX[activeCpu->opJ] | ~activeCpu->regX[activeCpu->opK]) & Mask60;
     }
 
-static void cpOp17(CpuContext *activeCpu)
+static void cpOp17(CPUVARG)
     {
     /*
     **  BXi -Xk-Xj
@@ -2498,7 +2536,7 @@ static void cpOp17(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = (activeCpu->regX[activeCpu->opJ] ^ ~activeCpu->regX[activeCpu->opK]) & Mask60;
     }
 
-static void cpOp20(CpuContext *activeCpu)
+static void cpOp20(CPUVARG)
     {
     /*
     **  LXi jk
@@ -2509,7 +2547,7 @@ static void cpOp20(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = shiftLeftCircular(activeCpu->regX[activeCpu->opI] & Mask60, jk);
     }
 
-static void cpOp21(CpuContext *activeCpu)
+static void cpOp21(CPUVARG)
     {
     /*
     **  AXi jk
@@ -2520,7 +2558,7 @@ static void cpOp21(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = shiftRightArithmetic(activeCpu->regX[activeCpu->opI] & Mask60, jk);
     }
 
-static void cpOp22(CpuContext *activeCpu)
+static void cpOp22(CPUVARG)
     {
     /*
     **  LXi Bj Xk
@@ -2551,7 +2589,7 @@ static void cpOp22(CpuContext *activeCpu)
         }
     }
 
-static void cpOp23(CpuContext *activeCpu)
+static void cpOp23(CPUVARG)
     {
     /*
     **  AXi Bj Xk
@@ -2582,7 +2620,7 @@ static void cpOp23(CpuContext *activeCpu)
         }
     }
 
-static void cpOp24(CpuContext *activeCpu)
+static void cpOp24(CPUVARG)
     {
     /*
     **  NXi Bj Xk
@@ -2590,7 +2628,7 @@ static void cpOp24(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = shiftNormalize(activeCpu->regX[activeCpu->opK], &activeCpu->regB[activeCpu->opJ], FALSE);
     }
 
-static void cpOp25(CpuContext *activeCpu)
+static void cpOp25(CPUVARG)
     {
     /*
     **  ZXi Bj Xk
@@ -2598,7 +2636,7 @@ static void cpOp25(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = shiftNormalize(activeCpu->regX[activeCpu->opK], &activeCpu->regB[activeCpu->opJ], TRUE);
     }
 
-static void cpOp26(CpuContext *activeCpu)
+static void cpOp26(CPUVARG)
     {
     /*
     **  UXi Bj Xk
@@ -2613,7 +2651,7 @@ static void cpOp26(CpuContext *activeCpu)
         }
     }
 
-static void cpOp27(CpuContext *activeCpu)
+static void cpOp27(CPUVARG)
     {
     /*
     **  PXi Bj Xk
@@ -2628,7 +2666,7 @@ static void cpOp27(CpuContext *activeCpu)
         }
     }
 
-static void cpOp30(CpuContext *activeCpu)
+static void cpOp30(CPUVARG)
     {
     /*
     **  FXi Xj+Xk
@@ -2636,7 +2674,7 @@ static void cpOp30(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = floatAdd(activeCpu->regX[activeCpu->opJ], activeCpu->regX[activeCpu->opK], FALSE, FALSE);
     }
 
-static void cpOp31(CpuContext *activeCpu)
+static void cpOp31(CPUVARG)
     {
     /*
     **  FXi Xj-Xk
@@ -2644,7 +2682,7 @@ static void cpOp31(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = floatAdd(activeCpu->regX[activeCpu->opJ], (~activeCpu->regX[activeCpu->opK] & Mask60), FALSE, FALSE);
     }
 
-static void cpOp32(CpuContext *activeCpu)
+static void cpOp32(CPUVARG)
     {
     /*
     **  DXi Xj+Xk
@@ -2652,7 +2690,7 @@ static void cpOp32(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = floatAdd(activeCpu->regX[activeCpu->opJ], activeCpu->regX[activeCpu->opK], FALSE, TRUE);
     }
 
-static void cpOp33(CpuContext *activeCpu)
+static void cpOp33(CPUVARG)
     {
     /*
     **  DXi Xj-Xk
@@ -2660,7 +2698,7 @@ static void cpOp33(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = floatAdd(activeCpu->regX[activeCpu->opJ], (~activeCpu->regX[activeCpu->opK] & Mask60), FALSE, TRUE);
     }
 
-static void cpOp34(CpuContext *activeCpu)
+static void cpOp34(CPUVARG)
     {
     /*
     **  RXi Xj+Xk
@@ -2668,7 +2706,7 @@ static void cpOp34(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = floatAdd(activeCpu->regX[activeCpu->opJ], activeCpu->regX[activeCpu->opK], TRUE, FALSE);
     }
 
-static void cpOp35(CpuContext *activeCpu)
+static void cpOp35(CPUVARG)
     {
     /*
     **  RXi Xj-Xk
@@ -2676,7 +2714,7 @@ static void cpOp35(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = floatAdd(activeCpu->regX[activeCpu->opJ], (~activeCpu->regX[activeCpu->opK] & Mask60), TRUE, FALSE);
     }
 
-static void cpOp36(CpuContext *activeCpu)
+static void cpOp36(CPUVARG)
     {
     /*
     **  IXi Xj+Xk
@@ -2692,7 +2730,7 @@ static void cpOp36(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = acc60 & Mask60;
     }
 
-static void cpOp37(CpuContext *activeCpu)
+static void cpOp37(CPUVARG)
     {
     /*
     **  IXi Xj-Xk
@@ -2708,7 +2746,7 @@ static void cpOp37(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = acc60 & Mask60;
     }
 
-static void cpOp40(CpuContext *activeCpu)
+static void cpOp40(CPUVARG)
     {
     /*
     **  FXi Xj*Xk
@@ -2716,7 +2754,7 @@ static void cpOp40(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = floatMultiply(activeCpu->regX[activeCpu->opJ], activeCpu->regX[activeCpu->opK], FALSE, FALSE);
     }
 
-static void cpOp41(CpuContext *activeCpu)
+static void cpOp41(CPUVARG)
     {
     /*
     **  RXi Xj*Xk
@@ -2724,7 +2762,7 @@ static void cpOp41(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = floatMultiply(activeCpu->regX[activeCpu->opJ], activeCpu->regX[activeCpu->opK], TRUE, FALSE);
     }
 
-static void cpOp42(CpuContext *activeCpu)
+static void cpOp42(CPUVARG)
     {
     /*
     **  DXi Xj*Xk
@@ -2732,7 +2770,7 @@ static void cpOp42(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = floatMultiply(activeCpu->regX[activeCpu->opJ], activeCpu->regX[activeCpu->opK], FALSE, TRUE);
     }
 
-static void cpOp43(CpuContext *activeCpu)
+static void cpOp43(CPUVARG)
     {
     /*
     **  MXi jk
@@ -2743,7 +2781,7 @@ static void cpOp43(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = shiftMask(jk);
     }
 
-static void cpOp44(CpuContext *activeCpu)
+static void cpOp44(CPUVARG)
     {
     /*
     **  FXi Xj/Xk
@@ -2751,7 +2789,7 @@ static void cpOp44(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = floatDivide(activeCpu->regX[activeCpu->opJ], activeCpu->regX[activeCpu->opK], FALSE);
     }
 
-static void cpOp45(CpuContext *activeCpu)
+static void cpOp45(CPUVARG)
     {
     /*
     **  RXi Xj/Xk
@@ -2759,7 +2797,7 @@ static void cpOp45(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = floatDivide(activeCpu->regX[activeCpu->opJ], activeCpu->regX[activeCpu->opK], TRUE);
     }
 
-static void cpOp46(CpuContext *activeCpu)
+static void cpOp46(CPUVARG)
     {
     switch (activeCpu->opI)
         {
@@ -2792,34 +2830,34 @@ static void cpOp46(CpuContext *activeCpu)
         /*
         **  Move indirect.
         */
-        cpuCmuMoveIndirect(activeCpu);
+        cpuCmuMoveIndirect(CPUARG);
         break;
 
     case 5:
         /*
         **  Move direct.
         */
-        cpuCmuMoveDirect(activeCpu);
+        cpuCmuMoveDirect(CPUARG);
         break;
 
     case 6:
         /*
         **  Compare collated.
         */
-        cpuCmuCompareCollated(activeCpu);
+        cpuCmuCompareCollated(CPUARG);
         break;
 
     case 7:
         /*
         **  Compare uncollated.
         */
-        cpuCmuCompareUncollated(activeCpu);
+        cpuCmuCompareUncollated(CPUARG);
         break;
         }
 #endif
     }
 
-static void cpOp47(CpuContext *activeCpu)
+static void cpOp47(CPUVARG)
     {
     /*
     **  CXi Xk
@@ -2842,87 +2880,87 @@ static void cpOp47(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = acc60 & Mask60;
     }
 
-static void cpOp50(CpuContext *activeCpu)
+static void cpOp50(CPUVARG)
     {
     /*
     **  SAi Aj+K
     */
     activeCpu->regA[activeCpu->opI] = cpuAdd18(activeCpu->regA[activeCpu->opJ], activeCpu->opAddress);
 
-    cpuRegASemantics (activeCpu);
+    cpuRegASemantics (CPUARG);
     }
 
-static void cpOp51(CpuContext *activeCpu)
+static void cpOp51(CPUVARG)
     {
     /*
     **  SAi Bj+K
     */
     activeCpu->regA[activeCpu->opI] = cpuAdd18(activeCpu->regB[activeCpu->opJ],  activeCpu->opAddress);
 
-    cpuRegASemantics (activeCpu);
+    cpuRegASemantics (CPUARG);
     }
 
-static void cpOp52(CpuContext *activeCpu)
+static void cpOp52(CPUVARG)
     {
     /*
     **  SAi Xj+K
     */
     activeCpu->regA[activeCpu->opI] = cpuAdd18((u32)activeCpu->regX[activeCpu->opJ], activeCpu->opAddress);
 
-    cpuRegASemantics (activeCpu);
+    cpuRegASemantics (CPUARG);
     }
 
-static void cpOp53(CpuContext *activeCpu)
+static void cpOp53(CPUVARG)
     {
     /*
     **  SAi Xj+Bk
     */
     activeCpu->regA[activeCpu->opI] = cpuAdd18((u32)activeCpu->regX[activeCpu->opJ], activeCpu->regB[activeCpu->opK]);
 
-    cpuRegASemantics (activeCpu);
+    cpuRegASemantics (CPUARG);
     }
 
-static void cpOp54(CpuContext *activeCpu)
+static void cpOp54(CPUVARG)
     {
     /*
     **  SAi Aj+Bk
     */
     activeCpu->regA[activeCpu->opI] = cpuAdd18(activeCpu->regA[activeCpu->opJ], activeCpu->regB[activeCpu->opK]);
 
-    cpuRegASemantics (activeCpu);
+    cpuRegASemantics (CPUARG);
     }
 
-static void cpOp55(CpuContext *activeCpu)
+static void cpOp55(CPUVARG)
     {
     /*
     **  SAi Aj-Bk
     */
     activeCpu->regA[activeCpu->opI] = cpuSubtract18(activeCpu->regA[activeCpu->opJ], activeCpu->regB[activeCpu->opK]);
 
-    cpuRegASemantics (activeCpu);
+    cpuRegASemantics (CPUARG);
     }
 
-static void cpOp56(CpuContext *activeCpu)
+static void cpOp56(CPUVARG)
     {
     /*
     **  SAi Bj+Bk
     */
     activeCpu->regA[activeCpu->opI] = cpuAdd18(activeCpu->regB[activeCpu->opJ], activeCpu->regB[activeCpu->opK]);
 
-    cpuRegASemantics (activeCpu);
+    cpuRegASemantics (CPUARG);
     }
 
-static void cpOp57(CpuContext *activeCpu)
+static void cpOp57(CPUVARG)
     {
     /*
     **  SAi Bj-Bk
     */
     activeCpu->regA[activeCpu->opI] = cpuSubtract18(activeCpu->regB[activeCpu->opJ], activeCpu->regB[activeCpu->opK]);
 
-    cpuRegASemantics (activeCpu);
+    cpuRegASemantics (CPUARG);
     }
 
-static void cpOp60(CpuContext *activeCpu)
+static void cpOp60(CPUVARG)
     {
     /*
     **  SBi Aj+K
@@ -2930,7 +2968,7 @@ static void cpOp60(CpuContext *activeCpu)
     activeCpu->regB[activeCpu->opI] = cpuAdd18(activeCpu->regA[activeCpu->opJ], activeCpu->opAddress);
     }
 
-static void cpOp61(CpuContext *activeCpu)
+static void cpOp61(CPUVARG)
     {
     /*
     **  SBi Bj+K
@@ -2938,7 +2976,7 @@ static void cpOp61(CpuContext *activeCpu)
     activeCpu->regB[activeCpu->opI] = cpuAdd18(activeCpu->regB[activeCpu->opJ], activeCpu->opAddress);
     }
 
-static void cpOp62(CpuContext *activeCpu)
+static void cpOp62(CPUVARG)
     {
     /*
     **  SBi Xj+K
@@ -2946,7 +2984,7 @@ static void cpOp62(CpuContext *activeCpu)
     activeCpu->regB[activeCpu->opI] = cpuAdd18((u32)activeCpu->regX[activeCpu->opJ], activeCpu->opAddress);
     }
 
-static void cpOp63(CpuContext *activeCpu)
+static void cpOp63(CPUVARG)
     {
     /*
     **  SBi Xj+Bk
@@ -2954,7 +2992,7 @@ static void cpOp63(CpuContext *activeCpu)
     activeCpu->regB[activeCpu->opI] = cpuAdd18((u32)activeCpu->regX[activeCpu->opJ], activeCpu->regB[activeCpu->opK]);
     }
 
-static void cpOp64(CpuContext *activeCpu)
+static void cpOp64(CPUVARG)
     {
     /*
     **  SBi Aj+Bk
@@ -2962,7 +3000,7 @@ static void cpOp64(CpuContext *activeCpu)
     activeCpu->regB[activeCpu->opI] = cpuAdd18(activeCpu->regA[activeCpu->opJ], activeCpu->regB[activeCpu->opK]);
     }
 
-static void cpOp65(CpuContext *activeCpu)
+static void cpOp65(CPUVARG)
     {
     /*
     **  SBi Aj-Bk
@@ -2970,7 +3008,7 @@ static void cpOp65(CpuContext *activeCpu)
     activeCpu->regB[activeCpu->opI] = cpuSubtract18(activeCpu->regA[activeCpu->opJ], activeCpu->regB[activeCpu->opK]);
     }
 
-static void cpOp66(CpuContext *activeCpu)
+static void cpOp66(CPUVARG)
     {
     /*
     **  SBi Bj+Bk
@@ -2978,7 +3016,7 @@ static void cpOp66(CpuContext *activeCpu)
     activeCpu->regB[activeCpu->opI] = cpuAdd18(activeCpu->regB[activeCpu->opJ], activeCpu->regB[activeCpu->opK]);
     }
 
-static void cpOp67(CpuContext *activeCpu)
+static void cpOp67(CPUVARG)
     {
     /*
     **  SBi Bj-Bk
@@ -2986,7 +3024,7 @@ static void cpOp67(CpuContext *activeCpu)
     activeCpu->regB[activeCpu->opI] = cpuSubtract18(activeCpu->regB[activeCpu->opJ], activeCpu->regB[activeCpu->opK]);
     }
 
-static void cpOp70(CpuContext *activeCpu)
+static void cpOp70(CPUVARG)
     {
     /*
     **  SXi Aj+K
@@ -3003,7 +3041,7 @@ static void cpOp70(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = acc60 & Mask60;
     }
 
-static void cpOp71(CpuContext *activeCpu)
+static void cpOp71(CPUVARG)
     {
     /*
     **  SXi Bj+K
@@ -3020,7 +3058,7 @@ static void cpOp71(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = acc60 & Mask60;
     }
 
-static void cpOp72(CpuContext *activeCpu)
+static void cpOp72(CPUVARG)
     {
     /*
     **  SXi Xj+K
@@ -3037,7 +3075,7 @@ static void cpOp72(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = acc60 & Mask60;
     }
 
-static void cpOp73(CpuContext *activeCpu)
+static void cpOp73(CPUVARG)
     {
     /*
     **  SXi Xj+Bk
@@ -3054,7 +3092,7 @@ static void cpOp73(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = acc60 & Mask60;
     }
 
-static void cpOp74(CpuContext *activeCpu)
+static void cpOp74(CPUVARG)
     {
     /*
     **  SXi Aj+Bk
@@ -3071,7 +3109,7 @@ static void cpOp74(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = acc60 & Mask60;
     }
 
-static void cpOp75(CpuContext *activeCpu)
+static void cpOp75(CPUVARG)
     {
     /*
     **  SXi Aj-Bk
@@ -3089,7 +3127,7 @@ static void cpOp75(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = acc60 & Mask60;
     }
 
-static void cpOp76(CpuContext *activeCpu)
+static void cpOp76(CPUVARG)
     {
     /*
     **  SXi Bj+Bk
@@ -3106,7 +3144,7 @@ static void cpOp76(CpuContext *activeCpu)
     activeCpu->regX[activeCpu->opI] = acc60 & Mask60;
     }
 
-static void cpOp77(CpuContext *activeCpu)
+static void cpOp77(CPUVARG)
     {
     /*
     **  SXi Bj-Bk

@@ -59,7 +59,6 @@ void cpuInit(char *model, u32 cpus, u32 memory, u32 ecsBanks, char *cmFile, char
 void cpuExit(void);
 u32 cpuGetP(u8 cpnum);
 void cpuStepAll(void);
-void cpuStep(CpuContext *activeCpu);
 bool cpuPpReadMem(u32 address, CpWord *data);
 void cpuPpWriteMem(u32 address, CpWord data);
 bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs);
@@ -279,7 +278,7 @@ extern PpSlot *activePpu;
 extern ChSlot *activeChannel;
 extern DevSlot *activeDevice;
 extern DevSlot *active3000Device;
-extern CpuContext *cpu;
+extern CpuContext cpu[];
 extern u8 cpuCount;
 extern volatile int monitorCpu;
 extern volatile int exchangeCpu;
