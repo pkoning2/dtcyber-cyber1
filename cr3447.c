@@ -417,7 +417,7 @@ static void cr3447Load(DevSlot *up, int eqNo, char *fn)
     FILE *fcb;
     static char msgBuf[80];
     
-    cc = (CrContext *) (up->context);
+    cc = (CrContext *) (up->context[0]);
 
     if (up->fcb[0] != NULL)
         fclose (up->fcb[0]);

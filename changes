@@ -261,3 +261,6 @@ Since jan21 2004 drop:
 - Added "true" keyboard emulation for Win32 (may not be quite right yet?)
 - Fix exit handling for pterm window for Win32.
 - More corrections to "true" keyboard handling, still needs work...
+- True keyboard handling now appears to work correctly on both platforms.
+- Fixed crash in cr3447.c (also change to operator.c)
+- Added dd8xxcvt.c

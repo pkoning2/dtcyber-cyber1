@@ -363,7 +363,7 @@ static void lp3000Load(DevSlot *up, int eqNo, char *fn)
 
     if (fn != NULL)
         {
-        opSetMsg ("$LOAD NOT SUPPORTED ON LP3000");
+        opSetMsg ("$LOAD NOT SUPPORTED ON LP5xx");
         return;
         }
     
@@ -375,13 +375,13 @@ static void lp3000Load(DevSlot *up, int eqNo, char *fn)
     up->fcb[0] = NULL;
 
     /*
-    **  Rename the device file to the format "LP3000_yyyymmdd_hhmmss".
+    **  Rename the device file to the format "LP5xx_yyyymmdd_hhmmss".
     */
     sprintf(fname, "LP5xx_C%02o_E%o", up->channel->id, up->eqNo);
 
     time(&currentTime);
     t = *localtime(&currentTime);
-    sprintf(fnameNew, "LP3000_%04d%02d%02d_%02d%02d%02d",
+    sprintf(fnameNew, "LP5xx_%04d%02d%02d_%02d%02d%02d",
         t.tm_year + 1900,
         t.tm_mon + 1,
         t.tm_mday,
@@ -417,7 +417,7 @@ static void lp3000Load(DevSlot *up, int eqNo, char *fn)
     **  Setup status.
     */
     up->fcb[0] = fcb;
-    sprintf (msgBuf, "LP3000 unloaded to %s", fnameNew);
+    sprintf (msgBuf, "LP5xx unloaded to %s", fnameNew);
     opSetMsg (msgBuf);
     }
 

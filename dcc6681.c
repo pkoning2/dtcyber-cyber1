@@ -282,12 +282,6 @@ static FcStatus dcc6681Func(PpWord funcCode)
         return(FcDeclined);
         }
 
-    // If not selected, we recognize only a select
-    if (!mp->selected && funcCode != Fc6681Select)
-        {
-        return(FcDeclined);
-        }
-    
     switch (funcCode)
         {
     case Fc6681Select:
@@ -385,15 +379,12 @@ static FcStatus dcc6681Func(PpWord funcCode)
             mp->status = StFc6681IntReject;
             return(FcProcessed);
             }
-        mp->status = StFc6681Ready;
-        return(FcProcessed);
 
         active3000Device = mp->device3000[e];
         funcCode &= Fc6681ConnectFuncMask;
         (active3000Device->func) (funcCode);
         mp->status = StFc6681Ready;
         return(FcProcessed);
-
         }
 
     mp->status = StFc6681IntReject;
@@ -530,6 +521,7 @@ static void dcc6681Load(DevSlot *dp, int eqNo, char *fn)
         opSetMsg ("$LOAD/UNLOAD NOT SUPPORTED ON EQUIPMENT");
         return;
         }
+    active3000Device = device;
     (device->load)(device, eqNo, fn);
     }
 
