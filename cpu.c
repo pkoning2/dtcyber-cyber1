@@ -91,7 +91,7 @@ static void cpuCmuMoveIndirect(CpuContext *activeCpu);
 static void cpuCmuMoveDirect(CpuContext *activeCpu);
 static void cpuCmuCompareCollated(CpuContext *activeCpu);
 static void cpuCmuCompareUncollated(CpuContext *activeCpu);
-#if CcDebug == 1
+#if DebugOps == 1
 static void cpuTraceCtl(CpuContext *activeCpu);
 #endif
 static void cpuExchangeJump(CpuContext *activeCpu);
@@ -990,10 +990,12 @@ void cpuStep(CpuContext *activeCpu)
                 {
                 traceCpu(activeCpu, oldRegP, activeCpu->opFm, activeCpu->opI, activeCpu->opJ, activeCpu->opK, activeCpu->opAddress);
                 }
+#if DebugOps == 1
             if (activeCpu->opFm == 061 && activeCpu->opI == 0 && activeCpu->opJ != 0)
                 {
                 cpuTraceCtl (activeCpu);
                 }
+#endif
             }
 #endif
 
@@ -1229,9 +1231,13 @@ void cpuExchangeJump(CpuContext *activeCpu)
 **      sb0 b1+76   turn off CPU tracing.
 **      sb0 b2+K    turn on CPU tracing (any CP) for K cycles.
 **
+**  These things are controlled by a separate conditional compile, not
+**  the usual CcDebug one, because it's not fully debugged and also
+**  because it may (?) be falsely triggered by some 180 series opcodes.
+**
 **------------------------------------------------------------------------
 */
-#if CcDebug == 1
+#if DebugOps == 1
 static void cpuTraceCtl (CpuContext *activeCpu)
     {
     if (activeCpu->opJ == 1 && activeCpu->opAddress == 000042)

@@ -1076,7 +1076,7 @@ static void ppOpPSN(void)     // 00
     /*
     **  Do nothing.
     */
-#if CcDebug == 1
+#if DebugOps == 1
     /*
     **  For tracing under program control, a PSN opcode of 2542 
     **  turns on tracing for this PPU, and 2576 turns it off.
