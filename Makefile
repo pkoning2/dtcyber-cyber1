@@ -9,18 +9,20 @@
 #
 #--------------------------------------------------------------------------
 
-HOST = $(shell uname)
+HOST := $(shell uname)
 
 LIBS    = -lm -lX11 -lpthread
-LDFLAGS = -g2 -L/usr/X11R6/lib -L/usr/local/lib
+LDFLAGS = -g2 -L/usr/X11R6/lib
 INCL    = -I/usr/X11R6/include -I/usr/local/include
 
-ifeq ($(HOST),"darwin")
+ifeq ("$(HOST)","Darwin")
 LIBS    +=  /System/Library/Frameworks/Carbon.framework/Carbon
 INCL    += -I/System/Library/Frameworks/Carbon.framework/Headers
 G5CFLAGS = -mcpu=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64 -DCPU_THREADS
 G4CFLAGS = -mcpu=G4 -mtune=G4
 G3CFLAGS = -mcpu=G3 -mtune=G3
+else
+LDFLAGS +=  -L/usr/local/lib
 endif
 
 CDEBUG = -DCcDebug=1
@@ -45,18 +47,18 @@ all: dtcyber fonts pterm
 
 fonts: $(PCFS)
 
-ifeq ($(HOST),"darwin")
+ifeq ("$(HOST)","Darwin")
 dtcyber:
 	mkdir -p g3; \
 	cd g3; \
 	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS)" VPATH=..
-	mkdir -p g4; \
-	cd g4; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G4CFLAGS)" VPATH=..
+#	mkdir -p g4; \
+#	cd g4; \
+#	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G4CFLAGS)" VPATH=..
 	mkdir -p g5; \
 	cd g5; \
 	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS)" VPATH=..
-	lipo -create -output dtcyber g3/gxdtcyber g4/gxdtcyber g5/gxdtcyber
+	lipo -create -output dtcyber g3/gxdtcyber g5/gxdtcyber
 
 gxdtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
