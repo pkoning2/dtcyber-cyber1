@@ -297,9 +297,9 @@ static OpDispatch decodeCpuOpcode[] =
 static INLINE bool cpuReadMem(CpuContext *activeCpu,
                               u32 address, CpWord *data)
     {
-    u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm);
+    u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm) & cpuMemMask;
     
-    if (address >= activeCpu->regFlCm || activeCpu->regRaCm + address >= cpuMaxMemory)
+    if (address >= activeCpu->regFlCm)
         {
         activeCpu->exitCondition |= EcAddressOutOfRange;
         if ((activeCpu->exitMode & EmAddressOutOfRange) != 0)
@@ -319,7 +319,8 @@ static INLINE bool cpuReadMem(CpuContext *activeCpu,
             }
         else
             {
-            address = 0;
+            // out of range address and exit not selected is a NOP
+            return(FALSE);
             }
         }
 
@@ -341,9 +342,9 @@ static INLINE bool cpuReadMem(CpuContext *activeCpu,
 static INLINE bool cpuWriteMem(CpuContext *activeCpu, 
                                u32 address, CpWord *data)
     {
-    u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm);
+    u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm) & cpuMemMask;
     
-    if (address >= activeCpu->regFlCm || activeCpu->regRaCm + address >= cpuMaxMemory)
+    if (address >= activeCpu->regFlCm)
         {
         activeCpu->exitCondition |= EcAddressOutOfRange;
         if ((activeCpu->exitMode & EmAddressOutOfRange) != 0)
@@ -562,7 +563,7 @@ int cpuIssueExchange(u8 cp, u32 addr, bool monitor)
 bool cpuPpReadMem(u32 address, CpWord *data)
     {
     address %= cpuMaxMemory;
-    *data = cpMem[address] & Mask60;
+    *data = cpMem[address & cpuMemMask] & Mask60;
     return(TRUE);
     }
 
@@ -580,7 +581,7 @@ bool cpuPpReadMem(u32 address, CpWord *data)
 void cpuPpWriteMem(u32 address, CpWord data)
     {
     address %= cpuMaxMemory;
-    cpMem[address] = data & Mask60;
+    cpMem[address & cpuMemMask] = data & Mask60;
     }
 
 /*--------------------------------------------------------------------------
@@ -1334,7 +1335,7 @@ static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs)
     /*
     **  Add base addresses.
     */
-    cmAddress += activeCpu->regRaCm;
+    cmAddress = cpuAdd18 (cmAddress, activeCpu->regRaCm);
     ecsAddress += activeCpu->regRaEcs;
 
     /*
@@ -1343,7 +1344,7 @@ static void cpuEcsTransfer(CpuContext *activeCpu, bool writeToEcs)
 
     while (wordCount--)
         {
-        cmAddress  %= cpuMaxMemory;
+        cmAddress  &= cpuMemMask;
         takeErrorExit = cpuEcsAccess (ecsAddress, cpMem + cmAddress, writeToEcs);
         if (takeErrorExit && writeToEcs)
             {
@@ -1385,11 +1386,12 @@ static bool cpuCmuGetByte(CpuContext *activeCpu,
                           u32 address, u32 pos, u8 *byte)
     {
     CpWord data;
+    u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm) & cpuMemMask;
 
     /*
     **  Validate access.
     */
-    if (address >= activeCpu->regFlCm || activeCpu->regRaCm + address >= cpuMaxMemory)
+    if (address >= activeCpu->regFlCm)
         {
         activeCpu->exitCondition |= EcAddressOutOfRange;
         if ((activeCpu->exitMode & EmAddressOutOfRange) != 0)
@@ -1413,7 +1415,7 @@ static bool cpuCmuGetByte(CpuContext *activeCpu,
     /*
     **  Fetch the word.
     */
-    data = cpMem[activeCpu->regRaCm + address] & Mask60;
+    data = cpMem[absAddr] & Mask60;
 
     /*
     **  Extract and return the byte.
@@ -1438,11 +1440,12 @@ static bool cpuCmuGetByte(CpuContext *activeCpu,
 static bool cpuCmuPutByte(CpuContext *activeCpu, u32 address, u32 pos, u8 byte)
     {
     CpWord data;
+    u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm) & cpuMemMask;
 
     /*
     **  Validate access.
     */
-    if (address >= activeCpu->regFlCm || activeCpu->regRaCm + address >= cpuMaxMemory)
+    if (address >= activeCpu->regFlCm)
         {
         activeCpu->exitCondition |= EcAddressOutOfRange;
         if ((activeCpu->exitMode & EmAddressOutOfRange) != 0)
@@ -1466,7 +1469,7 @@ static bool cpuCmuPutByte(CpuContext *activeCpu, u32 address, u32 pos, u8 byte)
     /*
     **  Fetch the word.
     */
-    data = cpMem[activeCpu->regRaCm + address] & Mask60;
+    data = cpMem[absAddr] & Mask60;
 
     /*
     **  Mask the destination position.
@@ -1481,7 +1484,7 @@ static bool cpuCmuPutByte(CpuContext *activeCpu, u32 address, u32 pos, u8 byte)
     /*
     **  Store the word.
     */
-    cpMem[activeCpu->regRaCm + address] = data & Mask60;
+    cpMem[absAddr] = data & Mask60;
 
     return(FALSE);
     }
