@@ -92,6 +92,12 @@ dep:	pterm.d $(SOBJS:.o=.d) $(OBJS:.o=.d)
 Makefile.pterm:
 	ln -s ../Makefile.pterm .
 
+Makefile.dd60:
+	ln -s ../Makefile.dd60 .
+
+Makefile.dtoper:
+	ln -s ../Makefile.dtoper .
+
 include  $(OBJS:.o=.d)
 
 #---------------------------  End Of File  --------------------------------
