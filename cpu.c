@@ -297,6 +297,8 @@ static OpDispatch decodeCpuOpcode[] =
 static INLINE bool cpuReadMem(CpuContext *activeCpu,
                               u32 address, CpWord *data)
     {
+    u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm);
+    
     if (address >= activeCpu->regFlCm || activeCpu->regRaCm + address >= cpuMaxMemory)
         {
         activeCpu->exitCondition |= EcAddressOutOfRange;
@@ -321,7 +323,7 @@ static INLINE bool cpuReadMem(CpuContext *activeCpu,
             }
         }
 
-    *data = cpMem[activeCpu->regRaCm + address] & Mask60;
+    *data = cpMem[absAddr] & Mask60;
 
     return(FALSE);
     }
@@ -339,6 +341,8 @@ static INLINE bool cpuReadMem(CpuContext *activeCpu,
 static INLINE bool cpuWriteMem(CpuContext *activeCpu, 
                                u32 address, CpWord *data)
     {
+    u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm);
+    
     if (address >= activeCpu->regFlCm || activeCpu->regRaCm + address >= cpuMaxMemory)
         {
         activeCpu->exitCondition |= EcAddressOutOfRange;
@@ -360,7 +364,7 @@ static INLINE bool cpuWriteMem(CpuContext *activeCpu,
         return(FALSE);
         }
 
-    cpMem[activeCpu->regRaCm + address] = *data & Mask60;
+    cpMem[absAddr] = *data & Mask60;
 
     return(FALSE);
     }

@@ -226,3 +226,6 @@ Since jan21 2004 drop:
 - Added support for original (644 bytes per cyber sector) 844 container
   file format.  To get that, add ",old" after the container file name
   in the cyber.ini file entries.
+- Fix cpuReadMem and cpuWriteMem to use cpuAdd18 for adding in RA.
+  Now EJT no longer complains about P + RA adder being broken.
+  Thanks Gerard!
