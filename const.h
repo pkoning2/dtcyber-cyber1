@@ -110,6 +110,7 @@
 
 #define RefreshInterval         ULL(100000)  /* microseconds */
 
+#define TraceEcs                (1 << 28)
 #define TraceCpu0               (1 << 29)
 #define TraceCpu1               (TraceCpu0 << 1)
 #define TraceCpu(n)             (TraceCpu0 << (n))

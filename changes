@@ -232,3 +232,9 @@ Since jan21 2004 drop:
 - Fix TRACE,CPUxx. command to accept the argument as documented.
 - Change memory references to be modulo the CM size in all cases, so the 
   system acts as if the unused address wires are ignored.
+- Change pterm_x11.c to wrap character plotting around screen edges.
+- Added ECS tracing, keyboard control of CPU1 tracing.  ALT/J now toggles
+  XJ tracing (was ALT/E).  ALT/c toggle CPU0, ALT/SHIFT/C toggles CPU1 
+  tracing.  ALT/E toggles ECS tracing.  In the status display line,
+  J means XJ tracing is on, E means ECS tracing, c means CPU0 and C 
+  (capital C) means CPU1 tracing is on.

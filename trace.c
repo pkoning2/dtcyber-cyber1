@@ -412,8 +412,9 @@ void traceCpu(CpuContext *activeCpu,
     /*
     **  Bail out if no trace of the current CPU is requested.
     */
-    if (!((traceMask & TraceCpu (cpuNum)) != 0) ||
-        ((traceMask & TraceXj) != 0 && opFm == 01 && opI == 3))
+    if (!(((traceMask & TraceCpu (cpuNum)) != 0) ||
+          ((traceMask & TraceXj) != 0 && opFm == 01 && opI == 3) ||
+          ((traceMask & TraceEcs) != 0 && opFm == 01 && (opI == 1 || opI == 2))))
         {
         return;
         }
@@ -761,7 +762,7 @@ void traceCpu(CpuContext *activeCpu,
     if (decode == rjDecode && (opI == 1 || opI == 2))
         {
         // ECS read/write, show what memory was touched
-        dumpCpuMem (cpuTF[cpuNum], activeCpu->regA[0], activeCpu->regA[0] + activeCpu->regB[opJ] + opK);
+        dumpCpuMem (cpuTF[cpuNum], activeCpu->regA[0], activeCpu->regA[0] + activeCpu->regB[opJ] + opAddress);
         }
     }
 
@@ -1323,6 +1324,8 @@ static bool ppuTraced(void)
     // Note that we don't trace ACN/DCN and the status test branches.
     // If we're tracing exchanges and the next instruction is an exchange,
     // the answer is also yes.
+    // Finally, if we're tracing ECS, and the instruction is an I/O instruction
+    // for a DDP channel, the answer is yes.
     opCode = activePpu->mem[activePpu->regP];
     opF = opCode >> 6;
     opD = opCode & 037;                     // ignore NoHang bit
@@ -1334,6 +1337,13 @@ static bool ppuTraced(void)
         (opF >= 076))                       // FAN, FNC
         {
         if (chTraceMask & (ULL(1) << opD))
+            {
+            return TRUE;
+            }
+        if ((traceMask & TraceEcs) != 0 &&
+            opD < channelCount &&
+            channel[opD].firstDevice != NULL &&
+            channel[opD].firstDevice->devType == DtDdp)
             {
             return TRUE;
             }

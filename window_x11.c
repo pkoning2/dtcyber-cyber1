@@ -328,9 +328,11 @@ void windowInit(void)
     XRebindKeysym(disp, '8', modList, 1, "$8", 2);
     XRebindKeysym(disp, '9', modList, 1, "$9", 2);
     XRebindKeysym(disp, 'c', modList, 1, "$c", 2);
-    XRebindKeysym(disp, 'C', modList, 1, "$c", 2);
+    XRebindKeysym(disp, 'C', modList, 1, "$C", 2);
     XRebindKeysym(disp, 'e', modList, 1, "$e", 2);
     XRebindKeysym(disp, 'E', modList, 1, "$e", 2);
+    XRebindKeysym(disp, 'j', modList, 1, "$j", 2);
+    XRebindKeysym(disp, 'J', modList, 1, "$j", 2);
     XRebindKeysym(disp, 'x', modList, 1, "$x", 2);
     XRebindKeysym(disp, 'X', modList, 1, "$x", 2);
     XRebindKeysym(disp, 'o', modList, 1, "$o", 2);
@@ -905,12 +907,21 @@ static void windowInput(void)
                     break;
 
                 case 'c':
-                    /* *** TODO *** per CPU control */
-                    traceMask ^= TraceCpu0 | TraceCpu1;
+                    traceMask ^= TraceCpu0;
+                    traceStop ();
+                    break;
+
+                case 'C':
+                    traceMask ^= TraceCpu1;
                     traceStop ();
                     break;
 
                 case 'e':
+                    traceMask ^= TraceEcs;
+                    traceStop ();
+                    break;
+
+                case 'j':
                     traceMask ^= TraceXj;
                     traceStop ();
                     break;
@@ -1008,7 +1019,7 @@ static void showDisplay (void)
             }
             
         sprintf(buf + strlen(buf),
-                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
+                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
                 (traceMask >> 0) & 1 ? '0' : '_',
                 (traceMask >> 1) & 1 ? '1' : '_',
                 (traceMask >> 2) & 1 ? '2' : '_',
@@ -1019,9 +1030,10 @@ static void showDisplay (void)
                 (traceMask >> 7) & 1 ? '7' : '_',
                 (traceMask >> 8) & 1 ? '8' : '_',
                 (traceMask >> 9) & 1 ? '9' : '_',
-                /* *** TODO CPU 1 */
-                (traceMask & TraceCpu0) ? 'C' : '_',
-                (traceMask & TraceXj) ? 'E' : '_',
+                (traceMask & TraceCpu0) ? 'c' : '_',
+                (traceMask & TraceCpu1) ? 'C' : '_',
+                (traceMask & TraceEcs) ? 'E' : '_',
+                (traceMask & TraceXj) ? 'J' : '_',
                 (chTraceMask >> 0) & 1 ? '0' : '_',
                 (chTraceMask >> 1) & 1 ? '1' : '_',
                 (chTraceMask >> 2) & 1 ? '2' : '_',

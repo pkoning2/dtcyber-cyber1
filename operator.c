@@ -39,7 +39,7 @@
 #define OpCmdSize 64
 #define TwinkleRate 2
 #define CmdX 0020
-#define CmdY 0100
+#define CmdY 0060
 /*
 **  -----------------------
 **  Private Macro Functions
@@ -91,11 +91,13 @@ static void opTraceCh(char *cmdParams);
 static void opTraceCp(char *cmdParams);
 static void opTraceCpu(char *cmdParams);
 static void opTraceXj(char *cmdParams);
+static void opTraceEcs(char *cmdParams);
 static void opUntrace(char *cmdParams);
 static void opUntracePpu(char *cmdParams);
 static void opUntraceCh(char *cmdParams);
 static void opUntraceCpu(char *cmdParams);
 static void opUntraceXj(char *cmdParams);
+static void opUntraceEcs(char *cmdParams);
 static void opResetTrace(char *cmdParams);
 #endif
 /*
@@ -143,11 +145,13 @@ static char *syntax[] =
     "TRACE,CPU7.\n",
     "TRACE,CP7.\n",
     "TRACE,XJ.\n",
+    "TRACE,ECS.\n",
     "UNTRACE,.\n",
     "UNTRACE,PPU7.\n",
     "UNTRACE,CHANNEL7.\n",
     "UNTRACE,CPU7.\n",
     "UNTRACE,XJ.\n",
+    "UNTRACE,ECS.\n",
     "UNTRACE,RESET.\n",
 #endif
     NULL,
@@ -180,11 +184,13 @@ static OpCmd decode[] =
     "TRACE,CPU",                opTraceCpu,
     "TRACE,CP",                 opTraceCp,
     "TRACE,XJ.",                opTraceXj,
+    "TRACE,ECS.",               opTraceEcs,
     "UNTRACE,.",                opUntrace,
     "UNTRACE,PPU",              opUntracePpu,
     "UNTRACE,CHANNEL",          opUntraceCh,
     "UNTRACE,CPU",              opUntraceCpu,
     "UNTRACE,XJ.",              opUntraceXj,
+    "UNTRACE,ECS.",             opUntraceEcs,
     "UNTRACE,RESET.",           opResetTrace,
 #endif
     NULL,                       NULL
@@ -192,8 +198,8 @@ static OpCmd decode[] =
 
 // Note: Y values of zero are filled in by opInit
 static OpMsg msg[] =
-    { { 0760 - (sizeof(DtCyberVersion) * 010), 0740, 0010, DtCyberVersion },
-      { 0020, 0630, 0010, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
+    { { 0760 - (sizeof(DtCyberVersion) * 010), 0760, 0010, DtCyberVersion },
+      { 0020, 0700, 0010, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
       { 0020,    0, 0010, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
       { 0020,    0, 0010, "UNLOAD,CH,EQ.      Unload ch/eq." },
       { 0020,    0, 0010, "DUMP,CPU.          Dump state of CPUs." },
@@ -209,6 +215,7 @@ static OpMsg msg[] =
       { 0020,    0, 0010, "TRACE,XJ.          Trace exchange jumps." },
       { 0020,    0, 0010, "TRACE,PPUNN.       Trace specified PPU activity." },
       { 0020,    0, 0010, "TRACE,CHANNELNN.   Trace specified channel activity." },
+      { 0020,    0, 0010, "TRACE,ECS.         Trace ECS accesses." },
       { 0020,    0, 0010, "UNTRACE,XXX        Stop trace of XXX." },
       { 0020,    0, 0010, "UNTRACE,.          Stop all tracing." },
       { 0020,    0, 0010, "UNTRACE,RESET.     Stop tracing, discard trace data." },
@@ -219,8 +226,8 @@ static OpMsg msg[] =
       { CmdX, CmdY, 0020, cmdBuf },  // echo, MUST be last
       { 0, 0, 0, NULL },
     };
-static OpMsg errmsg = { 0020, 0040, 0020, NULL };   // pointer filled in
-static OpMsg title = { 0120, 0700, 0020, "OPERATOR INTERFACE" };
+static OpMsg errmsg = { 0020, 0014, 0020, NULL };   // pointer filled in
+static OpMsg title = { 0120, 0730, 0020, "OPERATOR INTERFACE" };
 static bool msgBold;
 static bool complete;
 static char msgBuf[80];
@@ -1074,6 +1081,20 @@ static void opTraceXj(char *cmdParams)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Trace ECS references.
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opTraceEcs(char *cmdParams)
+    {
+    traceMask |= TraceEcs;
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Stop tracing a PPU
 **
 **  Parameters:     Name        Description.
@@ -1176,6 +1197,21 @@ static void opUntraceCpu(char *cmdParams)
 static void opUntraceXj(char *cmdParams)
     {
     traceMask &= ~(TraceXj);
+    traceStop ();
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Stop tracing ECS references
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opUntraceEcs(char *cmdParams)
+    {
+    traceMask &= ~(TraceEcs);
     traceStop ();
     }
 
