@@ -10,9 +10,14 @@
 #--------------------------------------------------------------------------
 
 HOST := $(shell uname)
+MACHINE := $(shell uname -m)
 
 LIBS    = -lm -lX11 -lpthread
+ifeq ("$(MACHINE)","x86_64")
+LDFLAGS = -g2 -L/usr/X11R6/lib64
+else
 LDFLAGS = -g2 -L/usr/X11R6/lib
+endif
 INCL    = -I/usr/X11R6/include -I/usr/local/include
 
 ifeq ("$(HOST)","Darwin")

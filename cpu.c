@@ -215,7 +215,7 @@ static const u32 cpOp01Length[8] = { 30, 30, 30, 30, 15, 15, 15, 15 };
 static OpDispatch decodeCpuOpcode[] =
     {
     cpOp00, 15,
-    cpOp01, (u32)cpOp01Length,
+    cpOp01, 0,
     cpOp02, 30,
     cpOp03, 30,
     cpOp04, 30,
@@ -937,9 +937,9 @@ void cpuStep(CpuContext *activeCpu)
         activeCpu->opI       = (u8)((activeCpu->opWord >> (activeCpu->opOffset -  9)) & Mask3);
         activeCpu->opJ       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 12)) & Mask3);
         length = decodeCpuOpcode[activeCpu->opFm].length;
-        if (length != 15 && length != 30)
+        if (length == 0)
             {
-            length = *((u32 *) length + activeCpu->opI);
+            length = cpOp01Length[activeCpu->opI];
             }
         
         if (length == 15)
