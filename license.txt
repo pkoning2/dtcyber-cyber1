@@ -1,0 +1,22 @@
+
+Copyright (c) 2002 - 2004 Tom Hunter
+
+This software is provided 'as-is', without any express or implied warranty.
+In no event will the author be held liable for any damages arising from
+the use of this software.
+
+Permission is granted to anyone to use this software for any purpose and
+to alter it and redistribute it, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software.
+
+2. Altered source versions must be marked as such, and must not be
+   misrepresented as being the original software.
+
+3. If you make changes to the software the author would appreciate it if
+   you would feed back the changes (but you are not required to).
+
+4. This notice may not be removed or altered from any source or binary
+   distribution.
+
