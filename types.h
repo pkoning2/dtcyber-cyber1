@@ -242,7 +242,7 @@ typedef struct
     NetPort     *portVec;               /* array of NetPorts */
     int         listenFd;               /* listen socket fd */
     int         portNum;                /* TCP port number to listen to */
-    volatile fd_set activeSet;          /* fd_set for active port fd's */
+    fd_set      activeSet;              /* fd_set for active port fd's */
     int         maxFd;                  /* highest port fd value */
     ConnCb      *callBack;              /* function to call for new conn */
     bool        localOnly;              /* TRUE to listen on 127.0.0.1 */
