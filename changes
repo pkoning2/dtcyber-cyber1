@@ -272,3 +272,9 @@ Since jan21 2004 drop:
 - Removed mt669.c debug logging message (trace,channel does this more flexibly).
 - Make true keyboard mode gather up all the keystrokes so several key down events
   at the "same" time register all at once, not one by one.
+- Added { to card reader translation as the encoding for EOF (6/7/9 punch).
+- Merged Gerard's dc7154.c, with some tweaks.
+- Added support for RX and WX instructions.
+- Changed NosICreate to accept a list of file names, rather than a file count
+  and fixed file names, for its inputs.
+- Improve tracing of ECS access instructions.
