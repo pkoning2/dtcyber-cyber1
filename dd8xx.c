@@ -161,6 +161,7 @@
 #define MaxTracks               19
 #define MaxSectors              24
 #define SectorSize              322
+#define SectorBytes             512
 
 /*
 **  -----------------------
@@ -176,10 +177,14 @@
 */
 typedef struct diskParam
     {
+    u8          *bp;
     u32         sector;
     u32         track;
     u32         cylinder;
     u8          interlace;
+    u8          sec[SectorBytes];
+    bool        seekNeeded;
+    bool        even;
     } DiskParam;
 
 /*
@@ -191,8 +196,8 @@ static FcStatus dd844Func(PpWord funcCode);
 static void dd844Io(void);
 static void dd844Activate(void);
 static void dd844Disconnect(void);
-static u32 dd844Seek(u32 cylinder, u32 track, u32 sector);
-static u32 dd844SeekNextSector(DiskParam *dp);
+static void dd844Seek(FILE *fcb, DiskParam *dp);
+static void dd844SeekNextSector(DiskParam *dp);
 static void dd844Dump(PpWord data);
 static void dd844Flush(void);
 
@@ -235,6 +240,7 @@ void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     DevSlot *dp;
     FILE *fcb;
     char fname[80];
+    DiskParam *dskp;
 
     (void)eqNo;
     (void)unitNo;
@@ -247,13 +253,14 @@ void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     dp->io = dd844Io;
     dp->selectedUnit = unitNo;
 
-    dp->context[unitNo] = calloc(1, sizeof(DiskParam));
+    dskp = (DiskParam *) calloc(1, sizeof(DiskParam));
+    dp->context[unitNo] = dskp;
     if (dp->context[unitNo] == NULL)
         {
         fprintf(StdErr, "Failed to allocate dd844 context block\n");
         exit(1);
         }
-
+    dskp->seekNeeded = TRUE;
     if (deviceName == NULL)
         {
         sprintf(fname, "DD844_C%02ou%1o", channelNo, unitNo);
@@ -296,6 +303,7 @@ static FcStatus dd844Func(PpWord funcCode)
     u8 unitNo;
     FILE *fcb;
     DiskParam *dp;
+    PpWord dsSecSize;
 
     if ((funcCode & 0700) == Fc844Deadstart )
         {
@@ -343,6 +351,10 @@ static FcStatus dd844Func(PpWord funcCode)
         activeDevice->fcode = funcCode;
         activeDevice->recordLength = SectorSize;
 //        printf (" reading u%d c%d t%d s%d\n", unitNo, dp->cylinder, dp->track, dp->sector);
+        dd844Seek(fcb, dp);
+        fread(dp->sec, 1, SectorBytes, fcb);
+        dp->bp = dp->sec;
+        dp->even = TRUE;
         break;
 
     case Fc844Write:
@@ -352,6 +364,9 @@ static FcStatus dd844Func(PpWord funcCode)
         activeDevice->fcode = funcCode;
         activeDevice->recordLength = SectorSize;
 //        printf (" writing u%d c%d t%d s%d\n", unitNo, dp->cylinder, dp->track, dp->sector);
+        dd844Seek(fcb, dp);
+        dp->bp = dp->sec;
+        dp->even = TRUE;
         break;
 
     case Fc844ReadCheckword:
@@ -404,9 +419,16 @@ static FcStatus dd844Func(PpWord funcCode)
             dp->track = 0;
             dp->sector = 2;
         #endif
-        fseek(fcb, dd844Seek(dp->cylinder, dp->track, dp->sector), SEEK_SET);
+        dp->seekNeeded = TRUE;
+        dd844Seek(fcb, dp);
+        fread(dp->sec, 1, SectorBytes, fcb);
+        dp->bp = dp->sec;
+        dp->even = TRUE;
         activeDevice->fcode = funcCode;
-        activeDevice->recordLength = SectorSize;
+        /* the first word in the sector contains data length */
+        dsSecSize = (dp->sec[0] << 4) + (dp->sec[1] >> 4);
+        fprintf(devF,"deadstart sect size = %04o\n", dsSecSize);
+        activeDevice->recordLength = dsSecSize;
         break;
 
     case Fc844SetClearFlaw:
@@ -494,18 +516,30 @@ static void dd844Io(void)
                 break;
 
             case 3:
-                dp->cylinder = activeChannel->data;
+                if (dp->cylinder != activeChannel->data)
+                    {
+                    dp->cylinder = activeChannel->data;
+                    dp->seekNeeded = TRUE;
+                    }
                 break;
 
             case 2:
-                dp->track = activeChannel->data;
+                if (dp->track != activeChannel->data)
+                    {
+                    dp->track = activeChannel->data;
+                    dp->seekNeeded = TRUE;
+                    }
                 break;
 
             case 1:
-                dp->sector = activeChannel->data;
+                if (dp->sector != activeChannel->data)
+                    {
+                    dp->sector = activeChannel->data;
+                    dp->seekNeeded = TRUE;
+                    }
                 activeChannel->active = FALSE;
                 activeChannel->ioDevice = NULL;
-                fseek(fcb, dd844Seek(dp->cylinder, dp->track, dp->sector), SEEK_SET);
+                dd844Seek(fcb, dp);
                 break;
 
             default:
@@ -518,41 +552,27 @@ static void dd844Io(void)
         break;
 
     case Fc844Deadstart:
-        if (!activeChannel->full)
-            {
-            if (activeDevice->recordLength == SectorSize)
-                {
-            /* the first word in the sector contains data length */
-                fread(&activeDevice->recordLength, 2, 1, fcb);
-                fprintf(devF,"deadstart sect size = %04o\n",
-                         activeDevice->recordLength);
-                activeChannel->data = activeDevice->recordLength;
-                }
-            else
-                {
-                fread(&activeChannel->data, 2, 1, fcb);
-                }
-            activeChannel->full = TRUE;
-            
-            if (--activeDevice->recordLength == 0)
-                {
-                activeChannel->discAfterInput = TRUE;
-                fseek(fcb, dd844SeekNextSector(dp), SEEK_SET);
-                }
-            }
-        break;
-
     case Fc844Read:
     case Fc844ReadFlawedSector:
         if (!activeChannel->full)
             {
-            fread(&activeChannel->data, 2, 1, fcb);
+            if (dp->even)
+                {
+                activeChannel->data = (*(dp->bp) << 4) + (*(dp->bp + 1) >> 4);
+                dp->bp++;
+                }
+            else
+                {
+                activeChannel->data = (*(dp->bp) << 8) + *(dp->bp + 1);
+                dp->bp += 2;
+                }
+            dp->even = !dp->even;
             activeChannel->full = TRUE;
 
             if (--activeDevice->recordLength == 0)
                 {
                 activeChannel->discAfterInput = TRUE;
-                fseek(fcb, dd844SeekNextSector(dp), SEEK_SET);
+                dd844SeekNextSector(dp);
                 }
             }
         break;
@@ -563,14 +583,25 @@ static void dd844Io(void)
     case Fc844WriteVerify:
         if (activeChannel->full)
             {
-            fwrite(&activeChannel->data, 2, 1, fcb);
+            if (dp->even)
+                {
+                *dp->bp++ = activeChannel->data >> 4;
+                *dp->bp = activeChannel->data << 4;
+                }
+            else
+                {
+                *dp->bp++ |= activeChannel->data >> 8;
+                *dp->bp++ = activeChannel->data;
+                }
+            dp->even = !dp->even;
             activeChannel->full = FALSE;
 
             if (--activeDevice->recordLength == 0)
                 {
                 activeChannel->active = FALSE;
                 activeChannel->ioDevice = NULL;
-                fseek(fcb, dd844SeekNextSector(dp), SEEK_SET);
+                fwrite(dp->sec, 1, SectorBytes, fcb);
+                dd844SeekNextSector(dp);
                 }
             }
         break;
@@ -666,43 +697,43 @@ static void dd844Disconnect(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Work out seek offset.
+**  Purpose:        Seek to the currently set cyl/track/sector
 **
 **  Parameters:     Name        Description.
-**                  cylinder    Cylinder number.
-**                  track       Track number.
-**                  sector      Sector number.
+**                  fcb         pointer to FILE struct.
+**                  dp          pointer to DiskParam struct.
 **
-**  Returns:        Byte offset (not word!)
+**  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-static u32 dd844Seek(u32 cylinder, u32 track, u32 sector)
+static void dd844Seek(FILE *fcb, DiskParam *dp)
     {
     u32 result;
 
-//fprintf(devF, "seek to c%o t%o s%o\n", cylinder, track, sector);
-
-    if (cylinder >= MaxCylinders)
+    if (dp->cylinder >= MaxCylinders)
         {
-        ppAbort((StdErr, "ch %o, cylinder %o invalid\n", activeChannel->id, cylinder));
+        ppAbort((StdErr, "ch %o, cylinder %o invalid\n", activeChannel->id, dp->cylinder));
         }
 
-    if (track >= MaxTracks)
+    if (dp->track >= MaxTracks)
         {
-        ppAbort((StdErr, "ch %o, track %o invalid\n", activeChannel->id, track));
+        ppAbort((StdErr, "ch %o, track %o invalid\n", activeChannel->id, dp->track));
         }
 
-    if (sector >= MaxSectors)
+    if (dp->sector >= MaxSectors)
         {
-        ppAbort((StdErr, "ch %o, sector %o invalid\n", activeChannel->id, sector));
+        ppAbort((StdErr, "ch %o, sector %o invalid\n", activeChannel->id, dp->sector));
         }
 
-    result  = cylinder * MaxTracks * MaxSectors;
-    result += track * MaxSectors;
-    result += sector;
-    result *= SectorSize * 2;
-
-    return(result);
+    if (dp->seekNeeded)
+        {
+        result  = dp->cylinder * MaxTracks * MaxSectors;
+        result += dp->track * MaxSectors;
+        result += dp->sector;
+        result *= SectorBytes;
+        fseek(fcb, result, SEEK_SET);
+        dp->seekNeeded = FALSE;
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -711,10 +742,10 @@ static u32 dd844Seek(u32 cylinder, u32 track, u32 sector)
 **  Parameters:     Name        Description.
 **                  dp          Disk parameters (context).
 **
-**  Returns:        Byte offset (not word!)
+**  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-static u32 dd844SeekNextSector(DiskParam *dp)
+static void dd844SeekNextSector(DiskParam *dp)
     {
     dp->sector += dp->interlace;
 
@@ -724,16 +755,11 @@ static u32 dd844SeekNextSector(DiskParam *dp)
             {
             dp->sector = 0;
             dp->track += 1;
-            if (dp->track == MaxTracks)
-                {
-                dp->track = MaxTracks;
-                dp->sector = MaxSectors - 1;
-                ppAbort((StdErr, "ch %o, sector wrap invalid\n", activeChannel->id));
-                }
             }
         }
     else
         {
+        dp->seekNeeded = TRUE;
         if (dp->sector == MaxSectors)
             {
             dp->sector = 0;
@@ -748,16 +774,8 @@ static u32 dd844SeekNextSector(DiskParam *dp)
             {
             dp->sector = 1;
             dp->track += 1;
-            if (dp->track == MaxTracks)
-                {
-                dp->track = MaxTracks;
-                dp->sector = MaxSectors - 2;
-                ppAbort((StdErr, "ch %o, sector wrap invalid\n", activeChannel->id));
-                }
             }
         }
-
-    return(dd844Seek(dp->cylinder, dp->track, dp->sector));
     }
 
 /*---------------------------  End Of File  ------------------------------*/
