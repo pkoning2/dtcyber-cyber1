@@ -610,7 +610,7 @@ void printblk (FILE *outf, int len)
         {
             // Modword... decode it
             get60 (m, blkbuf + w * 10);
-            if (((m >> 29) & 1) && !moddel)
+            if (((m >> 17) & 1) && !moddel)
             {
                 // Deleted line, skip it
                 w = i + 1;
@@ -621,7 +621,7 @@ void printblk (FILE *outf, int len)
                 dtoa (line, blkbuf + w * 10 + 2, 5);
                 line[5] = '\0';
                 fprintf (outf, "%5s %c%02d.%02d.%02d ",
-                         line, ((m >> 29) & 1) ? 'D' : ' ',
+                         line, ((m >> 17) & 1) ? 'D' : ' ',
                          (((m >> 9) & 037) + 73) % 100,
                          (m >> 5) & 017, m & 037);
             }
