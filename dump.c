@@ -444,6 +444,9 @@ void dumpDisassemblePpu(u8 pp)
     fprintf(pf, "STOP  %02o\n", ppu[pp].stopped);
     fprintf(pf, "\n");
 
+    // Dump the direct cells as data (not disassembly)
+    dumpPpuMem(pf, pp, 0, 077);
+    fprintf(pf, "\n");
     for (addr = 0100; addr < PpMemSize; addr += cnt)
         {
         if ((cnt == 1 && pm[addr - 1] == pm[addr]) ||

@@ -79,6 +79,7 @@ static void opCmdUnload(char *cmdParams);
 static void opDumpCpu (char *cmdParams);
 static void opDumpPpu (char *cmdParams);
 static void opDisPpu (char *cmdParams);
+#if CcDebug == 1
 static void opTracePpu(char *cmdParams);
 static void opTraceCh(char *cmdParams);
 static void opTraceCpu(char *cmdParams);
@@ -88,6 +89,7 @@ static void opUntracePpu(char *cmdParams);
 static void opUntraceCh(char *cmdParams);
 static void opUntraceCpu(char *cmdParams);
 static void opUntraceXj(char *cmdParams);
+#endif
 /*
 **  ----------------
 **  Public Variables
@@ -118,6 +120,7 @@ static char *syntax[] =
     "DUMP,CPU.\n",
     "DUMP,PPU7.\n",
     "DISASSEMBLE,PPU7.\n",
+#if CcDebug == 1
     "TRACE,PPU7.\n",
     "TRACE,CHANNEL7.\n",
     "TRACE,CPU.\n",
@@ -127,6 +130,7 @@ static char *syntax[] =
     "UNTRACE,CHANNEL7.\n",
     "UNTRACE,CPU.\n",
     "UNTRACE,XJ.\n",
+#endif
     NULL,
     };
 static OpCmd decode[] = 
@@ -147,37 +151,43 @@ static OpCmd decode[] =
     "DUMP,CPU",                 opDumpCpu,
     "DUMP,PPU",                 opDumpPpu,
     "DISASSEMBLE,PPU",          opDisPpu,
+#if CcDebug == 1
     "TRACE,PPU",                opTracePpu,
     "TRACE,CHANNEL",            opTraceCh,
     "TRACE,CPU.",               opTraceCpu,
-    "TRACE,ECS.",               opTraceXj,
+    "TRACE,XJ.",                opTraceXj,
     "UNTRACE,.",                opUntrace,
     "UNTRACE,PPU",              opUntracePpu,
     "UNTRACE,CHANNEL",          opUntraceCh,
     "UNTRACE,CPU.",             opUntraceCpu,
-    "UNTRACE,ECS.",             opUntraceXj,
+    "UNTRACE,XJ.",              opUntraceXj,
+#endif
     NULL,                       NULL
     };
 
+// Note: Y values of zero are filled in by opInit
 static OpMsg msg[] =
     { { 0760 - (sizeof(DtCyberVersion) * 010), 0760, 0010, DtCyberVersion },
       { 0020, 0640, 0010, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
-      { 0020, 0620, 0010, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
-      { 0020, 0600, 0010, "UNLOAD,CH,EQ.      Unload ch/eq." },
-      { 0020, 0560, 0010, "DUMP,CPU.          Dump CPU state." },
-      { 0020, 0540, 0010, "DUMP,PPUNN.        Dump specified PPU state." },
-      { 0020, 0520, 0010, "DISASSEMBLE,PPUNN. Disassemble specified PPU." },
-      { 0020, 0500, 0010, "TRACE,CPU.         Trace CPU activity." },
-      { 0020, 0460, 0010, "TRACE,XJ.          Trace exchange jumps." },
-      { 0020, 0440, 0010, "TRACE,PPUNN.       Trace specified PPU activity." },
-      { 0020, 0420, 0010, "TRACE,CHANNELNN.   Trace specified channel activity." },
-      { 0020, 0400, 0010, "UNTRACE,CPU.       Stop trace of CPU activity." },
-      { 0020, 0360, 0010, "UNTRACE,XJ.        Stop trace of exchange jumps." },
-      { 0020, 0340, 0010, "UNTRACE,PPUNN.     Stop trace of specified PPU activity." },
-      { 0020, 0320, 0010, "UNTRACE,CHANNELNN. Stop trace of specified channel activity." },
-      { 0020, 0300, 0010, "UNTRACE,.          Stop all tracing." },
-      { 0020, 0240, 0010, "END.               End operator mode." },
-      { 0020, 0220, 0010, "SHUTDOWN.          Close DtCyber." },
+      { 0020,    0, 0010, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
+      { 0020,    0, 0010, "UNLOAD,CH,EQ.      Unload ch/eq." },
+      { 0020,    0, 0010, "DUMP,CPU.          Dump CPU state." },
+      { 0020,    0, 0010, "DUMP,PPUNN.        Dump specified PPU state." },
+      { 0020,    0, 0010, "DISASSEMBLE,PPUNN. Disassemble specified PPU." },
+#if CcDebug == 1
+      { 0020,    0, 0010, "TRACE,CPU.         Trace CPU activity." },
+      { 0020,    0, 0010, "TRACE,XJ.          Trace exchange jumps." },
+      { 0020,    0, 0010, "TRACE,PPUNN.       Trace specified PPU activity." },
+      { 0020,    0, 0010, "TRACE,CHANNELNN.   Trace specified channel activity." },
+      { 0020,    0, 0010, "UNTRACE,CPU.       Stop trace of CPU activity." },
+      { 0020,    0, 0010, "UNTRACE,XJ.        Stop trace of exchange jumps." },
+      { 0020,    0, 0010, "UNTRACE,PPUNN.     Stop trace of specified PPU activity." },
+      { 0020,    0, 0010, "UNTRACE,CHANNELNN. Stop trace of specified channel activity." },
+      { 0020,    0, 0010, "UNTRACE,.          Stop all tracing." },
+#endif
+      { 0020,    0, 0010, "" },      // blank line to separate these last two from the above
+      { 0020,    0, 0010, "END.               End operator mode." },
+      { 0020,    0, 0010, "SHUTDOWN.          Close DtCyber." },
       { CmdX, CmdY, 0020, cmdBuf },  // echo, MUST be last
       { 0, 0, 0, NULL },
     };
@@ -204,6 +214,19 @@ static char msgBuf[80];
 **------------------------------------------------------------------------*/
 void opInit(void)
     {
+    int y;
+    OpMsg *m;
+
+    m = msg;
+    while (m->text != NULL)
+        {
+        if (m->y == 0)
+            {
+            m->y = y - (m->fontSize * 3) / 2;
+            }
+        y = m->y;
+        m++;
+        }
     }
 
 
@@ -218,7 +241,7 @@ void opInit(void)
 void opRequest(void)
     {
     OpCmd *cp;
-    char nextKey;
+    char nextKey = 0;
     int cmdLen;
     OpMsg *m;
     int i, j;
@@ -752,6 +775,7 @@ static void opDisPpu(char *cmdParams)
     opSetMsg ("COMPLETED");
     }
 
+#if CcDebug == 1
 /*--------------------------------------------------------------------------
 **  Purpose:        Trace a PPU
 **
@@ -937,5 +961,7 @@ static void opUntrace(char *cmdParams)
     {
     traceMask =chTraceMask = 0;
     }
+
+#endif  // CcDebug=1
 
 /*---------------------------  End Of File  ------------------------------*/

@@ -182,7 +182,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     /*
     **  Print a friendly message.
     */
-    printf("NIU initialised on channels %o and %o\n", unitNo, channelNo);
+    printf("NIU initialised with input channel %o and output channel %o\n", unitNo, channelNo);
 }
 
 /*--------------------------------------------------------------------------

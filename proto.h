@@ -224,7 +224,8 @@ extern u32 ecsMaxMemory;
 extern char ppKeyIn;
 extern const char asciiToCdc[];
 extern const char cdcToAscii[];
-extern const unsigned short asciiToPunch[];
+extern const unsigned short asciiTo026[];
+extern const unsigned short asciiTo029[];
 extern const unsigned char  asciiToBcd[];
 extern const unsigned char bcdToAscii[];
 extern const unsigned char extBcdToAscii[];
@@ -241,6 +242,7 @@ extern u16 platoPort;
 extern u16 platoConns;
 extern FILE **ppuTF;
 extern Dev3kSlot *activeUnit;
+extern u32 cycles;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

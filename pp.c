@@ -49,24 +49,24 @@
     if (((to) & Overflow12) != 0)                                           \
         {                                                                   \
         (to) += 1;                                                          \
+        (to) &= Mask12;                                                     \
         }                                                                   \
-    (to) &= Mask12;                                                         \
     }
 
 #define IndexLocation                                                       \
     if (opD != 0)                                                           \
         {                                                                   \
         location = activePpu->mem[opD] + activePpu->mem[activePpu->regP];   \
+        if ((location & Overflow12) != 0 || (location & Mask12) == 07777)   \
+            {                                                               \
+            location += 1;                                                  \
+            }                                                               \
+        location &= Mask12;                                                 \
         }                                                                   \
     else                                                                    \
         {                                                                   \
         location = activePpu->mem[activePpu->regP];                         \
         }                                                                   \
-    if ((location & Overflow12) != 0 || (location & Mask12) == 07777)       \
-        {                                                                   \
-        location += 1;                                                      \
-        }                                                                   \
-    location &= Mask12;                                                     \
     PpIncrement(activePpu->regP);
 
 
@@ -146,8 +146,8 @@ static void ppOpDCN(void);    // 75
 static void ppOpFAN(void);    // 76
 static void ppOpFNC(void);    // 77
 
-static u32 ppAdd18(u32 op1, u32 op2);
-static u32 ppSubtract18(u32 op1, u32 op2);
+static INLINE u32 ppAdd18(u32 op1, u32 op2);
+static INLINE u32 ppSubtract18(u32 op1, u32 op2);
 static void ppInterlock(PpWord func);
 
 /*
@@ -240,6 +240,59 @@ static void (*decodePpuOpcode[])(void) =
     ppOpFAN,    // 76
     ppOpFNC     // 77
     };
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Inline Functions
+**
+**--------------------------------------------------------------------------
+*/
+
+/*--------------------------------------------------------------------------
+**  Purpose:        18 bit ones-complement addition with subtractive adder
+**
+**  Parameters:     Name        Description.
+**                  op1         18 bit operand1
+**                  op2         18 bit operand2
+**
+**  Returns:        18 bit result.
+**
+**------------------------------------------------------------------------*/
+static INLINE u32 ppAdd18(u32 op1, u32 op2)
+    {
+    acc18 = (op1 & Mask18) - (~op2 & Mask18);
+    if ((acc18 & Overflow18) != 0)
+        {
+        acc18 -= 1;
+        acc18 &= Mask18;
+        }
+
+    return(acc18);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        18 bit ones-complement subtraction
+**
+**  Parameters:     Name        Description.
+**                  op1         18 bit operand1
+**                  op2         18 bit operand2
+**
+**  Returns:        18 bit result.
+**
+**------------------------------------------------------------------------*/
+static INLINE u32 ppSubtract18(u32 op1, u32 op2)
+    {
+    acc18 = (op1 & Mask18) - (op2 & Mask18);
+    if ((acc18 & Overflow18) != 0)
+        {
+        acc18 -= 1;
+        acc18 &= Mask18;
+        }
+
+    return(acc18);
+    }
+
 
 /*
 **--------------------------------------------------------------------------
@@ -349,7 +402,7 @@ void ppStep(void)
                 **  Trace memory touched by IAM/OAM, and if necessary,
                 **  A register after IAM/IAN/OAM/OAN
                 */
-                if (activePpu->ppMemLen >= 0)
+                if (activePpu->ppMemLen > 0)
                     {
                     tracePM ();
                     activePpu->ppMemLen = 0;
@@ -584,48 +637,6 @@ void ppStep(void)
 **
 **--------------------------------------------------------------------------
 */
-
-/*--------------------------------------------------------------------------
-**  Purpose:        18 bit ones-complement addition with subtractive adder
-**
-**  Parameters:     Name        Description.
-**                  op1         18 bit operand1
-**                  op2         18 bit operand2
-**
-**  Returns:        18 bit result.
-**
-**------------------------------------------------------------------------*/
-static u32 ppAdd18(u32 op1, u32 op2)
-    {
-    acc18 = (op1 & Mask18) - (~op2 & Mask18);
-    if ((acc18 & Overflow18) != 0)
-        {
-        acc18 -= 1;
-        }
-
-    return(acc18 & Mask18);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        18 bit ones-complement subtraction
-**
-**  Parameters:     Name        Description.
-**                  op1         18 bit operand1
-**                  op2         18 bit operand2
-**
-**  Returns:        18 bit result.
-**
-**------------------------------------------------------------------------*/
-static u32 ppSubtract18(u32 op1, u32 op2)
-    {
-    acc18 = (op1 & Mask18) - (op2 & Mask18);
-    if ((acc18 & Overflow18) != 0)
-        {
-        acc18 -= 1;
-        }
-
-    return(acc18 & Mask18);
-    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Status and control channel function processor

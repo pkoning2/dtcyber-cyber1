@@ -97,6 +97,8 @@ typedef struct
     int     intmask;
     int	    status;
     int     col;
+    const unsigned short *table;
+    u32     getcardcycle;
     char    card[82];
 } CrContext;
 
@@ -138,7 +140,8 @@ static void cr3447NextCard (Dev3kSlot *up, CrContext *cc);
 **                  eqNo        equipment number
 **                  unitCount   number of units to initialise
 **                  channelNo   channel number the device is attached to
-**                  deviceName  optional device file name
+**                  deviceName  optional card source file name, 
+"026" (default) or "029" to select translation mode
 **
 **  Returns:        Nothing.
 **
@@ -148,6 +151,7 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     Dev3kSlot *up;
     CrContext *cc;
     FILE *fcb;
+    char *opt;
     
     (void)eqNo;
 
@@ -168,6 +172,11 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 
     if (deviceName != NULL)
     {
+        opt = strchr (deviceName, ',');
+        if (opt != NULL)
+        {
+            *opt++ = '\0';
+        }
         fcb = fopen(deviceName, "r");
         if (fcb == NULL)
         {
@@ -181,10 +190,25 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     }
     else
     {
+        opt = NULL;
         up->fcb = NULL;
         cc->status = StCr3447Eof;
     }
 
+    cc->table = asciiTo026;     // default translation table
+    if (opt != NULL)
+    {
+        if (strcmp (opt, "029") == 0)
+        {
+            cc->table = asciiTo029;
+        }
+        else if (strcmp (opt, "026") != 0)
+        {
+            fprintf (stderr, "Unrecognized card code name %s\n", opt);
+            exit (1);
+        }
+    }
+    
     /*
     **  Print a friendly message.
     */
@@ -323,7 +347,11 @@ static void cr3447Io(void)
         
     case Fc6681InputToEor:
     case Fc6681Input:
-        if (activeChannel->full)
+        // Don't admit to having new data immediately after completing
+        // a card, otherwise 1CD may get stuck occasionally.
+        // So we simulate card in motion for 20 major cycles.
+        if (activeChannel->full ||
+            cycles - cc->getcardcycle < 20)
         {
             break;
         }
@@ -350,10 +378,16 @@ static void cr3447Io(void)
         }
         else
         {
+            if (activeUnit->fcode == Fc6681Input &&
+                activePpu->regP == 06071 && activePpu->mem[06067] == 06611)
+            {
+                traceMask |= 1 << activePpu->id;
+                printf ("gotcha!\n");
+            }
             c = cc->card[cc->col++];
             if (cc->binary || cc->bincard)
             {
-                p = asciiToPunch[c];
+                p = *(cc->table + c);
             }
             else
             {
@@ -366,6 +400,7 @@ static void cr3447Io(void)
         }
         break;
     }
+    
     if (DEBUG)
         printf ("data %04o, status now %04o\n",
                 activeChannel->data, cc->status);
@@ -466,6 +501,9 @@ static void cr3447NextCard (Dev3kSlot *up, CrContext *cc)
     char *cp;
     char c;
 
+    // Remember the cycle counter when the card was called for
+    cc->getcardcycle = cycles;
+    
     // Read the next card.
     cp = fgets (cc->card, sizeof (cc->card),
                 up->fcb);
@@ -485,7 +523,7 @@ static void cr3447NextCard (Dev3kSlot *up, CrContext *cc)
         }
     }
     // Set "this card is binary" if rows 7 and 9 are punched in column 1.
-    cc->bincard = ((asciiToPunch[cc->card[0]] & 005) == 005);
+    cc->bincard = ((*(cc->table + cc->card[0]) & 005) == 005);
     if (DEBUG)
         printf ("read card (binary: %d): %s", cc->bincard, cc->card);
     if ((cp = strchr (cc->card, '\n')) == NULL)
@@ -500,7 +538,7 @@ static void cr3447NextCard (Dev3kSlot *up, CrContext *cc)
         *cp = ' ';
     cc->col = 0;
     if (!cc->binary &&
-        (asciiToPunch[cc->card[0]] & 006) == 006)
+        (*(cc->table + cc->card[0]) & 006) == 006)
     {
         cc->status |= StCr3447File;
     }

@@ -360,6 +360,7 @@ static void dflush (HDC hdcMem, int dx)
 		x += dx;
 		}
     dcnt = 0;
+	xstart = 07777;
     }
 
 /*--------------------------------------------------------------------------
@@ -791,19 +792,32 @@ SetBkMode(hdcMem, TRANSPARENT);     // <<<<<<<<<<<< testing
         ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
         cpu.regP); 
 
-    sprintf(buf + strlen(buf), "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c",
-        (traceMask >> 0) & 1 ? '0' : '_',
-        (traceMask >> 1) & 1 ? '1' : '_',
-        (traceMask >> 2) & 1 ? '2' : '_',
-        (traceMask >> 3) & 1 ? '3' : '_',
-        (traceMask >> 4) & 1 ? '4' : '_',
-        (traceMask >> 5) & 1 ? '5' : '_',
-        (traceMask >> 6) & 1 ? '6' : '_',
-        (traceMask >> 7) & 1 ? '7' : '_',
-        (traceMask >> 8) & 1 ? '8' : '_',
-        (traceMask >> 9) & 1 ? '9' : '_',
-        (traceMask >> 14) & 1 ? 'C' : '_',
-        (traceMask >> 15) & 1 ? 'E' : '_');
+        sprintf(buf + strlen(buf),
+                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c",
+                (traceMask >> 0) & 1 ? '0' : '_',
+                (traceMask >> 1) & 1 ? '1' : '_',
+                (traceMask >> 2) & 1 ? '2' : '_',
+                (traceMask >> 3) & 1 ? '3' : '_',
+                (traceMask >> 4) & 1 ? '4' : '_',
+                (traceMask >> 5) & 1 ? '5' : '_',
+                (traceMask >> 6) & 1 ? '6' : '_',
+                (traceMask >> 7) & 1 ? '7' : '_',
+                (traceMask >> 8) & 1 ? '8' : '_',
+                (traceMask >> 9) & 1 ? '9' : '_',
+                (traceMask >> 14) & 1 ? 'C' : '_',
+                (traceMask >> 15) & 1 ? 'E' : '_',
+                (chTraceMask >> 0) & 1 ? '0' : '_',
+                (chTraceMask >> 1) & 1 ? '1' : '_',
+                (chTraceMask >> 2) & 1 ? '2' : '_',
+                (chTraceMask >> 3) & 1 ? '3' : '_',
+                (chTraceMask >> 4) & 1 ? '4' : '_',
+                (chTraceMask >> 5) & 1 ? '5' : '_',
+                (chTraceMask >> 6) & 1 ? '6' : '_',
+                (chTraceMask >> 7) & 1 ? '7' : '_',
+                (chTraceMask >> 8) & 1 ? '8' : '_',
+                (chTraceMask >> 9) & 1 ? '9' : '_',
+                (chTraceMask >> 10) & 1 ? 'A' : '_',
+                (chTraceMask >> 11) & 1 ? 'B' : '_');
 
     TextOut(hdcMem, 0, 0, buf, strlen(buf));
     }

@@ -37,14 +37,23 @@
 #define KeyBufSize	50	// MUST be even
 #define DisplayBufSize	64
 #define DisplayMargin	20
+
+// Size of the pixmap (two screens with 16 pixels in between)
+#define XSize           02020
+#define YSize           YADJUST (01000)
+
 /*
 **  -----------------------
 **  Private Macro Functions
 **  -----------------------
 */
 
-#define XADJUST(x) ((x) + DisplayMargin)
+// Adjustment to make room for trace line if needed
+#if CcDebug == 1
 #define YADJUST(y) ((y) + DisplayMargin)
+#else
+#define YADJUST(y) (y)
+#endif
 
 /*
 **  -----------------------------------------
@@ -73,7 +82,7 @@ typedef struct fontInfo
 static void dflush (void);
 static void dput (char c, int x, int y, int dx);
 static void getCharWidths (FontInfo *f);
-void windowInput(void);
+static void windowInput(void);
 static void showDisplay (void);
 /*
 **  ----------------
@@ -107,9 +116,9 @@ static char dchars[DisplayBufSize];
 static u8 dhits[DisplayBufSize];
 static int dcnt, xpos, xstart, ypos;
 static Pixmap pixmap;
-static GC gc;
+static GC wgc, pgc;
 static struct timeval lastDisplay;
-static unsigned long fg, bg;
+static unsigned long fg, bg, pfg, pbg;
 static bool displayOff = FALSE;
 /*
 **--------------------------------------------------------------------------
@@ -174,8 +183,8 @@ void windowInit(void)
     /*
     **  Create a window using the following hints.
     */
-    width = XADJUST (02020) + DisplayMargin;
-    height = YADJUST (512) + DisplayMargin;
+    width = XSize + 2 * DisplayMargin;
+    height = YSize + 2 * DisplayMargin;
 
     bg = BlackPixel(disp, screen);
     fg = WhitePixel(disp, screen);
@@ -187,7 +196,7 @@ void windowInit(void)
     **  Create a pixmap for background image generation.
     */
     depth = DefaultDepth (disp, screen);
-    pixmap = XCreatePixmap (disp, window, width, height, depth);
+    pixmap = XCreatePixmap (disp, window, XSize, YSize, 1);
 
     /*
     **  Set window and icon titles.
@@ -198,14 +207,21 @@ void windowInit(void)
     /*
     **  Create the graphics contexts for window and pixmap.
     */
-    gc = XCreateGC (disp, window, 0, 0);
+    wgc = XCreateGC (disp, window, 0, 0);
+    pgc = XCreateGC (disp, pixmap, 0, 0);
+
+    /*
+    **  Initialize the pixmap.
+    */
+    XSetForeground (disp, pgc, bg);
+    XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
 
     /*
     **  We don't want to get Expose events, otherwise every XCopyArea will generate one,
     **  and the event queue will fill up. This application will discard them anyway, but
     **  it is better not to generate them in the first place.
     */
-    XSetGraphicsExposures(disp, gc, FALSE);
+    XSetGraphicsExposures(disp, wgc, FALSE);
 
     /*
     **  Load three Cyber fonts, normal and bold flavors
@@ -227,8 +243,16 @@ void windowInit(void)
     XAllocNamedColor(disp, a.colormap,"green",&b,&c);
     fg=b.pixel;
     bg = BlackPixel(disp, screen);
-    XSetBackground(disp, gc, bg);
-    XSetForeground(disp, gc, fg);
+    XSetBackground(disp, wgc, bg);
+    XSetForeground(disp, wgc, fg);
+
+    /*
+    **  Ditto for pixmap
+    */
+    pfg = WhitePixel(disp, screen);
+    pbg = BlackPixel(disp, screen);
+    XSetBackground(disp, pgc, pbg);
+    XSetForeground(disp, pgc, pfg);
 
     /*
     **  Create mappings of some ALT-key combinations to strings.
@@ -441,7 +465,8 @@ void windowGetChar(void)
 **------------------------------------------------------------------------*/
 void windowClose(void)
     {
-    XFreeGC (disp, gc);
+    XFreeGC (disp, wgc);
+    XFreeGC (disp, pgc);
     XFreePixmap (disp, pixmap);
     XDestroyWindow (disp, window);
     XCloseDisplay (disp);
@@ -470,7 +495,7 @@ static void dflush (void)
         // "delta" is applied before the character, so clear the delta
         // of the first char, because we don't want to offset that.
         dbuf[0].delta = 0;
-        XDrawText(disp, pixmap, gc, XADJUST (xstart),
+        XDrawText(disp, pixmap, pgc, xstart,
                   YADJUST (ypos), dbuf, dcnt);
         dcnt = 0;
         }
@@ -566,7 +591,7 @@ static void getCharWidths (FontInfo *f)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void windowInput(void)
+static void windowInput(void)
     {
     KeySym key;
     XEvent event;
@@ -578,7 +603,7 @@ void windowInput(void)
     /*
     **  Process any X11 events.
     */
-    while (XEventsQueued(disp, QueuedAfterReading))
+    while (XEventsQueued(disp, QueuedAfterFlush))
         {
         XNextEvent(disp, &event);
 
@@ -586,21 +611,6 @@ void windowInput(void)
             {
         case MappingNotify:
             XRefreshKeyboardMapping ((XMappingEvent *)&event);
-            break;
-
-        case ConfigureNotify:
-            if (event.xconfigure.width > width || event.xconfigure.height > height)
-                {
-                /*
-                **  Reallocate pixmap only if it has grown.
-                */
-                width = event.xconfigure.width;
-                height = event.xconfigure.height;
-                XFreePixmap (disp, pixmap);
-                pixmap = XCreatePixmap (disp, window, width, height, depth);
-                }
-
-            XFillRectangle (disp, pixmap, gc, 0, 0, width, height);
             break;
 
         case KeyPress:
@@ -691,10 +701,8 @@ void showDisplay (void)
     DispList *end;
     u8 oldFont = 0;
 
-    XSetForeground (disp, gc, fg);
-
     currentFontInfo = &smallFont;
-    XSetFont(disp, gc, currentFontInfo->normalId);
+    XSetFont(disp, pgc, currentFontInfo->normalId);
     oldFont = FontSmall;
 
     if (displayOff)
@@ -745,7 +753,7 @@ void showDisplay (void)
                 (chTraceMask >> 10) & 1 ? 'A' : '_',
                 (chTraceMask >> 11) & 1 ? 'B' : '_');
 
-        XDrawString(disp, pixmap, gc, 0, 10, buf, strlen(buf));
+        XDrawString(disp, pixmap, pgc, 0, 10, buf, strlen(buf));
     }
 #endif
 
@@ -778,17 +786,17 @@ void showDisplay (void)
             {
             case FontSmall:
                 currentFontInfo = &smallFont;
-                XSetFont(disp, gc, currentFontInfo->normalId);
+                XSetFont(disp, pgc, currentFontInfo->normalId);
                 break;
 
             case FontMedium:
                 currentFontInfo = &mediumFont;
-                XSetFont(disp, gc, currentFontInfo->normalId);
+                XSetFont(disp, pgc, currentFontInfo->normalId);
                 break;
     
             case FontLarge:
                 currentFontInfo = &largeFont;
-                XSetFont(disp, gc, currentFontInfo->normalId);
+                XSetFont(disp, pgc, currentFontInfo->normalId);
                 break;
             }
         }
@@ -799,7 +807,7 @@ void showDisplay (void)
         if (curr->fontSize == FontDot)
         {
             dflush ();
-            XDrawPoint(disp, pixmap, gc, XADJUST (curr->xPos),
+            XDrawPoint(disp, pixmap, pgc, curr->xPos,
                        YADJUST (curr->yPos));
         }
         else
@@ -819,18 +827,18 @@ void showDisplay (void)
     /*
     **  Update display from pixmap.
     */
-    XCopyArea(disp, pixmap, window, gc, 0, 0, width, height, 0, 0);
+    XCopyPlane(disp, pixmap, window, wgc, 0, 0, XSize, YSize, DisplayMargin, DisplayMargin, 1);
 
     /*
     **  Erase pixmap for next round.
     */
-    XSetForeground (disp, gc, bg);
-    XFillRectangle (disp, pixmap, gc, 0, 0, width, height);
+    XSetForeground (disp, pgc, pbg);
+    XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
+    XSetForeground (disp, pgc, pfg);
 
     /*
-    **  Make sure the updates make it to the X11 server.
+    **  Remember when we did the most recent display.
     */
-    XSync(disp, 0);
     gettimeofday (&lastDisplay, NULL);
     }
 

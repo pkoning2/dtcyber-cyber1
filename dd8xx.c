@@ -342,6 +342,7 @@ static FcStatus dd844Func(PpWord funcCode)
     case Fc844ReadFlawedSector:
         activeDevice->fcode = funcCode;
         activeDevice->recordLength = SectorSize;
+//        printf (" reading u%d c%d t%d s%d\n", unitNo, dp->cylinder, dp->track, dp->sector);
         break;
 
     case Fc844Write:
@@ -350,6 +351,7 @@ static FcStatus dd844Func(PpWord funcCode)
     case Fc844WriteVerify:
         activeDevice->fcode = funcCode;
         activeDevice->recordLength = SectorSize;
+//        printf (" writing u%d c%d t%d s%d\n", unitNo, dp->cylinder, dp->track, dp->sector);
         break;
 
     case Fc844ReadCheckword:

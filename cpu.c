@@ -71,12 +71,13 @@ typedef struct opDispatch
 **  Private Function Prototypes
 **  ---------------------------
 */
-static bool cpuFetchOpWord(u32 address, CpWord *data);
-static bool cpuReadMem(u32 address, CpWord *data);
-static bool cpuWriteMem(u32 address, CpWord *data);
-static void cpuRegASemantics(void);
-static u32 cpuAdd18(u32 op1, u32 op2);
-static u32 cpuSubtract18(u32 op1, u32 op2);
+//static bool cpuFetchOpWord(u32 address, CpWord *data);
+#define cpuFetchOpWord cpuReadMem
+static INLINE bool cpuReadMem(u32 address, CpWord *data);
+static INLINE bool cpuWriteMem(u32 address, CpWord *data);
+static INLINE void cpuRegASemantics(void);
+static INLINE u32 cpuAdd18(u32 op1, u32 op2);
+static INLINE u32 cpuSubtract18(u32 op1, u32 op2);
 static void cpuEcsTransfer(bool writeToEcs);
 static bool cpuCmuGetByte(u32 address, u32 pos, u8 *byte);
 static bool cpuCmuPutByte(u32 address, u32 pos, u8 byte);
@@ -178,6 +179,7 @@ static u32 opAddress;
 static u32 oldRegP;
 static CpWord acc60;
 static u32 acc18;
+static u32 cpuMemMask;
 
 /*
 **  Opcode decode and dispatch table.
@@ -250,6 +252,95 @@ static OpDispatch decodeCpuOpcode[] =
     cpOp77, 15
     };
 
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Inline Functions
+**
+**--------------------------------------------------------------------------
+*/
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Read CPU memory and verify that address is within limits.
+**
+**  Parameters:     Name        Description.
+**                  address     RA relative address to read.
+**                  data        Pointer to 60 bit word which gets the data.
+**
+**  Returns:        TRUE if access failed, FALSE otherwise;
+**
+**------------------------------------------------------------------------*/
+static INLINE bool cpuReadMem(u32 address, CpWord *data)
+    {
+    if (address >= cpu.regFlCm || cpu.regRaCm + address >= cpuMaxMemory)
+        {
+        cpu.exitCondition |= EcAddressOutOfRange;
+        if ((cpu.exitMode & EmAddressOutOfRange) != 0)
+            {
+            /*
+            **  Exit mode selected.
+            */
+            if (cpu.regRaCm < cpuMaxMemory)
+                {
+                cpMem[cpu.regRaCm] = ((CpWord)cpu.exitCondition << 48) | ((CpWord)(cpu.regP + 1) << 30);
+                }
+
+            cpu.regP = 0;
+            *data = cpMem[0] & Mask60;
+            // ????????????? jump to monitor address ??????????????
+            return(TRUE);
+            }
+        else
+            {
+            address = 0;
+            }
+        }
+
+    *data = cpMem[cpu.regRaCm + address] & Mask60;
+
+    return(FALSE);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Write CPU memory and verify that address is within limits.
+**
+**  Parameters:     Name        Description.
+**                  address     RA relative address to write.
+**                  data        Pointer to 60 bit word which holds the data.
+**
+**  Returns:        TRUE if access failed, FALSE otherwise;
+**
+**------------------------------------------------------------------------*/
+static INLINE bool cpuWriteMem(u32 address, CpWord *data)
+    {
+    if (address >= cpu.regFlCm || cpu.regRaCm + address >= cpuMaxMemory)
+        {
+        cpu.exitCondition |= EcAddressOutOfRange;
+        if ((cpu.exitMode & EmAddressOutOfRange) != 0)
+            {
+            /*
+            **  Exit mode selected.
+            */
+            if (cpu.regRaCm < cpuMaxMemory)
+                {
+                cpMem[cpu.regRaCm] = ((CpWord)cpu.exitCondition << 48) | ((CpWord)(cpu.regP + 1) << 30);
+                }
+
+            cpu.regP = 0;
+            // ????????????? jump to monitor address ??????????????
+            return(TRUE);
+            }
+
+        return(FALSE);
+        }
+
+    cpMem[cpu.regRaCm + address] = *data & Mask60;
+
+    return(FALSE);
+    }
+
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -275,6 +366,11 @@ void cpuInit(char *model, u32 memory, u32 ecsBanks)
     /*
     **  Allocate configured central memory.
     */
+    if ((memory & -memory) != memory)
+        {
+        fprintf(stderr, "CM size must be a power of 2\n");
+        exit(1);
+        }
     cpMem = calloc(memory, sizeof(CpWord));
     if (cpMem == NULL)
         {
@@ -283,7 +379,8 @@ void cpuInit(char *model, u32 memory, u32 ecsBanks)
         }
 
     cpuMaxMemory = memory;
-
+    cpuMemMask = memory - 1;
+    
     /*
     **  Allocate configured ECS memory.
     */
@@ -328,7 +425,7 @@ u32 cpuGetP(void)
 **------------------------------------------------------------------------*/
 bool cpuPpReadMem(u32 address, CpWord *data)
     {
-    address %= cpuMaxMemory;
+    address &= cpuMemMask;
     *data = cpMem[address] & Mask60;
     return(TRUE);
     }
@@ -346,7 +443,7 @@ bool cpuPpReadMem(u32 address, CpWord *data)
 **------------------------------------------------------------------------*/
 void cpuPpWriteMem(u32 address, CpWord data)
     {
-    address %= cpuMaxMemory;
+    address &= cpuMemMask;
     cpMem[address] = data & Mask60;
     }
 
@@ -572,7 +669,7 @@ void cpuStep(void)
         /*
         **  Don't trace NOS's idle loop and CPUMTR.
         */
-        if (cpu.regRaCm != 0 && cpu.regP > 0100)
+        if (/*cpu.regRaCm != 0 && */ cpu.regP > 0100)
             {
             traceCpu(oldRegP, opFm, opI, opJ, opK, opAddress);
             }
@@ -721,6 +818,7 @@ bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs)
 **  Returns:        TRUE if access failed, FALSE otherwise;
 **
 **------------------------------------------------------------------------*/
+#if 0
 static bool cpuFetchOpWord(u32 address, CpWord *data)
     {
     u32 location;
@@ -729,9 +827,8 @@ static bool cpuFetchOpWord(u32 address, CpWord *data)
     if ((location & Overflow18) != 0)
         {
         location += 1;
+        location &= Mask18;
         }
-
-    location &= Mask18;
 
 
     if (address >= cpu.regFlCm || location >= cpuMaxMemory)
@@ -758,86 +855,7 @@ static bool cpuFetchOpWord(u32 address, CpWord *data)
 
     return(FALSE);
     }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Read CPU memory and verify that address is within limits.
-**
-**  Parameters:     Name        Description.
-**                  address     RA relative address to read.
-**                  data        Pointer to 60 bit word which gets the data.
-**
-**  Returns:        TRUE if access failed, FALSE otherwise;
-**
-**------------------------------------------------------------------------*/
-static bool cpuReadMem(u32 address, CpWord *data)
-    {
-    if (address >= cpu.regFlCm || cpu.regRaCm + address >= cpuMaxMemory)
-        {
-        cpu.exitCondition |= EcAddressOutOfRange;
-        if ((cpu.exitMode & EmAddressOutOfRange) != 0)
-            {
-            /*
-            **  Exit mode selected.
-            */
-            if (cpu.regRaCm < cpuMaxMemory)
-                {
-                cpMem[cpu.regRaCm] = ((CpWord)cpu.exitCondition << 48) | ((CpWord)(cpu.regP + 1) << 30);
-                }
-
-            cpu.regP = 0;
-            *data = cpMem[0] & Mask60;
-            // ????????????? jump to monitor address ??????????????
-            return(TRUE);
-            }
-        else
-            {
-            address = 0;
-            }
-        }
-
-    *data = cpMem[cpu.regRaCm + address] & Mask60;
-
-    return(FALSE);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Write CPU memory and verify that address is within limits.
-**
-**  Parameters:     Name        Description.
-**                  address     RA relative address to write.
-**                  data        Pointer to 60 bit word which holds the data.
-**
-**  Returns:        TRUE if access failed, FALSE otherwise;
-**
-**------------------------------------------------------------------------*/
-static bool cpuWriteMem(u32 address, CpWord *data)
-    {
-    if (address >= cpu.regFlCm || cpu.regRaCm + address >= cpuMaxMemory)
-        {
-        cpu.exitCondition |= EcAddressOutOfRange;
-        if ((cpu.exitMode & EmAddressOutOfRange) != 0)
-            {
-            /*
-            **  Exit mode selected.
-            */
-            if (cpu.regRaCm < cpuMaxMemory)
-                {
-                cpMem[cpu.regRaCm] = ((CpWord)cpu.exitCondition << 48) | ((CpWord)(cpu.regP + 1) << 30);
-                }
-
-            cpu.regP = 0;
-            // ????????????? jump to monitor address ??????????????
-            return(TRUE);
-            }
-
-        return(FALSE);
-        }
-
-    cpMem[cpu.regRaCm + address] = *data & Mask60;
-
-    return(FALSE);
-    }
-
+#endif
 /*--------------------------------------------------------------------------
 **  Purpose:        Implement A register sematics.
 **
@@ -846,7 +864,7 @@ static bool cpuWriteMem(u32 address, CpWord *data)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cpuRegASemantics(void)
+static INLINE void cpuRegASemantics(void)
     {
     if (opI == 0)
         {
@@ -879,15 +897,16 @@ static void cpuRegASemantics(void)
 **  Returns:        18 bit result.
 **
 **------------------------------------------------------------------------*/
-static u32 cpuAdd18(u32 op1, u32 op2)
+static INLINE u32 cpuAdd18(u32 op1, u32 op2)
     {
     acc18 = (op1 & Mask18) - (~op2 & Mask18);
     if ((acc18 & Overflow18) != 0)
         {
         acc18 -= 1;
+        acc18 &= Mask18;
         }
 
-    return(acc18 & Mask18);
+    return(acc18);
     }
 
 /*--------------------------------------------------------------------------
@@ -900,15 +919,16 @@ static u32 cpuAdd18(u32 op1, u32 op2)
 **  Returns:        18 bit result.
 **
 **------------------------------------------------------------------------*/
-static u32 cpuSubtract18(u32 op1, u32 op2)
+static INLINE u32 cpuSubtract18(u32 op1, u32 op2)
     {
     acc18 = (op1 & Mask18) - (op2 & Mask18);
     if ((acc18 & Overflow18) != 0)
         {
         acc18 -= 1;
+        acc18 &= Mask18;
         }
 
-    return(acc18 & Mask18);
+    return(acc18);
     }
 
 /*--------------------------------------------------------------------------
@@ -1020,7 +1040,7 @@ static void cpuEcsTransfer(bool writeToEcs)
 
     while (wordCount--)
         {
-        cmAddress  %= cpuMaxMemory;
+        cmAddress  &= cpuMemMask;
         takeErrorExit = cpuEcsAccess (ecsAddress, cpMem + cmAddress, writeToEcs);
         if (takeErrorExit && writeToEcs)
             {

@@ -54,6 +54,7 @@
 */
 char ppKeyIn;
 bool emulationActive = TRUE;
+u32 cycles;
 
 /*
 **  -----------------
@@ -141,6 +142,10 @@ int main(int argc, char **argv)
         ppStep();
         cpuStep();
         rtcTick();
+        /*
+        **  Count a major cycle
+        */
+        cycles++;
         }
 
     windowClose();

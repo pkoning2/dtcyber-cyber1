@@ -155,6 +155,13 @@
 **  -----------------------------------------
 */
 
+typedef struct lpContext 
+{
+    int flags;
+    bool printed;
+} LpContext;
+
+
 /*
 **  ---------------------------
 **  Private Function Prototypes
@@ -218,7 +225,7 @@ void lp501Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         }
     else
         {
-        fprintf (stderr, "Unrecognize LP501 controller type %s\n",
+        fprintf (stderr, "Unrecognized LP501 controller type %s\n",
                  deviceName);
         exit (1);
         }
@@ -255,7 +262,7 @@ void lp512Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         }
     else
         {
-        fprintf (stderr, "Unrecognize LP512 controller type %s\n",
+        fprintf (stderr, "Unrecognized LP512 controller type %s\n",
                  deviceName);
         exit (1);
         }
@@ -273,10 +280,9 @@ void lp512Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **  Purpose:        Initialise 3000 class line printer.
 **
 **  Parameters:     Name        Description.
-**                  eqNo        equipment number
 **                  unitNo      unit number
 **                  channelNo   channel number the device is attached to
-**                  deviceName  optional device file name
+**                  flags       Printer type flags
 **
 **  Returns:        Nothing.
 **
@@ -285,16 +291,18 @@ static void lp3000Init(u8 unitNo,  u8 channelNo, int flags)
     {
     Dev3kSlot *up;
     char fname[80];
-
+    LpContext *lc;
+    
     up = dcc6681Attach(channelNo, unitNo, DtLp3000);
 
-    up->context = calloc(1, sizeof(int));
+    lc = (LpContext *) calloc(1, sizeof(LpContext));
+    up->context = lc;
     up->activate = lp3000Activate;
     up->disconnect = lp3000Disconnect;
     up->func = lp3000Func;
     up->io = lp3000Io;
     up->load = lp3000Load;
-    (int) (up->context) = flags;
+    lc->flags = flags;
     
     /*
     **  Open the device file.
@@ -405,8 +413,11 @@ static void lp3000Load(Dev3kSlot *up, char *fn)
 static FcStatus lp3000Func(PpWord funcCode)
     {
     FILE *fcb;
-    fcb = activeUnit->fcb;
+    LpContext *lc;
 
+    fcb = activeUnit->fcb;
+    lc = (LpContext *) (activeUnit->context);
+    
     /*
     **  Note that we don't emulate the VFU, so all VFU control codes
     **  are implemented as NOPs.
@@ -415,17 +426,29 @@ static FcStatus lp3000Func(PpWord funcCode)
     // Start with the common codes
     switch (funcCode)
         {
-    case FcPrintRelease:
     case FcPrintAutoEject:
     case FcPrintNoSpace:
         // Treat these as NOPs
         return(FcProcessed);
 
+    case FcPrintRelease:
+        // Release is sent at end of job, so flush the print file
+        if (lc->printed)
+            {
+            fflush (fcb);
+            lc->printed = FALSE;
+            }
+        return(FcProcessed);
+        
     case FcPrintSingle:
     case FcPrintLastLine:
+        // Treat last-line codes as a single blank line
+        fputc('\n', fcb);
+        return(FcProcessed);
+
     case FcPrintEject:
-        // Treat last-line and eject codes as a single blank line
-        fprintf(fcb, "\n");
+        // Turn eject into a formfeed character
+        fputc('\f', fcb);
         return(FcProcessed);
 
     case FcPrintDouble:
@@ -433,34 +456,30 @@ static FcStatus lp3000Func(PpWord funcCode)
         return(FcProcessed);
 
     case FcControllerOutputEna:
-        if (Lp3000UnitFlags & Lp3555FillImageMem)
+        if (lc->flags & Lp3555FillImageMem)
             {
             // Tweak the function code to tell I/O handler to toss this data
             funcCode++;
             // Now clear the flag
-            Lp3000UnitFlags &= ~Lp3555FillImageMem;
-            }
-        else
-            {
-            fprintf(fcb, "\n");
+            lc->flags &= ~Lp3555FillImageMem;
             }
         // Initially clear interrupt status flags
-        Lp3000UnitFlags &= ~(StPrintIntReady | StPrintIntEnd);
+        lc->flags &= ~(StPrintIntReady | StPrintIntEnd);
 
         // Update interrupt status to reflect what status
         // will be when this transfer is finished.
         // Ok, so that's cheating a bit...
-        if (Lp3000UnitFlags & Lp3000IntReadyEna)
+        if (lc->flags & Lp3000IntReadyEna)
             {
-            Lp3000UnitFlags |= Lp3000IntReady;
+            lc->flags |= Lp3000IntReady;
             }
-        if (Lp3000UnitFlags & Lp3000IntEndEna)
+        if (lc->flags & Lp3000IntEndEna)
             {
-            Lp3000UnitFlags |= Lp3000IntEnd;
+            lc->flags |= Lp3000IntEnd;
             }
     
         // Update interrupt summary flag in unit block
-        activeUnit->intr = (Lp3000UnitFlags &
+        activeUnit->intr = (lc->flags &
                             (Lp3000IntReady | Lp3000IntEnd)) != 0;
 
         // fall through
@@ -469,7 +488,7 @@ static FcStatus lp3000Func(PpWord funcCode)
         return(FcAccepted);
         }
     
-    if (Lp3000UnitFlags & Lp3000Type3555)
+    if (lc->flags & Lp3000Type3555)
         {
         switch (funcCode)
             {
@@ -519,37 +538,37 @@ static FcStatus lp3000Func(PpWord funcCode)
         case Fc3555FillMemory:
             // Remember that we saw this function, but this doesn't actually
             // start any I/O yet.
-            Lp3000UnitFlags |= Lp3555FillImageMem;
+            lc->flags |= Lp3555FillImageMem;
             return(FcProcessed);
 
         case Fc3555SelIntReady:
             // Enable next int but clear current one
-            Lp3000UnitFlags |= Lp3000IntReadyEna;
-            Lp3000UnitFlags &= ~Lp3000IntReady;
+            lc->flags |= Lp3000IntReadyEna;
+            lc->flags &= ~Lp3000IntReady;
             // Update interrupt summary flag in unit block
-            activeUnit->intr = (Lp3000UnitFlags &
+            activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
             return(FcProcessed);
 
         case Fc3555RelIntReady:
-            Lp3000UnitFlags &= ~(Lp3000IntReadyEna | Lp3000IntReady);
+            lc->flags &= ~(Lp3000IntReadyEna | Lp3000IntReady);
             // Update interrupt summary flag in unit block
-            activeUnit->intr = (Lp3000UnitFlags &
+            activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
             return(FcProcessed);
 
         case Fc3555SelIntEnd:
-            Lp3000UnitFlags |= Lp3000IntEndEna;
-            Lp3000UnitFlags &= ~Lp3000IntEnd;
+            lc->flags |= Lp3000IntEndEna;
+            lc->flags &= ~Lp3000IntEnd;
             // Update interrupt summary flag in unit block
-            activeUnit->intr = (Lp3000UnitFlags &
+            activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
             return(FcProcessed);
 
         case Fc3555RelIntEnd:
-            Lp3000UnitFlags &= ~(Lp3000IntEndEna | Lp3000IntEnd);
+            lc->flags &= ~(Lp3000IntEndEna | Lp3000IntEnd);
             // Update interrupt summary flag in unit block
-            activeUnit->intr = (Lp3000UnitFlags &
+            activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
             return(FcProcessed);
             }
@@ -584,32 +603,32 @@ static FcStatus lp3000Func(PpWord funcCode)
 
         case Fc3152SelIntReady:
             // Enable next int but clear current one
-            Lp3000UnitFlags |= Lp3000IntReadyEna;
-            Lp3000UnitFlags &= ~Lp3000IntReady;
+            lc->flags |= Lp3000IntReadyEna;
+            lc->flags &= ~Lp3000IntReady;
             // Update interrupt summary flag in unit block
-            activeUnit->intr = (Lp3000UnitFlags &
+            activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
             return(FcProcessed);
 
         case Fc3152RelIntReady:
-            Lp3000UnitFlags &= ~(Lp3000IntReadyEna | Lp3000IntReady);
+            lc->flags &= ~(Lp3000IntReadyEna | Lp3000IntReady);
             // Update interrupt summary flag in unit block
-            activeUnit->intr = (Lp3000UnitFlags &
+            activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
             return(FcProcessed);
 
         case Fc3152SelIntEnd:
-            Lp3000UnitFlags |= Lp3000IntEndEna;
-            Lp3000UnitFlags &= ~Lp3000IntEnd;
+            lc->flags |= Lp3000IntEndEna;
+            lc->flags &= ~Lp3000IntEnd;
             // Update interrupt summary flag in unit block
-            activeUnit->intr = (Lp3000UnitFlags &
+            activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
             return(FcProcessed);
 
         case Fc3152RelIntEnd:
-            Lp3000UnitFlags &= ~(Lp3000IntEndEna | Lp3000IntEnd);
+            lc->flags &= ~(Lp3000IntEndEna | Lp3000IntEnd);
             // Update interrupt summary flag in unit block
-            activeUnit->intr = (Lp3000UnitFlags &
+            activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
             return(FcProcessed);
             }
@@ -629,6 +648,7 @@ static FcStatus lp3000Func(PpWord funcCode)
 static void lp3000Io(void)
     {
     FILE *fcb = activeUnit->fcb;
+    LpContext *lc = (LpContext *) (activeUnit->context);
 
     /*
     **  Process printer I/O.
@@ -642,7 +662,7 @@ static void lp3000Io(void)
     case FcControllerOutputEna:
         if (activeChannel->full)
             {
-            if (Lp3000UnitFlags & Lp3000Type501)
+            if (lc->flags & Lp3000Type501)
                 {
                 // 501 printer, output display code
                 fputc(bcdToAscii[(activeChannel->data >> 6) & 077], fcb);
@@ -654,6 +674,7 @@ static void lp3000Io(void)
                 fputc(activeChannel->data & 0377, fcb);
                 }
             activeChannel->full = FALSE;
+            lc->printed = TRUE;
             }
         break;
 
@@ -665,7 +686,7 @@ static void lp3000Io(void)
     case Fc6681DevStatusReq:
         // Indicate ready plus whatever interrupts are enabled
         activeChannel->data = StPrintReady | 
-                              (Lp3000UnitFlags &
+                              (lc->flags &
                                (StPrintIntReady | StPrintIntEnd));
         activeChannel->full = TRUE;
         activeUnit->fcode = 0;
@@ -695,6 +716,14 @@ static void lp3000Activate(void)
 **------------------------------------------------------------------------*/
 static void lp3000Disconnect(void)
     {
+    FILE *fcb = activeUnit->fcb;
+
+    if (activeUnit->fcode == FcControllerOutputEna)
+        {
+        // Rule is "space after the line is printed" so do that here
+        fputc('\n', fcb);
+        activeUnit->fcode = 0;
+        }
     }
 
 /*---------------------------  End Of File  ------------------------------*/

@@ -1,0 +1,19 @@
+Changes made to DtCyber
+
+Since jul25 drop:
+
+- Added 029 card code support to cr3447, selected by "026" or "029"
+  argument on cyber.ini line.
+- Changed several files to avoid gcc warning about oversized constants.
+- Some optimizations in ppu and cpu emulation, particularly inlining.
+- Added dumping of direct cells (as data) to ppu disassembly printout.
+- Changed lp3000 to do space after rather than before, and to handle
+  eject by outputting a formfeed character.
+- Make operator display look better if you don't have CcDebug turned on.
+- Suppress displaying of B0 in CPU trace output.
+- Fix display bug in win32 output; also add display of channel trace mask.
+- Change X11 display to use one-bit pixmap rather than screen depth.
+- Fix "1CD gets stuck sometimes" bug in cr3447.
+- Change lp3000.c to flush on a Release function if something was printed
+  since the last time.  That way you can see job output without having
+  to unload every time.
