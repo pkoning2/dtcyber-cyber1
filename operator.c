@@ -43,6 +43,7 @@
 **  Private Macro Functions
 **  -----------------------
 */
+#define opWidth(x) ((x == FontSmall) ? smallFontWidth : mediumFontWidth)
 
 /*
 **  -----------------------------------------
@@ -167,8 +168,8 @@ static OpCmd decode[] =
 
 // Note: Y values of zero are filled in by opInit
 static OpMsg msg[] =
-    { { 0760 - (sizeof(DtCyberVersion) * 010), 0760, 0010, DtCyberVersion },
-      { 0020, 0640, 0010, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
+    { { 0760 - (sizeof(DtCyberVersion) * 010), 0740, 0010, DtCyberVersion },
+      { 0020, 0600, 0010, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
       { 0020,    0, 0010, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
       { 0020,    0, 0010, "UNLOAD,CH,EQ.      Unload ch/eq." },
       { 0020,    0, 0010, "DUMP,CPU.          Dump CPU state." },
@@ -196,6 +197,9 @@ static OpMsg title = { 0120, 0700, 0020, "OPERATOR INTERFACE" };
 static bool msgBold;
 static bool complete;
 static char msgBuf[80];
+static int smallFontWidth;
+static int mediumFontWidth;
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -222,7 +226,7 @@ void opInit(void)
         {
         if (m->y == 0)
             {
-            m->y = y - (m->fontSize * 3) / 2;
+            m->y = y - m->fontSize * 2;
             }
         y = m->y;
         m++;
@@ -247,9 +251,11 @@ void opRequest(void)
     int i, j;
     int twRate = 0;     // number of repaints between twinkles
     int twPos = 0;      // Twinkle position mod 4
-
+    
     cmdBuf[0] = '\0';
     cmdLen = 0;
+    smallFontWidth = windowGetOperFontWidth(FontSmall);
+    mediumFontWidth = windowGetOperFontWidth(FontMedium);
     while (opActive)
         {
         for (i = 0; i < BoldMediumRepaints; i++)
@@ -271,7 +277,7 @@ void opRequest(void)
                 {
                 for (j = twPos; j < cmdLen; j += 4)
                     {
-                    windowSetX (CmdX + (FontMedium * j));
+                    windowSetX (CmdX + (mediumFontWidth * j));
                     windowQueue (cmdBuf[j]);
                     }
                 }
@@ -298,7 +304,7 @@ void opRequest(void)
             twRate = TwinkleRate;
             twPos = (twPos + 1) & 3;
             }
-        if (ppKeyIn == 0) 
+        if (ppKeyIn <= 0) 
             {
 #if !defined(_WIN32)
             usleep (RefreshInterval / 2);
@@ -430,12 +436,14 @@ void opSetMsg (char *p)
 static void opSendString (OpMsg *m)
     {
     char *c;
+    int x = m->x;
     
-    windowSetX (m->x);
     windowSetY (m->y);
     windowSetFont (m->fontSize);
     for (c = m->text; *c; c++)
         {
+        windowSetX (x);
+        x += opWidth (m->fontSize);
         windowQueue (*c);
         }
     }
@@ -598,7 +606,7 @@ static void opCmdShutdown(char *cmdParams)
     /*
     **  Process command.
     */
-    opActive = FALSE;
+    windowOperEnd();
     emulationActive = FALSE;
 
     printf("\nThanks for using %s - Goodbye for now.\n\n", DtCyberVersion);
@@ -618,7 +626,7 @@ static void opCmdEnd(char *cmdParams)
     /*
     **  Process commands.
     */
-    opActive = FALSE;
+    windowOperEnd();
     }
 
 /*--------------------------------------------------------------------------

@@ -98,22 +98,11 @@ static char asciiToConsole[128] =
     /* 78-7F */ 030,    031,    032,    0,      0,      0,      0,      0
     };
 
-//static char consoleToAscii[64] =
-char consoleToAscii[64] =
-    {
-    /* 00-07 */ 0,      'A',    'B',    'C',    'D',    'E',    'F',    'G',
-    /* 10-17 */ 'H',    'I',    'J',    'K',    'L',    'M',    'N',    'O',
-    /* 20-27 */ 'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',
-    /* 30-37 */ 'X',    'Y',    'Z',    '0',    '1',    '2',    '3',    '4',
-    /* 40-47 */ '5',    '6',    '7',    '8',    '9',    '+',    '-',    '*',
-    /* 50-57 */ '/',    '(',    ')',    ' ',    '=',    ' ',    ',',    '.',
-    /* 60-67 */  0,      0,      0,      0,      0,      0,      0,      0,
-    /* 70-77 */  0,      0,      0,      0,      0,      0,      0,      0
-    };
-
 static u8 currentFont;
 static u16 currentOffset;
 static bool emptyDrop = FALSE;
+static u64 keyMask;
+static u8 currentKey;
 
 /*
 **--------------------------------------------------------------------------
@@ -248,7 +237,9 @@ static void consoleIo(void)
     u8 c0;
     u8 c1;
     u8 ch;
-
+    int i;
+    u64 m;
+    
     switch (activeDevice->fcode)
         {
     default:
@@ -264,8 +255,8 @@ static void consoleIo(void)
             {
             emptyDrop = FALSE;
 
-            c0 = consoleToAscii[(activeChannel->data >> 6) & Mask6];
-            c1 = consoleToAscii[(activeChannel->data >> 0) & Mask6];
+            c0 = (activeChannel->data >> 6) & Mask6;
+            c1 = (activeChannel->data >> 0) & Mask6;
 
             ch = (u8)((activeChannel->data >> 6) & Mask6);
 
@@ -331,7 +322,27 @@ static void consoleIo(void)
         if (!activeChannel->full)
             {
             windowGetChar();
-            activeChannel->data = asciiToConsole[ppKeyIn];
+            ch = asciiToConsole[ppKeyIn & 0177];
+            if (ch != 0)
+                {
+                if (ppKeyIn < 0)
+                    {
+                    keyMask &= ~(ULL(1) << ch);
+                    }
+                else
+                    {
+                    keyMask |= ULL(1) << ch;
+                    }
+                currentKey = 0;
+                for (i = 0, m = 1; i < 64; i++, m <<= 1)
+                    {
+                    if (keyMask & m)
+                        {
+                        currentKey |= i;
+                        }
+                    }
+                }
+            activeChannel->data = currentKey;
             activeChannel->full = TRUE;
             activeChannel->status = 0;
             ppKeyIn = 0;
