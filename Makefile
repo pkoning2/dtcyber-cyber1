@@ -52,12 +52,11 @@ ifeq ("$(HOST)","Darwin")
 dtcyber:
 	mkdir -p g3; \
 	cd g3; \
+	ln -sf ../Makefile.* .; \
 	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS)" VPATH=..
-#	mkdir -p g4; \
-#	cd g4; \
-#	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G4CFLAGS)" VPATH=..
 	mkdir -p g5; \
 	cd g5; \
+	ln -sf ../Makefile.* .; \
 	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS)" VPATH=..
 	lipo -create -output dtcyber g3/gxdtcyber g5/gxdtcyber
 
@@ -65,16 +64,7 @@ gxdtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)
 
 clean:
-	rm -f *.o *.pcf g3/*.o g3/gxdcyber g4/*.o g4/gxdcyber g5/*.o g5/gxdtcyber dd60 dtoper pterm
-
-Makefile.pterm:
-	ln -s ../Makefile.pterm .
-
-Makefile.dd60:
-	ln -s ../Makefile.dd60 .
-
-Makefile.dtoper:
-	ln -s ../Makefile.dtoper .
+	rm -rf *.o *.pcf g3 g5 dd60 dtoper pterm
 
 else
 
