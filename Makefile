@@ -20,6 +20,7 @@ LIBS    +=  /System/Library/Frameworks/Carbon.framework/Carbon
 INCL    += -I/System/Library/Frameworks/Carbon.framework/Headers
 G5CFLAGS = -mcpu=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64 -DCPU_THREADS
 G4CFLAGS = -mcpu=G4 -mtune=G4
+G3CFLAGS = -mcpu=G3 -mtune=G3
 endif
 
 CDEBUG = -DCcDebug=1
@@ -46,22 +47,22 @@ fonts: $(PCFS)
 
 ifeq ($(HOST),"darwin")
 dtcyber:
+	mkdir -p g3; \
+	cd g3; \
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS)" VPATH=..
 	mkdir -p g4; \
 	cd g4; \
-	$(MAKE) -f ../Makefile g4dtcyber EXTRACFLAGS="$(G4CFLAGS)" VPATH=..
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G4CFLAGS)" VPATH=..
 	mkdir -p g5; \
 	cd g5; \
-	$(MAKE) -f ../Makefile g5dtcyber EXTRACFLAGS="$(G5CFLAGS)" VPATH=..
-	lipo -create -output dtcyber g4/dtcyber g5/dtcyber
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS)" VPATH=..
+	lipo -create -output dtcyber g3/dtcyber g4/dtcyber g5/dtcyber
 
-g4dtcyber: $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
-
-g5dtcyber: $(OBJS)
+gxdtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
 
 clean:
-	rm -f *.o *.pcf g4/*.o g4/dcyber g5/*.o g5/dtcyber
+	rm -f *.o *.pcf g3/*.o g3/dcyber g4/*.o g4/dcyber g5/*.o g5/dtcyber
 else
 dtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
