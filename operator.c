@@ -27,6 +27,9 @@
 #include "const.h"
 #include "types.h"
 #include "proto.h"
+#ifdef CPU_THREADS
+#include <pthread.h>
+#endif
 
 /*
 **  -----------------
@@ -108,6 +111,11 @@ bool opActive = FALSE;
 **  -----------------
 */
 static char cmdBuf[OpCmdSize];
+#ifdef CPU_THREADS
+pthread_cond_t oper_cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t oper_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 static char *syntax[] = 
     /*
     ** Simple command decode table with DSD style completion.
@@ -138,7 +146,7 @@ static char *syntax[] =
     "UNTRACE,.\n",
     "UNTRACE,PPU7.\n",
     "UNTRACE,CHANNEL7.\n",
-    "UNTRACE,CPU.\n",
+    "UNTRACE,CPU7.\n",
     "UNTRACE,XJ.\n",
     "UNTRACE,RESET.\n",
 #endif
@@ -159,7 +167,7 @@ static OpCmd decode[] =
     "SHUTDOWN.",                opCmdShutdown,
     "LOAD,",                    opCmdLoad,
     "UNLOAD,",                  opCmdUnload,
-    "DUMP,CPU",                 opDumpCpu,
+    "DUMP,CPU.",                opDumpCpu,
     "DUMP,CM,",                 opDumpCMem,
     "DUMP,ECS,",                opDumpEcs,
     "DUMP,PPU",                 opDumpPpu,
@@ -168,13 +176,13 @@ static OpCmd decode[] =
 #if CcDebug == 1
     "TRACE,PPU",                opTracePpu,
     "TRACE,CHANNEL",            opTraceCh,
-    "TRACE,CPU.",               opTraceCpu,
+    "TRACE,CPU",                opTraceCpu,
     "TRACE,CP",                 opTraceCp,
     "TRACE,XJ.",                opTraceXj,
     "UNTRACE,.",                opUntrace,
     "UNTRACE,PPU",              opUntracePpu,
     "UNTRACE,CHANNEL",          opUntraceCh,
-    "UNTRACE,CPU.",             opUntraceCpu,
+    "UNTRACE,CPU",              opUntraceCpu,
     "UNTRACE,XJ.",              opUntraceXj,
     "UNTRACE,RESET.",           opResetTrace,
 #endif
@@ -187,7 +195,7 @@ static OpMsg msg[] =
       { 0020, 0630, 0010, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
       { 0020,    0, 0010, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
       { 0020,    0, 0010, "UNLOAD,CH,EQ.      Unload ch/eq." },
-      { 0020,    0, 0010, "DUMP,CPU.          Dump CPU state." },
+      { 0020,    0, 0010, "DUMP,CPU.          Dump state of CPUs." },
       { 0020,    0, 0010, "DUMP,CM,X,Y.       Dump CM from X to Y." },
       { 0020,    0, 0010, "DUMP,ECS,X,Y.      Dump ECS from X to Y." },
       { 0020,    0, 0010, "DUMP,PPUNN.        Dump specified PPU state." },
@@ -195,7 +203,7 @@ static OpMsg msg[] =
       { 0020,    0, 0010, "SET,KEYBOARD=TRUE. Emulate console keyboard accurately." },
       { 0020,    0, 0010, "SET,KEYBOARD=EASY. Make console keyboard easy (rollover)." },
 #if CcDebug == 1
-      { 0020,    0, 0010, "TRACE,CPU.         Trace CPU activity." },
+      { 0020,    0, 0010, "TRACE,CPUN.        Trace specified CPU activity." },
       { 0020,    0, 0010, "TRACE,CPNN.        Trace CPU activity for CP NN." },
       { 0020,    0, 0010, "TRACE,XJ.          Trace exchange jumps." },
       { 0020,    0, 0010, "TRACE,PPUNN.       Trace specified PPU activity." },
@@ -439,6 +447,33 @@ void opSetMsg (char *p)
     errmsg.text = p;
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Wait for operator mode to end
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        nothing
+**
+**  This function lets a thread wait for operator mode to finish.
+**  In a single threaded implementation it does nothing, for a 
+**  multi-threaded implementation it waits on the operator condition
+**  variable.  
+**  Note: do not call this function from the thread that the operator
+**  mode processing runs in...
+**
+**------------------------------------------------------------------------*/
+void opWait (void)
+    {
+#ifdef CPU_THREADS
+    pthread_mutex_lock (&oper_mutex);
+    if (opActive)
+        {
+        pthread_cond_wait (&oper_cond, &oper_mutex);
+        }
+    pthread_mutex_unlock (&oper_mutex);
+#endif
+    }
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -629,7 +664,7 @@ static void opCmdShutdown(char *cmdParams)
     /*
     **  Process command.
     */
-    windowOperEnd();
+    opCmdEnd (cmdParams);
     emulationActive = FALSE;
 
     printf("\nThanks for using %s - Goodbye for now.\n\n", DtCyberVersion);
@@ -649,6 +684,14 @@ static void opCmdEnd(char *cmdParams)
     /*
     **  Process commands.
     */
+#ifdef CPU_THREADS
+    pthread_mutex_lock (&oper_mutex);
+    opActive = 0;
+    pthread_cond_broadcast (&oper_cond);
+    pthread_mutex_unlock (&oper_mutex);
+#else
+    opActive = 0;
+#endif
     windowOperEnd();
     }
 
@@ -981,12 +1024,12 @@ static void opTraceCp(char *cmdParams)
         opSetMsg ("$INVALID CP NUMBER");
         return;
         }
-    traceMask |= TraceCpu;
+    traceMask |= TraceCpu0 | TraceCpu1;
     traceCp = cp;
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Trace the CPU
+**  Purpose:        Trace a CPU
 **
 **  Parameters:     Name        Description.
 **                  cmdParams   Command parameters
@@ -996,7 +1039,22 @@ static void opTraceCp(char *cmdParams)
 **------------------------------------------------------------------------*/
 static void opTraceCpu(char *cmdParams)
     {
-    traceMask |= TraceCpu;
+    int     np, cp;
+    /*
+    **  Process commands.
+    */
+    np = sscanf (cmdParams, "%o", &cp);
+    if (np != 1)
+        {
+        opSetMsg ("$INSUFFICENT PARAMETERS");
+        return;
+        }
+    if (cp >= cpuCount)
+        {
+        opSetMsg ("$INVALID CPU NUMBER");
+        return;
+        }
+    traceMask |= TraceCpu (cp);
     traceCp = 0;
     }
 
@@ -1085,7 +1143,22 @@ static void opUntraceCh(char *cmdParams)
 **------------------------------------------------------------------------*/
 static void opUntraceCpu(char *cmdParams)
     {
-    traceMask &= ~(TraceCpu);
+    int     np, cp;
+    /*
+    **  Process commands.
+    */
+    np = sscanf (cmdParams, "%o", &cp);
+    if (np != 1)
+        {
+        opSetMsg ("$INSUFFICENT PARAMETERS");
+        return;
+        }
+    if (cp >= cpuCount)
+        {
+        opSetMsg ("$INVALID CPU NUMBER");
+        return;
+        }
+    traceMask &= ~(TraceCpu (cp));
     traceCp = 0;
     traceStop ();
     }

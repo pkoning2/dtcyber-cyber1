@@ -33,7 +33,7 @@
 **  Private Macro Functions
 **  -----------------------
 */
-#define WindowCheckRate         2000
+#define WindowCheckRate         5000
 
 /*
 **  -----------------------------------------
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     **  Initiate deadstart sequence.
     */
     deadStart();
-
+    
     /*
     **  Emulation loop.
     */
@@ -140,7 +140,11 @@ int main(int argc, char **argv)
         **  Execute PP, CPU and RTC.
         */
         ppStep();
-        cpuStep();
+#ifndef CPU_THREADS
+        cpuStepAll();
+#else
+	cpuStep(cpu);
+#endif
         rtcTick();
         /*
         **  Count a major cycle
@@ -165,6 +169,7 @@ int main(int argc, char **argv)
 
     return(0);
     }
+
 
 
 /*

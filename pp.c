@@ -21,6 +21,9 @@
 #include "const.h"
 #include "types.h"
 #include "proto.h"
+#ifdef CPU_THREADS
+#include <pthread.h>
+#endif
 
 /*
 **  -----------------
@@ -679,7 +682,7 @@ static void ppStatusAndControl(PpWord func)
     /*
     **  Set a few dynamic bits.
     */
-    if (cpuStopped)
+    if (cpu[0].cpuStopped)
         {
         ppStatusAndControlRegister[020] |= 1;
         }
@@ -687,14 +690,22 @@ static void ppStatusAndControl(PpWord func)
         {
         ppStatusAndControlRegister[020] &= ~1;
         }
-
-    if (cpu.monitorMode)
+    if (cpu[1].cpuStopped)
         {
-        ppStatusAndControlRegister[020] |= 010;
+        ppStatusAndControlRegister[020] |= 2;
         }
     else
         {
-        ppStatusAndControlRegister[020] &= ~010;
+        ppStatusAndControlRegister[020] &= ~2;
+        }
+
+    if (monitorCpu >= 0)
+        {
+        ppStatusAndControlRegister[020] |= 010 << monitorCpu;
+        }
+    else
+        {
+        ppStatusAndControlRegister[020] &= ~030;
         }
 
     switch (code)
@@ -1168,22 +1179,30 @@ static void ppOpLMC(void)     // 23
     PpIncrement(activePpu->regP);
     }
 
+extern FILE **cpuTF;
 static void ppOpEXN(void)     // 26
     {
     u32 exchangeAddress;
+    int cpnum = opD & 007;
+    int monitor;
+    
+    if (cpnum >= cpuCount)
+    {
+    cpnum = 0;
+    }
 
     if ((opD & 070) == 0)
         {
         exchangeAddress = activePpu->regA & Mask18;
+        monitor = -1;       // no change to monitor mode flag
         }
     else
         {
-        if (cpu.monitorMode)
+        // If we're in monitor mode now, do a pass
+        if (monitorCpu >= 0)
             {
             return;
             }
-
-        cpu.monitorMode = TRUE;
 
         if ((opD & 070) == 010)
             {
@@ -1191,25 +1210,46 @@ static void ppOpEXN(void)     // 26
             **  MXN.
             */
             exchangeAddress = activePpu->regA & Mask18;
+            monitor = 1;    // switch this CPU to monitor mode
             }
         else if ((opD & 070) == 020)
             {
             /*
             **  MAN.
             */
-            exchangeAddress = cpu.regMa & Mask18;
+            exchangeAddress = 0;
+            monitor = 2;    // switch this CPU to monitor mode at MA
             }
         }
 
-    while (!cpuExchangeJump(exchangeAddress))
+      fprintf(cpuTF[0],"pp %d issue exchange cpu%d to %06o monitor %d\n", (int) (activePpu->id), cpnum, exchangeAddress, (int)monitor);
+    if (!cpuIssueExchange (cpnum, exchangeAddress, monitor))
         {
-        cpuStep();
+        /*
+        **  Come here if exchange was not accepted.  There are two
+        **  possible reasons: 
+        **  1. A CPU is in monitor mode and monitor mode was requested.
+        **  2. An exchange is currently pending.
+        **  Case 2 applies only for the single threaded DtCyber. 
+        **  Case 1 applies to both, but can't happen here for the single
+        **  threaded version because we already check monitorCpu up above
+        **  and for a single threaded simulation it can't change in
+        **  mid-instruction.
+        */
+#ifdef CPU_THREADS
+        // Must be monitor mode, make it a pass
+        return;
+#else
+        // Must be exchange busy, retry the instruction
+        PpDecrement(activePpu->regP);
+        return;
+#endif
         }
     }
 
 static void ppOpRPN(void)     // 27
     {
-    activePpu->regA = cpuGetP();
+    activePpu->regA = cpuGetP(opD);
     }
 
 static void ppOpLDD(void)     // 30

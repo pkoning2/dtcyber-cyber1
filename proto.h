@@ -34,6 +34,7 @@ void deadStart(void);
 */
 void rtcInit(char *model, u8 increment, long setMHz);
 void rtcTick(void);
+u64 rtcMicrosec(void);
 
 /*
 **  channel.c
@@ -55,13 +56,14 @@ void ppStep(void);
 /*
 **  cpu.c
 */
-void cpuInit(char *model, u32 memory, u32 ecsBanks);
-u32 cpuGetP(void);
-bool cpuExchangeJump(u32 addr);
-void cpuStep(void);
+void cpuInit(char *model, u32 cpus, u32 memory, u32 ecsBanks);
+u32 cpuGetP(u8 cpnum);
+void cpuStepAll(void);
+void cpuStep(CpuContext *activeCpu);
 bool cpuPpReadMem(u32 address, CpWord *data);
 void cpuPpWriteMem(u32 address, CpWord data);
 bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs);
+bool cpuIssueExchange(u8 cpnum, u32 addr, int monitor);
 
 /*
 **  dcc6681.c
@@ -154,11 +156,12 @@ void tracePM(void);
 u8 traceDisassembleOpcode(char *str, PpWord *pm);
 void traceChannelFunction(PpWord funcCode);
 void tracePrint(char *str);
-void traceCpuPrint(char *str);
+void traceCpuPrint(CpuContext *activeCpu, char *str);
 void traceChannel(u8 ch);
 void traceEnd(void);
 void traceReset(void);
-void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress);
+void traceCpu(CpuContext *activeCpu, 
+              u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress);
 void traceExchange(CpuContext *cc, u32 addr, char *title);
 void traceCM(u32 start, u32 end);
 
@@ -232,6 +235,8 @@ void ptermTouchPanel(bool enable);
 void opInit(void);
 void opRequest(void);
 void opSetMsg (char *p);
+void opWaitOperMode(void);
+void opWait(void);
 
 /*
 **  -----------------
@@ -247,8 +252,9 @@ extern u8 channelCount;
 extern PpSlot *activePpu;
 extern ChSlot *activeChannel;
 extern DevSlot *activeDevice;
-extern CpuContext cpu;
-extern bool cpuStopped;
+extern CpuContext *cpu;
+extern u8 cpuCount;
+extern volatile int monitorCpu;
 extern CpWord *cpMem;
 extern CpWord *ecsMem;
 extern u32 cpuMaxMemory;

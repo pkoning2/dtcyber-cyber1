@@ -139,66 +139,73 @@ void dumpAll(void)
 **------------------------------------------------------------------------*/
 void dumpCpu(void)
     {
-    u8 i;
+    u8 i, j;
     CpWord data;
 
-    fprintf(cpuDF, "P       %06o  ", cpu.regP);
-    fprintf(cpuDF, "A%d %06o  ", 0, cpu.regA[0]);
-    fprintf(cpuDF, "B%d %06o", 0, cpu.regB[0]);
-    fprintf(cpuDF, "\n");
-                           
-    fprintf(cpuDF, "RAcm    %06o  ", cpu.regRaCm);
-    fprintf(cpuDF, "A%d %06o  ", 1, cpu.regA[1]);
-    fprintf(cpuDF, "B%d %06o", 1, cpu.regB[1]);
-    fprintf(cpuDF, "\n");
-                           
-    fprintf(cpuDF, "FLcm    %06o  ", cpu.regFlCm);
-    fprintf(cpuDF, "A%d %06o  ", 2, cpu.regA[2]);
-    fprintf(cpuDF, "B%d %06o", 2, cpu.regB[2]);
-    fprintf(cpuDF, "\n");
-                           
-    fprintf(cpuDF, "RAecs   %06o  ", cpu.regRaEcs);
-    fprintf(cpuDF, "A%d %06o  ", 3, cpu.regA[3]);
-    fprintf(cpuDF, "B%d %06o", 3, cpu.regB[3]);
-    fprintf(cpuDF, "\n");
-                           
-    fprintf(cpuDF, "FLecs   %06o  ", cpu.regFlEcs);
-    fprintf(cpuDF, "A%d %06o  ", 4, cpu.regA[4]);
-    fprintf(cpuDF, "B%d %06o", 4, cpu.regB[4]);
-    fprintf(cpuDF, "\n");
-                           
-    fprintf(cpuDF, "EM    %08o  ", cpu.exitMode);
-    fprintf(cpuDF, "A%d %06o  ", 5, cpu.regA[5]);
-    fprintf(cpuDF, "B%d %06o", 5, cpu.regB[5]);
-    fprintf(cpuDF, "\n");
-                           
-    fprintf(cpuDF, "MA      %06o  ", cpu.regMa);
-    fprintf(cpuDF, "A%d %06o  ", 6, cpu.regA[6]);
-    fprintf(cpuDF, "B%d %06o", 6, cpu.regB[6]);
-    fprintf(cpuDF, "\n");
-                           
-    fprintf(cpuDF, "ECOND       %02o  ", cpu.exitCondition);
-    fprintf(cpuDF, "A%d %06o  ", 7, cpu.regA[7]);
-    fprintf(cpuDF, "B%d %06o  ", 7, cpu.regB[7]);
-    fprintf(cpuDF, "\n");
-    fprintf(cpuDF, "STOP         %d  ", cpuStopped ? 1 : 0);
-    fprintf(cpuDF, "\n");
-    fprintf(cpuDF, "\n");
-
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < cpuCount; i++)
         {
-        fprintf(cpuDF, "X%d ", i);
-        data = cpu.regX[i];
-        fprintf(cpuDF, "%04o %04o %04o %04o %04o   ",
-            (PpWord)((data >> 48) & Mask12),
-            (PpWord)((data >> 36) & Mask12),
-            (PpWord)((data >> 24) & Mask12),
-            (PpWord)((data >> 12) & Mask12),
-            (PpWord)((data      ) & Mask12));
+        fprintf (cpuDF, "Cpu %d%s:\n", i,
+                 (monitorCpu == i) ? " (in monitor mode)" : "");
+        
+        fprintf(cpuDF, "P       %06o  ", cpu[i].regP);
+        fprintf(cpuDF, "A%d %06o  ", 0, cpu[i].regA[0]);
+        fprintf(cpuDF, "B%d %06o", 0, cpu[i].regB[0]);
+        fprintf(cpuDF, "\n");
+                           
+        fprintf(cpuDF, "RAcm    %06o  ", cpu[i].regRaCm);
+        fprintf(cpuDF, "A%d %06o  ", 1, cpu[i].regA[1]);
+        fprintf(cpuDF, "B%d %06o", 1, cpu[i].regB[1]);
+        fprintf(cpuDF, "\n");
+                           
+        fprintf(cpuDF, "FLcm    %06o  ", cpu[i].regFlCm);
+        fprintf(cpuDF, "A%d %06o  ", 2, cpu[i].regA[2]);
+        fprintf(cpuDF, "B%d %06o", 2, cpu[i].regB[2]);
+        fprintf(cpuDF, "\n");
+                           
+        fprintf(cpuDF, "RAecs %08o  ", cpu[i].regRaEcs);
+        fprintf(cpuDF, "A%d %06o  ", 3, cpu[i].regA[3]);
+        fprintf(cpuDF, "B%d %06o", 3, cpu[i].regB[3]);
+        fprintf(cpuDF, "\n");
+                           
+        fprintf(cpuDF, "FLecs %08o  ", cpu[i].regFlEcs);
+        fprintf(cpuDF, "A%d %06o  ", 4, cpu[i].regA[4]);
+        fprintf(cpuDF, "B%d %06o", 4, cpu[i].regB[4]);
+        fprintf(cpuDF, "\n");
+                           
+        fprintf(cpuDF, "EM    %08o  ", cpu[i].exitMode);
+        fprintf(cpuDF, "A%d %06o  ", 5, cpu[i].regA[5]);
+        fprintf(cpuDF, "B%d %06o", 5, cpu[i].regB[5]);
+        fprintf(cpuDF, "\n");
+                           
+        fprintf(cpuDF, "MA      %06o  ", cpu[i].regMa);
+        fprintf(cpuDF, "A%d %06o  ", 6, cpu[i].regA[6]);
+        fprintf(cpuDF, "B%d %06o", 6, cpu[i].regB[6]);
+        fprintf(cpuDF, "\n");
+                           
+        fprintf(cpuDF, "ECOND       %02o  ", cpu[i].exitCondition);
+        fprintf(cpuDF, "A%d %06o  ", 7, cpu[i].regA[7]);
+        fprintf(cpuDF, "B%d %06o  ", 7, cpu[i].regB[7]);
+        fprintf(cpuDF, "\n");
+        fprintf(cpuDF, "STOP         %d  ", cpu[i].cpuStopped ? 1 : 0);
+        fprintf(cpuDF, "\n");
+        fprintf(cpuDF, "\n");
+    
+        for (j = 0; j < 8; j++)
+            {
+            fprintf(cpuDF, "X%d ", j);
+            data = cpu[i].regX[j];
+            fprintf(cpuDF, "%04o %04o %04o %04o %04o   ",
+                    (PpWord)((data >> 48) & Mask12),
+                    (PpWord)((data >> 36) & Mask12),
+                    (PpWord)((data >> 24) & Mask12),
+                    (PpWord)((data >> 12) & Mask12),
+                    (PpWord)((data      ) & Mask12));
+            fprintf(cpuDF, "\n");
+            }
+
         fprintf(cpuDF, "\n");
         }
 
-    fprintf(cpuDF, "\n");
     dumpCpuMem (cpuDF, 0, cpuMaxMemory);
     }
 

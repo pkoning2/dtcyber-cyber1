@@ -174,6 +174,7 @@ static void initCyber(char *config)
     char model[40];
     long memory;
     long ecsBanks;
+    long cpus;
     long clockIncrement;
     long clockMHz;
     long pps;
@@ -215,7 +216,14 @@ static void initCyber(char *config)
         exit(1);
         }
 
-    cpuInit(model, memory, ecsBanks);
+    initGetInteger ("cpus", 1, &cpus);
+    if (cpus < 1 || cpus > 2)
+        {
+        fprintf (stderr, "Entry 'cpus' invalid in section [%s] in %s -- correct values are 1 or 2\n", config, startupFile);
+        exit (1);
+        }
+    
+    cpuInit(model, cpus, memory, ecsBanks);
 
     /*
     **  Determine number of PPs and initialise PP subsystem.

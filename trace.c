@@ -123,7 +123,7 @@ u32 traceClearMask = 0;
 u64 chTraceMask = 0;
 u32 traceCycles = 0;
 FILE *devF;
-FILE *cpuTF;
+FILE **cpuTF;
 FILE **ppuTF;
 
 /*
@@ -134,7 +134,10 @@ FILE **ppuTF;
 //static FILE *devF;
 static u32 sequence;
 
-static DecPpControl ppDecode[] =
+static const char *monState[] = 
+{ "none", "cpu 0", "cpu 1" };
+
+static const DecPpControl ppDecode[] =
     {
     AN,           "PSN",    // 00
     Amd,          "LJM",    // 01
@@ -322,8 +325,8 @@ static DecCpControl cpDecode[0100] =
 **------------------------------------------------------------------------*/
 void traceInit(void)
     {
-    u8 pp;
-    char ppTraceName[20];
+    u8 i;
+    char traceName[20];
 
     devF = fopen("device.trc", "wt");
     if (devF == NULL)
@@ -331,10 +334,21 @@ void traceInit(void)
         ppAbort((stderr, "can't open dev trace"));
         }
 
-    cpuTF = fopen("cpu.trc", "wt");
+    cpuTF = calloc(cpuCount, sizeof(FILE *));
     if (cpuTF == NULL)
         {
-        ppAbort((stderr, "can't open cpu trace"));
+        fprintf(stderr, "Failed to allocate CP trace FILE pointers\n");
+        exit(1);
+        }
+
+    for (i = 0; i < cpuCount; i++)
+        {
+        sprintf(traceName, "cpu%d.trc", i);
+        cpuTF[i] = fopen(traceName, "wt");
+        if (cpuTF[i] == NULL)
+            {
+            ppAbort((stderr, "can't open cpu%d trace (%s)\n", i, traceName));
+            }
         }
 
     ppuTF = calloc(ppuCount, sizeof(FILE *));
@@ -344,13 +358,13 @@ void traceInit(void)
         exit(1);
         }
 
-    for (pp = 0; pp < ppuCount; pp++)
+    for (i = 0; i < ppuCount; i++)
         {
-        sprintf(ppTraceName, "ppu%02o.trc", pp);
-        ppuTF[pp] = fopen(ppTraceName, "wt");
-        if (ppuTF[pp] == NULL)
+        sprintf(traceName, "ppu%02o.trc", i);
+        ppuTF[i] = fopen(traceName, "wt");
+        if (ppuTF[i] == NULL)
             {
-            ppAbort((stderr, "can't open ppu[%02o] trace (%s)\n", pp, ppTraceName));
+            ppAbort((stderr, "can't open ppu[%02o] trace (%s)\n", i, traceName));
             }
         }
 
@@ -370,17 +384,21 @@ void traceInit(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress)
+void traceCpu(CpuContext *activeCpu, 
+              u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress)
     {
     u8 addrMode;
     bool link = TRUE;
     DecCpControl *decode = cpDecode;
     static char str[80];
-
+    int i;
+    int cpuNum = activeCpu ->id;
+    
     /*
-    **  Bail out if no trace of the CPU is requested.
+    **  Bail out if no trace of the current CPU is requested.
     */
-    if ((traceMask & TraceCpu) == 0)
+    if (!((traceMask & TraceCpu (cpuNum)) != 0) ||
+        ((traceMask & TraceXj) != 0 && opFm == 01 && opI == 3))
         {
         return;
         }
@@ -391,27 +409,30 @@ void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress)
     */
     if (traceCycles != 0 && --traceCycles == 0)
         {
-        traceMask &= ~TraceCpu;
-        fflush(cpuTF);
+        for (i = 0; i < cpuCount; i++)
+            {
+            traceMask &= ~TraceCpu (i);
+            fflush(cpuTF[i]);
+            }
         }
     
 #if 0
     for (i = 0; i < 8; i++)
         {
-        data = cpu.regX[i];
-        fprintf(cpuTF, "        A%d %06.6o  X%d %04.4o %04.4o %04.4o %04.4o %04.4o   B%d %06.6o\n",
-            i, cpu.regA[i], i,
+        data = activeCpu->regX[i];
+        fprintf(cpuTF[cpuNum], "        A%d %06.6o  X%d %04.4o %04.4o %04.4o %04.4o %04.4o   B%d %06.6o\n",
+            i, activeCpu->regA[i], i,
             (PpWord)((data >> 48) & Mask12),
             (PpWord)((data >> 36) & Mask12),
             (PpWord)((data >> 24) & Mask12),
             (PpWord)((data >> 12) & Mask12),
             (PpWord)((data      ) & Mask12),
-            i, cpu.regB[i]);
+            i, activeCpu->regB[i]);
         }
 #endif
 
-    fprintf(cpuTF, "%6.6o  ", p);
-    fprintf(cpuTF, "%02o%o%o%o   ", opFm, opI, opJ, opK);        // << not quite correct, but still nice for debugging
+    fprintf(cpuTF[cpuNum], "%06d [%d] %6.6o  ", sequence, cpuNum, p);
+    fprintf(cpuTF[cpuNum], "%02o%o%o%o   ", opFm, opI, opJ, opK);        // << not quite correct, but still nice for debugging
 
     /*
     **  Print opcode.
@@ -477,7 +498,7 @@ void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress)
             }
         }
 
-    fprintf(cpuTF, "%-30s", str);
+    fprintf(cpuTF[cpuNum], "%-30s", str);
 
     /*
     **  Dump relevant register set.
@@ -488,220 +509,220 @@ void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress)
         break;
 
     case RAA:
-        fprintf(cpuTF, "A%d=%06o    ", opI, cpu.regA[opI]);
-        fprintf(cpuTF, "A%d=%06o    ", opJ, cpu.regA[opJ]);
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opI, activeCpu->regA[opI]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opJ, activeCpu->regA[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
         break;
 
     case RAAB:
-        fprintf(cpuTF, "A%d=%06o    ", opI, cpu.regA[opI]);
-        fprintf(cpuTF, "A%d=%06o    ", opJ, cpu.regA[opJ]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opI, activeCpu->regA[opI]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opJ, activeCpu->regA[opJ]);
         if (opK != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opK, cpu.regB[opK]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opK, activeCpu->regB[opK]);
             }
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
         break;
 
     case RAB:
-        fprintf(cpuTF, "A%d=%06o    ", opI, cpu.regA[opI]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opI, activeCpu->regA[opI]);
         if (opJ != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opJ, cpu.regB[opJ]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opJ, activeCpu->regB[opJ]);
             }
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
         break;
 
     case RABB:
-        fprintf(cpuTF, "A%d=%06o    ", opI, cpu.regA[opI]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opI, activeCpu->regA[opI]);
         if (opJ != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opJ, cpu.regB[opJ]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opJ, activeCpu->regB[opJ]);
             }
         if (opK != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opK, cpu.regB[opK]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opK, activeCpu->regB[opK]);
             }
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
         break;
 
     case RAX:
-        fprintf(cpuTF, "A%d=%06o    ", opI, cpu.regA[opI]);
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opJ, cpu.regX[opJ]);
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opI, activeCpu->regA[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
         break;
 
     case RAXB:
-        fprintf(cpuTF, "A%d=%06o    ", opI, cpu.regA[opI]);
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opJ, cpu.regX[opJ]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opI, activeCpu->regA[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
         if (opK != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opK, cpu.regB[opK]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opK, activeCpu->regB[opK]);
             }
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
         break;
 
     case RB:
         if (opI != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opI, cpu.regB[opI]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opI, activeCpu->regB[opI]);
             }
         break;
 
     case RBA:
         if (opI != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opI, cpu.regB[opI]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opI, activeCpu->regB[opI]);
             }
-        fprintf(cpuTF, "A%d=%06o    ", opJ, cpu.regA[opJ]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opJ, activeCpu->regA[opJ]);
         break;
 
     case RBAB:
         if (opI != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opI, cpu.regB[opI]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opI, activeCpu->regB[opI]);
             }
-        fprintf(cpuTF, "A%d=%06o    ", opJ, cpu.regA[opJ]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opJ, activeCpu->regA[opJ]);
         if (opK != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opK, cpu.regB[opK]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opK, activeCpu->regB[opK]);
             }
         break;
 
     case RBB:
         if (opI != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opI, cpu.regB[opI]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opI, activeCpu->regB[opI]);
             }
         if (opJ != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opJ, cpu.regB[opJ]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opJ, activeCpu->regB[opJ]);
             }
         break;
 
     case RBBB:
         if (opI != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opI, cpu.regB[opI]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opI, activeCpu->regB[opI]);
             }
         if (opJ != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opJ, cpu.regB[opJ]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opJ, activeCpu->regB[opJ]);
             }
         if (opK != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opK, cpu.regB[opK]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opK, activeCpu->regB[opK]);
             }
         break;
 
     case RBX:
         if (opI != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opI, cpu.regB[opI]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opI, activeCpu->regB[opI]);
             }
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opJ, cpu.regX[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
         break;
 
     case RBXB:
         if (opI != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opI, cpu.regB[opI]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opI, activeCpu->regB[opI]);
             }
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opJ, cpu.regX[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
         if (opK != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opK, cpu.regB[opK]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opK, activeCpu->regB[opK]);
             }
         break;
 
     case RX:
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
         break;
 
     case RXA: 
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
-        fprintf(cpuTF, "A%d=%06o    ", opJ, cpu.regA[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opJ, activeCpu->regA[opJ]);
         break;
 
     case RXAB:
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
-        fprintf(cpuTF, "A%d=%06o    ", opJ, cpu.regA[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
+        fprintf(cpuTF[cpuNum], "A%d=%06o    ", opJ, activeCpu->regA[opJ]);
         if (opK != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opK, cpu.regB[opK]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opK, activeCpu->regB[opK]);
             }
         break;
 
     case RXB:
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
         if (opJ != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opJ, cpu.regB[opJ]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opJ, activeCpu->regB[opJ]);
             }
         break;
 
     case RXBB:
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
         if (opJ != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opJ, cpu.regB[opJ]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opJ, activeCpu->regB[opJ]);
             }
         if (opK != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opK, cpu.regB[opK]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opK, activeCpu->regB[opK]);
             }
         break;
 
     case RXBX:
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
         if (opJ != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opJ, cpu.regB[opJ]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opJ, activeCpu->regB[opJ]);
             }
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opK, cpu.regX[opK]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opK, activeCpu->regX[opK]);
         break;
 
     case RXX:
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opJ, cpu.regX[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
         break;
 
     case RXXB:
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opJ, cpu.regX[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
         if (opK != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opK, cpu.regB[opK]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opK, activeCpu->regB[opK]);
             }
         break;
 
     case RXXX:
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opJ, cpu.regX[opJ]);
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opK, cpu.regX[opK]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opK, activeCpu->regX[opK]);
         break;
 
     case RZB:
         if (opJ != 0)
             {
-            fprintf(cpuTF, "B%d=%06o    ", opJ, cpu.regB[opJ]);
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opJ, activeCpu->regB[opJ]);
             }
         break;
 
     case RZX:
-        fprintf(cpuTF, "X%d=" FMT60_020o "   ", opJ, cpu.regX[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
         break;
 
     default:
-        fprintf(cpuTF,"unsupported register set %d", decode[opFm].regSet);
+        fprintf(cpuTF[cpuNum],"unsupported register set %d", decode[opFm].regSet);
         break;
         }
 
-    fprintf(cpuTF, "\n");
+    fprintf(cpuTF[cpuNum], "\n");
     if (decode == rjDecode && (opI == 1 || opI == 2))
         {
         // ECS read/write, show what memory was touched
-        dumpCpuMem (cpuTF, cpu.regA[0], cpu.regA[0] + cpu.regB[opJ] + opK);
+        dumpCpuMem (cpuTF[cpuNum], activeCpu->regA[0], activeCpu->regA[0] + activeCpu->regB[opJ] + opK);
         }
     }
 
@@ -719,7 +740,8 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
 {
     CpWord data;
     u8 i;
-
+    int cpn = cc->id;
+    
     /*
     **  Bail out if no trace of exchange jumps is requested.
     */
@@ -728,64 +750,64 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
         return;
         }
 
-    fprintf(cpuTF, "\nExchange jump with package address %06o (%s)\n\n", addr, title);
-    fprintf(cpuTF, "P       %06o  ", cc->regP);
-    fprintf(cpuTF, "A%d %06o  ", 0, cc->regA[0]);
-    fprintf(cpuTF, "B%d %06o", 0, cc->regB[0]);
-    fprintf(cpuTF, "\n");
+    fprintf(cpuTF[cpn], "\n%6d: Exchange jump CPU %d with package address %06o (%s)\n\n", sequence, cpn, addr, title);
+    fprintf(cpuTF[cpn], "P       %06o  ", cc->regP);
+    fprintf(cpuTF[cpn], "A%d %06o  ", 0, cc->regA[0]);
+    fprintf(cpuTF[cpn], "B%d %06o", 0, cc->regB[0]);
+    fprintf(cpuTF[cpn], "\n");
                            
-    fprintf(cpuTF, "RAcm    %06o  ", cc->regRaCm);
-    fprintf(cpuTF, "A%d %06o  ", 1, cc->regA[1]);
-    fprintf(cpuTF, "B%d %06o", 1, cc->regB[1]);
-    fprintf(cpuTF, "\n");
+    fprintf(cpuTF[cpn], "RAcm    %06o  ", cc->regRaCm);
+    fprintf(cpuTF[cpn], "A%d %06o  ", 1, cc->regA[1]);
+    fprintf(cpuTF[cpn], "B%d %06o", 1, cc->regB[1]);
+    fprintf(cpuTF[cpn], "\n");
                            
-    fprintf(cpuTF, "FLcm    %06o  ", cc->regFlCm);
-    fprintf(cpuTF, "A%d %06o  ", 2, cc->regA[2]);
-    fprintf(cpuTF, "B%d %06o", 2, cc->regB[2]);
-    fprintf(cpuTF, "\n");
+    fprintf(cpuTF[cpn], "FLcm    %06o  ", cc->regFlCm);
+    fprintf(cpuTF[cpn], "A%d %06o  ", 2, cc->regA[2]);
+    fprintf(cpuTF[cpn], "B%d %06o", 2, cc->regB[2]);
+    fprintf(cpuTF[cpn], "\n");
                            
-    fprintf(cpuTF, "RAecs   %06o  ", cc->regRaEcs);
-    fprintf(cpuTF, "A%d %06o  ", 3, cc->regA[3]);
-    fprintf(cpuTF, "B%d %06o", 3, cc->regB[3]);
-    fprintf(cpuTF, "\n");
+    fprintf(cpuTF[cpn], "RAecs %08o  ", cc->regRaEcs);
+    fprintf(cpuTF[cpn], "A%d %06o  ", 3, cc->regA[3]);
+    fprintf(cpuTF[cpn], "B%d %06o", 3, cc->regB[3]);
+    fprintf(cpuTF[cpn], "\n");
                            
-    fprintf(cpuTF, "FLecs   %06o  ", cc->regFlEcs);
-    fprintf(cpuTF, "A%d %06o  ", 4, cc->regA[4]);
-    fprintf(cpuTF, "B%d %06o", 4, cc->regB[4]);
-    fprintf(cpuTF, "\n");
+    fprintf(cpuTF[cpn], "FLecs %08o  ", cc->regFlEcs);
+    fprintf(cpuTF[cpn], "A%d %06o  ", 4, cc->regA[4]);
+    fprintf(cpuTF[cpn], "B%d %06o", 4, cc->regB[4]);
+    fprintf(cpuTF[cpn], "\n");
                            
-    fprintf(cpuTF, "EM    %08o  ", cc->exitMode);
-    fprintf(cpuTF, "A%d %06o  ", 5, cc->regA[5]);
-    fprintf(cpuTF, "B%d %06o", 5, cc->regB[5]);
-    fprintf(cpuTF, "\n");
+    fprintf(cpuTF[cpn], "EM    %08o  ", cc->exitMode);
+    fprintf(cpuTF[cpn], "A%d %06o  ", 5, cc->regA[5]);
+    fprintf(cpuTF[cpn], "B%d %06o", 5, cc->regB[5]);
+    fprintf(cpuTF[cpn], "\n");
                            
-    fprintf(cpuTF, "MA      %06.6o  ", cc->regMa); 
-    fprintf(cpuTF, "A%d %06o  ", 6, cc->regA[6]);
-    fprintf(cpuTF, "B%d %06o", 6, cc->regB[6]);
-    fprintf(cpuTF, "\n");
+    fprintf(cpuTF[cpn], "MA      %06.6o  ", cc->regMa); 
+    fprintf(cpuTF[cpn], "A%d %06o  ", 6, cc->regA[6]);
+    fprintf(cpuTF[cpn], "B%d %06o", 6, cc->regB[6]);
+    fprintf(cpuTF[cpn], "\n");
                            
-    fprintf(cpuTF, "STOP         %d  ", cpuStopped ? 1 : 0);
-    fprintf(cpuTF, "A%d %06o  ", 7, cc->regA[7]);
-    fprintf(cpuTF, "B%d %06o  ", 7, cc->regB[7]);
-    fprintf(cpuTF, "\n");
-    fprintf(cpuTF, "ECOND       %02o  ", cc->exitCondition);
-    fprintf(cpuTF, "\n");
-    fprintf(cpuTF, "\n");
+    fprintf(cpuTF[cpn], "STOP         %d  ", cc->cpuStopped ? 1 : 0);
+    fprintf(cpuTF[cpn], "A%d %06o  ", 7, cc->regA[7]);
+    fprintf(cpuTF[cpn], "B%d %06o  ", 7, cc->regB[7]);
+    fprintf(cpuTF[cpn], "\n");
+    fprintf(cpuTF[cpn], "ECOND       %02o  ", cc->exitCondition);
+    fprintf(cpuTF[cpn], "\n");
+    fprintf(cpuTF[cpn], "\n");
 
     for (i = 0; i < 8; i++)
         {
-        fprintf(cpuTF, "X%d ", i);
+        fprintf(cpuTF[cpn], "X%d ", i);
         data = cc->regX[i];
-        fprintf(cpuTF, "%04o %04o %04o %04o %04o   ",
+        fprintf(cpuTF[cpn], "%04o %04o %04o %04o %04o   ",
             (PpWord)((data >> 48) & Mask12),
             (PpWord)((data >> 36) & Mask12),
             (PpWord)((data >> 24) & Mask12),
             (PpWord)((data >> 12) & Mask12),
             (PpWord)((data      ) & Mask12));
-        fprintf(cpuTF, "\n");
+        fprintf(cpuTF[cpn], "\n");
         }
 
-    fprintf(cpuTF, "\n\n");
+    fprintf(cpuTF[cpn], "\nMonitor mode: %s\n", monState[monitorCpu + 1]);
     }
 
 /*--------------------------------------------------------------------------
@@ -798,13 +820,16 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
 **------------------------------------------------------------------------*/
 void traceFinish(void)
     {
-    u8 pp;
+    u8 i;
 
-    fclose(cpuTF);
-
-    for (pp = 0; pp < ppuCount; pp++)
+    for (i = 0; i < cpuCount; i++)
         {
-        fclose(ppuTF[pp]);
+        fflush(cpuTF[i]);
+        }
+
+    for (i = 0; i < ppuCount; i++)
+        {
+        fclose(ppuTF[i]);
         }
     }
 
@@ -818,14 +843,18 @@ void traceFinish(void)
 **------------------------------------------------------------------------*/
 void traceStop(void)
     {
-    u8 pp;
+    u8 i;
 
-    fflush(cpuTF);
+    for (i = 0; i < cpuCount; i++)
+        {
+        fflush(cpuTF[i]);
+        }
+
     fflush(devF);
     
-    for (pp = 0; pp < ppuCount; pp++)
+    for (i = 0; i < ppuCount; i++)
         {
-        fflush(ppuTF[pp]);
+        fflush(ppuTF[i]);
         }
     }
 
@@ -839,16 +868,21 @@ void traceStop(void)
 **------------------------------------------------------------------------*/
 void traceReset(void)
     {
-    u8 pp;
-    char ppTraceName[20];
+    u8 i;
+    char traceName[20];
 
-    freset (&cpuTF, "cpu.trc");
+    for (i = 0; i < cpuCount; i++)
+        {
+        sprintf(traceName, "cpu%d.trc", i);
+        freset (&cpuTF[i], traceName);
+        }
+
     freset (&devF, "device.trc");
     
-    for (pp = 0; pp < ppuCount; pp++)
+    for (i = 0; i < ppuCount; i++)
         {
-        sprintf(ppTraceName, "ppu%02o.trc", pp);
-        freset (&ppuTF[pp], ppTraceName);
+        sprintf(traceName, "ppu%02o.trc", i);
+        freset (&ppuTF[i], traceName);
         }
     }
 
@@ -1073,9 +1107,9 @@ void tracePrint(char *str)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void traceCpuPrint(char *str)
+void traceCpuPrint(CpuContext *activeCpu, char *str)
     {
-    fputs(str, cpuTF);
+    fputs(str, cpuTF[activeCpu->id]);
     }
 
 /*--------------------------------------------------------------------------
@@ -1248,10 +1282,16 @@ static bool ppuTraced(void)
     // Otherwise, see if the next instruction is an I/O instruction
     // and references a channel that's being traced.
     // Note that we don't trace ACN/DCN and the status test branches.
+    // If we're tracing exchanges and the next instruction is an exchange,
+    // the answer is also yes.
     opCode = activePpu->mem[activePpu->regP];
     opF = opCode >> 6;
     opD = opCode & 037;                     // ignore NoHang bit
-    if ((opF >= 070 && opF <= 073) ||       // IAN, IAM, OAN, OAM
+    if ((traceMask & TraceXj) != 0 && opF == 026)
+        {
+        return TRUE;
+        }
+    else if ((opF >= 070 && opF <= 073) ||  // IAN, IAM, OAN, OAM
         (opF >= 076))                       // FAN, FNC
         {
         if (chTraceMask & (ULL(1) << opD))
