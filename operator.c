@@ -145,7 +145,9 @@ static OpMsg msg[] =
       { 0, 0, 0, NULL },
     };
 static OpMsg errmsg = { 0020, 0040, 0020, NULL };   // pointer filled in
+static bool msgBold;
 static bool complete;
+static char msgBuf[80];
 /*
 **--------------------------------------------------------------------------
 **
@@ -211,7 +213,7 @@ void opRequest(void)
             }
         if (errmsg.text != NULL)
             {
-            for (i = 0; i < BoldMediumRepaints; i++)
+            for (i = 0; i < ((msgBold) ? BoldMediumRepaints : 1); i++)
                 {
                 opSendString (&errmsg);
                 }
@@ -235,7 +237,7 @@ void opRequest(void)
             usleep (RefreshInterval / 2);
             continue;
             }
-        opSetError (NULL);
+        opSetMsg (NULL);
         if (ppKeyIn == '\r')
             {
             ppKeyIn = '\n';
@@ -278,8 +280,10 @@ void opRequest(void)
                     if (strncmp(cp->name, cmdBuf, j) == 0)
                         {
                         cp->handler(cmdBuf + j);
-                        if (errmsg.text == NULL)
+                        if (!msgBold)
                             {
+                            // Command did not produce an error message,
+                            // so erase it because we're done with it.
                             cmdBuf[0] = '\0';
                             cmdLen = 0;
                             }
@@ -289,7 +293,7 @@ void opRequest(void)
                     }
                 if (cp->name == NULL)
                     {
-                    opSetError ("INVALID COMMAND");
+                    opSetMsg ("$INVALID COMMAND");
                     }
                 }
             else 
@@ -311,16 +315,26 @@ void opRequest(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Set operator error message
+**  Purpose:        Set operator message
 **
 **  Parameters:     Name        Description.
 **                  p           string pointer
+**                              If string begins with $, make it bold
 **
 **  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-void opSetError (char *p)
+void opSetMsg (char *p)
     {
+    if (p != NULL && *p == '$')
+        {
+        p++;
+        msgBold = TRUE;
+        }
+    else
+        {
+        msgBold = FALSE;
+        }
     errmsg.text = p;
     }
 
@@ -550,12 +564,13 @@ static void opCmdLoad(char *cmdParams)
     int rest;
     ChSlot *ch;
     DevSlot *dp;
-
+    bool done = FALSE;
+    
     rest = 0;
     np = sscanf (cmdParams, "%o,%o,%n", &chnum, &unit, &rest);
     if ((np != 3 && np != 2) || rest == 0)
         {
-        opSetError ("INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS");
         return;
         }
     ch = channel + chnum;
@@ -563,8 +578,17 @@ static void opCmdLoad(char *cmdParams)
     while (dp != NULL)
         {
         if (dp->load)
+            {
             dp->load (dp, unit, cmdParams + rest);
+            done = TRUE;
+            }
         dp = dp->next;
+        }
+    if (!done)
+        {
+        sprintf (msgBuf, "$NOT SUPPORTED ON CH%02o EQ%02o",
+                 chnum, unit);
+        opSetMsg (msgBuf);
         }
     }
 
@@ -586,7 +610,7 @@ static void opCmdUnload(char *cmdParams)
     np = sscanf (cmdParams, "%o,%o", &chnum, &unit);
     if (np != 2)
         {
-        opSetError ("INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS");
         return;
         }
     ch = channel + chnum;
@@ -635,7 +659,7 @@ static void opDumpPpu(char *cmdParams)
     np = sscanf (cmdParams, "%o", &pp);
     if (np != 1)
         {
-        opSetError ("INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS");
         return;
         }
     dumpPpu (pp);
@@ -660,7 +684,7 @@ static void opDisPpu(char *cmdParams)
     np = sscanf (cmdParams, "%o", &pp);
     if (np != 1)
         {
-        opSetError ("INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS");
         return;
         }
     dumpDisassemblePpu (pp);

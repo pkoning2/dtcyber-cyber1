@@ -90,7 +90,6 @@ static u8 currentFont;
 static FontInfo *currentFontInfo;
 static i16 currentX;
 static i16 currentY;
-static u16 oldCurrentY;
 static DispList display[ListSize];
 static u32 listGet, listPut, prevPut;
 static char keybuf[KeyBufSize];
@@ -101,7 +100,6 @@ static FontInfo largeFont;
 static int width;
 static int height;
 static int depth;
-static bool refresh = FALSE;
 static Display *disp;
 static Window window;
 static XTextItem dbuf[DisplayBufSize];
@@ -112,7 +110,7 @@ static Pixmap pixmap;
 static GC gc;
 static struct timeval lastDisplay;
 static unsigned long fg, bg;
-
+static bool displayOff = FALSE;
 /*
 **--------------------------------------------------------------------------
 **
@@ -253,6 +251,10 @@ void windowInit(void)
     XRebindKeysym(disp, 'X', modList, 1, "$x", 2);
     XRebindKeysym(disp, 'o', modList, 1, "$o", 2);
     XRebindKeysym(disp, 'O', modList, 1, "$o", 2);
+    XRebindKeysym(disp, 's', modList, 1, "$s", 2);
+    XRebindKeysym(disp, 'S', modList, 1, "$s", 2);
+    XRebindKeysym(disp, 'q', modList, 1, "$q", 2);
+    XRebindKeysym(disp, 'Q', modList, 1, "$q", 2);
 
     /*
     **  Initialise input.
@@ -287,7 +289,7 @@ void windowSetFont(u8 font)
 **  Purpose:        Set X coordinate.
 **
 **  Parameters:     Name        Description.
-**                  x           horinzontal coordinate (0 - 0777)
+**                  x           horizontal coordinate (0 - 0777)
 **
 **  Returns:        Nothing.
 **
@@ -317,7 +319,7 @@ void windowSetX(u16 x)
 **  Purpose:        Set Y coordinate.
 **
 **  Parameters:     Name        Description.
-**                  y           horinzontal coordinate (0 - 0777)
+**                  y           vertical coordinate (0 - 0777)
 **
 **  Returns:        Nothing.
 **
@@ -325,12 +327,6 @@ void windowSetX(u16 x)
 void windowSetY(u16 y)
     {
     currentY = 0777 - y;
-    if (oldCurrentY > currentY)
-        {
-        refresh = TRUE;
-        }
-
-    oldCurrentY = currentY;
     }
 
 /*--------------------------------------------------------------------------
@@ -383,7 +379,6 @@ void windowQueue(char ch)
 **------------------------------------------------------------------------*/
 void windowUpdate(void)
     {
-    refresh = TRUE;
     }
 
 /*--------------------------------------------------------------------------
@@ -400,13 +395,15 @@ void windowGetChar(void)
     struct timeval tm;
     int us;
     
-    if (traceMask & 2)
-        fprintf (ppuTF[1], "key poll %02o\n", ppKeyIn);
+    if (traceMask & (1 << activePpu->id))
+        fprintf (ppuTF[activePpu->id], "key poll %02o\n", ppKeyIn);
 
     // We treat a keyboard poll as the end of a display refresh cycle.
     // If it's been long enough since the last one, call the displayer.
     // If not, advance the "get" pointer to where the "put" pointer was
     // at the start of the preceding cycle.
+    // Correction: don't do that last, because some programs (like wrm)
+    // poll in the middle of their update cycle (one worm at a time).
     gettimeofday (&tm, NULL);
     us = (tm.tv_sec - lastDisplay.tv_sec) * 1000000 +
          (tm.tv_usec - lastDisplay.tv_usec);
@@ -419,8 +416,8 @@ void windowGetChar(void)
     }
     else
     {
-        listGet = prevPut;
-        prevPut = listPut;
+//        listGet = prevPut;
+//        prevPut = listPut;
     }
     
     if (keyListGet == keyListPut)
@@ -461,19 +458,22 @@ static void dflush (void)
     {
     if (dcnt != 0)
         {
+        // "delta" is applied before the character, so clear the delta
+        // of the first char, because we don't want to offset that.
+        dbuf[0].delta = 0;
         XDrawText(disp, pixmap, gc, XADJUST (xstart),
                   YADJUST (ypos), dbuf, dcnt);
-        if (traceMask & 2)
+        if (traceMask & (1<<activePpu->id))
             {
             int i;
                     
             dchars[dcnt] = '\0';
-            fprintf (ppuTF[1], "text %03o %03o %s\n", xstart, ypos, dchars);
+            fprintf (ppuTF[activePpu->id], "text %03o %03o %s\n", xstart, ypos, dchars);
             for (i = 0; i < dcnt; i++)
                 {
-                fprintf (ppuTF[1], "%d ", dhits[i]);
+                fprintf (ppuTF[activePpu->id], "%d ", dhits[i]);
                 }
-            fprintf (ppuTF[1], "\n");
+            fprintf (ppuTF[activePpu->id], "\n");
             }
         dcnt = 0;
         }
@@ -576,7 +576,6 @@ void windowInput(void)
             {
         case MappingNotify:
             XRefreshKeyboardMapping ((XMappingEvent *)&event);
-            refresh = TRUE;
             break;
 
         case ConfigureNotify:
@@ -592,7 +591,6 @@ void windowInput(void)
                 }
 
             XFillRectangle (disp, pixmap, gc, 0, 0, width, height);
-            refresh = TRUE;
             break;
 
         case KeyPress:
@@ -653,6 +651,12 @@ void windowInput(void)
                 case 'o':
                     opActive = TRUE;
                     break;
+                case 's':
+                    displayOff = TRUE;
+                    break;
+                case 'q':
+                    displayOff = FALSE;
+                    break;
                     }
                 }
             break;
@@ -674,6 +678,13 @@ void showDisplay (void)
     currentFontInfo = &smallFont;
     XSetFont(disp, gc, currentFontInfo->normalId);
     oldFont = FontSmall;
+
+    if (displayOff)
+        {
+        listGet = prevPut;
+        gettimeofday (&lastDisplay, NULL);
+        return;
+        }
 
 #if CcDebug == 1
     {
@@ -756,7 +767,7 @@ void showDisplay (void)
         if (curr->fontSize == FontDot)
         {
             dflush ();
-            XDrawPoint(disp, pixmap, gc, curr->xPos,
+            XDrawPoint(disp, pixmap, gc, XADJUST (curr->xPos),
                        YADJUST (curr->yPos));
         }
         else
@@ -771,7 +782,6 @@ void showDisplay (void)
     listGet = end - display;
     currentX = -1;
     currentY = -1;
-    refresh = FALSE;
 
     /*
     **  Update display from pixmap.

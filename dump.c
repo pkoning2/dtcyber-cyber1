@@ -251,6 +251,7 @@ void dumpCpuMem(FILE *f, u32 start, u32 end)
                 ch = (u8)((data >> shiftCount) & Mask6);
                 fprintf(f, "%c", cdcToAscii[ch]);
                 }
+            fprintf(f, "\n");
             break;
             }
         data2 = cpMem[addr + 1];        

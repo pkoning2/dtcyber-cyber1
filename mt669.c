@@ -20,6 +20,7 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif
+#include <errno.h>
 #include <string.h>
 #include "const.h"
 #include "types.h"
@@ -220,6 +221,7 @@ static void mt669FuncForespace(void);
 static void mt669FuncBackspace(void);
 static void mt669FuncReadBkw(void);
 static void mt669FuncReposition(void);
+static void mt669Load(DevSlot *dp, int unitNo, char *fn);
 
 /*
 **  ----------------
@@ -283,6 +285,7 @@ void mt669Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     dp->disconnect = mt669Disconnect;
     dp->func = mt669Func;
     dp->io = mt669Io;
+    dp->load = mt669Load;
     dp->selectedUnit = unitNo;
 
     dp->context[unitNo] = calloc(1, sizeof(TapeBuf));
@@ -325,78 +328,38 @@ void mt669Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Load a new tape (operator interface).
+**  Purpose:        Perform load/unload on 669 tape.
 **
 **  Parameters:     Name        Description.
-**                  params      parameters
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void mt669LoadTape(char *params)
-    {
-    DevSlot *dp;
-    int numParam;
-    int channelNo;
-    int unitNo;
+static void mt669Load(DevSlot *dp, int unitNo, char *fn)
+{
     TapeBuf *tp;
     FILE *fcb;
-    u8 unitMode;
-
-    /*
-    **  Operator inserted a new tape.
-    */
-    numParam = sscanf(params,"%o,%o,%c,%s",&channelNo, &unitNo, &unitMode, str);
-
-    /*
-    **  Check parameters.
-    */
-    if (numParam != 4)
+    u8 unitMode = 'r';
+    char *p;
+    static char msgBuf[80];
+    
+    if (fn == NULL)
         {
-        printf("Not enough or invalid parameters\n");
+        opSetMsg ("$UNLOAD NOT SUPPORTED ON MT669");
         return;
         }
-
-    if (channelNo < 0 || channelNo >= MaxChannels)
-        {
-        printf("Invalid channel no\n");
-        return;
-        }
-
+    
     if (unitNo < 0 || unitNo >= MaxUnits)
         {
-        printf("Invalid unit no\n");
+        opSetMsg ("$INVALID UNIT NO");
         return;
         }
-
-    if (unitMode != 'w' && unitMode != 'r')
-        {
-        printf("Invalid ring mode (r/w)\n");
-        return;
-        }
-
-    if (str[0] == 0)
-        {
-        printf("Invalid file name\n");
-        return;
-        }
-
-    /*
-    **  Locate the device control block.
-    */
-    dp = channelFindDevice((u8)channelNo, DtMt669);
-    if (dp == NULL)
-        {
-        printf("No tape on channel %o\n", channelNo);
-        return;
-        }
-
     /*
     **  Check if the unit is even configured.
     */
     if (dp->context[unitNo] == NULL)
         {
-        printf("Unit %d not allocated\n", unitNo);
+        opSetMsg ("$UNIT NOT ALLOCATED");
         return;
         }
 
@@ -405,24 +368,30 @@ void mt669LoadTape(char *params)
     */
     if (dp->fcb[unitNo] != NULL)
         {
-        printf("Unit %d not unloaded\n", unitNo);
+        opSetMsg ("$UNIT NOT UNLOADED");
         return;
         }
 
+    p = strchr (fn, ',');
+    if (p != NULL)
+        {
+        *p = '\0';
+        unitMode = 'w';
+        }
     /*
     **  Open the file in the requested mode.
     */
     if (unitMode == 'w')
         {
-        fcb = fopen(str, "r+b");
+        fcb = fopen(fn, "r+b");
         if (fcb == NULL)
             {
-            fcb = fopen(str, "w+b");
+            fcb = fopen(fn, "w+b");
             }
         }
     else
         {
-        fcb = fopen(str, "rb");
+        fcb = fopen(fn, "rb");
         }
 
     /*
@@ -430,7 +399,8 @@ void mt669LoadTape(char *params)
     */
     if (fcb == NULL)
         {
-        printf("Failed to open %s\n", str);
+        sprintf (msgBuf, "$Open error: %s", strerror (errno));
+        opSetMsg(msgBuf);
         return;
         }
 
@@ -441,7 +411,10 @@ void mt669LoadTape(char *params)
     tp = (TapeBuf *)dp->context[unitNo];
     tp->unitMode = unitMode;
     tp->newTape = TRUE;
-    }
+    sprintf (msgBuf, "MT669 loaded with %s, ring %s",
+             fn, ((unitMode == 'w') ? "in" : "out"));
+    opSetMsg (msgBuf);
+}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Execute function code on 669 tape drives.

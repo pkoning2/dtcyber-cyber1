@@ -127,6 +127,7 @@ static FcStatus lp512Func(PpWord funcCode);
 static void lp512Io(void);
 static void lp512Activate(void);
 static void lp512Disconnect(void);
+static void lp512Load(DevSlot *dp, int unitNo, char *fn);
 
 
 /*
@@ -176,6 +177,7 @@ void lp512Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     dp->disconnect = lp512Disconnect;
     dp->func = lp512Func;
     dp->io = lp512Io;
+    dp->load = lp512Load;
     dp->selectedUnit = unitNo;
 
     /*
@@ -201,59 +203,31 @@ void lp512Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Remove the paper (operator interface).
+**  Purpose:        Perform load/unload on printer.
 **
 **  Parameters:     Name        Description.
-**                  params      parameters
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void lp512RemovePaper(char *params)
+static void lp512Load(DevSlot *dp, int unitNo, char *fn)
     {
-    DevSlot *dp;
-    int numParam;
-    int channelNo;
-    int unitNo;
     FILE *fcb;
     time_t currentTime;
     struct tm t;
     char fname[80];
     char fnameNew[80];
+    static char msgBuf[80];
 
-    /*
-    **  Operator inserted a new tape.
-    */
-    numParam = sscanf(params,"%o,%o",&channelNo, &unitNo);
-
-    /*
-    **  Check parameters.
-    */
-    if (numParam != 2)
+    if (fn != NULL)
         {
-        printf("Not enough or invalid parameters\n");
+        opSetMsg ("$LOAD NOT SUPPORTED ON LP512");
         return;
         }
-
-    if (channelNo < 0 || channelNo >= MaxChannels)
-        {
-        printf("Invalid channel no\n");
-        return;
-        }
-
+    
     if (unitNo < 0 || unitNo >= MaxUnits)
         {
-        printf("Invalid equipment no\n");
-        return;
-        }
-
-    /*
-    **  Locate the device control block.
-    */
-    dp = channelFindDevice((u8)channelNo, DtLp512);
-    if (dp == NULL)
-        {
-        printf("No 512 printer on channel %o\n", channelNo);
+        opSetMsg ("$INVALID EQUIPMENT NO");
         return;
         }
 
@@ -262,7 +236,7 @@ void lp512RemovePaper(char *params)
     */
     if (dp->fcb[unitNo] == NULL)
         {
-        printf("Equipment %d not allocated\n", unitNo);
+        opSetMsg ("$EQUIPMENT NOT ALLOCATED");
         return;
         }
 
@@ -276,7 +250,7 @@ void lp512RemovePaper(char *params)
     /*
     **  Rename the device file to the format "LP512_yyyymmdd_hhmmss".
     */
-    sprintf(fname, "LP512_C%02o_E%o", channelNo, unitNo);
+    sprintf(fname, "LP512_C%02o_E%o", dp->channel->id, unitNo);
 
     time(&currentTime);
     t = *localtime(&currentTime);
@@ -290,7 +264,9 @@ void lp512RemovePaper(char *params)
 
     if (rename(fname, fnameNew) != 0)
         {
-        printf("Could not rename %s to %s - %s\n", fname, fnameNew, strerror(errno));
+        sprintf (msgBuf, "$Rename error (%s to %s): %s",
+                 fname, fnameNew, strerror(errno));
+        opSetMsg(msgBuf);
         return;
         }
 
@@ -304,16 +280,18 @@ void lp512RemovePaper(char *params)
     */
     if (fcb == NULL)
         {
-        printf("Failed to open %s\n", fname);
+        sprintf (msgBuf, "$Open error (%s): %s",
+                 fname, strerror (errno));
+        opSetMsg(msgBuf);
         return;
         }
-
-    printf("Paper removed from 512 printer\n");
 
     /*
     **  Setup status.
     */
     dp->fcb[unitNo] = fcb;
+    sprintf (msgBuf, "LP512 unloaded to %s", fnameNew);
+    opSetMsg (msgBuf);
     }
 
 /*--------------------------------------------------------------------------
