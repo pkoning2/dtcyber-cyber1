@@ -64,6 +64,7 @@
 
 #define Fc6681DevStatusReq      01300
 #define FcControllerOutputEna   01600
+#define Fc6681MasterClear       01700
 
 // Codes for 3152/3256/3659
 #define Fc3152ClearFormat       00010
@@ -159,6 +160,7 @@ typedef struct lpContext
 {
     int flags;
     bool printed;
+    bool keepInt;
 } LpContext;
 
 
@@ -428,6 +430,7 @@ static FcStatus lp3000Func(PpWord funcCode)
         {
     case FcPrintAutoEject:
     case FcPrintNoSpace:
+    case Fc6681MasterClear:
         // Treat these as NOPs
         return(FcProcessed);
 
@@ -542,9 +545,21 @@ static FcStatus lp3000Func(PpWord funcCode)
             return(FcProcessed);
 
         case Fc3555SelIntReady:
-            // Enable next int but clear current one
-            lc->flags |= Lp3000IntReadyEna;
-            lc->flags &= ~Lp3000IntReady;
+            // Enable next int.  If an I/O was done since the last
+            // time an int enable was issued, don't clear the
+            // current int.  That's because things go very slowly
+            // otherwise; printer drivers typically issue the write,
+            // then enable the int shortly after.  We've already set
+            // "ready" by then, unlike physical printers.
+            lc->flags |= Lp3000IntReady | Lp3000IntReadyEna;
+            if (lc->keepInt)
+                {
+                lc->keepInt = FALSE;
+                }
+            else
+                {
+                lc->flags &= ~Lp3000IntReady;
+                }
             // Update interrupt summary flag in unit block
             activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
@@ -558,8 +573,15 @@ static FcStatus lp3000Func(PpWord funcCode)
             return(FcProcessed);
 
         case Fc3555SelIntEnd:
-            lc->flags |= Lp3000IntEndEna;
-            lc->flags &= ~Lp3000IntEnd;
+            lc->flags |= Lp3000IntEnd | Lp3000IntEndEna;
+            if (lc->keepInt)
+                {
+                lc->keepInt = FALSE;
+                }
+            else
+                {
+                lc->flags &= ~Lp3000IntEnd;
+                }
             // Update interrupt summary flag in unit block
             activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
@@ -602,9 +624,21 @@ static FcStatus lp3000Func(PpWord funcCode)
             return(FcProcessed);
 
         case Fc3152SelIntReady:
-            // Enable next int but clear current one
-            lc->flags |= Lp3000IntReadyEna;
-            lc->flags &= ~Lp3000IntReady;
+            // Enable next int.  If an I/O was done since the last
+            // time an int enable was issued, don't clear the
+            // current int.  That's because things go very slowly
+            // otherwise; printer drivers typically issue the write,
+            // then enable the int shortly after.  We've already set
+            // "ready" by then, unlike physical printers.
+            lc->flags |= Lp3000IntReady | Lp3000IntReadyEna;
+            if (lc->keepInt)
+                {
+                lc->keepInt = FALSE;
+                }
+            else
+                {
+                lc->flags &= ~Lp3000IntReady;
+                }
             // Update interrupt summary flag in unit block
             activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
@@ -618,8 +652,15 @@ static FcStatus lp3000Func(PpWord funcCode)
             return(FcProcessed);
 
         case Fc3152SelIntEnd:
-            lc->flags |= Lp3000IntEndEna;
-            lc->flags &= ~Lp3000IntEnd;
+            lc->flags |= Lp3000IntEnd | Lp3000IntEndEna;
+            if (lc->keepInt)
+                {
+                lc->keepInt = FALSE;
+                }
+            else
+                {
+                lc->flags &= ~Lp3000IntEnd;
+                }
             // Update interrupt summary flag in unit block
             activeUnit->intr = (lc->flags &
                                 (StPrintIntReady | StPrintIntEnd)) != 0;
@@ -675,6 +716,7 @@ static void lp3000Io(void)
                 }
             activeChannel->full = FALSE;
             lc->printed = TRUE;
+            lc->keepInt = TRUE;
             }
         break;
 
