@@ -14,6 +14,20 @@ return(opl)
 *oplfile opl2
 */ -------------------------------------------------------------------
 */
+*/ send nop words (word value 1) for nopcode
+*/
+*/ for now, change only plato iv overlay
+*/
+*/ -------------------------------------------------------------------
+*ident dtnop
+*deck fovlay1
+*delete FOVLAY1.898
+          sx7    1
+          packwrd x7         send terminal nop
+*/ end fovlay1
+*/
+*/ -------------------------------------------------------------------
+*/
 */ increase frame count to 1024 (was 128) and mout buffer to 1000
 */ (was 512)
 */
