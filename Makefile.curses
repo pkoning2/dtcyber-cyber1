@@ -1,0 +1,35 @@
+#--------------------------------------------------------------------------
+#
+#   Copyright (c) 2002, Tom Hunter (see license.txt)
+#
+#   Name: Makefile.curses
+#
+#   Description:
+#       Build CURSES version of Desktop Cyber emulation.
+#
+#--------------------------------------------------------------------------
+
+LIBS    = -lcurses
+LDFLAGS = -s
+INCL    =
+
+#CFLAGS  = -O2 -I. $(INCL) -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes 
+CFLAGS  = -O2 -I. $(INCL)
+
+OBJS    = main.o window_curses.o init.o trace.o charset.o dump.o \
+          device.o channel.o cpu.o pp.o float.o shift.o operator.o \
+          deadstart.o console.o cr405.o dd6603.o dd844.o \
+          lp1612.o mt607.o mt669.o rtc.o 
+
+all: dtcyber
+
+dtcyber: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+.c.o:
+	$(CC) $(CFLAGS) -c $*.c
+
+clean:
+	rm -f *.o
+
+#---------------------------  End Of File  --------------------------------
