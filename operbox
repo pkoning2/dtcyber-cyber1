@@ -11,9 +11,9 @@
 # These three strings define the list of email addresses to send
 # to on a status change report.  Null string means don't send.
 
-to_up="paul@cyber1.org"
-to_down="paul@cyber1.org"
-to_crash="paul@cyber1.org,6038010176@vtext.com"
+to_up="ni1d@arrl.net"
+to_down="ni1d@arrl.net"
+to_crash="ni1d@arrl.net,6038010176@vtext.com"
 
 echo "`date "+%y/%m/%d %H.%M.%S"`. PLATO $1."
 
