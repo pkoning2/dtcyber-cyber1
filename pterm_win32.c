@@ -380,6 +380,12 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         hbmOld = SelectObject(hdcMem, hbmMem);
         
         /*
+        **  Initialize bitmap and window
+        */
+        BitBlt(hdcMem, 0, 0, XSize, YPMSize, hdcMem, 0, 0, BLACKNESS);
+        BitBlt(hdc, 0, 0, XSize, YSize, hdcMem, 0, 0, BLACKNESS);
+
+        /*
         **  Load the bitmap for the fonts
         */
         fontBitmap = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_FONTBITMAP));
