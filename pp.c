@@ -1521,7 +1521,8 @@ static void ppOpCWM(void)     // 63
     /*
     **  We're cheap -- charge one major cycle per 8 cm words.
     */
-    activePpu->delay = length / 8;
+//    activePpu->delay = length / 8;
+    activePpu->delay = 0;
     
     while (length--)
         {
