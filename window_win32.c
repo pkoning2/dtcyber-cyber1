@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: window_win32.c
 **
@@ -32,10 +32,10 @@
 **  -----------------
 */
 #define ListSize            10000
-#define KeyBufSize			50	// MUST be even
+#define KeyBufSize          50  // MUST be even
 #define MaxPolls        10      // number of poll cycles we track
-#define DisplayBufSize		64
-#define DisplayMargin		20
+#define DisplayBufSize      64
+#define DisplayMargin       20
 // These are used only for the operator interface font
 #define FontName            "Lucida Console"
 #define FontSmallHeight     12
@@ -53,8 +53,8 @@
 #define XADJUST(x) ((x) + DisplayMargin)
 #define YADJUST(y) ((y) + DisplayMargin)
 
-#define DefWinWidth			(XADJUST (02020) + DisplayMargin)
-#define DefWinHeight		(YADJUST (512) + DisplayMargin)
+#define DefWinWidth         (XADJUST (02020) + DisplayMargin)
+#define DefWinHeight        (YADJUST (512) + DisplayMargin)
 
 /*
 **  -----------------------------------------
@@ -91,6 +91,9 @@ static void freeFont (FontInfo *fi);
 static void dput (HDC hdcMem, char c, int x, int y, int dx);
 static void dflush (HDC hdcMem, int dx);
 static void sum (u16 x);
+#if CcHersheyFont == 1
+static void windowTextPlot(HDC hdc, int xPos, int yPos, char ch, u8 fontSize);
+#endif
 
 /*
 **  ----------------
@@ -133,6 +136,9 @@ static u32 s1,s2;
 static u32 s1list[MaxPolls], s2list[MaxPolls];
 static int listPutsAtGetChar[MaxPolls];
 static int sumListGet, sumListPut;
+#if CcHersheyFont == 1
+static HPEN hPen = 0;
+#endif
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Create WIN32 thread which will deal with all windows
@@ -156,10 +162,10 @@ void windowInit(void)
     sumListGet = sumListPut = 0;
     s1 = s2 = 0;
 
-	/*
-	**  Get our instance
-	*/
-	hInstance = GetModuleHandle(NULL);
+    /*
+    **  Get our instance
+    */
+    hInstance = GetModuleHandle(NULL);
 
     /*
     **  Create windowing thread.
@@ -178,12 +184,12 @@ void windowInit(void)
         exit(1);
         }
 
-	/*
-	**  Initialize the widths for the bitmap fonts
-	*/
-	smallFont.width = 8;
-	mediumFont.width = 16;
-	largeFont.width = 32;
+    /*
+    **  Initialize the widths for the bitmap fonts
+    */
+    smallFont.width = 8;
+    mediumFont.width = 16;
+    largeFont.width = 32;
     }
 
 /*--------------------------------------------------------------------------
@@ -219,7 +225,7 @@ void windowSetKeyboardTrue (bool flag)
     if ((keyboardTrue = flag))
         {
         // ** tbd
-		}
+        }
     else
         {
         // **tbd
@@ -245,7 +251,7 @@ void windowSetFont(u8 font)
 **  Purpose:        Set X coordinate.
 **
 **  Parameters:     Name        Description.
-**                  x           horinzontal coordinate (0 - 0777)
+**                  x           horizontal coordinate (0 - 0777)
 **
 **  Returns:        Nothing.
 **
@@ -298,14 +304,14 @@ void windowQueue(char ch)
         if (nextput == ListSize)
             nextput = 0;
         if (nextput != listGet)
-			{
-			elem = display + listPut;
-			listPut = nextput;
-			elem->ch = ch;
-			elem->fontSize = currentFont;
-			elem->xPos = currentX;
-			elem->yPos = currentY;
-			}
+            {
+            elem = display + listPut;
+            listPut = nextput;
+            elem->ch = ch;
+            elem->fontSize = currentFont;
+            elem->xPos = currentX;
+            elem->yPos = currentY;
+            }
         }
 
     currentX += currentFont;
@@ -322,10 +328,10 @@ void windowQueue(char ch)
 **------------------------------------------------------------------------*/
 void windowCheckOutput(void)
     {
-	if (GetQueueStatus(QS_ALLEVENTS) != 0)
-		{
-		WaitMessage();
-		}
+    if (GetQueueStatus(QS_ALLEVENTS) != 0)
+        {
+        WaitMessage();
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -401,14 +407,14 @@ void windowGetChar(void)
 
     // We treat a keyboard poll as the end of a display refresh cycle.
     listPutAtGetChar = listPut;
-	windowCheckOutput();
+    windowCheckOutput();
     
     if (keyListGet == keyListPut)
-	return;
+    return;
 
     nextget = keyListGet + 1;
     if (nextget == KeyBufSize)
-	nextget = 0;
+    nextget = 0;
     ppKeyIn = keybuf[keyListGet];
     keyListGet = nextget;
     }
@@ -438,92 +444,92 @@ void windowClose(void)
 **  Purpose:        Flush pending characters to the bitmap.
 **
 **  Parameters:     Name        Description.
-**					hdcMem		bitmap context
-**					dx			current font size
+**                  hdcMem      bitmap context
+**                  dx          current font size
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
 static void dflush (HDC hdcMem, int dx)
     {
-	int i;
-	int x, y;
-	bool bold = FALSE;
-	int fontY, fy, boldoff, yshift, ymask;
-	char str[2];
+    int i;
+    int x, y;
+    bool bold = FALSE;
+    int fontY, fy, boldoff, yshift, ymask;
+    char str[2];
 
-	switch (dx)
-		{
-	case 8:
-		fontY = 32;
-		boldoff = 8;
-		yshift = 6;
-		ymask = 077;
-		break;
-	case 16:
-		fontY = 48;
-		boldoff = 32;
-		yshift = 5;
-		ymask = 037;
-		break;
-	case 32:
-		fontY = 112;
-		boldoff = 128;
-		yshift = 4;
-		ymask = 017;
-		break;
-		}
-	fy = fontY;
-	str[1] = '\0';
-	x = XADJUST (xstart);
-	y = YADJUST (ypos);
-	if (opActive)
-		{
-		SelectObject(hdcMem, currentFontInfo->normalId);
-		}
-	for (i = 0; i < dcnt; i++)
-		{
-		if (dhits[i] >= dx / 2)
-			{
-			if (!bold)
-				{
-				if (opActive)
-					{
-					SelectObject(hdcMem, currentFontInfo->boldId);
-					}
-				bold = TRUE;
-				fy = fontY + boldoff;
-				}
-			}
-		else
-			{
-			if (bold)
-				{
-				if (opActive)
-					{
-					SelectObject(hdcMem, currentFontInfo->normalId);
-					}
-				bold = FALSE;
-				fy = fontY;
-				}
-			}
-		if (opActive)
-			{
-			str[0] = dchars[i];
-			TextOut(hdcMem, x, y, str, 1);
-			}
-		else if (dchars[i] != 0)
-			{
-			BitBlt (hdcMem, x, y, dx, dx, hdcFont,
-					dx * (dchars[i] & ymask),
-					fy + (dx * ((dchars[i] & ~ymask) >> yshift)),
-					0x00EA02E9);
-			}
-		x += dx;
-		}
+    switch (dx)
+        {
+    case 8:
+        fontY = 32;
+        boldoff = 8;
+        yshift = 6;
+        ymask = 077;
+        break;
+    case 16:
+        fontY = 48;
+        boldoff = 32;
+        yshift = 5;
+        ymask = 037;
+        break;
+    case 32:
+        fontY = 112;
+        boldoff = 128;
+        yshift = 4;
+        ymask = 017;
+        break;
+        }
+    fy = fontY;
+    str[1] = '\0';
+    x = XADJUST (xstart);
+    y = YADJUST (ypos);
+    if (opActive)
+        {
+        SelectObject(hdcMem, currentFontInfo->normalId);
+        }
+    for (i = 0; i < dcnt; i++)
+        {
+        if (dhits[i] >= dx / 2)
+            {
+            if (!bold)
+                {
+                if (opActive)
+                    {
+                    SelectObject(hdcMem, currentFontInfo->boldId);
+                    }
+                bold = TRUE;
+                fy = fontY + boldoff;
+                }
+            }
+        else
+            {
+            if (bold)
+                {
+                if (opActive)
+                    {
+                    SelectObject(hdcMem, currentFontInfo->normalId);
+                    }
+                bold = FALSE;
+                fy = fontY;
+                }
+            }
+        if (opActive)
+            {
+            str[0] = dchars[i];
+            TextOut(hdcMem, x, y, str, 1);
+            }
+        else if (dchars[i] != 0)
+            {
+            BitBlt (hdcMem, x, y, dx, dx, hdcFont,
+                    dx * (dchars[i] & ymask),
+                    fy + (dx * ((dchars[i] & ~ymask) >> yshift)),
+                    0x00EA02E9);
+            }
+        x += dx;
+        }
 
     dcnt = 0;
-	xstart = 07777;
+    xstart = 07777;
     }
 
 /*--------------------------------------------------------------------------
@@ -543,14 +549,14 @@ static void sum (u16 x)
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Put a character to the display, buffering a line
-**					at a time so we can do bold handling etc.
+**                  at a time so we can do bold handling etc.
 **
 **  Parameters:     Name        Description.
-**					hdcMem		bitmap context
-**					c			character (ASCII)
-**					x			x position
-**					y			y position
-**					dx			current font size
+**                  hdcMem      bitmap context
+**                  c           character (ASCII)
+**                  x           x position
+**                  y           y position
+**                  dx          current font size
 **
 **  Returns:        Nothing.
 **
@@ -561,14 +567,14 @@ static void dput (HDC hdcMem, char c, int x, int y, int dx)
     
     // Center the character on the supplied x/y.
     x -= dx / 2;
-	if (opActive)
-		{
-		y += dx * 3 / 8;
-		}
-	else
-		{
-		y -= dx / 2;
-		}
+    if (opActive)
+        {
+        y += dx * 3 / 8;
+        }
+    else
+        {
+        y -= dx / 2;
+        }
     
     // Count hits on this position (for intensify)
     dindx = (x - xstart) / dx;
@@ -616,8 +622,8 @@ static void dput (HDC hdcMem, char c, int x, int y, int dx)
 **  Purpose:        Initialize a FontInfo struct.
 **
 **  Parameters:     Name        Description.
-**					size		pointsize of font
-**					fi			pointer to FontInfo struct to fill in
+**                  size        pointsize of font
+**                  fi          pointer to FontInfo struct to fill in
 **
 **  Returns:        Nothing.
 **
@@ -626,51 +632,51 @@ void initFont (int size, FontInfo *fi)
 {
     LOGFONT lfTmp;
 
- 	memset(&lfTmp, 0, sizeof(lfTmp));
-	lfTmp.lfPitchAndFamily = FIXED_PITCH;
-	strcpy(lfTmp.lfFaceName, FontName);
-	lfTmp.lfWeight = FW_THIN;
-	lfTmp.lfOutPrecision = OUT_TT_PRECIS;
-	lfTmp.lfHeight = size;
-	fi->normalId = CreateFontIndirect (&lfTmp);
-	if (!fi->normalId)
-	{
-		MessageBox (GetFocus(),
-			"Unable to get regular font", 
-			"CreateFont Error",
-			MB_OK);
-	}
- 	memset(&lfTmp, 0, sizeof(lfTmp));
-	lfTmp.lfPitchAndFamily = FIXED_PITCH;
-	strcpy(lfTmp.lfFaceName, FontName);
-	lfTmp.lfWeight = FW_BOLD;
-	lfTmp.lfOutPrecision = OUT_TT_PRECIS;
-	lfTmp.lfHeight = size;
-	fi->boldId = CreateFontIndirect (&lfTmp);
-	if (!fi->boldId)
-	{
-		MessageBox (GetFocus(),
-			"Unable to get bold font", 
-			"CreateFont Error",
-			MB_OK);
-	}
+    memset(&lfTmp, 0, sizeof(lfTmp));
+    lfTmp.lfPitchAndFamily = FIXED_PITCH;
+    strcpy(lfTmp.lfFaceName, FontName);
+    lfTmp.lfWeight = FW_THIN;
+    lfTmp.lfOutPrecision = OUT_TT_PRECIS;
+    lfTmp.lfHeight = size;
+    fi->normalId = CreateFontIndirect (&lfTmp);
+    if (!fi->normalId)
+    {
+        MessageBox (GetFocus(),
+            "Unable to get regular font", 
+            "CreateFont Error",
+            MB_OK);
+    }
+    memset(&lfTmp, 0, sizeof(lfTmp));
+    lfTmp.lfPitchAndFamily = FIXED_PITCH;
+    strcpy(lfTmp.lfFaceName, FontName);
+    lfTmp.lfWeight = FW_BOLD;
+    lfTmp.lfOutPrecision = OUT_TT_PRECIS;
+    lfTmp.lfHeight = size;
+    fi->boldId = CreateFontIndirect (&lfTmp);
+    if (!fi->boldId)
+    {
+        MessageBox (GetFocus(),
+            "Unable to get bold font", 
+            "CreateFont Error",
+            MB_OK);
+    }
 }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Free fonts given a FontInfo struct.
 **
 **  Parameters:     Name        Description.
-**					fi			pointer to FontInfo struct to fill in
+**                  fi          pointer to FontInfo struct to fill in
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
 void freeFont (FontInfo *fi)
 {
-	if (fi->normalId)
-		DeleteObject(fi->normalId);
-	if (fi->boldId)
-		DeleteObject(fi->boldId);
+    if (fi->normalId)
+        DeleteObject(fi->normalId);
+    if (fi->boldId)
+        DeleteObject(fi->boldId);
 }
 
 /*--------------------------------------------------------------------------
@@ -750,11 +756,11 @@ ATOM windowRegisterClass(HINSTANCE hInstance)
 **------------------------------------------------------------------------*/
 static BOOL windowCreate(void)
     {
-	int dx, dy;
+    int dx, dy;
 
-	dx = GetSystemMetrics(SM_CXSIZEFRAME) * 2;
-	dy = GetSystemMetrics(SM_CYSIZEFRAME) * 2 +
-		 GetSystemMetrics(SM_CYCAPTION);
+    dx = GetSystemMetrics(SM_CXSIZEFRAME) * 2;
+    dy = GetSystemMetrics(SM_CYSIZEFRAME) * 2 +
+         GetSystemMetrics(SM_CYCAPTION);
     hWnd = CreateWindow(
         "CONSOLE",              // Registered class name
         DtCyberVersion,         // window name
@@ -793,9 +799,9 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
     {
     int wmId, wmEvent;
     u32 nextput;
-	TEXTMETRIC tm;
-	HDC hdc;
-	int neww, newh;
+    TEXTMETRIC tm;
+    HDC hdc;
+    int neww, newh;
 
     switch (message) 
         {
@@ -822,64 +828,79 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         break;
 
     case WM_CREATE:
-		initFont (FontSmallHeight, &smallOperFont);
-		initFont (FontMediumHeight, &mediumOperFont);
-		hdc = GetDC(hWnd);
-	    GetClientRect(hWnd, &rect);
-		SelectObject(hdc, smallOperFont.boldId);
-		GetTextMetrics(hdc, &tm);
-		smallOperFont.width = tm.tmAveCharWidth;
-		SelectObject(hdc, mediumOperFont.boldId);
-		GetTextMetrics(hdc, &tm);
-		mediumOperFont.width = tm.tmAveCharWidth;
-		
-		/*
-		**  Create a compatible DC.
-		*/
-		hdcMem = CreateCompatibleDC(hdc);
-		hdcFont = CreateCompatibleDC(hdc);
-		
-		/*
-		**  Create a bitmap big enough for our client rect.
-		*/
-		hbmMem = CreateCompatibleBitmap(hdc,
-			DefWinWidth, DefWinHeight);
-		
-		/*
-		**  Select the bitmap into the off-screen dc.
-		*/
-		hbmOld = SelectObject(hdcMem, hbmMem);
-		
-		/*
-		**  Load the bitmap for the fonts
-		*/
-		fontBitmap = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_FONTBITMAP));
-		if (fontBitmap == NULL)
-			fprintf (stderr, "Failed to load font bitmap");
-		
-			/*
-			**  Select the bitmap into the font dc.
-		*/
-		SelectObject(hdcFont, fontBitmap);
-		
-		SetBkMode(hdcMem, OPAQUE);
-		SetBkColor(hdcMem, RGB(0, 0, 0));
-		SetTextColor(hdcMem, RGB(0, 255, 0));
-		ReleaseDC(hWnd, hdc);
+        initFont (FontSmallHeight, &smallOperFont);
+        initFont (FontMediumHeight, &mediumOperFont);
+        hdc = GetDC(hWnd);
+        GetClientRect(hWnd, &rect);
+        SelectObject(hdc, smallOperFont.boldId);
+        GetTextMetrics(hdc, &tm);
+        smallOperFont.width = tm.tmAveCharWidth;
+        SelectObject(hdc, mediumOperFont.boldId);
+        GetTextMetrics(hdc, &tm);
+        mediumOperFont.width = tm.tmAveCharWidth;
+        
+        /*
+        **  Create a compatible DC.
+        */
+        hdcMem = CreateCompatibleDC(hdc);
+        hdcFont = CreateCompatibleDC(hdc);
+        
+        /*
+        **  Create a bitmap big enough for our client rect.
+        */
+        hbmMem = CreateCompatibleBitmap(hdc,
+            DefWinWidth, DefWinHeight);
+        
+        /*
+        **  Select the bitmap into the off-screen dc.
+        */
+        hbmOld = SelectObject(hdcMem, hbmMem);
+        
+        /*
+        **  Load the bitmap for the fonts
+        */
+        fontBitmap = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_FONTBITMAP));
+        if (fontBitmap == NULL)
+            fprintf (stderr, "Failed to load font bitmap");
+        
+            /*
+            **  Select the bitmap into the font dc.
+        */
+        SelectObject(hdcFont, fontBitmap);
+        
+        SetBkMode(hdcMem, OPAQUE);
+        SetBkColor(hdcMem, RGB(0, 0, 0));
+        SetTextColor(hdcMem, RGB(0, 255, 0));
+        ReleaseDC(hWnd, hdc);
+#if CcHersheyFont == 1
+        hPen = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
+        if (!hPen)
+            {
+            MessageBox (GetFocus(),
+                "Unable to get green pen", 
+                "CreatePen Error",
+                MB_OK);
+            }
+#endif
         return DefWindowProc (hWnd, message, wParam, lParam);
 
     case WM_DESTROY:
         freeFont (&smallFont);
         freeFont (&mediumFont);
-	    /*
-		**  Done with off screen bitmap and dc.
-		*/
-		SelectObject(hdcMem, hbmOld);
-		DeleteObject(hbmMem);
-		DeleteObject(fontBitmap);
-		DeleteDC(hdcFont);
-		DeleteDC(hdcMem);
-
+        /*
+        **  Done with off screen bitmap and dc.
+        */
+        SelectObject(hdcMem, hbmOld);
+        DeleteObject(hbmMem);
+        DeleteObject(fontBitmap);
+        DeleteDC(hdcFont);
+        DeleteDC(hdcMem);
+#if CcHersheyFont == 1
+        if (hPen)
+            {
+            DeleteObject(hPen);
+            }
+#endif
         PostQuitMessage(0);
         break;
 
@@ -947,20 +968,20 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         break;
 
     case WM_CHAR:
-		nextput = keyListPut + 2;
-		if (nextput == KeyBufSize)
-			nextput = 0;
-		if (nextput != keyListGet)
-		{
-			keybuf[keyListPut] = wParam;
-			/*
-			** Stick a null after the real character 
-			** to represent "key up" after the key down.
-			** Without this, NOS DSD loses many keystrokes.
-			*/
-			keybuf[keyListPut + 1] = 0;
-			keyListPut = nextput;
-		}
+        nextput = keyListPut + 2;
+        if (nextput == KeyBufSize)
+            nextput = 0;
+        if (nextput != keyListGet)
+        {
+            keybuf[keyListPut] = wParam;
+            /*
+            ** Stick a null after the real character 
+            ** to represent "key up" after the key down.
+            ** Without this, NOS DSD loses many keystrokes.
+            */
+            keybuf[keyListPut + 1] = 0;
+            keyListPut = nextput;
+        }
         break;
 
     default:
@@ -990,7 +1011,9 @@ void windowDisplay(HWND hWnd)
     HFONT hfntOld;
 
     BeginPaint(hWnd, &ps);
-	hdc = GetDC(hWnd);
+    hdc = GetDC(hWnd);
+//    hdc = BeginPaint(hWnd, &ps);
+//??    GetClientRect(hWnd, &rect);
 
     /*
     **  Start with a clean bitmap
@@ -1049,16 +1072,19 @@ void windowDisplay(HWND hWnd)
     }
 #endif
 
-	if (listPutAtGetChar >= 0)
-		{
-		prevPut = listPutAtGetChar;
-		}
-	else
-		{
-		prevPut = listPut;
-		}
+    if (listPutAtGetChar >= 0)
+        {
+        prevPut = listPutAtGetChar;
+        }
+    else
+        {
+        prevPut = listPut;
+        }
     end = display + prevPut;
     curr = display + listGet;
+#if CcHersheyFont == 1
+    SelectObject(hdcMem, hPen);
+#endif
     for (;;)
         {
         /*
@@ -1069,40 +1095,42 @@ void windowDisplay(HWND hWnd)
         if (curr == end)
             break;
 
+#if CcHersheyFont == 0
         if (oldFont != curr->fontSize)
             {
-			dflush (hdcMem, currentFontInfo->width);
+            dflush (hdcMem, currentFontInfo->width);
             oldFont = curr->fontSize;
 
             switch (oldFont)
                 {
             case FontSmall:
-				if (opActive)
-					{
-					currentFontInfo = &smallOperFont;
-					}
-				else
-					{
-					currentFontInfo = &smallFont;
-					}
+                if (opActive)
+                    {
+                    currentFontInfo = &smallOperFont;
+                    }
+                else
+                    {
+                    currentFontInfo = &smallFont;
+                    }
                 break;
 
             case FontMedium:
-				if (opActive)
-					{
-					currentFontInfo = &mediumOperFont;
-					}
-				else
-					{
-					currentFontInfo = &mediumFont;
-					}
+                if (opActive)
+                    {
+                    currentFontInfo = &mediumOperFont;
+                    }
+                else
+                    {
+                    currentFontInfo = &mediumFont;
+                    }
                 break;
 
-			case FontLarge:
+            case FontLarge:
                 currentFontInfo = &largeFont;
                 break;
-				}
+                }
             }
+#endif
 
         if (curr->fontSize == FontDot)
             {
@@ -1110,7 +1138,13 @@ void windowDisplay(HWND hWnd)
             }
         else
             {
-			dput (hdcMem, curr->ch, curr->xPos, curr->yPos, currentFontInfo->width);
+#if CcHersheyFont == 0
+            dput (hdcMem, curr->ch, curr->xPos, curr->yPos,
+                  currentFontInfo->width);
+#else
+            windowTextPlot(hdcMem, XADJUST (curr->xPos), YADJUST (curr->yPos),
+                           curr->ch, curr->fontSize);
+#endif
             }
         curr++;
         }
@@ -1127,7 +1161,6 @@ void windowDisplay(HWND hWnd)
         SelectObject(hdcMem, hfntOld);
         }
 
-
     /*
     **  Blit the changes to the screen dc.
     */
@@ -1138,8 +1171,201 @@ void windowDisplay(HWND hWnd)
            0, 0,
            SRCCOPY);
 
-	ReleaseDC(hWnd, hdc);
+    ReleaseDC(hWnd, hdc);
     EndPaint(hWnd, &ps);
     }
+
+#if CcHersheyFont == 1
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Define Hershey glyphs.
+**
+**------------------------------------------------------------------------*/
+const char * const consoleHersheyGlyphs[64] =
+    {
+#if 1
+    /* 00 = ':' */ "PURPRQSQSPRP RRURVSVSURU",
+    /* 01 = 'A' */ "MWRMNV RRMVV RPSTS",
+    /* 02 = 'B' */ "MWOMOV ROMSMUNUPSQ ROQSQURUUSVOV",
+    /* 03 = 'C' */ "MXVNTMRMPNOPOSPURVTVVU",
+    /* 04 = 'D' */ "MWOMOV ROMRMTNUPUSTURVOV",
+    /* 05 = 'E' */ "MWOMOV ROMUM ROQSQ ROVUV",
+    /* 06 = 'F' */ "MVOMOV ROMUM ROQSQ",
+    /* 07 = 'G' */ "MXVNTMRMPNOPOSPURVTVVUVR RSRVR",
+    /* 10 = 'H' */ "MWOMOV RUMUV ROQUQ",
+    /* 11 = 'I' */ "PTRMRV",
+    /* 12 = 'J' */ "NUSMSTRVPVOTOS",
+    /* 13 = 'K' */ "MWOMOV RUMOS RQQUV",
+    /* 14 = 'L' */ "MVOMOV ROVUV",
+    /* 15 = 'M' */ "LXNMNV RNMRV RVMRV RVMVV",
+    /* 16 = 'N' */ "MWOMOV ROMUV RUMUV",
+    /* 17 = 'O' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM",
+    /* 20 = 'P' */ "MWOMOV ROMSMUNUQSROR",
+    /* 21 = 'Q' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM RSTVW",
+    /* 22 = 'R' */ "MWOMOV ROMSMUNUQSROR RRRUV",
+    /* 23 = 'S' */ "MWUNSMQMONOOPPTRUSUUSVQVOU",
+    /* 24 = 'T' */ "MWRMRV RNMVM",
+    /* 25 = 'U' */ "MXOMOSPURVSVUUVSVM",
+    /* 26 = 'V' */ "MWNMRV RVMRV",
+    /* 27 = 'W' */ "LXNMPV RRMPV RRMTV RVMTV",
+    /* 30 = 'X' */ "MWOMUV RUMOV",
+    /* 31 = 'Y' */ "MWNMRQRV RVMRQ",
+    /* 32 = 'Z' */ "MWUMOV ROMUM ROVUV",
+    /* 33 = '0' */ "MWRMPNOPOSPURVTUUSUPTNRM",
+    /* 34 = '1' */ "MWPORMRV",
+    /* 35 = '2' */ "MWONQMSMUNUPTROVUV",
+    /* 36 = '3' */ "MWONQMSMUNUPSQ RRQSQURUUSVQVOU",
+    /* 37 = '4' */ "MWSMSV RSMNSVS",
+    /* 40 = '5' */ "MWPMOQQPRPTQUSTURVQVOU RPMTM",
+    /* 41 = '6' */ "MWTMRMPNOPOSPURVTUUSTQRPPQOS",
+    /* 42 = '7' */ "MWUMQV ROMUM",
+    /* 43 = '8' */ "MWQMONOPQQSQUPUNSMQM RQQOROUQVSVUUURSQ",
+    /* 44 = '9' */ "MWUPTRRSPROPPNRMTNUPUSTURVPV",
+    /* 45 = '+' */ "LXRNRV RNRVR",
+    /* 46 = '-' */ "LXNRVR",
+    /* 47 = '*' */ "MWRORU ROPUT RUPOT",
+    /* 50 = '/' */ "MWVLNX",
+    /* 51 = '(' */ "OUTKRNQQQSRVTY",
+    /* 52 = ')' */ "OUPKRNSQSSRVPY",
+    /* 53 = '$' */ "MWRKRX RUNSMQMONOPQQTRUSUUSVQVOU",
+    /* 54 = '=' */ "LXNPVP RNTVT",
+    /* 55 = ' ' */ "",
+    /* 56 = ',' */ "PUSVRVRUSUSWRY",
+    /* 57 = '.' */ "PURURVSVSURU",
+    /* 60 = '#' */ "MXQLQY RTLTY ROQVQ ROTVT",
+    /* 61 = '[' */ "",
+    /* 62 = ']' */ "",
+    /* 63 = '%' */ "",
+    /* 64 = '"' */ "NVPMPQ RTMTQ",
+    /* 65 = '_' */ "",
+    /* 66 = '!' */ "PURMRR RSMSR RRURVSVSURU",
+    /* 67 = '&' */ "LXVRURTSSURVOVNUNSORRQSPSNRMPMONOPQSSUUVVV",
+    /* 70 = ''' */ "PTRMRQ",
+    /* 71 = '?' */ "NWPNRMSMUNUPRQRRSRSQUP RRURVSVSURU",
+    /* 72 = '<' */ "",
+    /* 73 = '>' */ "",
+    /* 74 = '@' */ "",
+    /* 75 = '\' */ "",
+    /* 76 = '^' */ "",
+    /* 77 = ';' */ "PURPRQSQSPRP RSVRVRUSUSWRY",
+#else
+    /* 00 = ' ' */ "",
+    /* 01 = 'A' */ "MWRMNV RRMVV RPSTS",
+    /* 02 = 'B' */ "MWOMOV ROMSMUNUPSQ ROQSQURUUSVOV",
+    /* 03 = 'C' */ "MXVNTMRMPNOPOSPURVTVVU",
+    /* 04 = 'D' */ "MWOMOV ROMRMTNUPUSTURVOV",
+    /* 05 = 'E' */ "MWOMOV ROMUM ROQSQ ROVUV",
+    /* 06 = 'F' */ "MVOMOV ROMUM ROQSQ",
+    /* 07 = 'G' */ "MXVNTMRMPNOPOSPURVTVVUVR RSRVR",
+    /* 10 = 'H' */ "MWOMOV RUMUV ROQUQ",
+    /* 11 = 'I' */ "PTRMRV",
+    /* 12 = 'J' */ "NUSMSTRVPVOTOS",
+    /* 13 = 'K' */ "MWOMOV RUMOS RQQUV",
+    /* 14 = 'L' */ "MVOMOV ROVUV",
+    /* 15 = 'M' */ "LXNMNV RNMRV RVMRV RVMVV",
+    /* 16 = 'N' */ "MWOMOV ROMUV RUMUV",
+    /* 17 = 'O' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM",
+    /* 20 = 'P' */ "MWOMOV ROMSMUNUQSROR",
+    /* 21 = 'Q' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM RSTVW",
+    /* 22 = 'R' */ "MWOMOV ROMSMUNUQSROR RRRUV",
+    /* 23 = 'S' */ "MWUNSMQMONOOPPTRUSUUSVQVOU",
+    /* 24 = 'T' */ "MWRMRV RNMVM",
+    /* 25 = 'U' */ "MXOMOSPURVSVUUVSVM",
+    /* 26 = 'V' */ "MWNMRV RVMRV",
+    /* 27 = 'W' */ "LXNMPV RRMPV RRMTV RVMTV",
+    /* 30 = 'X' */ "MWOMUV RUMOV",
+    /* 31 = 'Y' */ "MWNMRQRV RVMRQ",
+    /* 32 = 'Z' */ "MWUMOV ROMUM ROVUV",
+    /* 33 = '0' */ "MWRMPNOPOSPURVTUUSUPTNRM",
+    /* 34 = '1' */ "MWPORMRV",
+    /* 35 = '2' */ "MWONQMSMUNUPTROVUV",
+    /* 36 = '3' */ "MWONQMSMUNUPSQ RRQSQURUUSVQVOU",
+    /* 37 = '4' */ "MWSMSV RSMNSVS",
+    /* 40 = '5' */ "MWPMOQQPRPTQUSTURVQVOU RPMTM",
+    /* 41 = '6' */ "MWTMRMPNOPOSPURVTUUSTQRPPQOS",
+    /* 42 = '7' */ "MWUMQV ROMUM",
+    /* 43 = '8' */ "MWQMONOPQQSQUPUNSMQM RQQOROUQVSVUUURSQ",
+    /* 44 = '9' */ "MWUPTRRSPROPPNRMTNUPUSTURVPV",
+    /* 45 = '+' */ "LXRNRV RNRVR",
+    /* 46 = '-' */ "LXNRVR",
+    /* 47 = '*' */ "MWRORU ROPUT RUPOT",
+    /* 50 = '/' */ "MWVLNX",
+    /* 51 = '(' */ "OUTKRNQQQSRVTY",
+    /* 52 = ')' */ "OUPKRNSQSSRVPY",
+    /* 53 = ' ' */ "",
+    /* 54 = '=' */ "LXNPVP RNTVT",
+    /* 55 = ' ' */ "",
+    /* 56 = ',' */ "PUSVRVRUSUSWRY",
+    /* 57 = '.' */ "PURURVSVSURU",
+    /* 60 = ' ' */ "",
+    /* 61 = ' ' */ "",
+    /* 62 = ' ' */ "",
+    /* 63 = ' ' */ "",
+    /* 64 = ' ' */ "",
+    /* 65 = ' ' */ "",
+    /* 66 = ' ' */ "",
+    /* 67 = ' ' */ "",
+    /* 70 = ' ' */ "",
+    /* 71 = ' ' */ "",
+    /* 72 = ' ' */ "",
+    /* 73 = ' ' */ "",
+    /* 74 = ' ' */ "",
+    /* 75 = ' ' */ "",
+    /* 76 = ' ' */ "",
+    /* 77 = ' ' */ "",
+#endif
+    };
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Plot a character using the Hershey glyphs.
+**
+**  Parameters:     Name        Description.
+**                  hWnd        window handle.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void windowTextPlot(HDC hdc, int xPos, int yPos, char ch, u8 fontSize)
+    {
+    bool penDown = FALSE;
+    const unsigned char *glyph;
+    int x, y;
+    int charSize = fontSize / 8;
+    
+    xPos += 8;
+    glyph = (const unsigned char *)(consoleHersheyGlyphs[ch]);
+
+    if (*glyph != '\0') /* nonempty glyph */
+        {
+        glyph += 2;
+
+        while (*glyph)
+            {
+            x = (int)glyph[0];
+
+            if (x == (int)' ')
+                penDown = FALSE;
+            else
+                {
+                x = charSize * (x - (int)'R') + xPos;
+                y = charSize * ((int)glyph[1] - (int)'R') + yPos;
+                if (penDown)
+                    {
+                    LineTo(hdc, x, y);  
+                    }
+                else
+                    {
+                    MoveToEx(hdc, x, y, NULL);  
+                    }
+
+                penDown = TRUE;
+                }
+
+            glyph += 2; /* on to next pair */
+            }
+        }
+    }
+
+#endif
 
 /*---------------------------  End Of File  ------------------------------*/
