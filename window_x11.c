@@ -56,6 +56,10 @@
 #define XADJUST(x) ((x) + DisplayMargin)
 #define YADJUST(y) ((y) + DisplayMargin)
 
+// turn on the next line to debug X startup troubles...
+//#define XDEBUG(disp,text) XSync(disp, 0); printf (text "\n")
+#define XDEBUG(disp,text)
+
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
@@ -242,33 +246,42 @@ void windowInit(void)
     **  Create a window using the following hints.
     */
     bg = BlackPixel(disp, screen);
+    XDEBUG(disp, "got background");
     fg = WhitePixel(disp, screen);
+    XDEBUG(disp, "got foreground");
 
     window = XCreateSimpleWindow (disp, DefaultRootWindow(disp),
         10, 10, XSize, YSize, 5, fg, bg);
+    XDEBUG(disp, "created window");
 
     /*
     **  Create a pixmap for background image generation.
     */
     pixmap = XCreatePixmap (disp, window, XSize, YSize, 1);
+    XDEBUG(disp, "created pixmap");
 
     /*
     **  Set window and icon titles.
     */
     XSetStandardProperties (disp, window, DtCyberVersion, DtCyberVersion,
         None, NULL, 0, NULL);
+    XDEBUG(disp, "set window properties");
 
     /*
     **  Create the graphics contexts for window and pixmap.
     */
     wgc = XCreateGC (disp, window, 0, 0);
+    XDEBUG(disp, "created window GC");
     pgc = XCreateGC (disp, pixmap, 0, 0);
+    XDEBUG(disp, "created pixmap GC");
 
     /*
     **  Initialize the pixmap.
     */
     XSetForeground (disp, pgc, bg);
+    XDEBUG(disp, "set pixmap bg");
     XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
+    XDEBUG(disp, "cleared pixmap");
 
     /*
     **  We don't want to get Expose events, otherwise every XCopyArea will generate one,
@@ -276,46 +289,71 @@ void windowInit(void)
     **  it is better not to generate them in the first place.
     */
     XSetGraphicsExposures(disp, wgc, FALSE);
+    XDEBUG(disp, "set window exposure events off");
 
     /*
     **  Load three Cyber fonts, normal and bold flavors
     */
     smallFont.normalId = XLoadFont(disp, "-*-seymour-medium-*-*-*-8-*-*-*-*-*-*-*\0");
+    XDEBUG(disp, "loaded small font");
     smallFont.boldId = XLoadFont(disp, "-*-seymour-bold-*-*-*-8-*-*-*-*-*-*-*\0");
+    XDEBUG(disp, "loaded bold small font");
     mediumFont.normalId = XLoadFont(disp, "-*-seymour-medium-*-*-*-16-*-*-*-*-*-*-*\0");
+    XDEBUG(disp, "loaded medium font");
     mediumFont.boldId = XLoadFont(disp, "-*-seymour-bold-*-*-*-16-*-*-*-*-*-*-*\0");
+    XDEBUG(disp, "loaded bold medium font");
     largeFont.normalId = XLoadFont(disp, "-*-seymour-medium-*-*-*-32-*-*-*-*-*-*-*\0");
+    XDEBUG(disp, "loaded large font");
     largeFont.boldId = XLoadFont(disp, "-*-seymour-bold-*-*-*-32-*-*-*-*-*-*-*\0");
-    smallOperFont.normalId = XLoadFont(disp, "-*-lucidatypewriter-medium-*-*-*-12-*-*-*-*-*-*-*\0");
-    smallOperFont.boldId = XLoadFont(disp, "-*-lucidatypewriter-bold-*-*-*-12-*-*-*-*-*-*-*\0");
-    mediumOperFont.normalId = XLoadFont(disp, "-*-lucidatypewriter-medium-*-*-*-17-*-*-*-*-*-*-*\0");
-    mediumOperFont.boldId = XLoadFont(disp, "-*-lucidatypewriter-bold-*-*-*-17-*-*-*-*-*-*-*\0");
+    XDEBUG(disp, "loaded bold large font");
+    smallOperFont.normalId = XLoadFont(disp, "-*-lucidatypewriter-medium-*-*-*-*-120-*-*-*-*-*-*\0");
+    XDEBUG(disp, "loaded small operator font");
+    smallOperFont.boldId = XLoadFont(disp, "-*-lucidatypewriter-bold-*-*-*-*-120-*-*-*-*-*-*\0");
+    XDEBUG(disp, "loaded bold small operator font");
+    mediumOperFont.normalId = XLoadFont(disp, "-*-lucidatypewriter-medium-*-*-*-*-180-*-*-*-*-*-*\0");
+    XDEBUG(disp, "loaded medium operator font");
+    mediumOperFont.boldId = XLoadFont(disp, "-*-lucidatypewriter-bold-*-*-*-*-180-*-*-*-*-*-*\0");
+    XDEBUG(disp, "loaded bold medium operator font");
     getCharWidths (&smallFont, "\001");
+    XDEBUG(disp, "queried small font");
     getCharWidths (&mediumFont, "\001");
+    XDEBUG(disp, "queried medium font");
     getCharWidths (&largeFont, "\001");
+    XDEBUG(disp, "queried large font");
     smallOperFont.pad = 1;
     mediumOperFont.pad = 2;
     getCharWidths (&smallOperFont, "A");
+    XDEBUG(disp, "queried small operator font");
     getCharWidths (&mediumOperFont, "A");
+    XDEBUG(disp, "queried medium operator font");
 
     /*
     **  Setup fore- and back-ground colors.
     */
     XGetWindowAttributes(disp,window,&a);
+    XDEBUG(disp, "get window attributes");
     XAllocNamedColor(disp, a.colormap, fgcolor, &b, &c);
+    XDEBUG(disp, "allocate foreground color");
     fg=b.pixel;
     XAllocNamedColor(disp, a.colormap, bgcolor, &b, &c);
+    XDEBUG(disp, "allocate background color");
     bg=b.pixel;
     XSetBackground(disp, wgc, bg);
+    XDEBUG(disp, "set window background");
     XSetForeground(disp, wgc, fg);
+    XDEBUG(disp, "set window foreground");
 
     /*
     **  Ditto for pixmap
     */
     pfg = WhitePixel(disp, screen);
+    XDEBUG(disp, "get pixmap white");
     pbg = BlackPixel(disp, screen);
+    XDEBUG(disp, "get pixmap black");
     XSetBackground(disp, pgc, pbg);
+    XDEBUG(disp, "set pixmap background");
     XSetForeground(disp, pgc, pfg);
+    XDEBUG(disp, "set pixmap foreground");
 
     /*
     **  Create mappings of some ALT-key combinations to strings.
@@ -348,6 +386,7 @@ void windowInit(void)
     XRebindKeysym(disp, 's', modList, 1, "$s", 2);
     XRebindKeysym(disp, 'S', modList, 1, "$s", 2);
     XRebindKeysym(disp, XK_Scroll_Lock, 0, 0, "$t", 2);
+    XDEBUG(disp, "rebound keysyms (a pile of them)");
     
     /*
     **  Initialise input.
@@ -355,12 +394,15 @@ void windowInit(void)
     wmhints.flags = InputHint;
     wmhints.input = True;
     XSetWMHints(disp, window, &wmhints);
+    XDEBUG(disp, "set window manager hints");
     XSelectInput (disp, window, KeyPressMask | StructureNotifyMask);
+    XDEBUG(disp, "select input");
 
     /*
     **  We like to be on top.
     */
     XMapRaised (disp, window);
+    XDEBUG(disp, "raise window");
     }
 
 /*--------------------------------------------------------------------------
