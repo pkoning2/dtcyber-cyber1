@@ -246,3 +246,9 @@ Since jan21 2004 drop:
   Fixed a typo in dd8xx.c, it was displaying 0 cylinders for the disk
   size at startup.
 - Added setting of the "reuse" flag to niu.c (lifted from mux6676.c)
+
+- Flaw map setting now fixed, along with read utilty map and read factory
+  data functions (I had overlooked that those needed fixing, too).
+- Changed the character wrap and clip handling in pterm_x11.c so the
+  spot where the trace marker is displayed is not active.  That way
+  we don't get stray pixels there.
