@@ -807,7 +807,6 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
     u32 nextput;
     TEXTMETRIC tm;
     HDC hdc;
-    int neww, newh;
 
     switch (message) 
         {
@@ -947,8 +946,8 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
             break;
 
         case 'C':
-            tracemask ^= tracecpu1;
-            tracestop ();
+            traceMask ^= TraceCpu1;
+            traceStop ();
             break;
 
         case 'E':
@@ -1083,7 +1082,7 @@ void windowDisplay(HWND hWnd)
         refreshCount++,
         ppu[0].regP, ppu[1].regP, ppu[2].regP, ppu[3].regP, ppu[4].regP,
         ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
-        cpu.regP); 
+        cpu[0].regP); 
 
         if (cpuCount > 1)
             {
@@ -1184,7 +1183,7 @@ void windowDisplay(HWND hWnd)
 
         if (curr->fontSize == FontDot)
             {
-            dflush ();
+            dflush (hdcMem, currentFontInfo->width);
             if (curr->xPos == dotx && curr->yPos == doty &&
                 doti < sizeof (dotdx) - 1)
                 {
