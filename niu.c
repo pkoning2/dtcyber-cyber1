@@ -37,6 +37,7 @@
 #define NiuLocalStations        32          // range reserved for local stations
 #define NiuLocalBufSize         50          // size of local input buffer
 
+//#define REAL_TIMING  // define this to do real NIU timing (16 ms per frame)
 //#define DEBUG
 
 /*
@@ -71,8 +72,6 @@ typedef struct localRing
     int put;
 } LocalRing;
 
-typedef void niuProcessOutput (int, u32);
-
 /*
 **  ---------------------------
 **  Private Function Prototypes
@@ -91,6 +90,9 @@ static void niuThread(void *param);
 #else
 static void *niuThread(void *param);
 #endif
+static void niuWelcome(int stat);
+static void niuSendstr(int stat, const char *p);
+static void niuSend(int stat, int word);
 
 /*
 **  ----------------
@@ -114,7 +116,10 @@ static int obytes;
 static u32 currOutput;
 static LocalRing localInput[NiuLocalStations];
 static niuProcessOutput *outputHandler[NiuLocalStations];
-
+#ifdef REAL_TIMING
+static u64 lastFrame;
+bool frameStart;
+#endif
 /*
 **--------------------------------------------------------------------------
 **
@@ -198,6 +203,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     */
 #if !defined(_WIN32)
     ptermInit ("Plato station 0-1");
+    niuWelcome (1);
 #endif
 
     /*
@@ -356,7 +362,7 @@ static void niuInIo(void)
         port = lastInPort;
         for (;;)
         {
-            if (++port > NiuLocalStations + platoConns)
+            if (++port >= NiuLocalStations + platoConns)
                 port = 0;
             if (port < NiuLocalStations)
             {
@@ -457,7 +463,11 @@ static void niuOutIo(void)
     PortParam *mp;
     u8 data[3];
     int port;
-    
+#ifdef REAL_TIMING
+    struct timeval tm;
+    u64 us;
+#endif
+
     if (activeDevice->fcode != FcNiuOutput ||
         !activeChannel->full)
         return;
@@ -465,11 +475,27 @@ static void niuOutIo(void)
     /*
     **  Output data.
     */
-    activeChannel->full = FALSE;
     d = activeChannel->data;
     if (obytes == 0)
     {
         // first word of the triple
+#ifdef REAL_TIMING
+        // If this word is the first of a frame, don't acknowledge
+        // it until it's a frame time later than the previous one.
+        if (frameStart)
+        {
+            gettimeofday (&tm, NULL);
+            us = tm.tv_sec * ULL(1000000) + tm.tv_usec;
+            if (us - lastFrame < ULL(16667))
+            {
+                return;
+            }
+            lastFrame = us;
+            frameStart = FALSE;
+        }
+#endif
+
+        activeChannel->full = FALSE;
         if ((d & 06000) != 04000)
         {
             printf ("niu output out of sync, first word %04o\n", d);
@@ -479,6 +505,7 @@ static void niuOutIo(void)
         obytes = 1;
         return;
     }
+    activeChannel->full = FALSE;
     if (obytes == 1)
     {
         // second word of the triple
@@ -497,38 +524,23 @@ static void niuOutIo(void)
         printf ("niu output out of sync, third word %04o\n", d);
         return;
     }
+
+#ifdef REAL_TIMING
+    // If end of frame bit is set, remember that so the
+    // next output word is recognized as the start of a new frame.
+    if ((d & 02000) != 0)
+    {
+        frameStart = TRUE;
+    }
+#endif
     port = (d & 01777);
     
     // Now that we have a complete output triple, discard it
     // if it's for a station number out of range (larger than
     // what we're configured to support) or without an 
     // active TCP connection.
-    if (port < NiuLocalStations)
-    {
-        if (outputHandler[port] != NULL)
-        {
-            (*outputHandler[port]) (port, currOutput);
-        }
-        obytes = 0;
-    }
-    else
-    {
-        port -= NiuLocalStations;
-        obytes = 0;
-        if (port >= platoConns)
-            return;
-        mp = portVector + port;
-        if (!mp->active)
-            return;
-        data[0] = currOutput >> 12;
-        data[1] = ((currOutput >> 6) & 077) | 0200;
-        data[2] = (currOutput & 077) | 0300;
-#ifdef DEBUG
-        printf ("niu output %03o %03o %03o\n",
-                data[0], data[1], data[2]);
-#endif
-        send(mp->connFd, data, 3, 0);
-    }
+    niuSend (port, currOutput);
+    obytes = 0;
 }
 
 /*--------------------------------------------------------------------------
@@ -714,6 +726,7 @@ static void niuThread(void *param)
         */
         mp->active = TRUE;
         printf("niu: Received connection on port %d\n", mp - portVector);
+        niuWelcome (mp - portVector + NiuLocalStations);
     }
 }
 
@@ -778,5 +791,148 @@ static int niuCheckInput(PortParam *mp)
         return(-1);
     }
 }
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Send a welcome message to a station
+**
+**  Parameters:     Name        Description.
+**                  stat        Station number
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void niuWelcome(int stat)
+{
+    char msg[100];
+    
+    sprintf (msg, "Connected to Plato station %d-%d", stat >> 5, stat & 037);
+    niuSend (stat, 0100033);        // mode 3, mode rewrite, screen
+    niuSend (stat, 0201200);        // load Y = 128
+    niuSend (stat, 0200200);        // load X = 128
+    niuSendstr (stat, msg);
+}
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Send a string to a station
+**
+**  Parameters:     Name        Description.
+**                  stat        Station number
+**                  p           pointer to ASCII string
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void niuSendstr(int stat, const char *p)
+{
+    int cc = 2;
+    int w = 017720;
+    bool shift = FALSE;
+    char c;
+    
+    while ((c = *p++) != 0)
+    {
+        if (isupper (c))
+        {
+            c = tolower (c);
+            if (!shift)
+            {
+                w = (w << 6 | 077);
+                if (++cc == 3)
+                {
+                    cc = 0;
+                    niuSend (stat, w);
+                    w = 1;
+                }
+                w = (w << 6 | 021);
+                if (++cc == 3)
+                {
+                    cc = 0;
+                    niuSend (stat, w);
+                    w = 1;
+                }
+                shift = TRUE;
+            }
+        }
+        else if (shift)
+        {
+            w = (w << 6 | 077);
+            if (++cc == 3)
+            {
+                cc = 0;
+                niuSend (stat, w);
+                w = 1;
+            }
+            w = (w << 6 | 020);
+            if (++cc == 3)
+            {
+                cc = 0;
+                niuSend (stat, w);
+                w = 1;
+            }
+            shift = FALSE;
+        }
+        w = (w << 6 | asciiToCdc[c]);
+        if (++cc == 3)
+        {
+            cc = 0;
+            niuSend (stat, w);
+            w = 1;
+        }
+    }
+    if (cc > 0)
+    {
+        while (cc < 3)
+        {
+            w = (w << 6 | 077);
+            cc++;
+        }
+        niuSend (stat, w);
+    }
+}
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Send an output word to a station
+**
+**  Parameters:     Name        Description.
+**                  stat        Station number
+**                  word        NIU data word
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void niuSend(int stat, int word)
+{
+    PortParam *mp;
+    u8 data[3];
+
+    if (stat < NiuLocalStations)
+    {
+        if (outputHandler[stat] != NULL)
+        {
+            (*outputHandler[stat]) (stat, word);
+        }
+    }
+    else
+    {
+        stat -= NiuLocalStations;
+        if (stat >= platoConns)
+            return;
+        mp = portVector + stat;
+        if (!mp->active)
+            return;
+        data[0] = word >> 12;
+        data[1] = ((word >> 6) & 077) | 0200;
+        data[2] = (word & 077) | 0300;
+#ifdef DEBUG
+        printf ("niu output %03o %03o %03o\n",
+                data[0], data[1], data[2]);
+#endif
+        send(mp->connFd, data, 3, 0);
+    }
+}
+
 
 /*---------------------------  End Of File  ------------------------------*/
