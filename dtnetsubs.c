@@ -41,6 +41,16 @@
 */
 
 /*
+**  -----------------------
+**  Private Macro Functions
+**  -----------------------
+*/
+
+#define locDtFetData(fet) \
+    ((in >= out) ? in - out                     \
+     : (fet)->end - out + in - (fet)->first)
+
+/*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
 **  -----------------------------------------
@@ -423,7 +433,7 @@ int dtRead (NetFet *fet, int time)
     fd_set readFds;
     fd_set exceptFds;
     struct timeval timeout;
-    u8 *nextin;
+    u8 *in, *out, *nextin;
     int size;
     
     if (time != -1)
@@ -449,13 +459,19 @@ int dtRead (NetFet *fet, int time)
                 }
             }
         }
-    if (fet->in < fet->out)
+    /*
+    **  Copy the pointers, since they are volatile.
+    */
+    in = (u8 *) (fet->in);
+    out = (u8 *) (fet->out);
+
+    if (in < out)
         {
         /*
         **  If the out pointer is beyond the in pointer, we can
         **  fill the space in between, leaving one free word
         */
-        size = fet->out - fet->in - 1;
+        size = out - in - 1;
         }
     else
         {
@@ -465,16 +481,16 @@ int dtRead (NetFet *fet, int time)
         **  at the start of the buffer, in which case we have to 
         **  leave the last word unused.
         */
-        size = fet->end - fet->in;
-        if (fet->out == fet->first)
+        size = fet->end - in;
+        if (out == fet->first)
             {
             size--;
             }
         }
-    i = recv(fet->connFd, fet->in, size, MSG_NOSIGNAL);
+    i = recv(fet->connFd, in, size, MSG_NOSIGNAL);
     if (i > 0)
         {
-        nextin = fet->in + i;
+        nextin = in + i;
         if (nextin == fet->end)
             {
             nextin = fet->first;
@@ -500,19 +516,25 @@ int dtRead (NetFet *fet, int time)
 **------------------------------------------------------------------------*/
 int dtReado (NetFet *fet)
     {
-    u8 *nextout;
+    u8 *in, *out, *nextout;
     u8 b;
     
-    if (fet->out == fet->in)
+    /*
+    **  Copy the pointers, since they are volatile.
+    */
+    in = (u8 *) (fet->in);
+    out = (u8 *) (fet->out);
+
+    if (out == in)
         {
         return -1;
         }
-    nextout = fet->out + 1;
+    nextout = out + 1;
     if (nextout == fet->end)
         {
         nextout = fet->first;
         }
-    b = *fet->out;
+    b = *out;
     fet->out = nextout;
     return b;
     }
@@ -530,13 +552,21 @@ int dtReado (NetFet *fet)
 **------------------------------------------------------------------------*/
 int dtReadw (NetFet *fet, void *buf, int len)
     {
+    u8 *in, *out;
     u8 *to = (u8 *) buf;
     int left;
     
-    if (dtFetData (fet) < len)
+    /*
+    **  Copy the pointers, since they are volatile.
+    */
+    in = (u8 *) (fet->in);
+    out = (u8 *) (fet->out);
+
+    if (locDtFetData (fet) < len)
         {
         return -1;
         }
+
     /*
     **  We now know we have enough data to satisfy the request.
     **  See how many bytes there are between the current "out"
@@ -545,7 +575,7 @@ int dtReadw (NetFet *fet, void *buf, int len)
     **  equal, we only have to move one piece, but the "out" pointer
     **  has to wrap back to "first".
     */
-    left = fet->end - fet->out;
+    left = fet->end - out;
     
     if (left <= len)
         {
@@ -553,7 +583,7 @@ int dtReadw (NetFet *fet, void *buf, int len)
         **  We'll exhaust the data from here to end of ring, so copy that
         **  first and wrap "out" back to the start of the ring.
         */
-        memcpy (to, fet->out, left);
+        memcpy (to, out, left);
         to += left;
         len -= left;
         fet->out = fet->first;
@@ -571,8 +601,8 @@ int dtReadw (NetFet *fet, void *buf, int len)
     **  that it will NOT take us all the way to the end of the ring
     **  buffer, so we don't need a wrap check on "out" here.
     */
-    memcpy (to, fet->out, len);
-    fet->out += len;
+    memcpy (to, out, len);
+    fet->out = out + len;
     return 0;
     }
 
@@ -592,19 +622,25 @@ int dtReadw (NetFet *fet, void *buf, int len)
 int dtReadtlv (NetFet *fet, void *buf, int len)
     {
     int datalen;
-    u8 *p;
+    u8 *in, *out, *p;
     
+    /*
+    **  Copy the pointers, since they are volatile.
+    */
+    in = (u8 *) (fet->in);
+    out = (u8 *) (fet->out);
+
     /*
     **  First check if we have enough data in the ring to find the
     **  length field.
     */
-    if (dtFetData (fet) < 2)
+    if (locDtFetData (fet) < 2)
         {
         return -1;
         }
     
     /* Compute the address of the length field */
-    p = fet->out + 1;
+    p = out + 1;
     if (p == fet->end)
         {
         p = fet->first;

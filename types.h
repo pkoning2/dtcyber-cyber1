@@ -207,8 +207,8 @@ typedef struct
     {
     int         connFd;                 /* File descriptor for socket */
     u8          *first;                 /* Start of ring buffer */
-    u8          *in;                    /* Fill (write) pointer */
-    u8          *out;                   /* Empty (read) pointer */
+    volatile u8 *in;                    /* Fill (write) pointer */
+    volatile u8 *out;                   /* Empty (read) pointer */
     u8          *end;                   /* End of ring buffer + 1 */
     } NetFet;
 
