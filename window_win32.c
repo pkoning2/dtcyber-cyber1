@@ -531,7 +531,7 @@ static void dflush (HDC hdcMem, int dx)
         }
     for (i = 0; i < dcnt; i++)
         {
-        if (dhits[i] >= dx / 2)
+        if (dhits[i] >= (dx / 2) - 1)
             {
             if (!bold)
                 {
