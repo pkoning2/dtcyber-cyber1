@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: channel.c
 **
@@ -146,13 +146,14 @@ DevSlot *channelFindDevice(u8 channelNo, u8 devType)
 **  Purpose:        Attach device to channel.
 **
 **  Parameters:     Name        Description.
-**                  channelNo   channel number to attach to.
+**                  channelNo   channel number to attach to
+**                  eqNo        equipment number
 **                  devType     device type
 **
 **  Returns:        Pointer to device slot.
 **
 **------------------------------------------------------------------------*/
-DevSlot *channelAttach(u8 channelNo, u8 devType)
+DevSlot *channelAttach(u8 channelNo, u8 eqNo, u8 devType)
     {
     DevSlot *device;
 
@@ -164,7 +165,8 @@ DevSlot *channelAttach(u8 channelNo, u8 devType)
     */
     while (device != NULL) 
         {
-        if (device->devType == devType)
+        if (   device->devType == devType
+            && device->eqNo    == eqNo)
             {
             return(device);
             }
@@ -189,6 +191,7 @@ DevSlot *channelAttach(u8 channelNo, u8 devType)
     activeChannel->firstDevice = device;
     device->channel = activeChannel;
     device->devType = devType;
+    device->eqNo    = eqNo;
 
     return(device);
     }
@@ -205,16 +208,6 @@ DevSlot *channelAttach(u8 channelNo, u8 devType)
 void channelFunction(PpWord funcCode)
     {
     FcStatus status = FcDeclined;
-
-#if 0
-    if (activeChannel->id == 010 && funcCode == 0)
-        {
-        activeChannel->ioDevice = NULL;
-        activeChannel->full = TRUE;
-        activeChannel->active = TRUE;
-        return;
-        }
-#endif
 
     for (activeDevice = activeChannel->firstDevice; activeDevice != NULL; activeDevice = activeDevice->next)
         {
@@ -243,7 +236,6 @@ void channelFunction(PpWord funcCode)
         **  No device has claimed the function code - keep channel active
         **  and full, but disconnect device.
         */
-//        traceChannelFunction(funcCode);
         activeChannel->ioDevice = NULL;
         activeChannel->full = TRUE;
         activeChannel->active = TRUE;
