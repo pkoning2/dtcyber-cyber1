@@ -48,6 +48,7 @@
 */
 #define FcNiuDeselectInput      00000
 #define FcNiuSelectInput        00040
+#define FcNiuSelectBlackBox     00041
 
 /*
 **  Output channel:
@@ -89,8 +90,8 @@ static void niuDisconnect(void);
 static void niuWelcome(NetPort *np, int stat);
 static void niuLocalWelcome(NetPort *np, int stat);
 static void niuRemoteWelcome(NetPort *np, int stat);
-static void niuSendstr(int stat, const char *p);
-static void niuSendWord(int stat, int word);
+void niuSendstr(int stat, const char *p);
+void niuSendWord(int stat, int word);
 static void niuSend(int stat, int word);
 static void niuUpdateStatus (void);
 
@@ -270,6 +271,7 @@ static FcStatus niuInFunc(PpWord funcCode)
         return(FcDeclined);
 
     case FcNiuSelectInput:
+    case FcNiuSelectBlackBox:
         currInPort = -1;
         break;
 
@@ -326,7 +328,8 @@ static void niuInIo(void)
     int i;
     int nextget;
     
-    if (activeDevice->fcode != FcNiuSelectInput ||
+    if ((activeDevice->fcode != FcNiuSelectBlackBox &&
+         activeDevice->fcode != FcNiuSelectInput) ||
         activeChannel->full)
         return;
     
@@ -664,7 +667,8 @@ static void niuWelcome(NetPort *np, int stat)
         {
         niuSendstr (stat, "Press  NEXT  to begin");
         }
-    else
+    else if (in->fcode != FcNiuSelectBlackBox)
+
         {
         niuSendstr (stat, "PLATO not active");
         }
@@ -701,7 +705,7 @@ static void niuRemoteWelcome(NetPort *np, int stat)
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuSendstr(int stat, const char *p)
+void niuSendstr(int stat, const char *p)
     {
     int cc = 2;
     int w = 017720;
@@ -809,7 +813,7 @@ static void niuSend(int stat, int word)
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuSendWord(int stat, int word)
+void niuSendWord(int stat, int word)
     {
     int fd;
     PortParam *mp;
