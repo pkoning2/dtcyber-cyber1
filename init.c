@@ -111,6 +111,7 @@ const intParam intParamList[] =
     { "doelzconns", &doelzConns, 4 },
     { "tpmuxport", &tpmuxPort, DefTpmuxPort },
     { "tpmuxconns", &tpmuxConns, 2 },
+    { "operstation", &niuOpstat, -1 },
     { NULL, NULL, 0 }                   /* End marker */
 };
 
