@@ -120,10 +120,10 @@
 /*
 **  Macro for defining > 32 bit constants
 */
-#ifdef __GNUC__
+#if defined(__GNUC__)
 #define ULL(x) x ## ULL
 #else
-#define ULL(x) x
+#define ULL(x) ((u64)(x))
 #endif
 
 /*
