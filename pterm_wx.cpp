@@ -2,11 +2,10 @@
 // Name:        pterm_wx.cpp
 // Purpose:     pterm interface to wxWindows 
 // Author:      Paul Koning
-//              (based on drawing.cpp by Robert Roebling)
 // Modified by:
-// Created:     04/01/98
-// Copyright:   (c) Paul Koning, Robert Roebling
-// Licence:     wxWindows licence, DtCyber license *** TBD ***
+// Created:     03/26/2005
+// Copyright:   (c) Paul Koning
+// Licence:     DtCyber license
 /////////////////////////////////////////////////////////////////////////////
 
 // ============================================================================
@@ -40,9 +39,9 @@
 // Pixmap has two rows added, which are storage for the
 // patterns for the character sets (ROM and loadable)
 #define XSize           ((512 + 2 * DisplayMargin) * scale)
-#define YSize           ((512 + 2 * DisplayMargin) * scale)
+#define YSize           ((512 + 2 * DisplayMargin+128) * scale)
 #define YPMSize         ((512 + 2 * DisplayMargin + CSETS * 16) * scale)
-#define ScreenSize      (512 * scale)
+#define ScreenSize      ((512+128) * scale)
 
 // Size of frame decoration, used to adjust the frame size
 #define XFrameAdj       2
@@ -112,6 +111,7 @@ extern "C"
 
 class PtermFrame;
 
+extern "C" {
 extern FILE *traceF;
 extern char traceFn[];
 extern bool tracePterm;
@@ -119,6 +119,7 @@ extern u8 wemode;
 extern bool emulationActive;
 extern const char *hostName;
 int scale = 1;
+}
 
 // ----------------------------------------------------------------------------
 // local variables
@@ -195,7 +196,6 @@ public:
     wxPen       m_backgroundPen;
     PtermCanvas *m_canvas;
     wxMemoryDC  *m_memDC;
-    wxPen       m_memPen;
 
 private:
     void drawChar (wxDC &dc, int x, int y, int snum, int cnum);
@@ -367,7 +367,7 @@ const unsigned short plato_m1[] = {
  0x0000, 0x08a0, 0x08a0, 0x0520, 0x0520, 0x0220, 0x0220, 0x0000, // greater/equal
  0x07c0, 0x0920, 0x1110, 0x1110, 0x1110, 0x0920, 0x07c0, 0x0000, // theta
  0x01e0, 0x0210, 0x04c8, 0x0528, 0x05e8, 0x0220, 0x01c0, 0x0000, // @
- 0x0400, 0x0200, 0x0100, 0x0080, 0x0040, 0x0020, 0x0010, 0x0000, // \
+ 0x0400, 0x0200, 0x0100, 0x0080, 0x0040, 0x0020, 0x0010, 0x0000, /* \ */
  0x01e0, 0x0210, 0x0210, 0x01e0, 0x0290, 0x0290, 0x01a0, 0x0000, // oe
 };
 
@@ -402,9 +402,11 @@ IMPLEMENT_APP(PtermApp)
 // 'Main program' equivalent: the program execution "starts" here
 bool PtermApp::OnInit (void)
 {
-    u8 ibuf[3];
     int port;
     int true_opt = 1;
+#if defined(_WIN32)
+    unsigned long ltrue_opt = 1;
+#endif
 
     if (argc > 1 && strcmp (argv[1], "-s") == 0)
     {
@@ -443,7 +445,7 @@ bool PtermApp::OnInit (void)
     setsockopt (fet.connFd, SOL_SOCKET, SO_KEEPALIVE,
                 (char *)&true_opt, sizeof(true_opt));
 #if defined(_WIN32)
-    ioctlsocket (fet.connFd, FIONBIO, &true_opt);
+    ioctlsocket (fet.connFd, FIONBIO, &ltrue_opt);
 #else
     fcntl (fet.connFd, F_SETFL, O_NONBLOCK);
 #endif
@@ -493,7 +495,6 @@ int PtermApp::OnExit (void)
 PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& size, long style)
     : wxFrame(NULL, -1, title, pos, size, style),
       m_bitmap (XSize, YPMSize, 1),
-      m_memPen (*wxBLACK, scale, wxSOLID),
       m_foregroundPen (*wxRED, scale, wxSOLID),     // color will be overridden later
       m_backgroundPen (*wxBLACK, scale, wxSOLID)
 {
@@ -535,6 +536,8 @@ PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& 
 
     m_memDC = new wxMemoryDC ();
     m_memDC->SelectObject (m_bitmap);
+    m_memDC->SetPen (*wxBLACK_PEN);
+	m_memDC->SetBrush (*wxWHITE_BRUSH);
     m_memDC->Blit (0, 0, XSize, YPMSize, m_memDC, 0, 0, wxCLEAR);
     m_canvas = new PtermCanvas (this);
 
@@ -561,7 +564,7 @@ void PtermFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
     wxString msg;
     msg.Printf (_T("PLATO terminal emulator %s.\n")
-                _T("Copyright © 2005 by Paul Koning, Robert Roebling."),
+                _T("Copyright © 2005 by Paul Koning."),
                 PTERMVERSION);
 
     wxMessageBox(msg, _T("About Pterm"), wxOK | wxICON_INFORMATION, this);
@@ -585,6 +588,7 @@ wxColour PtermFrame::SelectColor (void)
 
 void PtermFrame::PrepareDC(wxDC& dc)
 {
+    dc.SetAxisOrientation (TRUE, FALSE);
     if (m_colorForeground.Ok ())
         dc.SetTextForeground (m_colorForeground);
     if (m_colorBackground.Ok ())
@@ -712,6 +716,7 @@ PtermThread::ExitCode PtermThread::Entry (void)
         pterm_frame->AddPendingEvent (doit);
         Yield ();
     }
+	return (ExitCode) 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -744,13 +749,14 @@ void PtermCanvas::OnDraw(wxDC &dc)
     dc.Clear ();
     dc.Blit (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize,
              m_owner->m_memDC, XADJUST (0), YADJUST (511), wxCOPY);
+//	dc.DrawBitmap (m_owner->m_bitmap, 0, 0);
 }
 
 void PtermCanvas::OnChar(wxKeyEvent& event)
 {
     int key;
     int shift = 0;
-    int pc;
+    int pc = -1;
     bool ctrl = FALSE;
 
     if (event.m_controlDown)
@@ -762,6 +768,10 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
         shift = 040;
     }
     key = event.m_keyCode;
+    if (tracePterm)
+            {
+            fprintf (traceF, "ctrl %d, shift %d, alt %d, key %d\n", event.m_controlDown, event.m_shiftDown, event.m_altDown, key);
+            }
     if (key == (']' & 037))         // control-] : trace
     {
         tracePterm = !tracePterm;
@@ -816,6 +826,10 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
             }
         }
     }
+    if (tracePterm)
+            {
+            fprintf (traceF, "key %d to switch\n",key);
+            }
     switch (key)
     {
     case WXK_SPACE:
@@ -913,6 +927,11 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
         event.Skip ();
         return;
     }
+	    if (tracePterm)
+            {
+            fprintf (traceF, "pc %o, shift %o, key %d\n", pc, shift, key);
+            }
+
     pc |= shift;
     ptermSendKey (pc);
 }
@@ -926,7 +945,8 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
 
     dc.BeginDrawing ();
     PrepareDC (dc);
-    m_memDC->SetPen (m_memPen);
+    m_memDC->SetPen (*wxBLACK_PEN);
+	m_memDC->SetBrush (*wxWHITE_BRUSH);
     drawChar (dc, x, y, snum, cnum);
     dc.EndDrawing ();
     wxMutexGuiLeave ();
@@ -953,7 +973,8 @@ void PtermFrame::ptermDrawPoint (int x, int y)
         dc.SetPen (m_backgroundPen);
     }
     dc.DrawPoint (x, y);
-    m_memDC->SetPen (m_memPen);
+    m_memDC->SetPen (*wxBLACK_PEN);
+	m_memDC->SetBrush (*wxWHITE_BRUSH);
     m_memDC->DrawPoint (x, y);
     if (scale == 2)
         {
@@ -999,7 +1020,8 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2, bool nomutex)
         dc.SetPen (m_backgroundPen);
     }
     dc.DrawLine (x1, y1, x2, y2);
-    m_memDC->SetPen (m_memPen);
+    m_memDC->SetPen (*wxBLACK_PEN);
+	m_memDC->SetBrush (*wxWHITE_BRUSH);
     m_memDC->DrawLine (x1, y1, x2, y2);
     dc.EndDrawing ();
     if (!nomutex)
@@ -1018,6 +1040,7 @@ void PtermFrame::ptermFullErase (void)
     PrepareDC (dc);
     dc.Blit (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize, 
              m_memDC, XADJUST (0), YADJUST (511), wxCLEAR);
+	m_memDC->SetBrush (*wxWHITE_BRUSH);
     m_memDC->Blit (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize,
                    m_memDC, XADJUST (0), YADJUST (511), wxCLEAR);
     dc.EndDrawing ();
@@ -1046,9 +1069,15 @@ void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *data, bool init)
     {
         wxMutexGuiEnter ();
     }
-    m_memDC->SetPen (m_memPen);
+
+    wxClientDC dc(m_canvas);
+
+    dc.BeginDrawing ();
+    m_memDC->SetPen (*wxWHITE_PEN);
+	m_memDC->SetBrush (*wxWHITE_BRUSH);
     m_memDC->Blit (x, y - 15 * scale, 8 * scale, 16 * scale,
                    m_memDC, 0, 0, wxCLEAR);
+    m_memDC->SetPen (*wxBLACK_PEN);
 
     for (i = 0; i < 8; i++)
     {
@@ -1069,6 +1098,7 @@ void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *data, bool init)
         }
         x += scale;
     }
+    dc.EndDrawing ();
     if (!init)
     {
         wxMutexGuiLeave ();
@@ -1096,7 +1126,6 @@ static const int blitFunction[4] =
 void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     {
     int charX, charY, sizeX, sizeY, screenX, screenY;
-    char c;
 
     charX = cnum * 8 * scale;
     charY = YSize + snum * 16 * scale;
@@ -1147,7 +1176,7 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
 **------------------------------------------------------------------------*/
 void ptermSendKey(int key)
     {
-    u8 data[2];
+    char data[2];
     
     /*
     **  If this is a "composite", recursively send the two pieces.
