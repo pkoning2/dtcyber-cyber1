@@ -242,10 +242,14 @@ have to tell MASTOR to fix this by saying K.RELOAD.
 11. Additional PLATO terminals.
 
 DtCyber automatically starts one PLATO window, which is terminal 0-1.
-It also opens a TCP port (50004) which listens to connections from the
+It also opens a TCP port (5004) which listens to connections from the
 pterm utility.  pterm takes a hostname as argument, so you can use it
 on your local machine by saying "pterm localhost" or from anywhere
 else provided port 5004 can get through any firewalls that may exist.
+
+Note that you can use a different port number -- specify the port
+number using the "platoport" parameter in cyber.ini, and then specify
+that same port number as the second argument on the pterm command.
 
 pterm puts up another PLATO terminal window exactly as described
 above.  It will be seen by PLATO as a terminal in site 1, e.g., 1-0 or

@@ -55,7 +55,7 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void ptermConnect (const char *hostname);
+static void ptermConnect (const char *hostname, const char *portnum);
 static int ptermCheckInput(void);
 #if !defined(_WIN32)
 static void ptermWindowInput(void);
@@ -107,11 +107,18 @@ int main (int argc, char **argv)
     
     if (argc < 2)
     {
-        printf ("usage: pterm hostname\n");
+        printf ("usage: pterm hostname [ portnum ]\n");
         exit (1);
     }
+    if (argc > 2)
+    {
+        ptermConnect (argv[1], argv[2]);
+    }
+    else
+    {
+        ptermConnect (argv[1], NULL);
+    }
     
-    ptermConnect (argv[1]);
     sprintf (name, "Plato terminal -- %s", argv[1]);
     ptermInit (name);
     while (active)
@@ -213,10 +220,11 @@ void niuSetOutputHandler (niuProcessOutput *h, int stat)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void ptermConnect (const char *hostname)
+static void ptermConnect (const char *hostname, const char *portnum)
 {
     struct hostent *hp;
     struct sockaddr_in server;
+    int port = platoPort;
     
 #if defined(_WIN32)
     WORD versionRequested;
@@ -253,12 +261,16 @@ static void ptermConnect (const char *hostname)
         printf ("pterm: unrecognized hostname %s\n", hostname);
         return;
     }
+    if (portnum != NULL)
+    {
+        port = atoi (portnum);
+    }
     memcpy (&server.sin_addr, hp->h_addr, sizeof (server.sin_addr));
-    server.sin_port = htons(platoPort);
+    server.sin_port = htons(port);
 
     if (connect (connFd, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
-        printf("pterm: Can't connect to %s\n", hostname);
+        printf("pterm: Can't connect to %s %d\n", hostname, port);
         return;
     }
     active = TRUE;
