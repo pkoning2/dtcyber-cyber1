@@ -113,6 +113,7 @@ static u64 Hz;
 static u32 MHz;
 static u32 maxDelta;
 static u64 rtcPrev;
+static bool caughtUp = FALSE;
 #endif
 /*
 **--------------------------------------------------------------------------
@@ -223,11 +224,11 @@ static FcStatus rtcFunc(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
+static u64 rtcCycles, now;
+static u32 us;
 static void rtcIo(void)
     {
 #if RDTSC
-    u32 us;
-    u64 cycles, now;
     
     if (rtcIncrement == 0)
         {
@@ -236,12 +237,30 @@ static void rtcIo(void)
             rdtscll (rtcPrev);
             }
         rdtscll (now);
-        cycles = now - rtcPrev;
-        if (cycles > maxDelta)
+        if (now < rtcPrev)
             {
-            cycles = maxDelta;
+            printf ("ERROR: clock went backwards: now = %lld, prev = %lld, cycles = %lld, us = %d\n",
+                    now, rtcPrev, rtcCycles, us);
+            now = rtcPrev;
             }
-        us = cycles / MHz;
+        
+        rtcCycles = now - rtcPrev;
+        if (rtcCycles > maxDelta)
+            {
+            // print a message if more than 1 second behind
+            if (caughtUp && rtcCycles > Hz)
+                {
+                printf ("Clock in catch-up mode, %lld cycles behind (%lld microseconds)\n",
+                        now - rtcPrev, (now - rtcPrev) / MHz);
+                caughtUp = FALSE;
+                }
+            rtcCycles = maxDelta;
+            }
+        else
+            {
+            caughtUp = TRUE;
+            }
+        us = rtcCycles / MHz;
         rtcPrev += us * MHz;
         rtcClock += us;
         }
