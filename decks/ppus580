@@ -5,26 +5,7 @@ setasl(*)
 setjsl(*)
 rfl,170000.
 attach,procfil.
-attach,opl=plaopl.
-attach,nos=opl580.
-attach,ipl.
-attach,lgo=ppubin/m=w,na.
-if(.not.file(lgo,as))define,lgo=ppubin.
 *
-modify(lo=e)
-compass(l=0,i,s=nostext,ml=580d)
-*
-*        only dev system gets some utilities
-*
-modify(z,lo=e)/*oplfile ipl,nos/*edit spy
-compass(l=0,i,s=nostext,ml=580d)
-endif(dev)
-*
-modify(z,lo=e)/*oplfile ipl,nos/*edit dsn,dsn1
-compass(l=0,i,s=nostext,ml=580d)
-*---
-~
-*oplfile nos,ipl
-*edit     pio
-*edit     net
-*edit     pna
+begin(setupg,,noslvl=580)
+*begin(ppus,,ml=580d,list=0)
+begin(ppus,,ml=580d,list=output)

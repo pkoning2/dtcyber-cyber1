@@ -5,11 +5,9 @@ setasl(*)
 setjsl(*)
 rfl,170000.
 attach,procfil.
-attach,opl=plaopl.
-attach,nos=opl580.
-attach,ipl.
-attach,cstc.
 *
 set(r1g=0)
 *
-begin(condens,,ml=580d,list=0)
+begin(setupg,,noslvl=580)
+*begin(condens,,ml=580,list=0)
+begin(condens,,ml=580,list=output)

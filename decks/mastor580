@@ -4,47 +4,7 @@ settl(*)
 setasl(*)
 setjsl(*)
 attach,procfil.
-attach,opl=plaopl.
-attach,nos=opl580.
-attach,ipl.
-* mastor
-modify(lo=e)
-compass(l=0,i,ml=580,s=nostext,b=mast)
-* mastorn
-modify(lo=e)
-compass(l=0,i,ml=580,s=nostext,b=mastn)
-* ppus
-modify(lo=e)
-compass(l=0,i,ml=580d,s=nostext,b=ppus)
 *
-* make the ulibs
-begin(ulib,,mast,ulibm,mastor)
-begin(ulib,,mastn,ulibmn,mastorn)
-purge(mbin/na)
-define(mbin/ct=pu,m=r)
-rewind,mast,mastn,ppus.
-copybf(mast,mbin)
-bksp(mbin)
-copybf(mastn,mbin)
-bksp(mbin)
-copybf(ppus,mbin)
-catalog(mbin,r,n,u)
-*
-~
-*oplfile nos,ipl
-*edit     mastor
-*edit     mastor1
-*edit     mastor2
-*edit     mastor3
-*edit     mastr3b
-*edit     mastor4
-~
-*oplfile nos,ipl
-*edit     mastorn
-~
-*oplfile nos,ipl
-*edit     pms
-*edit     mrq,mrq1
-*edit     mas
-*edit     mxx
-*edit     epe
+begin(setupg,,noslvl=580)
+*begin(mastor,,ml=580,list=0)
+begin(mastor,,ml=580,list=output)
