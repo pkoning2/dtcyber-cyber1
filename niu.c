@@ -29,6 +29,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #endif
+#include <errno.h>
 /*
 **  -----------------
 **  Private Constants
@@ -704,7 +705,7 @@ static void *niuThread(void *param)
     int fromLen;
     PortParam *mp;
     int i;
-    int reuse = 1;
+    int true_opt = 1;
     
     /*
     **  Create TCP socket and bind to specified port.
@@ -716,7 +717,8 @@ static void *niuThread(void *param)
         RETURN;
     }
 
-    setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
+    setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR,
+               (char *)&true_opt, sizeof(true_opt));
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = inet_addr("0.0.0.0");
@@ -770,6 +772,12 @@ static void *niuThread(void *param)
         mp->connFd = accept(listenFd, (struct sockaddr *)&from, &fromLen);
 
         /*
+        **  Set Keepalive
+        */
+        setsockopt(mp->connFd, SOL_SOCKET, SO_KEEPALIVE,
+                   (char *)&true_opt, sizeof(true_opt));
+
+        /*
         **  Mark connection as active.
         */
         mp->active = TRUE;
@@ -811,7 +819,7 @@ static int niuCheckInput(PortParam *mp)
     select(mp->connFd + 1, &readFds, NULL, &exceptFds, &timeout);
     if (FD_ISSET(mp->connFd, &readFds))
     {
-        i = recv(mp->connFd, &data, 1, 0);
+        i = recv(mp->connFd, &data, 1, MSG_NOSIGNAL);
         if (i == 1)
         {
             return(data);
@@ -1020,7 +1028,10 @@ static void niuSendWord(int stat, int word)
             return;
         mp = portVector + stat;
         if (!mp->active)
+        {
             return;
+        }
+        
         data[0] = word >> 12;
         data[1] = ((word >> 6) & 077) | 0200;
         data[2] = (word & 077) | 0300;
@@ -1028,7 +1039,13 @@ static void niuSendWord(int stat, int word)
         printf ("niu output %03o %03o %03o\n",
                 data[0], data[1], data[2]);
 #endif
-        send(mp->connFd, data, 3, 0);
+        /*
+        **  Note that we ignore the send status.  If the connection has
+        **  gone away, an error will be returned which we ignore here.
+        **  It will be detected on the next read, which gives us an 
+        **  opportunity to send an "offkey" to PLATO.
+        */
+        send(mp->connFd, data, 3, MSG_NOSIGNAL);
     }
 }
 
