@@ -9,7 +9,7 @@
 #
 #--------------------------------------------------------------------------
 
-all: dtcyber pterm dtoper dd60
+all: dtcyber pterm dtoper dd60 blackbox
 
 include Makefile.common
 
@@ -71,14 +71,17 @@ else
 dtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
+blackbox: blackbox.o niu.o charset.o dtnetsubs.o
+	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
+
 clean:
 	rm -f *.d *.o *.pcf dtcyber dd60 dtoper pterm
 endif
 
 buildall: clean all
 
-dep:	pterm.dep dd60.dep dtoper.dep $(OBJS:.o=.d)
+dep:	pterm.dep dd60.dep dtoper.dep $(OBJS:.o=.d) blackbox.d
 
-include  $(OBJS:.o=.d)
+include  $(OBJS:.o=.d) blackbox.d
 
 #---------------------------  End Of File  --------------------------------
