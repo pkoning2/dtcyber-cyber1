@@ -91,7 +91,7 @@ static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize);
 extern Display *disp;
 extern XrmDatabase XrmDb;
 extern const char * const consoleHersheyGlyphs[64];
-extern bool windowActive;
+extern bool emulationActive;
 extern bool hersheyMode;
 extern int scaleX;
 extern int scaleY;
@@ -539,7 +539,7 @@ int windowInput(void)
                 case 's':
                     return Dd60KeyXoff;
                 case 'z':
-                    windowActive = FALSE;
+                    emulationActive = FALSE;
                     return Dd60KeyXoff;
                     }
                 }

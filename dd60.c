@@ -103,7 +103,7 @@ typedef struct
 **  Public Variables
 **  ----------------
 */
-bool windowActive = TRUE;
+bool emulationActive = TRUE;
 bool hersheyMode = FALSE;
 int scaleX = 10;
 int scaleY = 10;
@@ -245,13 +245,13 @@ int main (int argc, char **argv)
     initBuf[1] = Dd60KeyXon;
     send (fet.connFd, initBuf, sizeof (initBuf), 0);
 
-    while (windowActive)
+    while (emulationActive)
         {
         i = dtRead (&fet, readDelay);
         if (i < 0)
             {
             /* Connection went away... */
-            windowActive = FALSE;
+            emulationActive = FALSE;
             break;
             }
         else

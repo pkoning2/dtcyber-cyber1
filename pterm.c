@@ -77,7 +77,7 @@ extern FILE *traceF;
 extern char traceFn[];
 extern bool tracePterm;
 extern u8 wemode;
-extern volatile bool ptermActive;
+extern bool emulationActive;
 extern const char *hostName;
 
 /*
@@ -148,7 +148,7 @@ int main (int argc, char **argv)
                 (char *)&true_opt, sizeof(true_opt));
 #endif
 
-    ptermActive = TRUE;
+    emulationActive = TRUE;
 
 #if defined(_WIN32)
     /*
@@ -159,7 +159,7 @@ int main (int argc, char **argv)
 
     sprintf (name, "Pterm " PTERMVERSION ": %s", hostName);
     ptermInit (name, TRUE);
-    while (ptermActive)
+    while (emulationActive)
         {
         i = dtRead (&fet, 10);
         if (i < 0)
@@ -285,7 +285,7 @@ static void ptermWindowInput(void)
                 if (key == XK_z)        // control-Z : exit
                     {
                     dtCloseFet(&fet);
-                    ptermActive = FALSE;
+                    emulationActive = FALSE;
                     return;
                     }
                 else if (key == XK_bracketright)    // control-] : trace

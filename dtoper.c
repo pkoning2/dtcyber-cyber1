@@ -104,6 +104,7 @@ XrmDatabase XrmDb;
 #else
 HINSTANCE hInstance;
 #endif
+bool emulationActive = TRUE;
 
 /*
 **  ----------------
@@ -144,7 +145,6 @@ static char errmsgBuf[OpCmdSize + 1];
 static char msgBuf[80];
 static int smallFontWidth;
 static int mediumFontWidth;
-static volatile bool opActive = TRUE;
 static bool initDone = FALSE;
 
 /*
@@ -194,7 +194,7 @@ int main (int argc, char **argv)
 
     windowInit ();
     
-    while (opActive)
+    while (emulationActive)
         {
         i = dtRead (&fet, 10);
         if (i < 0)
@@ -438,7 +438,7 @@ static void opRequest(void)
             cmdBuf[--cmdLen] = '\0';
             if (strcmp (cmdBuf, "END.") == 0)
                 {
-                opActive = FALSE;
+                emulationActive = FALSE;
                 return;
                 }
             dtSendTlv (fet.connFd, OpCommand, strlen (cmdBuf), cmdBuf);

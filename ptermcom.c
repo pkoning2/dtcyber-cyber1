@@ -109,7 +109,7 @@ static void mode7 (u32 d);
 **  ----------------
 */
 bool tracePterm = FALSE;
-volatile bool ptermActive = FALSE;
+bool emulationActive = FALSE;
 u8 mode;
 u8 wemode;
 FILE *traceF;

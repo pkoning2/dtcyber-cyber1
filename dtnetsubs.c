@@ -774,6 +774,19 @@ static void *dtThread(void *param)
     while (1)
         {
         /*
+        **  If DtCyber is closing down, close the listener socket
+        **  and exit the thread.
+        **
+        **  Note that closing the data sockets is the responsibility
+        **  of the code that uses those sockets.
+        */
+        if (!emulationActive)
+            {
+            dtCloseSocket (listenFd);
+            ThreadReturn;
+            }
+        
+        /*
         **  Do we have any free ports?  If not, sleep a bit
         **  and look again.
         */
