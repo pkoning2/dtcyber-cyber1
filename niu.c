@@ -24,7 +24,6 @@
 #if defined(_WIN32)
 #include <winsock.h>
 #else
-#include <pthread.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -32,35 +31,36 @@
 #include <errno.h>
 
 /*
-**  Apple doesn't have a NOSIGNAL option on rcv/send, instead is has
-**  SO_NOSIGPIPE as a setsockopt option.
-**
-**  Windows doesn't have either; it seems not to do SIGPIPE ever.
-*/
-#if defined(__APPLE__) || defined(_WIN32)
-#define MSG_NOSIGNAL 0
-#endif
-
-/*
 **  -----------------
 **  Private Constants
 **  -----------------
 */
-#define NiuLocalStations        32          /* range reserved for local stations */
+#define NiuLocalOffset          1           /* starting station for local */
+#define NiuRemoteOffset         32          /* starting station for remotes */
 #define NiuLocalBufSize         50          /* size of local input buffer */
+#define NetBufSize              256
 
 /*
 **  Function codes.
 */
-#define FcNiuOutput             00000
-#define FcNiuInput              00040
+/*
+**  Input channel:
+*/
+#define FcNiuDeselectInput      00000
+#define FcNiuSelectInput        00040
+
+/*
+**  Output channel:
+*/
+#define FcNiuSelectOutput       00000
+#define FcNiuDeselectOutput     07000
 
 /*
 **  -----------------------
 **  Private Macro Functions
 **  -----------------------
 */
-#define STATIONS                (NiuLocalStations + platoConns)
+#define STATIONS                (NiuRemoteOffset + platoConns)
 
 /*
 **  -----------------------------------------
@@ -69,20 +69,11 @@
 */
 typedef struct portParam
     {
-    int         connFd;
+    NetPort     *np;
     u32         currOutput;
-    struct in_addr from;
-    u16         currInput;
-    u8          ibytes;      /* how many bytes have been assembled into currInput (0..2) */
-    bool        active;
+    u8          currInput[2];
+    bool        sendOffkey;
     } PortParam;
-
-typedef struct localRing
-    {
-    u16 buf[NiuLocalBufSize];
-    int get;
-    int put;
-    } LocalRing;
 
 /*
 **  ---------------------------
@@ -95,28 +86,23 @@ static FcStatus niuOutFunc(PpWord funcCode);
 static void niuOutIo(void);
 static void niuActivate(void);
 static void niuDisconnect(void);
-static void niuCreateThread(void);
-static int niuCheckInput(PortParam *portVector);
-#if defined(_WIN32)
-static void niuThread(void *param);
-#define RETURN return
-#else
-static void *niuThread(void *param);
-#define RETURN return 0
-#endif
-static void niuWelcome(int stat);
+static void niuWelcome(NetPort *np, int stat);
+static void niuLocalWelcome(NetPort *np, int stat);
+static void niuRemoteWelcome(NetPort *np, int stat);
 static void niuSendstr(int stat, const char *p);
 static void niuSendWord(int stat, int word);
 static void niuSend(int stat, int word);
-static const char *ts_now (void);
+static void niuUpdateStatus (void);
 
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
-u16 platoPort;
-u16 platoConns;
+long platoPort;
+long platoConns;
+long platoLocalPort;
+long platoLocalConns;
 extern u32 sequence;
 
 /*
@@ -127,22 +113,21 @@ extern u32 sequence;
 static DevSlot *in;
 static DevSlot *out;
 static PortParam *portVector;
+static NetPortSet niuPorts;
+static NetPortSet niuLocalPorts;
 static int currInPort;
 static int lastInPort;
 static int obytes;
 static u32 currOutput;
-static LocalRing localInput[NiuLocalStations];
-static niuProcessOutput *outputHandler[NiuLocalStations];
 static u32 lastFrame;
 bool frameStart;
-#if !defined(_WIN32)
-static pthread_t niu_thread;
-#endif
 static bool realTiming;
 #ifdef TRACE
 static FILE *niuF;
 static bool traced=FALSE;
 #endif
+static void *statusBuf;
+static int niuActiveConns;
 
 /*
 **--------------------------------------------------------------------------
@@ -166,7 +151,6 @@ static bool traced=FALSE;
 void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     {
     u8 i;
-    PortParam *mp;
 
     (void)eqNo;
 
@@ -205,41 +189,43 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     out->func = niuOutFunc;
     out->io = niuOutIo;
 
-    mp = portVector = calloc(1, sizeof(PortParam) * STATIONS);
+    /*
+    **  We allow up to 31 local stations
+    */
+    if (platoLocalConns > NiuRemoteOffset - NiuLocalOffset)
+        {
+        platoLocalConns = NiuRemoteOffset - NiuLocalOffset;
+        }
+    
+    portVector = calloc(1, sizeof(PortParam) * STATIONS);
     if (portVector == NULL)
         {
         fprintf(stderr, "Failed to allocate NIU context block\n");
         exit(1);
         }
 
-    /*
-    **  Initialise port control blocks.
-    */
-    for (i = 0; i < STATIONS; i++)
-        {
-        mp->active = FALSE;
-        mp->connFd = 0;
-        mp->ibytes = 0;
-        mp++;
-        }
-
-    for (i = 0; i < NiuLocalStations; i++)
-        {
-        localInput[i].get = localInput[i].put = 0;
-        }
-    
     currInPort = -1;
-    lastInPort = 0;
+    lastInPort = NiuLocalOffset;        /* Start first scan at 0-2 */
     
     /*
-    **  Create the thread which will deal with TCP connections.
+    **  Create the threads which will deal with TCP connections.
     */
-    niuCreateThread ();
+    niuPorts.portNum = platoPort;
+    niuPorts.maxPorts = platoConns;
+    niuPorts.localOnly = FALSE;
+    niuPorts.callBack = niuRemoteWelcome;
+    niuLocalPorts.portNum = platoLocalPort;
+    niuLocalPorts.maxPorts = platoLocalConns;
+    niuLocalPorts.localOnly = TRUE;
+    niuLocalPorts.callBack = niuLocalWelcome;
+    
+    dtCreateListener (&niuPorts, NetBufSize);
+    dtCreateListener (&niuLocalPorts, NetBufSize);
 
     /*
-    **  Fire up the 0-1 Plato terminal window
+    **  Allocate the operator status buffer
     */
-    ptermInit ("Plato station 0-1", FALSE);
+    statusBuf = opInitStatus ("NIU", channelNo, 0);
 
     /*
     **  Print a friendly message.
@@ -258,59 +244,6 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 bool niuPresent(void)
     {
     return (portVector != NULL);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process local Plato mode input
-**
-**  Parameters:     Name        Description.
-**                  key         Plato key code for station
-**                  stat        Station number
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void niuLocalKey(u16 key, int stat)
-    {
-    int nextput;
-    LocalRing *rp;
-    
-    if (stat >= NiuLocalStations)
-        {
-        fprintf (stderr, "Local station number of of range: %d\n", stat);
-        exit (1);
-        }
-    rp = &localInput[stat];
-    
-    nextput = rp->put + 1;
-    if (nextput == NiuLocalBufSize)
-        nextput = 0;
-
-    if (nextput != rp->get)
-        {
-        rp->buf[rp->put] = key;
-        rp->put = nextput;
-        }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Set handler address for local station output
-**
-**  Parameters:     Name        Description.
-**                  h           Output handler function
-**                  stat        Station number
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void niuSetOutputHandler (niuProcessOutput *h, int stat)
-    {
-    if (stat >= NiuLocalStations)
-        {
-        fprintf (stderr, "Local station number of of range: %d\n", stat);
-        exit (1);
-        }
-    outputHandler[stat] = h;
     }
 
 /*
@@ -336,8 +269,11 @@ static FcStatus niuInFunc(PpWord funcCode)
     default:
         return(FcDeclined);
 
-    case FcNiuInput:
+    case FcNiuSelectInput:
         currInPort = -1;
+        break;
+
+    case FcNiuDeselectInput:
         break;
         }
 
@@ -361,8 +297,11 @@ static FcStatus niuOutFunc(PpWord funcCode)
     default:
         return(FcDeclined);
 
-    case FcNiuOutput:
+    case FcNiuSelectOutput:
         obytes = 0;
+        break;
+
+    case FcNiuDeselectOutput:
         break;
         }
 
@@ -382,119 +321,132 @@ static void niuInIo(void)
     {
     int port;
     PortParam *mp;
-    int in;
+    NetPort *np;
+    NetPortSet *ps;
+    int i;
     int nextget;
-    LocalRing *rp;
     
-    if (activeDevice->fcode != FcNiuInput ||
+    if (activeDevice->fcode != FcNiuSelectInput ||
         activeChannel->full)
         return;
     
     if (currInPort < 0)
         {
         /*
-        **  We're at the first of the two-word input sequence; find a
-        **  port with data.
+        **  We're at the first of the two-word input sequence.
+        **
+        **  First, get any additional network data .
+        */
+        for (;;)
+            {
+            np = dtFindInput (&niuPorts, 0);
+            if (np == NULL)
+                {
+                break;
+                }
+            i = dtRead  (&np->fet, -1);
+            if (i < 0)
+                {
+                portVector[NiuRemoteOffset + (np - niuPorts.portVec)].sendOffkey = TRUE;
+                dtClose (np, &niuPorts);
+                }
+            }
+        for (;;)
+            {
+            np = dtFindInput (&niuLocalPorts, 0);
+            if (np == NULL)
+                {
+                break;
+                }
+            i = dtRead  (&np->fet, -1);
+            if (i < 0)
+                {
+                portVector[NiuRemoteOffset + (np - niuLocalPorts.portVec)].sendOffkey = TRUE;
+                dtClose (np, &niuLocalPorts);
+                }
+            }
+
+        /*
+        **  Now scan the active connections, round robin, looking
+        **  for one that has pending input.  We need two bytes of
+        **  data to be waiting in order to proceed with a given
+        **  connection.
         */
         port = lastInPort;
         for (;;)
             {
-            if (++port >= STATIONS)
-                port = 0;
-            if (port < NiuLocalStations)
+            if (++port == STATIONS)
                 {
-                /* check for local terminal input */
-                rp = &localInput[port];
-                if (rp->get != rp->put)
-                    {
-                    currInPort = lastInPort = port;
-                    activeChannel->data = 04000 + currInPort;
-                    activeChannel->full = TRUE;
-                    return;
-                    }
-                if (port == lastInPort)
-                    return;         /* No input, leave channel empty */
-                continue;
+                port = NiuLocalOffset;      /* wrap around */
                 }
             mp = portVector + port;
-            if (mp->active)
+            np = mp->np;
+            
+            if (mp->sendOffkey)
                 {
-                /*
-                **  Port with active TCP connection.
-                */
-                if ((in = niuCheckInput(mp)) >= 0)
-                    {
-#ifdef DEBUG
-                    printf ("niu input byte %d %03o\n", mp->ibytes, in);
-#endif
-                    /*
-                    **  Connection has data -- assemble it and see if we have
-                    **  a complete input word.
-                    */
-                    if (mp->ibytes != 0)
-                        {
-                        if ((in & 0200) == 0)
-                            {
-                            /* Sequence error, drop the byte */
-                            printf ("niu input sequence error, second byte %03o, port %d\n",
-                                    in, port);
-                            continue;
-                            }
-                        mp->currInput |= (in & 0177);
-                        currInPort = lastInPort = port;
-                        activeChannel->data = 04000 + currInPort;
-                        activeChannel->full = TRUE;
-                        return;
-                        }
-                    else
-                        {
-                        /* first byte of key data, save it for later */
-                        if ((in & 0370) != 0)
-                            {
-                            /* sequence error, drop the byte */
-                            printf ("niu input sequence error, first byte %03o, port %d\n",
-                                    in, port);
-                            continue;
-                            }
-                        mp->currInput = in << 7;
-                        mp->ibytes = 1;
-                        }
-                    }
-                else if (in == -2)
-                    {
-                    /* connection was dropped, generate an "offkey" */
-                    mp->currInput = 01753;  /* offky2 -- immediate signoff */
-                    currInPort = lastInPort = port;
-                    activeChannel->data = 04000 + currInPort;
-                    activeChannel->full = TRUE;
-                    return;
-                    }
+                /* connection was dropped */
+                mp->currInput[0] = 01753 >> 7;
+                mp->currInput[1] = 01753 & 0177;  /* offky2 -- immediate signoff */
+                mp->sendOffkey = FALSE;
+                break;
                 }
-            if (port == lastInPort)
-                return;         /* No input, leave channel empty */
+            if (np == NULL || !dtActive (&np->fet))
+                {
+                if (port == lastInPort)
+                    {
+                    return;                     /* no input anywhere */
+                    }
+                continue;
+                }
+            i = dtReadw (&np->fet, mp->currInput, 2);
+            if (i < 0)
+                {
+                if (port == lastInPort)
+                    {
+                    return;                     /* no input anywhere */
+                    }
+                continue;                   /* we don't have 2 bytes yet */
+                }
+#ifdef DEBUG
+            printf ("niu input %03o %03o\n", mp->currInput[0],
+                    mp->currInput[1]);
+#endif
+            if ((mp->currInput[0] & 0370) != 0)
+                {
+                /* sequence error, drop the byte */
+                printf ("niu input sequence error, first byte %03o, port %d\n",
+                        mp->currInput[0], port);
+                return;
+                }
+            if ((mp->currInput[1] & 0200) == 0)
+                {
+                /* Sequence error, drop the byte */
+                printf ("niu input sequence error, second byte %03o, port %d\n",
+                        mp->currInput[1], port);
+                return;
+                }
+            break;
             }
+        currInPort = lastInPort = port;
+        activeChannel->data = 04000 + currInPort;
+        activeChannel->full = TRUE;
+#ifdef DEBUG
+        printf ("niu input data (station number) %04o\n", 
+                activeChannel->data);
+#endif
+        return;         /* return with data */
         }
     /*
     **  We have a current port, so we already sent the port number;
     **  now send its data.
     */
-    if (currInPort < NiuLocalStations)
-        {
-        /* local input, send a keypress format input word */
-        rp = &localInput[currInPort];
-        nextget = rp->get + 1;
-        if (nextget == NiuLocalBufSize)
-            nextget = 0;
-        in = rp->buf[rp->get];
-        rp->get = nextget;
-        activeChannel->data = in << 1;
-        }
-    else
-        {
-        mp = portVector + currInPort;
-        activeChannel->data = mp->currInput << 1;
-        mp->ibytes = 0;
-        }
+    mp = portVector + currInPort;
+    activeChannel->data = ((mp->currInput[0] << 7) |
+                           (mp->currInput[1] & 0177)) << 1;
+#ifdef DEBUG
+    printf ("niu input data (keycode) %04o\n", 
+            activeChannel->data);
+#endif
     activeChannel->full = TRUE;
     currInPort = -1;
     }
@@ -513,7 +465,7 @@ static void niuOutIo(void)
     int port;
     PortParam *mp;
 
-    if (activeDevice->fcode != FcNiuOutput ||
+    if (activeDevice->fcode != FcNiuSelectOutput ||
         !activeChannel->full)
         return;
     
@@ -641,271 +593,102 @@ static void niuDisconnect(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Create thread which will deal with all TCP
-**                  connections.
+**  Purpose:        Update operator status
 **
 **  Parameters:     Name        Description.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuCreateThread(void)
+static void niuUpdateStatus (void)
     {
-#if defined(_WIN32)
-    static bool firstMux = TRUE;
-    WORD versionRequested;
-    WSADATA wsaData;
-    int err;
-    DWORD dwThreadId; 
-    HANDLE hThread;
-
-    if (firstMux)
-        {
-        firstMux = FALSE;
-
-        /*
-        **  Select WINSOCK 1.1.
-        */ 
-        versionRequested = MAKEWORD(1, 1);
- 
-        err = WSAStartup(versionRequested, &wsaData);
-        if (err != 0)
-            {
-            fprintf(stderr, "\r\nError in WSAStartup: %d\r\n", err);
-            exit(1);
-            }
-        }
-
-    /*
-    **  Create TCP thread.
-    */
-    hThread = CreateThread( 
-        NULL,                                       /* no security attribute */
-        0,                                          /* default stack size */
-        (LPTHREAD_START_ROUTINE)niuThread, 
-        (LPVOID)0,                                  /* thread parameter */
-        0,                                          /* not suspended */
-        &dwThreadId);                               /* returns thread ID */
-
-    if (hThread == NULL)
-        {
-        fprintf(stderr, "Failed to create niu thread\n");
-        exit(1);
-        }
-#else
-    int rc;
-
-    /*
-    **  Create POSIX thread with default attributes.
-    */
-    rc = pthread_create(&niu_thread, NULL, niuThread, 0);
-    if (rc < 0)
-        {
-        fprintf(stderr, "Failed to create niu thread\n");
-        exit(1);
-        }
-#endif
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        TCP thread.
-**
-**  Parameters:     Name        Description.
-**                  mp          pointer to mux parameters.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-#if defined(_WIN32)
-static void niuThread(void *param)
-#else
-    static void *niuThread(void *param)
-#endif
-    {
-    int listenFd;
-    struct sockaddr_in server;
-    struct sockaddr_in from;
-    int fromLen;
-    PortParam *mp;
-    int i;
-    int true_opt = 1;
+    char msg[64];
     
-    /*
-    **  Create TCP socket and bind to specified port.
-    */
-    listenFd = socket(AF_INET, SOCK_STREAM, 0);
-    if (listenFd < 0)
+    sprintf (msg, "%d connection%s", niuActiveConns,
+             (niuActiveConns != 1) ? "s" : "");
+    if (niuActiveConns == 0)
         {
-        printf("niu: Can't create socket\n");
-        RETURN;
-        }
-
-    setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR,
-               (char *)&true_opt, sizeof(true_opt));
-    memset(&server, 0, sizeof(server));
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr("0.0.0.0");
-    server.sin_port = htons(platoPort);
-
-    if (bind(listenFd, (struct sockaddr *)&server, sizeof(server)) < 0)
-        {
-        printf("niu: Can't bind to socket\n");
-        RETURN;
-        }
-
-    if (listen(listenFd, 5) < 0)
-        {
-        printf("niu: Can't listen\n");
-        RETURN;
-        }
-
-    while (1)
-        {
-        /*
-        **  Find a free port control block.
-        */
-        mp = portVector + NiuLocalStations;
-        for (i = NiuLocalStations; i < STATIONS; i++)
-            {
-            if (!mp->active)
-                {
-                break;
-                }
-            mp += 1;
-            }
-
-        if (i == STATIONS)
-            {
-            /*
-            **  No free port found - wait a bit and try again.
-            */
-#if defined(_WIN32)
-            Sleep(1000);
-#else
-            /* usleep(10000000); */
-            sleep(1);
-#endif
-            continue;
-            }
-
-        /*
-        **  Wait for a connection.
-        */
-        fromLen = sizeof(from);
-        mp->connFd = accept(listenFd, (struct sockaddr *)&from, &fromLen);
-
-        /*
-        **  Set Keepalive
-        */
-        setsockopt(mp->connFd, SOL_SOCKET, SO_KEEPALIVE,
-                   (char *)&true_opt, sizeof(true_opt));
-#ifdef __APPLE__
-        setsockopt(mp->connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                   (char *)&true_opt, sizeof(true_opt));
-#endif
-
-        /*
-        **  Mark connection as active.
-        */
-        mp->active = TRUE;
-        mp->from = from.sin_addr;
-        i = mp - portVector;
-        printf("%s niu: Received connection from %s for station %d-%d\n",
-               ts_now (), inet_ntoa (from.sin_addr), i / 32, i % 32);
-        niuWelcome (i);
-        }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Check for input.
-**
-**  Parameters:     Name        Description.
-**                  mp          pointer to PortParam struct for the connection.
-**
-**  Returns:        data byte received
-**                  -1 if there is no data
-**                  -2 if the connection was dropped
-**
-**------------------------------------------------------------------------*/
-static int niuCheckInput(PortParam *mp)
-    {
-    int i;
-    fd_set readFds;
-    fd_set exceptFds;
-    struct timeval timeout;
-    u8 data;
-
-    FD_ZERO(&readFds);
-    FD_ZERO(&exceptFds);
-    FD_SET(mp->connFd, &readFds);
-    FD_SET(mp->connFd, &exceptFds);
-
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
-
-    select(mp->connFd + 1, &readFds, NULL, &exceptFds, &timeout);
-    if (FD_ISSET(mp->connFd, &readFds))
-        {
-        i = recv(mp->connFd, &data, 1, MSG_NOSIGNAL);
-        if (i == 1)
-            {
-            return(data);
-            }
-        else
-            {
-#if defined(_WIN32)
-            closesocket(mp->connFd);
-#else
-            close(mp->connFd);
-#endif
-            mp->active = FALSE;
-            i = mp - portVector;
-            printf("%s niu: Connection dropped from %s for station %d-%d\n",
-                   ts_now (), inet_ntoa (mp->from),  i / 32, i % 32);
-            return(-2);
-            }
-        }
-    else if (FD_ISSET(mp->connFd, &exceptFds))
-        {
-#if defined(_WIN32)
-        closesocket(mp->connFd);
-#else
-        close(mp->connFd);
-#endif
-        mp->active = FALSE;
-        i = mp - portVector;
-        printf("%s niu: Connection dropped from %s for station %d-%d\n",
-               ts_now (), inet_ntoa (mp->from),  i / 32, i % 32);
-        return(-2);
+        opSetStatus (statusBuf, NULL);
         }
     else
         {
-        return(-1);
+        opSetStatus (statusBuf, msg);
         }
     }
-
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Send a welcome message to a station
 **
 **  Parameters:     Name        Description.
-**                  stat        Station number
+**                  np          NetPort pointer
+**                  stat        station number
 **
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuWelcome(int stat)
+static void niuWelcome(NetPort *np, int stat)
     {
-    char msg[100];
+    PortParam *mp;
+
+    mp = portVector + stat;
+    mp->np = np;
     
-    sprintf (msg, "Connected to Plato station %d-%d", stat >> 5, stat & 037);
+    if (np->fet.connFd == 0)
+        {
+        printf("%s niu: Connection dropped from %s for station %d-%d\n",
+               dtNowString (), inet_ntoa (np->from), 
+               stat / 32, stat % 32);
+        niuActiveConns--;
+        niuUpdateStatus ();
+        return;
+        }
+
+    
+    printf("%s niu: Received connection from %s for station %d-%d\n",
+           dtNowString (), inet_ntoa (np->from),
+           stat / 32, stat % 32);
+    
+    niuActiveConns++;
+    niuUpdateStatus ();
+
     niuSendWord (stat, 0042000 + stat); /* NOP with station number in it */
     niuSendWord (stat, 0100033);        /* mode 3, mode rewrite, screen */
     niuSendWord (stat, 0201200);        /* load Y = 128 */
     niuSendWord (stat, 0200200);        /* load X = 128 */
-    niuSendstr (stat, msg);
+    /*
+    **  Display an appropriate message depending on whether the NIU
+    **  is selected -- i.e., PIO is running.
+    */
+    if (in->fcode == FcNiuSelectInput)
+        {
+        niuSendstr (stat, "Press  NEXT  to begin");
+        }
+    else
+        {
+        niuSendstr (stat, "PLATO not active");
+        }
+    
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Send a welcome message to a local or remote station
+**
+**  Parameters:     Name        Description.
+**                  np          NetPort pointer
+**                  stat        NetPort index
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void niuLocalWelcome(NetPort *np, int stat)
+    {
+    niuWelcome (np, stat + NiuLocalOffset);
+    }
+
+static void niuRemoteWelcome(NetPort *np, int stat)
+    {
+    niuWelcome (np, stat + NiuRemoteOffset);
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Send a string to a station
@@ -1027,6 +810,7 @@ static void niuSend(int stat, int word)
 **------------------------------------------------------------------------*/
 static void niuSendWord(int stat, int word)
     {
+    int fd;
     PortParam *mp;
     u8 data[3];
 
@@ -1042,57 +826,43 @@ static void niuSendWord(int stat, int word)
         }
 #endif
 
-    if (stat < NiuLocalStations)
+    if (stat < NiuRemoteOffset)
         {
-        if (outputHandler[stat] != NULL)
+        stat -= NiuLocalOffset;
+        if (stat < 0 || stat >= platoLocalConns)
             {
-            (*outputHandler[stat]) (stat, word);
+            return;
             }
+        fd = (niuLocalPorts.portVec + stat)->fet.connFd;
         }
     else
         {
-        if (stat >= STATIONS)
-            return;
-        mp = portVector + stat;
-        if (!mp->active)
+        stat -= NiuRemoteOffset;
+        if (stat >= platoConns)
             {
             return;
             }
-        
-        data[0] = word >> 12;
-        data[1] = ((word >> 6) & 077) | 0200;
-        data[2] = (word & 077) | 0300;
-#ifdef DEBUG
-        printf ("niu output %03o %03o %03o\n",
-                data[0], data[1], data[2]);
-#endif
-        /*
-        **  Note that we ignore the send status.  If the connection has
-        **  gone away, an error will be returned which we ignore here.
-        **  It will be detected on the next read, which gives us an 
-        **  opportunity to send an "offkey" to PLATO.
-        */
-        send(mp->connFd, data, 3, MSG_NOSIGNAL);
+        fd = (niuPorts.portVec + stat)->fet.connFd;
         }
-    }
-
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Format a timestamp
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        pointer to (static) string
-**
-**------------------------------------------------------------------------*/
-static const char *ts_now (void)
-    {
-    static char ts[40];
-    time_t t;
-
-    time (&t);
-    strftime (ts, sizeof (ts) - 1, "%y/%m/%d %H.%M.%S.", localtime (&t));
-    return ts;
+    if (fd == 0)
+        {
+        return;
+        }
+    
+    data[0] = word >> 12;
+    data[1] = ((word >> 6) & 077) | 0200;
+    data[2] = (word & 077) | 0300;
+#ifdef DEBUG
+    printf ("niu output %03o %03o %03o\n",
+            data[0], data[1], data[2]);
+#endif
+    /*
+    **  Note that we ignore the send status.  If the connection has
+    **  gone away, an error will be returned which we ignore here.
+    **  It will be detected on the next read, which gives us an 
+    **  opportunity to send an "offkey" to PLATO.
+    */
+        send(fd, data, 3, MSG_NOSIGNAL);
     }
 
 

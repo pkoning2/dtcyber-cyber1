@@ -21,7 +21,7 @@
 /*
 **  init.c
 */
-void initStartup(char *);
+void initStartup(const char *);
 u32 initConvertEndian(u32 value);
 
 /*
@@ -112,6 +112,8 @@ void lp512Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 **  console.c
 */
 void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void consoleCheckOutput(void);
+void consoleSetKeyboardTrue(bool flag);
 
 /*
 **  dd6603.c
@@ -150,11 +152,6 @@ void mux6676Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 **  niu.c
 */
 void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-bool niuPresent(void);
-void niuLocalChar(u8 ch, int stat);
-void niuLocalKey(u16 key, int stat);
-typedef void niuProcessOutput (int, u32);
-void niuSetOutputHandler (niuProcessOutput *h, int stat);
 
 /*
 **  doelz.c
@@ -219,57 +216,51 @@ CpWord shiftNormalize(CpWord number, u32 *shift, bool round);
 CpWord shiftMask(u8 count);
 
 /*
-**  window_{win32,x11}.c
-*/
-void windowInit(void);
-void windowSetFont(u8 font);
-void windowSetX(u16 x);
-void windowSetY(u16 y);
-void windowQueue(char ch);
-void windowGetChar(void);
-void windowClose(void);
-void windowCheckOutput(void);
-void windowOperEnd(void);
-int windowGetOperFontWidth(int font);
-void windowSetKeyboardTrue(bool flag);
-bool windowTestKeybuf(void);
-void windowQueueKey(char ch);
-
-/*
-**  ptermcom.c
-*/
-void ptermComInit(void);
-void ptermComClose(void);
-
-/*
-**  pterm_{win32,x11}.c
-*/
-void ptermInit(const char *windowName, bool closeOk);
-void ptermSetName(const char *windowName);
-void ptermClose(void);
-void ptermSetWeMode(u8 wemode);
-void ptermDrawChar(int x, int y, int snum, int cnum);
-void ptermLoadChar(int snum, int cnum, const u16 *data);
-void ptermDrawPoint(int x, int y);
-void ptermDrawLine(int x1, int y1, int x2, int y2);
-void ptermFullErase(void);
-void ptermSetWeMode(u8 wemode);
-void ptermTouchPanel(bool enable);
-
-/*
 **  operator.c
 */
 void opInit(void);
-void opRequest(void);
-void opSetMsg (char *p);
-void opWaitOperMode(void);
-void opWait(void);
+void opSetMsg (const char *p);
+void opSetStatus (void *buf, const char *msg);
+void * opInitStatus (const char *type, int ch, int un);
 
 /*
 **  log.c
 */
 void logInit(void);
 void logError(char *file, int line, char *fmt, ...);
+
+/*
+**  dtnetsubs.c
+*/
+int dtConnect (int *connFd, const char *hostname, int portnum);
+int dtCheckInput(int connFd, void *buf, int size, int time);
+void dtCreateListener(NetPortSet *ps, int ringSize);
+void dtClose (NetPort *np, NetPortSet *ps);
+NetPort * dtFindInput (NetPortSet *ps, int time);
+void dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
+const char *dtNowString (void);
+void dtSendTlv (int connFd, int tag, int len, const void *value);
+
+int dtRead (NetFet *fet, int time);
+int dtReado (NetFet *fet);
+int dtReadw (NetFet *fet, void *buf, int len);
+int dtReadtlv (NetFet *fet, void *buf, int len);
+void dtInitFet (NetFet *fet, int bufsiz);
+void dtCloseFet (NetFet *fet);
+
+/* We could do these as functions but they are short, so... */
+#define dtEmpty(fet) \
+    ((fet)->in == (fet)->out)
+#define dtFull(fet) \
+    ((fet)->in + 1 == (fet)->out || \
+     ((fet)->in + 1 == (fet)->end && (fet)->out == (fet)->first))
+#define dtFetData(fet) \
+    (((fet)->in >= (fet)->out) ? (fet)->in - (fet)->out \
+     : (fet)->end - (fet)->out + (fet)->in - (fet)->first)
+#define dtFetFree(fet) \
+    ((fet)->end - (fet)->first - dtFetData (fet) - 1)
+#define dtActive(fet) \
+    ((fet)->connFd != 0)
 
 /*
 **  -----------------
@@ -316,18 +307,26 @@ extern DevDesc deviceDesc[];
 extern u8 deviceCount;
 extern bool bigEndian;
 extern bool opActive;
-extern u16 telnetPort;
-extern u16 telnetConns;
-extern u16 platoPort;
-extern u16 platoConns;
-extern u16 doelzPort;
-extern u16 doelzConns;
+extern long telnetPort;
+extern long telnetConns;
+extern long platoPort;
+extern long platoConns;
+extern long platoLocalPort;
+extern long platoLocalConns;
+extern long opPort;
+extern long opConns;
+extern long dd60Port;
+extern long dd60Conns;
+extern long doelzPort;
+extern long doelzConns;
 extern FILE **ppuTF;
 extern u32 cycles;
 extern long cpuRatio;
 extern bool debugDisplay;
 extern bool keyboardTrue;
 extern u32 rtcClock;
+extern char autoDateString[];
+extern char autoString[];
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

@@ -12,6 +12,12 @@
 **--------------------------------------------------------------------------
 */
 
+#if defined(_WIN32)
+#include <winsock.h>
+#else
+#include <netinet/in.h>
+#endif
+
 /*
 **  -----------------------
 **  Public Type Definitions
@@ -185,6 +191,72 @@ typedef struct
     u8              opJ;                /* J field of current instruction */
     u8              opK;                /* K field (first 3 bits only) */
     } CpuContext;
+/*
+**  Network "FET"
+**
+**  Ok, it's not quite a classic FET, but it's pretty similar and it
+**  supports many of the same kinds of operations.
+*/
+typedef struct
+    {
+    int         connFd;                 /* File descriptor for socket */
+    u8          *first;                 /* Start of ring buffer */
+    u8          *in;                    /* Fill (write) pointer */
+    u8          *out;                   /* Empty (read) pointer */
+    u8          *end;                   /* End of ring buffer + 1 */
+    } NetFet;
+
+
+/*
+**  Network port block.
+*/
+typedef struct
+    {
+    NetFet      fet;                    /* Network FET for connection */
+    struct in_addr from;                /* remote IP address */
+    } NetPort;
+
+/*
+**  Callback function for new connection.
+*/
+typedef void (ConnCb) (NetPort *np, int portNum);
+
+/*
+**  Tread function
+*/
+#if defined(_WIN32)
+typedef void ThreadFunRet;
+#define ThreadReturn return
+#else
+typedef void * ThreadFunRet;
+#define ThreadReturn return 0
+#endif
+
+/*
+**  Network port set.
+*/
+typedef struct
+    {
+    int         maxPorts;               /* total number of ports */
+    volatile int curPorts;              /* number of ports currently active */
+    NetPort     *portVec;               /* array of NetPorts */
+    int         listenFd;               /* listen socket fd */
+    int         portNum;                /* TCP port number to listen to */
+    volatile fd_set activeSet;          /* fd_set for active port fd's */
+    int         maxFd;                  /* highest port fd value */
+    ConnCb      *callBack;              /* function to call for new conn */
+    bool        localOnly;              /* TRUE to listen on 127.0.0.1 */
+    } NetPortSet;
+
+/*
+**  Apple doesn't have a NOSIGNAL option on rcv/send, instead is has
+**  SO_NOSIGPIPE as a setsockopt option.
+**
+**  Windows doesn't have either; it seems not to do SIGPIPE ever.
+*/
+#if !defined(MSG_NOSIGNAL)
+#define MSG_NOSIGNAL 0
+#endif
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* TYPES_H */

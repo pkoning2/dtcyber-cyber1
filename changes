@@ -322,3 +322,6 @@ Since jan21 2004 drop:
 - Put station number in pterm window titlebar.
 - Support control-digit for "PLATO layout" shifted digit codes.
 - Support arrow keys in pterm.
+
+- Split things apart so dtcyber is now a compute engine, with all the
+  user interface in separate programs.

@@ -35,6 +35,12 @@
 */
 //#define PPT
 
+#ifdef PPT
+#define TERMTYPE 9
+#else
+#define TERMTYPE 0
+#endif
+
 /*
 **  -----------------------
 **  Private Macro Functions
@@ -87,7 +93,6 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void procNiuWord (int stat, u32 d);
 static void plotChar (u8 c);
 static void mode0 (u32 d);
 static void mode1 (u32 d);
@@ -145,6 +150,9 @@ const char rom0char[] =
 **
 **--------------------------------------------------------------------------
 */
+extern void ptermSetName (const char *winName);
+extern void ptermLoadChar (int snum, int cnum, const u16 *data);
+extern void ptermSetWeMode (u8 we);
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Common initialization for the Plato simulation.
@@ -161,11 +169,6 @@ void ptermComInit(void)
     */
     sprintf (traceFn, "pterm%d.trc", getpid ());
     
-    /*
-    **  Register with NIU for local output.
-    */
-    niuSetOutputHandler (procNiuWord, 1);
-
     /*
     **  Do some common state initialization.
     */
@@ -194,7 +197,7 @@ void ptermComClose(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void procNiuWord (int stat, u32 d)
+void procNiuWord (int stat, u32 d)
 {
     mptr mp;
     char *msg = "";
@@ -312,15 +315,13 @@ static void procNiuWord (int stat, u32 d)
                    (d & 01000) ? 'Y' : 'X', d & 0777, msg);
             break;
         case 3:     // echo
-#ifdef PPT
-            // 163 is code for PPT...
+            // 160 is terminal type query
             if ((d & 0177) == 0160)
             {
-                TRACEN ("load echo termtype");
-                niuLocalKey (0363, stat);
+                TRACE ("load echo termtype %d", TERMTYPE);
+                niuLocalKey (0360 + TERMTYPE, stat);
                 break;
             }
-#endif
             TRACE ("load echo %d", d & 0177);
             niuLocalKey ((d & 0177) + 0200, stat);
             break;

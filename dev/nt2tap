@@ -37,7 +37,7 @@
 *         compass(i=nt2tap,s=nostext,x=opl871)
           
 ** max pru size (cio buffer size - 4)
- prulim   equ    5000b
+ prulim   equ    20000b
           
  nt2tap   sb1    1
           sa1    actr
@@ -53,6 +53,8 @@
           bx1    x0*x1
           bx6    x6+x1
           sa6    a2          set input file name
+          sx7    prulim
+          sa7    a2+6        set mlrs
           sa1    a1+b1       get second argument
           sa2    out
           bx6    -x0*x2
@@ -246,7 +248,7 @@
  ibfsiz   equ    prulim+3
  obfsiz   equ    prulim+4
           
- in       fileb  inbuf,ibfsiz,lbl
+ in       fileb  inbuf,ibfsiz,fet=10
 
  out      fileb  outbuf,obfsiz,fet=6
 

@@ -267,54 +267,10 @@ const unsigned short plato_m1[] = {
 bool platoKeypress (XKeyEvent *kp, int stat);
 bool platoTouch (XButtonPressedEvent *bp, int stat);
 void ptermInput(XEvent *event);
-void ptermXinit(void);
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Common X initialization for DtCyber and Pterm
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void ptermXinit (void)
-{
-    char *home;
-    char *xf;
-    XrmDatabase xdef, appdef;
-    
-    /*
-    **  Open the X11 display.
-    */
-    disp = XOpenDisplay (0);
-    if (disp == NULL)
-    {
-        fprintf(stderr, "Could not open display\n");
-        exit(1);
-    }
-    
-    XrmInitialize ();
-    appdef = XrmGetFileDatabase ("/usr/lib/X11/app-defaults/Dtcyber");
-    if (appdef == NULL)
-    {
-//        fprintf (stderr, "no app default database for dtcyber\n");
-    }
-    home = getenv ("HOME");
-    xf = malloc (strlen (home) + strlen ("/.Xdefaults") + 1);
-    strcpy (xf, home);
-    strcat (xf, "/.Xdefaults");
-    xdef = XrmGetFileDatabase (xf);
-    free (xf);
-    if (xdef != NULL)
-    {
-        XrmCombineDatabase (appdef, &xdef, FALSE);
-    }
-    else
-    {
-        xdef = appdef;
-    }
-    XrmDb = xdef;
-}
+void dtXinit(void);
+void ptermSetName (const char *winName);
+void ptermLoadChar (int snum, int cnum, const u16 *data);
+void ptermSetWeMode (u8 we);
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize the Plato terminal window.
@@ -337,7 +293,7 @@ void ptermInit(const char *winName, bool closeOk)
 
     if (disp == NULL)
     {
-        ptermXinit ();
+        dtXinit ();
     }
     
     screen = DefaultScreen(disp);

@@ -185,8 +185,8 @@ static void *doelzThread(void *param);
 **  Public Variables
 **  ----------------
 */
-u16 doelzPort;
-u16 doelzConns;
+long doelzPort;
+long doelzConns;
 int doelzNodeCnt;
 DoelzNode *doelzNodes;
 

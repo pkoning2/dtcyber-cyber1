@@ -96,8 +96,7 @@ typedef struct deckname_s
 
 typedef struct
     {
-    bool    binary;
-    bool    bincard;
+    void    *statusBuf;
     DeckName *waiting_decks;
     DeckName *last_deck;
     int     intmask;
@@ -106,6 +105,8 @@ typedef struct
     const u16 *table;
     u32     getcardcycle;
     char    card[82];
+    bool    binary;
+    bool    bincard;
     } CrContext;
 
 /*
@@ -228,6 +229,11 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         {
         opt = "026";
         }
+
+    /*
+    **  Allocate the operator status buffer
+    */
+    cc->statusBuf = opInitStatus ("CR3447", channelNo, eqNo);
     
     /*
     **  Print a friendly message.
@@ -646,6 +652,7 @@ static void cr3447NextDeck (DevSlot *up, CrContext *cc)
             up->fcb[0] = fcb;
             cc->status = StCr3447Ready;
             cr3447NextCard (up, cc);
+            opSetStatus (cc->statusBuf, d->name);
             }
         free (d->name);
         free (d);
@@ -655,6 +662,7 @@ static void cr3447NextDeck (DevSlot *up, CrContext *cc)
         /* No more decks */
         up->fcb[0] = NULL;
         cc->status = StCr3447Eof;
+        opSetStatus (cc->statusBuf, NULL);
         }
     }
 

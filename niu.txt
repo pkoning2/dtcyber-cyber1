@@ -2,13 +2,14 @@ Plato IV NIU:
 
 The NIU has TWO channels, one for input, one for output.
 These are given equipment names IC and OC respectively.
-In spite of that, there are distinct select codes for the
-two directions.  It appears that PIO is doing the select
-each time it wants to do input or output.
 
-Function codes
-	 0	select output
+Function codes, input channel:
+	 0	deselect input
 	 40	select input
+
+Function codes, output channel:
+	 0	select output
+	 7000	deselect output
 
 input data:
       input comes in a pair of words.

@@ -2,7 +2,7 @@
 #
 #   Copyright (c) 2002, Tom Hunter (see license.txt)
 #
-#   Name: Makefile.pterm
+#   Name: Makefile.dtoper
 #
 #   Description:
 #       Build X11 version of Desktop Cyber emulation.
@@ -25,15 +25,9 @@ ARCHCFLAGS ?= -march=$(MACHINE)
 endif
 INCL    = -I/usr/X11R6/include -I/usr/local/include
 
-SOBJS	= charset.o dtnetsubs.o dt_x11.o
-
-pterm:	$(SOBJS) pterm.o pterm_x11.o ptermcom.o 
+dtoper:	$(SOBJS) dtoper.o dtoper_x11.o
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
 
-%.d : %.c
-	echo -n "$@ " > $@
-	$(CC) -MM $< >> $@
-
-include  pterm.d $(SOBJS:.o=.d) 
+include  dtoper.d dtoper_x11.d $(SOBJS:.o=.d) 
 
 #---------------------------  End Of File  --------------------------------

@@ -87,8 +87,8 @@ static void *mux6676Thread(void *param);
 **  Public Variables
 **  ----------------
 */
-u16 telnetPort;
-u16 telnetConns;
+long telnetPort;
+long telnetConns;
 
 /*
 **  -----------------

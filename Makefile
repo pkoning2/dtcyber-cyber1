@@ -9,9 +9,13 @@
 #
 #--------------------------------------------------------------------------
 
-all: dtcyber fonts pterm
+all: dtcyber fonts pterm dtoper dd60
 
 include Makefile.pterm
+
+include Makefile.dtoper
+
+include Makefile.dd60
 
 ifeq ("$(HOST)","Darwin")
 LIBS    +=  /System/Library/Frameworks/Carbon.framework/Carbon
@@ -31,7 +35,7 @@ PCFS	= seymour8b.pcf seymour8m.pcf \
 	seymour16b.pcf seymour16m.pcf \
 	seymour32b.pcf seymour32m.pcf
 
-OBJS    = main.o window_x11.o init.o trace.o dump.o \
+OBJS    = main.o init.o trace.o dump.o \
           device.o channel.o cpu.o pp.o float.o shift.o operator.o \
           deadstart.o console.o cr405.o dd6603.o dd8xx.o mux6676.o \
           lp1612.o mt607.o mt669.o dcc6681.o rtc.o log.o \

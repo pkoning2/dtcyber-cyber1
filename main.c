@@ -33,7 +33,7 @@
 **  Private Macro Functions
 **  -----------------------
 */
-#define WindowCheckRate         5000
+#define ConsoleCheckRate         5000
 
 /*
 **  -----------------------------------------
@@ -61,7 +61,7 @@ u32 cycles;
 **  Private Variables
 **  -----------------
 */
-int windowCheckCycles;
+int consoleCheckCycles;
 
 /*
 **--------------------------------------------------------------------------
@@ -132,20 +132,12 @@ int main(int argc, char **argv)
         cycles++;
 
         /*
-        **  Deal with operator interface requests.
-        */
-        if (opActive)
-            {
-            opRequest();
-            }
-
-        /*
         ** Check if it's time for a screen update
         */
-        if (--windowCheckCycles < 0)
+        if (--consoleCheckCycles < 0)
             {
-            windowCheckCycles = WindowCheckRate;
-            windowCheckOutput();
+            consoleCheckCycles = ConsoleCheckRate;
+            consoleCheckOutput();
             }
         
         /*
@@ -167,8 +159,6 @@ int main(int argc, char **argv)
         cycles++;
         }
 
-    ptermClose();
-    windowClose();
     cpuExit();
 
 #if 0

@@ -141,7 +141,6 @@ static bool displayOff = FALSE;
 static const i8 dotdx[] = { 0, 1, 0, 1, -1, -1,  0, -1,  1 };
 static const i8 dotdy[] = { 0, 0, 1, 1, -1,  0, -1,  1, -1 };
 //static XKeyboardControl kbPrefs;
-static bool platoActive;
 #if CcHersheyFont == 1
 static HPEN hPen = 0;
 #endif
@@ -460,7 +459,7 @@ void windowGetChar(void)
     
     if (keyboardSendUp || keyListGet == keyListPut)
         {
-        if (keyboardTrue && !opActive)
+        if (keyboardTrue)
             {
             // If we're in true keyboard mode, lack of news means
             // "no change to last input" rather than "all keys up"!
@@ -481,7 +480,7 @@ void windowGetChar(void)
         }
     ppKeyIn = keybuf[keyListGet];
     keyListGet = nextget;
-    if (!keyboardTrue || opActive)
+    if (!keyboardTrue)
         {
         // We're not doing the precise emulation, instead doing
         // regular key rollover.  So ignore key up events,
@@ -561,20 +560,12 @@ static void dflush (HDC hdcMem, int dx)
     str[1] = '\0';
     x = XADJUST (xstart);
     y = YADJUST (ypos);
-    if (opActive)
-        {
-        SelectObject(hdcMem, currentFontInfo->normalId);
-        }
     for (i = 0; i < dcnt; i++)
         {
         if (dhits[i] >= (dx / 2) - 1)
             {
             if (!bold)
                 {
-                if (opActive)
-                    {
-                    SelectObject(hdcMem, currentFontInfo->boldId);
-                    }
                 bold = TRUE;
                 fy = fontY + boldoff;
                 }
@@ -583,20 +574,11 @@ static void dflush (HDC hdcMem, int dx)
             {
             if (bold)
                 {
-                if (opActive)
-                    {
-                    SelectObject(hdcMem, currentFontInfo->normalId);
-                    }
                 bold = FALSE;
                 fy = fontY;
                 }
             }
-        if (opActive)
-            {
-            str[0] = dchars[i];
-            TextOut(hdcMem, x, y, str, 1);
-            }
-        else if (dchars[i] != 0)
+        if (dchars[i] != 0)
             {
             BitBlt (hdcMem, x, y, dx, dx, hdcFont,
                     dx * (dchars[i] & ymask),
@@ -645,14 +627,7 @@ static void dput (HDC hdcMem, char c, int x, int y, int dx)
     
     // Center the character on the supplied x/y.
     x -= dx / 2;
-    if (opActive)
-        {
-        y += dx * 3 / 8;
-        }
-    else
-        {
-        y -= dx / 2;
-        }
+    y -= dx / 2;
     
     // Count hits on this position (for intensify)
     dindx = (x - xstart) / dx;
@@ -681,14 +656,7 @@ static void dput (HDC hdcMem, char c, int x, int y, int dx)
     for ( ; xpos < x; xpos += dx)
         {
         dhits[dcnt] = 1;
-        if (opActive)
-            {
-            dchars[dcnt++] = ' ';
-            }
-        else
-            {
-            dchars[dcnt++] = 0;
-            }
+        dchars[dcnt++] = 0;
         }
     
     dhits[dcnt] = 1;
@@ -1001,11 +969,6 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         **  Handle input characters.
         */
     case WM_SYSCHAR:
-        if (platoActive &&
-            platoKeypress (wParam, 1, 0))
-            {
-            return 0;
-            }
         switch (wParam)
             {
         case '0':
@@ -1064,18 +1027,6 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
                 }
             break;
 
-        case 'O':
-        case 'o':
-            opActive = TRUE;
-            break;
-
-        case 'p':
-            if (niuPresent ())
-                {
-                platoActive = !platoActive;
-                }
-            break;
-
         case 'q':
             displayOff = FALSE;
             break;
@@ -1092,33 +1043,14 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
             }
         break;
 
-    case WM_CHAR:
-        if (!opActive)
-            {
-/* Non-operator keystrokes are handled in KEYUP/KEYDOWN */
-            break;
-            }
-        windowQueueKey (wParam);
-        break;
-        
     case WM_KEYUP:
-        if (platoActive || !keyboardTrue || opActive)
+        if (!keyboardTrue)
             {
             return 0;
             }
 /* fall through */
     case WM_KEYDOWN:
-        if (opActive)
-            {
-            return 0;
-            }
-        if (platoActive)
-            {
-            platoKeypress (wParam, 0, 0);
-            return 0;
-            }
 /* 
- * Not Plato, not operator mode
  * Translate the key to display code
  * Ignore control keys
  */
@@ -1216,7 +1148,7 @@ void windowDisplay(HWND hWnd)
             }
             
         sprintf(buf + strlen(buf),
-                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
+                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c",
                 (traceMask >> 0) & 1 ? '0' : '_',
                 (traceMask >> 1) & 1 ? '1' : '_',
                 (traceMask >> 2) & 1 ? '2' : '_',
@@ -1242,8 +1174,7 @@ void windowDisplay(HWND hWnd)
                 (chTraceMask >> 8) & 1 ? '8' : '_',
                 (chTraceMask >> 9) & 1 ? '9' : '_',
                 (chTraceMask >> 10) & 1 ? 'A' : '_',
-                (chTraceMask >> 11) & 1 ? 'B' : '_',
-                (platoActive) ? 'P' : ' ');
+                (chTraceMask >> 11) & 1 ? 'B' : '_');
 
         TextOut(hdcMem, 0, 0, buf, strlen(buf));
         }
@@ -1279,25 +1210,11 @@ void windowDisplay(HWND hWnd)
             switch (oldFont)
                 {
             case FontSmall:
-                if (opActive)
-                    {
-                    currentFontInfo = &smallOperFont;
-                    }
-                else
-                    {
-                    currentFontInfo = &smallFont;
-                    }
+                currentFontInfo = &smallFont;
                 break;
 
             case FontMedium:
-                if (opActive)
-                    {
-                    currentFontInfo = &mediumOperFont;
-                    }
-                else
-                    {
-                    currentFontInfo = &mediumFont;
-                    }
+                currentFontInfo = &mediumFont;
                 break;
 
             case FontLarge:
@@ -1329,16 +1246,8 @@ void windowDisplay(HWND hWnd)
             dput (hdcMem, curr->ch, curr->xPos, curr->yPos,
                   currentFontInfo->width);
 #else
-            if (opActive)
-                {
-                dput (hdcMem, curr->ch, curr->xPos, curr->yPos,
-                      currentFontInfo->width);
-                }
-            else
-                {
-                windowTextPlot(hdcMem, XADJUST (curr->xPos), YADJUST (curr->yPos),
-                               curr->ch, curr->fontSize);
-                }
+            windowTextPlot(hdcMem, XADJUST (curr->xPos), YADJUST (curr->yPos),
+                           curr->ch, curr->fontSize);
 #endif
             }
         curr++;

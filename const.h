@@ -115,13 +115,22 @@
 #define FontSmall               8
 #define FontDot                 0
 
-#define RefreshInterval         ULL(100000)  /* microseconds */
+#define RefreshInterval         100000          /* microseconds */
 
 #define TraceEcs                (1 << 28)
 #define TraceCpu0               (1 << 29)
 #define TraceCpu1               (TraceCpu0 << 1)
 #define TraceCpu(n)             (TraceCpu0 << (n))
 #define TraceXj                 (1 << 31)
+
+/*
+**  TCP port numbers
+*/
+#define DefTelnetPort   5000        /* mux6676 default port */
+#define DefNiuPort      5004        /* Plato NIU default port */
+#define DefOpPort       5006        /* Operator interface default port */
+#define DefDd60Port     5007        /* DD60 interface default port */
+#define DefDoelzPort    5008        /* Default Doelz net port
 
 /*
 **  PP wait for I/O types

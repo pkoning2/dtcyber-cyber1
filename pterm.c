@@ -18,6 +18,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -43,8 +44,8 @@
 **  Private Constants
 **  -----------------
 */
-#define platoPort   5004
 #define DEFAULTHOST "cyberserv.org"
+#define BufSiz      256
 
 /*
 **  -----------------------------------------
@@ -57,8 +58,6 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void ptermConnect (const char *hostname, const char *portnum);
-static int ptermCheckInput(void);
 #if !defined(_WIN32)
 static void ptermWindowInput(void);
 #endif
@@ -88,10 +87,8 @@ extern const char *hostName;
 */
 static int obytes;
 static u32 currOutput;
-static int connFd;
+static NetFet fet;
 static u16 currInput;
-static u8 ibytes;      // how many bytes have been assembled into currInput (0..2)
-static niuProcessOutput *outh;
 
 /*
 **--------------------------------------------------------------------------
@@ -104,37 +101,54 @@ static niuProcessOutput *outh;
 
 extern void ptermInput(XEvent *event);
 #endif
+extern void procNiuWord (int stat, u32 d);
+extern void ptermSetWeMode (u8 we);
 
 int main (int argc, char **argv)
-{
-    int ibytes = 0;
+    {
+    u8 ibuf[3];
     u32 niuwd;
-    int d;
+    int i;
     char name[100];
-    char *port;
+    int port;
+    int true_opt = 1;
     
     if (argc > 3)
-    {
+        {
         printf ("usage: pterm [ hostname [ portnum ]]\n");
         exit (1);
-    }
+        }
     if (argc > 2)
-    {
-        port = argv[2];
-    }
+        {
+        port = atoi (argv[2]);
+        }
     else
-    {
-        port = NULL;
-    }
+        {
+        port = DefNiuPort;
+        }
     if (argc > 1)
-    {
+        {
         hostName = argv[1];
-    }
+        }
     else
-    {
+        {
         hostName = DEFAULTHOST;
-    }
-    ptermConnect (hostName, port);
+        }
+
+    dtInitFet (&fet, BufSiz);
+    if (dtConnect (&fet.connFd, hostName, port) < 0)
+        {
+        exit (1);
+        }
+    setsockopt (fet.connFd, SOL_SOCKET, SO_KEEPALIVE,
+                (char *)&true_opt, sizeof(true_opt));
+    fcntl (fet.connFd, F_SETFL, O_NONBLOCK);
+#ifdef __APPLE__
+    setsockopt (fet.connFd, SOL_SOCKET, SO_NOSIGPIPE,
+                (char *)&true_opt, sizeof(true_opt));
+#endif
+
+    ptermActive = TRUE;
 
 #if defined(_WIN32)
     /*
@@ -146,49 +160,45 @@ int main (int argc, char **argv)
     sprintf (name, "Pterm " PTERMVERSION ": %s", hostName);
     ptermInit (name, TRUE);
     while (ptermActive)
-    {
-        d = ptermCheckInput ();
-        if (d >= 0)
         {
-            switch (ibytes)
+        i = dtRead (&fet, 10);
+        if (i < 0)
             {
-            case 0:
-                if (d & 0200)
+            break;
+            }
+        
+        for (;;)
+            {
+#if !defined(_WIN32)
+            ptermWindowInput ();
+#endif
+            i = dtReadw (&fet, ibuf, 3);
+            if (i < 0)
                 {
-                    printf ("Plato output out of sync byte 0: %03o\n", d);
-                    continue;
+                break;              /* don't have 3 bytes yet */
                 }
-                niuwd = d << 12;
-                ibytes = 1;
-                break;
-            case 1:
-                if ((d & 0300) != 0200)
+            if (ibuf[0] & 0200)
                 {
-                    printf ("Plato output out of sync byte 1: %03o\n", d);
-                    continue;
-                }
-                niuwd |= ((d & 077) << 6);
-                ibytes = 2;
+                printf ("Plato output out of sync byte 0: %03o\n", ibuf[0]);
                 break;
-            case 2:
-                if ((d & 0300) != 0300)
+                }
+            if ((ibuf[1] & 0300) != 0200)
                 {
-                    printf ("Plato output out of sync byte 2: %03o\n", d);
-                    continue;
-                }
-                niuwd |= (d & 077);
-                ibytes = 0;
-                (*outh) (1, niuwd);
+                printf ("Plato output out of sync byte 1: %03o\n", ibuf[1]);
                 break;
+                }
+            if ((ibuf[2] & 0300) != 0300)
+                {
+                printf ("Plato output out of sync byte 2: %03o\n", ibuf[2]);
+                break;
+                }
+            niuwd = (ibuf[0] << 12) | ((ibuf[1] & 077) << 6) | (ibuf[2] & 077);
+            procNiuWord (1, niuwd);
             }
         }
-#if !defined(_WIN32)
-        ptermWindowInput ();
-#endif
-    }
     ptermClose ();
 	return 0;
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Process Plato mode input
@@ -201,33 +211,33 @@ int main (int argc, char **argv)
 **
 **------------------------------------------------------------------------*/
 void niuLocalKey(u16 key, int stat)
-{
+    {
     u8 data[2];
     
+#if 0   // this doesn't seem to work quite the way I want it to...
+    if (key == 032 || key == 072)
+        {
+        /*
+        **  STOP or SHIFT-STOP keys -- discard any pending
+        **  data from the network.
+        **
+        **  Usually that doesn't matter much, but if there are -delay-
+        **  words pending, there could be quite a lot of stuff backed
+        **  up, and we want to abort all that delaying.
+        */
+        fet.out = fet.in;
+        }
+#endif
+
     data[0] = key >> 7;
     data[1] = 0200 | key;
 
     if (tracePterm)
-    {
+        {
         fprintf (traceF, "key to plato %03o\n", key);
+        }
+    send(fet.connFd, data, 2, 0);
     }
-    send(connFd, data, 2, 0);
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Set handler address for station output
-**
-**  Parameters:     Name        Description.
-**                  h           Output handler function
-**                  stat        Station number
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void niuSetOutputHandler (niuProcessOutput *h, int stat)
-{
-    outh = h;
-}
 
 /*
 **--------------------------------------------------------------------------
@@ -236,131 +246,6 @@ void niuSetOutputHandler (niuProcessOutput *h, int stat)
 **
 **--------------------------------------------------------------------------
 */
-/*--------------------------------------------------------------------------
-**  Purpose:        Initialise Pterm
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void ptermConnect (const char *hostname, const char *portnum)
-{
-    struct hostent *hp;
-    struct sockaddr_in server;
-    int port = platoPort;
-    
-#if defined(_WIN32)
-    WORD versionRequested;
-    WSADATA wsaData;
-    int err;
-
-    /*
-    **  Select WINSOCK 1.1.
-    */ 
-    versionRequested = MAKEWORD(1, 1);
- 
-    err = WSAStartup(versionRequested, &wsaData);
-    if (err != 0)
-    {
-        fprintf(stderr, "\r\nError in WSAStartup: %d\r\n", err);
-        exit(1);
-    }
-#endif
-    /*
-    **  Create TCP socket and bind to specified port.
-    */
-    connFd = socket(AF_INET, SOCK_STREAM, 0);
-    if (connFd < 0)
-    {
-        printf("pterm: Can't create socket\n");
-        return;
-    }
-
-    memset(&server, 0, sizeof(server));
-    server.sin_family = AF_INET;
-    hp = gethostbyname (hostname);
-    if (hp == NULL || hp->h_length == 0)
-    {
-        printf ("pterm: unrecognized hostname %s\n", hostname);
-        return;
-    }
-    if (portnum != NULL)
-    {
-        port = atoi (portnum);
-    }
-    memcpy (&server.sin_addr, hp->h_addr, sizeof (server.sin_addr));
-    server.sin_port = htons(port);
-
-    if (connect (connFd, (struct sockaddr *)&server, sizeof(server)) < 0)
-    {
-        printf("pterm: Can't connect to %s %d\n", hostname, port);
-        return;
-    }
-    ptermActive = TRUE;
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Check for input.
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        data byte received, or -1 if there is no data.
-**
-**------------------------------------------------------------------------*/
-static int ptermCheckInput(void)
-{
-    int i;
-    fd_set readFds;
-    fd_set exceptFds;
-    struct timeval timeout;
-    u8 data;
-
-    FD_ZERO(&readFds);
-    FD_ZERO(&exceptFds);
-    FD_SET(connFd, &readFds);
-    FD_SET(connFd, &exceptFds);
-
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 10000;
-
-    select(connFd + 1, &readFds, NULL, &exceptFds, &timeout);
-    if (FD_ISSET(connFd, &readFds))
-    {
-        i = recv(connFd, &data, 1, 0);
-        if (i == 1)
-        {
-            return(data);
-        }
-        else
-        {
-#if defined(_WIN32)
-            closesocket(connFd);
-#else
-            close(connFd);
-#endif
-            ptermActive = FALSE;
-            printf("pterm: Connection dropped\n");
-            return(-1);
-        }
-    }
-    else if (FD_ISSET(connFd, &exceptFds))
-    {
-#if defined(_WIN32)
-        closesocket(connFd);
-#else
-        close(connFd);
-#endif
-        ptermActive = FALSE;
-        printf("pterm: Connection dropped\n");
-        return(-1);
-    }
-    else
-    {
-        return(-1);
-    }
-}
-
 #if !defined(_WIN32)
 /*--------------------------------------------------------------------------
 **  Purpose:        Window input event processor.
@@ -371,7 +256,7 @@ static int ptermCheckInput(void)
 **
 **------------------------------------------------------------------------*/
 static void ptermWindowInput(void)
-{
+    {
     XEvent event;
     XKeyEvent *kp;
     int key;
@@ -382,11 +267,11 @@ static void ptermWindowInput(void)
     **  Process any X11 events.
     */
     while (XEventsQueued(disp, QueuedAfterFlush))
-    {
+        {
         XNextEvent(disp, &event);
 
         switch (event.type)
-        {
+            {
         case MappingNotify:
             XRefreshKeyboardMapping ((XMappingEvent *)&event);
             break;
@@ -395,31 +280,31 @@ static void ptermWindowInput(void)
             // Special case: check for Control/D (disconnect)
             kp = (XKeyEvent *) &event;
             if (kp->state & ControlMask)
-            {
+                {
                 key = XKeycodeToKeysym (disp, kp->keycode, 0);
                 if (key == XK_z)        // control-Z : exit
-                {
-                    close(connFd);
+                    {
+                    dtCloseFet(&fet);
                     ptermActive = FALSE;
                     return;
-                }
+                    }
                 else if (key == XK_bracketright)    // control-] : trace
-                {
+                    {
                     tracePterm = !tracePterm;
                     savemode = wemode;
                     if (!tracePterm)
-                    {
+                        {
                         wemode = 2;
                         fflush (traceF);
-                    }
-                    else
-                    {
-                        if (traceF == NULL)
-                        {
-                            traceF = fopen (traceFn, "w");
                         }
+                    else
+                        {
+                        if (traceF == NULL)
+                            {
+                            traceF = fopen (traceFn, "w");
+                            }
                         wemode = 3;
-                    }
+                        }
                     ptermSetWeMode (wemode);
                     // The 1024 is a strange hack to circumvent the
                     // screen edge wrap checking.
@@ -427,15 +312,15 @@ static void ptermWindowInput(void)
                     wemode = savemode;
                     ptermSetWeMode (wemode);
                     return;
+                    }
                 }
-            }
             // Fall through to default handler
         default:
             ptermInput (&event);
             break;
+            }
         }
     }
-}
 #endif
 
 /*---------------------------  End Of File  ------------------------------*/

@@ -25,26 +25,32 @@
 #include <X11/Xatom.h>
 #include <X11/Xresource.h>
 #include <sys/time.h>
-#include <pthread.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
+#include "dd60.h"
 
 /*
 **  -----------------
 **  Private Constants
 **  -----------------
 */
-#define ListSize        10000
-#define KeyBufSize	    50
-#define MaxPolls        10      // number of poll cycles we track
-#define DisplayBufSize	64
-#define DisplayMargin	20
+#define NetBufSize      2048
+#define LineBufSize     64
+#define DefaultInterval 0.06
+/*
+**  Screen related definitions
+*/
+#define DisplayMargin	        20
+#define OffLeftScreen           0
+#define OffRightScreen          01020
+#define TraceX                  (10 - DisplayMargin)
+#define TraceY                  (10 - DisplayMargin)
 
 // Size of the window and pixmap.
 // This is: a screen high with marging top and botton, and two screens
 // wide with margins top and bottom, and 20b space in between.
-#define XSize           (02020 + 2 * DisplayMargin)
+#define XSize           (01000 + OffRightScreen + 2 * DisplayMargin)
 #define YSize           (01000 + 2 * DisplayMargin)
 
 /*
@@ -53,7 +59,7 @@
 **  -----------------------
 */
 
-#define XADJUST(x) ((x) + DisplayMargin)
+#define XADJUST(x) ((x) + DisplayMargin + currentXOffset)
 #define YADJUST(y) ((y) + DisplayMargin)
 
 // turn on the next line to debug X startup troubles...
@@ -65,14 +71,8 @@
 **  Private Typedef and Structure Definitions
 **  -----------------------------------------
 */
-typedef struct dispList
-    {
-    u16             xPos;           /* horizontal position */
-    u16             yPos;           /* vertical position */
-    u8              fontSize;       /* size of font */
-    char            ch;             /* character to be displayed */
-    } DispList;
 
+/* Font metrics data for each font we use */
 typedef struct fontInfo
     {
     int             normalId;       /* horizontal position */
@@ -82,20 +82,33 @@ typedef struct fontInfo
     int             height;         /* character height (ascent) in pixels */
     int             pad;            /* extra padding in between chars */
     } FontInfo;
+
+/* Data for buffered text in lineBuf */
+typedef struct
+    {
+    char            c;              /* Character to display */
+    u8              hits;           /* Number of repeats for this char */
+    } CharData;
+    
 /*
 **  ---------------------------
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void INLINE dflush (void);
-static void dput (char c, int x, int y, int dx);
+static void windowInit(void);
+static void windowQueue(char ch);
+static void windowClose(void);
+static void windowSetKeyboardTrue (bool flag);
+static void INLINE windowShowLine (void);
+static void windowStoreChar (char c, int x, int y, int dx);
 static void getCharWidths (FontInfo *f, char *s);
-static void windowInput(void);
-static void showDisplay (void);
-static void sum (u16 x);
-#if CcHersheyFont == 1
+static int windowInput(void);
+static void windowShowDisplay (void);
+static void windowSetX (int x);
+static void windowSetY (int y);
+static void windowSetMode (int mode);
+static void windowProcessChar (int ch);
 static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize);
-#endif
 
 /*
 **  ----------------
@@ -112,38 +125,40 @@ bool keyboardTrue;
 **  Private Variables
 **  -----------------
 */
-static i8 currentFont = -1;
+static NetFet fet;
+static int currentFont = -1;
 static FontInfo *currentFontInfo;
-static i16 currentX = -1;
-static i16 currentY = -1;
-static DispList display[ListSize];
-static int listGet, listPut, prevPut, listPutAtGetChar;
-static u32 s1,s2;
-static u32 s1list[MaxPolls], s2list[MaxPolls];
-static int listPutsAtGetChar[MaxPolls];
-static int sumListGet, sumListPut;
-static char keybuf[KeyBufSize];
-static u32 keyListPut, keyListGet;
+static int currentX = -1;
+static int currentY = -1;
+static int currentXOffset = 0;
 static FontInfo smallFont;
 static FontInfo mediumFont;
 static FontInfo largeFont;
-static FontInfo smallOperFont;
-static FontInfo mediumOperFont;
 static Window window;
-static XTextItem dbuf[DisplayBufSize];
-static char dchars[DisplayBufSize];
-static u8 dhits[DisplayBufSize];
-static int dcnt, xpos, xstart, ypos;
 static Pixmap pixmap;
 static GC wgc, pgc;
-static u32 lastDisplayUs;
 static unsigned long fg, bg, pfg, pbg;
-static bool displayOff = FALSE;
+static XKeyboardControl kbPrefs;
+static volatile bool windowActive = TRUE;
+static bool hersheyMode = FALSE;
+
+/*
+**  These two together make up the line buffering machinery used
+**  to detect bold (intensified) text.  The XLineBuf vector is
+**  separate because it (as a vector) is an argument to an Xlib
+**  function.
+*/
+static CharData lineBuf[LineBufSize];
+static XTextItem XLineBuf[LineBufSize];
+static int lineBufCnt, xpos, xstart, ypos;
+
+/*
+**  These variables are used to handle dot mode intensification.
+*/
+static int lastDotX, lastDotY = -1;
+static int dotRepeats = 0;
 static const i8 dotdx[] = { 0, 1, 0, 1, -1, -1,  0, -1,  1 };
 static const i8 dotdy[] = { 0, 0, 1, 1, -1,  0, -1,  1, -1 };
-static XKeyboardControl kbPrefs;
-static bool keyboardSendUp;
-static bool platoActive;
 
 /*
 **--------------------------------------------------------------------------
@@ -153,12 +168,230 @@ static bool platoActive;
 **--------------------------------------------------------------------------
 */
 
-/* These functions are declared extern here rather than in proto.h,
-** otherwise proto.h would have to #include X.h...
+/*
+**--------------------------------------------------------------------------
+**
+**  Public Functions
+**
+**--------------------------------------------------------------------------
 */
-extern bool platoKeypress (XKeyEvent *kp, int stat);
-extern void ptermInput(XEvent *event);
-extern void ptermXinit(void);
+
+int main (int argc, char **argv)
+    {
+    u8 c;
+    int data;
+    int port;
+    int i;
+    double interval;
+    int intervalCode;
+    u8 initBuf[2];
+    int readDelay;
+    char opt;
+    
+    for (;;)
+        {
+        opt = getopt (argc, argv, "h");
+        if (opt == (char) (-1))
+            break;
+        switch (opt)
+            {
+        case 'h':
+            hersheyMode = TRUE;
+            break;
+            }
+        }
+    argc -= optind;
+    argv += optind;
+
+    if (argc > 2)
+        {
+        fprintf (stderr, "usage: dd60 [-h] [ interval [ portnum ]]\n");
+        exit (1);
+        }
+    if (argc > 1)
+        {
+        port = atoi (argv[1]);
+        }
+    else
+        {
+        port = DefDd60Port;
+        }
+    if (argc > 0)
+        {
+        interval = strtod (argv[0], NULL);
+        if (interval < 0.01 || interval > 63.0)
+            {
+            fprintf (stderr, "interval value out of range\n");
+            exit (1);
+            }
+        }
+    else
+        {
+        interval = DefaultInterval;
+        }
+
+    /*
+    **  Set the network read timeout appropriately for the
+    **  display interval selected.  Keep it under 100 ms
+    **  for decent keyboard responsiveness.
+    */
+    if (interval < 0.1)
+        {
+        readDelay = interval * 1000;
+        }
+    else
+        {
+        readDelay = 100;
+        }
+
+    /* 
+    **  Convert the interval to an integer value in 20 ms units
+    */
+    intervalCode = interval / 0.02;
+    
+    if (intervalCode > 077)
+        {
+        /* If it doesn't fit, use the "slow" coding */
+        intervalCode = Dd60SlowRate + (intervalCode / 50);
+        }
+    else
+        {
+        intervalCode += Dd60FastRate;
+        }
+    
+    dtInitFet (&fet, NetBufSize);
+    
+    if (dtConnect (&fet.connFd, "localhost", port) < 0)
+        {
+        exit (1);
+        }
+    
+#if defined(_WIN32)
+    /*
+    **  Get our instance
+    */
+    hInstance = GetModuleHandle(NULL);
+#endif
+
+    windowInit ();
+
+    /*
+    **  We're ready to go, so send the rate we want, and a
+    **  "turn on display" code to DtCyber.
+    */
+    initBuf[0] = intervalCode;
+    initBuf[1] = Dd60KeyXon;
+    send (fet.connFd, initBuf, sizeof (initBuf), 0);
+
+    while (windowActive)
+        {
+        i = dtRead (&fet, readDelay);
+        if (i < 0)
+            {
+            /* Connection went away... */
+            windowActive = FALSE;
+            break;
+            }
+        else
+            {
+            /*
+            **  We received some data, so process what we received
+            */
+            for (;;)
+                {
+                data = dtReado (&fet);
+                if (data < 0)
+                    {
+                    break;
+                    }
+                if ((data & 0200) == 0)
+                    {
+                    windowProcessChar (data);
+                    }
+                else
+                    {
+                    switch (data & 0370)
+                        {
+                    case Dd60SetX:
+                    case Dd60SetY:
+                        /*
+                        **  SetX and SetY are two bytes long, so get
+                        **  the next byte and then proceed.  The second
+                        **  byte should be here already, but if not, we
+                        **  will wait for it.
+                        */
+                        for (;;)
+                            {
+                            i = dtReado (&fet);
+                            if (i >= 0)
+                                {
+                                break;
+                                }
+                            dtRead (&fet, -1);
+                            }
+                        i |= ((data & 7) << 8);
+                        if ((data & 0370) == Dd60SetX)
+                            {
+                            windowSetX (i);
+                            }
+                        else
+                            {
+                            windowSetY (i);
+                            }
+                        break;
+                    case Dd60SetTrace:
+                        windowSetMode (Dd60ScreenL | Dd60CharSmall);
+                        windowSetX (TraceX);
+                        windowSetY (0777 - TraceY);
+                        break;
+                    case Dd60SetKbTrue:
+                        windowSetKeyboardTrue ((data & 1) != 0);
+                        break;
+                    case Dd60SetMode:
+                        windowSetMode (data);
+                        break;
+                    case Dd60EndBlock:
+                        windowShowDisplay ();
+                        break;
+                        }
+                    }
+                }
+            }
+        
+        /*
+        **  We've processed all pending data from the system;
+        **  now look for keyboard data.
+        */
+#if !defined(_WIN32)
+        c = windowInput ();
+#else
+        //tbd
+#endif
+        if (c != 0)
+            {
+            if (c & 0200)
+                {
+                /* Keyup code */
+                c = Dd60KeyUp | (c & 077);
+                }
+            else
+                {
+                c = Dd60KeyDown | c;
+                }
+            send (fet.connFd, &c, 1, 0);
+            }
+        }
+    windowClose ();
+	return 0;
+    }
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Private Functions
+**
+**--------------------------------------------------------------------------
+*/
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize the display window.
@@ -168,7 +401,7 @@ extern void ptermXinit(void);
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void windowInit(void)
+static void windowInit(void)
     {
     int rc;
     KeySym modList[2];
@@ -181,32 +414,19 @@ void windowInit(void)
     char fgcolor[40], bgcolor[40];
     
     /*
-    **  Create display list pool.
-    */
-    listGet = listPut = 0;
-    sumListGet = sumListPut = 0;
-    s1 = s2 = 0;
-    
-    /*
     **  Initialize the text display structure and timestamp
     */
-    
-    for (rc = 0; rc < DisplayBufSize; rc++)
+    for (rc = 0; rc < LineBufSize; rc++)
         {
-        dbuf[rc].chars = dchars + rc;
-        dbuf[rc].nchars = 1;
-        dbuf[rc].font = None;
+        XLineBuf[rc].chars = &lineBuf[rc].c;
+        XLineBuf[rc].nchars = 1;
+        XLineBuf[rc].font = None;
         }
-    
-    /*
-    **  Initialize the input list
-    */
-    keyListGet = keyListPut = 0;
     
     /*
     **  Do common X initialization
     */
-    ptermXinit ();
+    dtXinit ();
 
     screen = DefaultScreen(disp);
 
@@ -306,26 +526,12 @@ void windowInit(void)
     XDEBUG(disp, "loaded large font");
     largeFont.boldId = XLoadFont(disp, "-*-seymour-bold-*-*-*-32-*-*-*-*-*-*-*\0");
     XDEBUG(disp, "loaded bold large font");
-    smallOperFont.normalId = XLoadFont(disp, "-*-lucidatypewriter-medium-*-*-*-*-120-*-*-*-*-*-*\0");
-    XDEBUG(disp, "loaded small operator font");
-    smallOperFont.boldId = XLoadFont(disp, "-*-lucidatypewriter-bold-*-*-*-*-120-*-*-*-*-*-*\0");
-    XDEBUG(disp, "loaded bold small operator font");
-    mediumOperFont.normalId = XLoadFont(disp, "-*-lucidatypewriter-medium-*-*-*-*-180-*-*-*-*-*-*\0");
-    XDEBUG(disp, "loaded medium operator font");
-    mediumOperFont.boldId = XLoadFont(disp, "-*-lucidatypewriter-bold-*-*-*-*-180-*-*-*-*-*-*\0");
-    XDEBUG(disp, "loaded bold medium operator font");
     getCharWidths (&smallFont, "\001");
     XDEBUG(disp, "queried small font");
     getCharWidths (&mediumFont, "\001");
     XDEBUG(disp, "queried medium font");
     getCharWidths (&largeFont, "\001");
     XDEBUG(disp, "queried large font");
-    smallOperFont.pad = 1;
-    mediumOperFont.pad = 2;
-    getCharWidths (&smallOperFont, "A");
-    XDEBUG(disp, "queried small operator font");
-    getCharWidths (&mediumOperFont, "A");
-    XDEBUG(disp, "queried medium operator font");
 
     /*
     **  Setup fore- and back-ground colors.
@@ -359,6 +565,7 @@ void windowInit(void)
     **  Create mappings of some ALT-key combinations to strings.
     */
     modList[0] = XK_Meta_L;
+#if 0
     XRebindKeysym(disp, '0', modList, 1, "$0", 2);
     XRebindKeysym(disp, '1', modList, 1, "$1", 2);
     XRebindKeysym(disp, '2', modList, 1, "$2", 2);
@@ -377,15 +584,13 @@ void windowInit(void)
     XRebindKeysym(disp, 'J', modList, 1, "$j", 2);
     XRebindKeysym(disp, 'x', modList, 1, "$x", 2);
     XRebindKeysym(disp, 'X', modList, 1, "$x", 2);
-    XRebindKeysym(disp, 'o', modList, 1, "$o", 2);
-    XRebindKeysym(disp, 'O', modList, 1, "$o", 2);
-    XRebindKeysym(disp, 'p', modList, 1, "$p", 2);
-    XRebindKeysym(disp, 'P', modList, 1, "$p", 2);
+#endif
     XRebindKeysym(disp, 'q', modList, 1, "$q", 2);
     XRebindKeysym(disp, 'Q', modList, 1, "$q", 2);
     XRebindKeysym(disp, 's', modList, 1, "$s", 2);
     XRebindKeysym(disp, 'S', modList, 1, "$s", 2);
-    XRebindKeysym(disp, XK_Scroll_Lock, 0, 0, "$t", 2);
+    XRebindKeysym(disp, 'z', modList, 1, "$z", 2);
+    XRebindKeysym(disp, 'Z', modList, 1, "$z", 2);
     XDEBUG(disp, "rebound keysyms (a pile of them)");
     
     /*
@@ -406,26 +611,6 @@ void windowInit(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Get width of medium operator display font.
-**
-**  Parameters:     None.
-**
-**  Returns:        Width.
-**
-**------------------------------------------------------------------------*/
-int windowGetOperFontWidth(int font)
-    {
-    if (font == FontSmall)
-        {
-        return smallOperFont.width;
-        }
-    else
-        {
-        return mediumOperFont.width;
-        }
-    }
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Set keyboard emulation to "true" or "easy".
 **
 **  Parameters:     TRUE for accurate, FALSE for easy.
@@ -433,8 +618,13 @@ int windowGetOperFontWidth(int font)
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-void windowSetKeyboardTrue (bool flag)
+static void windowSetKeyboardTrue (bool flag)
     {
+    if (keyboardTrue == flag)
+        {
+        return;         /* already set, just exit */
+        }
+    
     if ((keyboardTrue = flag))
         {
         kbPrefs.auto_repeat_mode = AutoRepeatModeOff;
@@ -450,298 +640,6 @@ void windowSetKeyboardTrue (bool flag)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Set font size.
-**                  functions.
-**
-**  Parameters:     Name        Description.
-**                  size        font size in points.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void windowSetFont(u8 font)
-    {
-    currentFont = font;
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Check whether it's time to do output
-**
-**  Parameters:     Name        Description.
-**                  None.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void windowCheckOutput(void)
-    {
-    struct timeval tm;
-    int i;
-    u32 us;
-    
-    gettimeofday (&tm, NULL);
-    us = tm.tv_sec * ULL(1000000) + tm.tv_usec;
-    
-    // Check if it's time for another display update
-    if (us - lastDisplayUs > RefreshInterval)
-        {
-        lastDisplayUs = us;
-        
-        // If a keyboard poll has been done since the last display update,
-        // display up to that point (since it's a cycle point of the
-        // display refresh).  Otherwise (strange code that doesn't do
-        // any polling) display the whole current display list.
-        if (listPutAtGetChar >= 0)
-            {
-            prevPut = listPutAtGetChar;
-            }
-        else
-            {
-            prevPut = listPut;
-            }
-
-        showDisplay ();
-        windowInput();
-
-        // This next line is necessary at least on NetBSD, because
-        // that uses the pth version of pthreads, which is non-preemptive,
-        // so other threads like the socket listener threads in mux6676
-        // and niu don't get a chance to run; we're CPU bound here.
-        //
-        // Don't do it on Linux because Linux has kernel based threads,
-#if !defined(__linux__)
-        sched_yield();
-#endif
-        }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Set X coordinate.
-**
-**  Parameters:     Name        Description.
-**                  x           horizontal coordinate (0 - 0777)
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void windowSetX(u16 x)
-    {
-    currentX = x;
-    sum (x);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Set Y coordinate.
-**
-**  Parameters:     Name        Description.
-**                  y           vertical coordinate (0 - 0777)
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void windowSetY(u16 y)
-    {
-    currentY = 0777 - y;
-    sum (y);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Report state of keyboard buffer.
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        TRUE if input pending, FALSE if not.
-**
-**------------------------------------------------------------------------*/
-bool windowTestKeybuf (void)
-    {
-    return !(keyListGet == keyListPut);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Queue keyboard input.
-**
-**  Parameters:     Name        Description.
-**                  ch          character to be queued.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void windowQueueKey(char ch)
-    {
-    int nextput;
-    
-    nextput = keyListPut + 1;
-    if (nextput == KeyBufSize)
-        nextput = 0;
-    if (nextput != keyListGet)
-        {
-        keybuf[keyListPut] = ch;
-        keyListPut = nextput;
-        }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Queue characters.
-**
-**  Parameters:     Name        Description.
-**                  ch          character to be queued.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void windowQueue(char ch)
-    {
-    DispList *elem;
-    u32 nextput;
-    
-    if (   currentX == -1
-        || currentY == -1
-        || currentFont == -1)
-        {
-        return;
-        }
-
-
-    if (ch != 0)
-        {
-        nextput = listPut + 1;
-        if (nextput == ListSize)
-            {
-            nextput = 0;
-            }
-        if (nextput == listGet)
-            {
-            return;
-            }
-        elem = display + listPut;
-        listPut = nextput;
-        elem->ch = ch;
-        elem->fontSize = currentFont;
-        elem->xPos = currentX;
-        elem->yPos = currentY;
-        }
-    currentX += currentFont;
-
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Indicate that operator mode is finished.
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void windowOperEnd(void)
-    {
-    currentX = currentY = currentFont = listPutAtGetChar = -1;
-    listGet = listPut;
-    if (keyboardTrue && !opActive)
-        {
-        kbPrefs.auto_repeat_mode = AutoRepeatModeOff;
-        XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
-        XSync(disp, 0);
-        }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Poll the keyboard
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Nothing
-**
-**------------------------------------------------------------------------*/
-void windowGetChar(void)
-    {
-    int nextget;
-    struct timeval tm;
-    int us;
-    int nextput, i, j, k;
-    
-    // Remember the x/y sum for this poll cycle
-    nextput = sumListPut + 1;
-    if (nextput == MaxPolls)
-        {
-        nextput = 0;
-        }
-    if (nextput != sumListGet)
-        {
-        s1list[sumListPut] = s1;
-        s2list[sumListPut] = s2;
-        listPutsAtGetChar[sumListPut] = listPutAtGetChar = listPut;
-        i = sumListGet;
-        j = -1;
-        while (i != sumListPut)
-            {
-            if (s1 == s1list[i] && s2 == s2list[i])
-                {
-                j = listPutsAtGetChar[i];
-                k = i;
-                }
-            i++;
-            if (i == MaxPolls)
-                {
-                i = 0;
-                }
-            }
-        s1 = s2 = 0;
-        if (j != -1)
-            {
-            k++;
-            if (k == MaxPolls)
-                {
-                k = 0;
-                }
-            listGet = j;
-            sumListGet = k;
-            }
-        sumListPut = nextput;
-        }
-    
-    windowCheckOutput();
-    
-    if (keyboardSendUp || keyListGet == keyListPut)
-        {
-        if (keyboardTrue && !opActive)
-            {
-            // If we're in true keyboard mode, lack of news means
-            // "no change to last input" rather than "all keys up"!
-            ppKeyIn = 0200;
-            }
-        else
-            {
-            ppKeyIn = 0;
-            }
-        keyboardSendUp = FALSE;
-        return;
-        }
-
-    nextget = keyListGet + 1;
-    if (nextget == KeyBufSize)
-        {
-        nextget = 0;
-        }
-    ppKeyIn = keybuf[keyListGet];
-    keyListGet = nextget;
-    if (!keyboardTrue || opActive)
-        {
-        // We're not doing the precise emulation, instead doing
-        // regular key rollover.  So ignore key up events,
-        // and send a zero code (all up) in between each key code.
-        if (ppKeyIn & 0200)
-            {
-            ppKeyIn = 0;
-            }
-        else
-            {
-            keyboardSendUp = TRUE;
-            }
-        }
-    }
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Close window.
 **
 **  Parameters:     Name        Description.
@@ -749,7 +647,7 @@ void windowGetChar(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void windowClose(void)
+static void windowClose(void)
     {
     XFreeGC (disp, wgc);
     XFreeGC (disp, pgc);
@@ -758,45 +656,23 @@ void windowClose(void)
     XCloseDisplay (disp);
     }
 
-/*
-**--------------------------------------------------------------------------
-**
-**  Private Functions
-**
-**--------------------------------------------------------------------------
-*/
-
 /*--------------------------------------------------------------------------
-**  Purpose:        Flush pending characters to the bitmap.
+**  Purpose:        Flush pending characters in the line buffer to the bitmap.
 **
 **  Parameters:     None.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void INLINE dflush (void)
+static void INLINE windowShowLine (void)
     {
-    if (dcnt != 0)
+    if (lineBufCnt != 0)
         {
         XDrawText(disp, pixmap, pgc, XADJUST (xstart),
-                  YADJUST (ypos), dbuf, dcnt);
-        dcnt = 0;
+                  YADJUST (ypos), XLineBuf, lineBufCnt);
+        lineBufCnt = 0;
+        ypos = -1;
         }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Sum coordinates
-**
-**  Parameters:     x or y
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void sum (u16 x)
-    {
-    // This is a Fletcher checsum of the 16 bit values passed in
-    s1 += x;
-    s2 += s1;
     }
 
 /*--------------------------------------------------------------------------
@@ -804,18 +680,15 @@ static void sum (u16 x)
 **					at a time so we can do bold handling etc.
 **
 **  Parameters:     Name        Description.
-**					c			character
+**					c			character (display code)
 **					x			x position
 **					y			y position
 **					dx			current font size
 **
 **  Returns:        Nothing.
 **
-**  Note that the character codes are ASCII when in the operator
-**  window, and display code when doing normal console display.
-**
 **------------------------------------------------------------------------*/
-static void dput (char c, int x, int y, int dx)
+static void windowStoreChar (char c, int x, int y, int dx)
     {
     int dindx;
     int fontId;
@@ -829,25 +702,25 @@ static void dput (char c, int x, int y, int dx)
     if (y == ypos &&
         x < xpos && x >= xstart &&
             dindx * dx == x - xstart &&
-            dchars[dindx] == c)
+            lineBuf[dindx].c == c)
         {
-        if (++dhits[dindx] >= (dx / 2) - 1)
+        if (++lineBuf[dindx].hits >= (dx / 2) - 1)
             {
-            dbuf[dindx].font = currentFontInfo->boldId;
-            if (dbuf[dindx + 1].font == None)
+            XLineBuf[dindx].font = currentFontInfo->boldId;
+            if (XLineBuf[dindx + 1].font == None)
                 {
-                dbuf[dindx + 1].font = currentFontInfo->normalId;
+                XLineBuf[dindx + 1].font = currentFontInfo->normalId;
                 }
             }
         return;
         }
-    if (dcnt == DisplayBufSize ||
+    if (lineBufCnt == LineBufSize ||
         y != ypos ||
         x < xpos || 
-        dindx >= DisplayBufSize ||
+        dindx >= LineBufSize ||
         dindx * dx != x - xstart)
         {
-        dflush ();
+        windowShowLine ();
         xpos = xstart = x;
         ypos = y;
         }
@@ -858,32 +731,25 @@ static void dput (char c, int x, int y, int dx)
     fontId = currentFontInfo->normalId;
     for ( ; xpos < x; xpos += dx)
         {
-        dbuf[dcnt].delta = currentFontInfo->pad;
-        dbuf[dcnt].font = fontId;
+        XLineBuf[lineBufCnt].delta = currentFontInfo->pad;
+        XLineBuf[lineBufCnt].font = fontId;
         fontId = None;
-        dhits[dcnt] = 1;
-        if (opActive)
-            {
-            dchars[dcnt++] = ' ';
-            }
-        else
-            {
-            dchars[dcnt++] = 055;
-            }
+        lineBuf[lineBufCnt].hits = 1;
+        lineBuf[lineBufCnt++].c = 055;
         }
     
-    dbuf[dcnt].delta = currentFontInfo->pad;
-    if (dcnt == 0 ||
-        dbuf[dcnt - 1].font == currentFontInfo->boldId)
+    XLineBuf[lineBufCnt].delta = currentFontInfo->pad;
+    if (lineBufCnt == 0 ||
+        XLineBuf[lineBufCnt - 1].font == currentFontInfo->boldId)
         {
-        dbuf[dcnt].font = currentFontInfo->normalId;
+        XLineBuf[lineBufCnt].font = currentFontInfo->normalId;
         }
     else
         {
-        dbuf[dcnt].font = None;
+        XLineBuf[lineBufCnt].font = None;
         }
-    dhits[dcnt] = 1;
-    dchars[dcnt++] = c;
+    lineBuf[lineBufCnt].hits = 1;
+    lineBuf[lineBufCnt++].c = c;
     xpos += dx;
     }
 
@@ -903,10 +769,10 @@ static void getCharWidths (FontInfo *f, char *s)
 **
 **  Parameters:     Name        Description.
 **
-**  Returns:        Nothing.
+**  Returns:        Key received, or 0.
 **
 **------------------------------------------------------------------------*/
-static void windowInput(void)
+static int windowInput(void)
     {
     KeySym key;
     XEvent event;
@@ -923,11 +789,6 @@ static void windowInput(void)
         {
         XNextEvent(disp, &event);
 
-        if (((XAnyEvent *) &event)->window == ptermWindow)
-            {
-            ptermInput (&event);
-            continue;
-            }
         switch (event.type)
             {
         case MappingNotify:
@@ -939,39 +800,26 @@ static void windowInput(void)
             // keyboard mode.  The code is mostly common with 
             // keypresses.
         case KeyPress:
-            if (platoActive && !opActive &&
-                event.type == KeyPress &&
-                platoKeypress ((XKeyEvent *)&event, 0))
-                {
-                // If it's a valid Plato keypress, we're done now.
-                return;
-                }
-            else
-                {
-                len = XLookupString ((XKeyEvent *)&event, text, 10, &key, 0);
-                if (platoActive && !opActive && len == 1)
-                    {
-                    // Unrecognized non-Alt keypresses in Plato mode are ignored.
-                    break;
-                    }
-                c = text[0];
-                }
+            len = XLookupString ((XKeyEvent *)&event, text, 10, &key, 0);
+            c = text[0];
             if (len == 1)
                 {
                 if (c > 127)
                     {
                     break;
                     }
+                c = asciiToConsole[c];
                 if (event.type == KeyRelease)
                     {
                     c |= 0200;
                     }
-                windowQueueKey (c);
+                return c;
                 }
             else if (event.type == KeyPress && len == 2 && text[0] == '$')
                 {
                 switch (text[1])
                     {
+#if 0
                 case '0':
                 case '1':
                 case '2':
@@ -1024,224 +872,37 @@ static void windowInput(void)
                         traceStop ();
                         }
                     break;
-
-                case 'o':
-                    opActive = TRUE;
-                    currentX = currentY = currentFont = listPutAtGetChar = -1;
-                    listGet = listPut;
-                    kbPrefs.auto_repeat_mode = AutoRepeatModeDefault;
-                    XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
-                    break;
-                case 'p':
-                    if (niuPresent ())
-                    {
-                        platoActive = !platoActive;
-                    }
-                    break;
+#endif
                 case 'q':
-                    displayOff = FALSE;
-                    break;
+                    return Dd60KeyXon;
                 case 's':
-                    displayOff = TRUE;
-                    break;
-                case 't':
-                    // this is useful in Plato mode when Alt-S and Alt-Q
-                    // have other meanings.
-                    displayOff = !displayOff;
-                    break;
+                    return Dd60KeyXoff;
+                case 'z':
+                    windowActive = FALSE;
+                    return Dd60KeyXoff;
                     }
                 }
             break;
 
             }
         }
+    return 0;
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Display current list.
+**  Purpose:        Show generated display data on the window.
 **
 **  Parameters:     None.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void showDisplay (void)
+static void windowShowDisplay (void)
     {
-    static int refreshCount = 0;
-    char str[2] = " ";
-    DispList *curr;
-    DispList *end;
-    u8 oldFont = 0;
-    int dotx, doty, doti;
-    char buf[160];
-    
-    currentFontInfo = &smallFont;
-    oldFont = FontSmall;
-
-    listPutAtGetChar = -1;
-    sumListGet = sumListPut;
-    
-    if (displayOff && !opActive)
-        {
-        listGet = prevPut;
-        return;
-        }
-
-    if (debugDisplay)
-        {
-        /*
-        **  Display P registers of PPUs and CPU and current trace mask.
-        */
-        XSetFont(disp, pgc, smallOperFont.normalId);
-        sprintf(buf, "Refresh: %-10d  PP P-reg: %04o %04o %04o %04o %04o %04o %04o %04o %04o %04o   CPU P-reg: %06o",
-                refreshCount++,
-                ppu[0].regP, ppu[1].regP, ppu[2].regP, ppu[3].regP, ppu[4].regP,
-                ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
-                cpu[0].regP); 
-
-        if (cpuCount > 1)
-            {
-            sprintf(buf + strlen(buf), " %06o", cpu[1].regP);
-            }
-            
-        sprintf(buf + strlen(buf),
-                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
-                (traceMask >> 0) & 1 ? '0' : '_',
-                (traceMask >> 1) & 1 ? '1' : '_',
-                (traceMask >> 2) & 1 ? '2' : '_',
-                (traceMask >> 3) & 1 ? '3' : '_',
-                (traceMask >> 4) & 1 ? '4' : '_',
-                (traceMask >> 5) & 1 ? '5' : '_',
-                (traceMask >> 6) & 1 ? '6' : '_',
-                (traceMask >> 7) & 1 ? '7' : '_',
-                (traceMask >> 8) & 1 ? '8' : '_',
-                (traceMask >> 9) & 1 ? '9' : '_',
-                (traceMask & TraceCpu0) ? 'c' : '_',
-                (traceMask & TraceCpu1) ? 'C' : '_',
-                (traceMask & TraceEcs) ? 'E' : '_',
-                (traceMask & TraceXj) ? 'J' : '_',
-                (chTraceMask >> 0) & 1 ? '0' : '_',
-                (chTraceMask >> 1) & 1 ? '1' : '_',
-                (chTraceMask >> 2) & 1 ? '2' : '_',
-                (chTraceMask >> 3) & 1 ? '3' : '_',
-                (chTraceMask >> 4) & 1 ? '4' : '_',
-                (chTraceMask >> 5) & 1 ? '5' : '_',
-                (chTraceMask >> 6) & 1 ? '6' : '_',
-                (chTraceMask >> 7) & 1 ? '7' : '_',
-                (chTraceMask >> 8) & 1 ? '8' : '_',
-                (chTraceMask >> 9) & 1 ? '9' : '_',
-                (chTraceMask >> 10) & 1 ? 'A' : '_',
-                (chTraceMask >> 11) & 1 ? 'B' : '_',
-                (platoActive) ? 'P' : ' ');
-
-        XDrawString(disp, pixmap, pgc, 10, 10, buf, strlen(buf));
-        }
-
-    XSetFont(disp, pgc, currentFontInfo->normalId);
-
     /*
-    **  Draw display list in pixmap.
+    **  Output any pending data from the line buffer
     */
-    end = display + prevPut;
-    curr = display + listGet;
-        
-    ypos = ~curr->yPos;     // Make sure this looks like a fresh line
-    doty = 07777;
-    
-    for (;;)
-    {
-        /*
-        **  Check for wrap and done
-        */
-        if (curr == display + ListSize)
-            curr = display;
-        if (curr == end)
-            break;
-
-        /*
-        **  Setup new font if necessary.
-        */
-        if (oldFont != curr->fontSize)
-        {
-            dflush ();
-            oldFont = curr->fontSize;
-
-            switch (oldFont)
-            {
-            case FontSmall:
-                if (opActive)
-                    {
-                    currentFontInfo = &smallOperFont;
-                    }
-                else
-                    {
-                    currentFontInfo = &smallFont;
-                    }
-                XSetFont(disp, pgc, currentFontInfo->normalId);
-                break;
-
-            case FontMedium:
-                if (opActive)
-                    {
-                    currentFontInfo = &mediumOperFont;
-                    }
-                else
-                    {
-                    currentFontInfo = &mediumFont;
-                    }
-                XSetFont(disp, pgc, currentFontInfo->normalId);
-                break;
-    
-            case FontLarge:
-                currentFontInfo = &largeFont;
-                XSetFont(disp, pgc, currentFontInfo->normalId);
-                break;
-            }
-        }
-
-        /*
-        **  Draw dot or character.
-        */
-        if (curr->fontSize == FontDot)
-        {
-            dflush ();
-            if (curr->xPos == dotx && curr->yPos == doty &&
-                doti < sizeof (dotdx) - 1)
-                {
-                doti++;
-                }
-            else
-                {
-                dotx = curr->xPos;
-                doty = curr->yPos;
-                doti = 0;
-                }
-            XDrawPoint(disp, pixmap, pgc, 
-                       XADJUST (curr->xPos + dotdx[doti]),
-                       YADJUST (curr->yPos + dotdy[doti]));
-        }
-        else
-        {
-            str[0] = curr->ch;
-#if CcHersheyFont == 0
-            dput (curr->ch, curr->xPos, curr->yPos, currentFontInfo->width);
-#else
-            if (opActive)
-                {
-                dput (curr->ch, curr->xPos, curr->yPos, currentFontInfo->width);
-                }
-            else
-                {
-                windowTextPlot(XADJUST (curr->xPos), YADJUST (curr->yPos),
-                               curr->ch, curr->fontSize);
-                }
-#endif
-        }
-        curr++;
-    }
-
-    dflush ();
-    listGet = end - display;
+    windowShowLine ();
 
     /*
     **  Update display from pixmap.
@@ -1256,7 +917,6 @@ static void showDisplay (void)
     XSetForeground (disp, pgc, pfg);
     }
 
-#if CcHersheyFont == 1
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Define Hershey glyphs.
@@ -1264,7 +924,7 @@ static void showDisplay (void)
 **------------------------------------------------------------------------*/
 const char * const consoleHersheyGlyphs[64] =
     {
-#if 1
+#if 0
     /* 00 = ':' */ "PURPRQSQSPRP RRURVSVSURU",
     /* 01 = 'A' */ "MWRMNV RRMVV RPSTS",
     /* 02 = 'B' */ "MWOMOV ROMSMUNUPSQ ROQSQURUUSVOV",
@@ -1403,7 +1063,10 @@ const char * const consoleHersheyGlyphs[64] =
 **  Purpose:        Plot a character using the Hershey glyphs.
 **
 **  Parameters:     Name        Description.
-**                  hWnd        window handle.
+**					xPos		x position
+**					yPos		y position
+**					ch			character (display code)
+**					fontSize	current font size
 **
 **  Returns:        Nothing.
 **
@@ -1455,6 +1118,158 @@ static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize)
         }
     }
 
-#endif
+/*--------------------------------------------------------------------------
+**  Purpose:        Process a Set X command
+**
+**  Parameters:     Name        Description.
+**                  x           New x position
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void windowSetX (int x)
+    {
+    currentX = x;
+    }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Process a Set Y command
+**
+**  Parameters:     Name        Description.
+**                  y           New y position
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void windowSetY (int y)
+    {
+    currentY = 0777 - y;
+    if (currentFont == FontDot)
+        {
+        windowShowLine ();
+        if (currentX == lastDotX && currentY == lastDotY &&
+            dotRepeats < sizeof (dotdx) - 1)
+            {
+            dotRepeats++;
+            }
+        else
+            {
+            lastDotX = currentX;
+            lastDotY = currentY;
+            dotRepeats = 0;
+            }
+        XDrawPoint(disp, pixmap, pgc, 
+                   XADJUST (currentX + dotdx[dotRepeats]),
+                   YADJUST (currentY + dotdy[dotRepeats]));
+        }
+    
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Process a Set X command
+**
+**  Parameters:     Name        Description.
+**                  mode        New mode position
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void windowSetMode (int mode)
+    {
+    int newFont, newOffset;
+    
+    /*
+    **  Handle left screen/right screen selection
+    */
+    if (mode & Dd60ScreenR)
+        {
+        newOffset = OffRightScreen;
+        }
+    else
+        {
+        newOffset = OffLeftScreen;
+        }
+
+    if (newOffset != currentXOffset)
+        {
+        /*
+        **  Send out any buffered line of text.
+        */
+        windowShowLine ();
+        currentXOffset = newOffset;
+        }
+        
+    /*
+    **  Setup new font if necessary.
+    */
+    switch (mode & 3)
+        {
+    case Dd60CharSmall:
+        newFont = FontSmall;
+        break;
+    case Dd60CharMedium:
+        newFont = FontMedium;
+        break;
+    case Dd60CharLarge:
+        newFont = FontLarge;
+        break;
+    case Dd60Dot:
+        newFont = FontDot;
+        break;
+        }
+
+        if (currentFont != newFont)
+        {
+            windowShowLine ();
+            currentFont = newFont;
+            switch (newFont)
+            {
+            case FontSmall:
+                currentFontInfo = &smallFont;
+                XSetFont(disp, pgc, currentFontInfo->normalId);
+                break;
+
+            case FontMedium:
+                currentFontInfo = &mediumFont;
+                XSetFont(disp, pgc, currentFontInfo->normalId);
+                break;
+    
+            case FontLarge:
+                currentFontInfo = &largeFont;
+                XSetFont(disp, pgc, currentFontInfo->normalId);
+                break;
+            }
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Process a byte of character data
+**
+**  Parameters:     Name        Description.
+**                  ch          character (display code)
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void windowProcessChar (int ch)
+    {
+    /*
+    **  If in dot mode, or no set mode received yet, just ignore the char
+    */
+    if (currentFont <= 0)
+        {
+        return;
+        }
+    if (hersheyMode)
+        {
+        windowTextPlot(XADJUST (currentX), YADJUST (currentY),
+                       ch, currentFont);
+        }
+    else
+        {
+        windowStoreChar (ch, currentX, currentY,
+                         currentFont);
+        }
+    currentX += currentFont;
+    }
 /*---------------------------  End Of File  ------------------------------*/

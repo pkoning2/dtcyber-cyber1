@@ -241,6 +241,7 @@ typedef struct tapeBuf
     bool        newTape;
     u8          unitMode;
     u32         blockNo;
+    void        *statusBuf;
     PpWord      recordLength;
     PpWord      lastLength;
     PpWord      deviceStatus;
@@ -340,6 +341,11 @@ void mt669Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 
     tp = dp->context[unitNo];
 
+    /*
+    **  Allocate the operator status buffer
+    */
+    tp->statusBuf = opInitStatus ("MT669", channelNo, unitNo);
+
     if (deviceName != NULL)
         {
         fcb = fopen(deviceName, "rb");
@@ -349,6 +355,7 @@ void mt669Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
             exit(1);
             }
 
+        opSetStatus (tp->statusBuf, deviceName);
         dp->fcb[unitNo] = fcb;
         tp->deviceStatus = St669NineTrack | St669LoadPoint| St669Ready;
         tp->initialStatus =  St669NineTrack | St669Ready;
@@ -466,6 +473,9 @@ static void mt669Load(DevSlot *dp, int unitNo, char *fn)
     tp = (TapeBuf *)dp->context[unitNo];
     tp->unitMode = unitMode;
     tp->newTape = TRUE;
+    sprintf (msgBuf, "%s%s",
+             fn, ((unitMode == 'w') ? " (W)" : ""));
+    opSetStatus (tp->statusBuf, msgBuf);
     if (endPos != 0)
         {
         sprintf (msgBuf, "$MT668 loaded, warning, file is not empty.");
@@ -525,6 +535,7 @@ static FcStatus mt669Func(PpWord funcCode)
         tp->deviceStatus = tp->initialStatus;
         fclose(activeDevice->fcb[unitNo]);
         activeDevice->fcb[unitNo] = NULL;
+        opSetStatus (tp->statusBuf, NULL);
         return(FcProcessed);
 
     case Fc669SetReadClipNorm:

@@ -43,20 +43,27 @@
 **  Private Typedef and Structure Definitions
 **  -----------------------------------------
 */
+typedef struct 
+    {
+    const char  *name;
+    long        *varp;
+    long        defval;
+    } intParam;
 
+    
 /*
 **  ---------------------------
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void initCyber(char *config);
+static void initCyber(const char *config);
 static void initEquipment(void);
 static void initDeadstart(void);
-static bool initOpenSection(char *name);
+static bool initOpenSection(const char *name);
 static char *initGetNextLine(void);
-static bool initGetOctal(char *entry, int defValue, long *value);
-static bool initGetInteger(char *entry, int defValue, long *value);
-static bool initGetString(char *entry, char *defString, char *str, int strLen);
+static bool initGetOctal(const char *entry, int defValue, long *value);
+static bool initGetInteger(const char *entry, int defValue, long *value);
+static bool initGetString(const char *entry, char *defString, char *str, int strLen);
 
 /*
 **  ----------------
@@ -67,6 +74,8 @@ bool bigEndian;
 extern u16 deadstartPanel[];
 extern u8 deadstartCount;
 long cpuRatio;
+char autoDateString[32];
+char autoString[32];
 
 /*
 **  -----------------
@@ -85,6 +94,24 @@ static union
     u8 bytes[4];
     } endianCheck;
 
+/* Table for a bunch of simple integer parameters */
+const intParam intParamList[] = 
+{
+    { "telnetport", &telnetPort, DefTelnetPort },
+    { "telnetconns", &telnetConns, 4 },
+    { "platoport", &platoPort, DefNiuPort },
+    { "platoconns", &platoConns, 4 },
+    { "platolocalport", &platoLocalPort, DefNiuPort + 1 },
+    { "platolocalconns", &platoLocalConns, 2 },
+    { "operport", &opPort, DefOpPort },
+    { "operconns", &opConns, 4 },
+    { "consoleport", &dd60Port, DefDd60Port },
+    { "consoleconns", &dd60Conns, 4 },
+    { "doelzport", &doelzPort, DefDoelzPort },
+    { "doelzconns", &doelzConns, 4 },
+    { NULL, NULL, 0 }                   /* End marker */
+};
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -102,7 +129,7 @@ static union
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void initStartup(char *config)
+void initStartup(const char *config)
     {
     /*
     **  Open startup file.
@@ -170,7 +197,7 @@ u32 initConvertEndian(u32 value)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void initCyber(char *config)
+static void initCyber(const char *config)
     {
     char model[40];
     char cmFile[256];
@@ -182,8 +209,7 @@ static void initCyber(char *config)
     long clockMHz;
     long pps;
     long mask;
-    long port;
-    long conns;
+    const intParam *paramp;
 
     if (!initOpenSection(config))
         {
@@ -306,40 +332,22 @@ static void initCyber(char *config)
         }
 
     /*
-    **  Get optional Telnet port number. If not specified, use default value.
+    **  Get a set of integer parameters
     */
-    initGetInteger("telnetport", 5000, &port);
-    telnetPort = (u16)port;
-
+    paramp = intParamList;
+    while (paramp->name != NULL)
+        {
+        initGetInteger (paramp->name, paramp->defval, paramp->varp);
+        paramp++;
+        }
     /*
-    **  Get optional max Telnet connections. If not specified, use default value.
+    **  Get auto date string (prompt used to trigger auto-entry of
+    **  the date and time) and auto string (initial text entered
+    **  into the console input buffer at deadstart).
     */
-    initGetInteger("telnetconns", 4, &conns);
-    telnetConns = (u16)conns;
-
-    /*
-    **  Get optional Plato port number. If not specified, use default value.
-    */
-    initGetInteger("platoport", 5004, &port);
-    platoPort = (u16)port;
-
-    /*
-    **  Get optional max Plato connections. If not specified, use default value.
-    */
-    initGetInteger("platoconns", 4, &conns);
-    platoConns = (u16)conns;
-
-    /*
-    **  Get optional Doelz port number. If not specified, use default value.
-    */
-    initGetInteger("doelzport", 5005, &port);
-    doelzPort = (u16)port;
-
-    /*
-    **  Get optional max Doelz connections. If not specified, use default value.
-    */
-    initGetInteger("doelzconns", 4, &conns);
-    doelzConns = (u16)conns;
+    (void)initGetString("autoDate", "", 
+                        autoDateString, sizeof(autoDateString));
+    (void)initGetString("autoEntry", "", autoString, sizeof(autoString));
     }
 
 /*--------------------------------------------------------------------------
@@ -513,7 +521,7 @@ static void initDeadstart(void)
 **  Returns:        TRUE if section was found, FALSE otherwise.
 **
 **------------------------------------------------------------------------*/
-static bool initOpenSection(char *name)
+static bool initOpenSection(const char *name)
     {
     char lineBuffer[MaxLine];
     char section[40];
@@ -621,7 +629,7 @@ static char *initGetNextLine(void)
 **  Returns:        TRUE if entry was found, FALSE otherwise.
 **
 **------------------------------------------------------------------------*/
-static bool initGetOctal(char *entry, int defValue, long *value)
+static bool initGetOctal(const char *entry, int defValue, long *value)
     {
     char buffer[40];
 
@@ -655,7 +663,7 @@ static bool initGetOctal(char *entry, int defValue, long *value)
 **  Returns:        TRUE if entry was found, FALSE otherwise.
 **
 **------------------------------------------------------------------------*/
-static bool initGetInteger(char *entry, int defValue, long *value)
+static bool initGetInteger(const char *entry, int defValue, long *value)
     {
     char buffer[40];
 
@@ -690,7 +698,7 @@ static bool initGetInteger(char *entry, int defValue, long *value)
 **  Returns:        TRUE if entry was found, FALSE otherwise.
 **
 **------------------------------------------------------------------------*/
-static bool initGetString(char *entry, char *defString, char *str, int strLen)
+static bool initGetString(const char *entry, char *defString, char *str, int strLen)
     {
     u8 entryLength = strlen(entry);
     char *line;

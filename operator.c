@@ -27,19 +27,21 @@
 #include "const.h"
 #include "types.h"
 #include "proto.h"
-#ifdef CPU_THREADS
-#include <pthread.h>
-#endif
+#include "operator.h"
 
 /*
 **  -----------------
 **  Private Constants
 **  -----------------
 */
-#define OpCmdSize 64
-#define TwinkleRate 2
-#define CmdX 0020
-#define CmdY 0060
+#define OpCmdSize       64
+#define NetBufSize      256
+#define StatusLineMax   32
+#define StatusSys       0       /* Line number of operator system status */
+#define StatusFirstDev  2       /* Line number of first device status line */
+#define StatusMsgPfx    15      /* Number of prefix bytes in status buffer */
+#define StatusMsgMax    50      /* Max length of status message */
+
 /*
 **  -----------------------
 **  Private Macro Functions
@@ -63,19 +65,28 @@ typedef struct opMsg
     u16     x;
     u16     y;
     u8      fontSize;
-    char    *text;
+    u8      bold;
+    const char *text;
     } OpMsg;
+
+typedef struct
+    {
+    int     line;
+    int     len;
+    char    buf[StatusMsgPfx + StatusMsgMax + 1];
+    } StatusData;
 
 /*
 **  ---------------------------
 **  Private Function Prototypes
 **  ---------------------------
 */
-char *opGetString(char *inStr, char *outStr, int outSize);
-static void opSendString (OpMsg *m);
-static int opScanCmd (void);
+static int opRequest(NetPort *np);
+static ThreadFunRet opThread (void *param);
+static void opSetup(NetPort *np, int index);
+static void opSendStatus (StatusData *sd);
+static void opUpdateSysStatus (void);
 
-static void opCmdEnd(char *cmdParams);
 static void opCmdShutdown(char *cmdParams);
 static void opCmdLoad(char *cmdParams);
 static void opCmdUnload(char *cmdParams);
@@ -85,6 +96,9 @@ static void opDumpEcs (char *cmdParams);
 static void opDumpPpu (char *cmdParams);
 static void opDisPpu (char *cmdParams);
 static void opKeyboard (char *cmdParams);
+static void opDebug(char *cmdParams);
+static void opLock(char *cmdParams);
+static void opUnlock(char *cmdParams);
 #if CcDebug == 1
 static void opTracePpu(char *cmdParams);
 static void opTraceCh(char *cmdParams);
@@ -99,27 +113,26 @@ static void opUntraceCpu(char *cmdParams);
 static void opUntraceXj(char *cmdParams);
 static void opUntraceEcs(char *cmdParams);
 static void opResetTrace(char *cmdParams);
-static void opDebugDisplay(char *cmdParams);
 #endif
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
-bool opActive = FALSE;
+long opPort;
+long opConns;
 bool debugDisplay = FALSE;
+
 /*
 **  -----------------
 **  Private Variables
 **  -----------------
 */
-static char cmdBuf[OpCmdSize];
-#ifdef CPU_THREADS
-pthread_cond_t oper_cond = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t oper_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
+static char tlvBuf[OpCmdSize];
+#define cmdBuf (tlvBuf + 2)
+static NetPortSet opPorts;
 
-static char *syntax[] = 
+static const char *syntax[] = 
     /*
     ** Simple command decode table with DSD style completion.
     ** 7 means one or more octal digits.
@@ -128,7 +141,7 @@ static char *syntax[] =
     ** command is complete if matched to end of some entry.
     */
     {
-    "END.\n",
+    "END.\n",               /* This is handled locally at the other end */
     "SHUTDOWN.\n",
     "LOAD,7,7,x,W.\n",
     "LOAD,7,7,x\n",
@@ -142,7 +155,11 @@ static char *syntax[] =
     "SET,KEYBOARD=EASY.\n",
     "DEBUG,DISPLAY=ON.\n",
     "DEBUG,DISPLAY=OFF.\n",
+    "LOCK.\n",
+    "UNLOCK.\n",
 #if CcDebug == 1
+    "DEBUG,ON.\n",
+    "DEBUG,OFF.\n",
     "TRACE,PPU7.\n",
     "TRACE,CHANNEL7.\n",
     "TRACE,CPU7.\n",
@@ -171,7 +188,6 @@ static OpCmd decode[] =
     ** possible matching string.  The first match is used.
     */
     {
-    "END.",                     opCmdEnd,
     "SHUTDOWN.",                opCmdShutdown,
     "LOAD,",                    opCmdLoad,
     "UNLOAD,",                  opCmdUnload,
@@ -181,7 +197,9 @@ static OpCmd decode[] =
     "DUMP,PPU",                 opDumpPpu,
     "DISASSEMBLE,PPU",          opDisPpu,
     "SET,KEYBOARD=",            opKeyboard,
-    "DEBUG,DISPLAY=",           opDebugDisplay,
+    "DEBUG,",                   opDebug,
+    "LOCK.",                    opLock,
+    "UNLOCK.",                  opUnlock,
 #if CcDebug == 1
     "TRACE,PPU",                opTracePpu,
     "TRACE,CHANNEL",            opTraceCh,
@@ -202,42 +220,49 @@ static OpCmd decode[] =
 
 // Note: Y values of zero are filled in by opInit
 static OpMsg msg[] =
-    { { 0760 - (sizeof(DtCyberVersion) * 010), 0760, 0010, DtCyberVersion },
-      { 0020, 0700, 0010, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
-      { 0020,    0, 0010, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
-      { 0020,    0, 0010, "UNLOAD,CH,EQ.      Unload ch/eq." },
-      { 0020,    0, 0010, "DUMP,CPU.          Dump state of CPUs." },
-      { 0020,    0, 0010, "DUMP,CM,X,Y.       Dump CM from X to Y." },
-      { 0020,    0, 0010, "DUMP,ECS,X,Y.      Dump ECS from X to Y." },
-      { 0020,    0, 0010, "DUMP,PPUNN.        Dump specified PPU state." },
-      { 0020,    0, 0010, "DISASSEMBLE,PPUNN. Disassemble specified PPU." },
-      { 0020,    0, 0010, "SET,KEYBOARD=TRUE. Emulate console keyboard accurately." },
-      { 0020,    0, 0010, "SET,KEYBOARD=EASY. Make console keyboard easy (rollover)." },
-      { 0020,    0, 0010, "DEBUG,DISPLAY=[ON,OFF]. Turn CP/PP debug display on/off." },
+    { { 0760 - (sizeof(DtCyberVersion) * 010),
+        0760, 0010, 0, DtCyberVersion },
+      { 0120, 0730, 0020, 0, "OPERATOR INTERFACE" },
+      { 0020, 0700, 0010, 0, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
+      { 0020,    0, 0010, 0, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
+      { 0020,    0, 0010, 0, "LOCK.              Disable SHUTDOWN." },
+      { 0020,    0, 0010, 0, "UNLOCK.            Enable SHUTDOWN." },
+      { 0020,    0, 0010, 0, "UNLOAD,CH,EQ.      Unload ch/eq." },
+      { 0020,    0, 0010, 0, "DUMP,CPU.          Dump state of CPUs." },
+      { 0020,    0, 0010, 0, "DUMP,CM,X,Y.       Dump CM from X to Y." },
+      { 0020,    0, 0010, 0, "DUMP,ECS,X,Y.      Dump ECS from X to Y." },
+      { 0020,    0, 0010, 0, "DUMP,PPUNN.        Dump specified PPU state." },
+      { 0020,    0, 0010, 0, "DISASSEMBLE,PPUNN. Disassemble specified PPU." },
+      { 0020,    0, 0010, 0, "SET,KEYBOARD=TRUE. Emulate console keyboard accurately." },
+      { 0020,    0, 0010, 0, "SET,KEYBOARD=EASY. Make console keyboard easy (rollover)." },
+      { 0020,    0, 0010, 0, "DEBUG,DISPLAY=[ON,OFF]. Turn CP/PP debug display on/off." },
 #if CcDebug == 1
-      { 0020,    0, 0010, "TRACE,CPUN.        Trace specified CPU activity." },
-      { 0020,    0, 0010, "TRACE,CPNN.        Trace CPU activity for CP NN." },
-      { 0020,    0, 0010, "TRACE,XJ.          Trace exchange jumps." },
-      { 0020,    0, 0010, "TRACE,PPUNN.       Trace specified PPU activity." },
-      { 0020,    0, 0010, "TRACE,CHANNELNN.   Trace specified channel activity." },
-      { 0020,    0, 0010, "TRACE,ECS.         Trace ECS accesses." },
-      { 0020,    0, 0010, "UNTRACE,XXX        Stop trace of XXX." },
-      { 0020,    0, 0010, "UNTRACE,.          Stop all tracing." },
-      { 0020,    0, 0010, "UNTRACE,RESET.     Stop tracing, discard trace data." },
+      { 0020,    0, 0010, 0, "DEBUG,[ON,OFF].    Enabled/disable debug commands." },
+      { 0020,    0, 0010, 0, "TRACE,CPUN.        Trace specified CPU activity." },
+      { 0020,    0, 0010, 0, "TRACE,CPNN.        Trace CPU activity for CP NN." },
+      { 0020,    0, 0010, 0, "TRACE,XJ.          Trace exchange jumps." },
+      { 0020,    0, 0010, 0, "TRACE,PPUNN.       Trace specified PPU activity." },
+      { 0020,    0, 0010, 0, "TRACE,CHANNELNN.   Trace specified channel activity." },
+      { 0020,    0, 0010, 0, "TRACE,ECS.         Trace ECS accesses." },
+      { 0020,    0, 0010, 0, "UNTRACE,XXX        Stop trace of XXX." },
+      { 0020,    0, 0010, 0, "UNTRACE,.          Stop all tracing." },
+      { 0020,    0, 0010, 0, "UNTRACE,RESET.     Stop tracing, discard trace data." },
 #endif
-      { 0020,    0, 0010, "" },      // blank line to separate these last two from the above
-      { 0020,    0, 0010, "END.               End operator mode." },
-      { 0020,    0, 0010, "SHUTDOWN.          Close DtCyber." },
-      { CmdX, CmdY, 0020, cmdBuf },  // echo, MUST be last
-      { 0, 0, 0, NULL },
+      { 0020,    0, 0010, 0, "" },      // blank line to separate these last two from the above
+      { 0020,    0, 0010, 0, "END.               Exit operator mode." },
+      { 0020,    0, 0010, 0, "SHUTDOWN.          Close DtCyber." },
+      { 0, 0, 0, 0, NULL },
     };
-static OpMsg errmsg = { 0020, 0014, 0020, NULL };   // pointer filled in
-static OpMsg title = { 0120, 0730, 0020, "OPERATOR INTERFACE" };
 static bool msgBold;
 static bool complete;
 static char msgBuf[80];
-static int smallFontWidth;
-static int mediumFontWidth;
+static const char *msgPtr;
+static int statusLineCnt = StatusFirstDev;
+static StatusData *statusLines[StatusLineMax];
+static StatusData statusSys;
+static int opActiveConns;
+static bool opLocked = TRUE;
+static bool opDebugging = FALSE;
 
 /*
 **--------------------------------------------------------------------------
@@ -260,181 +285,33 @@ void opInit(void)
     int y;
     OpMsg *m;
 
+    /*
+    **  Fill in the coordinates for the message data. 
+    */
     m = msg;
     while (m->text != NULL)
         {
         if (m->y == 0)
             {
-            m->y = y - m->fontSize * 2;
+            y -= m->fontSize * 2 - 2;
+            m->y = y;
             }
-        y = m->y;
+        else
+            {
+            y = m->y;
+            }
         m++;
         }
+    statusLines[StatusSys] = &statusSys;
+    
+    opPorts.portNum = opPort;
+    opPorts.maxPorts = opConns;
+    opPorts.localOnly = TRUE;
+    opPorts.callBack = opSetup;
+    dtCreateListener (&opPorts, NetBufSize);
+    dtCreateThread (opThread, 0);
     }
 
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Operator interface activation.
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void opRequest(void)
-    {
-    OpCmd *cp;
-    char nextKey = 0;
-    int cmdLen;
-    OpMsg *m;
-    int i, j;
-    int twRate = 0;     // number of repaints between twinkles
-    int twPos = 0;      // Twinkle position mod 4
-    int BoldMediumRepaints;
-
-    cmdBuf[0] = '\0';
-    cmdLen = 0;
-    smallFontWidth = windowGetOperFontWidth(FontSmall);
-    mediumFontWidth = windowGetOperFontWidth(FontMedium);
-    BoldMediumRepaints = mediumFontWidth / 2;
-
-    while (opActive)
-        {
-        for (i = 0; i < BoldMediumRepaints; i++)
-            {
-            opSendString (&title);
-            }
-        for (m = msg; m->text; m++)
-            {
-            opSendString (m);
-            }
-        // Do this right after displaying all the message lines,
-        // because the command line echo buffer is the last line
-        // displayed so now is the time to highlight it.
-        if (complete)
-            {
-            windowSetY (CmdY);
-            windowSetFont (FontMedium);
-            for (i = 0; i < BoldMediumRepaints - 1; i++)
-                {
-                for (j = twPos; j < cmdLen; j += 4)
-                    {
-                    windowSetX (CmdX + (mediumFontWidth * j));
-                    windowQueue (cmdBuf[j]);
-                    }
-                }
-            }
-        if (errmsg.text != NULL)
-            {
-            for (i = 0; i < ((msgBold) ? BoldMediumRepaints : 1); i++)
-                {
-                opSendString (&errmsg);
-                }
-            }
-        if (nextKey)
-            {
-            ppKeyIn = nextKey;
-            nextKey = 0;
-            windowCheckOutput();
-            }
-        else
-            {
-            windowGetChar();
-            }
-        if (--twRate < 0)
-            {
-            twRate = TwinkleRate;
-            twPos = (twPos + 1) & 3;
-            }
-        if (ppKeyIn <= 0) 
-            {
-#if !defined(_WIN32)
-            usleep (RefreshInterval / 2);
-#else
-            Sleep(25);
-#endif
-            continue;
-            }
-        opSetMsg (NULL);
-        if (ppKeyIn == '\r')
-            {
-            ppKeyIn = '\n';
-            }
-        if (ppKeyIn == '[' || ppKeyIn == ('U' & 037))
-            {
-            cmdBuf[0] = '\0';
-            cmdLen = 0;
-            complete = FALSE;
-            }
-        else if (ppKeyIn == 0177 || ppKeyIn == '\b')
-            {
-            if (cmdLen != 0)
-                {
-                cmdBuf[--cmdLen] = '\0';
-                complete = FALSE;
-                }
-            }
-        else
-            {
-            cmdBuf[cmdLen++] = ppKeyIn;
-            cmdBuf[cmdLen] = '\0';
-            i = opScanCmd ();
-            if (i < 0)
-                {
-                cmdBuf[--cmdLen] = '\0';
-                }
-            else if (ppKeyIn == '\n')
-                {
-                /*
-                **  Find the command handler.
-                */
-                /*
-                **  Complete command, find its processor
-                */
-                cmdBuf[--cmdLen] = '\0';
-                for (cp = decode; cp->name != NULL; cp++)
-                    {
-                    j = strlen (cp->name);
-                    if (strncmp(cp->name, cmdBuf, j) == 0)
-                        {
-                        cp->handler(cmdBuf + j);
-                        if (!msgBold)
-                            {
-                            // Command did not produce an error message,
-                            // so erase it because we're done with it.
-                            cmdBuf[0] = '\0';
-                            cmdLen = 0;
-                            }
-                        complete = FALSE;
-                        break;
-                        }
-                    }
-                if (cp->name == NULL)
-                    {
-                    opSetMsg ("$INVALID COMMAND");
-                    }
-                }
-            else 
-                {
-                if (i == '\n')
-                    {
-                    complete = TRUE;
-                    i = 0;
-                    }
-                else
-                    {
-                    complete = FALSE;
-                    }
-                nextKey = i;
-                }
-            }
-#if defined(_WIN32)
-		    Sleep(25);
-#else
-            usleep (RefreshInterval / 2);
-#endif
-        }
-    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Set operator message
@@ -446,45 +323,82 @@ void opRequest(void)
 **  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-void opSetMsg (char *p)
+void opSetMsg (const char *p)
     {
-    if (p != NULL && *p == '$')
-        {
-        p++;
-        msgBold = TRUE;
-        }
-    else
-        {
-        msgBold = FALSE;
-        }
-    errmsg.text = p;
+    msgPtr = p;
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Wait for operator mode to end
+**  Purpose:        Set status text for operator
 **
 **  Parameters:     Name        Description.
+**                  buf         pointer to buffer returned by opInitStatus
+**                  msg         message text to set
 **
 **  Returns:        nothing
 **
-**  This function lets a thread wait for operator mode to finish.
-**  In a single threaded implementation it does nothing, for a 
-**  multi-threaded implementation it waits on the operator condition
-**  variable.  
-**  Note: do not call this function from the thread that the operator
-**  mode processing runs in...
+**------------------------------------------------------------------------*/
+void opSetStatus (void *buf, const char *msg)
+    {
+    StatusData *sd = (StatusData *) buf;
+    
+    if (buf == NULL)
+        {
+        /*
+        **  Checking for NULL here means the caller doesn't have to
+        **  worry whether we ran out of space in opInitStatus.
+        */
+        return;
+        }
+    
+    if (msg != NULL)
+        {
+        strncpy (sd->buf + StatusMsgPfx, msg, StatusMsgMax);
+        sd->len = StatusMsgPfx + strlen (sd->buf + StatusMsgPfx);
+        }
+    else
+        {
+        sd->len = StatusMsgPfx;
+        }
+    opSendStatus (sd);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Initialize operator status buffer
+**
+**  Parameters:     Name        Description.
+**                  type        Device type name
+**                  ch          Channel number
+**                  un          Unit number
+**
+**  Returns:        pointer to status buffer, to be passed to opSetStatus
+**                  later, or NULL if no more room.
 **
 **------------------------------------------------------------------------*/
-void opWait (void)
+void * opInitStatus (const char *type, int ch, int un)
     {
-#ifdef CPU_THREADS
-    pthread_mutex_lock (&oper_mutex);
-    if (opActive)
+    StatusData *sd;
+    
+    if (statusLineCnt == StatusLineMax)
         {
-        pthread_cond_wait (&oper_cond, &oper_mutex);
+        return NULL;
         }
-    pthread_mutex_unlock (&oper_mutex);
-#endif
+    sd = (StatusData *) calloc (1, sizeof(StatusData));
+    if (sd == NULL)
+        {
+        return NULL;
+        }
+    statusLines[statusLineCnt] = sd;
+    sd->line = statusLineCnt++;
+
+    /*
+    **  Form the status line prefix, including the line number byte
+    **  The total length is 14 bytes
+    */
+    sprintf (sd->buf, "%c%-7s %02o %02o ", sd->line,
+             type, ch, un);
+    sd->len = StatusMsgPfx;
+    return sd;
     }
 
 /*
@@ -496,171 +410,115 @@ void opWait (void)
 */
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Send a string to the console.
+**  Purpose:        Operator command thread
 **
 **  Parameters:     Name        Description.
-**                  m           message structure pointer
+**                  param       unused
 **
 **  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-static void opSendString (OpMsg *m)
+static ThreadFunRet opThread (void *param)
     {
-    char *c;
-    int x = m->x;
+    int connFd, i;
+    NetPort *np;
     
-    windowSetY (m->y);
-    windowSetFont (m->fontSize);
-    for (c = m->text; *c; c++)
-        {
-        windowSetX (x);
-        x += opWidth (m->fontSize);
-        windowQueue (*c);
-        }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Scan the command table to match against a partial command
-**
-**  Parameters:     Name        Description.
-**                  none
-**
-**  Returns:        -1 for bad string.
-**                  0 for multiple matches, different next character.
-**                  c > 0 means next legal character is always c.
-**
-**------------------------------------------------------------------------*/
-static int opScanCmd (void)
-    {
-    char *p, *b;
-    char **c;
-    int match = -1;
+    printf ("operator thread running\n");
     
-    for (c = syntax; *c != NULL; c++)
+    for (;;)
         {
-        for (b = cmdBuf, p = *c; ; b++)
+        /*
+        **  First, look for commands from any of the connected 
+        **  operator displays.
+        */
+        np = opPorts.portVec;
+        for (i = 0; i < opConns; i++)
             {
-            if (*b == '\0')
+            if (dtActive (&np->fet))
                 {
-                if (match == -1 || match == *p)
-                    {
-                    match = *p;
-                    if (match == 'x' || match == '7')
-                        {
-                        match = 0;
-                        }
-                    }
-                else
-                    {
-                    match = 0;
-                    }
-                break;
+                opRequest (np);
                 }
-            else if (*p == '7')     // octal digit match
+            if (!emulationActive)
                 {
-                if (*b < '0' || *b > '7')
-                    {
-                    break;          // no match on this pattern
-                    }
-                if (b[1] != '\0' &&
-                    (b[1] < '0' || b[1] > '7'))
-                    {
-                    p++;        // if next is not digit, advance pattern
-                    }
+                /* We just executed "shutdown" */
+                ThreadReturn;
                 }
-            else if (*p == 'x')
-                {
-                // 'x' matches any character other than the argument
-                // separator (comma).
-                if (*b == ',')
-                    {
-                    break;
-                    }
-                if (b[1] != '\0' &&
-                    b[1] == p[1])
-                    {
-                    p++;        // if next input == next pattern, advance
-                    }
-                }
-            else if (*p == '\0')
-                {
-                break;
-                }
-            else
-                {
-                if (isupper (*p))
-                    {
-                    *b = toupper (*b);
-                    }
-                if (*b != *p)
-                    {
-                    break;          // no match on this pattern
-                    }
-                p++;
-                }
-            }   
-        }
-    
-    return match;
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Parse command string and return the first string
-**                  terminated by comma.
-**
-**  Parameters:     Name        Description.
-**                  inStr       Input string
-**                  outStr      Output string
-**                  outSize     Size of output field
-**
-**  Returns:        Pointer to first character in input string after
-**                  the extracted string..
-**
-**------------------------------------------------------------------------*/
-char *opGetString(char *inStr, char *outStr, int outSize)
-    {
-    u8 pos = 0;
-    u8 len = 0;
-
-    /*
-    **  Skip leading whitespace.
-    */
-    while (inStr[pos] != 0 && isspace(inStr[pos]))
-        {
-        pos += 1;
-        }
-
-    /*
-    **  Return pointer to end of input string when there was only
-    **  whitespace left.
-    */
-    if (inStr[pos] == 0)
-        {
-        *outStr = 0;
-        return(inStr + pos);
-        }
-
-    /*
-    **  Copy string to output buffer.
-    */
-    while (inStr[pos] != 0 && inStr[pos] != ',')
-        {
-        if (len >= outSize - 1)
-            {
-            return(NULL);
+            np++;
             }
-
-        outStr[len++] = inStr[pos++];
+        
+        /*
+        **  Next, get any additional network data 
+        */
+        for (;;)
+            {
+            np = dtFindInput (&opPorts, 1000);
+            if (np == NULL)
+                {
+                break;
+                }
+            i = dtRead  (&np->fet, -1);
+            if (i < 0)
+                {
+                dtClose (np, &opPorts);
+                }
+            }
         }
+    }
 
-    outStr[len] = 0;
+/*--------------------------------------------------------------------------
+**  Purpose:        Process operator request
+**
+**  Parameters:     Name        Description.
+**                  np          pointer to NetPort
+**
+**  Returns:        -1 if no command pending, 0 if command processed.
+**
+**------------------------------------------------------------------------*/
+static int opRequest(NetPort *np)
+    {
+    OpCmd *cp;
+    int cmdLen;
+    int i, j;
 
     /*
-    **  Skip the comma.
+    **  Try to receive a command TLV
     */
-    pos += 1;
-
-    return(inStr + pos);
+    cmdLen = dtReadtlv (&np->fet, tlvBuf, sizeof (tlvBuf));
+    if (cmdLen < 0 || tlvBuf[0] != OpCommand)
+        {
+        return -1;
+        }
+    if (cmdLen == 0)
+        {
+        return 0;
+        }
+    
+    cmdBuf[cmdLen++] = '\0';
+    printf ("%s Operator command: %s\n", dtNowString (), cmdBuf);
+    opSetMsg (NULL);
+    for (cp = decode; cp->name != NULL; cp++)
+        {
+        j = strlen (cp->name);
+        if (strncmp(cp->name, cmdBuf, j) == 0)
+            {
+            cp->handler(cmdBuf + j);
+            break;
+            }
+        }
+    if (cp->name == NULL)
+        {
+        opSetMsg ("$INVALID COMMAND.");
+        }
+    if (msgPtr != NULL)
+        {
+        dtSendTlv (np->fet.connFd, OpReply, strlen (msgPtr), msgPtr);
+        }
+    else
+        {
+        dtSendTlv (np->fet.connFd, OpReply, 0, NULL);
+        }
+    
+    return 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -677,36 +535,17 @@ static void opCmdShutdown(char *cmdParams)
     /*
     **  Process command.
     */
-    opCmdEnd (cmdParams);
-    windowSetKeyboardTrue (FALSE);
+    if (opLocked)
+        {
+        opSetMsg ("NOT UNLOCKED.");
+        return;
+        }
+    
+    consoleSetKeyboardTrue (FALSE);
     emulationActive = FALSE;
-
+    opSetMsg ("DtCyber shut down.");
+    
     printf("\nThanks for using %s - Goodbye for now.\n\n", DtCyberVersion);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Terminate operator interface.
-**
-**  Parameters:     Name        Description.
-**                  cmdParams   Command parameters
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void opCmdEnd(char *cmdParams)
-    {
-    /*
-    **  Process commands.
-    */
-#ifdef CPU_THREADS
-    pthread_mutex_lock (&oper_mutex);
-    opActive = 0;
-    pthread_cond_broadcast (&oper_cond);
-    pthread_mutex_unlock (&oper_mutex);
-#else
-    opActive = 0;
-#endif
-    windowOperEnd();
     }
 
 /*--------------------------------------------------------------------------
@@ -730,7 +569,7 @@ static void opCmdLoad(char *cmdParams)
     np = sscanf (cmdParams, "%o,%o,%n", &chnum, &unit, &rest);
     if ((np != 3 && np != 2) || rest == 0)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     ch = channel + chnum;
@@ -771,7 +610,7 @@ static void opCmdUnload(char *cmdParams)
     np = sscanf (cmdParams, "%o,%o", &chnum, &unit);
     if (np != 2)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     ch = channel + chnum;
@@ -802,7 +641,7 @@ static void opDumpCpu(char *cmdParams)
     **  Process commands.
     */
     dumpCpu ();
-    opSetMsg ("COMPLETED");
+    opSetMsg ("COMPLETED.");
     }
 
 
@@ -824,16 +663,16 @@ static void opDumpCMem(char *cmdParams)
     np = sscanf (cmdParams, "%o,%o", &start, &end);
     if (np != 2)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     if (start > end || end >= cpuMaxMemory)
         {
-        opSetMsg ("$INVALID ADDRESS");
+        opSetMsg ("$INVALID ADDRESS.");
         return;
         }
     dumpCpuMem (NULL, start, end);
-    opSetMsg ("COMPLETED");
+    opSetMsg ("COMPLETED.");
     }
 
 
@@ -855,16 +694,16 @@ static void opDumpEcs(char *cmdParams)
     np = sscanf (cmdParams, "%o,%o", &start, &end);
     if (np != 2)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     if (start > end || end >= ecsMaxMemory)
         {
-        opSetMsg ("$INVALID ADDRESS");
+        opSetMsg ("$INVALID ADDRESS.");
         return;
         }
     dumpEcs (NULL, start, end);
-    opSetMsg ("COMPLETED");
+    opSetMsg ("COMPLETED.");
     }
 
 
@@ -886,16 +725,16 @@ static void opDumpPpu(char *cmdParams)
     np = sscanf (cmdParams, "%o", &pp);
     if (np != 1)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     if (pp >= ppuCount)
         {
-        opSetMsg ("$INVALID PPU NUMBER");
+        opSetMsg ("$INVALID PPU NUMBER.");
         return;
         }
     dumpPpu (pp);
-    opSetMsg ("COMPLETED");
+    opSetMsg ("COMPLETED.");
     }
 
 
@@ -917,16 +756,16 @@ static void opDisPpu(char *cmdParams)
     np = sscanf (cmdParams, "%o", &pp);
     if (np != 1)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     if (pp >= ppuCount)
         {
-        opSetMsg ("$INVALID PPU NUMBER");
+        opSetMsg ("$INVALID PPU NUMBER.");
         return;
         }
     dumpDisassemblePpu (pp);
-    opSetMsg ("COMPLETED");
+    opSetMsg ("COMPLETED.");
     }
 
 /*--------------------------------------------------------------------------
@@ -945,20 +784,20 @@ static void opKeyboard(char *cmdParams)
     */
     if (strcmp (cmdParams, "EASY.") == 0)
         {
-        windowSetKeyboardTrue (FALSE);
+        consoleSetKeyboardTrue (FALSE);
         }
     else if (strcmp (cmdParams, "TRUE.") != 0)
         {
-        opSetMsg ("$INVALID PARAMETER");
+        opSetMsg ("$INVALID PARAMETER.");
         }
     else
         {
-        windowSetKeyboardTrue (TRUE);
+        consoleSetKeyboardTrue (TRUE);
         }
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Turn console display of CPU/PPU/Channel status on or off
+**  Purpose:        Change debug flag, or debug trace display.
 **
 **  Parameters:     Name        Description.
 **                  cmdParams   Command parameters
@@ -966,23 +805,66 @@ static void opKeyboard(char *cmdParams)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void opDebugDisplay(char *cmdParams)
+static void opDebug(char *cmdParams)
     {
     /*
     **  Process commands.
     */
-    if (strcmp (cmdParams, "ON.") == 0)
+    if (strcmp (cmdParams, "DISPLAY=ON.") == 0)
         {
         debugDisplay = TRUE;
         }
-    else if (strcmp (cmdParams, "OFF.") != 0)
-        {
-        opSetMsg ("$INVALID PARAMETER");
-        }
-    else
+    else if (strcmp (cmdParams, "DISPLAY=OFF.") == 0)
         {
         debugDisplay = FALSE;
         }
+#if CcDebug == 1
+    else if (strcmp (cmdParams, "ON.") == 0)
+        {
+        opDebugging = TRUE;
+        opUpdateSysStatus ();
+        }
+    else if (strcmp (cmdParams, "OFF.") == 0)
+        {
+        opDebugging = FALSE;
+        opUntrace (cmdParams);
+        opUpdateSysStatus ();
+        }
+#endif
+    else
+        {
+        opSetMsg ("$INVALID PARAMETER.");
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set locked state.
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opLock(char *cmdParams)
+    {
+    opLocked = TRUE;
+    opUpdateSysStatus ();
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set unlocked state.
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opUnlock(char *cmdParams)
+    {
+    opLocked = FALSE;
+    opUpdateSysStatus ();
     }
 
 #if CcDebug == 1
@@ -1001,15 +883,21 @@ static void opTracePpu(char *cmdParams)
     /*
     **  Process commands.
     */
+    if (!opDebugging)
+        {
+        opSetMsg ("$DEBUG MODE NOT SET.");
+        return;
+        }
+    
     np = sscanf (cmdParams, "%o", &pp);
     if (np != 1)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     if (pp >= ppuCount)
         {
-        opSetMsg ("$INVALID PPU NUMBER");
+        opSetMsg ("$INVALID PPU NUMBER.");
         return;
         }
     traceMask |= 1 << pp;
@@ -1030,15 +918,21 @@ static void opTraceCh(char *cmdParams)
     /*
     **  Process commands.
     */
+    if (!opDebugging)
+        {
+        opSetMsg ("$DEBUG MODE NOT SET.");
+        return;
+        }
+    
     np = sscanf (cmdParams, "%o", &ch);
     if (np != 1)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     if (ch >= channelCount)
         {
-        opSetMsg ("$INVALID CHANNEL NUMBER");
+        opSetMsg ("$INVALID CHANNEL NUMBER.");
         return;
         }
     chTraceMask |= ULL(1) << ch;
@@ -1059,15 +953,21 @@ static void opTraceCp(char *cmdParams)
     /*
     **  Process commands.
     */
+    if (!opDebugging)
+        {
+        opSetMsg ("$DEBUG MODE NOT SET.");
+        return;
+        }
+    
     np = sscanf (cmdParams, "%o", &cp);
     if (np != 1)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     if (cp > (cpMem[2] >> 12) & Mask12)
         {
-        opSetMsg ("$INVALID CP NUMBER");
+        opSetMsg ("$INVALID CP NUMBER.");
         return;
         }
     traceMask |= TraceCpu0 | TraceCpu1;
@@ -1089,15 +989,21 @@ static void opTraceCpu(char *cmdParams)
     /*
     **  Process commands.
     */
+    if (!opDebugging)
+        {
+        opSetMsg ("$DEBUG MODE NOT SET.");
+        return;
+        }
+    
     np = sscanf (cmdParams, "%o", &cp);
     if (np != 1)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     if (cp >= cpuCount)
         {
-        opSetMsg ("$INVALID CPU NUMBER");
+        opSetMsg ("$INVALID CPU NUMBER.");
         return;
         }
     traceMask |= TraceCpu (cp);
@@ -1115,6 +1021,12 @@ static void opTraceCpu(char *cmdParams)
 **------------------------------------------------------------------------*/
 static void opTraceXj(char *cmdParams)
     {
+    if (!opDebugging)
+        {
+        opSetMsg ("$DEBUG MODE NOT SET.");
+        return;
+        }
+    
     traceMask |= TraceXj;
     }
 
@@ -1129,6 +1041,12 @@ static void opTraceXj(char *cmdParams)
 **------------------------------------------------------------------------*/
 static void opTraceEcs(char *cmdParams)
     {
+    if (!opDebugging)
+        {
+        opSetMsg ("$DEBUG MODE NOT SET.");
+        return;
+        }
+    
     traceMask |= TraceEcs;
     }
 
@@ -1150,12 +1068,12 @@ static void opUntracePpu(char *cmdParams)
     np = sscanf (cmdParams, "%o", &pp);
     if (np != 1)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     if (pp >= ppuCount)
         {
-        opSetMsg ("$INVALID PPU NUMBER");
+        opSetMsg ("$INVALID PPU NUMBER.");
         return;
         }
     traceMask &= ~(1 << pp);
@@ -1180,12 +1098,12 @@ static void opUntraceCh(char *cmdParams)
     np = sscanf (cmdParams, "%o", &ch);
     if (np != 1)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     if (ch >= channelCount)
         {
-        opSetMsg ("$INVALID CHANNEL NUMBER");
+        opSetMsg ("$INVALID CHANNEL NUMBER.");
         return;
         }
     chTraceMask &= ~(ULL(1) << ch);
@@ -1210,12 +1128,12 @@ static void opUntraceCpu(char *cmdParams)
     np = sscanf (cmdParams, "%o", &cp);
     if (np != 1)
         {
-        opSetMsg ("$INSUFFICENT PARAMETERS");
+        opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
     if (cp >= cpuCount)
         {
-        opSetMsg ("$INVALID CPU NUMBER");
+        opSetMsg ("$INVALID CPU NUMBER.");
         return;
         }
     traceMask &= ~(TraceCpu (cp));
@@ -1284,5 +1202,154 @@ static void opResetTrace(char *cmdParams)
     }
 
 #endif  // CcDebug=1
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Send the initialization data to a new connection
+**
+**  Parameters:     Name        Description.
+**                  np          NetPort pointer
+**                  index       NetPort index
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void opSetup (NetPort *np, int index)
+    {
+    int i;
+    const char **sp;
+    OpMsg *msgp;
+    u8 msgbuf[200];
+    u8 *p;
+    
+    if (np->fet.connFd == 0)
+        {
+        opActiveConns--;
+        opUpdateSysStatus ();
+        printf("%s Operator connection dropped from %s\n",
+               dtNowString (), inet_ntoa (np->from));
+        return;
+        }
+
+    printf("%s Received operator connection from %s\n",
+           dtNowString (), inet_ntoa (np->from));
+    
+    /*
+    **  We have to send two sets of data:
+    **      1. the fixed text (command list, version string etc.)
+    **      2. the parse strings
+    */
+    sp = syntax;
+    while (*sp != NULL)
+        {
+        dtSendTlv (np->fet.connFd, OpSyntax, strlen (*sp), *sp);
+        sp++;
+        }
+    msgp = msg;
+    while (msgp->text != NULL)
+        {
+        p = msgbuf;
+        /*
+        **  The fixed text comes across with the data in the
+        **  following format:
+        **
+        **      x coordinate, 2 bytes, little endian.
+        **      y coordinate, 2 bytes, little endian.
+        **      font size, one byte
+        **      bold flag, one byte
+        **      text, the remaining bytes (not null terminated)
+        */
+        *p++ = msgp->x & 0377;
+        *p++ = msgp->x >> 8;
+        *p++ = msgp->y & 0377;
+        *p++ = msgp->y >> 8;
+        *p++ = msgp->fontSize;
+        *p++ = msgp->bold;
+        strcpy (p, msgp->text);
+        dtSendTlv (np->fet.connFd, OpText, p - msgbuf + strlen (msgp->text),
+                   msgbuf);
+        msgp++;
+        }
+    /*
+    **  All done sending init data, so indicate that.
+    */
+    dtSendTlv (np->fet.connFd, OpInitialized, 0, NULL);
+
+    opActiveConns++;
+    opUpdateSysStatus ();
+
+    /*
+    **  Status lines are not init data, so we can send them after
+    **  saying "init done" -- send them now.
+    */
+    for (i = 0; i < StatusLineMax; i++)
+        {
+        if (statusLines[i] != NULL)
+            {
+            dtSendTlv (np->fet.connFd, OpStatus, statusLines[i]->len,
+                       statusLines[i]->buf);
+            }
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Send a line of status data to all connections
+**
+**  Parameters:     Name        Description.
+**                  sd          StatusData pointer
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void opSendStatus (StatusData *sd)
+    {
+    int i;
+    NetPort *np;
+    
+    /*
+    **  If operator subsystem not initialized yet, just exit.
+    */
+    if (opPorts.portVec == NULL)
+        {
+        return;
+        }
+    
+    for (i = 0; i < opConns; i++)
+        {
+        np = opPorts.portVec + i;
+        if (dtActive (&np->fet))
+            {
+            dtSendTlv (np->fet.connFd, OpStatus, sd->len, sd->buf);
+            }
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Update the operator system status line
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void opUpdateSysStatus (void)
+    {
+    if (opActiveConns > 1)
+        {
+        sprintf (statusSys.buf + 1,
+                 "%8s  %5s    %d operators",
+                 (opLocked) ? "" : "UNLOCKED",
+                 (opDebugging) ? "DEBUG" : "",
+                 opActiveConns);
+        }
+    else
+        {
+        sprintf (statusSys.buf + 1,
+                 "%8s  %5s",
+                 (opLocked) ? "" : "UNLOCKED",
+                 (opDebugging) ? "DEBUG" : "");
+        }
+    statusSys.len = strlen (statusSys.buf + 1) + 1;
+    opSendStatus (&statusSys);
+    }
 
 /*---------------------------  End Of File  ------------------------------*/

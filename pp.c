@@ -21,9 +21,6 @@
 #include "const.h"
 #include "types.h"
 #include "proto.h"
-#ifdef CPU_THREADS
-#include <pthread.h>
-#endif
 
 /*
 **  -----------------
