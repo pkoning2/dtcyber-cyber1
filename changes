@@ -90,3 +90,41 @@ Since aug18 drop:
 - Added code to trace.c, operator.c, window_*.c to flush the trace files
   when tracing is turned off, so I can see what trace data was collected
   without shutting down DtCyber every time.
+
+Since aug29 drop:
+- Changed rtc.c to use the Pentium cycle counter register to do
+  timekeeping.  This code is enabled for Windows, and for other
+  (GCC based) targets if the cpu is x86.
+  This option is active when clock=0 is specified in cyber.ini.
+- Change lp3000.c so it will generate interrupts if the interrupt is
+  enabled after an I/O is issued.  By then the "ready" flag is already
+  set since I/Os complete in "zero time".
+  (Hm, it's still slow.  I think 1CD may just be slow...)
+- Added "untrace,reset." command that stops all tracing and truncates
+  all the trace files back to empty.  Handy when you're done analyzing
+  traces and want to free that space without restarting DtCyber.
+- Added Plato input mode to window_x11.c.  This is turned on/off by
+  Alt-P, only if the NIU is enabled in the config.  If Plato mode is
+  in effect, all keystrokes go to NIU input port 0 unless they are
+  Alt keycodes that aren't mapped to Plato (those are handled normally).
+  Also have Scroll Lock toggle display hold.
+  *** all of this is still only for X11; Win32 is coming. ***
+- Bugfix in ddp.c, thanks Nick Glazzard!
+- Add CP trace on/off similar to the PP trace control mentioned above.
+  For the CPU, on is "sb0 b1+42" and off is "sb0 b1+76".
+- Fix trace.c to disassemble JP instructions correctly.
+  Also fix it so the traced CP is reset when tracing is stopped.
+- added "unload" feature to dd844.c, which flushes the file buffer 
+  for the specified unit.  That lets other programs write data into
+  the disk container file without requiring a DtCyber restart.
+- Added pterm_x11.c to emulate a Plato IV terminal.  Start one pterm
+  window at DtCyber start if NIU is configured.
+- changed ddp.c so it clears the "disconnect after read" flag when
+  a new function code comes in, so flag register aborts don't mess
+  up a subsequent status read.  This fixes a hang in the "mas" ppu 
+  program used by "mastor" if several copies are active simultaneously
+  for several CPs.
+- Added "pterm.c" which is the mainline for a "remote" Plato IV terminal.
+  It uses pterm_x11.c for the actual display, but connects to DtCyber
+  via a TCP connection on port 5004 -- which talks to the NIU.
+  *** this is only for X11; Win32 is coming. ***
