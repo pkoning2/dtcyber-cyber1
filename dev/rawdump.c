@@ -59,9 +59,7 @@ int main (int argc, u8 *argv[])
 		table = 0;
         for (off = 0; off < 400; off += LBYT)
         {
-            if ((addr + off / 2) % (320 * 5) == 0)
-                printf ("\n");
-            printf ("%08o/ ", addr + off / 2);
+            printf ("%08o/ ", (addr + off / 2) / 5);
             p = out;
             for (i = 0; i < LBYT; i++)
             {
