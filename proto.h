@@ -284,7 +284,7 @@ extern CpWord *ecsMem;
 extern u32 cpuMaxMemory;
 extern u32 cpuMemMask;
 extern u32 ecsMaxMemory;
-extern i8 ppKeyIn;
+extern int ppKeyIn;
 extern const u8 asciiToCdc[256];
 extern const char cdcToAscii[64];
 extern const u8 asciiToConsole[256];
@@ -313,6 +313,7 @@ extern FILE **ppuTF;
 extern u32 cycles;
 extern int cpuRatio;
 extern bool debugDisplay;
+extern bool keyboardTrue;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */
