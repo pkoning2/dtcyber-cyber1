@@ -205,7 +205,7 @@ static void dd8xxIo(void);
 static void dd8xxActivate(void);
 static void dd8xxDisconnect(void);
 static i32 dd8xxSeek(DiskParam *dp);
-static i32 dd8xxSeekNextSector(DiskParam *dp);
+static i32 dd8xxSeekNextSector(DiskParam *dp, bool gap);
 static void dd8xxDump(PpWord data);
 static void dd8xxFlush(void);
 static PpWord dd8xxReadClassic(DiskParam *dp, FILE *fcb);
@@ -916,7 +916,7 @@ static void dd8xxIo(void)
             if (--activeDevice->recordLength == 0)
                 {
                 activeChannel->discAfterInput = TRUE;
-                pos = dd8xxSeekNextSector(dp);
+                pos = dd8xxSeekNextSector(dp, FALSE);
                 if (pos >= 0)
                     {
                     fseek(fcb, pos, SEEK_SET);
@@ -927,6 +927,7 @@ static void dd8xxIo(void)
 
     case Fc8xxRead:
     case Fc8xxReadFlawedSector:
+    case Fc8xxGapRead:
         if (!activeChannel->full)
             {
             activeChannel->data = dp->read(dp, fcb);
@@ -935,7 +936,7 @@ static void dd8xxIo(void)
             if (--activeDevice->recordLength == 0)
                 {
                 activeChannel->discAfterInput = TRUE;
-                pos = dd8xxSeekNextSector(dp);
+                pos = dd8xxSeekNextSector(dp, activeDevice->fcode == Fc8xxGapRead);
                 if (pos >= 0)
                     {
                     fseek(fcb, pos, SEEK_SET);
@@ -948,6 +949,8 @@ static void dd8xxIo(void)
     case Fc8xxWriteFlawedSector:
     case Fc8xxWriteLastSector:
     case Fc8xxWriteVerify:
+    case Fc8xxGapWrite:
+    case Fc8xxGapWriteVerify:
         if (activeChannel->full)
             {
             dp->write(dp, fcb, activeChannel->data);
@@ -955,7 +958,8 @@ static void dd8xxIo(void)
 
             if (--activeDevice->recordLength == 0)
                 {
-                pos = dd8xxSeekNextSector(dp);
+                    pos = dd8xxSeekNextSector(dp, activeDevice->fcode == Fc8xxGapWrite ||
+                                              activeDevice->fcode == Fc8xxGapWrite);
                 if (pos >= 0)
                     {
                     fseek(fcb, pos, SEEK_SET);
@@ -982,6 +986,7 @@ static void dd8xxIo(void)
         break;
 
     case Fc8xxReadCheckword:
+    case Fc8xxGapReadCheckword:
         if (!activeChannel->full)
             {
             activeChannel->data = 0;
@@ -1062,10 +1067,6 @@ static void dd8xxIo(void)
     case Fc8xxOnSectorStatus:
     case Fc8xxDriveRelease:
     case Fc8xxReturnCylAddr:
-    case Fc8xxGapRead:
-    case Fc8xxGapWrite:
-    case Fc8xxGapWriteVerify:
-    case Fc8xxGapReadCheckword:
     default:
         activeChannel->full = FALSE;
         break;
@@ -1157,18 +1158,19 @@ static i32 dd8xxSeek(DiskParam *dp)
 **
 **  Parameters:     Name        Description.
 **                  dp          Disk parameters (context).
+**                  gap         TRUE if function was ReadGap or WriteGap
 **
 **  Returns:        Byte offset (not word!) or -1 when seek target
 **                  is invalid.
 **
 **------------------------------------------------------------------------*/
-static i32 dd8xxSeekNextSector(DiskParam *dp)
+static i32 dd8xxSeekNextSector(DiskParam *dp, bool gap)
     {
-    dp->sector += dp->interlace;
+    dp->sector += dp->interlace + (gap ? 2 : 0);
 
-    if (dp->interlace == 1)
+    if (dp->sector >= dp->size.maxSectors)
         {
-        if (dp->sector == dp->size.maxSectors)
+        if (dp->interlace == 1)
             {
             dp->sector = 0;
             dp->track += 1;
@@ -1182,34 +1184,35 @@ static i32 dd8xxSeekNextSector(DiskParam *dp)
                 dp->sector = 0;
                 }
             }
-        }
-    else
-        {
-        if (dp->sector == dp->size.maxSectors)
+        else
             {
-            dp->sector = 0;
-            dp->track += 1;
-            if (dp->track == dp->size.maxTracks)
+            if (dp->sector == dp->size.maxSectors ||
+                dp->sector == dp->size.maxSectors + 2)
                 {
-                /*
-                **  Now start all odd sectors.
-                */
-                dp->track = 0;
+                dp->sector = 0;
+                dp->track += 1;
+                if (dp->track == dp->size.maxTracks)
+                    {
+                    /*
+                    **  Now start all odd sectors.
+                    */
+                    dp->track = 0;
+                    dp->sector = 1;
+                    }
+                }
+            else
+                {
                 dp->sector = 1;
-                }
-            }
-        else if (dp->sector == dp->size.maxSectors + 1)
-            {
-            dp->sector = 1;
-            dp->track += 1;
+                dp->track += 1;
 
-            if (dp->track == dp->size.maxTracks)
-                {
-                /*
-                **  Wrap to the start of the current cylinder.
-                */
-                dp->track = 0;
-                dp->sector = 0;
+                if (dp->track == dp->size.maxTracks)
+                    {
+                    /*
+                    **  Wrap to the start of the current cylinder.
+                    */
+                    dp->track = 0;
+                    dp->sector = 0;
+                    }
                 }
             }
         }
