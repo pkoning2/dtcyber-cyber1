@@ -175,6 +175,7 @@ static void initCyber(char *config)
     long memory;
     long ecsBanks;
     long clockIncrement;
+    long clockMHz;
     long pps;
     long mask;
     long port;
@@ -254,13 +255,8 @@ static void initCyber(char *config)
     **  Get clock increment value and initialise clock.
     */
     (void)initGetOctal("clock", 3, &clockIncrement);
-    if (clockIncrement < 1)
-        {
-        fprintf(stderr, "Entry 'clock' less then 1 in section [cyber] in %s\n", startupFile);
-        exit(1);
-        }
-
-    rtcInit(model, (u8)clockIncrement);
+    (void)initGetInteger("megahertz", 0, &clockMHz);
+    rtcInit(model, (u8)clockIncrement, clockMHz);
 
     /*
     **  Get active equipment section name.

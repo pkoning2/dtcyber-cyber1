@@ -18,6 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(_WIN32)
+#include <winsock.h>
+#endif
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -27,12 +30,32 @@
 **  Private Constants
 **  -----------------
 */
-
+#if defined(__GNUC__) && defined(__i386)
+#define RDTSC 1
+#elif defined(_WIN32)
+#define RDTSC 1
+#else
+#define RDTSC 0
+#endif
 /*
 **  -----------------------
 **  Private Macro Functions
 **  -----------------------
 */
+#if RDTSC
+#if defined(__GNUC__)
+#define rdtscll(val) \
+    __asm__ __volatile__("rdtsc" : "=A" (val))
+#endif
+#if defined(_WIN32)
+#define rdtscll(val) \
+	do { \
+		LARGE_INTEGER foo; \
+		QueryPerformanceCounter (&foo); \
+		val = foo.QuadPart; \
+	} while (0)
+#endif
+#endif
 
 /*
 **  -----------------------------------------
@@ -49,7 +72,9 @@ static FcStatus rtcFunc(PpWord funcCode);
 static void rtcIo(void);
 static void rtcActivate(void);
 static void rtcDisconnect(void);
-
+#if RDTSC
+static void rtcInit2 (long MHz);
+#endif
 /*
 **  ----------------
 **  Public Variables
@@ -65,7 +90,12 @@ static void rtcDisconnect(void);
 static u8 rtcIncrement;
 static u16 rtcClock = 0;
 static bool rtcFull;
-
+#if RDTSC
+static u64 Hz;
+static u32 MHz;
+static u32 maxDelta;
+static u64 rtcPrev;
+#endif
 /*
 **--------------------------------------------------------------------------
 **
@@ -80,11 +110,12 @@ static bool rtcFull;
 **  Parameters:     Name        Description.
 **                  model       Cyber model number
 **                  increment   clock increment per iteration.
+**                  setMHz      cycle counter frequency in MHz.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void rtcInit(char *model, u8 increment)
+void rtcInit(char *model, u8 increment, long setMHz)
     {
     DevSlot *dp;
 
@@ -96,8 +127,16 @@ void rtcInit(char *model, u8 increment)
     dp->io = rtcIo;
     dp->selectedUnit = 0;
 
+    if (increment == 0)
+        {
+#if RDTSC
+        rtcInit2 (setMHz);
+#else
+        fprintf (stderr, "Invalid clock increment 0, defaulting to 1\n");
+        increment = 1;
+#endif
+        }
     rtcIncrement = increment;
-
     activeChannel->ioDevice = dp;
 
     if (strcmp(model, "6600") == 0)
@@ -154,6 +193,24 @@ static FcStatus rtcFunc(PpWord funcCode)
 **------------------------------------------------------------------------*/
 static void rtcIo(void)
     {
+#if RDTSC
+    u32 us;
+    u64 cycles, now;
+    
+    if (rtcPrev == 0)
+        {
+        rdtscll (rtcPrev);
+        }
+    rdtscll (now);
+    cycles = now - rtcPrev;
+    if (cycles > maxDelta)
+        {
+        cycles = maxDelta;
+        }
+    us = cycles / MHz;
+    rtcPrev += us * MHz;
+    rtcClock += us;
+#endif    
     activeChannel->full = rtcFull;
     activeChannel->data = rtcClock;
     }
@@ -181,5 +238,76 @@ static void rtcActivate(void)
 static void rtcDisconnect(void)
     {
     }
+
+#if RDTSC
+/*--------------------------------------------------------------------------
+**  Purpose:        RTC initialization when using the Pentium cycle counter
+**
+**  Parameters:     Name        Description.
+**                  setMHz      cycle counter frequency in MHz.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void rtcInit2(long setMHz)
+    {
+    u64 hz = 0;
+#if defined(_WIN32)
+	LARGE_INTEGER lhz;
+#else
+    FILE *procf;
+    char procbuf[512];
+    u32 now, prev;
+    char *p;
+    double procMHz;
+#endif
+
+    if (setMHz == 0)
+        {
+#if defined(_WIN32)
+		if (!QueryPerformanceFrequency (&lhz))
+			{
+			fprintf (stderr, "High resolution timer not available\n");
+			exit (1);
+			}
+		hz = lhz.QuadPart;
+#else
+        procf = fopen ("/proc/cpuinfo", "r");
+        if (procf != NULL)
+            {
+            fread (procbuf, sizeof (procbuf), 1, procf);
+            p = strstr (procbuf, "cpu MHz");
+            if (p != NULL)
+                {
+                p = strchr (p, ':') + 1;
+                }
+            if (p != NULL)
+                {
+                sscanf (p, " %lf", &procMHz);
+                hz = procMHz * 1000000.0;
+                }
+            fclose (procf);
+            }
+        if (hz == 0)
+            {
+            sleep (1);
+            rdtscl (prev);
+            sleep (1);
+            rdtscl (now);
+            hz = now - prev;
+            }
+#endif
+        Hz = hz;
+        MHz = hz / 1000000;
+        }
+    else
+        {
+        MHz = setMHz;
+        Hz = MHz * 1000000;
+        }
+    maxDelta = 900 * MHz;   // less than 1 ms to keep mtr happy
+    printf ("using RDTSC at %d MHz\n", MHz);
+    }
+#endif
 
 /*---------------------------  End Of File  ------------------------------*/
