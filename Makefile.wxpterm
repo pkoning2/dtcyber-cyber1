@@ -1,0 +1,31 @@
+#--------------------------------------------------------------------------
+#
+#   Copyright (c) 2002, Tom Hunter (see license.txt)
+#
+#   Name: Makefile.pterm
+#
+#   Description:
+#       Build X11 version of Desktop Cyber emulation.
+#
+#--------------------------------------------------------------------------
+
+include Makefile.common
+
+CXX = $(shell wx-config --cxx)
+
+PTOBJS	= $(SOBJS) $(SXOBJS) pterm_wx.o ptermcom.o 
+pterm_wx:	$(PTOBJS)
+	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(XLIBS) $(THRLIBS)  `wx-config --libs`
+
+pterm.dep: $(PTOBJS:.o=.d)
+
+%.o : %.cpp
+	$(CXX) $(CFLAGS) -c `wx-config --cxxflags` $<
+
+%.d : %.cpp
+	echo -n "$@ " > $@
+	$(CXX) `wx-config --cxxflags` -MM $< >> $@
+
+include  $(PTOBJS:.o=.d) 
+
+#---------------------------  End Of File  --------------------------------
