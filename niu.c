@@ -434,6 +434,15 @@ static void niuInIo(void)
                         mp->ibytes = 1;
                     }
                 }
+                else if (in == -2)
+                {
+                    // connection was dropped, generate an "offkey"
+                    mp->currInput = 01753;  // offky2 -- immediate signoff
+                    currInPort = lastInPort = port;
+                    activeChannel->data = 04000 + currInPort;
+                    activeChannel->full = TRUE;
+                    return;
+                }
             }
             if (port == lastInPort)
                 return;         // No input, leave channel empty
@@ -743,7 +752,9 @@ static void *niuThread(void *param)
 **  Parameters:     Name        Description.
 **                  mp          pointer to PortParam struct for the connection.
 **
-**  Returns:        data byte received, or -1 if there is no data.
+**  Returns:        data byte received
+**                  -1 if there is no data
+**                  -2 if the connection was dropped
 **
 **------------------------------------------------------------------------*/
 static int niuCheckInput(PortParam *mp)
@@ -779,7 +790,7 @@ static int niuCheckInput(PortParam *mp)
 #endif
             mp->active = FALSE;
             printf("niu: Connection dropped on port %d\n", mp - portVector);
-            return(-1);
+            return(-2);
         }
     }
     else if (FD_ISSET(mp->connFd, &exceptFds))
@@ -791,7 +802,7 @@ static int niuCheckInput(PortParam *mp)
 #endif
         mp->active = FALSE;
         printf("niu: Connection dropped on port %d\n", mp - portVector);
-        return(-1);
+        return(-2);
     }
     else
     {

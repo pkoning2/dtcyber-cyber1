@@ -282,3 +282,8 @@ Since jan21 2004 drop:
 - Allow multiple LOAD commands to CR3447, each one adds another deck to the
   list of pending decks.  UNLOAD unloads all of them.
 - Make "real" NIU timing a cyber.ini option (",realtiming" after the channels)
+- Changed niu.c to send "offkey" on a station whose connection has dropped.
+  The "offkey" value used is the one used in the newer PLATO versions; the
+  NOS 1.x based (CERL 1978 vintage) one uses a different value so dropping
+  the connection won't sign out the terminal on that version.  But it should
+  cause no harm, either.
