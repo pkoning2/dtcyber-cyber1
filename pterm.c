@@ -118,7 +118,7 @@ int main (int argc, char **argv)
     
     argc--;
     argv++;
-    if (strcmp (argv[0], "-s") == 0)
+    if (argc > 0 && strcmp (argv[0], "-s") == 0)
         {
         argc--;
         argv++;
