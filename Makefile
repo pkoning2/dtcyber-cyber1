@@ -56,13 +56,13 @@ dtcyber:
 	mkdir -p g5; \
 	cd g5; \
 	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS)" VPATH=..
-	lipo -create -output dtcyber g3/dtcyber g4/dtcyber g5/dtcyber
+	lipo -create -output dtcyber g3/gxdtcyber g4/gxdtcyber g5/gxdtcyber
 
 gxdtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
 
 clean:
-	rm -f *.o *.pcf g3/*.o g3/dcyber g4/*.o g4/dcyber g5/*.o g5/dtcyber
+	rm -f *.o *.pcf g3/*.o g3/gxdcyber g4/*.o g4/gxdcyber g5/*.o g5/gxdtcyber
 else
 dtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
