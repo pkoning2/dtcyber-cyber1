@@ -769,6 +769,9 @@ void traceCpu(CpuContext *activeCpu,
     if (decode == rjDecode && (opI == 1 || opI == 2))
         {
         // ECS read/write, show what memory was touched
+        fprintf(cpuTF[cpuNum], " ECS FWA %08llo RAX %08o FLX %08o\n", 
+                activeCpu->regX[0] & 077777777,
+                activeCpu->regRaEcs, activeCpu->regFlEcs);
         dumpCpuMem (cpuTF[cpuNum], activeCpu->regA[0], activeCpu->regA[0] + activeCpu->regB[opJ] + opAddress);
         }
     }
