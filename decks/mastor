@@ -32,8 +32,6 @@ attach(spj)
 attach(mfn)
 *
 compass(i=mrq,s=nostext,b=masbin)
-exit.
-exit.
 compass(i=mas,s=nostext,b=masbin)
 compass(i=mxx,s=nostext,b=masbin)
 compass(i=spj,s=nostext,b=masbin)
