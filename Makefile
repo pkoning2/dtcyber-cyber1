@@ -10,25 +10,19 @@
 #--------------------------------------------------------------------------
 
 LIBS    = -lm -lX11 -lpthread
+LIBS    +=  /System/Library/Frameworks/Carbon.framework/Carbon
+#LIBS    = -lm -lX11
+#LDFLAGS = -s -L/usr/X11R6/lib
 LDFLAGS = -L/usr/X11R6/lib 
-INCL    = -I/usr/X11R6/include -I/usr/local/include
+#LDFLAGS += -L/usr/local/lib
+INCL    = -I/usr/X11R6/include -I/usr/local/include -I/System/Library/Frameworks/Carbon.framework/Headers
+
 #CFLAGS  = -O2 -I. $(INCL) -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes 
 CFLAGS  = -O2 -g2 -I. $(INCL)
-
+CFLAGS += -mcpu=970 -mtune=970 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64
 CFLAGS += -DCcDebug=1
-
-# If your host doesn't have pre-emptive threads (e.g., NetBSD)
-# or you don't want to use multiple CPUs for the emulator,
-# or the host doesn't have native 64-bit load/store (e.g., Mac G4)
-# then comment out the next line:
 CFLAGS += -DCPU_THREADS
-
-# uncomment the next  two lines for Apple Mac X
-#LIBS    +=  /System/Library/Frameworks/Carbon.framework/Carbon
-#INCL    += -I/System/Library/Frameworks/Carbon.framework/Headers
-
-# uncomment the next line for Apple Mac on a G5 (but NOT on other CPUs!)
-#CFLAGS += -mcpu=970 -mtune=970 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64
+VPATH = /Users/koning/dtcyber
 
 PCFS	= seymour8b.pcf seymour8m.pcf \
 	seymour16b.pcf seymour16m.pcf \
@@ -47,8 +41,14 @@ all: dtcyber fonts pterm
 
 fonts: $(PCFS)
 
-dtcyber: $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
+dtcyber: g4/dtcyber g5/dtcyber
+	lipo -create -output dtcyber g4/dtcyber g5/dtcyber
+
+g4/dtcyber:
+	cd g4; $(MAKE) dtcyber
+
+g5/dtcyber:
+	cd g5; $(MAKE) dtcyber
 
 pterm:	$(SOBJS) pterm.o
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)

@@ -201,3 +201,12 @@ for the PPUs.
 
 - Dual host CPU seems to work correctly now.  Tweaked the Makefile a bit
   to clarify the various build choices.
+
+Since jan02 2004 drop:
+- Changed pterm_x11.c to add platobackground property.  Make it work right
+  for the whole window, not just the 512 pixel area inside the margins.
+- Changed Makefile, added g4/Makefile and g5/Makefile for Apple "fat binary"
+  build.  
+  This isn't quite right yet for dependencies; it works correctly for
+  an empty binary directory but not when a source file changes.  Also,
+  need the same for pterm and clean targets.
