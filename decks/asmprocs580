@@ -637,18 +637,18 @@ revert. conden6
 .*
 .*  exit - cbin = absolute binary.
 .*
-begin(conden,,#ml=ml,#list)
-*begin(conden1,,#ml=ml,#list)
-begin(conden2,,#ml=ml,#list)
-begin(conden3,,#ml=ml,#list)
-begin(conden4,,#ml=ml,#list)
-begin(conden5,,#ml=ml,#list)
+begin(conden,,#ml=ml,#list=list)
+*begin(conden1,,#ml=ml,#list=list)
+begin(conden2,,#ml=ml,#list=list)
+begin(conden3,,#ml=ml,#list=list)
+begin(conden4,,#ml=ml,#list=list)
+begin(conden5,,#ml=ml,#list=list)
 .*
 .*        only assemble the experimental version on the
 .*        corporate dev system.
 .*
 *ife((r1g.and.200000b)=200000b,exp)   if corp dev system
-*begin(conden6,,#ml=ml,#list)
+*begin(conden6,,#ml=ml,#list=list)
 *endif(exp)
 *
 *begin(condcmp,,#list)
