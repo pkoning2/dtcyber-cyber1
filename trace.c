@@ -49,6 +49,7 @@
 #define Cik             8
 #define Cikj            9
 #define CijK            10
+#define Cmv             11
 #define CLINK           100
 
 /*
@@ -79,6 +80,7 @@
 #define RZB             23
 #define RZX             24
 #define RB              25
+#define RBD             26
 
 /*
 **  -----------------------
@@ -232,6 +234,18 @@ static DecCpControl cjDecode[010] =
     CjK,        "ID    X%o,%6.6o",      RZX,    // 7
     };
 
+static DecCpControl noDecode[010] = 
+    {
+    CN,         "NO",                                   R,      // 460
+    CN,         "NO",                                   R,      // 461
+    CN,         "NO",                                   R,      // 462
+    CN,         "NO",                                   R,      // 463
+    CjK,        "IM    B%o+%6.6o",                      RBD,    // 464
+    Cmv,        "DM    %3.3o,%6.6o,%2.2o,%6.6o,%2.2o",  R,      // 465
+    Cmv,        "CC    %3.3o,%6.6o,%2.2o,%6.6o,%2.2o",  R,      // 466
+    Cmv,        "CU    %3.3o,%6.6o,%2.2o,%6.6o,%2.2o",  R,      // 467
+    };
+
 static DecCpControl cpDecode[0100] =
     {
     CN,         "PS",                   R,      // 00
@@ -276,7 +290,7 @@ static DecCpControl cpDecode[0100] =
     Cijk,       "MX%o   %o%o",          RX,     // 43
     Cijk,       "FX%o   X%o/X%o",       RXXX,   // 44
     Cijk,       "RX%o   X%o/X%o",       RXXX,   // 45
-    CN,         "NO",                   R,      // 46
+    CLINK, (char *)noDecode,            R,      // 46
     Cik,        "CX%o   X%o",           RXX,    // 47
 
     CijK,       "SA%o   A%o+%6.6o",     RAA,    // 50
@@ -393,7 +407,8 @@ void traceCpu(CpuContext *activeCpu,
     static char str[80];
     int i;
     int cpuNum = activeCpu ->id;
-    
+    CpWord data;
+
     /*
     **  Bail out if no trace of the current CPU is requested.
     */
@@ -483,6 +498,16 @@ void traceCpu(CpuContext *activeCpu,
 
         case CijK:
             sprintf(str, decode[opFm].mnemonic, opI, opJ, opAddress);
+            break;
+
+        case Cmv:
+            data = cpMem[p];
+            sprintf(str, decode[opFm].mnemonic,
+                    (opJ << 4) + ((data >> 26) & 017),
+                    opAddress,
+                    (data >> 22) & 017,
+                    data & Mask18,
+                    (data >> 18) & 017);
             break;
 
         case CLINK:
@@ -613,6 +638,20 @@ void traceCpu(CpuContext *activeCpu,
             {
             fprintf(cpuTF[cpuNum], "B%d=%06o    ", opK, activeCpu->regB[opK]);
             }
+        break;
+
+    case RBD:
+        if (opJ != 0)
+            {
+            fprintf(cpuTF[cpuNum], "B%d=%06o    ", opJ, activeCpu->regB[opJ]);
+            }
+        data = cpMem[activeCpu->regB[opJ] + opAddress + activeCpu->regRaCm];
+        fprintf(cpuTF[cpuNum], "MD=%5.5o,%6.6o,%2.2o,%6.6o,%2.2o    ",
+                ((data >> 44) & 017760) + ((data >> 26) & 017),
+                (data >> 30) & Mask18,
+                (data >> 22) & 017,
+                data & Mask18,
+                (data >> 18) & 017);
         break;
 
     case RBX:
