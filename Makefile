@@ -13,8 +13,10 @@ HOST := $(shell uname)
 MACHINE := $(shell uname -m)
 
 LIBS    = -lm -lX11 -lpthread
+MACHINECFLAGS =
 ifeq ("$(MACHINE)","x86_64")
 LDFLAGS = -g2 -L/usr/X11R6/lib64
+MACHINECFLAGS = -DCPU_THREADS
 else
 LDFLAGS = -g2 -L/usr/X11R6/lib
 endif
@@ -32,7 +34,7 @@ endif
 
 CDEBUG = -DCcDebug=1
 
-CFLAGS  = -O2 -g2 -I. $(INCL) $(CDEBUG) $(EXTRACFLAGS)
+CFLAGS  = -O2 -g2 -I. $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(EXTRACFLAGS)
 
 PCFS	= seymour8b.pcf seymour8m.pcf \
 	seymour16b.pcf seymour16m.pcf \
