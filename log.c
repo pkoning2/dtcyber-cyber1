@@ -106,6 +106,7 @@ void logError(char *file, int line, char *fmt, ...)
     vfprintf(logF, fmt, param);
     va_end(param);
     fprintf(logF, NEWLINE);
+    fflush(logF);
     }
 
 
