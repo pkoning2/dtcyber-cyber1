@@ -30,6 +30,38 @@ dayfile.
 exit.
 dmp. 
 ~
+.proc,cybdev. 
+.* 
+.*  non-prime time load procedure. 
+.* 
+ife(ot.ne.syo,origin)
+revert,abort.
+endif(origin)
+.* 
+.*        set up file *configx* under user *platomf*.
+.*        in this proc, just purge *configx*.
+.* 
+setpun.
+purge(configx/na)
+.* 
+packnam. 
+clear. 
+.* 
+setpun.
+.*class(sc=sy) 
+norerun. 
+settl(*) 
+setasl(*)
+setjsl(*)
+set(r1=0)
+unload(*)
+configx(v=gogo) 
+mfnx.
+mastor(gogo)
+dayfile. 
+exit.
+dmp. 
+~
 .proc,platx,dis=$*dis$/dis,ax=0/1,cp=,v=cybis,pn=pcez. 
 .* 
 .*        plato load procedure.
@@ -249,7 +281,7 @@ revert.
 endif(cybis) 
 .* 
 unload(map)
-user(cybis,athena,cybdev)
+user(cybis,athena)
 .* 
 ife,($v$.eq.$cybdev$),cybdev.
 ife,($b$.eq.$mbin$),mbin.
@@ -269,7 +301,7 @@ attach(b=cbindev/na)
 endif(cbin)
 .* 
 else(cybdev) 
-attach(b/na,r=dq)
+attach(b/na)
 endif(cybdev)
 family.
 .* 
@@ -280,7 +312,7 @@ rewind(l)
 unload(b)
 endif(lsab)
 ife($m$.ne.$$,map) 
-attach(m/na,r=dq)
+attach(m/na)
 copy(m,map)
 rewind(map)
 unload(m)
