@@ -18,7 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#ifndef _WIN32
+#if defined(_WIN32)
+#include <winsock.h>
+#else
 #include <unistd.h>
 #endif
 #include "const.h"
