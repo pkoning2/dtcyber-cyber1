@@ -27,6 +27,8 @@
 **  -----------------
 */
 
+#define MAXDATANUM      8
+
 /*
 **  PPU command adressing modes.
 */
@@ -128,6 +130,7 @@ u32 traceCycles = 0;
 FILE *devF;
 FILE **cpuTF;
 FILE **ppuTF;
+FILE *dataTF[MAXDATANUM];
 
 /*
 **  -----------------
@@ -135,7 +138,7 @@ FILE **ppuTF;
 **  -----------------
 */
 //static FILE *devF;
-static u32 sequence;
+u32 sequence;
 
 static const char *monState[] = 
 { "none", "cpu 0", "cpu 1" };
@@ -881,6 +884,15 @@ void traceFinish(void)
         {
         fclose(ppuTF[i]);
         }
+
+    for (i = 0; i < MAXDATANUM; i++)
+        {
+        if (dataTF[i] != NULL)
+            {
+            fclose(dataTF[i]);
+            dataTF[i] = NULL;
+            }
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -905,6 +917,14 @@ void traceStop(void)
     for (i = 0; i < ppuCount; i++)
         {
         fflush(ppuTF[i]);
+        }
+
+    for (i = 0; i < MAXDATANUM; i++)
+        {
+        if (dataTF[i] != NULL)
+            {
+            fflush (dataTF[i]);
+            }
         }
     }
 
@@ -933,6 +953,15 @@ void traceReset(void)
         {
         sprintf(traceName, "ppu%02o.trc", i);
         freset (&ppuTF[i], traceName);
+        }
+
+    for (i = 0; i < MAXDATANUM; i++)
+        {
+        if (dataTF[i] != NULL)
+            {
+            sprintf(traceName, "data%d.trc", i);
+            freset (&dataTF[i], traceName);
+            }
         }
     }
 
@@ -1236,6 +1265,7 @@ void tracePM(void)
         }
     }
 
+
 /*--------------------------------------------------------------------------
 **  Purpose:        Output end-of-line.
 **
@@ -1267,6 +1297,40 @@ void traceEnd(void)
         {
         traceMask &= ~(1 << activePpu->id);
         }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Write data from X register to a data trace file.
+**
+**  Parameters:     Name        Description.
+**                  data        60-bit value
+**                  stream      file number (0..7)
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void traceData (CpWord data, int stream)
+    {
+    char traceName[20];
+    
+    if (stream >= MAXDATANUM)
+        {
+        return;
+        }
+    
+    if (dataTF[stream] == NULL)
+        {
+        sprintf(traceName, "data%d.trc", stream);
+        dataTF[stream] = fopen(traceName, "wt");
+        if (dataTF[stream] == NULL)
+            {
+            logError(LogErrorLocation, "can't open data stream %d trace (%s)\n",
+                     stream, traceName);
+            return;
+            }
+        }
+    
+    fprintf(dataTF[stream], "%06d %20.20llo\n", sequence, data);
     }
 
 /*

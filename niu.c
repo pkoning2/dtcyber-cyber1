@@ -38,7 +38,7 @@
 #define NiuLocalBufSize         50          // size of local input buffer
 
 //#define DEBUG
-
+//#define TRACE
 /*
 **  Function codes.
 */
@@ -50,6 +50,7 @@
 **  Private Macro Functions
 **  -----------------------
 */
+#define STATIONS                (NiuLocalStations + platoConns)
 
 /*
 **  -----------------------------------------
@@ -59,6 +60,8 @@
 typedef struct portParam
 {
     int         connFd;
+    u32         currOutput;
+    struct in_addr from;
     u16         currInput;
     u8          ibytes;      // how many bytes have been assembled into currInput (0..2)
     bool        active;
@@ -93,7 +96,9 @@ static void *niuThread(void *param);
 #endif
 static void niuWelcome(int stat);
 static void niuSendstr(int stat, const char *p);
+static void niuSendWord(int stat, int word);
 static void niuSend(int stat, int word);
+static const char *ts_now (void);
 
 /*
 **  ----------------
@@ -102,6 +107,7 @@ static void niuSend(int stat, int word);
 */
 u16 platoPort;
 u16 platoConns;
+extern u32 sequence;
 
 /*
 **  -----------------
@@ -123,6 +129,10 @@ bool frameStart;
 static pthread_t niu_thread;
 #endif
 static bool realTiming;
+#ifdef TRACE
+static FILE *niuF;
+static bool traced=FALSE;
+#endif
 
 /*
 **--------------------------------------------------------------------------
@@ -149,6 +159,10 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     PortParam *mp;
 
     (void)eqNo;
+
+#ifdef TRACE
+    niuF = fopen("niu.trc", "wt");
+#endif
 
     if (in != NULL)
     {
@@ -183,7 +197,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     out->func = niuOutFunc;
     out->io = niuOutIo;
 
-    mp = portVector = calloc(1, sizeof(PortParam) * platoConns);
+    mp = portVector = calloc(1, sizeof(PortParam) * STATIONS);
     if (portVector == NULL)
     {
         fprintf(stderr, "Failed to allocate NIU context block\n");
@@ -193,7 +207,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     /*
     **  Initialise port control blocks.
     */
-    for (i = 0; i < platoConns; i++)
+    for (i = 0; i < STATIONS; i++)
     {
         mp->active = FALSE;
         mp->connFd = 0;
@@ -375,7 +389,7 @@ static void niuInIo(void)
         port = lastInPort;
         for (;;)
         {
-            if (++port >= NiuLocalStations + platoConns)
+            if (++port >= STATIONS)
                 port = 0;
             if (port < NiuLocalStations)
             {
@@ -392,7 +406,7 @@ static void niuInIo(void)
                     return;         // No input, leave channel empty
                 continue;
             }
-            mp = portVector + (port - NiuLocalStations);
+            mp = portVector + port;
             if (mp->active)
             {
                 /*
@@ -463,7 +477,7 @@ static void niuInIo(void)
     }
     else
     {
-        mp = portVector + (currInPort - NiuLocalStations);
+        mp = portVector + currInPort;
         activeChannel->data = mp->currInput << 1;
         mp->ibytes = 0;
     }
@@ -483,6 +497,7 @@ static void niuOutIo(void)
 {
     PpWord d;
     int port;
+    PortParam *mp;
 
     if (activeDevice->fcode != FcNiuOutput ||
         !activeChannel->full)
@@ -506,8 +521,8 @@ static void niuOutIo(void)
                 return;
             }
             lastFrame = rtcClock;
-            frameStart = FALSE;
         }
+        frameStart = FALSE;
 
         activeChannel->full = FALSE;
         if ((d & 06000) != 04000)
@@ -544,6 +559,13 @@ static void niuOutIo(void)
     if ((d & 02000) != 0)
     {
         frameStart = TRUE;
+#ifdef TRACE
+        if (traced)
+        {
+            fprintf (niuF, "%06d frame end\n", sequence);
+            traced = FALSE;
+        }
+#endif
     }
 
     port = (d & 01777);
@@ -554,6 +576,20 @@ static void niuOutIo(void)
     // active TCP connection.
     niuSend (port, currOutput);
     obytes = 0;
+
+    if (frameStart)
+    {
+        // Frame just ended -- send pending output words
+        for (port = 1; port < STATIONS; port++)
+        {
+            mp = portVector + port;
+            if (mp->currOutput != 0)
+            {
+                niuSendWord (port, mp->currOutput);
+                mp->currOutput = 0;
+            }
+        }
+    }
 }
 
 /*--------------------------------------------------------------------------
@@ -667,9 +703,9 @@ static void *niuThread(void *param)
     struct sockaddr_in from;
     int fromLen;
     PortParam *mp;
-    u8 i;
+    int i;
     int reuse = 1;
-
+    
     /*
     **  Create TCP socket and bind to specified port.
     */
@@ -703,8 +739,8 @@ static void *niuThread(void *param)
         /*
         **  Find a free port control block.
         */
-        mp = portVector;
-        for (i = 0; i < platoConns; i++)
+        mp = portVector + NiuLocalStations;
+        for (i = NiuLocalStations; i < STATIONS; i++)
         {
             if (!mp->active)
             {
@@ -713,7 +749,7 @@ static void *niuThread(void *param)
             mp += 1;
         }
 
-        if (i == platoConns)
+        if (i == STATIONS)
         {
             /*
             **  No free port found - wait a bit and try again.
@@ -737,8 +773,11 @@ static void *niuThread(void *param)
         **  Mark connection as active.
         */
         mp->active = TRUE;
-        printf("niu: Received connection on port %d\n", mp - portVector);
-        niuWelcome (mp - portVector + NiuLocalStations);
+        mp->from = from.sin_addr;
+        i = mp - portVector;
+        printf("%s niu: Received connection from %s for station %d-%d\n",
+               ts_now (), inet_ntoa (from.sin_addr), i / 32, i % 32);
+        niuWelcome (i);
     }
 }
 
@@ -785,7 +824,9 @@ static int niuCheckInput(PortParam *mp)
             close(mp->connFd);
 #endif
             mp->active = FALSE;
-            printf("niu: Connection dropped on port %d\n", mp - portVector);
+            i = mp - portVector;
+            printf("%s niu: Connection dropped from %s for station %d-%d\n",
+                   ts_now (), inet_ntoa (mp->from),  i / 32, i % 32);
             return(-2);
         }
     }
@@ -797,7 +838,9 @@ static int niuCheckInput(PortParam *mp)
         close(mp->connFd);
 #endif
         mp->active = FALSE;
-        printf("niu: Connection dropped on port %d\n", mp - portVector);
+        i = mp - portVector;
+        printf("%s niu: Connection dropped from %s for station %d-%d\n",
+               ts_now (), inet_ntoa (mp->from),  i / 32, i % 32);
         return(-2);
     }
     else
@@ -821,9 +864,9 @@ static void niuWelcome(int stat)
     char msg[100];
     
     sprintf (msg, "Connected to Plato station %d-%d", stat >> 5, stat & 037);
-    niuSend (stat, 0100033);        // mode 3, mode rewrite, screen
-    niuSend (stat, 0201200);        // load Y = 128
-    niuSend (stat, 0200200);        // load X = 128
+    niuSendWord (stat, 0100033);        // mode 3, mode rewrite, screen
+    niuSendWord (stat, 0201200);        // load Y = 128
+    niuSendWord (stat, 0200200);        // load X = 128
     niuSendstr (stat, msg);
 }
 
@@ -856,14 +899,14 @@ static void niuSendstr(int stat, const char *p)
                 if (++cc == 3)
                 {
                     cc = 0;
-                    niuSend (stat, w);
+                    niuSendWord (stat, w);
                     w = 1;
                 }
                 w = (w << 6 | 021);
                 if (++cc == 3)
                 {
                     cc = 0;
-                    niuSend (stat, w);
+                    niuSendWord (stat, w);
                     w = 1;
                 }
                 shift = TRUE;
@@ -875,14 +918,14 @@ static void niuSendstr(int stat, const char *p)
             if (++cc == 3)
             {
                 cc = 0;
-                niuSend (stat, w);
+                niuSendWord (stat, w);
                 w = 1;
             }
             w = (w << 6 | 020);
             if (++cc == 3)
             {
                 cc = 0;
-                niuSend (stat, w);
+                niuSendWord (stat, w);
                 w = 1;
             }
             shift = FALSE;
@@ -891,7 +934,7 @@ static void niuSendstr(int stat, const char *p)
         if (++cc == 3)
         {
             cc = 0;
-            niuSend (stat, w);
+            niuSendWord (stat, w);
             w = 1;
         }
     }
@@ -902,13 +945,13 @@ static void niuSendstr(int stat, const char *p)
             w = (w << 6 | 077);
             cc++;
         }
-        niuSend (stat, w);
+        niuSendWord (stat, w);
     }
 }
 
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Send an output word to a station
+**  Purpose:        Store an output word to be sent for this stations
 **
 **  Parameters:     Name        Description.
 **                  stat        Station number
@@ -920,7 +963,37 @@ static void niuSendstr(int stat, const char *p)
 static void niuSend(int stat, int word)
 {
     PortParam *mp;
+
+    if (stat == 0 || stat >= STATIONS)
+    {
+        return;
+    }
+    mp = portVector + stat;
+    mp->currOutput = word;
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Send an output word to a station
+**
+**  Parameters:     Name        Description.
+**                  stat        Station number
+**                  word        NIU data word
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void niuSendWord(int stat, int word)
+{
+    PortParam *mp;
     u8 data[3];
+
+#ifdef TRACE
+    if (stat > 0 && stat < STATIONS)
+    {
+        traced = TRUE;
+        fprintf (niuF, "%06d %2d-%2d %07o\n", sequence, stat / 32, stat % 32, word);
+    }
+#endif
 
     if (stat < NiuLocalStations)
     {
@@ -931,8 +1004,7 @@ static void niuSend(int stat, int word)
     }
     else
     {
-        stat -= NiuLocalStations;
-        if (stat >= platoConns)
+        if (stat >= STATIONS)
             return;
         mp = portVector + stat;
         if (!mp->active)
@@ -946,6 +1018,25 @@ static void niuSend(int stat, int word)
 #endif
         send(mp->connFd, data, 3, 0);
     }
+}
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Format a timestamp
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        pointer to (static) string
+**
+**------------------------------------------------------------------------*/
+static const char *ts_now (void)
+{
+    static char ts[40];
+    time_t t;
+
+    time (&t);
+    strftime (ts, sizeof (ts) - 1, "%y/%m/%d %H.%M.%S.", localtime (&t));
+    return ts;
 }
 
 

@@ -300,3 +300,9 @@ Since jan21 2004 drop:
   only change is in pterm (not in the PLATO keyboard within DtCyber) -- 
   program exit is now Control-Z (was Control-D) and trace toggle is now 
   Control-] (was Control-T).
+- Changed niu.c to put timestamps and more information on connect/disconnect
+  messages.
+- Changed niu.c to save the last output word per terminal for each frame, and
+  then send that at frame end.  This fixes the -erase abort- problem -- in that
+  situation, PLATO sends several words per frame and apparently relies on only
+  the last of those words making it out the door.
