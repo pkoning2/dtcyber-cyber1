@@ -36,10 +36,12 @@
 #define KeyBufSize      50
 #define DisplayMargin   20
 
-// Size of the window and pixmap.
-// This is: a screen high with marging top and botton.
-// Pixmap has two rows added, which are storage for the
-// patterns for loadable characters.
+/*
+**  Size of the window and pixmap.
+**  This is: a screen high with marging top and botton.
+**  Pixmap has two rows added, which are storage for the
+**  patterns for loadable characters.
+*/
 #define XSize           (512 + 2 * DisplayMargin)
 #define YSize           (512 + 2 * DisplayMargin)
 #define YPMSize         (512 + 2 * DisplayMargin + 2 * 16)
@@ -107,9 +109,11 @@ static bool allowClose = FALSE;
 static HCURSOR hcNormal, hcTouch;
 static char ptermWinName[100] = "Pterm" ;
 
-// rasterop codes for a given W/E mode
-// See Win32 rasterops (ternary ops) appendix for explanations...
-//            0=inverse, 1=rewrite, 2=erase, 3=write
+/*
+**  rasterop codes for a given W/E mode
+**  See Win32 rasterops (ternary ops) appendix for explanations...
+**             0=inverse, 1=rewrite, 2=erase, 3=write
+*/
 static const DWORD WeFunc[] = 
 { 0x003F00EA,   // PSan
   MERGECOPY,
@@ -143,7 +147,7 @@ bool platoTouch (LPARAM lParam, int stat);
 **
 **------------------------------------------------------------------------*/
 void ptermInit(const char *winName, bool closeOk)
-{
+    {
     DWORD dwThreadId; 
     HANDLE hThread;
 
@@ -162,10 +166,10 @@ void ptermInit(const char *winName, bool closeOk)
         &dwThreadId);                               // returns thread ID 
 
     if (hThread == NULL)
-    {
+        {
         MessageBox(NULL, "pterm thread creation failed", "Error", MB_OK);
         exit(1);
-    }
+        }
 
 
     /*
@@ -173,7 +177,7 @@ void ptermInit(const char *winName, bool closeOk)
     */
     ptermComInit ();
     while (!ptermActive) ;      // spin until thread is done setting things up
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Set window name
@@ -205,13 +209,13 @@ void ptermSetName (const char *winName)
 **
 **------------------------------------------------------------------------*/
 void ptermClose(void)
-{
-    if (!ptermActive)
     {
+    if (!ptermActive)
+        {
         return;
-    }
+        }
     SendMessage(hWnd, WM_DESTROY, 0, 0);
-}
+    }
 
 
 /*--------------------------------------------------------------------------
@@ -223,7 +227,7 @@ void ptermClose(void)
 **
 **------------------------------------------------------------------------*/
 static void ptermThread(LPVOID foo)
-{
+    {
     MSG msg;
 
     /*
@@ -235,20 +239,20 @@ static void ptermThread(LPVOID foo)
     **  Create the window.
     */
     if (!ptermCreate())
-    {
+        {
         MessageBox(NULL, "pterm window creation failed", "Error", MB_OK);
         return;
-    }
+        }
 
     /*
     **  Main message loop.
     */
     while (GetMessage(&msg, NULL, 0, 0) > 0) 
-    {
+        {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
+        }
     }
-}
 
 
 /*--------------------------------------------------------------------------
@@ -260,7 +264,7 @@ static void ptermThread(LPVOID foo)
 **
 **------------------------------------------------------------------------*/
 ATOM ptermRegisterClass(HINSTANCE hInstance)
-{
+    {
     WNDCLASSEX wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX); 
@@ -278,7 +282,7 @@ ATOM ptermRegisterClass(HINSTANCE hInstance)
     wcex.hIconSm        = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
 
     return RegisterClassEx(&wcex);
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Create the main window.
@@ -289,7 +293,7 @@ ATOM ptermRegisterClass(HINSTANCE hInstance)
 **
 **------------------------------------------------------------------------*/
 static BOOL ptermCreate(void)
-{
+    {
     int dx, dy;
 
     dx = GetSystemMetrics(SM_CXSIZEFRAME) * 2;
@@ -309,15 +313,15 @@ static BOOL ptermCreate(void)
         NULL);                  // window-creation data
 
     if (!hWnd)
-    {
+        {
         return FALSE;
-    }
+        }
     ptermSetName (ptermWinName);
     ShowWindow(hWnd, SW_SHOWNORMAL);
     UpdateWindow(hWnd);
 
     return TRUE;
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Process messages for the main window.
@@ -329,14 +333,14 @@ static BOOL ptermCreate(void)
 **------------------------------------------------------------------------*/
 static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
                                        WPARAM wParam, LPARAM lParam)
-{
+    {
     int wmId, wmEvent;
     HDC hdc;
     PAINTSTRUCT paint;
     int savemode;
     
     switch (message) 
-    {
+        {
         /*
         **  Process the application menu.
         */
@@ -345,14 +349,14 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         wmEvent = HIWORD(wParam); 
 
         switch (wmId)
-        {
+            {
         case IDM_EXIT:
             DestroyWindow(hWnd);
             break;
 
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
-        }
+            }
         break;
 
     case WM_ERASEBKGND:
@@ -390,9 +394,9 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         */
         fontBitmap = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_FONTBITMAP));
         if (fontBitmap == NULL)
-        {
+            {
             fprintf (stderr, "Failed to load font bitmap");
-        }
+            }
 
         /*
         **  Load the cursors
@@ -415,20 +419,20 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         ReleaseDC(hWnd, hdc);
         hPen = CreatePen(PS_SOLID, 1, orange);
         if (!hPen)
-        {
+            {
             MessageBox (GetFocus(),
-                "Unable to get orange pen", 
-                "CreatePen Error",
-                MB_OK);
-        }
+                        "Unable to get orange pen", 
+                        "CreatePen Error",
+                        MB_OK);
+            }
         hPenBg = CreatePen(PS_SOLID, 1, black);
         if (!hPen)
-        {
+            {
             MessageBox (GetFocus(),
-                "Unable to get black pen", 
-                "CreatePen Error",
-                MB_OK);
-        }
+                        "Unable to get black pen", 
+                        "CreatePen Error",
+                        MB_OK);
+            }
         ptermActive = TRUE;
         return DefWindowProc (hWnd, message, wParam, lParam);
 
@@ -443,13 +447,13 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         DeleteDC(hdcFont);
         DeleteDC(hdcMem);
         if (hPen)
-        {
+            {
             DeleteObject(hPen);
-        }
+            }
         if (hPenBg)
-        {
+            {
             DeleteObject(hPenBg);
-        }
+            }
         PostQuitMessage(0);
         break;
 
@@ -475,34 +479,36 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         */
     case WM_CHAR:
         if (wParam == 032 && allowClose)
-        {
+            {
             DestroyWindow(hWnd);
-        }
+            }
         else if (wParam == 035) // control-] : trace
-        {
+            {
             tracePterm = !tracePterm;
             savemode = wemode;
             if (!tracePterm)
-            {
+                {
                 wemode = 2;
                 fflush (traceF);
-            }
-            else
-            {
-                if (traceF == NULL)
-                {
-                    traceF = fopen (traceFn, "w");
                 }
+            else
+                {
+                if (traceF == NULL)
+                    {
+                    traceF = fopen (traceFn, "w");
+                    }
                 wemode = 3;
-            }
+                }
             ptermSetWeMode (wemode);
-            // The 1024 is a strange hack to circumvent the
-            // screen edge wrap checking.
+            /*
+            **  The 1024 is a strange hack to circumvent the
+            **  screen edge wrap checking.
+            */
             ptermDrawChar (1024 + 512, 512, 1, 024);
             wemode = savemode;
             ptermSetWeMode (wemode);
             return 0;
-        }
+            }
         break;
 
     case WM_SYSCHAR:
@@ -518,29 +524,35 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         break;
         
     case WM_SYSKEYDOWN:
-        // F10 comes in as a syskey because it is used by Win keyboard
-        // conventions to access the menus.  We don't do that, just
-        // divert it to regular keyboard processing.
+        /*
+        **  F10 comes in as a syskey because it is used by Win keyboard
+        **  conventions to access the menus.  We don't do that, just
+        **  divert it to regular keyboard processing.
+        */
         if (wParam == VK_F10)
-        {
+            {
             platoKeypress (wParam, 0, 1);
             break;
-        }
+            }
 
-        // ALT leftarrow is assignment arrow:
+        /*
+        **  ALT leftarrow is assignment arrow:
+        */
         if (wParam == VK_LEFT)
-        {
+            {
             platoKeypress (wParam, 1, 1);
             break;
-        }
+            }
 
-        // Fall through to default action
+        /*
+        **  Fall through to default action
+        */
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
-    }
+        }
 
     return 0;
-}
+    }
 
 
 /*--------------------------------------------------------------------------
@@ -553,9 +565,9 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
 **
 **------------------------------------------------------------------------*/
 void ptermSetWeMode (u8 we)
-{
+    {
     wemode = we;
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Draw one character
@@ -570,7 +582,7 @@ void ptermSetWeMode (u8 we)
 **
 **------------------------------------------------------------------------*/
 void ptermDrawChar (int x, int y, int snum, int cnum)
-{
+    {
     HDC hdc;
 
     if (hWnd == 0)
@@ -582,7 +594,7 @@ void ptermDrawChar (int x, int y, int snum, int cnum)
     SelectObject(hdcMem, hPen);
     drawChar (hdc, x, y, snum, cnum);
     ReleaseDC (hWnd, hdc);
-}
+    }
 
 
 /*--------------------------------------------------------------------------
@@ -596,7 +608,7 @@ void ptermDrawChar (int x, int y, int snum, int cnum)
 **
 **------------------------------------------------------------------------*/
 void ptermDrawPoint (int x, int y)
-{
+    {
     HDC hdc;
 
     if (hWnd == 0)
@@ -605,17 +617,17 @@ void ptermDrawPoint (int x, int y)
         }
     hdc = GetDC(hWnd);
     if (wemode & 1)
-    {
+        {
         SetPixel (hdcMem, XADJUST (x), YADJUST (y), orange);
         SetPixel (hdc, XADJUST (x), YADJUST (y), orange);
-    }
+        }
     else
-    {
+        {
         SetPixel (hdcMem, XADJUST (x), YADJUST (y), black);
         SetPixel (hdc, XADJUST (x), YADJUST (y), black);
-    }
+        }
     ReleaseDC (hWnd, hdc);
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Draw a line
@@ -630,8 +642,9 @@ void ptermDrawPoint (int x, int y)
 **
 **------------------------------------------------------------------------*/
 void ptermDrawLine(int x1, int y1, int x2, int y2)
-{
+    {
     HDC hdc;
+    POINT line[2];
 
     if (hWnd == 0)
         {
@@ -639,21 +652,28 @@ void ptermDrawLine(int x1, int y1, int x2, int y2)
         }
     hdc = GetDC(hWnd);
     if (wemode & 1)
-    {
+        {
         SelectObject(hdc, hPen);
         SelectObject(hdcMem, hPen);
-    }
+        }
     else
-    {
+        {
         SelectObject(hdc, hPenBg);
         SelectObject(hdcMem, hPenBg);
-    }
-    MoveToEx (hdcMem, XADJUST (x1), YADJUST (y1), NULL);
-    LineTo (hdcMem, XADJUST (x2), YADJUST (y2));
-    MoveToEx (hdc, XADJUST (x1), YADJUST (y1), NULL);
-    LineTo (hdc, XADJUST (x2), YADJUST (y2));
+        }
+    line[0].x = XADJUST (x1);
+    line[0].y = YADJUST (y1);
+    line[1].x = XADJUST (x2);
+    line[1].y = YADJUST (y2);
+    Polyline (hdcMem, line, 2);
+    Polyline (hdc, line, 2);
     ReleaseDC (hWnd, hdc);
-}
+    /*
+    **  Windows refuses to draw the endpoint of the line, so
+    **  we'll do it the hard way.
+    */
+    ptermDrawPoint (x2, y2);
+    }
 
 
 /*--------------------------------------------------------------------------
@@ -666,7 +686,7 @@ void ptermDrawLine(int x1, int y1, int x2, int y2)
 **
 **------------------------------------------------------------------------*/
 void ptermFullErase (void)
-{
+    {
     HDC hdc;
 
     if (hWnd == 0)
@@ -677,7 +697,7 @@ void ptermFullErase (void)
     BitBlt(hdcMem, DisplayMargin, DisplayMargin, 512, 512, hdcMem, 0, 0, BLACKNESS);
     BitBlt(hdc, DisplayMargin, DisplayMargin, 512, 512, hdcMem, 0, 0, BLACKNESS);
     ReleaseDC (hWnd, hdc);
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Write a (loadable set) character to the font storage 
@@ -692,7 +712,7 @@ void ptermFullErase (void)
 **
 **------------------------------------------------------------------------*/
 void ptermLoadChar (int snum, int cnum, const u16 *data)
-{
+    {
     int i, j;
     int x = cnum * 8;
     int y = YSize + (snum & 1) * 16 + 15;
@@ -702,19 +722,19 @@ void ptermLoadChar (int snum, int cnum, const u16 *data)
     SelectObject(hdcMem, hPen);
 
     for (i = 0; i < 8; i++)
-    {
+        {
         col = *data++;
         for (j = 0; j < 16; j++)
-        {
-            if (col & 1)
             {
+            if (col & 1)
+                {
                 SetPixel (hdcMem, x, y - j, orange);
-            }
+                }
             col >>= 1;
-        }
+            }
         x = (x + 1) & 0777;
+        }
     }
-}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Process XKeyEvent for Plato keyboard
@@ -729,7 +749,7 @@ void ptermLoadChar (int snum, int cnum, const u16 *data)
 **
 **------------------------------------------------------------------------*/
 bool platoKeypress (WPARAM wParam, int alt, int stat)
-{
+    {
     SHORT keystate;
     int key;
     u8 shift = 0;
@@ -740,34 +760,34 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
 
     keystate = GetKeyState (VK_CONTROL);
     if ((signed) keystate < 0)
-    {
+        {
         ctrl = TRUE;
-    }
+        }
     keystate = GetKeyState (VK_SHIFT);
     if ((signed) keystate < 0)
-    {
+        {
         shift = 040;
-    }
+        }
     if (alt)
-    {
+        {
         if (wParam == VK_LEFT)
-        {
+            {
             pc = 015 | shift;       // assignment arrow
-        }
+            }
         else if (wParam > 0 && wParam < sizeof (altKeyToPlato))
-        {
+            {
             pc = altKeyToPlato[wParam] | shift;
-        }
+            }
         if (pc >= 0)
-        {
+            {
             niuLocalKey (pc, stat);
             return TRUE;
+            }
         }
-    }
     else
-    {
-        switch (wParam)
         {
+        switch (wParam)
+            {
         case ' ':
             pc = 0100;      // space
             break;
@@ -790,23 +810,23 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
             break;
         case VK_ADD:
             if (ctrl)
-            {
+                {
                 pc = 056;   // Sigma
-            }
+                }
             else
-            {
+                {
                 pc = 016;   // +
-            }
+                }
             break;
         case VK_SUBTRACT:
             if (ctrl)
-            {
+                {
                 pc = 057;   // Delta
-            }
+                }
             else
-            {
+                {
                 pc = 017;   // -
-            }
+                }
             break;
         case VK_MULTIPLY:
         case VK_DELETE:
@@ -862,53 +882,57 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
         default:
             pc = -1;
             if (ctrl)
-            {
+                {
                 key = MapVirtualKey (wParam, 2);
                 if (isalpha (key))
-                {
-                    key &= 037;     // form control-letter key value
-                }
-                else
-                {
-                    if (key == ']')
                     {
-                        // trace toggle was already handled
-                        return 0;
+                    key &= 037;     // form control-letter key value
                     }
-                    // control-nonletter produces the shift of
-                    // what PLATO has on that keycap
+                else
+                    {
+                    if (key == ']')
+                        {
+                        /*
+                        **  trace toggle was already handled
+                        */
+                        return 0;
+                        }
+                    /*
+                    **  control-nonletter produces the shift of
+                    **  what PLATO has on that keycap
+                    */
                     shift = 040;
-                }
+                    }
                 if (key > 0 && key <= 127)
-                {
+                    {
                     pc = asciiToPlato[key];
+                    }
                 }
-            }
             else
-            {
+                {
                 GetKeyboardState (keystatebuf);
                 buf[0] = 0;
                 if (ToAscii (wParam, 0, keystatebuf, buf, 0) == 1)
-                {
+                    {
                     key = buf[0];
                     if (key > 0 && key <= 127)
-                    {
+                        {
                         pc = asciiToPlato[key];
-                    }
+                        }
                     shift = 0;      // shift is accounted for in lookup table
+                    }
                 }
             }
-        }
         if (pc >= 0)
-        {
+            {
             pc |= shift;
             niuLocalKey (pc, stat);
             return TRUE;
+            }
         }
-    }
     
     return FALSE;
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Process mouse click for Plato terminal
@@ -921,27 +945,27 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
 **
 **------------------------------------------------------------------------*/
 bool platoTouch (LPARAM lParam, int stat)
-{
+    {
     int x, y;
     
     if (!touchEnabled)
-    {
+        {
         return FALSE;
-    }
+        }
     x = XUNADJUST (lParam & 0xffff);
     y = YUNADJUST (lParam >> 16);
     
     if (x < 0 || x > 511 ||
         y < 0 || y > 511)
-    {
+        {
         return FALSE;
-    }
+        }
     x /= 32;
     y /= 32;
 
     niuLocalKey (0x100 | (x << 4) | y, stat);
     return TRUE;
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Enable or disable "touch" input
@@ -953,17 +977,17 @@ bool platoTouch (LPARAM lParam, int stat)
 **
 **------------------------------------------------------------------------*/
 void ptermTouchPanel(bool enable)
-{
+    {
     if (enable)
-    {
+        {
         SetClassLong(hWnd, GCL_HCURSOR, (LONG) hcTouch);
-    }
+        }
     else
-    {
+        {
         SetClassLong(hWnd, GCL_HCURSOR, (LONG) hcNormal);
-    }
+        }
     touchEnabled = enable;
-}
+    }
 
 /*
 **--------------------------------------------------------------------------
@@ -987,67 +1011,73 @@ void ptermTouchPanel(bool enable)
 **
 **------------------------------------------------------------------------*/
 static void drawChar (HDC hdc, int x, int y, int snum, int cnum)
-{
+    {
     int charX, charY;
     int xb = 8, yb = 16;
     int xoff = 0, yoff = 0;
     int yt = YADJUST (y) - 15;
 
-    // Clip path has bizarre side effects, so do clipping manually.
-    // If X is 1024 or more, that's the special internal "don't clip"
-    // marker used for displaying the Trace indicator.
+    /*
+    **  Clip path has bizarre side effects, so do clipping manually.
+    **  If X is 1024 or more, that's the special internal "don't clip"
+    **  marker used for displaying the Trace indicator.
+    */
     if (x < 1024)
-    {
+        {
         if (x > 512 - 8)
-        {
+            {
             xb = 512 - x;
-        }
+            }
         else if (x < 0)
-        {
+            {
             xoff = -x;
             xb = 8 - xoff;
             x = 0;
-        }
+            }
         if (yt > DisplayMargin + 512 - 16)
-        {
+            {
             yb = 512 - (yt - DisplayMargin);
-        }
+            }
         else if (yt < DisplayMargin)
-        {
+            {
             yoff = DisplayMargin - yt;
             yb = 16 - yoff;
             yt = DisplayMargin;
+            }
         }
-    }
     
     charX = cnum * 8;
     if (snum < 2)
-    {
-        // "ROM" characters
+        {
+        /*
+        **  "ROM" characters
+        */
         charY = snum * 16;
         BitBlt (hdcMem, XADJUST (x & 1023), yt, xb, yb,
                 hdcFont, charX + xoff, charY + yoff, WeFunc[wemode]);
-    }
+        }
     else
-    {
+        {
         charY = YSize + (snum - 2) * 16;
         BitBlt (hdcMem, XADJUST (x & 1023), yt, xb, yb,
                 hdcMem, charX + xoff, charY + yoff, MWeFunc[wemode]);
-    }
+        }
     BitBlt(hdc, XADJUST (x & 1023), yt, xb, yb,
            hdcMem, XADJUST (x & 1023), yt, SRCCOPY);
-    // Handle screen edge wraparound by recursion...
+    /*
+    **  Handle screen edge wraparound by recursion...
+    */
     if (x < 1024)
-    {
+        {
         if (x > 512 - 8)
-        {
+            {
             drawChar (hdc, x - 512, y, snum, cnum);
-        }
+            }
         if (y > 512 - 16)
-        {
+            {
             drawChar (hdc, x, y - 512, snum, cnum);
+            }
         }
     }
-}
 
 /*---------------------------  End Of File  ------------------------------*/
