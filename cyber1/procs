@@ -1,0 +1,366 @@
+.proc,cybis. 
+.* 
+.*  prime time load procedure. 
+.* 
+ife(ot.ne.syo,origin)
+revert,abort.
+endif(origin)
+.* 
+.*        set up file *configx* under user *platomf*.
+.*        in this proc, just purge *configx*.
+.* 
+setpun.
+purge(configx/na)
+.* 
+packnam. 
+clear. 
+.* 
+setpun.
+.*class(sc=sy) 
+norerun. 
+settl(*) 
+setasl(*)
+setjsl(*)
+set(r1=0)
+unload(*)
+configx(v=cybis) 
+mfnx.
+mastor(cybis)
+dayfile. 
+exit.
+dmp. 
+~
+.proc,platx,dis=$*dis$/dis,ax=0/1,cp=,v=cybis,pn=pcez. 
+.* 
+.*        plato load procedure.
+.* 
+.*          ax  - specified for alternate executors. 
+.*          cp  = control point, default is highest. 
+.*          v   = version, the default is cybis.  if v 
+.*                is not cybis or gogo, it is the user 
+.*                number from which pbin is attached 
+.*                (from pack pcez if v .eq. gogo; else 
+.*                from pack support).
+.*          pn  = pbin pack, default is pcez.
+.*          dis - brings up dis at the control point.
+.* 
+ife(ot.ne.syo,origin)
+revert,abort.
+endif(origin)
+.* 
+setpr(70)
+setpun.
+.*class(sc=sy) 
+norerun. 
+settl(*) 
+setasl(*)
+setjsl(*)
+*
+versx(l=plato,b=pbin,m=pmap,#v=v,#pn=pn) 
+configx(#v=v)
+mode(1)
+rfl(140000)
+dis. 
+plato(ax)
+dayfile. 
+*
+exit.
+dmp. 
+~
+.proc,framx,dis=$*dis$/dis,cp=,v=cybis,pn=pcez.
+.* 
+.*        framatter load procedure.
+.* 
+.*          cp  = control point, default is highest. 
+.*          v   = version, the default is cybis.  if v 
+.*                is not cybis or gogo, it is the user 
+.*                number from which fbin is attached 
+.*                (from pack pcez if v .eq. gogo; else,
+.*                from pack support).
+.*          pn  = fbin pack, default is pcez.
+.*          dis - brings up dis at the control point.
+.* 
+ife(ot.ne.syo,origin)
+revert,abort.
+endif(origin)
+.* 
+setpr(70)
+setpun.
+.*class(sc=sy) 
+norerun. 
+settl(*) 
+setasl(*)
+setjsl(*)
+*
+versx(l=framat,b=fbin,m=fmap,#v=v,#pn=pn)
+mode(1)
+rfl(30000) 
+dis. 
+framat.
+ife(r1.eq.050323b,reload)
+dayfile. 
+route(output,dc=lp)
+framx(#v=v,#pn=pn) 
+endif(reload)
+exit.
+dmp. 
+~
+.proc,condx,dis=$*dis$/dis,cp=,pr=,v=cybis,pn=pcez.
+.* 
+.*        condensor load procedure.
+.* 
+.*          cp  = control point, default is highest. 
+.*          pr  = priority for condensor to run (1-72b)
+.*                (default is 72b set by condensor itself) 
+.*          v   = version, the default is cybis.  if v 
+.*                is not cybis or gogo, it is the user 
+.*                number from which cbin is attached 
+.*                (from pack pcez if v .eq. gogo; else,
+.*                from pack support).
+.*          pn  = cbin pack, default is pcez.
+.*          dis - brings up dis at the control point.
+.* 
+ife(ot.ne.syo,origin)
+revert,abort.
+endif(origin)
+.* 
+setpr(70)
+ife($v$ .eq. $cybis$,user) 
+setpun.
+endif(user)
+.*class(sc=sy) 
+norerun. 
+settl(*) 
+setasl(*)
+setjsl(*)
+* max cm fl allowed to avoid deadlock. 
+mfl(cm=104000) 
+*
+versx(l=conden,b=cbin,m=cmap,#v=v,#pn=pn)
+mode(1)
+rfl(40000) 
+dis. 
+ife,($pr$ .ne. $$),cond. 
+conden(pr).
+else(cond) 
+conden.
+endif(cond)
+*
+*  if ecs error, print dayfile and reload. 
+*
+ife(r1.eq.050323b,reload)
+dayfile. 
+route(output,dc=lp)
+condx(#v=v,#pn=pn,#pr=pr)
+endif(reload)
+*
+exit.
+dmp. 
+~
+.proc,plfx,dis=$*dis$/dis,cp=,v=cybis,pn=pcez. 
+.* 
+.*        plf load procedure.
+.* 
+.*        parameters.
+.* 
+.*          cp  = control point number, default is highest.
+.*          v   = version, the default is cybis.  if v 
+.*                is not cybis or gogo, it is the user 
+.*                number from which plfbin is attached 
+.*                (from pack pcez if v .eq. gogo; else,
+.*                from pack support).
+.*          pn  = plfbin pack, default is pcez.
+.*          dis - brings up dis at the control point.
+.* 
+.*        examples.
+.* 
+.*          x.plfx.          load prime time plf.
+.* 
+.*          x.plfx(v=gogo)   load gogo plf.
+.* 
+.*          x.plfx(v=test)   load plf from user number test. 
+.* 
+ife(ot.ne.syo,origin)
+revert,abort.
+endif(origin)
+.* 
+setpr(70)
+setpun.
+.*class(sc=sy) 
+setpr(41)
+settl(*) 
+setasl(*)
+setjsl(*)
+norerun. 
+mode(7)
+*
+ife($v$.ne.$cybis$,version)
+versx(l=plfbin,b=plfbin,m=plfmap,#v=v,#pn=pn)
+gtr(plfbin,plf,,,s,na)abs/plf-ulib/plf 
+unload(plfbin) 
+endif(version) 
+*
+ife(.not.file(plf,as),cybis) 
+common(system) 
+gtr(system,plf)abs/plf-ulib/plf
+unload(system) 
+endif(cybis) 
+*
+*unload(*,plf,map) 
+rfl(12000) 
+dis. 
+plf. 
+*
+exit.
+dmp. 
+~
+.proc,versx,l,b,m=,v=cybis,pn=pcez.
+.* 
+.*        get proper version of load file. 
+.* 
+.*        l  = local file name.
+.*        b  = direct access binary file.
+.*        m  = direct access load map file.
+.*        v  = version, default is cybis.
+.*        pn = pack name for gogo binaries (personal 
+.*             binaries are on pack support).
+.* 
+.*        if v .eq. cybis, do nothing. 
+.*        if v .ne. gogo, attach l=b from un=v, pn=support.
+.*        if v .eq. gogo, attach l=b from un=plato, pn=pcez. 
+.* 
+.*        if the file is not available from un=v, it 
+.*        is attached from un=cybis.  if it is also not
+.*        available from un=plato, nothing is done.
+.* 
+ife(ot.ne.syo,origin)
+revert,abort.
+endif(origin)
+.* 
+get,lconfig/na.
+ife($v$.eq.$cybis$,cybis)
+ife($l$.eq.$conden$,conden)
+*   keep conden overlays in local file for *cdisk*.
+common(system) 
+gtr(system,conden,u)abs/conden,ulib/conden 
+unload(system) 
+endif(conden)
+revert.
+endif(cybis) 
+.* 
+unload(map)
+user(cybis,athena,cybdev)
+.* 
+ife,($v$.eq.$cybdev$),cybdev.
+ife,($b$.eq.$mbin$),mbin.
+attach(b=mbindev/na) 
+endif(mbin)
+ife,($b$.eq.$pbin$),pbin.
+attach(b=pbindev/na) 
+endif(pbin)
+ife,($b$.eq.$fbin$),fbin.
+attach(b=fbindev/na) 
+endif(fbin)
+ife,($b$.eq.$pnibin$),pnibin.
+attach(b=pnidev/na)
+endif(pnibin)
+ife,($b$.eq.$cbin$),cbin.
+attach(b=cbindev/na) 
+endif(cbin)
+.* 
+else(cybdev) 
+attach(b/na,r=dq)
+endif(cybdev)
+family.
+.* 
+ife($l$.ne.$b$,lsab) 
+unload(l)
+copy(b,l)
+rewind(l)
+unload(b)
+endif(lsab)
+ife($m$.ne.$$,map) 
+attach(m/na,r=dq)
+copy(m,map)
+rewind(map)
+unload(m)
+endif(map) 
+setpun.
+.* 
+.*        if file still not attached after all this work,
+.*        then end job without exit processing.
+.* 
+ife(.not.file(l,as),cybis) 
+*  binary file not found.
+dayfile. 
+exit.
+exit.
+endif(cybis) 
+.* 
+revert.
+~
+.proc,configx,v=cybis. 
+.* 
+.*  get the configuration file.
+.* 
+.*        if v .eq. cybis, get text/config from system.
+.*        if v .ne. cybis, get file gogocon. 
+.* 
+.*        if indirect access file *configx* exists under 
+.*        user index 377773b, append its contents to the 
+.*        retrieved configuration file.
+.* 
+ife(ot.ne.syo,origin)
+revert,abort.
+endif(origin)
+.* 
+ife($v$.eq.$cybdev$,cybdev)
+setpun.
+get(config=devcfig)
+revert.
+endif(cybdev)
+.* 
+ife($v$.ne.$cybis$,gogocon)
+setpun.
+get(config=gogocon/na) 
+endif(gogocon) 
+.* 
+ife(.not.file(config,as),config) 
+common(system) 
+gtr(system,config)text/config
+unload(system) 
+endif(config)
+.* 
+setpun.
+get(c=configx/na)
+ife(file(c,as),add)
+skipei(config) 
+copyei(c,config) 
+rewind(*)
+pack(config) 
+unload(c)
+endif(add) 
+.* 
+get(lconfig/na)
+ife(file(lconfig,as),addloc) 
+skipei(config) 
+copyei(lconfig,config) 
+*unload(lconfig) 
+rewind(config) 
+pack(config) 
+rewind(config) 
+endif(addloc)
+.* 
+revert.
+~
+.proc,setpun,pw=platomf,fm=. 
+.* 
+.*      set plato user name. 
+.* 
+ife(ot.ne.syo,origin)
+revert,abort.
+endif(origin)
+.* 
+user(platomf,pw,fm)
+.* 
+revert.
