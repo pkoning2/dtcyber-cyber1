@@ -195,10 +195,9 @@ static FcStatus dd844Func(PpWord funcCode);
 static void dd844Io(void);
 static void dd844Activate(void);
 static void dd844Disconnect(void);
+static void dd844Load(DevSlot *, int, char *);
 static void dd844Seek(FILE *fcb, DiskParam *dp);
 static void dd844SeekNextSector(DiskParam *dp);
-static void dd844Dump(PpWord data);
-static void dd844Flush(void);
 
 /*
 **  ----------------
@@ -250,6 +249,7 @@ void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     dp->disconnect = dd844Disconnect;
     dp->func = dd844Func;
     dp->io = dd844Io;
+    dp->load = dd844Load;
     dp->selectedUnit = unitNo;
 
     dskp = (DiskParam *) calloc(1, sizeof(DiskParam));
@@ -756,6 +756,41 @@ static void dd844SeekNextSector(DiskParam *dp)
             dp->track += 1;
             }
         }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Perform load/unload on printer.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void dd844Load(DevSlot *dp, int unitNo, char *fn)
+    {
+    FILE *fcb;
+
+    if (fn != NULL)
+        {
+        opSetMsg ("$LOAD NOT SUPPORTED ON DD844");
+        return;
+        }
+    
+    if (unitNo < 0 || unitNo >= MaxUnits)
+        {
+        opSetMsg ("$INVALID UNIT NO");
+        return;
+        }
+    fcb = dp->fcb[unitNo];
+
+    if (fcb == NULL)
+        {
+        opSetMsg ("$UNIT NOT ALLOCATED");
+        return;
+        }
+
+    fflush (fcb);
+    opSetMsg ("BUFFERS FLUSHED");
     }
 
 /*---------------------------  End Of File  ------------------------------*/
