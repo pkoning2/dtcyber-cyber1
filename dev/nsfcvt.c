@@ -3,15 +3,19 @@
 **  Copyright (c) 2003-2004, Tom Hunter, Gerard van der Grinten, Paul Koning
 **  (see license.txt)
 **
-**  Name: dd8xxcvt.c
+**  Name: nsfcvt.c
 **
 **  Description:
 **      Format conversion for dd8xx image files
+**      This variant converts NSF PLATO images (8 bytes per 60 bits)
+**      to DtCyber packed form.
 **
 **--------------------------------------------------------------------------
 */
 
 #include <stdio.h>
+
+#define NEW_ORDER 1     // new ones have the 8 bytes reversed from the old order
 
 #define SectorSize              322
 #define SectorBytes             512
@@ -60,8 +64,15 @@ static int dd8xxReadSector(FILE *fcb, void *buf)
     for (i = 0; i < 64 * 8; i += 8)
     {
         t = 0;
+#if NEW_ORDER
+        bp += 8;
+        for (j = 0; j < 8; j++)
+            t = (t << 8) + *--bp;
+        bp += 8;
+#else
         for (j = 0; j < 8; j++)
             t = (t << 8) + *bp++;
+#endif
         for (j = 0; j < 5; j++)
         {
             *pp++ = (t >> 48) & 07777;
