@@ -1,0 +1,66 @@
+asm.
+user(plato,plato)
+settl(*)
+setasl(*)
+setjsl(*)
+rfl,170000.
+attach,opl=plaopl.
+attach,nos=opl580.
+attach,ipl.
+attach,cstc.
+attach,fcommon/m=w,na.
+if(.not.file(fcommon,as))define,fcommon.
+*
+modify(z,lo=e)/*oplfile nos,ipl/*edit framat
+cstc(l=0,a,i,s=0,ml=580d)
+modify(z,lo=e)/*oplfile nos,ipl/*edit setup/*edit instalf
+cstc(l=0,i,c=fcommon,s=nostext,ml=580d)
+modify(z,lo=e)/*oplfile nos,ipl/*edit fsys
+cstc(l=0,i,c=fcommon,s=nostext,ml=580d)
+modify(lo=e)
+cstc(l=0,i,c=fcommon,s=0,ml=580d)
+*---
+*         overlays
+*
+modify(lo=e)
+cstc(l=0,i,c=fcommon,s=0,ml=580d)
+*
+purge(genfig/na)
+define(genfig/ct=pu,m=r)
+modify(z,lo=e)/*oplfile nos,ipl/*edit genfigx
+compass(i,l=0,b=genfig)
+unload,genfig.
+*---
+rewind(lgo)
+purge(framat/na)
+define(framat/ct=pu,m=r)
+copybf(lgo,framat)
+unload(framat)
+*---
+attach(genfig)
+attach(framat)
+unload(lgo,compile)
+genfig,framat.
+compass(i,s=0,l=0)
+unload,genfig.
+*---
+begin(loader,,rel=$framat,lgo$,abs=fbin,rfl=0,map=fmap,mo=sbex)
+rfl,60000.
+note(dir)+*i abs/framat,ovl/*
+unload,lgo.
+gtr(fbin,lgo)ovl/fram00$
+libedit(p=fbin,c,i=dir,lo=e)
+begin(ulib,,fbin,ulibf,framat)
+catalog(fbin,r,n,u)
+~
+*oplfile nos,ipl
+*edit     format
+*edit     outform
+*edit     loadov
+~
+*oplfile nos,ipl
+*edit     fovlay1
+*edit     fovlay2
+*edit     fovlay3
+*edit     fovlay4
+*edit     fovlay5

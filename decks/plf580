@@ -1,0 +1,92 @@
+asm.
+user(plato,plato)
+settl(*)
+setasl(*)
+setjsl(*)
+rfl,170000.
+attach,opl=plaopl.
+attach,nos=opl580.
+attach,ipl.
+attach,cstc.
+attach,lgo=plfbin/m=w,na.
+if(.not.file(lgo,as))define,lgo=plfbin.
+attach,plfcom/m=w,na.
+if(.not.file(plfcom,as))define,plfcom.
+*
+*         plfcom.
+*
+modify(z,lo=e)/*oplfile nos,ipl/*edit plfcom
+cstc(a,i,s=0,g=nostxt,ml=580d)
+*
+*         main  ident.
+*
+modify(z,lo=e)/*oplfile nos,ipl/*edit plfmain/*edit plfsubs
+cstc(d,i,c=plfcom,s=0,g=nostxt,ml=580d)
+*
+*         other main overlay idents.
+*
+modify(lo=e)
+cstc(d,i,c=plfcom,s=0,g=nostxt,ml=580d)
+*
+*         overlays.
+*
+modify(lo=e)
+cstc(d,i,c=plfcom,s=0,g=nostxt,ml=580d)
+*
+*
+exit.
+exit.
+* *** need to figure out this loader/ulib stuff.
+purge(plf/na)
+define(plf/ct=pu,m=r)
+rewind(lgo)
+copyei(lgo,plf)
+catalog(plf,r,u,n)
+*
+begin(loader,,rel=plf,abs=plfbin,rfl=30000,mo=sbex,map=plfmap)
+rewind(plfmap)
+copyei(plfmap)
+*
+rfl(60000)
+begin(ulib,,plfbin,ulibplf,plf)
+catalog(plfbin,r,u,n)
+*
+~
+*oplfile nos,ipl
+*edit     plfbdd
+*edit     plfbds
+*edit     plfncr
+*edit     plfoeb
+~
+*oplfile nos,ipl
+*edit plfbst
+*edit plfddl
+*edit plfdei
+*edit plfdel
+*edit plfden
+*edit plfdes
+*edit plfdgn
+*edit plfdll
+*edit plfdpr
+*edit plfebd
+*edit plfetl
+*edit plfenp
+*edit plfesr
+*edit plfhlo
+*edit plfint
+*edit plfin1
+*edit plfisd
+*edit plfiso
+*edit plflds
+*edit plflsi
+*edit plfnam
+*edit plfncw
+*edit plfoei
+*edit plfoen
+*edit plfoes
+*edit plfprn
+*edit plfsdp
+*edit plfsel
+*edit plfsli
+*edit plfsts
+*edit plfwfp

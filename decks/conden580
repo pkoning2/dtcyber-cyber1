@@ -1,0 +1,15 @@
+asm.
+user(plato,plato)
+settl(*)
+setasl(*)
+setjsl(*)
+rfl,170000.
+attach,procfil.
+attach,opl=plaopl.
+attach,nos=opl580.
+attach,ipl.
+attach,cstc.
+*
+set(r1g=0)
+*
+begin(condens,,ml=580d,list=0)
