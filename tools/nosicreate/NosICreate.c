@@ -175,7 +175,7 @@ void writeNosItoTap(void)
             buf[byteCount + 5]  = (u8)(blockTerm >>  0);
             byteCount += 6;
             }
-        else if (1) //if (byteCount % 15 == 9)
+        else if (byteCount % 15 == 9)
             {
             ppWordCount = ((byteCount - 9) / 15) * 10;
 //            ppWordCount += (6 + 4);
