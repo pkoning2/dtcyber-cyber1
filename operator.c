@@ -998,7 +998,7 @@ static void opTraceCp(char *cmdParams)
         opSetMsg ("$INSUFFICENT PARAMETERS.");
         return;
         }
-    if (cp > (cpMem[2] >> 12) & Mask12)
+    if (cp > 034 || cp < 1)
         {
         opSetMsg ("$INVALID CP NUMBER.");
         return;
