@@ -1,0 +1,241 @@
+Doelz net
+
+The NIU has TWO channels, one for input, one for output.
+These are given equipment names NI and NO respectively.
+
+Function codes (on output channel)
+	 0	deactivate network
+	 1	activate network
+
+Input data:
+
+Input data arrives in blocks.  The block length is the primary
+identifier of what type of data the block carries.  The PP is expected
+to post a long read; the device will disconnect at the end of the
+block. 
+
+	   Length  Type
+	     1	   Permission to send
+	     7	   Key
+	     9	   Supervisory
+	     21	   Data block
+
+Message layouts in detail (from plftext):
+
+***       prms message format.
+*
+*                12 / network address.
+
+***       plato key message format.
+*
+*                12 / network address.
+*                64 / key data.
+*                 8 / reserved for the network.
+
+***       supervisory message format, excluding the ncrspm
+*         message.
+*
+*                12 / 1, host to network supervisory bit.
+*                 1 / 1, start bit.
+*                 1 / 0, first blockette bit.
+*                 1 / 0, blockette type bit.
+*                 1 / 0, a (up) bit.
+*                 4 / high bits of network address.
+*                 8 / low bits of network address.
+*                72 / 8 bit bytes 2 - 10 of the message.
+*                 8 / reserved for the network.
+
+***       ncrspm message format.
+*
+*                12 / 1, host to network supervisory bit.
+*                 1 / 1, start bit.
+*                 1 / 0, first blockette bit.
+*                 6 / high bits of micro-node address.
+*                 8 / low bits of micro-node address.
+*                72 / 8 bit bytes 2 - 10 of the message.
+*                 8 / reserved for the network.
+
+***       data messages (blocksets) are received a data
+*         block at a time.  each data block contains 1 to
+*         8 twenty bit data bytes, and a blockset consists
+*         of 1 to 16 data blocks.  the data blocks are re-
+*         cieved in sequential order.  the data blocks have
+*         two formats - the last data block of a blockset
+*         and not the last data block.
+
+***       not the last data block format.
+*
+*                12 / network address.
+*                 1 / start bit.
+*                 1 / 0, 1st blockette bit.
+*                 1 / 1, blockette type.
+*                 1 / 1, up/down bit.
+*                 1 / 0, supervisory/data bit.
+*                 1 / 0, spares bit.
+*                10 / low bits of network address.
+*                 1 / last blockette start bit.
+*                 1 /  2nd blockette bit.
+*                 1 / 0, last block bit.
+*                 1 / unused.
+*                 4 / block sequence number.
+*               160 / 8 twenty bit data bytes.
+*                 2 / 0.
+*                 4 / high bits of network address.
+*                 2 / 0.
+*                48 / padding to make length 21 pp words.
+
+***       last data block format.
+*
+*         in the last data block, the last block bit is
+*         set, and the low bit of the last 20 bit data byte
+*         received is always set.
+*
+*                12 / network address.
+*                 1 / start bit.
+*                 1 / 0, 1st blockette bit.
+*                 1 / 1, blockette type.
+*                 1 / 1, up/down bit.
+*                 1 / 0, supervisory/data bit.
+*                 1 / 0, spares bit.
+*                10 / low bits of network address.
+*                 1 / last blockette start bit.
+*                 1 /  2nd blockette bit.
+*                 1 / 1, last block bit.
+*                 1 / unused.
+*                 4 / block sequence number.
+*               160 / 1 to 8 twenty bit data bytes.
+*                 2 / 0.
+*                 4 / high bits of network address.
+*                 2 / 0.
+*                48 / padding to make length 21 pp words.
+
+****      pcn message type values.
+ 
+ alcalm0  equ    0           all call message (types 0 - 5)
+ alcalm5  equ    5
+ alclrm0  equ    8           all call response (types 8 - 13)
+ alclrm5  equ    13          all call response (types 8 - 13)
+ alcgrm   equ    16          all call group response
+ solr     equ    17          solicit response
+ estl     equ    18          establish link
+ nav1     equ    19          node available (1)
+ nav2     equ    20          node available (2)
+ busy     equ    21          busy
+ no       equ    22          no
+ drpl     equ    23          drop link
+ abortr   equ    25          abort response
+ abortm   equ    32          abort
+ pts      equ    36          permission to send
+ abortr   equ    25          abort response
+ abortm   equ    32          abort
+ ncrdm    equ    33          network control read
+ ncwrm    equ    35          net control write
+ pts      equ    36          permission to send
+ ncrspm   equ    37          network control response
+
+Output data:
+
+Output data also goes in blocks.  Each message type has a block
+length, which along with the first word indicates what the block type
+is.  Each block is transmitted by Output instructions ending with a
+channel disconnect.
+
+	   Length  Type				First word
+	     1	   Abort			Network address
+	     7	   Key				Network address
+	     11	   Supervisory			1
+	     n	   Data				Network address
+
+Data messages contain some number of 20-bit words, and the block size
+in PP words is X*20/12 + 1 rounded up, for X words.  X is at most 128,
+so that yields a max data block size of 215 PP words including the
+network address at the start.
+
+Note that the supervisory message size outbound is different from the
+size inbound.  
+
+Message layouts in detail (from plftext):
+
+***       abortm message format.
+*
+*                12 / network address.
+
+***       plato key message format.
+*
+*                12 / network address.
+*                64 / key data.
+*                 8 / reserved for the network.
+
+***       data message (blockset) format.
+*
+*                12 / network address.
+*              d*20 / d 20 bit data bytes, 0 < d < 129.
+
+***       supervisory message format, excluding the ncrdm
+*         and ncwrm messages.
+*
+*                12 / 1, host to network supervisory bit.
+*                 1 / 1, start bit.
+*                 1 / 0, first blockette bit.
+*                 1 / 0, blockette type bit.
+*                 1 / 0, a (up) bit.
+*                 4 / high bits of network address.
+*                 8 / low bits of network address.
+*                72 / 8 bit bytes 2 - 10 of the message.
+*                 8 / reserved for the network.
+*                24 / padding to make the length 11 pp wds.
+ 
+ 
+*         abortr path rate codes.
+ 
+ prt1200  equ    7           1200 bps
+
+***       ncrdm message and ncwrm message format.
+*
+*                12 / 1, host to network supervisory bit.
+*                 1 / 1, start bit.
+*                 1 / 0, first blockette bit.
+*                 6 / high bits of micro-node address.
+*                 8 / low bits of micro-node address.
+*                72 / 8 bit bytes 2 - 10 of the message.
+*                 8 / reserved for the network.
+*                24 / padding to make the length 11 pp wds.
+
+***       host to network output protocol.
+*
+*         messages sent to a network address associated with
+*         a path connecting a call origin and call destina-
+*         tion adhere to the following protocol.
+*
+*         1  supervisory and key messages may be output at
+*            any time.
+*
+*         2  data messages may be output only if -
+*
+*                since the last data message was sent,
+*                a prms has been received and an abortm
+*                has not been sent
+*
+*                            or
+*
+*                since the last abortm was sent, an
+*                abortr has been received.
+*
+*         3  the value in the high order 4 bits of the orgtyp
+*            field of the solr and estl messages indicates
+*            the type of link being established -
+*
+*                0  host to host interactive link.
+*                1  host to host bulk data link.
+*                2  host to host loopback link.
+*                3  host to host diagnostic link.
+*                4  interactive pcn dialed link.
+*                5  host to host interactive simulator link.
+*                6  get remote host name link.
+*                7  get nodes available link.
+*
+
+Protocol for Doelz over TCP:
+
+The protocol by default uses socket 5005.  It carries the input and
+output data streams.

@@ -66,7 +66,7 @@ static bool initGetString(char *entry, char *defString, char *str, int strLen);
 bool bigEndian;
 extern u16 deadstartPanel[];
 extern u8 deadstartCount;
-int cpuRatio;
+long cpuRatio;
 
 /*
 **  -----------------
@@ -328,6 +328,18 @@ static void initCyber(char *config)
     */
     initGetInteger("platoconns", 4, &conns);
     platoConns = (u16)conns;
+
+    /*
+    **  Get optional Doelz port number. If not specified, use default value.
+    */
+    initGetInteger("doelzport", 5005, &port);
+    doelzPort = (u16)port;
+
+    /*
+    **  Get optional max Doelz connections. If not specified, use default value.
+    */
+    initGetInteger("doelzconns", 4, &conns);
+    doelzConns = (u16)conns;
     }
 
 /*--------------------------------------------------------------------------

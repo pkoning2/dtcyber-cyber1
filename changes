@@ -293,3 +293,4 @@ Since jan21 2004 drop:
   not noticed until DtCyber died due to "file too long"...
 - Changed window_* so ALT/X is a "trace off" whenever any kind of trace,
   including channel trace, is in effect.
+- Changed Makefile to do dependencies, so changes to .h files are handled right.

@@ -34,7 +34,6 @@ void deadStart(void);
 */
 void rtcInit(char *model, u8 increment, long setMHz);
 void rtcTick(void);
-u64 rtcMicrosec(void);
 
 /*
 **  channel.c
@@ -158,6 +157,11 @@ typedef void niuProcessOutput (int, u32);
 void niuSetOutputHandler (niuProcessOutput *h, int stat);
 
 /*
+**  doelz.c
+*/
+void doelzInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+
+/*
 **  tpmux.c
 */
 void tpMuxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
@@ -183,6 +187,7 @@ void traceCpu(CpuContext *activeCpu,
               u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress);
 void traceExchange(CpuContext *cc, u32 addr, char *title);
 void traceCM(u32 start, u32 end);
+void traceData(CpWord d, int stream);
 
 /*
 **  dump.c
@@ -312,11 +317,14 @@ extern u16 telnetPort;
 extern u16 telnetConns;
 extern u16 platoPort;
 extern u16 platoConns;
+extern u16 doelzPort;
+extern u16 doelzConns;
 extern FILE **ppuTF;
 extern u32 cycles;
-extern int cpuRatio;
+extern long cpuRatio;
 extern bool debugDisplay;
 extern bool keyboardTrue;
+extern u32 rtcClock;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

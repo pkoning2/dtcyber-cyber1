@@ -88,6 +88,7 @@
 #define DtDdp                   15
 #define DtNiu                   16
 #define DtDd7155                17
+#define DtDoelz                 18
 
 /*
 **  Special channels.
