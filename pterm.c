@@ -386,7 +386,7 @@ static void ptermWindowInput(void)
                         ptermSetWeMode (wemode);
                         // The 1024 is a strange hack to circumvent the
                         // screen edge wrap checking.
-                        ptermDrawChar (1024, 512, 1, 024);
+                        ptermDrawChar (1024 + 512, 512, 1, 024);
                         wemode = savemode;
                         ptermSetWeMode (wemode);
                         return;

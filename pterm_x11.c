@@ -85,6 +85,8 @@ Display *disp;
 XrmDatabase XrmDb;
 Window ptermWindow;
 
+extern bool tracePterm;
+
 /*
 **  -----------------
 **  Private Variables
@@ -109,8 +111,7 @@ static const int WeFunc[] =
 };
 
 static XRectangle platoRect[] = 
-{ { DisplayMargin + 512, DisplayMargin - 16, 8, 16 },
-  { XADJUST (0), YADJUST (511), 512, 512 },
+{ { XADJUST (0), YADJUST (511), 512, 512 },
   { 0, YSize, 512, 32 } };
 
 /*
@@ -293,11 +294,12 @@ void ptermInit(const char *winName)
 
     /*
     **  Set clipping rectangles
-    **  The display gets two: one for the PLATO screen, one for the trace marker.
-    **  The bitmap gets a third one for the loadable chars bitmap.
+    **  The display gets one, the PLATO screen.
+    **  The bitmap gets a second one for the loadable chars bitmap.
+    **  (Painting of the trace marker is handled separately.)
     */
-    XSetClipRectangles (disp, wgc, 0, 0, platoRect, 2, YXSorted);
-    XSetClipRectangles (disp, pgc, 0, 0, platoRect, 3, YXSorted);
+    XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
+    XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
     
     /*
     **  Initialise input.
@@ -669,10 +671,17 @@ void ptermInput(XEvent *event)
                    512, 512, 
                    DisplayMargin, DisplayMargin, 1);
         // copy the trace marker
-        XCopyPlane(disp, pixmap, ptermWindow, wgc, 
-                   DisplayMargin + 512, DisplayMargin - 16,
-                   8, 16,
-                   DisplayMargin + 512, DisplayMargin - 16, 1);
+        if (tracePterm)
+        {
+            XSetClipMask (disp, wgc, None);
+            XSetClipMask (disp, pgc, None);
+            XCopyPlane(disp, pixmap, ptermWindow, wgc, 
+                       DisplayMargin + 512, DisplayMargin - 16,
+                       8, 16,
+                       DisplayMargin + 512, DisplayMargin - 16, 1);
+            XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
+            XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
+        }
         ptermSetWeMode (savemode);
         XSync (disp, FALSE);
         break;
@@ -728,13 +737,20 @@ static void drawChar (Drawable d, GC gc, int x, int y, int snum, int cnum)
     int charX, charY;
     char c;
     
+    if (x >= 1024)
+    {
+        // Special flag coordinate to write to the status field
+        XSetClipMask (disp, wgc, None);
+        XSetClipMask (disp, pgc, None);
+    }
+    
     if (snum < 2)
     {
         // "ROM" characters
         c = (snum * 64) + cnum;
         if (wemode & 2)
         {
-            XDrawString(disp, d, gc, XADJUST (x),
+            XDrawString(disp, d, gc, XADJUST (x & 1023),
                         YADJUST (y), &c, 1);
         }
         else
@@ -751,13 +767,22 @@ static void drawChar (Drawable d, GC gc, int x, int y, int snum, int cnum)
                     XADJUST (x), YADJUST (y) - 15, 1);
     }
     // Handle screen edge wraparound by recursion...
-    if (x > 512 - 8)
+    if (x >= 1024)
     {
-        drawChar (d, gc, x - 512, y, snum, cnum);
+        // Restore normal clipping
+        XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
+        XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
     }
-    if (y > 512 - 16)
+    else 
     {
-        drawChar (d, gc, x, y - 512, snum, cnum);
+        if (x > 512 - 8)
+        {
+            drawChar (d, gc, x - 512, y, snum, cnum);
+        }
+        if (y > 512 - 16)
+        {
+            drawChar (d, gc, x, y - 512, snum, cnum);
+        }
     }
 }
 
