@@ -18,7 +18,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "dd60"=.\dd60\dd60.dsp - Package Owner=<4>
+Project: "dd60"=.\dd60.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -30,7 +30,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "dtoper"=.\dtoper\dtoper.dsp - Package Owner=<4>
+Project: "dtoper"=.\dtoper.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
