@@ -238,3 +238,6 @@ Since jan21 2004 drop:
   tracing.  ALT/E toggles ECS tracing.  In the status display line,
   J means XJ tracing is on, E means ECS tracing, c means CPU0 and C 
   (capital C) means CPU1 tracing is on.
+
+- Merge Tom's 2.1Beta0:
+  Changed dd844.c to dd8xx.c (sorry, CVS doesn't do this well...)
