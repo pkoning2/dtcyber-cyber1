@@ -1162,7 +1162,7 @@ void pfread (int argc, char **argv)
         ep = pinflth * 10;
         for (entry = 0; entry <= fused; entry++)
         {
-            if (pdbuf[ep] == 0)
+            if (pdbuf[ep] == 0 || pdbuf[ep + 9] == 077)
             {
                 if (!wild)
                     fprintf (stderr, "plato file %s not found\n", fn);
