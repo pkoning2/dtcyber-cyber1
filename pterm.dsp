@@ -83,31 +83,31 @@ LINK32=link.exe
 # Name "pterm - Win32 Debug"
 # Begin Source File
 
-SOURCE=..\charset.c
+SOURCE=charset.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\fonts.bmp
+SOURCE=fonts.bmp
 # End Source File
 # Begin Source File
 
-SOURCE=..\pterm.c
+SOURCE=pterm.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\pterm_win32.c
+SOURCE=pterm_win32.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\ptermcom.c
+SOURCE=ptermcom.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\resource.h
+SOURCE=resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\window.rc
+SOURCE=window.rc
 
 !IF  "$(CFG)" == "pterm - Win32 Release"
 

@@ -259,3 +259,4 @@ Since jan21 2004 drop:
 - Removed a few unused variables.
 - Added plato terminal window handling for Win32.
 - Added "true" keyboard emulation for Win32 (may not be quite right yet?)
+- Fix exit handling for pterm window for Win32.

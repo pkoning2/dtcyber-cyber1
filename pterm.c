@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter, Paul Koning (see license.txt)
+**  Copyright (c) 2003, 2004, Tom Hunter, Paul Koning (see license.txt)
 **
 **  Name: pterm.c
 **
@@ -75,6 +75,7 @@ HINSTANCE hInstance;
 extern FILE *traceF;
 extern bool tracePterm;
 extern u8 wemode;
+extern volatile bool ptermActive;
 
 /*
 **  -----------------
@@ -86,7 +87,6 @@ static u32 currOutput;
 static int connFd;
 static u16 currInput;
 static u8 ibytes;      // how many bytes have been assembled into currInput (0..2)
-static bool active;
 static niuProcessOutput *outh;
 
 /*
@@ -131,7 +131,7 @@ int main (int argc, char **argv)
 
     sprintf (name, "Plato terminal -- %s", argv[1]);
     ptermInit (name, TRUE);
-    while (active)
+    while (ptermActive)
     {
         d = ptermCheckInput ();
         if (d >= 0)
@@ -283,7 +283,7 @@ static void ptermConnect (const char *hostname, const char *portnum)
         printf("pterm: Can't connect to %s %d\n", hostname, port);
         return;
     }
-    active = TRUE;
+    ptermActive = TRUE;
 }
 
 /*--------------------------------------------------------------------------
@@ -325,7 +325,7 @@ static int ptermCheckInput(void)
 #else
             close(connFd);
 #endif
-            active = FALSE;
+            ptermActive = FALSE;
             printf("pterm: Connection dropped\n");
             return(-1);
         }
@@ -337,7 +337,7 @@ static int ptermCheckInput(void)
 #else
         close(connFd);
 #endif
-        active = FALSE;
+        ptermActive = FALSE;
         printf("pterm: Connection dropped\n");
         return(-1);
     }
@@ -389,7 +389,7 @@ static void ptermWindowInput(void)
                     if (text[0] == '\004')  // control-D : exit
                     {
                         close(connFd);
-                        active = FALSE;
+                        ptermActive = FALSE;
                         return;
                     }
                     else if (text[0] == '\024') // control-T : trace

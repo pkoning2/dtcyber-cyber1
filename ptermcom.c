@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter, Paul Koning (see license.txt)
+**  Copyright (c) 2003, 2004, Tom Hunter, Paul Koning (see license.txt)
 **
 **  Name: ptermcom.c
 **
@@ -91,6 +91,7 @@ static void mode7 (u32 d);
 **  ----------------
 */
 bool tracePterm = FALSE;
+volatile bool ptermActive = FALSE;
 u8 wemode;
 FILE *traceF;
 

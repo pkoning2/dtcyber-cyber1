@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter, Paul Koning (see license.txt)
+**  Copyright (c) 2003, 2004, Tom Hunter, Paul Koning (see license.txt)
 **
 **  Name: pterm_win32.c
 **
@@ -77,13 +77,13 @@ static void drawChar (HDC hdc, int x, int y, int snum, int cnum);
 
 extern bool tracePterm;
 extern HINSTANCE hInstance;
+extern volatile bool ptermActive;
 
 /*
 **  -----------------
 **  Private Variables
 **  -----------------
 */
-static volatile bool ptermActive = FALSE;
 static u8 wemode;       // local copy of most recently set wemode
 static bool touchEnabled;
 static HWND hWnd;

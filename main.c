@@ -162,9 +162,7 @@ int main(int argc, char **argv)
         cycles++;
         }
 
-#if !defined(_WIN32)
     ptermClose();
-#endif
     windowClose();
     cpuExit();
 
