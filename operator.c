@@ -401,6 +401,40 @@ void * opInitStatus (const char *type, int ch, int un)
     return sd;
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Perform pending operator requests
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void operCheckRequests (void)
+    {
+    int i;
+    NetPort *np;
+
+    /*
+    **  Look for commands from any of the connected 
+    **  operator displays.
+    */
+    np = opPorts.portVec;
+    for (i = 0; i < opConns; i++)
+        {
+        if (dtActive (&np->fet))
+            {
+            opRequest (np);
+            }
+        if (!emulationActive)
+            {
+            /* We just executed "shutdown" */
+            return;
+            }
+        np++;
+        }
+        
+    }
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -427,27 +461,13 @@ static ThreadFunRet opThread (void *param)
     
     for (;;)
         {
-        /*
-        **  First, look for commands from any of the connected 
-        **  operator displays.
-        */
-        np = opPorts.portVec;
-        for (i = 0; i < opConns; i++)
+        if (!emulationActive)
             {
-            if (dtActive (&np->fet))
-                {
-                opRequest (np);
-                }
-            if (!emulationActive)
-                {
-                /* We just executed "shutdown" */
-                ThreadReturn;
-                }
-            np++;
+            /* We just executed "shutdown" */
+            ThreadReturn;
             }
-        
         /*
-        **  Next, get any additional network data 
+        **  Get any additional network data 
         */
         for (;;)
             {

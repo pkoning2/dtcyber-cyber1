@@ -223,6 +223,7 @@ void opInit(void);
 void opSetMsg (const char *p);
 void opSetStatus (void *buf, const char *msg);
 void * opInitStatus (const char *type, int ch, int un);
+void operCheckRequests (void);
 
 /*
 **  log.c

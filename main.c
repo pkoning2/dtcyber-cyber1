@@ -138,6 +138,12 @@ int main(int argc, char **argv)
             {
             consoleCheckCycles = ConsoleCheckRate;
             consoleCheckOutput();
+            /*
+            **  Also check for any pending operator requests;
+            **  those must be done in the main thread, not the 
+            **  operator network thread.
+            */
+            operCheckRequests ();
             }
         
         /*
