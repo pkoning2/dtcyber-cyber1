@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: lp1612.c
 **
@@ -17,6 +17,9 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <errno.h>
+#include <string.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -88,6 +91,7 @@ static FcStatus lp1612Func(PpWord funcCode);
 static void lp1612Io(void);
 static void lp1612Activate(void);
 static void lp1612Disconnect(void);
+static void lp1612Load(DevSlot *dp, int unitNo, char *fn);
 
 
 /*
@@ -101,22 +105,6 @@ static void lp1612Disconnect(void);
 **  Private Variables
 **  -----------------
 */
-
-/*
-**  Character set translation table (question marks as placeholders for
-**  scientific char set glyphs that could be mapped in any of several
-**  different ways).
-*/
-static char printerToAscii[] = {
-    /* 00-07 */     ':',    '1',    '2',    '3',    '4',    '5',    '6',    '7',
-    /* 10-17 */     '8',    '9',    '0',    '=',    '?',    '?',    '%',    '[',
-    /* 20-27 */     ' ',    '/',    'S',    'T',    'U',    'V',    'W',    'X',
-    /* 30-37 */     'Y',    'Z',    ']',    ',',    '(',    '?',    '?',    '?',
-    /* 40-47 */     '-',    'J',    'K',    'L',    'M',    'N',    'O',    'P',
-    /* 50-57 */     'Q',    'R',    '?',    '$',    '*',    '?',    '?',    '>',
-    /* 60-67 */     '+',    'A',    'B',    'C',    'D',    'E',    'F',    'G',
-    /* 70-77 */     'H',    'I',    '<',    '.',    ')',    '?',    '?',    ';'
-    };
 
 /*
 **--------------------------------------------------------------------------
@@ -145,12 +133,13 @@ void lp1612Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     (void)eqNo;
     (void)deviceName;
 
-    dp = channelAttach(channelNo, DtLp1612);
+    dp = channelAttach(channelNo, eqNo, DtLp1612);
 
     dp->activate = lp1612Activate;
     dp->disconnect = lp1612Disconnect;
     dp->func = lp1612Func;
     dp->io = lp1612Io;
+    dp->load = lp1612Load;
     dp->selectedUnit = unitNo;
 
     /*
@@ -168,6 +157,100 @@ void lp1612Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     **  Print a friendly message.
     */
     printf("LP1612 initialised on channel %o unit %o\n", channelNo, unitNo);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Perform load/unload on printer.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void lp1612Load(DevSlot *dp, int unitNo, char *fn)
+    {
+#if 0
+    FILE *fcb;
+    time_t currentTime;
+    struct tm t;
+    char fname[80];
+    char fnameNew[80];
+    static char msgBuf[80];
+
+    if (fn != NULL)
+        {
+        opSetMsg ("$LOAD NOT SUPPORTED ON LP1612");
+        return;
+        }
+    
+    if (unitNo < 0 || unitNo >= MaxUnits)
+        {
+        opSetMsg ("$INVALID EQUIPMENT NO");
+        return;
+        }
+
+    /*
+    **  Check if the unit is even configured.
+    */
+    if (dp->fcb[unitNo] == NULL)
+        {
+        opSetMsg ("$EQUIPMENT NOT ALLOCATED");
+        return;
+        }
+
+    /*
+    **  Close the old device file.
+    */
+    fflush(dp->fcb[unitNo]);
+    fclose(dp->fcb[unitNo]);
+    dp->fcb[unitNo] = NULL;
+
+    /*
+    **  Rename the device file to the format "LP1612_yyyymmdd_hhmmss".
+    */
+    sprintf(fname, "LP1612_C%02o_U%o", dp->channel->id, unitNo);
+
+    time(&currentTime);
+    t = *localtime(&currentTime);
+    sprintf(fnameNew, "LP1612_%04d%02d%02d_%02d%02d%02d",
+        t.tm_year + 1900,
+        t.tm_mon + 1,
+        t.tm_mday,
+        t.tm_hour,
+        t.tm_min,
+        t.tm_sec);
+
+    if (rename(fname, fnameNew) != 0)
+        { 
+        sprintf (msgBuf, "$Rename error (%s to %s): %s",
+                 fname, fnameNew, strerror(errno));
+        opSetMsg(msgBuf);
+        return;
+        }
+
+    /*
+    **  Open the device file.
+    */
+    fcb = fopen(fname, "w");
+
+    /*
+    **  Check if the open succeeded.
+    */
+    if (fcb == NULL)
+        {
+        sprintf (msgBuf, "$Open error (%s): %s",
+                 fname, strerror (errno));
+        opSetMsg(msgBuf);
+        return;
+        }
+
+    /*
+    **  Setup status.
+    */
+    dp->fcb[unitNo] = fcb;
+    sprintf (msgBuf, "LP1612 unloaded to %s", fnameNew);
+    opSetMsg (msgBuf);
+#endif
     }
 
 /*--------------------------------------------------------------------------
@@ -249,7 +332,7 @@ static void lp1612Io(void)
     case FcPrintSuppressLF:
         if (activeChannel->full)
             {
-            fputc(printerToAscii[activeChannel->data & 077], fcb);
+            fputc(extBcdToAscii[activeChannel->data & 077], fcb);
             activeChannel->full = FALSE;
             }
         break;

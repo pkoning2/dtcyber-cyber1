@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: disk.c
 **
@@ -91,9 +91,9 @@
 */
 typedef struct diskParam
     {
-    u32         sector;
-    u32         track;
-    u32         head;
+    i32         sector;
+    i32         track;
+    i32         head;
     } DiskParam;
 
 /*
@@ -105,7 +105,7 @@ static FcStatus dd6603Func(PpWord funcCode);
 static void dd6603Io(void);
 static void dd6603Activate(void);
 static void dd6603Disconnect(void);
-static u32 dd6603Seek(u32 track, u32 head, u32 sector);
+static i32 dd6603Seek(i32 track, i32 head, i32 sector);
 
 /*
 **  ----------------
@@ -151,7 +151,7 @@ void dd6603Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     (void)unitNo;
     (void)deviceName;
 
-    dp = channelAttach(channelNo, DtDd6603);
+    dp = channelAttach(channelNo, eqNo, DtDd6603);
 
     dp->activate = dd6603Activate;
     dp->disconnect = dd6603Disconnect;
@@ -180,16 +180,6 @@ void dd6603Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 
     dp->fcb[unitNo] = fcb;
 
-    sprintf(fname, "DD6603_C%02oU%1o.log", channelNo, unitNo);
-    fcb = fopen(fname, "wt");
-    if (fcb == NULL)
-        {
-        fprintf(stderr, "Failed to open %s\n", fname);
-        exit(1);
-        }
-
-    dp->log[unitNo] = fcb;
-
     /*
     **  Print a friendly message.
     */
@@ -208,8 +198,8 @@ void dd6603Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 static FcStatus dd6603Func(PpWord funcCode)
     {
     FILE *fcb = activeDevice->fcb[activeDevice->selectedUnit];
-    FILE *log = activeDevice->log[activeDevice->selectedUnit];
     DiskParam *dp = (DiskParam *)activeDevice->context[activeDevice->selectedUnit];
+    i32 pos;
 
     switch (funcCode & Fc6603CodeMask)
         {
@@ -219,22 +209,29 @@ static FcStatus dd6603Func(PpWord funcCode)
     case Fc6603ReadSector:
         activeDevice->fcode = funcCode;
         dp->sector = funcCode & Fc6603SectMask;
-        fseek(fcb, dd6603Seek(dp->track, dp->head, dp->sector), SEEK_SET);
-        fprintf(log, "\nFC: %04o - read  h: %o t: %03o s %03o\n", funcCode, dp->head, dp->track, dp->sector);
+        pos = dd6603Seek(dp->track, dp->head, dp->sector);
+        if (pos < 0)
+            {
+            return(FcDeclined);
+            }
+        fseek(fcb, pos, SEEK_SET);
         logColumn = 0;
         break;
 
     case Fc6603WriteSector:
         activeDevice->fcode = funcCode;
         dp->sector = funcCode & Fc6603SectMask;
-        fseek(fcb, dd6603Seek(dp->track, dp->head, dp->sector), SEEK_SET);
-        fprintf(log, "\nFC: %04o - write h: %o t: %03o s %03o\n", funcCode, dp->head, dp->track, dp->sector);
+        pos = dd6603Seek(dp->track, dp->head, dp->sector);
+        if (pos < 0)
+            {
+            return(FcDeclined);
+            }
+        fseek(fcb, pos, SEEK_SET);
         logColumn = 0;
         break;
 
     case Fc6603SelectTrack:
         dp->track = funcCode & Fc6603TrackMask;
-        fprintf(log, "\nFC: %04o - select track %03o\n", funcCode, dp->track);
         break;
 
     case Fc6603SelectHead:
@@ -242,7 +239,6 @@ static FcStatus dd6603Func(PpWord funcCode)
             {
             activeDevice->fcode = funcCode;
             activeChannel->status = (u16)dp->sector;
-            fprintf(log, "\nFC: %04o - request status\n", funcCode);
 
             /*
             **  Simulate the moving disk - seems strange but is required.
@@ -255,7 +251,6 @@ static FcStatus dd6603Func(PpWord funcCode)
             **  Select head.
             */
             dp->head = funcCode & Fc6603HeadMask;
-            fprintf(log, "\nFC: %04o - select head %o\n", funcCode, dp->head);
             }
         break;
         }
@@ -278,7 +273,7 @@ static void dd6603Io(void)
     switch (activeDevice->fcode & Fc6603CodeMask)
         {
     default:
-        ppAbort((stderr, "channel %02o - invalid function code: %4.4o", activeChannel->id, (u32)activeDevice->fcode));
+        logError(LogErrorLocation, "channel %02o - invalid function code: %4.4o", activeChannel->id, (u32)activeDevice->fcode);
         break;
 
     case Fc6603ReadSector:
@@ -344,27 +339,31 @@ static void dd6603Disconnect(void)
 **                  head        Head group.
 **                  sector      Sector number.
 **
-**  Returns:        Byte offset (not word!)
+**  Returns:        Byte offset (not word!) or -1 when seek target
+**                  is invalid.
 **
 **------------------------------------------------------------------------*/
-static u32 dd6603Seek(u32 track, u32 head, u32 sector)
+static i32 dd6603Seek(i32 track, i32 head, i32 sector)
     {
-    u32 result;
-    u32 sectorsPerTrack = MaxOuterSectors;
+    i32 result;
+    i32 sectorsPerTrack = MaxOuterSectors;
 
     if (track >= MaxTracks)
         {
-        ppAbort((stderr, "ch %o, track %o invalid", activeChannel->id, track));
+        logError(LogErrorLocation, "ch %o, track %o invalid", activeChannel->id, track);
+        return(-1);
         }
 
     if (head >= MaxHeads)
         {
-        ppAbort((stderr, "ch %o, head %o invalid", activeChannel->id, head));
+        logError(LogErrorLocation, "ch %o, head %o invalid", activeChannel->id, head);
+        return(-1);
         }
 
     if (sector >= sectorsPerTrack)
         {
-        ppAbort((stderr, "ch %o, sector %o invalid", activeChannel->id, sector));
+        logError(LogErrorLocation, "ch %o, sector %o invalid", activeChannel->id, sector);
+        return(-1);
         }
 
     result  = track * MaxHeads * sectorsPerTrack;

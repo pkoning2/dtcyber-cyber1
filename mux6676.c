@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: mux6676.c
 **
@@ -122,7 +122,7 @@ void mux6676Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     (void)eqNo;
     (void)deviceName;
 
-    dp = channelAttach(channelNo, DtMux6676);
+    dp = channelAttach(channelNo, eqNo, DtMux6676);
     dp->activate = mux6676Activate;
     dp->disconnect = mux6676Disconnect;
     dp->func = mux6676Func;
@@ -416,6 +416,7 @@ static void *mux6676Thread(void *param)
     int fromLen;
     PortParam *mp;
     u8 i;
+    int reuse = 1;
 
     /*
     **  Create TCP socket and bind to specified port.
@@ -423,10 +424,11 @@ static void *mux6676Thread(void *param)
     listenFd = socket(AF_INET, SOCK_STREAM, 0);
     if (listenFd < 0)
         {
-        printf("Can't create socket\n");
+        printf("mux6676: Can't create socket\n");
         return;
         }
 
+    setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = inet_addr("0.0.0.0");
@@ -434,13 +436,13 @@ static void *mux6676Thread(void *param)
 
     if (bind(listenFd, (struct sockaddr *)&server, sizeof(server)) < 0)
         {
-        printf("Can't bind to socket\n");
+        printf("mux6676: Can't bind to socket\n");
         return;
         }
 
     if (listen(listenFd, 5) < 0)
         {
-        printf("Can't listen\n");
+        printf("mux6676: Can't listen\n");
         return;
         }
 
@@ -483,7 +485,7 @@ static void *mux6676Thread(void *param)
         **  Mark connection as active.
         */
         mp->active = TRUE;
-        printf("Received connection on port %d\n", mp->id);
+        printf("mux6676: Received connection on port %d\n", mp->id);
         }
     }
 
@@ -528,7 +530,7 @@ static int mux6676CheckInput(PortParam *mp)
             close(mp->connFd);
         #endif
             mp->active = FALSE;
-            printf("Connection dropped on port %d\n", mp->id);
+            printf("mux6676: Connection dropped on port %d\n", mp->id);
             return(-1);
             }
         }
@@ -540,7 +542,7 @@ static int mux6676CheckInput(PortParam *mp)
         close(mp->connFd);
     #endif
         mp->active = FALSE;
-        printf("Connection dropped on port %d\n", mp->id);
+        printf("mux6676: Connection dropped on port %d\n", mp->id);
         return(-1);
         }
     else

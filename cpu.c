@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: cpu.c
 **
 **  Description:
-**      Perform CDC 6600 simulation of CPU.
+**      Perform simulation of CDC 6600 CPU.
 **
 **--------------------------------------------------------------------------
 */
@@ -168,6 +168,8 @@ u32 ecsMaxMemory;
 **  Private Variables
 **  -----------------
 */
+static FILE *cmHandle;
+static FILE *ecsHandle;
 static u8 opOffset;
 static CpWord opWord;
 static u8 opFm;
@@ -266,11 +268,13 @@ static OpDispatch decodeCpuOpcode[] =
 **                  model       CPU model string
 **                  memory      configured central memory
 **                  ecsBanks    configured number of ECS banks
+**                  cmFile      name of CM backing file or NULL
+**                  ecsFile     name of ECS backing file or NULL
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void cpuInit(char *model, u32 memory, u32 ecsBanks)
+void cpuInit(char *model, u32 memory, u32 ecsBanks, char *cmFile, char *ecsFile)
     {
     /*
     **  Allocate configured central memory.
@@ -297,9 +301,110 @@ void cpuInit(char *model, u32 memory, u32 ecsBanks)
     ecsMaxMemory = ecsBanks * EcsBankSize;
 
     /*
+    **  Optionally read in persistent CM contents.
+    */
+    if (*cmFile != '\0')
+        {
+        /*
+        **  Try to open existing file.
+        */
+        cmHandle = fopen(cmFile, "r+b");
+        if (cmHandle != NULL)
+            {
+            /*
+            **  Read CM contents.
+            */
+            if (fread(cpMem, sizeof(CpWord), cpuMaxMemory, cmHandle) != cpuMaxMemory)
+                {
+                printf("Unexpected length of CM backing file\n");
+                }
+            }
+        else
+            {
+            /*
+            **  Create a new file.
+            */
+            cmHandle = fopen(cmFile, "w+b");
+            if (cmHandle == NULL)
+                {
+                fprintf(stderr, "Failed to allocate CM memory\n");
+                exit(1);
+                }
+            }
+        }
+
+    /*
+    **  Optionally read in persistent ECS contents.
+    */
+    if (*ecsFile != '\0')
+        {
+        /*
+        **  Try to open existing file.
+        */
+        ecsHandle = fopen(ecsFile, "r+b");
+        if (ecsHandle != NULL)
+            {
+            /*
+            **  Read ECS contents.
+            */
+            if (fread(ecsMem, sizeof(CpWord), ecsMaxMemory, ecsHandle) != ecsMaxMemory)
+                {
+                printf("Unexpected length of ECS backing file\n");
+                }
+            }
+        else
+            {
+            /*
+            **  Create a new file.
+            */
+            ecsHandle = fopen(ecsFile, "w+b");
+            if (ecsHandle == NULL)
+                {
+                fprintf(stderr, "Failed to allocate ECS memory\n");
+                exit(1);
+                }
+            }
+        }
+
+    /*
     **  Print a friendly message.
     */
     printf("CPU model %s initialised (CM: %o, ECS: %o)\n", model, cpuMaxMemory, ecsMaxMemory);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Terminate CPU and optionally persist CM.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void cpuExit(void)
+    {
+    /*
+    **  Optionally save CM.
+    */
+    if (cmHandle != NULL)
+        {
+        fseek(cmHandle, 0, SEEK_SET);
+        if (fwrite(cpMem, sizeof(CpWord), cpuMaxMemory, cmHandle) != cpuMaxMemory)
+            {
+            printf("Error writing CM backing file\n");
+            }
+        }
+
+    /*
+    **  Optionally save ECS.
+    */
+    if (ecsHandle != NULL)
+        {
+        fseek(ecsHandle, 0, SEEK_SET);
+        if (fwrite(ecsMem, sizeof(CpWord), ecsMaxMemory, ecsHandle) != ecsMaxMemory)
+            {
+            printf("Error writing ECS backing file\n");
+            }
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -384,7 +489,6 @@ bool cpuExchangeJump(u32 addr)
 
     /*
     **  Verify if exchange package is within configured memory.
-    **  <<<<<<<<<<<<<<<<<<< not quite right - maybe need to wrap  >>>>>>>>>>>>>>>>>>>>>>>>
     */
     if (addr + 020 >= cpuMaxMemory)
         {
@@ -625,16 +729,7 @@ static bool cpuFetchOpWord(u32 address, CpWord *data)
     {
     u32 location;
 
-    location = cpu.regRaCm + address;
-    if ((location & Overflow18) != 0)
-        {
-        location += 1;
-        }
-
-    location &= Mask18;
-
-
-    if (address >= cpu.regFlCm || location >= cpuMaxMemory)
+    if (address >= cpu.regFlCm)
         {
         cpu.exitCondition |= EcAddressOutOfRange;
         if ((cpu.exitMode & EmAddressOutOfRange) != 0)
@@ -654,6 +749,9 @@ static bool cpuFetchOpWord(u32 address, CpWord *data)
         return(TRUE);
         }
 
+	location = cpuAdd18(cpu.regRaCm, address);
+    location %= cpuMaxMemory;
+
     *data = cpMem[location] & Mask60;
 
     return(FALSE);
@@ -671,7 +769,9 @@ static bool cpuFetchOpWord(u32 address, CpWord *data)
 **------------------------------------------------------------------------*/
 static bool cpuReadMem(u32 address, CpWord *data)
     {
-    if (address >= cpu.regFlCm || cpu.regRaCm + address >= cpuMaxMemory)
+    u32 location;
+
+    if (address >= cpu.regFlCm)
         {
         cpu.exitCondition |= EcAddressOutOfRange;
         if ((cpu.exitMode & EmAddressOutOfRange) != 0)
@@ -695,7 +795,10 @@ static bool cpuReadMem(u32 address, CpWord *data)
             }
         }
 
-    *data = cpMem[cpu.regRaCm + address] & Mask60;
+	location = cpuAdd18(cpu.regRaCm, address);
+    location %= cpuMaxMemory;
+
+    *data = cpMem[location] & Mask60;
 
     return(FALSE);
     }
@@ -712,7 +815,9 @@ static bool cpuReadMem(u32 address, CpWord *data)
 **------------------------------------------------------------------------*/
 static bool cpuWriteMem(u32 address, CpWord *data)
     {
-    if (address >= cpu.regFlCm || cpu.regRaCm + address >= cpuMaxMemory)
+    u32 location;
+
+    if (address >= cpu.regFlCm)
         {
         cpu.exitCondition |= EcAddressOutOfRange;
         if ((cpu.exitMode & EmAddressOutOfRange) != 0)
@@ -733,7 +838,10 @@ static bool cpuWriteMem(u32 address, CpWord *data)
         return(FALSE);
         }
 
-    cpMem[cpu.regRaCm + address] = *data & Mask60;
+	location = cpuAdd18(cpu.regRaCm, address);
+    location %= cpuMaxMemory;
+
+    cpMem[location] = *data & Mask60;
 
     return(FALSE);
     }
@@ -845,17 +953,19 @@ static void cpuEcsTransfer(bool writeToEcs)
     ecsAddress = (u32)(cpu.regX[0] & Mask24);
     cmAddress = cpu.regA[0] & Mask18;
 
-    {
-    u32 flagOp;
-
     /*
     **  Check if this is a flag register access.
+    **
+    **  The ECS book (60225100) says that a flag register reference occurs
+    **  when bit 23 is set in the relative address AND in the ECS FL.
+    **
+    **  Note that the ECS RA is NOT added to the relative address.
     */
-    flagOp = ecsAddress + cpu.regRaEcs;
-    if ((flagOp & ((u32)1 << 23)) != 0)
+    if (   (ecsAddress   & ((u32)1 << 23)) != 0
+        && (cpu.regFlEcs & ((u32)1 << 23)) != 0)
         {
-        u32 flagFunction = (flagOp >> 21) & Mask3;
-        u32 flagWord = flagOp & Mask18;
+        u32 flagFunction = (ecsAddress >> 21) & Mask3;
+        u32 flagWord = ecsAddress & Mask18;
 
         switch (flagFunction)
             {
@@ -911,7 +1021,6 @@ static void cpuEcsTransfer(bool writeToEcs)
         opOffset = 60;
         return;
         }
-    }
 
     /*
     **  Deal with possible negative zero word count.
@@ -922,12 +1031,11 @@ static void cpuEcsTransfer(bool writeToEcs)
         }
 
     /*
-    **  Check for positive word count, CM and ECS range and top ECS location reference.
+    **  Check for positive word count, CM and ECS range.
     */
     if (   (wordCount & Sign18) != 0
-        || cpu.regFlCm  <= cmAddress + wordCount
-        || cpu.regFlEcs <= ecsAddress + wordCount
-        || cpu.regFlEcs == ecsAddress + 1)
+        || cpu.regFlCm  < cmAddress  + wordCount
+        || cpu.regFlEcs < ecsAddress + wordCount)
         {
         cpu.exitCondition |= EcAddressOutOfRange;
         if ((cpu.exitMode & EmAddressOutOfRange) != 0)
@@ -951,7 +1059,9 @@ static void cpuEcsTransfer(bool writeToEcs)
     /*
     **  Add base addresses.
     */
-    cmAddress += cpu.regRaCm;
+	cmAddress = cpuAdd18(cpu.regRaCm, cmAddress);
+    cmAddress %= cpuMaxMemory;
+
     ecsAddress += cpu.regRaEcs;
 
     /*
@@ -961,7 +1071,6 @@ static void cpuEcsTransfer(bool writeToEcs)
         {
         while (wordCount--)
             {
-            cmAddress  %= cpuMaxMemory;
             if (ecsAddress >= ecsMaxMemory)
                 {
                 /*
@@ -970,7 +1079,13 @@ static void cpuEcsTransfer(bool writeToEcs)
                 return;
                 }
 
-            ecsMem[ecsAddress++] = cpMem[cmAddress++];
+            ecsMem[ecsAddress++] = cpMem[cmAddress];
+
+            /*
+            **  Increment CM address.
+            */
+	        cmAddress = cpuAdd18(cmAddress, 1);
+            cmAddress %= cpuMaxMemory;
             }
         }
     else
@@ -979,16 +1094,24 @@ static void cpuEcsTransfer(bool writeToEcs)
 
         while (wordCount--)
             {
-            cmAddress  %= cpuMaxMemory;
             if (ecsAddress >= ecsMaxMemory)
                 {
-                cpMem[cmAddress++] = 0;
+                /*
+                **  Zero CM, but take error exit once zeroing is finished.
+                */
+                cpMem[cmAddress] = 0;
                 takeErrorExit = TRUE;
                 }
             else
                 {
-                cpMem[cmAddress++] = ecsMem[ecsAddress++];
+                cpMem[cmAddress] = ecsMem[ecsAddress++];
                 }
+
+            /*
+            **  Increment CM address.
+            */
+	        cmAddress = cpuAdd18(cmAddress, 1);
+            cmAddress %= cpuMaxMemory;
             }
 
         if (takeErrorExit)
@@ -2236,18 +2359,14 @@ static void cpOp47(void)
     /*
     **  CXi Xk
     */
-    u8 i;
-    u8 count = 0;
-
     acc60 = cpu.regX[opK] & Mask60;
-
-    for (i = 60; i > 0; i--)
-        {
-        count += (u8)(acc60 & 1);
-        acc60 >>= 1;
-        }
-
-    cpu.regX[opI] = count;
+    acc60 = ((acc60 & 0xAAAAAAAAAAAAAAAA) >>  1) + (acc60 & 0x5555555555555555);
+    acc60 = ((acc60 & 0xCCCCCCCCCCCCCCCC) >>  2) + (acc60 & 0x3333333333333333);
+    acc60 = ((acc60 & 0xF0F0F0F0F0F0F0F0) >>  4) + (acc60 & 0x0F0F0F0F0F0F0F0F);
+    acc60 = ((acc60 & 0xFF00FF00FF00FF00) >>  8) + (acc60 & 0x00FF00FF00FF00FF);
+    acc60 = ((acc60 & 0xFFFF0000FFFF0000) >> 16) + (acc60 & 0x0000FFFF0000FFFF);
+    acc60 = ((acc60 & 0xFFFFFFFF00000000) >> 32) + (acc60 & 0x00000000FFFFFFFF);
+    cpu.regX[opI] = acc60 & Mask60;
     }
 
 static void cpOp50(void)

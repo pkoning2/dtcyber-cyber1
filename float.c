@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Steve Peltz and Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Steve Peltz and Tom Hunter (see license.txt)
 **
 **  Name: float.c
 **

@@ -2,7 +2,7 @@
 #define TYPES_H
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: types.h
 **
@@ -86,29 +86,30 @@ typedef enum {FcDeclined, FcAccepted, FcProcessed} FcStatus;
 */                                        
 typedef struct
     {
-    char            id[8];              /* device id */
-    void            (*init)(u8 eqNo, u8 unitCount, u8 channelNo, char *deviceName);
+    char            id[10];              /* device id */
+    void            (*init)(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
     } DevDesc;
-                                        
+
 /*
 **  Device control block.
 */                                        
 typedef struct devSlot                  
     {                                   
-    struct devSlot  *next;              /* next device attached to this channel */
+    struct devSlot  *next;              /* next device attached to this channel or converter */
     struct chSlot   *channel;           /* channel this device is attached to */
     u8              devType;            /* attached device type */
-    void            *context[MaxUnits]; /* device specific context data */
+    u8              eqNo;               /* equipment number */
     PpWord          status;             /* device status */
     PpWord          fcode;              /* device function code */
-    i8              selectedUnit;       /* selected unit */
     PpWord          recordLength;       /* length of read record */
+    i8              selectedUnit;       /* selected unit */
+    void            *context[MaxUnits]; /* device specific context data */
     FILE            *fcb[MaxUnits];     /* unit data file control block */
-    FILE            *log[MaxUnits];     /* unit log file control block */
     void            (*activate)(void);  /* channel activation function */        
     void            (*disconnect)(void);/* channel deactivation function */
     FcStatus        (*func)(PpWord);    /* function request handler */
     void            (*io)(void);        /* output request handler */
+    void            (*load)(struct devSlot *, int, char *); /* load/unload request handler */
     } DevSlot;                          
                                         
 /*

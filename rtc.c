@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: rtc.c
 **
@@ -88,7 +88,7 @@ void rtcInit(char *model, u8 increment)
     {
     DevSlot *dp;
 
-    dp = channelAttach(014, DtRtc);
+    dp = channelAttach(014, 0, DtRtc);
 
     dp->activate = rtcActivate;
     dp->disconnect = rtcDisconnect;

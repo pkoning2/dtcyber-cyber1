@@ -2,7 +2,7 @@
 #define PROTO_H
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: func.h
 **
@@ -40,7 +40,7 @@ void rtcTick(void);
 */
 void channelInit(u8 count);
 DevSlot *channelFindDevice(u8 channelNo, u8 devType);
-DevSlot *channelAttach(u8 channelNo, u8 devType);
+DevSlot *channelAttach(u8 channelNo, u8 eqNo, u8 devType);
 void channelFunction(PpWord funcCode);
 void channelActivate(void);
 void channelDisconnect(void);
@@ -55,7 +55,8 @@ void ppStep(void);
 /*
 **  cpu.c
 */
-void cpuInit(char *model, u32 memory, u32 ecsBanks);
+void cpuInit(char *model, u32 memory, u32 ecsBanks, char *cmFile, char *ecsFile);
+void cpuExit(void);
 u32 cpuGetP(void);
 bool cpuExchangeJump(u32 addr);
 void cpuStep(void);
@@ -65,9 +66,9 @@ void cpuPpWriteMem(u32 address, CpWord data);
 /*
 **  dcc6681.c
 */
-void dcc6681Init(u8 channelNo);
-FcStatus dcc6681Func(PpWord funcCode);
-bool dcc6681Io(void);
+DevSlot *dcc6681Attach(u8 channelNo, u8 eqNo, u8 unitNo, u8 devType);
+DevSlot *dcc6681FindDevice(u8 channelNo, u8 equipmentNo, u8 devType);
+void dcc6681Interrupt(bool status);
 
 /*
 **  mt607.c
@@ -86,21 +87,28 @@ void mt669LoadTape(char *params);
 void cr405Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
+**  cp3446.c
+*/
+void cp3446Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void cp3446RemoveCards(char *params);
+
+/*
+**  cr3447.c
+*/
+void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void cr3447LoadCards(char *params);
+
+/*
 **  lp1612.c
 */
 void lp1612Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
-**  lp501.c
+**  lp3000.c
 */
 void lp501Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-void lp501RemovePaper(char *params);
-
-/*
-**  lp512.c
-*/
 void lp512Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-void lp512RemovePaper(char *params);
+void lp3000RemovePaper(char *params);
 
 /*
 **  console.c
@@ -113,14 +121,27 @@ void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void dd6603Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
-**  dd844.c
+**  dd8xx.c
 */
-void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dd844Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dd844Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dd885Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dd885Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+
+/*
+**  dcc6681.c
+*/
+void dcc6681Interrupt(bool status);
 
 /*
 **  mux6676.c
 */
 void mux6676Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+
+/*
+**  tpmux.c
+*/
+void tpMuxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
 **  trace.c
@@ -184,6 +205,12 @@ void opInit(void);
 void opRequest(void);
 
 /*
+**  log.c
+*/
+void logInit(void);
+void logError(char *file, int line, char *fmt, ...);
+
+/*
 **  -----------------
 **  Global variables.
 **  -----------------
@@ -197,13 +224,21 @@ extern u8 channelCount;
 extern PpSlot *activePpu;
 extern ChSlot *activeChannel;
 extern DevSlot *activeDevice;
+extern DevSlot *active3000Device;
 extern CpuContext cpu;
 extern bool cpuStopped;
 extern CpWord *cpMem;
 extern u32 cpuMaxMemory;
 extern char ppKeyIn;
-extern char asciiToCdc[];
-extern char cdcToAscii[];
+extern const u8 asciiToCdc[256];
+extern const char cdcToAscii[64];
+extern const u8 asciiToConsole[256];
+extern const char consoleToAscii[64];
+extern const u16 asciiTo026[256];
+extern const u16 asciiTo029[256];
+extern const u8  asciiToBcd[256];
+extern const char bcdToAscii[64];
+extern const char extBcdToAscii[64];
 extern u16 traceMask;
 extern DevDesc deviceDesc[];
 extern u8 deviceCount;
@@ -211,7 +246,7 @@ extern bool bigEndian;
 extern bool opActive;
 extern u16 telnetPort;
 extern u16 telnetConns;
-
+extern u32 cycles;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

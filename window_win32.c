@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: window_win32.c
 **
@@ -76,6 +76,9 @@ ATOM windowRegisterClass(HINSTANCE hInstance);
 BOOL windowCreate(void);
 LRESULT CALLBACK windowProcedure(HWND, UINT, WPARAM, LPARAM);
 void windowDisplay(HWND hWnd);
+#if CcHersheyFont == 1
+static void windowTextPlot(HDC hdc, int xPos, int yPos, char ch, u8 fontSize);
+#endif
 
 /*
 **  ----------------
@@ -97,6 +100,8 @@ static HWND hWnd;
 static HFONT hSmallFont=0;
 static HFONT hMediumFont=0;
 static HFONT hLargeFont=0;
+static HPEN hPen = 0;
+
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Create WIN32 thread which will deal with all windows
@@ -154,7 +159,7 @@ void windowSetFont(u8 font)
 **  Purpose:        Set X coordinate.
 **
 **  Parameters:     Name        Description.
-**                  x           horinzontal coordinate (0 - 0777)
+**                  x           horizontal coordinate (0 - 0777)
 **
 **  Returns:        Nothing.
 **
@@ -168,7 +173,7 @@ void windowSetX(u16 x)
 **  Purpose:        Set Y coordinate.
 **
 **  Parameters:     Name        Description.
-**                  y           horinzontal coordinate (0 - 0777)
+**                  y           vertical coordinate (0 - 0777)
 **
 **  Returns:        Nothing.
 **
@@ -402,6 +407,15 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         break;
 
     case WM_CREATE:
+        hPen = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
+        if (!hPen)
+            {
+            MessageBox (GetFocus(),
+                "Unable to get green pen", 
+                "CreatePen Error",
+                MB_OK);
+            }
+
         memset(&lfTmp, 0, sizeof(lfTmp));
         lfTmp.lfPitchAndFamily = FIXED_PITCH;
         strcpy(lfTmp.lfFaceName, FontName);
@@ -461,6 +475,10 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         if (hLargeFont)
             {
             DeleteObject(hLargeFont);
+            }
+        if (hPen)
+            {
+            DeleteObject(hPen);
             }
         PostQuitMessage(0);
         break;
@@ -562,7 +580,6 @@ void windowDisplay(HWND hWnd)
     HBITMAP hbmMem, hbmOld;
     HFONT hfntOld;
 
-
 //    if (listEnd == 0)
 //        return;
 
@@ -638,10 +655,13 @@ SetBkMode(hdcMem, TRANSPARENT);     // <<<<<<<<<<<< testing
         TextOut(hdcMem, (0 * ScaleX) / 10, (256 * ScaleY) / 10, opMessage, strlen(opMessage));
         }
 
+    SelectObject(hdcMem, hPen);
+
     curr = display;
     end = display + listEnd;
     for (curr = display; curr < end; curr++)
         {
+#if CcHersheyFont == 0
         if (oldFont != curr->fontSize)
             {
             oldFont = curr->fontSize;
@@ -661,6 +681,7 @@ SetBkMode(hdcMem, TRANSPARENT);     // <<<<<<<<<<<< testing
                 break;
                 }
             }
+#endif
 
         if (curr->fontSize == FontDot)
             {
@@ -668,8 +689,13 @@ SetBkMode(hdcMem, TRANSPARENT);     // <<<<<<<<<<<< testing
             }
         else
             {
-            str[0] = curr->ch;
+#if CcHersheyFont == 0
+//            str[0] = consoleToAscii[curr->ch];
+            str[0] = cdcToAscii[curr->ch];
             TextOut(hdcMem, (curr->xPos * ScaleX) / 10, (curr->yPos * ScaleY) / 10 + 20, str, 1);
+#else
+            windowTextPlot(hdcMem, (curr->xPos * ScaleX) / 10, (curr->yPos * ScaleY) / 10 + 20, curr->ch, curr->fontSize);
+#endif
             }
         }
 
@@ -681,7 +707,6 @@ SetBkMode(hdcMem, TRANSPARENT);     // <<<<<<<<<<<< testing
         {
         SelectObject(hdcMem, hfntOld);
         }
-
 
     /*
     **  Blit the changes to the screen dc.
@@ -703,5 +728,198 @@ SetBkMode(hdcMem, TRANSPARENT);     // <<<<<<<<<<<< testing
 
     EndPaint(hWnd, &ps);
     }
+
+#if CcHersheyFont == 1
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Define Hershey glyphs.
+**
+**------------------------------------------------------------------------*/
+const char * const consoleHersheyGlyphs[64] =
+    {
+#if 1
+    /* 00 = ':' */ "PURPRQSQSPRP RRURVSVSURU",
+    /* 01 = 'A' */ "MWRMNV RRMVV RPSTS",
+    /* 02 = 'B' */ "MWOMOV ROMSMUNUPSQ ROQSQURUUSVOV",
+    /* 03 = 'C' */ "MXVNTMRMPNOPOSPURVTVVU",
+    /* 04 = 'D' */ "MWOMOV ROMRMTNUPUSTURVOV",
+    /* 05 = 'E' */ "MWOMOV ROMUM ROQSQ ROVUV",
+    /* 06 = 'F' */ "MVOMOV ROMUM ROQSQ",
+    /* 07 = 'G' */ "MXVNTMRMPNOPOSPURVTVVUVR RSRVR",
+    /* 10 = 'H' */ "MWOMOV RUMUV ROQUQ",
+    /* 11 = 'I' */ "PTRMRV",
+    /* 12 = 'J' */ "NUSMSTRVPVOTOS",
+    /* 13 = 'K' */ "MWOMOV RUMOS RQQUV",
+    /* 14 = 'L' */ "MVOMOV ROVUV",
+    /* 15 = 'M' */ "LXNMNV RNMRV RVMRV RVMVV",
+    /* 16 = 'N' */ "MWOMOV ROMUV RUMUV",
+    /* 17 = 'O' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM",
+    /* 20 = 'P' */ "MWOMOV ROMSMUNUQSROR",
+    /* 21 = 'Q' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM RSTVW",
+    /* 22 = 'R' */ "MWOMOV ROMSMUNUQSROR RRRUV",
+    /* 23 = 'S' */ "MWUNSMQMONOOPPTRUSUUSVQVOU",
+    /* 24 = 'T' */ "MWRMRV RNMVM",
+    /* 25 = 'U' */ "MXOMOSPURVSVUUVSVM",
+    /* 26 = 'V' */ "MWNMRV RVMRV",
+    /* 27 = 'W' */ "LXNMPV RRMPV RRMTV RVMTV",
+    /* 30 = 'X' */ "MWOMUV RUMOV",
+    /* 31 = 'Y' */ "MWNMRQRV RVMRQ",
+    /* 32 = 'Z' */ "MWUMOV ROMUM ROVUV",
+    /* 33 = '0' */ "MWRMPNOPOSPURVTUUSUPTNRM",
+    /* 34 = '1' */ "MWPORMRV",
+    /* 35 = '2' */ "MWONQMSMUNUPTROVUV",
+    /* 36 = '3' */ "MWONQMSMUNUPSQ RRQSQURUUSVQVOU",
+    /* 37 = '4' */ "MWSMSV RSMNSVS",
+    /* 40 = '5' */ "MWPMOQQPRPTQUSTURVQVOU RPMTM",
+    /* 41 = '6' */ "MWTMRMPNOPOSPURVTUUSTQRPPQOS",
+    /* 42 = '7' */ "MWUMQV ROMUM",
+    /* 43 = '8' */ "MWQMONOPQQSQUPUNSMQM RQQOROUQVSVUUURSQ",
+    /* 44 = '9' */ "MWUPTRRSPROPPNRMTNUPUSTURVPV",
+    /* 45 = '+' */ "LXRNRV RNRVR",
+    /* 46 = '-' */ "LXNRVR",
+    /* 47 = '*' */ "MWRORU ROPUT RUPOT",
+    /* 50 = '/' */ "MWVLNX",
+    /* 51 = '(' */ "OUTKRNQQQSRVTY",
+    /* 52 = ')' */ "OUPKRNSQSSRVPY",
+    /* 53 = '$' */ "MWRKRX RUNSMQMONOPQQTRUSUUSVQVOU",
+    /* 54 = '=' */ "LXNPVP RNTVT",
+    /* 55 = ' ' */ "",
+    /* 56 = ',' */ "PUSVRVRUSUSWRY",
+    /* 57 = '.' */ "PURURVSVSURU",
+    /* 60 = '#' */ "MXQLQY RTLTY ROQVQ ROTVT",
+    /* 61 = '[' */ "",
+    /* 62 = ']' */ "",
+    /* 63 = '%' */ "",
+    /* 64 = '"' */ "NVPMPQ RTMTQ",
+    /* 65 = '_' */ "",
+    /* 66 = '!' */ "PURMRR RSMSR RRURVSVSURU",
+    /* 67 = '&' */ "LXVRURTSSURVOVNUNSORRQSPSNRMPMONOPQSSUUVVV",
+    /* 70 = ''' */ "PTRMRQ",
+    /* 71 = '?' */ "NWPNRMSMUNUPRQRRSRSQUP RRURVSVSURU",
+    /* 72 = '<' */ "",
+    /* 73 = '>' */ "",
+    /* 74 = '@' */ "",
+    /* 75 = '\' */ "",
+    /* 76 = '^' */ "",
+    /* 77 = ';' */ "PURPRQSQSPRP RSVRVRUSUSWRY",
+#else
+    /* 00 = ' ' */ "",
+    /* 01 = 'A' */ "MWRMNV RRMVV RPSTS",
+    /* 02 = 'B' */ "MWOMOV ROMSMUNUPSQ ROQSQURUUSVOV",
+    /* 03 = 'C' */ "MXVNTMRMPNOPOSPURVTVVU",
+    /* 04 = 'D' */ "MWOMOV ROMRMTNUPUSTURVOV",
+    /* 05 = 'E' */ "MWOMOV ROMUM ROQSQ ROVUV",
+    /* 06 = 'F' */ "MVOMOV ROMUM ROQSQ",
+    /* 07 = 'G' */ "MXVNTMRMPNOPOSPURVTVVUVR RSRVR",
+    /* 10 = 'H' */ "MWOMOV RUMUV ROQUQ",
+    /* 11 = 'I' */ "PTRMRV",
+    /* 12 = 'J' */ "NUSMSTRVPVOTOS",
+    /* 13 = 'K' */ "MWOMOV RUMOS RQQUV",
+    /* 14 = 'L' */ "MVOMOV ROVUV",
+    /* 15 = 'M' */ "LXNMNV RNMRV RVMRV RVMVV",
+    /* 16 = 'N' */ "MWOMOV ROMUV RUMUV",
+    /* 17 = 'O' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM",
+    /* 20 = 'P' */ "MWOMOV ROMSMUNUQSROR",
+    /* 21 = 'Q' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM RSTVW",
+    /* 22 = 'R' */ "MWOMOV ROMSMUNUQSROR RRRUV",
+    /* 23 = 'S' */ "MWUNSMQMONOOPPTRUSUUSVQVOU",
+    /* 24 = 'T' */ "MWRMRV RNMVM",
+    /* 25 = 'U' */ "MXOMOSPURVSVUUVSVM",
+    /* 26 = 'V' */ "MWNMRV RVMRV",
+    /* 27 = 'W' */ "LXNMPV RRMPV RRMTV RVMTV",
+    /* 30 = 'X' */ "MWOMUV RUMOV",
+    /* 31 = 'Y' */ "MWNMRQRV RVMRQ",
+    /* 32 = 'Z' */ "MWUMOV ROMUM ROVUV",
+    /* 33 = '0' */ "MWRMPNOPOSPURVTUUSUPTNRM",
+    /* 34 = '1' */ "MWPORMRV",
+    /* 35 = '2' */ "MWONQMSMUNUPTROVUV",
+    /* 36 = '3' */ "MWONQMSMUNUPSQ RRQSQURUUSVQVOU",
+    /* 37 = '4' */ "MWSMSV RSMNSVS",
+    /* 40 = '5' */ "MWPMOQQPRPTQUSTURVQVOU RPMTM",
+    /* 41 = '6' */ "MWTMRMPNOPOSPURVTUUSTQRPPQOS",
+    /* 42 = '7' */ "MWUMQV ROMUM",
+    /* 43 = '8' */ "MWQMONOPQQSQUPUNSMQM RQQOROUQVSVUUURSQ",
+    /* 44 = '9' */ "MWUPTRRSPROPPNRMTNUPUSTURVPV",
+    /* 45 = '+' */ "LXRNRV RNRVR",
+    /* 46 = '-' */ "LXNRVR",
+    /* 47 = '*' */ "MWRORU ROPUT RUPOT",
+    /* 50 = '/' */ "MWVLNX",
+    /* 51 = '(' */ "OUTKRNQQQSRVTY",
+    /* 52 = ')' */ "OUPKRNSQSSRVPY",
+    /* 53 = ' ' */ "",
+    /* 54 = '=' */ "LXNPVP RNTVT",
+    /* 55 = ' ' */ "",
+    /* 56 = ',' */ "PUSVRVRUSUSWRY",
+    /* 57 = '.' */ "PURURVSVSURU",
+    /* 60 = ' ' */ "",
+    /* 61 = ' ' */ "",
+    /* 62 = ' ' */ "",
+    /* 63 = ' ' */ "",
+    /* 64 = ' ' */ "",
+    /* 65 = ' ' */ "",
+    /* 66 = ' ' */ "",
+    /* 67 = ' ' */ "",
+    /* 70 = ' ' */ "",
+    /* 71 = ' ' */ "",
+    /* 72 = ' ' */ "",
+    /* 73 = ' ' */ "",
+    /* 74 = ' ' */ "",
+    /* 75 = ' ' */ "",
+    /* 76 = ' ' */ "",
+    /* 77 = ' ' */ "",
+#endif
+    };
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Plot a character using the Hershey glyphs.
+**
+**  Parameters:     Name        Description.
+**                  hWnd        window handle.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void windowTextPlot(HDC hdc, int xPos, int yPos, char ch, u8 fontSize)
+    {
+    bool penDown = FALSE;
+    const unsigned char *glyph;
+    int x, y;
+    int charSize = fontSize / 8;
+    
+    xPos += 8;
+    glyph = (const unsigned char *)(consoleHersheyGlyphs[ch]);
+
+    if (*glyph != '\0')	/* nonempty glyph */
+        {
+        glyph += 2;
+
+        while (*glyph)
+            {
+            x = (int)glyph[0];
+
+            if (x == (int)' ')
+                penDown = FALSE;
+            else
+                {
+                x = charSize * (x - (int)'R') + xPos;
+                y = charSize * ((int)glyph[1] - (int)'R') + yPos;
+                if (penDown)
+                    {
+                    LineTo(hdc, x, y);  
+                    }
+                else
+                    {
+                    MoveToEx(hdc, x, y, NULL);  
+                    }
+
+                penDown = TRUE;
+                }
+
+            glyph += 2;	/* on to next pair */
+            }
+        }
+    }
+
+#endif
 
 /*---------------------------  End Of File  ------------------------------*/

@@ -1,11 +1,12 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
-**  Name: cr405.c
+**  Name: cr405b.c
 **
 **  Description:
-**      Perform simulation of CDC 405 card readers.
+**      Perform simulation of channel-connected CDC 405-B card reader.
+**      It does not use a 3000 series channel converter.
 **
 **--------------------------------------------------------------------------
 */
@@ -129,7 +130,7 @@ void cr405Init(u8 eqNo, u8 unitCount, u8 channelNo, char *deviceName)
     (void)unitCount;
     (void)deviceName;
 
-    dp = channelAttach(channelNo, DtCr405);
+    dp = channelAttach(channelNo, eqNo, DtCr405);
 
     dp->activate = cr405Activate;
     dp->disconnect = cr405Disconnect;
@@ -163,7 +164,7 @@ static FcStatus cr405Func(PpWord funcCode)
 
     case FcCr405Deselect:
     case FcCr405GateToSec:
-        ppAbort((stderr, "channel %02o - invalid function code: %4.4o", activeChannel->id, (u32)funcCode));
+        logError(LogErrorLocation, "channel %02o - unsupported function code: %4.4o", activeChannel->id, (u32)funcCode);
         break;
 
     case FcCr405ReadNonStop:
@@ -210,7 +211,7 @@ static void cr405Io(void)
     default:
     case FcCr405Deselect:
     case FcCr405GateToSec:
-        ppAbort((stderr, "channel %02o - invalid function code: %4.4o", activeChannel->id, activeDevice->fcode));
+        logError(LogErrorLocation, "channel %02o - unsupported function code: %4.4o", activeChannel->id, activeDevice->fcode);
         break;
 
     case FcCr405StatusReq:

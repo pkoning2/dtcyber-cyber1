@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: trace.c
 **
@@ -78,6 +78,7 @@
 #define RXXX            22
 #define RZB             23
 #define RZX             24
+#define RXNX            25
 
 /*
 **  -----------------------
@@ -267,7 +268,7 @@ static DecCpControl cpDecode[0100] =
     Cijk,       "FX%o   X%o/X%o",       RXXX,   // 44
     Cijk,       "RX%o   X%o/X%o",       RXXX,   // 45
     CN,         "NO",                   R,      // 46
-    Cik,        "CX%o   X%o",           RXX,    // 47
+    Cik,        "CX%o   X%o",           RXNX,   // 47
 
     CijK,       "SA%o   A%o+%6.6o",     RAA,    // 50
     CijK,       "SA%o   B%o+%6.6o",     RAB,    // 51
@@ -321,13 +322,13 @@ void traceInit(void)
     devF = fopen("device.trc", "wt");
     if (devF == NULL)
         {
-        ppAbort((stderr, "can't open dev trace"));
+        logError(LogErrorLocation, "can't open dev trace");
         }
 
     cpuF = fopen("cpu.trc", "wt");
     if (cpuF == NULL)
         {
-        ppAbort((stderr, "can't open cpu trace"));
+        logError(LogErrorLocation, "can't open cpu trace");
         }
 
     ppuF = calloc(ppuCount, sizeof(FILE *));
@@ -343,7 +344,7 @@ void traceInit(void)
         ppuF[pp] = fopen(ppTraceName, "wt");
         if (ppuF[pp] == NULL)
             {
-            ppAbort((stderr, "can't open ppu[%02o] trace (%s)\n", pp, ppTraceName));
+            logError(LogErrorLocation, "can't open ppu[%02o] trace (%s)\n", pp, ppTraceName);
             }
         }
 
@@ -597,6 +598,11 @@ void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress)
 
     case RZX:
         fprintf(cpuF, "X%d=" FMT60_020o "   ", opJ, cpu.regX[opJ]);
+        break;
+
+    case RXNX:
+        fprintf(cpuF, "X%d=" FMT60_020o "   ", opI, cpu.regX[opI]);
+        fprintf(cpuF, "X%d=" FMT60_020o "   ", opK, cpu.regX[opK]);
         break;
 
     default:

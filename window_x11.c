@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: window_x11.c
 **
@@ -611,7 +611,7 @@ void *windowThread(void *param)
                     }
                 else
                     {
-                    str[0] = curr->ch;
+                    str[0] = consoleToAscii[curr->ch];
                     XDrawString(disp, pixmap, gc, curr->xPos, (curr->yPos * 14) / 10 + 20, str, 1);
                     }
                 }

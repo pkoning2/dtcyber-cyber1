@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: operator.c
 **
@@ -63,8 +63,14 @@ static void opHelpHelp(void);
 static void opCmdEnd(bool help, char *cmdParams);
 static void opHelpEnd(void);
 
+static void opCmdLoadCards(bool help, char *cmdParams);
+static void opHelpLoadCards(void);
+
 static void opCmdLoadTape(bool help, char *cmdParams);
 static void opHelpLoadTape(void);
+
+static void opCmdRemoveCards(bool help, char *cmdParams);
+static void opHelpRemoveCards(void);
 
 static void opCmdRemovePaper(bool help, char *cmdParams);
 static void opHelpRemovePaper(void);
@@ -86,7 +92,13 @@ bool opActive = FALSE;
 */
 static OpCmd decode[] = 
     {
+    "lc",                       opCmdLoadCards,
+    "lt",                       opCmdLoadTape,
+    "rc",                       opCmdRemoveCards,
+    "rp",                       opCmdRemovePaper,
+    "load_cards",               opCmdLoadCards,
     "load_tape",                opCmdLoadTape,
+    "remove_cards",             opCmdRemoveCards,
     "remove_paper",             opCmdRemovePaper,
     "?",                        opCmdHelp,
     "help",                     opCmdHelp,
@@ -407,6 +419,45 @@ static void opHelpHelp(void)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Load a stack of cards
+**
+**  Parameters:     Name        Description.
+**                  help        Request only help on this command.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opCmdLoadCards(bool help, char *cmdParams)
+    {
+    /*
+    **  Process help request.
+    */
+    if (help)
+        {
+        opHelpLoadCards();
+        return;
+        }
+
+    /*
+    **  Check parameters and process command.
+    */
+    if (strlen(cmdParams) == 0)
+        {
+        printf("parameters expected\n");
+        opHelpLoadCards();
+        return;
+        }
+
+    cr3447LoadCards(cmdParams);
+    }
+
+static void opHelpLoadCards(void)
+    {
+    printf("'load_cards <channel>,<equipment>,<filename>' load specified card stack file.\n");
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Load a new tape
 **
 **  Parameters:     Name        Description.
@@ -442,7 +493,7 @@ static void opCmdLoadTape(bool help, char *cmdParams)
 
 static void opHelpLoadTape(void)
     {
-    printf("'load_tape <channel>,<unit>,<r|w>,<filename>' load specified tape on unit.\n");
+    printf("'load_tape <channel>,<equipment>,<unit>,<r|w>,<filename>' load specified tape.\n");
     }
 
 /*--------------------------------------------------------------------------
@@ -476,13 +527,51 @@ static void opCmdRemovePaper(bool help, char *cmdParams)
         return;
         }
 
-    lp501RemovePaper(cmdParams);
-    lp512RemovePaper(cmdParams);
+    lp3000RemovePaper(cmdParams);
     }
 
 static void opHelpRemovePaper(void)
     {
     printf("'remove_paper <channel>,<equipment>' remover paper from printer.\n");
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Remove cards from card puncher.
+**
+**  Parameters:     Name        Description.
+**                  help        Request only help on this command.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opCmdRemoveCards(bool help, char *cmdParams)
+    {
+    /*
+    **  Process help request.
+    */
+    if (help)
+        {
+        opHelpRemoveCards();
+        return;
+        }
+
+    /*
+    **  Check parameters and process command.
+    */
+    if (strlen(cmdParams) == 0)
+        {
+        printf("parameters expected\n");
+        opHelpRemoveCards();
+        return;
+        }
+
+    cp3446RemoveCards(cmdParams);
+    }
+
+static void opHelpRemoveCards(void)
+    {
+    printf("'remove_cards <channel>,<equipment>' remover cards from card puncher.\n");
     }
 
 /*---------------------------  End Of File  ------------------------------*/
