@@ -103,6 +103,10 @@ SOURCE=ptermcom.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\ptermversion.h
+# End Source File
+# Begin Source File
+
 SOURCE=resource.h
 # End Source File
 # Begin Source File

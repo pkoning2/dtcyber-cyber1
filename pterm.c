@@ -36,6 +36,7 @@
 #include <X11/Xatom.h>
 #include <X11/Xresource.h>
 #endif
+#include "ptermversion.h"
 
 /*
 **  -----------------
@@ -131,7 +132,7 @@ int main (int argc, char **argv)
     hInstance = GetModuleHandle(NULL);
 #endif
 
-    sprintf (name, "Plato terminal -- %s", argv[1]);
+    sprintf (name, "Pterm " PTERMVERSION ": %s", argv[1]);
     hostName = argv[1];
     ptermInit (name, TRUE);
     while (ptermActive)

@@ -26,6 +26,7 @@
 #include "const.h"
 #include "types.h"
 #include "proto.h"
+#include "ptermversion.h"
 
 /*
 **  -----------------
@@ -67,9 +68,9 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void ptermThread(LPVOID winName);
+static void ptermThread(LPVOID foo);
 static ATOM ptermRegisterClass(HINSTANCE hInstance);
-static BOOL ptermCreate(char *winName);
+static BOOL ptermCreate(void);
 static LRESULT CALLBACK ptermProcedure(HWND, UINT, WPARAM, LPARAM);
 static void drawChar (HDC hdc, int x, int y, int snum, int cnum);
 
@@ -102,6 +103,7 @@ static HPEN hPen = 0;
 static HBITMAP fontBitmap;
 static bool allowClose = FALSE;
 static HCURSOR hcNormal, hcTouch;
+static char ptermWinName[100] = "Pterm" ;
 
 // rasterop codes for a given W/E mode
 // See Win32 rasterops (ternary ops) appendix for explanations...
@@ -150,6 +152,7 @@ void ptermInit(const char *winName, bool closeOk)
     HANDLE hThread;
 
 	allowClose = closeOk;							// Remember whether to honor Ctrl/Z
+	strcpy (ptermWinName, winName);
 
     /*
     **  Create windowing thread.
@@ -188,10 +191,13 @@ void ptermInit(const char *winName, bool closeOk)
 void ptermSetName (const char *winName)
     {
     /*
-    **  Set window and icon titles.
+    **  Set window title.
     */
-//    XSetStandardProperties (disp, ptermWindow, winName, "Pterm",
-//                            None, NULL, 0, NULL);
+	if (hWnd != 0)
+		{
+        SetWindowText (hWnd, winName);
+		}
+	strcpy (ptermWinName, winName);
     }
 
 /*--------------------------------------------------------------------------
@@ -220,7 +226,7 @@ void ptermClose(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void ptermThread(LPVOID winName)
+static void ptermThread(LPVOID foo)
 {
     MSG msg;
 
@@ -232,7 +238,7 @@ static void ptermThread(LPVOID winName)
     /*
     **  Create the window.
     */
-    if (!ptermCreate((char *) winName)) 
+    if (!ptermCreate())
     {
         MessageBox(NULL, "pterm window creation failed", "Error", MB_OK);
         return;
@@ -286,7 +292,7 @@ ATOM ptermRegisterClass(HINSTANCE hInstance)
 **  Returns:        TRUE if successful, FALSE otherwise.
 **
 **------------------------------------------------------------------------*/
-static BOOL ptermCreate(char *winName)
+static BOOL ptermCreate(void)
 {
     int dx, dy;
 
@@ -295,7 +301,7 @@ static BOOL ptermCreate(char *winName)
          GetSystemMetrics(SM_CYCAPTION);
     hWnd = CreateWindow(
         "PTERM",                // Registered class name
-        winName,                // window name
+        ptermWinName,           // window name
         WS_OVERLAPPEDWINDOW,    // window style
         CW_USEDEFAULT,          // horizontal position of window
         CW_USEDEFAULT,          // vertical position of window
@@ -310,7 +316,7 @@ static BOOL ptermCreate(char *winName)
     {
         return FALSE;
     }
-
+	ptermSetName (ptermWinName);
     ShowWindow(hWnd, SW_SHOWNORMAL);
     UpdateWindow(hWnd);
 
@@ -537,6 +543,10 @@ void ptermDrawChar (int x, int y, int snum, int cnum)
 {
 	HDC hdc;
 
+	if (hWnd == 0)
+		{
+        return;
+		}
 	hdc = GetDC(hWnd);
     SelectObject(hdc, hPen);
     SelectObject(hdcMem, hPen);
@@ -559,6 +569,10 @@ void ptermDrawPoint (int x, int y)
 {
 	HDC hdc;
 
+	if (hWnd == 0)
+		{
+        return;
+		}
 	hdc = GetDC(hWnd);
     SetPixel (hdcMem, XADJUST (x), YADJUST (y), orange);
     SetPixel (hdc, XADJUST (x), YADJUST (y), orange);
@@ -581,6 +595,10 @@ void ptermDrawLine(int x1, int y1, int x2, int y2)
 {
 	HDC hdc;
 
+	if (hWnd == 0)
+		{
+        return;
+		}
 	hdc = GetDC(hWnd);
     SelectObject(hdc, hPen);
     SelectObject(hdcMem, hPen);
@@ -605,6 +623,10 @@ void ptermFullErase (void)
 {
 	HDC hdc;
 
+	if (hWnd == 0)
+		{
+        return;
+		}
 	hdc = GetDC(hWnd);
     BitBlt(hdcMem, DisplayMargin, DisplayMargin, 512, 512, hdcMem, 0, 0, BLACKNESS);
     BitBlt(hdc, DisplayMargin, DisplayMargin, 512, 512, hdcMem, 0, 0, BLACKNESS);
