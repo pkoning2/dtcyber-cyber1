@@ -1483,11 +1483,6 @@ static void mt669FuncRead(void)
     tp->lastLength = (PpWord)recLen1;
     tp->bp = tp->ioBuffer;
     tp->blockNo += 1;
-
-#if CcDebug == 1
-    sprintf(str, "---- record with %d bytes  and %d PP words----\n", recLen1, activeDevice->recordLength);
-    tracePrint(str);
-#endif
     }
 
 /*--------------------------------------------------------------------------
