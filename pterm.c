@@ -267,7 +267,7 @@ static void ptermConnect (const char *hostname, const char *portnum)
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     hp = gethostbyname (hostname);
-    if (hp->h_length == 0)
+    if (hp == NULL || hp->h_length == 0)
     {
         printf ("pterm: unrecognized hostname %s\n", hostname);
         return;
