@@ -40,6 +40,7 @@
     typedef unsigned long  u32;
     typedef unsigned __int64 u64;
     #define FMT60_020o "%020I64o"
+    #define FMT60_08o "%08I64o"
 #elif defined (__GNUC__)
     #if defined(__LONG_MAX__)
         #if (__LONG_MAX__ == __INT_MAX__)
@@ -67,6 +68,7 @@
         typedef unsigned int u32;
         typedef unsigned long int u64;
         #define FMT60_020o "%020lo"
+        #define FMT60_08o "%08lo"
     #else
         /*
         **  32 bit systems
@@ -80,6 +82,7 @@
         typedef unsigned int u32;
         typedef unsigned long long int u64;
         #define FMT60_020o "%020llo"
+        #define FMT60_08o "%08llo"
     #endif
 #else
     #error "Unable to determine size of basic data types"

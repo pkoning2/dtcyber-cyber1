@@ -80,12 +80,12 @@
 #define RXX             20
 #define RXXB            21
 #define RXXX            22
-#define RZB             23
+#define RZBE            23
 #define RZX             24
 #define RXNX            25
 #define RB              26
 #define RBD             27
-#define RNXX            28
+#define RNXXE           28
 
 /*
 **  -----------------------
@@ -223,11 +223,11 @@ static const DecPpControl ppDecode[] =
 static DecCpControl rjDecode[010] =
     {
     CK,         "RJ    %6.6o",          R,      // 0
-    CjK,        "RE    B%o+%6.6o",      RZB,    // 1
-    CjK,        "WE    B%o+%6.6o",      RZB,    // 2
+    CjK,        "RE    B%o+%6.6o",      RZBE,   // 1
+    CjK,        "WE    B%o+%6.6o",      RZBE,   // 2
     CK,         "XJ    %6.6o",          R,      // 3
-    Cjk,        "RX%o   X%o",           RNXX,   // 4
-    Cjk,        "WX%o   X%o",           RNXX,   // 5
+    Cjk,        "RX%o   X%o",           RNXXE,  // 4
+    Cjk,        "WX%o   X%o",           RNXXE,  // 5
     };
 
 static DecCpControl cjDecode[010] =
@@ -744,11 +744,14 @@ void traceCpu(CpuContext *activeCpu,
         fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opK, activeCpu->regX[opK]);
         break;
 
-    case RZB:
+    case RZBE:
         if (opJ != 0)
             {
             fprintf(cpuTF[cpuNum], "B%d=%06o    ", opJ, activeCpu->regB[opJ]);
             }
+        fprintf(cpuTF[cpuNum], "A0=%06o    X0=" FMT60_08o " (" FMT60_08o ") ",
+                activeCpu->regA[0], activeCpu->regX[0] & 077777777,
+                (activeCpu->regX[0] & 077777777) + activeCpu->regRaEcs);
         break;
 
     case RZX:
@@ -760,9 +763,11 @@ void traceCpu(CpuContext *activeCpu,
         fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opK, activeCpu->regX[opK]);
         break;
 
-    case RNXX:
+    case RNXXE:
         fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
-        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opK, activeCpu->regX[opK]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_08o " (" FMT60_08o ") ",
+                opK, activeCpu->regX[opK] & 077777777,
+                (activeCpu->regX[opK] & 077777777) + activeCpu->regRaEcs);
         break;
 
     default:
@@ -777,11 +782,6 @@ void traceCpu(CpuContext *activeCpu,
         /*
         **  ECS block read/write, show what memory was touched
         */
-#if 0
-        fprintf(cpuTF[cpuNum], " ECS FWA %08llo RAX %08o FLX %08o\n", 
-                activeCpu->regX[0] & 077777777,
-                activeCpu->regRaEcs, activeCpu->regFlEcs);
-#endif
         dumpCpuMem (cpuTF[cpuNum], 
                     activeCpu->regA[0], 
                     activeCpu->regA[0] + activeCpu->regB[opJ] + opAddress,
