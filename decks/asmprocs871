@@ -755,6 +755,7 @@ attach,opl=plaopl.
 attach,nos=opl_noslvl.
 attach,ipl.
 attach,cstc.
+attach,cybopl.
 revert. setupg
 ~
 .proc,plato,ml=871,list=0/output.
@@ -1109,6 +1110,7 @@ revert. mastor
 *edit     mastorn
 .data,edit3.
 *edit     pms
+*edit     proute
 *edit     mrq,mrq1
 *edit     mas
 *edit     mxx
@@ -1455,3 +1457,205 @@ unload(lgo,compile)
 unload(ubin)
 .*
 revert. utility
+~
+.proc,pni,ml=750,list=0/full.
+.*
+.*        build new pni
+.*
+unload(lgo,newbin)
+.*
+.*
+begin,sespack.
+.*
+begin(cybipl)
+.*
+.*        compile pni1 (cybil)
+.*
+ses. gencomp seq=80 status b=cybipl un=plato cybccmn ..
+def=nos750$  m=pni1
+.*
+ife($list$ .eq. $full$,prints)
+begin(compmod,,abort,#list=on)
+else(prints)
+begin(compmod,,abort)
+endif(prints)
+.*
+.*        save cybil relocatable binaries in file *pni1*
+.*
+rewind(lgo,pni1)
+copyei(lgo,pni1)
+rewind(lgo,pni1)
+.*
+.*        assemble pni2 (cpu compass) with standard nettext
+.*
+modify(z,lo=e,l=errs)/*oplfile ipl,nos/*edit pni2,plazlsr
+compass(a,i,s=0,g=nostxt,g=nettxt,#ml=ml,d,o=errs,l=list,b=pni2)
+.*
+.*        load normal and debug versions from standard libs.
+.*
+begin,pnild,,lib=niolib,abs=kermbin,map=pnimap.
+begin,pnild,,lib=niodlib,abs=krmdbin,map=pnidmap.
+.*
+.*        release cybil opl
+.*
+begin,cybfree.
+.*
+revert. pni
+~
+.proc,cybipl.
+.*
+.*        attach file cyblock in write mode to lock other
+.*        jobs away from file cybipl.
+.*
+.*        entry  sespack should have been called.
+.*               getcmod must have been called.
+.*               cybopl attached.
+.*
+.*
+.*        generate *ignore directives.
+.*
+.*
+.*        apply mods
+.*
+*ses. tempcor c=cybmods b=cybopl un=plato
+*ses. tempcor c=cybmods b=cybopl un=cybis
+.*
+.*        now lock cybipl
+.*
+attach(cyblock/m=w,na)
+ife,(file(cyblock,pm).ne.true),cyblock.
+define(cyblock/na)
+endif(cyblock)
+.*
+.*        create new cybipl file
+.*
+purge(cybipl/na)
+define(cybipl)
+rewind(cybopl)
+copyei,cybopl,cybipl.
+unload,cybopl.
+.*
+revert. cybipl
+~
+.proc,cybfree.
+.*
+.*        release cyblock and cybipl.
+.*
+ife,(file(cyblock,pm).eq.true),cyblock.
+begin(sespack)
+purge(cybipl/na)
+unload(cyblock)
+endif(cyblock)
+.*
+revert. cybfree
+~
+.proc,sespack.
+.*
+.*        set appropriate pack/family for ses procedures.
+.*
+ife((r1g.and.100000b)=0,dev)  if on dev system
+ife((r1g.and.200000b)=200000b,pack)  dev system
+.*
+*packnam(pcez)
+.*
+else(pack)       remote system
+.*
+*reqpack(r1g,r=dl)
+.*
+endif(pack)
+endif(dev)
+revert. sespack
+~
+.proc,compmod,abort=noabort/abort,module=$$,ol=/o,list=on,
+lo=f,base=cybopl,binfile=lgo.
+.*
+.*        compile a module and process errors.
+.*
+.*        entry  module = module to compile, null if already
+.*                        on compile file.
+.*               abort = $abort$ if you want to abort if 
+.*                       errors occur.
+.*               ol    = present, generates object listing.
+.*                       absent, no object listing done.
+.*               list  = on if listing required, off if not.
+.*               lo    = ses.cybil list options. default =
+.*                       full listing.
+.*               binfile = file to write binary to.  
+.*                         default = lgo.
+.*
+ife($module$.ne.$$,compile)
+ses. gencomp seq=80 status b=base un=plato cybccmn ..
+m=(module)
+endif(compile)
+.*
+.*        call cybil compiler if there were no errors.
+.*
+ife(efg.eq.0,gcompok)
+unload(seslist)
+*ses. cybil #lo=lo_ol l=seslist b=binfile
+ses. cybil #lo=o l=seslist b=binfile
+endif(gcompok)
+.*
+.*        if no errors, copy print to the full listing file.
+.*
+ife(efg.eq.0,seserrs)
+ife($list$.eq.$on$,getlist)
+rewind(seslist)
+copy(seslist,full)
+endif(getlist)
+unload,seslist,compile.
+.*
+.*        if errors occur, copy the print to full listing
+.*        and then abort if requested.
+.*
+else(seserrs)
+rewind(seslist,errlist)
+copy(seslist,full)
+copy(errlist,errs)
+unload(seslist,errlist,compile)
+.*
+.*        terminate job if requested.
+.*
+ife($abort$.eq.$abort$,abt)
+revert,abort.   compilation errors
+.*
+else(abt)
+set(efg=0)
+endif(abt)
+.*
+endif(seserrs)
+.*
+revert. compmod
+~
+.proc,pnild,lib=niolib,rel1=pni1,rel2=pni2,abs=kermbin,map=pnimap.
+.*
+.*        loads the cybil portion of pni from *rel1*
+.*        and the compass portion of pni from *rel2*
+.*        with network library specified by *lib* and
+.*        store absolute binary in permanent file *abs*
+.*        and store load map in permanent file *map*
+.*
+.*        note that this procedure wipes out file *lgo*
+.*
+rewind(rel1,rel2,lgo)
+copyei(rel1,lgo)  cybil module(s)
+copyei(rel2,lgo)  compass subroutines
+rewind(lgo)
+.*
+begin,sespack.
+begin,seslink,,libs=lib.
+.*
+begin,binpack.
+purge(map/na)
+define(map/ct=pu)
+rewind(newmap)
+copy,newmap,map.
+unload(newmap,map)
+.*
+purge(abs/na)
+define(abs/ct=pu)
+rewind(newbin)
+copy,newbin,abs.
+unload(newbin,abs)
+.*
+revert. pnild
