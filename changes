@@ -230,3 +230,5 @@ Since jan21 2004 drop:
   Now EJT no longer complains about P + RA adder being broken.
   Thanks Gerard!
 - Fix TRACE,CPUxx. command to accept the argument as documented.
+- Change memory references to be modulo the CM size in all cases, so the 
+  system acts as if the unused address wires are ignored.
