@@ -6,5 +6,8 @@ setjsl(*)
 rfl,170000.
 attach,procfil.
 begin(setupg,procfil,noslvl=871)
-*begin(plato,procfil,ml=871,list=0)
-begin(plato,procfil,ml=871,list=output)
+begin(plato,procfil,ml=871,list=0)
+*begin(plato,procfil,ml=871,list=output)
+* full is where the map goes.
+*rewind,full.
+*copyei,full,output.

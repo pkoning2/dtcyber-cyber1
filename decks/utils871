@@ -9,5 +9,5 @@ attach,procfil.
 set(r1g=200000b)
 *
 begin(setupg,procfil,noslvl=871)
-*begin(utility,procfil,ml=871d,list=0)
-begin(utility,procfil,ml=871d,list=output)
+begin(utility,procfil,ml=871d,list=0)
+*begin(utility,procfil,ml=871d,list=output)

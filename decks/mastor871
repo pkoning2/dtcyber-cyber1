@@ -6,5 +6,5 @@ setjsl(*)
 attach,procfil.
 *
 begin(setupg,procfil,noslvl=871)
-*begin(mastor,procfil,ml=871,list=0)
-begin(mastor,procfil,ml=871,list=output)
+begin(mastor,procfil,ml=871,list=0)
+*begin(mastor,procfil,ml=871,list=output)
