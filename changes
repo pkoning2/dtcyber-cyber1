@@ -269,3 +269,6 @@ Since jan21 2004 drop:
 - Add "DEBUG,DISPLAY=[ON,OFF]" to toggle PP/CP/Channel status display (in the
   debug build) on or off.  This doesn't make any real difference in performance
   but it makes the display less busy.
+- Removed mt669.c debug logging message (trace,channel does this more flexibly).
+- Make true keyboard mode gather up all the keystrokes so several key down events
+  at the "same" time register all at once, not one by one.

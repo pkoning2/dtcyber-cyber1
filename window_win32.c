@@ -102,6 +102,7 @@ static void windowTextPlot(HDC hdc, int xPos, int yPos, char ch, u8 fontSize);
 */
 HBITMAP fontBitmap;
 HINSTANCE hInstance;
+bool keyboardTrue;
 
 /*
 **  -----------------
@@ -125,7 +126,7 @@ static FontInfo mediumFont;
 static FontInfo largeFont;
 static FontInfo smallOperFont;
 static FontInfo mediumOperFont;
-static bool keyboardTrue, keyboardSendUp;
+static bool keyboardSendUp;
 static HDC hdcMem;
 static HBITMAP hbmMem, hbmOld;
 static HDC hdc;

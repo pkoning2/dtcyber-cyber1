@@ -291,30 +291,47 @@ static void consoleIo(void)
     case Fc6612SelKeyIn:
         if (!activeChannel->full)
             {
-            windowGetChar();
-            ch = asciiToConsole[ppKeyIn & 0177];
-            if (ppKeyIn == 0)
+            /* For normal ("easy") keyboard mode we get one buffered keycode
+            ** at a time.
+            ** For true keyboard mode, we keep collecting buffered keycodes
+            ** until we run out of news.  That way if two keys are pressed
+            ** between the previous poll and the current one, we deliver
+            ** those two keystrokes together rather than one at a time.
+            */
+            do
                 {
-                keyMask = ULL(0);
-                currentKey = 0;
-                }
-            else if (ch != 0)
-                {
-                if (ppKeyIn < 0)
+                windowGetChar();
+                ch = asciiToConsole[ppKeyIn & 0177];
+                if (ppKeyIn == 0)
                     {
-                    keyMask &= ~(ULL(1) << ch);
+                    keyMask = ULL(0);
                     }
-                else if (ppKeyIn != 0200)    /* 0200 means "no change" */
+                else if (ppKeyIn == 0200)   /* 0200 means "no change" */
                     {
-                    keyMask |= ULL(1) << ch;
+                    break;
                     }
-                currentKey = 0;
-                for (i = 0, m = 1; i < 64; i++, m <<= 1)
+                else if (ch != 0)
                     {
-                    if (keyMask & m)
+                    printf ("keyin %d ch %d\n", ppKeyIn, ch);
+                    
+                    if (ppKeyIn & 0200)
                         {
-                        currentKey |= i;
+                        keyMask &= ~(ULL(1) << ch);
                         }
+                    else
+                        {
+                        keyMask |= ULL(1) << ch;
+                        }
+                    }
+                }
+            while (keyboardTrue);
+                
+            currentKey = 0;
+            for (i = 0, m = 1; i < 64; i++, m <<= 1)
+                {
+                if (keyMask & m)
+                    {
+                    currentKey |= i;
                     }
                 }
             activeChannel->data = currentKey;

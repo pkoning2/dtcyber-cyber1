@@ -101,6 +101,7 @@ static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize);
 extern Display *disp;
 extern XrmDatabase XrmDb;
 extern Window ptermWindow;
+bool keyboardTrue;
 
 /*
 **  -----------------
@@ -137,7 +138,7 @@ static bool displayOff = FALSE;
 static const i8 dotdx[] = { 0, 1, 0, 1, -1, -1,  0, -1,  1 };
 static const i8 dotdy[] = { 0, 0, 1, 1, -1,  0, -1,  1, -1 };
 static XKeyboardControl kbPrefs;
-static bool keyboardTrue, keyboardSendUp;
+static bool keyboardSendUp;
 static bool platoActive;
 
 /*
