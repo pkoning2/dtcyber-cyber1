@@ -36,7 +36,7 @@ If you need to change cyber.ini, go ahead.  The relevant section is
 the [nos552] section; others are either older experiments or unchanged
 from Tom's version.
 
-2. Starting.
+3. Starting.
 
 When you start DtCyber with my cyber.ini, nos552 section, you'll see
 not just the usual DtCyber window but also a window "Plato station
@@ -76,7 +76,7 @@ appear in the B-display line for CONDEN as is processes them.  Once
 those are done, the PLATO terminal window for terminal 0-1 will
 display "Press  NEXT  to begin".
 
-PLATO keyboard layout.
+4. PLATO keyboard layout.
 
 The PLATO keyboard has a bunch of keys with non-ASCII markings.  Some
 are printable characters like multiply sign, divide sign, and
@@ -119,7 +119,7 @@ shifted forms).  TERM and FONT are the same shifted or not because
 those correspond to shifted keys (shifted ANS and MICRO respectively)
 on the PLATO keyboard.
 
-Basic PLATO navigation.
+5. Basic PLATO navigation.
 
 The function keys are the primary means for moving around in PLATO.
 The most commonly used ones have fairly obvious names:
@@ -145,7 +145,7 @@ modern software, it usually actually helps.  In my 3 years using and
 developing PLATO, I never saw a manual and I never needed one.  HELP
 is why.
 
-Logging in.
+6. Logging in.
 
 Just follow instructions.  Press NEXT (Enter).  You'll get a display
 prompting for your name.  Enter the name and press NEXT.
@@ -165,7 +165,7 @@ The signon is dtcyber in group s (or, by PLATO convention,
 "dtcyber / s").  Password is "guest". The first time, you'll see a
 welcome message I left.
 
-Author mode.
+7. Author mode.
 
 Author mode is the central starting point for authors -- people who
 write lessons or, in the case of "s", who do system development.  As
@@ -176,7 +176,7 @@ Author Mode prompt.  It's a complete manual of the PLATO system.  (It
 may have minor navigational glitches because I had to reconstruct its
 tables from scratch; if you find any please let me know.)
 
-Privileged utilities.
+8. Privileged utilities.
 
 There are some system programmer tools that aren't as well documented,
 though you can get a reasonable amount of info from "sysaids" (enter
@@ -216,13 +216,13 @@ account "system" and ask for a file list.  You'll see all the system
 programs (things like edit and plato and syslib) as well as all the
 Compass code (files like lex and main and tutorx).
 
-Logging off.
+9. Logging off.
 
 To log off, press SHIFT-STOP from the Author Mode page.  When editing
 files, press BACK repeatedly to get there; from inside most programs,
 simply SHIFT-STOP gets you there.
 
-Shutdown.
+10. Shutdown.
 
 To shut down PLATO:
 
@@ -239,7 +239,7 @@ display on the PLATO terminals.  MASTOR will reload PLATO
 automatically if this happens.  If one of the others dies, you may
 have to tell MASTOR to fix this by saying K.RELOAD.
 
-Additional PLATO terminals.
+11. Additional PLATO terminals.
 
 DtCyber automatically starts one PLATO window, which is terminal 0-1.
 It also opens a TCP port (6604) which listens to connections from the
@@ -257,7 +257,7 @@ how it worked out.)
 To close the pterm terminal, first log out, then enter Control/D to
 disconnect and close the program.
 
-Console PLATO terminal emulation.
+12. Console PLATO terminal emulation.
 
 PLATO treats the console display as station 0-0, and handles it
 somewhat specially.  For one thing, it's not subject to any throttling
