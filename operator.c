@@ -935,7 +935,7 @@ static void opKeyboard(char *cmdParams)
     */
     if (strcmp (cmdParams, "EASY.") == 0)
         {
-        windowSetKeyboardTrue (TRUE);
+        windowSetKeyboardTrue (FALSE);
         }
     else if (strcmp (cmdParams, "TRUE.") != 0)
         {
@@ -943,7 +943,7 @@ static void opKeyboard(char *cmdParams)
         }
     else
         {
-        windowSetKeyboardTrue (FALSE);
+        windowSetKeyboardTrue (TRUE);
         }
     }
 

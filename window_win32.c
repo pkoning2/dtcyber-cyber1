@@ -245,7 +245,7 @@ int windowGetOperFontWidth(int font)
 **------------------------------------------------------------------------*/
 void windowSetKeyboardTrue (bool flag)
     {
-    /* we don't actually need to do any setup here */
+    keyboardTrue = flag;
     }
 
 /*--------------------------------------------------------------------------
