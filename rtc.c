@@ -93,19 +93,20 @@ static void rtcDisconnect(void);
 #if RDTSC
 static void rtcInit2 (long MHz);
 #endif
+
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
 u32 rtcClock = 0;
+u8 rtcIncrement;
 
 /*
 **  -----------------
 **  Private Variables
 **  -----------------
 */
-static u8 rtcIncrement;
 static bool rtcFull;
 #if RDTSC
 static u64 Hz;

@@ -546,6 +546,42 @@ void windowSetY(u16 y)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Report state of keyboard buffer.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        TRUE if input pending, FALSE if not.
+**
+**------------------------------------------------------------------------*/
+bool windowTestKeybuf (void)
+    {
+    return !(keyListGet == keyListPut);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Queue keyboard input.
+**
+**  Parameters:     Name        Description.
+**                  ch          character to be queued.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void windowQueueKey(char ch)
+    {
+    int nextput;
+    
+    nextput = keyListPut + 1;
+    if (nextput == KeyBufSize)
+        nextput = 0;
+    if (nextput != keyListGet)
+        {
+        keybuf[keyListPut] = ch;
+        keyListPut = nextput;
+        }
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Queue characters.
 **
 **  Parameters:     Name        Description.
@@ -926,18 +962,11 @@ static void windowInput(void)
                     {
                     break;
                     }
-                nextput = keyListPut + 1;
                 if (event.type == KeyRelease)
                     {
                     c |= 0200;
                     }
-                if (nextput == KeyBufSize)
-                    nextput = 0;
-                if (nextput != keyListGet)
-                    {
-                    keybuf[keyListPut] = c;
-                    keyListPut = nextput;
-                    }
+                windowQueueKey (c);
                 }
             else if (event.type == KeyPress && len == 2 && text[0] == '$')
                 {

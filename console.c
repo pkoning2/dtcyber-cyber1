@@ -72,6 +72,7 @@ static void consoleDisconnect(void);
 **  Public Variables
 **  ----------------
 */
+extern u8 rtcIncrement;
 
 /*
 **  -----------------
@@ -82,6 +83,11 @@ static u8 currentFont;
 static u16 currentOffset;
 static u64 keyMask;
 static u8 currentKey;
+static bool autoDate;
+static int autoPos;
+
+static const PpWord autoString[] =
+{ 00516, 02405, 02255, 00401, 02405, 0 };
 
 /*
 **--------------------------------------------------------------------------
@@ -119,6 +125,12 @@ void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     dp->func = consoleFunc;
     dp->io = consoleIo;
 
+    /*
+    **  If clock is set to track real time (rtcIncrement = 0)
+    **  turn on auto date entry.
+    */
+    autoDate = (rtcIncrement == 0);
+    
     /*
     **  Initialise (X)Windows environment.
     */
@@ -216,6 +228,9 @@ static void consoleIo(void)
     u8 ch;
     int i;
     u64 m;
+    static char ts[40];
+    time_t t;
+    char *p;
     
     switch (activeDevice->fcode)
         {
@@ -253,6 +268,50 @@ static void consoleIo(void)
                 {
                 windowQueue((char)((activeChannel->data >> 6) & Mask6));
                 windowQueue((char)((activeChannel->data >> 0) & Mask6));
+
+                /*
+                **  Check for auto date entry.
+                */
+                if (autoDate)
+                    {
+                    /* 
+                    **  See if medium char size, and text matches
+                    **  next word of "enter date" message.
+                    */
+                    if (currentFont == FontMedium &&
+                        activeChannel->data == autoString[autoPos])
+                        {
+                        autoPos++;
+                        if (autoString[autoPos] == 0)
+                            {
+                            /*
+                            **  Entire message matched, supply
+                            **  auto date and time, provided that
+                            **  there is no typeahead, and keyboard
+                            **  is in "easy" mode.
+                            */
+                            autoDate = FALSE;
+                            if (!windowTestKeybuf () && !keyboardTrue)
+                                {
+                                time (&t);
+                                /* Note that DSD supplies punctuation */
+                                strftime (ts, sizeof (ts) - 1,
+                                          "%y%m%d\n%H%M%S\n", localtime (&t));
+                                for (p = ts; *p; p++)
+                                    {
+                                    windowQueueKey (*p);
+                                    }
+                                }
+                            }
+                        }
+                    else
+                        {
+                        /*
+                        **  No match, reset match position to start.
+                        */
+                        autoPos = 0;
+                        }
+                    }
                 }
 
             activeChannel->full = FALSE;

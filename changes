@@ -317,3 +317,6 @@ Since jan21 2004 drop:
   for the pterm trace file because its name is formed from the PID, so
   successive runs will in general NOT reuse the same file.
 - Added touch support to pterm (X only at the moment).
+- Added touch support and trace support for Win32 pterm.
+- Add automatic date/time entry at deadstart if "clock=0" specified.
+- Put station number in pterm window titlebar.

@@ -352,6 +352,42 @@ void windowCheckOutput(void)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Report state of keyboard buffer.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        TRUE if input pending, FALSE if not.
+**
+**------------------------------------------------------------------------*/
+bool windowTestKeybuf (void)
+    {
+    return !(keyListGet == keyListPut);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Queue keyboard input.
+**
+**  Parameters:     Name        Description.
+**                  ch          character to be queued.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void windowQueueKey(char ch)
+    {
+    int nextput;
+    
+    nextput = keyListPut + 1;
+    if (nextput == KeyBufSize)
+        nextput = 0;
+    if (nextput != keyListGet)
+        {
+        keybuf[keyListPut] = ch;
+        keyListPut = nextput;
+        }
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Indicate that operator mode is finished.
 **
 **  Parameters:     Name        Description.
@@ -1062,16 +1098,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
 /* Non-operator keystrokes are handled in KEYUP/KEYDOWN */
             break;
             }
-        nextput = keyListPut + 1;
-        if (nextput == KeyBufSize)
-            {
-            nextput = 0;
-            }
-        if (nextput != keyListGet)
-            {
-            keybuf[keyListPut] = wParam;
-            keyListPut = nextput;
-            }
+        windowQueueKey (wparam);
         break;
         
     case WM_KEYUP:
@@ -1114,16 +1141,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
                     i |= 0200;
                     }
 //				printf ("keycode %03o lparam %x\n", i, lParam);
-                nextput = keyListPut + 1;
-            	if (nextput == KeyBufSize)
-                    {
-    	            nextput = 0;
-                    }
-            	if (nextput != keyListGet)
-                    {
-                    keybuf[keyListPut] = i;
-                	keyListPut = nextput;
-                    }
+                windowQueueKey (i);
                 }
             }
         break;

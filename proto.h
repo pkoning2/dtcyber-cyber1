@@ -232,6 +232,8 @@ void windowCheckOutput(void);
 void windowOperEnd(void);
 int windowGetOperFontWidth(int font);
 void windowSetKeyboardTrue(bool flag);
+bool windowTestKeybuf(void);
+void windowQueueKey(char ch);
 
 /*
 **  ptermcom.c
@@ -243,6 +245,7 @@ void ptermComClose(void);
 **  pterm_{win32,x11}.c
 */
 void ptermInit(const char *windowName, bool closeOk);
+void ptermSetName(const char *windowName);
 void ptermClose(void);
 void ptermSetWeMode(u8 wemode);
 void ptermDrawChar(int x, int y, int snum, int cnum);
