@@ -552,6 +552,9 @@ static int opRequest(NetPort *np)
 **------------------------------------------------------------------------*/
 static void opCmdShutdown(char *cmdParams)
     {
+    int i;
+    NetPort *np;
+    
     /*
     **  Process command.
     */
@@ -564,7 +567,17 @@ static void opCmdShutdown(char *cmdParams)
     consoleSetKeyboardTrue (FALSE);
     emulationActive = FALSE;
     opSetMsg ("DtCyber shut down.");
-    
+
+    /* Send the shutdown reply message to all consoles */
+    for (i = 0; i < opConns; i++)
+        {
+        np = opPorts.portVec + i;
+        if (dtActive (&np->fet))
+            {
+            dtSendTlv (np->fet.connFd, OpReply, strlen (msgPtr), msgPtr);
+            }
+        }
+
     printf("\nThanks for using %s - Goodbye for now.\n\n", DtCyberVersion);
     }
 
@@ -1353,7 +1366,12 @@ static void opSendStatus (StatusData *sd)
 **------------------------------------------------------------------------*/
 static void opUpdateSysStatus (void)
     {
-    if (opActiveConns > 1)
+    if (!emulationActive)
+        {
+        sprintf (statusSys.buf + 1,
+                 "DtCyber shut down");
+        }
+    else if (opActiveConns > 1)
         {
         sprintf (statusSys.buf + 1,
                  "%8s  %5s    %d operators",
