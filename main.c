@@ -83,8 +83,6 @@ int consoleCheckCycles;
 **------------------------------------------------------------------------*/
 int main(int argc, char **argv)
     {
-    int cpucycle;
-    
     (void)argc;
     (void)argv;
 
@@ -152,15 +150,15 @@ int main(int argc, char **argv)
         **  Execute PP, CPU and RTC.
         */
         ppStep();
-        for (cpucycle = 0; cpucycle < cpuRatio; cpucycle++)
-            {
 #ifndef CPU_THREADS
-            cpuStepAll();
+        cpuStepAll();
 #else
-            cpuStep(cpu);
+        cpuStep(cpu);
 #endif
+        if (channelDelayMask != 0)
+            {
+            channelStep();
             }
-        channelStep();
         rtcTick();
         /*
         **  Count a major cycle

@@ -55,6 +55,7 @@ ChSlot *channel;
 ChSlot *activeChannel;
 DevSlot *activeDevice;
 u8 channelCount;
+u32 channelDelayMask;
 
 /*
 **  -----------------
@@ -412,6 +413,7 @@ void channelStep(void)
             if (cc->delayDisconnect == 0)
                 {
                 cc->active = FALSE;
+                channelDelayMask &= ~(1 << activeChannel->id);
                 }
             }
         }

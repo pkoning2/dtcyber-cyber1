@@ -928,11 +928,10 @@ void cpuStep(CPUVARG)
     {
     u32 oldRegP;
     u32 length;
+    int cpucycle;
     
     /*
     **  If this CPU needs to be exchanged, do that first.
-    **  (It may not happen right now, if we're in the middle
-    **  of the instruction word.)
     **  Note that this check must come BEFORE the "stopped" check.
     */
     if (activeCpu->id == exchangeCpu)
@@ -945,125 +944,133 @@ void cpuStep(CPUVARG)
         return;
         }
 
-    /*
-    **  Execute one CM word atomically.
-    */
-    do
+    for (cpucycle = 0; cpucycle < cpuRatio; cpucycle++)
         {
         /*
-        **  Decode based on type.
+        **  Execute one CM word atomically.
         */
-        activeCpu->opFm = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 6)) & Mask6);
-        activeCpu->opI       = (u8)((activeCpu->opWord >> (activeCpu->opOffset -  9)) & Mask3);
-        activeCpu->opJ       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 12)) & Mask3);
-        length = decodeCpuOpcode[activeCpu->opFm].length;
-        if (length == 0)
+        do
             {
-            length = cpOp01Length[activeCpu->opI];
-            }
-        
-        if (length == 15)
-            {
-            activeCpu->opK       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 15)) & Mask3);
-            activeCpu->opAddress = 0;
-
-            activeCpu->opOffset -= 15;
-            }
-        else
-            {
-            if (activeCpu->opOffset == 15)
+            /*
+            **  Decode based on type.
+            */
+            activeCpu->opFm = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 6)) & Mask6);
+            activeCpu->opI       = (u8)((activeCpu->opWord >> (activeCpu->opOffset -  9)) & Mask3);
+            activeCpu->opJ       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 12)) & Mask3);
+            length = decodeCpuOpcode[activeCpu->opFm].length;
+            if (length == 0)
                 {
-                /*
-                **  Stop when packing is invalid - this is the
-                **  behaviour of the 6400 and 6500. 
-                */
+                length = cpOp01Length[activeCpu->opI];
+                }
+        
+            if (length == 15)
+                {
+                activeCpu->opK       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 15)) & Mask3);
+                activeCpu->opAddress = 0;
+
+                activeCpu->opOffset -= 15;
+                }
+            else
+                {
+                if (activeCpu->opOffset == 15)
+                    {
+                    /*
+                    **  Stop when packing is invalid - this is the
+                    **  behaviour of the 6400 and 6500. 
+                    */
 #if CcDebug == 1
-                traceCpuPrint(activeCpu, "Invalid packing\n");
+                    traceCpuPrint(activeCpu, "Invalid packing\n");
 #endif
-                activeCpu->cpuStopped = TRUE;
+                    activeCpu->cpuStopped = TRUE;
+                    return;
+                    }
+
+                activeCpu->opK       = 0;
+                activeCpu->opAddress = (u32)((activeCpu->opWord >> (activeCpu->opOffset - 30)) & Mask18);
+
+                activeCpu->opOffset -= 30;
+                }
+
+            oldRegP = activeCpu->regP;
+
+            /*
+            **  Force B0 to 0.
+            */
+            activeCpu->regB[0] = 0;
+
+            /*
+            **  Execute instruction.
+            */
+            decodeCpuOpcode[activeCpu->opFm].execute (CPUARG);
+
+            /*
+            **  Force B0 to 0.
+            */
+            activeCpu->regB[0] = 0;
+
+#if CcDebug == 1
+            /*
+            **  Don't trace COS's idle loop.
+            */
+            //    if ((activeCpu->regRaCm + activeCpu->regP) > 02062)
+
+            /*
+            **  To make things faster, do a quick check first to see if any
+            **  tracing at all has been requested (i.e., trace mask != 0).
+            **  That makes a surprisingly large difference.
+            **
+            **  Don't trace NOS's idle loop.
+            **  If control point tracing is set, act accordingly.
+            **  The control point check relies on the property that the
+            **  monitor address in the CPU points to the exchange package
+            **  area at the start of the CP area for the CP when that CP
+            **  has the CPU.  This is more portable than looking for
+            **  the active CP value in low memory.
+            */
+            if (traceMask != 0 &&
+                /*activeCpu->regRaCm != 0 && */
+                activeCpu->regP > 0100)
+                {
+                if (traceCp == 0 || 
+                    (activeCpu->id != monitorCpu &&
+                     activeCpu->regMa == (traceCp << 7)))
+                    {
+                    traceCpu(activeCpu, oldRegP, activeCpu->opFm,
+                             activeCpu->opI, activeCpu->opJ,
+                             activeCpu->opK, activeCpu->opAddress);
+                    }
+#if DebugOps == 1
+                if (activeCpu->opFm == 061 && activeCpu->opI == 0 && activeCpu->opJ != 0)
+                    {
+                    cpuTraceCtl (CPUARG);
+                    }
+#endif
+                }
+#endif
+
+            if (activeCpu->cpuStopped)
+                {
+                if (activeCpu->opOffset == 0)
+                    {
+                    activeCpu->regP = (activeCpu->regP + 1) & Mask18;
+                    }
+#if CcDebug == 1
+                traceCpuPrint(activeCpu, (char*)"Stopped\n");
+#endif
                 return;
                 }
 
-            activeCpu->opK       = 0;
-            activeCpu->opAddress = (u32)((activeCpu->opWord >> (activeCpu->opOffset - 30)) & Mask18);
-
-            activeCpu->opOffset -= 30;
-            }
-
-        oldRegP = activeCpu->regP;
-
-        /*
-        **  Force B0 to 0.
-        */
-        activeCpu->regB[0] = 0;
-
-        /*
-        **  Execute instruction.
-        */
-        decodeCpuOpcode[activeCpu->opFm].execute (CPUARG);
-
-        /*
-        **  Force B0 to 0.
-        */
-        activeCpu->regB[0] = 0;
-
-#if CcDebug == 1
-        /*
-        **  Don't trace COS's idle loop.
-        */
-        //    if ((activeCpu->regRaCm + activeCpu->regP) > 02062)
-
-        /*
-        **  To make things faster, do a quick check first to see if any
-        **  tracing at all has been requested (i.e., trace mask != 0).
-        **  That makes a surprisingly large difference.
-        **
-        **  Don't trace NOS's idle loop.
-        **  If control point tracing is set, act accordingly.
-        */
-        if (traceMask != 0 &&
-            /*activeCpu->regRaCm != 0 && */
-            activeCpu->regP > 0100)
-            {
-            if (traceCp == 0 || 
-                (activeCpu->id != monitorCpu &&
-                 ((cpMem[060] >> 31) & 037) == traceCp))
-                {
-                traceCpu(activeCpu, oldRegP, activeCpu->opFm,
-                         activeCpu->opI, activeCpu->opJ,
-                         activeCpu->opK, activeCpu->opAddress);
-                }
-#if DebugOps == 1
-            if (activeCpu->opFm == 061 && activeCpu->opI == 0 && activeCpu->opJ != 0)
-                {
-                cpuTraceCtl (CPUARG);
-                }
-#endif
-            }
-#endif
-
-        if (activeCpu->cpuStopped)
-            {
+            /*
+            **  Fetch next instruction word if necessary.
+            */
             if (activeCpu->opOffset == 0)
                 {
                 activeCpu->regP = (activeCpu->regP + 1) & Mask18;
+                activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
+                activeCpu->opOffset = 60;
                 }
-#if CcDebug == 1
-            traceCpuPrint(activeCpu, (char*)"Stopped\n");
-#endif
-            return;
-            }
-
-        /*
-        **  Fetch next instruction word if necessary.
-        */
-        if (activeCpu->opOffset == 0)
-            {
-            activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-            activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
-            activeCpu->opOffset = 60;
-            }
-        } while (activeCpu->opOffset != 60);
+            } while (activeCpu->opOffset != 60);
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -1221,6 +1228,7 @@ void cpuExchangeJump(CPUVARG)
     CpuContext tmp;
     CpWord *mem;
     u32 addr;
+    CpWord t;
     
     /*
     **  Only perform exchange jump on instruction boundary or when stopped.
@@ -1388,6 +1396,22 @@ void cpuExchangeJump(CPUVARG)
         printf ("huh?\n");
         }
     
+    t = activeCpu->opWord;
+    /*
+    **  Check for the idle loop.  Usually that's just an "eq *" but in recent
+    **  flavors of NOS it's a few Cxi instructions then "eq *".  If we see
+    **  the idle loop, pretend the CPU is stopped.  That way we don't spend
+    **  time emulating the idle loop instructions, which will speed up other
+    **  stuff (such as the PPUs and their I/O) if the CPU is idle.
+    */
+    while ((t >> 54) == 047)
+        {
+        t = (t << 15) & Mask60;
+        }
+    if ((t >> 30) == (00400000000 | activeCpu->regP))
+        {
+        activeCpu->cpuStopped = TRUE;
+        }
     activeCpu->opOffset = 60;
     }
 

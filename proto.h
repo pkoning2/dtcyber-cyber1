@@ -340,6 +340,8 @@ extern bool keyboardTrue;
 extern u32 rtcClock;
 extern char autoDateString[];
 extern char autoString[];
+extern u32 channelDelayMask;
+extern long cmWaitRatio;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

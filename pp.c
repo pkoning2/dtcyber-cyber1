@@ -400,45 +400,48 @@ void ppStep(void)
             opD = opCode & 077;
 
 #if CcDebug == 1
-            /*
-            **  If the previous instruction was an I/O, then we do
-            **  the last few trace steps (registers after, etc.) here
-            **  rather than right after instruction execution, so that 
-            **  the information displayed reflects the completion of any
-            **  I/O that was done.  In particular, for I/O instructions
-            **  the A register is updated after the instruction
-            **  is "finished", so to show A correctly we display it now.
-            */
-            if (activePpu->ioFlag)
+            if (traceMask != 0)
                 {
                 /*
-                **  Trace result.
+                **  If the previous instruction was an I/O, then we do
+                **  the last few trace steps (registers after, etc.) here
+                **  rather than right after instruction execution, so that 
+                **  the information displayed reflects the completion of any
+                **  I/O that was done.  In particular, for I/O instructions
+                **  the A register is updated after the instruction
+                **  is "finished", so to show A correctly we display it now.
                 */
-                traceRegisters();
-
-                /*
-                **  Trace new channel status.
-                */
-                traceChannel(opD);
-
-                traceEnd();
-                /*
-                **  Trace memory touched by IAM/OAM, and if necessary,
-                **  A register after IAM/IAN/OAM/OAN
-                */
-                if (activePpu->ppMemLen > 0)
+                if (activePpu->ioFlag)
                     {
-                    tracePM ();
-                    activePpu->ppMemLen = 0;
+                    /*
+                    **  Trace result.
+                    */
+                    traceRegisters();
+
+                    /*
+                    **  Trace new channel status.
+                    */
+                    traceChannel(opD);
+
+                    traceEnd();
+                    /*
+                    **  Trace memory touched by IAM/OAM, and if necessary,
+                    **  A register after IAM/IAN/OAM/OAN
+                    */
+                    if (activePpu->ppMemLen > 0)
+                        {
+                        tracePM ();
+                        activePpu->ppMemLen = 0;
+                        }
                     }
-                }
             
-            /*
-            **  Trace instructions.
-            */
-            traceSequence();
-            traceRegisters();
-            traceOpcode();
+                /*
+                **  Trace instructions.
+                */
+                traceSequence();
+                traceRegisters();
+                traceOpcode();
+                }
 #endif
 
             /*
@@ -460,7 +463,7 @@ void ppStep(void)
             **  the information displayed reflects the completion of any
             **  I/O that was done.  
             */
-            if (!activePpu->ioFlag)
+            if (traceMask != 0 && !activePpu->ioFlag)
                 {
                 /*
                 **  Trace result.
@@ -485,7 +488,6 @@ void ppStep(void)
                     cpuMemLen = 0;
                     }
                 }
-            
 #endif
             }
 
