@@ -60,20 +60,16 @@
     if (opD != 0)                                                           \
         {                                                                   \
         location = activePpu->mem[opD] + activePpu->mem[activePpu->regP];   \
-        if ((location & Overflow12) != 0 || (location & Mask12) == 07777)   \
-            {                                                               \
-            location += 1;                                                  \
-            }                                                               \
-        location &= Mask12;                                                 \
         }                                                                   \
     else                                                                    \
         {                                                                   \
         location = activePpu->mem[activePpu->regP];                         \
-        if (location == 07777)                                              \
-            {                                                               \
-            location = 0;                                                   \
-            }                                                               \
         }                                                                   \
+    if ((location & Overflow12) != 0 || (location & Mask12) == 07777)       \
+        {                                                                   \
+        location += 1;                                                      \
+        }                                                                   \
+    location &= Mask12;                                                     \
     PpIncrement(activePpu->regP);
 
 
