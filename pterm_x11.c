@@ -272,8 +272,6 @@ const unsigned short plato_m1[] = {
 **--------------------------------------------------------------------------
 */
 
-extern void dtXinit(void);
-
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize the Plato terminal window.
 **
@@ -674,12 +672,11 @@ void ptermLoadChar (int snum, int cnum, const u16 *data)
 **
 **  Parameters:     Name        Description.
 **                  bp          XButtonPressedEvent for the touch
-**                  stat        Station number
 **
 **  Returns:        TRUE if key event was a valid Plato touch input.
 **
 **------------------------------------------------------------------------*/
-bool platoTouch (XButtonPressedEvent *bp, int stat)
+bool platoTouch (XButtonPressedEvent *bp)
     {
     int x, y;
     
@@ -698,7 +695,7 @@ bool platoTouch (XButtonPressedEvent *bp, int stat)
     x /= 32;
     y /= 32;
 
-    niuLocalKey (0x100 | (x << 4) | y, stat);
+    ptermSendKey (0x100 | (x << 4) | y);
     return TRUE;
     }
 
@@ -707,12 +704,11 @@ bool platoTouch (XButtonPressedEvent *bp, int stat)
 **
 **  Parameters:     Name        Description.
 **                  kp          XKeyEvent for the keypress
-**                  stat        Station number
 **
 **  Returns:        TRUE if key event was a valid Plato keycode.
 **
 **------------------------------------------------------------------------*/
-bool platoKeypress (XKeyEvent *kp, int stat)
+bool platoKeypress (XKeyEvent *kp)
     {
     int state = kp->state;
     int key;
@@ -739,7 +735,7 @@ bool platoKeypress (XKeyEvent *kp, int stat)
     if ((state & MODMASK) != 0 && key == XK_Left)
         {
         pc = 015 | shift;       // assignment arrow
-        niuLocalKey (pc, stat);
+        ptermSendKey (pc);
         return TRUE;
         }
     if (key < sizeof (asciiToPlato))
@@ -750,7 +746,7 @@ bool platoKeypress (XKeyEvent *kp, int stat)
             
             if (pc >= 0)
                 {
-                niuLocalKey (pc, stat);
+                ptermSendKey (pc);
                 return TRUE;
                 }
             else
@@ -783,7 +779,7 @@ bool platoKeypress (XKeyEvent *kp, int stat)
                     {
                     pc |= shift;
                     }
-                niuLocalKey (pc, stat);
+                ptermSendKey (pc);
                 return TRUE;
                 }
             
@@ -897,7 +893,7 @@ bool platoKeypress (XKeyEvent *kp, int stat)
         return FALSE;
         }
     pc |= shift;
-    niuLocalKey (pc, stat);
+    ptermSendKey (pc);
     return TRUE;
     }
 
@@ -921,11 +917,11 @@ void ptermInput(XEvent *event)
         break;
 
     case KeyPress:
-        platoKeypress ((XKeyEvent *) event, 1);
+        platoKeypress ((XKeyEvent *) event);
         break;
 
     case ButtonPress:
-        platoTouch ((XButtonPressedEvent *) event, 1);
+        platoTouch ((XButtonPressedEvent *) event);
         break;
         
     case Expose:

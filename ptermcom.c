@@ -189,24 +189,18 @@ void ptermComClose(void)
 **  Purpose:        Process NIU word
 **
 **  Parameters:     Name        Description.
-**                  stat        Station number
 **                  d           19-bit word
 **
 **  Returns:        1 if we did a delay, 0 if not.
 **
 **------------------------------------------------------------------------*/
-int procNiuWord (int stat, u32 d)
+int procNiuWord (u32 d)
     {
     mptr mp;
     char *msg = "";
     char name[100];
     int status = 0;
     
-    if (stat != 1)
-        {
-        return;
-        }
-
     seq++;
     if (tracePterm)
         {
@@ -319,11 +313,11 @@ int procNiuWord (int stat, u32 d)
             if ((d & 0177) == 0160)
                 {
                 TRACE ("load echo termtype %d", TERMTYPE);
-                niuLocalKey (0360 + TERMTYPE, stat);
+                ptermSendKey (0360 + TERMTYPE);
                 break;
                 }
             TRACE ("load echo %d", d & 0177);
-            niuLocalKey ((d & 0177) + 0200, stat);
+            ptermSendKey ((d & 0177) + 0200);
             break;
             
         case 4:     // load address

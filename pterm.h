@@ -19,15 +19,17 @@
 */
 
 #ifdef PTERM_DEFINE_X
-extern bool platoKeypress (XKeyEvent *kp, int stat);
-extern bool platoTouch (XButtonPressedEvent *bp, int stat);
+extern bool platoKeypress (XKeyEvent *kp);
+extern bool platoTouch (XButtonPressedEvent *bp);
 extern void ptermInput(XEvent *event);
-#endif
 extern void dtXinit(void);
+#endif
 extern void ptermSetName (const char *winName);
 extern void ptermLoadChar (int snum, int cnum, const u16 *data);
 extern void ptermSetWeMode (u8 we);
 extern void ptermSetClip (bool enable);
 extern void ptermSetTrace (bool fileaction);
+extern void ptermSendKey(int key);
+extern int procNiuWord (u32 d);
 
 #endif  /* PTERM_H */

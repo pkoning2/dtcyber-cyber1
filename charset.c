@@ -226,15 +226,21 @@ const char extBcdToAscii[64] = {
     /* 70-77 */     'H',    'I',    '<',    '.',    ')',   '\\',    '^',    ';'
     };
 
-/* Plato keycodes translation */
+/*  Plato keycodes translation */
 
-/* Note that we have valid entries (entry != -1) here only for those keys
-** where we do not need to do anything unusual for Shift.  For example,
-** "space" is not decoded here because Shift-Space gets a different code.
-** However, that doesn't apply to control keystrokes; those are shown
-** here even though shift affects them in the PLATO/Portal key conventions.
+/*
+**  Note that we have valid entries (entry != -1) here only for those keys
+**  where we do not need to do anything unusual for Shift.  For example,
+**  "space" is not decoded here because Shift-Space gets a different code.
+**  However, that doesn't apply to control keystrokes; those are shown
+**  here even though shift affects them in the PLATO/Portal key conventions.
+**
+**  "Composite" keys -- codes that are a single key on a conventional ASCII
+**  style keyboard but require two keystrokes in PLATO -- are represented in
+**  the table as 6-digit entries.  The upper 3 digits are the prefix code
+**  (typically 074: ACCESS), the low 3 digits are the suffix.
 */
-const i8 asciiToPlato[128] =
+const int asciiToPlato[128] =
 {
  /*                                                                         */
  /* 000- */ -1,    022,    030,    033,    031,    027,    064,    013,
@@ -245,7 +251,7 @@ const i8 asciiToPlato[128] =
  /*                                                                         */
  /* 030- */012,    021,     -1,     -1,     -1,     -1,     -1,     -1,
  /*          space   !       "       #       $       %       &       '      */
- /* 040- */ -1,      0176,   0177,  -1,      0044,   0045,  -1,      0047,
+ /* 040- */ -1,      0176,   0177, 074044,   0044,   0045, 074016,   0047,
  /*          (       )       *       +       ,       -       .       /      */
  /* 050- */  0051,   0173,   0050,   0016,   0137,   0017,   0136,   0135,
  /*          0       1       2       3       4       5       6       7      */
@@ -253,21 +259,21 @@ const i8 asciiToPlato[128] =
  /*          8       9       :       ;       <       =       >       ?      */
  /* 070- */  0010,   0011,   0174,   0134,   0040,   0133,   0041,   0175,
  /*          @       A       B       C       D       E       F       G      */
- /* 100- */ -1,      0141,   0142,   0143,   0144,   0145,   0146,   0147,
+ /* 100- */ 074005,  0141,   0142,   0143,   0144,   0145,   0146,   0147,
  /*          H       I       J       K       L       M       N       O      */
  /* 110- */  0150,   0151,   0152,   0153,   0154,   0155,   0156,   0157,
  /*          P       Q       R       S       T       U       V       W      */
  /* 120- */  0160,   0161,   0162,   0163,   0164,   0165,   0166,   0167,
  /*          X       Y       Z       [       \       ]       ^       _      */
- /* 130- */  0170,   0171,   0172,   0042,  -1,      0043,  -1,      0046,
+ /* 130- */  0170,   0171,   0172,   0042, 074135,   0043, 074130,   0046,
  /*          `       a       b       c       d       e       f       g      */
- /* 140- */ -1,      0101,   0102,   0103,   0104,   0105,   0106,   0107,
+ /* 140- */ 074121,  0101,   0102,   0103,   0104,   0105,   0106,   0107,
  /*          h       i       j       k       l       m       n       o      */
  /* 150- */  0110,   0111,   0112,   0113,   0114,   0115,   0116,   0117,
  /*          p       q       r       s       t       u       v       w      */
  /* 160- */  0120,   0121,   0122,   0123,   0124,   0125,   0126,   0127,
  /*          x       y       z       {       |       }       ~              */
- /* 170- */  0130,   0131,   0132,  -1,     -1,     -1,     -1,     -1
+ /* 170- */  0130,   0131,   0132, 074042, 074151, 074043, 074116,     -1
 };
 
 /* Keycode translation for ALT-keypress */

@@ -111,16 +111,6 @@ static int niuIn, niuOut;
 **
 **--------------------------------------------------------------------------
 */
-#if !defined(_WIN32)
-
-extern void ptermInput(XEvent *event);
-#endif
-extern void ptermInit(const char *winName, bool closeOk);
-extern void ptermClose (void);
-extern int procNiuWord (int stat, u32 d);
-extern void ptermSetWeMode (u8 we);
-
-void niuLocalKey(u16 key, int stat);
 
 int main (int argc, char **argv)
     {
@@ -256,7 +246,7 @@ int main (int argc, char **argv)
             i = niuRingCount;
             if (i == RINGXOFF1 || i == RINGXOFF2)
                 {
-                niuLocalKey (xofkey, 0);
+                ptermSendKey (xofkey);
 #if 0
                 printf ("off ");
                 fflush (stdout);
@@ -289,12 +279,12 @@ int main (int argc, char **argv)
                 {
                 next = 0;
                 }
-            j = procNiuWord (1, niuRing[niuOut]);
+            j = procNiuWord (niuRing[niuOut]);
             niuOut = next;
             i = niuRingCount;
             if (i == RINGXON1 || i == RINGXON2)
                 {
-                niuLocalKey (xonkey, 0);
+                ptermSendKey (xonkey);
 #if 0
                 printf ("on ");
                 fflush (stdout);
@@ -315,23 +305,33 @@ int main (int argc, char **argv)
 **
 **  Parameters:     Name        Description.
 **                  key         Plato key code for station
-**                  stat        Station number (ignored)
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void niuLocalKey(u16 key, int stat)
+void ptermSendKey(int key)
     {
     u8 data[2];
     
-    data[0] = key >> 7;
-    data[1] = 0200 | key;
-
-    if (tracePterm)
+    /*
+    **  If this is a "composite", recursively send the two pieces.
+    */
+    if ((key >> 9) != 0)
         {
-        fprintf (traceF, "key to plato %03o\n", key);
+        ptermSendKey (key >> 9);
+        ptermSendKey (key & 0777);
         }
-    send(fet.connFd, data, 2, 0);
+    else
+        {
+        data[0] = key >> 7;
+        data[1] = 0200 | key;
+
+        if (tracePterm)
+            {
+            fprintf (traceF, "key to plato %03o\n", key);
+            }
+        send(fet.connFd, data, 2, 0);
+        }
     }
 
 /*
@@ -386,7 +386,7 @@ static void ptermWindowInput(void)
 #if 0
                 else if (key == XK_s || key == XK_q)
                     {
-                    niuLocalKey (key == XK_s ? xofkey : xonkey, 0);
+                    ptermSendKey (key == XK_s ? xofkey : xonkey);
                     return;
                     }
 #endif
