@@ -141,7 +141,7 @@ void ptermInit(const char *winName, bool closeOk)
     DWORD dwThreadId; 
     HANDLE hThread;
 
-	allowClose = closeOk;							// Remember whether to honor Ctrl/D
+	allowClose = closeOk;							// Remember whether to honor Ctrl/Z
 
     /*
     **  Create windowing thread.
@@ -304,7 +304,6 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
 {
     int wmId, wmEvent;
     HDC hdc;
-	SHORT keystate;
     PAINTSTRUCT paint;
     
     switch (message) 
@@ -423,7 +422,7 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         **  Handle input characters.
         */
     case WM_CHAR:
-		if (allowClose && wParam == '\004')
+		if (wParam == 032 && allowClose)
 		{
             DestroyWindow(hWnd);
 		}
@@ -434,15 +433,8 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         break;
 
 	case WM_KEYDOWN:
-		/* Ignore control keys */
-		keystate = GetKeyState (VK_CONTROL);
-		if ((signed) keystate < 0)
-        {
-			/* Ignore control keys */
-			return 0;
-        }
         platoKeypress (wParam, 0, 1);
-		break;
+        break;
         
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
@@ -607,14 +599,20 @@ void ptermLoadChar (int snum, int cnum, const u16 *data)
 **------------------------------------------------------------------------*/
 bool platoKeypress (WPARAM wParam, int alt, int stat)
 {
-	SHORT keystate;
+    SHORT keystate;
     int key;
     u8 shift = 0;
     int pc = -1;
-	WORD buf[4];
+    WORD buf[4];
     BYTE keystatebuf[256];
+    bool ctrl = FALSE;
 
-	keystate = GetKeyState (VK_SHIFT);
+    keystate = GetKeyState (VK_CONTROL);
+    if ((signed) keystate < 0)
+    {
+        ctrl = TRUE;
+    }
+    keystate = GetKeyState (VK_SHIFT);
     if ((signed) keystate < 0)
     {
         shift = 040;
@@ -645,24 +643,42 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
             pc = 026;       // next
             break;
         case VK_HOME:
+        case VK_F8:
             pc = 030;       // back
             break;
         case VK_PAUSE:
+        case VK_F10:
             pc = 032;       // stop
             break;
         case VK_TAB:
             pc = 014;       // tab
             break;
         case VK_ADD:
-            pc = 016;       // +
+            if (ctrl)
+            {
+                pc = 056;	// Sigma
+            }
+            else
+            {
+                pc = 016;   // +
+            }
             break;
         case VK_SUBTRACT:
-            pc = 017;       // -
+            if (ctrl)
+            {
+                pc = 057;	// Delta
+            }
+            else
+            {
+                pc = 017;   // -
+            }
             break;
         case VK_MULTIPLY:
+        case VK_DELETE:
             pc = 012;       // multiply sign
             break;
         case VK_DIVIDE:
+        case VK_INSERT:
             pc = 013;       // divide sign
             break;
         case VK_LEFT:
@@ -674,18 +690,45 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
         case VK_DOWN:
             pc = 021;       // sub
             break;
+        case VK_F3:
+            pc = 034;       // square
+            break;
+        case VK_F2:
+            pc = 022;       // ans
+            break;
+        case VK_F11:
+            pc = 033;       // copy
+            break;
+        case VK_F9:
+            pc = 031;       // data
+            break;
+        case VK_F5:
+            pc = 027;       // edit
+            break;
+        case VK_F4:
+            pc = 024;       // micro/font
+            break;
+        case VK_F6:
+            pc = 025;       // help
+            break;
+        case VK_F7:
+            pc = 035;       // lab
+            break;
         default:
-			GetKeyboardState (keystatebuf);
-			buf[0] = 0;
-			if (ToAscii (wParam, 0, keystatebuf, buf, 0) == 1)
-			{
-				key = buf[0];
-	            if (key > 0 && key <= 127)
-		        {
-			        pc = asciiToPlato[key];
-					shift = 0;		// shift is accounted for in lookup table
-				}
-			}
+            GetKeyboardState (keystatebuf);
+            buf[0] = 0;
+            if (ToAscii (wParam, 0, keystatebuf, buf, 0) == 1)
+            {
+                key = buf[0];
+                if (key > 0 && key <= 127)
+                {
+                    pc = asciiToPlato[key];
+                    if (!ctrl)
+                    {
+                        shift = 0;		// shift is accounted for in lookup table
+                    }
+                }
+}
         }
         if (pc >= 0)
         {
