@@ -184,7 +184,7 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
             {
             cc->table = asciiTo029;
             }
-        else if (strcmp (deviceName, "026") == 0)
+        else if (strcmp (deviceName, "026") != 0)
             {
             fprintf (stderr, "Unrecognized card code name %s\n", deviceName);
             exit (1);
@@ -441,12 +441,6 @@ static void cr3447Io(void)
             }
         else
             {
-            if (active3000Device->fcode == Fc6681Input &&
-                activePpu->regP == 06071 && activePpu->mem[06067] == 06611)
-                {
-                traceMask |= 1 << activePpu->id;
-                printf ("gotcha!\n");
-                }
             c = cc->card[cc->col++];
             if (cc->binary || cc->bincard)
                 {

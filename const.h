@@ -17,7 +17,7 @@
 **  Public Constants
 **  ----------------
 */
-#define DtCyberVersion          "Desktop CYBER 2.1 BETA 0"
+#define DtCyberVersion          "Desktop CYBER 2.2 ALPHA 3"
 
 #ifndef NULL                    
 #define NULL                    ((void *) 0)
@@ -74,6 +74,9 @@
 #define DtCp3446                12
 #define DtCr3447                13
 #define DtDcc6681               14
+#define DtTpm                   15
+#define DtDdp                   16
+#define DtNiu                   17
 
 
 /*

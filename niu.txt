@@ -33,7 +33,7 @@ output data:
 
 Protocol for NIU to Plato terminal emulator program:
 
-The protocol runs over TCP, by default socket 6604.  It carries
+The protocol runs over TCP, by default socket 5004.  It carries
 the input and output data streams.
 
 Both input and output streams carry the Plato codes.  Since the code

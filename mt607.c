@@ -347,11 +347,6 @@ static FcStatus mt607Func(PpWord funcCode)
 
         activeDevice->recordLength = op - tp->ioBuffer;
         activeChannel->status = St607Ready;
-
-#if CcDebug == 1
-        sprintf(str, "--------------------- record with %d bytes  and %d PP words-----------------------------\n", recLen1, activeDevice->recordLength);
-        tracePrint(str);
-#endif
         break;
         }
 
@@ -387,7 +382,6 @@ static void mt607Io(void)
     case Fc607StatusReq:
         activeChannel->data = activeChannel->status;
         activeChannel->full = TRUE;
-//        activeChannel->discAfterInput = TRUE;  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< fixed COS 
         break;
 
     case Fc607RdBinary:

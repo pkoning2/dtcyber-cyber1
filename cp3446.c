@@ -196,7 +196,7 @@ void cp3446Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
             {
             cc->table = asciiTo029;
             }
-        else if (strcmp (deviceName, "026") == 0)
+        else if (strcmp (deviceName, "026") != 0)
             {
             fprintf (stderr, "Unrecognized card code name %s\n", deviceName);
             exit (1);

@@ -114,6 +114,7 @@ DevSlot *active3000Device;
 **
 **--------------------------------------------------------------------------
 */
+
 /*--------------------------------------------------------------------------
 **  Purpose:        Attach 3000 equipment to 6681 data channel converter.
 **
@@ -188,6 +189,41 @@ DevSlot *dcc6681Attach(u8 channelNo, u8 eqNo, u8 unitNo, u8 devType)
     ** Return the allocated 3000 series control block pointer
     */
     return(device);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Terminate channel converter context.
+**
+**  Parameters:     Name        Description.
+**                  channelNo   channel number the device is attached to
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void dcc6681Terminate(DevSlot *dp)
+    {
+    u8 i, j;
+
+    DccControl *cp = dp->context[0];
+
+    if (cp != NULL)
+        {
+        for (i = 0; i < MaxEquipment; i++)
+            {
+            if (cp->device3000[i] != NULL)
+                {
+                for (j = 0; j < MaxEquipment; j++)
+                    {
+                    if (cp->device3000[i]->context[j] != NULL)
+                        {
+                        free(cp->device3000[i]->context[j]);
+                        }
+                    }
+
+                free(cp->device3000[i]);
+                }
+            }
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -273,6 +309,11 @@ static FcStatus dcc6681Func(PpWord funcCode)
     i8 u;
     i8 e;
     
+    /*
+    **  Clear old function code.
+    */
+    activeDevice->fcode = 0;
+
     /*
     **  If not selected, we recognize only a select.
     */

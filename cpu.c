@@ -380,7 +380,7 @@ void cpuInit(char *model, u32 memory, u32 ecsBanks, char *cmFile, char *ecsFile)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void cpuExit(void)
+void cpuTerminate(void)
     {
     /*
     **  Optionally save CM.
@@ -405,6 +405,12 @@ void cpuExit(void)
             printf("Error writing ECS backing file\n");
             }
         }
+
+    /*
+    **  Free allocated memory.
+    */
+    free(cpMem);
+    free(ecsMem);
     }
 
 /*--------------------------------------------------------------------------
@@ -706,6 +712,115 @@ void cpuStep(void)
         } while (opOffset != 60);
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Perform ECS flag register operation.
+**
+**  Parameters:     Name        Description.
+**                  ecsAddress  ECS address (flag register function and data)
+**
+**  Returns:        TRUE if accepted, FALSE otherwise.
+**
+**------------------------------------------------------------------------*/
+bool cpuEcsFlagRegister(u32 ecsAddress)
+    {
+    u32 flagFunction = (ecsAddress >> 21) & Mask3;
+    u32 flagWord = ecsAddress & Mask18;
+
+    switch (flagFunction)
+        {
+    case 4:
+        /*
+        **  Ready/Select.
+        */
+        if ((ecsFlagRegister & flagWord ) != 0)
+            {
+            /*
+            **  Error exit.
+            */
+            return(FALSE);
+            }
+
+        ecsFlagRegister |= flagWord;
+        break;
+
+    case 5:
+        /*
+        **  Selective set.
+        */
+        ecsFlagRegister |= flagWord;
+        break;
+
+    case 6:
+        /*
+        **  Status.
+        */
+        if ((ecsFlagRegister & flagWord ) != 0)
+            {
+            /*
+            **  Error exit.
+            */
+            return(FALSE);
+            }
+
+        break;
+
+    case 7:
+        /*
+        **  Selective clear,
+        */
+        ecsFlagRegister = (ecsFlagRegister & ~flagWord) & Mask18;
+        break;
+        }
+
+    /*
+    **  Normal exit.
+    */
+    return(TRUE);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Transfer on 60 bit word to/from DDP/ECS.
+**
+**  Parameters:     Name        Description.
+**                  ecsAddress  ECS word address
+**                  data        Pointer to 60 bit word
+**                  writeToEcs  TRUE if this is a write to ECS, FALSE if
+**                              this is a read.
+**
+**  Returns:        TRUE if accepted, FALSE otherwise.
+**
+**------------------------------------------------------------------------*/
+bool cpuDdpTransfer(u32 ecsAddress, CpWord *data, bool writeToEcs)
+    {
+    /*
+    **  Normal (non flag-register) access must be within ECS boundaries.
+    */
+    if (ecsAddress >= ecsMaxMemory)
+        {
+        /*
+        **  Abort.
+        */
+        return(FALSE);
+        }
+
+    /*
+    **  Perform the transfer.
+    */
+    if (writeToEcs)
+        {
+        ecsMem[ecsAddress] = *data & Mask60;
+        }
+    else
+        {
+        *data = ecsMem[ecsAddress] & Mask60;
+        }
+
+    /*
+    **  Normal accept.
+    */
+    return(TRUE);
+    }
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -749,9 +864,15 @@ static bool cpuFetchOpWord(u32 address, CpWord *data)
         return(TRUE);
         }
 
+    /*
+    **  Calculate absolute address with wraparound.
+    */
 	location = cpuAdd18(cpu.regRaCm, address);
     location %= cpuMaxMemory;
 
+    /*
+    **  Fetch the instruction.
+    */
     *data = cpMem[location] & Mask60;
 
     return(FALSE);
@@ -795,9 +916,15 @@ static bool cpuReadMem(u32 address, CpWord *data)
             }
         }
 
+    /*
+    **  Calculate absolute address with wraparound.
+    */
 	location = cpuAdd18(cpu.regRaCm, address);
     location %= cpuMaxMemory;
 
+    /*
+    **  Fetch the data.
+    */
     *data = cpMem[location] & Mask60;
 
     return(FALSE);
@@ -838,9 +965,15 @@ static bool cpuWriteMem(u32 address, CpWord *data)
         return(FALSE);
         }
 
+    /*
+    **  Calculate absolute address with wraparound.
+    */
 	location = cpuAdd18(cpu.regRaCm, address);
     location %= cpuMaxMemory;
 
+    /*
+    **  Store the data.
+    */
     cpMem[location] = *data & Mask60;
 
     return(FALSE);
@@ -920,7 +1053,7 @@ static u32 cpuSubtract18(u32 op1, u32 op2)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Transfer to/from ECS.
+**  Purpose:        Transfer block to/from ECS initiated by a CPU instruction.
 **
 **  Parameters:     Name        Description.
 **                  writeToEcs  TRUE if this is a write to ECS, FALSE if
@@ -964,53 +1097,9 @@ static void cpuEcsTransfer(bool writeToEcs)
     if (   (ecsAddress   & ((u32)1 << 23)) != 0
         && (cpu.regFlEcs & ((u32)1 << 23)) != 0)
         {
-        u32 flagFunction = (ecsAddress >> 21) & Mask3;
-        u32 flagWord = ecsAddress & Mask18;
-
-        switch (flagFunction)
+        if (!cpuEcsFlagRegister(ecsAddress))
             {
-        case 4:
-            /*
-            **  Ready/Select.
-            */
-            if ((ecsFlagRegister & flagWord ) != 0)
-                {
-                /*
-                **  Error exit.
-                */
-                return;
-                }
-
-            ecsFlagRegister |= flagWord;
-            break;
-
-        case 5:
-            /*
-            **  Selective set.
-            */
-            ecsFlagRegister |= flagWord;
-            break;
-
-        case 6:
-            /*
-            **  Status.
-            */
-            if ((ecsFlagRegister & flagWord ) != 0)
-                {
-                /*
-                **  Error exit.
-                */
-                return;
-                }
-
-            break;
-
-        case 7:
-            /*
-            **  Selective clear,
-            */
-            ecsFlagRegister = (ecsFlagRegister & ~flagWord) & Mask18;
-            break;
+            return;
             }
 
         /*
@@ -1079,7 +1168,7 @@ static void cpuEcsTransfer(bool writeToEcs)
                 return;
                 }
 
-            ecsMem[ecsAddress++] = cpMem[cmAddress];
+            ecsMem[ecsAddress++] = cpMem[cmAddress] & Mask60;
 
             /*
             **  Increment CM address.
@@ -1104,7 +1193,7 @@ static void cpuEcsTransfer(bool writeToEcs)
                 }
             else
                 {
-                cpMem[cmAddress] = ecsMem[ecsAddress++];
+                cpMem[cmAddress] = ecsMem[ecsAddress++] & Mask60;
                 }
 
             /*
@@ -1144,6 +1233,7 @@ static void cpuEcsTransfer(bool writeToEcs)
 **------------------------------------------------------------------------*/
 static bool cpuCmuGetByte(u32 address, u32 pos, u8 *byte)
     {
+    u32 location;
     CpWord data;
 
     /*
@@ -1171,9 +1261,15 @@ static bool cpuCmuGetByte(u32 address, u32 pos, u8 *byte)
         }
 
     /*
+    **  Calculate absolute address with wraparound.
+    */
+	location = cpuAdd18(cpu.regRaCm, address);
+    location %= cpuMaxMemory;
+
+    /*
     **  Fetch the word.
     */
-    data = cpMem[cpu.regRaCm + address] & Mask60;
+    data = cpMem[location] & Mask60;
 
     /*
     **  Extract and return the byte.
@@ -1196,6 +1292,7 @@ static bool cpuCmuGetByte(u32 address, u32 pos, u8 *byte)
 **------------------------------------------------------------------------*/
 static bool cpuCmuPutByte(u32 address, u32 pos, u8 byte)
     {
+    u32 location;
     CpWord data;
 
     /*
@@ -1223,9 +1320,15 @@ static bool cpuCmuPutByte(u32 address, u32 pos, u8 byte)
         }
 
     /*
+    **  Calculate absolute address with wraparound.
+    */
+	location = cpuAdd18(cpu.regRaCm, address);
+    location %= cpuMaxMemory;
+
+    /*
     **  Fetch the word.
     */
-    data = cpMem[cpu.regRaCm + address] & Mask60;
+    data = cpMem[location] & Mask60;
 
     /*
     **  Mask the destination position.
@@ -1240,7 +1343,7 @@ static bool cpuCmuPutByte(u32 address, u32 pos, u8 byte)
     /*
     **  Store the word.
     */
-    cpMem[cpu.regRaCm + address] = data & Mask60;
+    cpMem[location] = data & Mask60;
 
     return(FALSE);
     }

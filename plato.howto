@@ -1,5 +1,10 @@
 How to run and use PLATO on DtCyber
 
+0. Edit history
+
+04.04.14.  Updated to reflect fixes/improvements in my latest
+	   DtCyber, which is based on Tom Hunter's version 2.1.
+
 1. Things you need.
 
 Much of PLATO is on disk, not the deadstart tape, so you need a bunch
@@ -36,7 +41,7 @@ If you need to change cyber.ini, go ahead.  The relevant section is
 the [nos552] section; others are either older experiments or unchanged
 from Tom's version.
 
-2. Starting.
+3. Starting.
 
 When you start DtCyber with my cyber.ini, nos552 section, you'll see
 not just the usual DtCyber window but also a window "Plato station
@@ -46,7 +51,10 @@ starts.
 Deadstart NOS 1.4 pretty much as usual.  One change: at the CMRDECK
 entry display, type:
       INITIALIZE,11,AL.
-to initialize the ECS.
+to initialize the ECS.  Note: this is necessary only if you do a Level
+0 deadstart.  If you use the new DtCyber feature for saving CM/ECS in
+files, you can do level 3 deadstart after the initial startup.  If so,
+leave off the INITIALIZE (and your startups will be a LOT faster).
 
 After startup completes, start up MASTOR:
       X. MASTOR.
@@ -55,20 +63,28 @@ CMS decided to come to CP20 right that instant), stop it (K,1. then
 K.STOP) and retry.  For some reason, MASTOR doesn't work right if it
 runs at a low CP.
 
+This doesn't usually happen after a level 0 deadstart, but it seems to
+be the norm after a level 3 deadstart.  Something odd about the way
+NOS assigns CPs, I guess.  It turns out that the MECC 1.4 I've been
+using has a workaround -- use this command instead:
+      20=MASTOR.
+
+That tells NOS you want to execute MASTOR and it must be at CP 20.
+
 When MASTOR initialization is done (LDR stops flashing at the CP and
 PNG appears), start PLATO:
-      X. PLATO.
-
-After a while, PLATO finishes initialing; at that point it has PIO
-active at its CP.  Because of a bug, this first load of PLATO doesn't
-work right, so we now reload it and also load the other programs:
       K,20.
       K.PGO
-      K.RELOAD
 
 The entry PGO tells MASTOR what file contains the deck that loads
 PLATO, and then starts up the load of the others.  PLATO, CONDEN, and
-FRAMAT pop up one after the other at the first three CPs.
+FRAMAT pop up one after the other at the first three CPs.  MASTOR
+waits a few seconds after the PGO entry before it starts this process.
+
+By the way, PGO starts the PLATO components that are on the deadstart
+tape.  If you want to use the latest test builds, use PTEST instead,
+that loads these programs from direct access files created by the
+build decks.
 
 When CONDEN finishes initializing, PLATO tells it to condense the
 first two system lessons: plato and syslib.  You will see their names
@@ -76,7 +92,7 @@ appear in the B-display line for CONDEN as is processes them.  Once
 those are done, the PLATO terminal window for terminal 0-1 will
 display "Press  NEXT  to begin".
 
-PLATO keyboard layout.
+4. PLATO keyboard layout.
 
 The PLATO keyboard has a bunch of keys with non-ASCII markings.  Some
 are printable characters like multiply sign, divide sign, and
@@ -119,7 +135,7 @@ shifted forms).  TERM and FONT are the same shifted or not because
 those correspond to shifted keys (shifted ANS and MICRO respectively)
 on the PLATO keyboard.
 
-Basic PLATO navigation.
+5. Basic PLATO navigation.
 
 The function keys are the primary means for moving around in PLATO.
 The most commonly used ones have fairly obvious names:
@@ -145,7 +161,7 @@ modern software, it usually actually helps.  In my 3 years using and
 developing PLATO, I never saw a manual and I never needed one.  HELP
 is why.
 
-Logging in.
+6. Logging in.
 
 Just follow instructions.  Press NEXT (Enter).  You'll get a display
 prompting for your name.  Enter the name and press NEXT.
@@ -165,7 +181,7 @@ The signon is dtcyber in group s (or, by PLATO convention,
 "dtcyber / s").  Password is "guest". The first time, you'll see a
 welcome message I left.
 
-Author mode.
+7. Author mode.
 
 Author mode is the central starting point for authors -- people who
 write lessons or, in the case of "s", who do system development.  As
@@ -176,7 +192,7 @@ Author Mode prompt.  It's a complete manual of the PLATO system.  (It
 may have minor navigational glitches because I had to reconstruct its
 tables from scratch; if you find any please let me know.)
 
-Privileged utilities.
+8. Privileged utilities.
 
 There are some system programmer tools that aren't as well documented,
 though you can get a reasonable amount of info from "sysaids" (enter
@@ -216,13 +232,13 @@ account "system" and ask for a file list.  You'll see all the system
 programs (things like edit and plato and syslib) as well as all the
 Compass code (files like lex and main and tutorx).
 
-Logging off.
+9. Logging off.
 
 To log off, press SHIFT-STOP from the Author Mode page.  When editing
 files, press BACK repeatedly to get there; from inside most programs,
 simply SHIFT-STOP gets you there.
 
-Shutdown.
+10. Shutdown.
 
 To shut down PLATO:
 
@@ -239,13 +255,17 @@ display on the PLATO terminals.  MASTOR will reload PLATO
 automatically if this happens.  If one of the others dies, you may
 have to tell MASTOR to fix this by saying K.RELOAD.
 
-Additional PLATO terminals.
+11. Additional PLATO terminals.
 
 DtCyber automatically starts one PLATO window, which is terminal 0-1.
-It also opens a TCP port (6604) which listens to connections from the
+It also opens a TCP port (5004) which listens to connections from the
 pterm utility.  pterm takes a hostname as argument, so you can use it
 on your local machine by saying "pterm localhost" or from anywhere
-else provided port 6604 can get through any firewalls that may exist.
+else provided port 5004 can get through any firewalls that may exist.
+
+Note that you can use a different port number -- specify the port
+number using the "platoport" parameter in cyber.ini, and then specify
+that same port number as the second argument on the pterm command.
 
 pterm puts up another PLATO terminal window exactly as described
 above.  It will be seen by PLATO as a terminal in site 1, e.g., 1-0 or
@@ -257,7 +277,7 @@ how it worked out.)
 To close the pterm terminal, first log out, then enter Control/D to
 disconnect and close the program.
 
-Console PLATO terminal emulation.
+12. Console PLATO terminal emulation.
 
 PLATO treats the console display as station 0-0, and handles it
 somewhat specially.  For one thing, it's not subject to any throttling

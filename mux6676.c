@@ -102,7 +102,7 @@ u16 telnetConns;
 **--------------------------------------------------------------------------
 */
 /*--------------------------------------------------------------------------
-**  Purpose:        Initialise 844 disk drive.
+**  Purpose:        Initialise terminal multiplexer.
 **
 **  Parameters:     Name        Description.
 **                  eqNo        equipment number
@@ -324,7 +324,7 @@ static void mux6676Disconnect(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Create WIN32 thread which will deal with all TCP
+**  Purpose:        Create thread which will deal with all TCP
 **                  connections.
 **
 **  Parameters:     Name        Description.

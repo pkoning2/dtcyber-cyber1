@@ -227,16 +227,17 @@ void windowGetChar(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Close window.
+**  Purpose:        Terminate console window.
 **
 **  Parameters:     Name        Description.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void windowClose(void)
+void windowTerminate(void)
     {
     SendMessage(hWnd, WM_DESTROY, 0, 0);
+    Sleep(100);
     }
 
 /*

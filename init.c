@@ -295,6 +295,18 @@ static void initCyber(char *config)
     */
     initGetInteger("telnetconns", 4, &conns);
     telnetConns = (u16)conns;
+
+    /*
+    **  Get optional Plato port number. If not specified, use default value.
+    */
+    initGetInteger("platoport", 5004, &port);
+    platoPort = (u16)port;
+
+    /*
+    **  Get optional max Plato connections. If not specified, use default value.
+    */
+    initGetInteger("platoconns", 4, &conns);
+    platoConns = (u16)conns;
     }
 
 /*--------------------------------------------------------------------------
@@ -314,7 +326,7 @@ static void initEquipment(void)
     int unitNo;
     int channelNo;
     u8 deviceIndex;
-    u16 lineNo;
+    int lineNo;
 
 
     if (!initOpenSection(equipment))
@@ -326,9 +338,11 @@ static void initEquipment(void)
     /*
     **  Process all equipment entries.
     */
-    lineNo = 0;
+    lineNo = -1;
     while  ((line = initGetNextLine()) != NULL)
         {
+        lineNo += 1;
+
         /*
         **  Parse device type.
         */

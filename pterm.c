@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter, Paul Koning (see license.txt)
+**  Copyright (c) 2003, 2004, Tom Hunter, Paul Koning (see license.txt)
 **
 **  Name: pterm.c
 **
@@ -22,10 +22,10 @@
 #include "types.h"
 #include "proto.h"
 #include <sys/types.h>
-#include <sys/time.h>
 #if defined(_WIN32)
 #include <winsock.h>
 #else
+#include <sys/time.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -34,6 +34,7 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
+#include <X11/Xresource.h>
 #endif
 
 /*
@@ -43,30 +44,38 @@
 */
 #define platoPort   5004
 
-//#define DEBUG
-
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
 **  -----------------------------------------
 */
-typedef void niuProcessOutput (int, u32);
 
 /*
 **  ---------------------------
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void ptermConnect (const char *hostname);
+static void ptermConnect (const char *hostname, const char *portnum);
 static int ptermCheckInput(void);
+#if !defined(_WIN32)
 static void ptermWindowInput(void);
+#endif
 
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
+#if !defined(_WIN32)
 Display *disp;
+XrmDatabase XrmDb;
+#else
+HINSTANCE hInstance;
+#endif
+extern FILE *traceF;
+extern bool tracePterm;
+extern u8 wemode;
+extern volatile bool ptermActive;
 
 /*
 **  -----------------
@@ -78,7 +87,7 @@ static u32 currOutput;
 static int connFd;
 static u16 currInput;
 static u8 ibytes;      // how many bytes have been assembled into currInput (0..2)
-static bool active;
+static niuProcessOutput *outh;
 
 /*
 **--------------------------------------------------------------------------
@@ -87,7 +96,10 @@ static bool active;
 **
 **--------------------------------------------------------------------------
 */
+#if !defined(_WIN32)
+
 extern void ptermInput(XEvent *event);
+#endif
 
 int main (int argc, char **argv)
 {
@@ -98,20 +110,32 @@ int main (int argc, char **argv)
     
     if (argc < 2)
     {
-        printf ("usage: pterm hostname\n");
+        printf ("usage: pterm hostname [ portnum ]\n");
         exit (1);
     }
-    ptermConnect (argv[1]);
+    if (argc > 2)
+    {
+        ptermConnect (argv[1], argv[2]);
+    }
+    else
+    {
+        ptermConnect (argv[1], NULL);
+    }
+
+#if defined(_WIN32)
+    /*
+    **  Get our instance
+    */
+    hInstance = GetModuleHandle(NULL);
+#endif
+
     sprintf (name, "Plato terminal -- %s", argv[1]);
-    ptermInit (name);
-    while (active)
+    ptermInit (name, TRUE);
+    while (ptermActive)
     {
         d = ptermCheckInput ();
         if (d >= 0)
         {
-#ifdef DEBUG
-            printf ("from plato byte %d %03o\n", ibytes, d);
-#endif
             switch (ibytes)
             {
             case 0:
@@ -140,13 +164,16 @@ int main (int argc, char **argv)
                 }
                 niuwd |= (d & 077);
                 ibytes = 0;
-                procNiuWord (1, niuwd);
+                (*outh) (1, niuwd);
                 break;
             }
         }
+#if !defined(_WIN32)
         ptermWindowInput ();
+#endif
     }
     ptermClose ();
+	return 0;
 }
 
 /*--------------------------------------------------------------------------
@@ -165,9 +192,11 @@ void niuLocalKey(u16 key, int stat)
     
     data[0] = key >> 7;
     data[1] = 0200 | key;
-#ifdef DEBUG
-            printf ("to plato %03o %03o\n", data[0], data[1]);
-#endif
+
+    if (tracePterm)
+    {
+        fprintf (traceF, "key to plato %03o\n", key);
+    }
     send(connFd, data, 2, 0);
 }
 
@@ -183,6 +212,7 @@ void niuLocalKey(u16 key, int stat)
 **------------------------------------------------------------------------*/
 void niuSetOutputHandler (niuProcessOutput *h, int stat)
 {
+    outh = h;
 }
 
 /*
@@ -200,10 +230,11 @@ void niuSetOutputHandler (niuProcessOutput *h, int stat)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void ptermConnect (const char *hostname)
+static void ptermConnect (const char *hostname, const char *portnum)
 {
     struct hostent *hp;
     struct sockaddr_in server;
+    int port = platoPort;
     
 #if defined(_WIN32)
     WORD versionRequested;
@@ -240,15 +271,19 @@ static void ptermConnect (const char *hostname)
         printf ("pterm: unrecognized hostname %s\n", hostname);
         return;
     }
+    if (portnum != NULL)
+    {
+        port = atoi (portnum);
+    }
     memcpy (&server.sin_addr, hp->h_addr, sizeof (server.sin_addr));
-    server.sin_port = htons(platoPort);
+    server.sin_port = htons(port);
 
     if (connect (connFd, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
-        printf("pterm: Can't connect to %s\n", hostname);
+        printf("pterm: Can't connect to %s %d\n", hostname, port);
         return;
     }
-    active = TRUE;
+    ptermActive = TRUE;
 }
 
 /*--------------------------------------------------------------------------
@@ -290,7 +325,7 @@ static int ptermCheckInput(void)
 #else
             close(connFd);
 #endif
-            active = FALSE;
+            ptermActive = FALSE;
             printf("pterm: Connection dropped\n");
             return(-1);
         }
@@ -302,7 +337,7 @@ static int ptermCheckInput(void)
 #else
         close(connFd);
 #endif
-        active = FALSE;
+        ptermActive = FALSE;
         printf("pterm: Connection dropped\n");
         return(-1);
     }
@@ -312,6 +347,7 @@ static int ptermCheckInput(void)
     }
 }
 
+#if !defined(_WIN32)
 /*--------------------------------------------------------------------------
 **  Purpose:        Window input event processor.
 **
@@ -323,7 +359,12 @@ static int ptermCheckInput(void)
 static void ptermWindowInput(void)
 {
     XEvent event;
-
+    XKeyEvent *kp;
+    KeySym ks;
+    char text[30];
+    int len;
+    int savemode;
+    
     /*
     **  Process any X11 events.
     */
@@ -337,11 +378,50 @@ static void ptermWindowInput(void)
             XRefreshKeyboardMapping ((XMappingEvent *)&event);
             break;
 
+        case KeyPress:
+            // Special case: check for Control/D (disconnect)
+            kp = (XKeyEvent *) &event;
+            if (kp->state & ControlMask)
+            {
+                len = XLookupString (kp, text, 10, &ks, 0);
+                if (len == 1)
+                {
+                    if (text[0] == '\004')  // control-D : exit
+                    {
+                        close(connFd);
+                        ptermActive = FALSE;
+                        return;
+                    }
+                    else if (text[0] == '\024') // control-T : trace
+                    {
+                        tracePterm = !tracePterm;
+                        savemode = wemode;
+                        if (!tracePterm)
+                        {
+                            wemode = 2;
+                            fflush (traceF);
+                        }
+                        else
+                        {
+                            wemode = 3;
+                        }
+                        ptermSetWeMode (wemode);
+                        // The 1024 is a strange hack to circumvent the
+                        // screen edge wrap checking.
+                        ptermDrawChar (1024 + 512, 512, 1, 024);
+                        wemode = savemode;
+                        ptermSetWeMode (wemode);
+                        return;
+                    }
+                }
+            }
+            // Fall through to default handler
         default:
             ptermInput (&event);
             break;
         }
     }
 }
+#endif
 
 /*---------------------------  End Of File  ------------------------------*/

@@ -39,27 +39,32 @@ void rtcTick(void);
 **  channel.c
 */
 void channelInit(u8 count);
+void channelTerminate(void);
 DevSlot *channelFindDevice(u8 channelNo, u8 devType);
 DevSlot *channelAttach(u8 channelNo, u8 eqNo, u8 devType);
 void channelFunction(PpWord funcCode);
 void channelActivate(void);
 void channelDisconnect(void);
+void channelProbe(void);
 void channelIo(void);
 
 /*
 **  pp.c
 */
 void ppInit(u8 count);
+void ppTerminate(void);
 void ppStep(void);
 
 /*
 **  cpu.c
 */
 void cpuInit(char *model, u32 memory, u32 ecsBanks, char *cmFile, char *ecsFile);
-void cpuExit(void);
+void cpuTerminate(void);
 u32 cpuGetP(void);
 bool cpuExchangeJump(u32 addr);
 void cpuStep(void);
+bool cpuEcsFlagRegister(u32 ecsAddress);
+bool cpuDdpTransfer(u32 ecsAddress, CpWord *data, bool writeToEcs);
 bool cpuPpReadMem(u32 address, CpWord *data);
 void cpuPpWriteMem(u32 address, CpWord data);
 
@@ -125,18 +130,33 @@ void dd6603Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 */
 void dd844Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void dd844Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-void dd885Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-void dd885Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dd885Init_1(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
 **  dcc6681.c
 */
+void dcc6681Terminate(DevSlot *dp);
 void dcc6681Interrupt(bool status);
+
+/*
+**  ddp.c
+*/
+void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
 **  mux6676.c
 */
 void mux6676Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+
+/*
+**  niu.c
+*/
+void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+bool niuPresent(void);
+void niuLocalChar(u8 ch, int stat);
+void niuLocalKey(u16 key, int stat);
+typedef void niuProcessOutput (int, u32);
+void niuSetOutputHandler (niuProcessOutput *h, int stat);
 
 /*
 **  tpmux.c
@@ -147,7 +167,7 @@ void tpMuxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 **  trace.c
 */
 void traceInit(void);
-void traceFinish(void);
+void traceTerminate(void);
 void traceSequence(void);
 void traceRegisters(void);
 void traceOpcode(void);
@@ -164,6 +184,7 @@ void traceExchange(CpuContext *cc, u32 addr, char *title);
 **  dump.c
 */
 void dumpInit(void);
+void dumpTerminate(void);
 void dumpAll(void);
 void dumpCpu(void);
 void dumpPpu(u8 pp);
@@ -196,7 +217,26 @@ void windowSetY(u16 y);
 void windowQueue(char ch);
 void windowUpdate(void);
 void windowGetChar(void);
-void windowClose(void);
+void windowTerminate(void);
+/*
+**  ptermcom.c
+*/
+void ptermComInit(void);
+void ptermComClose(void);
+
+/*
+**  pterm_{win32,x11}.c
+*/
+void ptermInit(const char *windowName, bool closeOk);
+void ptermClose(void);
+void ptermSetWeMode(u8 wemode);
+void ptermDrawChar(int x, int y, int snum, int cnum);
+void ptermLoadChar(int snum, int cnum, const u16 *data);
+void ptermDrawPoint(int x, int y);
+void ptermDrawLine(int x1, int y1, int x2, int y2);
+void ptermFullErase(void);
+void ptermSetWeMode(u8 wemode);
+void ptermTouchPanel(bool enable);
 
 /*
 **  operator.c
@@ -229,6 +269,7 @@ extern CpuContext cpu;
 extern bool cpuStopped;
 extern CpWord *cpMem;
 extern u32 cpuMaxMemory;
+extern u32 ecsMaxMemory;
 extern char ppKeyIn;
 extern const u8 asciiToCdc[256];
 extern const char cdcToAscii[64];
@@ -239,6 +280,8 @@ extern const u16 asciiTo029[256];
 extern const u8  asciiToBcd[256];
 extern const char bcdToAscii[64];
 extern const char extBcdToAscii[64];
+extern const i8 asciiToPlato[128];
+extern const i8 altKeyToPlato[128];
 extern u16 traceMask;
 extern DevDesc deviceDesc[];
 extern u8 deviceCount;
@@ -246,6 +289,8 @@ extern bool bigEndian;
 extern bool opActive;
 extern u16 telnetPort;
 extern u16 telnetConns;
+extern u16 platoPort;
+extern u16 platoConns;
 extern u32 cycles;
 
 /*---------------------------  End Of File  ------------------------------*/

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Paul Koning, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Paul Koning, Tom Hunter (see license.txt)
 **
 **  Name: ddp.c
 **
@@ -27,9 +27,6 @@
 **  Private Constants
 **  -----------------
 */
-
-#define DEBUG                    0
-#define DEBUGE                   1
 
 /*
 **  DDP function and status codes.
@@ -59,9 +56,9 @@
 /*
 **  DDP magical ECS address bits
 */
-#define DdpAddrReadOne           (01 << 21)
-#define DdpAddrMaint             (02 << 21)
-#define DdpAddrFlagReg           (04 << 21)
+#define DdpAddrReadOne           (1 << 21)
+#define DdpAddrMaint             (1 << 22)
+#define DdpAddrFlagReg           (1 << 23)
 
 /*
 **  -----------------------
@@ -76,13 +73,14 @@
 */
 
 typedef struct
-{
+    {
     CpWord  curword;
     u32     addr;
     int     dbyte;
     int     abyte;
+    int     endaddrcycle;
     PpWord  stat;
-} DdpContext;
+    } DdpContext;
 
 /*
 **  ---------------------------
@@ -125,7 +123,7 @@ static void ddpDisconnect(void);
 **
 **------------------------------------------------------------------------*/
 void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
-{
+    {
     DevSlot *dp;
     DdpContext *dc;
     
@@ -134,32 +132,33 @@ void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     (void)deviceName;
 
     if (ecsMaxMemory == 0)
-    {
+        {
         fprintf (stderr, "Cannot configure DDP, no ECS configured\n");
         exit (1);
-    }
+        }
     
-    dp = channelAttach(channelNo, DtDdp);
+    dp = channelAttach(channelNo, eqNo, DtDdp);
 
     dp->activate = ddpActivate;
     dp->disconnect = ddpDisconnect;
     dp->func = ddpFunc;
     dp->io = ddpIo;
 
-    dc = calloc (1, sizeof (DdpContext));
+    dc = calloc(1, sizeof (DdpContext));
     if (dc == NULL)
-    {
-        fprintf (stderr, "Failed to allocate DDP context block\n");
-        exit (1);
-    }
+        {
+        fprintf(stderr, "Failed to allocate DDP context block\n");
+        exit(1);
+        }
+
     dp->context[unitNo] = dc;
     dc->stat = StDdpAccept;
 
     /*
     **  Print a friendly message.
     */
-    printf ("DDP initialised on channel %o\n", channelNo);
-}
+    printf("DDP initialised on channel %o\n", channelNo);
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Execute function code on DDP device.
@@ -171,30 +170,33 @@ void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **
 **------------------------------------------------------------------------*/
 static FcStatus ddpFunc(PpWord funcCode)
-{
+    {
     DdpContext *dc;
 
-    dc = (DdpContext *) (activeDevice->context[activeDevice->selectedUnit]);
+    dc = (DdpContext *)(activeDevice->context[activeDevice->selectedUnit]);
 
     switch (funcCode)
-    {
+        {
     default:
-        return (FcDeclined);
+        break;
 
     case FcDdpReadECS:
     case FcDdpWriteECS:
     case FcDdpStatus:
-        dc->abyte = dc->dbyte = 0;
+        dc->abyte = 0;
+        dc->dbyte = 0;
         dc->addr = 0;
         activeDevice->fcode = funcCode;
-        return (FcAccepted);
+        return(FcAccepted);
 
     case FcDdpMasterClear:
         activeDevice->fcode = 0;
         dc->stat = StDdpAccept;
-        return (FcProcessed);
+        return(FcProcessed);
+        }
+
+    return(FcDeclined);
     }
-}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Perform I/O.
@@ -205,101 +207,144 @@ static FcStatus ddpFunc(PpWord funcCode)
 **
 **------------------------------------------------------------------------*/
 static void ddpIo(void)
-{
+    {
     DdpContext *dc;
 
     dc = (DdpContext *) (activeDevice->context[activeDevice->selectedUnit]);
 
     switch (activeDevice->fcode)
-    {
+        {
     default:
         return;
         
     case FcDdpStatus:
         if (!activeChannel->full)
-        {
-            if (DEBUG)
-                printf ("ddp status %04o\n", dc->stat);
+            {
             activeChannel->data = dc->stat;
             activeChannel->full = TRUE;
             activeDevice->fcode = 0;
-        }
+            // ? activeChannel->discAfterInput = TRUE;
+            }
         break;
         
     case FcDdpReadECS:
     case FcDdpWriteECS:
         if (dc->abyte < 2)
-        {
-            // We need to get the address from the PPU
-            if (activeChannel->full)
             {
+            /*
+            **  We need to get two address bytes from the PPU.
+            */
+            if (activeChannel->full)
+                {
                 dc->addr <<= 12;
                 dc->addr += activeChannel->data;
-                if (DEBUG)
-                    printf ("address %08o byte %d\n", dc->addr, dc->abyte);
                 dc->abyte++;
                 activeChannel->full = FALSE;
-            }
-            break;
-        }
-        if (activeDevice->fcode == FcDdpReadECS)
-        {
-            if (!activeChannel->full)
-            {
-                dc->stat = StDdpAccept;
-                if (dc->dbyte == 0)
+                }
+
+            if (dc->abyte == 2 && activeDevice->fcode == FcDdpReadECS)
                 {
-                    if (cpuEcsAccess (dc->addr, &dc->curword, FALSE))
+                /*
+                **  Delay a bit before we set channel full.
+                */
+                dc->endaddrcycle = cycles;
+
+                /*
+                **  A flag register reference occurs when bit 23 is set address.
+                */
+                if ((dc->addr & DdpAddrFlagReg) != 0)
                     {
-                        if (DEBUGE)
-                            printf ("ddp read abort addr %08o\n", dc->addr);
+                    if (cpuEcsFlagRegister(dc->addr))
+                        {
+                        dc->stat = StDdpAccept;
+                        }
+                    else
+                        {
                         activeChannel->discAfterInput = TRUE;
                         dc->stat = StDdpAbort;
+                        }
+
+                    dc->dbyte = 0;
+                    dc->curword = 0;
+                    }
+                else
+                    {
+                    dc->dbyte = -1;
                     }
                 }
-                activeChannel->data = dc->curword >> 48;
-                if (DEBUG)
-                    printf ("ddp read addr %08o data %04o byte %d\n",
-                            dc->addr, activeChannel->data, dc->dbyte);
+
+            break;
+            }
+
+        if (activeDevice->fcode == FcDdpReadECS)
+            {
+            if (!activeChannel->full && cycles - dc->endaddrcycle > 20)
+                {
+                if (dc->dbyte == -1)
+                    {
+                    /*
+                    **  Fetch next 60 bits from ECS.
+                    */
+                    if (cpuDdpTransfer(dc->addr, &dc->curword, FALSE))
+                        {
+                        dc->stat = StDdpAccept;
+                        }
+                    else
+                        {
+                        activeChannel->discAfterInput = TRUE;
+                        dc->stat = StDdpAbort;
+                        }
+
+                    dc->dbyte = 0;
+                    }
+
+                /*
+                **  Return next byte to PPU.
+                */
+                activeChannel->data = (PpWord)((dc->curword >> 48) & Mask12);
                 activeChannel->full = TRUE;
+
+                /*
+                **  Update admin stuff.
+                */
                 dc->curword <<= 12;
                 if (++dc->dbyte == 5)
-                {
+                    {
                     if (dc->addr & (DdpAddrReadOne | DdpAddrFlagReg))
+                        {
                         activeChannel->discAfterInput = TRUE;
-                    dc->dbyte = 0;
+                        }
+
+                    dc->dbyte = -1;
                     dc->addr++;
+                    }
                 }
             }
-            
-        }
         else if (activeChannel->full)
-        {
+            {
             dc->stat = StDdpAccept;
             dc->curword <<= 12;
             dc->curword += activeChannel->data;
             activeChannel->full = FALSE;
-            if (DEBUG)
-                printf ("ddp write addr %08o data %04o byte %d\n",
-                        dc->addr, activeChannel->data, dc->dbyte);
+
             if (++dc->dbyte == 5)
-            {
-                if (cpuEcsAccess (dc->addr, &dc->curword, TRUE))
                 {
-                    if (DEBUGE)
-                        printf ("ddp write abort addr %08o\n", dc->addr);
+                /*
+                **  Write next 60 bit to ECS.
+                */
+                if (!cpuDdpTransfer(dc->addr, &dc->curword, TRUE))
+                    {
                     activeChannel->active = FALSE;
                     dc->stat = StDdpAbort;
                     return;
-                }
-                if (dc->addr & DdpAddrFlagReg)
-                    activeChannel->active = FALSE;
+                    }
+
                 dc->dbyte = 0;
                 dc->addr++;
+                }
             }
         }
     }
-}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Handle channel activation.
@@ -310,8 +355,8 @@ static void ddpIo(void)
 **
 **------------------------------------------------------------------------*/
 static void ddpActivate(void)
-{
-}
+    {
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Handle disconnecting of channel.
@@ -322,7 +367,7 @@ static void ddpActivate(void)
 **
 **------------------------------------------------------------------------*/
 static void ddpDisconnect(void)
-{
-}
+    {
+    }
 
 /*---------------------------  End Of File  ------------------------------*/

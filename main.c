@@ -104,8 +104,10 @@ int main(int argc, char **argv)
     /*
     **  Setup debug support.
     */
+#if CcDebug == 1
     traceInit();
     dumpInit();
+#endif
 
     /*
     **  Setup operator interface.
@@ -143,18 +145,35 @@ int main(int argc, char **argv)
         rtcTick();
         }
 
-    windowClose();
-    cpuExit();
-
-#if 0
+#if CcDebug == 1
     /*
     **  Example post-mortem dumps.
     */
+#if 0
     dumpAll();
     dumpPpu(0);
     dumpDisassemblePpu(0);
     dumpCpu();
+#else
+    dumpAll();
 #endif
+#endif
+
+    /*
+    **  Shut down debug support.
+    */
+#if CcDebug == 1
+    traceTerminate();
+    dumpTerminate();
+#endif
+
+    /*
+    **  Shut down emulation.
+    */
+    windowTerminate();
+    cpuTerminate();
+    ppTerminate();
+    channelTerminate();
 
     return(0);
     }

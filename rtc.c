@@ -115,10 +115,9 @@ void rtcInit(char *model, u8 increment)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Execute deadstart function.
+**  Purpose:        Do a clock tick
 **
 **  Parameters:     Name        Description.
-**                  increment   clock increment per iteration.
 **
 **  Returns:        Nothing.
 **

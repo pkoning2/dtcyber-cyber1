@@ -352,6 +352,34 @@ void traceInit(void)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Terminate all traces.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void traceTerminate(void)
+    {
+    u8 pp;
+
+    if (cpuF != NULL)
+        {
+        fclose(cpuF);
+        }
+
+    for (pp = 0; pp < ppuCount; pp++)
+        {
+        if (ppuF[pp] != NULL)
+            {
+            fclose(ppuF[pp]);
+            }
+        }
+
+    free(ppuF);
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Output CPU opcode.
 **
 **  Parameters:     Name        Description.
@@ -694,26 +722,6 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
         }
 
     fprintf(cpuF, "\n\n");
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Finish execution trace.
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void traceFinish(void)
-    {
-    u8 pp;
-
-    fclose(cpuF);
-
-    for (pp = 0; pp < ppuCount; pp++)
-        {
-        fclose(ppuF[pp]);
-        }
     }
 
 /*--------------------------------------------------------------------------

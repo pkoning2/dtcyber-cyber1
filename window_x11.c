@@ -245,14 +245,14 @@ void windowGetChar(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Close window.
+**  Purpose:        Terminate console window.
 **
 **  Parameters:     Name        Description.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void windowClose(void)
+void windowTerminate(void)
     {
     XEvent ev;
     memset(&ev, 0, sizeof(ev));

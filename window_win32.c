@@ -47,6 +47,9 @@
 #define ScaleY              10
 #endif
 
+#define TIMER_ID        1
+#define TIMER_RATE      100
+
 /*
 **  -----------------------
 **  Private Macro Functions
@@ -101,6 +104,7 @@ static HFONT hSmallFont=0;
 static HFONT hMediumFont=0;
 static HFONT hLargeFont=0;
 static HPEN hPen = 0;
+static HINSTANCE hInstance = 0;
 
 
 /*--------------------------------------------------------------------------
@@ -121,6 +125,11 @@ void windowInit(void)
     **  Create display list pool.
     */
     listEnd = 0;
+
+    /*
+    **  Get our instance
+    */
+    hInstance = GetModuleHandle(NULL);
 
     /*
     **  Create windowing thread.
@@ -240,16 +249,17 @@ void windowGetChar(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Close window.
+**  Purpose:        Terminate console window.
 **
 **  Parameters:     Name        Description.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void windowClose(void)
+void windowTerminate(void)
     {
     SendMessage(hWnd, WM_DESTROY, 0, 0);
+    Sleep(100);
     }
 
 /*
@@ -271,7 +281,6 @@ void windowClose(void)
 static void windowThread(void)
     {
     MSG msg;
-    HINSTANCE hInstance = 0;
 
     /*
     **  Register the window class.
@@ -294,7 +303,6 @@ static void windowThread(void)
         {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-        Sleep(25);
         }
     }
 
@@ -323,7 +331,7 @@ ATOM windowRegisterClass(HINSTANCE hInstance)
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
     wcex.lpszMenuName   = (LPCSTR)IDC_CONSOLE;
     wcex.lpszClassName  = "CONSOLE";
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
+    wcex.hIconSm        = LoadIcon(hInstance, (LPCTSTR)IDI_SMALL);
 
     return RegisterClassEx(&wcex);
     }
@@ -358,10 +366,6 @@ static BOOL windowCreate(void)
 
     ShowWindow(hWnd, SW_SHOWMAXIMIZED);
     UpdateWindow(hWnd);
-
-#define TIMER_ID        1
-#define TIMER_RATE      200
-//#define TIMER_RATE      20      // <<<<<<<<<<<< testing
 
     SetTimer(hWnd, TIMER_ID, TIMER_RATE, NULL);
 
@@ -422,7 +426,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         lfTmp.lfWeight = FW_THIN;
         lfTmp.lfOutPrecision = OUT_TT_PRECIS;
         lfTmp.lfHeight = FontSmallHeight;
-        hSmallFont = CreateFontIndirect (&lfTmp);
+        hSmallFont = CreateFontIndirect(&lfTmp);
         if (!hSmallFont)
             {
             MessageBox (GetFocus(),
@@ -437,7 +441,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         lfTmp.lfWeight = FW_THIN;
         lfTmp.lfOutPrecision = OUT_TT_PRECIS;
         lfTmp.lfHeight = FontMediumHeight;
-        hMediumFont = CreateFontIndirect (&lfTmp);
+        hMediumFont = CreateFontIndirect(&lfTmp);
         if (!hMediumFont)
             {
             MessageBox (GetFocus(),
@@ -452,7 +456,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         lfTmp.lfWeight = FW_THIN;
         lfTmp.lfOutPrecision = OUT_TT_PRECIS;
         lfTmp.lfHeight = FontLargeHeight;
-        hLargeFont = CreateFontIndirect (&lfTmp);
+        hLargeFont = CreateFontIndirect(&lfTmp);
         if (!hLargeFont)
             {
             MessageBox (GetFocus(),
@@ -690,9 +694,16 @@ SetBkMode(hdcMem, TRANSPARENT);     // <<<<<<<<<<<< testing
         else
             {
 #if CcHersheyFont == 0
-//            str[0] = consoleToAscii[curr->ch];
+#if 1
+            str[0] = consoleToAscii[curr->ch];
+            if (str[0] != 0)
+                {
+                TextOut(hdcMem, (curr->xPos * ScaleX) / 10, (curr->yPos * ScaleY) / 10 + 20, str, 1);
+                }
+#else
             str[0] = cdcToAscii[curr->ch];
             TextOut(hdcMem, (curr->xPos * ScaleX) / 10, (curr->yPos * ScaleY) / 10 + 20, str, 1);
+#endif
 #else
             windowTextPlot(hdcMem, (curr->xPos * ScaleX) / 10, (curr->yPos * ScaleY) / 10 + 20, curr->ch, curr->fontSize);
 #endif

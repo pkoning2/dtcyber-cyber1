@@ -25,6 +25,8 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
+#include <X11/Xresource.h>
+#include <X11/cursorfont.h>
 #include <sys/time.h>
 #include "const.h"
 #include "types.h"
@@ -38,10 +40,19 @@
 #define KeyBufSize	    50
 #define DisplayMargin	20
 
+#ifdef __APPLE__
+#define MODMASK 8192    // Option key
+#else
+#define MODMASK Mod1Mask
+#endif
+
 // Size of the window and pixmap.
 // This is: a screen high with marging top and botton.
+// Pixmap has two rows added, which are storage for the
+// patterns for loadable characters.
 #define XSize           (512 + 2 * DisplayMargin)
 #define YSize           (512 + 2 * DisplayMargin)
+#define YPMSize         (512 + 2 * DisplayMargin + 2 * 16)
 
 /*
 **  -----------------------
@@ -50,211 +61,58 @@
 */
 
 #define XADJUST(x) ((x) + DisplayMargin)
-#define YADJUST(y) (YSize - DisplayMargin - (y))
+#define YADJUST(y) (YSize - 1 - DisplayMargin - (y))
 
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
 **  -----------------------------------------
 */
-typedef void niuProcessOutput (int, u32);
 
 /*
 **  ---------------------------
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void loadChar (const u16 *cdat, int snum, int cnum);
-static void setColors (u8 wemode);
-static void drawChar (Drawable d, GC gc, int snum, int cnum);
-static void plotChar (u8 c);
-static void mode0 (u32 d);
-static void mode1 (u32 d);
-static void mode2 (u32 d);
-static void mode3 (u32 d);
-static void mode4 (u32 d);
-static void mode5 (u32 d);
-static void mode6 (u32 d);
-static void mode7 (u32 d);
+static void drawChar (Drawable d, GC gc, int x, int y, int snum, int cnum);
 
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
-extern Display *disp;
+Display *disp;
+XrmDatabase XrmDb;
 Window ptermWindow;
+
+extern bool tracePterm;
 
 /*
 **  -----------------
 **  Private Variables
 **  -----------------
 */
+static bool ptermActive = FALSE;
 static int fontId;
-static u16 currentX;
-static u16 currentY;
-static u16 margin;
 static Pixmap pixmap;
 static GC wgc, pgc;
 static unsigned long fg, bg, pfg, pbg;
-static u8 mode;
-static u8 wemode;
-static u16 memaddr;
-static u16 plato_m23[128 * 8];
-static u16 memlpc;
-static u8 currentCharset;
-static bool uncover;
+static u8 wemode;       // local copy of most recently set wemode
+static Cursor curs;
+static bool touchEnabled;
+static int sts;
 
-/* data for plato font, set 0. */
-const u16 plato_m0[] = {
-    0x0000, 0x0000, 0x0330, 0x0330, 0x0000, 0x0000, 0x0000, 0x0000, // :
-    0x0060, 0x0290, 0x0290, 0x0290, 0x0290, 0x01e0, 0x0010, 0x0000, // a
-    0x1ff0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x00c0, 0x0000, // b
-    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0210, 0x0120, 0x0000, // c
-    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x1ff0, 0x0000, // d
-    0x00c0, 0x01a0, 0x0290, 0x0290, 0x0290, 0x0290, 0x0190, 0x0000, // e
-    0x0000, 0x0000, 0x0210, 0x0ff0, 0x1210, 0x1000, 0x0800, 0x0000, // f
-    0x01a8, 0x0254, 0x0254, 0x0254, 0x0254, 0x0194, 0x0208, 0x0000, // g
-    0x1000, 0x1ff0, 0x0100, 0x0200, 0x0200, 0x0200, 0x01f0, 0x0000, // h
-    0x0000, 0x0000, 0x0210, 0x13f0, 0x0010, 0x0000, 0x0000, 0x0000, // i
-    0x0000, 0x0002, 0x0202, 0x13fc, 0x0000, 0x0000, 0x0000, 0x0000, // j
-    0x1010, 0x1ff0, 0x0080, 0x0140, 0x0220, 0x0210, 0x0010, 0x0000, // k
-    0x0000, 0x0000, 0x1010, 0x1ff0, 0x0010, 0x0000, 0x0000, 0x0000, // l
-    0x03f0, 0x0200, 0x0200, 0x01f0, 0x0200, 0x0200, 0x01f0, 0x0000, // m
-    0x0200, 0x03f0, 0x0100, 0x0200, 0x0200, 0x0200, 0x01f0, 0x0000, // n
-    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x00c0, 0x0000, // o
-    0x03fe, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x00c0, 0x0000, // p
-    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x03fe, 0x0000, // q
-    0x0200, 0x03f0, 0x0100, 0x0200, 0x0200, 0x0200, 0x0100, 0x0000, // r
-    0x0120, 0x0290, 0x0290, 0x0290, 0x0290, 0x0290, 0x0060, 0x0000, // s
-    0x0200, 0x0200, 0x1fe0, 0x0210, 0x0210, 0x0210, 0x0000, 0x0000, // t
-    0x03e0, 0x0010, 0x0010, 0x0010, 0x0010, 0x03e0, 0x0010, 0x0000, // u
-    0x0200, 0x0300, 0x00c0, 0x0030, 0x00c0, 0x0300, 0x0200, 0x0000, // v
-    0x03e0, 0x0010, 0x0020, 0x01c0, 0x0020, 0x0010, 0x03e0, 0x0000, // w
-    0x0200, 0x0210, 0x0120, 0x00c0, 0x00c0, 0x0120, 0x0210, 0x0000, // x
-    0x0382, 0x0044, 0x0028, 0x0010, 0x0020, 0x0040, 0x0380, 0x0000, // y
-    0x0310, 0x0230, 0x0250, 0x0290, 0x0310, 0x0230, 0x0000, 0x0000, // z
-    0x0010, 0x07e0, 0x0850, 0x0990, 0x0a10, 0x07e0, 0x0800, 0x0000, // 0
-    0x0000, 0x0000, 0x0410, 0x0ff0, 0x0010, 0x0000, 0x0000, 0x0000, // 1
-    0x0000, 0x0430, 0x0850, 0x0890, 0x0910, 0x0610, 0x0000, 0x0000, // 2
-    0x0000, 0x0420, 0x0810, 0x0910, 0x0910, 0x06e0, 0x0000, 0x0000, // 3
-    0x0000, 0x0080, 0x0180, 0x0280, 0x0480, 0x0ff0, 0x0080, 0x0000, // 4
-    0x0000, 0x0f10, 0x0910, 0x0910, 0x0920, 0x08c0, 0x0000, 0x0000, // 5
-    0x0000, 0x03e0, 0x0510, 0x0910, 0x0910, 0x00e0, 0x0000, 0x0000, // 6
-    0x0000, 0x0800, 0x0830, 0x08c0, 0x0b00, 0x0c00, 0x0000, 0x0000, // 7
-    0x0000, 0x06e0, 0x0910, 0x0910, 0x0910, 0x06e0, 0x0000, 0x0000, // 8
-    0x0000, 0x0700, 0x0890, 0x0890, 0x08a0, 0x07c0, 0x0000, 0x0000, // 9
-    0x0000, 0x0080, 0x0080, 0x03e0, 0x0080, 0x0080, 0x0000, 0x0000, // +
-    0x0000, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0000, 0x0000, // -
-    0x0000, 0x0240, 0x0180, 0x0660, 0x0180, 0x0240, 0x0000, 0x0000, // *
-    0x0010, 0x0020, 0x0040, 0x0080, 0x0100, 0x0200, 0x0400, 0x0000, // /
-    0x0000, 0x0000, 0x0000, 0x0000, 0x07e0, 0x0810, 0x1008, 0x0000, // (
-    0x1008, 0x0810, 0x07e0, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // )
-    0x0640, 0x0920, 0x0920, 0x1ff0, 0x0920, 0x0920, 0x04c0, 0x0000, // $
-    0x0000, 0x0140, 0x0140, 0x0140, 0x0140, 0x0140, 0x0000, 0x0000, // =
-    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // space
-    0x0000, 0x0000, 0x0034, 0x0038, 0x0000, 0x0000, 0x0000, 0x0000, // ,
-    0x0000, 0x0000, 0x0030, 0x0030, 0x0000, 0x0000, 0x0000, 0x0000, // .
-    0x0000, 0x0080, 0x0080, 0x02a0, 0x0080, 0x0080, 0x0000, 0x0000, // divide
-    0x0000, 0x0000, 0x0000, 0x0000, 0x1ff8, 0x1008, 0x1008, 0x0000, // [
-    0x1008, 0x1008, 0x1ff8, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // ]
-    0x0c20, 0x1240, 0x0c80, 0x0100, 0x0260, 0x0490, 0x0860, 0x0000, // %
-    0x0000, 0x0000, 0x0240, 0x0180, 0x0180, 0x0240, 0x0000, 0x0000, // multiply
-    0x0080, 0x0140, 0x0220, 0x0770, 0x0140, 0x0140, 0x0140, 0x0000, // assign
-    0x0000, 0x0000, 0x0000, 0x1c00, 0x0000, 0x0000, 0x0000, 0x0000, // '
-    0x0000, 0x0000, 0x1c00, 0x0000, 0x1c00, 0x0000, 0x0000, 0x0000, // "
-    0x0000, 0x0000, 0x0000, 0x1f90, 0x0000, 0x0000, 0x0000, 0x0000, // !
-    0x0000, 0x0000, 0x0334, 0x0338, 0x0000, 0x0000, 0x0000, 0x0000, // ;
-    0x0000, 0x0080, 0x0140, 0x0220, 0x0410, 0x0000, 0x0000, 0x0000, // <
-    0x0000, 0x0000, 0x0410, 0x0220, 0x0140, 0x0080, 0x0000, 0x0000, // >
-    0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, // _
-    0x0000, 0x0c00, 0x1000, 0x10d0, 0x1100, 0x0e00, 0x0000, 0x0000, // ?
-    0x1c1c, 0x1224, 0x0948, 0x0490, 0x0220, 0x0140, 0x0080, 0x0000, // arrow
-    0x0000, 0x0000, 0x0000, 0x000a, 0x0006, 0x0000, 0x0000, 0x0000, // cedilla
+// X gc function codes for a given W/E mode:
+static const int WeFunc[] = 
+{ GXcopy,
+  GXcopy,
+  GXandInverted,
+  GXor 
 };
 
-/* data for plato font, set 1. */
-const u16 plato_m1[] = {
-    0x0500, 0x0500, 0x1fc0, 0x0500, 0x1fc0, 0x0500, 0x0500, 0x0000, // #
-    0x07f0, 0x0900, 0x1100, 0x1100, 0x1100, 0x0900, 0x07f0, 0x0000, // A
-    0x1ff0, 0x1210, 0x1210, 0x1210, 0x1210, 0x0e10, 0x01e0, 0x0000, // B
-    0x07c0, 0x0820, 0x1010, 0x1010, 0x1010, 0x1010, 0x0820, 0x0000, // C
-    0x1ff0, 0x1010, 0x1010, 0x1010, 0x1010, 0x0820, 0x07c0, 0x0000, // D
-    0x1ff0, 0x1110, 0x1110, 0x1110, 0x1010, 0x1010, 0x1010, 0x0000, // E
-    0x1ff0, 0x1100, 0x1100, 0x1100, 0x1000, 0x1000, 0x1000, 0x0000, // F
-    0x07c0, 0x0820, 0x1010, 0x1010, 0x1090, 0x1090, 0x08e0, 0x0000, // G
-    0x1ff0, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x1ff0, 0x0000, // H
-    0x0000, 0x1010, 0x1010, 0x1ff0, 0x1010, 0x1010, 0x0000, 0x0000, // I
-    0x0020, 0x0010, 0x1010, 0x1010, 0x1fe0, 0x1000, 0x1000, 0x0000, // J
-    0x1ff0, 0x0080, 0x0100, 0x0280, 0x0440, 0x0820, 0x1010, 0x0000, // K
-    0x1ff0, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0000, // L
-    0x1ff0, 0x0800, 0x0400, 0x0200, 0x0400, 0x0800, 0x1ff0, 0x0000, // M
-    0x1ff0, 0x0800, 0x0600, 0x0100, 0x00c0, 0x0020, 0x1ff0, 0x0000, // N
-    0x07c0, 0x0820, 0x1010, 0x1010, 0x1010, 0x0820, 0x07c0, 0x0000, // O
-    0x1ff0, 0x1100, 0x1100, 0x1100, 0x1100, 0x1100, 0x0e00, 0x0000, // P
-    0x07c0, 0x0820, 0x1010, 0x1018, 0x1014, 0x0824, 0x07c0, 0x0000, // Q
-    0x1ff0, 0x1100, 0x1100, 0x1180, 0x1140, 0x1120, 0x0e10, 0x0000, // R
-    0x0e20, 0x1110, 0x1110, 0x1110, 0x1110, 0x1110, 0x08e0, 0x0000, // S
-    0x1000, 0x1000, 0x1000, 0x1ff0, 0x1000, 0x1000, 0x1000, 0x0000, // T
-    0x1fe0, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x1fe0, 0x0000, // U
-    0x1800, 0x0700, 0x00c0, 0x0030, 0x00c0, 0x0700, 0x1800, 0x0000, // V
-    0x1fe0, 0x0010, 0x0020, 0x03c0, 0x0020, 0x0010, 0x1fe0, 0x0000, // W
-    0x1830, 0x0440, 0x0280, 0x0100, 0x0280, 0x0440, 0x1830, 0x0000, // X
-    0x1800, 0x0400, 0x0200, 0x01f0, 0x0200, 0x0400, 0x1800, 0x0000, // Y
-    0x1830, 0x1050, 0x1090, 0x1110, 0x1210, 0x1410, 0x1830, 0x0000, // Z
-    0x0000, 0x1000, 0x2000, 0x2000, 0x1000, 0x1000, 0x2000, 0x0000, // ~
-    0x0000, 0x0000, 0x1000, 0x0000, 0x1000, 0x0000, 0x0000, 0x0000, // dieresis
-    0x0000, 0x1000, 0x2000, 0x4000, 0x2000, 0x1000, 0x0000, 0x0000, // circumflex
-    0x0000, 0x0000, 0x0000, 0x1000, 0x2000, 0x4000, 0x0000, 0x0000, // acute
-    0x0000, 0x4000, 0x2000, 0x1000, 0x0000, 0x0000, 0x0000, 0x0000, // grave
-    0x0000, 0x0100, 0x0300, 0x07f0, 0x0300, 0x0100, 0x0000, 0x0000, // uparrow
-    0x0080, 0x0080, 0x0080, 0x0080, 0x03e0, 0x01c0, 0x0080, 0x0000, // rightarrow 
-    0x0000, 0x0040, 0x0060, 0x07f0, 0x0060, 0x0040, 0x0000, 0x0000, // downarrow
-    0x0080, 0x01c0, 0x03e0, 0x0080, 0x0080, 0x0080, 0x0080, 0x0000, // leftarrow
-    0x0000, 0x0080, 0x0100, 0x0100, 0x0080, 0x0080, 0x0100, 0x0000, // low tilde
-    0x1010, 0x1830, 0x1450, 0x1290, 0x1110, 0x1010, 0x1010, 0x0000, // Sigma
-    0x0030, 0x00d0, 0x0310, 0x0c10, 0x0310, 0x00d0, 0x0030, 0x0000, // Delta
-    0x0000, 0x0380, 0x0040, 0x0040, 0x0040, 0x0380, 0x0000, 0x0000, // union
-    0x0000, 0x01c0, 0x0200, 0x0200, 0x0200, 0x01c0, 0x0000, 0x0000, // intersect
-    0x0000, 0x0000, 0x0000, 0x0080, 0x0f78, 0x1004, 0x1004, 0x0000, // {
-    0x1004, 0x1004, 0x0f78, 0x0080, 0x0000, 0x0000, 0x0000, 0x0000, // }
-    0x00e0, 0x0d10, 0x1310, 0x0c90, 0x0060, 0x0060, 0x0190, 0x0000, // &
-    0x0150, 0x0160, 0x0140, 0x01c0, 0x0140, 0x0340, 0x0540, 0x0000, // not equal
-    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // space
-    0x0000, 0x0000, 0x0000, 0x1ff0, 0x0000, 0x0000, 0x0000, 0x0000, // |
-    0x0000, 0x0c00, 0x1200, 0x1200, 0x0c00, 0x0000, 0x0000, 0x0000, // degree
-    0x0000, 0x02a0, 0x02a0, 0x02a0, 0x02a0, 0x02a0, 0x0000, 0x0000, // equiv
-    0x01e0, 0x0210, 0x0210, 0x01a0, 0x0060, 0x0090, 0x0310, 0x0000, // alpha
-    0x0002, 0x03fc, 0x0510, 0x0910, 0x0910, 0x0690, 0x0060, 0x0000, // beta
-    0x0000, 0x0ce0, 0x1310, 0x1110, 0x0890, 0x0460, 0x0000, 0x0000, // delta
-    0x0000, 0x1030, 0x0cc0, 0x0300, 0x00c0, 0x0030, 0x0000, 0x0000, // lambda
-    0x0002, 0x0002, 0x03fc, 0x0010, 0x0010, 0x03e0, 0x0010, 0x0000, // mu
-    0x0100, 0x0200, 0x03f0, 0x0200, 0x03f0, 0x0200, 0x0400, 0x0000, // pi
-    0x0006, 0x0038, 0x00e0, 0x0110, 0x0210, 0x0220, 0x01c0, 0x0000, // rho
-    0x00e0, 0x0110, 0x0210, 0x0310, 0x02e0, 0x0200, 0x0200, 0x0000, // sigma
-    0x01e0, 0x0210, 0x0010, 0x00e0, 0x0010, 0x0210, 0x01e0, 0x0000, // omega
-    0x0220, 0x0220, 0x0520, 0x0520, 0x08a0, 0x08a0, 0x0000, 0x0000, // less/equal
-    0x0000, 0x08a0, 0x08a0, 0x0520, 0x0520, 0x0220, 0x0220, 0x0000, // greater/equal
-    0x07c0, 0x0920, 0x1110, 0x1110, 0x1110, 0x0920, 0x07c0, 0x0000, // theta
-    0x01e0, 0x0210, 0x04c8, 0x0528, 0x05e8, 0x0220, 0x01c0, 0x0000, // @
-    0x0400, 0x0200, 0x0100, 0x0080, 0x0040, 0x0020, 0x0010, 0x0000, // backslash
-    0x01e0, 0x0210, 0x0210, 0x01e0, 0x0290, 0x0290, 0x01a0, 0x0000, // oe
-};
-
-const u16 *setPtr[] =
-{
-    plato_m0, plato_m1,
-    plato_m23, plato_m23 + (64 * 8)
-};
-
-typedef void (*mptr)();
-
-const mptr modePtr[] = 
-{
-    &mode0, &mode1, &mode2, &mode3,
-    &mode4, &mode5, &mode6, &mode7
-};
-
+static XRectangle platoRect[] = 
+{ { XADJUST (0), YADJUST (511), 512, 512 },
+  { 0, YSize, 512, 32 } };
 
 /*
 **--------------------------------------------------------------------------
@@ -263,7 +121,57 @@ const mptr modePtr[] =
 **
 **--------------------------------------------------------------------------
 */
-extern void niuSetOutputHandler (niuProcessOutput *h, int stat);
+
+bool platoKeypress (XKeyEvent *kp, int stat);
+void ptermInput(XEvent *event);
+void ptermXinit(void);
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Common X initialization for DtCyber and Pterm
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermXinit (void)
+{
+    char *home;
+    char *xf;
+    XrmDatabase xdef, appdef;
+    
+    /*
+    **  Open the X11 display.
+    */
+    disp = XOpenDisplay (0);
+    if (disp == NULL)
+    {
+        fprintf(stderr, "Could not open display\n");
+        exit(1);
+    }
+    
+    XrmInitialize ();
+    appdef = XrmGetFileDatabase ("/usr/lib/X11/app-defaults/Dtcyber");
+    if (appdef == NULL)
+    {
+        fprintf (stderr, "no app default database for dtcyber\n");
+    }
+    home = getenv ("HOME");
+    xf = malloc (strlen (home) + strlen ("/.Xdefaults") + 1);
+    strcpy (xf, home);
+    strcat (xf, "/.Xdefaults");
+    xdef = XrmGetFileDatabase (xf);
+    free (xf);
+    if (xdef != NULL)
+    {
+        XrmCombineDatabase (appdef, &xdef, FALSE);
+    }
+    else
+    {
+        xdef = appdef;
+    }
+    XrmDb = xdef;
+}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize the Plato terminal window.
@@ -273,29 +181,51 @@ extern void niuSetOutputHandler (niuProcessOutput *h, int stat);
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void ptermInit(const char *winName)
+void ptermInit(const char *winName, bool closeOk)
 {
     int i;
     XWMHints wmhints;
     int screen;
     XWindowAttributes a;
     XColor b,c;
+    XrmValue value;
+    char *type[20];
+    char fgcolor[40], bgcolor[40];
 
-    /*
-    **  Open the X11 display.
-    */
     if (disp == NULL)
     {
-        disp = XOpenDisplay (0);
+        ptermXinit ();
     }
-    if (disp == (Display *) NULL)
-    {
-        fprintf(stderr, "Could not open display\n");
-        exit(1);
-    }
-
+    
     screen = DefaultScreen(disp);
 
+    /*
+    **  Look for resources
+    */
+    if (XrmGetResource (XrmDb, "dtcyber.platoforeground",
+                        "Dtcyber.PlatoForeground", type, &value))
+    {
+        strncpy (fgcolor, value.addr, (int) value.size);
+    }
+    else
+    {
+        strcpy (fgcolor, "#ff9000");
+    }
+    if (XrmGetResource (XrmDb, "dtcyber.platobackground",
+                        "Dtcyber.PlatoBackground", type, &value))
+    {
+        strncpy (bgcolor, value.addr, (int) value.size);
+    }
+    else if (XrmGetResource (XrmDb, "dtcyber.background",
+                        "Dtcyber.Background", type, &value))
+    {
+        strncpy (bgcolor, value.addr, (int) value.size);
+    }
+    else
+    {
+        strcpy (bgcolor, "#000000");
+    }
+    
     /*
     **  Create a window using the following hints.
     */
@@ -308,7 +238,7 @@ void ptermInit(const char *winName)
     /*
     **  Create a pixmap for background image generation.
     */
-    pixmap = XCreatePixmap (disp, ptermWindow, XSize, YSize, 1);
+    pixmap = XCreatePixmap (disp, ptermWindow, XSize, YPMSize, 1);
 
     /*
     **  Set window and icon titles.
@@ -331,10 +261,11 @@ void ptermInit(const char *winName)
     /*
     **  Setup fore- and back-ground colors.
     */
-    XGetWindowAttributes (disp,ptermWindow,&a);
-    XAllocNamedColor (disp, a.colormap,"orange",&b,&c);
-    fg=b.pixel;
-    bg = BlackPixel (disp, screen);
+    XGetWindowAttributes (disp, ptermWindow, &a);
+    sts = XAllocNamedColor (disp, a.colormap, fgcolor, &b, &c);
+    fg = b.pixel;
+    sts = XAllocNamedColor (disp, a.colormap, bgcolor, &b, &c);
+    bg = b.pixel;
     XSetBackground (disp, wgc, bg);
     XSetForeground (disp, wgc, fg);
 
@@ -357,11 +288,19 @@ void ptermInit(const char *winName)
     */
     XSetForeground (disp, wgc, bg);
     XFillRectangle (disp, ptermWindow, wgc, 0, 0, XSize, YSize);
-    XSetForeground (disp, wgc, fg);
     XSetForeground (disp, pgc, pbg);
-    XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
-    XSetForeground (disp, pgc, pfg);
+    XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YPMSize);
+    ptermSetWeMode (1);
 
+    /*
+    **  Set clipping rectangles
+    **  The display gets one, the PLATO screen.
+    **  The bitmap gets a second one for the loadable chars bitmap.
+    **  (Painting of the trace marker is handled separately.)
+    */
+    XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
+    XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
+    
     /*
     **  Initialise input.
     */
@@ -372,20 +311,29 @@ void ptermInit(const char *winName)
                   ExposureMask | KeyPressMask | StructureNotifyMask);
 
     /*
+    **  Find the "hand" cursor
+    */
+    curs = XCreateFontCursor(disp, XC_hand2);
+    
+    /*
     **  Load Plato font
     */
     fontId = XLoadFont(disp, "-*-plato-medium-*-*-*-8-*-*-*-*-*-*-*\0");
+    XSetFont(disp, wgc, fontId);
+    XSetFont(disp, pgc, fontId);
 
     /*
-    **  We like to be on top.
+    **  Should we be on top?  Probably not...
     */
-    XMapRaised (disp, ptermWindow);
+//    XMapRaised (disp, ptermWindow);
+    XMapWindow (disp, ptermWindow);
     XSync (disp, FALSE);
 
     /*
-    **  Register with NIU for local output.
+    **  Now do common init stuff
     */
-    niuSetOutputHandler (procNiuWord, 1);
+    ptermComInit ();
+    ptermActive = TRUE;
 }
 
 /*--------------------------------------------------------------------------
@@ -398,6 +346,13 @@ void ptermInit(const char *winName)
 **------------------------------------------------------------------------*/
 void ptermClose(void)
 {
+    if (!ptermActive)
+    {
+        return;
+    }
+    
+    ptermComClose ();
+    XFreeCursor (disp, curs);
     XFreeGC (disp, wgc);
     XFreeGC (disp, pgc);
     XFreePixmap (disp, pixmap);
@@ -406,11 +361,165 @@ void ptermClose(void)
 
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Set W/E mode
+**
+**  Parameters:     Name        Description.
+**                  we          mode byte
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermSetWeMode (u8 we)
+{
+    // Unfortunately we can't just do wemode == 0 with GXcopyInverted,
+    // partly because that produces wrong colors when writing to the
+    // (orange) window, and partly because XDrawImageString doesn't 
+    // pay attention to the GC function.
+    if (we == 0)
+    {
+        XSetBackground (disp, wgc, fg);
+        XSetForeground (disp, wgc, bg);
+        XSetBackground (disp, pgc, pfg);
+        XSetForeground (disp, pgc, pbg);
+    }
+    else
+    {
+        XSetBackground (disp, wgc, bg);
+        XSetForeground (disp, wgc, fg);
+        XSetBackground (disp, pgc, pbg);
+        XSetForeground (disp, pgc, pfg);
+    }
+    XSetFunction (disp, pgc, WeFunc[we]);
+    XSetFunction (disp, wgc, WeFunc[we]);
+    wemode = we;
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Draw one character
+**
+**  Parameters:     Name        Description.
+**                  x           X coordinate to draw
+**                  y           Y coordinate to draw
+**                  snum        character set number
+**                  cnum        character number
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermDrawChar (int x, int y, int snum, int cnum)
+{
+    drawChar (ptermWindow, wgc, x, y, snum, cnum);
+    drawChar (pixmap, pgc, x, y, snum, cnum);
+}
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Draw a point
+**
+**  Parameters:     Name        Description.
+**                  x           X coordinate of point
+**                  y           Y coordinate of point
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermDrawPoint (int x, int y)
+{
+    XDrawPoint (disp, pixmap, pgc, XADJUST (x), YADJUST (y));
+    XDrawPoint (disp, ptermWindow, wgc, XADJUST (x), YADJUST (y));
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Draw a line
+**
+**  Parameters:     Name        Description.
+**                  x1          starting X coordinate of line
+**                  y1          starting Y coordinate of line
+**                  x2          ending X coordinate
+**                  y2          ending Y coordinate
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermDrawLine(int x1, int y1, int x2, int y2)
+{
+    XDrawLine (disp, pixmap, pgc,
+               XADJUST (x1), YADJUST (y1),
+               XADJUST (x2), YADJUST (y2));
+    XDrawLine (disp, ptermWindow, wgc, 
+               XADJUST (x1), YADJUST (y1),
+               XADJUST (x2), YADJUST (y2));
+}
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Process Plato full screen erase.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**
+**------------------------------------------------------------------------*/
+void ptermFullErase (void)
+{
+    u8 savemode = wemode;
+    
+    ptermSetWeMode (0);
+    XFillRectangle (disp, ptermWindow, wgc,
+                    DisplayMargin, DisplayMargin, 512, 512);
+    XFillRectangle (disp, pixmap, pgc,
+                    DisplayMargin, DisplayMargin, 512, 512);
+    ptermSetWeMode (savemode);
+    XFlush (disp);
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Write a (loadable set) character to the font storage 
+**                  part of the pixmap
+**
+**  Parameters:     Name        Description.
+**                  snum        character set number
+**                  cnum        character number
+**                  data        vector of 8 uint16s with column pattern
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermLoadChar (int snum, int cnum, const u16 *data)
+{
+    int i, j;
+    int x = cnum * 8;
+    int y = YSize + (snum & 1) * 16 + 15;
+    u16 col;
+
+    XSetForeground (disp, pgc, pbg);
+    XSetFunction (disp, pgc, GXcopy);
+    XFillRectangle (disp, pixmap, pgc, x, y - 15, 8, 16);
+    XSetForeground (disp, pgc, pfg);
+
+    for (i = 0; i < 8; i++)
+    {
+        col = *data++;
+        for (j = 0; j < 16; j++)
+        {
+            if (col & 1)
+            {
+                XDrawPoint(disp, pixmap, pgc, x, y - j);
+            }
+            col >>= 1;
+        }
+        x = (x + 1) & 0777;
+    }
+    ptermSetWeMode (wemode);
+}
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Process XKeyEvent for Plato keyboard
 **
 **  Parameters:     Name        Description.
 **                  kp          XKeyEvent for the keypress
-**                  stat        Sstatio number
+**                  stat        Station number
 **
 **  Returns:        TRUE if key event was a valid Plato keycode.
 **
@@ -437,7 +546,7 @@ bool platoKeypress (XKeyEvent *kp, int stat)
     key = XKeycodeToKeysym (disp, kp->keycode, 0);
     if (key < sizeof (asciiToPlato))
     {
-        if (state & Mod1Mask)
+        if (state & MODMASK)
         {
             pc = altKeyToPlato[key] | shift;
             if (pc >= 0)
@@ -538,6 +647,8 @@ bool platoKeypress (XKeyEvent *kp, int stat)
 **------------------------------------------------------------------------*/
 void ptermInput(XEvent *event)
 {
+    u8 savemode = wemode;
+
     switch (event->type)
     {
     case MappingNotify:
@@ -549,91 +660,54 @@ void ptermInput(XEvent *event)
         break;
 
     case Expose:
+        ptermSetWeMode (0);
+        XFillRectangle (disp, ptermWindow, wgc,
+                        0, 0, XSize, YSize);
         XSetForeground (disp, wgc, fg);
-        XCopyPlane(disp, pixmap, ptermWindow, wgc, 0, 0, XSize, YSize, 0, 0, 1);
+        XSetBackground (disp, wgc, bg);
+        XSetFunction (disp, wgc, GXcopy);
+        XCopyPlane(disp, pixmap, ptermWindow, wgc, 
+                   DisplayMargin, DisplayMargin,
+                   512, 512, 
+                   DisplayMargin, DisplayMargin, 1);
+        // copy the trace marker
+        if (tracePterm)
+        {
+            XSetClipMask (disp, wgc, None);
+            XSetClipMask (disp, pgc, None);
+            XCopyPlane(disp, pixmap, ptermWindow, wgc, 
+                       DisplayMargin + 512, DisplayMargin - 16,
+                       8, 16,
+                       DisplayMargin + 512, DisplayMargin - 16, 1);
+            XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
+            XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
+        }
+        ptermSetWeMode (savemode);
         XSync (disp, FALSE);
         break;
     }
 }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Process NIU word
+**  Purpose:        Enable or disable "touch" input
 **
 **  Parameters:     Name        Description.
-**                  stat        Station number
-**                  d           19-bit word
+**                  enable      true or false for enable or disable.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void procNiuWord (int stat, u32 d)
+void ptermTouchPanel(bool enable)
 {
-    mptr mp;
-    
-    if (stat != 1)
+    if (enable)
     {
-        return;
-    }
-    if (d & 01000000)
-    {
-        mp = modePtr[mode];
-        (*mp) (d);
+        XDefineCursor (disp, ptermWindow, curs);
     }
     else
     {
-        switch ((d >> 15) & 7)
-        {
-        case 0:     // nop
-            break;
-
-        case 1:     // load mode
-            mode = (d >> 3) & 7;
-            wemode = (d >> 1) & 3;
-#ifdef DEBUG
-            printf ("load mode %d %d %d\n", mode, wemode, d & 1);
-#endif
-            if (d & 1)
-            {
-                // full screen erase
-                XSetForeground (disp, wgc, bg);
-                XFillRectangle (disp, ptermWindow, wgc, 0, 0, XSize, YSize);
-                XSetForeground (disp, wgc, fg);
-                XSetForeground (disp, pgc, pbg);
-                XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
-                XSetForeground (disp, pgc, pfg);
-                XFlush (disp);
-            }
-            break;
-            
-        case 2:     // load coordinate
-#ifdef DEBUG
-            printf ("load coord %d %d %d\n",
-                    d & 0777, (d >> 9) & 1, (d >> 12) & 1);
-#endif
-            if (d & 01000)
-            {
-                currentY = d & 0777;
-            }
-            else
-            {
-                currentX = d & 0777;
-                if (d & 010000)
-                {
-                    margin = currentX;
-                }
-            }
-            break;
-        case 3:     // echo
-#ifdef DEBUG
-            printf ("echo %03o\n", d & 0177);
-#endif
-            niuLocalKey ((d & 0177) + 0200, 1);
-            break;
-            
-        default:    // ignore
-            break;
-        }
+        XUndefineCursor (disp, ptermWindow);
     }
+    touchEnabled = enable;
 }
 
 /*
@@ -645,281 +719,71 @@ void procNiuWord (int stat, u32 d)
 */
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Write a character to the font area in the pixmap
+**  Purpose:        Draw a character
 **
 **  Parameters:     Name        Description.
 **                  d           X Drawable
 **                  gc          Graphics context
+**                  x           X coordinate to draw
+**                  y           Y coordinate to draw
 **                  snum        character set number
 **                  cnum        character number
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void drawChar (Drawable d, GC gc, int snum, int cnum)
+static void drawChar (Drawable d, GC gc, int x, int y, int snum, int cnum)
 {
-    int i, j;
-    int x = currentX;
-    const u16 *cp;
-    u16 col;
-    u8 drawMode = wemode | 2;
-    u8 eraseMode = (wemode ^ 1) | 2;
+    int charX, charY;
+    char c;
     
-    cp = setPtr[snum] + (8 * cnum);
-    for (i = 0; i < 8; i++)
+    if (x >= 1024)
     {
-        col = *cp++;
-        for (j = 0; j < 16; j++)
+        // Special flag coordinate to write to the status field
+        XSetClipMask (disp, wgc, None);
+        XSetClipMask (disp, pgc, None);
+    }
+    
+    if (snum < 2)
+    {
+        // "ROM" characters
+        c = (snum * 64) + cnum;
+        if (wemode & 2)
         {
-            if (col & 1)
-            {
-                setColors (drawMode);
-                XDrawPoint(disp, d, gc, XADJUST (x), YADJUST (currentY + j));
-            }
-            else if ((wemode & 2) == 0)
-            {
-                setColors (eraseMode);
-                XDrawPoint(disp, d, gc, XADJUST (x), YADJUST (currentY + j));
-            }
-            col >>= 1;
+            XDrawString(disp, d, gc, XADJUST (x & 1023),
+                        YADJUST (y), &c, 1);
         }
-        x = (x + 1) & 0777;
-    }
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Set drawing color given current W/E mode
-**
-**  Parameters:     Name        Description.
-**                  we          mode byte
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void setColors (u8 we)
-{
-    switch (we)
-    {
-    case 0:
-        XSetBackground(disp, pgc, pfg);
-        XSetBackground(disp, wgc, fg);
-    case 2:
-        XSetForeground(disp, pgc, pbg);
-        XSetForeground(disp, wgc, bg);
-        break;
-    case 1:
-        XSetBackground(disp, pgc, pbg);
-        XSetBackground(disp, wgc, bg);
-    case 3:
-        XSetForeground(disp, pgc, pfg);
-        XSetForeground(disp, wgc, fg);
-        break;
-    }
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Draw one character
-**
-**  Parameters:     Name        Description.
-**                  c           Character code
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void plotChar (u8 c)
-{
-    int x, y;
-    
-    c &= 077;
-    if (c == 077)
-    {
-        uncover = TRUE;
-        return;
-    }
-    if (uncover)
-    {
-        uncover = FALSE;
-        switch (c)
+        else
         {
-        case 010:   // backspace
-            currentX = (currentX - 8) & 0777;
-            break;
-        case 011:   // tab
-            currentX = (currentX + 8) & 0777;
-            break;
-        case 012:   // linefeed
-            currentY = (currentY - 16) & 0777;
-            break;
-        case 013:   // vertical tab
-            currentY = (currentY + 16) & 0777;
-            break;
-        case 014:   // form feed
-            currentX = 0;
-            currentY = 496;
-            break;
-        case 015:   // carriage return
-            currentX = margin;
-            currentY = (currentY - 16) & 0777;
-            break;
-        case 016:   // superscript
-            currentY = (currentY + 5) & 0777;
-            break;
-        case 017:   // subscript
-            currentY = (currentY - 5) & 0777;
-            break;
-        case 020:   // select M0
-        case 021:   // select M1
-        case 022:   // select M2
-        case 023:   // select M3
-            currentCharset = c - 020;
-            break;
-        default:
-            break;
+            XDrawImageString(disp, d, gc, XADJUST (x),
+                             YADJUST (y), &c, 1);
         }
     }
     else
     {
-        drawChar (ptermWindow, wgc, currentCharset, c);
-        drawChar (pixmap, pgc, currentCharset, c);
-        currentX = (currentX + 8) & 0777;
+        charX = cnum * 8;
+        charY = YSize + (snum - 2) * 16;
+        XCopyPlane (disp, pixmap, d, gc, charX, charY, 8, 16, 
+                    XADJUST (x), YADJUST (y) - 15, 1);
     }
-}
-
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 0 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode0 (u32 d)
-{
-    int x, y;
-    
-    x = (d >> 9) & 0777;
-    y = d & 0777;
-#ifdef DEBUG
-    printf ("dot %d %d\n", x, y);
-#endif
-    setColors (wemode);
-    XDrawPoint (disp, pixmap, pgc, XADJUST (x), YADJUST (y));
-    XDrawPoint (disp, ptermWindow, wgc, XADJUST (x), YADJUST (y));
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 1 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode1 (u32 d)
-{
-    int x, y;
-    
-    x = (d >> 9) & 0777;
-    y = d & 0777;
-#ifdef DEBUG
-    printf ("lineto %d %d\n", x, y);
-#endif
-    setColors (wemode);
-    XDrawLine (disp, pixmap, pgc,
-               XADJUST (currentX), YADJUST (currentY),
-               XADJUST (x), YADJUST (y));
-    XDrawLine (disp, ptermWindow, wgc, 
-               XADJUST (currentX), YADJUST (currentY),
-               XADJUST (x), YADJUST (y));
-    currentX = x;
-    currentY = y;
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 2 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode2 (u32 d)
-{
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 3 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode3 (u32 d)
-{
-#ifdef DEBUG
-    printf ("char %02o %02o %02o\n", (d >> 12) & 077, (d >> 6) & 077, d & 077);
-#endif
-    plotChar (d >> 12);
-    plotChar (d >> 6);
-    plotChar (d);
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 4 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode4 (u32 d)
-{
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 5 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode5 (u32 d)
-{
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 6 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode6 (u32 d)
-{
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 7 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode7 (u32 d)
-{
+    // Handle screen edge wraparound by recursion...
+    if (x >= 1024)
+    {
+        // Restore normal clipping
+        XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
+        XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
+    }
+    else 
+    {
+        if (x > 512 - 8)
+        {
+            drawChar (d, gc, x - 512, y, snum, cnum);
+        }
+        if (y > 512 - 16)
+        {
+            drawChar (d, gc, x, y - 512, snum, cnum);
+        }
+    }
 }
 
 /*---------------------------  End Of File  ------------------------------*/

@@ -59,9 +59,8 @@ DevDesc deviceDesc[] =
     "DD844-2",  dd844Init_2,
     "DD844-4",  dd844Init_4,
     "DD844",    dd844Init_4,
-    "DD885-2",  dd885Init_2,
-    "DD885-4",  dd885Init_4,
-    "DD885",    dd885Init_2,
+    "DD885-1",  dd885Init_1,
+    "DD885",    dd885Init_1,
     "CR405",    cr405Init,
     "LP1612",   lp1612Init,
     "LP501",    lp501Init,
@@ -70,6 +69,9 @@ DevDesc deviceDesc[] =
     "MUX6676",  mux6676Init,
     "CP3446",   cp3446Init,
     "CR3447",   cr3447Init,
+    "TPM",      tpMuxInit,
+    "DDP",      ddpInit,
+    "NIU",      niuInit,
     };
 
 u8 deviceCount = sizeof(deviceDesc) / sizeof(deviceDesc[0]);
