@@ -57,18 +57,18 @@ runs at a low CP.
 
 When MASTOR initialization is done (LDR stops flashing at the CP and
 PNG appears), start PLATO:
-      X. PLATO.
-
-After a while, PLATO finishes initialing; at that point it has PIO
-active at its CP.  Because of a bug, this first load of PLATO doesn't
-work right, so we now reload it and also load the other programs:
       K,20.
       K.PGO
-      K.RELOAD
 
 The entry PGO tells MASTOR what file contains the deck that loads
 PLATO, and then starts up the load of the others.  PLATO, CONDEN, and
-FRAMAT pop up one after the other at the first three CPs.
+FRAMAT pop up one after the other at the first three CPs.  MASTOR
+waits a few seconds after the PGO entry before it starts this process.
+
+By the way, PGO starts the PLATO components that are on the deadstart
+tape.  If you want to use the latest test builds, use PTEST instead,
+that loads these programs from direct access files created by the
+build decks.
 
 When CONDEN finishes initializing, PLATO tells it to condense the
 first two system lessons: plato and syslib.  You will see their names
