@@ -629,7 +629,16 @@ void windowGetChar(void)
     
     if (keyboardSendUp || keyListGet == keyListPut)
         {
-        ppKeyIn = 0;
+        if (keyboardTrue)
+            {
+            // If we're in true keyboard mode, lack of news means
+            // "no change to last input" rather than "all keys up"!
+            ppKeyIn = 0200;
+            }
+        else
+            {
+            ppKeyIn = 0;
+            }
         keyboardSendUp = FALSE;
         return;
         }

@@ -304,7 +304,7 @@ static void consoleIo(void)
                     {
                     keyMask &= ~(ULL(1) << ch);
                     }
-                else
+                else if (ppKeyIn != 0200)    /* 0200 means "no change" */
                     {
                     keyMask |= ULL(1) << ch;
                     }

@@ -673,6 +673,7 @@ static void opCmdShutdown(char *cmdParams)
     **  Process command.
     */
     opCmdEnd (cmdParams);
+    windowSetKeyboardTrue (FALSE);
     emulationActive = FALSE;
 
     printf("\nThanks for using %s - Goodbye for now.\n\n", DtCyberVersion);
@@ -733,6 +734,7 @@ static void opCmdLoad(char *cmdParams)
         {
         if (dp->load)
             {
+            activeDevice = dp;
             dp->load (dp, unit, cmdParams + rest);
             done = TRUE;
             }
@@ -772,7 +774,10 @@ static void opCmdUnload(char *cmdParams)
     while (dp != NULL)
         {
         if (dp->load)
+            {
+            activeDevice = dp;
             dp->load (dp, unit, NULL);
+            }
         dp = dp->next;
         }
     }
