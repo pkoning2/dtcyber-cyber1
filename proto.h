@@ -141,6 +141,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 */
 void traceInit(void);
 void traceFinish(void);
+void traceStop(void);
 void traceSequence(void);
 void traceRegisters(void);
 void traceOpcode(void);
@@ -194,7 +195,9 @@ void windowUpdate(void);
 void windowGetChar(void);
 void windowClose(void);
 void windowCheckOutput(void);
+void windowOperEnd(void);
 int windowGetOperFontWidth(int font);
+void windowSetKeyboardTrue(bool flag);
 
 /*
 **  operator.c
@@ -233,6 +236,7 @@ extern const unsigned char extBcdToAscii[];
 extern u16 traceMask;
 extern u16 traceClearMask;
 extern u16 chTraceMask;
+extern u8 traceCp;
 extern DevDesc deviceDesc[];
 extern u8 deviceCount;
 extern bool bigEndian;

@@ -323,7 +323,12 @@ static void consoleIo(void)
             {
             windowGetChar();
             ch = asciiToConsole[ppKeyIn & 0177];
-            if (ch != 0)
+            if (ppKeyIn == 0)
+                {
+                keyMask = ULL(0);
+                currentKey = 0;
+                }
+            else if (ch != 0)
                 {
                 if (ppKeyIn < 0)
                     {

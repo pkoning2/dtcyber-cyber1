@@ -80,9 +80,11 @@ static void opCmdUnload(char *cmdParams);
 static void opDumpCpu (char *cmdParams);
 static void opDumpPpu (char *cmdParams);
 static void opDisPpu (char *cmdParams);
+static void opKeyboard (char *cmdParams);
 #if CcDebug == 1
 static void opTracePpu(char *cmdParams);
 static void opTraceCh(char *cmdParams);
+static void opTraceCp(char *cmdParams);
 static void opTraceCpu(char *cmdParams);
 static void opTraceXj(char *cmdParams);
 static void opUntrace(char *cmdParams);
@@ -121,10 +123,13 @@ static char *syntax[] =
     "DUMP,CPU.\n",
     "DUMP,PPU7.\n",
     "DISASSEMBLE,PPU7.\n",
+    "SET,KEYBOARD=TRUE.\n",
+    "SET,KEYBOARD=EASY.\n",
 #if CcDebug == 1
     "TRACE,PPU7.\n",
     "TRACE,CHANNEL7.\n",
     "TRACE,CPU.\n",
+    "TRACE,CP7.\n",
     "TRACE,XJ.\n",
     "UNTRACE,.\n",
     "UNTRACE,PPU7.\n",
@@ -152,10 +157,12 @@ static OpCmd decode[] =
     "DUMP,CPU",                 opDumpCpu,
     "DUMP,PPU",                 opDumpPpu,
     "DISASSEMBLE,PPU",          opDisPpu,
+    "SET,KEYBOARD=",            opKeyboard,
 #if CcDebug == 1
     "TRACE,PPU",                opTracePpu,
     "TRACE,CHANNEL",            opTraceCh,
     "TRACE,CPU.",               opTraceCpu,
+    "TRACE,CP",                 opTraceCp,
     "TRACE,XJ.",                opTraceXj,
     "UNTRACE,.",                opUntrace,
     "UNTRACE,PPU",              opUntracePpu,
@@ -169,21 +176,21 @@ static OpCmd decode[] =
 // Note: Y values of zero are filled in by opInit
 static OpMsg msg[] =
     { { 0760 - (sizeof(DtCyberVersion) * 010), 0740, 0010, DtCyberVersion },
-      { 0020, 0600, 0010, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
+      { 0020, 0630, 0010, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
       { 0020,    0, 0010, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
       { 0020,    0, 0010, "UNLOAD,CH,EQ.      Unload ch/eq." },
       { 0020,    0, 0010, "DUMP,CPU.          Dump CPU state." },
       { 0020,    0, 0010, "DUMP,PPUNN.        Dump specified PPU state." },
       { 0020,    0, 0010, "DISASSEMBLE,PPUNN. Disassemble specified PPU." },
+      { 0020,    0, 0010, "SET,KEYBOARD=TRUE. Emulate console keyboard accurately." },
+      { 0020,    0, 0010, "SET,KEYBOARD=EASY. Make console keyboard easy (rollover)." },
 #if CcDebug == 1
       { 0020,    0, 0010, "TRACE,CPU.         Trace CPU activity." },
+      { 0020,    0, 0010, "TRACE,CPNN.        Trace CPU activity for CP NN." },
       { 0020,    0, 0010, "TRACE,XJ.          Trace exchange jumps." },
       { 0020,    0, 0010, "TRACE,PPUNN.       Trace specified PPU activity." },
       { 0020,    0, 0010, "TRACE,CHANNELNN.   Trace specified channel activity." },
-      { 0020,    0, 0010, "UNTRACE,CPU.       Stop trace of CPU activity." },
-      { 0020,    0, 0010, "UNTRACE,XJ.        Stop trace of exchange jumps." },
-      { 0020,    0, 0010, "UNTRACE,PPUNN.     Stop trace of specified PPU activity." },
-      { 0020,    0, 0010, "UNTRACE,CHANNELNN. Stop trace of specified channel activity." },
+      { 0020,    0, 0010, "UNTRACE,XXX        Stop trace of XXX." },
       { 0020,    0, 0010, "UNTRACE,.          Stop all tracing." },
 #endif
       { 0020,    0, 0010, "" },      // blank line to separate these last two from the above
@@ -783,6 +790,34 @@ static void opDisPpu(char *cmdParams)
     opSetMsg ("COMPLETED");
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Disassemble memory of selected PPU
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opKeyboard(char *cmdParams)
+    {
+    /*
+    **  Process commands.
+    */
+    if (strcmp (cmdParams, "EASY.") == 0)
+        {
+        windowSetKeyboardTrue (TRUE);
+        }
+    else if (strcmp (cmdParams, "TRUE.") != 0)
+        {
+        opSetMsg ("$INVALID PARAMETER");
+        }
+    else
+        {
+        windowSetKeyboardTrue (FALSE);
+        }
+    }
+
 #if CcDebug == 1
 /*--------------------------------------------------------------------------
 **  Purpose:        Trace a PPU
@@ -843,6 +878,36 @@ static void opTraceCh(char *cmdParams)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Trace a control point
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opTraceCp(char *cmdParams)
+    {
+    int     np, cp;
+    /*
+    **  Process commands.
+    */
+    np = sscanf (cmdParams, "%o", &cp);
+    if (np != 1)
+        {
+        opSetMsg ("$INSUFFICENT PARAMETERS");
+        return;
+        }
+    if (cp > (cpMem[2] >> 12) & Mask12)
+        {
+        opSetMsg ("$INVALID CP NUMBER");
+        return;
+        }
+    traceMask |= 1 << 14;
+    traceCp = cp;
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Trace the CPU
 **
 **  Parameters:     Name        Description.
@@ -854,6 +919,7 @@ static void opTraceCh(char *cmdParams)
 static void opTraceCpu(char *cmdParams)
     {
     traceMask |= 1 << 14;
+    traceCp = 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -897,6 +963,7 @@ static void opUntracePpu(char *cmdParams)
         return;
         }
     traceMask &= ~(1 << pp);
+    traceStop ();
     }
 
 /*--------------------------------------------------------------------------
@@ -926,6 +993,7 @@ static void opUntraceCh(char *cmdParams)
         return;
         }
     chTraceMask &= ~(1 << ch);
+    traceStop ();
     }
 
 /*--------------------------------------------------------------------------
@@ -940,6 +1008,7 @@ static void opUntraceCh(char *cmdParams)
 static void opUntraceCpu(char *cmdParams)
     {
     traceMask &= ~(1 << 14);
+    traceStop ();
     }
 
 /*--------------------------------------------------------------------------
@@ -954,6 +1023,7 @@ static void opUntraceCpu(char *cmdParams)
 static void opUntraceXj(char *cmdParams)
     {
     traceMask &= ~(1 << 15);
+    traceStop ();
     }
 
 /*--------------------------------------------------------------------------
@@ -968,6 +1038,7 @@ static void opUntraceXj(char *cmdParams)
 static void opUntrace(char *cmdParams)
     {
     traceMask =chTraceMask = 0;
+    traceStop ();
     }
 
 #endif  // CcDebug=1

@@ -661,8 +661,12 @@ void cpuStep(void)
 
         /*
         **  Don't trace NOS's idle loop and CPUMTR.
+        **  If control point tracing is set, act accordingly.
         */
-        if (cpu.regRaCm != 0 && cpu.regP > 0100)
+        if (cpu.regRaCm != 0 && cpu.regP > 0100 &&
+            (traceCp == 0 || 
+             (!cpu.monitorMode &&
+              ((cpMem[060] >> 31) & 037) == traceCp)))
             {
             traceCpu(oldRegP, opFm, opI, opJ, opK, opAddress);
             }
@@ -774,7 +778,6 @@ bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs)
             */
             return TRUE;
             }
-
         ecsMem[address] = *data;
         }
     else

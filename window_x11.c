@@ -99,10 +99,10 @@ static void sum (u16 x);
 **  Private Variables
 **  -----------------
 */
-static u8 currentFont;
+static i8 currentFont = -1;
 static FontInfo *currentFontInfo;
-static i16 currentX;
-static i16 currentY;
+static i16 currentX = -1;
+static i16 currentY = -1;
 static DispList display[ListSize];
 static int listGet, listPut, prevPut, listPutAtGetChar;
 static u32 s1,s2;
@@ -130,6 +130,7 @@ static bool displayOff = FALSE;
 static const i8 dotdx[] = { 0, 1, 0, 1, -1, -1,  0, -1,  1 };
 static const i8 dotdy[] = { 0, 0, 1, 1, -1,  0, -1,  1, -1 };
 static XKeyboardControl kbPrefs;
+static bool keyboardTrue, keyboardSendUp;
 
 /*
 **--------------------------------------------------------------------------
@@ -304,8 +305,6 @@ void windowInit(void)
     wmhints.input = True;
     XSetWMHints(disp, window, &wmhints);
     XSelectInput (disp, window, KeyPressMask | KeyReleaseMask | StructureNotifyMask);
-    kbPrefs.auto_repeat_mode = AutoRepeatModeOff;
-    XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
 
     /*
     **  We like to be on top.
@@ -330,6 +329,28 @@ int windowGetOperFontWidth(int font)
     else
         {
         return mediumOperFont.width;
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set keyboard emulation to "true" or "easy".
+**
+**  Parameters:     TRUE for accurate, FALSE for easy.
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+void windowSetKeyboardTrue (bool flag)
+    {
+    if ((keyboardTrue = flag))
+        {
+        kbPrefs.auto_repeat_mode = AutoRepeatModeOff;
+        XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
+        }
+    else
+        {
+        kbPrefs.auto_repeat_mode = AutoRepeatModeDefault;
+        XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
         }
     }
 
@@ -432,7 +453,8 @@ void windowQueue(char ch)
     u32 nextput;
     
     if (   currentX == -1
-        || currentY == -1)
+        || currentY == -1
+        || currentFont == -1)
         {
         return;
         }
@@ -483,9 +505,14 @@ void windowUpdate(void)
 void windowOperEnd(void)
     {
     opActive = FALSE;
-    kbPrefs.auto_repeat_mode = AutoRepeatModeOff;
-    XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
-    XSync(disp, 0);
+    currentX = currentY = currentFont = listPutAtGetChar = -1;
+    listGet = listPut;
+    if (keyboardTrue)
+        {
+        kbPrefs.auto_repeat_mode = AutoRepeatModeOff;
+        XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
+        XSync(disp, 0);
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -545,9 +572,10 @@ void windowGetChar(void)
     
     windowCheckOutput();
     
-    if (keyListGet == keyListPut)
+    if (keyboardSendUp || keyListGet == keyListPut)
         {
         ppKeyIn = 0;
+        keyboardSendUp = FALSE;
         return;
         }
 
@@ -558,6 +586,20 @@ void windowGetChar(void)
         }
     ppKeyIn = keybuf[keyListGet];
     keyListGet = nextget;
+    if (!keyboardTrue)
+        {
+        // We're not doing the precise emulation, instead doing
+        // regular key rollover.  So ignore key up events,
+        // and send a zero code (all up) in between each key code.
+        if (ppKeyIn & 0200)
+            {
+            ppKeyIn = 0;
+            }
+        else
+            {
+            keyboardSendUp = TRUE;
+            }
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -786,14 +828,17 @@ static void windowInput(void)
                 case '8':
                 case '9':
                     traceMask ^= (1 << (text[1] - '0'));
+                    traceStop ();
                     break;
 
                 case 'c':
                     traceMask ^= (1 << 14);
+                    traceStop ();
                     break;
 
                 case 'e':
                     traceMask ^= (1 << 15);
+                    traceStop ();
                     break;
 
                 case 'x':
@@ -804,11 +849,14 @@ static void windowInput(void)
                     else
                         {
                         traceMask = 0;
+                        traceStop ();
                         }
                     break;
 
                 case 'o':
                     opActive = TRUE;
+                    currentX = currentY = currentFont = listPutAtGetChar = -1;
+                    listGet = listPut;
                     kbPrefs.auto_repeat_mode = AutoRepeatModeDefault;
                     XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
                     break;

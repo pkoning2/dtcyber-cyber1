@@ -166,6 +166,7 @@ FILE *devF;
 **  -----------------
 */
 static u8 pp = 0;
+static PpWord opCode;
 static PpByte opF;
 static PpByte opD;
 static PpWord location;
@@ -350,7 +351,6 @@ void ppInit(u8 count)
 void ppStep(void)
     {
     u8 i;
-    PpWord opCode;
 
     /*
     **  Locate a PPU which is active (ie not waiting for I/O)
@@ -1020,6 +1020,24 @@ static void ppOpPSN(void)     // 00
     /*
     **  Do nothing.
     */
+#if CcDebug == 1
+    /*
+    **  For tracing under program control, a PSN 2542 in the low half
+    **  turns on tracing for this PPU, and 2576 turns it off.
+    **  Note that 25xx is normally an undefined opcode, but it's handled
+    **  as a PSN.
+    */
+    if (opCode == 02542)
+        {
+        traceMask |= (1 << activePpu->id);
+        traceClearMask |= (1 << activePpu->id);
+        }
+    else if (opCode == 02576)
+        {
+        traceMask &= ~(1 << activePpu->id);
+        traceClearMask &= ~(1 << activePpu->id);
+        }
+#endif
     }
 
 static void ppOpLJM(void)     // 01

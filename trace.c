@@ -116,6 +116,7 @@ static bool ppuTraced (void);
 **  ----------------
 */
 u16 traceMask = 0;
+u8 traceCp = 0;
 u16 traceClearMask = 0;
 u16 chTraceMask = 0;
 FILE *devF;
@@ -677,6 +678,11 @@ void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress)
         }
 
     fprintf(cpuTF, "\n");
+    if (decode == rjDecode && (opI == 1 || opI == 2))
+        {
+        // ECS read/write, show what memory was touched
+        dumpCpuMem (cpuTF, cpu.regA[0], cpu.regA[0] + cpu.regB[opJ] + opK);
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -779,6 +785,27 @@ void traceFinish(void)
     for (pp = 0; pp < ppuCount; pp++)
         {
         fclose(ppuTF[pp]);
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Stop execution trace for now.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void traceStop(void)
+    {
+    u8 pp;
+
+    fflush(cpuTF);
+    fflush(devF);
+    
+    for (pp = 0; pp < ppuCount; pp++)
+        {
+        fflush(ppuTF[pp]);
         }
     }
 

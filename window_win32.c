@@ -135,6 +135,7 @@ static HWND hWnd;
 static FontInfo smallFont;
 static FontInfo mediumFont;
 static FontInfo largeFont;
+static bool keyboardTrue, keyboardSendUp;
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Create WIN32 thread which will deal with all windows
@@ -171,6 +172,46 @@ void windowInit(void)
         {
         MessageBox(NULL, "thread creation failed", "Error", MB_OK);
         exit(1);
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Get width of medium operator display font.
+**
+**  Parameters:     None.
+**
+**  Returns:        Width.
+**
+**------------------------------------------------------------------------*/
+int windowGetOperFontWidth(int font)
+    {
+    if (font == FontSmall)
+        {
+        return 8;
+        }
+    else
+        {
+        return 16;
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set keyboard emulation to "true" or "easy".
+**
+**  Parameters:     TRUE for accurate, FALSE for easy.
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+void windowSetKeyboardTrue (bool flag)
+    {
+    if ((keyboardTrue = flag))
+        {
+        // ** tbd
+		}
+    else
+        {
+        // **tbd
         }
     }
 
@@ -239,7 +280,7 @@ void windowQueue(char ch)
 
     if (!opActive)
         {
-        ch = consoleToASscii[ch];
+        ch = consoleToAscii[ch];
         }
 
     if (ch != 0)
@@ -272,6 +313,25 @@ void windowQueue(char ch)
 **------------------------------------------------------------------------*/
 void windowCheckOutput(void)
     {
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Indicate that operator mode is finished.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void windowOperEnd(void)
+    {
+    opActive = FALSE;
+    currentX = currentY = currentFont = listPutAtGetChar = -1;
+    listGet = listPut;
+    if (keyboardTrue)
+        {
+        // ***tbd
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -598,7 +658,7 @@ static BOOL windowCreate(void)
     UpdateWindow(hWnd);
 
 #define TIMER_ID        1
-#define TIMER_RATE      200
+#define TIMER_RATE      100
 //#define TIMER_RATE      20      // <<<<<<<<<<<< testing
 
     SetTimer(hWnd, TIMER_ID, TIMER_RATE, NULL);
@@ -686,16 +746,19 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         case '8':
         case '9':
             traceMask ^= (1 << (wParam - '0'));
+            traceStop ();
             break;
 
         case 'C':
         case 'c':
             traceMask ^= (1 << 14);
+            traceStop ();
             break;
 
         case 'E':
         case 'e':
             traceMask ^= (1 << 15);
+            traceStop ();
             break;
 
         case 'X':
@@ -707,6 +770,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
             else
                 {
                 traceMask = 0;
+                traceStop ();
                 }
             break;
 
