@@ -1,0 +1,39 @@
+#--------------------------------------------------------------------------
+#
+#   Copyright (c) 2002, Tom Hunter (see license.txt)
+#
+#   Name: Makefile.pterm
+#
+#   Description:
+#       Build X11 version of Desktop Cyber emulation.
+#
+#--------------------------------------------------------------------------
+
+HOST := $(shell uname)
+MACHINE := $(shell uname -m)
+
+LIBS    = -lm -lX11 -lpthread
+MACHINECFLAGS =
+ifeq ("$(MACHINE)","x86_64")
+LDFLAGS = -g2 -L/usr/X11R6/lib64
+MACHINECFLAGS = -DCPU_THREADS
+else
+LDFLAGS = -g2 -L/usr/X11R6/lib
+endif
+ifeq ("$(MACHINE:i%86=i386)","i386")
+ARCHCFLAGS ?= -march=$(MACHINE)
+endif
+INCL    = -I/usr/X11R6/include -I/usr/local/include
+
+SOBJS	= pterm_x11.o ptermcom.o charset.o
+
+pterm:	$(SOBJS) pterm.o
+	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
+
+%.d : %.c
+	echo -n "$@ " > $@
+	$(CC) -MM $< >> $@
+
+include  pterm.d $(SOBJS:.o=.d) 
+
+#---------------------------  End Of File  --------------------------------

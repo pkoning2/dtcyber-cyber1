@@ -9,21 +9,9 @@
 #
 #--------------------------------------------------------------------------
 
-HOST := $(shell uname)
-MACHINE := $(shell uname -m)
+all: dtcyber fonts pterm
 
-LIBS    = -lm -lX11 -lpthread
-MACHINECFLAGS =
-ifeq ("$(MACHINE)","x86_64")
-LDFLAGS = -g2 -L/usr/X11R6/lib64
-MACHINECFLAGS = -DCPU_THREADS
-else
-LDFLAGS = -g2 -L/usr/X11R6/lib
-endif
-ifeq ("$(MACHINE:i%86=i386)","i386")
-MACHINECFLAGS = -march=$(MACHINE)
-endif
-INCL    = -I/usr/X11R6/include -I/usr/local/include
+include Makefile.pterm
 
 ifeq ("$(HOST)","Darwin")
 LIBS    +=  /System/Library/Frameworks/Carbon.framework/Carbon
@@ -37,13 +25,11 @@ endif
 
 CDEBUG = -DCcDebug=1
 
-CFLAGS  = -O2 -g2 -I. $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(EXTRACFLAGS)
+CFLAGS  = -O2 -g2 -I. $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCFLAGS) $(EXTRACFLAGS)
 
 PCFS	= seymour8b.pcf seymour8m.pcf \
 	seymour16b.pcf seymour16m.pcf \
 	seymour32b.pcf seymour32m.pcf
-
-SOBJS	= pterm_x11.o ptermcom.o charset.o
 
 OBJS    = main.o window_x11.o init.o trace.o dump.o \
           device.o channel.o cpu.o pp.o float.o shift.o operator.o \
@@ -52,8 +38,6 @@ OBJS    = main.o window_x11.o init.o trace.o dump.o \
 	  cr3447.o ddp.o niu.o lp3000.o cp3446.o \
 	  dc7155.o doelz.o \
 	  $(SOBJS)
-
-all: dtcyber fonts pterm
 
 fonts: $(PCFS)
 
@@ -84,11 +68,8 @@ dtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
 
 clean:
-	rm -f *.o *.pcf dtcyber
+	rm -f *.d *.o *.pcf dtcyber
 endif
-
-pterm:	$(SOBJS) pterm.o
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS)
 
 buildall: clean all
 
@@ -104,6 +85,6 @@ dep:	pterm.d $(SOBJS:.o=.d) $(OBJS:.o=.d)
 	echo -n "$@ " > $@
 	$(CC) -MM $< >> $@
 
-include  pterm.d $(SOBJS:.o=.d) $(OBJS:.o=.d)
+include  $(OBJS:.o=.d)
 
 #---------------------------  End Of File  --------------------------------
