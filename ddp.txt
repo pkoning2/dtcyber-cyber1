@@ -1,0 +1,28 @@
+DDP function codes
+
+5001	     read ecs
+5002	     write ecs
+5004	     select status
+5010	     master clear port
+
+Read and write start by writing 2 words to the DDP, which
+is the ECS address to access.  This is followed by an IAM 
+or OAM of the desired word count (multiple of 5, of course).
+If things went well, the I/O instruction terminates with A=0
+and the channel still active.
+
+If address bit 22 is set, for a read, that's "one reference" 
+(one CM word?).
+
+If address bit 23 is set, it's a flag register reference as usual.
+
+If address bit 21 is set, that's "select maintenance mode" (???)
+
+
+Status is one word:
+xxx1	     ECS abort
+xxx2	     ECS accept
+xxx4	     ECS parity error
+xx1x	     ECS write selected
+xx2x	     channel parity error
+xx4x	     6640 parity error
