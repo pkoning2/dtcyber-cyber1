@@ -89,6 +89,9 @@ static void getCharWidths (FontInfo *f, char *s);
 static void windowInput(void);
 static void showDisplay (void);
 static void sum (u16 x);
+#if CcHersheyFont == 1
+static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize);
+#endif
 
 /*
 **  ----------------
@@ -1138,7 +1141,19 @@ static void showDisplay (void)
         else
         {
             str[0] = curr->ch;
+#if CcHersheyFont == 0
             dput (curr->ch, curr->xPos, curr->yPos, currentFontInfo->width);
+#else
+            if (opActive)
+                {
+                dput (curr->ch, curr->xPos, curr->yPos, currentFontInfo->width);
+                }
+            else
+                {
+                windowTextPlot(XADJUST (curr->xPos), YADJUST (curr->yPos),
+                               curr->ch, curr->fontSize);
+                }
+#endif
         }
         curr++;
     }
@@ -1158,5 +1173,206 @@ static void showDisplay (void)
     XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
     XSetForeground (disp, pgc, pfg);
     }
+
+#if CcHersheyFont == 1
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Define Hershey glyphs.
+**
+**------------------------------------------------------------------------*/
+const char * const consoleHersheyGlyphs[64] =
+    {
+#if 1
+    /* 00 = ':' */ "PURPRQSQSPRP RRURVSVSURU",
+    /* 01 = 'A' */ "MWRMNV RRMVV RPSTS",
+    /* 02 = 'B' */ "MWOMOV ROMSMUNUPSQ ROQSQURUUSVOV",
+    /* 03 = 'C' */ "MXVNTMRMPNOPOSPURVTVVU",
+    /* 04 = 'D' */ "MWOMOV ROMRMTNUPUSTURVOV",
+    /* 05 = 'E' */ "MWOMOV ROMUM ROQSQ ROVUV",
+    /* 06 = 'F' */ "MVOMOV ROMUM ROQSQ",
+    /* 07 = 'G' */ "MXVNTMRMPNOPOSPURVTVVUVR RSRVR",
+    /* 10 = 'H' */ "MWOMOV RUMUV ROQUQ",
+    /* 11 = 'I' */ "PTRMRV",
+    /* 12 = 'J' */ "NUSMSTRVPVOTOS",
+    /* 13 = 'K' */ "MWOMOV RUMOS RQQUV",
+    /* 14 = 'L' */ "MVOMOV ROVUV",
+    /* 15 = 'M' */ "LXNMNV RNMRV RVMRV RVMVV",
+    /* 16 = 'N' */ "MWOMOV ROMUV RUMUV",
+    /* 17 = 'O' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM",
+    /* 20 = 'P' */ "MWOMOV ROMSMUNUQSROR",
+    /* 21 = 'Q' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM RSTVW",
+    /* 22 = 'R' */ "MWOMOV ROMSMUNUQSROR RRRUV",
+    /* 23 = 'S' */ "MWUNSMQMONOOPPTRUSUUSVQVOU",
+    /* 24 = 'T' */ "MWRMRV RNMVM",
+    /* 25 = 'U' */ "MXOMOSPURVSVUUVSVM",
+    /* 26 = 'V' */ "MWNMRV RVMRV",
+    /* 27 = 'W' */ "LXNMPV RRMPV RRMTV RVMTV",
+    /* 30 = 'X' */ "MWOMUV RUMOV",
+    /* 31 = 'Y' */ "MWNMRQRV RVMRQ",
+    /* 32 = 'Z' */ "MWUMOV ROMUM ROVUV",
+    /* 33 = '0' */ "MWRMPNOPOSPURVTUUSUPTNRM",
+    /* 34 = '1' */ "MWPORMRV",
+    /* 35 = '2' */ "MWONQMSMUNUPTROVUV",
+    /* 36 = '3' */ "MWONQMSMUNUPSQ RRQSQURUUSVQVOU",
+    /* 37 = '4' */ "MWSMSV RSMNSVS",
+    /* 40 = '5' */ "MWPMOQQPRPTQUSTURVQVOU RPMTM",
+    /* 41 = '6' */ "MWTMRMPNOPOSPURVTUUSTQRPPQOS",
+    /* 42 = '7' */ "MWUMQV ROMUM",
+    /* 43 = '8' */ "MWQMONOPQQSQUPUNSMQM RQQOROUQVSVUUURSQ",
+    /* 44 = '9' */ "MWUPTRRSPROPPNRMTNUPUSTURVPV",
+    /* 45 = '+' */ "LXRNRV RNRVR",
+    /* 46 = '-' */ "LXNRVR",
+    /* 47 = '*' */ "MWRORU ROPUT RUPOT",
+    /* 50 = '/' */ "MWVLNX",
+    /* 51 = '(' */ "OUTKRNQQQSRVTY",
+    /* 52 = ')' */ "OUPKRNSQSSRVPY",
+    /* 53 = '$' */ "MWRKRX RUNSMQMONOPQQTRUSUUSVQVOU",
+    /* 54 = '=' */ "LXNPVP RNTVT",
+    /* 55 = ' ' */ "",
+    /* 56 = ',' */ "PUSVRVRUSUSWRY",
+    /* 57 = '.' */ "PURURVSVSURU",
+    /* 60 = '#' */ "MXQLQY RTLTY ROQVQ ROTVT",
+    /* 61 = '[' */ "",
+    /* 62 = ']' */ "",
+    /* 63 = '%' */ "",
+    /* 64 = '"' */ "NVPMPQ RTMTQ",
+    /* 65 = '_' */ "",
+    /* 66 = '!' */ "PURMRR RSMSR RRURVSVSURU",
+    /* 67 = '&' */ "LXVRURTSSURVOVNUNSORRQSPSNRMPMONOPQSSUUVVV",
+    /* 70 = ''' */ "PTRMRQ",
+    /* 71 = '?' */ "NWPNRMSMUNUPRQRRSRSQUP RRURVSVSURU",
+    /* 72 = '<' */ "",
+    /* 73 = '>' */ "",
+    /* 74 = '@' */ "",
+    /* 75 = '\' */ "",
+    /* 76 = '^' */ "",
+    /* 77 = ';' */ "PURPRQSQSPRP RSVRVRUSUSWRY",
+#else
+    /* 00 = ' ' */ "",
+    /* 01 = 'A' */ "MWRMNV RRMVV RPSTS",
+    /* 02 = 'B' */ "MWOMOV ROMSMUNUPSQ ROQSQURUUSVOV",
+    /* 03 = 'C' */ "MXVNTMRMPNOPOSPURVTVVU",
+    /* 04 = 'D' */ "MWOMOV ROMRMTNUPUSTURVOV",
+    /* 05 = 'E' */ "MWOMOV ROMUM ROQSQ ROVUV",
+    /* 06 = 'F' */ "MVOMOV ROMUM ROQSQ",
+    /* 07 = 'G' */ "MXVNTMRMPNOPOSPURVTVVUVR RSRVR",
+    /* 10 = 'H' */ "MWOMOV RUMUV ROQUQ",
+    /* 11 = 'I' */ "PTRMRV",
+    /* 12 = 'J' */ "NUSMSTRVPVOTOS",
+    /* 13 = 'K' */ "MWOMOV RUMOS RQQUV",
+    /* 14 = 'L' */ "MVOMOV ROVUV",
+    /* 15 = 'M' */ "LXNMNV RNMRV RVMRV RVMVV",
+    /* 16 = 'N' */ "MWOMOV ROMUV RUMUV",
+    /* 17 = 'O' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM",
+    /* 20 = 'P' */ "MWOMOV ROMSMUNUQSROR",
+    /* 21 = 'Q' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM RSTVW",
+    /* 22 = 'R' */ "MWOMOV ROMSMUNUQSROR RRRUV",
+    /* 23 = 'S' */ "MWUNSMQMONOOPPTRUSUUSVQVOU",
+    /* 24 = 'T' */ "MWRMRV RNMVM",
+    /* 25 = 'U' */ "MXOMOSPURVSVUUVSVM",
+    /* 26 = 'V' */ "MWNMRV RVMRV",
+    /* 27 = 'W' */ "LXNMPV RRMPV RRMTV RVMTV",
+    /* 30 = 'X' */ "MWOMUV RUMOV",
+    /* 31 = 'Y' */ "MWNMRQRV RVMRQ",
+    /* 32 = 'Z' */ "MWUMOV ROMUM ROVUV",
+    /* 33 = '0' */ "MWRMPNOPOSPURVTUUSUPTNRM",
+    /* 34 = '1' */ "MWPORMRV",
+    /* 35 = '2' */ "MWONQMSMUNUPTROVUV",
+    /* 36 = '3' */ "MWONQMSMUNUPSQ RRQSQURUUSVQVOU",
+    /* 37 = '4' */ "MWSMSV RSMNSVS",
+    /* 40 = '5' */ "MWPMOQQPRPTQUSTURVQVOU RPMTM",
+    /* 41 = '6' */ "MWTMRMPNOPOSPURVTUUSTQRPPQOS",
+    /* 42 = '7' */ "MWUMQV ROMUM",
+    /* 43 = '8' */ "MWQMONOPQQSQUPUNSMQM RQQOROUQVSVUUURSQ",
+    /* 44 = '9' */ "MWUPTRRSPROPPNRMTNUPUSTURVPV",
+    /* 45 = '+' */ "LXRNRV RNRVR",
+    /* 46 = '-' */ "LXNRVR",
+    /* 47 = '*' */ "MWRORU ROPUT RUPOT",
+    /* 50 = '/' */ "MWVLNX",
+    /* 51 = '(' */ "OUTKRNQQQSRVTY",
+    /* 52 = ')' */ "OUPKRNSQSSRVPY",
+    /* 53 = ' ' */ "",
+    /* 54 = '=' */ "LXNPVP RNTVT",
+    /* 55 = ' ' */ "",
+    /* 56 = ',' */ "PUSVRVRUSUSWRY",
+    /* 57 = '.' */ "PURURVSVSURU",
+    /* 60 = ' ' */ "",
+    /* 61 = ' ' */ "",
+    /* 62 = ' ' */ "",
+    /* 63 = ' ' */ "",
+    /* 64 = ' ' */ "",
+    /* 65 = ' ' */ "",
+    /* 66 = ' ' */ "",
+    /* 67 = ' ' */ "",
+    /* 70 = ' ' */ "",
+    /* 71 = ' ' */ "",
+    /* 72 = ' ' */ "",
+    /* 73 = ' ' */ "",
+    /* 74 = ' ' */ "",
+    /* 75 = ' ' */ "",
+    /* 76 = ' ' */ "",
+    /* 77 = ' ' */ "",
+#endif
+    };
+
+#define HersheyMaxSegments 45
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Plot a character using the Hershey glyphs.
+**
+**  Parameters:     Name        Description.
+**                  hWnd        window handle.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize)
+    {
+    XPoint linesVec[HersheyMaxSegments];
+    int segnum = 0;
+    const unsigned char *glyph;
+    int x, y;
+    int charSize = fontSize / 8;
+    
+    xPos += 8;
+    glyph = (const unsigned char *)(consoleHersheyGlyphs[ch]);
+
+    if (*glyph != '\0') /* nonempty glyph */
+        {
+        glyph += 2;
+
+        while (*glyph)
+            {
+            x = (int)glyph[0];
+
+            if (x == (int)' ')
+                {
+                if (segnum != 0)
+                    {
+                    XDrawLines (disp, pixmap, pgc, linesVec,
+                                segnum, CoordModeOrigin);
+                    segnum = 0;
+                    }
+                }
+            else
+                {
+                x = charSize * (x - (int)'R') + xPos;
+                y = charSize * ((int)glyph[1] - (int)'R') + yPos;
+                linesVec[segnum].x = x;
+                linesVec[segnum].y = y;
+                segnum++;
+                }
+
+            glyph += 2; /* on to next pair */
+            }
+        if (segnum != 0)
+            {
+            XDrawLines (disp, pixmap, pgc, linesVec,
+                        segnum, CoordModeOrigin);
+            }
+        }
+    }
+
+#endif
 
 /*---------------------------  End Of File  ------------------------------*/
