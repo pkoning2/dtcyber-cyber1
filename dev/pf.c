@@ -1138,7 +1138,7 @@ void pfread (int argc, char **argv)
     cw pfnw;
     int entry, ep;
     u64 fiw, blkinfo;
-    int startblk, blks, type, blen, cblks;
+    int startblk, blks, type, blen, cblks, fblk;
     FILE *outf;
     int wild;
     
@@ -1227,12 +1227,13 @@ void pfread (int argc, char **argv)
                     cblks = 0;
                     if (!sourceonly)
                         printinfo (outf);
-                    for (b = 0; b < blks; b++)
+                    for (b = 1; b < blks; b++)
                     {
                         get60 (blkinfo, lh->binfo[b]);
                         blen = (blkinfo >> 9) & 0777;
                         type = (blkinfo >> 54) & 037;
-
+                        fblk = blkinfo & 0777;
+                        
                         // Skip empty blocks
                         if (blen == 0)
                             continue;
@@ -1245,7 +1246,7 @@ void pfread (int argc, char **argv)
                         }
                         else
                             printblabel (outf, b, false);
-                        readblk (b + startblk, blkbuf);
+                        readblk (fblk + startblk, blkbuf);
                         if (type == 0 || type == 9)
                             printblk (outf, blen);
                         else
