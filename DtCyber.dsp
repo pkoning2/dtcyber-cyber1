@@ -115,6 +115,10 @@ SOURCE=.\cr405.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\dc7155.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\dcc6681.c
 # End Source File
 # Begin Source File
@@ -136,6 +140,10 @@ SOURCE=.\deadstart.c
 # Begin Source File
 
 SOURCE=.\device.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\doelz.c
 # End Source File
 # Begin Source File
 
@@ -249,6 +257,10 @@ SOURCE=.\types.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
+SOURCE=.\bitmap2.bmp
+# End Source File
+# Begin Source File
+
 SOURCE=.\console.ICO
 # End Source File
 # Begin Source File
@@ -262,11 +274,22 @@ SOURCE=.\small.ico
 # Begin Source File
 
 SOURCE=.\window.rc
+
+!IF  "$(CFG)" == "DtCyber - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "DtCyber - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # End Group
 # Begin Group "Other Files"
 
 # PROP Default_Filter "*.ini"
+# Begin Source File
+
+SOURCE=.\cyber.ini
+# End Source File
 # Begin Source File
 
 SOURCE=.\Makefile
