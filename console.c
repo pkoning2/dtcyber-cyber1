@@ -867,22 +867,85 @@ static int consoleInput (NetPort *np)
     switch (buf & 0300)
         {
     case Dd60KeyDown:
-        if (buf == Dd60KeyXoff)
-            {
-            mp->stopped = TRUE;
-            }
-        else if (buf == Dd60KeyXon)
-            {
-            mp->stopped = FALSE;
-            mp->sendNow = TRUE;     /* Send new data ASAP */
-            }
-        else
+        if (buf <= 062)
             {
             consoleQueueKey (buf);
             }
+        else
+            {
+            switch (buf)
+                {
+            case  Dd60KeyXoff:
+                mp->stopped = TRUE;
+                break;
+            case Dd60KeyXon:
+                mp->stopped = FALSE;
+                mp->sendNow = TRUE;     /* Send new data ASAP */
+                break;
+#if CcDebug == 1
+            case Dd60TraceCp0:
+                if (opDebugging)
+                    {
+                    traceMask ^= TraceCpu0;
+                    debugDisplay |= (traceMask != 0);
+                    traceStop ();
+                    }
+                break;
+            case Dd60TraceCp1:
+                if (opDebugging)
+                    {
+                    traceMask ^= TraceCpu1;
+                    debugDisplay |= (traceMask != 0);
+                    traceStop ();
+                    }
+                break;
+            case Dd60TraceEcs:
+                if (opDebugging)
+                    {
+                    traceMask ^= TraceEcs;
+                    debugDisplay |= (traceMask != 0);
+                    traceStop ();
+                    }
+                break;
+            case Dd60TraceXj:
+                if (opDebugging)
+                    {
+                    traceMask ^= TraceXj;
+                    debugDisplay |= (traceMask != 0);
+                    traceStop ();
+                    }
+                break;
+            case Dd60TraceAll:
+                if (opDebugging && traceMask == 0 && chTraceMask == 0)
+                    {
+                    traceMask = ~0;
+                    debugDisplay = TRUE;
+                    }
+                else
+                    {
+                    traceMask = 0;
+                    chTraceMask = 0;
+                    traceStop ();
+                    }
+                break;
+                }
+#endif
+            }
         break;
     case Dd60KeyUp:
-        consoleQueueKey ((buf & 077) | 0200);
+        if ((buf & 077) <= 062)
+            {
+            consoleQueueKey ((buf & 077) | 0200);
+            }
+#if CcDebug == 1
+        else if (opDebugging && buf >= Dd60TracePp0 && buf <= Dd60TracePp0 + 011)
+            {
+            /* PPU trace toggle */
+            traceMask ^= (1 << (buf - Dd60TracePp0));
+            debugDisplay |= (traceMask != 0);
+            traceStop ();
+            }
+#endif
         break;
     case Dd60FastRate:
         mp->interval = (buf & 077) * 20000;

@@ -332,7 +332,6 @@ void windowInit(void)
     **  Create mappings of some ALT-key combinations to strings.
     */
     modList[0] = XK_Meta_L;
-#if 0
     XRebindKeysym(disp, '0', modList, 1, "$0", 2);
     XRebindKeysym(disp, '1', modList, 1, "$1", 2);
     XRebindKeysym(disp, '2', modList, 1, "$2", 2);
@@ -351,7 +350,6 @@ void windowInit(void)
     XRebindKeysym(disp, 'J', modList, 1, "$j", 2);
     XRebindKeysym(disp, 'x', modList, 1, "$x", 2);
     XRebindKeysym(disp, 'X', modList, 1, "$x", 2);
-#endif
     XRebindKeysym(disp, 'q', modList, 1, "$q", 2);
     XRebindKeysym(disp, 'Q', modList, 1, "$q", 2);
     XRebindKeysym(disp, 's', modList, 1, "$s", 2);
@@ -480,7 +478,6 @@ int windowInput(void)
                 {
                 switch (text[1])
                     {
-#if 0
                 case '0':
                 case '1':
                 case '2':
@@ -491,49 +488,17 @@ int windowInput(void)
                 case '7':
                 case '8':
                 case '9':
-                    traceMask ^= (1 << (text[1] - '0'));
-                    debugDisplay |= (traceMask != 0);
-                    traceStop ();
-                    break;
-
+                    return Dd60TracePp0 + (text[1] - '0');
                 case 'c':
-                    traceMask ^= TraceCpu0;
-                    debugDisplay |= (traceMask != 0);
-                    traceStop ();
-                    break;
-
+                    return Dd60TraceCp0;
                 case 'C':
-                    traceMask ^= TraceCpu1;
-                    debugDisplay |= (traceMask != 0);
-                    traceStop ();
-                    break;
-
+                    return Dd60TraceCp1;
                 case 'e':
-                    traceMask ^= TraceEcs;
-                    debugDisplay |= (traceMask != 0);
-                    traceStop ();
-                    break;
-
+                    return Dd60TraceEcs;
                 case 'j':
-                    traceMask ^= TraceXj;
-                    debugDisplay |= (traceMask != 0);
-                    traceStop ();
-                    break;
-
+                    return Dd60TraceXj;
                 case 'x':
-                    if (traceMask == 0 && chTraceMask == 0)
-                        {
-                        traceMask = ~0;
-                        debugDisplay = TRUE;
-                        }
-                    else
-                        {
-                        traceMask = 0;
-                        chTraceMask = 0;
-                        traceStop ();
-                        }
-                    break;
-#endif
+                    return Dd60TraceAll;
                 case 'q':
                     return Dd60KeyXon;
                 case 's':

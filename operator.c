@@ -122,6 +122,7 @@ static void opResetTrace(char *cmdParams);
 long opPort;
 long opConns;
 bool debugDisplay = FALSE;
+bool opDebugging = FALSE;
 
 /*
 **  -----------------
@@ -262,7 +263,6 @@ static StatusData *statusLines[StatusLineMax];
 static StatusData statusSys;
 static int opActiveConns;
 static bool opLocked = TRUE;
-static bool opDebugging = FALSE;
 
 /*
 **--------------------------------------------------------------------------
@@ -704,7 +704,7 @@ static void opDumpCMem(char *cmdParams)
         opSetMsg ("$INVALID ADDRESS.");
         return;
         }
-    dumpCpuMem (NULL, start, end);
+    dumpCpuMem (NULL, start, end, 0);
     opSetMsg ("COMPLETED.");
     }
 

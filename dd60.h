@@ -54,9 +54,17 @@
 
 /*
 **  Special actions encoded as keycodes outside the normal keyboard range
+**  (063-077) and KeyDown or KeyUp for up to 26 special codes.
 */
-#define Dd60KeyXon      070         /* start display */
-#define Dd60KeyXoff     071         /* stop display */
+#define Dd60TraceCp0    0063        /* toggle CPU0 trace */
+#define Dd60TraceCp1    0064        /* toggle CPU1 trace */
+#define Dd60TraceEcs    0065        /* toggle ECS trace */
+#define Dd60TraceXj     0066        /* toggle XJ trace */
+#define Dd60TraceAll    0067        /* toggle all traces */
+#define Dd60KeyXon      0070        /* start display */
+#define Dd60KeyXoff     0071        /* stop display */
+#define Dd60TracePp0    0163        /* toggle PP0 trace */
+/*      ... through     0174        /* toggle PP11 trace */
 
 /*
 **  Screen related definitions

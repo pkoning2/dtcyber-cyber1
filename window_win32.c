@@ -781,7 +781,6 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
     case WM_SYSCHAR:
         switch (wParam)
             {
-#if 0
         case '0':
         case '1':
         case '2':
@@ -792,52 +791,20 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         case '7':
         case '8':
         case '9':
-            traceMask ^= (1 << (wParam - '0'));
-            debugDisplay |= (traceMask != 0);
-            traceStop ();
-            break;
-
+            return Dd60TracePp0 + (wParam - '0');
         case 'c':
-            traceMask ^= TraceCpu0;
-            debugDisplay |= (traceMask != 0);
-            traceStop ();
-            break;
-
+            return Dd60TraceCp0;
         case 'C':
-            traceMask ^= TraceCpu1;
-            debugDisplay |= (traceMask != 0);
-            traceStop ();
-            break;
-
+            return Dd60TraceCp1;
         case 'E':
         case 'e':
-            traceMask ^= TraceEcs;
-            debugDisplay |= (traceMask != 0);
-            traceStop ();
-            break;
-
+            return Dd60TraceEcs;
         case 'J':
         case 'j':
-            traceMask ^= TraceXj;
-            debugDisplay |= (traceMask != 0);
-            traceStop ();
-            break;
-
+            return Dd60TraceXj;
         case 'X':
         case 'x':
-            if (traceMask == 0 && chTraceMask == 0)
-                {
-                traceMask = ~0;
-                debugDisplay = TRUE;
-                }
-            else
-                {
-                traceMask = 0;
-                chTraceMask = 0;
-                traceStop ();
-                }
-            break;
-#endif // 0
+            return Dd60TraceAll;
         case 'q':
             return Dd60KeyXon;
 
