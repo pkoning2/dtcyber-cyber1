@@ -126,7 +126,7 @@ static FcStatus lp501Func(PpWord funcCode);
 static void lp501Io(void);
 static void lp501Activate(void);
 static void lp501Disconnect(void);
-static void lp501Load(DevSlot *dp, int unitNo, char *fn);
+static void lp501Load(Dev3kSlot *up, char *fn);
 
 
 /*
@@ -162,37 +162,31 @@ static void lp501Load(DevSlot *dp, int unitNo, char *fn);
 **------------------------------------------------------------------------*/
 void lp501Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     {
-    DevSlot *dp;
+    Dev3kSlot *up;
     char fname[80];
 
     (void)eqNo;
     (void)deviceName;
 
-    dp = channelAttach(channelNo, DtLp501);
+    up = dcc6681Attach(channelNo, unitNo, DtLp501);
 
-    dp->context[unitNo] = calloc(1, sizeof(int));
-    dp->activate = lp501Activate;
-    dp->disconnect = lp501Disconnect;
-    dp->func = lp501Func;
-    dp->io = lp501Io;
-    dp->load = lp501Load;
-    dp->selectedUnit = unitNo;
+    up->context = calloc(1, sizeof(int));
+    up->activate = lp501Activate;
+    up->disconnect = lp501Disconnect;
+    up->func = lp501Func;
+    up->io = lp501Io;
+    up->load = lp501Load;
 
     /*
     **  Open the device file.
     */
     sprintf(fname, "LP501_C%02o_E%o", channelNo, unitNo);
-    dp->fcb[unitNo] = fopen(fname, "w");
-    if (dp->fcb[unitNo] == NULL)
+    up->fcb = fopen(fname, "w");
+    if (up->fcb == NULL)
         {
         fprintf(stderr, "Failed to open %s\n", fname);
         exit(1);
         }
-
-    /*
-    **  Initialise DCC6681 on this channel.
-    */
-    dcc6681Init(channelNo);
 
     /*
     **  Print a friendly message.
@@ -208,7 +202,7 @@ void lp501Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void lp501Load(DevSlot *dp, int unitNo, char *fn)
+static void lp501Load(Dev3kSlot *up, char *fn)
     {
     FILE *fcb;
     time_t currentTime;
@@ -223,32 +217,17 @@ static void lp501Load(DevSlot *dp, int unitNo, char *fn)
         return;
         }
     
-    if (unitNo < 0 || unitNo >= MaxUnits)
-        {
-        opSetMsg ("$INVALID EQUIPMENT NO");
-        return;
-        }
-
-    /*
-    **  Check if the unit is even configured.
-    */
-    if (dp->fcb[unitNo] == NULL)
-        {
-        opSetMsg ("$EQUIPMENT NOT ALLOCATED");
-        return;
-        }
-
     /*
     **  Close the old device file.
     */
-    fflush(dp->fcb[unitNo]);
-    fclose(dp->fcb[unitNo]);
-    dp->fcb[unitNo] = NULL;
+    fflush(up->fcb);
+    fclose(up->fcb);
+    up->fcb = NULL;
 
     /*
     **  Rename the device file to the format "LP501_yyyymmdd_hhmmss".
     */
-    sprintf(fname, "LP501_C%02o_E%o", dp->channel->id, unitNo);
+    sprintf(fname, "LP501_C%02o_E%o", up->conv->channel->id, up->id);
 
     time(&currentTime);
     t = *localtime(&currentTime);
@@ -287,7 +266,7 @@ static void lp501Load(DevSlot *dp, int unitNo, char *fn)
     /*
     **  Setup status.
     */
-    dp->fcb[unitNo] = fcb;
+    up->fcb = fcb;
     sprintf (msgBuf, "LP501 unloaded to %s", fnameNew);
     opSetMsg (msgBuf);
     }
@@ -304,18 +283,7 @@ static void lp501Load(DevSlot *dp, int unitNo, char *fn)
 static FcStatus lp501Func(PpWord funcCode)
     {
     FILE *fcb;
-    FcStatus st;
-
-    /*
-    **  Let the data channel converter have a pass over the function code first.
-    */
-    st = dcc6681Func(funcCode);
-    if (st != FcDeclined)
-        {
-        return(st);
-        }
-
-    fcb = activeDevice->fcb[activeDevice->selectedUnit];
+    fcb = activeUnit->fcb;
 
     /*
     **  Now process the printer function code.
@@ -325,7 +293,7 @@ static FcStatus lp501Func(PpWord funcCode)
     default:
 //        return(FcDeclined);
         printf("Unknown printer function %04o\n", funcCode);
-        return(FcAccepted);
+        return(FcProcessed);
 
     case FcPrintUnknown02:
     case FcPrintUnknown11:
@@ -334,8 +302,8 @@ static FcStatus lp501Func(PpWord funcCode)
     case FcPrintUnknown24:
     case FcPrintUnknown56:
     case FcPrintUnknown66:
-        activeDevice->fcode = funcCode;
-        return(FcAccepted);
+        activeUnit->fcode = funcCode;
+        return(FcProcessed);
 
     case FcPrintSelect:
     case FcPrintSelPrinter:
@@ -382,16 +350,17 @@ static FcStatus lp501Func(PpWord funcCode)
 
     case FcControllerOutputEna:
         fprintf(fcb, "\n");
-        break;
+        activeUnit->fcode = funcCode;
+        return(FcAccepted);
 
     case FcPrintStatusReq:
     case FcPrintReturnStatus:
     case Fc6681DevStatusReq:
-        break;
+        activeUnit->fcode = funcCode;
+        return(FcAccepted);
         }
         
-    activeDevice->fcode = funcCode;
-    return(FcAccepted);
+    return(FcProcessed);
     }
 
 /*--------------------------------------------------------------------------
@@ -404,20 +373,12 @@ static FcStatus lp501Func(PpWord funcCode)
 **------------------------------------------------------------------------*/
 static void lp501Io(void)
     {
-    FILE *fcb = activeDevice->fcb[activeDevice->selectedUnit];
+    FILE *fcb = activeUnit->fcb;
 
-    /*
-    **  Process any data channel converter I/O.
-    */
-    if (dcc6681Io())
-        {
-        return;
-        }
-    
     /*
     **  Process printer I/O.
     */
-    switch (activeDevice->fcode)
+    switch (activeUnit->fcode)
         {
     default:
         activeChannel->full = FALSE;
@@ -433,38 +394,12 @@ static void lp501Io(void)
         activeChannel->full = FALSE;
         break;
 
-    case FcPrintSelect:
-    case FcPrintSelPrinter:
-    case FcPrintAdvancePaper:
-    case FcPrintAdvance:
-    case FcPrintMoveChannel7:
-    case FcPrintAdvanceToLine:
-    case FcPrintMoveTOF:
-    case FcPrintEject:
-    case FcPrintAutoTOF:
-    case FcPrintEndOfData:
-    case FcPrintDone:
-    case FcPrintSelectVFUChan1:
-    case FcPrintSelVFUChan1:
-    case FcPrintSelectVFUChan2:
-    case FcPrintSelVFUChan2:
-    case FcPrintSelectVFUChan3:
-    case FcPrintSelVFUChan3:
-    case FcPrintSelectVFUChan4:
-    case FcPrintSelVFUChan4:
-    case FcPrintSelectVFUChan5:
-    case FcPrintSelVFUChan5:
-    case FcPrintSelectVFUChan6:
-    case FcPrintSelVFUChan6:
-        activeChannel->full = FALSE;
-        break;
-
     case FcPrintStatusReq:
     case FcPrintReturnStatus:
     case Fc6681DevStatusReq:
         activeChannel->data = StPrintReady;
         activeChannel->full = TRUE;
-        activeDevice->fcode = 0;
+        activeUnit->fcode = 0;
         break;
         }
     }

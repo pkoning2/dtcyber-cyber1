@@ -108,6 +108,7 @@ typedef struct decCpControl
 **  Private Function Prototypes
 **  ---------------------------
 */
+static bool ppuTraced (void);
 
 /*
 **  ----------------
@@ -116,6 +117,7 @@ typedef struct decCpControl
 */
 u16 traceMask = 0;
 u16 traceClearMask = 0;
+u16 chTraceMask = 0;
 FILE *devF;
 FILE *cpuTF;
 FILE **ppuTF;
@@ -729,7 +731,8 @@ void traceSequence(void)
     /*
     **  Bail out if no trace of this PPU is requested.
     */
-    if ((traceMask & (1 << activePpu->id)) == 0)
+    activePpu->traceLine = ppuTraced();
+    if (!activePpu->traceLine)
         {
         return;
         }
@@ -753,7 +756,7 @@ void traceRegisters(void)
     /*
     **  Bail out if no trace of this PPU is requested.
     */
-    if ((traceMask & (1 << activePpu->id)) == 0)
+    if (!activePpu->traceLine)
         {
         return;
         }
@@ -784,7 +787,7 @@ void traceOpcode(void)
     /*
     **  Bail out if no trace of this PPU is requested.
     */
-    if ((traceMask & (1 << activePpu->id)) == 0)
+    if (!activePpu->traceLine)
         {
         return;
         }
@@ -950,7 +953,7 @@ void traceChannel(u8 ch)
     /*
     **  Bail out if no trace of this PPU is requested.
     */
-    if ((traceMask & (1 << activePpu->id)) == 0)
+    if (!activePpu->traceLine)
         {
         return;
         }
@@ -972,6 +975,8 @@ void traceCM(u32 start, u32 len)
     {
     /*
     **  Bail out if no trace of this PPU is requested.
+    **  This one only tests the PPU trace mask because it 
+    **  cannot apply in the case of an I/O instruction.
     */
     if ((traceMask & (1 << activePpu->id)) == 0)
         {
@@ -994,15 +999,18 @@ void tracePM(void)
     /*
     **  Bail out if no trace of this PPU is requested.
     */
-    if ((traceMask & (1 << activePpu->id)) == 0)
+    if (!activePpu->traceLine)
         {
         return;
         }
 
-    dumpPpuMem (ppuTF[activePpu->id],
-                activePpu->id,
-                activePpu->ppMemStart, 
-                activePpu->ppMemStart + activePpu->ppMemLen);
+    if (activePpu->ppMemLen > 0)
+        {
+        dumpPpuMem (ppuTF[activePpu->id],
+                    activePpu->id,
+                    activePpu->ppMemStart, 
+                    activePpu->ppMemStart + activePpu->ppMemLen);
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -1018,7 +1026,7 @@ void traceEnd(void)
     /*
     **  Bail out if no trace of this PPU is requested.
     */
-    if ((traceMask & (1 << activePpu->id)) == 0)
+    if (!activePpu->traceLine)
         {
         return;
         }
@@ -1036,6 +1044,52 @@ void traceEnd(void)
         {
         traceMask &= ~(1 << activePpu->id);
         }
+    }
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Private Functions
+**
+**--------------------------------------------------------------------------
+*/
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Test if we want to trace the current PPU
+**
+**  Parameters:     Name        Description.
+**                  None.
+**
+**  Returns:        TRUE if yes
+**
+**------------------------------------------------------------------------*/
+static bool ppuTraced(void)
+    {
+    PpWord opCode;
+    u8 id = activePpu->id;
+    u8 opF, opD;
+    
+    // If the PPU is traced, the answer is yes
+    if (traceMask & (1 << id))
+        {
+        return TRUE;
+        }
+
+    // Otherwise, see if the next instruction is an I/O instruction
+    // and references a channel that's being traced.
+    // Note that we don't trace ACN/DCN and the status test branches.
+    opCode = activePpu->mem[activePpu->regP];
+    opF = opCode >> 6;
+    opD = opCode & 077;
+    if ((opF >= 070 && opF <= 073) ||       // IAN, IAM, OAN, OAM
+        (opF >= 076))                       // FAN, FNC
+        {
+        if (chTraceMask & (1 << opD))
+            {
+            return TRUE;
+            }
+        }
+    return FALSE;
     }
 
 /*---------------------------  End Of File  ------------------------------*/

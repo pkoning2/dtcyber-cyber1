@@ -32,6 +32,9 @@
 **  -----------------
 */
 #define ListSize            5000
+#define KeyBufSize			50	// MUST be even
+#define DisplayBufSize		64
+#define DisplayMargin		20
 #define FontName            "Lucida Console"
 #if CcLargeWin32Screen == 1
 #define FontSmallHeight     15
@@ -53,6 +56,12 @@
 **  -----------------------
 */
 
+#define XADJUST(x) ((x) * ScaleX / 10 + DisplayMargin)
+#define YADJUST(y) ((y) + ScaleY / 10 + DisplayMargin)
+
+#define DefWinWidth			(XADJUST (02020) + DisplayMargin)
+#define DefWinHeight		(YADJUST (512) + DisplayMargin)
+
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
@@ -66,6 +75,13 @@ typedef struct dispList
     char            ch;             /* character to be displayed */
     } DispList;
 
+typedef struct fontInfo
+    {
+    HFONT           normalId;       /* horizontal position */
+    HFONT           boldId;         /* size of font */
+    int             width;          /* character width in pixels */
+    } FontInfo;
+
 /*
 **  ---------------------------
 **  Private Function Prototypes
@@ -75,7 +91,11 @@ static void windowThread(void);
 ATOM windowRegisterClass(HINSTANCE hInstance);
 BOOL windowCreate(void);
 LRESULT CALLBACK windowProcedure(HWND, UINT, WPARAM, LPARAM);
-void windowDisplay(HWND hWnd);
+static void windowDisplay(HWND hWnd);
+static void initFont (int size, FontInfo *fi);
+static void freeFont (FontInfo *fi);
+static void dput (HDC hdcMem, char c, int x, int y, int dx);
+static void dflush (HDC hdcMem, int dx);
 
 /*
 **  ----------------
@@ -89,14 +109,20 @@ void windowDisplay(HWND hWnd);
 **  -----------------
 */
 static u8 currentFont;
+static FontInfo *currentFontInfo;
 static i16 currentX = -1;
 static i16 currentY = -1;
 static DispList display[ListSize];
-static u32 listEnd;
+static int listGet, listPut, prevPut, listPutAtGetChar;
+static char keybuf[KeyBufSize];
+static u32 keyListPut, keyListGet;
+static char dchars[DisplayBufSize];
+static u8 dhits[DisplayBufSize];
+static int dcnt, xpos, xstart, ypos;
 static HWND hWnd;
-static HFONT hSmallFont=0;
-static HFONT hMediumFont=0;
-static HFONT hLargeFont=0;
+static FontInfo smallFont;
+static FontInfo mediumFont;
+static FontInfo largeFont;
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Create WIN32 thread which will deal with all windows
@@ -115,7 +141,8 @@ void windowInit(void)
     /*
     **  Create display list pool.
     */
-    listEnd = 0;
+    listGet = listPut = 0;
+    listPutAtGetChar = -1;
 
     /*
     **  Create windowing thread.
@@ -190,9 +217,9 @@ void windowSetY(u16 y)
 void windowQueue(char ch)
     {
     DispList *elem;
+    int nextput;
 
-    if (   listEnd  >= ListSize
-        || currentX == -1
+    if (   currentX == -1
         || currentY == -1)
         {
         return;
@@ -200,14 +227,34 @@ void windowQueue(char ch)
 
     if (ch != 0)
         {
-        elem = display + listEnd++;
-        elem->ch = ch;
-        elem->fontSize = currentFont;
-        elem->xPos = currentX;
-        elem->yPos = currentY;
+        nextput = listPut + 1;
+        if (nextput == ListSize)
+            nextput = 0;
+        if (nextput != listGet)
+			{
+			elem = display + listPut;
+			listPut = nextput;
+			elem->ch = ch;
+			elem->fontSize = currentFont;
+			elem->xPos = currentX;
+			elem->yPos = currentY;
+			}
         }
 
     currentX += currentFont;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Check whether it's time to do output
+**
+**  Parameters:     Name        Description.
+**                  None.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void windowCheckOutput(void)
+    {
     }
 
 /*--------------------------------------------------------------------------
@@ -220,7 +267,7 @@ void windowQueue(char ch)
 **------------------------------------------------------------------------*/
 void windowUpdate(void)
     {
-    }
+	}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Poll the keyboard (dummy for X11)
@@ -232,6 +279,20 @@ void windowUpdate(void)
 **------------------------------------------------------------------------*/
 void windowGetChar(void)
     {
+    int nextget;
+
+    // We treat a keyboard poll as the end of a display refresh cycle.
+    listPutAtGetChar = listPut;
+    windowCheckOutput();
+    
+    if (keyListGet == keyListPut)
+	return;
+
+    nextget = keyListGet + 1;
+    if (nextget == KeyBufSize)
+	nextget = 0;
+    ppKeyIn = keybuf[keyListGet];
+    keyListGet = nextget;
     }
 
 /*--------------------------------------------------------------------------
@@ -254,6 +315,165 @@ void windowClose(void)
 **
 **--------------------------------------------------------------------------
 */
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Flush pending characters to the bitmap.
+**
+**  Parameters:     Name        Description.
+**					hdcMem		bitmap context
+**					dx			current font size
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void dflush (HDC hdcMem, int dx)
+    {
+	int i;
+	int x, y;
+	bool bold = FALSE;
+	char str[2];
+
+	str[1] = '\0';
+	x = XADJUST (xstart);
+	y = YADJUST (ypos);
+	SelectObject(hdcMem, currentFontInfo->normalId);
+	for (i = 0; i < dcnt; i++)
+		{
+		if (dhits[i] >= dx / 2)
+			{
+			if (!bold)
+				{
+                SelectObject(hdcMem, currentFontInfo->boldId);
+				bold = TRUE;
+				}
+			}
+		else
+			{
+			if (bold)
+				{
+                SelectObject(hdcMem, currentFontInfo->normalId);
+				bold = FALSE;
+				}
+			}
+		str[0] = dchars[i];
+	    TextOut(hdcMem, x, y, str, 1);
+		x += dx;
+		}
+    dcnt = 0;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Put a character to the display, buffering a line
+**					at a time so we can do bold handling etc.
+**
+**  Parameters:     Name        Description.
+**					hdcMem		bitmap context
+**					c			character (ASCII)
+**					x			x position
+**					y			y position
+**					dx			current font size
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void dput (HDC hdcMem, char c, int x, int y, int dx)
+    {
+    int dindx = (x - xstart) / dx;
+    
+    // Count hits on this position (for intensify)
+    if (y == ypos &&
+        x < xpos && x >= xstart &&
+            dindx * dx == x - xstart &&
+            dchars[dindx] == c)
+        {
+        ++dhits[dindx];
+        return;
+        }
+    if (dcnt == DisplayBufSize ||
+        y != ypos ||
+        x < xpos || 
+        dindx >= DisplayBufSize ||
+        dindx * dx != x - xstart)
+        {
+        dflush (hdcMem, dx);
+        xpos = xstart = x;
+        ypos = y;
+        }
+    /*
+    ** If we're skipping to a spot further down this line,
+    ** space fill the range in between.
+    */
+    for ( ; xpos < x; xpos += dx)
+        {
+        dhits[dcnt] = 1;
+        dchars[dcnt++] = ' ';
+        }
+    
+    dhits[dcnt] = 1;
+    dchars[dcnt++] = c;
+    xpos += dx;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Initialize a FontInfo struct.
+**
+**  Parameters:     Name        Description.
+**					size		pointsize of font
+**					fi			pointer to FontInfo struct to fill in
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void initFont (int size, FontInfo *fi)
+{
+    LOGFONT lfTmp;
+	
+ 	memset(&lfTmp, 0, sizeof(lfTmp));
+	lfTmp.lfPitchAndFamily = FIXED_PITCH;
+	strcpy(lfTmp.lfFaceName, FontName);
+	lfTmp.lfWeight = FW_THIN;
+	lfTmp.lfOutPrecision = OUT_TT_PRECIS;
+	lfTmp.lfHeight = size;
+	fi->normalId = CreateFontIndirect (&lfTmp);
+	if (!fi->normalId)
+	{
+		MessageBox (GetFocus(),
+			"Unable to get regular font", 
+			"CreateFont Error",
+			MB_OK);
+	}
+ 	memset(&lfTmp, 0, sizeof(lfTmp));
+	lfTmp.lfPitchAndFamily = FIXED_PITCH;
+	strcpy(lfTmp.lfFaceName, FontName);
+	lfTmp.lfWeight = FW_BOLD;
+	lfTmp.lfOutPrecision = OUT_TT_PRECIS;
+	lfTmp.lfHeight = size;
+	fi->boldId = CreateFontIndirect (&lfTmp);
+	if (!fi->boldId)
+	{
+		MessageBox (GetFocus(),
+			"Unable to get regular font", 
+			"CreateFont Error",
+			MB_OK);
+	}
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Free fonts given a FontInfo struct.
+**
+**  Parameters:     Name        Description.
+**					fi			pointer to FontInfo struct to fill in
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void freeFont (FontInfo *fi)
+{
+	if (fi->normalId)
+		DeleteObject(fi->normalId);
+	if (fi->boldId)
+		DeleteObject(fi->boldId);
+}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Windows thread.
@@ -338,9 +558,9 @@ static BOOL windowCreate(void)
         DtCyberVersion,         // window name
         WS_OVERLAPPEDWINDOW,    // window style
         CW_USEDEFAULT,          // horizontal position of window
-        0,                      // vertical position of window
-        CW_USEDEFAULT,          // window width
-        0,                      // window height
+        CW_USEDEFAULT,          // vertical position of window
+        DefWinWidth,            // window width
+        DefWinHeight,           // window height
         NULL,                   // handle to parent or owner window
         NULL,                   // menu handle or child identifier
         0,                      // handle to application instance
@@ -351,7 +571,7 @@ static BOOL windowCreate(void)
         return FALSE;
         }
 
-    ShowWindow(hWnd, SW_SHOWMAXIMIZED);
+    ShowWindow(hWnd, SW_SHOWNORMAL);
     UpdateWindow(hWnd);
 
 #define TIMER_ID        1
@@ -374,8 +594,8 @@ static BOOL windowCreate(void)
 static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     int wmId, wmEvent;
-    LOGFONT lfTmp;
     RECT rt;
+    u32 nextput;
 
     switch (message) 
         {
@@ -402,66 +622,15 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         break;
 
     case WM_CREATE:
-        memset(&lfTmp, 0, sizeof(lfTmp));
-        lfTmp.lfPitchAndFamily = FIXED_PITCH;
-        strcpy(lfTmp.lfFaceName, FontName);
-        lfTmp.lfWeight = FW_THIN;
-        lfTmp.lfOutPrecision = OUT_TT_PRECIS;
-        lfTmp.lfHeight = FontSmallHeight;
-        hSmallFont = CreateFontIndirect (&lfTmp);
-        if (!hSmallFont)
-            {
-            MessageBox (GetFocus(),
-                "Unable to get font in 15 point", 
-                "CreateFont Error",
-                MB_OK);
-            }
-
-        memset(&lfTmp, 0, sizeof(lfTmp));
-        lfTmp.lfPitchAndFamily = FIXED_PITCH;
-        strcpy(lfTmp.lfFaceName, FontName);
-        lfTmp.lfWeight = FW_THIN;
-        lfTmp.lfOutPrecision = OUT_TT_PRECIS;
-        lfTmp.lfHeight = FontMediumHeight;
-        hMediumFont = CreateFontIndirect (&lfTmp);
-        if (!hMediumFont)
-            {
-            MessageBox (GetFocus(),
-                "Unable to get font in 20 point", 
-                "CreateFont Error",
-                MB_OK);
-            }
-
-        memset(&lfTmp, 0, sizeof(lfTmp));
-        lfTmp.lfPitchAndFamily = FIXED_PITCH;
-        strcpy(lfTmp.lfFaceName, FontName);
-        lfTmp.lfWeight = FW_THIN;
-        lfTmp.lfOutPrecision = OUT_TT_PRECIS;
-        lfTmp.lfHeight = FontLargeHeight;
-        hLargeFont = CreateFontIndirect (&lfTmp);
-        if (!hLargeFont)
-            {
-            MessageBox (GetFocus(),
-                "Unable to get font in 30 point", 
-                "CreateFont Error",
-                MB_OK);
-            }
-
+		initFont (FontSmallHeight, &smallFont);
+		initFont (FontMediumHeight, &mediumFont);
+		initFont (FontLargeHeight, &largeFont);
         return DefWindowProc (hWnd, message, wParam, lParam);
 
     case WM_DESTROY:
-        if (hSmallFont)
-            {
-            DeleteObject(hSmallFont);
-            }
-        if (hMediumFont)
-            {
-            DeleteObject(hMediumFont);
-            }
-        if (hLargeFont)
-            {
-            DeleteObject(hLargeFont);
-            }
+        freeFont (&smallFont);
+        freeFont (&mediumFont);
+        freeFont (&largeFont);
         PostQuitMessage(0);
         break;
 
@@ -526,7 +695,20 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         break;
 
     case WM_CHAR:
-        ppKeyIn = wParam;
+		nextput = keyListPut + 2;
+		if (nextput == KeyBufSize)
+			nextput = 0;
+		if (nextput != keyListGet)
+		{
+			keybuf[keyListPut] = wParam;
+			/*
+			** Stick a null after the real character 
+			** to represent "key up" after the key down.
+			** Without this, NOS DSD loses many keystrokes.
+			*/
+			keybuf[keyListPut + 1] = 0;
+			keyListPut = nextput;
+		}
         break;
 
     default:
@@ -562,10 +744,6 @@ void windowDisplay(HWND hWnd)
     HBITMAP hbmMem, hbmOld;
     HFONT hfntOld;
 
-
-//    if (listEnd == 0)
-//        return;
-
     hdc = BeginPaint(hWnd, &ps);
 
     GetClientRect(hWnd, &rect);
@@ -596,7 +774,8 @@ SetBkMode(hdcMem, TRANSPARENT);     // <<<<<<<<<<<< testing
     SetBkColor(hdcMem, RGB(0, 0, 0));
     SetTextColor(hdcMem, RGB(0, 255, 0));
 
-    hfntOld = SelectObject(hdcMem, hSmallFont);
+    currentFontInfo = &smallFont;
+    hfntOld = SelectObject(hdcMem, smallFont.normalId);
     oldFont = FontSmall;
 
 #if CcDebug == 1
@@ -630,50 +809,61 @@ SetBkMode(hdcMem, TRANSPARENT);     // <<<<<<<<<<<< testing
     }
 #endif
 
-    if (opActive)
+	if (listPutAtGetChar >= 0)
+		{
+		prevPut = listPutAtGetChar;
+		}
+	else
+		{
+		prevPut = listPut;
+		}
+    end = display + prevPut;
+    curr = display + listGet;
+    for (;;)
         {
-        static char opMessage[] = "Operator Interface Active";
-        hfntOld = SelectObject(hdcMem, hLargeFont);
-        oldFont = FontLarge;
-        TextOut(hdcMem, (0 * ScaleX) / 10, (256 * ScaleY) / 10, opMessage, strlen(opMessage));
-        }
+        /*
+        **  Check for wrap and done
+        */
+        if (curr == display + ListSize)
+            curr = display;
+        if (curr == end)
+            break;
 
-    curr = display;
-    end = display + listEnd;
-    for (curr = display; curr < end; curr++)
-        {
         if (oldFont != curr->fontSize)
             {
+			dflush (hdcMem, oldFont);
             oldFont = curr->fontSize;
 
             switch (oldFont)
                 {
             case FontSmall:
-                SelectObject(hdcMem, hSmallFont);
+                currentFontInfo = &smallFont;
                 break;
 
             case FontMedium:
-                SelectObject(hdcMem, hMediumFont);
+                currentFontInfo = &mediumFont;
                 break;
     
             case FontLarge:
-                SelectObject(hdcMem, hLargeFont);
+                currentFontInfo = &largeFont;
                 break;
                 }
             }
 
         if (curr->fontSize == FontDot)
             {
-            SetPixel(hdcMem, (curr->xPos * ScaleX) / 10, (curr->yPos * ScaleY) / 10 + 30, RGB(0, 255, 0));
+            SetPixel(hdcMem, XADJUST (curr->xPos), YADJUST (curr->yPos) + 10, RGB(0, 255, 0));
             }
         else
             {
-            str[0] = curr->ch;
-            TextOut(hdcMem, (curr->xPos * ScaleX) / 10, (curr->yPos * ScaleY) / 10 + 20, str, 1);
+			dput (hdcMem, curr->ch, curr->xPos, curr->yPos, oldFont);
             }
+        curr++;
         }
 
-    listEnd = 0;
+    dflush (hdcMem, oldFont);
+    listGet = end - display;
+    listPutAtGetChar = -1;
     currentX = -1;
     currentY = -1;
 

@@ -65,11 +65,7 @@ void cpuPpWriteMem(u32 address, CpWord data);
 /*
 **  dcc6681.c
 */
-void dcc6681Init(u8 channelNo);
-FcStatus dcc6681Func(PpWord funcCode);
-bool dcc6681Io(void);
-void dcc6681SetInt (u8 eqNo);
-void dcc6681ClearInt (u8 eqNo);
+Dev3kSlot *dcc6681Attach(u8 channelNo, u8 unitNo, u8 devType);
 
 /*
 **  mt607.c
@@ -222,6 +218,7 @@ extern const unsigned char bcdToAscii[];
 extern const unsigned char extBcdToAscii[];
 extern u16 traceMask;
 extern u16 traceClearMask;
+extern u16 chTraceMask;
 extern DevDesc deviceDesc[];
 extern u8 deviceCount;
 extern bool bigEndian;
@@ -229,6 +226,7 @@ extern bool opActive;
 extern u16 telnetPort;
 extern u16 telnetConns;
 extern FILE **ppuTF;
+extern Dev3kSlot *activeUnit;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

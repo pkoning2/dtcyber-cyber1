@@ -90,7 +90,7 @@
 
 */
 
-#define CcLargeWin32Screen      1
+#define CcLargeWin32Screen      0
 
 
 
@@ -141,6 +141,10 @@
 #define DtMux6676               12
 
 #define DtCr3447                13
+
+#define DtDdc6681               14
+
+
 
 /*
 

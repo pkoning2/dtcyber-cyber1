@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <errno.h>
+#include <string.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"

@@ -196,18 +196,6 @@ typedef struct devSlot
 
     struct chSlot   *channel;           /* channel this device is attached to */
 
-    u8              devType;            /* attached device type */
-
-    void            *context[MaxUnits]; /* device specific context data */
-
-    PpWord          status;             /* device status */
-
-    PpWord          fcode;              /* device function code */
-
-    i8              selectedUnit;       /* selected unit */
-
-    PpWord          recordLength;       /* length of read record */
-
     FILE            *fcb[MaxUnits];     /* unit data file control block */
 
     FILE            *log[MaxUnits];     /* unit log file control block */
@@ -222,7 +210,63 @@ typedef struct devSlot
 
     void            (*load)(struct devSlot *, int, char *); /* load/unload request handler */
 
+    void            *context[MaxUnits]; /* device specific context data */
+
+    PpWord          status;             /* device status */
+
+    PpWord          fcode;              /* device function code */
+
+    PpWord          recordLength;       /* length of read record */
+
+    u8              devType;            /* attached device type */
+
+    i8              selectedUnit;       /* selected unit */
+
     } DevSlot;                          
+
+                                        
+
+/*
+
+**  3000 series device control block.
+
+*/                                        
+
+typedef struct dev3kSlot                  
+
+    {                                   
+
+    struct devSlot  *conv;              /* converter (6681) this device is attached to */
+
+    void            *context;           /* device specific context data */
+
+    FILE            *fcb;               /* unit data file control block */
+
+    FILE            *log;               /* unit log file control block */
+
+    void            (*activate)(void);  /* channel activation function */        
+
+    void            (*disconnect)(void);/* channel deactivation function */
+
+    FcStatus        (*func)(PpWord);    /* function request handler */
+
+    void            (*io)(void);        /* output request handler */
+
+    void            (*load)(struct dev3kSlot *, char *); /* load/unload request handler */
+
+    PpWord          status;             /* device status */
+
+    PpWord          fcode;              /* device function code */
+
+    PpWord          recordLength;       /* length of read record */
+
+    u8              devType;            /* attached device type */
+
+    u8              id;                 /* unit number */
+
+    bool            intr;               /* interrupt flag */
+
+    } Dev3kSlot;                          
 
                                         
 
@@ -236,6 +280,14 @@ typedef struct chSlot
 
     {                                   
 
+    DevSlot         *firstDevice;       /* linked list of devices attached to this channel */
+
+    DevSlot         *ioDevice;          /* device which deals with current function */
+
+    PpWord          data;               /* channel data */
+
+    PpWord          status;             /* channel status */
+
     u8              id;                 /* channel number */
 
     bool            active;             /* channel active flag */
@@ -243,14 +295,6 @@ typedef struct chSlot
     bool            full;               /* channel full flag */
 
     bool            discAfterInput;     /* disconnect channel after input flag */
-
-    PpWord          data;               /* channel data */
-
-    PpWord          status;             /* channel status */
-
-    DevSlot         *firstDevice;       /* linked list of devices attached to this channel */
-
-    DevSlot         *ioDevice;          /* device which deals with current function */
 
     } ChSlot;                           
 
@@ -266,23 +310,27 @@ typedef struct
 
     {                                   
 
-    u8              id;                 /* PP number */
-
-    bool            stopped;            /* PP stopped */
+    ChSlot          *channel;           /* associated channel (-1 is none) */
 
     u32             regA;               /* Register A (18 bit) */
 
     PpWord          regP;               /* Program counter (12 bit) */
-
-    ChSlot          *channel;           /* associated channel (-1 is none) */
-
-    u8              ioWaitType;         /* Indicates what kind of I/O we wait for */
 
     PpWord          mem[PpMemSize];     /* PP memory */
 
     u16             ppMemStart;         /* Start of IAM/OAM for tracing */
 
     u16             ppMemLen;           /* Length of IAM/OAM for tracing */
+
+    u8              ioWaitType;         /* Indicates what kind of I/O we wait for */
+
+    u8              id;                 /* PP number */
+
+    bool            stopped;            /* PP stopped */
+
+    bool            traceLine;          /* Trace one line for this PP */
+
+    bool            ioFlag;             /* Last instruction was an I/O */
 
     } PpSlot;                           
 
@@ -298,11 +346,11 @@ typedef struct
 
     {                                   
 
+    CpWord          regX[010];          /* Data registers (60 bit) */
+
     u32             regA[010];          /* Address registers (18 bit) */
 
     u32             regB[010];          /* Index registers (18 bit) */
-
-    CpWord          regX[010];          /* Data registers (60 bit) */
 
     u32             regP;               /* Program counter */
 
@@ -316,11 +364,11 @@ typedef struct
 
     u32             regMa;              /* Monitor address */
 
-    bool            monitorMode;        /* Monitor mode bit */
-
     u32             regSpare;           /* Reserved */
 
     u32             exitMode;           /* CPU exit mode (24 bit) */
+
+    bool            monitorMode;        /* Monitor mode bit */
 
     u8              exitCondition;      /* Recorded exit conditions since XJ */
 

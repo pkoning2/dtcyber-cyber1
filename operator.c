@@ -17,6 +17,9 @@
 **  Include Files
 **  -------------
 */
+#if defined(_WIN32)
+#include <windows.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,9 +57,9 @@ typedef struct opCmd
 
 typedef struct opMsg
     {
-    int     x;
-    int     y;
-    int     fontSize;
+    u16     x;
+    u16     y;
+    u8      fontSize;
     char    *text;
     } OpMsg;
 
@@ -76,7 +79,15 @@ static void opCmdUnload(char *cmdParams);
 static void opDumpCpu (char *cmdParams);
 static void opDumpPpu (char *cmdParams);
 static void opDisPpu (char *cmdParams);
-
+static void opTracePpu(char *cmdParams);
+static void opTraceCh(char *cmdParams);
+static void opTraceCpu(char *cmdParams);
+static void opTraceXj(char *cmdParams);
+static void opUntrace(char *cmdParams);
+static void opUntracePpu(char *cmdParams);
+static void opUntraceCh(char *cmdParams);
+static void opUntraceCpu(char *cmdParams);
+static void opUntraceXj(char *cmdParams);
 /*
 **  ----------------
 **  Public Variables
@@ -107,6 +118,15 @@ static char *syntax[] =
     "DUMP,CPU.\n",
     "DUMP,PPU7.\n",
     "DISASSEMBLE,PPU7.\n",
+    "TRACE,PPU7.\n",
+    "TRACE,CHANNEL7.\n",
+    "TRACE,CPU.\n",
+    "TRACE,XJ.\n",
+    "UNTRACE,.\n",
+    "UNTRACE,PPU7.\n",
+    "UNTRACE,CHANNEL7.\n",
+    "UNTRACE,CPU.\n",
+    "UNTRACE,XJ.\n",
     NULL,
     };
 static OpCmd decode[] = 
@@ -127,24 +147,42 @@ static OpCmd decode[] =
     "DUMP,CPU",                 opDumpCpu,
     "DUMP,PPU",                 opDumpPpu,
     "DISASSEMBLE,PPU",          opDisPpu,
+    "TRACE,PPU",                opTracePpu,
+    "TRACE,CHANNEL",            opTraceCh,
+    "TRACE,CPU.",               opTraceCpu,
+    "TRACE,ECS.",               opTraceXj,
+    "UNTRACE,.",                opUntrace,
+    "UNTRACE,PPU",              opUntracePpu,
+    "UNTRACE,CHANNEL",          opUntraceCh,
+    "UNTRACE,CPU.",             opUntraceCpu,
+    "UNTRACE,ECS.",             opUntraceXj,
     NULL,                       NULL
     };
 
 static OpMsg msg[] =
-    { { 0120, 0700, 0020, "OPERATOR INTERFACE" },
-      { 0760 - (sizeof(DtCyberVersion) * 010), 0760, 0010, DtCyberVersion },
+    { { 0760 - (sizeof(DtCyberVersion) * 010), 0760, 0010, DtCyberVersion },
       { 0020, 0640, 0010, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
       { 0020, 0620, 0010, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
       { 0020, 0600, 0010, "UNLOAD,CH,EQ.      Unload ch/eq." },
       { 0020, 0560, 0010, "DUMP,CPU.          Dump CPU state." },
       { 0020, 0540, 0010, "DUMP,PPUNN.        Dump specified PPU state." },
       { 0020, 0520, 0010, "DISASSEMBLE,PPUNN. Disassemble specified PPU." },
-      { 0020, 0460, 0010, "END.               End operator mode." },
-      { 0020, 0440, 0010, "SHUTDOWN.          Close DtCyber." },
+      { 0020, 0500, 0010, "TRACE,CPU.         Trace CPU activity." },
+      { 0020, 0460, 0010, "TRACE,XJ.          Trace exchange jumps." },
+      { 0020, 0440, 0010, "TRACE,PPUNN.       Trace specified PPU activity." },
+      { 0020, 0420, 0010, "TRACE,CHANNELNN.   Trace specified channel activity." },
+      { 0020, 0400, 0010, "UNTRACE,CPU.       Stop trace of CPU activity." },
+      { 0020, 0360, 0010, "UNTRACE,XJ.        Stop trace of exchange jumps." },
+      { 0020, 0340, 0010, "UNTRACE,PPUNN.     Stop trace of specified PPU activity." },
+      { 0020, 0320, 0010, "UNTRACE,CHANNELNN. Stop trace of specified channel activity." },
+      { 0020, 0300, 0010, "UNTRACE,.          Stop all tracing." },
+      { 0020, 0240, 0010, "END.               End operator mode." },
+      { 0020, 0220, 0010, "SHUTDOWN.          Close DtCyber." },
       { CmdX, CmdY, 0020, cmdBuf },  // echo, MUST be last
       { 0, 0, 0, NULL },
     };
 static OpMsg errmsg = { 0020, 0040, 0020, NULL };   // pointer filled in
+static OpMsg title = { 0120, 0700, 0020, "OPERATOR INTERFACE" };
 static bool msgBold;
 static bool complete;
 static char msgBuf[80];
@@ -191,6 +229,10 @@ void opRequest(void)
     cmdLen = 0;
     while (opActive)
         {
+        for (i = 0; i < BoldMediumRepaints; i++)
+            {
+            opSendString (&title);
+            }
         for (m = msg; m->text; m++)
             {
             opSendString (m);
@@ -235,7 +277,9 @@ void opRequest(void)
             }
         if (ppKeyIn == 0) 
             {
+#if !defined(_WIN32)
             usleep (RefreshInterval / 2);
+#endif
             continue;
             }
         opSetMsg (NULL);
@@ -311,7 +355,11 @@ void opRequest(void)
                 nextKey = i;
                 }
             }
-        usleep (RefreshInterval / 2);
+#if defined(_WIN32)
+		    Sleep(25);
+#else
+            usleep (RefreshInterval / 2);
+#endif
         }
     }
 
@@ -639,6 +687,7 @@ static void opDumpCpu(char *cmdParams)
     **  Process commands.
     */
     dumpCpu ();
+    opSetMsg ("COMPLETED");
     }
 
 
@@ -663,7 +712,13 @@ static void opDumpPpu(char *cmdParams)
         opSetMsg ("$INSUFFICENT PARAMETERS");
         return;
         }
+    if (pp >= ppuCount)
+        {
+        opSetMsg ("$INVALID PPU NUMBER");
+        return;
+        }
     dumpPpu (pp);
+    opSetMsg ("COMPLETED");
     }
 
 
@@ -688,8 +743,199 @@ static void opDisPpu(char *cmdParams)
         opSetMsg ("$INSUFFICENT PARAMETERS");
         return;
         }
+    if (pp >= ppuCount)
+        {
+        opSetMsg ("$INVALID PPU NUMBER");
+        return;
+        }
     dumpDisassemblePpu (pp);
+    opSetMsg ("COMPLETED");
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Trace a PPU
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opTracePpu(char *cmdParams)
+    {
+    int     np, pp;
+    /*
+    **  Process commands.
+    */
+    np = sscanf (cmdParams, "%o", &pp);
+    if (np != 1)
+        {
+        opSetMsg ("$INSUFFICENT PARAMETERS");
+        return;
+        }
+    if (pp >= ppuCount)
+        {
+        opSetMsg ("$INVALID PPU NUMBER");
+        return;
+        }
+    traceMask |= 1 << pp;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Trace a channel
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opTraceCh(char *cmdParams)
+    {
+    int     np, ch;
+    /*
+    **  Process commands.
+    */
+    np = sscanf (cmdParams, "%o", &ch);
+    if (np != 1)
+        {
+        opSetMsg ("$INSUFFICENT PARAMETERS");
+        return;
+        }
+    if (ch >= channelCount)
+        {
+        opSetMsg ("$INVALID CHANNEL NUMBER");
+        return;
+        }
+    chTraceMask |= 1 << ch;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Trace the CPU
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opTraceCpu(char *cmdParams)
+    {
+    traceMask |= 1 << 14;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Trace exchange jumps
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opTraceXj(char *cmdParams)
+    {
+    traceMask |= 1 << 15;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Stop tracing a PPU
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opUntracePpu(char *cmdParams)
+    {
+    int     np, pp;
+    /*
+    **  Process commands.
+    */
+    np = sscanf (cmdParams, "%o", &pp);
+    if (np != 1)
+        {
+        opSetMsg ("$INSUFFICENT PARAMETERS");
+        return;
+        }
+    if (pp >= ppuCount)
+        {
+        opSetMsg ("$INVALID PPU NUMBER");
+        return;
+        }
+    traceMask &= ~(1 << pp);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Stop tracing a channel
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opUntraceCh(char *cmdParams)
+    {
+    int     np, ch;
+    /*
+    **  Process commands.
+    */
+    np = sscanf (cmdParams, "%o", &ch);
+    if (np != 1)
+        {
+        opSetMsg ("$INSUFFICENT PARAMETERS");
+        return;
+        }
+    if (ch >= channelCount)
+        {
+        opSetMsg ("$INVALID CHANNEL NUMBER");
+        return;
+        }
+    chTraceMask &= ~(1 << ch);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Stop tracing the CPU
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opUntraceCpu(char *cmdParams)
+    {
+    traceMask &= ~(1 << 14);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Stop tracing exchange jumps
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opUntraceXj(char *cmdParams)
+    {
+    traceMask &= ~(1 << 15);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Stop all tracing
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opUntrace(char *cmdParams)
+    {
+    traceMask =chTraceMask = 0;
+    }
 
 /*---------------------------  End Of File  ------------------------------*/

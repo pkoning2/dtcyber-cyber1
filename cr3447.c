@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <string.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -32,22 +33,6 @@
 
 /*
 **  CDC 3447 card reader function and status codes.
-**  
-**      Function codes
-**
-**      ----------------------------------
-**      |  Equip select  |   function    |
-**      ----------------------------------
-**      11              6 5             0
-**
-**      0700 = Deselect
-**      0701 = Gate Card to Secondary bin
-**      0702 = Read Non-stop
-**      0704 = Status request
-**
-**      Note: To read one card, execute successive S702 and
-**      S704 functions.
-**      One column of card data per 12-bit data word.
 */
 #define FcCr3447Deselect         00000
 #define FcCr3447Binary           00001
@@ -123,10 +108,10 @@ typedef struct
 */
 static FcStatus cr3447Func(PpWord funcCode);
 static void cr3447Io(void);
-static void cr3447Load(DevSlot *, int ,char *);
+static void cr3447Load(Dev3kSlot *, char *);
 static void cr3447Activate(void);
 static void cr3447Disconnect(void);
-static void cr3447NextCard (DevSlot *dp, int unitNo, CrContext *cc);
+static void cr3447NextCard (Dev3kSlot *up, CrContext *cc);
 /*
 **  ----------------
 **  Public Variables
@@ -160,27 +145,26 @@ static void cr3447NextCard (DevSlot *dp, int unitNo, CrContext *cc);
 **------------------------------------------------------------------------*/
 void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 {
-    DevSlot *dp;
+    Dev3kSlot *up;
     CrContext *cc;
     FILE *fcb;
     
     (void)eqNo;
 
-    dp = channelAttach(channelNo, DtCr3447);
+    up = dcc6681Attach(channelNo, unitNo, DtCr3447);
 
-    dp->activate = cr3447Activate;
-    dp->disconnect = cr3447Disconnect;
-    dp->func = cr3447Func;
-    dp->io = cr3447Io;
-    dp->load = cr3447Load;
-    dp->selectedUnit = unitNo;
+    up->activate = cr3447Activate;
+    up->disconnect = cr3447Disconnect;
+    up->func = cr3447Func;
+    up->io = cr3447Io;
+    up->load = cr3447Load;
     cc = calloc (1, sizeof (CrContext));
     if (cc == NULL)
     {
         fprintf (stderr, "Failed to allocate CR3447 context block\n");
         exit (1);
     }
-    dp->context[unitNo] = cc;
+    up->context = cc;
 
     if (deviceName != NULL)
     {
@@ -191,20 +175,15 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
             exit(1);
         }
 
-        dp->fcb[unitNo] = fcb;
+        up->fcb = fcb;
         cc->status = StCr3447Ready;
-        cr3447NextCard (dp, unitNo, cc);        // Read the first card
+        cr3447NextCard (up, cc);        // Read the first card
     }
     else
     {
-        dp->fcb[unitNo] = NULL;
+        up->fcb = NULL;
         cc->status = StCr3447Eof;
     }
-
-    /*
-    **  Initialise DCC6681 on this channel.
-    */
-    dcc6681Init(channelNo);
 
     /*
     **  Print a friendly message.
@@ -225,24 +204,12 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 static FcStatus cr3447Func(PpWord funcCode)
 {
     CrContext *cc;
-    u8 unitNo;
     FcStatus st;
-    PpWord s;
     
     if (DEBUG)
         printf ("cr3447: function %04o\n", funcCode);
     
-    /*
-    ** Let the data channel converter have a pass over the function code first.
-    */
-    st = dcc6681Func(funcCode);
-    if (st != FcDeclined)
-    {
-        return(st);
-    }
-
-    unitNo = activeDevice->selectedUnit;
-    cc = (CrContext *)activeDevice->context[unitNo];
+    cc = (CrContext *)activeUnit->context;
 
     switch (funcCode)
     {
@@ -260,7 +227,7 @@ static FcStatus cr3447Func(PpWord funcCode)
         // fall through
     case Fc6681DevStatusReq:
         st = FcAccepted;
-        activeDevice->fcode = funcCode;
+        activeUnit->fcode = funcCode;
         break;
 
     case FcCr3447Binary:
@@ -313,8 +280,7 @@ static FcStatus cr3447Func(PpWord funcCode)
         st = FcProcessed;
         break;
     }
-    if ((cc->status & cc->intmask) == 0)
-        dcc6681ClearInt (unitNo);
+    activeUnit->intr = (cc->status & cc->intmask) != 0;
 
     return(st);
 }
@@ -330,26 +296,15 @@ static FcStatus cr3447Func(PpWord funcCode)
 static void cr3447Io(void)
 {
     CrContext *cc;
-    u8 unitNo;
-    char *cp;
     char c;
     PpWord p;
     
-    unitNo = activeDevice->selectedUnit;
-    cc = (CrContext *)activeDevice->context[unitNo];
+    cc = (CrContext *)activeUnit->context;
 
-    /*
-    **  Process any data channel converter I/O.
-    */
-    if (dcc6681Io())
-    {
-        return;
-    }
-    
     if (DEBUG)
-        printf ("cr3447: i/o %04o ", activeDevice->fcode);
+        printf ("cr3447: i/o %04o ", activeUnit->fcode);
 
-    switch (activeDevice->fcode)
+    switch (activeUnit->fcode)
     {
     default:
         printf("unexpected IO for function %04o\n", activeDevice->fcode); 
@@ -373,7 +328,7 @@ static void cr3447Io(void)
             break;
         }
 
-        if (activeDevice->fcb[unitNo] == NULL)
+        if (activeUnit->fcb == NULL)
         {
             cc->status = StCr3447Eof;
             break;
@@ -383,7 +338,7 @@ static void cr3447Io(void)
         {
             // Read the next card.
             // If the function is input to EOR, disconnect to indicate EOR
-            cr3447NextCard (activeDevice, unitNo, cc);
+            cr3447NextCard (activeUnit, cc);
             if (activeDevice->fcode == Fc6681InputToEor)
             {
                 // End of card but we're still ready
@@ -412,9 +367,9 @@ static void cr3447Io(void)
         break;
     }
     if (DEBUG)
-        printf ("data %04o, status now %04o\n", activeChannel->data, cc->status);
-    if ((cc->status & cc->intmask) != 0)
-        dcc6681SetInt (unitNo);
+        printf ("data %04o, status now %04o\n",
+                activeChannel->data, cc->status);
+    activeUnit->intr = (cc->status & cc->intmask) != 0;
 }
 
 /*--------------------------------------------------------------------------
@@ -425,29 +380,18 @@ static void cr3447Io(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cr3447Load(DevSlot *dp, int unitNo, char *fn)
+static void cr3447Load(Dev3kSlot *up, char *fn)
 {
     CrContext *cc;
     FILE *fcb;
     static char msgBuf[80];
     
-    if (unitNo < 0 || unitNo >= MaxUnits)
-    {
-        opSetMsg ("$INVALID UNIT NO");
-        return;
-    }
-    cc = (CrContext *)dp->context[unitNo];
+    cc = (CrContext *) (up->context);
 
-    if (cc == NULL)
-    {
-        opSetMsg ("$UNIT NOT ALLOCATED");
-        return;
-    }
-
-    if (dp->fcb[unitNo] != NULL)
-        fclose (dp->fcb[unitNo]);
+    if (up->fcb != NULL)
+        fclose (up->fcb);
     
-    dp->fcb[unitNo] = NULL;
+    up->fcb = NULL;
     cc->status = StCr3447Eof;
 
     if (fn != NULL)
@@ -460,12 +404,12 @@ static void cr3447Load(DevSlot *dp, int unitNo, char *fn)
             return;
         }
 
-        dp->fcb[unitNo] = fcb;
+        up->fcb = fcb;
         cc->status = StCr3447Ready;
-        cr3447NextCard (dp, unitNo, cc);
+        cr3447NextCard (up, cc);
     }
-    if ((cc->status & cc->intmask) != 0)
-        dcc6681SetInt (unitNo);
+    
+    up->intr = (cc->status & cc->intmask) != 0;
     if (fn == NULL)
         opSetMsg ("CR3447 unloaded");
     else
@@ -498,17 +442,14 @@ static void cr3447Activate(void)
 static void cr3447Disconnect(void)
 {
     CrContext *cc;
-    u8 unitNo;
     
-    unitNo = activeDevice->selectedUnit;
-    cc = (CrContext *)activeDevice->context[unitNo];
+    cc = (CrContext *)activeUnit->context;
     if (cc != NULL)
     {
         cc->status |= StCr3447EoiInt;
-        if ((cc->status & cc->intmask) != 0)
-            dcc6681SetInt (unitNo);
-        if (activeDevice->fcb[unitNo] != NULL && cc->col != 0)
-            cr3447NextCard (activeDevice, unitNo, cc);
+        activeUnit->intr = (cc->status & cc->intmask) != 0;
+        if (activeUnit->fcb != NULL && cc->col != 0)
+            cr3447NextCard (activeUnit, cc);
     }
 }
 
@@ -520,21 +461,16 @@ static void cr3447Disconnect(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cr3447NextCard (DevSlot *dp, int unitNo, CrContext *cc)
+static void cr3447NextCard (Dev3kSlot *up, CrContext *cc)
 {
     char *cp;
     char c;
 
     // Read the next card.
     cp = fgets (cc->card, sizeof (cc->card),
-                dp->fcb[unitNo]);
+                up->fcb);
     if (cp == NULL)
     {
-        if (DEBUG)
-        {
-            traceMask |= 1<<activePpu->id;
-            traceClearMask |= 1<<activePpu->id;
-        }
         // If the last card wasn't a 6/7/8/9 card, fake one.
         if (cc->card[0] != '}')
         {
@@ -542,8 +478,8 @@ static void cr3447NextCard (DevSlot *dp, int unitNo, CrContext *cc)
         }
         else
         {
-            fclose (dp->fcb[unitNo]);
-            dp->fcb[unitNo] = NULL;
+            fclose (up->fcb);
+            up->fcb = NULL;
             cc->status = StCr3447Eof;
             return;
         }
@@ -556,7 +492,7 @@ static void cr3447NextCard (DevSlot *dp, int unitNo, CrContext *cc)
     {
         do 
         {
-            c = fgetc (dp->fcb[unitNo]);
+            c = fgetc (up->fcb);
         } while (c != '\n');
         cp = &cc->card[80];
     }

@@ -203,6 +203,19 @@ void windowQueue(char ch)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Check whether it's time to do output
+**
+**  Parameters:     Name        Description.
+**                  None.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void windowCheckOutput(void)
+    {
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Update window.
 **
 **  Parameters:     Name        Description.

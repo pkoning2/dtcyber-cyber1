@@ -417,9 +417,6 @@ void windowGetChar(void)
     struct timeval tm;
     int us;
     
-    if (traceMask & (1 << activePpu->id))
-        fprintf (ppuTF[activePpu->id], "key poll %02o\n", ppKeyIn);
-
     // We treat a keyboard poll as the end of a display refresh cycle.
     listPutAtGetChar = listPut;
     windowCheckOutput();
@@ -458,6 +455,14 @@ void windowClose(void)
 **--------------------------------------------------------------------------
 */
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Flush pending characters to the bitmap.
+**
+**  Parameters:     None.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
 static void dflush (void)
     {
     if (dcnt != 0)
@@ -467,22 +472,23 @@ static void dflush (void)
         dbuf[0].delta = 0;
         XDrawText(disp, pixmap, gc, XADJUST (xstart),
                   YADJUST (ypos), dbuf, dcnt);
-        if (traceMask & (1<<activePpu->id))
-            {
-            int i;
-                    
-            dchars[dcnt] = '\0';
-            fprintf (ppuTF[activePpu->id], "text %03o %03o %s\n", xstart, ypos, dchars);
-            for (i = 0; i < dcnt; i++)
-                {
-                fprintf (ppuTF[activePpu->id], "%d ", dhits[i]);
-                }
-            fprintf (ppuTF[activePpu->id], "\n");
-            }
         dcnt = 0;
         }
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Put a character to the display, buffering a line
+**					at a time so we can do bold handling etc.
+**
+**  Parameters:     Name        Description.
+**					c			character (ASCII)
+**					x			x position
+**					y			y position
+**					dx			current font size
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
 static void dput (char c, int x, int y, int dx)
     {
     int dindx = (x - xstart) / dx;
@@ -669,6 +675,14 @@ void windowInput(void)
         }
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Display current list.
+**
+**  Parameters:     None.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
 void showDisplay (void)
     {
     static int refreshCount = 0;
@@ -704,7 +718,8 @@ void showDisplay (void)
                 ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
                 cpu.regP); 
 
-        sprintf(buf + strlen(buf), "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c",
+        sprintf(buf + strlen(buf),
+                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c",
                 (traceMask >> 0) & 1 ? '0' : '_',
                 (traceMask >> 1) & 1 ? '1' : '_',
                 (traceMask >> 2) & 1 ? '2' : '_',
@@ -716,7 +731,19 @@ void showDisplay (void)
                 (traceMask >> 8) & 1 ? '8' : '_',
                 (traceMask >> 9) & 1 ? '9' : '_',
                 (traceMask >> 14) & 1 ? 'C' : '_',
-                (traceMask >> 15) & 1 ? 'E' : '_');
+                (traceMask >> 15) & 1 ? 'E' : '_',
+                (chTraceMask >> 0) & 1 ? '0' : '_',
+                (chTraceMask >> 1) & 1 ? '1' : '_',
+                (chTraceMask >> 2) & 1 ? '2' : '_',
+                (chTraceMask >> 3) & 1 ? '3' : '_',
+                (chTraceMask >> 4) & 1 ? '4' : '_',
+                (chTraceMask >> 5) & 1 ? '5' : '_',
+                (chTraceMask >> 6) & 1 ? '6' : '_',
+                (chTraceMask >> 7) & 1 ? '7' : '_',
+                (chTraceMask >> 8) & 1 ? '8' : '_',
+                (chTraceMask >> 9) & 1 ? '9' : '_',
+                (chTraceMask >> 10) & 1 ? 'A' : '_',
+                (chTraceMask >> 11) & 1 ? 'B' : '_');
 
         XDrawString(disp, pixmap, gc, 0, 10, buf, strlen(buf));
     }

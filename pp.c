@@ -324,6 +324,39 @@ void ppStep(void)
 
 #if CcDebug == 1
             /*
+            **  If the previous instruction was an I/O, then we do
+            **  the last few trace steps (registers after, etc.) here
+            **  rather than right after instruction execution, so that 
+            **  the information displayed reflects the completion of any
+            **  I/O that was done.  In particular, for I/O instructions
+            **  the A register is updated after the instruction
+            **  is "finished", so to show A correctly we display it now.
+            */
+            if (activePpu->ioFlag)
+                {
+                /*
+                **  Trace result.
+                */
+                traceRegisters();
+
+                /*
+                **  Trace new channel status.
+                */
+                traceChannel(opD);
+
+                traceEnd();
+                /*
+                **  Trace memory touched by IAM/OAM, and if necessary,
+                **  A register after IAM/IAN/OAM/OAN
+                */
+                if (activePpu->ppMemLen >= 0)
+                    {
+                    tracePM ();
+                    activePpu->ppMemLen = 0;
+                    }
+                }
+            
+            /*
             **  Trace instructions.
             */
             traceSequence();
@@ -339,37 +372,43 @@ void ppStep(void)
             /*
             **  Execute PPU instruction.
             */
+            activePpu->ioFlag = FALSE;
             decodePpuOpcode[opF]();
 
 #if CcDebug == 1
             /*
-            **  Trace result.
+            **  If the current instruction is an I/O, then we do
+            **  the last few trace steps (registers after, etc.) later
+            **  rather than right after instruction execution, so that 
+            **  the information displayed reflects the completion of any
+            **  I/O that was done.  
             */
-            traceRegisters();
-
-            /*
-            **  Trace new channel status.
-            */
-            if (opF >= 064)
+            if (!activePpu->ioFlag)
                 {
-                traceChannel(opD);
-                }
+                /*
+                **  Trace result.
+                */
+                traceRegisters();
 
-            traceEnd();
-            /*
-            **  Trace memory touched by central read/write or by IAM/OAM
-            */
-            if (cpuMemLen > 0)
-                {
-                traceCM (cpuMemStart, cpuMemLen);
-                cpuMemLen = 0;
-                }
-            if (activePpu->ppMemLen > 0)
-                {
-                tracePM ();
-                activePpu->ppMemLen = 0;
-                }
+                /*
+                **  Trace new channel status.
+                */
+                if (opF >= 064)
+                    {
+                    traceChannel(opD);
+                    }
 
+                traceEnd();
+                /*
+                **  Trace memory touched by central read/write
+                */
+                if (cpuMemLen > 0)
+                    {
+                    traceCM (cpuMemStart, cpuMemLen);
+                    cpuMemLen = 0;
+                    }
+                }
+            
 #endif
             }
 
@@ -1473,6 +1512,7 @@ static void ppOpIAN(void)     // 70
 
     activePpu->ioWaitType = WaitInOne;
     activePpu->stopped = TRUE;
+    activePpu->ioFlag = TRUE;
     }
 
 static void ppOpIAM(void)     // 71
@@ -1481,6 +1521,7 @@ static void ppOpIAM(void)     // 71
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
     activePpu->ppMemStart = location = activePpu->mem[activePpu->regP] & Mask12;
+    activePpu->ioFlag = TRUE;
 
     if (!activeChannel->active)
         {
@@ -1533,6 +1574,7 @@ static void ppOpOAN(void)     // 72
 
     activePpu->ioWaitType = WaitOutOne;
     activePpu->stopped = TRUE;
+    activePpu->ioFlag = TRUE;
     }
 
 static void ppOpOAM(void)     // 73
@@ -1544,6 +1586,7 @@ static void ppOpOAM(void)     // 73
     activePpu->ppMemStart = activePpu->regP = activePpu->mem[activePpu->regP] & Mask12;
     activePpu->ioWaitType = WaitOutMany;
     activePpu->stopped = TRUE;
+    activePpu->ioFlag = TRUE;
     }
 
 static void ppOpACN(void)     // 74
@@ -1625,6 +1668,7 @@ static void ppOpFAN(void)     // 76
         }
 
     channelFunction((PpWord)(activePpu->regA & Mask12));
+    activePpu->ioFlag = TRUE;
     }
 
 static void ppOpFNC(void)     // 77
@@ -1652,6 +1696,7 @@ static void ppOpFNC(void)     // 77
 
     channelFunction((PpWord)(activePpu->mem[activePpu->regP] & Mask12));
     PpIncrement(activePpu->regP);
+    activePpu->ioFlag = TRUE;
     }
 
 /*---------------------------  End Of File  ------------------------------*/
