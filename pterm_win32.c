@@ -34,7 +34,7 @@
 **  -----------------
 */
 #define KeyBufSize      50
-#define DisplayMargin   20
+#define DisplayMargin   8
 
 /*
 **  Size of the window and pixmap.
@@ -81,7 +81,7 @@ static void drawChar (HDC hdc, int x, int y, int snum, int cnum);
 **  Public Variables
 **  ----------------
 */
-
+extern int scale;
 extern FILE *traceF;
 extern char traceFn[];
 extern bool tracePterm;
@@ -311,8 +311,8 @@ static BOOL ptermCreate(void)
         WS_OVERLAPPEDWINDOW,    // window style
         CW_USEDEFAULT,          // horizontal position of window
         CW_USEDEFAULT,          // vertical position of window
-        XSize + dx,             // window width
-        YSize + dy,             // window height
+        XSize * scale + dx,             // window width
+        YSize * scale + dy,             // window height
         NULL,                   // handle to parent or owner window
         NULL,                   // menu handle or child identifier
         0,                      // handle to application instance
@@ -393,7 +393,7 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
         **  Initialize bitmap and window
         */
         BitBlt(hdcMem, 0, 0, XSize, YPMSize, hdcMem, 0, 0, BLACKNESS);
-        BitBlt(hdc, 0, 0, XSize, YSize, hdcMem, 0, 0, BLACKNESS);
+        BitBlt(hdc, 0, 0, XSize * scale, YSize * scale, hdcMem, 0, 0, BLACKNESS);
 
         /*
         **  Load the bitmap for the fonts
@@ -469,12 +469,13 @@ static LRESULT CALLBACK ptermProcedure(HWND hWnd, UINT message,
     case WM_PAINT:
         BeginPaint (hWnd, &paint);
         hdc = GetDC(hWnd);
-        BitBlt(hdc, 
-               rect.left, rect.top,
-               XSize, YSize,
-               hdcMem,
-               0, 0,
-               SRCCOPY);
+        StretchBlt (hdc,
+                    rect.left, rect.top,
+                    XSize * scale, YSize * scale,
+                    hdcMem,
+                    0, 0,
+                    XSize, YSize,
+                    SRCCOPY);
 
         ReleaseDC(hWnd, hdc);
         EndPaint (hWnd, &paint);
@@ -622,15 +623,33 @@ void ptermDrawPoint (int x, int y)
         return;
         }
     hdc = GetDC(hWnd);
+    x = XADJUST (x);
+    y = YADJUST (y);
     if (wemode & 1)
         {
-        SetPixel (hdcMem, XADJUST (x), YADJUST (y), orange);
-        SetPixel (hdc, XADJUST (x), YADJUST (y), orange);
+        SetPixel (hdcMem, x, y, orange);
+        x *= scale;
+        y *= scale;
+        SetPixel (hdc, x, y, orange);
+        if (scale == 2)
+            {
+            SetPixel (hdc, x + 1, y, orange);
+            SetPixel (hdc, x, y + 1, orange);
+            SetPixel (hdc, x + 1, y + 1, orange);
+            }
         }
     else
         {
-        SetPixel (hdcMem, XADJUST (x), YADJUST (y), black);
-        SetPixel (hdc, XADJUST (x), YADJUST (y), black);
+        SetPixel (hdcMem, x, y, black);
+        x *= scale;
+        y *= scale;
+        SetPixel (hdc, x, y, black);
+        if (scale == 2)
+            {
+            SetPixel (hdc, x + 1, y, black);
+            SetPixel (hdc, x, y + 1, black);
+            SetPixel (hdc, x + 1, y + 1, black);
+            }
         }
     ReleaseDC (hWnd, hdc);
     }
@@ -651,6 +670,7 @@ void ptermDrawLine(int x1, int y1, int x2, int y2)
     {
     HDC hdc;
     POINT line[2];
+    int xx1, xx2, yy1, yy2, tx, ty, sx, sy;
 
     if (hWnd == 0)
         {
@@ -667,12 +687,43 @@ void ptermDrawLine(int x1, int y1, int x2, int y2)
         SelectObject(hdc, hPenBg);
         SelectObject(hdcMem, hPenBg);
         }
-    line[0].x = XADJUST (x1);
-    line[0].y = YADJUST (y1);
-    line[1].x = XADJUST (x2);
-    line[1].y = YADJUST (y2);
+    line[0].x = xx1 = XADJUST (x1);
+    line[0].y = yy1 = YADJUST (y1);
+    line[1].x = xx2 = XADJUST (x2);
+    line[1].y = yy2 = YADJUST (y2);
     Polyline (hdcMem, line, 2);
-    Polyline (hdc, line, 2);
+    if (scale == 1)
+        {
+        Polyline (hdc, line, 2);
+        }
+    else
+        {
+        if (xx1 < xx2)
+            {
+            tx = xx1;
+            sx = xx2 - xx1;
+            }
+        else
+            {
+            tx = xx2;
+            sx = xx1 - xx2;
+            }
+        if (yy1 < yy2)
+            {
+            ty = yy1;
+            sy = yy2 - yy1;
+            }
+        else
+            {
+            ty = yy2;
+            sy = yy1 - yy2;
+            }
+        sx++;
+        sy++;
+        StretchBlt (hdc, tx * scale, ty * scale,
+                    sx * scale, sy * scale,
+                    hdcMem, tx, ty, sx, sy, SRCCOPY);
+        }
     ReleaseDC (hWnd, hdc);
     /*
     **  Windows refuses to draw the endpoint of the line, so
@@ -701,7 +752,8 @@ void ptermFullErase (void)
         }
     hdc = GetDC(hWnd);
     BitBlt(hdcMem, DisplayMargin, DisplayMargin, 512, 512, hdcMem, 0, 0, BLACKNESS);
-    BitBlt(hdc, DisplayMargin, DisplayMargin, 512, 512, hdcMem, 0, 0, BLACKNESS);
+    BitBlt(hdc, DisplayMargin * scale, DisplayMargin * scale, 
+        512 * scale, 512 * scale, hdcMem, 0, 0, BLACKNESS);
     ReleaseDC (hWnd, hdc);
     }
 
@@ -958,8 +1010,8 @@ bool platoTouch (LPARAM lParam, int stat)
         {
         return FALSE;
         }
-    x = XUNADJUST (lParam & 0xffff);
-    y = YUNADJUST (lParam >> 16);
+    x = XUNADJUST ((lParam & 0xffff) / scale);
+    y = YUNADJUST ((lParam >> 16) / scale);
     
     if (x < 0 || x > 511 ||
         y < 0 || y > 511)
@@ -1068,8 +1120,10 @@ static void drawChar (HDC hdc, int x, int y, int snum, int cnum)
         BitBlt (hdcMem, XADJUST (x & 1023), yt, xb, yb,
                 hdcMem, charX + xoff, charY + yoff, MWeFunc[wemode]);
         }
-    BitBlt(hdc, XADJUST (x & 1023), yt, xb, yb,
-           hdcMem, XADJUST (x & 1023), yt, SRCCOPY);
+    StretchBlt(hdc, XADJUST (x & 1023) * scale, yt * scale,
+               xb * scale, yb * scale,
+               hdcMem, XADJUST (x & 1023), yt, 
+               xb, yb, SRCCOPY);
     /*
     **  Handle screen edge wraparound by recursion...
     */

@@ -79,6 +79,7 @@ extern bool tracePterm;
 extern u8 wemode;
 extern bool emulationActive;
 extern const char *hostName;
+int scale = 1;
 
 /*
 **  -----------------
@@ -115,22 +116,30 @@ int main (int argc, char **argv)
     int port;
     int true_opt = 1;
     
-    if (argc > 3)
+    argc--;
+    argv++;
+    if (strcmp (argv[0], "-s") == 0)
         {
-        printf ("usage: pterm [ hostname [ portnum ]]\n");
-        exit (1);
+        argc--;
+        argv++;
+        scale = 2;
         }
     if (argc > 2)
         {
-        port = atoi (argv[2]);
+        printf ("usage: pterm [-s] [ hostname [ portnum ]]\n");
+        exit (1);
+        }
+    if (argc > 1)
+        {
+        port = atoi (argv[1]);
         }
     else
         {
         port = DefNiuPort;
         }
-    if (argc > 1)
+    if (argc > 0)
         {
-        hostName = argv[1];
+        hostName = argv[0];
         }
     else
         {
