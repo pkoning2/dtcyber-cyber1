@@ -27,6 +27,6 @@ esac
 
 if [ -n "${to}" ]; then
     echo "Subject: PLATO $1" > /tmp/opermsg
-    sendmail ${to} < /tmp/opermsg
+    /usr/sbin/sendmail ${to} < /tmp/opermsg
     rm -f /tmp/opermsg
 fi
