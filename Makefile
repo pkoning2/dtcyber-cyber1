@@ -12,7 +12,7 @@
 HOST = $(shell uname)
 
 LIBS    = -lm -lX11 -lpthread
-LDFLAGS = -L/usr/X11R6/lib -g2
+LDFLAGS = -g2 -L/usr/X11R6/lib -L/usr/local/lib
 INCL    = -I/usr/X11R6/include -I/usr/local/include
 
 ifeq ($(HOST),"darwin")
