@@ -809,7 +809,8 @@ static ThreadFunRet consoleThread (void *param)
         np = dtFindInput (&consolePorts, 100);
         if (np == NULL)
             {
-            continue;}
+            continue;
+            }
         
         i = consoleInput (np);
         if (i < 0)
