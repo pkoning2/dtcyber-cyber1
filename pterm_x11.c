@@ -38,7 +38,7 @@
 **  -----------------
 */
 #define KeyBufSize	    50
-#define DisplayMargin	20
+#define DisplayMargin	8
 
 #define CSETS           8       // leave room for the PPT multiple sets
 
@@ -52,9 +52,9 @@
 // This is: a screen high with marging top and botton.
 // Pixmap has two rows added, which are storage for the
 // patterns for the character sets (ROM and loadable)
-#define XSize           (512 + 2 * DisplayMargin)
-#define YSize           (512 + 2 * DisplayMargin)
-#define YPMSize         (512 + 2 * DisplayMargin + CSETS * 16)
+#define XSize           ((512 + 2 * DisplayMargin) * scale)
+#define YSize           ((512 + 2 * DisplayMargin) * scale)
+#define YPMSize         ((512 + 2 * DisplayMargin + CSETS * 16) * scale)
 
 /*
 **  -----------------------
@@ -62,12 +62,12 @@
 **  -----------------------
 */
 
-#define XADJUST(x) ((x) + DisplayMargin)
-#define YADJUST(y) (YSize - 1 - DisplayMargin - (y))
+#define XADJUST(x) (((x) + DisplayMargin) * scale)
+#define YADJUST(y) (YSize - (DisplayMargin + 1 + (y)) * scale)
 
 // inverse mapping (for processing touch input)
-#define XUNADJUST(x) ((x) - DisplayMargin)
-#define YUNADJUST(y) (YSize - 1 - DisplayMargin - (y))
+#define XUNADJUST(x) ((x / scale) - DisplayMargin)
+#define YUNADJUST(y) ((YSize - (y)) / scale - 1 - DisplayMargin)
 
 /*
 **  -----------------------------------------
@@ -93,6 +93,7 @@ Window ptermWindow;
 
 extern bool tracePterm;
 extern u8 mode;
+extern int scale;
 
 /*
 **  -----------------
@@ -123,9 +124,7 @@ static const int WeFunc[] =
   GXor 
 };
 
-static XRectangle platoRect[] = 
-{ { XADJUST (0), YADJUST (511), 512, 512 },
-  { 0, YSize, 512, 16 * CSETS } };
+static XRectangle platoRect[2];
 
 /* data for plato font, set 0. */
 const unsigned short plato_m0[] = {
@@ -288,7 +287,7 @@ void ptermSetWeMode (u8 we);
 **
 **------------------------------------------------------------------------*/
 void ptermInit(const char *winName, bool closeOk)
-{
+    {
     int i;
     XWMHints wmhints;
     int screen;
@@ -299,9 +298,9 @@ void ptermInit(const char *winName, bool closeOk)
     char fgcolor[40], bgcolor[40];
 
     if (disp == NULL)
-    {
+        {
         dtXinit ();
-    }
+        }
     
     screen = DefaultScreen(disp);
 
@@ -310,27 +309,27 @@ void ptermInit(const char *winName, bool closeOk)
     */
     if (XrmGetResource (XrmDb, "dtcyber.platoforeground",
                         "Dtcyber.PlatoForeground", type, &value))
-    {
+        {
         strncpy (fgcolor, value.addr, (int) value.size);
-    }
+        }
     else
-    {
+        {
         strcpy (fgcolor, "#ff9000");
-    }
+        }
     if (XrmGetResource (XrmDb, "dtcyber.platobackground",
                         "Dtcyber.PlatoBackground", type, &value))
-    {
+        {
         strncpy (bgcolor, value.addr, (int) value.size);
-    }
+        }
     else if (XrmGetResource (XrmDb, "dtcyber.background",
-                        "Dtcyber.Background", type, &value))
-    {
+                             "Dtcyber.Background", type, &value))
+        {
         strncpy (bgcolor, value.addr, (int) value.size);
-    }
+        }
     else
-    {
+        {
         strcpy (bgcolor, "#000000");
-    }
+        }
     
     /*
     **  Create a window using the following hints.
@@ -382,8 +381,10 @@ void ptermInit(const char *winName, bool closeOk)
     /*
     **  Set line style
     */
-    XSetLineAttributes (disp, wgc, 0, LineSolid, CapButt, JoinBevel);
-    XSetLineAttributes (disp, pgc, 0, LineSolid, CapButt, JoinBevel);
+    XSetLineAttributes (disp, wgc, (scale == 1) ? 0 : scale,
+                        LineSolid, CapButt, JoinBevel);
+    XSetLineAttributes (disp, pgc, (scale == 1) ? 0 : scale,
+                        LineSolid, CapButt, JoinBevel);
     
     /*
     **  Initialize the window and pixmap.
@@ -400,6 +401,15 @@ void ptermInit(const char *winName, bool closeOk)
     **  The bitmap gets a second one for the loadable chars bitmap.
     **  (Painting of the trace marker is handled separately.)
     */
+    platoRect[0].x = XADJUST (0);
+    platoRect[0].y = YADJUST (511);
+    platoRect[0].width = 512 * scale;
+    platoRect[0].height = 512 * scale;
+    platoRect[1].x = 0;
+    platoRect[1].y = YSize;
+    platoRect[1].width = 512 * scale;
+    platoRect[1].height = 16 * CSETS * scale;
+    
     XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
     XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
     
@@ -422,10 +432,10 @@ void ptermInit(const char *winName, bool closeOk)
     **  Load Plato ROM characters
     */
     for (i = 0; i < sizeof (plato_m0) / (sizeof (plato_m0[0]) * 8); i++)
-    {
+        {
         ptermLoadChar (0, i, plato_m0 + (i * 8));
         ptermLoadChar (1, i, plato_m1 + (i * 8));
-    }
+        }
     
     /*
     **  Should we be on top?  Probably not...
@@ -439,7 +449,7 @@ void ptermInit(const char *winName, bool closeOk)
     */
     ptermComInit ();
     ptermActive = TRUE;
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Close window.
@@ -450,11 +460,11 @@ void ptermInit(const char *winName, bool closeOk)
 **
 **------------------------------------------------------------------------*/
 void ptermClose(void)
-{
-    if (!ptermActive)
     {
+    if (!ptermActive)
+        {
         return;
-    }
+        }
     
     ptermComClose ();
     XFreeCursor (disp, curs);
@@ -462,7 +472,7 @@ void ptermClose(void)
     XFreeGC (disp, pgc);
     XFreePixmap (disp, pixmap);
     XDestroyWindow (disp, ptermWindow);
-}
+    }
 
 
 /*--------------------------------------------------------------------------
@@ -493,7 +503,7 @@ void ptermSetName (const char *winName)
 **
 **------------------------------------------------------------------------*/
 void ptermSetWeMode (u8 we)
-{
+    {
     /*
     **  We set the window foreground and background to the writing colors,
     **  or to the reverse for the erasing modes, and the writing mode is
@@ -501,23 +511,23 @@ void ptermSetWeMode (u8 we)
     **  The pixmap writing varies according to what the Plato mode is.
     */
     if ( (we & 1) == 0)    /* inverse or erase, not char mode */
-    {
+        {
         XSetBackground (disp, wgc, fg);
         XSetForeground (disp, wgc, bg);
         XSetBackground (disp, pgc, pfg);
         XSetForeground (disp, pgc, pbg);
-    }
+        }
     else
-    {
+        {
         XSetBackground (disp, wgc, bg);
         XSetForeground (disp, wgc, fg);
         XSetBackground (disp, pgc, pbg);
         XSetForeground (disp, pgc, pfg);
-    }
+        }
     XSetFunction (disp, pgc, WeFunc[we]);
     XSetFunction (disp, wgc, GXcopy);
     wemode = we;
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Draw one character
@@ -532,16 +542,9 @@ void ptermSetWeMode (u8 we)
 **
 **------------------------------------------------------------------------*/
 void ptermDrawChar (int x, int y, int snum, int cnum)
-{
-  int savemode = wemode;
-  //    drawChar (ptermWindow, wgc, x, y, snum, cnum);
-        drawChar (pixmap, pgc, x, y, snum, cnum);
-	ptermSetWeMode (1);
-    XCopyPlane (disp, pixmap, ptermWindow, wgc, XADJUST (x & 1023), YADJUST (y) - 15,
-		8, 16, 
-                XADJUST (x & 1023), YADJUST (y) - 15, 1);
-    ptermSetWeMode (savemode);
-}
+    {
+    drawChar (pixmap, pgc, x, y, snum, cnum);
+    }
 
 
 /*--------------------------------------------------------------------------
@@ -555,10 +558,22 @@ void ptermDrawChar (int x, int y, int snum, int cnum)
 **
 **------------------------------------------------------------------------*/
 void ptermDrawPoint (int x, int y)
-{
-    XDrawPoint (disp, pixmap, pgc, XADJUST (x), YADJUST (y));
-    XDrawPoint (disp, ptermWindow, wgc, XADJUST (x), YADJUST (y));
-}
+    {
+    x = XADJUST (x);
+    y = YADJUST (y);
+    
+    XDrawPoint (disp, pixmap, pgc, x, y);
+    XDrawPoint (disp, ptermWindow, wgc, x, y);
+    if (scale == 2)
+        {
+        XDrawPoint (disp, pixmap, pgc, x + 1, y);
+        XDrawPoint (disp, ptermWindow, wgc, x + 1, y);
+        XDrawPoint (disp, pixmap, pgc, x, y + 1);
+        XDrawPoint (disp, ptermWindow, wgc, x, y + 1);
+        XDrawPoint (disp, pixmap, pgc, x + 1, y + 1);
+        XDrawPoint (disp, ptermWindow, wgc, x + 1, y + 1);
+        }    
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Draw a line
@@ -573,14 +588,14 @@ void ptermDrawPoint (int x, int y)
 **
 **------------------------------------------------------------------------*/
 void ptermDrawLine(int x1, int y1, int x2, int y2)
-{
+    {
     XDrawLine (disp, pixmap, pgc,
                XADJUST (x1), YADJUST (y1),
                XADJUST (x2), YADJUST (y2));
     XDrawLine (disp, ptermWindow, wgc, 
                XADJUST (x1), YADJUST (y1),
                XADJUST (x2), YADJUST (y2));
-}
+    }
 
 
 /*--------------------------------------------------------------------------
@@ -593,17 +608,19 @@ void ptermDrawLine(int x1, int y1, int x2, int y2)
 **
 **------------------------------------------------------------------------*/
 void ptermFullErase (void)
-{
+    {
     u8 savemode = wemode;
     
     ptermSetWeMode (0);
     XFillRectangle (disp, ptermWindow, wgc,
-                    DisplayMargin, DisplayMargin, 512, 512);
+                    DisplayMargin * scale, DisplayMargin * scale,
+                    512 * scale, 512 * scale);
     XFillRectangle (disp, pixmap, pgc,
-                    DisplayMargin, DisplayMargin, 512, 512);
+                    DisplayMargin * scale, DisplayMargin * scale,
+                    512 * scale, 512 * scale);
     ptermSetWeMode (savemode);
     XFlush (disp);
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Write a (loadable set) character to the font storage 
@@ -618,32 +635,43 @@ void ptermFullErase (void)
 **
 **------------------------------------------------------------------------*/
 void ptermLoadChar (int snum, int cnum, const u16 *data)
-{
+    {
     int i, j;
-    int x = cnum * 8;
-    int y = YSize + snum * 16 + 15;
+    int x = cnum * 8 * scale;
+    int y = YSize + (snum * 16 + 15) * scale;
     u16 col;
 
     XSetForeground (disp, pgc, pbg);
     XSetFunction (disp, pgc, GXcopy);
-    XFillRectangle (disp, pixmap, pgc, x, y - 15, 8, 16);
+    XFillRectangle (disp, pixmap, pgc, x, y - 15 * scale,
+                    8 * scale, 16 * scale);
     XSetForeground (disp, pgc, pfg);
 
     for (i = 0; i < 8; i++)
-    {
+        {
         col = *data++;
         for (j = 0; j < 16; j++)
-        {
-            if (col & 1)
             {
-                XDrawPoint(disp, pixmap, pgc, x, y - j);
-            }
+            if (col & 1)
+                {
+                XDrawPoint(disp, pixmap, pgc,
+                           x, y - j * scale);
+                if (scale == 2)
+                    {
+                    XDrawPoint(disp, pixmap, pgc,
+                               x + 1, y - j * scale);
+                    XDrawPoint(disp, pixmap, pgc,
+                               x, y - j * scale + 1);
+                    XDrawPoint(disp, pixmap, pgc,
+                               x + 1, y - j * scale + 1);
+                    }
+                }
             col >>= 1;
+            }
+        x += scale;
         }
-        x = (x + 1) & 0777;
-    }
     ptermSetWeMode (wemode);
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Process XButtonPressedEvent for Plato touch panel
@@ -656,27 +684,27 @@ void ptermLoadChar (int snum, int cnum, const u16 *data)
 **
 **------------------------------------------------------------------------*/
 bool platoTouch (XButtonPressedEvent *bp, int stat)
-{
+    {
     int x, y;
     
     if (!touchEnabled)
-    {
+        {
         return FALSE;
-    }
+        }
+
     x = XUNADJUST (bp->x);
     y = YUNADJUST (bp->y);
-    
     if (x < 0 || x > 511 ||
         y < 0 || y > 511)
-    {
+        {
         return FALSE;
-    }
+        }
     x /= 32;
     y /= 32;
 
     niuLocalKey (0x100 | (x << 4) | y, stat);
     return TRUE;
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Process XKeyEvent for Plato keyboard
@@ -689,7 +717,7 @@ bool platoTouch (XButtonPressedEvent *bp, int stat)
 **
 **------------------------------------------------------------------------*/
 bool platoKeypress (XKeyEvent *kp, int stat)
-{
+    {
     int state = kp->state;
     int key;
     KeySym ks;
@@ -700,73 +728,73 @@ bool platoKeypress (XKeyEvent *kp, int stat)
     bool ctrl = FALSE;
     
     if (state & ControlMask)
-    {
+        {
         ctrl = TRUE;
         state &= ~ControlMask;
-    }
+        }
     if (state & ShiftMask)
-    {
+        {
         state &= ~ShiftMask;
         shift = 040;
-    }
+        }
     key = XKeycodeToKeysym (disp, kp->keycode, 0);
 
     // ALT leftarrow is assignment arrow
     if ((state & MODMASK) != 0 && key == XK_Left)
-    {
+        {
         pc = 015 | shift;       // assignment arrow
         niuLocalKey (pc, stat);
         return TRUE;
-    }
+        }
     if (key < sizeof (asciiToPlato))
-    {
-        if (state & MODMASK)
         {
+        if (state & MODMASK)
+            {
             pc = altKeyToPlato[key] | shift;
             
             if (pc >= 0)
-            {
+                {
                 niuLocalKey (pc, stat);
                 return TRUE;
-            }
+                }
             else
-            {
+                {
                 return FALSE;
+                }
             }
-        }
         else
-        {
-            if (ctrl && !isalpha (key))
             {
+            if (ctrl && !isalpha (key))
+                {
                 // control but not a letter -- 
                 // translate to what a PLATO keyboard
                 // would have on the shifted position for that key
                 pc = asciiToPlato[key];
                 shift = 040;
-            }
+                }
             else
-            {
+                {
                 len = XLookupString (kp, text, 10, &ks, 0);
                 if (len > 1)
-                {
+                    {
                     return FALSE;
-                }
+                    }
                 pc = asciiToPlato[text[0]];
-            }
-            if (pc >= 0)
-            {
-                if (ctrl)
-                {
-                    pc |= shift;
                 }
+            if (pc >= 0)
+                {
+                if (ctrl)
+                    {
+                    pc |= shift;
+                    }
                 niuLocalKey (pc, stat);
                 return TRUE;
-            }
+                }
             
+            }
         }
-    }
     switch (key)
-    {
+        {
     case XK_space:
     case XK_KP_Space:
         pc = 0100;      // space
@@ -794,23 +822,23 @@ bool platoKeypress (XKeyEvent *kp, int stat)
         break;
     case XK_KP_Add:
         if (ctrl)
-        {
+            {
             pc = 056;   // Sigma
-        }
+            }
         else
-        {
+            {
             pc = 016;   // +
-        }
+            }
         break;
     case XK_KP_Subtract:
         if (ctrl)
-        {
+            {
             pc = 057;   // Delta
-        }
+            }
         else
-        {
+            {
             pc = 017;   // -
-        }
+            }
         break;
     case XK_KP_Multiply:
     case XK_Delete:
@@ -871,11 +899,11 @@ bool platoKeypress (XKeyEvent *kp, int stat)
         break;
     default:
         return FALSE;
-    }
+        }
     pc |= shift;
     niuLocalKey (pc, stat);
     return TRUE;
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Window input event processor.
@@ -887,11 +915,11 @@ bool platoKeypress (XKeyEvent *kp, int stat)
 **
 **------------------------------------------------------------------------*/
 void ptermInput(XEvent *event)
-{
+    {
     u8 savemode = wemode;
 
     switch (event->type)
-    {
+        {
     case MappingNotify:
         XRefreshKeyboardMapping ((XMappingEvent *)event);
         break;
@@ -912,26 +940,28 @@ void ptermInput(XEvent *event)
         XSetBackground (disp, wgc, bg);
         XSetFunction (disp, wgc, GXcopy);
         XCopyPlane(disp, pixmap, ptermWindow, wgc, 
-                   DisplayMargin, DisplayMargin,
-                   512, 512, 
-                   DisplayMargin, DisplayMargin, 1);
+                   DisplayMargin * scale, DisplayMargin * scale,
+                   512 * scale, 512 * scale, 
+                   DisplayMargin * scale, DisplayMargin * scale, 1);
         // copy the trace marker
         if (tracePterm)
-        {
+            {
             XSetClipMask (disp, wgc, None);
             XSetClipMask (disp, pgc, None);
             XCopyPlane(disp, pixmap, ptermWindow, wgc, 
-                       DisplayMargin + 512, DisplayMargin - 16,
-                       8, 16,
-                       DisplayMargin + 512, DisplayMargin - 16, 1);
+                       (DisplayMargin + 512) * scale,
+                       (DisplayMargin - 16) * scale,
+                       8 * scale, 16 * scale,
+                       (DisplayMargin + 512) * scale,
+                       (DisplayMargin - 16) * scale, 1);
             XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
             XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
-        }
+            }
         ptermSetWeMode (savemode);
         XSync (disp, FALSE);
         break;
+        }
     }
-}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Enable or disable "touch" input
@@ -943,17 +973,17 @@ void ptermInput(XEvent *event)
 **
 **------------------------------------------------------------------------*/
 void ptermTouchPanel(bool enable)
-{
+    {
     if (enable)
-    {
+        {
         XDefineCursor (disp, ptermWindow, curs);
-    }
+        }
     else
-    {
+        {
         XUndefineCursor (disp, ptermWindow);
-    }
+        }
     touchEnabled = enable;
-}
+    }
 
 /*
 **--------------------------------------------------------------------------
@@ -978,40 +1008,62 @@ void ptermTouchPanel(bool enable)
 **
 **------------------------------------------------------------------------*/
 static void drawChar (Drawable d, GC gc, int x, int y, int snum, int cnum)
-{
-    int charX, charY;
-    char c;
-    
-    if (x >= 1024)
     {
+    int charX, charY, sizeX, sizeY, screenX, screenY;
+    char c;
+    int savemode = wemode;
+
+    if (x >= 1024)
+        {
         // Special flag coordinate to write to the status field
         XSetClipMask (disp, wgc, None);
         XSetClipMask (disp, pgc, None);
-    }
+        }
     
-    charX = cnum * 8;
-    charY = YSize + snum * 16;
-    XCopyPlane (disp, pixmap, d, gc, charX, charY, 8, 16, 
-                XADJUST (x & 1023), YADJUST (y) - 15, 1);
+    charX = cnum * 8 * scale;
+    charY = YSize + snum * 16 * scale;
+    sizeX = 8;
+    sizeY = 16;
+    screenX = XADJUST (x & 1023);
+    screenY = YADJUST (y) - 15 * scale;
+    
+    if (x < 0)
+        {
+        sizeX += x;
+        charX -= x * scale;
+        screenX = XADJUST (0);
+        }
+    if (y < 0)
+        {
+        sizeY += y;
+        }
+    XCopyPlane (disp, pixmap, d, gc, charX, charY,
+                sizeX * scale, sizeY * scale, 
+                screenX, screenY, 1);
+	ptermSetWeMode (1);
+    XCopyPlane (disp, pixmap, ptermWindow, wgc,
+                screenX, screenY, sizeX * scale, sizeY * scale,
+                screenX, screenY, 1);
+	ptermSetWeMode (savemode);
     
     // Handle screen edge wraparound by recursion...
     if (x >= 1024)
-    {
+        {
         // Restore normal clipping
         XSetClipRectangles (disp, wgc, 0, 0, platoRect, 1, YXSorted);
         XSetClipRectangles (disp, pgc, 0, 0, platoRect, 2, YXSorted);
-    }
+        }
     else 
-    {
+        {
         if (x > 512 - 8)
-        {
+            {
             drawChar (d, gc, x - 512, y, snum, cnum);
-        }
+            }
         if (y > 512 - 16)
-        {
+            {
             drawChar (d, gc, x, y - 512, snum, cnum);
+            }
         }
     }
-}
 
 /*---------------------------  End Of File  ------------------------------*/
