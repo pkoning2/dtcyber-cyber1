@@ -342,6 +342,7 @@ static void mt669Load(DevSlot *dp, int unitNo, char *fn)
     u8 unitMode = 'r';
     char *p;
     static char msgBuf[80];
+    long endPos = 0;
     
     if (fn == NULL)
         {
@@ -388,6 +389,12 @@ static void mt669Load(DevSlot *dp, int unitNo, char *fn)
             {
             fcb = fopen(fn, "w+b");
             }
+        else
+            {
+            fseek (fcb, 0, SEEK_END);
+            endPos = ftell (fcb);
+            rewind (fcb);
+            }
         }
     else
         {
@@ -411,8 +418,15 @@ static void mt669Load(DevSlot *dp, int unitNo, char *fn)
     tp = (TapeBuf *)dp->context[unitNo];
     tp->unitMode = unitMode;
     tp->newTape = TRUE;
-    sprintf (msgBuf, "MT669 loaded with %s, ring %s",
-             fn, ((unitMode == 'w') ? "in" : "out"));
+    if (endPos != 0)
+        {
+        sprintf (msgBuf, "$MT668 loaded, warning, file is not empty.");
+        }
+    else
+        {
+        sprintf (msgBuf, "MT669 loaded with %s, ring %s",
+                 fn, ((unitMode == 'w') ? "in" : "out"));
+        }
     opSetMsg (msgBuf);
 }
 
