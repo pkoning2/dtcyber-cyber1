@@ -26,6 +26,7 @@ extern void dtXinit(void);
 #endif
 extern void ptermComInit(void);
 extern void ptermSetName (const char *winName);
+extern void ptermSetStation (const char *hostName, int station);
 extern void ptermLoadChar (int snum, int cnum, const u16 *data);
 extern void ptermSetWeMode (u8 we);
 extern void ptermSetClip (bool enable);

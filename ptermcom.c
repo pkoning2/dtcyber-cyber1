@@ -26,7 +26,6 @@
 #include "const.h"
 #include "types.h"
 #include "proto.h"
-#include "ptermversion.h"
 #include "pterm.h"
 
 /*
@@ -198,7 +197,6 @@ int procNiuWord (u32 d)
     {
     mptr mp;
     char *msg = "";
-    char name[100];
     int status = 0;
     
     seq++;
@@ -235,17 +233,7 @@ int procNiuWord (u32 d)
                 {
                 // Special code to tell pterm the station number
                 d &= 0777;
-                if (hostName != NULL)
-                    {
-                    sprintf (name, "Pterm " PTERMVERSION ": station %d-%d -- %s",
-                             d >> 5, d & 31, hostName);
-                    }
-                else
-                    {
-                    sprintf (name, "Pterm " PTERMVERSION ": station %d-%d",
-                             d >> 5, d & 31);
-                    }
-                ptermSetName (name);
+                ptermSetStation (hostName, d);
                 }
             else if (d == 1)
                 {

@@ -136,7 +136,6 @@ static const DWORD MWeFunc[] =
 **--------------------------------------------------------------------------
 */
 
-void ptermSetName (const char *winName);
 bool platoKeypress (WPARAM wParam, int alt, int stat);
 bool platoTouch (LPARAM lParam, int stat);
 extern void ptermComInit(void);
@@ -201,6 +200,32 @@ void ptermSetName (const char *winName)
         SetWindowText (hWnd, winName);
         }
     strcpy (ptermWinName, winName);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set window name
+**
+**  Parameters:     Name        Description.
+**                  winName     name to set.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermSetStation (const char *hostName, int station)
+    {
+    char name[100];
+    
+    if (hostName != NULL)
+        {
+        sprintf (name, "Pterm " PTERMVERSION ": station %d-%d -- %s",
+                 station >> 5, station & 31, hostName);
+        }
+    else
+        {
+        sprintf (name, "Pterm " PTERMVERSION ": station %d-%d",
+                 station >> 5, station & 31);
+         }
+    ptermSetName (name);
     }
 
 /*--------------------------------------------------------------------------
