@@ -1,0 +1,9 @@
+asm.
+user(plato,plato)
+settl(*)
+setasl(*)
+setjsl(*)
+rfl,170000.
+attach,procfil.
+begin(setupg,procfil,noslvl=871)
+begin(pni,procfil,ml=871,list=output)
