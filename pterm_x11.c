@@ -25,6 +25,8 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
+#include <X11/Xresource.h>
+#include <X11/cursorfont.h>
 #include <sys/time.h>
 #include "const.h"
 #include "types.h"
@@ -53,40 +55,28 @@
 */
 
 #define XADJUST(x) ((x) + DisplayMargin)
-#define YADJUST(y) (YSize - DisplayMargin - (y))
+#define YADJUST(y) (YSize - 1 - DisplayMargin - (y))
 
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
 **  -----------------------------------------
 */
-typedef void niuProcessOutput (int, u32);
 
 /*
 **  ---------------------------
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void loadChar (const u16 *cdat, int snum, int cnum);
-static void setWeMode (u8 wemode);
-static void drawChar (Drawable d, GC gc, int snum, int cnum);
-static void writeChar (int snum, int cnum, const u16 *data);
-static void plotChar (u8 c);
-static void mode0 (u32 d);
-static void mode1 (u32 d);
-static void mode2 (u32 d);
-static void mode3 (u32 d);
-static void mode4 (u32 d);
-static void mode5 (u32 d);
-static void mode6 (u32 d);
-static void mode7 (u32 d);
+static void drawChar (Drawable d, GC gc, int x, int y, int snum, int cnum);
 
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
-extern Display *disp;
+Display *disp;
+XrmDatabase XrmDb;
 Window ptermWindow;
 
 /*
@@ -95,28 +85,21 @@ Window ptermWindow;
 **  -----------------
 */
 static int fontId;
-static u16 currentX;
-static u16 currentY;
-static u16 margin;
 static Pixmap pixmap;
 static GC wgc, pgc;
 static unsigned long fg, bg, pfg, pbg;
-static u8 mode;
-static u8 wemode;
-static u16 memaddr;
-static u16 plato_m23[128 * 8];
-static u16 memlpc;
-static u8 currentCharset;
-static bool uncover;
+static u8 wemode;       // local copy of most recently set wemode
+static Cursor curs;
+static bool touchEnabled;
+static int sts;
 
-typedef void (*mptr)();
-
-const mptr modePtr[] = 
-{
-    &mode0, &mode1, &mode2, &mode3,
-    &mode4, &mode5, &mode6, &mode7
+// X gc function codes for a given W/E mode:
+static const int WeFunc[] = 
+{ GXcopy,
+  GXcopy,
+  GXandInverted,
+  GXor 
 };
-
 
 /*
 **--------------------------------------------------------------------------
@@ -125,7 +108,57 @@ const mptr modePtr[] =
 **
 **--------------------------------------------------------------------------
 */
-extern void niuSetOutputHandler (niuProcessOutput *h, int stat);
+
+bool platoKeypress (XKeyEvent *kp, int stat);
+void ptermInput(XEvent *event);
+void ptermXinit(void);
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Common X initialization for DtCyber and Pterm
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermXinit (void)
+{
+    char *home;
+    char *xf;
+    XrmDatabase xdef, appdef;
+    
+    /*
+    **  Open the X11 display.
+    */
+    disp = XOpenDisplay (0);
+    if (disp == NULL)
+    {
+        fprintf(stderr, "Could not open display\n");
+        exit(1);
+    }
+    
+    XrmInitialize ();
+    appdef = XrmGetFileDatabase ("/usr/lib/X11/app-defaults/Dtcyber");
+    if (appdef == NULL)
+    {
+        fprintf (stderr, "no app default database for dtcyber\n");
+    }
+    home = getenv ("HOME");
+    xf = malloc (strlen (home) + strlen ("/.Xdefaults") + 1);
+    strcpy (xf, home);
+    strcat (xf, "/.Xdefaults");
+    xdef = XrmGetFileDatabase (xf);
+    free (xf);
+    if (xdef != NULL)
+    {
+        XrmCombineDatabase (appdef, &xdef, FALSE);
+    }
+    else
+    {
+        xdef = appdef;
+    }
+    XrmDb = xdef;    
+}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize the Plato terminal window.
@@ -142,22 +175,39 @@ void ptermInit(const char *winName)
     int screen;
     XWindowAttributes a;
     XColor b,c;
+    XrmValue value;
+    char *type[20];
+    char fgcolor[40], bgcolor[40];
 
-    /*
-    **  Open the X11 display.
-    */
     if (disp == NULL)
     {
-        disp = XOpenDisplay (0);
+        ptermXinit ();
     }
-    if (disp == (Display *) NULL)
-    {
-        fprintf(stderr, "Could not open display\n");
-        exit(1);
-    }
-
+    
     screen = DefaultScreen(disp);
 
+    /*
+    **  Look for resources
+    */
+    if (XrmGetResource (XrmDb, "dtcyber.platoforeground",
+                        "Dtcyber.Foreground", type, &value))
+    {
+        strncpy (fgcolor, value.addr, (int) value.size);
+    }
+    else
+    {
+        strcpy (fgcolor, "#ff9000");
+    }
+    if (XrmGetResource (XrmDb, "dtcyber.background",
+                        "Dtcyber.Background", type, &value))
+    {
+        strncpy (bgcolor, value.addr, (int) value.size);
+    }
+    else
+    {
+        strcpy (bgcolor, "#000000");
+    }
+    
     /*
     **  Create a window using the following hints.
     */
@@ -193,10 +243,11 @@ void ptermInit(const char *winName)
     /*
     **  Setup fore- and back-ground colors.
     */
-    XGetWindowAttributes (disp,ptermWindow,&a);
-    XAllocNamedColor (disp, a.colormap,"orange",&b,&c);
-    fg=b.pixel;
-    bg = BlackPixel (disp, screen);
+    XGetWindowAttributes (disp, ptermWindow, &a);
+    sts = XAllocNamedColor (disp, a.colormap, fgcolor, &b, &c);
+    fg = b.pixel;
+    sts = XAllocNamedColor (disp, a.colormap, bgcolor, &b, &c);
+    bg = b.pixel;
     XSetBackground (disp, wgc, bg);
     XSetForeground (disp, wgc, fg);
 
@@ -221,8 +272,7 @@ void ptermInit(const char *winName)
     XFillRectangle (disp, ptermWindow, wgc, 0, 0, XSize, YSize);
     XSetForeground (disp, pgc, pbg);
     XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YPMSize);
-    wemode = 1;
-    setWeMode (wemode);
+    ptermSetWeMode (1);
 
     /*
     **  Initialise input.
@@ -233,6 +283,11 @@ void ptermInit(const char *winName)
     XSelectInput (disp, ptermWindow,
                   ExposureMask | KeyPressMask | StructureNotifyMask);
 
+    /*
+    **  Find the "hand" cursor
+    */
+    curs = XCreateFontCursor(disp, XC_hand2);
+    
     /*
     **  Load Plato font
     */
@@ -246,65 +301,10 @@ void ptermInit(const char *winName)
     XMapRaised (disp, ptermWindow);
     XSync (disp, FALSE);
 
-#if 0
-// testing...
-    int j;
-    
-    mode = 1;
-    wemode = 1;
-    setWeMode (wemode);
-    for (i = 0; i < 0774; i += 01)
-    {
-        currentY = i;
-        currentX = 0;
-        mode1 (0777000 + (i));
-    }
-    for (i = 0; i < 63; i++)
-    {
-        for (j = 0; j < 8; j++)
-        {
-            plato_m23[j] = (i << 8) + i;
-            plato_m23[j + 8] = (((i + j) << 8) + i + j);
-        }
-        writeChar (0, i, plato_m23);
-        writeChar (1, i, plato_m23 + 8);
-    }
-#define pc(c) { \
-        drawChar (ptermWindow, wgc, currentCharset, c); \
-        drawChar (pixmap, pgc, currentCharset, c); \
-        currentX = (currentX + 8) & 0777; \
-    }
-        
-    for (wemode = 0; wemode < 4; wemode++)
-    {
-        setWeMode (wemode);
-        currentX = 0;
-        mode = 3;
-        mode3(0777720);
-        currentY = 400 - 80 * wemode;
-        for (i = 0; i < 64; i++)
-            pc (i);
-        mode3(0777715);
-        mode3(0777721);
-        for (i = 0; i < 64; i++)
-            pc (i);
-        mode3(0777715);
-        mode3(0777722);
-        for (i = 0; i < 64; i++)
-            pc (i);
-        mode3(0777715);
-        mode3(0777723);
-        for (i = 0; i < 64; i++)
-            pc (i);
-        mode3(0777715);
-    }
-// end testing
-#endif
-
     /*
-    **  Register with NIU for local output.
+    **  Now do common init stuff
     */
-    niuSetOutputHandler (procNiuWord, 1);
+    ptermComInit ();
 }
 
 /*--------------------------------------------------------------------------
@@ -317,12 +317,168 @@ void ptermInit(const char *winName)
 **------------------------------------------------------------------------*/
 void ptermClose(void)
 {
+    ptermComClose ();
+    XFreeCursor (disp, curs);
     XFreeGC (disp, wgc);
     XFreeGC (disp, pgc);
     XFreePixmap (disp, pixmap);
     XDestroyWindow (disp, ptermWindow);
 }
 
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set W/E mode
+**
+**  Parameters:     Name        Description.
+**                  we          mode byte
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermSetWeMode (u8 we)
+{
+    // Unfortunately we can't just do wemode == 0 with GXcopyInverted,
+    // partly because that produces wrong colors when writing to the
+    // (orange) window, and partly because XDrawImageString doesn't 
+    // pay attention to the GC function.
+    if (we == 0)
+    {
+        XSetBackground (disp, wgc, fg);
+        XSetForeground (disp, wgc, bg);
+        XSetBackground (disp, pgc, pfg);
+        XSetForeground (disp, pgc, pbg);
+    }
+    else
+    {
+        XSetBackground (disp, wgc, bg);
+        XSetForeground (disp, wgc, fg);
+        XSetBackground (disp, pgc, pbg);
+        XSetForeground (disp, pgc, pfg);
+    }
+    XSetFunction (disp, pgc, WeFunc[we]);
+    XSetFunction (disp, wgc, WeFunc[we]);
+    wemode = we;
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Draw one character
+**
+**  Parameters:     Name        Description.
+**                  x           X coordinate to draw
+**                  y           Y coordinate to draw
+**                  snum        character set number
+**                  cnum        character number
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermDrawChar (int x, int y, int snum, int cnum)
+{
+    drawChar (ptermWindow, wgc, x, y, snum, cnum);
+    drawChar (pixmap, pgc, x, y, snum, cnum);
+}
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Draw a point
+**
+**  Parameters:     Name        Description.
+**                  x           X coordinate of point
+**                  y           Y coordinate of point
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermDrawPoint (int x, int y)
+{
+    XDrawPoint (disp, pixmap, pgc, XADJUST (x), YADJUST (y));
+    XDrawPoint (disp, ptermWindow, wgc, XADJUST (x), YADJUST (y));
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Draw a line
+**
+**  Parameters:     Name        Description.
+**                  x1          starting X coordinate of line
+**                  y1          starting Y coordinate of line
+**                  x2          ending X coordinate
+**                  y2          ending Y coordinate
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermDrawLine(int x1, int y1, int x2, int y2)
+{
+    XDrawLine (disp, pixmap, pgc,
+               XADJUST (x1), YADJUST (y1),
+               XADJUST (x2), YADJUST (y2));
+    XDrawLine (disp, ptermWindow, wgc, 
+               XADJUST (x1), YADJUST (y1),
+               XADJUST (x2), YADJUST (y2));
+}
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Process Plato full screen erase.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**
+**------------------------------------------------------------------------*/
+void ptermFullErase (void)
+{
+    u8 savemode = wemode;
+    
+    ptermSetWeMode (0);
+    XFillRectangle (disp, ptermWindow, wgc,
+                    DisplayMargin, DisplayMargin, 512, 512);
+    XFillRectangle (disp, pixmap, pgc,
+                    DisplayMargin, DisplayMargin, 512, 512);
+    ptermSetWeMode (savemode);
+    XFlush (disp);
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Write a (loadable set) character to the font storage 
+**                  part of the pixmap
+**
+**  Parameters:     Name        Description.
+**                  snum        character set number
+**                  cnum        character number
+**                  data        vector of 8 uint16s with column pattern
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void ptermLoadChar (int snum, int cnum, const u16 *data)
+{
+    int i, j;
+    int x = cnum * 8;
+    int y = YSize + (snum & 1) * 16 + 15;
+    u16 col;
+
+    XSetForeground (disp, pgc, pbg);
+    XSetFunction (disp, pgc, GXcopy);
+    XFillRectangle (disp, pixmap, pgc, x, y - 15, 8, 16);
+    XSetForeground (disp, pgc, pfg);
+
+    for (i = 0; i < 8; i++)
+    {
+        col = *data++;
+        for (j = 0; j < 16; j++)
+        {
+            if (col & 1)
+            {
+                XDrawPoint(disp, pixmap, pgc, x, y - j);
+            }
+            col >>= 1;
+        }
+        x = (x + 1) & 0777;
+    }
+    ptermSetWeMode (wemode);
+}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Process XKeyEvent for Plato keyboard
@@ -474,96 +630,37 @@ void ptermInput(XEvent *event)
                    DisplayMargin, DisplayMargin,
                    512, 512, 
                    DisplayMargin, DisplayMargin, 1);
-        setWeMode (wemode);
+        // copy the trace marker
+        XCopyPlane(disp, pixmap, ptermWindow, wgc, 
+                   DisplayMargin + 512, DisplayMargin - 16,
+                   8, 16,
+                   DisplayMargin + 512, DisplayMargin - 16, 1);
+        ptermSetWeMode (wemode);
         XSync (disp, FALSE);
         break;
     }
 }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Process NIU word
+**  Purpose:        Enable or disable "touch" input
 **
 **  Parameters:     Name        Description.
-**                  stat        Station number
-**                  d           19-bit word
+**                  enable      true or false for enable or disable.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void procNiuWord (int stat, u32 d)
+void ptermTouchPanel(bool enable)
 {
-    mptr mp;
-    
-    if (stat != 1)
+    if (enable)
     {
-        return;
-    }
-    if (d & 01000000)
-    {
-        mp = modePtr[mode];
-        (*mp) (d);
+        XDefineCursor (disp, ptermWindow, curs);
     }
     else
     {
-        switch ((d >> 15) & 7)
-        {
-        case 0:     // nop
-            break;
-
-        case 1:     // load mode
-            mode = (d >> 3) & 7;
-            wemode = (d >> 1) & 3;
-#ifdef DEBUG
-            printf ("load mode %d %d %d\n", mode, wemode, d & 1);
-#endif
-            if (d & 1)
-            {
-                // full screen erase
-                setWeMode (0);
-                XFillRectangle (disp, ptermWindow, wgc, 0, 0, XSize, YSize);
-                XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
-                setWeMode (wemode);
-                XFlush (disp);
-            }
-            else
-            {
-                setWeMode (wemode);
-            }
-            break;
-            
-        case 2:     // load coordinate
-#ifdef DEBUG
-            printf ("load coord %d %d %d\n",
-                    d & 0777, (d >> 9) & 1, (d >> 12) & 1);
-#endif
-            if (d & 01000)
-            {
-                currentY = d & 0777;
-            }
-            else
-            {
-                currentX = d & 0777;
-                if (d & 010000)
-                {
-                    margin = currentX;
-                }
-            }
-            break;
-        case 3:     // echo
-#ifdef DEBUG
-            printf ("echo %03o\n", d & 0177);
-#endif
-            niuLocalKey ((d & 0177) + 0200, 1);
-            break;
-            
-        case 4:     // load address
-            memaddr = d & 077777;
-            break;
-            
-        default:    // ignore
-            break;
-        }
+        XUndefineCursor (disp, ptermWindow);
     }
+    touchEnabled = enable;
 }
 
 /*
@@ -580,13 +677,15 @@ void procNiuWord (int stat, u32 d)
 **  Parameters:     Name        Description.
 **                  d           X Drawable
 **                  gc          Graphics context
+**                  x           X coordinate to draw
+**                  y           Y coordinate to draw
 **                  snum        character set number
 **                  cnum        character number
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void drawChar (Drawable d, GC gc, int snum, int cnum)
+static void drawChar (Drawable d, GC gc, int x, int y, int snum, int cnum)
 {
     int charX, charY;
     char c;
@@ -597,13 +696,13 @@ static void drawChar (Drawable d, GC gc, int snum, int cnum)
         c = (snum * 64) + cnum;
         if (wemode & 2)
         {
-            XDrawString(disp, d, gc, XADJUST (currentX),
-                        YADJUST (currentY), &c, 1);
+            XDrawString(disp, d, gc, XADJUST (x),
+                        YADJUST (y), &c, 1);
         }
         else
         {
-            XDrawImageString(disp, d, gc, XADJUST (currentX),
-                             YADJUST (currentY), &c, 1);
+            XDrawImageString(disp, d, gc, XADJUST (x),
+                             YADJUST (y), &c, 1);
         }
     }
     else
@@ -611,308 +710,8 @@ static void drawChar (Drawable d, GC gc, int snum, int cnum)
         charX = cnum * 8;
         charY = YSize + (snum - 2) * 16;
         XCopyPlane (disp, pixmap, d, gc, charX, charY, 8, 16, 
-                    XADJUST (currentX), YADJUST (currentY) - 15, 1);
+                    XADJUST (x), YADJUST (y) - 15, 1);
     }
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Write a (loadable set) character to the font storage 
-**                  part of the pixmap
-**
-**  Parameters:     Name        Description.
-**                  snum        character set number
-**                  cnum        character number
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void writeChar (int snum, int cnum, const u16 *data)
-{
-    int i, j;
-    int x = cnum * 8;
-    int y = YSize + (snum & 1) * 16 + 15;
-    u16 col;
-
-    XSetForeground (disp, pgc, pbg);
-    XSetFunction (disp, pgc, GXcopy);
-    XFillRectangle (disp, pixmap, pgc, x, y - 15, 8, 16);
-    XSetForeground (disp, pgc, pfg);
-
-    for (i = 0; i < 8; i++)
-    {
-        col = *data++;
-        for (j = 0; j < 16; j++)
-        {
-            if (col & 1)
-            {
-                XDrawPoint(disp, pixmap, pgc, x, y - j);
-            }
-            col >>= 1;
-        }
-        x = (x + 1) & 0777;
-    }
-    setWeMode (wemode);
-}
-
-// X gc function codes for a given W/E mode:
-static const int WeFunc[] = 
-{ GXcopy,
-  GXcopy,
-  GXandInverted,
-  GXor 
-};
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Set W/E mode
-**
-**  Parameters:     Name        Description.
-**                  we          mode byte
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void setWeMode (u8 we)
-{
-    // Unfortunately we can't just do wemode == 0 with GXcopyInverted,
-    // partly because that produces wrong colors when writing to the
-    // (orange) window, and partly because XDrawImageString doesn't 
-    // pay attention to the GC function.
-    if (we == 0)
-    {
-        XSetBackground (disp, wgc, fg);
-        XSetForeground (disp, wgc, bg);
-        XSetBackground (disp, pgc, pfg);
-        XSetForeground (disp, pgc, pbg);
-    }
-    else
-    {
-        XSetBackground (disp, wgc, bg);
-        XSetForeground (disp, wgc, fg);
-        XSetBackground (disp, pgc, pbg);
-        XSetForeground (disp, pgc, pfg);
-    }
-    XSetFunction (disp, pgc, WeFunc[we]);
-    XSetFunction (disp, wgc, WeFunc[we]);
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Draw one character
-**
-**  Parameters:     Name        Description.
-**                  c           Character code
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void plotChar (u8 c)
-{
-    int x, y;
-    
-    c &= 077;
-    if (c == 077)
-    {
-        uncover = TRUE;
-        return;
-    }
-    if (uncover)
-    {
-        uncover = FALSE;
-        switch (c)
-        {
-        case 010:   // backspace
-            currentX = (currentX - 8) & 0777;
-            break;
-        case 011:   // tab
-            currentX = (currentX + 8) & 0777;
-            break;
-        case 012:   // linefeed
-            currentY = (currentY - 16) & 0777;
-            break;
-        case 013:   // vertical tab
-            currentY = (currentY + 16) & 0777;
-            break;
-        case 014:   // form feed
-            currentX = 0;
-            currentY = 496;
-            break;
-        case 015:   // carriage return
-            currentX = margin;
-            currentY = (currentY - 16) & 0777;
-            break;
-        case 016:   // superscript
-            currentY = (currentY + 5) & 0777;
-            break;
-        case 017:   // subscript
-            currentY = (currentY - 5) & 0777;
-            break;
-        case 020:   // select M0
-        case 021:   // select M1
-        case 022:   // select M2
-        case 023:   // select M3
-            currentCharset = c - 020;
-            break;
-        default:
-            break;
-        }
-    }
-    else
-    {
-        drawChar (ptermWindow, wgc, currentCharset, c);
-        drawChar (pixmap, pgc, currentCharset, c);
-        currentX = (currentX + 8) & 0777;
-    }
-}
-
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 0 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode0 (u32 d)
-{
-    int x, y;
-    
-    x = (d >> 9) & 0777;
-    y = d & 0777;
-#ifdef DEBUG
-    printf ("dot %d %d\n", x, y);
-#endif
-    XDrawPoint (disp, pixmap, pgc, XADJUST (x), YADJUST (y));
-    XDrawPoint (disp, ptermWindow, wgc, XADJUST (x), YADJUST (y));
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 1 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode1 (u32 d)
-{
-    int x, y;
-    
-    x = (d >> 9) & 0777;
-    y = d & 0777;
-#ifdef DEBUG
-    printf ("lineto %d %d\n", x, y);
-#endif
-    XDrawLine (disp, pixmap, pgc,
-               XADJUST (currentX), YADJUST (currentY),
-               XADJUST (x), YADJUST (y));
-    XDrawLine (disp, ptermWindow, wgc, 
-               XADJUST (currentX), YADJUST (currentY),
-               XADJUST (x), YADJUST (y));
-    currentX = x;
-    currentY = y;
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 2 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode2 (u32 d)
-{
-    int ch;
-    
-    if (memaddr >= 127 * 8)
-    {
-        return;
-    }
-    if (((d >> 16) & 3) == 0)
-    {
-        // load data
-        plato_m23[memaddr] = d & 0xffff;
-        if ((++memaddr & 7) == 0)
-        {
-            // character is done -- load it to display 
-            ch = (memaddr / 8) - 1;
-            writeChar (ch / 64, ch % 64, &plato_m23[memaddr - 8]);
-        }
-    }
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 3 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode3 (u32 d)
-{
-#ifdef DEBUG
-    printf ("char %02o %02o %02o\n", (d >> 12) & 077, (d >> 6) & 077, d & 077);
-#endif
-    plotChar (d >> 12);
-    plotChar (d >> 6);
-    plotChar (d);
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 4 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode4 (u32 d)
-{
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 5 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode5 (u32 d)
-{
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 6 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode6 (u32 d)
-{
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Process Mode 7 data word
-**
-**  Parameters:     Name        Description.
-**                  d           Data word
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void mode7 (u32 d)
-{
 }
 
 /*---------------------------  End Of File  ------------------------------*/

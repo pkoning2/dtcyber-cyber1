@@ -22,10 +22,10 @@
 #include "types.h"
 #include "proto.h"
 #include <sys/types.h>
-#include <sys/time.h>
 #if defined(_WIN32)
 #include <winsock.h>
 #else
+#include <sys/time.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -34,6 +34,7 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
+#include <X11/Xresource.h>
 #endif
 
 /*
@@ -43,14 +44,11 @@
 */
 #define platoPort   5004
 
-//#define DEBUG
-
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
 **  -----------------------------------------
 */
-typedef void niuProcessOutput (int, u32);
 
 /*
 **  ---------------------------
@@ -59,14 +57,22 @@ typedef void niuProcessOutput (int, u32);
 */
 static void ptermConnect (const char *hostname);
 static int ptermCheckInput(void);
+#if !defined(_WIN32)
 static void ptermWindowInput(void);
+#endif
 
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
+#if !defined(_WIN32)
 Display *disp;
+XrmDatabase XrmDb;
+#endif
+extern FILE *traceF;
+extern bool tracePterm;
+extern u8 wemode;
 
 /*
 **  -----------------
@@ -79,6 +85,7 @@ static int connFd;
 static u16 currInput;
 static u8 ibytes;      // how many bytes have been assembled into currInput (0..2)
 static bool active;
+static niuProcessOutput *outh;
 
 /*
 **--------------------------------------------------------------------------
@@ -87,7 +94,9 @@ static bool active;
 **
 **--------------------------------------------------------------------------
 */
+#if !defined(_WIN32)
 extern void ptermInput(XEvent *event);
+#endif
 
 int main (int argc, char **argv)
 {
@@ -101,6 +110,7 @@ int main (int argc, char **argv)
         printf ("usage: pterm hostname\n");
         exit (1);
     }
+    
     ptermConnect (argv[1]);
     sprintf (name, "Plato terminal -- %s", argv[1]);
     ptermInit (name);
@@ -109,9 +119,6 @@ int main (int argc, char **argv)
         d = ptermCheckInput ();
         if (d >= 0)
         {
-#ifdef DEBUG
-            printf ("from plato byte %d %03o\n", ibytes, d);
-#endif
             switch (ibytes)
             {
             case 0:
@@ -140,13 +147,16 @@ int main (int argc, char **argv)
                 }
                 niuwd |= (d & 077);
                 ibytes = 0;
-                procNiuWord (1, niuwd);
+                (*outh) (1, niuwd);
                 break;
             }
         }
+#if !defined(_WIN32)
         ptermWindowInput ();
+#endif
     }
     ptermClose ();
+	return 0;
 }
 
 /*--------------------------------------------------------------------------
@@ -165,9 +175,11 @@ void niuLocalKey(u16 key, int stat)
     
     data[0] = key >> 7;
     data[1] = 0200 | key;
-#ifdef DEBUG
-            printf ("to plato %03o %03o\n", data[0], data[1]);
-#endif
+
+    if (tracePterm)
+    {
+        fprintf (traceF, "key to plato %03o\n", key);
+    }
     send(connFd, data, 2, 0);
 }
 
@@ -183,6 +195,7 @@ void niuLocalKey(u16 key, int stat)
 **------------------------------------------------------------------------*/
 void niuSetOutputHandler (niuProcessOutput *h, int stat)
 {
+    outh = h;
 }
 
 /*
@@ -312,6 +325,7 @@ static int ptermCheckInput(void)
     }
 }
 
+#if !defined(_WIN32)
 /*--------------------------------------------------------------------------
 **  Purpose:        Window input event processor.
 **
@@ -323,7 +337,12 @@ static int ptermCheckInput(void)
 static void ptermWindowInput(void)
 {
     XEvent event;
-
+    XKeyEvent *kp;
+    KeySym ks;
+    char text[30];
+    int len;
+    int savemode;
+    
     /*
     **  Process any X11 events.
     */
@@ -337,11 +356,48 @@ static void ptermWindowInput(void)
             XRefreshKeyboardMapping ((XMappingEvent *)&event);
             break;
 
+        case KeyPress:
+            // Special case: check for Control/D (disconnect)
+            kp = (XKeyEvent *) &event;
+            if (kp->state & ControlMask)
+            {
+                len = XLookupString (kp, text, 10, &ks, 0);
+                if (len == 1)
+                {
+                    if (text[0] == '\004')  // control-D : exit
+                    {
+                        close(connFd);
+                        active = FALSE;
+                        return;
+                    }
+                    else if (text[0] == '\024') // control-T : trace
+                    {
+                        tracePterm = !tracePterm;
+                        savemode = wemode;
+                        if (!tracePterm)
+                        {
+                            wemode = 2;
+                            fflush (traceF);
+                        }
+                        else
+                        {
+                            wemode = 3;
+                        }
+                        ptermSetWeMode (wemode);
+                        ptermDrawChar (512, 512, 1, 024);
+                        wemode = savemode;
+                        ptermSetWeMode (wemode);
+                        return;
+                    }
+                }
+            }
+            // Fall through to default handler
         default:
             ptermInput (&event);
             break;
         }
     }
 }
+#endif
 
 /*---------------------------  End Of File  ------------------------------*/

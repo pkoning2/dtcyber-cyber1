@@ -24,7 +24,7 @@ PCFS	= seymour8b.pcf seymour8m.pcf \
 	seymour32b.pcf seymour32m.pcf \
 	plato.pcf
 
-SOBJS	= pterm_x11.o charset.o
+SOBJS	= pterm_x11.o ptermcom.o charset.o
 
 OBJS    = main.o window_x11.o init.o trace.o dump.o \
           device.o channel.o cpu.o pp.o float.o shift.o operator.o \
