@@ -587,7 +587,6 @@ static void dd8xxIo(void)
     FILE *fcb;
     DiskParam *dp;
     u32 flaw;
-    i32 pos;
 
     unitNo = activeDevice->selectedUnit;
     fcb = activeDevice->fcb[unitNo];
