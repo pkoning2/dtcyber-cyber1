@@ -424,7 +424,7 @@ void windowGetChar(void)
     
     if (keyboardSendUp || keyListGet == keyListPut)
         {
-        if (keyboardTrue)
+        if (keyboardTrue && !opActive)
             {
             // If we're in true keyboard mode, lack of news means
             // "no change to last input" rather than "all keys up"!
@@ -445,7 +445,7 @@ void windowGetChar(void)
         }
     ppKeyIn = keybuf[keyListGet];
     keyListGet = nextget;
-    if (!keyboardTrue)
+    if (!keyboardTrue || opActive)
         {
         // We're not doing the precise emulation, instead doing
         // regular key rollover.  So ignore key up events,
@@ -1068,7 +1068,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         break;
         
 	case WM_KEYUP:
-		if (platoActive || !keyboardTrue)
+		if (platoActive || !keyboardTrue || opActive)
             {
 			return 0;
             }

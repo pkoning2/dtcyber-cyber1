@@ -563,7 +563,7 @@ void windowOperEnd(void)
     {
     currentX = currentY = currentFont = listPutAtGetChar = -1;
     listGet = listPut;
-    if (keyboardTrue)
+    if (keyboardTrue && !opActive)
         {
         kbPrefs.auto_repeat_mode = AutoRepeatModeOff;
         XChangeKeyboardControl(disp, KBAutoRepeatMode, &kbPrefs);
@@ -630,7 +630,7 @@ void windowGetChar(void)
     
     if (keyboardSendUp || keyListGet == keyListPut)
         {
-        if (keyboardTrue)
+        if (keyboardTrue && !opActive)
             {
             // If we're in true keyboard mode, lack of news means
             // "no change to last input" rather than "all keys up"!
@@ -651,7 +651,7 @@ void windowGetChar(void)
         }
     ppKeyIn = keybuf[keyListGet];
     keyListGet = nextget;
-    if (!keyboardTrue)
+    if (!keyboardTrue || opActive)
         {
         // We're not doing the precise emulation, instead doing
         // regular key rollover.  So ignore key up events,
