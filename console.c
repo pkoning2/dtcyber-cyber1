@@ -312,8 +312,6 @@ static void consoleIo(void)
                     }
                 else if (ch != 0)
                     {
-                    printf ("keyin %d ch %d\n", ppKeyIn, ch);
-                    
                     if (ppKeyIn & 0200)
                         {
                         keyMask &= ~(ULL(1) << ch);
