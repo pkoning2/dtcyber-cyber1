@@ -2,10 +2,10 @@
 #
 #   Copyright (c) 2002, Tom Hunter (see license.txt)
 #
-#   Name: Makefile.pterm
+#   Name: Makefile.wxpterm
 #
 #   Description:
-#       Build X11 version of Desktop Cyber emulation.
+#       Build wxWidgets version of PLATO terminal emulation.
 #
 #--------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@ include Makefile.common
 CXX = $(shell wx-config --cxx)
 
 PTOBJS	= $(SOBJS) pterm_wx.o ptermcom.o 
-pterm_wx:	$(PTOBJS)
+pterm:	$(PTOBJS)
 	$(CXX) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)  `wx-config --libs`
 
 pterm.dep: $(PTOBJS:.o=.d)

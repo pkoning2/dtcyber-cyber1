@@ -13,7 +13,7 @@ all: dtcyber pterm dtoper dd60 blackbox
 
 include Makefile.common
 
-include Makefile.pterm
+include Makefile.wxpterm
 
 include Makefile.dtoper
 
