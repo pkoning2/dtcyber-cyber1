@@ -234,21 +234,30 @@ static void procNiuWord (int stat, u32 d)
         {
         case 0:     // nop
             if ((d & 077000) == 042000)
-                {
+            {
                 // Special code to tell pterm the station number
                 d &= 0777;
                 if (hostName != NULL)
-                    {
+                {
                     sprintf (name, "Pterm " PTERMVERSION ": station %d-%d -- %s",
                              d >> 5, d & 31, hostName);
-                    }
+                }
                 else
-                    {
+                {
                     sprintf (name, "Pterm " PTERMVERSION ": station %d-%d",
                              d >> 5, d & 31);
-                    }
-                ptermSetName (name);
                 }
+                ptermSetName (name);
+            }
+            else if (d == 1)
+            {
+#if defined(_WIN32)
+                Sleep(1000 / 60);
+#else
+                usleep(1000000 / 60);
+#endif
+            }
+            
             TRACEN ("nop");
             break;
 
