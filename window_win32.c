@@ -622,8 +622,8 @@ static void dput (HDC hdcMem, char c, int x, int y, int dx)
     dindx = (x - xstart) / dx;
     if (y == ypos &&
         x < xpos && x >= xstart &&
-            dindx * dx == x - xstart &&
-            dchars[dindx] == c)
+        dindx * dx == x - xstart &&
+        dchars[dindx] == c)
         {
         ++dhits[dindx];
         return;
@@ -671,7 +671,7 @@ static void dput (HDC hdcMem, char c, int x, int y, int dx)
 **
 **------------------------------------------------------------------------*/
 void initFont (int size, FontInfo *fi)
-{
+    {
     LOGFONT lfTmp;
 
     memset(&lfTmp, 0, sizeof(lfTmp));
@@ -682,12 +682,12 @@ void initFont (int size, FontInfo *fi)
     lfTmp.lfHeight = size;
     fi->normalId = CreateFontIndirect (&lfTmp);
     if (!fi->normalId)
-    {
+        {
         MessageBox (GetFocus(),
-            "Unable to get regular font", 
-            "CreateFont Error",
-            MB_OK);
-    }
+                    "Unable to get regular font", 
+                    "CreateFont Error",
+                    MB_OK);
+        }
     memset(&lfTmp, 0, sizeof(lfTmp));
     lfTmp.lfPitchAndFamily = FIXED_PITCH;
     strcpy(lfTmp.lfFaceName, FontName);
@@ -696,13 +696,13 @@ void initFont (int size, FontInfo *fi)
     lfTmp.lfHeight = size;
     fi->boldId = CreateFontIndirect (&lfTmp);
     if (!fi->boldId)
-    {
+        {
         MessageBox (GetFocus(),
-            "Unable to get bold font", 
-            "CreateFont Error",
-            MB_OK);
+                    "Unable to get bold font", 
+                    "CreateFont Error",
+                    MB_OK);
+        }
     }
-}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Free fonts given a FontInfo struct.
@@ -714,12 +714,12 @@ void initFont (int size, FontInfo *fi)
 **
 **------------------------------------------------------------------------*/
 void freeFont (FontInfo *fi)
-{
+    {
     if (fi->normalId)
         DeleteObject(fi->normalId);
     if (fi->boldId)
         DeleteObject(fi->boldId);
-}
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Windows thread.
@@ -842,16 +842,16 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
     u32 nextput;
     TEXTMETRIC tm;
     HDC hdc;
-	SHORT keystate;
+    SHORT keystate;
     BYTE keystatebuf[256];
-	WORD buf[4];
-	UINT i;
+    WORD buf[4];
+    UINT i;
 
     switch (message) 
         {
-    /*
-    **  Process the application menu.
-    */
+        /*
+        **  Process the application menu.
+        */
     case WM_COMMAND:
         wmId    = LOWORD(wParam); 
         wmEvent = HIWORD(wParam); 
@@ -893,7 +893,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         **  Create a bitmap big enough for our client rect.
         */
         hbmMem = CreateCompatibleBitmap(hdc,
-            DefWinWidth, DefWinHeight);
+                                        DefWinWidth, DefWinHeight);
         
         /*
         **  Select the bitmap into the off-screen dc.
@@ -905,9 +905,9 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         */
         fontBitmap = LoadBitmap(hInstance, MAKEINTRESOURCE(IDB_FONTBITMAP));
         if (fontBitmap == NULL)
-			{
+            {
             fprintf (stderr, "Failed to load font bitmap");
-			}
+            }
 
         /*
         **  Select the bitmap into the font dc.
@@ -923,9 +923,9 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         if (!hPen)
             {
             MessageBox (GetFocus(),
-                "Unable to get green pen", 
-                "CreatePen Error",
-                MB_OK);
+                        "Unable to get green pen", 
+                        "CreatePen Error",
+                        MB_OK);
             }
 #endif
         return DefWindowProc (hWnd, message, wParam, lParam);
@@ -954,22 +954,22 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         windowDisplay(hWnd);
         break;
 
-    /*
-    **  Paint the main window.
-    */
+        /*
+        **  Paint the main window.
+        */
     case WM_PAINT:
         windowDisplay(hWnd);
         break;
 
-    /*
-    **  Handle input characters.
-    */
+        /*
+        **  Handle input characters.
+        */
     case WM_SYSCHAR:
-		if (platoActive &&
-			platoKeypress (wParam, 1, 0))
-		{
-			return 0;
-		}
+        if (platoActive &&
+            platoKeypress (wParam, 1, 0))
+            {
+            return 0;
+            }
         switch (wParam)
             {
         case '0':
@@ -1057,16 +1057,16 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
         break;
 
     case WM_CHAR:
-		if (!opActive)
+        if (!opActive)
             {
-			/* Non-operator keystrokes are handled in KEYUP/KEYDOWN */
-			break;
+/* Non-operator keystrokes are handled in KEYUP/KEYDOWN */
+            break;
             }
         nextput = keyListPut + 1;
         if (nextput == KeyBufSize)
-			{
+            {
             nextput = 0;
-			}
+            }
         if (nextput != keyListGet)
             {
             keybuf[keyListPut] = wParam;
@@ -1074,56 +1074,59 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
             }
         break;
         
-	case WM_KEYUP:
-		if (platoActive || !keyboardTrue || opActive)
+    case WM_KEYUP:
+        if (platoActive || !keyboardTrue || opActive)
             {
-			return 0;
+            return 0;
             }
-		/* fall through */
-	case WM_KEYDOWN:
-		if (opActive)
+/* fall through */
+    case WM_KEYDOWN:
+        if (opActive)
             {
-			return 0;
+            return 0;
             }
-		/* Not operator mode -- ignore control keys */
-		keystate = GetKeyState (VK_CONTROL);
-		if ((signed) keystate < 0)
+        if (platoActive)
             {
-			/* Ignore control keys */
-			return 0;
+            platoKeypress (wParam, 0, 0);
+            return 0;
             }
-		if (platoActive)
+/* 
+ * Not Plato, not operator mode
+ * Translate the key to display code
+ * Ignore control keys
+ */
+        keystate = GetKeyState (VK_CONTROL);
+        if ((signed) keystate < 0)
             {
-			platoKeypress (wParam, 0, 0);
-			return 0;
+/* Ignore control keys */
+            return 0;
             }
-		/* Not Plato, not operator mode -- translate the key to display code */
-		GetKeyboardState (keystatebuf);
-		buf[0] = 0;
-		if (ToAscii (wParam, 0, keystatebuf, buf, 0) == 1)
-			{
-			i = buf[0];
-			if (i != 0 && i <= 127)
-        	    {
-				if ((lParam & (1 << 31)) != 0)
-                	{
-					/* this is a "key up" message */
-					i |= 0200;
-                	}
+        GetKeyboardState (keystatebuf);
+        buf[0] = 0;
+        if (ToAscii (wParam, 0, keystatebuf, buf, 0) == 1)
+            {
+            i = buf[0];
+            if (i != 0 && i <= 127)
+                {
+                if ((lParam & (1 << 31)) != 0)
+                    {
+/* this is a "key up" message */
+                    i |= 0200;
+                    }
 //				printf ("keycode %03o lparam %x\n", i, lParam);
-				nextput = keyListPut + 1;
+                nextput = keyListPut + 1;
             	if (nextput == KeyBufSize)
-	                {
+                    {
     	            nextput = 0;
-        	        }
+                    }
             	if (nextput != keyListGet)
-					{
-					keybuf[keyListPut] = i;
+                    {
+                    keybuf[keyListPut] = i;
                 	keyListPut = nextput;
-					}
+                    }
                 }
             }
-		break;
+        break;
         
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
@@ -1189,43 +1192,43 @@ void windowDisplay(HWND hWnd)
                 ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
                 cpu[0].regP); 
 
-            if (cpuCount > 1)
-                {
-                sprintf(buf + strlen(buf), " %06o", cpu[1].regP);
-                }
+        if (cpuCount > 1)
+            {
+            sprintf(buf + strlen(buf), " %06o", cpu[1].regP);
+            }
             
-            sprintf(buf + strlen(buf),
-                    "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
-                    (traceMask >> 0) & 1 ? '0' : '_',
-                    (traceMask >> 1) & 1 ? '1' : '_',
-                    (traceMask >> 2) & 1 ? '2' : '_',
-                    (traceMask >> 3) & 1 ? '3' : '_',
-                    (traceMask >> 4) & 1 ? '4' : '_',
-                    (traceMask >> 5) & 1 ? '5' : '_',
-                    (traceMask >> 6) & 1 ? '6' : '_',
-                    (traceMask >> 7) & 1 ? '7' : '_',
-                    (traceMask >> 8) & 1 ? '8' : '_',
-                    (traceMask >> 9) & 1 ? '9' : '_',
-                    (traceMask & TraceCpu0) ? 'c' : '_',
-                    (traceMask & TraceCpu1) ? 'C' : '_',
-                    (traceMask & TraceEcs) ? 'E' : '_',
-                    (traceMask & TraceXj) ? 'J' : '_',
-                    (chTraceMask >> 0) & 1 ? '0' : '_',
-                    (chTraceMask >> 1) & 1 ? '1' : '_',
-                    (chTraceMask >> 2) & 1 ? '2' : '_',
-                    (chTraceMask >> 3) & 1 ? '3' : '_',
-                    (chTraceMask >> 4) & 1 ? '4' : '_',
-                    (chTraceMask >> 5) & 1 ? '5' : '_',
-                    (chTraceMask >> 6) & 1 ? '6' : '_',
-                    (chTraceMask >> 7) & 1 ? '7' : '_',
-                    (chTraceMask >> 8) & 1 ? '8' : '_',
-                    (chTraceMask >> 9) & 1 ? '9' : '_',
-                    (chTraceMask >> 10) & 1 ? 'A' : '_',
-                    (chTraceMask >> 11) & 1 ? 'B' : '_',
-                    (platoActive) ? 'P' : ' ');
+        sprintf(buf + strlen(buf),
+                "   Trace: %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c  %c",
+                (traceMask >> 0) & 1 ? '0' : '_',
+                (traceMask >> 1) & 1 ? '1' : '_',
+                (traceMask >> 2) & 1 ? '2' : '_',
+                (traceMask >> 3) & 1 ? '3' : '_',
+                (traceMask >> 4) & 1 ? '4' : '_',
+                (traceMask >> 5) & 1 ? '5' : '_',
+                (traceMask >> 6) & 1 ? '6' : '_',
+                (traceMask >> 7) & 1 ? '7' : '_',
+                (traceMask >> 8) & 1 ? '8' : '_',
+                (traceMask >> 9) & 1 ? '9' : '_',
+                (traceMask & TraceCpu0) ? 'c' : '_',
+                (traceMask & TraceCpu1) ? 'C' : '_',
+                (traceMask & TraceEcs) ? 'E' : '_',
+                (traceMask & TraceXj) ? 'J' : '_',
+                (chTraceMask >> 0) & 1 ? '0' : '_',
+                (chTraceMask >> 1) & 1 ? '1' : '_',
+                (chTraceMask >> 2) & 1 ? '2' : '_',
+                (chTraceMask >> 3) & 1 ? '3' : '_',
+                (chTraceMask >> 4) & 1 ? '4' : '_',
+                (chTraceMask >> 5) & 1 ? '5' : '_',
+                (chTraceMask >> 6) & 1 ? '6' : '_',
+                (chTraceMask >> 7) & 1 ? '7' : '_',
+                (chTraceMask >> 8) & 1 ? '8' : '_',
+                (chTraceMask >> 9) & 1 ? '9' : '_',
+                (chTraceMask >> 10) & 1 ? 'A' : '_',
+                (chTraceMask >> 11) & 1 ? 'B' : '_',
+                (platoActive) ? 'P' : ' ');
 
         TextOut(hdcMem, 0, 0, buf, strlen(buf));
-		}
+        }
 
     if (listPutAtGetChar >= 0)
         {
