@@ -30,6 +30,13 @@
 #include <netinet/in.h>
 #endif
 #include <errno.h>
+
+// Apple doesn't have a NOSIGNAL option on rcv/send, instead is has SO_NOSIGPIPE
+// as a setsockopt option.
+#ifdef __APPLE__
+#define MSG_NOSIGNAL 0
+#endif
+
 /*
 **  -----------------
 **  Private Constants
@@ -776,6 +783,10 @@ static void *niuThread(void *param)
         */
         setsockopt(mp->connFd, SOL_SOCKET, SO_KEEPALIVE,
                    (char *)&true_opt, sizeof(true_opt));
+#ifdef __APPLE__
+        setsockopt(mp->connFd, SOL_SOCKET, SO_NOSIGPIPE,
+                   (char *)&true_opt, sizeof(true_opt));
+#endif
 
         /*
         **  Mark connection as active.
