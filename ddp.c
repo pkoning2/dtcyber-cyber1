@@ -188,11 +188,13 @@ static FcStatus ddpFunc(PpWord funcCode)
         dc->abyte = dc->dbyte = 0;
         dc->addr = 0;
         activeDevice->fcode = funcCode;
+        activeChannel->discAfterInput = FALSE;
         return (FcAccepted);
 
     case FcDdpMasterClear:
         activeDevice->fcode = 0;
         dc->stat = StDdpAccept;
+        activeChannel->discAfterInput = FALSE;
         return (FcProcessed);
     }
 }
@@ -258,7 +260,7 @@ static void ddpIo(void)
                     activeChannel->discAfterInput = TRUE;
                     dc->stat = StDdpAbort;
                 }
-                dc->dbyte == 0;
+                dc->dbyte = 0;
             }
             break;
         }
