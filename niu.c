@@ -114,9 +114,9 @@ static void niuUpdateStatus (void);
 static void niuOpdata (int word);
 #if !defined(_WIN32)
 static ThreadFunRet niuThread (void *param);
-#endif
 static void niuCheckAlert (void);
 static void niuDoAlert (const char *msg);
+#endif
 
 /*
 **  ----------------
@@ -927,6 +927,7 @@ void niuSendWord(int stat, int word)
 **------------------------------------------------------------------------*/
 static void niuOpdata(int word)
     {
+#if !defined(_WIN32)    /* only non-Windows for now */
     /*
     **  This is where we implement the special handling of the operator
     **  station.  We emulate the operator's alert box.  That reacts
@@ -961,6 +962,7 @@ static void niuOpdata(int word)
         niuDoAlert (OPERBOX_DOWN);
         niuLastAlertReset = 0;
         }
+#endif
     }
 
 
