@@ -2,7 +2,7 @@
 #define CONST_H
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: const.h
 **
@@ -17,7 +17,7 @@
 **  Public Constants
 **  ----------------
 */
-#define DtCyberVersion          "Desktop CYBER 2.0 BETA 1"
+#define DtCyberVersion          "Desktop CYBER 2.1 BETA 0"
 
 #ifndef NULL                    
 #define NULL                    ((void *) 0)
@@ -56,6 +56,11 @@
 #define CcLargeWin32Screen      0
 
 /*
+**  Hershey font support.
+*/
+#define CcHersheyFont           0
+
+/*
 **  Debug support
 */
 #ifndef CcDebug
@@ -70,18 +75,18 @@
 #define DtMt607                 2
 #define DtMt669                 3
 #define DtDd6603                4
-#define DtDd844                 5
+#define DtDd8xx                 5
 #define DtCr405                 6
 #define DtLp1612                7
-#define DtRtc                   10
-#define DtConsole               11
-#define DtMux6676               12
+#define DtLp5xx                 8
+#define DtRtc                   9
+#define DtConsole               10
+#define DtMux6676               11
+#define DtCp3446                12
 #define DtCr3447                13
-#define DtDdc6681               14
+#define DtDcc6681               14
 #define DtDdp                   15
 #define DtNiu                   16
-#define DtLp3000                17
-#define DtCp3446                20
 
 /*
 **  Special channels.
@@ -97,8 +102,8 @@
 #define PpMemSize               010000
                                 
 #define MaxUnits                010
-#define MaxDevices              10
-#define MaxDeadStart            16
+#define MaxEquipment            010
+#define MaxDeadStart            020
 #define MaxChannels             040
 
 #define NEWLINE                 "\n"
@@ -177,29 +182,14 @@
 **  Public Macro Functions
 **  ----------------------
 */
-#if 0
-#define ppAbort(pars) \
-    { \
-    fprintf(stderr, "PP abort in %s at line %d : ", __FILE__, __LINE__); \
-    fprintf pars; \
-    fprintf(stderr, NEWLINE); \
-    dumpAll(); \
-    exit(1); \
-    } 
-#else
-#define ppAbort(pars) \
-    { \
-    fprintf(stdout, "PP abort in %s at line %d : ", __FILE__, __LINE__); \
-    fprintf pars; \
-    fprintf(stdout, NEWLINE); \
-    } 
-#endif
 
 #ifdef __GNUC__
 #define INLINE inline
 #else
 #define INLINE
 #endif
+
+#define LogErrorLocation        __FILE__, __LINE__
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* CONST_H */

@@ -2,7 +2,7 @@
 #define PROTO_H
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: func.h
 **
@@ -41,7 +41,7 @@ u64 rtcMicrosec(void);
 */
 void channelInit(u8 count);
 DevSlot *channelFindDevice(u8 channelNo, u8 devType);
-DevSlot *channelAttach(u8 channelNo, u8 devType);
+DevSlot *channelAttach(u8 channelNo, u8 eqNo, u8 devType);
 void channelFunction(PpWord funcCode);
 void channelActivate(void);
 void channelDisconnect(void);
@@ -56,7 +56,8 @@ void ppStep(void);
 /*
 **  cpu.c
 */
-void cpuInit(char *model, u32 cpus, u32 memory, u32 ecsBanks);
+void cpuInit(char *model, u32 cpus, u32 memory, u32 ecsBanks, char *cmFile, char *ecsFile);
+void cpuExit(void);
 u32 cpuGetP(u8 cpnum);
 void cpuStepAll(void);
 void cpuStep(CpuContext *activeCpu);
@@ -68,7 +69,9 @@ int cpuIssueExchange(u8 cpnum, u32 addr, int monitor);
 /*
 **  dcc6681.c
 */
-Dev3kSlot *dcc6681Attach(u8 channelNo, u8 unitNo, u8 devType);
+DevSlot *dcc6681Attach(u8 channelNo, u8 eqNo, u8 unitNo, u8 devType);
+DevSlot *dcc6681FindDevice(u8 channelNo, u8 equipmentNo, u8 devType);
+void dcc6681Interrupt(bool status);
 
 /*
 **  mt607.c
@@ -86,14 +89,14 @@ void mt669Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void cr405Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
-**  cr3447.c
-*/
-void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-
-/*
 **  cp3446.c
 */
 void cp3446Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+
+/*
+**  cr3447.c
+*/
+void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
 **  lp1612.c
@@ -102,16 +105,11 @@ void lp1612Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void lp1612RemovePaper(char *params);
 
 /*
-**  lp501.c
+**  lp3000.c
 */
 void lp501Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-void lp501RemovePaper(char *params);
-
-/*
-**  lp512.c
-*/
 void lp512Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-void lp512RemovePaper(char *params);
+void lp3000RemovePaper(char *params);
 
 /*
 **  console.c
@@ -124,9 +122,17 @@ void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void dd6603Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
-**  dd844.c
+**  dd8xx.c
 */
-void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dd844Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dd844Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dd885Init_2(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void dd885Init_4(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+
+/*
+**  dcc6681.c
+*/
+void dcc6681Interrupt(bool status);
 
 /*
 **  ddp.c
@@ -147,6 +153,11 @@ void niuLocalChar(u8 ch, int stat);
 void niuLocalKey(u16 key, int stat);
 typedef void niuProcessOutput (int, u32);
 void niuSetOutputHandler (niuProcessOutput *h, int stat);
+
+/*
+**  tpmux.c
+*/
+void tpMuxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
 **  trace.c
@@ -244,6 +255,12 @@ void opWaitOperMode(void);
 void opWait(void);
 
 /*
+**  log.c
+*/
+void logInit(void);
+void logError(char *file, int line, char *fmt, ...);
+
+/*
 **  -----------------
 **  Global variables.
 **  -----------------
@@ -257,6 +274,7 @@ extern u8 channelCount;
 extern PpSlot *activePpu;
 extern ChSlot *activeChannel;
 extern DevSlot *activeDevice;
+extern DevSlot *active3000Device;
 extern CpuContext *cpu;
 extern u8 cpuCount;
 extern volatile int monitorCpu;
@@ -267,15 +285,17 @@ extern u32 cpuMaxMemory;
 extern u32 cpuMemMask;
 extern u32 ecsMaxMemory;
 extern i8 ppKeyIn;
-extern const char asciiToCdc[256];
+extern const u8 asciiToCdc[256];
 extern const char cdcToAscii[64];
-extern const unsigned short asciiTo026[256];
-extern const unsigned short asciiTo029[256];
-extern const unsigned char  asciiToBcd[256];
-extern const signed char  asciiToPlato[128];
-extern const signed char  altKeyToPlato[128];
-extern const unsigned char bcdToAscii[64];
-extern const unsigned char extBcdToAscii[64];
+extern const u8 asciiToConsole[256];
+extern const char consoleToAscii[64];
+extern const u16 asciiTo026[256];
+extern const u16 asciiTo029[256];
+extern const u8  asciiToBcd[256];
+extern const char bcdToAscii[64];
+extern const char extBcdToAscii[64];
+extern const i8 asciiToPlato[128];
+extern const i8 altKeyToPlato[128];
 extern u32 traceMask;
 extern u32 traceClearMask;
 extern u64 chTraceMask;
@@ -290,7 +310,6 @@ extern u16 telnetConns;
 extern u16 platoPort;
 extern u16 platoConns;
 extern FILE **ppuTF;
-extern Dev3kSlot *activeUnit;
 extern u32 cycles;
 
 /*---------------------------  End Of File  ------------------------------*/

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: trace.c
 **
@@ -79,8 +79,9 @@
 #define RXXX            22
 #define RZB             23
 #define RZX             24
-#define RB              25
-#define RBD             26
+#define RXNX            25
+#define RB              26
+#define RBD             27
 
 /*
 **  -----------------------
@@ -291,7 +292,7 @@ static DecCpControl cpDecode[0100] =
     Cijk,       "FX%o   X%o/X%o",       RXXX,   // 44
     Cijk,       "RX%o   X%o/X%o",       RXXX,   // 45
     CLINK, (char *)noDecode,            R,      // 46
-    Cik,        "CX%o   X%o",           RXX,    // 47
+    Cik,        "CX%o   X%o",           RXNX,   // 47
 
     CijK,       "SA%o   A%o+%6.6o",     RAA,    // 50
     CijK,       "SA%o   B%o+%6.6o",     RAB,    // 51
@@ -345,14 +346,13 @@ void traceInit(void)
     devF = fopen("device.trc", "wt");
     if (devF == NULL)
         {
-        ppAbort((stderr, "can't open dev trace"));
+        logError(LogErrorLocation, "can't open dev trace");
         }
 
     cpuTF = calloc(cpuCount, sizeof(FILE *));
     if (cpuTF == NULL)
         {
-        fprintf(stderr, "Failed to allocate CP trace FILE pointers\n");
-        exit(1);
+        logError(LogErrorLocation, "can't open cpu trace");
         }
 
     for (i = 0; i < cpuCount; i++)
@@ -361,7 +361,8 @@ void traceInit(void)
         cpuTF[i] = fopen(traceName, "wt");
         if (cpuTF[i] == NULL)
             {
-            ppAbort((stderr, "can't open cpu%d trace (%s)\n", i, traceName));
+            logError(LogErrorLocation, "can't open cpu%d trace (%s)\n",
+                     i, traceName);
             }
         }
 
@@ -378,7 +379,8 @@ void traceInit(void)
         ppuTF[i] = fopen(traceName, "wt");
         if (ppuTF[i] == NULL)
             {
-            ppAbort((stderr, "can't open ppu[%02o] trace (%s)\n", i, traceName));
+            logError(LogErrorLocation, "can't open ppu[%02o] trace (%s)\n",
+                     i, traceName);
             }
         }
 
@@ -751,6 +753,11 @@ void traceCpu(CpuContext *activeCpu,
 
     case RZX:
         fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
+        break;
+
+    case RXNX:
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opI, activeCpu->regX[opI]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opK, activeCpu->regX[opK]);
         break;
 
     default:

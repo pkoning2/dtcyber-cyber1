@@ -2,7 +2,7 @@
 #define TYPES_H
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: types.h
 **
@@ -97,10 +97,10 @@ typedef enum {FcDeclined, FcAccepted, FcProcessed} FcStatus;
 */                                        
 typedef struct
     {
-    char            id[8];              /* device id */
-    void            (*init)(u8 eqNo, u8 unitCount, u8 channelNo, char *deviceName);
+    char            id[10];              /* device id */
+    void            (*init)(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
     } DevDesc;
-                                        
+
 /*
 **  Device control block.
 */                                        
@@ -109,7 +109,6 @@ typedef struct devSlot
     struct devSlot  *next;              /* next device attached to this channel */
     struct chSlot   *channel;           /* channel this device is attached to */
     FILE            *fcb[MaxUnits];     /* unit data file control block */
-    FILE            *log[MaxUnits];     /* unit log file control block */
     void            (*activate)(void);  /* channel activation function */        
     void            (*disconnect)(void);/* channel deactivation function */
     FcStatus        (*func)(PpWord);    /* function request handler */
@@ -120,30 +119,9 @@ typedef struct devSlot
     PpWord          fcode;              /* device function code */
     PpWord          recordLength;       /* length of read record */
     u8              devType;            /* attached device type */
+    u8              eqNo;               /* equipment number */
     i8              selectedUnit;       /* selected unit */
     } DevSlot;                          
-                                        
-/*
-**  3000 series device control block.
-*/                                        
-typedef struct dev3kSlot                  
-    {                                   
-    struct devSlot  *conv;              /* converter (6681) this device is attached to */
-    void            *context;           /* device specific context data */
-    FILE            *fcb;               /* unit data file control block */
-    FILE            *log;               /* unit log file control block */
-    void            (*activate)(void);  /* channel activation function */        
-    void            (*disconnect)(void);/* channel deactivation function */
-    FcStatus        (*func)(PpWord);    /* function request handler */
-    void            (*io)(void);        /* output request handler */
-    void            (*load)(struct dev3kSlot *, char *); /* load/unload request handler */
-    PpWord          status;             /* device status */
-    PpWord          fcode;              /* device function code */
-    PpWord          recordLength;       /* length of read record */
-    u8              devType;            /* attached device type */
-    u8              id;                 /* unit number */
-    bool            intr;               /* interrupt flag */
-    } Dev3kSlot;                          
                                         
 /*
 **  Channel control block.

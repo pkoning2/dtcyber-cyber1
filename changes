@@ -241,3 +241,8 @@ Since jan21 2004 drop:
 
 - Merge Tom's 2.1Beta0:
   Changed dd844.c to dd8xx.c (sorry, CVS doesn't do this well...)
+  Resolved all the merge conflicts in lots of places (except window_win32.c,
+  that one is still on the to-do list, and the flaw map handling in dd8xx.c)
+  Fixed a typo in dd8xx.c, it was displaying 0 cylinders for the disk
+  size at startup.
+- Added setting of the "reuse" flag to niu.c (lifted from mux6676.c)

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: console.c
 **
@@ -78,26 +78,6 @@ static void consoleDisconnect(void);
 **  Private Variables
 **  -----------------
 */
-static char asciiToConsole[128] =
-    {
-    /* 00-07 */ 0,      0,      0,      0,      0,      0,      0,      0,
-    /* 08-0F */ 061,    0,      060,    0,      0,      060,    0,      0,
-    /* 10-17 */ 0,      0,      0,      0,      0,      0,      0,      0,
-    /* 18-1F */ 0,      0,      0,      0,      0,      0,      0,      0,
-    /* 20-27 */ 062,    0,      0,      0,      0,      0,      0,      0,
-    /* 28-2F */ 051,    052,    047,    045,    056,    046,    057,    050,
-    /* 30-37 */ 033,    034,    035,    036,    037,    040,    041,    042,
-    /* 38-3F */ 043,    044,    0,      0,      0,      054,    0,      0,
-    /* 40-47 */ 0,      01,     02,     03,     04,     05,     06,     07,
-    /* 48-4F */ 010,    011,    012,    013,    014,    015,    016,    017,
-    /* 50-57 */ 020,    021,    022,    023,    024,    025,    026,    027,
-    /* 58-5F */ 030,    031,    032,    053,    0,      055,    0,      0,
-    /* 60-67 */ 0,      01,     02,     03,     04,     05,     06,     07,
-    /* 68-6F */ 010,    011,    012,    013,    014,    015,    016,    017,
-    /* 70-77 */ 020,    021,    022,    023,    024,    025,    026,    027,
-    /* 78-7F */ 030,    031,    032,    0,      0,      0,      0,      0
-    };
-
 static u8 currentFont;
 static u16 currentOffset;
 static u64 keyMask;
@@ -131,7 +111,7 @@ void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     (void)unitNo;
     (void)deviceName;
 
-    dp = channelAttach(channelNo, DtConsole);
+    dp = channelAttach(channelNo, eqNo, DtConsole);
 
     dp->activate = consoleActivate;
     dp->disconnect = consoleDisconnect;
@@ -233,8 +213,6 @@ static FcStatus consoleFunc(PpWord funcCode)
 **------------------------------------------------------------------------*/
 static void consoleIo(void)
     {
-    u8 c0;
-    u8 c1;
     u8 ch;
     int i;
     u64 m;
@@ -252,9 +230,6 @@ static void consoleIo(void)
     case Fc6612Sel16CharRight:
         if (activeChannel->full)
             {
-            c0 = (activeChannel->data >> 6) & Mask6;
-            c1 = (activeChannel->data >> 0) & Mask6;
-
             ch = (u8)((activeChannel->data >> 6) & Mask6);
 
             if (ch >= 060)
@@ -276,8 +251,8 @@ static void consoleIo(void)
                 }
             else
                 {
-                windowQueue(c0);
-                windowQueue(c1);
+                windowQueue((char)((activeChannel->data >> 6) & Mask6));
+                windowQueue((char)((activeChannel->data >> 0) & Mask6));
                 }
 
             activeChannel->full = FALSE;

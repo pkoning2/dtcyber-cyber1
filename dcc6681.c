@@ -1,11 +1,11 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: dcc6681.c
 **
 **  Description:
-**      Perform simulation of CDC 6681 data channel converter.
+**      Perform simulation of CDC 6681 or 6684 data channel converter.
 **
 **--------------------------------------------------------------------------
 */
@@ -26,42 +26,40 @@
 **  Private Constants
 **  -----------------
 */
-#ifndef DEBUG
-#define DEBUG 0
-#endif
 
 /*
 **  Function codes.
 */
-#define Fc6681Select            02000
-#define Fc6681DeSelect          02100
-#define Fc6681Connect1          01000
-#define Fc6681Function          01100
-#define Fc6681StatusReq         01200
-#define Fc6681DevStatusReq      01300
-#define Fc6681MasterClear       01700
-
-#define Fc6681Function1         00000
-#define Fc6681Connect4          04000
-#define Fc6681Connect5          05000
-#define Fc6681Connect6          06000
-#define Fc6681Connect7          07000
-#define Fc6681ConnectUnitMask   07000
-#define Fc6681ConnectFuncMask   00777
-
-#define Fc6681InputToEor        01400
-#define Fc6681Input             01500
-#define Fc6681Output            01600
-#define Fc6681IoModeMask        07700
-#define Fc6681IoIosMask         00070
-#define Fc6681IoBcdMask         00001
-
-/*
-**      Status reply
-*/
-#define StFc6681Ready           00000
-#define StFc6681Reject          00001
-#define StFc6681IntReject       00003
+#define Fc6681Select                02000
+#define Fc6681DeSelect              02100
+#define Fc6681ConnectMode2          01000
+#define Fc6681FunctionMode2         01100
+#define Fc6681DccStatusReq          01200
+#define Fc6681DevStatusReq          01300
+#define Fc6681MasterClear           01700
+                                    
+#define Fc6681FunctionMode1         00000
+#define Fc6681Connect4Mode1         04000
+#define Fc6681Connect5Mode1         05000
+#define Fc6681Connect6Mode1         06000
+#define Fc6681Connect7Mode1         07000
+#define Fc6681ConnectEquipmentMask  07000
+#define Fc6681ConnectUnitMask       00777
+#define Fc6681ConnectFuncMask       00777
+                                    
+#define Fc6681InputToEor            01400
+#define Fc6681Input                 01500
+#define Fc6681Output                01600
+#define Fc6681IoModeMask            07700
+#define Fc6681IoIosMask             00070
+#define Fc6681IoBcdMask             00001
+                                    
+/*                                  
+**      Status reply                
+*/                                  
+#define StFc6681Ready               00000
+#define StFc6681Reject              00001
+#define StFc6681IntReject           00003
 
 /*
 **  -----------------------
@@ -76,7 +74,9 @@
 */
 typedef struct dccControl
     {
-    bool        configured;
+    DevSlot     *device3000[MaxEquipment];
+    bool        interrupting[MaxEquipment];
+    i8          connectedEquipment;
     bool        selected;
     PpWord      ios;
     PpWord      bcd;
@@ -99,14 +99,13 @@ static void dcc6681Disconnect(void);
 **  Public Variables
 **  ----------------
 */
-Dev3kSlot *activeUnit;
+DevSlot *active3000Device;
 
 /*
 **  -----------------
 **  Private Variables
 **  -----------------
 */
-static DccControl dccMap[MaxChannels];
 
 /*
 **--------------------------------------------------------------------------
@@ -124,53 +123,139 @@ static DccControl dccMap[MaxChannels];
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-Dev3kSlot * dcc6681Attach(u8 channelNo, u8 unitNo, u8 devType)
+DevSlot *dcc6681Attach(u8 channelNo, u8 eqNo, u8 unitNo, u8 devType)
     {
     DevSlot *dp;
-    Dev3kSlot *up;
+    DccControl *cp;
+    DevSlot *device;
     
-    dp = channelAttach(channelNo, DtDdc6681);
+    dp = channelAttach(channelNo, 0, DtDcc6681);
 
     dp->activate = dcc6681Activate;
     dp->disconnect = dcc6681Disconnect;
     dp->func = dcc6681Func;
     dp->io = dcc6681Io;
     dp->load = dcc6681Load;
-    dp->selectedUnit = -1;
     
-    dccMap[channelNo].configured = TRUE;
-    dccMap[channelNo].selected = TRUE;
-
-    if (dp->context[unitNo] != NULL)
-        {
-        fprintf(stderr, "Unit %02o already allocated on channel %02o\n",
-                unitNo, channelNo);
-        exit(1);
-        }
     /*
-    ** Allocate a 3000 series unit block
+    **  Allocate converter context when first created.
     */
-    up = (Dev3kSlot *) calloc(1, sizeof(Dev3kSlot));
-    if (up == NULL)
+    if (dp->context[0] == NULL)
         {
-        fprintf(stderr, "Failed to allocate control block for Channel %02o unit %02o\n", channelNo, unitNo);
-        exit(1);
+        cp = (DccControl *)calloc(1, sizeof(DccControl));
+        if (cp == NULL)
+            {
+            fprintf(stderr, "Failed to allocate dcc6681 context block\n");
+            exit(1);
+            }
+
+        cp->selected = TRUE;
+        cp->connectedEquipment = -1;
+        dp->context[0] = (void *)cp;
         }
-    dp->context[unitNo] = up;
-    up->conv = dp;
-    up->devType = devType;
-    up->id = unitNo;
-    
+    else
+        {
+        cp = (DccControl *)dp->context[0];
+        }
+
+    /*
+    **  Allocate 3000 series device control block.
+    */
+    if (cp->device3000[eqNo] == NULL)
+        {
+        device = calloc(1, sizeof(DevSlot));
+        if (device == NULL)
+            {
+            fprintf(stderr, "Failed to allocate device control block for converter on channel %d\n", channelNo);
+            exit(1);
+            }
+
+        cp->device3000[eqNo] = device;
+        device->devType = devType;
+        device->channel = channel + channelNo;
+        device->eqNo = eqNo;
+        }
+    else
+        {
+        device = (DevSlot *)cp->device3000[eqNo];
+        }
+
     /*
     **  Print a friendly message.
     */
-    printf("Unit %02o attached to DCC6681 channel %o\n",
-           unitNo, channelNo);
+    printf("Equipment %02o, Unit %02o attached to DCC6681 on channel %o\n", eqNo, unitNo, channelNo);
 
     /*
     ** Return the allocated 3000 series control block pointer
     */
-    return(up);
+    return(device);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Return device control block attached to a channel converter.
+**
+**  Parameters:     Name        Description.
+**                  channelNo   channel number
+**                  equipmentNo equipment number
+**                  devType     device type
+**
+**  Returns:        Pointer to device slot.
+**
+**------------------------------------------------------------------------*/
+DevSlot *dcc6681FindDevice(u8 channelNo, u8 equipmentNo, u8 devType)
+    {
+    DevSlot *dp;
+    DccControl *cp;
+
+    /*
+    **  First find the channel converter.
+    */
+    dp = channelFindDevice(channelNo, DtDcc6681);
+    if (dp == NULL)
+        {
+        return(NULL);
+        }
+
+    /*
+    **  Locate channel converter context.
+    */
+    cp = (DccControl *)dp->context[0];
+    if (cp == NULL)
+        {
+        return(NULL);
+        }
+
+    /*
+    **  Lookup and verify equipment.
+    */
+    dp = cp->device3000[equipmentNo];
+    if (dp == NULL || dp->devType != devType)
+        {
+        return(NULL);
+        }
+
+    /*
+    **  Return series 3000 device control block.
+    */
+    return(dp);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Update interrupt status of current equipment.
+**
+**  Parameters:     Name        Description.
+**                  status      new interrupt status
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void dcc6681Interrupt(bool status)
+    {
+    DccControl *mp = (DccControl *)activeDevice->context[0];
+    if (mp->connectedEquipment >= 0)
+        {
+        mp->interrupting[mp->connectedEquipment] = status;
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -184,10 +269,15 @@ Dev3kSlot * dcc6681Attach(u8 channelNo, u8 unitNo, u8 devType)
 **------------------------------------------------------------------------*/
 static FcStatus dcc6681Func(PpWord funcCode)
     {
-    DccControl *mp = dccMap + activeChannel->id;
+    DccControl *mp = (DccControl *)activeDevice->context[0];
+    DevSlot *device;
     i8 u;
+    i8 e;
     
-    if (!mp->configured)
+    /*
+    **  If not selected, we recognize only a select.
+    */
+    if (!mp->selected && funcCode != Fc6681Select)
         {
         return(FcDeclined);
         }
@@ -210,78 +300,97 @@ static FcStatus dcc6681Func(PpWord funcCode)
         mp->status = StFc6681Ready;
         return(FcProcessed);
         
-    case Fc6681Connect1:
-    case Fc6681Function:
-    case Fc6681StatusReq:
+    case Fc6681ConnectMode2:
+    case Fc6681FunctionMode2:
+    case Fc6681DccStatusReq:
         activeDevice->fcode = funcCode;
         return(FcAccepted);
 
     case Fc6681MasterClear:
         mp->status = StFc6681Ready;
-        for (u = 0; u < MaxUnits; u++)
+        for (e = 0; e < MaxEquipment; e++)
             {
-            activeUnit = (Dev3kSlot *) (activeDevice->context[u]);
-            if (activeUnit != NULL)
+            mp->interrupting[e] = FALSE;
+            active3000Device = mp->device3000[e];
+            if (active3000Device != NULL)
                 {
-                activeUnit->intr = FALSE;
-                (activeUnit->func) (funcCode);
+                active3000Device->selectedUnit = -1;
+                (active3000Device->func)(funcCode);
                 }
             }
-        activeDevice->selectedUnit = -1;        // nothing connected
+
+        mp->connectedEquipment = -1;
         return(FcProcessed);
         }
 
     switch (funcCode & Fc6681IoModeMask)
         {
+    case Fc6681DevStatusReq:
+        funcCode &= Fc6681IoModeMask;
+        e = mp->connectedEquipment;
+        if (e < 0)
+            {
+            activeDevice->fcode = Fc6681DccStatusReq;
+            mp->status = StFc6681IntReject;
+            return(FcAccepted);
+            }
+        active3000Device = mp->device3000[e];
+        activeDevice->fcode = funcCode;
+        funcCode &= Fc6681IoModeMask;
+        return((active3000Device->func)(funcCode));
+
     case Fc6681InputToEor:
     case Fc6681Input:
     case Fc6681Output:
-    case Fc6681DevStatusReq:
-        u = activeDevice->selectedUnit;
-        if (u < 0)
+        e = mp->connectedEquipment;
+        if (e < 0)
             {
             mp->status = StFc6681IntReject;
             return(FcProcessed);
             }
+
+        active3000Device = mp->device3000[e];
         activeDevice->fcode = funcCode;
         mp->ios = funcCode & Fc6681IoIosMask;
         mp->bcd = funcCode & Fc6681IoBcdMask;
         funcCode &= Fc6681IoModeMask;
-        activeUnit = (Dev3kSlot *) (activeDevice->context[u]);
-        return((activeUnit->func) (funcCode));
+        return((active3000Device->func)(funcCode));
         }
 
-    switch (funcCode & Fc6681ConnectUnitMask)
+    switch (funcCode & Fc6681ConnectEquipmentMask)
         {
-    case Fc6681Connect4:
-    case Fc6681Connect5:
-    case Fc6681Connect6:
-    case Fc6681Connect7:
-        u = (funcCode & Fc6681ConnectUnitMask) >> 9;
-        activeUnit = (Dev3kSlot *) (activeDevice->context[u]);
-        if (activeUnit == NULL)
+    case Fc6681Connect4Mode1:
+    case Fc6681Connect5Mode1:
+    case Fc6681Connect6Mode1:
+    case Fc6681Connect7Mode1:
+        e = (funcCode & Fc6681ConnectEquipmentMask) >> 9;
+        u = funcCode & Fc6681ConnectUnitMask;
+        device = mp->device3000[e];
+        if (device == NULL || device->context[u] == NULL)
             {
+            mp->connectedEquipment = -1;
             mp->status = StFc6681IntReject;
             return(FcProcessed);
             }
-        activeDevice->selectedUnit = u;
-        if (DEBUG)
+
+        mp->connectedEquipment = e;
+        device->selectedUnit = u;
+        mp->status = StFc6681Ready;
+        return(FcProcessed);
+
+    case Fc6681FunctionMode1:
+        e = mp->connectedEquipment;
+        if (e < 0)
             {
-            printf("Fc6681ConnectX %04o %o\n",funcCode, activeDevice->selectedUnit);
+            mp->status = StFc6681IntReject;
+            return(FcProcessed);
             }
         mp->status = StFc6681Ready;
         return(FcProcessed);
 
-    case Fc6681Function1:
-        u = activeDevice->selectedUnit;
-        if (u < 0)
-            {
-            mp->status = StFc6681IntReject;
-            return(FcProcessed);
-            }
-        activeUnit = (Dev3kSlot *) (activeDevice->context[u]);
+        active3000Device = mp->device3000[e];
         funcCode &= Fc6681ConnectFuncMask;
-        (activeUnit->func) (funcCode);
+        (active3000Device->func) (funcCode);
         mp->status = StFc6681Ready;
         return(FcProcessed);
 
@@ -301,9 +410,10 @@ static FcStatus dcc6681Func(PpWord funcCode)
 **------------------------------------------------------------------------*/
 static void dcc6681Io(void)
     {
-    DccControl *mp = dccMap + activeChannel->id;
-    u8 u;
-    Dev3kSlot *up;
+    DccControl *mp = (DccControl *)activeDevice->context[0];
+    DevSlot *device;
+    i8 u;
+    i8 e;
     PpWord stat;
     
     switch (activeDevice->fcode)
@@ -314,44 +424,39 @@ static void dcc6681Io(void)
     case Fc6681Select:
     case Fc6681DeSelect:
     case Fc6681MasterClear:
-    case Fc6681Connect4:
-    case Fc6681Connect5:
-    case Fc6681Connect6:
-    case Fc6681Connect7:
+    case Fc6681Connect4Mode1:
+    case Fc6681Connect5Mode1:
+    case Fc6681Connect6Mode1:
+    case Fc6681Connect7Mode1:
         printf("unexpected IO for function %04o\n", activeDevice->fcode); 
         break;
 
-    case Fc6681Connect1:
+    case Fc6681ConnectMode2:
         if (activeChannel->full)
             {
-            u = (activeChannel->data & Fc6681ConnectUnitMask) >> 9;
-            activeUnit = (Dev3kSlot *) (activeDevice->context[u]);
-            if (activeUnit == NULL)
+            activeChannel->full = FALSE;
+            activeDevice->fcode = 0;
+            e = (activeChannel->data & Fc6681ConnectEquipmentMask) >> 9;
+            u = activeChannel->data & Fc6681ConnectUnitMask;
+            device = mp->device3000[e];
+            if (device == NULL || device->context[u] == NULL)
                 {
-                activeChannel->full = FALSE;
+                mp->connectedEquipment = -1;
                 mp->status = StFc6681IntReject;
                 break;
                 }
-            activeDevice->selectedUnit = u;
-            if (DEBUG)
-                {
-                printf("Fc6681Connect1 %04o\n", activeChannel->data);
-                }
-            activeChannel->full = FALSE;
-            activeDevice->fcode = 0;
+
+            mp->connectedEquipment = e;
+            device->selectedUnit = u;
             mp->status = StFc6681Ready;
             }
         break;
 
-    case Fc6681Function:
-        activeUnit = (Dev3kSlot *) (activeDevice->context[activeDevice->selectedUnit]);
+    case Fc6681FunctionMode2:
         if (activeChannel->full)
             {
-            if (DEBUG)
-                {
-                printf("Fc6681Function %04o\n", activeChannel->data);
-                }
-            (activeUnit->func) (activeChannel->data);
+            active3000Device = mp->device3000[mp->connectedEquipment];
+            (active3000Device->func) (activeChannel->data);
             activeChannel->full = FALSE;
             activeDevice->fcode = 0;
             }
@@ -361,27 +466,35 @@ static void dcc6681Io(void)
     case Fc6681Input:
     case Fc6681Output:
     case Fc6681DevStatusReq:
-        activeUnit = (Dev3kSlot *) (activeDevice->context[activeDevice->selectedUnit]);
-        (activeUnit->io) ();
+        active3000Device = mp->device3000[mp->connectedEquipment];
+        (active3000Device->io)();
         break;
         
-    case Fc6681StatusReq:
+    case Fc6681DccStatusReq:
         if (!activeChannel->full)
             {
             stat = mp->status;
-            // Gather up interrupt flags from the attached units
-            for (u = 0; u < MaxUnits; u++)
+            
+            /*
+            **  Assemble interrupt status.
+            */
+            for (e = 0; e < MaxEquipment; e++)
                 {
-                up = (Dev3kSlot *) (activeDevice->context[u]);
-                if (up != NULL && up->intr)
+                if (   mp->device3000[e] != NULL
+                    && mp->interrupting[e])
                     {
-                    stat |= 010 << u;
+                    stat |= (010 << e);
                     }
                 }
+
+            /*
+            **  Return status.
+            */
             activeChannel->data = stat;
             activeChannel->full = TRUE;
             activeDevice->fcode = 0;
             }
+
         break;
         }
     }
@@ -394,29 +507,30 @@ static void dcc6681Io(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dcc6681Load(DevSlot *dp, int unitNo, char *fn)
+static void dcc6681Load(DevSlot *dp, int eqNo, char *fn)
     {
-    Dev3kSlot *up;
+    DccControl *mp = (DccControl *)dp->context[0];
+    DevSlot *device;
     
-    if (unitNo < 0 || unitNo >= MaxUnits)
+    if (eqNo < 0 || eqNo >= MaxEquipment)
         {
-        opSetMsg ("$INVALID UNIT NO");
+        opSetMsg ("$INVALID EQUIPMENT NO");
         return;
         }
-    up = (Dev3kSlot *)dp->context[unitNo];
+    device = mp->device3000[eqNo];
 
-    if (up == NULL)
+    if (device == NULL)
         {
-        opSetMsg ("$UNIT NOT ALLOCATED");
+        opSetMsg ("$EQ NOT ALLOCATED");
         return;
         }
 
-    if (up->load == NULL)
+    if (device->load == NULL)
         {
-        opSetMsg ("$LOAD/UNLOAD NOT SUPPORTED ON UNIT");
+        opSetMsg ("$LOAD/UNLOAD NOT SUPPORTED ON EQUIPMENT");
         return;
         }
-    (up->load)(up, fn);
+    (device->load)(device, eqNo, fn);
     }
 
 /*--------------------------------------------------------------------------
@@ -429,14 +543,22 @@ static void dcc6681Load(DevSlot *dp, int unitNo, char *fn)
 **------------------------------------------------------------------------*/
 static void dcc6681Activate(void)
     {
-    i8 u;
+    DccControl *mp = (DccControl *)activeDevice->context[0];
+    i8 e;
 
-    u = activeDevice->selectedUnit;
-    if (u >= 0)
+    e = mp->connectedEquipment;
+    if (e < 0)
         {
-        activeUnit = (Dev3kSlot *) (activeDevice->context[u]);
-        (activeUnit->activate) ();
+        return;
         }
+
+    active3000Device = mp->device3000[e];
+    if (active3000Device == NULL)
+        {
+        return;
+        }
+
+    (active3000Device->activate)();
     }
 
 /*--------------------------------------------------------------------------
@@ -449,14 +571,22 @@ static void dcc6681Activate(void)
 **------------------------------------------------------------------------*/
 static void dcc6681Disconnect(void)
     {
-    i8 u;
+    DccControl *mp = (DccControl *)activeDevice->context[0];
+    i8 e;
 
-    u = activeDevice->selectedUnit;
-    if (u >= 0)
+    e = mp->connectedEquipment;
+    if (e < 0)
         {
-        activeUnit = (Dev3kSlot *) (activeDevice->context[u]);
-        (activeUnit->disconnect) ();
+        return;
         }
+
+    active3000Device = mp->device3000[e];
+    if (active3000Device == NULL)
+        {
+        return;
+        }
+
+    (active3000Device->disconnect)();
     }
 
 /*---------------------------  End Of File  ------------------------------*/

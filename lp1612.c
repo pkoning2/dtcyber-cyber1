@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: lp1612.c
 **
@@ -133,7 +133,7 @@ void lp1612Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     (void)eqNo;
     (void)deviceName;
 
-    dp = channelAttach(channelNo, DtLp1612);
+    dp = channelAttach(channelNo, eqNo, DtLp1612);
 
     dp->activate = lp1612Activate;
     dp->disconnect = lp1612Disconnect;

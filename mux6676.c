@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: mux6676.c
 **
@@ -127,7 +127,7 @@ void mux6676Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     (void)eqNo;
     (void)deviceName;
 
-    dp = channelAttach(channelNo, DtMux6676);
+    dp = channelAttach(channelNo, eqNo, DtMux6676);
     dp->activate = mux6676Activate;
     dp->disconnect = mux6676Disconnect;
     dp->func = mux6676Func;
@@ -418,6 +418,7 @@ static void *mux6676Thread(void *param)
     int fromLen;
     PortParam *mp;
     u8 i;
+    int reuse = 1;
 
     /*
     **  Create TCP socket and bind to specified port.
@@ -429,6 +430,7 @@ static void *mux6676Thread(void *param)
         RETURN;
         }
 
+    setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = inet_addr("0.0.0.0");

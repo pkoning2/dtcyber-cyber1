@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Paul Koning, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Paul Koning, Tom Hunter (see license.txt)
 **
 **  Name: ddp.c
 **
@@ -140,7 +140,7 @@ void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         exit (1);
     }
     
-    dp = channelAttach(channelNo, DtDdp);
+    dp = channelAttach(channelNo, eqNo, DtDdp);
 
     dp->activate = ddpActivate;
     dp->disconnect = ddpDisconnect;

@@ -162,12 +162,12 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     // We use two channels, one for input, one for output.
     // The input channel number is given by what is normally
     // the unit number in the cyber.ini file.
-    in = channelAttach(unitNo, DtNiu);
+    in = channelAttach(unitNo, eqNo, DtNiu);
     in->activate = niuActivate;
     in->disconnect = niuDisconnect;
     in->func = niuInFunc;
     in->io = niuInIo;
-    out = channelAttach(channelNo, DtNiu);
+    out = channelAttach(channelNo, eqNo, DtNiu);
     out->activate = niuActivate;
     out->disconnect = niuDisconnect;
     out->func = niuOutFunc;
@@ -661,6 +661,7 @@ static void *niuThread(void *param)
     int fromLen;
     PortParam *mp;
     u8 i;
+    int reuse = 1;
 
     /*
     **  Create TCP socket and bind to specified port.
@@ -672,6 +673,7 @@ static void *niuThread(void *param)
         RETURN;
     }
 
+    setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = inet_addr("0.0.0.0");

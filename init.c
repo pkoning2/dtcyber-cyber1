@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter (see license.txt)
+**  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
 **
 **  Name: init.c
 **
@@ -29,7 +29,7 @@
 **  Private Constants
 **  -----------------
 */
-#define MaxLine                 80
+#define MaxLine                 512
 
 /*
 **  -----------------------
@@ -172,6 +172,8 @@ u32 initConvertEndian(u32 value)
 static void initCyber(char *config)
     {
     char model[40];
+    char cmFile[256];
+    char ecsFile[256];
     long memory;
     long ecsBanks;
     long cpus;
@@ -227,7 +229,10 @@ static void initCyber(char *config)
         exit (1);
         }
     
-    cpuInit(model, cpus, memory, ecsBanks);
+    (void)initGetString("cmFile", "", cmFile, sizeof(cmFile));
+    (void)initGetString("ecsFile", "", ecsFile, sizeof(ecsFile));
+
+    cpuInit(model, cpus, memory, ecsBanks, cmFile, ecsFile);
 
     /*
     **  Determine number of PPs and initialise PP subsystem.
@@ -345,22 +350,9 @@ static void initEquipment(void)
     while  ((line = initGetNextLine()) != NULL)
         {
         /*
-        **  Parse equipment number.
-        */
-        token = strtok(line, "=");
-        if (token == NULL || strlen(token) != 2 || !isoctal(token[0]) || !isoctal(token[1]))
-            {
-            fprintf(stderr, "Section [%s], relative line %d, invalid equipment no %s in %s\n",
-                equipment, lineNo, token, startupFile);
-            exit(1);
-            }
-
-        eqNo = strtol(token, NULL, 8);
-
-        /*
         **  Parse device type.
         */
-        token = strtok(NULL, ",");
+        token = strtok(line, ",");
         if (token == NULL || strlen(token) < 2)
             {
             fprintf(stderr, "Section [%s], relative line %d, invalid device type %s in %s\n",
@@ -384,7 +376,20 @@ static void initEquipment(void)
             }
 
         /*
-        **  Parse unit/equipment number.
+        **  Parse equipment number.
+        */
+        token = strtok(NULL, ",");
+        if (token == NULL || strlen(token) != 1 || !isoctal(token[0]))
+            {
+            fprintf(stderr, "Section [%s], relative line %d, invalid equipment no %s in %s\n",
+                equipment, lineNo, token, startupFile);
+            exit(1);
+            }
+
+        eqNo = strtol(token, NULL, 8);
+
+        /*
+        **  Parse unit number.
         */
         token = strtok(NULL, ",");
         if (token == NULL || !isoctal(token[0]))
