@@ -167,6 +167,8 @@ static void dd8xxSeek(FILE *fcb, DiskParam *dp, u8 func);
 static void dd8xxSeekNextSector(DiskParam *dp);
 static void dd8xxDump(PpWord data);
 static void dd8xxFlush(void);
+static void dd8xxReadSector(FILE *fcb, DiskParam *dp, void *buf);
+static void dd8xxWriteSector(FILE *fcb, DiskParam *dp, const void *buf);
 static void dd8xxSetClearFlaw(DiskParam *dp, u32 flaw, PpWord flawState);
 
 /*
@@ -338,20 +340,16 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
         mySector[2] = 4 << 8 | 8 << 4 | 0;
         mySector[3] = 1 << 8 | 1 << 4 | 6;
 
-        dd8xxSeek(fcb, dp, Fc8xxWrite);
-        fwrite(&mySector, 2, SectorSize, fcb);
+        dd8xxWriteSector(fcb, dp, &mySector);
 
         dp->sector += 1;
-        dd8xxSeek(fcb, dp, Fc8xxWrite);
-        memset(mySector, 0, SectorSize * 2);
-        fwrite(&mySector, 2, SectorSize, fcb);
+        dd8xxWriteSector(fcb, dp, &mySector);
 
         /*
         **  Initialize utility map
         */
         dp->sector += 1;
-        dd8xxSeek(fcb, dp, Fc8xxWrite);
-        fwrite(&mySector, 2, SectorSize, fcb);
+        dd8xxWriteSector(fcb, dp, &mySector);
         }
 
     ds->fcb[unitNo] = fcb;
@@ -456,6 +454,8 @@ static FcStatus dd8xxFunc(PpWord funcCode)
 
     case Fc8xxRead:
     case Fc8xxReadFlawedSector:
+    case Fc8xxReadUtilityMap:
+    case Fc8xxReadFactoryData:
         activeDevice->fcode = funcCode;
         activeDevice->recordLength = SectorSize;
         dd8xxSeek(fcb, dp, Fc8xxRead);
@@ -501,12 +501,6 @@ static FcStatus dd8xxFunc(PpWord funcCode)
  
     case Fc8xxStartMemLoad:
         activeDevice->fcode = funcCode;
-        break;
-
-    case Fc8xxReadUtilityMap:
-    case Fc8xxReadFactoryData:
-        activeDevice->fcode = funcCode;
-        activeDevice->recordLength = SectorSize;
         break;
 
     case Fc8xxDriveRelease:
@@ -673,6 +667,8 @@ static void dd8xxIo(void)
     case Fc8xxDeadstart:
     case Fc8xxRead:
     case Fc8xxReadFlawedSector:
+    case Fc8xxReadUtilityMap:
+    case Fc8xxReadFactoryData:
         if (!activeChannel->full)
             {
             if (dp->oldFormat)
@@ -699,7 +695,11 @@ static void dd8xxIo(void)
             if (--activeDevice->recordLength == 0)
                 {
                 activeChannel->discAfterInput = TRUE;
-                dd8xxSeekNextSector(dp);
+                if (activeDevice->fcode == Fc8xxRead ||
+                    activeDevice->fcode == Fc8xxReadFlawedSector)
+                    {
+                    dd8xxSeekNextSector(dp);
+                    }
                 }
             }
         break;
@@ -759,20 +759,6 @@ static void dd8xxIo(void)
         if (!activeChannel->full)
             {
             activeChannel->data = 0;
-            activeChannel->full = TRUE;
-
-            if (--activeDevice->recordLength == 0)
-                {
-                activeChannel->discAfterInput = TRUE;
-                }
-            }
-        break;
-
-    case Fc8xxReadFactoryData:
-    case Fc8xxReadUtilityMap:
-        if (!activeChannel->full)
-            {
-            fread(&activeChannel->data, 2, 1, fcb);
             activeChannel->full = TRUE;
 
             if (--activeDevice->recordLength == 0)
@@ -973,6 +959,93 @@ static void dd8xxLoad(DevSlot *dp, int unitNo, char *fn)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Read sector to a local buffer
+**
+**  Parameters:     Name        Description.
+**                  dp          Disk parameters (context).
+**                  buf         buffer pointer (PpWord[322])
+**
+**  Returns:        Nothing.
+**
+**  This routine reads the sector set by the most recent seek.
+**  Note that it does NOT advance the current sector.
+**
+**------------------------------------------------------------------------*/
+static void dd8xxReadSector(FILE *fcb, DiskParam *dp, void *buf)
+    {
+    int i;
+    u8 *bp;
+    PpWord *pp;
+    
+    dd8xxSeek(fcb, dp, Fc8xxRead);
+    fread(dp->sec, 1, dp->sectorSize, fcb);
+    bp = dp->sec;
+    pp = (PpWord *) buf;
+    if (dp->oldFormat)
+        {
+        for (i = 0; i < SectorSize; i++)
+            {
+            *pp++ = *(PpWord *) bp;
+            bp += sizeof (PpWord);
+            }
+        }
+    else
+        {
+        for (i = 0; i < SectorSize; i += 2)
+            {
+            *pp++ = (*bp << 4) + (*(bp + 1) >> 4);
+            *pp++ = (*(bp + 1) << 8) + *(bp + 2);
+            bp += 3;
+            }
+        }
+    }
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Write sector from a local buffer
+**
+**  Parameters:     Name        Description.
+**                  dp          Disk parameters (context).
+**                  buf         buffer pointer (PpWord[322])
+**
+**  Returns:        Nothing.
+**
+**  This routine writes the sector set by the most recent seek.
+**  Note that it does NOT advance the current sector.
+**
+**------------------------------------------------------------------------*/
+static void dd8xxWriteSector(FILE *fcb, DiskParam *dp, const void *buf)
+    {
+    int i;
+    u8 *bp;
+    const PpWord *pp;
+    
+    bp = dp->sec;
+    pp = (const PpWord *) buf;
+    if (dp->oldFormat)
+        {
+        for (i = 0; i < SectorSize; i++)
+            {
+            *(PpWord *) bp = *pp++ & Mask12;
+            bp += sizeof (PpWord);
+            }
+        }
+    else
+        {
+        for (i = 0; i < SectorSize; i += 2)
+            {
+            *bp++ = *pp >> 4;
+            *bp = *pp++ << 4;
+            *bp++ |= *pp >> 8;
+            *bp++ = *pp++;
+            }
+        }
+    dd8xxSeek(fcb, dp, Fc8xxWrite);
+    fwrite(dp->sec, 1, dp->sectorSize, fcb);
+    }
+
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Manipulate sector flaw map.
 **
 **  Parameters:     Name        Description.
@@ -1002,8 +1075,7 @@ static void dd8xxSetClearFlaw(DiskParam *dp, u32 flaw, PpWord flawState)
     dp->track = 0;
     dp->sector = 0;
     dp->seekNeeded = TRUE;
-    dd8xxSeek(fcb, dp, Fc8xxWrite);
-    fread(&mySector, 2, SectorSize, fcb);
+    dd8xxReadSector(fcb, dp, &mySector);
 
     if (flawState & 02)
         {  /* set part */
@@ -1048,8 +1120,7 @@ static void dd8xxSetClearFlaw(DiskParam *dp, u32 flaw, PpWord flawState)
             mySector[index] = 0;
             }
         }
-    dd8xxSeek(fcb, dp, Fc8xxWrite);
-    fwrite(&mySector, 2, SectorSize, fcb);
+    dd8xxWriteSector(fcb, dp, &mySector);
     }
 
 /*---------------------------  End Of File  ------------------------------*/
