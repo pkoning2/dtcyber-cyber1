@@ -13,7 +13,7 @@ include Makefile.common
 
 .PHONY:	fonts
 
-DDOBJS  = $(SOBJS) $(SXOBJS) window_x11.o
+DDOBJS  = $(SOBJS) $(SXOBJS) window_x11.o dd60.o
 
 PCFS	= seymour8b.pcf seymour8m.pcf \
 	seymour16b.pcf seymour16m.pcf \

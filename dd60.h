@@ -58,4 +58,24 @@
 #define Dd60KeyXon      070         /* start display */
 #define Dd60KeyXoff     071         /* stop display */
 
+/*
+**  Screen related definitions
+*/
+#define DisplayMargin	        20
+#define OffLeftScreen           0
+#define OffRightScreen          01020
+#define TraceX                  (10 - DisplayMargin)
+#define TraceY                  (10 - DisplayMargin)
+
+/*
+**  Size of the window and pixmap.
+**   This is: a screen high with marging top and botton, and two screens
+**  wide with margins top and bottom, and 20b space in between.
+*/
+#define XSize       (01000 * scaleX / 10 + OffRightScreen + 2 * DisplayMargin)
+#define YSize       (01000 * scaleY / 10 + 2 * DisplayMargin)
+
+#define XADJUST(x) ((x) * scaleX / 10 + DisplayMargin + currentXOffset)
+#define YADJUST(y) ((y) * scaleY / 10 + DisplayMargin)
+
 #endif  /* DD60_H */

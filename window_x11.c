@@ -35,23 +35,9 @@
 **  Private Constants
 **  -----------------
 */
-#define NetBufSize      2048
 #define LineBufSize     64
 #define DefaultInterval 0.06
-/*
-**  Screen related definitions
-*/
-#define DisplayMargin	        20
-#define OffLeftScreen           0
-#define OffRightScreen          01020
-#define TraceX                  (10 - DisplayMargin)
-#define TraceY                  (10 - DisplayMargin)
-
-// Size of the window and pixmap.
-// This is: a screen high with marging top and botton, and two screens
-// wide with margins top and bottom, and 20b space in between.
-#define XSize           (01000 + OffRightScreen + 2 * DisplayMargin)
-#define YSize           (01000 + 2 * DisplayMargin)
+#define HersheyMaxSegments 45
 
 /*
 **  -----------------------
@@ -59,10 +45,7 @@
 **  -----------------------
 */
 
-#define XADJUST(x) ((x) + DisplayMargin + currentXOffset)
-#define YADJUST(y) ((y) + DisplayMargin)
-
-// turn on the next line to debug X startup troubles...
+/* turn on the next line to debug X startup troubles... */
 //#define XDEBUG(disp,text) XSync(disp, 0); printf (text "\n")
 #define XDEBUG(disp,text)
 
@@ -95,19 +78,9 @@ typedef struct
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void windowInit(void);
-static void windowQueue(char ch);
-static void windowClose(void);
-static void windowSetKeyboardTrue (bool flag);
 static void INLINE windowShowLine (void);
 static void windowStoreChar (char c, int x, int y, int dx);
 static void getCharWidths (FontInfo *f, char *s);
-static int windowInput(void);
-static void windowShowDisplay (void);
-static void windowSetX (int x);
-static void windowSetY (int y);
-static void windowSetMode (int mode);
-static void windowProcessChar (int ch);
 static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize);
 
 /*
@@ -117,15 +90,18 @@ static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize);
 */
 extern Display *disp;
 extern XrmDatabase XrmDb;
-extern Window ptermWindow;
-bool keyboardTrue;
+extern const char * const consoleHersheyGlyphs[64];
+extern bool windowActive;
+extern bool hersheyMode;
+extern int scaleX;
+extern int scaleY;
 
 /*
 **  -----------------
 **  Private Variables
 **  -----------------
 */
-static NetFet fet;
+static bool keyboardTrue;
 static int currentFont = -1;
 static FontInfo *currentFontInfo;
 static int currentX = -1;
@@ -139,8 +115,6 @@ static Pixmap pixmap;
 static GC wgc, pgc;
 static unsigned long fg, bg, pfg, pbg;
 static XKeyboardControl kbPrefs;
-static volatile bool windowActive = TRUE;
-static bool hersheyMode = FALSE;
 
 /*
 **  These two together make up the line buffering machinery used
@@ -168,227 +142,20 @@ static const i8 dotdy[] = { 0, 0, 1, 1, -1,  0, -1,  1, -1 };
 **--------------------------------------------------------------------------
 */
 
+void windowInit(void);
+void windowClose(void);
+void windowSetKeyboardTrue (bool flag);
+int windowInput(void);
+void windowShowDisplay (void);
+void windowSetX (int x);
+void windowSetY (int y);
+void windowSetMode (int mode);
+void windowProcessChar (int ch);
+
 /*
 **--------------------------------------------------------------------------
 **
 **  Public Functions
-**
-**--------------------------------------------------------------------------
-*/
-
-int main (int argc, char **argv)
-    {
-    u8 c;
-    int data;
-    int port;
-    int i;
-    double interval;
-    int intervalCode;
-    u8 initBuf[2];
-    int readDelay;
-    char opt;
-    
-    for (;;)
-        {
-        opt = getopt (argc, argv, "h");
-        if (opt == (char) (-1))
-            break;
-        switch (opt)
-            {
-        case 'h':
-            hersheyMode = TRUE;
-            break;
-            }
-        }
-    argc -= optind;
-    argv += optind;
-
-    if (argc > 2)
-        {
-        fprintf (stderr, "usage: dd60 [-h] [ interval [ portnum ]]\n");
-        exit (1);
-        }
-    if (argc > 1)
-        {
-        port = atoi (argv[1]);
-        }
-    else
-        {
-        port = DefDd60Port;
-        }
-    if (argc > 0)
-        {
-        interval = strtod (argv[0], NULL);
-        if (interval < 0.02 || interval > 63.0)
-            {
-            fprintf (stderr, "interval value out of range\n");
-            exit (1);
-            }
-        }
-    else
-        {
-        interval = DefaultInterval;
-        }
-
-    /*
-    **  Set the network read timeout appropriately for the
-    **  display interval selected.  Keep it under 100 ms
-    **  for decent keyboard responsiveness.
-    */
-    if (interval < 0.1)
-        {
-        readDelay = interval * 1000;
-        }
-    else
-        {
-        readDelay = 100;
-        }
-
-    /* 
-    **  Convert the interval to an integer value in 20 ms units
-    */
-    intervalCode = interval / 0.02;
-    
-    if (intervalCode > 077)
-        {
-        /* If it doesn't fit, use the "slow" coding */
-        intervalCode = Dd60SlowRate + (intervalCode / 50);
-        }
-    else
-        {
-        intervalCode += Dd60FastRate;
-        }
-    
-    dtInitFet (&fet, NetBufSize);
-    
-    if (dtConnect (&fet.connFd, "localhost", port) < 0)
-        {
-        exit (1);
-        }
-    
-#if defined(_WIN32)
-    /*
-    **  Get our instance
-    */
-    hInstance = GetModuleHandle(NULL);
-#endif
-
-    windowInit ();
-
-    /*
-    **  We're ready to go, so send the rate we want, and a
-    **  "turn on display" code to DtCyber.
-    */
-    initBuf[0] = intervalCode;
-    initBuf[1] = Dd60KeyXon;
-    send (fet.connFd, initBuf, sizeof (initBuf), 0);
-
-    while (windowActive)
-        {
-        i = dtRead (&fet, readDelay);
-        if (i < 0)
-            {
-            /* Connection went away... */
-            windowActive = FALSE;
-            break;
-            }
-        else
-            {
-            /*
-            **  We received some data, so process what we received
-            */
-            for (;;)
-                {
-                data = dtReado (&fet);
-                if (data < 0)
-                    {
-                    break;
-                    }
-                if ((data & 0200) == 0)
-                    {
-                    windowProcessChar (data);
-                    }
-                else
-                    {
-                    switch (data & 0370)
-                        {
-                    case Dd60SetX:
-                    case Dd60SetY:
-                        /*
-                        **  SetX and SetY are two bytes long, so get
-                        **  the next byte and then proceed.  The second
-                        **  byte should be here already, but if not, we
-                        **  will wait for it.
-                        */
-                        for (;;)
-                            {
-                            i = dtReado (&fet);
-                            if (i >= 0)
-                                {
-                                break;
-                                }
-                            dtRead (&fet, -1);
-                            }
-                        i |= ((data & 7) << 8);
-                        if ((data & 0370) == Dd60SetX)
-                            {
-                            windowSetX (i);
-                            }
-                        else
-                            {
-                            windowSetY (i);
-                            }
-                        break;
-                    case Dd60SetTrace:
-                        windowSetMode (Dd60ScreenL | Dd60CharSmall);
-                        windowSetX (TraceX);
-                        windowSetY (0777 - TraceY);
-                        break;
-                    case Dd60SetKbTrue:
-                        windowSetKeyboardTrue ((data & 1) != 0);
-                        break;
-                    case Dd60SetMode:
-                        windowSetMode (data);
-                        break;
-                    case Dd60EndBlock:
-                        windowShowDisplay ();
-                        break;
-                        }
-                    }
-                }
-            }
-        
-        /*
-        **  We've processed all pending data from the system;
-        **  now look for keyboard data.
-        */
-#if !defined(_WIN32)
-        c = windowInput ();
-#else
-        //tbd
-#endif
-        if (c != 0)
-            {
-            if (c & 0200)
-                {
-                /* Keyup code */
-                c = Dd60KeyUp | (c & 077);
-                }
-            else
-                {
-                c = Dd60KeyDown | c;
-                }
-            send (fet.connFd, &c, 1, 0);
-            }
-        }
-    windowClose ();
-	return 0;
-    }
-
-/*
-**--------------------------------------------------------------------------
-**
-**  Private Functions
 **
 **--------------------------------------------------------------------------
 */
@@ -401,7 +168,7 @@ int main (int argc, char **argv)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void windowInit(void)
+void windowInit(void)
     {
     int rc;
     KeySym modList[2];
@@ -618,7 +385,7 @@ static void windowInit(void)
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void windowSetKeyboardTrue (bool flag)
+void windowSetKeyboardTrue (bool flag)
     {
     if (keyboardTrue == flag)
         {
@@ -647,121 +414,13 @@ static void windowSetKeyboardTrue (bool flag)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void windowClose(void)
+void windowClose(void)
     {
     XFreeGC (disp, wgc);
     XFreeGC (disp, pgc);
     XFreePixmap (disp, pixmap);
     XDestroyWindow (disp, window);
     XCloseDisplay (disp);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Flush pending characters in the line buffer to the bitmap.
-**
-**  Parameters:     None.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void INLINE windowShowLine (void)
-    {
-    if (lineBufCnt != 0)
-        {
-        XDrawText(disp, pixmap, pgc, XADJUST (xstart),
-                  YADJUST (ypos), XLineBuf, lineBufCnt);
-        lineBufCnt = 0;
-        ypos = -1;
-        }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Put a character to the display, buffering a line
-**					at a time so we can do bold handling etc.
-**
-**  Parameters:     Name        Description.
-**					c			character (display code)
-**					x			x position
-**					y			y position
-**					dx			current font size
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void windowStoreChar (char c, int x, int y, int dx)
-    {
-    int dindx;
-    int fontId;
-    
-    // Center the character on the supplied x/y.
-    x -= currentFontInfo->bwidth / 2;
-    y += currentFontInfo->height / 2;
-    
-    // Check for intensify
-    dindx = (x - xstart) / dx;
-    if (y == ypos &&
-        x < xpos && x >= xstart &&
-            dindx * dx == x - xstart &&
-            lineBuf[dindx].c == c)
-        {
-        if (++lineBuf[dindx].hits >= (dx / 2) - 1)
-            {
-            XLineBuf[dindx].font = currentFontInfo->boldId;
-            if (XLineBuf[dindx + 1].font == None)
-                {
-                XLineBuf[dindx + 1].font = currentFontInfo->normalId;
-                }
-            }
-        return;
-        }
-    if (lineBufCnt == LineBufSize ||
-        y != ypos ||
-        x < xpos || 
-        dindx >= LineBufSize ||
-        dindx * dx != x - xstart)
-        {
-        windowShowLine ();
-        xpos = xstart = x;
-        ypos = y;
-        }
-    /*
-    ** If we're skipping to a spot further down this line,
-    ** space fill the range in between.
-    */
-    fontId = currentFontInfo->normalId;
-    for ( ; xpos < x; xpos += dx)
-        {
-        XLineBuf[lineBufCnt].delta = currentFontInfo->pad;
-        XLineBuf[lineBufCnt].font = fontId;
-        fontId = None;
-        lineBuf[lineBufCnt].hits = 1;
-        lineBuf[lineBufCnt++].c = 055;
-        }
-    
-    XLineBuf[lineBufCnt].delta = currentFontInfo->pad;
-    if (lineBufCnt == 0 ||
-        XLineBuf[lineBufCnt - 1].font == currentFontInfo->boldId)
-        {
-        XLineBuf[lineBufCnt].font = currentFontInfo->normalId;
-        }
-    else
-        {
-        XLineBuf[lineBufCnt].font = None;
-        }
-    lineBuf[lineBufCnt].hits = 1;
-    lineBuf[lineBufCnt++].c = c;
-    xpos += dx;
-    }
-
-static void getCharWidths (FontInfo *f, char *s)
-    {
-    int t;
-    XCharStruct cs;
-
-    XTextExtents(XQueryFont (disp, f->normalId), s, 1, &t, &t, &t, &cs);
-    f->width = cs.width + f->pad;
-    f->bwidth = cs.rbearing;
-    f->height = cs.ascent;
     }
 
 /*--------------------------------------------------------------------------
@@ -772,7 +431,7 @@ static void getCharWidths (FontInfo *f, char *s)
 **  Returns:        Key received, or 0.
 **
 **------------------------------------------------------------------------*/
-static int windowInput(void)
+int windowInput(void)
     {
     KeySym key;
     XEvent event;
@@ -796,9 +455,11 @@ static int windowInput(void)
             break;
 
         case KeyRelease:
-            // Note that we only get key release events in "true" 
-            // keyboard mode.  The code is mostly common with 
-            // keypresses.
+            /*
+            **  Note that we only get key release events in "true" 
+            **  keyboard mode.  The code is mostly common with 
+            **  keypresses.
+            */
         case KeyPress:
             len = XLookupString ((XKeyEvent *)&event, text, 10, &key, 0);
             c = text[0];
@@ -897,7 +558,7 @@ static int windowInput(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void windowShowDisplay (void)
+void windowShowDisplay (void)
     {
     /*
     **  Output any pending data from the line buffer
@@ -917,207 +578,6 @@ static void windowShowDisplay (void)
     XSetForeground (disp, pgc, pfg);
     }
 
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Define Hershey glyphs.
-**
-**------------------------------------------------------------------------*/
-const char * const consoleHersheyGlyphs[64] =
-    {
-#if 0
-    /* 00 = ':' */ "PURPRQSQSPRP RRURVSVSURU",
-    /* 01 = 'A' */ "MWRMNV RRMVV RPSTS",
-    /* 02 = 'B' */ "MWOMOV ROMSMUNUPSQ ROQSQURUUSVOV",
-    /* 03 = 'C' */ "MXVNTMRMPNOPOSPURVTVVU",
-    /* 04 = 'D' */ "MWOMOV ROMRMTNUPUSTURVOV",
-    /* 05 = 'E' */ "MWOMOV ROMUM ROQSQ ROVUV",
-    /* 06 = 'F' */ "MVOMOV ROMUM ROQSQ",
-    /* 07 = 'G' */ "MXVNTMRMPNOPOSPURVTVVUVR RSRVR",
-    /* 10 = 'H' */ "MWOMOV RUMUV ROQUQ",
-    /* 11 = 'I' */ "PTRMRV",
-    /* 12 = 'J' */ "NUSMSTRVPVOTOS",
-    /* 13 = 'K' */ "MWOMOV RUMOS RQQUV",
-    /* 14 = 'L' */ "MVOMOV ROVUV",
-    /* 15 = 'M' */ "LXNMNV RNMRV RVMRV RVMVV",
-    /* 16 = 'N' */ "MWOMOV ROMUV RUMUV",
-    /* 17 = 'O' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM",
-    /* 20 = 'P' */ "MWOMOV ROMSMUNUQSROR",
-    /* 21 = 'Q' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM RSTVW",
-    /* 22 = 'R' */ "MWOMOV ROMSMUNUQSROR RRRUV",
-    /* 23 = 'S' */ "MWUNSMQMONOOPPTRUSUUSVQVOU",
-    /* 24 = 'T' */ "MWRMRV RNMVM",
-    /* 25 = 'U' */ "MXOMOSPURVSVUUVSVM",
-    /* 26 = 'V' */ "MWNMRV RVMRV",
-    /* 27 = 'W' */ "LXNMPV RRMPV RRMTV RVMTV",
-    /* 30 = 'X' */ "MWOMUV RUMOV",
-    /* 31 = 'Y' */ "MWNMRQRV RVMRQ",
-    /* 32 = 'Z' */ "MWUMOV ROMUM ROVUV",
-    /* 33 = '0' */ "MWRMPNOPOSPURVTUUSUPTNRM",
-    /* 34 = '1' */ "MWPORMRV",
-    /* 35 = '2' */ "MWONQMSMUNUPTROVUV",
-    /* 36 = '3' */ "MWONQMSMUNUPSQ RRQSQURUUSVQVOU",
-    /* 37 = '4' */ "MWSMSV RSMNSVS",
-    /* 40 = '5' */ "MWPMOQQPRPTQUSTURVQVOU RPMTM",
-    /* 41 = '6' */ "MWTMRMPNOPOSPURVTUUSTQRPPQOS",
-    /* 42 = '7' */ "MWUMQV ROMUM",
-    /* 43 = '8' */ "MWQMONOPQQSQUPUNSMQM RQQOROUQVSVUUURSQ",
-    /* 44 = '9' */ "MWUPTRRSPROPPNRMTNUPUSTURVPV",
-    /* 45 = '+' */ "LXRNRV RNRVR",
-    /* 46 = '-' */ "LXNRVR",
-    /* 47 = '*' */ "MWRORU ROPUT RUPOT",
-    /* 50 = '/' */ "MWVLNX",
-    /* 51 = '(' */ "OUTKRNQQQSRVTY",
-    /* 52 = ')' */ "OUPKRNSQSSRVPY",
-    /* 53 = '$' */ "MWRKRX RUNSMQMONOPQQTRUSUUSVQVOU",
-    /* 54 = '=' */ "LXNPVP RNTVT",
-    /* 55 = ' ' */ "",
-    /* 56 = ',' */ "PUSVRVRUSUSWRY",
-    /* 57 = '.' */ "PURURVSVSURU",
-    /* 60 = '#' */ "MXQLQY RTLTY ROQVQ ROTVT",
-    /* 61 = '[' */ "",
-    /* 62 = ']' */ "",
-    /* 63 = '%' */ "",
-    /* 64 = '"' */ "NVPMPQ RTMTQ",
-    /* 65 = '_' */ "",
-    /* 66 = '!' */ "PURMRR RSMSR RRURVSVSURU",
-    /* 67 = '&' */ "LXVRURTSSURVOVNUNSORRQSPSNRMPMONOPQSSUUVVV",
-    /* 70 = ''' */ "PTRMRQ",
-    /* 71 = '?' */ "NWPNRMSMUNUPRQRRSRSQUP RRURVSVSURU",
-    /* 72 = '<' */ "",
-    /* 73 = '>' */ "",
-    /* 74 = '@' */ "",
-    /* 75 = '\' */ "",
-    /* 76 = '^' */ "",
-    /* 77 = ';' */ "PURPRQSQSPRP RSVRVRUSUSWRY",
-#else
-    /* 00 = ' ' */ "",
-    /* 01 = 'A' */ "MWRMNV RRMVV RPSTS",
-    /* 02 = 'B' */ "MWOMOV ROMSMUNUPSQ ROQSQURUUSVOV",
-    /* 03 = 'C' */ "MXVNTMRMPNOPOSPURVTVVU",
-    /* 04 = 'D' */ "MWOMOV ROMRMTNUPUSTURVOV",
-    /* 05 = 'E' */ "MWOMOV ROMUM ROQSQ ROVUV",
-    /* 06 = 'F' */ "MVOMOV ROMUM ROQSQ",
-    /* 07 = 'G' */ "MXVNTMRMPNOPOSPURVTVVUVR RSRVR",
-    /* 10 = 'H' */ "MWOMOV RUMUV ROQUQ",
-    /* 11 = 'I' */ "PTRMRV",
-    /* 12 = 'J' */ "NUSMSTRVPVOTOS",
-    /* 13 = 'K' */ "MWOMOV RUMOS RQQUV",
-    /* 14 = 'L' */ "MVOMOV ROVUV",
-    /* 15 = 'M' */ "LXNMNV RNMRV RVMRV RVMVV",
-    /* 16 = 'N' */ "MWOMOV ROMUV RUMUV",
-    /* 17 = 'O' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM",
-    /* 20 = 'P' */ "MWOMOV ROMSMUNUQSROR",
-    /* 21 = 'Q' */ "MXRMPNOPOSPURVSVUUVSVPUNSMRM RSTVW",
-    /* 22 = 'R' */ "MWOMOV ROMSMUNUQSROR RRRUV",
-    /* 23 = 'S' */ "MWUNSMQMONOOPPTRUSUUSVQVOU",
-    /* 24 = 'T' */ "MWRMRV RNMVM",
-    /* 25 = 'U' */ "MXOMOSPURVSVUUVSVM",
-    /* 26 = 'V' */ "MWNMRV RVMRV",
-    /* 27 = 'W' */ "LXNMPV RRMPV RRMTV RVMTV",
-    /* 30 = 'X' */ "MWOMUV RUMOV",
-    /* 31 = 'Y' */ "MWNMRQRV RVMRQ",
-    /* 32 = 'Z' */ "MWUMOV ROMUM ROVUV",
-    /* 33 = '0' */ "MWRMPNOPOSPURVTUUSUPTNRM",
-    /* 34 = '1' */ "MWPORMRV",
-    /* 35 = '2' */ "MWONQMSMUNUPTROVUV",
-    /* 36 = '3' */ "MWONQMSMUNUPSQ RRQSQURUUSVQVOU",
-    /* 37 = '4' */ "MWSMSV RSMNSVS",
-    /* 40 = '5' */ "MWPMOQQPRPTQUSTURVQVOU RPMTM",
-    /* 41 = '6' */ "MWTMRMPNOPOSPURVTUUSTQRPPQOS",
-    /* 42 = '7' */ "MWUMQV ROMUM",
-    /* 43 = '8' */ "MWQMONOPQQSQUPUNSMQM RQQOROUQVSVUUURSQ",
-    /* 44 = '9' */ "MWUPTRRSPROPPNRMTNUPUSTURVPV",
-    /* 45 = '+' */ "LXRNRV RNRVR",
-    /* 46 = '-' */ "LXNRVR",
-    /* 47 = '*' */ "MWRORU ROPUT RUPOT",
-    /* 50 = '/' */ "MWVLNX",
-    /* 51 = '(' */ "OUTKRNQQQSRVTY",
-    /* 52 = ')' */ "OUPKRNSQSSRVPY",
-    /* 53 = ' ' */ "",
-    /* 54 = '=' */ "LXNPVP RNTVT",
-    /* 55 = ' ' */ "",
-    /* 56 = ',' */ "PUSVRVRUSUSWRY",
-    /* 57 = '.' */ "PURURVSVSURU",
-    /* 60 = ' ' */ "",
-    /* 61 = ' ' */ "",
-    /* 62 = ' ' */ "",
-    /* 63 = ' ' */ "",
-    /* 64 = ' ' */ "",
-    /* 65 = ' ' */ "",
-    /* 66 = ' ' */ "",
-    /* 67 = ' ' */ "",
-    /* 70 = ' ' */ "",
-    /* 71 = ' ' */ "",
-    /* 72 = ' ' */ "",
-    /* 73 = ' ' */ "",
-    /* 74 = ' ' */ "",
-    /* 75 = ' ' */ "",
-    /* 76 = ' ' */ "",
-    /* 77 = ' ' */ "",
-#endif
-    };
-
-#define HersheyMaxSegments 45
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Plot a character using the Hershey glyphs.
-**
-**  Parameters:     Name        Description.
-**					xPos		x position
-**					yPos		y position
-**					ch			character (display code)
-**					fontSize	current font size
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize)
-    {
-    XPoint linesVec[HersheyMaxSegments];
-    int segnum = 0;
-    const unsigned char *glyph;
-    int x, y;
-    int charSize = fontSize / 8;
-    
-    xPos += 8;
-    glyph = (const unsigned char *)(consoleHersheyGlyphs[ch]);
-
-    if (*glyph != '\0') /* nonempty glyph */
-        {
-        glyph += 2;
-
-        while (*glyph)
-            {
-            x = (int)glyph[0];
-
-            if (x == (int)' ')
-                {
-                if (segnum != 0)
-                    {
-                    XDrawLines (disp, pixmap, pgc, linesVec,
-                                segnum, CoordModeOrigin);
-                    segnum = 0;
-                    }
-                }
-            else
-                {
-                x = charSize * (x - (int)'R') + xPos;
-                y = charSize * ((int)glyph[1] - (int)'R') + yPos;
-                linesVec[segnum].x = x;
-                linesVec[segnum].y = y;
-                segnum++;
-                }
-
-            glyph += 2; /* on to next pair */
-            }
-        if (segnum != 0)
-            {
-            XDrawLines (disp, pixmap, pgc, linesVec,
-                        segnum, CoordModeOrigin);
-            }
-        }
-    }
-
 /*--------------------------------------------------------------------------
 **  Purpose:        Process a Set X command
 **
@@ -1127,7 +587,7 @@ static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void windowSetX (int x)
+void windowSetX (int x)
     {
     currentX = x;
     }
@@ -1141,7 +601,7 @@ static void windowSetX (int x)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void windowSetY (int y)
+void windowSetY (int y)
     {
     currentY = 0777 - y;
     if (currentFont == FontDot)
@@ -1174,7 +634,7 @@ static void windowSetY (int y)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void windowSetMode (int mode)
+void windowSetMode (int mode)
     {
     int newFont, newOffset;
     
@@ -1251,7 +711,7 @@ static void windowSetMode (int mode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void windowProcessChar (int ch)
+void windowProcessChar (int ch)
     {
     /*
     **  If in dot mode, or no set mode received yet, just ignore the char
@@ -1272,4 +732,195 @@ static void windowProcessChar (int ch)
         }
     currentX += currentFont;
     }
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Private Functions
+**
+**--------------------------------------------------------------------------
+*/
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Flush pending characters in the line buffer to the bitmap.
+**
+**  Parameters:     None.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void INLINE windowShowLine (void)
+    {
+    if (lineBufCnt != 0)
+        {
+        XDrawText(disp, pixmap, pgc, XADJUST (xstart),
+                  YADJUST (ypos), XLineBuf, lineBufCnt);
+        lineBufCnt = 0;
+        ypos = -1;
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Put a character to the display, buffering a line
+**					at a time so we can do bold handling etc.
+**
+**  Parameters:     Name        Description.
+**					c			character (display code)
+**					x			x position
+**					y			y position
+**					dx			current font size
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void windowStoreChar (char c, int x, int y, int dx)
+    {
+    int dindx;
+    int fontId;
+    
+    /*
+    **  Center the character on the supplied x/y. 
+    */
+    x -= currentFontInfo->bwidth / 2;
+    y += currentFontInfo->height / 2;
+    
+    /*
+    **  Check for intensify
+    */
+    dindx = (x - xstart) / dx;
+    if (y == ypos &&
+        x < xpos && x >= xstart &&
+            dindx * dx == x - xstart &&
+            lineBuf[dindx].c == c)
+        {
+        if (++lineBuf[dindx].hits >= (dx / 2) - 1)
+            {
+            XLineBuf[dindx].font = currentFontInfo->boldId;
+            if (XLineBuf[dindx + 1].font == None)
+                {
+                XLineBuf[dindx + 1].font = currentFontInfo->normalId;
+                }
+            }
+        return;
+        }
+    if (lineBufCnt == LineBufSize ||
+        y != ypos ||
+        x < xpos || 
+        dindx >= LineBufSize ||
+        dindx * dx != x - xstart)
+        {
+        windowShowLine ();
+        xpos = xstart = x;
+        ypos = y;
+        }
+    /*
+    ** If we're skipping to a spot further down this line,
+    ** space fill the range in between.
+    */
+    fontId = currentFontInfo->normalId;
+    for ( ; xpos < x; xpos += dx)
+        {
+        XLineBuf[lineBufCnt].delta = currentFontInfo->pad;
+        XLineBuf[lineBufCnt].font = fontId;
+        fontId = None;
+        lineBuf[lineBufCnt].hits = 1;
+        lineBuf[lineBufCnt++].c = 055;
+        }
+    
+    XLineBuf[lineBufCnt].delta = currentFontInfo->pad;
+    if (lineBufCnt == 0 ||
+        XLineBuf[lineBufCnt - 1].font == currentFontInfo->boldId)
+        {
+        XLineBuf[lineBufCnt].font = currentFontInfo->normalId;
+        }
+    else
+        {
+        XLineBuf[lineBufCnt].font = None;
+        }
+    lineBuf[lineBufCnt].hits = 1;
+    lineBuf[lineBufCnt++].c = c;
+    xpos += dx;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Get font parameters
+**
+**  Parameters:     Name        Description.
+**					f           FontInfo struct pointer
+**					s           pointer to char to use to query for metrics
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void getCharWidths (FontInfo *f, char *s)
+    {
+    int t;
+    XCharStruct cs;
+
+    XTextExtents(XQueryFont (disp, f->normalId), s, 1, &t, &t, &t, &cs);
+    f->width = cs.width + f->pad;
+    f->bwidth = cs.rbearing;
+    f->height = cs.ascent;
+    }
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Plot a character using the Hershey glyphs.
+**
+**  Parameters:     Name        Description.
+**					xPos		x position
+**					yPos		y position
+**					ch			character (display code)
+**					fontSize	current font size
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize)
+    {
+    XPoint linesVec[HersheyMaxSegments];
+    int segnum = 0;
+    const unsigned char *glyph;
+    int x, y;
+    int charSize = fontSize / 8;
+    
+    xPos += 8;
+    glyph = (const unsigned char *)(consoleHersheyGlyphs[ch]);
+
+    if (*glyph != '\0') /* nonempty glyph */
+        {
+        glyph += 2;
+
+        while (*glyph)
+            {
+            x = (int)glyph[0];
+
+            if (x == (int)' ')
+                {
+                if (segnum != 0)
+                    {
+                    XDrawLines (disp, pixmap, pgc, linesVec,
+                                segnum, CoordModeOrigin);
+                    segnum = 0;
+                    }
+                }
+            else
+                {
+                x = charSize * (x - (int)'R') + xPos;
+                y = charSize * ((int)glyph[1] - (int)'R') + yPos;
+                linesVec[segnum].x = x;
+                linesVec[segnum].y = y;
+                segnum++;
+                }
+
+            glyph += 2; /* on to next pair */
+            }
+        if (segnum != 0)
+            {
+            XDrawLines (disp, pixmap, pgc, linesVec,
+                        segnum, CoordModeOrigin);
+            }
+        }
+    }
+
 /*---------------------------  End Of File  ------------------------------*/
