@@ -22,6 +22,8 @@
 #include <winsock.h>
 #elif defined(__APPLE__)
 #include <Carbon.h>
+#elif defined(__GNUC__) && defined(__x86_64)
+#include <sys/time.h>
 #endif
 
 #include "const.h"
@@ -34,6 +36,8 @@
 **  -----------------
 */
 #if defined(__GNUC__) && defined(__i386)
+#define RDTSC 1
+#elif defined(__GNUC__) && defined(__x86_64)
 #define RDTSC 1
 #elif defined(_WIN32)
 #define RDTSC 1
@@ -51,6 +55,13 @@
 #if defined(__GNUC__) && defined(__i386)
 #define rdtscll(val) \
     __asm__ __volatile__("rdtsc" : "=A" (val))
+#elif defined(__GNUC__) && defined(__x86_64)
+#define rdtscll(val) \
+    do  {            \
+        struct timeval tv;                          \
+        gettimeofday (&tv, NULL);                   \
+        val = tv.tv_sec * 1000000 + tv.tv_usec;     \
+    } while (0)
 #elif defined(__GNUC__) && defined(__APPLE__)
 #define rdtscll(val) \
     val = UnsignedWideToUInt64 (AbsoluteToNanoseconds (UpTime ()))
@@ -87,7 +98,7 @@ static void rtcInit2 (long MHz);
 **  Public Variables
 **  ----------------
 */
-
+u32 rtcClock = 0;
 
 /*
 **  -----------------
@@ -95,7 +106,6 @@ static void rtcInit2 (long MHz);
 **  -----------------
 */
 static u8 rtcIncrement;
-static u16 rtcClock = 0;
 static bool rtcFull;
 #if RDTSC
 static u64 Hz;
@@ -167,39 +177,17 @@ void rtcInit(char *model, u8 increment, long setMHz)
 **
 **  Returns:        Nothing.
 **
-**  Note that this just counts simulator cycles, so it doesn't give
-**  an accurate measure of elapsed time.  If you have a platform that
-**  supports a fine grained hardware clock, setting "increment=0" will
-**  use that clock, and the cycle counter maintained here is ignored.
+**  If *increment* is specified as non-zero, this process counts emulator
+**  cycles as an approximation of real time.  If *increment* is zero, then
+**  the channel read handler keeps track of real time and adjusts the
+**  RTC reading to match.  The rtcClock variable is 32 bits, so other parts
+**  of the emulator can use it to keep track of elapsed time efficiently;
+**  it is masked to 12 bits in the channel read handler.
 **
 **------------------------------------------------------------------------*/
 void rtcTick(void)
     {
-    rtcClock = (rtcClock + rtcIncrement) & Mask12;
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Return a microsecond timer value
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Time in microseconds, or 0 if no hardware timer.
-**
-**------------------------------------------------------------------------*/
-u64 rtcMicroSec(void)
-    {
-#if RDTSC==777
-    u64 now;
-    
-    if (MHz == 0)
-        {
-        return ULL(0);
-        }
-    rdtscll (now);
-    return now / MHz;
-#else
-    return ULL(0);
-#endif
+    rtcClock = rtcClock + rtcIncrement;
     }
 
 /*
@@ -258,7 +246,7 @@ static void rtcIo(void)
         }
 #endif    
     activeChannel->full = rtcFull;
-    activeChannel->data = rtcClock;
+    activeChannel->data = rtcClock & Mask12;
     }
 
 /*--------------------------------------------------------------------------
@@ -297,6 +285,10 @@ static void rtcDisconnect(void)
 **------------------------------------------------------------------------*/
 static void rtcInit2(long setMHz)
     {
+#if defined(__x86_64)
+    Hz = 1000000ULL;
+    MHz = 1;
+#else
     u64 hz = 0;
 #if defined(_WIN32)
 	LARGE_INTEGER lhz;
@@ -344,7 +336,7 @@ static void rtcInit2(long setMHz)
             rdtscll (now);
             hz = now - prev;
             }
-#endif
+#endif  // !__APPLE__
         Hz = hz;
         MHz = hz / ULL(1000000);
         }
@@ -353,6 +345,9 @@ static void rtcInit2(long setMHz)
         MHz = setMHz;
         Hz = MHz * ULL(1000000);
         }
+    maxDelta = 900 * MHz;   // less than 1 ms to keep mtr happy
+    printf ("using high resolution hardware clock at %d MHz\n", MHz);
+#endif  // !__x86_64
     maxDelta = 900 * MHz;   // less than 1 ms to keep mtr happy
     printf ("using high resolution hardware clock at %d MHz\n", MHz);
     }
