@@ -20,6 +20,7 @@
 #include "const.h"
 #include "types.h"
 #include "proto.h"
+#include <sys/types.h>
 
 /*
 **  -----------------

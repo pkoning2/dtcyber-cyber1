@@ -1098,7 +1098,7 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message, WPARAM wParam, 
 /* Non-operator keystrokes are handled in KEYUP/KEYDOWN */
             break;
             }
-        windowQueueKey (wparam);
+        windowQueueKey (wParam);
         break;
         
     case WM_KEYUP:
