@@ -110,7 +110,7 @@ extern "C"
 
 // the application icon (under Windows and OS/2 it is in resources)
 #if defined(__WXGTK__) || defined(__WXMOTIF__) || defined(__WXMAC__) || defined(__WXMGL__) || defined(__WXX11__)
-#include "mondrian.xpm"
+#include "pterm_32.xpm"
 #endif
 
 // ----------------------------------------------------------------------------
@@ -518,7 +518,7 @@ PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& 
     int i;
     
     // set the frame icon
-    SetIcon(wxICON(mondrian));
+    SetIcon(wxICON(pterm_32));
 
 #if wxUSE_MENUS
     // create a menu bar
