@@ -69,3 +69,24 @@ Since aug11 drop:
 - Changed window_x11, operator, and console to handle multiple
   simultaneous keypresses in the authentic manner. Starwar now seems
   to work as it should.
+
+Since aug18 drop:
+- Fixed bugs in ddp.c.
+- Make authentic keyboard handling NOT the default, but accessible
+  via an operator command.
+- Add tracing of a specific control point.  (This depends on NOS 1
+  memory layout: NCPL and ACPL.)
+- Add dump of CM referenced by an RE/WE instruction in CPU tracing.
+  *** this worked and then I broke it, need to find out why ***
+- Changed mt669.c to issue a warning when loading a tape image read/write
+  and that file is not empty.  This helps to avoid writing over
+  real data.
+- Fix niu output format to match the real code, I misread the PPU
+  code rather badly...
+- Fix dd844.c to disconnect the channel only in the cases where the
+  manual says it should do it.  (Basically, that's reads and errors,
+  but not any output operations to the channel such as seek or write.)
+- Added PP trace on/off under program control, via opcodes 2542 and 2576.
+- Added code to trace.c, operator.c, window_*.c to flush the trace files
+  when tracing is turned off, so I can see what trace data was collected
+  without shutting down DtCyber every time.
