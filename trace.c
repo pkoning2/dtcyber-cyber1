@@ -117,10 +117,11 @@ static void freset (FILE **f, const char *fn);
 **  Public Variables
 **  ----------------
 */
-u16 traceMask = 0;
+u32 traceMask = 0;
 u8 traceCp = 0;
-u16 traceClearMask = 0;
-u16 chTraceMask = 0;
+u32 traceClearMask = 0;
+u64 chTraceMask = 0;
+u32 traceCycles = 0;
 FILE *devF;
 FILE *cpuTF;
 FILE **ppuTF;
@@ -379,11 +380,21 @@ void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress)
     /*
     **  Bail out if no trace of the CPU is requested.
     */
-    if ((traceMask & 0x4000) == 0)
+    if ((traceMask & TraceCpu) == 0)
         {
         return;
         }
 
+    /*
+    **  If trace cycle count set, count it down, cancel further
+    **  tracing if count expired.
+    */
+    if (traceCycles != 0 && --traceCycles == 0)
+        {
+        traceMask &= ~TraceCpu;
+        fflush(cpuTF);
+        }
+    
 #if 0
     for (i = 0; i < 8; i++)
         {
@@ -712,7 +723,7 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
     /*
     **  Bail out if no trace of exchange jumps is requested.
     */
-    if ((traceMask & 0x8000) == 0)
+    if ((traceMask & TraceXj) == 0)
         {
         return;
         }
@@ -1239,11 +1250,11 @@ static bool ppuTraced(void)
     // Note that we don't trace ACN/DCN and the status test branches.
     opCode = activePpu->mem[activePpu->regP];
     opF = opCode >> 6;
-    opD = opCode & 077;
+    opD = opCode & 037;                     // ignore NoHang bit
     if ((opF >= 070 && opF <= 073) ||       // IAN, IAM, OAN, OAM
         (opF >= 076))                       // FAN, FNC
         {
-        if (chTraceMask & (1 << opD))
+        if (chTraceMask & (ULL(1) << opD))
             {
             return TRUE;
             }

@@ -100,6 +100,9 @@
 
 #define RefreshInterval         100000  /* microseconds */
 
+#define TraceCpu                (1 << 30)
+#define TraceXj                 (1 << 31)
+
 /*
 **  PP wait for I/O types
 */
