@@ -182,8 +182,10 @@ typedef struct diskParam
     u32         sector;
     u32         track;
     u32         cylinder;
+    u16         sectorSize;
+    u8          sec[SectorSize * 2];
+    bool        oldFormat;
     u8          interlace;
-    u8          sec[SectorBytes];
     bool        seekNeeded;
     u8          lastFunc;
     bool        even;
@@ -242,6 +244,7 @@ void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     FILE *fcb;
     char fname[80];
     DiskParam *dskp;
+    char *opt;
 
     (void)eqNo;
     (void)unitNo;
@@ -269,6 +272,11 @@ void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         }
     else
         {
+        opt = strchr (deviceName, ',');
+        if (opt != NULL)
+            {
+            *opt++ = '\0';
+            }
         strcpy(fname, deviceName);
         }
 
@@ -286,9 +294,29 @@ void dd844Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     dp->fcb[unitNo] = fcb;
 
     /*
+    **  Parse option, if any.
+    */
+    if (opt != NULL)
+        {
+        if (strcmp (opt, "old") == 0)
+            {
+            dskp->oldFormat = TRUE;
+            }
+        else if (strcmp (opt, "new") != 0 &&
+                 strcmp (opt, "packed") != 0)
+            {
+            fprintf (stderr, "Unrecognized option name %s\n", opt);
+            exit (1);
+            }
+        }
+    dskp->sectorSize = (dskp->oldFormat) ? SectorSize * 2 : SectorBytes;
+
+    /*
     **  Print a friendly message.
     */
-    printf("DD844 initialised on channel %o unit %o\n", channelNo, unitNo);
+    printf("DD844 initialised on channel %o unit %o, %s sector format\n",
+           channelNo, unitNo,
+           (dskp->oldFormat) ? "old (622 byte)" : "new packed (512 byte");
     }
 
 /*--------------------------------------------------------------------------
@@ -355,7 +383,7 @@ static FcStatus dd844Func(PpWord funcCode)
         if (DBG(activeDevice))
             printf (" reading u%d c%d t%d s%d\n", unitNo, dp->cylinder, dp->track, dp->sector);
         dd844Seek(fcb, dp, Fc844Read);
-        fread(dp->sec, 1, SectorBytes, fcb);
+        fread(dp->sec, 1, dp->sectorSize, fcb);
         dp->bp = dp->sec;
         dp->even = TRUE;
         break;
@@ -425,12 +453,19 @@ static FcStatus dd844Func(PpWord funcCode)
         #endif
         dp->seekNeeded = TRUE;
         dd844Seek(fcb, dp, Fc844Read);
-        fread(dp->sec, 1, SectorBytes, fcb);
+        fread(dp->sec, 1, dp->sectorSize, fcb);
         dp->bp = dp->sec;
         dp->even = TRUE;
         activeDevice->fcode = funcCode;
         /* the first word in the sector contains data length */
-        dsSecSize = (dp->sec[0] << 4) + (dp->sec[1] >> 4);
+        if (dp->oldFormat)
+            {
+            dsSecSize = *(PpWord *) (dp->bp);
+            }
+        else
+            {
+            dsSecSize = (dp->sec[0] << 4) + (dp->sec[1] >> 4);
+            }
         fprintf(devF,"deadstart sect size = %04o\n", dsSecSize);
         activeDevice->recordLength = dsSecSize;
         break;
@@ -558,17 +593,25 @@ static void dd844Io(void)
     case Fc844ReadFlawedSector:
         if (!activeChannel->full)
             {
-            if (dp->even)
+            if (dp->oldFormat)
                 {
-                activeChannel->data = (*(dp->bp) << 4) + (*(dp->bp + 1) >> 4);
-                dp->bp++;
+                activeChannel->data = *(PpWord *) (dp->bp) & Mask12;
+                dp->bp += sizeof (PpWord);
                 }
             else
                 {
-                activeChannel->data = (*(dp->bp) << 8) + *(dp->bp + 1);
-                dp->bp += 2;
+                if (dp->even)
+                    {
+                    activeChannel->data = (*(dp->bp) << 4) + (*(dp->bp + 1) >> 4);
+                    dp->bp++;
+                    }
+                else
+                    {
+                    activeChannel->data = (*(dp->bp) << 8) + *(dp->bp + 1);
+                    dp->bp += 2;
+                    }
+                dp->even = !dp->even;
                 }
-            dp->even = !dp->even;
             activeChannel->full = TRUE;
 
             if (--activeDevice->recordLength == 0)
@@ -585,23 +628,31 @@ static void dd844Io(void)
     case Fc844WriteVerify:
         if (activeChannel->full)
             {
-            if (dp->even)
+            if (dp->oldFormat)
                 {
-                *dp->bp++ = activeChannel->data >> 4;
-                *dp->bp = activeChannel->data << 4;
+                *(PpWord *) (dp->bp) = activeChannel->data & Mask12;
+                dp->bp += sizeof (PpWord);
                 }
             else
                 {
-                *dp->bp++ |= activeChannel->data >> 8;
-                *dp->bp++ = activeChannel->data;
+                if (dp->even)
+                    {
+                    *dp->bp++ = activeChannel->data >> 4;
+                    *dp->bp = activeChannel->data << 4;
+                    }
+                else
+                    {
+                    *dp->bp++ |= activeChannel->data >> 8;
+                    *dp->bp++ = activeChannel->data;
+                    }
+                dp->even = !dp->even;
                 }
-            dp->even = !dp->even;
             activeChannel->full = FALSE;
 
             if (--activeDevice->recordLength == 0)
                 {
                 activeChannel->ioDevice = NULL;
-                fwrite(dp->sec, 1, SectorBytes, fcb);
+                fwrite(dp->sec, 1, dp->sectorSize, fcb);
                 dd844SeekNextSector(dp);
                 }
             }
@@ -720,7 +771,7 @@ static void dd844Seek(FILE *fcb, DiskParam *dp, u8 func)
         result  = dp->cylinder * MaxTracks * MaxSectors;
         result += dp->track * MaxSectors;
         result += dp->sector;
-        result *= SectorBytes;
+        result *= dp->sectorSize;
         fseek(fcb, result, SEEK_SET);
         dp->seekNeeded = FALSE;
         dp->lastFunc = func;
