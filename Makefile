@@ -31,8 +31,6 @@ endif
 
 CDEBUG = -DCcDebug=1
 
-CFLAGS  = -O2 -g2 -I. $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCFLAGS) $(EXTRACFLAGS)
-
 OBJS    = main.o init.o trace.o dump.o \
           device.o channel.o cpu.o pp.o float.o shift.o operator.o \
           deadstart.o console.o cr405.o dd6603.o dd8xx.o mux6676.o \
