@@ -217,3 +217,5 @@ Since jan16 2004 drop:
 - Added missing cp3446.c  :-(
 - Changed Makefile for Mac to build G3 flavor as well.
 - Reverted index addressing in pp.c to what Tom had.
+
+Since jan21 2004 drop:
