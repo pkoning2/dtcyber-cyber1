@@ -455,15 +455,15 @@ void dc7155Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     UnitParam *up;
     UnitMux   *um;
 
-    (void)eqNo;
-    (void)unitNo;
-    (void)deviceName;
-
     int DiskType;
     int muxIndex;
     int muxNo;
     u8 containerType = CtClassic;
     char *opt = NULL;
+
+    (void)eqNo;
+    (void)unitNo;
+    (void)deviceName;
 
 #if DEBUG
     if (DC7155 == NULL)
