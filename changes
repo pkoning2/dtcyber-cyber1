@@ -325,3 +325,7 @@ Since jan21 2004 drop:
 
 - Split things apart so dtcyber is now a compute engine, with all the
   user interface in separate programs.
+
+- Do the RTC to real time alignment only for PP0 reads, so only MTR's 
+  timekeeping triggers the alignment.  That way we don't get strange
+  results if some other PPs use the RTC channel for timeouts or the like.

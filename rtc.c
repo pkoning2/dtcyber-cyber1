@@ -224,11 +224,13 @@ static FcStatus rtcFunc(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static u64 rtcCycles, now;
-static u32 us;
 static void rtcIo(void)
     {
+    u32 clock;
+    
 #if RDTSC
+    u64 rtcCycles, now;
+    u32 us;
     
     if (rtcIncrement == 0)
         {
@@ -263,12 +265,19 @@ static void rtcIo(void)
             caughtUp = TRUE;
             }
         us = rtcCycles / MHz;
-        rtcPrev += us * MHz;
-        rtcClock += us;
+        clock = rtcClock + us;
+        
+        if (activePpu->id == 0)
+            {
+            rtcPrev += us * MHz;
+            rtcClock = clock;
+            }
         }
+#else
+    clock = rtcClock;
 #endif    
     activeChannel->full = rtcFull;
-    activeChannel->data = rtcClock & Mask12;
+    activeChannel->data = clock & Mask12;
     }
 
 /*--------------------------------------------------------------------------
