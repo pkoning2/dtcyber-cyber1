@@ -263,6 +263,11 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     (void)eqNo;
 
     /*
+    **  Trim unit to 3 bits
+    */
+    unitNo &= 7;
+    
+    /*
     **  Setup channel functions.
     */
     ds = channelAttach(channelNo, eqNo, DtDd8xx);
@@ -604,7 +609,7 @@ static void dd8xxIo(void)
             activeDevice->selectedUnit = activeChannel->data & 07;
             if (activeDevice->fcb[activeDevice->selectedUnit] == NULL)
                 {
-                logError(LogErrorLocation, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeDevice->fcode);
+                logError(LogErrorLocation, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeChannel->data);
                 }
 
             activeChannel->full = FALSE;
@@ -622,7 +627,9 @@ static void dd8xxIo(void)
                 unitNo = activeDevice->selectedUnit;
                 if (activeDevice->fcb[activeDevice->selectedUnit] == NULL)
                     {
-                    logError(LogErrorLocation, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeDevice->fcode);
+                    logError(LogErrorLocation, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeChannel->data);
+                    activeChannel->active = FALSE;
+                    break;
                     }
 
                 fcb = activeDevice->fcb[unitNo];
