@@ -223,7 +223,8 @@
 #define MaxPpBuf                010000
 #define MaxByteBuf              014000
 
-#define MAXTAPE              115000000
+//#define MAXTAPE              115000000
+#define MAXTAPE                 0       /* means unlimited */
 
 /*
 **  -----------------------
@@ -594,10 +595,12 @@ static FcStatus mt669Func(PpWord funcCode)
         activeDevice->fcode = funcCode;
         tp->bp = tp->ioBuffer;
         position = ftell(activeDevice->fcb[unitNo]);
+#if MAXTAPE != 0
         if (position > MAXTAPE)
             {
             tp->deviceStatus |= St669EOT;
             }
+#endif
         tp->blockNo += 1;
 
         /*
@@ -634,10 +637,12 @@ static FcStatus mt669Func(PpWord funcCode)
         tp->deviceStatus = tp->initialStatus;
         anyWrite = funcCode;
         position = ftell(activeDevice->fcb[unitNo]);
+#if MAXTAPE != 0
         if (position > MAXTAPE)
             {
             tp->deviceStatus |= St669EOT;
             }
+#endif
         tp->blockNo += 1;
         break;
 
