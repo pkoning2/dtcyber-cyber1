@@ -137,6 +137,9 @@ void mux6676Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 bool niuPresent(void);
 void niuLocalChar(u8 ch, int stat);
+void niuLocalKey(u16 key, int stat);
+typedef void niuProcessOutput (int, u32);
+void niuSetOutputHandler (niuProcessOutput *h, int stat);
 
 /*
 **  trace.c
@@ -158,6 +161,7 @@ void traceReset(void);
 void traceCpu(u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress);
 void traceExchange(CpuContext *cc, u32 addr, char *title);
 void traceCM(u32 start, u32 end);
+
 /*
 **  dump.c
 */
@@ -165,6 +169,7 @@ void dumpInit(void);
 void dumpAll(void);
 void dumpCpu(void);
 void dumpCpuMem(FILE *f, u32 start, u32 end);
+void dumpEcs(FILE *f, u32 start, u32 end);
 void dumpPpu(u8 pp);
 void dumpPpuMem(FILE *f, u8 ppu, u32 start, u32 end);
 void dumpDisassemblePpu(u8 pp);
@@ -202,11 +207,24 @@ int windowGetOperFontWidth(int font);
 void windowSetKeyboardTrue(bool flag);
 
 /*
+**  ptermcom.c
+*/
+void ptermComInit(void);
+void ptermComClose(void);
+
+/*
 **  pterm_{win32,x11}.c
 */
 void ptermInit(const char *windowName);
 void ptermClose(void);
-void procNiuWord (int stat, u32 d);
+void ptermSetWeMode(u8 wemode);
+void ptermDrawChar(int x, int y, int snum, int cnum);
+void ptermLoadChar(int snum, int cnum, const u16 *data);
+void ptermDrawPoint(int x, int y);
+void ptermDrawLine(int x1, int y1, int x2, int y2);
+void ptermFullErase(void);
+void ptermSetWeMode(u8 wemode);
+void ptermTouchPanel(bool enable);
 
 /*
 **  operator.c
@@ -232,6 +250,7 @@ extern DevSlot *activeDevice;
 extern CpuContext cpu;
 extern bool cpuStopped;
 extern CpWord *cpMem;
+extern CpWord *ecsMem;
 extern u32 cpuMaxMemory;
 extern u32 ecsMaxMemory;
 extern i8 ppKeyIn;
@@ -244,10 +263,11 @@ extern const signed char  asciiToPlato[128];
 extern const signed char  altKeyToPlato[128];
 extern const unsigned char bcdToAscii[64];
 extern const unsigned char extBcdToAscii[64];
-extern u16 traceMask;
-extern u16 traceClearMask;
-extern u16 chTraceMask;
+extern u32 traceMask;
+extern u32 traceClearMask;
+extern u64 chTraceMask;
 extern u8 traceCp;
+extern u32 traceCycles;
 extern DevDesc deviceDesc[];
 extern u8 deviceCount;
 extern bool bigEndian;

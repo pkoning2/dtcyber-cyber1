@@ -85,6 +85,7 @@ static void cpuCmuMoveIndirect(void);
 static void cpuCmuMoveDirect(void);
 static void cpuCmuCompareCollated(void);
 static void cpuCmuCompareUncollated(void);
+static void cpuTraceCtl(void);
 
 static void cpOp00(void);
 static void cpOp01(void);
@@ -663,26 +664,17 @@ void cpuStep(void)
         **  Don't trace NOS's idle loop and CPUMTR.
         **  If control point tracing is set, act accordingly.
         */
-        if (cpu.regRaCm != 0 && cpu.regP > 0100)
+        if (/*cpu.regRaCm != 0 && */ cpu.regP > 0100)
             {
-            if (traceCp == 0 && (traceMask & 0x4000) == 0 &&
-                opFm == 061 && opI == 0 &&
-                opJ == 1 && opAddress == 000042)
-                {
-                // sb0 b1+42 is the magic word to turn on tracing
-                traceCp = (cpMem[060] >> 31) & 037;
-                traceMask |= 0x4000;
-                }
             if (traceCp == 0 || 
                 (!cpu.monitorMode &&
                  ((cpMem[060] >> 31) & 037) == traceCp))
                 {
                 traceCpu(oldRegP, opFm, opI, opJ, opK, opAddress);
-                if (opFm == 061 && opI == 0 &&
-                    opJ == 1 && opAddress == 000076)
-                    {
-                    traceMask &= ~0x04000;
-                    }
+                }
+            if (opFm == 061 && opI == 0 && opJ != 0)
+                {
+                cpuTraceCtl ();
                 }
             }
 #endif
@@ -818,6 +810,43 @@ bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs)
 **--------------------------------------------------------------------------
 */
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Turn on/off tracing under program control.
+**
+**  Parameters:     none.
+**
+**  Returns:        none.
+**
+**  Trace control ops are SB0 Bj+K, for various non-zero j and some K.
+**  These are all NOPs, but are not normally used in software so they
+**  can safely be used here for DtCyber specific magic.
+**
+**  Currently defined:
+**      sb0 b1+42   turn on tracing for this CP until canceled.
+**      sb0 b1+76   turn off CPU tracing.
+**      sb0 b2+K    turn on CPU tracing (any CP) for K cycles.
+**
+**------------------------------------------------------------------------
+*/
+static void cpuTraceCtl (void)
+    {
+    if (opJ == 1 && opAddress == 000042)
+        {
+        // sb0 b1+42 is the magic word to turn on tracing
+        traceCp = (cpMem[060] >> 31) & 037;
+        traceMask |= TraceCpu;
+        }
+    else if (opJ == 1 && opAddress == 000076)
+        {
+        traceMask &= ~TraceCpu;
+        }
+    else if (opJ == 2)
+        {
+        traceMask |= TraceCpu;
+        traceCycles = opAddress;
+        }
+    }
+ 
 /*--------------------------------------------------------------------------
 **  Purpose:        Read CPU instruction word and verify that address is
 **                  within limits.
