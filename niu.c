@@ -37,7 +37,6 @@
 #define NiuLocalStations        32          // range reserved for local stations
 #define NiuLocalBufSize         50          // size of local input buffer
 
-#define REAL_TIMING  // define this to do real NIU timing (16 ms per frame)
 //#define DEBUG
 
 /*
@@ -118,13 +117,12 @@ static int obytes;
 static u32 currOutput;
 static LocalRing localInput[NiuLocalStations];
 static niuProcessOutput *outputHandler[NiuLocalStations];
-#ifdef REAL_TIMING
 static u64 lastFrame;
 bool frameStart;
-#endif
 #if !defined(_WIN32)
 static pthread_t niu_thread;
 #endif
+static bool realTiming;
 
 /*
 **--------------------------------------------------------------------------
@@ -151,12 +149,24 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     PortParam *mp;
 
     (void)eqNo;
-    (void)deviceName;
 
     if (in != NULL)
     {
         fprintf (stderr, "Multiple NIUs not supported\n");
         exit (1);
+    }
+
+    if (deviceName != NULL && deviceName[0] != ';')
+    {
+        if (strcmp (deviceName, "realtiming") == 0)
+        {
+            realTiming = TRUE;
+        }
+        else
+        {
+            fprintf (stderr, "Unrecognized NIU option '%s'\n", deviceName);
+            exit (1);
+        }
     }
     
     // We use two channels, one for input, one for output.
@@ -464,10 +474,8 @@ static void niuOutIo(void)
 {
     PpWord d;
     int port;
-#ifdef REAL_TIMING
     struct timeval tm;
     u64 us;
-#endif
 
     if (activeDevice->fcode != FcNiuOutput ||
         !activeChannel->full)
@@ -479,11 +487,12 @@ static void niuOutIo(void)
     d = activeChannel->data;
     if (obytes == 0)
     {
-        // first word of the triple
-#ifdef REAL_TIMING
-        // If this word is the first of a frame, don't acknowledge
+        // first word of the triple.
+        //
+        // If we're doing real timing (60 frames per second), and
+        // if this word is the first of a frame, don't acknowledge
         // it until it's a frame time later than the previous one.
-        if (frameStart)
+        if (realTiming && frameStart)
         {
             gettimeofday (&tm, NULL);
             us = tm.tv_sec * ULL(1000000) + tm.tv_usec;
@@ -494,7 +503,6 @@ static void niuOutIo(void)
             lastFrame = us;
             frameStart = FALSE;
         }
-#endif
 
         activeChannel->full = FALSE;
         if ((d & 06000) != 04000)
@@ -526,14 +534,13 @@ static void niuOutIo(void)
         return;
     }
 
-#ifdef REAL_TIMING
     // If end of frame bit is set, remember that so the
     // next output word is recognized as the start of a new frame.
     if ((d & 02000) != 0)
     {
         frameStart = TRUE;
     }
-#endif
+
     port = (d & 01777);
     
     // Now that we have a complete output triple, discard it

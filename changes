@@ -281,3 +281,4 @@ Since jan21 2004 drop:
 - Speed up I/O; slow down CWM a little for F=L reads to work.
 - Allow multiple LOAD commands to CR3447, each one adds another deck to the
   list of pending decks.  UNLOAD unloads all of them.
+- Make "real" NIU timing a cyber.ini option (",realtiming" after the channels)
