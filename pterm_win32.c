@@ -840,6 +840,7 @@ bool platoKeypress (WPARAM wParam, int alt, int stat)
         case VK_F2:
             pc = 022;       // ans
             break;
+        case VK_F1:
         case VK_F11:
             pc = 033;       // copy
             break;
