@@ -7,6 +7,7 @@ attach,procfil/m=w,na.
 if(.not.file(procfil,as))define,procfil.
 copycf,input,procfil.
 ~
+* /---   block=01-d ulib           04/11/25. 17.20    source 
 .proc,ulib,abs,ulib,unam.
 .*
 .*        procedure to build *ulib* from absolute
@@ -170,6 +171,7 @@ revert. ulib
  
           end
 ~
+* /---   block=01-d loader           04/11/25. 17.20    source 
 .proc,loader,rel,abs,rfl=70000,map=0,mo=sbex.
 .*
 .*        load relocatable binary, create absolute binary
@@ -229,6 +231,7 @@ endif(xedt)
 .*
 revert,abort. loader.
 ~
+* /---   block=01-d condldr           04/11/25. 17.20    source 
 .proc,condldr,lo=sbex,el=all.
 .*
 .*  load the condensor.  writes the abs binary to cbin
@@ -295,6 +298,7 @@ unload(lgob,cbin,cmap,map)
 .*
 revert. condldr
 ~
+* /---   block=01-d psm           04/11/25. 17.20    source 
 .proc,psm,ml=580,list=0/output.
 .*
 .*        build plato system modules
@@ -311,6 +315,7 @@ begin,psmbld,,option=srvsys,binfile=psme,#list.
 .*
 revert.  psm
 ~
+* /---   block=01-d psmbld           04/11/25. 17.20    source 
 .proc,psmbld,option,binfile,list=0/output.
 .*
 .*        build plato system modifier
@@ -331,6 +336,7 @@ unload,lgo,binfile.
 .*
 revert.  psmbld
 ~
+* /---   block=01-d conden           04/11/25. 17.20    source 
 .proc,conden,ml=580,list=0/output.
 .*
 .*  central condensor full assembly.
@@ -414,6 +420,7 @@ revert. conden
 .*
 *edit     tagov
 ~
+* /---   block=01-d conden1           04/11/25. 17.20    source 
 .proc,conden1,ml=580,list=0/output.
 .*
 .*  level 1 micro plato full assembly.
@@ -448,6 +455,7 @@ revert. conden1
 *edit     mcond1d
 *edit     mcond1e
 ~
+* /---   block=01-d conden2           04/11/25. 17.20    source 
 .proc,conden2,ml=580,list=0/output.
 .*
 .*  level 2 micro plato full assembly.
@@ -483,6 +491,7 @@ revert. conden2
 *edit     mcond2d
 *edit     mcond2e
 ~
+* /---   block=01-d conden3           04/11/25. 17.20    source 
 .proc,conden3,ml=580,list=0/output.
 .*
 .*  level 3 micro plato full assembly.
@@ -520,6 +529,7 @@ revert. conden3
 *edit     mcond3d
 *edit     mcond3e
 ~
+* /---   block=01-d conden4           04/11/25. 17.20    source 
 .proc,conden4,ml=580,list=0/output.
 .*
 .*  level 4 micro plato full assembly.
@@ -557,6 +567,7 @@ revert. conden4
 *edit     mcond4d
 *edit     mcond4e
 ~
+* /---   block=01-d conden5           04/11/25. 17.20    source 
 .proc,conden5,ml=580,list=0/output.
 .*
 .*  level 5 micro plato full assembly.
@@ -594,6 +605,7 @@ revert. conden5
 *edit     mcond5d
 *edit     mcond5e
 ~
+* /---   block=01-d conden6           04/11/25. 17.20    source 
 .proc,conden6,ml=580,list=0/output.
 .*
 .*  level 6 micro plato full assembly.
@@ -631,6 +643,7 @@ revert. conden6
 *edit     mcond5d
 *edit     mcond5e
 ~
+* /---   block=01-d condens           04/11/25. 17.20    source 
 .proc,condens,ml=580,list=0/output.
 .*
 .*  condensor full assembly.
@@ -657,6 +670,7 @@ begin(condldr,,lo=sbex)
 .*
 revert. condens
 ~
+* /---   block=01-d liblvl           04/11/25. 17.20    source 
 .proc,liblvl,p=,lvl=.
 .*
 .*  move common relocatable code from the central system
@@ -699,6 +713,7 @@ revert. liblvl
 *norep conden
 *a rel/mget6,condc1,lex,mcond
 ~
+* /---   block=01-d cmpbin           04/11/25. 17.20    source 
 .proc,cmpbin,p=old.
 .*
 .*  add other condensor idents to the
@@ -750,6 +765,7 @@ bksp(tbin)
 unload(lgo,compile)
 revert. cabs
 ~
+* /---   block=01-d setupg           04/11/25. 17.20    source 
 .proc,setupg,noslvl=580.
 attach,opl=plaopl.
 attach,nos=opl_noslvl.
@@ -757,6 +773,7 @@ attach,ipl.
 attach,cstc.
 revert. setupg
 ~
+* /---   block=01-d plato           04/11/25. 17.20    source 
 .proc,plato,ml=580,list=0/output.
 *---
 *         master
@@ -906,6 +923,7 @@ revert. plato
 *edit     lodist
 *edit     exec10
 ~
+* /---   block=01-d framat           04/11/25. 17.20    source 
 .proc,framat,ml=580,list=0/output.
 *
 *         formatter
@@ -977,6 +995,7 @@ revert. framat
 *edit     fovlay4
 *edit     fovlay5
 ~
+* /---   block=01-d plf           04/11/25. 17.20    source 
 .proc,plf,list=0/output,ml=580.
 *
 *         plato link facility.
@@ -1068,6 +1087,7 @@ revert. plf
 *edit plfsts
 *edit plfwfp
 ~
+* /---   block=01-d mastor           04/11/25. 17.20    source 
 .proc,mastor,ml=580,list=0/full.
 *---
 unload(mast,mastn,ppus)
@@ -1114,6 +1134,7 @@ revert. mastor
 *edit     mxx
 *edit     epe
 ~
+* /---   block=01-d ppus           04/11/25. 17.20    source 
 .proc,ppus,ml=580d,list=0/output.
 *---
 unload(lgo)
@@ -1147,6 +1168,7 @@ revert. ppus
 .data,edit3.
 *edit     dsn,dsn1
 ~
+* /---   block=01-d utility           04/11/25. 17.20    source 
 .proc,utility,ml=580d,list=0/output.
 *---
 unload(lgo)
