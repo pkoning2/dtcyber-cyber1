@@ -76,8 +76,10 @@ static void mux6676CreateThread(DevSlot *dp);
 static int mux6676CheckInput(PortParam *mp);
 #if defined(_WIN32)
 static void mux6676Thread(void *param);
+#define RETURN return
 #else
 static void *mux6676Thread(void *param);
+#define RETURN return 0
 #endif
 
 /*
@@ -93,6 +95,9 @@ u16 telnetConns;
 **  Private Variables
 **  -----------------
 */
+#if !defined(_WIN32)
+static pthread_t mux6676_thread;
+#endif
 
 /*
 **--------------------------------------------------------------------------
@@ -324,7 +329,7 @@ static void mux6676Disconnect(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Create WIN32 thread which will deal with all TCP
+**  Purpose:        Create thread which will deal with all TCP
 **                  connections.
 **
 **  Parameters:     Name        Description.
@@ -378,14 +383,11 @@ static void mux6676CreateThread(DevSlot *dp)
         }
 #else
     int rc;
-    pthread_t thread;
-    pthread_attr_t attr;
 
     /*
     **  Create POSIX thread with default attributes.
     */
-    pthread_attr_init(&attr);
-    rc = pthread_create(&thread, &attr, mux6676Thread, dp);
+    rc = pthread_create(&mux6676_thread, NULL, mux6676Thread, dp);
     if (rc < 0)
         {
         fprintf(stderr, "Failed to create mux6676 thread\n");
@@ -424,7 +426,7 @@ static void *mux6676Thread(void *param)
     if (listenFd < 0)
         {
         printf("mux6676: Can't create socket\n");
-        return;
+        RETURN;
         }
 
     memset(&server, 0, sizeof(server));
@@ -435,13 +437,13 @@ static void *mux6676Thread(void *param)
     if (bind(listenFd, (struct sockaddr *)&server, sizeof(server)) < 0)
         {
         printf("mux6676: Can't bind to socket\n");
-        return;
+        RETURN;
         }
 
     if (listen(listenFd, 5) < 0)
         {
         printf("mux6676: Can't listen\n");
-        return;
+        RETURN;
         }
 
     while (1)

@@ -87,8 +87,10 @@ static void niuCreateThread(void);
 static int niuCheckInput(PortParam *portVector);
 #if defined(_WIN32)
 static void niuThread(void *param);
+#define RETURN return
 #else
 static void *niuThread(void *param);
+#define RETURN return 0
 #endif
 static void niuWelcome(int stat);
 static void niuSendstr(int stat, const char *p);
@@ -120,6 +122,10 @@ static niuProcessOutput *outputHandler[NiuLocalStations];
 static u64 lastFrame;
 bool frameStart;
 #endif
+#if !defined(_WIN32)
+static pthread_t niu_thread;
+#endif
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -568,7 +574,7 @@ static void niuDisconnect(void)
 }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Create WIN32 thread which will deal with all TCP
+**  Purpose:        Create thread which will deal with all TCP
 **                  connections.
 **
 **  Parameters:     Name        Description.
@@ -621,14 +627,11 @@ static void niuCreateThread(void)
     }
 #else
     int rc;
-    pthread_t thread;
-    pthread_attr_t attr;
 
     /*
     **  Create POSIX thread with default attributes.
     */
-    pthread_attr_init(&attr);
-    rc = pthread_create(&thread, &attr, niuThread, 0);
+    rc = pthread_create(&niu_thread, NULL, niuThread, 0);
     if (rc < 0)
     {
         fprintf(stderr, "Failed to create niu thread\n");
@@ -649,7 +652,7 @@ static void niuCreateThread(void)
 #if defined(_WIN32)
 static void niuThread(void *param)
 #else
-    static void *niuThread(void *param)
+static void *niuThread(void *param)
 #endif
 {
     int listenFd;
@@ -666,7 +669,7 @@ static void niuThread(void *param)
     if (listenFd < 0)
     {
         printf("niu: Can't create socket\n");
-        return;
+        RETURN;
     }
 
     memset(&server, 0, sizeof(server));
@@ -677,13 +680,13 @@ static void niuThread(void *param)
     if (bind(listenFd, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
         printf("niu: Can't bind to socket\n");
-        return;
+        RETURN;
     }
 
     if (listen(listenFd, 5) < 0)
     {
         printf("niu: Can't listen\n");
-        return;
+        RETURN;
     }
 
     while (1)
