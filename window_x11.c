@@ -219,7 +219,7 @@ int main (int argc, char **argv)
     if (argc > 0)
         {
         interval = strtod (argv[0], NULL);
-        if (interval < 0.01 || interval > 63.0)
+        if (interval < 0.02 || interval > 63.0)
             {
             fprintf (stderr, "interval value out of range\n");
             exit (1);
