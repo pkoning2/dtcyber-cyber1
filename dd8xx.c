@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003-2004, Tom Hunter and Gerard van der Grinten
+**  Copyright (c) 2003-2004, Tom Hunter, Gerard van der Grinten, Paul Koning
 **  (see license.txt)
 **
 **  Name: dd8xx.c
