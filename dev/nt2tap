@@ -1,0 +1,257 @@
+          ident  nt2tap,orgz
+          title  nt2tap - convert 9 track tape to *tap* container
+          comment copyright paul koning, 2004.
+
+          abs
+          
+          list   x
+
+          base   d
+          sst
+          syscom b1
+
+          org    120b
+
+ orgz     bss    0
+
+          entry  nt2tap
+                    
+*** nt2tap - convert 9 track tape to *tap* container file.
+*
+*         version 1.0        04.07.19.   p. koning.
+
+*** control card call.
+*
+*         nt2tap(in,out)
+*
+*         in -   input tape.
+*         out -  output file.
+*
+*         the tape format should be specified as "L" (long stranger)
+*         and unlabeled, no matter what the actual format is, so
+*         this program can see the labels and the data blocks as
+*         individual records.
+
+**  assembly procedure.
+*         attach(opl871)
+*         compass(i=nt2tap,s=nostext,x=opl871)
+          
+** max pru size (cio buffer size - 4)
+ prulim   equ    5000b
+          
+ nt2tap   sb1    1
+          sa1    actr
+          sx1    x1-2
+          zr     x1,ini1
+          message (=c* wrong argument count.*),0,r
+          abort
+
+ ini1     sa1    argr        get first argument
+          mx0    42
+          sa2    in
+          bx6    -x0*x2
+          bx1    x0*x1
+          bx6    x6+x1
+          sa6    a2          set input file name
+          sa1    a1+b1       get second argument
+          sa2    out
+          bx6    -x0*x2
+          bx1    x0*x1
+          bx6    x6+x1
+          sa6    a2          set output file name
+          open   in,read,r
+          sa1    in+1
+          mx0    12
+          ix1    x1*x0
+          lx1    -12
+          sx1    x1-4162b
+          zr     x1,ini2     if NT, F=L, unlabeled
+*          message (=c* input not nt, f=L, unlabeled.*),0,r
+ ini2     open   out,writenr,r
+
+* processing loop
+          
+ nextf    readcw in,17b
+ nextw    reado  in
+          ng     x1,eof      if tape mark
+          sa6    cw
+          sa1    bitc        get remaining word count
+          sx7    60
+          ix7    x1-x7       bits left after this word
+          nz     x1,nxw1     if not start of pru
+          mx7    0
+          sa7    tmc         not consecutive tape marks
+          mx0    -24
+          bx7    -x0*x6
+          ix0    x7+x7
+          ix7    x7+x0       get pp word count * 3
+          lx7    2           now bit count
+          mx0    -6
+          ax6    24
+          bx6    -x0*x6      get unused bit count
+          ix6    x7-x6       compute actual bits read
+          sa6    bitc        save bit count
+          ax6    3           now byte count
+          sa6    byc         save count of bytes
+          lx6    -8
+          sx1    x6          get upper 8 bits of byte count
+          bx7    x6-x1
+          lx1    -16         position bits 8-15 of byte count
+          bx6    x7+x1       form little endian byte count in high order x8
+          sa6    tapcw       save for trailer
+          sx1    32
+          rj     wpw         write 32 bits
+*          sa1    cw
+*          rj     wod
+*          sa6    msg1
+*          sa7    a6+b1
+*          message msg,1,r
+          eq     nextw
+
+ nxw1     sa7    a1          update bit count
+          zr     x7,nxw2     if last word and it is full word
+          pl     x7,nxw4     if not last word
+          rj     wpw         write partial word
+          eq     nxw3        skip trailer word
+
+ nxw2     rj     wfw         write full word
+ nxw3     reado  in          read trailer word
+          sa1    tapcw
+          bx6    x1
+          sx1    32
+          rj     wpw         write tap trailer word
+          mx6    0
+          sa6    bitc        indicate next word is first word of pru
+          eq     nextw
+
+ nxw4     rj     wfw         write full word
+          eq     nextw
+
+ eof      mx6    0
+          sx1    32
+          rj     wpw         write tap code for tape mark
+          sa1    tmc
+          sx6    x1+b1
+          sa6    a1          count tape marks
+          sx6    x6-2
+          ng     x6,nextf    if not *eoi* (two tape marks)
+          sa1    bc
+          zr     x1,eof1     if no partial word remaining
+          mx6    0
+          rj     wfw         flush partial word to *out* buffer
+ eof1     writef out,r
+          close  in,rewind,r
+          close  out,nr,r
+          endrun
+          title  write word to output
+** wfw - write full word
+*
+* entry   x6 = word
+*
+* exit    none.
+*
+* uses    
+*         x0, x1, x2, x6, x7
+*         a1, a2, a6, a7
+*         b2
+
+ wfw      ps
+          sa1    pw
+          sa2    bc
+          zr     x2,wfw1     if no pending partial word
+          sb2    x2-60
+          ax7    x6,b2       left shift circular by 60 - bc
+          mx0    1
+          sb2    x2-1
+          ax0    b2          form mask of *bc* bits
+          bx6    -x0*x7      isolate upper bits
+          bx7    x0*x7       isolate lower bits
+          bx6    x6+x1       merge in saved bits
+          sa7    a1          save new partial word
+ wfw1     writeo out
+          eq     wfw
+ wpw      space  4,4
+** wpw - write partial word
+*
+* entry   x1 = bit count
+*         x6 = word, left justified
+*         b1 = 1
+*
+* exit    none.
+*
+* uses
+*         x0, x1, x2, x3, x4, x5, x6, x7
+*         a1, a2, a3, a6, a7
+*         b2, b3
+ wpw      ps
+          sa2    pw
+          sa3    bc
+          zr     x3,wpw3     if no pending partial word
+          sb2    x3-60
+          ax7    x6,b2       left shift circular by 60 - bc
+          mx0    1
+          sb3    x3-1
+          ax5    x0,b3       form mask of *bc* bits
+          bx6    -x5*x7      isolate upper bits of new data
+          bx2    x5*x2       clean pending partial data word
+          ix4    x3+x1       form new bit count
+          bx6    x2+x6       merge previous and new data
+          sb3    x4-60
+          pl     b3,wpw1     if full word assembled
+          sb3    x4-1
+          ax0    b3          form mask for assembled partial word
+          bx6    x0*x6       clean off unused bits
+          sa6    a2
+          bx7    x4
+          sa7    a3          update bit count
+          eq     wpw
+
+ wpw1     zr     b3,wpw2     if no new partial word
+          sb2    b3-b1
+          ax0    b2          form mask for new partial word
+          bx7    x0*x7       isolate lower bits
+          sa7    a2          save new partial word
+ wpw2     sx7    b3
+          sa7    a3          save new bit count
+          writeo out         write completed word (in x6)
+          eq     wpw
+
+ wpw3     sb2    x1-1
+          mx0    1
+          ax0    b2          form mask of *bit count* bits
+          bx6    x0*x6
+          sa6    a2          set new partial word
+          bx7    x1
+          sa7    a3          set new pending bit count
+          eq     wpw
+          title  common decks
+          xtext  comcrdo
+          xtext  comcwto
+          xtext  comccio
+          xtext  comcsys
+*          xtext  comcwod
+          title  data
+
+ pw       data   0           partial word being assembled
+ bc       data   0           bit count in *pw*
+ byc      data   0           count of 8-bit bytes in pru
+ bitc     data   0           count of bits in pru
+ tmc      data   0           count of consecutive tape marks
+ tapcw    data   0           tap control word (byte count, little endian)
+
+ cw       data   0
+ msg      dis    ,*ctrl word xxxxxxxxxxxxxxxxxxxx*
+ msg1     equ    msg+1
+          
+ ibfsiz   equ    prulim+3
+ obfsiz   equ    prulim+4
+          
+ in       fileb  inbuf,ibfsiz,lbl
+
+ out      fileb  outbuf,obfsiz,fet=6
+
+ inbuf    bss    ibfsiz
+
+ outbuf   bss    obfsiz
+
+          end    nt2tap
