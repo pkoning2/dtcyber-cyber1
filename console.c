@@ -100,7 +100,6 @@ static char asciiToConsole[128] =
 
 static u8 currentFont;
 static u16 currentOffset;
-static bool emptyDrop = FALSE;
 static u64 keyMask;
 static u8 currentKey;
 
@@ -253,8 +252,6 @@ static void consoleIo(void)
     case Fc6612Sel16CharRight:
         if (activeChannel->full)
             {
-            emptyDrop = FALSE;
-
             c0 = (activeChannel->data >> 6) & Mask6;
             c1 = (activeChannel->data >> 0) & Mask6;
 
@@ -291,8 +288,6 @@ static void consoleIo(void)
     case Fc6612Sel512DotsRight:
         if (activeChannel->full)
             {
-            emptyDrop = FALSE;
-
             ch = (u8)((activeChannel->data >> 6) & Mask6);
 
             if (ch >= 060)
@@ -366,7 +361,6 @@ static void consoleIo(void)
 **------------------------------------------------------------------------*/
 static void consoleActivate(void)
     {
-    emptyDrop = TRUE;
     }
 
 /*--------------------------------------------------------------------------
@@ -379,11 +373,6 @@ static void consoleActivate(void)
 **------------------------------------------------------------------------*/
 static void consoleDisconnect(void)
     {
-    if (emptyDrop)
-        {
-        windowUpdate();
-        emptyDrop = FALSE;
-        }
     }
 
 /*---------------------------  End Of File  ------------------------------*/

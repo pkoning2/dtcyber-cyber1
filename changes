@@ -128,3 +128,8 @@ Since aug29 drop:
   It uses pterm_x11.c for the actual display, but connects to DtCyber
   via a TCP connection on port 5004 -- which talks to the NIU.
   *** this is only for X11; Win32 is coming. ***
+
+Since oct09 drop:
+- Cleaned up the Windows version.  It now runs at a reasonable speed
+  (as opposed to being very sluggish before).  It also has bitmap based
+  fonts that match the classic CDC console, same as the X11 version.

@@ -40,8 +40,11 @@
 
 // Size of the window and pixmap.
 // This is: a screen high with marging top and botton.
+// Pixmap has two rows added, which are storage for the
+// patterns for loadable characters.
 #define XSize           (512 + 2 * DisplayMargin)
 #define YSize           (512 + 2 * DisplayMargin)
+#define YPMSize         (512 + 2 * DisplayMargin + 2 * 16)
 
 /*
 **  -----------------------
@@ -65,8 +68,9 @@ typedef void niuProcessOutput (int, u32);
 **  ---------------------------
 */
 static void loadChar (const u16 *cdat, int snum, int cnum);
-static void setColors (u8 wemode);
+static void setWeMode (u8 wemode);
 static void drawChar (Drawable d, GC gc, int snum, int cnum);
+static void writeChar (int snum, int cnum, const u16 *data);
 static void plotChar (u8 c);
 static void mode0 (u32 d);
 static void mode1 (u32 d);
@@ -104,148 +108,6 @@ static u16 plato_m23[128 * 8];
 static u16 memlpc;
 static u8 currentCharset;
 static bool uncover;
-
-/* data for plato font, set 0. */
-const u16 plato_m0[] = {
-    0x0000, 0x0000, 0x0330, 0x0330, 0x0000, 0x0000, 0x0000, 0x0000, // :
-    0x0060, 0x0290, 0x0290, 0x0290, 0x0290, 0x01e0, 0x0010, 0x0000, // a
-    0x1ff0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x00c0, 0x0000, // b
-    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0210, 0x0120, 0x0000, // c
-    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x1ff0, 0x0000, // d
-    0x00c0, 0x01a0, 0x0290, 0x0290, 0x0290, 0x0290, 0x0190, 0x0000, // e
-    0x0000, 0x0000, 0x0210, 0x0ff0, 0x1210, 0x1000, 0x0800, 0x0000, // f
-    0x01a8, 0x0254, 0x0254, 0x0254, 0x0254, 0x0194, 0x0208, 0x0000, // g
-    0x1000, 0x1ff0, 0x0100, 0x0200, 0x0200, 0x0200, 0x01f0, 0x0000, // h
-    0x0000, 0x0000, 0x0210, 0x13f0, 0x0010, 0x0000, 0x0000, 0x0000, // i
-    0x0000, 0x0002, 0x0202, 0x13fc, 0x0000, 0x0000, 0x0000, 0x0000, // j
-    0x1010, 0x1ff0, 0x0080, 0x0140, 0x0220, 0x0210, 0x0010, 0x0000, // k
-    0x0000, 0x0000, 0x1010, 0x1ff0, 0x0010, 0x0000, 0x0000, 0x0000, // l
-    0x03f0, 0x0200, 0x0200, 0x01f0, 0x0200, 0x0200, 0x01f0, 0x0000, // m
-    0x0200, 0x03f0, 0x0100, 0x0200, 0x0200, 0x0200, 0x01f0, 0x0000, // n
-    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x00c0, 0x0000, // o
-    0x03fe, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x00c0, 0x0000, // p
-    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x03fe, 0x0000, // q
-    0x0200, 0x03f0, 0x0100, 0x0200, 0x0200, 0x0200, 0x0100, 0x0000, // r
-    0x0120, 0x0290, 0x0290, 0x0290, 0x0290, 0x0290, 0x0060, 0x0000, // s
-    0x0200, 0x0200, 0x1fe0, 0x0210, 0x0210, 0x0210, 0x0000, 0x0000, // t
-    0x03e0, 0x0010, 0x0010, 0x0010, 0x0010, 0x03e0, 0x0010, 0x0000, // u
-    0x0200, 0x0300, 0x00c0, 0x0030, 0x00c0, 0x0300, 0x0200, 0x0000, // v
-    0x03e0, 0x0010, 0x0020, 0x01c0, 0x0020, 0x0010, 0x03e0, 0x0000, // w
-    0x0200, 0x0210, 0x0120, 0x00c0, 0x00c0, 0x0120, 0x0210, 0x0000, // x
-    0x0382, 0x0044, 0x0028, 0x0010, 0x0020, 0x0040, 0x0380, 0x0000, // y
-    0x0310, 0x0230, 0x0250, 0x0290, 0x0310, 0x0230, 0x0000, 0x0000, // z
-    0x0010, 0x07e0, 0x0850, 0x0990, 0x0a10, 0x07e0, 0x0800, 0x0000, // 0
-    0x0000, 0x0000, 0x0410, 0x0ff0, 0x0010, 0x0000, 0x0000, 0x0000, // 1
-    0x0000, 0x0430, 0x0850, 0x0890, 0x0910, 0x0610, 0x0000, 0x0000, // 2
-    0x0000, 0x0420, 0x0810, 0x0910, 0x0910, 0x06e0, 0x0000, 0x0000, // 3
-    0x0000, 0x0080, 0x0180, 0x0280, 0x0480, 0x0ff0, 0x0080, 0x0000, // 4
-    0x0000, 0x0f10, 0x0910, 0x0910, 0x0920, 0x08c0, 0x0000, 0x0000, // 5
-    0x0000, 0x03e0, 0x0510, 0x0910, 0x0910, 0x00e0, 0x0000, 0x0000, // 6
-    0x0000, 0x0800, 0x0830, 0x08c0, 0x0b00, 0x0c00, 0x0000, 0x0000, // 7
-    0x0000, 0x06e0, 0x0910, 0x0910, 0x0910, 0x06e0, 0x0000, 0x0000, // 8
-    0x0000, 0x0700, 0x0890, 0x0890, 0x08a0, 0x07c0, 0x0000, 0x0000, // 9
-    0x0000, 0x0080, 0x0080, 0x03e0, 0x0080, 0x0080, 0x0000, 0x0000, // +
-    0x0000, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0000, 0x0000, // -
-    0x0000, 0x0240, 0x0180, 0x0660, 0x0180, 0x0240, 0x0000, 0x0000, // *
-    0x0010, 0x0020, 0x0040, 0x0080, 0x0100, 0x0200, 0x0400, 0x0000, // /
-    0x0000, 0x0000, 0x0000, 0x0000, 0x07e0, 0x0810, 0x1008, 0x0000, // (
-    0x1008, 0x0810, 0x07e0, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // )
-    0x0640, 0x0920, 0x0920, 0x1ff0, 0x0920, 0x0920, 0x04c0, 0x0000, // $
-    0x0000, 0x0140, 0x0140, 0x0140, 0x0140, 0x0140, 0x0000, 0x0000, // =
-    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // space
-    0x0000, 0x0000, 0x0034, 0x0038, 0x0000, 0x0000, 0x0000, 0x0000, // ,
-    0x0000, 0x0000, 0x0030, 0x0030, 0x0000, 0x0000, 0x0000, 0x0000, // .
-    0x0000, 0x0080, 0x0080, 0x02a0, 0x0080, 0x0080, 0x0000, 0x0000, // divide
-    0x0000, 0x0000, 0x0000, 0x0000, 0x1ff8, 0x1008, 0x1008, 0x0000, // [
-    0x1008, 0x1008, 0x1ff8, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // ]
-    0x0c20, 0x1240, 0x0c80, 0x0100, 0x0260, 0x0490, 0x0860, 0x0000, // %
-    0x0000, 0x0000, 0x0240, 0x0180, 0x0180, 0x0240, 0x0000, 0x0000, // multiply
-    0x0080, 0x0140, 0x0220, 0x0770, 0x0140, 0x0140, 0x0140, 0x0000, // assign
-    0x0000, 0x0000, 0x0000, 0x1c00, 0x0000, 0x0000, 0x0000, 0x0000, // '
-    0x0000, 0x0000, 0x1c00, 0x0000, 0x1c00, 0x0000, 0x0000, 0x0000, // "
-    0x0000, 0x0000, 0x0000, 0x1f90, 0x0000, 0x0000, 0x0000, 0x0000, // !
-    0x0000, 0x0000, 0x0334, 0x0338, 0x0000, 0x0000, 0x0000, 0x0000, // ;
-    0x0000, 0x0080, 0x0140, 0x0220, 0x0410, 0x0000, 0x0000, 0x0000, // <
-    0x0000, 0x0000, 0x0410, 0x0220, 0x0140, 0x0080, 0x0000, 0x0000, // >
-    0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, // _
-    0x0000, 0x0c00, 0x1000, 0x10d0, 0x1100, 0x0e00, 0x0000, 0x0000, // ?
-    0x1c1c, 0x1224, 0x0948, 0x0490, 0x0220, 0x0140, 0x0080, 0x0000, // arrow
-    0x0000, 0x0000, 0x0000, 0x000a, 0x0006, 0x0000, 0x0000, 0x0000, // cedilla
-};
-
-/* data for plato font, set 1. */
-const u16 plato_m1[] = {
-    0x0500, 0x0500, 0x1fc0, 0x0500, 0x1fc0, 0x0500, 0x0500, 0x0000, // #
-    0x07f0, 0x0900, 0x1100, 0x1100, 0x1100, 0x0900, 0x07f0, 0x0000, // A
-    0x1ff0, 0x1210, 0x1210, 0x1210, 0x1210, 0x0e10, 0x01e0, 0x0000, // B
-    0x07c0, 0x0820, 0x1010, 0x1010, 0x1010, 0x1010, 0x0820, 0x0000, // C
-    0x1ff0, 0x1010, 0x1010, 0x1010, 0x1010, 0x0820, 0x07c0, 0x0000, // D
-    0x1ff0, 0x1110, 0x1110, 0x1110, 0x1010, 0x1010, 0x1010, 0x0000, // E
-    0x1ff0, 0x1100, 0x1100, 0x1100, 0x1000, 0x1000, 0x1000, 0x0000, // F
-    0x07c0, 0x0820, 0x1010, 0x1010, 0x1090, 0x1090, 0x08e0, 0x0000, // G
-    0x1ff0, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x1ff0, 0x0000, // H
-    0x0000, 0x1010, 0x1010, 0x1ff0, 0x1010, 0x1010, 0x0000, 0x0000, // I
-    0x0020, 0x0010, 0x1010, 0x1010, 0x1fe0, 0x1000, 0x1000, 0x0000, // J
-    0x1ff0, 0x0080, 0x0100, 0x0280, 0x0440, 0x0820, 0x1010, 0x0000, // K
-    0x1ff0, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0000, // L
-    0x1ff0, 0x0800, 0x0400, 0x0200, 0x0400, 0x0800, 0x1ff0, 0x0000, // M
-    0x1ff0, 0x0800, 0x0600, 0x0100, 0x00c0, 0x0020, 0x1ff0, 0x0000, // N
-    0x07c0, 0x0820, 0x1010, 0x1010, 0x1010, 0x0820, 0x07c0, 0x0000, // O
-    0x1ff0, 0x1100, 0x1100, 0x1100, 0x1100, 0x1100, 0x0e00, 0x0000, // P
-    0x07c0, 0x0820, 0x1010, 0x1018, 0x1014, 0x0824, 0x07c0, 0x0000, // Q
-    0x1ff0, 0x1100, 0x1100, 0x1180, 0x1140, 0x1120, 0x0e10, 0x0000, // R
-    0x0e20, 0x1110, 0x1110, 0x1110, 0x1110, 0x1110, 0x08e0, 0x0000, // S
-    0x1000, 0x1000, 0x1000, 0x1ff0, 0x1000, 0x1000, 0x1000, 0x0000, // T
-    0x1fe0, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x1fe0, 0x0000, // U
-    0x1800, 0x0700, 0x00c0, 0x0030, 0x00c0, 0x0700, 0x1800, 0x0000, // V
-    0x1fe0, 0x0010, 0x0020, 0x03c0, 0x0020, 0x0010, 0x1fe0, 0x0000, // W
-    0x1830, 0x0440, 0x0280, 0x0100, 0x0280, 0x0440, 0x1830, 0x0000, // X
-    0x1800, 0x0400, 0x0200, 0x01f0, 0x0200, 0x0400, 0x1800, 0x0000, // Y
-    0x1830, 0x1050, 0x1090, 0x1110, 0x1210, 0x1410, 0x1830, 0x0000, // Z
-    0x0000, 0x1000, 0x2000, 0x2000, 0x1000, 0x1000, 0x2000, 0x0000, // ~
-    0x0000, 0x0000, 0x1000, 0x0000, 0x1000, 0x0000, 0x0000, 0x0000, // dieresis
-    0x0000, 0x1000, 0x2000, 0x4000, 0x2000, 0x1000, 0x0000, 0x0000, // circumflex
-    0x0000, 0x0000, 0x0000, 0x1000, 0x2000, 0x4000, 0x0000, 0x0000, // acute
-    0x0000, 0x4000, 0x2000, 0x1000, 0x0000, 0x0000, 0x0000, 0x0000, // grave
-    0x0000, 0x0100, 0x0300, 0x07f0, 0x0300, 0x0100, 0x0000, 0x0000, // uparrow
-    0x0080, 0x0080, 0x0080, 0x0080, 0x03e0, 0x01c0, 0x0080, 0x0000, // rightarrow 
-    0x0000, 0x0040, 0x0060, 0x07f0, 0x0060, 0x0040, 0x0000, 0x0000, // downarrow
-    0x0080, 0x01c0, 0x03e0, 0x0080, 0x0080, 0x0080, 0x0080, 0x0000, // leftarrow
-    0x0000, 0x0080, 0x0100, 0x0100, 0x0080, 0x0080, 0x0100, 0x0000, // low tilde
-    0x1010, 0x1830, 0x1450, 0x1290, 0x1110, 0x1010, 0x1010, 0x0000, // Sigma
-    0x0030, 0x00d0, 0x0310, 0x0c10, 0x0310, 0x00d0, 0x0030, 0x0000, // Delta
-    0x0000, 0x0380, 0x0040, 0x0040, 0x0040, 0x0380, 0x0000, 0x0000, // union
-    0x0000, 0x01c0, 0x0200, 0x0200, 0x0200, 0x01c0, 0x0000, 0x0000, // intersect
-    0x0000, 0x0000, 0x0000, 0x0080, 0x0f78, 0x1004, 0x1004, 0x0000, // {
-    0x1004, 0x1004, 0x0f78, 0x0080, 0x0000, 0x0000, 0x0000, 0x0000, // }
-    0x00e0, 0x0d10, 0x1310, 0x0c90, 0x0060, 0x0060, 0x0190, 0x0000, // &
-    0x0150, 0x0160, 0x0140, 0x01c0, 0x0140, 0x0340, 0x0540, 0x0000, // not equal
-    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // space
-    0x0000, 0x0000, 0x0000, 0x1ff0, 0x0000, 0x0000, 0x0000, 0x0000, // |
-    0x0000, 0x0c00, 0x1200, 0x1200, 0x0c00, 0x0000, 0x0000, 0x0000, // degree
-    0x0000, 0x02a0, 0x02a0, 0x02a0, 0x02a0, 0x02a0, 0x0000, 0x0000, // equiv
-    0x01e0, 0x0210, 0x0210, 0x01a0, 0x0060, 0x0090, 0x0310, 0x0000, // alpha
-    0x0002, 0x03fc, 0x0510, 0x0910, 0x0910, 0x0690, 0x0060, 0x0000, // beta
-    0x0000, 0x0ce0, 0x1310, 0x1110, 0x0890, 0x0460, 0x0000, 0x0000, // delta
-    0x0000, 0x1030, 0x0cc0, 0x0300, 0x00c0, 0x0030, 0x0000, 0x0000, // lambda
-    0x0002, 0x0002, 0x03fc, 0x0010, 0x0010, 0x03e0, 0x0010, 0x0000, // mu
-    0x0100, 0x0200, 0x03f0, 0x0200, 0x03f0, 0x0200, 0x0400, 0x0000, // pi
-    0x0006, 0x0038, 0x00e0, 0x0110, 0x0210, 0x0220, 0x01c0, 0x0000, // rho
-    0x00e0, 0x0110, 0x0210, 0x0310, 0x02e0, 0x0200, 0x0200, 0x0000, // sigma
-    0x01e0, 0x0210, 0x0010, 0x00e0, 0x0010, 0x0210, 0x01e0, 0x0000, // omega
-    0x0220, 0x0220, 0x0520, 0x0520, 0x08a0, 0x08a0, 0x0000, 0x0000, // less/equal
-    0x0000, 0x08a0, 0x08a0, 0x0520, 0x0520, 0x0220, 0x0220, 0x0000, // greater/equal
-    0x07c0, 0x0920, 0x1110, 0x1110, 0x1110, 0x0920, 0x07c0, 0x0000, // theta
-    0x01e0, 0x0210, 0x04c8, 0x0528, 0x05e8, 0x0220, 0x01c0, 0x0000, // @
-    0x0400, 0x0200, 0x0100, 0x0080, 0x0040, 0x0020, 0x0010, 0x0000, // backslash
-    0x01e0, 0x0210, 0x0210, 0x01e0, 0x0290, 0x0290, 0x01a0, 0x0000, // oe
-};
-
-const u16 *setPtr[] =
-{
-    plato_m0, plato_m1,
-    plato_m23, plato_m23 + (64 * 8)
-};
 
 typedef void (*mptr)();
 
@@ -308,7 +170,7 @@ void ptermInit(const char *winName)
     /*
     **  Create a pixmap for background image generation.
     */
-    pixmap = XCreatePixmap (disp, ptermWindow, XSize, YSize, 1);
+    pixmap = XCreatePixmap (disp, ptermWindow, XSize, YPMSize, 1);
 
     /*
     **  Set window and icon titles.
@@ -357,10 +219,10 @@ void ptermInit(const char *winName)
     */
     XSetForeground (disp, wgc, bg);
     XFillRectangle (disp, ptermWindow, wgc, 0, 0, XSize, YSize);
-    XSetForeground (disp, wgc, fg);
     XSetForeground (disp, pgc, pbg);
-    XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
-    XSetForeground (disp, pgc, pfg);
+    XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YPMSize);
+    wemode = 1;
+    setWeMode (wemode);
 
     /*
     **  Initialise input.
@@ -375,12 +237,69 @@ void ptermInit(const char *winName)
     **  Load Plato font
     */
     fontId = XLoadFont(disp, "-*-plato-medium-*-*-*-8-*-*-*-*-*-*-*\0");
+    XSetFont(disp, wgc, fontId);
+    XSetFont(disp, pgc, fontId);
 
     /*
     **  We like to be on top.
     */
     XMapRaised (disp, ptermWindow);
     XSync (disp, FALSE);
+
+#if 0
+// testing...
+    int j;
+    
+    mode = 1;
+    wemode = 1;
+    setWeMode (wemode);
+    for (i = 0; i < 0774; i += 01)
+    {
+        currentY = i;
+        currentX = 0;
+        mode1 (0777000 + (i));
+    }
+    for (i = 0; i < 63; i++)
+    {
+        for (j = 0; j < 8; j++)
+        {
+            plato_m23[j] = (i << 8) + i;
+            plato_m23[j + 8] = (((i + j) << 8) + i + j);
+        }
+        writeChar (0, i, plato_m23);
+        writeChar (1, i, plato_m23 + 8);
+    }
+#define pc(c) { \
+        drawChar (ptermWindow, wgc, currentCharset, c); \
+        drawChar (pixmap, pgc, currentCharset, c); \
+        currentX = (currentX + 8) & 0777; \
+    }
+        
+    for (wemode = 0; wemode < 4; wemode++)
+    {
+        setWeMode (wemode);
+        currentX = 0;
+        mode = 3;
+        mode3(0777720);
+        currentY = 400 - 80 * wemode;
+        for (i = 0; i < 64; i++)
+            pc (i);
+        mode3(0777715);
+        mode3(0777721);
+        for (i = 0; i < 64; i++)
+            pc (i);
+        mode3(0777715);
+        mode3(0777722);
+        for (i = 0; i < 64; i++)
+            pc (i);
+        mode3(0777715);
+        mode3(0777723);
+        for (i = 0; i < 64; i++)
+            pc (i);
+        mode3(0777715);
+    }
+// end testing
+#endif
 
     /*
     **  Register with NIU for local output.
@@ -410,7 +329,7 @@ void ptermClose(void)
 **
 **  Parameters:     Name        Description.
 **                  kp          XKeyEvent for the keypress
-**                  stat        Sstatio number
+**                  stat        Station number
 **
 **  Returns:        TRUE if key event was a valid Plato keycode.
 **
@@ -550,7 +469,12 @@ void ptermInput(XEvent *event)
 
     case Expose:
         XSetForeground (disp, wgc, fg);
-        XCopyPlane(disp, pixmap, ptermWindow, wgc, 0, 0, XSize, YSize, 0, 0, 1);
+        XSetFunction (disp, wgc, GXcopy);
+        XCopyPlane(disp, pixmap, ptermWindow, wgc, 
+                   DisplayMargin, DisplayMargin,
+                   512, 512, 
+                   DisplayMargin, DisplayMargin, 1);
+        setWeMode (wemode);
         XSync (disp, FALSE);
         break;
     }
@@ -595,13 +519,15 @@ void procNiuWord (int stat, u32 d)
             if (d & 1)
             {
                 // full screen erase
-                XSetForeground (disp, wgc, bg);
+                setWeMode (0);
                 XFillRectangle (disp, ptermWindow, wgc, 0, 0, XSize, YSize);
-                XSetForeground (disp, wgc, fg);
-                XSetForeground (disp, pgc, pbg);
                 XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
-                XSetForeground (disp, pgc, pfg);
+                setWeMode (wemode);
                 XFlush (disp);
+            }
+            else
+            {
+                setWeMode (wemode);
             }
             break;
             
@@ -630,6 +556,10 @@ void procNiuWord (int stat, u32 d)
             niuLocalKey ((d & 0177) + 0200, 1);
             break;
             
+        case 4:     // load address
+            memaddr = d & 077777;
+            break;
+            
         default:    // ignore
             break;
         }
@@ -645,7 +575,7 @@ void procNiuWord (int stat, u32 d)
 */
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Write a character to the font area in the pixmap
+**  Purpose:        Draw a character
 **
 **  Parameters:     Name        Description.
 **                  d           X Drawable
@@ -658,37 +588,82 @@ void procNiuWord (int stat, u32 d)
 **------------------------------------------------------------------------*/
 static void drawChar (Drawable d, GC gc, int snum, int cnum)
 {
-    int i, j;
-    int x = currentX;
-    const u16 *cp;
-    u16 col;
-    u8 drawMode = wemode | 2;
-    u8 eraseMode = (wemode ^ 1) | 2;
+    int charX, charY;
+    char c;
     
-    cp = setPtr[snum] + (8 * cnum);
+    if (snum < 2)
+    {
+        // "ROM" characters
+        c = (snum * 64) + cnum;
+        if (wemode & 2)
+        {
+            XDrawString(disp, d, gc, XADJUST (currentX),
+                        YADJUST (currentY), &c, 1);
+        }
+        else
+        {
+            XDrawImageString(disp, d, gc, XADJUST (currentX),
+                             YADJUST (currentY), &c, 1);
+        }
+    }
+    else
+    {
+        charX = cnum * 8;
+        charY = YSize + (snum - 2) * 16;
+        XCopyPlane (disp, pixmap, d, gc, charX, charY, 8, 16, 
+                    XADJUST (currentX), YADJUST (currentY) - 15, 1);
+    }
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Write a (loadable set) character to the font storage 
+**                  part of the pixmap
+**
+**  Parameters:     Name        Description.
+**                  snum        character set number
+**                  cnum        character number
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void writeChar (int snum, int cnum, const u16 *data)
+{
+    int i, j;
+    int x = cnum * 8;
+    int y = YSize + (snum & 1) * 16 + 15;
+    u16 col;
+
+    XSetForeground (disp, pgc, pbg);
+    XSetFunction (disp, pgc, GXcopy);
+    XFillRectangle (disp, pixmap, pgc, x, y - 15, 8, 16);
+    XSetForeground (disp, pgc, pfg);
+
     for (i = 0; i < 8; i++)
     {
-        col = *cp++;
+        col = *data++;
         for (j = 0; j < 16; j++)
         {
             if (col & 1)
             {
-                setColors (drawMode);
-                XDrawPoint(disp, d, gc, XADJUST (x), YADJUST (currentY + j));
-            }
-            else if ((wemode & 2) == 0)
-            {
-                setColors (eraseMode);
-                XDrawPoint(disp, d, gc, XADJUST (x), YADJUST (currentY + j));
+                XDrawPoint(disp, pixmap, pgc, x, y - j);
             }
             col >>= 1;
         }
         x = (x + 1) & 0777;
     }
+    setWeMode (wemode);
 }
 
+// X gc function codes for a given W/E mode:
+static const int WeFunc[] = 
+{ GXcopy,
+  GXcopy,
+  GXandInverted,
+  GXor 
+};
+
 /*--------------------------------------------------------------------------
-**  Purpose:        Set drawing color given current W/E mode
+**  Purpose:        Set W/E mode
 **
 **  Parameters:     Name        Description.
 **                  we          mode byte
@@ -696,25 +671,28 @@ static void drawChar (Drawable d, GC gc, int snum, int cnum)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void setColors (u8 we)
+static void setWeMode (u8 we)
 {
-    switch (we)
+    // Unfortunately we can't just do wemode == 0 with GXcopyInverted,
+    // partly because that produces wrong colors when writing to the
+    // (orange) window, and partly because XDrawImageString doesn't 
+    // pay attention to the GC function.
+    if (we == 0)
     {
-    case 0:
-        XSetBackground(disp, pgc, pfg);
-        XSetBackground(disp, wgc, fg);
-    case 2:
-        XSetForeground(disp, pgc, pbg);
-        XSetForeground(disp, wgc, bg);
-        break;
-    case 1:
-        XSetBackground(disp, pgc, pbg);
-        XSetBackground(disp, wgc, bg);
-    case 3:
-        XSetForeground(disp, pgc, pfg);
-        XSetForeground(disp, wgc, fg);
-        break;
+        XSetBackground (disp, wgc, fg);
+        XSetForeground (disp, wgc, bg);
+        XSetBackground (disp, pgc, pfg);
+        XSetForeground (disp, pgc, pbg);
     }
+    else
+    {
+        XSetBackground (disp, wgc, bg);
+        XSetForeground (disp, wgc, fg);
+        XSetBackground (disp, pgc, pbg);
+        XSetForeground (disp, pgc, pfg);
+    }
+    XSetFunction (disp, pgc, WeFunc[we]);
+    XSetFunction (disp, wgc, WeFunc[we]);
 }
 
 /*--------------------------------------------------------------------------
@@ -804,7 +782,6 @@ static void mode0 (u32 d)
 #ifdef DEBUG
     printf ("dot %d %d\n", x, y);
 #endif
-    setColors (wemode);
     XDrawPoint (disp, pixmap, pgc, XADJUST (x), YADJUST (y));
     XDrawPoint (disp, ptermWindow, wgc, XADJUST (x), YADJUST (y));
 }
@@ -827,7 +804,6 @@ static void mode1 (u32 d)
 #ifdef DEBUG
     printf ("lineto %d %d\n", x, y);
 #endif
-    setColors (wemode);
     XDrawLine (disp, pixmap, pgc,
                XADJUST (currentX), YADJUST (currentY),
                XADJUST (x), YADJUST (y));
@@ -849,6 +825,23 @@ static void mode1 (u32 d)
 **------------------------------------------------------------------------*/
 static void mode2 (u32 d)
 {
+    int ch;
+    
+    if (memaddr >= 127 * 8)
+    {
+        return;
+    }
+    if (((d >> 16) & 3) == 0)
+    {
+        // load data
+        plato_m23[memaddr] = d & 0xffff;
+        if ((++memaddr & 7) == 0)
+        {
+            // character is done -- load it to display 
+            ch = (memaddr / 8) - 1;
+            writeChar (ch / 64, ch % 64, &plato_m23[memaddr - 8]);
+        }
+    }
 }
 
 /*--------------------------------------------------------------------------

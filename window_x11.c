@@ -506,18 +506,6 @@ void windowQueue(char ch)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Update window.
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void windowUpdate(void)
-    {
-    }
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Indicate that operator mode is finished.
 **
 **  Parameters:     Name        Description.

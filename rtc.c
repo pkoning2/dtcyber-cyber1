@@ -257,7 +257,7 @@ static void rtcInit2(long setMHz)
 #else
     FILE *procf;
     char procbuf[512];
-    u32 now, prev;
+    u64 now, prev;
     char *p;
     double procMHz;
 #endif
@@ -291,9 +291,9 @@ static void rtcInit2(long setMHz)
         if (hz == 0)
             {
             sleep (1);
-            rdtscl (prev);
+            rdtscll (prev);
             sleep (1);
-            rdtscl (now);
+            rdtscll (now);
             hz = now - prev;
             }
 #endif

@@ -194,7 +194,6 @@ void windowSetFont(u8 font);
 void windowSetX(u16 x);
 void windowSetY(u16 y);
 void windowQueue(char ch);
-void windowUpdate(void);
 void windowGetChar(void);
 void windowClose(void);
 void windowCheckOutput(void);

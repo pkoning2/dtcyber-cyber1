@@ -34,7 +34,6 @@
 **  -----------------
 */
 #define OpCmdSize 64
-#define BoldMediumRepaints 8
 #define TwinkleRate 2
 #define CmdX 0020
 #define CmdY 0100
@@ -195,7 +194,7 @@ static OpMsg msg[] =
       { 0020,    0, 0010, "TRACE,CHANNELNN.   Trace specified channel activity." },
       { 0020,    0, 0010, "UNTRACE,XXX        Stop trace of XXX." },
       { 0020,    0, 0010, "UNTRACE,.          Stop all tracing." },
-//      { 0020,    0, 0010, "UNTRACE,RESET.     Stop tracing, discard trace data." },
+      { 0020,    0, 0010, "UNTRACE,RESET.     Stop tracing, discard trace data." },
 #endif
       { 0020,    0, 0010, "" },      // blank line to separate these last two from the above
       { 0020,    0, 0010, "END.               End operator mode." },
@@ -262,11 +261,14 @@ void opRequest(void)
     int i, j;
     int twRate = 0;     // number of repaints between twinkles
     int twPos = 0;      // Twinkle position mod 4
-    
+    int BoldMediumRepaints;
+
     cmdBuf[0] = '\0';
     cmdLen = 0;
     smallFontWidth = windowGetOperFontWidth(FontSmall);
     mediumFontWidth = windowGetOperFontWidth(FontMedium);
+    BoldMediumRepaints = mediumFontWidth / 2;
+
     while (opActive)
         {
         for (i = 0; i < BoldMediumRepaints; i++)
@@ -319,6 +321,8 @@ void opRequest(void)
             {
 #if !defined(_WIN32)
             usleep (RefreshInterval / 2);
+#else
+            Sleep(25);
 #endif
             continue;
             }
