@@ -1,0 +1,300 @@
+How to run and use PLATO on DtCyber
+
+1. Things you need.
+
+Much of PLATO is on disk, not the deadstart tape, so you need a bunch
+of disk images.  You also need my DtCyber, cyber.ini, and my deadstart
+tape.  All this is in plato.tar.gz.  (The DtCyber is a Linux build for
+a recent Linux; use the sources from my CVS server if you need to
+build something else.)
+
+2. PLATO components.
+
+PLATO consists of a collection of CP and PP programs, plus a large
+quantity of files ("lessons") in the TUTOR language.  The TUTOR files
+are system utilities, such as the login program, and the applications
+("courseware" and also lots of cool games) that made PLATO famous.
+
+I don't actually have much in the way of non-system TUTOR files,
+unfortunately. 
+
+There are a bunch of PP programs on the DST; I won't go into detail on
+that right now.
+
+The CP programs are:
+- PLATO: the main lesson execution program.  It schedules processing
+  for all the terminals.
+- FRAMAT: the terminal output formatter.  It receives output data
+  from PLATO and formats it appropriately for whichever terminal you
+  are using.  It then sends it to the PIO PP.
+- CONDEN: the lesson "condensor" -- essentially a compiler.  Takes
+  TUTOR input and produces binary output for execution.
+- MASTOR: the disk I/O and ECS manager.  Used by the others for 
+  PLATO disk I/O and for handling ECS.
+
+If you need to change cyber.ini, go ahead.  The relevant section is
+the [nos552] section; others are either older experiments or unchanged
+from Tom's version.
+
+2. Starting.
+
+When you start DtCyber with my cyber.ini, nos552 section, you'll see
+not just the usual DtCyber window but also a window "Plato station
+0-1".  That's a PLATO terminal; it will become active once PLATO
+starts. 
+
+Deadstart NOS 1.4 pretty much as usual.  One change: at the CMRDECK
+entry display, type:
+      INITIALIZE,11,AL.
+to initialize the ECS.
+
+After startup completes, start up MASTOR:
+      X. MASTOR.
+It should come up at CP20.  If it comes up at CP1 (which can happen if
+CMS decided to come to CP20 right that instant), stop it (K,1. then
+K.STOP) and retry.  For some reason, MASTOR doesn't work right if it
+runs at a low CP.
+
+When MASTOR initialization is done (LDR stops flashing at the CP and
+PNG appears), start PLATO:
+      X. PLATO.
+
+After a while, PLATO finishes initialing; at that point it has PIO
+active at its CP.  Because of a bug, this first load of PLATO doesn't
+work right, so we now reload it and also load the other programs:
+      K,20.
+      K.PGO
+      K.RELOAD
+
+The entry PGO tells MASTOR what file contains the deck that loads
+PLATO, and then starts up the load of the others.  PLATO, CONDEN, and
+FRAMAT pop up one after the other at the first three CPs.
+
+When CONDEN finishes initializing, PLATO tells it to condense the
+first two system lessons: plato and syslib.  You will see their names
+appear in the B-display line for CONDEN as is processes them.  Once
+those are done, the PLATO terminal window for terminal 0-1 will
+display "Press  NEXT  to begin".
+
+PLATO keyboard layout.
+
+The PLATO keyboard has a bunch of keys with non-ASCII markings.  Some
+are printable characters like multiply sign, divide sign, and
+assignment arrow.  Others are function keys with names like NEXT, LAB,
+and so on.  Many of these can be shifted, which changes the meaning.
+PLATO refers to these either as SHIFT-NEXT etc., or (older convention)
+as NEXT1 etc.
+
+Most of these extra keys are accessible as ALT-x keystrokes.  (On the
+MAC, these are Option-x -- not Command-x because I haven't found a way
+to override the standard Command codes like Command-Q.)  Some are keys
+on the numeric keypad.  Here's the list:
+
+   Keyboard    PLATO
+   ALT a       ANS
+   ALT b       BACK
+   ALT c       COPY
+   ALT d       DATA
+   ALT e       EDIT
+   ALT f       FONT
+   ALT h       HELP
+   ALT l       LAB
+   ALT m       MICRO
+   ALT n       NEXT	(Enter key also works)
+   ALT q       "square" (also called "access")
+   ALT r       ERASE	(Backspace key also works)
+   ALT s       STOP
+   ALT t       TERM
+   KP +	       +	(+ key also works for unshifted +)
+   KP -	       -	(- key also works for unshifted -)
+   KP *	       multiply
+   KP /	       divide
+   KP left     assignment arrow
+   KP up       SUPER
+   KP down     SUB
+
+Nearly all of these can be shifted (which is why + and - are
+accessible via the numeric keypad -- that's how you can reach the
+shifted forms).  TERM and FONT are the same shifted or not because
+those correspond to shifted keys (shifted ANS and MICRO respectively)
+on the PLATO keyboard.
+
+Basic PLATO navigation.
+
+The function keys are the primary means for moving around in PLATO.
+The most commonly used ones have fairly obvious names:
+
+    NEXT  Go forward, enter input.
+    BACK  Go backward, exit, exit one level.
+    STOP  Stop displaying (note -- may mess up display, known bug)
+    SHIFT-STOP  Kill current program. Also used during signin.
+
+Other keys come into play some of the time and are generally
+documented at that point.
+
+There's one more that's useful to know: TERM, which brings up a
+ "what term?" prompt at the bottom of the screen.  The original
+purpose was that this would be used to access named items in the
+current lesson.  That still happens occasionally.  The actual common
+use is for accessing system functions like "talk" and "consult".
+These are always available.  "talk" is particularly famous, it's the
+original "chat".
+
+Finally, remember this: HELP is almost always available -- and, unlike
+modern software, it usually actually helps.  In my 3 years using and
+developing PLATO, I never saw a manual and I never needed one.  HELP
+is why.
+
+Logging in.
+
+Just follow instructions.  Press NEXT (Enter).  You'll get a display
+prompting for your name.  Enter the name and press NEXT.
+
+Next you're asked for the group.  Enter that and press SHIFT-STOP
+(i.e., Shift Alt s).  That's the PLATO analog of Control/Alt/Del to
+sign into Windows.
+
+Finally, enter your password, and NEXT.
+
+To get you started, I've created a demo signin in group "s".  That's
+the system programmer's group, so it has all sorts of interesting
+privileges that ordinary folk don't have.  These are somewhat less
+documented (more later).
+
+The signon is dtcyber in group s (or, by PLATO convention,
+"dtcyber / s").  Password is "guest". The first time, you'll see a
+welcome message I left.
+
+Author mode.
+
+Author mode is the central starting point for authors -- people who
+write lessons or, in the case of "s", who do system development.  As
+the prompt says, help is available.  Give it a try.
+
+Most useful is AIDS, accessible by typing "aids" or just "A" at the
+Author Mode prompt.  It's a complete manual of the PLATO system.  (It
+may have minor navigational glitches because I had to reconstruct its
+tables from scratch; if you find any please let me know.)
+
+Privileged utilities.
+
+There are some system programmer tools that aren't as well documented,
+though you can get a reasonable amount of info from "sysaids" (enter
+sysaids then DATA at the author mode prompt).  But sysaids is more a
+description of the privileged TUTOR features, rather than the
+privileged tools.
+
+Some of the tools are single keystrokes in Author Mode, digits this
+time rather than shifted letters:
+
+     1  System options: things like post a message that people see
+	in Author Mode (1), send to terminals (2), backout (i.e., kick
+	people off) (3), etc.
+	You'll want to go to (3) backout to shut down PLATO cleanly.
+     2  Assorted statistics.  Not all of these are meaningful in
+	DtCyber.
+     3	Operator file manipulation.  You can use this to create
+	files (lessons) but a clearer/safer way is to use the
+	"accounts", in particular you can enter "work" at the
+	author mode prompt to do file management in the "work"
+	account.
+     4	simulated console displays
+
+Other handy things are simply lessons or other special files, which
+are special mostly in that they restrict access to system people.  For
+example:
+
+	sysaids: a "group notes" file for system staff.  I've
+		 been using this to keep track of my activities 
+		 in bringing up PLATO on DtCyber.
+        modify:	 a low level disk manipulator.
+	ipedit:	 system parameters display/edit.
+	spy:	 a profiler.
+
+The easiest way to see a list of all the system files is to edit
+account "system" and ask for a file list.  You'll see all the system
+programs (things like edit and plato and syslib) as well as all the
+Compass code (files like lex and main and tutorx).
+
+Logging off.
+
+To log off, press SHIFT-STOP from the Author Mode page.  When editing
+files, press BACK repeatedly to get there; from inside most programs,
+simply SHIFT-STOP gets you there.
+
+Shutdown.
+
+To shut down PLATO:
+
+From the Author Mode page, press 1 for system options, 3 for backout,
+then SHIFT-HELP for immediate shutdown (SHIFT-LAB to give people 60
+seconds warning). When that finishes, log off.
+
+At the console, enter K.STOP (select MASTOR to the K display first if
+necessary).   That kills all the PLATO programs.  Now shut down NOS as
+usual.
+
+If PLATO crashes for some reason, you'll see the famous "plato off"
+display on the PLATO terminals.  MASTOR will reload PLATO
+automatically if this happens.  If one of the others dies, you may
+have to tell MASTOR to fix this by saying K.RELOAD.
+
+Additional PLATO terminals.
+
+DtCyber automatically starts one PLATO window, which is terminal 0-1.
+It also opens a TCP port (6604) which listens to connections from the
+pterm utility.  pterm takes a hostname as argument, so you can use it
+on your local machine by saying "pterm localhost" or from anywhere
+else provided port 6604 can get through any firewalls that may exist.
+
+pterm puts up another PLATO terminal window exactly as described
+above.  It will be seen by PLATO as a terminal in site 1, e.g., 1-0 or
+1-3 or whatever.  The default is that DtCyber allows 4 terminals, but
+you can increase this.  The PLATO site setup will handle up to 64
+remote terminals.  (If you try a lot of terminals, please let me know
+how it worked out.)
+
+To close the pterm terminal, first log out, then enter Control/D to
+disconnect and close the program.
+
+Console PLATO terminal emulation.
+
+PLATO treats the console display as station 0-0, and handles it
+somewhat specially.  For one thing, it's not subject to any throttling
+so it's very fast.  Then again, it has no graphics, and only the
+standard console character set.
+
+I hacked this because I didn't have the real code for it.  As a
+result, the way you invoke it is not authentic.  (I don't remember the
+correct way; can anyone help?)
+
+By default the console sees the standard console keyboard, which
+doesn't get you very far because it has no function keys.  You can
+toggle back and forth to the PLATO keyboard layout with ALT/P -- when
+the PLATO keyboard is active a P is displayed in the upper right
+corner of the console window.
+
+To activate the console terminal:
+   1.ASSIGN,10.
+
+You'll see "lesson desired".  Enter the name of a lesson, e.g., "edit"
+for author mode.  (BACK also works.)  At this point you're nameless
+but privileged.  You can also ask for "plato" to sign in.  There's no
+real reason to do this, though.
+
+To exit console mode, switch the keyboard back to console keyboard
+mode (P disappears) and enter ] (right blank).
+
+The console wasn't normally used because it's such a pain; its main
+purpose is to get things going when most stuff is broken.  For
+example, I used it to get lesson "plato" (the login program) working
+initially, because at the console I could get to the editor without
+having to log in first.
+
+---
+That's all for now.  Enjoy, and please let me know how it goes.
+
+       Paul Koning
+       koning / s
+       pkoning@equallogic.com
+

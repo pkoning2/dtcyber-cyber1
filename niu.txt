@@ -1,0 +1,217 @@
+Plato IV NIU:
+
+The NIU has TWO channels, one for input, one for output.
+These are given equipment names IC and OC respectively.
+In spite of that, there are distinct select codes for the
+two directions.  It appears that PIO is doing the select
+each time it wants to do input or output.
+
+Function codes
+	 0	select output
+	 40	select input
+
+input data:
+      input comes in a pair of words.
+      first  word: 4000 plus station number.
+      second word: keycode << 1.
+      If there is no more input, this is indicated simply by
+      the fact that the channel doesn't become full when selected.
+
+output data:
+       output data comes in three words.
+       first and second words: data.
+       third word: station number.
+       first word contains 4000 plus first 10 bits of the output data.
+       second word contains the last 9 bits of the output data, left
+       shifted by one.  For example (from pio sourcecode):
+          data   4140b,0064b load char mode (mode rewrite)
+          data   4200b,0420b load x=136 (column 18)
+          data   4201b,1600b load y=448 (line 4)
+          data   5777b,1640b (uncover)(uncover)(20)
+          data   5555b,1332b (space)(space)(space)
+       third word has 2000b flag set for last station in the current frame.
+
+Protocol for NIU to Plato terminal emulator program:
+
+The protocol runs over TCP, by default socket 6604.  It carries
+the input and output data streams.
+
+Both input and output streams carry the Plato codes.  Since the code
+words are not multiples of 8 in length, they are split up with flag
+bits in the high order.  This allows each end to resynchronize if
+somehow a byte is misplaced.
+
+Plato output (NIU to terminal):
+
+The data word is 19 bits -- start bit and parity bit are not carried.
+The TCP stream carries these as sets of 3 bytes, encoded as:
+    byte 0:    1/0, 7/first 7 bits
+    byte 1:    2/2, 6/next 6 bits
+    byte 2:    2/3, 6/low order 6 bits
+
+NIU NOP codes are never sent, of course, but Plato NOP codes are, just
+in case the terminal emulator wants to emulate the operation of the
+word count register.  Actually, that might make sense; a standard
+PLATO abort sequence would be a sensible way to handle loss of TCP
+stream sync.
+
+Plato input (terminal to NIU):
+
+The data word is 10 bits -- start bit and parity bit are not carried.
+The TCP stream carries these as byte pairs, encoded as:
+    byte 0:    5/0, 3/first 3 bits
+    byte 1:    1/1, 7/low order 7 bits
+
+Examples:
+
+Touch screen input X=1, Y=2 comes in as:
+      5/0, 3/002
+      1/1, 7/022
+
+The output shown above goes out as:
+      1/0, 7/014
+      2/2, 6/000
+      2/3, 6/032
+      1/0, 7/020
+      2/2, 6/002
+      2/3, 6/010
+      1/0, 7/002
+      2/2, 6/017
+      2/3, 6/000
+      1/0, 7/177
+      2/2, 6/077
+      2/3, 7/020
+      1/0, 7/155
+      2/2, 6/055
+      2/3, 6/055
+ 
+
+Input coding (from polls):
+ keycode  con    1r0         000b
+          con    1r1         001b
+          con    1r2         002b
+          con    1r3         003b
+          con    1r4         004b
+          con    1r5         005b
+          con    1r6         006b
+          con    1r7         007b
+          con    1r8         010b
+          con    1r9         011b
+          con    kmult       012b
+          con    kdiv        013b
+          con    tab         014b
+          con    kassign     015b
+          con    1r+         016b
+          con    1r-         017b
+          con    ksup        020b
+          con    ksub        021b
+          con    ans         022b
+          con    erase       023b
+          con    micro       024b
+          con    help        025b
+          con    next        026b
+          con    edit        027b
+          con    back        030b
+          con    data        031b
+          con    stop        032b
+          con    copy        033b
+          con    micro1      034b (temporary for square)
+          con    lab         035b
+          con    extra1      036b
+          con    extra2      037b
+          con    klt         040b
+          con    kgt         041b
+          con    klbrack     042b
+          con    krbrack     043b
+          con    1r$         044b
+          con    kpct        045b
+          con    kunder      046b
+          con    kapost      047b
+          con    1r*         050b
+          con    1r(         051b
+          con    kdot        052b
+          con    kroot       053b
+          con    kcr         054b
+          con    kup         055b
+          con    ksigma      056b
+          con    kdelta      057b
+          con    upsup       060b
+          con    upsub       061b
+          con    term        062b
+          con    erase1      063b
+          con    font        064b
+          con    help1       065b
+          con    next1       066b
+          con    edit1       067b
+          con    back1       070b
+          con    data1       071b
+          con    stop1       072b
+          con    copy1       073b
+          con    access      074b  (square1)
+          con    lab1        075b
+          con    extra3      076b
+          con    extra4      077b
+          con    1r          100b
+          con    1ra         101b
+          con    1rb         102b
+          con    1rc         103b
+          con    1rd         104b
+          con    1re         105b
+          con    1rf         106b
+          con    1rg         107b
+          con    1rh         110b
+          con    1ri         111b
+          con    1rj         112b
+          con    1rk         113b
+          con    1rl         114b
+          con    1rm         115b
+          con    1rn         116b
+          con    1ro         117b
+          con    1rp         120b
+          con    1rq         121b
+          con    1rr         122b
+          con    1rs         123b
+          con    1rt         124b
+          con    1ru         125b
+          con    1rv         126b
+          con    1rw         127b
+          con    1rx         130b
+          con    1ry         131b
+          con    1rz         132b
+          con    1r=         133b
+          con    ksemic      134b
+          con    1r/         135b
+          con    1r.         136b
+          con    1r,         137b
+          con    kbksp       140b
+          con    upa         141b
+          con    upb         142b
+          con    upc         143b
+          con    upd         144b
+          con    upe         145b
+          con    upf         146b
+          con    upg         147b
+          con    uph         150b
+          con    upi         151b
+          con    upj         152b
+          con    upk         153b
+          con    upl         154b
+          con    upm         155b
+          con    upn         156b
+          con    upo         157b
+          con    upp         160b
+          con    upq         161b
+          con    upr         162b
+          con    ups         163b
+          con    upt         164b
+          con    upu         165b
+          con    upv         166b
+          con    upw         167b
+          con    upx         170b
+          con    upy         171b
+          con    upz         172b
+          con    1r)         173b
+          con    kcolon      174b
+          con    kquest      175b
+          con    kexclam     176b
+          con    kquote      177b
