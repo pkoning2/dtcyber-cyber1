@@ -13,6 +13,7 @@ attach(binary2/#m=m)
 .* 
 packnam(pn=dtcybis,r=dm1)
 attach(cybis1/#m=m)
+attach(cybis2/#m=m)
 .*attach(s0files/#m=m)
 .*
 .* cerl
