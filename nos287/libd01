@@ -1,0 +1,130 @@
+libd01
+*/
+*/        libdeck with esm. 
+*/
+*/
+*/        routines which should be in central memory. 
+*/        alphabetical order with grouping. 
+*/
+*cm       pp/1aj
+*cm       pp/1ds
+*cm       pp/1dl
+*cm       pp/1ms
+*cm       pp/1sj
+*cm       pp/3cr,3cs                           (cpd overlays) 
+*cm       pp/3q4,3q5                           (qac overlays) 
+*cm       pp/ndr,3nw                           (ndr and overlays) 
+*cm       pp/0mc,0md,1kb,2ka,2kb,3kc,4kb,4kc   (map iii/iv) 
+*cm       pp/4kd,5xa,5xb,5xc,5xd,5xe,5xf,5xg   (map iii/iv) 
+*/
+*/        routines to put in esm, alphabetical order with grouping. 
+*/
+*ad       5,pp/dsp
+*ad       5,pp/rpv
+*ad       5,pp/tlx
+*ad       5,pp/0au
+*ad       5,pp/0bf
+*ad       5,pp/0dq
+*ad       5,pp/0fa
+*ad       5,pp/0pt
+*ad       5,pp/0rf
+*ad       5,pp/0rp
+*ad       5,pp/0td
+*ad       5,pp/1io
+*ad       5,pp/1mi
+*ad       5,pp/1pp
+*ad       5,pp/1ck,3ck,3cl                     (1ck and overlays) 
+*ad       5,pp/1ta,3te                         (1ta and overlays) 
+*ad       5,pp/ldd,ldq                         (fdl overlays) 
+*ad       5,pp/qac,3qr,3qs                     (qac and overlays) 
+*ad       5,pp/1ma,2ma,2mb,2mc,2md             (1ma and overlays) 
+*ad       5,pp/3aa,3ab,3ad,3ae,3af,3ag,3ah,3ai (1aj overlays) 
+*ad       5,pp/3aj,3ak,ldr,tcs                 (1aj overlays) 
+*ad       5,pp/4ma,4mb,4mc,4md,4me,4mf         (1ms overlays) 
+*ad       5,pp/1ri,3rg,3rh,3ri                 (1ri and overlays) 
+*ad       5,pp/3rp,3rs                         (1ro overlays) 
+*ad       5,pp/lfm,3lb,3lc,3ld,3le             (lfm and overlays) 
+*ad       5,pp/pfm,3pa,3pc,3pd,3pe,3pf,3pg,3pi (pfm and overlays) 
+*ad       5,pp/3pj,3pp,3ps,3pt,3pu             (pfm overlays) 
+*ad       5,pp/cpm,3cb,3cc,3cd                 (cpm and overlays) 
+*ad       5,pp/sfm,3sx                         (sfm and overlays) 
+*ad       5,pp/1to,2to                         (1to and overlays) 
+*ad       5,pp/1mt,3mh,3mi,3mj,3mk,3ml,3mm,3mr (1mt and overlays) 
+*ad       5,pp/3mu,3mv,3mw,1lt                 (1mt overlays and 1lt) 
+*ad       5,pp/1mu,3m5,3m6                     (1mu and overlays) 
+*ad       5,pp/3sb                             (1sj overlay)
+*ad       5,pp/1mb,2mn                         (scr error logging)
+*/
+*ad       5,abs/catlist,cpupfm,cclbrwe,cclds,cclifes,copyb
+*ad       5,abs/enquire,dayfile,files,fseex,loader
+*ad       5,abs/mfiles,modify,pfiles,recover,valex,xedit
+*/
+*/        the following entries define the default central memory field 
+*/        lengths (divided by 100b) for the indicated programs. 
+*/        alphabetical order. 
+*/
+*fl       abs/basic-6330,cdcsbtf-6600 
+*fl       abs/cdcs2-6615,cobol5-6624,copy8p-6200
+*fl       abs/ddlf-6540,ddl3-6540,dfrcv-6650,dlfp-300,dml-6540
+*fl       abs/file-6031,ftn-6410,ftn5-6560,f45-6600 
+*fl       abs/hstcopy-6110,merge-6600,nda-400 
+*fl       abs/qu-6600,sortmrg-6600,sort5-6600 
+*/
+*/        the following programs use the product set method of parameter
+*/        cracking (scope cracking). alphabetical order.
+*/
+*sc       abs/adlp,basic,binder,cdcsbtf 
+*sc       abs/cdcs2,cobol5,copyl,copy8p 
+*sc       abs/dbmstrd,dbrcvr,dbrec,dbqrfa,dbqrfi
+*sc       abs/ddlf,ddl3,dfrcv,dlfp,dml,explain
+*sc       abs/file,ftn,ftn5,f45,itemize 
+*sc       abs/lfg,listppm,nda,ndas,ndlp,omref,qu,reportr,review 
+*sc       abs/script,sortmrg,stim,sympl,update
+*sc       ovl/binedit 
+*/
+*/        cybis libdeck entries.
+*/
+*cm     pp/mas
+*cm     pp/4qa,4qb,4qc,4qd,4qe          (mrq)
+*cm     pp/4qf,4qg,4qh,4qi,4qj,4qk      (mrq)
+*cm     pp/4ql,4qm,4qn,4qo,4qp,4qq      (mrq)
+*cm     pp/4qr,4qs,4qt                  (mrq)
+*cm     pp/4qu                          (mrq - 700 series mainframes only)
+*cm     pp/4pa,4pb                      (pms)
+*cm     pp/pna                          (pna - plato/nam aux processor)
+*/
+*/
+*/        more plato entries
+*/
+*/
+*proc     setpun                        (set plato user name)
+*proc     versx                         (version load)
+*proc     configx                       (get config)
+*proc     mfnx                          (attach master files)
+*proc     platx                         (load plato executor)
+*proc     framx                         (load framat)
+*proc     pnix                          (load pni)
+*proc     condx                         (load condensor)
+*proc     formcmd                       (format cmdump)
+*proc     emdtape                       (dump em for plato) 
+*proc     copypd                        (copy plato dump)
+*proc     dumpprt                       (print cm dump)
+*proc     emprt                         (print em dump)
+*proc     exec                          (additional plato executors)
+*proc     pdcat                         (catalog plato dump)
+*proc     mftload                       (copy mf to disk)
+*proc     mftcopy                       (copy mf to tape)
+*proc     mfpack                        (mf pack utility)
+*proc     bkstart                       (backups) 
+*proc     backdmp                       (backups) 
+*proc     mfdx                          (backups) 
+*proc     recoval                       (recover master files)
+*proc     recovmf                       (recover master file)
+*proc     pafterm                       (daily raf processor)
+*proc     endofbc                       (monthly bc processor)
+*proc     z1daily                       (daily acct sum processor)
+*proc     z1endbc                       (monthly acct sum processor)
+*proc     pcdconv                       (pcd3 uploader)
+*/
+*/        end of more plato proc entries
+*/
