@@ -252,3 +252,8 @@ Since jan21 2004 drop:
 - Changed the character wrap and clip handling in pterm_x11.c so the
   spot where the trace marker is displayed is not active.  That way
   we don't get stray pixels there.
+- Merged window_win32.c
+- Updated window_win32.c for dual CPU trace, ECS trace on/off and display;
+  Plato mode on/off/display.  Added dot mode intensification.
+- Added Hershey (stroke) font support to window_x11.c
+- Removed a few unused variables.
