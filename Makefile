@@ -16,9 +16,9 @@ include Makefile.pterm
 ifeq ("$(HOST)","Darwin")
 LIBS    +=  /System/Library/Frameworks/Carbon.framework/Carbon
 INCL    += -I/System/Library/Frameworks/Carbon.framework/Headers
-G5CFLAGS = -march=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64 -DCPU_THREADS
-G4CFLAGS = -march=G4 -mtune=G4
-G3CFLAGS = -march=G3 -mtune=G3
+G5CFLAGS = -mcpu=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64 -DCPU_THREADS
+G4CFLAGS = -mcpu=G4 -mtune=G4
+G3CFLAGS = -mcpu=G3 -mtune=G3
 else
 LDFLAGS +=  -L/usr/local/lib
 endif
@@ -84,6 +84,9 @@ dep:	pterm.d $(SOBJS:.o=.d) $(OBJS:.o=.d)
 %.d : %.c
 	echo -n "$@ " > $@
 	$(CC) -MM $< >> $@
+
+Makefile.pterm:
+	ln -s ../Makefile.pterm .
 
 include  $(OBJS:.o=.d)
 
