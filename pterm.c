@@ -44,6 +44,7 @@
 **  -----------------
 */
 #define platoPort   5004
+#define DEFAULTHOST "cyberserv.org"
 
 /*
 **  -----------------------------------------
@@ -110,20 +111,30 @@ int main (int argc, char **argv)
     u32 niuwd;
     int d;
     char name[100];
+    char *port;
     
-    if (argc < 2)
+    if (argc > 3)
     {
-        printf ("usage: pterm hostname [ portnum ]\n");
+        printf ("usage: pterm [ hostname [ portnum ]]\n");
         exit (1);
     }
     if (argc > 2)
     {
-        ptermConnect (argv[1], argv[2]);
+        port = argv[2];
     }
     else
     {
-        ptermConnect (argv[1], NULL);
+        port = NULL;
     }
+    if (argc > 1)
+    {
+        hostName = argv[1];
+    }
+    else
+    {
+        hostName = DEFAULTHOST;
+    }
+    ptermConnect (hostName, port);
 
 #if defined(_WIN32)
     /*
@@ -132,8 +143,7 @@ int main (int argc, char **argv)
     hInstance = GetModuleHandle(NULL);
 #endif
 
-    sprintf (name, "Pterm " PTERMVERSION ": %s", argv[1]);
-    hostName = argv[1];
+    sprintf (name, "Pterm " PTERMVERSION ": %s", hostName);
     ptermInit (name, TRUE);
     while (ptermActive)
     {
