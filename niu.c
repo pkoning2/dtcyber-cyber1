@@ -466,8 +466,6 @@ static void niuInIo(void)
 static void niuOutIo(void)
 {
     PpWord d;
-    PortParam *mp;
-    u8 data[3];
     int port;
 #ifdef REAL_TIMING
     struct timeval tm;
