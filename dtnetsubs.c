@@ -435,8 +435,8 @@ int dtRead (NetFet *fet, int time)
         FD_SET(connFd, &readFds);
         FD_SET(connFd, &exceptFds);
 
-        timeout.tv_sec = 0;
-        timeout.tv_usec = time * 1000;
+        timeout.tv_sec = time / 1000;
+        timeout.tv_usec = (time * 1000) % 1000000;
 
         select(connFd + 1, &readFds, NULL, &exceptFds, &timeout);
         if (!FD_ISSET(connFd, &readFds))
