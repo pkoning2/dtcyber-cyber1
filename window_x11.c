@@ -757,7 +757,7 @@ static void dput (char c, int x, int y, int dx)
             dindx * dx == x - xstart &&
             dchars[dindx] == c)
         {
-        if (++dhits[dindx] >= dx / 2)
+        if (++dhits[dindx] >= (dx / 2) - 1)
             {
             dbuf[dindx].font = currentFontInfo->boldId;
             if (dbuf[dindx + 1].font == None)
