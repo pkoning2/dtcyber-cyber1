@@ -124,17 +124,31 @@ keys and function keys) are available.  Here is the whole set:
                  ALT r       ERASE	(Backspace key also works)
   CTRL s   F10   ALT s       STOP
   CTRL t   Sh-F2 ALT t       TERM
-                 KP +	       +	(+ key also works for unshifted +)
-                 KP -	       -	(- key also works for unshifted -)
   CTRL x   DEL   KP *	       multiply
   CTRL g   INS   KP /	       divide
-                 KP left     assignment arrow
   CTRL p   PgUp  PgUp        SUPER
   CTRL y   PgDn  PgDown      SUB
+
+Auxiliary keypad keys:
+ KPkey        PLATO
+KP +	       +	(+ key also works for unshifted +)
+KP -	       -	(- key also works for unshifted -)
+KP left        a	(that's the left arrow PLATO key)
+KP right       d
+KP up          w
+KP down        x
 
 There is also CTRL Keypad - for Delta, and CTRL Keypad + for Sigma --
 those are just the shifted - and + keys and SHIFT Keypad + or -
 reaches them just as well.
+
+The assignment arrow is ALT KP left.
+
+For applications that use the shifted digits as they appear on the
+PLATO keyboard for various purposes (for example, in the editor,
+shift-0 gets you to part 10 of the file), use control-digit.  Control
+with any non-letter will give you whatever is on the PLATO keyboard in
+the shift position of that key.  For example, control = is ).
 
 Nearly all of these can be shifted (which is why + and - are
 accessible via the numeric keypad -- that's how you can reach the
@@ -142,9 +156,6 @@ shifted forms).  TERM and FONT are the same shifted or not because
 those correspond to shifted keys (shifted ANS and MICRO respectively)
 on the PLATO keyboard.
 
-Please note: for reasons I do not understand and can't find in the
-documentation, Windows appears to reserve F10 for its own use.  So F10
-for STOP work on X but not on Windows.
 
 5. Basic PLATO navigation.
 
