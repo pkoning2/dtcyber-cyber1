@@ -142,23 +142,6 @@ static void lp501Load(DevSlot *dp, int unitNo, char *fn);
 */
 
 /*
-**  Character set translation table (question marks as placeholders for
-**  scientific char set glyphs that could be mapped in any of several
-**  different ways).
-*/
-static char printerToAscii[] =
-    {
-    /* 00-07 */     '0',    '1',    '2',    '3',    '4',    '5',    '6',    '7',
-    /* 10-17 */     '8',    '9',    ':',    '=',    '"',    '@',    ' ',    '[',
-    /* 20-27 */     '+',    'A',    'B',    'C',    'D',    'E',    'F',    'G',
-    /* 30-37 */     'H',    'I',    '<',    '.',    ')',    '\\',    '^',    ';',
-    /* 40-47 */     '-',    'J',    'K',    'L',    'M',    'N',    'O',    'P',
-    /* 50-57 */     'Q',    'R',    '!',    '$',    '*',    0x27,    '?',    '>',
-    /* 60-67 */     ' ',    '/',    'S',    'T',    'U',    'V',    'W',    'X',
-    /* 70-77 */     'Y',    'Z',    ']',    ',',    '(',    '_',    '#',    '&'
-    };
-
-/*
 **--------------------------------------------------------------------------
 **
 **  Public Functions
@@ -443,8 +426,8 @@ static void lp501Io(void)
     case FcControllerOutputEna:
         if (activeChannel->full)
             {
-            fputc(printerToAscii[(activeChannel->data >> 6) & 077], fcb);
-            fputc(printerToAscii[activeChannel->data & 077], fcb);
+            fputc(bcdToAscii[(activeChannel->data >> 6) & 077], fcb);
+            fputc(bcdToAscii[activeChannel->data & 077], fcb);
             activeChannel->full = FALSE;
             }
         activeChannel->full = FALSE;

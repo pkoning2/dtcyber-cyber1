@@ -139,80 +139,6 @@ static void cr3447NextCard (DevSlot *dp, int unitNo, CrContext *cc);
 **  -----------------
 */
 
-static const unsigned short asc2pnch_table[256] =
-{
- /*                                                                         */
- /* 000- */  0,      0,      0,      0,      0,      0,      0,      0,
- /*                                                                         */
- /* 010- */  0,      0,      0,      0,      0,      0,      0,      0,
- /*                                                                         */
- /* 020- */  0,      0,      0,      0,      0,      0,      0,      0,
- /*                                                                         */
- /* 030- */  0,      0,      0,      0,      0,      0,      0,      0,
- /*          space   !       "       #       $       %       &       '      */
- /* 040- */  0,      0,      0,      0,      02102,  0,      0,      0,
- /*          (       )       *       +       ,       -       .       /      */
- /* 050- */  01042,  04042,  02042,  04000,  01102,  02000,  04102,  01400,
- /*          0       1       2       3       4       5       6       7      */
- /* 060- */  01000,  00400,  00200,  00100,  00040,  00020,  00010,  00004,
- /*          8       9       :       ;       <       =       >       ?      */
- /* 070- */  00002,  00001,  0,      0,      0,      00102,  0,      0,
- /*          @       A       B       C       D       E       F       G      */
- /* 100- */  0,      04400,  04200,  04100,  04040,  04020,  04010,  04004,
- /*          H       I       J       K       L       M       N       O      */
- /* 110- */  04002,  04001,  02400,  02200,  02100,  02040,  02020,  02010,
- /*          P       Q       R       S       T       U       V       W      */
- /* 120- */  02004,  02002,  02001,  01200,  01100,  01040,  01020,  01010,
- /*          X       Y       Z       [       \       ]       ^       _      */
- /* 130- */  01004,  01002,  01001,  0,      0,      0,      0,      00042,
- /*          `       a       b       c       d       e       f       g      */
- /* 140- */  0,      04400,  04200,  04100,  04040,  04020,  04010,  04004,
- /*          h       i       j       k       l       m       n       o      */
- /* 150- */  04002,  04001,  02400,  02200,  02100,  02040,  02020,  02010,
- /*          p       q       r       s       t       u       v       w      */
- /* 160- */  02004,  02002,  02001,  01200,  01100,  01040,  01020,  01010,
- /*          x       y       z       {       |       }       ~              */
- /* 170- */  01004,  01002 , 01001,  0,      0,      00017,  00007,  0
-};
-
-/* 077 means invalid code */
-static const unsigned char  asc2bcd_table[256] =
-{
- /*                                                                         */
- /* 000- */  077,    077,    077,    077,    077,    077,    077,    077,
- /*                                                                         */
- /* 010- */  077,    077,    077,    077,    077,    077,    077,    077,
- /*                                                                         */
- /* 020- */  077,    077,    077,    077,    077,    077,    077,    077,
- /*                                                                         */
- /* 030- */  077,    077,    077,    077,    077,    077,    077,    077,
- /*          space   !       "       #       $       %       &       '      */
- /* 040- */  060,    077,    077,    077,    053,    077,    077,    077,
- /*          (       )       *       +       ,       -       .       /      */
- /* 050- */  074,    034,    054,    020,    073,    040,    033,    061,
- /*          0       1       2       3       4       5       6       7      */
- /* 060- */  000,    001,    002,    003,    004,    005,    006,    007,
- /*          8       9       :       ;       <       =       >       ?      */
- /* 070- */  010,    011,    077,    077,    077,    013,    077,    077,
- /*          @       A       B       C       D       E       F       G      */
- /* 100- */  077,    021,    022,    023,    024,    025,    026,    027,
- /*          H       I       J       K       L       M       N       O      */
- /* 110- */  030,    031,    041,    042,    043,    044,    045,    046,
- /*          P       Q       R       S       T       U       V       W      */
- /* 120- */  047,    050,    051,    062,    063,    064,    065,    066,
- /*          X       Y       Z       [       \       ]       ^       _      */
- /* 130- */  067,    070,    071,    077,    077,    077,    077,    014,
- /*          `       a       b       c       d       e       f       g      */
- /* 140- */  077,    021,    022,    023,    024,    025,    026,    027,
- /*          h       i       j       k       l       m       n       o      */
- /* 150- */  030,    031,    041,    042,    043,    044,    045,    046,
- /*          p       q       r       s       t       u       v       w      */
- /* 160- */  047,    050,    051,    062,    063,    064,    065,    066,
- /*          x       y       z       {       |       }       ~              */
- /* 170- */  067,    070,    071,    077,    077,    077,    077,    077
-};
-
-
 /*
 **--------------------------------------------------------------------------
 **
@@ -318,12 +244,6 @@ static FcStatus cr3447Func(PpWord funcCode)
     unitNo = activeDevice->selectedUnit;
     cc = (CrContext *)activeDevice->context[unitNo];
 
-    if (DEBUG)
-    {
-        traceMask |= 1<<activePpu->id;
-        traceClearMask |= 1<<activePpu->id;
-    }
-    
     switch (funcCode)
     {
     default:                    // all unrecognized codes are NOPs
@@ -337,11 +257,6 @@ static FcStatus cr3447Func(PpWord funcCode)
     case Fc6681InputToEor:
     case Fc6681Input:
         cc->status = StCr3447Ready;
-        if (DEBUG)
-        {
-            traceMask |= 1<<activePpu->id;
-            traceClearMask |= 1<<activePpu->id;
-        }
         // fall through
     case Fc6681DevStatusReq:
         st = FcAccepted;
@@ -483,13 +398,13 @@ static void cr3447Io(void)
             c = cc->card[cc->col++];
             if (cc->binary || cc->bincard)
             {
-                p = asc2pnch_table[c];
+                p = asciiToPunch[c];
             }
             else
             {
-                p = asc2bcd_table[c] << 6;
+                p = asciiToBcd[c] << 6;
                 c = cc->card[cc->col++];
-                p += asc2bcd_table[c];
+                p += asciiToBcd[c];
             }
             activeChannel->data = p;
             activeChannel->full = TRUE;
@@ -615,6 +530,11 @@ static void cr3447NextCard (DevSlot *dp, int unitNo, CrContext *cc)
                 dp->fcb[unitNo]);
     if (cp == NULL)
     {
+        if (DEBUG)
+        {
+            traceMask |= 1<<activePpu->id;
+            traceClearMask |= 1<<activePpu->id;
+        }
         // If the last card wasn't a 6/7/8/9 card, fake one.
         if (cc->card[0] != '}')
         {
@@ -624,12 +544,12 @@ static void cr3447NextCard (DevSlot *dp, int unitNo, CrContext *cc)
         {
             fclose (dp->fcb[unitNo]);
             dp->fcb[unitNo] = NULL;
-            cc->status |= StCr3447Eof;
+            cc->status = StCr3447Eof;
             return;
         }
     }
     // Set "this card is binary" if rows 7 and 9 are punched in column 1.
-    cc->bincard = ((asc2pnch_table[cc->card[0]] & 005) == 005);
+    cc->bincard = ((asciiToPunch[cc->card[0]] & 005) == 005);
     if (DEBUG)
         printf ("read card (binary: %d): %s", cc->bincard, cc->card);
     if ((cp = strchr (cc->card, '\n')) == NULL)
@@ -644,7 +564,7 @@ static void cr3447NextCard (DevSlot *dp, int unitNo, CrContext *cc)
         *cp = ' ';
     cc->col = 0;
     if (!cc->binary &&
-        (asc2pnch_table[cc->card[0]] & 006) == 006)
+        (asciiToPunch[cc->card[0]] & 006) == 006)
     {
         cc->status |= StCr3447File;
     }

@@ -33,6 +33,7 @@
 **  Private Macro Functions
 **  -----------------------
 */
+#define WindowCheckRate         2000
 
 /*
 **  -----------------------------------------
@@ -59,6 +60,7 @@ bool emulationActive = TRUE;
 **  Private Variables
 **  -----------------
 */
+int windowCheckCycles;
 
 /*
 **--------------------------------------------------------------------------
@@ -124,6 +126,15 @@ int main(int argc, char **argv)
             opRequest();
             }
 
+        /*
+        ** Check if it's time for a screen update
+        */
+        if (--windowCheckCycles < 0)
+            {
+            windowCheckCycles = WindowCheckRate;
+            windowCheckOutput();
+            }
+        
         /*
         **  Execute PP, CPU and RTC.
         */

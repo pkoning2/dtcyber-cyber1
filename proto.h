@@ -186,6 +186,7 @@ void windowQueue(char ch);
 void windowUpdate(void);
 void windowGetChar(void);
 void windowClose(void);
+void windowCheckOutput(void);
 
 /*
 **  operator.c
@@ -213,8 +214,12 @@ extern bool cpuStopped;
 extern CpWord *cpMem;
 extern u32 cpuMaxMemory;
 extern char ppKeyIn;
-extern char asciiToCdc[];
-extern char cdcToAscii[];
+extern const char asciiToCdc[];
+extern const char cdcToAscii[];
+extern const unsigned short asciiToPunch[];
+extern const unsigned char  asciiToBcd[];
+extern const unsigned char bcdToAscii[];
+extern const unsigned char extBcdToAscii[];
 extern u16 traceMask;
 extern u16 traceClearMask;
 extern DevDesc deviceDesc[];

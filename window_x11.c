@@ -91,7 +91,7 @@ static FontInfo *currentFontInfo;
 static i16 currentX;
 static i16 currentY;
 static DispList display[ListSize];
-static u32 listGet, listPut, prevPut;
+static int listGet, listPut, prevPut, listPutAtGetChar;
 static char keybuf[KeyBufSize];
 static u32 keyListPut, keyListGet;
 static FontInfo smallFont;
@@ -140,6 +140,7 @@ void windowInit(void)
     **  Create display list pool.
     */
     listGet = listPut = 0;
+    listPutAtGetChar = -1;
 
     /*
     **  Initialize the text display structure and timestamp
@@ -286,6 +287,43 @@ void windowSetFont(u8 font)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Check whether it's time to do output
+**
+**  Parameters:     Name        Description.
+**                  None.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void windowCheckOutput(void)
+    {
+    struct timeval tm;
+    int us;
+
+    gettimeofday (&tm, NULL);
+    us = (tm.tv_sec - lastDisplay.tv_sec) * 1000000 +
+         (tm.tv_usec - lastDisplay.tv_usec);
+    // Check if it's time for another display update
+    if (us > RefreshInterval)
+        {
+        // If a keyboard poll has been done since the last display update,
+        // display up to that point (since it's a cycle point of the
+        // display refresh).  Otherwise (strange code that doesn't do
+        // any polling) display the whole current display list.
+        if (listPutAtGetChar >= 0)
+            {
+            prevPut = listPutAtGetChar;
+            }
+        else
+            {
+            prevPut = listPut;
+            }
+        showDisplay ();
+        windowInput();
+        }
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Set X coordinate.
 **
 **  Parameters:     Name        Description.
@@ -296,23 +334,7 @@ void windowSetFont(u8 font)
 **------------------------------------------------------------------------*/
 void windowSetX(u16 x)
     {
-    struct timeval tm;
-    int us;
-
     currentX = x;
-    gettimeofday (&tm, NULL);
-    us = (tm.tv_sec - lastDisplay.tv_sec) * 1000000 +
-         (tm.tv_usec - lastDisplay.tv_usec);
-    // If we're overdue for a screen display, do it now.
-    // This can happen if the PPU goes compute bound and
-    // doesn't watch for input, but still does output,
-    // for example in the NOS startup memory test.
-    if (us > RefreshInterval * 15 / 10)
-        {
-        prevPut = listPut;
-        showDisplay ();
-        windowInput();
-        }
     }
 
 /*--------------------------------------------------------------------------
@@ -399,26 +421,8 @@ void windowGetChar(void)
         fprintf (ppuTF[activePpu->id], "key poll %02o\n", ppKeyIn);
 
     // We treat a keyboard poll as the end of a display refresh cycle.
-    // If it's been long enough since the last one, call the displayer.
-    // If not, advance the "get" pointer to where the "put" pointer was
-    // at the start of the preceding cycle.
-    // Correction: don't do that last, because some programs (like wrm)
-    // poll in the middle of their update cycle (one worm at a time).
-    gettimeofday (&tm, NULL);
-    us = (tm.tv_sec - lastDisplay.tv_sec) * 1000000 +
-         (tm.tv_usec - lastDisplay.tv_usec);
-    if (us > RefreshInterval)
-    {
-        prevPut = listPut;
-        showDisplay ();
-        windowInput();
-        
-    }
-    else
-    {
-//        listGet = prevPut;
-//        prevPut = listPut;
-    }
+    listPutAtGetChar = listPut;
+    windowCheckOutput();
     
     if (keyListGet == keyListPut)
 	return;
@@ -682,6 +686,7 @@ void showDisplay (void)
     if (displayOff)
         {
         listGet = prevPut;
+        listPutAtGetChar = -1;
         gettimeofday (&lastDisplay, NULL);
         return;
         }
@@ -780,6 +785,7 @@ void showDisplay (void)
 
     dflush ();
     listGet = end - display;
+    listPutAtGetChar = -1;
     currentX = -1;
     currentY = -1;
 

@@ -222,6 +222,7 @@ void opRequest(void)
             {
             ppKeyIn = nextKey;
             nextKey = 0;
+            windowCheckOutput();
             }
         else
             {

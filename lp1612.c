@@ -106,24 +106,6 @@ static void lp1612Load(DevSlot *dp, int unitNo, char *fn);
 */
 
 /*
-**  Character set translation table (question marks as placeholders for
-**  scientific char set glyphs that could be mapped in any of several
-**  different ways).
-**  Changed to use the "ASCII subset" glyphs from the NOS Compass Instant.
-**  p. koning. 03.06.23.
-*/
-static char printerToAscii[] = {
-    /* 00-07 */     ':',    '1',    '2',    '3',    '4',    '5',    '6',    '7',
-    /* 10-17 */     '8',    '9',    '0',    '=',    '"',    '@',    '%',    '[',
-    /* 20-27 */     ' ',    '/',    'S',    'T',    'U',    'V',    'W',    'X',
-    /* 30-37 */     'Y',    'Z',    ']',    ',',    '(',    '_',    '#',    '&',
-    /* 40-47 */     '-',    'J',    'K',    'L',    'M',    'N',    'O',    'P',
-    /* 50-57 */     'Q',    'R',    '!',    '$',    '*',   '\'',    '?',    '>',
-    /* 60-67 */     '+',    'A',    'B',    'C',    'D',    'E',    'F',    'G',
-    /* 70-77 */     'H',    'I',    '<',    '.',    ')',   '\\',    '^',    ';'
-    };
-
-/*
 **--------------------------------------------------------------------------
 **
 **  Public Functions
@@ -347,7 +329,7 @@ static void lp1612Io(void)
     case FcPrintSuppressLF:
         if (activeChannel->full)
             {
-            fputc(printerToAscii[activeChannel->data & 077], fcb);
+            fputc(extBcdToAscii[activeChannel->data & 077], fcb);
             activeChannel->full = FALSE;
             }
         break;
