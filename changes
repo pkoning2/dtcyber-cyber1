@@ -17,3 +17,24 @@ Since jul25 drop:
 - Change lp3000.c to flush on a Release function if something was printed
   since the last time.  That way you can see job output without having
   to unload every time.
+
+Since aug07 drop:
+- Changed ECS address range check in cpu.c to allow transfer all the way
+  through the last word of CM/ECS.  The existing code implements the 
+  letter of the documentation -- but that doesn't make sense since as
+  written the rules don't let you get to the last word of CM.  More
+  importantly, it breaks 1.4-552 if ECS is present, when executing at
+  the last CP. CPUMTR uses ECS to move the CP when FL changes, and
+  some of the ECS references access that last word.  So the old code
+  was not executing that move, causing some of the CP memory to be
+  messed up.
+- Changed dd844.c to do seek at I/O start rather than I/O end so 
+  there isn't a false wrap error message for 1:1 interlace.
+  Also changed it to suppress the fseek() call when it's not needed.
+- Changed dd844.c to store a sector of data in 512 bytes, packed
+  2 PPU words into 3 bytes, with the remaining few bytes of the 
+  512-byte block unused.  This makes the containers somewhat smaller
+  and also makes all disk I/O aligned onto modern disk sector 
+  boundaries.
+  This change is INCOMPATIBLE with existing disk container files,
+  so I used pfdump/pfload to carry data between versions.
