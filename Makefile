@@ -74,7 +74,7 @@ else
 dtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
-blackbox: blackbox.o dtcyber
+blackbox: blackbox.o niu.o charset.o dtnetsubs.o
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 clean:
