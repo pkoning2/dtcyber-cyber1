@@ -115,10 +115,6 @@ SOURCE=.\cr405.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\dc7155.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\dcc6681.c
 # End Source File
 # Begin Source File
@@ -211,6 +207,10 @@ SOURCE=.\shift.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\tpmux.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\trace.c
 # End Source File
 # End Group
@@ -256,6 +256,13 @@ SOURCE=.\small.ico
 # Begin Source File
 
 SOURCE=.\window.rc
+
+!IF  "$(CFG)" == "DtCyber - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "DtCyber - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # End Group
 # Begin Group "Other Files"
