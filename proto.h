@@ -71,6 +71,7 @@ int cpuIssueExchange(u8 cpnum, u32 addr, int monitor);
 DevSlot *dcc6681Attach(u8 channelNo, u8 eqNo, u8 unitNo, u8 devType);
 DevSlot *dcc6681FindDevice(u8 channelNo, u8 equipmentNo, u8 devType);
 void dcc6681Interrupt(bool status);
+void dcc6681InterruptDev(DevSlot *dp, bool status);
 
 /*
 **  mt607.c

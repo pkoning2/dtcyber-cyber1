@@ -506,7 +506,7 @@ static void cr3447Load(DevSlot *up, int eqNo, char *fn)
         cc->waiting_decks = cc->last_deck = NULL;
         opSetMsg ("CR3447 unloaded");
         }
-    dcc6681Interrupt((cc->status & cc->intmask) != 0);
+    dcc6681InterruptDev(up, (cc->status & cc->intmask) != 0);
     }
 
 /*--------------------------------------------------------------------------

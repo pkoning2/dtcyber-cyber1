@@ -244,6 +244,25 @@ DevSlot *dcc6681FindDevice(u8 channelNo, u8 equipmentNo, u8 devType)
 **  Purpose:        Update interrupt status of current equipment.
 **
 **  Parameters:     Name        Description.
+**                  dp          device pointer
+**                  status      new interrupt status
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void dcc6681InterruptDev(DevSlot *dp, bool status)
+    {
+    DccControl *mp = (DccControl *)dp->context[0];
+    if (mp->connectedEquipment >= 0)
+        {
+        mp->interrupting[mp->connectedEquipment] = status;
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Update interrupt status of current equipment.
+**
+**  Parameters:     Name        Description.
 **                  status      new interrupt status
 **
 **  Returns:        Nothing.
@@ -251,11 +270,7 @@ DevSlot *dcc6681FindDevice(u8 channelNo, u8 equipmentNo, u8 devType)
 **------------------------------------------------------------------------*/
 void dcc6681Interrupt(bool status)
     {
-    DccControl *mp = (DccControl *)activeDevice->context[0];
-    if (mp->connectedEquipment >= 0)
-        {
-        mp->interrupting[mp->connectedEquipment] = status;
-        }
+    dcc6681InterruptDev(activeDevice, status);
     }
 
 /*--------------------------------------------------------------------------
