@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, Tom Hunter, Paul Koning (see license.txt)
+**  Copyright (c) 2003, 2004, Tom Hunter, Paul Koning (see license.txt)
 **
 **  Name: niu.c
 **
@@ -33,7 +33,8 @@
 
 // Apple doesn't have a NOSIGNAL option on rcv/send, instead is has SO_NOSIGPIPE
 // as a setsockopt option.
-#ifdef __APPLE__
+// Windows doesn't have either; it seems not to do SIGPIPE ever.
+#if defined(__APPLE__) || defined(_WIN32)
 #define MSG_NOSIGNAL 0
 #endif
 
