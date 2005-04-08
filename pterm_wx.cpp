@@ -51,8 +51,9 @@
 #define ScreenSize      (512 * scale)
 
 // Size of frame decoration, used to adjust the frame size
-#define XFrameAdj       2
-#define YFrameAdj       68
+// These work for WinXP.  There should be a better way to do this...
+#define XFrameAdj       8
+#define YFrameAdj       74
 
 /*
 **  -----------------------
@@ -84,6 +85,7 @@
 #include "wx/wx.h"
 #endif
 
+#include "wx/clipbrd.h"
 #include "wx/colordlg.h"
 #include "wx/config.h"
 
@@ -179,6 +181,7 @@ public:
     wxColour    m_fgColor;
 	wxColour	m_bgColor;
 	wxConfig	*m_config;
+	wxClipboard	m_clipboard;
 };
 
 class PtermCanvas;
@@ -195,6 +198,7 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
     void OnPref (wxCommandEvent& event);
+	void OnCopyScreen (wxCommandEvent &event);
     wxColour SelectColor (wxColour &initcol);
 
     void PrepareDC(wxDC& dc);
@@ -272,7 +276,7 @@ public:
     
     void OnButton (wxCommandEvent& event);
     void OnCheckbox (wxCommandEvent& event);
-
+	void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
     wxBitmap        *m_fgBitmap;
     wxBitmap        *m_bgBitmap;
     wxBitmapButton  *m_fgButton;
@@ -296,7 +300,7 @@ public:
     bool            m_scale2;
     
 private:
-    void paintBitmap (wxBitmap *bm, wxColour &color);
+    void paintBitmap (wxBitmap *bm, wxColour &color, wxBitmapButton *to);
     
     PtermFrame *m_owner;
 
@@ -310,15 +314,9 @@ private:
 // IDs for the controls and the menu commands
 enum
 {
-    // Buttons and checkboxes
-    Pterm_Pref_Ok = 1,
-    Pterm_Pref_Reset,
-    Pterm_Pref_Cancel,
-    Pterm_Pref_Fg,
-    Pterm_Pref_Bg,
-    Pterm_Pref_Scale2,
-
     // menu items
+	Pterm_CopyScreen = 1,
+
     Pterm_Quit = wxID_EXIT,
 #ifdef wxID_PREFERENCES
     Pterm_Pref = wxID_PREFERENCES,
@@ -478,7 +476,7 @@ const unsigned short plato_m1[] = {
 BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Quit,  PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
-    EVT_MENU(Pterm_Pref,  PtermFrame::OnPref)
+    EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
     END_EVENT_TABLE ()
 
 // Create a new application object: this macro will allow wxWindows to create
@@ -585,6 +583,8 @@ int PtermApp::OnExit (void)
 {
     free (hostName);
 
+	m_clipboard.Flush ();
+
     return 0;
 }
 
@@ -609,17 +609,22 @@ PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& 
     // create a menu bar
     wxMenu *menuFile = new wxMenu;
 
-    // the "About" item should be in the help menu
-    wxMenu *helpMenu = new wxMenu;
-    helpMenu->Append(Pterm_About, _T("&About..."), _T("Show about dialog"));
-
     menuFile->Append(Pterm_Pref, _T("P&references..."), _T("Set program configuration"));
     menuFile->AppendSeparator();
     menuFile->Append(Pterm_Quit, _T("E&xit\tCtrl-Z"), _T("Quit this program"));
 
+	wxMenu *menuEdit = new wxMenu;
+
+	menuEdit->Append (Pterm_CopyScreen, _T("Copy Screen"), _T("Copy screen to clipboard"));
+
+    // the "About" item should be in the help menu
+    wxMenu *helpMenu = new wxMenu;
+    helpMenu->Append(Pterm_About, _T("&About..."), _T("Show about dialog"));
+
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
     menuBar->Append(menuFile, _T("&File"));
+    menuBar->Append(menuEdit, _T("&Edit"));
     menuBar->Append(helpMenu, _T("&Help"));
 
     // ... and attach this menu bar to the frame
@@ -711,6 +716,26 @@ void PtermFrame::OnPref (wxCommandEvent& WXUNUSED(event))
     }
 }
 
+void PtermFrame::OnCopyScreen (wxCommandEvent & WXUNUSED(event))
+{
+	wxBitmap screenmap (ScreenSize, ScreenSize);
+	wxMemoryDC screenDC;
+	wxBitmapDataObject *screen;
+
+	screenDC.SelectObject (screenmap);
+	screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
+				   m_memDC, XADJUST (0), YADJUST (511), wxCOPY);
+	screenDC.SelectObject (wxNullBitmap);
+
+	screen = new wxBitmapDataObject(screenmap);
+
+	if (ptermApp->m_clipboard.Open ())
+	{
+		ptermApp->m_clipboard.SetData (screen);
+		ptermApp->m_clipboard.Close ();
+	}
+}
+
 wxColour PtermFrame::SelectColor (wxColour &initcol)
 {
     wxColour col (initcol);
@@ -741,6 +766,7 @@ void PtermFrame::PrepareDC(wxDC& dc)
 // ----------------------------------------------------------------------------
 
 BEGIN_EVENT_TABLE(PtermPrefdialog, wxDialog)
+    EVT_CLOSE(PtermPrefdialog::OnClose)
     EVT_BUTTON(wxID_ANY,   PtermPrefdialog::OnButton)
     EVT_CHECKBOX(wxID_ANY, PtermPrefdialog::OnCheckbox)
     END_EVENT_TABLE()
@@ -755,8 +781,8 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
 
     m_fgBitmap = new wxBitmap (20, 12);
     m_bgBitmap = new wxBitmap (20, 12);
-    paintBitmap (m_fgBitmap, m_fgColor);
-    paintBitmap (m_bgBitmap, m_bgColor);
+    paintBitmap (m_fgBitmap, m_fgColor, NULL);
+    paintBitmap (m_bgBitmap, m_bgColor, NULL);
     
     m_fgButton = new wxBitmapButton (this, wxID_ANY, *m_fgBitmap);
     m_bgButton = new wxBitmapButton (this, wxID_ANY, *m_bgBitmap);
@@ -818,8 +844,8 @@ void PtermPrefdialog::OnButton (wxCommandEvent& event)
         m_scale2 = FALSE;
         m_scaleCheck->SetValue (FALSE);
     }
-    paintBitmap (m_fgBitmap, m_fgColor);
-    paintBitmap (m_bgBitmap, m_bgColor);
+    paintBitmap (m_fgBitmap, m_fgColor, m_fgButton);
+    paintBitmap (m_bgBitmap, m_bgColor, m_bgButton);
 }
 
 void PtermPrefdialog::OnCheckbox (wxCommandEvent& event)
@@ -827,11 +853,11 @@ void PtermPrefdialog::OnCheckbox (wxCommandEvent& event)
     m_scale2 = event.IsChecked ();
 }
 
-void PtermPrefdialog::paintBitmap (wxBitmap *bm, wxColour &color)
+void PtermPrefdialog::paintBitmap (wxBitmap *bm, wxColour &color, wxBitmapButton *to)
 {
     wxBrush bitmapBrush (color, wxSOLID);
     wxMemoryDC memDC;
-    
+
     memDC.SelectObject (*bm);
     memDC.BeginDrawing ();
     memDC.SetBackground (bitmapBrush);
@@ -839,6 +865,10 @@ void PtermPrefdialog::paintBitmap (wxBitmap *bm, wxColour &color)
     memDC.EndDrawing ();
     memDC.SetBackground (wxNullBrush);
     memDC.SelectObject (wxNullBitmap);
+	if (to != NULL)
+	{
+		to->Refresh ();
+	}
 }
 
 
@@ -1138,9 +1168,10 @@ void PtermFrame::ptermLoadRomChars (void)
 
 void PtermFrame::ptermSetCharColors (wxColour &fg, wxColour &bg)
 {
-    wxBrush fgBrush (fg);
+    wxBrush fgBrush;
     wxString rgb;
     
+	fgBrush.SetColour (fg);
     if (ptermApp->m_fgColor == fg &&
         ptermApp->m_bgColor == bg)
     {

@@ -43,7 +43,7 @@ RSC=rc.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
 # ADD CPP /nologo /W3 /GX /O2 /I "c:\wxWindows-2.4.2\include" /I "c:\wxWindows-2.4.2\lib\msw" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
-# ADD RSC /l 0x409 /i "c:\wxWidgets-2.5.5\include" /d "NDEBUG"
+# ADD RSC /l 0x409 /i "c:\wxWindows-2.4.2\include" /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -68,7 +68,7 @@ LINK32=link.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
 # ADD CPP /nologo /W3 /Gm /GX /Zi /Od /I "c:\wxWindows-2.4.2\include" /I "c:\wxWindows-2.4.2\lib\msw" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
-# ADD RSC /l 0x409 /i "c:\wxWindows-2.5.5\include" /i "c:\wxWidgets-2.5.5\include" /d "_DEBUG"
+# ADD RSC /l 0x409 /i "c:\wxWindows-2.5.5\include" /i "c:\wxWindows-2.4.2\include" /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -101,7 +101,19 @@ SOURCE=charset.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\wx\msw\colours.bmp
+# End Source File
+# Begin Source File
+
 SOURCE=.\wx\msw\computer.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\csquery.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\wx\msw\disable.bmp
 # End Source File
 # Begin Source File
 
@@ -129,15 +141,7 @@ SOURCE=.\wx\msw\folder2.ico
 # End Source File
 # Begin Source File
 
-SOURCE=fonts.bmp
-# End Source File
-# Begin Source File
-
 SOURCE=.\wx\msw\hand.cur
-# End Source File
-# Begin Source File
-
-SOURCE=.\icon1.ico
 # End Source File
 # Begin Source File
 
@@ -165,11 +169,6 @@ SOURCE=.\wx\msw\pntright.cur
 # End Source File
 # Begin Source File
 
-SOURCE=pterm.c
-# PROP Exclude_From_Build 1
-# End Source File
-# Begin Source File
-
 SOURCE=.\pterm.rc
 
 !IF  "$(CFG)" == "pterm - Win32 Release"
@@ -182,11 +181,6 @@ SOURCE=.\pterm.rc
 # Begin Source File
 
 SOURCE=.\pterm_32.ico
-# End Source File
-# Begin Source File
-
-SOURCE=pterm_win32.c
-# PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
@@ -227,11 +221,6 @@ SOURCE=.\wx\msw\size.cur
 # Begin Source File
 
 SOURCE=.\wx\msw\watch1.cur
-# End Source File
-# Begin Source File
-
-SOURCE=window.rc
-# PROP Exclude_From_Build 1
 # End Source File
 # End Target
 # End Project
