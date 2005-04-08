@@ -15,7 +15,8 @@ CXX = $(shell wx-config --cxx)
 
 PTOBJS	= $(SOBJS) pterm_wx.o ptermcom.o 
 pterm:	$(PTOBJS)
-	$(CXX) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)  `wx-config --libs`
+	$(CXX) $(LDFLAGS) -o $@ $+  -L/usr/local/lib  -L/usr/X11R6/lib  /usr/local/lib/libwx_gtk2_xrc-2.5.a /usr/local/lib/libwx_gtk2_qa-2.5.a /usr/local/lib/libwx_gtk2_html-2.5.a /usr/local/lib/libwx_gtk2_adv-2.5.a /usr/local/lib/libwx_gtk2_core-2.5.a /usr/local/lib/libwx_base_xml-2.5.a /usr/local/lib/libwx_base_net-2.5.a /usr/local/lib/libwx_base-2.5.a -Wl,--export-dynamic -pthread /usr/local/lib/libgtk-x11-2.0.a /usr/local/lib/libgdk-x11-2.0.a /usr/local/lib/libgdk_pixbuf-2.0.a /usr/local/lib/libpangoxft-1.0.a  /usr/local/lib/libpangoft2-1.0.a  /usr/local/lib/libpangox-1.0.a  /usr/local/lib/libpango-1.0.a /usr/local/lib/libgthread-2.0.a /usr/local/lib/libgmodule-2.0.a /usr/local/lib/libgobject-2.0.a /usr/local/lib/libglib-2.0.a /usr/local/lib/libatk-1.0.a  /usr/lib/libfontconfig.a /usr/lib/libfreetype.a /usr/lib/libexpat.a -ldl -lXft -lXcursor -lXrender -lXinerama -lXext -lXrandr -lX11 -lz -lm
+	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
 
 pterm.dep: $(PTOBJS:.o=.d)
 
@@ -29,3 +30,4 @@ pterm.dep: $(PTOBJS:.o=.d)
 include  $(PTOBJS:.o=.d) 
 
 #---------------------------  End Of File  --------------------------------
+
