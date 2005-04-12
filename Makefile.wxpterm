@@ -11,21 +11,30 @@
 
 include Makefile.common
 
-CXX = $(shell wx-config --cxx)
+LOCAL ?= no
+ifeq ("$(LOCAL)","yes")
+CXXFLAGS = -I. -DGTK_NO_CHECK_CASTS -D__WXGTK__ -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES -D_LARGEFILE_SOURCE=1 -DNO_GCC_PRAGMA  
+LIBD	= wx
+LLIBD	= wx
+else
+CXXFLAGS = -I/usr/local/lib/wx/include/gtk2-ansi-release-static-2.5 -I/usr/local/include/wx-2.5 -DGTK_NO_CHECK_CASTS -D__WXGTK__ -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES -D_LARGEFILE_SOURCE=1 -DNO_GCC_PRAGMA  
+LIBD	= /usr/lib
+LLIBD	= /usr/local/lib
+endif
 
 PTOBJS	= $(SOBJS) pterm_wx.o ptermcom.o 
 pterm:	$(PTOBJS)
-	$(CXX) $(LDFLAGS) -o $@ $+  -L/usr/local/lib  -L/usr/X11R6/lib  /usr/local/lib/libwx_gtk2_xrc-2.5.a /usr/local/lib/libwx_gtk2_qa-2.5.a /usr/local/lib/libwx_gtk2_html-2.5.a /usr/local/lib/libwx_gtk2_adv-2.5.a /usr/local/lib/libwx_gtk2_core-2.5.a /usr/local/lib/libwx_base_xml-2.5.a /usr/local/lib/libwx_base_net-2.5.a /usr/local/lib/libwx_base-2.5.a -Wl,--export-dynamic -pthread /usr/local/lib/libgtk-x11-2.0.a /usr/local/lib/libgdk-x11-2.0.a /usr/local/lib/libgdk_pixbuf-2.0.a /usr/local/lib/libpangoxft-1.0.a  /usr/local/lib/libpangoft2-1.0.a  /usr/local/lib/libpangox-1.0.a  /usr/local/lib/libpango-1.0.a /usr/local/lib/libgthread-2.0.a /usr/local/lib/libgmodule-2.0.a /usr/local/lib/libgobject-2.0.a /usr/local/lib/libglib-2.0.a /usr/local/lib/libatk-1.0.a  /usr/lib/libfontconfig.a /usr/lib/libfreetype.a /usr/lib/libexpat.a -ldl -lXft -lXcursor -lXrender -lXinerama -lXext -lXrandr -lX11 -lz -lm
+	$(CXX) $(LDFLAGS) -o $@ $+  -L$(LLIBD)  -L/usr/X11R6/lib  $(LLIBD)/libwx_gtk2_xrc-2.5.a $(LLIBD)/libwx_gtk2_qa-2.5.a $(LLIBD)/libwx_gtk2_html-2.5.a $(LLIBD)/libwx_gtk2_adv-2.5.a $(LLIBD)/libwx_gtk2_core-2.5.a $(LLIBD)/libwx_base_xml-2.5.a $(LLIBD)/libwx_base_net-2.5.a $(LLIBD)/libwx_base-2.5.a -Wl,--export-dynamic -pthread $(LLIBD)/libgtk-x11-2.0.a $(LLIBD)/libgdk-x11-2.0.a $(LLIBD)/libgdk_pixbuf-2.0.a $(LLIBD)/libpangoxft-1.0.a  $(LLIBD)/libpangoft2-1.0.a  $(LLIBD)/libpangox-1.0.a  $(LLIBD)/libpango-1.0.a $(LLIBD)/libgthread-2.0.a $(LLIBD)/libgmodule-2.0.a $(LLIBD)/libgobject-2.0.a $(LLIBD)/libglib-2.0.a $(LLIBD)/libatk-1.0.a  $(LIBD)/libfontconfig.a $(LIBD)/libfreetype.a $(LIBD)/libexpat.a -ldl -lXft -lXcursor -lXrender -lXinerama -lXext -lXrandr -lX11 -lz -lm
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
 
 pterm.dep: $(PTOBJS:.o=.d)
 
 %.o : %.cpp
-	$(CXX) $(CFLAGS) -c `wx-config --cxxflags` $<
+	$(CXX) -c $(CFLAGS) $(CXXFLAGS) $<
 
 %.d : %.cpp
 	echo -n "$@ " > $@
-	$(CXX) `wx-config --cxxflags` -MM $< >> $@
+	$(CXX) $(CXXFLAGS) -MM $< >> $@
 
 include  $(PTOBJS:.o=.d) 
 
