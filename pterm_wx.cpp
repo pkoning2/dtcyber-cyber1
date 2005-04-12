@@ -36,8 +36,8 @@
 
 #define niuRingCount ((niuIn >= niuOut) ? (niuIn - niuOut) : (RINGSIZE + niuIn - niuOut))
 
-#define KeyBufSize	    50
-#define DisplayMargin	8
+#define KeyBufSize      50
+#define DisplayMargin   8
 
 #define CSETS           8       // leave room for the PPT multiple sets
 
@@ -183,9 +183,9 @@ public:
     virtual int OnExit (void);
 
     wxColour    m_fgColor;
-	wxColour	m_bgColor;
-	wxConfig	*m_config;
-	wxClipboard	m_clipboard;
+    wxColour    m_bgColor;
+    wxConfig    *m_config;
+    wxClipboard *m_clipboard;
 };
 
 class PtermCanvas;
@@ -202,7 +202,7 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
     void OnPref (wxCommandEvent& event);
-	void OnCopyScreen (wxCommandEvent &event);
+    void OnCopyScreen (wxCommandEvent &event);
     wxColour SelectColor (wxColour &initcol);
 
     void PrepareDC(wxDC& dc);
@@ -281,7 +281,7 @@ public:
     
     void OnButton (wxCommandEvent& event);
     void OnCheckbox (wxCommandEvent& event);
-	void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
+    void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
     wxBitmap        *m_fgBitmap;
     wxBitmap        *m_bgBitmap;
     wxBitmapButton  *m_fgButton;
@@ -320,7 +320,7 @@ private:
 enum
 {
     // menu items
-	Pterm_CopyScreen = 1,
+    Pterm_CopyScreen = 1,
 
     Pterm_Quit = wxID_EXIT,
 #ifdef wxID_PREFERENCES
@@ -505,13 +505,13 @@ bool PtermApp::OnInit (void)
 {
     int port;
     int true_opt = 1;
-	int r, g, b;
-	wxString rgb;
+    int r, g, b;
+    wxString rgb;
 
-	ptermApp = this;
+    ptermApp = this;
 
 #ifdef DEBUG
-	logwindow = new wxLogWindow (NULL, "pterm log", TRUE, FALSE);
+    logwindow = new wxLogWindow (NULL, "pterm log", TRUE, FALSE);
 #endif
 
     if (argc > 1 && strcmp (wxString (argv[1]).mb_str (), "-s") == 0)
@@ -557,24 +557,27 @@ bool PtermApp::OnInit (void)
 #endif
     emulationActive = TRUE;
 
-	m_config = new wxConfig (wxT ("Pterm"));
+    m_config = new wxConfig (wxT ("Pterm"));
     // 255 144 0 is RGB for Plato Orange
-	m_config->Read (wxT ("foreground"), &rgb, wxT ("255 144 0"));
-	sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
+    m_config->Read (wxT ("foreground"), &rgb, wxT ("255 144 0"));
+    sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
     m_fgColor = wxColour (r, g, b);
-	m_config->Read (wxT ("background"), &rgb, wxT ("0 0 0"));
-	sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
+    m_config->Read (wxT ("background"), &rgb, wxT ("0 0 0"));
+    sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
     m_bgColor = wxColour (r, g, b);
-	scale = m_config->Read (wxT ("scale"), 1);
-	if (scale != 1 && scale != 2)
-	{
-		scale = 1;
-	}
+    scale = m_config->Read (wxT ("scale"), 1);
+    if (scale != 1 && scale != 2)
+    {
+        scale = 1;
+    }
 
     // create the main application window
     pterm_frame = new PtermFrame(wxT("Pterm ") PTERMVERSION,
                                  wxDefaultPosition,
                                  wxSize (XSize + XFrameAdj, YSize + YFrameAdj));
+
+    // create the clipboard object
+    m_clipboard = new wxClipboard;
 
     // and show it (the frames, unlike simple controls, are not shown when
     // created initially)
@@ -593,10 +596,11 @@ int PtermApp::OnExit (void)
 {
     free (hostName);
 
-	m_clipboard.Flush ();
+    m_clipboard->Flush ();
+    delete m_clipboard;
 
 #ifdef DEBUG
-	delete logwindow;
+    delete logwindow;
 #endif
 
     return 0;
@@ -612,7 +616,7 @@ PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& 
       m_bitmap (XSize, YSize, -1),
       m_foregroundPen (ptermApp->m_fgColor, scale, wxSOLID),
       m_backgroundPen (ptermApp->m_bgColor, scale, wxSOLID),
-	  m_backgroundBrush (ptermApp->m_bgColor, wxSOLID)
+      m_backgroundBrush (ptermApp->m_bgColor, wxSOLID)
 {
     int i;
     
@@ -627,9 +631,9 @@ PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& 
     menuFile->AppendSeparator();
     menuFile->Append(Pterm_Quit, _T("E&xit\tCtrl-Z"), _T("Quit this program"));
 
-	wxMenu *menuEdit = new wxMenu;
+    wxMenu *menuEdit = new wxMenu;
 
-	menuEdit->Append (Pterm_CopyScreen, _T("Copy Screen"), _T("Copy screen to clipboard"));
+    menuEdit->Append (Pterm_CopyScreen, _T("Copy Screen"), _T("Copy screen to clipboard"));
 
     // the "About" item should be in the help menu
     wxMenu *helpMenu = new wxMenu;
@@ -659,8 +663,8 @@ PtermFrame::PtermFrame(const wxString& title, const wxPoint& pos, const wxSize& 
     }
     m_memDC = new wxMemoryDC ();
     m_memDC->SelectObject (m_bitmap);
-	m_memDC->SetBackground (m_backgroundBrush);
-	m_memDC->Clear ();
+    m_memDC->SetBackground (m_backgroundBrush);
+    m_memDC->Clear ();
     m_memDC->SetClippingRegion (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize);
     m_canvas = new PtermCanvas (this);
 
@@ -685,7 +689,7 @@ void PtermFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
 {
     int i;
     
-	m_thread->Kill ();
+    m_thread->Kill ();
     m_memDC->SelectObject (wxNullBitmap);
     m_memDC->SetBackground (wxNullBrush);
     m_memDC->SetPen (wxNullPen);
@@ -732,22 +736,22 @@ void PtermFrame::OnPref (wxCommandEvent& WXUNUSED(event))
 
 void PtermFrame::OnCopyScreen (wxCommandEvent & WXUNUSED(event))
 {
-	wxBitmap screenmap (ScreenSize, ScreenSize);
-	wxMemoryDC screenDC;
-	wxBitmapDataObject *screen;
+    wxBitmap screenmap (ScreenSize, ScreenSize);
+    wxMemoryDC screenDC;
+    wxBitmapDataObject *screen;
 
-	screenDC.SelectObject (screenmap);
-	screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
-				   m_memDC, XADJUST (0), YADJUST (511), wxCOPY);
-	screenDC.SelectObject (wxNullBitmap);
+    screenDC.SelectObject (screenmap);
+    screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
+                   m_memDC, XADJUST (0), YADJUST (511), wxCOPY);
+    screenDC.SelectObject (wxNullBitmap);
 
-	screen = new wxBitmapDataObject(screenmap);
+    screen = new wxBitmapDataObject(screenmap);
 
-	if (ptermApp->m_clipboard.Open ())
-	{
-		ptermApp->m_clipboard.SetData (screen);
-		ptermApp->m_clipboard.Close ();
-	}
+    if (ptermApp->m_clipboard->Open ())
+    {
+        ptermApp->m_clipboard->SetData (screen);
+        ptermApp->m_clipboard->Close ();
+    }
 }
 
 wxColour PtermFrame::SelectColor (wxColour &initcol)
@@ -879,10 +883,10 @@ void PtermPrefdialog::paintBitmap (wxBitmap *bm, wxColour &color, wxBitmapButton
     memDC.EndDrawing ();
     memDC.SetBackground (wxNullBrush);
     memDC.SelectObject (wxNullBitmap);
-	if (to != NULL)
-	{
-		to->Refresh ();
-	}
+    if (to != NULL)
+    {
+        to->Refresh ();
+    }
 }
 
 
@@ -955,7 +959,7 @@ PtermThread::ExitCode PtermThread::Entry (void)
             niuwd = (i << 12) | ((j & 077) << 6) | (k & 077);
             niuRing[niuIn] = niuwd;
 #ifdef DEBUG
-//			wxLogMessage ("data from plato %07o", niuwd);
+//          wxLogMessage ("data from plato %07o", niuwd);
 #endif
             niuIn = next;
             i = niuRingCount;
@@ -973,7 +977,7 @@ PtermThread::ExitCode PtermThread::Entry (void)
             wxWakeUpIdle ();
         }
     }
-	return (ExitCode) 0;
+    return (ExitCode) 0;
 }
 
 void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
@@ -983,7 +987,7 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
     dc.BeginDrawing ();
     PrepareDC (dc);
     m_memDC->SetPen (m_foregroundPen);
-	m_memDC->SetBackground (m_backgroundBrush);
+    m_memDC->SetBackground (m_backgroundBrush);
     drawChar (dc, x, y, snum, cnum);
     dc.EndDrawing ();
 }
@@ -1009,7 +1013,7 @@ void PtermFrame::ptermDrawPoint (int x, int y)
         m_memDC->SetPen (m_backgroundPen);
     }
     dc.DrawPoint (x, y);
-	m_memDC->SetBackground (m_backgroundBrush);
+    m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->DrawPoint (x, y);
     if (scale == 2)
     {
@@ -1046,7 +1050,7 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
         m_memDC->SetPen (m_backgroundPen);
     }
     dc.DrawLine (x1, y1, x2, y2);
-	m_memDC->SetBackground (m_backgroundBrush);
+    m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->DrawLine (x1, y1, x2, y2);
     dc.EndDrawing ();
 }
@@ -1060,7 +1064,7 @@ void PtermFrame::ptermFullErase (void)
     dc.Clear ();
     dc.EndDrawing ();
     m_memDC->BeginDrawing ();
-	m_memDC->SetBackground (m_backgroundBrush);
+    m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->Clear ();
     m_memDC->EndDrawing ();
 }
@@ -1188,16 +1192,16 @@ void PtermFrame::ptermSetCharColors (wxColour &fg, wxColour &bg)
     wxBrush fgBrush;
     wxString rgb;
     
-	fgBrush.SetColour (fg);
+    fgBrush.SetColour (fg);
     if (ptermApp->m_fgColor == fg &&
         ptermApp->m_bgColor == bg)
     {
         return;
     }
     rgb.Printf (wxT ("%d %d %d"), (int) fg.Red (), (int) fg.Green (), (int) fg.Blue ());
-	ptermApp->m_config->Write (wxT ("foreground"), rgb);
+    ptermApp->m_config->Write (wxT ("foreground"), rgb);
     rgb.Printf (wxT ("%d %d %d"), (int) bg.Red (), (int) bg.Green (), (int) bg.Blue ());
-	ptermApp->m_config->Write (wxT ("background"), rgb);
+    ptermApp->m_config->Write (wxT ("background"), rgb);
     ptermApp->m_config->Flush ();
     
     ptermApp->m_fgColor = fg;
@@ -1226,7 +1230,7 @@ void PtermFrame::ptermSetSize (bool scale2)
 {
     // TBD: actually change the window size on the spot.
     // for now, just save it for next start.
-	ptermApp->m_config->Write (wxT ("scale"), (scale2) ? 2 : 1);
+    ptermApp->m_config->Write (wxT ("scale"), (scale2) ? 2 : 1);
     ptermApp->m_config->Flush ();
 }
 
@@ -1323,16 +1327,16 @@ void PtermCanvas::OnDraw(wxDC &dc)
 
 void PtermCanvas::OnKeyDown (wxKeyEvent &event)
 {
-	// We have to handle F10 as a key-down event, not a char event,
-	// otherwise MSWindows sends it to the File menu item...
-	if (event.m_keyCode == WXK_F10)
-	{
-		ptermSendKey ((event.m_shiftDown) ? 072 : 032);
-	}
-	else
-	{
-		event.Skip ();
-	}
+    // We have to handle F10 as a key-down event, not a char event,
+    // otherwise MSWindows sends it to the File menu item...
+    if (event.m_keyCode == WXK_F10)
+    {
+        ptermSendKey ((event.m_shiftDown) ? 072 : 032);
+    }
+    else
+    {
+        event.Skip ();
+    }
 }
 
 void PtermCanvas::OnChar(wxKeyEvent& event)
@@ -1353,7 +1357,7 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     key = event.m_keyCode;
 
 #if 0
-	if (tracePterm)
+    if (tracePterm)
     {
         /*fprintf (traceF,*/printf( "ctrl %d shift %d alt %d key %d\n", event.m_controlDown, event.m_shiftDown, event.m_altDown, key);
     }
@@ -1565,7 +1569,7 @@ void PtermCanvas::OnIdle (wxIdleEvent& event)
             next = 0;
         }
 #ifdef DEBUG
-			wxLogMessage ("processing data from plato %07o", niuRing[niuOut]);
+            wxLogMessage ("processing data from plato %07o", niuRing[niuOut]);
 #endif
         j = procNiuWord (niuRing[niuOut]);
         niuOut = next;
@@ -1615,7 +1619,7 @@ void ptermSendKey(int key)
         {
             fprintf (traceF, "key to plato %03o\n", key);
 #ifdef DEBUG
-			wxLogMessage ("key to plato %03o", key);
+            wxLogMessage ("key to plato %03o", key);
 #endif
         }
         send(fet.connFd, data, 2, 0);
