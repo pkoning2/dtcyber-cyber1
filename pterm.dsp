@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /I "c:\wxWindows-2.4.2\include" /I "c:\wxWindows-2.4.2\lib\msw" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
+# ADD CPP /nologo /W3 /GX /O2 /I "c:\wxWidgets-2.5.5\include" /I "c:\wxWidgets-2.5.5\lib\vc_lib\msw" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /i "c:\wxWindows-2.4.2\include" /d "NDEBUG"
 BSC32=bscmake.exe
@@ -49,7 +49,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib regex.lib png.lib jpeg.lib tiff.lib wxmsw.lib /nologo /subsystem:windows /map /machine:I386 /nodefaultlib:"libc.lib" /libpath:"c:\wxWindows-2.4.2\lib"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib wxregex.lib wxjpeg.lib wxtiff.lib wxmsw25_core.lib wxbase25.lib /nologo /subsystem:windows /map /machine:I386 /nodefaultlib:"libc.lib" /libpath:"c:\wxWidgets-2.5.5\lib\vc_lib"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "pterm - Win32 Debug"
@@ -66,7 +66,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /Gm /GX /Zi /Od /I "c:\wxWindows-2.4.2\include" /I "c:\wxWindows-2.4.2\lib\msw" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
+# ADD CPP /nologo /W3 /Gm /GX /Zi /Od /I "c:\wxWidgets-2.5.5\include" /I "c:\wxWidgets-2.5.5\lib\vc_lib\msw" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
 # ADD RSC /l 0x409 /i "c:\wxWindows-2.5.5\include" /i "c:\wxWindows-2.4.2\include" /d "_DEBUG"
 BSC32=bscmake.exe
@@ -74,7 +74,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib regex.lib png.lib jpeg.lib tiff.lib wxmsw.lib /nologo /subsystem:windows /incremental:no /debug /machine:I386 /nodefaultlib:"libcd.lib" /pdbtype:sept /libpath:"c:\wxWindows-2.4.2\lib"
+# ADD LINK32 regex.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib wxregex.lib wxjpeg.lib wxtiff.lib wxmsw25_core.lib wxbase25.lib /nologo /subsystem:windows /incremental:no /debug /machine:I386 /nodefaultlib:"libcd.lib" /pdbtype:sept /libpath:"c:\wxWidgets-2.5.5\lib"
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 

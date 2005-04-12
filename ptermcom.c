@@ -237,12 +237,14 @@ int procNiuWord (u32 d)
                 }
             else if (d == 1)
                 {
+#if 0
 #if defined(_WIN32)
                 Sleep(1000 / 60);
 #else
                 usleep(1000000 / 60);
 #endif
                 status = 1;
+#endif
                 }
             
             TRACEN ("nop");

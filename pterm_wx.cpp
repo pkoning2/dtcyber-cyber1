@@ -142,6 +142,10 @@ extern "C" {
 class PtermApp;
 static PtermApp *ptermApp;
 
+#ifdef DEBUG
+static wxLogWindow *logwindow;
+#endif
+
 static PtermFrame *pterm_frame;
 static int obytes;
 static u32 currOutput;
@@ -258,6 +262,7 @@ public:
 
     void OnDraw (wxDC &dc);
     void OnChar (wxKeyEvent& event);
+    void OnKeyDown (wxKeyEvent& event);
     void OnMouseDown (wxMouseEvent &event);
     void OnIdle (wxIdleEvent& event);
     
@@ -476,6 +481,7 @@ const unsigned short plato_m1[] = {
 BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Quit,  PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
+    EVT_MENU(Pterm_Pref,  PtermFrame::OnPref)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
     END_EVENT_TABLE ()
 
@@ -503,6 +509,10 @@ bool PtermApp::OnInit (void)
 	wxString rgb;
 
 	ptermApp = this;
+
+#ifdef DEBUG
+	logwindow = new wxLogWindow (NULL, "pterm log", TRUE, FALSE);
+#endif
 
     if (argc > 1 && strcmp (wxString (argv[1]).mb_str (), "-s") == 0)
     {
@@ -584,6 +594,10 @@ int PtermApp::OnExit (void)
     free (hostName);
 
 	m_clipboard.Flush ();
+
+#ifdef DEBUG
+	delete logwindow;
+#endif
 
     return 0;
 }
@@ -695,9 +709,9 @@ void PtermFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
     wxString msg;
 
     msg.Printf (wxT("PLATO terminal emulator %s.\n")
-// temp: need to figure out how to get gcc to understant this:
+// temp: need to figure out how to get gcc to understand this:
 //                wxT("Copyright © 2005 by Paul Koning."),
-                wxT("Copyright (c) 2005 by Paul Koning."),
+                wxT("Copyright 2005 by Paul Koning."),
                 wxT (PTERMVERSION));
     
     wxMessageBox(msg, _T("About Pterm"), wxOK | wxICON_INFORMATION, this);
@@ -940,6 +954,9 @@ PtermThread::ExitCode PtermThread::Entry (void)
             }
             niuwd = (i << 12) | ((j & 077) << 6) | (k & 077);
             niuRing[niuIn] = niuwd;
+#ifdef DEBUG
+//			wxLogMessage ("data from plato %07o", niuwd);
+#endif
             niuIn = next;
             i = niuRingCount;
             if (i == RINGXOFF1 || i == RINGXOFF2)
@@ -1272,6 +1289,7 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
 // handlers) which process them.
 BEGIN_EVENT_TABLE(PtermCanvas, wxScrolledWindow)
     EVT_CHAR(PtermCanvas::OnChar)
+    EVT_KEY_DOWN(PtermCanvas::OnKeyDown)
     EVT_LEFT_DOWN(PtermCanvas::OnMouseDown)
     EVT_IDLE(PtermCanvas::OnIdle)
     END_EVENT_TABLE ()
@@ -1301,6 +1319,20 @@ void PtermCanvas::OnDraw(wxDC &dc)
     for (i = 0; i < 5; i++)
         dc.Blit (0, i * CharYSize, XSize, YSize, m_owner->m_charDC[i], 0, 0, wxCOPY);
 #endif
+}
+
+void PtermCanvas::OnKeyDown (wxKeyEvent &event)
+{
+	// We have to handle F10 as a key-down event, not a char event,
+	// otherwise MSWindows sends it to the File menu item...
+	if (event.m_keyCode == WXK_F10)
+	{
+		ptermSendKey ((event.m_shiftDown) ? 072 : 032);
+	}
+	else
+	{
+		event.Skip ();
+	}
 }
 
 void PtermCanvas::OnChar(wxKeyEvent& event)
@@ -1532,7 +1564,9 @@ void PtermCanvas::OnIdle (wxIdleEvent& event)
         {
             next = 0;
         }
-//        printf ("word %07o\n", niuRing[niuOut]);
+#ifdef DEBUG
+			wxLogMessage ("processing data from plato %07o", niuRing[niuOut]);
+#endif
         j = procNiuWord (niuRing[niuOut]);
         niuOut = next;
         i = niuRingCount;
@@ -1580,6 +1614,9 @@ void ptermSendKey(int key)
         if (tracePterm)
         {
             fprintf (traceF, "key to plato %03o\n", key);
+#ifdef DEBUG
+			wxLogMessage ("key to plato %03o", key);
+#endif
         }
         send(fet.connFd, data, 2, 0);
     }
