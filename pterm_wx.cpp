@@ -781,6 +781,9 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
 
 #if wxUSE_MENUS
     // create a menu bar
+    //
+    // Note that the menu bar labels do not have shortcut markings,
+    // because those conflict with the ALT-letter key codes for PLATO.
     wxMenu *menuFile = new wxMenu;
 
     menuFile->Append (Pterm_Connect, _T("&Connect..."),
@@ -799,15 +802,15 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
 
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
-    menuBar->Append(menuFile, _T("&File"));
-    menuBar->Append(menuEdit, _T("&Edit"));
+    menuBar->Append(menuFile, _T("File"));
+    menuBar->Append(menuEdit, _T("Edit"));
 
 #if !defined(__WXMAC__) 
     // the "About" item should be in the help menu, except on the Mac
     wxMenu *helpMenu = new wxMenu;
 
     helpMenu->Append(Pterm_About, _T("&About..."), _T("Show about dialog"));
-    menuBar->Append(helpMenu, _T("&Help"));
+    menuBar->Append(helpMenu, _T("Help"));
 #else
     // On the Mac, it will appear in the application menu.  Pretend it's on
     // the File menu.  It won't show up there, but by doing this rather than
@@ -2129,34 +2132,29 @@ void PtermCanvas::OnDraw(wxDC &dc)
 
 void PtermCanvas::OnKeyDown (wxKeyEvent &event)
 {
-    // We have to handle F10 as a key-down event, not a char event,
-    // otherwise MSWindows sends it to the File menu item...
-    if (event.m_keyCode == WXK_F10)
-    {
-        m_owner->ptermSendKey ((event.m_shiftDown) ? 072 : 032);
-    }
-    else
-    {
-        event.Skip ();
-    }
-}
-
-void PtermCanvas::OnChar(wxKeyEvent& event)
-{
     int key;
     int shift = 0;
     int pc = -1;
-    bool ctrl = FALSE;
+    bool ctrl;
 
-    if (event.m_controlDown)
-    {
-        ctrl = TRUE;
-    }
+    // Most keyboard inputs are handled here, because if we defer them to
+    // the EVT_CHAR stage, too many evil things happen in too many of the
+    // platforms, all different...
+    //
+    // The one thing we do defer until EVT_CHAR is plain old characters, i.e.,
+    // keystrokes that aren't function keys or other special keys, and
+    // neither Ctrl nor Alt are active.
+
+    ctrl = event.m_controlDown;
     if (event.m_shiftDown)
     {
         shift = 040;
     }
     key = event.m_keyCode;
+    if (isalpha (key))
+    {
+        key = tolower (key);
+    }
 
 #if 0
     if (tracePterm)
@@ -2165,16 +2163,17 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     }
 #endif
 
-    // **** TEMP **** workaround for 2.5.5 bug
-    if (ctrl && (key == ']' || isalpha (key)))
-    {
-        key &= 037;
-    }
-    
-    if (key == (']' & 037))         // control-] : trace
+    if (ctrl && key == ']')         // control-] : trace
     {
         m_owner->tracePterm = !m_owner->tracePterm;
         m_owner->ptermSetTrace (TRUE);
+        return;
+    }
+
+    // Special case: ALT-left is assignment arrow
+    if (event.m_altDown && key == WXK_LEFT)
+    {
+        m_owner->ptermSendKey (015 | shift);
         return;
     }
 
@@ -2182,11 +2181,11 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     {
         if (event.m_altDown)
         {
-            pc = altKeyToPlato[key] | shift;
+            pc = altKeyToPlato[key];
             
             if (pc >= 0)
             {
-                m_owner->ptermSendKey (pc);
+                m_owner->ptermSendKey (pc | shift);
                 return;
             }
             else
@@ -2195,9 +2194,24 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
                 return;
             }
         }
-        else
+        else if (ctrl && key >= 040)
         {
-            if (ctrl && !isalpha (key) && key >= 040)
+            // Control key is active.  There are several possibilities:
+            //
+            // Control plus letter: look up the translate table entry
+            //  for the matching control code.
+            // Control plus non-letter: look up the translate table entry
+            //  for that character, and set the "shift" bit.
+            // Control plus control code or function key: don't pay attention
+            //  to the control key being active, and don't do a table lookup
+            //  on the keycode.  Instead, those are handled later, in a switch.
+
+            if (isalpha (key))
+            {
+                // Control letter -- do a lookup for the matching control code.
+                pc = asciiToPlato[key & 037];
+            }
+            else
             {
                 // control but not a letter or ASCII control code -- 
                 // translate to what a PLATO keyboard
@@ -2205,26 +2219,24 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
                 pc = asciiToPlato[key];
                 shift = 040;
             }
-            else if (ctrl || key > 040)
-            {
-                // If we see a char code in the control range, do the table
-                // lookup only if the control key is actually down.  That way
-                // we avoid doing table lookup for function keys such as 
-                // Enter (Return) and Backspace.  Those are handled in the
-                // switch statement below.
-                pc = asciiToPlato[key];
-            }
+
             if (pc >= 0)
             {
-                if (ctrl)
-                {
-                    pc |= shift;
-                }
-                m_owner->ptermSendKey (pc);
+                m_owner->ptermSendKey (pc | shift);
                 return;
             }
         }
     }
+
+    // If we get down to this point, then the following is true:
+    // 1. It wasn't an ALT-key entry.
+    // 2. If Control was active, it was with a non-printable key (where we
+    //    ignore the Control flag).
+    // At this point, we're going to look for function keys.  If it isn't
+    // one of those, then it was a regular printable character code, possibly
+    // shifted.  Those are handled in the EVT_CHAR handler because the
+    // unshifted to shifted translation is keyboard specific (at least for
+    // non-letters) and we want to let the system deal with that.
 
     switch (key)
     {
@@ -2247,6 +2259,9 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
         break;
     case WXK_TAB:
         pc = 014;       // tab
+        break;
+    case WXK_ESCAPE:
+        pc = 015;       // assign
         break;
     case WXK_ADD:
         if (ctrl)
@@ -2324,8 +2339,37 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
         return;
     }
 
-    pc |= shift;
-    m_owner->ptermSendKey (pc);
+    m_owner->ptermSendKey (pc | shift);
+}
+
+void PtermCanvas::OnChar(wxKeyEvent& event)
+{
+    int key;
+    int shift = 0;
+    int pc = -1;
+
+    // control and alt codes shouldn't come here, they are handled in KEY_DOWN
+    if (event.m_controlDown || event.m_altDown)
+    {
+        event.Skip ();
+        return;
+    }
+    if (event.m_shiftDown)
+    {
+        shift = 040;
+    }
+    key = event.m_keyCode;
+
+    if (key < sizeof (asciiToPlato) / sizeof (asciiToPlato[0]))
+    {
+        pc = asciiToPlato[key];
+        if (pc >= 0)
+        {
+            m_owner->ptermSendKey (pc);
+            return;
+        }
+    }
+    event.Skip ();
 }
 
 void PtermCanvas::OnMouseDown (wxMouseEvent &event)
