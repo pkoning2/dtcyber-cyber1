@@ -16,8 +16,13 @@ ifeq ("$(LOCAL)","yes")
 CXXFLAGS = -I. -DGTK_NO_CHECK_CASTS -D__WXGTK__ -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES -D_LARGEFILE_SOURCE=1 -DNO_GCC_PRAGMA  
 WXLIBS	=  -Lwx  -L/usr/X11R6/lib  wx/libwx_gtk2_xrc-2.5.a wx/libwx_gtk2_qa-2.5.a wx/libwx_gtk2_html-2.5.a wx/libwx_gtk2_adv-2.5.a wx/libwx_gtk2_core-2.5.a wx/libwx_base_xml-2.5.a wx/libwx_base_net-2.5.a wx/libwx_base-2.5.a -Wl,--export-dynamic -pthread wx/libgtk-x11-2.0.a wx/libgdk-x11-2.0.a wx/libgdk_pixbuf-2.0.a wx/libpangoxft-1.0.a  wx/libpangoft2-1.0.a  wx/libpangox-1.0.a  wx/libpango-1.0.a wx/libgthread-2.0.a wx/libgmodule-2.0.a wx/libgobject-2.0.a wx/libglib-2.0.a wx/libatk-1.0.a  wx/libfontconfig.a wx/libfreetype.a wx/libexpat.a -ldl -lXft -lXcursor -lXrender -lXinerama -lXext -lXrandr -lX11 -lz -lm
 else
+ifeq ("$(LOCAL)","debug")
+CXXFLAGS = -I. -DGTK_NO_CHECK_CASTS -D__WXGTK__ -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES -D_LARGEFILE_SOURCE=1 -DNO_GCC_PRAGMA  -D__WXDEBUG__
+WXLIBS	=  -L/usr/local/lib  -L/usr/X11R6/lib  /usr/local/lib/libwx_gtk2d_xrc-2.5.a /usr/local/lib/libwx_gtk2d_qa-2.5.a /usr/local/lib/libwx_gtk2d_html-2.5.a /usr/local/lib/libwx_gtk2d_adv-2.5.a /usr/local/lib/libwx_gtk2d_core-2.5.a /usr/local/lib/libwx_based_xml-2.5.a /usr/local/lib/libwx_based_net-2.5.a /usr/local/lib/libwx_based-2.5.a -Wl,--export-dynamic -pthread /usr/local/lib/libgtk-x11-2.0.a /usr/local/lib/libgdk-x11-2.0.a /usr/local/lib/libgdk_pixbuf-2.0.a /usr/local/lib/libpangoxft-1.0.a  /usr/local/lib/libpangoft2-1.0.a  /usr/local/lib/libpangox-1.0.a  /usr/local/lib/libpango-1.0.a /usr/local/lib/libgthread-2.0.a /usr/local/lib/libgmodule-2.0.a /usr/local/lib/libgobject-2.0.a /usr/local/lib/libglib-2.0.a /usr/local/lib/libatk-1.0.a  /usr/lib/libfontconfig.a /usr/lib/libfreetype.a /usr/lib/libexpat.a -ldl -lXft -lXcursor -lXrender -lXinerama -lXext -lXrandr -lX11 -lz -lm
+else
 CXXFLAGS = `wx-config --cxxflags`
 WXLIBS	= `wx-config --libs`
+endif
 endif
 
 PTOBJS	= $(SOBJS) pterm_wx.o
