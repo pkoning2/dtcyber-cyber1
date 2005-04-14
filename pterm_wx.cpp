@@ -816,7 +816,7 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
     // putting it on the Help menu, we avoid an empty "Help" entry on the
     // Mac menubar.
     // If we add any other Help items, this hack will not be needed anymore.
-    fileMenu->Append(Pterm_About, _T("&About..."), _T("Show about dialog"));
+    menuFile->Append(Pterm_About, _T("&About..."), _T("Show about dialog"));
 #endif
 
     // ... and attach this menu bar to the frame
