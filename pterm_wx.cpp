@@ -37,9 +37,9 @@
 #define STATUS_CONN 2
 #define STATUSPANES 3
 
-#define niuRingCount(owner) ((owner->m_niuIn >= owner->m_niuOut) ? \
-                             (owner->m_niuIn - owner->m_niuOut) : \
-                             (RINGSIZE + owner->m_niuIn - owner->m_niuOut))
+#define displayRingCount(owner) ((owner->m_displayIn >= owner->m_displayOut) ? \
+                             (owner->m_displayIn - owner->m_displayOut) : \
+                             (RINGSIZE + owner->m_displayIn - owner->m_displayOut))
 
 #define KeyBufSize      50
 #define DisplayMargin   8
@@ -132,9 +132,9 @@
 
 extern "C"
 {
-#include <ctype.h>
 #if defined(_WIN32)
 #include <winsock.h>
+#include <process.h>
 #else
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -144,7 +144,6 @@ extern "C"
 #include "const.h"
 #include "types.h"
 #include "proto.h"
-//#include "pterm.h"
 #include "ptermversion.h"
 }
     
@@ -189,6 +188,7 @@ static const char rom0char[] =
 // ----------------------------------------------------------------------------
 
 class PtermFrame;
+class PtermCanvas;
 
 // Pterm processing thread
 class PtermThread : public wxThread
@@ -199,7 +199,7 @@ private:
 public:
     // override base class virtuals
     // ----------------------------
-    PtermThread (PtermFrame *owner) : wxThread (), m_owner (owner) {}
+    PtermThread (PtermFrame *owner) : wxThread (wxTHREAD_JOINABLE), m_owner (owner) {}
     virtual ExitCode Entry (void);
 };
 
@@ -234,8 +234,6 @@ private:
     // any class wishing to process wxWindows events must use this macro
     DECLARE_EVENT_TABLE ()
 };
-
-class PtermCanvas;
 
 // Define a new frame type: this is going to be our main frame
 class PtermFrame : public wxFrame
@@ -277,8 +275,8 @@ public:
 
     // data relating to the connection
     NetFet      m_fet;
-    u32         m_niuRing[RINGSIZE];
-    volatile int m_niuIn, m_niuOut;
+    u32         m_displayRing[RINGSIZE];
+    volatile int m_displayIn, m_displayOut;
     char        *m_hostName;
 
     // Character patterns are stored in three DCs because we want to
@@ -314,7 +312,7 @@ public:
     int wc;
     int seq;
 
-    int procNiuWord (u32 d);
+    int procPlatoWord (u32 d);
     void plotChar (int c);
     void mode0 (u32 d);
     void mode1 (u32 d);
@@ -755,8 +753,8 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
       uncover(FALSE),
       wc (0),
       seq (0),
-      m_niuIn (0),
-      m_niuOut (0),
+      m_displayIn (0),
+      m_displayOut (0),
       m_foregroundPen (ptermApp->m_fgColor, ptermApp->m_scale, wxSOLID),
       m_backgroundPen (ptermApp->m_bgColor, ptermApp->m_scale, wxSOLID),
       m_backgroundBrush (ptermApp->m_bgColor, wxSOLID)
@@ -789,9 +787,9 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
                       _T("Connect to a PLATO host"));
     menuFile->Append (Pterm_ConnectAgain, _T("Connect &Again"),
                       _T("Connect to the same host"));
-    menuFile->Append (Pterm_Close, _T("Close\tCtrl-Z"), _T("Close this window"));
     menuFile->Append (Pterm_Pref, _T("P&references..."),
                       _T("Set program configuration"));
+    menuFile->Append (Pterm_Close, _T("Close\tCtrl-Z"), _T("Close this window"));
 //    menuFile->AppendSeparator();
 //    menuFile->Append (Pterm_Quit, _T("E&xit"), _T("Quit this program"));
 
@@ -876,22 +874,22 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
         **  Process words until we hit some point that causes output delay.
         **  That way we see an abort code as soon as possible.
         */
-        if (m_niuIn == m_niuOut)
+        if (m_displayIn == m_displayOut)
         {
             event.Skip ();
             break;
         }
-        next = m_niuOut + 1;
+        next = m_displayOut + 1;
         if (next == RINGSIZE)
         {
             next = 0;
         }
 #ifdef DEBUG
-            wxLogMessage ("processing data from plato %07o", niuRing[niuOut]);
+            wxLogMessage ("processing data from plato %07o", displayRing[displayOut]);
 #endif
-        j = procNiuWord (m_niuRing[m_niuOut]);
-        m_niuOut = next;
-        i = niuRingCount (this);
+        j = procPlatoWord (m_displayRing[m_displayOut]);
+        m_displayOut = next;
+        i = displayRingCount (this);
         if (i == RINGXON1 || i == RINGXON2)
         {
 #if 0
@@ -904,7 +902,10 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
             break;
         }
     }
-    ptermApp->Yield ();
+    if (m_displayIn != m_displayOut)
+    {
+        event.RequestMore ();
+    }
 }
 
 void PtermFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
@@ -912,18 +913,26 @@ void PtermFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
     int i;
     
     m_thread->Delete ();
-    m_memDC->SelectObject (wxNullBitmap);
+    delete m_thread;
+    m_thread = NULL;
+
+    m_memDC->BeginDrawing ();
     m_memDC->SetBackground (wxNullBrush);
     m_memDC->SetPen (wxNullPen);
+    m_memDC->EndDrawing ();
+    m_memDC->SelectObject (wxNullBitmap);
     delete m_memDC;
     delete m_bitmap;
     m_memDC = NULL;
     m_bitmap = NULL;
+
     for (i = 0; i < 5; i++)
     {
-        m_charDC[i]->SelectObject (wxNullBitmap);
+        m_charDC[i]->BeginDrawing ();
         m_charDC[i]->SetBackground (wxNullBrush);
         m_charDC[i]->SetPen (wxNullPen);
+        m_charDC[i]->EndDrawing ();
+        m_charDC[i]->SelectObject (wxNullBitmap);
         delete m_charDC[i];
         delete m_charmap[i];
     }
@@ -1313,7 +1322,7 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
 }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Process NIU word
+**  Purpose:        Process word of PLATO output data
 **
 **  Parameters:     Name        Description.
 **                  d           19-bit word
@@ -1321,7 +1330,7 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
 **  Returns:        1 if we did a delay, 0 if not.
 **
 **------------------------------------------------------------------------*/
-int PtermFrame::procNiuWord (u32 d)
+int PtermFrame::procPlatoWord (u32 d)
     {
     mptr mp;
     char *msg = "";
@@ -1990,17 +1999,20 @@ void PtermConndialog::OnButton (wxCommandEvent& event)
 
 PtermThread::ExitCode PtermThread::Entry (void)
 {
-    u32 niuwd;
+    u32 platowd;
     int i, j, k;
     int next;
-
+    bool wasEmpty;
+    
     while (TRUE)
     {
-        i = dtRead (&m_owner->m_fet, 1000);
-        if (i < 0)
+        i = dtRead (&m_owner->m_fet, 200);
+        if (i < 0 || TestDestroy ())
         {
             break;
         }
+        
+        wasEmpty = (m_owner->m_displayIn == m_owner->m_displayOut);
         
         for (;;)
         {
@@ -2008,12 +2020,12 @@ PtermThread::ExitCode PtermThread::Entry (void)
             **  Assemble words from the network buffer, all the
             **  while looking for "abort output" codes (word == 2).
             */
-            next = m_owner->m_niuIn + 1;
+            next = m_owner->m_displayIn + 1;
             if (next == RINGSIZE)
             {
                 next = 0;
             }
-            if (next == m_owner->m_niuOut)
+            if (next == m_owner->m_displayOut)
             {
                 break;
             }
@@ -2050,13 +2062,13 @@ PtermThread::ExitCode PtermThread::Entry (void)
                 }
                 continue;
             }
-            niuwd = (i << 12) | ((j & 077) << 6) | (k & 077);
-            m_owner->m_niuRing[m_owner->m_niuIn] = niuwd;
+            platowd = (i << 12) | ((j & 077) << 6) | (k & 077);
+            m_owner->m_displayRing[m_owner->m_displayIn] = platowd;
 #ifdef DEBUG
-//          wxLogMessage ("data from plato %07o", niuwd);
+//          wxLogMessage ("data from plato %07o", platowd);
 #endif
-            m_owner->m_niuIn = next;
-            i = niuRingCount (m_owner);
+            m_owner->m_displayIn = next;
+            i = displayRingCount (m_owner);
             if (i == RINGXOFF1 || i == RINGXOFF2)
             {
 #if 0
@@ -2064,7 +2076,7 @@ PtermThread::ExitCode PtermThread::Entry (void)
 #endif
             }
         }
-        if (m_owner->m_niuIn != m_owner->m_niuOut)
+        if (wasEmpty && m_owner->m_displayIn != m_owner->m_displayOut)
         {
             // Send a do-nothing event to the frame; that will wake up the main
             // thread and cause it to process the words we buffered.
