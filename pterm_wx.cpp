@@ -20,7 +20,7 @@
 
 //#define PPT
 
-#define DEFAULTHOST "cyberserv.org"
+#define DEFAULTHOST wxT ("cyberserv.org")
 #define BufSiz      256
 #define RINGSIZE    5000
 #define RINGXOFF1   1000
@@ -260,6 +260,8 @@ public:
     // event handlers
     void OnConnect (wxCommandEvent &event);
 
+    bool DoConnect (bool ask);
+    
     wxColour    m_fgColor;
     wxColour    m_bgColor;
     wxConfig    *m_config;
@@ -270,6 +272,7 @@ public:
     // scale is 1 or 2 for full size and double, respectively.
     int         m_scale;
     bool        m_classicSpeed;
+    bool        m_connect;
     
 private:
 
@@ -441,6 +444,16 @@ public:
     wxStaticBoxSizer *m_colorsSizer;
     wxCheckBox      *m_scaleCheck;
     wxCheckBox      *m_speedCheck;
+    wxCheckBox      *m_autoConnect;
+    wxTextCtrl      *m_hostText;
+    wxTextCtrl      *m_portText;
+    wxTextValidator *m_hostVal;
+    wxTextValidator *m_portVal;
+    wxStaticText    *m_hostLabel;
+    wxStaticText    *m_portLabel;
+    wxFlexGridSizer *m_connItems;
+    wxStaticBox     *m_connBox;
+    wxStaticBoxSizer *m_connSizer;
     wxBoxSizer      *m_prefItems;
     wxBoxSizer      *m_prefButtons;
     wxBoxSizer      *m_dialogContent;
@@ -449,6 +462,9 @@ public:
     wxColour        m_bgColor;
     bool            m_scale2;
     bool            m_classicSpeed;
+    bool            m_connect;
+    wxString        m_host;
+    wxString        m_port;
     
 private:
     void paintBitmap (wxBitmap *bm, wxColour &color, wxBitmapButton *to);
@@ -478,8 +494,8 @@ public:
     wxBoxSizer      *m_connButtons;
     wxBoxSizer      *m_dialogContent;
     
-    wxString m_host;
-    wxString m_port;
+    wxString        m_host;
+    wxString        m_port;
     
 private:
     DECLARE_EVENT_TABLE ()
@@ -699,13 +715,16 @@ bool PtermApp::OnInit (void)
         printf ("usage: pterm [ hostname [ portnum ]]\n");
         exit (1);
     }
+
+    m_config = new wxConfig (wxT ("Pterm"));
+
     if (argc > 2)
     {
         m_port = atoi (wxString (argv[2]).mb_str ());
     }
     else
     {
-        m_port = DefNiuPort;
+        m_port = m_config->Read (wxT ("port"), DefNiuPort);
     }
     if (argc > 1)
     {
@@ -713,10 +732,10 @@ bool PtermApp::OnInit (void)
     }
     else
     {
-        m_hostName = strdup (DEFAULTHOST);
+        m_config->Read (wxT ("host"), &rgb, DEFAULTHOST);
+        m_hostName = strdup (rgb.mb_str ());
     }
 
-    m_config = new wxConfig (wxT ("Pterm"));
     // 255 144 0 is RGB for Plato Orange
     m_config->Read (wxT ("foreground"), &rgb, wxT ("255 144 0"));
     sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
@@ -730,9 +749,19 @@ bool PtermApp::OnInit (void)
         m_scale = 1;
     }
     m_classicSpeed = (m_config->Read (wxT ("classicSpeed"), 0L) != 0);
+    m_connect = (m_config->Read (wxT ("autoconnect"), 1) != 0);
 
+    // If arguments are present, always connect
+    if (argc > 1)
+    {
+        m_connect = TRUE;
+    }
+    
     // create the main application window
-    frame = new PtermFrame(m_hostName, m_port, wxT("Pterm " PTERMVERSION));
+    if (!DoConnect (!m_connect))
+    {
+        return FALSE;
+    }
     
     // create the clipboard object
     m_clipboard = new wxClipboard;
@@ -761,11 +790,19 @@ int PtermApp::OnExit (void)
 
 void PtermApp::OnConnect (wxCommandEvent &event)
 {
+    DoConnect (event.GetId () == Pterm_ConnectAgain);
+}
+
+bool PtermApp::DoConnect (bool ask)
+{
     PtermFrame *frame;
-    if (event.GetId () == Pterm_Connect)
+
+    if (ask)
     {
         PtermConndialog dlg (wxID_ANY, _("Connect to PLATO"));
     
+        dlg.CenterOnScreen ();
+        
         if (dlg.ShowModal () == wxID_OK)
         {
             free (m_hostName);
@@ -774,13 +811,15 @@ void PtermApp::OnConnect (wxCommandEvent &event)
         }
         else
         {
-            return;     // connect canceled
+            return FALSE;     // connect canceled
         }
     }
     
 
     // create the main application window
     frame = new PtermFrame(m_hostName, m_port, wxT("Pterm " PTERMVERSION));
+
+    return (frame != NULL);
 }
 
 
@@ -1056,7 +1095,15 @@ void PtermFrame::OnPref (wxCommandEvent& WXUNUSED(event))
         ptermSetCharColors (dlg.m_fgColor, dlg.m_bgColor);
         ptermSetSize (dlg.m_scale2);
         ptermApp->m_classicSpeed = dlg.m_classicSpeed;
+        free (ptermApp->m_hostName);
+        ptermApp->m_hostName = strdup (wxString (dlg.m_host).mb_str ());
+        ptermApp->m_port = atoi (wxString (dlg.m_port).mb_str ());
+        ptermApp->m_connect = dlg.m_connect;
+        
+        ptermApp->m_config->Write (wxT ("host"), dlg.m_host);
+        ptermApp->m_config->Write (wxT ("port"), m_port);
         ptermApp->m_config->Write (wxT ("classicSpeed"), (dlg.m_classicSpeed) ? 1 : 0);
+        ptermApp->m_config->Write (wxT ("autoConnect"), (dlg.m_connect) ? 1 : 0);
         ptermApp->m_config->Flush ();
     }
 }
@@ -1089,6 +1136,7 @@ wxColour PtermFrame::SelectColor (wxColour &initcol)
 
     data.SetColour (initcol);
     data.SetCustomColour (0, orange);
+    data.SetCustomColour (1, *wxBLACK);
     
     wxColourDialog dialog(this, &data);
 
@@ -1923,8 +1971,11 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
 {
     m_scale2 = (ptermApp->m_scale != 1);
     m_classicSpeed = ptermApp->m_classicSpeed;
+    m_connect = ptermApp->m_connect;
     m_fgColor = ptermApp->m_fgColor;
     m_bgColor = ptermApp->m_bgColor;
+    m_host = wxString (ptermApp->m_hostName);
+    m_port.Printf ("%d", ptermApp->m_port);
 
     m_fgBitmap = new wxBitmap (20, 12);
     m_bgBitmap = new wxBitmap (20, 12);
@@ -1946,6 +1997,24 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_scaleCheck->SetValue (m_scale2);
     m_speedCheck = new wxCheckBox (this, -1, _("Simulate 1200 Baud"));
     m_speedCheck->SetValue (m_classicSpeed);
+    m_connBox = new wxStaticBox (this, wxID_ANY, _("Connection settings"));
+    m_connSizer = new wxStaticBoxSizer (m_connBox, wxVERTICAL);
+    m_autoConnect = new wxCheckBox (this, -1, _("Connect at startup"));
+    m_autoConnect->SetValue (m_connect);
+    m_hostLabel = new wxStaticText (this, wxID_ANY, _("Default host"));
+    m_portLabel = new wxStaticText (this, wxID_ANY, _("Default port"));
+
+    m_hostVal = new wxTextValidator (wxFILTER_ASCII, &m_host);
+    m_portVal = new wxTextValidator (wxFILTER_NUMERIC, &m_port);
+    
+    m_hostText = new wxTextCtrl (this, wxID_ANY, m_host,
+                                 wxDefaultPosition, wxSize (160, 18),
+                                 0, *m_hostVal);
+    m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
+                                 wxDefaultPosition, wxSize (160, 18),
+                                 0, *m_portVal);
+    m_connItems = new wxFlexGridSizer (2, 2, 5, 5);
+
     m_prefItems = new wxBoxSizer (wxVERTICAL);
     m_prefButtons = new wxBoxSizer (wxHORIZONTAL);
     m_dialogContent = new wxBoxSizer (wxVERTICAL);
@@ -1956,8 +2025,15 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_bgSizer->Add (m_bgLabel, 0, wxALL, 5);
     m_colorsSizer->Add (m_fgSizer);
     m_colorsSizer->Add (m_bgSizer);
-    m_prefItems->Add (m_scaleCheck, 0, wxALL, 5);
-    m_prefItems->Add (m_speedCheck, 0, wxALL, 5);
+    m_connItems->Add (m_hostLabel, 0, wxRIGHT, 5);
+    m_connItems->Add (m_hostText);
+    m_connItems->Add (m_portLabel, 0, wxRIGHT, 5);
+    m_connItems->Add (m_portText);
+    m_connSizer->Add (m_autoConnect, 0, wxALL, 5);
+    m_connSizer->Add (m_connItems, 0, wxALL, 5);
+    m_prefItems->Add (m_scaleCheck, 0, wxTOP | wxLEFT | wxRIGHT, 10);
+    m_prefItems->Add (m_speedCheck, 0, wxALL, 10);
+    m_prefItems->Add (m_connSizer, 0, wxALL, 10);
     m_prefItems->Add (m_colorsSizer, 0, wxALL, 10);
     m_prefButtons->Add (m_okButton, 0, wxALL, 5);
     m_prefButtons->Add (m_cancelButton, 0, wxALL, 5);
@@ -1985,6 +2061,8 @@ void PtermPrefdialog::OnButton (wxCommandEvent& event)
     
     else if (event.m_eventObject == m_okButton)
     {
+        m_host = m_hostText->GetLineText (0);
+        m_port = m_portText->GetLineText (0);
         EndModal (wxID_OK);
     }
     else if (event.m_eventObject == m_cancelButton)
@@ -1993,12 +2071,19 @@ void PtermPrefdialog::OnButton (wxCommandEvent& event)
     }
     else if (event.m_eventObject == m_resetButton)
     {
+        wxString str;
+        
         m_fgColor = wxColour (255, 144, 0);
         m_bgColor = *wxBLACK;
         m_scale2 = FALSE;
         m_scaleCheck->SetValue (FALSE);
         m_classicSpeed = FALSE;
         m_speedCheck->SetValue (FALSE);
+        m_connect = TRUE;
+        m_autoConnect->SetValue (TRUE);
+        m_hostText->SetValue (DEFAULTHOST);
+        str.Printf ("%d", DefNiuPort);
+        m_portText->SetValue (str);
     }
     paintBitmap (m_fgBitmap, m_fgColor, m_fgButton);
     paintBitmap (m_bgBitmap, m_bgColor, m_bgButton);
@@ -2013,6 +2098,10 @@ void PtermPrefdialog::OnCheckbox (wxCommandEvent& event)
     else if (event.m_eventObject == m_speedCheck)
     {
         m_classicSpeed = event.IsChecked ();
+    }
+    else if (event.m_eventObject == m_autoConnect)
+    {
+        m_connect = event.IsChecked ();
     }
 }
 
@@ -2069,14 +2158,13 @@ PtermConndialog::PtermConndialog (wxWindowID id, const wxString &title)
     m_connButtons = new wxBoxSizer (wxHORIZONTAL);
     m_dialogContent = new wxBoxSizer (wxVERTICAL);
       
-
-    m_connItems->Add (m_hostLabel);
+    m_connItems->Add (m_hostLabel, 0, wxRIGHT, 5);
     m_connItems->Add (m_hostText);
-    m_connItems->Add (m_portLabel);
+    m_connItems->Add (m_portLabel, 0, wxRIGHT, 5);
     m_connItems->Add (m_portText);
     m_connButtons->Add (m_okButton, 0, wxALL, 5);
     m_connButtons->Add (m_cancelButton, 0, wxALL, 5);
-    m_dialogContent->Add (m_connItems, 0, wxTOP | wxLEFT | wxRIGHT, 10);
+    m_dialogContent->Add (m_connItems, 0, wxTOP | wxLEFT | wxRIGHT, 15);
     m_dialogContent->Add (m_connButtons, 0, wxALL, 10);
 
     SetSizer (m_dialogContent);
@@ -2333,6 +2421,7 @@ PtermCanvas::PtermCanvas(PtermFrame *parent)
     m_owner = parent;
     SetVirtualSize (XSize, YSize);
     
+    SetBackgroundColour (ptermApp->m_bgColor);
     SetScrollRate (1, 1);
     dc.SetClippingRegion (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize);
     SetFocus ();
