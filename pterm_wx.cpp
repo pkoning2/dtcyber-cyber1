@@ -238,7 +238,8 @@ private:
     PtermFrame  *m_owner;
     char        *m_hostName;
     int         m_port;
-
+    wxCriticalSection m_pointerLock;
+    
     void StoreWord (int word);
 
 };
@@ -2196,6 +2197,14 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
                 continue;
             }
             platowd = (i << 12) | ((j & 077) << 6) | (k & 077);
+            if (platowd == 2)
+            {
+                // erase abort marker -- reset the ring to be empty
+                wxCriticalSectionLocker lock (m_pointerLock);
+
+                m_displayOut = m_displayIn;
+            }
+
             StoreWord (platowd);
             i = RingCount ();
             if (i == RINGXOFF1 || i == RINGXOFF2)
@@ -2225,13 +2234,19 @@ int PtermConnection::NextWord (void)
     {
         return C_NODATA;
     }
-    next = m_displayOut + 1;
-    if (next == RINGSIZE)
+    
     {
-        next = 0;
+        wxCriticalSectionLocker lock (m_pointerLock);
+        
+        next = m_displayOut + 1;
+        if (next == RINGSIZE)
+        {
+            next = 0;
+        }
+        j = m_displayRing[m_displayOut];
+        m_displayOut = next;
     }
-    j = m_displayRing[m_displayOut];
-
+    
     // See if emulating 1200 baud, or the -delay- NOP code
     if (ptermApp->m_classicSpeed || j == 1)
     {
@@ -2241,8 +2256,6 @@ int PtermConnection::NextWord (void)
     // Pass the delay to the caller
     j |= (delay << 19);
     
-    m_displayOut = next;
-
     if (j == C_CONNFAIL || j == C_DISCONNECT)
     {
         wxString msg;
@@ -2271,20 +2284,25 @@ void PtermConnection::StoreWord (int word)
 {
     int next;
     
-    next = m_displayIn + 1;
-    if (next == RINGSIZE)
     {
-        next = 0;
+        wxCriticalSectionLocker lock (m_pointerLock);
+
+        next = m_displayIn + 1;
+        if (next == RINGSIZE)
+        {
+            next = 0;
+        }
+        if (next == m_displayOut)
+        {
+            return;
+        }
+        m_displayRing[m_displayIn] = word;
+        m_displayIn = next;
     }
-    if (next == m_displayOut)
-    {
-        return;
-    }
-    m_displayRing[m_displayIn] = word;
+    
 #ifdef DEBUG
 //    wxLogMessage ("data from plato %07o", word);
 #endif
-    m_displayIn = next;
 }
 
 void PtermConnection::SendData (const void *data, int len)
