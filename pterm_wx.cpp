@@ -2227,7 +2227,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
 
 int PtermConnection::NextWord (void)
 {
-    int i, j, next;
+    int j, next;
     int delay = 0;
     
     if (m_displayIn == m_displayOut)
@@ -2307,7 +2307,8 @@ void PtermConnection::StoreWord (int word)
 
 void PtermConnection::SendData (const void *data, int len)
 {
-    send(m_fet.connFd, data, len, 0);
+	// Windows has the wrong type for the buffer pointer argument...
+    send(m_fet.connFd, (const char *) data, len, 0);
 }
 
 // ----------------------------------------------------------------------------
