@@ -586,7 +586,7 @@ int dtReadw (NetFet *fet, void *buf, int len)
         memcpy (to, out, left);
         to += left;
         len -= left;
-        fet->out = fet->first;
+        fet->out = out = fet->first;
         /*
         **  If the data to end of ring was exactly the amount we wanted,
         **  we're done now.
