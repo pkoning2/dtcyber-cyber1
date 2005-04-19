@@ -132,6 +132,7 @@
 #include "wx/clipbrd.h"
 #include "wx/colordlg.h"
 #include "wx/config.h"
+#include "wx/image.h"
 
 extern "C"
 {
@@ -717,7 +718,6 @@ bool PtermApp::OnInit (void)
 {
     int r, g, b;
     wxString rgb;
-    PtermFrame *frame;
     
     ptermApp = this;
     m_firstFrame = NULL;
@@ -1812,7 +1812,6 @@ int PtermFrame::procPlatoWord (u32 d)
     mptr mp;
     char *msg = "";
     int status = 0;
-    int newx, newy;
     // used in load coordinate
     int &coord = (d & 01000) ? currentY : currentX;
     

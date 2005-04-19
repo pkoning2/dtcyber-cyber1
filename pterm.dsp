@@ -49,7 +49,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib wxregex.lib wxjpeg.lib wxtiff.lib wxmsw25_core.lib wxbase25.lib /nologo /subsystem:windows /map /machine:I386 /nodefaultlib:"libc.lib" /libpath:"c:\wxWidgets-2.5.5\lib\vc_lib"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib wxregex.lib wxjpeg.lib wxtiff.lib wxpng.lib wxzlib.lib wxmsw25_core.lib wxbase25.lib /nologo /subsystem:windows /map /machine:I386 /nodefaultlib:"libc.lib" /libpath:"c:\wxWidgets-2.5.5\lib\vc_lib"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "pterm - Win32 Debug"
@@ -74,7 +74,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 regex.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib wxregex.lib wxjpeg.lib wxtiff.lib wxmsw25_core.lib wxbase25.lib /nologo /subsystem:windows /incremental:no /debug /machine:I386 /nodefaultlib:"libcd.lib" /pdbtype:sept /libpath:"c:\wxWidgets-2.5.5\lib"
+# ADD LINK32 regex.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib wxregex.lib wxjpeg.lib wxtiff.lib wxpng.lib wxzlib.lib wxmsw25_core.lib wxbase25.lib /nologo /subsystem:windows /incremental:no /debug /machine:I386 /nodefaultlib:"libcd.lib" /pdbtype:sept /libpath:"c:\wxWidgets-2.5.5\lib"
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -170,13 +170,6 @@ SOURCE=.\wx\msw\pntright.cur
 # Begin Source File
 
 SOURCE=.\pterm.rc
-
-!IF  "$(CFG)" == "pterm - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "pterm - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
@@ -185,10 +178,6 @@ SOURCE=.\pterm_32.ico
 # Begin Source File
 
 SOURCE=.\pterm_wx.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=ptermcom.c
 # End Source File
 # Begin Source File
 
