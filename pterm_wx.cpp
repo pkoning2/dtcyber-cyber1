@@ -18,8 +18,6 @@
 **  -----------------
 */
 
-#define PPT 1
-
 #define DEFAULTHOST wxT ("cyberserv.org")
 #define BufSiz      256
 #define RINGSIZE    5000
@@ -64,11 +62,7 @@
 #define CharYSize       (vCharYSize (ptermApp->m_scale))
 #define ScreenSize      (vScreenSize (ptermApp->m_scale))
 
-#ifdef PPT
 #define TERMTYPE 10
-#else
-#define TERMTYPE 0
-#endif
 
 /*
 **  -----------------------
@@ -1830,12 +1824,10 @@ int PtermFrame::procPlatoWord (u32 d)
 	if ((d & 01700000) == 0)
     {
         // NOP command...
-#ifdef PPT
         if (d & 1)
         {
             wc = (wc + 1) & 0177;
         }
-#endif
     }
     else
     {
@@ -1872,15 +1864,7 @@ int PtermFrame::procPlatoWord (u32 d)
             }
             
             wemode = (d >> 1) & 3;
-#ifdef PPT
             mode = (d >> 3) & 7;
-#else
-            mode = (d >> 3) & 3;
-            if (wemode == 0)
-            {
-                wemode = 2;
-            }
-#endif
             if (d & 1)
             {
                 // full screen erase
@@ -1895,7 +1879,6 @@ int PtermFrame::procPlatoWord (u32 d)
             
         case 2:     // load coordinate
             
-#ifdef PPT
             if (d & 04000)
             {
                 // Add or subtract from current coordinate
@@ -1918,9 +1901,6 @@ int PtermFrame::procPlatoWord (u32 d)
                 margin = coord;
                 msg = "margin";
             }
-#else
-            coord = d & 0777;
-#endif
             TRACE3 ("load coord %c %d %s",
                     (d & 01000) ? 'Y' : 'X', d & 0777, msg);
             break;
@@ -1931,7 +1911,6 @@ int PtermFrame::procPlatoWord (u32 d)
                 TRACE ("load echo termtype %d", TERMTYPE);
                 d = 0160 + TERMTYPE;
             }
-#ifdef PPT
             else if ((d & 0177) == 0x7b)
             {
                 // hex 7b is beep
@@ -1944,7 +1923,6 @@ int PtermFrame::procPlatoWord (u32 d)
                 TRACE ("report MAR %o", memaddr);
                 d = memaddr;
             }
-#endif
             else
             {
                 TRACE ("load echo %d", d & 0177);
@@ -1953,16 +1931,11 @@ int PtermFrame::procPlatoWord (u32 d)
             break;
             
         case 4:     // load address
-#ifdef PPT
             memaddr = d & 077777;
-#else
-            memaddr = d & 01777;
-#endif
             TRACE2 ("load address %o (0x%x)", memaddr, memaddr);
             break;
             
-#ifdef PPT
-        case 5:     // SSF on PPT, Load Slide on PLATO IV
+        case 5:     // SSF on PPT
             switch ((d >> 10) & 037)
             {
             case 1: // Touch panel control ?
@@ -1974,7 +1947,6 @@ int PtermFrame::procPlatoWord (u32 d)
                 break;  // ignore
             }
             break;
-#endif
 
         case 6:
         case 7:
@@ -2119,15 +2091,12 @@ void PtermFrame::plotChar (int c)
         case 021:   // select M1
         case 022:   // select M2
         case 023:   // select M3
-#ifdef PPT
         case 024:   // select M4
         case 025:   // select M5
         case 026:   // select M6
         case 027:   // select M7
-#endif
             currentCharset = c - 020;
             break;
-#ifdef PPT
         case 030:   // horizontal writing
             vertical = FALSE;
             break;
@@ -2146,7 +2115,6 @@ void PtermFrame::plotChar (int c)
         case 035:   // double size writing
             large = TRUE;
             break;
-#endif
         default:
             break;
         }
@@ -2214,7 +2182,6 @@ void PtermFrame::mode2 (u32 d)
 {
     int ch, chaddr;
     
-#ifdef PPT
     // memaddr is a PPT RAM address; convert it to a character memory address
     chaddr = memaddr - M2ADDR;
     if (chaddr < 0 || chaddr > 127 * 16)
@@ -2223,14 +2190,6 @@ void PtermFrame::mode2 (u32 d)
         return;
     }
     chaddr /= 2;
-#else
-    if (memaddr >= 127 * 8)
-    {
-        TRACEN ("memdata, address out of range");
-        return;
-    }
-    chaddr = memaddr;
-#endif
     if (((d >> 16) & 3) == 0)
     {
         // load data
@@ -2243,11 +2202,7 @@ void PtermFrame::mode2 (u32 d)
             ptermLoadChar (2 + (ch / 64), ch % 64, &plato_m23[chaddr - 8]);
         }
     }
-#ifdef PPT
     memaddr += 2;
-#else
-    memaddr += 1;
-#endif
 }
 
 /*--------------------------------------------------------------------------
