@@ -18,7 +18,7 @@
 **  -----------------
 */
 
-//#define PPT
+#define PPT 1
 
 #define DEFAULTHOST wxT ("cyberserv.org")
 #define BufSiz      256
@@ -46,17 +46,26 @@
 
 #define CSETS           8       // leave room for the PPT multiple sets
 
+#define M2ADDR          0x2340  // PPT start address for set 2
+#define M3ADDR          0x2740  // PPT start address for set 3
+
 // Size of the window and pixmap.
 // This is: a screen high with marging top and botton.
 // Pixmap has two rows added, which are storage for the
 // patterns for the character sets (ROM and loadable)
-#define XSize           ((512 + 2 * DisplayMargin) * ptermApp->m_scale)
-#define YSize           ((512 + 2 * DisplayMargin) * ptermApp->m_scale)
-#define CharYSize       ((CSETS * 16) * ptermApp->m_scale)
-#define ScreenSize      (512 * ptermApp->m_scale)
+#define vXSize(s)       ((512 + 2 * DisplayMargin) * (s))
+#define vYSize(s)       ((512 + 2 * DisplayMargin) * (s))
+#define vCharXSize(s)   (512 * (s))
+#define vCharYSize(s)   ((CSETS * 16) * (s))
+#define vScreenSize(s)  (512 * (s))
+#define XSize           (vYSize (ptermApp->m_scale))
+#define YSize           (vXSize (ptermApp->m_scale))
+#define CharXSize       (vCharXSize (ptermApp->m_scale))
+#define CharYSize       (vCharYSize (ptermApp->m_scale))
+#define ScreenSize      (vScreenSize (ptermApp->m_scale))
 
 #ifdef PPT
-#define TERMTYPE 9
+#define TERMTYPE 10
 #else
 #define TERMTYPE 0
 #endif
@@ -259,8 +268,10 @@ public:
 
     // event handlers
     void OnConnect (wxCommandEvent &event);
+    void OnPref (wxCommandEvent& event);
 
     bool DoConnect (bool ask);
+    static wxColour SelectColor (wxColour &initcol);
     
     wxColour    m_fgColor;
     wxColour    m_bgColor;
@@ -273,9 +284,10 @@ public:
     int         m_scale;
     bool        m_classicSpeed;
     bool        m_connect;
+    PtermFrame  *m_firstFrame;
     
 private:
-
+    
     // any class wishing to process wxWindows events must use this macro
     DECLARE_EVENT_TABLE ()
 };
@@ -296,21 +308,23 @@ public:
     void OnTimer (wxTimerEvent& event);
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
-    void OnPref (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
 
-    wxColour SelectColor (wxColour &initcol);
-
+    void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
+    
     void PrepareDC(wxDC& dc);
     void ptermSendKey(int key);
     void ptermSetTrace (bool fileaction);
 
     wxMemoryDC  *m_memDC;
     bool        tracePterm;
+    PtermFrame  *m_nextFrame;
+    PtermFrame  *m_prevFrame;
 
 private:
     PtermConnection *m_conn;
     wxBrush     m_backgroundBrush;
+    wxBrush     m_foregroundBrush;
     wxBitmap    *m_bitmap;
     wxPen       m_foregroundPen;
     wxPen       m_backgroundPen;
@@ -355,20 +369,27 @@ private:
     int         memlpc;
     int         currentCharset;
     bool        uncover;
+    bool        vertical;
+    bool        reverse;
+    bool        large;
     int         wc;
     int         seq;
+    int         modewords;
+    int         mode4start;
+
+    void UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
+                   wxColour &newfg, wxColour &newbf, bool newscale2);
 
     // PLATO drawing primitives
     void ptermDrawChar (int x, int y, int snum, int cnum);
     void ptermDrawPoint (int x, int y);
     void ptermDrawLine(int x1, int y1, int x2, int y2);
     void ptermFullErase (void);
+    void ptermBlockErase (int x1, int y1, int x2, int y2);
     void ptermSetName (const char *winName);
     void ptermSetStatus (const char *str);
     void ptermLoadChar (int snum, int cnum, const u16 *data);
     void ptermLoadRomChars (void);
-    void ptermSetCharColors (wxColour &fb, wxColour &bg);
-    void ptermSetSize (bool scale2);
     
     void drawChar (wxDC &dc, int x, int y, int snum, int cnum);
     int procPlatoWord (u32 d);
@@ -467,7 +488,7 @@ public:
     wxString        m_port;
     
 private:
-    void paintBitmap (wxBitmap *bm, wxColour &color, wxBitmapButton *to);
+    void paintBitmap (wxBitmap *bm, wxColour &color);
     
     PtermFrame *m_owner;
 
@@ -673,13 +694,13 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_TIMER(wxID_ANY,   PtermFrame::OnTimer)
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
-    EVT_MENU(Pterm_Pref,  PtermFrame::OnPref)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
     END_EVENT_TABLE ()
 
 BEGIN_EVENT_TABLE(PtermApp, wxApp)
-    EVT_MENU(Pterm_Connect,  PtermApp::OnConnect)
+    EVT_MENU(Pterm_Connect, PtermApp::OnConnect)
     EVT_MENU(Pterm_ConnectAgain, PtermApp::OnConnect)
+    EVT_MENU(Pterm_Pref,    PtermApp::OnPref)
     END_EVENT_TABLE ()
 
 // Create a new application object: this macro will allow wxWindows to create
@@ -705,7 +726,8 @@ bool PtermApp::OnInit (void)
     PtermFrame *frame;
     
     ptermApp = this;
-
+    m_firstFrame = NULL;
+    
 #ifdef DEBUG
     logwindow = new wxLogWindow (NULL, "pterm log", TRUE, FALSE);
 #endif
@@ -751,21 +773,18 @@ bool PtermApp::OnInit (void)
     m_classicSpeed = (m_config->Read (wxT ("classicSpeed"), 0L) != 0);
     m_connect = (m_config->Read (wxT ("autoconnect"), 1) != 0);
 
-    // If arguments are present, always connect
-    if (argc > 1)
-    {
-        m_connect = TRUE;
-    }
-    
     // create the main application window
-    if (!DoConnect (!m_connect))
+    // If arguments are present, always connect without asking
+    if (!DoConnect (!(m_connect || argc > 1)))
     {
         return FALSE;
     }
     
     // create the clipboard object
     m_clipboard = new wxClipboard;
-
+    // GTK seems to require this -- thanks Chris Elliott!
+    wxImage::AddHandler (new wxPNGHandler);
+    
     sprintf (traceFn, "pterm%d.trc", getpid ());
 
     // success: wxApp::OnRun () will be called which will enter the main message
@@ -790,7 +809,7 @@ int PtermApp::OnExit (void)
 
 void PtermApp::OnConnect (wxCommandEvent &event)
 {
-    DoConnect (event.GetId () == Pterm_ConnectAgain);
+    DoConnect (event.GetId () == Pterm_Connect);
 }
 
 bool PtermApp::DoConnect (bool ask)
@@ -817,9 +836,80 @@ bool PtermApp::DoConnect (bool ask)
     
 
     // create the main application window
-    frame = new PtermFrame(m_hostName, m_port, wxT("Pterm " PTERMVERSION));
+    frame = new PtermFrame(m_hostName, m_port, wxT("Pterm"));
 
+    if (frame != NULL)
+    {
+        if (m_firstFrame != NULL)
+        {
+            m_firstFrame->m_prevFrame = frame;
+        }
+        frame->m_nextFrame = m_firstFrame;
+        m_firstFrame = frame;
+    }
+    
     return (frame != NULL);
+}
+
+void PtermApp::OnPref (wxCommandEvent& WXUNUSED(event))
+{
+    PtermFrame *frame;
+    wxString rgb;
+    
+    PtermPrefdialog dlg (NULL, wxID_ANY, _("Pterm Preferences"));
+    
+    if (dlg.ShowModal () == wxID_OK)
+    {
+        for (frame = m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
+        {
+            frame->UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2);
+        }
+
+        m_fgColor = dlg.m_fgColor;
+        m_bgColor = dlg.m_bgColor;
+        
+        m_scale = (dlg.m_scale2) ? 2 : 1;
+        m_classicSpeed = dlg.m_classicSpeed;
+        free (m_hostName);
+        m_hostName = strdup (wxString (dlg.m_host).mb_str ());
+        m_port = atoi (wxString (dlg.m_port).mb_str ());
+        m_connect = dlg.m_connect;
+        
+        rgb.Printf (wxT ("%d %d %d"), 
+                    dlg.m_fgColor.Red (), dlg.m_fgColor.Green (),
+                    dlg.m_fgColor.Blue ());
+        m_config->Write (wxT ("foreground"), rgb);
+        rgb.Printf (wxT ("%d %d %d"),
+                    dlg.m_bgColor.Red (), dlg.m_bgColor.Green (),
+                    dlg.m_bgColor.Blue ());
+        m_config->Write (wxT ("background"), rgb);
+        m_config->Write (wxT ("scale"), (dlg.m_scale2) ? 2 : 1);
+        m_config->Write (wxT ("host"), dlg.m_host);
+        m_config->Write (wxT ("port"), m_port);
+        m_config->Write (wxT ("classicSpeed"), (dlg.m_classicSpeed) ? 1 : 0);
+        m_config->Write (wxT ("autoConnect"), (dlg.m_connect) ? 1 : 0);
+        m_config->Flush ();
+    }
+}
+
+wxColour PtermApp::SelectColor (wxColour &initcol)
+{
+    wxColour col (initcol);
+    wxColour orange (255, 144, 0);
+    wxColourData data;
+
+    data.SetColour (initcol);
+    data.SetCustomColour (0, orange);
+    data.SetCustomColour (1, *wxBLACK);
+    
+    wxColourDialog dialog (NULL, &data);
+
+    if (dialog.ShowModal () == wxID_OK)
+    {
+        col = dialog.GetColourData ().GetColour ();
+    }
+
+    return col;
 }
 
 
@@ -834,7 +924,10 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
               wxDefaultSize),
       m_foregroundPen (ptermApp->m_fgColor, ptermApp->m_scale, wxSOLID),
       m_backgroundPen (ptermApp->m_bgColor, ptermApp->m_scale, wxSOLID),
+      m_foregroundBrush (ptermApp->m_fgColor, wxSOLID),
       m_backgroundBrush (ptermApp->m_bgColor, wxSOLID),
+      m_nextFrame (NULL),
+      m_prevFrame (NULL),
       m_timer (this),
       tracePterm (FALSE),
       m_port (port),
@@ -848,9 +941,13 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
       memaddr (0),
       memlpc (0),
       currentCharset (0),
-      uncover(FALSE),
+      uncover (FALSE),
+      vertical (FALSE),
+      reverse (FALSE),
+      large (FALSE),
       wc (0),
-      seq (0)
+      seq (0),
+      modewords (0)
 {
     int i;
 
@@ -913,7 +1010,7 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
     for (i = 0; i < 5; i++)
     {
         m_charDC[i] = new wxMemoryDC ();
-        m_charmap[i] = new wxBitmap (XSize, CharYSize, -1);
+        m_charmap[i] = new wxBitmap (CharXSize, CharYSize, -1);
         m_charDC[i]->SelectObject (*m_charmap[i]);
     }
     m_bitmap = new wxBitmap (XSize, YSize, -1);
@@ -925,7 +1022,7 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
     m_memDC->SetClippingRegion (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize);
     m_memDC->EndDrawing ();
 
-    SetClientSize (XSize+2, YSize+2);
+    SetClientSize (XSize + 2, YSize + 2);
     m_canvas = new PtermCanvas (this);
 
     /*
@@ -955,6 +1052,20 @@ PtermFrame::~PtermFrame ()
     {
         delete m_charDC[i];
         delete m_charmap[i];
+    }
+    
+    // Remove this frame from the app's frame list
+    if (m_nextFrame != NULL)
+    {
+        m_nextFrame->m_prevFrame = m_prevFrame;
+    }
+    if (m_prevFrame != NULL)
+    {
+        m_prevFrame->m_nextFrame = m_nextFrame;
+    }
+    else
+    {
+        ptermApp->m_firstFrame = m_nextFrame;
     }
     
     free (m_hostName);
@@ -1086,28 +1197,6 @@ void PtermFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
     wxMessageBox(msg, _T("About Pterm"), wxOK | wxICON_INFORMATION, this);
 }
 
-void PtermFrame::OnPref (wxCommandEvent& WXUNUSED(event))
-{
-    PtermPrefdialog dlg (this, wxID_ANY, _("Pterm Preferences"));
-    
-    if (dlg.ShowModal () == wxID_OK)
-    {
-        ptermSetCharColors (dlg.m_fgColor, dlg.m_bgColor);
-        ptermSetSize (dlg.m_scale2);
-        ptermApp->m_classicSpeed = dlg.m_classicSpeed;
-        free (ptermApp->m_hostName);
-        ptermApp->m_hostName = strdup (wxString (dlg.m_host).mb_str ());
-        ptermApp->m_port = atoi (wxString (dlg.m_port).mb_str ());
-        ptermApp->m_connect = dlg.m_connect;
-        
-        ptermApp->m_config->Write (wxT ("host"), dlg.m_host);
-        ptermApp->m_config->Write (wxT ("port"), m_port);
-        ptermApp->m_config->Write (wxT ("classicSpeed"), (dlg.m_classicSpeed) ? 1 : 0);
-        ptermApp->m_config->Write (wxT ("autoConnect"), (dlg.m_connect) ? 1 : 0);
-        ptermApp->m_config->Flush ();
-    }
-}
-
 void PtermFrame::OnCopyScreen (wxCommandEvent & WXUNUSED(event))
 {
     wxBitmap screenmap (ScreenSize, ScreenSize);
@@ -1128,26 +1217,6 @@ void PtermFrame::OnCopyScreen (wxCommandEvent & WXUNUSED(event))
     }
 }
 
-wxColour PtermFrame::SelectColor (wxColour &initcol)
-{
-    wxColour col (initcol);
-    wxColour orange (255, 144, 0);
-    wxColourData data;
-
-    data.SetColour (initcol);
-    data.SetCustomColour (0, orange);
-    data.SetCustomColour (1, *wxBLACK);
-    
-    wxColourDialog dialog(this, &data);
-
-    if (dialog.ShowModal () == wxID_OK)
-    {
-        col = dialog.GetColourData ().GetColour ();
-    }
-
-    return col;
-}
-
 void PtermFrame::PrepareDC(wxDC& dc)
 {
     dc.SetAxisOrientation (TRUE, FALSE);
@@ -1156,14 +1225,87 @@ void PtermFrame::PrepareDC(wxDC& dc)
 
 void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
 {
+    int &cx = (vertical) ? y : x;
+    int &cy = (vertical) ? x : y;
+    int i, j, saveY, savemode, dx, dy, sdy;
+    const u16 *charp;
+    u16 charw;
     wxClientDC dc(m_canvas);
 
-    dc.BeginDrawing ();
-    PrepareDC (dc);
-    m_memDC->SetPen (m_foregroundPen);
-    m_memDC->SetBackground (m_backgroundBrush);
-    drawChar (dc, x, y, snum, cnum);
-    dc.EndDrawing ();
+    if (!vertical && !large)
+    {
+        dc.BeginDrawing ();
+        m_memDC->BeginDrawing ();
+        PrepareDC (dc);
+        m_memDC->SetPen (m_foregroundPen);
+        m_memDC->SetBackground (m_backgroundBrush);
+        drawChar (dc, x, y, snum, cnum);
+        dc.EndDrawing ();
+        m_memDC->EndDrawing ();
+    }
+    else
+    {
+        // vertical or large drawing we do dot by dot
+        x = currentX;
+        y = currentY;
+        saveY = cy;
+        dx = dy = (large) ? 2 : 1;
+        sdy = 1;
+        if (vertical)
+        {
+            sdy = -1;
+            dy = -dy;
+        }
+        if (snum == 0)
+        {
+            charp = plato_m0;
+        }
+        else if (snum == 1)
+        {
+            charp = plato_m1;
+        }
+        else
+        {
+            charp = plato_m23 + (snum - 2) * (8 * 64);
+        }
+        charp += 8 * cnum;
+        savemode = wemode;
+        
+        for (j = 0; j < 8; j++)
+        {
+            cy = saveY;
+            charw = *charp++;
+            for (i = 0; i < 16; i++)
+            {
+                if ((charw & 1) == 0)
+                {
+                    // background, do we erase it?
+                    if (savemode & 2)
+                    {
+                        charw >>= 1;
+                        cy += dy;
+                        continue;
+                    }
+                    wemode = savemode ^ 1;
+                }
+                else
+                {
+                    wemode = savemode;
+                }
+                ptermDrawPoint (x, y);
+                if (large)
+                {
+                    ptermDrawPoint (x + 1, y);
+                    ptermDrawPoint (x, y + sdy);
+                    ptermDrawPoint (x + 1, y + sdy);
+                }
+                charw >>= 1;
+                cy += dy;
+            }
+            cx += dx;
+        }
+        wemode = savemode;
+    }
 }
 
 void PtermFrame::ptermDrawPoint (int x, int y)
@@ -1171,9 +1313,10 @@ void PtermFrame::ptermDrawPoint (int x, int y)
     wxClientDC dc(m_canvas);
 
     dc.BeginDrawing ();
+    m_memDC->BeginDrawing ();
     PrepareDC (dc);
-    x = XADJUST (x);
-    y = YADJUST (y);
+    x = XADJUST (x & 0777);
+    y = YADJUST (y & 0777);
     if (wemode & 1)
     {
         // mode rewrite or write
@@ -1187,7 +1330,7 @@ void PtermFrame::ptermDrawPoint (int x, int y)
         m_memDC->SetPen (m_backgroundPen);
     }
     dc.DrawPoint (x, y);
-    m_memDC->SetBackground (m_backgroundBrush);
+//    m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->DrawPoint (x, y);
     if (ptermApp->m_scale == 2)
     {
@@ -1199,6 +1342,7 @@ void PtermFrame::ptermDrawPoint (int x, int y)
         m_memDC->DrawPoint (x + 1, y + 1);
     }    
     dc.EndDrawing ();
+    m_memDC->EndDrawing ();
 }
 
 void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
@@ -1206,6 +1350,7 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
     wxClientDC dc(m_canvas);
 
     dc.BeginDrawing ();
+    m_memDC->BeginDrawing ();
     PrepareDC (dc);
     x1 = XADJUST (x1);
     y1 = YADJUST (y1);
@@ -1224,9 +1369,10 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
         m_memDC->SetPen (m_backgroundPen);
     }
     dc.DrawLine (x1, y1, x2, y2);
-    m_memDC->SetBackground (m_backgroundBrush);
+//    m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->DrawLine (x1, y1, x2, y2);
     dc.EndDrawing ();
+    m_memDC->EndDrawing ();
 }
 
 void PtermFrame::ptermFullErase (void)
@@ -1243,8 +1389,62 @@ void PtermFrame::ptermFullErase (void)
     m_memDC->EndDrawing ();
 }
 
+void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
+{
+    int t;
+    wxClientDC dc(m_canvas);
+
+    dc.BeginDrawing ();
+    m_memDC->BeginDrawing ();
+    PrepareDC (dc);
+    x1 = XADJUST (x1);
+    y1 = YADJUST (y1);
+    x2 = XADJUST (x2);
+    y2 = YADJUST (y2);
+    if (x1 > x2)
+    {
+        t = x1;
+        x1 = x2;
+        x2 = t;
+    }
+    if (y1 > y2)
+    {
+        t = y1;
+        y1 = y2;
+        y2 = t;
+    }
+    if (wemode & 1)
+    {
+        // mode rewrite or write
+        dc.SetPen (m_foregroundPen);
+        m_memDC->SetPen (m_foregroundPen);
+        dc.SetBrush (m_foregroundBrush);
+        m_memDC->SetBrush (m_foregroundBrush);
+    }
+    else
+    {
+        // mode inverse or erase
+        dc.SetPen (m_backgroundPen);
+        m_memDC->SetPen (m_backgroundPen);
+        dc.SetBrush (m_backgroundBrush);
+        m_memDC->SetBrush (m_backgroundBrush);
+    }
+    dc.DrawRectangle (x1, y1,
+                      x2 - x1 + ptermApp->m_scale,
+                      y2 - y1 + ptermApp->m_scale);
+    m_memDC->DrawRectangle (x1, y1,
+                            x2 - x1 + ptermApp->m_scale,
+                            y2 - y1 + ptermApp->m_scale);
+    dc.EndDrawing ();
+    m_memDC->EndDrawing ();
+}
+
 void PtermFrame::ptermSetName (const char *winName)
 {
+    wxString str;
+    
+    str.Printf (wxT("Pterm: %s"), winName);
+    SetName (str);
 }
 
 void PtermFrame::ptermSetStatus (const char *str)
@@ -1252,19 +1452,6 @@ void PtermFrame::ptermSetStatus (const char *str)
     wxString wxstr (str, *wxConvCurrent);
     
     SetStatusText(wxstr, STATUS_CONN);
-}
-
-void PtermCanvas::ptermTouchPanel(bool enable)
-{
-    m_touchEnabled = enable;
-    if (enable)
-    {
-        SetCursor (wxCursor (wxCURSOR_HAND));
-    }
-    else
-    {
-        SetCursor (wxNullCursor);
-    }
 }
 
 void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *chardata)
@@ -1361,49 +1548,204 @@ void PtermFrame::ptermLoadRomChars (void)
     }
 }
 
-void PtermFrame::ptermSetCharColors (wxColour &fg, wxColour &bg)
+void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool newscale2)
 {
-    wxBrush fgBrush;
-    wxString rgb;
+    const bool recolor = (ptermApp->m_fgColor != newfg ||
+                          ptermApp->m_bgColor != newbg);
+    const int newscale = (newscale2) ? 2 : 1;
+    const bool rescale = (newscale != ptermApp->m_scale);
+    int i;
+    wxBitmap *newmap;
     
-    fgBrush.SetColour (fg);
-    if (ptermApp->m_fgColor == fg &&
-        ptermApp->m_bgColor == bg)
+    if (!recolor && !rescale)
     {
         return;
     }
-    rgb.Printf (wxT ("%d %d %d"), (int) fg.Red (), (int) fg.Green (), (int) fg.Blue ());
-    ptermApp->m_config->Write (wxT ("foreground"), rgb);
-    rgb.Printf (wxT ("%d %d %d"), (int) bg.Red (), (int) bg.Green (), (int) bg.Blue ());
-    ptermApp->m_config->Write (wxT ("background"), rgb);
+
+    wxClientDC dc(m_canvas);
+
+    UpdateDC (m_memDC, m_bitmap, newfg, newbg, newscale2);
+    if (rescale)
+    {
+        SetClientSize (vXSize (newscale) + 2, vYSize (newscale) + 2);
+        m_canvas->SetSize (vXSize (newscale), vYSize (newscale));
+        m_canvas->SetVirtualSize (vXSize (newscale), vYSize (newscale));
+        m_canvas->SetScrollRate (1, 1);
+        dc.BeginDrawing ();
+        dc.DestroyClippingRegion ();
+        dc.SetClippingRegion (DisplayMargin * newscale, DisplayMargin * newscale,
+                              vScreenSize (newscale), vScreenSize (newscale));
+        dc.EndDrawing ();
+        m_memDC->BeginDrawing ();
+        m_memDC->DestroyClippingRegion ();
+        m_memDC->SetClippingRegion (DisplayMargin * newscale,
+                                    DisplayMargin * newscale,
+                                    vScreenSize (newscale), vScreenSize (newscale));
+        m_memDC->EndDrawing ();
+        
+        UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor,
+                  ptermApp->m_bgColor, newscale2);
+
+        // Just allocate new bitmaps for the others, we'll repaint them below
+        for (i = 0; i < 4; i++)
+        {
+            newmap = new wxBitmap (vCharXSize (newscale), vCharYSize (newscale), -1);
+            m_charDC[i]->SelectObject (*newmap);
+            delete m_charmap[i];
+            m_charmap[i] = newmap;
+        }
+    }
     
-    ptermApp->m_fgColor = fg;
-    ptermApp->m_bgColor = bg;
-    m_backgroundBrush.SetColour (bg);
-    m_backgroundPen.SetColour (bg);
-    m_foregroundPen.SetColour (fg);
+    m_canvas->SetBackgroundColour (newbg);
+    m_canvas->Refresh ();
+    m_backgroundBrush.SetColour (newbg);
+    m_backgroundPen.SetColour (newbg);
+    m_foregroundBrush.SetColour (newfg);
+    m_foregroundPen.SetColour (newfg);
     
     m_charDC[2]->SetBackground (m_backgroundBrush);
     m_charDC[2]->Clear ();
-    m_charDC[2]->Blit (0, 0, XSize, CharYSize, m_charDC[4], 0, 0, wxAND_INVERT);
-    m_charDC[3]->SetBackground (fgBrush);
+    m_charDC[2]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
+                       m_charDC[4], 0, 0, wxAND_INVERT);
+    m_charDC[3]->SetBackground (m_foregroundBrush);
     m_charDC[3]->Clear ();
-    m_charDC[3]->Blit (0, 0, XSize, CharYSize, m_charDC[4], 0, 0, wxAND_INVERT);
-    m_charDC[0]->SetBackground (fgBrush);
+    m_charDC[3]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
+                       m_charDC[4], 0, 0, wxAND_INVERT);
+    m_charDC[0]->SetBackground (m_foregroundBrush);
     m_charDC[0]->Clear ();
-    m_charDC[0]->Blit (0, 0, XSize, CharYSize, m_charDC[4], 0, 0, wxAND);
-    m_charDC[0]->Blit (0, 0, XSize, CharYSize, m_charDC[2], 0, 0, wxOR);
+    m_charDC[0]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
+                       m_charDC[4], 0, 0, wxAND);
+    m_charDC[0]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
+                       m_charDC[2], 0, 0, wxOR);
     m_charDC[1]->SetBackground (m_backgroundBrush);
     m_charDC[1]->Clear ();
-    m_charDC[1]->Blit (0, 0, XSize, CharYSize, m_charDC[4], 0, 0, wxAND);
-    m_charDC[1]->Blit (0, 0, XSize, CharYSize, m_charDC[3], 0, 0, wxOR);
+    m_charDC[1]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
+                       m_charDC[4], 0, 0, wxAND);
+    m_charDC[1]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
+                       m_charDC[3], 0, 0, wxOR);
 }
 
-void PtermFrame::ptermSetSize (bool scale2)
+void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
+                           wxColour &newfg, wxColour &newbg, bool newscale2)
 {
-    // TBD: actually change the window size on the spot.
-    // for now, just save it for next start.
-    ptermApp->m_config->Write (wxT ("scale"), (scale2) ? 2 : 1);
+    int fr, fg, fb, br, bg, bb, ofr, ofg, ofb;
+    int r, g, b, oh, ow, nh, nw, h, w;
+    u8 *odata, *ndata, *newbits;
+    const bool recolor = (ptermApp->m_fgColor != newfg ||
+                          ptermApp->m_bgColor != newbg);
+    const int newscale = (newscale2) ? 2 : 1;
+    const bool rescale = (newscale != ptermApp->m_scale);
+    wxMemoryDC tmpDC;
+    wxBitmap *newbitmap;
+    wxImage *imgp;
+    
+    if (!recolor && !rescale)
+    {
+        return;
+    }
+
+    imgp = new wxImage (bitmap->ConvertToImage ());
+    
+    ow = imgp->GetWidth ();
+    oh = imgp->GetHeight ();
+    w = ow / ptermApp->m_scale;
+    h = oh / ptermApp->m_scale;
+    nw = w * newscale;
+    nh = h * newscale;
+    
+    ofr = ptermApp->m_fgColor.Red ();
+    ofg = ptermApp->m_fgColor.Green ();
+    ofb = ptermApp->m_fgColor.Blue ();
+    fr = newfg.Red ();
+    fg = newfg.Green ();
+    fb = newfg.Blue ();
+    br = newbg.Red ();
+    bg = newbg.Green ();
+    bb = newbg.Blue ();
+    
+    ndata = odata = imgp->GetData ();
+    if (rescale)
+    {
+        ndata = newbits = (u8 *) malloc (3 * nw * nh);
+    }
+    
+    for (int j = 0; j < h; j++)
+    {
+        for (int i = 0; i < w; i++)
+        {
+            r = odata[0];
+            g = odata[1];
+            b = odata[2];
+            if (recolor)
+            {
+                if ((r == ofr) && (g == ofg) && (b == ofb))
+                {
+                    r = fr;
+                    g = fg;
+                    b = fb;
+                }
+                else
+                {
+                    r = br;
+                    g = bg;
+                    b = bb;
+                }
+            }
+            if (rescale)
+            {
+                if (newscale2)
+                {
+                    // from scale 1 to scale 2
+                    ndata[0] = ndata[3] = r;
+                    ndata[1] = ndata[4] = g;
+                    ndata[2] = ndata[5] = b;
+                    odata += 3;
+                    ndata += 6;
+                }
+                else
+                {
+                    ndata[0] = r;
+                    ndata[1] = g;
+                    ndata[2] = b;
+                    odata += 6;
+                    ndata += 3;
+                }
+            }
+            else
+            {
+                    odata[0] = r;
+                    odata[1] = g;
+                    odata[2] = b;
+                    odata += 3;
+            }
+        }
+        if (rescale)
+        {
+            if (newscale2)
+            {
+                // from scale 1 to scale 2 -- duplicate scan line just completed
+                memcpy (ndata, ndata - (nw * 3), nw * 3);
+                ndata += nw * 3;
+            }
+            else
+            {
+                // from scale 2 to scale 1 -- skip a scanline
+                odata += ow * 3;
+            }
+        }
+    }
+    if (rescale)
+    {
+        delete imgp;
+        imgp = new wxImage (nw, nh, newbits);
+    }
+    
+    newbitmap = new wxBitmap (*imgp);
+    
+    dc->SelectObject (*newbitmap);
+    delete bitmap;
+    delete imgp;
+    bitmap = newbitmap;
 }
 
 void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
@@ -1414,8 +1756,9 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     charY = snum * 16 * ptermApp->m_scale;
     sizeX = 8;
     sizeY = 16;
+
     screenX = XADJUST (x);
-    screenY = YADJUST (y) - 15 * ptermApp->m_scale;
+    screenY = YADJUST (y + 15);
     
     if (x < 0)
     {
@@ -1449,7 +1792,7 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     dc.Blit (screenX, screenY,
              sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale,
              m_memDC, screenX, screenY, wxCOPY);
-
+    
     // Handle screen edge wraparound by recursion...
     if (x > 512 - 8)
     {
@@ -1475,6 +1818,9 @@ int PtermFrame::procPlatoWord (u32 d)
     mptr mp;
     char *msg = "";
     int status = 0;
+    int newx, newy;
+    // used in load coordinate
+    int &coord = (d & 01000) ? currentY : currentX;
     
     seq++;
     if (tracePterm)
@@ -1498,6 +1844,7 @@ int PtermFrame::procPlatoWord (u32 d)
     
     if (d & 01000000)
     {
+        modewords++;
         mp = modePtr[mode];
         (this->*mp) (d);
     }
@@ -1512,22 +1859,12 @@ int PtermFrame::procPlatoWord (u32 d)
                 d &= 0777;
                 ptermSetStation (d);
             }
-            else if (d == 1)
-            {
-#if 0
-#if defined(_WIN32)
-                Sleep(1000 / 60);
-#else
-                usleep(1000000 / 60);
-#endif
-                status = 1;
-#endif
-            }
             
             TRACEN ("nop");
             break;
 
         case 1:     // load mode
+            modewords = 0;              // words since entering mode
             if ((d & 020000) != 0)
             {
                 // load wc bit is set
@@ -1551,27 +1888,39 @@ int PtermFrame::procPlatoWord (u32 d)
             }
 
             // bit 15 set is DISable
-            m_canvas->ptermTouchPanel ((d & 040000) == 0);
+            m_canvas->ptermTouchPanel ((d & 0100000) == 0);
             TRACE4 ("load mode %d inhibit %d wemode %d screen %d",
-                    mode, (d >> 14) & 1, wemode, (d & 1));
+                    mode, (d >> 15) & 1, wemode, (d & 1));
             break;
             
         case 2:     // load coordinate
-            if (d & 01000)
+            
+#ifdef PPT
+            if (d & 04000)
             {
-                currentY = d & 0777;
+                // Add or subtract from current coordinate
+                if (d & 02000)
+                {
+                    coord -= d & 0777;
+                }
+                else
+                {
+                    coord += d & 0777;
+                }
             }
             else
             {
-                currentX = d & 0777;
-#ifdef PPT
-                if (d & 010000)
-                {
-                    margin = currentX;
-                    msg = "margin";
-                }
-#endif
+                coord = d & 0777;
             }
+        
+            if (d & 010000)
+            {
+                margin = coord;
+                msg = "margin";
+            }
+#else
+            coord = d & 0777;
+#endif
             TRACE3 ("load coord %c %d %s",
                     (d & 01000) ? 'Y' : 'X', d & 0777, msg);
             break;
@@ -1580,10 +1929,26 @@ int PtermFrame::procPlatoWord (u32 d)
             if ((d & 0177) == 0160)
             {
                 TRACE ("load echo termtype %d", TERMTYPE);
-                ptermSendKey (0360 + TERMTYPE);
-                break;
+                d = 0160 + TERMTYPE;
             }
-            TRACE ("load echo %d", d & 0177);
+#ifdef PPT
+            else if ((d & 0177) == 0x7b)
+            {
+                // hex 7b is beep
+                TRACEN ("beep");
+                wxBell ();
+            }
+            else if ((d & 0177) == 0x7d)
+            {
+                // hex 7d is report MAR
+                TRACE ("report MAR %o", memaddr);
+                d = memaddr;
+            }
+#endif
+            else
+            {
+                TRACE ("load echo %d", d & 0177);
+            }
             ptermSendKey ((d & 0177) + 0200);
             break;
             
@@ -1593,19 +1958,17 @@ int PtermFrame::procPlatoWord (u32 d)
 #else
             memaddr = d & 01777;
 #endif
-            TRACE ("load address %o", memaddr);
+            TRACE2 ("load address %o (0x%x)", memaddr, memaddr);
             break;
             
 #ifdef PPT
         case 5:     // SSF on PPT, Load Slide on PLATO IV
             switch ((d >> 10) & 037)
             {
-#if 0
             case 1: // Touch panel control ?
                 TRACE ("ssf touch %o", d);
                 m_canvas->ptermTouchPanel ((d & 040) != 0);
                 break;
-#endif
             default:
                 TRACE ("ssf %o", d);
                 break;  // ignore
@@ -1680,6 +2043,19 @@ void PtermFrame::ptermSetTrace (bool fileaction)
 **------------------------------------------------------------------------*/
 void PtermFrame::plotChar (int c)
 {
+    int &cx = (vertical) ? currentY : currentX;
+    int &cy = (vertical) ? currentX : currentY;
+    
+    int deltax, deltay, supdelta;
+    
+    deltax = (reverse) ? -8 : 8;
+    deltay = (vertical) ? -16 : 16;
+    if (large)
+    {
+        deltax *= 2;
+        deltay *= 2;
+    }
+    
     c &= 077;
     if (c == 077)
     {
@@ -1688,43 +2064,88 @@ void PtermFrame::plotChar (int c)
     }
     if (uncover)
     {
+        supdelta = (deltay / 16) * 5;
         uncover = FALSE;
         switch (c)
         {
         case 010:   // backspace
-            currentX = (currentX - 8) & 0777;
+            cx = (cx - deltax) & 0777;
             break;
         case 011:   // tab
-            currentX = (currentX + 8) & 0777;
+            cx = (cx + deltax) & 0777;
             break;
         case 012:   // linefeed
-            currentY = (currentY - 16) & 0777;
+            cy = (cy - deltay) & 0777;
             break;
         case 013:   // vertical tab
-            currentY = (currentY + 16) & 0777;
-            break;
+            cy = (cy + deltay) & 0777;
         case 014:   // form feed
-            currentX = 0;
-            currentY = 496;
+            if (vertical)
+            {
+                cx = deltay - 1;
+                if (reverse)
+                {
+                    cy = 512 - deltax;
+                }
+                else
+                {
+                    cy = 0;
+                }
+            }
+            else
+            {
+                cy = 512 - deltay;
+                if (reverse)
+                {
+                    cx = 512 - deltax;
+                }
+                else
+                {
+                    cx = 0;
+                }
+            }
             break;
         case 015:   // carriage return
-            currentX = margin;
-            currentY = (currentY - 16) & 0777;
+            cx = margin;
+            cy = (cy - deltay) & 0777;
             break;
         case 016:   // superscript
-            currentY = (currentY + 5) & 0777;
+            cy = (cy + supdelta) & 0777;
             break;
         case 017:   // subscript
-            currentY = (currentY - 5) & 0777;
+            cy = (cy - supdelta) & 0777;
             break;
         case 020:   // select M0
         case 021:   // select M1
         case 022:   // select M2
         case 023:   // select M3
+#ifdef PPT
+        case 024:   // select M4
+        case 025:   // select M5
+        case 026:   // select M6
+        case 027:   // select M7
+#endif
             currentCharset = c - 020;
             break;
 #ifdef PPT
-            // tbd: PPT only uncover codes, all the higher ones.
+        case 030:   // horizontal writing
+            vertical = FALSE;
+            break;
+        case 031:   // vertical writing
+            vertical = TRUE;
+            break;
+        case 032:   // forward writing
+            reverse = FALSE;
+            break;
+        case 033:   // reverse writing
+            reverse = TRUE;
+            break;
+        case 034:   // normal size writing
+            large = FALSE;
+            break;
+        case 035:   // double size writing
+            large = TRUE;
+            break;
 #endif
         default:
             break;
@@ -1733,7 +2154,7 @@ void PtermFrame::plotChar (int c)
     else
     {
         ptermDrawChar (currentX, currentY, currentCharset, c);
-        currentX = (currentX + 8) & 0777;
+        cx = (cx + deltax) & 0777;
     }
 }
 
@@ -1791,25 +2212,42 @@ void PtermFrame::mode1 (u32 d)
 **------------------------------------------------------------------------*/
 void PtermFrame::mode2 (u32 d)
 {
-    int ch;
+    int ch, chaddr;
     
+#ifdef PPT
+    // memaddr is a PPT RAM address; convert it to a character memory address
+    chaddr = memaddr - M2ADDR;
+    if (chaddr < 0 || chaddr > 127 * 16)
+    {
+        TRACEN ("memaddr outside character memory range");
+        return;
+    }
+    chaddr /= 2;
+#else
     if (memaddr >= 127 * 8)
     {
         TRACEN ("memdata, address out of range");
         return;
     }
+    chaddr = memaddr;
+#endif
     if (((d >> 16) & 3) == 0)
     {
         // load data
-        TRACE2 ("memdata %06o to %04o", d & 0xffff, memaddr);
-        plato_m23[memaddr] = d & 0xffff;
-        if ((++memaddr & 7) == 0)
+        TRACE2 ("character memdata %06o to %04o", d & 0xffff, chaddr);
+        plato_m23[chaddr] = d & 0xffff;
+        if ((++chaddr & 7) == 0)
         {
             // character is done -- load it to display 
-            ch = (memaddr / 8) - 1;
-            ptermLoadChar (2 + (ch / 64), ch % 64, &plato_m23[memaddr - 8]);
+            ch = (chaddr / 8) - 1;
+            ptermLoadChar (2 + (ch / 64), ch % 64, &plato_m23[chaddr - 8]);
         }
     }
+#ifdef PPT
+    memaddr += 2;
+#else
+    memaddr += 1;
+#endif
 }
 
 /*--------------------------------------------------------------------------
@@ -1844,7 +2282,23 @@ void PtermFrame::mode3 (u32 d)
 **------------------------------------------------------------------------*/
 void PtermFrame::mode4 (u32 d)
 {
-    TRACE ("mode4 %06o", d);
+    int x1, y1, x2, y2;
+    
+    if (modewords & 1)
+    {
+        mode4start = d;
+        return;
+    }
+    x1 = (mode4start >> 9) & 0777;
+    y1 = mode4start & 0777;
+    x2 = (d >> 9) & 0777;
+    y2 = d & 0777;
+    
+    TRACE4 ("block erase %d %d to %d %d", x1, y1, x2, y2);
+
+    ptermBlockErase (x1, y1, x2, y2);
+    currentX = x1;
+    currentY = y1 - 15;
 }
 
 /*--------------------------------------------------------------------------
@@ -1941,6 +2395,7 @@ void PtermFrame::ptermSetStation (int station)
                  station >> 5, station & 31);
     }
     ptermSetStatus (name);
+    ptermSetName (name);
 }
 
 void PtermFrame::ptermShowTrace (bool enable)
@@ -1979,8 +2434,8 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
 
     m_fgBitmap = new wxBitmap (20, 12);
     m_bgBitmap = new wxBitmap (20, 12);
-    paintBitmap (m_fgBitmap, m_fgColor, NULL);
-    paintBitmap (m_bgBitmap, m_bgColor, NULL);
+    paintBitmap (m_fgBitmap, m_fgColor);
+    paintBitmap (m_bgBitmap, m_bgColor);
     
     m_fgButton = new wxBitmapButton (this, wxID_ANY, *m_fgBitmap);
     m_bgButton = new wxBitmapButton (this, wxID_ANY, *m_bgBitmap);
@@ -2052,11 +2507,11 @@ void PtermPrefdialog::OnButton (wxCommandEvent& event)
     
     if (event.m_eventObject == m_fgButton)
     {
-        m_fgColor = m_owner->SelectColor (m_fgColor);
+        m_fgColor = PtermApp::SelectColor (m_fgColor);
     }
     else if (event.m_eventObject == m_bgButton)
     {
-        m_bgColor = m_owner->SelectColor (m_bgColor);
+        m_bgColor = PtermApp::SelectColor (m_bgColor);
     }
     
     else if (event.m_eventObject == m_okButton)
@@ -2085,8 +2540,9 @@ void PtermPrefdialog::OnButton (wxCommandEvent& event)
         str.Printf ("%d", DefNiuPort);
         m_portText->SetValue (str);
     }
-    paintBitmap (m_fgBitmap, m_fgColor, m_fgButton);
-    paintBitmap (m_bgBitmap, m_bgColor, m_bgButton);
+    paintBitmap (m_fgBitmap, m_fgColor);
+    paintBitmap (m_bgBitmap, m_bgColor);
+    Refresh ();
 }
 
 void PtermPrefdialog::OnCheckbox (wxCommandEvent& event)
@@ -2105,7 +2561,7 @@ void PtermPrefdialog::OnCheckbox (wxCommandEvent& event)
     }
 }
 
-void PtermPrefdialog::paintBitmap (wxBitmap *bm, wxColour &color, wxBitmapButton *to)
+void PtermPrefdialog::paintBitmap (wxBitmap *bm, wxColour &color)
 {
     wxBrush bitmapBrush (color, wxSOLID);
     wxMemoryDC memDC;
@@ -2117,10 +2573,6 @@ void PtermPrefdialog::paintBitmap (wxBitmap *bm, wxColour &color, wxBitmapButton
     memDC.EndDrawing ();
     memDC.SetBackground (wxNullBrush);
     memDC.SelectObject (wxNullBitmap);
-    if (to != NULL)
-    {
-        to->Refresh ();
-    }
 }
 
 
@@ -2696,6 +3148,19 @@ void PtermCanvas::OnMouseDown (wxMouseEvent &event)
     y /= 32;
 
     m_owner->ptermSendKey (0x100 | (x << 4) | y);
+}
+
+void PtermCanvas::ptermTouchPanel(bool enable)
+{
+    m_touchEnabled = enable;
+    if (enable)
+    {
+        SetCursor (wxCursor (wxCURSOR_HAND));
+    }
+    else
+    {
+        SetCursor (wxNullCursor);
+    }
 }
 
 /*---------------------------  End Of File  ------------------------------*/
