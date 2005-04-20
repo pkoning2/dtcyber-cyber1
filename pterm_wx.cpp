@@ -1438,7 +1438,7 @@ void PtermFrame::ptermSetName (const char *winName)
     wxString str;
     
     str.Printf (wxT("Pterm: %s"), winName);
-    SetName (str);
+    SetTitle (str);
 }
 
 void PtermFrame::ptermSetStatus (const char *str)
