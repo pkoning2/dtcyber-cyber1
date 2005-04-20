@@ -149,6 +149,19 @@ extern "C"
 #include "types.h"
 #include "proto.h"
 #include "ptermversion.h"
+
+#if defined (__WXGTK__)
+
+// Attempting to include the gtk.h file yields infinite compile errors, so
+// instead we just declare the two functions we need, leaving any 
+// issues of data structures unstated.
+
+struct GtkSettings;
+    
+extern void gtk_settings_set_string_property (GtkSettings *, const char *,
+                                              const char *, const char *);
+extern GtkSettings * gtk_settings_get_default (void);
+#endif
 }
     
 #if wxUSE_UNICODE
@@ -271,7 +284,6 @@ public:
     wxColour    m_fgColor;
     wxColour    m_bgColor;
     wxConfig    *m_config;
-    wxClipboard *m_clipboard;
 
     char        *m_hostName;
     int         m_port;
@@ -774,9 +786,7 @@ bool PtermApp::OnInit (void)
         return FALSE;
     }
     
-    // create the clipboard object
-    m_clipboard = new wxClipboard;
-    // GTK seems to require this -- thanks Chris Elliott!
+    // GTK seems to require this for copying bitmaps to the clipboard
     wxImage::AddHandler (new wxPNGHandler);
     
     sprintf (traceFn, "pterm%d.trc", getpid ());
@@ -789,8 +799,7 @@ bool PtermApp::OnInit (void)
 
 int PtermApp::OnExit (void)
 {
-    m_clipboard->Flush ();
-    delete m_clipboard;
+    wxTheClipboard->Flush ();
 
     free (m_hostName);
     
@@ -955,6 +964,18 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
     //
     // Note that the menu bar labels do not have shortcut markings,
     // because those conflict with the ALT-letter key codes for PLATO.
+#if defined(__WXGTK__)
+    // A rather ugly hack here.  GTK insists that F10 should be the
+    // accelerator for the menu bar.  We don't want that.  There is
+    // no sane way to turn this off, but we *can* get the same effect
+    // by setting the "menu bar accelerator" property to the name of a
+    // function key that is apparently legal, but doesn't really exist.
+    // (Or if it does, it certainly isn't a key we use.)
+    gtk_settings_set_string_property (gtk_settings_get_default (),
+                                      "gtk-menu-bar-accel", "F15", "foo");
+
+#endif
+
     wxMenu *menuFile = new wxMenu;
 
     menuFile->Append (Pterm_Connect, _T("&New Connection..."),
@@ -1000,6 +1021,7 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
     CreateStatusBar(STATUSPANES);
     SetStatusText(_T(" Connecting..."), STATUS_CONN);
 #endif // wxUSE_STATUSBAR
+    SetCursor (*wxHOURGLASS_CURSOR);
 
     for (i = 0; i < 5; i++)
     {
@@ -1204,10 +1226,10 @@ void PtermFrame::OnCopyScreen (wxCommandEvent & WXUNUSED(event))
 
     screen = new wxBitmapDataObject(screenmap);
 
-    if (ptermApp->m_clipboard->Open ())
+    if (wxTheClipboard->Open ())
     {
-        ptermApp->m_clipboard->SetData (screen);
-        ptermApp->m_clipboard->Close ();
+        wxTheClipboard->SetData (screen);
+        wxTheClipboard->Close ();
     }
 }
 
@@ -2338,6 +2360,7 @@ void PtermFrame::ptermSetStation (int station)
 {
     char name[100];
     
+    SetCursor (wxNullCursor);
     if (m_hostName != NULL)
     {
         sprintf (name, " %s %d-%d",
