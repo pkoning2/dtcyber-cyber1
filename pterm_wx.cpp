@@ -277,6 +277,7 @@ public:
     // event handlers
     void OnConnect (wxCommandEvent &event);
     void OnPref (wxCommandEvent& event);
+    void OnQuit (wxCommandEvent& event);
 
     bool DoConnect (bool ask);
     static wxColour SelectColor (wxColour &initcol);
@@ -316,6 +317,7 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
+	void OnActivate (wxActivateEvent &event);
 
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
     
@@ -699,6 +701,7 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_IDLE(PtermFrame::OnIdle)
     EVT_CLOSE(PtermFrame::OnClose)
     EVT_TIMER(wxID_ANY,   PtermFrame::OnTimer)
+    EVT_ACTIVATE(PtermFrame::OnActivate)
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
@@ -708,6 +711,7 @@ BEGIN_EVENT_TABLE(PtermApp, wxApp)
     EVT_MENU(Pterm_Connect, PtermApp::OnConnect)
     EVT_MENU(Pterm_ConnectAgain, PtermApp::OnConnect)
     EVT_MENU(Pterm_Pref,    PtermApp::OnPref)
+	EVT_MENU(Pterm_Quit,	PtermApp::OnQuit)
     END_EVENT_TABLE ()
 
 // Create a new application object: this macro will allow wxWindows to create
@@ -915,6 +919,20 @@ wxColour PtermApp::SelectColor (wxColour &initcol)
     return col;
 }
 
+void PtermApp::OnQuit(wxCommandEvent& WXUNUSED(event))
+{
+	PtermFrame *frame, *nextframe;
+
+	frame = m_firstFrame;
+	while (frame != NULL)
+	{
+		nextframe = frame->m_nextFrame;
+		frame->Close (TRUE);
+		frame = nextframe;
+	}
+}
+
+
 
 // ----------------------------------------------------------------------------
 // main frame
@@ -959,6 +977,10 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
     // set the frame icon
     SetIcon(wxICON(pterm_32));
 
+	// set the line style to no cap
+	m_foregroundPen.SetCap (wxCAP_BUTT);
+	m_backgroundPen.SetCap (wxCAP_BUTT);
+
 #if wxUSE_MENUS
     // create a menu bar
     //
@@ -982,11 +1004,12 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
                       _T("Connect to a PLATO host"));
     menuFile->Append (Pterm_ConnectAgain, _T("Connect &Again"),
                       _T("Connect to the same host"));
+    menuFile->AppendSeparator();
     menuFile->Append (Pterm_Pref, _T("P&references..."),
                       _T("Set program configuration"));
+    menuFile->AppendSeparator();
     menuFile->Append (Pterm_Close, _T("&Close\tCtrl-Z"), _T("Close this window"));
-//    menuFile->AppendSeparator();
-//    menuFile->Append (Pterm_Quit, _T("E&xit"), _T("Quit this program"));
+    menuFile->Append (Pterm_Quit, _T("E&xit"), _T("Quit this program"));
 
     wxMenu *menuEdit = new wxMenu;
 
@@ -1200,6 +1223,14 @@ void PtermFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
     Close (TRUE);
 }
 
+void PtermFrame::OnActivate (wxActivateEvent &WXUNUSED(event))
+{
+	if (m_canvas != NULL)
+	{
+		m_canvas->SetFocus ();
+	}
+}
+
 void PtermFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
     wxString msg;
@@ -1352,10 +1383,10 @@ void PtermFrame::ptermDrawPoint (int x, int y)
     {
         dc.DrawPoint (x + 1, y);
         m_memDC->DrawPoint (x + 1, y);
-        dc.DrawPoint (x, y + 1);
-        m_memDC->DrawPoint (x, y + 1);
-        dc.DrawPoint (x + 1, y + 1);
-        m_memDC->DrawPoint (x + 1, y + 1);
+        dc.DrawPoint (x, y - 1);
+        m_memDC->DrawPoint (x, y - 1);
+        dc.DrawPoint (x + 1, y - 1);
+        m_memDC->DrawPoint (x + 1, y - 1);
     }    
     dc.EndDrawing ();
     m_memDC->EndDrawing ();
@@ -1365,6 +1396,13 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
 {
     wxClientDC dc(m_canvas);
 
+#if 0	// this still isn't right...
+	// On Windows, sometimes the starting point is missed.
+	// In any case, we have to draw the endpoint, since the
+	// book says that isn't drawn by DrawLine.
+	ptermDrawPoint (x1, y1);
+	ptermDrawPoint (x2, y2);
+#endif
     dc.BeginDrawing ();
     m_memDC->BeginDrawing ();
     PrepareDC (dc);
@@ -1616,8 +1654,10 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool newscale
     m_canvas->Refresh ();
     m_backgroundBrush.SetColour (newbg);
     m_backgroundPen.SetColour (newbg);
+    m_backgroundPen.SetWidth (newscale);
     m_foregroundBrush.SetColour (newfg);
     m_foregroundPen.SetColour (newfg);
+    m_foregroundPen.SetWidth (newscale);
     
     m_charDC[2]->SetBackground (m_backgroundBrush);
     m_charDC[2]->Clear ();
@@ -2419,22 +2459,22 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_okButton = new wxButton (this, wxID_ANY, _("OK"));
     m_cancelButton = new wxButton (this, wxID_ANY, _("Cancel"));
     m_resetButton = new wxButton (this, wxID_ANY, _("Defaults"));
-    m_fgLabel = new wxStaticText (this, wxID_ANY, _("Foreground"));
-    m_bgLabel = new wxStaticText (this, wxID_ANY, _("Background"));
+    m_fgLabel = new wxStaticText (this, wxID_ANY, _("&Foreground"));
+    m_bgLabel = new wxStaticText (this, wxID_ANY, _("&Background"));
     m_fgSizer = new wxBoxSizer (wxHORIZONTAL);
     m_bgSizer = new wxBoxSizer (wxHORIZONTAL);
     m_colorsBox = new wxStaticBox (this, wxID_ANY, _("Display colors"));
     m_colorsSizer = new wxStaticBoxSizer (m_colorsBox, wxVERTICAL);
-    m_scaleCheck = new wxCheckBox (this, -1, _("Zoom display 200%"));
+    m_scaleCheck = new wxCheckBox (this, -1, _("&Zoom display 200%"));
     m_scaleCheck->SetValue (m_scale2);
-    m_speedCheck = new wxCheckBox (this, -1, _("Simulate 1200 Baud"));
+    m_speedCheck = new wxCheckBox (this, -1, _("&Simulate 1200 Baud"));
     m_speedCheck->SetValue (m_classicSpeed);
     m_connBox = new wxStaticBox (this, wxID_ANY, _("Connection settings"));
     m_connSizer = new wxStaticBoxSizer (m_connBox, wxVERTICAL);
-    m_autoConnect = new wxCheckBox (this, -1, _("Connect at startup"));
+    m_autoConnect = new wxCheckBox (this, -1, _("&Connect at startup"));
     m_autoConnect->SetValue (m_connect);
-    m_hostLabel = new wxStaticText (this, wxID_ANY, _("Default host"));
-    m_portLabel = new wxStaticText (this, wxID_ANY, _("Default port"));
+    m_hostLabel = new wxStaticText (this, wxID_ANY, _("Default &Host"));
+    m_portLabel = new wxStaticText (this, wxID_ANY, _("Default &Port"));
 
     m_hostVal = new wxTextValidator (wxFILTER_ASCII, &m_host);
     m_portVal = new wxTextValidator (wxFILTER_NUMERIC, &m_port);
