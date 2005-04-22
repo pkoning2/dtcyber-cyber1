@@ -26,10 +26,22 @@ endif
 endif
 
 PTOBJS	= $(SOBJS) pterm_wx.o
+
 pterm:	$(PTOBJS)
 	$(CXX) $(LDFLAGS) -o $@ $+ $(WXLIBS)
 ifeq ("$(LOCAL)","yes")
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
+endif
+ifeq ("$(HOST)","Darwin")
+	rm -rf Pterm.app
+	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/English.lproj
+	cp pterm-info.plist Pterm.app/Contents/Info.plist
+	echo -n "APPL????" > Pterm.app/Contents/PkgInfo
+	cp pterm Pterm.app/Contents/MacOS/pterm
+	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
+#	cp pterm.rsrc Pterm.app/Contents/Resources/Pterm.rsrc
+#	cp pterm-infoplist.strings Pterm.app/Contents/Resources/English.lproj/InfoPlist.strings
+	
 endif
 
 pterm.dep: $(PTOBJS:.o=.d)
