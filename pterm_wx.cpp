@@ -290,6 +290,7 @@ public:
     PtermFrame  *m_firstFrame;
     
 private:
+    wxLocale    m_locale; // locale we'll be using
     
     // any class wishing to process wxWindows events must use this macro
     DECLARE_EVENT_TABLE ()
@@ -733,6 +734,9 @@ bool PtermApp::OnInit (void)
     ptermApp = this;
     m_firstFrame = NULL;
     
+    m_locale.Init(wxLANGUAGE_DEFAULT);
+    m_locale.AddCatalog(wxT("pterm"));
+
 #ifdef DEBUG
     logwindow = new wxLogWindow (NULL, "pterm log", TRUE, FALSE);
 #endif

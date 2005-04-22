@@ -1,0 +1,183 @@
+# Pterm Nederlandse tekst.
+# Copyright (C) 2005 Paul Koning
+# This file is distributed under the same license as the PACKAGE package.
+# Paul Koning <paul@cyber1.org>, 2005.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Pterm V2.10\n"
+"Report-Msgid-Bugs-To: paul@cyber1.org\n"
+"POT-Creation-Date: 2005-04-22 17:28-0400\n"
+"PO-Revision-Date: 2005-04-22 17:30-0400\n"
+"Last-Translator: Paul Koning <paul@cyber1.org>\n"
+"Language-Team: Nederlands <paul@cyber1.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: pterm_wx.cpp:820
+msgid "Connect to PLATO"
+msgstr "Met PLATO verbinden"
+
+#: pterm_wx.cpp:857
+msgid "Pterm Preferences"
+msgstr "Pterm voorkeuren"
+
+#: pterm_wx.cpp:992
+msgid "&New Connection...\tCtrl-N"
+msgstr "&Nieuwe verbinding...\tCtrl-N"
+
+#: pterm_wx.cpp:993
+msgid "Connect to a PLATO host"
+msgstr "Aan een PLATO-systeem verbinden"
+
+#: pterm_wx.cpp:994
+msgid "Connect &Again"
+msgstr "Nogmaals V&erbinden"
+
+#: pterm_wx.cpp:995
+msgid "Connect to the same host"
+msgstr "Verbinden aan hetzelfde systeem"
+
+#: pterm_wx.cpp:997
+msgid "P&references..."
+msgstr "&Voorkeuren..."
+
+#: pterm_wx.cpp:998
+msgid "Set program configuration"
+msgstr "Stel de voorkeuren van het programma in"
+
+#: pterm_wx.cpp:1000
+msgid "&Close\tCtrl-Z"
+msgstr "Verbinding sluiten\tCtrl-Z"
+
+#: pterm_wx.cpp:1000
+msgid "Close this window"
+msgstr "Sluit dit venster"
+
+#: pterm_wx.cpp:1001
+msgid "E&xit"
+msgstr "Programma sluiten"
+
+#: pterm_wx.cpp:1001
+msgid "Quit this program"
+msgstr "Beeindig het programma"
+
+#: pterm_wx.cpp:1005
+msgid "Copy Screen"
+msgstr "Scherm kopieren"
+
+#: pterm_wx.cpp:1005
+msgid "Copy screen to clipboard"
+msgstr "Kopieer het scherm naar het xxx"
+
+#: pterm_wx.cpp:1009
+msgid "File"
+msgstr "Bestand"
+
+#: pterm_wx.cpp:1010
+msgid "Edit"
+msgstr "Bewerken"
+
+#: pterm_wx.cpp:1018
+msgid "&About..."
+msgstr "&Over..."
+
+#: pterm_wx.cpp:1018
+msgid "Show about dialog"
+msgstr "Toon programma informatie"
+
+#: pterm_wx.cpp:1019
+msgid "Help"
+msgstr "Help"
+
+#: pterm_wx.cpp:1028
+msgid " Connecting..."
+msgstr "Aan het verbinden..."
+
+#: pterm_wx.cpp:1221
+msgid "Copyright © 2005 by Paul Koning."
+msgstr "Copyright © 2005 van Paul Koning."
+
+#: pterm_wx.cpp:1223
+msgid "About Pterm"
+msgstr "Over Pterm"
+
+#: pterm_wx.cpp:2399
+msgid " Trace "
+msgstr "Traceren "
+
+#: pterm_wx.cpp:2436 pterm_wx.cpp:2588
+msgid "OK"
+msgstr "Ja"
+
+#: pterm_wx.cpp:2437 pterm_wx.cpp:2589
+msgid "Cancel"
+msgstr "Nee"
+
+#: pterm_wx.cpp:2438
+msgid "Defaults"
+msgstr "Normaal"
+
+#: pterm_wx.cpp:2439
+msgid "&Foreground"
+msgstr "&Voorgrond"
+
+#: pterm_wx.cpp:2440
+msgid "&Background"
+msgstr "&Achtergrond"
+
+#: pterm_wx.cpp:2443
+msgid "Display colors"
+msgstr "Schermkleuren"
+
+#: pterm_wx.cpp:2445
+msgid "&Zoom display 200%"
+msgstr "&Beeld 200% vergroten"
+
+#: pterm_wx.cpp:2447
+msgid "&Simulate 1200 Baud"
+msgstr "1200 Baud &simuleren"
+
+#: pterm_wx.cpp:2449
+msgid "Connection settings"
+msgstr "Verbindingsinstellingen"
+
+#: pterm_wx.cpp:2451
+msgid "&Connect at startup"
+msgstr "Automatisch verbinden"
+
+#: pterm_wx.cpp:2453
+msgid "Default &Host"
+msgstr "Standaardsysteem"
+
+#: pterm_wx.cpp:2454
+msgid "Default &Port"
+msgstr "Standardpoortnummer"
+
+#: pterm_wx.cpp:2591
+msgid "Host name"
+msgstr "Systeemnaam"
+
+#: pterm_wx.cpp:2592
+msgid "Port"
+msgstr "Poortnummer"
+
+#: pterm_wx.cpp:2792
+msgid " Not connected"
+msgstr "Niet verbonden"
+
+#: pterm_wx.cpp:2795
+#, c-format
+msgid "Failed to connect to %s %d"
+msgstr "Kon niet verbinden met %s %d"
+
+#: pterm_wx.cpp:2800
+#, c-format
+msgid "Connection lost to %s %d"
+msgstr "Verbinding met %s %d verloren"
+
+#: pterm_wx.cpp:2804
+msgid "Alert"
+msgstr "Waarschuwing"
