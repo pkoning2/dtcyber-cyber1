@@ -164,10 +164,6 @@ extern GtkSettings * gtk_settings_get_default (void);
 #endif
 }
     
-#if wxUSE_UNICODE
-#warning "Unicode support isn't fully baked yet"
-#endif
-
 // ----------------------------------------------------------------------------
 // resources
 // ----------------------------------------------------------------------------
@@ -213,8 +209,7 @@ class PtermConnection : public wxThread
 public:
     // override base class virtuals
     // ----------------------------
-    PtermConnection (PtermFrame *owner, const char *host, int port);
-    ~PtermConnection ();
+    PtermConnection (PtermFrame *owner, wxString &host, int port);
     
     virtual ExitCode Entry (void);
 
@@ -253,7 +248,7 @@ private:
     u32         m_displayRing[RINGSIZE];
     volatile int m_displayIn, m_displayOut;
     PtermFrame  *m_owner;
-    char        *m_hostName;
+    wxString    m_hostName;
     int         m_port;
     wxCriticalSection m_pointerLock;
     
@@ -286,7 +281,7 @@ public:
     wxColour    m_bgColor;
     wxConfig    *m_config;
 
-    char        *m_hostName;
+    wxString    m_hostName;
     int         m_port;
     // scale is 1 or 2 for full size and double, respectively.
     int         m_scale;
@@ -307,7 +302,7 @@ class PtermFrame : public wxFrame
 
 public:
     // ctor(s)
-    PtermFrame(const char *host, int port, const wxString& title);
+    PtermFrame(wxString &host, int port, const wxString& title);
     ~PtermFrame ();
 
     // event handlers (these functions should _not_ be virtual)
@@ -338,7 +333,7 @@ private:
     wxPen       m_foregroundPen;
     wxPen       m_backgroundPen;
     PtermCanvas *m_canvas;
-    char        *m_hostName;
+    wxString    m_hostName;
     int         m_port;
     wxTimer     m_timer;
     
@@ -395,8 +390,8 @@ private:
     void ptermDrawLine(int x1, int y1, int x2, int y2);
     void ptermFullErase (void);
     void ptermBlockErase (int x1, int y1, int x2, int y2);
-    void ptermSetName (const char *winName);
-    void ptermSetStatus (const char *str);
+    void ptermSetName (wxString &winName);
+    void ptermSetStatus (wxString &str);
     void ptermLoadChar (int snum, int cnum, const u16 *data);
     void ptermLoadRomChars (void);
     
@@ -711,7 +706,7 @@ BEGIN_EVENT_TABLE(PtermApp, wxApp)
     EVT_MENU(Pterm_Connect, PtermApp::OnConnect)
     EVT_MENU(Pterm_ConnectAgain, PtermApp::OnConnect)
     EVT_MENU(Pterm_Pref,    PtermApp::OnPref)
-	EVT_MENU(Pterm_Quit,	PtermApp::OnQuit)
+    EVT_MENU(Pterm_Quit,	PtermApp::OnQuit)
     END_EVENT_TABLE ()
 
 // Create a new application object: this macro will allow wxWindows to create
@@ -760,12 +755,11 @@ bool PtermApp::OnInit (void)
     }
     if (argc > 1)
     {
-        m_hostName = strdup (wxString (argv[1]).mb_str ());
+        m_hostName = argv[1];
     }
     else
     {
-        m_config->Read (wxT ("host"), &rgb, DEFAULTHOST);
-        m_hostName = strdup (rgb.mb_str ());
+        m_config->Read (wxT ("host"), &m_hostName, DEFAULTHOST);
     }
 
     // 255 144 0 is RGB for Plato Orange
@@ -805,8 +799,6 @@ int PtermApp::OnExit (void)
 {
     wxTheClipboard->Flush ();
 
-    free (m_hostName);
-    
 #ifdef DEBUG
     delete logwindow;
 #endif
@@ -831,8 +823,7 @@ bool PtermApp::DoConnect (bool ask)
         
         if (dlg.ShowModal () == wxID_OK)
         {
-            free (m_hostName);
-            m_hostName = strdup (wxString (dlg.m_host).mb_str ());
+            m_hostName = dlg.m_host;
             m_port = atoi (wxString (dlg.m_port).mb_str ());
         }
         else
@@ -877,8 +868,7 @@ void PtermApp::OnPref (wxCommandEvent& WXUNUSED(event))
         
         m_scale = (dlg.m_scale2) ? 2 : 1;
         m_classicSpeed = dlg.m_classicSpeed;
-        free (m_hostName);
-        m_hostName = strdup (wxString (dlg.m_host).mb_str ());
+        m_hostName = dlg.m_host;
         m_port = atoi (wxString (dlg.m_port).mb_str ());
         m_connect = dlg.m_connect;
         
@@ -921,17 +911,16 @@ wxColour PtermApp::SelectColor (wxColour &initcol)
 
 void PtermApp::OnQuit(wxCommandEvent& WXUNUSED(event))
 {
-	PtermFrame *frame, *nextframe;
+    PtermFrame *frame, *nextframe;
 
-	frame = m_firstFrame;
-	while (frame != NULL)
-	{
-		nextframe = frame->m_nextFrame;
-		frame->Close (TRUE);
-		frame = nextframe;
-	}
+    frame = m_firstFrame;
+    while (frame != NULL)
+    {
+        nextframe = frame->m_nextFrame;
+        frame->Close (TRUE);
+        frame = nextframe;
+    }
 }
-
 
 
 // ----------------------------------------------------------------------------
@@ -939,7 +928,7 @@ void PtermApp::OnQuit(wxCommandEvent& WXUNUSED(event))
 // ----------------------------------------------------------------------------
 
 // frame constructor
-PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
+PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     : wxFrame(NULL, -1, title,
               wxDefaultPosition,
               wxDefaultSize),
@@ -972,14 +961,14 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
 {
     int i;
 
-    m_hostName = strdup (host);
+    m_hostName = host;
     
     // set the frame icon
     SetIcon(wxICON(pterm_32));
 
-	// set the line style to no cap
-	m_foregroundPen.SetCap (wxCAP_BUTT);
-	m_backgroundPen.SetCap (wxCAP_BUTT);
+    // set the line style to no cap
+    m_foregroundPen.SetCap (wxCAP_BUTT);
+    m_backgroundPen.SetCap (wxCAP_BUTT);
 
 #if wxUSE_MENUS
     // create a menu bar
@@ -1000,40 +989,34 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
 
     wxMenu *menuFile = new wxMenu;
 
-    menuFile->Append (Pterm_Connect, _T("&New Connection..."),
-                      _T("Connect to a PLATO host"));
-    menuFile->Append (Pterm_ConnectAgain, _T("Connect &Again"),
-                      _T("Connect to the same host"));
+    menuFile->Append (Pterm_Connect, _("&New Connection...\tCtrl-N"),
+                      _("Connect to a PLATO host"));
+    menuFile->Append (Pterm_ConnectAgain, _("Connect &Again"),
+                      _("Connect to the same host"));
     menuFile->AppendSeparator();
-    menuFile->Append (Pterm_Pref, _T("P&references..."),
-                      _T("Set program configuration"));
+    menuFile->Append (Pterm_Pref, _("P&references..."),
+                      _("Set program configuration"));
     menuFile->AppendSeparator();
-    menuFile->Append (Pterm_Close, _T("&Close\tCtrl-Z"), _T("Close this window"));
-    menuFile->Append (Pterm_Quit, _T("E&xit"), _T("Quit this program"));
+    menuFile->Append (Pterm_Close, _("&Close\tCtrl-Z"), _("Close this window"));
+    menuFile->Append (Pterm_Quit, _("E&xit"), _("Quit this program"));
 
     wxMenu *menuEdit = new wxMenu;
 
-    menuEdit->Append (Pterm_CopyScreen, _T("Copy Screen"), _T("Copy screen to clipboard"));
+    menuEdit->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
 
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
-    menuBar->Append(menuFile, _T("File"));
-    menuBar->Append(menuEdit, _T("Edit"));
+    menuBar->Append(menuFile, _("File"));
+    menuBar->Append(menuEdit, _("Edit"));
 
-#if !defined(__WXMAC__) 
-    // the "About" item should be in the help menu, except on the Mac
+    // the "About" item should be in the help menu.
+    // Well, on the Mac it actually doesn't show up there, but for that magic
+    // to work it has to be presented to wx in the help menu.  So the help
+    // menu ends up empty.  Sigh.
     wxMenu *helpMenu = new wxMenu;
 
-    helpMenu->Append(Pterm_About, _T("&About..."), _T("Show about dialog"));
-    menuBar->Append(helpMenu, _T("Help"));
-#else
-    // On the Mac, it will appear in the application menu.  Pretend it's on
-    // the File menu.  It won't show up there, but by doing this rather than
-    // putting it on the Help menu, we avoid an empty "Help" entry on the
-    // Mac menubar.
-    // If we add any other Help items, this hack will not be needed anymore.
-    menuFile->Append(Pterm_About, _T("&About..."), _T("Show about dialog"));
-#endif
+    helpMenu->Append(Pterm_About, _("&About..."), _("Show about dialog"));
+    menuBar->Append(helpMenu, _("Help"));
 
     // ... and attach this menu bar to the frame
     SetMenuBar(menuBar);
@@ -1042,7 +1025,7 @@ PtermFrame::PtermFrame(const char *host, int port, const wxString& title)
 #if wxUSE_STATUSBAR
     // create a status bar just for fun
     CreateStatusBar(STATUSPANES);
-    SetStatusText(_T(" Connecting..."), STATUS_CONN);
+    SetStatusText(_(" Connecting..."), STATUS_CONN);
 #endif // wxUSE_STATUSBAR
     SetCursor (*wxHOURGLASS_CURSOR);
 
@@ -1106,8 +1089,6 @@ PtermFrame::~PtermFrame ()
     {
         ptermApp->m_firstFrame = m_nextFrame;
     }
-    
-    free (m_hostName);
 }
 
 // event handlers
@@ -1225,23 +1206,21 @@ void PtermFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
 
 void PtermFrame::OnActivate (wxActivateEvent &WXUNUSED(event))
 {
-	if (m_canvas != NULL)
-	{
-		m_canvas->SetFocus ();
-	}
+    if (m_canvas != NULL)
+    {
+        m_canvas->SetFocus ();
+    }
 }
 
 void PtermFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
     wxString msg;
 
-    msg.Printf (wxT("PLATO terminal emulator %s.\n")
-// temp: need to figure out how to get gcc to understand this:
-//                wxT("Copyright © 2005 by Paul Koning."),
-                wxT("Copyright 2005 by Paul Koning."),
-                wxT (PTERMVERSION));
+    msg.Printf (_T("PLATO terminal emulator %s.\n%s"),
+                wxT (PTERMVERSION),
+                _("Copyright © 2005 by Paul Koning."));
     
-    wxMessageBox(msg, _T("About Pterm"), wxOK | wxICON_INFORMATION, this);
+    wxMessageBox(msg, _("About Pterm"), wxOK | wxICON_INFORMATION, this);
 }
 
 void PtermFrame::OnCopyScreen (wxCommandEvent & WXUNUSED(event))
@@ -1396,12 +1375,12 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
 {
     wxClientDC dc(m_canvas);
 
-#if 0	// this still isn't right...
-	// On Windows, sometimes the starting point is missed.
-	// In any case, we have to draw the endpoint, since the
-	// book says that isn't drawn by DrawLine.
-	ptermDrawPoint (x1, y1);
-	ptermDrawPoint (x2, y2);
+#if 0   // this still isn't right...
+    // On Windows, sometimes the starting point is missed.
+    // In any case, we have to draw the endpoint, since the
+    // book says that isn't drawn by DrawLine.
+    ptermDrawPoint (x1, y1);
+    ptermDrawPoint (x2, y2);
 #endif
     dc.BeginDrawing ();
     m_memDC->BeginDrawing ();
@@ -1493,19 +1472,17 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     m_memDC->EndDrawing ();
 }
 
-void PtermFrame::ptermSetName (const char *winName)
+void PtermFrame::ptermSetName (wxString &winName)
 {
     wxString str;
     
-    str.Printf (wxT("Pterm: %s"), winName);
+    str.Printf (wxT("Pterm: %s"), winName.c_str ());
     SetTitle (str);
 }
 
-void PtermFrame::ptermSetStatus (const char *str)
+void PtermFrame::ptermSetStatus (wxString &str)
 {
-    wxString wxstr (str, *wxConvCurrent);
-    
-    SetStatusText(wxstr, STATUS_CONN);
+    SetStatusText(str, STATUS_CONN);
 }
 
 void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *chardata)
@@ -2398,18 +2375,18 @@ void PtermFrame::ptermSendKey(int key)
 
 void PtermFrame::ptermSetStation (int station)
 {
-    char name[100];
+    wxString name;
     
     SetCursor (wxNullCursor);
-    if (m_hostName != NULL)
+    if (!m_hostName.IsEmpty ())
     {
-        sprintf (name, " %s %d-%d",
-                 m_hostName, station >> 5, station & 31);
+        name.Printf (wxT (" %s %d-%d"),
+                     m_hostName.c_str (), station >> 5, station & 31);
     }
     else
     {
-        sprintf (name, " %d-%d",
-                 station >> 5, station & 31);
+        name.Printf (wxT (" %d-%d"),
+                     station >> 5, station & 31);
     }
     ptermSetStatus (name);
     ptermSetName (name);
@@ -2419,11 +2396,11 @@ void PtermFrame::ptermShowTrace (bool enable)
 {
     if (enable)
     {
-        SetStatusText(_T(" TRACE "), STATUS_TRC);
+        SetStatusText(_(" Trace "), STATUS_TRC);
     }
     else
     {
-        SetStatusText(_T(""), STATUS_TRC);
+        SetStatusText(wxT (""), STATUS_TRC);
     }
 }
 
@@ -2446,8 +2423,8 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_connect = ptermApp->m_connect;
     m_fgColor = ptermApp->m_fgColor;
     m_bgColor = ptermApp->m_bgColor;
-    m_host = wxString (ptermApp->m_hostName);
-    m_port.Printf ("%d", ptermApp->m_port);
+    m_host = ptermApp->m_hostName;
+    m_port.Printf (wxT ("%d"), ptermApp->m_port);
 
     m_fgBitmap = new wxBitmap (20, 12);
     m_bgBitmap = new wxBitmap (20, 12);
@@ -2554,7 +2531,7 @@ void PtermPrefdialog::OnButton (wxCommandEvent& event)
         m_connect = TRUE;
         m_autoConnect->SetValue (TRUE);
         m_hostText->SetValue (DEFAULTHOST);
-        str.Printf ("%d", DefNiuPort);
+        str.Printf (wxT ("%d"), DefNiuPort);
         m_portText->SetValue (str);
     }
     paintBitmap (m_fgBitmap, m_fgColor);
@@ -2606,7 +2583,7 @@ PtermConndialog::PtermConndialog (wxWindowID id, const wxString &title)
     : wxDialog (NULL, id, title)
 {
     m_host = wxString (ptermApp->m_hostName);
-    m_port.Printf ("%d", ptermApp->m_port);
+    m_port.Printf (wxT ("%d"), ptermApp->m_port);
 
     m_okButton = new wxButton (this, wxID_ANY, _("OK"));
     m_cancelButton = new wxButton (this, wxID_ANY, _("Cancel"));
@@ -2659,19 +2636,14 @@ void PtermConndialog::OnButton (wxCommandEvent& event)
 // PtermConnection
 // ----------------------------------------------------------------------------
 
-PtermConnection::PtermConnection (PtermFrame *owner, const char *host, int port)
+PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
     : wxThread (wxTHREAD_JOINABLE),
       m_owner (owner),
       m_port (port),
       m_displayIn (0),
       m_displayOut (0)
 {
-    m_hostName = strdup (host);
-}
-
-PtermConnection::~PtermConnection ()
-{
-    free (m_hostName);
+    m_hostName = host;
 }
 
 PtermConnection::ExitCode PtermConnection::Entry (void)
@@ -2683,7 +2655,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
     int true_opt = 1;
     
     dtInitFet (&m_fet, BufSiz);
-    if (dtConnect (&m_fet.connFd, m_hostName, m_port) < 0)
+    if (dtConnect (&m_fet.connFd, m_hostName.mb_str (), m_port) < 0)
     {
         StoreWord (C_CONNFAIL);
         wxWakeUpIdle ();
@@ -2817,17 +2789,19 @@ int PtermConnection::NextWord (void)
     {
         wxString msg;
             
-        m_owner->SetStatusText(wxString (_T(" Not connected"), STATUS_CONN));
+        m_owner->SetStatusText (_(" Not connected"), STATUS_CONN);
         if (j == C_CONNFAIL)
         {
-            msg.Printf (_T("Failed to connect to %s %d"), m_hostName, m_port);
+            msg.Printf (_("Failed to connect to %s %d"),
+                        m_hostName.c_str (), m_port);
         }
         else
         {
-            msg.Printf (_T("Connection lost to %s %d"), m_hostName, m_port);
+            msg.Printf (_("Connection lost to %s %d"),
+                        m_hostName.c_str (), m_port);
         }
             
-        wxMessageDialog alert (m_owner, msg, wxString (_T("Alert")), wxOK);
+        wxMessageDialog alert (m_owner, msg, wxString (_("Alert")), wxOK);
             
         alert.ShowModal ();
         m_owner->Close (TRUE);
