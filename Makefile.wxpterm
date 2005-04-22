@@ -33,15 +33,26 @@ ifeq ("$(LOCAL)","yes")
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
 endif
 ifeq ("$(HOST)","Darwin")
-	rm -rf Pterm.app
+
+Pterm.app: pterm pterm-info.plist pterm.icns
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/English.lproj
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
 	echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
-#	cp pterm.rsrc Pterm.app/Contents/Resources/Pterm.rsrc
-#	cp pterm-infoplist.strings Pterm.app/Contents/Resources/English.lproj/InfoPlist.strings
-	
+
+pterm-empty.dmg:
+	hdiutil create -size 6m pterm-empty.dmg -layout NONE
+	dev=`hdid -nomount pterm-empty.dmg` ; newfs_hfs -v ptermvol $$dev ; hdiutil detach $$dev
+
+ptermkit.dmg: Pterm.app pterm-empty.dmg
+	cp pterm-empty.dmg ptermkit.dmg
+	dev=`hdid ptermkit.dmg | awk '{ print $$1 }'` ; cp -Rp Pterm.app /Volumes/ptermvol; hdiutil detach $$dev
+
+pterm.dmg: ptermkit.dmg
+	hdiutil convert -format UDZO ptermkit.dmg -o pterm.dmg
+	hdiutil internet-enable -yes pterm.dmg
+
 endif
 
 pterm.dep: $(PTOBJS:.o=.d)
