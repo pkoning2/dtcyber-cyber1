@@ -313,9 +313,9 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
-#if !defined(__WXMAC__)
+//#if !defined(__WXMAC__)
     void OnActivate (wxActivateEvent &event);
-#endif
+//#endif
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
     
     void PrepareDC(wxDC& dc);
@@ -698,9 +698,9 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_IDLE(PtermFrame::OnIdle)
     EVT_CLOSE(PtermFrame::OnClose)
     EVT_TIMER(wxID_ANY,   PtermFrame::OnTimer)
-#if !defined(__WXMAC__)
+//#if !defined(__WXMAC__)
     EVT_ACTIVATE(PtermFrame::OnActivate)
-#endif
+//#endif
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
@@ -1216,15 +1216,16 @@ void PtermFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
     Close (TRUE);
 }
 
-#if !defined(__WXMAC__)
-void PtermFrame::OnActivate (wxActivateEvent &WXUNUSED(event))
+//#if !defined(__WXMAC__)
+void PtermFrame::OnActivate (wxActivateEvent &event)
 {
     if (m_canvas != NULL)
     {
         m_canvas->SetFocus ();
     }
+    evt.Skip ();        // let others see the event, too
 }
-#endif
+//#endif
 
 void PtermFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
@@ -2445,6 +2446,8 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
     paintBitmap (m_fgBitmap, m_fgColor);
     paintBitmap (m_bgBitmap, m_bgColor);
     
+    m_colorsBox = new wxStaticBox (this, wxID_ANY, _("Display colors"));
+    m_colorsSizer = new wxStaticBoxSizer (m_colorsBox, wxVERTICAL);
     m_fgButton = new wxBitmapButton (this, wxID_ANY, *m_fgBitmap);
     m_bgButton = new wxBitmapButton (this, wxID_ANY, *m_bgBitmap);
     m_okButton = new wxButton (this, wxID_ANY, _("OK"));
@@ -2454,8 +2457,6 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_bgLabel = new wxStaticText (this, wxID_ANY, _("&Background"));
     m_fgSizer = new wxBoxSizer (wxHORIZONTAL);
     m_bgSizer = new wxBoxSizer (wxHORIZONTAL);
-    m_colorsBox = new wxStaticBox (this, wxID_ANY, _("Display colors"));
-    m_colorsSizer = new wxStaticBoxSizer (m_colorsBox, wxVERTICAL);
     m_scaleCheck = new wxCheckBox (this, -1, _("&Zoom display 200%"));
     m_scaleCheck->SetValue (m_scale2);
     m_speedCheck = new wxCheckBox (this, -1, _("&Simulate 1200 Baud"));
