@@ -1223,7 +1223,7 @@ void PtermFrame::OnActivate (wxActivateEvent &event)
     {
         m_canvas->SetFocus ();
     }
-    evt.Skip ();        // let others see the event, too
+    event.Skip ();        // let others see the event, too
 }
 //#endif
 
