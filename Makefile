@@ -37,7 +37,7 @@ OBJS    = main.o init.o trace.o dump.o \
 	  tpmux.o doelz.o \
 	  $(SOBJS)
 
-.PHONY : CLEAN dep
+.PHONY : clean dep kit
 
 ifeq ("$(HOST)","Darwin")
 
@@ -60,7 +60,7 @@ gxdtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)
 
 clean:
-	rm -rf *.o *.pcf g3 g5 dd60 dtoper pterm *.dmg *.app
+	rm -rf *.o *.pcf g3 g5 dd60 dtoper pterm pterm*.dmg Pterm.app
 
 blackbox: blackbox.o g3/niu.o g3/charset.o g3/dtnetsubs.o
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
@@ -76,8 +76,10 @@ blackbox: blackbox.o niu.o charset.o dtnetsubs.o
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 clean:
-	rm -f *.d *.o *.pcf dtcyber dd60 dtoper pterm
+	rm -f *.d *.o *.pcf dtcyber dd60 dtoper pterm pterm*.zip pterm*.tar.gz
 endif
+
+kit:	pterm-kit
 
 buildall: clean all
 

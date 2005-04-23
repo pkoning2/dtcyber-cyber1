@@ -15,7 +15,9 @@ TYPE ?= shared
 ifeq ("$(TYPE)","static")
 DIR = /usr/local/wxstaticu
 SETPATH=
+ifeq ("$(HOST)","Darwin")
 EXTRALIBS= -lwxpng-2.6
+endif
 else
 ifeq ("$(TYPE)","debugascii")
 DIR = /usr/local/wxshared
@@ -44,6 +46,8 @@ ifneq ("$(HOST)","Darwin")
 endif
 endif
 
+.PHONY : pterm-kit
+
 ifeq ("$(HOST)","Darwin")
 
 Pterm.app: pterm pterm-info.plist pterm.icns
@@ -64,6 +68,14 @@ ptermkit.dmg: Pterm.app pterm-empty.dmg
 pterm.dmg: ptermkit.dmg
 	hdiutil convert -format UDZO ptermkit.dmg -o pterm.dmg
 	hdiutil internet-enable -yes pterm.dmg
+
+pterm-kit: 
+	$(MAKE) pterm.dmg TYPE=static 
+
+else
+pterm-kit: 
+	$(MAKE) pterm TYPE=static 
+	tar czf pterm.tar.gz --exclude '*CVS*' --exclude '*~' *.h pterm_wx.cpp charset.c Makefile.wxpterm Makefile.common Makefile pterm `cat languages`
 
 endif
 
