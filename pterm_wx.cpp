@@ -313,8 +313,9 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
-  //	void OnActivate (wxActivateEvent &event);
-
+#if !defined(__WXMAC__)
+    void OnActivate (wxActivateEvent &event);
+#endif
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
     
     void PrepareDC(wxDC& dc);
@@ -697,7 +698,9 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_IDLE(PtermFrame::OnIdle)
     EVT_CLOSE(PtermFrame::OnClose)
     EVT_TIMER(wxID_ANY,   PtermFrame::OnTimer)
-//    EVT_ACTIVATE(PtermFrame::OnActivate)
+#if !defined(__WXMAC__)
+    EVT_ACTIVATE(PtermFrame::OnActivate)
+#endif
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
@@ -1213,7 +1216,7 @@ void PtermFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
     Close (TRUE);
 }
 
-#if 0
+#if !defined(__WXMAC__)
 void PtermFrame::OnActivate (wxActivateEvent &WXUNUSED(event))
 {
     if (m_canvas != NULL)
