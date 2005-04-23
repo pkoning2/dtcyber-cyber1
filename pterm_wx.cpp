@@ -313,7 +313,7 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
-	void OnActivate (wxActivateEvent &event);
+  //	void OnActivate (wxActivateEvent &event);
 
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
     
@@ -697,7 +697,7 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_IDLE(PtermFrame::OnIdle)
     EVT_CLOSE(PtermFrame::OnClose)
     EVT_TIMER(wxID_ANY,   PtermFrame::OnTimer)
-    EVT_ACTIVATE(PtermFrame::OnActivate)
+//    EVT_ACTIVATE(PtermFrame::OnActivate)
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
@@ -992,7 +992,6 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
 #endif
 
     wxMenu *menuFile = new wxMenu;
-
     menuFile->Append (Pterm_Connect, _("&New Connection...\tCtrl-N"),
                       _("Connect to a PLATO host"));
     menuFile->Append (Pterm_ConnectAgain, _("Connect &Again"),
@@ -1020,7 +1019,13 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     wxMenu *helpMenu = new wxMenu;
 
     helpMenu->Append(Pterm_About, _("&About..."), _("Show about dialog"));
+#if defined(__WXMAC__)
+    // On the Mac the menu name has to be exactly "&Help" for the About item
+    // to  be recognized.  Ugh.
+    menuBar->Append(helpMenu, wxT("&Help"));
+#else
     menuBar->Append(helpMenu, _("Help"));
+#endif
 
     // ... and attach this menu bar to the frame
     SetMenuBar(menuBar);
@@ -1208,6 +1213,7 @@ void PtermFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
     Close (TRUE);
 }
 
+#if 0
 void PtermFrame::OnActivate (wxActivateEvent &WXUNUSED(event))
 {
     if (m_canvas != NULL)
@@ -1215,6 +1221,7 @@ void PtermFrame::OnActivate (wxActivateEvent &WXUNUSED(event))
         m_canvas->SetFocus ();
     }
 }
+#endif
 
 void PtermFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
 {

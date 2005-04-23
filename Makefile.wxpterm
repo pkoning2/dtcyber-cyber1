@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------
 #
-#   Copyright (c) 2002, Tom Hunter (see license.txt)
+#   Copyright (c) 2005, Paul Koning (see license.txt)
 #
 #   Name: Makefile.wxpterm
 #
@@ -15,25 +15,33 @@ TYPE ?= shared
 ifeq ("$(TYPE)","static")
 DIR = /usr/local/wxstaticu
 SETPATH=
+EXTRALIBS= -lwxpng-2.6
+else
+ifeq ("$(TYPE)","debugascii")
+DIR = /usr/local/wxshared
+EXTRALIBS=
 else
 ifeq ("$(TYPE)","debug")
 DIR = /usr/local/wxshareud
 else
 DIR = /usr/local/wxshareu
 endif
+endif
 SETPATH= LD_RUN_PATH=$(DIR)/lib:/usr/lib:/lib
 endif
 
 CONFIG = $(DIR)/bin/wx-config
 CXXFLAGS = `$(CONFIG) --cxxflags`
-WXLIBS	= `$(CONFIG) --libs`
+WXLIBS	= `$(CONFIG) --libs` $(EXTRALIBS)
 
 PTOBJS	= $(SOBJS) pterm_wx.o
 
 pterm:	$(PTOBJS)
 	$(SETPATH) $(CXX) $(LDFLAGS) -o $@ $+ $(WXLIBS)
 ifeq ("$(TYPE)","static")
+ifneq ("$(HOST)","Darwin")
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
+endif
 endif
 
 ifeq ("$(HOST)","Darwin")
