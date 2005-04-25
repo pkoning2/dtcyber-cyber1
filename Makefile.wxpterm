@@ -38,6 +38,11 @@ WXLIBS	= `$(CONFIG) --libs` $(EXTRALIBS)
 
 PTOBJS	= $(SOBJS) pterm_wx.o
 
+LANGUAGES = $(shell cat languages)
+MOFILES = $(addsuffix /pterm.mo,$(LANGUAGES))
+
+.PHONY : pterm-kit langdirs
+
 pterm:	$(PTOBJS)
 	$(SETPATH) $(CXX) $(LDFLAGS) -o $@ $+ $(WXLIBS)
 ifeq ("$(TYPE)","static")
@@ -46,11 +51,10 @@ ifneq ("$(HOST)","Darwin")
 endif
 endif
 
-.PHONY : pterm-kit
 
 ifeq ("$(HOST)","Darwin")
 
-Pterm.app: pterm pterm-info.plist pterm.icns
+Pterm.app: pterm pterm-info.plist pterm.icns $(MOFILES)
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/English.lproj
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
 	echo -n "APPL????" > Pterm.app/Contents/PkgInfo
@@ -73,7 +77,7 @@ pterm-kit:
 	$(MAKE) pterm.dmg TYPE=static 
 
 else
-pterm-kit: 
+pterm-kit:  $(MOFILES)
 	$(MAKE) pterm TYPE=static 
 	tar czf pterm.tar.gz --exclude '*CVS*' --exclude '*~' *.h pterm_wx.cpp charset.c Makefile.wxpterm Makefile.common Makefile pterm `cat languages`
 
@@ -87,6 +91,9 @@ pterm.dep: $(PTOBJS:.o=.d)
 %.d : %.cpp
 	echo -n "$@ " > $@
 	$(CXX) $(CXXFLAGS) -MM $< >> $@
+
+%.mo : %.po
+	msgfmt -o $@ $<
 
 include  $(PTOBJS:.o=.d) 
 
