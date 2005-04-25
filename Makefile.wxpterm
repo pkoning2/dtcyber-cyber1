@@ -57,11 +57,13 @@ endif
 ifeq ("$(HOST)","Darwin")
 
 Pterm.app-timestamp: pterm pterm-info.plist pterm.icns $(MOFILES)
-	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/English.lproj
+	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en
+	mkdir -p $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES))
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
 	echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
+	for d in $(LANGUAGES); do cp $$d/pterm.mo Pterm.app/Contents/Resources/$$d; done
 	touch $@
 
 pterm-empty.dmg:
@@ -83,7 +85,7 @@ pterm-kit:
 else
 pterm-kit:  $(MOFILES)
 	$(MAKE) pterm TYPE=static 
-	tar czf pterm.tar.gz --exclude '*CVS*' --exclude '*~' *.h pterm_wx.cpp charset.c Makefile.wxpterm Makefile.common Makefile pterm `cat languages`
+	tar czf pterm.tar.gz --exclude '*CVS*' --exclude '*~' *.h pterm_wx.cpp charset.c Makefile.wxpterm Makefile.common Makefile pterm $(LANGUAGES)
 
 endif
 
@@ -98,6 +100,10 @@ pterm.dep: $(PTOBJS:.o=.d)
 
 %.mo : %.po
 	msgfmt -o $@ $<
+
+%.po : pterm_wx.cpp
+	xgettext  --keyword=_ --from-code=iso-8859-1 --msgid-bugs-address=paul@cyber1.org -C -o pterm.pot pterm_wx.cpp
+	msgmerge -U $@ pterm.pot
 
 include  $(PTOBJS:.o=.d) 
 
