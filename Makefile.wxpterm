@@ -38,10 +38,8 @@ WXLIBS	= `$(CONFIG) --libs` $(EXTRALIBS)
 
 PTOBJS	= $(SOBJS) pterm_wx.o
 
-ifneq ("$(HOST)","Darwin")
 LANGUAGES = $(shell cat languages)
 MOFILES = $(addsuffix /pterm.mo,$(LANGUAGES))
-endif
 
 .PHONY : pterm-kit langdirs
 
