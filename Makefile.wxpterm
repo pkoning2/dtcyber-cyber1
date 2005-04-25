@@ -32,6 +32,8 @@ endif
 SETPATH= LD_RUN_PATH=$(DIR)/lib:/usr/lib:/lib
 endif
 
+PATH=$(DIR)/bin:/usr/local/bin:$(PATH)
+
 CONFIG = $(DIR)/bin/wx-config
 CXXFLAGS = `$(CONFIG) --cxxflags`
 WXLIBS	= `$(CONFIG) --libs` $(EXTRALIBS)
