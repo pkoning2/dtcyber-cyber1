@@ -2913,7 +2913,15 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         shift = 040;
     }
     key = event.m_keyCode;
-    if (isalpha (key))
+    if (key == WXK_ALT || key == WXK_SHIFT || key == WXK_CONTROL)
+    {
+        // We don't take any action on the modifier key keydown events,
+        // but we do want to make sure they are seen by the rest of
+        // the system.
+        event.Skip ();
+        return;
+    }
+    if (key < 0200 && isalpha (key))
     {
         key = tolower (key);
     }
