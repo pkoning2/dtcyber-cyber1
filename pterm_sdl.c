@@ -166,7 +166,7 @@ static const volmap[8] = {
     4, 8, 12, 16, 20, 24, 28, 31
 };
 
-static inline int mapvol (int volume)
+static const int mapvol (int volume)
 {
     return volmap[volume & 7];
 }
