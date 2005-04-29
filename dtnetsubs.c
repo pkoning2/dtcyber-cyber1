@@ -447,16 +447,10 @@ int dtRead (NetFet *fet, int time)
         timeout.tv_usec = (time * 1000) % 1000000;
 
         select(connFd + 1, &readFds, NULL, &exceptFds, &timeout);
-        if (!FD_ISSET(connFd, &readFds))
+        if (!FD_ISSET(connFd, &readFds) &&
+            !FD_ISSET(connFd, &exceptFds))
             {
-            if (FD_ISSET(connFd, &exceptFds))
-                {
-                return(-1);
-                }
-            else
-                {
-                return(0);
-                }
+            return(0);
             }
         }
     /*
@@ -500,7 +494,7 @@ int dtRead (NetFet *fet, int time)
         }
     else
         {
-        return(-1);
+        return i;
         }
     }
 
