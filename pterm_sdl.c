@@ -30,7 +30,6 @@ struct gswState_t
 {
     double phaseStep;
     void *user;
-    SDL_AudioSpec audioSpec;
     volatile int in;
     volatile int out;
     u32 phase[4];
@@ -46,6 +45,8 @@ struct gswState_t
 };
 
 struct gswState_t gswState;
+SDL_AudioSpec audioSpec;
+bool audioOpened;
 
 static void gswCallback (void *userdata, u8  *stream, int len);
 
@@ -72,28 +73,35 @@ int ptermOpenGsw (void *user)
     // First clear out all the current GSW state
     memset (&gswState, 0, sizeof (gswState));
         
-    req = (SDL_AudioSpec *) calloc (1, sizeof (SDL_AudioSpec));
-    req->freq = FREQ;
-    req->format = AUDIO_U8;
-    req->channels = 1;
-    req->samples = SAMPLES;
-    req->callback = gswCallback;
-    if (SDL_OpenAudio (req, &gswState.audioSpec) < 0)
+    if (!audioOpened)
     {
-        fprintf (stderr, "can't open sound: %s\n", SDL_GetError ());
+        // We only open the SDL audio system the first time we come here,
+        // because it doesn't seem to appreciate being opened and closed
+        // multiple times, at least not on Linux.
+        req = (SDL_AudioSpec *) calloc (1, sizeof (SDL_AudioSpec));
+        req->freq = FREQ;
+        req->format = AUDIO_U8;
+        req->channels = 1;
+        req->samples = SAMPLES;
+        req->callback = gswCallback;
+        if (SDL_OpenAudio (req, &audioSpec) < 0)
+        {
+            fprintf (stderr, "can't open sound: %s\n", SDL_GetError ());
+            free (req);
+            return -1;
+        }
         free (req);
-        return -1;
+        audioOpened = TRUE;
     }
-    free (req);
         
     // We're all set up, mark the GSW as in-use
     gswState.user = user;
-    gswState.phaseStep = (double) CRYSTAL / gswState.audioSpec.freq;
-    gswState.clocksPerWord = gswState.audioSpec.freq / 60;
+    gswState.phaseStep = (double) CRYSTAL / audioSpec.freq;
+    gswState.clocksPerWord = audioSpec.freq / 60;
 #ifdef DEBUG
     printf ("sound opened, freq %d format %d channels %d samples %d\n",
-            gswState.audioSpec.freq, gswState.audioSpec.format,
-            gswState.audioSpec.channels, gswState.audioSpec.samples);
+            audioSpec.freq, audioSpec.format,
+            audioSpec.channels, audioSpec.samples);
 #endif
     return 0;
 }
@@ -104,7 +112,7 @@ int ptermOpenGsw (void *user)
 void ptermCloseGsw (void)
 {
     gswState.playing = FALSE;
-    SDL_CloseAudio ();
+    SDL_PauseAudio (1);
     gswState.user = NULL;
 #ifdef DEBUG
     printf ("sound stopped\n");
@@ -192,7 +200,7 @@ static void gswCallback (void *userdata, u8 *stream, int len)
             {
                 while (len > 0)
                 {
-                    *stream++ = gswState.audioSpec.silence;
+                    *stream++ = audioSpec.silence;
                     --len;
                 }
                 return;
@@ -247,7 +255,7 @@ static void gswCallback (void *userdata, u8 *stream, int len)
                                     voice, word, gswState.step[voice],
 //                                    ldexp (dph, 31),
                                     dph * 2147483648.0,
-                                    dph, (double) gswState.audioSpec.freq * dph);
+                                    dph, (double) audioSpec.freq * dph);
 #endif
                         }
                     }
@@ -280,7 +288,7 @@ static void gswCallback (void *userdata, u8 *stream, int len)
         // settings, then update the phase to reflect that one audio
         // clock has elapsed.
 
-        audio = gswState.audioSpec.silence;
+        audio = audioSpec.silence;
         for (i = 0; i < 4; i++)
         {
             if (gswState.step[i] != 0)
