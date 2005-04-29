@@ -90,9 +90,25 @@ pterm-kit:
 else
 pterm-kit:  $(MOFILES)
 	$(MAKE) pterm TYPE=static 
-	tar czf pterm.tar.gz --exclude '*CVS*' --exclude '*~' *.h pterm_wx.cpp pterm_sdl.c charset.c Makefile.wxpterm Makefile.common Makefile pterm $(LANGUAGES)
+	tar czf pterm.tar.gz --exclude '*CVS*' --exclude '*~'  --exclude '*.po' *.h pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages pterm $(LANGUAGES)
 
 endif
+
+mofiles: $(MOFILES)
+
+pterm-src:
+ifeq ("$(VERSION)","")
+$(error VERSION must be specified, e.g., VERSION=2.20)
+endif
+	mkdir pterm-$(VERSION)
+	cd pterm-$(VERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
+	cd pterm-$(VERSION); for f in const.h types.h proto.h ptermversion.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
+	tar chzf /home/pkoning/nobackup/pterm-linux-src-v$(VERSION).tar.gz pterm-$(VERSION)
+	rm -rf pterm-$(VERSION)
+
+pterm-rpm: pterm-src
+	cp /home/pkoning/nobackup/pterm-linux-src-v$(VERSION).tar.gz /usr/src/redhat/SOURCES
+	rpmbuild -ba pterm.spec
 
 pterm.dep: $(PTOBJS:.o=.d)
 
