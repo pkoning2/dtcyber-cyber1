@@ -150,6 +150,9 @@ extern "C"
 #include "proto.h"
 #include "ptermversion.h"
 
+extern int ptermOpenGsw (void *user);
+extern int ptermProcGswData (int data);
+extern void ptermCloseGsw (void);
 #if defined (__WXGTK__)
 
 // Attempting to include the gtk.h file yields infinite compile errors, so
@@ -210,6 +213,7 @@ public:
     // override base class virtuals
     // ----------------------------
     PtermConnection (PtermFrame *owner, wxString &host, int port);
+    ~PtermConnection ();
     
     virtual ExitCode Entry (void);
 
@@ -251,6 +255,9 @@ private:
     wxString    m_hostName;
     int         m_port;
     wxCriticalSection m_pointerLock;
+    bool        m_gswActive;
+    int         m_savedWord;
+    int         m_savedGswMode;
     
     void StoreWord (int word);
 
@@ -287,6 +294,7 @@ public:
     int         m_scale;
     bool        m_classicSpeed;
     bool        m_connect;
+    bool        m_gswEnable;
     PtermFrame  *m_firstFrame;
     
 private:
@@ -360,7 +368,7 @@ private:
     // The next word to be processed, and its associated delay.
     // We set this if we pick up a word from the connection object, and
     // either it comes with an associated delay, or "true timing" is selected
-    // via preferences
+    // via preferences, or GSW emulation is active.
     int         m_nextword;
     int         m_delay;
     
@@ -472,6 +480,7 @@ public:
     wxCheckBox      *m_scaleCheck;
     wxCheckBox      *m_speedCheck;
     wxCheckBox      *m_autoConnect;
+    wxCheckBox      *m_gswCheck;
     wxTextCtrl      *m_hostText;
     wxTextCtrl      *m_portText;
     wxTextValidator *m_hostVal;
@@ -490,6 +499,7 @@ public:
     bool            m_scale2;
     bool            m_classicSpeed;
     bool            m_connect;
+    bool            m_gswEnable;
     wxString        m_host;
     wxString        m_port;
     
@@ -783,7 +793,8 @@ bool PtermApp::OnInit (void)
     }
     m_classicSpeed = (m_config->Read (wxT ("classicSpeed"), 0L) != 0);
     m_connect = (m_config->Read (wxT ("autoconnect"), 1) != 0);
-
+    m_gswEnable = (m_config->Read (wxT ("gswenable"), 1) != 0);
+    
     // create the main application window
     // If arguments are present, always connect without asking
     if (!DoConnect (!(m_connect || argc > 1)))
@@ -856,7 +867,7 @@ bool PtermApp::DoConnect (bool ask)
     return (frame != NULL);
 }
 
-void PtermApp::OnPref (wxCommandEvent& WXUNUSED(event))
+void PtermApp::OnPref (wxCommandEvent&)
 {
     PtermFrame *frame;
     wxString rgb;
@@ -875,6 +886,7 @@ void PtermApp::OnPref (wxCommandEvent& WXUNUSED(event))
         
         m_scale = (dlg.m_scale2) ? 2 : 1;
         m_classicSpeed = dlg.m_classicSpeed;
+        m_gswEnable = dlg.m_gswEnable;
         m_hostName = dlg.m_host;
         m_port = atoi (wxString (dlg.m_port).mb_str ());
         m_connect = dlg.m_connect;
@@ -892,6 +904,7 @@ void PtermApp::OnPref (wxCommandEvent& WXUNUSED(event))
         m_config->Write (wxT ("port"), m_port);
         m_config->Write (wxT ("classicSpeed"), (dlg.m_classicSpeed) ? 1 : 0);
         m_config->Write (wxT ("autoConnect"), (dlg.m_connect) ? 1 : 0);
+        m_config->Write (wxT ("gswenable"), (dlg.m_gswEnable) ? 1 : 0);
         m_config->Flush ();
     }
 }
@@ -916,7 +929,7 @@ wxColour PtermApp::SelectColor (wxColour &initcol)
     return col;
 }
 
-void PtermApp::OnQuit(wxCommandEvent& WXUNUSED(event))
+void PtermApp::OnQuit(wxCommandEvent&)
 {
     PtermFrame *frame, *nextframe;
 
@@ -1158,7 +1171,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
     }
 }
 
-void PtermFrame::OnTimer (wxTimerEvent &WXUNUSED(event))
+void PtermFrame::OnTimer (wxTimerEvent &)
 {
     int word;
     
@@ -1186,7 +1199,7 @@ void PtermFrame::OnTimer (wxTimerEvent &WXUNUSED(event))
 }
 
 
-void PtermFrame::OnClose (wxCloseEvent &WXUNUSED(event))
+void PtermFrame::OnClose (wxCloseEvent &)
 {
     int i;
     
@@ -1210,7 +1223,7 @@ void PtermFrame::OnClose (wxCloseEvent &WXUNUSED(event))
     Destroy ();
 }
 
-void PtermFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
+void PtermFrame::OnQuit(wxCommandEvent&)
 {
     // TRUE is to force the frame to close
     Close (TRUE);
@@ -1227,7 +1240,7 @@ void PtermFrame::OnActivate (wxActivateEvent &event)
 }
 //#endif
 
-void PtermFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
+void PtermFrame::OnAbout(wxCommandEvent&)
 {
     wxString msg;
 
@@ -1238,7 +1251,7 @@ void PtermFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
     wxMessageBox(msg, _("About Pterm"), wxOK | wxICON_INFORMATION, this);
 }
 
-void PtermFrame::OnCopyScreen (wxCommandEvent & WXUNUSED(event))
+void PtermFrame::OnCopyScreen (wxCommandEvent &)
 {
     wxBitmap screenmap (ScreenSize, ScreenSize);
     wxMemoryDC screenDC;
@@ -2005,7 +2018,8 @@ int PtermFrame::procPlatoWord (u32 d)
         case 7:
             d &= 0177777;
             TRACE ("Ext %07o", d);
-            // Do -ext- processing
+            // Take no other action here -- it's been done already
+            // when the word was fetched
             break;
 
         default:    // ignore
@@ -2435,6 +2449,7 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
 {
     m_scale2 = (ptermApp->m_scale != 1);
     m_classicSpeed = ptermApp->m_classicSpeed;
+    m_gswEnable = ptermApp->m_gswEnable;
     m_connect = ptermApp->m_connect;
     m_fgColor = ptermApp->m_fgColor;
     m_bgColor = ptermApp->m_bgColor;
@@ -2461,6 +2476,8 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_scaleCheck->SetValue (m_scale2);
     m_speedCheck = new wxCheckBox (this, -1, _("&Simulate 1200 Baud"));
     m_speedCheck->SetValue (m_classicSpeed);
+    m_gswCheck = new wxCheckBox (this, -1, _("Enable &GSW"));
+    m_gswCheck->SetValue (m_gswEnable);
     m_connBox = new wxStaticBox (this, wxID_ANY, _("Connection settings"));
     m_connSizer = new wxStaticBoxSizer (m_connBox, wxVERTICAL);
     m_autoConnect = new wxCheckBox (this, -1, _("&Connect at startup"));
@@ -2496,7 +2513,8 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_connSizer->Add (m_autoConnect, 0, wxALL, 5);
     m_connSizer->Add (m_connItems, 0, wxALL, 5);
     m_prefItems->Add (m_scaleCheck, 0, wxTOP | wxLEFT | wxRIGHT, 10);
-    m_prefItems->Add (m_speedCheck, 0, wxALL, 10);
+    m_prefItems->Add (m_speedCheck, 0, wxTOP | wxLEFT | wxRIGHT, 10);
+    m_prefItems->Add (m_gswCheck, 0, wxALL, 10);
     m_prefItems->Add (m_connSizer, 0, wxALL, 10);
     m_prefItems->Add (m_colorsSizer, 0, wxALL, 10);
     m_prefButtons->Add (m_okButton, 0, wxALL, 5);
@@ -2545,6 +2563,8 @@ void PtermPrefdialog::OnButton (wxCommandEvent& event)
         m_speedCheck->SetValue (FALSE);
         m_connect = TRUE;
         m_autoConnect->SetValue (TRUE);
+        m_gswEnable = TRUE;
+        m_gswCheck->SetValue (TRUE);
         m_hostText->SetValue (DEFAULTHOST);
         str.Printf (wxT ("%d"), DefNiuPort);
         m_portText->SetValue (str);
@@ -2567,6 +2587,10 @@ void PtermPrefdialog::OnCheckbox (wxCommandEvent& event)
     else if (event.m_eventObject == m_autoConnect)
     {
         m_connect = event.IsChecked ();
+    }
+    else if (event.m_eventObject == m_gswCheck)
+    {
+        m_gswEnable = event.IsChecked ();
     }
 }
 
@@ -2656,9 +2680,21 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
       m_owner (owner),
       m_port (port),
       m_displayIn (0),
-      m_displayOut (0)
+      m_displayOut (0),
+      m_gswActive (FALSE),
+      m_savedWord (-1),
+      m_savedGswMode (0)
 {
     m_hostName = host;
+}
+
+PtermConnection::~PtermConnection ()
+{
+    if (m_gswActive)
+    {
+        ptermCloseGsw ();
+    }
+    dtCloseFet (&m_fet);
 }
 
 PtermConnection::ExitCode PtermConnection::Entry (void)
@@ -2707,42 +2743,107 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
             {
                 break;
             }
-            if (dtFetData (&m_fet) < 3)
+            if (m_savedWord >= 0)
             {
-                break;
+                // we had a word saved that we fetched before but couldn't
+                // save in the display ring because the GSW had no room.
+                // try to process it again.
+                platowd = m_savedWord;
+                m_savedWord = -1;
             }
-            i = dtReado (&m_fet);
-            if (i & 0200)
+            else
             {
-                printf ("Plato output out of sync byte 0: %03o\n", i);
-                continue;
-            }
-    newj:
-            j = dtReado (&m_fet);
-            if ((j & 0300) != 0200)
-            {
-                printf ("Plato output out of sync byte 1: %03o\n", j);
-                if ((j & 0200) == 0)
+                if (dtFetData (&m_fet) < 3)
                 {
-                    i = j;
-                    goto newj;
+                    break;
                 }
-                continue;
-            }
-            k = dtReado (&m_fet);
-            if ((k & 0300) != 0300)
-            {
-                printf ("Plato output out of sync byte 2: %03o\n", k);
-                if ((k & 0200) == 0)
+                i = dtReado (&m_fet);
+                if (i & 0200)
                 {
-                    i = k;
-                    goto newj;
+                    printf ("Plato output out of sync byte 0: %03o\n", i);
+                    continue;
                 }
-                continue;
+        newj:
+                j = dtReado (&m_fet);
+                if ((j & 0300) != 0200)
+                {
+                    printf ("Plato output out of sync byte 1: %03o\n", j);
+                    if ((j & 0200) == 0)
+                    {
+                        i = j;
+                        goto newj;
+                    }
+                    continue;
+                }
+                k = dtReado (&m_fet);
+                if ((k & 0300) != 0300)
+                {
+                    printf ("Plato output out of sync byte 2: %03o\n", k);
+                    if ((k & 0200) == 0)
+                    {
+                        i = k;
+                        goto newj;
+                    }
+                    continue;
+                }
+                platowd = (i << 12) | ((j & 077) << 6) | (k & 077);
             }
-            platowd = (i << 12) | ((j & 077) << 6) | (k & 077);
+            
+            if (!m_gswActive && (platowd >> 16) == 3 &&
+                platowd != 0700001 &&
+                platowd != 0702010)     // *** temp workaround for "edit" -ext-
+            {
+                // It's an -extout- word, which means we'll want to start up
+                // GSW emulation (if enabled: TBD).
+                // However, we'll see these also when PLATO is turning OFF
+                // the GSW (common entry code in the various gsw lessons).
+                // We don't want to grab the GSW subsystem in that case.
+                // The "turn off" sequence consists of a mode word followed
+                // by voice words that specify "rest" (operand == 1).
+                // The sound is silenced when the GSW is not active, so we'll
+                // ignore "rest" voice words in that case.  We'll save the last
+                // voice word, because it sets number of voices and volumes.
+                // We have to do that because when the music actually starts,
+                // we'll first see a mode word and then some non-rest voice
+                // words.  The non-rest voice words trigger the GSW startup,
+                // so we'll need to send the preceding mode word for correct
+                // initialization.
+                if ((platowd >> 15) == 6)
+                {
+                    // mode word, just save it
+                    m_savedGswMode = platowd;
+                }
+                else if (ptermOpenGsw (this) == 0)
+                {
+                    m_gswActive = TRUE;
+                    if (m_savedGswMode != 0)
+                    {
+                        ptermProcGswData (m_savedGswMode);
+                        m_savedGswMode = 0;
+                    }
+                }
+            }
+            
+            if (m_gswActive)
+            {
+                // feed the word to the GSW.  If it can't buffer it, we
+                // save it for next time.
+                i = ptermProcGswData (platowd);
+                if (i < 0)
+                {
+                    m_savedWord = platowd;
+                    break;
+                }
+                if (i != 0)
+                {
+                    m_gswActive = FALSE;
+                }
+            }
+            
             if (platowd == 2)
             {
+                m_savedGswMode = 0;
+
                 // erase abort marker -- reset the ring to be empty
                 wxCriticalSectionLocker lock (m_pointerLock);
 
@@ -2771,41 +2872,43 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
 
 int PtermConnection::NextWord (void)
 {
-    int j, next;
+    int i, word = 0, next;
     int delay = 0;
-    
-    if (m_displayIn == m_displayOut)
-    {
-        return C_NODATA;
-    }
-    
+
     {
         wxCriticalSectionLocker lock (m_pointerLock);
         
+        if (m_displayIn == m_displayOut)
+        {
+            return C_NODATA;
+        }
+    
+        word = m_displayRing[m_displayOut];
         next = m_displayOut + 1;
         if (next == RINGSIZE)
         {
             next = 0;
         }
-        j = m_displayRing[m_displayOut];
         m_displayOut = next;
     }
     
-    // See if emulating 1200 baud, or the -delay- NOP code
-    if (ptermApp->m_classicSpeed || j == 1)
+    // See if emulating 1200 baud, or the -delay- NOP code, or GSW is active
+    if (ptermApp->m_classicSpeed ||
+        word == 1 ||
+        m_gswActive)
     {
         delay = 1;
     }
     
     // Pass the delay to the caller
-    j |= (delay << 19);
+    word |= (delay << 19);
     
-    if (j == C_CONNFAIL || j == C_DISCONNECT)
+    if (word == C_CONNFAIL || word == C_DISCONNECT)
     {
         wxString msg;
             
         m_owner->SetStatusText (_(" Not connected"), STATUS_CONN);
-        if (j == C_CONNFAIL)
+        if (word == C_CONNFAIL)
         {
             msg.Printf (_("Failed to connect to %s %d"),
                         m_hostName.c_str (), m_port);
@@ -2820,31 +2923,27 @@ int PtermConnection::NextWord (void)
             
         alert.ShowModal ();
         m_owner->Close (TRUE);
-        j = C_NODATA;
+        word = C_NODATA;
     }
         
-    return j;
+    return word;
 }
 
 void PtermConnection::StoreWord (int word)
 {
     int next;
     
+    next = m_displayIn + 1;
+    if (next == RINGSIZE)
     {
-        wxCriticalSectionLocker lock (m_pointerLock);
-
-        next = m_displayIn + 1;
-        if (next == RINGSIZE)
-        {
-            next = 0;
-        }
-        if (next == m_displayOut)
-        {
-            return;
-        }
-        m_displayRing[m_displayIn] = word;
-        m_displayIn = next;
+        next = 0;
     }
+    if (next == m_displayOut)
+    {
+        return;
+    }
+    m_displayRing[m_displayIn] = word;
+    m_displayIn = next;
     
 #ifdef DEBUG
 //    wxLogMessage ("data from plato %07o", word);

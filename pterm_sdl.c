@@ -1,0 +1,303 @@
+/*--------------------------------------------------------------------------
+**
+**  Copyright (c) 2005, Paul Koning (see license.txt)
+**
+**  Name: pterm_sdl.c
+**
+**  Description:
+**      This is the interface from pterm to the SDL sound libraries,
+**      for GSW emulation
+**
+**--------------------------------------------------------------------------
+*/
+
+#include <stdio.h>
+#include <SDL.h>
+#include "const.h"
+#include "types.h"
+
+#define FREQ        22050           /* desired sound system data rate */
+#define CRYSTAL     3872000         /* GSW clock crystal frequency */
+#define SAMPLES     4096            /* number of samples to give to SDL each time */
+#define RINGSIZE    400             /* number of words in GSW ring buffer */
+
+#define RingData \
+    ((gswState.in >= gswState.out) ? \
+     gswState.in - gswState.out     \
+     : (RINGSIZE - gswState.out + gswState.in))
+
+struct gswState_t
+{
+    double phaseStep;
+    void *user;
+    SDL_AudioSpec audioSpec;
+    volatile int in;
+    volatile int out;
+    u32 phase[4];
+    u32 step[4];
+    int vol[4];
+    int voices;
+    int voice;
+    int clocksLeft;
+    int clocksPerWord;
+    int ring[RINGSIZE];
+    bool playing;
+    bool cis;
+};
+
+struct gswState_t gswState;
+
+static void gswCallback (void *userdata, u8  *stream, int len);
+
+/*
+**  This function assigns the GSW to the specified "user" (a pointer to some
+**  appropriate handle, e.g., a Connection object).
+**
+**  Return value:
+**      -1  Error (GSW unavailable for any reason; it may be disabled or
+**          some other connection may be using it).  You'll also get this
+**          if you call twice.
+**       0  Success (caller now owns the GSW)
+*/
+int ptermOpenGsw (void *user)
+{
+    SDL_AudioSpec *req;
+
+    if (gswState.user != NULL)
+    {
+        return -1;
+    }
+
+    // GSW was free, so initialize the SDL sound machinery
+    // First clear out all the current GSW state
+    memset (&gswState, 0, sizeof (gswState));
+        
+    req = (SDL_AudioSpec *) calloc (1, sizeof (SDL_AudioSpec));
+    req->freq = FREQ;
+    req->format = AUDIO_U8;
+    req->channels = 1;
+    req->samples = SAMPLES;
+    req->callback = gswCallback;
+    if (SDL_OpenAudio (req, &gswState.audioSpec) < 0)
+    {
+        fprintf (stderr, "can't open sound: %s\n", SDL_GetError ());
+        free (req);
+        return -1;
+    }
+    free (req);
+        
+    // We're all set up, mark the GSW as in-use
+    gswState.user = user;
+    gswState.phaseStep = (double) CRYSTAL / gswState.audioSpec.freq;
+    gswState.clocksPerWord = gswState.audioSpec.freq / 60;
+#ifdef DEBUG
+    printf ("sound opened, freq %d format %d channels %d samples %d\n",
+            gswState.audioSpec.freq, gswState.audioSpec.format,
+            gswState.audioSpec.channels, gswState.audioSpec.samples);
+#endif
+    return 0;
+}
+
+/*
+**  Close the GSW (done with the sound machinery)
+*/
+void ptermCloseGsw (void)
+{
+    gswState.playing = FALSE;
+    SDL_CloseAudio ();
+    gswState.user = NULL;
+#ifdef DEBUG
+    printf ("sound stopped\n");
+#endif
+}
+
+/*
+**  This function processes a GSW data word.
+**
+**  Return value:
+**      -1  no room for more data (hold this word for later)
+**       0  data stored, GSW is active (display should 1200 bps pacing)
+**       1  GSW is no longer active (this word was end of song)
+*/
+int ptermProcGswData (int data)
+{
+    int nextin;
+    
+    if (data == 2)
+    {
+        // Erase abort -- terminate playing because that can't occur
+        // in the middle of playing a tune.
+        ptermCloseGsw ();
+        return 1;
+    }
+    
+    nextin = gswState.in + 1;
+    if (nextin == RINGSIZE)
+    {
+        nextin = 0;
+    }
+    if (nextin == gswState.out)
+    {
+        return -1;
+    }
+    gswState.ring[gswState.in] = data;
+    gswState.in = nextin;
+    
+    // If we're not playing yet, start playing when we have enough data for
+    // 1/2 second of sound.  Each frame is 1/60th of a second, so we need
+    // 30 frames.
+    if (!gswState.playing && RingData > 30)
+    {
+#ifdef DEBUG
+        printf ("sound started\n");
+#endif
+        gswState.playing = TRUE;
+        SDL_PauseAudio (0);
+    }
+    
+    return 0;
+}
+
+// Since there are four channels and we do 8 bit audio, we want +/- 127 max,
+// which means +/- 31 max for each channel volume.
+// We'll use a map tabel so we can accommodate any transfer function.
+// For now (pending data from sjg) we'll assume a linear mapping.
+static const volmap[8] = {
+    4, 8, 12, 16, 20, 24, 28, 31
+};
+
+static inline int mapvol (int volume)
+{
+    return volmap[volume & 7];
+}
+
+static void gswCallback (void *userdata, u8 *stream, int len)
+{
+    int i, out, word, voice;
+    unsigned int audio;
+    double dph;
+    
+#ifdef DEBUG
+//    printf ("callback %d bytes\n", len);
+#endif
+    while (len > 0)
+    {
+        if (gswState.clocksLeft == 0)
+        {
+            // Finished processing the current word worth of data
+            // (1/60th of a second), get the next word from the ring.
+            // If we have no more data, supply silence.
+            out = gswState.out;
+            if (out == gswState.in)
+            {
+                while (len > 0)
+                {
+                    *stream++ = gswState.audioSpec.silence;
+                    --len;
+                }
+                return;
+            }
+            word = gswState.ring[out];
+            out++;
+            if (out == RINGSIZE)
+            {
+                out = 0;
+            }
+            gswState.out = out;
+            
+            // We have a word; figure out what it means.  In all cases,
+            // it means we have 1/60th second more data.  
+            gswState.clocksLeft = gswState.clocksPerWord;
+            if ((word >> 16) == 3)
+            {
+                // -extout- word, update the GSW state
+                if (word & 0100000)
+                {
+                    // voice word
+                    word &= 077777;
+                    voice = gswState.voice;
+                    if (word < 2)
+                    {
+                        // rest, set step to zero to indicate silence
+                        gswState.step[voice] = 0;
+#ifdef DEBUG
+                        printf ("voice %d rest\n", voice);
+#endif
+                    }
+                    else
+                    {
+                        dph = gswState.phaseStep / (4 * word + 2);
+                        if (dph > 0.5)
+                        {
+                            gswState.step[voice] = 0;
+#ifdef DEBUG
+                            printf ("voice %d step out of range: %f\n",
+                                    voice, dph);
+#endif
+                        }
+                        else
+                        {
+                            // form delta phase per audio clock, as a scaled
+                            // integer, binary point to the right of the top bit.
+//                            gswState.step[voice] = ldexp (dph, 31);
+                            gswState.step[voice] = dph * 2147483648.0;
+                            
+#ifdef DEBUG
+                            printf ("voice %d word %06o step %08x (%g) dph %g (%g Hz)\n",
+                                    voice, word, gswState.step[voice],
+//                                    ldexp (dph, 31),
+                                    dph * 2147483648.0,
+                                    dph, (double) gswState.audioSpec.freq * dph);
+#endif
+                        }
+                    }
+                    if (!gswState.cis)
+                    {
+                        if (--voice < 0)
+                        {
+                            voice = gswState.voices;
+                        }
+                        gswState.voice = voice;
+                    }
+                }
+                else
+                {
+                    // Mode word
+                    gswState.cis = (word & 040000) != 0;
+                    gswState.voice = gswState.voices = (word >> 12) & 3;
+                    gswState.vol[0] = mapvol (word >> 9);
+                    gswState.vol[1] = mapvol (word >> 6);
+                    gswState.vol[2] = mapvol (word >> 3);
+                    gswState.vol[3] = mapvol (word);
+#ifdef DEBUG
+                    printf ("gsw mode %06o\n", word);
+#endif
+                }
+            }
+        }
+
+        // Now generate one sample, from the current phase and volume
+        // settings, then update the phase to reflect that one audio
+        // clock has elapsed.
+
+        audio = gswState.audioSpec.silence;
+        for (i = 0; i < 4; i++)
+        {
+            if (gswState.step[i] != 0)
+            {
+                audio += (((gswState.phase[i] >> 30) & 1) ? -1 : 1) * gswState.vol[i];
+                gswState.phase[i] += gswState.step[i];
+            }
+        }
+        if (audio > 255)
+        {
+            printf ("audio out of range: %x\n", audio);
+        }
+        
+       --gswState.clocksLeft;
+        *stream++ = audio;
+        --len;
+    }
+}
+
+    

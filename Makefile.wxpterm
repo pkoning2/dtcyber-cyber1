@@ -36,9 +36,14 @@ PATH:=$(DIR)/bin:/usr/local/bin:$(PATH)
 
 CONFIG = $(DIR)/bin/wx-config
 CXXFLAGS = `$(CONFIG) --cxxflags`
-WXLIBS	= `$(CONFIG) --libs` $(EXTRALIBS)
+WXLIBS	= `$(CONFIG) --libs` $(EXTRALIBS) 
 
-PTOBJS	= $(SOBJS) pterm_wx.o
+SDLINCL = -I/usr/include/SDL
+SDLLIBS = -lSDL
+
+INCL += $(SDLINCL)
+
+PTOBJS	= $(SOBJS) pterm_sdl.o pterm_wx.o
 
 LANGUAGES = $(shell cat languages)
 MOFILES = $(addsuffix /pterm.mo,$(LANGUAGES))
@@ -46,7 +51,7 @@ MOFILES = $(addsuffix /pterm.mo,$(LANGUAGES))
 .PHONY : pterm-kit langdirs
 
 pterm:	$(PTOBJS)
-	$(SETPATH) $(CXX) $(LDFLAGS) -o $@ $+ $(WXLIBS)
+	$(SETPATH) $(CXX) $(LDFLAGS) -o $@ $+ $(SDLLIBS) $(WXLIBS)
 ifeq ("$(TYPE)","static")
 ifneq ("$(HOST)","Darwin")
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
@@ -85,7 +90,7 @@ pterm-kit:
 else
 pterm-kit:  $(MOFILES)
 	$(MAKE) pterm TYPE=static 
-	tar czf pterm.tar.gz --exclude '*CVS*' --exclude '*~' *.h pterm_wx.cpp charset.c Makefile.wxpterm Makefile.common Makefile pterm $(LANGUAGES)
+	tar czf pterm.tar.gz --exclude '*CVS*' --exclude '*~' *.h pterm_wx.cpp pterm_sdl.c charset.c Makefile.wxpterm Makefile.common Makefile pterm $(LANGUAGES)
 
 endif
 
