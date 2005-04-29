@@ -11,6 +11,16 @@
 
 include Makefile.common
 
+ifneq ("$(MAKECMDGOALS)","pterm-src")
+ifneq ("$(MAKECMDGOALS)","pterm-rpm")
+VERSION = **unused**
+endif
+endif
+
+ifeq ("$(VERSION)","")
+$(error VERSION must be specified, e.g., VERSION=2.20)
+endif
+
 TYPE ?= shared
 ifeq ("$(TYPE)","static")
 DIR = /usr/local/wxstaticu
@@ -97,9 +107,6 @@ endif
 mofiles: $(MOFILES)
 
 pterm-src:
-ifeq ("$(VERSION)","")
-$(error VERSION must be specified, e.g., VERSION=2.20)
-endif
 	mkdir pterm-$(VERSION)
 	cd pterm-$(VERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
 	cd pterm-$(VERSION); for f in const.h types.h proto.h ptermversion.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
@@ -126,7 +133,9 @@ pterm.dep: $(PTOBJS:.o=.d)
 	xgettext  --keyword=_ --from-code=iso-8859-1 --msgid-bugs-address=paul@cyber1.org -C -o pterm.pot pterm_wx.cpp
 	msgmerge -U $@ pterm.pot
 
+ifneq ($(MAKECMDGOALS),clean)
 include  $(PTOBJS:.o=.d) 
+endif
 
 #---------------------------  End Of File  --------------------------------
 

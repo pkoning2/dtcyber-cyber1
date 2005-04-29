@@ -18,6 +18,8 @@ dtoper:	$(DTOBJS)
 
 dtoper.dep: $(DTOBJS:.o=.d) 
 
+ifneq ($(MAKECMDGOALS),clean)
 include  $(DTOBJS:.o=.d) 
+endif
 
 #---------------------------  End Of File  --------------------------------

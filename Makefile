@@ -85,6 +85,8 @@ buildall: clean all
 
 dep:	pterm.dep dd60.dep dtoper.dep $(OBJS:.o=.d) blackbox.d
 
+ifneq ($(MAKECMDGOALS),clean)
 include  $(OBJS:.o=.d) blackbox.d
+endif
 
 #---------------------------  End Of File  --------------------------------
