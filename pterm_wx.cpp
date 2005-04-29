@@ -2872,7 +2872,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
 
 int PtermConnection::NextWord (void)
 {
-    int i, word = 0, next;
+    int word = 0, next;
     int delay = 0;
 
     {
