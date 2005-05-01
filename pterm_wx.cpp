@@ -30,9 +30,12 @@
 #define xofkey      01607
 #endif
 
+#define GSWRINGSIZE 100
+
 #define C_NODATA        -1
 #define C_CONNFAIL      -2
 #define C_DISCONNECT    -3
+#define C_GSWEND        -4
 
 #define STATUS_TIP      0
 #define STATUS_TRC      1
@@ -153,6 +156,7 @@ extern "C"
 extern int ptermOpenGsw (void *user);
 extern int ptermProcGswData (int data);
 extern void ptermCloseGsw (void);
+extern void ptermStartGsw (void);
 #if defined (__WXGTK__)
 
 // Attempting to include the gtk.h file yields infinite compile errors, so
@@ -218,6 +222,8 @@ public:
     virtual ExitCode Entry (void);
 
     int NextWord (void);
+    int NextGswWord (bool catchup);
+    
     void SendData (const void *data, int len);
 
     bool IsEmpty (void) const
@@ -251,17 +257,20 @@ private:
     NetFet      m_fet;
     u32         m_displayRing[RINGSIZE];
     volatile int m_displayIn, m_displayOut;
+    u32         m_gswRing[GSWRINGSIZE];
+    volatile int m_gswIn, m_gswOut;
     PtermFrame  *m_owner;
     wxString    m_hostName;
     int         m_port;
     wxCriticalSection m_pointerLock;
     bool        m_gswActive;
-    int         m_savedWord;
     int         m_savedGswMode;
     
     void StoreWord (int word);
-
+    int NextRingWord (void);
 };
+
+extern "C" int ptermNextGswWord (void *connection, int catchup);
 
 // Define a new application type, each program should derive a class from wxApp
 class PtermApp : public wxApp
@@ -329,7 +338,10 @@ public:
     void PrepareDC(wxDC& dc);
     void ptermSendKey(int key);
     void ptermSetTrace (bool fileaction);
-
+    bool TimerIsRunning (void)
+    {
+        return m_timer.IsRunning ();
+    }
     wxMemoryDC  *m_memDC;
     bool        tracePterm;
     PtermFrame  *m_nextFrame;
@@ -2681,8 +2693,9 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
       m_port (port),
       m_displayIn (0),
       m_displayOut (0),
+      m_gswIn (0),
+      m_gswOut (0),
       m_gswActive (FALSE),
-      m_savedWord (-1),
       m_savedGswMode (0)
 {
     m_hostName = host;
@@ -2743,51 +2756,41 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
             {
                 break;
             }
-            if (m_savedWord >= 0)
+
+            if (dtFetData (&m_fet) < 3)
             {
-                // we had a word saved that we fetched before but couldn't
-                // save in the display ring because the GSW had no room.
-                // try to process it again.
-                platowd = m_savedWord;
-                m_savedWord = -1;
+                break;
             }
-            else
+            i = dtReado (&m_fet);
+            if (i & 0200)
             {
-                if (dtFetData (&m_fet) < 3)
-                {
-                    break;
-                }
-                i = dtReado (&m_fet);
-                if (i & 0200)
-                {
-                    printf ("Plato output out of sync byte 0: %03o\n", i);
-                    continue;
-                }
-        newj:
-                j = dtReado (&m_fet);
-                if ((j & 0300) != 0200)
-                {
-                    printf ("Plato output out of sync byte 1: %03o\n", j);
-                    if ((j & 0200) == 0)
-                    {
-                        i = j;
-                        goto newj;
-                    }
-                    continue;
-                }
-                k = dtReado (&m_fet);
-                if ((k & 0300) != 0300)
-                {
-                    printf ("Plato output out of sync byte 2: %03o\n", k);
-                    if ((k & 0200) == 0)
-                    {
-                        i = k;
-                        goto newj;
-                    }
-                    continue;
-                }
-                platowd = (i << 12) | ((j & 077) << 6) | (k & 077);
+                printf ("Plato output out of sync byte 0: %03o\n", i);
+                continue;
             }
+    newj:
+            j = dtReado (&m_fet);
+            if ((j & 0300) != 0200)
+            {
+                printf ("Plato output out of sync byte 1: %03o\n", j);
+                if ((j & 0200) == 0)
+                {
+                    i = j;
+                    goto newj;
+                }
+                continue;
+            }
+            k = dtReado (&m_fet);
+            if ((k & 0300) != 0300)
+            {
+                printf ("Plato output out of sync byte 2: %03o\n", k);
+                if ((k & 0200) == 0)
+                {
+                    i = k;
+                    goto newj;
+                }
+                continue;
+            }
+            platowd = (i << 12) | ((j & 077) << 6) | (k & 077);
             
             if (!m_gswActive && (platowd >> 16) == 3 &&
                 platowd != 0700001 &&
@@ -2816,34 +2819,27 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
                 else if (ptermOpenGsw (this) == 0)
                 {
                     m_gswActive = TRUE;
+		    if (!m_owner->TimerIsRunning ())
+		    {
+		        wxWakeUpIdle ();
+		    }
                     if (m_savedGswMode != 0)
                     {
-                        ptermProcGswData (m_savedGswMode);
+                        StoreWord (m_savedGswMode);
                         m_savedGswMode = 0;
                     }
-                }
-            }
-            
-            if (m_gswActive)
-            {
-                // feed the word to the GSW.  If it can't buffer it, we
-                // save it for next time.
-                i = ptermProcGswData (platowd);
-                if (i < 0)
-                {
-                    m_savedWord = platowd;
-                    break;
-                }
-                if (i != 0)
-                {
-                    m_gswActive = FALSE;
                 }
             }
             
             if (platowd == 2)
             {
                 m_savedGswMode = 0;
-
+                if (m_gswActive)
+                {
+                    m_gswActive = FALSE;
+                    ptermCloseGsw ();
+                }
+                
                 // erase abort marker -- reset the ring to be empty
                 wxCriticalSectionLocker lock (m_pointerLock);
 
@@ -2852,6 +2848,11 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
 
             StoreWord (platowd);
             i = RingCount ();
+            if (i == GSWRINGSIZE / 2)
+            {
+                ptermStartGsw ();
+            }
+            
             if (i == RINGXOFF1 || i == RINGXOFF2)
             {
 #if 0
@@ -2870,10 +2871,9 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
     return (ExitCode) 0;
 }
 
-int PtermConnection::NextWord (void)
+int PtermConnection::NextRingWord (void)
 {
-    int word = 0, next;
-    int delay = 0;
+    int word, next;
 
     {
         wxCriticalSectionLocker lock (m_pointerLock);
@@ -2891,14 +2891,54 @@ int PtermConnection::NextWord (void)
         }
         m_displayOut = next;
     }
-    
-    // See if emulating 1200 baud, or the -delay- NOP code, or GSW is active
-    if (ptermApp->m_classicSpeed ||
-        word == 1 ||
-        m_gswActive)
+    return word;
+}
+
+int PtermConnection::NextWord (void)
+{
+    int next, word;
+    int delay = 0;
+
+    if (m_gswActive)
     {
-        delay = 1;
+        // Take data from the ring of words that have just been given
+        // to the GSW emulation.  Note that the delay amount has already
+        // been set in those entries.  Usually it is 1, but it may be 0
+        // if the display is falling behind.
+        if (m_gswIn == m_gswOut)
+        {
+            return C_NODATA;
+        }
+        
+        word = m_gswRing[m_gswOut];
+        next = m_gswOut + 1;
+        if (next == GSWRINGSIZE)
+        {
+            next = 0;
+        }
+        m_gswOut = next;
+        if (word == C_GSWEND)
+        {
+            m_gswActive = FALSE;
+            ptermCloseGsw ();
+        }
     }
+
+    // Not a simple "else" because the stream from the GSW may have an
+    // "end GSW" marker in it.
+    if (!m_gswActive)
+    {
+        // Take data from the main input ring
+        word = NextRingWord ();
+
+        // See if emulating 1200 baud, or the -delay- NOP code
+        if (ptermApp->m_classicSpeed ||
+            word == 1)
+        {
+            delay = 1;
+        }
+    }
+    
     
     // Pass the delay to the caller
     word |= (delay << 19);
@@ -2927,6 +2967,58 @@ int PtermConnection::NextWord (void)
     }
         
     return word;
+}
+
+// Get a word from the main data ring for the GSW emulation.  The 
+// "catchup" flag is true if this is the first word for the current
+// burst of sound data, meaning that the display should be made to
+// catch up to this point.  We do that by walking back through the
+// ring of data from GSW to the display (m_gswRing) clearing out the
+// delay setting for any words that haven't been processed yet.
+// This is necessary because the GSW paces the display.  The 1/60th
+// second timer roughly does the same, but in case it is off the two
+// could end up out of sync, so we force them to resync here.
+int PtermConnection::NextGswWord (bool catchup)
+{
+    int next, word;
+
+    next = m_gswOut;
+    if (catchup && m_gswIn != next)
+    {
+        // The display has some catching up to do.
+        while (next != m_gswIn)
+        {
+	  printf ("catchup: %d\n", next);
+            m_gswRing[next] &= 01777777;
+            next++;
+            if (next == GSWRINGSIZE)
+            {
+                next = 0;
+            }
+        }
+    }
+
+    next = m_gswIn + 1;
+    if (next == GSWRINGSIZE)
+    {
+        next = 0;
+    }
+    // If there is no room to save this data for the display,
+    // tell the sound that there isn't any more data.
+    if (next == m_gswOut)
+    {
+        return C_NODATA;
+    }
+    word = NextRingWord ();
+    m_gswRing[m_gswIn] = word | (1 << 19);
+    m_gswIn = next;
+    
+    return word;
+}
+
+int ptermNextGswWord (void *connection, int catchup)
+{
+    return ((PtermConnection *) connection)->NextGswWord (catchup != 0);
 }
 
 void PtermConnection::StoreWord (int word)

@@ -1,1 +1,1 @@
-#define PTERMVERSION "V2.20"
+#define PTERMVERSION "V2.21"

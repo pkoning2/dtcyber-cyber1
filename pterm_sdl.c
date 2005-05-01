@@ -19,19 +19,13 @@
 #define FREQ        22050           /* desired sound system data rate */
 #define CRYSTAL     3872000         /* GSW clock crystal frequency */
 #define SAMPLES     4096            /* number of samples to give to SDL each time */
-#define RINGSIZE    400             /* number of words in GSW ring buffer */
 
-#define RingData \
-    ((gswState.in >= gswState.out) ? \
-     gswState.in - gswState.out     \
-     : (RINGSIZE - gswState.out + gswState.in))
+#define C_NODATA        -1
 
 struct gswState_t
 {
     double phaseStep;
     void *user;
-    volatile int in;
-    volatile int out;
     u32 phase[4];
     u32 step[4];
     int vol[4];
@@ -39,7 +33,6 @@ struct gswState_t
     int voice;
     int clocksLeft;
     int clocksPerWord;
-    int ring[RINGSIZE];
     bool playing;
     bool cis;
 };
@@ -49,6 +42,7 @@ SDL_AudioSpec audioSpec;
 bool audioOpened;
 
 static void gswCallback (void *userdata, u8  *stream, int len);
+extern int ptermNextGswWord (void *connection, int catchup);
 
 /*
 **  This function assigns the GSW to the specified "user" (a pointer to some
@@ -120,41 +114,13 @@ void ptermCloseGsw (void)
 }
 
 /*
-**  This function processes a GSW data word.
+**  Start playing the GSW, if not already started.
 **
-**  Return value:
-**      -1  no room for more data (hold this word for later)
-**       0  data stored, GSW is active (display should 1200 bps pacing)
-**       1  GSW is no longer active (this word was end of song)
+**  The main emulation calls this when there is enough data in its buffer.
 */
-int ptermProcGswData (int data)
+void ptermStartGsw (void)
 {
-    int nextin;
-    
-    if (data == 2)
-    {
-        // Erase abort -- terminate playing because that can't occur
-        // in the middle of playing a tune.
-        ptermCloseGsw ();
-        return 1;
-    }
-    
-    nextin = gswState.in + 1;
-    if (nextin == RINGSIZE)
-    {
-        nextin = 0;
-    }
-    if (nextin == gswState.out)
-    {
-        return -1;
-    }
-    gswState.ring[gswState.in] = data;
-    gswState.in = nextin;
-    
-    // If we're not playing yet, start playing when we have enough data for
-    // 1/2 second of sound.  Each frame is 1/60th of a second, so we need
-    // 30 frames.
-    if (!gswState.playing && RingData > 30)
+    if (!gswState.playing)
     {
 #ifdef DEBUG
         printf ("sound started\n");
@@ -162,8 +128,6 @@ int ptermProcGswData (int data)
         gswState.playing = TRUE;
         SDL_PauseAudio (0);
     }
-    
-    return 0;
 }
 
 // Since there are four channels and we do 8 bit audio, we want +/- 127 max,
@@ -181,7 +145,8 @@ static const int mapvol (int volume)
 
 static void gswCallback (void *userdata, u8 *stream, int len)
 {
-    int i, out, word, voice;
+    int i, word, voice;
+    int catchup = 1;
     unsigned int audio;
     double dph;
     
@@ -193,10 +158,11 @@ static void gswCallback (void *userdata, u8 *stream, int len)
         if (gswState.clocksLeft == 0)
         {
             // Finished processing the current word worth of data
-            // (1/60th of a second), get the next word from the ring.
+            // (1/60th of a second), get the next word from the main emulation.
             // If we have no more data, supply silence.
-            out = gswState.out;
-            if (out == gswState.in)
+            word = ptermNextGswWord (gswState.user, catchup);
+            catchup = 0;
+            if (word == C_NODATA)
             {
                 while (len > 0)
                 {
@@ -205,13 +171,6 @@ static void gswCallback (void *userdata, u8 *stream, int len)
                 }
                 return;
             }
-            word = gswState.ring[out];
-            out++;
-            if (out == RINGSIZE)
-            {
-                out = 0;
-            }
-            gswState.out = out;
             
             // We have a word; figure out what it means.  In all cases,
             // it means we have 1/60th second more data.  

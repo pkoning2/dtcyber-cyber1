@@ -48,8 +48,12 @@ CONFIG = $(DIR)/bin/wx-config
 CXXFLAGS = `$(CONFIG) --cxxflags`
 WXLIBS	= `$(CONFIG) --libs` $(EXTRALIBS) 
 
-SDLINCL = -I/usr/include/SDL
+SDLINCL = -I/usr/include/SDL -I/usr/local/include/SDL
+ifeq ("$(TYPE)","static")
+SDLLIBS = /usr/local/lib/libSDL.a
+else
 SDLLIBS = -lSDL
+endif
 
 INCL += $(SDLINCL)
 
@@ -90,7 +94,7 @@ ptermkit.dmg: Pterm.app-timestamp pterm-empty.dmg
 	dev=`hdid ptermkit.dmg | awk '{ print $$1 }'` ; cp -Rp Pterm.app /Volumes/ptermvol; hdiutil detach $$dev
 
 pterm.dmg: ptermkit.dmg
-	rm pterm.dmg
+	rm -f pterm.dmg
 	hdiutil convert -format UDZO ptermkit.dmg -o pterm.dmg
 	hdiutil internet-enable -yes pterm.dmg
 

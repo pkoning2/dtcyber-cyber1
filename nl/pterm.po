@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V2.10\n"
 "Report-Msgid-Bugs-To: paul@cyber1.org\n"
-"POT-Creation-Date: 2005-04-29 12:39-0400\n"
+"POT-Creation-Date: 2005-05-01 18:49-0400\n"
 "PO-Revision-Date: 2005-04-22 17:30-0400\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -16,172 +16,172 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: pterm_wx.cpp:838
+#: pterm_wx.cpp:850
 msgid "Connect to PLATO"
 msgstr "Met PLATO verbinden"
 
-#: pterm_wx.cpp:875
+#: pterm_wx.cpp:887
 msgid "Pterm Preferences"
 msgstr "Pterm voorkeuren"
 
-#: pterm_wx.cpp:1011
+#: pterm_wx.cpp:1023
 msgid "&New Connection...\tCtrl-N"
 msgstr "&Nieuwe verbinding...\tCtrl-N"
 
-#: pterm_wx.cpp:1012
+#: pterm_wx.cpp:1024
 msgid "Connect to a PLATO host"
 msgstr "Aan een PLATO-systeem verbinden"
 
-#: pterm_wx.cpp:1013
+#: pterm_wx.cpp:1025
 msgid "Connect &Again"
 msgstr "Nogmaals V&erbinden"
 
-#: pterm_wx.cpp:1014
+#: pterm_wx.cpp:1026
 msgid "Connect to the same host"
 msgstr "Verbinden aan hetzelfde systeem"
 
-#: pterm_wx.cpp:1016
+#: pterm_wx.cpp:1028
 msgid "P&references..."
 msgstr "&Voorkeuren..."
 
-#: pterm_wx.cpp:1017
+#: pterm_wx.cpp:1029
 msgid "Set program configuration"
 msgstr "Stel de voorkeuren van het programma in"
 
-#: pterm_wx.cpp:1019
+#: pterm_wx.cpp:1031
 msgid "&Close\tCtrl-Z"
 msgstr "Verbinding sluiten\tCtrl-Z"
 
-#: pterm_wx.cpp:1019
+#: pterm_wx.cpp:1031
 msgid "Close this window"
 msgstr "Sluit dit venster"
 
-#: pterm_wx.cpp:1020
+#: pterm_wx.cpp:1032
 msgid "E&xit"
 msgstr "Programma sluiten"
 
-#: pterm_wx.cpp:1020
+#: pterm_wx.cpp:1032
 msgid "Quit this program"
 msgstr "Beeindig het programma"
 
-#: pterm_wx.cpp:1024
+#: pterm_wx.cpp:1036
 msgid "Copy Screen"
 msgstr "Scherm kopieren"
 
-#: pterm_wx.cpp:1024
+#: pterm_wx.cpp:1036
 msgid "Copy screen to clipboard"
 msgstr "Kopieer het scherm naar het xxx"
 
-#: pterm_wx.cpp:1028
+#: pterm_wx.cpp:1040
 msgid "File"
 msgstr "Bestand"
 
-#: pterm_wx.cpp:1029
+#: pterm_wx.cpp:1041
 msgid "Edit"
 msgstr "Bewerken"
 
-#: pterm_wx.cpp:1037
+#: pterm_wx.cpp:1049
 msgid "&About..."
 msgstr "&Over..."
 
-#: pterm_wx.cpp:1037
+#: pterm_wx.cpp:1049
 msgid "Show about dialog"
 msgstr "Toon programma informatie"
 
-#: pterm_wx.cpp:1043
+#: pterm_wx.cpp:1055
 msgid "Help"
 msgstr "Help"
 
-#: pterm_wx.cpp:1053
+#: pterm_wx.cpp:1065
 msgid " Connecting..."
 msgstr "Aan het verbinden..."
 
-#: pterm_wx.cpp:1249
+#: pterm_wx.cpp:1261
 msgid "Copyright © 2005 by Paul Koning."
 msgstr "Copyright © 2005 van Paul Koning."
 
-#: pterm_wx.cpp:1251
+#: pterm_wx.cpp:1263
 msgid "About Pterm"
 msgstr "Over Pterm"
 
-#: pterm_wx.cpp:2428
+#: pterm_wx.cpp:2440
 msgid " Trace "
 msgstr "Traceren "
 
-#: pterm_wx.cpp:2464
+#: pterm_wx.cpp:2476
 msgid "Display colors"
 msgstr "Schermkleuren"
 
-#: pterm_wx.cpp:2468 pterm_wx.cpp:2627
+#: pterm_wx.cpp:2480 pterm_wx.cpp:2639
 msgid "OK"
 msgstr "OK"
 
-#: pterm_wx.cpp:2469 pterm_wx.cpp:2628
+#: pterm_wx.cpp:2481 pterm_wx.cpp:2640
 msgid "Cancel"
 msgstr "Annuleren"
 
-#: pterm_wx.cpp:2470
+#: pterm_wx.cpp:2482
 msgid "Defaults"
 msgstr "Standaard"
 
-#: pterm_wx.cpp:2471
+#: pterm_wx.cpp:2483
 msgid "&Foreground"
 msgstr "&Voorgrond"
 
-#: pterm_wx.cpp:2472
+#: pterm_wx.cpp:2484
 msgid "&Background"
 msgstr "&Achtergrond"
 
-#: pterm_wx.cpp:2475
+#: pterm_wx.cpp:2487
 msgid "&Zoom display 200%"
 msgstr "&Beeld 200% vergroten"
 
-#: pterm_wx.cpp:2477
+#: pterm_wx.cpp:2489
 msgid "&Simulate 1200 Baud"
 msgstr "1200 Baud &simuleren"
 
-#: pterm_wx.cpp:2479
+#: pterm_wx.cpp:2491
 msgid "Enable &GSW"
 msgstr "&GSW aanzetten"
 
-#: pterm_wx.cpp:2481
+#: pterm_wx.cpp:2493
 msgid "Connection settings"
 msgstr "Verbindingsinstellingen"
 
-#: pterm_wx.cpp:2483
+#: pterm_wx.cpp:2495
 msgid "&Connect at startup"
 msgstr "Automatisch verbinden"
 
-#: pterm_wx.cpp:2485
+#: pterm_wx.cpp:2497
 msgid "Default &Host"
 msgstr "Standaardsysteem"
 
-#: pterm_wx.cpp:2486
+#: pterm_wx.cpp:2498
 msgid "Default &Port"
 msgstr "Standardpoortnummer"
 
-#: pterm_wx.cpp:2630
+#: pterm_wx.cpp:2642
 msgid "Host name"
 msgstr "Systeemnaam"
 
-#: pterm_wx.cpp:2631
+#: pterm_wx.cpp:2643
 msgid "Port"
 msgstr "Poortnummer"
 
-#: pterm_wx.cpp:2910
+#: pterm_wx.cpp:2950
 msgid " Not connected"
 msgstr "Niet verbonden"
 
-#: pterm_wx.cpp:2913
+#: pterm_wx.cpp:2953
 #, c-format
 msgid "Failed to connect to %s %d"
 msgstr "Kon niet verbinden met %s %d"
 
-#: pterm_wx.cpp:2918
+#: pterm_wx.cpp:2958
 #, c-format
 msgid "Connection lost to %s %d"
 msgstr "Verbinding met %s %d verloren"
 
-#: pterm_wx.cpp:2922
+#: pterm_wx.cpp:2962
 msgid "Alert"
 msgstr "Waarschuwing"
