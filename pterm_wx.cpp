@@ -264,7 +264,9 @@ private:
     int         m_port;
     wxCriticalSection m_pointerLock;
     bool        m_gswActive;
+    bool        m_gswStarted;
     int         m_savedGswMode;
+    int         m_gswWord2;
     
     void StoreWord (int word);
     int NextRingWord (void);
@@ -330,18 +332,13 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
-//#if !defined(__WXMAC__)
     void OnActivate (wxActivateEvent &event);
-//#endif
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
     
     void PrepareDC(wxDC& dc);
     void ptermSendKey(int key);
     void ptermSetTrace (bool fileaction);
-    bool TimerIsRunning (void)
-    {
-        return m_timer.IsRunning ();
-    }
+
     wxMemoryDC  *m_memDC;
     bool        tracePterm;
     PtermFrame  *m_nextFrame;
@@ -720,9 +717,7 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_IDLE(PtermFrame::OnIdle)
     EVT_CLOSE(PtermFrame::OnClose)
     EVT_TIMER(wxID_ANY,   PtermFrame::OnTimer)
-//#if !defined(__WXMAC__)
     EVT_ACTIVATE(PtermFrame::OnActivate)
-//#endif
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
@@ -1191,25 +1186,35 @@ void PtermFrame::OnTimer (wxTimerEvent &)
     {
         return;
     }
+#ifdef DEBUG
+        wxLogMessage ("processing data from plato %07o", m_nextword);
+#endif
     procPlatoWord (m_nextword);
     
-    word = m_conn->NextWord ();
+    // See what's next.  If no delay is called for, just process it, keep
+    // going until no more data or we get a word with delay.
+    for (;;)
+    {
+        word = m_conn->NextWord ();
     
-    if (word == C_NODATA)
-    {
-        m_nextword = 0;
-        m_timer.Stop ();
-        return;
-    }
-    m_delay = (word >> 19);
-    m_nextword = word & 01777777;
-    if (m_delay == 0)
-    {
-        m_timer.Stop ();
-        wxWakeUpIdle ();
+        if (word == C_NODATA)
+        {
+            m_nextword = 0;
+            m_timer.Stop ();
+            return;
+        }
+        m_delay = (word >> 19);
+        m_nextword = word & 01777777;
+        if (m_delay != 0)
+        {
+            break;
+        }
+#ifdef DEBUG
+        wxLogMessage ("processing data from plato %07o", word);
+#endif
+        procPlatoWord (word);
     }
 }
-
 
 void PtermFrame::OnClose (wxCloseEvent &)
 {
@@ -1241,7 +1246,6 @@ void PtermFrame::OnQuit(wxCommandEvent&)
     Close (TRUE);
 }
 
-//#if !defined(__WXMAC__)
 void PtermFrame::OnActivate (wxActivateEvent &event)
 {
     if (m_canvas != NULL)
@@ -1250,7 +1254,6 @@ void PtermFrame::OnActivate (wxActivateEvent &event)
     }
     event.Skip ();        // let others see the event, too
 }
-//#endif
 
 void PtermFrame::OnAbout(wxCommandEvent&)
 {
@@ -2696,7 +2699,9 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
       m_gswIn (0),
       m_gswOut (0),
       m_gswActive (FALSE),
-      m_savedGswMode (0)
+      m_gswStarted (FALSE),
+      m_savedGswMode (0),
+      m_gswWord2 (0)
 {
     m_hostName = host;
 }
@@ -2792,51 +2797,12 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
             }
             platowd = (i << 12) | ((j & 077) << 6) | (k & 077);
             
-            if (!m_gswActive && (platowd >> 16) == 3 &&
-                platowd != 0700001 &&
-                platowd != 0702010)     // *** temp workaround for "edit" -ext-
-            {
-                // It's an -extout- word, which means we'll want to start up
-                // GSW emulation (if enabled: TBD).
-                // However, we'll see these also when PLATO is turning OFF
-                // the GSW (common entry code in the various gsw lessons).
-                // We don't want to grab the GSW subsystem in that case.
-                // The "turn off" sequence consists of a mode word followed
-                // by voice words that specify "rest" (operand == 1).
-                // The sound is silenced when the GSW is not active, so we'll
-                // ignore "rest" voice words in that case.  We'll save the last
-                // voice word, because it sets number of voices and volumes.
-                // We have to do that because when the music actually starts,
-                // we'll first see a mode word and then some non-rest voice
-                // words.  The non-rest voice words trigger the GSW startup,
-                // so we'll need to send the preceding mode word for correct
-                // initialization.
-                if ((platowd >> 15) == 6)
-                {
-                    // mode word, just save it
-                    m_savedGswMode = platowd;
-                }
-                else if (ptermOpenGsw (this) == 0)
-                {
-                    m_gswActive = TRUE;
-		    if (!m_owner->TimerIsRunning ())
-		    {
-		        wxWakeUpIdle ();
-		    }
-                    if (m_savedGswMode != 0)
-                    {
-                        StoreWord (m_savedGswMode);
-                        m_savedGswMode = 0;
-                    }
-                }
-            }
-            
             if (platowd == 2)
             {
-                m_savedGswMode = 0;
+                m_savedGswMode = m_gswWord2 = 0;
                 if (m_gswActive)
                 {
-                    m_gswActive = FALSE;
+                    m_gswActive = m_gswStarted = FALSE;
                     ptermCloseGsw ();
                 }
                 
@@ -2848,9 +2814,10 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
 
             StoreWord (platowd);
             i = RingCount ();
-            if (i == GSWRINGSIZE / 2)
+            if (m_gswActive && !m_gswStarted && i >= GSWRINGSIZE / 2)
             {
                 ptermStartGsw ();
+                m_gswStarted = TRUE;
             }
             
             if (i == RINGXOFF1 || i == RINGXOFF2)
@@ -2919,26 +2886,63 @@ int PtermConnection::NextWord (void)
         m_gswOut = next;
         if (word == C_GSWEND)
         {
-            m_gswActive = FALSE;
+            m_gswActive = m_gswStarted = FALSE;
             ptermCloseGsw ();
         }
-    }
-
-    // Not a simple "else" because the stream from the GSW may have an
-    // "end GSW" marker in it.
-    if (!m_gswActive)
-    {
-        // Take data from the main input ring
-        word = NextRingWord ();
-
-        // See if emulating 1200 baud, or the -delay- NOP code
-        if (ptermApp->m_classicSpeed ||
-            word == 1)
+        else
         {
-            delay = 1;
+            return word;
         }
     }
-    
+
+    // Take data from the main input ring
+    word = NextRingWord ();
+
+    if ((word >> 16) == 3 &&
+        word != 0700001 &&
+        word != 0702010 &&     // *** temp workaround for "edit" -ext-
+        ptermApp->m_gswEnable)
+    {
+        // It's an -extout- word, which means we'll want to start up
+        // GSW emulation, if enabled.
+        // However, we'll see these also when PLATO is turning OFF
+        // the GSW (common entry code in the various gsw lessons).
+        // We don't want to grab the GSW subsystem in that case.
+        // The "turn off" sequence consists of a mode word followed
+        // by voice words that specify "rest" (operand == 1).
+        // The sound is silenced when the GSW is not active, so we'll
+        // ignore "rest" voice words in that case.  We'll save the last
+        // voice word, because it sets number of voices and volumes.
+        // We have to do that because when the music actually starts,
+        // we'll first see a mode word and then some non-rest voice
+        // words.  The non-rest voice words trigger the GSW startup,
+        // so we'll need to send the preceding mode word for correct
+        // initialization.
+        if ((word >> 15) == 6)
+        {
+            // mode word, just save it
+            m_savedGswMode = word;
+        }
+        else if (ptermOpenGsw (this) == 0)
+        {
+            m_gswActive = TRUE;
+            m_gswWord2 = word;
+            delay = 1;
+                
+            if (!m_gswStarted && RingCount () >= GSWRINGSIZE / 2)
+            {
+                ptermStartGsw ();
+                m_gswStarted = TRUE;
+            }
+        }
+    }
+            
+    // See if emulating 1200 baud, or the -delay- NOP code
+    if (ptermApp->m_classicSpeed ||
+        word == 1)
+    {
+        delay = 1;
+    }
     
     // Pass the delay to the caller
     word |= (delay << 19);
@@ -2982,36 +2986,48 @@ int PtermConnection::NextGswWord (bool catchup)
 {
     int next, word;
 
-    next = m_gswOut;
-    if (catchup && m_gswIn != next)
+    if (m_savedGswMode != 0)
     {
-        // The display has some catching up to do.
-        while (next != m_gswIn)
+        word = m_savedGswMode;
+        m_savedGswMode = 0;
+    }
+    else if (m_gswWord2 != 0)
+    {
+        word = m_gswWord2;
+        m_gswWord2 = 0;
+    }
+    else
+    {
+        next = m_gswOut;
+        if (catchup)
         {
-	  printf ("catchup: %d\n", next);
-            m_gswRing[next] &= 01777777;
-            next++;
-            if (next == GSWRINGSIZE)
+            while (next != m_gswIn)
             {
-                next = 0;
+                // The display has some catching up to do.
+                m_gswRing[next] &= 01777777;
+                next++;
+                if (next == GSWRINGSIZE)
+                {
+                    next = 0;
+                }
             }
+            wxWakeUpIdle ();
         }
+        next = m_gswIn + 1;
+        if (next == GSWRINGSIZE)
+        {
+            next = 0;
+        }
+        // If there is no room to save this data for the display,
+        // tell the sound that there isn't any more data.
+        if (next == m_gswOut)
+        {
+            return C_NODATA;
+        }
+        word = NextRingWord ();
+        m_gswRing[m_gswIn] = word | (1 << 19);
+        m_gswIn = next;
     }
-
-    next = m_gswIn + 1;
-    if (next == GSWRINGSIZE)
-    {
-        next = 0;
-    }
-    // If there is no room to save this data for the display,
-    // tell the sound that there isn't any more data.
-    if (next == m_gswOut)
-    {
-        return C_NODATA;
-    }
-    word = NextRingWord ();
-    m_gswRing[m_gswIn] = word | (1 << 19);
-    m_gswIn = next;
     
     return word;
 }
