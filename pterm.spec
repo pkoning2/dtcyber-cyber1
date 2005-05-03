@@ -40,6 +40,6 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/locale/nl/LC_MESSAGES/pterm.mo
 
 %changelog
-* Fri Apr 29 2005 Paul Koning <pkoning@equallogic.com> - 
+* Fri Apr 29 2005 Paul Koning <paul@cyber1.org> - 
 - Initial build.
 
