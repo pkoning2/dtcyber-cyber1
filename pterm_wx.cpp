@@ -318,8 +318,6 @@ private:
 // Define a new frame type: this is going to be our main frame
 class PtermFrame : public wxFrame
 {
-//friend class PtermCanvas;
-
 public:
     // ctor(s)
     PtermFrame(wxString &host, int port, const wxString& title);
@@ -456,6 +454,9 @@ public:
     void OnKeyDown (wxKeyEvent& event);
     void OnChar (wxKeyEvent& event);
     void OnMouseDown (wxMouseEvent &event);
+#if defined (__WXMSW__)
+    WXLRESULT MSWWindowProc(WXUINT message, WXWPARAM wParam, WXLPARAM lParam);
+#endif
     
 private:
     PtermFrame *m_owner;
@@ -727,7 +728,7 @@ BEGIN_EVENT_TABLE(PtermApp, wxApp)
     EVT_MENU(Pterm_Connect, PtermApp::OnConnect)
     EVT_MENU(Pterm_ConnectAgain, PtermApp::OnConnect)
     EVT_MENU(Pterm_Pref,    PtermApp::OnPref)
-    EVT_MENU(Pterm_Quit,	PtermApp::OnQuit)
+    EVT_MENU(Pterm_Quit,    PtermApp::OnQuit)
     END_EVENT_TABLE ()
 
 // Create a new application object: this macro will allow wxWindows to create
@@ -754,6 +755,8 @@ bool PtermApp::OnInit (void)
     ptermApp = this;
     m_firstFrame = NULL;
     
+    sprintf (traceFn, "pterm%d.trc", getpid ());
+
     m_locale.Init(wxLANGUAGE_DEFAULT);
     m_locale.AddCatalog(wxT("pterm"));
 
@@ -812,8 +815,6 @@ bool PtermApp::OnInit (void)
     // GTK seems to require this for copying bitmaps to the clipboard
     wxImage::AddHandler (new wxPNGHandler);
     
-    sprintf (traceFn, "pterm%d.trc", getpid ());
-
     // success: wxApp::OnRun () will be called which will enter the main message
     // loop and the application will run. If we returned FALSE here, the
     // application would exit immediately.
@@ -965,6 +966,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
       m_backgroundBrush (ptermApp->m_bgColor, wxSOLID),
       m_nextFrame (NULL),
       m_prevFrame (NULL),
+      m_canvas (NULL),
+      m_conn (NULL),
       m_timer (this),
       tracePterm (FALSE),
       m_port (port),
@@ -989,7 +992,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     int i;
 
     m_hostName = host;
-    
+
     // set the frame icon
     SetIcon(wxICON(pterm_32));
 
@@ -1902,7 +1905,7 @@ int PtermFrame::procPlatoWord (u32 d)
     {
         fprintf (traceF, "%07o ", d);
     }
-	if ((d & 01700000) == 0)
+    if ((d & 01700000) == 0)
     {
         // NOP command...
         if (d & 1)
@@ -3060,7 +3063,7 @@ void PtermConnection::StoreWord (int word)
 
 void PtermConnection::SendData (const void *data, int len)
 {
-	// Windows has the wrong type for the buffer pointer argument...
+    // Windows has the wrong type for the buffer pointer argument...
     send(m_fet.connFd, (const char *) data, len, 0);
 }
 
@@ -3383,5 +3386,18 @@ void PtermCanvas::ptermTouchPanel(bool enable)
         SetCursor (wxNullCursor);
     }
 }
+
+#if defined (__WXMSW__)
+// Override the window proc to avoid F10 being handled  as a hotkey
+WXLRESULT PtermCanvas::MSWWindowProc(WXUINT message, WXWPARAM wParam, WXLPARAM lParam)
+{
+    if (message == WM_SYSKEYDOWN && wParam == VK_F10)
+    { 
+        m_lastKeydownProcessed = HandleKeyDown((WORD) wParam, lParam);
+        return 0;
+    }
+    return wxScrolledWindow::MSWWindowProc(message, wParam, lParam);
+}
+#endif
 
 /*---------------------------  End Of File  ------------------------------*/
