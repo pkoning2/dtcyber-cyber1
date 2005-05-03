@@ -17,7 +17,7 @@ for use with the cyber1 CYBIS (PLATO) system.
 %setup -q
 
 %build
-make -f Makefile.wxpterm pterm TYPE=static 
+make -f Makefile.wxpterm pterm TYPE=static ARCHCFLAGS=
 make -f Makefile.wxpterm mofiles
 
 %install
