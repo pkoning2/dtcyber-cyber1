@@ -6,7 +6,7 @@ License: DtCyber
 Group: User Interface/Desktops
 URL: http://www.cyber1.org
 Packager: Paul Koning <paul@cyber1.org>
-Source: /home/pkoning/nobackup/pterm-linux-src-v%{version}.tar.gz
+Source: /lhome/pkoning/pterm-linux-src-v%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
