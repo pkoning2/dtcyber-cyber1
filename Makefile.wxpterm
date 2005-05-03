@@ -50,9 +50,10 @@ WXLIBS	= `$(CONFIG) --libs` $(EXTRALIBS)
 
 SDLINCL = -I/usr/include/SDL -I/usr/local/include/SDL
 ifeq ("$(TYPE)","static")
-SDLLIBS = /usr/local/lib/libSDL.a
 ifeq ("$(HOST)","Darwin")
-SDLLIBS += `/usr/local/bin/sdl-config --static-libs`
+SDLLIBS = /usr/local/lib/libSDL.a `/usr/local/bin/sdl-config --static-libs`
+else
+SDLLIBS = /usr/lib/libSDL.a
 endif
 else
 SDLLIBS = -lSDL
