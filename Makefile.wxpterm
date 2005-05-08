@@ -26,7 +26,7 @@ ifeq ("$(TYPE)","static")
 DIR = /usr/local/wxstaticu
 SETPATH=
 ifeq ("$(HOST)","Darwin")
-EXTRALIBS= -lwxpng-2.6
+EXTRALIBS= -lwxpng-2.6 -lwxtiff-2.6
 endif
 else
 ifeq ("$(TYPE)","debugascii")

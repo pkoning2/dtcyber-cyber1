@@ -138,13 +138,6 @@
 #include "wx/image.h"
 #include "wx/filename.h"
 
-// I'm sure this is the wrong way but I don't know the right way.
-#if defined (__WXGTK__)
-#include <tiff.h>
-#else
-#include "wx/tiff.h"
-#endif
-
 extern "C"
 {
 #if defined(_WIN32)
@@ -1356,8 +1349,9 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
              ext.CmpNoCase (wxT ("tiff")) == 0)
     {
         type = wxBITMAP_TYPE_TIF;
-        screenImage.SetOption (wxIMAGE_OPTION_COMPRESSION,
-                               COMPRESSION_PACKBITS);
+	// 32773 is PACKBITS -- not referenced symbolically because tiff.h
+	// isn't necessarily anywhere, for some reason.
+        screenImage.SetOption (wxIMAGE_OPTION_COMPRESSION, 32773);
     }
     else if (ext.CmpNoCase (wxT ("xpm")) == 0)
     {
