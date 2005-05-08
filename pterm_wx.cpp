@@ -136,6 +136,7 @@
 #include "wx/colordlg.h"
 #include "wx/config.h"
 #include "wx/image.h"
+#include "wx/filename.h"
 
 extern "C"
 {
@@ -148,6 +149,7 @@ extern "C"
 #include <netdb.h>
 #include <netinet/in.h>
 #endif
+#include <tiff.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -307,6 +309,7 @@ public:
     bool        m_connect;
     bool        m_gswEnable;
     PtermFrame  *m_firstFrame;
+    wxString    m_defDir;
     
 private:
     wxLocale    m_locale; // locale we'll be using
@@ -330,6 +333,7 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
+    void OnSaveScreen (wxCommandEvent &event);
     void OnActivate (wxActivateEvent &event);
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
     
@@ -466,10 +470,10 @@ private:
 };
 
 // define the preferences dialog
-class PtermPrefdialog : public wxDialog
+class PtermPrefDialog : public wxDialog
 {
 public:
-    PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxString &title);
+    PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxString &title);
     
     void OnButton (wxCommandEvent& event);
     void OnCheckbox (wxCommandEvent& event);
@@ -522,15 +526,13 @@ private:
 };
 
 // define the preferences dialog
-class PtermConndialog : public wxDialog
+class PtermConnDialog : public wxDialog
 {
 public:
-    PtermConndialog (wxWindowID id, const wxString &title);
+    PtermConnDialog (wxWindowID id, const wxString &title);
     
-    void OnButton (wxCommandEvent& event);
+    void OnOK (wxCommandEvent& event);
     void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
-    wxButton        *m_okButton;
-    wxButton        *m_cancelButton;
     wxTextCtrl      *m_hostText;
     wxTextCtrl      *m_portText;
     wxTextValidator *m_hostVal;
@@ -538,7 +540,6 @@ public:
     wxStaticText    *m_hostLabel;
     wxStaticText    *m_portLabel;
     wxFlexGridSizer *m_connItems;
-    wxBoxSizer      *m_connButtons;
     wxBoxSizer      *m_dialogContent;
     
     wxString        m_host;
@@ -558,6 +559,7 @@ enum
     // menu items
     Pterm_CopyScreen = 1,
     Pterm_ConnectAgain,
+    Pterm_SaveScreen,
 
     Pterm_Connect = wxID_NEW,
     Pterm_Quit = wxID_EXIT,
@@ -722,6 +724,7 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
+    EVT_MENU(Pterm_SaveScreen, PtermFrame::OnSaveScreen)
     END_EVENT_TABLE ()
 
 BEGIN_EVENT_TABLE(PtermApp, wxApp)
@@ -812,8 +815,12 @@ bool PtermApp::OnInit (void)
         return FALSE;
     }
     
-    // GTK seems to require this for copying bitmaps to the clipboard
+    // Add some handlers so we can save the screen in various formats
+    // Note that the BMP handler is always loaded, don't do it again.
     wxImage::AddHandler (new wxPNGHandler);
+    wxImage::AddHandler (new wxPNMHandler);
+    wxImage::AddHandler (new wxTIFFHandler);
+    wxImage::AddHandler (new wxXPMHandler);
     
     // success: wxApp::OnRun () will be called which will enter the main message
     // loop and the application will run. If we returned FALSE here, the
@@ -843,7 +850,7 @@ bool PtermApp::DoConnect (bool ask)
 
     if (ask)
     {
-        PtermConndialog dlg (wxID_ANY, _("Connect to PLATO"));
+        PtermConnDialog dlg (wxID_ANY, _("Connect to PLATO"));
     
         dlg.CenterOnScreen ();
         
@@ -880,7 +887,7 @@ void PtermApp::OnPref (wxCommandEvent&)
     PtermFrame *frame;
     wxString rgb;
     
-    PtermPrefdialog dlg (NULL, wxID_ANY, _("Pterm Preferences"));
+    PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"));
     
     if (dlg.ShowModal () == wxID_OK)
     {
@@ -996,17 +1003,17 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     // set the frame icon
     SetIcon(wxICON(pterm_32));
 
-    // set the line style to no cap
-    m_foregroundPen.SetCap (wxCAP_BUTT);
-    m_backgroundPen.SetCap (wxCAP_BUTT);
+    // set the line style to projecting
+    m_foregroundPen.SetCap (wxCAP_PROJECTING);
+    m_backgroundPen.SetCap (wxCAP_PROJECTING);
 
 #if wxUSE_MENUS
     // create a menu bar
     //
     // Note that the menu bar labels do not have shortcut markings,
     // because those conflict with the ALT-letter key codes for PLATO.
-#if 0// defined(__WXGTK__)
-    // A rather ugly hack here.  GTK insists that F10 should be the
+#if  defined(__WXGTK20__)
+    // A rather ugly hack here.  GTK V2 insists that F10 should be the
     // accelerator for the menu bar.  We don't want that.  There is
     // no sane way to turn this off, but we *can* get the same effect
     // by setting the "menu bar accelerator" property to the name of a
@@ -1022,6 +1029,13 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
                       _("Connect to a PLATO host"));
     menuFile->Append (Pterm_ConnectAgain, _("Connect &Again"),
                       _("Connect to the same host"));
+    menuFile->AppendSeparator();
+#if defined(__WXMAC__)
+    // The accelerator actually will be Command-S...
+    menuFile->Append (Pterm_SaveScreen, _("Save Screen\tCtrl-S"), _("Save screen"));
+#else
+    menuFile->Append (Pterm_SaveScreen, _("Save Screen"), _("Save screen"));
+#endif
     menuFile->AppendSeparator();
     menuFile->Append (Pterm_Pref, _("P&references..."),
                       _("Set program configuration"));
@@ -1289,6 +1303,69 @@ void PtermFrame::OnCopyScreen (wxCommandEvent &)
     }
 }
 
+void PtermFrame::OnSaveScreen (wxCommandEvent &)
+{
+    wxBitmap screenmap (ScreenSize, ScreenSize);
+    wxMemoryDC screenDC;
+    wxString filename, ext;
+    wxBitmapType type;
+    wxFileDialog fd (this, _("Save screen to"), ptermApp->m_defDir,
+                     wxT(""), wxT("PNG files (*.png)|*.png|"
+                                  "BMP files (*.bmp)|*.bmp|"
+                                  "PNM files (*.pnm)|*.pnm|"
+                                  "TIF files (*.tif)|*.tif|"
+                                  "XPM files (*.xpm)|*.xpm|"
+                                  "All files (*.*)|*.*"),
+                     wxSAVE | wxOVERWRITE_PROMPT);
+    
+    if (fd.ShowModal () != wxID_OK)
+    {
+        return;
+    }
+    filename = fd.GetFilename ();
+    
+    screenDC.SelectObject (screenmap);
+    screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
+                   m_memDC, XADJUST (0), YADJUST (511), wxCOPY);
+    screenDC.SelectObject (wxNullBitmap);
+
+    wxImage screenImage = screenmap.ConvertToImage ();
+    wxFileName fn (filename);
+    
+    ptermApp->m_defDir = fn.GetPath ();
+    ext = fn.GetExt ();
+    if (ext.CmpNoCase (wxT ("bmp")) == 0)
+    {
+        type = wxBITMAP_TYPE_BMP;
+    }
+    else if (ext.CmpNoCase (wxT ("png")) == 0)
+    {
+        type = wxBITMAP_TYPE_PNG;
+    }
+    else if (ext.CmpNoCase (wxT ("pnm")) == 0)
+    {
+        type = wxBITMAP_TYPE_PNM;
+    }
+    else if (ext.CmpNoCase (wxT ("tif")) == 0 ||
+             ext.CmpNoCase (wxT ("tiff")) == 0)
+    {
+        type = wxBITMAP_TYPE_TIF;
+        screenImage.SetOption (wxIMAGE_OPTION_COMPRESSION,
+                               COMPRESSION_PACKBITS);
+    }
+    else if (ext.CmpNoCase (wxT ("xpm")) == 0)
+    {
+        type = wxBITMAP_TYPE_XPM;
+    }
+    else
+    {
+        screenImage.SaveFile (filename);
+        return;
+    }
+    
+    screenImage.SaveFile (filename, type);
+}
+
 void PtermFrame::PrepareDC(wxDC& dc)
 {
     dc.SetAxisOrientation (TRUE, FALSE);
@@ -1402,7 +1479,6 @@ void PtermFrame::ptermDrawPoint (int x, int y)
         m_memDC->SetPen (m_backgroundPen);
     }
     dc.DrawPoint (x, y);
-//    m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->DrawPoint (x, y);
     if (ptermApp->m_scale == 2)
     {
@@ -1421,13 +1497,6 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
 {
     wxClientDC dc(m_canvas);
 
-#if 0   // this still isn't right...
-    // On Windows, sometimes the starting point is missed.
-    // In any case, we have to draw the endpoint, since the
-    // book says that isn't drawn by DrawLine.
-    ptermDrawPoint (x1, y1);
-    ptermDrawPoint (x2, y2);
-#endif
     dc.BeginDrawing ();
     m_memDC->BeginDrawing ();
     PrepareDC (dc);
@@ -1448,8 +1517,17 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
         m_memDC->SetPen (m_backgroundPen);
     }
     dc.DrawLine (x1, y1, x2, y2);
-//    m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->DrawLine (x1, y1, x2, y2);
+    if (ptermApp->m_scale == 2)
+    {
+        dc.DrawLine (x2, y2, x1, y1);
+        m_memDC->DrawLine (x2, y2, x1, y1);
+    }
+    else
+    {
+        dc.DrawPoint (x2, y2);
+        m_memDC->DrawPoint (x2, y2);
+    }
     dc.EndDrawing ();
     m_memDC->EndDrawing ();
 }
@@ -2452,16 +2530,16 @@ void PtermFrame::ptermShowTrace (bool enable)
 }
 
 // ----------------------------------------------------------------------------
-// PtermPrefdialog
+// PtermPrefDialog
 // ----------------------------------------------------------------------------
 
-BEGIN_EVENT_TABLE(PtermPrefdialog, wxDialog)
-    EVT_CLOSE(PtermPrefdialog::OnClose)
-    EVT_BUTTON(wxID_ANY,   PtermPrefdialog::OnButton)
-    EVT_CHECKBOX(wxID_ANY, PtermPrefdialog::OnCheckbox)
+BEGIN_EVENT_TABLE(PtermPrefDialog, wxDialog)
+    EVT_CLOSE(PtermPrefDialog::OnClose)
+    EVT_BUTTON(wxID_ANY,   PtermPrefDialog::OnButton)
+    EVT_CHECKBOX(wxID_ANY, PtermPrefDialog::OnCheckbox)
     END_EVENT_TABLE()
 
-PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxString &title)
+PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxString &title)
     : wxDialog (parent, id, title),
       m_owner (parent)
 {
@@ -2546,7 +2624,7 @@ PtermPrefdialog::PtermPrefdialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_okButton->SetDefault ();
 }
 
-void PtermPrefdialog::OnButton (wxCommandEvent& event)
+void PtermPrefDialog::OnButton (wxCommandEvent& event)
 {
     wxColour fgcol, bgcol;
     
@@ -2592,7 +2670,7 @@ void PtermPrefdialog::OnButton (wxCommandEvent& event)
     Refresh ();
 }
 
-void PtermPrefdialog::OnCheckbox (wxCommandEvent& event)
+void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
 {
     if (event.m_eventObject == m_scaleCheck)
     {
@@ -2612,7 +2690,7 @@ void PtermPrefdialog::OnCheckbox (wxCommandEvent& event)
     }
 }
 
-void PtermPrefdialog::paintBitmap (wxBitmap *bm, wxColour &color)
+void PtermPrefDialog::paintBitmap (wxBitmap *bm, wxColour &color)
 {
     wxBrush bitmapBrush (color, wxSOLID);
     wxMemoryDC memDC;
@@ -2628,22 +2706,19 @@ void PtermPrefdialog::paintBitmap (wxBitmap *bm, wxColour &color)
 
 
 // ----------------------------------------------------------------------------
-// PtermConndialog
+// PtermConnDialog
 // ----------------------------------------------------------------------------
 
-BEGIN_EVENT_TABLE(PtermConndialog, wxDialog)
-    EVT_CLOSE(PtermConndialog::OnClose)
-    EVT_BUTTON(wxID_ANY,   PtermConndialog::OnButton)
+BEGIN_EVENT_TABLE(PtermConnDialog, wxDialog)
+    EVT_CLOSE(PtermConnDialog::OnClose)
+    EVT_BUTTON(wxID_OK, PtermConnDialog::OnOK)
     END_EVENT_TABLE()
 
-PtermConndialog::PtermConndialog (wxWindowID id, const wxString &title)
+PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title)
     : wxDialog (NULL, id, title)
 {
     m_host = wxString (ptermApp->m_hostName);
     m_port.Printf (wxT ("%d"), ptermApp->m_port);
-
-    m_okButton = new wxButton (this, wxID_ANY, _("OK"));
-    m_cancelButton = new wxButton (this, wxID_ANY, _("Cancel"));
 
     m_hostLabel = new wxStaticText (this, wxID_ANY, _("Host name"));
     m_portLabel = new wxStaticText (this, wxID_ANY, _("Port"));
@@ -2658,35 +2733,24 @@ PtermConndialog::PtermConndialog (wxWindowID id, const wxString &title)
                                  wxDefaultPosition, wxSize (160, 18),
                                  0, *m_portVal);
     m_connItems = new wxFlexGridSizer (2, 2, 5, 5);
-    m_connButtons = new wxBoxSizer (wxHORIZONTAL);
     m_dialogContent = new wxBoxSizer (wxVERTICAL);
       
     m_connItems->Add (m_hostLabel, 0, wxRIGHT, 5);
     m_connItems->Add (m_hostText);
     m_connItems->Add (m_portLabel, 0, wxRIGHT, 5);
     m_connItems->Add (m_portText);
-    m_connButtons->Add (m_okButton, 0, wxALL, 5);
-    m_connButtons->Add (m_cancelButton, 0, wxALL, 5);
     m_dialogContent->Add (m_connItems, 0, wxTOP | wxLEFT | wxRIGHT, 15);
-    m_dialogContent->Add (m_connButtons, 0, wxALL, 10);
+    m_dialogContent->Add (CreateButtonSizer( wxOK|wxCANCEL), 0, wxEXPAND|wxALL, 10);
 
     SetSizer (m_dialogContent);
     m_dialogContent->Fit (this);
-    m_okButton->SetDefault ();
 }
 
-void PtermConndialog::OnButton (wxCommandEvent& event)
+void PtermConnDialog::OnOK (wxCommandEvent &)
 {
-    if (event.m_eventObject == m_okButton)
-    {
         m_host = m_hostText->GetLineText (0);
         m_port = m_portText->GetLineText (0);
         EndModal (wxID_OK);
-    }
-    else
-    {
-        EndModal (wxID_CANCEL);
-    }
 }
 
 // ----------------------------------------------------------------------------
