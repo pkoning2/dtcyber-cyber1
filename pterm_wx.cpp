@@ -138,6 +138,13 @@
 #include "wx/image.h"
 #include "wx/filename.h"
 
+// I'm sure this is the wrong way but I don't know the right way.
+#if defined (__WXGTK__)
+#include <tiff.h>
+#else
+#include "wx/tiff.h"
+#endif
+
 extern "C"
 {
 #if defined(_WIN32)
@@ -149,7 +156,6 @@ extern "C"
 #include <netdb.h>
 #include <netinet/in.h>
 #endif
-#include <tiff.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
