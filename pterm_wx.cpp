@@ -1321,7 +1321,7 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
     {
         return;
     }
-    filename = fd.GetFilename ();
+    filename = fd.GetPath ();
     
     screenDC.SelectObject (screenmap);
     screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
