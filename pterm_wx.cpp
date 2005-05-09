@@ -137,6 +137,9 @@
 #include "wx/config.h"
 #include "wx/image.h"
 #include "wx/filename.h"
+#include "wx/metafile.h"
+#include "wx/print.h"
+#include "wx/printdlg.h"
 
 extern "C"
 {
@@ -154,10 +157,16 @@ extern "C"
 #include "proto.h"
 #include "ptermversion.h"
 
+#if wxUSE_LIBGNOMEPRINT
+#include "wx/html/forcelnk.h"
+FORCE_LINK(gnome_print)
+#endif
+
 extern int ptermOpenGsw (void *user);
 extern int ptermProcGswData (int data);
 extern void ptermCloseGsw (void);
 extern void ptermStartGsw (void);
+
 #if defined (__WXGTK__)
 
 // Attempting to include the gtk.h file yields infinite compile errors, so
@@ -187,6 +196,12 @@ extern GtkSettings * gtk_settings_get_default (void);
 
 bool emulationActive = FALSE;
 
+// Global print data, to remember settings during the session
+wxPrintData *g_printData;
+
+// Global page setup data
+wxPageSetupData* g_pageSetupData;
+
 // ----------------------------------------------------------------------------
 // local variables
 // ----------------------------------------------------------------------------
@@ -210,6 +225,26 @@ static const char rom0char[] =
 
 class PtermFrame;
 class PtermCanvas;
+
+// Pterm screen printout
+class PtermPrintout: public wxPrintout
+{
+ public:
+    PtermPrintout (PtermFrame *owner,
+                   const wxString &title = _("Pterm printout")) 
+        : wxPrintout (title),
+          m_owner (owner)
+    {}
+  bool OnPrintPage (int page);
+  bool HasPage (int page);
+  bool OnBeginDocument (int startPage, int endPage);
+  void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo);
+  void DrawPage (wxDC *dc);
+
+private:
+    PtermFrame *m_owner;
+};
+
 
 // Pterm processing thread
 class PtermConnection : public wxThread
@@ -333,6 +368,9 @@ public:
     void OnAbout (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
     void OnSaveScreen (wxCommandEvent &event);
+    void OnPrint (wxCommandEvent& event);
+    void OnPrintPreview (wxCommandEvent& event);
+    void OnPageSetup (wxCommandEvent& event);
     void OnActivate (wxActivateEvent &event);
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
     
@@ -559,6 +597,9 @@ enum
     Pterm_CopyScreen = 1,
     Pterm_ConnectAgain,
     Pterm_SaveScreen,
+    Pterm_Print,
+    Pterm_Page_Setup,
+    Pterm_Preview,
 
     Pterm_Connect = wxID_NEW,
     Pterm_Quit = wxID_EXIT,
@@ -724,6 +765,9 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
     EVT_MENU(Pterm_SaveScreen, PtermFrame::OnSaveScreen)
+    EVT_MENU(Pterm_Print, PtermFrame::OnPrint)
+    EVT_MENU(Pterm_Preview, PtermFrame::OnPrintPreview)
+    EVT_MENU(Pterm_Page_Setup, PtermFrame::OnPageSetup)
     END_EVENT_TABLE ()
 
 BEGIN_EVENT_TABLE(PtermApp, wxApp)
@@ -756,6 +800,8 @@ bool PtermApp::OnInit (void)
     
     ptermApp = this;
     m_firstFrame = NULL;
+    g_printData = new wxPrintData;
+    g_pageSetupData = new wxPageSetupDialogData;
     
     sprintf (traceFn, "pterm%d.trc", getpid ());
 
@@ -831,6 +877,8 @@ int PtermApp::OnExit (void)
 {
     wxTheClipboard->Flush ();
 
+    delete g_printData;
+    delete g_pageSetupData;
 #ifdef DEBUG
     delete logwindow;
 #endif
@@ -1030,15 +1078,19 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
                       _("Connect to the same host"));
     menuFile->AppendSeparator();
 #if defined(__WXMAC__)
-    // The accelerator actually will be Command-S...
+    // The accelerators actually will be Command-xxx
     menuFile->Append (Pterm_SaveScreen, _("Save Screen\tCtrl-S"), _("Save screen"));
+    menuFile->Append (Pterm_Print, _("Print...\tCtrl-P"), _("Print"));
 #else
     menuFile->Append (Pterm_SaveScreen, _("Save Screen"), _("Save screen"));
+    menuFile->Append (Pterm_Print, _("Print..."), _("Print"));
 #endif
-    menuFile->AppendSeparator();
+    menuFile->Append (Pterm_Page_Setup, _("Page Setup..."), _("Page setup"));
+    menuFile->Append (Pterm_Preview, _T("Print Preview"), _("Preview"));
+    menuFile->AppendSeparator ();
     menuFile->Append (Pterm_Pref, _("P&references..."),
                       _("Set program configuration"));
-    menuFile->AppendSeparator();
+    menuFile->AppendSeparator ();
     menuFile->Append (Pterm_Close, _("&Close\tCtrl-Z"), _("Close this window"));
     menuFile->Append (Pterm_Quit, _("E&xit"), _("Quit this program"));
 
@@ -1048,8 +1100,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
 
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
-    menuBar->Append(menuFile, _("File"));
-    menuBar->Append(menuEdit, _("Edit"));
+    menuBar->Append (menuFile, _("File"));
+    menuBar->Append (menuEdit, _("Edit"));
 
     // the "About" item should be in the help menu.
     // Well, on the Mac it actually doesn't show up there, but for that magic
@@ -1364,6 +1416,61 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
     }
     
     screenImage.SaveFile (filename, type);
+}
+
+void PtermFrame::OnPrint (wxCommandEvent &)
+{
+    wxPrintDialogData printDialogData (*g_printData);
+
+    printDialogData.EnableSelection (FALSE);
+    printDialogData.EnablePageNumbers (FALSE);
+    
+    wxPrinter printer (& printDialogData);
+    PtermPrintout printout (this);
+    if (!printer.Print (this, &printout, true /*prompt*/))
+    {
+        if (wxPrinter::GetLastError() == wxPRINTER_ERROR)
+            wxMessageBox (_("There was a problem printing.\nPerhaps your current printer is not set correctly?"), _("Printing"), wxOK);
+    }
+    else
+    {
+        (*g_printData) = printer.GetPrintDialogData ().GetPrintData ();
+    }
+}
+
+void PtermFrame::OnPrintPreview (wxCommandEvent &)
+{
+    // Pass two printout objects: for preview, and possible printing.
+    wxPrintDialogData printDialogData (*g_printData);
+    wxPrintPreview *preview = new wxPrintPreview (new PtermPrintout (this),
+                                                  new PtermPrintout (this),
+                                                  &printDialogData);
+
+    printDialogData.EnableSelection (FALSE);
+    printDialogData.EnablePageNumbers (FALSE);
+    
+    if (!preview->Ok())
+    {
+        delete preview;
+        wxMessageBox(_("There was a problem previewing.\nPerhaps your current printer is not set correctly?"), _("Previewing"), wxOK);
+        return;
+    }
+
+    wxPreviewFrame *frame = new wxPreviewFrame(preview, this, _("Pterm Print Preview"), wxPoint(100, 100), wxSize(600, 650));
+    frame->Centre(wxBOTH);
+    frame->Initialize();
+    frame->Show();
+}
+
+void PtermFrame::OnPageSetup(wxCommandEvent &)
+{
+    (*g_pageSetupData) = *g_printData;
+
+    wxPageSetupDialog pageSetupDialog (this, g_pageSetupData);
+    pageSetupDialog.ShowModal ();
+
+    (*g_printData) = pageSetupDialog.GetPageSetupData ().GetPrintData ();
+    (*g_pageSetupData) = pageSetupDialog.GetPageSetupData ();
 }
 
 void PtermFrame::PrepareDC(wxDC& dc)
@@ -3463,5 +3570,132 @@ WXLRESULT PtermCanvas::MSWWindowProc(WXUINT message, WXWPARAM wParam, WXLPARAM l
     return wxScrolledWindow::MSWWindowProc(message, wParam, lParam);
 }
 #endif
+
+// ----------------------------------------------------------------------------
+// Pterm printing helper class
+// ----------------------------------------------------------------------------
+
+bool PtermPrintout::OnBeginDocument(int startPage, int endPage)
+{
+    if (!wxPrintout::OnBeginDocument (startPage, endPage))
+        return false;
+
+    return true;
+}
+
+bool PtermPrintout::OnPrintPage (int page)
+{
+    wxDC *dc = GetDC ();
+
+    if (dc)
+    {
+        if (page == 1)
+        {
+            DrawPage (dc);
+        }
+#if 0
+        dc->SetDeviceOrigin(0, 0);
+        dc->SetUserScale(1.0, 1.0);
+
+        wxChar buf[200];
+        wxSprintf(buf, wxT("PAGE %d"), page);
+        dc->DrawText(buf, 10, 10);
+#endif
+        return true;
+    }
+
+    return false;
+}
+
+void PtermPrintout::GetPageInfo(int *minPage, int *maxPage, int *selPageFrom, int *selPageTo)
+{
+    *minPage = 1;
+    *maxPage = 1;
+    *selPageFrom = 1;
+    *selPageTo = 1;
+}
+
+bool PtermPrintout::HasPage(int pageNum)
+{
+    return (pageNum == 1);
+}
+
+void PtermPrintout::DrawPage (wxDC *dc)
+{
+    wxBitmap screenmap (ScreenSize, ScreenSize);
+    wxMemoryDC screenDC;
+    int ofr, ofg, ofb;
+    double maxX = ScreenSize;
+    double maxY = ScreenSize;
+
+    // Let's have at least 50 device units margin
+    double marginX = 50;
+    double marginY = 50;
+
+    // Add the margin to the graphic size
+    maxX += (2*marginX);
+    maxY += (2*marginY);
+
+    // Get the size of the DC in pixels
+    int w, h;
+    dc->GetSize(&w, &h);
+
+    // Calculate a suitable scaling factor
+    double scaleX = (double) (w / maxX);
+    double scaleY = (double) (h / maxY);
+
+    // Use x or y scaling factor, whichever fits on the DC
+    double actualScale = wxMin(scaleX,scaleY);
+
+    // Calculate the position on the DC for centring the graphic
+    double posX = (double) ((w - (ScreenSize * actualScale)) / 2.0);
+    double posY = (double) ((h - (ScreenSize * actualScale)) / 2.0);
+
+    // Set the scale and origin
+    dc->SetUserScale (actualScale, actualScale);
+    dc->SetDeviceOrigin ((long) posX, (long) posY);
+
+    // Re-color the image
+    screenDC.SelectObject (screenmap);
+    screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
+                   m_owner->m_memDC, XADJUST (0), YADJUST (511), wxCOPY);
+    screenDC.SelectObject (wxNullBitmap);
+
+    wxImage screenImage = screenmap.ConvertToImage ();
+
+    unsigned char *data = screenImage.GetData ();
+    
+    w = screenImage.GetWidth ();
+    h = screenImage.GetHeight ();
+    ofr = ptermApp->m_fgColor.Red ();
+    ofg = ptermApp->m_fgColor.Green ();
+    ofb = ptermApp->m_fgColor.Blue ();
+
+    for (int j = 0; j < h; j++)
+    {
+        for (int i = 0; i < w; i++)
+        {
+            if (data[0] == ofr &&
+                data[1] == ofg &&
+                data[2] == ofb)
+            {
+                // Foreground, make it black
+                data[0] = data[1] = data[2] = 0;
+            }
+            else
+            {
+                // Background, make it white
+                data[0] = data[1] = data[2] = 255;
+            }
+            data += 3;
+        }
+    }
+
+    wxBitmap printmap (screenImage);
+
+    screenDC.SelectObject (printmap);
+    dc->Blit (0, 0, ScreenSize, ScreenSize, &screenDC, 0, 0, wxCOPY);
+    screenDC.SelectObject (wxNullBitmap);
+}
 
 /*---------------------------  End Of File  ------------------------------*/
