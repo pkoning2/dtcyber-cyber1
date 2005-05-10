@@ -1,6 +1,6 @@
 Summary: PLATO terminal emulator
 Name: pterm
-Version: 2.23
+Version: 2.24
 Release: 1
 License: DtCyber
 Group: User Interface/Desktops

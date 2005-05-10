@@ -238,9 +238,13 @@ const char extBcdToAscii[64] = {
 **  "Composite" keys -- codes that are a single key on a conventional ASCII
 **  style keyboard but require two keystrokes in PLATO -- are represented in
 **  the table as 6-digit entries.  The upper 3 digits are the prefix code
-**  (typically 074: ACCESS), the low 3 digits are the suffix.
+**  (074: ACCESS), the low 3 digits are the suffix.
+**  Keys that require three keycodes in PLATO are represented here by
+**  the first and third of those three keycodes; the second is always 
+**  074 (ACCESS).  Keys in that category are accented letters, which PLATO
+**  represents by the base letter, then the accent (which autobackspaces).
 */
-const int asciiToPlato[128] =
+const int asciiToPlato[256] =
 {
  /*                                                                         */
  /* 000- */ -1,    022,    030,    033,    031,    027,    064,    013,
@@ -273,7 +277,39 @@ const int asciiToPlato[128] =
  /*          p       q       r       s       t       u       v       w      */
  /* 160- */  0120,   0121,   0122,   0123,   0124,   0125,   0126,   0127,
  /*          x       y       z       {       |       }       ~              */
- /* 170- */  0130,   0131,   0132, 074042, 074151, 074043, 074116,     -1
+ /* 170- */  0130,   0131,   0132, 074042, 074151, 074043, 074116,  -1,
+ /*                                                                         */
+ /* 200- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*                                                                         */
+ /* 210- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*                                                                         */
+ /* 220- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*                                                                         */
+ /* 230- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*                  ¡       ¢       £       ¤       ¥       ¦       §      */
+ /* 240- */ -1,     -1,     -1,     -1,     -1,     -1,    074151,  -1,
+ /*          ¨       ©       ª       «       ¬       ­       ®       ¯      */
+ /* 250- */ -1,    074143,  -1,     -1,     -1,     -1,     -1,     -1,
+ /*          °       ±       ²       ³       ´       µ       ¶       ·      */
+ /* 260- */ -1,     -1,     -1,     -1,     -1,    074115,  -1,     -1,
+ /*          ¸       ¹       º       »       ¼       ½       ¾       ¿      */
+ /* 270- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*          À       Á       Â       Ã       Ä       Å       Æ       Ç      */
+ /* 300- */0141121,0141105,0141130,0141116,0141125, -1,     -1,   0143103,
+ /*          È       É       Ê       Ë       Ì       Í       Î       Ï      */
+ /* 310- */0145121,0145105,0145130,0145125,0151121,0151105,0151130,0151125,
+ /*          Ð       Ñ       Ò       Ó       Ô       Õ       Ö       ×      */
+ /* 320- */ -1,    0156116,0157121,0157105,0157130,     -1,0157125,  0012,
+ /*          Ø       Ù       Ú       Û       Ü       Ý       Þ       ß      */
+ /* 330- */ -1,   0165121,0165105,0165130,0165125,0171105,  -1,     -1,
+ /*          à       á       â       ã       ä       å       æ       ç      */
+ /* 340- */0101121,0101105,0101130,0101116,0101125, -1,     -1,   0103103,
+ /*          è       é       ê       ë       ì       í       î       ï      */
+ /* 350- */0105121,0105105,0105130,0105125,0111121,0111105,0111130,0111125,
+ /*          ð       ñ       ò       ó       ô       õ       ö       ÷      */
+ /* 360- */ -1,    0116116,0117121,0117105,0117130,     -1,0117125,  0013,
+ /*          ø       ù       ú       û       ü       ý       þ       ÿ      */
+ /* 370- */ -1,   0125121,0125105,0125130,0125125,0131105,  -1,   0131125,
 };
 
 /* Keycode translation for ALT-keypress */

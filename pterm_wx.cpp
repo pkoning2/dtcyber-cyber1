@@ -367,6 +367,9 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
+    void OnCopy (wxCommandEvent &event);
+    void OnPaste (wxCommandEvent &event);
+    void OnUpdateUIPaste (wxUpdateUIEvent& event);
     void OnSaveScreen (wxCommandEvent &event);
     void OnPrint (wxCommandEvent& event);
     void OnPrintPreview (wxCommandEvent& event);
@@ -597,10 +600,12 @@ enum
     Pterm_CopyScreen = 1,
     Pterm_ConnectAgain,
     Pterm_SaveScreen,
-    Pterm_Print,
-    Pterm_Page_Setup,
-    Pterm_Preview,
 
+    Pterm_Print = wxID_PRINT,
+    Pterm_Page_Setup = wxID_PRINT_SETUP,
+    Pterm_Preview = wxID_PREVIEW,
+    Pterm_Copy = wxID_COPY,
+    Pterm_Paste = wxID_PASTE,
     Pterm_Connect = wxID_NEW,
     Pterm_Quit = wxID_EXIT,
     Pterm_Close = wxID_CLOSE,
@@ -764,6 +769,9 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
+    EVT_MENU(Pterm_Copy, PtermFrame::OnCopy)
+    EVT_MENU(Pterm_Paste, PtermFrame::OnPaste)
+    EVT_UPDATE_UI(Pterm_Paste, PtermFrame::OnUpdateUIPaste)
     EVT_MENU(Pterm_SaveScreen, PtermFrame::OnSaveScreen)
     EVT_MENU(Pterm_Print, PtermFrame::OnPrint)
     EVT_MENU(Pterm_Preview, PtermFrame::OnPrintPreview)
@@ -1097,6 +1105,13 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     wxMenu *menuEdit = new wxMenu;
 
     menuEdit->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
+#if defined(__WXMAC__)
+    menuEdit->Append(Pterm_Copy, _T("&Copy text\tCtrl-C"));
+    menuEdit->Append(Pterm_Paste, _T("&Paste\tCtrl-V"));
+#else
+    menuEdit->Append(Pterm_Copy, _T("&Copy text"));
+    menuEdit->Append(Pterm_Paste, _T("&Paste"));
+#endif
 
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
@@ -1352,6 +1367,104 @@ void PtermFrame::OnCopyScreen (wxCommandEvent &)
         wxTheClipboard->SetData (screen);
         wxTheClipboard->Close ();
     }
+}
+
+void PtermFrame::OnCopy (wxCommandEvent &)
+{
+    if (!wxTheClipboard->Open ())
+    {
+        wxLogError (_("Can't open clipboard."));
+
+        return;
+    }
+#if 0
+    if (!wxTheClipboard->AddData (new wxTextDataObject (m_strText)))
+    {
+        wxLogError (_("Can't copy data to the clipboard"));
+    }
+    else
+    {
+        wxLogMessage (_("Text '%s' put on the clipboard"), m_strText.c_str ());
+    }
+#endif
+    wxTheClipboard->Close ();
+}
+
+void PtermFrame::OnPaste (wxCommandEvent &)
+{
+    wxChar c;
+    int i, p;
+    wxString t;
+    
+    if (!wxTheClipboard->Open ())
+    {
+        wxLogError (_("Can't open clipboard."));
+
+        return;
+    }
+
+    if (!wxTheClipboard->IsSupported (wxDF_TEXT))
+    {
+        wxLogWarning (_("No text data on clipboard"));
+
+        wxTheClipboard->Close ();
+        return;
+    }
+
+    wxTextDataObject text;
+
+    if (!wxTheClipboard->GetData (text))
+    {
+        wxLogError (_("Can't paste data from the clipboard"));
+    }
+    else
+    {
+        t = text.GetText ();
+        for (i = 0; i < t.Len (); i++)
+        {
+            c = t[i];
+            p = -1;
+            if (c < wxT(' '))
+            {
+                // Control char; treat newline as NEXT but ignore others
+                if (c == wxT ('\n'))
+                {
+                    p = 026;        // NEXT
+                }
+            }
+            else if (c < sizeof (asciiToPlato) / sizeof (asciiToPlato[0]))
+            {
+                p = asciiToPlato[c];
+            }
+            else
+            {
+                switch (c)
+                {
+                case wxT ('µ'):
+                    p = 074115;     // ACCESS m
+                    break;
+                // could put accented letters here, as 3 key sequences
+                }
+            }
+            if (p != -1)
+            {
+                ptermSendKey (p);
+            }
+        }
+    }
+
+    wxTheClipboard->Close ();
+}
+
+void PtermFrame::OnUpdateUIPaste (wxUpdateUIEvent& event)
+{
+#ifdef __WXDEBUG__
+    // too many trace messages if we don't do it - this function is called
+    // very often
+    wxLogNull nolog;
+#endif
+
+    event.Enable (wxTheClipboard->IsSupported (wxDF_TEXT));
 }
 
 void PtermFrame::OnSaveScreen (wxCommandEvent &)
@@ -2587,6 +2700,10 @@ void PtermFrame::ptermSendKey(int key)
     if ((key >> 9) != 0)
     {
         ptermSendKey (key >> 9);
+        if ((key >> 9) != 074)
+        {
+            ptermSendKey (074);
+        }
         ptermSendKey (key & 0777);
     }
     else
