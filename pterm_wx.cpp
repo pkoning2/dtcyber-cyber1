@@ -45,6 +45,8 @@
 #define KeyBufSize      50
 #define DisplayMargin   8
 
+#define MouseTolerance  3       // # pixels tolerance before we call it "drag"
+
 #define CSETS           8       // leave room for the PPT multiple sets
 
 #define M2ADDR          0x2340  // PPT start address for set 2
@@ -115,6 +117,9 @@
 #define XUNADJUST(x) ((x / ptermApp->m_scale) - DisplayMargin)
 #define YUNADJUST(y) ((YSize - (y)) / ptermApp->m_scale - 1 - DisplayMargin)
 
+// force coordinate into the range 0..511
+#define BOUND(x) x = (((x < 0) ? 0 : ((x > 511) ? 511 : x)))
+
 // ----------------------------------------------------------------------------
 // headers
 // ----------------------------------------------------------------------------
@@ -152,6 +157,7 @@ extern "C"
 #include <netdb.h>
 #include <netinet/in.h>
 #endif
+#include <stdlib.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -216,15 +222,15 @@ static char traceFn[20];
 static wxLogWindow *logwindow;
 #endif
 
-static const char rom0char[] =
-    ":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.÷[]%×«'\"!;<>+?»U";
+static const wxChar rom01char[] =
+    wxT(":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.÷[]%×«'\"!;<>_?» "
+        "#ABCDEFGHIJKLMNOPQRSTUVWXYZ~˜^´`    ~    {}&  |°     µ      @\\ ");
 
 // ----------------------------------------------------------------------------
 // private classes
 // ----------------------------------------------------------------------------
 
 class PtermFrame;
-class PtermCanvas;
 
 // Pterm screen printout
 class PtermPrintout: public wxPrintout
@@ -352,9 +358,52 @@ private:
     DECLARE_EVENT_TABLE ()
 };
 
+// define a scrollable canvas for drawing onto
+class PtermCanvas: public wxScrolledWindow
+{
+public:
+    PtermCanvas (PtermFrame *parent);
+
+    void ptermTouchPanel(bool enable);
+
+    void OnDraw (wxDC &dc);
+    void OnKeyDown (wxKeyEvent& event);
+    void OnChar (wxKeyEvent& event);
+    void OnMouseDown (wxMouseEvent &event);
+    void OnMouseUp (wxMouseEvent &event);
+    void OnMouseMotion (wxMouseEvent &event);
+    void OnCopy (wxCommandEvent &event);
+
+#if defined (__WXMSW__)
+    WXLRESULT MSWWindowProc(WXUINT message, WXWPARAM wParam, WXLPARAM lParam);
+#endif
+    
+    void SaveChar (int x, int y, int snum, int cnum, int wemode, bool large);
+    void FullErase (void);
+    void ClearRegion (void);
+    void UpdateRegion (wxMouseEvent &event);
+
+private:
+    PtermFrame *m_owner;
+    bool        m_touchEnabled;
+
+    // Text-copy support
+    char textmap[32 * 64];
+    int m_regionX;
+    int m_regionY;
+    int m_regionHeight;
+    int m_regionWidth;
+    int m_mouseX;
+    int m_mouseY;
+    
+    DECLARE_EVENT_TABLE ()
+};
+
 // Define a new frame type: this is going to be our main frame
 class PtermFrame : public wxFrame
 {
+    friend void PtermCanvas::OnDraw(wxDC &dc);
+    
 public:
     // ctor(s)
     PtermFrame(wxString &host, int port, const wxString& title);
@@ -484,29 +533,6 @@ const PtermFrame::mptr PtermFrame::modePtr[8] =
     &PtermFrame::mode2, &PtermFrame::mode3,
     &PtermFrame::mode4, &PtermFrame::mode5,
     &PtermFrame::mode6, &PtermFrame::mode7
-};
-
-// define a scrollable canvas for drawing onto
-class PtermCanvas: public wxScrolledWindow
-{
-public:
-    PtermCanvas (PtermFrame *parent);
-
-    void ptermTouchPanel(bool enable);
-
-    void OnDraw (wxDC &dc);
-    void OnKeyDown (wxKeyEvent& event);
-    void OnChar (wxKeyEvent& event);
-    void OnMouseDown (wxMouseEvent &event);
-#if defined (__WXMSW__)
-    WXLRESULT MSWWindowProc(WXUINT message, WXWPARAM wParam, WXLPARAM lParam);
-#endif
-    
-private:
-    PtermFrame *m_owner;
-    bool        m_touchEnabled;
-
-    DECLARE_EVENT_TABLE ()
 };
 
 // define the preferences dialog
@@ -1113,6 +1139,9 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     menuEdit->Append(Pterm_Paste, _T("&Paste"));
 #endif
 
+    // Copy is initially disabled, until a region is selected
+    menuEdit->Enable (Pterm_Copy, FALSE);
+    
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
     menuBar->Append (menuFile, _("File"));
@@ -1364,30 +1393,21 @@ void PtermFrame::OnCopyScreen (wxCommandEvent &)
 
     if (wxTheClipboard->Open ())
     {
-        wxTheClipboard->SetData (screen);
+        if (!wxTheClipboard->SetData (screen))
+        {
+            wxLogError (_("Can't copy image to the clipboard"));
+        }
         wxTheClipboard->Close ();
-    }
-}
-
-void PtermFrame::OnCopy (wxCommandEvent &)
-{
-    if (!wxTheClipboard->Open ())
-    {
-        wxLogError (_("Can't open clipboard."));
-
-        return;
-    }
-#if 0
-    if (!wxTheClipboard->AddData (new wxTextDataObject (m_strText)))
-    {
-        wxLogError (_("Can't copy data to the clipboard"));
     }
     else
     {
-        wxLogMessage (_("Text '%s' put on the clipboard"), m_strText.c_str ());
+        wxLogError (_("Can't open clipboard."));
     }
-#endif
-    wxTheClipboard->Close ();
+}
+
+void PtermFrame::OnCopy (wxCommandEvent &event)
+{
+    m_canvas->OnCopy (event);
 }
 
 void PtermFrame::OnPaste (wxCommandEvent &)
@@ -1436,16 +1456,7 @@ void PtermFrame::OnPaste (wxCommandEvent &)
             {
                 p = asciiToPlato[c];
             }
-            else
-            {
-                switch (c)
-                {
-                case wxT ('µ'):
-                    p = 074115;     // ACCESS m
-                    break;
-                // could put accented letters here, as 3 key sequences
-                }
-            }
+
             if (p != -1)
             {
                 ptermSendKey (p);
@@ -1600,7 +1611,9 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
     const u16 *charp;
     u16 charw;
     wxClientDC dc(m_canvas);
-
+    
+    m_canvas->SaveChar (x, y, snum, cnum, wemode, large);
+    
     if (!vertical && !large)
     {
         dc.BeginDrawing ();
@@ -1756,6 +1769,7 @@ void PtermFrame::ptermFullErase (void)
 {
     wxClientDC dc(m_canvas);
 
+    m_canvas->FullErase ();
     dc.BeginDrawing ();
     PrepareDC (dc);
     dc.Clear ();
@@ -2601,9 +2615,9 @@ void PtermFrame::mode3 (u32 d)
 {
     TRACE6 ("char %02o %02o %02o (%c%c%c)",
             (d >> 12) & 077, (d >> 6) & 077, d & 077,
-            rom0char[(d >> 12) & 077], 
-            rom0char[(d >> 6) & 077], 
-            rom0char[d & 077]);
+            rom01char[(d >> 12) & 077], 
+            rom01char[(d >> 6) & 077], 
+            rom01char[d & 077]);
     plotChar (d >> 12);
     plotChar (d >> 6);
     plotChar (d);
@@ -3365,6 +3379,8 @@ BEGIN_EVENT_TABLE(PtermCanvas, wxScrolledWindow)
     EVT_CHAR(PtermCanvas::OnChar)
     EVT_KEY_DOWN(PtermCanvas::OnKeyDown)
     EVT_LEFT_DOWN(PtermCanvas::OnMouseDown)
+    EVT_LEFT_UP(PtermCanvas::OnMouseUp)
+    EVT_MOTION(PtermCanvas::OnMouseMotion)
     END_EVENT_TABLE ()
 
 PtermCanvas::PtermCanvas(PtermFrame *parent)
@@ -3381,13 +3397,35 @@ PtermCanvas::PtermCanvas(PtermFrame *parent)
     SetScrollRate (1, 1);
     dc.SetClippingRegion (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize);
     SetFocus ();
+    FullErase ();
 }
 
 void PtermCanvas::OnDraw(wxDC &dc)
 {
+    int i, j, c;
+    int charX, charY, sizeX, sizeY;
+    
     m_owner->PrepareDC (dc);
     dc.Clear ();
     dc.Blit (0, 0, XSize, YSize, m_owner->m_memDC, 0, 0, wxCOPY);
+    if (m_regionHeight != 0 && m_regionWidth != 0)
+    {
+        sizeX = 8 * ptermApp->m_scale;
+        sizeY = 16 * ptermApp->m_scale;
+        for (i = m_regionY; i < m_regionY + m_regionHeight; i++)
+        {
+            for (j = m_regionX; j < m_regionX + m_regionWidth; j++)
+            {
+                c = textmap[i * 64 + j];
+                charX = (c & 077) * 8 * ptermApp->m_scale;
+                charY = (c >> 6) * 16 * ptermApp->m_scale;
+                dc.Blit (XADJUST (j * 8), YADJUST (i * 16 + 15), 
+//                         sizeX, sizeY, m_owner->m_charDC[4],
+//                         charX, charY, wxCOPY);
+                         sizeX, sizeY, m_owner->m_charDC[1],
+                         charX, charY, wxSRC_INVERT);            }
+        }
+    }
 }
 
 void PtermCanvas::OnKeyDown (wxKeyEvent &event)
@@ -3640,17 +3678,149 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     event.Skip ();
 }
 
+void PtermCanvas::SaveChar (int x, int y, int snum, int cnum, 
+                            int wemode, bool large)
+{
+    char c = 055;
+
+    // Convert the current x/y to a coarse grid position, and save
+    // the current character code (snum << 6 + cnum) into the textmap
+    // array.  Note that the Y coordinate starts with 0 for the bottom
+    // line, just as the fine grid Y coordinate does.
+    x /= 8;
+    y /= 16;
+    if ((wemode & 1) && snum < 2)
+    {
+        c = (snum << 6) + cnum;
+    }
+    textmap[y * 64 + x] = c;
+    if (large)
+    {
+        x = (x + 1) & 077;
+        textmap[y * 64 + x] = 055;
+        y = (y + 1) & 037;
+        textmap[y * 64 + x] = 055;
+        x = (x - 1) & 077;
+        textmap[y * 64 + x] = 055;
+    }
+}
+
+void PtermCanvas::OnCopy (wxCommandEvent &)
+{
+    int i, j, s, spaces;
+    wxString text;
+    wxChar c;
+    
+    if (m_regionHeight == 0 || m_regionWidth == 0)
+    {
+        return;
+    }
+    
+#ifdef DEBUG
+    for (i = 0; i < sizeof (textmap); i++)
+    {
+        printf ("%c", rom01char[textmap[i ^ 03700]]);
+        if ((i & 077) == 077)
+        {
+            printf ("\n");
+        }
+    }
+#endif
+
+    // regionX and regionY are the lowest coordinate corner of
+    // the copy region, i.e., the lower left corner, expressed in
+    // 0-based coarse grid coordinates.
+    for (i = m_regionY + m_regionHeight - 1; i >= m_regionY; i--)
+    {
+        spaces = 0;
+        for (j = m_regionX; j < m_regionX + m_regionWidth; j++)
+        {
+            c = rom01char[textmap[i * 64 + j]];
+            if (c == wxT (' '))
+            {
+                spaces++;
+            }
+            else
+            {
+                for (s = 0; s < spaces; s++)
+                {
+                    text.Append (wxT (' '));
+                }
+                spaces = 0;
+                text.Append (c);
+            }
+        }
+        if (m_regionHeight > 1)
+        {
+            text.Append (wxT ('\n'));
+        }
+    }
+    
+    if (!wxTheClipboard->Open ())
+    {
+        wxLogError (_("Can't open clipboard."));
+
+        return;
+    }
+
+    if (!wxTheClipboard->SetData (new wxTextDataObject (text)))
+    {
+        wxLogError (_("Can't copy text to the clipboard"));
+    }
+
+    wxTheClipboard->Close ();
+}
+
+void PtermCanvas::FullErase (void)
+{
+    // Erase the text "backing store"
+    memset (textmap, 055, sizeof (textmap));
+    
+    ClearRegion ();
+}
+
+void PtermCanvas::ClearRegion (void)
+{
+    // Cancel any region selection
+    m_regionHeight = 0;
+    m_regionWidth = 0;
+    m_owner->GetMenuBar ()->Enable (Pterm_Copy, FALSE);
+    Refresh ();
+}
+
+
 void PtermCanvas::OnMouseDown (wxMouseEvent &event)
 {
+    m_mouseX = XUNADJUST (event.m_x);
+    m_mouseY = YUNADJUST (event.m_y);
+    
+    ClearRegion ();
+    event.Skip ();
+}
+
+void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
+{
+    if (event.m_leftDown)
+    {
+        UpdateRegion (event);
+    }
+    
+    event.Skip ();
+}
+
+void PtermCanvas::OnMouseUp (wxMouseEvent &event)
+{
     int x, y;
+    
+    x = XUNADJUST (event.m_x);
+    y = YUNADJUST (event.m_y);
+    
+    UpdateRegion (event);
     
     if (!m_touchEnabled)
     {
         return;
     }
-
-    x = XUNADJUST (event.m_x);
-    y = YUNADJUST (event.m_y);
     if (x < 0 || x > 511 ||
         y < 0 || y > 511)
     {
@@ -3661,6 +3831,58 @@ void PtermCanvas::OnMouseDown (wxMouseEvent &event)
 
     m_owner->ptermSendKey (0x100 | (x << 4) | y);
 }
+
+void PtermCanvas::UpdateRegion (wxMouseEvent &event)
+{
+    int x, y, x1, x2, y1, y2;
+    
+    x = XUNADJUST (event.m_x);
+    y = YUNADJUST (event.m_y);
+    
+    if (abs (x - m_mouseX) > MouseTolerance ||
+        abs (y - m_mouseY) > MouseTolerance)
+    {
+        // It was a mouse drag (region selection)
+        // rather than a click
+        if (m_mouseX > x)
+        {
+            x1 = x;
+            x2 = m_mouseX;
+        }
+        else
+        {
+            x1 = m_mouseX;
+            x2 = x;
+        }
+        if (m_mouseY > y)
+        {
+            y1 = y;
+            y2 = m_mouseY;
+        }
+        else
+        {
+            y1 = m_mouseY;
+            y2 = y;
+        }
+        BOUND (x1);
+        BOUND (x2);
+        BOUND (y1);
+        BOUND (y2);
+        m_regionX = x1 / 8;
+        m_regionY = y1 / 16;
+        m_regionWidth = (x2 + 1 - (m_regionX * 8)) / 8;
+        m_regionHeight = (y2 - (m_regionY * 16)) / 16 + 1;
+        m_owner->GetMenuBar ()->Enable (Pterm_Copy, 
+                                        (m_regionWidth > 0));
+#ifdef DEBUG
+        printf ("region %d %d size %d %d\n", m_regionX, m_regionY,
+                m_regionWidth, m_regionHeight);
+#endif
+        Refresh ();
+        return;
+    }
+}
+
 
 void PtermCanvas::ptermTouchPanel(bool enable)
 {
