@@ -224,7 +224,7 @@ static wxLogWindow *logwindow;
 
 static const wxChar rom01char[] =
     wxT(":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.÷[]%×«'\"!;<>_?» "
-        "#ABCDEFGHIJKLMNOPQRSTUVWXYZ~˜^´`    ~    {}&  |°     µ      @\\ ");
+        "#ABCDEFGHIJKLMNOPQRSTUVWXYZ~¨^´`    ~    {}&  |°     µ       @\\ ");
 
 // ----------------------------------------------------------------------------
 // private classes
