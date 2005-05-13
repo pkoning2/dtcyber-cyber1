@@ -82,6 +82,7 @@ static void INLINE windowShowLine (void);
 static void windowStoreChar (char c, int x, int y, int dx);
 static void getCharWidths (FontInfo *f, char *s);
 static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize);
+static void window545Plot(int xPos, int yPos, char ch, u8 fontSize);
 
 /*
 **  ----------------
@@ -91,8 +92,10 @@ static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize);
 extern Display *disp;
 extern XrmDatabase XrmDb;
 extern const char * const consoleHersheyGlyphs[64];
+extern const u8 chargen[060][22];
 extern bool emulationActive;
 extern bool hersheyMode;
+extern bool cc545Mode;
 extern int scaleX;
 extern int scaleY;
 
@@ -690,6 +693,11 @@ void windowProcessChar (int ch)
         windowTextPlot(XADJUST (currentX), YADJUST (currentY),
                        ch, currentFont);
         }
+    else if (cc545Mode)
+        {
+        window545Plot(XADJUST (currentX), YADJUST (currentY),
+                      ch, currentFont);
+        }
     else
         {
         windowStoreChar (ch, currentX, currentY,
@@ -885,6 +893,88 @@ static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize)
             XDrawLines (disp, pixmap, pgc, linesVec,
                         segnum, CoordModeOrigin);
             }
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Plot a character using the CC545 glyphs.
+**
+**  Parameters:     Name        Description.
+**					xPos		x position
+**					yPos		y position
+**					ch			character (display code)
+**					fontSize	current font size
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void window545Plot(int xPos, int yPos, char ch, u8 fontSize)
+    {
+    XPoint linesVec[22];
+    int segnum = 0;
+    u8 glyph;
+    int x = 0, y = 0, i;
+    bool on = FALSE;
+    int dx = 1, dy = -1;
+    int charSize = fontSize / 8;
+    
+    xPos += 8;
+
+    for (i = 0; i < sizeof (chargen[0]); i++)
+        {
+        glyph = chargen[ch][i];
+        if (glyph & 1)
+            {
+            on = !on;
+            if (on)
+                {
+                segnum = 1;
+                linesVec[0].x = charSize * x + xPos;
+                linesVec[0].y = charSize * y + yPos;
+                }
+            else if (segnum > 1)
+                {
+                XDrawLines (disp, pixmap, pgc, linesVec,
+                            segnum, CoordModeOrigin);
+                }
+            }
+        switch ((glyph >> 1) & 3)
+            {
+        case 1:
+            x += dx * 2;
+            break;
+        case 2:
+            x += dx;
+            break;
+        case 3:
+            dx = -dx;
+            break;
+            }
+        switch (glyph >> 3)
+            {
+        case 1:
+            y += dy * 2;
+            break;
+        case 2:
+            y += dy;
+            break;
+        case 3:
+            dy = -dy;
+            break;
+            }
+
+        if (on)
+            {
+            linesVec[segnum].x = charSize * x + xPos;
+            linesVec[segnum].y = charSize * y + yPos;
+            segnum++;
+            }
+        }
+    
+    if (segnum > 1)
+        {
+        XDrawLines (disp, pixmap, pgc, linesVec,
+                    segnum, CoordModeOrigin);
         }
     }
 
