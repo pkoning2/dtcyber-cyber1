@@ -3547,12 +3547,14 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     switch (key)
     {
     case WXK_SPACE:
+    case WXK_NUMPAD_SPACE:
         pc = 0100;      // space
         break;
     case WXK_BACK:
         pc = 023;       // erase
         break;
     case WXK_RETURN:
+    case WXK_NUMPAD_ENTER:
         pc = 026;       // next
         break;
     case WXK_HOME:
@@ -3570,6 +3572,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         pc = 015;       // assign
         break;
     case WXK_ADD:
+    case WXK_NUMPAD_ADD:
         if (ctrl)
         {
             pc = 056;   // Sigma
@@ -3580,6 +3583,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         }
         break;
     case WXK_SUBTRACT:
+    case WXK_NUMPAD_SUBTRACT:
         if (ctrl)
         {
             pc = 057;   // Delta
@@ -3590,10 +3594,12 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         }
         break;
     case WXK_MULTIPLY:
+    case WXK_NUMPAD_MULTIPLY:
     case WXK_DELETE:
         pc = 012;       // multiply sign
         break;
     case WXK_DIVIDE:
+    case WXK_NUMPAD_DIVIDE:
     case WXK_INSERT:
         pc = 013;       // divide sign
         break;
@@ -3639,6 +3645,22 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         break;
     case WXK_F7:
         pc = 035;       // lab
+        break;
+    case WXK_NUMPAD0:
+    case WXK_NUMPAD1:
+    case WXK_NUMPAD2:
+    case WXK_NUMPAD3:
+    case WXK_NUMPAD4:
+    case WXK_NUMPAD5:
+    case WXK_NUMPAD6:
+    case WXK_NUMPAD7:
+    case WXK_NUMPAD8:
+    case WXK_NUMPAD9:
+        pc = key - WXK_NUMPAD0;
+        if (ctrl)
+        {
+            shift = 040;
+        }
         break;
     default:
         event.Skip ();
