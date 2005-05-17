@@ -3558,6 +3558,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         pc = 026;       // next
         break;
     case WXK_HOME:
+    case WXK_NUMPAD_HOME:
     case WXK_F8:
         pc = 030;       // back
         break;
@@ -3604,21 +3605,27 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         pc = 013;       // divide sign
         break;
     case WXK_LEFT:
+    case WXK_NUMPAD_LEFT:
         pc = 0101;      // left arrow (a)
         break;
     case WXK_RIGHT:
+    case WXK_NUMPAD_RIGHT:
         pc = 0104;      // right arrow (d)
         break;
     case WXK_UP:
+    case WXK_NUMPAD_UP:
         pc = 0127;      // up arrow (w)
         break;
     case WXK_DOWN:
+    case WXK_NUMPAD_DOWN:
         pc = 0130;      // down arrow (x)
         break;
     case WXK_PRIOR:
+    case WXK_NUMPAD_PRIOR:
         pc = 020;       // super
         break;
     case WXK_NEXT:
+    case WXK_NUMPAD_NEXT:
         pc = 021;       // sub
         break;
     case WXK_F3:
