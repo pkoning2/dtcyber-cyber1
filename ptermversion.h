@@ -1,2 +1,2 @@
 /* Be sure to update the version number in pterm.spec too */
-#define PTERMVERSION "V2.25"
+#define PTERMVERSION "V2.26"

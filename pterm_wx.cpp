@@ -3386,7 +3386,8 @@ BEGIN_EVENT_TABLE(PtermCanvas, wxScrolledWindow)
 PtermCanvas::PtermCanvas(PtermFrame *parent)
     : wxScrolledWindow(parent, -1, wxDefaultPosition, 
                        wxSize (XSize, YSize),
-                       wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE)
+                       wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE),
+      m_mouseX (-1)
 {
     wxClientDC dc(this);
 
@@ -3829,7 +3830,7 @@ void PtermCanvas::OnMouseDown (wxMouseEvent &event)
 
 void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
 {
-    if (event.m_leftDown)
+    if (m_mouseX >= 0 && event.m_leftDown)
     {
         UpdateRegion (event);
     }
@@ -3841,11 +3842,19 @@ void PtermCanvas::OnMouseUp (wxMouseEvent &event)
 {
     int x, y;
     
+    if (m_mouseX < 0)
+    {
+        event.Skip ();
+	return;
+    }
+
     x = XUNADJUST (event.m_x);
     y = YUNADJUST (event.m_y);
     
     UpdateRegion (event);
     
+    m_mouseX = -1;
+
     if (!m_touchEnabled)
     {
         return;
