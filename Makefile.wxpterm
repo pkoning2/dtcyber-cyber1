@@ -33,11 +33,7 @@ ifeq ("$(TYPE)","debugascii")
 DIR = /usr/local/wxshared
 EXTRALIBS=
 else
-ifeq ("$(TYPE)","debug")
 DIR = /usr/local/wxshareud
-else
-DIR = /usr/local/wxshareu
-endif
 endif
 SETPATH= LD_RUN_PATH=$(DIR)/lib:/usr/lib:/lib
 endif
