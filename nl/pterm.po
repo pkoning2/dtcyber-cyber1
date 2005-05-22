@@ -104,7 +104,7 @@ msgstr "Programma sluiten"
 
 #: pterm_wx.cpp:1129
 msgid "Quit this program"
-msgstr "Beeindig het programma"
+msgstr "Beëindig het programma"
 
 #: pterm_wx.cpp:1133
 msgid "Copy Screen"
@@ -112,7 +112,7 @@ msgstr "Scherm kopiëren"
 
 #: pterm_wx.cpp:1133
 msgid "Copy screen to clipboard"
-msgstr "Kopieer het scherm naar het klembord"
+msgstr "Kopiëer het scherm naar het klembord"
 
 #: pterm_wx.cpp:1147
 msgid "File"
@@ -149,7 +149,7 @@ msgstr "Over Pterm"
 #: pterm_wx.cpp:1398
 #, fuzzy
 msgid "Can't copy image to the clipboard"
-msgstr "Kopieer het scherm naar het klembord"
+msgstr "Kopiëer het scherm naar het klembord"
 
 #: pterm_wx.cpp:1404 pterm_wx.cpp:1421 pterm_wx.cpp:3783
 msgid "Can't open clipboard."
