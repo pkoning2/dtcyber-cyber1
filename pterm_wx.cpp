@@ -2866,26 +2866,26 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 {
     wxColour fgcol, bgcol;
     
-    if (event.m_eventObject == m_fgButton)
+    if (event.GetEventObject () == m_fgButton)
     {
         m_fgColor = PtermApp::SelectColor (m_fgColor);
     }
-    else if (event.m_eventObject == m_bgButton)
+    else if (event.GetEventObject () == m_bgButton)
     {
         m_bgColor = PtermApp::SelectColor (m_bgColor);
     }
     
-    else if (event.m_eventObject == m_okButton)
+    else if (event.GetEventObject () == m_okButton)
     {
         m_host = m_hostText->GetLineText (0);
         m_port = m_portText->GetLineText (0);
         EndModal (wxID_OK);
     }
-    else if (event.m_eventObject == m_cancelButton)
+    else if (event.GetEventObject () == m_cancelButton)
     {
         EndModal (wxID_CANCEL);
     }
-    else if (event.m_eventObject == m_resetButton)
+    else if (event.GetEventObject () == m_resetButton)
     {
         wxString str;
         
@@ -2910,19 +2910,19 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 
 void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
 {
-    if (event.m_eventObject == m_scaleCheck)
+    if (event.GetEventObject () == m_scaleCheck)
     {
         m_scale2 = event.IsChecked ();
     }
-    else if (event.m_eventObject == m_speedCheck)
+    else if (event.GetEventObject () == m_speedCheck)
     {
         m_classicSpeed = event.IsChecked ();
     }
-    else if (event.m_eventObject == m_autoConnect)
+    else if (event.GetEventObject () == m_autoConnect)
     {
         m_connect = event.IsChecked ();
     }
-    else if (event.m_eventObject == m_gswCheck)
+    else if (event.GetEventObject () == m_gswCheck)
     {
         m_gswEnable = event.IsChecked ();
     }
