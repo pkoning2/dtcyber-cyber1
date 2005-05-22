@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V2.10\n"
 "Report-Msgid-Bugs-To: paul@cyber1.org\n"
-"POT-Creation-Date: 2005-05-12 12:45-0400\n"
+"POT-Creation-Date: 2005-05-17 10:31-0400\n"
 "PO-Revision-Date: 2005-04-22 17:30-0400\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -64,7 +64,7 @@ msgstr "Afdrukken"
 #: pterm_wx.cpp:1119
 #, fuzzy
 msgid "Save Screen"
-msgstr "Scherm kopieren"
+msgstr "Scherm kopiëren"
 
 #: pterm_wx.cpp:1120
 msgid "Print..."
@@ -108,11 +108,11 @@ msgstr "Beeindig het programma"
 
 #: pterm_wx.cpp:1133
 msgid "Copy Screen"
-msgstr "Scherm kopieren"
+msgstr "Scherm kopiëren"
 
 #: pterm_wx.cpp:1133
 msgid "Copy screen to clipboard"
-msgstr "Kopieer het scherm naar het xxx"
+msgstr "Kopieer het scherm naar het klembord"
 
 #: pterm_wx.cpp:1147
 msgid "File"
@@ -149,19 +149,19 @@ msgstr "Over Pterm"
 #: pterm_wx.cpp:1398
 #, fuzzy
 msgid "Can't copy image to the clipboard"
-msgstr "Kopieer het scherm naar het xxx"
+msgstr "Kopieer het scherm naar het klembord"
 
-#: pterm_wx.cpp:1404 pterm_wx.cpp:1421 pterm_wx.cpp:3761
+#: pterm_wx.cpp:1404 pterm_wx.cpp:1421 pterm_wx.cpp:3783
 msgid "Can't open clipboard."
-msgstr ""
+msgstr "Openen van klembord mislukt."
 
 #: pterm_wx.cpp:1428
 msgid "No text data on clipboard"
-msgstr ""
+msgstr "Het klembord bevat geen tekst"
 
 #: pterm_wx.cpp:1438
 msgid "Can't paste data from the clipboard"
-msgstr ""
+msgstr "Ophalen van gegevens van klembord mislukt"
 
 #: pterm_wx.cpp:1487
 msgid "Save screen to"
@@ -278,7 +278,7 @@ msgstr "Verbinding met %s %d verloren"
 msgid "Alert"
 msgstr "Waarschuwing"
 
-#: pterm_wx.cpp:3768
+#: pterm_wx.cpp:3790
 #, fuzzy
 msgid "Can't copy text to the clipboard"
-msgstr "Kopieer het scherm naar het xxx"
+msgstr "Kopiëren van tekst naar het klembord mislukt"
