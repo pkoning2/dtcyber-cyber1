@@ -116,10 +116,9 @@ int dtConnect (int *connFd, const char *hostname, int port)
     err = WSAStartup(versionRequested, &wsaData);
     if (err != 0)
         {
-        if (stderr != NULL)
-            {
-            fprintf(stderr, "\r\nError in WSAStartup: %d\r\n", err);
-            }
+#if !defined(_WIN32)
+        fprintf(stderr, "\r\nError in WSAStartup: %d\r\n", err);
+#endif
         return -1;
         }
 #endif
@@ -129,10 +128,9 @@ int dtConnect (int *connFd, const char *hostname, int port)
     *connFd = socket(AF_INET, SOCK_STREAM, 0);
     if (*connFd < 0)
         {
-        if (stderr != NULL)
-            {
-            fprintf(stderr, "dtConnect: Can't create socket\n");
-            }
+#if !defined(_WIN32)
+        fprintf(stderr, "dtConnect: Can't create socket\n");
+#endif
         return -1;
         }
 
@@ -141,11 +139,10 @@ int dtConnect (int *connFd, const char *hostname, int port)
     hp = gethostbyname (hostname);
     if (hp == NULL || hp->h_length == 0)
         {
-        if (stderr != NULL)
-            {
-            fprintf (stderr, "dtConnect: unrecognized hostname %s\n", 
-                     hostname);
-            }
+#if !defined(_WIN32)
+        fprintf (stderr, "dtConnect: unrecognized hostname %s\n", 
+                 hostname);
+#endif
         return -1;
         }
     memcpy (&server.sin_addr, hp->h_addr, sizeof (server.sin_addr));
@@ -153,11 +150,10 @@ int dtConnect (int *connFd, const char *hostname, int port)
 
     if (connect (*connFd, (struct sockaddr *)&server, sizeof(server)) < 0)
         {
-        if (stderr != NULL)
-            {
-            fprintf(stderr, "dtConnect: Can't connect to %s %d\n", 
-                    hostname, port);
-            }
+#if !defined(_WIN32)
+        fprintf(stderr, "dtConnect: Can't connect to %s %d\n", 
+                hostname, port);
+#endif
         return -1;
         }
     return 0;
@@ -192,10 +188,6 @@ void dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
 
     if (hThread == NULL)
         {
-        if (stderr != NULL)
-            {
-            fprintf(stderr, "Failed to create thread\n");
-            }
         exit(1);
         }
 #else
@@ -207,10 +199,7 @@ void dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
     rc = pthread_create(&dt_thread, NULL, fp, param);
     if (rc < 0)
         {
-        if (stderr != NULL)
-            {
-            fprintf(stderr, "Failed to create thread\n");
-            }
+        fprintf(stderr, "Failed to create thread\n");
         exit(1);
         }
 #endif
@@ -272,11 +261,10 @@ void dtCreateListener(NetPortSet *ps, int ringSize)
     ps->portVec = calloc(1, sizeof(NetPort) * ps->maxPorts);
     if (ps->portVec == NULL)
         {
-        if (stderr != NULL)
-            {
-            fprintf(stderr, "Failed to allocate NetPort[%d] vector\n",
-                    ps->maxPorts);
-            }
+#if !defined(_WIN32)
+        fprintf(stderr, "Failed to allocate NetPort[%d] vector\n",
+                ps->maxPorts);
+#endif
         exit(1);
         }
     for (i = 0; i < ps->maxPorts; i++)
@@ -297,10 +285,9 @@ void dtCreateListener(NetPortSet *ps, int ringSize)
         err = WSAStartup(versionRequested, &wsaData);
         if (err != 0)
             {
-        if (stderr != NULL)
-            {
-            fprintf(stderr, "\r\nError in WSAStartup: %d\r\n", err);
-            }
+#if !defined(_WIN32)
+        fprintf(stderr, "\r\nError in WSAStartup: %d\r\n", err);
+#endif
             exit(1);
             }
         }
@@ -694,11 +681,10 @@ void dtInitFet (NetFet *fet, int bufsiz)
     buf = (u8 *) malloc (bufsiz);
     if (buf == NULL)
         {
-        if (stderr != NULL)
-            {
-            fprintf (stderr, "dtInitFet: failed to allocate %d byte buffer\n", 
-                     bufsiz);
-            }
+#if !defined(_WIN32)
+        fprintf (stderr, "dtInitFet: failed to allocate %d byte buffer\n", 
+                 bufsiz);
+#endif
         exit (1);
         }
     fet->connFd = 0;            /* Mark FET not open yet */
@@ -743,10 +729,9 @@ void dtSendTlv (int connFd, int tag, int len, const void *value)
     
     if (tag > 255 || len > 255)
         {
-        if (stderr != NULL)
-            {
-            fprintf (stderr, "dtSendTlv: bad tag/len %d %d\n", tag, len);
-            }
+#if !defined(_WIN32)
+        fprintf (stderr, "dtSendTlv: bad tag/len %d %d\n", tag, len);
+#endif
         return;
         }
     
@@ -795,10 +780,9 @@ static void *dtThread(void *param)
     listenFd = socket(AF_INET, SOCK_STREAM, 0);
     if (listenFd < 0)
         {
-        if (stderr != NULL)
-            {
-            fprintf(stderr, "dtThread: Can't create socket\n");
-            }
+#if !defined(_WIN32)
+        fprintf(stderr, "dtThread: Can't create socket\n");
+#endif
         ThreadReturn;
         }
 
@@ -823,19 +807,17 @@ static void *dtThread(void *param)
 
     if (bind(listenFd, (struct sockaddr *)&server, sizeof(server)) < 0)
         {
-        if (stderr != NULL)
-            {
-            fprintf(stderr, "dtThread: Can't bind to socket\n");
-            }
+#if !defined(_WIN32)
+        fprintf(stderr, "dtThread: Can't bind to socket\n");
+#endif
         ThreadReturn;
         }
 
     if (listen(listenFd, 5) < 0)
         {
-        if (stderr != NULL)
-            {
-            fprintf(stderr, "dtThread: Can't listen\n");
-            }
+#if !defined(_WIN32)
+        fprintf(stderr, "dtThread: Can't listen\n");
+#endif
         ThreadReturn;
         }
 
