@@ -21,11 +21,11 @@
 	<key>CFBundleVersion</key>
 	<string>@PTERMVERSION@</string>
 	<key>CFBundleShortVersionString</key>
-	<string>@PTERMVERSION</string>
+	<string>@PTERMVERSION@</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Pterm V@PTERMVERSION, (c) 2005 Paul Koning</string>
+	<string>Pterm V@PTERMVERSION@, (c) 2005 Paul Koning</string>
 	<key>CFBundleLongVersionString</key>
-	<string>@PTERMVERSION, (c) 2005 Paul Koning</string>
+	<string>@PTERMVERSION@, (c) 2005 Paul Koning</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
