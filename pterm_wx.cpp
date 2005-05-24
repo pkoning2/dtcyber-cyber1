@@ -544,8 +544,6 @@ public:
     void OnButton (wxCommandEvent& event);
     void OnCheckbox (wxCommandEvent& event);
     void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
-    wxBitmap        *m_fgBitmap;
-    wxBitmap        *m_bgBitmap;
     wxBitmapButton  *m_fgButton;
     wxBitmapButton  *m_bgButton;
     wxButton        *m_okButton;
@@ -584,7 +582,7 @@ public:
     wxString        m_port;
     
 private:
-    void paintBitmap (wxBitmap *bm, wxColour &color);
+    void paintBitmap (wxBitmap &bm, wxColour &color);
     
     PtermFrame *m_owner;
 
@@ -2781,6 +2779,9 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     : wxDialog (parent, id, title),
       m_owner (parent)
 {
+    wxBitmap fgBitmap (20, 12);
+    wxBitmap bgBitmap (20, 12);
+
     m_scale2 = (ptermApp->m_scale != 1);
     m_classicSpeed = ptermApp->m_classicSpeed;
     m_gswEnable = ptermApp->m_gswEnable;
@@ -2790,15 +2791,13 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_host = ptermApp->m_hostName;
     m_port.Printf (wxT ("%d"), ptermApp->m_port);
 
-    m_fgBitmap = new wxBitmap (20, 12);
-    m_bgBitmap = new wxBitmap (20, 12);
-    paintBitmap (m_fgBitmap, m_fgColor);
-    paintBitmap (m_bgBitmap, m_bgColor);
+    paintBitmap (fgBitmap, m_fgColor);
+    paintBitmap (bgBitmap, m_bgColor);
     
     m_colorsBox = new wxStaticBox (this, wxID_ANY, _("Display colors"));
     m_colorsSizer = new wxStaticBoxSizer (m_colorsBox, wxVERTICAL);
-    m_fgButton = new wxBitmapButton (this, wxID_ANY, *m_fgBitmap);
-    m_bgButton = new wxBitmapButton (this, wxID_ANY, *m_bgBitmap);
+    m_fgButton = new wxBitmapButton (this, wxID_ANY, fgBitmap);
+    m_bgButton = new wxBitmapButton (this, wxID_ANY, bgBitmap);
     m_okButton = new wxButton (this, wxID_ANY, _("OK"));
     m_cancelButton = new wxButton (this, wxID_ANY, _("Cancel"));
     m_resetButton = new wxButton (this, wxID_ANY, _("Defaults"));
@@ -2864,7 +2863,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 
 void PtermPrefDialog::OnButton (wxCommandEvent& event)
 {
-    wxColour fgcol, bgcol;
+    wxBitmap fgBitmap (20, 12);
+    wxBitmap bgBitmap (20, 12);
     
     if (event.GetEventObject () == m_fgButton)
     {
@@ -2903,9 +2903,10 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         str.Printf (wxT ("%d"), DefNiuPort);
         m_portText->SetValue (str);
     }
-    paintBitmap (m_fgBitmap, m_fgColor);
-    paintBitmap (m_bgBitmap, m_bgColor);
-    Refresh ();
+    paintBitmap (fgBitmap, m_fgColor);
+    paintBitmap (bgBitmap, m_bgColor);
+    m_fgButton->SetBitmapLabel (fgBitmap);
+    m_bgButton->SetBitmapLabel (bgBitmap);
 }
 
 void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
@@ -2928,12 +2929,12 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     }
 }
 
-void PtermPrefDialog::paintBitmap (wxBitmap *bm, wxColour &color)
+void PtermPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
 {
     wxBrush bitmapBrush (color, wxSOLID);
     wxMemoryDC memDC;
 
-    memDC.SelectObject (*bm);
+    memDC.SelectObject (bm);
     memDC.BeginDrawing ();
     memDC.SetBackground (bitmapBrush);
     memDC.Clear ();
