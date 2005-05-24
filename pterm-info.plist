@@ -23,9 +23,9 @@
 	<key>CFBundleShortVersionString</key>
 	<string>2.5.4</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Pterm V2.10, (c) 2005 Paul Koning</string>
+	<string>Pterm V2.27, (c) 2005 Paul Koning</string>
 	<key>CFBundleLongVersionString</key>
-	<string>2.10, (c) 2005 Paul Koning</string>
+	<string>2.27, (c) 2005 Paul Koning</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

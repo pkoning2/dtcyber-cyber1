@@ -3444,6 +3444,12 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     // keystrokes that aren't function keys or other special keys, and
     // neither Ctrl nor Alt are active.
 
+    if (event.m_metaDown)
+      {
+	event.Skip ();
+	return;
+      }
+
     ctrl = event.m_controlDown;
     if (event.m_shiftDown)
     {
@@ -3685,7 +3691,7 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     int pc = -1;
 
     // control and alt codes shouldn't come here, they are handled in KEY_DOWN
-    if (event.m_controlDown || event.m_altDown)
+    if (event.m_controlDown || event.m_altDown || event.m_metaDown)
     {
         event.Skip ();
         return;
