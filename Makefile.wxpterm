@@ -96,7 +96,7 @@ pterm-kit:
 else
 pterm-kit:  $(MOFILES)
 	$(MAKE) pterm TYPE=static 
-	tar czf pterm.tar.gz --exclude '*CVS*' --exclude '*~'  --exclude '*.po' *.h pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages pterm $(LANGUAGES)
+	tar cjf pterm-v$(PTERMVERSION).tar.bz2 --exclude '*CVS*' --exclude '*~'  --exclude '*.po' *.h pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages pterm $(LANGUAGES)
 
 endif
 
