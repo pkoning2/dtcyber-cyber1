@@ -1,11 +1,11 @@
 #--------------------------------------------------------------------------
 #
-#   Copyright (c) 2002, Tom Hunter (see license.txt)
+#   Copyright (c) 2002-2005, Tom Hunter, Paul Koning (see license.txt)
 #
-#   Name: Makefile.x11
+#   Name: Makefile
 #
 #   Description:
-#       Build X11 version of Desktop Cyber emulation.
+#       Build Desktop Cyber emulation on Unix-like systems.
 #
 #--------------------------------------------------------------------------
 

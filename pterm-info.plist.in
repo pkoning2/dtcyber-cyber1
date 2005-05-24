@@ -19,13 +19,13 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2.5.4</string>
+	<string>@PTERMVERSION@</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.5.4</string>
+	<string>@PTERMVERSION</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Pterm V2.27, (c) 2005 Paul Koning</string>
+	<string>Pterm V@PTERMVERSION, (c) 2005 Paul Koning</string>
 	<key>CFBundleLongVersionString</key>
-	<string>2.27, (c) 2005 Paul Koning</string>
+	<string>@PTERMVERSION, (c) 2005 Paul Koning</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

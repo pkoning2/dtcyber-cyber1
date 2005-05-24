@@ -11,15 +11,7 @@
 
 include Makefile.common
 
-ifneq ("$(MAKECMDGOALS)","pterm-src")
-ifneq ("$(MAKECMDGOALS)","pterm-rpm")
-VERSION = **unused**
-endif
-endif
-
-ifeq ("$(VERSION)","")
-$(error VERSION must be specified, e.g., VERSION=2.20)
-endif
+PTERMVERSION := $(shell cat ptermversion)
 
 TYPE ?= shared
 ifeq ("$(TYPE)","static")
@@ -111,14 +103,14 @@ endif
 mofiles: $(MOFILES)
 
 pterm-src:
-	mkdir pterm-$(VERSION)
-	cd pterm-$(VERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
-	cd pterm-$(VERSION); for f in const.h types.h proto.h ptermversion.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
-	tar chzf /lhome/pkoning/pterm-linux-src-v$(VERSION).tar.gz pterm-$(VERSION)
-	rm -rf pterm-$(VERSION)
+	mkdir pterm-$(PTERMVERSION)
+	cd pterm-$(PTERMVERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
+	cd pterm-$(PTERMVERSION); for f in const.h types.h proto.h ptermversion.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
+	tar chzf /lhome/pkoning/pterm-linux-src-v$(PTERMVERSION).tar.gz pterm-$(PTERMVERSION)
+	rm -rf pterm-$(PTERMVERSION)
 
 pterm-rpm: pterm-src
-	cp /lhome/pkoning/pterm-linux-src-v$(VERSION).tar.gz /usr/src/redhat/SOURCES
+	cp /lhome/pkoning/pterm-linux-src-v$(PTERMVERSION).tar.gz /usr/src/redhat/SOURCES
 	rpmbuild -ba pterm.spec
 
 pterm.dep: $(PTOBJS:.o=.d)
@@ -128,7 +120,7 @@ pterm.dep: $(PTOBJS:.o=.d)
 
 %.d : %.cpp
 	echo -n "$@ " > $@
-	$(CXX) $(CXXFLAGS) -MM $< >> $@
+	$(CXX) $(CXXFLAGS) -MM -MG $< >> $@
 
 %.mo : %.po
 	msgfmt -o $@ $<
@@ -136,6 +128,10 @@ pterm.dep: $(PTOBJS:.o=.d)
 %.po : pterm_wx.cpp
 	xgettext  --keyword=_ --from-code=iso-8859-1 --msgid-bugs-address=paul@cyber1.org -C -o pterm.pot pterm_wx.cpp
 	msgmerge -U $@ pterm.pot
+
+# Rule for inserting version number in some files
+% :: %.in ptermversion
+	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" $< > $@
 
 ifneq ($(MAKECMDGOALS),clean)
 include  $(PTOBJS:.o=.d) 
