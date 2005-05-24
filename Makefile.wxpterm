@@ -85,13 +85,13 @@ ptermkit.dmg: Pterm.app-timestamp pterm-empty.dmg
 	cp pterm-empty.dmg ptermkit.dmg
 	dev=`hdid ptermkit.dmg | awk '{ print $$1 }'` ; cp -Rp Pterm.app /Volumes/ptermvol; hdiutil detach $$dev
 
-pterm.dmg: ptermkit.dmg
-	rm -f pterm.dmg
-	hdiutil convert -format UDZO ptermkit.dmg -o pterm.dmg
-	hdiutil internet-enable -yes pterm.dmg
+pterm-$(PTERMVERSION).dmg: ptermkit.dmg
+	rm -f $@
+	hdiutil convert -format UDZO $< -o $@
+	hdiutil internet-enable -yes $@
 
 pterm-kit: 
-	$(MAKE) pterm.dmg TYPE=static 
+	$(MAKE) pterm-$(PTERMVERSION).dmg TYPE=static 
 
 else
 pterm-kit:  $(MOFILES)
