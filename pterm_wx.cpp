@@ -2907,6 +2907,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
     paintBitmap (bgBitmap, m_bgColor);
     m_fgButton->SetBitmapLabel (fgBitmap);
     m_bgButton->SetBitmapLabel (bgBitmap);
+    Refresh ();
 }
 
 void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
