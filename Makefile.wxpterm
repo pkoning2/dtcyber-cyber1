@@ -27,8 +27,14 @@ EXTRALIBS=
 else
 DIR = /usr/local/wxshareud
 endif
-SETPATH= LD_RUN_PATH=$(DIR)/lib:/usr/lib:/lib
 endif
+
+# if the wxmumble dir doesn't exist, try for plain /usr/local
+ifeq ("$(wildcard $(DIR))","")
+DIR=/usr/local
+endif
+
+SETPATH= LD_RUN_PATH=$(DIR)/lib:/usr/lib:/lib
 
 PATH:=$(DIR)/bin:/usr/local/bin:$(PATH)
 
@@ -119,8 +125,9 @@ pterm.dep: $(PTOBJS:.o=.d)
 	$(CXX) -c $(CFLAGS) $(CXXFLAGS) $<
 
 %.d : %.cpp
-	echo -n "$@ " > $@
-	$(CXX) $(CXXFLAGS) -MM -MG $< >> $@
+	echo -n "$@ " > /tmp/$@
+	$(CXX) $(CXXFLAGS) -MM -MG $< >> /tmp/$@
+	mv -f /tmp/$@ $@
 
 %.mo : %.po
 	msgfmt -o $@ $<
