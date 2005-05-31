@@ -549,28 +549,12 @@ public:
     wxButton        *m_okButton;
     wxButton        *m_cancelButton;
     wxButton        *m_resetButton;
-    wxStaticText    *m_fgLabel;
-    wxStaticText    *m_bgLabel;
-    wxBoxSizer      *m_fgSizer;
-    wxBoxSizer      *m_bgSizer;
-    wxStaticBox     *m_colorsBox;
-    wxStaticBoxSizer *m_colorsSizer;
     wxCheckBox      *m_scaleCheck;
     wxCheckBox      *m_speedCheck;
     wxCheckBox      *m_autoConnect;
     wxCheckBox      *m_gswCheck;
     wxTextCtrl      *m_hostText;
     wxTextCtrl      *m_portText;
-    wxTextValidator *m_hostVal;
-    wxTextValidator *m_portVal;
-    wxStaticText    *m_hostLabel;
-    wxStaticText    *m_portLabel;
-    wxFlexGridSizer *m_connItems;
-    wxStaticBox     *m_connBox;
-    wxStaticBoxSizer *m_connSizer;
-    wxBoxSizer      *m_prefItems;
-    wxBoxSizer      *m_prefButtons;
-    wxBoxSizer      *m_dialogContent;
 
     wxColour        m_fgColor;
     wxColour        m_bgColor;
@@ -898,7 +882,13 @@ bool PtermApp::OnInit (void)
     wxImage::AddHandler (new wxPNMHandler);
     wxImage::AddHandler (new wxTIFFHandler);
     wxImage::AddHandler (new wxXPMHandler);
-    
+
+#if defined(__WXMAC__)
+    // On Mac, the style rule is that the application keeps running even
+    // if all its windows are closed.
+    SetExitOnFrameDelete(FALSE);
+#endif
+
     // success: wxApp::OnRun () will be called which will enter the main message
     // loop and the application will run. If we returned FALSE here, the
     // application would exit immediately.
@@ -1034,6 +1024,11 @@ void PtermApp::OnQuit(wxCommandEvent&)
         frame->Close (TRUE);
         frame = nextframe;
     }
+#if defined(__WXMAC__)
+    // On the Mac, deleting all the windows doesn't terminate the
+    // program, so we make it stop this way.
+    ExitMainLoop ();
+#endif
 }
 
 
@@ -1139,10 +1134,12 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
 
     // Copy is initially disabled, until a region is selected
     menuEdit->Enable (Pterm_Copy, FALSE);
+
+    wxMenu *menuWindow = new wxMenu;
     
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
-    menuBar->Append (menuFile, _("File"));
+    menuBar->Append (menuFile, _("Connection"));
     menuBar->Append (menuEdit, _("Edit"));
 
     // the "About" item should be in the help menu.
@@ -1151,7 +1148,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     // menu ends up empty.  Sigh.
     wxMenu *helpMenu = new wxMenu;
 
-    helpMenu->Append(Pterm_About, _("&About..."), _("Show about dialog"));
+    helpMenu->Append(Pterm_About, _("&About Pterm"), _("Show about dialog"));
 #if defined(__WXMAC__)
     // On the Mac the menu name has to be exactly "&Help" for the About item
     // to  be recognized.  Ugh.
@@ -2781,7 +2778,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 {
     wxBitmap fgBitmap (20, 12);
     wxBitmap bgBitmap (20, 12);
-
+    wxBoxSizer *bs, *ds, *ods;
+    wxStaticBoxSizer *sbs;
+    wxFlexGridSizer *fgs;
+    
     m_scale2 = (ptermApp->m_scale != 1);
     m_classicSpeed = ptermApp->m_classicSpeed;
     m_gswEnable = ptermApp->m_gswEnable;
@@ -2794,70 +2794,82 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     paintBitmap (fgBitmap, m_fgColor);
     paintBitmap (bgBitmap, m_bgColor);
     
-    m_colorsBox = new wxStaticBox (this, wxID_ANY, _("Display colors"));
-    m_colorsSizer = new wxStaticBoxSizer (m_colorsBox, wxVERTICAL);
+    // Create the pieces of the dialog from outermost to innermost.
+    // Order matters on some platforms, because it establishes Z-order
+    // of the controls.
+
+    // Sizer for the whole dialog box content
+    ds = new wxBoxSizer (wxVERTICAL);
+
+    // First group: emulation settings
+    sbs = new wxStaticBoxSizer (new wxStaticBox (this, wxID_ANY,
+                                                 _("Emulation settings")),
+                                wxVERTICAL);
+    m_speedCheck = new wxCheckBox (this, -1, _("&Simulate 1200 Baud"));
+    m_speedCheck->SetValue (m_classicSpeed);
+    sbs->Add (m_speedCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_gswCheck = new wxCheckBox (this, -1, _("Enable &GSW"));
+    m_gswCheck->SetValue (m_gswEnable);
+    sbs->Add (m_gswCheck, 0, wxALL, 8);
+    ds->Add (sbs, 0,  wxTOP | wxLEFT | wxRIGHT | wxEXPAND, 10);
+    
+    // Second group: connection settings
+    sbs = new wxStaticBoxSizer (new wxStaticBox (this, wxID_ANY,
+                                                 _("Connection settings")),
+                                wxVERTICAL);
+    m_autoConnect = new wxCheckBox (this, -1, _("&Connect at startup"));
+    m_autoConnect->SetValue (m_connect);
+    sbs->Add (m_autoConnect, 0,   wxTOP | wxLEFT | wxRIGHT, 8);
+    fgs = new wxFlexGridSizer (2, 2, 8, 8);
+    m_hostText = new wxTextCtrl (this, wxID_ANY, m_host,
+                                 wxDefaultPosition, wxSize (160, 18),
+                                 0, *new wxTextValidator (wxFILTER_ASCII,
+                                                          &m_host));
+    m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
+                                 wxDefaultPosition, wxSize (160+40, 18),
+                                 0, *new wxTextValidator (wxFILTER_NUMERIC,
+                                                          &m_port));
+    fgs->Add (new wxStaticText (this, wxID_ANY, _("Default &Host")));
+    fgs->Add (m_hostText);
+    fgs->Add (new wxStaticText (this, wxID_ANY, _("Default &Port")));
+    fgs->Add (m_portText);
+    sbs->Add (fgs, 0, wxALL, 8);
+    ds->Add (sbs, 0,  wxTOP | wxLEFT | wxRIGHT | wxEXPAND, 10);
+
+    // Third group: Display settings
+    sbs = new wxStaticBoxSizer (new wxStaticBox (this, wxID_ANY,
+                                                 _("Display settings")),
+                                wxVERTICAL);
+    m_scaleCheck = new wxCheckBox (this, -1, _("&Zoom display 200%"));
+    m_scaleCheck->SetValue (m_scale2);
+    sbs->Add (m_scaleCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    fgs = new wxFlexGridSizer (2, 2, 8, 8);
     m_fgButton = new wxBitmapButton (this, wxID_ANY, fgBitmap);
     m_bgButton = new wxBitmapButton (this, wxID_ANY, bgBitmap);
+    fgs->Add (m_fgButton);
+    fgs->Add (new wxStaticText (this, wxID_ANY, _("Foreground")));
+    fgs->Add (m_bgButton);
+    fgs->Add (new wxStaticText (this, wxID_ANY, _("Background")));
+    sbs->Add (fgs, 0, wxALL, 8);
+    ds->Add (sbs, 0,  wxTOP | wxLEFT | wxRIGHT | wxEXPAND, 10);
+
+    // Finally, the buttons
+    bs = new wxBoxSizer (wxHORIZONTAL);
     m_okButton = new wxButton (this, wxID_ANY, _("OK"));
     m_cancelButton = new wxButton (this, wxID_ANY, _("Cancel"));
     m_resetButton = new wxButton (this, wxID_ANY, _("Defaults"));
-    m_fgLabel = new wxStaticText (this, wxID_ANY, _("&Foreground"));
-    m_bgLabel = new wxStaticText (this, wxID_ANY, _("&Background"));
-    m_fgSizer = new wxBoxSizer (wxHORIZONTAL);
-    m_bgSizer = new wxBoxSizer (wxHORIZONTAL);
-    m_scaleCheck = new wxCheckBox (this, -1, _("&Zoom display 200%"));
-    m_scaleCheck->SetValue (m_scale2);
-    m_speedCheck = new wxCheckBox (this, -1, _("&Simulate 1200 Baud"));
-    m_speedCheck->SetValue (m_classicSpeed);
-    m_gswCheck = new wxCheckBox (this, -1, _("Enable &GSW"));
-    m_gswCheck->SetValue (m_gswEnable);
-    m_connBox = new wxStaticBox (this, wxID_ANY, _("Connection settings"));
-    m_connSizer = new wxStaticBoxSizer (m_connBox, wxVERTICAL);
-    m_autoConnect = new wxCheckBox (this, -1, _("&Connect at startup"));
-    m_autoConnect->SetValue (m_connect);
-    m_hostLabel = new wxStaticText (this, wxID_ANY, _("Default &Host"));
-    m_portLabel = new wxStaticText (this, wxID_ANY, _("Default &Port"));
+    bs->AddStretchSpacer ();
+    bs->Add (m_okButton);
+    bs->Add (m_cancelButton, 0, wxLEFT, 5);
+    bs->Add (m_resetButton, 0, wxLEFT, 5);
+    ds->Add (bs, 0,  wxALL | wxEXPAND, 10);
 
-    m_hostVal = new wxTextValidator (wxFILTER_ASCII, &m_host);
-    m_portVal = new wxTextValidator (wxFILTER_NUMERIC, &m_port);
-    
-    m_hostText = new wxTextCtrl (this, wxID_ANY, m_host,
-                                 wxDefaultPosition, wxSize (160, 18),
-                                 0, *m_hostVal);
-    m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
-                                 wxDefaultPosition, wxSize (160, 18),
-                                 0, *m_portVal);
-    m_connItems = new wxFlexGridSizer (2, 2, 5, 5);
-
-    m_prefItems = new wxBoxSizer (wxVERTICAL);
-    m_prefButtons = new wxBoxSizer (wxHORIZONTAL);
-    m_dialogContent = new wxBoxSizer (wxVERTICAL);
-      
-    m_fgSizer->Add (m_fgButton, 0, wxALL, 5);
-    m_fgSizer->Add (m_fgLabel, 0, wxALL, 5);
-    m_bgSizer->Add (m_bgButton, 0, wxALL, 5);
-    m_bgSizer->Add (m_bgLabel, 0, wxALL, 5);
-    m_colorsSizer->Add (m_fgSizer);
-    m_colorsSizer->Add (m_bgSizer);
-    m_connItems->Add (m_hostLabel, 0, wxRIGHT, 5);
-    m_connItems->Add (m_hostText);
-    m_connItems->Add (m_portLabel, 0, wxRIGHT, 5);
-    m_connItems->Add (m_portText);
-    m_connSizer->Add (m_autoConnect, 0, wxALL, 5);
-    m_connSizer->Add (m_connItems, 0, wxALL, 5);
-    m_prefItems->Add (m_scaleCheck, 0, wxTOP | wxLEFT | wxRIGHT, 10);
-    m_prefItems->Add (m_speedCheck, 0, wxTOP | wxLEFT | wxRIGHT, 10);
-    m_prefItems->Add (m_gswCheck, 0, wxALL, 10);
-    m_prefItems->Add (m_connSizer, 0, wxALL, 10);
-    m_prefItems->Add (m_colorsSizer, 0, wxALL, 10);
-    m_prefButtons->Add (m_okButton, 0, wxALL, 5);
-    m_prefButtons->Add (m_cancelButton, 0, wxALL, 5);
-    m_prefButtons->Add (m_resetButton, 0, wxALL, 5);
-    m_dialogContent->Add (m_prefItems, 0, wxTOP | wxLEFT | wxRIGHT, 5);
-    m_dialogContent->Add (m_prefButtons, 0, wxALL, 10);
-
-    SetSizer (m_dialogContent);
-    m_dialogContent->Fit (this);
+    // We'll put another 10 pixels around the whole content, which
+    // requires a separate sizer unfortunately...
+    ods = new wxBoxSizer (wxVERTICAL);
+    ods->Add (ds, 0, wxALL, 10);
+    SetSizer (ods);
+    ods->Fit (this);
     m_okButton->SetDefault ();
 }
 
@@ -3046,13 +3058,19 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
 
     while (TRUE)
     {
+        // The reason for waiting a limited time here rather than
+        // using the more obvious -1 (wait forever) is to make sure
+        // we come out of the network wait and call TestDestroy
+        // reasonably often.  Otherwise, closing the window doesn't work.
         i = dtRead (&m_fet, 200);
-        if (i < 0 || TestDestroy ())
+        if (TestDestroy ())
         {
-            if (i < 0)
-            {
-                StoreWord (C_DISCONNECT);
-            }
+            break;
+        }
+        if (i < 0)
+        {
+            StoreWord (C_DISCONNECT);
+            wxWakeUpIdle ();
             break;
         }
         
