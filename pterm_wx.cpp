@@ -583,12 +583,6 @@ public:
     void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
     wxTextCtrl      *m_hostText;
     wxTextCtrl      *m_portText;
-    wxTextValidator *m_hostVal;
-    wxTextValidator *m_portVal;
-    wxStaticText    *m_hostLabel;
-    wxStaticText    *m_portLabel;
-    wxFlexGridSizer *m_connItems;
-    wxBoxSizer      *m_dialogContent;
     
     wxString        m_host;
     wxString        m_port;
@@ -2969,33 +2963,41 @@ BEGIN_EVENT_TABLE(PtermConnDialog, wxDialog)
 PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title)
     : wxDialog (NULL, id, title)
 {
+    wxBoxSizer *ds, *ods;
+    wxFlexGridSizer *fgs;
+
+    // Sizer for the whole dialog box content
+    ds = new wxBoxSizer (wxVERTICAL);
+
+    // First section: the text controls
     m_host = wxString (ptermApp->m_hostName);
     m_port.Printf (wxT ("%d"), ptermApp->m_port);
 
-    m_hostLabel = new wxStaticText (this, wxID_ANY, _("Host name"));
-    m_portLabel = new wxStaticText (this, wxID_ANY, _("Port"));
-
-    m_hostVal = new wxTextValidator (wxFILTER_ASCII, &m_host);
-    m_portVal = new wxTextValidator (wxFILTER_NUMERIC, &m_port);
-    
     m_hostText = new wxTextCtrl (this, wxID_ANY, m_host,
                                  wxDefaultPosition, wxSize (160, 18),
-                                 0, *m_hostVal);
+                                 0, *new wxTextValidator (wxFILTER_ASCII,
+                                                          &m_host));
     m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
                                  wxDefaultPosition, wxSize (160, 18),
-                                 0, *m_portVal);
-    m_connItems = new wxFlexGridSizer (2, 2, 5, 5);
-    m_dialogContent = new wxBoxSizer (wxVERTICAL);
+                                 0, *new wxTextValidator (wxFILTER_NUMERIC,
+                                                          &m_port));
+    fgs = new wxFlexGridSizer (2, 2, 8, 8);
       
-    m_connItems->Add (m_hostLabel, 0, wxRIGHT, 5);
-    m_connItems->Add (m_hostText);
-    m_connItems->Add (m_portLabel, 0, wxRIGHT, 5);
-    m_connItems->Add (m_portText);
-    m_dialogContent->Add (m_connItems, 0, wxTOP | wxLEFT | wxRIGHT, 15);
-    m_dialogContent->Add (CreateButtonSizer( wxOK|wxCANCEL), 0, wxEXPAND|wxALL, 10);
+    fgs->Add (new wxStaticText (this, wxID_ANY, _("Host name")));
+    fgs->Add (m_hostText);
+    fgs->Add (new wxStaticText (this, wxID_ANY, _("Port")));
+    fgs->Add (m_portText);
 
-    SetSizer (m_dialogContent);
-    m_dialogContent->Fit (this);
+    // Final section: the buttons
+    ds->Add (fgs, 0, wxTOP | wxLEFT | wxRIGHT, 10);
+    ds->Add (CreateButtonSizer( wxOK|wxCANCEL), 0, wxEXPAND | wxALL, 10);
+
+    // We'll put another 10 pixels around the whole content, which
+    // requires a separate sizer unfortunately...
+    ods = new wxBoxSizer (wxVERTICAL);
+    ods->Add (ds, 0, wxALL, 10);
+    SetSizer (ods);
+    ods->Fit (this);
 }
 
 void PtermConnDialog::OnOK (wxCommandEvent &)
