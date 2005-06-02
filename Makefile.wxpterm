@@ -38,20 +38,23 @@ SETPATH= LD_RUN_PATH=$(DIR)/lib:/usr/lib:/lib
 
 PATH:=$(DIR)/bin:/usr/local/bin:$(PATH)
 
-CONFIG = $(DIR)/bin/wx-config
-CXXFLAGS = `$(CONFIG) --cxxflags`
-WXLIBS	= `$(CONFIG) --libs` $(EXTRALIBS) 
+WXCONFIG ?= $(DIR)/bin/wx-config
+CXXFLAGS = `$(WXCONFIG) --cxxflags`
+WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
 
-SDLINCL = -I/usr/include/SDL -I/usr/local/include/SDL
+SDLPATH ?= /usr/local
+SDLINCL = -I$(SDLPATH)/include/SDL
 ifeq ("$(TYPE)","static")
-ifeq ("$(HOST)","Darwin")
-SDLLIBS = /usr/local/lib/libSDL.a `/usr/local/bin/sdl-config --static-libs`
+#ifeq ("$(HOST)","Darwin")
+SDLLIBS = $(SDLPATH)/lib/libSDL.a `$(SDLPATH)/bin/sdl-config --static-libs`
+#else
+#SDLLIBS = /usr/lib/libSDL.a
+#endif
 else
-SDLLIBS = /usr/lib/libSDL.a
+SDLLIBS = -lSDL -L$(SDLPATH)/lib
 endif
-else
-SDLLIBS = -lSDL
-endif
+
+#INCL ?= -I/usr/local/include
 
 INCL += $(SDLINCL)
 

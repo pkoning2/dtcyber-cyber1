@@ -506,7 +506,7 @@ void consoleCheckOutput(void)
         **  Don't do it on Linux because Linux has kernel based threads,
         */
 #if !defined(__linux__) && !defined(_WIN32)
-        sched_yield();
+//        sched_yield();
 #endif
         }
     }

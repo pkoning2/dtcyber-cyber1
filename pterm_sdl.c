@@ -12,6 +12,9 @@
 */
 
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include <SDL.h>
 #include "const.h"
 #include "types.h"
