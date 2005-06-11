@@ -11,7 +11,7 @@
 
 include Makefile.common
 
-PTERMVERSION := $(shell cat ptermversion)
+PTERMVERSION := $(shell awk -F \" '{print $$2}'  ptermversion.h)
 
 TYPE ?= shared
 ifeq ("$(TYPE)","static")

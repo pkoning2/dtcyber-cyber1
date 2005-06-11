@@ -1361,7 +1361,7 @@ void PtermFrame::OnAbout(wxCommandEvent&)
     wxString msg;
 
     msg.Printf (_T("PLATO terminal emulator %s.\n%s"),
-                wxT (PTERMVERSION),
+                wxT ("V" PTERMVERSION),
                 _("Copyright © 2005 by Paul Koning."));
     
     wxMessageBox(msg, _("About Pterm"), wxOK | wxICON_INFORMATION, this);

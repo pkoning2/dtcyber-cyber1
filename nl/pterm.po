@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V2.10\n"
 "Report-Msgid-Bugs-To: paul@cyber1.org\n"
-"POT-Creation-Date: 2005-05-17 10:31-0400\n"
+"POT-Creation-Date: 2005-05-24 11:04-0400\n"
 "PO-Revision-Date: 2005-04-22 17:30-0400\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -151,7 +151,7 @@ msgstr "Over Pterm"
 msgid "Can't copy image to the clipboard"
 msgstr "Kopiëer het scherm naar het klembord"
 
-#: pterm_wx.cpp:1404 pterm_wx.cpp:1421 pterm_wx.cpp:3783
+#: pterm_wx.cpp:1404 pterm_wx.cpp:1421 pterm_wx.cpp:3797
 msgid "Can't open clipboard."
 msgstr "Openen van klembord mislukt."
 
@@ -278,7 +278,7 @@ msgstr "Verbinding met %s %d verloren"
 msgid "Alert"
 msgstr "Waarschuwing"
 
-#: pterm_wx.cpp:3790
+#: pterm_wx.cpp:3804
 #, fuzzy
 msgid "Can't copy text to the clipboard"
 msgstr "Kopiëren van tekst naar het klembord mislukt"
