@@ -76,7 +76,8 @@ endif
 
 ifeq ("$(HOST)","Darwin")
 
-Pterm.app-timestamp: pterm pterm-info.plist pterm.icns $(MOFILES)
+Pterm.app-timestamp: pterm pterm-info.plist.in pterm.icns $(MOFILES)
+	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm-info.plist.in > pterm-info.plist
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en
 	mkdir -p $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES))
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
@@ -118,7 +119,8 @@ pterm-src: ptermversion.h
 	tar chzf /lhome/pkoning/pterm-linux-src-v$(PTERMVERSION).tar.gz pterm-$(PTERMVERSION)
 	rm -rf pterm-$(PTERMVERSION)
 
-pterm-rpm: pterm-src pterm.spec ptermversion.h
+pterm-rpm: pterm-src pterm.spec.in ptermversion.h
+	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm.spec.in > pterm.spec
 	cp /lhome/pkoning/pterm-linux-src-v$(PTERMVERSION).tar.gz /usr/src/redhat/SOURCES
 	rpmbuild -ba pterm.spec
 
@@ -139,9 +141,6 @@ pterm.dep: $(PTOBJS:.o=.d)
 	xgettext  --keyword=_ --from-code=iso-8859-1 --msgid-bugs-address=paul@cyber1.org -C -o pterm.pot pterm_wx.cpp
 	msgmerge -U $@ pterm.pot
 
-# Rule for inserting version number in some files
-% :: %.in ptermversion
-	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" $< > $@
 
 ifneq ($(MAKECMDGOALS),clean)
 include  $(PTOBJS:.o=.d) 
