@@ -105,7 +105,7 @@ pterm-kit:
 else
 pterm-kit:  $(MOFILES)
 	$(MAKE) pterm TYPE=static 
-	tar cjf pterm-v$(PTERMVERSION).tar.bz2 --exclude '*CVS*' --exclude '*~'  --exclude '*.po' *.h pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages pterm $(LANGUAGES)
+	tar cjf pterm-v$(PTERMVERSION).tar.bz2 --exclude '*CVS*' --exclude '*~'  --exclude '*.po' license.txt *.h pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages pterm $(LANGUAGES)
 
 endif
 
@@ -114,7 +114,7 @@ mofiles: $(MOFILES)
 pterm-src:
 	mkdir pterm-$(PTERMVERSION)
 	cd pterm-$(PTERMVERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
-	cd pterm-$(PTERMVERSION); for f in const.h types.h proto.h ptermversion.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
+	cd pterm-$(PTERMVERSION); for f in license.txt const.h types.h proto.h ptermversion.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
 	tar chzf /lhome/pkoning/pterm-linux-src-v$(PTERMVERSION).tar.gz pterm-$(PTERMVERSION)
 	rm -rf pterm-$(PTERMVERSION)
 
