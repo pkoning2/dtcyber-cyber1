@@ -13,8 +13,10 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#if !defined(_WIN32)
 #include <sys/time.h>
 #include <unistd.h>
+#endif
 #include <SDL.h>
 #include "const.h"
 #include "types.h"
