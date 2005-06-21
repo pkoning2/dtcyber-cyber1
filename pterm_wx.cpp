@@ -69,6 +69,21 @@
 
 #define TERMTYPE 10
 
+// Literal strings for wxConfig key strings.  These are defined
+// because they appear in two places, so this way we avoid getting
+// the two out of sync.  Note that they should *not* be changed after
+// once being defined, since that invalidates people's stored
+// preferences.
+#define PREF_FOREGROUND "foreground"
+#define PREF_BACKGROUND "background"
+#define PREF_HOST       "host"
+#define PREF_PORT       "port"
+#define PREF_SCALE2     "scale"
+#define PREF_1200BAUD   "classicSpeed"
+#define PREF_CONNECT    "autoconnect"
+#define PREF_GSW        "gswenable"
+#define PREF_ARROWS     "numpadArrows"
+
 /*
 **  -----------------------
 **  Private Macro Functions
@@ -206,7 +221,7 @@ bool emulationActive = FALSE;
 wxPrintData *g_printData;
 
 // Global page setup data
-wxPageSetupData* g_pageSetupData;
+wxPageSetupDialogData* g_pageSetupData;
 
 // ----------------------------------------------------------------------------
 // local variables
@@ -348,6 +363,7 @@ public:
     bool        m_classicSpeed;
     bool        m_connect;
     bool        m_gswEnable;
+    bool        m_numpadArrows;
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
     
@@ -553,6 +569,7 @@ public:
     wxCheckBox      *m_speedCheck;
     wxCheckBox      *m_autoConnect;
     wxCheckBox      *m_gswCheck;
+    wxCheckBox      *m_arrowCheck;
     wxTextCtrl      *m_hostText;
     wxTextCtrl      *m_portText;
 
@@ -562,6 +579,7 @@ public:
     bool            m_classicSpeed;
     bool            m_connect;
     bool            m_gswEnable;
+    bool            m_numpadArrows;
     wxString        m_host;
     wxString        m_port;
     
@@ -836,7 +854,7 @@ bool PtermApp::OnInit (void)
     }
     else
     {
-        m_port = m_config->Read (wxT ("port"), DefNiuPort);
+        m_port = m_config->Read (wxT (PREF_PORT), DefNiuPort);
     }
     if (argc > 1)
     {
@@ -844,25 +862,26 @@ bool PtermApp::OnInit (void)
     }
     else
     {
-        m_config->Read (wxT ("host"), &m_hostName, DEFAULTHOST);
+        m_config->Read (wxT (PREF_HOST), &m_hostName, DEFAULTHOST);
     }
 
     // 255 144 0 is RGB for Plato Orange
-    m_config->Read (wxT ("foreground"), &rgb, wxT ("255 144 0"));
+    m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("255 144 0"));
     sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
     m_fgColor = wxColour (r, g, b);
-    m_config->Read (wxT ("background"), &rgb, wxT ("0 0 0"));
+    m_config->Read (wxT (PREF_BACKGROUND), &rgb, wxT ("0 0 0"));
     sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
     m_bgColor = wxColour (r, g, b);
-    m_scale = m_config->Read (wxT ("scale"), 1);
+    m_scale = m_config->Read (wxT (PREF_SCALE2), 1);
     if (m_scale != 1 && m_scale != 2)
     {
         m_scale = 1;
     }
-    m_classicSpeed = (m_config->Read (wxT ("classicSpeed"), 0L) != 0);
-    m_connect = (m_config->Read (wxT ("autoconnect"), 1) != 0);
-    m_gswEnable = (m_config->Read (wxT ("gswenable"), 1) != 0);
-    
+    m_classicSpeed = (m_config->Read (wxT (PREF_1200BAUD), 0L) != 0);
+    m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
+    m_gswEnable = (m_config->Read (wxT (PREF_GSW), 1) != 0);
+    m_numpadArrows = (m_config->Read (wxT (PREF_ARROWS), 1) != 0);
+
     // create the main application window
     // If arguments are present, always connect without asking
     if (!DoConnect (!(m_connect || argc > 1)))
@@ -965,6 +984,7 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_scale = (dlg.m_scale2) ? 2 : 1;
         m_classicSpeed = dlg.m_classicSpeed;
         m_gswEnable = dlg.m_gswEnable;
+        m_numpadArrows = dlg.m_numpadArrows;
         m_hostName = dlg.m_host;
         m_port = atoi (wxString (dlg.m_port).mb_str ());
         m_connect = dlg.m_connect;
@@ -972,17 +992,18 @@ void PtermApp::OnPref (wxCommandEvent&)
         rgb.Printf (wxT ("%d %d %d"), 
                     dlg.m_fgColor.Red (), dlg.m_fgColor.Green (),
                     dlg.m_fgColor.Blue ());
-        m_config->Write (wxT ("foreground"), rgb);
+        m_config->Write (wxT (PREF_FOREGROUND), rgb);
         rgb.Printf (wxT ("%d %d %d"),
                     dlg.m_bgColor.Red (), dlg.m_bgColor.Green (),
                     dlg.m_bgColor.Blue ());
-        m_config->Write (wxT ("background"), rgb);
-        m_config->Write (wxT ("scale"), (dlg.m_scale2) ? 2 : 1);
-        m_config->Write (wxT ("host"), dlg.m_host);
-        m_config->Write (wxT ("port"), m_port);
-        m_config->Write (wxT ("classicSpeed"), (dlg.m_classicSpeed) ? 1 : 0);
-        m_config->Write (wxT ("autoConnect"), (dlg.m_connect) ? 1 : 0);
-        m_config->Write (wxT ("gswenable"), (dlg.m_gswEnable) ? 1 : 0);
+        m_config->Write (wxT (PREF_BACKGROUND), rgb);
+        m_config->Write (wxT (PREF_SCALE2), (dlg.m_scale2) ? 2 : 1);
+        m_config->Write (wxT (PREF_HOST), dlg.m_host);
+        m_config->Write (wxT (PREF_PORT), m_port);
+        m_config->Write (wxT (PREF_1200BAUD), (dlg.m_classicSpeed) ? 1 : 0);
+        m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
+        m_config->Write (wxT (PREF_GSW), (dlg.m_gswEnable) ? 1 : 0);
+        m_config->Write (wxT (PREF_ARROWS), (dlg.m_numpadArrows) ? 1 : 0);
         m_config->Flush ();
     }
 }
@@ -2779,6 +2800,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_scale2 = (ptermApp->m_scale != 1);
     m_classicSpeed = ptermApp->m_classicSpeed;
     m_gswEnable = ptermApp->m_gswEnable;
+    m_numpadArrows = ptermApp->m_numpadArrows;
     m_connect = ptermApp->m_connect;
     m_fgColor = ptermApp->m_fgColor;
     m_bgColor = ptermApp->m_bgColor;
@@ -2804,7 +2826,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     sbs->Add (m_speedCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_gswCheck = new wxCheckBox (this, -1, _("Enable &GSW"));
     m_gswCheck->SetValue (m_gswEnable);
-    sbs->Add (m_gswCheck, 0, wxALL, 8);
+    sbs->Add (m_gswCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_arrowCheck = new wxCheckBox (this, -1, _("Numeric keypad for arrows"));
+    m_arrowCheck->SetValue (m_numpadArrows);
+    sbs->Add (m_arrowCheck, 0, wxALL, 8);
     ds->Add (sbs, 0,  wxTOP | wxLEFT | wxRIGHT | wxEXPAND, 10);
     
     // Second group: connection settings
@@ -2905,6 +2930,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_autoConnect->SetValue (TRUE);
         m_gswEnable = TRUE;
         m_gswCheck->SetValue (TRUE);
+        m_numpadArrows = TRUE;
+        m_arrowCheck->SetValue (TRUE);
         m_hostText->SetValue (DEFAULTHOST);
         str.Printf (wxT ("%d"), DefNiuPort);
         m_portText->SetValue (str);
@@ -2933,6 +2960,10 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == m_gswCheck)
     {
         m_gswEnable = event.IsChecked ();
+    }
+    else if (event.GetEventObject () == m_arrowCheck)
+    {
+        m_numpadArrows = event.IsChecked ();
     }
 }
 
@@ -3466,12 +3497,6 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     // keystrokes that aren't function keys or other special keys, and
     // neither Ctrl nor Alt are active.
 
-    if (event.m_metaDown)
-      {
-	event.Skip ();
-	return;
-      }
-
     ctrl = event.m_controlDown;
     if (event.m_shiftDown)
     {
@@ -3573,134 +3598,182 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     // unshifted to shifted translation is keyboard specific (at least for
     // non-letters) and we want to let the system deal with that.
 
-    switch (key)
+    pc = -1;
+    if (ptermApp->m_numpadArrows)
     {
-    case WXK_SPACE:
-    case WXK_NUMPAD_SPACE:
-        pc = 0100;      // space
-        break;
-    case WXK_BACK:
-        pc = 023;       // erase
-        break;
-    case WXK_RETURN:
-    case WXK_NUMPAD_ENTER:
-        pc = 026;       // next
-        break;
-    case WXK_HOME:
-    case WXK_NUMPAD_HOME:
-    case WXK_F8:
-        pc = 030;       // back
-        break;
-    case WXK_PAUSE:
-    case WXK_F10:
-        pc = 032;       // stop
-        break;
-    case WXK_TAB:
-        pc = 014;       // tab
-        break;
-    case WXK_ESCAPE:
-        pc = 015;       // assign
-        break;
-    case WXK_ADD:
-    case WXK_NUMPAD_ADD:
-        if (ctrl)
+        // Check the numeric keypad keys separately and turn them
+        // into the 8-way arrow keys of the PLATO main keyboard.
+        switch (key)
         {
-            pc = 056;   // Sigma
+        case WXK_NUMPAD7:
+        case WXK_NUMPAD_HOME:
+            pc = 0121;      // up left (q)
+            break;
+        case WXK_NUMPAD8:
+        case WXK_NUMPAD_UP:
+            pc = 0127;      // up arrow (w)
+            break;
+        case WXK_NUMPAD9:
+        case WXK_NUMPAD_PRIOR:
+            pc = 0105;      // up right (e)
+            break;
+        case WXK_NUMPAD4:
+        case WXK_NUMPAD_LEFT:
+            pc = 0101;      // left arrow (a)
+            break;
+        case WXK_NUMPAD6:
+        case WXK_NUMPAD_RIGHT:
+            pc = 0104;      // right arrow (d)
+            break;
+        case WXK_NUMPAD1:
+        case WXK_NUMPAD_END:
+            pc = 0132;      // down left (z)
+            break;
+        case WXK_NUMPAD2:
+        case WXK_NUMPAD_DOWN:
+            pc = 0130;      // down arrow (x)
+            break;
+        case WXK_NUMPAD3:
+        case WXK_NUMPAD_NEXT:
+            pc = 0103;      // down right (c)
+            break;
         }
-        else
+    }
+    
+    if (pc == -1)
+    {
+        switch (key)
         {
-            pc = 016;   // +
+        case WXK_SPACE:
+        case WXK_NUMPAD_SPACE:
+            pc = 0100;      // space
+            break;
+        case WXK_BACK:
+            pc = 023;       // erase
+            break;
+        case WXK_RETURN:
+        case WXK_NUMPAD_ENTER:
+            pc = 026;       // next
+            break;
+        case WXK_HOME:
+        case WXK_NUMPAD_HOME:
+        case WXK_F8:
+            pc = 030;       // back
+            break;
+        case WXK_PAUSE:
+        case WXK_F10:
+            pc = 032;       // stop
+            break;
+        case WXK_TAB:
+            pc = 014;       // tab
+            break;
+        case WXK_ESCAPE:
+            pc = 015;       // assign
+            break;
+        case WXK_ADD:
+        case WXK_NUMPAD_ADD:
+            if (ctrl)
+            {
+                pc = 056;   // Sigma
+            }
+            else
+            {
+                pc = 016;   // +
+            }
+            break;
+        case WXK_SUBTRACT:
+        case WXK_NUMPAD_SUBTRACT:
+            if (ctrl)
+            {
+                pc = 057;   // Delta
+            }
+            else
+            {
+                pc = 017;   // -
+            }
+            break;
+        case WXK_MULTIPLY:
+        case WXK_NUMPAD_MULTIPLY:
+        case WXK_DELETE:
+            pc = 012;       // multiply sign
+            break;
+        case WXK_DIVIDE:
+        case WXK_NUMPAD_DIVIDE:
+        case WXK_INSERT:
+            pc = 013;       // divide sign
+            break;
+        case WXK_LEFT:
+        case WXK_NUMPAD_LEFT:
+            pc = 0101;      // left arrow (a)
+            break;
+        case WXK_RIGHT:
+        case WXK_NUMPAD_RIGHT:
+            pc = 0104;      // right arrow (d)
+            break;
+        case WXK_UP:
+        case WXK_NUMPAD_UP:
+            pc = 0127;      // up arrow (w)
+            break;
+        case WXK_DOWN:
+        case WXK_NUMPAD_DOWN:
+            pc = 0130;      // down arrow (x)
+            break;
+        case WXK_PRIOR:
+        case WXK_NUMPAD_PRIOR:
+            pc = 020;       // super
+            break;
+        case WXK_NEXT:
+        case WXK_NUMPAD_NEXT:
+            pc = 021;       // sub
+            break;
+        case WXK_F3:
+            pc = 034;       // square
+            break;
+        case WXK_F2:
+            pc = 022;       // ans
+            break;
+        case WXK_F1:
+        case WXK_F11:
+            pc = 033;       // copy
+            break;
+        case WXK_F9:
+            pc = 031;       // data
+            break;
+        case WXK_F5:
+            pc = 027;       // edit
+            break;
+        case WXK_F4:
+            pc = 024;       // micro/font
+            break;
+        case WXK_F6:
+            pc = 025;       // help
+            break;
+        case WXK_F7:
+            pc = 035;       // lab
+            break;
+        case WXK_NUMPAD_DECIMAL:
+            pc = 0136;      // .
+            break;
+        case WXK_NUMPAD0:
+        case WXK_NUMPAD1:
+        case WXK_NUMPAD2:
+        case WXK_NUMPAD3:
+        case WXK_NUMPAD4:
+        case WXK_NUMPAD5:
+        case WXK_NUMPAD6:
+        case WXK_NUMPAD7:
+        case WXK_NUMPAD8:
+        case WXK_NUMPAD9:
+            pc = key - WXK_NUMPAD0;
+            if (ctrl)
+            {
+                shift = 040;
+            }
+            break;
+        default:
+            event.Skip ();
+            return;
         }
-        break;
-    case WXK_SUBTRACT:
-    case WXK_NUMPAD_SUBTRACT:
-        if (ctrl)
-        {
-            pc = 057;   // Delta
-        }
-        else
-        {
-            pc = 017;   // -
-        }
-        break;
-    case WXK_MULTIPLY:
-    case WXK_NUMPAD_MULTIPLY:
-    case WXK_DELETE:
-        pc = 012;       // multiply sign
-        break;
-    case WXK_DIVIDE:
-    case WXK_NUMPAD_DIVIDE:
-    case WXK_INSERT:
-        pc = 013;       // divide sign
-        break;
-    case WXK_LEFT:
-    case WXK_NUMPAD_LEFT:
-        pc = 0101;      // left arrow (a)
-        break;
-    case WXK_RIGHT:
-    case WXK_NUMPAD_RIGHT:
-        pc = 0104;      // right arrow (d)
-        break;
-    case WXK_UP:
-    case WXK_NUMPAD_UP:
-        pc = 0127;      // up arrow (w)
-        break;
-    case WXK_DOWN:
-    case WXK_NUMPAD_DOWN:
-        pc = 0130;      // down arrow (x)
-        break;
-    case WXK_PRIOR:
-    case WXK_NUMPAD_PRIOR:
-        pc = 020;       // super
-        break;
-    case WXK_NEXT:
-    case WXK_NUMPAD_NEXT:
-        pc = 021;       // sub
-        break;
-    case WXK_F3:
-        pc = 034;       // square
-        break;
-    case WXK_F2:
-        pc = 022;       // ans
-        break;
-    case WXK_F1:
-    case WXK_F11:
-        pc = 033;       // copy
-        break;
-    case WXK_F9:
-        pc = 031;       // data
-        break;
-    case WXK_F5:
-        pc = 027;       // edit
-        break;
-    case WXK_F4:
-        pc = 024;       // micro/font
-        break;
-    case WXK_F6:
-        pc = 025;       // help
-        break;
-    case WXK_F7:
-        pc = 035;       // lab
-        break;
-    case WXK_NUMPAD0:
-    case WXK_NUMPAD1:
-    case WXK_NUMPAD2:
-    case WXK_NUMPAD3:
-    case WXK_NUMPAD4:
-    case WXK_NUMPAD5:
-    case WXK_NUMPAD6:
-    case WXK_NUMPAD7:
-    case WXK_NUMPAD8:
-    case WXK_NUMPAD9:
-        pc = key - WXK_NUMPAD0;
-        if (ctrl)
-        {
-            shift = 040;
-        }
-        break;
-    default:
-        event.Skip ();
-        return;
     }
 
     m_owner->ptermSendKey (pc | shift);
