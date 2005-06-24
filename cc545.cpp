@@ -48,8 +48,11 @@
 // global vars
 // ----------------------------------------------------------------------------
 
-int height;
+int height, width;
 int bw;
+double sigma =  1.0;
+int intensity = 150;
+
 #define STEPMHZ 10
 #define BWRATIO 100
 
@@ -189,6 +192,13 @@ IMPLEMENT_APP(MyApp)
 // implementation
 // ============================================================================
 
+#define pi 3.14159265358979323846
+static double bell (double x, double sigma)
+{
+    return (1 / (sigma * sqrt (2. * pi))) * 
+        exp (-((x * x) / (2. * sigma * sigma)));
+}
+
 // ----------------------------------------------------------------------------
 // the application class
 // ----------------------------------------------------------------------------
@@ -202,7 +212,7 @@ bool MyApp::OnInit()
     bw = 1;
     height = 32;
     
-    if (argc > 2)
+    if (argc > 3)
     {
         bw = atoi (wxString (argv[2]).mb_str ());
     }
@@ -210,6 +220,15 @@ bool MyApp::OnInit()
     {
         height = atoi (wxString (argv[1]).mb_str ());
     }
+    if (argc > 2)
+    {
+        width = atoi (wxString (argv[2]).mb_str ());
+    }
+    else
+    {
+        width = height;
+    }
+    
     if (bw != 0 && bw * BWRATIO / STEPMHZ < 1)
     {
         printf ("bandwidth too low\n");
@@ -295,21 +314,24 @@ CcWindow::CcWindow (MyFrame *parent)
 {
     wxClientDC dc(this);
 
-    SetVirtualSize (height * 13 / 2, height * 11 / 2);
+    SetVirtualSize (width * 13 / 2, height * 11 / 2);
     
-//    SetBackgroundColour (ptermApp->m_bgColor);
-    SetScrollRate (height, height);
+    SetBackgroundStyle (wxBG_STYLE_COLOUR);
+    SetBackgroundColour (*wxBLACK);
+    SetScrollRate (width, height);
 }
 
 void CcWindow::OnDraw (wxDC &dc)
 {
-    int ch, i, j, ix, iy, cx, cy;
-    double x, y, scale;
+    int ch, i, j, bx, by, ix, iy, cx, cy, pg;
+    double x, y, scalex, scaley, r, b;
+    unsigned char *pix;
     Fir xfilt, yfilt;
     Chargen cg;
     bool on;
+    int beamr = int (ceil (3 * sigma));
     
-    dc.Clear ();
+//    dc.Clear ();
     dc.SetPen (*wxBLACK_PEN);
     
     if (bw == 0)
@@ -324,13 +346,19 @@ void CcWindow::OnDraw (wxDC &dc)
         i = bw * BWRATIO / STEPMHZ;
     }
     cg.SetStepCount (i);
-    scale = (double) height / (i * 8);
+    scalex = (double) width / (i * 8);
+    scaley = (double) height / (i * 8);
     
     for (ch = 0; ch < 060; ch++)
     {
+        const int xs = int (ceil (width + 2 * beamr + 1));
+        const int ys = int (ceil (height + 2 * beamr + 1));
+        wxImage cimg (xs, ys, true);
+        unsigned char *dp = cimg.GetData ();
+        
         cx = ch & 7;
         cy = (ch >> 3) + 1;
-        cx = (height + cx * 3 * height) / 2;
+        cx = (width + cx * 3 * width) / 2;
         cy = (height + cy * 3 * height) / 2;
         xfilt.Reset ();
         yfilt.Reset ();
@@ -350,13 +378,41 @@ void CcWindow::OnDraw (wxDC &dc)
             }
             if (on)
             {
-                ix = (int) round (x * scale);
-                iy = (int) round (y * scale);
-                dc.DrawPoint (cx + ix, cy + iy);
-//                if (ch == 023) printf ("%d %6.2f %6.2f\n", ch, x, y);
+                // Intensify a spot given by a normal distribution
+                // around the current x/y.  We go out to 3 sigma.
+                for (bx = -beamr; bx <= beamr; bx++)
+                {
+                    for (by = -beamr; by <= beamr; by++)
+                    {
+                        r = sqrt (bx * bx + by * by);
+                        if (r > 3.0 * sigma)
+                            continue;
+                        b = bell (r, sigma);
+                        
+                        ix = (int) round (x * scalex + bx + beamr);
+                        iy = (int) round (y * scaley + by + beamr + height);
+                        if (ix >= xs || iy >= ys)
+                        {
+                            printf ("ix %d xs %d iy %d ys %d\n",
+                                    ix, xs, iy, ys);
+                            continue;
+                        }
+                        
+                        pix = dp + 3 * (iy * xs + ix);
+                        pg = pix[1];    // green value
+                        pg += int (b * intensity);
+                        if (pg > 255)
+                            pg = 255;
+                        pix[1] = pg;
+                    }
+                }
+                
+//                if (ch == 0) printf ("%d %6.2f %6.2f\n", ch, x, y);
             }
             cg.Step ();
         }
+        wxBitmap bm (cimg, -1);
+        dc.DrawBitmap (bm, cx, cy);
     }
 }
 
