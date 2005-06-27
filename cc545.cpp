@@ -4,7 +4,6 @@
 // Author:      Julian Smart
 // Modified by:
 // Created:     04/01/98
-// RCS-ID:      $Id$
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
 /////////////////////////////////////////////////////////////////////////////
@@ -48,36 +47,76 @@
 // global vars
 // ----------------------------------------------------------------------------
 
-int height, width;
 int bw;
-double sigma =  1.0;
-int intensity = 150;
 
 #define STEPMHZ 10
+#define STEPHZ  (STEPMHZ * 1000000)
 #define BWRATIO 100
+#define EXTRA   7
 
 // ----------------------------------------------------------------------------
 // private classes
 // ----------------------------------------------------------------------------
 
-class Fir 
+class Delay
 {
 public:
-    Fir(void);
-    
-    void Reset (void);
+    Delay (int delay);
+    ~Delay ();
     void SetFlag (bool flag);
     bool Flag (void) const
     {
         return m_flags[0];
     }
+    
+private:
+    Delay (const Delay &);
+
+    int m_delay;
+    bool *m_flags;
+};
+
+class Fir : public Delay
+{
+public:
+    Fir(void);
+    
+    void Reset (void);
     double Step (double in);
     
 private:
     enum { taps = 15, delay = (taps + 1) / 2 };
     double m_data[taps];
-    bool m_flags[delay];
     const static double coeff[taps];
+};
+
+class RClow
+{
+public:
+    RClow (double r, double c, int freq);
+    double Step (double in);
+    void Reset (void)
+    {
+        z = 0.0;
+    }
+    
+private:
+    double a, b, z;
+};
+
+class RChigh
+{
+public:
+    RChigh (double r, double c, int freq);
+    double Step (double in);
+    void Reset (void)
+    {
+        z = 0.0;
+    }
+
+private:
+    enum { delay = 5 };
+    double a, b, z;
 };
 
 class Chargen
@@ -86,11 +125,11 @@ public:
     void SetStepCount (int n);
     void Start (int ch);
     void Step (void);
-    int X (void) const 
+    double X (void) const 
     {
         return m_x;
     }
-    int Y (void) const
+    double Y (void) const
     {
         return m_y;
     }
@@ -104,11 +143,105 @@ public:
     }
     
 private:
-    int m_x, m_y;
+    double Ramp (int step);
+
+    double m_x, m_y;
     int m_dx, m_dy, m_step, m_stroke;
     bool m_on;
     const u8 *m_chardata;
     int m_stepcount;
+};
+
+class MyFrame;
+class CtlFrame;
+
+// Define a panel for the controls
+class CcPanel : public wxPanel
+{
+public:
+    CcPanel (CtlFrame *parent);
+
+    int sizeX (void) const
+    { 
+        return m_size->GetValue () * m_aspect->GetValue () / 100;
+    }
+    int sizeY (void) const { return m_size->GetValue (); }
+    double beamsize (void) const { return 0.01 * m_focus->GetValue (); }
+    int intensity (void) const { return m_intens->GetValue (); }
+    double r1_029 (void) const { return (double ) (m_r1_029->GetValue ()); }
+    double c1_029 (void) const { return 1.0e-12 * m_c1_029->GetValue (); }
+    double c1_a2 (void) const { return 1.0e-12 * m_c1_a2->GetValue (); }
+    double c4_a2 (void) const { return 1.0e-12 * m_c4_a2->GetValue (); }
+    bool get620on (void) const { return m_620on->GetValue (); }
+    bool getc19on (void) const { return m_c19on->GetValue (); }
+    bool get029on (void) const { return m_029on->GetValue (); }
+    bool getv1aon (void) const { return m_v1aon->GetValue (); }
+    bool getv3on (void) const { return m_v3on->GetValue (); }
+ 
+    void OnScroll (wxScrollEvent& event);
+    void OnCheck (wxCommandEvent& event);
+
+private:
+    wxBoxSizer  *m_sizer;
+    wxSlider    *m_size;
+    wxSlider    *m_aspect;
+    wxSlider    *m_focus;
+    wxSlider    *m_intens;
+//    wxSlider    *m_c2_019;
+    wxSlider    *m_r1_029;      // 029 amp pot
+    wxSlider    *m_c1_029;      // 029 amp trimcap
+    wxSlider    *m_c1_a2;       // v1a trimcap
+    wxSlider    *m_c4_a2;       // v3 trimcap    
+    wxCheckBox  *m_620on;
+    wxCheckBox  *m_c19on;
+    wxCheckBox  *m_029on;
+    wxCheckBox  *m_v1aon;
+    wxCheckBox  *m_v3on;
+    
+    // any class wishing to process wxWidgets events must use this macro
+    DECLARE_EVENT_TABLE()
+};
+
+// Define a window for the content
+class CcWindow : public wxScrolledWindow
+{
+public:
+    CcWindow (MyFrame *parent, CtlFrame *controls);
+
+    void OnDraw (wxDC &dc);
+
+private:
+    CtlFrame *m_controls;
+};
+
+// Define a new frame type: this is going to be our main frame
+class MyFrame : public wxFrame
+{
+public:
+    // ctor(s)
+    MyFrame(const wxString& title, CtlFrame *controls);
+
+    // event handlers (these functions should _not_ be virtual)
+    void OnQuit(wxCommandEvent& event);
+    void OnAbout(wxCommandEvent& event);
+
+private:
+    CcWindow    *m_canvas;
+    CtlFrame     *m_panel;
+    // any class wishing to process wxWidgets events must use this macro
+    DECLARE_EVENT_TABLE()
+};
+
+// Frame for the controls panel
+class CtlFrame : public wxFrame
+{
+public:
+    // ctor(s)
+    CtlFrame(const wxString& title);
+
+    CcPanel     *m_controls;
+    // any class wishing to process wxWidgets events must use this macro
+//    DECLARE_EVENT_TABLE()
 };
 
 // Define a new application type, each program should derive a class from wxApp
@@ -122,35 +255,34 @@ public:
     // initialization (doing it here and not in the ctor allows to have an error
     // return: if OnInit() returns false, the application terminates)
     virtual bool OnInit();
-};
 
-class MyFrame;
-
-// Define a window for the content
-class CcWindow : public wxScrolledWindow
-{
-public:
-    CcWindow (MyFrame *parent);
-
-    void OnDraw (wxDC &dc);
-};
-
-// Define a new frame type: this is going to be our main frame
-class MyFrame : public wxFrame
-{
-public:
-    // ctor(s)
-    MyFrame(const wxString& title);
-
-    // event handlers (these functions should _not_ be virtual)
-    void OnQuit(wxCommandEvent& event);
-    void OnAbout(wxCommandEvent& event);
-
+    int sizeX (void) const { return m_controls->m_controls->sizeX (); }
+    int sizeY (void) const { return m_controls->m_controls->sizeY (); }
+    double beamsize (void) const { return m_controls->m_controls->beamsize (); }
+    int intensity (void) const { return m_controls->m_controls->intensity (); }
+    double r1_029 (void) const { return m_controls->m_controls->r1_029 (); }
+    double c1_029 (void) const { return m_controls->m_controls->c1_029 (); }
+    double c1_a2 (void) const { return m_controls->m_controls->c1_a2 (); }
+    double c4_a2 (void) const { return m_controls->m_controls->c4_a2 (); }
+    bool get620on (void) const { return m_controls->m_controls->get620on (); }
+    bool getc19on (void) const { return m_controls->m_controls->getc19on (); }
+    bool get029on (void) const { return m_controls->m_controls->get029on (); }
+    bool getv1aon (void) const { return m_controls->m_controls->getv1aon (); }
+    bool getv3on (void) const { return m_controls->m_controls->getv3on (); }
+    
+    void closeControls (void) 
+    {
+        m_controls->Close (true);
+    }
+    void updateFrame (void)
+    {
+        m_frame->Refresh ();
+    }
+    
+    
 private:
-    CcWindow *m_canvas;
-
-    // any class wishing to process wxWidgets events must use this macro
-    DECLARE_EVENT_TABLE()
+    MyFrame     *m_frame;
+    CtlFrame    *m_controls;
 };
 
 // ----------------------------------------------------------------------------
@@ -199,6 +331,10 @@ static double bell (double x, double sigma)
         exp (-((x * x) / (2. * sigma * sigma)));
 }
 
+#define defwidth 32
+#define defheight 32
+#define consoleSize (wxSize (defwidth * 13 / 2, defheight * 11 / 2))
+
 // ----------------------------------------------------------------------------
 // the application class
 // ----------------------------------------------------------------------------
@@ -206,27 +342,10 @@ static double bell (double x, double sigma)
 // 'Main program' equivalent: the program execution "starts" here
 bool MyApp::OnInit()
 {
-    // create the main application window
-    MyFrame *frame = new MyFrame(_T("Minimal wxWidgets App"));
-
-    bw = 1;
-    height = 32;
-    
-    if (argc > 3)
-    {
-        bw = atoi (wxString (argv[2]).mb_str ());
-    }
+    bw = 4;
     if (argc > 1)
     {
-        height = atoi (wxString (argv[1]).mb_str ());
-    }
-    if (argc > 2)
-    {
-        width = atoi (wxString (argv[2]).mb_str ());
-    }
-    else
-    {
-        width = height;
+        bw = atoi (wxString (argv[1]).mb_str ());
     }
     
     if (bw != 0 && bw * BWRATIO / STEPMHZ < 1)
@@ -240,9 +359,16 @@ bool MyApp::OnInit()
                 bw * BWRATIO / STEPMHZ);
     }
     
+    // create the controls
+    m_controls = new CtlFrame (_T("Controls"));
+    m_controls->Show (true);
+    
+    // create the main application window
+    m_frame = new MyFrame(_T("Minimal wxWidgets App"), m_controls);
+
     // and show it (the frames, unlike simple controls, are not shown when
     // created initially)
-    frame->Show(true);
+    m_frame->Show(true);
 
     // success: wxApp::OnRun() will be called which will enter the main message
     // loop and the application will run. If we returned false here, the
@@ -255,13 +381,15 @@ bool MyApp::OnInit()
 // ----------------------------------------------------------------------------
 
 // frame constructor
-MyFrame::MyFrame(const wxString& title)
+MyFrame::MyFrame(const wxString& title, CtlFrame *controls)
        : wxFrame(NULL, wxID_ANY, title)
 {
     // set the frame icon
     SetIcon(wxICON(pterm_32));
 
-    m_canvas = new CcWindow (this);
+    SetClientSize (consoleSize);
+    
+    m_canvas = new CcWindow (this, controls);
     
 #if wxUSE_MENUS
     // create a menu bar
@@ -281,12 +409,6 @@ MyFrame::MyFrame(const wxString& title)
     // ... and attach this menu bar to the frame
     SetMenuBar(menuBar);
 #endif // wxUSE_MENUS
-
-#if wxUSE_STATUSBAR
-    // create a status bar just for fun (by default with 1 pane only)
-    CreateStatusBar(2);
-    SetStatusText(_T("Welcome to wxWidgets!"));
-#endif // wxUSE_STATUSBAR
 }
 
 
@@ -296,6 +418,7 @@ void MyFrame::OnQuit(wxCommandEvent& WXUNUSED(event))
 {
     // true is to force the frame to close
     Close(true);
+    wxGetApp ().closeControls ();
 }
 
 void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
@@ -307,18 +430,111 @@ void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event))
     wxMessageBox(msg, _T("About Minimal"), wxOK | wxICON_INFORMATION, this);
 }
 
-CcWindow::CcWindow (MyFrame *parent)
+// frame constructor
+CtlFrame::CtlFrame(const wxString& title)
+       : wxFrame(NULL, wxID_ANY, title)
+{
+    // set the frame icon
+    SetIcon(wxICON(pterm_32));
+
+    m_controls = new CcPanel (this);
+}
+
+BEGIN_EVENT_TABLE(CcPanel, wxPanel)
+    EVT_SCROLL(CcPanel::OnScroll)
+    EVT_CHECKBOX(wxID_ANY, CcPanel::OnCheck)
+END_EVENT_TABLE()
+
+CcPanel::CcPanel (CtlFrame *parent) :
+    wxPanel (parent)
+{
+    m_sizer = new wxBoxSizer (wxVERTICAL);
+    m_size = new wxSlider (this, wxID_ANY, 32, 8, 64, wxDefaultPosition,
+                            wxSize (200, 30), 
+                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_sizer->Add (m_size, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Size")),
+                  0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_aspect = new wxSlider (this, wxID_ANY, 100, 40, 200, wxDefaultPosition,
+                            wxSize (200, 30), 
+                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_sizer->Add (m_aspect, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Aspect ratio")),
+                  0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_focus = new wxSlider (this, wxID_ANY, 100, 0, 250, wxDefaultPosition,
+                            wxSize (200, 30), 
+                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_sizer->Add (m_focus, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Focus")),
+                  0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_intens = new wxSlider (this, wxID_ANY, 100, 1, 400, wxDefaultPosition,
+                            wxSize (200, 30), 
+                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_sizer->Add (m_intens, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Intensity")),
+                  0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_620on = new wxCheckBox (this, wxID_ANY, _("620 highpass on"));
+    m_sizer->Add (m_620on, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_c19on = new wxCheckBox (this, wxID_ANY, _("C19 lowpass on"));
+    m_sizer->Add (m_c19on, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_r1_029 = new wxSlider (this, wxID_ANY, 2000, 180, 5000, wxDefaultPosition,
+                            wxSize (200, 30), 
+                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_sizer->Add (m_r1_029, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("029 R1")),
+                  0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_c1_029 = new wxSlider (this, wxID_ANY, 300, 110, 580, wxDefaultPosition,
+                            wxSize (200, 30), 
+                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_sizer->Add (m_c1_029, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("029 C1")),
+                  0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_029on = new wxCheckBox (this, wxID_ANY, _("029 highpass on"));
+    m_sizer->Add (m_029on, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_c1_a2 = new wxSlider (this, wxID_ANY, 2000, 1400, 3055, wxDefaultPosition,
+                            wxSize (200, 30), 
+                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_sizer->Add (m_c1_a2, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("V1A C1")),
+                  0,  wxTOP | wxLEFT | wxRIGHT, 8); 
+    m_v1aon = new wxCheckBox (this, wxID_ANY, _("V1A C1 on"));
+    m_sizer->Add (m_v1aon, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_c4_a2 = new wxSlider (this, wxID_ANY, 2000, 1400, 3055, wxDefaultPosition,
+                            wxSize (200, 30), 
+                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_sizer->Add (m_c4_a2, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("V3 C4")),
+                  0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_v3on = new wxCheckBox (this, wxID_ANY, _("V3 C4 on"));
+    m_sizer->Add (m_v3on, 0,  wxALL, 8);
+    SetSizerAndFit (m_sizer);
+//    m_sizer->RecalcSizes ();
+}
+
+void CcPanel::OnScroll (wxScrollEvent &)
+{
+    wxGetApp ().updateFrame ();
+}
+
+void CcPanel::OnCheck (wxCommandEvent &)
+{
+    wxGetApp ().updateFrame ();
+}
+
+
+CcWindow::CcWindow (MyFrame *parent, CtlFrame *controls)
     : wxScrolledWindow(parent, -1, wxDefaultPosition, 
-                       wxSize (512, 512),
-                       wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE)
+                       consoleSize,
+                       wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE),
+      m_controls (controls)
 {
     wxClientDC dc(this);
 
-    SetVirtualSize (width * 13 / 2, height * 11 / 2);
+    SetVirtualSize (consoleSize);
     
     SetBackgroundStyle (wxBG_STYLE_COLOUR);
     SetBackgroundColour (*wxBLACK);
-    SetScrollRate (width, height);
+    SetScrollRate (defwidth, defheight);
 }
 
 void CcWindow::OnDraw (wxDC &dc)
@@ -326,9 +542,25 @@ void CcWindow::OnDraw (wxDC &dc)
     int ch, i, j, bx, by, ix, iy, cx, cy, pg;
     double x, y, scalex, scaley, r, b;
     unsigned char *pix;
-    Fir xfilt, yfilt;
+//    Fir xfilt, yfilt;
+    Delay delay (5);
+    const double peak = 0.25;
     Chargen cg;
     bool on;
+    const int width = wxGetApp ().sizeX ();
+    const int height = wxGetApp ().sizeY ();
+    const int intensity = wxGetApp ().intensity ();
+    const double sigma = wxGetApp ().beamsize ();
+    const double r029 = wxGetApp ().r1_029 ();
+    const double c029 = wxGetApp ().c1_029 ();
+    const double cv1a = wxGetApp ().c1_a2 ();
+    const double cv3 = wxGetApp ().c4_a2 ();
+    const bool on620 = wxGetApp ().get620on ();
+    const bool onc19 = wxGetApp ().getc19on ();
+    const bool on029 = wxGetApp ().get029on ();
+    const bool onv1a = wxGetApp ().getv1aon ();
+    const bool onv3 = wxGetApp ().getv3on ();
+    
     int beamr = int (ceil (3 * sigma));
     
 //    dc.Clear ();
@@ -345,23 +577,45 @@ void CcWindow::OnDraw (wxDC &dc)
         // frequency is STEPMHZ.
         i = bw * BWRATIO / STEPMHZ;
     }
+
+    const int rcfreq = STEPHZ * i;
+    RClow  x620 (470., 33.e-12, rcfreq), y620 (470., 33.e-12, rcfreq);
+    const double peak620 = .3;
+    RClow  xc19 (6800., 22.e-12, rcfreq), yc19 (6800., 22.e-12, rcfreq);
+    const double peakc19 =.35;
+    RClow  x029 (r029, c029, rcfreq), y029 (r029, c029, rcfreq);
+    const double peak029 = .1;
+    RClow  xv1a (470., cv1a, rcfreq), yv1a (470., cv1a, rcfreq);
+    const double peakv1a = .2;
+    RClow  xv3  (3900., cv3, rcfreq), yv3 (3900., cv3, rcfreq);
+    const double peakv3 = .16;
+
     cg.SetStepCount (i);
     scalex = (double) width / (i * 8);
     scaley = (double) height / (i * 8);
     
-    for (ch = 0; ch < 060; ch++)
+    for (ch = 1; ch < 060; ch++)
     {
-        const int xs = int (ceil (width + 2 * beamr + 1));
-        const int ys = int (ceil (height + 2 * beamr + 1));
+        const int xs = int (ceil (width + 2 * beamr + 2 * EXTRA));
+        const int ys = int (ceil (height + 2 * beamr + 2 * EXTRA));
         wxImage cimg (xs, ys, true);
         unsigned char *dp = cimg.GetData ();
         
+        x620.Reset ();
+        y620.Reset ();
+        xc19.Reset ();
+        yc19.Reset ();
+        x029.Reset ();
+        y029.Reset ();
+        xv1a.Reset ();
+        yv1a.Reset ();
+        xv3.Reset ();
+        yv3.Reset ();
+
         cx = ch & 7;
         cy = (ch >> 3) + 1;
         cx = (width + cx * 3 * width) / 2;
         cy = (height + cy * 3 * height) / 2;
-        xfilt.Reset ();
-        yfilt.Reset ();
         cg.Start (ch);
         while (!cg.Done ())
         {
@@ -371,10 +625,50 @@ void CcWindow::OnDraw (wxDC &dc)
             
             if (bw != 0)
             {
-                xfilt.SetFlag (on);
-                x = xfilt.Step (x);
-                y = yfilt.Step (y);
-                on = xfilt.Flag ();
+                delay.SetFlag (on);
+                // Apply the various filters.  The low pass filter in
+                // module C19 we apply directly.  The other filters
+                // all are lowpass in a feedback path, so they are applied
+                // as a fractional increase in the signal.
+//                printf ("%f %f  ", x, y);
+                if (on620)
+                {
+                    x += x620.Step (x * peak620);
+                    y += y620.Step (y * peak620);
+//                    printf ("%f %f  ", x, y);
+                }
+                if (onc19)
+                {
+                    x =  (x * (1 - peakc19)) + xc19.Step (x * peakc19);
+                    y =  (y * (1 - peakc19)) + yc19.Step (y * peakc19);
+//                    printf ("%f %f  ", x, y);
+                }
+                if (on029)
+                {
+                    x += x029.Step (x * peak029);
+                    y += y029.Step (y * peak029);
+                    x /= (1 + peak029);
+                    y /= (1 + peak029);
+//                    printf ("%f %f  ", x, y);
+                }
+                if (onv1a)
+                {
+                    x += xv1a.Step (x * peakv1a);
+                    y += yv1a.Step (y * peakv1a);
+                    x /= (1 + peakv1a);
+                    y /= (1 + peakv1a);
+//                    printf ("%f %f  ", x, y);
+                }
+                if (onv3)
+                {
+                    x += xv3.Step (x * peakv3);
+                    y += yv3.Step (y * peakv3);
+                    x /= (1 + peakv3);
+                    y /= (1 + peakv3);
+                }
+//                printf ("%f %f\n", x, y);
+                
+                on = delay.Flag ();
             }
             if (on)
             {
@@ -389,9 +683,9 @@ void CcWindow::OnDraw (wxDC &dc)
                             continue;
                         b = bell (r, sigma);
                         
-                        ix = (int) round (x * scalex + bx + beamr);
-                        iy = (int) round (y * scaley + by + beamr + height);
-                        if (ix >= xs || iy >= ys)
+                        ix = (int) round (x * scalex + bx + beamr + EXTRA);
+                        iy = (int) round (y * scaley + by + beamr + height + EXTRA);
+                        if (ix >= xs || iy >= ys || ix < 0 || iy < 0)
                         {
                             printf ("ix %d xs %d iy %d ys %d\n",
                                     ix, xs, iy, ys);
@@ -412,7 +706,12 @@ void CcWindow::OnDraw (wxDC &dc)
             cg.Step ();
         }
         wxBitmap bm (cimg, -1);
-        dc.DrawBitmap (bm, cx, cy);
+        wxMemoryDC mdc;
+        
+        mdc.SelectObject (bm);
+//        dc.DrawBitmap (bm, cx, cy);
+        dc.Blit (cx, cy, xs,ys, &mdc, 0, 0, wxOR);
+        mdc.SelectObject (wxNullBitmap);
     }
 }
 
@@ -429,6 +728,26 @@ void Chargen::Start (int ch)
     m_dy = -1;
     m_chardata = chargen[ch];
     m_step = m_stroke = 0;
+}
+
+double Chargen::Ramp (int step)
+{
+#if 1
+    // Base case: linear ramp
+    return 1.0;
+#elif 1
+    // Experiment: exponential decay to 2RC
+    return m_stepcount * (exp (-2.0 * step / m_stepcount) - exp (-2.0 * (step + 1) / m_stepcount));
+#elif 1
+    // Experiment: exponential decay to 5RC
+    return m_stepcount * (exp (-5.0 * step / m_stepcount) - exp (-5.0 * (step + 1) / m_stepcount));
+#elif 1
+    // Experiment: drive with a step function (not a linear ramp)
+    if (step == 0)
+        return m_stepcount;
+    else
+        return 0;
+#endif
 }
 
 void Chargen::Step (void)
@@ -448,10 +767,10 @@ void Chargen::Step (void)
     switch ((glyph >> 1) & 3)
     {
     case 1:
-        m_x += m_dx * 2;
+        m_x += m_dx * 2 * Ramp (m_step);
         break;
     case 2:
-        m_x += m_dx;
+        m_x += m_dx * Ramp (m_step);
         break;
     case 3:
         if (m_step == 0)
@@ -463,10 +782,10 @@ void Chargen::Step (void)
     switch (glyph >> 3)
     {
     case 1:
-        m_y += m_dy * 2;
+        m_y += m_dy * 2 * Ramp (m_step);
         break;
     case 2:
-        m_y += m_dy;
+        m_y += m_dy * Ramp (m_step);
         break;
     case 3:
         if (m_step == 0)
@@ -499,7 +818,8 @@ const double Fir::coeff[] =
    4.827919E-02,   4.508227E-02,   4.099866E-02,   3.675114E-02,   1.201039E-01,
 };
 
-Fir::Fir (void)
+Fir::Fir (void) :
+    Delay (delay)
 {
     Reset ();
 }
@@ -527,9 +847,61 @@ double Fir::Step (double in)
     return out;
 }
 
-void Fir::SetFlag (bool flag)
+Delay::Delay (int delay)
 {
-    memmove (&m_flags[0], &m_flags[1], sizeof (m_flags) - sizeof (m_flags[0]));
-    m_flags[delay - 1] = flag;
+    int i;
+    
+    m_delay = delay;
+    m_flags = new bool[delay];
+    for (i = 0; i < delay; i++)
+        m_flags[i] = false;
 }
 
+Delay::~Delay ()
+{
+    delete [] m_flags;
+}
+
+void Delay::SetFlag (bool flag)
+{
+    memmove (&m_flags[0], &m_flags[1], (m_delay - 1) * sizeof (*m_flags));
+    m_flags[m_delay - 1] = flag;
+}
+
+// See Frerking, page 60
+RClow::RClow (double r, double c, int freq)
+{
+    double t = 1.0 / freq;
+    
+//    printf ("low pass corner freq %4.2f MHz\n", 1. / (2.e6 * pi * r * c));
+    
+    a = t / (r * c);
+    b = exp (-a);
+    z = 0.0;
+}
+
+double RClow::Step (double in)
+{
+    z = (z * b) + in;
+    return z * a;
+}
+
+// See Frerking, page 350
+RChigh::RChigh (double r, double c, int freq)
+{
+    double t = 1.0 / freq;
+    
+//    printf ("high pass corner freq %4.2f MHz\n", 1. / (2.e6 * pi * r * c));
+
+    a = 1 / (1 + t / (2. * r * c));
+    b = a * (1 - t / (2. * r * c));
+    z = 0.0;
+}
+
+double RChigh::Step (double in)
+{
+    double z1 = z;
+    
+    z = (z1 * b) + (in * a);
+    return z - z1;
+}
