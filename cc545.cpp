@@ -331,6 +331,32 @@ static double bell (double x, double sigma)
         exp (-((x * x) / (2. * sigma * sigma)));
 }
 
+static int stepcount (int bw, int height)
+{
+    if (bw == 0)
+    {
+        // No filtering
+        return (height + 3) / 4;
+    }
+    else
+    {
+        // Filtering; FIR normalized bandwidth = 1/BWRATIO and stroke
+        // frequency is STEPMHZ.
+        return bw * BWRATIO / STEPMHZ;
+    }
+}
+
+// Normalize the intensity to account for beam size and character size
+// The input intensity value is the value we want to end up with in the
+// pixel for a double  speed stroke.
+static double normInt (int intens, int size)
+{
+    double step = size / (4.0 * stepcount (bw, size));
+    
+    return intens * step;
+}
+
+
 #define defwidth 32
 #define defheight 32
 #define consoleSize (wxSize (defwidth * 13 / 2, defheight * 11 / 2))
@@ -467,15 +493,17 @@ CcPanel::CcPanel (CtlFrame *parent) :
     m_sizer->Add (m_focus, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Focus")),
                   0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_intens = new wxSlider (this, wxID_ANY, 100, 1, 400, wxDefaultPosition,
+    m_intens = new wxSlider (this, wxID_ANY, 160, 1, 400, wxDefaultPosition,
                             wxSize (200, 30), 
                             wxSL_HORIZONTAL | wxSL_LABELS);
     m_sizer->Add (m_intens, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Intensity")),
                   0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_620on = new wxCheckBox (this, wxID_ANY, _("620 highpass on"));
+    m_620on->SetValue (true);
     m_sizer->Add (m_620on, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_c19on = new wxCheckBox (this, wxID_ANY, _("C19 lowpass on"));
+    m_c19on->SetValue (true);
     m_sizer->Add (m_c19on, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_r1_029 = new wxSlider (this, wxID_ANY, 2000, 180, 5000, wxDefaultPosition,
                             wxSize (200, 30), 
@@ -490,6 +518,7 @@ CcPanel::CcPanel (CtlFrame *parent) :
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("029 C1")),
                   0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_029on = new wxCheckBox (this, wxID_ANY, _("029 highpass on"));
+    m_029on->SetValue (true);
     m_sizer->Add (m_029on, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_c1_a2 = new wxSlider (this, wxID_ANY, 2000, 1400, 3055, wxDefaultPosition,
                             wxSize (200, 30), 
@@ -549,7 +578,7 @@ void CcWindow::OnDraw (wxDC &dc)
     bool on;
     const int width = wxGetApp ().sizeX ();
     const int height = wxGetApp ().sizeY ();
-    const int intensity = wxGetApp ().intensity ();
+    const double intensity = normInt (wxGetApp ().intensity (), height);
     const double sigma = wxGetApp ().beamsize ();
     const double r029 = wxGetApp ().r1_029 ();
     const double c029 = wxGetApp ().c1_029 ();
@@ -566,18 +595,8 @@ void CcWindow::OnDraw (wxDC &dc)
 //    dc.Clear ();
     dc.SetPen (*wxBLACK_PEN);
     
-    if (bw == 0)
-    {
-        // No filtering
-        i = (height + 3) / 4;
-    }
-    else
-    {
-        // Filtering; FIR normalized bandwidth = 1/BWRATIO and stroke
-        // frequency is STEPMHZ.
-        i = bw * BWRATIO / STEPMHZ;
-    }
-
+    i = stepcount (bw, height);
+    
     const int rcfreq = STEPHZ * i;
     RClow  x620 (470., 33.e-12, rcfreq), y620 (470., 33.e-12, rcfreq);
     const double peak620 = .3;
