@@ -938,8 +938,22 @@ bool PtermApp::DoConnect (bool ask)
         
         if (dlg.ShowModal () == wxID_OK)
         {
-            m_hostName = dlg.m_host;
-            m_port = atoi (wxString (dlg.m_port).mb_str ());
+            if (dlg.m_host.IsEmpty ())
+            {
+                m_hostName = DEFAULTHOST;
+            }
+            else
+            {
+                m_hostName = dlg.m_host;
+            }
+            if (dlg.m_port.IsEmpty ())
+            {
+                m_port = DefNiuPort;
+            }
+            else
+            {
+                m_port = atoi (wxString (dlg.m_port).mb_str ());
+            }
         }
         else
         {
@@ -2276,11 +2290,8 @@ int PtermFrame::procPlatoWord (u32 d)
                 // full screen erase
                 ptermFullErase ();
             }
-
-            // bit 15 set is DISable
-            m_canvas->ptermTouchPanel ((d & 0100000) == 0);
-            TRACE4 ("load mode %d inhibit %d wemode %d screen %d",
-                    mode, (d >> 15) & 1, wemode, (d & 1));
+            TRACE3 ("load mode %d wemode %d screen %d",
+                    mode, wemode, (d & 1));
             break;
             
         case 2:     // load coordinate
