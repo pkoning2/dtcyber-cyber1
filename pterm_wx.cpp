@@ -211,6 +211,10 @@ extern GtkSettings * gtk_settings_get_default (void);
 #include "pterm_32.xpm"
 #endif
 
+static const u32 keyboardhelp[] = {
+#include "ptermkeys.h"
+};
+
 // ----------------------------------------------------------------------------
 // global variables
 // ----------------------------------------------------------------------------
@@ -348,6 +352,7 @@ public:
     void OnConnect (wxCommandEvent &event);
     void OnPref (wxCommandEvent& event);
     void OnQuit (wxCommandEvent& event);
+    void OnHelpKeys (wxCommandEvent &event);
 
     bool DoConnect (bool ask);
     static wxColour SelectColor (wxColour &initcol);
@@ -419,7 +424,8 @@ private:
 class PtermFrame : public wxFrame
 {
     friend void PtermCanvas::OnDraw(wxDC &dc);
-    
+    friend void PtermApp::OnHelpKeys (wxCommandEvent &event);
+
 public:
     // ctor(s)
     PtermFrame(wxString &host, int port, const wxString& title);
@@ -620,6 +626,7 @@ enum
     Pterm_CopyScreen = 1,
     Pterm_ConnectAgain,
     Pterm_SaveScreen,
+    Pterm_HelpKeys,
 
     Pterm_Print = wxID_PRINT,
     Pterm_Page_Setup = wxID_PRINT_SETUP,
@@ -803,6 +810,8 @@ BEGIN_EVENT_TABLE(PtermApp, wxApp)
     EVT_MENU(Pterm_ConnectAgain, PtermApp::OnConnect)
     EVT_MENU(Pterm_Pref,    PtermApp::OnPref)
     EVT_MENU(Pterm_Quit,    PtermApp::OnQuit)
+    EVT_MENU(Pterm_HelpKeys, PtermApp::OnHelpKeys)
+
     END_EVENT_TABLE ()
 
 // Create a new application object: this macro will allow wxWindows to create
@@ -976,6 +985,31 @@ bool PtermApp::DoConnect (bool ask)
     }
     
     return (frame != NULL);
+}
+
+void PtermApp::OnHelpKeys (wxCommandEvent &)
+{
+    PtermFrame *frame;
+    wxString str;
+    int i;
+
+    // create a help window -- same as a regular frame except
+    // that the data comes from here, not from a connection.
+    frame = new PtermFrame(str, -1, wxT("Keyboard Help"));
+
+    if (frame != NULL)
+    {
+        if (m_firstFrame != NULL)
+        {
+            m_firstFrame->m_prevFrame = frame;
+        }
+        frame->m_nextFrame = m_firstFrame;
+        m_firstFrame = frame;
+        for (i = 0; i < sizeof (keyboardhelp) / sizeof (keyboardhelp[0]); i++)
+        {
+            frame->procPlatoWord (keyboardhelp[i]);
+        }
+    }
 }
 
 void PtermApp::OnPref (wxCommandEvent&)
@@ -1178,6 +1212,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     wxMenu *helpMenu = new wxMenu;
 
     helpMenu->Append(Pterm_About, _("&About Pterm"), _("Show about dialog"));
+    helpMenu->Append(Pterm_HelpKeys, _("Pterm keyboard"), _("Show keyboard description"));
+    
 #if defined(__WXMAC__)
     // On the Mac the menu name has to be exactly "&Help" for the About item
     // to  be recognized.  Ugh.
@@ -1193,7 +1229,13 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
 #if wxUSE_STATUSBAR
     // create a status bar just for fun
     CreateStatusBar(STATUSPANES);
-    SetStatusText(_(" Connecting..."), STATUS_CONN);
+    if (port > 0)
+    {
+        SetStatusText(_(" Connecting..."), STATUS_CONN);
+    }
+    else
+    {
+        SetStatusText(_(" Pterm help"), STATUS_CONN);    }
 #endif // wxUSE_STATUSBAR
     SetCursor (*wxHOURGLASS_CURSOR);
 
@@ -1220,14 +1262,17 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     */
     ptermLoadRomChars ();
     
-    // Create and start the network processing thread
-    m_conn = new PtermConnection (this, host, port);
-    if (m_conn->Create () != wxTHREAD_NO_ERROR)
+    if (port > 0)
     {
-        return;
+        // Create and start the network processing thread
+        m_conn = new PtermConnection (this, host, port);
+        if (m_conn->Create () != wxTHREAD_NO_ERROR)
+        {
+            return;
+        }
+        m_conn->Run ();
     }
-    m_conn->Run ();
-
+    
     Show(TRUE);
 }
 
@@ -1235,7 +1280,10 @@ PtermFrame::~PtermFrame ()
 {
     int i;
     
-    delete m_conn;
+    if (m_conn != NULL)
+    {
+        delete m_conn;
+    }
     delete m_memDC;
     delete m_bitmap;
     for (i = 0; i < 5; i++)
@@ -1264,6 +1312,12 @@ PtermFrame::~PtermFrame ()
 void PtermFrame::OnIdle (wxIdleEvent& event)
 {
     int word;
+
+    // Do nothing for the help window
+    if (m_conn == NULL)
+    {
+        return;
+    }
     
     // If our timer is running, we're using the timer event to drive
     // the display, so ignore idle events.
@@ -1356,7 +1410,10 @@ void PtermFrame::OnClose (wxCloseEvent &)
 {
     int i;
     
-    m_conn->Delete ();
+    if (m_conn != NULL)
+    {
+        m_conn->Delete ();
+    }
 
     m_memDC->BeginDrawing ();
     m_memDC->SetBackground (wxNullBrush);
@@ -2728,6 +2785,11 @@ void PtermFrame::mode7 (u32 d)
 void PtermFrame::ptermSendKey(int key)
 {
     char data[2];
+    
+    if (m_conn == NULL)
+    {
+        return;
+    }
     
     /*
     **  If this is a "composite", recursively send the two pieces.

@@ -115,7 +115,7 @@ mofiles: $(MOFILES)
 pterm-src: ptermversion.h
 	mkdir pterm-$(PTERMVERSION)
 	cd pterm-$(PTERMVERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
-	cd pterm-$(PTERMVERSION); for f in license.txt const.h types.h proto.h ptermversion.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
+	cd pterm-$(PTERMVERSION); for f in license.txt const.h types.h proto.h ptermversion.h ptermkeys.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
 	tar chzf /lhome/pkoning/pterm-linux-src-v$(PTERMVERSION).tar.gz pterm-$(PTERMVERSION)
 	rm -rf pterm-$(PTERMVERSION)
 
