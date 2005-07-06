@@ -1251,9 +1251,9 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
         {
             SetStatusBar (m_statusBar);
         }
-    }
 
-    SetCursor (*wxHOURGLASS_CURSOR);
+        SetCursor (*wxHOURGLASS_CURSOR);
+    }
 
     for (i = 0; i < 5; i++)
     {
