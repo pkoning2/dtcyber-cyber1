@@ -83,6 +83,7 @@
 #define PREF_CONNECT    "autoconnect"
 #define PREF_GSW        "gswenable"
 #define PREF_ARROWS     "numpadArrows"
+#define PREF_STATUSBAR  "statusbar"
 
 /*
 **  -----------------------
@@ -369,6 +370,7 @@ public:
     bool        m_connect;
     bool        m_gswEnable;
     bool        m_numpadArrows;
+    bool        m_showStatusBar;
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
     
@@ -425,7 +427,7 @@ class PtermFrame : public wxFrame
 {
     friend void PtermCanvas::OnDraw(wxDC &dc);
     friend void PtermApp::OnHelpKeys (wxCommandEvent &event);
-
+    friend int PtermConnection::NextWord (void);
 public:
     // ctor(s)
     PtermFrame(wxString &host, int port, const wxString& title);
@@ -446,18 +448,25 @@ public:
     void OnPrintPreview (wxCommandEvent& event);
     void OnPageSetup (wxCommandEvent& event);
     void OnActivate (wxActivateEvent &event);
-    void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
+    void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2,
+                         bool newstatusbar);
     
     void PrepareDC(wxDC& dc);
     void ptermSendKey(int key);
     void ptermSetTrace (bool fileaction);
 
+    bool HasConnection (void) const
+    {
+        return (m_conn != NULL);
+    }
+    
     wxMemoryDC  *m_memDC;
     bool        tracePterm;
     PtermFrame  *m_nextFrame;
     PtermFrame  *m_prevFrame;
 
 private:
+    wxStatusBar *m_statusBar;       // present even if not displayed
     PtermConnection *m_conn;
     wxBrush     m_backgroundBrush;
     wxBrush     m_foregroundBrush;
@@ -576,6 +585,7 @@ public:
     wxCheckBox      *m_autoConnect;
     wxCheckBox      *m_gswCheck;
     wxCheckBox      *m_arrowCheck;
+    wxCheckBox      *m_statusCheck;
     wxTextCtrl      *m_hostText;
     wxTextCtrl      *m_portText;
 
@@ -586,6 +596,7 @@ public:
     bool            m_connect;
     bool            m_gswEnable;
     bool            m_numpadArrows;
+    bool            m_showStatusBar;
     wxString        m_host;
     wxString        m_port;
     
@@ -890,6 +901,7 @@ bool PtermApp::OnInit (void)
     m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
     m_gswEnable = (m_config->Read (wxT (PREF_GSW), 1) != 0);
     m_numpadArrows = (m_config->Read (wxT (PREF_ARROWS), 1) != 0);
+    m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
 
     // create the main application window
     // If arguments are present, always connect without asking
@@ -1023,7 +1035,8 @@ void PtermApp::OnPref (wxCommandEvent&)
     {
         for (frame = m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
         {
-            frame->UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2);
+            frame->UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2,
+                                   dlg.m_showStatusBar);
         }
 
         m_fgColor = dlg.m_fgColor;
@@ -1033,6 +1046,7 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_classicSpeed = dlg.m_classicSpeed;
         m_gswEnable = dlg.m_gswEnable;
         m_numpadArrows = dlg.m_numpadArrows;
+        m_showStatusBar = dlg.m_showStatusBar;
         m_hostName = dlg.m_host;
         m_port = atoi (wxString (dlg.m_port).mb_str ());
         m_connect = dlg.m_connect;
@@ -1052,6 +1066,7 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
         m_config->Write (wxT (PREF_GSW), (dlg.m_gswEnable) ? 1 : 0);
         m_config->Write (wxT (PREF_ARROWS), (dlg.m_numpadArrows) ? 1 : 0);
+        m_config->Write (wxT (PREF_STATUSBAR), (dlg.m_showStatusBar) ? 1 : 0);
         m_config->Flush ();
     }
 }
@@ -1226,17 +1241,18 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     SetMenuBar(menuBar);
 #endif // wxUSE_MENUS
 
-#if wxUSE_STATUSBAR
-    // create a status bar just for fun
-    CreateStatusBar(STATUSPANES);
     if (port > 0)
     {
-        SetStatusText(_(" Connecting..."), STATUS_CONN);
+        // create a status bar, if this isn't a help window
+        m_statusBar = new wxStatusBar (this, wxID_ANY);
+        m_statusBar->SetFieldsCount (STATUSPANES);
+        m_statusBar->SetStatusText(_(" Connecting..."), STATUS_CONN);
+        if (ptermApp->m_showStatusBar)
+        {
+            SetStatusBar (m_statusBar);
+        }
     }
-    else
-    {
-        SetStatusText(_(" Pterm help"), STATUS_CONN);    }
-#endif // wxUSE_STATUSBAR
+
     SetCursor (*wxHOURGLASS_CURSOR);
 
     for (i = 0; i < 5; i++)
@@ -1921,7 +1937,7 @@ void PtermFrame::ptermSetName (wxString &winName)
 
 void PtermFrame::ptermSetStatus (wxString &str)
 {
-    SetStatusText(str, STATUS_CONN);
+    m_statusBar->SetStatusText(str, STATUS_CONN);
 }
 
 void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *chardata)
@@ -2018,7 +2034,8 @@ void PtermFrame::ptermLoadRomChars (void)
     }
 }
 
-void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool newscale2)
+void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
+                                 bool newscale2, bool newstatusbar)
 {
     const bool recolor = (ptermApp->m_fgColor != newfg ||
                           ptermApp->m_bgColor != newbg);
@@ -2026,6 +2043,18 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool newscale
     const bool rescale = (newscale != ptermApp->m_scale);
     int i;
     wxBitmap *newmap;
+
+    if (m_conn != NULL)
+    {
+        if (newstatusbar)
+        {
+            SetStatusBar (m_statusBar);
+        }
+        else
+        {
+            SetStatusBar (NULL);
+        }
+    }
     
     if (!recolor && !rescale)
     {
@@ -2842,11 +2871,11 @@ void PtermFrame::ptermShowTrace (bool enable)
 {
     if (enable)
     {
-        SetStatusText(_(" Trace "), STATUS_TRC);
+        m_statusBar->SetStatusText(_(" Trace "), STATUS_TRC);
     }
     else
     {
-        SetStatusText(wxT (""), STATUS_TRC);
+        m_statusBar->SetStatusText(wxT (""), STATUS_TRC);
     }
 }
 
@@ -2874,6 +2903,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_classicSpeed = ptermApp->m_classicSpeed;
     m_gswEnable = ptermApp->m_gswEnable;
     m_numpadArrows = ptermApp->m_numpadArrows;
+    m_showStatusBar = ptermApp->m_showStatusBar;
     m_connect = ptermApp->m_connect;
     m_fgColor = ptermApp->m_fgColor;
     m_bgColor = ptermApp->m_bgColor;
@@ -2935,6 +2965,9 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_scaleCheck = new wxCheckBox (this, -1, _("&Zoom display 200%"));
     m_scaleCheck->SetValue (m_scale2);
     sbs->Add (m_scaleCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_statusCheck = new wxCheckBox (this, -1, _("Status &bar"));
+    m_statusCheck->SetValue (m_showStatusBar);
+    sbs->Add (m_statusCheck, 0, wxALL, 8);
     fgs = new wxFlexGridSizer (2, 2, 8, 8);
     m_fgButton = new wxBitmapButton (this, wxID_ANY, fgBitmap);
     m_bgButton = new wxBitmapButton (this, wxID_ANY, bgBitmap);
@@ -3005,6 +3038,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_gswCheck->SetValue (TRUE);
         m_numpadArrows = TRUE;
         m_arrowCheck->SetValue (TRUE);
+        m_showStatusBar = TRUE;
+        m_statusCheck->SetValue (TRUE);
         m_hostText->SetValue (DEFAULTHOST);
         str.Printf (wxT ("%d"), DefNiuPort);
         m_portText->SetValue (str);
@@ -3037,6 +3072,10 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == m_arrowCheck)
     {
         m_numpadArrows = event.IsChecked ();
+    }
+    else if (event.GetEventObject () == m_statusCheck)
+    {
+        m_showStatusBar = event.IsChecked ();
     }
 }
 
@@ -3382,7 +3421,8 @@ int PtermConnection::NextWord (void)
     {
         wxString msg;
             
-        m_owner->SetStatusText (_(" Not connected"), STATUS_CONN);
+        m_owner->m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+
         if (word == C_CONNFAIL)
         {
             msg.Printf (_("Failed to connect to %s %d"),
@@ -3576,11 +3616,14 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         shift = 040;
     }
     key = event.m_keyCode;
-    if (key == WXK_ALT || key == WXK_SHIFT || key == WXK_CONTROL)
+    if (!m_owner->HasConnection () ||
+        key == WXK_ALT || key == WXK_SHIFT || key == WXK_CONTROL)
     {
         // We don't take any action on the modifier key keydown events,
         // but we do want to make sure they are seen by the rest of
         // the system.
+        // The same applies to keys sent to the help window (which has
+        // no connection on which to send them).
         event.Skip ();
         return;
     }
@@ -3859,7 +3902,8 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     int pc = -1;
 
     // control and alt codes shouldn't come here, they are handled in KEY_DOWN
-    if (event.m_controlDown || event.m_altDown || event.m_metaDown)
+    if (!m_owner->HasConnection () ||
+        event.m_controlDown || event.m_altDown || event.m_metaDown)
     {
         event.Skip ();
         return;
