@@ -4149,10 +4149,13 @@ void PtermCanvas::FullErase (void)
 void PtermCanvas::ClearRegion (void)
 {
     // Cancel any region selection
-    m_regionHeight = 0;
-    m_regionWidth = 0;
-    m_owner->GetMenuBar ()->Enable (Pterm_Copy, FALSE);
-    Refresh ();
+    if (m_regionHeight != 0 || m_regionWidth != 0)
+    {
+	    m_regionHeight = 0;
+		m_regionWidth = 0;
+		m_owner->GetMenuBar ()->Enable (Pterm_Copy, FALSE);
+		Refresh (false);
+	}
 }
 
 
@@ -4253,7 +4256,7 @@ void PtermCanvas::UpdateRegion (wxMouseEvent &event)
         printf ("region %d %d size %d %d\n", m_regionX, m_regionY,
                 m_regionWidth, m_regionHeight);
 #endif
-        Refresh ();
+        Refresh (false);
         return;
     }
 }
