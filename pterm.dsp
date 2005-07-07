@@ -43,7 +43,7 @@ RSC=rc.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
 # ADD CPP /nologo /W3 /GX /O2 /I "c:\wxWidgets-2.6.0\lib\vc_lib\msw" /I "c:\wxWidgets-2.6.0\include" /I "c:\SDL-1.2.8\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
-# ADD RSC /l 0x409 /i "c:\wxWindows-2.4.2\include" /i "c:\wxWindows-2.6.0\include" /d "NDEBUG"
+# ADD RSC /l 0x409 /i "c:\wxWidgets-2.6.0\include" /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
