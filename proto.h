@@ -307,6 +307,7 @@ extern const char bcdToAscii[64];
 extern const char extBcdToAscii[64];
 extern const int asciiToPlato[256];
 extern const i8 altKeyToPlato[128];
+extern const int printoutToPlato[128];
 extern u32 traceMask;
 extern u32 traceClearMask;
 extern u64 chTraceMask;

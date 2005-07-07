@@ -52,6 +52,10 @@
 #define M2ADDR          0x2340  // PPT start address for set 2
 #define M3ADDR          0x2740  // PPT start address for set 3
 
+// Delay parameters for text paste (in ms)
+#define PASTE_CHARDELAY 165
+#define PASTE_LINEDELAY 500
+
 // Size of the window and pixmap.
 // This is: a screen high with marging top and botton.
 // Pixmap has two rows added, which are storage for the
@@ -437,6 +441,7 @@ public:
     void OnIdle (wxIdleEvent& event);
     void OnClose (wxCloseEvent& event);
     void OnTimer (wxTimerEvent& event);
+    void OnPasteTimer (wxTimerEvent& event);
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
@@ -477,6 +482,12 @@ private:
     wxString    m_hostName;
     int         m_port;
     wxTimer     m_timer;
+
+    // Stuff for pacing Paste operations
+    wxTimer     m_pasteTimer;
+    wxString    m_pasteText;
+    int         m_pasteIndex;
+    bool        m_pastePrint;
     
     // Character patterns are stored in three DCs because we want to
     // BLIT them in various ways, and the OR/AND type ops don't work
@@ -638,7 +649,13 @@ enum
     Pterm_ConnectAgain,
     Pterm_SaveScreen,
     Pterm_HelpKeys,
+    Pterm_PastePrint,
 
+    // timers
+    Pterm_Timer,        // display pacing
+    Pterm_PasteTimer,   // paste key generation pacing
+
+    // Menu items with standard ID values
     Pterm_Print = wxID_PRINT,
     Pterm_Page_Setup = wxID_PRINT_SETUP,
     Pterm_Preview = wxID_PREVIEW,
@@ -802,13 +819,15 @@ const unsigned short plato_m1[] = {
 BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_IDLE(PtermFrame::OnIdle)
     EVT_CLOSE(PtermFrame::OnClose)
-    EVT_TIMER(wxID_ANY,   PtermFrame::OnTimer)
+    EVT_TIMER(Pterm_Timer, PtermFrame::OnTimer)
+    EVT_TIMER(Pterm_PasteTimer, PtermFrame::OnPasteTimer)
     EVT_ACTIVATE(PtermFrame::OnActivate)
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
     EVT_MENU(Pterm_About, PtermFrame::OnAbout)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
     EVT_MENU(Pterm_Copy, PtermFrame::OnCopy)
     EVT_MENU(Pterm_Paste, PtermFrame::OnPaste)
+    EVT_MENU(Pterm_PastePrint, PtermFrame::OnPaste)
     EVT_UPDATE_UI(Pterm_Paste, PtermFrame::OnUpdateUIPaste)
     EVT_MENU(Pterm_SaveScreen, PtermFrame::OnSaveScreen)
     EVT_MENU(Pterm_Print, PtermFrame::OnPrint)
@@ -1127,7 +1146,9 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
       m_prevFrame (NULL),
       m_canvas (NULL),
       m_conn (NULL),
-      m_timer (this),
+      m_timer (this, Pterm_Timer),
+      m_pasteTimer (this, Pterm_PasteTimer),
+      m_pasteIndex (-1),
       tracePterm (FALSE),
       m_port (port),
       m_nextword (0),
@@ -1204,11 +1225,12 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     menuEdit->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
 #if defined(__WXMAC__)
     menuEdit->Append(Pterm_Copy, _T("&Copy text\tCtrl-C"));
-    menuEdit->Append(Pterm_Paste, _T("&Paste\tCtrl-V"));
+    menuEdit->Append(Pterm_Paste, _T("&Paste ASCII\tCtrl-V"));
 #else
     menuEdit->Append(Pterm_Copy, _T("&Copy text"));
-    menuEdit->Append(Pterm_Paste, _T("&Paste"));
+    menuEdit->Append(Pterm_Paste, _T("&Paste ASCII"));
 #endif
+    menuEdit->Append(Pterm_PastePrint, _T("Paste Printo&ut"));
 
     // Copy is initially disabled, until a region is selected
     menuEdit->Enable (Pterm_Copy, FALSE);
@@ -1217,7 +1239,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
-    menuBar->Append (menuFile, _("Connection"));
+    menuBar->Append (menuFile, _("File"));
     menuBar->Append (menuEdit, _("Edit"));
 
     // the "About" item should be in the help menu.
@@ -1422,6 +1444,121 @@ void PtermFrame::OnTimer (wxTimerEvent &)
     }
 }
 
+void PtermFrame::OnPasteTimer (wxTimerEvent &)
+{
+    wxChar c;
+    int p, delay, nextindex;
+    int shift = 0;
+    
+    if (m_pasteIndex < 0 ||
+        m_pasteIndex >= m_pasteText.Len ())
+    {
+        m_pasteIndex = -1;
+        return;
+    }
+    
+    nextindex = m_pasteIndex;
+
+    if (m_pastePrint)
+    {
+        while (m_pasteIndex < m_pasteText.Len ())
+        {
+            c = m_pasteText[nextindex++];
+            p = -1;
+
+            // Pasting a printout string, with ' for shift and other fun stuff.
+            if (c == wxT('\''))
+            {
+                if (shift)
+                {
+                    // Odd -- two shift codes in a row.  Send the first
+                    // one as a standalone shift.
+                    ptermSendKey (055);     // shift-Assign is shift code
+                }
+                shift = 040;
+                continue;
+            }
+            if (c < sizeof (printoutToPlato) / sizeof (printoutToPlato[0]))
+            {
+                p = printoutToPlato[c];
+            }
+            if (p != -1)
+            {
+                // Look for a shift code preceding a character that is a shifted
+                // character (like $), or an unshifted character whose shifted form
+                // corresponds to a different printable character (like 4).  For
+                // those cases, if we see a shift code, send that separately.
+                // For example, '4 does not mean $, it means a shift code then 4
+                // (which is an embedded mode change).
+                if (shift != 0 &&
+                    ((p & 040) != 0 || strchr ("012345689=", c) != NULL))
+                {
+                    ptermSendKey (055);     // shift-Assign is shift code
+                    shift = 0;
+                }
+                ptermSendKey (p | shift);
+            }
+            else if (shift)
+            {
+                    ptermSendKey (055);     // shift-Assign is shift code
+            }
+            break;
+        }
+    }
+    else
+    {
+        c = m_pasteText[nextindex++];
+        p = -1;
+
+        if (c <= wxT(' '))
+        {
+            // Control char or space -- most get ignored
+            if (c == wxT ('\n'))
+            {
+                p = 026;        // NEXT
+            }
+            else if (c == wxT ('\t'))
+            {
+                p = 014;        // TAB
+            }
+            else if (c == wxT (' '))
+            {
+                p = 0100;       // space
+            }
+        }
+        else if (c < sizeof (asciiToPlato) / sizeof (asciiToPlato[0]))
+        {
+            p = asciiToPlato[c];
+        }
+
+        if (p != -1)
+        {
+            ptermSendKey (p);
+        }
+    }
+    
+    if (nextindex < m_pasteText.Len ())
+    {
+        // Still more to do.  Update the index (which is cleared to -1
+        // by ptermSendKey), then restart the timer with the
+        // appropriate delay (char delay or line delay).
+        m_pasteIndex = nextindex;
+        if (c == wxT ('\n'))
+        {
+            delay = PASTE_LINEDELAY;
+        }
+        else
+        {
+            delay = PASTE_CHARDELAY;
+        }
+        m_pasteTimer.Start (delay, true);
+    }
+    else
+    {
+        m_pasteIndex = -1;
+    }
+}
+
 void PtermFrame::OnClose (wxCloseEvent &)
 {
     int i;
@@ -1507,12 +1644,8 @@ void PtermFrame::OnCopy (wxCommandEvent &event)
     m_canvas->OnCopy (event);
 }
 
-void PtermFrame::OnPaste (wxCommandEvent &)
+void PtermFrame::OnPaste (wxCommandEvent &event)
 {
-    wxChar c;
-    int i, p;
-    wxString t;
-    
     if (!wxTheClipboard->Open ())
     {
         wxLogError (_("Can't open clipboard."));
@@ -1536,29 +1669,10 @@ void PtermFrame::OnPaste (wxCommandEvent &)
     }
     else
     {
-        t = text.GetText ();
-        for (i = 0; i < t.Len (); i++)
-        {
-            c = t[i];
-            p = -1;
-            if (c < wxT(' '))
-            {
-                // Control char; treat newline as NEXT but ignore others
-                if (c == wxT ('\n'))
-                {
-                    p = 026;        // NEXT
-                }
-            }
-            else if (c < sizeof (asciiToPlato) / sizeof (asciiToPlato[0]))
-            {
-                p = asciiToPlato[c];
-            }
-
-            if (p != -1)
-            {
-                ptermSendKey (p);
-            }
-        }
+        m_pasteText = text.GetText ();
+        m_pasteIndex = 0;
+        m_pasteTimer.Start (PASTE_CHARDELAY, true);
+        m_pastePrint = (event.GetId () == Pterm_PastePrint);
     }
 
     wxTheClipboard->Close ();
@@ -2820,6 +2934,12 @@ void PtermFrame::ptermSendKey(int key)
         return;
     }
     
+    // Cancel any pending text stream from a Paste operation.
+    // (If this key came from that paste, the index will be
+    // reset to keep going.  Any other keystroke will abort
+    // an in-progress paste.)
+    m_pasteIndex = -1;
+
     /*
     **  If this is a "composite", recursively send the two pieces.
     */
@@ -3573,7 +3693,6 @@ void PtermCanvas::OnDraw(wxDC &dc)
     int charX, charY, sizeX, sizeY;
     
     m_owner->PrepareDC (dc);
-    dc.Clear ();
     dc.Blit (0, 0, XSize, YSize, m_owner->m_memDC, 0, 0, wxCOPY);
     if (m_regionHeight != 0 && m_regionWidth != 0)
     {
