@@ -76,7 +76,7 @@ endif
 
 ifeq ("$(HOST)","Darwin")
 
-Pterm.app-timestamp: pterm pterm-info.plist.in pterm.icns $(MOFILES)
+Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES)
 	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm-info.plist.in > pterm-info.plist
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en
 	mkdir -p $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES))
@@ -91,7 +91,7 @@ pterm-empty.dmg:
 	hdiutil create -size 6m pterm-empty.dmg -layout NONE
 	dev=`hdid -nomount pterm-empty.dmg` ; newfs_hfs -v ptermvol $$dev ; hdiutil detach $$dev
 
-ptermkit.dmg: Pterm.app-timestamp pterm-empty.dmg
+ptermkit.dmg: Pterm.app pterm-empty.dmg
 	cp pterm-empty.dmg ptermkit.dmg
 	dev=`hdid ptermkit.dmg | awk '{ print $$1 }'` ; cp -Rp Pterm.app /Volumes/ptermvol; hdiutil detach $$dev
 
