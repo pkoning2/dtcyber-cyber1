@@ -19,7 +19,8 @@
 # deleted outright.  System jobs are defined as jobs that have a blank
 # user name on the burst page.
 #
-#    p. koning.    2005.03.07.
+#    p. koning.    2005.03.07.     initial version.
+#    p. koning.    2005.07.15.     added mail headers (to, from, subj).
 
 t=/tmp/sendprints.tmp
 
@@ -39,14 +40,21 @@ for f in LP5xx_20*; do
 	fi
 	if fgrep -q "block,output." $t ; then
 	    if fgrep -q 'note(printit,nr)/***** mail to *************************.' $t ; then
+		lesn=`fgrep 'note(printit,nr)/tprint' $t`
+		lesn=${lesn#*/tprint.}
+		lesn=${lesn%%,*}
 		m=`fgrep "@" $t | head -1`
 		m=${m#*/?}
 		m=${m%.}
 		if [ -n "$m" ] ; then
-		    echo "sending $f to $m"
-		    /usr/sbin/sendmail $m < $f
+		    echo "sending lesson $lesn (printout file $f) to $m"
+		    echo "To: $m" > /tmp/printhdr
+		    echo "From: \"Cyber1 printout server\" <postmaster@cyberserv.org>" >> /tmp/printhdr
+		    echo "Subject: Cyber1 printout of $lesn" >> /tmp/printhdr
+		    cat /tmp/printhdr $f | /usr/sbin/sendmail $m
 		    echo $f " sent to " $m
 		    mv $f sent/
+		    rm /tmp/printhdr
 		    continue
 		fi
 	    fi
