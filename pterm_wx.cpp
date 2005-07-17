@@ -1198,7 +1198,6 @@ PtermMainFrame::PtermMainFrame (void)
     menuFile->Append (Pterm_Pref, _("P&references..."),
                       _("Set program configuration"));
     menuFile->AppendSeparator ();
-//    menuFile->Append (Pterm_Close, _("&Close\tCtrl-Z"), _("Close this window"));
     menuFile->Append (Pterm_Quit, _("E&xit"), _("Quit this program"));
 
     // now append the freshly created menu to the menu bar...
@@ -1320,7 +1319,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     menuFile->Append (Pterm_Pref, _("P&references..."),
                       _("Set program configuration"));
     menuFile->AppendSeparator ();
-    menuFile->Append (Pterm_Close, _("&Close") MACACCEL ("\tCtrl-Z"),
+    menuFile->Append (Pterm_Close, _("&Close\tCtrl-Z"),
                       _("Close this window"));
     menuFile->Append (Pterm_Quit, _("E&xit"), _("Quit this program"));
 
