@@ -140,6 +140,13 @@
 // force coordinate into the range 0..511
 #define BOUND(x) x = (((x < 0) ? 0 : ((x > 511) ? 511 : x)))
 
+// Macro to include keyboard accelerator only if MAC
+#if defined(__WXMAC__)
+#define MACACCEL(x) + wxString (wxT (x))
+#else
+#define MACACCEL(x)
+#endif
+
 // ----------------------------------------------------------------------------
 // headers
 // ----------------------------------------------------------------------------
@@ -377,6 +384,7 @@ public:
     bool        m_showStatusBar;
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
+    PtermFrame  *m_helpFrame;
     
 private:
     wxLocale    m_locale; // locale we'll be using
@@ -426,8 +434,29 @@ private:
     DECLARE_EVENT_TABLE ()
 };
 
+#if defined(__WXMAC__)
+#define PTERM_MDI 1
+#else
+#define PTERM_MDI 0
+#endif
+
+#if PTERM_MDI
+#define PtermFrameBase  wxMDIChildFrame
+
+class PtermMainFrame : public wxMDIParentFrame
+{
+public:
+    PtermMainFrame (void);
+};
+
+static PtermMainFrame *PtermFrameParent;
+#else
+#define PtermFrameBase wxFrame
+#define PtermFrameParent NULL
+#endif
+
 // Define a new frame type: this is going to be our main frame
-class PtermFrame : public wxFrame
+class PtermFrame : public PtermFrameBase
 {
     friend void PtermCanvas::OnDraw(wxDC &dc);
     friend void PtermApp::OnHelpKeys (wxCommandEvent &event);
@@ -866,7 +895,7 @@ bool PtermApp::OnInit (void)
     wxString rgb;
     
     ptermApp = this;
-    m_firstFrame = NULL;
+    m_firstFrame = m_helpFrame = NULL;
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
     
@@ -922,6 +951,14 @@ bool PtermApp::OnInit (void)
     m_numpadArrows = (m_config->Read (wxT (PREF_ARROWS), 1) != 0);
     m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
 
+#if PTERM_MDI
+    // On Mac, the style rule is that the application keeps running even
+    // if all its windows are closed.
+//    SetExitOnFrameDelete(FALSE);
+    PtermFrameParent = new PtermMainFrame ();
+    PtermFrameParent->Show (true);
+#endif
+
     // create the main application window
     // If arguments are present, always connect without asking
     if (!DoConnect (!(m_connect || argc > 1)))
@@ -935,12 +972,6 @@ bool PtermApp::OnInit (void)
     wxImage::AddHandler (new wxPNMHandler);
     wxImage::AddHandler (new wxTIFFHandler);
     wxImage::AddHandler (new wxXPMHandler);
-
-#if defined(__WXMAC__)
-    // On Mac, the style rule is that the application keeps running even
-    // if all its windows are closed.
-    SetExitOnFrameDelete(FALSE);
-#endif
 
     // success: wxApp::OnRun () will be called which will enter the main message
     // loop and the application will run. If we returned FALSE here, the
@@ -1024,22 +1055,32 @@ void PtermApp::OnHelpKeys (wxCommandEvent &)
     wxString str;
     int i;
 
-    // create a help window -- same as a regular frame except
-    // that the data comes from here, not from a connection.
-    frame = new PtermFrame(str, -1, wxT("Keyboard Help"));
-
-    if (frame != NULL)
+    if (m_helpFrame == NULL)
     {
-        if (m_firstFrame != NULL)
+        // If there isn't one yet, create a help window -- same as a
+        // regular frame except that the data comes from here, not
+        // from a connection.
+        frame = new PtermFrame(str, -1, wxT("Keyboard Help"));
+
+        if (frame != NULL)
         {
-            m_firstFrame->m_prevFrame = frame;
+            if (m_firstFrame != NULL)
+            {
+                m_firstFrame->m_prevFrame = frame;
+            }
+            frame->m_nextFrame = m_firstFrame;
+            m_firstFrame = frame;
+            for (i = 0; i < sizeof (keyboardhelp) / sizeof (keyboardhelp[0]); i++)
+            {
+                frame->procPlatoWord (keyboardhelp[i]);
+            }
+            m_helpFrame = frame;
         }
-        frame->m_nextFrame = m_firstFrame;
-        m_firstFrame = frame;
-        for (i = 0; i < sizeof (keyboardhelp) / sizeof (keyboardhelp[0]); i++)
-        {
-            frame->procPlatoWord (keyboardhelp[i]);
-        }
+    }
+    else
+    {
+        m_helpFrame->Show (true);
+        m_helpFrame->Raise ();
     }
 }
 
@@ -1121,7 +1162,7 @@ void PtermApp::OnQuit(wxCommandEvent&)
         frame->Close (TRUE);
         frame = nextframe;
     }
-#if defined(__WXMAC__)
+#if PTERM_MDI // defined(__WXMAC__)
     // On the Mac, deleting all the windows doesn't terminate the
     // program, so we make it stop this way.
     ExitMainLoop ();
@@ -1129,15 +1170,73 @@ void PtermApp::OnQuit(wxCommandEvent&)
 }
 
 
+#if PTERM_MDI
+// MDI parent frame
+PtermMainFrame::PtermMainFrame (void)
+    : wxMDIParentFrame (NULL, wxID_ANY, wxT ("Pterm"))
+{
+#if wxUSE_MENUS
+    // create a menu bar
+    //
+    // Note that the menu bar labels do not have shortcut markings,
+    // because those conflict with the ALT-letter key codes for PLATO.
+#if  defined(__WXGTK20__)
+    // A rather ugly hack here.  GTK V2 insists that F10 should be the
+    // accelerator for the menu bar.  We don't want that.  There is
+    // no sane way to turn this off, but we *can* get the same effect
+    // by setting the "menu bar accelerator" property to the name of a
+    // function key that is apparently legal, but doesn't really exist.
+    // (Or if it does, it certainly isn't a key we use.)
+    gtk_settings_set_string_property (gtk_settings_get_default (),
+                                      "gtk-menu-bar-accel", "F15", "foo");
+
+#endif
+
+    wxMenu *menuFile = new wxMenu;
+    menuFile->Append (Pterm_Connect, _("&New Connection...\tCtrl-N"),
+                      _("Connect to a PLATO host"));
+    menuFile->Append (Pterm_Pref, _("P&references..."),
+                      _("Set program configuration"));
+    menuFile->AppendSeparator ();
+//    menuFile->Append (Pterm_Close, _("&Close\tCtrl-Z"), _("Close this window"));
+    menuFile->Append (Pterm_Quit, _("E&xit"), _("Quit this program"));
+
+    // now append the freshly created menu to the menu bar...
+    wxMenuBar *menuBar = new wxMenuBar ();
+    menuBar->Append (menuFile, _("File"));
+
+    // the "About" item should be in the help menu.
+    // Well, on the Mac it actually doesn't show up there, but for that magic
+    // to work it has to be presented to wx in the help menu.  So the help
+    // menu ends up empty.  Sigh.
+    wxMenu *helpMenu = new wxMenu;
+
+    helpMenu->Append(Pterm_About, _("&About Pterm"), _("Show about dialog"));
+    helpMenu->Append(Pterm_HelpKeys, _("Pterm keyboard"), _("Show keyboard description"));
+    
+#if defined(__WXMAC__)
+    // On the Mac the menu name has to be exactly "&Help" for the About item
+    // to  be recognized.  Ugh.
+    menuBar->Append(helpMenu, wxT("&Help"));
+#else
+    menuBar->Append(helpMenu, _("Help"));
+#endif
+
+    // ... and attach this menu bar to the frame
+    SetMenuBar(menuBar);
+#endif // wxUSE_MENUS
+}
+#endif
+
 // ----------------------------------------------------------------------------
 // main frame
 // ----------------------------------------------------------------------------
 
 // frame constructor
 PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
-    : wxFrame(NULL, -1, title,
-              wxDefaultPosition,
-              wxDefaultSize),
+  : PtermFrameBase(PtermFrameParent, -1, title,
+		   wxDefaultPosition,
+		   wxDefaultSize),
       m_foregroundPen (ptermApp->m_fgColor, ptermApp->m_scale, wxSOLID),
       m_backgroundPen (ptermApp->m_bgColor, ptermApp->m_scale, wxSOLID),
       m_foregroundBrush (ptermApp->m_fgColor, wxSOLID),
@@ -1200,43 +1299,48 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     wxMenu *menuFile = new wxMenu;
     menuFile->Append (Pterm_Connect, _("&New Connection...\tCtrl-N"),
                       _("Connect to a PLATO host"));
-    menuFile->Append (Pterm_ConnectAgain, _("Connect &Again"),
-                      _("Connect to the same host"));
-    menuFile->AppendSeparator();
-#if defined(__WXMAC__)
-    // The accelerators actually will be Command-xxx
-    menuFile->Append (Pterm_SaveScreen, _("Save Screen\tCtrl-S"), _("Save screen"));
-    menuFile->Append (Pterm_Print, _("Print...\tCtrl-P"), _("Print"));
-#else
-    menuFile->Append (Pterm_SaveScreen, _("Save Screen"), _("Save screen"));
-    menuFile->Append (Pterm_Print, _("Print..."), _("Print"));
-#endif
-    menuFile->Append (Pterm_Page_Setup, _("Page Setup..."), _("Page setup"));
-    menuFile->Append (Pterm_Preview, _T("Print Preview"), _("Preview"));
+    if (port > 0)
+    {
+        // No "connect again" for the help window because that
+        // doesn't own a connection.
+        menuFile->Append (Pterm_ConnectAgain, _("Connect &Again"),
+                          _("Connect to the same host"));
+        menuFile->AppendSeparator();
+    }
+    // The accelerators actually will be Command-xxx on the Mac;
+    // on other platforms they are omitted since they clash with
+    // the PLATO keyboard.
+    menuFile->Append (Pterm_SaveScreen, _("Save Screen") MACACCEL ("\tCtrl-S"),
+                      _("Save screen image to file"));
+    menuFile->Append (Pterm_Print, _("Print...") MACACCEL ("\tCtrl-P"),
+                      _("Print screen content"));
+    menuFile->Append (Pterm_Page_Setup, _("Page Setup..."), _("Printout page setup"));
+    menuFile->Append (Pterm_Preview, _T("Print Preview"), _("Preview screen print"));
     menuFile->AppendSeparator ();
     menuFile->Append (Pterm_Pref, _("P&references..."),
                       _("Set program configuration"));
     menuFile->AppendSeparator ();
-    menuFile->Append (Pterm_Close, _("&Close\tCtrl-Z"), _("Close this window"));
+    menuFile->Append (Pterm_Close, _("&Close") MACACCEL ("\tCtrl-Z"),
+                      _("Close this window"));
     menuFile->Append (Pterm_Quit, _("E&xit"), _("Quit this program"));
 
     wxMenu *menuEdit = new wxMenu;
 
     menuEdit->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
-#if defined(__WXMAC__)
-    menuEdit->Append(Pterm_Copy, _T("&Copy text\tCtrl-C"));
-    menuEdit->Append(Pterm_Paste, _T("&Paste ASCII\tCtrl-V"));
-#else
-    menuEdit->Append(Pterm_Copy, _T("&Copy text"));
-    menuEdit->Append(Pterm_Paste, _T("&Paste ASCII"));
-#endif
-    menuEdit->Append(Pterm_PastePrint, _T("Paste Printo&ut"));
+    menuEdit->Append(Pterm_Copy, _("&Copy text") MACACCEL ("\tCtrl-C"),
+                     _T("Copy text only to clipboard"));
+    if (port > 0)
+    {
+        menuEdit->Append(Pterm_Paste, _("&Paste ASCII") MACACCEL ("\tCtrl-V"),
+                         _T("Paste plain text"));
+        // No "paste" for help window because it doesn't do input.
+        menuEdit->Append(Pterm_PastePrint, _T("Paste Printo&ut"),
+                         _T("Paste Cyber printout format"));
+    }
 
     // Copy is initially disabled, until a region is selected
     menuEdit->Enable (Pterm_Copy, FALSE);
 
-    wxMenu *menuWindow = new wxMenu;
-    
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
     menuBar->Append (menuFile, _("File"));
@@ -1248,8 +1352,10 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     // menu ends up empty.  Sigh.
     wxMenu *helpMenu = new wxMenu;
 
-    helpMenu->Append(Pterm_About, _("&About Pterm"), _("Show about dialog"));
-    helpMenu->Append(Pterm_HelpKeys, _("Pterm keyboard"), _("Show keyboard description"));
+    helpMenu->Append(Pterm_About, _("&About Pterm"),
+                     _("Show about dialog"));
+    helpMenu->Append(Pterm_HelpKeys, _("Pterm keyboard"),
+                     _("Show keyboard description"));
     
 #if defined(__WXMAC__)
     // On the Mac the menu name has to be exactly "&Help" for the About item
@@ -1582,7 +1688,12 @@ void PtermFrame::OnClose (wxCloseEvent &)
         m_charDC[i]->EndDrawing ();
         m_charDC[i]->SelectObject (wxNullBitmap);
     }
-
+    
+    if (this == ptermApp->m_helpFrame)
+    {
+        ptermApp->m_helpFrame = NULL;
+    }
+    
     Destroy ();
 }
 
