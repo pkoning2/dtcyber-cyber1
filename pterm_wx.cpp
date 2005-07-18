@@ -365,6 +365,7 @@ public:
     void OnPref (wxCommandEvent& event);
     void OnQuit (wxCommandEvent& event);
     void OnHelpKeys (wxCommandEvent &event);
+    void OnAbout (wxCommandEvent& event);
 
     bool DoConnect (bool ask);
     static wxColour SelectColor (wxColour &initcol);
@@ -472,7 +473,6 @@ public:
     void OnTimer (wxTimerEvent& event);
     void OnPasteTimer (wxTimerEvent& event);
     void OnQuit (wxCommandEvent& event);
-    void OnAbout (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
     void OnCopy (wxCommandEvent &event);
     void OnPaste (wxCommandEvent &event);
@@ -852,7 +852,6 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_TIMER(Pterm_PasteTimer, PtermFrame::OnPasteTimer)
     EVT_ACTIVATE(PtermFrame::OnActivate)
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
-    EVT_MENU(Pterm_About, PtermFrame::OnAbout)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
     EVT_MENU(Pterm_Copy, PtermFrame::OnCopy)
     EVT_MENU(Pterm_Paste, PtermFrame::OnPaste)
@@ -870,6 +869,7 @@ BEGIN_EVENT_TABLE(PtermApp, wxApp)
     EVT_MENU(Pterm_Pref,    PtermApp::OnPref)
     EVT_MENU(Pterm_Quit,    PtermApp::OnQuit)
     EVT_MENU(Pterm_HelpKeys, PtermApp::OnHelpKeys)
+    EVT_MENU(Pterm_About, PtermApp::OnAbout)
 
     END_EVENT_TABLE ()
 
@@ -1047,6 +1047,17 @@ bool PtermApp::DoConnect (bool ask)
     }
     
     return (frame != NULL);
+}
+
+void PtermApp::OnAbout(wxCommandEvent&)
+{
+    wxString msg;
+
+    msg.Printf (_T("PLATO terminal emulator %s.\n%s"),
+                wxT ("V" PTERMVERSION),
+                _("Copyright © 2005 by Paul Koning."));
+    
+    wxMessageBox(msg, _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
 }
 
 void PtermApp::OnHelpKeys (wxCommandEvent &)
@@ -1709,17 +1720,6 @@ void PtermFrame::OnActivate (wxActivateEvent &event)
         m_canvas->SetFocus ();
     }
     event.Skip ();        // let others see the event, too
-}
-
-void PtermFrame::OnAbout(wxCommandEvent&)
-{
-    wxString msg;
-
-    msg.Printf (_T("PLATO terminal emulator %s.\n%s"),
-                wxT ("V" PTERMVERSION),
-                _("Copyright © 2005 by Paul Koning."));
-    
-    wxMessageBox(msg, _("About Pterm"), wxOK | wxICON_INFORMATION, this);
 }
 
 void PtermFrame::OnCopyScreen (wxCommandEvent &)
