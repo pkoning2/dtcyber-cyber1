@@ -49,7 +49,7 @@ SXOBJS  = dt_x11.o
 	$(CC) $(CFLAGS) -c $<
 
 %.pcf : %.bdf
-	bdftopcf -o $@ $<
+	/usr/X11R6/bin/bdftopcf -o $@ $<
 
 %.d : %.c
 	echo -n "$@ " > /tmp/$@

@@ -11,7 +11,7 @@
 
 include Makefile.common
 
-PTERMVERSION := $(shell awk -F \" '{print $$2}'  ptermversion.h)
+PTERMVERSION ?= $(shell awk -F \" '{print $$2}'  ptermversion.h)
 
 TYPE ?= shared
 ifeq ("$(TYPE)","static")
@@ -34,7 +34,6 @@ ifeq ("$(wildcard $(DIR))","")
 DIR=/usr/local
 endif
 
-SETPATH= LD_RUN_PATH=$(DIR)/lib:/usr/lib:/lib
 
 PATH:=$(DIR)/bin:/usr/local/bin:$(PATH)
 
@@ -48,11 +47,12 @@ ifeq ("$(TYPE)","static")
 #ifeq ("$(HOST)","Darwin")
 SDLLIBS = $(SDLPATH)/lib/libSDL.a `$(SDLPATH)/bin/sdl-config --static-libs`
 #else
-#SDLLIBS = /usr/lib/libSDL.a
+#SDLLIBS = $(SDLPATH)/lib/libSDL.a
 #endif
 else
-SDLLIBS = -lSDL -L$(SDLPATH)/lib
+SDLLIBS = -lSDL `$(SDLPATH)/bin/sdl-config --libs`
 endif
+SETPATH= LD_RUN_PATH=$(DIR)/lib:$(SDLPATH)/lib:/usr/lib:/lib
 
 #INCL ?= -I/usr/local/include
 
@@ -60,8 +60,10 @@ INCL += $(SDLINCL)
 
 PTOBJS	= $(SOBJS) pterm_sdl.o pterm_wx.o
 
+ifneq ("$(PTERMVERSION)","xxx")
 LANGUAGES = $(shell cat languages)
 MOFILES = $(addsuffix /pterm.mo,$(LANGUAGES))
+endif
 
 .PHONY : pterm-kit langdirs
 

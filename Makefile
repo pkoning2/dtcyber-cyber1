@@ -20,8 +20,9 @@ include Makefile.dtoper
 include Makefile.dd60
 
 ifeq ("$(HOST)","Darwin")
-LIBS    +=  /System/Library/Frameworks/Carbon.framework/Carbon
-INCL    += -I/System/Library/Frameworks/Carbon.framework/Headers
+SDKDIR	?= /Developer/SDKs/MacOSX10.2.8.sdk
+LIBS    +=  $(SDKDIR)/System/Library/Frameworks/Carbon.framework/Carbon
+INCL    += -I$(SDKDIR)/System/Library/Frameworks/Carbon.framework/Headers
 G5CFLAGS = -mcpu=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64
 G4CFLAGS = -mcpu=G4 -mtune=G4
 G3CFLAGS = -mcpu=G3 -mtune=G3
@@ -49,11 +50,11 @@ dtcyber:
 	mkdir -p g3; \
 	cd g3; \
 	ln -sf ../Makefile.* .; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL)
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx
 	mkdir -p g5; \
 	cd g5; \
 	ln -sf ../Makefile.* .; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL) DUAL_HOST_CPUS=1
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL) DUAL_HOST_CPUS=1 PTERMVERSION=xxx
 	lipo -create -output dtcyber g3/gxdtcyber g5/gxdtcyber
 
 gxdtcyber: $(OBJS)
