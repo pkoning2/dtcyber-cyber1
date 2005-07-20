@@ -15,7 +15,9 @@
 #if defined(_WIN32)
 #include <winsock.h>
 #else
+#include <stdbool.h>
 #include <netinet/in.h>
+#include <sys/types.h>
 #endif
 
 /*
@@ -86,10 +88,6 @@
     #endif
 #else
     #error "Unable to determine size of basic data types"
-#endif
-
-#if (!defined(__cplusplus) && !defined(bool) && !defined(CURSES) && !defined(CURSES_H) && !defined(_CURSES_H))
-    typedef int bool;
 #endif
 
 typedef u16 PpWord;                     /* 12 bit PP word */

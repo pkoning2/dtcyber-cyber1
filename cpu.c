@@ -636,7 +636,7 @@ u32 cpuGetP(u8 cp)
 **------------------------------------------------------------------------*/
 FILE **cpuTF;
 int foo;
-int cpuIssueExchange(u8 cp, u32 addr, bool monitor)
+int cpuIssueExchange(u8 cp, u32 addr, int monitor)
     {
     if (cp >= cpuCount)
         {
