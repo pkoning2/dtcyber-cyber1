@@ -424,7 +424,7 @@ private:
     bool        m_touchEnabled;
 
     // Text-copy support
-    char textmap[32 * 64];
+    u8  textmap[32 * 64];
     int m_regionX;
     int m_regionY;
     int m_regionHeight;
@@ -501,13 +501,13 @@ public:
 
 private:
     wxStatusBar *m_statusBar;       // present even if not displayed
-    PtermConnection *m_conn;
-    wxBrush     m_backgroundBrush;
-    wxBrush     m_foregroundBrush;
-    wxBitmap    *m_bitmap;
     wxPen       m_foregroundPen;
     wxPen       m_backgroundPen;
+    wxBrush     m_foregroundBrush;
+    wxBrush     m_backgroundBrush;
+    wxBitmap    *m_bitmap;
     PtermCanvas *m_canvas;
+    PtermConnection *m_conn;
     wxString    m_hostName;
     int         m_port;
     wxTimer     m_timer;
@@ -1064,7 +1064,7 @@ void PtermApp::OnHelpKeys (wxCommandEvent &)
 {
     PtermFrame *frame;
     wxString str;
-    int i;
+    unsigned int i;
 
     if (m_helpFrame == NULL)
     {
@@ -1247,19 +1247,19 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
   : PtermFrameBase(PtermFrameParent, -1, title,
 		   wxDefaultPosition,
 		   wxDefaultSize),
+      tracePterm (FALSE),
+      m_nextFrame (NULL),
+      m_prevFrame (NULL),
       m_foregroundPen (ptermApp->m_fgColor, ptermApp->m_scale, wxSOLID),
       m_backgroundPen (ptermApp->m_bgColor, ptermApp->m_scale, wxSOLID),
       m_foregroundBrush (ptermApp->m_fgColor, wxSOLID),
       m_backgroundBrush (ptermApp->m_bgColor, wxSOLID),
-      m_nextFrame (NULL),
-      m_prevFrame (NULL),
       m_canvas (NULL),
       m_conn (NULL),
+      m_port (port),
       m_timer (this, Pterm_Timer),
       m_pasteTimer (this, Pterm_PasteTimer),
       m_pasteIndex (-1),
-      tracePterm (FALSE),
-      m_port (port),
       m_nextword (0),
       m_delay (0),
       mode (0),
@@ -1563,11 +1563,12 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 void PtermFrame::OnPasteTimer (wxTimerEvent &)
 {
     wxChar c;
-    int p, delay, nextindex;
+    int p, delay;
+    unsigned int nextindex;
     int shift = 0;
     
     if (m_pasteIndex < 0 ||
-        m_pasteIndex >= m_pasteText.Len ())
+        m_pasteIndex >= (int) m_pasteText.Len ())
     {
         m_pasteIndex = -1;
         return;
@@ -1577,7 +1578,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 
     if (m_pastePrint)
     {
-        while (m_pasteIndex < m_pasteText.Len ())
+        while (m_pasteIndex < (int) m_pasteText.Len ())
         {
             c = m_pasteText[nextindex++];
             p = -1;
@@ -1594,7 +1595,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
                 shift = 040;
                 continue;
             }
-            if (c < sizeof (printoutToPlato) / sizeof (printoutToPlato[0]))
+            if (c < (int) (sizeof (printoutToPlato) / sizeof (printoutToPlato[0])))
             {
                 p = printoutToPlato[c];
             }
@@ -1642,7 +1643,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
                 p = 0100;       // space
             }
         }
-        else if (c < sizeof (asciiToPlato) / sizeof (asciiToPlato[0]))
+        else if (c < (int) (sizeof (asciiToPlato) / sizeof (asciiToPlato[0])))
         {
             p = asciiToPlato[c];
         }
@@ -2243,7 +2244,7 @@ void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *chardata)
 
 void PtermFrame::ptermLoadRomChars (void)
 {
-    int i;
+    unsigned int i;
 
     for (i = 0; i < 5; i++)
     {
@@ -2355,7 +2356,7 @@ void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
 {
     int fr, fg, fb, br, bg, bb, ofr, ofg, ofb;
     int r, g, b, oh, ow, nh, nw, h, w;
-    u8 *odata, *ndata, *newbits;
+    u8 *odata, *ndata, *newbits = NULL;
     const bool recolor = (ptermApp->m_fgColor != newfg ||
                           ptermApp->m_bgColor != newbg);
     const int newscale = (newscale2) ? 2 : 1;
@@ -3386,12 +3387,12 @@ void PtermConnDialog::OnOK (wxCommandEvent &)
 
 PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
     : wxThread (wxTHREAD_JOINABLE),
-      m_owner (owner),
-      m_port (port),
       m_displayIn (0),
       m_displayOut (0),
       m_gswIn (0),
       m_gswOut (0),
+      m_owner (owner),
+      m_port (port),
       m_gswActive (FALSE),
       m_gswStarted (FALSE),
       m_savedGswMode (0),
@@ -3826,7 +3827,7 @@ void PtermCanvas::OnDraw(wxDC &dc)
 
 void PtermCanvas::OnKeyDown (wxKeyEvent &event)
 {
-    int key;
+    unsigned int key;
     int shift = 0;
     int pc = -1;
     bool ctrl;
@@ -4126,7 +4127,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
 
 void PtermCanvas::OnChar(wxKeyEvent& event)
 {
-    int key;
+    unsigned int key;
     int shift = 0;
     int pc = -1;
 

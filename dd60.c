@@ -21,6 +21,8 @@
 #if !defined (_WIN32)
 #include <unistd.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #endif
 #include "const.h"
 #include "types.h"
