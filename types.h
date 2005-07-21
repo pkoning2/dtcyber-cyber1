@@ -33,6 +33,9 @@
     /*
     **  MS Win32 systems
     */
+#if !defined(__cplusplus)
+	typedef int bool;
+#endif
     typedef signed char  i8;
     typedef signed short i16;
     typedef signed long  i32;
@@ -43,6 +46,7 @@
     typedef unsigned __int64 u64;
     #define FMT60_020o "%020I64o"
     #define FMT60_08o "%08I64o"
+	typedef unsigned int socklen_t;
 #elif defined (__GNUC__)
     #if defined(__LONG_MAX__)
         #if (__LONG_MAX__ == __INT_MAX__)
