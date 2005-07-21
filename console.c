@@ -971,7 +971,7 @@ static int consoleInput (NetPort *np)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-static void checkImmediate (uint8_t *buf, int cnt)
+static void checkImmediate (u8 *buf, int cnt)
     {
     PortParam *mp;
     NetPort *np;
@@ -1004,7 +1004,7 @@ static void checkImmediate (uint8_t *buf, int cnt)
 static void consoleByte1 (int byte)
     {
     int nextin;
-    uint8_t b = byte;
+    u8 b = byte;
     
     nextin = displayIn + 1;
     if (nextin == DispBufSize)
@@ -1032,7 +1032,7 @@ static void consoleByte1 (int byte)
 static void consoleByte2 (int byte1, int byte2)
     {
     int nextin, nextin2;
-    uint8_t b[2];
+    u8 b[2];
     
     b[0] = byte1;
     b[1] = byte2;

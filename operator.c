@@ -20,6 +20,7 @@
 #if defined(_WIN32)
 #include <windows.h>
 #else
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

@@ -23,10 +23,14 @@ endif
 else
 ifeq ("$(TYPE)","debugascii")
 DIR = /usr/local/wxshared
+ifneq ("$(HOST)","Darwin")
 EXTRALIBS= -lXinerama
+endif
 else
 DIR = /usr/local/wxshareud
+ifneq ("$(HOST)","Darwin")
 EXTRALIBS= -lXinerama
+endif
 endif
 endif
 
@@ -45,17 +49,14 @@ WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS)
 SDLPATH ?= /usr/local
 SDLINCL = -I$(SDLPATH)/include/SDL
 ifeq ("$(TYPE)","static")
-#ifeq ("$(HOST)","Darwin")
 SDLLIBS = $(SDLPATH)/lib/libSDL.a `$(SDLPATH)/bin/sdl-config --static-libs`
-#else
-#SDLLIBS = $(SDLPATH)/lib/libSDL.a
-#endif
 else
 SDLLIBS = -lSDL `$(SDLPATH)/bin/sdl-config --libs`
 endif
-SETPATH= -Wl,-rpath,$(DIR)/lib -Wl,-rpath,$(SDLPATH)/lib
 
-#INCL ?= -I/usr/local/include
+ifneq ("$(HOST)","Darwin")
+SETPATH= -Wl,-rpath,$(DIR)/lib -Wl,-rpath,$(SDLPATH)/lib
+endif
 
 INCL += $(SDLINCL)
 
