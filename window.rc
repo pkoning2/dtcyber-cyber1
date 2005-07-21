@@ -34,23 +34,6 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 IDI_CONSOLE             ICON    DISCARDABLE     "console.ICO"
 IDI_SMALL               ICON    DISCARDABLE     "SMALL.ICO"
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_ABOUTBOX DIALOG DISCARDABLE  22, 17, 230, 75
-STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
-CAPTION "About"
-FONT 8, "System"
-BEGIN
-    ICON            IDI_CONSOLE,IDC_MYICON,14,9,20,20
-    LTEXT           "Desktop Cyber Version 1.0",IDC_STATIC,49,10,119,8,
-                    SS_NOPREFIX
-    LTEXT           "Copyright (C) 2002",IDC_STATIC,49,20,119,8
-    DEFPUSHBUTTON   "OK",IDOK,195,6,30,11,WS_GROUP
-END
-
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
