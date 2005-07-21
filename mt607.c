@@ -127,7 +127,6 @@ static void mt607Disconnect(void);
 **  Private Variables
 **  -----------------
 */
-static char str[200];
 static u8 rawBuffer[MaxByteBuf];
 
 /*

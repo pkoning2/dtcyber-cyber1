@@ -47,6 +47,7 @@ void channelActivate(void);
 void channelDisconnect(void);
 void channelProbe(void);
 void channelIo(void);
+void channelStep(void);
 
 /*
 **  pp.c

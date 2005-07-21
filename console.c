@@ -192,6 +192,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -201,6 +202,9 @@
 #include <sys/timeb.h>
 #else
 #include <sys/time.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 
 /*
@@ -299,7 +303,6 @@ extern u8 rtcIncrement;
 **  Private Variables
 **  -----------------
 */
-static u8 currentFont;
 static u64 keyMask;
 static u8 currentKey;
 static bool autoDate;
@@ -351,7 +354,7 @@ static bool sendToAll;
 void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     {
     DevSlot *dp;
-    char *p;
+    u8 *p;
     
     (void)eqNo;
     (void)unitNo;
@@ -394,7 +397,7 @@ void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     if (autoString[0] != '\0')
         {
         consoleQueueKey (0);            /* something for the PPU to eat */
-        for (p = autoString; *p; p++)
+        for (p = (u8 *) autoString; *p; p++)
             {
             if (*p == '%')
                 {
@@ -597,7 +600,7 @@ static void consoleIo(void)
     u64 m;
     static char ts[40];
     time_t t;
-    char *p;
+    u8 *p;
     
     switch (activeDevice->fcode)
         {
@@ -646,8 +649,8 @@ static void consoleIo(void)
                     */
                     if ((activeDevice->fcode == Fc6612Sel32CharLeft ||
                          activeDevice->fcode == Fc6612Sel32CharRight) &&
-                        ((activeChannel->data >> 6) & Mask6) == asciiToCdc[autoDateString[autoPos]] &&
-                        (activeChannel->data & Mask6) == asciiToCdc[autoDateString[autoPos + 1]])
+                        ((activeChannel->data >> 6) & Mask6) == asciiToCdc[(u8) autoDateString[autoPos]] &&
+                        (activeChannel->data & Mask6) == asciiToCdc[(u8) autoDateString[autoPos + 1]])
                         {
                         /*
                         **  It matches so far.  Let's see if we're done.
@@ -668,7 +671,7 @@ static void consoleIo(void)
                                 /* Note that DSD supplies punctuation */
                                 strftime (ts, sizeof (ts) - 1,
                                           "%y%m%d\n%H%M%S\n", localtime (&t));
-                                for (p = ts; *p; p++)
+                                for (p = (u8 *) ts; *p; p++)
                                     {
                                     consoleQueueKey (asciiToConsole[*p]);
                                     }
@@ -958,6 +961,38 @@ static int consoleInput (NetPort *np)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Send output immediately to any console display
+**                  handlers that want all output (interval == 0)
+**
+**  Parameters:     Name        Description.
+**                  buf         Buffer with data
+**                  cnt         Byte count
+**
+**  Returns:        Nothing
+**
+**------------------------------------------------------------------------*/
+static void checkImmediate (uint8_t *buf, int cnt)
+    {
+    PortParam *mp;
+    NetPort *np;
+    int i;
+    for (i = 0; i < dd60Conns; i++)
+        {
+        mp = portVector + i;
+        np = consolePorts.portVec + i;
+        if (!mp->stopped && dtActive (&np->fet) && mp->interval == 0)
+            {
+            /*
+            ** Process only displays that are connected, not stopped,
+            ** and want immediate input (interval is zero).
+            */
+            send (np->fet.connFd, buf, cnt, MSG_NOSIGNAL);
+            }
+        mp++;
+        }
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Store one byte of display output
 **
 **  Parameters:     Name        Description.
@@ -969,6 +1004,7 @@ static int consoleInput (NetPort *np)
 static void consoleByte1 (int byte)
     {
     int nextin;
+    uint8_t b = byte;
     
     nextin = displayIn + 1;
     if (nextin == DispBufSize)
@@ -980,6 +1016,7 @@ static void consoleByte1 (int byte)
         displayRing[displayIn] = byte;
         displayIn = nextin;
         }
+    checkImmediate (&b, 1);
     }
 
 /*--------------------------------------------------------------------------
@@ -995,6 +1032,10 @@ static void consoleByte1 (int byte)
 static void consoleByte2 (int byte1, int byte2)
     {
     int nextin, nextin2;
+    uint8_t b[2];
+    
+    b[0] = byte1;
+    b[1] = byte2;
     
     nextin = displayIn + 1;
     if (nextin == DispBufSize)
@@ -1013,6 +1054,7 @@ static void consoleByte2 (int byte1, int byte2)
         displayRing[nextin] = byte2;
         displayIn = nextin2;
         }
+    checkImmediate (b, 2);
     }
 
 /*--------------------------------------------------------------------------
@@ -1291,7 +1333,7 @@ static void consoleSendOutput (int start, int end)
                 (chTraceMask >> 11) & 1 ? 'B' : '-');
         for (i = 1; buf[i] != '\0'; i++)
             {
-            buf[i] = asciiToCdc[buf[i]];
+                buf[i] = asciiToCdc[(u8) buf[i]];
             }
         }
 
@@ -1307,16 +1349,15 @@ static void consoleSendOutput (int start, int end)
         {
         mp = portVector + i;
         np = consolePorts.portVec + i;
-        if (mp->stopped || !dtActive (&np->fet))
-            {
-            /*
-            **  Always skip a display that is stopped or not connected.
-            */
-            continue;
-            }
-        if (sendToAll ||
-            mp->sendNow ||
-            us - mp->lastFrame >= mp->interval)
+
+        /*
+        **  Always skip a display that is stopped or not connected,
+        **  or wants all the data (because we sent that already).
+        */
+        if (!mp->stopped && dtActive (&np->fet) && mp->interval != 0 &&
+            (sendToAll ||
+             mp->sendNow ||
+             us - mp->lastFrame >= mp->interval))
             {
             mp->sendNow = FALSE;
             mp->lastFrame = us;
@@ -1327,21 +1368,11 @@ static void consoleSendOutput (int start, int end)
                 send (np->fet.connFd, buf, strlen (buf), MSG_NOSIGNAL);
                 }
             
-            if (mp->interval == 0)
-                {
-                /* 
-                **  This display wants all data, so send data
-                **  starting with oldest (displayOut).
-                */
-                consoleSendFrame (np->fet.connFd, displayOut, end);
-                }
-            else
-                {
-                /*
-                **  Typical case -- send only the cycle we found.
-                */
-                consoleSendFrame (np->fet.connFd, start, end);
-                }
+            /*
+            **  Send only the cycle we found.
+            */
+            consoleSendFrame (np->fet.connFd, start, end);
+
             /*
             **  Send "end of data block" marker
             */

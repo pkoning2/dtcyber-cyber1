@@ -267,7 +267,7 @@ static void initCyber(const char *config)
         }
     else
         {
-        printf ("Running with %d CPU instructions per PPU instruction\n",
+        printf ("Running with %ld CPU instructions per PPU instruction\n",
                 cpuRatio);
         }
     

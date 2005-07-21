@@ -18,6 +18,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -29,6 +30,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 
 #define DEBUG 0
@@ -606,7 +608,7 @@ static void *tpMuxThread(void *param)
     int listenFd;
     struct sockaddr_in server;
     struct sockaddr_in from;
-    int fromLen;
+    socklen_t fromLen;
     PortParam *mp;
     u8 i;
     int reuse = 1;
@@ -618,7 +620,7 @@ static void *tpMuxThread(void *param)
     if (listenFd < 0)
         {
         printf("tpMux: Can't create socket\n");
-        return;
+        ThreadReturn;
         }
 
     setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
@@ -630,13 +632,13 @@ static void *tpMuxThread(void *param)
     if (bind(listenFd, (struct sockaddr *)&server, sizeof(server)) < 0)
         {
         printf("tpMux: Can't bind to socket\n");
-        return;
+        ThreadReturn;
         }
 
     if (listen(listenFd, 5) < 0)
         {
         printf("tpMux: Can't listen\n");
-        return;
+        ThreadReturn;
         }
 
     while (1)

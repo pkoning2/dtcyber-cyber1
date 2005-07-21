@@ -343,7 +343,7 @@ static FcStatus cr3447Func(PpWord funcCode)
 static void cr3447Io(void)
     {
     CrContext *cc;
-    char c;
+    int c;
     PpWord p;
     
     cc = (CrContext *)active3000Device->context[0];
@@ -586,7 +586,7 @@ static void cr3447NextCard (DevSlot *up, CrContext *cc)
     /* 
     **  Set "this card is binary" if rows 7 and 9 are punched in column 1.
     */
-    cc->bincard = (cc->table[cc->card[0]] & 005) == 005;
+    cc->bincard = (cc->table[(u8) cc->card[0]] & 005) == 005;
 
     /*
     **  Skip over any characters past column 80 (if line is longer).
@@ -610,7 +610,7 @@ static void cr3447NextCard (DevSlot *up, CrContext *cc)
 
     cc->col = 0;
     if (   !cc->binary
-        && (cc->table[cc->card[0]] & 006) == 006)
+           && (cc->table[(u8) cc->card[0]] & 006) == 006)
         {
         cc->status |= StCr3447File;
         }

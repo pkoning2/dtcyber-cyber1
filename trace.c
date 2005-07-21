@@ -17,6 +17,10 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#if !defined(_WIN32)
+#include <unistd.h>
+#include <sys/types.h>
+#endif
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -147,186 +151,186 @@ static const char *monState[] =
 
 static const DecPpControl ppDecode[] =
     {
-    AN,           "PSN",    // 00
-    Amd,          "LJM",    // 01
-    Amd,          "RJM",    // 02
-    Ar,           "UJN",    // 03
-    Ar,           "ZJN",    // 04
-    Ar,           "NJN",    // 05
-    Ar,           "PJN",    // 06
-    Ar,           "MJN",    // 07
+    { AN,           "PSN" },  // 00
+    { Amd,          "LJM" },  // 01
+    { Amd,          "RJM" },  // 02
+    { Ar,           "UJN" },  // 03
+    { Ar,           "ZJN" },  // 04
+    { Ar,           "NJN" },  // 05
+    { Ar,           "PJN" },  // 06
+    { Ar,           "MJN" },  // 07
 
-    Ar,           "SHN",    // 10
-    Ad,           "LMN",    // 11
-    Ad,           "LPN",    // 12
-    Ad,           "SCN",    // 13
-    Ad,           "LDN",    // 14
-    Ad,           "LCN",    // 15
-    Ad,           "ADN",    // 16
-    Ad,           "SBN",    // 17
+    { Ar,           "SHN" },  // 10
+    { Ad,           "LMN" },  // 11
+    { Ad,           "LPN" },  // 12
+    { Ad,           "SCN" },  // 13
+    { Ad,           "LDN" },  // 14
+    { Ad,           "LCN" },  // 15
+    { Ad,           "ADN" },  // 16
+    { Ad,           "SBN" },  // 17
 
-    Adm,          "LDC",    // 20
-    Adm,          "ADC",    // 21
-    Adm,          "LPC",    // 22
-    Adm,          "LMC",    // 23
-    AN,           "PSN",    // 24
-    AN,           "PSN",    // 25
-    Ad,           "EXN",    // 26
-    Ad,           "RPN",    // 27
+    { Adm,          "LDC" },  // 20
+    { Adm,          "ADC" },  // 21
+    { Adm,          "LPC" },  // 22
+    { Adm,          "LMC" },  // 23
+    { AN,           "PSN" },  // 24
+    { AN,           "PSN" },  // 25
+    { Ad,           "EXN" },  // 26
+    { Ad,           "RPN" },  // 27
 
-    Ad,           "LDD",    // 30
-    Ad,           "ADD",    // 31
-    Ad,           "SBD",    // 32
-    Ad,           "LMD",    // 33
-    Ad,           "STD",    // 34
-    Ad,           "RAD",    // 35
-    Ad,           "AOD",    // 36
-    Ad,           "SOD",    // 37
+    { Ad,           "LDD" },  // 30
+    { Ad,           "ADD" },  // 31
+    { Ad,           "SBD" },  // 32
+    { Ad,           "LMD" },  // 33
+    { Ad,           "STD" },  // 34
+    { Ad,           "RAD" },  // 35
+    { Ad,           "AOD" },  // 36
+    { Ad,           "SOD" },  // 37
 
-    Ad,           "LDI",    // 40
-    Ad,           "ADI",    // 41
-    Ad,           "SBI",    // 42
-    Ad,           "LMI",    // 43
-    Ad,           "STI",    // 44
-    Ad,           "RAI",    // 45
-    Ad,           "AOI",    // 46
-    Ad,           "SOI",    // 47
+    { Ad,           "LDI" },  // 40
+    { Ad,           "ADI" },  // 41
+    { Ad,           "SBI" },  // 42
+    { Ad,           "LMI" },  // 43
+    { Ad,           "STI" },  // 44
+    { Ad,           "RAI" },  // 45
+    { Ad,           "AOI" },  // 46
+    { Ad,           "SOI" },  // 47
 
-    Amd,          "LDM",    // 50
-    Amd,          "ADM",    // 51
-    Amd,          "SBM",    // 52
-    Amd,          "LMM",    // 53
-    Amd,          "STM",    // 54
-    Amd,          "RAM",    // 55
-    Amd,          "AOM",    // 56
-    Amd,          "SOM",    // 57
+    { Amd,          "LDM" },  // 50
+    { Amd,          "ADM" },  // 51
+    { Amd,          "SBM" },  // 52
+    { Amd,          "LMM" },  // 53
+    { Amd,          "STM" },  // 54
+    { Amd,          "RAM" },  // 55
+    { Amd,          "AOM" },  // 56
+    { Amd,          "SOM" },  // 57
 
-    Ad,           "CRD",    // 60
-    Amd,          "CRM",    // 61
-    Ad,           "CWD",    // 62
-    Amd,          "CWM",    // 63
-    Amd,          "AJM",    // 64
-    Amd,          "IJM",    // 65
-    Amd,          "FJM",    // 66
-    Amd,          "EJM",    // 67
+    { Ad,           "CRD" },  // 60
+    { Amd,          "CRM" },  // 61
+    { Ad,           "CWD" },  // 62
+    { Amd,          "CWM" },  // 63
+    { Amd,          "AJM" },  // 64
+    { Amd,          "IJM" },  // 65
+    { Amd,          "FJM" },  // 66
+    { Amd,          "EJM" },  // 67
 
-    Ad,           "IAN",    // 70
-    Amd,          "IAM",    // 71
-    Ad,           "OAN",    // 72
-    Amd,          "OAM",    // 73
-    Ad,           "ACN",    // 74
-    Ad,           "DCN",    // 75
-    Ad,           "FAN",    // 76
-    Amd,          "FNC"     // 77
+    { Ad,           "IAN" },  // 70
+    { Amd,          "IAM" },  // 71
+    { Ad,           "OAN" },  // 72
+    { Amd,          "OAM" },  // 73
+    { Ad,           "ACN" },  // 74
+    { Ad,           "DCN" },  // 75
+    { Ad,           "FAN" },  // 76
+    { Amd,          "FNC" },  // 77
     };
 
 static DecCpControl rjDecode[010] =
     {
-    CK,         "RJ    %6.6o",          R,      // 0
-    CjK,        "RE    B%o+%6.6o",      RZBE,   // 1
-    CjK,        "WE    B%o+%6.6o",      RZBE,   // 2
-    CK,         "XJ    %6.6o",          R,      // 3
-    Cjk,        "RX%o   X%o",           RNXXE,  // 4
-    Cjk,        "WX%o   X%o",           RNXXE,  // 5
+    { CK,         "RJ    %6.6o",          R },    // 0
+    { CjK,        "RE    B%o+%6.6o",      RZBE }, // 1
+    { CjK,        "WE    B%o+%6.6o",      RZBE }, // 2
+    { CK,         "XJ    %6.6o",          R },    // 3
+    { Cjk,        "RX%o   X%o",           RNXXE },// 4
+    { Cjk,        "WX%o   X%o",           RNXXE },// 5
     };
 
 static DecCpControl cjDecode[010] =
     {
-    CjK,        "ZR    X%o,%6.6o",      RZX,    // 0
-    CjK,        "NZ    X%o,%6.6o",      RZX,    // 1
-    CjK,        "PL    X%o,%6.6o",      RZX,    // 2
-    CjK,        "NG    X%o,%6.6o",      RZX,    // 3
-    CjK,        "IR    X%o,%6.6o",      RZX,    // 4
-    CjK,        "OR    X%o,%6.6o",      RZX,    // 5
-    CjK,        "DF    X%o,%6.6o",      RZX,    // 6
-    CjK,        "ID    X%o,%6.6o",      RZX,    // 7
+    { CjK,        "ZR    X%o,%6.6o",      RZX },  // 0
+    { CjK,        "NZ    X%o,%6.6o",      RZX },  // 1
+    { CjK,        "PL    X%o,%6.6o",      RZX },  // 2
+    { CjK,        "NG    X%o,%6.6o",      RZX },  // 3
+    { CjK,        "IR    X%o,%6.6o",      RZX },  // 4
+    { CjK,        "OR    X%o,%6.6o",      RZX },  // 5
+    { CjK,        "DF    X%o,%6.6o",      RZX },  // 6
+    { CjK,        "ID    X%o,%6.6o",      RZX },  // 7
     };
 
 static DecCpControl noDecode[010] = 
     {
-    CN,         "NO",                                   R,      // 460
-    CN,         "NO",                                   R,      // 461
-    CN,         "NO",                                   R,      // 462
-    CN,         "NO",                                   R,      // 463
-    CjK,        "IM    B%o+%6.6o",                      RBD,    // 464
-    Cmv,        "DM    %3.3o,%6.6o,%2.2o,%6.6o,%2.2o",  R,      // 465
-    Cmv,        "CC    %3.3o,%6.6o,%2.2o,%6.6o,%2.2o",  R,      // 466
-    Cmv,        "CU    %3.3o,%6.6o,%2.2o,%6.6o,%2.2o",  R,      // 467
+    { CN,         "NO",                                   R },    // 460
+    { CN,         "NO",                                   R },    // 461
+    { CN,         "NO",                                   R },    // 462
+    { CN,         "NO",                                   R },    // 463
+    { CjK,        "IM    B%o+%6.6o",                      RBD },  // 464
+    { Cmv,        "DM    %3.3o,%6.6o,%2.2o,%6.6o,%2.2o",  R },    // 465
+    { Cmv,        "CC    %3.3o,%6.6o,%2.2o,%6.6o,%2.2o",  R },    // 466
+    { Cmv,        "CU    %3.3o,%6.6o,%2.2o,%6.6o,%2.2o",  R },    // 467
     };
 
 static DecCpControl cpDecode[0100] =
     {
-    CN,         "PS",                   R,      // 00
-    CLINK, (char *)rjDecode,            R,      // 01
-    CiK,        "JP    B%o+%6.6o",      RB,     // 02
-    CLINK, (char *)cjDecode,            R,      // 03
-    CijK,       "EQ    B%o,B%o,%6.6o",  RBB,    // 04
-    CijK,       "NE    B%o,B%o,%6.6o",  RBB,    // 05
-    CijK,       "GE    B%o,B%o,%6.6o",  RBB,    // 06
-    CijK,       "LT    B%o,B%o,%6.6o",  RBB,    // 07
+    { CN,         "PS",                   R },    // 00
+    { CLINK, (char *)rjDecode,            R },    // 01
+    { CiK,        "JP    B%o+%6.6o",      RB },   // 02
+    { CLINK, (char *)cjDecode,            R },    // 03
+    { CijK,       "EQ    B%o,B%o,%6.6o",  RBB },  // 04
+    { CijK,       "NE    B%o,B%o,%6.6o",  RBB },  // 05
+    { CijK,       "GE    B%o,B%o,%6.6o",  RBB },  // 06
+    { CijK,       "LT    B%o,B%o,%6.6o",  RBB },  // 07
 
-    Cij,        "BX%o   X%o",           RXX,    // 10
-    Cijk,       "BX%o   X%o*X%o",       RXXX,   // 11
-    Cijk,       "BX%o   X%o+X%o",       RXXX,   // 12
-    Cijk,       "BX%o   X%o-X%o",       RXXX,   // 13
-    Cik,        "BX%o   -X%o",          RXXX,   // 14
-    Cikj,       "BX%o   -X%o*X%o",      RXXX,   // 15
-    Cikj,       "BX%o   -X%o+X%o",      RXXX,   // 16
-    Cikj,       "BX%o   -X%o-X%o",      RXXX,   // 17
+    { Cij,        "BX%o   X%o",           RXX },  // 10
+    { Cijk,       "BX%o   X%o*X%o",       RXXX }, // 11
+    { Cijk,       "BX%o   X%o+X%o",       RXXX }, // 12
+    { Cijk,       "BX%o   X%o-X%o",       RXXX }, // 13
+    { Cik,        "BX%o   -X%o",          RXXX }, // 14
+    { Cikj,       "BX%o   -X%o*X%o",      RXXX }, // 15
+    { Cikj,       "BX%o   -X%o+X%o",      RXXX }, // 16
+    { Cikj,       "BX%o   -X%o-X%o",      RXXX }, // 17
 
-    Cijk,       "LX%o   %o%o",          RX,     // 20
-    Cijk,       "AX%o   %o%o",          RX,     // 21
-    Cijk,       "LX%o   B%o,X%o",       RXBX,   // 22
-    Cijk,       "AX%o   B%o,X%o",       RXBX,   // 23
-    Cijk,       "NX%o   B%o,X%o",       RXBX,   // 24
-    Cijk,       "ZX%o   B%o,X%o",       RXBX,   // 25
-    Cijk,       "UX%o   B%o,X%o",       RXBX,   // 26
-    Cijk,       "PX%o   B%o,X%o",       RXBX,   // 27
+    { Cijk,       "LX%o   %o%o",          RX },   // 20
+    { Cijk,       "AX%o   %o%o",          RX },   // 21
+    { Cijk,       "LX%o   B%o,X%o",       RXBX }, // 22
+    { Cijk,       "AX%o   B%o,X%o",       RXBX }, // 23
+    { Cijk,       "NX%o   B%o,X%o",       RXBX }, // 24
+    { Cijk,       "ZX%o   B%o,X%o",       RXBX }, // 25
+    { Cijk,       "UX%o   B%o,X%o",       RXBX }, // 26
+    { Cijk,       "PX%o   B%o,X%o",       RXBX }, // 27
 
-    Cijk,       "FX%o   X%o+X%o",       RXXX,   // 30
-    Cijk,       "FX%o   X%o-X%o",       RXXX,   // 31
-    Cijk,       "DX%o   X%o+X%o",       RXXX,   // 32
-    Cijk,       "DX%o   X%o-X%o",       RXXX,   // 33
-    Cijk,       "RX%o   X%o+X%o",       RXXX,   // 34
-    Cijk,       "RX%o   X%o-X%o",       RXXX,   // 35
-    Cijk,       "IX%o   X%o+X%o",       RXXX,   // 36
-    Cijk,       "IX%o   X%o-X%o",       RXXX,   // 37
+    { Cijk,       "FX%o   X%o+X%o",       RXXX }, // 30
+    { Cijk,       "FX%o   X%o-X%o",       RXXX }, // 31
+    { Cijk,       "DX%o   X%o+X%o",       RXXX }, // 32
+    { Cijk,       "DX%o   X%o-X%o",       RXXX }, // 33
+    { Cijk,       "RX%o   X%o+X%o",       RXXX }, // 34
+    { Cijk,       "RX%o   X%o-X%o",       RXXX }, // 35
+    { Cijk,       "IX%o   X%o+X%o",       RXXX }, // 36
+    { Cijk,       "IX%o   X%o-X%o",       RXXX }, // 37
 
-    Cijk,       "FX%o   X%o*X%o",       RXXX,   // 40
-    Cijk,       "RX%o   X%o*X%o",       RXXX,   // 41
-    Cijk,       "DX%o   X%o*X%o",       RXXX,   // 42
-    Cijk,       "MX%o   %o%o",          RX,     // 43
-    Cijk,       "FX%o   X%o/X%o",       RXXX,   // 44
-    Cijk,       "RX%o   X%o/X%o",       RXXX,   // 45
-    CLINK, (char *)noDecode,            R,      // 46
-    Cik,        "CX%o   X%o",           RXNX,   // 47
+    { Cijk,       "FX%o   X%o*X%o",       RXXX }, // 40
+    { Cijk,       "RX%o   X%o*X%o",       RXXX }, // 41
+    { Cijk,       "DX%o   X%o*X%o",       RXXX }, // 42
+    { Cijk,       "MX%o   %o%o",          RX },   // 43
+    { Cijk,       "FX%o   X%o/X%o",       RXXX }, // 44
+    { Cijk,       "RX%o   X%o/X%o",       RXXX }, // 45
+    { CLINK, (char *)noDecode,            R },    // 46
+    { Cik,        "CX%o   X%o",           RXNX }, // 47
 
-    CijK,       "SA%o   A%o+%6.6o",     RAA,    // 50
-    CijK,       "SA%o   B%o+%6.6o",     RAB,    // 51
-    CijK,       "SA%o   X%o+%6.6o",     RAX,    // 52
-    Cijk,       "SA%o   X%o+B%o",       RAXB,   // 53
-    Cijk,       "SA%o   A%o+B%o",       RAAB,   // 54
-    Cijk,       "SA%o   A%o-B%o",       RAAB,   // 55
-    Cijk,       "SA%o   B%o+B%o",       RABB,   // 56
-    Cijk,       "SA%o   B%o-B%o",       RABB,   // 57
+    { CijK,       "SA%o   A%o+%6.6o",     RAA },  // 50
+    { CijK,       "SA%o   B%o+%6.6o",     RAB },  // 51
+    { CijK,       "SA%o   X%o+%6.6o",     RAX },  // 52
+    { Cijk,       "SA%o   X%o+B%o",       RAXB }, // 53
+    { Cijk,       "SA%o   A%o+B%o",       RAAB }, // 54
+    { Cijk,       "SA%o   A%o-B%o",       RAAB }, // 55
+    { Cijk,       "SA%o   B%o+B%o",       RABB }, // 56
+    { Cijk,       "SA%o   B%o-B%o",       RABB }, // 57
     
-    CijK,       "SB%o   A%o+%6.6o",     RBA,    // 60
-    CijK,       "SB%o   B%o+%6.6o",     RBB,    // 61
-    CijK,       "SB%o   X%o+%6.6o",     RBX,    // 62
-    Cijk,       "SB%o   X%o+B%o",       RBXB,   // 63
-    Cijk,       "SB%o   A%o+B%o",       RBAB,   // 64
-    Cijk,       "SB%o   A%o-B%o",       RBAB,   // 65
-    Cijk,       "SB%o   B%o+B%o",       RBBB,   // 66
-    Cijk,       "SB%o   B%o-B%o",       RBBB,   // 67
+    { CijK,       "SB%o   A%o+%6.6o",     RBA },  // 60
+    { CijK,       "SB%o   B%o+%6.6o",     RBB },  // 61
+    { CijK,       "SB%o   X%o+%6.6o",     RBX },  // 62
+    { Cijk,       "SB%o   X%o+B%o",       RBXB }, // 63
+    { Cijk,       "SB%o   A%o+B%o",       RBAB }, // 64
+    { Cijk,       "SB%o   A%o-B%o",       RBAB }, // 65
+    { Cijk,       "SB%o   B%o+B%o",       RBBB }, // 66
+    { Cijk,       "SB%o   B%o-B%o",       RBBB }, // 67
     
-    CijK,       "SX%o   A%o+%6.6o",     RXA,    // 70
-    CijK,       "SX%o   B%o+%6.6o",     RXB,    // 71
-    CijK,       "SX%o   X%o+%6.6o",     RXX,    // 72
-    Cijk,       "SX%o   X%o+B%o",       RXXB,   // 73
-    Cijk,       "SX%o   A%o+B%o",       RXAB,   // 74
-    Cijk,       "SX%o   A%o-B%o",       RXAB,   // 75
-    Cijk,       "SX%o   B%o+B%o",       RXBB,   // 76
-    Cijk,       "SX%o   B%o-B%o",       RXBB,   // 77
+    { CijK,       "SX%o   A%o+%6.6o",     RXA },  // 70
+    { CijK,       "SX%o   B%o+%6.6o",     RXB },  // 71
+    { CijK,       "SX%o   X%o+%6.6o",     RXX },  // 72
+    { Cijk,       "SX%o   X%o+B%o",       RXXB }, // 73
+    { Cijk,       "SX%o   A%o+B%o",       RXAB }, // 74
+    { Cijk,       "SX%o   A%o-B%o",       RXAB }, // 75
+    { Cijk,       "SX%o   B%o+B%o",       RXBB }, // 76
+    { Cijk,       "SX%o   B%o-B%o",       RXBB }, // 77
     };
 
 /*
@@ -347,8 +351,6 @@ static DecCpControl cpDecode[0100] =
 **------------------------------------------------------------------------*/
 void traceInit(void)
     {
-    u8 i;
-
     cpuTF = calloc(cpuCount, sizeof(FILE *));
     if (cpuTF == NULL)
         {
@@ -650,11 +652,11 @@ void traceCpu(CpuContext *activeCpu,
             }
         data = cpMem[activeCpu->regB[opJ] + opAddress + activeCpu->regRaCm];
         fprintf(cpuTF[cpuNum], "MD=%5.5o,%6.6o,%2.2o,%6.6o,%2.2o    ",
-                ((data >> 44) & 017760) + ((data >> 26) & 017),
-                (data >> 30) & Mask18,
-                (data >> 22) & 017,
-                data & Mask18,
-                (data >> 18) & 017);
+                (unsigned int) (((data >> 44) & 017760) + ((data >> 26) & 017)),
+                (unsigned int) ((data >> 30) & Mask18),
+                (unsigned int) ((data >> 22) & 017),
+                (unsigned int) (data & Mask18),
+                (unsigned int) ((data >> 18) & 017));
         break;
 
     case RBX:
@@ -860,7 +862,7 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
     fprintf(cpuTF[cpn], "B%d %06o", 5, cc->regB[5]);
     fprintf(cpuTF[cpn], "\n");
                            
-    fprintf(cpuTF[cpn], "MA      %06.6o  ", cc->regMa); 
+    fprintf(cpuTF[cpn], "MA      %06o  ", cc->regMa); 
     fprintf(cpuTF[cpn], "A%d %06o  ", 6, cc->regA[6]);
     fprintf(cpuTF[cpn], "B%d %06o", 6, cc->regB[6]);
     fprintf(cpuTF[cpn], "\n");

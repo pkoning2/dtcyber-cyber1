@@ -17,6 +17,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -31,6 +32,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <pthread.h>
 #endif
 
@@ -247,8 +249,6 @@ void dtCreateListener(NetPortSet *ps, int ringSize)
     WORD versionRequested;
     WSADATA wsaData;
     int err;
-#else
-    int rc;
 #endif
     int i;
 
@@ -778,7 +778,7 @@ static void *dtThread(void *param)
     int listenFd, connFd;
     struct sockaddr_in server;
     struct sockaddr_in from;
-    int fromLen;
+    socklen_t fromLen;
     int true_opt = 1;
     
     /*

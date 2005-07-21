@@ -91,7 +91,6 @@ extern XrmDatabase XrmDb;
 **  Private Variables
 **  -----------------
 */
-static FontInfo *currentFontInfo;
 static FontInfo smallOperFont;
 static FontInfo mediumOperFont;
 static Window window;
@@ -121,8 +120,6 @@ extern void dtXinit(void);
 **------------------------------------------------------------------------*/
 void windowInit(void)
     {
-    int rc;
-    KeySym modList[2];
     XWMHints wmhints;
     int screen;
     XWindowAttributes a;
@@ -271,7 +268,6 @@ void windowClose(void)
 char opWindowInput(void)
     {
     XEvent event;
-    XKeyEvent *kp;
     KeySym key;
     char text[30];
     int len;

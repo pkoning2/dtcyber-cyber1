@@ -17,6 +17,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -28,6 +29,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 /*
 **  -----------------
@@ -171,7 +173,7 @@ static void doelzActivate(void);
 static void doelzInDisconnect(void);
 static void doelzOutDisconnect(void);
 static void doelzCreateThread(void);
-static int doelzCheckInput(LinkParam *linkVector);
+//static int doelzCheckInput(LinkParam *linkVector);
 #if defined(_WIN32)
 static void doelzThread(void *param);
 #define RETURN return
@@ -198,7 +200,7 @@ DoelzNode *doelzNodes;
 static DevSlot *in;
 static DevSlot *out;
 static LinkParam *linkVector;
-static ConnParam *connTable[MAXADDR + 1];
+//static ConnParam *connTable[MAXADDR + 1];
 static ConnParam *first, *last;         /* list heads for pending input list */
 static int incnt;                       /* byte index of next input byte  */
 static int inflags;                     /* various input state flags */
@@ -242,7 +244,6 @@ static const SupMsg allCallMsg =
 **------------------------------------------------------------------------*/
 void doelzInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 {
-    u8 i;
     LinkParam *mp;
 
     (void)eqNo;
@@ -350,8 +351,6 @@ static FcStatus doelzOutFunc(PpWord funcCode)
 **------------------------------------------------------------------------*/
 static void doelzInIo(void)
 {
-    int port;
-    LinkParam *mp;
     PpWord d;
     u8 *p;
     int len;
@@ -427,7 +426,7 @@ static void doelzInIo(void)
             first = first->next;
             if (first == NULL)
             {
-                last == NULL;
+                last = NULL;
             }
         }
     }
@@ -445,9 +444,6 @@ static void doelzInIo(void)
 static void doelzOutIo(void)
 {
     PpWord d;
-    int port;
-    struct timeval tm;
-    u64 us;
 
     if (!activeChannel->full)
         return;
@@ -528,7 +524,6 @@ static void doelzOutDisconnect(void)
 {
     int addr = (outbuf[0] << 8) + outbuf[1];
     int i;
-    AbortMsg *am;
     KeyMsg *km;
     SupMsg *sm;
     /* DataMsg *dm; */
@@ -682,7 +677,7 @@ static void *doelzThread(void *param)
     int listenFd;
     struct sockaddr_in server;
     struct sockaddr_in from;
-    int fromLen;
+    socklen_t fromLen;
     LinkParam *mp;
     u8 i;
     int reuse = 1;
@@ -769,6 +764,7 @@ static void *doelzThread(void *param)
 **                  -2 if the connection was dropped
 **
 **------------------------------------------------------------------------*/
+#if 0   // not used yet
 static int doelzCheckInput(LinkParam *mp)
 {
     int i;
@@ -821,7 +817,7 @@ static int doelzCheckInput(LinkParam *mp)
         return(-1);
     }
 }
-
+#endif
 
 
 

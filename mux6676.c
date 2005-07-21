@@ -17,6 +17,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -28,6 +29,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 /*
 **  -----------------
@@ -415,7 +417,7 @@ static void *mux6676Thread(void *param)
     int listenFd;
     struct sockaddr_in server;
     struct sockaddr_in from;
-    int fromLen;
+    socklen_t fromLen;
     PortParam *mp;
     u8 i;
     int reuse = 1;

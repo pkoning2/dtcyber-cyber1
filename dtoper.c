@@ -104,6 +104,7 @@ XrmDatabase XrmDb;
 HINSTANCE hInstance;
 #endif
 bool emulationActive = TRUE;
+int ppKeyIn;
 
 /*
 **  ----------------
@@ -128,9 +129,8 @@ static NetFet fet;
 static char cmdBuf[OpCmdSize + 1];
 static int cmdLen = 0;
 static char userKey;
-static int ppKeyIn;
 static char nextKey = 0;
-static u8 dataBuf[OpDataSize + 1];
+static char dataBuf[OpDataSize + 1];
 
 static char **syntax;
 static int syntaxCnt = 0;
@@ -143,7 +143,6 @@ static OpMsg cmdEcho = { CmdX, CmdY, 0020, 0, cmdBuf };
 static OpMsg errmsg = { 0020, 0014, 0020, 0, NULL };   // pointer filled in
 static char errmsgBuf[OpCmdSize + 1];
 
-static char msgBuf[80];
 static int smallFontWidth;
 static int mediumFontWidth;
 static bool initDone = FALSE;
@@ -162,10 +161,12 @@ int main (int argc, char **argv)
     int port;
     int i, j;
     OpMsg *msgp;
-    u8 *p;
+    char *p;
     char *cp;
+#if defined(_WIN32) || defined (__APPLE__)
     int true_opt = 1;
-    
+#endif
+
     if (argc > 2)
         {
         printf ("usage: dtoper [ portnum ]\n");

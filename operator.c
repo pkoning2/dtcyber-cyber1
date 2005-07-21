@@ -19,6 +19,11 @@
 */
 #if defined(_WIN32)
 #include <windows.h>
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -189,34 +194,34 @@ static OpCmd decode[] =
     ** possible matching string.  The first match is used.
     */
     {
-    "SHUTDOWN.",                opCmdShutdown,
-    "LOAD,",                    opCmdLoad,
-    "UNLOAD,",                  opCmdUnload,
-    "DUMP,CPU.",                opDumpCpu,
-    "DUMP,CM,",                 opDumpCMem,
-    "DUMP,ECS,",                opDumpEcs,
-    "DUMP,PPU",                 opDumpPpu,
-    "DISASSEMBLE,PPU",          opDisPpu,
-    "SET,KEYBOARD=",            opKeyboard,
-    "DEBUG,",                   opDebug,
-    "LOCK.",                    opLock,
-    "UNLOCK.",                  opUnlock,
+    { "SHUTDOWN.",                opCmdShutdown },
+    { "LOAD,",                    opCmdLoad },
+    { "UNLOAD,",                  opCmdUnload },
+    { "DUMP,CPU.",                opDumpCpu },
+    { "DUMP,CM,",                 opDumpCMem },
+    { "DUMP,ECS,",                opDumpEcs },
+    { "DUMP,PPU",                 opDumpPpu },
+    { "DISASSEMBLE,PPU",          opDisPpu },
+    { "SET,KEYBOARD=",            opKeyboard },
+    { "DEBUG,",                   opDebug },
+    { "LOCK.",                    opLock },
+    { "UNLOCK.",                  opUnlock },
 #if CcDebug == 1
-    "TRACE,PPU",                opTracePpu,
-    "TRACE,CHANNEL",            opTraceCh,
-    "TRACE,CPU",                opTraceCpu,
-    "TRACE,CP",                 opTraceCp,
-    "TRACE,XJ.",                opTraceXj,
-    "TRACE,ECS.",               opTraceEcs,
-    "UNTRACE,.",                opUntrace,
-    "UNTRACE,PPU",              opUntracePpu,
-    "UNTRACE,CHANNEL",          opUntraceCh,
-    "UNTRACE,CPU",              opUntraceCpu,
-    "UNTRACE,XJ.",              opUntraceXj,
-    "UNTRACE,ECS.",             opUntraceEcs,
-    "UNTRACE,RESET.",           opResetTrace,
+    { "TRACE,PPU",                opTracePpu },
+    { "TRACE,CHANNEL",            opTraceCh },
+    { "TRACE,CPU",                opTraceCpu },
+    { "TRACE,CP",                 opTraceCp },
+    { "TRACE,XJ.",                opTraceXj },
+    { "TRACE,ECS.",               opTraceEcs },
+    { "UNTRACE,.",                opUntrace },
+    { "UNTRACE,PPU",              opUntracePpu },
+    { "UNTRACE,CHANNEL",          opUntraceCh },
+    { "UNTRACE,CPU",              opUntraceCpu },
+    { "UNTRACE,XJ.",              opUntraceXj },
+    { "UNTRACE,ECS.",             opUntraceEcs },
+    { "UNTRACE,RESET.",           opResetTrace },
 #endif
-    NULL,                       NULL
+    { NULL,                       NULL },
     };
 
 // Note: Y values of zero are filled in by opInit
@@ -253,8 +258,6 @@ static OpMsg msg[] =
       { 0020,    0, 0010, 0, "SHUTDOWN.          Close DtCyber." },
       { 0, 0, 0, 0, NULL },
     };
-static bool msgBold;
-static bool complete;
 static char msgBuf[80];
 static const char *msgPtr;
 static int statusLineCnt = StatusFirstDev;
@@ -281,7 +284,7 @@ static bool opLocked = TRUE;
 **------------------------------------------------------------------------*/
 void opInit(void)
     {
-    int y;
+    int y = 0;
     OpMsg *m;
 
     /*
@@ -453,7 +456,7 @@ void operCheckRequests (void)
 **------------------------------------------------------------------------*/
 static ThreadFunRet opThread (void *param)
     {
-    int connFd, i;
+    int i;
     NetPort *np;
     
     printf ("operator thread running\n");
@@ -497,7 +500,7 @@ static int opRequest(NetPort *np)
     {
     OpCmd *cp;
     int cmdLen;
-    int i, j;
+    int j;
 
     /*
     **  Try to receive a command TLV
@@ -1250,9 +1253,9 @@ static void opSetup (NetPort *np, int index)
     int i;
     const char **sp;
     OpMsg *msgp;
-    u8 msgbuf[200];
+    char msgbuf[200];
     char hostbuf[100];
-    u8 *p;
+    char *p;
     
     if (np->fet.connFd == 0)
         {

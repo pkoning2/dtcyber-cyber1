@@ -513,6 +513,7 @@ static void dumpMem(FILE *f, u32 start, u32 end, u32 ra, CpWord *mem)
         f = cpuDF;
         }
     lastData = ~mem[start + ra];
+    lastData2 = ~mem[start + 1 + ra];
     duplicateLine = FALSE;
     for (addr = start; addr < end; addr += 2)
         {

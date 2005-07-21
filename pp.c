@@ -1241,9 +1241,9 @@ static void ppOpLMC(void)     // 23
 
 static void ppOpEXN(void)     // 26
     {
-    u32 exchangeAddress;
+    u32 exchangeAddress = 0;
     int cpnum = opD & 007;
-    int monitor;
+    int monitor = -1;
     int ret;
 
     if (cpnum >= cpuCount)

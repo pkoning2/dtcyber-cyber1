@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 #include <time.h>
 #include "const.h"
 #include "types.h"

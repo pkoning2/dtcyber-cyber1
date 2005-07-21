@@ -238,70 +238,70 @@ static const u32 cpOp01Length[8] = { 30, 30, 30, 30, 15, 15, 15, 15 };
 */
 static OpDispatch decodeCpuOpcode[] =
     {
-    cpOp00, 15,
-    cpOp01, 0,
-    cpOp02, 30,
-    cpOp03, 30,
-    cpOp04, 30,
-    cpOp05, 30,
-    cpOp06, 30,
-    cpOp07, 30,
-    cpOp10, 15,
-    cpOp11, 15,
-    cpOp12, 15,
-    cpOp13, 15,
-    cpOp14, 15,
-    cpOp15, 15,
-    cpOp16, 15,
-    cpOp17, 15,
-    cpOp20, 15,
-    cpOp21, 15,
-    cpOp22, 15,
-    cpOp23, 15,
-    cpOp24, 15,
-    cpOp25, 15,
-    cpOp26, 15,
-    cpOp27, 15,
-    cpOp30, 15,
-    cpOp31, 15,
-    cpOp32, 15,
-    cpOp33, 15,
-    cpOp34, 15,
-    cpOp35, 15,
-    cpOp36, 15,
-    cpOp37, 15,
-    cpOp40, 15,
-    cpOp41, 15,
-    cpOp42, 15,
-    cpOp43, 15,
-    cpOp44, 15,
-    cpOp45, 15,
-    cpOp46, 15,
-    cpOp47, 15,
-    cpOp50, 30,
-    cpOp51, 30,
-    cpOp52, 30,
-    cpOp53, 15,
-    cpOp54, 15,
-    cpOp55, 15,
-    cpOp56, 15,
-    cpOp57, 15,
-    cpOp60, 30,
-    cpOp61, 30,
-    cpOp62, 30,
-    cpOp63, 15,
-    cpOp64, 15,
-    cpOp65, 15,
-    cpOp66, 15,
-    cpOp67, 15,
-    cpOp70, 30,
-    cpOp71, 30,
-    cpOp72, 30,
-    cpOp73, 15,
-    cpOp74, 15,
-    cpOp75, 15,
-    cpOp76, 15,
-    cpOp77, 15
+    { cpOp00, 15 },
+    { cpOp01, 0 },
+    { cpOp02, 30 },
+    { cpOp03, 30 },
+    { cpOp04, 30 },
+    { cpOp05, 30 },
+    { cpOp06, 30 },
+    { cpOp07, 30 },
+    { cpOp10, 15 },
+    { cpOp11, 15 },
+    { cpOp12, 15 },
+    { cpOp13, 15 },
+    { cpOp14, 15 },
+    { cpOp15, 15 },
+    { cpOp16, 15 },
+    { cpOp17, 15 },
+    { cpOp20, 15 },
+    { cpOp21, 15 },
+    { cpOp22, 15 },
+    { cpOp23, 15 },
+    { cpOp24, 15 },
+    { cpOp25, 15 },
+    { cpOp26, 15 },
+    { cpOp27, 15 },
+    { cpOp30, 15 },
+    { cpOp31, 15 },
+    { cpOp32, 15 },
+    { cpOp33, 15 },
+    { cpOp34, 15 },
+    { cpOp35, 15 },
+    { cpOp36, 15 },
+    { cpOp37, 15 },
+    { cpOp40, 15 },
+    { cpOp41, 15 },
+    { cpOp42, 15 },
+    { cpOp43, 15 },
+    { cpOp44, 15 },
+    { cpOp45, 15 },
+    { cpOp46, 15 },
+    { cpOp47, 15 },
+    { cpOp50, 30 },
+    { cpOp51, 30 },
+    { cpOp52, 30 },
+    { cpOp53, 15 },
+    { cpOp54, 15 },
+    { cpOp55, 15 },
+    { cpOp56, 15 },
+    { cpOp57, 15 },
+    { cpOp60, 30 },
+    { cpOp61, 30 },
+    { cpOp62, 30 },
+    { cpOp63, 15 },
+    { cpOp64, 15 },
+    { cpOp65, 15 },
+    { cpOp66, 15 },
+    { cpOp67, 15 },
+    { cpOp70, 30 },
+    { cpOp71, 30 },
+    { cpOp72, 30 },
+    { cpOp73, 15 },
+    { cpOp74, 15 },
+    { cpOp75, 15 },
+    { cpOp76, 15 },
+    { cpOp77, 15 },
     };
 
 
@@ -1559,7 +1559,7 @@ static void cpuEcsTransfer(CPUVARGS2 (bool writeToEcs, bool toReg))
     u32 ecsAddress;
     u32 cmAddress;
     bool takeErrorExit = FALSE;
-    CpWord *cmPtr;
+    CpWord *cmPtr = 0;
     
     /*
     **  ECS must exist and instruction (if RE/WE) must be located in the upper 30 bits.
@@ -1578,7 +1578,7 @@ static void cpuEcsTransfer(CPUVARGS2 (bool writeToEcs, bool toReg))
     if (toReg)
         {
         wordCount = 1;
-        ecsAddress = ecsAddress = (u32)(activeCpu->regX[activeCpu->opK] & Mask24);
+        ecsAddress = (u32)(activeCpu->regX[activeCpu->opK] & Mask24);
         cmAddress = activeCpu->opJ;
         cmPtr = activeCpu->regX + cmAddress;
         }
@@ -1851,7 +1851,7 @@ static bool cpuCmuPutByte(CPUVARGS3 (u32 address, u32 pos, u8 byte))
 **------------------------------------------------------------------------*/
 static void cpuCmuMoveIndirect(CPUVARG)
     {
-    CpWord descWord;
+    CpWord descWord = 0;
     u32 k1, k2;
     u32 c1, c2;
     u32 ll;

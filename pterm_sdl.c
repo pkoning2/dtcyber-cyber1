@@ -12,7 +12,9 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
+#include <string.h>
 #if !defined(_WIN32)
 #include <sys/time.h>
 #include <unistd.h>
@@ -139,11 +141,11 @@ void ptermStartGsw (void)
 // which means +/- 31 max for each channel volume.
 // We'll use a map tabel so we can accommodate any transfer function.
 // For now (pending data from sjg) we'll assume a linear mapping.
-static const volmap[8] = {
+static const int volmap[8] = {
     4, 8, 12, 16, 20, 24, 28, 31
 };
 
-static const int mapvol (int volume)
+static int mapvol (int volume)
 {
     return volmap[volume & 7];
 }

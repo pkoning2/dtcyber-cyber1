@@ -17,6 +17,8 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -28,6 +30,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <arpa/inet.h>
 #endif
 #include <errno.h>
 
@@ -176,8 +179,6 @@ static u32 niuLastAlertReset;
 **------------------------------------------------------------------------*/
 void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     {
-    u8 i;
-
     (void)eqNo;
 
     if (in != NULL)
@@ -362,9 +363,7 @@ static void niuInIo(void)
     int port;
     PortParam *mp;
     NetPort *np;
-    NetPortSet *ps;
     int i;
-    int nextget;
     
     if ((activeDevice->fcode != FcNiuSelectBlackBox &&
          activeDevice->fcode != FcNiuSelectInput) ||
@@ -747,7 +746,7 @@ void niuSendstr(int stat, const char *p)
     int cc = 2;
     int w = 017720;
     bool shift = FALSE;
-    char c;
+    int c;
     
     while ((c = *p++) != 0)
         {
@@ -853,7 +852,6 @@ static void niuSend(int stat, int word)
 void niuSendWord(int stat, int word)
     {
     int fd;
-    PortParam *mp;
     u8 data[3];
 
 #ifdef TRACE
@@ -996,6 +994,7 @@ static void *niuThread(void *param)
         {
         niuDoAlert (OPERBOX_CRASH);
         }
+        ThreadReturn;
     }
 
 

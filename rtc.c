@@ -24,6 +24,8 @@
 #include <Carbon.h>
 #elif defined(__GNUC__) && defined(__x86_64)
 #include <sys/time.h>
+#else
+#include <unistd.h>
 #endif
 
 #include "const.h"
@@ -227,11 +229,11 @@ static FcStatus rtcFunc(PpWord funcCode)
 **------------------------------------------------------------------------*/
 static void rtcIo(void)
     {
-    u32 clock;
+    u32 clock = 0;
     
 #if RDTSC
-    u64 rtcCycles, now;
-    u32 us;
+    u64 rtcCycles = 0, now;
+    u32 us = 0;
     
     if (rtcIncrement == 0)
         {

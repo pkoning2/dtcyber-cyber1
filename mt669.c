@@ -270,7 +270,9 @@ static void mt669FuncBackspace(void);
 static void mt669FuncReadBkw(void);
 static void mt669FuncReposition(void);
 static void mt669Load(DevSlot *dp, int unitNo, char *fn);
+#if DEBUG
 static char *mt669Func2String(PpWord funcCode);
+#endif
 
 /*
 **  ----------------
@@ -283,10 +285,8 @@ static char *mt669Func2String(PpWord funcCode);
 **  Private Variables
 **  -----------------
 */
-static char str[200];
 static u8 rawBuffer[MaxByteBuf];
 
-static int dc6681Status;
 static int dc6681UnitStatus = 01121;
 
 static u8 convTab1in[256];
@@ -1256,9 +1256,6 @@ static void mt669Disconnect(void)
 **------------------------------------------------------------------------*/
 static void mt669FuncRelease(void)
     {
-    u8 unitNo = activeDevice->selectedUnit;
-    TapeBuf *tp = activeDevice->context[unitNo];
-
     activeDevice->fcode = 0;
     activeDevice->status = St669NoUnit;
     }
@@ -2167,9 +2164,9 @@ static void mt669FuncReposition(void)
 **  Returns:        String equivalent of function code.
 **
 **------------------------------------------------------------------------*/
+#if DEBUG
 static char *mt669Func2String(PpWord funcCode)
     {
-#if DEBUG
     switch(funcCode)
         {
     case Fc669ClearUnit             :  return "ClearUnit";        
@@ -2222,9 +2219,9 @@ static char *mt669Func2String(PpWord funcCode)
     case Fc669MasterClear           :  return "MasterClear";      
     case Fc6681Read2EOR             :  return "6681Read2EOR";        
         }
-#endif
     return "UNKNOWN";
     }
+#endif
 
 /*---------------------------  End Of File  ------------------------------*/
 

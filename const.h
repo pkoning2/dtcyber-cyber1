@@ -133,7 +133,7 @@
 #define DefNiuPort      5004        /* Plato NIU default port */
 #define DefOpPort       5006        /* Operator interface default port */
 #define DefDd60Port     5007        /* DD60 interface default port */
-#define DefDoelzPort    5008        /* Default Doelz net port
+#define DefDoelzPort    5008        /* Default Doelz net port */
 
 /*
 **  PP wait for I/O types

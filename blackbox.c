@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -43,6 +44,9 @@ long platoLocalConns = 31;
 long platoLocalPort = 5005;
 long platoConns = 96;
 long platoPort = 5004;
+
+extern void niuSendstr(int stat, const char *p);
+extern void niuSendWord(int stat, int word);
 
 DevSlot *channelAttach (u8 channelNo, u8 eqNo, u8 devType)
     {

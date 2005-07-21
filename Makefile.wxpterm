@@ -23,9 +23,10 @@ endif
 else
 ifeq ("$(TYPE)","debugascii")
 DIR = /usr/local/wxshared
-EXTRALIBS=
+EXTRALIBS= -lXinerama
 else
 DIR = /usr/local/wxshareud
+EXTRALIBS= -lXinerama
 endif
 endif
 
@@ -52,7 +53,7 @@ SDLLIBS = $(SDLPATH)/lib/libSDL.a `$(SDLPATH)/bin/sdl-config --static-libs`
 else
 SDLLIBS = -lSDL `$(SDLPATH)/bin/sdl-config --libs`
 endif
-SETPATH= LD_RUN_PATH=$(DIR)/lib:$(SDLPATH)/lib:/usr/lib:/lib
+SETPATH= -Wl,-rpath,$(DIR)/lib -Wl,-rpath,$(SDLPATH)/lib
 
 #INCL ?= -I/usr/local/include
 
@@ -68,7 +69,7 @@ endif
 .PHONY : pterm-kit langdirs
 
 pterm:	$(PTOBJS)
-	$(SETPATH) $(CXX) $(LDFLAGS) -o $@ $+ $(SDLLIBS) $(WXLIBS)
+	$(CXX) $(LDFLAGS) -o $@ $+ $(SDLLIBS) $(WXLIBS) $(SETPATH)
 ifeq ("$(TYPE)","static")
 ifneq ("$(HOST)","Darwin")
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@

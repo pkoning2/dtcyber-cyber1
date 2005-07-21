@@ -206,16 +206,15 @@ static void dd8xxActivate(void);
 static void dd8xxDisconnect(void);
 static i32 dd8xxSeek(DiskParam *dp);
 static i32 dd8xxSeekNextSector(DiskParam *dp, bool gap);
-static void dd8xxDump(PpWord data);
-static void dd8xxFlush(void);
 static PpWord dd8xxReadClassic(DiskParam *dp, FILE *fcb);
 static PpWord dd8xxReadPacked(DiskParam *dp, FILE *fcb);
 static void dd8xxWriteClassic(DiskParam *dp, FILE *fcb, PpWord data);
 static void dd8xxWritePacked(DiskParam *dp, FILE *fcb, PpWord data);
-static void dd8xxSectorRead(DiskParam *dp, FILE *fcb, PpWord *sector);
 static void dd8xxSectorWrite(DiskParam *dp, FILE *fcb, PpWord *sector);
 static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState);
+#if DEBUG
 static char *dd8xxFunc2String(PpWord funcCode);
+#endif
 
 /*
 **  ----------------
@@ -305,7 +304,7 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     time_t mTime;
     struct tm *lTime;
     u8 yy, mm, dd;
-    u8 containerType;
+    u8 containerType = CtPacked;
     char *opt = NULL;
 
     (void)eqNo;
@@ -1407,27 +1406,6 @@ static void dd8xxWritePacked(DiskParam *dp, FILE *fcb, PpWord data)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Perform a sector read from a disk container.
-**
-**  Parameters:     Name        Description.
-**                  dp          Disk parameters (context).
-**                  fcb         File control block.
-**                  sector      Pointer to sector to read into.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static void dd8xxSectorRead(DiskParam *dp, FILE *fcb, PpWord *sector)
-    {
-    u16 byteCount;
-
-    for (byteCount = SectorSize; byteCount > 0; byteCount--)
-        {
-        *sector++ = dp->read(dp, fcb);
-        }
-    }
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Perform a sector write to a disk container.
 **
 **  Parameters:     Name        Description.
@@ -1570,9 +1548,9 @@ static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState)
 **  Returns:        String equivalent of function code.
 **
 **------------------------------------------------------------------------*/
+#if DEBUG
 static char *dd8xxFunc2String(PpWord funcCode)
     {
-#if DEBUG
     switch(funcCode)
         {
     case Fc8xxConnect                :  return "Connect";              
@@ -1609,8 +1587,8 @@ static char *dd8xxFunc2String(PpWord funcCode)
     case Fc8xxDeadstart              :  return "Deadstart";            
     case Fc8xxStartMemLoad           :  return "StartMemLoad";         
         }
-#endif
     return "UNKNOWN";
     }
+#endif
 
 /*---------------------------  End Of File  ------------------------------*/

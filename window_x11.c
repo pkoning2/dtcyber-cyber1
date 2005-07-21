@@ -49,6 +49,12 @@
 //#define XDEBUG(disp,text) XSync(disp, 0); printf (text "\n")
 #define XDEBUG(disp,text)
 
+/* Macro to fix a "signedness" warning caused by a boneheaded
+   choice for argument data types in X
+*/
+#define XXRebindKeysym(disp, key, modList, count, str, len) \
+    XRebindKeysym (disp, key, modList, count, \
+                   (unsigned char *) (str), len)
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
@@ -81,8 +87,8 @@ typedef struct
 static void INLINE windowShowLine (void);
 static void windowStoreChar (char c, int x, int y, int dx);
 static void getCharWidths (FontInfo *f, char *s);
-static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize);
-static void window545Plot(int xPos, int yPos, char ch, u8 fontSize);
+static void windowTextPlot(int xPos, int yPos, int ch, int fontSize);
+static void window545Plot(int xPos, int yPos, int ch, int fontSize);
 
 /*
 **  ----------------
@@ -98,13 +104,13 @@ extern bool hersheyMode;
 extern bool cc545Mode;
 extern int scaleX;
 extern int scaleY;
+bool keyboardTrue;
 
 /*
 **  -----------------
 **  Private Variables
 **  -----------------
 */
-static bool keyboardTrue;
 static int currentFont = -1;
 static FontInfo *currentFontInfo;
 static int currentX = -1;
@@ -154,6 +160,8 @@ void windowSetX (int x);
 void windowSetY (int y);
 void windowSetMode (int mode);
 void windowProcessChar (int ch);
+
+extern void dtXinit(void);
 
 /*
 **--------------------------------------------------------------------------
@@ -335,30 +343,30 @@ void windowInit(void)
     **  Create mappings of some ALT-key combinations to strings.
     */
     modList[0] = XK_Meta_L;
-    XRebindKeysym(disp, '0', modList, 1, "$0", 2);
-    XRebindKeysym(disp, '1', modList, 1, "$1", 2);
-    XRebindKeysym(disp, '2', modList, 1, "$2", 2);
-    XRebindKeysym(disp, '3', modList, 1, "$3", 2);
-    XRebindKeysym(disp, '4', modList, 1, "$4", 2);
-    XRebindKeysym(disp, '5', modList, 1, "$5", 2);
-    XRebindKeysym(disp, '6', modList, 1, "$6", 2);
-    XRebindKeysym(disp, '7', modList, 1, "$7", 2);
-    XRebindKeysym(disp, '8', modList, 1, "$8", 2);
-    XRebindKeysym(disp, '9', modList, 1, "$9", 2);
-    XRebindKeysym(disp, 'c', modList, 1, "$c", 2);
-    XRebindKeysym(disp, 'C', modList, 1, "$C", 2);
-    XRebindKeysym(disp, 'e', modList, 1, "$e", 2);
-    XRebindKeysym(disp, 'E', modList, 1, "$e", 2);
-    XRebindKeysym(disp, 'j', modList, 1, "$j", 2);
-    XRebindKeysym(disp, 'J', modList, 1, "$j", 2);
-    XRebindKeysym(disp, 'x', modList, 1, "$x", 2);
-    XRebindKeysym(disp, 'X', modList, 1, "$x", 2);
-    XRebindKeysym(disp, 'q', modList, 1, "$q", 2);
-    XRebindKeysym(disp, 'Q', modList, 1, "$q", 2);
-    XRebindKeysym(disp, 's', modList, 1, "$s", 2);
-    XRebindKeysym(disp, 'S', modList, 1, "$s", 2);
-    XRebindKeysym(disp, 'z', modList, 1, "$z", 2);
-    XRebindKeysym(disp, 'Z', modList, 1, "$z", 2);
+    XXRebindKeysym(disp, '0', modList, 1, "$0", 2);
+    XXRebindKeysym(disp, '1', modList, 1, "$1", 2);
+    XXRebindKeysym(disp, '2', modList, 1, "$2", 2);
+    XXRebindKeysym(disp, '3', modList, 1, "$3", 2);
+    XXRebindKeysym(disp, '4', modList, 1, "$4", 2);
+    XXRebindKeysym(disp, '5', modList, 1, "$5", 2);
+    XXRebindKeysym(disp, '6', modList, 1, "$6", 2);
+    XXRebindKeysym(disp, '7', modList, 1, "$7", 2);
+    XXRebindKeysym(disp, '8', modList, 1, "$8", 2);
+    XXRebindKeysym(disp, '9', modList, 1, "$9", 2);
+    XXRebindKeysym(disp, 'c', modList, 1, "$c", 2);
+    XXRebindKeysym(disp, 'C', modList, 1, "$C", 2);
+    XXRebindKeysym(disp, 'e', modList, 1, "$e", 2);
+    XXRebindKeysym(disp, 'E', modList, 1, "$e", 2);
+    XXRebindKeysym(disp, 'j', modList, 1, "$j", 2);
+    XXRebindKeysym(disp, 'J', modList, 1, "$j", 2);
+    XXRebindKeysym(disp, 'x', modList, 1, "$x", 2);
+    XXRebindKeysym(disp, 'X', modList, 1, "$x", 2);
+    XXRebindKeysym(disp, 'q', modList, 1, "$q", 2);
+    XXRebindKeysym(disp, 'Q', modList, 1, "$q", 2);
+    XXRebindKeysym(disp, 's', modList, 1, "$s", 2);
+    XXRebindKeysym(disp, 'S', modList, 1, "$s", 2);
+    XXRebindKeysym(disp, 'z', modList, 1, "$z", 2);
+    XXRebindKeysym(disp, 'Z', modList, 1, "$z", 2);
     XDEBUG(disp, "rebound keysyms (a pile of them)");
     
     /*
@@ -439,7 +447,6 @@ int windowInput(void)
     char text[30];
     u8 c;
     int len;
-    u32 nextput;
 
 
     /*
@@ -604,7 +611,7 @@ void windowSetY (int y)
 **------------------------------------------------------------------------*/
 void windowSetMode (int mode)
     {
-    int newFont, newOffset;
+    int newFont = 0, newOffset;
     
     /*
     **  Handle left screen/right screen selection
@@ -849,7 +856,7 @@ static void getCharWidths (FontInfo *f, char *s)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize)
+static void windowTextPlot(int xPos, int yPos, int ch, int fontSize)
     {
     XPoint linesVec[HersheyMaxSegments];
     int segnum = 0;
@@ -908,7 +915,7 @@ static void windowTextPlot(int xPos, int yPos, char ch, u8 fontSize)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void window545Plot(int xPos, int yPos, char ch, u8 fontSize)
+static void window545Plot(int xPos, int yPos, int ch, int fontSize)
     {
     XPoint linesVec[22];
     int segnum = 0;

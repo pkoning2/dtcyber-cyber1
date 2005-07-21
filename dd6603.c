@@ -119,7 +119,6 @@ static i32 dd6603Seek(i32 track, i32 head, i32 sector);
 **  -----------------
 */
 static u8 logColumn;
-static PpWord dmp[8];
 
 /*
 **--------------------------------------------------------------------------
