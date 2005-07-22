@@ -83,6 +83,11 @@ cc545:	cc545.cpp
 
 ifeq ("$(HOST)","Darwin")
 
+cc545.app: cc545
+	mkdir -p cc545.app/Contents/MacOS
+	cp cc545 cc545.app/Contents/MacOS
+	touch $@
+
 Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES)
 	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm-info.plist.in > pterm-info.plist
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en
