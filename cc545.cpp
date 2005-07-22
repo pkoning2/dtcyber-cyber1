@@ -58,6 +58,8 @@ int bw;
 // private classes
 // ----------------------------------------------------------------------------
 
+// Delay line -- used to align control signals (beam on/off)
+// with analog data going through filters.
 class Delay
 {
 public:
@@ -76,20 +78,7 @@ private:
     bool *m_flags;
 };
 
-class Fir : public Delay
-{
-public:
-    Fir(void);
-    
-    void Reset (void);
-    double Step (double in);
-    
-private:
-    enum { taps = 15, delay = (taps + 1) / 2 };
-    double m_data[taps];
-    const static double coeff[taps];
-};
-
+// R/C lowpass filter, implemented as an IIR filter
 class RClow
 {
 public:
@@ -104,6 +93,7 @@ private:
     double a, b, z;
 };
 
+// R/C highpass filter, implemented as an IIR filter
 class RChigh
 {
 public:
@@ -119,6 +109,10 @@ private:
     double a, b, z;
 };
 
+// Character waveform generator.  This generates the unfiltered
+// waveform, i.e., an idealized waveform made up of straight lines
+// (constant slope ramps, or constant voltages).  It implements
+// the CC545 character generator patterns from document 60469310.
 class Chargen
 {
 public:
@@ -155,12 +149,18 @@ private:
 class MyFrame;
 class CtlFrame;
 
-// Define a panel for the controls
+// Define a panel for the controls.  The nice way to do this would
+// be with custom controls that look like DD60 pot knobs, but that
+// will come later.
 class CcPanel : public wxPanel
 {
 public:
     CcPanel (CtlFrame *parent);
 
+    double aspect (void) const
+    {
+        return m_aspect->GetValue () / 100.0;
+    }
     int sizeX (void) const
     { 
         return m_size->GetValue () * m_aspect->GetValue () / 100;
@@ -264,6 +264,7 @@ public:
     // return: if OnInit() returns false, the application terminates)
     virtual bool OnInit();
 
+    double aspect (void) const { return m_controls->m_controls->aspect (); }
     int sizeX (void) const { return m_controls->m_controls->sizeX (); }
     int sizeY (void) const { return m_controls->m_controls->sizeY (); }
     double beamsize (void) const { return m_controls->m_controls->beamsize (); }
@@ -337,12 +338,15 @@ IMPLEMENT_APP(MyApp)
 // ============================================================================
 
 #define pi 3.14159265358979323846
+
+// Normal distribution (bell curve) function
 static double bell (double x, double sigma)
 {
     return (1 / (sigma * sqrt (2. * pi))) * 
         exp (-((x * x) / (2. * sigma * sigma)));
 }
 
+// Number of steps per stroke element, as a function of chosen bandwidth
 static int stepcount (int bw, int height)
 {
     if (bw == 0)
@@ -352,8 +356,6 @@ static int stepcount (int bw, int height)
     }
     else
     {
-        // Filtering; FIR normalized bandwidth = 1/BWRATIO and stroke
-        // frequency is STEPMHZ.
         return bw * BWRATIO / STEPMHZ;
     }
 }
@@ -672,8 +674,8 @@ void CcWindow::OnDraw (wxDC &dc)
 
         cx = ch & 7;
         cy = (ch >> 3) + 1;
-        cx = (width + cx * 3 * width) / 2;
-        cy = (height + cy * 3 * height) / 2;
+        cx = defwidth + cx * defwidth * wxGetApp ().aspect ();
+        cy = defheight + cy * defheight;
         cg.Start (ch);
         while (!cg.Done ())
         {
@@ -869,50 +871,6 @@ void Chargen::Step (void)
         ++m_chardata;
         m_step = 0;
     }
-}
-
-// FIR
-
-const double Fir::coeff[] = 
-{
-//FIR - Bandpass Filter                        
-//         Frequency  Value       Weight    Lower Limit Upper Limit
-//Band  1:  0.00000   1.000       1.000        ----        ----    
-//          0.01000   1.000       1.000        ----        ----    
-//          0.05000   0.000       1.000        ----        ----    
-//          0.50000   0.000       1.000        ----        ----    
-   1.201039E-01,   3.675114E-02,   4.099866E-02,   4.508227E-02,   4.827919E-02,
-   5.063049E-02,   5.207417E-02,   5.255540E-02,   5.207417E-02,   5.063049E-02,
-   4.827919E-02,   4.508227E-02,   4.099866E-02,   3.675114E-02,   1.201039E-01,
-};
-
-Fir::Fir (void) :
-    Delay (delay)
-{
-    Reset ();
-}
-
-void Fir::Reset (void)
-{
-    for (int i = 0; i < taps; i++)
-    {
-        m_data[i] = 0.0;
-    }
-}
-
-double Fir::Step (double in)
-{
-    double out;
-    int i;
-    
-    memmove (&m_data[0], &m_data[1], sizeof (m_data) - sizeof (m_data[0]));
-    m_data[taps - 1] = in;
-    out = 0.0;
-    for (i = 0; i < taps; i++)
-    {
-        out += m_data[i] * coeff[i];
-    }
-    return out;
 }
 
 Delay::Delay (int delay)
