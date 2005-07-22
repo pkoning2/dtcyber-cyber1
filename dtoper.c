@@ -248,11 +248,11 @@ int main (int argc, char **argv)
                     */
                     messages = realloc (messages, (++msgCount) * sizeof (OpMsg));
                     msgp = &messages[msgCount - 1];
-                    j = *p++;
-                    j += *p++ << 8;
+                    j = *(u8 *) (p++);
+                    j += *(u8 *) (p++) << 8;
                     msgp->x = j;
-                    j = *p++;
-                    j += *p++ << 8;
+                    j = *(u8 *) (p++);
+                    j += *(u8 *) (p++) << 8;
                     msgp->y = j;
                     msgp->fontSize = *p++;
                     msgp->bold = *p++;
