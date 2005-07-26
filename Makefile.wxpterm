@@ -46,6 +46,13 @@ WXCONFIG ?= $(DIR)/bin/wx-config
 CXXFLAGS = `$(WXCONFIG) --cxxflags`
 WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
 
+GCCVERSION := $(shell gcc --version | head -1 | awk '{print $$3}')
+GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
+
+ifeq ("$(GCCVERSION)","4")
+VERSIONCFLAGS = -finput-charset=iso8859-1
+endif
+
 SDLPATH ?= /usr/local
 SDLINCL = -I$(SDLPATH)/include/SDL
 ifeq ("$(TYPE)","static")
@@ -139,6 +146,8 @@ pterm-rpm: pterm-src pterm.spec.in ptermversion.h
 pterm.dep: $(PTOBJS:.o=.d)
 
 %.o : %.cpp
+	echo "GCCVERSION is $(GCCVERSION)"
+	echo "CFLAGS is $(CFLAGS)"
 	$(CXX) -c $(CFLAGS) $(CXXFLAGS) $<
 
 %.d : %.cpp
