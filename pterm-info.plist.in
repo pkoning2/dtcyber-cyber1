@@ -9,7 +9,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>Pterm</string>
+	<string>pterm</string>
 	<key>CFBundleIconFile</key>
 	<string>Pterm.icns</string>
 	<key>CFBundleName</key>
