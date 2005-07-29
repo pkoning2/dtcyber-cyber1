@@ -1184,7 +1184,8 @@ void PtermApp::OnQuit(wxCommandEvent&)
 #if PTERM_MDI
 // MDI parent frame
 PtermMainFrame::PtermMainFrame (void)
-    : wxMDIParentFrame (NULL, wxID_ANY, wxT ("Pterm"))
+    : wxMDIParentFrame (NULL, wxID_ANY, wxT ("Pterm"),
+                        wxDefaultPosition, wxDefaultSize, 0)
 {
 #if wxUSE_MENUS
     // create a menu bar
@@ -3211,8 +3212,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 
     // Finally, the buttons
     bs = new wxBoxSizer (wxHORIZONTAL);
-    m_okButton = new wxButton (this, wxID_ANY, _("OK"));
-    m_cancelButton = new wxButton (this, wxID_ANY, _("Cancel"));
+    m_okButton = new wxButton (this, wxID_OK);
+    m_cancelButton = new wxButton (this, wxID_CANCEL);
     m_resetButton = new wxButton (this, wxID_ANY, _("Defaults"));
     bs->AddStretchSpacer ();
     bs->Add (m_okButton);
