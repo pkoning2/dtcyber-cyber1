@@ -20,7 +20,8 @@ include Makefile.dtoper
 include Makefile.dd60
 
 ifeq ("$(HOST)","Darwin")
-SDKDIR	?= /Developer/SDKs/MacOSX10.2.8.sdk
+#SDKDIR	?= /Developer/SDKs/MacOSX10.2.8.sdk
+SDKDIR	?= /Developer/SDKs/MacOSX10.3.0.sdk
 LIBS    +=  $(SDKDIR)/System/Library/Frameworks/Carbon.framework/Carbon
 INCL    += -I$(SDKDIR)/System/Library/Frameworks/Carbon.framework/Headers
 G5CFLAGS = -mcpu=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64
