@@ -42,7 +42,7 @@ endif
 
 PATH:=$(DIR)/bin:/usr/local/bin:$(PATH)
 
-WXCONFIG ?= $(DIR)/bin/wx-config
+WXCONFIG ?= wx-config
 CXXFLAGS = `$(WXCONFIG) --cxxflags`
 WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
 
@@ -50,11 +50,11 @@ GCCVERSION := $(shell gcc --version | head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
 
 SDLPATH ?= /usr/local
-SDLINCL = -I$(SDLPATH)/include/SDL
+SDLINCL = `sdl-config --cflags`
 ifeq ("$(TYPE)","static")
-SDLLIBS = $(SDLPATH)/lib/libSDL.a `$(SDLPATH)/bin/sdl-config --static-libs`
+SDLLIBS = `sdl-config --static-libs`
 else
-SDLLIBS = -lSDL `$(SDLPATH)/bin/sdl-config --libs`
+SDLLIBS = `sdl-config --libs`
 endif
 
 ifneq ("$(HOST)","Darwin")
@@ -75,7 +75,9 @@ endif
 pterm:	$(PTOBJS)
 	$(CXX) $(LDFLAGS) -o $@ $+ $(SDLLIBS) $(WXLIBS) $(SETPATH)
 ifeq ("$(TYPE)","static")
-ifneq ("$(HOST)","Darwin")
+ifeq ("$(HOST)","Darwin")
+	strip $@
+else
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
 endif
 endif
