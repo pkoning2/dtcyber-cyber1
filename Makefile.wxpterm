@@ -142,8 +142,6 @@ pterm-rpm: pterm-src pterm.spec.in ptermversion.h
 pterm.dep: $(PTOBJS:.o=.d)
 
 %.o : %.cpp
-	echo "GCCVERSION is $(GCCVERSION)"
-	echo "CFLAGS is $(CFLAGS)"
 	$(CXX) -c $(CFLAGS) $(CXXFLAGS) $<
 
 %.d : %.cpp
