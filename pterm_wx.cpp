@@ -1071,7 +1071,7 @@ void PtermApp::OnHelpKeys (wxCommandEvent &)
         // If there isn't one yet, create a help window -- same as a
         // regular frame except that the data comes from here, not
         // from a connection.
-        frame = new PtermFrame(str, -1, wxT("Keyboard Help"));
+        frame = new PtermFrame(str, -1, _("Keyboard Help"));
 
         if (frame != NULL)
         {
@@ -1205,12 +1205,12 @@ PtermMainFrame::PtermMainFrame (void)
 #endif
 
     wxMenu *menuFile = new wxMenu;
-    menuFile->Append (Pterm_Connect, _("&New Connection...\tCtrl-N"),
+    menuFile->Append (Pterm_Connect, _("New Connection...\tCtrl-N"),
                       _("Connect to a PLATO host"));
-    menuFile->Append (Pterm_Pref, _("P&references..."),
+    menuFile->Append (Pterm_Pref, _("Preferences..."),
                       _("Set program configuration"));
     menuFile->AppendSeparator ();
-    menuFile->Append (Pterm_Quit, _("E&xit"), _("Quit this program"));
+    menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
 
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
@@ -1222,7 +1222,7 @@ PtermMainFrame::PtermMainFrame (void)
     // menu ends up empty.  Sigh.
     wxMenu *helpMenu = new wxMenu;
 
-    helpMenu->Append(Pterm_About, _("&About Pterm"), _("Show about dialog"));
+    helpMenu->Append(Pterm_About, _("About Pterm"), _("Show about dialog"));
     helpMenu->Append(Pterm_HelpKeys, _("Pterm keyboard"), _("Show keyboard description"));
     
 #if defined(__WXMAC__)
@@ -1308,13 +1308,13 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
 #endif
 
     wxMenu *menuFile = new wxMenu;
-    menuFile->Append (Pterm_Connect, _("&New Connection...\tCtrl-N"),
+    menuFile->Append (Pterm_Connect, _("New Connection...\tCtrl-N"),
                       _("Connect to a PLATO host"));
     if (port > 0)
     {
         // No "connect again" for the help window because that
         // doesn't own a connection.
-        menuFile->Append (Pterm_ConnectAgain, _("Connect &Again"),
+        menuFile->Append (Pterm_ConnectAgain, _("Connect Again"),
                           _("Connect to the same host"));
         menuFile->AppendSeparator();
     }
@@ -1326,27 +1326,27 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     menuFile->Append (Pterm_Print, _("Print...") MACACCEL ("\tCtrl-P"),
                       _("Print screen content"));
     menuFile->Append (Pterm_Page_Setup, _("Page Setup..."), _("Printout page setup"));
-    menuFile->Append (Pterm_Preview, _T("Print Preview"), _("Preview screen print"));
+    menuFile->Append (Pterm_Preview, _("Print Preview"), _("Preview screen print"));
     menuFile->AppendSeparator ();
-    menuFile->Append (Pterm_Pref, _("P&references..."),
+    menuFile->Append (Pterm_Pref, _("Preferences..."),
                       _("Set program configuration"));
     menuFile->AppendSeparator ();
-    menuFile->Append (Pterm_Close, _("&Close\tCtrl-Z"),
+    menuFile->Append (Pterm_Close, _("Close\tCtrl-Z"),
                       _("Close this window"));
-    menuFile->Append (Pterm_Quit, _("E&xit"), _("Quit this program"));
+    menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
 
     wxMenu *menuEdit = new wxMenu;
 
     menuEdit->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
-    menuEdit->Append(Pterm_Copy, _("&Copy text") MACACCEL ("\tCtrl-C"),
-                     _T("Copy text only to clipboard"));
+    menuEdit->Append(Pterm_Copy, _("Copy text") MACACCEL ("\tCtrl-C"),
+                     _("Copy text only to clipboard"));
     if (port > 0)
     {
-        menuEdit->Append(Pterm_Paste, _("&Paste ASCII") MACACCEL ("\tCtrl-V"),
-                         _T("Paste plain text"));
+        menuEdit->Append(Pterm_Paste, _("Paste ASCII") MACACCEL ("\tCtrl-V"),
+                         _("Paste plain text"));
         // No "paste" for help window because it doesn't do input.
-        menuEdit->Append(Pterm_PastePrint, _T("Paste Printo&ut"),
-                         _T("Paste Cyber printout format"));
+        menuEdit->Append(Pterm_PastePrint, _("Paste Printout"),
+                         _("Paste Cyber printout format"));
     }
 
     // Copy is initially disabled, until a region is selected
@@ -1363,7 +1363,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     // menu ends up empty.  Sigh.
     wxMenu *helpMenu = new wxMenu;
 
-    helpMenu->Append(Pterm_About, _("&About Pterm"),
+    helpMenu->Append(Pterm_About, _("About Pterm"),
                      _("Show about dialog"));
     helpMenu->Append(Pterm_HelpKeys, _("Pterm keyboard"),
                      _("Show keyboard description"));
@@ -3156,10 +3156,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     sbs = new wxStaticBoxSizer (new wxStaticBox (this, wxID_ANY,
                                                  _("Emulation settings")),
                                 wxVERTICAL);
-    m_speedCheck = new wxCheckBox (this, -1, _("&Simulate 1200 Baud"));
+    m_speedCheck = new wxCheckBox (this, -1, _("Simulate 1200 Baud"));
     m_speedCheck->SetValue (m_classicSpeed);
     sbs->Add (m_speedCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_gswCheck = new wxCheckBox (this, -1, _("Enable &GSW"));
+    m_gswCheck = new wxCheckBox (this, -1, _("Enable GSW"));
     m_gswCheck->SetValue (m_gswEnable);
     sbs->Add (m_gswCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_arrowCheck = new wxCheckBox (this, -1, _("Numeric keypad for arrows"));
@@ -3171,7 +3171,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     sbs = new wxStaticBoxSizer (new wxStaticBox (this, wxID_ANY,
                                                  _("Connection settings")),
                                 wxVERTICAL);
-    m_autoConnect = new wxCheckBox (this, -1, _("&Connect at startup"));
+    m_autoConnect = new wxCheckBox (this, -1, _("Connect at startup"));
     m_autoConnect->SetValue (m_connect);
     sbs->Add (m_autoConnect, 0,   wxTOP | wxLEFT | wxRIGHT, 8);
     fgs = new wxFlexGridSizer (2, 2, 8, 8);
@@ -3183,9 +3183,9 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                  wxDefaultPosition, wxSize (160+40, 18),
                                  0, *new wxTextValidator (wxFILTER_NUMERIC,
                                                           &m_port));
-    fgs->Add (new wxStaticText (this, wxID_ANY, _("Default &Host")));
+    fgs->Add (new wxStaticText (this, wxID_ANY, _("Default Host")));
     fgs->Add (m_hostText);
-    fgs->Add (new wxStaticText (this, wxID_ANY, _("Default &Port")));
+    fgs->Add (new wxStaticText (this, wxID_ANY, _("Default Port")));
     fgs->Add (m_portText);
     sbs->Add (fgs, 0, wxALL, 8);
     ds->Add (sbs, 0,  wxTOP | wxLEFT | wxRIGHT | wxEXPAND, 10);
@@ -3194,10 +3194,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     sbs = new wxStaticBoxSizer (new wxStaticBox (this, wxID_ANY,
                                                  _("Display settings")),
                                 wxVERTICAL);
-    m_scaleCheck = new wxCheckBox (this, -1, _("&Zoom display 200%"));
+    m_scaleCheck = new wxCheckBox (this, -1, _("Zoom display 200%"));
     m_scaleCheck->SetValue (m_scale2);
     sbs->Add (m_scaleCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_statusCheck = new wxCheckBox (this, -1, _("Status &bar"));
+    m_statusCheck = new wxCheckBox (this, -1, _("Status bar"));
     m_statusCheck->SetValue (m_showStatusBar);
     sbs->Add (m_statusCheck, 0, wxALL, 8);
     fgs = new wxFlexGridSizer (2, 2, 8, 8);
