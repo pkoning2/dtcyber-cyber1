@@ -49,10 +49,6 @@ WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS)
 GCCVERSION := $(shell gcc --version | head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
 
-ifeq ("$(GCCVERSION)","4")
-VERSIONCFLAGS = -finput-charset=iso8859-1
-endif
-
 SDLPATH ?= /usr/local
 SDLINCL = -I$(SDLPATH)/include/SDL
 ifeq ("$(TYPE)","static")
@@ -85,7 +81,7 @@ endif
 endif
 
 # console display test program
-cc545:	cc545.cpp
+cc545:	cc545.cpp knob.cpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
 ifeq ("$(HOST)","Darwin")

@@ -254,8 +254,8 @@ static wxLogWindow *logwindow;
 #endif
 
 static const wxChar rom01char[] =
-    wxT(":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.÷[]%×«'\"!;<>_?» "
-        "#ABCDEFGHIJKLMNOPQRSTUVWXYZ~¨^´`    ~    {}&  |°     µ       @\\ ");
+    wxT(":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.\xF7[]%\xD7\xAB'\"!;<>_?\xBB "
+        "#ABCDEFGHIJKLMNOPQRSTUVWXYZ~\xA8^\xB4`    ~    {}&  |\xB0     \xB5       @\\ ");
 
 // ----------------------------------------------------------------------------
 // private classes
@@ -1055,7 +1055,7 @@ void PtermApp::OnAbout(wxCommandEvent&)
 
     msg.Printf (_T("PLATO terminal emulator %s.\n%s"),
                 wxT ("V" PTERMVERSION),
-                _("Copyright © 2005 by Paul Koning."));
+                _("Copyright \xA9 2005 by Paul Koning."));
     
     wxMessageBox(msg, _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
 }
