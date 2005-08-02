@@ -98,8 +98,9 @@ void wxKnob::OnPaint(wxPaintEvent& WXUNUSED(event))
     double theta;
     double dx, dy;
     int cx, cy;
-    int r, r2;
+    int r, r2, lw;
     wxSize s = GetSize ();
+    wxPen p = *wxWHITE_PEN;
     
     theta = (PI / 180.) * (m_maxAngle +
                            (((double) m_max - m_setting) / (m_max - m_min))
@@ -111,11 +112,14 @@ void wxKnob::OnPaint(wxPaintEvent& WXUNUSED(event))
 
     GetCenter (cx, cy);
     r = irnd (((s.x < s.y) ? s.x : s.y) * .48);
-    r2 = irnd (r * .6);
+    r2 = irnd (r * .45);
+    lw = int (ceil (r / 15.));
     
     dc.BeginDrawing();
 
-    dc.SetPen (*wxBLACK_PEN);
+    p.SetWidth (lw);
+    dc.SetPen (p);
+    dc.SetBrush (*wxBLACK_BRUSH);
     dc.DrawCircle (cx, cy, r);
     dc.DrawLine (cx + irnd (r * dx), cy + irnd (r * dy),
                  cx + irnd (r2 * dx), cy + irnd (r2 * dy));

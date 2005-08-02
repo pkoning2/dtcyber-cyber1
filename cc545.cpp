@@ -30,6 +30,8 @@
 #endif
 
 #include <wx/image.h>
+#include "knob.h"
+#include "iir.h"
 
 // ----------------------------------------------------------------------------
 // resources
@@ -59,58 +61,6 @@ int bw;
 // ----------------------------------------------------------------------------
 // private classes
 // ----------------------------------------------------------------------------
-
-// Delay line -- used to align control signals (beam on/off)
-// with analog data going through filters.
-class Delay
-{
-public:
-    Delay (int delay);
-    ~Delay ();
-    void SetFlag (bool flag);
-    bool Flag (void) const
-    {
-        return m_flags[0];
-    }
-    
-private:
-    Delay (const Delay &);
-
-    int m_delay;
-    bool *m_flags;
-};
-
-// R/C lowpass filter, implemented as an IIR filter
-class RClow
-{
-public:
-    RClow (double r, double c, int freq);
-    double Step (double in);
-    void Reset (void)
-    {
-        z = 0.0;
-    }
-    
-private:
-    double a, b, z;
-};
-
-// R/C highpass filter, implemented as an IIR filter
-class RChigh
-{
-public:
-    RChigh (double r, double c, int freq);
-    double Step (double in);
-    void Reset (void)
-    {
-        z = 0.0;
-    }
-
-private:
-    enum { delay = 5 };
-    double a, b, z;
-};
-
 // Character waveform generator.  This generates the unfiltered
 // waveform, i.e., an idealized waveform made up of straight lines
 // (constant slope ramps, or constant voltages).  It implements
@@ -151,6 +101,8 @@ private:
 class MyFrame;
 class CtlFrame;
 
+    
+
 // Define a panel for the controls.  The nice way to do this would
 // be with custom controls that look like DD60 pot knobs, but that
 // will come later.
@@ -189,19 +141,19 @@ public:
 
 private:
     wxBoxSizer  *m_sizer;
-    wxSlider    *m_size;
-    wxSlider    *m_aspect;
-    wxSlider    *m_focus;
-    wxSlider    *m_intens;
-//    wxSlider    *m_c2_019;
-    wxSlider    *m_r1_029;      // 029 amp pot
-    wxSlider    *m_c1_029;      // 029 amp trimcap
-    wxSlider    *m_c1_a2;       // v1a trimcap
-    wxSlider    *m_c4_a2;       // v3 trimcap
-    wxSlider    *m_beamdelay;   // delay (in simclock ticks) for on/off
-    wxSlider    *m_red;         // red pixel value
-    wxSlider    *m_green;       // green pixel value
-    wxSlider    *m_blue;        // blue pixel value
+    wxKnob      *m_size;
+    wxKnob      *m_aspect;
+    wxKnob      *m_focus;
+    wxKnob      *m_intens;
+//    wxKnob      *m_c2_019;
+    wxKnob      *m_r1_029;      // 029 amp pot
+    wxKnob      *m_c1_029;      // 029 amp trimcap
+    wxKnob      *m_c1_a2;       // v1a trimcap
+    wxKnob      *m_c4_a2;       // v3 trimcap
+    wxKnob      *m_beamdelay;   // delay (in simclock ticks) for on/off
+    wxKnob      *m_red;         // red pixel value
+    wxKnob      *m_green;       // green pixel value
+    wxKnob      *m_blue;        // blue pixel value
     wxCheckBox  *m_620on;
     wxCheckBox  *m_c19on;
     wxCheckBox  *m_029on;
@@ -377,6 +329,7 @@ static double normInt (int intens, int size)
 #define defheight 32
 #define consoleSize (wxSize (defwidth * 13 / 2, defheight * 11 / 2))
 
+
 // ----------------------------------------------------------------------------
 // the application class
 // ----------------------------------------------------------------------------
@@ -490,92 +443,72 @@ END_EVENT_TABLE()
 CcPanel::CcPanel (CtlFrame *parent) :
     wxPanel (parent)
 {
+    wxBitmapButton *b;
+    
     m_sizer = new wxBoxSizer (wxVERTICAL);
-    m_size = new wxSlider (this, wxID_ANY, 32, 8, 64, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_size = new wxKnob (this, wxID_ANY, 32, 8, 64);
     m_sizer->Add (m_size, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Size")),
                   0,  wxLEFT | wxRIGHT, 8);
-    m_aspect = new wxSlider (this, wxID_ANY, 100, 40, 200, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
-    m_sizer->Add (m_aspect, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_aspect = new wxKnob (this, wxID_ANY, 100, 40, 200);
+    m_sizer->Add (m_aspect, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Aspect ratio")),
                   0,  wxLEFT | wxRIGHT, 8);
-    m_focus = new wxSlider (this, wxID_ANY, 100, 0, 250, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
-    m_sizer->Add (m_focus, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_focus = new wxKnob (this, wxID_ANY, 100, 0, 250);
+    m_sizer->Add (m_focus, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Focus")),
                   0,  wxLEFT | wxRIGHT, 8);
-    m_intens = new wxSlider (this, wxID_ANY, 160, 1, 400, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
-    m_sizer->Add (m_intens, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_intens = new wxKnob (this, wxID_ANY, 160, 1, 400);
+    m_sizer->Add (m_intens, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Intensity")),
                   0,  wxLEFT | wxRIGHT, 8);
-    m_beamdelay = new wxSlider (this, wxID_ANY, 5, 1, 100, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
-    m_sizer->Add (m_beamdelay, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_beamdelay = new wxKnob (this, wxID_ANY, 10, 1, 100);
+    m_sizer->Add (m_beamdelay, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("On/off delay")),
                   0,  wxLEFT | wxRIGHT, 8);
-    m_red = new wxSlider (this, wxID_ANY, 20, 0, 255, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
-    m_sizer->Add (m_red, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_red = new wxKnob (this, wxID_ANY, 20, 0, 255);
+    m_sizer->Add (m_red, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Red")),
                   0,  wxLEFT | wxRIGHT, 8);
-    m_green = new wxSlider (this, wxID_ANY, 255, 0, 255, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_green = new wxKnob (this, wxID_ANY, 255, 0, 255);
     m_sizer->Add (m_green, 0,  wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Green")),
                   0,  wxLEFT | wxRIGHT, 8);
-    m_blue = new wxSlider (this, wxID_ANY, 80, 0, 255, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_blue = new wxKnob (this, wxID_ANY, 80, 0, 255);
     m_sizer->Add (m_blue, 0,  wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Blue")),
                   0,  wxLEFT | wxRIGHT, 8);
     m_620on = new wxCheckBox (this, wxID_ANY, _("620 highpass on"));
     m_620on->SetValue (true);
-    m_sizer->Add (m_620on, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (m_620on, 0,   wxLEFT | wxRIGHT, 8);
     m_c19on = new wxCheckBox (this, wxID_ANY, _("C19 lowpass on"));
     m_c19on->SetValue (true);
-    m_sizer->Add (m_c19on, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_r1_029 = new wxSlider (this, wxID_ANY, 2000, 180, 5000, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
-    m_sizer->Add (m_r1_029, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (m_c19on, 0,   wxLEFT | wxRIGHT, 8);
+    m_r1_029 = new wxKnob (this, wxID_ANY, 2000, 180, 5000);
+    m_sizer->Add (m_r1_029, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("029 R1")),
                   0,  wxLEFT | wxRIGHT, 8);
-    m_c1_029 = new wxSlider (this, wxID_ANY, 300, 110, 580, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
+    m_c1_029 = new wxKnob (this, wxID_ANY, 300, 110, 580);
     m_sizer->Add (m_c1_029, 0,  wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("029 C1")),
                   0,  wxLEFT | wxRIGHT, 8);
     m_029on = new wxCheckBox (this, wxID_ANY, _("029 highpass on"));
     m_029on->SetValue (true);
-    m_sizer->Add (m_029on, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_c1_a2 = new wxSlider (this, wxID_ANY, 2000, 1400, 3055, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
-    m_sizer->Add (m_c1_a2, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (m_029on, 0,   wxLEFT | wxRIGHT, 8);
+#if 0
+    m_c1_a2 = new wxKnob (this, wxID_ANY, 2000, 1400, 3055);
+    m_sizer->Add (m_c1_a2, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("V1A C1")),
                   0,  wxLEFT | wxRIGHT, 8); 
     m_v1aon = new wxCheckBox (this, wxID_ANY, _("V1A C1 on"));
-    m_sizer->Add (m_v1aon, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_c4_a2 = new wxSlider (this, wxID_ANY, 2000, 1400, 3055, wxDefaultPosition,
-                            wxSize (200, 30), 
-                            wxSL_HORIZONTAL | wxSL_LABELS);
-    m_sizer->Add (m_c4_a2, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (m_v1aon, 0,   wxLEFT | wxRIGHT, 8);
+    m_c4_a2 = new wxKnob (this, wxID_ANY, 2000, 1400, 3055);
+    m_sizer->Add (m_c4_a2, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("V3 C4")),
                   0,  wxLEFT | wxRIGHT, 8);
     m_v3on = new wxCheckBox (this, wxID_ANY, _("V3 C4 on"));
     m_sizer->Add (m_v3on, 0,  wxALL, 8);
+#endif
     SetSizerAndFit (m_sizer);
 //    m_sizer->RecalcSizes ();
 }
@@ -621,8 +554,10 @@ void CcWindow::OnDraw (wxDC &dc)
     const double sigma = wxGetApp ().beamsize ();
     const double r029 = wxGetApp ().r1_029 ();
     const double c029 = wxGetApp ().c1_029 ();
+#if 0
     const double cv1a = wxGetApp ().c1_a2 ();
     const double cv3 = wxGetApp ().c4_a2 ();
+#endif
     Delay delay (wxGetApp ().delay ());
     const double red = wxGetApp ().red () / 255.;
     const double green = wxGetApp ().green () / 255.;
@@ -630,9 +565,11 @@ void CcWindow::OnDraw (wxDC &dc)
     const bool on620 = wxGetApp ().get620on ();
     const bool onc19 = wxGetApp ().getc19on ();
     const bool on029 = wxGetApp ().get029on ();
+#if 0
     const bool onv1a = wxGetApp ().getv1aon ();
     const bool onv3 = wxGetApp ().getv3on ();
-    
+#endif
+
     int beamr = int (ceil (3 * sigma));
     
 //    dc.Clear ();
@@ -647,10 +584,12 @@ void CcWindow::OnDraw (wxDC &dc)
     const double peakc19 =.35;
     RClow  x029 (r029, c029, rcfreq), y029 (r029, c029, rcfreq);
     const double peak029 = .1;
+#if 0
     RClow  xv1a (470., cv1a, rcfreq), yv1a (470., cv1a, rcfreq);
     const double peakv1a = .2;
     RClow  xv3  (3900., cv3, rcfreq), yv3 (3900., cv3, rcfreq);
     const double peakv3 = .16;
+#endif
 
     cg.SetStepCount (i);
     scalex = (double) width / (i * 8);
@@ -669,10 +608,12 @@ void CcWindow::OnDraw (wxDC &dc)
         yc19.Reset ();
         x029.Reset ();
         y029.Reset ();
+#if 0
         xv1a.Reset ();
         yv1a.Reset ();
         xv3.Reset ();
         yv3.Reset ();
+#endif
 
         cx = ch & 7;
         cy = (ch >> 3) + 1;
@@ -713,6 +654,7 @@ void CcWindow::OnDraw (wxDC &dc)
                     y /= (1 + peak029);
 //                    printf ("%f %f  ", x, y);
                 }
+#if 0
                 if (onv1a)
                 {
                     x += xv1a.Step (x * peakv1a);
@@ -728,6 +670,7 @@ void CcWindow::OnDraw (wxDC &dc)
                     x /= (1 + peakv3);
                     y /= (1 + peakv3);
                 }
+#endif
 //                printf ("%f %f\n", x, y);
                 
                 on = delay.Flag ();
@@ -873,66 +816,4 @@ void Chargen::Step (void)
         ++m_chardata;
         m_step = 0;
     }
-}
-
-Delay::Delay (int delay)
-{
-    int i;
-    
-    m_delay = delay + 1;
-    m_flags = new bool[m_delay];
-    for (i = 0; i < m_delay; i++)
-        m_flags[i] = false;
-}
-
-Delay::~Delay ()
-{
-    delete [] m_flags;
-}
-
-void Delay::SetFlag (bool flag)
-{
-    if (m_delay > 0)
-    {
-        memmove (&m_flags[0], &m_flags[1], (m_delay - 1) * sizeof (*m_flags));
-    }
-    m_flags[m_delay - 1] = flag;
-}
-
-// See Frerking, page 60
-RClow::RClow (double r, double c, int freq)
-{
-    double t = 1.0 / freq;
-    
-//    printf ("low pass corner freq %4.2f MHz\n", 1. / (2.e6 * pi * r * c));
-    
-    a = t / (r * c);
-    b = exp (-a);
-    z = 0.0;
-}
-
-double RClow::Step (double in)
-{
-    z = (z * b) + in;
-    return z * a;
-}
-
-// See Frerking, page 350
-RChigh::RChigh (double r, double c, int freq)
-{
-    double t = 1.0 / freq;
-    
-//    printf ("high pass corner freq %4.2f MHz\n", 1. / (2.e6 * pi * r * c));
-
-    a = 1 / (1 + t / (2. * r * c));
-    b = a * (1 - t / (2. * r * c));
-    z = 0.0;
-}
-
-double RChigh::Step (double in)
-{
-    double z1 = z;
-    
-    z = (z1 * b) + (in * a);
-    return z - z1;
 }
