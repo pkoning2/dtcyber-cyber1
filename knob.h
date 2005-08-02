@@ -17,7 +17,7 @@ public:
             int minValue, int maxValue,
             unsigned int minAngle = 240, unsigned int range = 300,
             const wxPoint &pos = wxDefaultPosition, 
-            const wxSize &size = wxDefaultSize, 
+            const wxSize &size = wxSize (30, 30), 
             long style = 0,
             const wxValidator &validator = wxDefaultValidator,
             const wxString &name = wxT ("knob"))
