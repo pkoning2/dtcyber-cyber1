@@ -2,32 +2,35 @@ job(cm140000,t77770)
 user(plato,plato)
 common,system.
 *
-attach,cmrdck5.
-attach,cmrdck6.
-attach,cmrdc10.
-attach,cmrdck7.
-attach,libdck2.
-attach,iprdck3.
-attach,iprdck4.
-attach,procs.
-get,config.
-attach,mfnx.
-attach,ubin.
-attach,mbin.
-attach,pbin.
-attach,fbin.
-attach,cbin.
+attach,cmrd25.
+attach,cmrd26.
+attach,eqpd25.
+attach,iprd00.
+attach,iprd01.
+attach,libd01.
 attach,ppubin.
-attach,plfbin.
+attach,pbin.
+attach,cbin.
+attach,fbin.
+attach,platlib.
+attach,mbin.
+attach,ubin.
+attach,config.
+attach,tmbin.
+attach,mfdx.
+attach,mfnx.
+attach,backdmp.
+attach,plprocs.
 *
 libedit,p=system.
-return,output.
+*return,output.
 rewind,new.
 itemize,new.
-request,tape,d=pe,po=w.
+* cy871s
+label,tape,vsn=ndt,lb=ku,po=w.
 rewind,new.
 copyei,new,tape.
 ~
-*file mfnx
-*file cmrdc10
-*after text/cmrdck7,text/cmrdc10
+*file ubin
+*norep ubin
+*replace pp/pdd
