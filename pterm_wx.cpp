@@ -448,6 +448,16 @@ class PtermMainFrame : public wxMDIParentFrame
 {
 public:
     PtermMainFrame (void);
+    wxMenuItem* AppendWinItem (int itemid,
+                               const wxString& text,
+                               const wxString& help = wxEmptyString,
+                               wxItemKind kind = wxITEM_NORMAL)
+    {
+        if (m_windowMenu != NULL)
+            return m_windowMenu->Append (itemid, text, help, kind);
+        else
+            return NULL;
+    }
 };
 
 static PtermMainFrame *PtermFrameParent;
@@ -484,6 +494,7 @@ public:
     void OnActivate (wxActivateEvent &event);
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2,
                          bool newstatusbar);
+    void OnFullScreen (wxCommandEvent &event);
     
     void PrepareDC(wxDC& dc);
     void ptermSendKey(int key);
@@ -511,7 +522,8 @@ private:
     wxString    m_hostName;
     int         m_port;
     wxTimer     m_timer;
-
+    bool        m_fullScreen;
+    
     // Stuff for pacing Paste operations
     wxTimer     m_pasteTimer;
     wxString    m_pasteText;
@@ -679,6 +691,7 @@ enum
     Pterm_SaveScreen,
     Pterm_HelpKeys,
     Pterm_PastePrint,
+    Pterm_FullScreen,
 
     // timers
     Pterm_Timer,        // display pacing
@@ -861,6 +874,7 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Print, PtermFrame::OnPrint)
     EVT_MENU(Pterm_Preview, PtermFrame::OnPrintPreview)
     EVT_MENU(Pterm_Page_Setup, PtermFrame::OnPageSetup)
+    EVT_MENU(Pterm_FullScreen, PtermFrame::OnFullScreen)
     END_EVENT_TABLE ()
 
 BEGIN_EVENT_TABLE(PtermApp, wxApp)
@@ -1245,9 +1259,9 @@ PtermMainFrame::PtermMainFrame (void)
 
 // frame constructor
 PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
-  : PtermFrameBase(PtermFrameParent, -1, title,
-		   wxDefaultPosition,
-		   wxDefaultSize),
+    : PtermFrameBase(PtermFrameParent, -1, title,
+                     wxDefaultPosition,
+                     wxDefaultSize),
       tracePterm (FALSE),
       m_nextFrame (NULL),
       m_prevFrame (NULL),
@@ -1259,6 +1273,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
       m_conn (NULL),
       m_port (port),
       m_timer (this, Pterm_Timer),
+      m_fullScreen (FALSE),
       m_pasteTimer (this, Pterm_PasteTimer),
       m_pasteIndex (-1),
       m_nextword (0),
@@ -1331,7 +1346,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     menuFile->Append (Pterm_Pref, _("Preferences..."),
                       _("Set program configuration"));
     menuFile->AppendSeparator ();
-    menuFile->Append (Pterm_Close, _("Close\tCtrl-Z"),
+    menuFile->Append (Pterm_Close, _("Close\tCtrl-W"),
                       _("Close this window"));
     menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
 
@@ -1352,11 +1367,15 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     // Copy is initially disabled, until a region is selected
     menuEdit->Enable (Pterm_Copy, FALSE);
 
-    // now append the freshly created menu to the menu bar...
-    wxMenuBar *menuBar = new wxMenuBar ();
-    menuBar->Append (menuFile, _("File"));
-    menuBar->Append (menuEdit, _("Edit"));
-
+#if 0//PTERM_MDI
+    PtermFrameParent->AppendWinItem (Pterm_FullScreen, _("Full Screen\tCtrl-U"),
+                                     _("Display in full screen mode"));
+#else
+    wxMenu *menuView = new wxMenu;
+    
+    menuView->Append (Pterm_FullScreen, _("Full Screen\tCtrl-U"),
+                      _("Display in full screen mode"));
+#endif
     // the "About" item should be in the help menu.
     // Well, on the Mac it actually doesn't show up there, but for that magic
     // to work it has to be presented to wx in the help menu.  So the help
@@ -1368,6 +1387,14 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     helpMenu->Append(Pterm_HelpKeys, _("Pterm keyboard"),
                      _("Show keyboard description"));
     
+    // now append the freshly created menu to the menu bar...
+    wxMenuBar *menuBar = new wxMenuBar ();
+    menuBar->Append (menuFile, _("File"));
+    menuBar->Append (menuEdit, _("Edit"));
+#if !0//PTERM_MDI
+    menuBar->Append (menuView, _("View"));
+#endif
+
 #if defined(__WXMAC__)
     // On the Mac the menu name has to be exactly "&Help" for the About item
     // to  be recognized.  Ugh.
@@ -1918,6 +1945,26 @@ void PtermFrame::OnPageSetup(wxCommandEvent &)
 
     (*g_printData) = pageSetupDialog.GetPageSetupData ().GetPrintData ();
     (*g_pageSetupData) = pageSetupDialog.GetPageSetupData ();
+}
+
+void PtermFrame::OnFullScreen (wxCommandEvent &)
+{
+    m_fullScreen = !m_fullScreen;
+    
+#if 0 //PTERM_MDI
+    // workaround for a bug in the MDI case
+    if (m_fullScreen)
+    
+    {
+        SetStatusBar (NULL);
+    }
+    else if (ptermApp->m_showStatusBar)
+    {
+        SetStatusBar (m_statusBar);
+    }
+#endif
+
+    ShowFullScreen (m_fullScreen);
 }
 
 void PtermFrame::PrepareDC(wxDC& dc)
