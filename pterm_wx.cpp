@@ -523,6 +523,7 @@ private:
     int         m_port;
     wxTimer     m_timer;
     bool        m_fullScreen;
+    int         m_station;
     
     // Stuff for pacing Paste operations
     wxTimer     m_pasteTimer;
@@ -1274,6 +1275,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
       m_port (port),
       m_timer (this, Pterm_Timer),
       m_fullScreen (FALSE),
+      m_station (0),
       m_pasteTimer (this, Pterm_PasteTimer),
       m_pasteIndex (-1),
       m_nextword (0),
@@ -3132,6 +3134,7 @@ void PtermFrame::ptermSetStation (int station)
     wxString name;
     
     SetCursor (wxNullCursor);
+    m_station = station;
     if (!m_hostName.IsEmpty ())
     {
         name.Printf (wxT (" %s %d-%d"),
@@ -3649,7 +3652,8 @@ int PtermConnection::NextWord (void)
 
     if ((word >> 16) == 3 &&
         word != 0700001 &&
-        word != 0702010 &&     // *** temp workaround for "edit" -ext-
+        !(m_owner->m_station == 1 && 
+          (word == 0770000 || word == 0730000)) &&
         ptermApp->m_gswEnable)
     {
         // It's an -extout- word, which means we'll want to start up
@@ -3667,6 +3671,8 @@ int PtermConnection::NextWord (void)
         // words.  The non-rest voice words trigger the GSW startup,
         // so we'll need to send the preceding mode word for correct
         // initialization.
+        // Also, if we're connected to station 0-1, ignore the
+        // operator box command words.
         if ((word >> 15) == 6)
         {
             // mode word, just save it
