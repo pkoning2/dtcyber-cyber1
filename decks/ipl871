@@ -778,12 +778,14 @@ return(opl)
 */ -------------------------------------------------------------------
 *ident,faadev
 */ added cyber1 and cyber2 -- gpk 04.08.23.
+*/ added dtfaa             -- gpk 05.08.05.
 *deck,msubs
 *d,msubsa.6,msubsa.8
- ndevsys  equ    5           maximum number of dev systems
+ ndevsys  equ    6           maximum number of dev systems
           data   0luol       university online system
           data   0lcybdev    cybis development system
           data   0lfaa       faa system (used by uol)
+          data   0ldtfaa     desktop faa system
           data   0lcyber1    cyber1.org system
           data   0lcyber2    second cyber1.org system
 *d,msubsa.15,msubsa.17
