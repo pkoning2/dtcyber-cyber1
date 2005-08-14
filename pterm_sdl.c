@@ -158,7 +158,7 @@ static void gswCallback (void *userdata, u8 *stream, int len)
     double dph;
     
 #ifdef DEBUG
-//    printf ("callback %d bytes\n", len);
+    printf ("callback %d bytes\n", len);
 #endif
     while (len > 0)
     {

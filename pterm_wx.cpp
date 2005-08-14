@@ -249,7 +249,7 @@ static PtermApp *ptermApp;
 static FILE *traceF;
 static char traceFn[20];
 
-#ifdef DEBUG
+#ifdef DEBUGLOG
 static wxLogWindow *logwindow;
 #endif
 
@@ -919,7 +919,7 @@ bool PtermApp::OnInit (void)
     m_locale.Init(wxLANGUAGE_DEFAULT);
     m_locale.AddCatalog(wxT("pterm"));
 
-#ifdef DEBUG
+#ifdef DEBUGLOG
     logwindow = new wxLogWindow (NULL, "pterm log", TRUE, FALSE);
 #endif
 
@@ -1000,7 +1000,7 @@ int PtermApp::OnExit (void)
 
     delete g_printData;
     delete g_pageSetupData;
-#ifdef DEBUG
+#ifdef DEBUGLOG
     delete logwindow;
 #endif
 
@@ -1530,8 +1530,9 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
             break;
         }
 
-        // See if we're supposed to delay
-        if (word >> 19)
+        // See if we're supposed to delay (but it's not an internal
+        // code such as NODATA)
+        if ((int) word >= 0 && word >> 19)
         {
             m_delay = word >> 19;
             m_nextword = word & 01777777;
@@ -1540,8 +1541,10 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
             return;
         }
             
-#ifdef DEBUG
+#ifdef DEBUGLOG
         wxLogMessage ("processing data from plato %07o", word);
+#elif DEBUG
+        printf ("processing data from plato %07o\n", word);
 #endif
         procPlatoWord (word);
     }
@@ -1560,8 +1563,10 @@ void PtermFrame::OnTimer (wxTimerEvent &)
     {
         return;
     }
-#ifdef DEBUG
+#ifdef DEBUGLOG
         wxLogMessage ("processing data from plato %07o", m_nextword);
+#elif DEBUG
+        printf ("processing data from plato %07o\n", m_nextword);
 #endif
     procPlatoWord (m_nextword);
     
@@ -1583,8 +1588,10 @@ void PtermFrame::OnTimer (wxTimerEvent &)
         {
             break;
         }
-#ifdef DEBUG
+#ifdef DEBUGLOG
         wxLogMessage ("processing data from plato %07o", word);
+#elif DEBUG
+        printf ("processing data from plato %07o\n", word);
 #endif
         procPlatoWord (word);
     }
@@ -3121,8 +3128,10 @@ void PtermFrame::ptermSendKey(int key)
         if (tracePterm)
         {
             fprintf (traceF, "key to plato %03o\n", key);
-#ifdef DEBUG
+#ifdef DEBUGLOG
             wxLogMessage ("key to plato %03o", key);
+#elif DEBUG
+            printf ("key to plato %03o\n", key);
 #endif
         }
         m_conn->SendData (data, 2);
@@ -3490,12 +3499,22 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
         // we come out of the network wait and call TestDestroy
         // reasonably often.  Otherwise, closing the window doesn't work.
         i = dtRead (&m_fet, 200);
+#ifdef DEBUG
+        printf ("dtRead status %i\n", i);
+#endif
         if (TestDestroy ())
         {
             break;
         }
         if (i < 0)
         {
+            m_savedGswMode = m_gswWord2 = 0;
+            if (m_gswActive)
+            {
+                m_gswActive = m_gswStarted = FALSE;
+                ptermCloseGsw ();
+            }
+
             StoreWord (C_DISCONNECT);
             wxWakeUpIdle ();
             break;
@@ -3760,7 +3779,10 @@ int PtermConnection::NextGswWord (bool catchup)
             while (next != m_gswIn)
             {
                 // The display has some catching up to do.
-                m_gswRing[next] &= 01777777;
+                if (int (m_gswRing[next]) >= 0)
+                {
+                    m_gswRing[next] &= 01777777;
+                }
                 next++;
                 if (next == GSWRINGSIZE)
                 {
@@ -3797,6 +3819,10 @@ void PtermConnection::StoreWord (int word)
 {
     int next;
     
+    if (word < 0)
+    {
+        m_displayOut = m_displayIn;
+    }
     next = m_displayIn + 1;
     if (next == RINGSIZE)
     {
