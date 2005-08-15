@@ -303,11 +303,11 @@ revert. condldr
 .*
 unload(lgo)
 .*
-begin,psmbld,,option=orient,binfile=psma,#list.
-begin,psmbld,,option=psplus,binfile=psmb,#list.
-begin,psmbld,,option=author,binfile=psmc,#list.
-begin,psmbld,,option=pcd2,binfile=psmd,#list.
-begin,psmbld,,option=srvsys,binfile=psme,#list.
+begin,psmbld,,option=orient,binfile=psma,#list=list.
+begin,psmbld,,option=psplus,binfile=psmb,#list=list.
+begin,psmbld,,option=author,binfile=psmc,#list=list.
+begin,psmbld,,option=pcd2,binfile=psmd,#list=list.
+begin,psmbld,,option=srvsys,binfile=psme,#list=list.
 .*
 revert.  psm
 ~
@@ -821,7 +821,7 @@ unload(pbin,plato,pmap)
 *---
 *         plato system modifier modules
 *
-begin(psm,,#list)
+begin(psm,,#list=list)
 revert. plato
 *---
 .data,edit1.
