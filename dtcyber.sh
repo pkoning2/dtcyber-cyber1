@@ -11,15 +11,15 @@ fi
 echo dtcyber started
 
 # wait for each of the ports to appear
-until netstat -tna | fgrep -q 127.0.0.1:5005; do
+until netstat -tna | grep -q 127.0.0.1.5005; do
     sleep 1
     echo -n "."
 done
-until netstat -tna | fgrep -q 127.0.0.1:5006; do
+until netstat -tna | grep -q 127.0.0.1.5006; do
     sleep 1
     echo -n "."
 done
-until netstat -tna | fgrep -q 127.0.0.1:5007; do
+until netstat -tna | grep -q 127.0.0.1.5007; do
     sleep 1
     echo -n "."
 done
