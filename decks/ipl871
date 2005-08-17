@@ -42,14 +42,14 @@ return(opl)
           sx2    x1-catchup
           zr     x2,pkeyp1
           sx2    x1-timeup
-          pl     x2,pkeyp1   if not keyset key
-*          mi     x2,pkeyp0   if keyset key
-*          sx2    x1-400b
-*          mi     x2,pkeyp1
-*          sx2    x1-3200b
-*          mi     x2,pkeyp0
-*          sx2    x1-3500
-*          mi     x2,pkeyp1
+          mi     x2,pkeyp0   if keyset key
+          eq     pkeyp1      all others leave xofbut alone
+          sx2    x1-400b
+          mi     x2,pkeyp1
+          sx2    x1-3400b
+          mi     x2,pkeyp0
+          sx2    x1-3500
+          mi     x2,pkeyp1
  pkeyp0   sa2    bankadd
           mx6    1
           lx6    xofbit      position to *xoff* bit
@@ -78,7 +78,7 @@ return(opl)
           lx6    xofbit      position to *xoff* bit
           bx6    -x6*x2      clear *xoff*
           sa6    a2
-          eq     xpkey2      write back station bank
+          eq     xpkey       write back station bank
 */ end main
 */
 *deck logicx
@@ -92,13 +92,16 @@ return(opl)
 *i XKREORG.369
           sa1    bankadd
           lx1    60-xofbit
-          mi     x1,tfino    if *xoff* in effect
+          mi     x1,tfinoo   if *xoff* in effect
+*i XKREORG.427
+          sx2    x1-xonkey   check for *xon* key
+          zr     x2,tfinp1
 *i XKREORG.444
           sa1    bankadd
           lx1    60-xofbit
-          mi     x1,tfino    if *xoff* in effect
-*/*d XKREORG.463
-*/ tfinoo   SB1    -1          -1 = WAIT FOR KEY
+          mi     x1,tfinoo   if *xoff* in effect
+*d XKREORG.463
+ tfinoo   SB1    -1          -1 = WAIT FOR KEY
 */end tutorx
 */
 *deck mainov
