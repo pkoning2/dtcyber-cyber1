@@ -3,7 +3,7 @@
 .*        attach plato master files
 .* 
 setpun.   set plato user name
-resourc(dm=9) 
+resourc(dm=7)
 *. 
 packnam(pn=binary,r=dm1) 
 attach(binary1/#m=m) 
@@ -54,23 +54,6 @@ attach(pubg/#m=m)
 attach(pubh/#m=m)
 attach(pubi/#m=m)
 attach(pubj/#m=m)
-.* 
-.*  nsf packs
-.* 
-packnam(pn=misc2,r=dm1)
-attach(nsf1/#m=m) 
-attach(nsfa/#m=m) 
-attach(nsfb/#m=m) 
-attach(nsfc/#m=m) 
-attach(nsfd/#m=m) 
-attach(nsfe/#m=m) 
-*. 
-packnam(pn=misc7,r=dm1)
-attach(nsff/#m=m) 
-attach(nsfg/#m=m) 
-attach(nsfh/#m=m) 
-attach(nsfi/#m=m) 
-attach(nsfj/#m=m) 
 *. 
 packnam. 
 revert.
