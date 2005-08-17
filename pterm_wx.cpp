@@ -21,14 +21,12 @@
 #define DEFAULTHOST wxT ("cyberserv.org")
 #define BufSiz      256
 #define RINGSIZE    5000
-#define RINGXOFF1   1000
-#define RINGXOFF2   1100
-#define RINGXON1    400
-#define RINGXON2    200
-#if 0
+#define RINGXON1    (RINGSIZE/3)
+#define RINGXON2    (RINGSIZE/4)
+#define RINGXOFF1   (RINGSIZE-RINGXON1)
+#define RINGXOFF2   (RINGSIZE-RINGXON2)
 #define xonkey      01606
 #define xofkey      01607
-#endif
 
 #define GSWRINGSIZE 100
 
@@ -510,6 +508,8 @@ public:
     PtermFrame  *m_nextFrame;
     PtermFrame  *m_prevFrame;
 
+    int         m_pendingEcho;
+
 private:
     wxStatusBar *m_statusBar;       // present even if not displayed
     wxPen       m_foregroundPen;
@@ -574,7 +574,7 @@ private:
     int         seq;
     int         modewords;
     int         mode4start;
-
+    
     void UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
                    wxColour &newfg, wxColour &newbf, bool newscale2);
 
@@ -1294,7 +1294,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
       large (FALSE),
       wc (0),
       seq (0),
-      modewords (0)
+      modewords (0),
+      m_pendingEcho (-1)
 {
     int i;
 
@@ -2712,7 +2713,16 @@ int PtermFrame::procPlatoWord (u32 d)
             {
                 TRACE ("load echo %d", d & 0177);
             }
-            ptermSendKey ((d & 0177) + 0200);
+            d = (d & 0177) + 0200;
+            if (m_conn->RingCount () > RINGXOFF1)
+            {
+                m_pendingEcho = d;
+            }
+            else
+            {
+                ptermSendKey (d);
+                m_pendingEcho = -1;
+            }
             break;
             
         case 4:     // load address
@@ -3111,7 +3121,7 @@ void PtermFrame::ptermSendKey(int key)
     /*
     **  If this is a "composite", recursively send the two pieces.
     */
-    if ((key >> 9) != 0)
+    if ((key >> 9) != 0 && key != xonkey && key != xofkey)
     {
         ptermSendKey (key >> 9);
         if ((key >> 9) != 074)
@@ -3128,12 +3138,12 @@ void PtermFrame::ptermSendKey(int key)
         if (tracePterm)
         {
             fprintf (traceF, "key to plato %03o\n", key);
-#ifdef DEBUGLOG
-            wxLogMessage ("key to plato %03o", key);
-#elif DEBUG
-            printf ("key to plato %03o\n", key);
-#endif
         }
+#ifdef DEBUGLOG
+        wxLogMessage ("key to plato %03o", key);
+#elif DEBUGKEY
+        printf ("key to plato %03o\n", key);
+#endif
         m_conn->SendData (data, 2);
     }
 }
@@ -3521,6 +3531,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
         }
         
         wasEmpty = IsEmpty ();
+//        printf ("ringcount %d\n", RingCount());
         
         for (;;)
         {
@@ -3593,9 +3604,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
             
             if (i == RINGXOFF1 || i == RINGXOFF2)
             {
-#if 0
-                ptermSendKey (xofkey);
-#endif
+                m_owner->ptermSendKey (xofkey);
             }
         }
         if (wasEmpty && !IsEmpty ())
@@ -3611,7 +3620,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
 
 int PtermConnection::NextRingWord (void)
 {
-    int word, next;
+    int word, next, i;
 
     {
         wxCriticalSectionLocker lock (m_pointerLock);
@@ -3621,6 +3630,7 @@ int PtermConnection::NextRingWord (void)
             return C_NODATA;
         }
     
+        i = RingCount ();
         word = m_displayRing[m_displayOut];
         next = m_displayOut + 1;
         if (next == RINGSIZE)
@@ -3629,12 +3639,23 @@ int PtermConnection::NextRingWord (void)
         }
         m_displayOut = next;
     }
+
+    if (i < RINGXOFF1 && m_owner->m_pendingEcho != -1)
+    {
+        m_owner->ptermSendKey (m_owner->m_pendingEcho);
+        m_owner->m_pendingEcho = -1;
+    }
+    if (i == RINGXON1 || i == RINGXON2)
+    {
+        m_owner->ptermSendKey (xonkey);
+    }
+
     return word;
 }
 
 int PtermConnection::NextWord (void)
 {
-    int next, word;
+    int next, word, i;
     int delay = 0;
 
     if (m_gswActive)
