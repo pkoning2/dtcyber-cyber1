@@ -54,7 +54,7 @@ void wxKnob::Create (wxWindow* parent, wxWindowID id, int value,
 {
     wxControl::Create (parent, id);
     SetInitialBestSize (size);
-//    SetClientSize (size);
+    SetSize (size);
     
     m_min = minValue;
     m_max = maxValue;
