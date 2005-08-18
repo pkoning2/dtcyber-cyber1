@@ -2009,6 +2009,15 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
     }
 #endif
 
+        if (m_fullScreen)
+        {
+            m_canvas->SetScrollRate (0, 0);
+        }
+        else
+        {
+            m_canvas->SetScrollRate (1, 1);
+        }
+    
     ShowFullScreen (m_fullScreen);
 }
 
@@ -2406,7 +2415,10 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
         SetClientSize (vXSize (newscale) + 2, vYSize (newscale) + 2);
         m_canvas->SetSize (vXSize (newscale), vYSize (newscale));
         m_canvas->SetVirtualSize (vXSize (newscale), vYSize (newscale));
-        m_canvas->SetScrollRate (1, 1);
+        if (!m_fullScreen)
+        {
+            m_canvas->SetScrollRate (1, 1);
+        }
         dc.BeginDrawing ();
         dc.DestroyClippingRegion ();
         dc.SetClippingRegion (GetXMargin (), GetYMargin (),
