@@ -58,8 +58,8 @@
 // This is: a screen high with marging top and botton.
 // Pixmap has two rows added, which are storage for the
 // patterns for the character sets (ROM and loadable)
-#define vXSize(s)       ((512 + 2 * DisplayMargin) * (s))
-#define vYSize(s)       ((512 + 2 * DisplayMargin) * (s))
+#define vXSize(s)       (512 * (s) + (2 * DisplayMargin))
+#define vYSize(s)       (512 * (s) + (2 * DisplayMargin))
 #define vCharXSize(s)   (512 * (s))
 #define vCharYSize(s)   ((CSETS * 16) * (s))
 #define vScreenSize(s)  (512 * (s))
@@ -128,16 +128,27 @@
         fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, a, a2, a3, a4, a5, a6); \
         }
 
-#define XADJUST(x) (((x) + DisplayMargin) * ptermApp->m_scale)
-#define YADJUST(y) (YSize - (DisplayMargin + 1 + (y)) * ptermApp->m_scale)
+// Map PLATO coordinates to window coordinates
+#define XADJUST(x) ((x) * ptermApp->m_scale + GetXMargin ())
+#define YADJUST(y) ((511 - (y)) * ptermApp->m_scale + GetYMargin ())
+
+// Map PLATO coordinates to backing store bitmap coordinates
+#define XMADJUST(x) ((x) * ptermApp->m_scale)
+#define YMADJUST(y) ((511 - (y)) * ptermApp->m_scale)
 
 // inverse mapping (for processing touch input)
-#define XUNADJUST(x) ((x / ptermApp->m_scale) - DisplayMargin)
-#define YUNADJUST(y) ((YSize - (y)) / ptermApp->m_scale - 1 - DisplayMargin)
+#define XUNADJUST(x) (((x) - GetXMargin ()) / ptermApp->m_scale)
+#define YUNADJUST(y) (511 - ((y) - GetYMargin ()) / ptermApp->m_scale)
 
 // force coordinate into the range 0..511
 #define BOUND(x) x = (((x < 0) ? 0 : ((x > 511) ? 511 : x)))
 
+// Define top left corner of the PLATO drawing area, in windowing
+// system coordinates (which have origin at the top and Y axis upside down)
+// The YTOP definition looks a bit strange because we want the top one
+// of the two pixels if we're doing double size display
+#define XTOP (XADJUST (0))
+#define YTOP (YADJUST (512) + 1)
 // Macro to include keyboard accelerator only if MAC
 #if defined(__WXMAC__)
 #define MACACCEL(x) + wxString (wxT (x))
@@ -264,17 +275,19 @@ class PtermFrame;
 // Pterm screen printout
 class PtermPrintout: public wxPrintout
 {
- public:
+public:
     PtermPrintout (PtermFrame *owner,
                    const wxString &title = _("Pterm printout")) 
         : wxPrintout (title),
           m_owner (owner)
     {}
-  bool OnPrintPage (int page);
-  bool HasPage (int page);
-  bool OnBeginDocument (int startPage, int endPage);
-  void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo);
-  void DrawPage (wxDC *dc);
+    bool OnPrintPage (int page);
+    bool HasPage (int page);
+    bool OnBeginDocument (int startPage, int endPage);
+    void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo);
+    void DrawPage (wxDC *dc);
+    inline int GetXMargin (void) const;
+    inline int GetYMargin (void) const;
 
 private:
     PtermFrame *m_owner;
@@ -393,7 +406,7 @@ private:
 };
 
 // define a scrollable canvas for drawing onto
-class PtermCanvas: public wxScrolledWindow
+class PtermCanvas : public wxScrolledWindow
 {
 public:
     PtermCanvas (PtermFrame *parent);
@@ -416,6 +429,9 @@ public:
     void FullErase (void);
     void ClearRegion (void);
     void UpdateRegion (wxMouseEvent &event);
+
+    inline int GetXMargin (void) const;
+    inline int GetYMargin (void) const;
 
 private:
     PtermFrame *m_owner;
@@ -501,6 +517,26 @@ public:
     bool HasConnection (void) const
     {
         return (m_conn != NULL);
+    }
+    int GetXMargin (void) const
+    {
+        if (m_fullScreen)
+        {
+            int i = GetClientSize ().x - ScreenSize;
+            return (i < 0) ? 0 : i / 2;
+        }
+        else
+            return DisplayMargin;
+    }
+    int GetYMargin (void) const
+    {
+        if (m_fullScreen)
+        {
+            int i = GetClientSize ().y - ScreenSize;
+            return (i < 0) ? 0 : i / 2;
+        }
+        else
+            return DisplayMargin;
     }
     
     wxMemoryDC  *m_memDC;
@@ -1430,13 +1466,12 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
         m_charmap[i] = new wxBitmap (CharXSize, CharYSize, -1);
         m_charDC[i]->SelectObject (*m_charmap[i]);
     }
-    m_bitmap = new wxBitmap (XSize, YSize, -1);
+    m_bitmap = new wxBitmap (ScreenSize, ScreenSize, -1);
     m_memDC = new wxMemoryDC ();
     m_memDC->BeginDrawing ();
     m_memDC->SelectObject (*m_bitmap);
     m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->Clear ();
-    m_memDC->SetClippingRegion (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize);
     m_memDC->EndDrawing ();
 
     SetClientSize (XSize + 2, YSize + 2);
@@ -1769,7 +1804,7 @@ void PtermFrame::OnCopyScreen (wxCommandEvent &)
 
     screenDC.SelectObject (screenmap);
     screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
-                   m_memDC, XADJUST (0), YADJUST (511), wxCOPY);
+                   m_memDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 
     screen = new wxBitmapDataObject(screenmap);
@@ -1861,7 +1896,7 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
     
     screenDC.SelectObject (screenmap);
     screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
-                   m_memDC, XADJUST (0), YADJUST (511), wxCOPY);
+                   m_memDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 
     wxImage screenImage = screenmap.ConvertToImage ();
@@ -2073,10 +2108,13 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
 void PtermFrame::ptermDrawPoint (int x, int y)
 {
     wxClientDC dc(m_canvas);
-
+    int xm, ym;
+    
     dc.BeginDrawing ();
     m_memDC->BeginDrawing ();
     PrepareDC (dc);
+    xm = XMADJUST (x & 0777);
+    ym = YMADJUST (y & 0777);
     x = XADJUST (x & 0777);
     y = YADJUST (y & 0777);
     if (wemode & 1)
@@ -2092,15 +2130,15 @@ void PtermFrame::ptermDrawPoint (int x, int y)
         m_memDC->SetPen (m_backgroundPen);
     }
     dc.DrawPoint (x, y);
-    m_memDC->DrawPoint (x, y);
+    m_memDC->DrawPoint (xm, ym);
     if (ptermApp->m_scale == 2)
     {
         dc.DrawPoint (x + 1, y);
-        m_memDC->DrawPoint (x + 1, y);
+        m_memDC->DrawPoint (xm + 1, ym);
         dc.DrawPoint (x, y - 1);
-        m_memDC->DrawPoint (x, y - 1);
+        m_memDC->DrawPoint (xm, ym - 1);
         dc.DrawPoint (x + 1, y - 1);
-        m_memDC->DrawPoint (x + 1, y - 1);
+        m_memDC->DrawPoint (xm + 1, ym - 1);
     }    
     dc.EndDrawing ();
     m_memDC->EndDrawing ();
@@ -2108,11 +2146,16 @@ void PtermFrame::ptermDrawPoint (int x, int y)
 
 void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
 {
+    int xm1, ym1, xm2, ym2;
     wxClientDC dc(m_canvas);
 
     dc.BeginDrawing ();
     m_memDC->BeginDrawing ();
     PrepareDC (dc);
+    xm1 = XMADJUST (x1);
+    ym1 = YMADJUST (y1);
+    xm2 = XMADJUST (x2);
+    ym2 = YMADJUST (y2);
     x1 = XADJUST (x1);
     y1 = YADJUST (y1);
     x2 = XADJUST (x2);
@@ -2130,16 +2173,16 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
         m_memDC->SetPen (m_backgroundPen);
     }
     dc.DrawLine (x1, y1, x2, y2);
-    m_memDC->DrawLine (x1, y1, x2, y2);
+    m_memDC->DrawLine (xm1, ym1, xm2, ym2);
     if (ptermApp->m_scale == 2)
     {
         dc.DrawLine (x2, y2, x1, y1);
-        m_memDC->DrawLine (x2, y2, x1, y1);
+        m_memDC->DrawLine (xm2, ym2, xm1, ym1);
     }
     else
     {
         dc.DrawPoint (x2, y2);
-        m_memDC->DrawPoint (x2, y2);
+        m_memDC->DrawPoint (xm2, ym2);
     }
     dc.EndDrawing ();
     m_memDC->EndDrawing ();
@@ -2163,11 +2206,16 @@ void PtermFrame::ptermFullErase (void)
 void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
 {
     int t;
+    int xm1, ym1, xm2, ym2;
     wxClientDC dc(m_canvas);
 
     dc.BeginDrawing ();
     m_memDC->BeginDrawing ();
     PrepareDC (dc);
+    xm1 = XMADJUST (x1);
+    ym1 = YMADJUST (y1);
+    xm2 = XMADJUST (x2);
+    ym2 = YMADJUST (y2);
     x1 = XADJUST (x1);
     y1 = YADJUST (y1);
     x2 = XADJUST (x2);
@@ -2177,12 +2225,18 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
         t = x1;
         x1 = x2;
         x2 = t;
+        t = xm1;
+        xm1 = xm2;
+        xm2 = t;
     }
     if (y1 > y2)
     {
         t = y1;
         y1 = y2;
         y2 = t;
+        t = ym1;
+        ym1 = ym2;
+        ym2 = t;
     }
     if (wemode & 1)
     {
@@ -2203,9 +2257,9 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     dc.DrawRectangle (x1, y1,
                       x2 - x1 + ptermApp->m_scale,
                       y2 - y1 + ptermApp->m_scale);
-    m_memDC->DrawRectangle (x1, y1,
-                            x2 - x1 + ptermApp->m_scale,
-                            y2 - y1 + ptermApp->m_scale);
+    m_memDC->DrawRectangle (xm1, ym1,
+                            xm2 - xm1 + ptermApp->m_scale,
+                            ym2 - ym1 + ptermApp->m_scale);
     dc.EndDrawing ();
     m_memDC->EndDrawing ();
 }
@@ -2355,15 +2409,9 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
         m_canvas->SetScrollRate (1, 1);
         dc.BeginDrawing ();
         dc.DestroyClippingRegion ();
-        dc.SetClippingRegion (DisplayMargin * newscale, DisplayMargin * newscale,
+        dc.SetClippingRegion (GetXMargin (), GetYMargin (),
                               vScreenSize (newscale), vScreenSize (newscale));
         dc.EndDrawing ();
-        m_memDC->BeginDrawing ();
-        m_memDC->DestroyClippingRegion ();
-        m_memDC->SetClippingRegion (DisplayMargin * newscale,
-                                    DisplayMargin * newscale,
-                                    vScreenSize (newscale), vScreenSize (newscale));
-        m_memDC->EndDrawing ();
         
         UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor,
                   ptermApp->m_bgColor, newscale2);
@@ -2534,7 +2582,7 @@ void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
 
 void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
 {
-    int charX, charY, sizeX, sizeY, screenX, screenY;
+    int charX, charY, sizeX, sizeY, screenX, screenY, memX, memY;
 
     charX = cnum * 8 * ptermApp->m_scale;
     charY = snum * 16 * ptermApp->m_scale;
@@ -2543,12 +2591,15 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
 
     screenX = XADJUST (x);
     screenY = YADJUST (y + 15);
+    memX = XMADJUST (x);
+    memY = YMADJUST (y + 15);
     
     if (x < 0)
     {
         sizeX += x;
         charX -= x * ptermApp->m_scale;
         screenX = XADJUST (0);
+        memX = XMADJUST (0);
     }
     if (y < 0)
     {
@@ -2557,17 +2608,17 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     if (wemode & 2)
     {
         // write or erase -- need to zap old pixels and OR in new pixels
-        m_memDC->Blit (screenX, screenY,
+        m_memDC->Blit (memX, memY,
                        sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
                        m_charDC[4], charX, charY, wxAND);
-        m_memDC->Blit (screenX, screenY,
+        m_memDC->Blit (memX, memY,
                        sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
                        m_charDC[wemode], charX, charY, wxOR);
     }
     else
     {
         // inverse or rewrite, just blit in the appropriate pattern
-        m_memDC->Blit (screenX, screenY,
+        m_memDC->Blit (memX, memY,
                        sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
                        m_charDC[wemode], charX, charY, wxCOPY);
     }
@@ -2575,7 +2626,7 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     // Now copy the resulting state of the character area into the screen dc
     dc.Blit (screenX, screenY,
              sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale,
-             m_memDC, screenX, screenY, wxCOPY);
+             m_memDC, memX, memY, wxCOPY);
     
     // Handle screen edge wraparound by recursion...
     if (x > 512 - 8)
@@ -3894,9 +3945,19 @@ PtermCanvas::PtermCanvas(PtermFrame *parent)
     
     SetBackgroundColour (ptermApp->m_bgColor);
     SetScrollRate (1, 1);
-    dc.SetClippingRegion (XADJUST (0), YADJUST (511), ScreenSize, ScreenSize);
+    dc.SetClippingRegion (GetXMargin (), GetYMargin (),
+                          ScreenSize, ScreenSize);
     SetFocus ();
     FullErase ();
+}
+
+int PtermCanvas::GetXMargin (void) const
+{
+    return m_owner->GetXMargin ();
+}
+int PtermCanvas::GetYMargin (void) const
+{
+    return m_owner->GetYMargin ();
 }
 
 void PtermCanvas::OnDraw(wxDC &dc)
@@ -3905,7 +3966,8 @@ void PtermCanvas::OnDraw(wxDC &dc)
     int charX, charY, sizeX, sizeY;
     
     m_owner->PrepareDC (dc);
-    dc.Blit (0, 0, XSize, YSize, m_owner->m_memDC, 0, 0, wxCOPY);
+    dc.Blit (XTOP, YTOP, ScreenSize, ScreenSize,
+             m_owner->m_memDC, 0, 0, wxCOPY);
     if (m_regionHeight != 0 && m_regionWidth != 0)
     {
         sizeX = 8 * ptermApp->m_scale;
@@ -4504,6 +4566,15 @@ WXLRESULT PtermCanvas::MSWWindowProc(WXUINT message, WXWPARAM wParam, WXLPARAM l
 // Pterm printing helper class
 // ----------------------------------------------------------------------------
 
+int PtermPrintout::GetXMargin (void) const
+{
+    return m_owner->GetXMargin ();
+}
+int PtermPrintout::GetYMargin (void) const
+{
+    return m_owner->GetYMargin ();
+}
+
 bool PtermPrintout::OnBeginDocument(int startPage, int endPage)
 {
     if (!wxPrintout::OnBeginDocument (startPage, endPage))
@@ -4586,8 +4657,8 @@ void PtermPrintout::DrawPage (wxDC *dc)
 
     // Re-color the image
     screenDC.SelectObject (screenmap);
-    screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
-                   m_owner->m_memDC, XADJUST (0), YADJUST (511), wxCOPY);
+    screenDC.Blit (XTOP, YTOP, ScreenSize, ScreenSize, 
+                   m_owner->m_memDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 
     wxImage screenImage = screenmap.ConvertToImage ();
@@ -4623,7 +4694,7 @@ void PtermPrintout::DrawPage (wxDC *dc)
     wxBitmap printmap (screenImage);
 
     screenDC.SelectObject (printmap);
-    dc->Blit (0, 0, ScreenSize, ScreenSize, &screenDC, 0, 0, wxCOPY);
+    dc->Blit (XTOP, YTOP, ScreenSize, ScreenSize, &screenDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 }
 
