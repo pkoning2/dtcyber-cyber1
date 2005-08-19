@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V2.10\n"
 "Report-Msgid-Bugs-To: paul@cyber1.org\n"
-"POT-Creation-Date: 2005-08-01 16:39-0400\n"
+"POT-Creation-Date: 2005-08-19 13:14-0400\n"
 "PO-Revision-Date: 2005-04-22 17:30-0400\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -15,191 +15,203 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: pterm_wx.cpp:271
+#: pterm_wx.cpp:280
 msgid "Pterm printout"
 msgstr "Pterm afdruk"
 
-#: pterm_wx.cpp:1006
+#: pterm_wx.cpp:1057
 msgid "Connect to PLATO"
 msgstr "Met PLATO verbinden"
 
-#: pterm_wx.cpp:1058
+#: pterm_wx.cpp:1109
 msgid "Copyright © 2005 by Paul Koning."
 msgstr "Copyright © 2005 van Paul Koning."
 
-#: pterm_wx.cpp:1060 pterm_wx.cpp:1225 pterm_wx.cpp:1366
+#: pterm_wx.cpp:1111 pterm_wx.cpp:1276 pterm_wx.cpp:1420
 msgid "About Pterm"
 msgstr "Over Pterm"
 
-#: pterm_wx.cpp:1074
+#: pterm_wx.cpp:1125
 msgid "Keyboard Help"
 msgstr "Toetsenbordbeschrijving"
 
-#: pterm_wx.cpp:1103
+#: pterm_wx.cpp:1154
 msgid "Pterm Preferences"
 msgstr "Pterm voorkeuren"
 
-#: pterm_wx.cpp:1208 pterm_wx.cpp:1311
+#: pterm_wx.cpp:1259 pterm_wx.cpp:1365
 msgid "New Connection...\tCtrl-N"
 msgstr "Nieuwe verbinding...\tCtrl-N"
 
-#: pterm_wx.cpp:1209 pterm_wx.cpp:1312
+#: pterm_wx.cpp:1260 pterm_wx.cpp:1366
 msgid "Connect to a PLATO host"
 msgstr "Aan een PLATO-systeem verbinden"
 
-#: pterm_wx.cpp:1210 pterm_wx.cpp:1331
+#: pterm_wx.cpp:1261 pterm_wx.cpp:1385
 msgid "Preferences..."
 msgstr "Voorkeuren..."
 
-#: pterm_wx.cpp:1211 pterm_wx.cpp:1332
+#: pterm_wx.cpp:1262 pterm_wx.cpp:1386
 msgid "Set program configuration"
 msgstr "Stel de voorkeuren van het programma in"
 
-#: pterm_wx.cpp:1213 pterm_wx.cpp:1336
+#: pterm_wx.cpp:1264 pterm_wx.cpp:1390
 msgid "Exit"
 msgstr "Programma sluiten"
 
-#: pterm_wx.cpp:1213 pterm_wx.cpp:1336
+#: pterm_wx.cpp:1264 pterm_wx.cpp:1390
 msgid "Quit this program"
 msgstr "Beëindig het programma"
 
-#: pterm_wx.cpp:1217 pterm_wx.cpp:1357
+#: pterm_wx.cpp:1268 pterm_wx.cpp:1427
 msgid "File"
 msgstr "Bestand"
 
 # msgid "About Pterm"
 # msgstr "Over Pterm"
-#: pterm_wx.cpp:1225 pterm_wx.cpp:1367
+#: pterm_wx.cpp:1276 pterm_wx.cpp:1421
 msgid "Show about dialog"
 msgstr "Toon programma informatie"
 
-#: pterm_wx.cpp:1226 pterm_wx.cpp:1368
+#: pterm_wx.cpp:1277 pterm_wx.cpp:1422
 msgid "Pterm keyboard"
 msgstr "Pterm toetsenbord"
 
-#: pterm_wx.cpp:1226 pterm_wx.cpp:1369
+#: pterm_wx.cpp:1277 pterm_wx.cpp:1423
 msgid "Show keyboard description"
 msgstr "Toon toetsenbordbeschrijving"
 
-#: pterm_wx.cpp:1233 pterm_wx.cpp:1376
+#: pterm_wx.cpp:1284 pterm_wx.cpp:1438
 msgid "Help"
 msgstr "Help"
 
 # msgid "New Connection...\tCtrl-N"
 # msgstr "Nieuwe verbinding...\tCtrl-N"
-#: pterm_wx.cpp:1317
+#: pterm_wx.cpp:1371
 msgid "Connect Again"
 msgstr "Nogmaals Verbinden"
 
-#: pterm_wx.cpp:1318
+#: pterm_wx.cpp:1372
 msgid "Connect to the same host"
 msgstr "Verbinden aan hetzelfde systeem"
 
-#: pterm_wx.cpp:1324
+#: pterm_wx.cpp:1378
 msgid "Save Screen"
 msgstr "Scherm kopiëren"
 
-#: pterm_wx.cpp:1325
+#: pterm_wx.cpp:1379
 msgid "Save screen image to file"
 msgstr "Scherm opslaan in"
 
-#: pterm_wx.cpp:1326
+#: pterm_wx.cpp:1380
 msgid "Print..."
 msgstr "Afdrukken..."
 
-#: pterm_wx.cpp:1327
+#: pterm_wx.cpp:1381
 msgid "Print screen content"
 msgstr "Afdrukvoorbeeld"
 
-#: pterm_wx.cpp:1328
+#: pterm_wx.cpp:1382
 msgid "Page Setup..."
 msgstr "Pagina-instelling..."
 
-#: pterm_wx.cpp:1328
+#: pterm_wx.cpp:1382
 msgid "Printout page setup"
 msgstr "Pagina-instelling"
 
-#: pterm_wx.cpp:1329
+#: pterm_wx.cpp:1383
 msgid "Print Preview"
 msgstr "Afdrukvoorbeeld"
 
-#: pterm_wx.cpp:1329
+#: pterm_wx.cpp:1383
 msgid "Preview screen print"
 msgstr "Bekijk afdrukvoorbeeld"
 
 # msgid "Preferences..."
 # msgstr "Voorkeuren..."
-#: pterm_wx.cpp:1334
-msgid "Close\tCtrl-Z"
-msgstr "Verbinding sluiten\tCtrl-Z"
+#: pterm_wx.cpp:1388
+msgid "Close\tCtrl-W"
+msgstr "Verbinding sluiten\tCtrl-W"
 
-#: pterm_wx.cpp:1335
+#: pterm_wx.cpp:1389
 msgid "Close this window"
 msgstr "Sluit dit venster"
 
 # msgid "Exit"
 # msgstr "Programma sluiten"
-#: pterm_wx.cpp:1340
+#: pterm_wx.cpp:1394
 msgid "Copy Screen"
 msgstr "Scherm kopiëren"
 
-#: pterm_wx.cpp:1340
+#: pterm_wx.cpp:1394
 msgid "Copy screen to clipboard"
 msgstr "Kopiëer scherm naar het klembord"
 
-#: pterm_wx.cpp:1341
+#: pterm_wx.cpp:1395
 msgid "Copy text"
 msgstr "Tekst kopiëren"
 
-#: pterm_wx.cpp:1342
+#: pterm_wx.cpp:1396
 msgid "Copy text only to clipboard"
 msgstr "Kopiëer tekst naar het klembord"
 
-#: pterm_wx.cpp:1345
+#: pterm_wx.cpp:1399
 msgid "Paste ASCII"
 msgstr "Voer tekst in"
 
-#: pterm_wx.cpp:1346
+#: pterm_wx.cpp:1400
 msgid "Paste plain text"
 msgstr "Voeg gewone tekst in"
 
-#: pterm_wx.cpp:1348
+#: pterm_wx.cpp:1402
 msgid "Paste Printout"
 msgstr "Voeg afdruktekst in"
 
-#: pterm_wx.cpp:1349
+#: pterm_wx.cpp:1403
 msgid "Paste Cyber printout format"
 msgstr "Voeg tekst in afdrukvorm in"
 
-#: pterm_wx.cpp:1358
+#: pterm_wx.cpp:1411
+msgid "Full Screen\tCtrl-U"
+msgstr "Schermvullend\tCtrl-U"
+
+#: pterm_wx.cpp:1412
+msgid "Display in full screen mode"
+msgstr "Schermvullende weergave"
+
+#: pterm_wx.cpp:1428
 msgid "Edit"
 msgstr "Bewerken"
 
-#: pterm_wx.cpp:1388
+#: pterm_wx.cpp:1430
+msgid "View"
+msgstr "Weergave"
+
+#: pterm_wx.cpp:1450
 msgid " Connecting..."
 msgstr "Aan het verbinden..."
 
-#: pterm_wx.cpp:1744
+#: pterm_wx.cpp:1812
 msgid "Can't copy image to the clipboard"
 msgstr "Kopiëren van het scherm naar het klembord mislukt."
 
-#: pterm_wx.cpp:1750 pterm_wx.cpp:1763 pterm_wx.cpp:4240
+#: pterm_wx.cpp:1818 pterm_wx.cpp:1831 pterm_wx.cpp:4410
 msgid "Can't open clipboard."
 msgstr "Openen van klembord mislukt."
 
-#: pterm_wx.cpp:1770
+#: pterm_wx.cpp:1838
 msgid "No text data on clipboard"
 msgstr "Het klembord bevat geen tekst"
 
-#: pterm_wx.cpp:1780
+#: pterm_wx.cpp:1848
 msgid "Can't paste data from the clipboard"
 msgstr "Ophalen van gegevens van klembord mislukt"
 
-#: pterm_wx.cpp:1810
+#: pterm_wx.cpp:1878
 msgid "Save screen to"
 msgstr "Scherm opslaan in"
 
-#: pterm_wx.cpp:1880
+#: pterm_wx.cpp:1948
 msgid ""
 "There was a problem printing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -207,11 +219,11 @@ msgstr ""
 "Er was een probleem bij het afdrukken.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: pterm_wx.cpp:1880
+#: pterm_wx.cpp:1948
 msgid "Printing"
 msgstr "Afdrukken"
 
-#: pterm_wx.cpp:1902
+#: pterm_wx.cpp:1970
 msgid ""
 "There was a problem previewing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -219,100 +231,100 @@ msgstr ""
 "Er was een probleem bij het maken van het afdrukvoorbeeld.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: pterm_wx.cpp:1902
+#: pterm_wx.cpp:1970
 msgid "Previewing"
 msgstr "Voorbeeld bekijken"
 
-#: pterm_wx.cpp:1906
+#: pterm_wx.cpp:1974
 msgid "Pterm Print Preview"
 msgstr "Pterm Afdrukvoorbeeld"
 
-#: pterm_wx.cpp:3106
+#: pterm_wx.cpp:3234
 msgid " Trace "
-msgstr "Traceren "
+msgstr " Traceren "
 
-#: pterm_wx.cpp:3157
+#: pterm_wx.cpp:3285
 msgid "Emulation settings"
 msgstr "Emulatie-instellingen"
 
-#: pterm_wx.cpp:3159
+#: pterm_wx.cpp:3287
 msgid "Simulate 1200 Baud"
 msgstr "1200 Baud simuleren"
 
-#: pterm_wx.cpp:3162
+#: pterm_wx.cpp:3290
 msgid "Enable GSW"
 msgstr "GSW aanzetten"
 
-#: pterm_wx.cpp:3165
+#: pterm_wx.cpp:3293
 msgid "Numeric keypad for arrows"
 msgstr "Numeriek toetsenbord voor pijlen"
 
-#: pterm_wx.cpp:3172
+#: pterm_wx.cpp:3300
 msgid "Connection settings"
 msgstr "Verbindingsinstellingen"
 
-#: pterm_wx.cpp:3174
+#: pterm_wx.cpp:3302
 msgid "Connect at startup"
 msgstr "Automatisch verbinden"
 
-#: pterm_wx.cpp:3186
+#: pterm_wx.cpp:3314
 msgid "Default Host"
 msgstr "Standaardsysteem"
 
-#: pterm_wx.cpp:3188
+#: pterm_wx.cpp:3316
 msgid "Default Port"
 msgstr "Standardpoortnummer"
 
-#: pterm_wx.cpp:3195
+#: pterm_wx.cpp:3323
 msgid "Display settings"
 msgstr "Scherminstellingen"
 
-#: pterm_wx.cpp:3197
+#: pterm_wx.cpp:3325
 msgid "Zoom display 200%"
 msgstr "Beeld 200% vergroten"
 
-#: pterm_wx.cpp:3200
+#: pterm_wx.cpp:3328
 msgid "Status bar"
 msgstr "Statusvenster"
 
-#: pterm_wx.cpp:3207
+#: pterm_wx.cpp:3335
 msgid "Foreground"
 msgstr "Voorgrond"
 
-#: pterm_wx.cpp:3209
+#: pterm_wx.cpp:3337
 msgid "Background"
 msgstr "Achtergrond"
 
-#: pterm_wx.cpp:3217
+#: pterm_wx.cpp:3345
 msgid "Defaults"
 msgstr "Standaard"
 
-#: pterm_wx.cpp:3361
+#: pterm_wx.cpp:3489
 msgid "Host name"
 msgstr "Systeemnaam"
 
-#: pterm_wx.cpp:3363
+#: pterm_wx.cpp:3491
 msgid "Port"
 msgstr "Poortnummer"
 
-#: pterm_wx.cpp:3656
+#: pterm_wx.cpp:3808
 msgid " Not connected"
 msgstr "Niet verbonden"
 
-#: pterm_wx.cpp:3660
+#: pterm_wx.cpp:3812
 #, c-format
 msgid "Failed to connect to %s %d"
 msgstr "Kon niet verbinden met %s %d"
 
-#: pterm_wx.cpp:3665
+#: pterm_wx.cpp:3817
 #, c-format
 msgid "Connection lost to %s %d"
 msgstr "Verbinding met %s %d verloren"
 
-#: pterm_wx.cpp:3669
+#: pterm_wx.cpp:3821
 msgid "Alert"
 msgstr "Waarschuwing"
 
-#: pterm_wx.cpp:4247
+#: pterm_wx.cpp:4417
 msgid "Can't copy text to the clipboard"
 msgstr "Kopiëren van tekst naar het klembord mislukt"

@@ -1406,15 +1406,11 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     // Copy is initially disabled, until a region is selected
     menuEdit->Enable (Pterm_Copy, FALSE);
 
-#if 0//PTERM_MDI
-    PtermFrameParent->AppendWinItem (Pterm_FullScreen, _("Full Screen\tCtrl-U"),
-                                     _("Display in full screen mode"));
-#else
     wxMenu *menuView = new wxMenu;
     
     menuView->Append (Pterm_FullScreen, _("Full Screen\tCtrl-U"),
                       _("Display in full screen mode"));
-#endif
+
     // the "About" item should be in the help menu.
     // Well, on the Mac it actually doesn't show up there, but for that magic
     // to work it has to be presented to wx in the help menu.  So the help
