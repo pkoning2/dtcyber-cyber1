@@ -1,4 +1,4 @@
-Quick CYBIS operator's guide				05/02/07.
+Quick CYBIS operator's guide				2005/08/20.
 
 Here are some quick notes for common operator actions on CYBIS.
 This version describes procedures for CYBIS running on NOS 2.8.7 on
@@ -7,11 +7,23 @@ the DtCyber emulator.
 1. Startup.
 
 The default is for Level 0 deadstart.  That is generally a good
-choice.  
+choice.  If you use the autostart feature of dtcyber.sh, this is what
+you get.  You can also get it manually as follows:
+        ./dtcyber.sh cybis871
+	[bring up the dd60 window which is the Cyber console]
+	<enter>
+	["cmrinst" display appears, lots of text]
+	GO. <enter>
+NOS will now start; it takes a minute or so.  When it is done, you'll
+see the A and B displays on the console.  You can then start PLATO as
+follows: 
+        x.cybis. <enter>
+
+and all the pieces will start.
 
 You can use level 3 deadstart under certain circumstances; that will
 save a little time.  Level 3 deadstart is ONLY valid if:
-     - be starting the SAME deadstart tape as last time.
+     - starting the SAME deadstart tape as last time, and
      - last shutdown must have been a clean shutdown.
 
 To do level 3 deadstart, enter the following at the first screen after
@@ -20,28 +32,37 @@ dtcyber startup (the *A* screen):
 	O	 (*O* screen appears)
 	P	 (*P* screen appears)
 	I=3 <enter>     (I = 0 line changes to I = 3)
-	enter
+	<enter>
 
 You will then get a screen with level 3 deadstart options, not the
-usual *cmrinst* screen.  At this screen, enter "go."
+usual *cmrinst* screen.  At this screen, enter "go."  NOS will start
+up, and you can then start up PLATO as above.
 
 1.1 Reinitializing ECS.
 
 If the system (NOS or DtCyber) has crashed or is otherwise suspect
-from the last time, it's a good idea to reinitialize ECS.  This is
-done as part of a level 0 deadstart.  At the "cmrinst" screen, enter
-the following:
+from the last time, it's a good idea to reinitialize ECS.  Similarly,
+it is sometimes necessary when changing deadstart tapes, so it is good
+practice to do it in all cases when changing deadstart tapes.  ECS
+initialization is done as part of a level 0 deadstart.  
 
-    next. <enter>
-    initialize,al,05. <enter>
-    go. <enter>
+Begin by starting DtCyber WITHOUT autostart:
+
+        ./dtcyber.sh cybis871
+	[bring up the dd60 window which is the Cyber console]
+	<enter>
+	["cmrinst" display appears, lots of text]
+        next. <enter>
+	["eqpinst" display appears, again lots of text]
+        initialize,al,05. <enter>
+        go. <enter>
 
 The initial NOS display will then be "TESTING EXTENDED MEMORY" and
 rapidly changing numbers, indicating that ECS is being initialized.
+Once NOS startup is complete, start up PLATO as usual.
 
 If you've done a clean shutdown, ECS does not need to be initialized
-(but there is no harm in doing so).  You also don't need to do it just
-because the deadstart tape was changed.
+(but there is no harm in doing so).
 
 2. Shutdown.
 
@@ -52,12 +73,14 @@ First back out PLATO (1 3 from author mode).  Then, at the console:
       [	      (to erase the "k.")
       unlock. <enter>
       check point system. <enter>
-WAIT FOR "check point complete" message.  IMPORTANT!
+IMPORTANT!  WAIT FOR "check point complete" message (at the B display 
+line for "system").
       step. <enter>
 
 Now go to the DtCyber operator window.  At that window, enter:
       unlock. <enter>
       shutdown. <enter>
+      end. <enter>
 
 2.1 Shutdown failures
 
@@ -70,7 +93,8 @@ wouldn't want to wait till later and forget...
 Now go to the DtCyber operator window.  At that window, enter:
         unlock. <enter>
 	shutdown. <enter>
-	<restart dtcyber>
+	end. <enter>
+	<restart dtcyber WITHOUT autostart: ./dtcyber.sh cybis871>
 	O P I=3 <enter>			(level 3 deadstart)
 
 The Level 3 deadstart options display will appear.  Enter:
@@ -79,12 +103,17 @@ The Level 3 deadstart options display will appear.  Enter:
 	happens, do that next.)
 	
 You should get a display that says "check point complete" somewhere.
-Enter ALT-O and shutdown, then restart dtcyber and do a level ZERO
-deadstart. 
+Now go to the DtCyber operator window.  At that window, enter:
+        unlock. <enter>
+	shutdown. <enter>
+	end. <enter>
+
+Finally, restart DtCyber WITH A LEVEL 0 DEADSTART.  Initializing ECS
+is probably a good idea if things got this messed up.
 
 3. Crashes.
 
-If PLATO (CYBIS) dies, you will get the dread "plato off" display on
+If PLATO (CYBIS) dies, you will get the dreaded "plato off" display on
 all the terminals.  A memory dump will be generated and sent to the
 printer.  Mastor will automatically restart things.
 
@@ -93,13 +122,28 @@ author mode.
 
 If Framat dies, enter:
 	  drop,pla1. <enter>
-and things should restart.
+(which will produce "plato off") and things should restart.
 
-If Mastor dies, shut down the system and restart.
+If Mastor dies, shut down the system and restart, as follows:
 
-In any of the above, wait for any line printer output to stop (BIO
-status is IDLE).  Then enter this command into the DtCyber operator window:
-       unload,12,5. <enter>
+On the console, enter:
+      unlock. <enter>
+      check point system. <enter>
+IMPORTANT!  WAIT FOR "check point complete" message (at the B display 
+line for "system").
+      step. <enter>
+
+Now go to the DtCyber operator window.  At that window, enter:
+      unlock. <enter>
+      shutdown. <enter>
+      end. <enter>
+
+Then restart DtCyber (Level 0 deadstart; initializing ECS is
+recommended). 
+
+In any of the above crash cases, wait for any line printer output to
+stop (BIO status is IDLE).  Then enter this command into the DtCyber
+operator window: unload,12,5. <enter>
 
 You'll get a message saying that LP was unloaded to some long file
 name.  That's the line printer output up to this point; save it for
@@ -132,3 +176,11 @@ If no argument is given, the default is: "PLATO is down for the moment".
 The black box runs until terminated (by control/C).  It takes very
 little CPU time, so it can easily be used while the system is busy
 doing backups or the like.
+
+If you use "blackbox" be sure to stop it before restarting DtCyber.
+If you forget, you should see some messages saying "can't bind to
+socket" from DtCyber.  If that happens, let startup complete normally,
+shut down DtCyber, kill blackbox, and restart.  Since the NIU (PLATO
+terminal interface) couldn't start up in this situation, you'll need
+the console PLATO terminal (x.console.) to shut down PLATO if you had
+done an autostart.
