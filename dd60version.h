@@ -1,0 +1,1 @@
+#define DD60VERSION "1.00"
