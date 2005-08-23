@@ -91,6 +91,11 @@ cc545:	cc545.cpp knob.cpp iir.cpp
 
 ifeq ("$(HOST)","Darwin")
 
+dd60x.app: dd60x
+	mkdir -p dd60x.app/Contents/MacOS
+	cp dd60x dd60x.app/Contents/MacOS
+	touch $@
+
 cc545.app: cc545
 	mkdir -p cc545.app/Contents/MacOS
 	cp cc545 cc545.app/Contents/MacOS
@@ -104,7 +109,8 @@ Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES)
 	echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
-	for d in $(LANGUAGES); do cp $$d/pterm.mo `wx-config --prefix`/share/locale/$$d/LC_MESSAGES/wxstd.mo Pterm.app/Contents/Resources/$$d; done
+#	for d in $(LANGUAGES); do cp $$d/pterm.mo `wx-config --prefix`/share/locale/$$d/LC_MESSAGES/wxstd.mo Pterm.app/Contents/Resources/$$d; done
+	for d in $(LANGUAGES); do cp $$d/pterm.mo Pterm.app/Contents/Resources/$$d; done
 	touch $@
 
 pterm-empty.dmg:

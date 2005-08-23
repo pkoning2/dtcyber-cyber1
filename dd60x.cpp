@@ -338,9 +338,9 @@ private:
     // that comes from saturation.  (That may be overkill...)  The pixels
     // for each character are in a contiguous set of bytes in the vector;
     // the character display operation spreads them over multiple scanlines.
-    uint8_t     *m_char8;
-    uint8_t     *m_char16;
-    uint8_t     *m_char32;
+    u8     *m_char8;
+    u8     *m_char16;
+    u8     *m_char32;
 
     // DD60 display emulation state
     int         mode;
@@ -352,7 +352,7 @@ private:
     void dd60SetName (wxString &winName);
     void dd60SetStatus (wxString &str);
 
-    void dd60LoadCharSize (int size, int tsize, uint8_t *vec);
+    void dd60LoadCharSize (int size, int tsize, u8 *vec);
     void procDd60Char (int d);
     void dd60ShowTrace (bool enable);
     
@@ -998,9 +998,9 @@ Dd60Frame::Dd60Frame(int port, const wxString& title)
     /*
     **  Load character patterns characters
     */
-    m_char8 = new uint8_t[3 * DD60CHARS * CHAR8SIZE * CHAR8SIZE];
-    m_char16 = new uint8_t[3 * DD60CHARS * CHAR16SIZE * CHAR16SIZE];
-    m_char32 = new uint8_t[3 * DD60CHARS * CHAR32SIZE * CHAR32SIZE];
+    m_char8 = new u8[3 * DD60CHARS * CHAR8SIZE * CHAR8SIZE];
+    m_char16 = new u8[3 * DD60CHARS * CHAR16SIZE * CHAR16SIZE];
+    m_char32 = new u8[3 * DD60CHARS * CHAR32SIZE * CHAR32SIZE];
 
     dd60LoadChars ();
     
@@ -1092,9 +1092,9 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
 
     for (int pix = 0; pix < pixels; pix++)
     {
-        uint8_t &rp = p.Red ();
-        uint8_t &gp = p.Green ();
-        uint8_t &bp = p.Blue ();
+        u8 &rp = p.Red ();
+        u8 &gp = p.Green ();
+        u8 &bp = p.Blue ();
         rp = (rp * DECAY) / 256;
         gp = (gp * DECAY) / 256;
         bp = (bp * DECAY) / 256;
@@ -1397,7 +1397,7 @@ void Dd60Frame::dd60LoadChars (void)
     dd60LoadCharSize (16, CHAR16SIZE, m_char16);
     dd60LoadCharSize (32, CHAR32SIZE, m_char32);
 #if 0
-    uint8_t *d=m_char8;
+    u8 *d=m_char8;
     for (int c = 0; c < 060; c++)
     {
         for (int i = 0; i < 16; i++)
@@ -1413,7 +1413,7 @@ void Dd60Frame::dd60LoadChars (void)
 #endif
 }
 
-void Dd60Frame::dd60LoadCharSize (int size, int tsize, uint8_t *vec)
+void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
 {
     int ch, i, j, bx, by, ix, iy, cx, cy, pg;
     double x, y, scalex, scaley, r, b;
@@ -1440,10 +1440,10 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, uint8_t *vec)
     const int beamr = int (ceil (3 * sigma));
 #define r1_029 2000
 #define m_c1_029 300
-#define DELAY 10
+#define ONDELAY 10
     const double r029 = r1_029;
     const double c029 = 1.0e-12 * m_c1_029;
-    Delay delay (DELAY);
+    Delay delay (ONDELAY);
     
     memset (vec, 0, DD60CHARS * nextchar);
     
@@ -1470,7 +1470,7 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, uint8_t *vec)
         // a vector of character patterns, each of which is a square
         // matrix of pixels.  We use grayscale pixels here; color is
         // added when we display the characters.
-        uint8_t * const origin = vec + (nextchar * ch) + orgoffset;
+        u8 * const origin = vec + (nextchar * ch) + orgoffset;
         
         x620.Reset ();
         y620.Reset ();
@@ -1583,7 +1583,7 @@ void Dd60Frame::UpdateSettings (wxColour &newfg, wxColour &newbg,
 void Dd60Frame::procDd60Char (int d)
 {
     int size, margin, firstx, firsty, inc, qwds;
-    uint8_t *data;
+    u8 *data;
     int i, j, k;
 
     switch (mode)
@@ -1623,7 +1623,8 @@ void Dd60Frame::procDd60Char (int d)
         for (i = 0; i < size; i++)
         {
             p.MoveTo (*m_pixmap, firstx, firsty + i);
-#if 1
+
+#ifdef __SSE2__
             typedef int v8qi __attribute__ ((mode(V8QI)));
             v8qi *pmap = (v8qi *)(p.m_ptr);
             v8qi *pdata = (v8qi *) data;
@@ -1638,9 +1639,9 @@ void Dd60Frame::procDd60Char (int d)
 #else
             for (j = 0; j < size; j++)
             {
-                uint8_t &rp = p.Red ();
-                uint8_t &gp = p.Green ();
-                uint8_t &bp = p.Blue ();
+                u8 &rp = p.Red ();
+                u8 &gp = p.Green ();
+                u8 &bp = p.Blue ();
             
                 k = rp + *data++;
                 if (k > 255)
