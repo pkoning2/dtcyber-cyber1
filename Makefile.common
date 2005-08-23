@@ -28,6 +28,7 @@ endif
 ifeq ("$(MACHINE:i%86=i386)","i386")
 ARCHCFLAGS ?= -march=$(MACHINE)
 endif
+LDFLAGS += $(EXTRALDFLAGS)
 
 # If dual cpu emulation requested ("make DUAL=yes") then turn that on.
 # If the host has dual CPUs, turn on CPU threads for this.
