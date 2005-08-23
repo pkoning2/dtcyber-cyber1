@@ -2015,6 +2015,7 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
         }
     
     ShowFullScreen (m_fullScreen);
+    m_canvas->Refresh ();
 }
 
 void PtermFrame::PrepareDC(wxDC& dc)
@@ -3714,7 +3715,7 @@ int PtermConnection::NextRingWord (void)
 
 int PtermConnection::NextWord (void)
 {
-    int next, word, i;
+    int next, word;
     int delay = 0;
 
     if (m_gswActive)
