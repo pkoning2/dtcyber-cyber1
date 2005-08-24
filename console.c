@@ -204,6 +204,7 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #endif
 
@@ -854,6 +855,7 @@ static int consoleInput (NetPort *np)
     int i;
     int port;
     PortParam *mp;
+    int delay_opt;
     
     /*
     **  Try to receive a byte of data
@@ -952,9 +954,15 @@ static int consoleInput (NetPort *np)
         break;
     case Dd60FastRate:
         mp->interval = (buf & 077) * 20000;
+        delay_opt = (mp->interval == 0);
+        setsockopt (np->fet.connFd, SOL_SOCKET, TCP_NODELAY,
+                    (char *) &delay_opt, sizeof (delay_opt));
         break;
     case Dd60SlowRate:
         mp->interval = (buf & 077) * 1000000;
+        delay_opt = (mp->interval == 0);
+        setsockopt (np->fet.connFd, SOL_SOCKET, TCP_NODELAY,
+                    (char *) &delay_opt, sizeof (delay_opt));
         break;
         }
     return 0;
