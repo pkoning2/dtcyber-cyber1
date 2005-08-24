@@ -34,8 +34,8 @@
 #define DD60CHARS       060         // number of characters in pattern arrays
 
 // Display parameters
-#define RRATE           100         // ms per refresh
-#define DECAY           128         // decay per refresh, scaled by 256.
+#define RRATE           33         // ms per refresh
+#define DECAY           224         // decay per refresh, scaled by 256.
 
 //#define DisplayMargin   8
 
@@ -353,7 +353,7 @@ private:
     void dd60SetStatus (wxString &str);
 
     void dd60LoadCharSize (int size, int tsize, u8 *vec);
-    void procDd60Char (int d);
+    void procDd60Char (unsigned int d);
     void dd60ShowTrace (bool enable);
     
     // any class wishing to process wxWindows events must use this macro
@@ -919,6 +919,7 @@ Dd60Frame::Dd60Frame(int port, const wxString& title)
     mode (0),
     currentX (0),
     currentY (0),
+    currentXOffset (0),
     truekb (false)
 {
     int i;
@@ -1203,7 +1204,7 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
             }
         }
     }
-#if 1
+#if 0
     Refresh ();
 #else
     wxWindowDC dc (m_canvas);
@@ -1413,6 +1414,8 @@ void Dd60Frame::dd60LoadChars (void)
 #endif
 }
 
+static double bellvec[10010 * 16];
+
 void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
 {
     int ch, i, j, bx, by, ix, iy, cx, cy, pg;
@@ -1460,6 +1463,11 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
     cg.SetStepCount (i);
     scalex = (double) width / (i * 8);
     scaley = (double) height / (i * 8);
+
+    for (j = 0; j <= beamr * 16; j++)
+    {
+        bellvec[j] = bell (j / 16.0, sigma);
+    }
     
     for (ch = 1; ch < DD60CHARS; ch++)
     {
@@ -1513,10 +1521,10 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
                         r = sqrt (bx * bx + by * by);
                         if (r > 3.0 * sigma)
                             continue;
-                        b = bell (r, sigma);
+                        b = bellvec[int (round (r)) * 16];
                         
-                        ix = (int) round (x * scalex + bx + beamr);
-                        iy = (int) round (y * scaley + by + beamr + height);
+                        ix = (int) round (x * scalex + bx);
+                        iy = (int) round (y * scaley + by + height);
                         if (ix < -margin || iy < -margin ||
                             ix >= size + margin || iy >= size + margin)
                         {
@@ -1580,12 +1588,18 @@ void Dd60Frame::UpdateSettings (wxColour &newfg, wxColour &newbg,
 **  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-void Dd60Frame::procDd60Char (int d)
+void Dd60Frame::procDd60Char (unsigned int d)
 {
     int size, margin, firstx, firsty, inc, qwds;
     u8 *data;
     int i, j, k;
 
+    if (d > 057)
+    {
+        printf ("procDd60Char: unexpected char %o\n", d);
+        return;
+    }
+    
     switch (mode)
     {
     case Dd60CharSmall:
@@ -1618,7 +1632,7 @@ void Dd60Frame::procDd60Char (int d)
 
     
         firstx = XADJUST (currentX - margin);
-        firsty = YADJUST (currentY - margin);
+        firsty = YADJUST (currentY - (size - margin));
     
         for (i = 0; i < size; i++)
         {
@@ -1996,7 +2010,6 @@ void Dd60Panel::OnScroll (wxScrollEvent &)
     
     for (frame = dd60App->m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
     {
-        printf ("loadchars\n");
         frame->dd60LoadChars ();
     }
 }
@@ -2157,6 +2170,11 @@ void Dd60Canvas::OnKey (wxKeyEvent &event)
         {
             key = asciiToConsole[key];
         }
+        else
+        {
+            key = 0;
+        }
+        
         if (key != 0 && event.GetEventType () == wxEVT_KEY_UP)
         {
             /* this is a "key up" message */
