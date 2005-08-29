@@ -2762,6 +2762,7 @@ int PtermFrame::procPlatoWord (u32 d)
                 // hex 7b is beep
                 TRACEN ("beep");
                 wxBell ();
+                break;          // -beep- does NOT send an echo code in reply
             }
             else if ((d & 0177) == 0x7d)
             {
