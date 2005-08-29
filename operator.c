@@ -972,6 +972,7 @@ static void opTraceCh(char *cmdParams)
         return;
         }
     chTraceMask |= ULL(1) << ch;
+    traceMask |= TraceCh;
     }
 
 /*--------------------------------------------------------------------------
@@ -1143,6 +1144,10 @@ static void opUntraceCh(char *cmdParams)
         return;
         }
     chTraceMask &= ~(ULL(1) << ch);
+    if (chTraceMask == 0)
+        {
+        traceMask &= ~TraceCh;
+        }
     traceStop ();
     }
 

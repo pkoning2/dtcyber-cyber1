@@ -119,6 +119,7 @@
 
 #define RefreshInterval         100000          /* microseconds */
 
+#define TraceCh                 (1 << 27)       /* Some channel is being traced */
 #define TraceEcs                (1 << 28)
 #define TraceCpu0               (1 << 29)
 #define TraceCpu1               (TraceCpu0 << 1)
