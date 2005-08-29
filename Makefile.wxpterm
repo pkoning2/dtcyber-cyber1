@@ -89,6 +89,12 @@ dd60x:	$(SOBJS) dd60x.o knob.o iir.o
 cc545:	cc545.cpp knob.cpp iir.cpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
+ifeq ("$(HOST)","Linux")
+# GCC 3.3.2-1 (from RedHat) miscompiles this on Linux if -O2 is used!
+knob.o : knob.cpp
+	$(CXX) -c $(CFLAGS) $(CXXFLAGS) -O1 $<
+endif
+
 ifeq ("$(HOST)","Darwin")
 
 dd60x.app: dd60x
