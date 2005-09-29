@@ -268,13 +268,13 @@ attach(conden,cmp,cl2,cl3,cl4,cl5/m=r)
 .*ses. link170 cybclib #lo=lo l=map #el=el ..
 .*xld='ldset(preset=zero)' ..
 .*f=(conden,cmp,cl2,cl3,cl4,cl5)
-ldset(preset=zero,err=all,map=cmap)
+ldset(preset=zero,err=all,map=sbex/cmap)
 load(conden,cl2,cl3,cl4,cl5)
 nogo(cbin)
 unload(conden,cmp,cl2,cl3,cl4,cl5)
-rewind,map.
-copy,map,full.
-unload,map.
+rewind,cmap.
+copy,cmap,full.
+unload,cmap.
 endif(exp)
 .*
 purge(cbin,cmap/na)
