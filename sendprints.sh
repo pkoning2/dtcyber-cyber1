@@ -21,6 +21,7 @@
 #
 #    p. koning.    2005.03.07.     initial version.
 #    p. koning.    2005.07.15.     added mail headers (to, from, subj).
+#    p. koning.    2005.09.30.     send printout as attachment.
 
 t=/tmp/sendprints.tmp
 
@@ -50,11 +51,35 @@ for f in LP5xx_20*; do
 		    echo "sending lesson $lesn (printout file $f) to $m"
 		    echo "To: $m" > /tmp/printhdr
 		    echo "From: \"Cyber1 printout server\" <postmaster@cyberserv.org>" >> /tmp/printhdr
+		    timestamp="$(date +%s)"
+		    echo "MIME-Version: 1.0" >> /tmp/printhdr
+		    echo "Content-Type: multipart/mixed; boundary=\"$timestamp\"" >> /tmp/printhdr
+		    echo "Content-Transfer-Encoding: 7bit" >> /tmp/printhdr
 		    echo "Subject: Cyber1 printout of $lesn" >> /tmp/printhdr
-		    cat /tmp/printhdr $f | /usr/sbin/sendmail $m
+		    echo "" >> /tmp/printhdr
+
+		    echo "--$timestamp" >> /tmp/printhdr
+		    echo "Content-Type: text/plain" >> /tmp/printhdr
+		    echo "Content-Description: printout of $lesn" >> /tmp/printhdr
+		    echo "Content-Disposition: inline;" >> /tmp/printhdr
+		    echo "	filename=\"$lesn\"" >> /tmp/printhdr
+		    echo "Content-Transfer-Encoding: 7bit" >> /tmp/printhdr
+		    echo "" >> /tmp/printhdr
+		    echo "Printout of lesson $lesn follows:" >> /tmp/printhdr
+		    echo "" >> /tmp/printhdr
+		    echo "--$timestamp" >> /tmp/printhdr
+		    echo "Content-Type: text/plain" >> /tmp/printhdr
+		    echo "Content-Description: printout of $lesn" >> /tmp/printhdr
+		    echo "Content-Disposition: inline;" >> /tmp/printhdr
+		    echo "	filename=\"$lesn\"" >> /tmp/printhdr
+		    echo "Content-Transfer-Encoding: 7bit" >> /tmp/printhdr
+		    echo "" >> /tmp/printhdr
+		    echo "" > /tmp/printtrailer
+		    echo "--$timestamp--" >> /tmp/printtrailer
+		    cat /tmp/printhdr $f /tmp/printtrailer | /usr/sbin/sendmail $m
 		    echo $f " sent to " $m
 		    mv $f sent/
-		    rm /tmp/printhdr
+		    rm /tmp/printhdr /tmp/printtrailer
 		    continue
 		fi
 	    fi
