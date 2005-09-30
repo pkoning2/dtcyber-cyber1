@@ -14,6 +14,24 @@ return(opl)
 */ **/---   block=01-e opl2              83/09/22. 20.24    source
 *oplfile opl2
 */
+*/ **/---   block=01-e nocmp              05/08/03. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Don't crash on missing conden overlays (like central tutor or
+*/ development level)
+*/
+*/ -------------------------------------------------------------------
+*ident nocmp
+*deck cond
+*i cond.152
+          sx6    33          Condense error code for *cmp not available*
+          zr     X1,CMPGO3   IF CMP absent
+*i cond.306
+          zr     X1,BADLEV   If this level not built into this conden
+
+*/ end nocmp
+*/
+*/
 */ **/---   block=01-e dtxon              05/02/08. 12.00    source
 */ -------------------------------------------------------------------
 */
@@ -1562,3 +1580,7 @@ return(opl)
 *i,ioput.1998
           sa5    a5          restore *x5* incase lost
 */ -------------------------------------------------------------------
+~
+;;; Local Variables: ***
+;;; mode:Update ***
+;;; End: ***
