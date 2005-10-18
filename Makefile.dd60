@@ -26,8 +26,11 @@ fonts: $(PCFS)
 
 dd60.dep: $(DDOBJS:.o=.d) 
 
-ifneq ($(MAKECMDGOALS),clean)
-include  $(DDOBJS:.o=.d) 
+ifeq ($(MAKECMDGOALS),dd60)
+DEPFILES+=  $(DDOBJS:.o=.d) 
+endif
+ifeq ($(MAKECMDGOALS),all)
+DEPFILES+=  $(DDOBJS:.o=.d) 
 endif
 
 #---------------------------  End Of File  --------------------------------

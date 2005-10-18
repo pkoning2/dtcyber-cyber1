@@ -9,7 +9,13 @@
 #
 #--------------------------------------------------------------------------
 
+ifeq ($(MAKECMDGOALS),)
+MAKECMDGOALS=all
+endif
+
 all: dtcyber pterm dtoper dd60 blackbox
+
+DEPFILES=
 
 include Makefile.common
 
@@ -87,8 +93,18 @@ buildall: clean all
 
 dep:	pterm.dep dd60.dep dtoper.dep $(OBJS:.o=.d) blackbox.d
 
-ifneq ($(MAKECMDGOALS),clean)
-include  $(OBJS:.o=.d) blackbox.d
+ifeq ($(MAKECMDGOALS),dtcyber)
+DEPFILES+= $(OBJS:.o=.d) blackbox.d
+endif
+ifeq ($(MAKECMDGOALS),all)
+DEPFILES+= $(OBJS:.o=.d) blackbox.d
+endif
+ifeq ($(MAKECMDGOALS),blackbox)
+DEPFILES+= blackbox.d niu.d charset.d dtnetsubs.d
+endif
+
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
 endif
 
 #---------------------------  End Of File  --------------------------------

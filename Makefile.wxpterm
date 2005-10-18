@@ -174,8 +174,11 @@ pterm.dep: $(PTOBJS:.o=.d)
 	msgmerge -U $@ pterm.pot
 
 
-ifneq ($(MAKECMDGOALS),clean)
-include  $(PTOBJS:.o=.d) 
+ifeq ($(MAKECMDGOALS),pterm)
+DEPFILES+=  $(PTOBJS:.o=.d) 
+endif
+ifeq ($(MAKECMDGOALS),all)
+DEPFILES+=  $(PTOBJS:.o=.d) 
 endif
 
 #---------------------------  End Of File  --------------------------------
