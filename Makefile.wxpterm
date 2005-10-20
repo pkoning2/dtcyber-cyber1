@@ -61,7 +61,7 @@ ifneq ("$(HOST)","Darwin")
 SETPATH= -Wl,-rpath,$(DIR)/lib -Wl,-rpath,$(SDLPATH)/lib
 endif
 
-INCL += $(SDLINCL)
+SDLCFLAGS = $(SDLINCL)
 
 PTOBJS	= $(SOBJS) pterm_sdl.o pterm_wx.o
 
@@ -160,6 +160,10 @@ pterm.dep: $(PTOBJS:.o=.d)
 
 %.o : %.cpp
 	$(CXX) -c $(CFLAGS) $(CXXFLAGS) $<
+
+pterm_sdl.o : pterm_sdl.c
+	$(CC) $(CFLAGS) $(SDLCFLAGS) -c $<
+
 
 %.d : %.cpp
 	echo -n "$@ " > /tmp/$@
