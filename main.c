@@ -160,10 +160,6 @@ int main(int argc, char **argv)
             channelStep();
             }
         rtcTick();
-        /*
-        **  Count a major cycle
-        */
-        cycles++;
         }
 
 #if 0
