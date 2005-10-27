@@ -1,0 +1,74 @@
+config
+*
+* SID and RID come from CONFIGX in UI 377777, see proc/configx.
+*SID=CYBER1.       SYSTEM NAME 
+*RID=CY1.         ROUTING ID (OBTAIN FROM RELEASE MATERIALS)
+famly=.          family name default is cyber
+subun=sys.       user number for procs
+prtun=prints.    user number for prints
+bgpct=85.        background processing increase for eficency
+*
+*         added at cdsi request
+*
+namto=120.
+*
+*         resource limits.
+*
+*cpspd=1700.      cpu speed (830/835)
+*cpspd=500.      plato hotline 2/16/89 test 5/3/90
+cpspd=375.       cnb-11/30/95 per c. hopkins/uol
+users=192.        maximum number of users
+*
+*       changes to default executors, formatters, condensors
+*
+*ncond=2.        number of condensors
+*mcond=2.        minimum number of condensors
+ncond=1.        number of condensors
+mcond=1.        minimum number of condensors
+*
+*
+*         em allocation.
+*
+rax=0.           plato determines rax (plato sets)
+*flx=7400b.      reserve just under 2m words
+flx=0.           reserve all available ecs
+*
+*         disk system parameters.
+*
+ndsus=30.        number of master files
+npms=2.          number of pp routines accessing drives
+*
+*         date / time formats.
+*
+datef=1.         mm/dd/yy
+timef=12.        12 hour clock
+*
+*         network parameters.
+*
+*nsite=7.         number of sites
+*n1sit=0.         starting pni site
+*nn1si=6.         number of pni sites
+nsite=8.         number of sites
+c0sit=0.         starting cui 0 site
+nc0si=7.         number of cui 0 sites
+fram1=200.       ciu 0 frame size
+*fram1=400.       ciu 0 frame size
+nn1si=0.         number of pni sites
+*
+*
+cblth=21.        condensor source buffer length
+*
+netms=16.        network system table size
+*
+pwnot=10.        missed password generates note
+ptlim=0.         no password expiration
+*
+cmp=on.          turn on central plato executor
+*
+plf=off.
+*plf=on.          turn on plato link facility
+*nlbnk=32.        number of link banks
+*netag=d,3072,16. call destination address group.
+*netag=l,264,16.  local distribution address group
+*netag=o,3136,16. call origin address group.
+*plfpr=56,55.     interactive and bulk transfer priorities (decimal?)
