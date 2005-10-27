@@ -12,8 +12,8 @@ attach(binary2/#m=m)
 .*    dtcyber cybis pack access starts here
 .* 
 packnam(pn=dtcybis,r=dm1)
-attach(cybis1/#m=m)
-attach(cybis2/#m=m)
+attach(algol/#m=m)
+attach(becrux/#m=m)
 .*attach(s0files/#m=m)
 .*
 .* cerl
