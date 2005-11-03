@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003, 2004, Tom Hunter, Paul Koning (see license.txt)
+**  Copyright (c) 2003-2005, Tom Hunter, Paul Koning (see license.txt)
 **
 **  Name: niu.c
 **
@@ -49,6 +49,9 @@
 #define resetb 0130000      /* disable (at system shutdown */
 #define ext    0600000
 
+/* -echo- words */
+#define echotype 0300160    /* -echo- code to inquire about terminal type */
+
 /* keepalive timeout */
 #define ALERT_TIMEOUT           15          /* seconds */
 
@@ -93,7 +96,9 @@ typedef struct portParam
     NetPort     *np;
     u32         currOutput;
     u8          currInput[2];
-    bool        sendOffkey;
+    bool        loggedIn;
+    bool        sendLogout;
+    bool        forceLogout;
     } PortParam;
 
 /*
@@ -304,6 +309,9 @@ bool niuPresent(void)
 **------------------------------------------------------------------------*/
 static FcStatus niuInFunc(PpWord funcCode)
     {
+    PortParam *mp;
+    int i;
+    
     switch (funcCode)
         {
     default:
@@ -315,6 +323,18 @@ static FcStatus niuInFunc(PpWord funcCode)
         break;
 
     case FcNiuDeselectInput:
+        /*
+        **  When PIO initializes or drops, it sends a Deselect Input
+        **  function to the NIU.  We then mark all stations as logged
+        **  out, since clearly that is what they are right then.
+        */
+        for (i = 0; i < STATIONS; i++)
+            {
+            mp = portVector + i;
+            mp->loggedIn = false;
+            mp->sendLogout = false;
+            mp->forceLogout = false;
+            }
         break;
         }
 
@@ -421,12 +441,16 @@ static void niuInIo(void)
             mp = portVector + port;
             np = mp->np;
             
-            if (mp->sendOffkey)
+            if (mp->sendLogout)
                 {
-                /* connection was dropped */
+                /*
+                **  If we disconnected without logging out, send
+                **  *offky2* which tells PLATO to log out this
+                **  station.
+                */
                 mp->currInput[0] = 01753 >> 7;
-                mp->currInput[1] = 01753 & 0177;  /* offky2 -- immediate signoff */
-                mp->sendOffkey = FALSE;
+                mp->currInput[1] = 01753 & 0177;
+                mp->sendLogout = false;
                 break;
                 }
             if (np == NULL || !dtActive (&np->fet))
@@ -445,6 +469,17 @@ static void niuInIo(void)
                     return;                     /* no input anywhere */
                     }
                 continue;                   /* we don't have 2 bytes yet */
+                }
+            if (mp->forceLogout)
+                {
+                /*
+                **  If we're not logged out yet, send *offky2* which
+                **  tells PLATO to log out this station.
+                */
+                mp->currInput[0] = 01753 >> 7;
+                mp->currInput[1] = 01753 & 0177;
+                printf ("continuing to force logout port %d\n", port);
+                break;
                 }
 #ifdef DEBUG
             printf ("niu input %03o %03o\n", mp->currInput[0],
@@ -674,22 +709,48 @@ static void niuWelcome(NetPort *np, int stat)
     
     if (np->fet.connFd == 0)
         {
-        mp->sendOffkey = TRUE;
+        /*
+        **  Connection was dropped.
+        */
         printf("%s niu: Connection dropped from %s for station %d-%d\n",
                dtNowString (), inet_ntoa (np->from), 
                stat / 32, stat % 32);
         niuActiveConns--;
         niuUpdateStatus ();
+        if (mp->loggedIn)
+            {
+            /*
+            **  If we're not logged out yet, set a flag to send
+            **  *offky2*, which tells PLATO to log out this station.
+            */
+            mp->sendLogout = true;
+            }
         return;
         }
 
-    
+    /*
+    **  New connection for this port.
+    */
     printf("%s niu: Received connection from %s for station %d-%d\n",
            dtNowString (), inet_ntoa (np->from),
            stat / 32, stat % 32);
     
     niuActiveConns++;
     niuUpdateStatus ();
+
+    /*
+    **  If we're not logged out yet (i.e. PLATO dropped the *offky2*)
+    **  that was sent when the connection dropped on this port the
+    **  last time it had a connection), set a flag to keep working on
+    **  it.  With that flag set, we'll send another *offky2* in the
+    **  key input handler for each key entered by the user, until
+    **  PLATO indicates that the logout has been done.
+    */
+    if (mp->loggedIn)
+        {
+        printf ("need to force logout for port %d\n", stat);
+        mp->forceLogout = true;
+        }
 
     niuSendWord (stat, 0042000 + stat); /* NOP with station number in it */
     niuSendWord (stat, 0100033);        /* mode 3, mode rewrite, screen */
@@ -837,6 +898,33 @@ static void niuSend(int stat, int word)
         }
 #endif
     mp->currOutput = word;
+    if (word == 3)
+        {
+        /*
+        **  NOP code 3 is sent by the formatter when PLATO tell it
+        **  that the station is logging out.  It is actually sent
+        **  just before the "Press NEXT to begin" string.  Until we see
+        **  that, we'll have to keep forcing this station off if a new
+        **  connection is assigned to it.
+        **
+        **  Note that usually a station is signed off as soon as the
+        **  connection drops, but if PLATO manages to lose that key,
+        **  this might not happen.  We do see that on rare occasions.
+        **  To cure this, we now have this explicit handshake; PLATO
+        **  has to tell us that the station has logged out.
+        **
+        **  If we believe that the station is logged in but PLATO
+        **  knows it is logged out, then it will also send a NOP 3
+        **  when it receives the *offky2*.  That way we have explicit
+        **  resynchronization.
+        */
+        mp->loggedIn = false;
+        mp->forceLogout = false;
+        }
+    else if (word == echotype)
+        {
+        mp->loggedIn = true;
+        }
     }
 
 /*--------------------------------------------------------------------------

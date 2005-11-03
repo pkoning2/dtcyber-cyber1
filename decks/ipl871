@@ -14,7 +14,43 @@ return(opl)
 */ **/---   block=01-e opl2              83/09/22. 20.24    source
 *oplfile opl2
 */
-*/ **/---   block=01-e nocmp              05/08/03. 12.00    source
+*/ **/---   block=01-e logout              05/11/02. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Send out nopcode 3 when logout is being done, so the niu knows
+*/ about that and can stop sending offkey.
+*/
+*/ -------------------------------------------------------------------
+*ident logout
+*deck fovlay1
+*i fovlay1.1185
+          sx7    3
+          packwrd x7         send *logging out* pterm nop
+*deck fovlay3
+*i fovlay3.1173
+          sx7    3
+          packwrd x7         send *logging out* pterm nop
+*deck fovlay4
+*i fovlay4.1315
+          sx7    3
+          packwrd x7         send *logging out* pterm nop
+*deck main
+*d main.1576
+          PL     X2,pkeyt1   if higher than touch range
+*i main.1578
+*
+* * *     check for *offky2*
+*
+ pkeyt1   sx2    x1-offky2
+          nz     x2,pkeyt2   if not *offky2*
+          outp   fincode     tell NIU that we're logged out already
+          call   patut
+          eq     xpkey1      ignore the key
+*d main.1582
+ pkeyt2   SX2    X1-ABORTK
+*/ end logout
+*/
+*/ **/---   block=01-e nocmp              05/09/30. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Don't crash on missing conden overlays (like central tutor or
@@ -32,7 +68,7 @@ return(opl)
 */ end nocmp
 */
 */
-*/ **/---   block=01-e dtxon              05/02/08. 12.00    source
+*/ **/---   block=01-e dtxon              05/08/17. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Add xon/xoff processing.  These keys are generated in pterm
