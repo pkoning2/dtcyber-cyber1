@@ -179,9 +179,11 @@ pterm_sdl.o : pterm_sdl.c
 
 
 ifeq ($(MAKECMDGOALS),pterm)
+INCL+=$(SDLINCL)
 DEPFILES+=  $(PTOBJS:.o=.d) 
 endif
 ifeq ($(MAKECMDGOALS),all)
+INCL+=$(SDLINCL)
 DEPFILES+=  $(PTOBJS:.o=.d) 
 endif
 
