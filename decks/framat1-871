@@ -11,6 +11,7 @@ attach,fcommon.
 modify(lo=e)
 cstc(i,l=list,c=fcommon,s=0,d,ml=871)
 *
+note(lgo,nr)+overlay    so it is always there for libedit to ignore
 attach,framat/m=w.
 libedit,p=framat,c,v.
 *
@@ -39,8 +40,5 @@ unload(fbin,framat)
 */ Insert *edit directives for the decks to be reassembled
 */ after this point.
 *edit fovlay1
-*edit fovlay3
-*edit fovlay4
 ~
-*/  for overlay assemblies add the following as libedit input.
-*/ *ignore text/overlay
+*ignore text/*
