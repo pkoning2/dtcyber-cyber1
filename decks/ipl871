@@ -23,15 +23,15 @@ return(opl)
 */ -------------------------------------------------------------------
 *ident logout
 *deck fovlay1
-*i fovlay1.1185
+*i fovlay1.1178
           sx7    3
           packwrd x7         send *logging out* pterm nop
 *deck fovlay3
-*i fovlay3.1173
+*i fovlay3.1166
           sx7    3
           packwrd x7         send *logging out* pterm nop
 *deck fovlay4
-*i fovlay4.1315
+*i fovlay4.1308
           sx7    3
           packwrd x7         send *logging out* pterm nop
 *deck main
@@ -43,9 +43,10 @@ return(opl)
 *
  pkeyt1   sx2    x1-offky2
           nz     x2,pkeyt2   if not *offky2*
-          outp   fincode     tell NIU that we're logged out already
+          outp   fincode     tell NIU that we are logged out already
           call   patut
-          eq     xpkey1      ignore the key
+          sx1    next        treat it as next to sign in
+          eq     pkeytype
 *d main.1582
  pkeyt2   SX2    X1-ABORTK
 */ end logout
@@ -53,7 +54,7 @@ return(opl)
 */ **/---   block=01-e nocmp              05/09/30. 12.00    source
 */ -------------------------------------------------------------------
 */
-*/ Don't crash on missing conden overlays (like central tutor or
+*/ Do not crash on missing conden overlays (like central tutor or
 */ development level)
 */
 */ -------------------------------------------------------------------
@@ -415,8 +416,8 @@ return(opl)
  KYO227   LDM    ECSBUFF+pkppidx
           STD    D.T4        set keybuf offset
 *d pio.952
-*/ ideally we'd write just the one word that changed, but that
-*/ involves a divide by 5 so we won't bother for now.
+*/ ideally we would write just the one word that changed, but that
+*/ involves a divide by 5 so we do not bother for now.
           LDN    pkeylth-5   D.T3 = NUMBER WORDS TO WRITE
 *d pio.1874
  ecsbsz   max    pkeylth,10
@@ -761,9 +762,9 @@ return(opl)
 *deck syscon
 *delete jsnppu.28
 */
-*/ we call it 180, not 170, even though we really aren't.
+*/ we call it 180, not 170, even though we really are not.
 */ the only difference is that rx and wx instructions
-*/ are enabled, which is required or fovlay5 doesn't fit.
+*/ are enabled, which is required or fovlay5 does not fit.
 */ (the other difference is that some necessary code in pms
 */ disappears, but the mod below, deleting pms800 1-4, cures that.)
 */
