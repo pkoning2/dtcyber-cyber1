@@ -1,0 +1,46 @@
+asm.
+user(plato,plato)
+settl(*)
+setasl(*)
+setjsl(*)
+rfl,170000.
+attach,procfil.
+begin(setupg,procfil,noslvl=871)
+*
+attach,fcommon.
+modify(lo=e)
+cstc(i,l=list,c=fcommon,s=0,d,ml=871)
+*
+attach,framat/m=w.
+libedit,p=framat,c,v.
+*
+attach(genfig)
+attach(framat)
+unload(lgo,compile)
+genfig,framat.
+compass,i,s=0,l=0.
+unload,genfig.
+*---
+begin(loader,,rel=$framat,lgo$,abs=fbin,rfl=0,map=full)
+rewind,full.
+*
+* turn this on to get a map
+*copyei,full,output.
+rfl,120000.
+note(dir)+*i abs/framat,ovl/*
+unload,lgo.
+gtr(fbin,lgo)ovl/fram00$
+libedit(p=fbin,c,i=dir,lo=e)
+begin(ulib,,fbin,ulibf,framat)
+catalog(fbin,r,n,u)
+unload(fbin,framat)
+~
+*oplfile nos,ipl
+*/ Insert *edit directives for the decks to be reassembled
+*/ after this point.
+*edit fovlay1
+*edit fovlay3
+*edit fovlay4
+~
+*/  for overlay assemblies add the following as libedit input.
+*/ *ignore text/overlay

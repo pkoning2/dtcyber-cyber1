@@ -1,0 +1,45 @@
+asm.
+user(plato,plato)
+settl(*)
+setasl(*)
+setjsl(*)
+rfl,170000.
+attach,procfil.
+begin(setupg,procfil,noslvl=871)
+*
+attach,pcommon.
+modify(lo=e)
+cstc(i,l=list,c=pcommon,s=0,d,ml=871)
+*
+attach,plato/m=w.
+libedit,p=plato,c,v.
+*
+attach(genfig)
+attach(plato)
+unload(lgo,compile)
+genfig,plato.
+compass,i,s=0,l=0.
+unload,genfig.
+*---
+begin(loader,,rel=$plato,lgo$,abs=pbin,rfl=0,map=full)
+rewind,full.
+*
+* turn this on to get a map
+*copyei,full,output.
+rfl,120000.
+note(dir)+*i abs/plato,ovl/*
+unload,lgo.
+gtr(pbin,lgo)ovl/plat00$
+libedit(p=pbin,c,i=dir,lo=e)
+begin(ulib,,pbin,ulibp,plato)
+catalog(pbin,r,n,u)
+unload(pbin,plato)
+~
+*oplfile nos,ipl
+*edit datime
+*/ Insert *edit directives for the decks to be reassembled
+*/ after this point.
+*edit main
+~
+*/  for overlay assemblies add the following as libedit input.
+*/ *ignore text/overlay
