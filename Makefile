@@ -27,7 +27,7 @@ include Makefile.dd60
 
 ifeq ("$(HOST)","Darwin")
 ifeq ("$(SDKDIR)","")
-SDKDIR := $(shell ls /Develvoper/SDKs | head -1)
+SDKDIR := $(shell ls /Developer/SDKs | head -1)
 ifeq ("$(SDKDIR)","")
 $(error "Cannot find any SDKs in /Developer/SDKs")
 endif
