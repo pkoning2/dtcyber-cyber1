@@ -1070,7 +1070,7 @@ bool PtermApp::OnInit (void)
     // if all its windows are closed.
 //    SetExitOnFrameDelete(FALSE);
     PtermFrameParent = new PtermMainFrame ();
-    PtermFrameParent->Show (true);
+    PtermFrameParent->Show (false);
 #endif
 
     // create the main application window
