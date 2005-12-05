@@ -198,6 +198,9 @@ extern "C"
 #include "types.h"
 #include "proto.h"
 #include "ptermversion.h"
+#include "8080a.h"
+#include "8080avar.h"
+#include "ppt.h"
 
 #if wxUSE_LIBGNOMEPRINT
 #include "wx/html/forcelnk.h"
@@ -425,7 +428,7 @@ public:
     WXLRESULT MSWWindowProc(WXUINT message, WXWPARAM wParam, WXLPARAM lParam);
 #endif
     
-    void SaveChar (int x, int y, int snum, int cnum, int wemode, bool large);
+    void SaveChar (int x, int y, int snum, int cnum, int w, bool large_p);
     void FullErase (void);
     void ClearRegion (void);
     void UpdateRegion (wxMouseEvent &event);
@@ -481,7 +484,7 @@ static PtermMainFrame *PtermFrameParent;
 #endif
 
 // Define a new frame type: this is going to be our main frame
-class PtermFrame : public PtermFrameBase
+class PtermFrame : public PtermFrameBase, public emul8080
 {
     friend void PtermCanvas::OnDraw(wxDC &dc);
     friend void PtermApp::OnHelpKeys (wxCommandEvent &event);
@@ -593,24 +596,79 @@ private:
     int         m_delay;
     
     // PLATO terminal emulation state
-    int         mode;
-    int         wemode;
+#define mode RAM[M_MODE]
+#define wemode (mode & 3)
     int         currentX;
     int         currentY;
-    int         margin;
+#define margin ReadRAMW (M_MARGIN)
     int         memaddr;
     u16         plato_m23[128 * 8];
     int         memlpc;
-    int         currentCharset;
-    bool        uncover;
-    bool        vertical;
-    bool        reverse;
-    bool        large;
+#define uncover     (RAM[M_CCR] & 0x80)
+#define reverse     (RAM[M_CCR] & 0x40)
+#define large       (RAM[M_CCR] & 0x20)
+#define currentCharset ((RAM[M_CCR] & 0x0e) >> 1)
+#define vertical    (RAM[M_CCR] & 0x01)
     int         wc;
     int         seq;
     int         modewords;
     int         mode4start;
     
+    void setMargin (int i)
+    {
+        RAM[M_MARGIN] = i;
+        RAM[M_MARGIN + 1] = i >> 8;
+    }
+    void setUncover (bool u)
+    {
+        if (u)
+        {
+            RAM[M_CCR] |= 0x80;
+        }
+        else
+        {
+            RAM[M_CCR] &= ~0x80;
+        }
+    }
+    void setReverse (bool u)
+    {
+        if (u)
+        {
+            RAM[M_CCR] |= 0x40;
+        }
+        else
+        {
+            RAM[M_CCR] &= ~0x40;
+        }
+    }
+    void setLarge (bool u)
+    {
+        if (u)
+        {
+            RAM[M_CCR] |= 0x20;
+        }
+        else
+        {
+            RAM[M_CCR] &= ~0x20;
+        }
+    }
+    void setCmem (int i)
+    {
+        RAM[M_CCR] = (RAM[M_CCR] & ~0x0e) | (i << 1);
+    }
+    void setVertical (bool u)
+    {
+        if (u)
+        {
+            RAM[M_CCR] |= 0x01;
+        }
+        else
+        {
+            RAM[M_CCR] &= ~0x01;
+        }
+    }
+    
+
     void UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
                    wxColour &newfg, wxColour &newbf, bool newscale2);
 
@@ -642,6 +700,11 @@ private:
     typedef void (PtermFrame::*mptr)(u32);
 
     static const mptr modePtr[8];
+
+    // 8080a emulation support
+    Uint8 input8080a (Uint8 data);
+    void output8080a (Uint8 data, Uint8 acc);
+    int call8080a (void);
 
     // any class wishing to process wxWindows events must use this macro
     DECLARE_EVENT_TABLE ()
@@ -1316,18 +1379,10 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
       m_pasteIndex (-1),
       m_nextword (0),
       m_delay (0),
-      mode (0),
-      wemode (0),
       currentX (0),
       currentY (0),
-      margin (0),
       memaddr (0),
       memlpc (0),
-      currentCharset (0),
-      uncover (FALSE),
-      vertical (FALSE),
-      reverse (FALSE),
-      large (FALSE),
       wc (0),
       seq (0),
       modewords (0),
@@ -1336,7 +1391,10 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
     int i;
 
     m_hostName = host;
-
+    mode = 0;
+    setMargin (0);
+    RAM[M_CCR] = 0;
+    
     // set the frame icon
     SetIcon(wxICON(pterm_32));
 
@@ -2072,7 +2130,7 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
             charp = plato_m23 + (snum - 2) * (8 * 64);
         }
         charp += 8 * cnum;
-        savemode = wemode;
+        savemode = mode;
         
         for (j = 0; j < 8; j++)
         {
@@ -2089,11 +2147,11 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
                         cy += dy;
                         continue;
                     }
-                    wemode = savemode ^ 1;
+                    mode = savemode ^ 1;
                 }
                 else
                 {
-                    wemode = savemode;
+                    mode = savemode;
                 }
                 ptermDrawPoint (x, y);
                 if (large)
@@ -2107,7 +2165,7 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
             }
             cx += dx;
         }
-        wemode = savemode;
+        mode = savemode;
     }
 }
 
@@ -2123,7 +2181,7 @@ void PtermFrame::ptermDrawPoint (int x, int y)
     ym = YMADJUST (y & 0777);
     x = XADJUST (x & 0777);
     y = YADJUST (y & 0777);
-    if (wemode & 1)
+    if (mode & 1)
     {
         // mode rewrite or write
         dc.SetPen (m_foregroundPen);
@@ -2166,7 +2224,7 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
     y1 = YADJUST (y1);
     x2 = XADJUST (x2);
     y2 = YADJUST (y2);
-    if (wemode & 1)
+    if (mode & 1)
     {
         // mode rewrite or write
         dc.SetPen (m_foregroundPen);
@@ -2244,7 +2302,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
         ym1 = ym2;
         ym2 = t;
     }
-    if (wemode & 1)
+    if (mode & 1)
     {
         // mode rewrite or write
         dc.SetPen (m_foregroundPen);
@@ -2614,7 +2672,7 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     {
         sizeY += y;
     }
-    if (wemode & 2)
+    if (mode & 2)
     {
         // write or erase -- need to zap old pixels and OR in new pixels
         m_memDC->Blit (memX, memY,
@@ -2686,7 +2744,7 @@ int PtermFrame::procPlatoWord (u32 d)
     if (d & 01000000)
     {
         modewords++;
-        mp = modePtr[mode];
+        mp = modePtr[mode >> 2];
         (this->*mp) (d);
     }
     else
@@ -2712,15 +2770,14 @@ int PtermFrame::procPlatoWord (u32 d)
                 wc = (d >> 6) & 0177;
             }
             
-            wemode = (d >> 1) & 3;
-            mode = (d >> 3) & 7;
+            mode = (d >> 1) & 037;
             if (d & 1)
             {
                 // full screen erase
                 ptermFullErase ();
             }
-            TRACE3 ("load mode %d wemode %d screen %d",
-                    mode, wemode, (d & 1));
+            TRACE2 ("load mode %d screen %d",
+                    mode, (d & 1));
             break;
             
         case 2:     // load coordinate
@@ -2744,7 +2801,7 @@ int PtermFrame::procPlatoWord (u32 d)
         
             if (d & 010000)
             {
-                margin = coord;
+                setMargin (coord);
                 msg = "margin";
             }
             TRACE3 ("load coord %c %d %s",
@@ -2888,13 +2945,13 @@ void PtermFrame::plotChar (int c)
     c &= 077;
     if (c == 077)
     {
-        uncover = TRUE;
+        setUncover (TRUE);
         return;
     }
     if (uncover)
     {
         supdelta = (deltay / 16) * 5;
-        uncover = FALSE;
+        setUncover (FALSE);
         switch (c)
         {
         case 010:   // backspace
@@ -2952,25 +3009,25 @@ void PtermFrame::plotChar (int c)
         case 025:   // select M5
         case 026:   // select M6
         case 027:   // select M7
-            currentCharset = c - 020;
+            setCmem (c - 020);
             break;
         case 030:   // horizontal writing
-            vertical = FALSE;
+            setVertical (FALSE);
             break;
         case 031:   // vertical writing
-            vertical = TRUE;
+            setVertical (TRUE);
             break;
         case 032:   // forward writing
-            reverse = FALSE;
+            setReverse (FALSE);
             break;
         case 033:   // reverse writing
-            reverse = TRUE;
+            setReverse (TRUE);
             break;
         case 034:   // normal size writing
-            large = FALSE;
+            setLarge (FALSE);
             break;
         case 035:   // double size writing
-            large = TRUE;
+            setLarge (TRUE);
             break;
         default:
             break;
@@ -3240,6 +3297,262 @@ void PtermFrame::ptermShowTrace (bool enable)
         m_statusBar->SetStatusText(wxT (""), STATUS_TRC);
     }
 }
+
+// Return 1 if the call has been taken care of (i.e., do a return)
+// and 0 if not.
+int PtermFrame::call8080a (void)
+{
+    int x, y, cp, c, x2, y2;
+    
+    switch (PC)
+    {
+    case R_INIT:
+        // r.init -- TBD
+        return 1;
+        
+    case R_DOT:
+        x = HL.pair;
+        y = DE.pair;
+        ptermDrawPoint (x, y);
+        currentX = x;
+        currentY = y;
+        return 1;
+        
+    case R_LINE:
+        x = HL.pair;
+        y = DE.pair;
+        ptermDrawLine (currentX, currentY, x, y);
+        currentX = x;
+        currentY = y;
+        return 1;
+
+    case R_CHARS:
+        // draw chars ending at 07700
+        cp = HL.pair;
+        c = RAM[cp++];
+        for (;;)
+        {
+            if (c == 077 && RAM[cp] == 0)
+            {
+                break;
+            }
+            plotChar (c);
+            c = RAM[cp++];
+        }
+        return 1;
+        
+    case R_BLOCK:
+        // block erase
+        cp = HL.pair;
+        x = ReadRAMW (cp);
+        y = ReadRAMW (cp + 2);
+        x2 = ReadRAMW (cp + 4);
+        y2 = ReadRAMW (cp + 6);
+        ptermBlockErase (x, y, x2, y2);
+        return 1;
+        
+    case R_INPX:
+        HL.pair = currentX;
+        return 1;
+
+    case R_INPY:
+        HL.pair = currentY;
+        return 1;
+        
+    case R_OUTX:
+        currentX = HL.pair;
+        return 1;
+        
+    case R_OUTY:
+        currentY = HL.pair;
+        return 1;
+        
+    case R_XMIT:
+        // send key in HL
+        return 1;
+        
+    case R_MODE:
+        // set mode from L
+        if (HL.reg.L & 1)
+        {
+            ptermFullErase ();
+        }
+        mode = (HL.reg.L >> 1) & 037;
+        return 1;
+        
+    case R_STEPX:
+        currentX = (currentX + ((RAM[M_DIR] & 2) ? -1 : 1)) & 0777;
+        return 1;
+        
+    case R_STEPY:
+        currentY = (currentY + ((RAM[M_DIR] & 1) ? -1 : 1)) & 0777;
+        return 1;
+        
+    case R_WE:
+        ptermDrawPoint (currentX, currentY);
+        return 1;
+        
+    case R_DIR:
+        RAM[M_DIR] = HL.reg.L & 3;
+        return 1;
+        
+    case R_INPUT:
+        // r.input
+        return 1;
+        
+    case R_SSH:
+        // r.ssh
+        return 1;
+        
+    case R_CCR:
+        RAM[M_CCR] = HL.reg.L;
+        return 1;
+        
+    case R_EXTOUT:
+        // r.extout
+        return 1;
+        
+    case R_EXEC:
+        // r.exec
+        return 1;
+        
+    case R_GJOB:
+        // r.gjob
+        return 1;
+        
+    case R_XJOB:
+        // r.xjob
+        return 1;
+        
+    default:
+        return 0;
+    }
+}
+
+/*******************************************************************************
+
+input8080a:
+----------
+
+   This case switches on the content of data.  If the content of data is equal
+to 1, ...
+The program counter, named PC, is incremented by one.
+
+
+Input:
+-----
+
+   data - This variable is the byte after the INp instruction, RAM[PC].
+
+
+Output:
+------
+
+   This variable is the data that has been read or calculated from the input
+device and returned to the main simulator core.
+
+
+Note:
+----
+
+   This function is called directly by main8080a.
+
+*******************************************************************************/
+
+Uint8 PtermFrame::input8080a (Uint8 data)
+{
+
+	/***********************************************************************
+	* Declaration:
+	* -----------
+	*
+	*   retval - This variable contains data read from an input device.
+	***********************************************************************/
+	Uint8 retval;
+
+
+	switch (data)
+	{
+
+	/***********************************************************************
+	*   If the value of the 8080a's memory, RAM[PC], is equal to 1 or 2,
+	* then first or second player input is requested.
+	***********************************************************************/
+		case 1:
+		case 2:
+			break;
+
+	/***********************************************************************
+	*   If the value of the 8080a's memory, RAM[PC], is not equal to any of
+	* the above cases, then the program requested bad input data. Debug
+	* information containing the value of the data is printed to STDOUT.
+	***********************************************************************/
+		default:
+			printf( "INp BAD -> Data = %d\n", data);
+
+			retval = 0;
+			break;
+	}
+
+
+	/***********************************************************************
+	*   This keyword returns the read input data to the main simulator core.
+	***********************************************************************/
+	return retval;
+}
+
+
+
+/*******************************************************************************
+
+output8080a:
+-----------
+
+   This case switches on the contents of the data.  If the content of data is
+equal to 2, ...
+If the content of data is any other value, then the request is bad and 
+debugging information is printed to STDOUT.
+
+
+Input:
+-----
+
+   data - This variable is the byte after the OUTp instruction, RAM[PC].
+   acc - This variable is the accumulator, which is the 8080a's A register.
+
+
+Note:
+----
+
+   This function is called directly by main8080a.
+
+*******************************************************************************/
+
+void PtermFrame::output8080a (Uint8 data, Uint8 acc)
+{
+	switch (data)
+	{
+
+	/***********************************************************************
+	*   If the value of the 8080a's memory, RAM[PC], is equal to 2, the
+	* content of the A register is moved into the left shift amount.
+	***********************************************************************/
+		case 2:
+			break;
+
+
+	/***********************************************************************
+	*   If the value of the 8080a's memory, RAM[PC], is not equal to any of
+	* the above cases, then the program requested bad output data.  Debug
+	* information containing the value of the data and the accumulator are
+	* printed to STDOUT.
+	***********************************************************************/
+		default:
+			printf("OUTp BAD -> Data = %d   A = %d\n", data, acc);
+			break;
+	}
+}
+
 
 // ----------------------------------------------------------------------------
 // PtermPrefDialog
@@ -4330,7 +4643,7 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
 }
 
 void PtermCanvas::SaveChar (int x, int y, int snum, int cnum, 
-                            int wemode, bool large)
+                            int w, bool large_p)
 {
     char c = 055;
 
@@ -4340,12 +4653,12 @@ void PtermCanvas::SaveChar (int x, int y, int snum, int cnum,
     // line, just as the fine grid Y coordinate does.
     x /= 8;
     y /= 16;
-    if ((wemode & 1) && snum < 2)
+    if ((w & 1) && snum < 2)
     {
         c = (snum << 6) + cnum;
     }
     textmap[y * 64 + x] = c;
-    if (large)
+    if (large_p)
     {
         x = (x + 1) & 077;
         textmap[y * 64 + x] = 055;

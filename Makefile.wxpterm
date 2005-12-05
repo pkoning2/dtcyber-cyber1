@@ -63,7 +63,7 @@ endif
 
 SDLCFLAGS = $(SDLINCL)
 
-PTOBJS	= $(SOBJS) pterm_sdl.o pterm_wx.o
+PTOBJS	= $(SOBJS) pterm_sdl.o pterm_wx.o 8080a.o
 
 ifneq ("$(PTERMVERSION)","xxx")
 LANGUAGES = $(shell cat languages)
@@ -147,7 +147,7 @@ mofiles: $(MOFILES)
 pterm-src: ptermversion.h
 	mkdir pterm-$(PTERMVERSION)
 	cd pterm-$(PTERMVERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
-	cd pterm-$(PTERMVERSION); for f in license.txt const.h types.h proto.h ptermversion.h ptermkeys.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
+	cd pterm-$(PTERMVERSION); for f in license.txt const.h types.h proto.h ptermversion.h ptermkeys.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c 8080a.cpp Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
 	tar chzf /lhome/pkoning/pterm-linux-src-v$(PTERMVERSION).tar.gz pterm-$(PTERMVERSION)
 	rm -rf pterm-$(PTERMVERSION)
 
@@ -168,6 +168,11 @@ pterm_sdl.o : pterm_sdl.c
 %.d : %.cpp
 	echo -n "$@ " > /tmp/$@
 	$(CXX) $(CXXFLAGS) -MM -MG $< >> /tmp/$@
+	mv -f /tmp/$@ $@
+
+pterm_sdl.d : pterm_sdl.c
+	echo -n "$@ " > /tmp/$@
+	$(CC) $(INCL) $(SDLCFLAGS) -MM -MG $< >> /tmp/$@
 	mv -f /tmp/$@ $@
 
 %.mo : %.po
