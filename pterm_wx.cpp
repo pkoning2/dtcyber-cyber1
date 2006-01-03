@@ -86,6 +86,7 @@
 #define PREF_GSW        "gswenable"
 #define PREF_ARROWS     "numpadArrows"
 #define PREF_STATUSBAR  "statusbar"
+#define PREF_PLATOKB    "platoKeyboard"
 
 /*
 **  -----------------------
@@ -397,6 +398,7 @@ public:
     bool        m_gswEnable;
     bool        m_numpadArrows;
     bool        m_showStatusBar;
+    bool        m_platoKb;
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
     PtermFrame  *m_helpFrame;
@@ -695,7 +697,7 @@ private:
     void mode6 (u32 d);
     void mode7 (u32 d);
     void ptermSetStation (int station);
-    void ptermShowTrace (bool enable);
+    void ptermShowTrace ();
     
     typedef void (PtermFrame::*mptr)(u32);
 
@@ -738,6 +740,7 @@ public:
     wxCheckBox      *m_gswCheck;
     wxCheckBox      *m_arrowCheck;
     wxCheckBox      *m_statusCheck;
+    wxCheckBox      *m_kbCheck;
     wxTextCtrl      *m_hostText;
     wxTextCtrl      *m_portText;
 
@@ -749,6 +752,7 @@ public:
     bool            m_gswEnable;
     bool            m_numpadArrows;
     bool            m_showStatusBar;
+    bool            m_platoKb;
     wxString        m_host;
     wxString        m_port;
     
@@ -1064,6 +1068,7 @@ bool PtermApp::OnInit (void)
     m_gswEnable = (m_config->Read (wxT (PREF_GSW), 1) != 0);
     m_numpadArrows = (m_config->Read (wxT (PREF_ARROWS), 1) != 0);
     m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
+    m_platoKb = (m_config->Read (wxT (PREF_PLATOKB), 0L) != 0);
 
 #if PTERM_MDI
     // On Mac, the style rule is that the application keeps running even
@@ -1218,6 +1223,7 @@ void PtermApp::OnPref (wxCommandEvent&)
     
     if (dlg.ShowModal () == wxID_OK)
     {
+        m_platoKb = dlg.m_platoKb;
         for (frame = m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
         {
             frame->UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2,
@@ -1252,6 +1258,7 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_GSW), (dlg.m_gswEnable) ? 1 : 0);
         m_config->Write (wxT (PREF_ARROWS), (dlg.m_numpadArrows) ? 1 : 0);
         m_config->Write (wxT (PREF_STATUSBAR), (dlg.m_showStatusBar) ? 1 : 0);
+        m_config->Write (wxT (PREF_PLATOKB), (dlg.m_platoKb) ? 1 : 0);
         m_config->Flush ();
     }
 }
@@ -1510,7 +1517,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
         {
             SetStatusBar (m_statusBar);
         }
-
+        ptermShowTrace ();
         SetCursor (*wxHOURGLASS_CURSOR);
     }
 
@@ -2456,6 +2463,7 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
             SetStatusBar (NULL);
         }
     }
+    ptermShowTrace ();
     
     if (!recolor && !rescale)
     {
@@ -2907,7 +2915,7 @@ void PtermFrame::ptermSetTrace (bool fileaction)
             traceF = fopen (traceFn, "w");
         }
     }
-    ptermShowTrace (tracePterm);
+    ptermShowTrace ();
 }
 
 /*
@@ -3286,11 +3294,15 @@ void PtermFrame::ptermSetStation (int station)
     ptermSetName (name);
 }
 
-void PtermFrame::ptermShowTrace (bool enable)
+void PtermFrame::ptermShowTrace ()
 {
-    if (enable)
+    if (tracePterm)
     {
         m_statusBar->SetStatusText(_(" Trace "), STATUS_TRC);
+    }
+    else if (ptermApp->m_platoKb)
+    {
+        m_statusBar->SetStatusText(_(" PLATO keyboard "), STATUS_TRC);
     }
     else
     {
@@ -3579,6 +3591,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_gswEnable = ptermApp->m_gswEnable;
     m_numpadArrows = ptermApp->m_numpadArrows;
     m_showStatusBar = ptermApp->m_showStatusBar;
+    m_platoKb = ptermApp->m_platoKb;
     m_connect = ptermApp->m_connect;
     m_fgColor = ptermApp->m_fgColor;
     m_bgColor = ptermApp->m_bgColor;
@@ -3607,7 +3620,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     sbs->Add (m_gswCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_arrowCheck = new wxCheckBox (this, -1, _("Numeric keypad for arrows"));
     m_arrowCheck->SetValue (m_numpadArrows);
-    sbs->Add (m_arrowCheck, 0, wxALL, 8);
+    sbs->Add (m_arrowCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_kbCheck = new wxCheckBox (this, -1, _("Use real PLATO keyboard"));
+    m_kbCheck->SetValue (m_platoKb);
+    sbs->Add (m_kbCheck, 0, wxALL, 8);
     ds->Add (sbs, 0,  wxTOP | wxLEFT | wxRIGHT | wxEXPAND, 10);
     
     // Second group: connection settings
@@ -3715,6 +3731,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_arrowCheck->SetValue (TRUE);
         m_showStatusBar = TRUE;
         m_statusCheck->SetValue (TRUE);
+        m_platoKb = FALSE;
+        m_kbCheck->SetValue (FALSE);
         m_hostText->SetValue (DEFAULTHOST);
         str.Printf (wxT ("%d"), DefNiuPort);
         m_portText->SetValue (str);
@@ -3751,6 +3769,10 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == m_statusCheck)
     {
         m_showStatusBar = event.IsChecked ();
+    }
+    else if (event.GetEventObject () == m_kbCheck)
+    {
+        m_platoKb = event.IsChecked ();
     }
 }
 
@@ -4551,10 +4573,21 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             pc = 0130;      // down arrow (x)
             break;
         case WXK_PRIOR:
+        case WXK_PAGEUP:    // (Mac does this instead)
         case WXK_NUMPAD_PRIOR:
-            pc = 020;       // super
-            break;
+            // TEMP: ignore SUPER for (proto) PLATO keyboard)
+            if (ptermApp->m_platoKb)
+            {
+                event.Skip ();
+                return;
+            }
+            else
+            {
+                pc = 020;       // super
+                break;
+            }
         case WXK_NEXT:
+        case WXK_PAGEDOWN:  // (Mac does this instead)
         case WXK_NUMPAD_NEXT:
             pc = 021;       // sub
             break;
@@ -4603,8 +4636,29 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             }
             break;
         default:
-            event.Skip ();
-            return;
+            // If it's not a function key, we'll let the OnChar handler
+            // deal with it if we are using a regular keyboard.
+            // But if we're using a PLATO keyboard, we'll take the
+            // (unshifted) keycode, translate it to the PLATO code, apply
+            // shift if any, and send that.  This is because the 
+            // shifted non-letters on the PLATO keyboard are generally
+            // different from those on the PC/Mac keyboard.
+            pc = asciiToPlato[key];
+            if (!ptermApp->m_platoKb || pc < 0)
+            {
+                event.Skip ();
+                return;
+            }
+            // On Linux (wx/GTK), there's a keyboard handling error:
+            // shifted comma key produces an OnKeyDown event with 
+            // key = '<', which is wrong, it should be the unshifted 
+            // code.  All other codes appear to be correct, and it also
+            // works right on other platforms.  Weird...  Work around
+            // this by forcing the keycode.
+            if (key == '<')
+            {
+                pc = asciiToPlato[','];
+            }
         }
     }
 
