@@ -133,6 +133,7 @@ pterm-$(PTERMVERSION).dmg: ptermkit.dmg
 	hdiutil internet-enable -yes $@
 
 pterm-kit: 
+	$(MAKE) pterm TYPE=static 
 	$(MAKE) pterm-$(PTERMVERSION).dmg TYPE=static 
 
 else
