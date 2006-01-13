@@ -85,6 +85,10 @@ LINK32=link.exe
 # Name "pterm - Win32 Debug"
 # Begin Source File
 
+SOURCE=.\8080a.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\wx\msw\blank.cur
 # End Source File
 # Begin Source File
