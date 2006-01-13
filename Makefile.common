@@ -53,8 +53,8 @@ SXOBJS  = dt_x11.o
 	/usr/X11R6/bin/bdftopcf -o $@ $<
 
 %.d : %.c
-	echo -n "$@ " > /tmp/$@
-	$(CC) $(INCL) -MM -MG $< >> /tmp/$@
-	mv -f /tmp/$@ $@
+	echo -n "$@ " > $@.tmp
+	$(CC) $(INCL) -MM -MG $< >> $@.tmp
+	mv -f $@.tmp $@
 
 #---------------------------  End Of File  --------------------------------
