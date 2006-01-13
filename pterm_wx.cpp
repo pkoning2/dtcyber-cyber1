@@ -4575,17 +4575,8 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         case WXK_PRIOR:
         case WXK_PAGEUP:    // (Mac does this instead)
         case WXK_NUMPAD_PRIOR:
-            // TEMP: ignore SUPER for (proto) PLATO keyboard)
-            if (ptermApp->m_platoKb)
-            {
-                event.Skip ();
-                return;
-            }
-            else
-            {
-                pc = 020;       // super
-                break;
-            }
+            pc = 020;       // super
+            break;
         case WXK_NEXT:
         case WXK_PAGEDOWN:  // (Mac does this instead)
         case WXK_NUMPAD_NEXT:
