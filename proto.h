@@ -192,7 +192,11 @@ void traceCpu(CpuContext *activeCpu,
               u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress);
 void traceExchange(CpuContext *cc, u32 addr, char *title);
 void traceCM(u32 start, u32 end);
-void traceData(CpWord d, int stream);
+
+/*
+**  env.c
+*/
+CpWord envOp (CpWord req);
 
 /*
 **  dump.c

@@ -1420,40 +1420,6 @@ void traceEnd(void)
         }
     }
 
-/*--------------------------------------------------------------------------
-**  Purpose:        Write data from X register to a data trace file.
-**
-**  Parameters:     Name        Description.
-**                  data        60-bit value
-**                  stream      file number (0..7)
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void traceData (CpWord data, int stream)
-    {
-    char traceName[20];
-    
-    if (stream >= MAXDATANUM)
-        {
-        return;
-        }
-    
-    if (dataTF[stream] == NULL)
-        {
-        sprintf(traceName, "data%d.trc", stream);
-        dataTF[stream] = fopen(traceName, "wt");
-        if (dataTF[stream] == NULL)
-            {
-            logError(LogErrorLocation, "can't open data stream %d trace (%s)\n",
-                     stream, traceName);
-            return;
-            }
-        }
-    
-    fprintf(dataTF[stream], "%06d %20.20llo\n", traceSequenceNo, data);
-    }
-
 /*
 **--------------------------------------------------------------------------
 **

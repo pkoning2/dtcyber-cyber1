@@ -2459,17 +2459,13 @@ static void cpOp01(CPUVARG)
         cpuEcsTransfer(CPUARGS2 (TRUE, TRUE));
         break;
         
-#if CcDebug == 1
     case 6:
         /*
         **  RI or IBj -- which is 7600 only.  So we steal it for 
-        **  use in tracing data flows.
-        **  Instruction format: 017jk to send the current value of Xj
-        **  to data trace stream k.
+        **  dealing with the world outside the emulator.
         */
-        traceData (activeCpu->regX[activeCpu->opJ], activeCpu->opK);
+        activeCpu->regX[activeCpu->opJ] = envOp (activeCpu->regX[activeCpu->opK]);
         break;
-#endif
         }
     }
 
