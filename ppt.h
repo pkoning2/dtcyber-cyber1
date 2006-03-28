@@ -8,7 +8,10 @@
 // Licence:     DtCyber license
 /////////////////////////////////////////////////////////////////////////////
 
+#include "8080a.h"
+
 // PPT Resident entry points
+#define R_MAIN  0x3d    // Fake return address for mode 5/6/7 call
 #define R_INIT  0x40
 #define R_DOT   0x43
 #define R_LINE  0x46
@@ -40,6 +43,9 @@
 #define IM_CON  0x02
 #define IM_CAR  0x01
 
+// Initial SP
+#define INITSP  0x2200
+
 // PPT Resident variables
 #define M_FLAG0 0x22ea
 #define M_TYPE  0x22eb
@@ -52,6 +58,25 @@
 #define M_DIR   0x22f8
 #define M_KSW   0x22fa
 #define M_ENAB  0x22fc
+
+#define CSETS           8       // leave room for the PPT multiple sets
+
+#define M2ADDR          0x2340  // PPT start address for set 2
+#define M3ADDR          0x2740  // PPT start address for set 3
+
+#define M5ORIGIN        (WORKRAM + 0x0300)  // Pointer to mode 5 program
+#define M6ORIGIN        (WORKRAM + 0x0302)  // Pointer to mode 6 program
+#define M7ORIGIN        (WORKRAM + 0x0304)  // Pointer to mode 7 program
+
+#define C2ORIGIN        (WORKRAM + 0x0306)  // Pointer to M2 characters
+#define C3ORIGIN        (WORKRAM + 0x0308)  // Pointer to M3 characters
+#define C4ORIGIN        (WORKRAM + 0x030a)  // Pointer to M4 characters
+#define C5ORIGIN        (WORKRAM + 0x030c)  // Pointer to M5 characters
+#define C6ORIGIN        (WORKRAM + 0x030e)  // Pointer to M6 characters
+#define C7ORIGIN        (WORKRAM + 0x0310)  // Pointer to M7 characters
+
+#define TM_HALT     (WORKRAM + 0x0314)
+#define TM_STATUS   (WORKRAM + 0x0316)
 
 // PPT input port addresses
 #define SIO     0x00

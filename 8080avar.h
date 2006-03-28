@@ -138,15 +138,10 @@ Contents:
 *  memory map	 Address ranges
 * +-----------+
 * |           |
-* |  PROGROM  | 0x0000h-0x1FFFh
+* |  PROGROM  | 0x0000h-0x3FFFh
 * +-----------+
 * |           |
-* |  WORKRAM  | 0x2000h-0x3FFFh
-* +-----------+
-* |           |
-* |           |
-* |           |
-* |  UNUSED   | 0x4000h-0xFFFFh
+* |  WORKRAM  | 0x4000h-0xfFFFh
 * +-----------+
 * 
 *
@@ -157,12 +152,11 @@ Contents:
 *
 *******************************************************************************/
 /*  Memory Map  */
-#define STARTROM1 0x0000
-#define ROMSIZE   0x2000
-#define PROGROM   0x0000
-#define WORKRAM   0x2000
-#define UNUSED    0x4000
-#define MEMSIZE  0x10000
+#define STARTROM1 0x00000
+#define ROMSIZE   0x04000
+#define PROGROM   0x00000
+#define WORKRAM   0x02000
+#define MEMSIZE   0x04000
 class emul8080
 {
 public:
@@ -201,7 +195,14 @@ public:
 protected:
     virtual Uint8 input8080a (Uint8 data);
     virtual void output8080a (Uint8 data, Uint8 acc);
-    virtual int call8080a (void);
+
+    // This emulates the "ROM resident".  Return values:
+    // 0: PC is not special (not in resident), proceed normally.
+    // 1: PC is ROM function entry point, it has been emulated,
+    //    do a RET now.
+    // 2: PC is either the 8080 emulation exit magic value, or R_INIT,
+    //    or an invalid resident value.  Exit 8080 emulation.
+    virtual int check_pc8080a (void);
 
     /*  Interrupt information  */
     Uint8 INTDISABLE;

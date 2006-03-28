@@ -967,7 +967,7 @@ const char CYCLES[256] =
 
 
 
-#ifdef DEBUG
+#ifdef DEBUG_8080
 
 /*******************************************************************************
 
@@ -1020,7 +1020,7 @@ const char MNEMONICS[][256] =
 
 };
 
-#endif	// for #ifdef DEBUG
+#endif	// for #ifdef 8080_DEBUG
 
 
 #endif

@@ -244,8 +244,8 @@ void emul8080::main8080a (void)
 		COUNTER	+= CYCLES[OPCODE];
 
 
-/*  This code is used for quick debugging.
-
+/*  This code is used for quick debugging. */
+#ifdef DEBUG_8080
 		printf("%s\n", MNEMONICS[OPCODE]);
 
 		printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
@@ -263,7 +263,7 @@ void emul8080::main8080a (void)
 			"PSW-[]\n", OPCODE, PC-1, SP);
 		printf("AF-[0x%X]\tBC-[0x%X]\tDE-[0x%X]\t"
 			"HL-[0x%X]\n\n", A, BC.pair, DE.pair, HL.pair);
-*/
+#endif
 
 
 	/***********************************************************************
@@ -899,8 +899,11 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
-				if (call8080a ())
-					goto doret;
+				switch (check_pc8080a ())
+                {
+                case 1: goto doret;
+                case 2: return;
+                }
 				break;
 
 
@@ -952,8 +955,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
-					if (call8080a ())
-						goto doret;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				} else
 					PC += 2;
 				break;
@@ -979,8 +985,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
-					if (call8080a ())
-						goto doret;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				} else
 					PC += 2;
 				break;
@@ -1197,8 +1206,11 @@ void emul8080::main8080a (void)
 					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
 
 					COUNTER += 6;
-					if (call8080a ())
-						goto doret;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				} else
 					PC += 2;
 				break;
@@ -1224,8 +1236,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
-					if (call8080a ())
-						goto doret;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				} else
 					PC += 2;
 				break;
@@ -1251,8 +1266,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
-					if (call8080a ())
-						goto doret;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				} else
 					PC += 2;
 				break;
@@ -1278,8 +1296,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
-					if (call8080a ())
-						goto doret;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				} else
 					PC += 2;
 				break;
@@ -1331,8 +1352,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
-					if (call8080a ())
-						goto doret;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				} else
 					PC += 2;
 				break;
@@ -1358,8 +1382,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
-					if (call8080a ())
-						goto doret;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				} else
 					PC += 2;
 				break;
@@ -2006,6 +2033,11 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 			case JMPa:
 				PC = (ReadRAM(PC+1)<<8) | ReadRAM(PC);
+				switch (check_pc8080a ())
+                {
+                case 1: goto doret;
+                case 2: return;
+                }
 				break;
 
 
@@ -2038,7 +2070,14 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 			case JCa:
 				if (PSW & CARRY)
+                {
 					PC = (ReadRAM(PC+1)<<8) | ReadRAM(PC);
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
+                }
 				else
 					PC += 2;
 				break;
@@ -2053,7 +2092,14 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 			case JMa:
 				if (PSW & SIGN)
+                {
 					PC = (ReadRAM(PC+1)<<8) | ReadRAM(PC);
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
+                }
 				else
 					PC += 2;
 				break;
@@ -2068,7 +2114,14 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 			case JNCa:
 				if ((~PSW) & CARRY)
+                {
 					PC = (ReadRAM(PC+1)<<8) | ReadRAM(PC);
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
+                }
 				else
 					PC += 2;
 				break;
@@ -2083,7 +2136,14 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 			case JNZa:
 				if ((~PSW) & ZERO)
+                {
 					PC = (ReadRAM(PC+1)<<8) | ReadRAM(PC);
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
+                }
 				else
 					PC += 2;
 				break;
@@ -2098,7 +2158,14 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 			case JPa:
 				if ((~PSW) & SIGN)
+                {
 					PC = (ReadRAM(PC+1)<<8) | ReadRAM(PC);
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
+                }
 				else
 					PC += 2;
 				break;
@@ -2113,7 +2180,14 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 			case JPEa:
 				if (PSW & PARITY)
+                {
 					PC = (ReadRAM(PC+1)<<8) | ReadRAM(PC);
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
+                }
 				else
 					PC += 2;
 				break;
@@ -2128,7 +2202,14 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 			case JPOa:
 				if ((~PSW) & PARITY)
+                {
 					PC = (ReadRAM(PC+1)<<8) | ReadRAM(PC);
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
+                }
 				else
 					PC += 2;
 				break;
@@ -2143,7 +2224,14 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 			case JZa:
 				if (PSW & ZERO)
+                {
 					PC = (ReadRAM(PC+1)<<8) | ReadRAM(PC);
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
+                }
 				else
 					PC += 2;
 				break;
@@ -3228,6 +3316,11 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 			case PCHL:
 				PC = HL.pair;
+                switch (check_pc8080a ())
+                {
+                case 1: goto doret;
+                case 2: return;
+                }
 				break;
 
 
@@ -3456,8 +3549,12 @@ void emul8080::main8080a (void)
 			case RET:
 		        doret:
 				PC = (ReadRAM(SP+1)<<8) | ReadRAM(SP);
-
-				SP += 2;
+                SP += 2;
+				switch (check_pc8080a ())
+                {
+                case 1: goto doret;
+                case 2: return;
+                }
 				break;
 
 
@@ -3499,6 +3596,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					SP += 2;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				}
 				break;
 
@@ -3517,6 +3619,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					SP += 2;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				}				
 				break;
 
@@ -3535,6 +3642,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					SP += 2;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				}				
 				break;
 
@@ -3554,6 +3666,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					SP += 2;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				}
 				break;
 
@@ -3572,6 +3689,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					SP += 2;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				}				
 				break;
 
@@ -3590,6 +3712,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					SP += 2;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				}	
 				break;
 
@@ -3608,6 +3735,11 @@ void emul8080::main8080a (void)
 					COUNTER += 6;
 
 					SP += 2;
+                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				}
 				break;
 
@@ -3625,7 +3757,11 @@ void emul8080::main8080a (void)
 
 					COUNTER += 6;
 
-					SP += 2;
+					SP += 2;                    switch (check_pc8080a ())
+                    {
+                    case 1: goto doret;
+                    case 2: return;
+                    }
 				}				
 				break;
 
@@ -3701,7 +3837,7 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x00;
-				break;
+				return;
 
 
 	/***********************************************************************
@@ -3716,7 +3852,7 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x08;
-				break;
+				return;
 
 
 	/***********************************************************************
@@ -3731,7 +3867,7 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x10;
-				break;
+				return;
 
 
 	/***********************************************************************
@@ -3746,7 +3882,7 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x18;
-				break;
+				return;
 
 
 	/***********************************************************************
@@ -3761,7 +3897,7 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x20;
-				break;
+				return;
 
 
 	/***********************************************************************
@@ -3776,7 +3912,7 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x28;
-				break;
+				return;
 
 
 	/***********************************************************************
@@ -3791,7 +3927,7 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x30;
-				break;
+				return;
 
 
 	/***********************************************************************
@@ -3806,7 +3942,7 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x38;
-				break;
+				return;
 
 
 
@@ -4894,7 +5030,7 @@ void emul8080::output8080a (Uint8 data, Uint8 acc)
 {
 }
 
-int emul8080::call8080a (void)
+int emul8080::check_pc8080a (void)
 {
 	return 0;
 }

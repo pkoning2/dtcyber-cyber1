@@ -45,11 +45,6 @@
 
 #define MouseTolerance  3       // # pixels tolerance before we call it "drag"
 
-#define CSETS           8       // leave room for the PPT multiple sets
-
-#define M2ADDR          0x2340  // PPT start address for set 2
-#define M3ADDR          0x2740  // PPT start address for set 3
-
 // Delay parameters for text paste (in ms)
 #define PASTE_CHARDELAY 165
 #define PASTE_LINEDELAY 500
@@ -696,6 +691,7 @@ private:
     void mode5 (u32 d);
     void mode6 (u32 d);
     void mode7 (u32 d);
+    void progmode (u32 d, int origin);
     void ptermSetStation (int station);
     void ptermShowTrace ();
     
@@ -706,7 +702,7 @@ private:
     // 8080a emulation support
     Uint8 input8080a (Uint8 data);
     void output8080a (Uint8 data, Uint8 acc);
-    int call8080a (void);
+    int check_pc8080a (void);
 
     // any class wishing to process wxWindows events must use this macro
     DECLARE_EVENT_TABLE ()
@@ -3103,25 +3099,34 @@ void PtermFrame::mode1 (u32 d)
 void PtermFrame::mode2 (u32 d)
 {
     int ch, chaddr;
-    
+
+    // Store the word in PPT RAM
+    WriteRAM (memaddr, d);
+    WriteRAM (memaddr + 1, d >> 8);
+
     // memaddr is a PPT RAM address; convert it to a character memory address
+    // FIXME: *** this code assumes that the character memory pointers
+    // are never changed, always stay at the default value.  If that is
+    // ever not true we'll display the wrong text.
     chaddr = memaddr - M2ADDR;
     if (chaddr < 0 || chaddr > 127 * 16)
     {
-        TRACEN ("memaddr outside character memory range");
-        return;
+        TRACE2 ("memdata %04x to %04x", d & 0xffff, memaddr);
     }
-    chaddr /= 2;
-    if (((d >> 16) & 3) == 0)
+    else
     {
-        // load data
-        TRACE2 ("character memdata %06o to %04o", d & 0xffff, chaddr);
-        plato_m23[chaddr] = d & 0xffff;
-        if ((++chaddr & 7) == 0)
+        chaddr /= 2;
+        if (((d >> 16) & 3) == 0)
         {
-            // character is done -- load it to display 
-            ch = (chaddr / 8) - 1;
-            ptermLoadChar (2 + (ch / 64), ch % 64, &plato_m23[chaddr - 8]);
+            // load data
+            TRACE2 ("character memdata %06o to %04o", d & 0xffff, chaddr);
+            plato_m23[chaddr] = d & 0xffff;
+            if ((++chaddr & 7) == 0)
+            {
+                // character is done -- load it to display 
+                ch = (chaddr / 8) - 1;
+                ptermLoadChar (2 + (ch / 64), ch % 64, &plato_m23[chaddr - 8]);
+            }
         }
     }
     memaddr += 2;
@@ -3190,6 +3195,7 @@ void PtermFrame::mode4 (u32 d)
 void PtermFrame::mode5 (u32 d)
 {
     TRACE ("mode5 %06o", d);
+    progmode (d, M5ORIGIN);
 }
 
 /*--------------------------------------------------------------------------
@@ -3204,6 +3210,7 @@ void PtermFrame::mode5 (u32 d)
 void PtermFrame::mode6 (u32 d)
 {
     TRACE ("mode6 %06o", d);
+    progmode (d, M6ORIGIN);
 }
 
 /*--------------------------------------------------------------------------
@@ -3218,6 +3225,37 @@ void PtermFrame::mode6 (u32 d)
 void PtermFrame::mode7 (u32 d)
 {
     TRACE ("mode7 %06o", d);
+    progmode (d, M7ORIGIN);
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Process Mode 5/6/7 data word
+**
+**  Parameters:     Name        Description.
+**                  d           Data word
+**                  origin      Address of mode handler pointer
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void PtermFrame::progmode (u32 d, int origin)
+{
+    // Load C/D/E with data word
+    BC.reg.C = d >> 16;
+    DE.reg.D = d >> 8;
+    DE.reg.E = d;
+
+    // Initialize the stack
+    SP = INITSP;
+
+    // Push the fake return address for "return to main loop" onto the
+    // stack, as if we just did a CALL instruction
+    WriteRAM(--SP, R_MAIN >> 8);
+    WriteRAM(--SP, R_MAIN);
+
+    // Set the start PC for the requested mode
+    PC = ReadRAMW (origin);
+    main8080a ();
 }
 
 /*--------------------------------------------------------------------------
@@ -3310,17 +3348,26 @@ void PtermFrame::ptermShowTrace ()
     }
 }
 
-// Return 1 if the call has been taken care of (i.e., do a return)
-// and 0 if not.
-int PtermFrame::call8080a (void)
+// This emulates the "ROM resident".  Return values:
+// 0: PC is not special (not in resident), proceed normally.
+// 1: PC is ROM function entry point, it has been emulated,
+//    do a RET now.
+// 2: PC is either the 8080 emulation exit magic value, or R_INIT,
+//    or an invalid resident value.  Exit 8080 emulation.
+int PtermFrame::check_pc8080a (void)
 {
     int x, y, cp, c, x2, y2;
     
     switch (PC)
     {
+    case R_MAIN:
+        // "r.main" -- fake return address value used as the return
+        // address for invocations of the mode 5/6/7 handler code
+        return 2;
+
     case R_INIT:
         // r.init -- TBD
-        return 1;
+        return 2;
         
     case R_DOT:
         x = HL.pair;
@@ -3437,7 +3484,17 @@ int PtermFrame::call8080a (void)
         return 1;
         
     default:
-        return 0;
+        if (PC < WORKRAM)
+        {
+            // Wild jump into ROM resident, quit
+            fprintf (stderr, "Wild jump to %04x\n", PC);
+            return 2;
+        }
+        else
+        {
+            // Plain old RAM PC -- keep executing
+            return 0;
+        }
     }
 }
 
@@ -4430,6 +4487,10 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
                 // control but not a letter or ASCII control code -- 
                 // translate to what a PLATO keyboard
                 // would have on the shifted position for that key
+                if (shift != 0 && key == '=')
+                {
+                    key = '+';
+                }
                 pc = asciiToPlato[key];
                 shift = 040;
             }
