@@ -64,15 +64,22 @@ CpWord envOp (CpWord req)
         req <<= 6;
         }
     *p = '\0';
-    if (strcmp (reqstr, "HOSTNAME") == 0)
+    p = getenv (reqstr);
+    if (p == NULL)
         {
-        gethostname (resultstr, sizeof (resultstr) - 1);
+        /*
+        **  Not in the environment, see if it's a name we know of.
+        */
+        if (strcmp (reqstr, "HOSTNAME") == 0)
+            {
+            gethostname (resultstr, sizeof (resultstr) - 1);
+            }
+        else
+            {
+            return 0;
+            }
+        p = resultstr;
         }
-    else
-        {
-        return 0;
-        }
-    p = resultstr;
     result = 0;
     for (i = 0; i < 10; i++)
         {
