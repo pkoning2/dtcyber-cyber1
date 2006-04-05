@@ -14,6 +14,52 @@ return(opl)
 */ **/---   block=01-e opl2              83/09/22. 20.24    source
 *oplfile opl2
 */
+*/ **/---   block=01-e hostname              06/03/28. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Get system name from the environment.
+*/
+*/ -------------------------------------------------------------------
+*ident hostnam
+*deck instalp
+*d instalp.81
+ HOMESYS  DATA   0
+*/ end instalp
+*deck,msubs
+*i msubs.7
+
+ exx      cpop   0,016b,012b
+*i msubsa.8
+
+***       default rid values corresponding to devsys names
+ defrid   data   0
+          data   0
+          data   0
+          data   0
+          data   0lcy1
+          data   0lbrs
+          data   0lgpk
+*i msubsa.22
+          nz     x3,chkdev   if system name set
+          sa1    =0lhostname
+          ex3    x1          get hostname from environment
+          bx6    x3
+          sa6    a3          set system name
+*i msubsa.31
+          sa3    homerid     check home rid definition
+          nz     x3,savedev  if rid set
+          sa1    defrid-1+x0 get default rid for this system name 
+          bx7    x1
+          sa7    a3
+*d msubs.1957,msubs.1961
+*/ end msubs
+*deck tovlay
+*d tovlay.481,tovlay.502
+          sa2    =xhomerid   (X2) = route id
+          lx2    18          right-justify it
+*d TOVLAY.948,tovlay.952
+*/ end tovlay
+*/
 */ **/---   block=01-e logout              05/11/02. 12.00    source
 */ -------------------------------------------------------------------
 */
@@ -931,15 +977,17 @@ return(opl)
 *ident,faadev
 */ added cyber1 and cyber2 -- gpk 04.08.23.
 */ added dtfaa             -- gpk 05.08.05.
+*/ added pkoning, boris    -- gpk 06.03.28.
 *deck,msubs
 *d,msubsa.6,msubsa.8
- ndevsys  equ    6           maximum number of dev systems
+ ndevsys  equ    7           maximum number of dev systems
           data   0luol       university online system
           data   0lcybdev    cybis development system
           data   0lfaa       faa system (used by uol)
           data   0ldtfaa     desktop faa system
           data   0lcyber1    cyber1.org system
-          data   0lcyber2    second cyber1.org system
+          data   0lboris     second cyber1.org system
+          data   0lpkoning   paul test system
 *d,msubsa.15,msubsa.17
  nuolsys  equ    3           maximum number of uol systems
           data   0luol       university online system
