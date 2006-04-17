@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003-2004, Tom Hunter and Gerard van der Grinten
+**  Copyright (c) 2003-2005, Tom Hunter and Gerard van der Grinten
 **  (see license.txt)
 **
 **  Name: dd8xx.c
 **
 **  Description:
-**      Perform simulation of CDC 844 and 885 disk drives.
+**      Perform emulation of CDC 844 and 885 disk drives.
 **
 **--------------------------------------------------------------------------
 */
@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/file.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -206,15 +207,15 @@ static void dd8xxActivate(void);
 static void dd8xxDisconnect(void);
 static i32 dd8xxSeek(DiskParam *dp);
 static i32 dd8xxSeekNextSector(DiskParam *dp, bool gap);
+static void dd8xxDump(PpWord data);
+static void dd8xxFlush(void);
 static PpWord dd8xxReadClassic(DiskParam *dp, FILE *fcb);
 static PpWord dd8xxReadPacked(DiskParam *dp, FILE *fcb);
 static void dd8xxWriteClassic(DiskParam *dp, FILE *fcb, PpWord data);
 static void dd8xxWritePacked(DiskParam *dp, FILE *fcb, PpWord data);
 static void dd8xxSectorWrite(DiskParam *dp, FILE *fcb, PpWord *sector);
 static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState);
-#if DEBUG
 static char *dd8xxFunc2String(PpWord funcCode);
-#endif
 
 /*
 **  ----------------
@@ -281,6 +282,30 @@ void dd885Init_1(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **
 **--------------------------------------------------------------------------
 */
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Lock a file
+**
+**  Parameters:     Name        Description.
+**                  f           FILE descriptor.
+**                  fn          Name of that file.
+**
+**  Returns:        Nothing if successful.  
+**                  On failure (file already locked) prints an error
+**                  message and exits.
+**
+**------------------------------------------------------------------------*/
+static void dd8xxLock (FILE *f, const char *fn)
+    {
+    int e;
+    
+    e = flock (fileno (f), LOCK_EX | LOCK_NB);
+    if (e != 0)
+        {
+        fprintf (stderr, "Cannot acquire exclusive lock on file %s\n", fn);
+        exit (1);
+        }
+    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialise specified disk drive.
@@ -426,7 +451,7 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
         dp->detailedStatus[ 9] = 07201;             // DSU fault status
         dp->detailedStatus[10] =     0;             // DSU interlock status
         dp->detailedStatus[11] =     0;             // bit address of correctable read error
-        dp->detailedStatus[12] =     0;             // PP address of correctable read error
+        dp->detailedStatus[12] = 02000;             // PP address of correctable read error
         dp->detailedStatus[13] =     0;             // first word of correction vector
         dp->detailedStatus[14] =     0;             // second word of correction vector
         dp->detailedStatus[15] =     0;             // DSC operating status word
@@ -505,6 +530,8 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
             exit(1);
             }
 
+        dd8xxLock (fcb, fname);
+
         /*
         **  Write last disk sector to reserve the space.
         */
@@ -567,6 +594,10 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
         fseek(fcb, dd8xxSeek(dp), SEEK_SET);
         dd8xxSectorWrite(dp, fcb, mySector);
         }
+    else
+        {
+        dd8xxLock (fcb, fname);
+        }
 
     ds->fcb[unitNo] = fcb;
 
@@ -597,16 +628,28 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
 **------------------------------------------------------------------------*/
 static FcStatus dd8xxFunc(PpWord funcCode)
     {
-    u8 unitNo = activeDevice->selectedUnit;
-    FILE *fcb = activeDevice->fcb[unitNo];
-    DiskParam *dp = (DiskParam *)activeDevice->context[unitNo];
+    i8 unitNo;
+    FILE *fcb;
+    DiskParam *dp;
+
+    unitNo = activeDevice->selectedUnit;
+    if (unitNo != -1)
+        {
+        dp = (DiskParam *)activeDevice->context[unitNo];
+        fcb = activeDevice->fcb[unitNo];
+        }
+    else
+        {
+        dp = NULL;
+        fcb = NULL;
+        }
 
     /*
     **  Decline functions for units which are not configured.
     */
     if (fcb == NULL)
         {
-        return(FcDeclined);
+////        return(FcDeclined);   <<<< fix this properly as in mt679.c
         }
 
     /*
@@ -622,15 +665,30 @@ static FcStatus dd8xxFunc(PpWord funcCode)
         }
 
 #if DEBUG
-    fprintf(dd8xxLog, "\nPP:%02o CH:%02o DSK:%d f:%04o T:%-25s   c:%3d t:%2d s:%2d  >   ", 
-        activePpu->id,
-        activeDevice->channel->id,
-        dp->diskNo,
-        funcCode,
-        dd8xxFunc2String(funcCode),
-        dp->cylinder,
-        dp->track,
-        dp->sector);
+    if (dp != NULL)
+        {
+        fprintf(dd8xxLog, "\n%06d PP:%02o CH:%02o DSK:%d f:%04o T:%-25s   c:%3d t:%2d s:%2d  >   ", 
+            traceSequenceNo,
+            activePpu->id,
+            activeDevice->channel->id,
+            dp->diskNo,
+            funcCode,
+            dd8xxFunc2String(funcCode),
+            dp->cylinder,
+            dp->track,
+            dp->sector);
+        }
+    else
+        {
+        fprintf(dd8xxLog, "\n%06d PP:%02o CH:%02o DSK:? f:%04o T:%-25s  >   ", 
+            traceSequenceNo,
+            activePpu->id,
+            activeDevice->channel->id,
+            funcCode,
+            dd8xxFunc2String(funcCode));
+        }
+
+    fflush(dd8xxLog);
 #endif
 
     /*
@@ -652,6 +710,11 @@ static FcStatus dd8xxFunc(PpWord funcCode)
         break;
 
     case Fc8xxSeekFull:
+        if (dp == NULL)
+            {
+            return(FcDeclined);
+            }
+            
         /*
         **  Expect drive number, cylinder, track and sector.
         */
@@ -660,6 +723,11 @@ static FcStatus dd8xxFunc(PpWord funcCode)
         break;
 
     case Fc8xxSeekHalf:
+        if (dp == NULL)
+            {
+            return(FcDeclined);
+            }
+            
         /*
         **  Expect drive number, cylinder, track and sector.
         */
@@ -686,7 +754,6 @@ static FcStatus dd8xxFunc(PpWord funcCode)
     case Fc8xxOpComplete:
     case Fc8xxDropSeeks:
         return(FcProcessed);
-        break;
 
     case Fc8xxGeneralStatus:
         activeDevice->recordLength = 1;
@@ -810,6 +877,10 @@ static FcStatus dd8xxFunc(PpWord funcCode)
         }
 
     activeDevice->fcode = funcCode;
+
+#if DEBUG
+    fflush(dd8xxLog);
+#endif
     return(FcAccepted);
     }
 
@@ -823,20 +894,51 @@ static FcStatus dd8xxFunc(PpWord funcCode)
 **------------------------------------------------------------------------*/
 static void dd8xxIo(void)
     {
-    u8 unitNo = activeDevice->selectedUnit;
-    FILE *fcb = activeDevice->fcb[unitNo];
-    DiskParam *dp = (DiskParam *)activeDevice->context[unitNo];
+    i8 unitNo;
+    FILE *fcb;
+    DiskParam *dp;
     i32 pos;
+
+    unitNo = activeDevice->selectedUnit;
+    if (unitNo != -1)
+        {
+        dp = (DiskParam *)activeDevice->context[unitNo];
+        fcb = activeDevice->fcb[unitNo];
+        }
+    else
+        {
+        dp = NULL;
+        fcb = NULL;
+        }
 
     switch (activeDevice->fcode)
         {
     case Fc8xxConnect:
         if (activeChannel->full)
             {
-            activeDevice->selectedUnit = activeChannel->data & 07;
+            unitNo = activeChannel->data & 07;
+            if (unitNo != activeDevice->selectedUnit)
+                {
+                if (activeDevice->fcb[unitNo] != NULL)
+                    {
+                    activeDevice->selectedUnit = unitNo;
+                    dp = (DiskParam *)activeDevice->context[unitNo];
+                    dp->detailedStatus[12] &= ~01000;
+                    }
+                else
+                    {
+                    activeDevice->selectedUnit = -1;
+                    }
+                }
+            else
+                {
+                dp->detailedStatus[12] |= 01000;
+                }
+
             if (activeDevice->fcb[activeDevice->selectedUnit] == NULL)
                 {
                 logError(LogErrorLocation, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeDevice->fcode);
+                // ???????????????? need to do betten than this - see mt679.c
                 }
 
             activeChannel->full = FALSE;
@@ -850,8 +952,25 @@ static void dd8xxIo(void)
             switch (activeDevice->recordLength--)
                 {
             case 4:
-                activeDevice->selectedUnit = activeChannel->data & 07;
-                unitNo = activeDevice->selectedUnit;
+                unitNo = activeChannel->data & 07;
+                if (unitNo != activeDevice->selectedUnit)
+                    {
+                    if (activeDevice->fcb[unitNo] != NULL)
+                        {
+                        activeDevice->selectedUnit = unitNo;
+                        dp = (DiskParam *)activeDevice->context[unitNo];
+                        dp->detailedStatus[12] &= ~01000;
+                        }
+                    else
+                        {
+                        activeDevice->selectedUnit = -1;
+                        }
+                    }
+                else
+                    {
+                    dp->detailedStatus[12] |= 01000;
+                    }
+
                 if (activeDevice->fcb[unitNo] == NULL)
                     {
                     logError(LogErrorLocation, "channel %02o - invalid select: %4.4o", activeChannel->id, (u32)activeDevice->fcode);
@@ -860,19 +979,32 @@ static void dd8xxIo(void)
                 break;
 
             case 3:
-                dp->cylinder = activeChannel->data;
+                if (dp != NULL)
+                    {
+                    dp->cylinder = activeChannel->data;
+                    }
                 break;
 
             case 2:
-                dp->track = activeChannel->data;
+                if (dp != NULL)
+                    {
+                    dp->track = activeChannel->data;
+                    }
                 break;
 
             case 1:
-                dp->sector = activeChannel->data;
-                pos = dd8xxSeek(dp);
-                if (pos >= 0 && fcb != NULL)
+                if (dp != NULL)
                     {
-                    fseek(fcb, pos, SEEK_SET);
+                    dp->sector = activeChannel->data;
+                    pos = dd8xxSeek(dp);
+                    if (pos >= 0 && fcb != NULL)
+                        {
+                        fseek(fcb, pos, SEEK_SET);
+                        }
+                    }
+                else
+                    {
+                    activeDevice->status = 05020;
                     }
                 break;
 
@@ -1036,6 +1168,10 @@ static void dd8xxIo(void)
             {
             activeChannel->data = dp->read(dp, fcb);
             activeChannel->full = TRUE;
+
+#if DEBUG
+            fprintf(dd8xxLog, " %04o[%d]", activeChannel->data, activeChannel->data);
+#endif
 
             if (--activeDevice->recordLength == 0)
                 {
@@ -1548,9 +1684,9 @@ static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState)
 **  Returns:        String equivalent of function code.
 **
 **------------------------------------------------------------------------*/
-#if DEBUG
 static char *dd8xxFunc2String(PpWord funcCode)
     {
+#if DEBUG
     switch(funcCode)
         {
     case Fc8xxConnect                :  return "Connect";              
@@ -1587,8 +1723,8 @@ static char *dd8xxFunc2String(PpWord funcCode)
     case Fc8xxDeadstart              :  return "Deadstart";            
     case Fc8xxStartMemLoad           :  return "StartMemLoad";         
         }
+#endif
     return "UNKNOWN";
     }
-#endif
 
 /*---------------------------  End Of File  ------------------------------*/
