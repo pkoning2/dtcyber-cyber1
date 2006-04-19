@@ -1,6 +1,7 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003-2005, Tom Hunter and Gerard van der Grinten
+**  Copyright (c) 2003-2006, Tom Hunter, Gerard van der Grinten,
+**  and Paul Koning.
 **  (see license.txt)
 **
 **  Name: dd8xx.c
@@ -23,6 +24,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/file.h>
+#include <errno.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -187,11 +189,13 @@ typedef struct diskParam
     i32         sectorSize;
     DiskSize    size;
     PpWord      *bufPtr;
+    void        *statusBuf;
     u16         detailedStatus[20];
     u8          diskNo;
     u8          unitNo;
     u8          diskType;
     i8          interlace;
+    bool        readonly;
     PpWord      buffer[SectorSize];
     } DiskParam;
 
@@ -216,6 +220,7 @@ static void dd8xxWritePacked(DiskParam *dp, FILE *fcb, PpWord data);
 static void dd8xxSectorWrite(DiskParam *dp, FILE *fcb, PpWord *sector);
 static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState);
 static char *dd8xxFunc2String(PpWord funcCode);
+static void dd8xxLoad(DevSlot *dp, int unitNo, char *fn);
 
 /*
 **  ----------------
@@ -324,7 +329,6 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     {
     DevSlot *ds;
     FILE *fcb;
-    char fname[80];
     DiskParam *dp;
     time_t mTime;
     struct tm *lTime;
@@ -350,6 +354,7 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     ds->disconnect = dd8xxDisconnect;
     ds->func = dd8xxFunc;
     ds->io = dd8xxIo;
+    ds->load = dd8xxLoad;
 
     /*
     **  Save disk parameters.
@@ -366,6 +371,13 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     dp->diskNo = diskCount++;
     dp->diskType = diskType;
     dp->unitNo = unitNo;
+    dp->readonly = FALSE;
+    
+    /*
+    **  Allocate the operator status buffer
+    */
+    dp->statusBuf = opInitStatus ((diskType == DiskType885) ? "DD885" : "DD844",
+                                  channelNo, unitNo);
 
     /*
     **  Determine if any options have been specified.
@@ -414,6 +426,7 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
             break;
             }
         }
+    opSetStatus (dp->statusBuf, deviceName);
 
     /*
     **  Setup environment for disk container type.
@@ -470,7 +483,14 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
         dp->detailedStatus[ 5] =     0;             // address 2 of failing sector
         dp->detailedStatus[ 6] =   010;             // non recoverable error status
         dp->detailedStatus[ 7] =     0;             // 11 bit correction factor
-        dp->detailedStatus[ 8] = 00740;             // DSU status
+        if (size == &sizeDd844_4)
+            {
+            dp->detailedStatus[ 8] = 00740;         // DSU status, double density
+            }
+        else
+            {
+            dp->detailedStatus[ 8] = 00700;         // DSU status, single density
+            }
         dp->detailedStatus[ 9] = 04001;             // DSU fault status
         dp->detailedStatus[10] = 07520;             // DSU interlock status
         dp->detailedStatus[11] =     0;             // bit address of correctable read error
@@ -491,124 +511,110 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     ds->context[unitNo] = dp;
 
     /*
-    **  Open or create disk image.
+    **  Open disk image, if a name is given.  Otherwise leave unit unloaded.
     */
-    if (deviceName == NULL)
+    if (deviceName != NULL)
         {
         /*
-        **  Construct a name.
+        **  Try to open existing disk image.
         */
-        switch (diskType)
-            {
-        case DiskType844:
-            sprintf(fname, "DD844_C%02ou%1o", channelNo, unitNo);
-            break;
-
-        case DiskType885:
-            sprintf(fname, "DD885_C%02ou%1o", channelNo, unitNo);
-            break;
-            }
-        }
-    else
-        {
-        strcpy(fname, deviceName);
-        }
-
-    /*
-    **  Try to open existing disk image.
-    */
-    fcb = fopen(fname, "r+b");
-    if (fcb == NULL)
-        {
-        /*
-        **  Disk does not yet exist - manufacture one.
-        */
-        fcb = fopen(fname, "w+b");
+        fcb = fopen(deviceName, "r+b");
         if (fcb == NULL)
             {
-            fprintf(stderr, "Failed to open %s\n", fname);
-            exit(1);
-            }
-
-        dd8xxLock (fcb, fname);
-
-        /*
-        **  Write last disk sector to reserve the space.
-        */
-        memset(mySector, 0, SectorSize * 2);
-        dp->cylinder = size->maxCylinders - 1;
-        dp->track = size->maxTracks - 1;
-        dp->sector = size->maxSectors - 1;
-        fseek(fcb, dd8xxSeek(dp), SEEK_SET);
-        dd8xxSectorWrite(dp, fcb, mySector);
-
-        /*
-        **  Position to cylinder with the disk's factory and utility
-        **  data areas.
-        */
-        switch (diskType)
-            {
-        case DiskType885:
-            dp->cylinder = size->maxCylinders - 2;
-            break;
-
-        case DiskType844:
-            dp->cylinder = size->maxCylinders - 1;
-            break;
-            }
-
-        /*
-        **  Zero entire cylinder containing factory and utility data areas.
-        */
-        memset(mySector, 0, SectorSize * 2);
-        for (dp->track = 0; dp->track < size->maxTracks; dp->track++)
-            {
-            for (dp->sector = 0; dp->sector < size->maxSectors; dp->sector++)
+            /*
+            **  Disk does not yet exist - manufacture one.
+            */
+            fcb = fopen(deviceName, "w+b");
+            if (fcb == NULL)
                 {
-                fseek(fcb, dd8xxSeek(dp), SEEK_SET);
-                dd8xxSectorWrite(dp, fcb, mySector);
+                fprintf(stderr, "Failed to open %s\n", deviceName);
+                exit(1);
                 }
+
+            dd8xxLock (fcb, deviceName);
+
+            /*
+            **  Write last disk sector to reserve the space.
+            */
+            memset(mySector, 0, SectorSize * 2);
+            dp->cylinder = size->maxCylinders - 1;
+            dp->track = size->maxTracks - 1;
+            dp->sector = size->maxSectors - 1;
+            fseek(fcb, dd8xxSeek(dp), SEEK_SET);
+            dd8xxSectorWrite(dp, fcb, mySector);
+
+            /*
+            **  Position to cylinder with the disk's factory and utility
+            **  data areas.
+            */
+            switch (diskType)
+                {
+            case DiskType885:
+                dp->cylinder = size->maxCylinders - 2;
+                break;
+
+            case DiskType844:
+                dp->cylinder = size->maxCylinders - 1;
+                break;
+                }
+
+            /*
+            **  Zero entire cylinder containing factory and utility data areas.
+            */
+            memset(mySector, 0, SectorSize * 2);
+            for (dp->track = 0; dp->track < size->maxTracks; dp->track++)
+                {
+                for (dp->sector = 0; dp->sector < size->maxSectors; dp->sector++)
+                    {
+                    fseek(fcb, dd8xxSeek(dp), SEEK_SET);
+                    dd8xxSectorWrite(dp, fcb, mySector);
+                    }
+                }
+
+            /*
+            **  Write serial number and date of manufacture.
+            */
+            mySector[0]  = (channelNo & 070) << (8 - 3);
+            mySector[0] |= (channelNo & 007) << (4 - 0);
+            mySector[0] |= (unitNo    & 070) >> (3 - 0);
+            mySector[1]  = (unitNo    & 007) << (8 - 0);
+            mySector[1] |= (diskType  & 070) << (4 - 3);
+            mySector[1] |= (diskType  & 007) << (0 - 0);
+
+            time(&mTime);
+            lTime = localtime(&mTime);
+            yy = lTime->tm_year % 100;
+            mm = lTime->tm_mon + 1;
+            dd = lTime->tm_mday;
+
+            mySector[2] = (dd / 10) << 8 | (dd % 10) << 4 | mm / 10;
+            mySector[3] = (mm % 10) << 8 | (yy / 10) << 4 | yy % 10;
+
+            dp->track = 0;
+            dp->sector = 0;
+            fseek(fcb, dd8xxSeek(dp), SEEK_SET);
+            dd8xxSectorWrite(dp, fcb, mySector);
+            }
+        else
+            {
+            dd8xxLock (fcb, deviceName);
             }
 
         /*
-        **  Write serial number and date of manufacture.
+        **  Reset disk seek position.
         */
-        mySector[0]  = (channelNo & 070) << (8 - 3);
-        mySector[0] |= (channelNo & 007) << (4 - 0);
-        mySector[0] |= (unitNo    & 070) >> (3 - 0);
-        mySector[1]  = (unitNo    & 007) << (8 - 0);
-        mySector[1] |= (diskType  & 070) << (4 - 3);
-        mySector[1] |= (diskType  & 007) << (0 - 0);
-
-        time(&mTime);
-        lTime = localtime(&mTime);
-        yy = lTime->tm_year % 100;
-        mm = lTime->tm_mon + 1;
-        dd = lTime->tm_mday;
-
-        mySector[2] = (dd / 10) << 8 | (dd % 10) << 4 | mm / 10;
-        mySector[3] = (mm % 10) << 8 | (yy / 10) << 4 | yy % 10;
-
+        dp->cylinder = 0;
         dp->track = 0;
         dp->sector = 0;
+        dp->interlace = 1;
         fseek(fcb, dd8xxSeek(dp), SEEK_SET);
-        dd8xxSectorWrite(dp, fcb, mySector);
+
+        ds->fcb[unitNo] = fcb;
         }
     else
         {
-        dd8xxLock (fcb, fname);
+        ds->fcb[unitNo] = NULL;
         }
-
-    ds->fcb[unitNo] = fcb;
-
-    /*
-    **  Reset disk seek position.
-    */
-    dp->cylinder = 0;
-    dp->track = 0;
-    dp->sector = 0;
-    dp->interlace = 1;
-    fseek(fcb, dd8xxSeek(dp), SEEK_SET);
 
     /*
     **  Print a friendly message.
@@ -923,11 +929,13 @@ static void dd8xxIo(void)
                     {
                     activeDevice->selectedUnit = unitNo;
                     dp = (DiskParam *)activeDevice->context[unitNo];
+                    activeDevice->status = 0;
                     dp->detailedStatus[12] &= ~01000;
                     }
                 else
                     {
                     activeDevice->selectedUnit = -1;
+                    activeDevice->status = 05020;
                     }
                 }
             else
@@ -1084,10 +1092,17 @@ static void dd8xxIo(void)
     case Fc8xxGapWriteVerify:
         if (activeChannel->full)
             {
-            dp->write(dp, fcb, activeChannel->data);
+            if (dp->readonly)
+                {
+                activeDevice->status = 05020;
+                }
+            else
+                {
+                dp->write(dp, fcb, activeChannel->data);
+                }
             activeChannel->full = FALSE;
 
-            if (--activeDevice->recordLength == 0)
+            if (--activeDevice->recordLength == 0 && !dp->readonly)
                 {
                     pos = dd8xxSeekNextSector(dp, activeDevice->fcode == Fc8xxGapWrite ||
                                               activeDevice->fcode == Fc8xxGapWrite);
@@ -1726,5 +1741,122 @@ static char *dd8xxFunc2String(PpWord funcCode)
 #endif
     return "UNKNOWN";
     }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Perform load/unload on 844/885 disk.
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void dd8xxLoad(DevSlot *ds, int unitNo, char *fn)
+    {
+    DiskParam *dp;
+    FILE *fcb;
+    u8 unitMode = 'r';
+    char *p;
+    static char msgBuf[80];
+    long endPos = 0;
+    
+    if (unitNo < 0 || unitNo >= MaxUnits)
+        {
+        opSetMsg ("$INVALID UNIT NO");
+        return;
+        }
+    /*
+    **  Check if the unit is even configured.
+    */
+    if (ds->context[unitNo] == NULL)
+        {
+        opSetMsg ("$UNIT NOT ALLOCATED");
+        return;
+        }
+
+    if (fn == NULL)
+        {
+        /*
+        **  Check if the unit is currently loaded.
+        */
+        if (ds->fcb[unitNo] == NULL)
+            {
+            opSetMsg ("$UNIT NOT LOADED");
+            return;
+            }
+        fclose (ds->fcb[unitNo]);
+        ds->fcb[unitNo] = NULL;
+        if (ds->selectedUnit == unitNo)
+            {
+            ds->selectedUnit = -1;
+            }
+        dp = (DiskParam *)ds->context[unitNo];
+        opSetStatus (dp->statusBuf, "");
+        opSetMsg ("DD8xx unloaded");
+        return;
+        }
+    
+    /*
+    **  Check if the unit has been unloaded.
+    */
+    if (ds->fcb[unitNo] != NULL)
+        {
+        opSetMsg ("$UNIT NOT UNLOADED");
+        return;
+        }
+
+    p = strchr (fn, ',');
+    if (p != NULL)
+        {
+        *p = '\0';
+        unitMode = 'w';
+        }
+    /*
+    **  Open the file in the requested mode.
+    */
+    if (unitMode == 'w')
+        {
+        fcb = fopen(fn, "r+b");
+        if (fcb == NULL)
+            {
+            fcb = fopen(fn, "w+b");
+            }
+        }
+    else
+        {
+        fcb = fopen(fn, "rb");
+        }
+
+    /*
+    **  Check if the open succeeded.
+    */
+    if (fcb == NULL)
+        {
+        sprintf (msgBuf, "$Open error: %s", strerror (errno));
+        opSetMsg(msgBuf);
+        return;
+        }
+
+    /*
+    **  Setup status.
+    */
+    ds->fcb[unitNo] = fcb;
+    dp = (DiskParam *)ds->context[unitNo];
+
+    /*
+    **  Set format to packed.
+    */
+    dp->read = dd8xxReadPacked;
+    dp->write = dd8xxWritePacked;
+    dp->sectorSize = 512;
+    dp->readonly = (unitMode != 'w');
+    
+    sprintf (msgBuf, "%s%s",
+             fn, ((unitMode == 'w') ? "" : " (RO)"));
+    opSetStatus (dp->statusBuf, msgBuf);
+    sprintf (msgBuf, "DD8XX loaded with %s, %s",
+             fn, ((unitMode == 'w') ? "write enabled" : "write locked"));
+    opSetMsg (msgBuf);
+    }
+
 
 /*---------------------------  End Of File  ------------------------------*/
