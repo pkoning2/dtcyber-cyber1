@@ -32,7 +32,7 @@
 #define blklth  320         // length of a disk block
 #define dsblks  7           // blocks per lesson space
 #define pdmax   40          // max blocks in pack directory
-#define pdstart ((mf) ? 1 : 12)          // starting block num of directory
+#define pdstart ((hasflawtb) ? 12 : 1)          // starting block num of directory
 #define pdspace ((pdblks+pdstart+dsblks-1)/dsblks) // # parts taken up by pdir
 #define flawtb  11          // starting block num of flaw table
 #define pdname  "4;;;;;;;;;" // pack dir "name"
@@ -237,6 +237,7 @@ bool sourceonly;
 bool verbose;
 int parts;
 int mf = 0;
+int hasflawtb = 1;
 int moddel = 0;
 int modword = 0;
 
@@ -1144,6 +1145,7 @@ void pflist (int argc, char **argv)
                 pdblks, (pdblks + 6) / 7);
         printf (" %lld files used, %lld total\n", fused, ftotal);
         printf (" %lld parts used, %lld total\n", sused, stotal);
+        printf (" pinflth %lld\n", pinflth);
         printf (" pack model number %d, pack dir size %d\n",
                 pd->f[0], pd->f[1]);
     }
@@ -1155,13 +1157,11 @@ void pflist (int argc, char **argv)
         if (pdbuf[ep] == 0)
             break;
         dtoa (fn, pdbuf + ep, 10);
-        if (strcmp (fn, pdname) == 0)
-            break;
         get60 (fiw, pdbuf + ep + ftotal * 10);
         startblk =  (fiw & 077777) * dsblks;
         blks = ((fiw >> 24) & 077) * dsblks;
         type = ((fiw >> 30) & 077);
-        if (type < 040)
+        if (verbose || type < 040)
         {
             if (verbose)
                 printf ("%-10s  %3d %c  %5d %020llo\n", fn, blks, 
@@ -1169,6 +1169,8 @@ void pflist (int argc, char **argv)
             else
                 printf ("%s\n", fn);
         }
+        if (strcmp (fn, pdname) == 0)
+            break;
         ep += 10;
     }
 }
@@ -1380,8 +1382,17 @@ void pfinit (int argc, char **argv)
         perror ("open");
         exit (1);
     }
+
+    // Pick a default pack directory size
+    pdblks = 17;
+    ftotal = 2560;
+    stotal = pspaces;
+    pinflth = 255;
+    
     initflaw ();
     initpd ();
+    pd->f[0] = 3;
+    pd->f[1] = (pdblks + 6) / 7;
     finishpd ();
     fclose (pdisk);
 }
@@ -1402,6 +1413,7 @@ void usage (void)
              "   -f                             include FIW data in image output\n"
              "   -v                             verbose\n"
              "   -m                             pdisk is a masterfile\n"
+             "   -F                             pdisk has no flawmap\n"
              "   -M                             display modwords\n"
              "   -D                             include deleted lines\n");
 }
@@ -1423,7 +1435,7 @@ int main (int argc, char **argv)
     parts = 0;
     for (;;)
     {
-        opt = getopt (argc, argv, "w:ciIfpslvmMD");
+        opt = getopt (argc, argv, "w:ciIfFpslvmMD");
         if (opt == (char) (-1))
             break;
         switch (opt)
@@ -1465,6 +1477,10 @@ int main (int argc, char **argv)
             break;
         case 'm':
             mf = 1;
+            hasflawtb = 0;
+            break;
+        case 'F':
+            hasflawtb = 0;
             break;
         case 'M':
             modword = 1;
