@@ -82,6 +82,9 @@
 #define PREF_ARROWS     "numpadArrows"
 #define PREF_STATUSBAR  "statusbar"
 #define PREF_PLATOKB    "platoKeyboard"
+#define PREF_XPOS       "xPosition"
+#define PREF_YPOS       "yPosition"
+#define PREF_BEEP       "beep"
 
 /*
 **  -----------------------
@@ -253,6 +256,8 @@ wxPageSetupDialogData* g_pageSetupData;
 
 class PtermApp;
 static PtermApp *ptermApp;
+static int lastX;
+static int lastY;
 
 static FILE *traceF;
 static char traceFn[20];
@@ -394,6 +399,8 @@ public:
     bool        m_numpadArrows;
     bool        m_showStatusBar;
     bool        m_platoKb;
+    bool        m_beepEnable;
+    
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
     PtermFrame  *m_helpFrame;
@@ -488,7 +495,8 @@ class PtermFrame : public PtermFrameBase, public emul8080
     friend int PtermConnection::NextWord (void);
 public:
     // ctor(s)
-    PtermFrame(wxString &host, int port, const wxString& title);
+    PtermFrame(wxString &host, int port, const wxString& title,
+                   const wxPoint &pos = wxDefaultPosition);
     ~PtermFrame ();
 
     // event handlers (these functions should _not_ be virtual)
@@ -737,6 +745,7 @@ public:
     wxCheckBox      *m_arrowCheck;
     wxCheckBox      *m_statusCheck;
     wxCheckBox      *m_kbCheck;
+    wxCheckBox      *m_beepCheck;
     wxTextCtrl      *m_hostText;
     wxTextCtrl      *m_portText;
 
@@ -749,6 +758,7 @@ public:
     bool            m_numpadArrows;
     bool            m_showStatusBar;
     bool            m_platoKb;
+    bool            m_beepEnable;
     wxString        m_host;
     wxString        m_port;
     
@@ -1065,6 +1075,7 @@ bool PtermApp::OnInit (void)
     m_numpadArrows = (m_config->Read (wxT (PREF_ARROWS), 1) != 0);
     m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
     m_platoKb = (m_config->Read (wxT (PREF_PLATOKB), 0L) != 0);
+    m_beepEnable = (m_config->Read (wxT (PREF_BEEP), 1) != 0);
 
 #if PTERM_MDI
     // On Mac, the style rule is that the application keeps running even
@@ -1098,6 +1109,10 @@ int PtermApp::OnExit (void)
 {
     wxTheClipboard->Flush ();
 
+    m_config->Write (wxT (PREF_XPOS), lastX);
+    m_config->Write (wxT (PREF_YPOS), lastY);
+    m_config->Flush ();
+
     delete g_printData;
     delete g_pageSetupData;
 #ifdef DEBUGLOG
@@ -1115,7 +1130,8 @@ void PtermApp::OnConnect (wxCommandEvent &event)
 bool PtermApp::DoConnect (bool ask)
 {
     PtermFrame *frame;
-
+    int x, y;
+    
     if (ask)
     {
         PtermConnDialog dlg (wxID_ANY, _("Connect to PLATO"));
@@ -1149,7 +1165,10 @@ bool PtermApp::DoConnect (bool ask)
     
 
     // create the main application window
-    frame = new PtermFrame(m_hostName, m_port, wxT("Pterm"));
+    x = m_config->Read (wxT (PREF_XPOS), 0L);
+    y = m_config->Read (wxT (PREF_YPOS), 0L);
+    frame = new PtermFrame(m_hostName, m_port, wxT("Pterm"), 
+                           wxPoint (x, y));
 
     if (frame != NULL)
     {
@@ -1220,6 +1239,7 @@ void PtermApp::OnPref (wxCommandEvent&)
     if (dlg.ShowModal () == wxID_OK)
     {
         m_platoKb = dlg.m_platoKb;
+        m_beepEnable = dlg.m_beepEnable;
         for (frame = m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
         {
             frame->UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2,
@@ -1255,6 +1275,7 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_ARROWS), (dlg.m_numpadArrows) ? 1 : 0);
         m_config->Write (wxT (PREF_STATUSBAR), (dlg.m_showStatusBar) ? 1 : 0);
         m_config->Write (wxT (PREF_PLATOKB), (dlg.m_platoKb) ? 1 : 0);
+        m_config->Write (wxT (PREF_BEEP), (dlg.m_beepEnable) ? 1 : 0);
         m_config->Flush ();
     }
 }
@@ -1361,9 +1382,10 @@ PtermMainFrame::PtermMainFrame (void)
 // ----------------------------------------------------------------------------
 
 // frame constructor
-PtermFrame::PtermFrame(wxString &host, int port, const wxString& title)
+PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
+                       const wxPoint &pos)
     : PtermFrameBase(PtermFrameParent, -1, title,
-                     wxDefaultPosition,
+                     pos,
                      wxDefaultSize),
       tracePterm (FALSE),
       m_nextFrame (NULL),
@@ -1833,6 +1855,10 @@ void PtermFrame::OnClose (wxCloseEvent &)
     if (this == ptermApp->m_helpFrame)
     {
         ptermApp->m_helpFrame = NULL;
+    }
+    else
+    {
+        GetPosition (&lastX, &lastY);
     }
     
     Destroy ();
@@ -2821,8 +2847,11 @@ int PtermFrame::procPlatoWord (u32 d)
             else if ((d & 0177) == 0x7b)
             {
                 // hex 7b is beep
-                TRACEN ("beep");
-                wxBell ();
+                if (ptermApp->m_beepEnable)
+                {
+                    TRACEN ("beep");
+                    wxBell ();
+                }
                 break;          // -beep- does NOT send an echo code in reply
             }
             else if ((d & 0177) == 0x7d)
@@ -3649,6 +3678,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_numpadArrows = ptermApp->m_numpadArrows;
     m_showStatusBar = ptermApp->m_showStatusBar;
     m_platoKb = ptermApp->m_platoKb;
+    m_beepEnable = ptermApp->m_beepEnable;
     m_connect = ptermApp->m_connect;
     m_fgColor = ptermApp->m_fgColor;
     m_bgColor = ptermApp->m_bgColor;
@@ -3680,7 +3710,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     sbs->Add (m_arrowCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_kbCheck = new wxCheckBox (this, -1, _("Use real PLATO keyboard"));
     m_kbCheck->SetValue (m_platoKb);
-    sbs->Add (m_kbCheck, 0, wxALL, 8);
+    sbs->Add (m_kbCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
+    m_beepCheck = new wxCheckBox (this, -1, _("Enable -beep-"));
+    m_beepCheck->SetValue (m_beepEnable);
+    sbs->Add (m_beepCheck, 0, wxALL, 8);
     ds->Add (sbs, 0,  wxTOP | wxLEFT | wxRIGHT | wxEXPAND, 10);
     
     // Second group: connection settings
@@ -3790,6 +3823,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_statusCheck->SetValue (TRUE);
         m_platoKb = FALSE;
         m_kbCheck->SetValue (FALSE);
+        m_beepEnable = TRUE;
+        m_beepCheck->SetValue (TRUE);
         m_hostText->SetValue (DEFAULTHOST);
         str.Printf (wxT ("%d"), DefNiuPort);
         m_portText->SetValue (str);
@@ -3830,6 +3865,10 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == m_kbCheck)
     {
         m_platoKb = event.IsChecked ();
+    }
+    else if (event.GetEventObject () == m_beepCheck)
+    {
+        m_beepEnable = event.IsChecked ();
     }
 }
 
