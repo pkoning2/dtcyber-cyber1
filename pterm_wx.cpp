@@ -1131,7 +1131,7 @@ bool PtermApp::DoConnect (bool ask)
 {
     PtermFrame *frame;
     int x, y;
-    
+
     if (ask)
     {
         PtermConnDialog dlg (wxID_ANY, _("Connect to PLATO"));
@@ -1167,8 +1167,15 @@ bool PtermApp::DoConnect (bool ask)
     // create the main application window
     x = m_config->Read (wxT (PREF_XPOS), 0L);
     y = m_config->Read (wxT (PREF_YPOS), 0L);
-    frame = new PtermFrame(m_hostName, m_port, wxT("Pterm"), 
-                           wxPoint (x, y));
+    if (x == 0 && y == 0)
+    {
+        frame = new PtermFrame(m_hostName, m_port, wxT("Pterm"));
+    }
+    else
+    {
+        frame = new PtermFrame(m_hostName, m_port, wxT("Pterm"), 
+                               wxPoint (x, y));
+    }
 
     if (frame != NULL)
     {
