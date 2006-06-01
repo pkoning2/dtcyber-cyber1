@@ -2,58 +2,59 @@
 .* 
 .*        attach plato master files
 .* 
-setpun.   set plato user name
-resourc(dm=7)
+.*setpun.   set plato user name
+.*resourc(dm=8)
 *. 
-packnam(pn=binary,r=dm1) 
-attach(binary1/#m=m) 
-attach(binary2/#m=m) 
+.*packnam(pn=binary,r=dm1) 
+.*attach(binary1/#m=m) 
+.*attach(binary2/#m=m) 
 .* 
 .*    dtcyber cybis pack access starts here
 .* 
-packnam(pn=dtcybis,r=dm1)
-attach(algol/#m=m)
-attach(becrux/#m=m)
+.*packnam(pn=dtcybis,r=dm1)
+.*attach(algol/#m=m)
+.*attach(becrux/#m=m)
 .*attach(s0files/#m=m)
 .*
 .* cerl
 .*
+.*packnam(pn=cerl1,r=dm1)
+.*attach(michael/#m=m)
+.*attach(minerva/#m=m)
+.*packnam(pn=cerl2,r=dm1) 
 .*attach(one/#m=m)
 .*attach(two/#m=m)
 .*attach(three/#m=m)
-packnam(pn=cybdev,r=dm1) 
 .*attach(four/#m=m)
 .*attach(five/#m=m)
-.*attach(michael/#m=m)
-.*attach(minerva/#m=m)
 .* 
 .*    general pack access starts here
 .* 
-packnam(pn=faa0,r=dm1) 
-attach(system/#m=m)
+.*packnam(pn=faa0,r=dm1) 
+.*attach(system/#m=m)
 .*attach(s0stuff/#m=m)
 .* 
 .* 
 .*  uol specific files 
 .* 
-packnam(pn=uol,r=dm1)
-attach(develop/#m=m) 
-*. 
+.*packnam(pn=uol,r=dm1)
+.*attach(develop/#m=m) 
+.**. 
 .*  published courseware 
 .* 
-packnam(pn=pub0,r=dm1) 
-attach(puba/#m=m)
-attach(pubb/#m=m)
-attach(pubc/#m=m)
-attach(pubd/#m=m)
-attach(pube/#m=m)
-*. 
-packnam(pn=pub1,r=dm1) 
-attach(pubf/#m=m)
-attach(pubg/#m=m)
-attach(pubh/#m=m)
-attach(pubi/#m=m)
-attach(pubj/#m=m)
-*. 
-packnam. 
+.*packnam(pn=pub0,r=dm1) 
+.*attach(puba/#m=m)
+.*attach(pubb/#m=m)
+.*attach(pubc/#m=m)
+.*attach(pubd/#m=m)
+.*attach(pube/#m=m)
+.**. 
+.*packnam(pn=pub1,r=dm1) 
+.*attach(pubf/#m=m)
+.*attach(pubg/#m=m)
+.*attach(pubh/#m=m)
+.*attach(pubi/#m=m)
+.*attach(pubj/#m=m)
+.**. 
+.*packnam. 
 revert.
