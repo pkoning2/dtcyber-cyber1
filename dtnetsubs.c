@@ -65,6 +65,7 @@
 */
 static ThreadFunRet dtThread (void *param);
 static void dtCloseSocket (int connFd);
+static dtGetw (NetFet *fet, void *buf, int len, bool read);
 
 /*
 **  ----------------
@@ -566,59 +567,47 @@ int dtReado (NetFet *fet)
 **------------------------------------------------------------------------*/
 int dtReadw (NetFet *fet, void *buf, int len)
     {
-    u8 *in, *out;
-    u8 *to = (u8 *) buf;
-    int left;
-    
-    /*
-    **  Copy the pointers, since they are volatile.
-    */
-    in = (u8 *) (fet->in);
-    out = (u8 *) (fet->out);
-
-    if (locDtFetData (fet) < len)
-        {
-        return -1;
-        }
-
-    /*
-    **  We now know we have enough data to satisfy the request.
-    **  See how many bytes there are between the current "out"
-    **  pointer and the end of the ring.  If that's less than the
-    **  amount requested, we have to move two pieces.  If it's exactly
-    **  equal, we only have to move one piece, but the "out" pointer
-    **  has to wrap back to "first".
-    */
-    left = fet->end - out;
-    
-    if (left <= len)
-        {
-        /*
-        **  We'll exhaust the data from here to end of ring, so copy that
-        **  first and wrap "out" back to the start of the ring.
-        */
-        memcpy (to, out, left);
-        to += left;
-        len -= left;
-        fet->out = out = fet->first;
-        /*
-        **  If the data to end of ring was exactly the amount we wanted,
-        **  we're done now.
-        */
-        if (len == 0)
-            {
-            return 0;
-            }
-        }
-    /*
-    **  At this point we only have one piece left to move, and we know
-    **  that it will NOT take us all the way to the end of the ring
-    **  buffer, so we don't need a wrap check on "out" here.
-    */
-    memcpy (to, out, len);
-    fet->out = out + len;
-    return 0;
+    return dtGetw (fet, buf, len, TRUE);
     }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Peek at the specified number of bytes in the network buffer
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**                  buf         Data buffer pointer
+**                  len         Number of bytes to read
+**
+**  Returns:        -1 if <len> bytes not currently available, 0 if ok
+**
+**------------------------------------------------------------------------*/
+int dtPeekw (NetFet *fet, void *buf, int len)
+    {
+    return dtGetw (fet, buf, len, FALSE);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Read at most the specified number of bytes.
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**                  buf         Data buffer pointer
+**                  len         Maximum number of bytes to read
+**
+**  Returns:        Number of bytes actually read
+**
+**------------------------------------------------------------------------*/
+int dtReadmax (NetFet *fet, void *buf, int len)
+{
+    int actual;
+    
+    actual = dtFetData (fet);
+    if (actual > 0)
+    {
+        dtReadw (fet, buf, actual);
+    }
+    return actual;
+}
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Read a TLV formatted data item from the network buffer
@@ -722,7 +711,7 @@ void dtCloseFet (NetFet *fet)
 **  Purpose:        Send a TLV formatted data item
 **
 **  Parameters:     Name        Description.
-**                  connFd      socket
+**                  fet         NetFet pointer
 **                  tag         tag (a.k.a., type) code
 **                  len         data length
 **                  value       buffer holding the data
@@ -730,7 +719,7 @@ void dtCloseFet (NetFet *fet)
 **  Returns:        Nothing. 
 **
 **------------------------------------------------------------------------*/
-void dtSendTlv (int connFd, int tag, int len, const void *value)
+void dtSendTlv (NetFet *fet, int tag, int len, const void *value)
     {
     u8  tl[2];
     
@@ -744,10 +733,28 @@ void dtSendTlv (int connFd, int tag, int len, const void *value)
     
     tl[0] = tag;
     tl[1] = len;
-    send (connFd, tl, 2, MSG_NOSIGNAL);
-    if (len > 0)
+    dtSend (fet, tl, 2);
+    dtSend (fet, value, len);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Send a buffer
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**                  len         data length
+**                  buf         buffer holding the data
+**
+**  Returns:        Nothing. 
+**
+**------------------------------------------------------------------------*/
+void dtSend (NetFet *fet, const void *buf, int len)
+    {
+    int connFd = fet->connFd;
+
+    if (len > 0 && connFd != 0)
         {
-        send (connFd, value, len, MSG_NOSIGNAL);
+        send (connFd, buf, len, MSG_NOSIGNAL);
         }
     }
 
@@ -933,6 +940,80 @@ static void dtCloseSocket (int connFd)
 #else
     close(connFd);
 #endif
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Get the specified number of bytes from the buffer.
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**                  buf         Data buffer pointer
+**                  len         Number of bytes to get
+**                  read        FALSE if just peeking, TRUE to advance "out"
+**
+**  Returns:        -1 if <len> bytes not currently available, 0 if ok
+**
+**------------------------------------------------------------------------*/
+static dtGetw (NetFet *fet, void *buf, int len, bool read)
+    {
+    u8 *in, *out;
+    u8 *to = (u8 *) buf;
+    int left;
+    
+    /*
+    **  Copy the pointers, since they are volatile.
+    */
+    in = (u8 *) (fet->in);
+    out = (u8 *) (fet->out);
+
+    if (locDtFetData (fet) < len)
+        {
+        return -1;
+        }
+
+    /*
+    **  We now know we have enough data to satisfy the request.
+    **  See how many bytes there are between the current "out"
+    **  pointer and the end of the ring.  If that's less than the
+    **  amount requested, we have to move two pieces.  If it's exactly
+    **  equal, we only have to move one piece, but the "out" pointer
+    **  has to wrap back to "first".
+    */
+    left = fet->end - out;
+    
+    if (left <= len)
+        {
+        /*
+        **  We'll exhaust the data from here to end of ring, so copy that
+        **  first and wrap "out" back to the start of the ring.
+        */
+        memcpy (to, out, left);
+        to += left;
+        len -= left;
+        if (read)
+            {
+            fet->out = out = fet->first;
+            }
+        /*
+        **  If the data to end of ring was exactly the amount we wanted,
+        **  we're done now.
+        */
+        if (len == 0)
+            {
+            return 0;
+            }
+        }
+    /*
+    **  At this point we only have one piece left to move, and we know
+    **  that it will NOT take us all the way to the end of the ring
+    **  buffer, so we don't need a wrap check on "out" here.
+    */
+    memcpy (to, out, len);
+    if (read)
+        {
+        fet->out = out + len;
+        }
+    return 0;
     }
 
 

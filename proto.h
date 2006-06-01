@@ -162,9 +162,9 @@ void mux6676Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
-**  doelz.c
+**  npu.c
 */
-void doelzInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
+void npuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 
 /*
 **  tpmux.c
@@ -253,11 +253,14 @@ void dtClose (NetPort *np, NetPortSet *ps);
 NetPort * dtFindInput (NetPortSet *ps, int time);
 void dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
 const char *dtNowString (void);
-void dtSendTlv (int connFd, int tag, int len, const void *value);
+void dtSendTlv (NetFet *fet, int tag, int len, const void *value);
+void dtSend (NetFet *fet, const void *buf, int len);
 
 int dtRead (NetFet *fet, int time);
 int dtReado (NetFet *fet);
 int dtReadw (NetFet *fet, void *buf, int len);
+int dtPeekw (NetFet *fet, void *buf, int len);
+int dtReadmax (NetFet *fet, void *buf, int len);
 int dtReadtlv (NetFet *fet, void *buf, int len);
 void dtInitFet (NetFet *fet, int bufsiz);
 void dtCloseFet (NetFet *fet);
@@ -333,8 +336,6 @@ extern long opPort;
 extern long opConns;
 extern long dd60Port;
 extern long dd60Conns;
-extern long doelzPort;
-extern long doelzConns;
 extern long tpmuxPort;
 extern long tpmuxConns;
 extern FILE **ppuTF;

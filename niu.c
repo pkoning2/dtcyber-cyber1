@@ -939,7 +939,7 @@ static void niuSend(int stat, int word)
 **------------------------------------------------------------------------*/
 void niuSendWord(int stat, int word)
     {
-    int fd;
+    NetFet *fet;
     u8 data[3];
 
 #ifdef TRACE
@@ -970,7 +970,7 @@ void niuSendWord(int stat, int word)
             {
             return;
             }
-        fd = (niuLocalPorts.portVec + stat)->fet.connFd;
+        fet = &(niuLocalPorts.portVec + stat)->fet;
         }
     else
         {
@@ -979,11 +979,7 @@ void niuSendWord(int stat, int word)
             {
             return;
             }
-        fd = (niuPorts.portVec + stat)->fet.connFd;
-        }
-    if (fd == 0)
-        {
-        return;
+        fet = &(niuPorts.portVec + stat)->fet;
         }
     
     data[0] = word >> 12;
@@ -993,13 +989,7 @@ void niuSendWord(int stat, int word)
     printf ("niu output %03o %03o %03o\n",
             data[0], data[1], data[2]);
 #endif
-    /*
-    **  Note that we ignore the send status.  If the connection has
-    **  gone away, an error will be returned which we ignore here.
-    **  It will be detected on the next read, which gives us an 
-    **  opportunity to send an "offkey" to PLATO.
-    */
-        send(fd, data, 3, MSG_NOSIGNAL);
+    dtSend(fet, data, 3);
     }
 
 /*--------------------------------------------------------------------------

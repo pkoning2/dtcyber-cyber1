@@ -449,7 +449,7 @@ static void opRequest(void)
                 emulationActive = FALSE;
                 return;
                 }
-            dtSendTlv (fet.connFd, OpCommand, strlen (cmdBuf), cmdBuf);
+            dtSendTlv (&fet, OpCommand, strlen (cmdBuf), cmdBuf);
             return;
             }
         else 

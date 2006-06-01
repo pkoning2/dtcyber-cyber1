@@ -534,11 +534,11 @@ static int opRequest(NetPort *np)
         }
     if (msgPtr != NULL)
         {
-        dtSendTlv (np->fet.connFd, OpReply, strlen (msgPtr), msgPtr);
+        dtSendTlv (&np->fet, OpReply, strlen (msgPtr), msgPtr);
         }
     else
         {
-        dtSendTlv (np->fet.connFd, OpReply, 0, NULL);
+        dtSendTlv (&np->fet, OpReply, 0, NULL);
         }
     
     return 0;
@@ -577,7 +577,7 @@ static void opCmdShutdown(char *cmdParams)
         np = opPorts.portVec + i;
         if (dtActive (&np->fet))
             {
-            dtSendTlv (np->fet.connFd, OpReply, strlen (msgPtr), msgPtr);
+            dtSendTlv (&np->fet, OpReply, strlen (msgPtr), msgPtr);
             }
         }
 
@@ -1283,7 +1283,7 @@ static void opSetup (NetPort *np, int index)
     sp = syntax;
     while (*sp != NULL)
         {
-        dtSendTlv (np->fet.connFd, OpSyntax, strlen (*sp), *sp);
+        dtSendTlv (&np->fet, OpSyntax, strlen (*sp), *sp);
         sp++;
         }
     msgp = msg;
@@ -1315,14 +1315,14 @@ static void opSetup (NetPort *np, int index)
             {
             strcpy (p, msgp->text);
             }
-        dtSendTlv (np->fet.connFd, OpText, p - msgbuf + strlen (p),
+        dtSendTlv (&np->fet, OpText, p - msgbuf + strlen (p),
                    msgbuf);
         msgp++;
         }
     /*
     **  All done sending init data, so indicate that.
     */
-    dtSendTlv (np->fet.connFd, OpInitialized, 0, NULL);
+    dtSendTlv (&np->fet, OpInitialized, 0, NULL);
 
     opActiveConns++;
     opUpdateSysStatus ();
@@ -1335,7 +1335,7 @@ static void opSetup (NetPort *np, int index)
         {
         if (statusLines[i] != NULL)
             {
-            dtSendTlv (np->fet.connFd, OpStatus, statusLines[i]->len,
+            dtSendTlv (&np->fet, OpStatus, statusLines[i]->len,
                        statusLines[i]->buf);
             }
         }
@@ -1368,7 +1368,7 @@ static void opSendStatus (StatusData *sd)
         np = opPorts.portVec + i;
         if (dtActive (&np->fet))
             {
-            dtSendTlv (np->fet.connFd, OpStatus, sd->len, sd->buf);
+            dtSendTlv (&np->fet, OpStatus, sd->len, sd->buf);
             }
         }
     }
