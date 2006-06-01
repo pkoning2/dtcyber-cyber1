@@ -17,7 +17,6 @@
 **  Private Constants
 **  -----------------
 */
-
 #define DEFAULTHOST wxT ("cyberserv.org")
 #define BufSiz      256
 #define RINGSIZE    5000
@@ -64,7 +63,10 @@
 #define CharYSize       (vCharYSize (ptermApp->m_scale))
 #define ScreenSize      (vScreenSize (ptermApp->m_scale))
 
-#define TERMTYPE 10
+#define TERMTYPE        10
+#define ASCTYPE         12
+#define SUBTYPE         0x74
+#define TERMCONFIG      0x40    // touch panel present
 
 // Literal strings for wxConfig key strings.  These are defined
 // because they appear in two places, so this way we avoid getting
@@ -211,6 +213,11 @@ extern int ptermProcGswData (int data);
 extern void ptermCloseGsw (void);
 extern void ptermStartGsw (void);
 
+#ifdef _WIN32
+#undef putchar
+#define putchar(x)
+#endif
+
 #if defined (__WXGTK__)
 
 // Attempting to include the gtk.h file yields infinite compile errors, so
@@ -242,7 +249,7 @@ static const u32 keyboardhelp[] = {
 // global variables
 // ----------------------------------------------------------------------------
 
-bool emulationActive = FALSE;
+bool emulationActive = false;
 
 // Global print data, to remember settings during the session
 wxPrintData *g_printData;
@@ -269,6 +276,77 @@ static wxLogWindow *logwindow;
 static const wxChar rom01char[] =
     wxT(":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.\xF7[]%\xD7\xAB'\"!;<>_?\xBB "
         "#ABCDEFGHIJKLMNOPQRSTUVWXYZ~\xA8^\xB4`    ~    {}&  |\xB0     \xB5       @\\ ");
+
+// high bit is M0/M1 selector (into the classic ROM)
+// 0xff means unused code.  The other codes 0xf0 and up
+// are specials:
+// 0xf0: embed left
+// 0xf1: embed right
+// 0xf2: copyright body
+// 0xf3: box
+// 0xf4: diamond
+// 0xf5: cross
+// 0xf6: hacek
+// 0xf7: universal delimiter
+static const u8 asciiM0[] = 
+{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0x2d, 0x38, 0x37, 0x80, 0x2b, 0x33, 0xab, 0x36,
+  0x29, 0x2a, 0x27, 0x25, 0x2e, 0x26, 0x2f, 0x28,
+  0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22,
+  0x23, 0x24, 0x00, 0x39, 0x3a, 0x2c, 0x3b, 0x3d,
+  0xbd, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
+  0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f,
+  0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
+  0x98, 0x99, 0x9a, 0x31, 0xbe, 0x32, 0x9d, 0x3c,
+  0x9f, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+  0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+  0x18, 0x19, 0x1a, 0xa9, 0xae, 0xaa, 0x1b, 0xff
+};
+static const u8 asciiM1[] = 
+{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0x2d, 0x28, 0xb0, 0x9b, 0x35, 0xac, 0xa0, 0xa1,
+  0xa2, 0xa3, 0x34, 0xa5, 0xa6, 0xa7, 0xa8, 0x30,
+  0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7, 0xb8,
+  0xb9, 0xba, 0xbb, 0xbc, 0xf0, 0xaf, 0xf1, 0x3e,
+  0xf2, 0x9c, 0xf3, 0xaf, 0xf4, 0xf5, 0x9e, 0x3f,
+  0xf6, 0xf7, 0xae, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+};
+
+static const u8 asciiKeycodes[] =
+{ 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+  0x38, 0x39, 0x26, 0x60, 0x0a, 0x5e, 0x2b, 0x2d,
+  0x13, 0x04, 0x07, 0x08, 0x7b, 0x0b, 0x0d, 0x1a,
+  0x02, 0x12, 0x01, 0x03, 0x7d, 0x0c, 0xff, 0xff,
+  0x3c, 0x3e, 0x5b, 0x5d, 0x24, 0x25, 0x5f, 0x7c,
+  0x2a, 0x28, 0x40, 0x27, 0x1c, 0x5c, 0x23, 0x7e,
+  0x17, 0x05, 0x14, 0x19, 0x7f, 0x09, 0x1e, 0x18,
+  0x0e, 0x1d, 0x11, 0x16, 0x00, 0x0f, 0xff, 0xff,
+  0x20, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
+  0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
+  0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
+  0x78, 0x79, 0x7a, 0x3d, 0x3b, 0x2f, 0x2e, 0x2c,
+  0x1f, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
+  0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
+  0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
+  0x58, 0x59, 0x5a, 0x29, 0x3a, 0x3f, 0x21, 0x22
+};
+
+// Conversion from ascii mode codes to classic codes
+static const u8 ascmode[] =
+{ 0, 3, 2, 1 };
 
 // ----------------------------------------------------------------------------
 // private classes
@@ -309,6 +387,9 @@ public:
     
     virtual ExitCode Entry (void);
 
+    int AssembleNiuWord (void);
+    int AssembleAsciiWord (void);
+    int AssembleAutoWord (void);
     int NextWord (void);
     int NextGswWord (bool catchup);
     
@@ -340,7 +421,11 @@ public:
             return RINGSIZE + m_displayIn - m_displayOut;
         }
     }
-    
+    bool Ascii (void) const
+    {
+        return (m_connMode == ascii);
+    }
+
 private:
     NetFet      m_fet;
     u32         m_displayRing[RINGSIZE];
@@ -355,6 +440,8 @@ private:
     bool        m_gswStarted;
     int         m_savedGswMode;
     int         m_gswWord2;
+    enum { both, niu, ascii } m_connMode;
+    bool        m_escPending;
     
     void StoreWord (int word);
     int NextRingWord (void);
@@ -516,12 +603,14 @@ public:
     void OnActivate (wxActivateEvent &event);
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2,
                          bool newstatusbar);
+    void SetColors (wxColour &newfg, wxColour &newbg, int newscale);
     void OnFullScreen (wxCommandEvent &event);
     
     void PrepareDC(wxDC& dc);
     void ptermSendKey(int key);
     void ptermSetTrace (bool fileaction);
-
+    int Parity (int key);
+    
     bool HasConnection (void) const
     {
         return (m_conn != NULL);
@@ -618,6 +707,19 @@ private:
     int         seq;
     int         modewords;
     int         mode4start;
+    bool        m_dumbTty;
+    typedef enum { none, ldc, lde, lda, ssf, fg, bg, word, coord } AscState;
+    AscState    m_ascState;
+    int         m_ascBytes;
+    int         m_assembler;
+    int         lastX;
+    int         lastY;
+    bool        m_noMode;
+    
+    wxColour    m_defFg;
+    wxColour    m_defBg;
+    wxColour    m_currentFg;
+    wxColour    m_currentBg;
     
     void setMargin (int i)
     {
@@ -689,7 +791,7 @@ private:
     void ptermLoadRomChars (void);
     
     void drawChar (wxDC &dc, int x, int y, int snum, int cnum);
-    int procPlatoWord (u32 d);
+    void procPlatoWord (u32 d, bool ascii);
     void plotChar (int c);
     void mode0 (u32 d);
     void mode1 (u32 d);
@@ -702,6 +804,10 @@ private:
     void progmode (u32 d, int origin);
     void ptermSetStation (int station);
     void ptermShowTrace ();
+    
+    bool AssembleCoord (int d);
+    int AssembleData (int d);
+    int AssembleColor (int d);
     
     typedef void (PtermFrame::*mptr)(u32);
 
@@ -1029,7 +1135,7 @@ bool PtermApp::OnInit (void)
     m_locale.AddCatalog(wxT("pterm"));
 
 #ifdef DEBUGLOG
-    logwindow = new wxLogWindow (NULL, "pterm log", TRUE, FALSE);
+    logwindow = new wxLogWindow (NULL, "pterm log", true, false);
 #endif
 
     if (argc > 3)
@@ -1080,7 +1186,7 @@ bool PtermApp::OnInit (void)
 #if PTERM_MDI
     // On Mac, the style rule is that the application keeps running even
     // if all its windows are closed.
-//    SetExitOnFrameDelete(FALSE);
+//    SetExitOnFrameDelete(false);
     PtermFrameParent = new PtermMainFrame ();
     PtermFrameParent->Show (false);
 #endif
@@ -1089,7 +1195,7 @@ bool PtermApp::OnInit (void)
     // If arguments are present, always connect without asking
     if (!DoConnect (!(m_connect || argc > 1)))
     {
-        return FALSE;
+        return false;
     }
     
     // Add some handlers so we can save the screen in various formats
@@ -1100,9 +1206,9 @@ bool PtermApp::OnInit (void)
     wxImage::AddHandler (new wxXPMHandler);
 
     // success: wxApp::OnRun () will be called which will enter the main message
-    // loop and the application will run. If we returned FALSE here, the
+    // loop and the application will run. If we returned false here, the
     // application would exit immediately.
-    return TRUE;
+    return true;
 }
 
 int PtermApp::OnExit (void)
@@ -1159,7 +1265,7 @@ bool PtermApp::DoConnect (bool ask)
         }
         else
         {
-            return FALSE;     // connect canceled
+            return false;     // connect canceled
         }
     }
     
@@ -1224,7 +1330,7 @@ void PtermApp::OnHelpKeys (wxCommandEvent &)
             m_firstFrame = frame;
             for (i = 0; i < sizeof (keyboardhelp) / sizeof (keyboardhelp[0]); i++)
             {
-                frame->procPlatoWord (keyboardhelp[i]);
+                frame->procPlatoWord (keyboardhelp[i], false);
             }
             m_helpFrame = frame;
         }
@@ -1315,7 +1421,7 @@ void PtermApp::OnQuit(wxCommandEvent&)
     while (frame != NULL)
     {
         nextframe = frame->m_nextFrame;
-        frame->Close (TRUE);
+        frame->Close (true);
         frame = nextframe;
     }
 #if PTERM_MDI // defined(__WXMAC__)
@@ -1394,7 +1500,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     : PtermFrameBase(PtermFrameParent, -1, title,
                      pos,
                      wxDefaultSize),
-      tracePterm (FALSE),
+      tracePterm (false),
       m_nextFrame (NULL),
       m_prevFrame (NULL),
       m_foregroundPen (ptermApp->m_fgColor, ptermApp->m_scale, wxSOLID),
@@ -1405,7 +1511,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
       m_conn (NULL),
       m_port (port),
       m_timer (this, Pterm_Timer),
-      m_fullScreen (FALSE),
+      m_fullScreen (false),
       m_station (0),
       m_pasteTimer (this, Pterm_PasteTimer),
       m_pasteIndex (-1),
@@ -1418,12 +1524,27 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
       wc (0),
       seq (0),
       modewords (0),
+      m_dumbTty (true),
+      m_ascState (none),
+      m_ascBytes (0),
+      lastX (0),
+      lastY (0),
+      m_noMode (true),
+      m_defFg (ptermApp->m_fgColor),
+      m_defBg (ptermApp->m_bgColor),
+      m_currentFg (ptermApp->m_fgColor),
+      m_currentBg (ptermApp->m_bgColor),
       m_pendingEcho (-1)
 {
     int i;
 
+    if (tracePterm)
+    {
+        traceF = stdout;
+    }
+    
     m_hostName = host;
-    mode = 0;
+    mode = 017;             // default to character mode, rewrite
     setMargin (0);
     RAM[M_CCR] = 0;
     
@@ -1494,7 +1615,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     }
 
     // Copy is initially disabled, until a region is selected
-    menuEdit->Enable (Pterm_Copy, FALSE);
+    menuEdit->Enable (Pterm_Copy, false);
 
     wxMenu *menuView = new wxMenu;
     
@@ -1579,7 +1700,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
         m_conn->Run ();
     }
     
-    Show(TRUE);
+    Show(true);
 }
 
 PtermFrame::~PtermFrame ()
@@ -1635,7 +1756,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
     
     if (m_nextword != 0)
     {
-        procPlatoWord (m_nextword);
+        procPlatoWord (m_nextword, m_conn->Ascii ());
         m_nextword = 0;
     }
     
@@ -1668,7 +1789,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 #elif DEBUG
         printf ("processing data from plato %07o\n", word);
 #endif
-        procPlatoWord (word);
+        procPlatoWord (word, m_conn->Ascii ());
     }
 
     if (word != C_NODATA)
@@ -1690,7 +1811,7 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 #elif DEBUG
         printf ("processing data from plato %07o\n", m_nextword);
 #endif
-    procPlatoWord (m_nextword);
+        procPlatoWord (m_nextword, m_conn->Ascii ());
     
     // See what's next.  If no delay is called for, just process it, keep
     // going until no more data or we get a word with delay.
@@ -1715,7 +1836,7 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 #elif DEBUG
         printf ("processing data from plato %07o\n", word);
 #endif
-        procPlatoWord (word);
+        procPlatoWord (word, m_conn->Ascii ());
     }
 }
 
@@ -1873,8 +1994,8 @@ void PtermFrame::OnClose (wxCloseEvent &)
 
 void PtermFrame::OnQuit(wxCommandEvent&)
 {
-    // TRUE is to force the frame to close
-    Close (TRUE);
+    // true is to force the frame to close
+    Close (true);
 }
 
 void PtermFrame::OnActivate (wxActivateEvent &event)
@@ -2031,8 +2152,8 @@ void PtermFrame::OnPrint (wxCommandEvent &)
 {
     wxPrintDialogData printDialogData (*g_printData);
 
-    printDialogData.EnableSelection (FALSE);
-    printDialogData.EnablePageNumbers (FALSE);
+    printDialogData.EnableSelection (false);
+    printDialogData.EnablePageNumbers (false);
     
     wxPrinter printer (& printDialogData);
     PtermPrintout printout (this);
@@ -2055,8 +2176,8 @@ void PtermFrame::OnPrintPreview (wxCommandEvent &)
                                                   new PtermPrintout (this),
                                                   &printDialogData);
 
-    printDialogData.EnableSelection (FALSE);
-    printDialogData.EnablePageNumbers (FALSE);
+    printDialogData.EnableSelection (false);
+    printDialogData.EnablePageNumbers (false);
     
     if (!preview->Ok())
     {
@@ -2114,7 +2235,7 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
 
 void PtermFrame::PrepareDC(wxDC& dc)
 {
-    dc.SetAxisOrientation (TRUE, FALSE);
+    dc.SetAxisOrientation (true, false);
     dc.SetBackground (m_backgroundBrush);
 }
 
@@ -2529,7 +2650,16 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
             m_charmap[i] = newmap;
         }
     }
-    
+    SetColors (newfg, newbg, newscale);
+    m_defFg = newfg;
+    m_defBg = newbg;
+}
+
+void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
+{
+    TRACE6 ("fg: %d %d %d; bg: %d %d %d",
+            newfg.Red(), newfg.Green(), newfg.Blue(),
+            newbg.Red(), newbg.Green(), newbg.Blue());
     m_canvas->SetBackgroundColour (newbg);
     m_canvas->Refresh ();
     m_backgroundBrush.SetColour (newbg);
@@ -2748,186 +2878,747 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
 **
 **  Parameters:     Name        Description.
 **                  d           19-bit word
+**                  ascii       true if using ASCII protocol
 **
-**  Returns:        1 if we did a delay, 0 if not.
+**  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-int PtermFrame::procPlatoWord (u32 d)
+void PtermFrame::procPlatoWord (u32 d, bool ascii)
 {
     mptr mp;
     char *msg = "";
-    int status = 0;
+    int i, j, n;
+    AscState    ascState;
+
     // used in load coordinate
     int &coord = (d & 01000) ? currentY : currentX;
+    int &cx = (vertical) ? currentY : currentX;
+    int &cy = (vertical) ? currentX : currentY;
+    
+    int deltax, deltay, supdelta;
+    
+    deltax = (reverse) ? -8 : 8;
+    deltay = (vertical) ? -16 : 16;
+    if (large)
+    {
+        deltax *= 2;
+        deltay *= 2;
+    }
+    supdelta = (deltay / 16) * 5;
     
     seq++;
     if (tracePterm)
     {
         fprintf (traceF, "%07o ", d);
     }
-    if ((d & 01700000) == 0)
+    if (ascii)
     {
-        // NOP command...
-        if (d & 1)
+#ifdef DEBUGASCII
+        if (!m_dumbTty)
         {
-            wc = (wc + 1) & 0177;
+            int c = ((d & 127) >= 32 && (d & 127) < 127) ? d & 127 : '.';
+            printf ("%04x  %c\n", d, c);
         }
-    }
-    else
-    {
-        wc = (wc + 1) & 0177;
-    }
-    
-    if (d & 01000000)
-    {
-        modewords++;
-        mp = modePtr[mode >> 2];
-        (this->*mp) (d);
-    }
-    else
-    {
-        switch ((d >> 15) & 7)
+#endif
+        if (m_dumbTty)
         {
-        case 0:     // nop
-            if ((d & 077000) == 042000)
+            if (d == (033 << 8) + 002)   // ESC STX
             {
-                // Special code to tell pterm the station number
-                d &= 0777;
-                ptermSetStation (d);
+                TRACEN ("Entering PLATO terminal mode");
+                m_dumbTty = false;
+                ptermSetStation (-1);   // Show connected in ASCII mode
             }
-            
-            TRACEN ("nop");
-            break;
-
-        case 1:     // load mode
-            modewords = 0;              // words since entering mode
-            if ((d & 020000) != 0)
+            else if ((d >> 8) == 0)
             {
-                // load wc bit is set
-                wc = (d >> 6) & 0177;
+                putchar (d);
             }
-            
-            mode = (d >> 1) & 037;
-            if (d & 1)
+        }
+        else if ((d >> 8) == 033)
+        {
+            // Escape sequence, the second character is in the low byte
+            d &= 0377;
+            switch (d)
             {
-                // full screen erase
+            case 002:   // ESC STX
+                TRACEN ("Still in PLATO terminal mode");
+                m_dumbTty = false;
+                break;
+            case 003:   // ESC ETX
+                TRACEN ("Leaving PLATO terminal mode");
+                m_dumbTty = true;
+                break;
+            case 014:   // ESC FF
+                TRACEN ("Full screen erase");
                 ptermFullErase ();
+                break;
+            case 021:   // ESC DC1
+            case 022:   // ESC DC2
+            case 023:   // ESC DC3
+            case 024:   // ESC DC4
+                // modes inverse, write, erase, rewrite
+                mode = (mode & ~3) + ascmode[d - 021];
+                m_noMode = false;
+                //mode = 017;
+                TRACE ("load mode %d", mode);
+                break;
+            case '2':
+                // Load coordinate
+                TRACEN ("Start load coordinate");
+                m_ascState = ldc;
+                m_ascBytes = 0;
+                break;
+            case '@':
+                // superscript
+                TRACEN ("Superscript");
+                cy = (cy + supdelta) & 0777;
+                break;
+            case 'A':
+                // subscript
+                TRACEN ("Subcript");
+                cy = (cy - supdelta) & 0777;
+                break;
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'E':
+            case 'F':
+            case 'G':
+            case 'H':
+            case 'I':
+                TRACE ("select memory M%d", d - 'B');
+                setCmem (d - 'B');
+                break;
+            case 'J':
+                TRACEN ("Horizontal writing mode");
+                setVertical (false);
+                break;
+            case 'K':
+                TRACEN ("Vertical writing mode");
+                setVertical (true);
+                break;
+            case 'L':
+                TRACEN ("Forward writing mode");
+                setReverse (false);
+                break;
+            case 'M':
+                TRACEN ("Reverse writing mode");
+                setReverse (true);
+                break;
+            case 'N':
+                TRACEN ("Normal size writing mode");
+                setLarge (false);
+                break;
+            case 'O':
+                TRACEN ("Double size writing mode");
+                setLarge (true);
+                break;
+            case 'P':
+                mode = 2 << 2;
+                m_noMode = false;
+                TRACE ("load mode %d", mode);
+                break;
+            case 'Q':
+                m_ascState = ssf;
+                m_ascBytes = 0;
+                TRACEN ("Start SSF");
+                break;
+            case 'R':
+                // external data
+                TRACEN ("Start ext");
+                break;
+            case 'S':
+                mode = 2 << 2;
+                m_noMode = false;
+                TRACE ("load mode %d", mode);
+                break;
+            case 'T':
+                mode = 5 << 2;
+                m_noMode = false;
+                TRACE ("load mode %d", mode);
+                break;
+            case 'U':
+                mode = 6 << 2;
+                m_noMode = false;
+                TRACE ("load mode %d", mode);
+                break;
+            case 'V':
+                mode = 7 << 2;
+                m_noMode = false;
+                TRACE ("load mode %d", mode);
+                break;
+            case 'W':
+                // Load memory address
+                TRACEN ("Start LDA");
+                m_ascState = lda;
+                m_ascBytes = 0;
+                break;
+            case 'Y':
+                // load echo
+                TRACEN ("Start LDE");
+                m_ascState = lde;
+                m_ascBytes = 0;
+                break;
+            case 'Z':
+                // set margin
+				TRACE ("set margin %d", currentX);
+                setMargin (cx);
+                break;
+            case 'a':
+                // set foreground color
+                TRACEN ("Start foreground color");
+                m_ascState = fg;
+                m_ascBytes = 0;
+                break;
+            case 'b':
+                // set background color
+                TRACEN ("Start background color");
+                m_ascState = bg;
+                m_ascBytes = 0;
+                break;
+            case 'c':
+                // paint
+                TRACEN ("paint TBI");
+                break;
             }
-            TRACE2 ("load mode %d screen %d",
-                    mode, (d & 1));
-            break;
-            
-        case 2:     // load coordinate
-            
-            if (d & 04000)
+        }
+        else
+        {
+            switch (d)
             {
-                // Add or subtract from current coordinate
-                if (d & 02000)
+            case 010:   // backspace
+                cx = (cx - deltax) & 0777;
+                TRACEN ("backspace");
+                break;
+            case 011:   // tab
+                TRACEN ("tab");
+                cx = (cx + deltax) & 0777;
+                break;
+            case 012:   // linefeed
+                TRACEN ("linefeed");
+                cy = (cy - deltay) & 0777;
+                break;
+            case 013:   // vertical tab
+                TRACEN ("vertical tab");
+                cy = (cy - deltay) & 0777;
+                break;
+            case 014:   // form feed
+                TRACEN ("form feed");
+                if (vertical)
                 {
-                    coord -= d & 0777;
+                    cx = deltay - 1;
+                    if (reverse)
+                    {
+                        cy = 512 - deltax;
+                    }
+                    else
+                    {
+                        cy = 0;
+                    }
                 }
                 else
                 {
-                    coord += d & 0777;
+                    cy = 512 - deltay;
+                    if (reverse)
+                    {
+                        cx = 512 - deltax;
+                    }
+                    else
+                    {
+                        cx = 0;
+                    }
                 }
-            }
-            else
-            {
-                coord = d & 0777;
-            }
-        
-            if (d & 010000)
-            {
-                setMargin (coord);
-                msg = "margin";
-            }
-            TRACE3 ("load coord %c %d %s",
-                    (d & 01000) ? 'Y' : 'X', d & 0777, msg);
-            break;
-        case 3:     // echo
-            // 160 is terminal type query
-            if ((d & 0177) == 0160)
-            {
-                TRACE ("load echo termtype %d", TERMTYPE);
-                d = 0160 + TERMTYPE;
-            }
-            else if ((d & 0177) == 0x7b)
-            {
-                // hex 7b is beep
-                if (ptermApp->m_beepEnable)
-                {
-                    TRACEN ("beep");
-                    wxBell ();
-                }
-                break;          // -beep- does NOT send an echo code in reply
-            }
-            else if ((d & 0177) == 0x7d)
-            {
-                // hex 7d is report MAR
-                TRACE ("report MAR %o", memaddr);
-                d = memaddr;
-            }
-            else
-            {
-                TRACE ("load echo %d", d & 0177);
-            }
-            d = (d & 0177) + 0200;
-            if (m_conn->RingCount () > RINGXOFF1)
-            {
-                m_pendingEcho = d;
-            }
-            else
-            {
-                ptermSendKey (d);
-                m_pendingEcho = -1;
-            }
-            break;
-            
-        case 4:     // load address
-            memaddr = d & 077777;
-            TRACE2 ("load address %o (0x%x)", memaddr, memaddr);
-            break;
-            
-        case 5:     // SSF on PPT
-            switch ((d >> 10) & 037)
-            {
-            case 1: // Touch panel control ?
-                TRACE ("ssf touch %o", d);
-                m_canvas->ptermTouchPanel ((d & 040) != 0);
                 break;
-            default:
-                TRACE ("ssf %o", d);
-                break;  // ignore
+            case 015:   // carriage return
+                cx = margin;
+                cy = (cy - deltay) & 0777;
+				TRACE2 ("CR to %d %d", currentX, currentY);
+                break;
+            case 031:   // EM
+                mode = (mode & 3) + (4 << 2);
+                m_noMode = false;
+                modewords = 0;              // words since entering mode
+                TRACE ("load mode %d", mode);
+                break;
+            case 034:   // FS
+                mode = (mode & 3) + (0 << 2);
+                m_noMode = false;
+                TRACE ("load mode %d", mode);
+                break;
+            case 035:   // FS
+                mode = (mode & 3) + (1 << 2);
+                m_noMode = false;
+				m_ascState = ldc;				// to have first coordinate be "dark"
+                TRACE ("load mode %d", mode);
+                break;
+            case 037:   // FS
+                mode = (mode & 3) + (3 << 2);
+                m_noMode = false;
+                TRACE ("load mode %d", mode);
+                break;
             }
-            break;
-
-        case 6:
-        case 7:
-            d &= 0177777;
-            TRACE ("Ext %07o", d);
-            // Take no other action here -- it's been done already
-            // when the word was fetched
-            break;
-
-        default:    // ignore
-            TRACE ("ignored command word %07o", d);
-            break;
+            if (d >= 040)
+            {
+                if (m_ascState == ldc)
+                {
+                    if (AssembleCoord (d))
+                    {
+                        currentX = lastX;
+                        currentY = lastY;
+                        TRACE2 ("load coordinate %d %d", currentX, currentY);
+                    }
+                }
+                else if (m_ascState == lde)
+                {
+                    n = AssembleData (d);
+                    if (n != -1)
+                    {
+                        // 160 is terminal type query
+                        if ((n & 0177) == 0160)
+                        {
+                            TRACE ("load echo termtype %d", ASCTYPE);
+                            n = 0160 + ASCTYPE;
+                        }
+                        else if ((n & 0177) == 0x71)
+                        {
+                            TRACE ("load echo subtype %d", SUBTYPE);
+                            n = SUBTYPE;
+                        }
+                        else if ((n & 0177) == 0x72)
+                        {
+                            TRACEN ("load echo loadfile (unused)");
+                            n = 0;
+                        }
+                        else if ((n & 0177) == 0x73)
+                        {
+                            // hex 73 is report terminal config
+                            TRACEN ("load echo termdata");
+                            n = TERMCONFIG;
+                        }
+                        else if ((n & 0177) == 0x7b)
+                        {
+                            // hex 7b is beep
+                            if (ptermApp->m_beepEnable)
+                            {
+                                TRACEN ("beep");
+                                wxBell ();
+                            }
+                        }
+                        else if ((n & 0177) == 0x7d)
+                        {
+                            // hex 7d is report MAR
+                            TRACE ("report MAR %o", memaddr);
+                            n = memaddr;
+                        }
+                        else
+                        {
+                            TRACE2 ("load echo %d (0x%02x)", n & 0177, n & 0177);
+                        }
+                        n = (n & 0177) + 0200;
+                        if (m_conn->RingCount () > RINGXOFF1)
+                        {
+                            m_pendingEcho = n;
+                        }
+                        else
+                        {
+                            ptermSendKey (n);
+                            m_pendingEcho = -1;
+                        }
+                    }
+                }
+                else if (m_ascState == lda)
+                {
+                    n = AssembleData (d);
+                    if (n != -1)
+                    {
+                        TRACE ("load memory address %04x", n);
+                        memaddr = n & 077777;
+                    }
+                }
+                else if (m_ascState == ssf)
+                {
+                    n = AssembleData (d);
+                    if (n != -1)
+                    {
+                        TRACE ("ssf %04x", n);
+                    }
+                }
+                else if (m_ascState == fg || m_ascState == bg)
+                {
+                    ascState = m_ascState;
+                    n = AssembleColor (d);
+                    if (n != -1)
+                    {
+                        wxColour c ((n >> 16) & 0xff, (n >> 8) & 0xff, 
+                                    n & 0xff);
+                        if (ascState == fg)
+                        {
+                            TRACE ("set foreground color %06x", n);
+                            m_currentFg = c;
+                        }
+                        else
+                        {
+                            TRACE ("set background color %06x", n);
+                            m_currentBg = c;
+                        }
+                        SetColors (m_currentFg, m_currentBg, 
+                                   ptermApp->m_scale);
+                        // Set a flag to discard output until a mode command
+                        // because we sometimes get extraneous data after
+                        // the color data.
+                        m_noMode = true;
+                    }
+                }
+                else if (!m_noMode)
+                {
+                    switch (mode >> 2)
+                    {
+                    case 0:
+                        if (AssembleCoord (d))
+                        {
+                            mode0 ((lastX << 9) + lastY);
+                        }
+                        break;
+                    case 1:
+                        if (AssembleCoord (d))
+                        {
+                            mode1 ((lastX << 9) + lastY);
+                        }
+                        break;
+                    case 2:
+                        n = AssembleData (d);
+                        if (n != -1)
+                        {
+                            mode2 (n);
+                        }
+                        break;
+                    case 3: // text mode
+                        TRACE2 ("char %03o (%c)", d, d);
+                        m_ascState = none;
+                        m_ascBytes = 0;
+                        i = currentCharset;
+                        if (i == 0)
+                        {
+                            d = asciiM0[d];
+                        }
+                        else if (i == 1)
+                        {
+                            d = asciiM1[d];
+                        }
+                        else d = 0xff;
+                        if ((d & 0xf0) == 0xf0)
+                        {
+                        }
+                        else 
+                        {
+                            ptermDrawChar (currentX, currentY, 
+                                           (d & 0x80) >> 7, d & 0x7f);
+                            cx = (cx + deltax) & 0777;
+                        }
+                        break;
+                    case 4:
+                        if (AssembleCoord (d))
+                        {
+                            modewords++;
+                            mode4 ((lastX << 9) + lastY);
+                        }
+                        break;
+                    case 5:
+                        n = AssembleData (d);
+                        if (n != -1)
+                        {
+                            mode5 (n);
+                        }
+                        break;
+                    case 6:
+                        n = AssembleData (d);
+                        if (n != -1)
+                        {
+                            mode6 (n);
+                        }
+                        break;
+                    case 7:
+                        n = AssembleData (d);
+                        if (n != -1)
+                        {
+                            mode7 (n);
+                        }
+                        break;
+                    }
+                }
+            }
         }
     }
-    return status;
+    else
+    {
+        if ((d & 01700000) == 0)
+        {
+            // NOP command...
+            if (d & 1)
+            {
+                wc = (wc + 1) & 0177;
+            }
+        }
+        else
+        {
+            wc = (wc + 1) & 0177;
+        }
+    
+        if (d & 01000000)
+        {
+            modewords++;
+            mp = modePtr[mode >> 2];
+            (this->*mp) (d);
+        }
+        else
+        {
+            switch ((d >> 15) & 7)
+            {
+            case 0:     // nop
+                if ((d & 077000) == 042000)
+                {
+                    // Special code to tell pterm the station number
+                    d &= 0777;
+                    ptermSetStation (d);
+                }
+            
+                TRACEN ("nop");
+                break;
+
+            case 1:     // load mode
+                modewords = 0;              // words since entering mode
+                if ((d & 020000) != 0)
+                {
+                    // load wc bit is set
+                    wc = (d >> 6) & 0177;
+                }
+            
+                mode = (d >> 1) & 037;
+                if (d & 1)
+                {
+                    // full screen erase
+                    ptermFullErase ();
+                }
+                TRACE2 ("load mode %d screen %d",
+                        mode, (d & 1));
+                break;
+            
+            case 2:     // load coordinate
+            
+                if (d & 04000)
+                {
+                    // Add or subtract from current coordinate
+                    if (d & 02000)
+                    {
+                        coord -= d & 0777;
+                    }
+                    else
+                    {
+                        coord += d & 0777;
+                    }
+                }
+                else
+                {
+                    coord = d & 0777;
+                }
+        
+                if (d & 010000)
+                {
+                    setMargin (coord);
+                    msg = "margin";
+                }
+                TRACE3 ("load coord %c %d %s",
+                        (d & 01000) ? 'Y' : 'X', d & 0777, msg);
+                break;
+            case 3:     // echo
+                // 160 is terminal type query
+                if ((d & 0177) == 0160)
+                {
+                    TRACE ("load echo termtype %d", TERMTYPE);
+                    d = 0160 + TERMTYPE;
+                }
+                else if ((d & 0177) == 0x7b)
+                {
+                    // hex 7b is beep
+                    if (ptermApp->m_beepEnable)
+                    {
+                        TRACEN ("beep");
+                        wxBell ();
+                    }
+                    break;          // -beep- does NOT send an echo code in reply
+                }
+                else if ((d & 0177) == 0x7d)
+                {
+                    // hex 7d is report MAR
+                    TRACE ("report MAR %o", memaddr);
+                    d = memaddr;
+                }
+                else
+                {
+                    TRACE ("load echo %d", d & 0177);
+                }
+                d = (d & 0177) + 0200;
+                if (m_conn->RingCount () > RINGXOFF1)
+                {
+                    m_pendingEcho = d;
+                }
+                else
+                {
+                    ptermSendKey (d);
+                    m_pendingEcho = -1;
+                }
+                break;
+            
+            case 4:     // load address
+                memaddr = d & 077777;
+                TRACE2 ("load address %o (0x%x)", memaddr, memaddr);
+                break;
+            
+            case 5:     // SSF on PPT
+                switch ((d >> 10) & 037)
+                {
+                case 1: // Touch panel control ?
+                    TRACE ("ssf touch %o", d);
+                    m_canvas->ptermTouchPanel ((d & 040) != 0);
+                    break;
+                default:
+                    TRACE ("ssf %o", d);
+                    break;  // ignore
+                }
+                break;
+
+            case 6:
+            case 7:
+                d &= 0177777;
+                TRACE ("Ext %07o", d);
+                // Take no other action here -- it's been done already
+                // when the word was fetched
+                break;
+
+            default:    // ignore
+                TRACE ("ignored command word %07o", d);
+                break;
+            }
+        }
+    }
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Assemble an 18 bit data word for the ASCII protocol
+**
+**  Parameters:     Name        Description.
+**                  d           current byte of input
+**
+**  Returns:        -1 if word not complete yet, otherwise the word
+**
+**------------------------------------------------------------------------*/
+int PtermFrame::AssembleData (int d)
+{
+    if (m_ascBytes == 0)
+    {
+        m_assembler = 0;
+    }    
+    m_assembler |= ((d & 077) << (m_ascBytes * 6));
+    if (++m_ascBytes == 3)
+    {
+        m_ascBytes = 0;
+        m_ascState = none;
+        TRACE2 ("data %07o (0x%04x)", m_assembler, m_assembler);
+        return m_assembler;
+    }
+    else
+    {
+        TRACE2 ("data byte %d: %d", m_ascBytes, d & 077);
+    }
+    return -1;
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Assemble a 24 bit color word for the ASCII protocol
+**
+**  Parameters:     Name        Description.
+**                  d           current byte of input
+**
+**  Returns:        -1 if word not complete yet, otherwise the color word
+**
+**------------------------------------------------------------------------*/
+int PtermFrame::AssembleColor (int d)
+{
+    if (m_ascBytes == 0)
+    {
+        m_assembler = 0;
+    }    
+    m_assembler |= ((d & 077) << (m_ascBytes * 6));
+    if (++m_ascBytes == 4)
+    {
+        m_ascBytes = 0;
+        m_ascState = none;
+        TRACE ("color 0x%06x)", m_assembler);
+        return m_assembler;
+    }
+    else
+    {
+        TRACE2 ("color byte %d: %d", m_ascBytes, d & 077);
+    }
+    return -1;
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Assemble a coordinate pair for the ASCII protocol
+**
+**  Parameters:     Name        Description.
+**                  d           current byte of input
+**
+**  Returns:        true if word is complete, false if not
+**                  lastX and lastY are the x/y coordinate received
+**
+**------------------------------------------------------------------------*/
+bool PtermFrame::AssembleCoord (int d)
+{
+    int c = d & 037;
+    
+    switch (d >> 5)
+    {
+    case 1: // High X or high Y
+        if (m_ascBytes == 0)
+        {
+            // High Y
+            TRACE ("high Y %d", c);
+            lastY = (lastY & 037) | (c << 5);
+            m_ascBytes = 2;
+        }
+        else
+        {
+            TRACE ("high X %d", c);
+            lastX = (lastX & 037) | (c << 5);
+        }
+        break;
+    case 2:
+        lastX = (lastX & 0740) | c;
+        m_assembler = (lastX << 16) + lastY;
+        m_ascBytes = 0;
+        m_ascState = none;
+        TRACE3 ("low X %d, coordinates %d %d", c, lastX, lastY);
+        return true;
+    case 3:
+        TRACE ("low Y %d", c);
+        lastY = (lastY & 0740) | c;
+        m_ascBytes = 2;
+        break;
+    }
+    return false;
 }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Display visual indication of trace status
 **
 **  Parameters:     Name        Description.
-**                  fileaction  TRUE to open/flush files,
-**                              FALSE if only redisplay is needed
+**                  fileaction  true to open/flush files,
+**                              false if only redisplay is needed
 **
 **  Returns:        nothing
 **
 **  This function opens or flushes the trace file depending on trace
-**  setting, if fileaction is TRUE.  It then redraws (on or off) the trace
+**  setting, if fileaction is true.  It then redraws (on or off) the trace
 **  indication.
 **
 **------------------------------------------------------------------------*/
@@ -2985,13 +3676,13 @@ void PtermFrame::plotChar (int c)
     c &= 077;
     if (c == 077)
     {
-        setUncover (TRUE);
+        setUncover (true);
         return;
     }
     if (uncover)
     {
         supdelta = (deltay / 16) * 5;
-        setUncover (FALSE);
+        setUncover (false);
         switch (c)
         {
         case 010:   // backspace
@@ -3052,22 +3743,22 @@ void PtermFrame::plotChar (int c)
             setCmem (c - 020);
             break;
         case 030:   // horizontal writing
-            setVertical (FALSE);
+            setVertical (false);
             break;
         case 031:   // vertical writing
-            setVertical (TRUE);
+            setVertical (true);
             break;
         case 032:   // forward writing
-            setReverse (FALSE);
+            setReverse (false);
             break;
         case 033:   // reverse writing
-            setReverse (TRUE);
+            setReverse (true);
             break;
         case 034:   // normal size writing
-            setLarge (FALSE);
+            setLarge (false);
             break;
         case 035:   // double size writing
-            setLarge (TRUE);
+            setLarge (true);
             break;
         default:
             break;
@@ -3305,7 +3996,7 @@ void PtermFrame::progmode (u32 d, int origin)
 **------------------------------------------------------------------------*/
 void PtermFrame::ptermSendKey(int key)
 {
-    char data[2];
+    char data[5];
     
     if (m_conn == NULL)
     {
@@ -3332,9 +4023,6 @@ void PtermFrame::ptermSendKey(int key)
     }
     else
     {
-        data[0] = key >> 7;
-        data[1] = 0200 | key;
-
         if (tracePterm)
         {
             fprintf (traceF, "key to plato %03o\n", key);
@@ -3344,9 +4032,61 @@ void PtermFrame::ptermSendKey(int key)
 #elif DEBUGKEY
         printf ("key to plato %03o\n", key);
 #endif
-        m_conn->SendData (data, 2);
+        if (m_conn->Ascii ())
+        {
+            if (key < 0200)
+            {
+                // Regular keyboard key
+                key = asciiKeycodes[key];
+                if (key == 0xff)
+                {
+                    return;
+                }
+                data[0] = Parity (key);
+                if (tracePterm)
+                {
+                    fprintf (traceF, "ascii mode key to plato 0x%02x\n", data[0] & 0xff);
+                }
+                m_conn->SendData (data, 1);
+            }
+            else
+            {
+                data[0] = 033;
+                data[1] = Parity (0100 + (key & 077));
+                data[2] = Parity (0140 + (key >> 6));
+                if (tracePterm)
+                {
+                    fprintf (traceF, "ascii mode key to plato 0x%02x 0x%02x 0x%02x\n", 
+                             data[0] & 0xff, data[1] & 0xff, data[2] & 0xff);
+                }
+                m_conn->SendData (data, 3);
+            }
+        }
+        else
+        {
+            data[0] = key >> 7;
+            data[1] = 0200 | key;
+
+            m_conn->SendData (data, 2);
+        }
     }
 }
+
+int PtermFrame::Parity (int key)
+{
+    int i;
+    int p = 0;
+    key &= 0177;
+    for (i = 0; i < 8; i++)
+    {
+        if (key & (1 << i))
+        {
+            p ^= 0200;
+        }
+    }
+    return key;// | p;
+}
+
 
 void PtermFrame::ptermSetStation (int station)
 {
@@ -3356,13 +4096,27 @@ void PtermFrame::ptermSetStation (int station)
     m_station = station;
     if (!m_hostName.IsEmpty ())
     {
-        name.Printf (wxT (" %s %d-%d"),
-                     m_hostName.c_str (), station >> 5, station & 31);
+        if (station < 0)
+        {
+            name.Printf (wxT (" %s ASCII"),
+                         m_hostName.c_str ());
+        }
+        else
+        {
+            name.Printf (wxT (" %s %d-%d"),
+                         m_hostName.c_str (), station >> 5, station & 31);
+        }
     }
     else
     {
-        name.Printf (wxT (" %d-%d"),
-                     station >> 5, station & 31);
+        if (station < 0)
+        {
+            name.Printf (wxT (" ASCII"));
+        }
+        else
+        {
+            name.Printf (wxT (" %d-%d"), station >> 5, station & 31);
+        }
     }
     ptermSetStatus (name);
     ptermSetName (name);
@@ -3816,22 +4570,22 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         
         m_fgColor = wxColour (255, 144, 0);
         m_bgColor = *wxBLACK;
-        m_scale2 = FALSE;
-        m_scaleCheck->SetValue (FALSE);
-        m_classicSpeed = FALSE;
-        m_speedCheck->SetValue (FALSE);
-        m_connect = TRUE;
-        m_autoConnect->SetValue (TRUE);
-        m_gswEnable = TRUE;
-        m_gswCheck->SetValue (TRUE);
-        m_numpadArrows = TRUE;
-        m_arrowCheck->SetValue (TRUE);
-        m_showStatusBar = TRUE;
-        m_statusCheck->SetValue (TRUE);
-        m_platoKb = FALSE;
-        m_kbCheck->SetValue (FALSE);
-        m_beepEnable = TRUE;
-        m_beepCheck->SetValue (TRUE);
+        m_scale2 = false;
+        m_scaleCheck->SetValue (false);
+        m_classicSpeed = false;
+        m_speedCheck->SetValue (false);
+        m_connect = true;
+        m_autoConnect->SetValue (true);
+        m_gswEnable = true;
+        m_gswCheck->SetValue (true);
+        m_numpadArrows = true;
+        m_arrowCheck->SetValue (true);
+        m_showStatusBar = true;
+        m_statusCheck->SetValue (true);
+        m_platoKb = false;
+        m_kbCheck->SetValue (false);
+        m_beepEnable = true;
+        m_beepCheck->SetValue (true);
         m_hostText->SetValue (DEFAULTHOST);
         str.Printf (wxT ("%d"), DefNiuPort);
         m_portText->SetValue (str);
@@ -3962,10 +4716,12 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
       m_gswOut (0),
       m_owner (owner),
       m_port (port),
-      m_gswActive (FALSE),
-      m_gswStarted (FALSE),
+      m_gswActive (false),
+      m_gswStarted (false),
       m_savedGswMode (0),
-      m_gswWord2 (0)
+      m_gswWord2 (0),
+      m_connMode (both),
+      m_escPending (false)
 {
     m_hostName = host;
 }
@@ -4001,7 +4757,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
                 (char *)&true_opt, sizeof(true_opt));
 #endif
 
-    while (TRUE)
+    while (true)
     {
         // The reason for waiting a limited time here rather than
         // using the more obvious -1 (wait forever) is to make sure
@@ -4020,7 +4776,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
             m_savedGswMode = m_gswWord2 = 0;
             if (m_gswActive)
             {
-                m_gswActive = m_gswStarted = FALSE;
+                m_gswActive = m_gswStarted = false;
                 ptermCloseGsw ();
             }
 
@@ -4043,47 +4799,29 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
                 break;
             }
 
-            if (dtFetData (&m_fet) < 3)
+            switch (m_connMode)
+            {
+            case niu:
+                platowd = AssembleNiuWord ();
+                break;
+            case ascii:
+                platowd = AssembleAsciiWord ();
+                break;
+            case both:
+                platowd = AssembleAutoWord ();
+                break;
+            }
+            
+            if (platowd == C_NODATA)
             {
                 break;
             }
-            i = dtReado (&m_fet);
-            if (i & 0200)
-            {
-                printf ("Plato output out of sync byte 0: %03o\n", i);
-                continue;
-            }
-    newj:
-            j = dtReado (&m_fet);
-            if ((j & 0300) != 0200)
-            {
-                printf ("Plato output out of sync byte 1: %03o\n", j);
-                if ((j & 0200) == 0)
-                {
-                    i = j;
-                    goto newj;
-                }
-                continue;
-            }
-            k = dtReado (&m_fet);
-            if ((k & 0300) != 0300)
-            {
-                printf ("Plato output out of sync byte 2: %03o\n", k);
-                if ((k & 0200) == 0)
-                {
-                    i = k;
-                    goto newj;
-                }
-                continue;
-            }
-            platowd = (i << 12) | ((j & 077) << 6) | (k & 077);
-            
-            if (platowd == 2)
+            else if (m_connMode == niu && platowd == 2)
             {
                 m_savedGswMode = m_gswWord2 = 0;
                 if (m_gswActive)
                 {
-                    m_gswActive = m_gswStarted = FALSE;
+                    m_gswActive = m_gswStarted = false;
                     ptermCloseGsw ();
                 }
                 
@@ -4098,10 +4836,11 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
             if (m_gswActive && !m_gswStarted && i >= GSWRINGSIZE / 2)
             {
                 ptermStartGsw ();
-                m_gswStarted = TRUE;
+                m_gswStarted = true;
             }
             
-            if (i == RINGXOFF1 || i == RINGXOFF2)
+            if (m_connMode == niu &&
+                (i == RINGXOFF1 || i == RINGXOFF2))
             {
                 m_owner->ptermSendKey (xofkey);
             }
@@ -4116,6 +4855,101 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
 
     return (ExitCode) 0;
 }
+
+int PtermConnection::AssembleNiuWord (void)
+{
+    int i, j, k;
+    
+    for (;;)
+    {
+        if (dtFetData (&m_fet) < 3)
+        {
+            return C_NODATA;
+        }
+        i = dtReado (&m_fet);
+        if (i & 0200)
+        {
+            printf ("Plato output out of sync byte 0: %03o\n", i);
+            continue;
+        }
+newj:
+        j = dtReado (&m_fet);
+        if ((j & 0300) != 0200)
+        {
+            printf ("Plato output out of sync byte 1: %03o\n", j);
+            if ((j & 0200) == 0)
+            {
+                i = j;
+                goto newj;
+            }
+            continue;
+        }
+        k = dtReado (&m_fet);
+        if ((k & 0300) != 0300)
+        {
+            printf ("Plato output out of sync byte 2: %03o\n", k);
+            if ((k & 0200) == 0)
+            {
+                i = k;
+                goto newj;
+            }
+            continue;
+        }
+        return (i << 12) | ((j & 077) << 6) | (k & 077);
+    }
+}
+
+int PtermConnection::AssembleAutoWord (void)
+{
+    u8 buf[3];
+    
+    if (dtPeekw (&m_fet, buf, 3) < 0)
+    {
+        return C_NODATA;
+    }
+    if ((buf[0] & 0200) == 0 &&
+        (buf[1] & 0300) == 0200 &&
+        (buf[2] & 0300) == 0300)
+    {
+        m_connMode = niu;
+        return AssembleNiuWord ();
+    }
+    else
+    {
+        m_connMode = ascii;
+        return AssembleAsciiWord ();
+    }
+}
+
+int PtermConnection::AssembleAsciiWord (void)
+{
+    int i;
+    
+    for (;;)
+    {
+        i = dtReado (&m_fet);
+        if (i == -1)
+        {
+            return C_NODATA;
+        }
+        i &= 0177;
+        if (i == 033)
+        {
+            m_escPending = true;
+            continue;
+        }
+        if (m_escPending)
+        {
+            m_escPending = false;
+            return (033 << 8) + i;
+        }
+        else
+        {
+            return i;
+        }
+    }
+}
+
 
 int PtermConnection::NextRingWord (void)
 {
@@ -4144,7 +4978,8 @@ int PtermConnection::NextRingWord (void)
         m_owner->ptermSendKey (m_owner->m_pendingEcho);
         m_owner->m_pendingEcho = -1;
     }
-    if (i == RINGXON1 || i == RINGXON2)
+    if (m_connMode == niu &&
+        (i == RINGXON1 || i == RINGXON2))
     {
         m_owner->ptermSendKey (xonkey);
     }
@@ -4177,7 +5012,7 @@ int PtermConnection::NextWord (void)
         m_gswOut = next;
         if (word == C_GSWEND)
         {
-            m_gswActive = m_gswStarted = FALSE;
+            m_gswActive = m_gswStarted = false;
             ptermCloseGsw ();
         }
         else
@@ -4189,7 +5024,8 @@ int PtermConnection::NextWord (void)
     // Take data from the main input ring
     word = NextRingWord ();
 
-    if ((word >> 16) == 3 &&
+    if (!Ascii () && 
+        (word >> 16) == 3 &&
         word != 0700001 &&
         !(m_owner->m_station == 1 && 
           (word == 0770000 || word == 0730000)) &&
@@ -4219,14 +5055,14 @@ int PtermConnection::NextWord (void)
         }
         else if (ptermOpenGsw (this) == 0)
         {
-            m_gswActive = TRUE;
+            m_gswActive = true;
             m_gswWord2 = word;
             delay = 1;
                 
             if (!m_gswStarted && RingCount () >= GSWRINGSIZE / 2)
             {
                 ptermStartGsw ();
-                m_gswStarted = TRUE;
+                m_gswStarted = true;
             }
         }
     }
@@ -4261,7 +5097,7 @@ int PtermConnection::NextWord (void)
         wxMessageDialog alert (m_owner, msg, wxString (_("Alert")), wxOK);
             
         alert.ShowModal ();
-        m_owner->Close (TRUE);
+        m_owner->Close (true);
         word = C_NODATA;
     }
         
@@ -4416,6 +5252,15 @@ void PtermCanvas::OnDraw(wxDC &dc)
     m_owner->PrepareDC (dc);
     dc.Blit (XTOP, YTOP, ScreenSize, ScreenSize,
              m_owner->m_memDC, 0, 0, wxCOPY);
+#if 0
+    // debug charmaps
+    for (i = 0; i <= 4; i++)
+    {
+        dc.Blit (XTOP, YADJUST(i * 48 + 48), CharXSize,
+                 32 * ptermApp->m_scale, 
+                 m_owner->m_charDC[i], 0, 0, wxCOPY);
+    }
+#endif
     if (m_regionHeight != 0 && m_regionWidth != 0)
     {
         sizeX = 8 * ptermApp->m_scale;
@@ -4483,7 +5328,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     if (ctrl && key == ']')         // control-] : trace
     {
         m_owner->tracePterm = !m_owner->tracePterm;
-        m_owner->ptermSetTrace (TRUE);
+        m_owner->ptermSetTrace (true);
         return;
     }
 
@@ -4902,7 +5747,7 @@ void PtermCanvas::ClearRegion (void)
     {
 	    m_regionHeight = 0;
 		m_regionWidth = 0;
-		m_owner->GetMenuBar ()->Enable (Pterm_Copy, FALSE);
+		m_owner->GetMenuBar ()->Enable (Pterm_Copy, false);
 		Refresh (false);
 	}
 }
