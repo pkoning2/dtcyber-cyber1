@@ -367,6 +367,8 @@ void windowInit(void)
     XXRebindKeysym(disp, 'S', modList, 1, "$s", 2);
     XXRebindKeysym(disp, 'z', modList, 1, "$z", 2);
     XXRebindKeysym(disp, 'Z', modList, 1, "$z", 2);
+    XXRebindKeysym(disp, 'n', modList, 1, "$n", 2);
+    XXRebindKeysym(disp, 'N', modList, 1, "$n", 2);
     XDEBUG(disp, "rebound keysyms (a pile of them)");
     
     /*
@@ -513,6 +515,8 @@ int windowInput(void)
                     return Dd60KeyXon;
                 case 's':
                     return Dd60KeyXoff;
+                case 'n':
+                    return Dd60KeyTest;
                 case 'z':
                     emulationActive = FALSE;
                     return Dd60KeyXoff;

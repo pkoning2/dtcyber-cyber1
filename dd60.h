@@ -63,6 +63,7 @@
 #define Dd60TraceAll    0067        /* toggle all traces */
 #define Dd60KeyXon      0070        /* start display */
 #define Dd60KeyXoff     0071        /* stop display */
+#define Dd60KeyTest     0072        /* test key (alt N) */
 #define Dd60TracePp0    0163        /* toggle PP0 trace */
 /*      ... through     0174        ** toggle PP11 trace */
 

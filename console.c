@@ -296,6 +296,7 @@ static void consoleUpdateStatus (void);
 long dd60Port;
 long dd60Conns;
 bool keyboardTrue;
+bool npuAction = FALSE;
 
 extern u8 rtcIncrement;
 
@@ -880,6 +881,10 @@ static int consoleInput (NetPort *np)
             {
             switch (buf)
                 {
+            case  Dd60KeyTest:
+                npuAction = TRUE;
+                printf ("npuAction set\n");
+                break;
             case  Dd60KeyXoff:
                 mp->stopped = TRUE;
                 break;
