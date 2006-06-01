@@ -30,6 +30,8 @@
 #define InterlockWords          11
 #define StatusAndControlWords   22
 
+#define DebugOps 1
+
 /*
 **  -----------------------
 **  Private Macro Functions
@@ -1670,6 +1672,7 @@ static void ppOpIAM(void)     // 71
         activePpu->mem[0] = activePpu->regP;
         activePpu->regP = location;
         activeChannel->delayStatus = 0;
+        activePpu->ppMemLen = 0;
         activePpu->ioWaitType = WaitInMany;
         activePpu->stopped = TRUE;
         }
@@ -1724,6 +1727,7 @@ static void ppOpOAM(void)     // 73
     activePpu->ppMemStart = activePpu->regP = activePpu->mem[activePpu->regP] & Mask12;
     activeChannel->delayStatus = 0;
     activePpu->ioWaitType = WaitOutMany;
+    activePpu->ppMemLen = 0;
     activePpu->stopped = TRUE;
     activePpu->ioFlag = TRUE;
     }
