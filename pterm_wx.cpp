@@ -150,6 +150,10 @@
 // of the two pixels if we're doing double size display
 #define XTOP (XADJUST (0))
 #define YTOP (YADJUST (512) + 1)
+// Ditto but for the backing store bitmap
+#define XMTOP (XMADJUST (0))
+#define YMTOP (YMADJUST (512) + 1)
+
 // Macro to include keyboard accelerator only if MAC
 #if defined(__WXMAC__)
 #define MACACCEL(x) + wxString (wxT (x))
@@ -213,11 +217,6 @@ extern int ptermProcGswData (int data);
 extern void ptermCloseGsw (void);
 extern void ptermStartGsw (void);
 
-#ifdef _WIN32
-#undef putchar
-#define putchar(x)
-#endif
-
 #if defined (__WXGTK__)
 
 // Attempting to include the gtk.h file yields infinite compile errors, so
@@ -263,8 +262,6 @@ wxPageSetupDialogData* g_pageSetupData;
 
 class PtermApp;
 static PtermApp *ptermApp;
-static int lastX;
-static int lastY;
 
 static FILE *traceF;
 static char traceFn[20];
@@ -425,6 +422,7 @@ public:
     {
         return (m_connMode == ascii);
     }
+    void StoreWord (int word);
 
 private:
     NetFet      m_fet;
@@ -441,9 +439,8 @@ private:
     int         m_savedGswMode;
     int         m_gswWord2;
     enum { both, niu, ascii } m_connMode;
-    bool        m_escPending;
+    int         m_pending;
     
-    void StoreWord (int word);
     int NextRingWord (void);
 };
 
@@ -491,6 +488,9 @@ public:
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
     PtermFrame  *m_helpFrame;
+
+    int lastX;
+    int lastY;
     
 private:
     wxLocale    m_locale; // locale we'll be using
@@ -708,13 +708,12 @@ private:
     int         modewords;
     int         mode4start;
     bool        m_dumbTty;
-    typedef enum { none, ldc, lde, lda, ssf, fg, bg, word, coord } AscState;
+    typedef enum { none, ldc, lde, lda, ssf, fg, bg, paint } AscState;
     AscState    m_ascState;
     int         m_ascBytes;
     int         m_assembler;
     int         lastX;
     int         lastY;
-    bool        m_noMode;
     
     wxColour    m_defFg;
     wxColour    m_defBg;
@@ -789,6 +788,7 @@ private:
     void ptermSetStatus (wxString &str);
     void ptermLoadChar (int snum, int cnum, const u16 *data);
     void ptermLoadRomChars (void);
+    void ptermPaint (int pat);
     
     void drawChar (wxDC &dc, int x, int y, int snum, int cnum);
     void procPlatoWord (u32 d, bool ascii);
@@ -806,6 +806,7 @@ private:
     void ptermShowTrace ();
     
     bool AssembleCoord (int d);
+    int AssemblePaint (int d);
     int AssembleData (int d);
     int AssembleColor (int d);
     
@@ -1518,7 +1519,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
       m_nextword (0),
       m_delay (0),
       currentX (0),
-      currentY (0),
+      currentY (496),
       memaddr (0),
       memlpc (0),
       wc (0),
@@ -1529,7 +1530,6 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
       m_ascBytes (0),
       lastX (0),
       lastY (0),
-      m_noMode (true),
       m_defFg (ptermApp->m_fgColor),
       m_defBg (ptermApp->m_bgColor),
       m_currentFg (ptermApp->m_fgColor),
@@ -1547,6 +1547,12 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     mode = 017;             // default to character mode, rewrite
     setMargin (0);
     RAM[M_CCR] = 0;
+    
+    // Set default character set origins (for PPT that is; ASCII is different)
+    RAM[C2ORIGIN] = M2ADDR;
+    RAM[C2ORIGIN + 1] = M2ADDR >> 8;
+    RAM[C3ORIGIN] = M3ADDR;
+    RAM[C3ORIGIN + 1] = M3ADDR >> 8;
     
     // set the frame icon
     SetIcon(wxICON(pterm_32));
@@ -1986,7 +1992,7 @@ void PtermFrame::OnClose (wxCloseEvent &)
     }
     else
     {
-        GetPosition (&lastX, &lastY);
+        GetPosition (&ptermApp->lastX, &ptermApp->lastY);
     }
     
     Destroy ();
@@ -2485,6 +2491,26 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     m_memDC->EndDrawing ();
 }
 
+void PtermFrame::ptermPaint (int pat)
+{
+    wxClientDC dc(m_canvas);
+    int xm, ym;
+    
+    dc.BeginDrawing ();
+    m_memDC->BeginDrawing ();
+    PrepareDC (dc);
+    
+    xm = XMADJUST (currentX);
+    ym = YMADJUST (currentY);
+
+    m_memDC->SetBrush (m_foregroundBrush);
+    m_memDC->FloodFill (xm, ym, m_currentBg, wxFLOOD_BORDER);
+    dc.Blit (XTOP, YTOP, ScreenSize, ScreenSize,
+             m_memDC, 0, 0, wxCOPY);
+    dc.EndDrawing ();
+    m_memDC->EndDrawing ();
+}
+
 void PtermFrame::ptermSetName (wxString &winName)
 {
     wxString str;
@@ -2930,7 +2956,54 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             }
             else if ((d >> 8) == 0)
             {
-                putchar (d);
+                if (d >= 32 && d < 127)
+                {
+                    d = asciiM0[d];
+                    if ((d & 0xf0) != 0xf0)
+                    {
+                        // Force mode rewrite
+                        mode = (3 << 2) + 1;
+                        ptermDrawChar (currentX, currentY, 
+                                       (d & 0x80) >> 7, d & 0x7f);
+                        currentX = (currentX + 8) & 0777;
+                    }
+                }
+                else if (d == 015)
+                {
+                    currentX = 0;
+                }
+                else if (d == 012)
+                {
+                    wxClientDC dc(m_canvas);
+                    dc.BeginDrawing ();
+                    m_memDC->BeginDrawing ();
+                    PrepareDC (dc);
+                    m_memDC->SetBackground (m_backgroundBrush);
+                    if (currentY != 0)
+                    {
+                        currentY -= 16;
+                    }
+                    else
+                    {
+                        // On the bottom line... scroll.
+                        dc.Blit (XTOP, YTOP, ScreenSize,
+                                 ScreenSize - (16 * ptermApp->m_scale),
+                                 m_memDC, XMTOP, YMADJUST (496),
+                                 wxCOPY);
+                        m_memDC->Blit (XMTOP, YMTOP, ScreenSize,
+                                       ScreenSize - (16 * ptermApp->m_scale),
+                                       &dc, XTOP, YTOP, wxCOPY);
+                    }
+                    // Erase the line we just moved to.
+                    m_memDC->Blit (XMTOP, YMADJUST (16) + 1, ScreenSize,
+                                   16 * ptermApp->m_scale,
+                                   m_memDC, 0, 0, wxCLEAR);
+                    dc.Blit (XTOP, YADJUST (16) + 1, ScreenSize,
+                             16 * ptermApp->m_scale,
+                             &dc, 0, 0, wxCLEAR);
+                    dc.EndDrawing ();
+                    m_memDC->EndDrawing ();
+                }
             }
         }
         else if ((d >> 8) == 033)
@@ -2946,6 +3019,8 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             case 003:   // ESC ETX
                 TRACEN ("Leaving PLATO terminal mode");
                 m_dumbTty = true;
+                currentX = 0;
+                currentY = 496;
                 break;
             case 014:   // ESC FF
                 TRACEN ("Full screen erase");
@@ -2957,7 +3032,6 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             case 024:   // ESC DC4
                 // modes inverse, write, erase, rewrite
                 mode = (mode & ~3) + ascmode[d - 021];
-                m_noMode = false;
                 //mode = 017;
                 TRACE ("load mode %d", mode);
                 break;
@@ -3014,7 +3088,6 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 'P':
                 mode = 2 << 2;
-                m_noMode = false;
                 TRACE ("load mode %d", mode);
                 break;
             case 'Q':
@@ -3028,22 +3101,18 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 'S':
                 mode = 2 << 2;
-                m_noMode = false;
                 TRACE ("load mode %d", mode);
                 break;
             case 'T':
                 mode = 5 << 2;
-                m_noMode = false;
                 TRACE ("load mode %d", mode);
                 break;
             case 'U':
                 mode = 6 << 2;
-                m_noMode = false;
                 TRACE ("load mode %d", mode);
                 break;
             case 'V':
                 mode = 7 << 2;
-                m_noMode = false;
                 TRACE ("load mode %d", mode);
                 break;
             case 'W':
@@ -3077,7 +3146,9 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 'c':
                 // paint
-                TRACEN ("paint TBI");
+                TRACEN ("Start paint");
+                m_ascState = paint;
+                m_ascBytes = 0;
                 break;
             }
         }
@@ -3135,40 +3206,44 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 031:   // EM
                 mode = (mode & 3) + (4 << 2);
-                m_noMode = false;
                 modewords = 0;              // words since entering mode
                 TRACE ("load mode %d", mode);
                 break;
             case 034:   // FS
                 mode = (mode & 3) + (0 << 2);
-                m_noMode = false;
                 TRACE ("load mode %d", mode);
                 break;
             case 035:   // FS
                 mode = (mode & 3) + (1 << 2);
-                m_noMode = false;
 				m_ascState = ldc;				// to have first coordinate be "dark"
                 TRACE ("load mode %d", mode);
                 break;
             case 037:   // FS
                 mode = (mode & 3) + (3 << 2);
-                m_noMode = false;
                 TRACE ("load mode %d", mode);
                 break;
             }
             if (d >= 040)
             {
-                if (m_ascState == ldc)
+                switch (m_ascState)
                 {
+                case ldc:
                     if (AssembleCoord (d))
                     {
                         currentX = lastX;
                         currentY = lastY;
                         TRACE2 ("load coordinate %d %d", currentX, currentY);
                     }
-                }
-                else if (m_ascState == lde)
-                {
+                    break;
+                case paint:
+                    n = AssemblePaint (d);
+                    if (n != -1)
+                    {
+                        TRACE ("paint %03o", n);
+                        ptermPaint (n);
+                    }
+                    break;
+                case lde:
                     n = AssembleData (d);
                     if (n != -1)
                     {
@@ -3224,26 +3299,24 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             m_pendingEcho = -1;
                         }
                     }
-                }
-                else if (m_ascState == lda)
-                {
+                    break;
+                case lda:
                     n = AssembleData (d);
                     if (n != -1)
                     {
                         TRACE ("load memory address %04x", n);
                         memaddr = n & 077777;
                     }
-                }
-                else if (m_ascState == ssf)
-                {
+                    break;
+                case ssf:
                     n = AssembleData (d);
                     if (n != -1)
                     {
                         TRACE ("ssf %04x", n);
                     }
-                }
-                else if (m_ascState == fg || m_ascState == bg)
-                {
+                    break;
+                case fg:
+                case bg:
                     ascState = m_ascState;
                     n = AssembleColor (d);
                     if (n != -1)
@@ -3262,14 +3335,9 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         }
                         SetColors (m_currentFg, m_currentBg, 
                                    ptermApp->m_scale);
-                        // Set a flag to discard output until a mode command
-                        // because we sometimes get extraneous data after
-                        // the color data.
-                        m_noMode = true;
                     }
-                }
-                else if (!m_noMode)
-                {
+                    break;
+                case none:
                     switch (mode >> 2)
                     {
                     case 0:
@@ -3299,19 +3367,34 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         if (i == 0)
                         {
                             d = asciiM0[d];
+                            // The ROM vs. RAM choice is given by the
+                            // current character set.  
+                            // For the ROM characters, the even vs. odd
+                            // (M0 vs. M1) choice is given by the top bit
+                            // of the ASCII translation table.
+                            i = (d & 0x80) >> 7;
                         }
                         else if (i == 1)
                         {
                             d = asciiM1[d];
+                            i = (d & 0x80) >> 7;
                         }
-                        else d = 0xff;
+                        else
+                        {
+                            // RAM characters are indexed by printable
+                            // ASCII characters; the RAM character offset
+                            // is simply the character code - 32.
+                            // The set choice is simply what the host sent.
+                            d = (d - 040) & 077;
+                        }
                         if ((d & 0xf0) == 0xf0)
                         {
+                            // Builtin composite chars TBD.
                         }
                         else 
                         {
-                            ptermDrawChar (currentX, currentY, 
-                                           (d & 0x80) >> 7, d & 0x7f);
+                            ptermDrawChar (currentX, currentY,
+                                           i, d & 0x7f);
                             cx = (cx + deltax) & 0777;
                         }
                         break;
@@ -3344,6 +3427,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         }
                         break;
                     }
+                    break;
                 }
             }
         }
@@ -3500,6 +3584,36 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             }
         }
     }
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Assemble a 9 bit data word for the ASCII protocol
+**
+**  Parameters:     Name        Description.
+**                  d           current byte of input
+**
+**  Returns:        -1 if word not complete yet, otherwise the word
+**
+**------------------------------------------------------------------------*/
+int PtermFrame::AssemblePaint (int d)
+{
+    if (m_ascBytes == 0)
+    {
+        m_assembler = 0;
+    }    
+    m_assembler |= ((d & 077) << (m_ascBytes * 6));
+    if (++m_ascBytes == 2)
+    {
+        m_ascBytes = 0;
+        m_ascState = none;
+        TRACE2 ("paint %03o (0x%04x)", m_assembler, m_assembler);
+        return m_assembler;
+    }
+    else
+    {
+        TRACE2 ("paint byte %d: %d", m_ascBytes, d & 077);
+    }
+    return -1;
 }
 
 /*--------------------------------------------------------------------------
@@ -3832,10 +3946,7 @@ void PtermFrame::mode2 (u32 d)
     WriteRAM (memaddr + 1, d >> 8);
 
     // memaddr is a PPT RAM address; convert it to a character memory address
-    // FIXME: *** this code assumes that the character memory pointers
-    // are never changed, always stay at the default value.  If that is
-    // ever not true we'll display the wrong text.
-    chaddr = memaddr - M2ADDR;
+    chaddr = memaddr - ReadRAMW (C2ORIGIN);
     if (chaddr < 0 || chaddr > 127 * 16)
     {
         TRACE2 ("memdata %04x to %04x", d & 0xffff, memaddr);
@@ -3846,7 +3957,7 @@ void PtermFrame::mode2 (u32 d)
         if (((d >> 16) & 3) == 0)
         {
             // load data
-            TRACE2 ("character memdata %06o to %04o", d & 0xffff, chaddr);
+            TRACE2 ("character memdata %06o to char word %04o", d & 0xffff, chaddr);
             plato_m23[chaddr] = d & 0xffff;
             if ((++chaddr & 7) == 0)
             {
@@ -4014,12 +4125,16 @@ void PtermFrame::ptermSendKey(int key)
     */
     if ((key >> 9) != 0 && key != xonkey && key != xofkey)
     {
-        ptermSendKey (key >> 9);
-        if ((key >> 9) != 074)
+        // Don't do composite keys if ASCII and in dumb terminal mode
+        if (!(m_conn->Ascii () && m_dumbTty))
         {
-            ptermSendKey (074);
+            ptermSendKey (key >> 9);
+            if ((key >> 9) != 074)
+            {
+                ptermSendKey (074);
+            }
+            ptermSendKey (key & 0777);
         }
-        ptermSendKey (key & 0777);
     }
     else
     {
@@ -4048,8 +4163,13 @@ void PtermFrame::ptermSendKey(int key)
                     fprintf (traceF, "ascii mode key to plato 0x%02x\n", data[0] & 0xff);
                 }
                 m_conn->SendData (data, 1);
+                if (m_dumbTty)
+                {
+                    // do local echoing
+                    m_conn->StoreWord (key);
+                }
             }
-            else
+            else if (!m_dumbTty)
             {
                 data[0] = 033;
                 data[1] = Parity (0100 + (key & 077));
@@ -4721,7 +4841,7 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
       m_savedGswMode (0),
       m_gswWord2 (0),
       m_connMode (both),
-      m_escPending (false)
+      m_pending (0)
 {
     m_hostName = host;
 }
@@ -4935,16 +5055,23 @@ int PtermConnection::AssembleAsciiWord (void)
         i &= 0177;
         if (i == 033)
         {
-            m_escPending = true;
+            m_pending = 033;
             continue;
         }
-        if (m_escPending)
+        if (m_pending == 033)
         {
-            m_escPending = false;
+            m_pending = 0;
             return (033 << 8) + i;
+        }
+        else if (m_pending == 0 && i == 0177)
+        {
+            // Weird.  For some reason, 0177 is sent as two of them.
+            m_pending = 0177;
+            continue;
         }
         else
         {
+            m_pending = 0;
             return i;
         }
     }
