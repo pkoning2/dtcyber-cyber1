@@ -282,9 +282,11 @@ static const wxChar rom01char[] =
 // 0xf2: copyright body
 // 0xf3: box
 // 0xf4: diamond
-// 0xf5: cross
+// 0xf5: cross product
 // 0xf6: hacek
 // 0xf7: universal delimiter
+// 0xf8: dot product
+// 0xf9: cedilla
 static const u8 asciiM0[] = 
 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -312,7 +314,7 @@ static const u8 asciiM1[] =
   0xa2, 0xa3, 0x34, 0xa5, 0xa6, 0xa7, 0xa8, 0x30,
   0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7, 0xb8,
   0xb9, 0xba, 0xbb, 0xbc, 0xf0, 0xaf, 0xf1, 0x3e,
-  0xf2, 0x9c, 0xf3, 0xaf, 0xf4, 0xf5, 0x9e, 0x3f,
+  0xf2, 0x9c, 0xf3, 0xf8, 0xf4, 0xf5, 0x9e, 0xf9,
   0xf6, 0xf7, 0xae, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -339,6 +341,27 @@ static const u8 asciiKeycodes[] =
   0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
   0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
   0x58, 0x59, 0x5a, 0x29, 0x3a, 0x3f, 0x21, 0x22
+};
+
+// These are the strings to use for the "special" characters.
+// On classic terminals, the formatter generates these from
+// the regular ROM characters with a sequence of backspaces and
+// the like.  In ASCII mode, we have to do it; we do it
+// roughly the same way.  Each row is indexed by the
+// special char code - 0xf0.  Each entry is a pair:
+//  char code, Y offset.  Char code 0 is the terminator.
+// All are plotted at the same X implicitly.
+static const u8 M1specials[][8] =
+{ { 0x3a, 0, 0x29, 0, 0 },              // embed left
+  { 0x3b, 0, 0x2a, 0, 0 },              // embed right
+  { 0x3c, 0, 0x3c, 11, 0x03, 1, 0 },    // copyright body
+  { 0xa7, 0, 0xa8, 0, 0 },              // box
+  { 0xa0, 0, 0xa3, 0, 0xa2, 0, 0 },     // diamond
+  { 0x28, 0, 0xbe, 0, 0 },              // cross product
+  { 0x9e, 0, 0x9f, 0, 0 },              // hacek
+  { 0xa0, 0, 0xa2, 0, 0 },              // universal delimiter
+  { 0xaf, (u8) -3, 0 },                 // dot product
+  { 0x9e, (u8) -11, 0 },                // cedilla
 };
 
 // Conversion from ascii mode codes to classic codes
@@ -3389,8 +3412,31 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         }
                         if ((d & 0xf0) == 0xf0)
                         {
-                            // Builtin composite chars TBD.
-                        }
+                            if (d != 0xff)
+                            {
+                                // A builtin composite
+                                int savemode = mode;
+                                int sy = cy;
+                                
+                                d -= 0xf0;
+                                for (i = 0; i < 8; i += 2)
+                                {
+                                    n = M1specials[d][i];
+                                    if (n == 0)
+                                    {
+                                        break;
+                                    }
+                                    j = (i8) M1specials[d][i + 1];
+                                    cy += j * ptermApp->m_scale;
+                                    ptermDrawChar (currentX, currentY,
+                                                   n >> 7, n & 0x7f);
+                                    cy = sy;
+                                    mode |= 2;
+                                }
+                                mode = savemode;
+                                cx = (cx + deltax) & 0777;
+                            }
+                        }   
                         else 
                         {
                             ptermDrawChar (currentX, currentY,
