@@ -138,10 +138,10 @@ Contents:
 *  memory map	 Address ranges
 * +-----------+
 * |           |
-* |  PROGROM  | 0x0000h-0x3FFFh
+* |  PROGROM  | 0x0000h-0x1FFFh
 * +-----------+
 * |           |
-* |  WORKRAM  | 0x4000h-0xfFFFh
+* |  WORKRAM  | 0x2000h-0xfFFFh
 * +-----------+
 * 
 *
@@ -153,10 +153,10 @@ Contents:
 *******************************************************************************/
 /*  Memory Map  */
 #define STARTROM1 0x00000
-#define ROMSIZE   0x04000
+#define ROMSIZE   0x02000
 #define PROGROM   0x00000
 #define WORKRAM   0x02000
-#define MEMSIZE   0x04000
+#define MEMSIZE   0x0d000
 class emul8080
 {
 public:
