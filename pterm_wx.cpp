@@ -26,6 +26,8 @@
 #define RINGXOFF2   (RINGSIZE-RINGXON2)
 #define xonkey      01606
 #define xofkey      01607
+#define ascxon      0x11
+#define ascxof      0x13
 
 #define GSWRINGSIZE 100
 
@@ -737,6 +739,7 @@ private:
     int         m_assembler;
     int         lastX;
     int         lastY;
+    bool        m_flowCtrl;
     
     wxColour    m_defFg;
     wxColour    m_defBg;
@@ -1553,6 +1556,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
       m_ascBytes (0),
       lastX (0),
       lastY (0),
+      m_flowCtrl (false),
       m_defFg (ptermApp->m_fgColor),
       m_defBg (ptermApp->m_bgColor),
       m_currentFg (ptermApp->m_fgColor),
@@ -3042,6 +3046,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             case 003:   // ESC ETX
                 TRACEN ("Leaving PLATO terminal mode");
                 m_dumbTty = true;
+                m_flowCtrl = false;
                 currentX = 0;
                 currentY = 496;
                 break;
@@ -3270,48 +3275,54 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     n = AssembleData (d);
                     if (n != -1)
                     {
-                        // 160 is terminal type query
-                        if ((n & 0177) == 0160)
+                        n &= 0177;
+                        switch (n)
                         {
+                        case 0160:
+                            // 160 is terminal type query
                             TRACE ("load echo termtype %d", ASCTYPE);
                             n = 0160 + ASCTYPE;
-                        }
-                        else if ((n & 0177) == 0x71)
-                        {
+                            break;
+                        case 0x71:
                             TRACE ("load echo subtype %d", SUBTYPE);
                             n = SUBTYPE;
-                        }
-                        else if ((n & 0177) == 0x72)
-                        {
+                            break;
+                        case 0x72:
                             TRACEN ("load echo loadfile (unused)");
                             n = 0;
-                        }
-                        else if ((n & 0177) == 0x73)
-                        {
+                            break;
+                        case 0x73:
                             // hex 73 is report terminal config
                             TRACEN ("load echo termdata");
                             n = TERMCONFIG;
-                        }
-                        else if ((n & 0177) == 0x7b)
-                        {
+                            break;
+                        case 0x7b:
                             // hex 7b is beep
                             if (ptermApp->m_beepEnable)
                             {
                                 TRACEN ("beep");
                                 wxBell ();
                             }
-                        }
-                        else if ((n & 0177) == 0x7d)
-                        {
+                            break;
+                        case 0x7d:
                             // hex 7d is report MAR
                             TRACE ("report MAR %o", memaddr);
                             n = memaddr;
+                            break;
+                        case 0x52:
+                            // hex 52 is enable flow control
+                            TRACEN ("enable flow control");
+                            m_flowCtrl = true;
+                            n = 0x53;
+                            break;
+                        default:
+                            TRACE2 ("load echo %d (0x%02x)", n, n);
                         }
-                        else
+                        if (n == 0x7b)
                         {
-                            TRACE2 ("load echo %d (0x%02x)", n & 0177, n & 0177);
+                            break;          // -beep- does NOT send an echo code in reply
                         }
-                        n = (n & 0177) + 0200;
+                        n += 0200;
                         if (m_conn->RingCount () > RINGXOFF1)
                         {
                             m_pendingEcho = n;
@@ -3336,6 +3347,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     if (n != -1)
                     {
                         TRACE ("ssf %04x", n);
+                        m_canvas->ptermTouchPanel ((n & 0x20) != 0);
                     }
                     break;
                 case fg:
@@ -3560,33 +3572,35 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         (d & 01000) ? 'Y' : 'X', d & 0777, msg);
                 break;
             case 3:     // echo
-                // 160 is terminal type query
-                if ((d & 0177) == 0160)
+                d &= 0177;
+                switch (d)
                 {
+                case 0160:
+                    // 160 is terminal type query
                     TRACE ("load echo termtype %d", TERMTYPE);
                     d = 0160 + TERMTYPE;
-                }
-                else if ((d & 0177) == 0x7b)
-                {
+                    break;
+                case 0x7b:
                     // hex 7b is beep
                     if (ptermApp->m_beepEnable)
                     {
                         TRACEN ("beep");
                         wxBell ();
                     }
-                    break;          // -beep- does NOT send an echo code in reply
-                }
-                else if ((d & 0177) == 0x7d)
-                {
+                    break;
+                case 0x7d:
                     // hex 7d is report MAR
                     TRACE ("report MAR %o", memaddr);
                     d = memaddr;
+                    break;
+                default:
+                    TRACE ("load echo %d", d);
                 }
-                else
+                if (d == 0x7b)
                 {
-                    TRACE ("load echo %d", d & 0177);
+                    break;          // -beep- does NOT send an echo code in reply
                 }
-                d = (d & 0177) + 0200;
+                d += 0200;
                 if (m_conn->RingCount () > RINGXOFF1)
                 {
                     m_pendingEcho = d;
@@ -4154,6 +4168,7 @@ void PtermFrame::progmode (u32 d, int origin)
 void PtermFrame::ptermSendKey(int key)
 {
     char data[5];
+    int len;
     
     if (m_conn == NULL)
     {
@@ -4195,6 +4210,8 @@ void PtermFrame::ptermSendKey(int key)
 #endif
         if (m_conn->Ascii ())
         {
+            // Assume one byte key code
+            len = 1;
             if (key < 0200)
             {
                 // Regular keyboard key
@@ -4203,12 +4220,57 @@ void PtermFrame::ptermSendKey(int key)
                 {
                     return;
                 }
-                data[0] = Parity (key);
+                if (m_flowCtrl)
+                {
+                    // Do the keycode translation for the
+                    // "flow control enabled" coding rules.
+                    switch (key)
+                    {
+                    case 0x00:              // access
+                        key = 0x1d;
+                        len = 2;
+                        break;
+                    case 0x05:              // shift-sub
+                        key = 0x04;
+                        len = 2;
+                        break;
+                    case 0x0a:              // tab
+                        key = 0x09;
+                        break;
+                    case 0x09:              // shift-help
+                        key = 0x0a;
+                        break;
+                    case 0x11:              // shift-stop
+                        key = 0x05;
+                        break;
+                    case 0x17:              // shift-super
+                        len = 2;
+                        // fall through
+                    case 0x13:              // super
+                        key = 0x17;
+                        break;
+                    case 0x7c:              // apostrophe
+                        key = 0x27;
+                        break;
+                    case 0x27:              // #
+                        key = 0x7c;
+                        break;
+                    }
+                    data[0] = 033;          // store esc for 2 byte codes
+                }                        
+                data[len - 1] = Parity (key);
                 if (tracePterm)
                 {
-                    fprintf (traceF, "ascii mode key to plato 0x%02x\n", data[0] & 0xff);
+                    if (len == 1)
+                    {
+                        fprintf (traceF, "ascii mode key to plato 0x%02x\n", data[0] & 0xff);
+                    }
+                    else
+                    {
+                        fprintf (traceF, "ascii mode key to plato 0x%02x 0x%02x\n", data[0], data[1] & 0xff);
+                    }
                 }
-                m_conn->SendData (data, 1);
+                m_conn->SendData (data, len);
                 if (m_dumbTty)
                 {
                     // do local echoing
@@ -4217,15 +4279,43 @@ void PtermFrame::ptermSendKey(int key)
             }
             else if (!m_dumbTty)
             {
-                data[0] = 033;
-                data[1] = Parity (0100 + (key & 077));
-                data[2] = Parity (0140 + (key >> 6));
-                if (tracePterm)
+                if (key == xofkey)
                 {
-                    fprintf (traceF, "ascii mode key to plato 0x%02x 0x%02x 0x%02x\n", 
-                             data[0] & 0xff, data[1] & 0xff, data[2] & 0xff);
+                    if (!m_flowCtrl)
+                    {
+                        return;
+                    }
+                    data[0] = Parity (ascxof);
+                    if (tracePterm)
+                    {
+                        fprintf (traceF, "ascii mode key to plato XOFF\n");
+                    }
                 }
-                m_conn->SendData (data, 3);
+                else if (key == xonkey)
+                {
+                    if (!m_flowCtrl)
+                    {
+                        return;
+                    }
+                    data[0] = Parity (ascxon);
+                    if (tracePterm)
+                    {
+                        fprintf (traceF, "ascii mode key to plato XON\n");
+                    }
+                }
+                else
+                {
+                    len = 3;
+                    data[0] = 033;
+                    data[1] = Parity (0100 + (key & 077));
+                    data[2] = Parity (0140 + (key >> 6));
+                    if (tracePterm)
+                    {
+                        fprintf (traceF, "ascii mode key to plato 0x%02x 0x%02x 0x%02x\n", 
+                                 data[0] & 0xff, data[1] & 0xff, data[2] & 0xff);
+                    }
+                }
+                m_conn->SendData (data, len);
             }
         }
         else
@@ -5005,8 +5095,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
                 m_gswStarted = true;
             }
             
-            if (m_connMode == niu &&
-                (i == RINGXOFF1 || i == RINGXOFF2))
+            if (i == RINGXOFF1 || i == RINGXOFF2)
             {
                 m_owner->ptermSendKey (xofkey);
             }
@@ -5151,8 +5240,7 @@ int PtermConnection::NextRingWord (void)
         m_owner->ptermSendKey (m_owner->m_pendingEcho);
         m_owner->m_pendingEcho = -1;
     }
-    if (m_connMode == niu &&
-        (i == RINGXON1 || i == RINGXON2))
+    if (i == RINGXON1 || i == RINGXON2)
     {
         m_owner->ptermSendKey (xonkey);
     }
