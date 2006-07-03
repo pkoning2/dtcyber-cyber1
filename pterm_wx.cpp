@@ -69,6 +69,7 @@
 #define ASCTYPE         12
 #define SUBTYPE         0x74
 #define TERMCONFIG      0x40    // touch panel present
+#define ASCFEATURES     0x01    // features: fine touch
 
 // Literal strings for wxConfig key strings.  These are defined
 // because they appear in two places, so this way we avoid getting
@@ -633,6 +634,7 @@ public:
     
     void PrepareDC(wxDC& dc);
     void ptermSendKey(int key);
+    void ptermSendTouch (int x, int y);
     void ptermSetTrace (bool fileaction);
     int Parity (int key);
     
@@ -733,13 +735,14 @@ private:
     int         modewords;
     int         mode4start;
     bool        m_dumbTty;
-    typedef enum { none, ldc, lde, lda, ssf, fg, bg, paint } AscState;
+    typedef enum { none, ldc, lde, lda, ssf, fg, bg, paint, pni_rs } AscState;
     AscState    m_ascState;
     int         m_ascBytes;
     int         m_assembler;
     int         lastX;
     int         lastY;
     bool        m_flowCtrl;
+    bool        m_sendFgt;
     
     wxColour    m_defFg;
     wxColour    m_defBg;
@@ -1557,6 +1560,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
       lastX (0),
       lastY (0),
       m_flowCtrl (false),
+      m_sendFgt (false),
       m_defFg (ptermApp->m_fgColor),
       m_defBg (ptermApp->m_bgColor),
       m_currentFg (ptermApp->m_fgColor),
@@ -2979,6 +2983,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             {
                 TRACEN ("Entering PLATO terminal mode");
                 m_dumbTty = false;
+                mode = (3 << 2) + 1;    // set character mode, rewrite
                 ptermSetStation (-1);   // Show connected in ASCII mode
             }
             else if ((d >> 8) == 0)
@@ -3033,6 +3038,16 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 }
             }
         }
+        else if (m_ascState == pni_rs)
+        {
+            // We just want to ignore 3 command codes.  Note that escape
+            // sequences count for one, not two.
+            if (++m_ascBytes == 3)
+            {
+                m_ascBytes = 0;
+                m_ascState = none;
+            }
+        }
         else if ((d >> 8) == 033)
         {
             // Escape sequence, the second character is in the low byte
@@ -3047,6 +3062,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 TRACEN ("Leaving PLATO terminal mode");
                 m_dumbTty = true;
                 m_flowCtrl = false;
+                m_sendFgt = false;
                 currentX = 0;
                 currentY = 496;
                 break;
@@ -3246,6 +3262,10 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 				m_ascState = ldc;				// to have first coordinate be "dark"
                 TRACE ("load mode %d", mode);
                 break;
+            case 036:   // RS -- used by PNI in connect handshake
+                m_ascState = pni_rs;
+                TRACEN ("pni start download, ignoring next 3 commands");
+                break;
             case 037:   // FS
                 mode = (mode & 3) + (3 << 2);
                 TRACE ("load mode %d", mode);
@@ -3314,6 +3334,11 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             TRACEN ("enable flow control");
                             m_flowCtrl = true;
                             n = 0x53;
+                            break;
+                        case 0x60:
+                            // hex 60 is inquire features
+                            TRACE ("report features 0x%02x", ASCFEATURES);
+                            n += ASCFEATURES;
                             break;
                         default:
                             TRACE2 ("load echo %d (0x%02x)", n, n);
@@ -4157,7 +4182,7 @@ void PtermFrame::progmode (u32 d, int origin)
 }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Process Plato mode input
+**  Purpose:        Process Plato mode keyboard input
 **
 **  Parameters:     Name        Description.
 **                  key         Plato key code for station
@@ -4326,6 +4351,28 @@ void PtermFrame::ptermSendKey(int key)
             m_conn->SendData (data, 2);
         }
     }
+}
+
+void PtermFrame::ptermSendTouch (int x, int y)
+{
+    char data[6];
+
+    if (m_sendFgt)
+    {
+        // Send fine grid touch code first
+        data[0] = 033;
+        data[1] = 0x1f;
+        data[2] = 0x40 + (x & 0x1f);
+        data[3] = 0x40 + ((x >> 5) & 0x0f);
+        data[4] = 0x40 + (y & 0x1f);
+        data[5] = 0x40 + ((y >> 5) & 0x0f);
+        m_conn->SendData (data, 6);
+    }
+    
+    x /= 32;
+    y /= 32;
+
+    ptermSendKey (0x100 | (x << 4) | y);
 }
 
 int PtermFrame::Parity (int key)
@@ -5666,7 +5713,24 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     // non-letters) and we want to let the system deal with that.
 
     pc = -1;
-    if (ptermApp->m_numpadArrows)
+    if (ptermApp->m_platoKb)
+    {
+        // A few keys are mismapped in the rev 2.02 keyboard.  
+        // Fix those up here.
+        switch (key)
+        {
+        case WXK_TAB:
+            pc = 015;       // assign
+            break;
+        case WXK_ESCAPE:
+            pc = 016;       // +
+            break;
+        case WXK_NUMPAD_ADD:
+            pc = 014;       // tab
+            break;
+        }
+    }
+    else if (ptermApp->m_numpadArrows)
     {
         // Check the numeric keypad keys separately and turn them
         // into the 8-way arrow keys of the PLATO main keyboard.
@@ -6059,10 +6123,7 @@ void PtermCanvas::OnMouseUp (wxMouseEvent &event)
     {
         return;
     }
-    x /= 32;
-    y /= 32;
-
-    m_owner->ptermSendKey (0x100 | (x << 4) | y);
+    m_owner->ptermSendTouch (x, y);
 }
 
 void PtermCanvas::UpdateRegion (wxMouseEvent &event)
