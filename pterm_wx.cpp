@@ -735,7 +735,7 @@ private:
     int         modewords;
     int         mode4start;
     bool        m_dumbTty;
-    typedef enum { none, ldc, lde, lda, ssf, fg, bg, paint, pni_rs } AscState;
+    typedef enum { none, ldc, lde, lda, ssf, fg, bg, paint, pni_rs, ext } AscState;
     AscState    m_ascState;
     int         m_ascBytes;
     int         m_assembler;
@@ -3141,6 +3141,8 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 'R':
                 // external data
+                m_ascState = ext;
+                m_ascBytes = 0;
                 TRACEN ("Start ext");
                 break;
             case 'S':
@@ -3339,6 +3341,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             // hex 60 is inquire features
                             TRACE ("report features 0x%02x", ASCFEATURES);
                             n += ASCFEATURES;
+                            m_sendFgt = true;
                             break;
                         default:
                             TRACE2 ("load echo %d (0x%02x)", n, n);
@@ -3365,6 +3368,13 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     {
                         TRACE ("load memory address %04x", n);
                         memaddr = n & 077777;
+                    }
+                    break;
+                case ext:
+                    if (n != -1)
+                    {
+                        TRACE ("ext %04x", n);
+                        // tbd
                     }
                     break;
                 case ssf:
@@ -5245,7 +5255,7 @@ int PtermConnection::AssembleAsciiWord (void)
             m_pending = 0;
             return (033 << 8) + i;
         }
-        else if (m_pending == 0 && i == 0177)
+        else if (0 && m_pending == 0 && i == 0177)
         {
             // Weird.  For some reason, 0177 is sent as two of them.
             m_pending = 0177;
