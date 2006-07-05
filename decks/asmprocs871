@@ -1458,7 +1458,7 @@ unload(ubin)
 .*
 revert. utility
 ~
-.proc,pni,ml=750,list=0/full.
+.proc,pni,ml=871,list=0/full.
 .*
 .*        build new pni
 .*
@@ -1472,7 +1472,7 @@ begin(cybipl)
 .*        compile pni1 (cybil)
 .*
 ses. gencomp seq=80 status b=cybipl un=plato cybccmn ..
-def=nos750$  m=pni1
+def=nos871$  m=pni1
 .*
 ife($list$ .eq. $full$,prints)
 begin(compmod,,abort,#list=on)
@@ -1488,13 +1488,17 @@ rewind(lgo,pni1)
 .*
 .*        assemble pni2 (cpu compass) with standard nettext
 .*
-modify(z,lo=e,l=errs)/*oplfile ipl,nos/*edit pni2,plazlsr
-compass(a,i,s=0,g=nostxt,g=nettxt,#ml=ml,d,o=errs,l=list,b=pni2)
+modify(z,lo=e,l=errs)/*oplfile nos,ipl/*edit pni2,plazlsr
+compass(a,i,s=0,s=nostext,s=nettext,#ml=ml,d,o=errs,l=list,b=pni2)
 .*
 .*        load normal and debug versions from standard libs.
 .*
-begin,pnild,,lib=niolib,abs=kermbin,map=pnimap.
-begin,pnild,,lib=niodlib,abs=krmdbin,map=pnidmap.
+common,system.
+gtr,system,netio,d.ulib/netio
+gtr,system,netiod,d.ulib/netiod
+.*
+begin,pnild,,lib=netio,abs=pnibin,map=pnimap.
+begin,pnild,,lib=netiod,abs=pnidbin,map=pnidmap.
 .*
 .*        release cybil opl
 .*
@@ -1601,7 +1605,8 @@ endif(gcompok)
 ife(efg.eq.0,seserrs)
 ife($list$.eq.$on$,getlist)
 rewind(seslist)
-copy(seslist,full)
+.*copy(seslist,full)
+ses. print f=seslist hn=0
 endif(getlist)
 unload,seslist,compile.
 .*
@@ -1627,7 +1632,7 @@ endif(seserrs)
 .*
 revert. compmod
 ~
-.proc,pnild,lib=niolib,rel1=pni1,rel2=pni2,abs=kermbin,map=pnimap.
+.proc,pnild,lib=netio,rel1=pni1,rel2=pni2,abs=kermbin,map=pnimap.
 .*
 .*        loads the cybil portion of pni from *rel1*
 .*        and the compass portion of pni from *rel2*
@@ -1645,7 +1650,7 @@ rewind(lgo)
 begin,sespack.
 begin,seslink,,libs=lib.
 .*
-begin,binpack.
+.*begin,binpack.
 purge(map/na)
 define(map/ct=pu)
 rewind(newmap)
@@ -1659,3 +1664,45 @@ copy,newbin,abs.
 unload(newbin,abs)
 .*
 revert. pnild
+~
+.proc,seslink,libs=$$.
+.*
+.*        link relocatable binaries.
+.*
+.*        entry  libs = libraries for external references
+.*               lgo = file with relocatable binaries
+.*
+.*        exit   binaries copied to newbin
+.*               map copied to newmap and full output file
+.*               lgo unloaded
+.*
+unload(map,lgob)
+map(on)
+ses. link170 p=(libs) cybclib l=map lo=full
+.*
+.*        if errors, copy errors to file *errs*, copy full
+.*        map to file *full*, and then abort.
+.*
+ife(efg.ne.0,loaderr)
+rewind,map.
+copy,map,output.
+xedit(map,l=errs)$l.///.*$t$l.***.*$e
+unload(map)
+revert,abort.  loader errors
+endif(loaderr)
+.*
+.*        copy binaries to file *newbin*
+.*
+rewind,lgob.
+copy,lgob,newbin.
+unload(lgo,lgob)
+.*
+.*        copy map to newmap and full output file
+.*
+rewind,map.
+copy,map,newmap.
+rewind,map.
+copy,map,output.
+unload,map.
+.*
+revert. seslink
