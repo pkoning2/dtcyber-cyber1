@@ -331,9 +331,9 @@ static FcStatus niuInFunc(PpWord funcCode)
         for (i = 0; i < STATIONS; i++)
             {
             mp = portVector + i;
-            mp->loggedIn = false;
-            mp->sendLogout = false;
-            mp->forceLogout = false;
+            mp->loggedIn = FALSE;
+            mp->sendLogout = FALSE;
+            mp->forceLogout = FALSE;
             }
         break;
         }
@@ -450,7 +450,7 @@ static void niuInIo(void)
                 */
                 mp->currInput[0] = 01753 >> 7;
                 mp->currInput[1] = 01753 & 0177;
-                mp->sendLogout = false;
+                mp->sendLogout = FALSE;
                 break;
                 }
             if (np == NULL || !dtActive (&np->fet))
@@ -723,7 +723,7 @@ static void niuWelcome(NetPort *np, int stat)
             **  If we're not logged out yet, set a flag to send
             **  *offky2*, which tells PLATO to log out this station.
             */
-            mp->sendLogout = true;
+            mp->sendLogout = TRUE;
             }
         return;
         }
@@ -749,7 +749,7 @@ static void niuWelcome(NetPort *np, int stat)
     if (mp->loggedIn)
         {
         printf ("need to force logout for port %d\n", stat);
-        mp->forceLogout = true;
+        mp->forceLogout = TRUE;
         }
 
     niuSendWord (stat, 0042000 + stat); /* NOP with station number in it */
@@ -918,12 +918,12 @@ static void niuSend(int stat, int word)
         **  when it receives the *offky2*.  That way we have explicit
         **  resynchronization.
         */
-        mp->loggedIn = false;
-        mp->forceLogout = false;
+        mp->loggedIn = FALSE;
+        mp->forceLogout = FALSE;
         }
     else if (word == echotype)
         {
-        mp->loggedIn = true;
+        mp->loggedIn = TRUE;
         }
     }
 
