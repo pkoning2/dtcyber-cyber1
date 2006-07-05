@@ -5728,6 +5728,12 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         case WXK_NUMPAD_ADD:
             pc = 014;       // tab
             break;
+#if defined(_WIN32)
+		// This is a workaround for a Windows keyboard mapping bug
+        case '+':
+			pc = 0133;		// =
+			break;
+#endif
         }
     }
     else if (ptermApp->m_numpadArrows)
