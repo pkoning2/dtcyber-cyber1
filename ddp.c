@@ -381,6 +381,16 @@ static void ddpActivate(void)
 **------------------------------------------------------------------------*/
 static void ddpDisconnect(void)
     {
+#if 0
+    DdpContext *dc;
+
+    dc = (DdpContext *) (activeDevice->context[activeDevice->selectedUnit]);
+
+    if (activeDevice->fcode == FcDdpWriteECS && dc->dbyte > 0)
+    {
+        printf ("*** ddp: write disconnect on partial word boundary\n");
+    }
+#endif
     }
 
 /*---------------------------  End Of File  ------------------------------*/
