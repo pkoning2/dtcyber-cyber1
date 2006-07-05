@@ -14,6 +14,30 @@ return(opl)
 */ **/---   block=01-e opl2              83/09/22. 20.24    source
 *oplfile opl2
 */
+*/ **/---   block=01-e ascii              06/03/28. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ make ASCII terminals work if CIU is also present
+*/
+*/ -------------------------------------------------------------------
+*ident ciuasci
+*deck outform
+*d MISCFX1.5
++         EQ     OUTF555     14 - ASCII terminal
+*/ end outform
+*/
+*/ **/---   block=01-e cerlpack              06/03/28. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Use CERL-style real packs
+*/
+*/ -------------------------------------------------------------------
+*ident cerlpak
+*deck mastor
+*d JSNPPU.11
+          SYSTEM png,,PNGWRD
+*/ end mastor
+*/
 */ **/---   block=01-e hostname              06/03/28. 12.00    source
 */ -------------------------------------------------------------------
 */
@@ -485,7 +509,9 @@ return(opl)
           sb6    x6-idxlim
           mi     b6,kbi1     if not time to wrap
           sx6    0           wrap to start
- kbi1     bx7    x5*x3       get rest of word with pp index
+ kbi1     bx7    x6-x0       check against cp index
+          zr     x7,kbix     no room, exit
+          bx7    x5*x3       get rest of word with pp index
           bx7    x7+x6       merge updated index
           sa7    a3          update pp index word
           sa3    x6+kidxtb   read word and shift for this index
@@ -563,10 +589,10 @@ return(opl)
  kidxtb   kidxtb
 *d polls.503,polls.504
           SA1    A0+nkppidx  PPU KEY WORD
-          SA2    A1+nkcpidx  CPU KEY WORD
+          SA2    A0+nkcpidx  CPU KEY WORD
 *d UQ9600.21,UQ9600.22
           SA1    A0+nkppidx  PPU KEY WORD
-          SA2    A1+nkcpidx  CPU KEY WORD
+          SA2    A0+nkcpidx  CPU KEY WORD
 *i UQ9600.25
           pl     x6,keycnt   if no wrap
           sx6    x6+idxlim   adjust count for wrapped index
@@ -613,6 +639,45 @@ return(opl)
 *d exec6.4327
  FKKEYBF  OVDATA nkeylth
 */ end exec6
+*deck pni2
+*d JBFKEY.154
+          LX1    /plat/nkeyshf
+*d jbfkey.156,jbfkey.157
+          sa0    cmkbuf      address of cm copy of key buffer
+          RE     /plat/nkeylth READ KEY BUFFER ENTRY
+*d jbfkey.159,jbfkey.160
+          SA1    A0+/plat/nkppidx  net KEY WORD
+          SA3    A0+/plat/nkcpidx  CPU KEY WORD
+*d jbfkey.164,jbfkey.167
+          sb6    x3-/plat/idxlim
+          mi     b6,sky9     if not time to wrap
+          sx3    0           wrap to start
+ sky9     bx6    x3-x4       check against cpu index
+*d jbfkey.172,PNIRWX.24
+          bx6    x7*x1       get rest of word with net index
+          bx6    x6+x3       merge updated index
+          sa6    a1          update net index word
+          sa3    x3+kidxtb   read word and shift for this index
+          ux3,b6 x3
+          sa3    x3+cmkbuf   fetch the right word
+          lx3    b6          put the key byte to update in low byte
+          bx3    x3*x7       clear it out
+          bx3    x2+x3       merge the key
+          sb6    b6-60
+          ax6    x3,b6       rotate key word back to the way it was
+          SA6    a3
++         we     /plat/nkeylth-1 write ecs keybuf except for cpu index word
+-         rj     epe
+*i JBFKEY.219
+
+ cmkbuf   bss    /plat/nkeylth
+
+ kidxtb   bss    0
+          qual   plat
+          kidxtb
+          qual   *
+
+*/ end pni2
 */
 */ **/---   block=01-e signoff              05/01/13. 12.19    source
 */ -------------------------------------------------------------------
