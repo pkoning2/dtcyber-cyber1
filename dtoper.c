@@ -53,7 +53,9 @@
 #define CmdY        0060
 #define StatusX     01040
 #define StatusY     0740
-#define StatusLines 32
+#define StatusLines 255
+#define StatusWin   20
+#define StatusOff   2
 #define NetBufSize  1024
 
 /*
@@ -138,6 +140,8 @@ static OpMsg *messages;
 static int msgCount = 0;
 
 static char *status[StatusLines];
+static int statusTop = StatusOff;
+static int statusMax = 0;
 
 static OpMsg cmdEcho = { CmdX, CmdY, 0020, 0, cmdBuf };
 static OpMsg errmsg = { 0020, 0014, 0020, 0, NULL };   // pointer filled in
@@ -278,7 +282,7 @@ int main (int argc, char **argv)
                     **      line number, one byte
                     **      text, the remaining bytes
                     */
-                    j = *p++;
+                    j = *(u8 *) (p++);
                     if (i > OpStatSize + 1 || i == 0 || j >= StatusLines)
                         {
                         break;
@@ -287,6 +291,10 @@ int main (int argc, char **argv)
                     if (status[j] == NULL)
                         {
                         status[j] = malloc(OpStatSize + 1);
+                        if (j > statusMax)
+                            {
+                            statusMax = j;
+                            }
                         }
                     cp = status[j];
                     strncpy (cp, p, OpStatSize);
@@ -350,7 +358,7 @@ int main (int argc, char **argv)
 **------------------------------------------------------------------------*/
 void opDisplay(void)
     {
-    int i;
+    int i, line;
 
     smallFontWidth = windowGetOperFontWidth(FontSmall);
     mediumFontWidth = windowGetOperFontWidth(FontMedium);
@@ -363,13 +371,44 @@ void opDisplay(void)
             }
         }
     
-    for (i = 0; i < StatusLines; i++)
+    if (status[0] != NULL)
+        {
+        windowSendString (StatusX, StatusY, 010, 
+                          FALSE, status[0], TRUE);
+        }
+    
+    line = 0;
+    if (statusTop != StatusOff)
+        {
+            windowSendString (StatusX, StatusY - StatusOff * 020, 010, 
+                              FALSE, "        (more)", TRUE);
+            line++;
+        }
+    
+    for (i = statusTop; i <= statusMax; i++)
         {
         if (status[i] != NULL)
             {
-            windowSendString (StatusX, StatusY - 020 * i, 010, 
+            if (line >= StatusWin && i < statusMax)
+                {
+                windowSendString (StatusX, 
+                                  StatusY - 020 * (line + StatusOff), 010, 
+                                  FALSE, "        (more)", TRUE);
+                line++;
+                break;
+                }
+            windowSendString (StatusX,
+                              StatusY - 020 * (line + StatusOff), 010, 
                               FALSE, status[i], TRUE);
             }
+        line++;
+        }
+    while (line <= StatusWin)
+        {
+        windowSendString (StatusX,
+                          StatusY - 020 * (line + StatusOff), 010, 
+                          FALSE, "", TRUE);
+        line++;
         }
 
     opSendString (&cmdEcho, TRUE);
@@ -410,7 +449,43 @@ static void opRequest(void)
         {
         return;
         }
-    opSetMsg (NULL);
+    if (cmdLen == 0)
+        {
+        /*
+        **  Special actions for first keystroke.
+        */
+        opSetMsg (NULL);
+        if (ppKeyIn == '+')
+            {
+            /*
+            **  Scroll status display down.
+            */
+            i = statusTop + StatusWin;
+            if (i + StatusWin >= statusMax)
+                {
+                i = statusMax - StatusWin + 1;
+                if (i < StatusOff)
+                    {
+                    i = StatusOff;
+                    }
+                }
+            statusTop = i;
+            return;
+            }
+        else if (ppKeyIn == '-')
+            {
+            /*
+            **  Scroll status display down.
+            */
+            i = statusTop - StatusWin;
+                if (i < StatusOff)
+                    {
+                    i = StatusOff;
+                    }
+            statusTop = i;
+            return;
+            }
+        }
     if (ppKeyIn == '\r')
         {
         ppKeyIn = '\n';

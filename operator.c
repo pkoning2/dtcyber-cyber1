@@ -42,7 +42,7 @@
 */
 #define OpCmdSize       64
 #define NetBufSize      256
-#define StatusLineMax   32
+#define StatusLineMax   255
 #define StatusSys       0       /* Line number of operator system status */
 #define StatusFirstDev  2       /* Line number of first device status line */
 #define StatusMsgPfx    15      /* Number of prefix bytes in status buffer */
