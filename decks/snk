@@ -1,4 +1,5 @@
-user(sys)
+snk.
+user(plato,plato)
 attach,snkbin/m=w,na.
 if(.not.file(snkbin,as))define,snkbin.
 pf(snk),-blabel
