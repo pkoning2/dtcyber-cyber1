@@ -215,7 +215,7 @@ ATOM dtRegisterClass(HINSTANCE hInstance)
     wcex.hIcon          = LoadIcon(hInstance, (LPCTSTR)IDI_CONSOLE);
     wcex.hCursor        = LoadCursor(NULL, IDC_ARROW);
     wcex.hbrBackground  = bgBrush;
-    wcex.lpszMenuName   = (LPCSTR)IDC_CONSOLE;
+//    wcex.lpszMenuName   = (LPCSTR)IDC_CONSOLE;
     wcex.lpszClassName  = "DTOPER";
     wcex.hIconSm        = LoadIcon(wcex.hInstance, (LPCTSTR)IDI_SMALL);
 
@@ -287,9 +287,9 @@ static LRESULT CALLBACK windowProcedure(HWND hWnd, UINT message,
 
         switch (wmId)
             {
-        case IDM_EXIT:
-            DestroyWindow(hWnd);
-            break;
+        //case IDM_EXIT:
+        //    DestroyWindow(hWnd);
+        //    break;
 
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
