@@ -65,7 +65,7 @@
 */
 static ThreadFunRet dtThread (void *param);
 static void dtCloseSocket (int connFd);
-static dtGetw (NetFet *fet, void *buf, int len, bool read);
+static int dtGetw (NetFet *fet, void *buf, int len, bool read);
 
 /*
 **  ----------------
@@ -954,7 +954,7 @@ static void dtCloseSocket (int connFd)
 **  Returns:        -1 if <len> bytes not currently available, 0 if ok
 **
 **------------------------------------------------------------------------*/
-static dtGetw (NetFet *fet, void *buf, int len, bool read)
+static int dtGetw (NetFet *fet, void *buf, int len, bool read)
     {
     u8 *in, *out;
     u8 *to = (u8 *) buf;
