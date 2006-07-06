@@ -5,6 +5,9 @@ COPYBR,INPUT,NDLJOB.
 *SAVE,NDL16.
 *SAVE,NDLJOB.
 REPLACE,NDL16,NDLJOB.
+*
+* Now compile it.
+begin,,ndljob.
 ~
 ****************************************************************
 *                                                              *
@@ -40,103 +43,10 @@ TASY721: DEFINE, TC=721, PRI, PG=NO, PL=0, PW=0, OP=DI, OC=YES,
 *                  ASYNCHRONOUS TERMINALS                      *
 *                                                              *
 ****************************************************************
-  
-LI01:    LINE,     PORT=01, L9600.
-         TE01:     TERMDEV, TASY721.
-  
-LI02:    LINE,     PORT=02, L9600.
-         TE02:     TERMDEV, TASY721.
-  
-LI03:    LINE,     PORT=03, L9600.
-         TE03:     TERMDEV, TASY721.
-  
-LI04:    LINE,     PORT=04, L9600.
-         TE04:     TERMDEV, TASY721.
-  
-LI05:    LINE,     PORT=05, L9600.
-         TE05:     TERMDEV, TASY721.
-  
-LI06:    LINE,     PORT=06, L9600.
-         TE06:     TERMDEV, TASY721.
-  
-LI07:    LINE,     PORT=07, L9600.
-         TE07:     TERMDEV, TASY721.
-  
-LI08:    LINE,     PORT=08, L9600.
-         TE08:     TERMDEV, TASY721.
-  
-LI09:    LINE,     PORT=09, L9600.
-         TE09:     TERMDEV, TASY721.
-  
-LI0A:    LINE,     PORT=0A, L9600.
-         TE0A:     TERMDEV, TASY721.
-  
-LI0B:    LINE,     PORT=0B, L9600.
-         TE0B:     TERMDEV, TASY721.
-  
-LI0C:    LINE,     PORT=0C, L9600.
-         TE0C:     TERMDEV, TASY721.
-  
-LI0D:    LINE,     PORT=0D, L9600.
-         TE0D:     TERMDEV, TASY721.
-  
-LI0E:    LINE,     PORT=0E, L9600.
-         TE0E:     TERMDEV, TASY721.
-  
-LI0F:    LINE,     PORT=0F, L9600.
-         TE0F:     TERMDEV, TASY721.
-  
-LI10:    LINE,     PORT=10, L9600.
-         TE10:     TERMDEV, TASY721.
-   
-LI11:    LINE,     PORT=11, L9600.
-         TE11:     TERMDEV, TASY721.
-  
-LI12:    LINE,     PORT=12, L9600.
-         TE12:     TERMDEV, TASY721.
-  
-LI13:    LINE,     PORT=13, L9600.
-         TE13:     TERMDEV, TASY721.
-  
-LI14:    LINE,     PORT=14, L9600.
-         TE14:     TERMDEV, TASY721.
-  
-LI15:    LINE,     PORT=15, L9600.
-         TE15:     TERMDEV, TASY721.
-  
-LI16:    LINE,     PORT=16, L9600.
-         TE16:     TERMDEV, TASY721.
-  
-LI17:    LINE,     PORT=17, L9600.
-         TE17:     TERMDEV, TASY721.
-  
-LI18:    LINE,     PORT=18, L9600.
-         TE18:     TERMDEV, TASY721.
-  
-LI19:    LINE,     PORT=19, L9600.
-         TE19:     TERMDEV, TASY721.
-  
-LI1A:    LINE,     PORT=1A, L9600.
-         TE1A:     TERMDEV, TASY721.
-  
-LI1B:    LINE,     PORT=1B, L9600.
-         TE1B:     TERMDEV, TASY721.
-  
-LI1C:    LINE,     PORT=1C, L9600.
-         TE1C:     TERMDEV, TASY721.
-  
-LI1D:    LINE,     PORT=1D, L9600.
-         TE1D:     TERMDEV, TASY721.
-  
-LI1E:    LINE,     PORT=1E, L9600.
-         TE1E:     TERMDEV, TASY721.
-  
-LI1F:    LINE,     PORT=1F, L9600.
-         TE1F:     TERMDEV, TASY721.
-  
-LI20:    LINE,     PORT=20, L9600.
-         TE20:     TERMDEV, TASY721.
-  
+
+[LI#:    LINE,     PORT=#, L9600.
+         TE#:     TERMDEV, TASY721.
+]  
  
 ****************************************************************
 *                                                              *
@@ -177,40 +87,9 @@ CYBIS:   APPL.
 *
 *  INTERACTIVE TERMINAL USERS 
 *
-  
-TE01:    USER,     PLAUSER.
-TE02:    USER,     PLAUSER.
-TE03:    USER,     PLAUSER.
-TE04:    USER,     PLAUSER.
-TE05:    USER,     PLAUSER.
-TE06:    USER,     PLAUSER.
-TE07:    USER,     PLAUSER.
-TE08:    USER,     PLAUSER.
-TE09:    USER,     PLAUSER.
-TE0A:    USER,     PLAUSER.
-TE0B:    USER,     PLAUSER.
-TE0C:    USER,     PLAUSER.
-TE0D:    USER,     PLAUSER.
-TE0E:    USER,     PLAUSER.
-TE0F:    USER,     PLAUSER.
-TE10:    USER,     PLAUSER.
-TE11:    USER,     PLAUSER.
-TE12:    USER,     PLAUSER.
-TE13:    USER,     PLAUSER.
-TE14:    USER,     PLAUSER.
-TE15:    USER,     PLAUSER.
-TE16:    USER,     PLAUSER.
-TE17:    USER,     PLAUSER.
-TE18:    USER,     PLAUSER.
-TE19:    USER,     PLAUSER.
-TE1A:    USER,     PLAUSER.
-TE1B:    USER,     PLAUSER.
-TE1C:    USER,     PLAUSER.
-TE1D:    USER,     PLAUSER.
-TE1E:    USER,     PLAUSER.
-TE1F:    USER,     PLAUSER.
-TE20:    USER,     PLAUSER.
-  
+
+[TE#:    USER,     PLAUSER.]  
+
          END.
 ~
 .PROC,NDLJOB,VERSION=16.
