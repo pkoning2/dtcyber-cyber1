@@ -12,12 +12,23 @@
 **--------------------------------------------------------------------------
 */
 
+#include <sys/types.h>
 #if defined(_WIN32)
 #include <winsock.h>
 #else
 #include <stdbool.h>
 #include <netinet/in.h>
-#include <sys/types.h>
+#define _POSIX_C_SOURCE_199309L
+#include <unistd.h>
+#endif
+
+#ifdef HOST_Linuxxx
+/* Linux claims to have it but doesn't actually. */
+#undef _POSIX_ASYNCHRONOUS_IO
+#endif
+
+#ifdef _POSIX_ASYNCHRONOUS_IO
+#include <aio.h>
 #endif
 
 /*
@@ -265,6 +276,24 @@ typedef struct
 #if !defined(MSG_NOSIGNAL)
 #define MSG_NOSIGNAL 0
 #endif
+
+/*
+**  Disk I/O control struct.
+**
+**  This support async I/O, if the host OS has it.
+*/
+
+typedef struct 
+    {
+#ifdef _POSIX_ASYNCHRONOUS_IO
+    struct aiocb iocb;
+#endif
+    off_t       pos;
+    void        *buf;
+    int         fd;
+    int         count;
+    bool        ioPending;
+    } DiskIO;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* TYPES_H */

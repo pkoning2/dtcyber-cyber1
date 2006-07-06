@@ -244,6 +244,22 @@ void logInit(void);
 void logError(char *file, int line, char *fmt, ...);
 
 /*
+**  dtdisksubs.c
+*/
+bool ddOpen (DiskIO *io, const char *name, bool writable);
+bool ddCreate (DiskIO *io, const char *name);
+void ddClose (DiskIO *io);
+bool ddIOPending (DiskIO *io);
+bool ddLock (DiskIO *io);
+void ddQueueRead (DiskIO *io, void *buf, int bytes);
+void ddQueueWrite (DiskIO *io, const void *buf, int bytes);
+void ddSeek (DiskIO *io, off_t pos);
+void ddWaitIO (DiskIO *io);
+
+/* For efficiency this is a define */
+#define ddOpened(io) ((io)->fd > 0)
+
+/*
 **  dtnetsubs.c
 */
 int dtConnect (int *connFd, const char *hostname, int portnum);
@@ -328,6 +344,8 @@ extern bool bigEndian;
 extern bool opActive;
 extern long telnetPort;
 extern long telnetConns;
+extern long npuNetTelnetConns;
+extern long npuNetTelnetPort;
 extern long platoPort;
 extern long platoConns;
 extern long platoLocalPort;
