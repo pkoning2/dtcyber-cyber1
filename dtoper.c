@@ -93,6 +93,7 @@ typedef struct opMsg
 static void opSendString (OpMsg *m, bool blank);
 static void opRequest(void);
 static int opScanCmd (void);
+static void opScroll (int top);
 
 /*
 **  ----------------
@@ -298,6 +299,15 @@ int main (int argc, char **argv)
                         }
                     cp = status[j];
                     strncpy (cp, p, OpStatSize);
+                    /*
+                    **  If this status line isn't currently visible, 
+                    **  scroll the display to make it so.
+                    */
+                    if (j >= StatusOff &&
+                        (j < statusTop || j >= statusTop + StatusWin))
+                        {
+                        opScroll (j);
+                        }
                     break;
                 case OpReply:
                     /*
@@ -424,6 +434,28 @@ void opDisplay(void)
 */
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Scroll device status window to a given line
+**
+**  Parameters:     Name        Description.
+**                  top         New top line index
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opScroll (int top)
+    {
+    if (top + StatusWin >= statusMax)
+        {
+        top = statusMax - StatusWin + 1;
+        }
+    if (top < StatusOff)
+        {
+        top = StatusOff;
+        }
+    statusTop = top;
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Process a keystroke.
 **
 **  Parameters:     Name        Description.
@@ -460,16 +492,7 @@ static void opRequest(void)
             /*
             **  Scroll status display down.
             */
-            i = statusTop + StatusWin;
-            if (i + StatusWin >= statusMax)
-                {
-                i = statusMax - StatusWin + 1;
-                if (i < StatusOff)
-                    {
-                    i = StatusOff;
-                    }
-                }
-            statusTop = i;
+            opScroll (statusTop + StatusWin);
             return;
             }
         else if (ppKeyIn == '-')
@@ -477,12 +500,7 @@ static void opRequest(void)
             /*
             **  Scroll status display down.
             */
-            i = statusTop - StatusWin;
-                if (i < StatusOff)
-                    {
-                    i = StatusOff;
-                    }
-            statusTop = i;
+            opScroll (statusTop - StatusWin);
             return;
             }
         }
