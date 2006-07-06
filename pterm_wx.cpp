@@ -636,8 +636,16 @@ public:
     void ptermSendKey(int key);
     void ptermSendTouch (int x, int y);
     void ptermSetTrace (bool fileaction);
+#if 0
+    // The s0ascers spec calls for parity but it isn't really needed
+    // and by not doing it we keep things simpler.  For example,
+    // that way we don't need to worry about telnet escaping
+    // (0xff escaping) in the inbound direction.
     int Parity (int key);
-    
+#else
+#define Parity(x) (x)
+#endif
+
     bool HasConnection (void) const
     {
         return (m_conn != NULL);
@@ -1332,7 +1340,7 @@ void PtermApp::OnAbout(wxCommandEvent&)
 
     msg.Printf (_T("PLATO terminal emulator %s.\n%s"),
                 wxT ("V" PTERMVERSION),
-                _("Copyright \xA9 2005 by Paul Koning."));
+                _("Copyright \xA9 2004-2006 by Paul Koning."));
     
     wxMessageBox(msg, _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
 }
@@ -4385,6 +4393,7 @@ void PtermFrame::ptermSendTouch (int x, int y)
     ptermSendKey (0x100 | (x << 4) | y);
 }
 
+#if 0
 int PtermFrame::Parity (int key)
 {
     int i;
@@ -4399,7 +4408,7 @@ int PtermFrame::Parity (int key)
     }
     return key;// | p;
 }
-
+#endif
 
 void PtermFrame::ptermSetStation (int station)
 {
@@ -5244,6 +5253,16 @@ int PtermConnection::AssembleAsciiWord (void)
         {
             return C_NODATA;
         }
+        else if (m_pending == 0 && i == 0377)
+        {
+            // 0377 is used by Telnet to introduce commands (IAC).
+            // We recognize only IAC IAC for now.
+            // Note that the check has to be made before the sign
+            // bit is stripped off.
+            m_pending = 0377;
+            continue;
+        }
+
         i &= 0177;
         if (i == 033)
         {
@@ -5254,12 +5273,6 @@ int PtermConnection::AssembleAsciiWord (void)
         {
             m_pending = 0;
             return (033 << 8) + i;
-        }
-        else if (0 && m_pending == 0 && i == 0177)
-        {
-            // Weird.  For some reason, 0177 is sent as two of them.
-            m_pending = 0177;
-            continue;
         }
         else
         {
@@ -5725,26 +5738,13 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     pc = -1;
     if (ptermApp->m_platoKb)
     {
-        // A few keys are mismapped in the rev 2.02 keyboard.  
-        // Fix those up here.
-        switch (key)
-        {
-        case WXK_TAB:
-            pc = 015;       // assign
-            break;
-        case WXK_ESCAPE:
-            pc = 016;       // +
-            break;
-        case WXK_NUMPAD_ADD:
-            pc = 014;       // tab
-            break;
 #if defined(_WIN32)
 		// This is a workaround for a Windows keyboard mapping bug
-        case '+':
+        if (key == '+')
+        {
 			pc = 0133;		// =
-			break;
-#endif
         }
+#endif
     }
     else if (ptermApp->m_numpadArrows)
     {
