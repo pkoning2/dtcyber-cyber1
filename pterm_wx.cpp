@@ -2461,7 +2461,11 @@ void PtermFrame::ptermFullErase (void)
     m_canvas->FullErase ();
     dc.BeginDrawing ();
     PrepareDC (dc);
-    dc.Clear ();
+    dc.SetPen (m_backgroundPen);
+    dc.SetBrush (m_backgroundBrush);
+    dc.DrawRectangle (XTOP, YTOP, 
+                      512 * ptermApp->m_scale, 
+                      512 * ptermApp->m_scale);
     dc.EndDrawing ();
     m_memDC->BeginDrawing ();
     m_memDC->SetBackground (m_backgroundBrush);
@@ -2716,6 +2720,8 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
         }
     }
     SetColors (newfg, newbg, newscale);
+    m_canvas->SetBackgroundColour (newbg);
+    m_canvas->Refresh ();
     m_defFg = newfg;
     m_defBg = newbg;
 }
@@ -2725,8 +2731,6 @@ void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
     TRACE6 ("fg: %d %d %d; bg: %d %d %d",
             newfg.Red(), newfg.Green(), newfg.Blue(),
             newbg.Red(), newbg.Green(), newbg.Blue());
-    m_canvas->SetBackgroundColour (newbg);
-    m_canvas->Refresh ();
     m_backgroundBrush.SetColour (newbg);
     m_backgroundPen.SetColour (newbg);
     m_backgroundPen.SetWidth (newscale);
