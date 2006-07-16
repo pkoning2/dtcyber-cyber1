@@ -1,0 +1,15 @@
+png.
+user(plato,plato)
+*attach,ptext.
+*attach,mtext.
+*attach,syscon.
+*attach,iptext.
+*attach,miscdef.
+*
+attach,png.
+* attach the opl
+attach(opl=opl871)
+attach(plaopl)
+purge,pngbin/na.
+define,lgo=pngbin.
+compass,i=png,s=nostext,x,ml=871d.

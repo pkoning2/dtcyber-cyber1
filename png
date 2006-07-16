@@ -1,0 +1,1011 @@
+          ident  png,ppfw
+          title  png - plato disk io
+          title  definitions
+          comment plato disk io, trivial version for dtcyber
+*
+*
+************************************************************
+*
+*
+          periph
+          sst
+*
+          syscom
+*
+*
+ opl      xtext  comsbio
+ opl      xtext  compmac
+*
+          list   x
+*
+ plaopl   xtext  ptext
+ plaopl   xtext  plasmpc
+* mtext    xtext
+ plaopl   xtext  syscon
+* iptext   xtext
+*
+          list   -x
+*
+ d.t0     equ    20b         direct cell work variables
+ d.t1     equ    21b
+ d.t2     equ    22b
+ d.t3     equ    23b
+ d.t4     equ    24b
+*
+*         equ    25b         (2 words)
+ d.dsks   equ    27b         (2 words) address of disk stack
+ d.pwrd   equ    31b         (2 words) address of pngwrd
+ d.ndsu   equ    33b         number of disk units
+* keep the next 4 in order
+ d.unit   equ    34b         current unit
+ d.cyl    equ    35b         current cylinder
+ d.trk    equ    36b         current track
+ d.sec    equ    37b         current sector
+* keep preceding 4 in order
+ d.nds4   equ    40b         number of disk units * 4
+ d.unt4   equ    41b         current unit * 4
+ d.seek   equ    42b         seek required flag
+ d.secs   equ    43b         count of sectors to transfer
+*
+* mastor request codes
+*
+ reads    equ     1          read to ecs buffer 
+ writs    equ     2          write from ecs buffer
+ readec   equ     3          read to ecs buffer 
+ writec   equ     4          write from ecs buffer
+*
+* disk function codes
+*
+ f.conn   equ    0           connect
+ f.seek   equ    1           seek 1-1 interlace
+ f.read   equ    4           read sector
+ f.write  equ    5           write sector
+ f.gst    equ    12b         general status
+*
+* disk params lifted from platxt
+*
+ dwps     equ    64          disk words per sector
+ dspt     equ    24          disk sectors per track
+ dtpc     equ    19          disk tracks per cylinder
+*
+* error codes
+*       
+ notrdy   equ    1           unit not available or busy
+ reqerr   equ    2           illegal request
+ seekerr  equ    3           seek error
+ adderr   equ    4           address error
+ limerr   equ    5           request outside ecs fl
+ lockerr  equ    10          write lockout during write
+*
+* other parameters
+*
+ oslev    equ    "modlevel"
+ esm      equ    0           ecs, not esm
+ maxctl   equ    8           number of disk controllers supports
+ ctl1     equ    2rs0        eq name of first controller
+ umask    equ    7           mask for unit within controller
+ ctlshf   equ    3           shift count for controller number
+ maxdsu   equ    64d         max unit number
+ nohang   equ    40b
+*
+* debug control (dtcyber specific)
+*
+ .debug   if     def,debug
+ trace    macro  sw
+          ifc    eq,*sw*on*,1
+          con    2542b
+          ifc    eq,*sw*off*,1
+          con    2576b
+ trace    endm
+ .debug   else
+ trace    macro  sw
+ trace    endm
+ .debug   endif
+*
+*
+************************************************************
+*
+*
+          title  comments
+*
+*
+************************************************************
+*
+*
+*         png call, from mastor only.
+*t, ir    24/3lpng, 1/1, 11/0, 6/0, 18/req
+* 
+*t, req   6/0, 18/pnames, 6/0, 18/diskstak, 11/ndsu, 1/0
+*         pnames = address of pack name table
+*         diskstak = address of disk request vector
+*         ndsu = number of disk units
+*
+*         pnames contains ndsu words, one per unit (not used by png)
+*
+*         diskstak format (4 words per unit)
+*t, stk   12/0, 1/1, 11/unit, 6/0, 18/len, 12/iocode
+*t, stk+1 24/ecsaddr, 12/0, 24/diskaddr
+*t, stk+2 60/completion data
+*
+*         len is number of cm/ecs words (i.e., 64 per sector)
+*         iocode is 3 for read, 4 for write
+*         diskaddr is the absolute disk address -
+*t, dskad 12/cylinder, 6/track, 6/sector
+*
+*         completion is indicated by first word of diskstak
+*t, stk   12/4000, 18/0, 18/status, 12/0
+*         status codes -
+*         0 = ok
+*         > 0 = error
+*
+*
+*         required equipment.
+*         *d1* -- ddp.
+*         *s0*..*s7* -- plato disk controllers.
+*
+*         up to 8 controllers are supported, with up to 8 units
+*         for each controller.  the plato unit number is
+*         3/ctrl, 3/unit
+* 
+*         plato disk equipment table entry.
+*t, pdeq  12/0, 6/0, 6/ch, 12/, 12/2ls0, 12/0
+*
+************************************************************
+*
+*
+          title  -png-       main loop
+*
+*
+*
+          org    ppfw
+ png      bss    0
+          trace  on
+          rjm    init        initializations
+          trace  off
+*
+ png1     ldd    d.nds4      get unit count
+          std    d.unt4      reinitialize current unit
+          delay  100         idle
+*
+*
+*         check for *mastor* to *png* request
+*
+          call   pause       check for error / storage move
+ pngr101  lcn    4
+          rad    d.unt4      cycle through units
+          mjn    png1        gone past zero, restart loop
+          ldn    3
+          std    d.t0        set number cm words to read
+          loadcm dskstk      address of disk stack
+          add    d.unt4      bias to entry for current unit
+          crm    request,d.t0    read request words
+          ldm    request     check ready flag
+          njn    pngr101     not this unit, try next
+          ldm    request+1   get unit
+          shn    6           check the flag bit
+          pjn    pngr101     not set, skip this
+          trace  on
+          shn    -6
+          lpc    3777b       clear the flag bit
+          std    d.unit      remember requested unit
+          sbd    d.ndsu      check for range
+          pjp    pngrerr     too large
+          ldd    d.unit
+          shn    -ctlshf     get controller number
+          std    d.t1
+          ldm    chtab,d.t1  get channel number for controller
+          zjp    nounit      if controller not present
+          plant  channel,c=dsk plant channel number
+          ldd    d.unit
+          lpn    umask       form physical unit number
+          std    d.unit
+          ldm    request+2   get high order length
+          shn    12
+          adm    request+3   now all of it
+          shn    -6          turn into sector count
+          std    d.secs      save that
+          ldm    request+8   get cylinder number
+          std    d.cyl       save that
+          ldm    request+9   get trk/sec
+          shn    -6
+          std    d.trk
+          ldm    request+9
+          lpn    77b
+          std    d.sec
+          aod    d.seek      set seek required flag
+          ldm    ecra+1      get low order mastor ecs ra
+          ram    request+6   make ecs address absolute
+          shn    -12         position carry
+          adm    ecra         and high order ecs ra
+          ram    request+5   high order now absolute
+* i suppose technically we ought to check ecs fl...
+
+* 
+* check if the unit is on-line
+* 
+          fnc    f.conn,c=dsk issue connect function
+          acn    c=dsk
+          ldd    d.unit
+          oan    c=dsk       send unit number
+          dcn    c=dsk
+          fnc    f.gst,c=dsk issue general status request
+          acn    c=dsk
+          ian    c=dsk       read status
+          lpn    20b         test dsu error bit
+          njp    nounit      if dsu error, i.e., unit not present
+* 
+* get opcode and dispatch
+* 
+          ldm    request+4   get iocode
+          zjp    pngrerr     if invalid request
+          sbn    writec      highest legal code
+          zjn    pngwrt      if write
+          pjp    pngrerr     if request code out of range
+          adn    writec-writs check other write code
+          njp    pngrd       if read
+*
+*         process write request
+*
+ pngwrt   call   rsvddp      reserve ddp port
+ pngw2    ldn    1rw
+          call   pngmsg
+          ldc    secdata
+          std    d.t0        set buffer address
+          ldm    request+5
+          std    d.t1        high order ecs address
+          ldm    request+6
+          std    d.t2        and low order
+          ldc    dwps*5
+          std    d.t3        set PP word count (one sector)
+          call   readecs
+* need error check...
+          call   writsec     write that sector
+* need error check...
+          call   advance     advance to next sector
+          njn    pngw2       more sectors to do...
+          ldc    nomsg
+          call   messag
+          call   relddp      release ddp
+          ujp    pngrx       all done
+*
+*         process read request
+*
+ pngrd    call   rsvddp      reserve ddp port
+ pngr2    ldn    1rr
+          call   pngmsg
+          call   readsec     read a sector
+* need error check...
+          ldc    secdata
+          std    d.t0        set buffer address
+          ldm    request+5
+          std    d.t1        high order ecs address
+          ldm    request+6
+          std    d.t2        and low order
+          ldc    dwps*5
+          std    d.t3        set PP word count (one sector)
+          call   writecs
+* need error check...
+          call   advance     advance to next sector
+          njn    pngr2       more sectors to do...
+          ldc    nomsg
+          call   messag
+          call   relddp      release ddp
+          ujn    pngrx       all done
+*
+*
+*         request processing exits
+*
+ pngrx    ldn    0           mark no error occurred
+          stm    request+3
+          ujp    pngr900
+*
+ nounit   ldn    notrdy
+          ujn    pngerr
+* 
+ pngrerr  ldn    reqerr      invalid request
+ pngerr   stm    request+3
+*
+ pngr900  ldc    4000b       set completion bit
+          stm    request
+          ldn    0
+          stm    request+1   clear out unused words
+          stm    request+2
+          stm    request+4
+          loadcm dskstk      address of request word
+          add    d.unt4      bias for current unit
+          cwm    request,on  re-write request
+          trace  off
+          ujp    pngr101
+*
+*
+*
+*
+          title  drop ppu
+*
+*
+*
+*         error exits -
+*
+ pngerr1  call   dfm,(=21cpng  improper request)
+          ujp    pngerrx
+*
+ pngerr2  call   dfm,(=22cpng  ddp not available)
+          ujp    pngerrx
+*
+ pngerr3  call   dfm,(=22cpng  mastor not active)
+          ujp    drop
+*
+ pngerr4  call   dfm,(=25cpng  mastor not in recall)
+          ujp    pngerrx
+*
+ pngerr5  call   dfm,(=28cpng  cannot return to mastor)
+          ujp    drop
+*
+ pngerr6  call   dfm,(=23cpng  disk not available)
+          ujp    pngerrx
+*
+ pngerr7  call   dfm,(=37cpng  ndsu larger than disk unit count)
+          ujp    pngerrx
+*
+*
+ pngerrx  ldc    zerl        pre-clear arguments
+          crd    cm
+          ldn    ppet
+          std    cm+1        set error flag = ppu abort
+          trace  off
+          monitor cefm
+          ujp    drop2
+*
+*
+ drop     ldn    0
+          std    d.unit
+ drop1    ldn    zerl        pre-clear arguments
+          crd    cm
+          ldm    chtab,d.unit
+          zjn    drop3       if no controller
+          dchan              release disk channel
+ drop3    aod    d.unit      advance controller index
+          sbn    maxctl
+          mjn    drop1       if more controllers
+ drop2    monitor dppm       drop ppu
+          ujp    ppr
+*
+*
+          title  -pause-     pause for storage move
+*
+*
+*
+*         -pause-
+*         check for storage move or control point error
+*
+*
+ pause    subr
+ p100     ldd    cp          get address of c.p. area
+          adn    stsw        form address of status word
+          crd    d.t0
+          ldd    d.t0+c.cpef     error flag
+          njp    drop
+          ldd    d.t0+c.cpstat   cpu status
+          shn    -9
+          lpn    7b          check if end of execution
+          zjp    drop
+          ldn    cmcl
+          crd    cm          read memory control word
+          ldd    cp
+ .NOS27   IFGE   OSLEV,716D  NOS 2.7.1
+          SHN    -7
+ .NOS27   ENDIF
+          lmd    cm          check if this control point
+          njp    pausex
+          pause  st
+          ldd    d.dsks      load upper part of rel address
+          shn    6
+          add    ra          add cm reference address
+          shn    6
+          adm    d.dsks+1    attach lower 12 bits
+          plant  cm,dskstk
+          ujp    pausex
+*
+*
+          title  -messag-    output b-display message
+*
+*
+*
+*         -messag-           outputs b-display message
+*         on entry  -  a = address of message
+*
+*         destroys no variables
+*
+*
+ messag   subr
+ .debug   if     def,debug
+          stm    msg10+1     plant ppu address of message
+          ldd    d.t0
+          stm    msg20       preserve *d.t0*
+          ldn    5
+          std    d.t0        set length of message
+          ldd    cp          load control point area address
+          adn    ms2w        add bias to message area
+*
+ msg10    cwm    **,d.t0     write message to cp area
+          ldm    msg20
+          std    d.t0        restore *d.t0*
+ .debug   endif
+          ujp    messagx
+*
+ msg20    bss    1
+*
+*
+          title  reserve / release ddp port
+*
+*
+*
+*         -rsvddp-
+*         reserve ddp port channel
+*
+*
+ rsvddp   subr
+          ldm    rddp        check if ddp reserved
+          njp    rsvddpx
+*
+ rvd110   ldc    zerl        pre-clear arguments
+          crd    cm
+          ldm    /c=ddp/c=ddp
+          std    cm+1        set channel number
+          monitor cchm       check if channel reserved
+          ldd    cm+2
+          zjp    rvd200      jump if channel not assigned
+          ldm    /c=ddp/c=ddp
+          sbd    cm+1        check if obtained ddp channel
+          njp    rvd200
+          ldn    1
+          stm    rddp        mark ddp reserved
+*
+ rvd120   ijm    rvd122,c=ddp
+          dcn    c=ddp       insure channel inactive
+*
+ rvd122   fnc    5010b,c=ddp        master-clear port
+          wait   inactive,c=ddp,rvd120
+          ujp    rsvddpx
+*
+ rvd200   call   pause       check for error / storage move
+          ujp    rvd110      try reserve again
+
+*
+*
+*
+*         -relddp-
+*         release ddp port channel reservation
+*
+*
+ relddp   subr
+          ldm    rddp        check if ddp reserved
+          zjp    relddpx
+          ldn    zerl        pre-clear arguments
+          crd    cm
+          ldm    /c=ddp/c=ddp
+          std    cm+1        set channel number
+          monitor dchm       release channel
+          ldn    0
+          stm    rddp        mark ddp no longer reserved
+          ujp    relddpx
+*
+          title  -advance-   advance to next sector
+***
+*         entry.
+*         request+5, +6 = ecs address
+*         d.sec, d.trk, d.cyl = disk address
+*         d.secs = sector count
+*
+*         exit.
+*         all of the above updated
+*         d.seek set if cylinder wrap
+*         a = remaining sector count
+ advance  subr
+          ldc    dwps        words per sector
+          ram    request+6   advance low ecs address
+          shn    -12         get carry
+          ram    request+5   add into high order
+          aod    d.sec       advance sector
+          sbn    dspt        check for end of track
+          mjn    adv1        not end of track
+          std    d.sec       reset to sector zero
+          aod    d.trk       advance track
+          sbn    dtpc        check for end of cylinder
+          mjn    adv1        not end of cylinder
+          std    d.trk       reset to track zero
+          aod    d.cyl       advance cylinder
+          std    d.seek      and set seek flag
+ adv1     sod    d.secs      count down sectors
+          ujp    advancex
+*
+          title  -readecs-   ecs to ppu transfer via ddp
+*
+*
+*
+*         -readecs-
+*         on entry  -  d.t0 = ppu memory address
+*                      d.t1 = upper portion of ecs address
+*                      d.t2 = lower portion of ecs address
+*                      d.t3 = number of ppu words to read
+*
+*         on return - a = 0 = read completed
+*                         1 = ecs parity error
+*
+*
+ readecs  subr
+          ijm    rcs10,c=ddp
+          dcn    c=ddp
+*
+ rcs10    fnc    5001b,c=ddp      5001b = read ecs
+          acn    c=ddp
+          ldn    2
+          oam    d.t1,c=ddp  output 2 word ecs address
+          ldd    d.t0
+          stm    rcs15+1     plant ppu memory address
+*
+          ldm    d.t3        number of words to read
+ rcs15    iam    **,c=ddp    read ecs to ppu memory
+          njp    rcs90       exit if error
+*
+ rcs20    ijm    rcs30,c=ddp      wait channel active + full
+          ejm    rcs20,c=ddp
+          dcn    c=ddp       disconnect channel
+          ldn    0           mark no error occurred
+          ujp    readecsx
+*
+ rcs30    fnc    5010b,c=ddp      5010b = master clear port
+          wait   inactive,c=ddp,rcs90
+*
+ rcs90    ijm    rcs95,c=ddp      check if channel inactive
+          dcn    c=ddp       disconnect ddp channel
+*
+ rcs95    call   dfm,(=21cpng  ecs parity error)
+          ldn    1           mark error occurred
+          ujp    readecsx
+*
+*
+          title  -writecs-   ppu to ecs transfer via ddp
+*
+*
+*
+*         -writecs-
+*         on entry  -  d.t0 = ppu memory address
+*                      d.t1 = upper portion of ecs address
+*                      d.t2 = lower portion of ecs address
+*                      d.t3 = number of ppu words to write
+*
+*         on return - a = 0 = write completed
+*                         1 = ecs abort
+*
+*
+ writecs  subr
+          ijm    wcs10,c=ddp
+          dcn    c=ddp
+*
+ wcs10    fnc    5002b,c=ddp      5002b = write ecs
+          acn    c=ddp
+          ldn    2
+          oam    d.t1,c=ddp  output 2 word ecs address
+          ldd    d.t0
+          stm    wcs15+1     plant ppu memory address
+*
+          ldm    d.t3        number of words to write
+ wcs15    oam    **,c=ddp    write ppu memory to ecs
+          njp    wcs90       exit if error
+          dcn    c=ddp
+*
+ wcs30    fnc    5004b,c=ddp      5004b = select status
+          wait   inactive,c=ddp,wcs90
+          acn    c=ddp       re-activate ddp channel
+          wait   full,c=ddp,wcs90
+          ian    c=ddp       input status word
+          dcn    c=ddp
+          lpn    11b         mask write/abort bits
+          njp    wcs50       jump if error or incomplete
+          ijm    writecsx,c=ddp     exit (a=0)
+          dcn    c=ddp
+          ujp    writecsx    exit (a=0)
+*
+ wcs50    lpn    10b
+          njp    wcs30       loop if write not complete
+          fnc    5010b,c=ddp      5010b = master clear port
+          wait   inactive,c=ddp,wcs90
+*
+ wcs90    ijm    wcs95,c=ddp      check if channel inactive
+          dcn    c=ddp       disconnect ddp channel
+*
+ wcs95    call   dfm,(=14cpng  ecs abort)
+          ldn    1           mark error occurred
+          ujp    writecsx
+*
+*
+          title  -readsec-   read disk sector
+***
+*         entry.
+*         d.unit current unit
+*         d.cyl  current cylinder
+*         d.trk  current track
+*         d.sec  current sector
+*
+*         exit.
+*         sector read into buff
+ readsec  subr
+          call   seek
+          fnc    f.read,c=dsk issue read function
+          acn    c=dsk
+          ldc    bufflth
+          iam    buff,c=dsk  read the sector data
+* disk controller disconnects channel after read is done
+          
+          ujp    readsecx
+* 
+          title  -writsec-   write disk sector
+***
+*         entry.
+*         d.unit current unit
+*         d.cyl  current cylinder
+*         d.trk  current track
+*         d.sec  current sector
+*         buff   sector data
+*
+*         exit.
+*         sector written.
+ writsec  subr
+          call   seek
+          fnc    f.write,c=dsk issue write function
+          acn    c=dsk
+          ldc    bufflth
+          oam    buff,c=dsk  read the sector data
+          dcn    c=dsk
+          ujp    writsecx
+* 
+          title  -seek-      seek to current request position
+***
+*         entry.
+*         d.unit current unit
+*         d.cyl  current cylinder
+*         d.trk  current track
+*         d.sec  current sector
+*         d.seek zero if no seek needed right now
+*
+*         exit.
+*         seek done, seek flag cleared.
+ seek     subr
+          ldd    d.seek      seek needed
+          zjn    seekx       no
+          ldn    0
+          std    d.seek      no seek needed next time
+          fnc    f.seek,c=dsk issue seek function
+          acn    c=dsk
+          ldn    4           4 words for unit/cyl/trk/sec
+          oam    d.unit,c=dsk
+          dcn    c=dsk
+          ujp    seekx
+*
+ .debug   if     def,debug
+ o2d4     subr
+          std    t2
+          ldd    t0
+          shn    -6
+          std    t1
+          ldd    t2
+          call   o2d2
+          ldd    t0
+          lpn    77b
+          std    t1
+          aod    t2
+          call   o2d2
+          ujp    o2d4x
+*
+ o2d2     subr
+          std    t2
+          ldd    t1
+          lpn    70b
+          shn    3
+          add    t1
+          lpc    0707b
+          adc    2r00
+          sti    t2
+          ujp    o2d2x
+          title  pngmsg - show activity in cp message
+*** pngmsg
+*
+*         entry  (a) = 1rr for read
+*                    = 1rw for write
+ pngmsg   subr
+          stm    msg0
+          ldd    d.unit
+          std    t1
+          ldc    msg1
+          call   o2d2
+          ldd    d.cyl
+          std    t0
+          ldc    msg2
+          call   o2d4
+          ldd    d.trk
+          std    t1
+          ldc    msg3
+          call   o2d2
+          ldd    d.sec
+          std    t1
+          ldc    msg4
+          call   o2d2
+          ldc    msg
+          call   messag
+          ujp    pngmsgx
+* 
+ msg      dis    ,/ png uxx cxxxx txx sxx./
+ msg0     equ    msg+2
+ msg1     equ    msg+3
+ msg2     equ    msg+5
+ msg3     equ    msg+8
+ msg4     equ    msg+10
+ .debug   else
+ pngmsg   subr
+          ujn    pngmsgx
+ .debug   endif
+*
+ nomsg    bssz   5
+* 
+          title  common routines
+*
+ plaopl   xtext  plappln     plant routine
+ plaopl   xtext  plapabs     relative to absolute conversion
+ plaopl   xtext  plapeqn     equipment table search
+ plaopl   xtext  plapdnm     delay for n microseconds
+*
+          title  storage definitions
+*
+*
+ c=ddp    table  channel     ddp channel table
+ c=dsk    table  channel     disk channel table
+*
+ dskstk   table  cm          mastor disk request vector
+*
+*
+ rddp     bssz   1           ddp reserved flag
+*
+ jobnam   bss    5           calling job name
+ masnam   dis    ,*mastor*   *mastor* name (in mastab)
+ mfn      data   0
+ joborg   bss    1           job origin code
+ ecra     bss    2           *mastor* rax
+ mastab   bssz   3*5         *mastor* pointer table
+ chtab    bssz   maxctl      table of channel numbers for controllers
+*
+ request  bssz   3*5         *mastor* to *png* request words
+*
+ zero     bssz   5           zeroed cm word
+*
+ ii       bss    1
+*
+ bufflth  equ    dwps*5+2
+ buff     bss    bufflth+5   work buffer
+ secdata  equ    buff+2      data part of the sector
+*
+          title  initializations
+*
+*
+*
+*         initialize main-frame number
+*
+ init     subr
+*
+*         set up address of *mastor* to *png* request word
+*
+          ldd    ir+3        form address of arguments
+          lpn    37b
+          std    d.pwrd      save upper part of rel address
+          ldd    ir+4
+          std    d.pwrd+1    save lower part of rel address
+          ldd    d.pwrd      upper part of relative address
+          shn    12          position upper part of address
+          add    d.pwrd+1    attach lower part
+          call   abs         convert relative to absolute
+          crd    cm          read *pngwrd*
+          ldd    cm+2        form address of diskstak
+          lpn    37b
+          std    d.dsks      save upper part of rel address
+          ldd    cm+3
+          std    d.dsks+1    save lower part of rel address
+          ldd    cm+4        get ndsu
+          shn    -1
+          std    d.ndsu      save the actual number
+          adc    -maxdsu
+          pjp    pngerr7     if too large
+          ldd    d.ndsu
+          shn    2           now times 4
+          std    d.nds4      save units times 4
+*
+*         form and plant addr of disk stack
+*
+          ldd    d.dsks      upper part of relative address
+          shn    12          position upper part of address
+          add    d.dsks+1    attach lower part
+          call   abs         convert relative to absolute
+          zjp    pngerr1
+          plant  cm,dskstk   plant references
+*
+*         check *png* called from system origin job
+*
+          ldd    cp          get address of c.p. area
+ .NOSV2   IFLT   OSLEV,562D  NOS V1
+          ADN    JNMW
+          CRD    CM
+          LDD    CM+3
+          LPN    77B         (A) = JOB ORIGIN TYPE
+ .NOSV2   ELSE               NOS V2
+          ADN    JOTW        JOB ORIGIN TYPE WORD
+          CRD    CM
+          LDD    CM+3        (A) = JOB ORIGIN TYPE
+ .NOSV2   ENDIF
+*
+          lmn    syot        check system origin job
+          njp    pngerr1
+*
+*         obtain ddp port channel number
+*
+          ldc    2rd1        *dq* = ddp equipment name
+          call   eqn
+          mjp    pngerr2     exit if ddp not available
+          ldd    cm          load ddp port channel number
+          plant  channel,c=ddp
+*
+*         obtain plato disk controllers
+*
+          ldn    0
+          std    d.unit      controller counter
+ ini1     ldc    ctl1
+          add    d.unit      form controller name
+          call   eqn
+          mjp    ini8        skip if this controller not present
+          ldd    cm          get channel number for controller
+          stm    chtab,d.unit save in channel table
+          ldn    zerl        pre-clear arguments
+          crd    cm
+          ldm    chtab,d.unit
+          rchan              reserve disk channel
+ ini8     aod    d.unit      advance controller
+          sbn    maxctl
+          pjn    init130     if past last supported controller
+          ldd    d.unit
+          shn    3           form units
+          sbd    d.ndsu      compare with mastor supplied unit count
+          mjp    ini1        if not at mastor limit yet
+*
+*  get stsw
+* 
+ INIT130  LDD    CP          CONTROL POINT ADDRESS WORD
+          ADN    STSW        FORM ADDRESS OF STATUS WORD
+          CRD    D.T0        READ CONTROL POINT STATUS
+          LDD    D.T0+C.CPEF
+          NJP    DROP        DROP PPU IF ERROR
+* 
+*         WAIT mastor IN RECALL BEFORE READING ECS ADDRESS
+*
+          LDD    D.T0+C.CPSTAT
+ .NOSV2   IFLT   OSLEV,562D  NOS V1
+          LPC    3000B       CHECK mastor IN RECALL (I OR X)
+          NJN    INI9
+ .NOSV2   ELSE               NOS V2
+          SHN    -11B        CHECK FOR *I* STATUS (6)
+          SBN    5
+          PJN    INI9        IF IN AUTO-RECALL
+ .NOSV2   ENDIF
+          DELAY  1000        IDLE FOR 1 MILLISECOND
+          UJP    INIT130
+*       
+*         read ecs reference address from exchange package
+*       
+ ini9     ldd    cp          address of control point area
+          adn    4           bias to rax
+          crd    d.t0
+ .esm     ifeq   esm,0
+          ldd    d.t0        set upper part of ecs ra
+          lpc    777b
+          stm    ecra
+          ldd    d.t0+1      set lower part of ecs ra
+          stm    ecra+1
+ .esm     else
+          ldd    d.t0
+          lpn    77b         clear flag bits
+          shn    12
+          lmd    d.t1
+          shn    12
+          stm    ecra        save upper part of ecs ra
+          shn    -12
+          scn    77b
+          stm    ecra+1      save lower part of ecs ra
+ .esm     endif
+*
+*         read *mastor* pointer table
+*
+ png120   call   rsvddp      reserve ddp port
+          ldc    mastab
+          std    d.t0        d.t0 = ppu memory address
+          ldm    ecra
+          std    d.t1        d.t1 = upper part of rax
+          ldm    ecra+1
+          std    d.t2        d.t2 = lower part of rax
+          ldc    3*5
+          std    d.t3        d.t3 = num ppu words to read
+          call   readecs     read *mastor* pointer table
+          njp    pngerr3
+          call   relddp      release ddp
+*
+*         check *mastor* pointer table initialized
+*
+          ldn    2           initialize index
+          std    d.t0
+*
+ png240   ldm    mastab,d.t0  load next 2 chars of name
+          sbm    masnam,d.t0       check against job name
+          njp    pngerr3     error if *mastor* not operable
+          sod    d.t0
+          pjp    png240
+* 
+*         RESTART MASTOR
+* 
+          LDD    IR+3        RE-READ PARAMETER WORD
+          LPN    37
+          SHN    6
+          ADD    RA
+          SHN    6
+          ADD    IR+4
+          CRD    CM
+          LDD    CM+4        SET COMPLETE BIT
+          LMN    1
+          STD    CM+4
+          LDD    IR+3        RETURN PARAMETER WORD
+          LPN    37
+          SHN    6
+          ADD    RA
+          SHN    6
+          ADD    IR+4
+          CWD    CM
+ .NOSV1   IFLT   OSLEV,562D  NOS V1
+          MONITOR RCPM       RESTART CPU
+ .NOSV1   ENDIF
+*
+ png260   call   rsvddp      reserve ddp port
+          ldm    ecra+1      lower part of ecs ra
+          adc    ms.clk
+          std    d.t2        d.t2 = lower part of ecs addr
+          shn    -12
+          adm    ecra        upper part of ecs ra
+          std    d.t1        d.t1 = upper part of ecs addr
+          ldc    buff
+          std    d.t0        d.t0 = ppu memory address
+          ldn    5
+          std    d.t3        d.t3 = number ppu words to read
+          call   readecs     read millisecond clock
+          njp    pngerr3
+          call   relddp      release ddp port
+ png320   call   pause       check for error / storage move
+          delay  5000
+          call   rsvddp      reserve ddp port
+          ldm    ecra+1      lower part of ecs ra
+          adc    ms.clk
+          std    d.t2        d.t2 = lower part of ecs addr
+          shn    -12
+          adm    ecra        upper part of ecs ra
+          std    d.t1        d.t1 = upper part of ecs addr
+          ldc    buff+5
+          std    d.t0        d.t0 = ppu memory address
+          ldn    5
+          std    d.t3        d.t3 = number ppu words to read
+          call   readecs     read millisecond clock
+          njp    pngerr3
+          call   relddp      release ddp port
+          ldm    buff+4
+          sbm    buff+9      check if clock has ticked
+          njp    png350
+          som    ii          check for time-out
+          zjp    pngerr3
+          ujp    png320      continue waiting
+*
+ png350   bss    0
+          ujp    initx      all done
+          
+          end
