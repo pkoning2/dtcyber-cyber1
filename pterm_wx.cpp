@@ -1820,11 +1820,18 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 
         // See if we're supposed to delay (but it's not an internal
         // code such as NODATA)
-        if ((int) word >= 0 && word >> 19)
+        if ((int) word >= 0 && (word >> 19) != 0)
         {
             m_delay = word >> 19;
             m_nextword = word & 01777777;
-            m_timer.Start (17);
+            if (m_conn->Ascii ())
+            {
+                m_timer.Start (8);  // 16.67 / 2.2, rounded
+            }
+            else
+            {
+                m_timer.Start (17);
+            }
             event.Skip ();
             return;
         }
@@ -4789,7 +4796,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_speedCheck = new wxCheckBox (this, -1, _("Simulate 1200 Baud"));
     m_speedCheck->SetValue (m_classicSpeed);
     sbs->Add (m_speedCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_gswCheck = new wxCheckBox (this, -1, _("Enable GSW"));
+    m_gswCheck = new wxCheckBox (this, -1, _("Enable GSW (not in ASCII)"));
     m_gswCheck->SetValue (m_gswEnable);
     sbs->Add (m_gswCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_arrowCheck = new wxCheckBox (this, -1, _("Numeric keypad for arrows"));
@@ -5281,6 +5288,11 @@ int PtermConnection::AssembleAsciiWord (void)
         else
         {
             m_pending = 0;
+            if (i == 0)
+            {
+                // NUL is for -delay-
+                i = 1 << 19;
+            }
             return i;
         }
     }
