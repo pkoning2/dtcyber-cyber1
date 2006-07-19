@@ -22,13 +22,12 @@
 #include <unistd.h>
 #endif
 
-#ifdef HOST_Linuxxx
-/* Linux claims to have it but doesn't actually. */
-#undef _POSIX_ASYNCHRONOUS_IO
-#endif
-
 #ifdef _POSIX_ASYNCHRONOUS_IO
+#if defined(__APPLE__)
+#include <sys/aio.h>
+#else
 #include <aio.h>
+#endif
 #endif
 
 /*
