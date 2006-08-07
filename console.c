@@ -937,9 +937,9 @@ static int consoleInput (NetPort *np)
                     chTraceMask = 0;
                     traceStop ();
                     }
+#endif
                 break;
                 }
-#endif
             }
         break;
     case Dd60KeyUp:
