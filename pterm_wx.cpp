@@ -678,6 +678,9 @@ public:
 
     int         m_pendingEcho;
 
+	bool		m_bCancelPaste;
+	bool		m_bPasteActive;
+
 private:
     wxStatusBar *m_statusBar;       // present even if not displayed
     wxPen       m_foregroundPen;
@@ -1553,6 +1556,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
       m_station (0),
       m_pasteTimer (this, Pterm_PasteTimer),
       m_pasteIndex (-1),
+	  m_bCancelPaste (false),
+	  m_bPasteActive (false),
       m_nextword (0),
       m_delay (0),
       currentX (0),
@@ -1899,6 +1904,17 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     unsigned int nextindex;
     int shift = 0;
     
+
+	if (m_bCancelPaste ||
+		m_pasteIndex < 0 ||
+        m_pasteIndex >= (int) m_pasteText.Len ())
+	{
+		m_bCancelPaste = false;
+		m_bPasteActive = false;
+		return;
+	}
+
+
     if (m_pasteIndex < 0 ||
         m_pasteIndex >= (int) m_pasteText.Len ())
     {
@@ -2001,10 +2017,12 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
             delay = PASTE_CHARDELAY;
         }
         m_pasteTimer.Start (delay, true);
+		m_bPasteActive = true;
     }
     else
     {
-        m_pasteIndex = -1;
+		m_bCancelPaste = false;
+		m_bPasteActive = false;
     }
 }
 
@@ -4229,11 +4247,6 @@ void PtermFrame::ptermSendKey(int key)
         return;
     }
     
-    // Cancel any pending text stream from a Paste operation.
-    // (If this key came from that paste, the index will be
-    // reset to keep going.  Any other keystroke will abort
-    // an in-progress paste.)
-    m_pasteIndex = -1;
 
     /*
     **  If this is a "composite", recursively send the two pieces.
@@ -5642,6 +5655,14 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     // The one thing we do defer until EVT_CHAR is plain old characters, i.e.,
     // keystrokes that aren't function keys or other special keys, and
     // neither Ctrl nor Alt are active.
+
+	if (m_owner->m_bPasteActive)
+	{
+		// If pasting is active, this key is NOT passed on to the application until
+		// the paste operation is properly canceled
+		m_owner->m_bCancelPaste = true;
+		return;
+	}
 
     ctrl = event.m_controlDown;
     if (event.m_shiftDown)
