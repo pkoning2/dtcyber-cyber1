@@ -107,7 +107,7 @@ def dofile (name):
                                      filename = lesson)
                 msg.set_payload ([ desc, printout])
                 s = smtplib.SMTP (MAILHOST)
-                s.sendmail ("pkoning@equallogic.com", [ mailto ], msg.as_string ())
+                s.sendmail ("postmaster@cyberserv.org", [ mailto ], msg.as_string ())
                 print name, "lesson", lesson, "sent to", mailto
                 os.rename (name, os.path.join ("sent", name))
                 break
