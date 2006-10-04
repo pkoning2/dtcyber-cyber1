@@ -112,7 +112,6 @@ u8 rtcIncrement;
 static bool rtcFull;
 #if RDTSC
 static u64 Hz;
-static u32 MHz;
 static u32 maxDelta;
 static u64 rtcPrev;
 static bool caughtUp = FALSE;
@@ -257,7 +256,7 @@ static void rtcIo(void)
             if (caughtUp && rtcCycles > Hz)
                 {
                 printf ("Clock in catch-up mode, %lld cycles behind (%lld microseconds)\n",
-                        now - rtcPrev, (now - rtcPrev) / MHz);
+                        rtcCycles, (rtcCycles * 1000000ULL) / Hz);
                 caughtUp = FALSE;
                 }
 #endif  /* DEBUG */
@@ -267,12 +266,12 @@ static void rtcIo(void)
             {
             caughtUp = TRUE;
             }
-        us = rtcCycles / MHz;
+        us = (rtcCycles * 1000000ULL) / Hz;
         clock = rtcClock + us;
         
         if (activePpu->id == 0 || !mtr)
             {
-            rtcPrev += us * MHz;
+            rtcPrev += (us * Hz) / 1000000ULL;
             rtcClock = clock;
             }
         else if (activePpu->id == 0)
@@ -325,7 +324,6 @@ static void rtcInit2(long setMHz)
     {
 #if defined(__x86_64)
     Hz = 1000000ULL;
-    MHz = 1;
 #else
     u64 hz = 0;
 #if defined(_WIN32)
@@ -376,16 +374,14 @@ static void rtcInit2(long setMHz)
             }
 #endif  /* !__APPLE__ */
         Hz = hz;
-        MHz = hz / ULL(1000000);
         }
     else
         {
-        MHz = setMHz;
-        Hz = MHz * ULL(1000000);
+        Hz = setMHz * ULL(1000000);
         }
 #endif  /* !__x86_64 */
-    maxDelta = 900 * MHz;   /* less than 1 ms to keep mtr happy */
-    printf ("using high resolution hardware clock at %d MHz\n", MHz);
+    maxDelta = Hz / 1250ULL;   /* 800 microseconds, to keep mtr happy */
+    printf ("using high resolution hardware clock at %lld Hz\n", Hz);
     }
 #endif
 
