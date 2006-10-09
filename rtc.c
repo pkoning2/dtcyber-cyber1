@@ -21,7 +21,7 @@
 #if defined(_WIN32)
 #include <winsock.h>
 #elif defined(__APPLE__)
-#include <Carbon.h>
+#include <DriverServices.h>
 #elif defined(__GNUC__) && defined(__x86_64)
 #include <sys/time.h>
 #else
