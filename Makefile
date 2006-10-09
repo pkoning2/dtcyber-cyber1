@@ -36,6 +36,7 @@ PPCARCHFLAGS = -arch ppc
 G5CFLAGS = -mcpu=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64
 G3CFLAGS = -mcpu=G3 -mtune=G3
 X86ARCHFLAGS = -arch i386
+TOOLLDFLAGS = -arch i386 -arch ppc
 endif
 
 ifeq ("$(HOST)","Linux")

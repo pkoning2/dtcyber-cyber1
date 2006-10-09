@@ -14,7 +14,7 @@ include Makefile.common
 DTOBJS	= $(SOBJS) $(SXOBJS) dtoper.o dtoper_x11.o
 
 dtoper:	$(DTOBJS) 
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(XLIBS) $(THRLIBS)
+	$(CC) $(LDFLAGS) $(TOOLLDFLAGS) -o $@ $+ $(LIBS) $(XLIBS) $(THRLIBS)
 
 dtoper.dep: $(DTOBJS:.o=.d) 
 

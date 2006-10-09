@@ -20,7 +20,7 @@ PCFS	= seymour8b.pcf seymour8m.pcf \
 	seymour32b.pcf seymour32m.pcf
 
 dd60:	$(DDOBJS) $(PCFS)
-	$(CC) $(LDFLAGS) -o $@ $(DDOBJS) $(LIBS) $(XLIBS) $(THRLIBS)
+	$(CC) $(LDFLAGS) $(TOOLLDFLAGS) -o $@ $(DDOBJS) $(LIBS) $(XLIBS) $(THRLIBS)
 
 fonts: $(PCFS)
 
