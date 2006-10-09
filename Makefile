@@ -41,7 +41,7 @@ G3CFLAGS = -mcpu=G3 -mtune=G3
 endif
 
 ifeq ("$(HOST)","Linux")
-LIBS += -lposix-aio
+#LIBS += -lposix-aio
 endif
 
 CDEBUG = -DCcDebug=1

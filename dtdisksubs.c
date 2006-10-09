@@ -193,7 +193,7 @@ bool ddIOPending (DiskIO *io)
         }
     ret = aio_return (&io->iocb);
 #if DEBUG
-    printf ("aio done fd %d err %d ret %d\n", io->fd, err, ret);
+    printf ("io no longer pending fd %d err %d ret %d\n", io->fd, err, ret);
 #endif
     io->ioPending = FALSE;
 #endif
