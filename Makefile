@@ -27,17 +27,15 @@ include Makefile.dd60
 
 ifeq ("$(HOST)","Darwin")
 ifeq ("$(SDKDIR)","")
-SDKDIR := $(shell ls /Developer/SDKs | head -1)
-ifeq ("$(SDKDIR)","")
-$(error "Cannot find any SDKs in /Developer/SDKs")
+SDKDIR := /Developer/SDKs/MacOSX10.4u.sdk
 endif
-SDKDIR := /Developer/SDKs/$(SDKDIR)
-endif
-LIBS    +=  $(SDKDIR)/System/Library/Frameworks/Carbon.framework/Carbon
-INCL    += -I$(SDKDIR)/System/Library/Frameworks/Carbon.framework/Headers
+LIBS    +=  -Wl,-syslibroot,$(SDKDIR)
+INCL    += -isysroot $(SDKDIR) -I$(SDKDIR)/Developer/Headers/FlatCarbon
+LDFLAGS +=  -Wl,-framework,CoreServices
+PPCARCHFLAGS = -arch ppc
 G5CFLAGS = -mcpu=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64
-G4CFLAGS = -mcpu=G4 -mtune=G4
 G3CFLAGS = -mcpu=G3 -mtune=G3
+X86ARCHFLAGS = -arch i386
 endif
 
 ifeq ("$(HOST)","Linux")
@@ -67,18 +65,22 @@ dtcyber:
 	mkdir -p g3; \
 	cd g3; \
 	ln -sf ../Makefile.* .; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)"
 	mkdir -p g5; \
 	cd g5; \
 	ln -sf ../Makefile.* .; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL) DUAL_HOST_CPUS=1 PTERMVERSION=xxx
-	lipo -create -output dtcyber g3/gxdtcyber g5/gxdtcyber
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL) DUAL_HOST_CPUS=1 PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)"
+	mkdir -p x86; \
+	cd x86 ; \
+	ln -sf ../Makefile.* .; \
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86ARCHFLAGS)"
+	lipo -create -output dtcyber g3/gxdtcyber g5/gxdtcyber x86/gxdtcyber
 
 gxdtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)
 
 clean:
-	rm -rf *.o *.d *.pcf g3 g5 dd60 dtoper pterm pterm*.dmg Pterm.app
+	rm -rf *.o *.d *.pcf g3 g5 x86 dd60 dtoper pterm pterm*.dmg Pterm.app
 
 blackbox: blackbox.o niu.o charset.o dtnetsubs.o
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
