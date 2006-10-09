@@ -99,6 +99,8 @@ const intParam intParamList[] =
 {
     { "telnetport", &telnetPort, DefTelnetPort },
     { "telnetconns", &telnetConns, 4 },
+    { "nputelnetconns", &npuNetTelnetConns, 3 },
+    { "nputelnetport", &npuNetTelnetPort, 6610 },
     { "platoport", &platoPort, DefNiuPort },
     { "platoconns", &platoConns, 4 },
     { "platolocalport", &platoLocalPort, DefNiuPort + 1 },
@@ -107,8 +109,6 @@ const intParam intParamList[] =
     { "operconns", &opConns, 4 },
     { "consoleport", &dd60Port, DefDd60Port },
     { "consoleconns", &dd60Conns, 4 },
-    { "doelzport", &doelzPort, DefDoelzPort },
-    { "doelzconns", &doelzConns, 4 },
     { "tpmuxport", &tpmuxPort, DefTpmuxPort },
     { "tpmuxconns", &tpmuxConns, 2 },
     { "operstation", &niuOpstat, -1 },

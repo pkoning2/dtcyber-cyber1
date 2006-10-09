@@ -72,7 +72,7 @@ DevDesc deviceDesc[] =
     { "TPM",      tpMuxInit },
     { "DDP",      ddpInit },
     { "NIU",      niuInit },
-    { "DOELZ",    doelzInit },
+    { "NPU",      npuInit, },
     };
 
 u8 deviceCount = sizeof(deviceDesc) / sizeof(deviceDesc[0]);

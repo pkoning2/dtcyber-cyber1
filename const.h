@@ -88,7 +88,7 @@
 #define DtTpm                   15
 #define DtDdp                   16
 #define DtNiu                   17
-#define DtDoelz                 18
+#define DtNpu                   18
 #define DtMt679                 19
 
 /*
@@ -161,6 +161,8 @@
 #define Mask4                   017
 #define Mask5                   037
 #define Mask6                   077
+#define Mask7                   0177
+#define Mask8                   0377
 #define Mask9                   0777
 #define Mask10                  01777
 #define Mask11                  03777

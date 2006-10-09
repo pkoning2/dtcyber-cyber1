@@ -139,7 +139,7 @@ SOURCE=.\device.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\doelz.c
+SOURCE=.\dtdisksubs.c
 # End Source File
 # Begin Source File
 
@@ -148,6 +148,10 @@ SOURCE=.\dtnetsubs.c
 # Begin Source File
 
 SOURCE=.\dump.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\env.c
 # End Source File
 # Begin Source File
 
@@ -188,6 +192,30 @@ SOURCE=.\mux6676.c
 # Begin Source File
 
 SOURCE=.\niu.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\npu_async.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\npu_bip.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\npu_hip.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\npu_net.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\npu_svm.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\npu_tip.c
 # End Source File
 # Begin Source File
 
