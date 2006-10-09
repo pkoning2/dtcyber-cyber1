@@ -1277,7 +1277,6 @@ void PtermApp::OnConnect (wxCommandEvent &event)
 bool PtermApp::DoConnect (bool ask)
 {
     PtermFrame *frame;
-    int x, y;
 
     if (ask)
     {
@@ -1312,16 +1311,16 @@ bool PtermApp::DoConnect (bool ask)
     
 
     // create the main application window
-    x = m_config->Read (wxT (PREF_XPOS), 0L);
-    y = m_config->Read (wxT (PREF_YPOS), 0L);
-    if (x == 0 && y == 0)
+    lastX = m_config->Read (wxT (PREF_XPOS), 0L);
+    lastY = m_config->Read (wxT (PREF_YPOS), 0L);
+    if (lastX == 0 && lastY == 0)
     {
         frame = new PtermFrame(m_hostName, m_port, wxT("Pterm"));
     }
     else
     {
         frame = new PtermFrame(m_hostName, m_port, wxT("Pterm"), 
-                               wxPoint (x, y));
+                               wxPoint (lastX, lastY));
     }
 
     if (frame != NULL)
@@ -2030,7 +2029,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 
 void PtermFrame::OnClose (wxCloseEvent &)
 {
-    int i;
+    int i, x, y, xs, ys;
     
     if (m_conn != NULL)
     {
@@ -2058,7 +2057,14 @@ void PtermFrame::OnClose (wxCloseEvent &)
     }
     else
     {
-        GetPosition (&ptermApp->lastX, &ptermApp->lastY);
+        GetPosition (&x, &y);
+        wxDisplaySize (&xs, &ys);
+        if (x > 0 && x < xs - XSize &&
+            y > 0 && y < ys - YSize)
+        {
+            ptermApp->lastX = x;
+            ptermApp->lastY = y;
+        }
     }
     
     Destroy ();
@@ -3513,7 +3519,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                                         break;
                                     }
                                     j = (i8) M1specials[d][i + 1];
-                                    cy += j * ptermApp->m_scale;
+                                    cy += j;
                                     ptermDrawChar (currentX, currentY,
                                                    n >> 7, n & 0x7f);
                                     cy = sy;
@@ -5966,6 +5972,10 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             // shift if any, and send that.  This is because the 
             // shifted non-letters on the PLATO keyboard are generally
             // different from those on the PC/Mac keyboard.
+            if (key < 0 || key >= sizeof (asciiToPlato) / sizeof (asciiToPlato[0]))
+            {
+                return;
+            }
             pc = asciiToPlato[key];
             if (!ptermApp->m_platoKb || pc < 0)
             {
@@ -6321,7 +6331,7 @@ void PtermPrintout::DrawPage (wxDC *dc)
 {
     wxBitmap screenmap (ScreenSize, ScreenSize);
     wxMemoryDC screenDC;
-    int ofr, ofg, ofb;
+    int obr, obg, obb;
     double maxX = ScreenSize;
     double maxY = ScreenSize;
 
@@ -6354,7 +6364,7 @@ void PtermPrintout::DrawPage (wxDC *dc)
 
     // Re-color the image
     screenDC.SelectObject (screenmap);
-    screenDC.Blit (XTOP, YTOP, ScreenSize, ScreenSize, 
+    screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
                    m_owner->m_memDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 
@@ -6364,25 +6374,25 @@ void PtermPrintout::DrawPage (wxDC *dc)
     
     w = screenImage.GetWidth ();
     h = screenImage.GetHeight ();
-    ofr = ptermApp->m_fgColor.Red ();
-    ofg = ptermApp->m_fgColor.Green ();
-    ofb = ptermApp->m_fgColor.Blue ();
+    obr = ptermApp->m_bgColor.Red ();
+    obg = ptermApp->m_bgColor.Green ();
+    obb = ptermApp->m_bgColor.Blue ();
 
     for (int j = 0; j < h; j++)
     {
         for (int i = 0; i < w; i++)
         {
-            if (data[0] == ofr &&
-                data[1] == ofg &&
-                data[2] == ofb)
-            {
-                // Foreground, make it black
-                data[0] = data[1] = data[2] = 0;
-            }
-            else
+            if (data[0] == obr &&
+                data[1] == obg &&
+                data[2] == obb)
             {
                 // Background, make it white
                 data[0] = data[1] = data[2] = 255;
+            }
+            else
+            {
+                // Foreground, make it black
+                data[0] = data[1] = data[2] = 0;
             }
             data += 3;
         }
