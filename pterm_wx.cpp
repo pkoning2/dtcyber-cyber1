@@ -1241,9 +1241,9 @@ bool PtermApp::OnInit (void)
     
     // Add some handlers so we can save the screen in various formats
     // Note that the BMP handler is always loaded, don't do it again.
-    wxImage::AddHandler (new wxPNGHandler);
+//temp    wxImage::AddHandler (new wxPNGHandler);
     wxImage::AddHandler (new wxPNMHandler);
-    wxImage::AddHandler (new wxTIFFHandler);
+//temp    wxImage::AddHandler (new wxTIFFHandler);
     wxImage::AddHandler (new wxXPMHandler);
 
     // success: wxApp::OnRun () will be called which will enter the main message
@@ -1726,11 +1726,9 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     }
     m_bitmap = new wxBitmap (ScreenSize, ScreenSize, -1);
     m_memDC = new wxMemoryDC ();
-    m_memDC->BeginDrawing ();
     m_memDC->SelectObject (*m_bitmap);
     m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->Clear ();
-    m_memDC->EndDrawing ();
 
     SetClientSize (XSize + 2, YSize + 2);
     m_canvas = new PtermCanvas (this);
@@ -2036,18 +2034,14 @@ void PtermFrame::OnClose (wxCloseEvent &)
         m_conn->Delete ();
     }
 
-    m_memDC->BeginDrawing ();
     m_memDC->SetBackground (wxNullBrush);
     m_memDC->SetPen (wxNullPen);
-    m_memDC->EndDrawing ();
     m_memDC->SelectObject (wxNullBitmap);
 
     for (i = 0; i < 5; i++)
     {
-        m_charDC[i]->BeginDrawing ();
         m_charDC[i]->SetBackground (wxNullBrush);
         m_charDC[i]->SetPen (wxNullPen);
-        m_charDC[i]->EndDrawing ();
         m_charDC[i]->SelectObject (wxNullBitmap);
     }
     
@@ -2197,14 +2191,17 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
     {
         type = wxBITMAP_TYPE_BMP;
     }
+#if 0 //temp
     else if (ext.CmpNoCase (wxT ("png")) == 0)
     {
         type = wxBITMAP_TYPE_PNG;
     }
+#endif
     else if (ext.CmpNoCase (wxT ("pnm")) == 0)
     {
         type = wxBITMAP_TYPE_PNM;
     }
+#if 0 //temp
     else if (ext.CmpNoCase (wxT ("tif")) == 0 ||
              ext.CmpNoCase (wxT ("tiff")) == 0)
     {
@@ -2213,6 +2210,7 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
 	// isn't necessarily anywhere, for some reason.
         screenImage.SetOption (wxIMAGE_OPTION_COMPRESSION, 32773);
     }
+#endif
     else if (ext.CmpNoCase (wxT ("xpm")) == 0)
     {
         type = wxBITMAP_TYPE_XPM;
@@ -2330,14 +2328,10 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
     
     if (!vertical && !large)
     {
-        dc.BeginDrawing ();
-        m_memDC->BeginDrawing ();
         PrepareDC (dc);
         m_memDC->SetPen (m_foregroundPen);
         m_memDC->SetBackground (m_backgroundBrush);
         drawChar (dc, x, y, snum, cnum);
-        dc.EndDrawing ();
-        m_memDC->EndDrawing ();
     }
     else
     {
@@ -2409,8 +2403,6 @@ void PtermFrame::ptermDrawPoint (int x, int y)
     wxClientDC dc(m_canvas);
     int xm, ym;
     
-    dc.BeginDrawing ();
-    m_memDC->BeginDrawing ();
     PrepareDC (dc);
     xm = XMADJUST (x & 0777);
     ym = YMADJUST (y & 0777);
@@ -2439,8 +2431,6 @@ void PtermFrame::ptermDrawPoint (int x, int y)
         dc.DrawPoint (x + 1, y - 1);
         m_memDC->DrawPoint (xm + 1, ym - 1);
     }    
-    dc.EndDrawing ();
-    m_memDC->EndDrawing ();
 }
 
 void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
@@ -2448,8 +2438,6 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
     int xm1, ym1, xm2, ym2;
     wxClientDC dc(m_canvas);
 
-    dc.BeginDrawing ();
-    m_memDC->BeginDrawing ();
     PrepareDC (dc);
     xm1 = XMADJUST (x1);
     ym1 = YMADJUST (y1);
@@ -2483,8 +2471,6 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
         dc.DrawPoint (x2, y2);
         m_memDC->DrawPoint (xm2, ym2);
     }
-    dc.EndDrawing ();
-    m_memDC->EndDrawing ();
 }
 
 void PtermFrame::ptermFullErase (void)
@@ -2492,18 +2478,14 @@ void PtermFrame::ptermFullErase (void)
     wxClientDC dc(m_canvas);
 
     m_canvas->FullErase ();
-    dc.BeginDrawing ();
     PrepareDC (dc);
     dc.SetPen (m_backgroundPen);
     dc.SetBrush (m_backgroundBrush);
     dc.DrawRectangle (XTOP, YTOP, 
                       512 * ptermApp->m_scale, 
                       512 * ptermApp->m_scale);
-    dc.EndDrawing ();
-    m_memDC->BeginDrawing ();
     m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->Clear ();
-    m_memDC->EndDrawing ();
 }
 
 void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
@@ -2512,8 +2494,6 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     int xm1, ym1, xm2, ym2;
     wxClientDC dc(m_canvas);
 
-    dc.BeginDrawing ();
-    m_memDC->BeginDrawing ();
     PrepareDC (dc);
     xm1 = XMADJUST (x1);
     ym1 = YMADJUST (y1);
@@ -2563,8 +2543,6 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     m_memDC->DrawRectangle (xm1, ym1,
                             xm2 - xm1 + ptermApp->m_scale,
                             ym2 - ym1 + ptermApp->m_scale);
-    dc.EndDrawing ();
-    m_memDC->EndDrawing ();
 }
 
 void PtermFrame::ptermPaint (int pat)
@@ -2572,8 +2550,6 @@ void PtermFrame::ptermPaint (int pat)
     wxClientDC dc(m_canvas);
     int xm, ym;
     
-    dc.BeginDrawing ();
-    m_memDC->BeginDrawing ();
     PrepareDC (dc);
     
     xm = XMADJUST (currentX);
@@ -2583,8 +2559,6 @@ void PtermFrame::ptermPaint (int pat)
     m_memDC->FloodFill (xm, ym, m_currentBg, wxFLOOD_BORDER);
     dc.Blit (XTOP, YTOP, ScreenSize, ScreenSize,
              m_memDC, 0, 0, wxCOPY);
-    dc.EndDrawing ();
-    m_memDC->EndDrawing ();
 }
 
 void PtermFrame::ptermSetName (wxString &winName)
@@ -2609,7 +2583,6 @@ void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *chardata)
     
     for (m = 0; m < 5; m++)
     {
-        m_charDC[m]->BeginDrawing ();
         data = chardata;
         x = cnum * 8 * ptermApp->m_scale;
         y = (snum * 16 + 15) * ptermApp->m_scale;
@@ -2673,7 +2646,6 @@ void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *chardata)
             }
             x += ptermApp->m_scale;
         }
-        m_charDC[m]->EndDrawing ();
     }
 }
 
@@ -2734,11 +2706,9 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
         {
             m_canvas->SetScrollRate (1, 1);
         }
-        dc.BeginDrawing ();
         dc.DestroyClippingRegion ();
         dc.SetClippingRegion (GetXMargin (), GetYMargin (),
                               vScreenSize (newscale), vScreenSize (newscale));
-        dc.EndDrawing ();
         
         UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor,
                   ptermApp->m_bgColor, newscale2);
@@ -3052,8 +3022,6 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 else if (d == 012)
                 {
                     wxClientDC dc(m_canvas);
-                    dc.BeginDrawing ();
-                    m_memDC->BeginDrawing ();
                     PrepareDC (dc);
                     m_memDC->SetBackground (m_backgroundBrush);
                     if (currentY != 0)
@@ -3078,8 +3046,6 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     dc.Blit (XTOP, YADJUST (16) + 1, ScreenSize,
                              16 * ptermApp->m_scale,
                              &dc, 0, 0, wxCLEAR);
-                    dc.EndDrawing ();
-                    m_memDC->EndDrawing ();
                 }
             }
         }
@@ -4993,10 +4959,8 @@ void PtermPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
     wxMemoryDC memDC;
 
     memDC.SelectObject (bm);
-    memDC.BeginDrawing ();
     memDC.SetBackground (bitmapBrush);
     memDC.Clear ();
-    memDC.EndDrawing ();
     memDC.SetBackground (wxNullBrush);
     memDC.SelectObject (wxNullBitmap);
 }
@@ -5911,12 +5875,10 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             pc = 0130;      // down arrow (x)
             break;
         case WXK_PRIOR:
-        case WXK_PAGEUP:    // (Mac does this instead)
         case WXK_NUMPAD_PRIOR:
             pc = 020;       // super
             break;
         case WXK_NEXT:
-        case WXK_PAGEDOWN:  // (Mac does this instead)
         case WXK_NUMPAD_NEXT:
             pc = 021;       // sub
             break;
