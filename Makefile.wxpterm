@@ -13,34 +13,36 @@ include Makefile.common
 
 PTERMVERSION ?= $(shell awk -F \" '{print $$2}'  ptermversion.h)
 
-TYPE ?= shared
+TYPE ?= static
 ifeq ("$(TYPE)","static")
-DIR = /usr/local/wxstaticu
+DEFWXDIR = /usr/local/wxstaticu
 SETPATH=
-ifeq ("$(HOST)","Darwin")
-EXTRALIBS= -lwxpng-2.6 -lwxtiff-2.6
-endif
 else
 ifeq ("$(TYPE)","debugascii")
-DIR = /usr/local/wxshared
+DEFWXDIR = /usr/local/wxshared
 ifneq ("$(HOST)","Darwin")
 EXTRALIBS= -lXinerama
 endif
 else
-DIR = /usr/local/wxshareud
+DEFWXDIR = /usr/local/wxshareud
 ifneq ("$(HOST)","Darwin")
 EXTRALIBS= -lXinerama
 endif
 endif
+endif
+ifeq ("$(HOST)","Darwin")
+ARCHCFLAGS = -arch i386 -arch ppc
+#EXTRALIBS= -lwxpng-2.6 -lwxtiff-2.6
+DEFWXDIR = /usr/local/wxstaticu.270
 endif
 
 # if the wxmumble dir doesn't exist, try for plain /usr/local
-ifeq ("$(wildcard $(DIR))","")
-DIR=/usr/local
+ifeq ("$(wildcard $(DEFWXDIR))","")
+DEFWXDIR=/usr/local
 endif
+WXDIR ?= $(DEFWXDIR)
 
-
-PATH:=$(DIR)/bin:/usr/local/bin:$(PATH)
+PATH:=$(WXDIR)/bin:/usr/local/bin:$(PATH)
 
 WXCONFIG ?= wx-config
 CXXFLAGS = `$(WXCONFIG) --cxxflags`
@@ -51,15 +53,13 @@ GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
 
 SDLPATH ?= /usr/local
 SDLINCL = `sdl-config --cflags`
+PATH:=$(SDLPATH)/bin:$(PATH)
 ifeq ("$(TYPE)","static")
 SDLLIBS = `sdl-config --static-libs`
 else
 SDLLIBS = `sdl-config --libs`
 endif
-
-ifneq ("$(HOST)","Darwin")
-SETPATH= -Wl,-rpath,$(DIR)/lib -Wl,-rpath,$(SDLPATH)/lib
-endif
+#SETPATH= -Wl,-rpath,$(WXDIR)/lib -Wl,-rpath,$(SDLPATH)/lib
 
 SDLCFLAGS = $(SDLINCL)
 
@@ -73,10 +73,11 @@ endif
 .PHONY : pterm-kit langdirs
 
 pterm:	$(PTOBJS)
-	$(CXX) $(LDFLAGS) -o $@ $+ $(SDLLIBS) $(WXLIBS) $(SETPATH)
+	$(CXX) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SETPATH) $(STATICSW)
 ifeq ("$(TYPE)","static")
 ifeq ("$(HOST)","Darwin")
 	strip $@
+
 else
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
 endif
@@ -120,7 +121,7 @@ Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES)
 	touch $@
 
 pterm-empty.dmg:
-	hdiutil create -size 6m pterm-empty.dmg -layout NONE
+	hdiutil create -size 12m pterm-empty.dmg -layout NONE
 	dev=`hdid -nomount pterm-empty.dmg` ; newfs_hfs -v ptermvol $$dev ; hdiutil detach $$dev
 
 ptermkit.dmg: Pterm.app pterm-empty.dmg
