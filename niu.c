@@ -1110,6 +1110,11 @@ static void niuDoAlert (const char *msg)
     if (fork () == 0)
         {
         execlp (OPERBOX_EXEC, OPERBOX_EXEC, msg, NULL);
+        
+        /*
+        **  Just exit if that didn't work.
+        */
+        exit (0);
         }
     }
 
