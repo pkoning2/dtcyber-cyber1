@@ -2,6 +2,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#define hasflawtb 0
+
 #define k_sb    5           // sectors per block     (5)
 #define k_st    24          // sectors per track     (24)
 #define k_tc    19          // tracks  per cylinder  (19)
@@ -12,7 +14,7 @@
 #define blklth  320         // length of a disk block
 #define dsblks  7           // blocks per lesson space
 #define pdblks  16          // num blocks in pack directory
-#define pdstart 12          // starting block num of directory
+#define pdstart ((hasflawtb) ? 12 : 1)          // starting block num of directory
 #define pdspace ((pdblks+pdstart+dsblks-1)/dsblks) // # parts taken up by pdir
 #define flawtb  11          // starting block num of flaw table
 #define pdname  "4;;;;;;;;;" // pack dir "name"
