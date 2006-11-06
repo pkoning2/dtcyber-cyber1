@@ -73,6 +73,7 @@ endif
 .PHONY : pterm-kit langdirs
 
 pterm:	$(PTOBJS)
+	export LD_RUN_PATH=$(WXDIR)/lib ; \
 	$(CXX) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SETPATH) $(STATICSW)
 ifeq ("$(TYPE)","static")
 ifeq ("$(HOST)","Darwin")
