@@ -90,6 +90,7 @@
 #define PREF_XPOS       "xPosition"
 #define PREF_YPOS       "yPosition"
 #define PREF_BEEP       "beep"
+#define PREF_NOCOLOR    "noColor"
 
 /*
 **  -----------------------
@@ -510,6 +511,7 @@ public:
     bool        m_showStatusBar;
     bool        m_platoKb;
     bool        m_beepEnable;
+    bool        m_noColor;
     
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
@@ -893,6 +895,7 @@ public:
     wxCheckBox      *m_statusCheck;
     wxCheckBox      *m_kbCheck;
     wxCheckBox      *m_beepCheck;
+    wxCheckBox      *m_colorCheck;
     wxTextCtrl      *m_hostText;
     wxTextCtrl      *m_portText;
 
@@ -906,6 +909,7 @@ public:
     bool            m_showStatusBar;
     bool            m_platoKb;
     bool            m_beepEnable;
+    bool            m_noColor;
     wxString        m_host;
     wxString        m_port;
     
@@ -1223,13 +1227,14 @@ bool PtermApp::OnInit (void)
     m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
     m_platoKb = (m_config->Read (wxT (PREF_PLATOKB), 0L) != 0);
     m_beepEnable = (m_config->Read (wxT (PREF_BEEP), 1) != 0);
+    m_noColor = (m_config->Read (wxT (PREF_NOCOLOR), 0L) != 0);
 
 #if PTERM_MDI
     // On Mac, the style rule is that the application keeps running even
     // if all its windows are closed.
 //    SetExitOnFrameDelete(false);
     PtermFrameParent = new PtermMainFrame ();
-    PtermFrameParent->Show (false);
+    PtermFrameParent->Show (true);
 #endif
 
     // create the main application window
@@ -1393,6 +1398,7 @@ void PtermApp::OnPref (wxCommandEvent&)
     {
         m_platoKb = dlg.m_platoKb;
         m_beepEnable = dlg.m_beepEnable;
+        m_noColor = dlg.m_noColor;
         for (frame = m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
         {
             frame->UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2,
@@ -1429,6 +1435,7 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_STATUSBAR), (dlg.m_showStatusBar) ? 1 : 0);
         m_config->Write (wxT (PREF_PLATOKB), (dlg.m_platoKb) ? 1 : 0);
         m_config->Write (wxT (PREF_BEEP), (dlg.m_beepEnable) ? 1 : 0);
+        m_config->Write (wxT (PREF_NOCOLOR), (dlg.m_noColor) ? 1 : 0);
         m_config->Flush ();
     }
 }
@@ -2059,6 +2066,15 @@ void PtermFrame::OnClose (wxCloseEvent &)
             ptermApp->lastX = x;
             ptermApp->lastY = y;
         }
+    }
+
+    if (m_nextFrame != NULL && IsActive ())
+    {
+        m_nextFrame->Raise ();
+    }
+    else if (m_prevFrame != NULL && IsActive ())
+    {
+        m_prevFrame->Raise ();
     }
     
     Destroy ();
@@ -3400,7 +3416,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 case bg:
                     ascState = m_ascState;
                     n = AssembleColor (d);
-                    if (n != -1)
+                    if (n != -1 && !ptermApp->m_noColor)
                     {
                         wxColour c ((n >> 16) & 0xff, (n >> 8) & 0xff, 
                                     n & 0xff);
@@ -4760,6 +4776,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_showStatusBar = ptermApp->m_showStatusBar;
     m_platoKb = ptermApp->m_platoKb;
     m_beepEnable = ptermApp->m_beepEnable;
+    m_noColor = ptermApp->m_noColor;
     m_connect = ptermApp->m_connect;
     m_fgColor = ptermApp->m_fgColor;
     m_bgColor = ptermApp->m_bgColor;
@@ -4794,7 +4811,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     sbs->Add (m_kbCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
     m_beepCheck = new wxCheckBox (this, -1, _("Enable -beep-"));
     m_beepCheck->SetValue (m_beepEnable);
-    sbs->Add (m_beepCheck, 0, wxALL, 8);
+    sbs->Add (m_beepCheck, 0, wxTOP | wxLEFT | wxRIGHT, 8);
+    m_colorCheck = new wxCheckBox (this, -1, _("Disable -color-"));
+    m_colorCheck->SetValue (m_noColor);
+    sbs->Add (m_colorCheck, 0, wxALL, 8);
     ds->Add (sbs, 0,  wxTOP | wxLEFT | wxRIGHT | wxEXPAND, 10);
     
     // Second group: connection settings
@@ -4906,6 +4926,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_kbCheck->SetValue (false);
         m_beepEnable = true;
         m_beepCheck->SetValue (true);
+        m_noColor = false;
+        m_colorCheck->SetValue (false);
         m_hostText->SetValue (DEFAULTHOST);
         str.Printf (wxT ("%d"), DefNiuPort);
         m_portText->SetValue (str);
@@ -4950,6 +4972,10 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == m_beepCheck)
     {
         m_beepEnable = event.IsChecked ();
+    }
+    else if (event.GetEventObject () == m_colorCheck)
+    {
+        m_noColor = event.IsChecked ();
     }
 }
 
