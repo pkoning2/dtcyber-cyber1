@@ -14,6 +14,7 @@ void usage (void)
 int main (int argc, char **argv)
 {
     int bs, ds;
+    unsigned char bsv[4];
     int start = 1;
     int fn = 0;
     char name[40];
@@ -42,7 +43,8 @@ int main (int argc, char **argv)
     
     while (!feof (inf))
     {
-        fread (&bs, 1, sizeof (bs), inf);
+        fread (bsv, 1, sizeof (bsv), inf);
+        bs = bsv[0] + (bsv[1] << 8) + (bsv[2] << 16) + (bsv[3] << 24);
         if (bs == 0)
         {
             printf ("tape mark seen\n");
