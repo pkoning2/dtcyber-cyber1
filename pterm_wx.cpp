@@ -2,7 +2,7 @@
 // Name:        pterm_wx.cpp
 // Purpose:     pterm interface to wxWindows 
 // Author:      Paul Koning
-// Modified by:
+// Modified by: Joe Stanton, 11/26-2006-12/07/2006
 // Created:     03/26/2005
 // Copyright:   (c) Paul Koning
 // Licence:     DtCyber license
