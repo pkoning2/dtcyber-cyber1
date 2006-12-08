@@ -69,7 +69,8 @@
 #define ASCTYPE         12
 #define SUBTYPE         0x74
 #define TERMCONFIG      0x40    // touch panel present
-#define ASCFEATURES     0x01    // features: fine touch
+//#define ASCFEATURES     0x01    // features: fine touch
+#define ASCFEATURES     0x05   // features: fine touch=0x01, kermit=0x04
 
 // Literal strings for wxConfig key strings.  These are defined
 // because they appear in two places, so this way we avoid getting
@@ -91,6 +92,13 @@
 #define PREF_YPOS       "yPosition"
 #define PREF_BEEP       "beep"
 #define PREF_NOCOLOR    "noColor"
+#define PREF_CHARDELAY  "charDelay"	// added by JWS 11/26/2006
+#define PREF_LINEDELAY  "lineDelay"	// added by JWS 11/26/2006
+#define PREF_AUTOLF     "autoLF"	// added by JWS 11/26/2006
+#define PREF_CONVDOT7   "convDot7"	// added by JWS 11/26/2006
+#define PREF_CONV8SP    "conv8Sp"	// added by JWS 11/26/2006
+#define PREF_BROWSER    "Browser"	// added by JWS 12/02/2006
+#define PREF_LASTTAB	"lastTab"	// added by JWS 12/02/2006
 
 /*
 **  -----------------------
@@ -182,12 +190,14 @@
 #include "wx/wx.h"
 #endif
 
+#include <wx/button.h>		// added by JWS 11/27/2006
 #include "wx/clipbrd.h"
 #include "wx/colordlg.h"
 #include "wx/config.h"
 #include "wx/image.h"
 #include "wx/filename.h"
 #include "wx/metafile.h"
+#include "wx/notebook.h"	// added by JWS 11/27/2006
 #include "wx/print.h"
 #include "wx/printdlg.h"
 
@@ -494,12 +504,13 @@ public:
     void OnAbout (wxCommandEvent& event);
 
     bool DoConnect (bool ask);
-    static wxColour SelectColor (wxColour &initcol);
+    static wxColour SelectColor (wxWindow &parent, char * title, wxColour &initcol );
     
     wxColour    m_fgColor;
     wxColour    m_bgColor;
     wxConfig    *m_config;
 
+	int			m_lastTab;		// added by JWS 12/02/2006
     wxString    m_hostName;
     int         m_port;
     // scale is 1 or 2 for full size and double, respectively.
@@ -512,7 +523,13 @@ public:
     bool        m_platoKb;
     bool        m_beepEnable;
     bool        m_noColor;
-    
+    wxString    m_charDelay;	// added by JWS 11/26/2006
+    wxString    m_lineDelay;	// added by JWS 11/26/2006
+    wxString    m_autoLF;	    // added by JWS 11/26/2006
+    bool        m_convDot7;     // added by JWS 11/26/2006
+    bool        m_conv8Sp;      // added by JWS 11/26/2006
+	wxString	m_Browser;      // added by JWS 12/02/2006
+
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
     PtermFrame  *m_helpFrame;
@@ -540,6 +557,7 @@ public:
     void OnChar (wxKeyEvent& event);
     void OnMouseDown (wxMouseEvent &event);
     void OnMouseUp (wxMouseEvent &event);
+    void OnMouseContextMenu (wxMouseEvent &event);	// added by JWS 12/03/2006
     void OnMouseMotion (wxMouseEvent &event);
     void OnCopy (wxCommandEvent &event);
 
@@ -622,6 +640,7 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
     void OnCopy (wxCommandEvent &event);
+    void OnExec (wxCommandEvent &event);
     void OnPaste (wxCommandEvent &event);
     void OnUpdateUIPaste (wxUpdateUIEvent& event);
     void OnSaveScreen (wxCommandEvent &event);
@@ -683,6 +702,8 @@ public:
 	bool		m_bCancelPaste;
 	bool		m_bPasteActive;
 
+	wxMenu      *menuEdit;			// moved to public scope by JWS 12/03/2006
+
 private:
     wxStatusBar *m_statusBar;       // present even if not displayed
     wxPen       m_foregroundPen;
@@ -703,6 +724,7 @@ private:
     wxString    m_pasteText;
     int         m_pasteIndex;
     bool        m_pastePrint;
+	int			m_pasteNextKeyCnt;	// added by JWS 12/03/2006
     
     // Character patterns are stored in three DCs because we want to
     // BLIT them in various ways, and the OR/AND type ops don't work
@@ -877,41 +899,72 @@ const PtermFrame::mptr PtermFrame::modePtr[8] =
 class PtermPrefDialog : public wxDialog
 {
 public:
-    PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxString &title);
-    
-    void OnButton (wxCommandEvent& event);
+    PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxString &title, wxPoint pos,  wxSize size);
+
+    //event sink handlers
+	void OnButton (wxCommandEvent& event);
     void OnCheckbox (wxCommandEvent& event);
     void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
-    wxBitmapButton  *m_fgButton;
-    wxBitmapButton  *m_bgButton;
-    wxButton        *m_okButton;
-    wxButton        *m_cancelButton;
-    wxButton        *m_resetButton;
-    wxCheckBox      *m_scaleCheck;
-    wxCheckBox      *m_speedCheck;
-    wxCheckBox      *m_autoConnect;
-    wxCheckBox      *m_gswCheck;
-    wxCheckBox      *m_arrowCheck;
-    wxCheckBox      *m_statusCheck;
-    wxCheckBox      *m_kbCheck;
-    wxCheckBox      *m_beepCheck;
-    wxCheckBox      *m_colorCheck;
-    wxTextCtrl      *m_hostText;
-    wxTextCtrl      *m_portText;
+	//objects
+	wxNotebook* tabPrefsDialog;
+	//tab1
+	wxCheckBox* chkSimulate1200Baud;
+	wxCheckBox* chkEnableGSW;
+	wxCheckBox* chkEnableNumericKeyPad;
+	wxCheckBox* chkUsePLATOKeyboard;
+	wxCheckBox* chkEnableBeep;
+	//tab2
+	wxCheckBox* chkConnectAtStartup;
+	wxTextCtrl* txtDefaultHost;
+	wxComboBox* cboDefaultPort;
+	//tab3
+	wxCheckBox* chkZoom200;
+	wxCheckBox* chkStatusBar;
+	wxCheckBox* chkDisableColor;
+	wxButton* btnFGColor;
+	wxButton* btnBGColor;
+	//tab4
+	wxTextCtrl* txtCharDelay;
+	wxTextCtrl* txtLineDelay;
+	wxComboBox* cboAutoLF;
+	wxCheckBox* chkConvertDot7;
+	wxCheckBox* chkConvert8Spaces;
+	//tab5
+	wxCheckBox* chkAllowPPT;
+	wxCheckBox* chkAllowMicroTutor;
+	wxCheckBox* chkAllowKermit;
+	wxTextCtrl* txtBrowser;
+	//button bar
+	wxButton* btnOK;
+	wxButton* btnCancel;
+	wxButton* btnDefaults;
 
-    wxColour        m_fgColor;
-    wxColour        m_bgColor;
-    bool            m_scale2;
+	//properties	
+	int				m_lastTab;		// added by JWS 12/02/2006
+	//tab1
     bool            m_classicSpeed;
-    bool            m_connect;
     bool            m_gswEnable;
     bool            m_numpadArrows;
-    bool            m_showStatusBar;
     bool            m_platoKb;
     bool            m_beepEnable;
-    bool            m_noColor;
+	//tab2
+    bool            m_connect;
     wxString        m_host;
     wxString        m_port;
+	//tab3
+    bool            m_scale2;
+    bool            m_showStatusBar;
+    bool            m_noColor;
+    wxColour        m_fgColor;
+    wxColour        m_bgColor;
+	//tab4
+    wxString        m_charDelay;	// added by JWS 11/26/2006
+    wxString        m_lineDelay;	// added by JWS 11/26/2006
+    wxString        m_autoLF;		// added by JWS 11/26/2006
+    bool            m_convDot7;		// added by JWS 11/26/2006
+    bool            m_conv8Sp;		// added by JWS 11/26/2006
+	//tab5
+	wxString		m_Browser;		// added by JWS 12/02/2006
     
 private:
     void paintBitmap (wxBitmap &bm, wxColour &color);
@@ -921,19 +974,25 @@ private:
     DECLARE_EVENT_TABLE ()
 };
 
-// define the preferences dialog
+// define the connection dialog
 class PtermConnDialog : public wxDialog
 {
 public:
-    PtermConnDialog (wxWindowID id, const wxString &title);
+    PtermConnDialog (wxWindowID id, const wxString &title, wxPoint pos,  wxSize size);	// changed by JWS 12/04/2006
     
-    void OnOK (wxCommandEvent& event);
+    void OnButton (wxCommandEvent& event);		// was OnOK, changed by JWS 12/04/2006
     void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
-    wxTextCtrl      *m_hostText;
-    wxTextCtrl      *m_portText;
     
     wxString        m_host;
     wxString        m_port;
+
+//start block. added by JWS 12/04/2006
+	wxTextCtrl* txtHost;
+	wxComboBox* cboPort;
+	wxButton* btnQuickConnectClassic;
+	wxButton* btnQuickConnectASCII;
+	wxButton* btnConnect;
+//end block. added by JWS 12/04/2006
     
 private:
     DECLARE_EVENT_TABLE ()
@@ -957,6 +1016,7 @@ enum
     // timers
     Pterm_Timer,        // display pacing
     Pterm_PasteTimer,   // paste key generation pacing
+    Pterm_Exec,			// execute URL; added by JWS 12/02/2006
 
     // Menu items with standard ID values
     Pterm_Print = wxID_PRINT,
@@ -1128,6 +1188,7 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
     EVT_MENU(Pterm_Copy, PtermFrame::OnCopy)
+    EVT_MENU(Pterm_Exec, PtermFrame::OnExec)	// added by JWS 12/02/2006
     EVT_MENU(Pterm_Paste, PtermFrame::OnPaste)
     EVT_MENU(Pterm_PastePrint, PtermFrame::OnPaste)
     EVT_UPDATE_UI(Pterm_Paste, PtermFrame::OnUpdateUIPaste)
@@ -1191,43 +1252,45 @@ bool PtermApp::OnInit (void)
 
     m_config = new wxConfig (wxT ("Pterm"));
 
-    if (argc > 2)
-    {
-        m_port = atoi (wxString (argv[2]).mb_str ());
-    }
-    else
-    {
-        m_port = m_config->Read (wxT (PREF_PORT), DefNiuPort);
-    }
+	//notebook
+	m_lastTab = m_config->Read (wxT (PREF_LASTTAB), 0L);
+	//tab1
+    m_classicSpeed = (m_config->Read (wxT (PREF_1200BAUD), 0L) != 0);
+    m_gswEnable = (m_config->Read (wxT (PREF_GSW), 1) != 0);
+    m_numpadArrows = (m_config->Read (wxT (PREF_ARROWS), 1) != 0);
+    m_platoKb = (m_config->Read (wxT (PREF_PLATOKB), 0L) != 0);
+    m_beepEnable = (m_config->Read (wxT (PREF_BEEP), 1) != 0);
+	//tab2
+    m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
     if (argc > 1)
-    {
         m_hostName = argv[1];
-    }
     else
-    {
         m_config->Read (wxT (PREF_HOST), &m_hostName, DEFAULTHOST);
-    }
-
-    // 255 144 0 is RGB for Plato Orange
-    m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("255 144 0"));
+    if (argc > 2)
+        m_port = atoi (wxString (argv[2]).mb_str ());
+    else
+        m_port = m_config->Read (wxT (PREF_PORT), DefNiuPort);
+	//tab3
+    m_scale = m_config->Read (wxT (PREF_SCALE2), 1);
+    if (m_scale != 1 && m_scale != 2)
+        m_scale = 1;
+    m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
+    m_noColor = (m_config->Read (wxT (PREF_NOCOLOR), 0L) != 0);
+    m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("255 144 0"));		// 255 144 0 is RGB for Plato Orange
     sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
     m_fgColor = wxColour (r, g, b);
     m_config->Read (wxT (PREF_BACKGROUND), &rgb, wxT ("0 0 0"));
     sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
     m_bgColor = wxColour (r, g, b);
-    m_scale = m_config->Read (wxT (PREF_SCALE2), 1);
-    if (m_scale != 1 && m_scale != 2)
-    {
-        m_scale = 1;
-    }
-    m_classicSpeed = (m_config->Read (wxT (PREF_1200BAUD), 0L) != 0);
-    m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
-    m_gswEnable = (m_config->Read (wxT (PREF_GSW), 1) != 0);
-    m_numpadArrows = (m_config->Read (wxT (PREF_ARROWS), 1) != 0);
-    m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
-    m_platoKb = (m_config->Read (wxT (PREF_PLATOKB), 0L) != 0);
-    m_beepEnable = (m_config->Read (wxT (PREF_BEEP), 1) != 0);
-    m_noColor = (m_config->Read (wxT (PREF_NOCOLOR), 0L) != 0);
+	//tab4
+	m_charDelay.Printf ( "%d", m_config->Read (wxT (PREF_CHARDELAY), PASTE_CHARDELAY) );	// added by JWS 11/26/2006
+	m_lineDelay.Printf ( "%d", m_config->Read (wxT (PREF_LINEDELAY), PASTE_LINEDELAY) );	// added by JWS 11/26/2006
+	m_autoLF.Printf ( "%d", m_config->Read (wxT (PREF_AUTOLF), 0L) );						// added by JWS 11/26/2006
+    m_convDot7 = (m_config->Read (wxT (PREF_CONVDOT7), 0L) != 0);							// added by JWS 11/26/2006
+    m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);								// added by JWS 11/26/2006
+	//tab5
+    m_config->Read (wxT (PREF_BROWSER), &m_Browser, wxT(""));								// added by JWS 12/02/2006
+
 
 #if PTERM_MDI
     // On Mac, the style rule is that the application keeps running even
@@ -1285,7 +1348,7 @@ bool PtermApp::DoConnect (bool ask)
 
     if (ask)
     {
-        PtermConnDialog dlg (wxID_ANY, _("Connect to PLATO"));
+        PtermConnDialog dlg (wxID_ANY, _("Connect to PLATO"), wxDefaultPosition, wxSize( 356,174 ));
     
         dlg.CenterOnScreen ();
         
@@ -1343,12 +1406,19 @@ bool PtermApp::DoConnect (bool ask)
 
 void PtermApp::OnAbout(wxCommandEvent&)
 {
+// changed by JWS 12/04/2006
     wxString msg;
+	wxString ver;
+	int v[4];
 
-    msg.Printf (_T("PLATO terminal emulator %s.\n%s"),
-                wxT ("V" PTERMVERSION),
-                _("Copyright \xA9 2004-2006 by Paul Koning."));
-    
+	sscanf (STRFILEVER,"%d, %d, %d, %d", &v[0], &v[1], &v[2], &v[3] );
+	if (v[2]==0 && v[3]==0)
+		ver.Printf ( "%d.%d", v[0], v[1] );
+	else if (v[2]!=0 && v[3]==0)
+		ver.Printf ( "%d.%d.%d", v[0], v[1], v[2] );
+	else
+		ver.Printf ( "%d.%d.%d.%d", v[0], v[1], v[2], v[3] );
+	msg.Printf ("%s V%s\n%s", STRPRODUCTNAME, ver, STRLEGALCOPYRIGHT);
     wxMessageBox(msg, _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
 }
 
@@ -1392,31 +1462,40 @@ void PtermApp::OnPref (wxCommandEvent&)
     PtermFrame *frame;
     wxString rgb;
     
-    PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"));
+    PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"), wxDefaultPosition, wxSize( 381,358 ) );
     
     if (dlg.ShowModal () == wxID_OK)
     {
-        m_platoKb = dlg.m_platoKb;
-        m_beepEnable = dlg.m_beepEnable;
-        m_noColor = dlg.m_noColor;
         for (frame = m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
-        {
-            frame->UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2,
-                                   dlg.m_showStatusBar);
-        }
-
-        m_fgColor = dlg.m_fgColor;
-        m_bgColor = dlg.m_bgColor;
-        
-        m_scale = (dlg.m_scale2) ? 2 : 1;
+            frame->UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2, dlg.m_showStatusBar);
+		//get prefs
+		m_lastTab = dlg.m_lastTab;
+        //tab1
         m_classicSpeed = dlg.m_classicSpeed;
         m_gswEnable = dlg.m_gswEnable;
         m_numpadArrows = dlg.m_numpadArrows;
-        m_showStatusBar = dlg.m_showStatusBar;
+        m_platoKb = dlg.m_platoKb;
+        m_beepEnable = dlg.m_beepEnable;
+		//tab2
+        m_connect = dlg.m_connect;
         m_hostName = dlg.m_host;
         m_port = atoi (wxString (dlg.m_port).mb_str ());
-        m_connect = dlg.m_connect;
-        
+		//tab3
+        m_scale = (dlg.m_scale2) ? 2 : 1;
+        m_showStatusBar = dlg.m_showStatusBar;
+        m_noColor = dlg.m_noColor;
+        m_fgColor = dlg.m_fgColor;
+        m_bgColor = dlg.m_bgColor;
+		//tab4
+        m_charDelay = dlg.m_charDelay;	// added by JWS 11/26/2006
+        m_lineDelay = dlg.m_lineDelay;	// added by JWS 11/26/2006
+		m_convDot7 = dlg.m_convDot7;	// added by JWS 11/26/2006
+		m_conv8Sp = dlg.m_conv8Sp;		// added by JWS 11/26/2006
+		//tab5
+		m_Browser = dlg.m_Browser;		// added by JWS 12/02/2006
+		
+        //write prefs
+		m_config->Write (wxT (PREF_LASTTAB), dlg.m_lastTab);				// added by JWS 12/02/2006
         rgb.Printf (wxT ("%d %d %d"), 
                     dlg.m_fgColor.Red (), dlg.m_fgColor.Green (),
                     dlg.m_fgColor.Blue ());
@@ -1427,7 +1506,7 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_BACKGROUND), rgb);
         m_config->Write (wxT (PREF_SCALE2), (dlg.m_scale2) ? 2 : 1);
         m_config->Write (wxT (PREF_HOST), dlg.m_host);
-        m_config->Write (wxT (PREF_PORT), m_port);
+        m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port));				// changed by JWS 12/02/2006
         m_config->Write (wxT (PREF_1200BAUD), (dlg.m_classicSpeed) ? 1 : 0);
         m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
         m_config->Write (wxT (PREF_GSW), (dlg.m_gswEnable) ? 1 : 0);
@@ -1436,11 +1515,18 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_PLATOKB), (dlg.m_platoKb) ? 1 : 0);
         m_config->Write (wxT (PREF_BEEP), (dlg.m_beepEnable) ? 1 : 0);
         m_config->Write (wxT (PREF_NOCOLOR), (dlg.m_noColor) ? 1 : 0);
+        m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay));		// added by JWS 11/26/2006
+        m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay));		// added by JWS 11/26/2006
+        m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF));			// added by JWS 11/26/2006
+        m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);	// added by JWS 11/26/2006
+        m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);		// added by JWS 11/26/2006
+        m_config->Write (wxT (PREF_BROWSER), dlg.m_Browser);				// added by JWS 12/02/2006
         m_config->Flush ();
+
     }
 }
 
-wxColour PtermApp::SelectColor (wxColour &initcol)
+wxColour PtermApp::SelectColor ( wxWindow &parent, char * title, wxColour &initcol)	// changed by JWS 12/05/2006; inserted first and second arguments
 {
     wxColour col (initcol);
     wxColour orange (255, 144, 0);
@@ -1452,7 +1538,10 @@ wxColour PtermApp::SelectColor (wxColour &initcol)
     data.SetCustomColour (1, *wxBLACK);
     data.SetCustomColour (2, vikingGreen);
     
-    wxColourDialog dialog (NULL, &data);
+    wxColourDialog dialog (&parent, &data);
+
+	dialog.CentreOnParent();			// added by JWS 12/05/2006
+	dialog.SetTitle((wxString) title);	// added by JWS 12/05/2006
 
     if (dialog.ShowModal () == wxID_OK)
     {
@@ -1564,6 +1653,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
       m_station (0),
       m_pasteTimer (this, Pterm_PasteTimer),
       m_pasteIndex (-1),
+      m_pasteNextKeyCnt (0),
 	  m_bCancelPaste (false),
 	  m_bPasteActive (false),
       m_nextword (0),
@@ -1658,7 +1748,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
                       _("Close this window"));
     menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
 
-    wxMenu *menuEdit = new wxMenu;
+//    wxMenu *menuEdit = new wxMenu;	// moved up to public scope, JWS 12/03/2006
+    menuEdit = new wxMenu;
 
     menuEdit->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
     menuEdit->Append(Pterm_Copy, _("Copy text") MACACCEL ("\tCtrl-C"),
@@ -1671,9 +1762,12 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
         menuEdit->Append(Pterm_PastePrint, _("Paste Printout"),
                          _("Paste Cyber printout format"));
     }
+    menuEdit->AppendSeparator ();															// added by JWS 12/02/2006
+    menuEdit->Append(Pterm_Exec, _("Execute URL") MACACCEL ("\tCtrl-X"), _("Execute URL"));	// added by JWS 12/02/2006
 
     // Copy is initially disabled, until a region is selected
     menuEdit->Enable (Pterm_Copy, false);
+    menuEdit->Enable (Pterm_Exec, false);	// added by JWS 12/02/2006
 
     wxMenu *menuView = new wxMenu;
     
@@ -1909,7 +2003,8 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     int p, delay;
     unsigned int nextindex;
     int shift = 0;
-    
+	bool neednext = false;										// added by JWS 12/03/2006
+	int autonext = ptermApp->m_config->Read(PREF_AUTOLF, 0L);	// added by JWS 12/03/2006
 
 	if (m_bCancelPaste ||
 		m_pasteIndex < 0 ||
@@ -2005,6 +2100,14 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         if (p != -1)
         {
             ptermSendKey (p);
+// start block. added by JWS 12/03/2006
+			m_pasteNextKeyCnt++;
+			if (autonext != 0 && m_pasteNextKeyCnt == autonext)
+			{
+				neednext = (p != 026);	// NEXT
+				m_pasteNextKeyCnt = 0;
+			}
+// end block. added by JWS 12/03/2006
         }
     }
     
@@ -2016,14 +2119,27 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         m_pasteIndex = nextindex;
         if (c == wxT ('\n'))
         {
-            delay = PASTE_LINEDELAY;
+            delay = atoi(ptermApp->m_lineDelay);	// changed by JWS 11/26/2006
         }
         else
         {
-            delay = PASTE_CHARDELAY;
+            delay = atoi(ptermApp->m_charDelay);	// changed by JWS 11/26/2006
         }
         m_pasteTimer.Start (delay, true);
 		m_bPasteActive = true;
+// start block. added by JWS 12/03/2006
+		//check if need to send a NEXT
+		if (neednext)
+		{
+			neednext = false;
+            ptermSendKey (026);
+			m_pasteIndex = nextindex;
+			delay = atoi(ptermApp->m_lineDelay);	// changed by JWS 11/26/2006
+			m_pasteTimer.Start (delay, true);
+			m_bPasteActive = true;
+		}
+// end block. added by JWS 12/03/2006
+
     }
     else
     {
@@ -2127,6 +2243,40 @@ void PtermFrame::OnCopy (wxCommandEvent &event)
     m_canvas->OnCopy (event);
 }
 
+void PtermFrame::OnExec (wxCommandEvent &event)
+{
+// added by JWS 12/02/2006
+    m_canvas->OnCopy (event);
+
+    if (!wxTheClipboard->Open ())
+    {
+        wxLogError (_("Can't open clipboard to execute."));
+
+        return;
+    }
+
+    if (!wxTheClipboard->IsSupported (wxDF_TEXT))
+    {
+        wxLogWarning (_("No text data on clipboard to execute"));
+
+        wxTheClipboard->Close ();
+        return;
+    }
+
+    wxTextDataObject text;
+
+    if (!wxTheClipboard->GetData (text))
+    {
+        wxLogError (_("Can't paste data from the clipboard to execute"));
+    }
+    else
+    {
+		wxExecute ( ptermApp->m_Browser + " " + text.GetText () );
+    }
+
+    wxTheClipboard->Close ();
+}
+
 void PtermFrame::OnPaste (wxCommandEvent &event)
 {
     if (!wxTheClipboard->Open ())
@@ -2154,7 +2304,8 @@ void PtermFrame::OnPaste (wxCommandEvent &event)
     {
         m_pasteText = text.GetText ();
         m_pasteIndex = 0;
-        m_pasteTimer.Start (PASTE_CHARDELAY, true);
+		m_pasteNextKeyCnt = 0;									// added by JWS 12/03/2006
+        m_pasteTimer.Start (atoi(ptermApp->m_charDelay), true);	// changed by JWS 11/26/2006
         m_pastePrint = (event.GetId () == Pterm_PastePrint);
     }
 
@@ -2756,7 +2907,9 @@ void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
     m_foregroundBrush.SetColour (newfg);
     m_foregroundPen.SetColour (newfg);
     m_foregroundPen.SetWidth (newscale);
-    
+   
+// start block. code disabled by JWS for MPS 12/04/2006
+/*
     m_charDC[2]->SetBackground (m_backgroundBrush);
     m_charDC[2]->Clear ();
     m_charDC[2]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
@@ -2777,6 +2930,9 @@ void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
                        m_charDC[4], 0, 0, wxAND);
     m_charDC[1]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
                        m_charDC[3], 0, 0, wxOR);
+*/
+// end block. code disabled by JWS for MPS 12/04/2006
+
 }
 
 void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
@@ -2927,38 +3083,36 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     {
         sizeY += y;
     }
-    if (mode & 2)
-    {
-        // write or erase -- need to zap old pixels and OR in new pixels
-        m_memDC->Blit (memX, memY,
-                       sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
-                       m_charDC[4], charX, charY, wxAND);
-        m_memDC->Blit (memX, memY,
-                       sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
-                       m_charDC[wemode], charX, charY, wxOR);
-    }
-    else
-    {
-        // inverse or rewrite, just blit in the appropriate pattern
-        m_memDC->Blit (memX, memY,
-                       sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
-                       m_charDC[wemode], charX, charY, wxCOPY);
-    }
-        
+// start block. added by JWS for MPS 12/04/2006
+	//translate vertical char data into horizontal
+	//with additional wrinkle that the wxBitmap constructor is going to reverse the bits
+	unsigned char bmi[16]={0};
+	const unsigned short*m[] = {plato_m0, plato_m1, plato_m23, plato_m23+64*8};
+	unsigned short *chardata = (unsigned short*)m[snum] + cnum*8;
+	for(char c=0; c<sizeX; c++) 
+		for(char r=0; r<sizeY; r++) {
+			bmi[r] >>= 1;
+			if(chardata[c] & (0x8000>>r))		bmi[r] |= 0x80;
+	}
+	wxBitmap *cbm = new wxBitmap ((char*)bmi, sizeX,sizeY,1);
+	//note that if you pass the pointer to the bitmap it merely stores the address and subsequently FAILS
+	enum plotmodes {minverse,mrewrite,merase,mwrite, mmask, bitinvert=1,bitwriteback=2,lastmode=mwrite};
+	if (wemode & bitwriteback)
+		cbm->SetMask(new wxMask(*cbm));
+	m_memDC->SetTextForeground(((wemode & bitinvert)?m_backgroundBrush:m_foregroundBrush).GetColour());
+	m_memDC->SetTextBackground(((wemode & bitinvert)?m_foregroundBrush:m_backgroundBrush).GetColour());
+	m_charDC[0]->SelectObject(*cbm);	//should define a DC for this purpose somewhere
+	m_memDC->Blit(memX,memY, sizeX, sizeY,m_charDC[0],0,0,wxCOPY,1);
+	delete cbm;
+// end block. added by JWS for MPS 12/04/2006
     // Now copy the resulting state of the character area into the screen dc
-    dc.Blit (screenX, screenY,
-             sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale,
+    dc.Blit (screenX, screenY,sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale,
              m_memDC, memX, memY, wxCOPY);
-    
     // Handle screen edge wraparound by recursion...
     if (x > 512 - 8)
-    {
         drawChar (dc, x - 512, y, snum, cnum);
-    }
     if (y > 512 - 16)
-    {
         drawChar (dc, x, y - 512, snum, cnum);
-    }
 }
 
 /*--------------------------------------------------------------------------
@@ -4759,224 +4913,461 @@ BEGIN_EVENT_TABLE(PtermPrefDialog, wxDialog)
     EVT_CHECKBOX(wxID_ANY, PtermPrefDialog::OnCheckbox)
     END_EVENT_TABLE()
 
-PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxString &title)
-    : wxDialog (parent, id, title),
+PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxString &title, wxPoint pos, wxSize size)
+    : wxDialog (parent, id, title, pos, size),
       m_owner (parent)
 {
-    wxBitmap fgBitmap (20, 12);
-    wxBitmap bgBitmap (20, 12);
-    wxBoxSizer *bs, *ds, *ods;
-    wxStaticBoxSizer *sbs;
-    wxFlexGridSizer *fgs;
+
+	// static ui objects, note dynamic controls, e.g. those that hold values or require event processing are declared above
+//	wxNotebook* tabPrefsDialog;
+	//tab1
+	wxScrolledWindow* tab1;
+	wxStaticText* lblExplain1;
+//	wxCheckBox* chkSimulate1200Baud;
+//	wxCheckBox* chkEnableGSW;
+//	wxCheckBox* chkEnableNumericKeyPad;
+//	wxCheckBox* chkUsePLATOKeyboard;
+//	wxCheckBox* chkEnableBeep;
+	//tab2
+	wxScrolledWindow* tab2;
+	wxStaticText* lblExplain2;
+//	wxCheckBox* chkConnectAtStartup;
+	wxStaticText* lblDefaultHost;
+//	wxTextCtrl* txtDefaultHost;
+	wxStaticText* lblDefaultPort;
+//	wxComboBox* cboDefaultPort;
+	wxStaticText* lblExplainPort;
+	//tab3
+	wxScrolledWindow* tab3;
+	wxStaticText* lblExplain3;
+//	wxCheckBox* chkZoom200;
+//	wxCheckBox* chkStatusBar;
+//	wxCheckBox* chkDisableColor;
+//	wxButton* btnFGColor;
+	wxStaticText* lblFGColor;
+//	wxButton* btnBGColor;
+	wxStaticText* lblBGColor;
+	wxStaticText* lblExplainColor;
+	//tab4
+	wxScrolledWindow* tab4;
+	wxStaticText* lblExplain4;
+	wxStaticText* lblCharDelay;
+//	wxTextCtrl* txtCharDelay;
+	wxStaticText* lblCharDelay2;
+	wxStaticText* lblLineDelay;
+//	wxTextCtrl* txtLineDelay;
+	wxStaticText* lblLineDelay2;
+	wxStaticText* lblAutoNewLine;
+//	wxComboBox* cboAutoLF;
+	wxStaticText* lblAutoNewLine2;
+//	wxCheckBox* chkConvertDot7;
+//	wxCheckBox* chkConvert8Spaces;
+	wxStaticText* lblExplainConversions;
+	//tab5
+	wxScrolledWindow* tab5;
+	wxStaticText* lblExplain5;
+//	wxCheckBox* chkAllowPPT;
+//	wxCheckBox* chkAllowMicroTutor;
+//	wxCheckBox* chkAllowKermit;
+	wxStaticText* lblBrowser;
+//	wxTextCtrl* txtBrowser;
+	//button  bar
+//	wxButton* btnOK;
+//	wxButton* btnCancel;
+//	wxButton* btnDefaults;
     
-    m_scale2 = (ptermApp->m_scale != 1);
+    // ui object creation / placement, note initialization of values is below
+	wxBoxSizer* bSizer1;
+	bSizer1 = new wxBoxSizer( wxVERTICAL );
+	tabPrefsDialog = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP ); 
+	//tab1
+	tab1 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL|wxTAB_TRAVERSAL );
+	tab1->SetScrollRate( 5, 5 );
+	wxBoxSizer* page1;
+	page1 = new wxBoxSizer( wxVERTICAL );
+	lblExplain1 = new wxStaticText( tab1, wxID_ANY, _("Settings on this page let you fine-tune your PLATO experience."), wxDefaultPosition, wxDefaultSize, 0 );
+	page1->Add( lblExplain1, 0, wxALL, 5 );
+	chkSimulate1200Baud = new wxCheckBox( tab1, wxID_ANY, _("Simulate 1200 baud"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	page1->Add( chkSimulate1200Baud, 0, wxALL, 5 );
+	chkEnableGSW = new wxCheckBox( tab1, wxID_ANY, _("Enable GSW (not in ASCII)"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	page1->Add( chkEnableGSW, 0, wxALL, 5 );
+	chkEnableNumericKeyPad = new wxCheckBox( tab1, wxID_ANY, _("Enable numeric keypad for arrow operation"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	page1->Add( chkEnableNumericKeyPad, 0, wxALL, 5 );
+	chkUsePLATOKeyboard = new wxCheckBox( tab1, wxID_ANY, _("Use real PLATO keyboard"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	page1->Add( chkUsePLATOKeyboard, 0, wxALL, 5 );
+	chkEnableBeep = new wxCheckBox( tab1, wxID_ANY, _("Enable -beep-"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	page1->Add( chkEnableBeep, 0, wxALL, 5 );
+	tab1->SetSizer( page1 );
+	tab1->Layout();
+	page1->Fit( tab1 );
+	tabPrefsDialog->AddPage( tab1, _("Emulation"), false );
+	//tab2
+	tab2 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL|wxTAB_TRAVERSAL );
+	tab2->SetScrollRate( 5, 5 );
+	wxFlexGridSizer* page2;
+	page2 = new wxFlexGridSizer( 1, 1, 0, 0 );
+	page2->AddGrowableCol( 1 );
+	page2->AddGrowableRow( 1 );
+	page2->SetFlexibleDirection( wxVERTICAL );
+	lblExplain2 = new wxStaticText( tab2, wxID_ANY, _("Settings on this page specify where PLATO is on the internet."), wxDefaultPosition, wxDefaultSize, 0 );
+	page2->Add( lblExplain2, 1, wxALL|wxEXPAND, 5 );
+	wxBoxSizer* bs21;
+	bs21 = new wxBoxSizer( wxVERTICAL );
+	chkConnectAtStartup = new wxCheckBox( tab2, wxID_ANY, _("Connect at startup"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	chkConnectAtStartup->SetValue(true);
+	bs21->Add( chkConnectAtStartup, 0, wxEXPAND|wxTOP|wxLEFT, 5 );
+	wxFlexGridSizer* fgs211;
+	fgs211 = new wxFlexGridSizer( 2, 2, 0, 0 );
+	lblDefaultHost = new wxStaticText( tab2, wxID_ANY, _("Default Host"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgs211->Add( lblDefaultHost, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	txtDefaultHost = new wxTextCtrl( tab2, wxID_ANY, wxT("cyberserv.org"), wxDefaultPosition, wxSize( -1,-1 ), wxTAB_TRAVERSAL );
+	txtDefaultHost->SetMaxLength( 100 ); 
+	txtDefaultHost->SetMinSize( wxSize( 270,-1 ) );
+	fgs211->Add( txtDefaultHost, 1, wxALL|wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
+	lblDefaultPort = new wxStaticText( tab2, wxID_ANY, _("Default Port*"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgs211->Add( lblDefaultPort, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	cboDefaultPort = new wxComboBox( tab2, wxID_ANY, wxT("5004"), wxDefaultPosition, wxSize( 60,-1 ), 0, NULL, wxTAB_TRAVERSAL );
+	cboDefaultPort->Append( wxT("5004") );
+	cboDefaultPort->Append( wxT("8005") );
+	fgs211->Add( cboDefaultPort, 0, wxALL, 5 );
+	bs21->Add( fgs211, 1, wxEXPAND, 5 );
+	page2->Add( bs21, 1, wxEXPAND, 0 );
+	lblExplainPort = new wxStaticText( tab2, wxID_ANY, _("* NOTE: 5004=Classic, 8005=ASCII (with -color- available)"), wxDefaultPosition, wxDefaultSize, 0 );
+	page2->Add( lblExplainPort, 0, wxALL, 5 );
+	tab2->SetSizer( page2 );
+	tab2->Layout();
+	page2->Fit( tab2 );
+	tabPrefsDialog->AddPage( tab2, _("Connection"), true );
+	//tab3
+	tab3 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL|wxTAB_TRAVERSAL );
+	tab3->SetScrollRate( 5, 5 );
+	wxFlexGridSizer* page3;
+	page3 = new wxFlexGridSizer( 1, 1, 0, 0 );
+	page3->AddGrowableCol( 1 );
+	page3->AddGrowableRow( 1 );
+	page3->SetFlexibleDirection( wxVERTICAL );
+	lblExplain3 = new wxStaticText( tab3, wxID_ANY, _("Settings on this page allow you to change the display appearance."), wxDefaultPosition, wxDefaultSize, 0 );
+	page3->Add( lblExplain3, 0, wxALL, 5 );
+	wxBoxSizer* bs31;
+	bs31 = new wxBoxSizer( wxVERTICAL );
+	chkZoom200 = new wxCheckBox( tab3, wxID_ANY, _("Zoom display 200%"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	bs31->Add( chkZoom200, 0, wxALL, 5 );
+	chkStatusBar = new wxCheckBox( tab3, wxID_ANY, _("Display status bar"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	chkStatusBar->SetValue(true);
+	bs31->Add( chkStatusBar, 0, wxALL, 5 );
+	chkDisableColor = new wxCheckBox( tab3, wxID_ANY, _("Disable -color- (ASCII mode)"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	bs31->Add( chkDisableColor, 0, wxALL, 5 );
+	wxFlexGridSizer* fgs311;
+	fgs311 = new wxFlexGridSizer( 2, 2, 0, 0 );
+	btnFGColor = new wxButton( tab3, wxID_ANY, wxT(""), wxDefaultPosition, wxSize( 25,-1 ), wxTAB_TRAVERSAL );
+	btnFGColor->SetBackgroundColour( wxColour( 255, 128, 0 ) );
+	fgs311->Add( btnFGColor, 0, wxALL, 5 );
+	lblFGColor = new wxStaticText( tab3, wxID_ANY, _("Foreground color*"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	fgs311->Add( lblFGColor, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	btnBGColor = new wxButton( tab3, wxID_ANY, wxT(""), wxDefaultPosition, wxSize( 25,-1 ), wxTAB_TRAVERSAL );
+	btnBGColor->SetBackgroundColour( wxColour( 0, 0, 0 ) );
+	fgs311->Add( btnBGColor, 0, wxALL, 5 );
+	lblBGColor = new wxStaticText( tab3, wxID_ANY, _("Background color*"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgs311->Add( lblBGColor, 0, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	bs31->Add( fgs311, 1, wxEXPAND, 5 );
+	page3->Add( bs31, 1, wxEXPAND, 5 );
+	lblExplainColor = new wxStaticText( tab3, wxID_ANY, _("* NOTE: Applied in Classic mode or if -color- is disabled in ASCII mode"), wxDefaultPosition, wxDefaultSize, 0 );
+	page3->Add( lblExplainColor, 0, wxALL, 5 );
+	tab3->SetSizer( page3 );
+	tab3->Layout();
+	page3->Fit( tab3 );
+	tabPrefsDialog->AddPage( tab3, _("Display"), false );
+	//tab4
+	tab4 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
+	tab4->SetScrollRate( 5, 5 );
+	wxFlexGridSizer* page4;
+	page4 = new wxFlexGridSizer( 1, 1, 0, 0 );
+	page4->AddGrowableCol( 1 );
+	page4->AddGrowableRow( 1 );
+	page4->SetFlexibleDirection( wxVERTICAL );
+	wxBoxSizer* bs41;
+	bs41 = new wxBoxSizer( wxVERTICAL );
+	lblExplain4 = new wxStaticText( tab4, wxID_ANY, _("Settings on this page allow you to specify Paste options."), wxDefaultPosition, wxDefaultSize, 0 );
+	bs41->Add( lblExplain4, 0, wxALL, 5 );
+	wxFlexGridSizer* fgs411;
+	fgs411 = new wxFlexGridSizer( 2, 3, 0, 0 );
+	lblCharDelay = new wxStaticText( tab4, wxID_ANY, _("Delay between chars"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgs411->Add( lblCharDelay, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	txtCharDelay = new wxTextCtrl( tab4, wxID_ANY, wxT("50"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
+	txtCharDelay->SetMaxLength( 3 ); 
+	fgs411->Add( txtCharDelay, 0, wxALL, 5 );
+	lblCharDelay2 = new wxStaticText( tab4, wxID_ANY, _("milliseconds"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgs411->Add( lblCharDelay2, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	lblLineDelay = new wxStaticText( tab4, wxID_ANY, _("Delay after end of line"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgs411->Add( lblLineDelay, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	txtLineDelay = new wxTextCtrl( tab4, wxID_ANY, wxT("100"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
+	txtLineDelay->SetMaxLength( 3 ); 
+	fgs411->Add( txtLineDelay, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	lblLineDelay2 = new wxStaticText( tab4, wxID_ANY, _("milliseconds"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgs411->Add( lblLineDelay2, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	bs41->Add( fgs411, 1, wxEXPAND, 5 );
+	wxFlexGridSizer* fgs4111;
+	fgs4111 = new wxFlexGridSizer( 2, 3, 0, 0 );
+	lblAutoNewLine = new wxStaticText( tab4, wxID_ANY, _("Automatic new line every"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgs4111->Add( lblAutoNewLine, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	cboAutoLF = new wxComboBox( tab4, wxID_ANY, wxT("0"), wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0|wxTAB_TRAVERSAL );
+	cboAutoLF->Append( wxT("0") );
+	cboAutoLF->Append( wxT("60") );
+	cboAutoLF->Append( wxT("120") );
+	cboAutoLF->SetMinSize( wxSize( 55,-1 ) );
+	fgs4111->Add( cboAutoLF, 1, wxALL, 5 );
+	lblAutoNewLine2 = new wxStaticText( tab4, wxID_ANY, _("characters"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgs4111->Add( lblAutoNewLine2, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	bs41->Add( fgs4111, 0, wxEXPAND, 5 );
+	chkConvertDot7 = new wxCheckBox( tab4, wxID_ANY, _("Convert periods followed by 7 spaces into period/tab*"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkConvertDot7->SetValue(true);
+	chkConvertDot7->Hide();
+	bs41->Add( chkConvertDot7, 0, wxALL, 5 );
+	chkConvert8Spaces = new wxCheckBox( tab4, wxID_ANY, _("Convert 8 consecutive spaces into a tab*"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkConvert8Spaces->SetValue(true);
+	chkConvert8Spaces->Hide();
+	bs41->Add( chkConvert8Spaces, 0, wxALL, 5 );
+	page4->Add( bs41, 1, wxEXPAND, 5 );
+	lblExplainConversions = new wxStaticText( tab4, wxID_ANY, _("* NOTE: Conversions are applied at 8-character intervals."), wxDefaultPosition, wxDefaultSize, 0 );
+	lblExplainConversions->Hide();
+	page4->Add( lblExplainConversions, 0, wxALL|wxALIGN_BOTTOM, 5 );
+	tab4->SetSizer( page4 );
+	tab4->Layout();
+	page4->Fit( tab4 );
+	tabPrefsDialog->AddPage( tab4, _("Pasting"), true );
+	//tab5
+	tab5 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
+	tab5->SetScrollRate( 5, 5 );
+	tab5->Hide();
+	wxFlexGridSizer* page5;
+	page5 = new wxFlexGridSizer( 2, 1, 0, 0 );
+	lblExplain5 = new wxStaticText( tab5, wxID_ANY, _("Settings on this page allow you to control local processing."), wxDefaultPosition, wxDefaultSize, 0 );
+	page5->Add( lblExplain5, 0, wxALL, 5 );
+	chkAllowPPT = new wxCheckBox( tab5, wxID_ANY, _("Allow PPT programs to load and execute"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkAllowPPT->Enable( false );
+	page5->Add( chkAllowPPT, 0, wxALL, 5 );
+	chkAllowMicroTutor = new wxCheckBox( tab5, wxID_ANY, _("Allow µTUTOR programs to load and execute"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkAllowMicroTutor->Enable( false );
+	page5->Add( chkAllowMicroTutor, 0, wxALL, 5 );
+	chkAllowKermit = new wxCheckBox( tab5, wxID_ANY, _("Enable Kermit data transfer protocol"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkAllowKermit->Enable( false );
+	page5->Add( chkAllowKermit, 0, wxALL, 5 );
+	lblBrowser = new wxStaticText( tab5, wxID_ANY, _("Specify browser to use for menu option 'Execute URL'"), wxDefaultPosition, wxDefaultSize, 0 );
+	page5->Add( lblBrowser, 0, wxALL|wxALIGN_BOTTOM, 5 );
+	txtBrowser = new wxTextCtrl( tab5, wxID_ANY, wxT(""), wxPoint( -1,-1 ), wxDefaultSize, wxTAB_TRAVERSAL );
+	txtBrowser->SetMaxLength( 255 ); 
+	txtBrowser->SetMinSize( wxSize( 342,-1 ) );
+	page5->Add( txtBrowser, 0, wxALL, 5 );
+	tab5->SetSizer( page5 );
+	tab5->Layout();
+	page5->Fit( tab5 );
+	tabPrefsDialog->AddPage( tab5, _("Local"), true );
+	//button bar
+	bSizer1->Add( tabPrefsDialog, 1, wxEXPAND|wxTOP|wxRIGHT|wxLEFT, 5 );
+	wxFlexGridSizer* fgsButtons;
+	fgsButtons = new wxFlexGridSizer( 1, 4, 0, 0 );
+	fgsButtons->AddGrowableCol( 0 );
+	fgsButtons->AddGrowableRow( 0 );
+	fgsButtons->SetFlexibleDirection( wxHORIZONTAL );
+	fgsButtons->Add( 0, 0, 1, 0, 5 );
+	btnOK = new wxButton( this, wxID_ANY, _("OK"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgsButtons->Add( btnOK, 0, wxALL, 5 );
+	btnCancel = new wxButton( this, wxID_ANY, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgsButtons->Add( btnCancel, 0, wxALL, 5 );
+	btnDefaults = new wxButton( this, wxID_ANY, _("Defaults"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgsButtons->Add( btnDefaults, 0, wxALL, 5 );
+	bSizer1->Add( fgsButtons, 0, wxEXPAND, 5 );
+	this->SetSizer( bSizer1 );
+	this->Layout();
+	
+	// static ui objects, note dynamic controls, e.g. those that hold values or require event processing are declared above
+    // ui object creation / placement, note initialization of values is below
+	// initialize values
+	//m_lastTab = ptermApp->m_lastTab;
+	m_lastTab = ptermApp->m_config->Read (wxT (PREF_LASTTAB), 0L);
+	//tab1
     m_classicSpeed = ptermApp->m_classicSpeed;
     m_gswEnable = ptermApp->m_gswEnable;
     m_numpadArrows = ptermApp->m_numpadArrows;
-    m_showStatusBar = ptermApp->m_showStatusBar;
     m_platoKb = ptermApp->m_platoKb;
     m_beepEnable = ptermApp->m_beepEnable;
-    m_noColor = ptermApp->m_noColor;
+	//tab2
     m_connect = ptermApp->m_connect;
-    m_fgColor = ptermApp->m_fgColor;
-    m_bgColor = ptermApp->m_bgColor;
     m_host = ptermApp->m_hostName;
     m_port.Printf (wxT ("%d"), ptermApp->m_port);
+	//tab3
+    m_scale2 = (ptermApp->m_scale != 1);
+    m_showStatusBar = ptermApp->m_showStatusBar;
+    m_noColor = ptermApp->m_noColor;
+    //m_fgColor = ptermApp->m_fgColor;
+    //m_bgColor = ptermApp->m_bgColor;
+    int r, g, b;
+    wxString rgb;
+    ptermApp->m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("255 144 0"));		// 255 144 0 is RGB for Plato Orange
+    sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
+    m_fgColor = wxColour (r, g, b);
+    ptermApp->m_config->Read (wxT (PREF_BACKGROUND), &rgb, wxT ("0 0 0"));
+    sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
+    m_bgColor = wxColour (r, g, b);
 
-    paintBitmap (fgBitmap, m_fgColor);
-    paintBitmap (bgBitmap, m_bgColor);
-    
-    // Create the pieces of the dialog from outermost to innermost.
-    // Order matters on some platforms, because it establishes Z-order
-    // of the controls.
+	//tab4
+    m_charDelay = ptermApp->m_charDelay;
+    m_lineDelay = ptermApp->m_lineDelay;
+    m_autoLF = ptermApp->m_autoLF;
+	m_convDot7 = ptermApp->m_convDot7;
+	m_conv8Sp = ptermApp->m_conv8Sp;
+	//tab5
+	m_Browser = ptermApp->m_Browser;
 
-    // Sizer for the whole dialog box content
-    ds = new wxBoxSizer (wxVERTICAL);
+	// set object value properties
+	//tab1
+    chkSimulate1200Baud->SetValue ( m_classicSpeed );
+    chkEnableGSW->SetValue ( m_gswEnable );
+    chkEnableNumericKeyPad->SetValue ( m_numpadArrows );
+    chkUsePLATOKeyboard->SetValue ( m_platoKb );
+    chkEnableBeep->SetValue ( m_beepEnable );
+	//tab2
+    chkConnectAtStartup->SetValue ( m_connect );
+    txtDefaultHost->SetValue ( m_host );
+    cboDefaultPort->SetValue ( m_port );
+	//tab3
+    chkZoom200->SetValue ( m_scale2 );
+	chkStatusBar->SetValue( m_showStatusBar );
+    chkDisableColor->SetValue ( m_noColor );
+	btnFGColor->SetBackgroundColour( m_fgColor );
+	btnBGColor->SetBackgroundColour( m_bgColor );
+	//tab4
+	txtCharDelay->SetValue( m_charDelay );
+	txtLineDelay->SetValue( m_lineDelay );
+	cboAutoLF->SetValue(m_autoLF );
+	chkConvertDot7->SetValue( m_convDot7 );
+	chkConvert8Spaces->SetValue( m_conv8Sp );
+	//tab5
+	txtBrowser->SetValue ( m_Browser );
+	//button bar
+	btnOK->SetDefault ();
+	//set active tab
+	tabPrefsDialog->SetSelection ( m_lastTab );
 
-    // First group: emulation settings
-    sbs = new wxStaticBoxSizer (new wxStaticBox (this, wxID_ANY,
-                                                 _("Emulation settings")),
-                                wxVERTICAL);
-    m_speedCheck = new wxCheckBox (this, -1, _("Simulate 1200 Baud"));
-    m_speedCheck->SetValue (m_classicSpeed);
-    sbs->Add (m_speedCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_gswCheck = new wxCheckBox (this, -1, _("Enable GSW (not in ASCII)"));
-    m_gswCheck->SetValue (m_gswEnable);
-    sbs->Add (m_gswCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_arrowCheck = new wxCheckBox (this, -1, _("Numeric keypad for arrows"));
-    m_arrowCheck->SetValue (m_numpadArrows);
-    sbs->Add (m_arrowCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_kbCheck = new wxCheckBox (this, -1, _("Use real PLATO keyboard"));
-    m_kbCheck->SetValue (m_platoKb);
-    sbs->Add (m_kbCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_beepCheck = new wxCheckBox (this, -1, _("Enable -beep-"));
-    m_beepCheck->SetValue (m_beepEnable);
-    sbs->Add (m_beepCheck, 0, wxTOP | wxLEFT | wxRIGHT, 8);
-    m_colorCheck = new wxCheckBox (this, -1, _("Disable -color-"));
-    m_colorCheck->SetValue (m_noColor);
-    sbs->Add (m_colorCheck, 0, wxALL, 8);
-    ds->Add (sbs, 0,  wxTOP | wxLEFT | wxRIGHT | wxEXPAND, 10);
-    
-    // Second group: connection settings
-    sbs = new wxStaticBoxSizer (new wxStaticBox (this, wxID_ANY,
-                                                 _("Connection settings")),
-                                wxVERTICAL);
-    m_autoConnect = new wxCheckBox (this, -1, _("Connect at startup"));
-    m_autoConnect->SetValue (m_connect);
-    sbs->Add (m_autoConnect, 0,   wxTOP | wxLEFT | wxRIGHT, 8);
-    fgs = new wxFlexGridSizer (2, 2, 8, 8);
-    m_hostText = new wxTextCtrl (this, wxID_ANY, m_host,
-                                 wxDefaultPosition, wxSize (160, 18),
-                                 0, *new wxTextValidator (wxFILTER_ASCII,
-                                                          &m_host));
-    m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
-                                 wxDefaultPosition, wxSize (160+40, 18),
-                                 0, *new wxTextValidator (wxFILTER_NUMERIC,
-                                                          &m_port));
-    fgs->Add (new wxStaticText (this, wxID_ANY, _("Default Host")));
-    fgs->Add (m_hostText);
-    fgs->Add (new wxStaticText (this, wxID_ANY, _("Default Port")));
-    fgs->Add (m_portText);
-    sbs->Add (fgs, 0, wxALL, 8);
-    ds->Add (sbs, 0,  wxTOP | wxLEFT | wxRIGHT | wxEXPAND, 10);
-
-    // Third group: Display settings
-    sbs = new wxStaticBoxSizer (new wxStaticBox (this, wxID_ANY,
-                                                 _("Display settings")),
-                                wxVERTICAL);
-    m_scaleCheck = new wxCheckBox (this, -1, _("Zoom display 200%"));
-    m_scaleCheck->SetValue (m_scale2);
-    sbs->Add (m_scaleCheck, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_statusCheck = new wxCheckBox (this, -1, _("Status bar"));
-    m_statusCheck->SetValue (m_showStatusBar);
-    sbs->Add (m_statusCheck, 0, wxALL, 8);
-    fgs = new wxFlexGridSizer (2, 2, 8, 8);
-    m_fgButton = new wxBitmapButton (this, wxID_ANY, fgBitmap);
-    m_bgButton = new wxBitmapButton (this, wxID_ANY, bgBitmap);
-    fgs->Add (m_fgButton);
-    fgs->Add (new wxStaticText (this, wxID_ANY, _("Foreground")));
-    fgs->Add (m_bgButton);
-    fgs->Add (new wxStaticText (this, wxID_ANY, _("Background")));
-    sbs->Add (fgs, 0, wxALL, 8);
-    ds->Add (sbs, 0,  wxTOP | wxLEFT | wxRIGHT | wxEXPAND, 10);
-
-    // Finally, the buttons
-    bs = new wxBoxSizer (wxHORIZONTAL);
-    m_okButton = new wxButton (this, wxID_OK);
-    m_cancelButton = new wxButton (this, wxID_CANCEL);
-    m_resetButton = new wxButton (this, wxID_ANY, _("Defaults"));
-    bs->AddStretchSpacer ();
-    bs->Add (m_okButton);
-    bs->Add (m_cancelButton, 0, wxLEFT, 5);
-    bs->Add (m_resetButton, 0, wxLEFT, 5);
-    ds->Add (bs, 0,  wxALL | wxEXPAND, 10);
-
-    // We'll put another 10 pixels around the whole content, which
-    // requires a separate sizer unfortunately...
-    ods = new wxBoxSizer (wxVERTICAL);
-    ods->Add (ds, 0, wxALL, 10);
-    SetSizer (ods);
-    ods->Fit (this);
-    m_okButton->SetDefault ();
 }
 
 void PtermPrefDialog::OnButton (wxCommandEvent& event)
 {
-    wxBitmap fgBitmap (20, 12);
-    wxBitmap bgBitmap (20, 12);
     
-    if (event.GetEventObject () == m_fgButton)
+	void OnButton (wxCommandEvent& event);
+    if (event.GetEventObject () == btnFGColor)
     {
-        m_fgColor = PtermApp::SelectColor (m_fgColor);
+        m_fgColor = PtermApp::SelectColor ( *this, (char *) _("Foreground"), m_fgColor );
+		btnFGColor->SetBackgroundColour ( m_fgColor );
     }
-    else if (event.GetEventObject () == m_bgButton)
+    else if (event.GetEventObject () == btnBGColor)
     {
-        m_bgColor = PtermApp::SelectColor (m_bgColor);
+        m_bgColor = PtermApp::SelectColor ( *this, (char *) _("Background"), m_bgColor );
+		btnBGColor->SetBackgroundColour ( m_bgColor );
     }
-    
-    else if (event.GetEventObject () == m_okButton)
+    else if (event.GetEventObject () == btnOK)
     {
-        m_host = m_hostText->GetLineText (0);
-        m_port = m_portText->GetLineText (0);
+        m_host = txtDefaultHost->GetLineText (0);
+        m_port = cboDefaultPort->GetValue ();
+        m_charDelay = txtCharDelay->GetLineText (0);	// added by JWS 11/26/2006
+        m_lineDelay = txtLineDelay->GetLineText (0);	// added by JWS 11/26/2006
+        m_autoLF = cboAutoLF->GetValue ();				// added by JWS 11/26/2006
+		m_Browser = txtBrowser->GetLineText (0);		// added by JWS 12/02/2006
+		m_lastTab = tabPrefsDialog->GetSelection ();
         EndModal (wxID_OK);
     }
-    else if (event.GetEventObject () == m_cancelButton)
-    {
+    else if (event.GetEventObject () == btnCancel)
+	{
+		m_lastTab = tabPrefsDialog->GetSelection();
         EndModal (wxID_CANCEL);
-    }
-    else if (event.GetEventObject () == m_resetButton)
+	}
+    else if (event.GetEventObject () == btnDefaults)
     {
         wxString str;
-        
+		
+		//reset variable values
+        //tab1
+        m_classicSpeed = false;
+        m_gswEnable = true;
+        m_numpadArrows = true;
+        m_platoKb = false;
+        m_beepEnable = true;
+		//tab2
+        m_connect = true;
+		m_host = DEFAULTHOST;
+		str.Printf ( "%d", DefNiuPort );
+		m_port = wxT( str );
+		//tab3
+        m_scale2 = false;
+        m_showStatusBar = true;
+        m_noColor = false;
         m_fgColor = wxColour (255, 144, 0);
         m_bgColor = *wxBLACK;
-        m_scale2 = false;
-        m_scaleCheck->SetValue (false);
-        m_classicSpeed = false;
-        m_speedCheck->SetValue (false);
-        m_connect = true;
-        m_autoConnect->SetValue (true);
-        m_gswEnable = true;
-        m_gswCheck->SetValue (true);
-        m_numpadArrows = true;
-        m_arrowCheck->SetValue (true);
-        m_showStatusBar = true;
-        m_statusCheck->SetValue (true);
-        m_platoKb = false;
-        m_kbCheck->SetValue (false);
-        m_beepEnable = true;
-        m_beepCheck->SetValue (true);
-        m_noColor = false;
-        m_colorCheck->SetValue (false);
-        m_hostText->SetValue (DEFAULTHOST);
-        str.Printf (wxT ("%d"), DefNiuPort);
-        m_portText->SetValue (str);
+		//tab4
+		m_charDelay.Printf ( "%d", PASTE_CHARDELAY );
+		m_lineDelay.Printf ( "%d", PASTE_LINEDELAY );
+		m_autoLF = wxT( "0" );
+        m_convDot7 = false;
+        m_conv8Sp = false;
+		m_Browser = wxT("");
+
+		//reset object values
+		//tab1
+		chkSimulate1200Baud->SetValue ( m_classicSpeed );
+		chkEnableGSW->SetValue ( m_gswEnable );
+		chkEnableNumericKeyPad->SetValue ( m_numpadArrows );
+		chkUsePLATOKeyboard->SetValue ( m_platoKb );
+		chkEnableBeep->SetValue ( m_beepEnable );
+		//tab2
+		chkConnectAtStartup->SetValue ( m_connect );
+		txtDefaultHost->SetValue ( m_host );
+		cboDefaultPort->SetValue ( m_port );
+		//tab3
+		chkZoom200->SetValue ( m_scale2 );
+		chkStatusBar->SetValue ( m_showStatusBar );
+		chkDisableColor->SetValue ( m_noColor );
+		btnFGColor->SetBackgroundColour ( m_fgColor );
+		btnBGColor->SetBackgroundColour ( m_bgColor );
+		//tab4
+		txtCharDelay->SetValue ( m_charDelay );
+		txtLineDelay->SetValue ( m_lineDelay );
+		cboAutoLF->SetValue ( m_autoLF );
+		chkConvertDot7->SetValue ( m_convDot7 );
+		chkConvert8Spaces->SetValue ( m_conv8Sp );
+		//tab5
+		txtBrowser->SetValue ( m_Browser );
     }
-    paintBitmap (fgBitmap, m_fgColor);
-    paintBitmap (bgBitmap, m_bgColor);
-    m_fgButton->SetBitmapLabel (fgBitmap);
-    m_bgButton->SetBitmapLabel (bgBitmap);
     Refresh ();
 }
 
 void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
 {
-    if (event.GetEventObject () == m_scaleCheck)
-    {
-        m_scale2 = event.IsChecked ();
-    }
-    else if (event.GetEventObject () == m_speedCheck)
-    {
+	//tab1
+    if (event.GetEventObject () == chkSimulate1200Baud)
         m_classicSpeed = event.IsChecked ();
-    }
-    else if (event.GetEventObject () == m_autoConnect)
-    {
-        m_connect = event.IsChecked ();
-    }
-    else if (event.GetEventObject () == m_gswCheck)
-    {
+    else if (event.GetEventObject () == chkEnableGSW)
         m_gswEnable = event.IsChecked ();
-    }
-    else if (event.GetEventObject () == m_arrowCheck)
-    {
+    else if (event.GetEventObject () == chkEnableNumericKeyPad)
         m_numpadArrows = event.IsChecked ();
-    }
-    else if (event.GetEventObject () == m_statusCheck)
-    {
-        m_showStatusBar = event.IsChecked ();
-    }
-    else if (event.GetEventObject () == m_kbCheck)
-    {
+    else if (event.GetEventObject () == chkUsePLATOKeyboard)
         m_platoKb = event.IsChecked ();
-    }
-    else if (event.GetEventObject () == m_beepCheck)
-    {
+    else if (event.GetEventObject () == chkEnableBeep)
         m_beepEnable = event.IsChecked ();
-    }
-    else if (event.GetEventObject () == m_colorCheck)
-    {
+	//tab2
+    else if (event.GetEventObject () == chkConnectAtStartup)
+        m_connect = event.IsChecked ();
+	//tab3
+    else if (event.GetEventObject () == chkZoom200)
+        m_scale2 = event.IsChecked ();
+    else if (event.GetEventObject () == chkStatusBar)
+        m_showStatusBar = event.IsChecked ();
+    else if (event.GetEventObject () == chkDisableColor)
         m_noColor = event.IsChecked ();
-    }
+	//tab4
+    else if (event.GetEventObject () == chkConvertDot7)
+        m_convDot7 = event.IsChecked ();
+    else if (event.GetEventObject () == chkConvert8Spaces)
+        m_conv8Sp = event.IsChecked ();
 }
 
 void PtermPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
@@ -4998,54 +5389,87 @@ void PtermPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
 
 BEGIN_EVENT_TABLE(PtermConnDialog, wxDialog)
     EVT_CLOSE(PtermConnDialog::OnClose)
-    EVT_BUTTON(wxID_OK, PtermConnDialog::OnOK)
+    EVT_BUTTON(wxID_ANY, PtermConnDialog::OnButton)	// changed by JWS 12/04/2006
     END_EVENT_TABLE()
 
-PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title)
-    : wxDialog (NULL, id, title)
+PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint pos, wxSize loc)
+    : wxDialog (NULL, id, title, pos, loc)
 {
-    wxBoxSizer *ds, *ods;
-    wxFlexGridSizer *fgs;
 
-    // Sizer for the whole dialog box content
-    ds = new wxBoxSizer (wxVERTICAL);
+	// static ui objects, note dynamic controls, e.g. those that hold values or require event processing are declared above
+	wxStaticText* lblHost;
+//	wxTextCtrl* txtHost;
+	wxStaticText* lblPort;
+//	wxComboBox* cboPort;
+	wxStaticText* lblExplainPort;
+//	wxButton* btnQuickConnectClassic;
+//	wxButton* btnQuickConnectASCII;
+//	wxButton* btnConnect;
 
-    // First section: the text controls
-    m_host = wxString (ptermApp->m_hostName);
+    // ui object creation / placement, note initialization of values is below
+	wxBoxSizer* bs1;
+	bs1 = new wxBoxSizer( wxVERTICAL );
+	wxFlexGridSizer* fgs11;
+	fgs11 = new wxFlexGridSizer( 2, 2, 0, 0 );
+	lblHost = new wxStaticText( this, wxID_ANY, _("Host name"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgs11->Add( lblHost, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	txtHost = new wxTextCtrl( this, wxID_ANY, wxT("cyberserv.org"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	txtHost->SetMaxLength( 100 ); 
+	txtHost->SetMinSize( wxSize( 275,-1 ) );
+	fgs11->Add( txtHost, 0, wxALL, 5 );
+	lblPort = new wxStaticText( this, wxID_ANY, _("Port*"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgs11->Add( lblPort, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	cboPort = new wxComboBox( this, wxID_ANY, wxT("5004"), wxDefaultPosition, wxDefaultSize, 0, NULL, wxTAB_TRAVERSAL );
+	cboPort->Append( wxT("5004") );
+	cboPort->Append( wxT("8005") );
+	cboPort->SetMinSize( wxSize( 60,-1 ) );
+	fgs11->Add( cboPort, 0, wxALL, 5 );
+	bs1->Add( fgs11, 1, wxEXPAND, 5 );
+	lblExplainPort = new wxStaticText( this, wxID_ANY, _("* NOTE: 5004=Classic, 8005=ASCII (with -color- available)"), wxDefaultPosition, wxDefaultSize, 0 );
+	bs1->Add( lblExplainPort, 0, wxALL, 5 );
+	wxFlexGridSizer* fgs12;
+	fgs12 = new wxFlexGridSizer( 2, 3, 0, 0 );
+	btnQuickConnectClassic = new wxButton( this, wxID_ANY, _("Quick Connect 'Classic'"), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	fgs12->Add( btnQuickConnectClassic, 0, wxALL, 5 );
+	btnQuickConnectASCII = new wxButton( this, wxID_ANY, _("Quick Connect ASCII"), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	fgs12->Add( btnQuickConnectASCII, 0, wxALL, 5 );
+	btnConnect = new wxButton( this, wxID_ANY, _("Connect"), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	fgs12->Add( btnConnect, 0, wxALL, 5 );
+	bs1->Add( fgs12, 0, wxEXPAND, 5 );
+	this->SetSizer( bs1 );
+	this->Layout();
+	btnConnect->SetDefault ();
+	btnConnect->SetFocus ();
+
+	// initialize values
+    m_host = ptermApp->m_hostName;
     m_port.Printf (wxT ("%d"), ptermApp->m_port);
 
-    m_hostText = new wxTextCtrl (this, wxID_ANY, m_host,
-                                 wxDefaultPosition, wxSize (160, 18),
-                                 0, *new wxTextValidator (wxFILTER_ASCII,
-                                                          &m_host));
-    m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
-                                 wxDefaultPosition, wxSize (160, 18),
-                                 0, *new wxTextValidator (wxFILTER_NUMERIC,
-                                                          &m_port));
-    fgs = new wxFlexGridSizer (2, 2, 8, 8);
-      
-    fgs->Add (new wxStaticText (this, wxID_ANY, _("Host name")));
-    fgs->Add (m_hostText);
-    fgs->Add (new wxStaticText (this, wxID_ANY, _("Port")));
-    fgs->Add (m_portText);
+	// set object value properties
+    txtHost->SetValue ( m_host );
+    cboPort->SetValue ( m_port );
 
-    // Final section: the buttons
-    ds->Add (fgs, 0, wxTOP | wxLEFT | wxRIGHT, 10);
-    ds->Add (CreateButtonSizer( wxOK|wxCANCEL), 0, wxEXPAND | wxALL, 10);
-
-    // We'll put another 10 pixels around the whole content, which
-    // requires a separate sizer unfortunately...
-    ods = new wxBoxSizer (wxVERTICAL);
-    ods->Add (ds, 0, wxALL, 10);
-    SetSizer (ods);
-    ods->Fit (this);
 }
 
-void PtermConnDialog::OnOK (wxCommandEvent &)
+void PtermConnDialog::OnButton (wxCommandEvent& event)	// changed by JWS 12/04/2006
 {
-        m_host = m_hostText->GetLineText (0);
-        m_port = m_portText->GetLineText (0);
-        EndModal (wxID_OK);
+	void OnButton (wxCommandEvent& event);
+    if (event.GetEventObject () == btnQuickConnectClassic)
+    {
+        m_host = txtHost->GetLineText (0);
+        m_port.Printf ( "%d", DefNiuPort);
+	}
+    if (event.GetEventObject () == btnQuickConnectASCII)
+    {
+        m_host = txtHost->GetLineText (0);
+        m_port = wxT ( "8005" );
+	}
+    if (event.GetEventObject () == btnConnect)
+    {
+        m_host = txtHost->GetLineText (0);
+        m_port = cboPort->GetValue ();
+	}
+    EndModal (wxID_OK);
 }
 
 // ----------------------------------------------------------------------------
@@ -5571,6 +5995,7 @@ BEGIN_EVENT_TABLE(PtermCanvas, wxScrolledWindow)
     EVT_KEY_DOWN(PtermCanvas::OnKeyDown)
     EVT_LEFT_DOWN(PtermCanvas::OnMouseDown)
     EVT_LEFT_UP(PtermCanvas::OnMouseUp)
+    EVT_RIGHT_UP(PtermCanvas::OnMouseContextMenu)	// added by JWS 12/03/2006
     EVT_MOTION(PtermCanvas::OnMouseMotion)
     END_EVENT_TABLE ()
 
@@ -5876,11 +6301,13 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             break;
         case WXK_MULTIPLY:
         case WXK_NUMPAD_MULTIPLY:
+        case WXK_NUMPAD_DELETE:	// added by JWS 12/02/2006
         case WXK_DELETE:
             pc = 012;       // multiply sign
             break;
         case WXK_DIVIDE:
         case WXK_NUMPAD_DIVIDE:
+        case WXK_NUMPAD_INSERT:	// added by JWS 12/02/2006
         case WXK_INSERT:
             pc = 013;       // divide sign
             break;
@@ -6091,6 +6518,11 @@ void PtermCanvas::OnCopy (wxCommandEvent &)
         }
         if (m_regionHeight > 1)
         {
+//start block. added by JWS 12/05/2006 
+//Windows really likes a CRLF and it must be done on two separate function calls
+#if defined (__WXMSW__)
+            text.Append (wxT ('\r'));
+#endif
             text.Append (wxT ('\n'));
         }
     }
@@ -6126,6 +6558,7 @@ void PtermCanvas::ClearRegion (void)
 	    m_regionHeight = 0;
 		m_regionWidth = 0;
 		m_owner->GetMenuBar ()->Enable (Pterm_Copy, false);
+		m_owner->GetMenuBar ()->Enable (Pterm_Exec, false);	// added by JWS 12/02/2006
 		Refresh (false);
 	}
 }
@@ -6135,7 +6568,6 @@ void PtermCanvas::OnMouseDown (wxMouseEvent &event)
 {
     m_mouseX = XUNADJUST (event.m_x);
     m_mouseY = YUNADJUST (event.m_y);
-    
     ClearRegion ();
     event.Skip ();
 }
@@ -6150,6 +6582,13 @@ void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
     event.Skip ();
 }
 
+// start block. added by JWS 12/03/2006
+void PtermCanvas::OnMouseContextMenu (wxMouseEvent &event)
+{
+	ptermApp->m_firstFrame->PopupMenu ( ptermApp->m_firstFrame->menuEdit );
+}
+// end block. added by JWS 12/03/2006
+
 void PtermCanvas::OnMouseUp (wxMouseEvent &event)
 {
     int x, y;
@@ -6157,26 +6596,27 @@ void PtermCanvas::OnMouseUp (wxMouseEvent &event)
     if (m_mouseX < 0)
     {
         event.Skip ();
-	return;
+		return;
     }
 
-    x = XUNADJUST (event.m_x);
-    y = YUNADJUST (event.m_y);
-    
-    UpdateRegion (event);
-    
-    m_mouseX = -1;
+	x = XUNADJUST (event.m_x);
+	y = YUNADJUST (event.m_y);
 
-    if (!m_touchEnabled)
-    {
-        return;
-    }
-    if (x < 0 || x > 511 ||
-        y < 0 || y > 511)
-    {
-        return;
-    }
-    m_owner->ptermSendTouch (x, y);
+	UpdateRegion (event);
+
+	m_mouseX = -1;
+
+	if (!m_touchEnabled)
+	{
+		return;
+	}
+	if (x < 0 || x > 511 ||
+		y < 0 || y > 511)
+	{
+		return;
+	}
+	m_owner->ptermSendTouch (x, y);
+
 }
 
 void PtermCanvas::UpdateRegion (wxMouseEvent &event)
@@ -6221,6 +6661,8 @@ void PtermCanvas::UpdateRegion (wxMouseEvent &event)
         m_regionHeight = (y2 - (m_regionY * 16)) / 16 + 1;
         m_owner->GetMenuBar ()->Enable (Pterm_Copy, 
                                         (m_regionWidth > 0));
+        m_owner->GetMenuBar ()->Enable (Pterm_Exec, 
+                                        (m_regionWidth > 0)); // added by JWS 12/02/2006
 #ifdef DEBUG
         printf ("region %d %d size %d %d\n", m_regionX, m_regionY,
                 m_regionWidth, m_regionHeight);
