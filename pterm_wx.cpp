@@ -69,8 +69,8 @@
 #define ASCTYPE         12
 #define SUBTYPE         0x74
 #define TERMCONFIG      0x40    // touch panel present
-//#define ASCFEATURES     0x01    // features: fine touch
-#define ASCFEATURES     0x05   // features: fine touch=0x01, kermit=0x04
+#define ASCFEATURES     0x01    // features: fine touch
+//#define ASCFEATURES     0x05   // features: fine touch=0x01, kermit=0x04
 
 // Literal strings for wxConfig key strings.  These are defined
 // because they appear in two places, so this way we avoid getting
