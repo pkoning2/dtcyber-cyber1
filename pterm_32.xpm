@@ -1,5 +1,5 @@
 /* XPM */
-static char * pterm_32_xpm[] = {
+static const char * pterm_32_xpm[] = {
 "32 32 3 1",
 " 	c None",
 ".	c #000000",

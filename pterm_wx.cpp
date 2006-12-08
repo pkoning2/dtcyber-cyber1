@@ -1694,9 +1694,9 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     RAM[M_CCR] = 0;
     
     // Set default character set origins (for PPT that is; ASCII is different)
-    RAM[C2ORIGIN] = M2ADDR;
+    RAM[C2ORIGIN] = M2ADDR & 0xff;
     RAM[C2ORIGIN + 1] = M2ADDR >> 8;
-    RAM[C3ORIGIN] = M3ADDR;
+    RAM[C3ORIGIN] = M3ADDR & 0xff;
     RAM[C3ORIGIN + 1] = M3ADDR >> 8;
     
     // set the frame icon
@@ -3131,7 +3131,7 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
 void PtermFrame::procPlatoWord (u32 d, bool ascii)
 {
     mptr mp;
-    char *msg = "";
+    const char *msg = "";
     int i, j, n;
     AscState    ascState;
 
@@ -5149,7 +5149,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	chkAllowPPT = new wxCheckBox( tab5, wxID_ANY, _("Allow PPT programs to load and execute"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkAllowPPT->Enable( false );
 	page5->Add( chkAllowPPT, 0, wxALL, 5 );
-	chkAllowMicroTutor = new wxCheckBox( tab5, wxID_ANY, _("Allow µTUTOR programs to load and execute"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkAllowMicroTutor = new wxCheckBox( tab5, wxID_ANY, _("Allow microTUTOR programs to load and execute"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkAllowMicroTutor->Enable( false );
 	page5->Add( chkAllowMicroTutor, 0, wxALL, 5 );
 	chkAllowKermit = new wxCheckBox( tab5, wxID_ANY, _("Enable Kermit data transfer protocol"), wxDefaultPosition, wxDefaultSize, 0 );
