@@ -504,7 +504,8 @@ public:
     void OnAbout (wxCommandEvent& event);
 
     bool DoConnect (bool ask);
-    static wxColour SelectColor (wxWindow &parent, char * title, wxColour &initcol );
+    static wxColour SelectColor (wxWindow &parent, const wxChar *title, 
+                                 wxColour &initcol );
     
     wxColour    m_fgColor;
     wxColour    m_bgColor;
@@ -1283,9 +1284,9 @@ bool PtermApp::OnInit (void)
     sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
     m_bgColor = wxColour (r, g, b);
 	//tab4
-	m_charDelay.Printf ( "%d", m_config->Read (wxT (PREF_CHARDELAY), PASTE_CHARDELAY) );	// added by JWS 11/26/2006
-	m_lineDelay.Printf ( "%d", m_config->Read (wxT (PREF_LINEDELAY), PASTE_LINEDELAY) );	// added by JWS 11/26/2006
-	m_autoLF.Printf ( "%d", m_config->Read (wxT (PREF_AUTOLF), 0L) );						// added by JWS 11/26/2006
+	m_charDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_CHARDELAY), PASTE_CHARDELAY) );	// added by JWS 11/26/2006
+	m_lineDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_LINEDELAY), PASTE_LINEDELAY) );	// added by JWS 11/26/2006
+	m_autoLF.Printf (wxT ("%d"), m_config->Read (wxT (PREF_AUTOLF), 0L) );						// added by JWS 11/26/2006
     m_convDot7 = (m_config->Read (wxT (PREF_CONVDOT7), 0L) != 0);							// added by JWS 11/26/2006
     m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);								// added by JWS 11/26/2006
 	//tab5
@@ -1408,17 +1409,17 @@ void PtermApp::OnAbout(wxCommandEvent&)
 {
 // changed by JWS 12/04/2006
     wxString msg;
-	wxString ver;
+	char ver[20];
 	int v[4];
 
 	sscanf (STRFILEVER,"%d, %d, %d, %d", &v[0], &v[1], &v[2], &v[3] );
 	if (v[2]==0 && v[3]==0)
-		ver.Printf ( "%d.%d", v[0], v[1] );
+		sprintf (ver, "%d.%d", v[0], v[1] );
 	else if (v[2]!=0 && v[3]==0)
-		ver.Printf ( "%d.%d.%d", v[0], v[1], v[2] );
+		sprintf (ver, "%d.%d.%d", v[0], v[1], v[2] );
 	else
-		ver.Printf ( "%d.%d.%d.%d", v[0], v[1], v[2], v[3] );
-	msg.Printf ("%s V%s\n%s", STRPRODUCTNAME, ver, STRLEGALCOPYRIGHT);
+		sprintf (ver, "%d.%d.%d.%d", v[0], v[1], v[2], v[3] );
+	msg.Printf (wxT ("%s V%s\n%s"), STRPRODUCTNAME, ver, STRLEGALCOPYRIGHT);
     wxMessageBox(msg, _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
 }
 
@@ -1506,7 +1507,7 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_BACKGROUND), rgb);
         m_config->Write (wxT (PREF_SCALE2), (dlg.m_scale2) ? 2 : 1);
         m_config->Write (wxT (PREF_HOST), dlg.m_host);
-        m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port));				// changed by JWS 12/02/2006
+        m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port.mb_str ()));				// changed by JWS 12/02/2006
         m_config->Write (wxT (PREF_1200BAUD), (dlg.m_classicSpeed) ? 1 : 0);
         m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
         m_config->Write (wxT (PREF_GSW), (dlg.m_gswEnable) ? 1 : 0);
@@ -1515,9 +1516,9 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_PLATOKB), (dlg.m_platoKb) ? 1 : 0);
         m_config->Write (wxT (PREF_BEEP), (dlg.m_beepEnable) ? 1 : 0);
         m_config->Write (wxT (PREF_NOCOLOR), (dlg.m_noColor) ? 1 : 0);
-        m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay));		// added by JWS 11/26/2006
-        m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay));		// added by JWS 11/26/2006
-        m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF));			// added by JWS 11/26/2006
+        m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay.mb_str ()));		// added by JWS 11/26/2006
+        m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay.mb_str ()));		// added by JWS 11/26/2006
+        m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF.mb_str ()));			// added by JWS 11/26/2006
         m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);	// added by JWS 11/26/2006
         m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);		// added by JWS 11/26/2006
         m_config->Write (wxT (PREF_BROWSER), dlg.m_Browser);				// added by JWS 12/02/2006
@@ -1526,7 +1527,9 @@ void PtermApp::OnPref (wxCommandEvent&)
     }
 }
 
-wxColour PtermApp::SelectColor ( wxWindow &parent, char * title, wxColour &initcol)	// changed by JWS 12/05/2006; inserted first and second arguments
+wxColour PtermApp::SelectColor ( wxWindow &parent, 
+                                 const wxChar *title, wxColour &initcol)
+// changed by JWS 12/05/2006; inserted first and second arguments
 {
     wxColour col (initcol);
     wxColour orange (255, 144, 0);
@@ -1541,7 +1544,7 @@ wxColour PtermApp::SelectColor ( wxWindow &parent, char * title, wxColour &initc
     wxColourDialog dialog (&parent, &data);
 
 	dialog.CentreOnParent();			// added by JWS 12/05/2006
-	dialog.SetTitle((wxString) title);	// added by JWS 12/05/2006
+	dialog.SetTitle(title);	// added by JWS 12/05/2006
 
     if (dialog.ShowModal () == wxID_OK)
     {
@@ -2004,7 +2007,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     unsigned int nextindex;
     int shift = 0;
 	bool neednext = false;										// added by JWS 12/03/2006
-	int autonext = ptermApp->m_config->Read(PREF_AUTOLF, 0L);	// added by JWS 12/03/2006
+	int autonext = ptermApp->m_config->Read(wxT (PREF_AUTOLF), 0L);	// added by JWS 12/03/2006
 
 	if (m_bCancelPaste ||
 		m_pasteIndex < 0 ||
@@ -2119,11 +2122,11 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         m_pasteIndex = nextindex;
         if (c == wxT ('\n'))
         {
-            delay = atoi(ptermApp->m_lineDelay);	// changed by JWS 11/26/2006
+            delay = atoi(ptermApp->m_lineDelay.mb_str ());	// changed by JWS 11/26/2006
         }
         else
         {
-            delay = atoi(ptermApp->m_charDelay);	// changed by JWS 11/26/2006
+            delay = atoi(ptermApp->m_charDelay.mb_str ());	// changed by JWS 11/26/2006
         }
         m_pasteTimer.Start (delay, true);
 		m_bPasteActive = true;
@@ -2134,7 +2137,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 			neednext = false;
             ptermSendKey (026);
 			m_pasteIndex = nextindex;
-			delay = atoi(ptermApp->m_lineDelay);	// changed by JWS 11/26/2006
+			delay = atoi(ptermApp->m_lineDelay.mb_str ());	// changed by JWS 11/26/2006
 			m_pasteTimer.Start (delay, true);
 			m_bPasteActive = true;
 		}
@@ -2271,7 +2274,7 @@ void PtermFrame::OnExec (wxCommandEvent &event)
     }
     else
     {
-		wxExecute ( ptermApp->m_Browser + " " + text.GetText () );
+        wxExecute (ptermApp->m_Browser + wxT (" ") + text.GetText ());
     }
 
     wxTheClipboard->Close ();
@@ -2305,7 +2308,7 @@ void PtermFrame::OnPaste (wxCommandEvent &event)
         m_pasteText = text.GetText ();
         m_pasteIndex = 0;
 		m_pasteNextKeyCnt = 0;									// added by JWS 12/03/2006
-        m_pasteTimer.Start (atoi(ptermApp->m_charDelay), true);	// changed by JWS 11/26/2006
+        m_pasteTimer.Start (atoi(ptermApp->m_charDelay.mb_str ()), true);	// changed by JWS 11/26/2006
         m_pastePrint = (event.GetId () == Pterm_PastePrint);
     }
 
@@ -5257,12 +5260,12 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 	void OnButton (wxCommandEvent& event);
     if (event.GetEventObject () == btnFGColor)
     {
-        m_fgColor = PtermApp::SelectColor ( *this, (char *) _("Foreground"), m_fgColor );
+        m_fgColor = PtermApp::SelectColor ( *this, _("Foreground"), m_fgColor );
 		btnFGColor->SetBackgroundColour ( m_fgColor );
     }
     else if (event.GetEventObject () == btnBGColor)
     {
-        m_bgColor = PtermApp::SelectColor ( *this, (char *) _("Background"), m_bgColor );
+        m_bgColor = PtermApp::SelectColor ( *this, _("Background"), m_bgColor );
 		btnBGColor->SetBackgroundColour ( m_bgColor );
     }
     else if (event.GetEventObject () == btnOK)
@@ -5295,8 +5298,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		//tab2
         m_connect = true;
 		m_host = DEFAULTHOST;
-		str.Printf ( "%d", DefNiuPort );
-		m_port = wxT( str );
+		str.Printf (wxT ("%d"), DefNiuPort );
+		m_port = str;
 		//tab3
         m_scale2 = false;
         m_showStatusBar = true;
@@ -5304,8 +5307,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_fgColor = wxColour (255, 144, 0);
         m_bgColor = *wxBLACK;
 		//tab4
-		m_charDelay.Printf ( "%d", PASTE_CHARDELAY );
-		m_lineDelay.Printf ( "%d", PASTE_LINEDELAY );
+		m_charDelay.Printf (wxT ("%d"), PASTE_CHARDELAY );
+		m_lineDelay.Printf (wxT ("%d"), PASTE_LINEDELAY );
 		m_autoLF = wxT( "0" );
         m_convDot7 = false;
         m_conv8Sp = false;
@@ -5457,7 +5460,7 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)	// changed by JWS 12/04/2
     if (event.GetEventObject () == btnQuickConnectClassic)
     {
         m_host = txtHost->GetLineText (0);
-        m_port.Printf ( "%d", DefNiuPort);
+        m_port.Printf (wxT ("%d"), DefNiuPort);
 	}
     if (event.GetEventObject () == btnQuickConnectASCII)
     {
