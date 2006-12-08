@@ -166,6 +166,33 @@ const char ptype[] = backup;
 char pname[10];
 int fused, sused;
 int nextpart = pdspace;     // next space number to allocate
+
+// Convert ascii to display code, n character field.
+void atod (u8 *d, const u8 *a, int n)
+{
+    int i;
+    
+    for (i = 0; i < n; i++)
+    {
+        if (*a)
+            *d++ = asciiToCdc[*a++];
+        else
+            *d++ = 0;
+    }
+}
+
+// Convert display code to ascii, n character field.
+// Trailing 0 (colon) characters are stripped.
+void dtoa (u8 *a, const u8 *d, int n)
+{
+    int i;
+    
+    for (i = 0; i < n; i++)
+        *a++ = cdcToAscii[*d++];
+    while (*--a == ':')
+        *a = '\0';
+}
+
 int readmsec (int sec, u8 *buf)
 {
     int i;
@@ -295,7 +322,7 @@ int main (int argc, char **argv)
     u64 ftotal;
     u64 dirblks;
     u8 *np, *ip;
-    char fname[11];
+    char pn[11], pt[11];
     u64 finfo;
     int cyl;
     int part;
@@ -324,6 +351,17 @@ int main (int argc, char **argv)
     {
         if (!readmblk (i, blkbuf))
             break;
+        if (i == 1)
+        {
+            pdir = (const packdir *) blkbuf;
+            pn[10] = pt[10] = '\0';
+            dtoa (pn, pdir->packname, 10);
+            dtoa (pt, pdir->packtype, 10);
+            printf ("pack %s type %s\n", pn, pt);
+            setstr (pdir->packtype, ptype);
+            printf ("pack type changed to %s\n", ptype);
+        }
+        
         writeblk (i, blkbuf);
     }
     
