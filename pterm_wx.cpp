@@ -922,8 +922,8 @@ public:
 	wxCheckBox* chkZoom200;
 	wxCheckBox* chkStatusBar;
 	wxCheckBox* chkDisableColor;
-	wxButton* btnFGColor;
-	wxButton* btnBGColor;
+	wxBitmapButton* btnFGColor;
+	wxBitmapButton* btnBGColor;
 	//tab4
 	wxTextCtrl* txtCharDelay;
 	wxTextCtrl* txtLineDelay;
@@ -4946,9 +4946,11 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 //	wxCheckBox* chkZoom200;
 //	wxCheckBox* chkStatusBar;
 //	wxCheckBox* chkDisableColor;
-//	wxButton* btnFGColor;
+//	wxBitmapButton* btnFGColor;
+    wxBitmap fgBitmap (15, 15);
 	wxStaticText* lblFGColor;
-//	wxButton* btnBGColor;
+//	wxBitmapButton* btnBGColor;
+    wxBitmap bgBitmap (15, 15);
 	wxStaticText* lblBGColor;
 	wxStaticText* lblExplainColor;
 	//tab4
@@ -5066,16 +5068,26 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	bs31->Add( chkDisableColor, 0, wxALL, 5 );
 	wxFlexGridSizer* fgs311;
 	fgs311 = new wxFlexGridSizer( 2, 2, 0, 0 );
-	btnFGColor = new wxButton( tab3, wxID_ANY, wxT(""), wxDefaultPosition, wxSize( 25,-1 ), 0 );
-	btnFGColor->SetBackgroundColour( wxColour( 255, 128, 0 ) );
+
+//	btnFGColor = new wxButton( tab3, wxID_ANY, wxT(""), wxDefaultPosition, wxSize( 25,-1 ), 0 );
+//	btnFGColor->SetBackgroundColour( wxColour( 255, 128, 0 ) );
+//	fgs311->Add( btnFGColor, 0, wxALL, 5 );
+//	lblFGColor = new wxStaticText( tab3, wxID_ANY, _("Foreground color*"), wxDefaultPosition, wxDefaultSize, 0 );
+//	fgs311->Add( lblFGColor, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+//	btnBGColor = new wxButton( tab3, wxID_ANY, wxT(""), wxDefaultPosition, wxSize( 25,-1 ), 0 );
+//	btnBGColor->SetBackgroundColour( wxColour( 0, 0, 0 ) );
+//	fgs311->Add( btnBGColor, 0, wxALL, 5 );
+//	lblBGColor = new wxStaticText( tab3, wxID_ANY, _("Background color*"), wxDefaultPosition, wxDefaultSize, 0 );
+//	fgs311->Add( lblBGColor, 0, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	btnFGColor = new wxBitmapButton( tab3, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxSize( 25,-1 ), wxBU_AUTODRAW );
 	fgs311->Add( btnFGColor, 0, wxALL, 5 );
 	lblFGColor = new wxStaticText( tab3, wxID_ANY, _("Foreground color*"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs311->Add( lblFGColor, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	btnBGColor = new wxButton( tab3, wxID_ANY, wxT(""), wxDefaultPosition, wxSize( 25,-1 ), 0 );
-	btnBGColor->SetBackgroundColour( wxColour( 0, 0, 0 ) );
+	btnBGColor = new wxBitmapButton( tab3, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxSize( 25,-1 ), wxBU_AUTODRAW );
 	fgs311->Add( btnBGColor, 0, wxALL, 5 );
 	lblBGColor = new wxStaticText( tab3, wxID_ANY, _("Background color*"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs311->Add( lblBGColor, 0, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
+	
 	bs31->Add( fgs311, 1, wxEXPAND, 5 );
 	page3->Add( bs31, 1, wxEXPAND, 5 );
 	lblExplainColor = new wxStaticText( tab3, wxID_ANY, _("* NOTE: Applied in Classic mode or if -color- is disabled in ASCII mode"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -5240,8 +5252,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     chkZoom200->SetValue ( m_scale2 );
 	chkStatusBar->SetValue( m_showStatusBar );
     chkDisableColor->SetValue ( m_noColor );
-	btnFGColor->SetBackgroundColour( m_fgColor );
-	btnBGColor->SetBackgroundColour( m_bgColor );
+    paintBitmap (fgBitmap, m_fgColor);
+	btnFGColor->SetBitmapLabel( fgBitmap );
+    paintBitmap (bgBitmap, m_bgColor);
+	btnBGColor->SetBitmapLabel( bgBitmap );
 	//tab4
 	txtCharDelay->SetValue( m_charDelay );
 	txtLineDelay->SetValue( m_lineDelay );
@@ -5259,17 +5273,21 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 
 void PtermPrefDialog::OnButton (wxCommandEvent& event)
 {
+    wxBitmap fgBitmap (15, 15);
+    wxBitmap bgBitmap (15, 15);
     
 	void OnButton (wxCommandEvent& event);
     if (event.GetEventObject () == btnFGColor)
     {
         m_fgColor = PtermApp::SelectColor ( *this, _("Foreground"), m_fgColor );
-		btnFGColor->SetBackgroundColour ( m_fgColor );
+	    paintBitmap (fgBitmap, m_fgColor);
+		btnFGColor->SetBitmapLabel (fgBitmap);
     }
     else if (event.GetEventObject () == btnBGColor)
     {
         m_bgColor = PtermApp::SelectColor ( *this, _("Background"), m_bgColor );
-		btnBGColor->SetBackgroundColour ( m_bgColor );
+	    paintBitmap (bgBitmap, m_bgColor);
+		btnBGColor->SetBitmapLabel (bgBitmap);
     }
     else if (event.GetEventObject () == btnOK)
     {
