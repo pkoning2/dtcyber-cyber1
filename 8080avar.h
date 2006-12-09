@@ -51,10 +51,17 @@ Contents:
 *******************************************************************************/
 #if (((SDL_BYTEORDER == SDL_LIL_ENDIAN) && BIGENDIAN) || \
      ((SDL_BYTEORDER == SDL_BIG_ENDIAN) && LITTLEENDIAN))
+#if defined (__WXMSW__)
+#define __STR2__(x) #x
+#define __STR1__(x) __STR2__(x)
+#define __LOC__ __FILE__ "("__STR1__(__LINE__)") : Warning Msg: "
+#pragma message(__LOC__"CONFLICTING ENDIAN TYPES DETECTED!")
+#pragma message(__LOC__"Edit the Makefile if this is incorrect.")
+#else
 #warning CONFLICTING ENDIAN TYPES DETECTED!
 #warning Edit the Makefile if this is incorrect.
 #endif
-
+#endif
 
 
 /*******************************************************************************
