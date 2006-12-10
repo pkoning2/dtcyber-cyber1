@@ -2123,6 +2123,8 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         if (c == wxT ('\n'))
         {
             delay = atoi(ptermApp->m_lineDelay.mb_str ());	// changed by JWS 11/26/2006
+			neednext = false;								// added by JWS 12/10/2006
+			m_pasteNextKeyCnt = 0;							// added by JWS 12/10/2006
         }
         else
         {
