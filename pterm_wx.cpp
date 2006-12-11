@@ -218,6 +218,7 @@ extern "C"
 #include "types.h"
 #include "proto.h"
 #include "ptermversion.h"
+#include <SDL.h>
 #include "8080a.h"
 #include "8080avar.h"
 #include "ppt.h"
