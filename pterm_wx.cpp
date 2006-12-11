@@ -2940,9 +2940,7 @@ void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
     m_foregroundBrush.SetColour (newfg);
     m_foregroundPen.SetColour (newfg);
     m_foregroundPen.SetWidth (newscale);
-   
-// start block. code disabled by JWS for MPS 12/04/2006
-/*
+    
     m_charDC[2]->SetBackground (m_backgroundBrush);
     m_charDC[2]->Clear ();
     m_charDC[2]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
@@ -2963,9 +2961,6 @@ void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
                        m_charDC[4], 0, 0, wxAND);
     m_charDC[1]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
                        m_charDC[3], 0, 0, wxOR);
-*/
-// end block. code disabled by JWS for MPS 12/04/2006
-
 }
 
 void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
@@ -3116,36 +3111,38 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     {
         sizeY += y;
     }
-// start block. added by JWS for MPS 12/04/2006
-	//translate vertical char data into horizontal
-	//with additional wrinkle that the wxBitmap constructor is going to reverse the bits
-	unsigned char bmi[16]={0};
-	const unsigned short*m[] = {plato_m0, plato_m1, plato_m23, plato_m23+64*8};
-	unsigned short *chardata = (unsigned short*)m[snum] + cnum*8;
-	for(char c=0; c<sizeX; c++) 
-		for(char r=0; r<sizeY; r++) {
-			bmi[r] >>= 1;
-			if(chardata[c] & (0x8000>>r))		bmi[r] |= 0x80;
-	}
-	wxBitmap *cbm = new wxBitmap ((char*)bmi, sizeX,sizeY,1);
-	//note that if you pass the pointer to the bitmap it merely stores the address and subsequently FAILS
-	enum plotmodes {minverse,mrewrite,merase,mwrite, mmask, bitinvert=1,bitwriteback=2,lastmode=mwrite};
-	if (wemode & bitwriteback)
-		cbm->SetMask(new wxMask(*cbm));
-	m_memDC->SetTextForeground(((wemode & bitinvert)?m_backgroundBrush:m_foregroundBrush).GetColour());
-	m_memDC->SetTextBackground(((wemode & bitinvert)?m_foregroundBrush:m_backgroundBrush).GetColour());
-	m_charDC[0]->SelectObject(*cbm);	//should define a DC for this purpose somewhere
-	m_memDC->Blit(memX,memY, sizeX, sizeY,m_charDC[0],0,0,wxCOPY,1);
-	delete cbm;
-// end block. added by JWS for MPS 12/04/2006
+    if (mode & 2)
+    {
+        // write or erase -- need to zap old pixels and OR in new pixels
+        m_memDC->Blit (memX, memY,
+                       sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
+                       m_charDC[4], charX, charY, wxAND);
+        m_memDC->Blit (memX, memY,
+                       sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
+                       m_charDC[wemode], charX, charY, wxOR);
+    }
+    else
+    {
+        // inverse or rewrite, just blit in the appropriate pattern
+        m_memDC->Blit (memX, memY,
+                       sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
+                       m_charDC[wemode], charX, charY, wxCOPY);
+    }
+        
     // Now copy the resulting state of the character area into the screen dc
-    dc.Blit (screenX, screenY,sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale,
+    dc.Blit (screenX, screenY,
+             sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale,
              m_memDC, memX, memY, wxCOPY);
+    
     // Handle screen edge wraparound by recursion...
     if (x > 512 - 8)
+    {
         drawChar (dc, x - 512, y, snum, cnum);
+    }
     if (y > 512 - 16)
+    {
         drawChar (dc, x, y - 512, snum, cnum);
+    }
 }
 
 /*--------------------------------------------------------------------------
