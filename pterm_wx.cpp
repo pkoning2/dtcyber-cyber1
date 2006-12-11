@@ -95,6 +95,7 @@
 #define PREF_CHARDELAY  "charDelay"	// added by JWS 11/26/2006
 #define PREF_LINEDELAY  "lineDelay"	// added by JWS 11/26/2006
 #define PREF_AUTOLF     "autoLF"	// added by JWS 11/26/2006
+#define PREF_SPLITWORDS "splitWords"	// added by JWS 12/10/2006
 #define PREF_CONVDOT7   "convDot7"	// added by JWS 11/26/2006
 #define PREF_CONV8SP    "conv8Sp"	// added by JWS 11/26/2006
 #define PREF_BROWSER    "Browser"	// added by JWS 12/02/2006
@@ -527,6 +528,7 @@ public:
     wxString    m_charDelay;	// added by JWS 11/26/2006
     wxString    m_lineDelay;	// added by JWS 11/26/2006
     wxString    m_autoLF;	    // added by JWS 11/26/2006
+	bool		m_splitWords;	// added by JWS 12/10/2006
     bool        m_convDot7;     // added by JWS 11/26/2006
     bool        m_conv8Sp;      // added by JWS 11/26/2006
 	wxString	m_Browser;      // added by JWS 12/02/2006
@@ -928,6 +930,7 @@ public:
 	wxTextCtrl* txtCharDelay;
 	wxTextCtrl* txtLineDelay;
 	wxComboBox* cboAutoLF;
+	wxCheckBox* chkSplitWords;
 	wxCheckBox* chkConvertDot7;
 	wxCheckBox* chkConvert8Spaces;
 	//tab5
@@ -962,6 +965,7 @@ public:
     wxString        m_charDelay;	// added by JWS 11/26/2006
     wxString        m_lineDelay;	// added by JWS 11/26/2006
     wxString        m_autoLF;		// added by JWS 11/26/2006
+	bool			m_splitWords;	// added by JWS 12/10/2006
     bool            m_convDot7;		// added by JWS 11/26/2006
     bool            m_conv8Sp;		// added by JWS 11/26/2006
 	//tab5
@@ -1287,6 +1291,7 @@ bool PtermApp::OnInit (void)
 	m_charDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_CHARDELAY), PASTE_CHARDELAY) );	// added by JWS 11/26/2006
 	m_lineDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_LINEDELAY), PASTE_LINEDELAY) );	// added by JWS 11/26/2006
 	m_autoLF.Printf (wxT ("%d"), m_config->Read (wxT (PREF_AUTOLF), 0L) );						// added by JWS 11/26/2006
+    m_splitWords = (m_config->Read (wxT (PREF_SPLITWORDS), 0L) != 0);						// added by JWS 12/10/2006
     m_convDot7 = (m_config->Read (wxT (PREF_CONVDOT7), 0L) != 0);							// added by JWS 11/26/2006
     m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);								// added by JWS 11/26/2006
 	//tab5
@@ -1490,6 +1495,7 @@ void PtermApp::OnPref (wxCommandEvent&)
 		//tab4
         m_charDelay = dlg.m_charDelay;	// added by JWS 11/26/2006
         m_lineDelay = dlg.m_lineDelay;	// added by JWS 11/26/2006
+		m_splitWords = dlg.m_splitWords;	// added by JWS 12/10/2006
 		m_convDot7 = dlg.m_convDot7;	// added by JWS 11/26/2006
 		m_conv8Sp = dlg.m_conv8Sp;		// added by JWS 11/26/2006
 		//tab5
@@ -1519,6 +1525,7 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay.mb_str ()));		// added by JWS 11/26/2006
         m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay.mb_str ()));		// added by JWS 11/26/2006
         m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF.mb_str ()));			// added by JWS 11/26/2006
+        m_config->Write (wxT (PREF_SPLITWORDS), (dlg.m_splitWords) ? 1 : 0);	// added by JWS 12/10/2006
         m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);	// added by JWS 11/26/2006
         m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);		// added by JWS 11/26/2006
         m_config->Write (wxT (PREF_BROWSER), dlg.m_Browser);				// added by JWS 12/02/2006
@@ -2007,7 +2014,11 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     unsigned int nextindex;
     int shift = 0;
 	bool neednext = false;										// added by JWS 12/03/2006
-	int autonext = ptermApp->m_config->Read(wxT (PREF_AUTOLF), 0L);	// added by JWS 12/03/2006
+//	int autonext = ptermApp->m_config->Read(wxT (PREF_AUTOLF), 0L);	// added by JWS 12/03/2006
+	int autonext = atoi(ptermApp->m_autoLF.mb_str());			// added by JWS 12/10/2006
+	unsigned int tindex;
+	int tcnt;
+	wxChar tchr;
 
 	if (m_bCancelPaste ||
 		m_pasteIndex < 0 ||
@@ -2069,7 +2080,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
             }
             else if (shift)
             {
-                    ptermSendKey (055);     // shift-Assign is shift code
+                ptermSendKey (055);     // shift-Assign is shift code
             }
             break;
         }
@@ -2102,7 +2113,22 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 
         if (p != -1)
         {
+			//send the key
             ptermSendKey (p);
+// start block. added by JWS 12/10/2006
+			//look ahead to see if line should be split at this breakpoint (space or hyphen)
+			if (autonext !=0 && !ptermApp->m_splitWords && (c == wxT(' ') || c == wxT('-')))
+			{
+				for (tindex = nextindex, neednext = true, tcnt = m_pasteNextKeyCnt; tindex < m_pasteText.Len() && neednext && tcnt < autonext; tindex++, tcnt++)
+				{
+					tchr = m_pasteText[tindex];
+					if (tchr == wxT(' ') || tchr == wxT('-') )
+						neednext = false;
+				}
+				if (neednext)
+					m_pasteNextKeyCnt = 0;
+			}
+// end block. added by JWS 12/10/2006
 // start block. added by JWS 12/03/2006
 			m_pasteNextKeyCnt++;
 			if (autonext != 0 && m_pasteNextKeyCnt == autonext)
@@ -2133,11 +2159,12 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         m_pasteTimer.Start (delay, true);
 		m_bPasteActive = true;
 // start block. added by JWS 12/03/2006
-		//check if need to send a NEXT
+		//check if need to send a NEXT as part of the automatic newline feature
 		if (neednext)
 		{
 			neednext = false;
             ptermSendKey (026);
+			for ( ; !ptermApp->m_splitWords && m_pasteText[nextindex] == wxT(' ') && nextindex < m_pasteText.Len(); nextindex++);	//eat leading spaces
 			m_pasteIndex = nextindex;
 			delay = atoi(ptermApp->m_lineDelay.mb_str ());	// changed by JWS 11/26/2006
 			m_pasteTimer.Start (delay, true);
@@ -4967,6 +4994,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	wxStaticText* lblAutoNewLine;
 //	wxComboBox* cboAutoLF;
 	wxStaticText* lblAutoNewLine2;
+//	wxCheckBox* chkSplitWords;
 //	wxCheckBox* chkConvertDot7;
 //	wxCheckBox* chkConvert8Spaces;
 	wxStaticText* lblExplainConversions;
@@ -5140,6 +5168,9 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	lblAutoNewLine2 = new wxStaticText( tab4, wxID_ANY, _("characters"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs4111->Add( lblAutoNewLine2, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 	bs41->Add( fgs4111, 0, wxEXPAND, 5 );
+	chkSplitWords = new wxCheckBox( tab4, wxID_ANY, _("Allow words to be split across lines"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkSplitWords->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	bs41->Add( chkSplitWords, 0, wxALL, 5 );
 	chkConvertDot7 = new wxCheckBox( tab4, wxID_ANY, _("Convert periods followed by 7 spaces into period/tab*"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkConvertDot7->SetValue(true);
 	chkConvertDot7->Hide();
@@ -5234,6 +5265,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_charDelay = ptermApp->m_charDelay;
     m_lineDelay = ptermApp->m_lineDelay;
     m_autoLF = ptermApp->m_autoLF;
+	m_splitWords = ptermApp->m_splitWords;	// added by JWS 12/10/2006
 	m_convDot7 = ptermApp->m_convDot7;
 	m_conv8Sp = ptermApp->m_conv8Sp;
 	//tab5
@@ -5262,6 +5294,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	txtCharDelay->SetValue( m_charDelay );
 	txtLineDelay->SetValue( m_lineDelay );
 	cboAutoLF->SetValue(m_autoLF );
+	chkSplitWords->SetValue( m_splitWords );
 	chkConvertDot7->SetValue( m_convDot7 );
 	chkConvert8Spaces->SetValue( m_conv8Sp );
 	//tab5
@@ -5333,6 +5366,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		m_charDelay.Printf (wxT ("%d"), PASTE_CHARDELAY );
 		m_lineDelay.Printf (wxT ("%d"), PASTE_LINEDELAY );
 		m_autoLF = wxT( "0" );
+        m_splitWords = false;
         m_convDot7 = false;
         m_conv8Sp = false;
 		m_Browser = wxT("");
@@ -5358,6 +5392,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		txtCharDelay->SetValue ( m_charDelay );
 		txtLineDelay->SetValue ( m_lineDelay );
 		cboAutoLF->SetValue ( m_autoLF );
+		chkSplitWords->SetValue ( m_splitWords );
 		chkConvertDot7->SetValue ( m_convDot7 );
 		chkConvert8Spaces->SetValue ( m_conv8Sp );
 		//tab5
@@ -5390,6 +5425,8 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == chkDisableColor)
         m_noColor = event.IsChecked ();
 	//tab4
+    else if (event.GetEventObject () == chkSplitWords)
+        m_splitWords = event.IsChecked ();
     else if (event.GetEventObject () == chkConvertDot7)
         m_convDot7 = event.IsChecked ();
     else if (event.GetEventObject () == chkConvert8Spaces)
