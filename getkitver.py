@@ -12,5 +12,8 @@ for l in f:
         nums2 = [ ]
         for n in nums:
             nums2.append (int (n))
-        print "%d.%d%d-%d" % tuple (nums2)
+        if len (nums2) == 3:
+            print "%d.%d%d" % tuple (nums2)
+        else:
+            print "%d.%d%d-%d" % tuple (nums2)
         sys.exit (0)

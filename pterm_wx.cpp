@@ -1410,19 +1410,9 @@ bool PtermApp::DoConnect (bool ask)
 
 void PtermApp::OnAbout(wxCommandEvent&)
 {
-    wxString msg;
-	char ver[20];
-	int v[4];
-
-	sscanf (STRFILEVER,"%d, %d, %d, %d", &v[0], &v[1], &v[2], &v[3] );
-	if (v[2]==0 && v[3]==0)
-		sprintf (ver, "%d.%d", v[0], v[1] );
-	else if (v[2]!=0 && v[3]==0)
-		sprintf (ver, "%d.%d.%d", v[0], v[1], v[2] );
-	else
-		sprintf (ver, "%d.%d.%d.%d", v[0], v[1], v[2], v[3] );
-	msg.Printf (wxT ("%s V%s\n%s"), STRPRODUCTNAME, ver, STRLEGALCOPYRIGHT);
-    wxMessageBox(msg, _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
+    wxMessageBox(wxT (STRPRODUCTNAME " V" STRFILEVER
+                      "\n" STRLEGALCOPYRIGHT),
+                      _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
 }
 
 void PtermApp::OnHelpKeys (wxCommandEvent &)
