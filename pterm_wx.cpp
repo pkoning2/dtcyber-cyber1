@@ -2,7 +2,7 @@
 // Name:        pterm_wx.cpp
 // Purpose:     pterm interface to wxWindows 
 // Author:      Paul Koning
-// Modified by: Joe Stanton, 11/26-2006-12/07/2006
+// Modified by: 
 // Created:     03/26/2005
 // Copyright:   (c) Paul Koning
 // Licence:     DtCyber license
@@ -92,14 +92,14 @@
 #define PREF_YPOS       "yPosition"
 #define PREF_BEEP       "beep"
 #define PREF_NOCOLOR    "noColor"
-#define PREF_CHARDELAY  "charDelay"	// added by JWS 11/26/2006
-#define PREF_LINEDELAY  "lineDelay"	// added by JWS 11/26/2006
-#define PREF_AUTOLF     "autoLF"	// added by JWS 11/26/2006
-#define PREF_SPLITWORDS "splitWords"	// added by JWS 12/10/2006
-#define PREF_CONVDOT7   "convDot7"	// added by JWS 11/26/2006
-#define PREF_CONV8SP    "conv8Sp"	// added by JWS 11/26/2006
-#define PREF_BROWSER    "Browser"	// added by JWS 12/02/2006
-#define PREF_LASTTAB	"lastTab"	// added by JWS 12/02/2006
+#define PREF_CHARDELAY  "charDelay"
+#define PREF_LINEDELAY  "lineDelay"
+#define PREF_AUTOLF     "autoLF"
+#define PREF_SPLITWORDS "splitWords"
+#define PREF_CONVDOT7   "convDot7"
+#define PREF_CONV8SP    "conv8Sp"
+#define PREF_BROWSER    "Browser"
+#define PREF_LASTTAB	"lastTab"
 
 /*
 **  -----------------------
@@ -191,14 +191,14 @@
 #include "wx/wx.h"
 #endif
 
-#include <wx/button.h>		// added by JWS 11/27/2006
+#include <wx/button.h>
 #include "wx/clipbrd.h"
 #include "wx/colordlg.h"
 #include "wx/config.h"
 #include "wx/image.h"
 #include "wx/filename.h"
 #include "wx/metafile.h"
-#include "wx/notebook.h"	// added by JWS 11/27/2006
+#include "wx/notebook.h"
 #include "wx/print.h"
 #include "wx/printdlg.h"
 
@@ -218,7 +218,6 @@ extern "C"
 #include "types.h"
 #include "proto.h"
 #include "ptermversion.h"
-#include <SDL.h>
 #include "8080a.h"
 #include "8080avar.h"
 #include "ppt.h"
@@ -513,7 +512,7 @@ public:
     wxColour    m_bgColor;
     wxConfig    *m_config;
 
-	int			m_lastTab;		// added by JWS 12/02/2006
+	int			m_lastTab;		
     wxString    m_hostName;
     int         m_port;
     // scale is 1 or 2 for full size and double, respectively.
@@ -526,13 +525,13 @@ public:
     bool        m_platoKb;
     bool        m_beepEnable;
     bool        m_noColor;
-    wxString    m_charDelay;	// added by JWS 11/26/2006
-    wxString    m_lineDelay;	// added by JWS 11/26/2006
-    wxString    m_autoLF;	    // added by JWS 11/26/2006
-	bool		m_splitWords;	// added by JWS 12/10/2006
-    bool        m_convDot7;     // added by JWS 11/26/2006
-    bool        m_conv8Sp;      // added by JWS 11/26/2006
-	wxString	m_Browser;      // added by JWS 12/02/2006
+    wxString    m_charDelay;	
+    wxString    m_lineDelay;	
+    wxString    m_autoLF;	    
+	bool		m_splitWords;	
+    bool        m_convDot7;     
+    bool        m_conv8Sp;      
+	wxString	m_Browser;      
 
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
@@ -561,7 +560,7 @@ public:
     void OnChar (wxKeyEvent& event);
     void OnMouseDown (wxMouseEvent &event);
     void OnMouseUp (wxMouseEvent &event);
-    void OnMouseContextMenu (wxMouseEvent &event);	// added by JWS 12/03/2006
+    void OnMouseContextMenu (wxMouseEvent &event);
     void OnMouseMotion (wxMouseEvent &event);
     void OnCopy (wxCommandEvent &event);
 
@@ -706,7 +705,7 @@ public:
 	bool		m_bCancelPaste;
 	bool		m_bPasteActive;
 
-	wxMenu      *menuEdit;			// moved to public scope by JWS 12/03/2006
+	wxMenu      *menuEdit;
 
 private:
     wxStatusBar *m_statusBar;       // present even if not displayed
@@ -728,7 +727,7 @@ private:
     wxString    m_pasteText;
     int         m_pasteIndex;
     bool        m_pastePrint;
-	int			m_pasteNextKeyCnt;	// added by JWS 12/03/2006
+	int			m_pasteNextKeyCnt;
     
     // Character patterns are stored in three DCs because we want to
     // BLIT them in various ways, and the OR/AND type ops don't work
@@ -945,7 +944,7 @@ public:
 	wxButton* btnDefaults;
 
 	//properties	
-	int				m_lastTab;		// added by JWS 12/02/2006
+	int				m_lastTab;		
 	//tab1
     bool            m_classicSpeed;
     bool            m_gswEnable;
@@ -963,14 +962,14 @@ public:
     wxColour        m_fgColor;
     wxColour        m_bgColor;
 	//tab4
-    wxString        m_charDelay;	// added by JWS 11/26/2006
-    wxString        m_lineDelay;	// added by JWS 11/26/2006
-    wxString        m_autoLF;		// added by JWS 11/26/2006
-	bool			m_splitWords;	// added by JWS 12/10/2006
-    bool            m_convDot7;		// added by JWS 11/26/2006
-    bool            m_conv8Sp;		// added by JWS 11/26/2006
+    wxString        m_charDelay;	
+    wxString        m_lineDelay;	
+    wxString        m_autoLF;		
+	bool			m_splitWords;	
+    bool            m_convDot7;		
+    bool            m_conv8Sp;		
 	//tab5
-	wxString		m_Browser;		// added by JWS 12/02/2006
+	wxString		m_Browser;		
     
 private:
     void paintBitmap (wxBitmap &bm, wxColour &color);
@@ -984,21 +983,19 @@ private:
 class PtermConnDialog : public wxDialog
 {
 public:
-    PtermConnDialog (wxWindowID id, const wxString &title, wxPoint pos,  wxSize size);	// changed by JWS 12/04/2006
+    PtermConnDialog (wxWindowID id, const wxString &title, wxPoint pos,  wxSize size);
     
-    void OnButton (wxCommandEvent& event);		// was OnOK, changed by JWS 12/04/2006
+    void OnButton (wxCommandEvent& event);
     void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
     
     wxString        m_host;
     wxString        m_port;
 
-//start block. added by JWS 12/04/2006
 	wxTextCtrl* txtHost;
 	wxComboBox* cboPort;
 	wxButton* btnQuickConnectClassic;
 	wxButton* btnQuickConnectASCII;
 	wxButton* btnConnect;
-//end block. added by JWS 12/04/2006
     
 private:
     DECLARE_EVENT_TABLE ()
@@ -1022,7 +1019,7 @@ enum
     // timers
     Pterm_Timer,        // display pacing
     Pterm_PasteTimer,   // paste key generation pacing
-    Pterm_Exec,			// execute URL; added by JWS 12/02/2006
+    Pterm_Exec,			// execute URL
 
     // Menu items with standard ID values
     Pterm_Print = wxID_PRINT,
@@ -1194,7 +1191,7 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
     EVT_MENU(Pterm_Copy, PtermFrame::OnCopy)
-    EVT_MENU(Pterm_Exec, PtermFrame::OnExec)	// added by JWS 12/02/2006
+    EVT_MENU(Pterm_Exec, PtermFrame::OnExec)	
     EVT_MENU(Pterm_Paste, PtermFrame::OnPaste)
     EVT_MENU(Pterm_PastePrint, PtermFrame::OnPaste)
     EVT_UPDATE_UI(Pterm_Paste, PtermFrame::OnUpdateUIPaste)
@@ -1289,14 +1286,14 @@ bool PtermApp::OnInit (void)
     sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
     m_bgColor = wxColour (r, g, b);
 	//tab4
-	m_charDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_CHARDELAY), PASTE_CHARDELAY) );	// added by JWS 11/26/2006
-	m_lineDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_LINEDELAY), PASTE_LINEDELAY) );	// added by JWS 11/26/2006
-	m_autoLF.Printf (wxT ("%d"), m_config->Read (wxT (PREF_AUTOLF), 0L) );						// added by JWS 11/26/2006
-    m_splitWords = (m_config->Read (wxT (PREF_SPLITWORDS), 0L) != 0);						// added by JWS 12/10/2006
-    m_convDot7 = (m_config->Read (wxT (PREF_CONVDOT7), 0L) != 0);							// added by JWS 11/26/2006
-    m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);								// added by JWS 11/26/2006
+	m_charDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_CHARDELAY), PASTE_CHARDELAY) );	
+	m_lineDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_LINEDELAY), PASTE_LINEDELAY) );	
+	m_autoLF.Printf (wxT ("%d"), m_config->Read (wxT (PREF_AUTOLF), 0L) );						
+    m_splitWords = (m_config->Read (wxT (PREF_SPLITWORDS), 0L) != 0);						
+    m_convDot7 = (m_config->Read (wxT (PREF_CONVDOT7), 0L) != 0);							
+    m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);								
 	//tab5
-    m_config->Read (wxT (PREF_BROWSER), &m_Browser, wxT(""));								// added by JWS 12/02/2006
+    m_config->Read (wxT (PREF_BROWSER), &m_Browser, wxT(""));								
 
 
 #if PTERM_MDI
@@ -1413,7 +1410,6 @@ bool PtermApp::DoConnect (bool ask)
 
 void PtermApp::OnAbout(wxCommandEvent&)
 {
-// changed by JWS 12/04/2006
     wxString msg;
 	char ver[20];
 	int v[4];
@@ -1494,16 +1490,16 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_fgColor = dlg.m_fgColor;
         m_bgColor = dlg.m_bgColor;
 		//tab4
-        m_charDelay = dlg.m_charDelay;	// added by JWS 11/26/2006
-        m_lineDelay = dlg.m_lineDelay;	// added by JWS 11/26/2006
-		m_splitWords = dlg.m_splitWords;	// added by JWS 12/10/2006
-		m_convDot7 = dlg.m_convDot7;	// added by JWS 11/26/2006
-		m_conv8Sp = dlg.m_conv8Sp;		// added by JWS 11/26/2006
+        m_charDelay = dlg.m_charDelay;	
+        m_lineDelay = dlg.m_lineDelay;	
+		m_splitWords = dlg.m_splitWords;	
+		m_convDot7 = dlg.m_convDot7;	
+		m_conv8Sp = dlg.m_conv8Sp;		
 		//tab5
-		m_Browser = dlg.m_Browser;		// added by JWS 12/02/2006
+		m_Browser = dlg.m_Browser;		
 		
         //write prefs
-		m_config->Write (wxT (PREF_LASTTAB), dlg.m_lastTab);				// added by JWS 12/02/2006
+		m_config->Write (wxT (PREF_LASTTAB), dlg.m_lastTab);				
         rgb.Printf (wxT ("%d %d %d"), 
                     dlg.m_fgColor.Red (), dlg.m_fgColor.Green (),
                     dlg.m_fgColor.Blue ());
@@ -1514,7 +1510,7 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_BACKGROUND), rgb);
         m_config->Write (wxT (PREF_SCALE2), (dlg.m_scale2) ? 2 : 1);
         m_config->Write (wxT (PREF_HOST), dlg.m_host);
-        m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port.mb_str ()));				// changed by JWS 12/02/2006
+        m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port.mb_str ()));
         m_config->Write (wxT (PREF_1200BAUD), (dlg.m_classicSpeed) ? 1 : 0);
         m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
         m_config->Write (wxT (PREF_GSW), (dlg.m_gswEnable) ? 1 : 0);
@@ -1523,13 +1519,13 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_PLATOKB), (dlg.m_platoKb) ? 1 : 0);
         m_config->Write (wxT (PREF_BEEP), (dlg.m_beepEnable) ? 1 : 0);
         m_config->Write (wxT (PREF_NOCOLOR), (dlg.m_noColor) ? 1 : 0);
-        m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay.mb_str ()));		// added by JWS 11/26/2006
-        m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay.mb_str ()));		// added by JWS 11/26/2006
-        m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF.mb_str ()));			// added by JWS 11/26/2006
-        m_config->Write (wxT (PREF_SPLITWORDS), (dlg.m_splitWords) ? 1 : 0);	// added by JWS 12/10/2006
-        m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);	// added by JWS 11/26/2006
-        m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);		// added by JWS 11/26/2006
-        m_config->Write (wxT (PREF_BROWSER), dlg.m_Browser);				// added by JWS 12/02/2006
+        m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay.mb_str ()));		
+        m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay.mb_str ()));		
+        m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF.mb_str ()));			
+        m_config->Write (wxT (PREF_SPLITWORDS), (dlg.m_splitWords) ? 1 : 0);	
+        m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);	
+        m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);		
+        m_config->Write (wxT (PREF_BROWSER), dlg.m_Browser);				
         m_config->Flush ();
 
     }
@@ -1537,7 +1533,6 @@ void PtermApp::OnPref (wxCommandEvent&)
 
 wxColour PtermApp::SelectColor ( wxWindow &parent, 
                                  const wxChar *title, wxColour &initcol)
-// changed by JWS 12/05/2006; inserted first and second arguments
 {
     wxColour col (initcol);
     wxColour orange (255, 144, 0);
@@ -1551,8 +1546,8 @@ wxColour PtermApp::SelectColor ( wxWindow &parent,
     
     wxColourDialog dialog (&parent, &data);
 
-	dialog.CentreOnParent();			// added by JWS 12/05/2006
-	dialog.SetTitle(title);	// added by JWS 12/05/2006
+	dialog.CentreOnParent();
+	dialog.SetTitle(title);
 
     if (dialog.ShowModal () == wxID_OK)
     {
@@ -1759,7 +1754,6 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
                       _("Close this window"));
     menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
 
-//    wxMenu *menuEdit = new wxMenu;	// moved up to public scope, JWS 12/03/2006
     menuEdit = new wxMenu;
 
     menuEdit->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
@@ -1773,12 +1767,12 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
         menuEdit->Append(Pterm_PastePrint, _("Paste Printout"),
                          _("Paste Cyber printout format"));
     }
-    menuEdit->AppendSeparator ();															// added by JWS 12/02/2006
-    menuEdit->Append(Pterm_Exec, _("Execute URL") MACACCEL ("\tCtrl-X"), _("Execute URL"));	// added by JWS 12/02/2006
+    menuEdit->AppendSeparator ();															
+    menuEdit->Append(Pterm_Exec, _("Execute URL") MACACCEL ("\tCtrl-X"), _("Execute URL"));	
 
     // Copy is initially disabled, until a region is selected
     menuEdit->Enable (Pterm_Copy, false);
-    menuEdit->Enable (Pterm_Exec, false);	// added by JWS 12/02/2006
+    menuEdit->Enable (Pterm_Exec, false);	
 
     wxMenu *menuView = new wxMenu;
     
@@ -2014,9 +2008,8 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     int p, delay;
     unsigned int nextindex;
     int shift = 0;
-	bool neednext = false;										// added by JWS 12/03/2006
-//	int autonext = ptermApp->m_config->Read(wxT (PREF_AUTOLF), 0L);	// added by JWS 12/03/2006
-	int autonext = atoi(ptermApp->m_autoLF.mb_str());			// added by JWS 12/10/2006
+	bool neednext = false;
+	int autonext = atoi(ptermApp->m_autoLF.mb_str());			
 	unsigned int tindex;
 	int tcnt;
 	wxChar tchr;
@@ -2116,7 +2109,6 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         {
 			//send the key
             ptermSendKey (p);
-// start block. added by JWS 12/10/2006
 			//look ahead to see if line should be split at this breakpoint (space or hyphen)
 			if (autonext !=0 && !ptermApp->m_splitWords && (c == wxT(' ') || c == wxT('-')))
 			{
@@ -2129,15 +2121,12 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 				if (neednext)
 					m_pasteNextKeyCnt = 0;
 			}
-// end block. added by JWS 12/10/2006
-// start block. added by JWS 12/03/2006
 			m_pasteNextKeyCnt++;
 			if (autonext != 0 && m_pasteNextKeyCnt == autonext)
 			{
 				neednext = (p != 026);	// NEXT
 				m_pasteNextKeyCnt = 0;
 			}
-// end block. added by JWS 12/03/2006
         }
     }
     
@@ -2149,17 +2138,16 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         m_pasteIndex = nextindex;
         if (c == wxT ('\n'))
         {
-            delay = atoi(ptermApp->m_lineDelay.mb_str ());	// changed by JWS 11/26/2006
-			neednext = false;								// added by JWS 12/10/2006
-			m_pasteNextKeyCnt = 0;							// added by JWS 12/10/2006
+            delay = atoi(ptermApp->m_lineDelay.mb_str ());
+			neednext = false;								
+			m_pasteNextKeyCnt = 0;							
         }
         else
         {
-            delay = atoi(ptermApp->m_charDelay.mb_str ());	// changed by JWS 11/26/2006
+            delay = atoi(ptermApp->m_charDelay.mb_str ());
         }
         m_pasteTimer.Start (delay, true);
 		m_bPasteActive = true;
-// start block. added by JWS 12/03/2006
 		//check if need to send a NEXT as part of the automatic newline feature
 		if (neednext)
 		{
@@ -2167,11 +2155,10 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
             ptermSendKey (026);
 			for ( ; !ptermApp->m_splitWords && m_pasteText[nextindex] == wxT(' ') && nextindex < m_pasteText.Len(); nextindex++);	//eat leading spaces
 			m_pasteIndex = nextindex;
-			delay = atoi(ptermApp->m_lineDelay.mb_str ());	// changed by JWS 11/26/2006
+			delay = atoi(ptermApp->m_lineDelay.mb_str ());
 			m_pasteTimer.Start (delay, true);
 			m_bPasteActive = true;
 		}
-// end block. added by JWS 12/03/2006
 
     }
     else
@@ -2278,7 +2265,7 @@ void PtermFrame::OnCopy (wxCommandEvent &event)
 
 void PtermFrame::OnExec (wxCommandEvent &event)
 {
-// added by JWS 12/02/2006
+
     m_canvas->OnCopy (event);
 
     if (!wxTheClipboard->Open ())
@@ -2337,8 +2324,8 @@ void PtermFrame::OnPaste (wxCommandEvent &event)
     {
         m_pasteText = text.GetText ();
         m_pasteIndex = 0;
-		m_pasteNextKeyCnt = 0;									// added by JWS 12/03/2006
-        m_pasteTimer.Start (atoi(ptermApp->m_charDelay.mb_str ()), true);	// changed by JWS 11/26/2006
+		m_pasteNextKeyCnt = 0;
+        m_pasteTimer.Start (atoi(ptermApp->m_charDelay.mb_str ()), true);
         m_pastePrint = (event.GetId () == Pterm_PastePrint);
     }
 
@@ -5263,7 +5250,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     m_charDelay = ptermApp->m_charDelay;
     m_lineDelay = ptermApp->m_lineDelay;
     m_autoLF = ptermApp->m_autoLF;
-	m_splitWords = ptermApp->m_splitWords;	// added by JWS 12/10/2006
+	m_splitWords = ptermApp->m_splitWords;	
 	m_convDot7 = ptermApp->m_convDot7;
 	m_conv8Sp = ptermApp->m_conv8Sp;
 	//tab5
@@ -5326,10 +5313,10 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
     {
         m_host = txtDefaultHost->GetLineText (0);
         m_port = cboDefaultPort->GetValue ();
-        m_charDelay = txtCharDelay->GetLineText (0);	// added by JWS 11/26/2006
-        m_lineDelay = txtLineDelay->GetLineText (0);	// added by JWS 11/26/2006
-        m_autoLF = cboAutoLF->GetValue ();				// added by JWS 11/26/2006
-		m_Browser = txtBrowser->GetLineText (0);		// added by JWS 12/02/2006
+        m_charDelay = txtCharDelay->GetLineText (0);	
+        m_lineDelay = txtLineDelay->GetLineText (0);	
+        m_autoLF = cboAutoLF->GetValue ();				
+		m_Browser = txtBrowser->GetLineText (0);		
 		m_lastTab = tabPrefsDialog->GetSelection ();
         EndModal (wxID_OK);
     }
@@ -5450,7 +5437,7 @@ void PtermPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
 
 BEGIN_EVENT_TABLE(PtermConnDialog, wxDialog)
     EVT_CLOSE(PtermConnDialog::OnClose)
-    EVT_BUTTON(wxID_ANY, PtermConnDialog::OnButton)	// changed by JWS 12/04/2006
+    EVT_BUTTON(wxID_ANY, PtermConnDialog::OnButton)
     END_EVENT_TABLE()
 
 PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint pos, wxSize loc)
@@ -5520,7 +5507,7 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
 
 }
 
-void PtermConnDialog::OnButton (wxCommandEvent& event)	// changed by JWS 12/04/2006
+void PtermConnDialog::OnButton (wxCommandEvent& event)
 {
 	void OnButton (wxCommandEvent& event);
     if (event.GetEventObject () == btnQuickConnectClassic)
@@ -6064,7 +6051,7 @@ BEGIN_EVENT_TABLE(PtermCanvas, wxScrolledWindow)
     EVT_KEY_DOWN(PtermCanvas::OnKeyDown)
     EVT_LEFT_DOWN(PtermCanvas::OnMouseDown)
     EVT_LEFT_UP(PtermCanvas::OnMouseUp)
-    EVT_RIGHT_UP(PtermCanvas::OnMouseContextMenu)	// added by JWS 12/03/2006
+    EVT_RIGHT_UP(PtermCanvas::OnMouseContextMenu)
     EVT_MOTION(PtermCanvas::OnMouseMotion)
     END_EVENT_TABLE ()
 
@@ -6370,13 +6357,13 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             break;
         case WXK_MULTIPLY:
         case WXK_NUMPAD_MULTIPLY:
-        case WXK_NUMPAD_DELETE:	// added by JWS 12/02/2006
+        case WXK_NUMPAD_DELETE:	
         case WXK_DELETE:
             pc = 012;       // multiply sign
             break;
         case WXK_DIVIDE:
         case WXK_NUMPAD_DIVIDE:
-        case WXK_NUMPAD_INSERT:	// added by JWS 12/02/2006
+        case WXK_NUMPAD_INSERT:	
         case WXK_INSERT:
             pc = 013;       // divide sign
             break;
@@ -6587,7 +6574,6 @@ void PtermCanvas::OnCopy (wxCommandEvent &)
         }
         if (m_regionHeight > 1)
         {
-//start block. added by JWS 12/05/2006 
 //Windows really likes a CRLF and it must be done on two separate function calls
 #if defined (__WXMSW__)
             text.Append (wxT ('\r'));
@@ -6627,7 +6613,7 @@ void PtermCanvas::ClearRegion (void)
 	    m_regionHeight = 0;
 		m_regionWidth = 0;
 		m_owner->GetMenuBar ()->Enable (Pterm_Copy, false);
-		m_owner->GetMenuBar ()->Enable (Pterm_Exec, false);	// added by JWS 12/02/2006
+		m_owner->GetMenuBar ()->Enable (Pterm_Exec, false);	
 		Refresh (false);
 	}
 }
@@ -6651,12 +6637,10 @@ void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
     event.Skip ();
 }
 
-// start block. added by JWS 12/03/2006
 void PtermCanvas::OnMouseContextMenu (wxMouseEvent &event)
 {
 	ptermApp->m_firstFrame->PopupMenu ( ptermApp->m_firstFrame->menuEdit );
 }
-// end block. added by JWS 12/03/2006
 
 void PtermCanvas::OnMouseUp (wxMouseEvent &event)
 {
@@ -6731,7 +6715,7 @@ void PtermCanvas::UpdateRegion (wxMouseEvent &event)
         m_owner->GetMenuBar ()->Enable (Pterm_Copy, 
                                         (m_regionWidth > 0));
         m_owner->GetMenuBar ()->Enable (Pterm_Exec, 
-                                        (m_regionWidth > 0)); // added by JWS 12/02/2006
+                                        (m_regionWidth > 0)); 
 #ifdef DEBUG
         printf ("region %d %d size %d %d\n", m_regionX, m_regionY,
                 m_regionWidth, m_regionHeight);
