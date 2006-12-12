@@ -5084,11 +5084,11 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 //	fgs311->Add( btnBGColor, 0, wxALL, 5 );
 //	lblBGColor = new wxStaticText( tab3, wxID_ANY, _("Background color*"), wxDefaultPosition, wxDefaultSize, 0 );
 //	fgs311->Add( lblBGColor, 0, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
-	btnFGColor = new wxBitmapButton( tab3, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxSize( 25,-1 ), wxBU_AUTODRAW );
+	btnFGColor = new wxBitmapButton( tab3, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxSize( 20, 12 ), wxBU_AUTODRAW );
 	fgs311->Add( btnFGColor, 0, wxALL, 5 );
 	lblFGColor = new wxStaticText( tab3, wxID_ANY, _("Foreground color*"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs311->Add( lblFGColor, 1, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	btnBGColor = new wxBitmapButton( tab3, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxSize( 25,-1 ), wxBU_AUTODRAW );
+	btnBGColor = new wxBitmapButton( tab3, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxSize( 20, 12 ), wxBU_AUTODRAW );
 	fgs311->Add( btnBGColor, 0, wxALL, 5 );
 	lblBGColor = new wxStaticText( tab3, wxID_ANY, _("Background color*"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs311->Add( lblBGColor, 0, wxALL|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL, 5 );
