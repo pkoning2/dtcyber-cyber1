@@ -704,6 +704,8 @@ public:
 
 	bool		m_bCancelPaste;
 	bool		m_bPasteActive;
+    PtermConnection *m_conn;
+    bool        m_dumbTty;
 
 	wxMenu      *menuEdit;
 
@@ -715,7 +717,6 @@ private:
     wxBrush     m_backgroundBrush;
     wxBitmap    *m_bitmap;
     PtermCanvas *m_canvas;
-    PtermConnection *m_conn;
     wxString    m_hostName;
     int         m_port;
     wxTimer     m_timer;
@@ -772,7 +773,6 @@ private:
     int         seq;
     int         modewords;
     int         mode4start;
-    bool        m_dumbTty;
     typedef enum { none, ldc, lde, lda, ssf, fg, bg, paint, pni_rs, ext } AscState;
     AscState    m_ascState;
     int         m_ascBytes;
@@ -4392,7 +4392,7 @@ void PtermFrame::progmode (u32 d, int origin)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void PtermFrame::ptermSendKey(int key)
+void PtermFrame::ptermSendKey (int key)
 {
     char data[5];
     int len;
@@ -6144,6 +6144,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     }
     key = event.m_keyCode;
     if (!m_owner->HasConnection () ||
+        (m_owner->m_conn->Ascii () && m_owner->m_dumbTty) ||
         key == WXK_ALT || key == WXK_SHIFT || key == WXK_CONTROL)
     {
         // We don't take any action on the modifier key keydown events,
@@ -6151,6 +6152,8 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         // the system.
         // The same applies to keys sent to the help window (which has
         // no connection on which to send them).
+        // And finally, it applies to ASCII when in dumb TTY mode, in
+        // that case we just want to send ASCII keycodes straight.
         event.Skip ();
         return;
     }
@@ -6469,6 +6472,17 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     int shift = 0;
     int pc = -1;
 
+    // Dumb TTY input is handled here, always
+    if (m_owner->m_conn->Ascii () && m_owner->m_dumbTty)
+    {
+        key = event.m_keyCode;
+#ifdef DEBUGLOG
+        wxLogMessage ("dumb tty key %d\n", key);
+#endif
+        m_owner->m_conn->SendData (&key, 1);
+        return;
+    }
+    
     // control and alt codes shouldn't come here, they are handled in KEY_DOWN
     if (!m_owner->HasConnection () ||
         event.m_controlDown || event.m_altDown || event.m_metaDown)
