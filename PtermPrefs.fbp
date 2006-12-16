@@ -78,7 +78,7 @@
                                 <property name="subclass"></property>
                                 <property name="tooltip"></property>
                                 <property name="window_extra_style"></property>
-                                <property name="window_style">wxHSCROLL|wxVSCROLL</property>
+                                <property name="window_style">wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL</property>
                                 <object class="wxBoxSizer">
                                     <property name="minimum_size"></property>
                                     <property name="name">page1</property>
@@ -256,7 +256,7 @@
                                 <property name="subclass"></property>
                                 <property name="tooltip"></property>
                                 <property name="window_extra_style"></property>
-                                <property name="window_style">wxHSCROLL|wxVSCROLL</property>
+                                <property name="window_style">wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL</property>
                                 <object class="wxFlexGridSizer">
                                     <property name="cols">1</property>
                                     <property name="flexible_direction">wxVERTICAL</property>
@@ -490,7 +490,7 @@
                                 <property name="subclass"></property>
                                 <property name="tooltip"></property>
                                 <property name="window_extra_style"></property>
-                                <property name="window_style">wxHSCROLL|wxVSCROLL</property>
+                                <property name="window_style">wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL</property>
                                 <object class="wxFlexGridSizer">
                                     <property name="cols">1</property>
                                     <property name="flexible_direction">wxVERTICAL</property>
@@ -772,7 +772,7 @@
                                 <property name="subclass"></property>
                                 <property name="tooltip"></property>
                                 <property name="window_extra_style"></property>
-                                <property name="window_style">wxHSCROLL|wxVSCROLL</property>
+                                <property name="window_style">wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL</property>
                                 <object class="wxFlexGridSizer">
                                     <property name="cols">1</property>
                                     <property name="flexible_direction">wxVERTICAL</property>
@@ -1194,7 +1194,7 @@
                                 <property name="subclass"></property>
                                 <property name="tooltip"></property>
                                 <property name="window_extra_style"></property>
-                                <property name="window_style">wxHSCROLL|wxVSCROLL</property>
+                                <property name="window_style">wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL</property>
                                 <object class="wxFlexGridSizer">
                                     <property name="cols">1</property>
                                     <property name="flexible_direction">wxBOTH</property>

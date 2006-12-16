@@ -4996,7 +4996,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	tabPrefsDialog = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP );
 	tabPrefsDialog->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	//tab1
-	tab1 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
+	tab1 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL|wxTAB_TRAVERSAL );
 	tab1->SetScrollRate( 5, 5 );
 	wxBoxSizer* page1;
 	page1 = new wxBoxSizer( wxVERTICAL );
@@ -5020,7 +5020,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	page1->Fit( tab1 );
 	tabPrefsDialog->AddPage( tab1, _("Emulation"), true );
 	//tab2
-	tab2 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
+	tab2 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL|wxTAB_TRAVERSAL );
 	tab2->SetScrollRate( 5, 5 );
 	wxFlexGridSizer* page2;
 	page2 = new wxFlexGridSizer( 1, 1, 0, 0 );
@@ -5057,7 +5057,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	page2->Fit( tab2 );
 	tabPrefsDialog->AddPage( tab2, _("Connection"), false );
 	//tab3
-	tab3 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
+	tab3 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL|wxTAB_TRAVERSAL );
 	tab3->SetScrollRate( 5, 5 );
 	wxFlexGridSizer* page3;
 	page3 = new wxFlexGridSizer( 1, 1, 0, 0 );
@@ -5106,7 +5106,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	page3->Fit( tab3 );
 	tabPrefsDialog->AddPage( tab3, _("Display"), false );
 	//tab4
-	tab4 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
+	tab4 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL|wxTAB_TRAVERSAL );
 	tab4->SetScrollRate( 5, 5 );
 	wxFlexGridSizer* page4;
 	page4 = new wxFlexGridSizer( 1, 1, 0, 0 );
@@ -5167,7 +5167,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	page4->Fit( tab4 );
 	tabPrefsDialog->AddPage( tab4, _("Pasting"), false );
 	//tab5
-	tab5 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
+	tab5 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL|wxTAB_TRAVERSAL );
 	tab5->SetScrollRate( 5, 5 );
 	wxFlexGridSizer* page5;
 	page5 = new wxFlexGridSizer( 2, 1, 0, 0 );
@@ -5917,20 +5917,27 @@ int PtermConnection::NextWord (void)
 
         if (word == C_CONNFAIL)
         {
-            msg.Printf (_("Failed to connect to %s %d"),
+            msg.Printf (_("Failed to connect to %s %d\n\nTry another connection?"),
                         m_hostName.c_str (), m_port);
         }
         else
         {
-            msg.Printf (_("Connection lost to %s %d"),
+            msg.Printf (_("Connection lost to %s %d\n\nTry another connection?"),
                         m_hostName.c_str (), m_port);
         }
             
-        wxMessageDialog alert (m_owner, msg, wxString (_("Alert")), wxOK);
-            
-        alert.ShowModal ();
-        m_owner->Close (true);
-        word = C_NODATA;
+	    wxMessageDialog alert (m_owner, msg, wxString (_("Alert")), wxYES_NO|wxCANCEL);
+		switch (alert.ShowModal ())
+		{
+		case wxID_YES:	// prompt for a connection rather than just bailing out
+			ptermApp->DoConnect(true);
+			break;
+		case wxID_NO:	// stay in pterm in disconnected state
+			break;
+		default:		// cancel exits
+			m_owner->Close (true);
+		}
+		word = C_NODATA;
     }
         
     return word;

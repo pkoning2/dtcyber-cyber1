@@ -1,5 +1,5 @@
 # Microsoft Developer Studio Project File - Name="pterm" - Package Owner=<4>
-# Microsoft Developer Studio Generated Build File, Format Version 5.00
+# Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Console Application" 0x0103
@@ -22,6 +22,7 @@ CFG=pterm - Win32 Debug
 !MESSAGE 
 
 # Begin Project
+# PROP AllowPerConfigDependencies 0
 # PROP Scc_ProjName ""
 # PROP Scc_LocalPath ""
 CPP=cl.exe
@@ -41,15 +42,15 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /I "c:\wxWidgets-2.6.0\lib\vc_lib\msw" /I "c:\wxWidgets-2.6.0\include" /I "c:\SDL-1.2.8\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
+# ADD CPP /nologo /W3 /GX /O2 /I "d:\projects\pterm\wxWidgets 2.6.3\lib\vc_lib\msw" /I "d:\projects\pterm\wxWidgets 2.6.3\include" /I "d:\projects\pterm\SDL-1.2.11\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
-# ADD RSC /l 0x409 /i "c:\wxWidgets-2.6.0\include" /d "NDEBUG"
+# ADD RSC /l 0x409 /i "d:\projects\pterm\wxWidgets 2.6.3\include" /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 wxregex.lib wxjpeg.lib wxtiff.lib wxpng.lib wxzlib.lib wxmsw26_core.lib wxbase26.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib SDL.lib /nologo /subsystem:windows /map /machine:I386 /nodefaultlib:"libc.lib" /libpath:"c:\wxWidgets-2.6.0\lib\vc_lib" /libpath:"c:\SDL-1.2.8\lib"
+# ADD LINK32 wxregex.lib wxjpeg.lib wxtiff.lib wxpng.lib wxzlib.lib wxmsw26_core.lib wxbase26.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib SDL.lib /nologo /subsystem:windows /map /machine:I386 /nodefaultlib:"libc.lib" /libpath:"d:\projects\pterm\wxWidgets 2.6.3\lib\vc_lib" /libpath:"d:\projects\pterm\SDL-1.2.11\lib"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "pterm - Win32 Debug"
@@ -66,15 +67,15 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /Gm /GX /Zi /Od /I "c:\wxWidgets-2.6.0\lib\vc_lib\mswd" /I "c:\wxWidgets-2.6.0\lib\vc_lib\msw" /I "c:\wxWidgets-2.6.0\include" /I "c:\SDL-1.2.8\include" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "d:\projects\pterm\wxWidgets 2.6.3\lib\vc_lib\mswd" /I "d:\projects\pterm\wxWidgets 2.6.3\lib\vc_lib\msw" /I "d:\projects\pterm\wxWidgets 2.6.3\include" /I "d:\projects\pterm\SDL-1.2.11\include" /D "NDEBUG" /D "_MBCS" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /FR /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
-# ADD RSC /l 0x409 /i "c:\wxWindows-2.6.0\include" /d "_DEBUG"
+# ADD RSC /l 0x409 /i "d:\projects\pterm\wxWidgets 2.6.3\include\\" /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 wxregexd.lib wxjpegd.lib wxtiffd.lib wxpngd.lib wxzlibd.lib wxmsw26_core.lib wxbase26.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib SDL.lib /nologo /subsystem:windows /incremental:no /debug /machine:I386 /nodefaultlib:"libcd" /pdbtype:sept /libpath:"c:\wxWidgets-2.6.0\lib\vc_lib" /libpath:"c:\SDL-1.2.8\lib"
+# ADD LINK32 wxregexd.lib wxjpegd.lib wxtiffd.lib wxpngd.lib wxzlibd.lib wxmsw26_core.lib wxbase26.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib SDL.lib /nologo /subsystem:windows /incremental:no /debug /machine:I386 /nodefaultlib:"libcd" /pdbtype:sept /libpath:"d:\projects\pterm\wxWidgets 2.6.3\lib\vc_lib" /libpath:"d:\projects\pterm\SDL-1.2.11\lib"
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -113,7 +114,7 @@ SOURCE=.\wx\msw\computer.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\console.ICO
+SOURCE=.\console.ico
 # End Source File
 # Begin Source File
 
