@@ -256,7 +256,7 @@ static void rtcIo(void)
             if (caughtUp && rtcCycles > Hz)
                 {
                 printf ("Clock in catch-up mode, %lld cycles behind (%lld microseconds)\n",
-                        rtcCycles, (rtcCycles * 1000000ULL) / Hz);
+                        rtcCycles, (rtcCycles * ULL (1000000)) / Hz);
                 caughtUp = FALSE;
                 }
 #endif  /* DEBUG */
@@ -266,12 +266,12 @@ static void rtcIo(void)
             {
             caughtUp = TRUE;
             }
-        us = (rtcCycles * 1000000ULL) / Hz;
+        us = (rtcCycles * ULL (1000000)) / Hz;
         clock = rtcClock + us;
         
         if (activePpu->id == 0 || !mtr)
             {
-            rtcPrev += (us * Hz) / 1000000ULL;
+            rtcPrev += (us * Hz) / ULL (1000000);
             rtcClock = clock;
             }
         else if (activePpu->id == 0)
@@ -323,7 +323,7 @@ static void rtcDisconnect(void)
 static void rtcInit2(long setMHz)
     {
 #if defined(__x86_64)
-    Hz = 1000000ULL;
+    Hz = ULL (1000000);
 #else
     u64 hz = 0;
 #if defined(_WIN32)
@@ -380,7 +380,7 @@ static void rtcInit2(long setMHz)
         Hz = setMHz * ULL(1000000);
         }
 #endif  /* !__x86_64 */
-    maxDelta = Hz / 1250ULL;   /* 800 microseconds, to keep mtr happy */
+    maxDelta = Hz / ULL (1250);   /* 800 microseconds, to keep mtr happy */
     printf ("using high resolution hardware clock at %lld Hz\n", Hz);
     }
 #endif
