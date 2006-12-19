@@ -17,6 +17,21 @@ return(opl)
 */ **/---   block=01-e ascii              06/03/28. 12.00    source
 */ -------------------------------------------------------------------
 */
+*/ Allow ppt commands without fuss
+*/
+*/ -------------------------------------------------------------------
+*ident pptok
+*deck condc
+*d VCPPT.49,VCPPT.66
+*d VCPPT.68,VCPPT.71
+*deck covlay2
+*d COVLAY2.493
+*d COVLAY2.733,COVLAY2.793
+*/ end covlay2
+*/
+*/ **/---   block=01-e ascii              06/03/28. 12.00    source
+*/ -------------------------------------------------------------------
+*/
 */ make ASCII terminals work if CIU is also present
 */
 */ -------------------------------------------------------------------
