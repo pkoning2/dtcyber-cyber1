@@ -3813,6 +3813,10 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     {
                         TRACEN ("beep");
                         wxBell ();
+                        if (!IsActive())
+                        {
+                            RequestUserAttention(wxUSER_ATTENTION_INFO);
+                        }
                     }
                     break;
                 case 0x7d:
