@@ -222,10 +222,10 @@ protected:
 
         struct
         {
-#ifdef BIGENDIAN
-            Uint8 B, C;
+#if BIGENDIAN
+			Uint8 B, C;
 #else
-            Uint8 C, B;
+			Uint8 C, B;
 #endif
         } reg;
     } BC;
@@ -237,10 +237,10 @@ protected:
 
         struct
         {
-#ifdef BIGENDIAN
-            Uint8 D, E;
+#if BIGENDIAN
+			Uint8 D, E;
 #else
-            Uint8 E, D;
+			Uint8 E, D;
 #endif
         } reg;
     } DE;
@@ -252,10 +252,10 @@ protected:
 
         struct
         {
-#ifdef BIGENDIAN
-            Uint8 H, L;
+#if BIGENDIAN
+			Uint8 H, L;
 #else
-            Uint8 L, H;
+			Uint8 L, H;
 #endif
         } reg;
     } HL;
