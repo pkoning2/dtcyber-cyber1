@@ -39,7 +39,7 @@ global MAILHOST
 MAILHOST = "localhost"
 
 dump_re = re.compile ("^ +[0-7]+ +[0-7]+")
-tprint_re = re.compile (r"note\(printit,nr\)/tprint\.(.+?),(.+?),(.+?),(.+?)$")
+tprint_re = re.compile (r"note\(printit,nr\)/[a-z]+\.(.+?),(.+?),(.+?),(.+?)$")
 mailto_re = re.compile (r"note\(printit,nr\)/\*(.+?)\.$")
 
 def dofile (name):
