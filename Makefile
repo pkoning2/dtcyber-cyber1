@@ -83,7 +83,7 @@ gxdtcyber: $(OBJS)
 clean:
 	rm -rf *.o *.d *.pcf g3 g5 x86 dd60 dtoper pterm pterm*.dmg Pterm.app
 
-blackbox: blackbox.o niu.o charset.o dtnetsubs.o
+blackbox: blackbox.o charset.o dtnetsubs.o
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 else
@@ -93,7 +93,7 @@ else
 dtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
-blackbox: blackbox.o niu.o charset.o dtnetsubs.o
+blackbox: blackbox.o charset.o dtnetsubs.o
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 clean:
