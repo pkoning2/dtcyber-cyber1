@@ -99,6 +99,8 @@
 #define PREF_CONVDOT7   "convDot7"
 #define PREF_CONV8SP    "conv8Sp"
 #define PREF_BROWSER    "Browser"
+#define PREF_EMAIL      "EmailClient"
+#define PREF_SEARCHURL  "SearchURL"
 #define PREF_LASTTAB	"lastTab"
 
 /*
@@ -532,6 +534,8 @@ public:
     bool        m_convDot7;     
     bool        m_conv8Sp;      
 	wxString	m_Browser;      
+	wxString	m_Email;      
+	wxString	m_SearchURL;      
 
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
@@ -644,6 +648,8 @@ public:
     void OnCopyScreen (wxCommandEvent &event);
     void OnCopy (wxCommandEvent &event);
     void OnExec (wxCommandEvent &event);
+    void OnMailTo (wxCommandEvent &event);
+    void OnSearchThis (wxCommandEvent &event);
     void OnPaste (wxCommandEvent &event);
     void OnUpdateUIPaste (wxUpdateUIEvent& event);
     void OnSaveScreen (wxCommandEvent &event);
@@ -934,10 +940,9 @@ public:
 	wxCheckBox* chkConvertDot7;
 	wxCheckBox* chkConvert8Spaces;
 	//tab5
-	wxCheckBox* chkAllowPPT;
-	wxCheckBox* chkAllowMicroTutor;
-	wxCheckBox* chkAllowKermit;
 	wxTextCtrl* txtBrowser;
+	wxTextCtrl* txtEmail;
+	wxTextCtrl* txtSearchURL;
 	//button bar
 	wxButton* btnOK;
 	wxButton* btnCancel;
@@ -970,6 +975,8 @@ public:
     bool            m_conv8Sp;		
 	//tab5
 	wxString		m_Browser;		
+	wxString		m_Email;		
+	wxString		m_SearchURL;		
     
 private:
     void paintBitmap (wxBitmap &bm, wxColour &color);
@@ -1020,6 +1027,8 @@ enum
     Pterm_Timer,        // display pacing
     Pterm_PasteTimer,   // paste key generation pacing
     Pterm_Exec,			// execute URL
+    Pterm_MailTo,		// execute email client
+    Pterm_SearchThis,	// execute search URL
 
     // Menu items with standard ID values
     Pterm_Print = wxID_PRINT,
@@ -1192,6 +1201,8 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
     EVT_MENU(Pterm_Copy, PtermFrame::OnCopy)
     EVT_MENU(Pterm_Exec, PtermFrame::OnExec)	
+    EVT_MENU(Pterm_MailTo, PtermFrame::OnMailTo)	
+    EVT_MENU(Pterm_SearchThis, PtermFrame::OnSearchThis)	
     EVT_MENU(Pterm_Paste, PtermFrame::OnPaste)
     EVT_MENU(Pterm_PastePrint, PtermFrame::OnPaste)
     EVT_UPDATE_UI(Pterm_Paste, PtermFrame::OnUpdateUIPaste)
@@ -1294,6 +1305,8 @@ bool PtermApp::OnInit (void)
     m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);								
 	//tab5
     m_config->Read (wxT (PREF_BROWSER), &m_Browser, wxT(""));								
+    m_config->Read (wxT (PREF_EMAIL), &m_Email, wxT(""));								
+    m_config->Read (wxT (PREF_SEARCHURL), &m_SearchURL, wxT(""));								
 
 
 #if PTERM_MDI
@@ -1487,6 +1500,8 @@ void PtermApp::OnPref (wxCommandEvent&)
 		m_conv8Sp = dlg.m_conv8Sp;		
 		//tab5
 		m_Browser = dlg.m_Browser;		
+		m_Email = dlg.m_Email;		
+		m_SearchURL = dlg.m_SearchURL;		
 		
         //write prefs
 		m_config->Write (wxT (PREF_LASTTAB), dlg.m_lastTab);				
@@ -1516,6 +1531,8 @@ void PtermApp::OnPref (wxCommandEvent&)
         m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);	
         m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);		
         m_config->Write (wxT (PREF_BROWSER), dlg.m_Browser);				
+        m_config->Write (wxT (PREF_EMAIL), dlg.m_Email);				
+        m_config->Write (wxT (PREF_SEARCHURL), dlg.m_SearchURL);				
         m_config->Flush ();
 
     }
@@ -1759,10 +1776,14 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     }
     menuEdit->AppendSeparator ();															
     menuEdit->Append(Pterm_Exec, _("Execute URL") MACACCEL ("\tCtrl-X"), _("Execute URL"));	
+    menuEdit->Append(Pterm_MailTo, _("Mail to...") MACACCEL ("\tCtrl-M"), _("Mail to..."));	
+    menuEdit->Append(Pterm_SearchThis, _("Search this...") MACACCEL ("\tCtrl-G"), _("Search this..."));	// g=google this?
 
     // Copy is initially disabled, until a region is selected
     menuEdit->Enable (Pterm_Copy, false);
     menuEdit->Enable (Pterm_Exec, false);	
+    menuEdit->Enable (Pterm_MailTo, false);	
+    menuEdit->Enable (Pterm_SearchThis, false);	
 
     wxMenu *menuView = new wxMenu;
     
@@ -2282,6 +2303,124 @@ void PtermFrame::OnExec (wxCommandEvent &event)
     else
     {
         wxExecute (ptermApp->m_Browser + wxT (" ") + text.GetText ());
+    }
+
+    wxTheClipboard->Close ();
+}
+
+void PtermFrame::OnMailTo (wxCommandEvent &event)
+{
+	wxString l_Email;
+	wxString l_FixText;
+	wxString newchr;
+	wxString pnt;
+	int cnt;
+
+    m_canvas->OnCopy (event);
+
+    if (!wxTheClipboard->Open ())
+    {
+        wxLogError (_("Can't open clipboard to save email address"));
+
+        return;
+    }
+
+    if (!wxTheClipboard->IsSupported (wxDF_TEXT))
+    {
+        wxLogWarning (_("No text data on clipboard for email address"));
+
+        wxTheClipboard->Close ();
+        return;
+    }
+
+    wxTextDataObject text;
+
+    if (!wxTheClipboard->GetData (text))
+    {
+        wxLogError (_("Can't paste email address data from the clipboard"));
+    }
+    else
+    {
+		for (pnt = text.GetText(), cnt = 0; pnt[cnt]; cnt++)
+		{
+			if (pnt[cnt] == '/')
+				newchr = '@';
+			//fix ' at ' , '(at)', and '[at]'
+			else if (pnt[cnt] == ' ' && pnt[cnt+1] == 'a' && pnt[cnt+2] == 't' && pnt[cnt+3] == ' ')
+				cnt += 3, newchr = '@';
+			else if (pnt[cnt] == '(' && pnt[cnt+1] == 'a' && pnt[cnt+2] == 't' && pnt[cnt+3] == ')')
+				cnt += 3, newchr = '@';
+			else if (pnt[cnt] == '[' && pnt[cnt+1] == 'a' && pnt[cnt+2] == 't' && pnt[cnt+3] == ']')
+				cnt += 3, newchr = '@';
+			//fix ' dot ' , '(dot)', and '[dot]'
+			else if (pnt[cnt] == ' ' && pnt[cnt+1] == 'd' && pnt[cnt+2] == 'o' && pnt[cnt+3] == 't' && pnt[cnt+4] == ' ')
+				cnt += 4, newchr = '.';
+			else if (pnt[cnt] == '(' && pnt[cnt+1] == 'd' && pnt[cnt+2] == 'o' && pnt[cnt+3] == 't' && pnt[cnt+4] == ')')
+				cnt += 4, newchr = '.';
+			else if (pnt[cnt] == '[' && pnt[cnt+1] == 'd' && pnt[cnt+2] == 'o' && pnt[cnt+3] == 't' && pnt[cnt+4] == ']')
+				cnt += 4, newchr = '.';
+			//strip 'nospam'
+			else if (pnt[cnt] == 'n' && pnt[cnt+1] == 'o' && pnt[cnt+2] == 's' && pnt[cnt+3] == 'p' && pnt[cnt+4] == 'a' && pnt[cnt+5] == 'm')
+				cnt += 5, newchr = '*';
+			else
+				newchr = pnt[cnt];
+			if (newchr != '*')
+				l_FixText += newchr;
+		}
+		l_Email.Printf(ptermApp->m_Email,l_FixText);
+        wxExecute ( l_Email );
+    }
+
+    wxTheClipboard->Close ();
+}
+
+void PtermFrame::OnSearchThis (wxCommandEvent &event)
+{
+	wxString l_FixText;
+	wxString newchr;
+	wxString pnt;
+	int cnt;
+
+    m_canvas->OnCopy (event);
+
+    if (!wxTheClipboard->Open ())
+    {
+        wxLogError (_("Can't open clipboard to save search key"));
+
+        return;
+    }
+
+    if (!wxTheClipboard->IsSupported (wxDF_TEXT))
+    {
+        wxLogWarning (_("No text data on clipboard for search"));
+
+        wxTheClipboard->Close ();
+        return;
+    }
+
+    wxTextDataObject text;
+
+    if (!wxTheClipboard->GetData (text))
+    {
+        wxLogError (_("Can't paste search key data from the clipboard"));
+    }
+    else
+    {
+		for (pnt = text.GetText(), cnt = 0; pnt[cnt]; cnt++)
+		{
+			if (pnt[cnt] == ' ' && newchr != '+')
+				newchr = '+';
+			else if (pnt[cnt] >= 'a' && pnt[cnt] <= 'z')
+				newchr = pnt[cnt];
+			else if (pnt[cnt] >= 'A' && pnt[cnt] <= 'Z')
+				newchr = pnt[cnt];
+			else if (pnt[cnt] >= '0' && pnt[cnt] <= '9')
+				newchr = pnt[cnt];
+			else
+				newchr.Printf("%%%02x",pnt[cnt]);
+			l_FixText += newchr;
+		}
+		wxExecute (ptermApp->m_Browser + wxT (" ") + ptermApp->m_SearchURL + l_FixText);
     }
 
     wxTheClipboard->Close ();
@@ -4984,11 +5123,12 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	//tab5
 	wxScrolledWindow* tab5;
 	wxStaticText* lblExplain5;
-//	wxCheckBox* chkAllowPPT;
-//	wxCheckBox* chkAllowMicroTutor;
-//	wxCheckBox* chkAllowKermit;
 	wxStaticText* lblBrowser;
+	wxStaticText* lblEmail;
+	wxStaticText* lblSearchURL;
 //	wxTextCtrl* txtBrowser;
+//	wxTextCtrl* txtEmail;
+//	wxTextCtrl* txtSearchURL;
 	//button  bar
 //	wxButton* btnOK;
 //	wxButton* btnCancel;
@@ -5177,21 +5317,28 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	page5 = new wxFlexGridSizer( 2, 1, 0, 0 );
 	lblExplain5 = new wxStaticText( tab5, wxID_ANY, _("Settings on this page allow you to control local processing."), wxDefaultPosition, wxDefaultSize, 0 );
 	page5->Add( lblExplain5, 0, wxALL, 5 );
-	chkAllowPPT = new wxCheckBox( tab5, wxID_ANY, _("Allow PPT programs to load and execute"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkAllowPPT->Enable( false );
-	page5->Add( chkAllowPPT, 0, wxALL, 5 );
-	chkAllowMicroTutor = new wxCheckBox( tab5, wxID_ANY, _("Allow \xB5TUTOR programs to load and execute"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkAllowMicroTutor->Enable( false );
-	page5->Add( chkAllowMicroTutor, 0, wxALL, 5 );
-	chkAllowKermit = new wxCheckBox( tab5, wxID_ANY, _("Enable Kermit data transfer protocol"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkAllowKermit->Enable( false );
-	page5->Add( chkAllowKermit, 0, wxALL, 5 );
 	lblBrowser = new wxStaticText( tab5, wxID_ANY, _("Specify browser to use for menu option 'Execute URL'"), wxDefaultPosition, wxDefaultSize, 0 );
 	page5->Add( lblBrowser, 0, wxALL|wxALIGN_BOTTOM, 5 );
 	txtBrowser = new wxTextCtrl( tab5, wxID_ANY, wxT(""), wxPoint( -1,-1 ), wxDefaultSize, 0|wxTAB_TRAVERSAL );
 	txtBrowser->SetMaxLength( 255 ); 
 	txtBrowser->SetMinSize( wxSize( 410,-1 ) );
 	page5->Add( txtBrowser, 0, wxALL, 5 );
+
+	lblEmail = new wxStaticText( tab5, wxID_ANY, wxT("Command line for menu option 'Mail to...' (%s=address)"), wxDefaultPosition, wxDefaultSize, 0 );
+	page5->Add( lblEmail, 0, wxALL, 5 );
+	txtEmail = new wxTextCtrl( tab5, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	txtEmail->SetMaxLength( 255 ); 
+	txtEmail->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	txtEmail->SetMinSize( wxSize( 410,-1 ) );
+	page5->Add( txtEmail, 0, wxALL, 5 );
+
+	lblSearchURL = new wxStaticText( tab5, wxID_ANY, wxT("Specify URL for menu option 'Search this...'"), wxDefaultPosition, wxDefaultSize, 0 );
+	page5->Add( lblSearchURL, 0, wxALL, 5 );
+	txtSearchURL = new wxTextCtrl( tab5, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	txtSearchURL->SetMaxLength( 255 ); 
+	txtSearchURL->SetMinSize( wxSize( 410,-1 ) );
+	page5->Add( txtSearchURL, 0, wxALL, 5 );
+	
 	tab5->SetSizer( page5 );
 	tab5->Layout();
 	page5->Fit( tab5 );
@@ -5253,6 +5400,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	m_conv8Sp = ptermApp->m_conv8Sp;
 	//tab5
 	m_Browser = ptermApp->m_Browser;
+	m_Email = ptermApp->m_Email;
+	m_SearchURL = ptermApp->m_SearchURL;
 
 	// set object value properties
 	//tab1
@@ -5282,6 +5431,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	chkConvert8Spaces->SetValue( m_conv8Sp );
 	//tab5
 	txtBrowser->SetValue ( m_Browser );
+	txtEmail->SetValue ( m_Email );
+	txtSearchURL->SetValue ( m_SearchURL );
 	//button bar
 	btnOK->SetDefault ();
 	//set active tab
@@ -5315,6 +5466,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_lineDelay = txtLineDelay->GetLineText (0);	
         m_autoLF = cboAutoLF->GetValue ();				
 		m_Browser = txtBrowser->GetLineText (0);		
+		m_Email = txtEmail->GetLineText (0);		
+		m_SearchURL = txtSearchURL->GetLineText (0);		
 		m_lastTab = tabPrefsDialog->GetSelection ();
         EndModal (wxID_OK);
     }
@@ -5353,6 +5506,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_convDot7 = false;
         m_conv8Sp = false;
 		m_Browser = wxT("");
+		m_Email = wxT("");
+		m_SearchURL = wxT("");
 
 		//reset object values
 		//tab1
@@ -5380,6 +5535,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		chkConvert8Spaces->SetValue ( m_conv8Sp );
 		//tab5
 		txtBrowser->SetValue ( m_Browser );
+		txtEmail->SetValue ( m_Email );
+		txtSearchURL->SetValue ( m_SearchURL );
     }
     Refresh ();
 }
@@ -6633,6 +6790,8 @@ void PtermCanvas::ClearRegion (void)
 		m_regionWidth = 0;
 		m_owner->GetMenuBar ()->Enable (Pterm_Copy, false);
 		m_owner->GetMenuBar ()->Enable (Pterm_Exec, false);	
+		m_owner->GetMenuBar ()->Enable (Pterm_MailTo, false);	
+		m_owner->GetMenuBar ()->Enable (Pterm_SearchThis, false);	
 		Refresh (false);
 	}
 }
@@ -6658,7 +6817,7 @@ void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
 
 void PtermCanvas::OnMouseContextMenu (wxMouseEvent &event)
 {
-	ptermApp->m_firstFrame->PopupMenu ( ptermApp->m_firstFrame->menuEdit );
+	m_owner->PopupMenu ( m_owner->menuEdit );
 }
 
 void PtermCanvas::OnMouseUp (wxMouseEvent &event)
@@ -6734,6 +6893,10 @@ void PtermCanvas::UpdateRegion (wxMouseEvent &event)
         m_owner->GetMenuBar ()->Enable (Pterm_Copy, 
                                         (m_regionWidth > 0));
         m_owner->GetMenuBar ()->Enable (Pterm_Exec, 
+                                        (m_regionWidth > 0)); 
+        m_owner->GetMenuBar ()->Enable (Pterm_MailTo, 
+                                        (m_regionWidth > 0)); 
+        m_owner->GetMenuBar ()->Enable (Pterm_SearchThis, 
                                         (m_regionWidth > 0)); 
 #ifdef DEBUG
         printf ("region %d %d size %d %d\n", m_regionX, m_regionY,
