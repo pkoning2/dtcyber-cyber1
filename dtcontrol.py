@@ -399,7 +399,7 @@ class Pterm (Connection, threading.Thread):
         else:
             cx = self.x // 8
             # line 0 is the top line
-            cy = 32 - (self.y // 16)
+            cy = 31 - (self.y // 16)
             if self.wemode & 1:
                 # mode write or rewrite
                 self.arrow = self.mem == 0 and c == 076
