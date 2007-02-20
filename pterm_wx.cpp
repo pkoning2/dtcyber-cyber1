@@ -2344,30 +2344,30 @@ void PtermFrame::OnMailTo (wxCommandEvent &event)
 		for (pnt = text.GetText(), cnt = 0; pnt[cnt]; cnt++)
 		{
 			if (pnt[cnt] == '/')
-				newchr = '@';
+				newchr = wxChar ('@');
 			//fix ' at ' , '(at)', and '[at]'
 			else if (pnt[cnt] == ' ' && pnt[cnt+1] == 'a' && pnt[cnt+2] == 't' && pnt[cnt+3] == ' ')
-				cnt += 3, newchr = '@';
+				cnt += 3, newchr = wxChar ('@');
 			else if (pnt[cnt] == '(' && pnt[cnt+1] == 'a' && pnt[cnt+2] == 't' && pnt[cnt+3] == ')')
-				cnt += 3, newchr = '@';
+				cnt += 3, newchr = wxChar ('@');
 			else if (pnt[cnt] == '[' && pnt[cnt+1] == 'a' && pnt[cnt+2] == 't' && pnt[cnt+3] == ']')
-				cnt += 3, newchr = '@';
+				cnt += 3, newchr = wxChar ('@');
 			//fix ' dot ' , '(dot)', and '[dot]'
 			else if (pnt[cnt] == ' ' && pnt[cnt+1] == 'd' && pnt[cnt+2] == 'o' && pnt[cnt+3] == 't' && pnt[cnt+4] == ' ')
-				cnt += 4, newchr = '.';
+				cnt += 4, newchr = wxChar ('.');
 			else if (pnt[cnt] == '(' && pnt[cnt+1] == 'd' && pnt[cnt+2] == 'o' && pnt[cnt+3] == 't' && pnt[cnt+4] == ')')
-				cnt += 4, newchr = '.';
+				cnt += 4, newchr = wxChar ('.');
 			else if (pnt[cnt] == '[' && pnt[cnt+1] == 'd' && pnt[cnt+2] == 'o' && pnt[cnt+3] == 't' && pnt[cnt+4] == ']')
-				cnt += 4, newchr = '.';
+				cnt += 4, newchr = wxChar ('.');
 			//strip 'nospam'
 			else if (pnt[cnt] == 'n' && pnt[cnt+1] == 'o' && pnt[cnt+2] == 's' && pnt[cnt+3] == 'p' && pnt[cnt+4] == 'a' && pnt[cnt+5] == 'm')
-				cnt += 5, newchr = '*';
+				cnt += 5, newchr = wxChar ('*');
 			else
 				newchr = pnt[cnt];
 			if (newchr != '*')
 				l_FixText += newchr;
 		}
-		l_Email.Printf(ptermApp->m_Email,l_FixText);
+		l_Email.Printf(ptermApp->m_Email,l_FixText.c_str ());
         wxExecute ( l_Email );
     }
 
@@ -2409,7 +2409,7 @@ void PtermFrame::OnSearchThis (wxCommandEvent &event)
 		for (pnt = text.GetText(), cnt = 0; pnt[cnt]; cnt++)
 		{
 			if (pnt[cnt] == ' ' && newchr != '+')
-				newchr = '+';
+				newchr = wxChar ('+');
 			else if (pnt[cnt] >= 'a' && pnt[cnt] <= 'z')
 				newchr = pnt[cnt];
 			else if (pnt[cnt] >= 'A' && pnt[cnt] <= 'Z')
@@ -2417,7 +2417,7 @@ void PtermFrame::OnSearchThis (wxCommandEvent &event)
 			else if (pnt[cnt] >= '0' && pnt[cnt] <= '9')
 				newchr = pnt[cnt];
 			else
-				newchr.Printf("%%%02x",pnt[cnt]);
+				newchr.Printf(wxT ("%%%02x"),pnt[cnt]);
 			l_FixText += newchr;
 		}
 		wxExecute (ptermApp->m_Browser + wxT (" ") + ptermApp->m_SearchURL + l_FixText);
