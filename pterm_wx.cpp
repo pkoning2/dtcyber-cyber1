@@ -1933,7 +1933,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
         */
         word = m_conn->NextWord ();
         
-        if (word == C_NODATA)
+		if (word == C_NODATA)
         {
             event.Skip ();
             break;
@@ -5984,6 +5984,7 @@ int PtermConnection::NextWord (void)
 {
     int next, word;
     int delay = 0;
+    wxString msg;
 
     if (m_gswActive)
     {
@@ -6072,20 +6073,12 @@ int PtermConnection::NextWord (void)
     
     if (word == C_CONNFAIL || word == C_DISCONNECT)
     {
-        wxString msg;
-            
         m_owner->m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
 
         if (word == C_CONNFAIL)
-        {
-            msg.Printf (_("Failed to connect to %s %d\n\nTry another connection?"),
-                        m_hostName.c_str (), m_port);
-        }
+            msg.Printf (_("Failed to connect to %s %d\n\nTry another connection?"), m_hostName.c_str (), m_port);
         else
-        {
-            msg.Printf (_("Connection lost to %s %d\n\nTry another connection?"),
-                        m_hostName.c_str (), m_port);
-        }
+            msg.Printf (_("Connection lost to %s %d\n\nTry another connection?"), m_hostName.c_str (), m_port);
             
 	    wxMessageDialog alert (m_owner, msg, wxString (_("Alert")), wxYES_NO|wxCANCEL);
 		switch (alert.ShowModal ())
