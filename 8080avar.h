@@ -38,6 +38,40 @@ Contents:
 #define __8080AVAR_H__
 
 
+/* This endian stuff is lifted from SDL_byteorder.h.  It's here rather
+ * than handled by #include because newer versions of SDL bring in too
+ * much extraneous stuff. 
+ */
+
+/* The two types of endianness */
+#define SDL_LIL_ENDIAN	1234
+#define SDL_BIG_ENDIAN	4321
+
+
+#ifdef __linux__
+#include <endian.h>
+#define SDL_BYTEORDER __BYTE_ORDER
+#else
+
+/* Pardon the mess, I'm trying to determine the endianness of this host.
+   I'm doing it by preprocessor defines rather than some sort of configure
+   script so that application code can use this too.  The "right" way would
+   be to dynamically generate this file on install, but that's a lot of work.
+ */
+#if (defined(__i386__) || defined(__i386)) || \
+     defined(__ia64__) || defined(WIN32) || \
+    (defined(__alpha__) || defined(__alpha)) || \
+     defined(__arm__) || \
+    (defined(__mips__) && defined(__MIPSEL__)) || \
+     defined(__SYMBIAN32__) || \
+     defined(__x86_64__) || \
+     defined(__LITTLE_ENDIAN__)
+#define SDL_BYTEORDER	SDL_LIL_ENDIAN
+#else
+#define SDL_BYTEORDER	SDL_BIG_ENDIAN
+#endif
+
+#endif /* __linux __ */
 
 
 /*******************************************************************************
