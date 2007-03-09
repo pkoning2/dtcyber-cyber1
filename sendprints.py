@@ -75,8 +75,11 @@ def dofile (name):
                 account = tm.group (2)
                 user = tm.group (4)
                 group = tm.group (3)
+                notify = False
                 line = tail.next ()
-                if line.find ("*** mail to ***") == -1:
+                if line.find ("*** pnotify ***") != -1:
+                    notify = True
+                elif line.find ("*** mail to ***") == -1:
                     print "mail to section not found when expected in", name
                     os.rename (name, os.path.join ("printed", name))
                     return
@@ -92,24 +95,37 @@ def dofile (name):
                     os.rename (name, os.path.join ("printed", name))
                     return
                 msg = email.Message.Message ()
-                msg.add_header ("From", "\"Cyber1 printout server\" <postmaster@cyberserv.org>")
+                if notify:
+                    msg.add_header ("From", "\"Cyber1\" <postmaster@cyberserv.org>")
+                else:
+                    msg.add_header ("From", "\"Cyber1 printout server\" <postmaster@cyberserv.org>")
                 msg.add_header ("To", mailto)
                 msg.add_header ("Reply-To", mailto)
-                msg.add_header ("Subject", "Cyber1 lesson printout")
-                msg.add_header ("MIME-Version", "1.0")
-                msg.add_header ("Content-Type", "multipart/mixed")
-                desc = email.MIMEText.MIMEText ("This is a Cyber1 lesson printout of lesson %s, requested by %s of %s" % (lesson, user, group))
-                desc.add_header ("Content-Description", "message body text")
-                printout = email.MIMEText.MIMEText ("".join (text))
-                printout.add_header ("Content-Description",
+                if notify:
+                    msg.add_header ("Subject", "New Personal Notes")
+                else:
+                    msg.add_header ("Subject", "Cyber1 lesson printout")
+                    msg.add_header ("MIME-Version", "1.0")
+                    msg.add_header ("Content-Type", "multipart/mixed")
+                if notify :
+                    desc = "New Personal Note from %s of %s on Cyber1" % (user, group)
+                    msg.set_payload (desc)
+                else:
+                    desc = email.MIMEText.MIMEText ("This is a Cyber1 lesson printout of lesson %s, requested by %s of %s" % (lesson, user, group))
+                    desc.add_header ("Content-Description", "message body text")
+                    printout = email.MIMEText.MIMEText ("".join (text))
+                    printout.add_header ("Content-Description",
                                      "printout of %s" % lesson)
-                printout.add_header ("Content-Disposition", "inline",
+                    printout.add_header ("Content-Disposition", "inline",
                                      filename = lesson)
-                msg.set_payload ([ desc, printout])
+                    msg.set_payload ([ desc, printout])
                 s = smtplib.SMTP (MAILHOST)
                 s.sendmail ("postmaster@cyberserv.org", [ mailto ], msg.as_string ())
-                print name, "lesson", lesson, "sent to", mailto
-                os.rename (name, os.path.join ("sent", name))
+                if not notify:
+                    print name, "lesson", lesson, "sent to", mailto
+                    os.rename (name, os.path.join ("sent", name))
+                else:
+                    os.remove (name)
                 break
     except StopIteration:
         print "no mail to section found in", name
