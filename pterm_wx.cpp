@@ -4792,6 +4792,15 @@ int PtermFrame::check_pc8080a (void)
 {
     int x, y, cp, c, x2, y2;
     
+    if (PC < WORKRAM)
+    {
+        if (tracePterm)
+        {
+            fprintf (traceF, "Resident call %04x DE=%04x HL=%04x\n", 
+                     PC, DE.pair, HL.pair);
+        }
+    }
+    
     switch (PC)
     {
     case R_MAIN:
