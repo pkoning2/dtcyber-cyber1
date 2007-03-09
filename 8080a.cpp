@@ -2335,7 +2335,8 @@ void emul8080::main8080a (void)
 	* BC.  PC is incremented by 2.
 	***********************************************************************/
 			case LXIBnn:
-				BC.pair = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                BC.reg.B = ReadRAM(PC + 1);
+                BC.reg.C = ReadRAM(PC);
 
 				PC += 2;
 				break;
@@ -2347,7 +2348,8 @@ void emul8080::main8080a (void)
 	* DE.  PC is incremented by 2.
 	***********************************************************************/
 			case LXIDnn:
-				DE.pair = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                DE.reg.D = ReadRAM(PC + 1);
+                DE.reg.E = ReadRAM(PC);
 
 				PC += 2; 
 				break;
@@ -2359,7 +2361,8 @@ void emul8080::main8080a (void)
 	* HL.  PC is incremented by 2.
 	***********************************************************************/
 			case LXIHnn:
-				HL.pair = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                HL.reg.H = ReadRAM(PC + 1);
+                HL.reg.L = ReadRAM(PC);
 
 				PC += 2; 
 				break;
