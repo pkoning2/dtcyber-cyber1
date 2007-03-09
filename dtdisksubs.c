@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/file.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #if defined(_WIN32)
@@ -36,6 +35,7 @@
 #define O_CREAT _O_CREAT
 #define O_RDONLY _O_RDONLY
 #else
+#include <sys/file.h>
 #include <unistd.h>
 #endif
 #include <errno.h>
