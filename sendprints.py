@@ -26,7 +26,11 @@ user name on the burst page.
    p. koning.    2005.09.30.     send printout as attachment.
    p. koning.    2006.09.14.     converted to Python.
                                  use real MIME machinery.
+   p. resch.     2007.09.03.     pnote notification.
+   p. resch,
+   p. koning     2007.03.15.     assorted other notification types.
 """
+
 import sys
 import os
 import time
@@ -39,8 +43,18 @@ global MAILHOST
 MAILHOST = "localhost"
 
 dump_re = re.compile ("^ +[0-7]+ +[0-7]+")
-tprint_re = re.compile (r"note\(printit,nr\)/[a-z]+\.(.+?),(.+?),(.+?),(.+?)$")
+tprint_re = re.compile (r"note\(printit,nr\)/[a-z]+\.(?P<lesson>.+?),(?P<account>.+?),(?P<group>.+?),(?P<user>.+?)$")
 mailto_re = re.compile (r"note\(printit,nr\)/\*(.+?)\.$")
+notify_re = re.compile (r"\*\*\* (.notify) \*\*\*")
+
+subjects = { "pnotify": "New Cyber1 Personal Note",
+             "cnotify": "Cyber1 TERM-consult request",
+             "onotify": "Cyber1 TERM-operator request",
+             "nnotify": "New Cyber1 Notes" }
+descriptions = { "pnotify": "%(lesson)s / %(account)s has a new Personal Note from %(user)s / %(group)s on Cyber1.",
+                 "cnotify": "%(user)s / %(group)s requests a consultant on Cyber1.",
+                 "onotify": "%(user)s / %(group)s requests an operator on Cyber1.",
+                 "nnotify": "New notes in sequencer notesfiles list of %(lesson)s / %(account)s on Cyber1." }
 
 def dofile (name):
     """Process a single file.  The file name (within the current
@@ -71,14 +85,20 @@ def dofile (name):
             line = tail.next ()
             tm = tprint_re.search (line)
             if tm:
-                lesson = tm.group (1)
-                account = tm.group (2)
-                user = tm.group (4)
-                group = tm.group (3)
+                params = tm.groupdict ()
                 notify = False
                 line = tail.next ()
-                if line.find ("*** pnotify ***") != -1:
+                m = notify_re.search (line)
+                if m:
                     notify = True
+                    action = m.group (1)
+                    try:
+                        subject = subjects[action]
+                        desc = descriptions[action]
+                    except KeyError:
+                        print "Unrecognized notification type %s in %s" % (action, name)
+                        os.rename (name, os.path.join ("misc", name))
+                        return
                 elif line.find ("*** mail to ***") == -1:
                     print "mail to section not found when expected in", name
                     os.rename (name, os.path.join ("printed", name))
@@ -102,18 +122,16 @@ def dofile (name):
                 msg.add_header ("To", mailto)
                 msg.add_header ("Reply-To", mailto)
                 if notify:
-                    msg.add_header ("Subject", "New Personal Notes")
+                    msg.add_header ("Subject", subject)
+                    msg.set_payload (desc % params)
                 else:
                     msg.add_header ("Subject", "Cyber1 lesson printout")
                     msg.add_header ("MIME-Version", "1.0")
                     msg.add_header ("Content-Type", "multipart/mixed")
-                if notify :
-                    desc = "New Personal Note from %s of %s on Cyber1" % (user, group)
-                    msg.set_payload (desc)
-                else:
-                    desc = email.MIMEText.MIMEText ("This is a Cyber1 lesson printout of lesson %s, requested by %s of %s" % (lesson, user, group))
+                    desc = email.MIMEText.MIMEText ("This is a Cyber1 lesson printout of lesson %(lesson)s, requested by %(user)s of %(group)s" % params)
                     desc.add_header ("Content-Description", "message body text")
                     printout = email.MIMEText.MIMEText ("".join (text))
+                    lesson = params["lesson"]
                     printout.add_header ("Content-Description",
                                      "printout of %s" % lesson)
                     printout.add_header ("Content-Disposition", "inline",
@@ -121,11 +139,11 @@ def dofile (name):
                     msg.set_payload ([ desc, printout])
                 s = smtplib.SMTP (MAILHOST)
                 s.sendmail ("postmaster@cyberserv.org", [ mailto ], msg.as_string ())
-                if not notify:
+                if notify:
+                    os.remove (name)
+                else:
                     print name, "lesson", lesson, "sent to", mailto
                     os.rename (name, os.path.join ("sent", name))
-                else:
-                    os.remove (name)
                 break
     except StopIteration:
         print "no mail to section found in", name
