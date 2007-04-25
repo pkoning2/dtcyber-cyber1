@@ -1018,8 +1018,8 @@ public:
 	//properties	
 	int				m_lastTab;
 	//tab0
-	//tab1
 	wxString		m_curProfile;
+	//tab1
     bool            m_connect;
     wxString        m_host;
     wxString        m_port;
@@ -6295,6 +6295,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		m_curProfile = profile;
 		if (SaveProfile(profile))
 		{
+			ptermApp->LoadProfile(profile,wxT(""));
 			SetControlState();
 			lblProfileStatusMessage->SetLabel(_("Profile saved."));
 		}
@@ -6347,6 +6348,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 			{
 				ptermApp->m_curProfile = profile;
 				m_curProfile = profile;
+				ptermApp->LoadProfile(profile,wxT(""));
 				SetControlState();
 				lblProfileStatusMessage->SetLabel(_("Profile added."));
 			}

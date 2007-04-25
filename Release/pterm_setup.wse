@@ -27,10 +27,12 @@ item: Global
   FTP Cluster Size=20
   Per-User Version ID=1
   Dialogs Version=7
-  Version File=4.0.6
+  Version File=%_APPVER_%
+  Version Copyright=Copyright (c) 2004-2007, Paul Koning
+  Version Company=Cyber1.org
   Crystal Format=10111100101100000010001001001001
   Crystal Destination=00000000000000000000000000001011
-  Step View=&Properties
+  Step View=&All
   Variable Name1=_SYS_
   Variable Default1=C:\WINDOWS\system32
   Variable Flags1=00001000
@@ -59,7 +61,7 @@ item: Set Variable
 end
 item: Set Variable
   Variable=MAINDIR
-  Value=C:\PTerm
+  Value=PTerm
   Flags=00001100
 end
 item: Set Variable
@@ -184,10 +186,6 @@ item: Custom Dialog Set
       Text=It is strongly recommended that you exit all Windows programs before running this Setup Program.
       Text=
       Text=Click Cancel to quit Setup and close any programs you have running.  Click Next to continue with the Setup program.
-      Text=
-      Text=WARNING: This program is protected by copyright law and international treaties.
-      Text=
-      Text=Unauthorized reproduction or distribution of this program, or any portion of it, may result in severe civil and criminal penalties, and will be prosecuted to the maximum extent possible under law.
       Text French=Il vous est fortement recommandé de fermer tous les programmes Windows avant d'exécuter le Programme d'Installation.
       Text French=
       Text French=Cliquez sur Annuler pour quitter l'Installation et fermez tous les programmes actuellement utilisés. Cliquez sur Suivant pour continuer l'installation.
