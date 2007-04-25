@@ -61,7 +61,7 @@ item: Set Variable
 end
 item: Set Variable
   Variable=MAINDIR
-  Value=PTerm
+  Value=C:\PTerm
   Flags=00001100
 end
 item: Set Variable
@@ -1008,7 +1008,8 @@ item: Edit Registry
   end
   item: Key
     Key=PTerm.Document\shell\open\command
-    New Value=%MAINDIR%\PTerm.EXE %%1
+    New Value=%MAINDIR%\PTerm.EXE "%%1"
+    New Value=
   end
 end
 remarked item: Edit Registry
