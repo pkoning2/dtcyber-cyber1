@@ -917,57 +917,57 @@ item: Include Script
   Pathname=%_WISE_%\INCLUDE\uninstal.wse
 end
 item: Install File
-  Source=C:\PTerm\PTerm.EXE
+  Source=D:\Projects\PTerm\DtCyber\Release\PTerm.EXE
   Destination=%MAINDIR%\PTerm.EXE
   Flags=0000000010000010
 end
 item: Install File
-  Source=C:\PTerm\PTerm.EXE.manifest
+  Source=D:\Projects\PTerm\DtCyber\Release\PTerm.EXE.manifest
   Destination=%MAINDIR%\PTerm.EXE.manifest
   Flags=0000000000000010
 end
 item: Install File
-  Source=C:\PTerm\SDL.DLL
+  Source=D:\Projects\PTerm\DtCyber\Release\SDL.DLL
   Destination=%MAINDIR%\SDL.DLL
   Flags=0000000010000010
 end
 item: Install File
-  Source=C:\PTerm\Cyber1 - Classic Terminal.ppf
+  Source=D:\Projects\PTerm\DtCyber\Release\Cyber1 - Classic Terminal.ppf
   Destination=%MAINDIR%\Cyber1 - Classic Terminal.ppf
   Flags=0000000000001010
 end
 item: Install File
-  Source=C:\PTerm\Cyber1 - Color Terminal.ppf
+  Source=D:\Projects\PTerm\DtCyber\Release\Cyber1 - Color Terminal.ppf
   Destination=%MAINDIR%\Cyber1 - Color Terminal.ppf
   Flags=0000000000001010
 end
 item: Install File
-  Source=C:\PTerm\Plato.TTF
+  Source=D:\Projects\PTerm\DtCyber\Release\Plato.TTF
   Destination=%MAINDIR%\Plato.TTF
   Flags=0000000000001010
 end
 item: Install File
-  Source=C:\PTerm\PlatoAscii.TTF
+  Source=D:\Projects\PTerm\DtCyber\Release\PlatoAscii.TTF
   Destination=%MAINDIR%\PlatoAscii.TTF
   Flags=0000000000001010
 end
 item: Install File
-  Source=C:\PTerm\PlatoBold.TTF
+  Source=D:\Projects\PTerm\DtCyber\Release\PlatoBold.TTF
   Destination=%MAINDIR%\PlatoBold.TTF
   Flags=0000000000001010
 end
 item: Install File
-  Source=C:\PTerm\PlatoMicro.TTF
+  Source=D:\Projects\PTerm\DtCyber\Release\PlatoMicro.TTF
   Destination=%MAINDIR%\PlatoMicro.TTF
   Flags=0000000000001010
 end
 item: Install File
-  Source=C:\PTerm\PlatoNative.TTF
+  Source=D:\Projects\PTerm\DtCyber\Release\PlatoNative.TTF
   Destination=%MAINDIR%\PlatoNative.TTF
   Flags=0000000000001010
 end
 item: Install File
-  Source=C:\PTerm\PTerm.ICO
+  Source=D:\Projects\PTerm\DtCyber\Release\PTerm.ICO
   Destination=%MAINDIR%\Pterm.ICO
   Flags=0000000000001010
 end
@@ -1227,17 +1227,4 @@ item: Remark
 end
 item: Include Script
   Pathname=%_WISE_%\INCLUDE\rollback.wse
-end
-item: New Event
-  Name=Cancel
-end
-item: Install File
-  Source=C:\PTerm\pterm.ICO
-  Destination=%MAINDIR%\pterm.ICO
-  Flags=0000000000001010
-end
-item: Install File
-  Source=C:\PTerm\pterm.ICO
-  Destination=%MAINDIR%\pterm.ICO
-  Flags=0000000000001010
 end

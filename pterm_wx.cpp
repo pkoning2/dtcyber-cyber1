@@ -1751,9 +1751,9 @@ void PtermApp::OnPref (wxCommandEvent&)
 		//get prefs
 		m_lastTab = dlg.m_lastTab;
         //tab0
+        m_curProfile = dlg.m_curProfile;
 		//tab1
         m_connect = dlg.m_connect;
-        m_curProfile = dlg.m_curProfile;
         m_hostName = dlg.m_host;
         m_port = atoi (wxString (dlg.m_port).mb_str ());
         //tab2
@@ -1787,40 +1787,44 @@ void PtermApp::OnPref (wxCommandEvent&)
 		m_SearchURL = dlg.m_SearchURL;
 
         //write prefs
+		//tab0
 		m_config->Write (wxT (PREF_LASTTAB), dlg.m_lastTab);
-        rgb.Printf (wxT ("%d %d %d"), 
-                    dlg.m_fgColor.Red (), dlg.m_fgColor.Green (),
-                    dlg.m_fgColor.Blue ());
-        m_config->Write (wxT (PREF_FOREGROUND), rgb);
-        rgb.Printf (wxT ("%d %d %d"),
-                    dlg.m_bgColor.Red (), dlg.m_bgColor.Green (),
-                    dlg.m_bgColor.Blue ());
-        m_config->Write (wxT (PREF_BACKGROUND), rgb);
-        m_config->Write (wxT (PREF_SCALE2), (dlg.m_scale2) ? 2 : 1);
+		m_config->Write (wxT (PREF_CURPROFILE), dlg.m_curProfile);
+		//tab1
+        m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
         m_config->Write (wxT (PREF_HOST), dlg.m_host);
         m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port.mb_str ()));
+		//tab2
+        m_config->Write (wxT (PREF_SHOWSIGNON), (dlg.m_showSignon) ? 1 : 0);
+        m_config->Write (wxT (PREF_SHOWSYSNAME), (dlg.m_showSysName) ? 1 : 0);
+        m_config->Write (wxT (PREF_SHOWHOST), (dlg.m_showHost) ? 1 : 0);
+        m_config->Write (wxT (PREF_SHOWSTATION), (dlg.m_showStation) ? 1 : 0);
+		//tab3
         m_config->Write (wxT (PREF_1200BAUD), (dlg.m_classicSpeed) ? 1 : 0);
-        m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
         m_config->Write (wxT (PREF_GSW), (dlg.m_gswEnable) ? 1 : 0);
         m_config->Write (wxT (PREF_ARROWS), (dlg.m_numpadArrows) ? 1 : 0);
-        m_config->Write (wxT (PREF_STATUSBAR), (dlg.m_showStatusBar) ? 1 : 0);
         m_config->Write (wxT (PREF_PLATOKB), (dlg.m_platoKb) ? 1 : 0);
         m_config->Write (wxT (PREF_ACCEL), (dlg.m_useAccel) ? 1 : 0);
         m_config->Write (wxT (PREF_BEEP), (dlg.m_beepEnable) ? 1 : 0);
+		//tab4
+        m_config->Write (wxT (PREF_SCALE2), (dlg.m_scale2) ? 2 : 1);
+        m_config->Write (wxT (PREF_STATUSBAR), (dlg.m_showStatusBar) ? 1 : 0);
         m_config->Write (wxT (PREF_NOCOLOR), (dlg.m_noColor) ? 1 : 0);
+        rgb.Printf (wxT ("%d %d %d"), dlg.m_fgColor.Red (), dlg.m_fgColor.Green (), dlg.m_fgColor.Blue ());
+        m_config->Write (wxT (PREF_FOREGROUND), rgb);
+        rgb.Printf (wxT ("%d %d %d"), dlg.m_bgColor.Red (), dlg.m_bgColor.Green (), dlg.m_bgColor.Blue ());
+        m_config->Write (wxT (PREF_BACKGROUND), rgb);
+		//tab5
         m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay.mb_str ()));
         m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay.mb_str ()));
         m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF.mb_str ()));
         m_config->Write (wxT (PREF_SPLITWORDS), (dlg.m_splitWords) ? 1 : 0);
         m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);
         m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);
+		//tab6
         m_config->Write (wxT (PREF_BROWSER), dlg.m_Browser);
         m_config->Write (wxT (PREF_EMAIL), dlg.m_Email);
         m_config->Write (wxT (PREF_SEARCHURL), dlg.m_SearchURL);
-        m_config->Write (wxT (PREF_SHOWSIGNON), (dlg.m_showSignon) ? 1 : 0);
-        m_config->Write (wxT (PREF_SHOWSYSNAME), (dlg.m_showSysName) ? 1 : 0);
-        m_config->Write (wxT (PREF_SHOWHOST), (dlg.m_showHost) ? 1 : 0);
-        m_config->Write (wxT (PREF_SHOWSTATION), (dlg.m_showStation) ? 1 : 0);
         m_config->Flush ();
 
     }

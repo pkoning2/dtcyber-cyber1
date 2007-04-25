@@ -37,6 +37,86 @@
 #endif
 
 /*
+**  -----------------------
+**  Private Macro Functions
+**  -----------------------
+*/
+#define TRACEN(str)                                             \
+    if (tracePterm)                                             \
+        {                                                       \
+        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc);  \
+        }
+
+#define TRACE(str, arg)                                             \
+    if (tracePterm)                                                 \
+        {                                                           \
+        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg); \
+        }
+
+#define TRACE2(str, arg, arg2)                                          \
+    if (tracePterm)                                                     \
+        {                                                               \
+        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg, arg2); \
+        }
+
+#define TRACE3(str, arg, arg2, arg3)                                    \
+    if (tracePterm)                                                     \
+        {                                                               \
+        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg, arg2, arg3); \
+        }
+
+#define TRACE4(str, a, a2, a3, a4)                                      \
+    if (tracePterm)                                                     \
+        {                                                               \
+        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, a, a2, a3, a4); \
+        }
+
+#define TRACE6(str, a, a2, a3, a4, a5, a6)                              \
+    if (tracePterm)                                                     \
+        {                                                               \
+        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, a, a2, a3, a4, a5, a6); \
+        }
+
+#define DTTRACE(str)                                            \
+    if (tracePterm)                                             \
+        {                                                       \
+        fprintf (traceF, str "\n");                             \
+        }
+
+#define DTTRACE1(str, arg)                                      \
+    if (tracePterm)                                             \
+        {                                                       \
+        fprintf (traceF, str "\n", arg);                        \
+        }
+
+#define DTTRACE2(str, arg, arg2)                                \
+    if (tracePterm)                                             \
+        {                                                       \
+        fprintf (traceF, str "\n", arg, arg2);                  \
+        }
+
+#define DTTRACE3(str, arg, arg2, arg3)                          \
+    if (tracePterm)                                             \
+        {                                                       \
+        fprintf (traceF, str "\n", arg, arg2, arg3);            \
+        }
+
+#define DTTRACE4(str, a, a2, a3, a4)                            \
+    if (tracePterm)                                             \
+        {                                                       \
+        fprintf (traceF, str "\n", a, a2, a3, a4);              \
+        } 
+
+#define DTTRACE6(str, a, a2, a3, a4, a5, a6)                    \
+    if (tracePterm)                                             \
+        {                                                       \
+        fprintf (traceF,str "\n", a, a2, a3, a4, a5, a6);       \
+        }
+
+static FILE *traceF;
+static char traceFn[20];
+
+/*
 **  -----------------
 **  Private Constants
 **  -----------------
@@ -48,8 +128,8 @@
 **  -----------------------
 */
 
-#define locDtFetData(fet) \
-    ((in >= out) ? in - out                     \
+#define locDtFetData(fet)                                       \
+    ((in >= out) ? in - out                                     \
      : (fet)->end - out + in - (fet)->first)
 
 /*

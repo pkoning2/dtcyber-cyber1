@@ -89,11 +89,23 @@ SOURCE=charset.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\console.ico
+# End Source File
+# Begin Source File
+
 SOURCE=dd60.c
 # End Source File
 # Begin Source File
 
 SOURCE=dtnetsubs.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\fonts.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\small.ico
 # End Source File
 # Begin Source File
 
