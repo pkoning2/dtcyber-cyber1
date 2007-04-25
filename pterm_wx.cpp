@@ -1682,7 +1682,7 @@ wxString PtermApp::ProfileFileName(wxString profile)
 {
 	wxString filename;
 	filename = wxGetCwd();
-	if (filename.Right(1)!="/" && filename.Right(1)!="\\")
+	if (filename.Right(1) != wxT ("/") && filename.Right(1) != wxT ("\\"))
 	{
 		#if defined(_WIN32)
 			filename.Append(wxT("\\"));
@@ -3682,7 +3682,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             n = AssembleAsciiPlatoMetaData (d);
             if (n == 0)
             {
-                TRACE ("plato meta data complete: %s", m_PMD);
+                TRACE ("plato meta data complete: %s", m_PMD.c_str ());
 				SetTitleFromPlatoMetaData();
 				m_PMD = wxT("");
             }
@@ -4667,19 +4667,19 @@ void PtermFrame::SetTitleFromPlatoMetaData ()
 	l_str = wxT("");
 	if (ptermApp->m_showSignon)
 	{
-		l_str.Printf(wxT("%s/%s"),l_name,l_group);
+		l_str.Printf(wxT("%s/%s"), l_name.c_str (), l_group.c_str ());
 	}
 	if (ptermApp->m_showSysName)
 	{
-		l_str.Printf(wxT("%s/%s"),l_str,l_system);
+		l_str.Printf(wxT("%s/%s"), l_str.c_str (), l_system.c_str ());
 	}
 	if (ptermApp->m_showHost)
 	{
-		l_str.Printf(wxT("%s %s"),l_str,m_hostName);
+		l_str.Printf(wxT("%s %s"), l_str.c_str (), m_hostName.c_str ());
 	}
 	if (ptermApp->m_showStation)
 	{
-		l_str.Printf(wxT("%s (%s)"),l_str,l_station);
+		l_str.Printf(wxT("%s (%s)"), l_str.c_str (), l_station.c_str ());
 	}
 	l_str.Trim(true);
 	l_str.Trim(false);
@@ -5304,16 +5304,16 @@ void PtermFrame::ptermSetStation (int station)
 	l_str = wxT("");
 	if (ptermApp->m_showHost)
 	{
-		l_str.Printf(wxT("%s "),l_hostname.c_str());
+		l_str.Printf(wxT("%s "), l_hostname.c_str());
 	}
 	if (ptermApp->m_showStation)
 	{
-		l_str.Printf(wxT("%s%s"),l_str,l_station.c_str());
+		l_str.Printf(wxT("%s%s"), l_str.c_str (), l_station.c_str());
 	}
     ptermSetName (l_str);
 
 	//always show host and station in status bar
-	l_str.Printf(wxT("%s %s"),l_hostname.c_str(),l_station.c_str());
+	l_str.Printf(wxT("%s %s"), l_hostname.c_str(), l_station.c_str());
     ptermSetStatus (l_str);
 }
 
@@ -5684,11 +5684,9 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 //	wxCheckBox* chkDisableColor;
 //	wxButton* btnFGColor;// windows
 //	wxBitmapButton* btnFGColor;// other
-    wxBitmap fgBitmap (15, 15);
 	wxStaticText* lblFGColor;
 //	wxButton* btnBGColor;// windows
 //	wxBitmapButton* btnBGColor;// other
-    wxBitmap bgBitmap (15, 15);
 	wxStaticText* lblBGColor;
 	wxStaticText* lblExplainColor;
 	//tab5
@@ -6040,7 +6038,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 
 bool PtermPrefDialog::ValidProfile(wxString profile)
 {
-	wxString validchr = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. ()";
+	wxString validchr = wxT ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. ()");
 	unsigned int cnt;
 	for (cnt=0;cnt<profile.Len();cnt++)
 		if (!validchr.Contains(profile.Mid(cnt,1)))
@@ -6067,67 +6065,67 @@ bool PtermPrefDialog::SaveProfile(wxString profile)
 
     //write prefs
 	//tab0
-	buffer.Printf("%s=%s", wxT (PREF_CURPROFILE), profile);
+	buffer.Printf(wxT ("%s=%s"), PREF_CURPROFILE, profile.c_str ());
 	file.AddLine(buffer);
 	//tab1
-    buffer.Printf("%s=%d", wxT (PREF_CONNECT), (m_connect) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_CONNECT, (m_connect) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%s", wxT (PREF_HOST), m_host);
+    buffer.Printf(wxT ("%s=%s"), PREF_HOST, m_host.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf("%s=%s", wxT (PREF_PORT), m_port);
+    buffer.Printf(wxT ("%s=%s"), PREF_PORT, m_port.c_str ());
 	file.AddLine(buffer);
 	//tab2
-	buffer.Printf("%s=%d", wxT (PREF_SHOWSIGNON), (m_showSignon) ? 1 : 0);
+	buffer.Printf(wxT ("%s=%d"), PREF_SHOWSIGNON, (m_showSignon) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_SHOWSYSNAME), (m_showSysName) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_SHOWSYSNAME, (m_showSysName) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_SHOWHOST), (m_showHost) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_SHOWHOST, (m_showHost) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_SHOWSTATION), (m_showStation) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_SHOWSTATION, (m_showStation) ? 1 : 0);
 	file.AddLine(buffer);
 	//tab3
-    buffer.Printf("%s=%d", wxT (PREF_1200BAUD), (m_classicSpeed) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_1200BAUD, (m_classicSpeed) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_GSW), (m_gswEnable) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_GSW, (m_gswEnable) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_ARROWS), (m_numpadArrows) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_ARROWS, (m_numpadArrows) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_PLATOKB), (m_platoKb) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_PLATOKB, (m_platoKb) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_ACCEL), (m_useAccel) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_ACCEL, (m_useAccel) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_BEEP), (m_beepEnable) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_BEEP, (m_beepEnable) ? 1 : 0);
 	file.AddLine(buffer);
 	//tab4
-    buffer.Printf("%s=%d", wxT (PREF_SCALE2), (m_scale2) ? 2 : 1);
+    buffer.Printf(wxT ("%s=%d"), PREF_SCALE2, (m_scale2) ? 2 : 1);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_STATUSBAR), (m_showStatusBar) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_STATUSBAR, (m_showStatusBar) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_NOCOLOR), (m_noColor) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_NOCOLOR, (m_noColor) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d %d %d", wxT (PREF_FOREGROUND), m_fgColor.Red (), m_fgColor.Green (), m_fgColor.Blue ());
+    buffer.Printf(wxT ("%s=%d %d %d"), PREF_FOREGROUND, m_fgColor.Red (), m_fgColor.Green (), m_fgColor.Blue ());
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d %d %d", wxT (PREF_BACKGROUND), m_bgColor.Red (), m_bgColor.Green (), m_bgColor.Blue ());
+    buffer.Printf(wxT ("%s=%d %d %d"), PREF_BACKGROUND, m_bgColor.Red (), m_bgColor.Green (), m_bgColor.Blue ());
 	file.AddLine(buffer);
 	//tab5
-    buffer.Printf("%s=%s", wxT (PREF_CHARDELAY), m_charDelay);
+    buffer.Printf(wxT ("%s=%s"), PREF_CHARDELAY, m_charDelay.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf("%s=%s", wxT (PREF_LINEDELAY), m_lineDelay);
+    buffer.Printf(wxT ("%s=%s"), PREF_LINEDELAY, m_lineDelay.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf("%s=%s", wxT (PREF_AUTOLF), m_autoLF);
+    buffer.Printf(wxT ("%s=%s"), PREF_AUTOLF, m_autoLF.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_SPLITWORDS), (m_splitWords) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_SPLITWORDS, (m_splitWords) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_CONVDOT7), (m_convDot7) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_CONVDOT7, (m_convDot7) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf("%s=%d", wxT (PREF_CONV8SP), (m_conv8Sp) ? 1 : 0);
+    buffer.Printf(wxT ("%s=%d"), PREF_CONV8SP, (m_conv8Sp) ? 1 : 0);
 	file.AddLine(buffer);
 	//tab6
-    buffer.Printf("%s=%s", wxT (PREF_BROWSER), m_Browser);
+    buffer.Printf(wxT ("%s=%s"), PREF_BROWSER, m_Browser.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf("%s=%s", wxT (PREF_EMAIL), m_Email);
+    buffer.Printf(wxT ("%s=%s"), PREF_EMAIL, m_Email.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf("%s=%s", wxT (PREF_SEARCHURL), m_SearchURL);
+    buffer.Printf(wxT ("%s=%s"), PREF_SEARCHURL, m_SearchURL.c_str ());
 	file.AddLine(buffer);
 
 	//write to disk
@@ -6154,6 +6152,10 @@ bool PtermPrefDialog::DeleteProfile(wxString profile)
 
 void PtermPrefDialog::SetControlState(void)
 {
+#if !defined(_WIN32)
+    wxBitmap fgBitmap (15, 15);
+    wxBitmap bgBitmap (15, 15);
+#endif
 	//tab0
 	m_curProfile = ptermApp->m_curProfile;
 	//tab1
@@ -6204,7 +6206,7 @@ void PtermPrefDialog::SetControlState(void)
 	if ( ldir.IsOpened() )
     {
 		wxString filename;
-		bool cont = ldir.GetFirst(&filename, "*.ppf", wxDIR_DEFAULT);
+		bool cont = ldir.GetFirst(&filename, wxT ("*.ppf"), wxDIR_DEFAULT);
 		lstProfiles->Clear();
 		lstProfiles->Append(CURRENT_PROFILE);
 		int i,cur=0;
@@ -6268,7 +6270,7 @@ void PtermPrefDialog::SetControlState(void)
 	wxString profile;
 	bool enable;
 	profile = lstProfiles->GetStringSelection();
-	enable = (profile.Cmp(wxT(CURRENT_PROFILE))!=0);
+	enable = (profile.Cmp(CURRENT_PROFILE)!=0);
 	btnSave->Enable(enable);
 	btnLoad->Enable(enable);
 	btnDelete->Enable(enable);
@@ -6299,7 +6301,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		else
 		{
 			filename = ptermApp->ProfileFileName(profile);
-			str.Printf("Unable to save profile: %s",filename);
+			str.Printf(wxT ("Unable to save profile: %s"), filename.c_str ());
 			wxMessageBox(str, _("Error"), wxOK | wxICON_HAND );
 		}
 	}
@@ -6316,7 +6318,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		else
 		{
 			filename = ptermApp->ProfileFileName(profile);
-			str.Printf("Unable to load profile: %s",filename);
+			str.Printf(wxT ("Unable to load profile: %s"), filename.c_str ());
 			wxMessageBox(str, _("Error"), wxOK | wxICON_HAND );
 		}
 	}
@@ -6331,7 +6333,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		else
 		{
 			filename = ptermApp->ProfileFileName(profile);
-			str.Printf("Unable to delete profile: %s",filename);
+			str.Printf(wxT ("Unable to delete profile: %s"), 
+                       filename.c_str ());
 			wxMessageBox(str, _("Error"), wxOK | wxICON_HAND );
 		}
 	}
@@ -6350,16 +6353,17 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 			else
 			{
 				filename = ptermApp->ProfileFileName(profile);
-				str.Printf("Unable to add/save profile: %s",filename);
+				str.Printf(wxT ("Unable to add/save profile: %s"), 
+                           filename.c_str ());
 				wxMessageBox(str, _("Error"), wxOK | wxICON_HAND );
 			}
 		}
 		else
 		{
-			wxMessageBox("The profile name you entered contains illegal characters.\n\n"
+			wxMessageBox(_("The profile name you entered contains illegal characters.\n\n"
 				         "Valid characters are:\n\n"
 						 "Standard: a-z, A-Z, 0-9\n"
-						 "Special:  parentheses, dash, underscore, period, and space", _("Problem"), wxOK | wxICON_EXCLAMATION);
+                           "Special:  parentheses, dash, underscore, period, and space"), _("Problem"), wxOK | wxICON_EXCLAMATION);
 		}
 	}
     else if (event.GetEventObject () == btnFGColor)
@@ -6534,7 +6538,7 @@ void PtermPrefDialog::OnSelect (wxCommandEvent& event)
     if (event.GetEventObject () == lstProfiles)
     {
 		profile = lstProfiles->GetStringSelection();
-		enable = (profile.Cmp(wxT(CURRENT_PROFILE))!=0);
+		enable = (profile.Cmp(CURRENT_PROFILE)!=0);
 		btnSave->Enable(enable);
 		btnLoad->Enable(enable);
 		btnDelete->Enable(enable);
@@ -6566,7 +6570,7 @@ void PtermPrefDialog::OnDoubleClick (wxCommandEvent& event)
     if (event.GetEventObject () == lstProfiles)
     {
 		profile = lstProfiles->GetStringSelection();
-		enable = (profile.Cmp(wxT(CURRENT_PROFILE))!=0);
+		enable = (profile.Cmp(CURRENT_PROFILE)!=0);
 		btnSave->Enable(enable);
 		btnLoad->Enable(enable);
 		btnDelete->Enable(enable);
@@ -6584,7 +6588,8 @@ void PtermPrefDialog::OnDoubleClick (wxCommandEvent& event)
 			else
 			{
 				filename = ptermApp->ProfileFileName(profile);
-				str.Printf("Unable to load profile: %s",filename);
+				str.Printf( wxT ("Unable to load profile: %s"), 
+                            filename.c_str ());
 				wxMessageBox(str, _("Error"), wxOK | wxICON_HAND );
 			}
 		}
@@ -6731,7 +6736,7 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
 	if ( ldir.IsOpened() )
     {
 		wxString filename;
-		bool cont = ldir.GetFirst(&filename, "*.ppf", wxDIR_DEFAULT);
+		bool cont = ldir.GetFirst(&filename, wxT ("*.ppf"), wxDIR_DEFAULT);
 		lstProfiles->Append(CURRENT_PROFILE);
 		int i,cur=0;
 		for (i=0;cont;i++)
@@ -6789,7 +6794,7 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
     if (event.GetEventObject () == lstProfiles)
     {
 		profile = lstProfiles->GetStringSelection();
-		if (profile.Cmp(wxT(CURRENT_PROFILE))==0)
+		if (profile.Cmp(CURRENT_PROFILE)==0)
 			;
 		else if (ptermApp->LoadProfile(profile,wxT("")))
 		{
@@ -6801,8 +6806,9 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
 		else
 		{
 			filename = ptermApp->ProfileFileName(profile);
-			str.Printf("Profile '%s' not found. Missing file:\n\n%s",profile,filename);
-			wxMessageBox(str,"Error",wxOK | wxICON_HAND);
+			str.Printf(wxT ("Profile '%s' not found. Missing file:\n\n%s"),
+                       profile.c_str (), filename.c_str ());
+			wxMessageBox(str, wxT ("Error"), wxOK | wxICON_HAND);
 		}
 	}
 }
@@ -6829,8 +6835,9 @@ void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
 		else
 		{
 			filename = ptermApp->ProfileFileName(profile);
-			str.Printf("Profile '%s' not found. Missing file:\n\n%s",profile,filename);
-			wxMessageBox(str,"Error",wxOK | wxICON_HAND);
+			str.Printf (wxT ("Profile '%s' not found. Missing file:\n\n%s"), 
+                        profile.c_str (), filename.c_str ());
+			wxMessageBox (str, wxT ("Error"), wxOK | wxICON_HAND);
 		}
 	}
 }
@@ -7969,10 +7976,13 @@ void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
 			{
 				scgx = (scfx/8)+1;
 				ecgx = scgx+m_regionWidth-1;
-				msg.Printf("%dx%d, f=%d-%d, g=%02d-%02d",m_regionWidth,m_regionHeight,scfx,ecfx,scgx,ecgx);
+				msg.Printf (wxT ("%dx%d, f=%d-%d, g=%02d-%02d"),
+                            m_regionWidth, m_regionHeight, 
+                            scfx, ecfx, scgx, ecgx);
 			}
 			else
-				msg.Printf("%dx%d, f=%d-%d",m_regionWidth,m_regionHeight,scfx,ecfx);
+				msg.Printf (wxT ("%dx%d, f=%d-%d"),
+                            m_regionWidth, m_regionHeight, scfx, ecfx);
 		}
         m_owner->m_statusBar->SetStatusText (msg, STATUS_TIP);
     }
