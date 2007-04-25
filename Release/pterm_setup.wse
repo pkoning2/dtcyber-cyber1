@@ -983,6 +983,7 @@ end
 item: Create Shortcut
   Source=%MAINDIR%\PTerm.EXE
   Destination=%DESKTOPDIR%\My PLATO Terminal.lnk
+  Working Directory=%MAINDIR%
   Icon Pathname=%MAINDIR%\PTerm.EXE
   Key Type=1536
   Flags=00000001
