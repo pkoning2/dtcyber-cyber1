@@ -15,7 +15,7 @@ item: Global
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
-  Pages Modified=00011000011100000000001000000010
+  Pages Modified=00011000011100000001001000000010
   Extra Pages=00000000000000000000000000010000
   Disk Label=Default
   Disk Filename=SETUP
@@ -989,7 +989,29 @@ item: Create Shortcut
 end
 item: End Block
 end
+remarked item: Self-Register OCXs/DLLs
+  Description=Updating System Configuration, Please Wait...
+end
+item: If/While Statement
+  Variable=ADMIN
+  Value=Y
+end
 item: Edit Registry
+  Total Keys=3
+  item: Key
+    Key=.ppf
+    New Value=PTerm.Document
+  end
+  item: Key
+    Key=PTerm.Document
+    New Value=PTerm Document
+  end
+  item: Key
+    Key=PTerm.Document\shell\open\command
+    New Value=%MAINDIR%\PTerm.EXE %%1
+  end
+end
+remarked item: Edit Registry
   Total Keys=12
   item: Key
     Key=Applications\pterm.exe
@@ -1051,8 +1073,7 @@ item: Edit Registry
     Data Type=4
   end
 end
-remarked item: Self-Register OCXs/DLLs
-  Description=Updating System Configuration, Please Wait...
+item: End Block
 end
 item: Wizard Block
   Direction Variable=DIRECTION
