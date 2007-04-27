@@ -1072,8 +1072,10 @@ public:
     void OnDoubleClick (wxCommandEvent& event);
     void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
     
+    wxString        m_curProfile;
     wxString        m_host;
     wxString        m_port;
+	wxConfig		m_config;
 
 	wxListBox* lstProfiles;
 	wxTextCtrl* txtHost;
@@ -1384,8 +1386,8 @@ bool PtermApp::OnInit (void)
 		//notebook
 		m_lastTab = m_config->Read (wxT (PREF_LASTTAB), 0L);
 		//tab0
-		//tab1
 		m_config->Read (wxT (PREF_CURPROFILE), &m_curProfile, CURRENT_PROFILE);
+		//tab1
 		m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
 		if (argc > 1)
 			m_hostName = argv[1];
@@ -1514,6 +1516,12 @@ bool PtermApp::DoConnect (bool ask)
             {
                 m_port = atoi (wxString (dlg.m_port).mb_str ());
             }
+			//save selection to current
+			m_config = new wxConfig (wxT ("Pterm"));
+			m_config->Write (wxT (PREF_CURPROFILE), m_curProfile );
+			m_config->Write (wxT (PREF_HOST), m_hostName);
+			m_config->Write (wxT (PREF_PORT), m_port);
+		    m_config->Flush ();
         }
         else
         {
@@ -1638,6 +1646,8 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
 
     //write prefs
 	m_config = new wxConfig (wxT ("Pterm"));
+	//tab0
+    m_config->Write (wxT (PREF_CURPROFILE), profile );
 	//tab1
     m_config->Write (wxT (PREF_SHOWSIGNON), (m_showSignon) ? 1 : 0);
     m_config->Write (wxT (PREF_SHOWSYSNAME), (m_showSysName) ? 1 : 0);
@@ -1787,8 +1797,8 @@ void PtermApp::OnPref (wxCommandEvent&)
 		m_SearchURL = dlg.m_SearchURL;
 
         //write prefs
-		//tab0
 		m_config->Write (wxT (PREF_LASTTAB), dlg.m_lastTab);
+		//tab0
 		m_config->Write (wxT (PREF_CURPROFILE), dlg.m_curProfile);
 		//tab1
         m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
@@ -6771,16 +6781,19 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
 	void OnButton (wxCommandEvent& event);
     if (event.GetEventObject () == btnQuickConnectClassic)
     {
+		m_curProfile = CURRENT_PROFILE;
         m_host = txtHost->GetLineText (0);
         m_port.Printf (wxT ("%d"), DefNiuPort);
 	}
     if (event.GetEventObject () == btnQuickConnectASCII)
     {
+		m_curProfile = CURRENT_PROFILE;
         m_host = txtHost->GetLineText (0);
         m_port = wxT ( "8005" );
 	}
     if (event.GetEventObject () == btnConnect)
     {
+		m_curProfile = lstProfiles->GetStringSelection();
         m_host = txtHost->GetLineText (0);
         m_port = cboPort->GetValue ();
 	}
@@ -6800,6 +6813,7 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
 			;
 		else if (ptermApp->LoadProfile(profile,wxT("")))
 		{
+			m_curProfile = profile;
 			m_host = ptermApp->m_hostName;
 			m_port.Printf (wxT ("%d"), ptermApp->m_port);
 			txtHost->SetValue ( m_host );
@@ -6826,6 +6840,7 @@ void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
 		profile = lstProfiles->GetStringSelection();
 		if (ptermApp->LoadProfile(profile,wxT("")))
 		{
+			m_curProfile = profile;
 			m_host = ptermApp->m_hostName;
 			m_port.Printf (wxT ("%d"), ptermApp->m_port);
 			txtHost->SetValue ( m_host );
