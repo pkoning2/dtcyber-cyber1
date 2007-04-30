@@ -157,10 +157,10 @@ void windowInit(void)
     hThread = CreateThread( 
         NULL,                                       // no security attribute 
         0,                                          // default stack size 
-        (LPTHREAD_START_ROUTINE) windowThread, 
-        (LPVOID) NULL,                              // thread parameter 
+        (LPTHREAD_START_ROUTINE) windowThread,
+        (LPVOID) 0,                              // thread parameter 
         0,                                          // not suspended 
-        &dwThreadId);                               // returns thread ID 
+        &dwThreadId);                               // returns thread ID */
 
     if (hThread == NULL)
         {
@@ -168,13 +168,14 @@ void windowInit(void)
         exit(1);
         }
 
-    /*
+	/*
     **  Initialize the widths for the bitmap fonts
     */
     smallFont.width = 8;
     mediumFont.width = 16;
     largeFont.width = 32;
     }
+
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Set keyboard emulation to "true" or "easy".

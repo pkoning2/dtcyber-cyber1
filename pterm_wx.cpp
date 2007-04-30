@@ -718,6 +718,7 @@ public:
     void ptermSendTouch (int x, int y);
     void ptermSetTrace (bool fileaction);
 	void SetTitleFromPlatoMetaData(void);
+	void WriteTraceMessage(wxString);
 #if 0
     // The s0ascers spec calls for parity but it isn't really needed
     // and by not doing it we keep things simpler.  For example,
@@ -2227,6 +2228,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     if (port > 0)
     {
         // Create and start the network processing thread
+		TRACE2("Connecting to: %s:%d",host,port);
         m_conn = new PtermConnection (this, host, port);
         if (m_conn->Create () != wxTHREAD_NO_ERROR)
         {
@@ -4781,6 +4783,22 @@ void PtermFrame::SetTitleFromPlatoMetaData ()
 		l_str = wxT("Pterm");
 	}
 	SetTitle (l_str);
+}
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Change frame title to string specified in the assembled
+**                  meta data.
+**
+**  Parameters:     none
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void PtermFrame::WriteTraceMessage (wxString msg)
+{
+	TRACE ("%s",msg.c_str());
+	return;
 }
 
 /*--------------------------------------------------------------------------
@@ -7462,10 +7480,14 @@ int PtermConnection::NextWord (void)
     {
         m_owner->m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
 
+		wxDateTime ldt;
+		ldt.SetToCurrent();
         if (word == C_CONNFAIL)
-            msg = _("Connection Failed");
+            msg.Printf(_("Connection failed @ %s on %s"), ldt.FormatTime().c_str(), ldt.FormatDate().c_str());
         else
-            msg = _("Connection Dropped");
+            msg.Printf(_("Dropped connection @ %s on %s"), ldt.FormatTime().c_str(), ldt.FormatDate().c_str());
+		m_owner->WriteTraceMessage(msg);
+        msg.Printf(_("%s on %s"), ldt.FormatTime().c_str(), ldt.FormatDate().c_str());	// fits in dialog box title
 		
 		ptermApp->m_connError = word;
         PtermConnFailDialog dlg (wxID_ANY, msg, wxDefaultPosition, wxSize( 320,140 ));
