@@ -88,37 +88,45 @@
 // the two out of sync.  Note that they should *not* be changed after
 // once being defined, since that invalidates people's stored
 // preferences.
-#define PREF_FOREGROUND  "foreground"
-#define PREF_BACKGROUND  "background"
-#define PREF_CURPROFILE  "curProfile"
-#define PREF_HOST        "host"
-#define PREF_PORT        "port"
-#define PREF_SCALE2      "scale"
-#define PREF_1200BAUD    "classicSpeed"
-#define PREF_CONNECT     "autoconnect"
-#define PREF_GSW         "gswenable"
-#define PREF_ARROWS      "numpadArrows"
-#define PREF_STATUSBAR   "statusbar"
-#define PREF_PLATOKB     "platoKeyboard"
+#define PREF_LASTTAB	 "lastTab"
 #define PREF_XPOS        "xPosition"
 #define PREF_YPOS        "yPosition"
-#define PREF_BEEP        "beep"
+//tab0
+#define PREF_CURPROFILE  "curProfile"
+//tab1
+#define PREF_SHELLFIRST  "ShellFirst"
+#define PREF_CONNECT     "autoconnect"
+#define PREF_HOST        "host"
+#define PREF_PORT        "port"
+//tab2
+#define PREF_SHOWSIGNON  "ShowSignon"
+#define PREF_SHOWSYSNAME "ShowSysName"
+#define PREF_SHOWHOST    "ShowHost"
+#define PREF_SHOWSTATION "ShowStation"
+//tab3
+#define PREF_1200BAUD    "classicSpeed"
+#define PREF_GSW         "gswenable"
+#define PREF_ARROWS      "numpadArrows"
+#define PREF_PLATOKB     "platoKeyboard"
 #define PREF_ACCEL       "UseAccel"
+#define PREF_BEEP        "beep"
+//tab4
+#define PREF_SCALE2      "scale"
+#define PREF_STATUSBAR   "statusbar"
 #define PREF_NOCOLOR     "noColor"
+#define PREF_FOREGROUND  "foreground"
+#define PREF_BACKGROUND  "background"
+//tab5
 #define PREF_CHARDELAY   "charDelay"
 #define PREF_LINEDELAY   "lineDelay"
 #define PREF_AUTOLF      "autoLF"
 #define PREF_SPLITWORDS  "splitWords"
 #define PREF_CONVDOT7    "convDot7"
 #define PREF_CONV8SP     "conv8Sp"
+//tab6
 #define PREF_BROWSER     "Browser"
 #define PREF_EMAIL       "EmailClient"
 #define PREF_SEARCHURL   "SearchURL"
-#define PREF_SHOWSIGNON  "ShowSignon"
-#define PREF_SHOWSYSNAME "ShowSysName"
-#define PREF_SHOWHOST    "ShowHost"
-#define PREF_SHOWSTATION "ShowStation"
-#define PREF_LASTTAB	 "lastTab"
 
 /*
 **  -----------------------
@@ -530,6 +538,8 @@ public:
     void OnAbout (wxCommandEvent& event);
 
     bool DoConnect (bool ask);
+	int	m_connError;
+	int	m_connAction;
 	
 	bool LoadProfile (wxString profile, wxString filename);
 	wxString ProfileFileName (wxString profile);
@@ -537,34 +547,43 @@ public:
     static wxColour SelectColor (wxWindow &parent, const wxChar *title, 
                                  wxColour &initcol );
     
-    wxColour    m_fgColor;
-    wxColour    m_bgColor;
     wxConfig    *m_config;
 
+	//general
 	int			m_lastTab;
+	//tab0
+	wxString	m_curProfile;
+	//tab1
+	wxString	m_ShellFirst;
+    bool        m_connect;
+    wxString    m_hostName;
+    int         m_port;
+	//tab2
 	bool        m_showSignon;
 	bool        m_showSysName;
 	bool        m_showHost;
 	bool        m_showStation;
-	wxString	m_curProfile;
-    wxString    m_hostName;
-    int         m_port;
-    int         m_scale;
+	//tab3
     bool        m_classicSpeed;
-    bool        m_connect;
     bool        m_gswEnable;
     bool        m_numpadArrows;
-    bool        m_showStatusBar;
     bool        m_platoKb;
 	bool		m_useAccel;
     bool        m_beepEnable;
+	//tab4
+    int         m_scale;
+    bool        m_showStatusBar;
     bool        m_noColor;
+    wxColour    m_fgColor;
+    wxColour    m_bgColor;
+	//tab5
     wxString    m_charDelay;
     wxString    m_lineDelay;
     wxString    m_autoLF;    
 	bool		m_splitWords;
     bool        m_convDot7;     
     bool        m_conv8Sp;      
+	//tab6
 	wxString	m_Browser;      
 	wxString	m_Email;      
 	wxString	m_SearchURL;      
@@ -676,6 +695,7 @@ public:
     void OnClose (wxCloseEvent& event);
     void OnTimer (wxTimerEvent& event);
     void OnPasteTimer (wxTimerEvent& event);
+    void OnShellTimer (wxTimerEvent& event);
     void OnQuit (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
     void OnCopy (wxCommandEvent &event);
@@ -756,6 +776,7 @@ private:
     wxBitmap    *m_bitmap;
     PtermCanvas *m_canvas;
 	wxString	m_curProfile;
+	wxString	m_ShellFirst;
     wxString    m_hostName;
     int         m_port;
     wxTimer     m_timer;
@@ -974,6 +995,7 @@ public:
 	wxButton* btnAdd;
 	//tab1
 	wxCheckBox* chkConnectAtStartup;
+	wxTextCtrl* txtShellFirst;
 	wxTextCtrl* txtDefaultHost;
 	wxComboBox* cboDefaultPort;
 	//tab2
@@ -1020,6 +1042,7 @@ public:
 	//tab0
 	wxString		m_curProfile;
 	//tab1
+	wxString		m_ShellFirst;
     bool            m_connect;
     wxString        m_host;
     wxString        m_port;
@@ -1069,20 +1092,40 @@ public:
     
     void OnButton (wxCommandEvent& event);
     void OnSelect (wxCommandEvent& event);
+    void OnChange (wxCommandEvent& event);
     void OnDoubleClick (wxCommandEvent& event);
     void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
     
+	wxString		m_ShellFirst;
     wxString        m_curProfile;
     wxString        m_host;
     wxString        m_port;
 	wxConfig		m_config;
 
 	wxListBox* lstProfiles;
+	wxTextCtrl* txtShellFirst;
 	wxTextCtrl* txtHost;
 	wxComboBox* cboPort;
 	wxButton* btnQuickConnectClassic;
 	wxButton* btnQuickConnectASCII;
 	wxButton* btnConnect;
+    
+private:
+    DECLARE_EVENT_TABLE ()
+};
+
+// define the connection fail dialog
+class PtermConnFailDialog : public wxDialog
+{
+public:
+    PtermConnFailDialog (wxWindowID id, const wxString &title, wxPoint pos,  wxSize size);
+    
+    void OnButton (wxCommandEvent& event);
+    void OnClose (wxCloseEvent& event);
+    
+	wxButton* btnNew;
+	wxButton* btnRetry;
+	wxButton* btnCancel;
     
 private:
     DECLARE_EVENT_TABLE ()
@@ -1106,6 +1149,7 @@ enum
     // timers
     Pterm_Timer,        // display pacing
     Pterm_PasteTimer,   // paste key generation pacing
+	//other items
     Pterm_Exec,			// execute URL
     Pterm_MailTo,		// execute email client
     Pterm_SearchThis,	// execute search URL
@@ -1388,6 +1432,7 @@ bool PtermApp::OnInit (void)
 		//tab0
 		m_config->Read (wxT (PREF_CURPROFILE), &m_curProfile, CURRENT_PROFILE);
 		//tab1
+		m_config->Read (wxT (PREF_SHELLFIRST), &m_ShellFirst, wxT(""));
 		m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
 		if (argc > 1)
 			m_hostName = argv[1];
@@ -1500,6 +1545,14 @@ bool PtermApp::DoConnect (bool ask)
         
         if (dlg.ShowModal () == wxID_OK)
         {
+            if (dlg.m_ShellFirst.IsEmpty())
+            {
+                m_ShellFirst = wxT("");
+            }
+            else
+            {
+                m_ShellFirst = dlg.m_ShellFirst;
+            }
             if (dlg.m_host.IsEmpty ())
             {
                 m_hostName = DEFAULTHOST;
@@ -1518,6 +1571,7 @@ bool PtermApp::DoConnect (bool ask)
             }
 			//save selection to current
 			m_config = new wxConfig (wxT ("Pterm"));
+			m_config->Write (wxT (PREF_SHELLFIRST), m_ShellFirst );
 			m_config->Write (wxT (PREF_CURPROFILE), m_curProfile );
 			m_config->Write (wxT (PREF_HOST), m_hostName);
 			m_config->Write (wxT (PREF_PORT), m_port);
@@ -1587,6 +1641,7 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
 			//tab0
 			if      (token.Cmp(wxT(PREF_CURPROFILE))==0)			m_curProfile	= profile;
 			//tab1
+			else if (token.Cmp(wxT(PREF_SHELLFIRST))==0)			m_ShellFirst	= value;
 			else if (token.Cmp(wxT(PREF_CONNECT))==0)				m_connect		= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_HOST))==0)					m_hostName		= value;
 			else if (token.Cmp(wxT(PREF_PORT))==0)					
@@ -1763,6 +1818,7 @@ void PtermApp::OnPref (wxCommandEvent&)
         //tab0
         m_curProfile = dlg.m_curProfile;
 		//tab1
+        m_ShellFirst = dlg.m_ShellFirst;
         m_connect = dlg.m_connect;
         m_hostName = dlg.m_host;
         m_port = atoi (wxString (dlg.m_port).mb_str ());
@@ -1801,6 +1857,7 @@ void PtermApp::OnPref (wxCommandEvent&)
 		//tab0
 		m_config->Write (wxT (PREF_CURPROFILE), dlg.m_curProfile);
 		//tab1
+        m_config->Write (wxT (PREF_SHELLFIRST), dlg.m_ShellFirst);
         m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
         m_config->Write (wxT (PREF_HOST), dlg.m_host);
         m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port.mb_str ()));
@@ -2129,6 +2186,16 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
         m_statusBar = new wxStatusBar (this, wxID_ANY);
         m_statusBar->SetFieldsCount (STATUSPANES);
         m_statusBar->SetStatusText(_(" Connecting..."), STATUS_CONN);
+
+		//shell program; then wait 2 seconds
+		if (!ptermApp->m_ShellFirst.IsEmpty())
+		{
+			if (wxExecute(ptermApp->m_ShellFirst)!=0)
+			{
+				Sleep(2000);
+			}
+		}
+
         if (ptermApp->m_showStatusBar)
         {
             SetStatusBar (m_statusBar);
@@ -2208,69 +2275,85 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 {
     int word;
 
-    // Do nothing for the help window
-    if (m_conn == NULL)
-    {
-        return;
-    }
+	// Do nothing for the help window
+	if (m_conn == NULL)
+	{
+		return;
+	}
+
+	// If our timer is running, we're using the timer event to drive
+	// the display, so ignore idle events.
+	if (m_timer.IsRunning ())
+	{
+		event.Skip ();
+		return;
+	}
+
+	if (m_nextword != 0)
+	{
+		procPlatoWord (m_nextword, m_conn->Ascii ());
+		m_nextword = 0;
+	}
+
+	for (;;)
+	{
+		/*
+		**  Process words until there is nothing left.
+		*/
+		word = m_conn->NextWord ();
     
-    // If our timer is running, we're using the timer event to drive
-    // the display, so ignore idle events.
-    if (m_timer.IsRunning ())
-    {
-        event.Skip ();
-        return;
-    }
-    
-    if (m_nextword != 0)
-    {
-        procPlatoWord (m_nextword, m_conn->Ascii ());
-        m_nextword = 0;
-    }
-    
-    for (;;)
-    {
-        /*
-        **  Process words until there is nothing left.
-        */
-        word = m_conn->NextWord ();
+		if (word == C_NODATA || word == C_CONNFAIL)
+		{
+			event.Skip ();
+			break;
+		}
+
+		// See if we're supposed to delay (but it's not an internal
+		// code such as NODATA)
+		if ((int) word >= 0 && (word >> 19) != 0)
+		{
+			m_delay = word >> 19;
+			m_nextword = word & 01777777;
+			if (m_conn->Ascii ())
+			{
+				m_timer.Start (8);  // 16.67 / 2.2, rounded
+			}
+			else
+			{
+				m_timer.Start (17);
+			}
+			event.Skip ();
+			return;
+		}
         
-		if (word == C_NODATA)
-        {
-            event.Skip ();
-            break;
-        }
+		#ifdef DEBUGLOG
+			wxLogMessage ("processing data from plato %07o", word);
+		#elif DEBUG
+			printf ("processing data from plato %07o\n", word);
+		#endif
+		procPlatoWord (word, m_conn->Ascii ());
+	}
 
-        // See if we're supposed to delay (but it's not an internal
-        // code such as NODATA)
-        if ((int) word >= 0 && (word >> 19) != 0)
-        {
-            m_delay = word >> 19;
-            m_nextword = word & 01777777;
-            if (m_conn->Ascii ())
-            {
-                m_timer.Start (8);  // 16.67 / 2.2, rounded
-            }
-            else
-            {
-                m_timer.Start (17);
-            }
-            event.Skip ();
-            return;
-        }
-            
-#ifdef DEBUGLOG
-        wxLogMessage ("processing data from plato %07o", word);
-#elif DEBUG
-        printf ("processing data from plato %07o\n", word);
-#endif
-        procPlatoWord (word, m_conn->Ascii ());
-    }
+	switch (word)
+		{
+		case C_NODATA:
+			break;
+		case C_CONNFAIL:
+			// restart the network processing thread
+			if (m_port > 0)
+			{
+				m_conn = new PtermConnection (this, m_hostName, m_port);
+				if (m_conn->Create () != wxTHREAD_NO_ERROR)
+				{
+					return;
+				}
+				m_conn->Run ();
+			}
+			break;
+		default:
+			event.RequestMore ();
+		}
 
-    if (word != C_NODATA)
-    {
-        event.RequestMore ();
-    }
 }
 
 void PtermFrame::OnTimer (wxTimerEvent &)
@@ -5665,6 +5748,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	wxScrolledWindow* tab3;
 	wxStaticText* lblExplain3;
 //	wxCheckBox* chkConnectAtStartup;
+	wxStaticText* lblShellFirst;
+//	wxTextCtrl* txtShellFirst;
 	wxStaticText* lblDefaultHost;
 //	wxTextCtrl* txtDefaultHost;
 	wxStaticText* lblDefaultPort;
@@ -5731,6 +5816,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	// ui object creation / placement, note initialization of values is below
 	wxBoxSizer* bSizer1;
 	bSizer1 = new wxBoxSizer( wxVERTICAL );
+	//notebook
 	tabPrefsDialog = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxNB_TOP );
 	tabPrefsDialog->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	//tab0
@@ -5799,12 +5885,20 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	bs11->Add( chkConnectAtStartup, 0, wxEXPAND|wxTOP|wxLEFT, 5 );
 	wxFlexGridSizer* fgs111;
 	fgs111 = new wxFlexGridSizer( 2, 2, 0, 0 );
+	fgs111->AddGrowableCol( 1 );
+	fgs111->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	lblShellFirst = new wxStaticText( tab1, wxID_ANY, _("Run this first"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblShellFirst->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	fgs111->Add( lblShellFirst, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	txtShellFirst = new wxTextCtrl( tab1, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+	txtShellFirst->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	txtShellFirst->SetMaxLength( 255 ); 
+	fgs111->Add( txtShellFirst, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
 	lblDefaultHost = new wxStaticText( tab1, wxID_ANY, _("Default Host"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs111->Add( lblDefaultHost, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	txtDefaultHost = new wxTextCtrl( tab1, wxID_ANY, wxT("cyberserv.org"), wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	txtDefaultHost->SetMaxLength( 100 ); 
 	txtDefaultHost->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
-	txtDefaultHost->SetMinSize( wxSize( 325,-1 ) );
 	fgs111->Add( txtDefaultHost, 1, wxALL|wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 	lblDefaultPort = new wxStaticText( tab1, wxID_ANY, _("Default Port*"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs111->Add( lblDefaultPort, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -5814,12 +5908,15 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	fgs111->Add( cboDefaultPort, 0, wxALL, 5 );
 	bs11->Add( fgs111, 1, wxEXPAND, 5 );
 	page1->Add( bs11, 1, wxEXPAND, 0 );
-	lblExplainPort = new wxStaticText( tab1, wxID_ANY, _("* NOTE: 5004=Classic, 8005=ASCII (with -color- available)"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblExplainPort = new wxStaticText( tab1, wxID_ANY, _("* NOTE: 5004=Classic, 8005=Color Terminal"), wxDefaultPosition, wxDefaultSize, 0 );
 	page1->Add( lblExplainPort, 0, wxALL, 5 );
 	tab1->SetSizer( page1 );
 	tab1->Layout();
 	page1->Fit( tab1 );
-	tabPrefsDialog->AddPage( tab1, _("Connection"), false );
+	tabPrefsDialog->AddPage( tab1, _("Connection"), true );
+	tab2 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL );
+	tab2->SetScrollRate( 5, 5 );
+	tab2->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	//tab2
 	tab2 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL );
 	tab2->SetScrollRate( 5, 5 );
@@ -5992,32 +6089,30 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	tab6->Hide();
 	wxFlexGridSizer* page6;
 	page6 = new wxFlexGridSizer( 0, 1, 0, 0 );
+	page6->AddGrowableCol( 0 );
 	page6->SetFlexibleDirection( wxBOTH );
 	lblBrowser = new wxStaticText( tab6, wxID_ANY, _("Specify browser to use for menu option 'Execute URL'"), wxDefaultPosition, wxDefaultSize, 0 );
 	page6->Add( lblBrowser, 0, wxALIGN_BOTTOM|wxALL, 5 );
 	txtBrowser = new wxTextCtrl( tab6, wxID_ANY, wxT(""), wxPoint( -1,-1 ), wxDefaultSize, 0|wxTAB_TRAVERSAL );
 	txtBrowser->SetMaxLength( 255 ); 
-	txtBrowser->SetMinSize( wxSize( 410,-1 ) );
-	page6->Add( txtBrowser, 0, wxALL, 5 );
+	page6->Add( txtBrowser, 0, wxALL|wxEXPAND, 5 );
 	lblEmail = new wxStaticText( tab6, wxID_ANY, _("Command line for menu option 'Mail to...' (%s=address)"), wxDefaultPosition, wxDefaultSize, 0 );
 	page6->Add( lblEmail, 0, wxALL|wxALIGN_BOTTOM, 5 );
 	txtEmail = new wxTextCtrl( tab6, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
 	txtEmail->SetMaxLength( 255 ); 
 	txtEmail->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
-	txtEmail->SetMinSize( wxSize( 410,-1 ) );
-	page6->Add( txtEmail, 0, wxALL, 5 );
+	page6->Add( txtEmail, 0, wxALL|wxEXPAND, 5 );
 	lblSearchURL = new wxStaticText( tab6, wxID_ANY, _("Specify URL for menu option 'Search this...'"), wxDefaultPosition, wxDefaultSize, 0 );
 	page6->Add( lblSearchURL, 0, wxALL, 5 );
 	txtSearchURL = new wxTextCtrl( tab6, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
 	txtSearchURL->SetMaxLength( 255 ); 
-	txtSearchURL->SetMinSize( wxSize( 410,-1 ) );
-	page6->Add( txtSearchURL, 0, wxALL, 5 );
+	page6->Add( txtSearchURL, 0, wxALL|wxEXPAND, 5 );
 	tab6->SetSizer( page6 );
 	tab6->Layout();
 	page6->Fit( tab6 );
-	tabPrefsDialog->AddPage( tab6, _("Local"), false );
+	tabPrefsDialog->AddPage( tab6, _("Local"), true );
+	//notebook
 	bSizer1->Add( tabPrefsDialog, 1, wxEXPAND|wxTOP|wxRIGHT|wxLEFT, 6 );
-	
 	//button bar
 	wxFlexGridSizer* fgsButtons;
 	fgsButtons = new wxFlexGridSizer( 1, 4, 0, 0 );
@@ -6079,6 +6174,8 @@ bool PtermPrefDialog::SaveProfile(wxString profile)
 	file.AddLine(buffer);
 	//tab1
     buffer.Printf(wxT ("%s=%d"), PREF_CONNECT, (m_connect) ? 1 : 0);
+	file.AddLine(buffer);
+    buffer.Printf(wxT ("%s=%s"), PREF_SHELLFIRST, m_ShellFirst.c_str());
 	file.AddLine(buffer);
     buffer.Printf(wxT ("%s=%s"), PREF_HOST, m_host.c_str ());
 	file.AddLine(buffer);
@@ -6169,22 +6266,22 @@ void PtermPrefDialog::SetControlState(void)
 	//tab0
 	m_curProfile = ptermApp->m_curProfile;
 	//tab1
+	m_ShellFirst = ptermApp->m_ShellFirst;
+    m_connect = ptermApp->m_connect;
+    m_host = ptermApp->m_hostName;
+    m_port.Printf (wxT ("%d"), ptermApp->m_port);
+	//tab2
     m_showSignon = ptermApp->m_showSignon;
     m_showSysName = ptermApp->m_showSysName;
     m_showHost = ptermApp->m_showHost;
     m_showStation = ptermApp->m_showStation;
-	//tab2
+	//tab3
     m_classicSpeed = ptermApp->m_classicSpeed;
     m_gswEnable = ptermApp->m_gswEnable;
     m_numpadArrows = ptermApp->m_numpadArrows;
     m_platoKb = ptermApp->m_platoKb;
     m_useAccel = ptermApp->m_useAccel;
     m_beepEnable = ptermApp->m_beepEnable;
-	//tab3
-    m_connect = ptermApp->m_connect;
-    m_curProfile = ptermApp->m_curProfile;
-    m_host = ptermApp->m_hostName;
-    m_port.Printf (wxT ("%d"), ptermApp->m_port);
 	//tab4
     m_scale2 = (ptermApp->m_scale != 1);
     m_showStatusBar = ptermApp->m_showStatusBar;
@@ -6211,10 +6308,11 @@ void PtermPrefDialog::SetControlState(void)
 	m_Email = ptermApp->m_Email;
 	m_SearchURL = ptermApp->m_SearchURL;
 	
-	// populate listbox
+	//tab0
 	wxDir ldir(wxGetCwd());
 	if ( ldir.IsOpened() )
     {
+		// populate listbox
 		wxString filename;
 		bool cont = ldir.GetFirst(&filename, wxT ("*.ppf"), wxDIR_DEFAULT);
 		lstProfiles->Clear();
@@ -6236,21 +6334,22 @@ void PtermPrefDialog::SetControlState(void)
 		lstProfiles->Select(cur);
 	}
 	//tab1
+    chkConnectAtStartup->SetValue ( m_connect );
+    txtShellFirst->SetValue ( m_ShellFirst );
+    txtDefaultHost->SetValue ( m_host );
+    cboDefaultPort->SetValue ( m_port );
+	//tab2
 	chkShowSignon->SetValue( m_showSignon );
 	chkShowSysName->SetValue( m_showSysName );
 	chkShowHost->SetValue( m_showHost );
 	chkShowStation->SetValue( m_showStation );
-	//tab2
+	//tab3
     chkSimulate1200Baud->SetValue ( m_classicSpeed );
     chkEnableGSW->SetValue ( m_gswEnable );
     chkEnableNumericKeyPad->SetValue ( m_numpadArrows );
     chkUsePLATOKeyboard->SetValue ( m_platoKb );
     chkUseAccelerators->SetValue ( m_useAccel );
     chkEnableBeep->SetValue ( m_beepEnable );
-	//tab3
-    chkConnectAtStartup->SetValue ( m_connect );
-    txtDefaultHost->SetValue ( m_host );
-    cboDefaultPort->SetValue ( m_port );
 	//tab4
     chkZoom200->SetValue ( m_scale2 );
 	chkStatusBar->SetValue( m_showStatusBar );
@@ -6415,28 +6514,28 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		
 		//reset variable values
         //tab0
-        //tab1
+		//tab1
+        m_ShellFirst = wxT("");
+        m_connect = true;
+		m_host = DEFAULTHOST;
+		str.Printf (wxT ("%d"), DefNiuPort );
+		m_port = str;
+        //tab2
 		m_showSignon = false;
 		m_showSysName = false;
 		m_showHost = true;
 		m_showStation = true;
-        //tab2
+        //tab3
         m_classicSpeed = false;
         m_gswEnable = true;
         m_numpadArrows = true;
         m_platoKb = false;
-
 		#if defined(__WXMAC__)
 			m_useAccel = true;
 		#else
 			m_useAccel = false;
 		#endif
         m_beepEnable = true;
-		//tab3
-        m_connect = true;
-		m_host = DEFAULTHOST;
-		str.Printf (wxT ("%d"), DefNiuPort );
-		m_port = str;
 		//tab4
         m_scale2 = false;
         m_showStatusBar = true;
@@ -6458,6 +6557,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		//reset object values
 		//tab0
 		//tab1
+		txtShellFirst->SetValue ( m_ShellFirst );
 		chkConnectAtStartup->SetValue ( m_connect );
 		txtDefaultHost->SetValue ( m_host );
 		cboDefaultPort->SetValue ( m_port );
@@ -6619,6 +6719,8 @@ void PtermPrefDialog::OnChange (wxCommandEvent& event)
 		btnAdd->Enable(!profile.IsEmpty());
 	}
 	//tab1
+    else if (event.GetEventObject () == txtShellFirst)
+        m_ShellFirst = txtShellFirst->GetLineText (0);
     else if (event.GetEventObject () == txtDefaultHost)
         m_host = txtDefaultHost->GetLineText (0);
     else if (event.GetEventObject () == cboDefaultPort)
@@ -6660,6 +6762,7 @@ BEGIN_EVENT_TABLE(PtermConnDialog, wxDialog)
     EVT_CLOSE(PtermConnDialog::OnClose)
 	EVT_LISTBOX(wxID_ANY, PtermConnDialog::OnSelect)
 	EVT_LISTBOX_DCLICK(wxID_ANY, PtermConnDialog::OnDoubleClick)
+	EVT_TEXT(wxID_ANY, PtermConnDialog::OnChange)
     EVT_BUTTON(wxID_ANY, PtermConnDialog::OnButton)
     END_EVENT_TABLE()
 
@@ -6669,7 +6772,9 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
 
 	// static ui objects, note dynamic controls, e.g. those that hold values or require event processing are declared above
 	wxStaticText* lblExplainProfiles;
-//	wxListBox* lstProfile;
+//	wxListBox* lstProfiles;
+	wxStaticText* lblShellFirst;
+//	wxTextCtrl* txtShellFirst;
 	wxStaticText* lblExplainManual;
 	wxStaticText* lblHost;
 //	wxTextCtrl* txtHost;
@@ -6700,6 +6805,13 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
 	fgSizer11->SetFlexibleDirection( wxBOTH );
 	wxFlexGridSizer* fgs111;
 	fgs111 = new wxFlexGridSizer( 2, 2, 0, 0 );
+	lblShellFirst = new wxStaticText( this, wxID_ANY, _("Run this first"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblShellFirst->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	fgs111->Add( lblShellFirst, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+	txtShellFirst = new wxTextCtrl( this, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+	txtShellFirst->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	txtShellFirst->SetMaxLength( 255 ); 
+	fgs111->Add( txtShellFirst, 0, wxALL|wxEXPAND, 5 );
 	lblHost = new wxStaticText( this, wxID_ANY, _("Host name"), wxDefaultPosition, wxDefaultSize, 0 );
 	lblHost->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgs111->Add( lblHost, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
@@ -6718,7 +6830,7 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
 	cboPort->SetMinSize( wxSize( 75,-1 ) );
 	fgs111->Add( cboPort, 0, wxALL, 5 );
 	fgSizer11->Add( fgs111, 0, 0, 5 );
-	lblExplainPort = new wxStaticText( this, wxID_ANY, _("* NOTE: 5004=Classic, 8005=ASCII (with -color- available)"), wxDefaultPosition, wxDefaultSize, 0 );
+	lblExplainPort = new wxStaticText( this, wxID_ANY, _("* NOTE: 5004=Classic, 8005=Color Terminal"), wxDefaultPosition, wxDefaultSize, 0 );
 	lblExplainPort->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgSizer11->Add( lblExplainPort, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
 	wxFlexGridSizer* fgs112;
@@ -6767,10 +6879,12 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
 	}
 
 	// initialize values
+    m_ShellFirst = ptermApp->m_ShellFirst;
     m_host = ptermApp->m_hostName;
     m_port.Printf (wxT ("%d"), ptermApp->m_port);
 
 	// set object value properties
+    txtShellFirst->SetValue ( m_ShellFirst );
     txtHost->SetValue ( m_host );
     cboPort->SetValue ( m_port );
 
@@ -6782,18 +6896,21 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
     if (event.GetEventObject () == btnQuickConnectClassic)
     {
 		m_curProfile = CURRENT_PROFILE;
+	    m_ShellFirst = txtShellFirst->GetLineText (0);
         m_host = txtHost->GetLineText (0);
         m_port.Printf (wxT ("%d"), DefNiuPort);
 	}
     if (event.GetEventObject () == btnQuickConnectASCII)
     {
 		m_curProfile = CURRENT_PROFILE;
+	    m_ShellFirst = txtShellFirst->GetLineText (0);
         m_host = txtHost->GetLineText (0);
         m_port = wxT ( "8005" );
 	}
     if (event.GetEventObject () == btnConnect)
     {
 		m_curProfile = lstProfiles->GetStringSelection();
+	    m_ShellFirst = txtShellFirst->GetLineText (0);
         m_host = txtHost->GetLineText (0);
         m_port = cboPort->GetValue ();
 	}
@@ -6814,8 +6931,10 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
 		else if (ptermApp->LoadProfile(profile,wxT("")))
 		{
 			m_curProfile = profile;
+		    m_ShellFirst = ptermApp->m_ShellFirst;
 			m_host = ptermApp->m_hostName;
 			m_port.Printf (wxT ("%d"), ptermApp->m_port);
+			txtShellFirst->SetValue ( m_ShellFirst );
 			txtHost->SetValue ( m_host );
 			cboPort->SetValue ( m_port );
 		}
@@ -6827,6 +6946,13 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
 			wxMessageBox(str, wxT ("Error"), wxOK | wxICON_HAND);
 		}
 	}
+}
+
+void PtermConnDialog::OnChange (wxCommandEvent& event)
+{
+	void OnChange (wxCommandEvent& event);
+    if (event.GetEventObject () == txtShellFirst)
+        m_ShellFirst = txtShellFirst->GetLineText (0);
 }
 
 void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
@@ -6841,8 +6967,10 @@ void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
 		if (ptermApp->LoadProfile(profile,wxT("")))
 		{
 			m_curProfile = profile;
+		    m_ShellFirst = ptermApp->m_ShellFirst;
 			m_host = ptermApp->m_hostName;
 			m_port.Printf (wxT ("%d"), ptermApp->m_port);
+			txtShellFirst->SetValue ( m_ShellFirst );
 			txtHost->SetValue ( m_host );
 			cboPort->SetValue ( m_port );
 			m_host = txtHost->GetLineText (0);
@@ -6857,6 +6985,89 @@ void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
 			wxMessageBox (str, wxT ("Error"), wxOK | wxICON_HAND);
 		}
 	}
+}
+
+// ----------------------------------------------------------------------------
+// PtermConnFailDialog
+// ----------------------------------------------------------------------------
+
+BEGIN_EVENT_TABLE(PtermConnFailDialog, wxDialog)
+    EVT_CLOSE(PtermConnFailDialog::OnClose)
+    EVT_BUTTON(wxID_ANY, PtermConnFailDialog::OnButton)
+    END_EVENT_TABLE()
+
+PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title, wxPoint pos, wxSize loc)
+    : wxDialog (NULL, id, title, pos, loc)
+{
+
+	// static ui objects, note dynamic controls, e.g. those that hold values or require event processing are declared above
+	wxStaticText* lblPrompt;
+	wxStaticText* lblHost;
+//	wxButton* btnNew;
+//	wxButton* btnRetry;
+//	wxButton* btnCancel;
+	wxString str;
+
+	// ui object creation / placement, note initialization of values is below
+	this->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	wxBoxSizer* bs1;
+	bs1 = new wxBoxSizer( wxVERTICAL );
+	lblPrompt = new wxStaticText( this, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+	lblPrompt->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	bs1->Add( lblPrompt, 1, wxTOP|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
+	lblHost = new wxStaticText( this, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+	lblHost->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	bs1->Add( lblHost, 0, wxALL, 5 );
+	wxFlexGridSizer* fgs11;
+	fgs11 = new wxFlexGridSizer( 0, 4, 0, 0 );
+	fgs11->AddGrowableCol( 2 );
+	fgs11->SetFlexibleDirection( wxHORIZONTAL );
+	btnNew = new wxButton( this, wxID_ANY, _("New Connection"), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	btnNew->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	fgs11->Add( btnNew, 0, wxALL, 5 );
+	btnRetry = new wxButton( this, wxID_ANY, _("Retry"), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	btnRetry->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	fgs11->Add( btnRetry, 0, wxALL, 5 );
+	fgs11->Add( 0, 0, 1, wxALL, 5 );
+	btnCancel = new wxButton( this, wxID_ANY, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	btnCancel->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	fgs11->Add( btnCancel, 0, wxALL, 5 );
+	bs1->Add( fgs11, 0, wxEXPAND, 5 );
+
+	// set object value properties
+	if (ptermApp->m_connError == C_DISCONNECT)
+		str.Printf(_("Your connection to the host was lost.  You may open a\nnew connection, try this connection again, or exit."));
+	else
+		str.Printf(_("The host did not respond to the connection request.\nYou may open a new connection, try this connection\nagain, or exit."));
+	lblPrompt->SetLabel(str);
+	str.Printf(_("\nFailed: %s:%d"),ptermApp->m_hostName, ptermApp->m_port);
+    lblHost->SetLabel(str);
+
+	//size the controls
+	this->SetSizer( bs1 );
+	this->Layout();
+	bs1->Fit( this );
+	btnRetry->SetDefault ();
+	btnRetry->SetFocus ();
+}
+
+void PtermConnFailDialog::OnButton (wxCommandEvent& event)
+{
+	void OnButton (wxCommandEvent& event);
+    if (event.GetEventObject () == btnNew)
+		ptermApp->m_connAction = 1;
+    else if (event.GetEventObject () == btnRetry)
+		ptermApp->m_connAction = 2;
+    else if (event.GetEventObject () == btnCancel)
+		ptermApp->m_connAction = 0;
+    EndModal (wxID_OK);
+}
+
+void PtermConnFailDialog::OnClose (wxCloseEvent& event)
+{
+	void OnClose (wxCommandEvent& event);
+	ptermApp->m_connAction = 0;
+    EndModal (wxID_OK);
 }
 
 // ----------------------------------------------------------------------------
@@ -7252,22 +7463,31 @@ int PtermConnection::NextWord (void)
         m_owner->m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
 
         if (word == C_CONNFAIL)
-            msg.Printf (_("Failed to connect to %s %d\n\nTry another connection?"), m_hostName.c_str (), m_port);
+            msg = _("Connection Failed");
         else
-            msg.Printf (_("Connection lost to %s %d\n\nTry another connection?"), m_hostName.c_str (), m_port);
-            
-	    wxMessageDialog alert (m_owner, msg, wxString (_("Alert")), wxYES_NO|wxCANCEL);
-		switch (alert.ShowModal ())
+            msg = _("Connection Dropped");
+		
+		ptermApp->m_connError = word;
+        PtermConnFailDialog dlg (wxID_ANY, msg, wxDefaultPosition, wxSize( 320,140 ));
+        dlg.CenterOnScreen ();
+        dlg.ShowModal ();
+
+		switch (ptermApp->m_connAction)
 		{
-		case wxID_YES:	// prompt for a connection rather than just bailing out
+		case 1:			// prompt for a connection rather than just bailing out
 			ptermApp->DoConnect(true);
+			word = C_NODATA;
 			break;
-		case wxID_NO:	// stay in pterm in disconnected state
+		case 2:			// stay in pterm in disconnected state
+			if (word == C_DISCONNECT)
+				word = C_NODATA;
+			else
+				m_owner->m_statusBar->SetStatusText (_(" Retrying..."), STATUS_CONN);
 			break;
 		default:		// cancel exits
 			m_owner->Close (true);
+			word = C_NODATA;
 		}
-		word = C_NODATA;
     }
         
     return word;

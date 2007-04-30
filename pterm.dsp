@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /I "d:\projects\pterm\wxWidgets 2.6.3\lib\vc_lib\msw" /I "d:\projects\pterm\wxWidgets 2.6.3\include" /I "d:\projects\pterm\SDL-1.2.11\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /YX /FD /c
+# ADD CPP /nologo /W3 /GX /O2 /I "d:\projects\pterm\wxWidgets 2.6.3\lib\vc_lib\msw" /I "d:\projects\pterm\wxWidgets 2.6.3\include" /I "d:\projects\pterm\SDL-1.2.11\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D WINVER=0x400 /D wxUSE_GUI=1 /FR /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /i "d:\projects\pterm\wxWidgets 2.6.3\include" /d "NDEBUG"
 BSC32=bscmake.exe
