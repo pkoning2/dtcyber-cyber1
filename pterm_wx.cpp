@@ -617,6 +617,7 @@ public:
     void OnMouseUp (wxMouseEvent &event);
     void OnMouseContextMenu (wxMouseEvent &event);
     void OnMouseMotion (wxMouseEvent &event);
+	void OnMouseWheel (wxMouseEvent &event);
     void OnCopy (wxCommandEvent &event);
 
 #if defined (__WXMSW__)
@@ -702,6 +703,15 @@ public:
     void OnExec (wxCommandEvent &event);
     void OnMailTo (wxCommandEvent &event);
     void OnSearchThis (wxCommandEvent &event);
+    void OnMacro0 (wxCommandEvent &event);
+    void OnMacro1 (wxCommandEvent &event);
+    void OnMacro2 (wxCommandEvent &event);
+    void OnMacro3 (wxCommandEvent &event);
+    void OnMacro4 (wxCommandEvent &event);
+    void OnMacro5 (wxCommandEvent &event);
+    void OnMacro6 (wxCommandEvent &event);
+    void OnMacro7 (wxCommandEvent &event);
+    void OnMacro8 (wxCommandEvent &event);
     void OnPaste (wxCommandEvent &event);
     void OnUpdateUIPaste (wxUpdateUIEvent& event);
     void OnSaveScreen (wxCommandEvent &event);
@@ -715,7 +725,9 @@ public:
     
     void PrepareDC(wxDC& dc);
     void ptermSendKey(int key);
+    void ptermSendKeys(int key[]);
     void ptermSendTouch (int x, int y);
+    void ptermSendExt (int key);
     void ptermSetTrace (bool fileaction);
 	void SetTitleFromPlatoMetaData(void);
 	void WriteTraceMessage(wxString);
@@ -1154,6 +1166,15 @@ enum
     Pterm_Exec,			// execute URL
     Pterm_MailTo,		// execute email client
     Pterm_SearchThis,	// execute search URL
+    Pterm_Macro0,
+    Pterm_Macro1,
+    Pterm_Macro2,
+    Pterm_Macro3,
+    Pterm_Macro4,
+    Pterm_Macro5,
+    Pterm_Macro6,
+    Pterm_Macro7,
+    Pterm_Macro8,
 
     // Menu items with standard ID values
     Pterm_Print = wxID_PRINT,
@@ -1328,6 +1349,15 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Exec, PtermFrame::OnExec)	
     EVT_MENU(Pterm_MailTo, PtermFrame::OnMailTo)	
     EVT_MENU(Pterm_SearchThis, PtermFrame::OnSearchThis)	
+    EVT_MENU(Pterm_Macro0, PtermFrame::OnMacro0)	
+    EVT_MENU(Pterm_Macro1, PtermFrame::OnMacro1)	
+    EVT_MENU(Pterm_Macro2, PtermFrame::OnMacro2)	
+    EVT_MENU(Pterm_Macro3, PtermFrame::OnMacro3)	
+    EVT_MENU(Pterm_Macro4, PtermFrame::OnMacro4)	
+    EVT_MENU(Pterm_Macro5, PtermFrame::OnMacro5)	
+    EVT_MENU(Pterm_Macro6, PtermFrame::OnMacro6)	
+    EVT_MENU(Pterm_Macro7, PtermFrame::OnMacro7)	
+    EVT_MENU(Pterm_Macro8, PtermFrame::OnMacro8)	
     EVT_MENU(Pterm_Paste, PtermFrame::OnPaste)
     EVT_MENU(Pterm_PastePrint, PtermFrame::OnPaste)
     EVT_UPDATE_UI(Pterm_Paste, PtermFrame::OnUpdateUIPaste)
@@ -2138,6 +2168,16 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     menuEdit->Append(Pterm_Exec, _("Execute URL") ACCELERATOR ("\tCtrl-X"), _("Execute URL"));
     menuEdit->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
     menuEdit->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
+    menuEdit->AppendSeparator ();					
+    menuEdit->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
+    menuEdit->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
+    menuEdit->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
+    menuEdit->Append(Pterm_Macro3, _("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), _("<c,zc.keys>"));
+    menuEdit->Append(Pterm_Macro4, _("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), _("<c,zc.text>"));
+    menuEdit->Append(Pterm_Macro5, _("color zc.errf") ACCELERATOR ("\tCtrl-5"), _("color zc.errf"));
+    menuEdit->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
+    menuEdit->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
+    menuEdit->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
 
     // Copy is initially disabled, until a region is selected
     menuEdit->Enable (Pterm_Copy, false);
@@ -2812,6 +2852,52 @@ void PtermFrame::OnSearchThis (wxCommandEvent &event)
     }
 
     wxTheClipboard->Close ();
+}
+
+void PtermFrame::OnMacro0 (wxCommandEvent &event)
+{
+	int key[] = {0034,0034,0034,0034,0034,0034,0034,0034,-1};
+	ptermSendKeys(key);
+}
+void PtermFrame::OnMacro1 (wxCommandEvent &event)
+{
+	int key[] = {0024,0000,0103,0137,0132,0103,0136,0105,0122,0122,0106,0024,0001,-1};
+	ptermSendKeys(key);
+}
+void PtermFrame::OnMacro2 (wxCommandEvent &event)
+{
+	int key[] = {0024,0000,0103,0137,0132,0103,0136,0111,0116,0106,0117,0024,0001,-1};
+	ptermSendKeys(key);
+}
+void PtermFrame::OnMacro3 (wxCommandEvent &event)
+{
+	int key[] = {0024,0000,0103,0137,0132,0103,0136,0113,0105,0131,0123,0024,0001,-1};
+	ptermSendKeys(key);
+}
+void PtermFrame::OnMacro4 (wxCommandEvent &event)
+{
+	int key[] = {0024,0000,0103,0137,0132,0103,0136,0124,0105,0130,0124,0024,0001,-1};
+	ptermSendKeys(key);
+}
+void PtermFrame::OnMacro5 (wxCommandEvent &event)
+{
+	int key[] = {0103,0117,0114,0117,0122,0100,0100,0100,0104,0111,0123,0120,0114,0101,0131,0134,0132,0103,0136,0105,0122,0122,0106,-1};
+	ptermSendKeys(key);
+}
+void PtermFrame::OnMacro6 (wxCommandEvent &event)
+{
+	int key[] = {0103,0117,0114,0117,0122,0100,0100,0100,0104,0111,0123,0120,0114,0101,0131,0134,0132,0103,0136,0111,0116,0106,0117,-1};
+	ptermSendKeys(key);
+}
+void PtermFrame::OnMacro7 (wxCommandEvent &event)
+{
+	int key[] = {0103,0117,0114,0117,0122,0100,0100,0100,0104,0111,0123,0120,0114,0101,0131,0134,0132,0103,0136,0113,0105,0131,0123,-1};
+	ptermSendKeys(key);
+}
+void PtermFrame::OnMacro8 (wxCommandEvent &event)
+{
+	int key[] = {0103,0117,0114,0117,0122,0100,0100,0100,0104,0111,0123,0120,0114,0101,0131,0134,0132,0103,0136,0124,0105,0130,0124,-1};
+	ptermSendKeys(key);
 }
 
 void PtermFrame::OnPaste (wxCommandEvent &event)
@@ -5336,12 +5422,29 @@ void PtermFrame::ptermSendKey (int key)
         {
             data[0] = key >> 7;
             data[1] = 0200 | key;
-
             m_conn->SendData (data, 2);
         }
     }
 }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Process Plato mode keyboard input (multiple keys)
+**
+**  Parameters:     Name        Description.
+**                  key         Array of integers of Plato key codes
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void PtermFrame::ptermSendKeys (int key[])
+{
+	for (int i=0; key[i] != -1; i++)
+	{
+		ptermSendKey(key[i]);
+		m_pasteTimer.Start (atoi(ptermApp->m_charDelay.mb_str ()), true);
+	}
+}
+			
 void PtermFrame::ptermSendTouch (int x, int y)
 {
     char data[6];
@@ -5362,6 +5465,27 @@ void PtermFrame::ptermSendTouch (int x, int y)
     y /= 32;
 
     ptermSendKey (0x100 | (x << 4) | y);
+}
+
+void PtermFrame::ptermSendExt (int key)
+{
+    char data[3];
+
+    if (m_conn->Ascii ())
+    {
+        // Send external key
+        data[0] = 033;
+        data[1] = 0x40 | (key & 0x3f);
+        data[2] = 0x68 | ((key >> 6) & 0x03);
+        m_conn->SendData (data, 3);
+	}
+	else
+	{
+        data[0] = 0x04 | ((key >> 7) & 0x01);
+        data[1] = 0x80 | (key & 0x7f);
+        m_conn->SendData (data, 2);
+    }
+    
 }
 
 #if 0
@@ -5831,6 +5955,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 //	wxButton* btnCancel;
 //	wxButton* btnDefaults;
     
+
+	
 	// ui object creation / placement, note initialization of values is below
 	wxBoxSizer* bSizer1;
 	bSizer1 = new wxBoxSizer( wxVERTICAL );
@@ -5863,7 +5989,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	btnDelete = new wxButton( tab0, wxID_ANY, _("Delete"), wxDefaultPosition, wxDefaultSize, 0 );
 	btnDelete->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgs011->Add( btnDelete, 0, wxRIGHT|wxLEFT, 5 );
-	lblProfileStatusMessage = new wxStaticText( tab0, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
+	lblProfileStatusMessage = new wxStaticText( tab0, wxID_ANY, _("Profile saved."), wxDefaultPosition, wxDefaultSize, 0 );
 	lblProfileStatusMessage->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgs011->Add( lblProfileStatusMessage, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 	fgs01->Add( fgs011, 1, 0, 5 );
@@ -5875,7 +6001,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	fgs012->SetFlexibleDirection( wxHORIZONTAL );
 	lblNewProfile = new wxStaticText( tab0, wxID_ANY, _("Profile"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs012->Add( lblNewProfile, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	txtProfile = new wxTextCtrl( tab0, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+	txtProfile = new wxTextCtrl( tab0, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0 );
 	txtProfile->SetMinSize( wxSize( 310,-1 ) );
 	fgs012->Add( txtProfile, 1, wxALL|wxEXPAND, 5 );
 	btnAdd = new wxButton( tab0, wxID_ANY, _("Add"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT );
@@ -5932,9 +6058,6 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	tab1->Layout();
 	page1->Fit( tab1 );
 	tabPrefsDialog->AddPage( tab1, _("Connection"), true );
-	tab2 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL );
-	tab2->SetScrollRate( 5, 5 );
-	tab2->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	//tab2
 	tab2 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL );
 	tab2->SetScrollRate( 5, 5 );
@@ -5957,7 +6080,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	page2->Add( chkShowStation, 0, wxALL, 5 );
 	tab2->SetSizer( page2 );
 	tab2->Layout();
-	page1->Fit( tab2 );
+	page2->Fit( tab2 );
 	tabPrefsDialog->AddPage( tab2, _("Title"), false );
 	//tab3
 	tab3 = new wxScrolledWindow( tabPrefsDialog, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL );
@@ -6056,14 +6179,14 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	fgs511 = new wxFlexGridSizer( 2, 3, 0, 0 );
 	lblCharDelay = new wxStaticText( tab5, wxID_ANY, _("Delay between chars"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs511->Add( lblCharDelay, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-	txtCharDelay = new wxTextCtrl( tab5, wxID_ANY, wxT("50"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
+	txtCharDelay = new wxTextCtrl( tab5, wxID_ANY, _("50"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
 	txtCharDelay->SetMaxLength( 3 ); 
 	fgs511->Add( txtCharDelay, 0, wxALL, 5 );
 	lblCharDelay2 = new wxStaticText( tab5, wxID_ANY, _("milliseconds"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs511->Add( lblCharDelay2, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	lblLineDelay = new wxStaticText( tab5, wxID_ANY, _("Delay after end of line"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs511->Add( lblLineDelay, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	txtLineDelay = new wxTextCtrl( tab5, wxID_ANY, wxT("100"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
+	txtLineDelay = new wxTextCtrl( tab5, wxID_ANY, _("100"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
 	txtLineDelay->SetMaxLength( 3 ); 
 	fgs511->Add( txtLineDelay, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 	lblLineDelay2 = new wxStaticText( tab5, wxID_ANY, _("milliseconds"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6073,10 +6196,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	fgs512 = new wxFlexGridSizer( 2, 3, 0, 0 );
 	lblAutoNewLine = new wxStaticText( tab5, wxID_ANY, _("Automatic new line every"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs512->Add( lblAutoNewLine, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	cboAutoLF = new wxComboBox( tab5, wxID_ANY, wxT("60"), wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0|wxTAB_TRAVERSAL );
-	cboAutoLF->Append( wxT("0") );
-	cboAutoLF->Append( wxT("60") );
-	cboAutoLF->Append( wxT("120") );
+	cboAutoLF = new wxComboBox( tab5, wxID_ANY, _("60"), wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0|wxTAB_TRAVERSAL );
+	cboAutoLF->Append( _("0") );
+	cboAutoLF->Append( _("60") );
+	cboAutoLF->Append( _("120") );
 	cboAutoLF->SetMinSize( wxSize( 65,-1 ) );
 	fgs512->Add( cboAutoLF, 1, wxALL, 5 );
 	lblAutoNewLine2 = new wxStaticText( tab5, wxID_ANY, _("characters"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6111,38 +6234,41 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	page6->SetFlexibleDirection( wxBOTH );
 	lblBrowser = new wxStaticText( tab6, wxID_ANY, _("Specify browser to use for menu option 'Execute URL'"), wxDefaultPosition, wxDefaultSize, 0 );
 	page6->Add( lblBrowser, 0, wxALIGN_BOTTOM|wxALL, 5 );
-	txtBrowser = new wxTextCtrl( tab6, wxID_ANY, wxT(""), wxPoint( -1,-1 ), wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	txtBrowser = new wxTextCtrl( tab6, wxID_ANY, _(""), wxPoint( -1,-1 ), wxDefaultSize, 0|wxTAB_TRAVERSAL );
 	txtBrowser->SetMaxLength( 255 ); 
 	page6->Add( txtBrowser, 0, wxALL|wxEXPAND, 5 );
 	lblEmail = new wxStaticText( tab6, wxID_ANY, _("Command line for menu option 'Mail to...' (%s=address)"), wxDefaultPosition, wxDefaultSize, 0 );
 	page6->Add( lblEmail, 0, wxALL|wxALIGN_BOTTOM, 5 );
-	txtEmail = new wxTextCtrl( tab6, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	txtEmail = new wxTextCtrl( tab6, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
 	txtEmail->SetMaxLength( 255 ); 
 	txtEmail->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	page6->Add( txtEmail, 0, wxALL|wxEXPAND, 5 );
 	lblSearchURL = new wxStaticText( tab6, wxID_ANY, _("Specify URL for menu option 'Search this...'"), wxDefaultPosition, wxDefaultSize, 0 );
 	page6->Add( lblSearchURL, 0, wxALL, 5 );
-	txtSearchURL = new wxTextCtrl( tab6, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	txtSearchURL = new wxTextCtrl( tab6, wxID_ANY, _(""), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
 	txtSearchURL->SetMaxLength( 255 ); 
 	page6->Add( txtSearchURL, 0, wxALL|wxEXPAND, 5 );
 	tab6->SetSizer( page6 );
 	tab6->Layout();
 	page6->Fit( tab6 );
-	tabPrefsDialog->AddPage( tab6, _("Local"), true );
+	tabPrefsDialog->AddPage( tab6, _("Local"), false );
 	//notebook
 	bSizer1->Add( tabPrefsDialog, 1, wxEXPAND|wxTOP|wxRIGHT|wxLEFT, 6 );
 	//button bar
 	wxFlexGridSizer* fgsButtons;
-	fgsButtons = new wxFlexGridSizer( 1, 4, 0, 0 );
+	fgsButtons = new wxFlexGridSizer( 1, 5, 0, 0 );
 	fgsButtons->AddGrowableCol( 0 );
 	fgsButtons->AddGrowableRow( 0 );
 	fgsButtons->SetFlexibleDirection( wxHORIZONTAL );
-	fgsButtons->Add( 0, 0, 1, 0, 5 );
+	fgsButtons->Add( 0, 0, 1, wxALL|wxEXPAND, 5 );
 	btnOK = new wxButton( this, wxID_ANY, _("OK"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnOK->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgsButtons->Add( btnOK, 0, wxALL, 5 );
 	btnCancel = new wxButton( this, wxID_ANY, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnCancel->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgsButtons->Add( btnCancel, 0, wxALL, 5 );
 	btnDefaults = new wxButton( this, wxID_ANY, _("Defaults"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnDefaults->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgsButtons->Add( btnDefaults, 0, wxALL, 5 );
 	bSizer1->Add( fgsButtons, 0, wxEXPAND, 5 );
 	this->SetSizer( bSizer1 );
@@ -7626,6 +7752,7 @@ BEGIN_EVENT_TABLE(PtermCanvas, wxScrolledWindow)
     EVT_LEFT_UP(PtermCanvas::OnMouseUp)
     EVT_RIGHT_UP(PtermCanvas::OnMouseContextMenu)
     EVT_MOTION(PtermCanvas::OnMouseMotion)
+	EVT_MOUSEWHEEL(PtermCanvas::OnMouseWheel)
     END_EVENT_TABLE ()
 
 PtermCanvas::PtermCanvas(PtermFrame *parent)
@@ -8208,6 +8335,12 @@ void PtermCanvas::ClearRegion (void)
 	}
 }
 
+void PtermCanvas::OnMouseWheel (wxMouseEvent &event)
+{
+	int key = event.m_wheelRotation;
+	m_owner->ptermSendExt((key>0 ? ~1 : 1) & 0xff);
+    event.Skip ();
+}
 
 void PtermCanvas::OnMouseDown (wxMouseEvent &event)
 {

@@ -60,7 +60,7 @@
                         <object class="notebookpage">
                             <property name="bitmap"></property>
                             <property name="label">Profiles</property>
-                            <property name="select">0</property>
+                            <property name="select">1</property>
                             <object class="wxScrolledWindow">
                                 <property name="bg"></property>
                                 <property name="enabled">1</property>
@@ -405,7 +405,7 @@
                         <object class="notebookpage">
                             <property name="bitmap"></property>
                             <property name="label">Connection</property>
-                            <property name="select">1</property>
+                            <property name="select">0</property>
                             <object class="wxScrolledWindow">
                                 <property name="bg"></property>
                                 <property name="enabled">1</property>
