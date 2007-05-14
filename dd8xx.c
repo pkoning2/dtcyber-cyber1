@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003-2006, Tom Hunter, Gerard van der Grinten,
+**  Copyright (c) 2003-2007, Tom Hunter, Gerard van der Grinten,
 **  and Paul Koning.
 **  (see license.txt)
 **
@@ -34,6 +34,8 @@
 **  Private Constants
 **  -----------------
 */
+
+#define MAXDDUNITS 64
 
 /*
 **  CDC 844 and 885 disk drive function and status codes.
@@ -307,6 +309,7 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     {
     DevSlot *ds;
     DiskParam *dp;
+    DiskParam **dpvec;
     time_t mTime;
     struct tm *lTime;
     u8 yy, mm, dd;
@@ -485,7 +488,18 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     /*
     **  Link device parameters.
     */
-    ds->context[unitNo] = dp;
+    dpvec = (DiskParam **) (ds->context[0]);
+    if (dpvec == NULL)
+        {
+        dpvec = (DiskParam **) malloc (sizeof (DiskParam *) * MAXDDUNITS);
+        if (dpvec == NULL)
+            {
+            fprintf (stderr, "Failed to allocate DiskParam vector");
+            exit (1);
+            }
+        ds->context[0] = dpvec;
+        }
+    dpvec[unitNo] = dp;
 
     /*
     **  Open disk image, if a name is given.  Otherwise leave unit unloaded.
@@ -618,7 +632,7 @@ static FcStatus dd8xxFunc(PpWord funcCode)
     unitNo = activeDevice->selectedUnit;
     if (unitNo != -1)
         {
-        dp = (DiskParam *)activeDevice->context[unitNo];
+        dp = ((DiskParam **) (activeDevice->context[0]))[unitNo];
         opened = ddOpened (&dp->ioDesc);
         }
     else
@@ -641,9 +655,9 @@ static FcStatus dd8xxFunc(PpWord funcCode)
     if ((funcCode & 0700) == Fc8xxDeadstart )
         {
         funcCode = Fc8xxDeadstart;
-        activeDevice->selectedUnit = funcCode & 07;
+        activeDevice->selectedUnit = funcCode & 077;
         unitNo = activeDevice->selectedUnit;
-        dp = (DiskParam *)activeDevice->context[unitNo];
+        dp = ((DiskParam **) (activeDevice->context[0]))[unitNo];
         opened = ddOpened (&dp->ioDesc);
         }
 
@@ -887,7 +901,7 @@ static void dd8xxIo(void)
     unitNo = activeDevice->selectedUnit;
     if (unitNo != -1)
         {
-        dp = (DiskParam *)activeDevice->context[unitNo];
+        dp = ((DiskParam **) (activeDevice->context[0]))[unitNo];
         opened = ddOpened (&dp->ioDesc);
         }
     else
@@ -901,10 +915,10 @@ static void dd8xxIo(void)
     case Fc8xxConnect:
         if (activeChannel->full)
             {
-            unitNo = activeChannel->data & 07;
+            unitNo = activeChannel->data & 077;
             if (unitNo != activeDevice->selectedUnit)
                 {
-                dp = (DiskParam *)activeDevice->context[unitNo];
+                dp = ((DiskParam **) (activeDevice->context[0]))[unitNo];
                 if (dp != NULL && ddOpened (&dp->ioDesc))
                     {
                     activeDevice->selectedUnit = unitNo;
@@ -933,10 +947,10 @@ static void dd8xxIo(void)
             switch (activeDevice->recordLength--)
                 {
             case 4:
-                unitNo = activeChannel->data & 07;
+                unitNo = activeChannel->data & 077;
                 if (unitNo != activeDevice->selectedUnit)
                     {
-                    dp = (DiskParam *)activeDevice->context[unitNo];
+                    dp = ((DiskParam **) (activeDevice->context[0]))[unitNo];
                     if (dp != NULL &&  ddOpened (&dp->ioDesc))
                         {
                         activeDevice->selectedUnit = unitNo;
@@ -1825,7 +1839,7 @@ static void dd8xxLoad(DevSlot *ds, int unitNo, char *fn)
     static char msgBuf[80];
     long endPos = 0;
     
-    if (unitNo < 0 || unitNo >= MaxUnits)
+    if (unitNo < 0 || unitNo >= MAXDDUNITS)
         {
         opSetMsg ("$INVALID UNIT NO");
         return;
@@ -1833,12 +1847,12 @@ static void dd8xxLoad(DevSlot *ds, int unitNo, char *fn)
     /*
     **  Check if the unit is even configured.
     */
-    if (ds->context[unitNo] == NULL)
+    dp = ((DiskParam **) (activeDevice->context[0]))[unitNo];
+    if (dp == NULL)
         {
         opSetMsg ("$UNIT NOT ALLOCATED");
         return;
         }
-    dp = (DiskParam *)ds->context[unitNo];
 
     if (fn == NULL)
         {
