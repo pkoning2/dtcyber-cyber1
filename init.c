@@ -99,8 +99,10 @@ const intParam intParamList[] =
 {
     { "telnetport", &telnetPort, DefTelnetPort },
     { "telnetconns", &telnetConns, 4 },
+#ifdef NPU_SUPPORT
     { "nputelnetconns", &npuNetTelnetConns, 3 },
     { "nputelnetport", &npuNetTelnetPort, 6610 },
+#endif
     { "platoport", &platoPort, DefNiuPort },
     { "platoconns", &platoConns, 4 },
     { "platolocalport", &platoLocalPort, DefNiuPort + 1 },
