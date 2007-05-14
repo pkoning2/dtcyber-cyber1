@@ -2233,7 +2233,11 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
 		{
 			if (wxExecute(ptermApp->m_ShellFirst)!=0)
 			{
-				Sleep(2000);
+#if defined(_WIN32)
+                Sleep (2000);
+#else
+                sleep (2);
+#endif
 			}
 		}
 
@@ -2268,7 +2272,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     if (port > 0)
     {
         // Create and start the network processing thread
-		TRACE2("Connecting to: %s:%d",host,port);
+		TRACE2 ("Connecting to: %s:%d", host.c_str (), port);
         m_conn = new PtermConnection (this, host, port);
         if (m_conn->Create () != wxTHREAD_NO_ERROR)
         {
@@ -7184,7 +7188,8 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title, 
 	else
 		str.Printf(_("The host did not respond to the connection request.\nYou may open a new connection, try this connection\nagain, or exit."));
 	lblPrompt->SetLabel(str);
-	str.Printf(_("\nFailed: %s:%d"),ptermApp->m_hostName, ptermApp->m_port);
+	str.Printf(_("\nFailed: %s:%d"), ptermApp->m_hostName.c_str (), 
+               ptermApp->m_port);
     lblHost->SetLabel(str);
 
 	//size the controls
@@ -8179,7 +8184,8 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     int pc = -1;
 
     // Dumb TTY input is handled here, always
-    if (m_owner->m_conn->Ascii () && m_owner->m_dumbTty)
+    if (m_owner->HasConnection () &&
+        m_owner->m_conn->Ascii () && m_owner->m_dumbTty)
     {
         key = event.m_keyCode;
 #ifdef DEBUGLOG
