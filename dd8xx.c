@@ -664,7 +664,7 @@ static FcStatus dd8xxFunc(PpWord funcCode)
 #if DEBUG
     if (dp != NULL)
         {
-        fprintf(dd8xxLog, "\n%06d PP:%02o CH:%02o DSK:%d f:%04o T:%-25s   c:%3d t:%2d s:%2d  >   ", 
+        fprintf(dd8xxLog, "\n%06d PP:%02o CH:%02o DSK:%o f:%04o T:%-25s   c:%3d t:%2d s:%2d  >   ", 
             traceSequenceNo,
             activePpu->id,
             activeDevice->channel->id,
