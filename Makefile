@@ -55,6 +55,7 @@ OBJS    = main.o init.o trace.o dump.o \
 
 ifneq ("$(NPU_SUPPORT)","")
 OBJS +=	  npu_async.o npu_bip.o npu_hip.o npu_svm.o npu_tip.o npu_net.o
+VERSIONCFLAGS +=   -DNPU_SUPPORT=1
 endif
 
 .PHONY : clean dep kit
