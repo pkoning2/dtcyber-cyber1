@@ -1,6 +1,6 @@
 #!/bin/bash
 cr=${0%/*}
-cj=$cr/j
+cj=$cr/decks
 test -e $cj/fix && rm -f $cj/fix
 for f in $@; do
   f2=${f##*/}
