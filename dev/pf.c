@@ -88,7 +88,7 @@ void usage (void);
 
 #define OFFSET_OF(__CLASS__,__FIELD__) ((size_t)(&((__CLASS__*)0)->__FIELD__))
 
-typedef enum { None, Read, Write, Create, Packinit, List } action;
+typedef enum { None, Read, Write, Create, Packinit, List, Packupdate } action;
 
 
 typedef struct 
@@ -240,6 +240,7 @@ int mf = 0;
 int hasflawtb = 1;
 int moddel = 0;
 int modword = 0;
+int offset = 0;
 
 cw ccode;
 cw icode;
@@ -485,7 +486,7 @@ void readsec (int sec, u8 *buf)
         fread (secbuf, 512, 1, pdisk);
     }
     p = secbuf;
-    for (i = (mf) ? 2 : 0; i < 0502; i += 2)
+    for (i = (mf || offset) ? 2 : 0; i < 0502; i += 2)
     {
         p1 = *p++ << 4;
         p1 += *p >> 4;
@@ -508,9 +509,12 @@ void writesec (int sec, const u8 *buf)
     u8 *p;
     
     p = secbuf;
-    *p++ = 0;
-    *p++ = 0;
-    *p++ = 0;
+    if (!(mf || offset))
+    {
+        *p++ = 0;
+        *p++ = 0;
+        *p++ = 0;
+    }
     for (i = 2; i < 0502; i += 2)
     {
         if ((*buf | buf[1] | buf[2] | buf[3]) & 0300)
@@ -547,12 +551,22 @@ void writesec (int sec, const u8 *buf)
         }
     }
 #endif
-    fseek (pdisk, sec * 512, SEEK_SET);
-    if (fwrite (secbuf, 512, 1, pdisk) != 1)
+    if (mf)
     {
-        perror ("write");
+        fseek (pdisk, sec * 480, SEEK_SET);
+        if (fwrite (secbuf, 480, 1, pdisk) != 1)
+        {
+            perror ("write");
+        }
     }
-    
+    else
+    {
+        fseek (pdisk, sec * 512, SEEK_SET);
+        if (fwrite (secbuf, 512, 1, pdisk) != 1)
+        {
+            perror ("write");
+        }
+    }
 }
 
 void readblk (int blk, u8 *buf)
@@ -1125,6 +1139,7 @@ void pflist (int argc, char **argv)
     u64 fiw;
     int startblk, blks, type;
     char fn[11];
+    char pn[11], pt[11];
     
     if (argc != 1)
     {
@@ -1141,6 +1156,10 @@ void pflist (int argc, char **argv)
     readpd ();
     if (verbose)
     {
+        pn[10] = pt[10] = '\0';
+        dtoa (pn, pd->packname, 10);
+        dtoa (pt, pd->packtype, 10);
+        printf ("pack %s, type %s\n", pn, pt);
         printf ("pack directory size %d blocks (%d parts)\n",
                 pdblks, (pdblks + 6) / 7);
         printf (" %lld files used, %lld total\n", fused, ftotal);
@@ -1397,6 +1416,45 @@ void pfinit (int argc, char **argv)
     fclose (pdisk);
 }
 
+void pfupdate (int argc, char **argv)
+{
+    int type, i;
+    
+    if (argc != 3)
+    {
+        printf ("wrong number of arguments\n");
+        usage ();
+        exit (1);
+    }
+    type = tolower(*argv[2]) - 'a';
+    if (type > 3)
+    {
+        printf ("invalid pack type %s\n", argv[3]);
+        exit (1);
+    }
+    ptype = types[type];
+    memset (pname, ':', 10);
+    i = strlen (argv[1]);
+    if (i > 10)
+    {
+        printf ("invalid pack name %s\n", argv[2]);
+        exit (1);
+    }
+    memcpy (pname, argv[1], i);
+    
+    pdisk = fopen(argv[0], "r+b");
+    if (pdisk == NULL)
+    {
+        perror ("open");
+        exit (1);
+    }
+    readpd ();
+    setstr (pd->packname, pname);
+    setstr (pd->packtype, ptype);
+    writeblk (pdstart, pdbuf);
+    fclose (pdisk);
+}
+
 void usage (void)
 {
     fprintf (stderr, "usage:\n"
@@ -1408,6 +1466,7 @@ void usage (void)
 
              "pf [-mf] -p -c parts pdisk pfile  create file from stdin\n"
              "pf [-mf] -I pdisk plabel ptype    initialize plato disk\n"
+             "pf [-mf] -U pdisk plabel ptype    relabel plato disk\n"
              "   -p                             pipe output to stdout\n"
              "   -i                             image output mode\n"
              "   -f                             include FIW data in image output\n"
@@ -1435,11 +1494,14 @@ int main (int argc, char **argv)
     parts = 0;
     for (;;)
     {
-        opt = getopt (argc, argv, "w:ciIfFpslvmMD");
+        opt = getopt (argc, argv, "w:ciIfFpslvmMD2U");
         if (opt == (char) (-1))
             break;
         switch (opt)
         {
+        case '2':
+            offset = 2;
+            break;
         case 'w':
             act = Write;
             break;
@@ -1455,6 +1517,9 @@ int main (int argc, char **argv)
             break;
         case 'I':
             act = Packinit;
+            break;
+        case 'U':
+            act = Packupdate;
             break;
         case 'f':
             force = true;
@@ -1533,6 +1598,9 @@ int main (int argc, char **argv)
             }
         }
         pfinit (argc, argv);
+        break;
+    case Packupdate:
+        pfupdate (argc, argv);
         break;
     default:
         fprintf (stderr, "oops, code is missing\n");
