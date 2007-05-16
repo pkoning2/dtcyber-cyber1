@@ -189,10 +189,12 @@
 // The YTOP definition looks a bit strange because we want the top one
 // of the two pixels if we're doing double size display
 #define XTOP (XADJUST (0))
-#define YTOP (YADJUST (512) + 1)
+//#define YTOP (YADJUST (512) + 1)
+#define YTOP (YADJUST (511))
 // Ditto but for the backing store bitmap
 #define XMTOP (XMADJUST (0))
-#define YMTOP (YMADJUST (512) + 1)
+//#define YMTOP (YMADJUST (512) + 1)
+#define YMTOP (YMADJUST (511))
 
 // Macro to include keyboard accelerator only if option enabled
 #define ACCELERATOR(x) + ((ptermApp->m_useAccel) ? wxString(wxT (x)) : wxString(wxT("")))
@@ -925,6 +927,7 @@ private:
     void ptermDrawChar (int x, int y, int snum, int cnum);
     void ptermDrawPoint (int x, int y);
     void ptermDrawLine(int x1, int y1, int x2, int y2);
+    void ptermDrawBresenhamLine(wxDC *dc,int x1, int y1, int x2, int y2);
     void ptermFullErase (void);
     void ptermBlockErase (int x1, int y1, int x2, int y2);
     void ptermSetName (wxString &winName);
@@ -3220,10 +3223,10 @@ void PtermFrame::ptermDrawPoint (int x, int y)
     {
         dc.DrawPoint (x + 1, y);
         m_memDC->DrawPoint (xm + 1, ym);
-        dc.DrawPoint (x, y - 1);
-        m_memDC->DrawPoint (xm, ym - 1);
-        dc.DrawPoint (x + 1, y - 1);
-        m_memDC->DrawPoint (xm + 1, ym - 1);
+        dc.DrawPoint (x, y + 1);
+        m_memDC->DrawPoint (xm, ym + 1);
+        dc.DrawPoint (x + 1, y + 1);
+        m_memDC->DrawPoint (xm + 1, ym + 1);
     }    
 }
 
@@ -3233,6 +3236,7 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
     wxClientDC dc(m_canvas);
 
     PrepareDC (dc);
+
     xm1 = XMADJUST (x1);
     ym1 = YMADJUST (y1);
     xm2 = XMADJUST (x2);
@@ -3241,6 +3245,7 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
     y1 = YADJUST (y1);
     x2 = XADJUST (x2);
     y2 = YADJUST (y2);
+
     if (mode & 1)
     {
         // mode rewrite or write
@@ -3253,18 +3258,82 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
         dc.SetPen (m_backgroundPen);
         m_memDC->SetPen (m_backgroundPen);
     }
-    dc.DrawLine (x1, y1, x2, y2);
-    m_memDC->DrawLine (xm1, ym1, xm2, ym2);
-    if (ptermApp->m_scale == 2)
-    {
-        dc.DrawLine (x2, y2, x1, y1);
-        m_memDC->DrawLine (xm2, ym2, xm1, ym1);
+
+	//draw lines
+	ptermDrawBresenhamLine(&dc,x1,y1,x2,y2);
+	ptermDrawBresenhamLine(m_memDC,xm1,ym1,xm2,ym2);
+
+}
+
+void PtermFrame::ptermDrawBresenhamLine(wxDC *dc,int x1,int y1,int x2,int y2)
+{
+
+	int dx,dy;
+	int stepx, stepy;
+
+    dx = x2 - x1;
+	dy = y2 - y1;
+    if (dx < 0) { dx = -dx;  stepx = -1; } else { stepx = 1; }
+    if (dy < 0) { dy = -dy;  stepy = -1; } else { stepy = 1; }
+	stepx *= (ptermApp->m_scale == 2) ? 2 : 1;
+	stepy *= (ptermApp->m_scale == 2) ? 2 : 1;
+    dx <<= 1;
+    dy <<= 1;
+	
+	// draw first point
+	dc->DrawPoint(x1, y1);
+	if (ptermApp->m_scale == 2)
+	{
+		dc->DrawPoint(x1+1, y1);
+		dc->DrawPoint(x1, y1+1);
+		dc->DrawPoint(x1+1, y1+1);
+	}
+	
+	//check for shallow line
+    if (dx > dy) 
+	{
+        int fraction = dy - (dx >> 1);
+        while (x1 != x2) 
+		{
+            if (fraction >= 0) 
+			{
+                y1 += stepy;
+                fraction -= dx;
+            }
+            x1 += stepx;
+            fraction += dy;
+			dc->DrawPoint(x1, y1);
+			if (ptermApp->m_scale == 2)
+			{
+				dc->DrawPoint(x1+1, y1);
+				dc->DrawPoint(x1, y1+1);
+				dc->DrawPoint(x1+1, y1+1);
+			}
+        }
+    } 
+	//otherwise steep line
+	else 
+	{
+        int fraction = dx - (dy >> 1);
+        while (y1 != y2) 
+		{
+            if (fraction >= 0) 
+			{
+                x1 += stepx;
+                fraction -= dy;
+            }
+            y1 += stepy;
+            fraction += dx;
+			dc->DrawPoint(x1, y1);
+			if (ptermApp->m_scale == 2)
+			{
+				dc->DrawPoint(x1+1, y1);
+				dc->DrawPoint(x1, y1+1);
+				dc->DrawPoint(x1+1, y1+1);
+			}
+        }
     }
-    else
-    {
-        dc.DrawPoint (x2, y2);
-        m_memDC->DrawPoint (xm2, ym2);
-    }
+
 }
 
 void PtermFrame::ptermFullErase (void)
@@ -3287,6 +3356,12 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     int t;
     int xm1, ym1, xm2, ym2;
     wxClientDC dc(m_canvas);
+	
+	int ox1,oy1,ox2,oy2;	//original values
+	ox1 = x1; 
+	oy1 = y1; 
+	ox2 = x2; 
+	oy2 = y2;
 
     PrepareDC (dc);
     xm1 = XMADJUST (x1);
@@ -3315,6 +3390,8 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
         ym1 = ym2;
         ym2 = t;
     }
+
+
     if (mode & 1)
     {
         // mode rewrite or write
@@ -3331,12 +3408,16 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
         dc.SetBrush (m_backgroundBrush);
         m_memDC->SetBrush (m_backgroundBrush);
     }
-    dc.DrawRectangle (x1, y1,
-                      x2 - x1 + ptermApp->m_scale,
-                      y2 - y1 + ptermApp->m_scale);
-    m_memDC->DrawRectangle (xm1, ym1,
-                            xm2 - xm1 + ptermApp->m_scale,
-                            ym2 - ym1 + ptermApp->m_scale);
+
+	if (ptermApp->m_scale == 2)
+	{
+		//tweak the half pixel errors
+		x1++,xm1++,x2++,xm2++;
+		y1++,ym1++,y2++,ym2++;
+	}
+	dc.DrawRectangle (x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+	m_memDC->DrawRectangle (xm1, ym1, xm2 - xm1 + 1, ym2 - ym1 + 1);
+
 }
 
 void PtermFrame::ptermPaint (int pat)
@@ -3537,10 +3618,8 @@ void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
             newbg.Red(), newbg.Green(), newbg.Blue());
     m_backgroundBrush.SetColour (newbg);
     m_backgroundPen.SetColour (newbg);
-    m_backgroundPen.SetWidth (newscale);
     m_foregroundBrush.SetColour (newfg);
     m_foregroundPen.SetColour (newfg);
-    m_foregroundPen.SetWidth (newscale);
     
     m_charDC[2]->SetBackground (m_backgroundBrush);
     m_charDC[2]->Clear ();
@@ -7794,7 +7873,9 @@ void PtermCanvas::OnDraw(wxDC &dc)
     int charX, charY, sizeX, sizeY;
     
     m_owner->PrepareDC (dc);
-    dc.Blit (XTOP, YTOP, ScreenSize, ScreenSize,
+
+//JWS: this is where I think the paint problem is occuring. 5/15/2007    
+	dc.Blit (XTOP, YTOP, ScreenSize, ScreenSize,
              m_owner->m_memDC, 0, 0, wxCOPY);
 #if 0
     // debug charmaps
