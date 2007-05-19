@@ -12,6 +12,8 @@
 // declarations
 // ============================================================================
 
+//#define wxUse_DC_Cache	-1
+
 /*
 **  -----------------
 **  Private Constants
@@ -60,11 +62,11 @@
 #define vCharXSize(s)   (512 * (s))
 #define vCharYSize(s)   ((CSETS * 16) * (s))
 #define vScreenSize(s)  (512 * (s))
-#define XSize           (vYSize (ptermApp->m_scale))
-#define YSize           (vXSize (ptermApp->m_scale))
-#define CharXSize       (vCharXSize (ptermApp->m_scale))
-#define CharYSize       (vCharYSize (ptermApp->m_scale))
-#define ScreenSize      (vScreenSize (ptermApp->m_scale))
+//#define XSize           (vYSize (ptermApp->m_scale))
+//#define YSize           (vXSize (ptermApp->m_scale))
+//#define CharXSize       (vCharXSize (ptermApp->m_scale))
+//#define CharYSize       (vCharYSize (ptermApp->m_scale))
+//#define ScreenSize      (vScreenSize (ptermApp->m_scale))
 
 #define TERMTYPE        10
 #define ASCTYPE         12
@@ -170,30 +172,26 @@
         }
 
 // Map PLATO coordinates to window coordinates
-#define XADJUST(x) ((x) * ptermApp->m_scale + GetXMargin ())
-#define YADJUST(y) ((511 - (y)) * ptermApp->m_scale + GetYMargin ())
+#define XADJUST(x) ((x) * m_scale + GetXMargin ())
+#define YADJUST(y) ((511 - (y)) * m_scale + GetYMargin ())
 
 // Map PLATO coordinates to backing store bitmap coordinates
-#define XMADJUST(x) ((x) * ptermApp->m_scale)
-#define YMADJUST(y) ((511 - (y)) * ptermApp->m_scale)
+#define XMADJUST(x) ((x) * m_scale)
+#define YMADJUST(y) ((511 - (y)) * m_scale)
 
 // inverse mapping (for processing touch input)
-#define XUNADJUST(x) (((x) - GetXMargin ()) / ptermApp->m_scale)
-#define YUNADJUST(y) (511 - ((y) - GetYMargin ()) / ptermApp->m_scale)
+#define XUNADJUST(x) (((x) - GetXMargin ()) / m_scale)
+#define YUNADJUST(y) (511 - ((y) - GetYMargin ()) / m_scale)
 
 // force coordinate into the range 0..511
 #define BOUND(x) x = (((x < 0) ? 0 : ((x > 511) ? 511 : x)))
 
 // Define top left corner of the PLATO drawing area, in windowing
 // system coordinates (which have origin at the top and Y axis upside down)
-// The YTOP definition looks a bit strange because we want the top one
-// of the two pixels if we're doing double size display
 #define XTOP (XADJUST (0))
-//#define YTOP (YADJUST (512) + 1)
 #define YTOP (YADJUST (511))
 // Ditto but for the backing store bitmap
 #define XMTOP (XMADJUST (0))
-//#define YMTOP (YMADJUST (512) + 1)
 #define YMTOP (YMADJUST (511))
 
 // Macro to include keyboard accelerator only if option enabled
@@ -534,7 +532,6 @@ public:
 
     // event handlers
     void OnConnect (wxCommandEvent &event);
-    void OnPref (wxCommandEvent& event);
     void OnQuit (wxCommandEvent& event);
     void OnHelpKeys (wxCommandEvent &event);
     void OnAbout (wxCommandEvent& event);
@@ -596,6 +593,10 @@ public:
 
     int lastX;
     int lastY;
+
+	PtermFrame *m_CurFrame;
+	int m_CurFrameScreenSize;
+	int m_CurFrameScale;
     
 private:
     wxLocale    m_locale; // locale we'll be using
@@ -634,19 +635,20 @@ public:
     inline int GetXMargin (void) const;
     inline int GetYMargin (void) const;
 
-private:
-    PtermFrame *m_owner;
-    bool        m_touchEnabled;
-
     // Text-copy support
-    u8  textmap[32 * 64];
+    u16  textmap[32 * 64];
     int m_regionX;
     int m_regionY;
     int m_regionHeight;
     int m_regionWidth;
     int m_mouseX;
     int m_mouseY;
+	int	m_scale;
     
+private:
+    PtermFrame *m_owner;
+    bool        m_touchEnabled;
+
     DECLARE_EVENT_TABLE ()
 };
 
@@ -720,6 +722,7 @@ public:
     void OnPrint (wxCommandEvent& event);
     void OnPrintPreview (wxCommandEvent& event);
     void OnPageSetup (wxCommandEvent& event);
+    void OnPref (wxCommandEvent& event);
     void OnActivate (wxActivateEvent &event);
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2, bool newstatusbar);
     void SetColors (wxColour &newfg, wxColour &newbg, int newscale);
@@ -751,7 +754,7 @@ public:
     {
         if (m_fullScreen)
         {
-            int i = GetClientSize ().x - ScreenSize;
+            int i = GetClientSize ().x - vScreenSize(m_scale);
             return (i < 0) ? 0 : i / 2;
         }
         else
@@ -761,7 +764,7 @@ public:
     {
         if (m_fullScreen)
         {
-            int i = GetClientSize ().y - ScreenSize;
+            int i = GetClientSize ().y - vScreenSize(m_scale);
             return (i < 0) ? 0 : i / 2;
         }
         else
@@ -782,6 +785,8 @@ public:
 
 	wxMenu      *menuEdit;
     wxStatusBar *m_statusBar;       // present even if not displayed
+
+	int			m_scale;
 
 private:
     wxPen       m_foregroundPen;
@@ -1368,13 +1373,13 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Print, PtermFrame::OnPrint)
     EVT_MENU(Pterm_Preview, PtermFrame::OnPrintPreview)
     EVT_MENU(Pterm_Page_Setup, PtermFrame::OnPageSetup)
+    EVT_MENU(Pterm_Pref,    PtermFrame::OnPref)
     EVT_MENU(Pterm_FullScreen, PtermFrame::OnFullScreen)
     END_EVENT_TABLE ()
 
 BEGIN_EVENT_TABLE(PtermApp, wxApp)
     EVT_MENU(Pterm_Connect, PtermApp::OnConnect)
     EVT_MENU(Pterm_ConnectAgain, PtermApp::OnConnect)
-    EVT_MENU(Pterm_Pref,    PtermApp::OnPref)
     EVT_MENU(Pterm_Quit,    PtermApp::OnQuit)
     EVT_MENU(Pterm_HelpKeys, PtermApp::OnHelpKeys)
     EVT_MENU(Pterm_About, PtermApp::OnAbout)
@@ -1836,101 +1841,6 @@ void PtermApp::OnHelpKeys (wxCommandEvent &)
     }
 }
 
-void PtermApp::OnPref (wxCommandEvent&)
-{
-    PtermFrame *frame;
-    wxString rgb;
-    
-    PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"), wxDefaultPosition, wxSize( 450,380 ) );
-    
-    if (dlg.ShowModal () == wxID_OK)
-    {
-        for (frame = m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
-            frame->UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2, dlg.m_showStatusBar);
-		//get prefs
-		m_lastTab = dlg.m_lastTab;
-        //tab0
-        m_curProfile = dlg.m_curProfile;
-		//tab1
-        m_ShellFirst = dlg.m_ShellFirst;
-        m_connect = dlg.m_connect;
-        m_hostName = dlg.m_host;
-        m_port = atoi (wxString (dlg.m_port).mb_str ());
-        //tab2
-		m_showSignon = dlg.m_showSignon;
-		m_showSysName = dlg.m_showSysName;
-		m_showHost = dlg.m_showHost;
-		m_showStation = dlg.m_showStation;
-        //tab3
-        m_classicSpeed = dlg.m_classicSpeed;
-        m_gswEnable = dlg.m_gswEnable;
-        m_numpadArrows = dlg.m_numpadArrows;
-        m_platoKb = dlg.m_platoKb;
-		m_useAccel = dlg.m_useAccel;
-        m_beepEnable = dlg.m_beepEnable;
-		//tab4
-        m_scale = (dlg.m_scale2) ? 2 : 1;
-        m_showStatusBar = dlg.m_showStatusBar;
-        m_noColor = dlg.m_noColor;
-        m_fgColor = dlg.m_fgColor;
-        m_bgColor = dlg.m_bgColor;
-		//tab5
-        m_charDelay = dlg.m_charDelay;
-        m_lineDelay = dlg.m_lineDelay;
-        m_autoLF = dlg.m_autoLF;
-		m_splitWords = dlg.m_splitWords;
-		m_convDot7 = dlg.m_convDot7;	//currently disabled
-		m_conv8Sp = dlg.m_conv8Sp;		//currently disabled
-		//tab6
-		m_Browser = dlg.m_Browser;
-		m_Email = dlg.m_Email;
-		m_SearchURL = dlg.m_SearchURL;
-
-        //write prefs
-		m_config->Write (wxT (PREF_LASTTAB), dlg.m_lastTab);
-		//tab0
-		m_config->Write (wxT (PREF_CURPROFILE), dlg.m_curProfile);
-		//tab1
-        m_config->Write (wxT (PREF_SHELLFIRST), dlg.m_ShellFirst);
-        m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
-        m_config->Write (wxT (PREF_HOST), dlg.m_host);
-        m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port.mb_str ()));
-		//tab2
-        m_config->Write (wxT (PREF_SHOWSIGNON), (dlg.m_showSignon) ? 1 : 0);
-        m_config->Write (wxT (PREF_SHOWSYSNAME), (dlg.m_showSysName) ? 1 : 0);
-        m_config->Write (wxT (PREF_SHOWHOST), (dlg.m_showHost) ? 1 : 0);
-        m_config->Write (wxT (PREF_SHOWSTATION), (dlg.m_showStation) ? 1 : 0);
-		//tab3
-        m_config->Write (wxT (PREF_1200BAUD), (dlg.m_classicSpeed) ? 1 : 0);
-        m_config->Write (wxT (PREF_GSW), (dlg.m_gswEnable) ? 1 : 0);
-        m_config->Write (wxT (PREF_ARROWS), (dlg.m_numpadArrows) ? 1 : 0);
-        m_config->Write (wxT (PREF_PLATOKB), (dlg.m_platoKb) ? 1 : 0);
-        m_config->Write (wxT (PREF_ACCEL), (dlg.m_useAccel) ? 1 : 0);
-        m_config->Write (wxT (PREF_BEEP), (dlg.m_beepEnable) ? 1 : 0);
-		//tab4
-        m_config->Write (wxT (PREF_SCALE2), (dlg.m_scale2) ? 2 : 1);
-        m_config->Write (wxT (PREF_STATUSBAR), (dlg.m_showStatusBar) ? 1 : 0);
-        m_config->Write (wxT (PREF_NOCOLOR), (dlg.m_noColor) ? 1 : 0);
-        rgb.Printf (wxT ("%d %d %d"), dlg.m_fgColor.Red (), dlg.m_fgColor.Green (), dlg.m_fgColor.Blue ());
-        m_config->Write (wxT (PREF_FOREGROUND), rgb);
-        rgb.Printf (wxT ("%d %d %d"), dlg.m_bgColor.Red (), dlg.m_bgColor.Green (), dlg.m_bgColor.Blue ());
-        m_config->Write (wxT (PREF_BACKGROUND), rgb);
-		//tab5
-        m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay.mb_str ()));
-        m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay.mb_str ()));
-        m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF.mb_str ()));
-        m_config->Write (wxT (PREF_SPLITWORDS), (dlg.m_splitWords) ? 1 : 0);
-        m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);
-        m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);
-		//tab6
-        m_config->Write (wxT (PREF_BROWSER), dlg.m_Browser);
-        m_config->Write (wxT (PREF_EMAIL), dlg.m_Email);
-        m_config->Write (wxT (PREF_SEARCHURL), dlg.m_SearchURL);
-        m_config->Flush ();
-
-    }
-}
-
 wxColour PtermApp::SelectColor ( wxWindow &parent, 
                                  const wxChar *title, wxColour &initcol)
 {
@@ -2082,7 +1992,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
       m_defBg (ptermApp->m_bgColor),
       m_currentFg (ptermApp->m_fgColor),
       m_currentBg (ptermApp->m_bgColor),
-      m_pendingEcho (-1)
+      m_pendingEcho (-1),
+	  m_scale (ptermApp->m_scale)
 {
     int i;
 
@@ -2171,7 +2082,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     menuEdit->Append(Pterm_Exec, _("Execute URL") ACCELERATOR ("\tCtrl-X"), _("Execute URL"));
     menuEdit->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
     menuEdit->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
-    menuEdit->AppendSeparator ();					
+    menuEdit->AppendSeparator ();
     menuEdit->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
     menuEdit->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
     menuEdit->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
@@ -2255,16 +2166,16 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     for (i = 0; i < 5; i++)
     {
         m_charDC[i] = new wxMemoryDC ();
-        m_charmap[i] = new wxBitmap (CharXSize, CharYSize, -1);
+        m_charmap[i] = new wxBitmap (vCharXSize(m_scale), vCharYSize(m_scale), -1);
         m_charDC[i]->SelectObject (*m_charmap[i]);
     }
-    m_bitmap = new wxBitmap (ScreenSize, ScreenSize, -1);
+    m_bitmap = new wxBitmap (vScreenSize(m_scale), vScreenSize(m_scale), -1);
     m_memDC = new wxMemoryDC ();
     m_memDC->SelectObject (*m_bitmap);
     m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->Clear ();
 
-    SetClientSize (XSize + 2, YSize + 2);
+    SetClientSize (vXSize(m_scale) + 2, vYSize(m_scale) + 2);
     m_canvas = new PtermCanvas (this);
 
     /*
@@ -2285,6 +2196,16 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     }
     
     Show(true);
+
+//kludge: hide then show scrollbars after showing.  under window at least this can prevent
+//        the case of events not occurring in a nice orderly fashion leaving the window not
+//        knowing if it needs scrollbars or not, this says, "no you don't, but in case you
+//        do here you go".  typical windows crapola.
+#if defined (__WXMSW__)
+	m_canvas->SetScrollRate (0, 0);
+	m_canvas->SetScrollRate (1, 1);
+#endif
+
 }
 
 PtermFrame::~PtermFrame ()
@@ -2324,7 +2245,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 {
     int word;
 
-	// Do nothing for the help window
+	// Do nothing for the help window or other connection-less windows
 	if (m_conn == NULL)
 	{
 		return;
@@ -2642,8 +2563,8 @@ void PtermFrame::OnClose (wxCloseEvent &)
     {
         GetPosition (&x, &y);
         wxDisplaySize (&xs, &ys);
-        if (x > 0 && x < xs - XSize &&
-            y > 0 && y < ys - YSize)
+        if (x > 0 && x < xs - vXSize(m_scale) &&
+            y > 0 && y < ys - vYSize(m_scale))
         {
             ptermApp->lastX = x;
             ptermApp->lastY = y;
@@ -2679,12 +2600,12 @@ void PtermFrame::OnActivate (wxActivateEvent &event)
 
 void PtermFrame::OnCopyScreen (wxCommandEvent &)
 {
-    wxBitmap screenmap (ScreenSize, ScreenSize);
+    wxBitmap screenmap (vScreenSize(m_scale), vScreenSize(m_scale));
     wxMemoryDC screenDC;
     wxBitmapDataObject *screen;
 
     screenDC.SelectObject (screenmap);
-    screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
+    screenDC.Blit (0, 0, vScreenSize(m_scale), vScreenSize(m_scale), 
                    m_memDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 
@@ -2955,7 +2876,7 @@ void PtermFrame::OnUpdateUIPaste (wxUpdateUIEvent& event)
 
 void PtermFrame::OnSaveScreen (wxCommandEvent &)
 {
-    wxBitmap screenmap (ScreenSize, ScreenSize);
+    wxBitmap screenmap (vScreenSize(m_scale), vScreenSize(m_scale));
     wxMemoryDC screenDC;
     wxString filename, ext;
     wxBitmapType type;
@@ -2975,7 +2896,7 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
     filename = fd.GetPath ();
     
     screenDC.SelectObject (screenmap);
-    screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
+    screenDC.Blit (0, 0, vScreenSize(m_scale), vScreenSize(m_scale), 
                    m_memDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 
@@ -3029,6 +2950,10 @@ void PtermFrame::OnPrint (wxCommandEvent &)
     printDialogData.EnablePageNumbers (false);
     
     wxPrinter printer (& printDialogData);
+	
+	ptermApp->m_CurFrameScreenSize = vScreenSize(m_scale);
+	ptermApp->m_CurFrameScale = m_scale;
+
     PtermPrintout printout (this);
     if (!printer.Print (this, &printout, true /*prompt*/))
     {
@@ -3067,13 +2992,114 @@ void PtermFrame::OnPrintPreview (wxCommandEvent &)
 
 void PtermFrame::OnPageSetup(wxCommandEvent &)
 {
-    (*g_pageSetupData) = *g_printData;
+	wxClientDC dc(m_canvas);
+	dc.Blit (XTOP, YTOP+vCharYSize(m_scale)*0, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[0], 0, 0, wxCOPY);
+	dc.Blit (XTOP, YTOP+vCharYSize(m_scale)*1, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[1], 0, 0, wxCOPY);
+	dc.Blit (XTOP, YTOP+vCharYSize(m_scale)*2, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[2], 0, 0, wxCOPY);
+	dc.Blit (XTOP, YTOP+vCharYSize(m_scale)*3, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[3], 0, 0, wxCOPY);
+	dc.Blit (XTOP, YTOP+vCharYSize(m_scale)*4, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[3], 0, 0, wxCOPY);
+/*    
+	(*g_pageSetupData) = *g_printData;
 
     wxPageSetupDialog pageSetupDialog (this, g_pageSetupData);
     pageSetupDialog.ShowModal ();
 
     (*g_printData) = pageSetupDialog.GetPageSetupData ().GetPrintData ();
     (*g_pageSetupData) = pageSetupDialog.GetPageSetupData ();
+*/
+}
+
+void PtermFrame::OnPref (wxCommandEvent&)
+{
+    wxString rgb;
+    
+    PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"), wxDefaultPosition, wxSize( 450,380 ) );
+    
+    if (dlg.ShowModal () == wxID_OK)
+    {
+        UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2, dlg.m_showStatusBar);
+		//get prefs
+		ptermApp->m_lastTab = dlg.m_lastTab;
+        //tab0
+        ptermApp->m_curProfile = dlg.m_curProfile;
+		//tab1
+        ptermApp->m_ShellFirst = dlg.m_ShellFirst;
+        ptermApp->m_connect = dlg.m_connect;
+        ptermApp->m_hostName = dlg.m_host;
+        ptermApp->m_port = atoi (wxString (dlg.m_port).mb_str ());
+        //tab2
+		ptermApp->m_showSignon = dlg.m_showSignon;
+		ptermApp->m_showSysName = dlg.m_showSysName;
+		ptermApp->m_showHost = dlg.m_showHost;
+		ptermApp->m_showStation = dlg.m_showStation;
+        //tab3
+        ptermApp->m_classicSpeed = dlg.m_classicSpeed;
+        ptermApp->m_gswEnable = dlg.m_gswEnable;
+        ptermApp->m_numpadArrows = dlg.m_numpadArrows;
+        ptermApp->m_platoKb = dlg.m_platoKb;
+		ptermApp->m_useAccel = dlg.m_useAccel;
+        ptermApp->m_beepEnable = dlg.m_beepEnable;
+		//tab4
+        ptermApp->m_scale = (dlg.m_scale2) ? 2 : 1;
+		m_scale = ptermApp->m_scale;
+        ptermApp->m_showStatusBar = dlg.m_showStatusBar;
+        ptermApp->m_noColor = dlg.m_noColor;
+        ptermApp->m_fgColor = dlg.m_fgColor;
+        ptermApp->m_bgColor = dlg.m_bgColor;
+		//tab5
+        ptermApp->m_charDelay = dlg.m_charDelay;
+        ptermApp->m_lineDelay = dlg.m_lineDelay;
+        ptermApp->m_autoLF = dlg.m_autoLF;
+		ptermApp->m_splitWords = dlg.m_splitWords;
+		ptermApp->m_convDot7 = dlg.m_convDot7;	//currently disabled
+		ptermApp->m_conv8Sp = dlg.m_conv8Sp;		//currently disabled
+		//tab6
+		ptermApp->m_Browser = dlg.m_Browser;
+		ptermApp->m_Email = dlg.m_Email;
+		ptermApp->m_SearchURL = dlg.m_SearchURL;
+
+        //write prefs
+		ptermApp->m_config->Write (wxT (PREF_LASTTAB), dlg.m_lastTab);
+		//tab0
+		ptermApp->m_config->Write (wxT (PREF_CURPROFILE), dlg.m_curProfile);
+		//tab1
+        ptermApp->m_config->Write (wxT (PREF_SHELLFIRST), dlg.m_ShellFirst);
+        ptermApp->m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_HOST), dlg.m_host);
+        ptermApp->m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port.mb_str ()));
+		//tab2
+        ptermApp->m_config->Write (wxT (PREF_SHOWSIGNON), (dlg.m_showSignon) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_SHOWSYSNAME), (dlg.m_showSysName) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_SHOWHOST), (dlg.m_showHost) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_SHOWSTATION), (dlg.m_showStation) ? 1 : 0);
+		//tab3
+        ptermApp->m_config->Write (wxT (PREF_1200BAUD), (dlg.m_classicSpeed) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_GSW), (dlg.m_gswEnable) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_ARROWS), (dlg.m_numpadArrows) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_PLATOKB), (dlg.m_platoKb) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_ACCEL), (dlg.m_useAccel) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_BEEP), (dlg.m_beepEnable) ? 1 : 0);
+		//tab4
+        ptermApp->m_config->Write (wxT (PREF_SCALE2), (dlg.m_scale2) ? 2 : 1);
+        ptermApp->m_config->Write (wxT (PREF_STATUSBAR), (dlg.m_showStatusBar) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_NOCOLOR), (dlg.m_noColor) ? 1 : 0);
+        rgb.Printf (wxT ("%d %d %d"), dlg.m_fgColor.Red (), dlg.m_fgColor.Green (), dlg.m_fgColor.Blue ());
+        ptermApp->m_config->Write (wxT (PREF_FOREGROUND), rgb);
+        rgb.Printf (wxT ("%d %d %d"), dlg.m_bgColor.Red (), dlg.m_bgColor.Green (), dlg.m_bgColor.Blue ());
+        ptermApp->m_config->Write (wxT (PREF_BACKGROUND), rgb);
+		//tab5
+        ptermApp->m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay.mb_str ()));
+        ptermApp->m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay.mb_str ()));
+        ptermApp->m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF.mb_str ()));
+        ptermApp->m_config->Write (wxT (PREF_SPLITWORDS), (dlg.m_splitWords) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);
+		//tab6
+        ptermApp->m_config->Write (wxT (PREF_BROWSER), dlg.m_Browser);
+        ptermApp->m_config->Write (wxT (PREF_EMAIL), dlg.m_Email);
+        ptermApp->m_config->Write (wxT (PREF_SEARCHURL), dlg.m_SearchURL);
+        ptermApp->m_config->Flush ();
+    }
 }
 
 void PtermFrame::OnFullScreen (wxCommandEvent &)
@@ -3219,7 +3245,7 @@ void PtermFrame::ptermDrawPoint (int x, int y)
     }
     dc.DrawPoint (x, y);
     m_memDC->DrawPoint (xm, ym);
-    if (ptermApp->m_scale == 2)
+    if (m_scale == 2)
     {
         dc.DrawPoint (x + 1, y);
         m_memDC->DrawPoint (xm + 1, ym);
@@ -3260,8 +3286,8 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
     }
 
 	//draw lines
-	ptermDrawBresenhamLine(&dc,x1,y1,x2,y2);
 	ptermDrawBresenhamLine(m_memDC,xm1,ym1,xm2,ym2);
+	dc.Blit (XTOP, YTOP, vScreenSize(m_scale), vScreenSize(m_scale), m_memDC, 0, 0, wxCOPY);
 
 }
 
@@ -3275,14 +3301,14 @@ void PtermFrame::ptermDrawBresenhamLine(wxDC *dc,int x1,int y1,int x2,int y2)
 	dy = y2 - y1;
     if (dx < 0) { dx = -dx;  stepx = -1; } else { stepx = 1; }
     if (dy < 0) { dy = -dy;  stepy = -1; } else { stepy = 1; }
-	stepx *= (ptermApp->m_scale == 2) ? 2 : 1;
-	stepy *= (ptermApp->m_scale == 2) ? 2 : 1;
+	stepx *= (m_scale == 2) ? 2 : 1;
+	stepy *= (m_scale == 2) ? 2 : 1;
     dx <<= 1;
     dy <<= 1;
 	
 	// draw first point
 	dc->DrawPoint(x1, y1);
-	if (ptermApp->m_scale == 2)
+	if (m_scale == 2)
 	{
 		dc->DrawPoint(x1+1, y1);
 		dc->DrawPoint(x1, y1+1);
@@ -3303,7 +3329,7 @@ void PtermFrame::ptermDrawBresenhamLine(wxDC *dc,int x1,int y1,int x2,int y2)
             x1 += stepx;
             fraction += dy;
 			dc->DrawPoint(x1, y1);
-			if (ptermApp->m_scale == 2)
+			if (m_scale == 2)
 			{
 				dc->DrawPoint(x1+1, y1);
 				dc->DrawPoint(x1, y1+1);
@@ -3325,7 +3351,7 @@ void PtermFrame::ptermDrawBresenhamLine(wxDC *dc,int x1,int y1,int x2,int y2)
             y1 += stepy;
             fraction += dx;
 			dc->DrawPoint(x1, y1);
-			if (ptermApp->m_scale == 2)
+			if (m_scale == 2)
 			{
 				dc->DrawPoint(x1+1, y1);
 				dc->DrawPoint(x1, y1+1);
@@ -3344,9 +3370,8 @@ void PtermFrame::ptermFullErase (void)
     PrepareDC (dc);
     dc.SetPen (m_backgroundPen);
     dc.SetBrush (m_backgroundBrush);
-    dc.DrawRectangle (XTOP, YTOP, 
-                      512 * ptermApp->m_scale, 
-                      512 * ptermApp->m_scale);
+    //dc.DrawRectangle (XTOP, YTOP, 512 * m_scale, 512 * m_scale);
+    dc.Clear ();
     m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->Clear ();
 }
@@ -3409,7 +3434,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
         m_memDC->SetBrush (m_backgroundBrush);
     }
 
-	if (ptermApp->m_scale == 2)
+	if (m_scale == 2)
 	{
 		//tweak the half pixel errors
 		x1++,xm1++,x2++,xm2++;
@@ -3417,6 +3442,10 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
 	}
 	dc.DrawRectangle (x1, y1, x2 - x1 + 1, y2 - y1 + 1);
 	m_memDC->DrawRectangle (xm1, ym1, xm2 - xm1 + 1, ym2 - ym1 + 1);
+
+	//wipe text map
+	for ( int row = ym1/16; row <= ym2/16 ; row++ )
+		memset (&m_canvas->textmap[row * 64 + xm1/8], 055, 2*((xm2-xm1)/8));
 
 }
 
@@ -3432,7 +3461,7 @@ void PtermFrame::ptermPaint (int pat)
 
     m_memDC->SetBrush (m_foregroundBrush);
     m_memDC->FloodFill (xm, ym, m_currentBg, wxFLOOD_BORDER);
-    dc.Blit (XTOP, YTOP, ScreenSize, ScreenSize,
+    dc.Blit (XTOP, YTOP, vScreenSize(m_scale), vScreenSize(m_scale),
              m_memDC, 0, 0, wxCOPY);
 }
 
@@ -3466,8 +3495,8 @@ void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *chardata)
     for (m = 0; m < 5; m++)
     {
         data = chardata;
-        x = cnum * 8 * ptermApp->m_scale;
-        y = (snum * 16 + 15) * ptermApp->m_scale;
+        x = cnum * 8 * m_scale;
+        y = (snum * 16 + 15) * m_scale;
         for (i = 0; i < 8; i++)
         {
             col = *data++;
@@ -3517,16 +3546,16 @@ void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *chardata)
                         break;
                     }
                 }
-                m_charDC[m]->DrawPoint(x, y - j * ptermApp->m_scale);
-                if (ptermApp->m_scale == 2)
+                m_charDC[m]->DrawPoint(x, y - j * m_scale);
+                if (m_scale == 2)
                 {
-                    m_charDC[m]->DrawPoint(x + 1, y - j * ptermApp->m_scale);
-                    m_charDC[m]->DrawPoint(x, y - j * ptermApp->m_scale + 1);
-                    m_charDC[m]->DrawPoint(x + 1, y - j * ptermApp->m_scale + 1);
+                    m_charDC[m]->DrawPoint(x + 1, y - j * m_scale);
+                    m_charDC[m]->DrawPoint(x, y - j * m_scale + 1);
+                    m_charDC[m]->DrawPoint(x + 1, y - j * m_scale + 1);
                 }
                 col >>= 1;
             }
-            x += ptermApp->m_scale;
+            x += m_scale;
         }
     }
 }
@@ -3554,7 +3583,7 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
     const bool recolor = (ptermApp->m_fgColor != newfg ||
                           ptermApp->m_bgColor != newbg);
     const int newscale = (newscale2) ? 2 : 1;
-    const bool rescale = (newscale != ptermApp->m_scale);
+    const bool rescale = (newscale != m_scale);
     int i;
     wxBitmap *newmap;
 
@@ -3586,16 +3615,15 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
         m_canvas->SetVirtualSize (vXSize (newscale), vYSize (newscale));
         if (!m_fullScreen)
         {
+            m_canvas->SetScrollRate (0, 0);
             m_canvas->SetScrollRate (1, 1);
         }
         dc.DestroyClippingRegion ();
-        dc.SetClippingRegion (GetXMargin (), GetYMargin (),
-                              vScreenSize (newscale), vScreenSize (newscale));
-        
-        UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor,
-                  ptermApp->m_bgColor, newscale2);
+        dc.SetClippingRegion (GetXMargin (), GetYMargin (), vScreenSize (newscale), vScreenSize (newscale));
 
-        // Just allocate new bitmaps for the others, we'll repaint them below
+        UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
+
+		// Just allocate new bitmaps for the others, we'll repaint them below
         for (i = 0; i < 4; i++)
         {
             newmap = new wxBitmap (vCharXSize (newscale), vCharYSize (newscale), -1);
@@ -3603,44 +3631,59 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
             delete m_charmap[i];
             m_charmap[i] = newmap;
         }
-    }
-    SetColors (newfg, newbg, newscale);
-    m_canvas->SetBackgroundColour (newbg);
-    m_canvas->Refresh ();
-    m_defFg = newfg;
-    m_defBg = newbg;
+    
+//		for (i = 0; i < 5; i++)
+//		{
+//			delete m_charDC[i];
+//			delete m_charmap[i];
+//			m_charDC[i] = new wxMemoryDC ();
+//			m_charmap[i] = new wxBitmap (vCharXSize(newscale), vCharYSize(newscale), -1);
+//			m_charDC[i]->SelectObject (*m_charmap[i]);
+//		}
+//		ptermLoadRomChars ();
+//		UpdateDC (m_charDC[0], m_charmap[0], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
+//		UpdateDC (m_charDC[1], m_charmap[1], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
+//		UpdateDC (m_charDC[2], m_charmap[2], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
+//		UpdateDC (m_charDC[3], m_charmap[3], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
+//		UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
+        
+	}
+
+	SetColors (newfg, newbg, newscale);
+	m_canvas->SetBackgroundColour (newbg);
+	m_canvas->m_scale = m_scale;
+	m_canvas->Refresh ();
+	m_defFg = newfg;
+	m_defBg = newbg;
+
 }
 
 void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
 {
-    TRACE6 ("fg: %d %d %d; bg: %d %d %d",
-            newfg.Red(), newfg.Green(), newfg.Blue(),
-            newbg.Red(), newbg.Green(), newbg.Blue());
+    TRACE6 ("fg: %d %d %d; bg: %d %d %d", newfg.Red(), newfg.Green(), newfg.Blue(), newbg.Red(), newbg.Green(), newbg.Blue());
+
     m_backgroundBrush.SetColour (newbg);
     m_backgroundPen.SetColour (newbg);
     m_foregroundBrush.SetColour (newfg);
     m_foregroundPen.SetColour (newfg);
-    
-    m_charDC[2]->SetBackground (m_backgroundBrush);
+
+	m_charDC[2]->SetBackground (m_backgroundBrush);
     m_charDC[2]->Clear ();
-    m_charDC[2]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
-                       m_charDC[4], 0, 0, wxAND_INVERT);
-    m_charDC[3]->SetBackground (m_foregroundBrush);
+    m_charDC[2]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[4], 0, 0, wxAND_INVERT);
+    
+	m_charDC[3]->SetBackground (m_foregroundBrush);
     m_charDC[3]->Clear ();
-    m_charDC[3]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
-                       m_charDC[4], 0, 0, wxAND_INVERT);
-    m_charDC[0]->SetBackground (m_foregroundBrush);
+    m_charDC[3]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[4], 0, 0, wxAND_INVERT);
+    
+	m_charDC[0]->SetBackground (m_foregroundBrush);
     m_charDC[0]->Clear ();
-    m_charDC[0]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
-                       m_charDC[4], 0, 0, wxAND);
-    m_charDC[0]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
-                       m_charDC[2], 0, 0, wxOR);
+    m_charDC[0]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[4], 0, 0, wxAND);
+    m_charDC[0]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[2], 0, 0, wxOR);
+
     m_charDC[1]->SetBackground (m_backgroundBrush);
     m_charDC[1]->Clear ();
-    m_charDC[1]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
-                       m_charDC[4], 0, 0, wxAND);
-    m_charDC[1]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale),
-                       m_charDC[3], 0, 0, wxOR);
+    m_charDC[1]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[4], 0, 0, wxAND);
+    m_charDC[1]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[3], 0, 0, wxOR);
 }
 
 void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
@@ -3652,7 +3695,7 @@ void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
     const bool recolor = (ptermApp->m_fgColor != newfg ||
                           ptermApp->m_bgColor != newbg);
     const int newscale = (newscale2) ? 2 : 1;
-    const bool rescale = (newscale != ptermApp->m_scale);
+    const bool rescale = (newscale != m_scale);
     wxMemoryDC tmpDC;
     wxBitmap *newbitmap;
     wxImage *imgp;
@@ -3666,8 +3709,8 @@ void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
     
     ow = imgp->GetWidth ();
     oh = imgp->GetHeight ();
-    w = ow / ptermApp->m_scale;
-    h = oh / ptermApp->m_scale;
+    w = ow / m_scale;
+    h = oh / m_scale;
     nw = w * newscale;
     nh = h * newscale;
     
@@ -3770,8 +3813,8 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
 {
     int charX, charY, sizeX, sizeY, screenX, screenY, memX, memY;
 
-    charX = cnum * 8 * ptermApp->m_scale;
-    charY = snum * 16 * ptermApp->m_scale;
+    charX = cnum * 8 * m_scale;
+    charY = snum * 16 * m_scale;
     sizeX = 8;
     sizeY = 16;
 
@@ -3783,7 +3826,7 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     if (x < 0)
     {
         sizeX += x;
-        charX -= x * ptermApp->m_scale;
+        charX -= x * m_scale;
         screenX = XADJUST (0);
         memX = XMADJUST (0);
     }
@@ -3795,23 +3838,23 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     {
         // write or erase -- need to zap old pixels and OR in new pixels
         m_memDC->Blit (memX, memY,
-                       sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
+                       sizeX * m_scale, sizeY * m_scale, 
                        m_charDC[4], charX, charY, wxAND);
         m_memDC->Blit (memX, memY,
-                       sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
+                       sizeX * m_scale, sizeY * m_scale, 
                        m_charDC[wemode], charX, charY, wxOR);
     }
     else
     {
         // inverse or rewrite, just blit in the appropriate pattern
         m_memDC->Blit (memX, memY,
-                       sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale, 
+                       sizeX * m_scale, sizeY * m_scale, 
                        m_charDC[wemode], charX, charY, wxCOPY);
     }
         
     // Now copy the resulting state of the character area into the screen dc
     dc.Blit (screenX, screenY,
-             sizeX * ptermApp->m_scale, sizeY * ptermApp->m_scale,
+             sizeX * m_scale, sizeY * m_scale,
              m_memDC, memX, memY, wxCOPY);
     
     // Handle screen edge wraparound by recursion...
@@ -3913,20 +3956,20 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     else
                     {
                         // On the bottom line... scroll.
-                        dc.Blit (XTOP, YTOP, ScreenSize,
-                                 ScreenSize - (16 * ptermApp->m_scale),
+                        dc.Blit (XTOP, YTOP, vScreenSize(m_scale),
+                                 vScreenSize(m_scale) - (16 * m_scale),
                                  m_memDC, XMTOP, YMADJUST (496),
                                  wxCOPY);
-                        m_memDC->Blit (XMTOP, YMTOP, ScreenSize,
-                                       ScreenSize - (16 * ptermApp->m_scale),
+                        m_memDC->Blit (XMTOP, YMTOP, vScreenSize(m_scale),
+                                       vScreenSize(m_scale) - (16 * m_scale),
                                        &dc, XTOP, YTOP, wxCOPY);
                     }
                     // Erase the line we just moved to.
-                    m_memDC->Blit (XMTOP, YMADJUST (16) + 1, ScreenSize,
-                                   16 * ptermApp->m_scale,
+                    m_memDC->Blit (XMTOP, YMADJUST (16) + 1, vScreenSize(m_scale),
+                                   16 * m_scale,
                                    m_memDC, 0, 0, wxCLEAR);
-                    dc.Blit (XTOP, YADJUST (16) + 1, ScreenSize,
-                             16 * ptermApp->m_scale,
+                    dc.Blit (XTOP, YADJUST (16) + 1, vScreenSize(m_scale),
+                             16 * m_scale,
                              &dc, 0, 0, wxCLEAR);
                 }
             }
@@ -4316,7 +4359,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             m_currentBg = c;
                         }
                         SetColors (m_currentFg, m_currentBg, 
-                                   ptermApp->m_scale);
+                                   m_scale);
                     }
                     break;
                 case pmd:
@@ -5267,6 +5310,7 @@ void PtermFrame::mode4 (u32 d)
     ptermBlockErase (x1, y1, x2, y2);
     currentX = x1;
     currentY = y1 - 15;
+
 }
 
 /*--------------------------------------------------------------------------
@@ -7841,19 +7885,22 @@ BEGIN_EVENT_TABLE(PtermCanvas, wxScrolledWindow)
 
 PtermCanvas::PtermCanvas(PtermFrame *parent)
     : wxScrolledWindow(parent, -1, wxDefaultPosition, 
-                       wxSize (XSize, YSize),
+                       wxSize (vXSize(m_scale), vYSize(m_scale)),
                        wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE),
       m_mouseX (-1)
 {
     wxClientDC dc(this);
 
+
     m_owner = parent;
-    SetVirtualSize (XSize, YSize);
+	m_scale = m_owner->m_scale;
+
+    SetVirtualSize (vXSize(m_scale), vYSize(m_scale));
     
     SetBackgroundColour (ptermApp->m_bgColor);
     SetScrollRate (1, 1);
     dc.SetClippingRegion (GetXMargin (), GetYMargin (),
-                          ScreenSize, ScreenSize);
+                          vScreenSize(m_owner->m_scale), vScreenSize(m_owner->m_scale));
     SetFocus ();
     FullErase ();
 }
@@ -7874,29 +7921,28 @@ void PtermCanvas::OnDraw(wxDC &dc)
     
     m_owner->PrepareDC (dc);
 
-//JWS: this is where I think the paint problem is occuring. 5/15/2007    
-	dc.Blit (XTOP, YTOP, ScreenSize, ScreenSize,
+	dc.Blit (XTOP, YTOP, vScreenSize(m_owner->m_scale), vScreenSize(m_owner->m_scale),
              m_owner->m_memDC, 0, 0, wxCOPY);
 #if 0
     // debug charmaps
     for (i = 0; i <= 4; i++)
     {
-        dc.Blit (XTOP, YADJUST(i * 48 + 48), CharXSize,
-                 32 * ptermApp->m_scale, 
+        dc.Blit (XTOP, YADJUST(i * 48 + 48), vCharXSize(m_scale),
+                 32 * m_scale, 
                  m_owner->m_charDC[i], 0, 0, wxCOPY);
     }
 #endif
     if (m_regionHeight != 0 && m_regionWidth != 0)
     {
-        sizeX = 8 * ptermApp->m_scale;
-        sizeY = 16 * ptermApp->m_scale;
+        sizeX = 8 * m_scale;
+        sizeY = 16 * m_scale;
         for (i = m_regionY; i < m_regionY + m_regionHeight; i++)
         {
             for (j = m_regionX; j < m_regionX + m_regionWidth; j++)
             {
-                c = textmap[i * 64 + j];
-                charX = (c & 077) * 8 * ptermApp->m_scale;
-                charY = (c >> 6) * 16 * ptermApp->m_scale;
+                c = textmap[i * 64 + j] & 0xff;
+                charX = (c & 077) * 8 * m_scale;
+                charY = (c >> 6) * 16 * m_scale;
                 dc.Blit (XADJUST (j * 8), YADJUST (i * 16 + 15), 
 //                         sizeX, sizeY, m_owner->m_charDC[4],
 //                         charX, charY, wxCOPY);
@@ -8305,6 +8351,7 @@ void PtermCanvas::SaveChar (int x, int y, int snum, int cnum,
                             int w, bool large_p)
 {
     char c = 055;
+	u16 oc;
 
     // Convert the current x/y to a coarse grid position, and save
     // the current character code (snum << 6 + cnum) into the textmap
@@ -8312,20 +8359,32 @@ void PtermCanvas::SaveChar (int x, int y, int snum, int cnum,
     // line, just as the fine grid Y coordinate does.
     x /= 8;
     y /= 16;
-    if ((w & 1) && snum < 2)
+    if ((w & 1) && snum < 4)	// allow altfont but store as standard font
     {
-        c = (snum << 6) + cnum;
+        c = ((snum & 1) << 6) + cnum;
     }
-    textmap[y * 64 + x] = c;
-    if (large_p)
-    {
-        x = (x + 1) & 077;
-        textmap[y * 64 + x] = 055;
-        y = (y + 1) & 037;
-        textmap[y * 64 + x] = 055;
-        x = (x - 1) & 077;
-        textmap[y * 64 + x] = 055;
-    }
+	oc = textmap[y * 64 + x];
+	if (c == 055)
+		textmap[y * 64 + x] = (055 << 8) | 055;
+	else if ((oc & 0xff) != 055)
+	{
+		oc = (oc & 0xff) | (c << 8);
+		textmap[y * 64 + x] = oc;
+	}
+	else
+	{
+		textmap[y * 64 + x] = (055 << 8) | (c & 0xff);
+	}
+	if (large_p)
+	{
+		x = (x + 1) & 077;
+		textmap[y * 64 + x] = 055;
+		y = (y + 1) & 037;
+		textmap[y * 64 + x] = 055;
+		x = (x - 1) & 077;
+		textmap[y * 64 + x] = 055;
+	}
+
 }
 
 void PtermCanvas::OnCopy (wxCommandEvent &)
@@ -8333,6 +8392,8 @@ void PtermCanvas::OnCopy (wxCommandEvent &)
     int i, j, s, spaces;
     wxString text;
     wxChar c;
+    wxChar c1;
+    wxChar c2;
     
     if (m_regionHeight == 0 || m_regionWidth == 0)
     {
@@ -8340,9 +8401,9 @@ void PtermCanvas::OnCopy (wxCommandEvent &)
     }
     
 #ifdef DEBUG
-    for (i = 0; i < sizeof (textmap); i++)
+    for (i = 0; i < sizeof (textmap) / sizeof(textmap[0]); i++)
     {
-        printf ("%c", rom01char[textmap[i ^ 03700]]);
+        printf ("%c", rom01char[textmap[i ^ 03700] & 0xff]);
         if ((i & 077) == 077)
         {
             printf ("\n");
@@ -8358,8 +8419,9 @@ void PtermCanvas::OnCopy (wxCommandEvent &)
         spaces = 0;
         for (j = m_regionX; j < m_regionX + m_regionWidth; j++)
         {
-            c = rom01char[textmap[i * 64 + j]];
-            if (c == wxT (' '))
+			c1 = textmap[i * 64 + j] & 0xff;
+			c2 = textmap[i * 64 + j] >> 8;
+            if (c1 == 055)
             {
                 spaces++;
             }
@@ -8370,7 +8432,27 @@ void PtermCanvas::OnCopy (wxCommandEvent &)
                     text.Append (wxT (' '));
                 }
                 spaces = 0;
-                text.Append (c);
+	            c1 = rom01char[c1];
+	            c2 = rom01char[c2];
+				if (c1 == wxT('<') && c2 == wxT('('))
+				{
+					text.Append (c1);
+					text.Append (c2);
+				}
+				else if (c1 == wxT('>') && c2 == wxT(')'))
+				{
+					text.Append (c2);
+					text.Append (c1);
+				}
+				else if (c2 != wxT(' ')) 
+				{
+					text.Append (c1);
+					text.Append (c2);
+				}
+				else
+				{
+					text.Append (c1);
+				}
             }
         }
         if (m_regionHeight > 1)
@@ -8511,8 +8593,7 @@ void PtermCanvas::UpdateRegion (wxMouseEvent &event)
     x = XUNADJUST (event.m_x);
     y = YUNADJUST (event.m_y);
     
-    if (abs (x - m_mouseX) > MouseTolerance ||
-        abs (y - m_mouseY) > MouseTolerance)
+    if (abs (x - m_mouseX) > MouseTolerance || abs (y - m_mouseY) > MouseTolerance)
     {
         // It was a mouse drag (region selection)
         // rather than a click
@@ -8544,14 +8625,10 @@ void PtermCanvas::UpdateRegion (wxMouseEvent &event)
         m_regionY = y1 / 16;
         m_regionWidth = (x2 + 1 - (m_regionX * 8)) / 8;
         m_regionHeight = (y2 - (m_regionY * 16)) / 16 + 1;
-        m_owner->GetMenuBar ()->Enable (Pterm_Copy, 
-                                        (m_regionWidth > 0));
-        m_owner->GetMenuBar ()->Enable (Pterm_Exec, 
-                                        (m_regionWidth > 0)); 
-        m_owner->GetMenuBar ()->Enable (Pterm_MailTo, 
-                                        (m_regionWidth > 0)); 
-        m_owner->GetMenuBar ()->Enable (Pterm_SearchThis, 
-                                        (m_regionWidth > 0)); 
+        m_owner->GetMenuBar ()->Enable (Pterm_Copy, (m_regionWidth > 0));
+        m_owner->GetMenuBar ()->Enable (Pterm_Exec, (m_regionWidth > 0)); 
+        m_owner->GetMenuBar ()->Enable (Pterm_MailTo, (m_regionWidth > 0)); 
+        m_owner->GetMenuBar ()->Enable (Pterm_SearchThis, (m_regionWidth > 0)); 
 #ifdef DEBUG
         printf ("region %d %d size %d %d\n", m_regionX, m_regionY,
                 m_regionWidth, m_regionHeight);
@@ -8648,11 +8725,12 @@ bool PtermPrintout::HasPage(int pageNum)
 
 void PtermPrintout::DrawPage (wxDC *dc)
 {
-    wxBitmap screenmap (ScreenSize, ScreenSize);
+    wxBitmap screenmap (ptermApp->m_CurFrameScreenSize, ptermApp->m_CurFrameScreenSize);
     wxMemoryDC screenDC;
     int obr, obg, obb;
-    double maxX = ScreenSize;
-    double maxY = ScreenSize;
+    double maxX = ptermApp->m_CurFrameScreenSize;
+    double maxY = ptermApp->m_CurFrameScreenSize;
+	int m_scale = ptermApp->m_CurFrameScale;
 
     // Let's have at least 50 device units margin
     double marginX = 50;
@@ -8674,8 +8752,8 @@ void PtermPrintout::DrawPage (wxDC *dc)
     double actualScale = wxMin(scaleX,scaleY);
 
     // Calculate the position on the DC for centring the graphic
-    double posX = (double) ((w - (ScreenSize * actualScale)) / 2.0);
-    double posY = (double) ((h - (ScreenSize * actualScale)) / 2.0);
+    double posX = (double) ((w - (ptermApp->m_CurFrameScreenSize * actualScale)) / 2.0);
+    double posY = (double) ((h - (ptermApp->m_CurFrameScreenSize * actualScale)) / 2.0);
 
     // Set the scale and origin
     dc->SetUserScale (actualScale, actualScale);
@@ -8683,7 +8761,7 @@ void PtermPrintout::DrawPage (wxDC *dc)
 
     // Re-color the image
     screenDC.SelectObject (screenmap);
-    screenDC.Blit (0, 0, ScreenSize, ScreenSize, 
+    screenDC.Blit (0, 0, ptermApp->m_CurFrameScreenSize, ptermApp->m_CurFrameScreenSize, 
                    m_owner->m_memDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 
@@ -8720,7 +8798,7 @@ void PtermPrintout::DrawPage (wxDC *dc)
     wxBitmap printmap (screenImage);
 
     screenDC.SelectObject (printmap);
-    dc->Blit (XTOP, YTOP, ScreenSize, ScreenSize, &screenDC, 0, 0, wxCOPY);
+    dc->Blit (XTOP, YTOP, ptermApp->m_CurFrameScreenSize, ptermApp->m_CurFrameScreenSize, &screenDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 }
 
