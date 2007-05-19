@@ -61,6 +61,7 @@
 #define vYSize(s)       (512 * (s) + (2 * DisplayMargin))
 #define vCharXSize(s)   (512 * (s))
 #define vCharYSize(s)   ((CSETS * 16) * (s))
+#define tvCharYSize(s)   ((4 * 16) * (s))
 #define vScreenSize(s)  (512 * (s))
 //#define XSize           (vYSize (ptermApp->m_scale))
 //#define YSize           (vXSize (ptermApp->m_scale))
@@ -2993,11 +2994,11 @@ void PtermFrame::OnPrintPreview (wxCommandEvent &)
 void PtermFrame::OnPageSetup(wxCommandEvent &)
 {
 	wxClientDC dc(m_canvas);
-	dc.Blit (XTOP, YTOP+vCharYSize(m_scale)*0, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[0], 0, 0, wxCOPY);
-	dc.Blit (XTOP, YTOP+vCharYSize(m_scale)*1, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[1], 0, 0, wxCOPY);
-	dc.Blit (XTOP, YTOP+vCharYSize(m_scale)*2, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[2], 0, 0, wxCOPY);
-	dc.Blit (XTOP, YTOP+vCharYSize(m_scale)*3, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[3], 0, 0, wxCOPY);
-	dc.Blit (XTOP, YTOP+vCharYSize(m_scale)*4, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[3], 0, 0, wxCOPY);
+	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*0, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[0], 0, 0, wxCOPY);
+	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*1, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[1], 0, 0, wxCOPY);
+	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*2, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[2], 0, 0, wxCOPY);
+	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*3, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[3], 0, 0, wxCOPY);
+	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*4, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[4], 0, 0, wxCOPY);
 /*    
 	(*g_pageSetupData) = *g_printData;
 
@@ -3370,8 +3371,10 @@ void PtermFrame::ptermFullErase (void)
     PrepareDC (dc);
     dc.SetPen (m_backgroundPen);
     dc.SetBrush (m_backgroundBrush);
-    //dc.DrawRectangle (XTOP, YTOP, 512 * m_scale, 512 * m_scale);
-    dc.Clear ();
+	// erase entire canvas in background color which means the margins to; but is faster
+    //dc.Clear ();	
+	// erase just 512x512
+    dc.DrawRectangle (XTOP, YTOP, 512 * m_scale, 512 * m_scale);
     m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->Clear ();
 }
@@ -3383,20 +3386,8 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     wxClientDC dc(m_canvas);
 	
 	int ox1,oy1,ox2,oy2;	//original values
-	ox1 = x1; 
-	oy1 = y1; 
-	ox2 = x2; 
-	oy2 = y2;
 
     PrepareDC (dc);
-    xm1 = XMADJUST (x1);
-    ym1 = YMADJUST (y1);
-    xm2 = XMADJUST (x2);
-    ym2 = YMADJUST (y2);
-    x1 = XADJUST (x1);
-    y1 = YADJUST (y1);
-    x2 = XADJUST (x2);
-    y2 = YADJUST (y2);
     if (x1 > x2)
     {
         t = x1;
@@ -3415,6 +3406,18 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
         ym1 = ym2;
         ym2 = t;
     }
+	ox1 = x1; 
+	oy1 = y1; 
+	ox2 = x2; 
+	oy2 = y2;
+    xm1 = XMADJUST (x1);
+    ym1 = YMADJUST (y1);
+    xm2 = XMADJUST (x2);
+    ym2 = YMADJUST (y2);
+    x1 = XADJUST (x1);
+    y1 = YADJUST (y1);
+    x2 = XADJUST (x2);
+    y2 = YADJUST (y2);
 
 
     if (mode & 1)
@@ -3444,8 +3447,12 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
 	m_memDC->DrawRectangle (xm1, ym1, xm2 - xm1 + 1, ym2 - ym1 + 1);
 
 	//wipe text map
-	for ( int row = ym1/16; row <= ym2/16 ; row++ )
-		memset (&m_canvas->textmap[row * 64 + xm1/8], 055, 2*((xm2-xm1)/8));
+	int scol = int(ox1/8);
+	int cols = int(ceil((ox2-ox1)/8))+1;
+	int srow = int((oy1)/16);
+	int rows = int(ceil((oy2-oy1)/16))+1;
+	for ( int row = srow; row < srow+rows ; row++ )
+		memset (&m_canvas->textmap[row * 64 + scol], 055, sizeof(&m_canvas->textmap[0])*cols);
 
 }
 
@@ -7921,8 +7928,7 @@ void PtermCanvas::OnDraw(wxDC &dc)
     
     m_owner->PrepareDC (dc);
 
-	dc.Blit (XTOP, YTOP, vScreenSize(m_owner->m_scale), vScreenSize(m_owner->m_scale),
-             m_owner->m_memDC, 0, 0, wxCOPY);
+	dc.Blit (XTOP, YTOP, vScreenSize(m_owner->m_scale), vScreenSize(m_owner->m_scale), m_owner->m_memDC, 0, 0, wxCOPY);
 #if 0
     // debug charmaps
     for (i = 0; i <= 4; i++)
