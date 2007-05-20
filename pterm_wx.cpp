@@ -3386,8 +3386,24 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     wxClientDC dc(m_canvas);
 	
 	int ox1,oy1,ox2,oy2;	//original values
+	ox1 = x1; 
+	oy1 = y1; 
+	ox2 = x2; 
+	oy2 = y2;
+    if (ox1 > ox2)
+        t = ox1, ox1 = ox2, ox2 = t;
+    if (oy1 > oy2)
+        t = oy1, oy1 = oy2, oy2 = t;
 
     PrepareDC (dc);
+    xm1 = XMADJUST (x1);
+    ym1 = YMADJUST (y1);
+    xm2 = XMADJUST (x2);
+    ym2 = YMADJUST (y2);
+    x1 = XADJUST (x1);
+    y1 = YADJUST (y1);
+    x2 = XADJUST (x2);
+    y2 = YADJUST (y2);
     if (x1 > x2)
     {
         t = x1;
@@ -3406,18 +3422,6 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
         ym1 = ym2;
         ym2 = t;
     }
-	ox1 = x1; 
-	oy1 = y1; 
-	ox2 = x2; 
-	oy2 = y2;
-    xm1 = XMADJUST (x1);
-    ym1 = YMADJUST (y1);
-    xm2 = XMADJUST (x2);
-    ym2 = YMADJUST (y2);
-    x1 = XADJUST (x1);
-    y1 = YADJUST (y1);
-    x2 = XADJUST (x2);
-    y2 = YADJUST (y2);
 
 
     if (mode & 1)
@@ -3443,16 +3447,17 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
 		x1++,xm1++,x2++,xm2++;
 		y1++,ym1++,y2++,ym2++;
 	}
+
 	dc.DrawRectangle (x1, y1, x2 - x1 + 1, y2 - y1 + 1);
 	m_memDC->DrawRectangle (xm1, ym1, xm2 - xm1 + 1, ym2 - ym1 + 1);
-
+	
 	//wipe text map
 	int scol = int(ox1/8);
 	int cols = int(ceil((ox2-ox1)/8))+1;
-	int srow = int((oy1)/16);
+	int srow = int(oy1/16);
 	int rows = int(ceil((oy2-oy1)/16))+1;
-	for ( int row = srow; row < srow+rows ; row++ )
-		memset (&m_canvas->textmap[row * 64 + scol], 055, sizeof(&m_canvas->textmap[0])*cols);
+	for ( int row = srow; rows > 0; row++, rows-- )
+		memset (&m_canvas->textmap[row * 64 + scol], 055, 2*cols);
 
 }
 
@@ -3628,35 +3633,32 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
         dc.DestroyClippingRegion ();
         dc.SetClippingRegion (GetXMargin (), GetYMargin (), vScreenSize (newscale), vScreenSize (newscale));
 
-        UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
+		UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
 
 		// Just allocate new bitmaps for the others, we'll repaint them below
-        for (i = 0; i < 4; i++)
-        {
-            newmap = new wxBitmap (vCharXSize (newscale), vCharYSize (newscale), -1);
-            m_charDC[i]->SelectObject (*newmap);
-            delete m_charmap[i];
-            m_charmap[i] = newmap;
-        }
+		for (i = 0; i < 4; i++)
+		{
+			newmap = new wxBitmap (vCharXSize (newscale), vCharYSize (newscale), -1);
+			m_charDC[i]->SelectObject (*newmap);
+			delete m_charmap[i];
+			m_charmap[i] = newmap;
+		}
     
-//		for (i = 0; i < 5; i++)
-//		{
-//			delete m_charDC[i];
-//			delete m_charmap[i];
-//			m_charDC[i] = new wxMemoryDC ();
-//			m_charmap[i] = new wxBitmap (vCharXSize(newscale), vCharYSize(newscale), -1);
-//			m_charDC[i]->SelectObject (*m_charmap[i]);
-//		}
-//		ptermLoadRomChars ();
 //		UpdateDC (m_charDC[0], m_charmap[0], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
 //		UpdateDC (m_charDC[1], m_charmap[1], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
 //		UpdateDC (m_charDC[2], m_charmap[2], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
 //		UpdateDC (m_charDC[3], m_charmap[3], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
 //		UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
-        
+
 	}
 
-	SetColors (newfg, newbg, newscale);
+// Here's where it all goes wrong....  This is temporarily commented
+// so that I can hit Page Setup and see the charsets.  I'm wondering
+// if the problem has something to do with Pens or Brushes needing to
+// to be destroyed/recreated.  JWS 5/19/2007
+
+//	SetColors (newfg, newbg, newscale);
+
 	m_canvas->SetBackgroundColour (newbg);
 	m_canvas->m_scale = m_scale;
 	m_canvas->Refresh ();
