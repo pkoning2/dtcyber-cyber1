@@ -926,8 +926,7 @@ private:
     }
     
 
-    void UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap,
-                   wxColour &newfg, wxColour &newbf, bool newscale2);
+    void UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap, wxColour &newfg, wxColour &newbf, bool newscale2);
 
     // PLATO drawing primitives
     void ptermDrawChar (int x, int y, int snum, int cnum);
@@ -2993,12 +2992,23 @@ void PtermFrame::OnPrintPreview (wxCommandEvent &)
 
 void PtermFrame::OnPageSetup(wxCommandEvent &)
 {
+
+	//show charsets on screen
 	wxClientDC dc(m_canvas);
 	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*0, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[0], 0, 0, wxCOPY);
 	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*1, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[1], 0, 0, wxCOPY);
 	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*2, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[2], 0, 0, wxCOPY);
 	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*3, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[3], 0, 0, wxCOPY);
 	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*4, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[4], 0, 0, wxCOPY);
+
+	wxString str = wxT("");
+	str.Printf(wxT(  "0 m_charDC=%p     m_charmap=%p\n"),    m_charDC[0],m_charmap[0]);
+	str.Printf(wxT("%s1 m_charDC=%p     m_charmap=%p\n"),str,m_charDC[1],m_charmap[1]);
+	str.Printf(wxT("%s2 m_charDC=%p     m_charmap=%p\n"),str,m_charDC[2],m_charmap[2]);
+	str.Printf(wxT("%s3 m_charDC=%p     m_charmap=%p\n"),str,m_charDC[3],m_charmap[3]);
+	str.Printf(wxT("%s4 m_charDC=%p     m_charmap=%p\n"),str,m_charDC[4],m_charmap[4]);
+	wxMessageBox(str);
+
 /*    
 	(*g_pageSetupData) = *g_printData;
 
@@ -3643,21 +3653,10 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
 			delete m_charmap[i];
 			m_charmap[i] = newmap;
 		}
-    
-//		UpdateDC (m_charDC[0], m_charmap[0], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
-//		UpdateDC (m_charDC[1], m_charmap[1], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
-//		UpdateDC (m_charDC[2], m_charmap[2], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
-//		UpdateDC (m_charDC[3], m_charmap[3], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
-//		UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
 
 	}
 
-// Here's where it all goes wrong....  This is temporarily commented
-// so that I can hit Page Setup and see the charsets.  I'm wondering
-// if the problem has something to do with Pens or Brushes needing to
-// to be destroyed/recreated.  JWS 5/19/2007
-
-//	SetColors (newfg, newbg, newscale);
+	SetColors (newfg, newbg, newscale);	// boo hiss! this creates the weird mode inverse problem when switching scales.
 
 	m_canvas->SetBackgroundColour (newbg);
 	m_canvas->m_scale = m_scale;
@@ -7752,6 +7751,7 @@ int PtermConnection::NextWord (void)
 		m_owner->WriteTraceMessage(msg);
         msg.Printf(_("%s on %s"), ldt.FormatTime().c_str(), ldt.FormatDate().c_str());	// fits in dialog box title
 		
+		m_owner->Iconize(false);	// ensure window is visible when connection fails
 		ptermApp->m_connError = word;
         PtermConnFailDialog dlg (wxID_ANY, msg, wxDefaultPosition, wxSize( 320,140 ));
         dlg.CenterOnScreen ();
@@ -8492,7 +8492,7 @@ void PtermCanvas::FullErase (void)
 {
     // Erase the text "backing store"
     memset (textmap, 055, sizeof (textmap));
-    
+
     ClearRegion ();
 }
 
