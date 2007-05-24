@@ -106,12 +106,25 @@ class Oper (Connection, threading.Thread):
         self.status = elist ()
         self.locked = False
         self.debug = False
+        self.statusdict = { }
         self.start ()
+        self.operators = 1
 
     def run (self):
         """Collect data from DtCyber.  We sort out the various
         types of data we receive and salt away most of it in
         a more convenient form.
+
+        In particular, the status lines are captured several ways:
+        1. self.status is an array, each entry is a status line.
+        2. self.statusdict is a dictionary indexed by a tuple
+           of two integers, the channel and equipment number of
+           one of the devices.  The value is the status for that device.
+        3. The Oper object string representation is the whole status
+           text, as it would appear on the screen (one line per entry).
+
+        In addition, the current lock and debug states are extracted,
+        as well as the current operator connection count.
         """
         while True:
             try:
@@ -136,10 +149,21 @@ class Oper (Connection, threading.Thread):
                     i = ord (v[0])
                     v = v[1:]
                     self.status[i] = v
+                    fields = v.split (None, 3)
+                    if len (fields) >= 3:
+                        skey = (int (fields[1], 8), int (fields[2], 8))
+                        try:
+                            self.statusdict[skey] = fields[3]
+                        except IndexError:
+                            self.statusdict[skey] = ""
                     if i == 0:
                         # System status line, update locked and debug status
                         self.locked = not v.startswith ("UNLOCKED")
                         self.debug = v[10:15] == "DEBUG"
+                        if len (v) > 15:
+                            self.operators = int (v[15:].split ()[0])
+                        else:
+                            self.operators = 1
             except socket.timeout:
                 pass
             except EOFError:
@@ -281,8 +305,10 @@ class Pterm (Connection, threading.Thread):
             
     def sendkey (self, key):
         key &= 01777
+        #print "sending key", key
         data = struct.pack ("<BB", key >> 7, (0200 | key & 0177))
         self.sendall (data)
+        self.arrow = False
 
     # This table is nearly the same as the one in charset.c, except
     # for the entries for ctrl-i, ctrl-j, and rubout, which are
@@ -321,7 +347,21 @@ class Pterm (Connection, threading.Thread):
           -1,    0116116,0117121,0117105,0117130, -1, 0117125,  0013,
           -1,    0125121,0125105,0125130,0125125,0131105, -1,   0131125
        )
-    
+
+    def waitarrow (self, wait):
+        """Wait the specified number of seconds for an arrow to appear.
+        Returns True if there was an arrow, False if not.
+        """
+        delay = wait / 10.0
+        if delay > 1:
+            delay = 1
+        while wait > 0:
+            if self.arrow:
+                return True
+            time.sleep (delay)
+            wait -= delay
+        return False
+
     def sendstr (self, s, term = None, wait = None):
         """Send a text string, converting from ASCII as we go.
         There is no delay in here, so don't send too much.
@@ -330,12 +370,7 @@ class Pterm (Connection, threading.Thread):
         an arrow to appear before sending the string.
         """
         if wait:
-            delay = wait / 10
-            while wait > 0:
-                if self.arrow:
-                    break
-                time.sleep (delay)
-                wait -= delay
+            self.waitarrow (wait)
         for c in s:
             key = self.asciiToPlato[ord (c)]
             if key == -1:
@@ -402,7 +437,9 @@ class Pterm (Connection, threading.Thread):
             cy = 31 - (self.y // 16)
             if self.wemode & 1:
                 # mode write or rewrite
-                self.arrow = self.mem == 0 and c == 076
+                # Set the arrow flag, unless this is a space.
+                if self.mem > 1 or c != 055:
+                    self.arrow = self.mem == 0 and c == 076
                 c = self.rom[self.mem][c]
             else:
                 # mode erase, write a space
@@ -423,4 +460,15 @@ class Pterm (Connection, threading.Thread):
         self.sendstr (group, self.SHIFT + self.STOP, 10)
         if passwd:
             self.sendstr (passwd, self.NEXT, 10)
+        # Handle any extraneous pages before author mode, like
+        # a message page or a consultant signon page.
+        for i in range(4):
+            if self.waitarrow (5):
+                break
+            self.sendkey (self.NEXT)
+
+    def logout (self):
+        while "Press  NEXT  to begin" not in str (self):
+            self.sendkey (self.SHIFT + self.STOP)
+            self.waitarrow (4)
             
