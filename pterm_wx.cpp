@@ -71,8 +71,7 @@
 
 #define TERMTYPE        10
 #define ASCTYPE         12
-#define SUBTYPE         0x74
-//#define SUBTYPE         0x01
+#define SUBTYPE         0x74	// original value
 #define TERMCONFIG      0x40    // touch panel present
 //#define TERMCONFIG      0x60    // touch panel present
 #define ASCFEATURES     0x01    // features: fine touch
@@ -414,8 +413,7 @@ static const u8 M1specials[][8] =
 };
 
 // Conversion from ascii mode codes to classic codes
-static const u8 ascmode[] =
-{ 0, 3, 2, 1 };
+static const u8 ascmode[] = { 0, 3, 2, 1 };
 
 // ----------------------------------------------------------------------------
 // private classes
@@ -598,7 +596,7 @@ public:
 	PtermFrame *m_CurFrame;
 	int m_CurFrameScreenSize;
 	int m_CurFrameScale;
-    
+
 private:
     wxLocale    m_locale; // locale we'll be using
     
@@ -728,7 +726,10 @@ public:
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2, bool newstatusbar);
     void SetColors (wxColour &newfg, wxColour &newbg, int newscale);
     void OnFullScreen (wxCommandEvent &event);
-    
+#if defined (__WXMSW__)
+    void OnIconize(wxIconizeEvent &event);
+#endif
+
     void PrepareDC(wxDC& dc);
     void ptermSendKey(int key);
     void ptermSendKeys(int key[]);
@@ -788,6 +789,18 @@ public:
     wxStatusBar *m_statusBar;       // present even if not displayed
 
 	int			m_scale;
+
+	//fonts
+	wxFont		*m_font;
+	bool		m_usefont;
+	wxFontFamily m_fontfamily;
+	wxString	m_fontface;
+	int			m_fontsize;
+	bool		m_fontitalic;
+	bool		m_fontbold;
+	bool		m_fontstrike;
+	bool		m_fontunderln;
+	int			m_fontheight;
 
 private:
     wxPen       m_foregroundPen;
@@ -942,6 +955,7 @@ private:
     void ptermPaint (int pat);
     
     void drawChar (wxDC &dc, int x, int y, int snum, int cnum);
+    void drawFontChar (int x, int y, int c);
     void procPlatoWord (u32 d, bool ascii);
     void plotChar (int c);
     void mode0 (u32 d);
@@ -1375,6 +1389,9 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Page_Setup, PtermFrame::OnPageSetup)
     EVT_MENU(Pterm_Pref,    PtermFrame::OnPref)
     EVT_MENU(Pterm_FullScreen, PtermFrame::OnFullScreen)
+#if defined (__WXMSW__)
+    EVT_ICONIZE(PtermFrame::OnIconize)
+#endif
     END_EVENT_TABLE ()
 
 BEGIN_EVENT_TABLE(PtermApp, wxApp)
@@ -1993,7 +2010,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
       m_currentFg (ptermApp->m_fgColor),
       m_currentBg (ptermApp->m_bgColor),
       m_pendingEcho (-1),
-	  m_scale (ptermApp->m_scale)
+	  m_scale (ptermApp->m_scale),
+	  m_usefont( false )
 {
     int i;
 
@@ -2718,6 +2736,9 @@ void PtermFrame::OnMailTo (wxCommandEvent &event)
 			//strip 'nospam'
 			else if (pnt[cnt] == 'n' && pnt[cnt+1] == 'o' && pnt[cnt+2] == 's' && pnt[cnt+3] == 'p' && pnt[cnt+4] == 'a' && pnt[cnt+5] == 'm')
 				cnt += 5, newchr = wxChar ('*');
+			//fix comma
+			else if (pnt[cnt] == ',')
+				newchr = wxChar ('.');
 			else
 				newchr = pnt[cnt];
 			if (newchr != '*')
@@ -2993,6 +3014,7 @@ void PtermFrame::OnPrintPreview (wxCommandEvent &)
 void PtermFrame::OnPageSetup(wxCommandEvent &)
 {
 
+/*
 	//show charsets on screen
 	wxClientDC dc(m_canvas);
 	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*0, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[0], 0, 0, wxCOPY);
@@ -3000,7 +3022,6 @@ void PtermFrame::OnPageSetup(wxCommandEvent &)
 	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*2, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[2], 0, 0, wxCOPY);
 	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*3, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[3], 0, 0, wxCOPY);
 	dc.Blit (XTOP, YTOP+tvCharYSize(m_scale)*4, vCharXSize(m_scale), vCharYSize(m_scale), m_charDC[4], 0, 0, wxCOPY);
-
 	wxString str = wxT("");
 	str.Printf(wxT(  "0 m_charDC=%p     m_charmap=%p\n"),    m_charDC[0],m_charmap[0]);
 	str.Printf(wxT("%s1 m_charDC=%p     m_charmap=%p\n"),str,m_charDC[1],m_charmap[1]);
@@ -3008,16 +3029,16 @@ void PtermFrame::OnPageSetup(wxCommandEvent &)
 	str.Printf(wxT("%s3 m_charDC=%p     m_charmap=%p\n"),str,m_charDC[3],m_charmap[3]);
 	str.Printf(wxT("%s4 m_charDC=%p     m_charmap=%p\n"),str,m_charDC[4],m_charmap[4]);
 	wxMessageBox(str);
+ */
 
-/*    
-	(*g_pageSetupData) = *g_printData;
+ 	(*g_pageSetupData) = *g_printData;
 
     wxPageSetupDialog pageSetupDialog (this, g_pageSetupData);
     pageSetupDialog.ShowModal ();
 
     (*g_printData) = pageSetupDialog.GetPageSetupData ().GetPrintData ();
     (*g_pageSetupData) = pageSetupDialog.GetPageSetupData ();
-*/
+
 }
 
 void PtermFrame::OnPref (wxCommandEvent&)
@@ -3143,6 +3164,19 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
     m_canvas->Refresh ();
 }
 
+#if defined (__WXMSW__)
+void PtermFrame::OnIconize (wxIconizeEvent &event)
+{
+	// this helps control to a certain extent, the scrollbars that
+	// sometimes appear when restoring from iconized state.
+    if (!IsIconized())
+	{
+		m_canvas->SetScrollRate (0, 0);
+		m_canvas->SetScrollRate (1, 1);
+	}
+}
+#endif
+
 void PtermFrame::PrepareDC(wxDC& dc)
 {
     dc.SetAxisOrientation (true, false);
@@ -3160,7 +3194,7 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
     
     m_canvas->SaveChar (x, y, snum, cnum, wemode, large!=0);
     
-    if (!vertical && !large)
+	if (!vertical && !large)
     {
         PrepareDC (dc);
         m_memDC->SetPen (m_foregroundPen);
@@ -3876,6 +3910,50 @@ void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
     }
 }
 
+void PtermFrame::drawFontChar (int x, int y, int c)
+{
+    int screenX, screenY, memX, memY;
+    wxClientDC dc(m_canvas);
+	wxCoord w,h;
+	wxString chr;
+
+	chr.Printf(wxT("%c"),c);
+
+	switch (wemode)
+	{
+	case 0:			// inverse
+		m_memDC->SetBackgroundMode(wxSOLID);
+		m_memDC->SetTextBackground(m_currentFg);
+		m_memDC->SetTextForeground(m_currentBg);
+		break;
+	case 1:			// rewrite
+		m_memDC->SetBackgroundMode(wxSOLID);
+		m_memDC->SetTextBackground(m_currentBg);
+		m_memDC->SetTextForeground(m_currentFg);
+		break;
+	case 2:			// erase
+		m_memDC->SetBackgroundMode(wxTRANSPARENT);
+		m_memDC->SetTextForeground(m_currentBg);
+		break;
+	case 3:			// write
+		m_memDC->SetBackgroundMode(wxTRANSPARENT);
+		m_memDC->SetTextForeground(m_currentFg);
+		break;
+	}
+
+	m_memDC->GetTextExtent(chr, &w, &h);
+
+    screenX = XADJUST (x);
+    screenY = YADJUST (y + h - 1);
+    memX = XMADJUST (x);
+    memY = YMADJUST (y + h - 1);
+
+	currentX += w;
+    
+	m_memDC->DrawText(chr,memX,memY);
+    dc.Blit (XTOP, YTOP, vScreenSize(m_scale), vScreenSize(m_scale), m_memDC, 0, 0, wxCOPY);
+}
+
 /*--------------------------------------------------------------------------
 **  Purpose:        Process word of PLATO output data
 **
@@ -3902,14 +3980,25 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 
 	bool settitleflag = false;
     
-    deltax = (reverse) ? -8 : 8;
-    deltay = (vertical) ? -16 : 16;
-    if (large)
-    {
-        deltax *= 2;
-        deltay *= 2;
-    }
-    supdelta = (deltay / 16) * 5;
+	if (m_usefont)
+	{
+		supdelta = (m_fontheight /3);
+		// Not going to support reverse/vertical in font mode until I get documentation
+		// on what worked with -font- in the past.  JWS 5/27/2007
+		deltax = 8;
+		deltay = m_fontheight;
+	}
+	else
+	{
+		supdelta = (deltay / 16) * 5;
+		deltax = (reverse) ? -8 : 8;
+		deltay = (vertical) ? -16 : 16;
+		if (large)
+		{
+			deltax *= 2;
+			deltay *= 2;
+		}
+	}
     
     seq++;
     if (tracePterm)
@@ -3943,8 +4032,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     {
                         // Force mode rewrite
                         mode = (3 << 2) + 1;
-                        ptermDrawChar (currentX, currentY, 
-                                       (d & 0x80) >> 7, d & 0x7f);
+                        ptermDrawChar (currentX, currentY, (d & 0x80) >> 7, d & 0x7f);
                         currentX = (currentX + 8) & 0777;
                     }
                 }
@@ -3964,21 +4052,12 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     else
                     {
                         // On the bottom line... scroll.
-                        dc.Blit (XTOP, YTOP, vScreenSize(m_scale),
-                                 vScreenSize(m_scale) - (16 * m_scale),
-                                 m_memDC, XMTOP, YMADJUST (496),
-                                 wxCOPY);
-                        m_memDC->Blit (XMTOP, YMTOP, vScreenSize(m_scale),
-                                       vScreenSize(m_scale) - (16 * m_scale),
-                                       &dc, XTOP, YTOP, wxCOPY);
+                        dc.Blit (XTOP, YTOP, vScreenSize(m_scale), vScreenSize(m_scale) - (16 * m_scale), m_memDC, XMTOP, YMADJUST (496), wxCOPY);
+                        m_memDC->Blit (XMTOP, YMTOP, vScreenSize(m_scale), vScreenSize(m_scale) - (16 * m_scale), &dc, XTOP, YTOP, wxCOPY);
                     }
                     // Erase the line we just moved to.
-                    m_memDC->Blit (XMTOP, YMADJUST (16) + 1, vScreenSize(m_scale),
-                                   16 * m_scale,
-                                   m_memDC, 0, 0, wxCLEAR);
-                    dc.Blit (XTOP, YADJUST (16) + 1, vScreenSize(m_scale),
-                             16 * m_scale,
-                             &dc, 0, 0, wxCLEAR);
+                    m_memDC->Blit (XMTOP, YMADJUST (16) + 1, vScreenSize(m_scale), 16 * m_scale, m_memDC, 0, 0, wxCLEAR);
+                    dc.Blit (XTOP, YADJUST (16) + 1, vScreenSize(m_scale), 16 * m_scale, &dc, 0, 0, wxCLEAR);
                 }
             }
         }
@@ -4046,7 +4125,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 'A':
                 // subscript
-                TRACEN ("Subcript");
+                TRACEN ("Subscript");
                 cy = (cy - supdelta) & 0777;
                 break;
             case 'B':
@@ -4182,26 +4261,12 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 if (vertical)
                 {
                     cx = deltay - 1;
-                    if (reverse)
-                    {
-                        cy = 512 - deltax;
-                    }
-                    else
-                    {
-                        cy = 0;
-                    }
+                    cy = reverse ? 512 - deltax : 0;
                 }
                 else
                 {
                     cy = 512 - deltay;
-                    if (reverse)
-                    {
-                        cx = 512 - deltax;
-                    }
-                    else
-                    {
-                        cx = 0;
-                    }
+                    cx = reverse ? 512 - deltax : 0;
                 }
                 break;
             case 015:   // carriage return
@@ -4284,9 +4349,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                                 TRACEN ("beep");
                                 wxBell ();
 								if (!IsActive())
-								{
 									RequestUserAttention(wxUSER_ATTENTION_INFO);
-								}
                             }
                             break;
                         case 0x7d:
@@ -4310,14 +4373,10 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             TRACE2 ("load echo %d (0x%02x)", n, n);
                         }
                         if (n == 0x7b)
-                        {
                             break;          // -beep- does NOT send an echo code in reply
-                        }
                         n += 0200;
                         if (m_conn->RingCount () > RINGXOFF1)
-                        {
                             m_pendingEcho = n;
-                        }
                         else
                         {
                             ptermSendKey (n);
@@ -4334,10 +4393,85 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     }
                     break;
                 case ext:
+                    TRACE ("ext %04x", d);
+                    n = AssembleData (d);
                     if (n != -1)
                     {
-                        TRACE ("ext %04x", n);
-                        // tbd
+	                    TRACE ("ext completed %04x", n);
+						//check for font data
+						switch (n & 07700)
+						{
+						case 05000:		// font name
+							switch (n & 077)
+							{
+							case 2:
+								m_fontface = wxT("Terminal");
+								m_fontfamily = wxFONTFAMILY_TELETYPE;
+								break;
+							case 3:
+								m_fontface = wxT("UOL8X14");
+								m_fontfamily = wxFONTFAMILY_TELETYPE;
+								break;
+							case 4:
+								m_fontface = wxT("UOL8X16");
+								m_fontfamily = wxFONTFAMILY_TELETYPE;
+								break;
+							case 5:
+								m_fontface = wxT("Courier");
+								m_fontfamily = wxFONTFAMILY_TELETYPE;
+								break;
+							case 6:
+								m_fontface = wxT("Courier New");
+								m_fontfamily = wxFONTFAMILY_MODERN;
+								break;
+							case 16:
+								m_fontface = wxT("Arial");
+								m_fontfamily = wxFONTFAMILY_DECORATIVE;
+								break;
+							case 17:
+								m_fontface = wxT("Times New Roman");
+								m_fontfamily = wxFONTFAMILY_ROMAN;
+								break;
+							case 18:
+								m_fontface = wxT("Script");
+								m_fontfamily = wxFONTFAMILY_SCRIPT;
+								break;
+							case 19:
+								m_fontface = wxT("MS Sans Serif");
+								m_fontfamily = wxFONTFAMILY_SWISS;
+								break;
+							default:
+								m_fontface = wxT("default");
+								m_fontfamily = wxFONTFAMILY_TELETYPE;
+							}
+							break;
+						case 05100:		// font size
+							m_fontsize = (n & 077) < 6 ? 6 : n & 077;
+							break;
+						case 05200:		// font mode
+							m_usefont = m_fontface.Cmp(wxT("default")) != 0;
+							if (m_usefont)
+							{
+								int w;
+								m_font = new wxFont;
+								//m_font->New(m_fontsize, m_fontfamily, wxFONTFLAG_NOT_ANTIALIASED, m_fontface);
+								m_font->New(m_fontsize, m_fontfamily, wxFONTFLAG_ANTIALIASED, m_fontface);
+								m_font->SetFaceName(m_fontface);
+								m_font->SetFamily(m_fontfamily);
+								m_font->SetPointSize(m_fontsize);
+								m_fontitalic = ((n & 0x01) != 0);
+								m_font->SetStyle(m_fontitalic ? wxFONTSTYLE_ITALIC : wxFONTSTYLE_NORMAL);
+								m_fontbold = ((n & 0x02) != 0);
+								m_font->SetWeight(m_fontbold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL);
+								m_fontstrike = ((n & 0x04) != 0);
+								m_fontunderln = ((n & 0x08) != 0);
+								m_font->SetUnderlined(m_fontunderln);
+								m_memDC->SetFont(*m_font);
+								m_memDC->GetTextExtent(wxT(" "), &w, &m_fontheight);
+								TRACE3 ("Font selected: %s,%d,%d", m_fontface, m_fontsize, n & 0x0f);
+							}
+							break;
+						}
                     }
                     break;
                 case ssf:
@@ -4354,8 +4488,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     n = AssembleColor (d);
                     if (n != -1 && !ptermApp->m_noColor)
                     {
-                        wxColour c ((n >> 16) & 0xff, (n >> 8) & 0xff, 
-                                    n & 0xff);
+                        wxColour c ((n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff);
                         if (ascState == fg)
                         {
                             TRACE ("set foreground color %06x", n);
@@ -4366,8 +4499,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             TRACE ("set background color %06x", n);
                             m_currentBg = c;
                         }
-                        SetColors (m_currentFg, m_currentBg, 
-                                   m_scale);
+                        SetColors (m_currentFg, m_currentBg, m_scale);
                     }
                     break;
                 case pmd:
@@ -4398,63 +4530,66 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         TRACE2 ("char %03o (%c)", d, d);
                         m_ascState = none;
                         m_ascBytes = 0;
-                        i = currentCharset;
-                        if (i == 0)
-                        {
-                            d = asciiM0[d];
-                            // The ROM vs. RAM choice is given by the
-                            // current character set.  
-                            // For the ROM characters, the even vs. odd
-                            // (M0 vs. M1) choice is given by the top bit
-                            // of the ASCII translation table.
-                            i = (d & 0x80) >> 7;
-                        }
-                        else if (i == 1)
-                        {
-                            d = asciiM1[d];
-                            i = (d & 0x80) >> 7;
-                        }
-                        else
-                        {
-                            // RAM characters are indexed by printable
-                            // ASCII characters; the RAM character offset
-                            // is simply the character code - 32.
-                            // The set choice is simply what the host sent.
-                            d = (d - 040) & 077;
-                        }
-                        if ((d & 0xf0) == 0xf0)
-                        {
-                            if (d != 0xff)
-                            {
-                                // A builtin composite
-                                int savemode = mode;
-                                int sy = cy;
+						i = currentCharset;
+						if (m_usefont && i == 0)
+							drawFontChar(currentX, currentY, d);
+						else
+						{
+							if (i == 0)
+							{
+								d = asciiM0[d];
+								// The ROM vs. RAM choice is given by the
+								// current character set.  
+								// For the ROM characters, the even vs. odd
+								// (M0 vs. M1) choice is given by the top bit
+								// of the ASCII translation table.
+								i = (d & 0x80) >> 7;
+							}
+							else if (i == 1)
+							{
+								d = asciiM1[d];
+								i = (d & 0x80) >> 7;
+							}
+							else
+							{
+								// RAM characters are indexed by printable
+								// ASCII characters; the RAM character offset
+								// is simply the character code - 32.
+								// The set choice is simply what the host sent.
+								d = (d - 040) & 077;
+							}
+							if ((d & 0xf0) == 0xf0)
+							{
+								if (d != 0xff)
+								{
+									// A builtin composite
+									int savemode = mode;
+									int sy = cy;
                                 
-                                d -= 0xf0;
-                                for (i = 0; i < 8; i += 2)
-                                {
-                                    n = M1specials[d][i];
-                                    if (n == 0)
-                                    {
-                                        break;
-                                    }
-                                    j = (i8) M1specials[d][i + 1];
-                                    cy += j;
-                                    ptermDrawChar (currentX, currentY,
-                                                   n >> 7, n & 0x7f);
-                                    cy = sy;
-                                    mode |= 2;
-                                }
-                                mode = savemode;
-                                cx = (cx + deltax) & 0777;
-                            }
-                        }   
-                        else 
-                        {
-                            ptermDrawChar (currentX, currentY,
-                                           i, d & 0x7f);
-                            cx = (cx + deltax) & 0777;
-                        }
+									d -= 0xf0;
+									for (i = 0; i < 8; i += 2)
+									{
+										n = M1specials[d][i];
+										if (n == 0)
+										{
+											break;
+										}
+										j = (i8) M1specials[d][i + 1];
+										cy += j;
+										ptermDrawChar (currentX, currentY, n >> 7, n & 0x7f);
+										cy = sy;
+										mode |= 2;
+									}
+									mode = savemode;
+									cx = (cx + deltax) & 0777;
+								}
+							}   
+							else 
+							{
+								ptermDrawChar (currentX, currentY, i, d & 0x7f);
+								cx = (cx + deltax) & 0777;
+							}
+						}
                         break;
                     case 4:
                         if (AssembleCoord (d))
@@ -4466,23 +4601,17 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     case 5:
                         n = AssembleData (d);
                         if (n != -1)
-                        {
                             mode5 (n);
-                        }
                         break;
                     case 6:
                         n = AssembleData (d);
                         if (n != -1)
-                        {
                             mode6 (n);
-                        }
                         break;
                     case 7:
                         n = AssembleData (d);
                         if (n != -1)
-                        {
                             mode7 (n);
-                        }
                         break;
                     }
                     break;
