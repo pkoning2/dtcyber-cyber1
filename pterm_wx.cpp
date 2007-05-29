@@ -4468,7 +4468,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 								m_font->SetUnderlined(m_fontunderln);
 								m_memDC->SetFont(*m_font);
 								m_memDC->GetTextExtent(wxT(" "), &w, &m_fontheight);
-								TRACE3 ("Font selected: %s,%d,%d", m_fontface, m_fontsize, n & 0x0f);
+								TRACE3 ("Font selected: %s,%d,%d", m_fontface.c_str (), m_fontsize, n & 0x0f);
 							}
 							break;
 						}
