@@ -14,6 +14,75 @@ return(opl)
 */ **/---   block=01-e opl2              83/09/22. 20.24    source
 *oplfile opl2
 */
+*/ **/---   block=01-e jsfont           07/05/24. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Turn on -font- for pterm
+*/
+*/ -------------------------------------------------------------------
+*ident jsfont
+*deck pftext
+*i arrows.5
+sbtpterm equ    16          pterm for cyber1 software
+*/ end pftext
+*deck exec3
+*i nexec3.757
+          title  send font ext codes to ASCII pterm only
+***       fontext  -  sends ext codes to pterm
+*
+*         uses a - 1
+*              b - 1,2
+*              x - 0,1
+*
+*         input: b1 = ext code
+*                b2 = value to be added to ext
+*
+*
+          entry  fontext
+ fontext  eq     *           entry/exit
+          sa1    stflag1     get terminal info word
+          mx0    -ttbtn      set mask for term type field
+          lx1    ttbtn-ttbts  position term type field
+          bx0    -x0*x1      get term type
+          sx0    x0-asctype  see if ascii term (ztttype=12)
+          nz     x0,fontext  if not ascii, exit
+          sa1    bankadd     get word holding term subtype
+          mx0    -tsbtn      set mask to get data
+          lx1    tsbtn-tsbts  position data to end of word
+          bx1    -x0*x1      mask out term subtype
+          sx0    x1-sbtwin   see if windows terminal
+          zr     x0,fontext1 send -ext- code
+          sx0    x1-sbtmac   see if macintosh system
+          zr     x0,fontext1 send -ext- code
+          sx0    x1-sbtpterm see if pterm terminal
+          zr     x0,fontext1 send -ext- code
+          eq     fontext     -- return
+
+ fontext1 sx1    b1          -ext- code
+          sx1    x1+b2       add additional value to -ext-
+          outcode extcode    output code to formatter
+          eq     fontext     return
+*d font.39
+          call   fontext,5000b,x1    font type code
+*d font.49
+ sendsiz  call   fontext,5100b,x1    font size code
+*d font.53
+          call   fontext,5200b,x1    font mode code
+*/ end exec3
+*deck tutorx
+*d font.32
+          call   fontext,5000b,1     default font
+*d font.37,font.38
+          call   fontext,5100b,0     default size
+          call   fontext,5200b,0     default font mode
+*d font.56
+          call   fontext,5000b,x1
+*d font.68
+          call   fontext,5100b,x1
+*d font.73
+          call   fontext,5200b,x1
+
+*/
 */ **/---   block=01-e tprtuse           07/05/14. 12.00    source
 */ -------------------------------------------------------------------
 */
