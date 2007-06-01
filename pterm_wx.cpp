@@ -12,7 +12,9 @@
 // declarations
 // ============================================================================
 
-//#define wxUse_DC_Cache	-1
+#if defined(__WXMSW__)
+#define wxUse_DC_Cache	-1
+#endif
 
 /*
 **  -----------------
@@ -1495,7 +1497,7 @@ bool PtermApp::OnInit (void)
 		else
 			m_config->Read (wxT (PREF_HOST), &m_hostName, DEFAULTHOST);
 		if (argc > 2)
-			m_port = atoi (wxString (argv[2]).mb_str ());
+			m_port = atoi (wxString (argv[2]).mb_str());
 		else
 			m_port = m_config->Read (wxT (PREF_PORT), DefNiuPort);
 		//tab2
@@ -1521,10 +1523,10 @@ bool PtermApp::OnInit (void)
 		m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
 		m_noColor = (m_config->Read (wxT (PREF_NOCOLOR), 0L) != 0);
 		m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("255 144 0"));// 255 144 0 is RGB for Plato Orange
-		sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
+		sscanf (rgb.mb_str(), "%d %d %d", &r, &g, &b);
 		m_fgColor = wxColour (r, g, b);
 		m_config->Read (wxT (PREF_BACKGROUND), &rgb, wxT ("0 0 0"));
-		sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
+		sscanf (rgb.mb_str(), "%d %d %d", &r, &g, &b);
 		m_bgColor = wxColour (r, g, b);
 		//tab5
 		m_charDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_CHARDELAY), PASTE_CHARDELAY) );
@@ -1623,7 +1625,7 @@ bool PtermApp::DoConnect (bool ask)
             }
             else
             {
-                m_port = atoi (wxString (dlg.m_port).mb_str ());
+                m_port = atoi (wxString (dlg.m_port).mb_str());
             }
 			//save selection to current
 			m_config = new wxConfig (wxT ("Pterm"));
@@ -1728,12 +1730,12 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
 			else if (token.Cmp(wxT(PREF_NOCOLOR))==0)				m_noColor		= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_FOREGROUND))==0)
 																	{
-																	sscanf (value.mb_str (), "%d %d %d", &r, &g, &b);
+																	sscanf (value.mb_str(), "%d %d %d", &r, &g, &b);
 																	m_fgColor		= wxColour (r, g, b);
 																	}
 			else if (token.Cmp(wxT(PREF_BACKGROUND))==0)
 																	{
-																	sscanf (value.mb_str (), "%d %d %d", &r, &g, &b);
+																	sscanf (value.mb_str(), "%d %d %d", &r, &g, &b);
 																	m_bgColor		= wxColour (r, g, b);
 																	}
 			//tab5
@@ -1784,9 +1786,9 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
     rgb.Printf (wxT ("%d %d %d"), m_bgColor.Red (), m_bgColor.Green (), m_bgColor.Blue ());
     m_config->Write (wxT (PREF_BACKGROUND), rgb);
 	//tab5
-    m_config->Write (wxT (PREF_CHARDELAY), atoi(m_charDelay.mb_str ()));
-    m_config->Write (wxT (PREF_LINEDELAY), atoi(m_lineDelay.mb_str ()));
-    m_config->Write (wxT (PREF_AUTOLF), atoi(m_autoLF.mb_str ()));
+    m_config->Write (wxT (PREF_CHARDELAY), atoi(m_charDelay.mb_str()));
+    m_config->Write (wxT (PREF_LINEDELAY), atoi(m_lineDelay.mb_str()));
+    m_config->Write (wxT (PREF_AUTOLF), atoi(m_autoLF.mb_str()));
     m_config->Write (wxT (PREF_SPLITWORDS), (m_splitWords) ? 1 : 0);
     m_config->Write (wxT (PREF_CONVDOT7), (m_convDot7) ? 1 : 0);
     m_config->Write (wxT (PREF_CONV8SP), (m_conv8Sp) ? 1 : 0);
@@ -2204,7 +2206,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     if (port > 0)
     {
         // Create and start the network processing thread
-		TRACE2 ("Connecting to: %s:%d", host.c_str (), port);
+		TRACE2 ("Connecting to: %s:%d", host.c_str(), port);
         m_conn = new PtermConnection (this, host, port);
         if (m_conn->Create () != wxTHREAD_NO_ERROR)
         {
@@ -2522,13 +2524,13 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         m_pasteIndex = nextindex;
         if (c == wxT ('\n'))
 		{
-			delay = atoi(ptermApp->m_lineDelay.mb_str ());
+			delay = atoi(ptermApp->m_lineDelay.mb_str());
 			neednext = false;
 			m_pasteNextKeyCnt = 0;
 		}
         else
         {
-            delay = atoi(ptermApp->m_charDelay.mb_str ());
+            delay = atoi(ptermApp->m_charDelay.mb_str());
         }
         m_pasteTimer.Start (delay, true);
 		m_bPasteActive = true;
@@ -2540,7 +2542,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
             ptermSendKey (026);
 			for ( ; !ptermApp->m_splitWords && m_pasteText[nextindex] == wxT(' ') && nextindex < m_pasteText.Len(); nextindex++);//eat leading spaces
 			m_pasteIndex = nextindex;
-			delay = atoi(ptermApp->m_lineDelay.mb_str ());
+			delay = atoi(ptermApp->m_lineDelay.mb_str());
 			m_pasteTimer.Start (delay, true);
 			m_bPasteActive = true;
 		}
@@ -2744,7 +2746,7 @@ void PtermFrame::OnMailTo (wxCommandEvent &event)
 			if (newchr != '*')
 				l_FixText += newchr;
 		}
-		l_Email.Printf(ptermApp->m_Email,l_FixText.c_str ());
+		l_Email.Printf(ptermApp->m_Email,l_FixText.c_str());
         wxExecute ( l_Email );
     }
 
@@ -2877,7 +2879,7 @@ void PtermFrame::OnPaste (wxCommandEvent &event)
         m_pasteText = text.GetText ();
         m_pasteIndex = 0;
 		m_pasteNextKeyCnt = 0;
-        m_pasteTimer.Start (atoi(ptermApp->m_charDelay.mb_str ()), true);
+        m_pasteTimer.Start (atoi(ptermApp->m_charDelay.mb_str()), true);
         m_pastePrint = (event.GetId () == Pterm_PastePrint);
     }
 
@@ -3058,7 +3060,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_ShellFirst = dlg.m_ShellFirst;
         ptermApp->m_connect = dlg.m_connect;
         ptermApp->m_hostName = dlg.m_host;
-        ptermApp->m_port = atoi (wxString (dlg.m_port).mb_str ());
+        ptermApp->m_port = atoi (wxString (dlg.m_port).mb_str());
         //tab2
 		ptermApp->m_showSignon = dlg.m_showSignon;
 		ptermApp->m_showSysName = dlg.m_showSysName;
@@ -3098,7 +3100,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_config->Write (wxT (PREF_SHELLFIRST), dlg.m_ShellFirst);
         ptermApp->m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_HOST), dlg.m_host);
-        ptermApp->m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port.mb_str ()));
+        ptermApp->m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port.mb_str()));
 		//tab2
         ptermApp->m_config->Write (wxT (PREF_SHOWSIGNON), (dlg.m_showSignon) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_SHOWSYSNAME), (dlg.m_showSysName) ? 1 : 0);
@@ -3120,9 +3122,9 @@ void PtermFrame::OnPref (wxCommandEvent&)
         rgb.Printf (wxT ("%d %d %d"), dlg.m_bgColor.Red (), dlg.m_bgColor.Green (), dlg.m_bgColor.Blue ());
         ptermApp->m_config->Write (wxT (PREF_BACKGROUND), rgb);
 		//tab5
-        ptermApp->m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay.mb_str ()));
-        ptermApp->m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay.mb_str ()));
-        ptermApp->m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF.mb_str ()));
+        ptermApp->m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay.mb_str()));
+        ptermApp->m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay.mb_str()));
+        ptermApp->m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF.mb_str()));
         ptermApp->m_config->Write (wxT (PREF_SPLITWORDS), (dlg.m_splitWords) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);
@@ -3303,7 +3305,7 @@ void PtermFrame::ptermDrawPoint (int x, int y)
 
 void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
 {
-    int xm1, ym1, xm2, ym2;
+    int xm1, ym1, xm2, ym2, t;
     wxClientDC dc(m_canvas);
 
     PrepareDC (dc);
@@ -3317,22 +3319,26 @@ void PtermFrame::ptermDrawLine(int x1, int y1, int x2, int y2)
     x2 = XADJUST (x2);
     y2 = YADJUST (y2);
 
+    // mode rewrite or write
     if (mode & 1)
-    {
-        // mode rewrite or write
-        dc.SetPen (m_foregroundPen);
         m_memDC->SetPen (m_foregroundPen);
-    }
+    // mode inverse or erase
     else
-    {
-        // mode inverse or erase
-        dc.SetPen (m_backgroundPen);
         m_memDC->SetPen (m_backgroundPen);
-    }
 
 	//draw lines
 	ptermDrawBresenhamLine(m_memDC,xm1,ym1,xm2,ym2);
-	dc.Blit (XTOP, YTOP, vScreenSize(m_scale), vScreenSize(m_scale), m_memDC, 0, 0, wxCOPY);
+	if (x1>x2)
+	{
+		t = x1, x1=x2, x2=t;
+		t = xm1, xm1=xm2, xm2=t;
+	}
+	if (y1>y2)
+	{
+		t = y1, y1=y2, y2=t;
+		t = ym1, ym1=ym2, ym2=t;
+	}
+	dc.Blit (x1, y1, x2-x1+1, y2-y1+1, m_memDC, xm1, ym1, wxCOPY);
 
 }
 
@@ -3531,7 +3537,7 @@ void PtermFrame::ptermSetName (wxString &winName)
 	}
 	else
 	{
-		str.Printf (wxT("Pterm: %s"), winName.c_str ());
+		str.Printf (wxT("Pterm: %s"), winName.c_str());
 	}
     SetTitle (str);
 }
@@ -3951,7 +3957,7 @@ void PtermFrame::drawFontChar (int x, int y, int c)
 	currentX += w;
     
 	m_memDC->DrawText(chr,memX,memY);
-    dc.Blit (XTOP, YTOP, vScreenSize(m_scale), vScreenSize(m_scale), m_memDC, 0, 0, wxCOPY);
+	dc.Blit (screenX, screenY, w, h, m_memDC, memX, memY);
 }
 
 /*--------------------------------------------------------------------------
@@ -3982,7 +3988,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
     
 	if (m_usefont)
 	{
-		supdelta = (m_fontheight /3);
+		supdelta = (m_fontheight/3);
 		// Not going to support reverse/vertical in font mode until I get documentation
 		// on what worked with -font- in the past.  JWS 5/27/2007
 		deltax = 8;
@@ -3990,7 +3996,6 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 	}
 	else
 	{
-		supdelta = (deltay / 16) * 5;
 		deltax = (reverse) ? -8 : 8;
 		deltay = (vertical) ? -16 : 16;
 		if (large)
@@ -3998,6 +4003,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 			deltax *= 2;
 			deltay *= 2;
 		}
+		supdelta = (deltay / 16) * 5;
 	}
     
     seq++;
@@ -4076,7 +4082,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             n = AssembleAsciiPlatoMetaData (d);
             if (n == 0)
             {
-                TRACE ("plato meta data complete: %s", m_PMD.c_str ());
+                TRACE ("plato meta data complete: %s", m_PMD.c_str());
 				SetTitleFromPlatoMetaData();
 				m_PMD = wxT("");
             }
@@ -4454,21 +4460,21 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 							{
 								int w;
 								m_font = new wxFont;
+								m_fontitalic = ((n & 0x01) != 0);
+								m_fontbold = ((n & 0x02) != 0);
+								m_fontstrike = ((n & 0x04) != 0);
+								m_fontunderln = ((n & 0x08) != 0);
 								//m_font->New(m_fontsize, m_fontfamily, wxFONTFLAG_NOT_ANTIALIASED, m_fontface);
-								m_font->New(m_fontsize, m_fontfamily, wxFONTFLAG_ANTIALIASED, m_fontface);
+								m_font->New(m_fontsize, m_fontfamily, wxFONTFLAG_ANTIALIASED | (m_fontstrike ? wxFONTFLAG_STRIKETHROUGH : 0), m_fontface);
 								m_font->SetFaceName(m_fontface);
 								m_font->SetFamily(m_fontfamily);
 								m_font->SetPointSize(m_fontsize);
-								m_fontitalic = ((n & 0x01) != 0);
 								m_font->SetStyle(m_fontitalic ? wxFONTSTYLE_ITALIC : wxFONTSTYLE_NORMAL);
-								m_fontbold = ((n & 0x02) != 0);
 								m_font->SetWeight(m_fontbold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL);
-								m_fontstrike = ((n & 0x04) != 0);
-								m_fontunderln = ((n & 0x08) != 0);
 								m_font->SetUnderlined(m_fontunderln);
 								m_memDC->SetFont(*m_font);
 								m_memDC->GetTextExtent(wxT(" "), &w, &m_fontheight);
-								TRACE3 ("Font selected: %s,%d,%d", m_fontface.c_str (), m_fontsize, n & 0x0f);
+								TRACE3 ("Font selected: %s,%d,%d", m_fontface.c_str(), m_fontsize, n & 0x0f);
 							}
 							break;
 						}
@@ -5711,7 +5717,7 @@ void PtermFrame::ptermSendKeys (int key[])
 	for (int i=0; key[i] != -1; i++)
 	{
 		ptermSendKey(key[i]);
-		m_pasteTimer.Start (atoi(ptermApp->m_charDelay.mb_str ()), true);
+		m_pasteTimer.Start (atoi(ptermApp->m_charDelay.mb_str()), true);
 	}
 }
 			
@@ -5813,12 +5819,14 @@ void PtermFrame::ptermSetStation (int station)
 	}
 	if (ptermApp->m_showStation)
 	{
-		l_str.Printf(wxT("%s%s"), l_str.c_str (), l_station.c_str());
+		l_str.Printf(wxT("%s"), l_str.c_str());
+		l_str.Append(l_station.c_str());
 	}
     ptermSetName (l_str);
 
 	//always show host and station in status bar
-	l_str.Printf(wxT("%s %s"), l_hostname.c_str(), l_station.c_str());
+	l_str.Printf(wxT("%s "), l_hostname.c_str());
+	l_str.Append(l_station.c_str());
     ptermSetStatus (l_str);
 }
 
@@ -6584,16 +6592,16 @@ bool PtermPrefDialog::SaveProfile(wxString profile)
 
     //write prefs
 	//tab0
-	buffer.Printf(wxT (PREF_CURPROFILE "=%s"), profile.c_str ());
+	buffer.Printf(wxT (PREF_CURPROFILE "=%s"), profile.c_str());
 	file.AddLine(buffer);
 	//tab1
     buffer.Printf(wxT (PREF_CONNECT "=%d"), (m_connect) ? 1 : 0);
 	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_SHELLFIRST "=%s"), m_ShellFirst.c_str());
 	file.AddLine(buffer);
-    buffer.Printf(wxT (PREF_HOST "=%s"), m_host.c_str ());
+    buffer.Printf(wxT (PREF_HOST "=%s"), m_host.c_str());
 	file.AddLine(buffer);
-    buffer.Printf(wxT (PREF_PORT "=%s"), m_port.c_str ());
+    buffer.Printf(wxT (PREF_PORT "=%s"), m_port.c_str());
 	file.AddLine(buffer);
 	//tab2
 	buffer.Printf(wxT (PREF_SHOWSIGNON "=%d"), (m_showSignon) ? 1 : 0);
@@ -6629,11 +6637,11 @@ bool PtermPrefDialog::SaveProfile(wxString profile)
     buffer.Printf(wxT (PREF_BACKGROUND "=%d %d %d"), m_bgColor.Red (), m_bgColor.Green (), m_bgColor.Blue ());
 	file.AddLine(buffer);
 	//tab5
-    buffer.Printf(wxT (PREF_CHARDELAY "=%s"), m_charDelay.c_str ());
+    buffer.Printf(wxT (PREF_CHARDELAY "=%s"), m_charDelay.c_str());
 	file.AddLine(buffer);
-    buffer.Printf(wxT (PREF_LINEDELAY "=%s"), m_lineDelay.c_str ());
+    buffer.Printf(wxT (PREF_LINEDELAY "=%s"), m_lineDelay.c_str());
 	file.AddLine(buffer);
-    buffer.Printf(wxT (PREF_AUTOLF "=%s"), m_autoLF.c_str ());
+    buffer.Printf(wxT (PREF_AUTOLF "=%s"), m_autoLF.c_str());
 	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_SPLITWORDS "=%d"), (m_splitWords) ? 1 : 0);
 	file.AddLine(buffer);
@@ -6642,11 +6650,11 @@ bool PtermPrefDialog::SaveProfile(wxString profile)
     buffer.Printf(wxT (PREF_CONV8SP "=%d"), (m_conv8Sp) ? 1 : 0);
 	file.AddLine(buffer);
 	//tab6
-    buffer.Printf(wxT (PREF_BROWSER "=%s"), m_Browser.c_str ());
+    buffer.Printf(wxT (PREF_BROWSER "=%s"), m_Browser.c_str());
 	file.AddLine(buffer);
-    buffer.Printf(wxT (PREF_EMAIL "=%s"), m_Email.c_str ());
+    buffer.Printf(wxT (PREF_EMAIL "=%s"), m_Email.c_str());
 	file.AddLine(buffer);
-    buffer.Printf(wxT (PREF_SEARCHURL "=%s"), m_SearchURL.c_str ());
+    buffer.Printf(wxT (PREF_SEARCHURL "=%s"), m_SearchURL.c_str());
 	file.AddLine(buffer);
 
 	//write to disk
@@ -6705,10 +6713,10 @@ void PtermPrefDialog::SetControlState(void)
     int r, g, b;
     wxString rgb;
     ptermApp->m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("255 144 0"));// 255 144 0 is RGB for Plato Orange
-    sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
+    sscanf (rgb.mb_str(), "%d %d %d", &r, &g, &b);
     m_fgColor = wxColour (r, g, b);
     ptermApp->m_config->Read (wxT (PREF_BACKGROUND), &rgb, wxT ("0 0 0"));
-    sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
+    sscanf (rgb.mb_str(), "%d %d %d", &r, &g, &b);
     m_bgColor = wxColour (r, g, b);
 	//tab5
     m_charDelay = ptermApp->m_charDelay;
@@ -6825,7 +6833,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		else
 		{
 			filename = ptermApp->ProfileFileName(profile);
-			str.Printf(wxT ("Unable to save profile: %s"), filename.c_str ());
+			str.Printf(wxT ("Unable to save profile: %s"), filename.c_str());
 			wxMessageBox(str, _("Error"), wxOK | wxICON_HAND );
 		}
 	}
@@ -6842,7 +6850,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		else
 		{
 			filename = ptermApp->ProfileFileName(profile);
-			str.Printf(wxT ("Unable to load profile: %s"), filename.c_str ());
+			str.Printf(wxT ("Unable to load profile: %s"), filename.c_str());
 			wxMessageBox(str, _("Error"), wxOK | wxICON_HAND );
 		}
 	}
@@ -6858,7 +6866,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		{
 			filename = ptermApp->ProfileFileName(profile);
 			str.Printf(wxT ("Unable to delete profile: %s"), 
-                       filename.c_str ());
+                       filename.c_str());
 			wxMessageBox(str, _("Error"), wxOK | wxICON_HAND );
 		}
 	}
@@ -6879,7 +6887,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 			{
 				filename = ptermApp->ProfileFileName(profile);
 				str.Printf(wxT ("Unable to add/save profile: %s"), 
-                           filename.c_str ());
+                           filename.c_str());
 				wxMessageBox(str, _("Error"), wxOK | wxICON_HAND );
 			}
 		}
@@ -7115,7 +7123,7 @@ void PtermPrefDialog::OnDoubleClick (wxCommandEvent& event)
 			{
 				filename = ptermApp->ProfileFileName(profile);
 				str.Printf( wxT ("Unable to load profile: %s"), 
-                            filename.c_str ());
+                            filename.c_str());
 				wxMessageBox(str, _("Error"), wxOK | wxICON_HAND );
 			}
 		}
@@ -7355,8 +7363,8 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
 		else
 		{
 			filename = ptermApp->ProfileFileName(profile);
-			str.Printf(wxT ("Profile '%s' not found. Missing file:\n\n%s"),
-                       profile.c_str (), filename.c_str ());
+			str.Printf(wxT ("Profile '%s' not found. Missing file:\n\n"), profile.c_str());
+			str.Append(filename.c_str());
 			wxMessageBox(str, wxT ("Error"), wxOK | wxICON_HAND);
 		}
 	}
@@ -7394,8 +7402,8 @@ void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
 		else
 		{
 			filename = ptermApp->ProfileFileName(profile);
-			str.Printf (wxT ("Profile '%s' not found. Missing file:\n\n%s"), 
-                        profile.c_str (), filename.c_str ());
+			str.Printf (wxT ("Profile '%s' not found. Missing file:\n\n"), profile.c_str());
+			str.Append(filename.c_str());
 			wxMessageBox (str, wxT ("Error"), wxOK | wxICON_HAND);
 		}
 	}
@@ -7454,7 +7462,7 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title, 
 	else
 		str.Printf(_("The host did not respond to the connection request.\nYou may open a new connection, try this connection\nagain, or exit."));
 	lblPrompt->SetLabel(str);
-	str.Printf(_("\nFailed: %s:%d"), ptermApp->m_hostName.c_str (), 
+	str.Printf(_("\nFailed: %s:%d"), ptermApp->m_hostName.c_str(), 
                ptermApp->m_port);
     lblHost->SetLabel(str);
 
@@ -7525,7 +7533,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
     int true_opt = 1;
     
     dtInitFet (&m_fet, BufSiz);
-    if (dtConnect (&m_fet.connFd, m_hostName.mb_str (), m_port) < 0)
+    if (dtConnect (&m_fet.connFd, m_hostName.mb_str(), m_port) < 0)
     {
         StoreWord (C_CONNFAIL);
         wxWakeUpIdle ();
@@ -7880,11 +7888,13 @@ int PtermConnection::NextWord (void)
 		wxDateTime ldt;
 		ldt.SetToCurrent();
         if (word == C_CONNFAIL)
-            msg.Printf(_("Connection failed @ %s on %s"), ldt.FormatTime().c_str(), ldt.FormatDate().c_str());
+            msg.Printf(_("Connection failed @ %s on "), ldt.FormatTime().c_str());
         else
-            msg.Printf(_("Dropped connection @ %s on %s"), ldt.FormatTime().c_str(), ldt.FormatDate().c_str());
+            msg.Printf(_("Dropped connection @ %s on "), ldt.FormatTime().c_str());
+		msg.Append(ldt.FormatDate());
 		m_owner->WriteTraceMessage(msg);
-        msg.Printf(_("%s on %s"), ldt.FormatTime().c_str(), ldt.FormatDate().c_str());	// fits in dialog box title
+        msg.Printf(_("%s on "), ldt.FormatTime().c_str());
+		msg.Append(ldt.FormatDate().c_str());	// fits in dialog box title
 		
 		m_owner->Iconize(false);	// ensure window is visible when connection fails
 		ptermApp->m_connError = word;
