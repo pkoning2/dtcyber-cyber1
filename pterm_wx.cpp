@@ -5111,19 +5111,25 @@ void PtermFrame::SetTitleFromPlatoMetaData ()
 	l_str = wxT("");
 	if (ptermApp->m_showSignon)
 	{
-		l_str.Printf(wxT("%s/%s"), l_name.c_str (), l_group.c_str ());
+        l_str = l_name;
+        l_str.Append (wxT ("/"));
+        l_str += l_group;
 	}
 	if (ptermApp->m_showSysName)
 	{
-		l_str.Printf(wxT("%s/%s"), l_str.c_str (), l_system.c_str ());
+        l_str.Append (wxT ("/"));
+        l_str += l_system;
 	}
 	if (ptermApp->m_showHost)
 	{
-		l_str.Printf(wxT("%s %s"), l_str.c_str (), m_hostName.c_str ());
+        l_str.Append (wxT (" "));
+        l_str += m_hostName;
 	}
 	if (ptermApp->m_showStation)
 	{
-		l_str.Printf(wxT("%s (%s)"), l_str.c_str (), l_station.c_str ());
+        l_str.Append (wxT (" ("));
+        l_str += l_station;
+        l_str.Append (wxT (")"));
 	}
 	l_str.Trim(true);
 	l_str.Trim(false);
@@ -6578,69 +6584,69 @@ bool PtermPrefDialog::SaveProfile(wxString profile)
 
     //write prefs
 	//tab0
-	buffer.Printf(wxT ("%s=%s"), PREF_CURPROFILE, profile.c_str ());
+	buffer.Printf(wxT (PREF_CURPROFILE "=%s"), profile.c_str ());
 	file.AddLine(buffer);
 	//tab1
-    buffer.Printf(wxT ("%s=%d"), PREF_CONNECT, (m_connect) ? 1 : 0);
+    buffer.Printf(wxT (PREF_CONNECT "=%d"), (m_connect) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%s"), PREF_SHELLFIRST, m_ShellFirst.c_str());
+    buffer.Printf(wxT (PREF_SHELLFIRST "=%s"), m_ShellFirst.c_str());
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%s"), PREF_HOST, m_host.c_str ());
+    buffer.Printf(wxT (PREF_HOST "=%s"), m_host.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%s"), PREF_PORT, m_port.c_str ());
+    buffer.Printf(wxT (PREF_PORT "=%s"), m_port.c_str ());
 	file.AddLine(buffer);
 	//tab2
-	buffer.Printf(wxT ("%s=%d"), PREF_SHOWSIGNON, (m_showSignon) ? 1 : 0);
+	buffer.Printf(wxT (PREF_SHOWSIGNON "=%d"), (m_showSignon) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_SHOWSYSNAME, (m_showSysName) ? 1 : 0);
+    buffer.Printf(wxT (PREF_SHOWSYSNAME "=%d"), (m_showSysName) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_SHOWHOST, (m_showHost) ? 1 : 0);
+    buffer.Printf(wxT (PREF_SHOWHOST "=%d"), (m_showHost) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_SHOWSTATION, (m_showStation) ? 1 : 0);
+    buffer.Printf(wxT (PREF_SHOWSTATION "=%d"), (m_showStation) ? 1 : 0);
 	file.AddLine(buffer);
 	//tab3
-    buffer.Printf(wxT ("%s=%d"), PREF_1200BAUD, (m_classicSpeed) ? 1 : 0);
+    buffer.Printf(wxT (PREF_1200BAUD "=%d"), (m_classicSpeed) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_GSW, (m_gswEnable) ? 1 : 0);
+    buffer.Printf(wxT (PREF_GSW "=%d"), (m_gswEnable) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_ARROWS, (m_numpadArrows) ? 1 : 0);
+    buffer.Printf(wxT (PREF_ARROWS "=%d"), (m_numpadArrows) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_PLATOKB, (m_platoKb) ? 1 : 0);
+    buffer.Printf(wxT (PREF_PLATOKB "=%d"), (m_platoKb) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_ACCEL, (m_useAccel) ? 1 : 0);
+    buffer.Printf(wxT (PREF_ACCEL "=%d"), (m_useAccel) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_BEEP, (m_beepEnable) ? 1 : 0);
+    buffer.Printf(wxT (PREF_BEEP "=%d"), (m_beepEnable) ? 1 : 0);
 	file.AddLine(buffer);
 	//tab4
-    buffer.Printf(wxT ("%s=%d"), PREF_SCALE2, (m_scale2) ? 2 : 1);
+    buffer.Printf(wxT (PREF_SCALE2 "=%d"), (m_scale2) ? 2 : 1);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_STATUSBAR, (m_showStatusBar) ? 1 : 0);
+    buffer.Printf(wxT (PREF_STATUSBAR "=%d"), (m_showStatusBar) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_NOCOLOR, (m_noColor) ? 1 : 0);
+    buffer.Printf(wxT (PREF_NOCOLOR "=%d"), (m_noColor) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d %d %d"), PREF_FOREGROUND, m_fgColor.Red (), m_fgColor.Green (), m_fgColor.Blue ());
+    buffer.Printf(wxT (PREF_FOREGROUND "=%d %d %d"), m_fgColor.Red (), m_fgColor.Green (), m_fgColor.Blue ());
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d %d %d"), PREF_BACKGROUND, m_bgColor.Red (), m_bgColor.Green (), m_bgColor.Blue ());
+    buffer.Printf(wxT (PREF_BACKGROUND "=%d %d %d"), m_bgColor.Red (), m_bgColor.Green (), m_bgColor.Blue ());
 	file.AddLine(buffer);
 	//tab5
-    buffer.Printf(wxT ("%s=%s"), PREF_CHARDELAY, m_charDelay.c_str ());
+    buffer.Printf(wxT (PREF_CHARDELAY "=%s"), m_charDelay.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%s"), PREF_LINEDELAY, m_lineDelay.c_str ());
+    buffer.Printf(wxT (PREF_LINEDELAY "=%s"), m_lineDelay.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%s"), PREF_AUTOLF, m_autoLF.c_str ());
+    buffer.Printf(wxT (PREF_AUTOLF "=%s"), m_autoLF.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_SPLITWORDS, (m_splitWords) ? 1 : 0);
+    buffer.Printf(wxT (PREF_SPLITWORDS "=%d"), (m_splitWords) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_CONVDOT7, (m_convDot7) ? 1 : 0);
+    buffer.Printf(wxT (PREF_CONVDOT7 "=%d"), (m_convDot7) ? 1 : 0);
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%d"), PREF_CONV8SP, (m_conv8Sp) ? 1 : 0);
+    buffer.Printf(wxT (PREF_CONV8SP "=%d"), (m_conv8Sp) ? 1 : 0);
 	file.AddLine(buffer);
 	//tab6
-    buffer.Printf(wxT ("%s=%s"), PREF_BROWSER, m_Browser.c_str ());
+    buffer.Printf(wxT (PREF_BROWSER "=%s"), m_Browser.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%s"), PREF_EMAIL, m_Email.c_str ());
+    buffer.Printf(wxT (PREF_EMAIL "=%s"), m_Email.c_str ());
 	file.AddLine(buffer);
-    buffer.Printf(wxT ("%s=%s"), PREF_SEARCHURL, m_SearchURL.c_str ());
+    buffer.Printf(wxT (PREF_SEARCHURL "=%s"), m_SearchURL.c_str ());
 	file.AddLine(buffer);
 
 	//write to disk
