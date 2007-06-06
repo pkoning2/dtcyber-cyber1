@@ -86,6 +86,9 @@
 #define	NOP_PMDSTART	  043000	// start streaming "Plato Meta Data"; note, lowest 6 bits is a character
 #define	NOP_PMDSTREAM	  044000	// stream "Plato Meta Data"
 #define	NOP_PMDSTOP		  045000	// stop streaming "Plato Meta Data"
+#define	NOP_FONTTYPE	  050000	// get font type
+#define	NOP_FONTSIZE	  051000	// get font size
+#define	NOP_FONTFLAG	  052000	// get font flags
 
 // Literal strings for wxConfig key strings.  These are defined
 // because they appear in two places, so this way we avoid getting
@@ -803,6 +806,7 @@ public:
 	bool		m_fontstrike;
 	bool		m_fontunderln;
 	int			m_fontheight;
+	bool		m_fontPMD;
 
 private:
     wxPen       m_foregroundPen;
@@ -979,6 +983,10 @@ private:
 
     int AssembleAsciiPlatoMetaData (int d);
     bool AssembleClassicPlatoMetaData (int d);
+	void SetFontFaceAndFamily(int n);
+	void SetFontSize(int n);
+	void SetFontFlags(int n);
+	void SetFontActive(void);
     
     typedef void (PtermFrame::*mptr)(u32);
 
@@ -1143,8 +1151,7 @@ public:
 	wxTextCtrl* txtShellFirst;
 	wxTextCtrl* txtHost;
 	wxComboBox* cboPort;
-	wxButton* btnQuickConnectClassic;
-	wxButton* btnQuickConnectASCII;
+	wxButton* btnCancel;
 	wxButton* btnConnect;
     
 private:
@@ -2013,7 +2020,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
       m_currentBg (ptermApp->m_bgColor),
       m_pendingEcho (-1),
 	  m_scale (ptermApp->m_scale),
-	  m_usefont( false )
+	  m_usefont( false ),
+	  m_fontPMD( false )
 {
     int i;
 
@@ -2052,51 +2060,41 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     // by setting the "menu bar accelerator" property to the name of a
     // function key that is apparently legal, but doesn't really exist.
     // (Or if it does, it certainly isn't a key we use.)
-    gtk_settings_set_string_property (gtk_settings_get_default (),
-                                      "gtk-menu-bar-accel", "F15", "foo");
+    gtk_settings_set_string_property (gtk_settings_get_default (), "gtk-menu-bar-accel", "F15", "foo");
 
 #endif
 
     wxMenu *menuFile = new wxMenu;
-    menuFile->Append (Pterm_Connect, _("New Connection...\tCtrl-N"),
-                      _("Connect to a PLATO host"));
+    menuFile->Append (Pterm_Connect, _("New Connection...") ACCELERATOR ("\tCtrl-N"), _("Connect to a PLATO host"));
     if (port > 0)
     {
         // No "connect again" for the help window because that
         // doesn't own a connection.
-        menuFile->Append (Pterm_ConnectAgain, _("Connect Again"),
-                          _("Connect to the same host"));
+        menuFile->Append (Pterm_ConnectAgain, _("Connect Again"), _("Connect to the same host"));
         menuFile->AppendSeparator();
     }
     // The accelerators actually will be Command-xxx on the Mac;
     // on other platforms they are omitted since they clash with
     // the PLATO keyboard.
-    menuFile->Append (Pterm_SaveScreen, _("Save Screen") ACCELERATOR ("\tCtrl-S"),
-                      _("Save screen image to file"));
-    menuFile->Append (Pterm_Print, _("Print...") ACCELERATOR ("\tCtrl-P"),
-                      _("Print screen content"));
+    menuFile->Append (Pterm_SaveScreen, _("Save Screen") ACCELERATOR ("\tCtrl-S"), _("Save screen image to file"));
+    menuFile->Append (Pterm_Print, _("Print...") ACCELERATOR ("\tCtrl-P"), _("Print screen content"));
     menuFile->Append (Pterm_Page_Setup, _("Page Setup..."), _("Printout page setup"));
     menuFile->Append (Pterm_Preview, _("Print Preview"), _("Preview screen print"));
     menuFile->AppendSeparator ();
-    menuFile->Append (Pterm_Pref, _("Preferences..."),
-                      _("Set program configuration"));
+    menuFile->Append (Pterm_Pref, _("Preferences..."), _("Set program configuration"));
     menuFile->AppendSeparator ();
-    menuFile->Append (Pterm_Close, _("Close\tCtrl-W"),
-                      _("Close this window"));
+    menuFile->Append (Pterm_Close, _("Close") ACCELERATOR ("\tCtrl-W"), _("Close this window"));
     menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
 
     menuEdit = new wxMenu;
 
     menuEdit->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
-    menuEdit->Append(Pterm_Copy, _("Copy text") ACCELERATOR ("\tCtrl-C"),
-                     _("Copy text only to clipboard"));
+    menuEdit->Append(Pterm_Copy, _("Copy text") ACCELERATOR ("\tCtrl-C"), _("Copy text only to clipboard"));
     if (port > 0)
     {
-        menuEdit->Append(Pterm_Paste, _("Paste ASCII") ACCELERATOR ("\tCtrl-V"),
-                         _("Paste plain text"));
+        menuEdit->Append(Pterm_Paste, _("Paste ASCII") ACCELERATOR ("\tCtrl-V"), _("Paste plain text"));
         // No "paste" for help window because it doesn't do input.
-        menuEdit->Append(Pterm_PastePrint, _("Paste Printout"),
-                         _("Paste Cyber printout format"));
+        menuEdit->Append(Pterm_PastePrint, _("Paste Printout"), _("Paste Cyber printout format"));
     }
     menuEdit->AppendSeparator ();					
     menuEdit->Append(Pterm_Exec, _("Execute URL") ACCELERATOR ("\tCtrl-X"), _("Execute URL"));
@@ -2121,8 +2119,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
 
     wxMenu *menuView = new wxMenu;
     
-    menuView->Append (Pterm_FullScreen, _("Full Screen\tCtrl-U"),
-                      _("Display in full screen mode"));
+    menuView->Append (Pterm_FullScreen, _("Full Screen") ACCELERATOR ("\tCtrl-U"), _("Display in full screen mode"));
 
     // the "About" item should be in the help menu.
     // Well, on the Mac it actually doesn't show up there, but for that magic
@@ -2130,10 +2127,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     // menu ends up empty.  Sigh.
     wxMenu *helpMenu = new wxMenu;
 
-    helpMenu->Append(Pterm_About, _("About Pterm"),
-                     _("Show about dialog"));
-    helpMenu->Append(Pterm_HelpKeys, _("Pterm keyboard"),
-                     _("Show keyboard description"));
+    helpMenu->Append(Pterm_About, _("About Pterm"), _("Show about dialog"));
+    helpMenu->Append(Pterm_HelpKeys, _("Pterm keyboard"), _("Show keyboard description"));
     
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
@@ -3047,7 +3042,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
 {
     wxString rgb;
     
-    PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"), wxDefaultPosition, wxSize( 450,380 ) );
+    PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"), wxDefaultPosition, wxSize( 450,380 ));
     
     if (dlg.ShowModal () == wxID_OK)
     {
@@ -3986,7 +3981,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 
 	bool settitleflag = false;
     
-	if (m_usefont)
+	if (m_usefont && currentCharset <= 1)
 	{
 		supdelta = (m_fontheight/3);
 		// Not going to support reverse/vertical in font mode until I get documentation
@@ -4082,8 +4077,17 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             n = AssembleAsciiPlatoMetaData (d);
             if (n == 0)
             {
-                TRACE ("plato meta data complete: %s", m_PMD.c_str());
-				SetTitleFromPlatoMetaData();
+				if (m_fontPMD)
+				{
+					TRACEN ("plato meta data complete: font data accepted");
+					TRACE3 ("Font selected: %s,%d,%d", m_fontface.c_str(), m_fontsize, m_fontbold|m_fontitalic|m_fontstrike|m_fontunderln);
+					m_fontPMD = false;
+				}
+				else
+				{
+					TRACE ("plato meta data complete: %s", m_PMD.c_str());
+					SetTitleFromPlatoMetaData();
+				}
 				m_PMD = wxT("");
             }
         }
@@ -4407,75 +4411,15 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 						//check for font data
 						switch (n & 07700)
 						{
-						case 05000:		// font name
-							switch (n & 077)
-							{
-							case 2:
-								m_fontface = wxT("Terminal");
-								m_fontfamily = wxFONTFAMILY_TELETYPE;
-								break;
-							case 3:
-								m_fontface = wxT("UOL8X14");
-								m_fontfamily = wxFONTFAMILY_TELETYPE;
-								break;
-							case 4:
-								m_fontface = wxT("UOL8X16");
-								m_fontfamily = wxFONTFAMILY_TELETYPE;
-								break;
-							case 5:
-								m_fontface = wxT("Courier");
-								m_fontfamily = wxFONTFAMILY_TELETYPE;
-								break;
-							case 6:
-								m_fontface = wxT("Courier New");
-								m_fontfamily = wxFONTFAMILY_MODERN;
-								break;
-							case 16:
-								m_fontface = wxT("Arial");
-								m_fontfamily = wxFONTFAMILY_DECORATIVE;
-								break;
-							case 17:
-								m_fontface = wxT("Times New Roman");
-								m_fontfamily = wxFONTFAMILY_ROMAN;
-								break;
-							case 18:
-								m_fontface = wxT("Script");
-								m_fontfamily = wxFONTFAMILY_SCRIPT;
-								break;
-							case 19:
-								m_fontface = wxT("MS Sans Serif");
-								m_fontfamily = wxFONTFAMILY_SWISS;
-								break;
-							default:
-								m_fontface = wxT("default");
-								m_fontfamily = wxFONTFAMILY_TELETYPE;
-							}
+						case 05000:		// font face name and family
+							SetFontFaceAndFamily(n & 077);
 							break;
 						case 05100:		// font size
-							m_fontsize = (n & 077) < 6 ? 6 : n & 077;
+							SetFontSize(n & 077);
 							break;
-						case 05200:		// font mode
-							m_usefont = m_fontface.Cmp(wxT("default")) != 0;
-							if (m_usefont)
-							{
-								int w;
-								m_font = new wxFont;
-								m_fontitalic = ((n & 0x01) != 0);
-								m_fontbold = ((n & 0x02) != 0);
-								m_fontstrike = ((n & 0x04) != 0);
-								m_fontunderln = ((n & 0x08) != 0);
-								//m_font->New(m_fontsize, m_fontfamily, wxFONTFLAG_NOT_ANTIALIASED, m_fontface);
-								m_font->New(m_fontsize, m_fontfamily, wxFONTFLAG_ANTIALIASED | (m_fontstrike ? wxFONTFLAG_STRIKETHROUGH : 0), m_fontface);
-								m_font->SetFaceName(m_fontface);
-								m_font->SetFamily(m_fontfamily);
-								m_font->SetPointSize(m_fontsize);
-								m_font->SetStyle(m_fontitalic ? wxFONTSTYLE_ITALIC : wxFONTSTYLE_NORMAL);
-								m_font->SetWeight(m_fontbold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL);
-								m_font->SetUnderlined(m_fontunderln);
-								m_memDC->SetFont(*m_font);
-								m_memDC->GetTextExtent(wxT(" "), &w, &m_fontheight);
-								TRACE3 ("Font selected: %s,%d,%d", m_fontface.c_str(), m_fontsize, n & 0x0f);
-							}
+						case 05200:		// font flags
+							SetFontFlags(n & 077);
+							SetFontActive();
 							break;
 						}
                     }
@@ -4651,16 +4595,26 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             switch ((d >> 15) & 7)
             {
             case 0:     // nop
-                // Special code to tell pterm the station number
+				settitleflag = false;
+                // special code to tell pterm the station number
                 if ((d & NOP_MASKDATA) == NOP_SETSTAT)
                 {
                     d &= 0777;
                     ptermSetStation (d);
                 }
-                // Special code to tell pterm to accept plato meta data
+                // special code to get font type / size / flags
+                else if ((d & NOP_MASKDATA) == NOP_FONTTYPE)
+                    SetFontFaceAndFamily(d & 077);
+                else if ((d & NOP_MASKDATA) == NOP_FONTSIZE)
+                    SetFontSize(d & 077);
+                else if ((d & NOP_MASKDATA) == NOP_FONTFLAG)
+                {
+                    SetFontFlags(d & 077);
+					SetFontActive();
+                }
+	            // otherwise check for plato meta data codes
                 else
 				{
-					settitleflag = false;
 					if ((d & NOP_MASKDATA) == NOP_PMDSTART && !m_loadingPMD)
 					{
 						m_loadingPMD = true;
@@ -4678,9 +4632,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 						settitleflag = true;
 					}
 					if (settitleflag)
-					{
 						SetTitleFromPlatoMetaData();
-					}
 				}
                 TRACEN ("nop");
                 break;
@@ -4699,8 +4651,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     // full screen erase
                     ptermFullErase ();
                 }
-                TRACE2 ("load mode %d screen %d",
-                        mode, (d & 1));
+                TRACE2 ("load mode %d screen %d", mode, (d & 1));
                 break;
             
             case 2:     // load coordinate
@@ -4727,8 +4678,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     setMargin (coord);
                     msg = "margin";
                 }
-                TRACE3 ("load coord %c %d %s",
-                        (d & 01000) ? 'Y' : 'X', d & 0777, msg);
+                TRACE3 ("load coord %c %d %s", (d & 01000) ? 'Y' : 'X', d & 0777, msg);
                 break;
             case 3:     // echo
                 d &= 0177;
@@ -4746,9 +4696,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         TRACEN ("beep");
                         wxBell ();
                         if (!IsActive())
-                        {
                             RequestUserAttention(wxUSER_ATTENTION_INFO);
-                        }
                     }
                     break;
                 case 0x7d:
@@ -4946,8 +4894,10 @@ bool PtermFrame::AssembleCoord (int d)
 }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Assemble a string for use as frame caption from data
-**                  sent in ASCII connection mode.
+**  Purpose:        Assemble a string for use as extended data from Plato
+**                  sent in ASCII connection mode.  Could be meta data
+**                  for setting window caption or could be font data, or
+**                  other data someday.
 **
 **  Parameters:     Name        Description.
 **                  d           current byte of input
@@ -4958,14 +4908,38 @@ bool PtermFrame::AssembleCoord (int d)
 **------------------------------------------------------------------------*/
 int PtermFrame::AssembleAsciiPlatoMetaData (int d)
 {
-    TRACE ("plato meta data: %d", d);
+	int od = d;
+    TRACE2 ("plato meta data: %d (counter=%d)", d, m_ascBytes+1);
 	d &= 077;
-    if (m_ascBytes == 0)
-    {
+    if (m_ascBytes==0)
 		m_PMD = wxT("");
-    }    
 	m_ascBytes++;
-    if (d == 0 || m_ascBytes==1001)
+	// special check for start font mode
+	if (od=='F' && m_ascBytes==1)
+		m_fontPMD = true;
+	// check if in font mode
+	else if (m_fontPMD && m_ascBytes==2)
+	{
+		SetFontFaceAndFamily(d);
+		if (d==0)
+		{
+			m_ascBytes = 0;
+			m_ascState = none;
+			return 0;
+		}
+	}
+	else if (m_fontPMD && m_ascBytes==3)
+		SetFontSize(d);
+	else if (m_fontPMD && m_ascBytes==4)
+	{
+		SetFontFlags(d);
+		SetFontActive();
+        m_ascBytes = 0;
+        m_ascState = none;
+		return 0;
+	}
+	// check if done / full
+    else if (d==0 || m_ascBytes==1001)
     {
 		if (m_ascBytes==1001)
 		{
@@ -4975,6 +4949,7 @@ int PtermFrame::AssembleAsciiPlatoMetaData (int d)
         m_ascState = none;
         return 0;
     }
+	// otherwise keep assembling
     else
     {
 		if (d >= 1 && d <= 26)
@@ -5148,10 +5123,121 @@ void PtermFrame::SetTitleFromPlatoMetaData ()
 
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Change frame title to string specified in the assembled
-**                  meta data.
+**  Purpose:        Set font face name and family flag.
+**
+**  Parameters:     font type code
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void PtermFrame::SetFontFaceAndFamily (int n)
+{
+	switch (n)
+	{
+	case 2:
+		m_fontface = wxT("Terminal");
+		m_fontfamily = wxFONTFAMILY_TELETYPE;
+		break;
+	case 3:
+		m_fontface = wxT("UOL8X14");
+		m_fontfamily = wxFONTFAMILY_TELETYPE;
+		break;
+	case 4:
+		m_fontface = wxT("UOL8X16");
+		m_fontfamily = wxFONTFAMILY_TELETYPE;
+		break;
+	case 5:
+		m_fontface = wxT("Courier");
+		m_fontfamily = wxFONTFAMILY_TELETYPE;
+		break;
+	case 6:
+		m_fontface = wxT("Courier New");
+		m_fontfamily = wxFONTFAMILY_MODERN;
+		break;
+	case 16:
+		m_fontface = wxT("Arial");
+		m_fontfamily = wxFONTFAMILY_DECORATIVE;
+		break;
+	case 17:
+		m_fontface = wxT("Times New Roman");
+		m_fontfamily = wxFONTFAMILY_ROMAN;
+		break;
+	case 18:
+		m_fontface = wxT("Script");
+		m_fontfamily = wxFONTFAMILY_SCRIPT;
+		break;
+	case 19:
+		m_fontface = wxT("MS Sans Serif");
+		m_fontfamily = wxFONTFAMILY_SWISS;
+		break;
+	default:
+		m_fontface = wxT("default");
+		m_fontfamily = wxFONTFAMILY_TELETYPE;
+	}
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set font size.
+**
+**  Parameters:     font size
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void PtermFrame::SetFontSize (int n)
+{
+	m_fontsize = (n < 6 ? 6 : n);
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set font flags.
+**
+**  Parameters:     font flag
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void PtermFrame::SetFontFlags (int n)
+{
+	m_fontitalic = ((n & 0x01) != 0);
+	m_fontbold = ((n & 0x02) != 0);
+	m_fontstrike = ((n & 0x04) != 0);
+	m_fontunderln = ((n & 0x08) != 0);
+	TRACE3 ("Font selected: %s,%d,%d", m_fontface.c_str(), m_fontsize, n & 0x0f);
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set font.
 **
 **  Parameters:     none
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void PtermFrame::SetFontActive ()
+{
+	m_usefont = m_fontface.Cmp(wxT("default")) != 0;
+	if (m_usefont)
+	{
+		int w;
+		m_font = new wxFont;
+		//m_font->New(m_fontsize, m_fontfamily, wxFONTFLAG_NOT_ANTIALIASED, m_fontface);
+		m_font->New(m_fontsize, m_fontfamily, wxFONTFLAG_ANTIALIASED | (m_fontstrike ? wxFONTFLAG_STRIKETHROUGH : 0), m_fontface);
+		m_font->SetFaceName(m_fontface);
+		m_font->SetFamily(m_fontfamily);
+		m_font->SetPointSize(m_fontsize);
+		m_font->SetStyle(m_fontitalic ? wxFONTSTYLE_ITALIC : wxFONTSTYLE_NORMAL);
+		m_font->SetWeight(m_fontbold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL);
+		m_font->SetUnderlined(m_fontunderln);
+		m_memDC->SetFont(*m_font);
+		m_memDC->GetTextExtent(wxT(" "), &w, &m_fontheight);
+	}
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Write a trace message.
+**
+**  Parameters:     message
 **
 **  Returns:        nothing
 **
@@ -5219,23 +5305,36 @@ void PtermFrame::plotChar (int c)
     
     int deltax, deltay, supdelta;
     
-    deltax = (reverse) ? -8 : 8;
-    deltay = (vertical) ? -16 : 16;
-    if (large)
-    {
-        deltax *= 2;
-        deltay *= 2;
-    }
-    
+	// check for uncover code and fast exit
     c &= 077;
     if (c == 077)
     {
         setUncover (true);
         return;
     }
+
+	if (m_usefont && currentCharset <= 1)
+	{
+		supdelta = (m_fontheight/3);
+		// Not going to support reverse/vertical in font mode until I get documentation
+		// on what worked with -font- in the past.  JWS 5/27/2007
+		deltax = 8;
+		deltay = m_fontheight;
+	}
+	else
+	{
+		deltax = (reverse) ? -8 : 8;
+		deltay = (vertical) ? -16 : 16;
+		if (large)
+		{
+			deltax *= 2;
+			deltay *= 2;
+		}
+		supdelta = (deltay / 16) * 5;
+	}
+	
     if (uncover)
     {
-        supdelta = (deltay / 16) * 5;
         setUncover (false);
         switch (c)
         {
@@ -5318,6 +5417,8 @@ void PtermFrame::plotChar (int c)
             break;
         }
     }
+	else if (m_usefont && currentCharset <= 1)
+		drawFontChar(currentX, currentY, rom01char[c+64*currentCharset]);
     else
     {
         ptermDrawChar (currentX, currentY, currentCharset, c);
@@ -6136,7 +6237,7 @@ void PtermFrame::output8080a (Uint8 data, Uint8 acc)
 
 BEGIN_EVENT_TABLE(PtermPrefDialog, wxDialog)
     EVT_CLOSE(PtermPrefDialog::OnClose)
-    EVT_BUTTON(wxID_ANY,   PtermPrefDialog::OnButton)
+    EVT_BUTTON(wxID_ANY, PtermPrefDialog::OnButton)
     EVT_CHECKBOX(wxID_ANY, PtermPrefDialog::OnCheckbox)
 	EVT_LISTBOX(wxID_ANY, PtermPrefDialog::OnSelect)
 	EVT_LISTBOX_DCLICK(wxID_ANY, PtermPrefDialog::OnDoubleClick)
@@ -6542,7 +6643,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	btnOK = new wxButton( this, wxID_ANY, _("OK"), wxDefaultPosition, wxDefaultSize, 0 );
 	btnOK->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgsButtons->Add( btnOK, 0, wxALL, 5 );
-	btnCancel = new wxButton( this, wxID_ANY, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+	btnCancel = new wxButton( this, wxID_CANCEL, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
 	btnCancel->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgsButtons->Add( btnCancel, 0, wxALL, 5 );
 	btnDefaults = new wxButton( this, wxID_ANY, _("Defaults"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7203,8 +7304,7 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
 	wxStaticText* lblPort;
 //	wxComboBox* cboPort;
 	wxStaticText* lblExplainPort;
-//	wxButton* btnQuickConnectClassic;
-//	wxButton* btnQuickConnectASCII;
+//	wxButton* btnCancel;
 //	wxButton* btnConnect;
 
 	// ui object creation / placement, note initialization of values is below
@@ -7256,16 +7356,14 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
 	lblExplainPort->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgSizer11->Add( lblExplainPort, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
 	wxFlexGridSizer* fgs112;
-	fgs112 = new wxFlexGridSizer( 2, 4, 0, 0 );
-	fgs112->AddGrowableCol( 2 );
+
+	fgs112 = new wxFlexGridSizer( 2, 3, 0, 0 );
+	fgs112->AddGrowableCol( 0 );
 	fgs112->SetFlexibleDirection( wxBOTH );
-	btnQuickConnectClassic = new wxButton( this, wxID_ANY, _("Quick Connect 'Classic'"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	btnQuickConnectClassic->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
-	fgs112->Add( btnQuickConnectClassic, 0, wxALL, 5 );
-	btnQuickConnectASCII = new wxButton( this, wxID_ANY, _("Quick Connect ASCII"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	btnQuickConnectASCII->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
-	fgs112->Add( btnQuickConnectASCII, 0, wxALL, 5 );
 	fgs112->Add( 0, 0, 1, wxALL, 5 );
+	btnCancel = new wxButton( this, wxID_CANCEL, _("Cancel"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	btnCancel->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	fgs112->Add( btnCancel, 0, wxALL, 5 );
 	btnConnect = new wxButton( this, wxID_ANY, _("Connect"), wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	btnConnect->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgs112->Add( btnConnect, 0, wxALL, 5 );
@@ -7315,28 +7413,16 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
 void PtermConnDialog::OnButton (wxCommandEvent& event)
 {
 	void OnButton (wxCommandEvent& event);
-    if (event.GetEventObject () == btnQuickConnectClassic)
-    {
-		m_curProfile = CURRENT_PROFILE;
-	    m_ShellFirst = txtShellFirst->GetLineText (0);
-        m_host = txtHost->GetLineText (0);
-        m_port.Printf (wxT ("%d"), DefNiuPort);
-	}
-    if (event.GetEventObject () == btnQuickConnectASCII)
-    {
-		m_curProfile = CURRENT_PROFILE;
-	    m_ShellFirst = txtShellFirst->GetLineText (0);
-        m_host = txtHost->GetLineText (0);
-        m_port = wxT ( "8005" );
-	}
+    if (event.GetEventObject () == btnCancel)
+	    EndModal (wxID_CANCEL);
     if (event.GetEventObject () == btnConnect)
     {
 		m_curProfile = lstProfiles->GetStringSelection();
 	    m_ShellFirst = txtShellFirst->GetLineText (0);
         m_host = txtHost->GetLineText (0);
         m_port = cboPort->GetValue ();
+	    EndModal (wxID_OK);
 	}
-    EndModal (wxID_OK);
 }
 
 void PtermConnDialog::OnSelect (wxCommandEvent& event)
@@ -7451,7 +7537,7 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title, 
 	btnRetry->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgs11->Add( btnRetry, 0, wxALL, 5 );
 	fgs11->Add( 0, 0, 1, wxALL, 5 );
-	btnCancel = new wxButton( this, wxID_ANY, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
+	btnCancel = new wxButton( this, wxID_CANCEL, _("Cancel"), wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL );
 	btnCancel->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	fgs11->Add( btnCancel, 0, wxALL, 5 );
 	bs1->Add( fgs11, 0, wxEXPAND, 5 );
@@ -7488,7 +7574,7 @@ void PtermConnFailDialog::OnButton (wxCommandEvent& event)
 
 void PtermConnFailDialog::OnClose (wxCloseEvent& event)
 {
-	void OnClose (wxCommandEvent& event);
+	void OnClose (wxCloseEvent& event);
 	ptermApp->m_connAction = 0;
     EndModal (wxID_OK);
 }

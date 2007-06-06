@@ -315,9 +315,9 @@
                             <property name="flag">wxEXPAND|wxALIGN_CENTER_VERTICAL</property>
                             <property name="proportion">0</property>
                             <object class="wxFlexGridSizer">
-                                <property name="cols">4</property>
+                                <property name="cols">3</property>
                                 <property name="flexible_direction">wxBOTH</property>
-                                <property name="growablecols">2</property>
+                                <property name="growablecols">0</property>
                                 <property name="growablerows"></property>
                                 <property name="hgap">0</property>
                                 <property name="minimum_size"></property>
@@ -325,60 +325,36 @@
                                 <property name="non_flexible_grow_mode"></property>
                                 <property name="rows">2</property>
                                 <property name="vgap">0</property>
-                                <object class="sizeritem">
-                                    <property name="border">5</property>
-                                    <property name="flag">wxALL</property>
-                                    <property name="proportion">0</property>
-                                    <object class="wxButton">
-                                        <property name="bg"></property>
-                                        <property name="enabled">1</property>
-                                        <property name="fg"></property>
-                                        <property name="font">Arial,90,90,10</property>
-                                        <property name="hidden">0</property>
-                                        <property name="id">ID_DEFAULT</property>
-                                        <property name="label">Quick Connect &apos;Classic&apos;</property>
-                                        <property name="minimum_size"></property>
-                                        <property name="name">btnQuickConnectClassic</property>
-                                        <property name="permission">protected</property>
-                                        <property name="pos"></property>
-                                        <property name="size"></property>
-                                        <property name="style"></property>
-                                        <property name="subclass"></property>
-                                        <property name="tooltip"></property>
-                                        <property name="window_extra_style"></property>
-                                        <property name="window_style">wxTAB_TRAVERSAL</property>
-                                    </object>
-                                </object>
-                                <object class="sizeritem">
-                                    <property name="border">5</property>
-                                    <property name="flag">wxALL</property>
-                                    <property name="proportion">0</property>
-                                    <object class="wxButton">
-                                        <property name="bg"></property>
-                                        <property name="enabled">1</property>
-                                        <property name="fg"></property>
-                                        <property name="font">Arial,90,90,10</property>
-                                        <property name="hidden">0</property>
-                                        <property name="id">ID_DEFAULT</property>
-                                        <property name="label">Quick Connect ASCII</property>
-                                        <property name="minimum_size"></property>
-                                        <property name="name">btnQuickConnectASCII</property>
-                                        <property name="permission">protected</property>
-                                        <property name="pos"></property>
-                                        <property name="size"></property>
-                                        <property name="style"></property>
-                                        <property name="subclass"></property>
-                                        <property name="tooltip"></property>
-                                        <property name="window_extra_style"></property>
-                                        <property name="window_style">wxTAB_TRAVERSAL</property>
-                                    </object>
-                                </object>
                                 <object class="spacer">
                                     <property name="border">5</property>
                                     <property name="flag">wxALL</property>
                                     <property name="height">0</property>
                                     <property name="proportion">1</property>
                                     <property name="width">0</property>
+                                </object>
+                                <object class="sizeritem">
+                                    <property name="border">5</property>
+                                    <property name="flag">wxALL</property>
+                                    <property name="proportion">0</property>
+                                    <object class="wxButton">
+                                        <property name="bg"></property>
+                                        <property name="enabled">1</property>
+                                        <property name="fg"></property>
+                                        <property name="font">Arial,90,90,10</property>
+                                        <property name="hidden">0</property>
+                                        <property name="id">ID_DEFAULT</property>
+                                        <property name="label">Cancel</property>
+                                        <property name="minimum_size"></property>
+                                        <property name="name">btnCancel</property>
+                                        <property name="permission">protected</property>
+                                        <property name="pos"></property>
+                                        <property name="size"></property>
+                                        <property name="style"></property>
+                                        <property name="subclass"></property>
+                                        <property name="tooltip"></property>
+                                        <property name="window_extra_style"></property>
+                                        <property name="window_style">wxTAB_TRAVERSAL</property>
+                                    </object>
                                 </object>
                                 <object class="sizeritem">
                                     <property name="border">5</property>
