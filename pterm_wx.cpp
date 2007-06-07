@@ -430,8 +430,7 @@ class PtermFrame;
 class PtermPrintout: public wxPrintout
 {
 public:
-    PtermPrintout (PtermFrame *owner,
-                   const wxString &title = _("Pterm printout")) 
+    PtermPrintout (PtermFrame *owner, const wxString &title = _("Pterm printout")) 
         : wxPrintout (title),
           m_owner (owner)
     {}
@@ -695,8 +694,7 @@ class PtermFrame : public PtermFrameBase, public emul8080
     friend int PtermConnection::NextWord (void);
 public:
     // ctor(s)
-    PtermFrame(wxString &host, int port, const wxString& title,
-                   const wxPoint &pos = wxDefaultPosition);
+    PtermFrame(wxString &host, int port, const wxString& title, const wxPoint &pos = wxDefaultPosition);
     ~PtermFrame ();
 
     // event handlers (these functions should _not_ be virtual)
@@ -1658,8 +1656,7 @@ bool PtermApp::DoConnect (bool ask)
     }
     else
     {
-        frame = new PtermFrame(m_hostName, m_port, wxT("Pterm"), 
-                               wxPoint (lastX, lastY));
+        frame = new PtermFrame(m_hostName, m_port, wxT("Pterm"),  wxPoint (lastX, lastY));
     }
 
     if (frame != NULL)
@@ -1975,11 +1972,8 @@ PtermMainFrame::PtermMainFrame (void)
 // ----------------------------------------------------------------------------
 
 // frame constructor
-PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
-                       const wxPoint &pos)
-    : PtermFrameBase(PtermFrameParent, -1, title,
-                     pos,
-                     wxDefaultSize),
+PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wxPoint &pos)
+    : PtermFrameBase(PtermFrameParent, -1, title, pos, wxDefaultSize),
       tracePterm (false),
       m_nextFrame (NULL),
       m_prevFrame (NULL),
@@ -2074,8 +2068,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
         menuFile->AppendSeparator();
     }
     // The accelerators actually will be Command-xxx on the Mac;
-    // on other platforms they are omitted since they clash with
-    // the PLATO keyboard.
+    // on other platforms they are controlled by a prefs setting.
     menuFile->Append (Pterm_SaveScreen, _("Save Screen") ACCELERATOR ("\tCtrl-S"), _("Save screen image to file"));
     menuFile->Append (Pterm_Print, _("Print...") ACCELERATOR ("\tCtrl-P"), _("Print screen content"));
     menuFile->Append (Pterm_Page_Setup, _("Page Setup..."), _("Printout page setup"));
@@ -2101,6 +2094,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     menuEdit->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
     menuEdit->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
     menuEdit->AppendSeparator ();
+
+/*
     menuEdit->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
     menuEdit->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
     menuEdit->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
@@ -2110,6 +2105,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title,
     menuEdit->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
     menuEdit->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
     menuEdit->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
+*/
 
     // Copy is initially disabled, until a region is selected
     menuEdit->Enable (Pterm_Copy, false);
@@ -3672,7 +3668,9 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
         m_canvas->SetVirtualSize (vXSize (newscale), vYSize (newscale));
         if (!m_fullScreen)
         {
-            m_canvas->SetScrollRate (0, 0);
+#if defined (__WXMSW__)
+			m_canvas->SetScrollRate (0, 0);
+#endif
             m_canvas->SetScrollRate (1, 1);
         }
         dc.DestroyClippingRegion ();
@@ -5186,7 +5184,7 @@ void PtermFrame::SetFontFaceAndFamily (int n)
 **------------------------------------------------------------------------*/
 void PtermFrame::SetFontSize (int n)
 {
-	m_fontsize = (n < 6 ? 6 : n);
+	m_fontsize = (n < 6 ? 6 : (n > 63 ? 63 : n));
 }
 
 /*--------------------------------------------------------------------------
@@ -8124,9 +8122,7 @@ BEGIN_EVENT_TABLE(PtermCanvas, wxScrolledWindow)
     END_EVENT_TABLE ()
 
 PtermCanvas::PtermCanvas(PtermFrame *parent)
-    : wxScrolledWindow(parent, -1, wxDefaultPosition, 
-                       wxSize (vXSize(m_scale), vYSize(m_scale)),
-                       wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE),
+    : wxScrolledWindow(parent, -1, wxDefaultPosition,  wxSize (vXSize(m_scale), vYSize(m_scale)), wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE),
       m_mouseX (-1)
 {
     wxClientDC dc(this);
@@ -8139,8 +8135,7 @@ PtermCanvas::PtermCanvas(PtermFrame *parent)
     
     SetBackgroundColour (ptermApp->m_bgColor);
     SetScrollRate (1, 1);
-    dc.SetClippingRegion (GetXMargin (), GetYMargin (),
-                          vScreenSize(m_owner->m_scale), vScreenSize(m_owner->m_scale));
+    dc.SetClippingRegion (GetXMargin (), GetYMargin (), vScreenSize(m_owner->m_scale), vScreenSize(m_owner->m_scale));
     SetFocus ();
     FullErase ();
 }
