@@ -5184,7 +5184,7 @@ void PtermFrame::SetFontFaceAndFamily (int n)
 **------------------------------------------------------------------------*/
 void PtermFrame::SetFontSize (int n)
 {
-	m_fontsize = (n < 6 ? 6 : (n > 63 ? 63 : n));
+	m_fontsize = (n < 1 ? 1 : (n > 63 ? 63 : n));
 }
 
 /*--------------------------------------------------------------------------
@@ -5303,14 +5303,6 @@ void PtermFrame::plotChar (int c)
     
     int deltax, deltay, supdelta;
     
-	// check for uncover code and fast exit
-    c &= 077;
-    if (c == 077)
-    {
-        setUncover (true);
-        return;
-    }
-
 	if (m_usefont && currentCharset <= 1)
 	{
 		supdelta = (m_fontheight/3);
@@ -5331,6 +5323,14 @@ void PtermFrame::plotChar (int c)
 		supdelta = (deltay / 16) * 5;
 	}
 	
+	// check for uncover code and fast exit
+    c &= 077;
+    if (c == 077)
+    {
+        setUncover (true);
+        return;
+    }
+
     if (uncover)
     {
         setUncover (false);
