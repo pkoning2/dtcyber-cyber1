@@ -86,9 +86,10 @@
 #define	NOP_PMDSTART	  043000	// start streaming "Plato Meta Data"; note, lowest 6 bits is a character
 #define	NOP_PMDSTREAM	  044000	// stream "Plato Meta Data"
 #define	NOP_PMDSTOP		  045000	// stop streaming "Plato Meta Data"
-#define	NOP_FONTTYPE	  050000	// get font type
-#define	NOP_FONTSIZE	  051000	// get font size
-#define	NOP_FONTFLAG	  052000	// get font flags
+#define	NOP_FONTTYPE	  050000	// font type
+#define	NOP_FONTSIZE	  051000	// font size
+#define	NOP_FONTFLAG	  052000	// font flags
+#define	NOP_FONTINFO	  053000	// get last font character width/height
 
 // Literal strings for wxConfig key strings.  These are defined
 // because they appear in two places, so this way we avoid getting
@@ -803,8 +804,10 @@ public:
 	bool		m_fontbold;
 	bool		m_fontstrike;
 	bool		m_fontunderln;
-	int			m_fontheight;
+	wxCoord		m_fontwidth;
+	wxCoord		m_fontheight;
 	bool		m_fontPMD;
+	bool		m_fontinfo;
 
 private:
     wxPen       m_foregroundPen;
@@ -2015,7 +2018,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
       m_pendingEcho (-1),
 	  m_scale (ptermApp->m_scale),
 	  m_usefont( false ),
-	  m_fontPMD( false )
+	  m_fontPMD( false ),
+	  m_fontinfo( false )
 {
     int i;
 
@@ -3913,7 +3917,6 @@ void PtermFrame::drawFontChar (int x, int y, int c)
 {
     int screenX, screenY, memX, memY;
     wxClientDC dc(m_canvas);
-	wxCoord w,h;
 	wxString chr;
 
 	chr.Printf(wxT("%c"),c);
@@ -3940,17 +3943,17 @@ void PtermFrame::drawFontChar (int x, int y, int c)
 		break;
 	}
 
-	m_memDC->GetTextExtent(chr, &w, &h);
+	m_memDC->GetTextExtent(chr, &m_fontwidth, &m_fontheight);
 
     screenX = XADJUST (x);
-    screenY = YADJUST (y + h - 1);
+    screenY = YADJUST (y + m_fontheight - 1);
     memX = XMADJUST (x);
-    memY = YMADJUST (y + h - 1);
+    memY = YMADJUST (y + m_fontheight - 1);
 
-	currentX += w;
+	currentX += m_fontwidth;
     
 	m_memDC->DrawText(chr,memX,memY);
-	dc.Blit (screenX, screenY, w, h, m_memDC, memX, memY);
+	dc.Blit (screenX, screenY, m_fontwidth, m_fontheight, m_memDC, memX, memY);
 }
 
 /*--------------------------------------------------------------------------
@@ -4080,6 +4083,11 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 					TRACEN ("plato meta data complete: font data accepted");
 					TRACE3 ("Font selected: %s,%d,%d", m_fontface.c_str(), m_fontsize, m_fontbold|m_fontitalic|m_fontstrike|m_fontunderln);
 					m_fontPMD = false;
+				}
+				else if (m_fontinfo)
+				{
+					TRACEN ("plato meta data complete: get font data accepted and sent");
+					m_fontinfo = false;
 				}
 				else
 				{
@@ -4610,6 +4618,13 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     SetFontFlags(d & 077);
 					SetFontActive();
                 }
+                else if ((d & NOP_MASKDATA) == NOP_FONTINFO)
+                {
+					ptermSendExt((int)m_fontwidth);
+					wxMilliSleep(atoi(ptermApp->m_charDelay));
+					ptermSendExt((int)m_fontheight);
+					wxMilliSleep(atoi(ptermApp->m_charDelay));
+                }
 	            // otherwise check for plato meta data codes
                 else
 				{
@@ -4915,6 +4930,17 @@ int PtermFrame::AssembleAsciiPlatoMetaData (int d)
 	// special check for start font mode
 	if (od=='F' && m_ascBytes==1)
 		m_fontPMD = true;
+	else if (od=='f' && m_ascBytes==1)
+	{
+		m_fontinfo = true;
+		m_ascBytes = 0;
+		m_ascState = none;
+		ptermSendExt((int)m_fontwidth);
+		wxMilliSleep(atoi(ptermApp->m_charDelay));
+		ptermSendExt((int)m_fontheight);
+		wxMilliSleep(atoi(ptermApp->m_charDelay));
+		return 0;
+	}
 	// check if in font mode
 	else if (m_fontPMD && m_ascBytes==2)
 	{
@@ -5217,7 +5243,6 @@ void PtermFrame::SetFontActive ()
 	m_usefont = m_fontface.Cmp(wxT("default")) != 0;
 	if (m_usefont)
 	{
-		int w;
 		m_font = new wxFont;
 		//m_font->New(m_fontsize, m_fontfamily, wxFONTFLAG_NOT_ANTIALIASED, m_fontface);
 		m_font->New(m_fontsize, m_fontfamily, wxFONTFLAG_ANTIALIASED | (m_fontstrike ? wxFONTFLAG_STRIKETHROUGH : 0), m_fontface);
@@ -5228,7 +5253,7 @@ void PtermFrame::SetFontActive ()
 		m_font->SetWeight(m_fontbold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL);
 		m_font->SetUnderlined(m_fontunderln);
 		m_memDC->SetFont(*m_font);
-		m_memDC->GetTextExtent(wxT(" "), &w, &m_fontheight);
+		m_memDC->GetTextExtent(wxT(" "), &m_fontwidth, &m_fontheight);
 	}
 }
 
