@@ -90,6 +90,7 @@
 #define	NOP_FONTSIZE	  051000	// font size
 #define	NOP_FONTFLAG	  052000	// font flags
 #define	NOP_FONTINFO	  053000	// get last font character width/height
+#define	NOP_OSINFO	      054000	// get operating system type, returns 1=mac, 2=windows, 3=linux
 
 // Literal strings for wxConfig key strings.  These are defined
 // because they appear in two places, so this way we avoid getting
@@ -808,6 +809,8 @@ public:
 	wxCoord		m_fontheight;
 	bool		m_fontPMD;
 	bool		m_fontinfo;
+	//operating system request
+	bool		m_osinfo;
 
 private:
     wxPen       m_foregroundPen;
@@ -1936,10 +1939,8 @@ PtermMainFrame::PtermMainFrame (void)
 #endif
 
     wxMenu *menuFile = new wxMenu;
-    menuFile->Append (Pterm_Connect, _("New Connection...\tCtrl-N"),
-                      _("Connect to a PLATO host"));
-    menuFile->Append (Pterm_Pref, _("Preferences..."),
-                      _("Set program configuration"));
+    menuFile->Append (Pterm_Connect, _("New Connection...") ACCELERATOR ("\tCtrl-N"), _("Connect to a PLATO host"));
+    menuFile->Append (Pterm_Pref, _("Preferences..."), _("Set program configuration"));
     menuFile->AppendSeparator ();
     menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
 
@@ -1951,17 +1952,17 @@ PtermMainFrame::PtermMainFrame (void)
     // Well, on the Mac it actually doesn't show up there, but for that magic
     // to work it has to be presented to wx in the help menu.  So the help
     // menu ends up empty.  Sigh.
-    wxMenu *helpMenu = new wxMenu;
+    wxMenu *menuHelp = new wxMenu;
 
-    helpMenu->Append(Pterm_About, _("About Pterm"), _("Show about dialog"));
-    helpMenu->Append(Pterm_HelpKeys, _("Pterm keyboard"), _("Show keyboard description"));
+    menuHelp->Append(Pterm_About, _("About Pterm"), _("Show about dialog"));
+    menuHelp->Append(Pterm_HelpKeys, _("Pterm keyboard"), _("Show keyboard description"));
     
 #if defined(__WXMAC__)
     // On the Mac the menu name has to be exactly "&Help" for the About item
     // to  be recognized.  Ugh.
-    menuBar->Append(helpMenu, wxT("&Help"));
+    menuBar->Append(menuHelp, wxT("&Help"));
 #else
-    menuBar->Append(helpMenu, _("Help"));
+    menuBar->Append(menuHelp, _("Help"));
 #endif
 
     // ... and attach this menu bar to the frame
@@ -2019,7 +2020,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
 	  m_scale (ptermApp->m_scale),
 	  m_usefont( false ),
 	  m_fontPMD( false ),
-	  m_fontinfo( false )
+	  m_fontinfo( false ),
+	  m_osinfo( false )
 {
     int i;
 
@@ -2062,6 +2064,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
 
 #endif
 
+    // NOTE: Accelerators are actually Command-xxx on the Mac on other platforms they are controlled by a prefs setting.
+	//file menu options
     wxMenu *menuFile = new wxMenu;
     menuFile->Append (Pterm_Connect, _("New Connection...") ACCELERATOR ("\tCtrl-N"), _("Connect to a PLATO host"));
     if (port > 0)
@@ -2071,8 +2075,6 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
         menuFile->Append (Pterm_ConnectAgain, _("Connect Again"), _("Connect to the same host"));
         menuFile->AppendSeparator();
     }
-    // The accelerators actually will be Command-xxx on the Mac;
-    // on other platforms they are controlled by a prefs setting.
     menuFile->Append (Pterm_SaveScreen, _("Save Screen") ACCELERATOR ("\tCtrl-S"), _("Save screen image to file"));
     menuFile->Append (Pterm_Print, _("Print...") ACCELERATOR ("\tCtrl-P"), _("Print screen content"));
     menuFile->Append (Pterm_Page_Setup, _("Page Setup..."), _("Printout page setup"));
@@ -2082,9 +2084,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     menuFile->AppendSeparator ();
     menuFile->Append (Pterm_Close, _("Close") ACCELERATOR ("\tCtrl-W"), _("Close this window"));
     menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
-
+	//edit menu options
     menuEdit = new wxMenu;
-
     menuEdit->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
     menuEdit->Append(Pterm_Copy, _("Copy text") ACCELERATOR ("\tCtrl-C"), _("Copy text only to clipboard"));
     if (port > 0)
@@ -2097,9 +2098,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     menuEdit->Append(Pterm_Exec, _("Execute URL") ACCELERATOR ("\tCtrl-X"), _("Execute URL"));
     menuEdit->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
     menuEdit->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
-    menuEdit->AppendSeparator ();
-
 /*
+    menuEdit->AppendSeparator ();
     menuEdit->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
     menuEdit->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
     menuEdit->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
@@ -2110,25 +2110,23 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     menuEdit->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
     menuEdit->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
 */
-
-    // Copy is initially disabled, until a region is selected
-    menuEdit->Enable (Pterm_Copy, false);
+    menuEdit->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
     menuEdit->Enable (Pterm_Exec, false);
     menuEdit->Enable (Pterm_MailTo, false);
     menuEdit->Enable (Pterm_SearchThis, false);
 
+	//view menu options
     wxMenu *menuView = new wxMenu;
-    
     menuView->Append (Pterm_FullScreen, _("Full Screen") ACCELERATOR ("\tCtrl-U"), _("Display in full screen mode"));
 
     // the "About" item should be in the help menu.
     // Well, on the Mac it actually doesn't show up there, but for that magic
     // to work it has to be presented to wx in the help menu.  So the help
     // menu ends up empty.  Sigh.
-    wxMenu *helpMenu = new wxMenu;
-
-    helpMenu->Append(Pterm_About, _("About Pterm"), _("Show about dialog"));
-    helpMenu->Append(Pterm_HelpKeys, _("Pterm keyboard"), _("Show keyboard description"));
+	//help menu options
+    wxMenu *menuHelp = new wxMenu;
+    menuHelp->Append(Pterm_About, _("About Pterm"), _("Show about dialog"));
+    menuHelp->Append(Pterm_HelpKeys, _("Pterm keyboard"), _("Show keyboard description"));
     
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
@@ -2141,9 +2139,9 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
 #if defined(__WXMAC__)
     // On the Mac the menu name has to be exactly "&Help" for the About item
     // to  be recognized.  Ugh.
-    menuBar->Append(helpMenu, wxT("&Help"));
+    menuBar->Append(menuHelp, wxT("&Help"));
 #else
-    menuBar->Append(helpMenu, _("Help"));
+    menuBar->Append(menuHelp, _("Help"));
 #endif
 
     // ... and attach this menu bar to the frame
@@ -3128,6 +3126,8 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_config->Write (wxT (PREF_EMAIL), dlg.m_Email);
         ptermApp->m_config->Write (wxT (PREF_SEARCHURL), dlg.m_SearchURL);
         ptermApp->m_config->Flush ();
+
+
     }
 }
 
@@ -4089,6 +4089,11 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 					TRACEN ("plato meta data complete: get font data accepted and sent");
 					m_fontinfo = false;
 				}
+				else if (m_osinfo)
+				{
+					TRACEN ("plato meta data complete: get operating system info accepted and sent");
+					m_osinfo = false;
+				}
 				else
 				{
 					TRACE ("plato meta data complete: %s", m_PMD.c_str());
@@ -4625,6 +4630,24 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 					ptermSendExt((int)m_fontheight);
 					wxMilliSleep(atoi(ptermApp->m_charDelay));
                 }
+                else if ((d & NOP_MASKDATA) == NOP_OSINFO)
+                {
+					// sends 3 external keys, OS, major version, minor version
+					int os,major,minor;
+					os = wxGetOsVersion(&major,&minor);
+					ptermSendExt(os);
+					wxMilliSleep(atoi(ptermApp->m_charDelay));
+					if (os==wxMAC || os==wxMAC_DARWIN)
+						ptermSendExt(10*(major>>4) + (major &0x0f));
+					else
+						ptermSendExt(major);
+					wxMilliSleep(atoi(ptermApp->m_charDelay));
+					if (os==wxMAC || os==wxMAC_DARWIN)
+						ptermSendExt(10*(minor>>4) + (minor &0x0f));
+					else
+						ptermSendExt(minor);
+					wxMilliSleep(atoi(ptermApp->m_charDelay));
+                }
 	            // otherwise check for plato meta data codes
                 else
 				{
@@ -4927,9 +4950,10 @@ int PtermFrame::AssembleAsciiPlatoMetaData (int d)
     if (m_ascBytes==0)
 		m_PMD = wxT("");
 	m_ascBytes++;
-	// special check for start font mode
+	// check for start font mode
 	if (od=='F' && m_ascBytes==1)
 		m_fontPMD = true;
+	// check for request font character info
 	else if (od=='f' && m_ascBytes==1)
 	{
 		m_fontinfo = true;
@@ -4939,6 +4963,29 @@ int PtermFrame::AssembleAsciiPlatoMetaData (int d)
 		wxMilliSleep(atoi(ptermApp->m_charDelay));
 		ptermSendExt((int)m_fontheight);
 		wxMilliSleep(atoi(ptermApp->m_charDelay));
+		return 0;
+	}
+	// check for request operating system info
+	else if (od=='o' && m_ascBytes==1)
+	{
+		// sends 3 external keys, OS, major version, minor version
+		int os,major,minor;
+		os = wxGetOsVersion(&major,&minor);
+		ptermSendExt(os);
+		wxMilliSleep(atoi(ptermApp->m_charDelay));
+		if (os==wxMAC || os==wxMAC_DARWIN)
+			ptermSendExt(10*(major>>4) + (major &0x0f));
+		else
+			ptermSendExt(major);
+		wxMilliSleep(atoi(ptermApp->m_charDelay));
+		if (os==wxMAC || os==wxMAC_DARWIN)
+			ptermSendExt(10*(minor>>4) + (minor &0x0f));
+		else
+			ptermSendExt(minor);
+		wxMilliSleep(atoi(ptermApp->m_charDelay));
+		m_osinfo = true;
+		m_ascBytes = 0;
+		m_ascState = none;
 		return 0;
 	}
 	// check if in font mode
