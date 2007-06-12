@@ -116,6 +116,7 @@
 #define PREF_1200BAUD    "classicSpeed"
 #define PREF_GSW         "gswenable"
 #define PREF_ARROWS      "numpadArrows"
+#define PREF_IGNORECAP   "ignoreCapLock"
 #define PREF_PLATOKB     "platoKeyboard"
 #define PREF_ACCEL       "UseAccel"
 #define PREF_BEEP        "beep"
@@ -241,6 +242,7 @@
 #include "wx/print.h"
 #include "wx/printdlg.h"
 #include "wx/textfile.h"
+#include "wx/utils.h"
 
 extern "C"
 {
@@ -571,6 +573,7 @@ public:
     bool        m_classicSpeed;
     bool        m_gswEnable;
     bool        m_numpadArrows;
+    bool        m_ignoreCapLock;
     bool        m_platoKb;
 	bool		m_useAccel;
     bool        m_beepEnable;
@@ -791,6 +794,7 @@ public:
     bool        m_dumbTty;
 
 	wxMenu      *menuEdit;
+	wxMenu      *menuPopup;
     wxStatusBar *m_statusBar;       // present even if not displayed
 
 	int			m_scale;
@@ -1056,6 +1060,7 @@ public:
 	wxCheckBox* chkSimulate1200Baud;
 	wxCheckBox* chkEnableGSW;
 	wxCheckBox* chkEnableNumericKeyPad;
+	wxCheckBox* chkIgnoreCapLock;
 	wxCheckBox* chkUsePLATOKeyboard;
 	wxCheckBox* chkUseAccelerators;
 	wxCheckBox* chkEnableBeep;
@@ -1104,6 +1109,7 @@ public:
     bool            m_classicSpeed;
     bool            m_gswEnable;
     bool            m_numpadArrows;
+    bool            m_ignoreCapLock;
     bool            m_platoKb;
 	bool			m_useAccel;
     bool            m_beepEnable;
@@ -1520,6 +1526,7 @@ bool PtermApp::OnInit (void)
 		m_classicSpeed = (m_config->Read (wxT (PREF_1200BAUD), 0L) != 0);
 		m_gswEnable = (m_config->Read (wxT (PREF_GSW), 1) != 0);
 		m_numpadArrows = (m_config->Read (wxT (PREF_ARROWS), 1) != 0);
+		m_ignoreCapLock = (m_config->Read (wxT (PREF_IGNORECAP), 0L) != 0);
 		m_platoKb = (m_config->Read (wxT (PREF_PLATOKB), 0L) != 0);
 		#if defined(__WXMAC__)
 			m_useAccel = true;
@@ -1726,6 +1733,7 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
 			else if (token.Cmp(wxT(PREF_1200BAUD))==0)				m_classicSpeed	= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_GSW))==0)					m_gswEnable		= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_ARROWS))==0)				m_numpadArrows	= (value.Cmp(wxT("1"))==0);
+			else if (token.Cmp(wxT(PREF_IGNORECAP))==0)				m_ignoreCapLock	= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_PLATOKB))==0)				m_platoKb		= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_ACCEL))==0)					
 																	#if defined(__WXMAC__)
@@ -1780,6 +1788,7 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
     m_config->Write (wxT (PREF_1200BAUD), (m_classicSpeed) ? 1 : 0);
     m_config->Write (wxT (PREF_GSW), (m_gswEnable) ? 1 : 0);
     m_config->Write (wxT (PREF_ARROWS), (m_numpadArrows) ? 1 : 0);
+    m_config->Write (wxT (PREF_IGNORECAP), (m_ignoreCapLock) ? 1 : 0);
     m_config->Write (wxT (PREF_PLATOKB), (m_platoKb) ? 1 : 0);
     m_config->Write (wxT (PREF_ACCEL), (m_useAccel) ? 1 : 0);
     m_config->Write (wxT (PREF_BEEP), (m_beepEnable) ? 1 : 0);
@@ -2114,6 +2123,39 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     menuEdit->Enable (Pterm_Exec, false);
     menuEdit->Enable (Pterm_MailTo, false);
     menuEdit->Enable (Pterm_SearchThis, false);
+
+	//edit menu options (copy for POPUP menu via right-click on canvas, adds the full-screen option)
+    menuPopup = new wxMenu;
+    menuPopup->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
+    menuPopup->Append(Pterm_Copy, _("Copy text") ACCELERATOR ("\tCtrl-C"), _("Copy text only to clipboard"));
+    if (port > 0)
+    {
+        menuPopup->Append(Pterm_Paste, _("Paste ASCII") ACCELERATOR ("\tCtrl-V"), _("Paste plain text"));
+        // No "paste" for help window because it doesn't do input.
+        menuPopup->Append(Pterm_PastePrint, _("Paste Printout"), _("Paste Cyber printout format"));
+    }
+    menuPopup->AppendSeparator ();					
+    menuPopup->Append(Pterm_Exec, _("Execute URL") ACCELERATOR ("\tCtrl-X"), _("Execute URL"));
+    menuPopup->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
+    menuPopup->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
+/*
+    menuPopup->AppendSeparator ();
+    menuPopup->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
+    menuPopup->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
+    menuPopup->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
+    menuPopup->Append(Pterm_Macro3, _("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), _("<c,zc.keys>"));
+    menuPopup->Append(Pterm_Macro4, _("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), _("<c,zc.text>"));
+    menuPopup->Append(Pterm_Macro5, _("color zc.errf") ACCELERATOR ("\tCtrl-5"), _("color zc.errf"));
+    menuPopup->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
+    menuPopup->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
+    menuPopup->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
+*/
+    menuPopup->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
+    menuPopup->Enable (Pterm_Exec, false);
+    menuPopup->Enable (Pterm_MailTo, false);
+    menuPopup->Enable (Pterm_SearchThis, false);
+    menuPopup->AppendSeparator ();
+    menuPopup->Append (Pterm_FullScreen, _("Full Screen") ACCELERATOR ("\tCtrl-U"), _("Display in full screen mode"));
 
 	//view menu options
     wxMenu *menuView = new wxMenu;
@@ -3063,6 +3105,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_classicSpeed = dlg.m_classicSpeed;
         ptermApp->m_gswEnable = dlg.m_gswEnable;
         ptermApp->m_numpadArrows = dlg.m_numpadArrows;
+        ptermApp->m_ignoreCapLock = dlg.m_ignoreCapLock;
         ptermApp->m_platoKb = dlg.m_platoKb;
 		ptermApp->m_useAccel = dlg.m_useAccel;
         ptermApp->m_beepEnable = dlg.m_beepEnable;
@@ -3103,6 +3146,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_config->Write (wxT (PREF_1200BAUD), (dlg.m_classicSpeed) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_GSW), (dlg.m_gswEnable) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_ARROWS), (dlg.m_numpadArrows) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_IGNORECAP), (dlg.m_ignoreCapLock) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_PLATOKB), (dlg.m_platoKb) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_ACCEL), (dlg.m_useAccel) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_BEEP), (dlg.m_beepEnable) ? 1 : 0);
@@ -6359,6 +6403,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 //	wxCheckBox* chkSimulate1200Baud;
 //	wxCheckBox* chkEnableGSW;
 //	wxCheckBox* chkEnableNumericKeyPad;
+//	wxCheckBox* chkIgnoreCapLock;
 //	wxCheckBox* chkUsePLATOKeyboard;
 //	wxCheckBox* chkUseAccelerators;
 //	wxCheckBox* chkEnableBeep;
@@ -6546,6 +6591,9 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	chkEnableNumericKeyPad = new wxCheckBox( tab3, wxID_ANY, _("Enable numeric keypad for arrow operation"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkEnableNumericKeyPad->SetValue(true);
 	page3->Add( chkEnableNumericKeyPad, 0, wxALL, 5 );
+	chkIgnoreCapLock = new wxCheckBox( tab3, wxID_ANY, _("Ignore CAPS LOCK"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkIgnoreCapLock->SetValue(true);
+	page3->Add( chkIgnoreCapLock, 0, wxALL, 5 );
 	chkUsePLATOKeyboard = new wxCheckBox( tab3, wxID_ANY, _("Use real PLATO keyboard"), wxDefaultPosition, wxDefaultSize, 0 );
 	page3->Add( chkUsePLATOKeyboard, 0, wxALL, 5 );
 	chkUseAccelerators = new wxCheckBox( tab3, wxID_ANY, _("Enable control-key menu accelerators"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -6790,6 +6838,8 @@ bool PtermPrefDialog::SaveProfile(wxString profile)
 	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_ARROWS "=%d"), (m_numpadArrows) ? 1 : 0);
 	file.AddLine(buffer);
+    buffer.Printf(wxT (PREF_IGNORECAP "=%d"), (m_ignoreCapLock) ? 1 : 0);
+	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_PLATOKB "=%d"), (m_platoKb) ? 1 : 0);
 	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_ACCEL "=%d"), (m_useAccel) ? 1 : 0);
@@ -6872,6 +6922,7 @@ void PtermPrefDialog::SetControlState(void)
     m_classicSpeed = ptermApp->m_classicSpeed;
     m_gswEnable = ptermApp->m_gswEnable;
     m_numpadArrows = ptermApp->m_numpadArrows;
+    m_ignoreCapLock = ptermApp->m_ignoreCapLock;
     m_platoKb = ptermApp->m_platoKb;
     m_useAccel = ptermApp->m_useAccel;
     m_beepEnable = ptermApp->m_beepEnable;
@@ -6940,6 +6991,7 @@ void PtermPrefDialog::SetControlState(void)
     chkSimulate1200Baud->SetValue ( m_classicSpeed );
     chkEnableGSW->SetValue ( m_gswEnable );
     chkEnableNumericKeyPad->SetValue ( m_numpadArrows );
+    chkIgnoreCapLock->SetValue ( m_ignoreCapLock );
     chkUsePLATOKeyboard->SetValue ( m_platoKb );
     chkUseAccelerators->SetValue ( m_useAccel );
     chkEnableBeep->SetValue ( m_beepEnable );
@@ -7122,6 +7174,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_classicSpeed = false;
         m_gswEnable = true;
         m_numpadArrows = true;
+        m_ignoreCapLock = false;
         m_platoKb = false;
 		#if defined(__WXMAC__)
 			m_useAccel = true;
@@ -7163,6 +7216,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		chkSimulate1200Baud->SetValue ( m_classicSpeed );
 		chkEnableGSW->SetValue ( m_gswEnable );
 		chkEnableNumericKeyPad->SetValue ( m_numpadArrows );
+		chkIgnoreCapLock->SetValue ( m_ignoreCapLock );
 		chkUsePLATOKeyboard->SetValue ( m_platoKb );
 		chkUseAccelerators->SetValue ( m_useAccel );
 		chkEnableBeep->SetValue ( m_beepEnable );
@@ -7211,6 +7265,8 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
         m_gswEnable = event.IsChecked ();
     else if (event.GetEventObject () == chkEnableNumericKeyPad)
         m_numpadArrows = event.IsChecked ();
+    else if (event.GetEventObject () == chkIgnoreCapLock)
+        m_ignoreCapLock = event.IsChecked ();
     else if (event.GetEventObject () == chkUsePLATOKeyboard)
         m_platoKb = event.IsChecked ();
     else if (event.GetEventObject () == chkUseAccelerators)
@@ -8284,7 +8340,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     ctrl = event.m_controlDown;
     if (event.m_shiftDown)
     {
-        shift = 040;
+		shift = 040;
     }
     key = event.m_keyCode;
     if (!m_owner->HasConnection () ||
@@ -8641,6 +8697,21 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     }
     key = event.m_keyCode;
 
+	//see if we can ignore the caplock
+	if (ptermApp->m_ignoreCapLock && isalpha(key) && wxGetKeyState(WXK_CAPITAL))
+	{
+		if (wxGetKeyState(WXK_SHIFT))
+		{
+			shift = 040;
+			key = toupper(key);
+		}
+		else
+		{
+			shift = 0;
+			key = tolower(key);
+		}
+	}
+
     if (key < sizeof (asciiToPlato) / sizeof (asciiToPlato[0]))
     {
         pc = asciiToPlato[key];
@@ -8805,6 +8876,10 @@ void PtermCanvas::ClearRegion (void)
 		m_owner->GetMenuBar ()->Enable (Pterm_Exec, false);
 		m_owner->GetMenuBar ()->Enable (Pterm_MailTo, false);
 		m_owner->GetMenuBar ()->Enable (Pterm_SearchThis, false);
+		m_owner->menuPopup->Enable (Pterm_Copy, false);
+		m_owner->menuPopup->Enable (Pterm_Exec, false);
+		m_owner->menuPopup->Enable (Pterm_MailTo, false);
+		m_owner->menuPopup->Enable (Pterm_SearchThis, false);
         m_owner->m_statusBar->SetStatusText (wxT(""), STATUS_TIP);
 		Refresh (false);
 	}
@@ -8859,7 +8934,7 @@ void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
 
 void PtermCanvas::OnMouseContextMenu (wxMouseEvent &event)
 {
-	m_owner->PopupMenu ( m_owner->menuEdit );
+	m_owner->PopupMenu ( m_owner->menuPopup );
 }
 
 void PtermCanvas::OnMouseUp (wxMouseEvent &event)
@@ -8935,6 +9010,10 @@ void PtermCanvas::UpdateRegion (wxMouseEvent &event)
         m_owner->GetMenuBar ()->Enable (Pterm_Exec, (m_regionWidth > 0)); 
         m_owner->GetMenuBar ()->Enable (Pterm_MailTo, (m_regionWidth > 0)); 
         m_owner->GetMenuBar ()->Enable (Pterm_SearchThis, (m_regionWidth > 0)); 
+        m_owner->menuPopup->Enable (Pterm_Copy, (m_regionWidth > 0));
+        m_owner->menuPopup->Enable (Pterm_Exec, (m_regionWidth > 0)); 
+        m_owner->menuPopup->Enable (Pterm_MailTo, (m_regionWidth > 0)); 
+        m_owner->menuPopup->Enable (Pterm_SearchThis, (m_regionWidth > 0)); 
 #ifdef DEBUG
         printf ("region %d %d size %d %d\n", m_regionX, m_regionY,
                 m_regionWidth, m_regionHeight);
