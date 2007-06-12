@@ -4669,28 +4669,30 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 }
                 else if ((d & NOP_MASKDATA) == NOP_FONTINFO)
                 {
+                    const int chardelay = atoi(ptermApp->m_charDelay.mb_str());
 					ptermSendExt((int)m_fontwidth);
-					wxMilliSleep(atoi(ptermApp->m_charDelay));
+					wxMilliSleep(chardelay);
 					ptermSendExt((int)m_fontheight);
-					wxMilliSleep(atoi(ptermApp->m_charDelay));
+					wxMilliSleep(chardelay);
                 }
                 else if ((d & NOP_MASKDATA) == NOP_OSINFO)
                 {
+                    const int chardelay = atoi(ptermApp->m_charDelay.mb_str());
 					// sends 3 external keys, OS, major version, minor version
 					int os,major,minor;
 					os = wxGetOsVersion(&major,&minor);
 					ptermSendExt(os);
-					wxMilliSleep(atoi(ptermApp->m_charDelay));
+					wxMilliSleep(chardelay);
 					if (os==wxMAC || os==wxMAC_DARWIN)
 						ptermSendExt(10*(major>>4) + (major &0x0f));
 					else
 						ptermSendExt(major);
-					wxMilliSleep(atoi(ptermApp->m_charDelay));
+					wxMilliSleep(chardelay);
 					if (os==wxMAC || os==wxMAC_DARWIN)
 						ptermSendExt(10*(minor>>4) + (minor &0x0f));
 					else
 						ptermSendExt(minor);
-					wxMilliSleep(atoi(ptermApp->m_charDelay));
+					wxMilliSleep(chardelay);
                 }
 	            // otherwise check for plato meta data codes
                 else
@@ -4989,6 +4991,8 @@ bool PtermFrame::AssembleCoord (int d)
 int PtermFrame::AssembleAsciiPlatoMetaData (int d)
 {
 	int od = d;
+    const int chardelay = atoi(ptermApp->m_charDelay.mb_str());
+
     TRACE2 ("plato meta data: %d (counter=%d)", d, m_ascBytes+1);
 	d &= 077;
     if (m_ascBytes==0)
@@ -5004,9 +5008,9 @@ int PtermFrame::AssembleAsciiPlatoMetaData (int d)
 		m_ascBytes = 0;
 		m_ascState = none;
 		ptermSendExt((int)m_fontwidth);
-		wxMilliSleep(atoi(ptermApp->m_charDelay));
+		wxMilliSleep(chardelay);
 		ptermSendExt((int)m_fontheight);
-		wxMilliSleep(atoi(ptermApp->m_charDelay));
+		wxMilliSleep(chardelay);
 		return 0;
 	}
 	// check for request operating system info
@@ -5016,17 +5020,17 @@ int PtermFrame::AssembleAsciiPlatoMetaData (int d)
 		int os,major,minor;
 		os = wxGetOsVersion(&major,&minor);
 		ptermSendExt(os);
-		wxMilliSleep(atoi(ptermApp->m_charDelay));
+		wxMilliSleep(chardelay);
 		if (os==wxMAC || os==wxMAC_DARWIN)
 			ptermSendExt(10*(major>>4) + (major &0x0f));
 		else
 			ptermSendExt(major);
-		wxMilliSleep(atoi(ptermApp->m_charDelay));
+		wxMilliSleep(chardelay);
 		if (os==wxMAC || os==wxMAC_DARWIN)
 			ptermSendExt(10*(minor>>4) + (minor &0x0f));
 		else
 			ptermSendExt(minor);
-		wxMilliSleep(atoi(ptermApp->m_charDelay));
+		wxMilliSleep(chardelay);
 		m_osinfo = true;
 		m_ascBytes = 0;
 		m_ascState = none;
