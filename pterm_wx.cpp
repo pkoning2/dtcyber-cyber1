@@ -2249,18 +2249,10 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
         }
         m_conn->Run ();
     }
-    
     Show(true);
 
-//kludge: hide then show scrollbars after showing.  under window at least this can prevent
-//        the case of events not occurring in a nice orderly fashion leaving the window not
-//        knowing if it needs scrollbars or not, this says, "no you don't, but in case you
-//        do here you go".  typical windows crapola.
-#if defined (__WXMSW__)
-	m_canvas->SetScrollRate (0, 0);
-	m_canvas->SetScrollRate (1, 1);
-#endif
-
+    m_canvas->SetScrollRate (0, 0);
+    m_canvas->SetScrollRate (1, 1);
 }
 
 PtermFrame::~PtermFrame ()
@@ -3716,9 +3708,7 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
         m_canvas->SetVirtualSize (vXSize (newscale), vYSize (newscale));
         if (!m_fullScreen)
         {
-#if defined (__WXMSW__)
 			m_canvas->SetScrollRate (0, 0);
-#endif
             m_canvas->SetScrollRate (1, 1);
         }
         dc.DestroyClippingRegion ();
@@ -8266,6 +8256,7 @@ PtermCanvas::PtermCanvas(PtermFrame *parent)
     SetVirtualSize (vXSize(m_scale), vYSize(m_scale));
     
     SetBackgroundColour (ptermApp->m_bgColor);
+    SetScrollRate (0, 0);
     SetScrollRate (1, 1);
     dc.SetClippingRegion (GetXMargin (), GetYMargin (), vScreenSize(m_owner->m_scale), vScreenSize(m_owner->m_scale));
     SetFocus ();
