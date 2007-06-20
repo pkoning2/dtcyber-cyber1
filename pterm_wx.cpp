@@ -269,6 +269,14 @@ extern "C"
 FORCE_LINK(gnome_print)
 #endif
 
+// For wxWidgets 2.8
+#ifndef wxMAC
+#define wxMAC wxOS_MAC_OS
+#endif
+#ifndef wxMAC_DARWIN
+#define wxMAC_DARWIN wxOS_MAC_OSX_DARWIN
+#endif
+
 extern int ptermOpenGsw (void *user);
 extern int ptermProcGswData (int data);
 extern void ptermCloseGsw (void);
