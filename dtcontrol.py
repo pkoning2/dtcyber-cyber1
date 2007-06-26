@@ -12,6 +12,7 @@ import sys
 import time
 import socket
 import threading
+import Queue
 import struct
 import wx
 
@@ -141,7 +142,7 @@ class Oper (Connection, threading.Thread):
                     v = v[1:]
                     self.status[i] = v
                 if self.window:
-                    self.window.Refresh ()
+                    self.window.AddPendingEvent (wx.PaintEvent ())
             except socket.timeout:
                 pass
             except EOFError:
@@ -172,53 +173,21 @@ class Oper (Connection, threading.Thread):
 
 class Dd60 (Connection, threading.Thread):
     """A connection to the DtCyber console (green tubes).  It includes
-    a thread that collects data from DtCyber and updates local
-    state to reflect what it hears.
+    a thread that collects data from DtCyber.
     """
-    # A blank line
-    line64 = 64 * ' '
-
-    # Mode codes
-    LEFT = 0
-    RIGHT = 4
-    SMALL = 0
-    MEDIUM = 1
-    LARGE = 2
-    DOT = 3
-
-    # Command codes (output stream non-data codes).  Unlisted codes
-    # are ignored.
-    SETX = 0200
-    SETY = 0210
-    SETMODE = 0240
-    ENDBLOCK = 0250
-    
     def __init__ (self, port = 5007, interval = 3):
         threading.Thread.__init__ (self)
         Connection.__init__ (self, "localhost", port)
-        self.settimeout (5)
-        self.erase ()
+        self.settimeout (3)
         self.stopnow = False
         self.interval = -1
         self.setinterval (interval)
         self.sendkey (070)                 # XON to start output flow
-        self.mode = self.DOT + self.LEFT   # no display until mode set
-        self.x = self.y = 0
-        self.endblock = True
+        self.inited = False
+        self.block = [ ]
+        self.window = None
         self.start ()
 
-    def erase (self):
-        self.left = [ ]
-        self.right = [ ]
-        for i in xrange (32):
-            self.left.append (self.line64)
-            self.right.append (self.line64)
-
-    def next (self):
-        """Return next byte of Cyber output, as an integer.
-        """
-        return ord (self.read (1))
-    
     def run (self):
         """Collect data from DtCyber, and store it away into the
         left or right screen arrays.
@@ -228,14 +197,37 @@ class Dd60 (Connection, threading.Thread):
                 if self.stopnow:
                     self.close ()
                     break
-                ch = self.next ()
-                self.process_output (ch)
+                ch = ord (self.read (1))
+                if ch & 0200:
+                    # Control word.  See if setx/sety, and if so
+                    # collect the additional byte
+                    code = ch << 8
+                    if (ch < 0217):
+                        code += ord (self.read (1))
+                    self.block.append (code)
+                    if ch == 0250:
+                        # end of block
+                        if self.inited:
+                            #print "sending", len (self.block)
+                            if self.window:
+                                try:
+                                    self.window.queue.put (self.block, False)
+                                except Queue.Full:
+                                    pass
+                                self.window.AddPendingEvent (wx.PaintEvent ())
+                        self.block = [ ]
+                        self.inited = True    
+                elif self.inited:
+                    self.block.append (ch)
             except socket.timeout:
                 pass
             except EOFError:
                 break
         self.stopnow = True
 
+    def setwindow (self, win):
+        self.window = win
+        
     def stop (self):
         if not self.stopnow:
             self.stopnow = True
@@ -284,72 +276,6 @@ class Dd60 (Connection, threading.Thread):
                 continue
             self.sendkey (key)
 
-    def __repr__ (self):
-        return self.screen (1)
-
-    def screen (self, n):
-        if n:
-            return '\n'.join (self.right)
-        else:
-            return '\n'.join (self.left)
-
-    # This table comes from charset.c, replacing 0 (unused) entries
-    # by blank
-    consoleToAscii = \
-    ( ' ',    'A',    'B',    'C',    'D',    'E',    'F',    'G',
-      'H',    'I',    'J',    'K',    'L',    'M',    'N',    'O',
-      'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',
-      'X',    'Y',    'Z',    '0',    '1',    '2',    '3',    '4',
-      '5',    '6',    '7',    '8',    '9',    '+',    '-',    '*',
-      '/',    '(',    ')',    ' ',    '=',    ' ',    ',',    '.',
-      ' ',    ' ',    ' ',    ' ',    ' ',    ' ',    ' ',    ' ',
-      ' ',    ' ',    ' ',    ' ',    ' ',    ' ',    ' ',    ' ' )
-
-    def process_char (self, ch):
-        """Process a data byte.  If not in dot mode, store it in the
-        correct position of the current line.  Medium and large chars
-        are handled by storing the char at the current X/Y and skipping
-        one (medium) or three (large) character positions.
-        """
-        if self.mode & self.RIGHT:
-            screen = self.left
-        else:
-            screen = self.right
-        mode = self.mode & 3
-        if mode != self.DOT:
-            line = screen[self.y]
-            
-            screen[self.y] = line[:self.x] + self.consoleToAscii[ch] + line[self.x + 1:]
-            x = self.x + 1
-            if mode == self.MEDIUM:
-                x += 1
-            elif mode == self.LARGE:
-                x += 3
-            self.x = x & 077
-
-    def process_output (self, ch):
-        """Process Cyber output data.  Sort control codes (upper bit set)
-        from data codes (upper bit clear).  Whenever we receive an output
-        byte after the end of block code, do a full erase to prepare the
-        screen image for another block of data.
-        """
-        if self.endblock:
-            self.erase ()
-            self.endblock = False
-        if ch & 0200:
-            # Control code
-            action = ch & 0270
-            if action == self.SETX:
-                self.x = (((ch << 8) + self.next ()) & 0770) / 8
-            elif action == self.SETY:
-                self.y = (((ch << 8) + self.next ()) & 0760) / 16
-            elif action == self.SETMODE:
-                self.mode = ch & 7
-            elif action == self.ENDBLOCK:
-                self.endblock = True
-        else:
-            self.process_char (ch)
-
 class Displaythread (threading.Thread):
     """This class wraps the processing thread for wxPython.
     The thread is started when an instance is created.
@@ -357,9 +283,10 @@ class Displaythread (threading.Thread):
     one for the dd60.
     """
     
-    def __init__ (self, oper):
+    def __init__ (self, oper = None, dd60 = None):
         self.running = False
         self.oper = oper
+        self.dd60 = dd60
         threading.Thread.__init__ (self, name = "DtControl")
         self.start ()
         
@@ -367,8 +294,10 @@ class Displaythread (threading.Thread):
         """Start a thread for the wx toolkit processing.
         """
         self.app = wx.PySimpleApp ()
-        self.operframe = Operframe (self.oper, wx.ID_ANY, "Operator interface")
-        self.operframe.Show (True)
+        #self.operframe = Operframe (self.oper, wx.ID_ANY, "Operator interface")
+        #self.operframe.Show (True)
+        self.dd60frame = Dd60frame (self.dd60, wx.ID_ANY, "DtCyber Console")
+        self.dd60frame.Show (True)
         self.running = True
         self.app.MainLoop ()
 
@@ -377,8 +306,8 @@ class Displaythread (threading.Thread):
         """
         if self.running:
             self.running = False
-            self.operframe.AddPendingEvent (wx.CloseEvent (wx.wxEVT_CLOSE_WINDOW))
-            #self.consoleframe.AddPendingEvent (wx.CloseEvent (wx.wxEVT_CLOSE_WINDOW))
+            #self.operframe.AddPendingEvent (wx.CloseEvent (wx.wxEVT_CLOSE_WINDOW))
+            self.dd60frame.AddPendingEvent (wx.CloseEvent (wx.wxEVT_CLOSE_WINDOW))
             
 class Operframe (wx.Frame):
     """Simple text display window class derived from wxFrame.
@@ -435,6 +364,8 @@ class Operframe (wx.Frame):
         cw = cw * 132 + self.margin * 2
         ch = ch * 32 + self.margin * 2
         self.SetSize (wx.Size (cw, ch))
+        self.SetBackgroundColour (wx.BLACK)
+        self.textFg = wx.Colour (0, 255, 0)
         wx.EVT_PAINT (self, self.OnPaint)
         wx.EVT_CLOSE (self, self.OnClose)
         self.oper = oper
@@ -446,12 +377,11 @@ class Operframe (wx.Frame):
         """
         dc = wx.PaintDC (self)
         dc.BeginDrawing ()
-        #dc.Clear ()
         oper = self.oper
         if not oper:
             return
         currentfont = None
-        dc.SetPen (wx.BLACK_PEN)
+        dc.SetTextForeground (self.textFg)
         for x, y, size, bold, text in oper.fixedtext:
             if bold:
                 if size == 010:
@@ -470,10 +400,14 @@ class Operframe (wx.Frame):
         dc.SetFont (self.sfont)
         for text in oper.status:
             dc.DrawText (text, 01040, y)
-            y += self.smallfontextent[1]
+            y += self.smallfontextent[1] + 2
         #self.SendString (dc, 020, 060, self.font, oper.cmd, False)
-        dc.SetFont (self.lfont)
-        dc.DrawText (oper.response, 020, 0764)
+        if response.startswith ('$'):
+            dc.SetFont (self.lbfont)
+            dc.DrawText (oper.response[1:], 020, 0764)
+        else:
+            dc.SetFont (self.lfont)
+            dc.DrawText (oper.response, 020, 0764)
         dc.EndDrawing ()
 
     def OnClose (self, event = None):
@@ -482,8 +416,241 @@ class Operframe (wx.Frame):
         self.Destroy ()
         if self.oper:
             self.oper.stop ()
+
+class Dd60frame (wx.Frame):
+    """
+    """
+    def __init__ (self, dd60, id, name):
+        framestyle = (wx.MINIMIZE_BOX |
+                      wx.MAXIMIZE_BOX |
+                      wx.RESIZE_BORDER |
+                      wx.SYSTEM_MENU |
+                      wx.CAPTION |
+                      wx.CLOSE_BOX |
+                      wx.FULL_REPAINT_ON_RESIZE)
+        wx.Frame.__init__ (self, None, id, name,
+                           style = framestyle)
+        self.SetSize (wx.Size (02040, 01020))
+        self.SetBackgroundColour (wx.BLACK)
+        self.greenPen = wx.Pen (wx.Colour (0, 255, 0))
+        wx.EVT_PAINT (self, self.OnPaint)
+        wx.EVT_CLOSE (self, self.OnClose)
+        self.dd60 = dd60
+        self.queue = Queue.Queue (3)
+        self.mode = 99
+        self.screen = 0
+        self.x = 0
+        self.y = 0
+        if dd60:
+            dd60.setwindow (self)
         
-def o(port):
+    def OnPaint (self, event = None):
+        """This is the event handler for window repaint events,
+        which is also done on window resize. 
+        """
+        dc = wx.PaintDC (self)
+        dc.BeginDrawing ()
+        dc.SetPen (self.greenPen)
+        try:
+            block = self.queue.get (False)
+            dc.SetBackground (wx.BLACK_BRUSH)
+            dc.Clear ()
+        except Queue.Empty:
+            block = [ ]
+        #print "processing", len (block)
+        for c in block:
+            #print oct (c),
+            if c & 0100000:
+                action = (c >> 8) & 0270
+                if action == 0200:
+                    # Set X
+                    self.x = c & 0777
+                elif action == 0210:
+                    # Set Y
+                    self.y = c & 0777
+                    if self.mode == 3:
+                        # dot mode
+                        x = self.x + self.screen
+                        y = 01020 - self.y
+                        dc.DrawPoint (x, y)
+                elif action == 0220:
+                    # set trace data
+                    self.mode = 0
+                    self.x = 0
+                    self.y = 01010
+                elif action == 0230:
+                    # set keyboard true
+                    pass
+                elif action == 0240:
+                    # set mode
+                    c >>= 8
+                    if c & 4:
+                        self.screen = 01020
+                    else:
+                        self.screen = 020
+                    self.mode = c & 3
+            elif self.mode < 3:
+                # Character plot mode
+                size = 010 << self.mode
+                x = self.x + self.screen
+                y = 01020 - self.y
+                self.plotChar (dc, x, y, size, c)
+                self.x = (self.x + size) & 0777
+        dc.EndDrawing ()
+        #sys.stdout.flush ()
+
+    def OnClose (self, event = None):
+        """Close the operator window.
+        """
+        self.Destroy ()
+        if self.dd60:
+            self.dd60.stop ()
+
+    chargen = \
+      (  ( 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ),
+         ( 001, 014, 014, 014, 030, 014, 014, 014, 036, 015, 001,
+           002, 002, 000, 001, 000, 000, 000, 000, 000, 000, 000 ), # A
+         ( 001, 010, 010, 010, 030, 002, 002, 022, 026, 022, 002,
+           002, 006, 003, 003, 022, 026, 022, 002, 002, 000, 001 ), # B
+         ( 012, 012, 022, 000, 007, 022, 032, 022, 016, 010, 022,
+           032, 022, 000, 001, 000, 000, 000, 000, 000, 000, 000 ), # C
+         ( 001, 010, 010, 010, 030, 002, 002, 022, 016, 010, 022,
+           002, 002, 000, 001, 000, 000, 000, 000, 000, 000, 000 ), # D
+         ( 001, 010, 010, 010, 030, 002, 002, 002, 007, 012, 000,
+           003, 002, 006, 011, 010, 001, 002, 002, 002, 000, 001 ), # E
+         ( 001, 010, 010, 010, 030, 002, 002, 002, 007, 012, 020,
+           000, 003, 002, 001, 000, 000, 000, 000, 000, 000, 000 ), # F
+         ( 022, 012, 000, 001, 002, 036, 010, 022, 032, 022, 016,
+           010, 022, 032, 022, 000, 001, 000, 000, 000, 000, 000 ), # G
+         ( 001, 010, 010, 010, 031, 010, 021, 000, 002, 002, 002,
+           000, 011, 020, 031, 010, 010, 010, 000, 001, 000, 000 ), # H
+         ( 002, 004, 000, 001, 010, 010, 010, 000, 001, 000, 000,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # I
+         ( 010, 000, 031, 012, 032, 012, 010, 010, 001, 000, 000,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # J
+         ( 001, 010, 010, 010, 031, 002, 002, 003, 006, 022, 022,
+           022, 006, 022, 022, 022, 000, 001, 000, 000, 000, 000 ), # K
+         ( 010, 010, 010, 031, 010, 010, 010, 000, 002, 002, 002,
+           000, 001, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # L
+         ( 001, 010, 010, 010, 030, 012, 024, 030, 012, 024, 030,
+           010, 010, 010, 000, 001, 000, 000, 000, 000, 000, 000 ), # M
+         ( 001, 010, 010, 010, 030, 012, 012, 012, 030, 010, 010,
+           010, 000, 001, 000, 000, 000, 000, 000, 000, 000, 000 ), # N
+         ( 010, 000, 001, 010, 012, 032, 012, 016, 012, 032, 012,
+           001, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # O
+         ( 001, 010, 010, 010, 030, 002, 002, 022, 026, 022, 002,
+           002, 000, 001, 000, 000, 000, 000, 000, 000, 000, 000 ), # P
+         ( 002, 000, 001, 002, 012, 016, 012, 032, 012, 016, 012,
+           031, 012, 030, 001, 012, 000, 001, 000, 000, 000, 000 ), # Q
+         ( 001, 010, 010, 010, 030, 002, 002, 022, 026, 022, 002,
+           002, 006, 022, 022, 022, 000, 001, 000, 000, 000, 000 ), # R
+         ( 020, 000, 031, 022, 032, 022, 026, 022, 002, 022, 026,
+           022, 032, 022, 000, 001, 000, 000, 000, 000, 000, 000 ), # S
+         ( 002, 004, 000, 001, 010, 010, 010, 001, 002, 004, 007,
+           002, 002, 002, 000, 001, 000, 000, 000, 000, 000, 000 ), # T
+         ( 010, 010, 010, 031, 010, 010, 014, 032, 002, 014, 010,
+           010, 000, 001, 000, 000, 000, 000, 000, 000, 000, 000 ), # U
+         ( 010, 010, 010, 031, 014, 014, 014, 030, 014, 014, 014,
+           000, 001, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # V
+         ( 010, 010, 010, 031, 010, 010, 010, 030, 012, 024, 030,
+           012, 024, 030, 010, 010, 010, 000, 001, 000, 000, 000 ), # W
+         ( 001, 012, 012, 012, 037, 010, 010, 010, 031, 012, 012,
+           012, 000, 001, 000, 000, 000, 000, 000, 000, 000, 000 ), # X
+         ( 002, 004, 000, 001, 010, 020, 001, 012, 024, 037, 012,
+           024, 030, 012, 024, 000, 001, 000, 000, 000, 000, 000 ), # Y
+         ( 010, 010, 010, 000, 031, 002, 002, 002, 006, 012, 012,
+           012, 006, 002, 002, 002, 000, 001, 000, 000, 000, 000 ), # Z
+         ( 020, 000, 001, 010, 010, 024, 032, 002, 024, 016, 010,
+           024, 032, 002, 024, 000, 001, 000, 000, 000, 000, 000 ), # 0
+         ( 002, 004, 000, 007, 010, 010, 010, 030, 022, 000, 001,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # 1
+         ( 010, 010, 020, 000, 001, 022, 032, 022, 026, 022, 022,
+           012, 006, 002, 002, 002, 000, 001, 000, 000, 000, 000 ), # 2
+         ( 020, 000, 031, 022, 032, 022, 016, 022, 002, 006, 022,
+           022, 006, 002, 002, 002, 000, 001, 000, 000, 000, 000 ), # 3
+         ( 002, 002, 000, 007, 010, 010, 010, 030, 012, 012, 006,
+           002, 002, 002, 000, 001, 000, 000, 000, 000, 000, 000 ), # 4
+         ( 020, 000, 031, 022, 032, 022, 016, 022, 002, 002, 000,
+           016, 000, 002, 002, 002, 000, 001, 000, 000, 000, 000 ), # 5
+         ( 010, 020, 001, 022, 032, 022, 016, 022, 032, 022, 016,
+           010, 022, 032, 022, 000, 001, 000, 000, 000, 000, 000 ), # 6
+         ( 002, 000, 001, 020, 014, 012, 022, 006, 002, 002, 002,
+           001, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # 7
+         ( 020, 000, 001, 020, 022, 002, 022, 026, 022, 032, 022,
+           026, 022, 002, 022, 026, 022, 032, 022, 000, 001, 000 ), # 8
+         ( 020, 000, 031, 022, 032, 022, 016, 010, 022, 032, 022,
+           016, 022, 032, 022, 000, 001, 000, 000, 000, 000, 000 ), # 9
+         ( 002, 004, 000, 001, 010, 010, 010, 031, 012, 024, 007,
+           002, 002, 002, 000, 001, 000, 000, 000, 000, 000, 000 ), # +
+         ( 010, 020, 000, 000, 001, 002, 002, 002, 000, 001, 000,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # -
+         ( 020, 004, 001, 012, 012, 037, 010, 001, 002, 002, 036,
+           011, 030, 001, 012, 012, 000, 001, 000, 000, 000, 000 ), # *
+         ( 001, 012, 012, 012, 000, 001, 000, 000, 000, 000, 000,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # /
+         ( 002, 002, 000, 007, 024, 016, 010, 024, 000, 001, 000,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # (
+         ( 002, 000, 001, 024, 016, 010, 024, 001, 000, 000, 000,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # )
+         ( 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ),
+         ( 010, 000, 001, 002, 002, 002, 007, 010, 001, 002, 002,
+           002, 000, 001, 000, 000, 000, 000, 000, 000, 000, 000 ), # =
+         ( 000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ),
+         ( 001, 024, 030, 000, 001, 000, 000, 000, 000, 000, 000,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 ), # ,
+         ( 001, 000, 000, 001, 000, 000, 000, 000, 000, 000, 000,
+           000, 000, 000, 000, 000, 000, 000, 000, 000, 000, 000 )  # .
+         )
+
+    def plotChar (self, dc, xpos, ypos, size, ch):
+        """Draw a character using the 545 char data.
+        """
+        xpos += size
+        size /= 8
+        dx = 1
+        dy = -1
+        x = y = 0
+        if ch > len (self.chargen):
+            return
+        data = self.chargen[ch]
+        segs = [ ]
+        on = False
+        for c in data:
+            if c & 1:
+                on = not on
+                if on:
+                    segs = [ wx.Point ( size * x, size * y ) ]
+                elif len (segs) > 1:
+                    dc.DrawLines (segs, xpos, ypos)
+                    segs = [ ]
+            xcode = (c >> 1) & 3
+            ycode = (c >> 3) & 3
+            if xcode == 1:
+                x += dx * 2
+            elif xcode == 2:
+                x += dx
+            elif xcode == 3:
+                dx = -dx
+            if ycode == 1:
+                y += dy * 2
+            elif ycode == 2:
+                y += dy
+            elif ycode == 3:
+                dy = -dy
+            if on:
+                segs.append (wx.Point (x * size, y * size))
+        if len (segs) > 1:
+            dc.DrawLines (segs, xpos, ypos)
+                
+def o(port = 5106):
     ot = Oper (port)
     dt = Displaythread (ot)
+    return dt
+
+def d(port = 5107):
+    ot = Dd60 (port)
+    dt = Displaythread (None, ot)
     return dt
