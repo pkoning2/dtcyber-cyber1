@@ -131,6 +131,7 @@
 #define PREF_LINEDELAY   "lineDelay"
 #define PREF_AUTOLF      "autoLF"
 #define PREF_SPLITWORDS  "splitWords"
+#define PREF_SMARTPASTE  "smartPaste"
 #define PREF_CONVDOT7    "convDot7"
 #define PREF_CONV8SP     "conv8Sp"
 //tab6
@@ -270,11 +271,13 @@ FORCE_LINK(gnome_print)
 #endif
 
 // For wxWidgets 2.8
+#ifdef __WXMAC__
 #ifndef wxMAC
 #define wxMAC wxOS_MAC_OS
 #endif
 #ifndef wxMAC_DARWIN
 #define wxMAC_DARWIN wxOS_MAC_OSX_DARWIN
+#endif
 #endif
 
 extern int ptermOpenGsw (void *user);
@@ -594,10 +597,11 @@ public:
 	//tab5
     wxString    m_charDelay;
     wxString    m_lineDelay;
-    wxString    m_autoLF;    
+    wxString    m_autoLF;
 	bool		m_splitWords;
-    bool        m_convDot7;     
-    bool        m_conv8Sp;      
+	bool		m_smartPaste;
+    bool        m_convDot7;
+    bool        m_conv8Sp;
 	//tab6
 	wxString	m_Browser;      
 	wxString	m_Email;      
@@ -1088,6 +1092,7 @@ public:
 	wxTextCtrl* txtLineDelay;
 	wxComboBox* cboAutoLF;
 	wxCheckBox* chkSplitWords;
+	wxCheckBox* chkSmartPaste;
 	wxCheckBox* chkConvertDot7;
 	wxCheckBox* chkConvert8Spaces;
 	//tab6
@@ -1132,6 +1137,7 @@ public:
     wxString        m_lineDelay;
     wxString        m_autoLF;
 	bool			m_splitWords;
+	bool			m_smartPaste;
     bool            m_convDot7;
     bool            m_conv8Sp;
 	//tab6
@@ -1559,6 +1565,7 @@ bool PtermApp::OnInit (void)
 		m_lineDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_LINEDELAY), PASTE_LINEDELAY) );
 		m_autoLF.Printf (wxT ("%d"), m_config->Read (wxT (PREF_AUTOLF), 0L) );
 		m_splitWords = (m_config->Read (wxT (PREF_SPLITWORDS), 0L) != 0);
+		m_smartPaste = (m_config->Read (wxT (PREF_SMARTPASTE), 0L) != 0);
 		m_convDot7 = (m_config->Read (wxT (PREF_CONVDOT7), 0L) != 0);
 		m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);
 		//tab6
@@ -1769,6 +1776,7 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
 			else if (token.Cmp(wxT(PREF_LINEDELAY))==0)				m_lineDelay		= value;
 			else if (token.Cmp(wxT(PREF_AUTOLF))==0)				m_autoLF		= value;
 			else if (token.Cmp(wxT(PREF_SPLITWORDS))==0)			m_splitWords	= (value.Cmp(wxT("1"))==0);
+			else if (token.Cmp(wxT(PREF_SMARTPASTE))==0)			m_smartPaste	= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_CONVDOT7))==0)				m_convDot7		= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_CONV8SP))==0)				m_conv8Sp		= (value.Cmp(wxT("1"))==0);
 			//tab6
@@ -1817,6 +1825,7 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
     m_config->Write (wxT (PREF_LINEDELAY), atoi(m_lineDelay.mb_str()));
     m_config->Write (wxT (PREF_AUTOLF), atoi(m_autoLF.mb_str()));
     m_config->Write (wxT (PREF_SPLITWORDS), (m_splitWords) ? 1 : 0);
+    m_config->Write (wxT (PREF_SMARTPASTE), (m_smartPaste) ? 1 : 0);
     m_config->Write (wxT (PREF_CONVDOT7), (m_convDot7) ? 1 : 0);
     m_config->Write (wxT (PREF_CONV8SP), (m_conv8Sp) ? 1 : 0);
 	//tab6
@@ -2502,29 +2511,65 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     }
     else
     {
-        c = m_pasteText[nextindex++];
+        c = m_pasteText[nextindex];
         p = -1;
 
-        if (c <= wxT(' '))
+
+		bool found = false;
+		if (ptermApp->m_smartPaste)
+		{
+			wxString tascii[] = {
+								wxT(".       "), 
+								wxT("        "), 
+								wxT("<("), 
+								wxT(")>")
+								};
+			int kplato[] =  {
+							asciiToPlato['.'], 014,
+							014,			   -1,
+							024,               asciiToPlato['0'],
+							024,               asciiToPlato['1']
+							};
+			for (int i = 0; !found && i < (int)(sizeof(tascii) / sizeof(tascii[0])); i++)
+				if (tascii[i].Cmp(m_pasteText.Mid(nextindex,tascii[i].Length())) == 0)
+				{
+					ptermSendKey(kplato[2*i+0]);
+					if (kplato[2*i+1] != -1)
+						ptermSendKey(kplato[2*i+1]);
+					nextindex += tascii[i].Length()-1;
+					found = true;
+				}
+		}
+        if (!found && (c <= wxT(' ')))
         {
-            // Control char or space -- most get ignored
-            if (c == wxT ('\n'))
-            {
+            // Most get ignored
+			switch (c)
+			{
+			case wxT ('\n'):
                 p = 026;        // NEXT
-            }
-            else if (c == wxT ('\t'))
-            {
+				break;
+            case wxT ('\t'):
                 p = 014;        // TAB
-            }
-            else if (c == wxT (' '))
-            {
+				break;
+            case wxT (' '):
                 p = 0100;       // space
-            }
+				break;
+			case wxT('\xAB'):	// assignment arrow
+				p = 015;
+				break;
+			case wxT('\xBB'):	// arrow
+	            ptermSendKey (024);
+	            p = asciiToPlato['6'];
+				break;
+			}
+			found = true;
         }
-        else if (c < (int) (sizeof (asciiToPlato) / sizeof (asciiToPlato[0])))
-        {
-            p = asciiToPlato[c];
-        }
+		if (!found && (c < (int)(sizeof(asciiToPlato) / sizeof(asciiToPlato[0]))))
+		{
+			p = asciiToPlato[c];
+			found = true;
+		}
+		nextindex++;
 
         if (p != -1)
         {
@@ -3121,6 +3166,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_lineDelay = dlg.m_lineDelay;
         ptermApp->m_autoLF = dlg.m_autoLF;
 		ptermApp->m_splitWords = dlg.m_splitWords;
+		ptermApp->m_smartPaste = dlg.m_smartPaste;
 		ptermApp->m_convDot7 = dlg.m_convDot7;	//currently disabled
 		ptermApp->m_conv8Sp = dlg.m_conv8Sp;		//currently disabled
 		//tab6
@@ -3163,6 +3209,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay.mb_str()));
         ptermApp->m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF.mb_str()));
         ptermApp->m_config->Write (wxT (PREF_SPLITWORDS), (dlg.m_splitWords) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_SMARTPASTE), (dlg.m_smartPaste) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);
 		//tab6
@@ -6435,6 +6482,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 //	wxComboBox* cboAutoLF;
 	wxStaticText* lblAutoNewLine2;
 //	wxCheckBox* chkSplitWords;
+//	wxCheckBox* chkSmartPaste;
 //	wxCheckBox* chkConvertDot7;
 //	wxCheckBox* chkConvert8Spaces;
 	wxStaticText* lblExplainConversions;
@@ -6707,6 +6755,9 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	chkSplitWords = new wxCheckBox( tab5, wxID_ANY, _("Allow words to be split across lines"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkSplitWords->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
 	bs51->Add( chkSplitWords, 0, wxALL, 5 );
+	chkSmartPaste = new wxCheckBox( tab5, wxID_ANY, _("Use TUTOR pasting (certain sequences are treated specially)"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkSmartPaste->SetFont( wxFont( 10, 74, 90, 90, false, wxT("Arial") ) );
+	bs51->Add( chkSmartPaste, 0, wxALL, 5 );
 	chkConvertDot7 = new wxCheckBox( tab5, wxID_ANY, _("Convert periods followed by 7 spaces into period/tab*"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkConvertDot7->SetValue(true);
 	chkConvertDot7->Hide();
@@ -6868,6 +6919,8 @@ bool PtermPrefDialog::SaveProfile(wxString profile)
 	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_SPLITWORDS "=%d"), (m_splitWords) ? 1 : 0);
 	file.AddLine(buffer);
+    buffer.Printf(wxT (PREF_SMARTPASTE "=%d"), (m_smartPaste) ? 1 : 0);
+	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_CONVDOT7 "=%d"), (m_convDot7) ? 1 : 0);
 	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_CONV8SP "=%d"), (m_conv8Sp) ? 1 : 0);
@@ -6947,6 +7000,7 @@ void PtermPrefDialog::SetControlState(void)
     m_lineDelay = ptermApp->m_lineDelay;
     m_autoLF = ptermApp->m_autoLF;
 	m_splitWords = ptermApp->m_splitWords;
+	m_smartPaste = ptermApp->m_smartPaste;
 	m_convDot7 = ptermApp->m_convDot7;
 	m_conv8Sp = ptermApp->m_conv8Sp;
 	//tab6
@@ -7015,6 +7069,7 @@ void PtermPrefDialog::SetControlState(void)
 	txtLineDelay->SetValue( m_lineDelay );
 	cboAutoLF->SetValue(m_autoLF );
 	chkSplitWords->SetValue( m_splitWords );
+	chkSmartPaste->SetValue( m_smartPaste );
 	chkConvertDot7->SetValue( m_convDot7 );
 	chkConvert8Spaces->SetValue( m_conv8Sp );
 	//tab6
@@ -7195,6 +7250,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		m_lineDelay.Printf (wxT ("%d"), PASTE_LINEDELAY );
 		m_autoLF = wxT( "0" );
         m_splitWords = false;
+        m_smartPaste = false;
         m_convDot7 = false;
         m_conv8Sp = false;
 		//tab6
@@ -7233,6 +7289,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		txtLineDelay->SetValue ( m_lineDelay );
 		cboAutoLF->SetValue ( m_autoLF );
 		chkSplitWords->SetValue ( m_splitWords );
+		chkSmartPaste->SetValue ( m_smartPaste );
 		chkConvertDot7->SetValue ( m_convDot7 );
 		chkConvert8Spaces->SetValue ( m_conv8Sp );
 		//tab6
@@ -7285,6 +7342,8 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
 	//tab5
     else if (event.GetEventObject () == chkSplitWords)
         m_splitWords = event.IsChecked ();
+    else if (event.GetEventObject () == chkSmartPaste)
+        m_smartPaste = event.IsChecked ();
     else if (event.GetEventObject () == chkConvertDot7)
         m_convDot7 = event.IsChecked ();
     else if (event.GetEventObject () == chkConvert8Spaces)
