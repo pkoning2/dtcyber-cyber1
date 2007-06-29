@@ -5380,7 +5380,7 @@ void PtermFrame::SetFontFlags (int n)
 **------------------------------------------------------------------------*/
 void PtermFrame::SetFontActive ()
 {
-	m_usefont = m_fontface.Cmp(wxT("default")) != 0;
+	m_usefont = m_fontface.Cmp(wxT("default")) > 1;
 	if (m_usefont)
 	{
 		m_font = new wxFont;
