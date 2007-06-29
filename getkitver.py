@@ -15,5 +15,5 @@ for l in f:
         if len (nums2) == 3:
             print "%d.%d%d" % tuple (nums2)
         else:
-            print "%d.%d%d-%d" % tuple (nums2)
+            print "%d.%d%d" % tuple (nums2)[:3]
         sys.exit (0)

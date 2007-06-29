@@ -151,12 +151,12 @@ pterm-src: ptermversion.h
 	mkdir pterm-$(PTERMVERSION)
 	cd pterm-$(PTERMVERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
 	cd pterm-$(PTERMVERSION); for f in license.txt *.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c 8080a.cpp Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
-	tar chzf /lhome/pkoning/pterm-linux-src-v$(PTERMVERSION).tar.gz pterm-$(PTERMVERSION)
+	tar chzf $(HOME)/pterm-linux-src-v$(PTERMVERSION).tar.gz pterm-$(PTERMVERSION)
 	rm -rf pterm-$(PTERMVERSION)
 
 pterm-rpm: pterm-src pterm.spec.in ptermversion.h
 	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm.spec.in > pterm.spec
-	cp /lhome/pkoning/pterm-linux-src-v$(PTERMVERSION).tar.gz /usr/src/redhat/SOURCES
+	cp $(HOME)/pterm-linux-src-v$(PTERMVERSION).tar.gz /usr/src/redhat/SOURCES
 	rpmbuild -ba pterm.spec
 
 pterm.dep: $(PTOBJS:.o=.d)
@@ -182,7 +182,7 @@ pterm_sdl.d : pterm_sdl.c
 	msgfmt -o $@ $<
 
 %.po : pterm_wx.cpp
-	xgettext  --keyword=_ --from-code=iso-8859-1 --msgid-bugs-address=paul@cyber1.org -C -o pterm.pot pterm_wx.cpp
+	xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
 	msgmerge -U $@ pterm.pot
 
 
