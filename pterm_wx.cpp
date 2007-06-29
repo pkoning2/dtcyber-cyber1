@@ -271,7 +271,7 @@ FORCE_LINK(gnome_print)
 #endif
 
 // For wxWidgets 2.8
-#ifdef __WXMAC__
+#ifdef wxOS_MAC_OS
 #ifndef wxMAC
 #define wxMAC wxOS_MAC_OS
 #endif
