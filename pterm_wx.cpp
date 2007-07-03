@@ -15,6 +15,7 @@
 #if defined(__WXMSW__)
 #define wxUse_DC_Cache	-1
 #endif
+#define TUTOR_MACROS false
 
 /*
 **  -----------------
@@ -735,6 +736,7 @@ public:
     void OnMacro6 (wxCommandEvent &event);
     void OnMacro7 (wxCommandEvent &event);
     void OnMacro8 (wxCommandEvent &event);
+    void OnMacro9 (wxCommandEvent &event);
     void OnPaste (wxCommandEvent &event);
     void OnUpdateUIPaste (wxUpdateUIEvent& event);
     void OnSaveScreen (wxCommandEvent &event);
@@ -1230,6 +1232,7 @@ enum
     Pterm_Macro6,
     Pterm_Macro7,
     Pterm_Macro8,
+    Pterm_Macro9,
 
     // Menu items with standard ID values
     Pterm_Print = wxID_PRINT,
@@ -1413,6 +1416,7 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Macro6, PtermFrame::OnMacro6)	
     EVT_MENU(Pterm_Macro7, PtermFrame::OnMacro7)	
     EVT_MENU(Pterm_Macro8, PtermFrame::OnMacro8)	
+    EVT_MENU(Pterm_Macro9, PtermFrame::OnMacro9)	
     EVT_MENU(Pterm_Paste, PtermFrame::OnPaste)
     EVT_MENU(Pterm_PastePrint, PtermFrame::OnPaste)
     EVT_UPDATE_UI(Pterm_Paste, PtermFrame::OnUpdateUIPaste)
@@ -2124,7 +2128,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     menuEdit->Append(Pterm_Exec, _("Execute URL") ACCELERATOR ("\tCtrl-X"), _("Execute URL"));
     menuEdit->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
     menuEdit->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
-/*
+
+#if TUTOR_MACROS
     menuEdit->AppendSeparator ();
     menuEdit->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
     menuEdit->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
@@ -2135,7 +2140,9 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     menuEdit->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
     menuEdit->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
     menuEdit->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
-*/
+    menuEdit->Append(Pterm_Macro9, _("Menu colorization") ACCELERATOR ("\tCtrl-9"), _("Menu colorization"));
+#endif
+
     menuEdit->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
     menuEdit->Enable (Pterm_Exec, false);
     menuEdit->Enable (Pterm_MailTo, false);
@@ -2155,7 +2162,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     menuPopup->Append(Pterm_Exec, _("Execute URL") ACCELERATOR ("\tCtrl-X"), _("Execute URL"));
     menuPopup->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
     menuPopup->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
-/*
+
+#if TUTOR_MACROS
     menuPopup->AppendSeparator ();
     menuPopup->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
     menuPopup->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
@@ -2166,7 +2174,9 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     menuPopup->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
     menuPopup->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
     menuPopup->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
-*/
+    menuPopup->Append(Pterm_Macro9, _("Menu colorization") ACCELERATOR ("\tCtrl-9"), _("Menu colorization"));
+#endif
+
     menuPopup->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
     menuPopup->Enable (Pterm_Exec, false);
     menuPopup->Enable (Pterm_MailTo, false);
@@ -2929,6 +2939,18 @@ void PtermFrame::OnMacro8 (wxCommandEvent &event)
 {
 	int key[] = {0103,0117,0114,0117,0122,0100,0100,0100,0104,0111,0123,0120,0114,0101,0131,0134,0132,0103,0136,0124,0105,0130,0124,-1};
 	ptermSendKeys(key);
+}
+void PtermFrame::OnMacro9 (wxCommandEvent &event)
+{
+	// 8boxes, <c,zc.keys> 2 boxes <c,zc.text>
+	int key0[] = {0034,0034,0034,0034,0034,0034,0034,0034,-1};
+	ptermSendKeys(key0);
+	int key3[] = {0024,0000,0103,0137,0132,0103,0136,0113,0105,0131,0123,0024,0001,-1};
+	ptermSendKeys(key3);
+	int key[] = {0034,0034,-1};
+	ptermSendKeys(key);
+	int key4[] = {0024,0000,0103,0137,0132,0103,0136,0124,0105,0130,0124,0024,0001,-1};
+	ptermSendKeys(key4);
 }
 
 void PtermFrame::OnPaste (wxCommandEvent &event)
