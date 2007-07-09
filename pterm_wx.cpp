@@ -3255,7 +3255,7 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
     {
         SetStatusBar (NULL);
     }
-    else if (ptermApp->m_showStatusBar)
+    else if (ptermApp->m_showStatusBar && m_statusBar != NULL)
     {
         SetStatusBar (m_statusBar);
     }
@@ -3652,7 +3652,10 @@ void PtermFrame::ptermSetName (wxString &winName)
 
 void PtermFrame::ptermSetStatus (wxString &str)
 {
-    m_statusBar->SetStatusText(str, STATUS_CONN);
+    if (m_statusBar != NULL)
+    {
+        m_statusBar->SetStatusText(str, STATUS_CONN);
+    }
 }
 
 void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *chardata)
@@ -8964,7 +8967,10 @@ void PtermCanvas::ClearRegion (void)
 		m_owner->menuPopup->Enable (Pterm_Exec, false);
 		m_owner->menuPopup->Enable (Pterm_MailTo, false);
 		m_owner->menuPopup->Enable (Pterm_SearchThis, false);
-        m_owner->m_statusBar->SetStatusText (wxT(""), STATUS_TIP);
+        if (m_owner->m_statusBar != NULL)
+        {
+            m_owner->m_statusBar->SetStatusText (wxT(""), STATUS_TIP);
+        }
 		Refresh (false);
 	}
 }
@@ -9010,7 +9016,10 @@ void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
 				msg.Printf (wxT ("%dx%d, f=%d-%d"),
                             m_regionWidth, m_regionHeight, scfx, ecfx);
 		}
-        m_owner->m_statusBar->SetStatusText (msg, STATUS_TIP);
+        if (m_owner->m_statusBar != NULL)
+        {
+            m_owner->m_statusBar->SetStatusText (msg, STATUS_TIP);
+        }
     }
     
     event.Skip ();
