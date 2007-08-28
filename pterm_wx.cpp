@@ -1474,7 +1474,7 @@ bool PtermApp::OnInit (void)
     m_locale.AddCatalog(wxT("pterm"));
 
 #ifdef DEBUGLOG
-    logwindow = new wxLogWindow (NULL, "pterm log", true, false);
+    logwindow = new wxLogWindow (NULL, wxT("pterm log"), true, false);
 #endif
 
     if (argc > 3)
@@ -1861,6 +1861,7 @@ wxString PtermApp::ProfileFileName(wxString profile)
 void PtermApp::OnAbout(wxCommandEvent&)
 {
     wxMessageBox(wxT (STRPRODUCTNAME " V" STRFILEVER
+                      "\n  built with wxWidgets V" WXVERSION
                       "\n" STRLEGALCOPYRIGHT),
                       _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
 }
@@ -2075,8 +2076,8 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     SetIcon(wxICON(pterm_32));
 
     // set the line style to projecting
-    m_foregroundPen.SetCap (wxCAP_PROJECTING);
-    m_backgroundPen.SetCap (wxCAP_PROJECTING);
+    m_foregroundPen.SetCap (wxCAP_BUTT);
+    m_backgroundPen.SetCap (wxCAP_BUTT);
 
 #if wxUSE_MENUS
     // create a menu bar
@@ -2370,11 +2371,11 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 			return;
 		}
         
-		#ifdef DEBUGLOG
-			wxLogMessage ("processing data from plato %07o", word);
-		#elif DEBUG
-			printf ("processing data from plato %07o\n", word);
-		#endif
+#ifdef DEBUGLOG
+        wxLogMessage (wxT("processing data from plato %07o"), word);
+#elif DEBUG
+        printf ("processing data from plato %07o\n", word);
+#endif
 		procPlatoWord (word, m_conn->Ascii ());
 	}
 
@@ -2409,11 +2410,11 @@ void PtermFrame::OnTimer (wxTimerEvent &)
         return;
     }
 #ifdef DEBUGLOG
-        wxLogMessage ("processing data from plato %07o", m_nextword);
+    wxLogMessage (wxT("processing data from plato %07o"), m_nextword);
 #elif DEBUG
-        printf ("processing data from plato %07o\n", m_nextword);
+    printf ("processing data from plato %07o\n", m_nextword);
 #endif
-        procPlatoWord (m_nextword, m_conn->Ascii ());
+    procPlatoWord (m_nextword, m_conn->Ascii ());
     
     // See what's next.  If no delay is called for, just process it, keep
     // going until no more data or we get a word with delay.
@@ -2434,7 +2435,7 @@ void PtermFrame::OnTimer (wxTimerEvent &)
             break;
         }
 #ifdef DEBUGLOG
-        wxLogMessage ("processing data from plato %07o", word);
+        wxLogMessage (wxT("processing data from plato %07o"), word);
 #elif DEBUG
         printf ("processing data from plato %07o\n", word);
 #endif
@@ -5869,7 +5870,7 @@ void PtermFrame::ptermSendKey (int key)
             fprintf (traceF, "key to plato %03o\n", key);
         }
 #ifdef DEBUGLOG
-        wxLogMessage ("key to plato %03o", key);
+        wxLogMessage (wxT("key to plato %03o"), key);
 #elif DEBUGKEY
         printf ("key to plato %03o\n", key);
 #endif
@@ -8376,10 +8377,16 @@ void PtermCanvas::OnDraw(wxDC &dc)
     // debug charmaps
     for (i = 0; i <= 4; i++)
     {
-        dc.Blit (XTOP, YADJUST(i * 48 + 48), vCharXSize(m_scale),
+        dc.Blit (XTOP, YADJUST(i * 48 + 128), vCharXSize(m_scale),
                  32 * m_scale, 
                  m_owner->m_charDC[i], 0, 0, wxCOPY);
     }
+    dc.SetPen (*wxRED_PEN);
+    for (i = 0; i < 512; i += 4)
+    {
+        dc.DrawPoint (XADJUST(i), YADJUST (70));
+    }
+    
 #endif
     if (m_regionHeight != 0 && m_regionWidth != 0)
     {
@@ -8668,10 +8675,12 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             pc = 0130;      // down arrow (x)
             break;
         case WXK_PRIOR:
+        case WXK_PAGEUP:
         case WXK_NUMPAD_PRIOR:
             pc = 020;       // super
             break;
         case WXK_NEXT:
+        case WXK_PAGEDOWN:
         case WXK_NUMPAD_NEXT:
             pc = 021;       // sub
             break;
@@ -8765,7 +8774,7 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
     {
         key = event.m_keyCode;
 #ifdef DEBUGLOG
-        wxLogMessage ("dumb tty key %d\n", key);
+        wxLogMessage (wxT("dumb tty key %d\n"), key);
 #endif
         m_owner->m_conn->SendData (&key, 1);
         return;
