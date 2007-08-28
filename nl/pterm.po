@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V2.10\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-08-07 15:07-0400\n"
+"POT-Creation-Date: 2007-08-28 15:00-0400\n"
 "PO-Revision-Date: 2005-04-22 17:30-0400\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -213,7 +213,7 @@ msgstr ""
 
 #: pterm_wx.cpp:2144 pterm_wx.cpp:2178
 msgid "Menu colorization"
-msgstr ""
+msgstr "Menukleuren"
 
 #: pterm_wx.cpp:2186 pterm_wx.cpp:2190
 #, fuzzy
@@ -240,7 +240,7 @@ msgstr "Aan het verbinden..."
 msgid "Can't copy image to the clipboard"
 msgstr "Kopieren van het scherm naar het klembord mislukt."
 
-#: pterm_wx.cpp:2735 pterm_wx.cpp:2961 pterm_wx.cpp:8935
+#: pterm_wx.cpp:2735 pterm_wx.cpp:2961 pterm_wx.cpp:8943
 msgid "Can't open clipboard."
 msgstr "Openen van klembord mislukt."
 
@@ -343,11 +343,11 @@ msgstr " PLATO toetsenbord "
 
 #: pterm_wx.cpp:6542
 msgid "Use this page to manage your connection preference profiles."
-msgstr "Gebruik deze bladzijde om bewaarde programmavoorkeuren te bewerken"
+msgstr "Gebruik deze bladzijde om voorkeurbestanden te bewerken"
 
 #: pterm_wx.cpp:6549
 msgid "Select a profile above, then click a button below."
-msgstr "Kies een bewaarde programmavoorkeur, en klik dan op een button hieronder"
+msgstr "Kies een voorkeurbestand, en klik dan op een button hieronder"
 
 #: pterm_wx.cpp:6553
 msgid "Save"
@@ -606,7 +606,7 @@ msgstr "OK"
 
 #: pterm_wx.cpp:6843 pterm_wx.cpp:7577 pterm_wx.cpp:7753
 msgid "Cancel"
-msgstr ""
+msgstr "Annuleer"
 
 #: pterm_wx.cpp:6846
 msgid "Defaults"
@@ -727,12 +727,12 @@ msgstr "Niet verbonden"
 #: pterm_wx.cpp:8190
 #, c-format
 msgid "Connection failed @ %s on "
-msgstr "Verbinding mislukt op %s naar "
+msgstr "Verbinding mislukt om %s op "
 
 #: pterm_wx.cpp:8192
 #, c-format
 msgid "Dropped connection @ %s on "
-msgstr "Verbinding verloren op %s naar "
+msgstr "Verbinding verloren om %s op "
 
 #: pterm_wx.cpp:8195
 #, c-format
@@ -744,7 +744,6 @@ msgstr "%s naar "
 msgid " Retrying..."
 msgstr "Nogmaals proberen..."
 
-#: pterm_wx.cpp:8942
+#: pterm_wx.cpp:8950
 msgid "Can't copy text to the clipboard"
 msgstr "Kopieren van tekst naar het klembord mislukt"
-
