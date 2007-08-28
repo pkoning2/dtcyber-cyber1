@@ -32,8 +32,10 @@ endif
 endif
 ifeq ("$(HOST)","Darwin")
 ARCHCFLAGS = -arch i386 -arch ppc
+#ARCHCFLAGS =  -arch ppc
 #EXTRALIBS= -lwxpng-2.6 -lwxtiff-2.6
-DEFWXDIR = /usr/local/wxstaticu.270
+DEFWXDIR = /usr/local/wxstaticu.264
+MSGFLAGS =  
 endif
 
 # if the wxmumble dir doesn't exist, try for plain /usr/local
@@ -47,19 +49,22 @@ PATH:=$(WXDIR)/bin:/usr/local/bin:$(PATH)
 WXCONFIG ?= wx-config
 CXXFLAGS = `$(WXCONFIG) --cxxflags`
 WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
+WXVERSION = `$(WXCONFIG) --version` 
 
 GCCVERSION := $(shell gcc --version | head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
 
 SDLPATH ?= /usr/local
-SDLINCL = `sdl-config --cflags`
+SDLINCL ?= `sdl-config --cflags`
 PATH:=$(SDLPATH)/bin:$(PATH)
 ifeq ("$(TYPE)","static")
-SDLLIBS = `sdl-config --static-libs`
+SDLLIBS ?= `sdl-config --static-libs`
 else
-SDLLIBS = `sdl-config --libs`
+SDLLIBS ?= `sdl-config --libs`
 endif
 #SETPATH= -Wl,-rpath,$(WXDIR)/lib -Wl,-rpath,$(SDLPATH)/lib
+
+MSGFLAGS ?= -U
 
 SDLCFLAGS = $(SDLINCL)
 
@@ -70,7 +75,7 @@ LANGUAGES = $(shell cat languages)
 MOFILES = $(addsuffix /pterm.mo,$(LANGUAGES))
 endif
 
-.PHONY : pterm-kit langdirs
+.PHONY : pterm-kit langdirs wxversion pterm-v$(PTERMVERSION).tar.bz2
 
 pterm:	$(PTOBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
@@ -83,6 +88,12 @@ else
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
 endif
 endif
+
+wxversion.h: wxversion
+	echo "#define WXVERSION \"$(WXVERSION)\"" > wxversion.h.tmp
+	if [ ! -r wxversion.h ]; then mv -f wxversion.h.tmp wxversion.h; else \
+	  if cmp -s wxversion.h.tmp wxversion.h; then rm -f wxversion.h.tmp; \
+	    else mv -f wxversion.h.tmp wxversion.h; fi; fi
 
 dd60x:	$(SOBJS) dd60x.o knob.o iir.o 
 	$(CXX) $(LDFLAGS) -o $@ $+ $(SDLLIBS) $(WXLIBS) $(SETPATH)
@@ -139,11 +150,12 @@ pterm-kit:
 	$(MAKE) pterm-$(PTERMVERSION).dmg TYPE=static 
 
 else
-pterm-kit:  $(MOFILES)
+pterm-kit:  $(MOFILES) pterm-v$(PTERMVERSION).tar.bz2
 	$(MAKE) pterm TYPE=static 
-	tar cjf pterm-v$(PTERMVERSION).tar.bz2 --exclude '*CVS*' --exclude '*~'  --exclude '*.po' license.txt *.h pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c pterm_32.xpm Makefile.wxpterm Makefile.common Makefile languages pterm $(LANGUAGES)
 
 endif
+pterm-v$(PTERMVERSION).tar.bz2:
+	tar cjf pterm-v$(PTERMVERSION).tar.bz2 --exclude '*CVS*' --exclude '*~'  --exclude '*.po' license.txt *.h pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c pterm_32.xpm Makefile.wxpterm Makefile.common Makefile languages pterm $(LANGUAGES)
 
 mofiles: $(MOFILES)
 
@@ -183,7 +195,7 @@ pterm_sdl.d : pterm_sdl.c
 
 %.po : pterm_wx.cpp
 	xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
-	msgmerge -U $@ pterm.pot
+	msgmerge $(MSGFLAGS) $@ pterm.pot
 
 
 ifeq ($(MAKECMDGOALS),pterm)

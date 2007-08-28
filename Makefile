@@ -85,7 +85,7 @@ gxdtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)
 
 clean:
-	rm -rf *.o *.d *.pcf g3 g5 x86 dd60 dtoper pterm pterm*.dmg Pterm.app
+	rm -rf *.o *.d *.i *.ii *.pcf g3 g5 x86 dd60 dtoper pterm pterm*.dmg Pterm.app
 
 blackbox: blackbox.o charset.o dtnetsubs.o
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)

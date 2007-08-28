@@ -3,11 +3,12 @@
 # This file is distributed under the same license as the PACKAGE package.
 # Paul Koning <paul@cyber1.org>, 2005.
 #
+#: pterm_wx.cpp:6574 pterm_wx.cpp:6813 pterm_wx.cpp:6818 pterm_wx.cpp:6824
 msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V2.10\n"
-"Report-Msgid-Bugs-To: paul@cyber1.org\n"
-"POT-Creation-Date: 2006-11-06 16:36-0500\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-08-07 15:07-0400\n"
 "PO-Revision-Date: 2005-04-22 17:30-0400\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -15,204 +16,292 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: pterm_wx.cpp:386
+#: pterm_wx.cpp:449
 msgid "Pterm printout"
 msgstr "Pterm afdruk"
 
-#: pterm_wx.cpp:1288
+#: pterm_wx.cpp:1637
 msgid "Connect to PLATO"
 msgstr "Met PLATO verbinden"
 
-#: pterm_wx.cpp:1350
-#, fuzzy
-msgid "Copyright © 2004-2006 by Paul Koning."
-msgstr "Copyright  2005 van Paul Koning."
-
-#: pterm_wx.cpp:1352 pterm_wx.cpp:1525 pterm_wx.cpp:1689
+#: pterm_wx.cpp:1866 pterm_wx.cpp:1988 pterm_wx.cpp:2198
 msgid "About Pterm"
 msgstr "Over Pterm"
 
-#: pterm_wx.cpp:1366
+#: pterm_wx.cpp:1880
 msgid "Keyboard Help"
 msgstr "Toetsenbordbeschrijving"
 
-#: pterm_wx.cpp:1395
-msgid "Pterm Preferences"
-msgstr "Pterm voorkeuren"
+#: pterm_wx.cpp:1973 pterm_wx.cpp:2101
+#, fuzzy
+msgid "New Connection..."
+msgstr "Aan het verbinden..."
 
-#: pterm_wx.cpp:1508 pterm_wx.cpp:1634
-msgid "New Connection...\tCtrl-N"
-msgstr "Nieuwe verbinding...\tCtrl-N"
-
-#: pterm_wx.cpp:1509 pterm_wx.cpp:1635
+#: pterm_wx.cpp:1973 pterm_wx.cpp:2101
 msgid "Connect to a PLATO host"
 msgstr "Aan een PLATO-systeem verbinden"
 
-#: pterm_wx.cpp:1510 pterm_wx.cpp:1654
+#: pterm_wx.cpp:1974 pterm_wx.cpp:2114
 msgid "Preferences..."
 msgstr "Voorkeuren..."
 
-#: pterm_wx.cpp:1511 pterm_wx.cpp:1655
+#: pterm_wx.cpp:1974 pterm_wx.cpp:2114
 msgid "Set program configuration"
 msgstr "Stel de voorkeuren van het programma in"
 
-#: pterm_wx.cpp:1513 pterm_wx.cpp:1659
+#: pterm_wx.cpp:1976 pterm_wx.cpp:2117
 msgid "Exit"
 msgstr "Programma sluiten"
 
-#: pterm_wx.cpp:1513 pterm_wx.cpp:1659
+#: pterm_wx.cpp:1976 pterm_wx.cpp:2117
 msgid "Quit this program"
 msgstr "Beindig het programma"
 
-#: pterm_wx.cpp:1517 pterm_wx.cpp:1696
+#: pterm_wx.cpp:1980 pterm_wx.cpp:2203
 msgid "File"
 msgstr "Bestand"
 
 # msgid "About Pterm"
 # msgstr "Over Pterm"
-#: pterm_wx.cpp:1525 pterm_wx.cpp:1690
+#: pterm_wx.cpp:1988 pterm_wx.cpp:2198
 msgid "Show about dialog"
 msgstr "Toon programma informatie"
 
-#: pterm_wx.cpp:1526 pterm_wx.cpp:1691
+#: pterm_wx.cpp:1989 pterm_wx.cpp:2199
 msgid "Pterm keyboard"
 msgstr "Pterm toetsenbord"
 
-#: pterm_wx.cpp:1526 pterm_wx.cpp:1692
+#: pterm_wx.cpp:1989 pterm_wx.cpp:2199
 msgid "Show keyboard description"
 msgstr "Toon toetsenbordbeschrijving"
 
-#: pterm_wx.cpp:1533 pterm_wx.cpp:1707
+#: pterm_wx.cpp:1996 pterm_wx.cpp:2214
 msgid "Help"
 msgstr "Help"
 
 # msgid "New Connection...\tCtrl-N"
 # msgstr "Nieuwe verbinding...\tCtrl-N"
-#: pterm_wx.cpp:1640
+#: pterm_wx.cpp:2106
 msgid "Connect Again"
 msgstr "Nogmaals Verbinden"
 
-#: pterm_wx.cpp:1641
+#: pterm_wx.cpp:2106
 msgid "Connect to the same host"
 msgstr "Verbinden aan hetzelfde systeem"
 
-#: pterm_wx.cpp:1647
+#: pterm_wx.cpp:2109
 msgid "Save Screen"
 msgstr "Scherm kopiren"
 
-#: pterm_wx.cpp:1648
+#: pterm_wx.cpp:2109
 msgid "Save screen image to file"
 msgstr "Scherm opslaan in"
 
-#: pterm_wx.cpp:1649
+#: pterm_wx.cpp:2110
 msgid "Print..."
 msgstr "Afdrukken..."
 
-#: pterm_wx.cpp:1650
+#: pterm_wx.cpp:2110
 msgid "Print screen content"
 msgstr "Afdrukvoorbeeld"
 
-#: pterm_wx.cpp:1651
+#: pterm_wx.cpp:2111
 msgid "Page Setup..."
 msgstr "Pagina-instelling..."
 
-#: pterm_wx.cpp:1651
+#: pterm_wx.cpp:2111
 msgid "Printout page setup"
 msgstr "Pagina-instelling"
 
-#: pterm_wx.cpp:1652
+#: pterm_wx.cpp:2112
 msgid "Print Preview"
 msgstr "Afdrukvoorbeeld"
 
-#: pterm_wx.cpp:1652
+#: pterm_wx.cpp:2112
 msgid "Preview screen print"
 msgstr "Bekijk afdrukvoorbeeld"
 
-# msgid "Preferences..."
-# msgstr "Voorkeuren..."
-#: pterm_wx.cpp:1657
-msgid "Close\tCtrl-W"
-msgstr "Verbinding sluiten\tCtrl-W"
+#: pterm_wx.cpp:2116
+msgid "Close"
+msgstr ""
 
-#: pterm_wx.cpp:1658
+#: pterm_wx.cpp:2116
 msgid "Close this window"
 msgstr "Sluit dit venster"
 
 # msgid "Exit"
 # msgstr "Programma sluiten"
-#: pterm_wx.cpp:1663
+#: pterm_wx.cpp:2120 pterm_wx.cpp:2154
 msgid "Copy Screen"
 msgstr "Scherm kopiren"
 
-#: pterm_wx.cpp:1663
+#: pterm_wx.cpp:2120 pterm_wx.cpp:2154
 msgid "Copy screen to clipboard"
 msgstr "Kopir scherm naar het klembord"
 
-#: pterm_wx.cpp:1664
+#: pterm_wx.cpp:2121 pterm_wx.cpp:2155
 msgid "Copy text"
 msgstr "Tekst kopiren"
 
-#: pterm_wx.cpp:1665
+#: pterm_wx.cpp:2121 pterm_wx.cpp:2155
 msgid "Copy text only to clipboard"
 msgstr "Kopir tekst naar het klembord"
 
-#: pterm_wx.cpp:1668
+#: pterm_wx.cpp:2124 pterm_wx.cpp:2158
 msgid "Paste ASCII"
 msgstr "Voer tekst in"
 
-#: pterm_wx.cpp:1669
+#: pterm_wx.cpp:2124 pterm_wx.cpp:2158
 msgid "Paste plain text"
 msgstr "Voeg gewone tekst in"
 
-#: pterm_wx.cpp:1671
+#: pterm_wx.cpp:2126 pterm_wx.cpp:2160
 msgid "Paste Printout"
 msgstr "Voeg afdruktekst in"
 
-#: pterm_wx.cpp:1672
+#: pterm_wx.cpp:2126 pterm_wx.cpp:2160
 msgid "Paste Cyber printout format"
 msgstr "Voeg tekst in afdrukvorm in"
 
-#: pterm_wx.cpp:1680
-msgid "Full Screen\tCtrl-U"
+#: pterm_wx.cpp:2129 pterm_wx.cpp:2163
+msgid "Execute URL"
+msgstr ""
+
+#: pterm_wx.cpp:2130 pterm_wx.cpp:2164
+msgid "Mail to..."
+msgstr ""
+
+#: pterm_wx.cpp:2131 pterm_wx.cpp:2165
+msgid "Search this..."
+msgstr ""
+
+#: pterm_wx.cpp:2135 pterm_wx.cpp:2169
+msgid "Box 8x"
+msgstr ""
+
+#: pterm_wx.cpp:2136 pterm_wx.cpp:2170
+msgid "<c,zc.errf>"
+msgstr ""
+
+#: pterm_wx.cpp:2137 pterm_wx.cpp:2171
+msgid "<c,zc.info>"
+msgstr ""
+
+#: pterm_wx.cpp:2138 pterm_wx.cpp:2172
+msgid "<c,zc.keys>"
+msgstr ""
+
+#: pterm_wx.cpp:2139 pterm_wx.cpp:2173
+msgid "<c,zc.text>"
+msgstr ""
+
+#: pterm_wx.cpp:2140 pterm_wx.cpp:2174
+msgid "color zc.errf"
+msgstr ""
+
+#: pterm_wx.cpp:2141 pterm_wx.cpp:2175
+msgid "color zc.info"
+msgstr ""
+
+#: pterm_wx.cpp:2142 pterm_wx.cpp:2176
+msgid "color zc.keys"
+msgstr ""
+
+#: pterm_wx.cpp:2143 pterm_wx.cpp:2177
+msgid "color zc.text"
+msgstr ""
+
+#: pterm_wx.cpp:2144 pterm_wx.cpp:2178
+msgid "Menu colorization"
+msgstr ""
+
+#: pterm_wx.cpp:2186 pterm_wx.cpp:2190
+#, fuzzy
+msgid "Full Screen"
 msgstr "Schermvullend\tCtrl-U"
 
-#: pterm_wx.cpp:1681
+#: pterm_wx.cpp:2186 pterm_wx.cpp:2190
 msgid "Display in full screen mode"
 msgstr "Schermvullende weergave"
 
-#: pterm_wx.cpp:1697
+#: pterm_wx.cpp:2204
 msgid "Edit"
 msgstr "Bewerken"
 
-#: pterm_wx.cpp:1699
+#: pterm_wx.cpp:2206
 msgid "View"
 msgstr "Weergave"
 
-#: pterm_wx.cpp:1719
+#: pterm_wx.cpp:2226
 msgid " Connecting..."
 msgstr "Aan het verbinden..."
 
-#: pterm_wx.cpp:2115
+#: pterm_wx.cpp:2729
 msgid "Can't copy image to the clipboard"
 msgstr "Kopiren van het scherm naar het klembord mislukt."
 
-#: pterm_wx.cpp:2121 pterm_wx.cpp:2134 pterm_wx.cpp:6100
+#: pterm_wx.cpp:2735 pterm_wx.cpp:2961 pterm_wx.cpp:8935
 msgid "Can't open clipboard."
 msgstr "Openen van klembord mislukt."
 
-#: pterm_wx.cpp:2141
+#: pterm_wx.cpp:2751
+#, fuzzy
+msgid "Can't open clipboard to execute."
+msgstr "Openen van klembord mislukt."
+
+#: pterm_wx.cpp:2758
+#, fuzzy
+msgid "No text data on clipboard to execute"
+msgstr "Het klembord bevat geen tekst"
+
+#: pterm_wx.cpp:2768
+#, fuzzy
+msgid "Can't paste data from the clipboard to execute"
+msgstr "Ophalen van gegevens van klembord mislukt"
+
+#: pterm_wx.cpp:2790
+#, fuzzy
+msgid "Can't open clipboard to save email address"
+msgstr "Openen van klembord mislukt."
+
+#: pterm_wx.cpp:2797
+#, fuzzy
+msgid "No text data on clipboard for email address"
+msgstr "Het klembord bevat geen tekst"
+
+#: pterm_wx.cpp:2807
+#, fuzzy
+msgid "Can't paste email address data from the clipboard"
+msgstr "Ophalen van gegevens van klembord mislukt"
+
+#: pterm_wx.cpp:2858
+#, fuzzy
+msgid "Can't open clipboard to save search key"
+msgstr "Openen van klembord mislukt."
+
+#: pterm_wx.cpp:2865
+#, fuzzy
+msgid "No text data on clipboard for search"
+msgstr "Het klembord bevat geen tekst"
+
+#: pterm_wx.cpp:2875
+#, fuzzy
+msgid "Can't paste search key data from the clipboard"
+msgstr "Ophalen van gegevens van klembord mislukt"
+
+#: pterm_wx.cpp:2968
 msgid "No text data on clipboard"
 msgstr "Het klembord bevat geen tekst"
 
-#: pterm_wx.cpp:2151
+#: pterm_wx.cpp:2978
 msgid "Can't paste data from the clipboard"
 msgstr "Ophalen van gegevens van klembord mislukt"
 
-#: pterm_wx.cpp:2181
+#: pterm_wx.cpp:3009
 msgid "Save screen to"
 msgstr "Scherm opslaan in"
 
-#: pterm_wx.cpp:2255
+#: pterm_wx.cpp:3087
 msgid ""
 "There was a problem printing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -220,11 +309,11 @@ msgstr ""
 "Er was een probleem bij het afdrukken.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: pterm_wx.cpp:2255
+#: pterm_wx.cpp:3087
 msgid "Printing"
 msgstr "Afdrukken"
 
-#: pterm_wx.cpp:2277
+#: pterm_wx.cpp:3109
 msgid ""
 "There was a problem previewing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -232,120 +321,453 @@ msgstr ""
 "Er was een probleem bij het maken van het afdrukvoorbeeld.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: pterm_wx.cpp:2277
+#: pterm_wx.cpp:3109
 msgid "Previewing"
 msgstr "Voorbeeld bekijken"
 
-#: pterm_wx.cpp:2281
+#: pterm_wx.cpp:3113
 msgid "Pterm Print Preview"
 msgstr "Pterm Afdrukvoorbeeld"
 
-#: pterm_wx.cpp:4465
+#: pterm_wx.cpp:3153
+msgid "Pterm Preferences"
+msgstr "Pterm voorkeuren"
+
+#: pterm_wx.cpp:6127
 msgid " Trace "
 msgstr " Traceren "
 
-#: pterm_wx.cpp:4469
+#: pterm_wx.cpp:6131
 msgid " PLATO keyboard "
 msgstr " PLATO toetsenbord "
 
-#: pterm_wx.cpp:4798
-msgid "Emulation settings"
-msgstr "Emulatie-instellingen"
+#: pterm_wx.cpp:6542
+msgid "Use this page to manage your connection preference profiles."
+msgstr ""
 
-#: pterm_wx.cpp:4800
-msgid "Simulate 1200 Baud"
+#: pterm_wx.cpp:6549
+msgid "Select a profile above, then click a button below."
+msgstr ""
+
+#: pterm_wx.cpp:6553
+msgid "Save"
+msgstr ""
+
+#: pterm_wx.cpp:6556
+msgid "Load"
+msgstr ""
+
+#: pterm_wx.cpp:6559
+msgid "Delete"
+msgstr ""
+
+#: pterm_wx.cpp:6562 pterm_wx.cpp:7137
+msgid "Profile saved."
+msgstr ""
+
+#: pterm_wx.cpp:6566
+msgid "Or, enter the name of a new profile below and click Add."
+msgstr ""
+
+#: pterm_wx.cpp:6572
+msgid "Profile"
+msgstr ""
+
+#: pterm_wx.cpp:6577
+msgid "Add"
+msgstr ""
+
+#: pterm_wx.cpp:6584
+msgid "Profiles"
+msgstr ""
+
+#: pterm_wx.cpp:6593
+msgid "Settings on this page specify where PLATO is on the internet."
+msgstr ""
+
+#: pterm_wx.cpp:6597
+msgid "Connect at startup"
+msgstr "Automatisch verbinden"
+
+#: pterm_wx.cpp:6604 pterm_wx.cpp:7543
+msgid "Run this first"
+msgstr ""
+
+#: pterm_wx.cpp:6611
+msgid "Default Host"
+msgstr "Standaardsysteem"
+
+#: pterm_wx.cpp:6617
+#, fuzzy
+msgid "Default Port*"
+msgstr "Standardpoortnummer"
+
+#: pterm_wx.cpp:6625 pterm_wx.cpp:7568
+msgid "* NOTE: 5004=Classic, 8005=Color Terminal"
+msgstr ""
+
+# msgid "New Connection...\tCtrl-N"
+# msgstr "Nieuwe verbinding...\tCtrl-N"
+#: pterm_wx.cpp:6630
+#, fuzzy
+msgid "Connection"
+msgstr "Nogmaals Verbinden"
+
+#: pterm_wx.cpp:6637
+msgid "Settings on this page configure the text shown in the window title."
+msgstr ""
+
+#: pterm_wx.cpp:6639
+msgid "Show name/group in frame title"
+msgstr ""
+
+#: pterm_wx.cpp:6642
+msgid "Show system name in frame title"
+msgstr ""
+
+#: pterm_wx.cpp:6645
+msgid "Show host name in frame title"
+msgstr ""
+
+#: pterm_wx.cpp:6648
+msgid "Show site-station numbers in frame title"
+msgstr ""
+
+#: pterm_wx.cpp:6654
+#, fuzzy
+msgid "Title"
+msgstr "Bestand"
+
+#: pterm_wx.cpp:6660
+msgid "Settings on this page let you fine-tune your PLATO experience."
+msgstr ""
+
+#: pterm_wx.cpp:6662
+#, fuzzy
+msgid "Simulate 1200 baud"
 msgstr "1200 Baud simuleren"
 
-#: pterm_wx.cpp:4803
+#: pterm_wx.cpp:6664
 msgid "Enable GSW (not in ASCII)"
 msgstr ""
 
-#: pterm_wx.cpp:4806
-msgid "Numeric keypad for arrows"
+#: pterm_wx.cpp:6667
+#, fuzzy
+msgid "Enable numeric keypad for arrow operation"
 msgstr "Numeriek toetsenbord voor pijlen"
 
-#: pterm_wx.cpp:4809
+#: pterm_wx.cpp:6670
+msgid "Ignore CAPS LOCK"
+msgstr ""
+
+#: pterm_wx.cpp:6673
 msgid "Use real PLATO keyboard"
 msgstr "Gebruik een echt PLATO toetsenbord"
 
-#: pterm_wx.cpp:4812
+#: pterm_wx.cpp:6675
+msgid "Enable control-key menu accelerators"
+msgstr ""
+
+#: pterm_wx.cpp:6682
 #, fuzzy
 msgid "Enable -beep-"
 msgstr "GSW aanzetten"
 
-#: pterm_wx.cpp:4815
-msgid "Disable -color-"
+#: pterm_wx.cpp:6688
+#, fuzzy
+msgid "Emulation"
+msgstr "Emulatie-instellingen"
+
+#: pterm_wx.cpp:6697
+msgid "Settings on this page allow you to change the display appearance."
 msgstr ""
 
-#: pterm_wx.cpp:4822
-msgid "Connection settings"
-msgstr "Verbindingsinstellingen"
-
-#: pterm_wx.cpp:4824
-msgid "Connect at startup"
-msgstr "Automatisch verbinden"
-
-#: pterm_wx.cpp:4836
-msgid "Default Host"
-msgstr "Standaardsysteem"
-
-#: pterm_wx.cpp:4838
-msgid "Default Port"
-msgstr "Standardpoortnummer"
-
-#: pterm_wx.cpp:4845
-msgid "Display settings"
-msgstr "Scherminstellingen"
-
-#: pterm_wx.cpp:4847
+#: pterm_wx.cpp:6701
 msgid "Zoom display 200%"
 msgstr "Beeld 200% vergroten"
 
-#: pterm_wx.cpp:4850
-msgid "Status bar"
-msgstr "Statusvenster"
+#: pterm_wx.cpp:6703
+#, fuzzy
+msgid "Display status bar"
+msgstr "Scherminstellingen"
 
-#: pterm_wx.cpp:4857
-msgid "Foreground"
+#: pterm_wx.cpp:6706
+msgid "Disable -color- (ASCII mode)"
+msgstr ""
+
+#: pterm_wx.cpp:6714 pterm_wx.cpp:6724
+#, fuzzy
+msgid "Foreground color*"
 msgstr "Voorgrond"
 
-#: pterm_wx.cpp:4859
-msgid "Background"
+#: pterm_wx.cpp:6719 pterm_wx.cpp:6728
+#, fuzzy
+msgid "Background color*"
 msgstr "Achtergrond"
 
-#: pterm_wx.cpp:4867
+#: pterm_wx.cpp:6733
+msgid "* NOTE: Applied in Classic mode or if -color- is disabled in ASCII mode"
+msgstr ""
+
+#: pterm_wx.cpp:6738
+#, fuzzy
+msgid "Display"
+msgstr "Scherminstellingen"
+
+#: pterm_wx.cpp:6749
+msgid "Settings on this page allow you to specify Paste options."
+msgstr ""
+
+#: pterm_wx.cpp:6753
+msgid "Delay between chars"
+msgstr ""
+
+#: pterm_wx.cpp:6755
+msgid "50"
+msgstr ""
+
+#: pterm_wx.cpp:6758 pterm_wx.cpp:6765
+msgid "milliseconds"
+msgstr ""
+
+#: pterm_wx.cpp:6760
+msgid "Delay after end of line"
+msgstr ""
+
+#: pterm_wx.cpp:6762
+msgid "100"
+msgstr ""
+
+#: pterm_wx.cpp:6770
+msgid "Automatic new line every"
+msgstr ""
+
+#: pterm_wx.cpp:6772 pterm_wx.cpp:6774
+msgid "60"
+msgstr ""
+
+#: pterm_wx.cpp:6773
+msgid "0"
+msgstr ""
+
+#: pterm_wx.cpp:6775
+msgid "120"
+msgstr ""
+
+#: pterm_wx.cpp:6778
+msgid "characters"
+msgstr ""
+
+#: pterm_wx.cpp:6781
+msgid "Allow words to be split across lines"
+msgstr ""
+
+#: pterm_wx.cpp:6784
+msgid "Use TUTOR pasting (certain sequences are treated specially)"
+msgstr ""
+
+#: pterm_wx.cpp:6787
+msgid "Convert periods followed by 7 spaces into period/tab*"
+msgstr ""
+
+#: pterm_wx.cpp:6791
+msgid "Convert 8 consecutive spaces into a tab*"
+msgstr ""
+
+#: pterm_wx.cpp:6796
+msgid "* NOTE: Conversions are applied at 8-character intervals."
+msgstr ""
+
+#: pterm_wx.cpp:6802
+#, fuzzy
+msgid "Pasting"
+msgstr "Afdrukken"
+
+#: pterm_wx.cpp:6811
+msgid "Specify browser to use for menu option 'Execute URL'"
+msgstr ""
+
+#: pterm_wx.cpp:6816
+#, c-format
+msgid "Command line for menu option 'Mail to...' (%s=address)"
+msgstr ""
+
+#: pterm_wx.cpp:6822
+msgid "Specify URL for menu option 'Search this...'"
+msgstr ""
+
+#: pterm_wx.cpp:6830
+msgid "Local"
+msgstr ""
+
+#: pterm_wx.cpp:6840
+msgid "OK"
+msgstr ""
+
+#: pterm_wx.cpp:6843 pterm_wx.cpp:7577 pterm_wx.cpp:7753
+msgid "Cancel"
+msgstr ""
+
+#: pterm_wx.cpp:6846
 msgid "Defaults"
 msgstr "Standaard"
 
-#: pterm_wx.cpp:5027
+#: pterm_wx.cpp:7143 pterm_wx.cpp:7160 pterm_wx.cpp:7176 pterm_wx.cpp:7197
+#: pterm_wx.cpp:7441
+msgid "Error"
+msgstr ""
+
+#: pterm_wx.cpp:7154 pterm_wx.cpp:7434
+msgid "Profile loaded."
+msgstr ""
+
+#: pterm_wx.cpp:7169
+msgid "Profile deleted."
+msgstr ""
+
+#: pterm_wx.cpp:7190
+msgid "Profile added."
+msgstr ""
+
+#: pterm_wx.cpp:7202
+msgid ""
+"The profile name you entered contains illegal characters.\n"
+"\n"
+"Valid characters are:\n"
+"\n"
+"Standard: a-z, A-Z, 0-9\n"
+"Special:  parentheses, dash, underscore, period, and space"
+msgstr ""
+
+#: pterm_wx.cpp:7205
+msgid "Problem"
+msgstr ""
+
+#: pterm_wx.cpp:7210
+msgid "Foreground"
+msgstr "Voorgrond"
+
+#: pterm_wx.cpp:7220
+msgid "Background"
+msgstr "Achtergrond"
+
+#: pterm_wx.cpp:7526
+msgid "Select a profile and click Connect."
+msgstr ""
+
+#: pterm_wx.cpp:7533
+msgid "Or, enter a hostname and port number, then click Connect."
+msgstr ""
+
+#: pterm_wx.cpp:7550
 msgid "Host name"
 msgstr "Systeemnaam"
 
-#: pterm_wx.cpp:5029
-msgid "Port"
+#: pterm_wx.cpp:7558
+#, fuzzy
+msgid "Port*"
 msgstr "Poortnummer"
 
-#: pterm_wx.cpp:5442
+# msgid "New Connection...\tCtrl-N"
+# msgstr "Nieuwe verbinding...\tCtrl-N"
+#: pterm_wx.cpp:7580
+#, fuzzy
+msgid "Connect"
+msgstr "Nogmaals Verbinden"
+
+# msgid "New Connection...\tCtrl-N"
+# msgstr "Nieuwe verbinding...\tCtrl-N"
+#: pterm_wx.cpp:7746
+#, fuzzy
+msgid "New Connection"
+msgstr "Nogmaals Verbinden"
+
+#: pterm_wx.cpp:7749
+msgid "Retry"
+msgstr ""
+
+#: pterm_wx.cpp:7760
+msgid ""
+"Your connection to the host was lost.  You may open a\n"
+"new connection, try this connection again, or exit."
+msgstr ""
+
+#: pterm_wx.cpp:7762
+msgid ""
+"The host did not respond to the connection request.\n"
+"You may open a new connection, try this connection\n"
+"again, or exit."
+msgstr ""
+
+#: pterm_wx.cpp:7764
+#, c-format
+msgid ""
+"\n"
+"Failed: %s:%d"
+msgstr ""
+
+#: pterm_wx.cpp:8185
 msgid " Not connected"
 msgstr "Niet verbonden"
 
-#: pterm_wx.cpp:5446
+#: pterm_wx.cpp:8190
 #, c-format
-msgid "Failed to connect to %s %d"
-msgstr "Kon niet verbinden met %s %d"
+msgid "Connection failed @ %s on "
+msgstr ""
 
-#: pterm_wx.cpp:5451
+#: pterm_wx.cpp:8192
 #, c-format
-msgid "Connection lost to %s %d"
-msgstr "Verbinding met %s %d verloren"
+msgid "Dropped connection @ %s on "
+msgstr ""
 
-#: pterm_wx.cpp:5455
-msgid "Alert"
-msgstr "Waarschuwing"
+#: pterm_wx.cpp:8195
+#, c-format
+msgid "%s on "
+msgstr ""
 
-#: pterm_wx.cpp:6107
+#: pterm_wx.cpp:8214
+#, fuzzy
+msgid " Retrying..."
+msgstr "Aan het verbinden..."
+
+#: pterm_wx.cpp:8942
 msgid "Can't copy text to the clipboard"
 msgstr "Kopiren van tekst naar het klembord mislukt"
+
+#~ msgid "New Connection...\tCtrl-N"
+#~ msgstr "Nieuwe verbinding...\tCtrl-N"
+
+# msgid "Preferences..."
+# msgstr "Voorkeuren..."
+#~ msgid "Close\tCtrl-W"
+#~ msgstr "Verbinding sluiten\tCtrl-W"
+
+#, fuzzy
+#~ msgid ""
+#~ "Failed to connect to %s %d\n"
+#~ "\n"
+#~ "Try another connection?"
+#~ msgstr "Kon niet verbinden met %s %d"
+
+#, fuzzy
+#~ msgid ""
+#~ "Connection lost to %s %d\n"
+#~ "\n"
+#~ "Try another connection?"
+#~ msgstr "Verbinding met %s %d verloren"
+
+#~ msgid "Alert"
+#~ msgstr "Waarschuwing"
+
+#, fuzzy
+#~ msgid "Copyright © 2004-2006 by Paul Koning."
+#~ msgstr "Copyright  2005 van Paul Koning."
+
+#~ msgid "Connection settings"
+#~ msgstr "Verbindingsinstellingen"
+
+#~ msgid "Status bar"
+#~ msgstr "Statusvenster"
 
 #~ msgid "Enable GSW"
 #~ msgstr "GSW aanzetten"
