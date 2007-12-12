@@ -1458,23 +1458,23 @@ void pfupdate (int argc, char **argv)
 void usage (void)
 {
     fprintf (stderr, "usage:\n"
-             "pf [-pmivMD] pdisk pfile ...      read files\n"
-             "pf [-mv] -l pdisk                 list directory\n"
-             "pf [-m] -w pdisk pfile ...        write files\n"
-             "pf [-m] -p -w pdisk pfile         write file from stdin\n"
-             "pf [-mf] -c parts pdisk pfile ... create files\n"
+             "pf [-pmFivMD] pdisk pfile ...      read files\n"
+             "pf [-mFv] -l pdisk                 list directory\n"
+             "pf [-mF] -w pdisk pfile ...        write files\n"
+             "pf [-mF] -p -w pdisk pfile         write file from stdin\n"
+             "pf [-mFf] -c parts pdisk pfile ... create files\n"
 
-             "pf [-mf] -p -c parts pdisk pfile  create file from stdin\n"
-             "pf [-mf] -I pdisk plabel ptype    initialize plato disk\n"
-             "pf [-mf] -U pdisk plabel ptype    relabel plato disk\n"
-             "   -p                             pipe output to stdout\n"
-             "   -i                             image output mode\n"
-             "   -f                             include FIW data in image output\n"
-             "   -v                             verbose\n"
-             "   -m                             pdisk is a masterfile\n"
-             "   -F                             pdisk has no flawmap\n"
-             "   -M                             display modwords\n"
-             "   -D                             include deleted lines\n");
+             "pf [-mFf] -p -c parts pdisk pfile  create file from stdin\n"
+             "pf [-mFf] -I pdisk plabel ptype    initialize plato disk\n"
+             "pf [-mFf] -U pdisk plabel ptype    relabel plato disk\n"
+             "   -p                              pipe output to stdout\n"
+             "   -i                              image output mode\n"
+             "   -f                              include FIW data in image output\n"
+             "   -v                              verbose\n"
+             "   -m                              pdisk is a masterfile\n"
+             "   -F                              pdisk has no flawmap\n"
+             "   -M                              display modwords\n"
+             "   -D                              include deleted lines\n");
 }
 
 int main (int argc, char **argv)
