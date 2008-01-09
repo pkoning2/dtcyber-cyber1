@@ -96,6 +96,9 @@ class Oper (Connection, threading.Thread):
     state to reflect what it hears.
     """
     def __init__ (self, port = 5006):
+        """port is the operator interface port number, default
+        is 5006.
+        """
         threading.Thread.__init__ (self)
         Connection.__init__ (self, "localhost", port)
         self.settimeout (5)
@@ -188,6 +191,10 @@ class Oper (Connection, threading.Thread):
             time.sleep (0.3)
 
     def __repr__ (self):
+        """The representation of the object is the current status
+        area (right screen of the dtoper display, but in full rather
+        than limited to what fits in 30 or so lines).
+        """
         return '\n'.join (self.status)
 
 class Pterm (Connection, threading.Thread):
@@ -218,6 +225,10 @@ class Pterm (Connection, threading.Thread):
     line64 = 64 * ' '
 
     def __init__ (self, host = "localhost", port = 5004):
+        """port is the pterm port number, default is 5004.
+        Note that this must be an NIU ('classic' protocol) port;
+        ASCII mode is not supported.
+        """
         threading.Thread.__init__ (self)
         Connection.__init__ (self, host, port)
         self.settimeout (5)
@@ -453,6 +464,9 @@ class Pterm (Connection, threading.Thread):
             self.x = (self.x + 8) & 0777
 
     def __repr__ (self):
+        """The representation of the object is the current contents
+        of the screen, as a string of 32 lines each 64 characters long.
+        """
         return '\n'.join (self.lines)
 
     def login (self, user, group, passwd = None):
@@ -478,6 +492,11 @@ class Dd60 (Connection, threading.Thread):
     """A connection to the DtCyber console (green tubes).  It includes
     a thread that collects data from DtCyber and updates local
     state to reflect what it hears.
+
+    The last full screen worth of content is available via attribute
+    'screen' which is the left and right screens as a tuple;  each
+    screen is an array of 32 strings, each 64 characters long, containing
+    the content of that screen.
     """
     # A blank line
     line64 = 64 * ' '
@@ -498,6 +517,12 @@ class Dd60 (Connection, threading.Thread):
     ENDBLOCK = 0250
     
     def __init__ (self, port = 5007, interval = 3):
+        """port is the console port number, default is 5007.
+        interval is the update interval, default is 3 seconds.
+        Note that the interval can be set quite short, but
+        values shorter than a second or two are not recommended
+        because of excessive overhead.
+        """
         threading.Thread.__init__ (self)
         Connection.__init__ (self, "localhost", port)
         self.settimeout (5)
@@ -507,17 +532,20 @@ class Dd60 (Connection, threading.Thread):
         self.setinterval (interval)
         self.sendkey (070)                 # XON to start output flow
         self.mode = self.DOT + self.LEFT   # no display until mode set
-        self.x = self.y = 0
-        self.endblock = True
+        self.x = 0
+        self.y = 31
         self.start ()
+        self.screen = self.erase ()
+        self.pending = self.erase ()
 
     def erase (self):
-        self.left = [ ]
-        self.right = [ ]
+        left = [ ]
+        right = [ ]
         for i in xrange (32):
-            self.left.append (self.line64)
-            self.right.append (self.line64)
-
+            left.append (self.line64)
+            right.append (self.line64)
+        return left, right
+    
     def next (self):
         """Return next byte of Cyber output, as an integer.
         """
@@ -589,13 +617,16 @@ class Dd60 (Connection, threading.Thread):
             self.sendkey (key)
 
     def __repr__ (self):
-        return self.screen (1)
+        """The representation of the object is the current contents
+        of the right screen.
+        """
+        return self.screentext (1)
 
-    def screen (self, n):
-        if n:
-            return '\n'.join (self.right)
-        else:
-            return '\n'.join (self.left)
+    def screentext (self, n):
+        """Returns the current contents of the specified screen
+        (0 or 1), as a string, 32 lines of 64 characters each.
+        """
+        return '\n'.join (self.screen[n])
 
     # This table comes from charset.c, replacing 0 (unused) entries
     # by blank
@@ -616,14 +647,14 @@ class Dd60 (Connection, threading.Thread):
         one (medium) or three (large) character positions.
         """
         if self.mode & self.RIGHT:
-            screen = self.left
+            side = 1
         else:
-            screen = self.right
+            side = 0
         mode = self.mode & 3
         if mode != self.DOT:
-            line = screen[self.y]
+            line = self.pending[side][self.y]
             
-            screen[self.y] = line[:self.x] + self.consoleToAscii[ch] + line[self.x + 1:]
+            self.pending[side][self.y] = line[:self.x] + self.consoleToAscii[ch] + line[self.x + 1:]
             x = self.x + 1
             if mode == self.MEDIUM:
                 x += 1
@@ -633,23 +664,18 @@ class Dd60 (Connection, threading.Thread):
 
     def process_output (self, ch):
         """Process Cyber output data.  Sort control codes (upper bit set)
-        from data codes (upper bit clear).  Whenever we receive an output
-        byte after the end of block code, do a full erase to prepare the
-        screen image for another block of data.
+        from data codes (upper bit clear). 
         """
-        if self.endblock:
-            self.erase ()
-            self.endblock = False
         if ch & 0200:
             # Control code
             action = ch & 0270
             if action == self.SETX:
                 self.x = (((ch << 8) + self.next ()) & 0770) / 8
             elif action == self.SETY:
-                self.y = (((ch << 8) + self.next ()) & 0760) / 16
+                self.y = 31 - (((ch << 8) + self.next ()) & 0760) / 16
             elif action == self.SETMODE:
                 self.mode = ch & 7
             elif action == self.ENDBLOCK:
-                self.endblock = True
+                self.screen = self.pending
         else:
             self.process_char (ch)
