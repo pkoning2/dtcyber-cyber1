@@ -268,7 +268,7 @@ extern "C"
 
 #if wxUSE_LIBGNOMEPRINT
 #include "wx/html/forcelnk.h"
-FORCE_LINK(gnome_print)
+//FORCE_LINK(gnome_print)
 #endif
 
 // For wxWidgets 2.8
@@ -8675,12 +8675,16 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             pc = 0130;      // down arrow (x)
             break;
         case WXK_PRIOR:
+#if (WXK_PRIOR != WXK_PAGEUP)
         case WXK_PAGEUP:
+#endif
         case WXK_NUMPAD_PRIOR:
             pc = 020;       // super
             break;
         case WXK_NEXT:
+#if (WXK_NEXT != WXK_PAGEDOWN)
         case WXK_PAGEDOWN:
+#endif
         case WXK_NUMPAD_NEXT:
             pc = 021;       // sub
             break;
