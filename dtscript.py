@@ -225,7 +225,8 @@ class Pterm (Connection, threading.Thread):
     line64 = 64 * ' '
 
     def __init__ (self, host = "localhost", port = 5004):
-        """port is the pterm port number, default is 5004.
+        """host is the host name to connect to, default is localhost.
+        port is the pterm port number, default is 5004.
         Note that this must be an NIU ('classic' protocol) port;
         ASCII mode is not supported.
         """
