@@ -1,4 +1,4 @@
-#define TEST 1
+//#define TEST 1
 /////////////////////////////////////////////////////////////////////////////
 // Name:        dd60.cpp
 // Purpose:     dd60 interface to wxWindows 
@@ -36,7 +36,7 @@
 
 // Display parameters
 #define RRATE           100        // ms per refresh
-#define DECAY           128         // decay per refresh, scaled by 256.
+#define DECAY           128        // decay per refresh, scaled by 256.
 
 //#define DisplayMargin   8
 
@@ -272,6 +272,7 @@ public:
     Dd60Canvas (Dd60Frame *parent);
 
     void OnDraw (wxDC &dc);
+    void OnEraseBackground (wxEraseEvent &);
     void OnKey (wxKeyEvent& event);
 
 private:
@@ -1105,15 +1106,22 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
     PixelData::Iterator p (*m_pixmap);
     const int bytesperpixel = PixelData::Iterator::PixelFormat::SizePixel;
     
-//    printf ("pixels %d, pixel stride %d\n", pixels, bytesperpixel);
+    //printf ("pixels %d, pixel stride %d\n", pixels, bytesperpixel);
     
-#if (DECAY == 1280)
+#if (DECAY == 128)
     const int wds = (pixels * /*bytesperpixel*/3) / 4;
     uint32_t *pmap = (uint32_t *)(p.m_ptr);
-            
+    uint32_t maxalpha, t;
+    
+    t = *pmap;
+    *pmap = 0;
+    p.Alpha () = 255;
+    maxalpha = *pmap;
+    *pmap = t;
+    
     for (i = 0; i < wds; i++)
     {
-        *pmap = (*pmap >> 1) & 0x7f7f7f7f;
+        *pmap = ((*pmap >> 1) & 0x7f7f7f7f) | maxalpha;
         ++pmap;
     }
 #else
@@ -1465,7 +1473,7 @@ void Dd60Frame::dd60LoadChars (void)
 #endif
 }
 
-static double bellvec[10010 * 16];
+static double bellvec[16 * 16];
 
 void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
 {
@@ -1494,7 +1502,7 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
     const int beamr = int (ceil (3 * sigma));
 #define r1_029 2000
 #define m_c1_029 300
-#define ONDELAY 10
+#define ONDELAY 23
     const double r029 = r1_029;
     const double c029 = 1.0e-12 * m_c1_029;
     Delay delay (ONDELAY);
@@ -2062,6 +2070,7 @@ void Dd60Panel::OnScroll (wxScrollEvent &)
 BEGIN_EVENT_TABLE(Dd60Canvas, wxScrolledWindow)
     EVT_KEY_DOWN(Dd60Canvas::OnKey)
     EVT_KEY_UP(Dd60Canvas::OnKey)
+    EVT_ERASE_BACKGROUND(Dd60Canvas::OnEraseBackground)
     END_EVENT_TABLE ()
 
 Dd60Canvas::Dd60Canvas(Dd60Frame *parent)
@@ -2082,6 +2091,11 @@ Dd60Canvas::Dd60Canvas(Dd60Frame *parent)
 void Dd60Canvas::OnDraw(wxDC &dc)
 {
     dc.DrawBitmap (*m_owner->m_screenmap, 0, 0, false);
+}
+
+void Dd60Canvas::OnEraseBackground (wxEraseEvent &)
+{
+    // Do nothing, to avoid flashing.
 }
 
 void Dd60Canvas::OnKey (wxKeyEvent &event)
