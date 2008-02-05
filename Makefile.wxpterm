@@ -96,10 +96,12 @@ wxversion.h: wxversion
 	    else mv -f wxversion.h.tmp wxversion.h; fi; fi
 
 dd60x:	$(SOBJS) dd60x.o knob.o iir.o 
+	export LD_RUN_PATH=$(WXDIR)/lib ; \
 	$(CXX) $(LDFLAGS) -o $@ $+ $(SDLLIBS) $(WXLIBS) $(SETPATH)
 
 # console display test program
-cc545:	cc545.cpp knob.cpp iir.cpp
+cc545:	cc545.o knob.o iir.o
+	export LD_RUN_PATH=$(WXDIR)/lib ; \
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
 ifeq ("$(HOST)","Linux")
