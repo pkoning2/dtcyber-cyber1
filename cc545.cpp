@@ -140,7 +140,7 @@ public:
     void OnCheck (wxCommandEvent& event);
 
 private:
-    wxBoxSizer  *m_sizer;
+    wxFlexGridSizer  *m_sizer;
     wxKnob      *m_size;
     wxKnob      *m_aspect;
     wxKnob      *m_focus;
@@ -444,77 +444,102 @@ CcPanel::CcPanel (CtlFrame *parent) :
     wxPanel (parent)
 {
     wxBitmapButton *b;
+    int id = 9900;
     
-    m_sizer = new wxBoxSizer (wxVERTICAL);
-    m_size = new wxKnob (this, wxID_ANY, 32, 8, 64);
-    m_sizer->Add (m_size, 0,  wxTOP | wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Size")),
-                  0,  wxLEFT | wxRIGHT, 8);
-    m_aspect = new wxKnob (this, wxID_ANY, 100, 40, 200);
+    m_sizer = new wxFlexGridSizer (18, 2, 5, 10);
+    m_size = new wxKnob (this, id++, 32, 8, 64);
+    m_sizer->Add (m_size, 0,  wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, id++, _("Size 32")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_aspect = new wxKnob (this, id++, 100, 40, 200);
     m_sizer->Add (m_aspect, 0,   wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Aspect ratio")),
-                  0,  wxLEFT | wxRIGHT, 8);
-    m_focus = new wxKnob (this, wxID_ANY, 100, 0, 250);
+    m_sizer->Add (new wxStaticText (this, id++, _("Aspect ratio 100")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_focus = new wxKnob (this, id++, 100, 0, 250);
     m_sizer->Add (m_focus, 0,   wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Focus")),
-                  0,  wxLEFT | wxRIGHT, 8);
-    m_intens = new wxKnob (this, wxID_ANY, 160, 1, 400);
+    m_sizer->Add (new wxStaticText (this, id++, _("Focus 100")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_intens = new wxKnob (this, id++, 160, 1, 400);
     m_sizer->Add (m_intens, 0,   wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Intensity")),
-                  0,  wxLEFT | wxRIGHT, 8);
-    m_beamdelay = new wxKnob (this, wxID_ANY, 10, 1, 100);
+    m_sizer->Add (new wxStaticText (this, id++, _("Intensity 160")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_beamdelay = new wxKnob (this, id++, 10, 1, 100);
     m_sizer->Add (m_beamdelay, 0,   wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("On/off delay")),
-                  0,  wxLEFT | wxRIGHT, 8);
-    m_red = new wxKnob (this, wxID_ANY, 20, 0, 255);
+    m_sizer->Add (new wxStaticText (this, id++, _("On/off delay 10")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_red = new wxKnob (this, id++, 20, 0, 255);
     m_sizer->Add (m_red, 0,   wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Red")),
-                  0,  wxLEFT | wxRIGHT, 8);
-    m_green = new wxKnob (this, wxID_ANY, 255, 0, 255);
+    m_sizer->Add (new wxStaticText (this, id++, _("Red 20")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_green = new wxKnob (this, id++, 255, 0, 255);
     m_sizer->Add (m_green, 0,  wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Green")),
-                  0,  wxLEFT | wxRIGHT, 8);
-    m_blue = new wxKnob (this, wxID_ANY, 80, 0, 255);
+    m_sizer->Add (new wxStaticText (this, id++, _("Green 255")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_blue = new wxKnob (this, id++, 80, 0, 255);
     m_sizer->Add (m_blue, 0,  wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Blue")),
-                  0,  wxLEFT | wxRIGHT, 8);
-    m_620on = new wxCheckBox (this, wxID_ANY, _("620 highpass on"));
+    m_sizer->Add (new wxStaticText (this, id++, _("Blue 80")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_620on = new wxCheckBox (this, wxID_ANY, _(""));
     m_620on->SetValue (true);
     m_sizer->Add (m_620on, 0,   wxLEFT | wxRIGHT, 8);
-    m_c19on = new wxCheckBox (this, wxID_ANY, _("C19 lowpass on"));
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("620 highpass on")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_c19on = new wxCheckBox (this, wxID_ANY, _(""));
     m_c19on->SetValue (true);
     m_sizer->Add (m_c19on, 0,   wxLEFT | wxRIGHT, 8);
-    m_r1_029 = new wxKnob (this, wxID_ANY, 2000, 180, 5000);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("C19 lowpass on")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_r1_029 = new wxKnob (this, id++, 2000, 180, 5000);
     m_sizer->Add (m_r1_029, 0,   wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("029 R1")),
-                  0,  wxLEFT | wxRIGHT, 8);
-    m_c1_029 = new wxKnob (this, wxID_ANY, 300, 110, 580);
+    m_sizer->Add (new wxStaticText (this, id++, _("029 R1 2000")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_c1_029 = new wxKnob (this, id++, 300, 110, 580);
     m_sizer->Add (m_c1_029, 0,  wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("029 C1")),
-                  0,  wxLEFT | wxRIGHT, 8);
-    m_029on = new wxCheckBox (this, wxID_ANY, _("029 highpass on"));
+    m_sizer->Add (new wxStaticText (this, id++, _("029 C1 300")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_029on = new wxCheckBox (this, wxID_ANY, _(""));
     m_029on->SetValue (true);
     m_sizer->Add (m_029on, 0,   wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("029 highpass on")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
 #if 0
-    m_c1_a2 = new wxKnob (this, wxID_ANY, 2000, 1400, 3055);
+    m_c1_a2 = new wxKnob (this, id++, 2000, 1400, 3055);
     m_sizer->Add (m_c1_a2, 0,   wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("V1A C1")),
-                  0,  wxLEFT | wxRIGHT, 8); 
-    m_v1aon = new wxCheckBox (this, wxID_ANY, _("V1A C1 on"));
+    m_sizer->Add (new wxStaticText (this, id++, _("V1A C1 2000")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8); 
+    m_v1aon = new wxCheckBox (this, wxID_ANY, _(""));
     m_sizer->Add (m_v1aon, 0,   wxLEFT | wxRIGHT, 8);
-    m_c4_a2 = new wxKnob (this, wxID_ANY, 2000, 1400, 3055);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("V1A C1 on")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_c4_a2 = new wxKnob (this, id++, 2000, 1400, 3055);
     m_sizer->Add (m_c4_a2, 0,   wxLEFT | wxRIGHT, 8);
-    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("V3 C4")),
-                  0,  wxLEFT | wxRIGHT, 8);
-    m_v3on = new wxCheckBox (this, wxID_ANY, _("V3 C4 on"));
+    m_sizer->Add (new wxStaticText (this, id++, _("V3 C4 2000")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_v3on = new wxCheckBox (this, wxID_ANY, _(""));
     m_sizer->Add (m_v3on, 0,  wxALL, 8);
+    m_sizer->Add (new wxStaticText (this, wxID_ANY, _("V3 C4 on")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
 #endif
     SetSizerAndFit (m_sizer);
 //    m_sizer->RecalcSizes ();
 }
 
-void CcPanel::OnScroll (wxScrollEvent &)
+void CcPanel::OnScroll (wxScrollEvent &e)
 {
+    int id;
+    wxKnob *ctl;
+    wxStaticText *lwin;
+    wxString label;
+    
+    id = e.GetId ();
+    ctl = (wxKnob *) FindWindowById (id, this);
+    lwin = (wxStaticText *) FindWindowById (id + 1, this);
+    label = lwin->GetLabel ();
+    label = label.BeforeLast (' ');
+    //printf ("id: %d, val: %d\n", id, ctl->GetValue());
+    label << _(" ") << ctl->GetValue ();
+    lwin->SetLabel (label);
+    
     wxGetApp ().updateFrame ();
 }
 
