@@ -4,6 +4,8 @@
 HOSTNAME=$(hostname)
 if [ "${HOSTNAME}" = "monster" ]; then 
 	HOSTNAME="cyber1"
+elif [ "${HOSTNAME}" = "pkoning-laptop" ]; then 
+	HOSTNAME="pkoning"
 fi
 export HOSTNAME
 ulimit -c unlimited
