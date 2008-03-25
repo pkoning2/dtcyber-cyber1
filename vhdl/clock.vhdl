@@ -14,13 +14,13 @@ use IEEE.std_logic_1164.all;
 entity clock is
   
   port (
-    I, II, III, IV : out std_logic);    -- The four clock phases
+    p1, p2, p3, p4 : out std_logic);    -- The four clock phases
 
 end clock;
 
 architecture beh of clock is
   signal clkin : std_logic := '0';      -- The external clock input
-  signal p1, p2, p3, p4 : std_logic;    -- internal copies of the phases
+  signal i, ii, iii, iv : std_logic;    -- internal copies of the phases
 begin  -- beh
 
   -- purpose: The external clock waveform
@@ -36,33 +36,33 @@ begin  -- beh
   -- purpose: Generate the four clock phases
   -- type   : combinational
   -- inputs : clkin
-  -- outputs: p1, p2, p3, p4
+  -- outputs: i, ii, iii, iv
   clkgen: process (clkin)
   begin  -- process clkgen
-    if p4 = '1' then
-      p1 <= '1';
-      p2 <= '0';
-      p3 <= '0';
-      p4 <= '0';
-    elsif p1 = '1' then
-      p1 <= '0';
-      p2 <= '1';
-      p3 <= '0';
-      p4 <= '0';
-    elsif p2 = '1' then
-      p1 <= '0';
-      p2 <= '0';
-      p3 <= '1';
-      p4 <= '0';
+    if iv = '1' then
+      i <= '1';
+      ii <= '0';
+      iii <= '0';
+      iv <= '0';
+    elsif i = '1' then
+      i <= '0';
+      ii <= '1';
+      iii <= '0';
+      iv <= '0';
+    elsif ii = '1' then
+      i <= '0';
+      ii <= '0';
+      iii <= '1';
+      iv <= '0';
     else
-      p1 <= '0';
-      p2 <= '0';
-      p3 <= '0';
-      p4 <= '1';
+      i <= '0';
+      ii <= '0';
+      iii <= '0';
+      iv <= '1';
     end if;
   end process clkgen;
-  I <= p1;
-  II <= p2;
-  III <= p3;
-  IV <= p4;
+  p1 <= i;
+  p2 <= ii;
+  p3 <= iii;
+  p4 <= iv;
 end beh;

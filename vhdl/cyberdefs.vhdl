@@ -23,6 +23,7 @@ package sigs is
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
   type testvector is array (natural range <>) of std_logic;  -- test vector from harness
+  type coaxsigs is array (0 to 18) of std_logic;  -- CDC standard coax cable
 end sigs;
 
 library IEEE;
@@ -123,15 +124,15 @@ end bool;
 library IEEE;
 use IEEE.std_logic_1164.all;
 use work.sigs.all;
-entity coax is
+entity cxdriver is
   
   port (
     a : in  std_logic;                        -- source
     x : out std_logic);                       -- destination
 
-end coax;
+end cxdriver;
 
-architecture bool of coax is
+architecture bool of cxdriver is
 
 begin  -- bool
 

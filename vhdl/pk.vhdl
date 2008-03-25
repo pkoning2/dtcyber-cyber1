@@ -53,7 +53,7 @@ architecture gates of pk is
       a, b : in  std_logic;                   -- inputs
       x    : out std_logic);                  -- output
   end component;
-  component coax
+  component cxdriver
     port (
       a : in  std_logic;                        -- source
       x : out std_logic);                       -- destination

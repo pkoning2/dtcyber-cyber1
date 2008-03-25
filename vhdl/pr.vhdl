@@ -33,7 +33,7 @@ architecture gates of prslice is
       a, b : in  std_logic;                   -- inputs
       x    : out std_logic);                  -- output
   end component;
-  component coax
+  component cxdriver
     port (
       a : in  std_logic;                        -- source
       x : out std_logic);                       -- destination
@@ -58,7 +58,7 @@ begin  -- gates
     s  => s2,
     r  => rb,
     qb => qb);
-  u4 : coax port map (
+  u4 : cxdriver port map (
     a => s,
     x => odata);
   
