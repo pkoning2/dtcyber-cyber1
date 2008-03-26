@@ -1,0 +1,41 @@
+# Wiring list for chassis 1
+# 
+# everything is case insensitive
+
+chassis 1
+
+modules
+TC n32
+PG o27
+TD r25 r26
+TD r29
+PD r27 r28 q32
+TH q28 q29
+TG m32 m29
+PR m36
+PK m35
+CLOCK a1
+
+coax 
+1 extern 1
+
+wires
+# module pin module pin (in to out or out to in, either order)
+r25 6 r27 14
+a1 4 r27 16
+r27 11 q28 6
+r26 6 r28 14
+#a1 4 r28 16
+r28 11 q29 6
+q28 5 r29 1
+q29 5 r29 3
+r29 6 q32 14
+a1 2 q32 16
+q32 11 m36 19
+q32 4 m35 19
+o27 13 n32 3
+n32 1 m36 17
+m35 24 m36 14
+m36 8 m32 2
+m32 13 m29 2
+a1 3 coax1 1

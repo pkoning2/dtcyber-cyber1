@@ -1,5 +1,6 @@
 VLIB = work-obj93.cf
 MODULES = pd.o pg.o pr.o tc.o td.o th.o tg.o pk.o clock.o
+CHASSIS = chassis1.o
 TOP = cdc6600.o
 TB = cdc_tb.o
 OBJS = $(TB) $(TOP) $(MODULES)
@@ -18,3 +19,7 @@ $(VLIB): cyberdefs.vhdl
 
 clean:
 	rm -f *.o *.cf cyberdefs.stamp
+
+$(TOP): $(CHASSIS)
+
+$(CHASSIS): $(MODULES)

@@ -23,7 +23,7 @@ package sigs is
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
   type testvector is array (natural range <>) of std_logic;  -- test vector from harness
-  type coaxsigs is array (0 to 18) of std_logic;  -- CDC standard coax cable
+  type coaxsigs is array (1 to 19) of std_logic;  -- CDC standard coax cable
 end sigs;
 
 library IEEE;
