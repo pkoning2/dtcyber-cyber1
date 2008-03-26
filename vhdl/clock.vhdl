@@ -14,7 +14,8 @@ use IEEE.std_logic_1164.all;
 entity clock is
   
   port (
-    p1, p2, p3, p4 : out std_logic);    -- The four clock phases
+    p1, p2, p3, p4 : out std_logic;         -- The four clock phases
+    p11, p12, p13, p14 : out std_logic);    -- Another copy
 
 end clock;
 
@@ -65,4 +66,8 @@ begin  -- beh
   p2 <= ii;
   p3 <= iii;
   p4 <= iv;
+  p11 <= i;
+  p12 <= ii;
+  p13 <= iii;
+  p14 <= iv;
 end beh;
