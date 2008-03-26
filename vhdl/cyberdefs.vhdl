@@ -22,7 +22,6 @@ package sigs is
   constant t : time := 5 ns;            -- basic stage delay
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
-  type testvector is array (natural range <>) of std_logic;  -- test vector from harness
   type coaxsigs is array (1 to 19) of std_logic;  -- CDC standard coax cable
 end sigs;
 
@@ -32,8 +31,8 @@ use work.sigs.all;
 entity inv is
   
   port (
-    a  : in  std_logic;                       -- input
-    x  : out std_logic);                      -- output
+    i  : in  std_logic;                       -- input
+    o  : out std_logic);                      -- output
 
 end inv;
 
@@ -41,7 +40,7 @@ architecture bool of inv is
 
 begin  -- bool
 
-  x <= a after t;
+  o <= i after t;
 
 end bool;
 

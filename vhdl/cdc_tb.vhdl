@@ -10,6 +10,8 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
+use std.textio.all;
+use work.sigs.all;
 
 --  A testbench has no ports.
 
@@ -18,77 +20,50 @@ end cdc_tb;
 
 architecture behav of cdc_tb is
    --  Declaration of the component that will be instantiated.
-   component latch
-     port (
-       d, clk : in  std_logic;                   -- data (set), clock
-       q, qb  : out std_logic);                  -- q and q.bar
-   end component;
+  component cdc6600 
+    port (
+      coax1_1_extern_1 : inout coaxsigs);
+  end component;
    --  Specifies which entity is bound with the component.
-   for cdc6600_0: latch use entity work.latch;
-   signal d, clk, q, qb : std_logic;
+  signal coax1 : coaxsigs;              -- First coax
 begin
    --  Component instantiation.
-   cdc6600_0: latch port map (d => d, clk => clk, q => q, qb => qb);
+   uut: cdc6600 port map (coax1_1_extern_1 => coax1);
 
    --  This process does the real job.
-   process
-      type pattern_type is record
-         --  The inputs of the cdc6600.
-         i0, i1 : std_logic;
-         --  The expected outputs of the cdc6600.
-         --o1, o2 : std_logic;
-      end record;
-      --  The patterns to apply.
-      type pattern_array is array (natural range <>) of pattern_type;
-      constant patterns : pattern_array :=
-        (('0', '0'),
-         ('0', '0'),
-         ('0', '1'),
-         ('0', '0'),
-         ('0', '0'),
-         ('0', '0'),
-         ('1', '0'),
-         ('1', '0'),
-         ('1', '1'),
-         ('1', '0'),
-         ('1', '0'),
-         ('1', '0'),
-         ('0', '0'),
-         ('0', '0'),
-         ('0', '1'),
-         ('0', '0'),
-         ('0', '0'),
-         ('0', '0'),
-         ('1', '0'),
-         ('1', '0'),
-         ('1', '1'),
-         ('1', '0'),
-         ('1', '0'),
-         ('1', '0'),
-         ('0', '0'),
-         ('0', '0'),
-         ('0', '1'),
-         ('0', '0'),
-         ('0', '0'),
-         ('0', '0'),
-         ('1', '0'),
-         ('1', '0'),
-         ('1', '1'),
-         ('1', '0'),
-         ('1', '0'),
-         ('1', '0'),
-         ('1', '0'));
-   begin
-      --  Check each pattern.
-      for i in patterns'range loop
-        --  Set the inputs.
-        d <= patterns(i).i0;
-        clk <= patterns(i).i1;
-        --  Wait for the results.
-        wait for 10 ns;
-      end loop;
-      assert false report "end of test" severity note;
+   -- purpose: Read the test script and pass it to the UUT
+   -- type   : combinational
+   -- inputs : 
+   -- outputs: 
+   test: process
+     variable testdata : coaxsigs;         -- One line worth of test data
+     variable l : line;
+     file vector_file : text is in "./cdc_tb.txt";  -- test vector file
+     variable r : real;
+     variable g : boolean;
+     variable b : character;
+     variable i : integer;
+     variable d : time;
+   begin  -- process test
+     while not endfile (vector_file) loop
+       readline (vector_file, l);
+       read (l, r, good => g);
+       next when not g;
+       d := r * 25 ns;
+       testdata(1 to 19) := coax1;
+       for i in testdata'left to testdata'right loop
+         read (l, b);
+         if b = '0' then
+           testdata(i) := '0';
+         elsif b = '1' then
+           testdata(i) := '1';
+         end if;
+       end loop;  -- i
+       coax1 <= testdata(1 to 19);
+       wait for d;
+     end loop;
+      assert false report "end of test";
       --  Wait forever; this will finish the simulation.
       wait;
-   end process;
-end behav;
+   end process test;
+end;

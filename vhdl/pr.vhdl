@@ -70,10 +70,10 @@ use IEEE.std_logic_1164.all;
 entity pr is
   
   port (
-    p19 : in  std_logic;                      -- clock
-    p17 : in  std_logic;                      -- bit 0
-    p14 : in  std_logic;                      -- clear
-    p6  : in  std_logic;                      -- coax data in bit 0
+    p19 : in  std_logic := '1';                      -- clock
+    p17 : in  std_logic := '1';                      -- bit 0
+    p14 : in  std_logic := '1';                      -- clear
+    p6  : in  std_logic := '1';                      -- coax data in bit 0
     p5  : out std_logic;                      -- coax data out bit 0
     p8  : out std_logic);                     -- registered data 0
 

@@ -45,10 +45,10 @@ use IEEE.std_logic_1164.all;
 entity tg is
   
   port (
-    p2, p4, p6, p8     : in  std_logic;   -- bit 0 inputs
+    p2, p4, p6, p8     : in  std_logic := '1';   -- bit 0 inputs
     p13, p14           : out std_logic;   -- bit 0 outputs (true/complement)
     tp1                : out std_logic;   -- test point 1
-    p12, p16, p11, p15 : in  std_logic);  -- selects a, b, c, d
+    p12, p16, p11, p15 : in  std_logic := '1');  -- selects a, b, c, d
 
 end tg;
 

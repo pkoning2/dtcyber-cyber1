@@ -50,7 +50,7 @@ use IEEE.std_logic_1164.all;
 entity td is
   
   port (
-    p1, p3 : in  std_logic;                   -- inputs
+    p1, p3 : in  std_logic := '1';                   -- inputs
     tp1    : out std_logic;                   -- test point 1
     p6     : out std_logic);                  -- output
 

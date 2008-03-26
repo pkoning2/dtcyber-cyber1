@@ -27,7 +27,7 @@ use work.sigs.all;
 
 chassis_list = [ None ] * 17
 
-portpat = re.compile (r"\s*([\w\s,]+):\s*(in|out|inout)\s+std_logic\s*(\))?\s*;", re.I)
+portpat = re.compile (r"\s*([\w\s,]+):\s*(in|out|inout)\s+std_logic\s*(?:\:=\s'.')?(\))?\s*;", re.I)
 
 class Fail (Exception):
     pass

@@ -67,8 +67,8 @@ use IEEE.std_logic_1164.all;
 entity pd is
   
   port (
-    p16 : in std_logic;                       -- clock input
-    p14 : in std_logic;                       -- bit 1 input
+    p16 : in  std_logic := '1';                       -- clock input
+    p14 : in  std_logic := '1';                       -- bit 1 input
     tp1 : out std_logic;                      -- test point 1
     p4  : out std_logic;                      -- bit 1 output, complemented
     p11 : out std_logic);                     -- bit 1 output

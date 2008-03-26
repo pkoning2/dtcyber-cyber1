@@ -38,4 +38,7 @@ n32 1 m36 17
 m35 24 m36 14
 m36 8 m32 2
 m32 13 m29 2
-a1 3 coax1 1
+coax1 1 r25 1
+coax1 2 r25 3
+coax1 3 r26 1
+coax1 4 r26 3
