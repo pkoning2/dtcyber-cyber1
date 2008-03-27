@@ -26,6 +26,7 @@ architecture behav of cdc_tb is
   end component;
    --  Specifies which entity is bound with the component.
   signal coax1 : coaxsigs;              -- First coax
+  type testvec is array (1 to 80) of std_logic;
 begin
    --  Component instantiation.
    uut: cdc6600 port map (coax1_1_extern_1 => coax1);
@@ -36,10 +37,9 @@ begin
    -- inputs : 
    -- outputs: 
    test: process
-     variable testdata : coaxsigs;         -- One line worth of test data
+     variable testdata : testvec; -- One line worth of test data
      variable l : line;
      file vector_file : text is in "./cdc_tb.txt";  -- test vector file
-     variable r : real;
      variable g : boolean;
      variable b : character;
      variable i : integer;
@@ -47,19 +47,21 @@ begin
    begin  -- process test
      while not endfile (vector_file) loop
        readline (vector_file, l);
-       read (l, r, good => g);
-       next when not g;
-       d := r * 25 ns;
-       testdata(1 to 19) := coax1;
+       read (l, i);
+       d := i * 25 ns;
+       read (l, b);                     -- skip the space separator
        for i in testdata'left to testdata'right loop
-         read (l, b);
+         read (l, b, good => g);
+         exit when not g;
          if b = '0' then
            testdata(i) := '0';
          elsif b = '1' then
            testdata(i) := '1';
          end if;
        end loop;  -- i
-       coax1 <= testdata(1 to 19);
+       for i in 1 to 19 loop
+         coax1(i) <= testdata(i);
+       end loop;  -- i
        wait for d;
      end loop;
       assert false report "end of test";
