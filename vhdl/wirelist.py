@@ -93,7 +93,7 @@ class Chassis (object):
     def ports (self):
         """Return the ports definition of the chassis, as a string.
         """
-        portlist = [ ]
+        portlist = [ "      clk : in std_logic" ]
         for c in self.coax:
             portlist.append (self.port (c))
         if portlist:
@@ -169,7 +169,7 @@ def top_vhdl (f):
     cnames = cables.keys ()
     cnames.sort ()
     print >> f, header
-    print >> f, "entity cdc6600 is\n  port ("
+    print >> f, "entity cdc6600 is\n  port (\n    clk : in std_logic;"
     clist = [ ]
     for c in cnames:
         n = cables[c]
@@ -190,7 +190,7 @@ def top_vhdl (f):
         if ch is None:
             continue
         print >> f, "  ch%d : %s port map (" % (int (ch.name[7:]), ch.name)
-        clist = [ ]
+        clist = [ "    clk => clk" ]
         for c in ch.coax:
             n = c.coaxname ()
             clist.append ("    %s => %s" % (c.name, n))
@@ -240,11 +240,13 @@ class Coax (object):
     
 def pinnum (p):
     """Convert pin name to number.  Test point are treated as pins
-    above 100.
+    above 100.  Non-standard names are handled as -1000000+radix36(name).
     """
     if p.startswith ("tp"):
         return int (p[2:]) + 100
-    return int (p[1:])
+    elif p.startswith ("p"):
+        return int (p[1:])
+    return int (p, 36) - 1000000
 
 def pincmp (p1, p2):
     """Comparison function for sorting pin names in numeric order.
@@ -366,6 +368,8 @@ class ModuleInstance (object):
         connected pins of this module instance to the wire signal names.
         """
         clist = [ ]
+        if "clk" in self.Type.pins:
+            clist.append ("    clk => clk")
         plist = self.connections.keys ()
         plist.sort ()
         for pin in plist:
