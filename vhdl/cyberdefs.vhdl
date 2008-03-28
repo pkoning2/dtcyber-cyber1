@@ -44,6 +44,10 @@ begin  -- bool
 
 end bool;
 
+-- The CDC docs talk about the gates as "NOR", meaning "NOT OR".
+-- In standard terminology, that's "NAND" (AND NOT).  So we'll
+-- write the that way here.
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 use work.sigs.all;
@@ -59,7 +63,7 @@ architecture bool of g2 is
 
 begin  -- bool
 
-  x <= not (a) or not (b) after t;
+  x <= not (a and b) after t;
 
 end bool;
 
@@ -78,7 +82,7 @@ architecture bool of g3 is
 
 begin  -- bool
 
-  x <= not (a) or not (b) or not (c) after t;
+  x <= not (a and b and c) after t;
 
 end bool;
 
@@ -97,7 +101,7 @@ architecture bool of g4 is
 
 begin  -- bool
 
-  x <= not (a) or not (b) or not (c) or not (d) after t;
+  x <= not (a and b and c and d) after t;
 
 end bool;
 
@@ -116,7 +120,7 @@ architecture bool of g5 is
 
 begin  -- bool
 
-  x <= not (a) or not (b) or not (c) or not (d) or not (e) after t;
+  x <= not (a and b and c and d and e) after t;
 
 end bool;
 
