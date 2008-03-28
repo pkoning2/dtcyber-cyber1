@@ -1,0 +1,22 @@
+Some notes on the simulation
+
+The CDC 6600 uses negative logic (low voltage is logic 1, high voltage
+is logic 0).  Coaxial transmission is somewhat of an exception: pulse
+(which actually is a positive followed by a negative pulse, but the
+negative one doesn't really matter) is logic 1, absence of pulse is 0.
+
+In the model, the description is given in terms of logic values, not
+voltage levels, so 1 is 1 and 0 is 0.  On the waveform viewer, 1 will
+show up as the higher level.  That actually matches what the CDC
+documents do; logic waveforms are shown that way, not as voltage
+plots.
+
+A coax connection is modeled as a straight wire delay, without any
+inversions in it.  That's basically sensible end to end (the coax link
+with driver and receiver is non-inverting).  But it mixes up the
+picture a bit, because the input to the driver is a 0-going pulse to
+produce a coax pulse (which in turn produces a 0-going pulse out).  So
+when viewed on a waveform viewer, coax signals will appear inverted
+(steady high with low pulses).  That could be fixed but at the cost of
+introducing the need to model two inversions, one at each end.  That
+doesn't seem to be worth the trouble.
