@@ -175,7 +175,7 @@ def top_vhdl (f):
         n = cables[c]
         if n == 2:
             clist.append ("    %s : inout coaxsigs" % c)
-    print >> f, "%s);\nend cdc6600;\n" % ",\n".join (clist)
+    print >> f, "%s);\nend cdc6600;\n" % ";\n".join (clist)
     print >> f, "\narchitecture chassis of cdc6600 is"
     for ch in chassis_list:
         if ch is None:
@@ -226,7 +226,10 @@ class Coax (object):
             raise Warn, "Pin number %s out of range" % pin
         if pin in self.connections:
             raise Warn, "Coax %s pin %s already connected" % (self.name, pin)
+        if pin2 in other.connections:
+            raise Warn, "Pin %s already connected in %s module at %s" % (pin2, t2.name, other.name)
         self.connections[pin] = (other, pin2)
+        other.connections[pin2] = (self, pin)
         
     def coaxname (self):
         """Like wirename but for coax cables.
@@ -430,13 +433,13 @@ def process_list (name):
         if not l:
             continue
         try:
-            if l.startswith ("chassis"):
+            if l.startswith ("chassis "):
                 process_chassis (l)
-            elif l.startswith ("modules"):
+            elif l == "modules":
                 action = process_modules
-            elif l.startswith ("coax"):
+            elif l == "coax":
                 action = process_coax
-            elif l.startswith ("wires"):
+            elif l == "wires":
                 action = process_wires
             else:
                 action (l)
