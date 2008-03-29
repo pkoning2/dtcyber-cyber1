@@ -279,14 +279,14 @@ class ModuleType (object):
         self.readdef (name)
 
     def readdef (self, name):
-        """Read the <name>.vhdl file to find the entity declaration
+        """Read the <name>.vhd file to find the entity declaration
         for this module.  Process its port definition and save away
         all the pin data.
         """
         try:
-            v = open (name + ".vhdl", "r")
+            v = open (name + ".vhd", "r")
         except:
-            raise Warn, "Error opening %s.vhdl" % name
+            raise Warn, "Error opening %s.vhd" % name
         entpat = re.compile ("entity %s is" % name, re.I)
         ent = False
         while not entpat.search (v.readline ()):
@@ -457,12 +457,12 @@ if __name__ == "__main__":
         sys.exit (1)
     for f in sys.argv[1:]:
         process_list (f)
-    f = open ("cdc6600.vhdl", "w")
+    f = open ("cdc6600.vhd", "w")
     top_vhdl (f)
     f.close ()
     for ch in chassis_list:
         if ch is None:
             continue
-        f = open ("%s.vhdl" % ch.name, "w")
+        f = open ("%s.vhd" % ch.name, "w")
         ch.print_vhdl (f)
         f.close ()

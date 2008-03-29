@@ -30,7 +30,7 @@ begin  -- beh
   -- outputs: i, ii, iii, iv
   clkgen: process (clk)
   begin  -- process clkgen
-    if clk'event then  -- either edge (for now)
+    if clk'event and clk = '1' then  -- rising edge
       if iv = '1' then
         i <= '1';
         ii <= '0';
