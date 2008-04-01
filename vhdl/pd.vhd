@@ -72,6 +72,7 @@ entity pd is
     p14 : in  std_logic := '1';                       -- bit 1 input
     tp1 : out std_logic;                      -- test point 1
     p4  : out std_logic;                      -- bit 1 output, complemented
+    p7  : out std_logic;                      -- bit 1 output
     p11 : out std_logic);                     -- bit 1 output
 
 end pd;
@@ -90,8 +91,9 @@ architecture gates of pd is
       a, b : out std_logic);                  -- clear, set outputs
   end component;
   signal a, b : std_logic;                    -- reset and set clocks
+  signal q : std_logic;
 begin  -- gates
-
+  
   u1 : clearset port map (
     clk => p16,
     a   => a,
@@ -101,8 +103,9 @@ begin  -- gates
     a  => a,
     b  => b,
     tp => tp1,
-    q  => p11,
+    q  => q,
     qb => p4);
-
+  p7 <= q;
+  p11 <= q;
 end gates;
 

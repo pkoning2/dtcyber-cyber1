@@ -25,14 +25,19 @@ end tgslice;
 
 architecture bool of tgslice is
   signal ti : std_logic;                      -- internal copy of output
+  signal ii1, ii2, ii3, ii4 : std_logic;
 begin  -- bool
 
   -- We could do this as gates, but chances are that writing
   -- it this way will result in better synthesis
-  ti <= i1 when a = '1' else
-        i2 when b = '1' else
-        i3 when c = '1' else
-        i4 when d = '1' else '0';
+  ii1 <= '1' when i1 = 'U' else i1;
+  ii2 <= '1' when i2 = 'U' else i2;
+  ii3 <= '1' when i3 = 'U' else i3;
+  ii4 <= '1' when i4 = 'U' else i4;
+  ti <= ii1 when a = '1' else
+        ii2 when b = '1' else
+        ii3 when c = '1' else
+        ii4 when d = '1' else '0';
   tp <= ti after 2 * t;
   q  <= ti after 2 * t;
   qb <= not (ti) after 3 * t;

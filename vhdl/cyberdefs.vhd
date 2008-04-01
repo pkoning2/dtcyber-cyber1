@@ -160,7 +160,7 @@ architecture bool of cxdriver is
   signal xi : std_logic := '1';
 begin  -- bool
   ai <= '1' when a = 'U' else a;
-  xi <= transport a after tc;
+  xi <= a after tc;
   x <= xi;
 end bool;
 
@@ -181,21 +181,19 @@ architecture gates of rsflop is
       a, b, c, d, e : in  std_logic;            -- inputs
       x    : out std_logic);                    -- output
   end component;
-  signal qi : std_logic;                -- internal copies of the outputs
-  signal qib : std_logic;               -- internal copies of the outputs
+  signal qi : std_logic := '0';                -- internal copies of the outputs
+  signal qib : std_logic := '1';               -- internal copies of the outputs
   signal q2, qb2 : std_logic;
 begin  -- gates
-  q2 <= '0' when qi = 'U' else qi;
-  qb2 <= '1' when qib = 'U' else qib;
   u1 : g5 port map (
     a => s,
-    b => qb2,
+    b => qib,
     c => s2,
     d => s3,
     e => s4,
     x => qi);
   u2 : g5 port map (
-    a => q2,
+    a => qi,
     b => r,
     c => r2,
     d => r3,

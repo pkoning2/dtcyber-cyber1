@@ -33,7 +33,7 @@ q28 5 r29 1
 q29 5 r29 3
 r29 6 q32 14
 a1 2 q32 16
-q32 11 m36 19
+q32 7 m36 19
 q32 4 m35 19
 o27 13 n32 3
 n32 1 m36 17
@@ -43,7 +43,7 @@ m32 13 m29 2
 # channel 0 inputs
 coax2 1 m36 6
 coax2 13 m35 25
-coax2 14 m35 14
+#coax2 14 m35 14
 coax2 15 m35 15
 coax2 16 m35 8
 coax2 18 a1 p1	# 10 MHz clock
@@ -68,3 +68,4 @@ coax1 9 m35 p17	# ian
 coax1 10 m35 23	# not(mclear)
 coax1 11 m35 12 # acn
 coax1 12 m35 27 # dcn
+coax1 13 m35 14 # coax inactive in

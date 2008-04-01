@@ -31,12 +31,7 @@ begin  -- beh
   clkgen: process (clk)
   begin  -- process clkgen
     if clk'event and clk = '1' then  -- rising edge
-      if iv = '1' then
-        i <= '1';
-        ii <= '0';
-        iii <= '0';
-        iv <= '0';
-      elsif i = '1' then
+      if i = '1' then
         i <= '0';
         ii <= '1';
         iii <= '0';
@@ -46,11 +41,16 @@ begin  -- beh
         ii <= '0';
         iii <= '1';
         iv <= '0';
-      else
+      elsif iii = '1' then
         i <= '0';
         ii <= '0';
         iii <= '0';
         iv <= '1';
+      else
+        i <= '1';
+        ii <= '0';
+        iii <= '0';
+        iv <= '0';
       end if;
       
     end if;
