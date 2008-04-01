@@ -7,7 +7,7 @@ OBJS = $(TB) $(TOP) $(MODULES)
 cdc_tb:	$(OBJS) $(VLIB)
 	ghdl -e cdc_tb
 
-cyberdefs.o cyberdefs.stamp: cyberdefs.vhdl
+cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
 	ghdl -a $<
 	touch cyberdefs.stamp
 
