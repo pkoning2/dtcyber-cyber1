@@ -17,7 +17,7 @@ cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
 %.o : %.vhd cyberdefs.stamp
 	ghdl -a $<
 
-$(VLIB): cyberdefs.vhdl
+$(VLIB): cyberdefs.vhd
 	ghdl -a $<
 
 clean:
