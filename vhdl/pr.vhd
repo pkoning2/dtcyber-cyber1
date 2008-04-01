@@ -41,6 +41,7 @@ architecture gates of prslice is
   component rsflop
     port (
       s, r  : in  std_logic;                  -- inputs
+      s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset if needed
       q, qb : out std_logic);                 -- outputs
   end component;
   signal s, s2, rb : std_logic;

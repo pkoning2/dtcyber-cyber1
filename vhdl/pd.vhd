@@ -15,6 +15,7 @@ entity pdslice is
   
   port (
     i : in  std_logic;                        -- input
+    a, b : in std_logic;                      -- clocks
     tp : out std_logic;                       -- test point output
     q, qb : out std_logic);                   -- outputs
 
@@ -34,9 +35,9 @@ architecture gates of pdslice is
   component rsflop
     port (
       s, r  : in  std_logic;                  -- inputs
+      s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset if needed
       q, qb : out std_logic);                 -- outputs
   end component;
-  signal a, b : std_logic;                    -- clocks
   signal ti : std_logic;                      -- copy of test point
   signal t2 : std_logic;                      -- buffered output
   signal ad : std_logic;                      -- gated input
@@ -79,6 +80,7 @@ architecture gates of pd is
   component pdslice
     port (
       i : in  std_logic;                      -- input
+      a, b : in std_logic;                    -- clocks
       tp    : out std_logic;                  -- test point output
       q, qb : out std_logic);                 -- outputs
   end component;
@@ -96,6 +98,8 @@ begin  -- gates
     b   => b);
   u2 : pdslice port map (
     i  => p14,
+    a  => a,
+    b  => b,
     tp => tp1,
     q  => p11,
     qb => p4);

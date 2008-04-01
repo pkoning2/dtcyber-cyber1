@@ -37,10 +37,12 @@ entity inv is
 end inv;
 
 architecture bool of inv is
-
+  signal ii : std_logic;
+  signal oi : std_logic := '0';
 begin  -- bool
-
-  o <= i after t;
+  ii <= '1' when i = 'U' else i;
+  oi <= not (ii) after t;
+  o <= oi;
 
 end bool;
 
@@ -60,11 +62,14 @@ entity g2 is
 end g2;
 
 architecture bool of g2 is
-
+  signal ai, bi : std_logic;
+  signal xi : std_logic := '0';
 begin  -- bool
-
-  x <= not (a and b) after t;
-
+  ai <= '1' when a = 'U' else a;
+  bi <= '1' when b = 'U' else b;
+  xi <= not (ai and bi) after t;
+  x <= xi;
+  
 end bool;
 
 library IEEE;
@@ -79,10 +84,14 @@ entity g3 is
 end g3;
 
 architecture bool of g3 is
-
+  signal ai, bi, ci : std_logic;
+  signal xi : std_logic := '0';
 begin  -- bool
-
-  x <= not (a and b and c) after t;
+  ai <= '1' when a = 'U' else a;
+  bi <= '1' when b = 'U' else b;
+  ci <= '1' when c = 'U' else c;
+  xi <= not (ai and bi and ci) after t;
+  x <= xi;
 
 end bool;
 
@@ -98,10 +107,15 @@ entity g4 is
 end g4;
 
 architecture bool of g4 is
-
+  signal ai, bi, ci, di : std_logic;
+  signal xi : std_logic := '0';
 begin  -- bool
-
-  x <= not (a and b and c and d) after t;
+  ai <= '1' when a = 'U' else a;
+  bi <= '1' when b = 'U' else b;
+  ci <= '1' when c = 'U' else c;
+  di <= '1' when d = 'U' else d;
+  xi <= not (ai and bi and ci and di) after t;
+  x <= xi;
 
 end bool;
 
@@ -117,10 +131,16 @@ entity g5 is
 end g5;
 
 architecture bool of g5 is
-
+  signal ai, bi, ci, di, ei : std_logic;
+  signal xi : std_logic := '0';
 begin  -- bool
-
-  x <= not (a and b and c and d and e) after t;
+  ai <= '1' when a = 'U' else a;
+  bi <= '1' when b = 'U' else b;
+  ci <= '1' when c = 'U' else c;
+  di <= '1' when d = 'U' else d;
+  ei <= '1' when e = 'U' else e;
+  xi <= not (ai and bi and ci and di and ei) after t;
+  x <= xi;
 
 end bool;
 
@@ -136,11 +156,12 @@ entity cxdriver is
 end cxdriver;
 
 architecture bool of cxdriver is
-
+  signal ai : std_logic;
+  signal xi : std_logic := '1';
 begin  -- bool
-
-  x <= transport a after tc;
-
+  ai <= '1' when a = 'U' else a;
+  xi <= transport a after tc;
+  x <= xi;
 end bool;
 
 library IEEE;
@@ -149,27 +170,36 @@ use work.sigs.all;
 entity rsflop is
   port (
     s, r  : in  std_logic;                    -- set, reset
+    s2, s3, s4, r2, r3, r4  : in  std_logic := '1';  -- extra set, reset if needed
     q, qb : out std_logic);                   -- q and q.bar
 
 end rsflop;
 
 architecture gates of rsflop is
-  component g2 is
+  component g5 is
     port (
-      a, b : in  std_logic;                     -- inputs
+      a, b, c, d, e : in  std_logic;            -- inputs
       x    : out std_logic);                    -- output
   end component;
   signal qi : std_logic;                -- internal copies of the outputs
   signal qib : std_logic;               -- internal copies of the outputs
-
+  signal q2, qb2 : std_logic;
 begin  -- gates
-  u1 : g2 port map (
+  q2 <= '0' when qi = 'U' else qi;
+  qb2 <= '1' when qib = 'U' else qib;
+  u1 : g5 port map (
     a => s,
-    b => qib,
+    b => qb2,
+    c => s2,
+    d => s3,
+    e => s4,
     x => qi);
-  u2 : g2 port map (
-    a => qi,
+  u2 : g5 port map (
+    a => q2,
     b => r,
+    c => r2,
+    d => r3,
+    e => r4,
     x => qib);
   q <= qi;
   qb <= qib;
@@ -189,13 +219,15 @@ entity clearset is
 end clearset;
 
 architecture gates of clearset is
-  signal ai : std_logic;                      -- internal copy of a output
+  signal ai : std_logic := '0';               -- internal copy of output
+  signal bi : std_logic := '1';               -- internal copy of output
+  signal clki : std_logic;
 begin  -- gates
-
-  ai <= not (clk) after t;
+  clki <= '1' when clk = 'U' else clk;  
+  ai <= not (clki) after t;
   a <= ai;
-  b <= not (ai) after t;
-
+  bi <= not (ai) after t;
+  b <= bi;
 end gates;
 
 library IEEE;

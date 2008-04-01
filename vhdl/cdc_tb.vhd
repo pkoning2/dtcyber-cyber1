@@ -65,8 +65,10 @@ begin
          coax1(i) <= testdata(i);
        end loop;  -- i
        for i in 1 to d loop
-         wait for 25 ns;
-         clk <= not (clk);
+         clk <= '1';
+         wait for 12.5 ns;
+         clk <= '0';
+         wait for 12.5 ns;
        end loop;  -- i
      end loop;
       assert false report "end of test";

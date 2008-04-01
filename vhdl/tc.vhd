@@ -25,25 +25,26 @@ entity tc is
 end tc;
 
 architecture bool of tc is
-
+  signal pi3 : std_logic;
 begin  -- bool
-
+  pi3 <= '1' when p3 = 'U' else p3;
+  
   -- We could do this as gates but that's too much trouble to
   -- be worth doing.  Just code it as concurrent assignments...
-  tp1 <= not (p3) after t;
-  tp2 <= p3 after 2 * t;
-  p1 <= p3 after 3 * t;
-  p2 <= p3 after 3 * t;
-  p4 <= p3 after 3 * t;
-  p6 <= p3 after 3 * t;
-  p7 <= p3 after 3 * t;
-  p8 <= p3 after 3 * t;
-  p9 <= p3 after 3 * t;
-  p10 <= p3 after 3 * t;
-  p11 <= p3 after 3 * t;
-  p12 <= p3 after 3 * t;
-  p13 <= p3 after 3 * t;
-  p15 <= p3 after 3 * t;
+  tp1 <= not (pi3) after t;
+  tp2 <= pi3 after 2 * t;
+  p1 <= pi3 after 3 * t;
+  p2 <= pi3 after 3 * t;
+  p4 <= pi3 after 3 * t;
+  p6 <= pi3 after 3 * t;
+  p7 <= pi3 after 3 * t;
+  p8 <= pi3 after 3 * t;
+  p9 <= pi3 after 3 * t;
+  p10 <= pi3 after 3 * t;
+  p11 <= pi3 after 3 * t;
+  p12 <= pi3 after 3 * t;
+  p13 <= pi3 after 3 * t;
+  p15 <= pi3 after 3 * t;
 
 end bool;
 

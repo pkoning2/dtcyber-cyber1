@@ -40,19 +40,31 @@ n32 1 m36 17
 m35 24 m36 14
 m36 8 m32 2
 m32 13 m29 2
-coax1 1 r25 1
-coax1 2 r25 3
-coax1 3 r26 1
-coax1 4 r26 3
+# channel 0 inputs
 coax2 1 m36 6
 coax2 13 m35 25
 coax2 14 m35 14
 coax2 15 m35 15
 coax2 16 m35 8
 coax2 18 a1 p1	# 10 MHz clock
+# channel 0 outputs
 coax3 1 m36 5
 coax3 13 m35 22
 coax3 14 m35 18
 coax3 15 m35 13
 coax3 16 m35 9
 coax3 17 m35 3
+
+# test cable
+coax1 1 r25 1
+coax1 2 r25 3
+coax1 3 r26 1
+coax1 4 r26 3
+coax1 5 o27 3	# a0
+coax1 6 o27 21	# not(fan)
+coax1 7 m35 p5  # fan
+coax1 8 m35 p6	# oan
+coax1 9 m35 p17	# ian
+coax1 10 m35 23	# not(mclear)
+coax1 11 m35 12 # acn
+coax1 12 m35 27 # dcn

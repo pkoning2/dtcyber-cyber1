@@ -21,7 +21,7 @@ entity pk is
     p8  : in  std_logic := '1';                      -- coax empty input
     p23 : in  std_logic := '1';                      -- master clear
     p5  : in  std_logic := '1';                      -- function
-    p3  : in  std_logic := '1';                      -- function coax output
+    p3  : out std_logic;                      -- function coax output
     p9  : out std_logic;                      -- empty coax output
     p10 : out std_logic;                      -- empty out
     p18 : out std_logic;                      -- inactive coax out
@@ -61,12 +61,77 @@ architecture gates of pk is
   component rsflop
     port (
       s, r  : in  std_logic;                  -- inputs
+      s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset if needed
       q, qb : out std_logic);                 -- outputs
   end component;
   signal b, c : std_logic;                    -- internal enables
-  signal ai, ii, fi, ei, fui : std_logic;     -- internal gate output terms
+  signal ai, ii, fi, ei : std_logic;          -- internal gate output terms
+  signal fq : std_logic;                -- full rsflop output
+  signal a : std_logic;                 -- active rsflop output
 begin  -- gates
 
-  
+  u1 : inv port map (
+    i => p19,
+    o => c);
+  u2 : g2 port map (
+    a => p6,
+    b => c,
+    x => fi);
+  u3 : g2 port map (
+    a => c,
+    b => p17,
+    x => ei);
+  u4 : g2 port map (
+    a => p5,
+    b => c,
+    x => b);
+  u5 : g2 port map (
+    a => p12,
+    b => c,
+    x => ai);
+  u6 : g2 port map (
+    a => p27,
+    b => c,
+    x => ii);
+  u7 : cxdriver port map (
+    a => fi,
+    x => p13);
+  u8 : cxdriver port map (
+    a => ei,
+    x => p9);
+  u9 : cxdriver port map (
+    a => b,
+    x => p3);
+  u10 : cxdriver port map (
+    a => ai,
+    x => p22);
+  u11 : cxdriver port map (
+    a => ii,
+    x => p18);
+  u12 : rsflop port map (
+    s  => fi,
+    s2 => p15,
+    s3 => b,
+    r  => ei,
+    r2 => p8,
+    r3 => a,
+    r4 => p23,
+    q  => fq,
+    qb => p10);
+  u13 : inv port map (
+    i => fq,
+    o => p24);
+  u14 : rsflop port map (
+    s  => ai,
+    s2 => p23,
+    s3 => b,
+    s4 => p25,
+    r  => ii,
+    r2 => p14,
+    q  => tp5,
+    qb => p21);
+  tp4 <= c;
+  tp2 <= fq;
+  tp1 <= b;
 
 end gates;
