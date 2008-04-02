@@ -5,6 +5,7 @@
 chassis 1
 
 modules
+#mem a1
 TC n32
 PG o27
 TD r25 r26
@@ -14,7 +15,7 @@ TH q28 q29
 TG m32 m29
 PR m36
 PK m35
-CLOCK a1
+CLOCK z1
 
 coax 
 1 extern 1
@@ -24,15 +25,15 @@ coax
 wires
 # module pin module pin (in to out or out to in, either order)
 r25 6 r27 14
-a1 4 r27 16
+z1 4 r27 16
 r27 11 q28 6
 r26 6 r28 14
-a1 14 r28 16
+z1 14 r28 16
 r28 11 q29 6
 q28 5 r29 1
 q29 5 r29 3
 r29 6 q32 14
-a1 2 q32 16
+z1 2 q32 16
 q32 7 m36 19
 q32 4 m35 19
 o27 13 n32 3
@@ -46,7 +47,7 @@ coax2 13 m35 25
 #coax2 14 m35 14
 coax2 15 m35 15
 coax2 16 m35 8
-coax2 18 a1 p1	# 10 MHz clock
+coax2 18 z1 p1	# 10 MHz clock
 # channel 0 outputs
 coax3 1 m36 5
 coax3 13 m35 22

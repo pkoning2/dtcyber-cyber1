@@ -1,5 +1,6 @@
 VLIB = work-obj93.cf
-MODULES = pd.o pg.o pr.o tc.o td.o th.o tg.o pk.o clock.o
+MODULES = pd.o pg.o pr.o tc.o td.o th.o tg.o pk.o \
+	clock.o mem.o
 CHASSIS = chassis1.o
 TOP = cdc6600.o
 TB = cdc_tb.o

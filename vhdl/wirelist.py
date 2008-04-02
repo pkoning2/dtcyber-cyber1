@@ -289,10 +289,18 @@ class ModuleType (object):
             raise Warn, "Error opening %s.vhd" % name
         entpat = re.compile ("entity %s is" % name, re.I)
         ent = False
-        while not entpat.search (v.readline ()):
-            pass
-        while not v.readline ().strip ().startswith ("port"):
-            pass
+        while True:
+            l = v.readline ()
+            if l and not entpat.search (l):
+                continue
+            break
+        while True:
+            l = v.readline ()
+            if l and not l.strip ().startswith ("port"):
+                continue
+            break
+        if not l:
+            raise Warn, "Entity %s missing" % name
         for l in v:
             m = portpat.match (l)
             if not m:

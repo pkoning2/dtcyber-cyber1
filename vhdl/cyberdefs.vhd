@@ -23,6 +23,46 @@ package sigs is
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
   type coaxsigs is array (1 to 19) of std_logic;  -- CDC standard coax cable
+  type ppword is array (11 downto 0) of std_logic;  -- PPU word (12 bits)
+  type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
+
+  function pp_to_int (
+    v : ppword)                         -- input bit vector
+    return integer;
+
+  function "not" (
+    a : ppword)                         -- input
+    return ppword;
+end sigs;
+
+package body sigs is
+
+  -- purpose: Convert a bit vector to the corresponding integer
+  function pp_to_int (
+    v : ppword)                         -- input bit vector
+    return integer is
+    variable result : integer := 0;     -- result accumulator
+  begin  -- pp_to_int
+    for i in 0 to v'high loop
+      result := result * 2;
+      if v(i) = '1' then
+        result := result + 1;
+      end if;
+    end loop;  -- i
+    return result;
+  end pp_to_int;
+
+  -- purpose: logical not of a 12-bit word
+  function "not" (
+    a : ppword)
+    return ppword is
+    variable o : ppword;
+  begin  -- not
+    for i in 0 to 11 loop
+      o (i) := not (a (i));
+    end loop;  -- i
+    return o;
+  end "not";
 end sigs;
 
 library IEEE;
