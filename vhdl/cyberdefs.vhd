@@ -175,58 +175,20 @@ entity rsflop is
 
 end rsflop;
 
-architecture gates of rsflop is
-  component g5 is
-    port (
-      a, b, c, d, e : in  std_logic;            -- inputs
-      x    : out std_logic);                    -- output
-  end component;
-  signal qi : std_logic := '0';                -- internal copies of the outputs
-  signal qib : std_logic := '1';               -- internal copies of the outputs
-  signal q2, qb2 : std_logic;
-begin  -- gates
-  u1 : g5 port map (
-    a => s,
-    b => qib,
-    c => s2,
-    d => s3,
-    e => s4,
-    x => qi);
-  u2 : g5 port map (
-    a => qi,
-    b => r,
-    c => r2,
-    d => r3,
-    e => r4,
-    x => qib);
-  q <= qi;
-  qb <= qib;
-  
-end gates;
+architecture beh of rsflop is
+  signal qi : std_logic := '0';
+  signal qib : std_logic := '1';
+begin  -- beh
 
+  qi <= '1' when s = '0' or s2 = '0' or s3 = '0' or s4 = '0' else
+        '0' when r = '0' or r2 = '0' or r3 = '0' or r4 = '0' else unaffected;
+  qib<= '0' when s = '0' or s2 = '0' or s3 = '0' or s4 = '0' else
+        '1' when r = '0' or r2 = '0' or r3 = '0' or r4 = '0' else unaffected;
+  q <= qi after t;
+  qb <= qib after t;
+        
+end beh;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
-use work.sigs.all;
-entity clearset is
-  
-  port (
-    clk  : in  std_logic;                     -- clock input
-    a, b : out std_logic);                    -- clear and set outputs
-
-end clearset;
-
-architecture gates of clearset is
-  signal ai : std_logic := '0';               -- internal copy of output
-  signal bi : std_logic := '1';               -- internal copy of output
-  signal clki : std_logic;
-begin  -- gates
-  clki <= '1' when clk = 'U' else clk;  
-  ai <= not (clki) after t;
-  a <= ai;
-  bi <= not (ai) after t;
-  b <= bi;
-end gates;
 
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -239,37 +201,14 @@ entity latch is
 
 end latch;
 
-architecture gates of latch is
-  signal a, b, ad : std_logic;                -- delayed clks
-  component g2 is
-    port (
-      a, b : in  std_logic;                     -- inputs
-      x    : out std_logic);                    -- output
-  end component;
-  component clearset
-    port (
-      clk  : in  std_logic;                   -- clock input
-      a, b : out std_logic);                  -- clear, set outputs
-  end component;
-  component rsflop
-    port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
-  end component;
-begin  -- gates
+architecture beh of latch is
+  signal qi : std_logic := '0';
+  signal qib : std_logic := '1';
+begin  -- beh
 
-  u1 : clearset port map (
-    clk => clk,
-    a   => a,
-    b   => b);
-  u2 : g2 port map (
-    a => d,
-    b => b,
-    x => ad);
-  u3 : rsflop port map (
-    s  => ad,
-    r  => a,
-    q  => q,
-    qb => qb);
+  qi <= d when clk = '1' else unaffected;
+  qib <= not (d) when clk = '1' else unaffected;
+  q <= qi after t;
+  qb <= qib after t;
 
-end gates;
+end beh;

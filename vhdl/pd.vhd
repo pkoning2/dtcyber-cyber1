@@ -15,48 +15,37 @@ entity pdslice is
   
   port (
     i : in  std_logic;                        -- input
-    a, b : in std_logic;                      -- clocks
+    clk : in std_logic;                       -- clock
     tp : out std_logic;                       -- test point output
     q, qb : out std_logic);                   -- outputs
 
 end pdslice;
 
 architecture gates of pdslice is
-  component g2
-    port (
-      a, b : in  std_logic;                   -- inputs
-      x    : out std_logic);                  -- output
-  end component;
   component inv
     port (
       i : in  std_logic;                      -- input
       o : out std_logic);                     -- output
   end component;
-  component rsflop
+  component latch
     port (
-      s, r  : in  std_logic;                  -- inputs
-      s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset if needed
-      q, qb : out std_logic);                 -- outputs
+      d, clk : in  std_logic;                   -- data (set), clock
+      q, qb  : out std_logic);                  -- q and q.bar
   end component;
   signal ti : std_logic;                      -- copy of test point
   signal t2 : std_logic;                      -- buffered output
-  signal ad : std_logic;                      -- gated input
 begin  -- gates
 
-  u1 : g2 port map (
-    a => i,
-    b => b,
-    x => ad);
-  u2 : rsflop port map (
-    s => ad,
-    r => a,
+  u1 : latch port map (
+    d => i,
+    clk => clk,
     q => ti);
   tp <= ti;
-  u3 : inv port map (
+  u2 : inv port map (
     i => ti,
     o => t2);
   qb <= t2;
-  u4 : inv port map (
+  u3 : inv port map (
     i => t2,
     o => q);
 
@@ -81,27 +70,16 @@ architecture gates of pd is
   component pdslice
     port (
       i : in  std_logic;                      -- input
-      a, b : in std_logic;                    -- clocks
+      clk : in std_logic;                     -- clock
       tp    : out std_logic;                  -- test point output
       q, qb : out std_logic);                 -- outputs
   end component;
-  component clearset
-    port (
-      clk  : in  std_logic;                   -- clock input
-      a, b : out std_logic);                  -- clear, set outputs
-  end component;
-  signal a, b : std_logic;                    -- reset and set clocks
   signal q : std_logic;
 begin  -- gates
   
-  u1 : clearset port map (
-    clk => p16,
-    a   => a,
-    b   => b);
-  u2 : pdslice port map (
+  u1 : pdslice port map (
     i  => p14,
-    a  => a,
-    b  => b,
+    clk => p16,
     tp => tp1,
     q  => q,
     qb => p4);
