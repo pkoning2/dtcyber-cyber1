@@ -37,11 +37,11 @@ begin  -- beh
     variable mdata : ppmem;               -- Memory data
   begin  -- process rw
     if read'event and read = '1' then  -- rising clock edge
-      areg := pp_to_int (addr);
+      areg := vec_to_int (addr);
       rdata <= mdata (areg);
       rdatab <= not (mdata (areg));
     elsif write'event and write = '1' then
-      areg := pp_to_int (addr);
+      areg := vec_to_int (addr);
       mdata (areg) := not (wdata);
     end if;
   end process rw;
