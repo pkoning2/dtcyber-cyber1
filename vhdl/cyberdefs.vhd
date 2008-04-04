@@ -22,25 +22,21 @@ package sigs is
   constant t : time := 5 ns;            -- basic stage delay
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
-  type vec is array (natural range <>) of std_logic;  -- generalized vector
-  subtype coaxsigs is vec (1 to 19);    -- CDC standard coax cable
-  subtype ppword is vec (11 downto 0);  -- PPU word (12 bits)
+  subtype coaxsigs is std_logic_vector (1 to 19);    -- CDC standard coax cable
+  subtype ppword is std_logic_vector (11 downto 0);  -- PPU word (12 bits)
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
 
   function vec_to_int (
-    v : vec)                            -- input bit vector
+    v : std_logic_vector)                            -- input bit vector
     return integer;
 
-  function "not" (
-    a : vec)                            -- input
-    return vec;
 end sigs;
 
 package body sigs is
 
   -- purpose: Convert a bit vector to the corresponding integer
   function vec_to_int (
-    v : vec)                            -- input bit vector
+    v : std_logic_vector)                            -- input bit vector
     return integer is
     variable result : integer := 0;     -- result accumulator
   begin  -- vec_to_int
@@ -53,17 +49,6 @@ package body sigs is
     return result;
   end vec_to_int;
 
-  -- purpose: logical not of a vector
-  function "not" (
-    a : vec)
-    return vec is
-    variable o : vec (a'left to a'right);
-  begin  -- not
-    for i in a'low to a'high loop
-      o (i) := not (a (i));
-    end loop;  -- i
-    return o;
-  end "not";
 end sigs;
 
 library IEEE;
