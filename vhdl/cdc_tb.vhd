@@ -13,7 +13,55 @@ use IEEE.std_logic_1164.all;
 use std.textio.all;
 use work.sigs.all;
 
+package teststuff is
+
+  procedure send (
+    func : in  boolean;                 -- true if sending function
+    dat  : in  integer;                 -- data to send
+    oc   : inout coaxsigs);             -- output cable
+
+end teststuff;
+
+package body teststuff is
+
+  -- purpose: construct output cable signals for function or data
+  procedure send (
+    func : in    boolean;
+    dat  : in    integer;
+    oc   : inout coaxsigs) is
+    variable i, b, d : integer;
+  begin  -- send
+
+    for i in 1 to 19 loop
+      oc(i) := '1';
+    end loop;  -- i
+
+    b := 2048;
+    d := dat;
+    for i in 11 downto 0 loop
+      if d >= b then
+        oc(i + 1) := '0';
+        d := d - b;
+      end if;
+      b := b / 2;
+    end loop;  -- i
+
+    if func then
+      oc(17) := '0';
+    else
+      oc(15) := '0';
+    end if;
+  end send;
+
+end teststuff;
+
 --  A testbench has no ports.
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use std.textio.all;
+use work.sigs.all;
+use work.teststuff.all;
 
 entity cdc_tb is
 end cdc_tb;
@@ -47,7 +95,10 @@ begin
      variable b : character;
      variable i : integer;
      variable d : integer;
+     variable ic, oc : coaxsigs;
+     variable c1, c2, c3, c4 : integer := 0;
    begin  -- process test
+     dtmain;
      while not endfile (vector_file) loop
        readline (vector_file, l);
        read (l, d);                     -- delay in 25 ns units
@@ -63,13 +114,85 @@ begin
        end loop;  -- i
        for i in 1 to 19 loop
          coax1(i) <= testdata(i);
+         oc(i) := testdata(i);
        end loop;  -- i
+       synchro (8, ic, oc);
        for i in 1 to d loop
          clk <= '1';
          wait for 12.5 ns;
          clk <= '0';
          wait for 12.5 ns;
        end loop;  -- i
+     end loop;
+     loop
+       send (true, 8#7001#, oc);
+       synchro (8, ic, oc);
+       for i in 1 to 19 loop
+         oc(i) := '1';
+       end loop;  -- i
+       oc(13) := '0';                   -- active
+       synchro (8, ic, oc);
+       send (false, 8#7400#, oc);
+       synchro (8, ic, oc);
+       send (false, 8#6060#, oc);
+       synchro (8, ic, oc);
+       send (false, 8#1005#, oc);
+       synchro (8, ic, oc);
+       send (false, 8#1414#, oc);
+       synchro (8, ic, oc);
+       send (false, 8#1755#, oc);
+       synchro (8, ic, oc);
+       send (false, 8#2610#, oc);
+       synchro (8, ic, oc);
+       send (false, 8#0414#, oc);
+       synchro (8, ic, oc);
+       send (false, 8#5555#, oc);
+       synchro (8, ic, oc);
+       send (false, 8#3333# + (c1 * 64) + c2, oc);
+       synchro (8, ic, oc);
+       send (false, 8#3333# + (c3 * 64) + c4, oc);
+       synchro (8, ic, oc);
+       if c1 < 7 then
+         c1 := c1 + 1;
+       else
+         c1 := 0;
+         if c2 < 7 then
+           c2 := c2 + 1;
+         else
+           c2 := 0;
+           if c3 < 7 then
+             c3 := c3 + 1;
+           else
+             c3 := 0;
+             if c4 < 7 then
+               c4 := c4 + 1;
+             else
+               c4 := 0;
+             end if;
+           end if;
+         end if;
+       end if;
+       for i in 1 to 19 loop
+         oc(i) := '1';
+       end loop;  -- i
+       oc(14) := '0';                   -- inactive
+       synchro (8, ic, oc);
+       send (true, 8#7020#, oc);
+       synchro (8, ic, oc);
+       for i in 1 to 19 loop
+         oc(i) := '1';
+       end loop;  -- i
+       oc(13) := '0';                   -- active
+       synchro (8, ic, oc);
+       for i in 1 to 19 loop
+         oc(i) := '1';
+       end loop;  -- i
+       synchro (8, ic, oc);
+       for i in 1 to 19 loop
+         oc(i) := '1';
+       end loop;  -- i
+       oc(14) := '0';                   -- inactive
+       synchro (8, ic, oc);
      end loop;
       assert false report "end of test";
       --  Wait forever; this will finish the simulation.

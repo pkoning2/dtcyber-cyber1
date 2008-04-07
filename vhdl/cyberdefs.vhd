@@ -30,6 +30,15 @@ package sigs is
     v : std_logic_vector)                            -- input bit vector
     return integer;
 
+  procedure synchro (
+    constant chnum : in    integer;     -- Channel number for this synchronizer
+    incable        : inout coaxsigs;    -- Input cable
+    outcable       : inout coaxsigs);   -- Output cable
+  attribute foreign of synchro : procedure is "VHPIDIRECT synchro";
+
+  procedure dtmain ;
+  attribute foreign of dtmain : procedure is "VHPIDIRECT dtmain";
+
 end sigs;
 
 package body sigs is
@@ -40,7 +49,7 @@ package body sigs is
     return integer is
     variable result : integer := 0;     -- result accumulator
   begin  -- vec_to_int
-    for i in 0 to v'high loop
+    for i in v'high downto 0 loop
       result := result * 2;
       if v(i) = '1' then
         result := result + 1;
@@ -49,6 +58,21 @@ package body sigs is
     return result;
   end vec_to_int;
 
+  -- purpose: Dummy body
+  procedure synchro (
+    constant chnum : in    integer;
+    incable        : inout coaxsigs;
+    outcable       : inout coaxsigs) is
+  begin  -- synchro
+    assert false severity failure;
+  end synchro;
+  
+  -- purpose: Dummy body
+  procedure dtmain  is
+  begin  -- dtmain
+    assert false severity failure;
+  end dtmain;
+  
 end sigs;
 
 library IEEE;
