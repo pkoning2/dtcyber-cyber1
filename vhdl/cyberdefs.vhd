@@ -30,11 +30,11 @@ package sigs is
     v : std_logic_vector)                            -- input bit vector
     return integer;
 
-  procedure synchro (
+  procedure dtsynchro (
     constant chnum : in    integer;     -- Channel number for this synchronizer
     incable        : inout coaxsigs;    -- Input cable
     outcable       : inout coaxsigs);   -- Output cable
-  attribute foreign of synchro : procedure is "VHPIDIRECT synchro";
+  attribute foreign of dtsynchro : procedure is "VHPIDIRECT dtsynchro";
 
   procedure dtmain ;
   attribute foreign of dtmain : procedure is "VHPIDIRECT dtmain";
@@ -59,13 +59,13 @@ package body sigs is
   end vec_to_int;
 
   -- purpose: Dummy body
-  procedure synchro (
+  procedure dtsynchro (
     constant chnum : in    integer;
     incable        : inout coaxsigs;
     outcable       : inout coaxsigs) is
-  begin  -- synchro
+  begin  -- dtsynchro
     assert false severity failure;
-  end synchro;
+  end dtsynchro;
   
   -- purpose: Dummy body
   procedure dtmain  is

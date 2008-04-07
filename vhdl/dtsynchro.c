@@ -5,16 +5,15 @@
 #include "types.h"
 #include "proto.h"
 
+#ifdef DEBUG
+#define DPRINTF printf
+#else
 #define DPRINTF(f...)
-//#define DPRINTF printf
+#endif
 
 static bool pending_in[19][040];
 
-coaxsigs foo = { w,x,w,w,one,zero,one,zero,one,zero
-}
-    ;
-
-void synchro (int chnum, coaxsigs incable, coaxsigs outcable)
+void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
 {
     int i;
     u32 dout, din;
@@ -25,6 +24,7 @@ void synchro (int chnum, coaxsigs incable, coaxsigs outcable)
     activeChannel = channel + chnum;
     if (activeChannel == NULL)
     {
+        DPRINTF ("not connected: channel %o\n", chnum);
         return;
     }
 
