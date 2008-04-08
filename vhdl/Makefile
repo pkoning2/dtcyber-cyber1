@@ -12,13 +12,15 @@ FLIBS   = -lpthread
 CHASSIS = chassis1.o
 TOP = cdc6600.o
 TB = cdc_tb.o
-OBJS = $(TB) $(TOP) $(MODULES) $(FOREIGN)
+VOBJS = $(TB) $(TOP) $(MODULES)
+OBJS = $(VOBJS) $(FOREIGN)
 VPATH = ..
 LINKSWITCH := -Wl,
 LINK_FOREIGN = $(addprefix $(LINKSWITCH),$(FOREIGN) $(FLIBS))
 
-cdc_tb:	$(OBJS) $(VLIB)
-	ghdl -e $(LINK_FOREIGN)  cdc_tb
+cdc_tb:	$(OBJS)
+	ghdl -e $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
+
 cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
 	ghdl -a $<
 	touch cyberdefs.stamp

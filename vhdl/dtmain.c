@@ -25,6 +25,8 @@ char autoDateString[32];
 char autoString[32];
 long opPort;
 long opConns;
+long npuNetTelnetPort;
+long npuNetTelnetConns;
 u16 deadstartPanel[MaxDeadStart];
 u8 deadstartCount;
 
@@ -74,6 +76,10 @@ void ppInit(u8 count)
 }
 
 void rtcInit(char *model, u8 increment, long setMHz)
+{
+}
+
+void npuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 {
 }
 
