@@ -177,9 +177,9 @@ begin
        sync (oc);
        send (false, 8#5555#, oc);
        sync (oc);
-       send (false, 8#3333# + (c1 * 64) + c2, oc);
+       send (false, 8#3333# + (c4 * 64) + c3, oc);
        sync (oc);
-       send (false, 8#3333# + (c3 * 64) + c4, oc);
+       send (false, 8#3333# + (c2 * 64) + c1, oc);
        sync (oc);
        if c1 < 7 then
          c1 := c1 + 1;
