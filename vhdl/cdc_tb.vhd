@@ -78,7 +78,6 @@ architecture behav of cdc_tb is
       chnum : integer);                   -- connected channel number
 
     port (
-      clk10 : in std_logic;             -- 10 MHz clock
       ic : inout coaxsigs;                -- input cable
       oc : inout coaxsigs);               -- output cable
   end component;
@@ -87,8 +86,8 @@ architecture behav of cdc_tb is
   signal clk : std_logic := '0';        -- clock source
 
   constant idle : coaxsigs := ('1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1');
-  signal ics, ocs : coaxsigs := idle;
-  signal clk10 : std_logic := '1';
+  signal ics : coaxsigs;
+  signal ocs : coaxsigs := idle;
   type testvec is array (1 to 80) of std_logic;
 begin
    --  Component instantiation.
@@ -97,7 +96,6 @@ begin
    console : synchro generic map (
      chnum => 8#10#)
    port map (
-     clk10 => clk10,
      ic => ics,
      oc => ocs);
    --  This process does the real job.
@@ -118,9 +116,9 @@ begin
      procedure sync (
        oc : inout coaxsigs) is
      begin  -- sync
-       clk10 <= '0';
+       ics(17) <= '0';
        wait for 25 ns;
-       clk10 <= '1';
+       ics(17) <= '1';
        ocs <= oc;
        wait for 25 ns;
        ocs <= idle;

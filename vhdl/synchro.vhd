@@ -19,7 +19,6 @@ entity synchro is
     chnum : integer);                   -- connected channel number
 
   port (
-    clk10 : in std_logic;               -- 10 MHz clock
     ic : inout coaxsigs;                -- input cable
     oc : inout coaxsigs);               -- output cable
 
@@ -31,20 +30,24 @@ begin  -- synchro
 
   -- purpose: Simulate 6600 synchronizer, connected to DtCyber
   -- type   : sequential
-  -- inputs : clk10, ic, oc
-  -- outputs: ic, oc
-  process (clk10)
+  -- inputs : ic(17), oc
+  -- outputs: ic(1 to 16)
+  process (ic (17))
     constant idle : coaxsigs := ('1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1');
     variable icv : coaxsigs;
     variable ocv : coaxsigs;
   begin  -- process
     -- Note that logic states are inverted on simulated coax
-    if clk10'event and clk10 = '1' then  -- trailing clock edge
+    ic (17) <= 'Z';                     -- because these come from 6600
+    ic (18) <= 'Z';
+    if ic (17)'event and ic (17) = '1' then  -- trailing clock edge
       ocv := oc;
       icv := idle;
       dtsynchro (chnum, icv, ocv);
-      ic <= transport icv;
-      ic <= transport idle after 25 ns;
+      for i in 1 to 16 loop
+        ic(i) <= transport icv(i);
+        ic(i) <= transport '1' after 25 ns;
+      end loop;  -- i
     end if;
   end process;
 
