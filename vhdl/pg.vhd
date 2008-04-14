@@ -14,7 +14,7 @@ use IEEE.std_logic_1164.all;
 entity pgslice is
   
   port (
-    dbit, abit : in  std_logic;               -- d(n) and a(n) input bits
+    i1, i2     : in  std_logic;               -- input bits
     a, b, d, e : in  std_logic;               -- common enables/clocks
     tp         : out std_logic;               -- test point
     q          : out std_logic);              -- output
@@ -43,12 +43,12 @@ begin  -- gates
 
   u1 : g3 port map (
     a => e,
-    b => dbit,
+    b => i1,
     c => b,
     x => s1);
   u2 : g3 port map (
     a => b,
-    b => abit,
+    b => i2,
     c => d,
     x => s2);
   s <= s1 or s2;
@@ -67,18 +67,13 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 
 entity pg is
-  
+
   port (
-    p5  : in  std_logic := '1';                      -- d0
-    p3  : in  std_logic := '1';                      -- a0
-    p10 : in  std_logic := '1';                      -- clock I
-    p6  : in  std_logic := '1';                      -- III (pre-slot)
-    p9  : in  std_logic := '1';                      -- 72x...
-    p21 : in  std_logic := '1';                      -- 76x...
-    p7  : in  std_logic := '1';                      -- 732...
-    p23 : in  std_logic := '1';                      -- 77x...
-    tp1 : out std_logic;                      -- test point 1
-    p13 : out std_logic);                     -- data 0
+    p10, p8, p9, p21, p7, p23 : in  std_logic := '1';  -- enables
+    p5, p3, p6, p4            : in  std_logic := '1';  -- inputs 1 and 2
+    p25, p27, p26, p28        : in  std_logic := '1';  -- inputs 3 and 4
+    p13, p14, p17, p20        : out std_logic;  -- outputs
+    tp1, tp2, tp5, tp6        : out std_logic);  -- test points
 
 end pg;
 
@@ -95,7 +90,7 @@ architecture gates of pg is
   end component;
   component pgslice
     port (
-      dbit, abit : in  std_logic;               -- d(n) and a(n) input bits
+      i1, i2     : in  std_logic;               -- input bits
       a, b, d, e : in  std_logic;               -- common enables/clocks
       tp         : out std_logic;               -- test point
       q          : out std_logic);              -- output
@@ -121,14 +116,41 @@ begin  -- gates
     b => p23,
     x => e);
   u6 : pgslice port map (
-    dbit => p5,
-    abit => p3,
-    a    => a,
-    b    => b,
-    d    => d,
-    e    => e,
-    tp   => tp1,
-    q    => p13);
+    i1 => p5,
+    i2 => p3,
+    a  => a,
+    b  => b,
+    d  => d,
+    e  => e,
+    tp => tp1,
+    q  => p13);
+  u7 : pgslice port map (
+    i1 => p6,
+    i2 => p4,
+    a  => a,
+    b  => b,
+    d  => d,
+    e  => e,
+    tp => tp2,
+    q  => p14);
+  u8 : pgslice port map (
+    i1 => p25,
+    i2 => p27,
+    a  => a,
+    b  => b,
+    d  => d,
+    e  => e,
+    tp => tp5,
+    q  => p17);
+  u9 : pgslice port map (
+    i1 => p26,
+    i2 => p28,
+    a  => a,
+    b  => b,
+    d  => d,
+    e  => e,
+    tp => tp6,
+    q  => p20);
 
 end gates;
 

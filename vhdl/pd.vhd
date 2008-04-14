@@ -58,12 +58,12 @@ entity pd is
   
   port (
     p16 : in  std_logic := '1';                       -- clock input
-    p14 : in  std_logic := '1';                       -- bit 1 input
-    tp1 : out std_logic;                      -- test point 1
-    p4  : out std_logic;                      -- bit 1 output, complemented
-    p7  : out std_logic;                      -- bit 1 output
-    p11 : out std_logic);                     -- bit 1 output
-
+    p14, p13, p18, p17 : in  std_logic := '1';  -- inputs
+    tp1, tp2, tp5, tp6 : out std_logic;       -- test points
+    p11, p7, p9, p6, p4 : out std_logic;  -- bit 1 outputs
+    p12, p10, p8, p5, p3 : out std_logic;  -- bit 2 outputs
+    p19, p20, p25, p23, p28 : out std_logic;  -- bit 3 outputs
+    p22, p24, p26, p21, p27 : out std_logic);  -- bit 4 outputs
 end pd;
 
 architecture gates of pd is
@@ -74,16 +74,54 @@ architecture gates of pd is
       tp    : out std_logic;                  -- test point output
       q, qb : out std_logic);                 -- outputs
   end component;
-  signal q : std_logic;
+  signal q1, q2, q3, q4 : std_logic;
+  signal qb1, qb2, qb3, qb4 : std_logic;
 begin  -- gates
   
   u1 : pdslice port map (
     i  => p14,
     clk => p16,
     tp => tp1,
-    q  => q,
-    qb => p4);
-  p7 <= q;
-  p11 <= q;
+    q  => q1,
+    qb => qb1);
+  p11 <= q1;
+  p7 <= q1;
+  p9 <= q1;
+  p6 <= qb1;
+  p4 <= qb1;
+  u2 : pdslice port map (
+    i   => p13,
+    clk => p16,
+    tp  => tp2,
+    q   => q2,
+    qb  => qb2);
+  p12 <= q2;
+  p10 <= q2;
+  p8 <= q2;
+  p5 <= qb2;
+  p3 <= qb3;
+  u3 : pdslice port map (
+    i   => p18,
+    clk => p16,
+    tp  => tp5,
+    q   => q3,
+    qb  => qb3);
+  p19 <= q3;
+  p20 <= q3;
+  p25 <= q3;
+  p23 <= qb3;
+  p28 <= qb3;
+  u4 : pdslice port map (
+    i   => p17,
+    clk => p16,
+    tp  => tp6,
+    q   => q4,
+    qb  => qb4);
+  p22 <= q4;
+  p24 <= q4;
+  p26 <= q4;
+  p21 <= qb4;
+  p27 <= qb4;
+         
 end gates;
 

@@ -52,7 +52,13 @@ entity tg is
   port (
     p2, p4, p6, p8     : in  std_logic := '1';   -- bit 0 inputs
     p13, p14           : out std_logic;   -- bit 0 outputs (true/complement)
-    tp1                : out std_logic;   -- test point 1
+    p1, p3, p5, p7     : in  std_logic := '1';  -- bit 1 inputs
+    p9, p10            : out std_logic;  -- bit 1 outputs
+    p28, p26, p24, p22 : in  std_logic := '1';  -- bit 2 inputs
+    p17, p18           : out std_logic;  -- bit 2 outputs
+    p27, p25, p23, p21 : in  std_logic := '1';  -- bit 3 inputs
+    p19, p20           : out std_logic;  -- bit 3 outputs
+    tp1, tp2, tp5, tp6 : out std_logic;   -- test points
     p12, p16, p11, p15 : in  std_logic := '1');  -- selects a, b, c, d
 
 end tg;
@@ -97,5 +103,40 @@ begin  -- gates
     q  => p13,
     qb => p14,
     tp => tp1);
-
+  u6 : tgslice port map (
+    i1 => p1,
+    i2 => p3,
+    i3 => p5,
+    i4 => p7,
+    a  => a,
+    b  => b,
+    c  => c,
+    d  => d,
+    tp => tp2,
+    q  => p10,
+    qb => p9);
+  u7 : tgslice port map (
+    i1 => p28,
+    i2 => p26,
+    i3 => p24,
+    i4 => p22,
+    a  => a,
+    b  => b,
+    c  => c,
+    d  => d,
+    tp => tp5,
+    q  => p17,
+    qb => p18);
+  u8 : tgslice port map (
+    i1 => p27,
+    i2 => p25,
+    i3 => p23,
+    i4 => p21,
+    a  => a,
+    b  => b,
+    c  => c,
+    d  => d,
+    tp => tp6,
+    q  => p20,
+    qb => p19);
 end gates;
