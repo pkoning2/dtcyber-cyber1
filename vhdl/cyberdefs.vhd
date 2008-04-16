@@ -22,6 +22,7 @@ package sigs is
   constant t : time := 5 ns;            -- basic stage delay
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
+  subtype coaxsig is std_logic range '0' to '1';  -- signal on coax
   subtype coaxsigs is std_logic_vector (1 to 19);    -- CDC standard coax cable
   subtype ppword is std_logic_vector (11 downto 0);  -- PPU word (12 bits)
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
@@ -227,7 +228,7 @@ entity cxdriver is
   
   port (
     a : in  std_logic;                        -- source
-    x : out std_logic);                       -- destination
+    x : out coaxsig);                         -- destination
 
 end cxdriver;
 
@@ -236,8 +237,26 @@ architecture bool of cxdriver is
   signal xi : std_logic := '1';
 begin  -- bool
   ai <= '1' when a = 'U' else a;
-  xi <= a after tc;
-  x <= xi;
+  xi <= ai after tc;
+  x <= not (xi);                        -- coax is positive logic...
+end bool;
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+entity cxreceiver is
+  
+  port (
+    a : in  coaxsig;                    -- source
+    x : out std_logic);                 -- destination
+
+end cxreceiver;
+
+architecture bool of cxreceiver is
+  signal ai : std_logic := '1';
+begin  -- bool
+  ai <= '1' when a = 'U' else a;
+  x <= not (ai);                        -- coax is positive logic...
 end bool;
 
 library IEEE;
