@@ -197,6 +197,32 @@ end bool;
 library IEEE;
 use IEEE.std_logic_1164.all;
 use work.sigs.all;
+entity g6 is
+  
+  port (
+    a, b, c, d, e, f : in  std_logic;         -- inputs
+    x    : out std_logic);                    -- output
+
+end g6;
+
+architecture bool of g6 is
+  signal ai, bi, ci, di, ei, fi : std_logic;
+  signal xi : std_logic := '0';
+begin  -- bool
+  ai <= '1' when a = 'U' else a;
+  bi <= '1' when b = 'U' else b;
+  ci <= '1' when c = 'U' else c;
+  di <= '1' when d = 'U' else d;
+  ei <= '1' when e = 'U' else e;
+  fi <= '1' when f = 'U' else f;
+  xi <= not (ai and bi and ci and di and ei and fi) after t;
+  x <= xi;
+
+end bool;
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
 entity cxdriver is
   
   port (
