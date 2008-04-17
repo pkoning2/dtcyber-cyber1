@@ -11,12 +11,87 @@ show up as the higher level.  That actually matches what the CDC
 documents do; logic waveforms are shown that way, not as voltage
 plots.
 
-A coax connection is modeled as a straight wire delay, without any
-inversions in it.  That's basically sensible end to end (the coax link
-with driver and receiver is non-inverting).  But it mixes up the
-picture a bit, because the input to the driver is a 0-going pulse to
-produce a coax pulse (which in turn produces a 0-going pulse out).  So
-when viewed on a waveform viewer, coax signals will appear inverted
-(steady high with low pulses).  That could be fixed but at the cost of
-introducing the need to model two inversions, one at each end.  That
-doesn't seem to be worth the trouble.
+There is a set of type definitions and common entities in
+cyberdefs.vhd.  Most of these correspond to the circles and squares in
+the CDC logic diagrams.
+
+The basic gate is called "NOR" by CDC, but they mean "not or" which in
+standard terminology is NAND (and not).
+
+The common entities in cyberdefs.vhd are:
+
+1. inv -- an inverter.
+2. inv2 -- two inverters in series.  CDC uses that for fanout
+   (or perhaps for delay).
+3. g2 through g6 -- 2 to 6 input NAND gates.
+4. rsflop -- an RS flip-flop with up to 5 set and clear inputs,
+   '0' is active.  These are shown in the CDC diagrams as
+   cross-coupled gates, but attempting to model them that way
+   creates oscilations and other messy things in the simulation.
+5. latch -- a level-enabled latch (D flop).  This corresponds to
+   the CDC RS flop with a clear-set network (two inverters in a 
+   row, first inverter tied to the clear input, second gates the
+   data input).  Again, trying to model the CDC diagram exactly
+   is messy.  Also, modeling it as a latch is likely to give
+   a better synthesis.  The behavior is not exactly the same;
+   the CDC diagram has a glitch in it, and the Q and Qbar outputs
+   are not changing at the same time.  But those oddities are
+   not really interesting.
+6. cxdriver -- a coax driver.  In the CDC drawings, the driver
+   is electrically non-inverting but logically inverting, because
+   a positive-going pulse is a '1' on the coax but a '0' elsewhere.
+   To make waveforms easier to read, we model the coax driver 
+   (and receiver) as inverters, so the logic level waveforms are
+   consistent.  The full delay of a coax link (driver, cable,
+   receiver) is modeled as a delay in cxdriver.
+7. cxreceiver -- a coax receiver.  This is just an inversion to
+   match the different logic conventions.
+
+Other things defined in cyberdefs.vhd:
+
+1. "t" -- the standard stage delay (5 ns).  Anytime we need to refer
+   to stage delays, t or a multiple of t is used.  This will allow
+   us to test what happens if t is zero -- if things still work then
+   a synthesis will work, without the need to synthesize explicit 
+   stage delays at every stage.  More likely some explicit delays
+   will be needed in a few places if that is done, but hopefully
+   only a very few.
+2. coaxsig -- a subtype of std_logic used to identify coax pins
+   as opposed to twisted pair pins.  (Twisted pair is std_logic.)
+   The wirelist processor uses this to check correct pin assignment.
+
+Modules
+
+The majority of the .VHD files are module definitions.  Each module
+goes into a separate file, whose name is the two-letter module name.
+In general the modules are written as schematic style models
+(components instantiated and hooked up by port maps).  Once in a while
+it makes more sense to write behavioral models, but the goal is to
+make the relationship between the model and the original design clear,
+so the schematic approach is best.
+
+All module pins must be "in" or "out" -- no "inout".  The wirelist
+processor uses this to check correct wiring (in to out).  Coax pins
+(double circle symbol) must be type "coaxsig"; other pins are
+"std_logic". 
+
+Some modules have pins connected to pullup resistors.  Those are
+modeled as output pins with the output signal explicitly set to '0'.
+
+Other .VHD files
+
+Memory modules are modeled by a behavioral model in mem.vhd.  Memories
+have two connectors; in the model those are done as pins 1-30 for the
+first connector, and pins 101-130 for the second.
+
+synchro.vhd is a simple model of a synchronizer, or more precisely, a
+VHDL interface to dtsynchro.c which does most of the work.  This
+models a synchronizer (an I/O device connected to a channel).  The
+synchro entity has a generic "chnum" which is the channel number it
+goes with.  There needs to be a matching device in the [vhdl] section
+of the cyber.ini file -- that will be the simulated device connected
+to this synchronizer.
+
+As with mem.vhd, synchro.vhd has two connectors: the first connector
+is for the input cable, and the second for the output cable.  Pin
+numbers 101-130 are used on the output connector.
