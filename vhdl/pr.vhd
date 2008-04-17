@@ -10,15 +10,16 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
+use work.sigs.all;
 
 entity prslice is
   
   port (
     d, clk : in  std_logic;                   -- data, clock
-    idata  : in  std_logic;                   -- input data coax
+    idata  : in  coaxsig;                     -- input data coax
     r      : in  std_logic;                   -- reset
     tp     : out std_logic;                   -- test point
-    odata  : out std_logic;                   -- output data coax
+    odata  : out coaxsig;                     -- output data coax
     qb     : out std_logic);                  -- output (negated)
 
 end prslice;
@@ -32,7 +33,12 @@ architecture gates of prslice is
   component cxdriver
     port (
       a : in  std_logic;                        -- source
-      x : out std_logic);                       -- destination
+      x : out coaxsig);                         -- destination
+  end component;
+  component cxreceiver
+    port (
+      a : in  coaxsig;                    -- source
+      x : out std_logic);                 -- destination
   end component;
   component rsflop
     port (
@@ -40,16 +46,20 @@ architecture gates of prslice is
       s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset if needed
       q, qb : out std_logic);                 -- outputs
   end component;
-  signal s, s2, rb : std_logic;
+  signal s, rb : std_logic;
+  signal ii : std_logic := '1';         -- internal copy of coax in
 begin  -- gates
 
   u1 : g2 port map (
     a => clk,
     b => d,
     x => s);
-  s2 <= s or idata;
+  u2 : cxreceiver port map (
+    a => idata,
+    x => ii);
   u3 : rsflop port map (
-    s  => s2,
+    s  => s,
+    s2 => ii,
     r  => rb,
     q  => tp,
     qb => qb);
@@ -69,20 +79,20 @@ entity pr is
     p19 : in  std_logic := '1';               -- clock
     p14 : in  std_logic := '1';               -- clear
     p17 : in  std_logic := '1';               -- bit 0
-    p6  : in  std_logic := '1';               -- coax data in bit 0
-    p5  : out std_logic;                      -- coax data out bit 0
+    p6  : in  coaxsig := '1';                 -- coax data in bit 0
+    p5  : out coaxsig;                        -- coax data out bit 0
     p8  : out std_logic;                      -- registered data 0
     p15 : in  std_logic := '1';               -- bit 1
-    p4  : in  std_logic := '1';               -- coax data in bit 1
-    p11 : out std_logic;                      -- coax data out bit 1
+    p4  : in  coaxsig := '1';                 -- coax data in bit 1
+    p11 : out coaxsig;                        -- coax data out bit 1
     p7  : out std_logic;                      -- registered data 1
     p16 : in  std_logic := '1';               -- bit 2
-    p23 : in  std_logic := '1';               -- coax data in bit 2
-    p28 : out std_logic;                      -- coax data out bit 2
+    p23 : in  coaxsig := '1';                 -- coax data in bit 2
+    p28 : out coaxsig;                        -- coax data out bit 2
     p21 : out std_logic;                      -- registered data 2
     p18 : in  std_logic := '1';               -- bit 3
-    p27 : in  std_logic := '1';               -- coax data in bit 3
-    p24 : out std_logic;                      -- coax data out bit 3
+    p27 : in  coaxsig := '1';                 -- coax data in bit 3
+    p24 : out coaxsig;                        -- coax data out bit 3
     p22 : out std_logic;                      -- registered data 3
     tp1, tp2, tp5, tp6 : out std_logic);      -- test points
 
@@ -92,10 +102,10 @@ architecture gates of pr is
   component prslice
     port (
       d, clk : in  std_logic;                   -- data, clock
-      idata  : in  std_logic;                   -- input data coax
+      idata  : in  coaxsig;                     -- input data coax
       r      : in  std_logic;                   -- reset
       tp     : out std_logic;                   -- test point
-      odata  : out std_logic;                   -- output data coax
+      odata  : out coaxsig;                     -- output data coax
       qb     : out std_logic);                  -- output (negated)
   end component;
   component inv

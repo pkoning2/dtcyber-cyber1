@@ -19,7 +19,7 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
     u32 dout, din;
     ChSlot prev_ch;
     bool ic[19], oc[19];
-    enum std_logic z = zero;
+    enum std_logic o = one;
     
     activeChannel = channel + chnum;
     if (activeChannel == NULL)
@@ -29,20 +29,18 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
     }
 
     // Convert between std_logic values and boolean.  
-    // Note that coax cable signals are inverted logic so we
-    // convert '0' to true.
 
     // Send pending input, then clear pending
     for (i = 0; i < 16; i++)
     {
         if (pending_in[i][chnum])
         {
-            incable[i] = zero;
+            incable[i] = one;
             DPRINTF ("1");
         }
         else 
         {
-            incable[i] = one;
+            incable[i] = zero;
             DPRINTF ("0");
         }
         pending_in[i][chnum] = FALSE;
@@ -52,7 +50,7 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
     // Convert output
     for (i = 0; i < 19; i++)
     {
-        if (outcable[i] == z)
+        if (outcable[i] == o)
         {
             oc[i] = TRUE;
             DPRINTF ("1");
