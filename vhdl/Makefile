@@ -1,6 +1,9 @@
 VLIB = work-obj93.cf
-MODULES = pd.o pg.o pr.o tc.o td.o th.o tg.o pk.o \
-	clock.o mem.o  synchro.o
+MODULES = \
+	clock.o mem.o  synchro.o \
+	pd.o pg.o pk.o pr.o \
+	tc.o td.o th.o tg.o \
+
 FOREIGN = dtsynchro.o \
 	channel.o console.o cr405.o dd6603.o dd8xx.o mux6676.o \
 	lp1612.o mt607.o mt669.o dcc6681.o \
