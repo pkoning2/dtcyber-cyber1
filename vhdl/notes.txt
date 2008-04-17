@@ -92,6 +92,7 @@ goes with.  There needs to be a matching device in the [vhdl] section
 of the cyber.ini file -- that will be the simulated device connected
 to this synchronizer.
 
-As with mem.vhd, synchro.vhd has two connectors: the first connector
-is for the input cable, and the second for the output cable.  Pin
-numbers 101-130 are used on the output connector.
+As with mem.vhd, synchro.vhd has two connectors (19-pin connectors in
+this case since coax has 19 wires in it): the first connector is for
+the input cable, and the second for the output cable.  Pin numbers
+101-119 are used on the output connector.

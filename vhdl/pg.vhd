@@ -6,6 +6,8 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
+-- PG module - storage address register (G)
+--
 -------------------------------------------------------------------------------
 
 library IEEE;

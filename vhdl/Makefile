@@ -1,7 +1,7 @@
 VLIB = work-obj93.cf
 MODULES = \
 	clock.o mem.o  synchro.o \
-	pd.o pg.o pk.o pr.o \
+	pa.o pb.o pc.o pd.o pg.o pk.o pr.o \
 	tc.o td.o th.o tg.o \
 
 FOREIGN = dtsynchro.o \
