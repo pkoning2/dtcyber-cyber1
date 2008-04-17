@@ -33,23 +33,23 @@ package body teststuff is
   begin  -- send
 
     for i in 1 to 19 loop
-      oc(i) := '1';
+      oc(i) := '0';
     end loop;  -- i
 
     b := 2048;
     d := dat;
     for i in 11 downto 0 loop
       if d >= b then
-        oc(i + 1) := '0';
+        oc(i + 1) := '1';
         d := d - b;
       end if;
       b := b / 2;
     end loop;  -- i
 
     if func then
-      oc(17) := '0';
+      oc(17) := '1';
     else
-      oc(15) := '0';
+      oc(15) := '1';
     end if;
   end send;
 
@@ -78,14 +78,18 @@ architecture behav of cdc_tb is
       chnum : integer);                   -- connected channel number
 
     port (
-      ic : inout coaxsigs;                -- input cable
-      oc : inout coaxsigs);               -- output cable
+      p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12 : out coaxsig;  -- data
+      p13, p14, p15, p16 : out coaxsig;   -- active, inactive, full, empty
+      p17, p18: in coaxsig;               -- 10 and 1 MHz clocks
+      p101, p102, p103, p104, p105, p106, p107 : in coaxsig;
+      p108, p109, p110, p111, p112 : in coaxsig;  -- data
+      p113, p114, p115, p116, p117, p118 : in coaxsig);  -- control outputs
   end component;
    --  Specifies which entity is bound with the component.
   signal coax1 : coaxsigs;              -- First coax
   signal clk : std_logic := '0';        -- clock source
 
-  constant idle : coaxsigs := ('1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1','1');
+  constant idle : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
   signal ics : coaxsigs;
   signal ocs : coaxsigs := idle;
   type testvec is array (1 to 80) of std_logic;
@@ -96,8 +100,41 @@ begin
    console : synchro generic map (
      chnum => 8#10#)
    port map (
-     ic => ics,
-     oc => ocs);
+     p1 => ics (1),
+     p2 => ics (2),
+     p3 => ics (3),
+     p4 => ics (4),
+     p5 => ics (5),
+     p6 => ics (6),
+     p7 => ics (7),
+     p8 => ics (8),
+     p9 => ics (9),
+     p10 => ics (10),
+     p11 => ics (11),
+     p12 => ics (12),
+     p13 => ics (13),
+     p14 => ics (14),
+     p15 => ics (15),
+     p16 => ics (16),
+     p17 => ics (17),
+     p101 => ocs (1),
+     p102 => ocs (2),
+     p103 => ocs (3),
+     p104 => ocs (4),
+     p105 => ocs (5),
+     p106 => ocs (6),
+     p107 => ocs (7),
+     p108 => ocs (8),
+     p109 => ocs (9),
+     p110 => ocs (10),
+     p111 => ocs (11),
+     p112 => ocs (12),
+     p113 => ocs (13),
+     p114 => ocs (14),
+     p115 => ocs (15),
+     p116 => ocs (16),
+     p117 => ocs (17),
+     p118 => ocs (18));
    --  This process does the real job.
    -- purpose: Read the test script and pass it to the UUT
    -- type   : combinational
@@ -116,9 +153,9 @@ begin
      procedure sync (
        oc : inout coaxsigs) is
      begin  -- sync
-       ics(17) <= '0';
-       wait for 25 ns;
        ics(17) <= '1';
+       wait for 25 ns;
+       ics(17) <= '0';
        ocs <= oc;
        wait for 25 ns;
        ocs <= idle;
@@ -155,9 +192,9 @@ begin
        send (true, 8#7001#, oc);
        sync (oc);
        for i in 1 to 19 loop
-         oc(i) := '1';
+         oc(i) := '0';
        end loop;  -- i
-       oc(13) := '0';                   -- active
+       oc(13) := '1';                   -- active
        sync (oc);
        send (false, 8#7400#, oc);
        sync (oc);
@@ -200,25 +237,25 @@ begin
          end if;
        end if;
        for i in 1 to 19 loop
-         oc(i) := '1';
+         oc(i) := '0';
        end loop;  -- i
-       oc(14) := '0';                   -- inactive
+       oc(14) := '1';                   -- inactive
        sync (oc);
        send (true, 8#7020#, oc);
        sync (oc);
        for i in 1 to 19 loop
-         oc(i) := '1';
+         oc(i) := '0';
        end loop;  -- i
-       oc(13) := '0';                   -- active
+       oc(13) := '1';                   -- active
        sync (oc);
        for i in 1 to 19 loop
-         oc(i) := '1';
+         oc(i) := '0';
        end loop;  -- i
        sync (oc);
        for i in 1 to 19 loop
-         oc(i) := '1';
+         oc(i) := '0';
        end loop;  -- i
-       oc(14) := '0';                   -- inactive
+       oc(14) := '1';                   -- inactive
        sync (oc);
      end loop;
       assert false report "end of test";

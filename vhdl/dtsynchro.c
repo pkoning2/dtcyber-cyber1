@@ -1,3 +1,27 @@
+//-----------------------------------------------------------------------------
+//
+// CDC 6600 model
+//
+// Authors: Paul Koning, Dave Redell
+//
+// Based on the original design by Seymour Cray and his team
+//
+//-----------------------------------------------------------------------------
+//
+// This function is invoked from VHDL code at the trailing edge
+// of the 10 MHz clock pulse of the channel.  That is also the 
+// leading edge of the output signals (control and data) and the
+// leading edge of any input signals.
+//
+// icv and ocv are 19-entry vectors of std_logic corresponding to 
+// the input and output cables.  icv is idle (all 0) on entry; ocv
+// contains the states of the output wires (1 for any wires with
+// output pulses on them).  On exit from this function, icv is
+// updated to have 1 entries for any wires on which to send a pulse
+// back to the channel.  Only entries 0 to 15 are looked at by
+// the VHDL code (the other 3 wires on the input cable are two clocks
+// and an unused wire).
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "vhdl.h"
