@@ -97,6 +97,30 @@ begin  -- bool
 
 end bool;
 
+-- inv2 is two inverters in a row, used by the 6600 for fanout
+-- (or perhaps for delay)
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+entity inv2 is
+  
+  port (
+    i  : in  std_logic;                       -- input
+    o  : out std_logic);                      -- output
+
+end inv2;
+
+architecture bool of inv2 is
+  signal ii : std_logic;
+  signal oi : std_logic := '0';
+begin  -- bool
+  ii <= '1' when i = 'U' else i;
+  oi <= ii after 2 * t;
+  o <= oi;
+
+end bool;
+
 -- The CDC docs talk about the gates as "NOR", meaning "NOT OR".
 -- In standard terminology, that's "NAND" (AND NOT).  So we'll
 -- write the that way here.
