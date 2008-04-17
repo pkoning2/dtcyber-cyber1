@@ -26,48 +26,67 @@ entity tc is
 
 end tc;
 
-architecture bool of tc is
-  signal pi3, pi5, pi14, pi16 : std_logic;
-  signal in1, in2 : std_logic;
-begin  -- bool
-  pi3 <= '1' when p3 = 'U' else p3;
-  pi5 <= '1' when p5 = 'U' else p5;
-  pi14 <= '1' when p14 = 'U' else p14;
-  pi16 <= '1' when p16 = 'U' else p16;
+architecture gates of tc is
+  component inv
+    port (
+      i : in  std_logic;                      -- input
+      o : out std_logic);                     -- output
+  end component;
+  component g2
+    port (
+      a, b : in  std_logic;                   -- inputs
+      x    : out std_logic);                  -- output
+  end component;
+  signal a, b, c, d, e, f : std_logic;
+begin  -- gates
+  u1 : g2 port map (
+    a => p3,
+    b => p5,
+    x => a);
+  tp1 <= a;
+  u2 : inv port map (
+    i => a,
+    o => b);
+  tp2 <= b;
+  u3 : inv port map (
+    i => b,
+    o => c);
+  p1 <= c;
+  p2 <= c;
+  p4 <= c;
+  p6 <= c;
+  p7 <= c;
+  p8 <= c;
+  p9 <= c;
+  p10 <= c;
+  p11 <= c;
+  p12 <= c;
+  p13 <= c;
+  p15 <= c;
+  u4 : g2 port map (
+    a => p14,
+    b => p16,
+    x => d);
+  tp5 <= d;
+  u5 : inv port map (
+    i => d,
+    o => e);
+  tp6 <= e;
+  u6 : inv port map (
+    i => e,
+    o => f);
+  p17 <= f;
+  p18 <= f;
+  p19 <= f;
+  p20 <= f;
+  p21 <= f;
+  p22 <= f;
+  p23 <= f;
+  p24 <= f;
+  p25 <= f;
+  p26 <= f;
+  p27 <= f;
+  p28 <= f;
 
-  in1 <= not (pi3 and pi5);
-  in2 <= not (pi14 and pi16);
-  
-  -- We could do this as gates but that's too much trouble to
-  -- be worth doing.  Just code it as concurrent assignments...
-  tp1 <= in1 after t;
-  tp2 <= not (in1) after 2 * t;
-  p1 <= in1 after 3 * t;
-  p2 <= in1 after 3 * t;
-  p4 <= in1 after 3 * t;
-  p6 <= in1 after 3 * t;
-  p7 <= in1 after 3 * t;
-  p8 <= in1 after 3 * t;
-  p9 <= in1 after 3 * t;
-  p10 <= in1 after 3 * t;
-  p11 <= in1 after 3 * t;
-  p12 <= in1 after 3 * t;
-  p13 <= in1 after 3 * t;
-  p15 <= in1 after 3 * t;
-  tp5 <= in2 after t;
-  tp6 <= not (in2) after 2 * t;
-  p17 <= in2 after 3 * t;
-  p18 <= in2 after 3 * t;
-  p19 <= in2 after 3 * t;
-  p20 <= in2 after 3 * t;
-  p21 <= in2 after 3 * t;
-  p22 <= in2 after 3 * t;
-  p23 <= in2 after 3 * t;
-  p24 <= in2 after 3 * t;
-  p25 <= in2 after 3 * t;
-  p26 <= in2 after 3 * t;
-  p27 <= in2 after 3 * t;
-  p28 <= in2 after 3 * t;
-
-end bool;
+end gates;
 
