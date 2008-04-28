@@ -58,13 +58,13 @@ end pc;
 architecture gates of pc is
   component inv
     port (
-      i  : in  std_logic;                     -- input
-      o  : out std_logic);                    -- output
+      a  : in  std_logic;                     -- input
+      y  : out std_logic);                    -- output
   end component;
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
-      x    : out std_logic);                  -- output
+      y, y2    : out std_logic);                  -- output
   end component;
   component pcslice
     port (
@@ -81,12 +81,12 @@ begin  -- gates
   p15 <= '0';
   p17 <= '0';
   u1 : inv port map (
-    i => p13,
-    o => e);
+    a => p13,
+    y => e);
   u2 : g2 port map (
     a => e,
     b => p20,
-    x => f);
+    y => f);
   u3 : pcslice port map (
     d1  => p7,
     e1  => e,

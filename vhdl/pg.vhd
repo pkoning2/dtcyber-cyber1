@@ -26,13 +26,13 @@ end pgslice;
 architecture gates of pgslice is
   component inv
     port (
-      i : in  std_logic;                      -- input
-      o : out std_logic);                     -- output
+      a : in  std_logic;                      -- input
+      y : out std_logic);                     -- output
   end component;
   component g3
     port (
       a, b, c : in  std_logic;                -- inputs
-      x       : out std_logic);               -- output
+      y, y2       : out std_logic);               -- output
   end component;
   component rsflop
     port (
@@ -47,12 +47,12 @@ begin  -- gates
     a => e,
     b => i1,
     c => b,
-    x => s1);
+    y => s1);
   u2 : g3 port map (
     a => b,
     b => i2,
     c => d,
-    x => s2);
+    y => s2);
   s <= s1 or s2;
   u3 : rsflop port map (
     s => s,
@@ -60,8 +60,8 @@ begin  -- gates
     q => ti);
   tp <= ti;
   u4 : inv port map (
-    i => ti,
-    o => q);
+    a => ti,
+    y => q);
   
 end gates;
 
@@ -83,12 +83,17 @@ architecture gates of pg is
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
-      x    : out std_logic);                  -- output
+      y, y2    : out std_logic);                  -- output
   end component;
   component inv
     port (
-      i : in  std_logic;                      -- input
-      o : out std_logic);                     -- output
+      a : in  std_logic;                      -- input
+      y : out std_logic);                     -- output
+  end component;
+  component inv2
+    port (
+      a : in  std_logic;                      -- input
+      y, y2 : out std_logic);                     -- output
   end component;
   component pgslice
     port (
@@ -97,26 +102,23 @@ architecture gates of pg is
       tp         : out std_logic;               -- test point
       q          : out std_logic);              -- output
   end component;
-  signal a, bi, b, d, e : std_logic;          -- control signals
+  signal a, b, d, e : std_logic;          -- control signals
 begin  -- gates
 
   u1 : inv port map (
-    i => p10,
-    o => a);
-  u2 : inv port map (
-    i => p6,
-    o => bi);
-  u3 : inv port map (
-    i => bi,
-    o => b);
+    a => p10,
+    y => a);
+  u2 : inv2 port map (
+    a => p6,
+    y2 => b);
   u4 : g2 port map (
     a => p9,
     b => p21,
-    x => d);
+    y => d);
   u5 : g2 port map (
     a => p7,
     b => p23,
-    x => e);
+    y => e);
   u6 : pgslice port map (
     i1 => p5,
     i2 => p3,

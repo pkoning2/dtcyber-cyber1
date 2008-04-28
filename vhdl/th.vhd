@@ -23,20 +23,20 @@ end thslice;
 architecture gates of thslice is
   component inv
     port (
-      i : in  std_logic;                      -- input
-      o : out std_logic);                     -- output
+      a : in  std_logic;                      -- input
+      y : out std_logic);                     -- output
   end component;
   signal ti : std_logic;                      -- intermediate value
   signal o : std_logic;
 begin  -- gates
 
   u1 : inv port map (
-    i => i,
-    o => ti);
+    a => i,
+    y => ti);
   tp <= ti;
   u2 : inv port map (
-    i => ti,
-    o => o);
+    a => ti,
+    y => o);
   o1 <= o;
   o2 <= o;
   o3 <= o;

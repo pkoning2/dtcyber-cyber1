@@ -44,23 +44,23 @@ end pk;
 architecture gates of pk is
   component inv
     port (
-      i : in  std_logic;                      -- input
-      o : out std_logic);                     -- output
+      a : in  std_logic;                      -- input
+      y : out std_logic);                     -- output
   end component;
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
-      x    : out std_logic);                  -- output
+      y, y2    : out std_logic);                  -- output
   end component;
   component cxdriver
     port (
       a : in  std_logic;                        -- source
-      x : out coaxsig);                       -- destination
+      y : out coaxsig);                       -- destination
   end component;
   component cxreceiver
     port (
       a : in  coaxsig;                    -- source
-      x : out std_logic);                 -- destination
+      y : out std_logic);                 -- destination
   end component;
   component rsflop
     port (
@@ -76,51 +76,51 @@ architecture gates of pk is
 begin  -- gates
 
   u1 : inv port map (
-    i => p19,
-    o => c);
+    a => p19,
+    y => c);
   tp6 <= c;
   u2 : g2 port map (
     a => p6,
     b => c,
-    x => fi);
+    y => fi);
   u3 : g2 port map (
     a => c,
     b => p17,
-    x => ei);
+    y => ei);
   u4 : g2 port map (
     a => p5,
     b => c,
-    x => b);
+    y => b);
   tp1 <= b;
   u5 : g2 port map (
     a => p12,
     b => c,
-    x => ai);
+    y => ai);
   u6 : g2 port map (
     a => p27,
     b => c,
-    x => ii);
+    y => ii);
   u7 : cxdriver port map (
     a => fi,
-    x => p13);
+    y => p13);
   u8 : cxdriver port map (
     a => ei,
-    x => p9);
+    y => p9);
   u9 : cxdriver port map (
     a => b,
-    x => p3);
+    y => p3);
   u10 : cxdriver port map (
     a => ai,
-    x => p22);
+    y => p22);
   u11 : cxdriver port map (
     a => ii,
-    x => p18);
+    y => p18);
   u12 : cxreceiver port map (
     a => p15,
-    x => p15i);
+    y => p15i);
   u13 : cxreceiver port map (
     a => p8,
-    x => p8i);
+    y => p8i);
   u14 : rsflop port map (
     s  => fi,
     s2 => p15i,
@@ -133,20 +133,20 @@ begin  -- gates
     qb => p10);
   tp2 <= fq;
   u15 : inv port map (
-    i => fq,
-    o => p28);
+    a => fq,
+    y => p28);
   u16 : inv port map (
-    i => fq,
-    o => p26);
+    a => fq,
+    y => p26);
   u17 : inv port map (
-    i => fq,
-    o => p24);
+    a => fq,
+    y => p24);
   u18 : cxreceiver port map (
     a => p25,
-    x => p25i);
+    y => p25i);
   u19 : cxreceiver port map (
     a => p14,
-    x => p14i);
+    y => p14i);
   u20 : rsflop port map (
     s  => ai,
     s2 => p23,

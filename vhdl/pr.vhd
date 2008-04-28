@@ -28,17 +28,17 @@ architecture gates of prslice is
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
-      x    : out std_logic);                  -- output
+      y, y2    : out std_logic);                  -- output
   end component;
   component cxdriver
     port (
       a : in  std_logic;                        -- source
-      x : out coaxsig);                         -- destination
+      y : out coaxsig);                         -- destination
   end component;
   component cxreceiver
     port (
       a : in  coaxsig;                    -- source
-      x : out std_logic);                 -- destination
+      y : out std_logic);                 -- destination
   end component;
   component rsflop
     port (
@@ -53,10 +53,10 @@ begin  -- gates
   u1 : g2 port map (
     a => clk,
     b => d,
-    x => s);
+    y => s);
   u2 : cxreceiver port map (
     a => idata,
-    x => ii);
+    y => ii);
   u3 : rsflop port map (
     s  => s,
     s2 => ii,
@@ -65,7 +65,7 @@ begin  -- gates
     qb => qb);
   u4 : cxdriver port map (
     a => s,
-    x => odata);
+    y => odata);
   
 end gates;
 
@@ -110,16 +110,23 @@ architecture gates of pr is
   end component;
   component inv
     port (
-      i : in  std_logic;                      -- input
-      o : out std_logic);                     -- output
+      a : in  std_logic;                      -- input
+      y : out std_logic);                     -- output
+  end component;
+  component inv2
+    port (
+      a  : in  std_logic;                     -- input
+      y, y2 : out std_logic);                    -- output
   end component;
   signal a, b : std_logic;                    -- buffered clock
 begin  -- gates
 
   u1 : inv port map (
-    i => p14,
-    o => a);
-  b <= p19 after 2 * t;
+    a => p14,
+    y => a);
+  u2 : inv2 port map (
+    a  => p19,
+    y2 => b);
   u3 : prslice port map (
     clk   => b,
     d     => p17,

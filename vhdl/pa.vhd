@@ -26,8 +26,8 @@ end paslice;
 architecture gates of paslice is
   component inv2
     port (
-      i  : in  std_logic;                     -- input
-      o  : out std_logic);                    -- output
+      a  : in  std_logic;                     -- input
+      y, y2  : out std_logic);                    -- output
   end component;
   component latch
     port (
@@ -42,8 +42,8 @@ begin  -- gates
     q   => qi);
   tp <= qi;
   u2 : inv2 port map (
-    i => qi,
-    o => qi2);
+    a => qi,
+    y2 => qi2);
   q1 <= qi2;
   q2 <= qi2;
 end gates;
@@ -73,29 +73,18 @@ architecture gates of pa is
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
-      x    : out std_logic);                  -- output
+      y, y2    : out std_logic);                  -- output
   end component;
-  component inv
-    port (
-      i  : in  std_logic;                     -- input
-      o  : out std_logic);                    -- output
-  end component;
-  signal a, b, c, d : std_logic := '0';       -- strobes
+  signal b, d : std_logic := '0';       -- strobes
 begin  -- gates
   u1 : g2 port map (
     a => p9,
     b => p7,
-    x => a);
-  u2 : inv port map (
-    i => a,
-    o => b);
+    y2 => b);
   u3 : g2 port map (
     a => p20,
     b => p22,
-    x => c);
-  u4 : inv port map (
-    i => c,
-    o => d);
+    y2 => d);
   u5 : paslice port map (
     d   => p8,
     clk => b,

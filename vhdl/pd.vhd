@@ -24,10 +24,10 @@ entity pdslice is
 end pdslice;
 
 architecture gates of pdslice is
-  component inv
+  component inv2
     port (
-      i : in  std_logic;                      -- input
-      o : out std_logic);                     -- output
+      a : in  std_logic;                      -- input
+      y, y2 : out std_logic);                     -- output
   end component;
   component latch
     port (
@@ -43,13 +43,11 @@ begin  -- gates
     clk => clk,
     q => ti);
   tp <= ti;
-  u2 : inv port map (
-    i => ti,
-    o => t2);
+  u2 : inv2 port map (
+    a => ti,
+    y => t2,
+    y2 => q);
   qb <= t2;
-  u3 : inv port map (
-    i => t2,
-    o => q);
 
 end gates;
 

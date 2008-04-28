@@ -2,48 +2,48 @@
 
   component inv
     port (
-      i  : in  std_logic;                     -- input
-      o  : out std_logic);                    -- output
+      a  : in  std_logic;                     -- input
+      y  : out std_logic);                    -- output
   end component;
   component inv2
     port (
-      i  : in  std_logic;                     -- input
-      o  : out std_logic);                    -- output
+      a  : in  std_logic;                     -- input
+      y, y2 : out std_logic);                    -- output
   end component;
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
-      x    : out std_logic);                  -- output
+      y, y2   : out std_logic);                  -- output
   end component;
   component g3
     port (
       a, b, c : in  std_logic;                -- inputs
-      x    : out std_logic);                  -- output
+      y, y2   : out std_logic);                  -- output
   end component;
   component g4
     port (
       a, b, c, d : in  std_logic;             -- inputs
-      x    : out std_logic);                  -- output
+      y, y2   : out std_logic);                  -- output
   end component;
   component g5
     port (
       a, b, c, d, e : in  std_logic;          -- inputs
-      x    : out std_logic);                  -- output
+      y, y2   : out std_logic);                  -- output
   end component;
   component g6
     port (
       a, b, c, d, e, f : in  std_logic;       -- inputs
-      x    : out std_logic);                  -- output
+      y, y2   : out std_logic);                  -- output
   end component;
   component cxdriver
     port (
       a : in  std_logic;                      -- source
-      x : out coaxsig);                       -- destination
+      y : out coaxsig);                       -- destination
   end component;
   component cxreceiver
     port (
       a : in  coaxsig;                        -- source
-      x : out std_logic);                     -- destination
+      y : out std_logic);                     -- destination
   end component;
   component rsflop
     port (

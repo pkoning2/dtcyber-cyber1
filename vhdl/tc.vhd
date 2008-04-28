@@ -27,30 +27,28 @@ entity tc is
 end tc;
 
 architecture gates of tc is
-  component inv
+  component inv2
     port (
-      i : in  std_logic;                      -- input
-      o : out std_logic);                     -- output
+      a : in  std_logic;                      -- input
+      y, y2 : out std_logic);                     -- output
   end component;
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
-      x    : out std_logic);                  -- output
+      y, y2    : out std_logic);                  -- output
   end component;
   signal a, b, c, d, e, f : std_logic;
 begin  -- gates
   u1 : g2 port map (
     a => p3,
     b => p5,
-    x => a);
+    y => a);
   tp1 <= a;
-  u2 : inv port map (
-    i => a,
-    o => b);
+  u2 : inv2 port map (
+    a => a,
+    y => b,
+    y2 => c);
   tp2 <= b;
-  u3 : inv port map (
-    i => b,
-    o => c);
   p1 <= c;
   p2 <= c;
   p4 <= c;
@@ -66,15 +64,13 @@ begin  -- gates
   u4 : g2 port map (
     a => p14,
     b => p16,
-    x => d);
+    y => d);
   tp5 <= d;
-  u5 : inv port map (
-    i => d,
-    o => e);
+  u5 : inv2 port map (
+    a => d,
+    y => e,
+    y2 => f);
   tp6 <= e;
-  u6 : inv port map (
-    i => e,
-    o => f);
   p17 <= f;
   p18 <= f;
   p19 <= f;

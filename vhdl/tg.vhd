@@ -66,8 +66,8 @@ end tg;
 architecture gates of tg is
   component inv
     port (
-      i : in  std_logic;                      -- input
-      o : out std_logic);                     -- output
+      a : in  std_logic;                      -- input
+      y : out std_logic);                     -- output
   end component;
   component tgslice
     port (
@@ -80,17 +80,17 @@ architecture gates of tg is
 begin  -- gates
 
   u1 : inv port map (
-    i => p12,
-    o => a);
+    a => p12,
+    y => a);
   u2 : inv port map (
-    i => p16,
-    o => b);
+    a => p16,
+    y => b);
   u3 : inv port map (
-    i => p11,
-    o => c);
+    a => p11,
+    y => c);
   u4 : inv port map (
-    i => p15,
-    o => d);
+    a => p15,
+    y => d);
   u5 : tgslice port map (
     i1 => p2,
     i2 => p4,

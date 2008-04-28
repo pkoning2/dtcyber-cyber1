@@ -26,6 +26,7 @@ package sigs is
   subtype coaxsigs is std_logic_vector (1 to 19);    -- CDC standard coax cable
   subtype ppword is std_logic_vector (11 downto 0);  -- PPU word (12 bits)
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
+  subtype misc is std_logic range '0' to '1';  -- used for non-logic pins
 
   function vec_to_int (
     v : std_logic_vector)                            -- input bit vector
@@ -82,8 +83,8 @@ use work.sigs.all;
 entity inv is
   
   port (
-    i  : in  std_logic;                       -- input
-    o  : out std_logic);                      -- output
+    a  : in  std_logic;                       -- input
+    y  : out std_logic);                      -- output
 
 end inv;
 
@@ -91,9 +92,9 @@ architecture bool of inv is
   signal ii : std_logic;
   signal oi : std_logic := '0';
 begin  -- bool
-  ii <= '1' when i = 'U' else i;
+  ii <= '1' when a = 'U' else a;
   oi <= not (ii) after t;
-  o <= oi;
+  y <= oi;
 
 end bool;
 
@@ -106,19 +107,21 @@ use work.sigs.all;
 entity inv2 is
   
   port (
-    i  : in  std_logic;                       -- input
-    o  : out std_logic);                      -- output
+    a  : in  std_logic;                       -- input
+    y, y2  : out std_logic);                      -- output
 
 end inv2;
 
 architecture bool of inv2 is
   signal ii : std_logic;
-  signal oi : std_logic := '0';
+  signal oi, oi2 : std_logic := '0';
 begin  -- bool
-  ii <= '1' when i = 'U' else i;
-  oi <= ii after 2 * t;
-  o <= oi;
-
+  ii <= '1' when a = 'U' else a;
+  oi <= not (ii) after t;
+  oi2 <= ii after 2 * t;
+  y <= oi;
+  y2 <= oi2;
+  
 end bool;
 
 -- The CDC docs talk about the gates as "NOR", meaning "NOT OR".
@@ -132,18 +135,20 @@ entity g2 is
   
   port (
     a, b : in  std_logic;                     -- inputs
-    x    : out std_logic);                    -- output
+    y, y2    : out std_logic);                    -- output
 
 end g2;
 
 architecture bool of g2 is
   signal ai, bi : std_logic;
-  signal xi : std_logic := '0';
+  signal yi, y2i : std_logic := '0';
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
-  xi <= not (ai and bi) after t;
-  x <= xi;
+  yi <= not (ai and bi) after t;
+  y2i <= (ai and bi) after 2 * t;
+  y <= yi;
+  y2 <= y2i;
   
 end bool;
 
@@ -154,19 +159,21 @@ entity g3 is
   
   port (
     a, b, c : in  std_logic;                  -- inputs
-    x    : out std_logic);                    -- output
+    y, y2    : out std_logic);                    -- output
 
 end g3;
 
 architecture bool of g3 is
   signal ai, bi, ci : std_logic;
-  signal xi : std_logic := '0';
+  signal yi, y2i : std_logic := '0';
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
   ci <= '1' when c = 'U' else c;
-  xi <= not (ai and bi and ci) after t;
-  x <= xi;
+  yi <= not (ai and bi and ci) after t;
+  y2i <= (ai and bi and ci) after 2 * t;
+  y <= yi;
+  y2 <= y2i;
 
 end bool;
 
@@ -177,20 +184,22 @@ entity g4 is
   
   port (
     a, b, c, d : in  std_logic;               -- inputs
-    x    : out std_logic);                    -- output
+    y, y2    : out std_logic);                    -- output
 
 end g4;
 
 architecture bool of g4 is
   signal ai, bi, ci, di : std_logic;
-  signal xi : std_logic := '0';
+  signal yi, y2i : std_logic := '0';
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
   ci <= '1' when c = 'U' else c;
   di <= '1' when d = 'U' else d;
-  xi <= not (ai and bi and ci and di) after t;
-  x <= xi;
+  yi <= not (ai and bi and ci and di) after t;
+  y2i <= (ai and bi and ci and di) after 2 * t;
+  y <= yi;
+  y2 <= y2i;
 
 end bool;
 
@@ -201,21 +210,23 @@ entity g5 is
   
   port (
     a, b, c, d, e : in  std_logic;            -- inputs
-    x    : out std_logic);                    -- output
+    y, y2    : out std_logic);                    -- output
 
 end g5;
 
 architecture bool of g5 is
   signal ai, bi, ci, di, ei : std_logic;
-  signal xi : std_logic := '0';
+  signal yi, y2i : std_logic := '0';
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
   ci <= '1' when c = 'U' else c;
   di <= '1' when d = 'U' else d;
   ei <= '1' when e = 'U' else e;
-  xi <= not (ai and bi and ci and di and ei) after t;
-  x <= xi;
+  yi <= not (ai and bi and ci and di and ei) after t;
+  y2i <= (ai and bi and ci and di and ei) after 2 * t;
+  y <= yi;
+  y2 <= y2i;
 
 end bool;
 
@@ -226,13 +237,13 @@ entity g6 is
   
   port (
     a, b, c, d, e, f : in  std_logic;         -- inputs
-    x    : out std_logic);                    -- output
+    y, y2    : out std_logic);                    -- output
 
 end g6;
 
 architecture bool of g6 is
   signal ai, bi, ci, di, ei, fi : std_logic;
-  signal xi : std_logic := '0';
+  signal yi, y2i : std_logic := '0';
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
@@ -240,8 +251,10 @@ begin  -- bool
   di <= '1' when d = 'U' else d;
   ei <= '1' when e = 'U' else e;
   fi <= '1' when f = 'U' else f;
-  xi <= not (ai and bi and ci and di and ei and fi) after t;
-  x <= xi;
+  yi <= not (ai and bi and ci and di and ei and fi) after t;
+  y2i <= (ai and bi and ci and di and ei and fi) after 2 * t;
+  y <= yi;
+  y2 <= y2i;
 
 end bool;
 
@@ -252,17 +265,17 @@ entity cxdriver is
   
   port (
     a : in  std_logic;                        -- source
-    x : out coaxsig);                         -- destination
+    y : out coaxsig);                         -- destination
 
 end cxdriver;
 
 architecture bool of cxdriver is
   signal ai : std_logic;
-  signal xi : std_logic := '1';
+  signal yi : std_logic := '1';
 begin  -- bool
   ai <= '1' when a = 'U' else a;
-  xi <= ai after tc;
-  x <= not (xi);                        -- coax is positive logic...
+  yi <= ai after tc;
+  y <= not (yi);                        -- coax is positive logic...
 end bool;
 
 library IEEE;
@@ -272,7 +285,7 @@ entity cxreceiver is
   
   port (
     a : in  coaxsig;                    -- source
-    x : out std_logic);                 -- destination
+    y : out std_logic);                 -- destination
 
 end cxreceiver;
 
@@ -280,7 +293,7 @@ architecture bool of cxreceiver is
   signal ai : std_logic := '1';
 begin  -- bool
   ai <= '1' when a = 'U' else a;
-  x <= not (ai);                        -- coax is positive logic...
+  y <= not (ai);                        -- coax is positive logic...
 end bool;
 
 library IEEE;

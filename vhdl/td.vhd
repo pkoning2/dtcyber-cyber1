@@ -24,12 +24,12 @@ architecture gates of tdslice is
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
-      x    : out std_logic);                  -- output
+      y, y2    : out std_logic);                  -- output
   end component;
   component inv
     port (
-      i : in  std_logic;                      -- input
-      o : out std_logic);                     -- output
+      a : in  std_logic;                      -- input
+      y : out std_logic);                     -- output
   end component;
   signal ti : std_logic;                      -- internal value of test point
 begin  -- gates
@@ -37,10 +37,10 @@ begin  -- gates
   u1 : g2 port map (
     a => a,
     b => b,
-    x => ti);
+    y => ti);
   u2 : inv port map (
-    i => ti,
-    o => x);
+    a => ti,
+    y => x);
   tp <= ti;
 end gates;
 
