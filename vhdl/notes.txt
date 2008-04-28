@@ -22,8 +22,9 @@ The common entities in cyberdefs.vhd are:
 
 1. inv -- an inverter.
 2. inv2 -- two inverters in series.  CDC uses that for fanout
-   (or perhaps for delay).
-3. g2 through g6 -- 2 to 6 input NAND gates.
+   (or perhaps for delay).  Both stages are provided as outputs.
+3. g2 through g6 -- 2 to 6 input NAND gates.  A second output, which
+   is the first output inverted, is also provided.
 4. rsflop -- an RS flip-flop with up to 5 set and clear inputs,
    '0' is active.  These are shown in the CDC diagrams as
    cross-coupled gates, but attempting to model them that way
@@ -96,3 +97,33 @@ As with mem.vhd, synchro.vhd has two connectors (19-pin connectors in
 this case since coax has 19 wires in it): the first connector is for
 the input cable, and the second for the output cable.  Pin numbers
 101-119 are used on the output connector.
+
+Wire list format
+
+The wire list format is basically straight from the CDC documents.  It
+lists the modules, one by one, with all the connections for each
+module pin.  All the pins are mentioned even if no-connects.  For
+memory, all 30 pins are shown; for other modules, only pins 1 to 28
+are shown (the other two are power/ground).
+
+Connections come in two basic forms: twisted pair, and coax.  Twisted
+pair is given as the destination module (like "C21"), the destination
+pin, and the length (in xxx units).  Coax is given as the cable id
+(like "W02") and the wire in the cable (like "902").  Coax wire IDs
+are 90 through 99 and 900 through 908 -- 19 wires per cable total.
+
+A special case is destination pin "X" instead of a pin number.  That
+is a ground (logic 1); the destination slot is always the current
+slot, and the length is 2.  In the wirelist originals, the length is
+sometimes omitted.
+
+For memory, the power and ground connections are shown explicitly
+(CB1, CB2, CB3, "+6 BUS").  For other modules they are omitted.
+
+Each module in the wire list begins with a line that is the module
+type and slot, like this:  "PX 1I25".  The leading number on the slot
+is the chassis number.  Module type is the two-letter code or "MEM"
+for memory.  That line is followed by the pin list (30 lines for
+memory, 28 otherwise).  For memory, this is followed by a second
+connector section with just a slot id (no module type) and another 30
+pins -- those are the second connector.
