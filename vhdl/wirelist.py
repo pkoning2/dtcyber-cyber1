@@ -390,10 +390,13 @@ class ModuleInstance (object):
                 if cc[:2] != (other, pin2):
                     print linenum, curline
                     print "Pin %s already connected (%s, %s, %s) in module at %s" % (pin, cc[0].name, cc[1], cc[2], self.name)
-                elif False and cc[2] != wlen and \
+                elif False and \
+                         cc[2] != wlen and \
                          not (cc[2].endswith ("x") and wlen.endswith ("x")):
-                    print "pin %s module %s to pin %s module %s length mismatch (%s vs. %s)" % \
-                          (pin, self.name, pin2, other.name, wlen, cc[2])
+                    print "module %s pin %s to module %s pin %s length mismatch (%s vs. %s)" % \
+                          (self.name, pin, other.name, pin2, wlen, cc[2])
+                    print "module %s pin %s to module %s pin %s length mismatch (%s vs. %s)" % \
+                          (other.name, pin2, self.name, pin, cc[2], wlen)
             except KeyError:
                 pass
             try:

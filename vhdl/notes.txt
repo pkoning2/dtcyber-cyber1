@@ -129,7 +129,6 @@ connector section with just a slot id (no module type) and another 30
 pins -- those are the second connector.
 
 The wirelist checker verifies that a connection from a to b is paired
-with the same wire from b to a.  Sometimes the wirelist is
-inconsistent about the wire length; such mismatches in the original
-are labeled with an "x" after the length, and the checker accepts
-lengths marked that way.
+with the same wire from b to a.  It doesn't check that the length is
+given the same in both places, because the original wirelists have
+substantial numbers of inconsistencies there.
