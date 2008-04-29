@@ -27,7 +27,7 @@ cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
 	touch cyberdefs.stamp
 
 %.o : %.vhd cyberdefs.stamp
-	ghdl -a $<
+	ghdl -a -O2 $<
 
 %.o : %.c
 	$(CC) -O2  $(CFLAGS) -I .. -I . -c $<
