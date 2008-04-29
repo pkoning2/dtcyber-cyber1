@@ -6,6 +6,8 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
+-- TG module -- 4 input mux
+--
 -------------------------------------------------------------------------------
 
 library IEEE;
@@ -23,26 +25,47 @@ entity tgslice is
 
 end tgslice;
 
-architecture bool of tgslice is
-  signal ti : std_logic;                      -- internal copy of output
+architecture gates of tgslice is
+  component g2
+    port (
+      a, b : in  std_logic;                   -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  component g4
+    port (
+      a, b, c, d : in  std_logic;             -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
   signal ii1, ii2, ii3, ii4 : std_logic;
-begin  -- bool
-
-  -- We could do this as gates, but chances are that writing
-  -- it this way will result in better synthesis
-  ii1 <= '1' when i1 = 'U' else i1;
-  ii2 <= '1' when i2 = 'U' else i2;
-  ii3 <= '1' when i3 = 'U' else i3;
-  ii4 <= '1' when i4 = 'U' else i4;
-  ti <= ii1 when a = '1' else
-        ii2 when b = '1' else
-        ii3 when c = '1' else
-        ii4 when d = '1' else '0';
-  tp <= ti after 2 * t;
-  q  <= ti after 2 * t;
-  qb <= not (ti) after 3 * t;
+  signal ti : std_logic;                      -- internal copy of output
+begin  -- gates
+  u1 : g2 port map (
+    a => i1,
+    b => a,
+    y => ii1);
+  u2 : g2 port map (
+    a => i2,
+    b => b,
+    y => ii2);
+  u3 : g2 port map (
+    a => i3,
+    b => c,
+    y => ii3);
+  u4 : g2 port map (
+    a => i4,
+    b => d,
+    y => ii4);
+  u5 : g4 port map (
+    a  => ii1,
+    b  => ii2,
+    c  => ii3,
+    d  => ii4,
+    y  => ti,
+    y2 => qb);
+  tp <= ti;
+  q <= ti;
   
-end bool;
+end gates;
 
 library IEEE;
 use IEEE.std_logic_1164.all;

@@ -6,6 +6,8 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
+-- TC module -- dual 12 output fanout
+--
 -------------------------------------------------------------------------------
 
 library IEEE;
@@ -27,62 +29,58 @@ entity tc is
 end tc;
 
 architecture gates of tc is
-  component inv2
+  component inv
     port (
-      a : in  std_logic;                      -- input
-      y, y2 : out std_logic);                     -- output
+      a  : in  std_logic;                     -- input
+      y  : out std_logic);                    -- output
   end component;
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
       y, y2    : out std_logic);                  -- output
   end component;
-  signal a, b, c, d, e, f : std_logic;
+  signal a, b, c, d : std_logic;
 begin  -- gates
   u1 : g2 port map (
     a => p3,
     b => p5,
-    y => a);
-  tp1 <= a;
-  u2 : inv2 port map (
+    y => tp1,
+    y2 => a);
+  u2 : inv port map (
     a => a,
-    y => b,
-    y2 => c);
-  tp2 <= b;
-  p1 <= c;
-  p2 <= c;
-  p4 <= c;
-  p6 <= c;
-  p7 <= c;
-  p8 <= c;
-  p9 <= c;
-  p10 <= c;
-  p11 <= c;
-  p12 <= c;
-  p13 <= c;
-  p15 <= c;
+    y => b);
+  p1 <= b;
+  p2 <= b;
+  p4 <= b;
+  p6 <= b;
+  p7 <= b;
+  p8 <= b;
+  p9 <= b;
+  p10 <= b;
+  p11 <= b;
+  p12 <= b;
+  p13 <= b;
+  p15 <= b;
   u4 : g2 port map (
     a => p14,
     b => p16,
+    y => tp5,
+    t2 => c);
+  u5 : inv port map (
+    a => c,
     y => d);
-  tp5 <= d;
-  u5 : inv2 port map (
-    a => d,
-    y => e,
-    y2 => f);
-  tp6 <= e;
-  p17 <= f;
-  p18 <= f;
-  p19 <= f;
-  p20 <= f;
-  p21 <= f;
-  p22 <= f;
-  p23 <= f;
-  p24 <= f;
-  p25 <= f;
-  p26 <= f;
-  p27 <= f;
-  p28 <= f;
+  p17 <= d;
+  p18 <= d;
+  p19 <= d;
+  p20 <= d;
+  p21 <= d;
+  p22 <= d;
+  p23 <= d;
+  p24 <= d;
+  p25 <= d;
+  p26 <= d;
+  p27 <= d;
+  p28 <= d;
 
 end gates;
 
