@@ -526,7 +526,8 @@ class ModuleInstance (object):
                     if w:
                         if w is ground:
                             clist.append ("    %s => one" % p)
-                        else:
+                        elif w.wiretype ():
+                            # It's a valid wire, add it
                             clist.append ("    %s => %s" % (p, w.name))
                     elif dir == "in":
                         error ("Unconnected input pin %s in %s" %
