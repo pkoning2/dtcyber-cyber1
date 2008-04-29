@@ -21,6 +21,7 @@ entity qb is
     p11, p9, p13, p21, p25, p27  : in  std_logic;
     tp1, tp2, tp3, tp4, tp5, tp6 : out std_logic;  -- test points
     p2, p1, p20, p22, p24        : out std_logic;
+    p4, p8, p6                   : out std_logic;
     p14, p16, p28, p12, p18, p26 : out std_logic);
 
 end qb;
