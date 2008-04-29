@@ -19,6 +19,9 @@ VPATH = ..
 LINKSWITCH := -Wl,
 LINK_FOREIGN = $(addprefix $(LINKSWITCH),$(FOREIGN) $(FLIBS))
 
+OPTIMIZE :=
+#OPTIMIZE := -O2
+
 cdc_tb:	$(OBJS)
 	ghdl -e $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
 
@@ -27,7 +30,7 @@ cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
 	touch cyberdefs.stamp
 
 %.o : %.vhd cyberdefs.stamp
-	ghdl -a -O2 $<
+	ghdl -a $(OPTIMIZE) $<
 
 %.o : %.c
 	$(CC) -O2  $(CFLAGS) -I .. -I . -c $<
