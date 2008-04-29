@@ -73,13 +73,13 @@ def get_chslot (name):
 def chslotname (slot):
     return "%d%s%d" % slot
 
-def get_wire (name, slot, pin, stype):
+def get_wire (name, slot, pin):
     to = (slot, pin)
     try:
         w = curch.wires[name]
         w.connect (to)
     except KeyError:
-        w = curch.wires[name] = Wire (name, to, stype)
+        w = curch.wires[name] = Wire (name, to)
     return w
 
 def get_coax (name, slot, pin):
@@ -88,7 +88,7 @@ def get_coax (name, slot, pin):
         w = coaxdict[name]
         w.connect (to)
     except KeyError:
-        w = coaxdict[name] = Wire (name, to, "coaxsig")
+        w = coaxdict[name] = Wire (name, to)
     curch.coax[name] = w
     return w
 
@@ -106,10 +106,9 @@ def get_module_type (tname):
 class Wire (object):
     """An instance of a wire (connection between two connector pins).
     """
-    def __init__ (self, name, end1, stype):
+    def __init__ (self, name, end1):
         self.name = name
         self.ends = [ ]
-        self.stype = stype
         self.connect (end1)
 
     def connect (self, end1):
@@ -118,11 +117,34 @@ class Wire (object):
         else:
             self.ends.append (end1)
 
-    def valid (self):
+    def pindefs (self):
+        """Return a list of pindefs for the endpoints.
+        """
+        d = [ ]
+        for c, p in self.ends:
+            d.append (c.pindef (p))
+        return d
+
+    def wiretype (self):
         if len (self.ends) != 2:
             error ("Half-connected wire %s" % self.name)
-            return False
-        return True
+            return None
+        d1, d2 = self.pindefs ()
+        dir1, stype1 = d1
+        dir2, stype2 = d2
+        if stype1 != stype2:
+            error ("Endpoint type mismatch on wire %s (%s vs. %s)" %
+                   (self.name, stype1, stype2))
+            return None
+        if d1 == "inout" or d2 == "inout":
+            if stype1 != "misc":
+                error ("inout pin for wrong signal type, wire %s" % self.name)
+                return None
+        else:
+            if d1 == d2:
+                error ("wire %s not matched in to out" % self.name)
+                return None
+        return dir1, stype1
 
 class Chassis (object):
     """An instance of a 6000 chassis.
@@ -153,9 +175,13 @@ class Chassis (object):
         wnames.sort ()
         for w in wnames:
             wire = self.coax[w]
-            if wire.valid () or True:
-                dir = "inout"  # TODO
-                portlist.append ("      %s : %s coaxsig" % (w, dir))
+            wt = wire.wiretype ()
+            if wt:
+                dir, stype = wt
+                if stype == "coaxsig":
+                    portlist.append ("      %s : %s coaxsig" % (w, dir))
+                else:
+                    error ("coax %s unexpected type %s" % (w, stype))
         if portlist:
             return "    port (\n%s);\n" % ";\n".join (portlist)
         return ""
@@ -187,8 +213,10 @@ class Chassis (object):
         wnames.sort ()
         for w in wnames:
             wire = self.wires[w]
-            if wire.valid ():
-                wlist.append ("  signal %s : %s;\n" % (w, wire.stype))
+            wt = wire.wiretype ()
+            if wt:
+                dir, stype = wt
+                wlist.append ("  signal %s : %s;\n" % (w, stype))
         return "".join (wlist)
     
     def print_vhdl (self, f):
@@ -406,10 +434,12 @@ none30 = [ None ]  * 31
 class Connector (object):
     """An instance of a 30-pin connector.
     """
-    def __init__ (self, slot):
+    def __init__ (self, slot, module, offset = 0):
         self.name = slot
         self.slotid = get_slot (slot)
         self.pins = list (none30)
+        self.module = module
+        self.offset = offset
 
     def read_pins (self, f, count):
         """Process the connector pin list.  There are 'count' pins.
@@ -445,11 +475,17 @@ class Connector (object):
                         wname = "%s_%d_%s_%s" % (self.name, p, dest, pin2)
                     else:
                         wname = "%s_%s_%s_%d" % (dest, pin2, self.name, p)
-                    w = get_wire (wname, self, p, "std_logic")
+                    w = get_wire (wname, self, p)
             else:
                 wname = "%s_%s" % (dest, pin2)
                 w = get_coax (wname, self, p)
             self.pins[p] = w
+            
+    def pindef (self, num):
+        """Get the definition of the pin, from the ModuleType object.
+        """
+        pname = "p%d" % (num + self.offset)
+        return self.module.Type.pins[pname]
     
 class ModuleInstance (object):
     """An instance of a ModuleType (living in some slot in some chassis)
@@ -522,7 +558,7 @@ def process_file (f):
                 curch = chassis_list[ch]
             slot = slotname (slotid)
             module = curch.add_module (mt, slot)
-            c = Connector (slot)
+            c = Connector (slot, module)
             module.add_connector (c)
             if mt == "mem":
                 c.read_pins (f, 30)
@@ -531,7 +567,7 @@ def process_file (f):
                 if not slotid:
                     error ("Invalid slot ID %s" % slot2)
                 slot2 = slotname (slotid)
-                c = Connector (slot2)
+                c = Connector (slot2, module, 100)
                 module.add_connector (c)
                 c.read_pins (f, 30)
             else:
