@@ -28,14 +28,17 @@ use work.sigs.all;
 
 chassis_list = [ None ] * 17
 curch = None
+curcnum = None
+ground = "ground"
+
+module_types = { }
+coaxdict = { }
 
 portpat = re.compile (r"\s*([\w\s,]+):\s*(in|out|inout)\s+(std_logic|coaxsig|misc)\s*(?:\:=\s'.')?(\))?\s*;", re.I)
+slotpat = re.compile (r"([a-r])(\d\d?)", re.I)
+chslotpat = re.compile (r"(\d\d?)([a-r])(\d\d?)", re.I)
 
-class Fail (Exception):
-    pass
-class Warn (Exception):
-    pass
-
+curfile = ""
 curline = ""
 linenum = 0
 
@@ -46,46 +49,94 @@ def getline (f):
     #print curline
     return curline
 
+def error (text):
+    print "%s:%d: %s\n%s" % (curfile, linenum, text, curline)
+
+def get_slot (name):
+    m = slotpat.match (name)
+    if m:
+        return curcnum, m.group (1), int (m.group (2))
+    return None
+
+def slotname (slot):
+    return "%s%d" % (slot[1], slot[2])
+
+def get_chslot (name):
+    m = chslotpat.match (name)
+    if m:
+        return int (m.group (1)), m.group (2), int (m.group (3))
+    return None
+
+def chslotname (slot):
+    return "%d%s%d" % slot
+
+def get_wire (name, slot, pin):
+    to = (slot, pin)
+    try:
+        w = curch.wires[name]
+        w.connect (to)
+    except KeyError:
+        w = curch.wires[name] = Wire (name, to)
+    return w
+
+def get_coax (name, slot, pin):
+    to = (slot, pin)
+    try:
+        w = coaxdict[name]
+        w.connect (to)
+    except KeyError:
+        w = coaxdict[name] = Wire (name, to)
+    return w
+
+def get_module_type (tname):
+    """Retrieve a module type by type name, returning the ModuleType
+    object.  If it wasn't added before, add it.
+    """
+    global module_types
+    try:
+        return module_types[tname]
+    except KeyError:
+        module_types[tname] = mod = ModuleType (tname)
+        return mod
+
+class Wire (object):
+    """An instance of a wire (connection between two connector pins).
+    """
+    def __init__ (self, name, end1):
+        self.name = name
+        self.ends = [ ]
+        self.connect (end1)
+
+    def connect (self, end1):
+        if len (self.ends) > 1:
+            error ("Wire %s already has two connections" % self.name)
+        else:
+            self.ends.append (end1)
+
+    def valid (self):
+        if len (self.ends) != 2:
+            error ("Half-connected wire %s" % self.name)
+
 class Chassis (object):
     """An instance of a 6000 chassis.
     """
     def __init__ (self, num):
         self.num = num
         self.name = "chassis%d" % num
-        self.module_types = { }
         self.modules = { }
-        self.coax = { }
+        self.wires = { }
         
-    def add_module_type (self, tname):
-        """Add a module type by type name, returning the ModuleType
-        object.  If it was added before, return that one.
-        """
-        try:
-            return self.module_types[tname]
-        except KeyError:
-            self.module_types[tname] = mod = ModuleType (tname)
-            return mod
-
     def add_module (self, tname, name):
         """Add a module instance for slot 'name'.  Error if that slot
         already has something in it.  Mtype is the module type object.
         """
-        try:
+        if name in self.modules:
+            error ("Slot %s already assigned" % name)
             mi = self.modules[name]
-            #mod_type = self.add_module_type (tname)
-            #mi.settype (tname, mod_type)
-        except KeyError:
+        else:
             mi = self.modules[name] = ModuleInstance (name, tname)
         return mi
 
-    def find_module (self, name):
-        """Find the module instance for slot 'name'. 
-        """
-        try:
-            return self.modules[name]
-        except KeyError:
-            return self.add_module ("unknown", name)
-        
     def ports (self):
         """Return the ports definition of the chassis, as a string.
         """
@@ -101,13 +152,16 @@ class Chassis (object):
         (i.e., for the module types it contains), as a string.
         """
         clist = [ ]
-        mlist = self.module_types.keys ()
+        mtypes = { }
+        for m in self.modules.itervalues ():
+            mtypes[m.Type.name] = m.Type
+        mlist = mtypes.keys ()
         mlist.sort ()
         for m in mlist:
-            clist.append ("  component %s\n%s  end component;\n" % (m, self.module_types[m].ports ()))
+            clist.append ("  component %s\n%s  end component;\n" % (m, mtypes[m].ports ()))
         return "".join (clist)
 
-    def wires (self):
+    def wirelist (self):
         """Return the list of wires for this chassis, as signal
         declarations.  The signal names look like m32_1_q34_17 for
         the wire from pin 1 of the module in slot m32 to pin 17 of
@@ -116,16 +170,14 @@ class Chassis (object):
         ends are the same slot.
         """
         wlist = [ ]
-        for mname, m in self.modules.iteritems ():
-            for pin, p in m.connections.iteritems ():
-                other, pin2 = p
-                if isinstance (other, Coax) or \
-                       (other.name, pin2) < (mname, pin):
-                    continue
-                wlist.append (wirename (m, pin, other, pin2))
-        wlist.sort ()
-        return "  signal %s : std_logic;\n" % " : std_logic;\n  signal ".join (wlist)
-
+        wnames = self.wires.keys ()
+        wnames.sort ()
+        for w in wnames:
+            wire = self.wires[w]
+            if wire.valid ():
+                wlist.append ("  signal %s : %s;\n" % (w, wire.stype))
+        return "".join (wlist)
+    
     def print_vhdl (self, f):
         """Print the VHDL entity definition and structural model
         for this chassis.  f is the file to write to.  We don't
@@ -137,8 +189,10 @@ class Chassis (object):
         print >> f, "end %s;" % self.name
         print >> f, "\narchitecture modules of %s is" % self.name
         print >> f, self.component_decls ()
-        print >> f, self.wires ()
+        print >> f, "  signal one : std_logic := '1';"
+        print >> f, self.wirelist ()
         print >> f, "begin -- modules"
+        print >> f, "  one <= '1';"
         clist = self.modules.keys ()
         clist.sort ()
         for slot in clist:
@@ -222,11 +276,11 @@ class Coax (object):
         elif num >= 900 and num <= 908:
             num = (num - 900) + 10
         else:
-            raise Warn, "Pin number %s out of range" % pin
+            error ("Pin number %s out of range" % pin)
         if pin in self.connections:
-            raise Warn, "Coax %s pin %s already connected" % (self.name, pin)
+            error ("Coax %s pin %s already connected" % (self.name, pin))
         if pin2 in other.connections:
-            raise Warn, "Pin %s already connected in %s module at %s" % (pin2, t2.name, other.name)
+            error ("Pin %s already connected in %s module at %s" % (pin2, t2.name, other.name))
         self.connections[num] = (other, pin2)
         other.connections[num] = (self, pin)
         
@@ -285,7 +339,7 @@ class ModuleType (object):
         try:
             v = open (name + ".vhd", "r")
         except:
-            raise Warn, "Error opening %s.vhd" % name
+            error ("Error opening %s.vhd" % name)
         entpat = re.compile ("entity %s is" % name, re.I)
         ent = False
         while True:
@@ -299,18 +353,18 @@ class ModuleType (object):
                 continue
             break
         if not l:
-            raise Warn, "Entity %s missing" % name
+            error ("Entity %s missing" % name)
         for l in v:
             m = portpat.match (l)
             if not m:
-                raise Warn, "Entity %s missing or port declaration not formatted right" % name
+                error ("Entity %s missing or port declaration not formatted right" % name)
                 return
             pins = m.group (1).lower ()
             dir = m.group (2).lower ()
             stype = m.group (3).lower ()
             if stype != "misc" and dir not in ("in", "out"):
-                raise Warn, "Unrecognized pin direction %s for %s pin %s" \
-                      % (dir, name, pins)
+                error ("Unrecognized pin direction %s for %s pin %s" 
+                      % (dir, name, pins))
             for pin in pins.split (","):
                 pin = pin.strip ()
                 if pin in self.pins:
@@ -320,13 +374,6 @@ class ModuleType (object):
             if m.group (4):
                 break
 
-    def port (self, pin):
-        """Return the port definition for the specified pin,
-        without the ; delimiter.
-        """
-        dir, stype = self.pins[pin]
-        return "      %s : %s %s" % (pin, dir, stype)
-    
     def ports (self):
         """Return the ports definition of the chassis, as a string.
         They are returned grouped in, inout, out, and in numeric order
@@ -337,10 +384,60 @@ class ModuleType (object):
         pins.sort (pincmp)
         for d in ("in", "inout", "out"):
             for p in pins:
-                if self.pins[p] == d:
-                    portlist.append (self.port (p))
+                pdir, stype = self.pins[p]
+                if pdir == d:
+                    portlist.append ("      %s : %s %s" % (p, pdir, stype))
         return "    port (\n%s);\n" % ";\n".join (portlist)
 
+none30 = [ None ]  * 31
+class Connector (object):
+    """An instance of a 30-pin connector.
+    """
+    def __init__ (self, slot):
+        self.name = slot
+        self.slotid = get_slot (slot)
+        self.pins = list (none30)
+
+    def read_pins (self, f, count):
+        """Process the connector pin list.  There are 'count' pins.
+        """
+        for p in xrange (count):
+            l = getline (f)
+            fields = l.split ()
+            pin1 = fields[0]
+            if int (pin1) != p + 1:
+                error ("Pin %d out of sequence" % pin1)
+            if len (fields) == 1:
+                # Unconnected pin, skip
+                continue
+            if count == 30 and fields[1] in ("cb1", "cb2", "cb3", "+6"):
+                # Memory power pins, ignore
+                continue
+            dest = fields[1]
+            pin2 = fields[2]
+            if pin2.startswith ("p"):
+                pin2 = pin2[1:]
+            wlen = 0
+            if len (fields) > 3:
+                wlen = int (fields[3])
+            dslot = get_slot (dest)
+            if dslot:
+                # Destination looks like a slot ID.
+                if pin2 == "x":
+                    # connected to ground, mark that
+                    self.pins[p] = ground
+                    continue
+                else:
+                    if (self.slotid, p) < (dslot, int (pin2)):
+                        wname = "%s_%d_%s_%s" % (self.name, p, dest, pin2)
+                    else:
+                        wname = "%s_%s_%s_%d" % (dest, pin2, self.name, p)
+                    w = get_wire (wname, self, p)
+            else:
+                wname = "%s_%s" % (dest, pin2)
+                w = get_coax (wname, self, p)
+            self.pins[p] = w
+    
 class ModuleInstance (object):
     """An instance of a ModuleType (living in some slot in some chassis)
     """
@@ -349,167 +446,85 @@ class ModuleInstance (object):
         """
         self.name = name
         self.tname = tname
-        self.Type = None
-        self.connections = { }
+        self.Type = get_module_type (tname)
+        self.connectors = [ ]
 
-    def settype (self, tname, mod_type):
-        if self.Type:
-            raise Warn, "Module %s type already set" % self.name
-        self.tname = tname
-        self.Type = mod_type
+    def add_connector (self, c):
+        self.connectors.append (c)
         
-    def connect (self, pin, other, pin2, wlen):
-        if pin2.startswith ("p"):
-            pin2 = pin2[1:]
-        t1 = self.Type
-        if t1:
-            try:
-                dir1, stype1 = t1.pins[pin]
-            except KeyError:
-                raise Warn, "No pin %s in %s module at %s" % (pin, t1.name, self.name)
-        else:
-            dir1 = "inout"
-            stype1 = "unknown"
-        t2 = other.Type
-        if t2:
-            try:
-                dir2, stype2 = t2.pins[pin2]
-            except KeyError:
-                raise Warn, "No pin %s in %s module at %s" % (pin2, t2.name, other.name)
-        else:
-            dir2 = "inout"
-            stype2 = stype1
-        if stype1 != stype2 and stype1 != "unknown":
-            raise Warn, "Error: type mismatch module at %s pin %s" % \
-                  (self.name, pin)
-        if dir1 != "inout" and dir2 != "inout" and dir1 == dir2:
-            raise Warn, "Error: %s to %s" % (dir1, dir2)
-        else:
-            try:
-                cc = self.connections[pin]
-                if cc[:2] != (other, pin2):
-                    print linenum, curline
-                    print "Pin %s already connected (%s, %s, %s) in module at %s" % (pin, cc[0].name, cc[1], cc[2], self.name)
-                elif False and \
-                         cc[2] != wlen and \
-                         not (cc[2].endswith ("x") and wlen.endswith ("x")):
-                    print "module %s pin %s to module %s pin %s length mismatch (%s vs. %s)" % \
-                          (self.name, pin, other.name, pin2, wlen, cc[2])
-                    print "module %s pin %s to module %s pin %s length mismatch (%s vs. %s)" % \
-                          (other.name, pin2, self.name, pin, cc[2], wlen)
-            except KeyError:
-                pass
-            try:
-                cc = other.connections[pin2]
-                if cc[:2] != (self, pin):
-                    print linenum, curline
-                    print "Pin %s already connected (%s, %s, %s) in module at %s" % (pin2, cc[0].name, cc[1], cc[2], other.name)
-            except KeyError:
-                pass
-            self.connections[pin] = (other, pin2, wlen)
-            other.connections[pin2] = (self, pin, wlen)
-
     def portmap (self):
         """Return a component invocation (port map) mapping the
         connected pins of this module instance to the wire signal names.
         """
         clist = [ ]
-        if "clk" in self.Type.pins:
-            clist.append ("    clk => clk")
-        plist = self.connections.keys ()
+        plist = self.Type.pins.keys ()
         plist.sort ()
-        for pin in plist:
-            other, pin2 = self.connections[pin]
-            wire = wirename (self, pin, other, pin2)
-            clist.append ("    %s => %s" % (pin, wire))
+        for dir in ("in", "out", "inout"):
+            for p in plist:
+                pdir, stype = self.Type.pins[p]
+                if pdir != dir:
+                    continue
+                if p == "clk":
+                    clist.append ("    clk => clk")
+                else:
+                    if p.startswith ("tp"):
+                        # test point
+                        continue
+                    pnum = int (p[1:])
+                    cnum, pnum = divmod (pnum, 100)
+                    c = self.connectors[cnum]
+                    w = c.pins[pnum]
+                    if w:
+                        if w is ground:
+                            clist.append ("    %s => one" % p)
+                        else:
+                            clist.append ("    %s => %s" % (p, w.name))
+                    elif dir == "in":
+                        error ("Unconnected input pin %s in %s" %
+                               (p, self.name))
         return "  %s : %s port map (\n%s);\n" % (self.name, self.Type.name, ",\n".join (clist))
     
-def pins (f, mod1, count):
-    """Process the connector pin list.  There are 'count' pins.
-    """
-    current_chassis = chassis_list[curch]
-    for p in xrange (count):
-        l = getline (f)
-        fields = l.split ()
-        pin1 = fields[0]
-        if int (pin1) != p + 1:
-            raise Warn, "Pin %d out of sequence" % pin1
-        if count == 30 and fields[1] in ("cb1", "cb2", "cb3", "+6"):
-            # Memory power pins, ignore
-            continue
-        if len (fields) == 3:
-            # Coax style connection
-            cable = fields[1]
-            pin2 = fields[2]
-            p = int (pin2)
-            if p < 90 or (p > 99 and p < 900) or p > 908:
-                raise Warn, "Invalid coax pin %s" % pin2
-            # Add coax wire
-        elif len (fields) > 1:
-            pin2 = fields[2]
-            wlen = fields[3]
-            if pin2 == "x":
-                # "x" means ground -- logic one
-                if fields[1] != mod1.name:
-                    print"'x' connection to %s, expected %s" \
-                              % (fields[1], mod1.name)
-                # do something
-            else:
-                mod2 = current_chassis.find_module (fields[1])
-                mod1.connect (pin1, mod2, pin2, wlen)
-
-slotpat = re.compile (r"(\d+)(\w+)", re.I)
 def process_file (f):
-    global curch
-    curch = None
+    global curch, curcnum
+    curch = curcnum = None
     while True:
         l = getline (f)
         if not l:
             break
         try:
             mt, slot = l.split ()
-            m = slotpat.match (slot)
-            if not m:
-                raise Warn, "Invalid slot ID %s" % slot
-            ch = int (m.group (1))
-            if curch:
-                if ch != curch:
-                    raise Warn, "Chassis mismatch slot %s" % slot
+            slotid = get_chslot (slot)
+            if not slotid:
+                error ("Invalid slot ID %s" % slot)
+            ch = slotid[0]
+            if curcnum:
+                if ch != curcnum:
+                    error ("Chassis mismatch slot %s" % slot)
             else:
                 if ch < 1 or ch > 16:
-                    raise Fail, "Chassis number %d out of range" % cnum
+                    error ("Chassis number %d out of range" % ch)
                 if not chassis_list[ch]:
                     chassis_list[ch] = Chassis (ch)
-                curch = ch
-            slot = m.group (2)
-            module = chassis_list[ch].add_module (mt, slot)
+                curcnum = ch
+                curch = chassis_list[ch]
+            slot = slotname (slotid)
+            module = curch.add_module (mt, slot)
+            c = Connector (slot)
+            module.add_connector (c)
             if mt == "mem":
-                pins (f, module, 30)
+                c.read_pins (f, 30)
                 slot2 = getline (f)
-                m = slotpat.match (slot2)
-                if not m:
-                    raise Warn, "Invalid slot ID %s" % slot2
-                slot2 = m.group (2)
-                conn2 = chassis_list[ch].add_module ("mem", slot2)
-                pins (f, conn2, 30) # ??? TODO
+                slotid = get_chslot (slot2)
+                if not slotid:
+                    error ("Invalid slot ID %s" % slot2)
+                slot2 = slotname (slotid)
+                c = Connector (slot2)
+                module.add_connector (c)
+                c.read_pins (f, 30)
             else:
-                pins (f, module, 28)
-        except Fail, msg:
-            print msg
-            print linenum, curline
-            failure = traceback.format_exception (sys.exc_type,
-                                                  sys.exc_value,
-                                                  sys.exc_traceback)
-            #print "".join (failure)
-        except Warn, msg:
-            print msg
-            print linenum, curline
-            failure = traceback.format_exception (sys.exc_type,
-                                                  sys.exc_value,
-                                                  sys.exc_traceback)
-            #print "".join (failure)
+                c.read_pins (f, 28)
         except:
-            print "unexpected error in", linenum, curline
+            error ("unexpected error")
             failure = traceback.format_exception (sys.exc_type,
                                                   sys.exc_value,
                                                   sys.exc_traceback)
@@ -518,7 +533,8 @@ def process_file (f):
 
 def process_list (name):
     f = open (name, "r")
-    global linenum
+    global linenum, curfile
+    curfile = name
     linenum = 0
     process_file (f)
 
