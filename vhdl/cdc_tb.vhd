@@ -70,8 +70,7 @@ architecture behav of cdc_tb is
    --  Declaration of the component that will be instantiated.
   component cdc6600 
     port (
-      clk : in std_logic;
-      coax1_1_extern_1 : inout coaxsigs);
+      clk : in std_logic);
   end component;
   component synchro
     generic (
@@ -95,8 +94,7 @@ architecture behav of cdc_tb is
   type testvec is array (1 to 80) of std_logic;
 begin
    --  Component instantiation.
-   uut: cdc6600 port map (coax1_1_extern_1 => coax1,
-                          clk => clk);
+   uut: cdc6600 port map (clk => clk);
    console : synchro generic map (
      chnum => 8#10#)
    port map (

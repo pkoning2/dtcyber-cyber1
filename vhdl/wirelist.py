@@ -260,8 +260,8 @@ def top_vhdl (f):
     cnames = cables.keys ()
     cnames.sort ()
     print >> f, header
-    print >> f, "entity cdc6600 is\n  port (\n    clk : in std_logic;"
-    clist = [ ]
+    print >> f, "entity cdc6600 is\n  port ("
+    clist = [ "    clk : in std_logic" ]
     #for c in cnames:
     #    n = cables[c]
     #    if n == 2:
