@@ -247,18 +247,9 @@ def top_vhdl (f):
     outside world.  All interconnects are modeled as coax, which is
     an array of 19 inout logic signals.
     """
-    cables = { }
     for ch in chassis_list:
         if ch is None:
             continue
-        #for c in ch.coax:
-        #    n = c.coaxname ()
-        #    if c.to[0].startswith ("chassis"):
-        #        cables[n] = 1
-        #    else:
-        #        cables[n] = 2
-    cnames = cables.keys ()
-    cnames.sort ()
     print >> f, header
     print >> f, "entity cdc6600 is\n  port ("
     clist = [ "    clk : in std_logic" ]
@@ -272,69 +263,15 @@ def top_vhdl (f):
         if ch is None:
             continue
         print >> f, "  component %s\n%s  end component;" % (ch.name, ch.ports ())
-    #for c in cnames:
-    #    n = cables[c]
-    #    if n == 1:
-    #        print >> f, "  signal %s : inout coaxsigs;" % n
     print >> f, "begin -- chassis"
     for ch in chassis_list:
         if ch is None:
             continue
         print >> f, "  ch%d : %s port map (" % (int (ch.name[7:]), ch.name)
         clist = [ "    clk => clk" ]
-        #for c in ch.coax:
-        #    n = c.coaxname ()
-        #    clist.append ("    %s => %s" % (c.name, n))
         print >> f, "%s);" % ",\n".join (clist)
     print >> f, "end chassis;"
 
-class CoaxType (object):
-    """Used to make references to coax look like references to module
-    instances.
-    """
-    def __init__ (self):
-        self.name = "Coax"
-        self.pins = { }
-        for p in xrange (19):
-            self.pins["p%d" % (p + 1)] = "inout"
-
-coaxType = CoaxType ()
-
-class Coax (object):
-    """A coax connection (more precisely, the end within a given
-    chassis of that coax connection).
-    """
-    def __init__ (self, name, to_chassis, to_num):
-        self.name = name
-        self.to = (to_chassis, to_num)
-        self.Type = coaxType
-        self.connections = { }
-
-    def connect (self, pin, other, pin2):
-        num = pinnum (pin)
-        if num >= 90 and num <= 99:
-            num -= 89
-        elif num >= 900 and num <= 908:
-            num = (num - 900) + 10
-        else:
-            error ("Pin number %s out of range" % pin)
-        if pin in self.connections:
-            error ("Coax %s pin %s already connected" % (self.name, pin))
-        if pin2 in other.connections:
-            error ("Pin %s already connected in %s module at %s" % (pin2, t2.name, other.name))
-        self.connections[num] = (other, pin2)
-        other.connections[num] = (self, pin)
-        
-    def coaxname (self):
-        """Like wirename but for coax cables.
-        """
-        this = self.name
-        num = self.num
-        other, num2 = self.to
-        if other.startswith ("coax") and (other, num2) < (this, num):
-            this, num, other, num2 = other, num2, this, num
-        return "%s_%s_%s_%s" % (this, num, other, num2)
-    
 def pinnum (p):
     """Convert pin name to number.  Test point are treated as pins
     above 200.  Non-standard names are handled as -1000000+radix36(name).
@@ -349,18 +286,6 @@ def pincmp (p1, p2):
     """Comparison function for sorting pin names in numeric order.
     """
     return pinnum (p1) - pinnum (p2)
-
-def wirename (this, pin, other, pin2):
-    """Return the signal name for the connection between the two
-    given endpoints.
-    """
-    if isinstance (this, Coax):
-        return "%s(%d)" % (this.name, pinnum (pin))
-    if isinstance (other, Coax):
-        return "%s(%d)" % (other.name, pinnum (pin2))
-    if (other.name, pin2) < (this.name, pin):
-        this, pin, other, pin2 = other, pin2, this, pin
-    return "%s_%s_%s_%s" % (this.name, pin, other.name, pin2)
 
 class ModuleType (object):
     def __init__ (self, name):
