@@ -26,3 +26,69 @@ entity tb is
     p14, p16, p18, p20, p22 : out std_logic);
 
 end tb;
+
+architecture gates of tb is
+  component g3
+    port (
+      a, b, c : in  std_logic;                -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  component g4
+    port (
+      a, b, c, d : in  std_logic;             -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  component g5
+    port (
+      a, b, c, d, e : in  std_logic;          -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  component g6
+    port (
+      a, b, c, d, e, f : in  std_logic;       -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  signal t1, t2, t3 : std_logic;
+begin  -- gates
+
+  u1 : g6 port map (
+    a  => p1,
+    b  => p3,
+    c  => p5,
+    d  => p7,
+    e  => p9,
+    f  => p11,
+    y  => tp1,
+    y2 => p19);
+  u2 : g5 port map (
+    a  => p2,
+    b  => p4,
+    c  => p6,
+    d  => p8,
+    e  => p10,
+    y  => tp2,
+    y2 => t1);
+  p13 <= t1;
+  p12 <= t1;
+  p15 <= t1;
+  p17 <= t1;
+  u3 : g4 port map (
+    a  => p21,
+    b  => p23,
+    c  => p25,
+    d  => p27,
+    y  => tp5,
+    y2 => t2);
+  p14 <= t2;
+  p16 <= t2;
+  p18 <= t2;
+  u4 : g3 port map (
+    a  => p24,
+    b  => p26,
+    c  => p28,
+    y  => tp6,
+    y2 => t3);
+  p20 <= t3;
+  p22 <= t3;
+  
+end gates;
