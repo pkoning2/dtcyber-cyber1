@@ -50,8 +50,11 @@ def getline (f):
     return curline
 
 def error (text):
-    print "%s:%d: %s\n%s" % (curfile, linenum, text, curline)
-
+    if curline:
+        print "%s:%d: %s\n%s" % (curfile, linenum, text, curline)
+    else:
+        print text
+        
 def get_slot (name):
     m = slotpat.match (name)
     if m:
@@ -70,13 +73,13 @@ def get_chslot (name):
 def chslotname (slot):
     return "%d%s%d" % slot
 
-def get_wire (name, slot, pin):
+def get_wire (name, slot, pin, stype):
     to = (slot, pin)
     try:
         w = curch.wires[name]
         w.connect (to)
     except KeyError:
-        w = curch.wires[name] = Wire (name, to)
+        w = curch.wires[name] = Wire (name, to, stype)
     return w
 
 def get_coax (name, slot, pin):
@@ -85,7 +88,8 @@ def get_coax (name, slot, pin):
         w = coaxdict[name]
         w.connect (to)
     except KeyError:
-        w = coaxdict[name] = Wire (name, to)
+        w = coaxdict[name] = Wire (name, to, "coaxsig")
+    curch.coax[name] = w
     return w
 
 def get_module_type (tname):
@@ -102,9 +106,10 @@ def get_module_type (tname):
 class Wire (object):
     """An instance of a wire (connection between two connector pins).
     """
-    def __init__ (self, name, end1):
+    def __init__ (self, name, end1, stype):
         self.name = name
         self.ends = [ ]
+        self.stype = stype
         self.connect (end1)
 
     def connect (self, end1):
@@ -116,6 +121,8 @@ class Wire (object):
     def valid (self):
         if len (self.ends) != 2:
             error ("Half-connected wire %s" % self.name)
+            return False
+        return True
 
 class Chassis (object):
     """An instance of a 6000 chassis.
@@ -125,6 +132,7 @@ class Chassis (object):
         self.name = "chassis%d" % num
         self.modules = { }
         self.wires = { }
+        self.coax = { }
         
     def add_module (self, tname, name):
         """Add a module instance for slot 'name'.  Error if that slot
@@ -141,8 +149,13 @@ class Chassis (object):
         """Return the ports definition of the chassis, as a string.
         """
         portlist = [ "      clk : in std_logic" ]
-        #for c in self.coax:
-        #    portlist.append (self.port (c))
+        wnames = self.coax.keys ()
+        wnames.sort ()
+        for w in wnames:
+            wire = self.coax[w]
+            if wire.valid () or True:
+                dir = "inout"  # TODO
+                portlist.append ("      %s : %s coaxsig" % (w, dir))
         if portlist:
             return "    port (\n%s);\n" % ";\n".join (portlist)
         return ""
@@ -401,12 +414,12 @@ class Connector (object):
     def read_pins (self, f, count):
         """Process the connector pin list.  There are 'count' pins.
         """
-        for p in xrange (count):
+        for p in xrange (1, count + 1):
             l = getline (f)
             fields = l.split ()
             pin1 = fields[0]
-            if int (pin1) != p + 1:
-                error ("Pin %d out of sequence" % pin1)
+            if int (pin1) != p:
+                error ("Pin %s out of sequence" % pin1)
             if len (fields) == 1:
                 # Unconnected pin, skip
                 continue
@@ -432,7 +445,7 @@ class Connector (object):
                         wname = "%s_%d_%s_%s" % (self.name, p, dest, pin2)
                     else:
                         wname = "%s_%s_%s_%d" % (dest, pin2, self.name, p)
-                    w = get_wire (wname, self, p)
+                    w = get_wire (wname, self, p, "std_logic")
             else:
                 wname = "%s_%s" % (dest, pin2)
                 w = get_coax (wname, self, p)
