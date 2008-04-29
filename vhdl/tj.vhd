@@ -17,7 +17,7 @@ use work.sigs.all;
 entity tj is
   
   port (
-    p10, p9, p9, p7, p6, p5      : in  std_logic;
+    p10, p9, p8, p7, p6, p5      : in  std_logic;
     p24, p25, p26, p21, p22, p23 : in  std_logic;
     tp1, tp2, tp5, tp6           : out std_logic;  -- test points
     p12, p14, p4, p11            : out std_logic;

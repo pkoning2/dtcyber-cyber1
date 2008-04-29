@@ -1,8 +1,6 @@
 VLIB = work-obj93.cf
-MODULES = \
-	clock.o mem.o  synchro.o \
-	pa.o pb.o pc.o pd.o pg.o pk.o pr.o \
-	tc.o td.o th.o tg.o \
+MODULE_SRCS = $(wildcard ??.vhd)
+MODULES = clock.o mem.o  synchro.o $(MODULE_SRCS:.vhd=.o)
 
 FOREIGN = dtsynchro.o \
 	channel.o console.o cr405.o dd6603.o dd8xx.o mux6676.o \

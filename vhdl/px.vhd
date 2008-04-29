@@ -22,7 +22,7 @@ entity px is
     p22, p10, p23, p24, p21, p26 : in  std_logic;
     tp1, tp2, tp5, tp6           : out std_logic;  -- test points
     p13, p28, p18, p17, p20      : out std_logic;
-    p15, p13, p8, p16, p3, p1    : out std_logic;
-    p27, p25, p9                 : out std_logic);
+    p15, p14, p16, p3, p1        : out std_logic;
+    p27, p25, p19                : out std_logic);
 
 end px;

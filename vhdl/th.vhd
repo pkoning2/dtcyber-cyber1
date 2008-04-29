@@ -51,7 +51,7 @@ begin  -- gates
   u3 : inv2 port map (
     a  => p3,
     y  => tp3,
-    y3 => t3);
+    y2 => t3);
   p2 <= t3;
   p12 <= t3;
   p10 <= t3;

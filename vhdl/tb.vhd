@@ -21,8 +21,8 @@ entity tb is
     p2, p4, p6, p8, p10     : in  std_logic;
     p21, p23, p25, p27      : in  std_logic;
     p24, p26, p28           : in  std_logic;
-    tp1, tp2, tp5, tp5      : out std_logic;  -- test points
-    p19, p13, p12, p15, p15 : out std_logic;
-    p13, p16, p18, p20, p22 : out std_logic);
+    tp1, tp2, tp5, tp6      : out std_logic;  -- test points
+    p19, p13, p12, p15, p17 : out std_logic;
+    p14, p16, p18, p20, p22 : out std_logic);
 
 end tb;

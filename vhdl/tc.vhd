@@ -65,7 +65,7 @@ begin  -- gates
     a => p14,
     b => p16,
     y => tp5,
-    t2 => c);
+    y2 => c);
   u5 : inv port map (
     a => c,
     y => d);
