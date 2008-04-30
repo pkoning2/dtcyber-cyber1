@@ -329,6 +329,7 @@ entity latch is
   
   port (
     d, clk : in  std_logic;                   -- data (set), clock
+    d2, d3, d4  : in  std_logic := '1';       -- extra data if needed
     q, qb  : out std_logic);                  -- q and q.bar
 
 end latch;
@@ -338,8 +339,8 @@ architecture beh of latch is
   signal qib : std_logic := '1';
 begin  -- beh
 
-  qi <= d when clk = '1' else unaffected;
-  qib <= not (d) when clk = '1' else unaffected;
+  qi <= (d and d2 and d3 and d4) when clk = '1' else unaffected;
+  qib <= not (d and d2 and d3 and d4) when clk = '1' else unaffected;
   q <= qi after t;
   qb <= qib after t;
 
