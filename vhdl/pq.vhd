@@ -19,7 +19,8 @@ entity pq is
   port (
     p6, p22, p24, p26, p28, p11, p17, p19  : in  std_logic;
     p1, p5, p21                            : in  coaxsig;
-    p23, p25, p3, p4, p2, p16              : in  std_logic;
+    p23, p25, p3                           : in std_logic;
+    p4, p2, p16                            : in  std_logic := '0';
     tp1, tp2, tp5, tp6                     : out std_logic;  -- test points
     p27, p13, p18, p20, p10, p8            : out std_logic;
     p14, p9, p12, p7, p15                  : out std_logic);
