@@ -18,7 +18,7 @@ entity px is
   
   port (
     p11                          : in  coaxsig;
-    p7, p2, p5, p9, p6, p4       : in  std_logic;
+    p7, p2, p5, p9, p6, p12, p4  : in  std_logic;
     p22, p10, p23, p24, p21, p26 : in  std_logic;
     tp1, tp2, tp5, tp6           : out std_logic;  -- test points
     p13, p28, p18, p17, p20      : out std_logic;
@@ -26,3 +26,152 @@ entity px is
     p8, p27, p25, p19            : out std_logic);
 
 end px;
+
+architecture gates of px is
+  component inv
+    port (
+      a  : in  std_logic;                     -- input
+      y  : out std_logic);                    -- output
+  end component;
+  component inv2
+    port (
+      a  : in  std_logic;                     -- input
+      y, y2 : out std_logic);                    -- output
+  end component;
+  component g2
+    port (
+      a, b : in  std_logic;                   -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  component g3
+    port (
+      a, b, c : in  std_logic;                -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  component g5
+    port (
+      a, b, c, d, e : in  std_logic;          -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  component cxreceiver
+    port (
+      a : in  coaxsig;                        -- source
+      y : out std_logic);                     -- destination
+  end component;
+  component rsflop
+    port (
+      s, r  : in  std_logic;                  -- set, reset
+      s2, s3, s4, r2, r3, r4  : in  std_logic := '1';-- extra set, reset if needed
+      q, qb : out std_logic);                 -- q and q.bar
+  end component;
+  signal c, d, e, g, h : std_logic;
+  signal t1, t2, t3, t4, t5, t6, t7, t8 : std_logic;
+  signal t9, t10, t11, t12, t13, t14 : std_logic;
+begin  -- gates
+
+  u1 : cxreceiver port map (
+    a => p11,
+    y => t1);
+  u2 : inv2 port map (
+    a  => p6,
+    y2 => t2);
+  u3 : g2 port map (
+    a => p2,
+    b => t2,
+    y => t3);
+  u4 : rsflop port map (
+    s  => t1,
+    r  => t2,
+    r3 => p12,
+    q  => t3,
+    qb => t4);
+  tp1 <= t3;
+  u5 : inv port map (
+    a => t3,
+    y => p13);
+  u6 : inv port map (
+    a => p4,
+    y => t5);
+  tp2 <= t5;
+  u7 : g3 port map (
+    a  => t4,
+    b  => t5,
+    c  => p5,
+    y2 => t6);
+  u8 : inv port map (
+    a => p7,
+    y => t7);
+  u9 : g2 port map (
+    a => t7,
+    b => t6,
+    y => d);
+  u10 : inv2 port map (
+    a  => d,
+    y2 => p28);
+  u11 : g3 port map (
+    a => t6,
+    b => e,
+    c => p9,
+    y => t8);
+  p17 <= t8;
+  u12 : g3 port map (
+    a  => g,
+    b  => d,
+    c  => t8,
+    y  => tp6,
+    y2 => p18);
+  u13 : g5 port map (
+    a => t5,
+    b => c,
+    c => p22,
+    d => e,
+    e => p10,
+    y => g);
+  u14 : g2 port map (
+    a  => d,
+    b  => d,
+    y2 => p20);
+  u15 : inv2 port map (
+    a  => g,
+    y2 => p15);
+  u16 : inv port map (
+    a => p22,
+    y => t9);
+  u17 : inv port map (
+    a => p24,
+    y => t10);
+  u18 : g2 port map (
+    a  => p23,
+    b  => t10,
+    y  => p27,
+    y2 => e);
+  u19 : g2 port map (
+    a  => t10,
+    b  => p21,
+    y  => p25,
+    y2 => t11);
+  u20 : g2 port map (
+    a => t11,
+    b => p26,
+    y => t12);
+  p19 <= t12;
+  u21 : g3 port map (
+    a => p10,
+    b => t9,
+    c => e,
+    y => t13);
+  p8 <= t13;
+  u22 : g3 port map (
+    a  => g,
+    b  => t13,
+    c  => t12,
+    y  => tp5,
+    y2 => t14);
+  p14 <= t14;
+  p16 <= t14;
+  p3 <= t14;
+  u23 : inv port map (
+    a => t14,
+    y => p1);
+  
+end gates;

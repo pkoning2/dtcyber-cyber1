@@ -32,6 +32,7 @@ architecture gates of paslice is
   component latch
     port (
       d, clk : in  std_logic;                 -- data (set), clock
+      d2, d3, d4  : in  std_logic := '1';     -- extra data if needed
       q, qb  : out std_logic);                -- q and q.bar
   end component;
   signal qi, qi2 : std_logic := '0';          -- latch output
