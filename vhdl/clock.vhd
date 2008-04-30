@@ -6,6 +6,9 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
+-- Clock source.  This pinout is designed to be a drop-in replacement
+-- for the TD module at 1H02 in the standard 6600 (sn 1-7) design.
+-- 
 -------------------------------------------------------------------------------
 
 library IEEE;
@@ -14,53 +17,25 @@ use IEEE.std_logic_1164.all;
 entity clock is
   
   port (
-    clk : in std_logic;                 -- clock from the outside world
-    p1, p2, p3, p4 : out std_logic;         -- The four clock phases
-    p11, p12, p13, p14 : out std_logic);    -- Another copy
+    clk1, clk2, clk3, clk4 : in std_logic;  -- clocks from the outside world
+    p15, p17, p23, p19 : out std_logic;  -- clock phase 1
+    p6, p12 : out std_logic;            -- clock phase 2
+    p5, p11 : out std_logic;            -- clock phase 3
+    p16, p20 : out std_logic);          -- clock phase 4
 
 end clock;
 
 architecture beh of clock is
-  signal i, ii, iii, iv : std_logic;    -- internal copies of the phases
 begin  -- beh
-
-  -- purpose: Generate the four clock phases
-  -- type   : sequential
-  -- inputs : clk
-  -- outputs: i, ii, iii, iv
-  clkgen: process (clk)
-  begin  -- process clkgen
-    if clk'event and clk = '1' then  -- rising edge
-      if i = '1' then
-        i <= '0';
-        ii <= '1';
-        iii <= '0';
-        iv <= '0';
-      elsif ii = '1' then
-        i <= '0';
-        ii <= '0';
-        iii <= '1';
-        iv <= '0';
-      elsif iii = '1' then
-        i <= '0';
-        ii <= '0';
-        iii <= '0';
-        iv <= '1';
-      else
-        i <= '1';
-        ii <= '0';
-        iii <= '0';
-        iv <= '0';
-      end if;
-      
-    end if;
-  end process clkgen;
-  p1 <= i;
-  p2 <= ii;
-  p3 <= iii;
-  p4 <= iv;
-  p11 <= i;
-  p12 <= ii;
-  p13 <= iii;
-  p14 <= iv;
+  p15 <= clk1;
+  p17 <= clk1;
+  p23 <= clk1;
+  p19 <= clk1;
+  p6 <= clk2;
+  p12 <= clk2;
+  p5 <= clk3;
+  p11 <= clk3;
+  p16 <= clk4;
+  p20 <= clk4;
+  
 end beh;

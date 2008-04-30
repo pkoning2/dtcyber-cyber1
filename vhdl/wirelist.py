@@ -42,12 +42,18 @@ curfile = ""
 curline = ""
 linenum = 0
 
+commentpat = re.compile (r"#.*$")
 def getline (f):
     global curline, linenum
-    linenum += 1
-    curline = f.readline ().strip (" \t\014\n").lower ()
-    #print curline
-    return curline
+    while True:
+        linenum += 1
+        curline = f.readline ()
+        if not curline:
+            return
+        curline = commentpat.sub ("", curline).strip (" \t\014\n").lower ()
+        #print curline
+        if curline:
+            return curline
 
 def error (text):
     if curline:
@@ -136,12 +142,12 @@ class Wire (object):
             error ("Endpoint type mismatch on wire %s (%s vs. %s)" %
                    (self.name, stype1, stype2))
             return None
-        if d1 == "inout" or d2 == "inout":
+        if dir1 == "inout" or dir2 == "inout":
             if stype1 != "misc":
                 error ("inout pin for wrong signal type, wire %s" % self.name)
                 return None
         else:
-            if d1 == d2:
+            if dir1 == dir2:
                 error ("wire %s not matched in to out" % self.name)
                 return None
         return dir1, stype1
@@ -170,7 +176,7 @@ class Chassis (object):
     def ports (self):
         """Return the ports definition of the chassis, as a string.
         """
-        portlist = [ "      clk : in std_logic" ]
+        portlist = [ "      clk1, clk2, clk3, clk4 : in std_logic" ]
         wnames = self.coax.keys ()
         wnames.sort ()
         for w in wnames:
@@ -230,9 +236,11 @@ class Chassis (object):
         print >> f, "end %s;" % self.name
         print >> f, "\narchitecture modules of %s is" % self.name
         print >> f, self.component_decls ()
+        print >> f, "  signal zero : std_logic := '0';"
         print >> f, "  signal one : std_logic := '1';"
         print >> f, self.wirelist ()
         print >> f, "begin -- modules"
+        print >> f, "  zero <= '0';"
         print >> f, "  one <= '1';"
         clist = self.modules.keys ()
         clist.sort ()
@@ -252,7 +260,7 @@ def top_vhdl (f):
             continue
     print >> f, header
     print >> f, "entity cdc6600 is\n  port ("
-    clist = [ "    clk : in std_logic" ]
+    clist = [ "    clk1, clk2, clk3, clk4 : in std_logic" ]
     #for c in cnames:
     #    n = cables[c]
     #    if n == 2:
@@ -268,7 +276,10 @@ def top_vhdl (f):
         if ch is None:
             continue
         print >> f, "  ch%d : %s port map (" % (int (ch.name[7:]), ch.name)
-        clist = [ "    clk => clk" ]
+        clist = [ "    clk1 => clk1",
+                  "    clk2 => clk2",
+                  "    clk3 => clk3",
+                  "    clk4 => clk4"]
         print >> f, "%s);" % ",\n".join (clist)
     print >> f, "end chassis;"
 
@@ -438,8 +449,8 @@ class ModuleInstance (object):
                 pdir, stype = self.Type.pins[p]
                 if pdir != dir:
                     continue
-                if p == "clk":
-                    clist.append ("    clk => clk")
+                if p.startswith ("clk"):
+                    clist.append ("    % => %" % (p, p))
                 else:
                     if p.startswith ("tp"):
                         # test point
@@ -454,6 +465,13 @@ class ModuleInstance (object):
                         elif w.wiretype ():
                             # It's a valid wire, add it
                             clist.append ("    %s => %s" % (p, w.name))
+                        elif dir == "in":
+                            # TEMP: tie half-connected inputs to idle
+                            pdir, ptype = w.pindefs ()[0]
+                            if ptype == "coaxsig":
+                                clist.append ("    %s => zero" % p)
+                            else:
+                                clist.append ("    %s => one" % p)
                     elif dir == "in":
                         error ("Unconnected input pin %s in %s" %
                                (p, self.name))
