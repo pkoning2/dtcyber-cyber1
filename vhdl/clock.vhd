@@ -21,7 +21,8 @@ entity clock is
     p15, p17, p23, p19 : out std_logic;  -- clock phase 1
     p6, p12 : out std_logic;            -- clock phase 2
     p5, p11 : out std_logic;            -- clock phase 3
-    p16, p20 : out std_logic);          -- clock phase 4
+    p16, p20 : out std_logic;           -- clock phase 4
+    p21 : out std_logic);               -- clock squarewave
 
 end clock;
 
@@ -37,5 +38,6 @@ begin  -- beh
   p11 <= clk3;
   p16 <= clk4;
   p20 <= clk4;
+  p21 <= (clk1 or clk2);
   
 end beh;

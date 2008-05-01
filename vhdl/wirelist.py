@@ -450,7 +450,7 @@ class ModuleInstance (object):
                 if pdir != dir:
                     continue
                 if p.startswith ("clk"):
-                    clist.append ("    % => %" % (p, p))
+                    clist.append ("    %s => %s" % (p, p))
                 else:
                     if p.startswith ("tp"):
                         # test point
