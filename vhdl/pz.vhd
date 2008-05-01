@@ -73,6 +73,11 @@ entity pz is
 end pz;
 
 architecture gates of pz is
+  component inv
+    port (
+      a  : in  std_logic;                     -- input
+      y  : out std_logic);                    -- output
+  end component;
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
@@ -84,7 +89,7 @@ architecture gates of pz is
       tp        : out std_logic;            -- test point
       q         : out std_logic);
   end component;
-  signal a, c : std_logic;
+  signal a, c, t1 : std_logic;
 begin  -- gates
 
   u1 : g2 port map (
@@ -94,7 +99,10 @@ begin  -- gates
   u2 : g2 port map (
     a  => p16,
     b  => p10,
-    y2 => c);
+    y2 => t1);
+  u9 : inv port map (
+    a => t1,
+    y => c);
   u3 : pzslice port map (
     d   => p4,
     clk => a,
