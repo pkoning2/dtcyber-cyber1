@@ -19,8 +19,8 @@ VPATH = ..
 LINKSWITCH := -Wl,
 LINK_FOREIGN = $(addprefix $(LINKSWITCH),$(FOREIGN) $(FLIBS))
 
-OPTIMIZE :=
-#OPTIMIZE := -O2
+OPTIMIZE ?=
+#OPTIMIZE ?= -O2
 
 cdc_tb:	$(OBJS)
 	ghdl -e $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb

@@ -5313,15 +5313,20 @@ CLOCK	1H2
 TB	1I15
 1	J16	19	9
 2	H13	8	9
-3	H12	10	7
+#3	H12	10	7
+3	i15	x	2   # speed up master clear pulses
 4	H13	25	9
-5	H12	20	7
+#5	H12	20	7
+5	i15	x	2   # speed up master clear pulses
 6	H13	26	9
-7	H12	24	7
+#7	H12	24	7
+7	i15	x	2   # speed up master clear pulses
 8	I15	X	2
-9	H13	9	9
+#9	H13	9	9
+9	i15	x	2   # speed up master clear pulses
 10	I15	X	2
-11	I15	12	3
+#11	I15	12	3
+11	i15	x	2   # speed up master clear pulses
 12	I15	11	3
 13
 14	L19	12	15
@@ -6566,7 +6571,8 @@ CLOCK	1H2
 6	K27	13	15
 7	H11	24	13
 8	M24	16	17
-9	H12	9	13
+#9	H12	9	13
+9	j16	x	2   # speed up master clear pulses
 10	K29	8	15
 11	I29	15	17
 12	M9	15	17
