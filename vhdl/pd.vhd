@@ -99,7 +99,7 @@ begin  -- gates
   p10 <= q2;
   p8 <= q2;
   p5 <= qb2;
-  p3 <= qb3;
+  p3 <= qb2;
   u3 : pdslice port map (
     i   => p18,
     clk => p16,

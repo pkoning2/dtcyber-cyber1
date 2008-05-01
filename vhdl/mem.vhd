@@ -173,6 +173,6 @@ begin  -- beh
     rdatab(10) => p112,
     rdatab(11) => p122,
     write => p121,
-    read => p121);
+    read => p123);
 
 end beh;
