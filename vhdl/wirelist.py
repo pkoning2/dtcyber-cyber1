@@ -131,24 +131,28 @@ class Wire (object):
             d.append (c.pindef (p))
         return d
 
-    def wiretype (self):
+    def wiretype (self, verbose = True):
         if len (self.ends) != 2:
-            error ("Half-connected wire %s" % self.name)
+            if verbose:
+                error ("Half-connected wire %s" % self.name)
             return None
         d1, d2 = self.pindefs ()
         dir1, stype1 = d1
         dir2, stype2 = d2
         if stype1 != stype2:
-            error ("Endpoint type mismatch on wire %s (%s vs. %s)" %
+            if verbose:
+                error ("Endpoint type mismatch on wire %s (%s vs. %s)" %
                    (self.name, stype1, stype2))
             return None
         if dir1 == "inout" or dir2 == "inout":
             if stype1 != "misc":
-                error ("inout pin for wrong signal type, wire %s" % self.name)
+                if verbose:
+                    error ("inout pin for wrong signal type, wire %s" % self.name)
                 return None
         else:
             if dir1 == dir2:
-                error ("wire %s not matched in to out" % self.name)
+                if verbose:
+                    error ("wire %s not matched in to out" % self.name)
                 return None
         return dir1, stype1
 
@@ -462,7 +466,7 @@ class ModuleInstance (object):
                     if w:
                         if w is ground:
                             clist.append ("    %s => one" % p)
-                        elif w.wiretype ():
+                        elif w.wiretype (False):
                             # It's a valid wire, add it
                             clist.append ("    %s => %s" % (p, w.name))
                         elif dir == "in":
