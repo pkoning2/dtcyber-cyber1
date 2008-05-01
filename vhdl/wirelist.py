@@ -467,14 +467,18 @@ class ModuleInstance (object):
                             clist.append ("    %s => %s" % (p, w.name))
                         elif dir == "in":
                             # TEMP: tie half-connected inputs to idle
-                            pdir, ptype = w.pindefs ()[0]
-                            if ptype == "coaxsig":
+                            if stype == "coaxsig":
                                 clist.append ("    %s => zero" % p)
                             else:
                                 clist.append ("    %s => one" % p)
                     elif dir == "in":
                         error ("Unconnected input pin %s in %s" %
                                (p, self.name))
+                        # TEMP: tie unconnected inputs to idle
+                        if stype == "coaxsig":
+                            clist.append ("    %s => zero" % p)
+                        else:
+                            clist.append ("    %s => one" % p)
         return "  %s : %s port map (\n%s);\n" % (self.name, self.Type.name, ",\n".join (clist))
     
 def process_file (f):
