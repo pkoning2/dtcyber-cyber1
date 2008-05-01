@@ -42,7 +42,6 @@ architecture gates of qaslice is
   component latch
     port (
       d, clk : in  std_logic;                 -- data (set), clock
-      d2, d3, d4  : in  std_logic := '1';     -- extra data if needed
       q, qb  : out std_logic);                -- q and q.bar
   end component;
   signal t1, t2, t3 : std_logic;
