@@ -15,13 +15,13 @@ use work.sigs.all;
 entity pk is
   
   port (
-    p19 : in  std_logic := '1';               -- select channel
+    p19 : in  std_logic;               -- select channel
     p15 : in  coaxsig := '1';                 -- coax full input
-    p6  : in  std_logic := '1';               -- full
-    p17 : in  std_logic := '1';               -- empty
+    p6  : in  std_logic;               -- full
+    p17 : in  std_logic;               -- empty
     p8  : in  coaxsig := '1';                 -- coax empty input
-    p23 : in  std_logic := '1';               -- master clear
-    p5  : in  std_logic := '1';               -- function
+    p23 : in  std_logic;               -- master clear
+    p5  : in  std_logic;               -- function
     p3  : out coaxsig;                        -- function coax output
     p9  : out coaxsig;                        -- empty coax output
     p10 : out std_logic;                      -- empty out
@@ -30,8 +30,8 @@ entity pk is
     p21 : out std_logic;                      -- inactive out
     p25 : in  coaxsig := '1';                 -- active coax in
     p22 : out coaxsig;                        -- active coax out
-    p12 : in  std_logic := '1';               -- active in
-    p27 : in  std_logic := '1';               -- inactive in
+    p12 : in  std_logic;               -- active in
+    p27 : in  std_logic;               -- inactive in
     p24, p26, p28 : out std_logic;            -- empty out
     p13 : out coaxsig;                        -- coax full out
     tp1 : out std_logic;                      -- test point 1
@@ -72,7 +72,7 @@ architecture gates of pk is
   signal ai, ii, fi, ei : std_logic;          -- internal gate output terms
   signal fq : std_logic;                -- full rsflop output
   signal a : std_logic;                 -- active rsflop output
-  signal p15i, p8i, p25i, p14i : std_logic := '1';  -- internal coax inputs
+  signal p15i, p8i, p25i, p14i : std_logic;  -- internal coax inputs
 begin  -- gates
 
   u1 : inv port map (

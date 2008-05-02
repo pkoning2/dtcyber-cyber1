@@ -22,7 +22,7 @@ package sigs is
   constant t : time := 5 ns;            -- basic stage delay
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
-  subtype coaxsig is std_logic range '0' to '1';  -- signal on coax
+  subtype coaxsig is std_logic range 'U' to '1';  -- signal on coax
   subtype coaxsigs is std_logic_vector (1 to 19);    -- CDC standard coax cable
   subtype ppword is std_logic_vector (11 downto 0);  -- PPU word (12 bits)
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
@@ -90,7 +90,7 @@ end inv;
 
 architecture bool of inv is
   signal ii : std_logic;
-  signal oi : std_logic := '0';
+  signal oi : std_logic;
 begin  -- bool
   ii <= '1' when a = 'U' else a;
   oi <= not (ii) after t;
@@ -114,7 +114,7 @@ end inv2;
 
 architecture bool of inv2 is
   signal ii : std_logic;
-  signal oi, oi2 : std_logic := '0';
+  signal oi, oi2 : std_logic;
 begin  -- bool
   ii <= '1' when a = 'U' else a;
   oi <= not (ii) after t;
@@ -141,7 +141,7 @@ end g2;
 
 architecture bool of g2 is
   signal ai, bi : std_logic;
-  signal yi, y2i : std_logic := '0';
+  signal yi, y2i : std_logic;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
@@ -165,7 +165,7 @@ end g3;
 
 architecture bool of g3 is
   signal ai, bi, ci : std_logic;
-  signal yi, y2i : std_logic := '0';
+  signal yi, y2i : std_logic;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
@@ -190,7 +190,7 @@ end g4;
 
 architecture bool of g4 is
   signal ai, bi, ci, di : std_logic;
-  signal yi, y2i : std_logic := '0';
+  signal yi, y2i : std_logic;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
@@ -216,7 +216,7 @@ end g5;
 
 architecture bool of g5 is
   signal ai, bi, ci, di, ei : std_logic;
-  signal yi, y2i : std_logic := '0';
+  signal yi, y2i : std_logic;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
@@ -243,7 +243,7 @@ end g6;
 
 architecture bool of g6 is
   signal ai, bi, ci, di, ei, fi : std_logic;
-  signal yi, y2i : std_logic := '0';
+  signal yi, y2i : std_logic;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
@@ -271,7 +271,7 @@ end cxdriver;
 
 architecture bool of cxdriver is
   signal ai : std_logic;
-  signal yi : std_logic := '1';
+  signal yi : std_logic;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   yi <= ai after tc;
@@ -290,7 +290,7 @@ entity cxreceiver is
 end cxreceiver;
 
 architecture bool of cxreceiver is
-  signal ai : std_logic := '1';
+  signal ai : std_logic;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   y <= not (ai);                        -- coax is positive logic...
@@ -308,8 +308,8 @@ entity rsflop is
 end rsflop;
 
 architecture beh of rsflop is
-  signal qi : std_logic := '0';
-  signal qib : std_logic := '1';
+  signal qi : std_logic;
+  signal qib : std_logic;
 begin  -- beh
 
   qi <= '1' when s = '0' or s2 = '0' or s3 = '0' or s4 = '0' else
@@ -334,8 +334,8 @@ entity latch is
 end latch;
 
 architecture beh of latch is
-  signal qi : std_logic := '0';
-  signal qib : std_logic := '1';
+  signal qi : std_logic;
+  signal qib : std_logic;
 begin  -- beh
 
   qi <= d when clk = '1' else unaffected;

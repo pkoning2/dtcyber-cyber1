@@ -30,7 +30,7 @@ architecture gates of td is
       a, b : in  std_logic;                   -- inputs
       y, y2   : out std_logic);                  -- output
   end component;
-  signal t1, t2, t5, t6 : std_logic := '0';
+  signal t1, t2, t5, t6 : std_logic;
 begin  -- gates
 
   u1 : g2 port map (

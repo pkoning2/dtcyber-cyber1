@@ -30,7 +30,7 @@ architecture gates of pcslice is
       d, clk : in  std_logic;                 -- data (set), clock
       q, qb  : out std_logic);                -- q and q.bar
   end component;
-  signal d : std_logic := '0';          -- combined input
+  signal d : std_logic;          -- combined input
 begin  -- gates
   d <= (d1 and e1) or (d2 and e2);
   u1 : latch port map (
@@ -73,7 +73,7 @@ architecture gates of pc is
       clk    : in  std_logic;             -- clock
       q      : out std_logic);            -- output
   end component;
-  signal e, f : std_logic := '0';       -- selects
+  signal e, f : std_logic;       -- selects
   signal q1, q2, q3, q4 : std_logic;    -- outputs
 begin  -- gates
   p2 <= '0';

@@ -47,7 +47,7 @@ architecture gates of prslice is
       q, qb : out std_logic);                 -- outputs
   end component;
   signal s, rb : std_logic;
-  signal ii : std_logic := '1';         -- internal copy of coax in
+  signal ii : std_logic;         -- internal copy of coax in
 begin  -- gates
 
   u1 : g2 port map (
@@ -76,21 +76,21 @@ use work.sigs.all;
 entity pr is
   
   port (
-    p19 : in  std_logic := '1';               -- clock
-    p14 : in  std_logic := '1';               -- clear
-    p17 : in  std_logic := '1';               -- bit 0
+    p19 : in  std_logic;               -- clock
+    p14 : in  std_logic;               -- clear
+    p17 : in  std_logic;               -- bit 0
     p6  : in  coaxsig := '1';                 -- coax data in bit 0
     p5  : out coaxsig;                        -- coax data out bit 0
     p8  : out std_logic;                      -- registered data 0
-    p15 : in  std_logic := '1';               -- bit 1
+    p15 : in  std_logic;               -- bit 1
     p4  : in  coaxsig := '1';                 -- coax data in bit 1
     p11 : out coaxsig;                        -- coax data out bit 1
     p7  : out std_logic;                      -- registered data 1
-    p16 : in  std_logic := '1';               -- bit 2
+    p16 : in  std_logic;               -- bit 2
     p23 : in  coaxsig := '1';                 -- coax data in bit 2
     p28 : out coaxsig;                        -- coax data out bit 2
     p21 : out std_logic;                      -- registered data 2
-    p18 : in  std_logic := '1';               -- bit 3
+    p18 : in  std_logic;               -- bit 3
     p27 : in  coaxsig := '1';                 -- coax data in bit 3
     p24 : out coaxsig;                        -- coax data out bit 3
     p22 : out std_logic;                      -- registered data 3

@@ -71,9 +71,9 @@ use IEEE.std_logic_1164.all;
 entity pg is
 
   port (
-    p10, p8, p9, p21, p7, p23 : in  std_logic := '1';  -- enables
-    p5, p3, p6, p4            : in  std_logic := '1';  -- inputs 1 and 2
-    p25, p27, p26, p28        : in  std_logic := '1';  -- inputs 3 and 4
+    p10, p8, p9, p21, p7, p23 : in  std_logic;  -- enables
+    p5, p3, p6, p4            : in  std_logic;  -- inputs 1 and 2
+    p25, p27, p26, p28        : in  std_logic;  -- inputs 3 and 4
     p13, p14, p17, p20        : out std_logic;  -- outputs
     tp1, tp2, tp5, tp6        : out std_logic);  -- test points
 

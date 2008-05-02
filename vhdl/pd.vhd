@@ -57,8 +57,8 @@ use IEEE.std_logic_1164.all;
 entity pd is
   
   port (
-    p16 : in  std_logic := '1';                       -- clock input
-    p14, p13, p18, p17 : in  std_logic := '1';  -- inputs
+    p16 : in  std_logic;                       -- clock input
+    p14, p13, p18, p17 : in  std_logic;  -- inputs
     tp1, tp2, tp5, tp6 : out std_logic;       -- test points
     p11, p7, p9, p6, p4 : out std_logic;  -- bit 1 outputs
     p12, p10, p8, p5, p3 : out std_logic;  -- bit 2 outputs

@@ -34,7 +34,7 @@ architecture gates of paslice is
       d, clk : in  std_logic;                 -- data (set), clock
       q, qb  : out std_logic);                -- q and q.bar
   end component;
-  signal qi, qi2 : std_logic := '0';          -- latch output
+  signal qi, qi2 : std_logic;                 -- latch output
 begin  -- gates
   u1 : latch port map (
     d   => d,
@@ -75,7 +75,7 @@ architecture gates of pa is
       a, b : in  std_logic;                   -- inputs
       y, y2    : out std_logic);                  -- output
   end component;
-  signal b, d : std_logic := '0';       -- strobes
+  signal b, d : std_logic;       -- strobes
 begin  -- gates
   u1 : g2 port map (
     a => p9,

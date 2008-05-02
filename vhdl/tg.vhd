@@ -73,16 +73,16 @@ use IEEE.std_logic_1164.all;
 entity tg is
   
   port (
-    p2, p4, p6, p8     : in  std_logic := '1';   -- bit 0 inputs
+    p2, p4, p6, p8     : in  std_logic;   -- bit 0 inputs
     p13, p14           : out std_logic;   -- bit 0 outputs (true/complement)
-    p1, p3, p5, p7     : in  std_logic := '1';  -- bit 1 inputs
+    p1, p3, p5, p7     : in  std_logic;  -- bit 1 inputs
     p9, p10            : out std_logic;  -- bit 1 outputs
-    p28, p26, p24, p22 : in  std_logic := '1';  -- bit 2 inputs
+    p28, p26, p24, p22 : in  std_logic;  -- bit 2 inputs
     p17, p18           : out std_logic;  -- bit 2 outputs
-    p27, p25, p23, p21 : in  std_logic := '1';  -- bit 3 inputs
+    p27, p25, p23, p21 : in  std_logic;  -- bit 3 inputs
     p19, p20           : out std_logic;  -- bit 3 outputs
     tp1, tp2, tp5, tp6 : out std_logic;   -- test points
-    p12, p16, p11, p15 : in  std_logic := '1');  -- selects a, b, c, d
+    p12, p16, p11, p15 : in  std_logic);  -- selects a, b, c, d
 
 end tg;
 

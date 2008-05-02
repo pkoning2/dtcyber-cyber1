@@ -16,7 +16,7 @@ use IEEE.std_logic_1164.all;
 entity th is
   
   port (
-    p1, p3, p6, p25, p26, p28  : in  std_logic := '1';  -- inputs
+    p1, p3, p6, p25, p26, p28  : in  std_logic;  -- inputs
     tp1, tp2, tp3, tp4, tp5, tp6 : out std_logic;  -- test point
     p7, p8, p14, p2, p4, p10, p12: out std_logic;  -- outputs
     p16, p18, p20, p24, p5, p9, p11, p13 : out std_logic;  -- outputs

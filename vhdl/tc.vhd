@@ -18,7 +18,7 @@ use work.sigs.all;
 entity tc is
   
   port (
-    p3, p5, p14, p16            : in  std_logic := '1';  -- inputs
+    p3, p5, p14, p16            : in  std_logic;  -- inputs
     tp1, tp5                    : out std_logic;  -- test point 1 (stage 1)
     tp2, tp6                    : out std_logic;  -- test point 2 (stage 2)
     p1, p2, p4, p6, p7, p8      : out std_logic;  -- outputs 1
