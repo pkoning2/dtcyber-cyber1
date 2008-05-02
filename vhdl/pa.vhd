@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PA module -- memory address register (S register)
+-- PA module rev C -- memory address register (S register)
 --
 -------------------------------------------------------------------------------
 

@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PB module -- barrel latches
+-- PB module rev D -- barrel latches
 --
 -------------------------------------------------------------------------------
 

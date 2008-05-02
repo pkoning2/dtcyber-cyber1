@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PL module - coax drivers
+-- PL module rev E - coax drivers
 --
 -------------------------------------------------------------------------------
 

@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PG module - storage address register (G)
+-- PG modulerev C  - storage address register (G)
 --
 -------------------------------------------------------------------------------
 
@@ -17,7 +17,8 @@ entity pgslice is
   
   port (
     i1, i2     : in  std_logic;               -- input bits
-    a, b, d, e : in  std_logic;               -- common enables/clocks
+    a          : in  std_logic;               -- reset
+    b, d, e    : in  std_logic;               -- common enables/clocks
     tp         : out std_logic;               -- test point
     q          : out std_logic);              -- output
 
@@ -109,7 +110,7 @@ begin  -- gates
     a => p10,
     y => a);
   u2 : inv2 port map (
-    a => p6,
+    a => p8,
     y2 => b);
   u4 : g2 port map (
     a => p9,

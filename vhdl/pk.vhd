@@ -6,6 +6,8 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
+-- PK module rev D -- channel control
+--
 -------------------------------------------------------------------------------
 
 library IEEE;
@@ -70,9 +72,9 @@ architecture gates of pk is
   end component;
   signal b, c : std_logic;                    -- internal enables
   signal ai, ii, fi, ei : std_logic;          -- internal gate output terms
-  signal fq : std_logic;                -- full rsflop output
-  signal a : std_logic;                 -- active rsflop output
-  signal p15i, p8i, p25i, p14i : std_logic;  -- internal coax inputs
+  signal fq, f2 : std_logic;                  -- full rsflop outputs
+  signal a : std_logic;                       -- active rsflop output
+  signal p15i, p8i, p25i, p14i : std_logic;   -- internal coax inputs
 begin  -- gates
 
   u1 : inv port map (
@@ -134,13 +136,10 @@ begin  -- gates
   tp2 <= fq;
   u15 : inv port map (
     a => fq,
-    y => p28);
-  u16 : inv port map (
-    a => fq,
-    y => p26);
-  u17 : inv port map (
-    a => fq,
-    y => p24);
+    y => f2);
+  p28 <= f2;
+  p26 <= f2;
+  p24 <= f2;
   u18 : cxreceiver port map (
     a => p25,
     y => p25i);

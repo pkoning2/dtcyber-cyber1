@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PD module
+-- PD module rev D
 --
 -------------------------------------------------------------------------------
 
@@ -35,7 +35,6 @@ architecture gates of pdslice is
       q, qb  : out std_logic);                  -- q and q.bar
   end component;
   signal ti : std_logic;                      -- copy of test point
-  signal t2 : std_logic;                      -- buffered output
 begin  -- gates
 
   u1 : latch port map (
@@ -45,9 +44,8 @@ begin  -- gates
   tp <= ti;
   u2 : inv2 port map (
     a => ti,
-    y => t2,
+    y => qb,
     y2 => q);
-  qb <= t2;
 
 end gates;
 

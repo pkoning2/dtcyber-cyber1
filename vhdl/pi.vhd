@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PI module
+-- PI module rev C
 --
 -------------------------------------------------------------------------------
 
@@ -74,6 +74,11 @@ entity pi is
 end pi;
 
 architecture gates of pi is
+  component inv
+    port (
+      a  : in  std_logic;                     -- input
+      y  : out std_logic);                    -- output
+  end component;
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
@@ -86,13 +91,16 @@ architecture gates of pi is
       tp    : out std_logic;              -- test point
       q, qb : out std_logic);
   end component;
-  signal a : std_logic;
+  signal a, t1 : std_logic;
 begin  -- gates
 
   u1 : g2 port map (
     a  => p16,
     b  => p15,
-    y2 => a);
+    y2 => t1);
+  u9 : inv port map (
+    a => t1,
+    y => a);
   u2 : pislice port map (
     s  => p5,
     r  => a,
