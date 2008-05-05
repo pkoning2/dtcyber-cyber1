@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- TH module -- assorted fanouts
+-- TH module, rev C -- assorted fanouts
 --
 -------------------------------------------------------------------------------
 

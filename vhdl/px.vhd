@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PX module
+-- PX module, rev D
 --
 -------------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ architecture gates of px is
       s2, s3, s4, r2, r3, r4  : in  std_logic := '1';-- extra set, reset if needed
       q, qb : out std_logic);                 -- q and q.bar
   end component;
-  signal c, d, e, g, h : std_logic;
+  signal c, d, e, g : std_logic;
   signal t1, t2, t3, t4, t5, t6, t7, t8 : std_logic;
   signal t9, t10, t11, t12, t13, t14 : std_logic;
 begin  -- gates
@@ -83,18 +83,18 @@ begin  -- gates
     s  => t1,
     r  => t2,
     r3 => p12,
-    q  => t3,
-    qb => t4);
-  tp1 <= t3;
+    q  => t4,
+    qb => c);
+  tp1 <= t4;
   u5 : inv port map (
-    a => t3,
+    a => t4,
     y => p13);
   u6 : inv port map (
     a => p4,
     y => t5);
   tp2 <= t5;
   u7 : g3 port map (
-    a  => t4,
+    a  => c,
     b  => t5,
     c  => p5,
     y2 => t6);
@@ -129,7 +129,7 @@ begin  -- gates
     y => g);
   u14 : g2 port map (
     a  => d,
-    b  => d,
+    b  => g,
     y2 => p20);
   u15 : inv2 port map (
     a  => g,

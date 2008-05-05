@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- TI module -- 3 and 4 input gates
+-- TI module, rev C -- 3 and 4 input gates
 --
 -------------------------------------------------------------------------------
 

@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- TB module -- 3-6 input gates
+-- TB module, rev C -- 3-6 input gates
 --
 -------------------------------------------------------------------------------
 

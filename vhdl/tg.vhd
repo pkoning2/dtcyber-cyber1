@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- TG module -- 4 input mux
+-- TG module, rev H -- 4 input mux
 --
 -------------------------------------------------------------------------------
 

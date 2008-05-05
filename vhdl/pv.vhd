@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PV module
+-- PV module, rev D
 --
 -------------------------------------------------------------------------------
 
@@ -107,11 +107,11 @@ begin  -- gates
     b => t4,
     y => p1);
   u12 : g4 port map (
-    a => h,
-    b => p8,
-    c => i,
-    d => k,
-    y => m);
+    a  => h,
+    b  => p8,
+    c  => i,
+    d  => k,
+    y2 => m);
   u13 : g4 port map (
     a  => m,
     b  => a,

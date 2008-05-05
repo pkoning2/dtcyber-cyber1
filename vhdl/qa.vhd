@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- QA module
+-- QA module, rev C
 --
 -------------------------------------------------------------------------------
 
@@ -97,14 +97,13 @@ architecture gates of qa is
       tp1, tp3                 : out std_logic;  -- test points
       qb11, qb12, q1, q12, qb2 : out std_logic);
   end component;
-  signal a, b, c, d : std_logic;
 begin  -- gates
 
   u1 : qaslice port map (
     d1   => p11,
-    clk1 => p14,
+    clk1 => p19,
     d2   => p15,
-    clk2 => p14,
+    clk2 => p19,
     tp1  => tp1,
     tp3  => tp3,
     qb11 => p5,

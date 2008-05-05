@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PM module
+-- PM module, rev C
 --
 -------------------------------------------------------------------------------
 
@@ -119,7 +119,7 @@ begin  -- gates
     y => d);
   u15 : g2 port map (
     a  => c,
-    b  => g,
+    b  => d,
     y  => t3,
     y2 => p16);
   tp2 <= t3;

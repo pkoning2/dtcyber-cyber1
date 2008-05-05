@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- TD module -- quad 5-output fanout
+-- TD module, rev D -- quad 5-output fanout
 --
 -------------------------------------------------------------------------------
 

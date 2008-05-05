@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- QF module -- shift network
+-- QF module, rev D -- shift network
 --
 -------------------------------------------------------------------------------
 

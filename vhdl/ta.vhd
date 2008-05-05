@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- TA module -- 6 input gates
+-- TA module, rev C -- 6 input gates
 --
 -------------------------------------------------------------------------------
 

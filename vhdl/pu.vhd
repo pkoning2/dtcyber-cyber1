@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PU module
+-- PU module, rev C
 --
 -------------------------------------------------------------------------------
 

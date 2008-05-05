@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- QK module -- incrementer
+-- QK module, rev D -- incrementer
 --
 -------------------------------------------------------------------------------
 

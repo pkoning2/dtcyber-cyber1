@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- TK module -- 3 to 8 decode
+-- TK module, rev C -- 3 to 8 decode
 --
 -------------------------------------------------------------------------------
 

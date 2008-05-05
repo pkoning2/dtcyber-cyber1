@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- QE module -- shift control
+-- QE module, rev D -- shift control
 --
 -------------------------------------------------------------------------------
 
@@ -95,7 +95,7 @@ architecture gates of qe is
       ya, yb, yc : out std_logic);
   end component;
   signal a, b, e, f : std_logic;
-  signal di1, di2, t1, t2, t3, t4 : std_logic;
+  signal di1, di2, t2, t3, t4 : std_logic;
 begin  -- gates
 
   di1 <= p7 and p11;

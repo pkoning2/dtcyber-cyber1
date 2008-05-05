@@ -6,6 +6,8 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
+-- PR module, rev B -- channel data register
+--
 -------------------------------------------------------------------------------
 
 library IEEE;
@@ -46,7 +48,7 @@ architecture gates of prslice is
       s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset if needed
       q, qb : out std_logic);                 -- outputs
   end component;
-  signal s, rb : std_logic;
+  signal s  : std_logic;
   signal ii : std_logic;         -- internal copy of coax in
 begin  -- gates
 
@@ -60,7 +62,7 @@ begin  -- gates
   u3 : rsflop port map (
     s  => s,
     s2 => ii,
-    r  => rb,
+    r  => r,
     q  => tp,
     qb => qb);
   u4 : cxdriver port map (
@@ -94,6 +96,8 @@ entity pr is
     p27 : in  coaxsig := '1';                 -- coax data in bit 3
     p24 : out coaxsig;                        -- coax data out bit 3
     p22 : out std_logic;                      -- registered data 3
+    p2  : in  std_logic;
+    p1  : out coaxsig;
     tp1, tp2, tp5, tp6 : out std_logic);      -- test points
 
 end pr;
@@ -117,6 +121,11 @@ architecture gates of pr is
     port (
       a  : in  std_logic;                     -- input
       y, y2 : out std_logic);                    -- output
+  end component;
+  component cxdriver
+    port (
+      a : in  std_logic;                      -- source
+      y : out coaxsig);                       -- destination
   end component;
   signal a, b : std_logic;                    -- buffered clock
 begin  -- gates
@@ -159,5 +168,8 @@ begin  -- gates
     idata => p27,
     odata => p24,
     qb    => p22);
+  u7 : cxdriver port map (
+    a => p2,
+    y => p1);
 end gates;
 

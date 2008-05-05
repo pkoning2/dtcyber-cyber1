@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PZ module -- memory inhibit driver
+-- PZ module, rev E -- memory inhibit driver
 --
 -------------------------------------------------------------------------------
 

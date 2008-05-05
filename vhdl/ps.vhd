@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PS module -- memory sense amplifier
+-- PS module, rev H -- memory sense amplifier
 --
 -------------------------------------------------------------------------------
 

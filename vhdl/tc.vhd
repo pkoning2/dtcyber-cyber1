@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- TC module -- dual 12 output fanout
+-- TC module, rev D -- dual 12 output fanout
 --
 -------------------------------------------------------------------------------
 
@@ -46,6 +46,7 @@ begin  -- gates
     b => p5,
     y => tp1,
     y2 => a);
+  tp2 <= a;
   u2 : inv port map (
     a => a,
     y => b);
@@ -66,6 +67,7 @@ begin  -- gates
     b => p16,
     y => tp5,
     y2 => c);
+  tp6 <= c;
   u5 : inv port map (
     a => c,
     y => d);

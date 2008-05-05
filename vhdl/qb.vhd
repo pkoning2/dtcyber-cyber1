@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- QB module
+-- QB module, rev E
 --
 -------------------------------------------------------------------------------
 
@@ -56,7 +56,7 @@ begin  -- gates
   u1 : g2 port map (
     a => p7,
     b => p5,
-    y => a);
+    y => c);
   u2 : inv2 port map (
     a  => p3,
     y  => f,
@@ -121,10 +121,10 @@ begin  -- gates
   tp1 <= t10;
   p2 <= t10;
   u15 : g3 port map (
-    a => a,
-    b => b,
-    c => c,
-    y => t11);
+    a  => a,
+    b  => b,
+    c  => c,
+    y2 => t11);
   p20 <= t11;
   p22 <= t11;
   p24 <= t11;

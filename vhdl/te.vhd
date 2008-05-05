@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- TE module -- hex 3-input mux
+-- TE module, rev C -- hex 3-input mux
 --
 -------------------------------------------------------------------------------
 

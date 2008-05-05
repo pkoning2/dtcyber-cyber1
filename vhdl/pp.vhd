@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PP module
+-- PP module - rev B
 --
 -------------------------------------------------------------------------------
 
@@ -66,10 +66,10 @@ begin  -- gates
     c  => t3,
     y  => a,
     y2 => t4);
+  tp1 <= a;
   u5 : inv port map (
     a => p16,
     y => t5);
-  tp1 <= a;
   u6 : g4 port map (
     a  => p19,
     b  => t5,

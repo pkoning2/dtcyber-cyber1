@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- QG module
+-- QG module, rev C
 --
 -------------------------------------------------------------------------------
 
@@ -55,8 +55,8 @@ begin  -- gates
     q   => c);
   tp1 <= c;
   u3 : inv2 port map (
-    a => c,
-    y => t2);
+    a  => c,
+    y2 => t2);
   p13 <= t2;
   p12 <= t2;
   p10 <= t2;
@@ -71,7 +71,7 @@ begin  -- gates
     d   => t3,
     clk => p5,
     q   => d);
-  tp6 <= d;
+  tp5 <= d;
   u6 : inv2 port map (
     a  => d,
     y2 => t4);
@@ -95,5 +95,7 @@ begin  -- gates
   p8 <= t5;
   p4 <= t5;
   p2 <= t5;
-  
+  u9 : inv port map (
+    a => p5,
+    y => tp2);
 end gates;

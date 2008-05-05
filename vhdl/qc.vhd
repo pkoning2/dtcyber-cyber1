@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- QC module
+-- QC module, rev B
 --
 -------------------------------------------------------------------------------
 

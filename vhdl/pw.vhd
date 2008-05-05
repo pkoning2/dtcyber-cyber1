@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PW module
+-- PW module, rev B
 --
 -------------------------------------------------------------------------------
 
@@ -87,7 +87,7 @@ begin  -- gates
     c => t3,
     d => t4,
     y => t5);
-  tp1 <= t1;
+  tp1 <= t5;
   u9 : g2 port map (
     a => t5,
     b => e,
@@ -100,11 +100,6 @@ begin  -- gates
   u11 : inv port map (
     a => p17,
     y => d);
-  u12 : g3 port map (
-    a => d,
-    b => t6,
-    c => p19,
-    y => p21);
   u13 : g3 port map (
     a  => p19,
     b  => t6,
@@ -112,6 +107,7 @@ begin  -- gates
     y  => t7,
     y2 => t8);
   tp5 <= t7;
+  p21 <= t7;
   u14 : g2 port map (
     a => p16,
     b => t8,

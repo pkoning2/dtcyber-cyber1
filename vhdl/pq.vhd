@@ -6,7 +6,7 @@
 --
 -- Based on the original design by Seymour Cray and his team
 --
--- PQ module -- deadstart panel control
+-- PQ module, rev D -- deadstart panel control and central busy state
 --
 -------------------------------------------------------------------------------
 
@@ -20,6 +20,7 @@ entity pq is
     p6, p22, p24, p26, p28, p11, p17, p19  : in  std_logic;
     p1, p5, p21                            : in  coaxsig;
     p23, p25, p3                           : in std_logic;
+    -- initial value of 0 is temporary (for switches not connected)
     p4, p2, p16                            : in  std_logic := '0';
     tp1, tp2, tp5, tp6                     : out std_logic;  -- test points
     p27, p13, p18, p20, p10, p8            : out std_logic;
@@ -92,7 +93,7 @@ begin  -- gates
     s  => t2,
     s2 => t3,
     s3 => t4,
-    r  => t4,
+    r  => t5,
     r2 => t6,
     r3 => t7,
     r4 => p3,
