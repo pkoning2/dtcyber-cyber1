@@ -26,6 +26,11 @@ entity qg is
 end qg;
 
 architecture gates of qg is
+  component inv
+    port (
+      a  : in  std_logic;                     -- input
+      y  : out std_logic);                    -- output
+  end component;
   component inv2
     port (
       a  : in  std_logic;                     -- input
