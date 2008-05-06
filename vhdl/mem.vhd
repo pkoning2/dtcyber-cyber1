@@ -10,6 +10,7 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
 
 use work.sigs.all;
 
@@ -37,11 +38,11 @@ begin  -- beh
     variable mdata : ppmem;               -- Memory data
   begin  -- process rw
     if read'event and read = '1' then  -- rising clock edge
-      areg := vec_to_int (addr);
+      areg := TO_INTEGER (addr);
       rdata <= mdata (areg);
       rdatab <= not (mdata (areg));
     elsif write'event and write = '1' then
-      areg := vec_to_int (addr);
+      areg := TO_INTEGER (addr);
       mdata (areg) := not (wdata);
     end if;
   end process rw;

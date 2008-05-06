@@ -10,6 +10,7 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
 
 -- Common definitions for CDC 6600 model
 
@@ -24,13 +25,9 @@ package sigs is
   constant tc : time := 25 ns;          -- coax delay (including transistors)
   subtype coaxsig is std_logic range 'U' to '1';  -- signal on coax
   subtype coaxsigs is std_logic_vector (1 to 19);    -- CDC standard coax cable
-  subtype ppword is std_logic_vector (11 downto 0);  -- PPU word (12 bits)
+  subtype ppword is UNSIGNED (11 downto 0);  -- PPU word (12 bits)
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
   subtype misc is std_logic range '0' to '1';  -- used for non-logic pins
-
-  function vec_to_int (
-    v : std_logic_vector)                            -- input bit vector
-    return integer;
 
   procedure dtsynchro (
     constant chnum : in    integer;     -- Channel number for this synchronizer
@@ -44,21 +41,6 @@ package sigs is
 end sigs;
 
 package body sigs is
-
-  -- purpose: Convert a bit vector to the corresponding integer
-  function vec_to_int (
-    v : std_logic_vector)                            -- input bit vector
-    return integer is
-    variable result : integer := 0;     -- result accumulator
-  begin  -- vec_to_int
-    for i in v'high downto 0 loop
-      result := result * 2;
-      if v(i) = '1' then
-        result := result + 1;
-      end if;
-    end loop;  -- i
-    return result;
-  end vec_to_int;
 
   -- purpose: Dummy body
   procedure dtsynchro (
