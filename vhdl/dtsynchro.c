@@ -97,6 +97,14 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
             dout++;
         }
     }
+    
+    // Check for master clear
+    if (chnum == 0 && oc[17])
+    {
+        deadStart ();
+        activeChannel->full = FALSE;
+        activeChannel->active = TRUE;
+    }
 
     // First process active and inactive pulses (those get no acknowledgment
     // so we check them before saving the channel state)

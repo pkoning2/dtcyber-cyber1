@@ -8,7 +8,7 @@ FOREIGN = dtsynchro.o \
 	cr3447.o ddp.o niu.o lp3000.o cp3446.o \
 	tpmux.o dtdisksubs.o charset.o dtnetsubs.o \
 	trace.o log.o init.o device.o \
-	dtmain.o
+	dtmain.o deadstart.o
 FLIBS   = -lpthread
 CHASSIS = chassis1.o
 TOP = cdc6600.o
