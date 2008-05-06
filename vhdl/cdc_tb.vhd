@@ -8,11 +8,6 @@
 --
 -------------------------------------------------------------------------------
 
-library IEEE;
-use IEEE.std_logic_1164.all;
-use std.textio.all;
-use work.sigs.all;
-
 --  A testbench has no ports.
 
 library IEEE;
