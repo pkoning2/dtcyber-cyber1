@@ -46,11 +46,6 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
     enum std_logic o = one;
     
     activeChannel = channel + chnum;
-    if (activeChannel == NULL)
-    {
-        DPRINTF ("not connected: channel %o\n", chnum);
-        return;
-    }
 
     // Convert between std_logic values and boolean.  
 
