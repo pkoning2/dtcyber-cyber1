@@ -25,6 +25,10 @@ case "$1" in
 		exit 1;;
 esac
 
+if [ `hostname` = "pkoning-laptop" ]; then
+    unset to
+fi
+
 if [ -n "${to}" ]; then
     echo "Subject: PLATO $1" > /tmp/opermsg
     /usr/sbin/sendmail ${to} < /tmp/opermsg
