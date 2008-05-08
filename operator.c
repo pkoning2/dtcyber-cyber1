@@ -105,6 +105,7 @@ static void opKeyboard (char *cmdParams);
 static void opDebug(char *cmdParams);
 static void opLock(char *cmdParams);
 static void opUnlock(char *cmdParams);
+static void opDeadstart(char *cmdParams);
 #if CcDebug == 1
 static void opTracePpu(char *cmdParams);
 static void opTraceCh(char *cmdParams);
@@ -164,6 +165,7 @@ static const char *syntax[] =
     "DEBUG,DISPLAY=OFF.\n",
     "LOCK.\n",
     "UNLOCK.\n",
+    "DEADSTART.\n",
 #if CcDebug == 1
     "DEBUG,ON.\n",
     "DEBUG,OFF.\n",
@@ -207,6 +209,7 @@ static OpCmd decode[] =
     { "DEBUG,",                   opDebug },
     { "LOCK.",                    opLock },
     { "UNLOCK.",                  opUnlock },
+    { "DEADSTART.",               opDeadstart },
 #if CcDebug == 1
     { "TRACE,PPU",                opTracePpu },
     { "TRACE,CHANNEL",            opTraceCh },
@@ -242,6 +245,7 @@ static OpMsg msg[] =
       { 0020,    0, 0010, 0, "SET,KEYBOARD=TRUE. Emulate console keyboard accurately." },
       { 0020,    0, 0010, 0, "SET,KEYBOARD=EASY. Make console keyboard easy (rollover)." },
       { 0020,    0, 0010, 0, "DEBUG,DISPLAY=[ON,OFF]. Turn CP/PP debug display on/off." },
+      { 0020,    0, 0010, 0, "DEADSTART.         Deadstart the system." },
 #if CcDebug == 1
       { 0020,    0, 0010, 0, "DEBUG,[ON,OFF].    Enabled/disable debug commands." },
       { 0020,    0, 0010, 0, "TRACE,CPUN.        Trace specified CPU activity." },
@@ -900,6 +904,31 @@ static void opLock(char *cmdParams)
 static void opUnlock(char *cmdParams)
     {
     opLocked = FALSE;
+    opUpdateSysStatus ();
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Deadstart the system.
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opDeadstart(char *cmdParams)
+    {
+    /*
+    **  Process command.
+    */
+    if (opLocked)
+        {
+        opSetMsg ("NOT UNLOCKED.");
+        return;
+        }
+    
+    deadStart ();
+
     opUpdateSysStatus ();
     }
 

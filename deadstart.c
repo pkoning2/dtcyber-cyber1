@@ -64,7 +64,7 @@ u8 deadstartCount;
 **  Private Variables
 **  -----------------
 */
-static u8 dsSequence;       /* deadstart sequencer */
+int dsSequence;       /* deadstart sequencer */
 
 /*
 **--------------------------------------------------------------------------
@@ -107,7 +107,7 @@ void deadStart(void)
     /*
     **  Reset deadstart sequencer.
     */
-    dsSequence = 0;
+    dsSequence = -1;
 
     for (pp = 0; pp < ppuCount; pp++)
         {
@@ -124,11 +124,15 @@ void deadStart(void)
             {
             ppu[pp].channel = channel + pp;
             channel[pp].active = TRUE;
+            channel[pp].full = FALSE;
+            channel[pp].ioDevice = NULL;
             }
         else
             {
             ppu[pp].channel = channel + (pp - 012 + 020);
             channel[pp - 012 + 020].active = TRUE;
+            channel[pp - 012 + 020].full = FALSE;
+            channel[pp - 012 + 020].ioDevice = NULL;
             }
 
         /*
@@ -153,9 +157,6 @@ void deadStart(void)
     **  Start load of PPU0.
     */
     channel[0].ioDevice = dp;
-    channel[0].active = TRUE;
-    channel[0].full = TRUE;
-    channel[0].data = 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -184,7 +185,15 @@ static FcStatus deadFunc(PpWord funcCode)
 **------------------------------------------------------------------------*/
 static void deadIo(void)
     {
-    activeChannel->data = deadstartPanel[dsSequence++] & Mask12;
+    if (dsSequence < 0)
+        {
+        dsSequence++;
+        activeChannel->data = 0;
+        }
+    else
+        {
+        activeChannel->data = deadstartPanel[dsSequence++] & Mask12;
+        }
     if (dsSequence == deadstartCount)
         {
         activeChannel->active = FALSE;
