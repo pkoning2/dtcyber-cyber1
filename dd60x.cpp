@@ -143,7 +143,7 @@ u8 tdata[] = {
 
 #if wxUSE_LIBGNOMEPRINT
 #include "wx/html/forcelnk.h"
-FORCE_LINK(gnome_print)
+//FORCE_LINK(gnome_print)
 #endif
 
 #if defined (__WXGTK__)
