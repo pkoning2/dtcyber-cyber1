@@ -185,6 +185,11 @@ static FcStatus deadFunc(PpWord funcCode)
 **------------------------------------------------------------------------*/
 static void deadIo(void)
     {
+    if (activeChannel->full ||
+        !activeChannel->active)
+        {
+        return;
+        }
     if (dsSequence < 0)
         {
         dsSequence++;
