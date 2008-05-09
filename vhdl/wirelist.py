@@ -37,6 +37,7 @@ coaxdict = { }
 portpat = re.compile (r"\s*([\w\s,]+):\s*(in|out|inout)\s+(std_logic|coaxsig|misc)\s*(?:\:=\s'.')?(\))?\s*;", re.I)
 slotpat = re.compile (r"([a-r])(\d\d?)", re.I)
 chslotpat = re.compile (r"(\d\d?)([a-r])(\d\d?)", re.I)
+vhdlcommentpat = re.compile (r"--.*$")
 
 curfile = ""
 curline = ""
@@ -111,6 +112,9 @@ def get_module_type (tname):
 
 class Wire (object):
     """An instance of a wire (connection between two connector pins).
+    The endpoints are given by the elements of the "ends" list.  Each
+    element is a pair of slot and pin number.  The slot is a
+    ModuleInstance object.
     """
     def __init__ (self, name, end1):
         self.name = name
@@ -129,6 +133,16 @@ class Wire (object):
         d = [ ]
         for c, p in self.ends:
             d.append (c.pindef (p))
+        return d
+
+    def endids (self):
+        """Returns a list of endpoints.  Each endpoint is a pair of
+        chassis/slot ID and pin number.  The chassis/slot ID is a pair
+        of chassis number and slot name.
+        """
+        d = [ ]
+        for c, p in self.ends:
+            d.append ((c.chslotid (), p))
         return d
 
     def wiretype (self, verbose = True):
@@ -174,26 +188,53 @@ class Chassis (object):
             error ("Slot %s already assigned" % name)
             mi = self.modules[name]
         else:
-            mi = self.modules[name] = ModuleInstance (name, tname)
+            mi = self.modules[name] = ModuleInstance (self.num, name, tname)
         return mi
 
-    def ports (self):
-        """Return the ports definition of the chassis, as a string.
+    def portlist (self):
+        """Return the port defintions of the chassis, as a list of
+        tuples.  Each tuple consists of signal name, direction
+        name, and type name.
         """
-        portlist = [ "      clk1, clk2, clk3, clk4 : in std_logic" ]
+        portlist = [ ]
+        for clk in ("clk1", "clk2", "clk3" , "clk4"):
+            portlist.append ((clk, "in", "std_logic"))
         wnames = self.coax.keys ()
         wnames.sort ()
         for w in wnames:
             wire = self.coax[w]
-            wt = wire.wiretype ()
-            if wt:
-                dir, stype = wt
-                if stype == "coaxsig":
-                    portlist.append ("      %s : %s coaxsig" % (w, dir))
-                else:
-                    error ("coax %s unexpected type %s" % (w, stype))
-        if portlist:
-            return "    port (\n%s);\n" % ";\n".join (portlist)
+            ends = wire.endids ()
+            if len (ends) == 2:
+                e1, e2 = ends
+                if e1[0][0] == e2[0][0]:
+                    # Same chassis (which has to be this chassis)
+                    # at both ends -- don't put this coax wire into ports.
+                    continue
+                wt = wire.wiretype ()  # Check for consistency
+                if not wt:
+                    continue
+            c, p = wire.ends[0]
+            if ends[0][0][0] != self.num:
+                # first endpoint is the other chassis
+                c, p = wire.ends[1]
+            wt = c.pindef (p)
+            dir, stype = wt
+            if stype == "coaxsig":
+                portlist.append ((w, dir, stype))
+            else:
+                error ("coax %s unexpected type %s" % (w, stype))
+        return portlist
+        
+    def ports (self):
+        """Return the ports definition of the chassis, as a string.
+        Coax cables are included unless they are in-chassis, i.e.,
+        the same chassis number for both endpoints.
+        """
+        pl = [ ]
+        for p in self.portlist ():
+            pl.append ("      %s : %s %s" % p)
+        if pl:
+            return "    port (\n%s);\n" % ";\n".join (pl)
         return ""
 
     def component_decls (self):
@@ -217,6 +258,8 @@ class Chassis (object):
         the module in slot q34.  The left half of the name is less
         than the right half, i.e., lower slot, or lower pin if both
         ends are the same slot.
+        Coax cables are included if they are in-chassis, i.e., the
+        same chassis number for both endpoints.
         """
         wlist = [ ]
         wnames = self.wires.keys ()
@@ -227,6 +270,20 @@ class Chassis (object):
             if wt:
                 dir, stype = wt
                 wlist.append ("  signal %s : %s;\n" % (w, stype))
+        wnames = self.coax.keys ()
+        wnames.sort ()
+        for w in wnames:
+            wire = self.coax[w]
+            ends = wire.endids ()
+            if len (ends) == 2:
+                e1, e2 = ends
+                if e1[0][0] != e2[0][0]:
+                    # Different chassis, so it goes into ports not signals
+                    continue
+                wt = wire.wiretype ()  # Check for consistency
+                if wt:
+                    dir, stype = wt
+                    wlist.append ("  signal %s : %s;\n" % (w, stype))
         return "".join (wlist)
     
     def print_vhdl (self, f):
@@ -265,25 +322,48 @@ def top_vhdl (f):
     print >> f, header
     print >> f, "entity cdc6600 is\n  port ("
     clist = [ "    clk1, clk2, clk3, clk4 : in std_logic" ]
-    #for c in cnames:
-    #    n = cables[c]
-    #    if n == 2:
-    #        clist.append ("    %s : inout coaxsigs" % c)
+    wnames = coaxdict.keys ()
+    wnames.sort ()
+    for w in wnames:
+        wire = coaxdict[w]
+        ends = wire.endids ()
+        if len (ends) == 1:
+            # Half-connected coax, so it goes to the outside world
+            c, p = wire.ends[0]
+            wt = c.pindef (p)
+            dir, stype = wt
+            if stype == "coaxsig":
+                clist.append ("    %s : %s coaxsigs" % (w, dir))
     print >> f, "%s);\nend cdc6600;\n" % ";\n".join (clist)
     print >> f, "\narchitecture chassis of cdc6600 is"
     for ch in chassis_list:
         if ch is None:
             continue
         print >> f, "  component %s\n%s  end component;" % (ch.name, ch.ports ())
+    for w in wnames:
+        wire = coaxdict[w]
+        wt = wire.wiretype ()  # Check for consistency
+        if not wt:
+            continue
+        ends = wire.endids ()
+        e1, e2 = ends
+        if e1[0][0] == e2[0][0]:
+            # Same chassis (which has to be this chassis)
+            # at both ends -- don't put this coax wire into top level signals
+                continue
+        c, p = wire.ends[0]
+        wt = c.pindef (p)
+        dir, stype = wt
+        print >> f, "  signal %s : %s;" % (w, stype)
     print >> f, "begin -- chassis"
     for ch in chassis_list:
         if ch is None:
             continue
         print >> f, "  ch%d : %s port map (" % (int (ch.name[7:]), ch.name)
-        clist = [ "    clk1 => clk1",
-                  "    clk2 => clk2",
-                  "    clk3 => clk3",
-                  "    clk4 => clk4"]
+        pl = ch.portlist ()
+        clist = [ ]
+        for p, d, t in pl:
+            clist.append ("    %s => %s" % (p, p))
         print >> f, "%s);" % ",\n".join (clist)
     print >> f, "end chassis;"
 
@@ -336,13 +416,18 @@ class ModuleType (object):
         if not l:
             error ("Entity %s missing" % name)
         for l in v:
+            l = vhdlcommentpat.sub ("", l).strip ().lower ()
+            if not l:
+                continue
+            if name == "pq":
+                print l
             m = portpat.match (l)
             if not m:
                 error ("Entity %s missing or port declaration not formatted right" % name)
                 return
-            pins = m.group (1).lower ()
-            dir = m.group (2).lower ()
-            stype = m.group (3).lower ()
+            pins = m.group (1)
+            dir = m.group (2)
+            stype = m.group (3)
             if stype != "misc" and dir not in ("in", "out"):
                 error ("Unrecognized pin direction %s for %s pin %s" 
                       % (dir, name, pins))
@@ -425,14 +510,22 @@ class Connector (object):
         """Get the definition of the pin, from the ModuleType object.
         """
         pname = "p%d" % (num + self.offset)
-        return self.module.Type.pins[pname]
+        try:
+            return self.module.Type.pins[pname]
+        except KeyError:
+            print pname, self.name, self.module.tname
+            raise
+
+    def chslotid (self):
+        return self.module.chslotid ()
     
 class ModuleInstance (object):
     """An instance of a ModuleType (living in some slot in some chassis)
     """
-    def __init__ (self, name, tname):
+    def __init__ (self, ch, name, tname):
         """name is the slot name.
         """
+        self.chassis = ch
         self.name = name
         self.tname = tname
         self.Type = get_module_type (tname)
@@ -440,7 +533,10 @@ class ModuleInstance (object):
 
     def add_connector (self, c):
         self.connectors.append (c)
-        
+
+    def chslotid (self):
+        return (self.chassis, self.name)
+    
     def portmap (self):
         """Return a component invocation (port map) mapping the
         connected pins of this module instance to the wire signal names.
