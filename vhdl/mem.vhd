@@ -21,8 +21,8 @@ entity memarray is
     rdata  : out ppword;                -- read data
     rdatab : out ppword;                -- read data complemented
     wdata  : in  ppword;                -- write data (complemented)
-    read   : in  std_logic;             -- read strobe
-    write  : in  std_logic);            -- write strobe
+    strobe : in  std_logic;             -- read/write strobe
+    write  : in  std_logic);            -- write request
 
 end memarray;
 
@@ -33,17 +33,18 @@ begin  -- beh
   -- type   : sequential
   -- inputs : read, write, addr, wdata
   -- outputs: rdata, rdatab
-  rw: process (read, write)
+  rw: process (strobe)
     variable areg : integer;              -- Address as an integer
     variable mdata : ppmem;               -- Memory data
   begin  -- process rw
-    if read'event and read = '1' then  -- rising clock edge
+    if strobe'event and strobe = '1' then  -- rising clock edge
       areg := TO_INTEGER (addr);
-      rdata <= mdata (areg);
-      rdatab <= not (mdata (areg));
-    elsif write'event and write = '1' then
-      areg := TO_INTEGER (addr);
-      mdata (areg) := not (wdata);
+      if write = '1' then
+        mdata (areg) := not (wdata);
+      else
+        rdata <= mdata (areg);
+        rdatab <= not (mdata (areg));
+      end if;
     end if;
   end process rw;
 end beh;
@@ -119,11 +120,13 @@ architecture beh of mem is
       rdata  : out ppword;                -- read data
       rdatab : out ppword;                -- read data complemented
       wdata  : in  ppword;                -- write data (complemented)
-      read   : in  std_logic;             -- read strobe
-      write  : in  std_logic);            -- write strobe
+      strobe : in  std_logic;             -- read/write strobe
+      write  : in  std_logic);            -- write operation
   end component;
+  signal s : std_logic;
 begin  -- beh
 
+  s <= p123 or p121;
   ar : memarray port map (
     addr(0) => p22,
     addr(1) => p20,
@@ -174,6 +177,6 @@ begin  -- beh
     rdatab(10) => p112,
     rdatab(11) => p122,
     write => p121,
-    read => p123);
+    strobe => s);
 
 end beh;
