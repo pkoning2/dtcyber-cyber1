@@ -333,7 +333,7 @@ def top_vhdl (f):
             wt = c.pindef (p)
             dir, stype = wt
             if stype == "coaxsig":
-                clist.append ("    %s : %s coaxsigs" % (w, dir))
+                clist.append ("    %s : %s coaxsig" % (w, dir))
     print >> f, "%s);\nend cdc6600;\n" % ";\n".join (clist)
     print >> f, "\narchitecture chassis of cdc6600 is"
     for ch in chassis_list:
