@@ -109,8 +109,8 @@ entity mem is
     p119  : in std_logic;                -- quadrant 10 (unused)
     p117  : in std_logic;                -- quadrant 01 (unused)
     p115  : in std_logic;                -- quadrant 00 (unused)
-    p121  : in std_logic;                -- write
-    p123  : in std_logic);               -- read
+    p121  : in std_logic;                -- not write
+    p123  : in std_logic);               -- not read
 end mem;
 
 architecture beh of mem is
@@ -123,10 +123,11 @@ architecture beh of mem is
       strobe : in  std_logic;             -- read/write strobe
       write  : in  std_logic);            -- write operation
   end component;
-  signal s : std_logic;
+  signal s, w : std_logic;
 begin  -- beh
 
-  s <= p123 or p121;
+  s <= not (p123) or not (p121);
+  w <= not (p121);
   ar : memarray port map (
     addr(0) => p22,
     addr(1) => p20,
@@ -176,7 +177,7 @@ begin  -- beh
     rdatab(9) => p11,
     rdatab(10) => p112,
     rdatab(11) => p122,
-    write => p121,
+    write => w,
     strobe => s);
 
 end beh;
