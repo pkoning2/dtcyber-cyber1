@@ -1,6 +1,8 @@
 VLIB = work-obj93.cf
 MODULE_SRCS = $(wildcard ??.vhd)
 MODULES = clock.o mem.o  synchro.o $(MODULE_SRCS:.vhd=.o)
+CHASSIS_SRCS = $(wildcard chassis*.vhd)
+CHASSIS = $(CHASSIS_SRCS:.vhd=.o)
 
 FOREIGN = dtsynchro.o \
 	channel.o console.o cr405.o dd6603.o dd8xx.o mux6676.o \
@@ -10,7 +12,6 @@ FOREIGN = dtsynchro.o \
 	trace.o log.o init.o device.o \
 	dtmain.o deadstart.o
 FLIBS   = -lpthread
-CHASSIS = chassis1.o
 TOP = cdc6600.o
 TB = cdc_tb.o
 VOBJS = $(TB) $(TOP) $(MODULES)
