@@ -567,10 +567,14 @@ class ModuleInstance (object):
                             clist.append ("    %s => %s" % (p, w.name))
                         elif dir == "in":
                             # TEMP: tie half-connected inputs to idle
+                            # if they are twisted pair, to outside if coax
                             if stype == "coaxsig":
-                                clist.append ("    %s => zero" % p)
+                                clist.append ("    %s => %s" % (p, w.name))
                             else:
                                 clist.append ("    %s => one" % p)
+                        elif dir == "out" and stype == "coaxsig":
+                            # TEMP: hook up coax (to the outside)
+                            clist.append ("    %s => %s" % (p, w.name))
                     elif dir == "in":
                         error ("Unconnected input pin %s in %s" %
                                (p, self.name))

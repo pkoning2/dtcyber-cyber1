@@ -141,6 +141,7 @@ begin  -- gates
     c  => t8,
     y  => t9,
     y2 => p15);
+  tp6 <= t9;
   u19 : inv port map (
     a => p21,
     y => t10);
