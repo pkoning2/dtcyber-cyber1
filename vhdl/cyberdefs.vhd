@@ -28,7 +28,8 @@ package sigs is
   subtype ppword is UNSIGNED (11 downto 0);  -- PPU word (12 bits)
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
   subtype misc is std_logic range '0' to '1';  -- used for non-logic pins
-
+  subtype analog is UNSIGNED (2 downto 0);    -- 6612 character drawing signal
+  
   procedure dtsynchro (
     constant chnum : in    integer;     -- Channel number for this synchronizer
     incable        : inout coaxsigs;    -- Input cable
@@ -311,6 +312,7 @@ entity latch is
   
   port (
     d, clk : in  std_logic;                   -- data (set), clock
+    r      : in  std_logic := '0';            -- optional reset
     q, qb  : out std_logic);                  -- q and q.bar
 
 end latch;
@@ -320,8 +322,10 @@ architecture beh of latch is
   signal qib : std_logic;
 begin  -- beh
 
-  qi <= d when clk = '1' else unaffected;
-  qib <= not (d) when clk = '1' else unaffected;
+  qi <= '0' when r = '1' else
+      d when clk = '1' else unaffected;
+  qib <= '1' when r = '1' else
+       not (d) when clk = '1' else unaffected;
   q <= qi after t;
   qb <= qib after t;
 
