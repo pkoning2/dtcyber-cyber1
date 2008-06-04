@@ -34,7 +34,7 @@ ground = "ground"
 module_types = { }
 coaxdict = { }
 
-portpat = re.compile (r"\s*([\w\s,]+):\s*(in|out|inout)\s+(std_logic|coaxsig|misc)\s*(?:\:=\s'.')?(\))?\s*;", re.I)
+portpat = re.compile (r"\s*([\w\s,]+):\s*(in|out|inout)\s+(std_logic|coaxsig|analog|misc)\s*(?:\:=\s'.')?(\))?\s*;", re.I)
 slotpat = re.compile (r"([a-r])(\d\d?)", re.I)
 chslotpat = re.compile (r"(\d\d?)([a-r])(\d\d?)", re.I)
 vhdlcommentpat = re.compile (r"--.*$")
@@ -219,7 +219,7 @@ class Chassis (object):
                 c, p = wire.ends[1]
             wt = c.pindef (p)
             dir, stype = wt
-            if stype == "coaxsig":
+            if stype == "coaxsig" or stype == "analog":
                 portlist.append ((w, dir, stype))
             else:
                 error ("coax %s unexpected type %s" % (w, stype))
@@ -332,8 +332,8 @@ def top_vhdl (f):
             c, p = wire.ends[0]
             wt = c.pindef (p)
             dir, stype = wt
-            if stype == "coaxsig":
-                clist.append ("    %s : %s coaxsig" % (w, dir))
+            if stype == "coaxsig" or stype == "analog":
+                clist.append ("    %s : %s %s" % (w, dir, stype))
     print >> f, "%s);\nend cdc6600;\n" % ";\n".join (clist)
     print >> f, "\narchitecture chassis of cdc6600 is"
     for ch in chassis_list:
@@ -570,18 +570,19 @@ class ModuleInstance (object):
                         elif dir == "in":
                             # TEMP: tie half-connected inputs to idle
                             # if they are twisted pair, to outside if coax
-                            if stype == "coaxsig":
+                            if stype == "coaxsig" or stype == "analog":
                                 clist.append ("    %s => %s" % (p, w.name))
                             else:
                                 clist.append ("    %s => one" % p)
-                        elif dir == "out" and stype == "coaxsig":
+                        elif dir == "out" and \
+                             (stype == "coaxsig" or stype == "analog"):
                             # TEMP: hook up coax (to the outside)
                             clist.append ("    %s => %s" % (p, w.name))
                     elif dir == "in":
                         error ("Unconnected input pin %s in %s" %
                                (p, self.name))
                         # TEMP: tie unconnected inputs to idle
-                        if stype == "coaxsig":
+                        if stype == "coaxsig" or stype == "analog":
                             clist.append ("    %s => zero" % p)
                         else:
                             clist.append ("    %s => one" % p)
