@@ -1,0 +1,133 @@
+-------------------------------------------------------------------------------
+--
+-- CDC 6600 model
+--
+-- Authors: Paul Koning, Dave Redell
+--
+-- Based on the original design by Seymour Cray and his team
+--
+-- PJ module
+--
+-------------------------------------------------------------------------------
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+
+entity pjslice is
+  
+  port (
+    d, clk     : in  std_logic;             -- data and clock
+    tp         : out std_logic;             -- test point
+    qb, q1, q2 : out std_logic);            -- outputs
+
+end pjslice;
+
+architecture gates of pjslice is
+  component inv2
+    port (
+      a  : in  std_logic;                     -- input
+      y, y2  : out std_logic);                    -- output
+  end component;
+  component latch
+    port (
+      d, clk : in  std_logic;                 -- data (set), clock
+      r      : in  std_logic := '0';          -- optional reset
+      q, qb  : out std_logic);                -- q and q.bar
+  end component;
+  signal qi, qi2 : std_logic;                 -- latch output
+begin  -- gates
+  u1 : latch port map (
+    d   => d,
+    clk => clk,
+    q   => qi);
+  tp <= qi;
+  u2 : inv2 port map (
+    a => qi,
+    y => qb,
+    y2 => qi2);
+  q1 <= qi2;
+  q2 <= qi2;
+end gates;
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+
+entity pj is
+  
+  port (
+    p8, p5, p12, p21, p24, p23                  : in  std_logic;  -- inputs
+    p9, p7, p20, p22                            : in  std_logic;  -- clocks
+    tp1, tp2, tp3, tp4, tp5, tp6                : out std_logic;  -- test points
+    p4, p1, p3, p11, p2, p6, p13, p14, p10      : out std_logic;
+    p15, p19, p17, p16, p27, p18, p25, p28, p26 : out std_logic);
+
+end pj;
+
+architecture gates of pj is
+  component g2
+    port (
+      a, b : in  std_logic;                   -- inputs
+      y, y2    : out std_logic);                  -- output
+  end component;
+  component pjslice
+    port (
+      d, clk     : in  std_logic;             -- data and clock
+      tp         : out std_logic;             -- test point
+      qb, q1, q2 : out std_logic);            -- outputs
+  end component;
+  signal b, d : std_logic;       -- strobes
+begin  -- gates
+  u1 : g2 port map (
+    a => p9,
+    b => p7,
+    y2 => b);
+  u2 : g2 port map (
+    a => p20,
+    b => p22,
+    y2 => d);
+  u3 : pjslice port map (
+    d   => p8,
+    clk => b,
+    tp  => tp1,
+    qb  => p4,
+    q1  => p1,
+    q2  => p3);
+  u4 : pjslice port map (
+    d   => p5,
+    clk => b,
+    tp  => tp2,
+    qb  => p11,
+    q1  => p2,
+    q2  => p6);
+  u5 : pjslice port map (
+    d   => p12,
+    clk => b,
+    tp  => tp3,
+    qb  => p13,
+    q1  => p14,
+    q2  => p10);
+  u6 : pjslice port map (
+    d   => p21,
+    clk => d,
+    tp  => tp4,
+    qb  => p15,
+    q1  => p19,
+    q2  => p17);
+  u7 : pjslice port map (
+    d   => p24,
+    clk => d,
+    tp  => tp5,
+    qb  => p16,
+    q1  => p27,
+    q2  => p18);
+  u8 : pjslice port map (
+    d   => p23,
+    clk => d,
+    tp  => tp6,
+    qb  => p25,
+    q1  => p28,
+    q2  => p26);
+
+end gates;

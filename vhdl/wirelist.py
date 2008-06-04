@@ -482,7 +482,7 @@ class Connector (object):
                 # Memory power pins, ignore
                 continue
             dest = fields[1]
-            if dest == "good":
+            if dest == "good" or dest == "gnd" or dest == "grd":
                 dest = self.name
             pin2 = fields[2]
             if pin2.startswith ("p"):
