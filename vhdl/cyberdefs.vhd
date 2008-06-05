@@ -318,14 +318,15 @@ entity latch is
 end latch;
 
 architecture beh of latch is
+  signal clki : std_logic;
   signal qi : std_logic;
   signal qib : std_logic;
 begin  -- beh
-
+  clki <= clk after t * 2;
   qi <= '0' when r = '1' else
-      d when clk = '1' else unaffected;
+      d when clki = '1' else unaffected;
   qib <= '1' when r = '1' else
-       not (d) when clk = '1' else unaffected;
+       not (d) when clki = '1' else unaffected;
   q <= qi after t;
   qb <= qib after t;
 
