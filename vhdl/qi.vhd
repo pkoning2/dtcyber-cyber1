@@ -121,7 +121,7 @@ begin  -- gates
     y2 => t2);
   u3 : inv2 port map (
     a => t2,
-    y => a);
+    y2 => a);
   u4 : qislice port map (
     s  => p3,
     r  => a,

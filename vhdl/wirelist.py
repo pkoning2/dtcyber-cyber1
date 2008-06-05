@@ -99,6 +99,13 @@ def get_coax (name, slot, pin):
     curch.coax[name] = w
     return w
 
+def normname (name):
+    """Some coax names start with a digit; if so put on a prefix.
+    """
+    if name[0].isdigit ():
+        name = "w_" + name
+    return name
+
 def get_module_type (tname):
     """Retrieve a module type by type name, returning the ModuleType
     object.  If it wasn't added before, add it.
@@ -222,7 +229,7 @@ class Chassis (object):
             wt = c.pindef (p)
             dir, stype = wt
             #if stype == "coaxsig" or stype == "analog":
-            portlist.append ((w, dir, stype))
+            portlist.append ((normname (w), dir, stype))
             #else:
             #    error ("coax %s unexpected type %s" % (w, stype))
         return portlist
@@ -285,7 +292,8 @@ class Chassis (object):
                 wt = wire.wiretype ()  # Check for consistency
                 if wt:
                     dir, stype = wt
-                    wlist.append ("  signal %s : %s;\n" % (w, stype))
+                    wlist.append ("  signal %s : %s;\n" %
+                                  (normname (w), stype))
         return "".join (wlist)
     
     def print_vhdl (self, f):
@@ -334,8 +342,8 @@ def top_vhdl (f):
             c, p = wire.ends[0]
             wt = c.pindef (p)
             dir, stype = wt
-            if stype == "coaxsig" or stype == "analog":
-                clist.append ("    %s : %s %s" % (w, dir, stype))
+            #if stype == "coaxsig" or stype == "analog":
+            clist.append ("    %s : %s %s" % (normname (w), dir, stype))
     print >> f, "%s);\nend cdc6600;\n" % ";\n".join (clist)
     print >> f, "\narchitecture chassis of cdc6600 is"
     for ch in chassis_list:
@@ -570,18 +578,21 @@ class ModuleInstance (object):
                             clist.append ("    %s => one" % p)
                         elif w.wiretype (False):
                             # It's a valid wire, add it
-                            clist.append ("    %s => %s" % (p, w.name))
+                            clist.append ("    %s => %s" %
+                                          (p, normname (w.name)))
                         elif dir == "in":
                             # TEMP: tie half-connected inputs to idle
                             # if they are twisted pair, to outside if coax
                             if stype == "coaxsig" or stype == "analog":
-                                clist.append ("    %s => %s" % (p, w.name))
+                                clist.append ("    %s => %s" %
+                                              (p, normname (w.name)))
                             else:
                                 clist.append ("    %s => one" % p)
                         elif dir == "out" and \
                              (stype == "coaxsig" or stype == "analog"):
                             # TEMP: hook up coax (to the outside)
-                            clist.append ("    %s => %s" % (p, w.name))
+                            clist.append ("    %s => %s" %
+                                          (p, normname (w.name)))
                     elif dir == "in":
                         error ("Unconnected input pin %s in %s" %
                                (p, self.name))

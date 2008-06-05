@@ -1,6 +1,6 @@
 VLIB = work-obj93.cf
 MODULE_SRCS = $(wildcard ??.vhd)
-MODULES = clock.o mem.o  synchro.o $(MODULE_SRCS:.vhd=.o)
+MODULES = clock.o clockh.o mem.o  synchro.o $(MODULE_SRCS:.vhd=.o)
 CHASSIS_SRCS = $(wildcard chassis*.vhd)
 CHASSIS = $(CHASSIS_SRCS:.vhd=.o)
 
