@@ -219,10 +219,10 @@ class Chassis (object):
                 c, p = wire.ends[1]
             wt = c.pindef (p)
             dir, stype = wt
-            if stype == "coaxsig" or stype == "analog":
-                portlist.append ((w, dir, stype))
-            else:
-                error ("coax %s unexpected type %s" % (w, stype))
+            #if stype == "coaxsig" or stype == "analog":
+            portlist.append ((w, dir, stype))
+            #else:
+            #    error ("coax %s unexpected type %s" % (w, stype))
         return portlist
         
     def ports (self):
@@ -492,6 +492,8 @@ class Connector (object):
                 wlen = int (fields[3])
             dslot = get_slot (dest)
             if dslot:
+                # Normalize the name
+                dest = slotname (dslot)
                 # Destination looks like a slot ID.
                 if pin2 == "x":
                     # connected to ground, mark that
