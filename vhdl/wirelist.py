@@ -146,9 +146,11 @@ class Wire (object):
         return d
 
     def wiretype (self, verbose = True):
+        ids = self.endids ()
         if len (self.ends) != 2:
             if verbose:
-                error ("Half-connected wire %s" % self.name)
+                error ("Half-connected wire %s (only at %s %d)" %
+                       (self.name, ids[0][0][1], ids[0][1]))
             return None
         d1, d2 = self.pindefs ()
         dir1, stype1 = d1
