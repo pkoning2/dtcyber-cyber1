@@ -330,3 +330,29 @@ begin  -- beh
   qb <= qib after t;
 
 end beh;
+
+
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+  
+entity wire is
+  
+  generic (
+    length : integer := 0);                -- length in inches
+
+  port (
+    i  : in  std_logic;                 -- input
+    o  : out std_logic);                -- output
+
+end wire;
+
+architecture beh of wire is
+  constant feet : real := real (length) / 12.0;
+  constant idelay : time := feet * 1.3 ns;
+begin  -- beh
+
+  o <= transport i after idelay;
+
+end beh;

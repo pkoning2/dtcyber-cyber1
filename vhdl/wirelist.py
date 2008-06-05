@@ -30,6 +30,7 @@ chassis_list = [ None ] * 17
 curch = None
 curcnum = None
 ground = "ground"
+real_length = 40     # simulate wire delay for wires this long, None to disable
 
 module_types = { }
 coaxdict = { }
@@ -80,13 +81,13 @@ def get_chslot (name):
 def chslotname (slot):
     return "%d%s%d" % slot
 
-def get_wire (name, slot, pin):
+def get_wire (name, slot, pin, wlen = 0):
     to = (slot, pin)
     try:
         w = curch.wires[name]
-        w.connect (to)
+        w.connect (to, wlen)
     except KeyError:
-        w = curch.wires[name] = Wire (name, to)
+        w = curch.wires[name] = Wire (name, to, wlen)
     return w
 
 def get_coax (name, slot, pin):
@@ -123,17 +124,22 @@ class Wire (object):
     element is a pair of slot and pin number.  The slot is a
     ModuleInstance object.
     """
-    def __init__ (self, name, end1):
+    def __init__ (self, name, end1, wlen = 0):
         self.name = name
         self.ends = [ ]
-        self.connect (end1)
+        self.length = 0
+        self.connect (end1, wlen)
 
-    def connect (self, end1):
+    def connect (self, end1, wlen = 0):
         if len (self.ends) > 1:
             error ("Wire %s already has two connections" % self.name)
         else:
             self.ends.append (end1)
-
+            if real_length is not None and \
+                   wlen > self.length and \
+                   wlen >= real_length:
+                self.length = wlen
+                
     def pindefs (self):
         """Return a list of pindefs for the endpoints.
         """
@@ -250,7 +256,15 @@ class Chassis (object):
         """Return the component declarations for this chassis
         (i.e., for the module types it contains), as a string.
         """
-        clist = [ ]
+        clist = ["""  component wire
+    generic (
+      length : integer := 0);                -- length in inches
+
+    port (
+      i  : in  std_logic;                 -- input
+      o  : out std_logic);                -- output
+  end component;
+"""]
         mtypes = { }
         for m in self.modules.itervalues ():
             mtypes[m.Type.name] = m.Type
@@ -279,6 +293,15 @@ class Chassis (object):
             if wt:
                 dir, stype = wt
                 wlist.append ("  signal %s : %s;\n" % (w, stype))
+                if stype == "std_logic" and wire.length > 0:
+                    ends = wire.endids ()
+                    if len (ends) == 2:
+                        if dir == "out":
+                            e1 = ends[0]
+                        else:
+                            e1 = ends[1]
+                        wlist.append ("  signal %s_%d : std_logic;\n" %
+                                      (e1[0][1], e1[1]))
         wnames = self.coax.keys ()
         wnames.sort ()
         for w in wnames:
@@ -499,6 +522,7 @@ class Connector (object):
                 pin2 = pin2[1:]
             wlen = 0
             if len (fields) > 3:
+                # Wire length appears to be in inches (modulo typos)
                 wlen = int (fields[3])
             dslot = get_slot (dest)
             if dslot:
@@ -514,7 +538,7 @@ class Connector (object):
                         wname = "%s_%d_%s_%s" % (self.name, p, dest, pin2)
                     else:
                         wname = "%s_%s_%s_%d" % (dest, pin2, self.name, p)
-                    w = get_wire (wname, self, p)
+                    w = get_wire (wname, self, p, wlen)
             else:
                 wname = "%s_%s" % (dest, pin2)
                 w = get_coax (wname, self, p)
@@ -556,6 +580,7 @@ class ModuleInstance (object):
         connected pins of this module instance to the wire signal names.
         """
         clist = [ ]
+        dlist = [ ]  # wire delays
         plist = self.Type.pins.keys ()
         plist.sort ()
         for dir in ("in", "out", "inout"):
@@ -578,8 +603,22 @@ class ModuleInstance (object):
                             clist.append ("    %s => one" % p)
                         elif w.wiretype (False):
                             # It's a valid wire, add it
-                            clist.append ("    %s => %s" %
-                                          (p, normname (w.name)))
+                            if dir == "out" and \
+                                   stype == "std_logic" and \
+                                   w.length > 0:
+                                # Output pin, model the wire delay here
+                                clist.append ("    %s => %s_%d" %
+                                              (p, self.name, pnum))
+                                wn = normname (w.name)
+                                dlist.append ("""  wire_%s : wire generic map (
+    length => %d)
+  port map (
+    i => %s_%d,
+    o => %s);
+""" % (wn, w.length, self.name, pnum, wn))
+                            else:
+                                clist.append ("    %s => %s" %
+                                              (p, normname (w.name)))
                         elif dir == "in":
                             # TEMP: tie half-connected inputs to idle
                             # if they are twisted pair, to outside if coax
@@ -589,7 +628,7 @@ class ModuleInstance (object):
                             else:
                                 clist.append ("    %s => one" % p)
                         elif dir == "out" and \
-                             (stype == "coaxsig" or stype == "analog"):
+                             (True or stype == "coaxsig" or stype == "analog"):
                             # TEMP: hook up coax (to the outside)
                             clist.append ("    %s => %s" %
                                           (p, normname (w.name)))
@@ -601,7 +640,7 @@ class ModuleInstance (object):
                             clist.append ("    %s => zero" % p)
                         else:
                             clist.append ("    %s => one" % p)
-        return "  %s : %s port map (\n%s);\n" % (self.name, self.Type.name, ",\n".join (clist))
+        return "  %s : %s port map (\n%s);\n%s" % (self.name, self.Type.name, ",\n".join (clist), "".join (dlist))
     
 def process_file (f):
     global curch, curcnum

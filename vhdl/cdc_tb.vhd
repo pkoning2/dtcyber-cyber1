@@ -12,6 +12,7 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
 use std.textio.all;
 use work.sigs.all;
 
@@ -48,6 +49,7 @@ architecture behav of cdc_tb is
       w_12w2_903 : out coaxsig;
       w_12w2_904 : out coaxsig;
       w_12w2_905 : out coaxsig;
+      w_12w2_906 : in coaxsig;
       w_12w2_907 : in coaxsig;
       w_12w2_91 : out coaxsig;
       w_12w2_92 : out coaxsig;
@@ -158,6 +160,7 @@ architecture behav of cdc_tb is
   signal w_12w2_903 :  coaxsig;
   signal w_12w2_904 :  coaxsig;
   signal w_12w2_905 :  coaxsig;
+  signal w_12w2_906 :  coaxsig := '0';
   signal w_12w2_907 :  coaxsig := '0';
   signal w_12w2_91 :  coaxsig;
   signal w_12w2_92 :  coaxsig;
@@ -201,7 +204,7 @@ architecture behav of cdc_tb is
   signal w_12w6_95 :  std_logic := '0';
   signal w_12w6_96 :  std_logic := '0';
   signal w_12w6_97 :  std_logic := '0';
-  signal w_12w6_98 :  std_logic;
+  signal w_12w6_98 :  std_logic := '0';
   signal w_12w6_99 :  std_logic;
   signal w_12w7_90 :  std_logic;
   signal w_12w7_900 :  std_logic;
@@ -269,6 +272,7 @@ begin
                           w_12w2_903 => w_12w2_903,
                           w_12w2_904 => w_12w2_904,
                           w_12w2_905 => w_12w2_905,
+                          w_12w2_906 => w_12w2_906,
                           w_12w2_907 => w_12w2_907,
                           w_12w2_91 => w_12w2_91,
                           w_12w2_92 => w_12w2_92,
@@ -365,6 +369,14 @@ begin
      variable d : integer;
      variable ic, oc : coaxsigs;
      variable c1, c2, c3, c4 : integer := 0;
+     variable count4 : integer := 4;
+     variable count40 : integer := 4;
+     variable x, y : integer := 0;
+     variable unblank : integer := 0;
+     constant space : string := " ";
+     constant zero : string := "0";
+     constant one : string := "1";
+     variable llen : integer;
    begin  -- process test
      while not endfile (vector_file) loop
        readline (vector_file, l);
@@ -373,6 +385,7 @@ begin
        for i in testdata'left to testdata'right loop
          read (l, b, good => g);
          exit when not g;
+         llen := i;
          if b = '0' then
            testdata(i) := '0';
          elsif b = '1' then
@@ -383,7 +396,44 @@ begin
          -- coax1(i) <= testdata(i);
          oc(i) := testdata(i);
        end loop;  -- i
+       write(l, d);
+       write (l, space);
+       for i in testdata'left to llen loop
+         if testdata(i) = '0' then
+           write (l, zero);
+         else
+           write (l, one);
+         end if;
+       end loop;  -- i
+       writeline (output, l);
        for i in 1 to d loop
+         count4 := count4 - 1;
+         if count4 < 1 then
+           count4 := 4;
+           w_12w2_906 <= '1';
+           x := TO_INTEGER (w_12w6_905);
+           y := TO_INTEGER (w_12w6_903);
+           if w_12w6_98 = '1' then
+             unblank := 1;
+           else
+             unblank := 0;
+           end if;
+           write (l, x);
+           write (l, space);
+           write (l, y);
+           write (l, space);
+           write (l, unblank);
+           writeline (output, l);
+         else
+           w_12w2_906 <= '0';           
+         end if;
+         count40 := count40 - 1;
+         if count40 < 1 then
+           count40 := 40;
+           w_12w2_907 <= '1';
+         else
+           w_12w2_907 <= '0';           
+         end if;
          w_12w1_90 <= oc(1);
          w_12w1_91 <= oc(2);
          w_12w1_92 <= oc(3);
