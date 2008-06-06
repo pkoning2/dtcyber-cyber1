@@ -343,6 +343,27 @@ class Chassis (object):
             print >> f, c.portmap ()
         print >> f, "end modules;"
 
+    def print_modmap (self, f, sep = ""):
+        """Print the module layout.
+        """
+        modmap = [ ]
+        for r in xrange (18):
+            modmap.append (list (["--"] * 43))
+            modmap[r][0] = chr (r + 65)
+        for m, i in self.modules.iteritems ():
+            r = ord (m[0]) - 97
+            c = int (m[1:])
+            modmap[r][c] = i.tname
+        for r in xrange (18):
+            curmod = ""
+            for m in xrange (1, 43):
+                if modmap[r][m] == curmod and curmod != "--":
+                    modmap[r][m] = ""
+                else:
+                    curmod = modmap[r][m]
+            modmap[r] = sep.join (modmap[r])
+        print >> f, "\n".join (modmap)
+        
 def top_vhdl (f):
     """Print the top-level VHDL for the whole system.  This is the
     interconnect between chassis and from the chassis to the
@@ -710,4 +731,7 @@ if __name__ == "__main__":
             continue
         f = open ("%s.vhd" % ch.name, "w")
         ch.print_vhdl (f)
+        f.close ()
+        f = open ("%s.csv" % ch.name, "w")
+        ch.print_modmap (f, ",")
         f.close ()
