@@ -114,6 +114,7 @@ HINSTANCE hInstance;
 bool emulationActive = TRUE;
 bool hersheyMode = FALSE;
 bool cc545Mode = FALSE;
+bool dd60Mode = FALSE;
 int scaleX = 10;
 int scaleY = 10;
 
@@ -158,7 +159,7 @@ int main (int argc, char **argv)
 #if !defined(_WIN32)
     for (;;)
         {
-        opt = getopt (argc, argv, "chs");
+        opt = getopt (argc, argv, "cdhs");
         if (opt == (char) (-1))
             break;
         switch (opt)
@@ -166,7 +167,9 @@ int main (int argc, char **argv)
         case 'c':
             cc545Mode = TRUE;
             break;
-            
+        case 'd':
+            dd60Mode = TRUE;
+            break;            
         case 'h':
             hersheyMode = TRUE;
             break;
@@ -185,7 +188,7 @@ int main (int argc, char **argv)
 
     if (argc > 2)
         {
-        fprintf (stderr, "usage: dd60 [-chs] [ interval [ portnum ]]\n");
+        fprintf (stderr, "usage: dd60 [-cdhs] [ interval [ portnum ]]\n");
         exit (1);
         }
     if (argc > 1)

@@ -29,6 +29,7 @@
 #include "types.h"
 #include "proto.h"
 #include "dd60.h"
+#include "chargen6612.h"
 
 /*
 **  -----------------
@@ -89,6 +90,7 @@ static void windowStoreChar (char c, int x, int y, int dx);
 static void getCharWidths (FontInfo *f, char *s);
 static void windowTextPlot(int xPos, int yPos, int ch, int fontSize);
 static void window545Plot(int xPos, int yPos, int ch, int fontSize);
+static void window6612Plot(int xPos, int yPos, int ch, int fontSize);
 
 /*
 **  ----------------
@@ -102,6 +104,7 @@ extern const u8 chargen[060][22];
 extern bool emulationActive;
 extern bool hersheyMode;
 extern bool cc545Mode;
+extern bool dd60Mode;
 extern int scaleX;
 extern int scaleY;
 bool keyboardTrue;
@@ -709,6 +712,11 @@ void windowProcessChar (int ch)
         window545Plot(XADJUST (currentX), YADJUST (currentY),
                       ch, currentFont);
         }
+    else if (dd60Mode)
+        {
+        window6612Plot(XADJUST (currentX), YADJUST (currentY),
+                       ch, currentFont);
+        }
     else
         {
         windowStoreChar (ch, currentX, currentY,
@@ -980,6 +988,63 @@ static void window545Plot(int xPos, int yPos, int ch, int fontSize)
             linesVec[segnum].y = charSize * y + yPos;
             segnum++;
             }
+        }
+    
+    if (segnum > 1)
+        {
+        XDrawLines (disp, pixmap, pgc, linesVec,
+                    segnum, CoordModeOrigin);
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Plot a character using the 6612 (dd60) glyphs.
+**
+**  Parameters:     Name        Description.
+**					xPos		x position
+**					yPos		y position
+**					ch			character (display code)
+**					fontSize	current font size
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void window6612Plot(int xPos, int yPos, int ch, int fontSize)
+    {
+    XPoint linesVec[28];
+    int segnum = 0;
+    const xyu *glyph;
+    int i;
+    bool on = FALSE;
+    int charSize = fontSize / 8;
+    
+    glyph = dd60chars[ch];
+    for (i = 0; i < sizeof (dd60chars[0]) / sizeof (*glyph); i++)
+        {
+        if (glyph->unblank)
+            {
+            if (!on)
+                {
+                segnum = 1;
+                on = TRUE;
+                }
+            linesVec[segnum].x = charSize * glyph->x + xPos;
+            linesVec[segnum].y = -charSize * glyph->y + yPos;
+            segnum++;
+            }
+        else
+            {
+            if (segnum > 1)
+                {
+                XDrawLines (disp, pixmap, pgc, linesVec,
+                            segnum, CoordModeOrigin);
+                on = FALSE;
+                segnum = 0;
+                }
+            linesVec[0].x = charSize * glyph->x + xPos;
+            linesVec[0].y = -charSize * glyph->y + yPos;
+            }
+        glyph++;
         }
     
     if (segnum > 1)
