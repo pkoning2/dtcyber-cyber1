@@ -473,8 +473,6 @@ class ModuleType (object):
             l = vhdlcommentpat.sub ("", l).strip ().lower ()
             if not l:
                 continue
-            if name == "pq":
-                print l
             m = portpat.match (l)
             if not m:
                 error ("Entity %s missing or port declaration not formatted right" % name)
