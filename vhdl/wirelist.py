@@ -34,11 +34,13 @@ real_length = 40     # simulate wire delay for wires this long, None to disable
 
 module_types = { }
 coaxdict = { }
+warnpins = { }
 
 portpat = re.compile (r"\s*([\w\s,]+):\s*(in|out|inout)\s+(std_logic|coaxsig|analog|misc)\s*(?:\:=\s'.')?(\))?\s*;", re.I)
 slotpat = re.compile (r"([a-r])(\d\d?)", re.I)
 chslotpat = re.compile (r"(\d\d?)([a-r])(\d\d?)", re.I)
 vhdlcommentpat = re.compile (r"--.*$")
+wiresplit = re.compile (r"([a-r]\d+)_(\d+)_([a-r]\d+)_(\d+)")
 
 curfile = ""
 curline = ""
@@ -161,9 +163,21 @@ class Wire (object):
     def wiretype (self, verbose = True):
         ids = self.endids ()
         if len (self.ends) != 2:
-            if verbose:
-                error ("Half-connected wire %s (only at %s %d)" %
-                       (self.name, ids[0][0][1], ids[0][1]))
+            if verbose and "w" not in self.name:
+                warnpins[ids[0]] = "half-connected to %s" % self.name
+                m = wiresplit.match (self.name)
+                if m:
+                    m1, p1, m2, p2 = m.groups ()
+                    p1 = int (p1)
+                    p2 = int (p2)
+                    ch = ids[0][0][0]
+                    if m1 == ids[0][0][1] and p1 == ids[0][1]:
+                        other = ((ch, m2), p2)
+                    else:
+                        other = ((ch, m1), p1)
+                    warnpins[other] = "other end of half-connected %s" % self.name
+                #error ("Half-connected wire %s (only at %s %d)" %
+                #       (self.name, ids[0][0][1], ids[0][1]))
             return None
         d1, d2 = self.pindefs ()
         dir1, stype1 = d1
@@ -652,8 +666,9 @@ class ModuleInstance (object):
                             clist.append ("    %s => %s" %
                                           (p, normname (w.name)))
                     elif dir == "in":
-                        error ("Unconnected input pin %s in %s" %
-                               (p, self.name))
+                        warnpins[((self.chassis, self.name), p[1:])] = "unconnected input"
+                        #error ("Unconnected input pin %s in %s" %
+                        #       (p, self.name))
                         # TEMP: tie unconnected inputs to idle
                         if stype == "coaxsig" or stype == "analog":
                             clist.append ("    %s => zero" % p)
@@ -733,3 +748,9 @@ if __name__ == "__main__":
         f = open ("%s.csv" % ch.name, "w")
         ch.print_modmap (f, ",")
         f.close ()
+    wl = warnpins.keys ()
+    wl.sort ()
+    for k in wl:
+        m, p = k
+        ch, m = m
+        print "%d%s pin %d: %s" % (ch, m, int (p), warnpins[k])
