@@ -153,7 +153,8 @@ begin  -- gates
     s4 => p25i,
     r  => ii,
     r2 => p14i,
-    q  => tp5,
+    q  => a,
     qb => p21);
-
+  tp5 <= a;
+  
 end gates;
