@@ -30,7 +30,7 @@ chassis_list = [ None ] * 17
 curch = None
 curcnum = None
 ground = "ground"
-real_length = 40     # simulate wire delay for wires this long, None to disable
+real_length = None     # simulate wire delay for wires this long, None to disable
 
 module_types = { }
 coaxdict = { }
@@ -703,7 +703,7 @@ def process_file (f):
             module = curch.add_module (mt, slot)
             c = Connector (slot, module)
             module.add_connector (c)
-            if mt == "mem":
+            if mt == "mem" or mt == "synchro":
                 c.read_pins (f, 30)
                 slot2 = getline (f)
                 slotid = get_chslot (slot2)

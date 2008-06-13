@@ -36,14 +36,23 @@ begin  -- synchro
   -- type   : sequential
   -- inputs : p17, p18, p101 - p118
   -- outputs: p1 - p16
-  process (p17)
+  sync: process
     constant idle : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
     variable icv : coaxsigs;
     variable ocv : coaxsigs;
   begin  -- process
-    if p17'event and p17 = '0' then  -- trailing clock edge
+    wait on p17;
+    if p17'event and p17 = '0' then
       ocv := ( p101, p102, p103, p104, p105, p106, p107, p108, p109, p110,
                p111, p112, p113, p114, p115, p116, p117, p118, '0' );
+      wait for 10 ns;
+      ocv := ( ocv (1) or p101, ocv (2) or p102, ocv (3) or p103,
+               ocv (4) or p104, ocv (5) or p105, ocv (6) or p106,
+               ocv (7) or p107, ocv (8) or p108, ocv (9) or p109,
+               ocv (10) or p110, ocv (11) or p111, ocv (12) or p112,
+               ocv (13) or p113, ocv (14) or p114, ocv (15) or p115,
+               ocv (16) or p116, ocv (17) or p117, ocv (18) or p118, '0' );
+      
       icv := idle;
       dtsynchro (chnum, icv, ocv);
       p1  <= transport icv (1);  p1  <= transport '0' after 25 ns;
@@ -62,6 +71,7 @@ begin  -- synchro
       p14 <= transport icv (14); p14 <= transport '0' after 25 ns;
       p15 <= transport icv (15); p15 <= transport '0' after 25 ns;
       p16 <= transport icv (16); p16 <= transport '0' after 25 ns;
+      
     end if;
   end process;
 
