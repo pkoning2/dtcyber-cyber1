@@ -378,6 +378,7 @@ begin
      constant one : string := "1";
      variable llen : integer;
    begin  -- process test
+     dtmain;
      while not endfile (vector_file) loop
        readline (vector_file, l);
        read (l, d);                     -- delay in 25 ns units
