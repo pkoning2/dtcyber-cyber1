@@ -71,21 +71,10 @@ architecture gates of pa is
       tp     : out std_logic;           -- test point
       q1, q2 : out std_logic);          -- outputs
   end component;
-  component g2
-    port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2    : out std_logic);                  -- output
-  end component;
   signal b, d : std_logic;       -- strobes
 begin  -- gates
-  u1 : g2 port map (
-    a => p9,
-    b => p7,
-    y2 => b);
-  u3 : g2 port map (
-    a => p20,
-    b => p22,
-    y2 => d);
+  b <= p9 and p7;                       -- gate delay is modeled in latch
+  d <= p20 and p22;
   u5 : paslice port map (
     d   => p8,
     clk => b,
