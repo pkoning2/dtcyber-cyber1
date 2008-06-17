@@ -107,7 +107,7 @@
 #define MaxUnits                010
 #define MaxUnits2               020
 #define MaxEquipment            010
-#define MaxDeadStart            020
+#define MaxDeadStart            0200
 #define MaxChannels             040
 
 #define NEWLINE                 "\n"
