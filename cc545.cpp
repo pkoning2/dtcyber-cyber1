@@ -12,6 +12,8 @@
 // declarations
 // ============================================================================
 
+#define C1C4 1
+
 // ----------------------------------------------------------------------------
 // headers
 // ----------------------------------------------------------------------------
@@ -52,6 +54,7 @@
 // ----------------------------------------------------------------------------
 
 int bw;
+int repeats;
 
 #define STEPMHZ 10
 #define STEPHZ  (STEPMHZ * 1000000)
@@ -135,6 +138,11 @@ public:
     bool get029on (void) const { return m_029on->GetValue (); }
     bool getv1aon (void) const { return m_v1aon->GetValue (); }
     bool getv3on (void) const { return m_v3on->GetValue (); }
+    double peak620 (void) const { return m_peak620->GetValue () / 100.0; }
+    double peakc19 (void) const { return m_peakc19->GetValue () / 100.0; }
+    double peak029 (void) const { return m_peak029->GetValue () / 100.0; }
+    double peakv1a (void) const { return m_peakv1a->GetValue () / 100.0; }
+    double peakv3 (void) const { return m_peakv3->GetValue () / 100.0; }
  
     void OnScroll (wxScrollEvent& event);
     void OnCheck (wxCommandEvent& event);
@@ -154,6 +162,13 @@ private:
     wxKnob      *m_red;         // red pixel value
     wxKnob      *m_green;       // green pixel value
     wxKnob      *m_blue;        // blue pixel value
+    wxKnob      *m_peak620;     // scale factors
+    wxKnob      *m_peakc19;     // scale factors
+    wxKnob      *m_peak029;     // scale factors
+#if C1C4
+    wxKnob      *m_peakv1a;     // scale factors
+    wxKnob      *m_peakv3;     // scale factors
+#endif
     wxCheckBox  *m_620on;
     wxCheckBox  *m_c19on;
     wxCheckBox  *m_029on;
@@ -236,7 +251,14 @@ public:
     bool get029on (void) const { return m_controls->m_controls->get029on (); }
     bool getv1aon (void) const { return m_controls->m_controls->getv1aon (); }
     bool getv3on (void) const { return m_controls->m_controls->getv3on (); }
-    
+    double peak620 (void) const { return m_controls->m_controls->peak620 (); }
+    double peakc19 (void) const { return m_controls->m_controls->peakc19 (); }
+    double peak029 (void) const { return m_controls->m_controls->peak029 (); }
+#if C1C4
+    double peakv1a (void) const { return m_controls->m_controls->peakv1a (); }
+    double peakv3 (void) const { return m_controls->m_controls->peakv3 (); }
+#endif
+
     void closeControls (void) 
     {
         m_controls->Close (true);
@@ -479,6 +501,18 @@ CcPanel::CcPanel (CtlFrame *parent) :
     m_sizer->Add (m_blue, 0,  wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, id++, _("Blue 80")),
                   0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_peak620 = new wxKnob (this, id++, 50, 0, 100);
+    m_sizer->Add (m_peak620, 0,  wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, id++, _("620 highpass weight 50")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_peakc19 = new wxKnob (this, id++, 100, 0, 100);
+    m_sizer->Add (m_peakc19, 0,  wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, id++, _("c19 lowpass weight 100")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_peak029 = new wxKnob (this, id++, 50, 0, 100);
+    m_sizer->Add (m_peak029, 0,  wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, id++, _("029 highpass weight 50")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
     m_620on = new wxCheckBox (this, wxID_ANY, _(""));
     m_620on->SetValue (true);
     m_sizer->Add (m_620on, 0,   wxLEFT | wxRIGHT, 8);
@@ -502,11 +536,15 @@ CcPanel::CcPanel (CtlFrame *parent) :
     m_sizer->Add (m_029on, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("029 highpass on")),
                   0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
-#if 0
+#if C1C4
     m_c1_a2 = new wxKnob (this, id++, 2000, 1400, 3055);
     m_sizer->Add (m_c1_a2, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, id++, _("V1A C1 2000")),
                   0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8); 
+    m_peakv1a = new wxKnob (this, id++, 50, 0, 100);
+    m_sizer->Add (m_peakv1a, 0,  wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, id++, _("v1a highpass weight 50")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
     m_v1aon = new wxCheckBox (this, wxID_ANY, _(""));
     m_sizer->Add (m_v1aon, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("V1A C1 on")),
@@ -514,6 +552,10 @@ CcPanel::CcPanel (CtlFrame *parent) :
     m_c4_a2 = new wxKnob (this, id++, 2000, 1400, 3055);
     m_sizer->Add (m_c4_a2, 0,   wxLEFT | wxRIGHT, 8);
     m_sizer->Add (new wxStaticText (this, id++, _("V3 C4 2000")),
+                  0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
+    m_peakv3 = new wxKnob (this, id++, 50, 0, 100);
+    m_sizer->Add (m_peakv3, 0,  wxLEFT | wxRIGHT, 8);
+    m_sizer->Add (new wxStaticText (this, id++, _("v3 highpass weight 50")),
                   0,  wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
     m_v3on = new wxCheckBox (this, wxID_ANY, _(""));
     m_sizer->Add (m_v3on, 0,  wxALL, 8);
@@ -579,7 +621,7 @@ void CcWindow::OnDraw (wxDC &dc)
     const double sigma = wxGetApp ().beamsize ();
     const double r029 = wxGetApp ().r1_029 ();
     const double c029 = wxGetApp ().c1_029 ();
-#if 0
+#if C1C4
     const double cv1a = wxGetApp ().c1_a2 ();
     const double cv3 = wxGetApp ().c4_a2 ();
 #endif
@@ -590,7 +632,7 @@ void CcWindow::OnDraw (wxDC &dc)
     const bool on620 = wxGetApp ().get620on ();
     const bool onc19 = wxGetApp ().getc19on ();
     const bool on029 = wxGetApp ().get029on ();
-#if 0
+#if C1C4
     const bool onv1a = wxGetApp ().getv1aon ();
     const bool onv3 = wxGetApp ().getv3on ();
 #endif
@@ -603,17 +645,19 @@ void CcWindow::OnDraw (wxDC &dc)
     i = stepcount (bw, height);
     
     const int rcfreq = STEPHZ * i;
+    printf ("iir freq %d\n", rcfreq);
+    
     RClow  x620 (470., 33.e-12, rcfreq), y620 (470., 33.e-12, rcfreq);
-    const double peak620 = .3;
+    const double peak620 = wxGetApp ().peak620 ();
     RClow  xc19 (6800., 22.e-12, rcfreq), yc19 (6800., 22.e-12, rcfreq);
-    const double peakc19 =.35;
+    const double peakc19 = wxGetApp ().peakc19 ();
     RClow  x029 (r029, c029, rcfreq), y029 (r029, c029, rcfreq);
-    const double peak029 = .1;
-#if 0
+    const double peak029 = wxGetApp ().peak029 ();
+#if C1C4
     RClow  xv1a (470., cv1a, rcfreq), yv1a (470., cv1a, rcfreq);
-    const double peakv1a = .2;
+    const double peakv1a = wxGetApp ().peakv1a ();
     RClow  xv3  (3900., cv3, rcfreq), yv3 (3900., cv3, rcfreq);
-    const double peakv3 = .16;
+    const double peakv3 = wxGetApp ().peakv3 ();
 #endif
 
     cg.SetStepCount (i);
@@ -633,7 +677,7 @@ void CcWindow::OnDraw (wxDC &dc)
         yc19.Reset ();
         x029.Reset ();
         y029.Reset ();
-#if 0
+#if C1C4
         xv1a.Reset ();
         yv1a.Reset ();
         xv3.Reset ();
@@ -679,7 +723,7 @@ void CcWindow::OnDraw (wxDC &dc)
                     y /= (1 + peak029);
 //                    printf ("%f %f  ", x, y);
                 }
-#if 0
+#if C1C4
                 if (onv1a)
                 {
                     x += xv1a.Step (x * peakv1a);
@@ -696,8 +740,10 @@ void CcWindow::OnDraw (wxDC &dc)
                     y /= (1 + peakv3);
                 }
 #endif
-//                printf ("%f %f\n", x, y);
-                
+#if 0
+                if (ch == 017 && repeats == 0)
+                    printf ("%f %f\n", x, y);
+#endif
                 on = delay.Flag ();
             }
             if (on)
@@ -753,6 +799,8 @@ void CcWindow::OnDraw (wxDC &dc)
         dc.Blit (cx, cy, xs,ys, &mdc, 0, 0, wxOR);
         mdc.SelectObject (wxNullBitmap);
     }
+    repeats++;
+    
 }
 
 void Chargen::SetStepCount (int n)
@@ -772,16 +820,16 @@ void Chargen::Start (int ch)
 
 double Chargen::Ramp (int step)
 {
-#if 1
+#if 0
     // Base case: linear ramp
     return 1.0;
-#elif 1
+#elif 0
     // Experiment: exponential decay to 2RC
     return m_stepcount * (exp (-2.0 * step / m_stepcount) - exp (-2.0 * (step + 1) / m_stepcount));
-#elif 1
+#elif 0
     // Experiment: exponential decay to 5RC
     return m_stepcount * (exp (-5.0 * step / m_stepcount) - exp (-5.0 * (step + 1) / m_stepcount));
-#elif 1
+#else
     // Experiment: drive with a step function (not a linear ramp)
     if (step == 0)
         return m_stepcount;
