@@ -290,19 +290,34 @@ entity rsflop is
 
 end rsflop;
 
-architecture beh of rsflop is
-  signal qi : std_logic;
-  signal qib : std_logic;
-begin  -- beh
+architecture gates of rsflop is
+  component g5
+    port (
+      a, b, c, d, e : in  std_logic;          -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  signal qi : std_logic := '0';
+  signal qib : std_logic := '1';
+begin  -- gates
 
-  qi <= '1' when s = '0' or s2 = '0' or s3 = '0' or s4 = '0' else
-        '0' when r = '0' or r2 = '0' or r3 = '0' or r4 = '0' else unaffected;
-  qib<= '0' when s = '0' or s2 = '0' or s3 = '0' or s4 = '0' else
-        '1' when r = '0' or r2 = '0' or r3 = '0' or r4 = '0' else unaffected;
-  q <= qi after t;
-  qb <= qib after t;
-        
-end beh;
+  u1 : g5 port map (
+    a => s,
+    b => s2,
+    c => s3,
+    d => s4,
+    e => qib,
+    y => qi);
+  u2 : g5 port map (
+    a => r,
+    b => r2,
+    c => r3,
+    d => r4,
+    e => qi,
+    y => qib);
+  q <= qi;
+  qb <= qib;
+
+end gates;
 
 
 library IEEE;
@@ -317,6 +332,41 @@ entity latch is
 
 end latch;
 
+architecture gates of latch is
+  component inv2
+    port (
+      a  : in  std_logic;                     -- input
+      y, y2 : out std_logic);                    -- output
+  end component;
+  component g2
+    port (
+      a, b : in  std_logic;                   -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  component rsflop
+    port (
+      s, r  : in  std_logic;                  -- set, reset
+      s2, s3, s4, r2, r3, r4  : in  std_logic := '1';-- extra set, reset if needed
+      q, qb : out std_logic);                 -- q and q.bar
+  end component;
+  signal t1, a, b : std_logic;
+begin  -- gates
+
+  u1 : inv2 port map (
+    a  => clk,
+    y  => a,
+    y2 => b);
+  u2 : g2 port map (
+    a => d,
+    b => b,
+    y => t1);
+  u3 : rsflop port map (
+    s  => t1,
+    r  => a,
+    q  => q,
+    qb => qb);
+
+end gates;
 architecture beh of latch is
   signal clki : std_logic;
   signal qi : std_logic;
