@@ -94,7 +94,7 @@ architecture behav of cdc_tb is
       w05_97 : in coaxsig;
       w05_98 : in coaxsig;
       w05_99 : in coaxsig;
-      w061_905 : in coaxsig;
+      w06_905 : in coaxsig;
       w06_90 : in coaxsig;
       w06_900 : in coaxsig;
       w06_901 : in coaxsig;
@@ -372,6 +372,7 @@ architecture behav of cdc_tb is
       w22_96 : out coaxsig;
       w22_97 : out coaxsig;
       w22_98 : out coaxsig;
+      w22_99 : out coaxsig;
       w23_90 : in coaxsig;
       w23_900 : in coaxsig;
       w23_901 : in coaxsig;
@@ -480,42 +481,6 @@ architecture behav of cdc_tb is
       w28_97 : in coaxsig;
       w28_98 : in coaxsig;
       w28_99 : in coaxsig;
-      w29_90 : in coaxsig;
-      w29_900 : in coaxsig;
-      w29_901 : in coaxsig;
-      w29_902 : in coaxsig;
-      w29_903 : in coaxsig;
-      w29_904 : in coaxsig;
-      w29_905 : in coaxsig;
-      w29_906 : out coaxsig;
-      w29_907 : out coaxsig;
-      w29_91 : in coaxsig;
-      w29_92 : in coaxsig;
-      w29_93 : in coaxsig;
-      w29_94 : in coaxsig;
-      w29_96 : in coaxsig;
-      w29_97 : in coaxsig;
-      w29_98 : in coaxsig;
-      w29_99 : in coaxsig;
-      w2_99 : out coaxsig;
-      w30_90 : out coaxsig;
-      w30_900 : out coaxsig;
-      w30_901 : out coaxsig;
-      w30_902 : out coaxsig;
-      w30_903 : out coaxsig;
-      w30_904 : out coaxsig;
-      w30_905 : out coaxsig;
-      w30_906 : out coaxsig;
-      w30_907 : out coaxsig;
-      w30_91 : out coaxsig;
-      w30_92 : out coaxsig;
-      w30_93 : out coaxsig;
-      w30_94 : out coaxsig;
-      w30_95 : out coaxsig;
-      w30_96 : out coaxsig;
-      w30_97 : out coaxsig;
-      w30_98 : out coaxsig;
-      w30_99 : out coaxsig;
       w31_90 : in coaxsig;
       w31_900 : in coaxsig;
       w31_901 : in coaxsig;
@@ -624,7 +589,9 @@ architecture behav of cdc_tb is
       w36_97 : out coaxsig;
       w36_98 : out coaxsig;
       w36_99 : out coaxsig;
-      w9_95 : in coaxsig);
+      w999_90 : in std_logic;
+      w999_91 : in std_logic;
+      w999_92 : in std_logic);
   end component;
   signal clk1 : std_logic := '1';        -- clock phase 1
   signal clk2, clk3, clk4 : std_logic := '0';  -- clock phase 2-4
@@ -700,7 +667,7 @@ architecture behav of cdc_tb is
   signal w05_97 : coaxsig := '0';
   signal w05_98 : coaxsig := '0';
   signal w05_99 : coaxsig := '0';
-  signal w061_905 : coaxsig := '0';
+  signal w06_905 : coaxsig := '0';
   signal w06_90 : coaxsig := '0';
   signal w06_900 : coaxsig := '0';
   signal w06_901 : coaxsig := '0';
@@ -978,6 +945,7 @@ architecture behav of cdc_tb is
   signal w22_96 : coaxsig := '0';
   signal w22_97 : coaxsig := '0';
   signal w22_98 : coaxsig := '0';
+  signal w22_99 : coaxsig := '0';
   signal w23_90 : coaxsig := '0';
   signal w23_900 : coaxsig := '0';
   signal w23_901 : coaxsig := '0';
@@ -1086,42 +1054,6 @@ architecture behav of cdc_tb is
   signal w28_97 : coaxsig := '0';
   signal w28_98 : coaxsig := '0';
   signal w28_99 : coaxsig := '0';
-  signal w29_90 : coaxsig := '0';
-  signal w29_900 : coaxsig := '0';
-  signal w29_901 : coaxsig := '0';
-  signal w29_902 : coaxsig := '0';
-  signal w29_903 : coaxsig := '0';
-  signal w29_904 : coaxsig := '0';
-  signal w29_905 : coaxsig := '0';
-  signal w29_906 : coaxsig := '0';
-  signal w29_907 : coaxsig := '0';
-  signal w29_91 : coaxsig := '0';
-  signal w29_92 : coaxsig := '0';
-  signal w29_93 : coaxsig := '0';
-  signal w29_94 : coaxsig := '0';
-  signal w29_96 : coaxsig := '0';
-  signal w29_97 : coaxsig := '0';
-  signal w29_98 : coaxsig := '0';
-  signal w29_99 : coaxsig := '0';
-  signal w2_99 : coaxsig := '0';
-  signal w30_90 : coaxsig := '0';
-  signal w30_900 : coaxsig := '0';
-  signal w30_901 : coaxsig := '0';
-  signal w30_902 : coaxsig := '0';
-  signal w30_903 : coaxsig := '0';
-  signal w30_904 : coaxsig := '0';
-  signal w30_905 : coaxsig := '0';
-  signal w30_906 : coaxsig := '0';
-  signal w30_907 : coaxsig := '0';
-  signal w30_91 : coaxsig := '0';
-  signal w30_92 : coaxsig := '0';
-  signal w30_93 : coaxsig := '0';
-  signal w30_94 : coaxsig := '0';
-  signal w30_95 : coaxsig := '0';
-  signal w30_96 : coaxsig := '0';
-  signal w30_97 : coaxsig := '0';
-  signal w30_98 : coaxsig := '0';
-  signal w30_99 : coaxsig := '0';
   signal w31_90 : coaxsig := '0';
   signal w31_900 : coaxsig := '0';
   signal w31_901 : coaxsig := '0';
@@ -1230,7 +1162,9 @@ architecture behav of cdc_tb is
   signal w36_97 : coaxsig := '0';
   signal w36_98 : coaxsig := '0';
   signal w36_99 : coaxsig := '0';
-  signal w9_95 : coaxsig := '0';
+  signal w999_90 : std_logic := '0';
+  signal w999_91 : std_logic := '0';
+  signal w999_92 : std_logic := '0';
 begin
    --  Component instantiation.
    uut: cdc6600 port map (clk1 => clk1,
@@ -1307,7 +1241,7 @@ begin
                           w05_97 => w05_97,
                           w05_98 => w05_98,
                           w05_99 => w05_99,
-                          w061_905 => w061_905,
+                          w06_905 => w06_905,
                           w06_90 => w06_90,
                           w06_900 => w06_900,
                           w06_901 => w06_901,
@@ -1585,6 +1519,7 @@ begin
                           w22_96 => w22_96,
                           w22_97 => w22_97,
                           w22_98 => w22_98,
+                          w22_99 => w22_99,
                           w23_90 => w23_90,
                           w23_900 => w23_900,
                           w23_901 => w23_901,
@@ -1693,42 +1628,6 @@ begin
                           w28_97 => w28_97,
                           w28_98 => w28_98,
                           w28_99 => w28_99,
-                          w29_90 => w29_90,
-                          w29_900 => w29_900,
-                          w29_901 => w29_901,
-                          w29_902 => w29_902,
-                          w29_903 => w29_903,
-                          w29_904 => w29_904,
-                          w29_905 => w29_905,
-                          w29_906 => w29_906,
-                          w29_907 => w29_907,
-                          w29_91 => w29_91,
-                          w29_92 => w29_92,
-                          w29_93 => w29_93,
-                          w29_94 => w29_94,
-                          w29_96 => w29_96,
-                          w29_97 => w29_97,
-                          w29_98 => w29_98,
-                          w29_99 => w29_99,
-                          w2_99 => w2_99,
-                          w30_90 => w30_90,
-                          w30_900 => w30_900,
-                          w30_901 => w30_901,
-                          w30_902 => w30_902,
-                          w30_903 => w30_903,
-                          w30_904 => w30_904,
-                          w30_905 => w30_905,
-                          w30_906 => w30_906,
-                          w30_907 => w30_907,
-                          w30_91 => w30_91,
-                          w30_92 => w30_92,
-                          w30_93 => w30_93,
-                          w30_94 => w30_94,
-                          w30_95 => w30_95,
-                          w30_96 => w30_96,
-                          w30_97 => w30_97,
-                          w30_98 => w30_98,
-                          w30_99 => w30_99,
                           w31_90 => w31_90,
                           w31_900 => w31_900,
                           w31_901 => w31_901,
@@ -1837,7 +1736,9 @@ begin
                           w36_97 => w36_97,
                           w36_98 => w36_98,
                           w36_99 => w36_99,
-                          w9_95 => w9_95);
+                          w999_90 => w999_90,
+                          w999_91 => w999_91,
+                          w999_92 => w999_92);
    --  This process does the real job.
    -- purpose: Read the test script and pass it to the UUT
    -- type   : combinational
@@ -1890,6 +1791,9 @@ begin
          end if;
        end loop;  -- i
        writeline (output, l);
+       w999_90 <= testdata (1);
+       w999_91 <= testdata (2);
+       w999_92 <= testdata (3);
        for i in 1 to d loop
          wait for 25 ns;
          if clk1 = '1' then

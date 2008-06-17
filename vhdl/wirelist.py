@@ -679,7 +679,9 @@ class ModuleInstance (object):
                         elif dir == "in":
                             # TEMP: tie half-connected inputs to idle
                             # if they are twisted pair, to outside if coax
-                            if stype == "coaxsig" or stype == "analog":
+                            if stype == "coaxsig" or \
+                                   stype == "analog" or \
+                                   "w" in w.name:
                                 clist.append ("    %s => %s" %
                                               (p, normname (w.name)))
                             else:
