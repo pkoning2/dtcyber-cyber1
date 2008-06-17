@@ -137,7 +137,7 @@ extern void windowInit(void);
 extern void windowClose(void);
 extern void windowSetKeyboardTrue (bool flag);
 extern int windowInput(void);
-extern void windowShowDisplay (void);
+extern void windowShowDisplay (bool erase);
 extern void windowSetX (int x);
 extern void windowSetY (int y);
 extern void windowSetMode (int mode);
@@ -202,7 +202,7 @@ int main (int argc, char **argv)
     if (argc > 0)
         {
         interval = strtod (argv[0], NULL);
-        if (interval < 0.02 || interval > 63.0)
+        if (interval != 0.0 && (interval < 0.02 || interval > 63.0))
             {
             fprintf (stderr, "interval value out of range\n");
             exit (1);
@@ -218,7 +218,7 @@ int main (int argc, char **argv)
     **  display interval selected.  Keep it under 100 ms
     **  for decent keyboard responsiveness.
     */
-    if (interval < 0.1)
+    if (interval != 0.0 && interval < 0.1)
         {
         readDelay = interval * 1000;
         }
@@ -333,9 +333,13 @@ int main (int argc, char **argv)
                         windowSetMode (data);
                         break;
                     case Dd60EndBlock:
-                        windowShowDisplay ();
+                        windowShowDisplay (TRUE);
                         break;
                         }
+                    }
+                if (interval == 0.0)
+                    {
+                    windowShowDisplay (FALSE);
                     }
                 }
             }

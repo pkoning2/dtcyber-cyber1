@@ -158,7 +158,7 @@ void windowInit(void);
 void windowClose(void);
 void windowSetKeyboardTrue (bool flag);
 int windowInput(void);
-void windowShowDisplay (void);
+void windowShowDisplay (bool erase);
 void windowSetX (int x);
 void windowSetY (int y);
 void windowSetMode (int mode);
@@ -540,7 +540,7 @@ int windowInput(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void windowShowDisplay (void)
+void windowShowDisplay (bool erase)
     {
     /*
     **  Output any pending data from the line buffer
@@ -555,9 +555,12 @@ void windowShowDisplay (void)
     /*
     **  Erase pixmap for next round.
     */
-    XSetForeground (disp, pgc, pbg);
-    XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
-    XSetForeground (disp, pgc, pfg);
+    if (erase)
+        {
+        XSetForeground (disp, pgc, pbg);
+        XFillRectangle (disp, pixmap, pgc, 0, 0, XSize, YSize);
+        XSetForeground (disp, pgc, pfg);
+        }
     }
 
 /*--------------------------------------------------------------------------
