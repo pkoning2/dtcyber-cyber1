@@ -30,7 +30,7 @@ chassis_list = [ None ] * 17
 curch = None
 curcnum = None
 ground = "ground"
-real_length = None     # simulate wire delay for wires this long, None to disable
+real_length = 60     # simulate wire delay for wires this long, None to disable
 
 module_types = { }
 coaxdict = { }
@@ -41,6 +41,7 @@ slotpat = re.compile (r"([a-r])(\d\d?)", re.I)
 chslotpat = re.compile (r"(\d\d?)([a-r])(\d\d?)", re.I)
 vhdlcommentpat = re.compile (r"--.*$")
 wiresplit = re.compile (r"([a-r]\d+)_(\d+)_([a-r]\d+)_(\d+)")
+gensplit = re.compile (r"([a-z]+)(\(.+?\))")
 
 curfile = ""
 curline = ""
@@ -212,12 +213,19 @@ class Chassis (object):
     def add_module (self, tname, name):
         """Add a module instance for slot 'name'.  Error if that slot
         already has something in it.  Mtype is the module type object.
+        If the module type has generic parameters (like the "synchro" type),
+        those are given in parentheses directly after the type name.
         """
         if name in self.modules:
             error ("Slot %s already assigned" % name)
             mi = self.modules[name]
         else:
-            mi = self.modules[name] = ModuleInstance (self.num, name, tname)
+            m = gensplit.match (tname)
+            if m:
+                tname, gparms = m.groups ()
+            else:
+                gparms = ""
+            mi = self.modules[name] = ModuleInstance (self.num, name, tname, gparms)
         return mi
 
     def portlist (self):
@@ -476,8 +484,19 @@ class ModuleType (object):
             if l and not entpat.search (l):
                 continue
             break
+        self.generic = [ ]
+        ingeneric = False
         while True:
             l = v.readline ()
+            if l and l.strip ().startswith ("generic"):
+                self.generic.append (l)
+                ingeneric = True
+                continue
+            if l and ingeneric:
+                self.generic.append (l)
+                if ")" in l:
+                    ingeneric = False
+                continue
             if l and not l.strip ().startswith ("port"):
                 continue
             break
@@ -519,7 +538,7 @@ class ModuleType (object):
                 pdir, stype = self.pins[p]
                 if pdir == d:
                     portlist.append ("      %s : %s %s" % (p, pdir, stype))
-        return "    port (\n%s);\n" % ";\n".join (portlist)
+        return "%s    port (\n%s);\n" % ("".join (self.generic), ";\n".join (portlist))
 
 none30 = [ None ]  * 31
 class Connector (object):
@@ -593,13 +612,14 @@ class Connector (object):
 class ModuleInstance (object):
     """An instance of a ModuleType (living in some slot in some chassis)
     """
-    def __init__ (self, ch, name, tname):
+    def __init__ (self, ch, name, tname, gparms = ""):
         """name is the slot name.
         """
         self.chassis = ch
         self.name = name
         self.tname = tname
         self.Type = get_module_type (tname)
+        self.gparms = gparms
         self.connectors = [ ]
 
     def add_connector (self, c):
@@ -612,6 +632,10 @@ class ModuleInstance (object):
         """Return a component invocation (port map) mapping the
         connected pins of this module instance to the wire signal names.
         """
+        if self.gparms:
+            gmap = "generic map %s\n    " % self.gparms
+        else:
+            gmap = ""
         clist = [ ]
         dlist = [ ]  # wire delays
         plist = self.Type.pins.keys ()
@@ -674,7 +698,7 @@ class ModuleInstance (object):
                             clist.append ("    %s => zero" % p)
                         else:
                             clist.append ("    %s => one" % p)
-        return "  %s : %s port map (\n%s);\n%s" % (self.name, self.Type.name, ",\n".join (clist), "".join (dlist))
+        return "  %s : %s %s port map (\n%s);\n%s" % (self.name, self.Type.name, gmap, ",\n".join (clist), "".join (dlist))
     
 def process_file (f):
     global curch, curcnum
@@ -703,7 +727,7 @@ def process_file (f):
             module = curch.add_module (mt, slot)
             c = Connector (slot, module)
             module.add_connector (c)
-            if mt == "mem" or mt == "synchro":
+            if mt == "mem" or mt.startswith ("synchro"):
                 c.read_pins (f, 30)
                 slot2 = getline (f)
                 slotid = get_chslot (slot2)

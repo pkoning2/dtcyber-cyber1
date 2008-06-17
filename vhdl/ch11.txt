@@ -1,5 +1,5 @@
 # "Chassis 11" -- stuff for simulation (there is no real chassis 11)
-SYNCHRO	   11A1
+SYNCHRO(0)	   11A1
 1	   W13	90
 2	   W13	91
 3	   W13	92
