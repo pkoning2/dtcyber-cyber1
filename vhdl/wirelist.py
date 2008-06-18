@@ -2,7 +2,7 @@
 
 """Process CDC 6600 wiring list
 
-By Paul Koning and Dave Redell
+By Paul Koning, Dave Redell, Al Kossow
 """
 
 import re
@@ -13,7 +13,7 @@ header = """--------------------------------------------------------------------
 --
 -- CDC 6600 model
 --
--- Authors: Paul Koning, Dave Redell
+-- Authors: Paul Koning, Dave Redell, Al Kossow
 --
 -- Based on the original design by Seymour Cray and his team
 --

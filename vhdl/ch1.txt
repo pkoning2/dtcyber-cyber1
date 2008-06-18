@@ -1,3 +1,8 @@
+#
+# Scanned from 63019800A_Chassis_Tabs_01_Mar65.pdf
+# first part from Dave Redell, rest from the scan
+# supplied on bitsavers.org by Al Kossow
+#
 MEM	1A1
 1	C3	2	11
 2	C7	23	13

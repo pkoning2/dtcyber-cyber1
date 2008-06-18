@@ -1,3 +1,7 @@
+#
+# Scanned from 63016700A_6600_Chassis_Tabs_12_Apr65.pdf
+# as supplied on bitsavers.org by Al Kossow
+#
 QI	12A01
 1
 2

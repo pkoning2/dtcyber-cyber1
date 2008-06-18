@@ -2,7 +2,7 @@
 --
 -- Test bed for misc tests
 --
--- Authors: Paul Koning, Dave Redell
+-- Authors: Paul Koning, Dave Redell, Al Kossow
 --
 -- Based on the original design by Seymour Cray and his team
 --
