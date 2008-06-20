@@ -21,23 +21,35 @@ standard terminology is NAND (and not).
 The common entities in cyberdefs.vhd are:
 
 1. inv -- an inverter.
+
 2. inv2 -- two inverters in series.  CDC uses that for fanout
    (or perhaps for delay).  Both stages are provided as outputs.
+
 3. g2 through g6 -- 2 to 6 input NAND gates.  A second output, which
-   is the first output inverted, is also provided.
+   is the first output inverted, is also provided; this makes the
+   module descriptions a lot more compact because "gate plus inverter"
+   is a common sequence in many places.
+
 4. rsflop -- an RS flip-flop with up to 5 set and clear inputs,
    '0' is active.  These are shown in the CDC diagrams as
-   cross-coupled gates, but attempting to model them that way
-   creates oscilations and other messy things in the simulation.
+   cross-coupled gates.  Currently it is modeled that way, even though
+   that produces some initial oscillations in the simulation when both
+   R and S deassert at the same time.
+
 5. latch -- a level-enabled latch (D flop).  This corresponds to
    the CDC RS flop with a clear-set network (two inverters in a 
    row, first inverter tied to the clear input, second gates the
-   data input).  Again, trying to model the CDC diagram exactly
-   is messy.  Also, modeling it as a latch is likely to give
-   a better synthesis.  The behavior is not exactly the same;
-   the CDC diagram has a glitch in it, and the Q and Qbar outputs
-   are not changing at the same time.  But those oddities are
-   not really interesting.
+   data input).  As with the rsflop, this is currently modeled as
+   drawn.  For implementation in a real FPGA, we'll presumably want to
+   model it as a standard flip-flop instead.  (It would want to be an
+   edge-triggered flip flop, triggering on the falling edge of the
+   clock; that most closely matches what the original does.)  For now
+   I haven't done that, because it appears that in some spots it may
+   make a difference.  (Maybe not; there may have been mistakes
+   elsewhere in my test runs.  Much of the 6600 design is rather
+   insensitive to timing details, but occasionally there is a
+   surprise.)
+
 6. cxdriver -- a coax driver.  In the CDC drawings, the driver
    is electrically non-inverting but logically inverting, because
    a positive-going pulse is a '1' on the coax but a '0' elsewhere.
@@ -45,8 +57,20 @@ The common entities in cyberdefs.vhd are:
    (and receiver) as inverters, so the logic level waveforms are
    consistent.  The full delay of a coax link (driver, cable,
    receiver) is modeled as a delay in cxdriver.
+
 7. cxreceiver -- a coax receiver.  This is just an inversion to
    match the different logic conventions.
+
+8. wire -- this models the delay of a wire of given length (in
+   inches).  As mentioned above, for the most part it isn't necessary
+   to model wire delays, and attempting to do so across the board
+   makes the simulation absurdly slow.  But it turns out to be
+   necessary to model a few wires; if a wire is longer than 50 inches
+   or so, it tends to matter.  The wirelist processor has a threshold
+   length (set as a defined constant near the top of the code); any
+   wire shorter than that is just handled as a directly connected
+   signal, but any wire longer than the threshold setting is modeled
+   via a wire entity.  Currently the threshold is set to 60. 
 
 Other things defined in cyberdefs.vhd:
 
@@ -57,9 +81,18 @@ Other things defined in cyberdefs.vhd:
    stage delays at every stage.  More likely some explicit delays
    will be needed in a few places if that is done, but hopefully
    only a very few.
+
 2. coaxsig -- a subtype of std_logic used to identify coax pins
    as opposed to twisted pair pins.  (Twisted pair is std_logic.)
    The wirelist processor uses this to check correct pin assignment.
+
+3. analog and misc -- two other types.  "misc" is for things that show
+   up in the module schematics that don't seem to relate to anything
+   -- jumpers, or resistor networks such as in the PU module (those
+   are probably for the margin setting circuitry for memory
+   margining).  In general "misc" signals show up in the wire list but
+   don't go anywhere.  "analog" is used for the AF module output,
+   which is the character shape signal from 6612 to dd60.
 
 Modules
 
@@ -71,10 +104,10 @@ it makes more sense to write behavioral models, but the goal is to
 make the relationship between the model and the original design clear,
 so the schematic approach is best.
 
-All module pins must be "in" or "out" -- no "inout".  The wirelist
-processor uses this to check correct wiring (in to out).  Coax pins
-(double circle symbol) must be type "coaxsig"; other pins are
-"std_logic". 
+All module pins (for std_logic and coaxsig type signals) must be "in"
+or "out" -- no "inout".  The wirelist processor uses this to check
+correct wiring (in to out).  Coax pins (double circle symbol) must be
+type "coaxsig"; other pins are "std_logic".
 
 Some modules have pins connected to pullup resistors.  Those are
 modeled as output pins with the output signal explicitly set to '0'.
@@ -93,10 +126,10 @@ goes with.  There needs to be a matching device in the [vhdl] section
 of the cyber.ini file -- that will be the simulated device connected
 to this synchronizer.
 
-As with mem.vhd, synchro.vhd has two connectors (19-pin connectors in
-this case since coax has 19 wires in it): the first connector is for
-the input cable, and the second for the output cable.  Pin numbers
-101-119 are used on the output connector.
+As with mem.vhd, synchro.vhd has two 30-pin connectors (only the first
+19 pins are used on each connectors since coax has 19 wires in it):
+the first connector is for the input cable, and the second for the
+output cable.  Pin numbers 101-119 are used on the output connector.
 
 Wire list format
 
@@ -108,27 +141,30 @@ are shown (the other two are power/ground).
 
 Connections come in two basic forms: twisted pair, and coax.  Twisted
 pair is given as the destination module (like "C21"), the destination
-pin, and the length (in xxx units).  Coax is given as the cable id
+pin, and the length (in inches).  Coax is given as the cable id
 (like "W02") and the wire in the cable (like "902").  Coax wire IDs
 are 90 through 99 and 900 through 908 -- 19 wires per cable total.
 
 A special case is destination pin "X" instead of a pin number.  That
-is a ground (logic 1); the destination slot is always the current
-slot, and the length is 2.  In the wirelist originals, the length is
-sometimes omitted.
+is a ground (logic 1); the destination slot varies in the original
+(the current slot, or "GOOD", "GND", "GRD"), and the length is 2.  In
+the wirelist originals, the length is sometimes omitted.
 
 For memory, the power and ground connections are shown explicitly
 (CB1, CB2, CB3, "+6 BUS").  For other modules they are omitted.
 
 Each module in the wire list begins with a line that is the module
-type and slot, like this:  "PX 1I25".  The leading number on the slot
+type and slot, like this: "PX 1I25".  The leading number on the slot
 is the chassis number.  Module type is the two-letter code or "MEM"
 for memory.  That line is followed by the pin list (30 lines for
-memory, 28 otherwise).  For memory, this is followed by a second
-connector section with just a slot id (no module type) and another 30
-pins -- those are the second connector.
+memory and synchro, 28 otherwise).  For memory and synchro, this is
+followed by a second connector section with just a slot id (no module
+type) and another 30 pins -- those are the second connector.
 
 The wirelist checker verifies that a connection from a to b is paired
 with the same wire from b to a.  It doesn't check that the length is
 given the same in both places, because the original wirelists have
-substantial numbers of inconsistencies there.
+substantial numbers of inconsistencies there.  Wire length modeling is
+done based on the larger of the two length values given in the
+wirelist.
+
