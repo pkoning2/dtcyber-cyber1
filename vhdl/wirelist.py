@@ -8,6 +8,7 @@ By Paul Koning, Dave Redell, Al Kossow
 import re
 import sys
 import traceback
+import getopt
 
 header = """-------------------------------------------------------------------------------
 --
@@ -757,14 +758,24 @@ def process_list (name):
     process_file (f)
 
 if __name__ == "__main__":
-    if len (sys.argv) < 2:
+    topname = "cdc6600"
+    opts, args = getopt.getopt (sys.argv[1:], "t:")
+    if len (args) < 1:
         print "usage: %s wirelist [ wirelist ... ]" % sys.argv[0]
         sys.exit (1)
-    for f in sys.argv[1:]:
+    for opt, val in opts:
+        if opt == "-t":
+            # top level filename (default: "cdc6600")
+            if val == "-":
+                topname = None
+            else:
+                topname = val
+    for f in args:
         process_list (f)
-    f = open ("cdc6600.vhd", "w")
-    top_vhdl (f)
-    f.close ()
+    if topname:
+        f = open ("%s.vhd" % topname, "w")
+        top_vhdl (f)
+        f.close ()
     for ch in chassis_list:
         if ch is None:
             continue
