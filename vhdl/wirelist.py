@@ -366,26 +366,57 @@ class Chassis (object):
             print >> f, c.portmap ()
         print >> f, "end modules;"
 
-    def print_modmap (self, f, sep = ""):
+    def print_modmap (self, f):
         """Print the module layout.
         """
         modmap = [ ]
+        modname = [ ]
+        empty = '<td bgcolor="#909090">'
         for r in xrange (18):
-            modmap.append (list (["--"] * 43))
-            modmap[r][0] = chr (r + 65)
+            modname.append ([ "" ] * 42)
         for m, i in self.modules.iteritems ():
             r = ord (m[0]) - 97
-            c = int (m[1:])
-            modmap[r][c] = i.tname
+            c = int (m[1:]) - 1
+            modname[r][c] = i.tname
         for r in xrange (18):
+            modmap.append ([ "<td><b>%s</b>" % chr (r + 65) ])
             curmod = ""
-            for m in xrange (1, 43):
-                if modmap[r][m] == curmod and curmod != "--":
-                    modmap[r][m] = ""
+            repeats = 0
+            for m in xrange (43):
+                if m < 42 and modname[r][m] == curmod and curmod != "":
+                    repeats += 1
                 else:
-                    curmod = modmap[r][m]
-            modmap[r] = sep.join (modmap[r])
-        print >> f, "\n".join (modmap)
+                    if curmod == "":
+                        # Previous was empty
+                        if repeats:
+                            modmap[r].append (empty)
+                    else:
+                        modmap[r].append ("<td colspan=%d align=left>%s" % (repeats, curmod))
+                    if m < 42:
+                        repeats = 1
+                        curmod = modname[r][m]
+            modmap[r] = "".join (modmap[r])
+        print >> f, """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Chassis %d module map</title>
+  </head>
+
+  <body>
+    <h1>Chassis %d module map</h1>
+    <table border=1 cellspacing=0 cellpadding=2>
+    <tr align=center><th>
+""" % (self.num, self.num)
+        for i in xrange (42):
+            print >> f, "<th>%d" % (i + 1)
+        print >> f, "</tr>\n<tr>"
+        print >> f, "</tr>\n<tr>".join (modmap)
+        print >> f, """
+      </tr>
+    </table>
+  </body>
+</html>
+"""
         
 def top_vhdl (f):
     """Print the top-level VHDL for the whole system.  This is the
@@ -782,8 +813,8 @@ if __name__ == "__main__":
         f = open ("%s.vhd" % ch.name, "w")
         ch.print_vhdl (f)
         f.close ()
-        f = open ("%s.csv" % ch.name, "w")
-        ch.print_modmap (f, ",")
+        f = open ("%s.html" % ch.name, "w")
+        ch.print_modmap (f)
         f.close ()
     wl = warnpins.keys ()
     wl.sort ()
