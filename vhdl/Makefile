@@ -28,8 +28,8 @@ OPTIMIZE ?=
 cdc_tb:	$(OBJS)
 	ghdl -e $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
 
-cdc_tb2:	$(filter-out cdc_tb.o,$(OBJS)) cdc_tb2.o
-	ghdl -e $(addprefix $(LINKSWITCH),$(filter-out cdc_tb2.o $(VOBJS),$+) $(FLIBS))  cdc_tb2
+cdc_tb2:	$(filter-out cdc_tb.o,$(OBJS)) cdc_tb2.o chassis12.o
+	ghdl -e $(addprefix $(LINKSWITCH),$(filter-out cdc_tb2.o chassis12.o $(VOBJS),$+) $(FLIBS))  cdc_tb2
 
 cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
 	ghdl -a $<

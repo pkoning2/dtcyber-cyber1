@@ -405,5 +405,8 @@ architecture beh of wire is
 begin  -- beh
 
   o <= transport i after idelay;
+  -- What a hack... modeling a (long) wire as an unconditional
+  -- 5 ns delay doubles the speed of the GHDL simulator
+  --o <= i after t;
 
 end beh;
