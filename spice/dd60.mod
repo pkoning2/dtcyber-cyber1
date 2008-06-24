@@ -29,9 +29,11 @@ v2k v2k 0 2kv
 *
 vref vref 0 5v
 eplus v1 0 vctrl 0 1
-eminus vref v2 vctrl 0 -1
-t1 v1 0 in1 0 z0=75 td=2ns
-t2 v2 0 in2 0 z0=75 td=2ns
+eminus v2 vref 0 vctrl 1
+r1 v1 0 75
+r2 v2 0 75
+t1 v1 0 in1 0 z0=75 td=25ns
+t2 v2 0 in2 0 z0=75 td=25ns
 *
 * Test signal
 *
@@ -40,5 +42,5 @@ vctrl vctrl 0 pwl(0 0 100ns 0 105ns 2 200ns 2 205ns 0 300ns 0)
 *** Run the test
 *
 .tran 2ns 300ns
-.save vctrl in1 in2 def1 def2
+*.save vctrl in1 in2 def1 def2
 .end
