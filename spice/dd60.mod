@@ -6,6 +6,9 @@
 .include a2.mod
 .include a6.mod
 .include a7.mod
+.include af.mod
+.include diff.mod
+*
 *
 xa6 in1 in2 in3 in4 a6c1a a6c1b a6c2a a6c2b a6out1 a6out2 a6out3 a6out4 vcc vee a6
 c16 a6c1a a6c1b 100pF
@@ -30,16 +33,19 @@ ey 0 y def3 def4 1
 *
 vcc vcc 0 20v
 vee 0 vee 20v
+v6 v6 0 6v
 v600 v600 0 600v
 v2k v2k 0 2kv
 *
-* connection to 6612
+* 6612 D/A output
 *
-vref vref 0 5v
-ex1 x1 0 vx 0 1
-ex2 x2 vref 0 vx 1
-ey1 y1 0 vx 0 1
-ey2 y2 vref 0 vx 1
+xafx ix1 ix2 ix3 ix4 ix5 ix6 x1 v6 af
+xafxb bx1 bx2 bx3 bx3 bx5 bx6 x2 v6 af
+xafy iy1 iy2 iy3 iy4 iy5 iy6 y1 v6 af
+xafyb by1 by2 by3 by3 by5 by6 y2 v6 af
+*
+* cable from 6612
+*
 r1 x1 0 75
 r2 x2 0 75
 r3 y1 0 75
@@ -54,10 +60,38 @@ t2 x2a 0 in2 0 z0=75 td=112ns
 t3 y1a 0 in3 0 z0=75 td=112ns
 t4 y2a 0 in4 0 z0=75 td=112ns
 *
-* Test signal
+* Test signals
 *
-vx vx 0 pwl(0ns 0 10ns 0 15ns 2 110ns 2 115ns 0 210ns 0)
-vy vy 0 pwl(0ns 1 10ns 1 15ns 2 110ns 2 115ns 0 210ns 0)
+* Control signals: 0 and 1 for logic level inputs to AF modules
+*
+vx1 vx1 0 pwl(0ns 0 10ns 0 15ns 1 110ns 1 115ns 0 210ns 0)
+vx2 vx2 0
+vx3 vx3 0
+vx4 vx4 0
+vx5 vx5 0
+vx6 vx6 0
+*
+vy1 vy1 0 pwl(0ns 1 10ns 1 15ns 0 110ns 0 115ns 0 210ns 0)
+vy2 vy2 0
+vy3 vy3 0
+vy4 vy4 0
+vy5 vy5 0
+vy6 vy6 0
+*
+* Generate true and complement signals for the AF modules
+*
+xx1 vx1 ix1 bx1 diff
+xx2 vx2 ix2 bx2 diff
+xx3 vx3 ix3 bx3 diff
+xx4 vx4 ix4 bx4 diff
+xx5 vx5 ix5 bx5 diff
+xx6 vx6 ix6 bx6 diff
+xy1 vy1 iy1 by1 diff
+xy2 vy2 iy2 by2 diff
+xy3 vy3 iy3 by3 diff
+xy4 vy4 iy4 by4 diff
+xy5 vy5 iy5 by5 diff
+xy6 vy6 iy6 by6 diff
 *
 *** Run the test
 *
