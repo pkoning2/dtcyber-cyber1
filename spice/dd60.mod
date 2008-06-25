@@ -11,23 +11,35 @@
 *
 *
 xa6 in1 in2 in3 in4 a6c1a a6c1b a6c2a a6c2b a6out1 a6out2 a6out3 a6out4 vcc vee a6
-c16 a6c1a a6c1b 100pF
-c26 a6c2a a6c2b 100pF
+* c1/c2 : 10 to 100
+*c16 a6c1a a6c1b 100pF
+*c26 a6c2a a6c2b 100pF
+c16 a6c1a a6c1b 40pF
+c26 a6c2a a6c2b 40pF
 *
 xa7 a6out1 a6out2 a6out3 a6out4 a7c1a a7c1b a7c2a a7c2b a7out1 a7out2 a7out3 a7out4 vcc vee a7
+* c1/c2: 110 to 580
 c17 a7c1a a7c1b 580pF
 c27 a7c2a a7c2b 580pF
+*c17 a7c1a a7c1b 250pF
+*c27 a7c2a a7c2b 250pF
 *
 xa2x a7out1 a7out2 c1a c1b c4a c4b def1 def2 v600 v2k a2
-c1 c1a c1b 3055pF
-c4 c4a c4b 300pF
+* c1/c2: 1400 to 3055
+* c3/c4: 55 to 300
+*c1 c1a c1b 3055pF
+*c4 c4a c4b 300pF
+c1 c1a c1b 1000pF
+c4 c4a c4b 100pF
 xa2y a7out3 a7out4 c2a c2b c3a c3b def3 def4 v600 v2k a2
-c2 c2a c2b 3055pF
-c3 c3a c3b 300pF
+*c2 c2a c2b 3055pF
+*c3 c3a c3b 300pF
+c2 c2a c2b 1000pF
+c3 c3a c3b 100pF
 *
 * Make single ended output for ease of interpretation
-ex 0 x def1 def2 1
-ey 0 y def3 def4 1
+ex 0 x def2 def1 1
+ey 0 y def4 def3 1
 *
 * supplies
 *
@@ -64,19 +76,7 @@ t4 y2a 0 in4 0 z0=75 td=112ns
 *
 * Control signals: 0 and 1 for logic level inputs to AF modules
 *
-vx1 vx1 0 pwl(0ns 0 10ns 0 15ns 1 110ns 1 115ns 0 210ns 0)
-vx2 vx2 0
-vx3 vx3 0
-vx4 vx4 0
-vx5 vx5 0
-vx6 vx6 0
-*
-vy1 vy1 0 pwl(0ns 1 10ns 1 15ns 0 110ns 0 115ns 0 210ns 0)
-vy2 vy2 0
-vy3 vy3 0
-vy4 vy4 0
-vy5 vy5 0
-vy6 vy6 0
+.include vctrl.mod
 *
 * Generate true and complement signals for the AF modules
 *
@@ -95,6 +95,6 @@ xy6 vy6 iy6 by6 diff
 *
 *** Run the test
 *
-.tran 2ns 600ns
+.tran 2ns 1100ns
 *
 .end
