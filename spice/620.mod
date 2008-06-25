@@ -1,7 +1,5 @@
 * NGSpice model -- 620 module for dd60
 .subckt 620 in1 in2 out1 out2 vcc vee
-C1       0 vee .01uF
-C2       vcc 0 .01uF
 C3       n5 n4 33pF
 C4       n13 n12 33pF
 d1       n7 0 mz56
