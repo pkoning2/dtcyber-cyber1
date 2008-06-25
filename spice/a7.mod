@@ -13,7 +13,6 @@
 xm2 in1 in2 in3 in4 039
 *
 xm1 in1 in2 c1a c1b m1p4 m1p10 vcc vee 029
-c1 c1a c1b 580pF
 *
 xm4 m1p4 m1p10 out1 out2 vcc vee 040
 *
