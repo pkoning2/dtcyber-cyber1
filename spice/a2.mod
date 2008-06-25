@@ -1,7 +1,7 @@
 * NGSpice model -- A2 chassis for dd60
 .subckt a2 in1 in2 c1a c1b c4a c4b out1 out2 v600 v2k
-R1       0 in1 1M
-R2       0 in2 1M
+R1       0 in1 1Meg
+R2       0 in2 1Meg
 R3       n6 v600 40k
 R4       0 n1 1500
 R5       n2 v600 40k
