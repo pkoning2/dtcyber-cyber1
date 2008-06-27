@@ -19,10 +19,10 @@ c26 a6c2a a6c2b 40pF
 *
 xa7 a6out1 a6out2 a6out3 a6out4 a7c1a a7c1b a7c2a a7c2b a7out1 a7out2 a7out3 a7out4 vcc vee a7
 * c1/c2: 110 to 580
-c17 a7c1a a7c1b 580pF
-c27 a7c2a a7c2b 580pF
-*c17 a7c1a a7c1b 250pF
-*c27 a7c2a a7c2b 250pF
+*c17 a7c1a a7c1b 580pF
+*c27 a7c2a a7c2b 580pF
+c17 a7c1a a7c1b 10pF
+c27 a7c2a a7c2b 10pF
 *
 xa2x a7out1 a7out2 c1a c1b c4a c4b def1 def2 v600 v2k a2
 * c1/c2: 1400 to 3055
@@ -95,6 +95,6 @@ xy6 vy6 iy6 by6 diff
 *
 *** Run the test
 *
-.tran 2ns 1100ns
+.tran 2ns 1500ns
 *
 .end
