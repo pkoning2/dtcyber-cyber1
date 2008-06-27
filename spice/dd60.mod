@@ -95,6 +95,6 @@ xy6 vy6 iy6 by6 diff
 *
 *** Run the test
 *
-.tran 2ns 1500ns
+.tran 2ns 2800ns
 *
 .end

@@ -14,7 +14,7 @@ void sig (FILE *f, int ch, int xy)
     for (v = 1; v <= 6; v++)
     {
         prev = -1;
-        coord = xy ? 'x' : 'y';
+        coord = xy ? 'y' : 'x';
         fprintf (f, "v%c%d v%c%d 0 pwl (", coord, v, coord, v);
         for (i = 0; i < 28; i++)
         {
