@@ -36,6 +36,7 @@ real_length = 60     # simulate wire delay for wires this long, None to disable
 module_types = { }
 coaxdict = { }
 warnpins = { }
+connections = { }
 
 portpat = re.compile (r"\s*([\w\s,]+):\s*(in|out|inout)\s+(std_logic|coaxsig|analog|misc)\s*(?:\:=\s'.')?(\))?\s*;", re.I)
 slotpat = re.compile (r"([a-r])(\d\d?)", re.I)
@@ -86,6 +87,10 @@ def chslotname (slot):
     return "%d%s%d" % slot
 
 def get_wire (name, slot, pin, wlen = 0):
+    try:
+        name = connections[name]
+    except KeyError:
+        pass
     to = (slot, pin)
     try:
         w = curch.wires[name]
@@ -95,6 +100,10 @@ def get_wire (name, slot, pin, wlen = 0):
     return w
 
 def get_coax (name, slot, pin):
+    try:
+        name = connections[name]
+    except KeyError:
+        pass
     to = (slot, pin)
     try:
         w = coaxdict[name]
@@ -462,7 +471,7 @@ def top_vhdl (f):
         c, p = wire.ends[0]
         wt = c.pindef (p)
         dir, stype = wt
-        print >> f, "  signal %s : %s;" % (w, stype)
+        print >> f, "  signal %s : %s;" % (normname (w), stype)
     print >> f, "begin -- chassis"
     for ch in chassis_list:
         if ch is None:
@@ -741,6 +750,10 @@ def process_file (f):
         l = getline (f)
         if not l:
             break
+        if l.lower ().startswith ("connect"):
+            kw, fr, to = l.split ()
+            connections[fr] = to
+            continue
         try:
             mt, slot = l.split ()
             slotid = get_chslot (slot)

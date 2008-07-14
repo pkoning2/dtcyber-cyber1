@@ -302,7 +302,7 @@ begin
            w_12w2_906 <= '0';
            w_12w2_907 <= '0';
          end if;
-         if clk2 = '1' then
+         if clk3 = '1' then
            w_12w1_90 <= oc(1);
            w_12w1_91 <= oc(2);
            w_12w1_92 <= oc(3);
