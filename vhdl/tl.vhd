@@ -52,7 +52,7 @@ begin  -- gates
   p12 <= t1;
   u2 : g3 port map (
     a => p2,
-    b => t4,
+    b => p4,
     c => p6,
     y => t2);
   tp2 <= t2;
