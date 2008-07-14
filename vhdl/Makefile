@@ -44,6 +44,9 @@ cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
 cdc6600.vhd ${CHASSIS_V} : ${CHASSIS_SRCS}
 	python wirelist.py ${CHASSIS_SRCS}
 
+chassis12.vhd : chassis12.wlist
+	python wirelist.py -t - chassis12.wlist
+
 $(VLIB): cyberdefs.vhd
 	ghdl -a $<
 
