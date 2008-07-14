@@ -25,15 +25,11 @@ entity afslice is
 end afslice;
 
 architecture beh of afslice is
-
-begin  -- beh
-  -- purpose: D/A conversion
-  -- type   : combinational
-  -- inputs : a, b, c, d, e, f
-  -- outputs: q
-  ad: process (a, b, c, d, e, f)
+  function dtoa (
+    a, b, c, d, e, f : std_logic)       -- inputs
+    return integer is
     variable acc : integer;
-  begin  -- process ad
+  begin  -- dtoa
     acc := 0;
     if a = '1' then
       acc := acc + 1;
@@ -53,9 +49,10 @@ begin  -- beh
     if f = '1' then
       acc := acc + 1;
     end if;
-    q <= TO_UNSIGNED (acc, 3);
-  end process ad;
-
+    return acc;
+  end dtoa;
+begin  -- beh
+  q <= TO_UNSIGNED (dtoa (a, b, c, d, e, f), 3);
 end beh;
 
 
