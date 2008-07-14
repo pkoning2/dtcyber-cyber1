@@ -289,7 +289,7 @@ begin
        writeline (output, l);
        for i in 1 to d loop
          wait for 25 ns;
-         if clk1 = '1' then
+         if clk2 = '1' then
            w_12w2_906 <= '1';
            ten := ten + 1;
            if ten > 9 then
