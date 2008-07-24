@@ -333,6 +333,30 @@ static DecCpControl cpDecode[0100] =
     { Cijk,       "SX%o   B%o-B%o",       RXBB }, // 77
     };
 
+/*--------------------------------------------------------------------------
+**  Purpose:        18 bit ones-complement addition with subtractive adder
+**
+**  Parameters:     Name        Description.
+**                  op1         18 bit operand1
+**                  op2         18 bit operand2
+**
+**  Returns:        18 bit result.
+**
+**------------------------------------------------------------------------*/
+static INLINE u32 cpuAdd18(u32 op1, u32 op2)
+    {
+    u32 acc18;
+
+    acc18 = (op1 & Mask18) - (~op2 & Mask18);
+    if ((acc18 & Overflow18) != 0)
+        {
+        acc18 -= 1;
+        acc18 &= Mask18;
+        }
+
+    return(acc18);
+    }
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -751,8 +775,9 @@ void traceCpu(CpuContext *activeCpu,
             {
             fprintf(cpuTF[cpuNum], "B%d=%06o    ", opJ, activeCpu->regB[opJ]);
             }
-        fprintf(cpuTF[cpuNum], "A0=%06o    X0=" FMT60_08o " (" FMT60_08o ") ",
+        fprintf(cpuTF[cpuNum], "A0=%06o    X0=" FMT60_08o " (%06o " FMT60_08o ") ",
                 activeCpu->regA[0], activeCpu->regX[0] & 077777777,
+                cpuAdd18 (activeCpu->regB[opJ], activeCpu->opAddress),
                 (activeCpu->regX[0] & 077777777) + activeCpu->regRaEcs);
         break;
 
@@ -786,7 +811,7 @@ void traceCpu(CpuContext *activeCpu,
         */
         dumpCpuMem (cpuTF[cpuNum], 
                     activeCpu->regA[0], 
-                    activeCpu->regA[0] + activeCpu->regB[opJ] + opAddress,
+                    activeCpu->regA[0] + cpuAdd18 (activeCpu->regB[opJ], opAddress),
                     activeCpu->regRaCm);
         }
     }

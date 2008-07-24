@@ -14,6 +14,51 @@ return(opl)
 */ **/---   block=01-e opl2              83/09/22. 20.24    source
 *oplfile opl2
 */
+*/ **/---   block=01-e nprt              08/07/22. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Make notesfile printing (nprt) work
+*/
+*/ -------------------------------------------------------------------
+*ident nprtfix
+*deck nprt
+*d nprt.12
+     "IDBLKS,IDW(2048),FTITLE(5),IDINFO(20),IPINFO(10),
+*d nprt.62,nprt.63
+      print 12,MONTH(MON),IDAY,IYR+1900
+12    FORMAT(/48X,*NOTES BEGINNING*,A10,I3,*, *,i4)
+*d nprt.68
+13    FORMAT(/35X,*FILE *,A10,* PRINTED AT *,A10,* ON*,A10,1X,A2,*, 20*,
+*d nprt.170
+     "IDBLKS,IDW(2048),FTITLE(5),IDINFO(20),IPINFO(10),
+*d NPRT.196
+20    PRINT 30,MON,IDAY,IYR+1900,HROUT,ICOLON,MIN,APE,
+*d NPRT.199
+21    PRINT 31,MON,IDAY,IYR+1900,HROUT,ICOLON,MIN,APE,
+*d NPRT.202
+22    PRINT 32,MON,IDAY,IYR+1900,HROUT,ICOLON,MIN,APE,
+*d NPRT.205
+23    PRINT 33,MON,IDAY,IYR+1900,HROUT,ICOLON,MIN,APE,
+*d nprt.209
+30    FORMAT(12X,I2,*/*,I1,*/*,I4,3X,I2,A1,*0*,I1,1X,A2,5X,
+*d nprt.211
+31    FORMAT(12X,I2,*/*,I1,*/*,I4,3X,I2,A1,I2,1X,A2,5X,
+*d nprt.213
+32    FORMAT(12X,I2,*/*,I2,*/*,I4,2X,I2,A1,*0*,I1,1X,A2,5X,
+*d nprt.215
+33    FORMAT(12X,I2,*/*,I2,*/*,I4,2X,I2,A1,I2,1X,A2,5X,
+*d nprt.241
+     "IDBLKS,IDW(2048),FTITLE(5),IDINFO(20),IPINFO(10),
+*d NPRT.320
+ DW       BSS    2048        DIRECTORY WORDS
+*d nprt.464,nprt.466
+ NOSUB    SX2    X1-2048     CANT BE OVER 2047
+          NG     X2,DBD1
+          SX1    2047
+*d NPRT.870
+ NCB      EQU    10          NUMBER OF ECS BLOCK BUFFERS                
+*/ end nprt
+*/
 */ **/---   block=01-e notesys           07/08/29. 12.00    source
 */ -------------------------------------------------------------------
 */
