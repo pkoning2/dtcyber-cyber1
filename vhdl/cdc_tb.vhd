@@ -23,7 +23,7 @@ architecture behav of cdc_tb is
    --  Declaration of the component that will be instantiated.
   component cdc6600 
   port (
-    clk1, clk2, clk3, clk4 : in std_logic;
+    clk1, clk2, clk3, clk4, reset : in std_logic;
     w_12w5_90 : out std_logic;
     w_12w5_900 : out std_logic;
     w_12w5_901 : out std_logic;
@@ -627,6 +627,7 @@ architecture behav of cdc_tb is
     w999_91 : in std_logic;
     w999_92 : in std_logic);
   end component;
+  signal reset : std_logic := '1';      -- power-up reset
   signal clk1 : std_logic := '1';        -- clock phase 1
   signal clk2, clk3, clk4 : std_logic := '0';  -- clock phase 2-4
   type testvec is array (1 to 80) of std_logic;
@@ -1206,6 +1207,7 @@ begin
                           clk2 => clk2,
                           clk3 => clk3,
                           clk4 => clk4,
+                          reset => reset,
                           w02_90 => w02_90,
                           w02_900 => w02_900,
                           w02_901 => w02_901,
@@ -1815,6 +1817,9 @@ begin
      variable llen : integer;
    begin  -- process test
      dtmain;
+     reset <= '1';
+     wait for 25 ns;
+     reset <= '0';
      while not endfile (vector_file) loop
        readline (vector_file, l);
        read (l, d);                     -- delay in 25 ns units

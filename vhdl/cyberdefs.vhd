@@ -26,7 +26,9 @@ package sigs is
   subtype coaxsig is std_logic range 'U' to '1';  -- signal on coax
   subtype coaxsigs is std_logic_vector (1 to 19);    -- CDC standard coax cable
   subtype ppword is UNSIGNED (11 downto 0);  -- PPU word (12 bits)
-  type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
+  subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
+  type ppmem is array (0 to 4095) of ppint;  -- standard 4kx12 memory array
+  type imem  is array (natural range <>) of ppint;  -- initial data for ppmem
   subtype misc is std_logic range '0' to '1';  -- used for non-logic pins
   subtype analog is UNSIGNED (2 downto 0);    -- 6612 character drawing signal
   
@@ -290,22 +292,23 @@ entity rsflop is
 
 end rsflop;
 
-architecture gates of rsflop is
+architecture beh of rsflop is
   component g5
     port (
       a, b, c, d, e : in  std_logic;          -- inputs
       y, y2   : out std_logic);                  -- output
   end component;
-  signal qi : std_logic := '0';
-begin  -- gates
-
-  qi <= '0' when r = '0'
-        else '1' when s = '0'
+  signal ri, si, qi : std_logic := '0';
+begin  -- beh
+  si <= s and s2 and s3 and s4;
+  ri <= r and r2 and r3 and r4;
+  qi <= '0' when ri = '0'
+        else '1' when si = '0'
         else unaffected;
   q <= qi after t;
   qb <= not (qi) after t;
 
-end gates;
+end beh;
 
 
 library IEEE;

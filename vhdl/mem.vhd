@@ -16,11 +16,14 @@ use work.sigs.all;
 
 entity memarray is
   
+  generic (
+    idata : imem);
   port (
     addr   : in  ppword;                -- Memory address
     rdata  : out ppword;                -- read data
     rdatab : out ppword;                -- read data complemented
     wdata  : in  ppword;                -- write data (complemented)
+    reset  : in  std_logic;             -- power-up reset
     strobe : in  std_logic;             -- read/write strobe
     write  : in  std_logic);            -- write request
 
@@ -33,17 +36,26 @@ begin  -- beh
   -- type   : sequential
   -- inputs : read, write, addr, wdata
   -- outputs: rdata, rdatab
-  rw: process (strobe)
+  rw: process (strobe, reset)
     variable areg : integer;              -- Address as an integer
-    variable mdata : ppmem;               -- Memory data
+    variable dreg : ppint;              -- data, as an integer
+    variable mdata : ppmem;             -- memory array
+    variable tdata : ppword;            -- copy of read data
   begin  -- process rw
-    if strobe'event and strobe = '1' then  -- rising clock edge
+    if reset = '1' then
+      for i in 0 to idata'high loop
+        mdata (i) := idata (i);
+      end loop;  -- i
+    elsif strobe'event and strobe = '1' then  -- rising clock edge
       areg := TO_INTEGER (addr);
       if write = '1' then
-        mdata (areg) := not (wdata);
+        if idata'high = 1 then
+          mdata (areg) := TO_INTEGER (not (wdata));
+        end if;
       else
-        rdata <= mdata (areg);
-        rdatab <= not (mdata (areg));
+        tdata := TO_UNSIGNED (mdata (areg), 12);
+        rdata <= tdata;
+        rdatab <= not (tdata);
       end if;
     end if;
   end process rw;
@@ -55,8 +67,11 @@ use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity mem is
+  generic (
+    idata : imem := (0,0));
   
   port (
+    reset  : in  std_logic;              -- power-up reset
     p22 : in std_logic;                  -- addr(0)
     p20 : in std_logic;                  -- addr(1)
     p8 : in std_logic;                   -- addr(2)
@@ -115,11 +130,14 @@ end mem;
 
 architecture beh of mem is
   component memarray
+    generic (
+      idata : imem);
     port (
       addr   : in  ppword;                -- Memory address
       rdata  : out ppword;                -- read data
       rdatab : out ppword;                -- read data complemented
       wdata  : in  ppword;                -- write data (complemented)
+      reset  : in  std_logic;             -- power-up reset
       strobe : in  std_logic;             -- read/write strobe
       write  : in  std_logic);            -- write operation
   end component;
@@ -128,7 +146,9 @@ begin  -- beh
 
   s <= not (p123) or not (p121);
   w <= not (p121);
-  ar : memarray port map (
+  ar : memarray generic map (
+    idata => idata)
+    port map (
     addr(0) => p22,
     addr(1) => p20,
     addr(2) => p8,
@@ -177,6 +197,7 @@ begin  -- beh
     rdatab(9) => p11,
     rdatab(10) => p112,
     rdatab(11) => p122,
+    reset => reset,
     write => w,
     strobe => s);
 

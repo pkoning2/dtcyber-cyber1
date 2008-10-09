@@ -27,6 +27,7 @@ architecture behav of cdc_tb2 is
       clk2 : in std_logic;
       clk3 : in std_logic;
       clk4 : in std_logic;
+      reset : in std_logic;
       w_12w1_90 : in coaxsig;
       w_12w1_900 : in coaxsig;
       w_12w1_901 : in coaxsig;
@@ -134,6 +135,7 @@ architecture behav of cdc_tb2 is
       w_12w8_98 : out std_logic;
       w_12w8_99 : out std_logic);
   end component;
+  signal reset : std_logic := '1';      -- power-up reset
   signal clk1 : std_logic := '1';        -- clock phase 1
   signal clk2, clk3, clk4 : std_logic := '0';  -- clock phase 2-4
   type testvec is array (1 to 80) of std_logic;
@@ -182,6 +184,7 @@ begin
                           clk2 => clk2,
                           clk3 => clk3,
                           clk4 => clk4,
+                          reset => reset,
                           w_12w1_90 => w_12w1_90,
                           w_12w1_900 => w_12w1_900,
                           w_12w1_901 => w_12w1_901,
@@ -259,6 +262,9 @@ begin
      variable ten : integer := 9;
    begin  -- process test
      --dtmain;
+     reset <= '1';
+     wait for 25 ns;
+     reset <= '0';
      while not endfile (vector_file) loop
        readline (vector_file, l);
        read (l, d);                     -- delay in 25 ns units

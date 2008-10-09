@@ -43,7 +43,8 @@ slotpat = re.compile (r"([a-r])(\d\d?)", re.I)
 chslotpat = re.compile (r"(\d\d?)([a-r])(\d\d?)", re.I)
 vhdlcommentpat = re.compile (r"--.*$")
 wiresplit = re.compile (r"([a-r]\d+)_(\d+)_([a-r]\d+)_(\d+)")
-gensplit = re.compile (r"([a-z]+)(\(.+?\))")
+gensplit = re.compile (r"([a-z]+)(\(.+)")
+octalpat = re.compile (r"\W0([0-7]+)")
 
 curfile = ""
 curline = ""
@@ -210,6 +211,10 @@ class Wire (object):
                 return None
         return dir1, stype1
 
+def fixoctal (m):
+    s = m.group (0)
+    return "%s8#%s#" % (s[0], s[1:])
+
 class Chassis (object):
     """An instance of a 6000 chassis.
     """
@@ -233,6 +238,7 @@ class Chassis (object):
             m = gensplit.match (tname)
             if m:
                 tname, gparms = m.groups ()
+                gparms = octalpat.sub (fixoctal, gparms)
             else:
                 gparms = ""
             mi = self.modules[name] = ModuleInstance (self.num, name, tname, gparms)
@@ -244,7 +250,7 @@ class Chassis (object):
         name, and type name.
         """
         portlist = [ ]
-        for clk in ("clk1", "clk2", "clk3" , "clk4"):
+        for clk in ("clk1", "clk2", "clk3" , "clk4", "reset"):
             portlist.append ((clk, "in", "std_logic"))
         wnames = self.coax.keys ()
         wnames.sort ()
@@ -438,7 +444,7 @@ def top_vhdl (f):
             continue
     print >> f, header
     print >> f, "entity cdc6600 is\n  port ("
-    clist = [ "    clk1, clk2, clk3, clk4 : in std_logic" ]
+    clist = [ "    clk1, clk2, clk3, clk4, reset : in std_logic" ]
     wnames = coaxdict.keys ()
     wnames.sort ()
     for w in wnames:
@@ -686,7 +692,7 @@ class ModuleInstance (object):
                 pdir, stype = self.Type.pins[p]
                 if pdir != dir:
                     continue
-                if p.startswith ("clk"):
+                if p.startswith ("clk") or p == "reset":
                     clist.append ("    %s => %s" % (p, p))
                 else:
                     if p.startswith ("tp"):
@@ -774,7 +780,7 @@ def process_file (f):
             module = curch.add_module (mt, slot)
             c = Connector (slot, module)
             module.add_connector (c)
-            if mt == "mem" or mt.startswith ("synchro"):
+            if mt.startswith ("mem") or mt.startswith ("synchro"):
                 c.read_pins (f, 30)
                 slot2 = getline (f)
                 slotid = get_chslot (slot2)
