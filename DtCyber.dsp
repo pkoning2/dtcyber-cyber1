@@ -196,26 +196,80 @@ SOURCE=.\niu.c
 # Begin Source File
 
 SOURCE=.\npu_async.c
+
+!IF  "$(CFG)" == "DtCyber - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "DtCyber - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=.\npu_bip.c
+
+!IF  "$(CFG)" == "DtCyber - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "DtCyber - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=.\npu_hip.c
+
+!IF  "$(CFG)" == "DtCyber - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "DtCyber - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=.\npu_net.c
+
+!IF  "$(CFG)" == "DtCyber - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "DtCyber - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=.\npu_svm.c
+
+!IF  "$(CFG)" == "DtCyber - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "DtCyber - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
 SOURCE=.\npu_tip.c
+
+!IF  "$(CFG)" == "DtCyber - Win32 Release"
+
+# PROP Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "DtCyber - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
