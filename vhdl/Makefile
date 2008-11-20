@@ -41,9 +41,9 @@ cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
 %.o : %.c
 	$(CC) -O2  $(CFLAGS) -I .. -I . -c $<
 
-cdc6600.vhd ${CHASSIS_V} : ${CHASSIS_SRCS} connections.wlist
+cdc6600.vhd $(CHASSIS_V) : $(CHASSIS_SRCS) connections.wlist
 	# Note: connections.wlist must be first
-	python wirelist.py connections.wlist ${CHASSIS_SRCS}
+	python wirelist.py connections.wlist $(CHASSIS_SRCS)
 
 #chassis12.vhd : chassis12.wlist
 #	python wirelist.py -t - chassis12.wlist
