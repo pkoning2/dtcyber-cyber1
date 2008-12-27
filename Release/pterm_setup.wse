@@ -40,7 +40,7 @@ item: Global
   Variable Default2=C:\WINDOWS
   Variable Flags2=00001000
   Variable Name3=_WISE_
-  Variable Default3=D:\Program Files\Wise
+  Variable Default3=D:\PROGRA~1\WISEIN~1
   Variable Flags3=00001000
   Variable Name4=_ALIASNAME_
   Variable Flags4=00001000
@@ -910,6 +910,10 @@ item: Set Variable
   Variable=COMMON
   Value=%COMMON%
   Flags=00010100
+end
+item: Set Variable
+  Variable=GROUP
+  Value=%APPTITLE%
 end
 item: Include Script
   Pathname=%_WISE_%\INCLUDE\uninstal.wse
