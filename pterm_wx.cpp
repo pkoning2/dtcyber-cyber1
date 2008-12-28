@@ -3249,7 +3249,9 @@ void PtermFrame::SendRoster (void)
 
 	//open file
 	wxTextFile file(ptermApp->m_RosterFile);
-	if (!file.Exists() || !file.Open())
+	if (!file.Exists())
+		return;
+	if (!file.Open())
 		return;
 
 	//read file
@@ -3259,9 +3261,7 @@ void PtermFrame::SendRoster (void)
 		m_pasteText.Append(buffer);
 		m_pasteText.Append(wxT("\n"));
 		if (file.Eof())
-		{
 			break;
-		}
 	}
 	file.Close();
 	//force certain options to expected values
@@ -5840,6 +5840,8 @@ void PtermFrame::ProcessPlatoMetaData ()
 	wxString l_station;
 
 	//special check for roster
+	if (m_SendRoster)
+		return;
 	if ((fnd = m_PMD.Find(wxT("sendroster;"))) != -1)
 	{
 		SendRoster();
