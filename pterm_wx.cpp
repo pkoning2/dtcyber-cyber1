@@ -15,8 +15,6 @@
 #if defined(__WXMSW__)
 #define wxUse_DC_Cache	-1
 #endif
-#define TUTOR_MACROS	0
-#define SEND_ROSTER		0
 
 /*
 **  -----------------
@@ -84,8 +82,8 @@
 #define	ASC_ZPCKEYS		0x02
 #define	ASC_ZKERMIT		0x04
 #define	ASC_ZWINDOW		0x08
-//#define ASCFEATURES     ASC_ZFGT | ASC_ZWINDOW
-#define ASCFEATURES     ASC_ZFGT
+#define ASCFEATURES     ASC_ZFGT | ASC_ZWINDOW
+//#define ASCFEATURES     ASC_ZFGT
 //#define ASCFEATURES     ASC_ZFGT
 //#define ASCFEATURES     0x01    // features: fine touch
 //#define ASCFEATURES     0x05   // features: fine touch=0x01, kermit=0x04
@@ -148,10 +146,13 @@
 #define PREF_SMARTPASTE  "smartPaste"
 #define PREF_CONVDOT7    "convDot7"
 #define PREF_CONV8SP     "conv8Sp"
+#define PREF_TUTORCOLOR  "TutorColor"
 //tab6
 #define PREF_BROWSER     "Browser"
 #define PREF_EMAIL       "EmailClient"
 #define PREF_SEARCHURL   "SearchURL"
+//rostering
+#define	PREF_ROSTERFILE  "RosterFile"
 
 /*
 **  -----------------------
@@ -622,10 +623,13 @@ public:
 	bool		m_smartPaste;
     bool        m_convDot7;
     bool        m_conv8Sp;
+    bool        m_TutorColor;
 	//tab6
 	wxString	m_Browser;      
 	wxString	m_Email;      
 	wxString	m_SearchURL;      
+	//rostering
+	wxString	m_RosterFile;      
 
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
@@ -637,6 +641,8 @@ public:
 	PtermFrame *m_CurFrame;
 	int m_CurFrameScreenSize;
 	int m_CurFrameScale;
+
+	bool		m_RosterMonitor;
 
 private:
     wxLocale    m_locale; // locale we'll be using
@@ -766,7 +772,7 @@ public:
     void OnPageSetup (wxCommandEvent& event);
     void OnPref (wxCommandEvent& event);
     void OnActivate (wxActivateEvent &event);
-    void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2, bool newstatusbar);
+    void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
     void SetColors (wxColour &newfg, wxColour &newbg, int newscale);
     void FixTextCharMaps (void);
     void OnFullScreen (wxCommandEvent &event);
@@ -774,13 +780,18 @@ public:
     void OnIconize(wxIconizeEvent &event);
 #endif
 
+    void BuildMenuBar (void);
+    void BuildEditMenu (int port);
+    void BuildPopupMenu (int port);
+    void SendRoster (void);
+    void KillRoster (void);
     void PrepareDC(wxDC& dc);
     void ptermSendKey(int key);
     void ptermSendKeys(int key[]);
     void ptermSendTouch (int x, int y);
     void ptermSendExt (int key);
     void ptermSetTrace (bool fileaction);
-	void SetTitleFromPlatoMetaData(void);
+	void ProcessPlatoMetaData(void);
 	void WriteTraceMessage(wxString);
 #if 0
     // The s0ascers spec calls for parity but it isn't really needed
@@ -1045,7 +1056,7 @@ private:
     void mode6 (u32 d);
     void mode7 (u32 d);
     void progmode (u32 d, int origin);
-    void ptermSetStation (int station);
+    void ptermSetStation (int station, bool showtitle, bool showstatus);
     void ptermShowTrace ();
     
     bool AssembleCoord (int d);
@@ -1095,7 +1106,8 @@ public:
     void OnDoubleClick (wxCommandEvent& event);
     void OnChange (wxCommandEvent& event);
     void OnComboSelect (wxCommandEvent& event);
-    void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
+    //void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
+    void OnClose (wxCloseEvent &);
 	//support routines
 	bool ValidProfile (wxString profile);
 	bool SaveProfile (wxString profile);
@@ -1151,6 +1163,7 @@ public:
 	wxCheckBox* chkSmartPaste;
 	wxCheckBox* chkConvertDot7;
 	wxCheckBox* chkConvert8Spaces;
+	wxCheckBox* chkTutorColor;
 	//tab6
 	wxTextCtrl* txtBrowser;
 	wxTextCtrl* txtEmail;
@@ -1199,6 +1212,7 @@ public:
 	bool			m_smartPaste;
     bool            m_convDot7;
     bool            m_conv8Sp;
+	bool			m_TutorColor;
 	//tab6
 	wxString		m_Browser;
 	wxString		m_Email;
@@ -1272,7 +1286,6 @@ enum
     Pterm_SaveScreen,
     Pterm_HelpKeys,
     Pterm_PastePrint,
-    Pterm_SendRoster,
     Pterm_FullScreen,
 
     // timers
@@ -1479,7 +1492,6 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Macro7, PtermFrame::OnMacro7)	
     EVT_MENU(Pterm_Macro8, PtermFrame::OnMacro8)	
     EVT_MENU(Pterm_Macro9, PtermFrame::OnMacro9)	
-    EVT_MENU(Pterm_SendRoster, PtermFrame::OnPaste)
     EVT_MENU(Pterm_Paste, PtermFrame::OnPaste)
     EVT_MENU(Pterm_PastePrint, PtermFrame::OnPaste)
     EVT_UPDATE_UI(Pterm_Paste, PtermFrame::OnUpdateUIPaste)
@@ -1638,10 +1650,13 @@ bool PtermApp::OnInit (void)
 		m_smartPaste = (m_config->Read (wxT (PREF_SMARTPASTE), 0L) != 0);
 		m_convDot7 = (m_config->Read (wxT (PREF_CONVDOT7), 0L) != 0);
 		m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);
+		m_TutorColor = (m_config->Read (wxT (PREF_TUTORCOLOR), 0L) != 0);
 		//tab6
 		m_config->Read (wxT (PREF_BROWSER), &m_Browser, wxT(""));
 		m_config->Read (wxT (PREF_EMAIL), &m_Email, wxT(""));
 		m_config->Read (wxT (PREF_SEARCHURL), &m_SearchURL, wxT(""));
+		//rostering
+		m_config->Read (wxT (PREF_ROSTERFILE), &m_RosterFile, wxT("C:\\Documents and Settings\\Joe\\Desktop\\Cyber1\\new_roster.txt"));
 	}
 
 #if PTERM_MDI
@@ -1852,6 +1867,7 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
 			else if (token.Cmp(wxT(PREF_SMARTPASTE))==0)			m_smartPaste	= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_CONVDOT7))==0)				m_convDot7		= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_CONV8SP))==0)				m_conv8Sp		= (value.Cmp(wxT("1"))==0);
+			else if (token.Cmp(wxT(PREF_TUTORCOLOR))==0)			m_TutorColor	= (value.Cmp(wxT("1"))==0);
 			//tab6
 			else if (token.Cmp(wxT(PREF_BROWSER))==0)				m_Browser		= value;
 			else if (token.Cmp(wxT(PREF_EMAIL))==0)					m_Email			= value;
@@ -1904,6 +1920,7 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
     m_config->Write (wxT (PREF_SMARTPASTE), (m_smartPaste) ? 1 : 0);
     m_config->Write (wxT (PREF_CONVDOT7), (m_convDot7) ? 1 : 0);
     m_config->Write (wxT (PREF_CONV8SP), (m_conv8Sp) ? 1 : 0);
+    m_config->Write (wxT (PREF_TUTORCOLOR), (m_TutorColor) ? 1 : 0);
 	//tab6
     m_config->Write (wxT (PREF_BROWSER), m_Browser);
     m_config->Write (wxT (PREF_EMAIL), m_Email);
@@ -2069,10 +2086,8 @@ PtermMainFrame::PtermMainFrame (void)
 #endif
 
     // ... and attach this menu bar to the frame
-	if (ptermApp->m_showMenuBar)
-	{
+	if (!m_fullScreen && ptermApp->m_showMenuBar)
 		SetMenuBar(menuBar);
-	}
 #endif // wxUSE_MENUS
 }
 #endif
@@ -2200,96 +2215,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     menuFile->Append (Pterm_Close, _("Close") ACCELERATOR ("\tCtrl-W"), _("Close this window"));
     menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
 	//edit menu options
-    menuEdit = new wxMenu;
-    menuEdit->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
-    menuEdit->Append(Pterm_Copy, _("Copy text") ACCELERATOR ("\tCtrl-C"), _("Copy text only to clipboard"));
-    if (port > 0)
-    {
-        menuEdit->Append(Pterm_Paste, _("Paste ASCII") ACCELERATOR ("\tCtrl-V"), _("Paste plain text"));
-        // No "paste" for help window because it doesn't do input.
-        menuEdit->Append(Pterm_PastePrint, _("Paste Printout"), _("Paste Cyber printout format"));
-    }
-    menuEdit->AppendSeparator ();					
-    menuEdit->Append(Pterm_Exec, _("Execute URL") ACCELERATOR ("\tCtrl-X"), _("Execute URL"));
-    menuEdit->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
-    menuEdit->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
-
-#if TUTOR_MACROS
-    if (port > 0)
-	{
-		menuEdit->AppendSeparator ();
-		menuEdit->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
-		menuEdit->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
-		menuEdit->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
-		menuEdit->Append(Pterm_Macro3, _("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), _("<c,zc.keys>"));
-		menuEdit->Append(Pterm_Macro4, _("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), _("<c,zc.text>"));
-		menuEdit->Append(Pterm_Macro5, _("color zc.errf") ACCELERATOR ("\tCtrl-5"), _("color zc.errf"));
-		menuEdit->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
-		menuEdit->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
-		menuEdit->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
-		menuEdit->Append(Pterm_Macro9, _("Menu colorization") ACCELERATOR ("\tCtrl-9"), _("Menu colorization"));
-	}
-#endif
-#if SEND_ROSTER
-    if (port > 0)
-	{
-	    menuEdit->AppendSeparator ();
-		menuEdit->Append(Pterm_SendRoster, _("Send roster"), _("Send roster"));
-	}
-#endif
-
-    menuEdit->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
-    menuEdit->Enable (Pterm_Exec, false);
-    menuEdit->Enable (Pterm_MailTo, false);
-    menuEdit->Enable (Pterm_SearchThis, false);
-
-	//edit menu options (copy for POPUP menu via right-click on canvas, adds the full-screen option)
-    menuPopup = new wxMenu;
-    menuPopup->Append (Pterm_ShowHideMenuBar, _("Show/hide menu bar"), _("Show/hide menu bar"));
-    menuPopup->AppendSeparator ();					
-    menuPopup->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
-    menuPopup->Append(Pterm_Copy, _("Copy text") ACCELERATOR ("\tCtrl-C"), _("Copy text only to clipboard"));
-    if (port > 0)
-    {
-        menuPopup->Append(Pterm_Paste, _("Paste ASCII") ACCELERATOR ("\tCtrl-V"), _("Paste plain text"));
-        // No "paste" for help window because it doesn't do input.
-        menuPopup->Append(Pterm_PastePrint, _("Paste Printout"), _("Paste Cyber printout format"));
-    }
-    menuPopup->AppendSeparator ();					
-    menuPopup->Append(Pterm_Exec, _("Execute URL") ACCELERATOR ("\tCtrl-X"), _("Execute URL"));
-    menuPopup->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
-    menuPopup->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
-
-#if TUTOR_MACROS
-    if (port > 0)
-	{
-		menuPopup->AppendSeparator ();
-		menuPopup->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
-		menuPopup->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
-		menuPopup->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
-		menuPopup->Append(Pterm_Macro3, _("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), _("<c,zc.keys>"));
-		menuPopup->Append(Pterm_Macro4, _("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), _("<c,zc.text>"));
-		menuPopup->Append(Pterm_Macro5, _("color zc.errf") ACCELERATOR ("\tCtrl-5"), _("color zc.errf"));
-		menuPopup->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
-		menuPopup->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
-		menuPopup->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
-		menuPopup->Append(Pterm_Macro9, _("Menu colorization") ACCELERATOR ("\tCtrl-9"), _("Menu colorization"));
-	}
-#endif
-#if SEND_ROSTER
-    if (port > 0)
-	{
-	    menuPopup->AppendSeparator ();
-		menuPopup->Append(Pterm_SendRoster, _("Send roster"), _("Send roster"));
-	}
-#endif
-
-    menuPopup->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
-    menuPopup->Enable (Pterm_Exec, false);
-    menuPopup->Enable (Pterm_MailTo, false);
-    menuPopup->Enable (Pterm_SearchThis, false);
-    menuPopup->AppendSeparator ();
-    menuPopup->Append (Pterm_FullScreen, _("Full Screen") ACCELERATOR ("\tCtrl-U"), _("Display in full screen mode"));
+	BuildEditMenu(port);
 
 	//view menu options
     menuView = new wxMenu;
@@ -2305,34 +2231,19 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     menuHelp->Append(Pterm_HelpKeys, _("Pterm keyboard"), _("Show keyboard description"));
     
     // now append the freshly created menu to the menu bar...
-    menuBar = new wxMenuBar ();
-    menuBar->Append (menuFile, _("File"));
-    menuBar->Append (menuEdit, _("Edit"));
-#if !0//PTERM_MDI
-    menuBar->Append (menuView, _("View"));
-#endif
+	BuildMenuBar();
 
-#if defined(__WXMAC__)
-    // On the Mac the menu name has to be exactly "&Help" for the About item
-    // to  be recognized.  Ugh.
-    menuBar->Append(menuHelp, wxT("&Help"));
-#else
-    menuBar->Append(menuHelp, _("Help"));
-#endif
+	//edit menu options (copy for POPUP menu via right-click on canvas, adds the full-screen option)
+	BuildPopupMenu(port);
 
     // ... and attach this menu bar to the frame
-	if (ptermApp->m_showMenuBar)
-	{
+	if (!m_fullScreen && ptermApp->m_showMenuBar)
 		SetMenuBar(menuBar);
-	}
 #endif // wxUSE_MENUS
 
     if (port > 0)
     {
         // create a status bar, if this isn't a help window
-        m_statusBar = new wxStatusBar (this, wxID_ANY);
-        m_statusBar->SetFieldsCount (STATUSPANES);
-        m_statusBar->SetStatusText(_(" Connecting..."), STATUS_CONN);
 
 		//shell program; then wait 2 seconds
 		if (!ptermApp->m_ShellFirst.IsEmpty())
@@ -2347,10 +2258,19 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
 			}
 		}
 
-        if (ptermApp->m_showStatusBar)
-        {
+		if (m_fullScreen || !ptermApp->m_showStatusBar)
+		{
+	        m_statusBar = NULL;
+            SetStatusBar (NULL);
+		}
+        else
+		{
+			m_statusBar = new wxStatusBar (this, wxID_ANY);
+			m_statusBar->SetFieldsCount (STATUSPANES);
+			m_statusBar->SetStatusText(_(" Connecting..."), STATUS_CONN);
             SetStatusBar (m_statusBar);
-        }
+		}
+
         ptermShowTrace ();
         SetCursor (*wxHOURGLASS_CURSOR);
     }
@@ -2422,6 +2342,97 @@ PtermFrame::~PtermFrame ()
     {
         ptermApp->m_firstFrame = m_nextFrame;
     }
+}
+
+// menu builders
+void PtermFrame::BuildMenuBar(void)
+{
+    menuBar = new wxMenuBar ();
+    menuBar->Append (menuFile, _("File"));
+    menuBar->Append (menuEdit, _("Edit"));
+#if !0//PTERM_MDI
+    menuBar->Append (menuView, _("View"));
+#endif
+#if defined(__WXMAC__)
+    // On the Mac the menu name has to be exactly "&Help" for the About item
+    // to  be recognized.  Ugh.
+    menuBar->Append(menuHelp, wxT("&Help"));
+#else
+    menuBar->Append(menuHelp, _("Help"));
+#endif
+}
+
+void PtermFrame::BuildEditMenu (int port)
+{
+    menuEdit = new wxMenu;
+    menuEdit->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
+    menuEdit->Append(Pterm_Copy, _("Copy text") ACCELERATOR ("\tCtrl-C"), _("Copy text only to clipboard"));
+    if (port > 0)
+    {
+        menuEdit->Append(Pterm_Paste, _("Paste plain text") ACCELERATOR ("\tCtrl-V"), _("Paste plain text"));
+        // No "paste" for help window because it doesn't do input.
+        menuEdit->Append(Pterm_PastePrint, _("Paste Printout"), _("Paste Cyber printout format"));
+    }
+    menuEdit->AppendSeparator ();					
+    menuEdit->Append(Pterm_Exec, _("Execute URL") ACCELERATOR ("\tCtrl-X"), _("Execute URL"));
+    menuEdit->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
+    menuEdit->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
+    if (ptermApp->m_TutorColor && port > 0)
+	{
+		menuEdit->AppendSeparator ();
+		menuEdit->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
+		menuEdit->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
+		menuEdit->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
+		menuEdit->Append(Pterm_Macro3, _("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), _("<c,zc.keys>"));
+		menuEdit->Append(Pterm_Macro4, _("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), _("<c,zc.text>"));
+		menuEdit->Append(Pterm_Macro5, _("color zc.errf") ACCELERATOR ("\tCtrl-5"), _("color zc.errf"));
+		menuEdit->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
+		menuEdit->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
+		menuEdit->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
+		menuEdit->Append(Pterm_Macro9, _("Menu colorization") ACCELERATOR ("\tCtrl-9"), _("Menu colorization"));
+	}
+    menuEdit->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
+    menuEdit->Enable (Pterm_Exec, false);
+    menuEdit->Enable (Pterm_MailTo, false);
+    menuEdit->Enable (Pterm_SearchThis, false);
+}
+
+void PtermFrame::BuildPopupMenu (int port)
+{
+    menuPopup = new wxMenu;
+    menuPopup->Append (Pterm_CopyScreen, _("Copy Screen"), _("Copy screen to clipboard"));
+    menuPopup->Append(Pterm_Copy, _("Copy text") ACCELERATOR ("\tCtrl-C"), _("Copy text only to clipboard"));
+    if (port > 0)
+    {
+        menuPopup->Append(Pterm_Paste, _("Paste ASCII") ACCELERATOR ("\tCtrl-V"), _("Paste plain text"));
+        // No "paste" for help window because it doesn't do input.
+        menuPopup->Append(Pterm_PastePrint, _("Paste Printout"), _("Paste Cyber printout format"));
+    }
+    menuPopup->AppendSeparator ();					
+    menuPopup->Append(Pterm_Exec, _("Execute URL") ACCELERATOR ("\tCtrl-X"), _("Execute URL"));
+    menuPopup->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
+    menuPopup->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
+    menuPopup->AppendSeparator ();
+    menuPopup->Append (Pterm_ShowHideMenuBar, _("Show/hide menu bar"), _("Show/hide menu bar"));
+    menuPopup->Append (Pterm_FullScreen, _("Full Screen") ACCELERATOR ("\tCtrl-U"), _("Display in full screen mode"));
+    if (ptermApp->m_TutorColor && port > 0)
+	{
+		menuPopup->AppendSeparator ();
+		menuPopup->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
+		menuPopup->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
+		menuPopup->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
+		menuPopup->Append(Pterm_Macro3, _("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), _("<c,zc.keys>"));
+		menuPopup->Append(Pterm_Macro4, _("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), _("<c,zc.text>"));
+		menuPopup->Append(Pterm_Macro5, _("color zc.errf") ACCELERATOR ("\tCtrl-5"), _("color zc.errf"));
+		menuPopup->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
+		menuPopup->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
+		menuPopup->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
+		menuPopup->Append(Pterm_Macro9, _("Menu colorization") ACCELERATOR ("\tCtrl-9"), _("Menu colorization"));
+	}
+    menuPopup->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
+    menuPopup->Enable (Pterm_Exec, false);
+    menuPopup->Enable (Pterm_MailTo, false);
+    menuPopup->Enable (Pterm_SearchThis, false);
 }
 
 // event handlers
@@ -2566,10 +2577,12 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 	int tcnt;
 	wxChar tchr;
 
-	if (m_bCancelPaste ||
-		m_pasteIndex < 0 ||
-        m_pasteIndex >= (int) m_pasteText.Len ())
+	if (m_bCancelPaste || m_pasteIndex < 0 || m_pasteIndex >= (int) m_pasteText.Len ())
 	{
+		//delete roster file if done
+		if (m_SendRoster && m_pasteIndex >= (int) m_pasteText.Len ())
+			KillRoster();
+		//reset flags
 		m_bCancelPaste = false;
 		m_bPasteActive = false;
 		m_SendRoster = false;
@@ -2840,6 +2853,10 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     }
     else
     {
+		//delete roster file if done
+		if (m_SendRoster)
+			KillRoster();
+		//reset flags
 		m_bCancelPaste = false;
 		m_bPasteActive = false;
 		m_SendRoster = false;
@@ -2939,14 +2956,11 @@ void PtermFrame::OnCopyScreen (wxCommandEvent &)
 
 void PtermFrame::OnShowHideMenuBar (wxCommandEvent &)
 {
-	if (ptermApp->m_showMenuBar)
-	{
-		ptermApp->m_showMenuBar = false;
-		SetMenuBar(0);
-	}
+	ptermApp->m_showMenuBar = !ptermApp->m_showMenuBar;
+	if (m_fullScreen || !ptermApp->m_showMenuBar)
+		SetMenuBar(NULL);
 	else
 	{
-		ptermApp->m_showMenuBar = true;
 		// append menus to bar
 		menuBar = new wxMenuBar ();
 		menuBar->Append (menuFile, _("File"));
@@ -3227,6 +3241,48 @@ void PtermFrame::OnMacro9 (wxCommandEvent &event)
 	ptermSendKeys(key4);
 }
 
+void PtermFrame::SendRoster (void)
+{
+	//read contents of Roster File
+	
+	wxString buffer;
+
+	//open file
+	wxTextFile file(ptermApp->m_RosterFile);
+	if (!file.Exists() || !file.Open())
+		return;
+
+	//read file
+	m_pasteText.Clear();
+	for ( buffer = file.GetFirstLine(); ; buffer = file.GetNextLine() )
+	{
+		m_pasteText.Append(buffer);
+		m_pasteText.Append(wxT("\n"));
+		if (file.Eof())
+		{
+			break;
+		}
+	}
+	file.Close();
+	//force certain options to expected values
+	ptermApp->m_splitWords = false;
+	ptermApp->m_smartPaste = false;
+	ptermApp->m_autoLF = wxT("0");
+	ptermApp->m_conv8Sp = false;
+	ptermApp->m_convDot7 = false;
+	//start pasting
+	m_SendRoster = true;
+	m_pasteIndex = 0;
+	m_pasteNextKeyCnt = 0;
+	m_pasteTimer.Start (atoi(ptermApp->m_charDelay.mb_str()), true);
+}
+
+void PtermFrame::KillRoster (void)
+{
+	//delete file
+	wxRemoveFile(ptermApp->m_RosterFile);
+}
+
 void PtermFrame::OnPaste (wxCommandEvent &event)
 {
     if (!wxTheClipboard->Open ())
@@ -3257,7 +3313,6 @@ void PtermFrame::OnPaste (wxCommandEvent &event)
 		m_pasteNextKeyCnt = 0;
         m_pasteTimer.Start (atoi(ptermApp->m_charDelay.mb_str()), true);
         m_pastePrint = (event.GetId () == Pterm_PastePrint);
-        m_SendRoster = (event.GetId () == Pterm_SendRoster || m_WaitReady);
     }
 
     wxTheClipboard->Close ();
@@ -3423,11 +3478,11 @@ void PtermFrame::OnPref (wxCommandEvent&)
 {
     wxString rgb;
 
-    PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"), wxDefaultPosition, wxSize( 451,382 ));
+    PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"), wxDefaultPosition, wxSize( 451,400 ));
     
     if (dlg.ShowModal () == wxID_OK)
     {
-        UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2, dlg.m_showStatusBar);
+        UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2);
 		//get prefs
 		ptermApp->m_lastTab = dlg.m_lastTab;
         //tab0
@@ -3466,8 +3521,9 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_autoLF = dlg.m_autoLF;
 		ptermApp->m_splitWords = dlg.m_splitWords;
 		ptermApp->m_smartPaste = dlg.m_smartPaste;
-		ptermApp->m_convDot7 = dlg.m_convDot7;	//currently disabled
-		ptermApp->m_conv8Sp = dlg.m_conv8Sp;		//currently disabled
+		ptermApp->m_convDot7 = dlg.m_convDot7;
+		ptermApp->m_conv8Sp = dlg.m_conv8Sp;
+		ptermApp->m_TutorColor = dlg.m_TutorColor;
 		//tab6
 		ptermApp->m_Browser = dlg.m_Browser;
 		ptermApp->m_Email = dlg.m_Email;
@@ -3514,12 +3570,47 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_config->Write (wxT (PREF_SMARTPASTE), (dlg.m_smartPaste) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);
         ptermApp->m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);
+        ptermApp->m_config->Write (wxT (PREF_TUTORCOLOR), (dlg.m_TutorColor) ? 1 : 0);
 		//tab6
         ptermApp->m_config->Write (wxT (PREF_BROWSER), dlg.m_Browser);
         ptermApp->m_config->Write (wxT (PREF_EMAIL), dlg.m_Email);
         ptermApp->m_config->Write (wxT (PREF_SEARCHURL), dlg.m_SearchURL);
         ptermApp->m_config->Flush ();
 
+		//rebuild menus
+		BuildPopupMenu(1);
+		SetMenuBar(NULL);
+		BuildEditMenu(1);
+		BuildMenuBar();
+		if (m_conn != NULL && !m_fullScreen && ptermApp->m_showMenuBar)
+			SetMenuBar(menuBar);
+
+        SetStatusBar (NULL);
+		if (m_conn != NULL && !m_fullScreen && ptermApp->m_showStatusBar)
+		{
+			delete m_statusBar;
+			m_statusBar = new wxStatusBar (this, wxID_ANY);
+			m_statusBar->SetFieldsCount (STATUSPANES);
+			if (m_conn == NULL)
+				m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+			else
+	            ptermSetStation (m_station, true, true);
+			if (tracePterm)
+				m_statusBar->SetStatusText(_(" Trace "), STATUS_TRC);
+			else if (ptermApp->m_platoKb)
+				m_statusBar->SetStatusText(_(" PLATO keyboard "), STATUS_TRC);
+			else
+				m_statusBar->SetStatusText(wxT (""), STATUS_TRC);
+            SetStatusBar (m_statusBar);
+			m_canvas->SetScrollRate (0, 0);
+			m_canvas->SetScrollRate (1, 1);
+		}
+        else
+		{
+			delete m_statusBar;
+	        m_statusBar = NULL;
+            SetStatusBar (NULL);
+		}
 
     }
 }
@@ -3528,27 +3619,14 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
 {
     m_fullScreen = !m_fullScreen;
     
-#if 0 //PTERM_MDI
-    // workaround for a bug in the MDI case
     if (m_fullScreen)
-    
     {
-        SetStatusBar (NULL);
+        m_canvas->SetScrollRate (0, 0);
     }
-    else if (ptermApp->m_showStatusBar && m_statusBar != NULL)
+    else
     {
-        SetStatusBar (m_statusBar);
+        m_canvas->SetScrollRate (1, 1);
     }
-#endif
-
-        if (m_fullScreen)
-        {
-            m_canvas->SetScrollRate (0, 0);
-        }
-        else
-        {
-            m_canvas->SetScrollRate (1, 1);
-        }
     
     ShowFullScreen (m_fullScreen);
     m_canvas->Refresh ();
@@ -3961,9 +4039,7 @@ void PtermFrame::ptermSetName (wxString &winName)
 void PtermFrame::ptermSetStatus (wxString &str)
 {
     if (m_statusBar != NULL)
-    {
         m_statusBar->SetStatusText(str, STATUS_CONN);
-    }
 }
 
 void PtermFrame::ptermLoadChar (int snum, int cnum, const u16 *chardata)
@@ -4060,8 +4136,7 @@ void PtermFrame::ptermLoadRomChars (void)
     }
 }
 
-void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
-                                 bool newscale2, bool newstatusbar)
+void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool newscale2)
 {
     const bool recolor = (ptermApp->m_fgColor != newfg ||
                           ptermApp->m_bgColor != newbg);
@@ -4070,17 +4145,6 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
     int i;
     wxBitmap *newmap;
 
-    if (m_conn != NULL)
-    {
-        if (newstatusbar)
-        {
-            SetStatusBar (m_statusBar);
-        }
-        else
-        {
-            SetStatusBar (NULL);
-        }
-    }
     ptermShowTrace ();
     
     if (!recolor && !rescale)
@@ -4511,7 +4575,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 TRACEN ("Entering PLATO terminal mode");
                 m_dumbTty = false;
                 mode = (3 << 2) + 1;    // set character mode, rewrite
-                ptermSetStation (-1);   // Show connected in ASCII mode
+                ptermSetStation (-1, true, ptermApp->m_showStatusBar);   // Show connected in ASCII mode
             }
             else if ((d >> 8) == 0)
             {
@@ -4585,7 +4649,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 				else
 				{
 					TRACE ("plato meta data complete: %s", m_PMD.c_str());
-					SetTitleFromPlatoMetaData();
+					ProcessPlatoMetaData();
 				}
 				m_PMD = wxT("");
             }
@@ -5224,7 +5288,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 if ((d & NOP_MASKDATA) == NOP_SETSTAT)
                 {
                     d &= 0777;
-                    ptermSetStation (d);
+                    ptermSetStation (d, true, ptermApp->m_showStatusBar);
                 }
                 // special code to get font type / size / flags
                 else if ((d & NOP_MASKDATA) == NOP_FONTTYPE)
@@ -5283,7 +5347,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 						settitleflag = true;
 					}
 					if (settitleflag)
-						SetTitleFromPlatoMetaData();
+						ProcessPlatoMetaData();
 				}
                 TRACEN ("nop");
                 break;
@@ -5765,7 +5829,7 @@ bool PtermFrame::AssembleClassicPlatoMetaData (int d)
 **  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-void PtermFrame::SetTitleFromPlatoMetaData ()
+void PtermFrame::ProcessPlatoMetaData ()
 {
 	int fnd;
 	int len;
@@ -5775,6 +5839,14 @@ void PtermFrame::SetTitleFromPlatoMetaData ()
 	wxString l_system;
 	wxString l_station;
 
+	//special check for roster
+	if ((fnd = m_PMD.Find(wxT("sendroster;"))) != -1)
+	{
+		SendRoster();
+		return;
+	}
+
+	//initialize
 	l_name = wxT("");
 	l_group = wxT("");
 	l_system = wxT("");
@@ -6652,11 +6724,11 @@ int PtermFrame::Parity (int key)
 }
 #endif
 
-void PtermFrame::ptermSetStation (int station)
+void PtermFrame::ptermSetStation (int station, bool showtitle, bool showstatus)
 {
 
 	//this routine is called only when connection is initially made
-	//see SetTitleFromPlatoMetaData for the dynamic code.
+	//see ProcessPlatoMetaData for the dynamic code.
     wxString l_hostname;
     wxString l_station;
     wxString l_str;
@@ -6683,38 +6755,41 @@ void PtermFrame::ptermSetStation (int station)
     }
 
 	// only show what the user wants to see in title bar
-	l_str = wxT("");
-	if (ptermApp->m_showHost)
+	if (showtitle)
 	{
-		l_str.Printf(wxT("%s "), l_hostname.c_str());
+		l_str = wxT("");
+		if (ptermApp->m_showHost)
+		{
+			l_str.Printf(wxT("%s "), l_hostname.c_str());
+		}
+		if (ptermApp->m_showStation)
+		{
+			l_str.Printf(wxT("%s"), l_str.c_str());
+			l_str.Append(l_station.c_str());
+		}
+		ptermSetName (l_str);
 	}
-	if (ptermApp->m_showStation)
-	{
-		l_str.Printf(wxT("%s"), l_str.c_str());
-		l_str.Append(l_station.c_str());
-	}
-    ptermSetName (l_str);
 
 	//always show host and station in status bar
-	l_str.Printf(wxT("%s "), l_hostname.c_str());
-	l_str.Append(l_station.c_str());
-    ptermSetStatus (l_str);
+	if (showstatus)
+	{
+		l_str.Printf(wxT("%s "), l_hostname.c_str());
+		l_str.Append(l_station.c_str());
+		ptermSetStatus (l_str);
+	}
 }
 
 void PtermFrame::ptermShowTrace ()
 {
-    if (tracePterm)
-    {
-        m_statusBar->SetStatusText(_(" Trace "), STATUS_TRC);
-    }
-    else if (ptermApp->m_platoKb)
-    {
-        m_statusBar->SetStatusText(_(" PLATO keyboard "), STATUS_TRC);
-    }
-    else
-    {
-        m_statusBar->SetStatusText(wxT (""), STATUS_TRC);
-    }
+	if (m_statusBar != NULL)
+	{
+		if (tracePterm)
+			m_statusBar->SetStatusText(_(" Trace "), STATUS_TRC);
+		else if (ptermApp->m_platoKb)
+			m_statusBar->SetStatusText(_(" PLATO keyboard "), STATUS_TRC);
+		else
+			m_statusBar->SetStatusText(wxT (""), STATUS_TRC);
+	}
 }
 
 // This emulates the "ROM resident".  Return values:
@@ -7096,6 +7171,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 //	wxCheckBox* chkSmartPaste;
 //	wxCheckBox* chkConvertDot7;
 //	wxCheckBox* chkConvert8Spaces;
+//	wxCheckBox* chkTutorColor;
 	wxStaticText* lblExplainConversions;
 	//tab6
 	wxScrolledWindow* tab6;
@@ -7380,15 +7456,19 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	bs51->Add( chkSmartPaste, 0, wxALL, 5 );
 	chkConvertDot7 = new wxCheckBox( tab5, wxID_ANY, _("Convert periods followed by 7 spaces into period/tab*"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkConvertDot7->SetValue(true);
-	chkConvertDot7->Hide();
+	//chkConvertDot7->Hide();
 	bs51->Add( chkConvertDot7, 0, wxALL, 5 );
 	chkConvert8Spaces = new wxCheckBox( tab5, wxID_ANY, _("Convert 8 consecutive spaces into a tab*"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkConvert8Spaces->SetValue(true);
-	chkConvert8Spaces->Hide();
+	//chkConvert8Spaces->Hide();
 	bs51->Add( chkConvert8Spaces, 0, wxALL, 5 );
+	chkTutorColor = new wxCheckBox( tab5, wxID_ANY, _("Display TUTOR colorization options on Edit/Context menus"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkTutorColor->SetValue(true);
+	//chkTutorColor->Hide();
+	bs51->Add( chkTutorColor, 0, wxALL, 5 );
 	page5->Add( bs51, 1, wxEXPAND, 5 );
 	lblExplainConversions = new wxStaticText( tab5, wxID_ANY, _("* NOTE: Conversions are applied at 8-character intervals."), wxDefaultPosition, wxDefaultSize, 0 );
-	lblExplainConversions->Hide();
+	//lblExplainConversions->Hide();
 	page5->Add( lblExplainConversions, 0, wxALL|wxALIGN_BOTTOM, 5 );
 	tab5->SetSizer( page5 );
 	tab5->Layout();
@@ -7453,6 +7533,11 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 
 	//button bar
 	btnOK->SetDefault ();
+}
+
+void PtermPrefDialog::OnClose (wxCloseEvent& event)
+{
+	EndModal (wxID_CANCEL);
 }
 
 bool PtermPrefDialog::ValidProfile(wxString profile)
@@ -7551,6 +7636,8 @@ bool PtermPrefDialog::SaveProfile(wxString profile)
 	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_CONV8SP "=%d"), (m_conv8Sp) ? 1 : 0);
 	file.AddLine(buffer);
+    buffer.Printf(wxT (PREF_TUTORCOLOR "=%d"), (m_TutorColor) ? 1 : 0);
+	file.AddLine(buffer);
 	//tab6
     buffer.Printf(wxT (PREF_BROWSER "=%s"), m_Browser.c_str());
 	file.AddLine(buffer);
@@ -7632,6 +7719,7 @@ void PtermPrefDialog::SetControlState(void)
 	m_smartPaste = ptermApp->m_smartPaste;
 	m_convDot7 = ptermApp->m_convDot7;
 	m_conv8Sp = ptermApp->m_conv8Sp;
+	m_TutorColor = ptermApp->m_TutorColor;
 	//tab6
 	m_Browser = ptermApp->m_Browser;
 	m_Email = ptermApp->m_Email;
@@ -7704,6 +7792,7 @@ void PtermPrefDialog::SetControlState(void)
 	chkSmartPaste->SetValue( m_smartPaste );
 	chkConvertDot7->SetValue( m_convDot7 );
 	chkConvert8Spaces->SetValue( m_conv8Sp );
+	chkTutorColor->SetValue( m_TutorColor );
 	//tab6
 	txtBrowser->SetValue ( m_Browser );
 	txtEmail->SetValue ( m_Email );
@@ -7888,6 +7977,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_smartPaste = false;
         m_convDot7 = false;
         m_conv8Sp = false;
+		m_TutorColor = false;
 		//tab6
 		m_Browser = wxT("");
 		m_Email = wxT("");
@@ -7930,6 +8020,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		chkSmartPaste->SetValue ( m_smartPaste );
 		chkConvertDot7->SetValue ( m_convDot7 );
 		chkConvert8Spaces->SetValue ( m_conv8Sp );
+		chkTutorColor->SetValue ( m_TutorColor );
 		//tab6
 		txtBrowser->SetValue ( m_Browser );
 		txtEmail->SetValue ( m_Email );
@@ -7992,6 +8083,8 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
         m_convDot7 = event.IsChecked ();
     else if (event.GetEventObject () == chkConvert8Spaces)
         m_conv8Sp = event.IsChecked ();
+    else if (event.GetEventObject () == chkTutorColor)
+        m_TutorColor = event.IsChecked ();
 	//tab6
 }
 
@@ -8379,8 +8472,7 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title, 
 	else
 		str.Printf(_("The host did not respond to the connection request.\nYou may open a new connection, try this connection\nagain, or exit."));
 	lblPrompt->SetLabel(str);
-	str.Printf(_("\nFailed: %s:%d"), ptermApp->m_hostName.c_str(), 
-               ptermApp->m_port);
+	str.Printf(_("\nFailed: %s:%d"), ptermApp->m_hostName.c_str(), ptermApp->m_port);
     lblHost->SetLabel(str);
 
 	//size the controls
@@ -8800,7 +8892,8 @@ int PtermConnection::NextWord (void)
     
     if (word == C_CONNFAIL || word == C_DISCONNECT)
     {
-        m_owner->m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+		if (m_owner->m_statusBar != NULL)
+			m_owner->m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
 
 		wxDateTime ldt;
 		ldt.SetToCurrent();
@@ -8829,7 +8922,8 @@ int PtermConnection::NextWord (void)
 			if (word == C_DISCONNECT)
 				word = C_NODATA;
 			else
-				m_owner->m_statusBar->SetStatusText (_(" Retrying..."), STATUS_CONN);
+				if (m_owner->m_statusBar != NULL)
+					m_owner->m_statusBar->SetStatusText (_(" Retrying..."), STATUS_CONN);
 			break;
 		default:		// cancel exits
 			m_owner->Close (true);
@@ -9604,9 +9698,7 @@ void PtermCanvas::ClearRegion (void)
 		m_owner->menuPopup->Enable (Pterm_MailTo, false);
 		m_owner->menuPopup->Enable (Pterm_SearchThis, false);
         if (m_owner->m_statusBar != NULL)
-        {
             m_owner->m_statusBar->SetStatusText (wxT(""), STATUS_TIP);
-        }
 		Refresh (false);
 	}
 }
@@ -9653,9 +9745,7 @@ void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
                             m_regionWidth, m_regionHeight, scfx, ecfx);
 		}
         if (m_owner->m_statusBar != NULL)
-        {
             m_owner->m_statusBar->SetStatusText (msg, STATUS_TIP);
-        }
     }
     
     event.Skip ();
