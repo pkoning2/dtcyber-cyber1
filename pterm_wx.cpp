@@ -2956,6 +2956,13 @@ void PtermFrame::OnCopyScreen (wxCommandEvent &)
 
 void PtermFrame::OnShowHideMenuBar (wxCommandEvent &)
 {
+	int ww,wh,ow,oh,nw,nh;
+
+	//get window parameters pre-prefs
+	GetSize(&ww,&wh);
+	GetClientSize(&ow,&oh);
+
+	//toggle menu
 	ptermApp->m_showMenuBar = !ptermApp->m_showMenuBar;
 	if (m_fullScreen || !ptermApp->m_showMenuBar)
 		SetMenuBar(NULL);
@@ -2975,6 +2982,13 @@ void PtermFrame::OnShowHideMenuBar (wxCommandEvent &)
 		#endif
 		SetMenuBar(menuBar);
 	}
+
+	//check if size changed
+	GetClientSize(&nw,&nh);
+	SetSize(ww,wh-(nh-oh));
+	m_canvas->SetScrollRate (0, 0);
+	m_canvas->SetScrollRate (1, 1);
+
 }
 
 void PtermFrame::OnCopy (wxCommandEvent &event)
@@ -3477,9 +3491,16 @@ void PtermFrame::OnPageSetup(wxCommandEvent &)
 void PtermFrame::OnPref (wxCommandEvent&)
 {
     wxString rgb;
+	int ww,wh,ow,oh,nw,nh;
 
-    PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"), wxDefaultPosition, wxSize( 451,400 ));
+	//get window parameters pre-prefs
+	GetSize(&ww,&wh);
+	GetClientSize(&ow,&oh);
+
+	//show dialog
+	PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"), wxDefaultPosition, wxSize( 451,400 ));
     
+	//process changes if OK clicked
     if (dlg.ShowModal () == wxID_OK)
     {
         UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2);
@@ -3585,7 +3606,6 @@ void PtermFrame::OnPref (wxCommandEvent&)
 		if (m_conn != NULL && !m_fullScreen && ptermApp->m_showMenuBar)
 			SetMenuBar(menuBar);
 
-        SetStatusBar (NULL);
 		if (m_conn != NULL && !m_fullScreen && ptermApp->m_showStatusBar)
 		{
 			delete m_statusBar;
@@ -3611,6 +3631,12 @@ void PtermFrame::OnPref (wxCommandEvent&)
 	        m_statusBar = NULL;
             SetStatusBar (NULL);
 		}
+
+		//check if size changed
+		GetClientSize(&nw,&nh);
+		SetSize(ww,wh-(nh-oh));
+		m_canvas->SetScrollRate (0, 0);
+		m_canvas->SetScrollRate (1, 1);
 
     }
 }
