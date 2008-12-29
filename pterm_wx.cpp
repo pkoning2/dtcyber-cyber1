@@ -132,7 +132,7 @@
 #define PREF_SHIFTSPACE  "DisableShiftSpace"
 #define PREF_MOUSEDRAG   "DisableMouseDrag"
 //tab4
-#define PREF_SCALE2      "scale"
+#define PREF_SCALE       "scale"
 #define PREF_STATUSBAR   "statusbar"
 #define PREF_MENUBAR	 "menubar"
 #define PREF_NOCOLOR     "noColor"
@@ -747,7 +747,9 @@ public:
     void OnPasteTimer (wxTimerEvent& event);
     void OnShellTimer (wxTimerEvent& event);
     void OnQuit (wxCommandEvent& event);
-    void OnShowHideMenuBar (wxCommandEvent &event);
+    void OnToggleMenuBar (wxCommandEvent &event);
+    void OnToggleStatusBar (wxCommandEvent &event);
+    void OnToggle2xMode (wxCommandEvent &event);
     void OnCopyScreen (wxCommandEvent &event);
     void OnCopy (wxCommandEvent &event);
     void OnExec (wxCommandEvent &event);
@@ -773,6 +775,7 @@ public:
     void OnPref (wxCommandEvent& event);
     void OnActivate (wxActivateEvent &event);
     void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
+    void SavePreferences (void);
     void SetColors (wxColour &newfg, wxColour &newbg, int newscale);
     void FixTextCharMaps (void);
     void OnFullScreen (wxCommandEvent &event);
@@ -783,6 +786,7 @@ public:
     void BuildMenuBar (void);
     void BuildEditMenu (int port);
     void BuildPopupMenu (int port);
+	void BuildStatusBar (void);
     void SendRoster (void);
     void KillRoster (void);
     void PrepareDC(wxDC& dc);
@@ -1144,9 +1148,9 @@ public:
 	wxCheckBox* chkDisableShiftSpace;
 	wxCheckBox* chkDisableMouseDrag;
 	//tab4
-	wxCheckBox* chkZoom200;
-	wxCheckBox* chkStatusBar;
-	wxCheckBox* chkMenuBar;
+	//wxCheckBox* chkZoom200;
+	//wxCheckBox* chkStatusBar;
+	//wxCheckBox* chkMenuBar;
 	wxCheckBox* chkDisableColor;
 #if defined(_WIN32)
 	wxButton* btnFGColor;
@@ -1280,13 +1284,19 @@ private:
 enum
 {
     // menu items
-	Pterm_ShowHideMenuBar = 1,
+	Pterm_ToggleMenuBar = 1,
+	Pterm_ToggleMenuBarView,
+	Pterm_ToggleStatusBar,
+	Pterm_ToggleStatusBarView,
+	Pterm_Toggle2xMode,
+	Pterm_Toggle2xModeView,
     Pterm_CopyScreen,
     Pterm_ConnectAgain,
     Pterm_SaveScreen,
     Pterm_HelpKeys,
     Pterm_PastePrint,
     Pterm_FullScreen,
+    Pterm_FullScreenView,
 
     // timers
     Pterm_Timer,        // display pacing
@@ -1475,7 +1485,12 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_TIMER(Pterm_PasteTimer, PtermFrame::OnPasteTimer)
     EVT_ACTIVATE(PtermFrame::OnActivate)
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
-    EVT_MENU(Pterm_ShowHideMenuBar, PtermFrame::OnShowHideMenuBar)
+    EVT_MENU(Pterm_ToggleMenuBar, PtermFrame::OnToggleMenuBar)
+    EVT_MENU(Pterm_ToggleMenuBarView, PtermFrame::OnToggleMenuBar)
+    EVT_MENU(Pterm_ToggleStatusBar, PtermFrame::OnToggleStatusBar)
+    EVT_MENU(Pterm_ToggleStatusBarView, PtermFrame::OnToggleStatusBar)
+    EVT_MENU(Pterm_Toggle2xMode, PtermFrame::OnToggle2xMode)
+    EVT_MENU(Pterm_Toggle2xModeView, PtermFrame::OnToggle2xMode)
     EVT_MENU(Pterm_CopyScreen, PtermFrame::OnCopyScreen)
     EVT_MENU(Pterm_Copy, PtermFrame::OnCopy)
     EVT_MENU(Pterm_Exec, PtermFrame::OnExec)	
@@ -1501,6 +1516,7 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_MENU(Pterm_Page_Setup, PtermFrame::OnPageSetup)
     EVT_MENU(Pterm_Pref,    PtermFrame::OnPref)
     EVT_MENU(Pterm_FullScreen, PtermFrame::OnFullScreen)
+    EVT_MENU(Pterm_FullScreenView, PtermFrame::OnFullScreen)
 #if defined (__WXMSW__)
     EVT_ICONIZE(PtermFrame::OnIconize)
 #endif
@@ -1630,7 +1646,7 @@ bool PtermApp::OnInit (void)
 		m_DisableShiftSpace = (m_config->Read (wxT (PREF_SHIFTSPACE), 0L) != 0);
 		m_DisableMouseDrag = (m_config->Read (wxT (PREF_MOUSEDRAG), 0L) != 0);
 		//tab4
-		m_scale = m_config->Read (wxT (PREF_SCALE2), 1);
+		m_scale = m_config->Read (wxT (PREF_SCALE), 1);
 		if (m_scale != 1 && m_scale != 2)
 			m_scale = 1;
 		m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
@@ -1845,7 +1861,7 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
 			else if (token.Cmp(wxT(PREF_SHIFTSPACE))==0)			m_DisableShiftSpace	= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_MOUSEDRAG))==0)				m_DisableMouseDrag	= (value.Cmp(wxT("1"))==0);
 			//tab4
-			else if (token.Cmp(wxT(PREF_SCALE2))==0)				m_scale			= (value.Cmp(wxT("2"))==0) ? 2 : 1;
+			else if (token.Cmp(wxT(PREF_SCALE))==0)					m_scale			= (value.Cmp(wxT("2"))==0) ? 2 : 1;
 			else if (token.Cmp(wxT(PREF_STATUSBAR))==0)				m_showStatusBar = (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_MENUBAR))==0)				m_showMenuBar	= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_NOCOLOR))==0)				m_noColor		= (value.Cmp(wxT("1"))==0);
@@ -1904,7 +1920,7 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
     m_config->Write (wxT (PREF_HOST), m_hostName);
     m_config->Write (wxT (PREF_PORT), m_port);
 	//tab4
-    m_config->Write (wxT (PREF_SCALE2), m_scale);
+    m_config->Write (wxT (PREF_SCALE), m_scale);
     m_config->Write (wxT (PREF_STATUSBAR), (m_showStatusBar) ? 1 : 0);
     m_config->Write (wxT (PREF_MENUBAR), (m_showMenuBar) ? 1 : 0);
     m_config->Write (wxT (PREF_NOCOLOR), (m_noColor) ? 1 : 0);
@@ -2219,7 +2235,14 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
 
 	//view menu options
     menuView = new wxMenu;
-    menuView->Append (Pterm_FullScreen, _("Full Screen") ACCELERATOR ("\tCtrl-U"), _("Display in full screen mode"));
+    menuView->AppendCheckItem (Pterm_ToggleMenuBarView, _("Display menu bar"), _("Display menu bar"));
+	menuView->Check(Pterm_ToggleMenuBarView,ptermApp->m_showMenuBar);
+    menuView->AppendCheckItem (Pterm_ToggleStatusBarView, _("Display status bar"), _("Display status bar"));
+	menuView->Check(Pterm_ToggleStatusBarView,ptermApp->m_showStatusBar);
+    menuView->AppendCheckItem (Pterm_Toggle2xModeView, _("Zoom display 200%"), _("Zoom display 200%"));
+	menuView->Check(Pterm_Toggle2xMode,(ptermApp->m_scale==2));
+    menuView->AppendSeparator ();
+    menuView->Append (Pterm_FullScreenView, _("Full Screen") ACCELERATOR ("\tCtrl-U"), _("Display in full screen mode"));
 
     // the "About" item should be in the help menu.
     // Well, on the Mac it actually doesn't show up there, but for that magic
@@ -2413,8 +2436,14 @@ void PtermFrame::BuildPopupMenu (int port)
     menuPopup->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
     menuPopup->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
     menuPopup->AppendSeparator ();
-    menuPopup->Append (Pterm_ShowHideMenuBar, _("Show/hide menu bar"), _("Show/hide menu bar"));
-    menuPopup->Append (Pterm_FullScreen, _("Full Screen") ACCELERATOR ("\tCtrl-U"), _("Display in full screen mode"));
+    menuPopup->AppendCheckItem (Pterm_ToggleMenuBar, _("Display menu bar"), _("Display menu bar"));
+	menuPopup->Check(Pterm_ToggleMenuBar,ptermApp->m_showMenuBar);
+    menuPopup->AppendCheckItem (Pterm_ToggleStatusBar, _("Display status bar"), _("Display status bar"));
+	menuPopup->Check(Pterm_ToggleStatusBar,ptermApp->m_showStatusBar);
+    menuPopup->AppendCheckItem (Pterm_Toggle2xMode, _("Zoom display 200%"), _("Zoom display 200%"));
+	menuPopup->Check(Pterm_Toggle2xMode,(ptermApp->m_scale==2));
+    menuPopup->AppendSeparator ();
+    menuPopup->AppendCheckItem (Pterm_FullScreen, _("Full Screen") ACCELERATOR ("\tCtrl-U"), _("Display full screen"));
     if (ptermApp->m_TutorColor && port > 0)
 	{
 		menuPopup->AppendSeparator ();
@@ -2433,6 +2462,35 @@ void PtermFrame::BuildPopupMenu (int port)
     menuPopup->Enable (Pterm_Exec, false);
     menuPopup->Enable (Pterm_MailTo, false);
     menuPopup->Enable (Pterm_SearchThis, false);
+}
+
+void PtermFrame::BuildStatusBar (void)
+{
+	if (m_conn != NULL && !m_fullScreen && ptermApp->m_showStatusBar)
+	{
+		delete m_statusBar;
+		m_statusBar = new wxStatusBar (this, wxID_ANY);
+		m_statusBar->SetFieldsCount (STATUSPANES);
+		if (m_conn == NULL)
+			m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+		else
+	        ptermSetStation (m_station, true, true);
+		if (tracePterm)
+			m_statusBar->SetStatusText(_(" Trace "), STATUS_TRC);
+		else if (ptermApp->m_platoKb)
+			m_statusBar->SetStatusText(_(" PLATO keyboard "), STATUS_TRC);
+		else
+			m_statusBar->SetStatusText(wxT (""), STATUS_TRC);
+        SetStatusBar (m_statusBar);
+		m_canvas->SetScrollRate (0, 0);
+		m_canvas->SetScrollRate (1, 1);
+	}
+    else
+	{
+		delete m_statusBar;
+	    m_statusBar = NULL;
+        SetStatusBar (NULL);
+	}
 }
 
 // event handlers
@@ -2934,8 +2992,7 @@ void PtermFrame::OnCopyScreen (wxCommandEvent &)
     wxBitmapDataObject *screen;
 
     screenDC.SelectObject (screenmap);
-    screenDC.Blit (0, 0, vScreenSize(m_scale), vScreenSize(m_scale), 
-                   m_memDC, 0, 0, wxCOPY);
+    screenDC.Blit (0, 0, vScreenSize(m_scale), vScreenSize(m_scale), m_memDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 
     screen = new wxBitmapDataObject(screenmap);
@@ -2954,7 +3011,7 @@ void PtermFrame::OnCopyScreen (wxCommandEvent &)
     }
 }
 
-void PtermFrame::OnShowHideMenuBar (wxCommandEvent &)
+void PtermFrame::OnToggleMenuBar (wxCommandEvent &)
 {
 	int ww,wh,ow,oh,nw,nh;
 
@@ -2964,6 +3021,9 @@ void PtermFrame::OnShowHideMenuBar (wxCommandEvent &)
 
 	//toggle menu
 	ptermApp->m_showMenuBar = !ptermApp->m_showMenuBar;
+	menuPopup->Check(Pterm_ToggleMenuBar,ptermApp->m_showMenuBar);
+	menuView->Check(Pterm_ToggleMenuBarView,ptermApp->m_showMenuBar);
+	SavePreferences();
 	if (m_fullScreen || !ptermApp->m_showMenuBar)
 		SetMenuBar(NULL);
 	else
@@ -2986,6 +3046,48 @@ void PtermFrame::OnShowHideMenuBar (wxCommandEvent &)
 	//check if size changed
 	GetClientSize(&nw,&nh);
 	SetSize(ww,wh-(nh-oh));
+	m_canvas->SetScrollRate (0, 0);
+	m_canvas->SetScrollRate (1, 1);
+
+}
+
+void PtermFrame::OnToggleStatusBar (wxCommandEvent &)
+{
+	int ww,wh,ow,oh,nw,nh;
+
+	//get window parameters pre-prefs
+	GetSize(&ww,&wh);
+	GetClientSize(&ow,&oh);
+
+	//toggle status
+	ptermApp->m_showStatusBar = !ptermApp->m_showStatusBar;
+	menuPopup->Check(Pterm_ToggleStatusBar,ptermApp->m_showStatusBar);
+	menuView->Check(Pterm_ToggleStatusBarView,ptermApp->m_showStatusBar);
+	SavePreferences();
+	BuildStatusBar();
+
+	//check if size changed
+	GetClientSize(&nw,&nh);
+	SetSize(ww,wh-(nh-oh));
+	m_canvas->SetScrollRate (0, 0);
+	m_canvas->SetScrollRate (1, 1);
+
+}
+
+void PtermFrame::OnToggle2xMode (wxCommandEvent &)
+{
+
+	//toggle status
+    UpdateSettings (ptermApp->m_fgColor, ptermApp->m_bgColor, (ptermApp->m_scale==1));
+	ptermApp->m_scale = (ptermApp->m_scale==2) ? 1 : 2;
+	m_canvas->m_scale = ptermApp->m_scale;
+	m_scale = ptermApp->m_scale;
+	menuPopup->Check(Pterm_Toggle2xMode,(ptermApp->m_scale==2));
+	menuView->Check(Pterm_Toggle2xModeView,(ptermApp->m_scale==2));
+	SavePreferences();
+
+	//refit
+	FitInside();
 	m_canvas->SetScrollRate (0, 0);
 	m_canvas->SetScrollRate (1, 1);
 
@@ -3365,8 +3467,7 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
     filename = fd.GetPath ();
     
     screenDC.SelectObject (screenmap);
-    screenDC.Blit (0, 0, vScreenSize(m_scale), vScreenSize(m_scale), 
-                   m_memDC, 0, 0, wxCOPY);
+    screenDC.Blit (0, 0, vScreenSize(m_scale), vScreenSize(m_scale), m_memDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 
     wxImage screenImage = screenmap.ConvertToImage ();
@@ -3490,7 +3591,6 @@ void PtermFrame::OnPageSetup(wxCommandEvent &)
 
 void PtermFrame::OnPref (wxCommandEvent&)
 {
-    wxString rgb;
 	int ww,wh,ow,oh,nw,nh;
 
 	//get window parameters pre-prefs
@@ -3529,10 +3629,10 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_DisableShiftSpace = dlg.m_DisableShiftSpace;
         ptermApp->m_DisableMouseDrag = dlg.m_DisableMouseDrag;
 		//tab4
-        ptermApp->m_scale = (dlg.m_scale2) ? 2 : 1;
-		m_scale = ptermApp->m_scale;
-        ptermApp->m_showStatusBar = dlg.m_showStatusBar;
-        ptermApp->m_showMenuBar = dlg.m_showMenuBar;
+        //ptermApp->m_scale = (dlg.m_scale2) ? 2 : 1;
+		//m_scale = ptermApp->m_scale;
+        //ptermApp->m_showStatusBar = dlg.m_showStatusBar;
+        //ptermApp->m_showMenuBar = dlg.m_showMenuBar;
         ptermApp->m_noColor = dlg.m_noColor;
         ptermApp->m_fgColor = dlg.m_fgColor;
         ptermApp->m_bgColor = dlg.m_bgColor;
@@ -3550,53 +3650,8 @@ void PtermFrame::OnPref (wxCommandEvent&)
 		ptermApp->m_Email = dlg.m_Email;
 		ptermApp->m_SearchURL = dlg.m_SearchURL;
 
-        //write prefs
-		ptermApp->m_config->Write (wxT (PREF_LASTTAB), dlg.m_lastTab);
-		//tab0
-		ptermApp->m_config->Write (wxT (PREF_CURPROFILE), dlg.m_curProfile);
-		//tab1
-        ptermApp->m_config->Write (wxT (PREF_SHELLFIRST), dlg.m_ShellFirst);
-        ptermApp->m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_HOST), dlg.m_host);
-        ptermApp->m_config->Write (wxT (PREF_PORT), atoi(dlg.m_port.mb_str()));
-		//tab2
-        ptermApp->m_config->Write (wxT (PREF_SHOWSIGNON), (dlg.m_showSignon) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_SHOWSYSNAME), (dlg.m_showSysName) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_SHOWHOST), (dlg.m_showHost) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_SHOWSTATION), (dlg.m_showStation) ? 1 : 0);
-		//tab3
-        ptermApp->m_config->Write (wxT (PREF_1200BAUD), (dlg.m_classicSpeed) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_GSW), (dlg.m_gswEnable) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_ARROWS), (dlg.m_numpadArrows) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_IGNORECAP), (dlg.m_ignoreCapLock) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_PLATOKB), (dlg.m_platoKb) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_ACCEL), (dlg.m_useAccel) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_BEEP), (dlg.m_beepEnable) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_SHIFTSPACE), (dlg.m_DisableShiftSpace) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_MOUSEDRAG), (dlg.m_DisableMouseDrag) ? 1 : 0);
-		//tab4
-        ptermApp->m_config->Write (wxT (PREF_SCALE2), (dlg.m_scale2) ? 2 : 1);
-        ptermApp->m_config->Write (wxT (PREF_STATUSBAR), (dlg.m_showStatusBar) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_MENUBAR), (dlg.m_showMenuBar) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_NOCOLOR), (dlg.m_noColor) ? 1 : 0);
-        rgb.Printf (wxT ("%d %d %d"), dlg.m_fgColor.Red (), dlg.m_fgColor.Green (), dlg.m_fgColor.Blue ());
-        ptermApp->m_config->Write (wxT (PREF_FOREGROUND), rgb);
-        rgb.Printf (wxT ("%d %d %d"), dlg.m_bgColor.Red (), dlg.m_bgColor.Green (), dlg.m_bgColor.Blue ());
-        ptermApp->m_config->Write (wxT (PREF_BACKGROUND), rgb);
-		//tab5
-        ptermApp->m_config->Write (wxT (PREF_CHARDELAY), atoi(dlg.m_charDelay.mb_str()));
-        ptermApp->m_config->Write (wxT (PREF_LINEDELAY), atoi(dlg.m_lineDelay.mb_str()));
-        ptermApp->m_config->Write (wxT (PREF_AUTOLF), atoi(dlg.m_autoLF.mb_str()));
-        ptermApp->m_config->Write (wxT (PREF_SPLITWORDS), (dlg.m_splitWords) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_SMARTPASTE), (dlg.m_smartPaste) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_CONVDOT7), (dlg.m_convDot7) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_CONV8SP), (dlg.m_conv8Sp) ? 1 : 0);
-        ptermApp->m_config->Write (wxT (PREF_TUTORCOLOR), (dlg.m_TutorColor) ? 1 : 0);
-		//tab6
-        ptermApp->m_config->Write (wxT (PREF_BROWSER), dlg.m_Browser);
-        ptermApp->m_config->Write (wxT (PREF_EMAIL), dlg.m_Email);
-        ptermApp->m_config->Write (wxT (PREF_SEARCHURL), dlg.m_SearchURL);
-        ptermApp->m_config->Flush ();
+		//update settings to config
+		SavePreferences();
 
 		//rebuild menus
 		BuildPopupMenu(1);
@@ -3606,31 +3661,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
 		if (m_conn != NULL && !m_fullScreen && ptermApp->m_showMenuBar)
 			SetMenuBar(menuBar);
 
-		if (m_conn != NULL && !m_fullScreen && ptermApp->m_showStatusBar)
-		{
-			delete m_statusBar;
-			m_statusBar = new wxStatusBar (this, wxID_ANY);
-			m_statusBar->SetFieldsCount (STATUSPANES);
-			if (m_conn == NULL)
-				m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
-			else
-	            ptermSetStation (m_station, true, true);
-			if (tracePterm)
-				m_statusBar->SetStatusText(_(" Trace "), STATUS_TRC);
-			else if (ptermApp->m_platoKb)
-				m_statusBar->SetStatusText(_(" PLATO keyboard "), STATUS_TRC);
-			else
-				m_statusBar->SetStatusText(wxT (""), STATUS_TRC);
-            SetStatusBar (m_statusBar);
-			m_canvas->SetScrollRate (0, 0);
-			m_canvas->SetScrollRate (1, 1);
-		}
-        else
-		{
-			delete m_statusBar;
-	        m_statusBar = NULL;
-            SetStatusBar (NULL);
-		}
+		BuildStatusBar();
 
 		//check if size changed
 		GetClientSize(&nw,&nh);
@@ -3639,6 +3670,58 @@ void PtermFrame::OnPref (wxCommandEvent&)
 		m_canvas->SetScrollRate (1, 1);
 
     }
+}
+
+void PtermFrame::SavePreferences(void)
+{
+    wxString rgb;
+    //write prefs
+	ptermApp->m_config->Write (wxT (PREF_LASTTAB), ptermApp->m_lastTab);
+	//tab0
+	ptermApp->m_config->Write (wxT (PREF_CURPROFILE), ptermApp->m_curProfile);
+	//tab1
+    ptermApp->m_config->Write (wxT (PREF_SHELLFIRST), ptermApp->m_ShellFirst);
+    ptermApp->m_config->Write (wxT (PREF_CONNECT), (ptermApp->m_connect) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_HOST), m_hostName);
+    ptermApp->m_config->Write (wxT (PREF_PORT), ptermApp->m_port);
+	//tab2
+    ptermApp->m_config->Write (wxT (PREF_SHOWSIGNON), (ptermApp->m_showSignon) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_SHOWSYSNAME), (ptermApp->m_showSysName) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_SHOWHOST), (ptermApp->m_showHost) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_SHOWSTATION), (ptermApp->m_showStation) ? 1 : 0);
+	//tab3
+    ptermApp->m_config->Write (wxT (PREF_1200BAUD), (ptermApp->m_classicSpeed) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_GSW), (ptermApp->m_gswEnable) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_ARROWS), (ptermApp->m_numpadArrows) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_IGNORECAP), (ptermApp->m_ignoreCapLock) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_PLATOKB), (ptermApp->m_platoKb) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_ACCEL), (ptermApp->m_useAccel) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_BEEP), (ptermApp->m_beepEnable) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_SHIFTSPACE), (ptermApp->m_DisableShiftSpace) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_MOUSEDRAG), (ptermApp->m_DisableMouseDrag) ? 1 : 0);
+	//tab4
+    ptermApp->m_config->Write (wxT (PREF_SCALE), ptermApp->m_scale);
+    ptermApp->m_config->Write (wxT (PREF_STATUSBAR), (ptermApp->m_showStatusBar) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_MENUBAR), (ptermApp->m_showMenuBar) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_NOCOLOR), (ptermApp->m_noColor) ? 1 : 0);
+    rgb.Printf (wxT ("%d %d %d"), ptermApp->m_fgColor.Red (), ptermApp->m_fgColor.Green (), ptermApp->m_fgColor.Blue ());
+    ptermApp->m_config->Write (wxT (PREF_FOREGROUND), rgb);
+    rgb.Printf (wxT ("%d %d %d"), ptermApp->m_bgColor.Red (), ptermApp->m_bgColor.Green (), ptermApp->m_bgColor.Blue ());
+    ptermApp->m_config->Write (wxT (PREF_BACKGROUND), rgb);
+	//tab5
+    ptermApp->m_config->Write (wxT (PREF_CHARDELAY), atoi(ptermApp->m_charDelay.mb_str()));
+    ptermApp->m_config->Write (wxT (PREF_LINEDELAY), atoi(ptermApp->m_lineDelay.mb_str()));
+    ptermApp->m_config->Write (wxT (PREF_AUTOLF), atoi(ptermApp->m_autoLF.mb_str()));
+    ptermApp->m_config->Write (wxT (PREF_SPLITWORDS), (ptermApp->m_splitWords) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_SMARTPASTE), (ptermApp->m_smartPaste) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_CONVDOT7), (ptermApp->m_convDot7) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_CONV8SP), (ptermApp->m_conv8Sp) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_TUTORCOLOR), (ptermApp->m_TutorColor) ? 1 : 0);
+	//tab6
+    ptermApp->m_config->Write (wxT (PREF_BROWSER), ptermApp->m_Browser);
+    ptermApp->m_config->Write (wxT (PREF_EMAIL), ptermApp->m_Email);
+    ptermApp->m_config->Write (wxT (PREF_SEARCHURL), ptermApp->m_SearchURL);
+    ptermApp->m_config->Flush ();
 }
 
 void PtermFrame::OnFullScreen (wxCommandEvent &)
@@ -3656,6 +3739,7 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
     
     ShowFullScreen (m_fullScreen);
     m_canvas->Refresh ();
+	menuPopup->Check(Pterm_FullScreen,m_fullScreen);
 }
 
 #if defined (__WXMSW__)
@@ -4183,7 +4267,8 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool newscale
     UpdateDC (m_memDC, m_bitmap, newfg, newbg, newscale2);
     if (rescale)
     {
-        SetClientSize (vXSize (newscale) + 2, vYSize (newscale) + 2);
+
+		SetClientSize (vXSize (newscale) + 2, vYSize (newscale) + 2);
         m_canvas->SetSize (vXSize (newscale), vYSize (newscale));
         m_canvas->SetVirtualSize (vXSize (newscale), vYSize (newscale));
         if (!m_fullScreen)
@@ -7393,14 +7478,16 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	page4->Add( lblExplain4, 0, wxALL, 5 );
 	wxBoxSizer* bs41;
 	bs41 = new wxBoxSizer( wxVERTICAL );
-	chkZoom200 = new wxCheckBox( tab4, wxID_ANY, _("Zoom display 200%"), wxDefaultPosition, wxDefaultSize, 0 );
-	bs41->Add( chkZoom200, 0, wxALL, 5 );
-	chkStatusBar = new wxCheckBox( tab4, wxID_ANY, _("Display status bar"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkStatusBar->SetValue(true);
-	bs41->Add( chkStatusBar, 0, wxALL, 5 );
-	chkMenuBar = new wxCheckBox( tab4, wxID_ANY, _("Display menu bar"), wxDefaultPosition, wxDefaultSize, 0 );
-	chkMenuBar->SetValue(true);
-	bs41->Add( chkMenuBar, 0, wxALL, 5 );
+
+	//chkZoom200 = new wxCheckBox( tab4, wxID_ANY, _("Zoom display 200%"), wxDefaultPosition, wxDefaultSize, 0 );
+	//bs41->Add( chkZoom200, 0, wxALL, 5 );
+	//chkStatusBar = new wxCheckBox( tab4, wxID_ANY, _("Display status bar"), wxDefaultPosition, wxDefaultSize, 0 );
+	//chkStatusBar->SetValue(true);
+	//bs41->Add( chkStatusBar, 0, wxALL, 5 );
+	//chkMenuBar = new wxCheckBox( tab4, wxID_ANY, _("Display menu bar"), wxDefaultPosition, wxDefaultSize, 0 );
+	//chkMenuBar->SetValue(true);
+	//bs41->Add( chkMenuBar, 0, wxALL, 5 );
+
 	chkDisableColor = new wxCheckBox( tab4, wxID_ANY, _("Disable -color- (ASCII mode)"), wxDefaultPosition, wxDefaultSize, 0 );
 	bs41->Add( chkDisableColor, 0, wxALL, 5 );
 	wxFlexGridSizer* fgs411;
@@ -7637,7 +7724,7 @@ bool PtermPrefDialog::SaveProfile(wxString profile)
     buffer.Printf(wxT (PREF_MOUSEDRAG "=%d"), (m_DisableMouseDrag) ? 1 : 0);
 	file.AddLine(buffer);
 	//tab4
-    buffer.Printf(wxT (PREF_SCALE2 "=%d"), (m_scale2) ? 2 : 1);
+    buffer.Printf(wxT (PREF_SCALE "=%d"), (m_scale2) ? 2 : 1);
 	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_STATUSBAR "=%d"), (m_showStatusBar) ? 1 : 0);
 	file.AddLine(buffer);
@@ -7799,9 +7886,9 @@ void PtermPrefDialog::SetControlState(void)
     chkDisableShiftSpace->SetValue ( m_DisableShiftSpace );
     chkDisableMouseDrag->SetValue ( m_DisableMouseDrag );
 	//tab4
-    chkZoom200->SetValue ( m_scale2 );
-	chkStatusBar->SetValue( m_showStatusBar );
-	chkMenuBar->SetValue( m_showMenuBar );
+    //chkZoom200->SetValue ( m_scale2 );
+	//chkStatusBar->SetValue( m_showStatusBar );
+	//chkMenuBar->SetValue( m_showMenuBar );
     chkDisableColor->SetValue ( m_noColor );
 	#if defined(_WIN32)
 		btnFGColor->SetBackgroundColour( m_fgColor );
@@ -8034,9 +8121,9 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		chkDisableShiftSpace->SetValue ( m_DisableShiftSpace );
 		chkDisableMouseDrag->SetValue ( m_DisableMouseDrag );
 		//tab4
-		chkZoom200->SetValue ( m_scale2 );
-		chkStatusBar->SetValue ( m_showStatusBar );
-		chkMenuBar->SetValue ( m_showMenuBar );
+		//chkZoom200->SetValue ( m_scale2 );
+		//chkStatusBar->SetValue ( m_showStatusBar );
+		//chkMenuBar->SetValue ( m_showMenuBar );
 		chkDisableColor->SetValue ( m_noColor );
 		btnFGColor->SetBackgroundColour ( m_fgColor );
 		btnBGColor->SetBackgroundColour ( m_bgColor );
@@ -8094,12 +8181,12 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == chkDisableMouseDrag)
         m_DisableMouseDrag = event.IsChecked ();
 	//tab4
-    else if (event.GetEventObject () == chkZoom200)
-        m_scale2 = event.IsChecked ();
-    else if (event.GetEventObject () == chkStatusBar)
-        m_showStatusBar = event.IsChecked ();
-    else if (event.GetEventObject () == chkMenuBar)
-        m_showMenuBar = event.IsChecked ();
+    //else if (event.GetEventObject () == chkZoom200)
+    //    m_scale2 = event.IsChecked ();
+    //else if (event.GetEventObject () == chkStatusBar)
+    //    m_showStatusBar = event.IsChecked ();
+    //else if (event.GetEventObject () == chkMenuBar)
+    //    m_showMenuBar = event.IsChecked ();
     else if (event.GetEventObject () == chkDisableColor)
         m_noColor = event.IsChecked ();
 	//tab5
