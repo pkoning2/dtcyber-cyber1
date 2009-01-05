@@ -51,7 +51,7 @@ SXOBJS  = dt_x11.o
 	bdftopcf -o $@ $<
 
 %.d : %.c
-	echo -n "$@ " > $@.tmp
+	/bin/echo -n "$@ " > $@.tmp
 	$(CC) $(INCL) -MM -MG $< >> $@.tmp
 	mv -f $@.tmp $@
 

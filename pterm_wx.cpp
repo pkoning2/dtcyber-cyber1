@@ -1,10 +1,10 @@
 /////////////////////////////////////////////////////////////////////////////
 // Name:        pterm_wx.cpp
 // Purpose:     pterm interface to wxWindows 
-// Author:      Paul Koning
+// Authors:     Paul Koning, Joe Stanton
 // Modified by: 
 // Created:     03/26/2005
-// Copyright:   (c) Paul Koning
+// Copyright:   (c) Paul Koning, Joe Stanton
 // Licence:     DtCyber license
 /////////////////////////////////////////////////////////////////////////////
 
@@ -640,7 +640,9 @@ public:
 	//tab4
     int         m_scale;
     bool        m_showStatusBar;
+#if !defined(__WXMAC__)
     bool        m_showMenuBar;
+#endif
     bool        m_noColor;
     wxColour    m_fgColor;
     wxColour    m_bgColor;
@@ -750,6 +752,9 @@ public:
         else
             return NULL;
     }
+	wxMenuBar   *menuBar;
+	wxMenu      *menuFile;
+	wxMenu      *menuHelp;
 };
 
 static PtermMainFrame *PtermFrameParent;
@@ -776,7 +781,9 @@ public:
     void OnPasteTimer (wxTimerEvent& event);
     void OnShellTimer (wxTimerEvent& event);
     void OnQuit (wxCommandEvent& event);
+#if !defined(__WXMAC__)
     void OnToggleMenuBar (wxCommandEvent &event);
+#endif
     void OnToggleStatusBar (wxCommandEvent &event);
     void OnToggle2xMode (wxCommandEvent &event);
     void OnCopyScreen (wxCommandEvent &event);
@@ -1233,7 +1240,9 @@ public:
 	//tab4
     bool            m_scale2;
     bool            m_showStatusBar;
+#if !defined(__WXMAC__)
     bool            m_showMenuBar;
+#endif
     bool            m_noColor;
     wxColour        m_fgColor;
     wxColour        m_bgColor;
@@ -1514,8 +1523,10 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
     EVT_TIMER(Pterm_PasteTimer, PtermFrame::OnPasteTimer)
     EVT_ACTIVATE(PtermFrame::OnActivate)
     EVT_MENU(Pterm_Close, PtermFrame::OnQuit)
+#if !defined(__WXMAC__)
     EVT_MENU(Pterm_ToggleMenuBar, PtermFrame::OnToggleMenuBar)
     EVT_MENU(Pterm_ToggleMenuBarView, PtermFrame::OnToggleMenuBar)
+#endif
     EVT_MENU(Pterm_ToggleStatusBar, PtermFrame::OnToggleStatusBar)
     EVT_MENU(Pterm_ToggleStatusBarView, PtermFrame::OnToggleStatusBar)
     EVT_MENU(Pterm_Toggle2xMode, PtermFrame::OnToggle2xMode)
@@ -1679,7 +1690,9 @@ bool PtermApp::OnInit (void)
 		if (m_scale != 1 && m_scale != 2)
 			m_scale = 1;
 		m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
+#if !defined(__WXMAC__)
 		m_showMenuBar = (m_config->Read (wxT (PREF_MENUBAR), 1) != 0);
+#endif
 		m_noColor = (m_config->Read (wxT (PREF_NOCOLOR), 0L) != 0);
 		m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("255 144 0"));// 255 144 0 is RGB for Plato Orange
 		sscanf (rgb.mb_str(), "%d %d %d", &r, &g, &b);
@@ -1892,7 +1905,9 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
 			//tab4
 			else if (token.Cmp(wxT(PREF_SCALE))==0)					m_scale			= (value.Cmp(wxT("2"))==0) ? 2 : 1;
 			else if (token.Cmp(wxT(PREF_STATUSBAR))==0)				m_showStatusBar = (value.Cmp(wxT("1"))==0);
+#if !defined(__WXMAC__)
 			else if (token.Cmp(wxT(PREF_MENUBAR))==0)				m_showMenuBar	= (value.Cmp(wxT("1"))==0);
+#endif
 			else if (token.Cmp(wxT(PREF_NOCOLOR))==0)				m_noColor		= (value.Cmp(wxT("1"))==0);
 			else if (token.Cmp(wxT(PREF_FOREGROUND))==0)
 																	{
@@ -1951,7 +1966,9 @@ bool PtermApp::LoadProfile(wxString profile, wxString filename)
 	//tab4
     m_config->Write (wxT (PREF_SCALE), m_scale);
     m_config->Write (wxT (PREF_STATUSBAR), (m_showStatusBar) ? 1 : 0);
+#if !defined(__WXMAC__)
     m_config->Write (wxT (PREF_MENUBAR), (m_showMenuBar) ? 1 : 0);
+#endif
     m_config->Write (wxT (PREF_NOCOLOR), (m_noColor) ? 1 : 0);
     rgb.Printf (wxT ("%d %d %d"), m_fgColor.Red (), m_fgColor.Green (), m_fgColor.Blue ());
     m_config->Write (wxT (PREF_FOREGROUND), rgb);
@@ -2131,7 +2148,9 @@ PtermMainFrame::PtermMainFrame (void)
 #endif
 
     // ... and attach this menu bar to the frame
-	if (!m_fullScreen && ptermApp->m_showMenuBar)
+#if !defined(__WXMAC__)
+    if (!m_fullScreen && ptermApp->m_showMenuBar)
+#endif
 		SetMenuBar(menuBar);
 #endif // wxUSE_MENUS
 }
@@ -2269,8 +2288,10 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
 
 	//view menu options
     menuView = new wxMenu;
+#if !defined(__WXMAC__)
     menuView->AppendCheckItem (Pterm_ToggleMenuBarView, _("Display menu bar"), _("Display menu bar"));
 	menuView->Check(Pterm_ToggleMenuBarView,ptermApp->m_showMenuBar);
+#endif
     menuView->AppendCheckItem (Pterm_ToggleStatusBarView, _("Display status bar"), _("Display status bar"));
 	menuView->Check(Pterm_ToggleStatusBarView,ptermApp->m_showStatusBar);
     menuView->AppendCheckItem (Pterm_Toggle2xModeView, _("Zoom display 200%"), _("Zoom display 200%"));
@@ -2294,7 +2315,10 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
 	BuildPopupMenu(port);
 
     // ... and attach this menu bar to the frame
+#if !defined(__WXMAC__)
+    // On Mac menu bar is always displayed (Mac standard)
 	if (!m_fullScreen && ptermApp->m_showMenuBar)
+#endif
 		SetMenuBar(menuBar);
 #endif // wxUSE_MENUS
 
@@ -2470,8 +2494,10 @@ void PtermFrame::BuildPopupMenu (int port)
     menuPopup->Append(Pterm_MailTo, _("Mail to...") ACCELERATOR ("\tCtrl-M"), _("Mail to..."));
     menuPopup->Append(Pterm_SearchThis, _("Search this...") ACCELERATOR ("\tCtrl-G"), _("Search this..."));// g=google this?
     menuPopup->AppendSeparator ();
+#if !defined(__WXMAC__)
     menuPopup->AppendCheckItem (Pterm_ToggleMenuBar, _("Display menu bar"), _("Display menu bar"));
 	menuPopup->Check(Pterm_ToggleMenuBar,ptermApp->m_showMenuBar);
+#endif
     menuPopup->AppendCheckItem (Pterm_ToggleStatusBar, _("Display status bar"), _("Display status bar"));
 	menuPopup->Check(Pterm_ToggleStatusBar,ptermApp->m_showStatusBar);
     menuPopup->AppendCheckItem (Pterm_Toggle2xMode, _("Zoom display 200%"), _("Zoom display 200%"));
@@ -3045,6 +3071,7 @@ void PtermFrame::OnCopyScreen (wxCommandEvent &)
     }
 }
 
+#if !defined(__WXMAC__)
 void PtermFrame::OnToggleMenuBar (wxCommandEvent &)
 {
 	int ww,wh,ow,oh,nw,nh;
@@ -3066,14 +3093,8 @@ void PtermFrame::OnToggleMenuBar (wxCommandEvent &)
 		menuBar = new wxMenuBar ();
 		menuBar->Append (menuFile, _("File"));
 		menuBar->Append (menuEdit, _("Edit"));
-		#if !0//PTERM_MDI
-			menuBar->Append (menuView, _("View"));
-		#endif
-		#if defined(__WXMAC__)
-			menuBar->Append(menuHelp, wxT("&Help"));
-		#else
-			menuBar->Append(menuHelp, _("Help"));
-		#endif
+        menuBar->Append (menuView, _("View"));
+        menuBar->Append(menuHelp, _("Help"));
 		SetMenuBar(menuBar);
 	}
 
@@ -3084,6 +3105,7 @@ void PtermFrame::OnToggleMenuBar (wxCommandEvent &)
 	m_canvas->SetScrollRate (1, 1);
 
 }
+#endif
 
 void PtermFrame::OnToggleStatusBar (wxCommandEvent &)
 {
@@ -3159,7 +3181,7 @@ void PtermFrame::OnExec (wxCommandEvent &event)
     else
     {
 		wxString url = text.GetText();
-		url.Replace("\n","");
+		url.Replace(wxT ("\n"), wxT (""));
         wxExecute (ptermApp->m_Browser + wxT (" ") + url);
     }
 
@@ -3666,7 +3688,9 @@ void PtermFrame::OnPref (wxCommandEvent&)
         //ptermApp->m_scale = (dlg.m_scale2) ? 2 : 1;
 		//m_scale = ptermApp->m_scale;
         //ptermApp->m_showStatusBar = dlg.m_showStatusBar;
+#if !defined(__WXMAC__)
         //ptermApp->m_showMenuBar = dlg.m_showMenuBar;
+#endif
         ptermApp->m_noColor = dlg.m_noColor;
         ptermApp->m_fgColor = dlg.m_fgColor;
         ptermApp->m_bgColor = dlg.m_bgColor;
@@ -3692,7 +3716,9 @@ void PtermFrame::OnPref (wxCommandEvent&)
 		SetMenuBar(NULL);
 		BuildEditMenu(1);
 		BuildMenuBar();
+#if !defined(__WXMAC__)
 		if (m_conn != NULL && !m_fullScreen && ptermApp->m_showMenuBar)
+#endif
 			SetMenuBar(menuBar);
 
 		BuildStatusBar();
@@ -3736,7 +3762,9 @@ void PtermFrame::SavePreferences(void)
 	//tab4
     ptermApp->m_config->Write (wxT (PREF_SCALE), ptermApp->m_scale);
     ptermApp->m_config->Write (wxT (PREF_STATUSBAR), (ptermApp->m_showStatusBar) ? 1 : 0);
+#if !defined(__WXMAC__)
     ptermApp->m_config->Write (wxT (PREF_MENUBAR), (ptermApp->m_showMenuBar) ? 1 : 0);
+#endif
     ptermApp->m_config->Write (wxT (PREF_NOCOLOR), (ptermApp->m_noColor) ? 1 : 0);
     rgb.Printf (wxT ("%d %d %d"), ptermApp->m_fgColor.Red (), ptermApp->m_fgColor.Green (), ptermApp->m_fgColor.Blue ());
     ptermApp->m_config->Write (wxT (PREF_FOREGROUND), rgb);
@@ -7872,8 +7900,10 @@ bool PtermPrefDialog::SaveProfile(wxString profile)
 	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_STATUSBAR "=%d"), (m_showStatusBar) ? 1 : 0);
 	file.AddLine(buffer);
+#if !defined(__WXMAC__)
     buffer.Printf(wxT (PREF_MENUBAR "=%d"), (m_showMenuBar) ? 1 : 0);
 	file.AddLine(buffer);
+#endif
     buffer.Printf(wxT (PREF_NOCOLOR "=%d"), (m_noColor) ? 1 : 0);
 	file.AddLine(buffer);
     buffer.Printf(wxT (PREF_FOREGROUND "=%d %d %d"), m_fgColor.Red (), m_fgColor.Green (), m_fgColor.Blue ());
@@ -7958,7 +7988,9 @@ void PtermPrefDialog::SetControlState(void)
 	//tab4
     m_scale2 = (ptermApp->m_scale != 1);
     m_showStatusBar = ptermApp->m_showStatusBar;
+#if !defined(__WXMAC__)
     m_showMenuBar = ptermApp->m_showMenuBar;
+#endif
     m_noColor = ptermApp->m_noColor;
     //m_fgColor = ptermApp->m_fgColor;
     //m_bgColor = ptermApp->m_bgColor;
@@ -8032,7 +8064,9 @@ void PtermPrefDialog::SetControlState(void)
 	//tab4
     //chkZoom200->SetValue ( m_scale2 );
 	//chkStatusBar->SetValue( m_showStatusBar );
+#if !defined(__WXMAC__)
 	//chkMenuBar->SetValue( m_showMenuBar );
+#endif
     chkDisableColor->SetValue ( m_noColor );
 	#if defined(_WIN32)
 		btnFGColor->SetBackgroundColour( m_fgColor );
@@ -8224,7 +8258,9 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		//tab4
         m_scale2 = false;
         m_showStatusBar = true;
+#if !defined(__WXMAC__)
         m_showMenuBar = true;
+#endif
         m_noColor = false;
         m_fgColor = wxColour (255, 144, 0);
         m_bgColor = *wxBLACK;
@@ -8267,7 +8303,9 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 		//tab4
 		//chkZoom200->SetValue ( m_scale2 );
 		//chkStatusBar->SetValue ( m_showStatusBar );
+#if !defined(__WXMAC__)
 		//chkMenuBar->SetValue ( m_showMenuBar );
+#endif
 		chkDisableColor->SetValue ( m_noColor );
 		btnFGColor->SetBackgroundColour ( m_fgColor );
 		btnBGColor->SetBackgroundColour ( m_bgColor );
@@ -8329,8 +8367,10 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     //    m_scale2 = event.IsChecked ();
     //else if (event.GetEventObject () == chkStatusBar)
     //    m_showStatusBar = event.IsChecked ();
+#if !defined(__WXMAC__)
     //else if (event.GetEventObject () == chkMenuBar)
     //    m_showMenuBar = event.IsChecked ();
+#endif
     else if (event.GetEventObject () == chkDisableColor)
         m_noColor = event.IsChecked ();
 	//tab5
