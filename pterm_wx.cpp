@@ -227,7 +227,7 @@
 	#define YMADJUST(y) (511 - (y))
 #else
 	#define XMADJUST(x) ((x) * m_scale)
-	#define YMADJUST(y) ((511 - (y) * m_scale)
+	#define YMADJUST(y) (511 - (y) * m_scale)
 #endif
 
 // inverse mapping (for processing touch input)
