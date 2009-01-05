@@ -2295,7 +2295,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     menuView->AppendCheckItem (Pterm_ToggleStatusBarView, _("Display status bar"), _("Display status bar"));
 	menuView->Check(Pterm_ToggleStatusBarView,ptermApp->m_showStatusBar);
     menuView->AppendCheckItem (Pterm_Toggle2xModeView, _("Zoom display 200%"), _("Zoom display 200%"));
-	menuView->Check(Pterm_Toggle2xMode,(ptermApp->m_scale==2));
+	menuView->Check(Pterm_Toggle2xModeView,(ptermApp->m_scale==2));
     menuView->AppendSeparator ();
     menuView->Append (Pterm_FullScreenView, _("Full Screen") ACCELERATOR ("\tCtrl-U"), _("Display in full screen mode"));
 
