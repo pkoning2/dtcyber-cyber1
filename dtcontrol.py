@@ -28,7 +28,8 @@ class Connection (socket.socket):
         socket.socket.__init__ (self, socket.AF_INET, socket.SOCK_STREAM)
         self.connect ((host, port))
         self.pendingdata = ""
-
+        self.nextbyte = 0
+        
     def readmore (self):
         """Read some more network data and append it to pendingdata.
         """
@@ -41,20 +42,21 @@ class Connection (socket.socket):
     def read (self, bytes):
         """Read exactly the supplied number of bytes.
         """
-        while len (self.pendingdata) < bytes:
+        while len (self.pendingdata) - self.nextbyte < bytes:
             self.readmore ()
-        ret = self.pendingdata[:bytes]
-        self.pendingdata = self.pendingdata[bytes:]
+        ret = self.pendingdata[self.nextbyte:self.nextbyte + bytes]
+        self.nextbyte += bytes
         return ret
 
     def readmin (self, minbytes = 1):
         """Read at least the supplied number of bytes.  Default length
         is one, i.e., read any non-null network data.
         """
-        while len (self.pendingdata) < bytes:
+        while len (self.pendingdata) - self.nextbyte < bytes:
             self.readmore ()
-        ret = self.pendingdata
+        ret = self.pendingdata[self.nextbyte:]
         self.pendingdata = ""
+        self.nextbyte = 0
         return ret
         
     def readtlv (self):
@@ -489,6 +491,8 @@ class Operframe (ControlFrame):
             self.lfont.SetFaceName (lucida)
             self.lbfont.SetFaceName (lucida)
         dc = wx.MemoryDC ()
+        bm = wx.EmptyBitmap (50, 50)
+        dc.SelectObject (bm)
         dc.SetFont (self.sfont)
         self.smallfontextent = dc.GetTextExtent ("a")
         dc.SetFont (self.lfont)
