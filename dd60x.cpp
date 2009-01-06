@@ -1,4 +1,3 @@
-//#define TEST 1
 /////////////////////////////////////////////////////////////////////////////
 // Name:        dd60.cpp
 // Purpose:     dd60 interface to wxWindows 
@@ -35,8 +34,8 @@
 #define DD60CHARS       060         // number of characters in pattern arrays
 
 // Display parameters
-#define RRATE           100        // ms per refresh
 #define DECAY           128        // decay per refresh, scaled by 256.
+#define DefaultInterval 0.06
 
 //#define DisplayMargin   8
 
@@ -121,26 +120,6 @@ extern "C"
 #define scaleY 10
 #include "dd60.h"
 
-#ifdef TEST
-int tcount;
-    
-// test data vector -- a simulated data stream from the Cyber.
-u8 tdata[] = {
-    Dd60SetMode + Dd60CharMedium + Dd60ScreenR, Dd60SetX, 0, Dd60SetY + 1, 0200,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    // "intensity adjust" from DS1
-    Dd60SetMode + Dd60CharSmall, Dd60SetX, 0, Dd60SetY, 0200,
-    011, 016, 024, 005, 016, 023, 011, 024, 031, 
-    055, 001, 004, 012, 025, 023, 024,
-    Dd60SetMode + Dd60CharMedium, Dd60SetX, 0, Dd60SetY + 1, 000,
-    011, 016, 024, 005, 016, 023, 011, 024, 031, 
-    055, 001, 004, 012, 025, 023, 024,
-    Dd60SetMode + Dd60CharLarge, Dd60SetX, 0, Dd60SetY + 1, 0200,
-    011, 016, 024, 005, 016, 023, 011, 024, 031, 
-    055, 001, 004, 012, 025, 023, 024,
-};
-#endif
-
 #if wxUSE_LIBGNOMEPRINT
 #include "wx/html/forcelnk.h"
 //FORCE_LINK(gnome_print)
@@ -192,6 +171,7 @@ static Dd60App *dd60App;
 class Dd60Panel;
 static Dd60Panel *dd60Panel;
 static wxFrame *dd60PanelFrame;
+static int interval;
 
 static FILE *traceF;
 static char traceFn[20];
@@ -247,12 +227,21 @@ public:
     bool DoConnect (bool ask);
     static wxColour SelectColor (wxColour &initcol);
     
+    void WritePrefs (void);
+    
     wxColour    m_fgColor;
     wxConfig    *m_config;
 
     int         m_port;
+    int         m_interval;
+    int         m_readDelay;
+    
     // scale is 1 or 2 for full size and double, respectively.
     int         m_scale;
+    int         m_sizeX;
+    int         m_sizeY;
+    int         m_focus;
+    int         m_intens;
     bool        m_connect;
     bool        m_showStatusBar;
     Dd60Frame  *m_firstFrame;
@@ -312,7 +301,7 @@ class Dd60Frame : public Dd60FrameBase
 
 public:
     // ctor(s)
-    Dd60Frame(int port, const wxString& title);
+    Dd60Frame(int port, int interval, int readDelay, const wxString& title);
     ~Dd60Frame ();
 
     // event handlers (these functions should _not_ be virtual)
@@ -347,6 +336,9 @@ private:
     Dd60Canvas  *m_canvas;
     NetFet      m_fet;
     int         m_port;
+    int         m_interval;
+    int         m_readDelay;
+    bool        m_startBlock;
     wxTimer     m_timer;
 
     // Character patterns are stored in three pixel vectors.  These are
@@ -640,6 +632,7 @@ bool Dd60App::OnInit (void)
 {
     int r, g, b;
     wxString rgb;
+    double interval;
     
     dd60App = this;
     m_firstFrame = NULL;
@@ -655,23 +648,59 @@ bool Dd60App::OnInit (void)
     logwindow = new wxLogWindow (NULL, "dd60 log", true, false);
 #endif
 
-    if (argc > 2)
+    if (argc > 3)
     {
-        printf ("usage: dd60 [ portnum ]\n");
+        printf ("usage: dd60 [ interval [ portnum ]]\n");
         exit (1);
     }
-
-    dd60PanelFrame = new wxFrame (NULL, wxID_ANY, _("DD60 controls"),
-                                  wxDefaultPosition, wxDefaultSize,
-                                  wxFRAME_TOOL_WINDOW | wxMINIMIZE_BOX);
-    dd60Panel = new Dd60Panel (dd60PanelFrame);
-    dd60PanelFrame->Show (true);
 
     m_config = new wxConfig (wxT ("Dd60"));
 
     if (argc > 1)
     {
-        m_port = atoi (wxString (argv[1]).mb_str ());
+        interval = strtod (wxString (argv[1]).mb_str (), NULL);
+        if (interval != 0.0 && (interval < 0.02 || interval > 63.0))
+        {
+            fprintf (stderr, "interval value out of range\n");
+            exit (1);
+        }
+    }
+    else
+    {
+        interval = DefaultInterval;
+    }
+
+    /*
+    **  Set the network read timeout appropriately for the
+    **  display interval selected.  Keep it under 100 ms
+    **  for decent keyboard responsiveness.
+    */
+    if (interval != 0.0 && interval < 0.1)
+    {
+        m_readDelay = interval * 1000;
+    }
+    else
+    {
+        m_readDelay = 100;
+    }
+
+    /* 
+    **  Convert the interval to an integer value in 20 ms units
+    */
+    m_interval = interval / 0.02;
+    
+    if (m_interval > 077)
+    {
+        /* If it doesn't fit, use the "slow" coding */
+        m_interval = Dd60SlowRate + (m_interval / 50);
+    }
+    else
+    {
+        m_interval += Dd60FastRate;
+    }
+    if (argc > 2)
+    {
+        m_port = atoi (wxString (argv[2]).mb_str ());
     }
     else
     {
@@ -683,12 +712,17 @@ bool Dd60App::OnInit (void)
     m_fgColor = wxColour (r, g, b);
     m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
     m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
-#if 0
-    m_sizeX = m_config->Read (wxT (PREF_SIZEX), 30);
-    m_sizeY = m_config->Read (wxT (PREF_SIZEY), 30);
-    m_focus = m_config->Read (wxT (PREF_FOCUS), 160);
-    m_intens = m_config->Read (wxT (PREF_INTENS), 10);
-#endif
+
+    m_sizeX = m_config->Read (wxT (PREF_SIZEX), 90);
+    m_sizeY = m_config->Read (wxT (PREF_SIZEY), 90);
+    m_focus = m_config->Read (wxT (PREF_FOCUS), 54);
+    m_intens = m_config->Read (wxT (PREF_INTENS), 160);
+
+    dd60PanelFrame = new wxFrame (NULL, wxID_ANY, _("DD60 controls"),
+                                  wxDefaultPosition, wxDefaultSize,
+                                  wxFRAME_TOOL_WINDOW | wxMINIMIZE_BOX);
+    dd60Panel = new Dd60Panel (dd60PanelFrame);
+    dd60PanelFrame->Show (true);
 
 #if DD60_MDI
     // On Mac, the style rule is that the application keeps running even
@@ -743,7 +777,6 @@ bool Dd60App::DoConnect (bool ask)
 {
     Dd60Frame *frame;
 
-#ifndef TEST
     if (ask)
     {
         Dd60ConnDialog dlg (wxID_ANY, _("Connect to DtCyber console"));
@@ -766,10 +799,9 @@ bool Dd60App::DoConnect (bool ask)
             return false;     // connect canceled
         }
     }
-#endif
 
     // create the main application window
-    frame = new Dd60Frame(m_port, wxT("Dd60"));
+    frame = new Dd60Frame(m_port, m_interval, m_readDelay, wxT("Dd60"));
 
     if (frame != NULL)
     {
@@ -798,8 +830,6 @@ void Dd60App::OnAbout(wxCommandEvent&)
 void Dd60App::OnPref (wxCommandEvent&)
 {
     Dd60Frame *frame;
-    wxString rgb;
-    
     Dd60PrefDialog dlg (NULL, wxID_ANY, _("Dd60 Preferences"));
     
     if (dlg.ShowModal () == wxID_OK)
@@ -815,15 +845,27 @@ void Dd60App::OnPref (wxCommandEvent&)
         m_port = atoi (wxString (dlg.m_port).mb_str ());
         m_connect = dlg.m_connect;
         
-        rgb.Printf (wxT ("%d %d %d"), 
-                    dlg.m_fgColor.Red (), dlg.m_fgColor.Green (),
-                    dlg.m_fgColor.Blue ());
-        m_config->Write (wxT (PREF_FOREGROUND), rgb);
-        m_config->Write (wxT (PREF_PORT), m_port);
-        m_config->Write (wxT (PREF_CONNECT), (dlg.m_connect) ? 1 : 0);
-        m_config->Write (wxT (PREF_STATUSBAR), (dlg.m_showStatusBar) ? 1 : 0);
-        m_config->Flush ();
+        WritePrefs ();
     }
+}
+
+void Dd60App::WritePrefs (void)
+{
+    wxString rgb;
+
+    rgb.Printf (wxT ("%d %d %d"), 
+                m_fgColor.Red (), m_fgColor.Green (),
+                m_fgColor.Blue ());
+
+    m_config->Write (wxT (PREF_FOREGROUND), rgb);
+    m_config->Write (wxT (PREF_PORT), m_port);
+    m_config->Write (wxT (PREF_CONNECT), (m_connect) ? 1 : 0);
+    m_config->Write (wxT (PREF_STATUSBAR), (m_showStatusBar) ? 1 : 0);
+    m_config->Write (wxT (PREF_SIZEX), m_sizeX);
+    m_config->Write (wxT (PREF_SIZEY), m_sizeY);
+    m_config->Write (wxT (PREF_FOCUS), m_focus);
+    m_config->Write (wxT (PREF_INTENS), m_intens);    
+    m_config->Flush ();
 }
 
 wxColour Dd60App::SelectColor (wxColour &initcol)
@@ -907,7 +949,8 @@ Dd60MainFrame::Dd60MainFrame (void)
 // ----------------------------------------------------------------------------
 
 // frame constructor
-Dd60Frame::Dd60Frame(int port, const wxString& title)
+Dd60Frame::Dd60Frame(int port, int interval, int readDelay, 
+                     const wxString& title)
   : Dd60FrameBase(Dd60FrameParent, -1, title,
 		   wxDefaultPosition,
 		   wxDefaultSize),
@@ -921,6 +964,9 @@ Dd60Frame::Dd60Frame(int port, const wxString& title)
     m_foregroundBrush (dd60App->m_fgColor, wxSOLID),
     m_canvas (NULL),
     m_port (port),
+    m_interval (interval),
+    m_readDelay (readDelay),
+    m_startBlock (true),
     m_timer (this, Dd60_Timer),
     mode (0),
     currentX (0),
@@ -989,9 +1035,7 @@ Dd60Frame::Dd60Frame(int port, const wxString& title)
         SetStatusBar (m_statusBar);
     }
     
-#ifndef TEST
     SetCursor (*wxHOURGLASS_CURSOR);
-#endif
 
     SetClientSize (XSize + 2, YSize + 2);
     m_screenmap = new wxBitmap (XSize, YSize, 32);
@@ -1008,7 +1052,7 @@ Dd60Frame::Dd60Frame(int port, const wxString& title)
 
     // Open the connection
     dtInitFet (&m_fet, BufSiz);
-#ifndef TEST
+
     if (dtConnect (&m_fet.connFd, "127.0.0.1", m_port) < 0)
     {
         wxString msg;
@@ -1032,12 +1076,11 @@ Dd60Frame::Dd60Frame(int port, const wxString& title)
                 (char *)&true_opt, sizeof(true_opt));
 #endif
 
-    // Set update rate zero which means "send me all data",
-    // then turn on the display data stream.
-    dd60SendKey (Dd60FastRate);
+    // Set update rate, then turn on the display data stream.
+    dd60SendKey (m_interval);
     dd60SendKey (Dd60KeyXon);
-#endif  // TEST
-    m_timer.Start (RRATE);
+
+    m_timer.Start (m_readDelay);
     
     Show(true);
 }
@@ -1085,13 +1128,16 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
 {
     int i, data;
     
-#ifndef TEST
     if (!dtActive (&m_fet))
     {
         return;
     }
-#endif
 
+    if (m_interval == Dd60FastRate + 0)
+    {
+        m_startBlock = true;
+    }
+    
     m_pixmap = new PixelData (*m_screenmap);
     if (!m_pixmap)
     {
@@ -1101,44 +1147,6 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
     }
     m_pixmap->UseAlpha ();
 
-    // First decay the current screen content
-    const int pixels = m_pixmap->GetWidth () * m_pixmap->GetHeight ();
-    PixelData::Iterator p (*m_pixmap);
-    const int bytesperpixel = PixelData::Iterator::PixelFormat::SizePixel;
-    
-    //printf ("pixels %d, pixel stride %d\n", pixels, bytesperpixel);
-    
-#if (DECAY == 128)
-    const int wds = (pixels * /*bytesperpixel*/3) / 4;
-    uint32_t *pmap = (uint32_t *)(p.m_ptr);
-    uint32_t maxalpha, t;
-    
-    t = *pmap;
-    *pmap = 0;
-    p.Alpha () = 255;
-    maxalpha = *pmap;
-    *pmap = t;
-    
-    for (i = 0; i < wds; i++)
-    {
-        *pmap = ((*pmap >> 1) & 0x7f7f7f7f) | maxalpha;
-        ++pmap;
-    }
-#else
-    for (int pix = 0; pix < pixels; pix++)
-    {
-        u8 &rp = p.Red ();
-        u8 &gp = p.Green ();
-        u8 &bp = p.Blue ();
-        rp = (rp * DECAY) / 256;
-        gp = (gp * DECAY) / 256;
-        bp = (bp * DECAY) / 256;
-        p.Alpha () = 255;
-        ++p;
-    }
-#endif
-
-#ifndef TEST
     i = dtRead (&m_fet, 0);
     
     if (i < 0)
@@ -1155,24 +1163,9 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
         Close (TRUE);
         return;
     }
-#endif
 
 //    printf ("%d bytes from cyber\n", dtFetData (&m_fet));
     
-#ifdef TEST
-    sprintf ((char *) (tdata + 5), "%d %s", tcount++,
-             (tcount & 32) ? "ON" : "  ");
-    for (int t = 0; ; t++)
-    {
-        if (tdata[t + 5] == 0)
-            break;
-        
-        tdata[t + 5] = asciiToCdc[tdata[t + 5]];
-    }
-    for (int t = 0; t < sizeof (tdata); t++)
-    {
-        data = tdata[t];
-#else
     for (;;)
     {
         data = dtReado (&m_fet);
@@ -1180,7 +1173,48 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
         {
             break;
         }
+
+        if (m_startBlock)
+        {
+            // At start of block, decay the current screen content
+            const int pixels = m_pixmap->GetWidth () * m_pixmap->GetHeight ();
+            PixelData::Iterator p (*m_pixmap);
+            const int bytesperpixel = PixelData::Iterator::PixelFormat::SizePixel;
+    
+            //printf ("pixels %d, pixel stride %d\n", pixels, bytesperpixel);
+    
+#if (DECAY == 128)
+            const int wds = (pixels * bytesperpixel) / 4;
+            uint32_t *pmap = (uint32_t *)(p.m_ptr);
+            uint32_t maxalpha, t;
+    
+            t = *pmap;
+            *pmap = 0;
+            p.Alpha () = 255;
+            maxalpha = *pmap;
+            *pmap = t;
+    
+            for (i = 0; i < wds; i++)
+            {
+                *pmap = ((*pmap >> 1) & 0x7f7f7f7f) | maxalpha;
+                ++pmap;
+            }
+#else
+            for (int pix = 0; pix < pixels; pix++)
+            {
+                u8 &rp = p.Red ();
+                u8 &gp = p.Green ();
+                u8 &bp = p.Blue ();
+                rp = (rp * DECAY) / 256;
+                gp = (gp * DECAY) / 256;
+                bp = (bp * DECAY) / 256;
+                p.Alpha () = 255;
+                ++p;
+            }
 #endif
+            m_startBlock = false;
+        }
+    
         if ((data & 0200) == 0)
         {
             TRACE1 ("Char %o", data);
@@ -1198,9 +1232,6 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
                 **  byte should be here already, but if not, we
                 **  will wait for it.
                 */
-#ifdef TEST
-                i = tdata[++t] | ((data & 7) << 8);
-#else
                 for (;;)
                 {
                     i = dtReado (&m_fet);
@@ -1211,7 +1242,7 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
                     dtRead (&m_fet, -1);
                 }
                 i |= ((data & 7) << 8);
-#endif
+
                 if ((data & 0370) == Dd60SetX)
                 {
                     TRACE1 ("Set X %o", i);
@@ -1258,21 +1289,33 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
                 // Save only char size or dot plotting mode bits
                 mode = data & 3;
                 break;
+            case Dd60EndBlock:
+                if (m_interval != Dd60FastRate + 0)
+                {
+                    m_startBlock = true;
+                    break;
+                }
             }
+        }
+        if (m_startBlock)
+        {
+            break;
         }
     }
     delete m_pixmap;
     
+    if (m_interval == Dd60FastRate + 0 || m_startBlock)
+    {
 #if 0
-    Refresh (false);
+        Refresh (false);
 #else
-    wxWindowDC dc (m_canvas);
-    dc.BeginDrawing ();
-    dc.DrawBitmap (*m_screenmap, 0, 0, false);
-    dc.EndDrawing ();
+        wxWindowDC dc (m_canvas);
+        m_canvas->DoPrepareDC (dc);
+        dc.DrawBitmap (*m_screenmap, 0, 0, false);
 #endif
+    }
 }
-
+    
 void Dd60Frame::OnClose (wxCloseEvent &)
 {
     int i;
@@ -1953,10 +1996,8 @@ void Dd60PrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
     wxMemoryDC memDC;
 
     memDC.SelectObject (bm);
-    memDC.BeginDrawing ();
     memDC.SetBackground (bitmapBrush);
     memDC.Clear ();
-    memDC.EndDrawing ();
     memDC.SetBackground (wxNullBrush);
     memDC.SelectObject (wxNullBitmap);
 }
@@ -2028,16 +2069,16 @@ Dd60Panel::Dd60Panel (wxFrame *parent) :
     sf.Align (wxALIGN_CENTER);
     sf.Border (wxLEFT | wxRIGHT | wxTOP);
     m_sizer = new wxFlexGridSizer (2, 4, 2, 8);
-    m_sizeX = new wxKnob (this, wxID_ANY, 100, 50, 200,
+    m_sizeX = new wxKnob (this, wxID_ANY, dd60App->m_sizeX, 50, 150,
                           240, 300, wxDefaultPosition, knobSize);
     m_sizer->Add (m_sizeX, sf);
-    m_sizeY = new wxKnob (this, wxID_ANY, 100, 50, 200,
+    m_sizeY = new wxKnob (this, wxID_ANY, dd60App->m_sizeY, 50, 150,
                           240, 300, wxDefaultPosition, knobSize);
     m_sizer->Add (m_sizeY, sf);
-    m_focus = new wxKnob (this, wxID_ANY, 100, 0, 250,
+    m_focus = new wxKnob (this, wxID_ANY, dd60App->m_focus, 45, 120,
                           240, 300, wxDefaultPosition, knobSize);
     m_sizer->Add (m_focus, sf);
-    m_intens = new wxKnob (this, wxID_ANY, 160, 1, 400,
+    m_intens = new wxKnob (this, wxID_ANY, dd60App->m_intens, 1, 400,
                            240, 300, wxDefaultPosition, knobSize);
     m_sizer->Add (m_intens, sf);
     sf.Border (wxLEFT | wxRIGHT | wxBOTTOM);
@@ -2054,6 +2095,12 @@ Dd60Panel::Dd60Panel (wxFrame *parent) :
 void Dd60Panel::OnScroll (wxScrollEvent &)
 {
     Dd60Frame *frame;
+    
+    dd60App->m_sizeX = m_sizeX->GetValue ();
+    dd60App->m_sizeY = m_sizeY->GetValue ();
+    dd60App->m_focus = m_focus->GetValue ();
+    dd60App->m_intens = m_intens->GetValue ();
+    dd60App->WritePrefs ();
     
     for (frame = dd60App->m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
     {
@@ -2082,7 +2129,7 @@ Dd60Canvas::Dd60Canvas(Dd60Frame *parent)
 
     m_owner = parent;
     SetVirtualSize (XSize, YSize);
-    
+    dc.SetClippingRegion (DisplayMargin, DisplayMargin, XSize, YSize);
     SetBackgroundColour (*wxBLACK);
     SetScrollRate (1, 1);
     SetFocus ();
