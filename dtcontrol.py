@@ -803,7 +803,7 @@ class Dd60frame (ControlFrame):
         dc.Blit (0, 0, self.xsize, self.ysize, self.screendc, 0, 0, wx.COPY)
         self.screendc.EndDrawing ()
         dc.EndDrawing ()
-        print len (block), "items in", (time.clock() - clk) * 1000,"ms"
+        #print len (block), "items in", (time.clock() - clk) * 1000,"ms"
 
     def OnChar (self, event = None):
         """Process a keystroke.
