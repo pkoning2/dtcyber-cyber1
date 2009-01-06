@@ -332,7 +332,11 @@ private:
     wxBrush     m_foregroundBrush;
     wxBitmap    *m_screenmap;
     PixelData   *m_pixmap;
-
+    uint32_t    m_maxalpha;
+    uint32_t    m_red;
+    uint32_t    m_green;
+    uint32_t    m_blue;
+    
     Dd60Canvas  *m_canvas;
     NetFet      m_fet;
     int         m_port;
@@ -1039,14 +1043,53 @@ Dd60Frame::Dd60Frame(int port, int interval, int readDelay,
 
     SetClientSize (XSize + 2, YSize + 2);
     m_screenmap = new wxBitmap (XSize, YSize, 32);
+    m_pixmap = new PixelData (*m_screenmap);
+    if (!m_pixmap)
+    {
+        // ... raw access to bitmap data unavailable, do something else ...
+        printf ("no raw bitmap access\n");
+        exit (1);
+    }
+    PixelData::Iterator p (*m_pixmap);
+    uint32_t *pmap = (uint32_t *)(p.m_ptr);
+    uint8_t *pb = (uint8_t *) pmap;
+    uint32_t t;
+    
+    m_pixmap->UseAlpha ();
+    t = *pmap;
+    *pmap = 0;
+    p.Alpha () = 255;
+    m_maxalpha = *pmap;
+    *pmap = 0;
+    p.Red () = 1;
+    for (i = 0; i < 4; i++)
+    {
+        if (pb[i]) m_red = i;
+    }
+    *pmap = 0;
+    p.Green () = 1;
+    for (i = 0; i < 4; i++)
+    {
+        if (pb[i]) m_green = i;
+    }
+    *pmap = 0;
+    p.Blue () = 1;
+    for (i = 0; i < 4; i++)
+    {
+        if (pb[i]) m_blue = i;
+    }
+    *pmap = t;
+    delete m_pixmap;
+    printf ("%d %d %d %d\n", m_maxalpha, m_red, m_green, m_blue);
+    
     m_canvas = new Dd60Canvas (this);
 
     /*
     **  Load character patterns characters
     */
-    m_char8 = new u8[3 * DD60CHARS * CHAR8SIZE * CHAR8SIZE];
-    m_char16 = new u8[3 * DD60CHARS * CHAR16SIZE * CHAR16SIZE];
-    m_char32 = new u8[3 * DD60CHARS * CHAR32SIZE * CHAR32SIZE];
+    m_char8 = new u8[4 * DD60CHARS * CHAR8SIZE * CHAR8SIZE];
+    m_char16 = new u8[4 * DD60CHARS * CHAR16SIZE * CHAR16SIZE];
+    m_char32 = new u8[4 * DD60CHARS * CHAR32SIZE * CHAR32SIZE];
 
     dd60LoadChars ();
 
@@ -1139,12 +1182,6 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
     }
     
     m_pixmap = new PixelData (*m_screenmap);
-    if (!m_pixmap)
-    {
-        // ... raw access to bitmap data unavailable, do something else ...
-        printf ("no raw bitmap access\n");
-        exit (1);
-    }
     m_pixmap->UseAlpha ();
 
     i = dtRead (&m_fet, 0);
@@ -1186,17 +1223,11 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
 #if (DECAY == 128)
             const int wds = (pixels * bytesperpixel) / 4;
             uint32_t *pmap = (uint32_t *)(p.m_ptr);
-            uint32_t maxalpha, t;
     
-            t = *pmap;
             *pmap = 0;
-            p.Alpha () = 255;
-            maxalpha = *pmap;
-            *pmap = t;
-    
             for (i = 0; i < wds; i++)
             {
-                *pmap = ((*pmap >> 1) & 0x7f7f7f7f) | maxalpha;
+                *pmap = ((*pmap >> 1) & 0x7f7f7f7f) | m_maxalpha;
                 ++pmap;
             }
 #else
@@ -1528,12 +1559,12 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
     bool on;
     const int margin = (tsize - size) / 2;
     // delta from one scanline to the next (Y to Y-1):
-    const int nextline = tsize * 3;
+    const int nextline = tsize * 4;
     // offset to character origin (accounting for margins) -- 
     // note that this is a window system style origin, i.e., upper left.
-    const int orgoffset = nextline * margin + margin * 3;
+    const int orgoffset = nextline * margin + margin * 4;
     // delta from one char to the next:
-    const int nextchar = tsize * tsize * 3;
+    const int nextchar = tsize * tsize * 4;
     // sizeX and sizeY are percentages of the nominal size
     const int width = size * dd60Panel->sizeX () / 100;
     const int height = size * dd60Panel->sizeY () / 100;
@@ -1633,22 +1664,22 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
                             continue;
                         }
                         
-                        pix = origin + ix * 3 + (iy * nextline);
-                        pg = pix[0];    // current red pixel value
+                        pix = origin + ix * 4 + (iy * nextline);
+                        pg = pix[m_red];    // current red pixel value
                         pg += int (b * intensity * rv / 255);
                         if (pg > 255)
                             pg = 255;
-                        pix[0] = pg;
-                        pg = pix[1];    // current green pixel value
+                        pix[m_red] = pg;
+                        pg = pix[m_green];    // current green pixel value
                         pg += int (b * intensity * gv / 255);
                         if (pg > 255)
                             pg = 255;
-                        pix[1] = pg;
-                        pg = pix[2];    // current blue pixel value
+                        pix[m_green] = pg;
+                        pg = pix[m_blue];    // current blue pixel value
                         pg += int (b * intensity * bv / 255);
                         if (pg > 255)
                             pg = 255;
-                        pix[2] = pg;
+                        pix[m_blue] = pg;
 #if 0
                         if (size == 8 && bx == 0 && by == 0)
                             printf ("ch %o x %d y %d, pix %d\n", ch, ix, iy, pg);
@@ -1705,23 +1736,23 @@ void Dd60Frame::procDd60Char (unsigned int d)
     case Dd60Dot:
         inc = 8;
         size = CHAR8SIZE;
-        qwds = 3 * CHAR8SIZE / 8;
+        qwds = 4 * CHAR8SIZE / 8;
         margin = 4;
-        data = m_char8 + (d * 3 * CHAR8SIZE * CHAR8SIZE);
+        data = m_char8 + (d * 4 * CHAR8SIZE * CHAR8SIZE);
         break;
     case Dd60CharMedium:
         inc = 16;
         size = CHAR16SIZE;
-        qwds = 3 * CHAR16SIZE / 8;
+        qwds = 4 * CHAR16SIZE / 8;
         margin = 8;
-        data = m_char16 + (d * 3 * CHAR16SIZE * CHAR16SIZE);
+        data = m_char16 + (d * 4 * CHAR16SIZE * CHAR16SIZE);
         break;
     case Dd60CharLarge:
         inc = 32;
         size = CHAR32SIZE;
-        qwds = 3 * CHAR32SIZE / 8;
+        qwds = 4 * CHAR32SIZE / 8;
         margin = 8;
-        data = m_char32 + (d * 3 * CHAR32SIZE * CHAR32SIZE);
+        data = m_char32 + (d * 4 * CHAR32SIZE * CHAR32SIZE);
         break;
     }
     
@@ -1755,25 +1786,26 @@ void Dd60Frame::procDd60Char (unsigned int d)
                 u8 &gp = p.Green ();
                 u8 &bp = p.Blue ();
             
-                k = rp + *data++;
+                k = rp + data[m_red];
                 if (k > 255)
                 {
                     k = 255;
                 }
                 rp = k;
-                k = gp + *data++;
+                k = gp + data[m_green];
                 if (k > 255)
                 {
                     k = 255;
                 }
                 gp = k;
-                k = bp + *data++;
+                k = bp + data[m_blue];
                 if (k > 255)
                 {
                     k = 255;
                 }
                 bp = k;
                 ++p;
+                data += 4;
             }
 #endif
         }
