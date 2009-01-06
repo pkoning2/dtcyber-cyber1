@@ -209,7 +209,7 @@ class Oper (Connection, threading.Thread):
                     i = ord (v[0])
                     v = v[1:]
                     self.status[i] = v
-                    if i:
+                    if i and self.window:
                         self.window.scrollto (i)
                 elif t == 5:
                     self.initialized = True
