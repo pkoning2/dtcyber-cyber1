@@ -719,7 +719,7 @@ bool Dd60App::OnInit (void)
 
     m_sizeX = m_config->Read (wxT (PREF_SIZEX), 90);
     m_sizeY = m_config->Read (wxT (PREF_SIZEY), 90);
-    m_focus = m_config->Read (wxT (PREF_FOCUS), 54);
+    m_focus = m_config->Read (wxT (PREF_FOCUS), 68);
     m_intens = m_config->Read (wxT (PREF_INTENS), 160);
 
     dd60PanelFrame = new wxFrame (NULL, wxID_ANY, _("DD60 controls"),
@@ -1547,12 +1547,10 @@ void Dd60Frame::dd60LoadChars (void)
 #endif
 }
 
-static double bellvec[16 * 16];
-
 void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
 {
     int ch, i, j, bx, by, ix, iy, cx, cy, pg;
-    double x, y, scalex, scaley, r, b;
+    double x, y, scalex, scaley, r, b, dx, dy;
     unsigned char *pix;
     const double peak = 0.25;
     Chargen cg;
@@ -1597,11 +1595,6 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
     scalex = (double) width / (i * 8);
     scaley = (double) height / (i * 8);
 
-    for (j = 0; j <= beamr * 16; j++)
-    {
-        bellvec[j] = bell (j / 16.0, sigma);
-    }
-    
     for (ch = 1; ch < DD60CHARS; ch++)
     {
         // pointer to 0,0 pixel in vec.  Note that vec is laid out
@@ -1651,11 +1644,6 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
                 {
                     for (by = -beamr; by <= beamr; by++)
                     {
-                        r = sqrt (bx * bx + by * by);
-                        if (r > 3.0 * sigma)
-                            continue;
-                        b = bellvec[int (round (r)) * 16];
-                        
                         ix = (int) round (x * scalex + bx);
                         iy = (int) round (y * scaley + by + height);
                         if (ix < -margin || iy < -margin ||
@@ -1663,7 +1651,12 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
                         {
                             continue;
                         }
-                        
+                        dx = ix - (x * scalex);
+                        dy = iy - (y * scaley + height);
+                        r = sqrt (dx * dx + dy * dy);
+                        if (r > 3.0 * sigma)
+                            continue;
+                        b = bell (r, sigma);
                         pix = origin + ix * 4 + (iy * nextline);
                         pg = pix[m_red];    // current red pixel value
                         pg += int (b * intensity * rv / 255);
