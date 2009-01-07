@@ -1566,12 +1566,12 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
     // delta from one char to the next:
     const int nextchar = tsize * tsize * 4;
     // sizeX and sizeY are percentages of the nominal size
-    const int width = size * dd60Panel->sizeX () / 100;
-    const int height = size * dd60Panel->sizeY () / 100;
+    const int width = size * dd60App->m_sizeX / 100;
+    const int height = size * dd60App->m_sizeY / 100;
     const int rv = dd60App->m_fgColor.Red ();
     const int gv = dd60App->m_fgColor.Green ();
     const int bv = dd60App->m_fgColor.Blue ();
-    const double intensity = normInt (dd60Panel->intensity (), height);
+    const double intensity = normInt (dd60App->m_intens, height);
     const double sigma = dd60Panel->beamsize ();
     const int beamr = int (ceil (3 * sigma));
 #define r1_029 2000
