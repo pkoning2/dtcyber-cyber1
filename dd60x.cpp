@@ -1080,7 +1080,7 @@ Dd60Frame::Dd60Frame(int port, int interval, int readDelay,
     }
     *pmap = t;
     delete m_pixmap;
-    printf ("%d %d %d %d\n", m_maxalpha, m_red, m_green, m_blue);
+    //printf ("%d %d %d %d\n", m_maxalpha, m_red, m_green, m_blue);
     
     m_canvas = new Dd60Canvas (this);
 
@@ -1768,7 +1768,7 @@ void Dd60Frame::procDd60Char (unsigned int d)
         {
             p.MoveTo (*m_pixmap, firstx, firsty + i);
 #ifdef __SSE2__
-            typedef int v8qi __attribute__ ((mode(V8QI)));
+            typedef u8 v8qi __attribute__ ((vector_size (8)));
             v8qi *pmap = (v8qi *)(p.m_ptr);
             v8qi *pdata = (v8qi *) data;
             
