@@ -1737,24 +1737,22 @@ void Dd60Frame::procDd60Char (unsigned int d)
         inc = 8;
         size = CHAR8SIZE;
         qwds = 4 * CHAR8SIZE / 8;
-        margin = 4;
         data = m_char8 + (d * 4 * CHAR8SIZE * CHAR8SIZE);
         break;
     case Dd60CharMedium:
         inc = 16;
         size = CHAR16SIZE;
         qwds = 4 * CHAR16SIZE / 8;
-        margin = 8;
         data = m_char16 + (d * 4 * CHAR16SIZE * CHAR16SIZE);
         break;
     case Dd60CharLarge:
         inc = 32;
         size = CHAR32SIZE;
         qwds = 4 * CHAR32SIZE / 8;
-        margin = 8;
         data = m_char32 + (d * 4 * CHAR32SIZE * CHAR32SIZE);
         break;
     }
+    margin = (size - inc) / 2;
     
     if (d != 0 && d != 055)
     {
