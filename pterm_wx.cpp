@@ -5014,7 +5014,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 'P':
 				modexor = false;
-                mode = 2 << 2;
+                mode = (mode & 3) + (2 << 2);
                 TRACE ("load mode %d", mode);
                 break;
             case 'Q':
@@ -5030,22 +5030,22 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 'S':
 				modexor = false;
-                mode = 2 << 2;
+                mode = (mode & 3) + (2 << 2);
                 TRACE ("load mode %d", mode);
                 break;
             case 'T':
 				modexor = false;
-                mode = 5 << 2;
+                mode = (mode & 3) + (5 << 2);
                 TRACE ("load mode %d", mode);
                 break;
             case 'U':
 				modexor = false;
-                mode = 6 << 2;
+                mode = (mode & 3) + (6 << 2);
                 TRACE ("load mode %d", mode);
                 break;
             case 'V':
 				modexor = false;
-                mode = 7 << 2;
+                mode = (mode & 3) + (7 << 2);
                 TRACE ("load mode %d", mode);
                 break;
             case 'W':
