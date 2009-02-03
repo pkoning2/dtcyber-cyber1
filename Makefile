@@ -27,11 +27,11 @@ include Makefile.dd60
 
 ifeq ("$(HOST)","Darwin")
 ifeq ("$(SDKDIR)","")
-SDKDIR := /Developer/SDKs/MacOSX10.4u.sdk
+SDKDIR := /Developer/SDKs/MacOSX10.5.sdk
 endif
 LIBS    +=  -Wl,-syslibroot,$(SDKDIR)
 INCL    += -isysroot $(SDKDIR) -I$(SDKDIR)/Developer/Headers/FlatCarbon
-LDFLAGS +=  -Wl,-framework,CoreServices
+LDFLAGS +=  -Wl,-framework,CoreServices -Wl,-macosx_version_min,10.4
 PPCARCHFLAGS = -arch ppc
 G5CFLAGS = -mcpu=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64
 G3CFLAGS = -mcpu=G3 -mtune=G3
@@ -50,7 +50,7 @@ OBJS    = main.o init.o trace.o dump.o \
           deadstart.o console.o cr405.o dd6603.o dd8xx.o mux6676.o \
           lp1612.o mt607.o mt669.o dcc6681.o rtc.o log.o \
 	  cr3447.o ddp.o niu.o lp3000.o cp3446.o \
-	  tpmux.o dtdisksubs.o env.o \
+	  tpmux.o dtdisksubs.o ext.o \
 	  $(SOBJS)
 
 ifneq ("$(NPU_SUPPORT)","")
@@ -82,7 +82,7 @@ dtcyber:
 	lipo -create -output dtcyber g3/gxdtcyber g5/gxdtcyber x86/gxdtcyber
 
 gxdtcyber: $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)
+	$(CC) $(LDFLAGS) $(ARCHCFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)
 
 clean:
 	rm -rf *.o *.d *.i *.ii *.pcf g3 g5 x86 dd60 dtoper pterm pterm*.dmg Pterm.app

@@ -6,6 +6,8 @@ if [ "${HOSTNAME}" = "monster" ]; then
 	HOSTNAME="cyber1"
 elif [ "${HOSTNAME}" = "pkoning-laptop" ]; then 
 	HOSTNAME="pkoning"
+elif [ "${HOSTNAME}" = "paul-konings-macbook-pro.local" ]; then 
+	HOSTNAME="pkoning"
 fi
 export HOSTNAME
 ulimit -c unlimited

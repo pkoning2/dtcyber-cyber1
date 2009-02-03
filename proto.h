@@ -69,6 +69,7 @@ bool cpuPpReadMem(u32 address, CpWord *data);
 void cpuPpWriteMem(u32 address, CpWord data);
 bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs);
 int cpuIssueExchange(u8 cpnum, u32 addr, int monitor);
+CpWord * cpuAccessMem(CpWord address, int length);
 
 /*
 **  dcc6681.c
@@ -194,9 +195,9 @@ void traceExchange(CpuContext *cc, u32 addr, char *title);
 void traceCM(u32 start, u32 end);
 
 /*
-**  env.c
+**  ext.c
 */
-CpWord envOp (CpWord req);
+CpWord extOp (CpWord req);
 
 /*
 **  dump.c

@@ -722,6 +722,50 @@ void cpuPpWriteMem(u32 address, CpWord data)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Process CM/ECS pointer and verify address is within limits.
+**
+**  Parameters:     Name        Description.
+**                  address     RA relative address to accesss.
+**                  length      Number of words to be accessed.
+**
+**  Returns:        Pointer to first word, or NULL if out of range
+**
+**------------------------------------------------------------------------*/
+CpWord * cpuAccessMem(CpWord address, int length)
+    {
+	u32 absAddr;
+
+	if (address & (1ULL << 59))
+	    {
+		/* ECS pointer */
+		address &= Mask24;
+		
+		if (address + length > activeCpu->regFlEcs)
+		    {
+			return NULL;
+		    }
+		else
+		    {
+			return ecsMem + address + activeCpu->regRaEcs;
+		    }
+	    }
+	else
+	    {
+		/* CM pointer */
+		address &= Mask18;
+		
+		if (address + length > activeCpu->regFlCm)
+		    {
+			return NULL;
+		    }
+		else
+		    {
+			return cpMem + address + activeCpu->regRaCm;
+		    }
+	    }
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Execute next instruction in the CPUs.
 **
 **  Parameters:     Name        Description.
@@ -2464,7 +2508,7 @@ static void cpOp01(CPUVARG)
         **  RI or IBj -- which is 7600 only.  So we steal it for 
         **  dealing with the world outside the emulator.
         */
-        activeCpu->regX[activeCpu->opJ] = envOp (activeCpu->regX[activeCpu->opK]);
+        activeCpu->regX[activeCpu->opJ] = extOp (activeCpu->regX[activeCpu->opK]);
         break;
         }
     }

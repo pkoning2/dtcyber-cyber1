@@ -214,9 +214,12 @@ sbtpterm equ    16          pterm for cyber1 software
           data   0lcy1
           data   0lbrs
           data   0lgpk
+
+ hostreq  vfd    48/0,12/0   getenv
+          data   0lhostname
 *i msubsa.22
           nz     x3,chkdev   if system name set
-          sa1    =0lhostname
+          sx1    hostreq     point to getenv request block
           ex3    x1          get hostname from environment
           bx6    x3
           sa6    a3          set system name

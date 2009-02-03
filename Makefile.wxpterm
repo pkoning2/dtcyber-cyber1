@@ -31,11 +31,25 @@ endif
 endif
 endif
 ifeq ("$(HOST)","Darwin")
-ARCHCFLAGS = -arch i386 -arch ppc
+ARCHCFLAGS ?= -arch i386 -arch ppc
 #ARCHCFLAGS =  -arch ppc
 #EXTRALIBS= -lwxpng-2.6 -lwxtiff-2.6
 DEFWXDIR = /usr/local/wxstaticu.264
+ARCHFLAGS=-arch i386
+DEFWXDIR=/usr
 MSGFLAGS =  
+SDLINCL=-FSDL
+SDLLIBS=-Wl,-framework,SDL
+else
+SDLPATH ?= /usr/local
+SDLINCL ?= `sdl-config --cflags`
+PATH:=$(SDLPATH)/bin:$(PATH)
+ifeq ("$(TYPE)","static")
+SDLLIBS ?= `sdl-config --static-libs`
+else
+SDLLIBS ?= `sdl-config --libs`
+endif
+#SETPATH= -Wl,-rpath,$(WXDIR)/lib -Wl,-rpath,$(SDLPATH)/lib
 endif
 
 # if the wxmumble dir doesn't exist, try for plain /usr/local
@@ -54,16 +68,6 @@ WXVERSION = `$(WXCONFIG) --version`
 GCCVERSION := $(shell gcc --version | head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
 
-SDLPATH ?= /usr/local
-SDLINCL ?= `sdl-config --cflags`
-PATH:=$(SDLPATH)/bin:$(PATH)
-ifeq ("$(TYPE)","static")
-SDLLIBS ?= `sdl-config --static-libs`
-else
-SDLLIBS ?= `sdl-config --libs`
-endif
-#SETPATH= -Wl,-rpath,$(WXDIR)/lib -Wl,-rpath,$(SDLPATH)/lib
-
 MSGFLAGS ?= -U
 
 SDLCFLAGS = $(SDLINCL)
@@ -79,10 +83,10 @@ endif
 
 pterm:	$(PTOBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SETPATH) $(STATICSW)
+	$(CXX) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SETPATH) $(STATICSW)
 ifeq ("$(TYPE)","static")
 ifeq ("$(HOST)","Darwin")
-	strip $@
+	#strip $@
 
 else
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
@@ -122,12 +126,12 @@ cc545.app: cc545
 	cp cc545 cc545.app/Contents/MacOS
 	touch $@
 
-Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES)
+Pterm.app: pterm pterm-info.plist.in pterm.icns 
 	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm-info.plist.in > pterm-info.plist
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en
 	mkdir -p $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES))
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
-	echo -n "APPL????" > Pterm.app/Contents/PkgInfo
+	/bin/echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
 #	for d in $(LANGUAGES); do cp $$d/pterm.mo `wx-config --prefix`/share/locale/$$d/LC_MESSAGES/wxstd.mo Pterm.app/Contents/Resources/$$d; done
@@ -183,12 +187,12 @@ pterm_sdl.o : pterm_sdl.c
 
 
 %.d : %.cpp
-	echo -n "$@ " > /tmp/$@
+	/bin/echo -n "$@ " > /tmp/$@
 	$(CXX) $(CXXFLAGS) -MM -MG $< >> /tmp/$@
 	mv -f /tmp/$@ $@
 
 pterm_sdl.d : pterm_sdl.c
-	echo -n "$@ " > /tmp/$@
+	/bin/echo -n "$@ " > /tmp/$@
 	$(CC) $(INCL) $(SDLCFLAGS) -MM -MG $< >> /tmp/$@
 	mv -f /tmp/$@ $@
 

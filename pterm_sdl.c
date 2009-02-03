@@ -19,7 +19,11 @@
 #include <sys/time.h>
 #include <unistd.h>
 #endif
+#if defined(__APPLE__)
+#include <SDL/SDL.h>
+#else
 #include <SDL.h>
+#endif
 #include "const.h"
 #include "types.h"
 

@@ -9388,7 +9388,7 @@ void PtermCanvas::OnDraw(wxDC &dc)
     m_owner->PrepareDC (dc);
 
 	dc.Blit (XTOP, YTOP, vScreenSize(m_owner->m_scale), vScreenSize(m_owner->m_scale), m_owner->m_memDC, 0, 0, wxCOPY);
-#if 0
+#if 01
     // debug charmaps
     for (i = 0; i <= 4; i++)
     {
