@@ -28,6 +28,7 @@
 #include <winsock.h>
 #else
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
