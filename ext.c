@@ -393,7 +393,11 @@ static CpWord sockOp (CpWord req)
             else
             {
                 // PLATO text mode
-                if (*cp == '\n' || *cp == '\r')
+                if (*cp == '\r')
+                {
+                    continue;
+                }
+                else if (*cp == '\n')
                 {
                     // End of line
                     *bufp++ = d;
