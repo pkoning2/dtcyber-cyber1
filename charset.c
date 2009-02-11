@@ -474,5 +474,18 @@ const int asciiToPlatoString[256] =
  /* 370- */ -1,      0257621,  0257605,  0257630,  0257625,  0317605,    -1,     0317625,
 };
 
+/* This translates PLATO string codes (as opposed to key codes) into ASCII, or
+ * more precisely, ISO 8859-1 ("Latin-1").
+ * \001 marks codes that don't translate to Latin-1 or are unused altogether,  
+ * and will be ignored during translation.
+ * The four lines correspond to unshifted characters, shifted (preceded by 070), 
+ * access (preceded by 076) and shifted access characters.
+ */
+const unsigned char platoStringToAscii[4][65] = {
+    "\001abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.\xf7[]%\xd7\xab\001\001\001\001<>\001\001\001;",
+    "\001ABCDEFGHIJKLMNOPQRSTUVWXYZ\001\001\001\001\001\001_'\001\001\001\001\001\001{}&\001\001\"!\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001:",
+    "\001\001\001\001\001\001\001\xe6\xf8\001\xe5\xe4\001\xb5\001\xb0\001\001\001\001\001\001\001\001\001\xf6\001\xab\xbb\001\001\001@\xbb\001\001\001&\001\001\\\001\001#\001\001\001\001\001{}\001\xba\001\001\001\001\001\001\001\001\001\001~",
+    "\001\001\001\xa9\001\001\xc6\xd8|\xc5\xc4\001\001\001\001\001\001\001\001\001\001\001\001\001\xd6\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001"};
+
 /*---------------------------  End Of File  ------------------------------*/
 

@@ -334,6 +334,7 @@ extern const int asciiToPlato[256];
 extern const i8 altKeyToPlato[128];
 extern const int printoutToPlato[128];
 extern const int asciiToPlatoString[256];
+extern const unsigned char platoStringToAscii[4][65];
 extern u32 traceMask;
 extern u32 traceClearMask;
 extern u64 chTraceMask;

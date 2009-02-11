@@ -1,4 +1,3 @@
-#define DEBUG 1
 /*--------------------------------------------------------------------------
 **
 **  Copyright (c) 2006, Tom Hunter, Paul Koning (see license.txt)
@@ -46,6 +45,8 @@
 #define RETINVREQ   0
 #define RETNOSOCK   1
 #define RETNODATA   2
+#define RETLONG     3
+#define RETNULL     4
 #define RETERRNO    (1000 + errno)
 
 #define MAXIO       4096
@@ -142,7 +143,8 @@ static CpWord envOp (CpWord req)
 static struct sockaddr_in addr;
 static CpWord sockOp (CpWord req)
 {
-    CpWord *reqp = cpuAccessMem (req, 10);
+    // Check for a 5 word request buffer always (even though most requests require less)
+    CpWord *reqp = cpuAccessMem (req, 5);
     int socknum;
     int retval;
     int true_opt = 1;
@@ -151,11 +153,13 @@ static CpWord sockOp (CpWord req)
     CpWord *bufp;
     CpWord d;
     char *cp;
+    int c;
     int ic, oc;
     int shift;
     int pc;
     int i, pcnt;
     socklen_t sl;
+    int charset;
     
     if (reqp == NULL)
     {
@@ -459,7 +463,129 @@ static CpWord sockOp (CpWord req)
         return RETOK;
     case 8:
         // write
-        return 0;
+        // 2: 1/ecs, 35/0, 24/bufaddr
+        // 3: 60/chars
+        // chars is 8 bit bytes in binary mode, 6 bit chars in text mode.  Char count
+        // includes the end of line code (at least one 00 char) if last line ends in
+        // end of line.
+        ic = reqp[3];
+        if (ic > MAXIO)
+        {
+            return RETLONG;
+        }
+        if (mode != 0)
+        {
+            buflen = (ic + 9) / 10;
+            shift = 60 - 6;
+        }
+        else
+        {
+            buflen = ic / 15;
+            i = buflen * 15;
+            buflen = 2 * buflen;
+            if (i > 7)
+            {
+                buflen += 2;
+            }
+            else if (i > 0)
+            {
+                buflen++;
+            }
+            shift = 60 - 8;
+        }
+        bufp = cpuAccessMem (reqp[2], buflen);
+        if (bufp == NULL)
+        {
+            return RETINVREQ;
+        }
+        cp = resultstr;
+        charset = 0;
+        d = *bufp++;
+        for (i = 0; i < ic; i++)
+        {
+            if (mode == 0)
+            {
+                // Binary mode
+                if (shift == -4)
+                {
+                    *cp = d << 4;
+                    d = *bufp++;
+                    *cp++ |= (d >> 56) & 0x0f;
+                    shift = 60 - 8 - 4;
+                }
+                else
+                {
+                    *cp++ = (d >> shift) & 0xff;
+                    if (shift == 0)
+                    {
+                        shift = 60 - 8;
+                        d = *bufp++;
+                    }
+                    else
+                    {
+                        shift -= 8;
+                    }
+                }
+            }
+            else
+            {
+                // PLATO string
+                c = (d >> shift) & Mask6;
+                //DEBUGPRINT ("word %p, %llo, char num %d, char %d, shift %d, ", bufp, d, i, c, shift);
+                shift -= 6;
+                if (shift < 0)
+                {
+                    d = *bufp++;
+                    shift = 60 - 6;
+                }
+                if (c == 0)
+                {
+                    // end of line
+                    *cp++ = '\n';
+                    // Adjust input char count by number of pad zeroes skipped
+                    i += (shift + 6) / 6;
+                    // Advance to the next word (skip pad zeroes in this word)
+                    shift = 60 - 6;
+                    charset = 0;
+                    d = *bufp++;
+                    //DEBUGPRINT ("newline, now word %p, %llo, chars left %d\n", bufp, d, i);
+                }
+                else
+                {
+                    if (c == 070)
+                    {
+                        charset |= 1;
+                    }
+                    else if (c == 076)
+                    {
+                        charset |= 2;
+                    }
+                    else
+                    {
+                        c = platoStringToAscii[charset][c];
+                        //DEBUGPRINT ("charset %d, ascii %d\n", charset, c);
+                        charset = 0;
+                        if (c != 001)
+                        {
+                            *cp++ = c;
+                        }
+                    }
+                }
+            }
+        }
+        oc = cp - resultstr;
+        if (oc == 0)
+        {
+            return RETNULL;
+        }
+        retval = write (socknum, resultstr, oc);
+        DEBUGPRINT ("write (%d, ptr, %d), result %d\n", socknum, oc, retval);
+        reqp[4] = retval;
+        if (retval < 0)
+        {
+            return RETERRNO;
+        }
+        return RETOK;
     case 9:
         // Reset all -- takes a buffer full of socket numbers
         // 2: 1/ecs, 35/0, 24/bufaddr
