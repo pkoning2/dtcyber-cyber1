@@ -433,6 +433,7 @@ static CpWord sockOp (CpWord req)
                     *bufp++ = d;
                     buflen--;
                     d = 0;
+                    shift = 60 - 6;
                     if (oc % 10 == 9)
                     {
                         if (buflen > 0)
