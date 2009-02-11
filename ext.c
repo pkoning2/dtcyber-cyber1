@@ -83,7 +83,7 @@ static CpWord envOp (CpWord req)
     {
         return 0;
     }
-    DEBUGPRINT ("req %llo, reqp %p, reqp[1] %llo\n", req, reqp, reqp[1]);
+//    DEBUGPRINT ("req %llo, reqp %p, reqp[1] %llo\n", req, reqp, reqp[1]);
     req = reqp[1];
     for (i = 0; i < 10; i++)
     {
@@ -155,6 +155,7 @@ static CpWord sockOp (CpWord req)
     int shift;
     int pc;
     int i, pcnt;
+    socklen_t sl;
     
     if (reqp == NULL)
     {
@@ -224,12 +225,12 @@ static CpWord sockOp (CpWord req)
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = htonl (reqp[3]);
         addr.sin_port = htons(reqp[2]);
-        DEBUGPRINT ("bind to %08x:%d\n", ntohl (addr.sin_addr.s_addr), ntohs (addr.sin_port));
-        if (bind (socknum, (struct sockaddr *) &addr, sizeof (addr)) < 0)
+        DEBUGPRINT ("bind %d to %08x:%d (%p, %d)\n", socknum, ntohl (addr.sin_addr.s_addr), ntohs (addr.sin_port), &addr, sizeof(addr));
+        if (bind (socknum, (struct sockaddr *) &addr, sizeof (addr)))
         {
-            return RETOK;
+            return RETERRNO;
         }
-        return RETERRNO;
+        return RETOK;
     case 4:
         // listen
         // 2: 44/0, 32/backlog
@@ -237,7 +238,7 @@ static CpWord sockOp (CpWord req)
         {
             return RETNOSOCK;
         }
-        if (listen (socknum, reqp[2]) < 0)
+        if (listen (socknum, reqp[2]))
         {
             return RETERRNO;
         }
@@ -251,11 +252,11 @@ static CpWord sockOp (CpWord req)
             return RETNOSOCK;
         }
         reqp[2] = reqp[3] = 0;
-        oc = sizeof (struct sockaddr);
-        retval = accept (socknum, (struct sockaddr *) &addr, &oc);
+        sl = sizeof (struct sockaddr);
+        retval = accept (socknum, (struct sockaddr *) &addr, &sl);
         if (retval >= 0)
         {
-            DEBUGPRINT ("accept returned socket %d, partner = %08x:%d\n", retval, ntohl (addr.sin_addr.s_addr), ntohs (addr.sin_port));
+            DEBUGPRINT ("accept %d returned socket %d, partner = %08x:%d\n", socknum, retval, ntohl (addr.sin_addr.s_addr), ntohs (addr.sin_port));
 #if defined(_WIN32)
             ioctlsocket (retval, FIONBIO, &true_opt);
 #else
@@ -286,11 +287,11 @@ static CpWord sockOp (CpWord req)
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = htonl (reqp[3]);
         addr.sin_port = htons(reqp[2]);
-        if (connect (socknum, (struct sockaddr *) &addr, sizeof (addr)) < 0)
+        if (connect (socknum, (struct sockaddr *) &addr, sizeof (addr)))
         {
-            return RETOK;
+            return RETERRNO;
         }
-        return RETERRNO;
+        return RETOK;
     case 7:
         // read
         // 2: 1/ecs, 35/0, 24/bufaddr
@@ -507,8 +508,6 @@ CpWord extOp (CpWord req)
     CpWord *reqp = cpuAccessMem (req, 1);
     CpWord retval;
     
-    DEBUGPRINT ("req %llo, reqp %p, *reqp %llo\n", req, reqp, *reqp);
-    
     if (reqp == NULL)
     {
         return 0;
@@ -524,8 +523,11 @@ CpWord extOp (CpWord req)
     default:
         retval = RETINVREQ;
     }
-    DEBUGPRINT ("return value %llo\n", retval);
-
+    if (retval != RETOK && retval != RETNODATA)
+    {
+        DEBUGPRINT ("req %llo, reqp %p, *reqp %llo\n", req, reqp, *reqp);
+        DEBUGPRINT ("return value %llo\n", retval);
+    }
     return retval;
 }
 
