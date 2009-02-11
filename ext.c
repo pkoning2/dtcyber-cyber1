@@ -136,6 +136,26 @@ static CpWord envOp (CpWord req)
 **                              28/0, 32/socknum
 **                              60/reqdependent...
 **
+**                              Function codes:
+**                                  0: reset
+**                                  1: close ("shutdown" on the connection)
+**                                  2: get socket
+**                                  3: bind
+**                                  4: listen
+**                                  5: accept
+**                                  6: connect
+**                                  7: read
+**                                  8: write
+**                                  9: reset all
+**
+**                              For the "get socket" request, socknum must
+**                              be zero, and the socket number obtained is returned
+**                              in word 1.  For "reset all" it is unused.
+**                              For all other request, socknum must be the number
+**                              of a socket obtained from "get socket" or "accept".
+**
+**                              See below for reqdependent fields.
+**
 **  Returns:        Operation status.  -1 for success, >= 0 for error.
 **                  For host OS errors, status is 1000 + errno value.
 **
@@ -172,6 +192,7 @@ static CpWord sockOp (CpWord req)
     {
     case 0:
         // reset
+        // no request dependent fields.
         if (socknum != 0)
         {
             if (close (socknum))
@@ -183,6 +204,7 @@ static CpWord sockOp (CpWord req)
         return RETNOSOCK;
     case 1:
         // close
+        // no request dependent fields.
         if (socknum != 0)
         {
             if (shutdown (socknum, SHUT_RDWR))
@@ -194,6 +216,9 @@ static CpWord sockOp (CpWord req)
         return RETNOSOCK;
     case 2:
         // socket (get a socket number)
+        // no request dependent fields.
+        // Note that socket number (word 1) must be zero coming in,
+        // and the socket number we obtained is returned there.
         if (socknum == 0)
         {
             retval = socket (PF_INET, SOCK_STREAM, 0);
@@ -217,6 +242,7 @@ static CpWord sockOp (CpWord req)
         return RETINVREQ;
     case 3:
         // bind
+        // request dependent fields:
         // 2: 44/0, 16/port
         // 3: 28/0, 32/address
         if (socknum == 0)
@@ -237,6 +263,7 @@ static CpWord sockOp (CpWord req)
         return RETOK;
     case 4:
         // listen
+        // request dependent fields:
         // 2: 44/0, 32/backlog
         if (socknum == 0)
         {
@@ -249,6 +276,7 @@ static CpWord sockOp (CpWord req)
         return RETOK;
     case 5:
         // accept
+        // no request dependent fields inbound.
         // On return, 3rd word is the data socket, if the accept worked.
         // The IP address is returned in the 4th word.
         if (socknum == 0)
@@ -281,6 +309,7 @@ static CpWord sockOp (CpWord req)
         return RETERRNO;
     case 6:
         // connect
+        // request dependent fields:
         // 2: 44/0, 16/port
         // 3: 28/0, 32/address
         if (socknum == 0)
@@ -298,6 +327,7 @@ static CpWord sockOp (CpWord req)
         return RETOK;
     case 7:
         // read
+        // request dependent fields:
         // 2: 1/ecs, 35/0, 24/bufaddr
         // 3: 60/bufwords
         // 4: 60/retbufchars
@@ -467,6 +497,7 @@ static CpWord sockOp (CpWord req)
         return RETOK;
     case 8:
         // write
+        // request dependent fields:
         // 2: 1/ecs, 35/0, 24/bufaddr
         // 3: 60/chars
         // chars is 8 bit bytes in binary mode, 6 bit chars in text mode.  Char count
@@ -592,8 +623,10 @@ static CpWord sockOp (CpWord req)
         return RETOK;
     case 9:
         // Reset all -- takes a buffer full of socket numbers
+        // request dependent fields:
         // 2: 1/ecs, 35/0, 24/bufaddr
         // 3: 60/bufwords
+        // Note that socknum (word 1) is not used.
         buflen = reqp[3];
         if (buflen <= 0)
         {
