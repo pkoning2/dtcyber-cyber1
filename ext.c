@@ -132,8 +132,8 @@ static CpWord envOp (CpWord req)
 **  Parameters:     Name        Description.
 **                  req         Pointer to request (1/ecsflag, 35/, 24/address)
 **
-**                              36/0, 6/mode, 6/function, 12/1
-**                              28/0, 32/socknum
+**                              42/0, 6/function, 12/1
+**                              6/mode, 22/0, 32/socknum
 **                              60/reqdependent...
 **
 **                              Function codes:
@@ -149,10 +149,16 @@ static CpWord envOp (CpWord req)
 **                                  9: reset all
 **
 **                              For the "get socket" request, socknum must
-**                              be zero, and the socket number obtained is returned
-**                              in word 1.  For "reset all" it is unused.
-**                              For all other request, socknum must be the number
-**                              of a socket obtained from "get socket" or "accept".
+**                              be zero, and the socket number obtained is 
+**                              returned in word 1.  For "reset all" it is 
+**                              unused.
+**                              For all other request, socknum must be the 
+**                              number of a socket obtained from "get socket" 
+**                              or "accept".
+**
+**                              "mode" is 0 for text, 1 for binary.
+**                              This applies only to read and write calls.
+**                              Other values are reserved.
 **
 **                              See below for reqdependent fields.
 **
@@ -185,8 +191,8 @@ static CpWord sockOp (CpWord req)
     {
         return 0;
     }
-    mode = ((*reqp >> 18) & Mask6);
-    socknum = reqp[1];
+    mode = ((reqp[1] >> 54) & Mask6);
+    socknum = reqp[1] & 0xffffffff;
 
     switch ((*reqp >> 12) & Mask6)
     {
@@ -335,7 +341,7 @@ static CpWord sockOp (CpWord req)
         // request buffer.  The amount is in 8-bit bytes for binary mode,
         // or 6-bit characters in text mode.
         //
-        // mode (from word 1) is 0 for binary, 1 for PLATO text.
+        // mode (from word 1) is 1 for binary, 0 for PLATO text.
         // In text mode, multiple lines may be returned, with line
         // terminators in the usual form.  The character count includes
         // line terminator characters, including padding to the next 
@@ -371,7 +377,7 @@ static CpWord sockOp (CpWord req)
         resultstr[retval] = '\0';
         DEBUGPRINT ("read %d: %s\n", retval, resultstr);
         cp = resultstr;
-        if (mode == 0)
+        if (mode == 1)
         {
             shift = 60 - 8;
         }
@@ -387,7 +393,7 @@ static CpWord sockOp (CpWord req)
             {
                 break;
             }
-            if (mode == 0)
+            if (mode == 1)
             {
                 // binary
                 if (shift == -4)
@@ -501,15 +507,15 @@ static CpWord sockOp (CpWord req)
         // request dependent fields:
         // 2: 1/ecs, 35/0, 24/bufaddr
         // 3: 60/chars
-        // chars is 8 bit bytes in binary mode, 6 bit chars in text mode.  Char count
-        // includes the end of line code (at least one 00 char) if last line ends in
-        // end of line.
+        // chars is 8 bit bytes in binary mode, 6 bit chars in text mode.  
+        // Char countincludes the end of line code (at least one 00 char) 
+        // if last line ends in end of line.
         ic = reqp[3];
         if (ic > MAXIO)
         {
             return RETLONG;
         }
-        if (mode != 0)
+        if (mode == 0)
         {
             buflen = (ic + 9) / 10;
             shift = 60 - 6;
@@ -539,7 +545,7 @@ static CpWord sockOp (CpWord req)
         d = *bufp++;
         for (i = 0; i < ic; i++)
         {
-            if (mode == 0)
+            if (mode == 1)
             {
                 // Binary mode
                 if (shift == -4)
