@@ -14,6 +14,670 @@ return(opl)
 */ **/---   block=01-e opl2              83/09/22. 20.24    source
 *oplfile opl2
 */
+*/ **/---   block=01-e socket            09/02/03. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Add -socket- command
+*/
+*/ -------------------------------------------------------------------
+*ident socket
+*deck platxt
+*i APACPLS.5
+*
+*         tsocket = 1/resolve pending, 41/unused, 18/socket lesnum
+ tsocket  bss    1
+*i VGNAPLP.1
+          subov  sockx       -socket-
+*deck pctext
+*d pctext.288
+*                13 TERMINAL RESIDENT, 14 socket table)
+*i pctexta.3
+
+***       socket function codes
+*
+*         except where noted, these codes are used in two ways          
+*         1. as function codes on the -socket- command
+*         2. as function codes in the dtcyber socket access opcode
+*
+ s.reset  equ    0           reset socket
+ s.close  equ    1           close socket
+ s.ctrl   equ    2           control (conden to plato)
+ s.get    equ    2           get socket number (dtcyber)
+ s.bind   equ    3           bind address/port for passive socket
+ s.listn  equ    4           listen for connections
+ s.acc    equ    5           accept a connection
+ s.conn   equ    6           connect outbound
+ s.read   equ    7           read data
+ s.write  equ    8           write data
+ s.rall   equ    9           reset all sockets (dtcyber)
+
+***       socket lesson layout
+*
+* for each user that has opened any sockets, there is a socket
+* lesson in ecs.  the socket number seen by tutor is an index
+* into a 64-entry array in this lesson, which serves to hide the
+* actual socket numbers from the users.  the lesson also contains
+* space for name to address conversion (to be done later).
+*
+* the socket lesson is dropped on exit from the lesson unless
+* -inhibit something- is in effect.
+*
+* socket lessons are locked (non-deletable) at all times,
+* and are non-relocatable whenever a resolve request is pending.
+*
+ sltype   equ    14          lesson type
+ sockmax  equ    64
+ socks    equ    0           start of socket list
+ sladdr   equ    socks+sockmax address (for resolve calls)
+ snammax  equ    13          max name length in words
+ slname   equ    sladdr+1
+ sllen    equ    slname+snammax length of socket lesson
+ sockhd   equ    lprmlth     socket lesson header length (basic header)
+*deck comnds
+*d yfclnup.7
+          JUMPOV 8LSOCKET,socket,0,keywdov,4,11010,sockx,0 socket    482
+*deck covlay3
+*i covlay3.3006
++         eq     socket      4 = -socket-
+*i covlay3.3290
+***
+*
+*         -socket- command
+*
+*         general format is
+*         socket  keywd,socknum,args
+*
+*         socket  reset,num
+*         socket  close,num
+*         socket  bind,num,addr,port
+*         socket  listen,num,backlog
+*         socket  accept,num,lnum
+*         socket  connect,num,addr,port
+*         socket  recv,num,buf,len,retchars
+*         socket  send,num,buf,bufchars
+*         socket  control,num,flags
+
+ socket   call   systest     error if not system lesson
+          call   nxtnam      (x6) = primary keyword
+          zr     x6,err2few  error if no keyword
+          sx1    x1-1r,
+          nz     x1,errterm
+          sa1    socktab-1   (a1) = address of 0th keyword
+          mx0    42          (x0) = mask for keyword name
+ sock1    sa1    a1+1        (x1) = next keyword table entry
+          zr     x1,errname  error if end of table
+          bx2    x0*x1       (x2) = next keyword
+          bx2    x2-x6       test if match
+          nz     x2,sock1    if no match
+          bx6    -x0*x1      (x1) = function code
+          sx7    1
+          sa7    varbuf      set argument count so far
+          sa6    varbuf+x7   set function code
+          call   vardo2      get socket number
+          sa1    varbuf+1    retrieve function code
+          sb1    x1
+          jp     sctab+b1    go condense for this keyword
+
+** list of socket command function keywords and their code
+
+ socktab  vfd    42/0lreset,18/s.reset
+          vfd    42/0lclose,18/s.close
+          vfd    42/0lcontrol,18/s.ctrl
+          vfd    42/0lbind,18/s.bind
+          vfd    42/0llisten,18/s.listn
+          vfd    42/0laccept,18/s.acc
+          vfd    42/0lconnect,18/s.conn
+          vfd    42/0lread,18/s.read
+          vfd    42/0lwrite,18/s.write
+          con    0
+
+** list of condense routines for each function.  they must have
+*  offset corresponding to the command function code.
+
+ scent    macro  proc,fcode
++         bss    0
+          errnz  *-sctab-fcode
+          eq     proc
+ scent    endm
+
+ sctab    scent  mrklast,s.reset
+          scent  mrklast,s.close
+          scent  scctrl,s.ctrl
+          scent  scbind,s.bind
+          scent  sclistn,s.listn
+          scent  scacc,s.acc
+          scent  scconn,s.conn
+          scent  scread,s.read
+          scent  scwrite,s.write
+
+** handle -socket control-
+
+ scctrl   call   nxtnam      (x6) = control optio keyword
+          zr     x6,err2few  error if no keyword
+          sa1    sftab-1     (a1) = address of 0th keyword
+          mx0    48          (x0) = mask for keyword name
+ scctrl1  sa1    a1+1        (x1) = next keyword table entry
+          zr     x1,errname  error if end of table
+          bx2    x0*x1       (x2) = next keyword
+          bx2    x2-x6       test if match
+          nz     x2,scctrl1  if no match
+          bx6    -x0*x1      (x1) = function code
+          sa2    varbuf      get current varbuf count
+          sx7    x2+1
+          sa7    a2+0        update it
+          sa6    varbuf+x7   store control flags
+          eq     mrklast
+
+** list of flags keywords for the -socket control- command
+
+ sftab    vfd    48/0lbinary,18/0
+          vfd    48/0ltext,18/1
+          con    0
+
+** handle -socket bind- and -socket connect
+*
+*  both of these have two integer arguments (address and port)
+ scbind   bss    0
+ scconn   call   vardo2      get address
+          call   vardo2      get port
+          eq     mrklast
+
+** handle -socket listen-
+ sclistn  call   vardo2      get backlog
+          eq     mrklast
+
+** handle -socket accept-
+*
+*  one argument, must be storeable
+ scacc    call   vardo2
+          ng     x1,errstor  -- error if not storable
+          eq     mrklast
+
+** handle -socket read-
+*
+*  three arguments -- buffer, words, charcount return
+ scread   call   vardo2      get buffer start
+          ng     x1,errstor  -- error if not storable
+          call   vardo2      get words in buffer
+          call   vardo2      get variable where to return char count
+          ng     x1,errstor  -- error if not storable
+          eq     mrklast
+
+** handle -socket write
+*
+*  two arguments -- buffer, charcount
+ scwrite  call   vardo2      get buffer start
+          ng     x1,errstor  -- error if not storable
+          call   vardo2      get characters in buffer
+          eq     mrklast
+*deck tutorx
+*i TUTOR1X.567
+          call   dropsck     sign out of any sockets
+*i tutor1x.1328
+          call   dropsck     sign out of any sockets
+*i tutor1x.1473
+          call   dropsck     sign out of any sockets
+*i TUTORX.742
+          call   dropsck     sign out of sockets
+*i TUTORX.1382
+          call   dropsck     sign out of sockets
+*i TUTORX.2290
+          call   dropsck     sign out of sockets
+*
+*i TUTOR1X.2489
+          sa6    tsocket     clear -socket- word
+*deck lesson
+*i lesson.1250
+          call   dropsck     sign out of sockets
+*i lesson.1917
++         VFD    60/sockhd   socket buffer
+*deck lcomnd
+*i lcomnd.8
+
+ exx      cpop   0,016b,012b
+*i lcomnd.132
+***       -dropsck-
+*
+*         frees any ecs allocated for the network socket data
+*
+          entry  dropsck
+ dropsck  eq     *
+          sa1    tsocket
+          sx1    x1          check for socket lesson
+          zr     x1,nosock   -- if no sockets
+          call   lsnaddr     get ecs address
+          sx2    3
+          ix0    x0+x2       point to 4th word of lesnam entry
+          rx2    x0          read ecs address
+          mx6    1           set ecs address flag
+          bx6    x6+x1       form pointer
+          sx2    socks       offset to socket list
+          ix6    x6+x2
+          sa6    slptr       store in resetall request block
+          sx1    dorall
+          ex1    x1          reset all sockets in the list
+          call   iolessn,tsocket,-0001b clear non-deletable
+          sa1    tsocket
+          sx1    x1
+          call   delete      done with the ecs
+ nosock   sx6    0
+          sa6    tsocket
+          eq     dropsck
+
+ dorall   vfd    42/0,6/s.rall,12/1
+          con    0
+ slptr    con    0           address of socket list
+          con    sockmax
+*deck lex1
+          sysnam tsocket
+          sysnam sockmax
+*deck exec10
+*i VGNAPLP.156
+ socket   title  -socket- command execution
+
+***       -socket- command
+*
+*         general form is
+*         socket keywd,sockidx,args...
+*
+*         sockidx is not an actual socket number but a 1-based index
+*         into an array of sockets for this user (max of *sockmax*).
+*         actual socket numbers are allocated and freed behind the
+*         scenes; in particular there is no call for just allocating
+*         a socket number.
+*
+*         note that all operations are non-blocking.  if there is no
+*         data, *zreturn* = 2 is returned; this corresponds to the
+*         EAGAIN value in errno for Unix socket operations.
+*
+*         socket reset,sockidx
+*                immediate close of a socket
+*
+*         socket close,sockidx
+*                shutdown (controlled close) of a socket
+*
+*         socket control,sockidx,flags
+*                set socket mode; flags is *binary* or *text*.
+*
+*         socket bind,sockidx,ipaddr,port
+*                bind an address and tcp port number to listen
+*
+*         socket listen,sockidx,backlog
+*                listen for connections, max backlog is given
+*
+*         socket accept,sockidx,dataidx
+*                accept a connection, new data socket index is
+*                returned in dataidx
+*
+*         socket connect,sockidx,ipaddr,port
+*                open an outgoing connection
+*
+*         socket read,sockidx,buf,words,charret
+*                read data from socket into buf, length *words*.
+*                number of characters read returned in charret.
+*
+*         socket write,sockidx,buf,chars
+*                write data from buf to socket, *chars* characters.
+*
+*         initially all valid sockidx values correspond to unused
+*         sockets.  the rules for sockidx values are
+*
+*         reset, close -- any sockidx value is legal.  if sockidx is
+*                not currently in use, no action is taken.
+*                upon completion the sockidx is now not in use.
+*         bind, connect -- sockidx must be an index that is not
+*                currently in use.  after successful completion it
+*                now is in use.
+*         listen, accept -- sockidx must be an index for which a
+*                *bind* has been done.
+*         read, write -- sockidx must be an index for which a connect
+*                has been done, or which was the dataidx returned
+*                by an accept.
+*
+*         *zreturn* values
+*                -1          ok
+*                0           invalid request (internal error)
+*                1           incorrect sockidx (in-use rule error)
+*                2           no data
+*                3           data too long (internal error)
+*                4           disconnect on read
+*                5           no free socket index for accept
+*               1000+n       unix errno *n*
+*
+*         if the sockidx is outside the range of valid values
+*         (less than 1 or greater than sys(sockmax)) an execution
+*         error results.
+
+ sockx    ovrlay
+          sx6    5           (x6) = max argument count
+          sa5    a5+0        retrieve command word
+          call   getargs     move getvar codes to *varbuf*
+          sa1    varbuf      get function number
+          sb1    x1
+          jp     sctab+b1    dispatch to action routine
+
+ scent    macro  proc,fcode
++         bss    0
+          errnz  *-sctab-fcode
+          eq     proc
+ scent    endm
+
+ sctab    scent  screset,s.reset
+          scent  scclose,s.close
+          scent  scctrl,s.ctrl
+          scent  scbind,s.bind
+          scent  sclistn,s.listn
+          scent  scacc,s.acc
+          scent  scconn,s.conn
+          scent  scread,s.read
+          scent  scwrite,s.write
+          space  5,11
+**        -socket reset- and -socket close-
+
+ screset  bss    0
+ scclose  rj     getsoco     get socket number or 0 if none now
+          zr     x1,sockok   none is a nop
+          mx6    0
+          sa6    a1          clear out socket slot
+          sa1    sockead
+          bx0    x1
+          sa0    socklst
++         we     sockmax
+-         rj     ecsprty     update the socket list in ecs
+ scdo     sa2    varbuf      retrieve function code
+          lx2    12          position it
+          sx6    x2+1        form *socket* opcode
+          sa6    sxbuf       set opcode
+          bx7    x1
+          sa7    a6+1        set socket number
+          sx1    a6
+          ex6    x1          issue socket op
+          eq     sockret     set *zreturn* from socket op result
+          space  5,11
+**        -socket control-
+
+ scctrl   eq     sockok      tbd
+          space  5,11
+**        -socket listen-
+
+ sclistn  rj     getsockn    get socket number, must be non-zero
+          bx6    x1
+          sa6    sxbuf+1     set it in request
+          sa1    varbuf+2    backlog argument
+          bx5    x1
+          ngetvar
+          bx6    x1
+          sa6    sxbuf+2     set in request
+          eq     scdo        do the listen and exit
+          space  5,11
+**        -socket bind-, -socket connect-
+
+ scbind   bss    0
+ scconn   rj     getsockz    get socket number, must be free
+          bx6    x1
+          sa6    sxbuf+1     set it in request
+          sa1    varbuf+2    address argument
+          bx5    x1
+          ngetvar
+          bx6    x1
+          sa6    sxbuf+2     set in request
+          sa1    varbuf+3    port number argument
+          bx5    x1
+          ngetvar
+          bx6    x1
+          sa6    sxbuf+3     set in request
+          eq     scdo        do the operation and exit
+          space  5,11
+**        -socket accept-
+
+ scacc    rj     getsockn    get socket number, must be non-zero
+          bx6    x1
+          sa6    sacreq+1    set it in request
+          sb1    sockmax
+          sa1    socklst-1
+ slscan   sa1    a1+1        check socklist entry
+          zr     x1,slsc2    found a free entry
+          sb1    b1-1
+          nz     b1,slscan
+          sx6    5
+          eq     sockret     *zreturn* = 5 -- no room
+
+ slsc2    sx6    a1-socklst-1 compute data socket index
+          sa6    sdidx       save it
+          sx1    sacreq
+          ex6    x1
+          pl     x6,sockret  quit if error
+          sa1    varbuf+2    dataidx argument
+          bx5    x1
+          ngetvar
+          sa2    sacreq+2    get returned socket
+          sa3    sdidx       get socket table index we found
+          bx6    x2
+          sa6    x3+socklst-1 set socket number
+          sa1    sockead
+          bx0    x1
+          sa0    socklst
++         we     sockmax
+-         rj     ecsprty     update the socket list in ecs
+          eq     sockok
+
+ sacreq   vfd    42/0,6/s.acc,12/1
+          bss    2
+ sdidx    bss    1           socket index for data socket
+          space  5,11
+**        -socket read-
+
+ scread   rj     getsocn     get socket number, must be non-zero
+          bx6    x1
+          sa6    scrreq+1    set it in request
+          sa1    varbuf+2    read buffer argument
+          bx5    x1
+          ngetvar
+          sx6    a1
+          sa6    scrreq+2    set in request
+          sa1    varbuf+3    word count argument
+          bx5    x1
+          ngetvar
+          bx6    x1
+          sa6    scrreq+3    set in request
+          sa2    scrreq+2    re-fetch start address
+          sa0    x2
+          call   bounds      check
+          sx1    scrreq
+          ex6    x1          do the read
+          pl     x6,sockerr  error of some sort, set *zreturn*
+          sa1    varbuf+3    char count return argument
+          bx5    x1
+          ngetvar
+          sa2    scrreq+4
+          bx6    x2
+          sa6    x1          store the char count
+ sockok   sx6    -1
+          sa6    treturn     set *zreturn* = -1 for goodness
+          eq     process
+
+ scrreq   vfd    42/0,6/s.read,12/1
+          space  5,11
+**        -socket write-
+
+ scwrite  rj     getsockn    get socket number, must be non-zero
+          bx6    x1
+          sa6    sxbuf+1     set it in request
+          sa1    varbuf+2    buffer argument
+          bx5    x1
+          ngetvar
+          sx6    a1
+          sa6    sxbuf+2     set in request
+          sa1    varbuf+3    char count argument
+          bx5    x1
+          ngetvar
+          bx6    x1
+          sa6    sxbuf+3     set in request
+          sa2    sxbuf+2     re-fetch start address
+          sa0    x2
+          call   words       check bounds (binary mode tbd)
+          eq     scdo        do the write and exit
+          space  5,11
+** map user socket index to socket number, ok if none
+*
+*  on entry, varbuf+1 is the varbuf entry for the socknum argument.
+*
+*  on exit, x1 is the socket number, or 0 if there is no socket list.
+
+ getsoco  ps
+          sa1    tsocket     get socket lesson number
+          sx1    x1
+          zr     x1,getsoc2  exit with (x1) = 0 if none
+          rj     getsock     look up the socket entry
+          eq     getsoco
+
+** map user socket index to socket number, must be non-zero
+*
+*  on entry, varbuf+1 is the varbuf entry for the socknum argument.
+*
+*  on exit, x1 is the socket number
+
+ getsocn  ps
+          rj     getsoco     look up the entry
+          nz     x1,getsocn  
+ sidxerr  sx6    1           *zreturn* = 1 -- bad sockidx
+ sockret  sa6    treturn
+          eq     process
+
+** map user socket index to socket number, must be free
+*
+*  on entry, varbuf+1 is the varbuf entry for the socknum argument.
+*
+*  on exit, x1 is the socket number.  the socket list both in memory
+*  and in ecs are updated.
+
+ getsocz  ps
+          rj     getsock     look up the entry
+          nz     x1,sidxerr  non-zero (in use) is error
+          sx1    gsnum
+          ex6    x1          try to get a socket
+          pl     x6,sockret  quit if error
+          sa2    gsnum+2     fetch the socket number
+          bx1    x2          for return
+          bx6    x2
+          sa6    a1          write it to socket list
+          sa2    sockead
+          bx0    x2
+          sa0    socklst
++         we     sockmax
+-         rj     ecsprty     update the socket list in ecs
+          eq     getsocz    
+
+ gsnum    vfd    42/0,6/s.get,12/1
+          bssz   2
+
+** map user socket index to socket number.
+*
+* on entry, varbuf+1 is the varbuf entry for the socknum argument.
+*
+* on exit, x1 is the socket number, and the socket list portion
+* of the socket lesson has been read into socklst.  also, the value
+* of socknum (which is a 1-based index) is in sockidx.  a1 points
+* to the entry in socket list buffer in cm.
+*
+* if sockidx is out of range, or if we tried to allocate the socket
+* lesson and failed due to no ecs, an execution error results.
+
+ getsock  ps
+          sa1    varbuf+1    sockidx argument
+          bx5    x1
+          ngetvar
+          bx6    x1
+          sa6    sockidx     save it
+          ng     x1,sockerr  bad index
+          zr     x1,sockerr  ditto
+          sx6    x6-sockmax-1
+          pl     x6,sockerr  ditto
+          sa1    tsocket
+          sx1    x1          check for socket lesson
+          nz     x1,gets2    -- there is one
+          rj     getslst
+          ng     x6,sockecs  no ecs for list
+          bx1    x6          copy lesson number
+ gets2    call   lsnaddr     get ecs address
+          sx2    3
+          ix0    x0+x2       point to 4th word of lesnam entry
+          rx2    x0          read ecs address
+          mx0    -24         mask for ecs address
+          bx2    -x0*x2
+          sx0    socks       offset to socket list
+          ix0    x0+x2
+          bx6    x0
+          sa6    sockead     remember ecs address of list
+          sa0    socklst
++         re     sockmax     read the socket list
+-         rj     ecsprty
+          sa1    sockidx     get the index again
+          sa1    x1+socklst-1 get the requested entry
+          eq     getsock     (a1) = addr of socket entry, (x1) = entry
+
+ sockerr  sa1    sockidx
+          sx2    sockmax
+          execerr calcerr,31 index error, (x1)=index, (x2)=max
+
+ sockecs  eq     noecs
+
+          space  5,11
+
+** getslst -- obtain ecs for the socket list
+*
+* on exit 
+*         (x6) < 0 if no ecs
+*         (x6) = tsocket = socket list lesson number
+*
+* the lesson obtained has a use count of 1 and is marked non-deletable
+
+ getslst  ps
+          SX6    0
+          SA6    INAME       ACCOUNT NAME ZERO
+          BX6    X1
+          SA6    A6+1
+          SA1    STATION     GET THIS STATION NUMBER
+          BX6    X1
+          LX6    18          MAKES BETTER HASH THAN HORMEL
+          BX6    X6+X1
+          SA6    A6+1        SECOND WORD OF NAME
+          SX6    14          socket buffer lesson type
+          LX6    48          MOVE TO CORRECT FIELD
+          SA6    A6+1        THIRD WORD OF NAME
+
+          MX6    0
+          SA6    tsocket     INITIALIZE *tsocket*
+          SX6    10          TRY FOR socket buffer 10 TIMES
+
+ gs2      SA6    ECTRIES
+*
+          CALL   XSTOR,slNAME,sllen  SET UP LESSON
+          SA1    LESNUM      SEE IF WE GOT IT
+          PL     X1,gs3      got the socket buffer
+          INTCLR X,I.SIGN    CLEAR FOR TUTIM
+          TUTIM  1100        WAIT FOR EM MANAGER
+          INTLOK X,I.SIGN,W  RE-SET FOR NEXT TRY
+          SA2    ECTRIES     X2 = LOOP COUNTER
+          SX6    X2-1
+          PL     X6,gs2      GIVE IT ANOTHER TRY,
+          EQ     getsock     -- EXIT, X6 = NEGATIVE
+
+ gs3      BX6    X1
+          SA6    tsocket     save socket lesson number
+          CALL   ALTLES,1    INCREMENT USER COUNT
+          call   iolessn,tsocket,0001b make non-deletable
+          INTCLR X,I.ADDL    RELEASE LESNAM INTERLOCK   
+          sa1    tsocket
+          bx6    x1
+          eq     getslst     exit with lesson number in x6  
+
+ slname   bss    4
+ sockidx  bss    1
+ sockead  bss    1
+ socklst  bss    sockmax
+ sxbuf    bss    5           socket instruction request buffer
+*/
 */ **/---   block=01-e nprt              08/07/22. 12.00    source
 */ -------------------------------------------------------------------
 */
