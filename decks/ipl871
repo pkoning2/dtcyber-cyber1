@@ -97,6 +97,10 @@ return(opl)
 *         socket  send,num,buf,bufchars
 *         socket  control,num,flags
 
+          ext    ecsprty,noecs
+
+ exx      cpop   0,016b,012b
+
  socket   call   systest     error if not system lesson
           call   nxtnam      (x6) = primary keyword
           zr     x6,err2few  error if no keyword
@@ -396,11 +400,18 @@ return(opl)
           space  5,11
 **        -socket control-
 
- scctrl   eq     sockok      tbd
+ scctrl   rj     getsocn     get socket number, must be non-zero
+          sa2    varbuf+2    get flags value
+          lx2    54          position to high bits
+          mx0    6
+          bx6    -x0*x1      clear out old flags
+          bx6    x6+x2       merge in new
+          sa6    a1          update socket entry
+          eq     sockrok     update ecs copy and exit
           space  5,11
 **        -socket listen-
 
- sclistn  rj     getsockn    get socket number, must be non-zero
+ sclistn  rj     getsocn     get socket number, must be non-zero
           bx6    x1
           sa6    sxbuf+1     set it in request
           sa1    varbuf+2    backlog argument
@@ -413,7 +424,7 @@ return(opl)
 **        -socket bind-, -socket connect-
 
  scbind   bss    0
- scconn   rj     getsockz    get socket number, must be free
+ scconn   rj     getsocz     get socket number, must be free
           bx6    x1
           sa6    sxbuf+1     set it in request
           sa1    varbuf+2    address argument
@@ -430,7 +441,7 @@ return(opl)
           space  5,11
 **        -socket accept-
 
- scacc    rj     getsockn    get socket number, must be non-zero
+ scacc    rj     getsocn     get socket number, must be non-zero
           bx6    x1
           sa6    sacreq+1    set it in request
           sb1    sockmax
@@ -454,7 +465,7 @@ return(opl)
           sa3    sdidx       get socket table index we found
           bx6    x2
           sa6    x3+socklst-1 set socket number
-          sa1    sockead
+ sockrok  sa1    sockead
           bx0    x1
           sa0    socklst
 +         we     sockmax
@@ -500,7 +511,7 @@ return(opl)
           space  5,11
 **        -socket write-
 
- scwrite  rj     getsockn    get socket number, must be non-zero
+ scwrite  rj     getsocn     get socket number, must be non-zero
           bx6    x1
           sa6    sxbuf+1     set it in request
           sa1    varbuf+2    buffer argument
@@ -527,7 +538,7 @@ return(opl)
  getsoco  ps
           sa1    tsocket     get socket lesson number
           sx1    x1
-          zr     x1,getsoc2  exit with (x1) = 0 if none
+          zr     x1,getsoco  exit with (x1) = 0 if none
           rj     getsock     look up the socket entry
           eq     getsoco
 
@@ -634,7 +645,7 @@ return(opl)
 
  getslst  ps
           SX6    0
-          SA6    INAME       ACCOUNT NAME ZERO
+          SA6    slname      ACCOUNT NAME ZERO
           BX6    X1
           SA6    A6+1
           SA1    STATION     GET THIS STATION NUMBER
@@ -652,7 +663,7 @@ return(opl)
 
  gs2      SA6    ECTRIES
 *
-          CALL   XSTOR,slNAME,sllen  SET UP LESSON
+          CALL   XSTOR,slname,sllen  SET UP LESSON
           SA1    LESNUM      SEE IF WE GOT IT
           PL     X1,gs3      got the socket buffer
           INTCLR X,I.SIGN    CLEAR FOR TUTIM
@@ -677,6 +688,8 @@ return(opl)
  sockead  bss    1
  socklst  bss    sockmax
  sxbuf    bss    5           socket instruction request buffer
+          endov
+*/ end socket
 */
 */ **/---   block=01-e nprt              08/07/22. 12.00    source
 */ -------------------------------------------------------------------
