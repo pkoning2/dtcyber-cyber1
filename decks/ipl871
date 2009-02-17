@@ -97,10 +97,6 @@ return(opl)
 *         socket  send,num,buf,bufchars
 *         socket  control,num,flags
 
-          ext    ecsprty,noecs
-
- exx      cpop   0,016b,012b
-
  socket   call   systest     error if not system lesson
           call   nxtnam      (x6) = primary keyword
           zr     x6,err2few  error if no keyword
@@ -352,11 +348,16 @@ return(opl)
 *         (less than 1 or greater than sys(sockmax)) an execution
 *         error results.
 
+          ext    ecsprty,noecs
+
+ exx      cpop   0,016b,012b
+
  sockx    ovrlay
           sx6    5           (x6) = max argument count
           sa5    a5+0        retrieve command word
           call   getargs     move getvar codes to *varbuf*
           sa1    varbuf      get function number
+          lx1    xcodel      right-justify getvar code
           sb1    x1
           jp     sctab+b1    dispatch to action routine
 
@@ -402,7 +403,7 @@ return(opl)
 
  scctrl   rj     getsocn     get socket number, must be non-zero
           sa2    varbuf+2    get flags value
-          lx2    54          position to high bits
+          lx2    xcodel-6    position to high bits
           mx0    6
           bx6    -x0*x1      clear out old flags
           bx6    x6+x2       merge in new
@@ -646,6 +647,7 @@ return(opl)
  getslst  ps
           SX6    0
           SA6    slname      ACCOUNT NAME ZERO
+          SA1    =7Lsockets  FORM NAME IN X1
           BX6    X1
           SA6    A6+1
           SA1    STATION     GET THIS STATION NUMBER
