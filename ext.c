@@ -1,3 +1,4 @@
+#define DEBUG 1
 /*--------------------------------------------------------------------------
 **
 **  Copyright (c) 2006, Tom Hunter, Paul Koning (see license.txt)
@@ -193,7 +194,8 @@ static CpWord sockOp (CpWord req)
     }
     mode = ((reqp[1] >> 54) & Mask6);
     socknum = reqp[1] & 0xffffffff;
-
+    DEBUGPRINT ("socket req %llo %llo %llo %llo %llo\n", 
+                reqp[0], reqp[1], reqp[2], reqp[3], reqp[4]);
     switch ((*reqp >> 12) & Mask6)
     {
     case 0:
@@ -249,8 +251,8 @@ static CpWord sockOp (CpWord req)
     case 3:
         // bind
         // request dependent fields:
-        // 2: 44/0, 16/port
-        // 3: 28/0, 32/address
+        // 2: 28/0, 32/address
+        // 3: 44/0, 16/port
         if (socknum == 0)
         {
             return RETNOSOCK;
@@ -259,8 +261,8 @@ static CpWord sockOp (CpWord req)
                    (char *) &true_opt, sizeof (true_opt));
         memset (&addr, 0, sizeof(addr));
         addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = htonl (reqp[3]);
-        addr.sin_port = htons(reqp[2]);
+        addr.sin_addr.s_addr = htonl (reqp[2]);
+        addr.sin_port = htons(reqp[3]);
         DEBUGPRINT ("bind %d to %08x:%d (%p, %d)\n", socknum, ntohl (addr.sin_addr.s_addr), ntohs (addr.sin_port), &addr, sizeof(addr));
         if (bind (socknum, (struct sockaddr *) &addr, sizeof (addr)))
         {
@@ -316,16 +318,16 @@ static CpWord sockOp (CpWord req)
     case 6:
         // connect
         // request dependent fields:
-        // 2: 44/0, 16/port
-        // 3: 28/0, 32/address
+        // 2: 28/0, 32/address
+        // 3: 44/0, 16/port
         if (socknum == 0)
         {
             return RETNOSOCK;
         }
         memset (&addr, 0, sizeof(addr));
         addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = htonl (reqp[3]);
-        addr.sin_port = htons(reqp[2]);
+        addr.sin_addr.s_addr = htonl (reqp[2]);
+        addr.sin_port = htons(reqp[3]);
         if (connect (socknum, (struct sockaddr *) &addr, sizeof (addr)))
         {
             return RETERRNO;
