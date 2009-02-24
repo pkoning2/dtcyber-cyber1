@@ -67,12 +67,12 @@ return(opl)
 *
  sltype   equ    14          lesson type
  sockmax  equ    64
+ sockhd   equ    lprmlth     socket lesson header length (basic header)
  socks    equ    0           start of socket list
  sladdr   equ    socks+sockmax address (for resolve calls)
  snammax  equ    13          max name length in words
  slname   equ    sladdr+1
  sllen    equ    slname+snammax length of socket lesson
- sockhd   equ    lprmlth     socket lesson header length (basic header)
 *deck comnds
 *d yfclnup.7
           JUMPOV 8LSOCKET,socket,0,keywdov,4,11010,sockx,0 socket    482
@@ -250,8 +250,8 @@ return(opl)
           ix0    x0+x2       point to 4th word of lesnam entry
           rx2    x0          read ecs address
           mx6    1           set ecs address flag
-          bx6    x6+x1       form pointer
-          sx2    socks       offset to socket list
+          bx6    x6+x2       form pointer
+          sx2    sockhd+socks offset to socket list
           ix6    x6+x2
           sa6    slptr       store in resetall request block
           sx1    dorall
@@ -348,7 +348,7 @@ return(opl)
 *         (less than 1 or greater than sys(sockmax)) an execution
 *         error results.
 
-          ext    ecsprty,noecs
+          ext    ecsprty,noecs,iname
 
  exx      cpop   0,016b,012b
 
@@ -390,11 +390,9 @@ return(opl)
 +         we     sockmax
 -         rj     ecsprty     update the socket list in ecs
  scdo     sa2    varbuf      retrieve function code
-          lx2    12          position it
+          lx2    xcodel+12   position it
           sx6    x2+1        form *socket* opcode
           sa6    sxbuf       set opcode
-          bx7    x1
-          sa7    a6+1        set socket number
           sx1    a6
           ex6    x1          issue socket op
           eq     sockret     set *zreturn* from socket op result
@@ -454,7 +452,7 @@ return(opl)
           sx6    5
           eq     sockret     *zreturn* = 5 -- no room
 
- slsc2    sx6    a1-socklst-1 compute data socket index
+ slsc2    sx6    a1-socklst+1 compute data socket index
           sa6    sdidx       save it
           sx1    sacreq
           ex6    x1
@@ -465,7 +463,9 @@ return(opl)
           sa2    sacreq+2    get returned socket
           sa3    sdidx       get socket table index we found
           bx6    x2
+          bx7    x3
           sa6    x3+socklst-1 set socket number
+          sa7    a1          return socket index
  sockrok  sa1    sockead
           bx0    x1
           sa0    socklst
@@ -474,7 +474,7 @@ return(opl)
           eq     sockok
 
  sacreq   vfd    42/0,6/s.acc,12/1
-          bss    2
+          bss    4
  sdidx    bss    1           socket index for data socket
           space  5,11
 **        -socket read-
@@ -497,13 +497,13 @@ return(opl)
           call   bounds      check
           sx1    scrreq
           ex6    x1          do the read
-          pl     x6,sockerr  error of some sort, set *zreturn*
+          pl     x6,sockret  error of some sort, set *zreturn*
           sa1    varbuf+3    char count return argument
           bx5    x1
           ngetvar
           sa2    scrreq+4
           bx6    x2
-          sa6    x1          store the char count
+          sa6    a1          store the char count
  sockok   sx6    -1
           sa6    treturn     set *zreturn* = -1 for goodness
           eq     process
@@ -569,7 +569,7 @@ return(opl)
           sx1    gsnum
           ex6    x1          try to get a socket
           pl     x6,sockret  quit if error
-          sa2    gsnum+2     fetch the socket number
+          sa2    gsnum+1     fetch the socket number
           bx1    x2          for return
           bx6    x2
           sa6    a1          write it to socket list
@@ -617,7 +617,7 @@ return(opl)
           rx2    x0          read ecs address
           mx0    -24         mask for ecs address
           bx2    -x0*x2
-          sx0    socks       offset to socket list
+          sx0    sockhd+socks offset to socket list
           ix0    x0+x2
           bx6    x0
           sa6    sockead     remember ecs address of list
@@ -645,8 +645,9 @@ return(opl)
 * the lesson obtained has a use count of 1 and is marked non-deletable
 
  getslst  ps
+          call   savles	
           SX6    0
-          SA6    slname      ACCOUNT NAME ZERO
+          SA6    iname       ACCOUNT NAME ZERO
           SA1    =7Lsockets  FORM NAME IN X1
           BX6    X1
           SA6    A6+1
@@ -665,7 +666,7 @@ return(opl)
 
  gs2      SA6    ECTRIES
 *
-          CALL   XSTOR,slname,sllen  SET UP LESSON
+          CALL   XSTOR,iname,sllen  SET UP LESSON
           SA1    LESNUM      SEE IF WE GOT IT
           PL     X1,gs3      got the socket buffer
           INTCLR X,I.SIGN    CLEAR FOR TUTIM
@@ -674,18 +675,18 @@ return(opl)
           SA2    ECTRIES     X2 = LOOP COUNTER
           SX6    X2-1
           PL     X6,gs2      GIVE IT ANOTHER TRY,
-          EQ     getsock     -- EXIT, X6 = NEGATIVE
+          EQ     gs4         -- EXIT, X6 = NEGATIVE
 
  gs3      BX6    X1
           SA6    tsocket     save socket lesson number
           CALL   ALTLES,1    INCREMENT USER COUNT
           call   iolessn,tsocket,0001b make non-deletable
-          INTCLR X,I.ADDL    RELEASE LESNAM INTERLOCK   
+          INTCLR X,I.ADDL    RELEASE LESNAM INTERLOCK
+          call   restles     restore things after pause
           sa1    tsocket
           bx6    x1
           eq     getslst     exit with lesson number in x6  
 
- slname   bss    4
  sockidx  bss    1
  sockead  bss    1
  socklst  bss    sockmax
