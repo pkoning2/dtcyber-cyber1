@@ -652,6 +652,7 @@ static CpWord sockOp (CpWord req)
             *bufp++ = 0;
             if (socknum != 0)
             {
+                DEBUGPRINT ("closing socket %d at index %d\n", socknum, i + 1);
                 close (socknum);
             }
         }
@@ -695,7 +696,7 @@ CpWord extOp (CpWord req)
     default:
         retval = RETINVREQ;
     }
-    if (retval != RETOK && retval != RETNODATA)
+    if (retval != RETNODATA)
     {
         DEBUGPRINT ("req %llo, reqp %p, *reqp %llo\n", req, reqp, *reqp);
         DEBUGPRINT ("return value %llo\n", retval);
