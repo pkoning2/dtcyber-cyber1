@@ -90,6 +90,7 @@
 #define RB              26
 #define RBD             27
 #define RNXXE           28
+#define RNXX            29
 
 /*
 **  -----------------------
@@ -232,6 +233,7 @@ static DecCpControl rjDecode[010] =
     { CK,         "XJ    %6.6o",          R },    // 3
     { Cjk,        "RX%o   X%o",           RNXXE },// 4
     { Cjk,        "WX%o   X%o",           RNXXE },// 5
+    { Cjk,        "EX%o   X%o",           RNXX }, // 6
     };
 
 static DecCpControl cjDecode[010] =
@@ -795,6 +797,11 @@ void traceCpu(CpuContext *activeCpu,
         fprintf(cpuTF[cpuNum], "X%d=" FMT60_08o " (" FMT60_08o ") ",
                 opK, activeCpu->regX[opK] & 077777777,
                 (activeCpu->regX[opK] & 077777777) + activeCpu->regRaEcs);
+        break;
+
+    case RNXX:
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opJ, activeCpu->regX[opJ]);
+        fprintf(cpuTF[cpuNum], "X%d=" FMT60_020o "   ", opK, activeCpu->regX[opK]);
         break;
 
     default:
