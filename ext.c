@@ -1,4 +1,3 @@
-#define DEBUG 1
 /*--------------------------------------------------------------------------
 **
 **  Copyright (c) 2006, Tom Hunter, Paul Koning (see license.txt)
@@ -48,6 +47,7 @@
 #define RETNODATA   2
 #define RETLONG     3
 #define RETNULL     4
+#define RETEOF      5
 #define RETERRNO    (1000 + errno)
 
 #define MAXIO       4096
@@ -179,7 +179,7 @@ static CpWord sockOp (CpWord req)
     int buflen;
     CpWord *bufp;
     CpWord d;
-    char *cp;
+    unsigned char *cp;
     int c;
     int ic, oc;
     int shift;
@@ -376,9 +376,13 @@ static CpWord sockOp (CpWord req)
             }
             return RETERRNO;
         }
+        if (retval == 0)
+        {
+            return RETEOF;
+        }
         resultstr[retval] = '\0';
         DEBUGPRINT ("read %d: %s\n", retval, resultstr);
-        cp = resultstr;
+        cp = (unsigned char *) resultstr;
         if (mode == 1)
         {
             shift = 60 - 8;
@@ -501,6 +505,11 @@ static CpWord sockOp (CpWord req)
                 cp++;
             }
         }
+        if (buflen > 0 && shift < 60 - 8)
+        {
+            // There is a partially assembled word left, and we have room
+            *bufp = d;
+        }
         DEBUGPRINT ("chars to Cyber: %d\n", oc);
         reqp[4] = oc;
         return RETOK;
@@ -525,7 +534,7 @@ static CpWord sockOp (CpWord req)
         else
         {
             buflen = ic / 15;
-            i = buflen * 15;
+            i = ic - buflen * 15;
             buflen = 2 * buflen;
             if (i > 7)
             {
@@ -542,7 +551,7 @@ static CpWord sockOp (CpWord req)
         {
             return RETINVREQ;
         }
-        cp = resultstr;
+        cp = (unsigned char *) resultstr;
         charset = 0;
         d = *bufp++;
         for (i = 0; i < ic; i++)
@@ -596,6 +605,8 @@ static CpWord sockOp (CpWord req)
                 }
                 else
                 {
+                    // TODO: postfix (autobackspacing) accent handling;
+                    // those need to translate the preceding letter.
                     if (c == 070)
                     {
                         charset |= 1;
@@ -617,7 +628,7 @@ static CpWord sockOp (CpWord req)
                 }
             }
         }
-        oc = cp - resultstr;
+        oc = cp - (unsigned char *) resultstr;
         if (oc == 0)
         {
             return RETNULL;

@@ -498,7 +498,7 @@ return(opl)
           sx1    scrreq
           ex6    x1          do the read
           pl     x6,sockret  error of some sort, set *zreturn*
-          sa1    varbuf+3    char count return argument
+          sa1    varbuf+4    char count return argument
           bx5    x1
           ngetvar
           sa2    scrreq+4
