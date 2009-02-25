@@ -47,7 +47,6 @@
 #define RETNODATA   2
 #define RETLONG     3
 #define RETNULL     4
-#define RETEOF      5
 #define RETERRNO    (1000 + errno)
 
 #define MAXIO       4096
@@ -378,7 +377,7 @@ static CpWord sockOp (CpWord req)
         }
         if (retval == 0)
         {
-            return RETEOF;
+            return RETNULL;
         }
         resultstr[retval] = '\0';
         DEBUGPRINT ("read %d: %s\n", retval, resultstr);
@@ -629,10 +628,6 @@ static CpWord sockOp (CpWord req)
             }
         }
         oc = cp - (unsigned char *) resultstr;
-        if (oc == 0)
-        {
-            return RETNULL;
-        }
         retval = write (socknum, resultstr, oc);
         DEBUGPRINT ("write (%d, ptr, %d), result %d\n", socknum, oc, retval);
         reqp[4] = retval;
