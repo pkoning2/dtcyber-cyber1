@@ -44,9 +44,13 @@
 #define NetBufSize      256
 #define StatusLineMax   255
 #define StatusSys       0       /* Line number of operator system status */
-#define StatusFirstDev  2       /* Line number of first device status line */
+#define StatusHdr       1       /* Line number of status header line */
+#define StatusFirstDev  2       /* Line number of first status line */
 #define StatusMsgPfx    15      /* Number of prefix bytes in status buffer */
 #define StatusMsgMax    50      /* Max length of status message */
+
+#define StatusDevs      0       /* Currently displaying device status */
+#define StatusConns     1       /* Currently displaying connections */
 
 /*
 **  -----------------------
@@ -87,9 +91,9 @@ typedef struct
 **  Private Function Prototypes
 **  ---------------------------
 */
-static int opRequest(NetPort *np);
+static int opRequest(NetFet *np);
 static ThreadFunRet opThread (void *param);
-static void opSetup(NetPort *np, int index);
+static void opSetup(NetFet *np, int index);
 static void opSendStatus (StatusData *sd);
 static void opUpdateSysStatus (void);
 
@@ -106,6 +110,8 @@ static void opDebug(char *cmdParams);
 static void opLock(char *cmdParams);
 static void opUnlock(char *cmdParams);
 static void opDeadstart(char *cmdParams);
+static void opDevlist(char *cmdParams);
+static void opConnlist(char *cmdParams);
 #if CcDebug == 1
 static void opTracePpu(char *cmdParams);
 static void opTraceCh(char *cmdParams);
@@ -121,6 +127,8 @@ static void opUntraceXj(char *cmdParams);
 static void opUntraceEcs(char *cmdParams);
 static void opResetTrace(char *cmdParams);
 #endif
+static void operUpdateConnections (void);
+
 /*
 **  ----------------
 **  Public Variables
@@ -139,6 +147,7 @@ bool opDebugging = FALSE;
 static char tlvBuf[OpCmdSize];
 #define cmdBuf (tlvBuf + 2)
 static NetPortSet opPorts;
+static int statusType = StatusDevs;
 
 static const char *syntax[] = 
     /*
@@ -166,6 +175,8 @@ static const char *syntax[] =
     "LOCK.\n",
     "UNLOCK.\n",
     "DEADSTART.\n",
+    "SHOW,DEVICES.\n",
+    "SHOW,CONNECTIONS.\n",
 #if CcDebug == 1
     "DEBUG,ON.\n",
     "DEBUG,OFF.\n",
@@ -210,6 +221,8 @@ static OpCmd decode[] =
     { "LOCK.",                    opLock },
     { "UNLOCK.",                  opUnlock },
     { "DEADSTART.",               opDeadstart },
+    { "SHOW,DEVICES.",            opDevlist },
+    { "SHOW,CONNECTIONS.",        opConnlist },
 #if CcDebug == 1
     { "TRACE,PPU",                opTracePpu },
     { "TRACE,CHANNEL",            opTraceCh },
@@ -242,18 +255,13 @@ static OpMsg msg[] =
       { 0020,    0, 0010, 0, "DUMP,ECS,X,Y.      Dump ECS from X to Y." },
       { 0020,    0, 0010, 0, "DUMP,PPUNN.        Dump specified PPU state." },
       { 0020,    0, 0010, 0, "DISASSEMBLE,PPUNN. Disassemble specified PPU." },
-      { 0020,    0, 0010, 0, "SET,KEYBOARD=TRUE. Emulate console keyboard accurately." },
-      { 0020,    0, 0010, 0, "SET,KEYBOARD=EASY. Make console keyboard easy (rollover)." },
+      { 0020,    0, 0010, 0, "SET,KEYBOARD=[TRUE,EASY]. Set rollover mode." },
       { 0020,    0, 0010, 0, "DEBUG,DISPLAY=[ON,OFF]. Turn CP/PP debug display on/off." },
       { 0020,    0, 0010, 0, "DEADSTART.         Deadstart the system." },
+      { 0020,    0, 0010, 0, "SHOW,[DEVICES,CONNECTIONS]. Choose status display." },
 #if CcDebug == 1
       { 0020,    0, 0010, 0, "DEBUG,[ON,OFF].    Enabled/disable debug commands." },
-      { 0020,    0, 0010, 0, "TRACE,CPUN.        Trace specified CPU activity." },
-      { 0020,    0, 0010, 0, "TRACE,CPNN.        Trace CPU activity for CP NN." },
-      { 0020,    0, 0010, 0, "TRACE,XJ.          Trace exchange jumps." },
-      { 0020,    0, 0010, 0, "TRACE,PPUNN.       Trace specified PPU activity." },
-      { 0020,    0, 0010, 0, "TRACE,CHANNELNN.   Trace specified channel activity." },
-      { 0020,    0, 0010, 0, "TRACE,ECS.         Trace ECS accesses." },
+      { 0020,    0, 0010, 0, "TRACE,[CPUN,CPN,XJ,PPUN,CHANNELN,ECS]. Trace something." },
       { 0020,    0, 0010, 0, "UNTRACE,XXX        Stop trace of XXX." },
       { 0020,    0, 0010, 0, "UNTRACE,.          Stop all tracing." },
       { 0020,    0, 0010, 0, "UNTRACE,RESET.     Stop tracing, discard trace data." },
@@ -268,6 +276,7 @@ static const char *msgPtr;
 static int statusLineCnt = StatusFirstDev;
 static StatusData *statusLines[StatusLineMax];
 static StatusData statusSys;
+static StatusData statusHdr;
 static int opActiveConns;
 static bool opLocked = TRUE;
 
@@ -310,6 +319,10 @@ void opInit(void)
         m++;
         }
     statusLines[StatusSys] = &statusSys;
+    statusLines[StatusHdr] = &statusHdr;
+    sprintf (statusHdr.buf, "\001Device status");
+    statusHdr.len = strlen (statusHdr.buf);
+    updateConnections = operUpdateConnections;
     
     opPorts.portNum = opPort;
     opPorts.maxPorts = opConns;
@@ -367,7 +380,10 @@ void opSetStatus (void *buf, const char *msg)
         {
         sd->len = StatusMsgPfx;
         }
-    opSendStatus (sd);
+    if (statusType == StatusDevs)
+        {
+        opSendStatus (sd);
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -419,7 +435,7 @@ void * opInitStatus (const char *type, int ch, int un)
 void operCheckRequests (void)
     {
     int i;
-    NetPort *np;
+    NetFet *np;
 
     /*
     **  Look for commands from any of the connected 
@@ -428,7 +444,7 @@ void operCheckRequests (void)
     np = opPorts.portVec;
     for (i = 0; i < opConns; i++)
         {
-        if (dtActive (&np->fet))
+        if (dtActive (np))
             {
             opRequest (np);
             }
@@ -462,7 +478,7 @@ void operCheckRequests (void)
 static ThreadFunRet opThread (void *param)
     {
     int i;
-    NetPort *np;
+    NetFet *np;
     
     printf ("operator thread running\n");
     
@@ -483,7 +499,7 @@ static ThreadFunRet opThread (void *param)
                 {
                 break;
                 }
-            i = dtRead  (&np->fet, -1);
+            i = dtRead  (np, -1);
             if (i < 0)
                 {
                 dtClose (np, &opPorts);
@@ -496,12 +512,12 @@ static ThreadFunRet opThread (void *param)
 **  Purpose:        Process operator request
 **
 **  Parameters:     Name        Description.
-**                  np          pointer to NetPort
+**                  np          pointer to NetFet
 **
 **  Returns:        -1 if no command pending, 0 if command processed.
 **
 **------------------------------------------------------------------------*/
-static int opRequest(NetPort *np)
+static int opRequest(NetFet *np)
     {
     OpCmd *cp;
     int cmdLen;
@@ -510,7 +526,7 @@ static int opRequest(NetPort *np)
     /*
     **  Try to receive a command TLV
     */
-    cmdLen = dtReadtlv (&np->fet, tlvBuf, sizeof (tlvBuf));
+    cmdLen = dtReadtlv (np, tlvBuf, sizeof (tlvBuf));
     if (cmdLen < 0 || tlvBuf[0] != OpCommand)
         {
         return -1;
@@ -538,11 +554,11 @@ static int opRequest(NetPort *np)
         }
     if (msgPtr != NULL)
         {
-        dtSendTlv (&np->fet, OpReply, strlen (msgPtr), msgPtr);
+        dtSendTlv (np, OpReply, strlen (msgPtr), msgPtr);
         }
     else
         {
-        dtSendTlv (&np->fet, OpReply, 0, NULL);
+        dtSendTlv (np, OpReply, 0, NULL);
         }
     
     return 0;
@@ -560,7 +576,7 @@ static int opRequest(NetPort *np)
 static void opCmdShutdown(char *cmdParams)
     {
     int i;
-    NetPort *np;
+    NetFet *np;
     
     /*
     **  Process command.
@@ -579,9 +595,9 @@ static void opCmdShutdown(char *cmdParams)
     for (i = 0; i < opConns; i++)
         {
         np = opPorts.portVec + i;
-        if (dtActive (&np->fet))
+        if (dtActive (np))
             {
-            dtSendTlv (&np->fet, OpReply, strlen (msgPtr), msgPtr);
+            dtSendTlv (np, OpReply, strlen (msgPtr), msgPtr);
             }
         }
 
@@ -932,6 +948,91 @@ static void opDeadstart(char *cmdParams)
     opUpdateSysStatus ();
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Show device status (default display).
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opDevlist(char *cmdParams)
+    {
+    int i, j;
+    NetFet *np;
+    char null[2];
+    
+    sprintf (statusHdr.buf + 1, "Device status");
+    statusHdr.len = strlen (statusHdr.buf);
+    statusType = StatusDevs;
+    
+    for (i = 0; i < opConns; i++)
+        {
+        np = opPorts.portVec + i;
+        if (dtActive (np))
+            {
+            dtSendTlv (np, OpStatus, statusHdr.len, statusHdr.buf);
+            for (j = 0; j < StatusLineMax; j++)
+                {
+                if (statusLines[j] != NULL)
+                    {
+                    dtSendTlv (np, OpStatus, statusLines[j]->len,
+                               statusLines[j]->buf);
+                    }
+                else
+                    {
+                    null[0] = j;
+                    dtSendTlv (np, OpStatus, 1, null);
+                    }
+                }
+            }
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Show connections status.
+**
+**  Parameters:     Name        Description.
+**                  cmdParams   Command parameters
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void opConnlist(char *cmdParams)
+    {
+    int i, j;
+    char cstat[50];
+    NetFet *cp;
+    NetFet *np;
+    
+    sprintf (statusHdr.buf + 1, "Connections");
+    statusHdr.len = strlen (statusHdr.buf);
+    statusType = StatusConns;
+    
+    for (i = 0; i < opConns; i++)
+        {
+        np = opPorts.portVec + i;
+        if (dtActive (np))
+            {
+            dtSendTlv (np, OpStatus, statusHdr.len, statusHdr.buf);
+            for (j = StatusFirstDev, cp = connlist.next; 
+                 j < StatusLineMax && cp != &connlist;
+                 j++, cp = cp->next)
+                {
+                sprintf (cstat, "%c%3d. %d to %s:%d", j, j, cp->connFd, 
+                         inet_ntoa (cp->from), cp->fromPort);
+                dtSendTlv (np, OpStatus, strlen (cstat), cstat);
+                }
+            for ( ; j < StatusLineMax; j++)
+                {
+                cstat[0] = j;
+                dtSendTlv (np, OpStatus, 1, cstat);
+                }
+            }
+        }
+    }
+
 #if CcDebug == 1
 /*--------------------------------------------------------------------------
 **  Purpose:        Trace a PPU
@@ -1277,13 +1378,13 @@ static void opResetTrace(char *cmdParams)
 **  Purpose:        Send the initialization data to a new connection
 **
 **  Parameters:     Name        Description.
-**                  np          NetPort pointer
-**                  index       NetPort index
+**                  np          NetFet pointer
+**                  index       NetFet index
 **
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void opSetup (NetPort *np, int index)
+static void opSetup (NetFet *np, int index)
     {
     int i;
     const char **sp;
@@ -1292,7 +1393,7 @@ static void opSetup (NetPort *np, int index)
     char hostbuf[100];
     char *p;
     
-    if (np->fet.connFd == 0)
+    if (np->connFd == 0)
         {
         opActiveConns--;
         opUpdateSysStatus ();
@@ -1312,7 +1413,7 @@ static void opSetup (NetPort *np, int index)
     sp = syntax;
     while (*sp != NULL)
         {
-        dtSendTlv (&np->fet, OpSyntax, strlen (*sp), *sp);
+        dtSendTlv (np, OpSyntax, strlen (*sp), *sp);
         sp++;
         }
     msgp = msg;
@@ -1344,14 +1445,14 @@ static void opSetup (NetPort *np, int index)
             {
             strcpy (p, msgp->text);
             }
-        dtSendTlv (&np->fet, OpText, p - msgbuf + strlen (p),
+        dtSendTlv (np, OpText, p - msgbuf + strlen (p),
                    msgbuf);
         msgp++;
         }
     /*
     **  All done sending init data, so indicate that.
     */
-    dtSendTlv (&np->fet, OpInitialized, 0, NULL);
+    dtSendTlv (np, OpInitialized, 0, NULL);
 
     opActiveConns++;
     opUpdateSysStatus ();
@@ -1364,7 +1465,7 @@ static void opSetup (NetPort *np, int index)
         {
         if (statusLines[i] != NULL)
             {
-            dtSendTlv (&np->fet, OpStatus, statusLines[i]->len,
+            dtSendTlv (np, OpStatus, statusLines[i]->len,
                        statusLines[i]->buf);
             }
         }
@@ -1382,7 +1483,7 @@ static void opSetup (NetPort *np, int index)
 static void opSendStatus (StatusData *sd)
     {
     int i;
-    NetPort *np;
+    NetFet *np;
     
     /*
     **  If operator subsystem not initialized yet, just exit.
@@ -1395,9 +1496,9 @@ static void opSendStatus (StatusData *sd)
     for (i = 0; i < opConns; i++)
         {
         np = opPorts.portVec + i;
-        if (dtActive (&np->fet))
+        if (dtActive (np))
             {
-            dtSendTlv (&np->fet, OpStatus, sd->len, sd->buf);
+            dtSendTlv (np, OpStatus, sd->len, sd->buf);
             }
         }
     }
@@ -1434,6 +1535,22 @@ static void opUpdateSysStatus (void)
         }
     statusSys.len = strlen (statusSys.buf + 1) + 1;
     opSendStatus (&statusSys);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Update connections display, if active
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+static void operUpdateConnections (void)
+    {
+    if (statusType == StatusConns)
+        {
+        opConnlist (NULL);
+        }
     }
 
 /*---------------------------  End Of File  ------------------------------*/

@@ -215,29 +215,24 @@ typedef struct
 **  Ok, it's not quite a classic FET, but it's pretty similar and it
 **  supports many of the same kinds of operations.
 */
-typedef struct
+typedef struct NetFet_s
     {
+    struct NetFet_s *prev;              /* circular list pointers */
+    struct NetFet_s *next;
     int         connFd;                 /* File descriptor for socket */
     u8          *first;                 /* Start of ring buffer */
     volatile u8 *in;                    /* Fill (write) pointer */
     volatile u8 *out;                   /* Empty (read) pointer */
     u8          *end;                   /* End of ring buffer + 1 */
+    struct in_addr from;                /* remote IP address */
+    int         fromPort;               /* remote TCP port number */
     } NetFet;
 
 
 /*
-**  Network port block.
-*/
-typedef struct
-    {
-    NetFet      fet;                    /* Network FET for connection */
-    struct in_addr from;                /* remote IP address */
-    } NetPort;
-
-/*
 **  Callback function for new connection.
 */
-typedef void (ConnCb) (NetPort *np, int portNum);
+typedef void (ConnCb) (NetFet *np, int portNum);
 
 /*
 **  Tread function
@@ -257,7 +252,7 @@ typedef struct
     {
     int         maxPorts;               /* total number of ports */
     volatile int curPorts;              /* number of ports currently active */
-    NetPort     *portVec;               /* array of NetPorts */
+    NetFet      *portVec;               /* array of NetFets */
     int         listenFd;               /* listen socket fd */
     int         portNum;                /* TCP port number to listen to */
     fd_set      activeSet;              /* fd_set for active port fd's */

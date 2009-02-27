@@ -275,7 +275,7 @@ static void consoleActivate(void);
 static void consoleDisconnect(void);
 
 static ThreadFunRet consoleThread (void *param);
-static int consoleInput (NetPort *np);
+static int consoleInput (NetFet *np);
 
 static void consoleByte1 (int byte);
 static void consoleByte2 (int byte1, int byte2);
@@ -285,7 +285,7 @@ static void consolePoll (void);
 static void consoleSetXY (int code, int data);
 static void consoleSendOutput (int start, int end);
 static void consoleReinitPoll (void);
-static void consoleConnect(NetPort *np, int index);
+static void consoleConnect(NetFet *np, int index);
 static void consoleUpdateStatus (void);
 
 /*
@@ -816,7 +816,7 @@ static void consoleDisconnect(void)
 static ThreadFunRet consoleThread (void *param)
     {
     int i;
-    NetPort *np;
+    NetFet *np;
     
     printf ("console thread running\n");
     
@@ -845,12 +845,12 @@ static ThreadFunRet consoleThread (void *param)
 **  Purpose:        Process console input
 **
 **  Parameters:     Name        Description.
-**                  np          NetPort with input
+**                  np          NetFet with input
 **
 **  Returns:        -1 for disconnect, 0 if command processed.
 **
 **------------------------------------------------------------------------*/
-static int consoleInput (NetPort *np)
+static int consoleInput (NetFet *np)
     {
     u8 buf;
     int i;
@@ -861,7 +861,7 @@ static int consoleInput (NetPort *np)
     /*
     **  Try to receive a byte of data
     */
-    i = recv (np->fet.connFd, &buf, 1, MSG_NOSIGNAL);
+    i = recv (np->connFd, &buf, 1, MSG_NOSIGNAL);
     if (i <= 0)
         {
         return -1;
@@ -960,13 +960,13 @@ static int consoleInput (NetPort *np)
     case Dd60FastRate:
         mp->interval = (buf & 077) * 20000;
         delay_opt = (mp->interval == 0);
-        setsockopt (np->fet.connFd, SOL_SOCKET, TCP_NODELAY,
+        setsockopt (np->connFd, SOL_SOCKET, TCP_NODELAY,
                     (char *) &delay_opt, sizeof (delay_opt));
         break;
     case Dd60SlowRate:
         mp->interval = (buf & 077) * 1000000;
         delay_opt = (mp->interval == 0);
-        setsockopt (np->fet.connFd, SOL_SOCKET, TCP_NODELAY,
+        setsockopt (np->connFd, SOL_SOCKET, TCP_NODELAY,
                     (char *) &delay_opt, sizeof (delay_opt));
         break;
         }
@@ -987,19 +987,19 @@ static int consoleInput (NetPort *np)
 static void checkImmediate (u8 *buf, int cnt)
     {
     PortParam *mp;
-    NetPort *np;
+    NetFet *np;
     int i;
     for (i = 0; i < dd60Conns; i++)
         {
         mp = portVector + i;
         np = consolePorts.portVec + i;
-        if (!mp->stopped && dtActive (&np->fet) && mp->interval == 0)
+        if (!mp->stopped && dtActive (np) && mp->interval == 0)
             {
             /*
             ** Process only displays that are connected, not stopped,
             ** and want immediate input (interval is zero).
             */
-            send (np->fet.connFd, buf, cnt, MSG_NOSIGNAL);
+            send (np->connFd, buf, cnt, MSG_NOSIGNAL);
             }
         mp++;
         }
@@ -1284,7 +1284,7 @@ static void consoleSendFrame (int fd, int start, int end)
 static void consoleSendOutput (int start, int end)
     {
     PortParam *mp;
-    NetPort *np;
+    NetFet *np;
     int i;
 #if defined(_WIN32)
     struct _timeb tm;
@@ -1367,7 +1367,7 @@ static void consoleSendOutput (int start, int end)
         **  Always skip a display that is stopped or not connected,
         **  or wants all the data (because we sent that already).
         */
-        if (!mp->stopped && dtActive (&np->fet) && mp->interval != 0 &&
+        if (!mp->stopped && dtActive (np) && mp->interval != 0 &&
             (sendToAll ||
              mp->sendNow ||
              us - mp->lastFrame >= mp->interval))
@@ -1378,18 +1378,18 @@ static void consoleSendOutput (int start, int end)
             /* Start by sending the trace line, if enabled */
             if (debugDisplay)
                 {
-                send (np->fet.connFd, buf, strlen (buf), MSG_NOSIGNAL);
+                send (np->connFd, buf, strlen (buf), MSG_NOSIGNAL);
                 }
             
             /*
             **  Send only the cycle we found.
             */
-            consoleSendFrame (np->fet.connFd, start, end);
+            consoleSendFrame (np->connFd, start, end);
 
             /*
             **  Send "end of data block" marker
             */
-            send (np->fet.connFd, &endBlock, 1, MSG_NOSIGNAL);
+            send (np->connFd, &endBlock, 1, MSG_NOSIGNAL);
             }
         mp++;
         }
@@ -1407,19 +1407,19 @@ static void consoleSendOutput (int start, int end)
 **  Purpose:        Handle console connect or disconnect
 **
 **  Parameters:     Name        Description.
-**                  np          NetPort pointer
-**                  index       NetPort index
+**                  np          NetFet pointer
+**                  index       NetFet index
 **
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void consoleConnect (NetPort *np, int index)
+static void consoleConnect (NetFet *np, int index)
     {
     PortParam *mp;
 
     mp = portVector + index;
     
-    if (np->fet.connFd == 0)
+    if (np->connFd == 0)
         {
         printf("%s Console connection dropped from %s\n",
                dtNowString (), inet_ntoa (np->from));

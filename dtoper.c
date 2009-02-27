@@ -289,22 +289,36 @@ int main (int argc, char **argv)
                         break;
                         }
                     i--;
-                    if (status[j] == NULL)
+                    if (*p == '\0')
                         {
-                        status[j] = malloc(OpStatSize + 1);
-                        if (j > statusMax)
+                        if (status[j] != NULL)
                             {
-                            statusMax = j;
+                            free (status[j]);
+                            status[j] = NULL;
                             }
                         }
-                    cp = status[j];
-                    strncpy (cp, p, OpStatSize);
+                    else 
+                        {
+                        if (status[j] == NULL)
+                            {
+                            status[j] = malloc(OpStatSize + 1);
+                            if (j > statusMax)
+                                {
+                                statusMax = j;
+                                }
+                            }
+                        cp = status[j];
+                        strncpy (cp, p, OpStatSize);
+                        }
+                    
                     /*
                     **  If this status line isn't currently visible, 
-                    **  scroll the display to make it so.
+                    **  scroll the display to make it so
+                    **  line is not null.
                     */
                     if (j >= StatusOff &&
-                        (j < statusTop || j >= statusTop + StatusWin))
+                        (j < statusTop || j >= statusTop + StatusWin) &&
+                        *p != '\0')
                         {
                         opScroll (j);
                         }
@@ -383,8 +397,13 @@ void opDisplay(void)
     
     if (status[0] != NULL)
         {
-        windowSendString (StatusX, StatusY, 010, 
+        windowSendString (StatusX, StatusY + 020, 010, 
                           FALSE, status[0], TRUE);
+        }
+    if (status[1] != NULL)
+        {
+        windowSendString (StatusX, StatusY - 020, 010, 
+                          FALSE, status[1], TRUE);
         }
     
     line = 0;
@@ -410,6 +429,12 @@ void opDisplay(void)
             windowSendString (StatusX,
                               StatusY - 020 * (line + StatusOff), 010, 
                               FALSE, status[i], TRUE);
+            }
+        else
+            {
+            windowSendString (StatusX,
+                              StatusY - 020 * (line + StatusOff), 010, 
+                              FALSE, "              ", TRUE);
             }
         line++;
         }

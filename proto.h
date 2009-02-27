@@ -266,8 +266,8 @@ void ddWaitIO (DiskIO *io);
 int dtConnect (int *connFd, const char *hostname, int portnum);
 int dtCheckInput(int connFd, void *buf, int size, int time);
 void dtCreateListener(NetPortSet *ps, int ringSize);
-void dtClose (NetPort *np, NetPortSet *ps);
-NetPort * dtFindInput (NetPortSet *ps, int time);
+void dtClose (NetFet *np, NetPortSet *ps);
+NetFet * dtFindInput (NetPortSet *ps, int time);
 void dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
 const char *dtNowString (void);
 void dtSendTlv (NetFet *fet, int tag, int len, const void *value);
@@ -371,6 +371,8 @@ extern char autoString[];
 extern u32 channelDelayMask;
 extern long cmWaitRatio;
 extern long niuOpstat;
+extern NetFet connlist;
+extern void (*updateConnections) (void);
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

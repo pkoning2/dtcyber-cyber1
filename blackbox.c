@@ -49,15 +49,15 @@ static NetPortSet niuAsciiPorts;
 
 static void niuSendstr(int stat, const char *p);
 static void niuSendWord(int stat, int word);
-static void niuAsciiWelcome(NetPort *np, int stat);
-static void niuRemoteWelcome(NetPort *np, int stat);
+static void niuAsciiWelcome(NetFet *np, int stat);
+static void niuRemoteWelcome(NetFet *np, int stat);
 static void bbSendNiu(int stat);
 static void bbSendAscii(int stat);
 
 int main (int argc, char **argv)
     {
     int stat, i;
-    NetPort *np;
+    NetFet *np;
     char msg2[200];
     
     if (argc < 2)
@@ -100,7 +100,7 @@ int main (int argc, char **argv)
                 {
                 break;
                 }
-            i = dtRead  (&np->fet, -1);
+            i = dtRead  (np, -1);
             if (i < 0)
                 {
                 dtClose (np, &niuPorts);
@@ -113,7 +113,7 @@ int main (int argc, char **argv)
                 {
                 break;
                 }
-            i = dtRead  (&np->fet, -1);
+            i = dtRead  (np, -1);
             if (i < 0)
                 {
                 dtClose (np, &niuAsciiPorts);
@@ -168,7 +168,7 @@ static void niuSendstr(int stat, const char *p)
     bool shift = FALSE;
     int c;
     
-    if (&(niuPorts.portVec + stat)->fet.connFd == 0)
+    if (&(niuPorts.portVec + stat)->connFd == 0)
         {
         return;
         }
@@ -256,7 +256,7 @@ static void niuSendWord(int stat, int word)
     NetFet *fet;
     u8 data[3];
 
-    fet = &(niuPorts.portVec + stat)->fet;
+    fet = niuPorts.portVec + stat;
     if (fet->connFd == 0)
         {
         return;
@@ -273,15 +273,15 @@ static void niuSendWord(int stat, int word)
 **  Purpose:        Handle connect/disconnect
 **
 **  Parameters:     Name        Description.
-**                  np          NetPort pointer
+**                  np          NetFet pointer
 **                  stat        station number
 **
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuRemoteWelcome(NetPort *np, int stat)
+static void niuRemoteWelcome(NetFet *np, int stat)
     {
-    if (np->fet.connFd == 0)
+    if (np->connFd == 0)
         {
         /*
         **  Connection was dropped.
@@ -299,15 +299,15 @@ static void niuRemoteWelcome(NetPort *np, int stat)
 **  Purpose:        Handle connect/disconnect
 **
 **  Parameters:     Name        Description.
-**                  np          NetPort pointer
+**                  np          NetFet pointer
 **                  stat        station number
 **
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuAsciiWelcome(NetPort *np, int stat)
+static void niuAsciiWelcome(NetFet *np, int stat)
     {
-    if (np->fet.connFd == 0)
+    if (np->connFd == 0)
         {
         /*
         **  Connection was dropped.
@@ -357,7 +357,7 @@ static void bbSendAscii (int stat)
     char setY[2];
     const char *setX = "\041\120";      // X = 48
     
-    fet = &(niuAsciiPorts.portVec + stat)->fet;
+    fet = niuAsciiPorts.portVec + stat;
     if (fet->connFd == 0)
         {
         return;

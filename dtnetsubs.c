@@ -146,12 +146,15 @@ static char traceFn[20];
 static ThreadFunRet dtThread (void *param);
 static void dtCloseSocket (int connFd);
 static int dtGetw (NetFet *fet, void *buf, int len, bool read);
+static void dtActivateFet (NetFet *fet, int connFd);
 
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
+NetFet connlist = { &connlist, &connlist, 0, NULL, NULL, NULL, NULL };
+void (*updateConnections) (void) = NULL;
 
 /*
 **  -----------------
@@ -317,9 +320,9 @@ void dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
 **  That data is the socket fd, and the remote IP address.
 **
 **  If a callback function pointer is specified, that callback function
-**  is called with the NetPort entry that was filled in, and the
+**  is called with the NetFet entry that was filled in, and the
 **  portVec array index where that entry lives.  The callback function
-**  is also called when the NetPort is closed; the two cases are
+**  is also called when the NetFet is closed; the two cases are
 **  distinguished by the fact that the connFd is non-zero if the connection
 **  is open, and zero if it is closed.
 **------------------------------------------------------------------------*/
@@ -339,18 +342,18 @@ void dtCreateListener(NetPortSet *ps, int ringSize)
     ps->curPorts = 0;
     FD_ZERO(&ps->activeSet);
     ps->maxFd = 0;
-    ps->portVec = calloc(1, sizeof(NetPort) * ps->maxPorts);
+    ps->portVec = calloc(1, sizeof(NetFet) * ps->maxPorts);
     if (ps->portVec == NULL)
         {
 #if !defined(_WIN32)
-        fprintf(stderr, "Failed to allocate NetPort[%d] vector\n",
+        fprintf(stderr, "Failed to allocate NetFet[%d] vector\n",
                 ps->maxPorts);
 #endif
         exit(1);
         }
     for (i = 0; i < ps->maxPorts; i++)
         {
-        dtInitFet (&ps->portVec[i].fet, ringSize);
+        dtInitFet (&ps->portVec[i], ringSize);
         }
     
 #if defined(_WIN32)
@@ -381,7 +384,7 @@ void dtCreateListener(NetPortSet *ps, int ringSize)
 **  Purpose:        Close an inbound network port
 **
 **  Parameters:     Name        Description.
-**                  np          Pointer to NetPort being closed
+**                  np          Pointer to NetFet being closed
 **                  ps          Pointer to NetPortSet that np belongs to
 **
 **  Returns:        Nothing.
@@ -389,14 +392,14 @@ void dtCreateListener(NetPortSet *ps, int ringSize)
 **  This function is used to close sockets for inbound connections -- those
 **  that were created by the dtCreateListener mechanism.
 **------------------------------------------------------------------------*/
-void dtClose (NetPort *np, NetPortSet *ps)
+void dtClose (NetFet *np, NetPortSet *ps)
     {
     int fd, i, j;
-    NetPort *t;
+    NetFet *t;
     
-    fd = np->fet.connFd;
+    fd = np->connFd;
     FD_CLR(fd, &ps->activeSet);
-    dtCloseFet (&np->fet);
+    dtCloseFet (np);
     if (ps->callBack != NULL)
         {
         (*ps->callBack) (np, np - ps->portVec);
@@ -407,9 +410,9 @@ void dtClose (NetPort *np, NetPortSet *ps)
         for (i = 0; i < ps->maxPorts; i++)
             {
             t = ps->portVec + i;
-            if (t->fet.connFd > j)
+            if (t->connFd > j)
                 {
-                j = t->fet.connFd;
+                j = t->connFd;
                 }
             }
         ps->maxFd = j;
@@ -418,30 +421,30 @@ void dtClose (NetPort *np, NetPortSet *ps)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Find a NetPort with data waiting
+**  Purpose:        Find a NetFet with data waiting
 **
 **  Parameters:     Name        Description.
 **                  ps          Pointer to NetPortSet
 **                  time        Timeout in ms, or 0 to return immediately
 **                              if no data
 **
-**  Returns:        pointer to NetPort with data, NULL if timeout
+**  Returns:        pointer to NetFet with data, NULL if timeout
 **
 **  This function waits for received data or for a change of status
 **  on any of the ports associated with the supplied NetPortSet.
 **  Any status change (disconnect) is handled directly.
-**  If data is received, a pointer to one of the NetPorts that has data
+**  If data is received, a pointer to one of the NetFets that has data
 **  is returned.
 **  If no data is received within the timeout period, NULL is returned.
 **
 **------------------------------------------------------------------------*/
-NetPort * dtFindInput (NetPortSet *ps, int time)
+NetFet * dtFindInput (NetPortSet *ps, int time)
     {
     int i;
     fd_set readFds;
     fd_set exceptFds;
     struct timeval timeout;
-    NetPort *np;
+    NetFet *np;
 
     readFds = ps->activeSet;
     exceptFds = ps->activeSet;
@@ -463,8 +466,8 @@ NetPort * dtFindInput (NetPortSet *ps, int time)
             np = ps->portVec;
             for (i = 0; i < ps->maxPorts; i++)
                 {
-                if (dtActive (&np->fet) &&
-                    FD_ISSET (np->fet.connFd, &exceptFds))
+                if (dtActive (np) &&
+                    FD_ISSET (np->connFd, &exceptFds))
                     {
                     dtClose (np, ps);
                     }
@@ -479,8 +482,8 @@ NetPort * dtFindInput (NetPortSet *ps, int time)
             np = ps->portVec;
             for (i = 0; i < ps->maxPorts; i++)
                 {
-                if (dtActive (&np->fet) &&
-                    FD_ISSET (np->fet.connFd, &readFds))
+                if (dtActive (np) &&
+                    FD_ISSET (np->connFd, &readFds))
                     {
                     return np;
                     }
@@ -764,6 +767,7 @@ void dtInitFet (NetFet *fet, int bufsiz)
         exit (1);
         }
     fet->connFd = 0;            /* Mark FET not open yet */
+    fet->prev = fet->next = NULL;
     fet->first = buf;
     fet->in = buf;
     fet->out = buf;
@@ -785,6 +789,14 @@ void dtCloseFet (NetFet *fet)
     fet->connFd = 0;            /* Mark FET not open anymore */
     fet->in = fet->first;
     fet->out = fet->first;
+    /* remove from the active list */
+    fet->prev->next = fet->next;
+    fet->next->prev = fet->prev;
+    fet->prev = fet->next = NULL;
+    if (updateConnections != NULL)
+        {
+        (*updateConnections) ();
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -861,7 +873,7 @@ static void *dtThread(void *param)
 #endif
     {
     NetPortSet *ps = (NetPortSet *) param;
-    NetPort *np;
+    NetFet *np;
     int listenFd, connFd;
     struct sockaddr_in server;
     struct sockaddr_in from;
@@ -972,12 +984,12 @@ static void *dtThread(void *param)
 #endif
 
         /*
-        **  Find a free slot in the NetPort vector.
+        **  Find a free slot in the NetFet vector.
         **  Note that there definitely is one, because we checked
         **  current vs. max count earlier.
         */
         np = ps->portVec;
-        while (dtActive (&np->fet))
+        while (dtActive (np))
             {
             np++;
             }
@@ -994,8 +1006,9 @@ static void *dtThread(void *param)
         **  Mark connection as active.
         */
         ps->curPorts++;
-        np->fet.connFd = connFd;
+        dtActivateFet (np, connFd);
         np->from = from.sin_addr;
+        np->fromPort = from.sin_port;
         FD_SET(connFd, &ps->activeSet);
         if (ps->callBack != NULL)
             {
@@ -1020,6 +1033,29 @@ static void dtCloseSocket (int connFd)
 #else
     close(connFd);
 #endif
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Activate the NetFet
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**
+**  Returns:        Nothing. 
+**
+**------------------------------------------------------------------------*/
+static void dtActivateFet (NetFet *fet, int connFd)
+    {
+    fet->connFd = connFd;
+    /* Link this FET into the active list */
+    fet->next = connlist.next;
+    fet->prev = &connlist;
+    fet->next->prev = fet;
+    connlist.next = fet;
+    if (updateConnections != NULL)
+        {
+        (*updateConnections) ();
+        }
     }
 
 /*--------------------------------------------------------------------------

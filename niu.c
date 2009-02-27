@@ -93,7 +93,7 @@
 */
 typedef struct portParam
     {
-    NetPort     *np;
+    NetFet     *np;
     u32         currOutput;
     u8          currInput[2];
     bool        loggedIn;
@@ -112,9 +112,9 @@ static FcStatus niuOutFunc(PpWord funcCode);
 static void niuOutIo(void);
 static void niuActivate(void);
 static void niuDisconnect(void);
-static void niuWelcome(NetPort *np, int stat);
-static void niuLocalWelcome(NetPort *np, int stat);
-static void niuRemoteWelcome(NetPort *np, int stat);
+static void niuWelcome(NetFet *np, int stat);
+static void niuLocalWelcome(NetFet *np, int stat);
+static void niuRemoteWelcome(NetFet *np, int stat);
 void niuSendstr(int stat, const char *p);
 void niuSendWord(int stat, int word);
 static void niuSend(int stat, int word);
@@ -382,7 +382,7 @@ static void niuInIo(void)
     {
     int port;
     PortParam *mp;
-    NetPort *np;
+    NetFet *np;
     int i;
     
     if ((activeDevice->fcode != FcNiuSelectBlackBox &&
@@ -417,7 +417,7 @@ static void niuInIo(void)
                         {
                         break;
                         }
-                    i = dtRead  (&np->fet, -1);
+                    i = dtRead  (np, -1);
                     if (i < 0)
                         {
                         dtClose (np, &niuPorts);
@@ -430,7 +430,7 @@ static void niuInIo(void)
                         {
                         break;
                         }
-                    i = dtRead  (&np->fet, -1);
+                    i = dtRead  (np, -1);
                     if (i < 0)
                         {
                         dtClose (np, &niuLocalPorts);
@@ -453,7 +453,7 @@ static void niuInIo(void)
                 mp->sendLogout = FALSE;
                 break;
                 }
-            if (np == NULL || !dtActive (&np->fet))
+            if (np == NULL || !dtActive (np))
                 {
                 if (port == lastInPort)
                     {
@@ -461,7 +461,7 @@ static void niuInIo(void)
                     }
                 continue;
                 }
-            i = dtReadw (&np->fet, mp->currInput, 2);
+            i = dtReadw (np, mp->currInput, 2);
             if (i < 0)
                 {
                 if (port == lastInPort)
@@ -694,20 +694,20 @@ static void niuUpdateStatus (void)
 **  Purpose:        Send a welcome message to a station
 **
 **  Parameters:     Name        Description.
-**                  np          NetPort pointer
+**                  np          NetFet pointer
 **                  stat        station number
 **
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuWelcome(NetPort *np, int stat)
+static void niuWelcome(NetFet *np, int stat)
     {
     PortParam *mp;
 
     mp = portVector + stat;
     mp->np = np;
     
-    if (np->fet.connFd == 0)
+    if (np->connFd == 0)
         {
         /*
         **  Connection was dropped.
@@ -776,18 +776,18 @@ static void niuWelcome(NetPort *np, int stat)
 **  Purpose:        Send a welcome message to a local or remote station
 **
 **  Parameters:     Name        Description.
-**                  np          NetPort pointer
-**                  stat        NetPort index
+**                  np          NetFet pointer
+**                  stat        NetFet index
 **
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuLocalWelcome(NetPort *np, int stat)
+static void niuLocalWelcome(NetFet *np, int stat)
     {
     niuWelcome (np, stat + NiuLocalOffset);
     }
 
-static void niuRemoteWelcome(NetPort *np, int stat)
+static void niuRemoteWelcome(NetFet *np, int stat)
     {
     niuWelcome (np, stat + NiuRemoteOffset);
     }
@@ -970,7 +970,7 @@ void niuSendWord(int stat, int word)
             {
             return;
             }
-        fet = &(niuLocalPorts.portVec + stat)->fet;
+        fet = niuLocalPorts.portVec + stat;
         }
     else
         {
@@ -979,7 +979,7 @@ void niuSendWord(int stat, int word)
             {
             return;
             }
-        fet = &(niuPorts.portVec + stat)->fet;
+        fet = niuPorts.portVec + stat;
         }
     
     data[0] = word >> 12;
