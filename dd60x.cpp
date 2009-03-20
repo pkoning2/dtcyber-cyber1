@@ -1167,10 +1167,13 @@ Dd60Frame::~Dd60Frame ()
 
 // event handlers
 
+static int foo=0;
+static wxBitmap *bar;
+
 void Dd60Frame::OnTimer (wxTimerEvent &)
 {
     int i, data;
-    
+
     if (!dtActive (&m_fet))
     {
         return;
@@ -1179,6 +1182,11 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
     if (m_interval == Dd60FastRate + 0)
     {
         m_startBlock = true;
+    }
+    
+    if(foo==0)
+    {
+        bar = new wxBitmap (*m_screenmap);
     }
     
     m_pixmap = new PixelData (*m_screenmap);
@@ -1334,6 +1342,15 @@ void Dd60Frame::OnTimer (wxTimerEvent &)
         }
     }
     delete m_pixmap;
+    if (bar)
+    {
+        if (memcmp (bar, m_screenmap, sizeof (wxBitmap)))
+        {
+            printf ("bitmaps differ\n");
+        }
+        free (bar);
+        bar = NULL;
+    }
     
     if (m_interval == Dd60FastRate + 0 || m_startBlock)
     {
@@ -1758,7 +1775,10 @@ void Dd60Frame::procDd60Char (unsigned int d)
         for (i = 0; i < size; i++)
         {
             p.MoveTo (*m_pixmap, firstx, firsty + i);
-#ifdef __SSE2__
+//#ifdef __SSE2__
+            if (foo++ == 0)
+            {
+                
             typedef u8 v8qi __attribute__ ((vector_size (8)));
             v8qi *pmap = (v8qi *)(p.m_ptr);
             v8qi *pdata = (v8qi *) data;
@@ -1770,7 +1790,11 @@ void Dd60Frame::procDd60Char (unsigned int d)
                 ++pdata;
             }
             data += qwds * 8;
-#else
+            }
+            else
+            {
+                
+//#else
             for (j = 0; j < size; j++)
             {
                 u8 &rp = p.Red ();
@@ -1798,7 +1822,8 @@ void Dd60Frame::procDd60Char (unsigned int d)
                 ++p;
                 data += 4;
             }
-#endif
+            }
+//#endif
         }
     }
     currentX = (currentX + inc) & 0777;
