@@ -75,7 +75,7 @@ return(opl)
  sllen    equ    slname+snammax length of socket lesson
 *deck comnds
 *d yfclnup.7
-          JUMPOV 8LSOCKET,socket,0,keywdov,4,11010,sockx,0 socket    482
+          JUMPOV 8LSOCKET,socket,0,keywdov,4,11010,sockx,0 socket    483
 *deck covlay3
 *i covlay3.3006
 +         eq     socket      4 = -socket-
