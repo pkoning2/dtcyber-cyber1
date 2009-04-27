@@ -675,7 +675,7 @@ return(opl)
           SA2    ECTRIES     X2 = LOOP COUNTER
           SX6    X2-1
           PL     X6,gs2      GIVE IT ANOTHER TRY,
-          EQ     gs4         -- EXIT, X6 = NEGATIVE
+          EQ     getslst     -- EXIT, X6 = NEGATIVE
 
  gs3      BX6    X1
           SA6    tsocket     save socket lesson number
@@ -693,6 +693,69 @@ return(opl)
  sxbuf    bss    5           socket instruction request buffer
           endov
 */ end socket
+*/
+*/ **/---   block=01-e extcall           09/04/27. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Add -extcall- command
+*/
+*/ -------------------------------------------------------------------
+*ident extcall
+*deck comnds
+*d yfclnup.8
+          JUMPOV 8Lextcall,extcall,0,keywdov,5,11010,sockx,1 extcall 484
+*deck covlay3
+*i covlay3.29
+          ext    collctc
+*i socket.1
++         eq     extcall     5 = -extcall-
+*i covlay3.3290
+***
+*
+*         -extcall- command
+*
+*         format is
+*         extcall buffer,wcnt
+*
+*         buffer is the variable address of the command buffer
+*         wcnt is the number of words in that buffer
+
+ extcall  call   systst1     error if not write-cm lesson
+          eq     collctc     collect two arguments, first storeable
+*deck exec10
+*i socket.74
+*
+*         *ovarg1* = 0       -socket-
+*                  = 1       -extcall-
+*i socket.80
+          sa1    ovarg1
+          nz     x1,extcx    do -extcall- command
+*i socket.418
+ extcall  title  -extcall- command execution
+***
+*         -extcall- command
+*
+*         extcall buf,wcnt
+*
+*         this performs an external function call to dtcyber,
+*         using the supplied buffer as the parameter buffer.
+*
+*         on exit, *zreturn* is set to the return value
+*         from the external function instruction.
+
+ extcx    ngetvar
+          sx6    a1
+          sa6    sxbuf       save buffer address
+          sa5    a5          restore command word
+          lx5    xcodel      position next -getvar- code
+          ngetvar            get word count
+          sa2    sxbuf       retrieve buffer address
+          sa0    x2
+          call   bounds      a0=addr, x1=length
+          sa1    sxbuf       retrieve buffer address again
+          ex6    x1          issue external op
+          eq     sockret     set *zreturn* from socket op result
+*/ end extcall          
 */
 */ **/---   block=01-e nprt              08/07/22. 12.00    source
 */ -------------------------------------------------------------------

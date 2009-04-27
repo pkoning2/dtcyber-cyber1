@@ -41,7 +41,7 @@
 #define DEBUGPRINT(fmt, ...)
 #endif
 
-#define RETOK       ((~1) & Mask60)
+#define RETOK       MINUS1
 #define RETINVREQ   0
 #define RETNOSOCK   1
 #define RETNODATA   2
@@ -671,6 +671,45 @@ static CpWord sockOp (CpWord req)
 }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Get information about a terminal connection
+**
+**  Parameters:     Name        Description.
+**                  req         Pointer to request (1/ecsflag, 35/, 24/address)
+**
+**                              48/0, 12/2
+**                              60/port number
+**                              60/port type
+**
+**                              Port type is 0 for NIU, 1 for NPU.
+**                              Port number is 0 based, relative to
+**                              the ports maintained by NIU and NPU.
+**
+**  Returns:        IP address for connection (right justified, network order)
+**                  0 if no connection
+**                  -1 if error (port number or port type out of range)
+**
+**------------------------------------------------------------------------*/
+static CpWord termConnOp (CpWord req)
+{
+    CpWord *reqp = cpuAccessMem (req, 3);
+    
+    if (reqp == NULL)
+    {
+        return 0;
+    }
+//    DEBUGPRINT ("req %llo, reqp %p, reqp[1] %llo\n", req, reqp, reqp[1]);
+    switch (reqp[2])
+    {
+    case 0:
+        return niuConn (reqp[1]);
+    case 1:
+        return npuConn (reqp[1]);
+    default:
+        return MINUS1;
+    }
+}
+
+/*--------------------------------------------------------------------------
 **  Purpose:        External operation
 **
 **  Parameters:     Name        Description.
@@ -698,6 +737,9 @@ CpWord extOp (CpWord req)
         break;
     case 1:
         retval = sockOp (req);
+        break;
+    case 2:
+        retval = termConnOp (req);
         break;
     default:
         retval = RETINVREQ;

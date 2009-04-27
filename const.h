@@ -197,6 +197,11 @@
 #define NegativeZero            ULL(077777777777777777777)
 
 /*
+**  Other
+*/
+#define MINUS1                  ((~1) & Mask60)
+
+/*
 **  ----------------------
 **  Public Macro Functions
 **  ----------------------

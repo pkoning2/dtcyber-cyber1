@@ -279,16 +279,40 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Report if NIU is configured
+**  Purpose:        Return connected IP address for a port
 **
 **  Parameters:     Name        Description.
+**                  stat        Port number
 **
-**  Returns:        TRUE if it is.
+**  Returns:        IP address, 0 if no connection, -1 if error.
 **
 **------------------------------------------------------------------------*/
-bool niuPresent(void)
+CpWord niuConn (u32 stat)
     {
-    return (portVector != NULL);
+    NetFet *fet;
+    if (stat < NiuRemoteOffset)
+        {
+        stat -= NiuLocalOffset;
+        if (stat < 0 || stat >= platoLocalConns)
+            {
+            return MINUS1;
+            }
+        fet = niuLocalPorts.portVec + stat;
+        }
+    else
+        {
+        stat -= NiuRemoteOffset;
+        if (stat >= platoConns)
+            {
+            return MINUS1;
+            }
+        fet = niuPorts.portVec + stat;
+        }
+    if (fet->connFd == 0)
+        {
+        return 0;
+        }
+    return fet->from.s_addr;
     }
 
 /*
