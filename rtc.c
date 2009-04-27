@@ -54,7 +54,10 @@
 **  -----------------------
 */
 #if RDTSC
-#if defined(__GNUC__) && defined(__i386)
+#if defined(__GNUC__) && defined(__APPLE__)
+#define rdtscll(val) \
+    val = UnsignedWideToUInt64 (AbsoluteToNanoseconds (UpTime ()))
+#elif defined(__GNUC__) && defined(__i386)
 #define rdtscll(val) \
     __asm__ __volatile__("rdtsc" : "=A" (val))
 #elif defined(__GNUC__) && defined(__x86_64)
@@ -64,9 +67,6 @@
         gettimeofday (&tv, NULL);                   \
         val = tv.tv_sec * 1000000 + tv.tv_usec;     \
     } while (0)
-#elif defined(__GNUC__) && defined(__APPLE__)
-#define rdtscll(val) \
-    val = UnsignedWideToUInt64 (AbsoluteToNanoseconds (UpTime ()))
 #elif defined(_WIN32)
 #define rdtscll(val) \
 	do { \
