@@ -27,11 +27,12 @@ include Makefile.dd60
 
 ifeq ("$(HOST)","Darwin")
 ifeq ("$(SDKDIR)","")
-SDKDIR := /Developer/SDKs/MacOSX10.5.sdk
+SDKDIR := /Developer/SDKs/MacOSX10.4u.sdk
 endif
 LIBS    +=  -Wl,-syslibroot,$(SDKDIR)
 INCL    += -isysroot $(SDKDIR) -I$(SDKDIR)/Developer/Headers/FlatCarbon
-LDFLAGS +=  -Wl,-framework,CoreServices -Wl,-macosx_version_min,10.4
+LDFLAGS +=  -Wl,-framework,CoreServices -mmacosx-version-min=10.4
+CFLAGS  +=  -mmacosx-version-min=10.4
 PPCARCHFLAGS = -arch ppc
 G5CFLAGS = -mcpu=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64
 G3CFLAGS = -mcpu=G3 -mtune=G3
