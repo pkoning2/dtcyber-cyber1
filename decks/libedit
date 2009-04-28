@@ -27,7 +27,7 @@ libedit,p=system.
 *return,output.
 rewind,new.
 itemize,new.
-* cy871aw
+* cy871ax
 label,tape,vsn=ndt,lb=ku,po=w.
 rewind,new.
 copyei,new,tape.
