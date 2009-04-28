@@ -312,7 +312,7 @@ CpWord niuConn (u32 stat)
         {
         return 0;
         }
-    return fet->from.s_addr;
+    return ntohl (fet->from.s_addr);
     }
 
 /*
