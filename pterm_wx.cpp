@@ -8829,7 +8829,7 @@ PtermConnection::~PtermConnection ()
     {
         ptermCloseGsw ();
     }
-    dtCloseFet (&m_fet);
+    dtCloseFet (&m_fet, TRUE);
 }
 
 PtermConnection::ExitCode PtermConnection::Entry (void)
@@ -8837,22 +8837,31 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
     u32 platowd;
     int i;
     bool wasEmpty;
-    
+    struct hostent *hp;
+    in_addr_t host;
     int true_opt = 1;
     
-    dtInitFet (&m_fet, BufSiz);
-    if (dtConnect (&m_fet.connFd, m_hostName.mb_str(), m_port) < 0)
+    if (dtInitFet (&m_fet, BufSiz) != 0)
     {
         StoreWord (C_CONNFAIL);
         wxWakeUpIdle ();
         return (ExitCode) 1;
     }
-    setsockopt (m_fet.connFd, SOL_SOCKET, SO_KEEPALIVE,
-                (char *)&true_opt, sizeof(true_opt));
-#ifdef __APPLE__
-    setsockopt (m_fet.connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                (char *)&true_opt, sizeof(true_opt));
-#endif
+
+    hp = gethostbyname (m_hostName.mb_str());
+    if (hp == NULL || hp->h_length == 0)
+    {
+        StoreWord (C_CONNFAIL);
+        wxWakeUpIdle ();
+        return (ExitCode) 1;
+    }
+    memcpy (&host, hp->h_addr, sizeof (host));
+    if (dtConnect (&m_fet, host, m_port) < 0)
+    {
+        StoreWord (C_CONNFAIL);
+        wxWakeUpIdle ();
+        return (ExitCode) 1;
+    }
 
     while (true)
     {

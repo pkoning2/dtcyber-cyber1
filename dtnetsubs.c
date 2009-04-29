@@ -145,7 +145,7 @@ static char traceFn[20];
 **  ---------------------------
 */
 static ThreadFunRet dtThread (void *param);
-static void dtCloseSocket (int connFd);
+static void dtCloseSocket (int connFd, bool hard);
 static int dtGetw (NetFet *fet, void *buf, int len, bool read);
 static void dtActivateFet (NetFet *fet, int connFd);
 static void dtSendPending (NetFet *fet);
@@ -182,17 +182,20 @@ static int waitCount = 0;
 **  Purpose:        Establish an outbound connection
 **
 **  Parameters:     Name        Description.
-**                  connFd      Pointer to socket file number
-**                  hostname    Host to connect to (name or address)
+**                  fet         Pointer to NetFet
+**                  host        Address of host to connect to
 **                  port        Port number to connect to
 **
 **  Returns:        0 if ok, or -1 if error.
 **
 **------------------------------------------------------------------------*/
-int dtConnect (int *connFd, const char *hostname, int port)
+int dtConnect (NetFet *fet, in_addr_t host, int port)
     {
-    struct hostent *hp;
     struct sockaddr_in server;
+    int retval;
+#if defined(_WIN32) || defined (__APPLE__)
+    int true_opt = 1;
+#endif
     
 #if defined(_WIN32)
     WORD versionRequested;
@@ -207,43 +210,43 @@ int dtConnect (int *connFd, const char *hostname, int port)
     err = WSAStartup(versionRequested, &wsaData);
     if (err != 0)
         {
-#if !defined(_WIN32)
-        fprintf(stderr, "\r\nError in WSAStartup: %d\r\n", err);
-#endif
         return -1;
         }
 #endif
+
     /*
-    **  Create TCP socket and bind to specified port.
+    **  Create TCP socket
     */
-    *connFd = socket(AF_INET, SOCK_STREAM, 0);
-    if (*connFd < 0)
+    fet->connFd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fet->connFd < 0)
         {
 #if !defined(_WIN32)
-        fprintf(stderr, "dtConnect: Can't create socket\n");
+        fprintf(stderr, "dtInitFet: Can't create socket\n");
 #endif
         return -1;
         }
+
+#if defined(_WIN32)
+    ioctlsocket (fet->connFd, FIONBIO, &true_opt);
+#else
+    fcntl (fet->connFd, F_SETFL, O_NONBLOCK);
+#endif
+#ifdef __APPLE__
+    setsockopt (fet->connFd, SOL_SOCKET, SO_NOSIGPIPE,
+                (char *)&true_opt, sizeof(true_opt));
+#endif
 
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
-    hp = gethostbyname (hostname);
-    if (hp == NULL || hp->h_length == 0)
-        {
-#if !defined(_WIN32)
-        fprintf (stderr, "dtConnect: unrecognized hostname %s\n", 
-                 hostname);
-#endif
-        return -1;
-        }
-    memcpy (&server.sin_addr, hp->h_addr, sizeof (server.sin_addr));
+    server.sin_addr.s_addr = host;
     server.sin_port = htons(port);
 
-    if (connect (*connFd, (struct sockaddr *)&server, sizeof(server)) < 0)
+    retval = connect (fet->connFd, (struct sockaddr *)&server, sizeof(server));
+    if (retval < 0 && errno != EINPROGRESS)
         {
 #if !defined(_WIN32)
-        fprintf(stderr, "dtConnect: Can't connect to %s %d\n", 
-                hostname, port);
+        fprintf(stderr, "dtConnect: Can't connect to %08x %d, errno %d\n", 
+                host, port, errno);
 #endif
         return -1;
         }
@@ -358,7 +361,14 @@ void dtCreateListener(NetPortSet *ps, int ringSize)
         }
     for (i = 0; i < ps->maxPorts; i++)
         {
-        dtInitFet (&ps->portVec[i], ringSize);
+        if (dtInitFet (&ps->portVec[i], ringSize) != 0)
+            {
+#if !defined(_WIN32)
+            fprintf (stderr, "dtInitFet: failed to allocate %d byte buffer\n", 
+                     ringSize);
+#endif
+            exit (1);
+            }
         }
     
 #if defined(_WIN32)
@@ -409,7 +419,7 @@ void dtClose (NetFet *np, NetPortSet *ps)
     
     fd = np->connFd;
     FD_CLR(fd, &ps->activeSet);
-    dtCloseFet (np);
+    dtCloseFet (np, TRUE);
     if (ps->callBack != NULL)
         {
         (*ps->callBack) (np, np - ps->portVec);
@@ -776,30 +786,28 @@ int dtReadtlv (NetFet *fet, void *buf, int len)
 **                  fet         NetFet pointer
 **                  bufsiz      Size of buffer to allocate
 **
-**  Returns:        Nothing.  If malloc fails, abort.
+**  Returns:        0 if ok, -1 if malloc failed
 **
 **------------------------------------------------------------------------*/
-void dtInitFet (NetFet *fet, int bufsiz)
+int dtInitFet (NetFet *fet, int bufsiz)
     {
     u8 *buf;
-    
+
     buf = (u8 *) malloc (bufsiz);
     if (buf == NULL)
         {
-#if !defined(_WIN32)
-        fprintf (stderr, "dtInitFet: failed to allocate %d byte buffer\n", 
-                 bufsiz);
-#endif
-        exit (1);
+        return -1;
         }
-    fet->connFd = 0;            /* Mark FET not open yet */
+
     fet->prev = fet->next = NULL;
+    fet->connFd = 0;                /* no socket yet */
     fet->first = buf;
     fet->in = buf;
     fet->out = buf;
     fet->end = buf + bufsiz;
     fet->sendData = NULL;
     fet->sendCount = fet->sendBufCount = 0;
+    return 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -807,13 +815,14 @@ void dtInitFet (NetFet *fet, int bufsiz)
 **
 **  Parameters:     Name        Description.
 **                  fet         NetFet pointer
+**                  hard        TRUE for reset, FALSE for shutdown
 **
 **  Returns:        Nothing. 
 **
 **------------------------------------------------------------------------*/
-void dtCloseFet (NetFet *fet)
+void dtCloseFet (NetFet *fet, bool hard)
     {
-    dtCloseSocket (fet->connFd);
+    dtCloseSocket (fet->connFd, hard);
     /* Free any pending output data */
     if (fet->sendData != NULL)
         {
@@ -826,10 +835,18 @@ void dtCloseFet (NetFet *fet)
     fet->connFd = 0;            /* Mark FET not open anymore */
     fet->in = fet->first;
     fet->out = fet->first;
-    /* remove from the active list */
-    fet->prev->next = fet->next;
-    fet->next->prev = fet->prev;
-    fet->prev = fet->next = NULL;
+    /* 
+    ** Remove from the active list.
+    ** If there is no link, this is a listen FET as opposed to a data
+    ** connection FET, so skip the unlink.
+    */
+    if (fet->prev != NULL)
+        {
+        fet->prev->next = fet->next;
+        fet->next->prev = fet->prev;
+        fet->prev = fet->next = NULL;
+        }
+    
     if (updateConnections != NULL)
         {
         (*updateConnections) ();
@@ -954,6 +971,142 @@ void dtSend (NetFet *fet, const void *buf, int len)
         }
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Bind to address/port and listen for connections
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**                  host        IP address to listen to (0.0.0.0 or 127.0.0.1)
+**                  port        Port number to connect to
+**                  backlog     Listen backlog
+**
+**  Returns:        0 for ok, -1 for error
+**
+**------------------------------------------------------------------------*/
+int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog)
+    {
+    struct sockaddr_in server;
+    int true_opt = 1;
+
+#if defined(_WIN32)
+    WORD versionRequested;
+    WSADATA wsaData;
+    int err;
+
+    /*
+    **  Select WINSOCK 1.1.
+    */ 
+    versionRequested = MAKEWORD(1, 1);
+ 
+    err = WSAStartup(versionRequested, &wsaData);
+    if (err != 0)
+        {
+        return -1;
+        }
+#endif
+
+    /*
+    **  Create TCP socket
+    */
+    fet->connFd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fet->connFd < 0)
+        {
+#if !defined(_WIN32)
+        fprintf(stderr, "dtInitFet: Can't create socket\n");
+#endif
+        return -1;
+        }
+
+#if defined(_WIN32)
+    ioctlsocket (fet->connFd, FIONBIO, &true_opt);
+#else
+    fcntl (fet->connFd, F_SETFL, O_NONBLOCK);
+#endif
+#ifdef __APPLE__
+    setsockopt (fet->connFd, SOL_SOCKET, SO_NOSIGPIPE,
+                (char *)&true_opt, sizeof(true_opt));
+#endif
+
+    setsockopt(fet->connFd, SOL_SOCKET, SO_REUSEADDR,
+               (char *)&true_opt, sizeof (true_opt));
+    memset(&server, 0, sizeof(server));
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = host;
+    server.sin_port = htons(port);
+
+    if (bind (fet->connFd, (struct sockaddr *)&server, sizeof(server)) < 0)
+        {
+        return -1;
+        }
+    return listen (fet->connFd, backlog);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Accept a connection
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer, for a bound/listening fet
+**
+**  Returns:        Pointer to the allocated connection Fet, 
+**                  or NULL if error (no pending connection or no memory)
+**
+**------------------------------------------------------------------------*/
+NetFet *dtAccept (NetFet *fet, int maxdata)
+    {
+    int connFd;
+    struct sockaddr_in from;
+    socklen_t fromLen;
+    int true_opt = 1;
+    NetFet *dataFet;
+    
+    /*
+    **  Accept a connection.
+    */
+    fromLen = sizeof (from);
+    connFd = accept (fet->connFd, (struct sockaddr *) &from, &fromLen);
+    if (connFd < 0)
+        {
+        return NULL;
+        }
+
+    /*
+    **  Set Keepalive, non-blocking socket, and no signals.
+    **
+    **  Non-blocking ensures that we won't block if some network
+    **  link is having trouble.  Ideally that's detected and handled
+    **  more elegantly, but at least no one else will suffer even
+    **  without any special handling.
+    */
+    setsockopt(connFd, SOL_SOCKET, SO_KEEPALIVE,
+               (char *)&true_opt, sizeof(true_opt));
+#if defined(_WIN32)
+    ioctlsocket (connFd, FIONBIO, &true_opt);
+#else
+    fcntl (connFd, F_SETFL, O_NONBLOCK);
+#endif
+#ifdef __APPLE__
+    setsockopt(connFd, SOL_SOCKET, SO_NOSIGPIPE,
+               (char *)&true_opt, sizeof(true_opt));
+#endif
+
+    dataFet = malloc (sizeof (*fet));
+    if (dataFet == NULL)
+        {
+        close (connFd);
+        return NULL;
+        }
+    if (dtInitFet (dataFet, maxdata) != 0)
+        {
+        free (dataFet);
+        close (connFd);
+        return NULL;
+    }
+    dtActivateFet (dataFet, connFd);
+    dataFet->from = from.sin_addr;
+    dataFet->fromPort = from.sin_port;
+    return dataFet;
+    }
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -985,7 +1138,7 @@ static void *dtThread(void *param)
     int true_opt = 1;
     
     /*
-    **  Create TCP socket and bind to specified port.
+    **  Create TCP socket
     */
     listenFd = socket(AF_INET, SOCK_STREAM, 0);
     if (listenFd < 0)
@@ -1042,7 +1195,7 @@ static void *dtThread(void *param)
         */
         if (!emulationActive)
             {
-            dtCloseSocket (listenFd);
+            dtCloseSocket (listenFd, TRUE);
             ThreadReturn;
             }
         
@@ -1126,16 +1279,24 @@ static void *dtThread(void *param)
 **
 **  Parameters:     Name        Description.
 **                  connFd      socket fd to close
+**                  hard        TRUE for reset, FALSE for shutdown
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dtCloseSocket (int connFd)
+static void dtCloseSocket (int connFd, bool hard)
     {
 #if defined(_WIN32)
     closesocket(connFd);
 #else
-    close(connFd);
+    if (hard)
+        {
+        close(connFd);
+        }
+    else
+        {
+        shutdown (connFd, SHUT_RDWR);
+        }
 #endif
     }
 
@@ -1151,7 +1312,9 @@ static void dtCloseSocket (int connFd)
 static void dtActivateFet (NetFet *fet, int connFd)
     {
     fet->connFd = connFd;
-    /* Link this FET into the active list */
+    /* 
+    ** Link this FET into the active list. 
+    */
     fet->next = connlist.next;
     fet->prev = &connlist;
     fet->next->prev = fet;

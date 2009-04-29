@@ -34,6 +34,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
@@ -168,10 +169,7 @@ int main (int argc, char **argv)
     OpMsg *msgp;
     char *p;
     char *cp;
-#if defined(_WIN32) || defined (__APPLE__)
-    int true_opt = 1;
-#endif
-
+    
     if (argc > 2)
         {
         printf ("usage: dtoper [ portnum ]\n");
@@ -188,20 +186,10 @@ int main (int argc, char **argv)
         
     dtInitFet (&fet, NetBufSize);
     
-    if (dtConnect (&fet.connFd, "localhost", port) < 0)
+    if (dtConnect (&fet, inet_addr ("127.0.0.1"), port) < 0)
         {
         exit (1);
         }
-
-#if defined(_WIN32)
-    ioctlsocket (fet.connFd, FIONBIO, &true_opt);
-#else
-    fcntl (fet.connFd, F_SETFL, O_NONBLOCK);
-#endif
-#ifdef __APPLE__
-    setsockopt (fet.connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                (char *)&true_opt, sizeof(true_opt));
-#endif
 
 #if defined(_WIN32)
     /*

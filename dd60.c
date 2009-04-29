@@ -23,6 +23,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #endif
 #include "const.h"
 #include "types.h"
@@ -155,7 +156,7 @@ int main (int argc, char **argv)
     u8 initBuf[2];
     int readDelay;
     char opt;
-    
+
 #if !defined(_WIN32)
     for (;;)
         {
@@ -243,7 +244,7 @@ int main (int argc, char **argv)
         }
     dtInitFet (&fet, NetBufSize);
     
-    if (dtConnect (&fet.connFd, "localhost", port) < 0)
+    if (dtConnect (&fet, inet_addr ("127.0.0.1"), port) < 0)
         {
         exit (1);
         }

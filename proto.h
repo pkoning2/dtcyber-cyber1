@@ -265,7 +265,7 @@ void ddWaitIO (DiskIO *io);
 /*
 **  dtnetsubs.c
 */
-int dtConnect (int *connFd, const char *hostname, int portnum);
+int dtConnect (NetFet *fet, in_addr_t host, int portnum);
 int dtCheckInput(int connFd, void *buf, int size, int time);
 void dtCreateListener(NetPortSet *ps, int ringSize);
 void dtClose (NetFet *np, NetPortSet *ps);
@@ -274,6 +274,8 @@ void dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
 const char *dtNowString (void);
 void dtSendTlv (NetFet *fet, int tag, int len, const void *value);
 void dtSend (NetFet *fet, const void *buf, int len);
+int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog);
+NetFet *dtAccept (NetFet *fet, int maxdata);
 
 int dtRead (NetFet *fet, int time);
 int dtReado (NetFet *fet);
@@ -281,8 +283,8 @@ int dtReadw (NetFet *fet, void *buf, int len);
 int dtPeekw (NetFet *fet, void *buf, int len);
 int dtReadmax (NetFet *fet, void *buf, int len);
 int dtReadtlv (NetFet *fet, void *buf, int len);
-void dtInitFet (NetFet *fet, int bufsiz);
-void dtCloseFet (NetFet *fet);
+int dtInitFet (NetFet *fet, int bufsiz);
+void dtCloseFet (NetFet *fet, bool hard);
 
 /* We could do these as functions but they are short, so... */
 #define dtEmpty(fet) \

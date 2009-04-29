@@ -1,3 +1,4 @@
+#define DEBUG 1
 /*--------------------------------------------------------------------------
 **
 **  Copyright (c) 2006, Tom Hunter, Paul Koning (see license.txt)
@@ -47,12 +48,11 @@
 #define RETNODATA   2
 #define RETLONG     3
 #define RETNULL     4
-#define RETERRNO    (1000 + errno)
+#define RETERROR(x) (1000 + x)
+#define RETERRNO    RETERROR(errno)
 
-#define MAXIO       4096
-
-static char reqstr[11];
-static char resultstr[MAXIO];
+#define MAXENV      500
+#define MAXNET      4096
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Read an environment variable
@@ -75,6 +75,8 @@ static CpWord envOp (CpWord req)
 {
     CpWord *reqp = cpuAccessMem (req, 2);
     CpWord *bufp;
+    char reqstr[11];
+    char resultstr[MAXENV];
     char *p = reqstr;
     int i;
     char c;
@@ -156,6 +158,9 @@ static CpWord envOp (CpWord req)
 **                              number of a socket obtained from "get socket" 
 **                              or "accept".
 **
+**                              "socknum" is not actually a socket number;
+**                              instead, it is a pointer to a NetFet.
+**
 **                              "mode" is 0 for text, 1 for binary.
 **                              This applies only to read and write calls.
 **                              Other values are reserved.
@@ -171,7 +176,7 @@ static CpWord sockOp (CpWord req)
 {
     // Check for a 5 word request buffer always (even though most requests require less)
     CpWord *reqp = cpuAccessMem (req, 5);
-    int socknum;
+    NetFet *fet, *dataFet;
     int retval;
     int true_opt = 1;
     int mode;
@@ -186,13 +191,14 @@ static CpWord sockOp (CpWord req)
     int i, pcnt;
     socklen_t sl;
     int charset;
+    char resultstr[MAXNET];
     
     if (reqp == NULL)
     {
         return 0;
     }
     mode = ((reqp[1] >> 54) & Mask6);
-    socknum = reqp[1] & 0xffffffff;
+    fet = (NetFet *) (u32) (reqp[1] & 0xffffffff);
     DEBUGPRINT ("socket req %llo %llo %llo %llo %llo\n", 
                 reqp[0], reqp[1], reqp[2], reqp[3], reqp[4]);
     switch ((*reqp >> 12) & Mask6)
@@ -200,134 +206,102 @@ static CpWord sockOp (CpWord req)
     case 0:
         // reset
         // no request dependent fields.
-        if (socknum != 0)
+        if (fet != NULL)
         {
-            if (close (socknum))
-            {
-                return RETERRNO;
-            }
+            dtCloseFet (fet, TRUE);
+            free (fet);
             return RETOK;
         }
         return RETNOSOCK;
     case 1:
         // close
         // no request dependent fields.
-        if (socknum != 0)
+        if (fet != NULL)
         {
-            if (shutdown (socknum, SHUT_RDWR))
-            {
-                return RETERRNO;
-            }
+            dtCloseFet (fet, FALSE);
+            free (fet);
             return RETOK;
         }
         return RETNOSOCK;
     case 2:
-        // socket (get a socket number)
+        // socket (get a NetFet)
         // no request dependent fields.
         // Note that socket number (word 1) must be zero coming in,
-        // and the socket number we obtained is returned there.
-        if (socknum == 0)
+        // and the NetFet address we obtained is returned there.
+        if (fet == NULL)
         {
-            retval = socket (PF_INET, SOCK_STREAM, 0);
-            if (retval > 0)
+            fet = malloc (sizeof (*fet));
+            if (fet == NULL)
             {
-                DEBUGPRINT ("new socket %d\n", retval);
-                reqp[1] = retval;
-#if defined(_WIN32)
-                ioctlsocket (retval, FIONBIO, &true_opt);
-#else
-                fcntl (retval, F_SETFL, O_NONBLOCK);
-#endif
-#ifdef __APPLE__
-                setsockopt (retval, SOL_SOCKET, SO_NOSIGPIPE,
-                            (char *) &true_opt, sizeof (true_opt));
-#endif
-                return RETOK;
+                return RETERROR (ENOMEM);
             }
-            return RETERRNO;
+            if ((u64)fet & 0xf000000000000000ULL)
+            {
+                printf ("HELP... FET pointers larger than 60 bits...\n");
+            }
+            if (dtInitFet (fet, MAXNET) != 0)
+            {
+                free (fet);
+                return RETERRNO;
+            }
+            reqp[1] = (CpWord) (u32) fet;
+            return RETOK;
         }
         return RETINVREQ;
     case 3:
-        // bind
+        // bind + listen
         // request dependent fields:
         // 2: 28/0, 32/address
         // 3: 44/0, 16/port
-        if (socknum == 0)
+        // 4: 44/0, 32/backlog
+        if (fet == 0)
         {
             return RETNOSOCK;
         }
-        setsockopt (socknum, SOL_SOCKET, SO_REUSEADDR,
-                   (char *) &true_opt, sizeof (true_opt));
-        memset (&addr, 0, sizeof(addr));
-        addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = htonl (reqp[2]);
-        addr.sin_port = htons(reqp[3]);
-        DEBUGPRINT ("bind %d to %08x:%d (%p, %d)\n", socknum, ntohl (addr.sin_addr.s_addr), ntohs (addr.sin_port), &addr, sizeof(addr));
-        if (bind (socknum, (struct sockaddr *) &addr, sizeof (addr)))
+        if (dtBind (fet, htonl (reqp[2]), reqp[3], reqp[4]) != 0)
         {
             return RETERRNO;
         }
         return RETOK;
     case 4:
-        // listen
-        // request dependent fields:
-        // 2: 44/0, 32/backlog
-        if (socknum == 0)
-        {
-            return RETNOSOCK;
-        }
-        if (listen (socknum, reqp[2]))
-        {
-            return RETERRNO;
-        }
-        return RETOK;
+        // unused (was "listen")
+        return RETINVREQ;
     case 5:
         // accept
         // no request dependent fields inbound.
         // On return, 3rd word is the data socket, if the accept worked.
         // The IP address is returned in the 4th word.
-        if (socknum == 0)
+        if (fet == 0)
         {
             return RETNOSOCK;
         }
         reqp[2] = reqp[3] = 0;
-        sl = sizeof (struct sockaddr);
-        retval = accept (socknum, (struct sockaddr *) &addr, &sl);
-        if (retval >= 0)
+        dataFet = dtAccept (fet, MAXNET);
+        if (dataFet == NULL)
         {
-            DEBUGPRINT ("accept %d returned socket %d, partner = %08x:%d\n", socknum, retval, ntohl (addr.sin_addr.s_addr), ntohs (addr.sin_port));
-#if defined(_WIN32)
-            ioctlsocket (retval, FIONBIO, &true_opt);
-#else
-            fcntl (retval, F_SETFL, O_NONBLOCK);
-#endif
-#ifdef __APPLE__
-            setsockopt (retval, SOL_SOCKET, SO_NOSIGPIPE,
-                        (char *) &true_opt, sizeof (true_opt));
-#endif
-            reqp[2] = retval;
-            reqp[3] = ntohl (addr.sin_addr.s_addr);
-            return RETOK;
+            if (errno == EAGAIN)
+            {
+                return RETNODATA;
+            }
+            return RETERRNO;
         }
-        if (errno == EAGAIN)
+        if ((u64)dataFet & 0xf000000000000000ULL)
         {
-            return RETNODATA;
+            printf ("HELP... FET pointers larger than 60 bits...\n");
         }
-        return RETERRNO;
+        reqp[2] = (CpWord) (u32) dataFet;
+        reqp[3] = ntohl (dataFet->from.s_addr);
+        return RETOK;
     case 6:
         // connect
         // request dependent fields:
         // 2: 28/0, 32/address
         // 3: 44/0, 16/port
-        if (socknum == 0)
+        if (fet == 0)
         {
             return RETNOSOCK;
         }
-        memset (&addr, 0, sizeof(addr));
-        addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = htonl (reqp[2]);
-        addr.sin_port = htons(reqp[3]);
-        if (connect (socknum, (struct sockaddr *) &addr, sizeof (addr)))
+        if (dtConnect (fet, htonl (reqp[2]), reqp[3]) != 0)
         {
             return RETERRNO;
         }
@@ -351,7 +325,7 @@ static CpWord sockOp (CpWord req)
         // not be a line terminator at the end of the last line.
         // In other words, if char[count-1] != 0 then the last line
         // is a partial line.
-        if (socknum == 0)
+        if (fet == 0)
         {
             return RETNOSOCK;
         }
@@ -366,22 +340,17 @@ static CpWord sockOp (CpWord req)
         {
             return RETINVREQ;
         }
-        retval = read (socknum, resultstr, MAXIO);
+        retval = dtRead (fet, 0);
         if (retval < 0)
         {
-            if (errno == EAGAIN)
-            {
-                return RETNODATA;
-            }
             return RETERRNO;
         }
-        if (retval == 0)
+        if (dtEmpty (fet))
         {
-            return RETNULL;
+            return RETNODATA;
         }
-        resultstr[retval] = '\0';
-        DEBUGPRINT ("read %d: %s\n", retval, resultstr);
-        cp = (unsigned char *) resultstr;
+        DEBUGPRINT ("dtRead %d, %d bytes buffered\n", retval, dtFetData (fet));
+        c = dtReado (fet);
         if (mode == 1)
         {
             shift = 60 - 8;
@@ -392,7 +361,7 @@ static CpWord sockOp (CpWord req)
         }
         d = 0;
         oc = 0;
-        for (ic = 0; ic < retval; ic++)
+        for (ic = 0; ; ic++)
         {
             if (buflen == 0)
             {
@@ -408,15 +377,15 @@ static CpWord sockOp (CpWord req)
                         // Quit if there's not room for both pieces
                         break;
                     }
-                    d |= *cp >> 4;
+                    d |= c >> 4;
                     *bufp++ = d;
                     buflen--;
-                    d = ((CpWord) (*cp & 0x0f)) << 56;
+                    d = ((CpWord) (c & 0x0f)) << 56;
                     shift = 56 - 8;
                 }
                 else
                 {
-                    d |= ((CpWord) (*cp)) << shift;
+                    d |= ((CpWord) (c)) << shift;
                     if (shift == 0)
                     {
                         *bufp++ = d;
@@ -434,11 +403,16 @@ static CpWord sockOp (CpWord req)
             else
             {
                 // PLATO text mode
-                if (*cp == '\r')
+                if (c == '\r')
                 {
+                    c = dtReado (fet);
+                    if (c < 0)
+                    {
+                        break;
+                    }
                     continue;
                 }
-                else if (*cp == '\n')
+                else if (c == '\n')
                 {
                     // End of line
                     *bufp++ = d;
@@ -465,10 +439,15 @@ static CpWord sockOp (CpWord req)
                 }
                 else
                 {
-                    pc = asciiToPlatoString[*cp];
+                    pc = asciiToPlatoString[c];
                     if (pc < 0)
                     {
                         // char with no PLATO equivalent
+                        c = dtReado (fet);
+                        if (c < 0)
+                        {
+                            break;
+                        }
                         continue;
                     }
                     // Check how many 6-bit codes we need
@@ -501,7 +480,11 @@ static CpWord sockOp (CpWord req)
                         oc++;
                     }
                 }
-                cp++;
+                c = dtReado (fet);
+                if (c < 0)
+                {
+                    break;
+                }
             }
         }
         if (buflen > 0 && shift < 60 - 8)
@@ -521,7 +504,7 @@ static CpWord sockOp (CpWord req)
         // Char countincludes the end of line code (at least one 00 char) 
         // if last line ends in end of line.
         ic = reqp[3];
-        if (ic > MAXIO)
+        if (ic > MAXNET)
         {
             return RETLONG;
         }
@@ -628,20 +611,15 @@ static CpWord sockOp (CpWord req)
             }
         }
         oc = cp - (unsigned char *) resultstr;
-        retval = write (socknum, resultstr, oc);
-        DEBUGPRINT ("write (%d, ptr, %d), result %d\n", socknum, oc, retval);
-        reqp[4] = retval;
-        if (retval < 0)
-        {
-            return RETERRNO;
-        }
+        dtSend (fet, resultstr, oc);
+        DEBUGPRINT ("dtSend (%d, ptr, %d)\n", fet, oc);
         return RETOK;
     case 9:
         // Reset all -- takes a buffer full of socket numbers
         // request dependent fields:
         // 2: 1/ecs, 35/0, 24/bufaddr
         // 3: 60/bufwords
-        // Note that socknum (word 1) is not used.
+        // Note that fet (word 1) is not used.
         buflen = reqp[3];
         if (buflen <= 0)
         {
@@ -654,12 +632,13 @@ static CpWord sockOp (CpWord req)
         }
         for (i = 0; i < buflen; i++)
         {
-            socknum = *bufp;
+            fet = (NetFet *) (u32) *bufp;
             *bufp++ = 0;
-            if (socknum != 0)
+            if (fet != 0)
             {
-                DEBUGPRINT ("closing socket %d at index %d\n", socknum, i + 1);
-                close (socknum);
+                DEBUGPRINT ("closing socket %d at index %d\n", fet, i + 1);
+                dtCloseFet (fet, TRUE);
+                free (fet);
             }
         }
         return RETOK;
