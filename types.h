@@ -226,6 +226,9 @@ typedef struct NetFet_s
     u8          *end;                   /* End of ring buffer + 1 */
     struct in_addr from;                /* remote IP address */
     int         fromPort;               /* remote TCP port number */
+    u8          *sendData;              /* Pending data to send */
+    int         sendCount;              /* Count of sendData bytes */
+    int         sendBufCount;           /* Size of sendData realloc */
     } NetFet;
 
 

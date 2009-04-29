@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -147,13 +148,14 @@ static ThreadFunRet dtThread (void *param);
 static void dtCloseSocket (int connFd);
 static int dtGetw (NetFet *fet, void *buf, int len, bool read);
 static void dtActivateFet (NetFet *fet, int connFd);
+static void dtSendPending (NetFet *fet);
 
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
-NetFet connlist = { &connlist, &connlist, 0, NULL, NULL, NULL, NULL };
+NetFet connlist = { &connlist, &connlist };  /* trailing fields default to 0 */
 void (*updateConnections) (void) = NULL;
 
 /*
@@ -164,7 +166,10 @@ void (*updateConnections) (void) = NULL;
 #if !defined(_WIN32)
 static pthread_t dt_thread;
 #endif
-fd_set nullSet;
+static fd_set nullSet;
+static fd_set sendSet;
+static bool sendSet_initialized;
+static int waitCount = 0;
 
 /*
 **--------------------------------------------------------------------------
@@ -378,6 +383,11 @@ void dtCreateListener(NetPortSet *ps, int ringSize)
 #endif
     dtCreateThread (dtThread, ps);
     FD_ZERO(&nullSet);
+    if (!sendSet_initialized)
+        {
+        sendSet_initialized = TRUE;
+        FD_ZERO(&sendSet);
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -585,6 +595,14 @@ int dtRead (NetFet *fet, int time)
             size--;
             }
         }
+    if (size == 0)
+        {
+        /*
+        ** No room for new data, so return but do not call that an error.
+        */
+        return 0;
+        }
+
     i = recv(fet->connFd, in, size, MSG_NOSIGNAL);
     if (i > 0)
         {
@@ -685,6 +703,14 @@ int dtReadmax (NetFet *fet, void *buf, int len)
     int actual;
     
     actual = dtFetData (fet);
+    if (len < actual)
+        {
+        /*
+        ** Don't read more than was requested.
+        */
+        actual = len;
+        }
+    
     if (actual > 0)
     {
         dtReadw (fet, buf, actual);
@@ -772,6 +798,8 @@ void dtInitFet (NetFet *fet, int bufsiz)
     fet->in = buf;
     fet->out = buf;
     fet->end = buf + bufsiz;
+    fet->sendData = NULL;
+    fet->sendCount = fet->sendBufCount = 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -786,6 +814,15 @@ void dtInitFet (NetFet *fet, int bufsiz)
 void dtCloseFet (NetFet *fet)
     {
     dtCloseSocket (fet->connFd);
+    /* Free any pending output data */
+    if (fet->sendData != NULL)
+        {
+        free (fet->sendData);
+        FD_CLR (fet->connFd, &sendSet);
+        waitCount--;
+        fet->sendData = NULL;
+        fet->sendCount = fet->sendBufCount = 0;
+        }
     fet->connFd = 0;            /* Mark FET not open anymore */
     fet->in = fet->first;
     fet->out = fet->first;
@@ -843,10 +880,77 @@ void dtSendTlv (NetFet *fet, int tag, int len, const void *value)
 void dtSend (NetFet *fet, const void *buf, int len)
     {
     int connFd = fet->connFd;
-
-    if (len > 0 && connFd != 0)
+    int sent = 0, pend, newcount;
+    u8 *waitptr;
+    
+    /*
+    ** Ignore calls when connection is not open.
+    */
+    if (connFd == 0)
         {
-        send (connFd, buf, len, MSG_NOSIGNAL);
+        return;
+        }
+    
+    /*
+    ** First send any pending data (if possible).
+    */
+    dtSendPending (fet);
+    
+    /*
+    ** Only try to send new data if nothing is currently still pending.
+    */
+    if (fet->sendCount == 0)
+        {
+        if (len > 0 && connFd != 0)
+            {
+            sent = send (connFd, buf, len, MSG_NOSIGNAL);
+            if (sent < 0)
+                {
+                if (errno != EAGAIN)
+                    {
+                    return;
+                    }
+                sent = 0;
+                }
+            }
+        }
+
+    /*
+    ** If some data was unsent, or if no send was done because we already
+    ** had data pending, append the unsent data to the pending data.
+    */
+    pend = len - sent;
+    if (pend > 0)
+        {
+        newcount = fet->sendCount + pend;
+        if (newcount > fet->sendBufCount)
+            {
+            waitptr = realloc (fet->sendData, newcount);
+            if (waitptr != NULL)
+                {
+                fet->sendBufCount = newcount;
+                fet->sendData = waitptr;
+                }
+            }
+        else
+            {
+            waitptr = fet->sendData;
+            }
+        if (waitptr != NULL)
+            {
+            if (fet->sendCount == 0)
+                {
+                /*
+                ** Transition from nothing pending to something pending.
+                ** Add this connection to the fd_set of connections that
+                ** have pending data waiting for space.
+                */
+                FD_SET (connFd, &sendSet);
+                waitCount++;
+                }
+            memcpy (waitptr + fet->sendCount, (u8 *)buf + sent, pend);
+            fet->sendCount = newcount;
+            }
         }
     }
 
@@ -1106,9 +1210,10 @@ static int dtGetw (NetFet *fet, void *buf, int len, bool read)
         memcpy (to, out, left);
         to += left;
         len -= left;
+        out = fet->first;
         if (read)
             {
-            fet->out = out = fet->first;
+            fet->out = out;
             }
         /*
         **  If the data to end of ring was exactly the amount we wanted,
@@ -1132,5 +1237,53 @@ static int dtGetw (NetFet *fet, void *buf, int len, bool read)
     return 0;
     }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Send pending data, if any
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**
+**  Returns:        Nothing. 
+**
+**------------------------------------------------------------------------*/
+void dtSendPending (NetFet *fet)
+    {
+    int connFd = fet->connFd;
+    int sent = 0, pend;
+    u8 *waitptr;
+
+    if (fet->sendCount == 0)
+        {
+        return;
+        }
+    sent = send (connFd, fet->sendData, fet->sendCount, MSG_NOSIGNAL);
+    if (sent < 0)
+        {
+        if (errno != EAGAIN)
+            {
+            /*
+            ** Some strange error.  Pretend the whole send worked,
+            ** which results in the pending data being discarded.
+            */
+            sent = fet->sendCount;
+            }
+        else
+            {
+            sent = 0;
+            }
+        }
+    pend = fet->sendCount = fet->sendCount - sent;
+    
+    if (pend == 0)
+        {
+        free (fet->sendData);
+        fet->sendData = NULL;
+        fet->sendBufCount = 0;
+        }
+    else
+        {
+        memmove (fet->sendData, fet->sendData + sent, pend);
+        }
+    }
 
 /*---------------------------  End Of File  ------------------------------*/
