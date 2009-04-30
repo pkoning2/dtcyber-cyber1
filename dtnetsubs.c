@@ -540,7 +540,9 @@ const char *dtNowString (void)
 **                  time        Max time to wait in ms; 0 means do not
 **                              wait, -1 means wait indefinitely
 **
-**  Returns:        < 0 if error, 0 if ok
+**  Returns:        0  if ok
+**                  -1 if disconnected
+**                  -2 if some other error
 **
 **------------------------------------------------------------------------*/
 int dtRead (NetFet *fet, int time)
@@ -568,7 +570,7 @@ int dtRead (NetFet *fet, int time)
             {
             if (FD_ISSET(connFd, &exceptFds))
                 {
-                return(-1);
+                return(-2);
                 }
             else
                 {

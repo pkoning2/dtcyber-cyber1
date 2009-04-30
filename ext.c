@@ -142,13 +142,12 @@ static CpWord envOp (CpWord req)
 **                                  0: reset
 **                                  1: close ("shutdown" on the connection)
 **                                  2: get socket
-**                                  3: bind
-**                                  4: listen
-**                                  5: accept
-**                                  6: connect
-**                                  7: read
-**                                  8: write
-**                                  9: reset all
+**                                  3: bind + listen
+**                                  4: accept
+**                                  5: connect
+**                                  6: read
+**                                  7: write
+**                                  8: reset all
 **
 **                              For the "get socket" request, socknum must
 **                              be zero, and the socket number obtained is 
@@ -264,9 +263,6 @@ static CpWord sockOp (CpWord req)
         }
         return RETOK;
     case 4:
-        // unused (was "listen")
-        return RETINVREQ;
-    case 5:
         // accept
         // no request dependent fields inbound.
         // On return, 3rd word is the data socket, if the accept worked.
@@ -292,7 +288,7 @@ static CpWord sockOp (CpWord req)
         reqp[2] = (CpWord) (u32) dataFet;
         reqp[3] = ntohl (dataFet->from.s_addr);
         return RETOK;
-    case 6:
+    case 5:
         // connect
         // request dependent fields:
         // 2: 28/0, 32/address
@@ -306,7 +302,7 @@ static CpWord sockOp (CpWord req)
             return RETERRNO;
         }
         return RETOK;
-    case 7:
+    case 6:
         // read
         // request dependent fields:
         // 2: 1/ecs, 35/0, 24/bufaddr
@@ -341,15 +337,19 @@ static CpWord sockOp (CpWord req)
             return RETINVREQ;
         }
         retval = dtRead (fet, 0);
+        DEBUGPRINT ("dtRead %d, %d bytes buffered\n", retval, dtFetData (fet));
         if (retval < 0)
         {
+            if (retval == -1)
+            {
+                return RETNULL;
+            }
             return RETERRNO;
         }
         if (dtEmpty (fet))
         {
             return RETNODATA;
         }
-        DEBUGPRINT ("dtRead %d, %d bytes buffered\n", retval, dtFetData (fet));
         c = dtReado (fet);
         if (mode == 1)
         {
@@ -495,7 +495,7 @@ static CpWord sockOp (CpWord req)
         DEBUGPRINT ("chars to Cyber: %d\n", oc);
         reqp[4] = oc;
         return RETOK;
-    case 8:
+    case 7:
         // write
         // request dependent fields:
         // 2: 1/ecs, 35/0, 24/bufaddr
@@ -614,7 +614,7 @@ static CpWord sockOp (CpWord req)
         dtSend (fet, resultstr, oc);
         DEBUGPRINT ("dtSend (%d, ptr, %d)\n", fet, oc);
         return RETOK;
-    case 9:
+    case 8:
         // Reset all -- takes a buffer full of socket numbers
         // request dependent fields:
         // 2: 1/ecs, 35/0, 24/bufaddr

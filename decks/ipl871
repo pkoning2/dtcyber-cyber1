@@ -43,13 +43,12 @@ return(opl)
  s.close  equ    1           close socket
  s.ctrl   equ    2           control (conden to plato)
  s.get    equ    2           get socket number (dtcyber)
- s.bind   equ    3           bind address/port for passive socket
- s.listn  equ    4           listen for connections
- s.acc    equ    5           accept a connection
- s.conn   equ    6           connect outbound
- s.read   equ    7           read data
- s.write  equ    8           write data
- s.rall   equ    9           reset all sockets (dtcyber)
+ s.listn  equ    3           bind address/port then listen
+ s.acc    equ    4           accept a connection
+ s.conn   equ    5           connect outbound
+ s.read   equ    6           read data
+ s.write  equ    7           write data
+ s.rall   equ    8           reset all sockets (dtcyber)
 
 ***       socket lesson layout
 *
@@ -89,8 +88,7 @@ return(opl)
 *
 *         socket  reset,num
 *         socket  close,num
-*         socket  bind,num,addr,port
-*         socket  listen,num,backlog
+*         socket  listen,num,addr,port,backlog
 *         socket  accept,num,lnum
 *         socket  connect,num,addr,port
 *         socket  recv,num,buf,len,retchars
@@ -123,7 +121,6 @@ return(opl)
  socktab  vfd    42/0lreset,18/s.reset
           vfd    42/0lclose,18/s.close
           vfd    42/0lcontrol,18/s.ctrl
-          vfd    42/0lbind,18/s.bind
           vfd    42/0llisten,18/s.listn
           vfd    42/0laccept,18/s.acc
           vfd    42/0lconnect,18/s.conn
@@ -143,7 +140,6 @@ return(opl)
  sctab    scent  mrklast,s.reset
           scent  mrklast,s.close
           scent  scctrl,s.ctrl
-          scent  scbind,s.bind
           scent  sclistn,s.listn
           scent  scacc,s.acc
           scent  scconn,s.conn
@@ -174,16 +170,19 @@ return(opl)
           vfd    48/0ltext,18/1
           con    0
 
-** handle -socket bind- and -socket connect
+** handle -socket connect-
 *
-*  both of these have two integer arguments (address and port)
- scbind   bss    0
+*  this has two integer arguments (address and port)
  scconn   call   vardo2      get address
           call   vardo2      get port
           eq     mrklast
 
 ** handle -socket listen-
- sclistn  call   vardo2      get backlog
+*
+*  this has three integer arguments (address, port, backlog)
+ sclistn  call   vardo2      get address
+          call   vardo2      get port
+          call   vardo2      get backlog
           eq     mrklast
 
 ** handle -socket accept-
@@ -299,11 +298,8 @@ return(opl)
 *         socket control,sockidx,flags
 *                set socket mode; flags is *binary* or *text*.
 *
-*         socket bind,sockidx,ipaddr,port
-*                bind an address and tcp port number to listen
-*
-*         socket listen,sockidx,backlog
-*                listen for connections, max backlog is given
+*         socket listen,sockidx,ipaddr,port,backlog
+*                bind an address and tcp port number, then listen
 *
 *         socket accept,sockidx,dataidx
 *                accept a connection, new data socket index is
@@ -325,11 +321,9 @@ return(opl)
 *         reset, close -- any sockidx value is legal.  if sockidx is
 *                not currently in use, no action is taken.
 *                upon completion the sockidx is now not in use.
-*         bind, connect -- sockidx must be an index that is not
+*         listen, connect -- sockidx must be an index that is not
 *                currently in use.  after successful completion it
 *                now is in use.
-*         listen, accept -- sockidx must be an index for which a
-*                *bind* has been done.
 *         read, write -- sockidx must be an index for which a connect
 *                has been done, or which was the dataidx returned
 *                by an accept.
@@ -370,7 +364,6 @@ return(opl)
  sctab    scent  screset,s.reset
           scent  scclose,s.close
           scent  scctrl,s.ctrl
-          scent  scbind,s.bind
           scent  sclistn,s.listn
           scent  scacc,s.acc
           scent  scconn,s.conn
@@ -410,19 +403,28 @@ return(opl)
           space  5,11
 **        -socket listen-
 
- sclistn  rj     getsocn     get socket number, must be non-zero
+ sclistn  rj     getsocz     get socket number, must be free
           bx6    x1
           sa6    sxbuf+1     set it in request
-          sa1    varbuf+2    backlog argument
+          sa1    varbuf+2    address argument
           bx5    x1
           ngetvar
           bx6    x1
           sa6    sxbuf+2     set in request
-          eq     scdo        do the listen and exit
+          sa1    varbuf+3    port number argument
+          bx5    x1
+          ngetvar
+          bx6    x1
+          sa6    sxbuf+3     set in request
+          sa1    varbuf+4    backlog argument
+          bx5    x1
+          ngetvar
+          bx6    x1
+          sa6    sxbuf+4     set in request
+          eq     scdo        do the bind/listen and exit
           space  5,11
 **        -socket bind-, -socket connect-
 
- scbind   bss    0
  scconn   rj     getsocz     get socket number, must be free
           bx6    x1
           sa6    sxbuf+1     set it in request
@@ -723,14 +725,14 @@ return(opl)
  extcall  call   systst1     error if not write-cm lesson
           eq     collctc     collect two arguments, first storeable
 *deck exec10
-*i socket.74
+*i socket.69
 *
 *         *ovarg1* = 0       -socket-
 *                  = 1       -extcall-
-*i socket.80
+*i socket.75
           sa1    ovarg1
           nz     x1,extcx    do -extcall- command
-*i socket.418
+*i socket.421
  extcall  title  -extcall- command execution
 ***
 *         -extcall- command
