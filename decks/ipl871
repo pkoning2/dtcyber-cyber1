@@ -383,7 +383,9 @@ return(opl)
 +         we     sockmax
 -         rj     ecsprty     update the socket list in ecs
  scdo     sa2    varbuf      retrieve function code
-          lx2    xcodel+12   position it
+          lx2    xcodel      right-justify getvar code
+          sx2    x2          isolate it
+          lx2    12          position it for exx request
           sx6    x2+1        form *socket* opcode
           sa6    sxbuf       set opcode
           sx1    a6
@@ -732,7 +734,7 @@ return(opl)
 *i socket.75
           sa1    ovarg1
           nz     x1,extcx    do -extcall- command
-*i socket.421
+*i socket.423
  extcall  title  -extcall- command execution
 ***
 *         -extcall- command

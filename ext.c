@@ -575,7 +575,8 @@ static CpWord sockOp (CpWord req)
                 }
                 if (c == 0)
                 {
-                    // end of line
+                    // end of line.  Use CRLF because that's the RFC convention
+                    *cp++ = '\r';
                     *cp++ = '\n';
                     // Adjust input char count by number of pad zeroes skipped
                     i += (shift + 6) / 6;
