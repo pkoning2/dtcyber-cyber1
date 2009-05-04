@@ -328,7 +328,8 @@ void opInit(void)
     opPorts.maxPorts = opConns;
     opPorts.localOnly = TRUE;
     opPorts.callBack = opSetup;
-    dtCreateListener (&opPorts, NetBufSize);
+    opPorts.kind = "oper";
+    dtInitPortset (&opPorts, NetBufSize);
     dtCreateThread (opThread, 0);
     }
 
@@ -502,7 +503,7 @@ static ThreadFunRet opThread (void *param)
             i = dtRead  (np, -1);
             if (i < 0)
                 {
-                dtClose (np, &opPorts);
+                dtClose (np, &opPorts, TRUE);
                 }
             }
         }
@@ -554,11 +555,11 @@ static int opRequest(NetFet *np)
         }
     if (msgPtr != NULL)
         {
-        dtSendTlv (np, OpReply, strlen (msgPtr), msgPtr);
+        dtSendTlv (np, &opPorts, OpReply, strlen (msgPtr), msgPtr);
         }
     else
         {
-        dtSendTlv (np, OpReply, 0, NULL);
+        dtSendTlv (np, &opPorts, OpReply, 0, NULL);
         }
     
     return 0;
@@ -597,7 +598,7 @@ static void opCmdShutdown(char *cmdParams)
         np = opPorts.portVec + i;
         if (dtActive (np))
             {
-            dtSendTlv (np, OpReply, strlen (msgPtr), msgPtr);
+            dtSendTlv (np, &opPorts, OpReply, strlen (msgPtr), msgPtr);
             }
         }
 
@@ -972,18 +973,18 @@ static void opDevlist(char *cmdParams)
         np = opPorts.portVec + i;
         if (dtActive (np))
             {
-            dtSendTlv (np, OpStatus, statusHdr.len, statusHdr.buf);
+            dtSendTlv (np, &opPorts, OpStatus, statusHdr.len, statusHdr.buf);
             for (j = 0; j < StatusLineMax; j++)
                 {
                 if (statusLines[j] != NULL)
                     {
-                    dtSendTlv (np, OpStatus, statusLines[j]->len,
+                    dtSendTlv (np, &opPorts, OpStatus, statusLines[j]->len,
                                statusLines[j]->buf);
                     }
                 else
                     {
                     null[0] = j;
-                    dtSendTlv (np, OpStatus, 1, null);
+                    dtSendTlv (np, &opPorts, OpStatus, 1, null);
                     }
                 }
             }
@@ -1005,6 +1006,7 @@ static void opConnlist(char *cmdParams)
     char cstat[50];
     NetFet *cp;
     NetFet *np;
+    const char *kind;
     
     sprintf (statusHdr.buf + 1, "Connections");
     statusHdr.len = strlen (statusHdr.buf);
@@ -1015,19 +1017,39 @@ static void opConnlist(char *cmdParams)
         np = opPorts.portVec + i;
         if (dtActive (np))
             {
-            dtSendTlv (np, OpStatus, statusHdr.len, statusHdr.buf);
+            dtSendTlv (np, &opPorts, OpStatus, statusHdr.len, statusHdr.buf);
             for (j = StatusFirstDev, cp = connlist.next; 
                  j < StatusLineMax && cp != &connlist;
                  j++, cp = cp->next)
                 {
-                sprintf (cstat, "%c%3d. %d to %s:%d", j, j, cp->connFd, 
-                         inet_ntoa (cp->from), cp->fromPort);
-                dtSendTlv (np, OpStatus, strlen (cstat), cstat);
+                if (cp->ps != NULL)
+                    {
+                    kind = cp->ps->kind;
+                    }
+                else
+                    {
+                    kind = "";
+                    }
+                if (cp->ownerInfo <= 0 || cp->ownerInfo > 1023)
+                    {
+                    sprintf (cstat, "%c%3d. %-7s %5lld to %s:%d", 
+                             j, j - StatusFirstDev,
+                             kind, cp->ownerInfo,
+                             inet_ntoa (cp->from), cp->fromPort);
+                    }
+                else
+                    {
+                    sprintf (cstat, "%c%3d. %-7s %2lld-%-2lld to %s:%d", 
+                             j, j - StatusFirstDev,
+                             kind, cp->ownerInfo / 32, cp->ownerInfo & 31,
+                             inet_ntoa (cp->from), cp->fromPort);
+                    }
+                dtSendTlv (np, &opPorts, OpStatus, strlen (cstat), cstat);
                 }
             for ( ; j < StatusLineMax; j++)
                 {
                 cstat[0] = j;
-                dtSendTlv (np, OpStatus, 1, cstat);
+                dtSendTlv (np, &opPorts, OpStatus, 1, cstat);
                 }
             }
         }
@@ -1413,7 +1435,7 @@ static void opSetup (NetFet *np, int index)
     sp = syntax;
     while (*sp != NULL)
         {
-        dtSendTlv (np, OpSyntax, strlen (*sp), *sp);
+        dtSendTlv (np, &opPorts, OpSyntax, strlen (*sp), *sp);
         sp++;
         }
     msgp = msg;
@@ -1445,14 +1467,14 @@ static void opSetup (NetFet *np, int index)
             {
             strcpy (p, msgp->text);
             }
-        dtSendTlv (np, OpText, p - msgbuf + strlen (p),
+        dtSendTlv (np, &opPorts, OpText, p - msgbuf + strlen (p),
                    msgbuf);
         msgp++;
         }
     /*
     **  All done sending init data, so indicate that.
     */
-    dtSendTlv (np, OpInitialized, 0, NULL);
+    dtSendTlv (np, &opPorts, OpInitialized, 0, NULL);
 
     opActiveConns++;
     opUpdateSysStatus ();
@@ -1465,7 +1487,7 @@ static void opSetup (NetFet *np, int index)
         {
         if (statusLines[i] != NULL)
             {
-            dtSendTlv (np, OpStatus, statusLines[i]->len,
+            dtSendTlv (np, &opPorts, OpStatus, statusLines[i]->len,
                        statusLines[i]->buf);
             }
         }
@@ -1498,7 +1520,7 @@ static void opSendStatus (StatusData *sd)
         np = opPorts.portVec + i;
         if (dtActive (np))
             {
-            dtSendTlv (np, OpStatus, sd->len, sd->buf);
+            dtSendTlv (np, &opPorts, OpStatus, sd->len, sd->buf);
             }
         }
     }

@@ -124,7 +124,8 @@ int scaleY = 10;
 **  Private Variables
 **  -----------------
 */
-static NetFet fet;
+static NetPortSet consolePorts;
+static NetFet *fet;
 
 /*
 **--------------------------------------------------------------------------
@@ -242,9 +243,11 @@ int main (int argc, char **argv)
         {
         intervalCode += Dd60FastRate;
         }
-    dtInitFet (&fet, NetBufSize);
+    consolePorts.maxPorts = 1;
+    dtInitPortset (&consolePorts, NetBufSize);
+    fet = consolePorts.portVec;
     
-    if (dtConnect (&fet, inet_addr ("127.0.0.1"), port) < 0)
+    if (dtConnect (fet, &consolePorts, inet_addr ("127.0.0.1"), port) < 0)
         {
         exit (1);
         }
@@ -264,11 +267,11 @@ int main (int argc, char **argv)
     */
     initBuf[0] = intervalCode;
     initBuf[1] = Dd60KeyXon;
-    send (fet.connFd, initBuf, 2, 0);
+    dtSend (fet, &consolePorts, initBuf, 2);
 
     while (emulationActive)
         {
-        i = dtRead (&fet, readDelay);
+        i = dtRead (fet, readDelay);
         if (i < 0)
             {
             /* Connection went away... */
@@ -282,7 +285,7 @@ int main (int argc, char **argv)
             */
             for (;;)
                 {
-                data = dtReado (&fet);
+                data = dtReado (fet);
                 if (data < 0)
                     {
                     break;
@@ -305,12 +308,12 @@ int main (int argc, char **argv)
                         */
                         for (;;)
                             {
-                            i = dtReado (&fet);
+                            i = dtReado (fet);
                             if (i >= 0)
                                 {
                                 break;
                                 }
-                            dtRead (&fet, -1);
+                            dtRead (fet, -1);
                             }
                         i |= ((data & 7) << 8);
                         if ((data & 0370) == Dd60SetX)
@@ -361,7 +364,7 @@ int main (int argc, char **argv)
                 {
                 c = Dd60KeyDown | c;
                 }
-            send (fet.connFd, &c, 1, 0);
+            dtSend (fet, &consolePorts, &c, 1);
             }
         }
     windowClose ();

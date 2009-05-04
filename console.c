@@ -424,7 +424,8 @@ void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     consolePorts.maxPorts = dd60Conns;
     consolePorts.localOnly = TRUE;
     consolePorts.callBack = consoleConnect;
-    dtCreateListener (&consolePorts, NetBufSize);
+    consolePorts.kind = "dd60";
+    dtInitPortset (&consolePorts, NetBufSize);
     dtCreateThread (consoleThread, 0);
 
     /*
@@ -831,7 +832,7 @@ static ThreadFunRet consoleThread (void *param)
         i = consoleInput (np);
         if (i < 0)
             {
-            dtClose (np, &consolePorts);
+            dtClose (np, &consolePorts, TRUE);
             }
         else if (!emulationActive)
             {
@@ -999,7 +1000,7 @@ static void checkImmediate (u8 *buf, int cnt)
             ** Process only displays that are connected, not stopped,
             ** and want immediate input (interval is zero).
             */
-            send (np->connFd, buf, cnt, MSG_NOSIGNAL);
+            dtSend (np, &consolePorts, buf, cnt);
             }
         mp++;
         }
@@ -1243,14 +1244,14 @@ static void consoleReinitPoll (void)
 **  Purpose:        Send selected range of displayRing
 **
 **  Parameters:     Name        Description.
-**                  fd          file descriptor to send to
+**                  fet         NetFet to send to
 **                  start       displayRing index of first byte
 **                  end         displayRing index of last byte + 1
 **
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-static void consoleSendFrame (int fd, int start, int end)
+static void consoleSendFrame (NetFet *fet, int start, int end)
     {
 #ifdef DEBUG
     printf ("%d ", (start > end) ? end + DispBufSize - start : end - start);
@@ -1259,15 +1260,15 @@ static void consoleSendFrame (int fd, int start, int end)
 
     if (start > end)
         {
-        send (fd, displayRing + start, DispBufSize - start, MSG_NOSIGNAL);
+        dtSend (fet, &consolePorts, displayRing + start, DispBufSize - start);
         if (end > 0)
             {
-            send (fd, displayRing, end, MSG_NOSIGNAL);
+            dtSend (fet, &consolePorts, displayRing, end);
             }
         }
     else
         {
-        send (fd, displayRing + start, end - start, MSG_NOSIGNAL);
+        dtSend (fet, &consolePorts, displayRing + start, end - start);
         }
     }
 
@@ -1378,18 +1379,18 @@ static void consoleSendOutput (int start, int end)
             /* Start by sending the trace line, if enabled */
             if (debugDisplay)
                 {
-                send (np->connFd, buf, strlen (buf), MSG_NOSIGNAL);
+                dtSend (np, &consolePorts, buf, strlen (buf));
                 }
             
             /*
             **  Send only the cycle we found.
             */
-            consoleSendFrame (np->connFd, start, end);
+            consoleSendFrame (np, start, end);
 
             /*
             **  Send "end of data block" marker
             */
-            send (np->connFd, &endBlock, 1, MSG_NOSIGNAL);
+            dtSend (np, &consolePorts, &endBlock, 1);
             }
         mp++;
         }

@@ -114,6 +114,7 @@ const intParam intParamList[] =
     { "tpmuxport", &tpmuxPort, DefTpmuxPort },
     { "tpmuxconns", &tpmuxConns, 2 },
     { "operstation", &niuOpstat, -1 },
+    { "sockets", &extSockets, 128 },
     { NULL, NULL, 0 }                   /* End marker */
 };
 
@@ -163,6 +164,7 @@ void initStartup(const char *config)
     initCyber(config);
     initDeadstart();
     initEquipment();
+    initExt();
     }
 
 /*--------------------------------------------------------------------------

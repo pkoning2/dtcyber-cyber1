@@ -246,13 +246,15 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     niuPorts.maxPorts = platoConns;
     niuPorts.localOnly = FALSE;
     niuPorts.callBack = niuRemoteWelcome;
+    niuPorts.kind = "NIU";
     niuLocalPorts.portNum = platoLocalPort;
     niuLocalPorts.maxPorts = platoLocalConns;
     niuLocalPorts.localOnly = TRUE;
     niuLocalPorts.callBack = niuLocalWelcome;
+    niuLocalPorts.kind = "NIU";
     
-    dtCreateListener (&niuPorts, NetBufSize);
-    dtCreateListener (&niuLocalPorts, NetBufSize);
+    dtInitPortset (&niuPorts, NetBufSize);
+    dtInitPortset (&niuLocalPorts, NetBufSize);
 
     /*
     **  Allocate the operator status buffer
@@ -444,7 +446,7 @@ static void niuInIo(void)
                     i = dtRead  (np, -1);
                     if (i < 0)
                         {
-                        dtClose (np, &niuPorts);
+                        dtClose (np, &niuPorts, TRUE);
                         }
                     }
                 for (;;)
@@ -457,7 +459,7 @@ static void niuInIo(void)
                     i = dtRead  (np, -1);
                     if (i < 0)
                         {
-                        dtClose (np, &niuLocalPorts);
+                        dtClose (np, &niuLocalPorts, TRUE);
                         }
                     }
                 }
@@ -758,7 +760,8 @@ static void niuWelcome(NetFet *np, int stat)
     printf("%s niu: Received connection from %s for station %d-%d\n",
            dtNowString (), inet_ntoa (np->from),
            stat / 32, stat % 32);
-    
+
+    np->ownerInfo = stat;
     niuActiveConns++;
     niuUpdateStatus ();
 
@@ -964,6 +967,7 @@ static void niuSend(int stat, int word)
 void niuSendWord(int stat, int word)
     {
     NetFet *fet;
+    NetPortSet *ps;
     u8 data[3];
 
 #ifdef TRACE
@@ -994,7 +998,7 @@ void niuSendWord(int stat, int word)
             {
             return;
             }
-        fet = niuLocalPorts.portVec + stat;
+        ps = &niuLocalPorts;
         }
     else
         {
@@ -1003,8 +1007,9 @@ void niuSendWord(int stat, int word)
             {
             return;
             }
-        fet = niuPorts.portVec + stat;
+        ps = &niuPorts;
         }
+    fet = ps->portVec + stat;
     
     data[0] = word >> 12;
     data[1] = ((word >> 6) & 077) | 0200;
@@ -1013,7 +1018,7 @@ void niuSendWord(int stat, int word)
     printf ("niu output %03o %03o %03o\n",
             data[0], data[1], data[2]);
 #endif
-    dtSend(fet, data, 3);
+    dtSend(fet, ps, data, 3);
     }
 
 /*--------------------------------------------------------------------------

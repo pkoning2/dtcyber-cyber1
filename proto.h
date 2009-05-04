@@ -200,6 +200,7 @@ void traceCM(u32 start, u32 end);
 **  ext.c
 */
 CpWord extOp (CpWord req);
+void initExt (void);
 
 /*
 **  dump.c
@@ -265,17 +266,19 @@ void ddWaitIO (DiskIO *io);
 /*
 **  dtnetsubs.c
 */
-int dtConnect (NetFet *fet, in_addr_t host, int portnum);
+int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int portnum);
 int dtCheckInput(int connFd, void *buf, int size, int time);
-void dtCreateListener(NetPortSet *ps, int ringSize);
-void dtClose (NetFet *np, NetPortSet *ps);
+void dtInitPortset (NetPortSet *ps, int ringSize);
+void dtClose (NetFet *np, NetPortSet *ps, bool hard);
 NetFet * dtFindInput (NetPortSet *ps, int time);
 void dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
 const char *dtNowString (void);
-void dtSendTlv (NetFet *fet, int tag, int len, const void *value);
-void dtSend (NetFet *fet, const void *buf, int len);
+void dtSendTlv (NetFet *fet, NetPortSet *ps, 
+                int tag, int len, const void *value);
+void dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len);
 int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog);
-NetFet *dtAccept (NetFet *fet, int maxdata);
+int dtAccept (NetFet *fet, NetFet *acceptFet);
+void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd);
 
 int dtRead (NetFet *fet, int time);
 int dtReado (NetFet *fet);
@@ -377,6 +380,7 @@ extern long cmWaitRatio;
 extern long niuOpstat;
 extern NetFet connlist;
 extern void (*updateConnections) (void);
+extern long extSockets;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

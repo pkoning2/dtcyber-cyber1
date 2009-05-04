@@ -8856,7 +8856,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
         return (ExitCode) 1;
     }
     memcpy (&host, hp->h_addr, sizeof (host));
-    if (dtConnect (&m_fet, host, m_port) < 0)
+    if (dtConnect (&m_fet, NULL, host, m_port) < 0)
     {
         StoreWord (C_CONNFAIL);
         wxWakeUpIdle ();

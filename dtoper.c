@@ -129,7 +129,8 @@ void opDisplay(void);
 **  Private Variables
 **  -----------------
 */
-static NetFet fet;
+static NetPortSet operPorts;
+static NetFet *fet;
 static char cmdBuf[OpCmdSize + 1];
 static int cmdLen = 0;
 static char userKey;
@@ -184,9 +185,11 @@ int main (int argc, char **argv)
         port = DefOpPort;
         }
         
-    dtInitFet (&fet, NetBufSize);
+    operPorts.maxPorts = 1;
+    dtInitPortset (&operPorts, NetBufSize);
+    fet = operPorts.portVec;
     
-    if (dtConnect (&fet, inet_addr ("127.0.0.1"), port) < 0)
+    if (dtConnect (fet, &operPorts, inet_addr ("127.0.0.1"), port) < 0)
         {
         exit (1);
         }
@@ -202,7 +205,7 @@ int main (int argc, char **argv)
     
     while (emulationActive)
         {
-        i = dtRead (&fet, 30);
+        i = dtRead (fet, 30);
         if (i < 0)
             {
 #if defined(_WIN32)
@@ -215,7 +218,7 @@ int main (int argc, char **argv)
             {
             for (;;)
                 {
-                i = dtReadtlv (&fet, dataBuf, OpDataSize);
+                i = dtReadtlv (fet, dataBuf, OpDataSize);
                 if (i < 0)
                     {
                     if (i == -2)
@@ -555,7 +558,7 @@ static void opRequest(void)
                 emulationActive = FALSE;
                 return;
                 }
-            dtSendTlv (&fet, OpCommand, strlen (cmdBuf), cmdBuf);
+            dtSendTlv (fet, &operPorts, OpCommand, strlen (cmdBuf), cmdBuf);
             return;
             }
         else 

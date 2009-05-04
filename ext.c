@@ -42,6 +42,11 @@
 #define DEBUGPRINT(fmt, ...)
 #endif
 
+/*
+**  -----------------
+**  Private Constants
+**  -----------------
+*/
 #define RETOK       MINUS1
 #define RETINVREQ   0
 #define RETNOSOCK   1
@@ -53,6 +58,120 @@
 
 #define MAXENV      500
 #define MAXNET      4096
+
+/*
+**  -----------------------
+**  Private Macro Functions
+**  -----------------------
+*/
+#define socktofet(x) (extPorts.portVec + (x) - 1)
+#define fettosock(x) ((x) - extPorts.portVec + 1)
+
+/*
+**  ---------------------------
+**  Private Function Prototypes
+**  ---------------------------
+*/
+static CpWord envOp (CpWord req);
+static CpWord sockOp (CpWord req);
+static CpWord termConnOp (CpWord req);
+static NetFet *getFet (void);
+
+/*
+**  ----------------
+**  Public Variables
+**  ----------------
+*/
+long extSockets;
+
+/*
+**  -----------------
+**  Private Variables
+**  -----------------
+*/
+static struct sockaddr_in addr;
+static NetPortSet extPorts;
+NetFet acceptFet;
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Public Functions
+**
+**--------------------------------------------------------------------------
+*/
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Initialize external operations module
+**
+**  Parameters:     None
+**
+**  Returns:        Nothing
+**
+**------------------------------------------------------------------------*/
+void initExt (void)
+{
+    extPorts.maxPorts = extSockets;
+    extPorts.kind = "socket";
+    
+    /*
+    **  Initialize the portset, which among other things allocates
+    **  a vector of NetFets.  Pass 0 for the buffer size to defer
+    **  allocating the FET data buffer until later.
+    */
+    dtInitPortset (&extPorts, 0);
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        External operation
+**
+**  Parameters:     Name        Description.
+**                  req         Pointer to request (1/ecsflag, 35/, 24/address)
+**
+**                              48/reqdependent, 12/request
+**                              60/reqdependent ...
+**
+**  Returns:        result of the request (60 bits)
+**
+**------------------------------------------------------------------------*/
+CpWord extOp (CpWord req)
+{
+    CpWord *reqp = cpuAccessMem (req, 1);
+    CpWord retval;
+    
+    if (reqp == NULL)
+    {
+        return 0;
+    }
+    switch (*reqp & Mask12)
+    {
+    case 0:
+        retval = envOp (req);
+        break;
+    case 1:
+        retval = sockOp (req);
+        break;
+    case 2:
+        retval = termConnOp (req);
+        break;
+    default:
+        retval = RETINVREQ;
+    }
+    if (retval != RETNODATA)
+    {
+        DEBUGPRINT ("req %llo, reqp %p, *reqp %llo\n", req, reqp, *reqp);
+        DEBUGPRINT ("return value %llo\n", retval);
+    }
+    return retval;
+}
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Private Functions
+**
+**--------------------------------------------------------------------------
+*/
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Read an environment variable
@@ -158,7 +277,7 @@ static CpWord envOp (CpWord req)
 **                              or "accept".
 **
 **                              "socknum" is not actually a socket number;
-**                              instead, it is a pointer to a NetFet.
+**                              instead, it is an index into our NetPortSet.
 **
 **                              "mode" is 0 for text, 1 for binary.
 **                              This applies only to read and write calls.
@@ -170,12 +289,12 @@ static CpWord envOp (CpWord req)
 **                  For host OS errors, status is 1000 + errno value.
 **
 **------------------------------------------------------------------------*/
-static struct sockaddr_in addr;
 static CpWord sockOp (CpWord req)
 {
     // Check for a 5 word request buffer always (even though most requests require less)
     CpWord *reqp = cpuAccessMem (req, 5);
-    NetFet *fet, *dataFet;
+    NetFet *fet = NULL, *dataFet;
+    int fd;
     int retval;
     int true_opt = 1;
     int mode;
@@ -187,7 +306,7 @@ static CpWord sockOp (CpWord req)
     int ic, oc;
     int shift;
     int pc;
-    int i, pcnt;
+    int i, idx, pcnt;
     socklen_t sl;
     int charset;
     char resultstr[MAXNET];
@@ -197,7 +316,15 @@ static CpWord sockOp (CpWord req)
         return 0;
     }
     mode = ((reqp[1] >> 54) & Mask6);
-    fet = (NetFet *) (u32) (reqp[1] & 0xffffffff);
+    if (reqp[1] > extSockets)
+    {
+        return RETINVREQ;
+    }
+    if (reqp[1] != 0)
+    {
+        fet = socktofet (reqp[1]);
+    }
+    
     DEBUGPRINT ("socket req %llo %llo %llo %llo %llo\n", 
                 reqp[0], reqp[1], reqp[2], reqp[3], reqp[4]);
     switch ((*reqp >> 12) & Mask6)
@@ -207,8 +334,8 @@ static CpWord sockOp (CpWord req)
         // no request dependent fields.
         if (fet != NULL)
         {
-            dtCloseFet (fet, TRUE);
-            free (fet);
+            dtClose (fet, &extPorts, TRUE);
+            fet->ownerInfo = 0;
             return RETOK;
         }
         return RETNOSOCK;
@@ -217,33 +344,35 @@ static CpWord sockOp (CpWord req)
         // no request dependent fields.
         if (fet != NULL)
         {
-            dtCloseFet (fet, FALSE);
-            free (fet);
+            dtClose (fet, &extPorts, FALSE);
+            fet->ownerInfo = 0;
             return RETOK;
         }
         return RETNOSOCK;
     case 2:
         // socket (get a NetFet)
-        // no request dependent fields.
+        // 2:  60/ owner data
         // Note that socket number (word 1) must be zero coming in,
         // and the NetFet address we obtained is returned there.
+        // The "owner data" field is saved with the FET.  If zero is
+        // supplied, -1 is used instead.
+        if (reqp[2] == 0)
+        {
+            reqp[2] = MINUS1;
+        }
         if (fet == NULL)
         {
-            fet = malloc (sizeof (*fet));
+            fet = getFet ();
             if (fet == NULL)
             {
                 return RETERROR (ENOMEM);
             }
-            if ((u64)fet & 0xf000000000000000ULL)
-            {
-                printf ("HELP... FET pointers larger than 60 bits...\n");
-            }
             if (dtInitFet (fet, MAXNET) != 0)
             {
-                free (fet);
                 return RETERRNO;
             }
-            reqp[1] = (CpWord) (u32) fet;
+            fet->ownerInfo = reqp[2];
+            reqp[1] = fettosock (fet);
             return RETOK;
         }
         return RETINVREQ;
@@ -253,7 +382,7 @@ static CpWord sockOp (CpWord req)
         // 2: 28/0, 32/address
         // 3: 44/0, 16/port
         // 4: 44/0, 32/backlog
-        if (fet == 0)
+        if (fet == NULL)
         {
             return RETNOSOCK;
         }
@@ -267,13 +396,13 @@ static CpWord sockOp (CpWord req)
         // no request dependent fields inbound.
         // On return, 3rd word is the data socket, if the accept worked.
         // The IP address is returned in the 4th word.
-        if (fet == 0)
+        if (fet == NULL)
         {
             return RETNOSOCK;
         }
         reqp[2] = reqp[3] = 0;
-        dataFet = dtAccept (fet, MAXNET);
-        if (dataFet == NULL)
+        fd = dtAccept (fet, &acceptFet);
+        if (fd == 0)
         {
             if (errno == EAGAIN)
             {
@@ -281,11 +410,22 @@ static CpWord sockOp (CpWord req)
             }
             return RETERRNO;
         }
-        if ((u64)dataFet & 0xf000000000000000ULL)
+        dataFet = getFet ();
+        if (dataFet == NULL)
         {
-            printf ("HELP... FET pointers larger than 60 bits...\n");
+            close (fd);
+            return RETERROR (ENOMEM);
         }
-        reqp[2] = (CpWord) (u32) dataFet;
+        if (dtInitFet (dataFet, MAXNET) != 0)
+        {
+            close (fd);
+            return RETERROR (ENOMEM);
+        }
+        dataFet->ownerInfo = fet->ownerInfo;
+        dataFet->from = acceptFet.from;
+        dataFet->fromPort = acceptFet.fromPort;
+        dtActivateFet (dataFet, &extPorts, fd);
+        reqp[2] = fettosock (dataFet);
         reqp[3] = ntohl (dataFet->from.s_addr);
         return RETOK;
     case 5:
@@ -293,11 +433,11 @@ static CpWord sockOp (CpWord req)
         // request dependent fields:
         // 2: 28/0, 32/address
         // 3: 44/0, 16/port
-        if (fet == 0)
+        if (fet == NULL)
         {
             return RETNOSOCK;
         }
-        if (dtConnect (fet, htonl (reqp[2]), reqp[3]) != 0)
+        if (dtConnect (fet, &extPorts, htonl (reqp[2]), reqp[3]) != 0)
         {
             return RETERRNO;
         }
@@ -321,7 +461,7 @@ static CpWord sockOp (CpWord req)
         // not be a line terminator at the end of the last line.
         // In other words, if char[count-1] != 0 then the last line
         // is a partial line.
-        if (fet == 0)
+        if (fet == NULL)
         {
             return RETNOSOCK;
         }
@@ -612,7 +752,7 @@ static CpWord sockOp (CpWord req)
             }
         }
         oc = cp - (unsigned char *) resultstr;
-        dtSend (fet, resultstr, oc);
+        dtSend (fet, &extPorts, resultstr, oc);
         DEBUGPRINT ("dtSend (%d, ptr, %d)\n", fet, oc);
         return RETOK;
     case 8:
@@ -633,13 +773,14 @@ static CpWord sockOp (CpWord req)
         }
         for (i = 0; i < buflen; i++)
         {
-            fet = (NetFet *) (u32) *bufp;
+            idx = *bufp;
             *bufp++ = 0;
-            if (fet != 0)
+            if (idx != 0)
             {
-                DEBUGPRINT ("closing socket %d at index %d\n", fet, i + 1);
-                dtCloseFet (fet, TRUE);
-                free (fet);
+                fet = socktofet (idx);                
+                DEBUGPRINT ("closing socket %d at index %d\n", fet->connFd, i + 1);
+                dtClose (fet, &extPorts, TRUE);
+                fet->ownerInfo = 0;
             }
         }
         return RETOK;
@@ -690,45 +831,33 @@ static CpWord termConnOp (CpWord req)
 }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        External operation
+**  Purpose:        Get a free FET from the extPorts portVec
 **
-**  Parameters:     Name        Description.
-**                  req         Pointer to request (1/ecsflag, 35/, 24/address)
+**  Parameters:     None
 **
-**                              48/reqdependent, 12/request
-**                              60/reqdependent ...
-**
-**  Returns:        result of the request (60 bits)
+**  Returns:        FET address, or NULL if there aren't any.
 **
 **------------------------------------------------------------------------*/
-CpWord extOp (CpWord req)
+static NetFet *getFet (void)
 {
-    CpWord *reqp = cpuAccessMem (req, 1);
-    CpWord retval;
+    int i;
+    NetFet *fet;
     
-    if (reqp == NULL)
+    if (extPorts.curPorts == extPorts.maxPorts)
     {
-        return 0;
+        return NULL;
     }
-    switch (*reqp & Mask12)
+    fet = extPorts.portVec;
+    for (i = 0; i < extPorts.maxPorts; i++)
     {
-    case 0:
-        retval = envOp (req);
-        break;
-    case 1:
-        retval = sockOp (req);
-        break;
-    case 2:
-        retval = termConnOp (req);
-        break;
-    default:
-        retval = RETINVREQ;
+        if (fet->ownerInfo == 0)
+        {
+            return fet;
+        }
+        fet++;
     }
-    if (retval != RETNODATA)
-    {
-        DEBUGPRINT ("req %llo, reqp %p, *reqp %llo\n", req, reqp, *reqp);
-        DEBUGPRINT ("return value %llo\n", retval);
-    }
-    return retval;
 }
+
+/*---------------------------  End Of File  ------------------------------*/
+
 

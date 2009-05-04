@@ -89,7 +89,7 @@ return(opl)
 *         socket  reset,num
 *         socket  close,num
 *         socket  listen,num,addr,port,backlog
-*         socket  accept,num,lnum
+*         socket  accept,num,lnum[,ipaddr]
 *         socket  connect,num,addr,port
 *         socket  recv,num,buf,len,retchars
 *         socket  send,num,buf,bufchars
@@ -187,8 +187,12 @@ return(opl)
 
 ** handle -socket accept-
 *
-*  one argument, must be storeable
+*  one or two arguments, must be storeable
  scacc    call   vardo2
+          ng     x1,errstor  -- error if not storable
+          sa1    lastkey     check for optional tag
+          zr     x1,mrklast  -- no ip address argument
+          call   vardo2
           ng     x1,errstor  -- error if not storable
           eq     mrklast
 
@@ -301,9 +305,9 @@ return(opl)
 *         socket listen,sockidx,ipaddr,port,backlog
 *                bind an address and tcp port number, then listen
 *
-*         socket accept,sockidx,dataidx
+*         socket accept,sockidx,dataidx[,ipaddr]
 *                accept a connection, new data socket index is
-*                returned in dataidx
+*                returned in dataidx, ip address in ipaddr if supplied
 *
 *         socket connect,sockidx,ipaddr,port
 *                open an outgoing connection
@@ -350,6 +354,7 @@ return(opl)
           sx6    5           (x6) = max argument count
           sa5    a5+0        retrieve command word
           call   getargs     move getvar codes to *varbuf*
+          sa6    sckargs     save argument count in case needed
           sa1    varbuf      get function number
           lx1    xcodel      right-justify getvar code
           sb1    x1
@@ -470,6 +475,15 @@ return(opl)
           bx7    x3
           sa6    x3+socklst-1 set socket number
           sa7    a1          return socket index
+          sa1    sckargs     get arg count
+          sx1    x1-3        ip address arg present
+          zr     x1,sockrok  -- skip if not
+          sa1    varbuf+3
+          bx5    x1
+          ngetvar
+          sa2    sacreq+3    get returned ip address
+          bx6    x2
+          sa6    a1          return it
  sockrok  sa1    sockead
           bx0    x1
           sa0    socklst
@@ -564,12 +578,15 @@ return(opl)
 *
 *  on entry, varbuf+1 is the varbuf entry for the socknum argument.
 *
-*  on exit, x1 is the socket number.  the socket list both in memory
-*  and in ecs are updated.
+*  on exit, x1 is the socket number, and a1 is the address of the variable
+*  it came from.  the socket list both in memory and in ecs are updated.
 
  getsocz  ps
           rj     getsock     look up the entry
           nz     x1,sidxerr  non-zero (in use) is error
+          sa2    station     get station number
+          bx6    x2
+          sa6    gsnum+2     pass that as *owner info*
           sx1    gsnum
           ex6    x1          try to get a socket
           pl     x6,sockret  quit if error
@@ -603,10 +620,10 @@ return(opl)
           sa1    varbuf+1    sockidx argument
           bx5    x1
           ngetvar
-          bx6    x1
+          sx6    x1
           sa6    sockidx     save it
-          ng     x1,sockerr  bad index
-          zr     x1,sockerr  ditto
+          ng     x6,sockerr  bad index
+          zr     x6,sockerr  ditto
           sx6    x6-sockmax-1
           pl     x6,sockerr  ditto
           sa1    tsocket
@@ -691,6 +708,7 @@ return(opl)
           bx6    x1
           eq     getslst     exit with lesson number in x6  
 
+ sckargs  bss    1           count of -socket- arguments
  sockidx  bss    1
  sockead  bss    1
  socklst  bss    sockmax
@@ -734,7 +752,7 @@ return(opl)
 *i socket.75
           sa1    ovarg1
           nz     x1,extcx    do -extcall- command
-*i socket.423
+*i socket.437
  extcall  title  -extcall- command execution
 ***
 *         -extcall- command

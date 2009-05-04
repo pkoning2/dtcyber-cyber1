@@ -81,8 +81,8 @@ int main (int argc, char **argv)
     niuAsciiPorts.localOnly = FALSE;
     niuAsciiPorts.callBack = niuAsciiWelcome;
     
-    dtCreateListener (&niuPorts, 1024);
-    dtCreateListener (&niuAsciiPorts, 1024);
+    dtInitPortset (&niuPorts, 1024);
+    dtInitPortset (&niuAsciiPorts, 1024);
 
     printf ("Current message is: '%s'\n", msg);
     printf ("Enter a new message at any time, or Ctrl-D to stop blackbox.\n");
@@ -103,7 +103,7 @@ int main (int argc, char **argv)
             i = dtRead  (np, -1);
             if (i < 0)
                 {
-                dtClose (np, &niuPorts);
+                dtClose (np, &niuPorts, TRUE);
                 }
             }
         for (;;)
@@ -116,7 +116,7 @@ int main (int argc, char **argv)
             i = dtRead  (np, -1);
             if (i < 0)
                 {
-                dtClose (np, &niuAsciiPorts);
+                dtClose (np, &niuAsciiPorts, TRUE);
                 }
             }
         for (stat = 0; stat < platoConns; stat++)
@@ -266,7 +266,7 @@ static void niuSendWord(int stat, int word)
     data[1] = ((word >> 6) & 077) | 0200;
     data[2] = (word & 077) | 0300;
 
-    dtSend(fet, data, 3);
+    dtSend(fet, &niuPorts, data, 3);
     }
 
 /*--------------------------------------------------------------------------
@@ -363,11 +363,11 @@ static void bbSendAscii (int stat)
         return;
         }
 
-    dtSend(fet, modeStr, strlen (modeStr));
+    dtSend(fet, &niuAsciiPorts, modeStr, strlen (modeStr));
     setY[0] = (currentY >> 5) | 040;
     setY[1] = (currentY & 037) | 0140;
-    dtSend (fet, setY, 2);
-    dtSend (fet, setX, 2);
+    dtSend (fet, &niuAsciiPorts, setY, 2);
+    dtSend (fet, &niuAsciiPorts, setX, 2);
     
-    dtSend (fet, msg, strlen (msg));
+    dtSend (fet, &niuAsciiPorts, msg, strlen (msg));
     }

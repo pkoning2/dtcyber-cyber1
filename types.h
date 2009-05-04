@@ -229,6 +229,8 @@ typedef struct NetFet_s
     u8          *sendData;              /* Pending data to send */
     int         sendCount;              /* Count of sendData bytes */
     int         sendBufCount;           /* Size of sendData realloc */
+    struct NetPortSet_s *ps;            /* PortSet this belongs to */
+    u64         ownerInfo;              /* Any non-zero value means in use */
     } NetFet;
 
 
@@ -251,7 +253,7 @@ typedef void * ThreadFunRet;
 /*
 **  Network port set.
 */
-typedef struct
+typedef struct NetPortSet_s
     {
     int         maxPorts;               /* total number of ports */
     volatile int curPorts;              /* number of ports currently active */
@@ -259,8 +261,11 @@ typedef struct
     int         listenFd;               /* listen socket fd */
     int         portNum;                /* TCP port number to listen to */
     fd_set      activeSet;              /* fd_set for active port fd's */
+    fd_set      sendSet;                /* fd_set for fd's with send data */
+    int         sendCount;              /* count of fd's in sendSet */
     int         maxFd;                  /* highest port fd value */
     ConnCb      *callBack;              /* function to call for new conn */
+    const char  *kind;                  /* What is this portset for? */
     bool        localOnly;              /* TRUE to listen on 127.0.0.1 */
     } NetPortSet;
 
