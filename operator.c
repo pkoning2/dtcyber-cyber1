@@ -1035,14 +1035,14 @@ static void opConnlist(char *cmdParams)
                     sprintf (cstat, "%c%3d. %-7s %5lld to %s:%d", 
                              j, j - StatusFirstDev,
                              kind, cp->ownerInfo,
-                             inet_ntoa (cp->from), cp->fromPort);
+                             inet_ntoa (cp->from), ntohs (cp->fromPort));
                     }
                 else
                     {
                     sprintf (cstat, "%c%3d. %-7s %2lld-%-2lld to %s:%d", 
                              j, j - StatusFirstDev,
                              kind, cp->ownerInfo / 32, cp->ownerInfo & 31,
-                             inet_ntoa (cp->from), cp->fromPort);
+                             inet_ntoa (cp->from), ntohs (cp->fromPort));
                     }
                 dtSendTlv (np, &opPorts, OpStatus, strlen (cstat), cstat);
                 }
