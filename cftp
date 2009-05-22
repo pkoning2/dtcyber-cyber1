@@ -1,0 +1,82 @@
+          ident  cftp
+          title  cftp - cyber file transfer program
+
+          abs
+
+          entry  cftp
+          entry  cftpd
+          
+***       cftp - cyber file transfer program
+*
+*         this utility uses the dtcyber exx socket access opcode
+*         to run a simple file transfer protocol.  transfer is
+*         provided in either direction, binary mode only.
+*         full support for cyber file structure is included, so
+*         files with multiple records (such as the deadstart file)
+*         can be transfered.
+*
+*         command line
+*
+*         cftpd.
+*
+*         daemon mode.  this listens for incoming connections,
+*         processing one at a time until stopped.  files accessed
+*         are permanent files under the current username, indirect
+*         access by default, direct access if requested by the client.
+*
+*         cftp,op,host,lfn,rfn.
+*         cftp,op,host,fn.
+*
+*         client mode.  this connects to the daemon, performs a single
+*         transfer, then exits.
+*
+*         *op* is *get* to get a file from the remote host,
+*         or *put* to send a file to the remote host.
+*
+*         *host* is the host name (tbd) or *z*.  if *z* is specified,
+*         the host name or host address (dotted decimal notation)
+*         follows the end of the argument list.
+*
+*         *lfn* is the file name at the client end.  this is a local
+*         file name.
+*
+*         *rfn* is the file name at the remote end.  this is a
+*         permanent file name under the user name where cftpd runs.
+*         by default it is an indirect access name.  if rfn/d is
+*         specified, it is a direct access file.  for *get*
+*         operations, the file must exist, for *put* it is created
+*         if it does not exist, or replaced if it does.
+*
+*         in the second form of the command (*fn* argument),
+*         *fn* is both local and remote file name, i.e., the name
+*         is the same at both ends.  as with *rfn*, */d* can be
+*         added for a direct access remote file.
+
+          base   d
+          
+          syscom
+
+          xtext  syscon
+          xtext  comcmac
+
+ netmax   equ    400         max network word count
+ ciolth   equ    1001b       fet buffer size
+
+
+ direct   data   0           direct access flag
+ put      data   0           operation is *put*
+ host     data   0           host address
+ port     data   6021        port number
+ lsock    data   0           listen socket (for daemon)
+ sock     data   0           data socket
+ lfn      data   0           local side file name
+ rfn      data   0           remote side file name
+          
+ sockreq  bss    6           exx socket request buffer
+ fet      fileb  ciobuff,ciolth,fet=14b
+
+ ciobuff  bss    ciolth
+ netbuf   bss    netmax
+ ctlbuf   bss    2           buffer for cftp control records (all 2 words long)
+          
+          end
