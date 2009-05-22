@@ -8,6 +8,68 @@ transfers single-record files since record marks (or file marks) have
 no representation in the Unix file system.  (At some point this could
 be added if desired, by storing the data in tape format as a .tap
 file.)
+
+The protocol is a simple client-server protocol, transfering exactly
+one file per connection, in either direction.  The protocol transfers
+60-bit words, packed into 7.5 bytes big endian byte order.  Control
+transfers are either 2 or 4 words (always an even length though that's
+not always needed, that way it comes across as an integral number of
+bytes).  Data transfers are also in words, the word count may be
+odd.  If it is, then the last byte has the bottom 4 bits of the last
+word in its top 4 bits and its bottom 4 bits are unused.
+
+The description below shows the messages as 60-bit values, written
+in CDC standard notation as if they were VFD arguments.  See the
+CDC Compass manual for an explanation...
+
+Operation request, client to server:
+   42/filename, 24/0
+   1/put, 1/direct, 46/0, 12/MTU
+
+"put" is 1 if the transfer is from client to server, 0 if server to client
+"direct" is 1 if the server side file is (or should be created as) a
+direct file.
+
+Response, server to client:
+   60/0, 60/MTU, and 2 words of padding if ok
+   60/errno and 3 words of message if error
+
+"MTU" is the receive buffer size, in words.  The data transfers are
+broken up into chunks no larger than MTU.  MTU should be even.
+
+If ok, then the transfer starts.  The encoding is the same no matter
+what direction it goes in.  For a "get", the transfer immediately
+follows the reponse from the server; for a "put", the client can
+start the transfer as soon as it receives the (ok) response.
+The transfer is broken up in chunks of length "MTU" or less.  Each
+chunk is marked as regular data, EOR (the last data of a "record"),
+EOF (which has no data) or EOI (which has no data).  Chunks follow
+one after the other until the EOI chunk, which ends the transfer.
+Alternatively, transfer can be aborted with an "abort" chunk (which
+has no data).
+
+Note that regular (non-EOR) transfers will normally be exactly
+MTU in size, though this is not actually required.
+
+Chunk header:
+  60/wordcount, 60/0 for regular data
+  60/wordcount, 60/1 for EOR
+  60/0, 60/2 for EOF
+  60/0, 60/3 for EOI
+  60/0, 60/4 for abort
+
+The chunk header is followed by "wordcount" words of data, which
+means 7.5 * wordcount bytes, rounded up.  Note that on DtCyber the
+socket read call for the data has to be by itself so that any half
+byte of unused data is dropped (each socket read starts on a byte
+boundary).
+
+Once the transfer completes, the receiver of the data replies with
+a final status reply, and then does a "shutdown" on the connection.
+
+Status reply:
+  60/0 and 3 words of padding if ok
+  60/errno and 3 words of message if error
 """
 
 import os
@@ -17,9 +79,15 @@ import time
 import socket
 import struct
 
-NETMAX = 8192
+MTU = 200
+NETMAX = MTU * 15
 CFTP = 6021
 
+NORMAL = 0
+EOR = 1
+EOF = 2
+EOI = 3
+ABORT = 4
 def usage ():
     print "usage: %s [-d] {get | put} host lfn rfn" % sys.argv[0]
     print "       %s -D" % sys.argv[0]
@@ -229,13 +297,15 @@ def d2a (l):
         cl.append (dw2a (c))
     return "".join (cl)
 
-def transfer (sock, f, inbound):
+def transfer (sock, f, inbound, mtu):
+    even, odd = divmod (mtu, 2)
+    bytemax = even * 15 + odd * 8
     if inbound:
         while True:
             wc, flags = sock.readwords (2)
             if wc == 0:
                 sock.sendwords ((0, 0, 0, 0))
-                if flags == 2:
+                if flags == EOI:
                     print "Done"
                 else:
                     print "inbound transfer ended with unexpected flags", flags
@@ -244,13 +314,13 @@ def transfer (sock, f, inbound):
                 f.write (sock.read (wc2bc (wc)))
     else:
         while True:
-            data = f.read (1500)
+            data = f.read (bytemax)
             if data:
                 wc = bc2wc (len (data))
                 sock.sendwords ((wc, 0))
                 sock.sendall (data[:wc2bc (wc)])
             else:
-                sock.sendwords ((0, 2))
+                sock.sendwords ((0, EOI))
                 status  = sock.readwords (4)
                 if status[0]:
                     print "outbound transfer ended with error code", status[0], d2a (status[1:])
@@ -283,24 +353,26 @@ def cftp (op, host, lfn, rfn, direct):
     try:
         locfile = open (lfn, mode)
     except (IOError,OSError), err:
-        print "error %d opening %s: %s" % (err.errno, err.strerror, lfn)
+        print "error %d opening %s: %s" % (err.errno, lfn, err.strerror)
         return
     except:
         print "unexpected error opening", lfn
         return
     sock = Connection (host)
     nosfn = afn2d (rfn)
+    flags = 0
     if put:
-        nosfn += 2
+        flags += 1 << 59
     if direct:
-        nosfn += 1
-    sock.sendwords ((nosfn, 0))
+        flags += 1 << 58
+    flags += MTU
+    sock.sendwords ((nosfn, flags))
     resp = sock.readwords (4)
     if resp[0]:
         print op, rfn, "error code", resp[0], d2a (resp[1:])
         sock.close ()
         return
-    transfer (sock, locfile, not put)
+    transfer (sock, locfile, not put, min (MTU, resp[1]))
     
 def cftpd ():
     """Server side operation.  This takes no arguments, but simply
@@ -311,23 +383,24 @@ def cftpd ():
     try:
         while True:
             sock.accept ()
-            req, flags = sock.readwords (2)
-            put = (req & 2) != 0
-            direct = (req & 1) != 0
+            reqfn, flags = sock.readwords (2)
+            put = ((flags >> 59) & 1) != 0
+            direct = ((flags >> 58) & 1) != 0
+            cmtu = flags & 07777
             if put:
                 action = "put"
                 mode = "wb"
             else:
                 action = "get"
                 mode = "rb"
-            rfn = dw2a (req & (-4))
-            print "Request is", action, "of", rfn
+            rfn = dw2a (reqfn)
+            print "Request is", action, "of", rfn, "mtu", cmtu
             if direct:
                 print "(direct access)"
             try:
                 locfile = open (rfn, mode)
             except (IOError,OSError), err:
-                print "error %d opening %s: %s" % (err.errno, err.strerror, rfn)
+                print "error %d opening %s: %s" % (err.errno, rfn, err.strerror)
                 msg = [ err.errno ]
                 msg.extend (a2d (err.strerror))
                 while len (msg) < 4:
@@ -341,7 +414,7 @@ def cftpd ():
                 sock.shutdown ()
                 continue
             sock.sendwords ((0, 0, 0, 0))
-            transfer (sock, locfile, put)
+            transfer (sock, locfile, put, min (cmtu, MTU))
     except KeyboardInterrupt:
         print
         sock.close ()
