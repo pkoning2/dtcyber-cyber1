@@ -89,8 +89,8 @@ EOF = 2
 EOI = 3
 ABORT = 4
 def usage ():
-    print "usage: %s [-d] {get | put} host lfn rfn" % sys.argv[0]
-    print "       %s -D" % sys.argv[0]
+    print "usage: %s [-d] {get | put} host[:port] lfn rfn" % sys.argv[0]
+    print "       %s -D [port]" % sys.argv[0]
 
 class Connection (socket.socket):
     """A network connection.  Derived from socket, with some more
@@ -358,7 +358,13 @@ def cftp (op, host, lfn, rfn, direct):
     except:
         print "unexpected error opening", lfn
         return
-    sock = Connection (host)
+    i = host.find (":")
+    if i < 0:
+        port = CFTP
+    else:
+        port = int (host[i + 1:])
+        host = host[:i]
+    sock = Connection (host, port)
     nosfn = afn2d (rfn)
     flags = 0
     if put:
@@ -374,12 +380,16 @@ def cftp (op, host, lfn, rfn, direct):
         return
     transfer (sock, locfile, not put, min (MTU, resp[1]))
     
-def cftpd ():
+def cftpd (args):
     """Server side operation.  This takes no arguments, but simply
     listens for connections and does what was asked.  It runs until
     interrupted.
     """
-    sock = Connection (None, daemon = True)
+    if args:
+        port = int (args[0])
+    else:
+        port = CFTP
+    sock = Connection (None, port, True)
     try:
         while True:
             sock.accept ()
@@ -429,7 +439,7 @@ def main (args):
         elif opt == "-d":
             direct = True
     if daemon:
-        cftpd ()
+        cftpd (args)
     else:
         if len (args) != 4:
             usage ()
