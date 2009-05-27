@@ -1,9 +1,16 @@
-          ident  cftp
+test,cm177000,t7770.
+user,plato,plato.
+attach,opl=opl871.
+compass,l=0,s=nostext,x.
+lgo.
+exit.
+~
+          ident  cftp,111b,cftp
           title  cftp - cyber file transfer program
 
           abs
 
-          entry  cftp
+*          entry  cftp
           entry  cftpd
           
 ***       cftp - cyber file transfer program
@@ -35,7 +42,12 @@
 *
 *         *host* is the host name (tbd) or *z*.  if *z* is specified,
 *         the host name or host address (dotted decimal notation)
-*         follows the end of the argument list.
+*         follows the end of the argument list. *host* can also
+*         be a built-in 3 character host alias name, which is the
+*         *routing id* from plato.  in that case, the name is
+*         translated internally to a host address and port number.
+*         for all other cases, the standard port number (6021)
+*         is used.
 *
 *         *lfn* is the file name at the client end.  this is a local
 *         file name.
@@ -54,29 +66,483 @@
 
           base   d
           
-          syscom
+          syscom b1
 
-          xtext  syscon
+          xtext  comccmd
           xtext  comcmac
+          xtext  comsrpv
+          
+ exx      cpop   0,016b,012b
 
+          org    111b
+          
+**        socket function codes
+
+ s.rset   equ    0           reset socket
+ s.close  equ    1           shutdown (graceful close)
+ s.get    equ    2           get a socket
+ s.bind   equ    3           bind + listen
+ s.acc    equ    4           accept
+ s.conn   equ    5           connect
+ s.read   equ    6           read data
+ s.write  equ    7           write data
+ s.rall   equ    8           reset all (reset list of sockets)
+
+ cftp     title  file transfer client
+          
+ cftp     sb1    1
+
+ cftpd    title  file transfer daemon main loop
+
+ ftpderr  close  fet,return,r
+ ftpdgo   sx6    0
+          mx1    0
+          sa6    dsock
+          rj     psock       wipe planted data socket numbers
+          sx2    accept
+          rj     netio       wait for a connection
+          pl     x6,derr1    if error
+          sa1    dsock
+          rj     psock       plant data socket number
+          sx6    2
+          rj     readctl     read a control message
+          pl     x6,ftpdgo   if error
+          sa1    ctlbuf
+          sa2    a1+b1
+          sx6    b1          *done* bit
+          bx6    x6+x1
+          sa6    fet         set file name in fet
+          sa6    rfn
+          bx7    x2
+          sa7    put         *put* flag in sign bit
+          lx7    1
+          sa7    direct      direct access flag in sign bit
+          sx7    x2          extract mtu
+          sx2    x7-netmax
+          ng     x2,ftpd1    if mtu in range
+          sx7    netmax      use our mtu if smaller
+ ftpd1    sa7    mtu
+          sa1    put         get direction
+          ng     x1,putreq   if *put*
+          space  4,10
+**        *get* request (daemon to client)
+
+          sa1    direct      get file access mode
+          ng     x1,getdir   if direct access
+          get    fet         get working copy of the file
+ ftpd2    sa1    fet
+          sx6    x1
+          ax6    10
+          nz     x6,geterr1  if error on file access
+          sa1    mtu
+          mx6    0           *ok* status
+          bx7    x1          transfer mtu
+          sa6    ctlbuf
+          sa7    a6+b1
+          sx6    4
+          rj     sendctl     send *ok* response
+          rj     sendfil     send data file
+          close  fet,return
+          sx6    4
+          rj     sendctl     receive final status
+          sx2    shut
+          rj     netio       then close the socket
+          eq     ftpdgo      loop for next request
+
+ getdir   attach fet,,,,r
+          eq     ftpd2
+
+ puterr1  bss    0
+ puterr2  bss    0
+ geterr1  sa6    ctlbuf      set error code
+          sx6    4
+          rj     sendctl     send error response
+          message errbuf,4,r
+          sx2    shut
+          rj     netio       issue socket shutdown
+          eq     ftpdgo      loop for next request
+          space  4,10
+**        *put* request (client to daemon)
+
+ putreq   sa1    direct      get file access mode
+          pl     x1,ftpd3    if indirect access
+          define fet         first define the file
+          sa1    fet
+          sx6    x1
+          ax6    10
+          zr     x6,ftpd3    if ok
+          sx1    x6-5        see if file exists
+          nz     x1,puterr1  if some other error
+          attach fet,,,,w    attach existing file
+          sa1    fet
+          sx6    x1
+          ax6    10
+          nz     x6,puterr1  if error on file access
+ ftpd3    sa1    mtu
+          mx6    0           status is ok
+          bx7    x1          reply with transfer mtu
+          sa6    ctlbuf
+          sa7    a6+b1
+          sx6    4
+          rj     sendctl     send *ok* response
+          rj     rcvfil      receive data file
+          pl     x6,ftpderr  if error
+          sa1    direct      check mode again
+          ng     x1,ftpd4    if direct access
+          replace fet        replace any existing file
+          sa1    fet
+          sx6    x1
+          ax6    10
+          nz     x6,puterr2  if error on file replace
+ ftpd4    close  fet,return
+          sx6    0
+          sa6    ctlbuf
+          sx6    4
+          rj     sendctl     send final status
+          sx2    shut
+          rj     netio       then close the socket
+          eq     ftpdgo      loop for next request
+
+ derr1    message derrm1,4,r
+          sx2    rsetall
+          rj     netio
+          abort
+
+ derrm1   dis    ,* accept error.*
+          title  send a file to the other cftpd
+**        read local file from *fet* and send it to the other end
+*
+*         uses   lots of registers
+
+ sendfil  subr
+          sa1    fet
+          mx6    42
+          bx6    x6*x1
+          sa6    sendm1+1    set file name in message
+          message sendm1,1,r
+          open   fet,read,r
+ sendf1   read   fet         start reading
+ sendf2   sa1    mtu
+          readw  fet,netbuf,x1 transfer an mtu worth
+          ng     x1,sendf5   if eof/eoi
+          nz     x1,sendf3   if eor
+          sa1    mtu
+          sx7    0           flag = normal data
+          eq     sendf4
+
+ sendf3   sx7    1           flag = eor
+          sx1    x1-netbuf   convert lwa+1 to word count
+ sendf4   bx6    x1
+          sa6    ctlbuf      set word count
+          sa7    a6+b1       set flag
+          sx6    x1+2        total word count = data + header
+          rj     sendctl     send that
+          sa1    ctlbuf+1
+          zr     x1,sendf2   if not eor
+          eq     sendf1      start reading another record
+
+ sendf5   sx7    b1
+          ix7    x7-x1       flag = 2 for eof, 3 for eio
+          sx6    0
+          sa6    ctlbuf
+          sa7    a6+b1
+          sx6    2
+          rj     sendctl     send eof/eoi control record
+          sa1    ctlbuf+1
+          sx1    x1-2        check eof vs. eoi
+          zr     x1,sendf1   if eof
+          message nullm,1,r  clear line 1
+          eq     sendfilx    eoi, all done
+
+ sendm1   dis    ,* sending  xxxxxxx*
+ nullm    data   0
+          title  receive a file from the other cftpd
+**        receive file data from the other end and write it to *fet*
+*
+*         entry  *fet* is open
+*
+*         exit   (x6) < 0 if ok
+*
+*         uses   lots of registers
+
+ rcvfil   subr
+          sa1    fet
+          mx6    42
+          bx6    x6*x1
+          sx1    1r
+          bx6    x6+x1
+          lx6    54
+          sa6    rcvm1+1    set file name in message
+          message rcvm1,1,r
+          open   fet,write,r
+ rcvf1    sx6    2
+          rj     readctl     receive the header
+          pl     x6,rcvfilx  if error
+          sa1    ctlbuf      get the word count
+          zr     x1,rcvf2    if eof/eoi
+          sx6    netbuf
+          bx7    x1
+          sa6    rbuf
+          sa7    a6+b1
+          sx2    read
+          rj     netio       receive the data
+          pl     x6,rcvfe1   if error
+          sa1    ctlbuf      get word count again
+          writew fet,netbuf,x1
+ rcvf2    sa1    ctlbuf+1
+          zr     x1,rcvf1    if not eor/eof/eoi
+          sx1    x1-2
+          zr     x1,rcvf3    if eof
+          pl     x1,rcvf4    if eoi
+          writer fet,r
+          eq     rcvf1
+
+ rcvf3    writef fet,r
+          eq     rcvf1
+
+ rcvf4    message nullm,1,r
+          sx6    -1          indicate ok
+          eq     rcvfilx
+          
+ rcvfe1   message rcvfem,4,r
+          sx6    1           indicate error
+          eq     rcvfilx
+
+ rcvm1    dis    ,* receiving xxxxxxx*
+ rcvfem   dis    ,* network error receving file.*
+          title  read a control message
+
+**        read control message (2 or 4 words)
+*
+*         entry  (x6) = word count
+*
+*         exit   (x6) < 0 if ok
+*
+*         uses   x1, x2, x6, a6
+
+ readctl  subr
+          sa6    rbuflen
+          sx6    ctlbuf
+          sa6    rbuf
+          sx2    read
+          rj     netio
+          ng     x6,readctlx if ok
+          message readerr,4,r
+          sx2    shut
+          rj     netio       try to free the data socket
+          sx6    1
+          eq     readctlx    error exit
+
+ readerr  dis    ,* control message read error.*
+          title  send a control message
+
+**        send control message (2 or 4 words)
+*
+*         entry  (x6) = word count
+*                (b1) = 1
+*
+*         exit   (x6) < 0 if ok
+*
+*         uses   x1, x2, x6, a6
+
+ sendctl  subr
+          ax1    x6,b1       form wc / 2
+          lx6    3
+          ix6    x6-x1       wc * 7.5 rounded up = byte count
+          sa6    wbuflen
+          sx6    ctlbuf
+          sa6    wbuf
+          sx2    write
+          rj     netio
+          ng     x6,sendctlx if ok
+          message senderr,4,r
+          sx2    shut
+          rj     netio       try to free the data socket
+          sx6    1
+          eq     sendctlx    error exit
+
+ senderr  dis    ,* message send error.*
+          title  plant socket number
+
+**        plant data socket number
+*
+*         entry  (x1) = socket number
+*
+*         uses   x6, x6
+          
+ psock    subr
+          sx6    1
+          lx6    54          binary mode flag
+          bx6    x1+x6
+          sa6    rcvs        plant data socket number
+          sa6    ws
+          sa6    ss
+          sa6    socks+1
+          eq     psockx
+ common   title  routines and data common to client and daemon
+
+          space  4,10
+**        do a network operation, wait for it
+*
+*         entry  (x2) = address of socket request block.
+*
+*         exit   (x6) = socket request status. -1 is ok.
+*
+*         uses   x1, x6.
+* 
+*         this routine retries the socket operation so long as
+*         it returns status code 2 (*eagain*), i.e., no data
+*         or not ready yet.
+
+ netio    subr
+ netio1   ex6    x2          do it
+          sa6    netstat     save return value
+          sx1    x6-2        check for *eagain* status code
+          nz     x1,netiox   if ready
+          recall             wait a bit
+          eq     netio1      try again
+
+ netstat  data   0
+          title  reprieve handler
+
+ doexit   sx1    rsetall
+          ex1    x1          reset all sockets
+          reprieve rpvdata,reset,0  continue error processing
+          
+          space  4,10
+** common decks
+          
+          xtext  comccio
+          xtext  comcpfm
+          xtext  comcrdw
+          xtext  comcsys
+          xtext  comcwtw
+          xtext  comspfm
+          
  netmax   equ    400         max network word count
  ciolth   equ    1001b       fet buffer size
-
-
- direct   data   0           direct access flag
- put      data   0           operation is *put*
+ defport  equ    6021
+          
+ direct   data   0           direct access flag in sign bit
+ put      data   0           operation is *put* in sign bit
  host     data   0           host address
- port     data   6021        port number
+ portnum  con    defport     port number
  lsock    data   0           listen socket (for daemon)
  sock     data   0           data socket
  lfn      data   0           local side file name
  rfn      data   0           remote side file name
+ mtu      con    netmax      max chunk size (netmax, unless reduced by the other end)
           
- sockreq  bss    6           exx socket request buffer
- fet      fileb  ciobuff,ciolth,fet=14b
+ shut     vfd    42/0,6/s.close,12/1
+ ss       data   0
 
- ciobuff  bss    ciolth
- netbuf   bss    netmax
- ctlbuf   bss    2           buffer for cftp control records (all 2 words long)
+ accept   vfd    42/0,6/s.acc,12/1
+ as       data   0
+ dsock    data   0           returned data socket number
+ asaddr   data   0           returned remote host address
+
+ read     vfd    42/0,6/s.read,12/1
+ rcvs     vfd    6/1         binary mode
+ rbuf     data   0
+ rbuflen  data   0
+ rcc      data   0
+
+ write    vfd    42/0,6/s.write,12/1
+ ws       vfd    6/1         binary mode
+ wbuf     data   0
+ wbuflen  data   0
           
-          end
+ rsetall  vfd    42/0,6/s.rall,12/1
+          data   0
+          con    socks
+          data   2
+
+ socks    bss    2           list of sockets for *reset all*
+
+ fet      fileb  ciobuff,ciolth,epr,fet=14
+
+ rpvdata  rpvblk doexit
+
+**        buffers only beyond this point, which overlay
+*         the initialization code.
+          
+ ciobuff  bss    ciolth
+ ctlbuf   bss    4           buffer for cftp control records (2 or 4 words long)
+          bss    netmax      space for max length data
+          bss    5           extra space for the readw/writew overrun area
+ netbuf   equ    ctlbuf+2    file data starts here
+
+ errbuf   equ    ctlbuf+1    message area for *pfm* errors
+
+          title  initialization
+
+          org    ciobuff     this code is overlaid by i/o buffers
+
+ cftpd    sb1    1
+          sa1    actr        get arg count
+          sx1    x1
+          sx6    defport     default port number
+          zr     x1,cftpd1   if no arguments
+          sx1    x1-1        check arg count
+          nz     x1,err1     if too many arguments
+          sa5    argr        get argument
+          sb7    1
+          rj     dxb         convert decimal number
+          nz     x4,err2     if error in number string
+ cftpd1   sa6    portnum     remember port number
+          sa6    bport       set as listen port number
+          reprieve rpvdata,setup,277b  catch everything except endrun
+          sx2    getsock
+          rj     netio       obtain a socket
+          pl     x6,err3     if error
+          sa1    socknum
+          bx6    x1
+          sa6    bs          plant socket number
+          sa6    as
+          sa6    socks
+          sx2    bind
+          rj     netio       bind and listen
+          pl     x6,err4     if error
+          sx6    errbuf
+          sa6    fet+cfpw    set error message pointer for *pfm* calls
+          eq     ftpdgo      enter daemon main loop
+
+ err1     message errm1,,r
+          abort
+
+ err2     message errm2,,r
+          abort
+
+ err3     message errm3,,r
+          abort
+
+ err4     sx2    rsetall
+          rj     netio       try to release listen socket
+          message errm4,,r
+          abort
+
+ errm1    dis    ,* too many arguments.*
+ errm2    dis    ,* invalid argument.*
+ errm3    dis    ,* error requesting socket.*
+ errm4    dis    ,* error in bind.*
+
+**        initialization time socket request blocks
+
+ getsock  vfd    42/0,6/s.get,12/1
+ socknum  data   0           returned socket number
+          data   0           owner data (none specified)
+          
+ bind     vfd    42/0,6/s.bind,12/1
+ bs       data   0
+          data   0           any ip address
+ bport    bss    1
+          data   16          backlog
+          
+ conn     vfd    42/0,6/s.conn,12/1
+ cs       data   0
+ caddr    data   0
+ cport    data   0
+          
+          xtext  comcdxb
+          
+          end    cftpd

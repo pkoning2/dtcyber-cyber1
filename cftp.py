@@ -89,8 +89,8 @@ EOF = 2
 EOI = 3
 ABORT = 4
 def usage ():
-    print "usage: %s [-d] {get | put} host[:port] lfn rfn" % sys.argv[0]
-    print "       %s -D [port]" % sys.argv[0]
+    print "usage: %s [-dv] {get | put} host[:port] lfn rfn" % sys.argv[0]
+    print "       %s [-v] -D [port]" % sys.argv[0]
 
 class Connection (socket.socket):
     """A network connection.  Derived from socket, with some more
@@ -108,6 +108,8 @@ class Connection (socket.socket):
             self.dsock = None
         else:
             self.connect ((socket.gethostbyname (host), port))
+            if verbose:
+                print "Connected to", host, port
         self.pendingdata = ""
         self.nextbyte = 0
         self.daemon = daemon
@@ -116,6 +118,8 @@ class Connection (socket.socket):
         if not self.daemon:
             print "Wrong accept call"
         dsock, fromaddr = socket.socket.accept (self)
+        if verbose:
+            print "Accepted connection from", hex (fromaddr)
         self.dsock = dsock
 
     def shutdown (self, flag = socket.SHUT_RDWR):
@@ -127,6 +131,7 @@ class Connection (socket.socket):
             socket.socket.shutdown (sock, flag)
         except socket.error:
             pass
+        
     def readmore (self):
         """Read some more network data and append it to pendingdata.
         """
@@ -178,16 +183,30 @@ class Connection (socket.socket):
 
     def readwords (self, words):
         """Read exactly the supplied number of words."""
-        return bytes2words (self.read (wc2bc (words)))
-
+        words = bytes2words (self.read (wc2bc_pkt (words)))
+        if verbose:
+            print "Read %d words:" % len (words)
+            for w in words:
+                print " %020o" % w
+        return words
+    
     def sendwords (self, words):
         """Send the supplied list of words."""
         self.sendall (words2bytes (words))
+        if verbose:
+            print "Sent %d words" % len (words)
+            for w in words:
+                print " %020o" % w
         
-def wc2bc (w):
-    """Convert word count to byte count"""
+def wc2bc_pkt (w):
+    """Convert word count to byte count, as encoded in packets"""
     pairs, odd = divmod (w, 2)
     return pairs * 15 + odd * 8
+
+def wc2bc_data (w):
+    """Convert word count to byte count, actual data count"""
+    pairs, odd = divmod (w, 2)
+    return pairs * 15 + odd * 7
 
 def bc2wc (b):
     """Convert byte count to word count"""
@@ -291,10 +310,13 @@ def dw2a (w):
     return "".join (name)
 
 def d2a (l):
-    """Convert a list of display code words to ascii."""
+    """Convert a list of display code words to ascii.
+    Conversion stops at end of line."""
     cl = [ ]
     for c in l:
         cl.append (dw2a (c))
+        if (c & 077) == 0:
+            break
     return "".join (cl)
 
 def transfer (sock, f, inbound, mtu):
@@ -304,22 +326,25 @@ def transfer (sock, f, inbound, mtu):
         while True:
             wc, flags = sock.readwords (2)
             if wc == 0:
-                sock.sendwords ((0, 0, 0, 0))
                 if flags == EOI:
+                    sock.sendwords ((0, 0, 0, 0))
                     print "Done"
+                    break
                 else:
-                    print "inbound transfer ended with unexpected flags", flags
-                break
+                    print "inbound transfer, wc 0, flags", flags
             else:
-                f.write (sock.read (wc2bc (wc)))
+                data = sock.read (wc2bc_pkt (wc))
+                f.write (data[:wc2bc_data (wc)])
     else:
         while True:
             data = f.read (bytemax)
             if data:
                 wc = bc2wc (len (data))
                 sock.sendwords ((wc, 0))
-                sock.sendall (data[:wc2bc (wc)])
+                sock.sendall (data[:wc2bc_pkt (wc)])
             else:
+                sock.sendwords ((0, EOR))
+                sock.sendwords ((0, EOF))
                 sock.sendwords ((0, EOI))
                 status  = sock.readwords (4)
                 if status[0]:
@@ -430,14 +455,18 @@ def cftpd (args):
         sock.close ()
         
 def main (args):
-    opts, args = getopt.getopt (args, "dD")
+    opts, args = getopt.getopt (args, "dDv")
     daemon = False
     direct = False
+    global verbose
+    verbose = False
     for opt, val in opts:
         if opt == "-D":
             daemon = True
         elif opt == "-d":
             direct = True
+        elif opt == "-v":
+            verbose = True
     if daemon:
         cftpd (args)
     else:
