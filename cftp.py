@@ -119,7 +119,7 @@ class Connection (socket.socket):
             print "Wrong accept call"
         dsock, fromaddr = socket.socket.accept (self)
         if verbose:
-            print "Accepted connection from", hex (fromaddr)
+            print "Accepted connection from", fromaddr[0], fromaddr[1]
         self.dsock = dsock
 
     def shutdown (self, flag = socket.SHUT_RDWR):
