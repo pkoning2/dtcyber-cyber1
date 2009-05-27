@@ -230,6 +230,10 @@ return(opl)
 *i TUTOR1X.2489
           sa6    tsocket     clear -socket- word
 *deck lesson
+*i lesson.46
+*                  14- socket buffer
+*i lesson.717
++         EQ     DELET3      socket buffer
 *i lesson.1250
           call   dropsck     sign out of sockets
 *i lesson.1917
