@@ -294,6 +294,7 @@ static CpWord sockOp (CpWord req)
     CpWord *reqp = cpuAccessMem (req, 5);
     NetFet *fet = NULL, *dataFet;
     int fd;
+    int socknum;
     int retval;
     int true_opt = 1;
     int mode;
@@ -315,17 +316,20 @@ static CpWord sockOp (CpWord req)
         return 0;
     }
     mode = ((reqp[1] >> 54) & Mask6);
-    if (reqp[1] > extSockets)
+    socknum = reqp[1] & 0xffffffff;
+    if (socknum > extSockets)
     {
         return RETINVREQ;
     }
-    if (reqp[1] != 0)
+    if (socknum != 0)
     {
-        fet = socktofet (reqp[1]);
+        fet = socktofet (socknum);
     }
     
+#if 0
     DEBUGPRINT ("socket req %llo %llo %llo %llo %llo\n", 
                 reqp[0], reqp[1], reqp[2], reqp[3], reqp[4]);
+#endif
     switch ((*reqp >> 12) & Mask6)
     {
     case 0:
@@ -470,13 +474,13 @@ static CpWord sockOp (CpWord req)
             return RETINVREQ;
         }
         bufp = cpuAccessMem (reqp[2], buflen);
+        // DEBUGPRINT ("read mode %d to %06llo length %d\n", mode, reqp[2], buflen);
         reqp[4] = 0;
         if (bufp == NULL)
         {
             return RETINVREQ;
         }
         retval = dtRead (fet, 0);
-        DEBUGPRINT ("dtRead %d, %d bytes buffered\n", retval, dtFetData (fet));
         if (retval < 0)
         {
             if (retval == -1)
@@ -489,6 +493,7 @@ static CpWord sockOp (CpWord req)
         {
             return RETNODATA;
         }
+        DEBUGPRINT ("dtRead %d, %d bytes buffered\n", retval, dtFetData (fet));
         c = dtReado (fet);
         if (mode == 1)
         {
@@ -502,10 +507,7 @@ static CpWord sockOp (CpWord req)
         oc = 0;
         for (ic = 0; ; ic++)
         {
-            if (buflen == 0)
-            {
-                break;
-            }
+            // DEBUGPRINT (" byte %03o (%02x) shift %d\n", c, c, shift);
             if (mode == 1)
             {
                 // binary
@@ -518,6 +520,7 @@ static CpWord sockOp (CpWord req)
                     }
                     d |= c >> 4;
                     *bufp++ = d;
+                    DEBUGPRINT (" %020llo\n", d);
                     buflen--;
                     d = ((CpWord) (c & 0x0f)) << 56;
                     shift = 56 - 8;
@@ -528,6 +531,7 @@ static CpWord sockOp (CpWord req)
                     if (shift == 0)
                     {
                         *bufp++ = d;
+                        DEBUGPRINT (" %020llo\n", d);
                         buflen--;
                         d = 0;
                         shift = 60 - 8;
@@ -538,9 +542,22 @@ static CpWord sockOp (CpWord req)
                     }
                 }
                 oc++;
+                if (buflen == 0)
+                {
+                    break;
+                }
+                c = dtReado (fet);
+                if (c < 0)
+                {
+                    break;
+                }
             }
             else
             {
+                if (buflen == 0)
+                {
+                    break;
+                }
                 // PLATO text mode
                 if (c == '\r')
                 {
@@ -555,6 +572,7 @@ static CpWord sockOp (CpWord req)
                 {
                     // End of line
                     *bufp++ = d;
+                    DEBUGPRINT (" %020llo\n", d);
                     buflen--;
                     d = 0;
                     shift = 60 - 6;
@@ -563,6 +581,7 @@ static CpWord sockOp (CpWord req)
                         if (buflen > 0)
                         {
                             *bufp++ = 0;
+                            DEBUGPRINT (" %020llo\n", 0);
                             buflen--;
                             oc += 11;
                         }
@@ -608,6 +627,7 @@ static CpWord sockOp (CpWord req)
                         if (shift == 0)
                         {
                             *bufp++ = d;
+                            DEBUGPRINT (" %020llo\n", d);
                             buflen--;
                             d = 0;
                             shift = 60 - 6;
@@ -630,6 +650,7 @@ static CpWord sockOp (CpWord req)
         {
             // There is a partially assembled word left, and we have room
             *bufp = d;
+            DEBUGPRINT (" %020llo\n", d);
         }
         DEBUGPRINT ("chars to Cyber: %d\n", oc);
         reqp[4] = oc;
@@ -668,6 +689,7 @@ static CpWord sockOp (CpWord req)
             shift = 60 - 8;
         }
         bufp = cpuAccessMem (reqp[2], buflen);
+        // DEBUGPRINT ("write mode %d from %06llo length %lld bytes (%d words)\n", mode, reqp[2], reqp[3], buflen);
         if (bufp == NULL)
         {
             return RETINVREQ;
