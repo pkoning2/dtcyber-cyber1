@@ -104,7 +104,8 @@ exit.
           sa6    ctlbuf      set in request word 0
           sa1    put         get *put* flag
           sa2    direct      get *direct access* flag
-          sx6    netmax      get default mtu
+          sa3    mtu         get negotiated mtu
+          bx6    x3
           lx2    -1          position flag
           bx6    x6+x1
           bx6    x6+x2
@@ -115,9 +116,6 @@ exit.
           rj     readctl     read response
           sa1    ctlbuf      get status word
           nz     x1,cerr1    if error
-          sa1    a1+b1
-          sx6    x1
-          sa6    mtu         set mtu
           sa1    put         check direction
           ng     x1,doput    if *put*
           rj     rcvfil      get the file from the server
@@ -161,6 +159,10 @@ exit.
           pl     x6,derr1    if error
           sa1    dsock
           rj     psock       plant data socket number
+          sx6    netmax
+          sa6    ctlbuf
+          sx6    2
+          rj     sendctl     send server *hello* message
           sx6    2
           rj     readctl     read a control message
           pl     x6,ftpdgo   if error
@@ -269,6 +271,8 @@ exit.
           title  send a file to the other cftpd
 **        read local file from *fet* and send it to the other end
 *
+*         exit   (x6) < 0 if ok
+*
 *         uses   lots of registers
 
  sendfil  subr
@@ -294,6 +298,7 @@ exit.
           sa7    a6+b1       set flag
           sx6    x1+2        total word count = data + header
           rj     sendctl     send that
+          pl     x6,sendfilx if error
           sa1    ctlbuf+1
           zr     x1,sendf2   if not eor
           eq     sendf1      start reading another record
@@ -305,10 +310,12 @@ exit.
           sa7    a6+b1
           sx6    2
           rj     sendctl     send eof/eoi control record
+          pl     x6,sendfilx if error
           sa1    ctlbuf+1
           sx1    x1-2        check eof vs. eoi
           zr     x1,sendf1   if eof
           message nullm,1,r  clear line 1
+          sx6    -1          ok status
           eq     sendfilx    eoi, all done
 
  sendm1   dis    ,* sending  xxxxxxx*
@@ -336,15 +343,17 @@ exit.
           rj     readctl     receive the header
           pl     x6,rcvfilx  if error
           sa1    ctlbuf      get the word count
-          zr     x1,rcvf2    if eof/eoi
+          zr     x1,rcvf2    if eof/eoi or eor without data
           sx6    netbuf
-          bx7    x1
+          sx7    b1
+          bx7    x7*x1       low order bit of word count
+          ix7    x7+x1       form wc rounded up to even
           sa6    rbuf
           sa7    a6+b1
           sx2    read
           rj     netio       receive the data
           pl     x6,rcvfe1   if error
-          sa1    ctlbuf      get word count again
+          sa1    ctlbuf      get original word count again
           writew fet,netbuf,x1
  rcvf2    sa1    ctlbuf+1
           zr     x1,rcvf1    if not eor/eof/eoi
@@ -393,7 +402,7 @@ exit.
  readerr  dis    ,* control message read error.*
           title  send a control message
 
-**        send control message (2 or 4 words)
+**        send control message possibly with additional data
 *
 *         entry  (x6) = word count
 *                (b1) = 1
@@ -403,9 +412,11 @@ exit.
 *         uses   x1, x2, x6, a6
 
  sendctl  subr
-          ax1    x6,b1       form wc / 2
-          lx6    3
-          ix6    x6-x1       wc * 7.5 rounded up = byte count
+          sx1    x6+b1
+          ax1    1
+          bx6    x1
+          lx6    4
+          ix6    x6-x1       round up wc to even then * 15
           sa6    wbuflen
           sx6    ctlbuf
           sa6    wbuf
@@ -475,6 +486,9 @@ exit.
           xtext  comcsys
           xtext  comcwtw
           xtext  comspfm
+
+** note - netmax must be less than dtcyber socket ring buffer
+*  size divided by 7.5.
           
  netmax   equ    400         max network word count
  ciolth   equ    1001b       fet buffer size
@@ -591,6 +605,15 @@ exit.
           sx2    conn
           rj     netio       connect to the server
           pl     x6,err8     if connect failure
+          sx6    2
+          rj     readctl     get server hello message
+          sa1    ctlbuf      get mtu
+          ax6    x1,b1
+          lx6    1           force it to be even
+          sx1    x6-netmax   compare with ours
+          ng     x1,cftp4    if ours is larger
+          sx6    netmax      use our mtu if smaller
+ cftp4    sa6    mtu         set connection mtu
           eq     cftpgo      go to mainline
           title  daemon initialization
           

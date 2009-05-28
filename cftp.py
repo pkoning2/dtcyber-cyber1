@@ -14,28 +14,30 @@ one file per connection, in either direction.  The protocol transfers
 60-bit words, packed into 7.5 bytes big endian byte order.  Control
 transfers are either 2 or 4 words (always an even length though that's
 not always needed, that way it comes across as an integral number of
-bytes).  Data transfers are also in words, the word count may be
-odd.  If it is, then the last byte has the bottom 4 bits of the last
-word in its top 4 bits and its bottom 4 bits are unused.
+bytes).  Data transfers are also in words, rounded up to an even number
+to avoid fractional bytes.
 
 The description below shows the messages as 60-bit values, written
 in CDC standard notation as if they were VFD arguments.  See the
 CDC Compass manual for an explanation...
 
+Hello message, server to client.  This is sent upon connection:
+   60/MTU, 60/0
+   
 Operation request, client to server:
    42/filename, 24/0
    1/put, 1/direct, 46/0, 12/MTU
+
+"MTU" is the receive buffer size, in words.  The data transfers are
+broken up into chunks no larger than MTU.  MTU should be even.
 
 "put" is 1 if the transfer is from client to server, 0 if server to client
 "direct" is 1 if the server side file is (or should be created as) a
 direct file.
 
 Response, server to client:
-   60/0, 60/MTU, and 2 words of padding if ok
+   60/0 and 3 words of padding if ok
    60/errno and 3 words of message if error
-
-"MTU" is the receive buffer size, in words.  The data transfers are
-broken up into chunks no larger than MTU.  MTU should be even.
 
 If ok, then the transfer starts.  The encoding is the same no matter
 what direction it goes in.  For a "get", the transfer immediately
@@ -58,11 +60,8 @@ Chunk header:
   60/0, 60/3 for EOI
   60/0, 60/4 for abort
 
-The chunk header is followed by "wordcount" words of data, which
-means 7.5 * wordcount bytes, rounded up.  Note that on DtCyber the
-socket read call for the data has to be by itself so that any half
-byte of unused data is dropped (each socket read starts on a byte
-boundary).
+The chunk header is followed by "wordcount" rounded up to an even number
+words of data, which means 7.5 * wordcount bytes.
 
 Once the transfer completes, the receiver of the data replies with
 a final status reply, and then does a "shutdown" on the connection.
@@ -183,7 +182,7 @@ class Connection (socket.socket):
 
     def readwords (self, words):
         """Read exactly the supplied number of words."""
-        words = bytes2words (self.read (wc2bc_pkt (words)))
+        words = bytes2words (self.read (wc2bc (words)))
         if verbose:
             print "Read %d words:" % len (words)
             for w in words:
@@ -198,22 +197,17 @@ class Connection (socket.socket):
             for w in words:
                 print " %020o" % w
         
-def wc2bc_pkt (w):
-    """Convert word count to byte count, as encoded in packets"""
+def wc2bc (w):
+    """Convert word count to byte count"""
     pairs, odd = divmod (w, 2)
-    return pairs * 15 + odd * 8
-
-def wc2bc_data (w):
-    """Convert word count to byte count, actual data count"""
-    pairs, odd = divmod (w, 2)
-    return pairs * 15 + odd * 7
+    return pairs * 15 + odd * 15
 
 def bc2wc (b):
     """Convert byte count to word count"""
     pairs, odd = divmod (b, 15)
-    if odd and odd != 8:
+    if odd:
         print "warning: funny byte count", b, pairs, odd
-    return pairs * 2 + odd / 8
+    return pairs * 2
 
 def words2bytes (wl):
     """Convert string of words to string of bytes"""
@@ -321,7 +315,9 @@ def d2a (l):
 
 def transfer (sock, f, inbound, mtu):
     even, odd = divmod (mtu, 2)
-    bytemax = even * 15 + odd * 8
+    if odd:
+        print "Warning, odd MTU", mtu
+    bytemax = even * 15
     if inbound:
         while True:
             wc, flags = sock.readwords (2)
@@ -333,18 +329,18 @@ def transfer (sock, f, inbound, mtu):
                 else:
                     print "inbound transfer, wc 0, flags", flags
             else:
-                data = sock.read (wc2bc_pkt (wc))
-                f.write (data[:wc2bc_data (wc)])
+                data = sock.read (wc2bc (wc))
+                f.write (data[:wc2bc (wc)])
     else:
         while True:
             data = f.read (bytemax)
             if data:
                 wc = bc2wc (len (data))
                 sock.sendwords ((wc, 0))
-                sock.sendall (data[:wc2bc_pkt (wc)])
+                sock.sendall (data[:wc2bc (wc)])
             else:
+                # end of file, send EOR then EOI
                 sock.sendwords ((0, EOR))
-                sock.sendwords ((0, EOF))
                 sock.sendwords ((0, EOI))
                 status  = sock.readwords (4)
                 if status[0]:
@@ -390,20 +386,24 @@ def cftp (op, host, lfn, rfn, direct):
         port = int (host[i + 1:])
         host = host[:i]
     sock = Connection (host, port)
+    cmtu, pad = sock.readwords (2)
     nosfn = afn2d (rfn)
     flags = 0
     if put:
         flags += 1 << 59
     if direct:
         flags += 1 << 58
-    flags += MTU
+    if cmtu < 10:
+        print "Bad MTU from server", cmtu
+    cmtu = min (cmtu, MTU)
+    flags += cmtu
     sock.sendwords ((nosfn, flags))
     resp = sock.readwords (4)
     if resp[0]:
         print op, rfn, "error code", resp[0], d2a (resp[1:])
         sock.close ()
         return
-    transfer (sock, locfile, not put, min (MTU, resp[1]))
+    transfer (sock, locfile, not put, cmtu)
     
 def cftpd (args):
     """Server side operation.  This takes no arguments, but simply
@@ -418,6 +418,7 @@ def cftpd (args):
     try:
         while True:
             sock.accept ()
+            sock.sendwords ((MTU, 0))
             reqfn, flags = sock.readwords (2)
             put = ((flags >> 59) & 1) != 0
             direct = ((flags >> 58) & 1) != 0
@@ -430,6 +431,10 @@ def cftpd (args):
                 mode = "rb"
             rfn = dw2a (reqfn)
             print "Request is", action, "of", rfn, "mtu", cmtu
+            if cmtu > MTU or cmtu < 10:
+                print "Error, bad MTU from client", cmtu
+                sock,shutdown ()
+                continue
             if direct:
                 print "(direct access)"
             try:
@@ -448,8 +453,7 @@ def cftpd (args):
                 sock.sendwords ((9999, 0, 0, 0))
                 sock.shutdown ()
                 continue
-            cmtu = min (cmtu, MTU)
-            sock.sendwords ((0, cmtu, 0, 0))
+            sock.sendwords ((0, 0, 0, 0))
             transfer (sock, locfile, put, cmtu)
     except KeyboardInterrupt:
         print
