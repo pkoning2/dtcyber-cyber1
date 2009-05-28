@@ -100,7 +100,7 @@ int main (int argc, char **argv)
                 {
                 break;
                 }
-            i = dtRead  (np, -1);
+            i = dtRead  (np, &niuPorts, -1);
             if (i < 0)
                 {
                 dtClose (np, &niuPorts, TRUE);
@@ -113,7 +113,7 @@ int main (int argc, char **argv)
                 {
                 break;
                 }
-            i = dtRead  (np, -1);
+            i = dtRead  (np, &niuPorts, -1);
             if (i < 0)
                 {
                 dtClose (np, &niuAsciiPorts, TRUE);

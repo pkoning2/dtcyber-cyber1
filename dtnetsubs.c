@@ -207,7 +207,7 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
         }
 
 #if defined(_WIN32)
-    ioctlsocket (fet->connFd, FIONBIO, &true_opt);
+    ioctlsocket (connFd, FIONBIO, &true_opt);
 #else
     fcntl (connFd, F_SETFL, O_NONBLOCK);
 #endif
@@ -397,16 +397,30 @@ void dtInitPortset (NetPortSet *ps, int ringSize)
 **                  ps          Pointer to NetPortSet that np belongs to
 **                  hard        TRUE for reset, FALSE for shutdown
 **
-**  Returns:        Nothing.
+**  Returns:        0 if ok
+**                  -1 if send data is still pending and hard is FALSE.
 **
 **  This function is used to close sockets for inbound connections -- those
 **  that were created by the dtCreateListener mechanism.
 **------------------------------------------------------------------------*/
-void dtClose (NetFet *np, NetPortSet *ps, bool hard)
+int dtClose (NetFet *np, NetPortSet *ps, bool hard)
     {
     int fd, i, j;
     NetFet *t;
     
+    if (!hard && np->sendCount != 0)
+        {
+        /*
+        ** First send any pending data (if possible).
+        ** Return with failure if we can't send yet.
+        */
+        dtSendPending (np, ps);
+        if (np->sendCount != 0)
+            {
+            return -1;
+            }
+        }
+        
     fd = np->connFd;
     FD_CLR(fd, &ps->activeSet);
     if (np->sendCount != 0)
@@ -433,6 +447,7 @@ void dtClose (NetFet *np, NetPortSet *ps, bool hard)
         ps->maxFd = j;
         }
     ps->curPorts--;
+    return 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -561,6 +576,7 @@ const char *dtNowString (void)
 **
 **  Parameters:     Name        Description.
 **                  fet         NetFet pointer
+**                  ps          Pointer to NetPortSet to use
 **                  time        Max time to wait in ms; 0 means do not
 **                              wait, -1 means wait indefinitely
 **
@@ -569,7 +585,7 @@ const char *dtNowString (void)
 **                  -2 if some other error
 **
 **------------------------------------------------------------------------*/
-int dtRead (NetFet *fet, int time)
+int dtRead (NetFet *fet, NetPortSet *ps, int time)
     {
     int connFd = fet->connFd;
     int i;
@@ -578,6 +594,11 @@ int dtRead (NetFet *fet, int time)
     struct timeval timeout;
     u8 *in, *out, *nextin;
     int size;
+    
+    /*
+    ** First send any pending data (if possible).
+    */
+    dtSendPending (fet, ps);
     
     if (time != -1)
         {
@@ -862,7 +883,9 @@ void dtCloseFet (NetFet *fet, bool hard)
     fet->connFd = 0;            /* Mark FET not open anymore */
     fet->in = fet->first;
     fet->out = fet->first;
-
+    fet->ownerInfo = 0;
+    fet->inUse = 0;
+    
     /* 
     ** Remove from the active list.
     ** If there is no link, this is a listen FET as opposed to a data
@@ -1113,6 +1136,7 @@ int dtAccept (NetFet *fet, NetFet *acceptFet)
     acceptFet->connFd = connFd;
     acceptFet->from = from.sin_addr;
     acceptFet->fromPort = from.sin_port;
+    acceptFet->inUse = 1;
     
     return connFd;
     }
@@ -1134,6 +1158,7 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
     **  Set the FD number in the FET.
     */
     fet->connFd = connFd;
+    fet->inUse = 1;
 
     /*
     **  Track this FET in the NetPortSet, if supplied

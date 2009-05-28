@@ -500,7 +500,7 @@ static ThreadFunRet opThread (void *param)
                 {
                 break;
                 }
-            i = dtRead  (np, -1);
+            i = dtRead  (np, &opPorts, -1);
             if (i < 0)
                 {
                 dtClose (np, &opPorts, TRUE);
@@ -1030,7 +1030,7 @@ static void opConnlist(char *cmdParams)
                     {
                     kind = "";
                     }
-                if (cp->ownerInfo <= 0 || cp->ownerInfo > 1023)
+                if (cp->ownerInfo < 0 || cp->ownerInfo > 1023)
                     {
                     sprintf (cstat, "%c%3d. %-7s %5lld to %s:%d", 
                              j, j - StatusFirstDev,

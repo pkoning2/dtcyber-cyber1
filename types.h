@@ -230,7 +230,9 @@ typedef struct NetFet_s
     int         sendCount;              /* Count of sendData bytes */
     int         sendBufCount;           /* Size of sendData realloc */
     struct NetPortSet_s *ps;            /* PortSet this belongs to */
-    u64         ownerInfo;              /* Any non-zero value means in use */
+    u64         ownerInfo;              /* Data supplied by socket owner */
+    u8          inUse;                  /* In use flag */
+    u8          connPending;            /* Non-zero if dtConnect pending */
     } NetFet;
 
 

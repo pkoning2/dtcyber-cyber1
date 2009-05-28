@@ -339,7 +339,6 @@ static CpWord sockOp (CpWord req)
         if (fet != NULL)
         {
             dtClose (fet, &extPorts, TRUE);
-            fet->ownerInfo = 0;
             return RETOK;
         }
         return RETNOSOCK;
@@ -348,9 +347,11 @@ static CpWord sockOp (CpWord req)
         // no request dependent fields.
         if (fet != NULL)
         {
-            dtClose (fet, &extPorts, FALSE);
-            fet->ownerInfo = 0;
-            return RETOK;
+            if (dtClose (fet, &extPorts, FALSE) == 0)
+            {
+                return RETOK;
+            }
+            return RETNODATA;
         }
         return RETNOSOCK;
     case 2:
@@ -358,12 +359,7 @@ static CpWord sockOp (CpWord req)
         // 2:  60/ owner data
         // Note that socket number (word 1) must be zero coming in,
         // and the NetFet address we obtained is returned there.
-        // The "owner data" field is saved with the FET.  If zero is
-        // supplied, -1 is used instead.
-        if (reqp[2] == 0)
-        {
-            reqp[2] = MINUS1;
-        }
+        // The "owner data" field is saved with the FET. 
         if (fet == NULL)
         {
             fet = getFet ();
@@ -481,7 +477,7 @@ static CpWord sockOp (CpWord req)
         {
             return RETINVREQ;
         }
-        retval = dtRead (fet, 0);
+        retval = dtRead (fet, &extPorts, 0);
         if (retval < 0)
         {
             if (retval == -1)
@@ -806,7 +802,6 @@ static CpWord sockOp (CpWord req)
                 fet = socktofet (idx);                
                 DEBUGPRINT ("closing socket %d at index %d\n", fet->connFd, i + 1);
                 dtClose (fet, &extPorts, TRUE);
-                fet->ownerInfo = 0;
             }
         }
         return RETOK;
@@ -876,8 +871,9 @@ static NetFet *getFet (void)
     fet = extPorts.portVec;
     for (i = 0; i < extPorts.maxPorts; i++)
     {
-        if (fet->ownerInfo == 0)
+        if (fet->inUse == 0)
         {
+            fet->inUse = 1;
             return fet;
         }
         fet++;

@@ -269,7 +269,7 @@ void ddWaitIO (DiskIO *io);
 int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int portnum);
 int dtCheckInput(int connFd, void *buf, int size, int time);
 void dtInitPortset (NetPortSet *ps, int ringSize);
-void dtClose (NetFet *np, NetPortSet *ps, bool hard);
+int dtClose (NetFet *np, NetPortSet *ps, bool hard);
 NetFet * dtFindInput (NetPortSet *ps, int time);
 void dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
 const char *dtNowString (void);
@@ -280,7 +280,7 @@ int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog);
 int dtAccept (NetFet *fet, NetFet *acceptFet);
 void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd);
 
-int dtRead (NetFet *fet, int time);
+int dtRead (NetFet *fet, NetPortSet *ps, int time);
 int dtReado (NetFet *fet);
 int dtReadw (NetFet *fet, void *buf, int len);
 int dtPeekw (NetFet *fet, void *buf, int len);

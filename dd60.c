@@ -271,7 +271,7 @@ int main (int argc, char **argv)
 
     while (emulationActive)
         {
-        i = dtRead (fet, readDelay);
+        i = dtRead (fet, &consolePorts, readDelay);
         if (i < 0)
             {
             /* Connection went away... */
@@ -313,7 +313,7 @@ int main (int argc, char **argv)
                                 {
                                 break;
                                 }
-                            dtRead (fet, -1);
+                            dtRead (fet, &consolePorts, -1);
                             }
                         i |= ((data & 7) << 8);
                         if ((data & 0370) == Dd60SetX)

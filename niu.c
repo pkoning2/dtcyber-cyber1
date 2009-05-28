@@ -443,7 +443,7 @@ static void niuInIo(void)
                         {
                         break;
                         }
-                    i = dtRead  (np, -1);
+                    i = dtRead  (np, &niuPorts, -1);
                     if (i < 0)
                         {
                         dtClose (np, &niuPorts, TRUE);
@@ -456,7 +456,7 @@ static void niuInIo(void)
                         {
                         break;
                         }
-                    i = dtRead  (np, -1);
+                    i = dtRead  (np, &niuLocalPorts, -1);
                     if (i < 0)
                         {
                         dtClose (np, &niuLocalPorts, TRUE);

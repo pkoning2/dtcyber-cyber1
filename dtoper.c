@@ -205,7 +205,7 @@ int main (int argc, char **argv)
     
     while (emulationActive)
         {
-        i = dtRead (fet, 30);
+        i = dtRead (fet, &operPorts, 30);
         if (i < 0)
             {
 #if defined(_WIN32)
