@@ -1,16 +1,18 @@
 test,cm177000,t7770.
 user,plato,plato.
 attach,opl=opl871.
-compass,l=0,s=nostext,x.
-lgo.
+attach,lgo=ftpbin/m=w,na.
+if(.not.file(lgo,as))define,lgo=ftpbin.
+compass,l,s=nostext,x.
+*lgo.
 exit.
 ~
-          ident  cftp,111b,cftp
+          ident  cftp,125b,cftp
           title  cftp - cyber file transfer program
 
           abs
 
-*          entry  cftp
+          entry  cftp
           entry  cftpd
           
 ***       cftp - cyber file transfer program
@@ -24,12 +26,15 @@ exit.
 *
 *         command line
 *
+*         cftpd,port.
 *         cftpd.
 *
 *         daemon mode.  this listens for incoming connections,
 *         processing one at a time until stopped.  files accessed
 *         are permanent files under the current username, indirect
 *         access by default, direct access if requested by the client.
+*         if the port argument is present, that is the decimal
+*         port number used; otherwise the default (6021) is used.
 *
 *         cftp,op,host,lfn,rfn.
 *         cftp,op,host,fn.
@@ -38,7 +43,10 @@ exit.
 *         transfer, then exits.
 *
 *         *op* is *get* to get a file from the remote host,
-*         or *put* to send a file to the remote host.
+*         or *put* to send a file to the remote host.  note that
+*         in either case the local file name is first, so the
+*         syntax is *not* from-to or to-from, as might be more
+*         intuitive.
 *
 *         *host* is the host name (tbd) or *z*.  if *z* is specified,
 *         the host name or host address (dotted decimal notation)
@@ -47,7 +55,8 @@ exit.
 *         *routing id* from plato.  in that case, the name is
 *         translated internally to a host address and port number.
 *         for all other cases, the standard port number (6021)
-*         is used.
+*         is used unless the host argument is given as *host/port*,
+*         in which case *port* is a decimal port number.
 *
 *         *lfn* is the file name at the client end.  this is a local
 *         file name.
@@ -74,7 +83,7 @@ exit.
           
  exx      cpop   0,016b,012b
 
-          org    111b
+          org    125b
           
 **        socket function codes
 
@@ -88,10 +97,58 @@ exit.
  s.write  equ    7           write data
  s.rall   equ    8           reset all (reset list of sockets)
 
- cftp     title  file transfer client
+ cftp     title  file transfer client main processing
           
- cftp     sb1    1
+ cftpgo   sa1    rfn         get remote file name
+          bx6    x1
+          sa6    ctlbuf      set in request word 0
+          sa1    put         get *put* flag
+          sa2    direct      get *direct access* flag
+          sx6    netmax      get default mtu
+          lx2    -1          position flag
+          bx6    x6+x1
+          bx6    x6+x2
+          sa6    ctlbuf+1    set flags and mtu
+          sx6    2
+          rj     sendctl     send request
+          sx6    4
+          rj     readctl     read response
+          sa1    ctlbuf      get status word
+          nz     x1,cerr1    if error
+          sa1    a1+b1
+          sx6    x1
+          sa6    mtu         set mtu
+          sa1    put         check direction
+          ng     x1,doput    if *put*
+          rj     rcvfil      get the file from the server
+          pl     x6,cerr2    if transfer error
+          close  fet,rewind,r
+          sx6    0
+          sa6    ctlbuf
+          sx6    4
+          rj     sendctl     send final status
+          sx2    shut
+          rj     netio       then close the socket
+          endrun
 
+ doput    rj     sendfil     send file to server
+          pl     x6,cerr2    if transfer error
+          close  fet,rewind,r
+          sx6    4
+          rj     sendctl     receive final status
+          sx2    shut
+          rj     netio       then close the socket
+          endrun
+
+ cerr1    message ctlbuf+1,3,r
+ cerr     sx2    rsetall
+          rj     netio       release the socket
+          abort
+
+ cerr2    message cerrm2,3,r
+          eq     cerr
+
+ cerrm2   dis    ,* file transfer error.*
  cftpd    title  file transfer daemon main loop
 
  ftpderr  close  fet,return,r
@@ -157,7 +214,7 @@ exit.
  geterr1  sa6    ctlbuf      set error code
           sx6    4
           rj     sendctl     send error response
-          message errbuf,4,r
+          message errbuf,3,r
           sx2    shut
           rj     netio       issue socket shutdown
           eq     ftpdgo      loop for next request
@@ -203,7 +260,7 @@ exit.
           rj     netio       then close the socket
           eq     ftpdgo      loop for next request
 
- derr1    message derrm1,4,r
+ derr1    message derrm1,3,r
           sx2    rsetall
           rj     netio
           abort
@@ -304,7 +361,7 @@ exit.
           sx6    -1          indicate ok
           eq     rcvfilx
           
- rcvfe1   message rcvfem,4,r
+ rcvfe1   message rcvfem,3,r
           sx6    1           indicate error
           eq     rcvfilx
 
@@ -327,7 +384,7 @@ exit.
           sx2    read
           rj     netio
           ng     x6,readctlx if ok
-          message readerr,4,r
+          message readerr,3,r
           sx2    shut
           rj     netio       try to free the data socket
           sx6    1
@@ -355,7 +412,7 @@ exit.
           sx2    write
           rj     netio
           ng     x6,sendctlx if ok
-          message senderr,4,r
+          message senderr,3,r
           sx2    shut
           rj     netio       try to free the data socket
           sx6    1
@@ -474,10 +531,69 @@ exit.
 
  errbuf   equ    ctlbuf+1    message area for *pfm* errors
 
-          title  initialization
+          title  client initialization
 
           org    ciobuff     this code is overlaid by i/o buffers
 
+ cftp     sb1    1
+          sa1    actr        get arg count
+          sx1    x1-3        minimum is 3
+          ng     x1,err5     if not enough
+          mx0    42          mask for keyword
+          sa1    argr        get operation name
+          bx1    x0*x1       isolate it
+          sa2    =3lget
+          bx6    x2-x1
+          zr     x6,cftp1    if *get*
+          sa2    =3lput
+          bx6    x2-x1
+          nz     x6,err6     if not *put*
+          mx6    1           minus means put
+ cftp1    sa6    put         set operation flag
+          sa1    argr+1
+          bx1    x0*x1       isolate hostname
+* tbd - *z*, port number, etc.
+          sa2    htab        start local host table scan
+ cftp2    zr     x2,err7     if end of table
+          bx2    x2-x1
+          zr     x2,cftp3    if matching entry
+          sa2    a2+2        advance scan
+          eq     cftp2
+
+ cftp3    sa2    a2+1
+          mx1    -32
+          bx6    -x1*x2      isolate ip address
+          sa6    host
+          sa6    caddr       set in connect block
+          mx1    16
+          bx6    x1*x2       isolate port number
+          lx6    16          position it
+          sa6    portnum
+          sa6    cport       set in connect block
+** tbd - single fn argument, /d switch.
+          sa1    argr+2      get local file name
+          bx6    x0*x1
+          sa6    lfn         save it
+          sx7    b1
+          bx7    x6+x7       set *ready* bit
+          sa7    fet         set in fet
+          sa1    argr+3      get remote file name
+          bx6    x0*x1
+          sa6    rfn
+          reprieve rpvdata,setup,277b  catch everything except endrun
+          sx2    getsock
+          rj     netio       obtain a socket
+          pl     x6,err3     if error
+          sa1    socknum
+          bx6    x1
+          sa6    cs          set socket for connect
+          rj     psock       set all the others
+          sx2    conn
+          rj     netio       connect to the server
+          pl     x6,err8     if connect failure
+          eq     cftpgo      go to mainline
+          title  daemon initialization
+          
  cftpd    sb1    1
           sa1    actr        get arg count
           sx1    x1
@@ -517,15 +633,33 @@ exit.
           abort
 
  err4     sx2    rsetall
-          rj     netio       try to release listen socket
+          rj     netio       release listen socket
           message errm4,,r
+          abort
+
+ err5     message errm5,,r
+          abort
+
+ err6     message errm6,,r
+          abort
+
+ err7     message errm7,,r
+          abort
+
+ err8     sx2    rsetall
+          rj     netio       release socket
+          message errm8,,r
           abort
 
  errm1    dis    ,* too many arguments.*
  errm2    dis    ,* invalid argument.*
  errm3    dis    ,* error requesting socket.*
  errm4    dis    ,* error in bind.*
-
+ errm5    dis    ,* insufficient arguments.*
+ errm6    dis    ,* invalid operation keyword.*
+ errm7    dis    ,* unrecognized hostname.*
+ errm8    dis    ,* error connecting to server.*
+          
 **        initialization time socket request blocks
 
  getsock  vfd    42/0,6/s.get,12/1
@@ -543,6 +677,19 @@ exit.
  caddr    data   0
  cport    data   0
           
+ host     macro  hname,i1,i2,i3,i4,p
+          vfd    60/0l_hname,16/p,12/0,8/i1,8/i2,8/i3,8/i4
+ host     endm
+
+ htab     host   lcl,127,0,0,1,6021     localhost
+          host   gpk,127,0,0,1,11851    pkoning, via tunnel
+          host   cyt,127,0,0,1,5831     monster, via tunnel
+          host   brt,127,0,0,1,3939     boris, via tunnel
+          host   faa,127,0,0,1,9641     dtfaa, via tunnel
+*          host   brs,1,2,3,4,6021
+*          host   cy1,1,2,3,5,6021
+          data   0
+                            
           xtext  comcdxb
           
-          end    cftpd
+          end    cftp

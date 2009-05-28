@@ -1,3 +1,4 @@
+#define DEBUG 1
 /*--------------------------------------------------------------------------
 **
 **  Copyright (c) 2006, Tom Hunter, Paul Koning (see license.txt)
@@ -689,7 +690,7 @@ static CpWord sockOp (CpWord req)
             shift = 60 - 8;
         }
         bufp = cpuAccessMem (reqp[2], buflen);
-        // DEBUGPRINT ("write mode %d from %06llo length %lld bytes (%d words)\n", mode, reqp[2], reqp[3], buflen);
+        DEBUGPRINT ("write mode %d from %06llo length %lld bytes (%d words)\n", mode, reqp[2], reqp[3], buflen);
         if (bufp == NULL)
         {
             return RETINVREQ;
@@ -697,6 +698,7 @@ static CpWord sockOp (CpWord req)
         cp = (unsigned char *) resultstr;
         charset = 0;
         d = *bufp++;
+        DEBUGPRINT (" %020llo\n", d);
         for (i = 0; i < ic; i++)
         {
             if (mode == 1)
@@ -706,6 +708,7 @@ static CpWord sockOp (CpWord req)
                 {
                     *cp = d << 4;
                     d = *bufp++;
+                    DEBUGPRINT (" %020llo\n", d);
                     *cp++ |= (d >> 56) & 0x0f;
                     shift = 60 - 8 - 4;
                 }
@@ -716,6 +719,8 @@ static CpWord sockOp (CpWord req)
                     {
                         shift = 60 - 8;
                         d = *bufp++;
+                        if (i < ic - 1)
+                            DEBUGPRINT (" %020llo\n", d);
                     }
                     else
                     {

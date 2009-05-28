@@ -448,8 +448,9 @@ def cftpd (args):
                 sock.sendwords ((9999, 0, 0, 0))
                 sock.shutdown ()
                 continue
-            sock.sendwords ((0, 0, 0, 0))
-            transfer (sock, locfile, put, min (cmtu, MTU))
+            cmtu = min (cmtu, MTU)
+            sock.sendwords ((0, cmtu, 0, 0))
+            transfer (sock, locfile, put, cmtu)
     except KeyboardInterrupt:
         print
         sock.close ()
