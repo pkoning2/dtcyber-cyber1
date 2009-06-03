@@ -1,4 +1,3 @@
-#define DEBUG 1
 /*--------------------------------------------------------------------------
 **
 **  Copyright (c) 2006, Tom Hunter, Paul Koning (see license.txt)
