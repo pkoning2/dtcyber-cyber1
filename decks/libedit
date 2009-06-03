@@ -35,3 +35,4 @@ copyei,new,tape.
 ~
 *file libd01
 *file ftpbin
+*after pp/4x2,abs/cftp
