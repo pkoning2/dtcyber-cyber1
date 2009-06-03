@@ -125,6 +125,7 @@ libd01
 *proc     z1daily                       (daily acct sum processor)
 *proc     z1endbc                       (monthly acct sum processor)
 *proc     pcdconv                       (pcd3 uploader)
+*sc       abs/cftp,abs/cftpd            (file transfer utility)
 */
 */        end of more plato proc entries
 */

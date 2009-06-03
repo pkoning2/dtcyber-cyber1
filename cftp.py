@@ -110,7 +110,6 @@ class Connection (socket.socket):
             if verbose:
                 print "Connected to", host, port
         self.pendingdata = ""
-        self.nextbyte = 0
         self.daemon = daemon
         
     def accept (self):
@@ -120,6 +119,7 @@ class Connection (socket.socket):
         if verbose:
             print "Accepted connection from", fromaddr[0], fromaddr[1]
         self.dsock = dsock
+        self.pendingdata = ""
 
     def shutdown (self, flag = socket.SHUT_RDWR):
         if self.daemon:
@@ -130,6 +130,7 @@ class Connection (socket.socket):
             socket.socket.shutdown (sock, flag)
         except socket.error:
             pass
+        self.pendingdata = ""
         
     def readmore (self):
         """Read some more network data and append it to pendingdata.
@@ -139,30 +140,32 @@ class Connection (socket.socket):
         else:
             sock = self
         new = sock.recv (NETMAX)
+        #if verbose:
+        #    print len (new), "bytes received:", repr (new)
         if not new:
             sock.close ()
             self.dsock = None
+            self.pendingdata = ""
             raise EOFError
         self.pendingdata += new
             
     def read (self, bytes):
         """Read exactly the supplied number of bytes.
         """
-        while len (self.pendingdata) - self.nextbyte < bytes:
+        while len (self.pendingdata) < bytes:
             self.readmore ()
-        ret = self.pendingdata[self.nextbyte:self.nextbyte + bytes]
-        self.nextbyte += bytes
+        ret = self.pendingdata[:bytes]
+        self.pendingdata = self.pendingdata[bytes:]
         return ret
 
     def readmin (self, minbytes = 1):
         """Read at least the supplied number of bytes.  Default length
         is one, i.e., read any non-null network data.
         """
-        while len (self.pendingdata) - self.nextbyte < bytes:
+        while len (self.pendingdata) < bytes:
             self.readmore ()
-        ret = self.pendingdata[self.nextbyte:]
+        ret = self.pendingdata
         self.pendingdata = ""
-        self.nextbyte = 0
         return ret
         
     def sendall (self, text):
@@ -415,8 +418,8 @@ def cftpd (args):
     else:
         port = CFTP
     sock = Connection (None, port, True)
-    try:
-        while True:
+    while True:
+        try:
             sock.accept ()
             sock.sendwords ((MTU, 0))
             reqfn, flags = sock.readwords (2)
@@ -433,7 +436,7 @@ def cftpd (args):
             print "Request is", action, "of", rfn, "mtu", cmtu
             if cmtu > MTU or cmtu < 10:
                 print "Error, bad MTU from client", cmtu
-                sock,shutdown ()
+                sock.shutdown ()
                 continue
             if direct:
                 print "(direct access)"
@@ -455,10 +458,18 @@ def cftpd (args):
                 continue
             sock.sendwords ((0, 0, 0, 0))
             transfer (sock, locfile, put, cmtu)
-    except KeyboardInterrupt:
-        print
-        sock.close ()
-        
+        except KeyboardInterrupt:
+            print
+            if verbose:
+                print len (sock.pendingdata), "bytes pending"
+                print repr (sock.pendingdata)
+                raise
+            sock.close ()
+            break
+        except (IOError, OSError, EOFError):
+            # some sort of network error; close connection and wait for another
+            sock.close ()
+            
 def main (args):
     opts, args = getopt.getopt (args, "dDv")
     daemon = False

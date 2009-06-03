@@ -201,7 +201,7 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
     if (connFd < 0)
         {
 #if !defined(_WIN32)
-        fprintf(stderr, "dtConnect: Can't create socket\n");
+        perror ("dtConnect: Can't create socket");
 #endif
         return -1;
         }
@@ -227,10 +227,13 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
 #if !defined(_WIN32)
         fprintf(stderr, "dtConnect: Can't connect to %08x %d, errno %d\n", 
                 host, port, errno);
+        perror ("Can't connect");
 #endif
         close (connFd);
         return -1;
         }
+    fet->from = server.sin_addr;
+    fet->fromPort = server.sin_port;
     dtActivateFet (fet, ps, connFd);
     return 0;
     }
@@ -275,7 +278,7 @@ void dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
     rc = pthread_create(&dt_thread, NULL, fp, param);
     if (rc < 0)
         {
-        fprintf(stderr, "Failed to create thread\n");
+        perror ("Failed to create thread");
         exit(1);
         }
 #endif
@@ -407,6 +410,14 @@ int dtClose (NetFet *np, NetPortSet *ps, bool hard)
     {
     int fd, i, j;
     NetFet *t;
+
+    /*
+    **  Return success if already closed.
+    */
+    if (!np->inUse)
+        {
+        return 0;
+        }
     
     if (!hard && np->sendCount != 0)
         {
@@ -1048,7 +1059,7 @@ int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog)
     if (fet->connFd < 0)
         {
 #if !defined(_WIN32)
-        fprintf(stderr, "dtBind: Can't create socket\n");
+        perror ("dtBind: Can't create socket");
 #endif
         return -1;
         }
@@ -1229,7 +1240,7 @@ static void dtThread(void *param)
     if (listenFd < 0)
         {
 #if !defined(_WIN32)
-        fprintf(stderr, "dtThread: Can't create socket\n");
+        perror ("dtThread: Can't create socket");
 #endif
         ThreadReturn;
         }
@@ -1256,7 +1267,7 @@ static void dtThread(void *param)
     if (bind(listenFd, (struct sockaddr *)&server, sizeof(server)) < 0)
         {
 #if !defined(_WIN32)
-        fprintf(stderr, "dtThread: Can't bind to socket\n");
+        perror ("dtThread: Can't bind to socket");
 #endif
         ThreadReturn;
         }
@@ -1264,7 +1275,7 @@ static void dtThread(void *param)
     if (listen(listenFd, 5) < 0)
         {
 #if !defined(_WIN32)
-        fprintf(stderr, "dtThread: Can't listen\n");
+        perror ("dtThread: Can't listen");
 #endif
         ThreadReturn;
         }

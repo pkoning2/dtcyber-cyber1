@@ -37,7 +37,6 @@ exit.
 *         port number used; otherwise the default (6021) is used.
 *
 *         cftp,op,host,lfn,rfn.
-*         cftp,op,host,fn.
 *
 *         client mode.  this connects to the daemon, performs a single
 *         transfer, then exits.
@@ -67,11 +66,6 @@ exit.
 *         specified, it is a direct access file.  for *get*
 *         operations, the file must exist, for *put* it is created
 *         if it does not exist, or replaced if it does.
-*
-*         in the second form of the command (*fn* argument),
-*         *fn* is both local and remote file name, i.e., the name
-*         is the same at both ends.  as with *rfn*, */d* can be
-*         added for a direct access remote file.
 
           base   d
           
@@ -551,10 +545,12 @@ exit.
 
  cftp     sb1    1
           sa1    actr        get arg count
-          sx1    x1-3        minimum is 3
-          ng     x1,err5     if not enough
+          sb3    x1-4        minimum is 4
+          ng     b3,err5     if not enough
           mx0    42          mask for keyword
           sa1    argr        get operation name
+          sb2    x1-1        check for comma separator
+          nz     b2,err9     if not comma
           bx1    x0*x1       isolate it
           sa2    =3lget
           bx6    x2-x1
@@ -564,12 +560,36 @@ exit.
           nz     x6,err6     if not *put*
           mx6    1           minus means put
  cftp1    sa6    put         set operation flag
-          sa1    argr+1
-          bx1    x0*x1       isolate hostname
-* tbd - *z*, port number, etc.
+          sa1    a1+b1
+          bx3    x0*x1       isolate hostname
+          sa2    =1lz
+          bx2    x2-x3       check for *z*
+          nz     x2,cftp6    if not *z*
+          sb2    x1-1        see if comma separator
+          zr     b2,cftp7    if comma
+          sb2    x1-3        otherwise must be */*
+          nz     b2,cftp7    if not slash
+          sa5    a1+b1       get port number
+          sb2    x5-1        check for comma separator
+          nz     b2,err9     if not comma
+          sb7    b1          indicate decimal conversion
+          rj     dxb         convert port number
+          nz     x4,err9     if error in number
+          sa6    portnum     save chosen port number
+          sa1    argr+2      restore argument pointer
+          mx0    42          restore mask for keyword
+ cftp7    mx6    1           flag for *z* host name
+          sa6    host
+          eq     cftp8
+          
+** process host name other than *z*, which means looking for
+*  the name in a table of local short names.
+          
+ cftp6    sb2    x1-1        check for comma separator
+          nz     b2,err9     if not comma
           sa2    htab        start local host table scan
  cftp2    zr     x2,err7     if end of table
-          bx2    x2-x1
+          bx2    x2-x3
           zr     x2,cftp3    if matching entry
           sa2    a2+2        advance scan
           eq     cftp2
@@ -578,30 +598,85 @@ exit.
           mx1    -32
           bx6    -x1*x2      isolate ip address
           sa6    host
-          sa6    caddr       set in connect block
           mx1    16
           bx6    x1*x2       isolate port number
           lx6    16          position it
           sa6    portnum
-          sa6    cport       set in connect block
-** tbd - single fn argument, /d switch.
-          sa1    argr+2      get local file name
+ cftp8    sa1    a1+b1       get local file name
+          sb2    x1-1        check for comma separator
+          nz     b2,err9     if not comma
           bx6    x0*x1
           sa6    lfn         save it
           sx7    b1
           bx7    x6+x7       set *ready* bit
           sa7    fet         set in fet
-          sa1    argr+3      get remote file name
+          sa1    a1+b1       get remote file name
           bx6    x0*x1
           sa6    rfn
-          reprieve rpvdata,setup,277b  catch everything except endrun
+          sb2    x1-17b
+          zr     b2,cftp5    if end of command
+          sb2    x1-3
+          nz     b2,err9     if not */*
+          sa1    a1+b1       get direct flag
+          sa2    dend        must be *d* and end of command
+          bx1    x1-x2
+          nz     x1,err9     if not *d* or not last argument
+          mx6    1
+          sa6    direct      set direct access flag
+ cftp5    sa1    host        check host argument
+          pl     x1,cftp9    if not *z*
+          sb2    ccdr        command image
+          rj     usb         unpack command to *usbb*
+          mx6    0
+          sa6    b7+b1       make sure there is an eol
+          sa1    usbb        start scan
+ cftp10   sa1    a1+b1       load next char
+          zr     x1,err9     error if eol
+          sx2    x1-1r.
+          zr     x2,cftp11   if end of command
+          sx2    x1-1r)
+          nz     x2,cftp10   if not end of command
+ cftp11   sx7    0           clear host address assembly
+          sb2    3           count of fields left - 1
+          sx3    10          radix
+ cftp12   sx6    0           clear number assembly
+ cftp16   sa1    a1+b1       load host address character
+          zr     x1,cftp13   if end of line
+          sx2    x1-1r
+          zr     x2,cftp12   if blank, ignore
+          sx2    x1-1r.      check for number terminator
+          zr     x2,cftp14   if end of field
+          sx2    x1-1r0      check for digit
+          ng     x2,err9     if not digit
+          sx1    x1-1r9-1    check for digit
+          pl     x1,err9     if not digit
+          ix6    x6*x3
+          ix6    x6+x2       accumulate digits
+          eq     cftp16
+
+ cftp13   nz     b2,err9     if eol before field 4
+ cftp14   lx7    8           shift previous address fields
+          bx7    x7+x6
+          zr     x1,cftp15   if end of line
+          sb2    b2-b1       count fields
+          pl     b2,cftp12   if more fields to do
+          eq     err9
+
+ cftp15   sa7    host
+ cftp9    reprieve rpvdata,setup,277b  catch everything except endrun
           sx2    getsock
           rj     netio       obtain a socket
           pl     x6,err3     if error
           sa1    socknum
+          sa2    host
+          sa3    portnum
           bx6    x1
+          bx7    x2
           sa6    cs          set socket for connect
-          rj     psock       set all the others
+          sa7    caddr       set host address
+          bx6    x3
+          sa6    cport       set port number
+          rj     psock       set all other sockets
           sx2    conn
           rj     netio       connect to the server
           pl     x6,err8     if connect failure
@@ -674,6 +749,9 @@ exit.
           message errm8,,r
           abort
 
+ err9     message errm9,,r
+          abort
+          
  errm1    dis    ,* too many arguments.*
  errm2    dis    ,* invalid argument.*
  errm3    dis    ,* error requesting socket.*
@@ -682,6 +760,9 @@ exit.
  errm6    dis    ,* invalid operation keyword.*
  errm7    dis    ,* unrecognized hostname.*
  errm8    dis    ,* error connecting to server.*
+ errm9    dis    ,* argument error.*
+
+ dend     con    1ld+17b
           
 **        initialization time socket request blocks
 
@@ -714,5 +795,6 @@ exit.
           data   0
                             
           xtext  comcdxb
-          
+          xtext  comcusb
+
           end    cftp

@@ -22,15 +22,16 @@ attach,mfnx.
 attach,backdmp.
 attach,plprocs.
 attach,pnidbin.
+attach,ftpbin.
 *
 libedit,p=system.
 *return,output.
 rewind,new.
 itemize,new.
-* cy871ax
+* cy871ay
 label,tape,vsn=ndt,lb=ku,po=w.
 rewind,new.
 copyei,new,tape.
 ~
-*file cbin
-*file pbin
+*file libd01
+*file ftpbin
