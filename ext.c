@@ -477,7 +477,11 @@ static CpWord sockOp (CpWord req)
             return RETINVREQ;
         }
         retval = dtRead (fet, &extPorts, 0);
-        if (retval < 0)
+        //
+        // Report error status from dtRead only if there isn't any
+        // data left to be processed.
+        //
+        if (retval < 0 && dtEmpty (fet))
         {
             if (retval == -1)
             {
