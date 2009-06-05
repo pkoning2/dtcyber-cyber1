@@ -9,7 +9,7 @@ common,system.
 *attach,iprd01.
 *attach,libd01.
 *attach,ppubin.
-*attach,pbin.
+attach,pbin.
 *attach,cbin.
 *attach,fbin.
 *attach,platlib.
@@ -33,8 +33,4 @@ label,tape,vsn=ndt,lb=ku,po=w.
 rewind,new.
 copyei,new,tape.
 ~
-*file ftpbin
-*file plprocs
-*after proc/pnix,proc/cftpdx
-*delete text/platx.
-*delete text/platx(v
+*file pbin

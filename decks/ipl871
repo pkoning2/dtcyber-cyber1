@@ -983,6 +983,7 @@ sbtpterm equ    16          pterm for cyber1 software
           data   0lcy1
           data   0lbrs
           data   0lgpk
+          data   0lpk2
 
  hostreq  vfd    48/0,12/0   getenv
           data   0lhostname
@@ -1965,10 +1966,11 @@ sbtpterm equ    16          pterm for cyber1 software
 *ident,faadev
 */ added cyber1 and cyber2 -- gpk 04.08.23.
 */ added dtfaa             -- gpk 05.08.05.
-*/ added pkoning, boris    -- gpk 06.03.28.
+*/ added pkoning, boris -- gpk 06.03.28.
+*/ added koning2        -- gpk 09.06.05.
 *deck,msubs
 *d,msubsa.6,msubsa.8
- ndevsys  equ    7           maximum number of dev systems
+ ndevsys  equ    8           maximum number of dev systems
           data   0luol       university online system
           data   0lcybdev    cybis development system
           data   0lfaa       faa system (used by uol)
@@ -1976,6 +1978,7 @@ sbtpterm equ    16          pterm for cyber1 software
           data   0lcyber1    cyber1.org system
           data   0lboris     second cyber1.org system
           data   0lpkoning   paul test system
+          data   0lkoning2   paul second test system
 *d,msubsa.15,msubsa.17
  nuolsys  equ    3           maximum number of uol systems
           data   0luol       university online system
