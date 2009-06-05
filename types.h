@@ -232,7 +232,6 @@ typedef struct NetFet_s
     struct NetPortSet_s *ps;            /* PortSet this belongs to */
     u64         ownerInfo;              /* Data supplied by socket owner */
     u8          inUse;                  /* In use flag */
-    u8          connPending;            /* Non-zero if dtConnect pending */
     } NetFet;
 
 
