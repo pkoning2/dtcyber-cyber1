@@ -132,12 +132,12 @@ exit.
           rj     netio       then close the socket
           endrun
 
- cerr1    message ctlbuf+1,3,r
+ cerr1    message ctlbuf+1,,r
  cerr     sx2    rsetall
           rj     netio       release the socket
           abort
 
- cerr2    message cerrm2,3,r
+ cerr2    message cerrm2,,r
           eq     cerr
 
  cerrm2   dis    ,* file transfer error.*
@@ -210,7 +210,7 @@ exit.
  geterr1  sa6    ctlbuf      set error code
           sx6    4
           rj     sendctl     send error response
-          message errbuf,3,r
+          message errbuf,,r
           sx2    shut
           rj     netio       issue socket shutdown
           eq     ftpdgo      loop for next request
@@ -256,7 +256,7 @@ exit.
           rj     netio       then close the socket
           eq     ftpdgo      loop for next request
 
- derr1    message derrm1,3,r
+ derr1    message derrm1,,r
           sx2    rsetall
           rj     netio
           abort
@@ -364,7 +364,7 @@ exit.
           sx6    -1          indicate ok
           eq     rcvfilx
           
- rcvfe1   message rcvfem,3,r
+ rcvfe1   message rcvfem,,r
           sx6    1           indicate error
           eq     rcvfilx
 
@@ -387,7 +387,7 @@ exit.
           sx2    read
           rj     netio
           ng     x6,readctlx if ok
-          message readerr,3,r
+          message readerr,,r
           sx2    shut
           rj     netio       try to free the data socket
           sx6    1
@@ -417,7 +417,7 @@ exit.
           sx2    write
           rj     netio
           ng     x6,sendctlx if ok
-          message senderr,3,r
+          message senderr,,r
           sx2    shut
           rj     netio       try to free the data socket
           sx6    1
@@ -787,11 +787,12 @@ exit.
 
  htab     host   lcl,127,0,0,1,6021     localhost
           host   gpk,127,0,0,1,11851    pkoning, via tunnel
+          host   pk2,127,0,0,1,26151    koning2, via tunnel	
           host   cyt,127,0,0,1,5831     monster, via tunnel
           host   brt,127,0,0,1,3939     boris, via tunnel
           host   faa,127,0,0,1,9641     dtfaa, via tunnel
-*          host   brs,1,2,3,4,6021
-*          host   cy1,1,2,3,5,6021
+          host   cy1,192,168,2,13,6021  monster, on its local subnet
+          host   brs,192,168,2,17,6021  boris, on its local subnet
           data   0
                             
           xtext  comcdxb

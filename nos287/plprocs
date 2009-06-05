@@ -2641,3 +2641,13 @@ ATTACH(SYSTEM/#M=M)
 ATTACH(DEVMAST/#M=M) 
 .* 
 REVERT.
+~
+.proc,cftpdx.
+.*
+.*	start cftp daemon
+.*
+USER(plarecv,netderf)
+cftpd.
+exit.
+dmd.
+exit.

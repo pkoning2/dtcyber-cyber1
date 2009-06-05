@@ -2,26 +2,26 @@ job(cm140000,t77770)
 user(plato,plato)
 common,system.
 *
-attach,cmrd25.
-attach,cmrd26.
-attach,eqpd25.
-attach,iprd00.
-attach,iprd01.
-attach,libd01.
-attach,ppubin.
-attach,pbin.
-attach,cbin.
-attach,fbin.
-attach,platlib.
-attach,mbin.
-attach,ubin.
-attach,config.
-attach,tmbin.
-attach,mfdx.
-attach,mfnx.
-attach,backdmp.
+*attach,cmrd25.
+*attach,cmrd26.
+*attach,eqpd25.
+*attach,iprd00.
+*attach,iprd01.
+*attach,libd01.
+*attach,ppubin.
+*attach,pbin.
+*attach,cbin.
+*attach,fbin.
+*attach,platlib.
+*attach,mbin.
+*attach,ubin.
+*attach,config.
+*attach,tmbin.
+*attach,mfdx.
+*attach,mfnx.
+*attach,backdmp.
+*attach,pnidbin.
 attach,plprocs.
-attach,pnidbin.
 attach,ftpbin.
 *
 libedit,p=system.
@@ -33,6 +33,8 @@ label,tape,vsn=ndt,lb=ku,po=w.
 rewind,new.
 copyei,new,tape.
 ~
-*file libd01
 *file ftpbin
-*after pp/4x2,abs/cftp
+*file plprocs
+*after proc/pnix,proc/cftpdx
+*delete text/platx.
+*delete text/platx(v
