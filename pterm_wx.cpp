@@ -561,7 +561,8 @@ public:
     void StoreWord (int word);
 
 private:
-    NetFet      m_fet;
+    NetPortSet  m_portset;
+    NetFet      *m_fet;
     u32         m_displayRing[RINGSIZE];
     volatile int m_displayIn, m_displayOut;
     u32         m_gswRing[GSWRINGSIZE];
@@ -8829,7 +8830,7 @@ PtermConnection::~PtermConnection ()
     {
         ptermCloseGsw ();
     }
-    dtCloseFet (&m_fet, TRUE);
+    dtClose (m_fet, &m_portset, TRUE);
 }
 
 PtermConnection::ExitCode PtermConnection::Entry (void)
@@ -8841,13 +8842,9 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
     in_addr_t host;
     int true_opt = 1;
     
-    if (dtInitFet (&m_fet, BufSiz) != 0)
-    {
-        StoreWord (C_CONNFAIL);
-        wxWakeUpIdle ();
-        return (ExitCode) 1;
-    }
-
+    dtInitPortset (&m_portset, BufSiz);
+    m_fet = m_portset.portVec;
+    
     hp = gethostbyname (m_hostName.mb_str());
     if (hp == NULL || hp->h_length == 0)
     {
@@ -8856,7 +8853,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
         return (ExitCode) 1;
     }
     memcpy (&host, hp->h_addr, sizeof (host));
-    if (dtConnect (&m_fet, NULL, host, m_port) < 0)
+    if (dtConnect (m_fet, NULL, host, m_port) < 0)
     {
         StoreWord (C_CONNFAIL);
         wxWakeUpIdle ();
@@ -8869,7 +8866,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
         // using the more obvious -1 (wait forever) is to make sure
         // we come out of the network wait and call TestDestroy
         // reasonably often.  Otherwise, closing the window doesn't work.
-        i = dtRead (&m_fet, 200);
+        i = dtRead (m_fet, &m_portset, 200);
 #ifdef DEBUG
         printf ("dtRead status %i\n", i);
 #endif
@@ -8967,18 +8964,18 @@ int PtermConnection::AssembleNiuWord (void)
     
     for (;;)
     {
-        if (dtFetData (&m_fet) < 3)
+        if (dtFetData (m_fet) < 3)
         {
             return C_NODATA;
         }
-        i = dtReado (&m_fet);
+        i = dtReado (m_fet);
         if (i & 0200)
         {
             printf ("Plato output out of sync byte 0: %03o\n", i);
             continue;
         }
 newj:
-        j = dtReado (&m_fet);
+        j = dtReado (m_fet);
         if ((j & 0300) != 0200)
         {
             printf ("Plato output out of sync byte 1: %03o\n", j);
@@ -8989,7 +8986,7 @@ newj:
             }
             continue;
         }
-        k = dtReado (&m_fet);
+        k = dtReado (m_fet);
         if ((k & 0300) != 0300)
         {
             printf ("Plato output out of sync byte 2: %03o\n", k);
@@ -9008,7 +9005,7 @@ int PtermConnection::AssembleAutoWord (void)
 {
     u8 buf[3];
     
-    if (dtPeekw (&m_fet, buf, 3) < 0)
+    if (dtPeekw (m_fet, buf, 3) < 0)
     {
         return C_NODATA;
     }
@@ -9032,7 +9029,7 @@ int PtermConnection::AssembleAsciiWord (void)
     
     for (;;)
     {
-        i = dtReado (&m_fet);
+        i = dtReado (m_fet);
         if (i == -1)
         {
             return C_NODATA;
@@ -9337,7 +9334,7 @@ void PtermConnection::StoreWord (int word)
 void PtermConnection::SendData (const void *data, int len)
 {
     // Windows has the wrong type for the buffer pointer argument...
-    send(m_fet.connFd, (const char *) data, len, 0);
+    send(m_fet->connFd, (const char *) data, len, 0);
 }
 
 // ----------------------------------------------------------------------------
