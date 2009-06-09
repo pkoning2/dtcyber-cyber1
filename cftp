@@ -8,14 +8,17 @@ compass,l,s=nostext,x.
 exit.
 ~
           ident  cftp,125b,cftp
-          title  cftp - cyber file transfer program
-
+          title  cftp - cyber file transfer program.
+          comment 09.06.09 cyber file transfer program.
           abs
 
           entry  cftp
           entry  cftpd
+          entry  rfl=
           
 ***       cftp - cyber file transfer program
+*
+*         p. koning  09.06.09.
 *
 *         this utility uses the dtcyber exx socket access opcode
 *         to run a simple file transfer protocol.  transfer is
@@ -65,7 +68,10 @@ exit.
 *         by default it is an indirect access name.  if rfn/d is
 *         specified, it is a direct access file.  for *get*
 *         operations, the file must exist, for *put* it is created
-*         if it does not exist, or replaced if it does.
+*         if it does not exist, or replaced if it does.  in the
+*         case of replacement, the existing file must be of the
+*         same type (direct access or indirect access) as the new
+*         file.
 
           base   d
           
@@ -81,6 +87,7 @@ exit.
           
 **        socket function codes
 
+ e.sock   equ    1           exx function code for sockets
  s.rset   equ    0           reset socket
  s.close  equ    1           shutdown (graceful close)
  s.get    equ    2           get a socket
@@ -144,6 +151,8 @@ exit.
  cftpd    title  file transfer daemon main loop
 
  ftpderr  close  fet,return,r
+          sx1    reset
+          ex1    x1          reset the connection
  ftpdgo   sx6    0
           mx1    0
           sa6    dsock
@@ -164,8 +173,12 @@ exit.
           sa2    a1+b1
           sx6    b1          *done* bit
           bx6    x6+x1
-          sa6    fet         set file name in fet
           sa6    rfn
+          sa6    fet         set file name in fet
+          sa1    a6+b1
+          sx6    x1          *first*
+          sa6    a1+b1       *in* = *first*
+          sa6    a6+b1       *out* = *in* so fet is empty
           bx7    x2
           sa7    put         *put* flag in sign bit
           lx7    1
@@ -342,10 +355,9 @@ exit.
           sx7    b1
           bx7    x7*x1       low order bit of word count
           ix7    x7+x1       form wc rounded up to even
-          sa6    rbuf
-          sa7    a6+b1
-          sx2    read
-          rj     netio       receive the data
+          sb3    x7
+          sb4    netbuf      buffer fwa
+          rj     readn       read the specified count of words
           pl     x6,rcvfe1   if error
           sa1    ctlbuf      get original word count again
           writew fet,netbuf,x1
@@ -369,7 +381,7 @@ exit.
           eq     rcvfilx
 
  rcvm1    dis    ,* receiving xxxxxxx*
- rcvfem   dis    ,* network error receving file.*
+ rcvfem   dis    ,* network error receiving file.*
           title  read a control message
 
 **        read control message (2 or 4 words)
@@ -381,15 +393,13 @@ exit.
 *         uses   x1, x2, x6, a6
 
  readctl  subr
-          sa6    rbuflen
-          sx6    ctlbuf
-          sa6    rbuf
-          sx2    read
-          rj     netio
+          sb3    x6
+          sb4    ctlbuf
+          rj     readn       read specified word count
           ng     x6,readctlx if ok
           message readerr,,r
-          sx2    shut
-          rj     netio       try to free the data socket
+          sx2    reset
+          ex2    x2          reset the connection
           sx6    1
           eq     readctlx    error exit
 
@@ -418,12 +428,41 @@ exit.
           rj     netio
           ng     x6,sendctlx if ok
           message senderr,,r
-          sx2    shut
-          rj     netio       try to free the data socket
+          sx2    reset
+          ex2    x2          reset the connection
           sx6    1
           eq     sendctlx    error exit
 
  senderr  dis    ,* message send error.*
+          title  receive message of exactly n words
+**        receive exactly the given word count
+*
+*         entry  (b3) = word count (must be even)
+*                (b4) = buffer fwa
+*                (rcvs) = socket number
+*
+*         exit   (x6) < 0 if ok
+*
+*         uses   x1, x2, x3, b2, b7
+
+ readn    subr
+ readn2   sx6    b4
+          sx7    b3
+          sa6    rbuf
+          sa7    rbuflen
+          sx2    read
+          rj     netio       receive the data
+          pl     x6,readnx   if error
+          sa1    rcc         get received byte count
+          sx2    15
+          ix3    x1/x2       count of word pairs
+          lx3    1           get count of words read
+          sb2    x3
+          sb3    b3-b2       calculate words left to do
+          sb4    b4+b2       advance buffer pointer
+          mx6    1
+          zr     b3,readnx   if request satisfied
+          eq     readn2      read more data
           title  plant socket number
 
 **        plant data socket number
@@ -433,12 +472,13 @@ exit.
 *         uses   x6, x6
           
  psock    subr
-          sx6    1
-          lx6    54          binary mode flag
+          sx6    3
+          lx6    54          binary mode flag, no partial words
           bx6    x1+x6
           sa6    rcvs        plant data socket number
           sa6    ws
           sa6    ss
+          sa6    rss
           sa6    socks+1
           eq     psockx
  common   title  routines and data common to client and daemon
@@ -456,11 +496,12 @@ exit.
 *         it returns status code 2 (*eagain*), i.e., no data
 *         or not ready yet.
 
+ neterr   sa6    netstat     save return value
  netio    subr
  netio1   ex6    x2          do it
-          sa6    netstat     save return value
+          ng     x6,netiox   if ok
           sx1    x6-2        check for *eagain* status code
-          nz     x1,netiox   if ready
+          nz     x1,neterr   if interesting error
           recall             wait a bit
           eq     netio1      try again
 
@@ -498,26 +539,29 @@ exit.
  rfn      data   0           remote side file name
  mtu      con    netmax      max chunk size (netmax, unless reduced by the other end)
           
- shut     vfd    42/0,6/s.close,12/1
+ reset    vfd    42/0,6/s.rset,12/e.sock
+ rss      data   0
+
+ shut     vfd    42/0,6/s.close,12/e.sock
  ss       data   0
 
- accept   vfd    42/0,6/s.acc,12/1
+ accept   vfd    42/0,6/s.acc,12/e.sock
  as       data   0
  dsock    data   0           returned data socket number
  asaddr   data   0           returned remote host address
 
- read     vfd    42/0,6/s.read,12/1
- rcvs     vfd    6/1         binary mode
+ read     vfd    42/0,6/s.read,12/e.sock
+ rcvs     vfd    6/3         binary mode, full words
  rbuf     data   0
  rbuflen  data   0
  rcc      data   0
 
- write    vfd    42/0,6/s.write,12/1
- ws       vfd    6/1         binary mode
+ write    vfd    42/0,6/s.write,12/e.sock
+ ws       vfd    6/3         binary mode, full words
  wbuf     data   0
  wbuflen  data   0
           
- rsetall  vfd    42/0,6/s.rall,12/1
+ rsetall  vfd    42/0,6/s.rall,12/e.sock
           data   0
           con    socks
           data   2
@@ -538,7 +582,6 @@ exit.
  netbuf   equ    ctlbuf+2    file data starts here
 
  errbuf   equ    ctlbuf+1    message area for *pfm* errors
-
           title  client initialization
 
           org    ciobuff     this code is overlaid by i/o buffers
@@ -766,17 +809,17 @@ exit.
           
 **        initialization time socket request blocks
 
- getsock  vfd    42/0,6/s.get,12/1
+ getsock  vfd    42/0,6/s.get,12/e.sock
  socknum  data   0           returned socket number
           data   0           owner data (none specified)
           
- bind     vfd    42/0,6/s.bind,12/1
+ bind     vfd    42/0,6/s.bind,12/e.sock
  bs       data   0
           data   0           any ip address
  bport    bss    1
           data   16          backlog
           
- conn     vfd    42/0,6/s.conn,12/1
+ conn     vfd    42/0,6/s.conn,12/e.sock
  cs       data   0
  caddr    data   0
  cport    data   0
@@ -798,4 +841,4 @@ exit.
           xtext  comcdxb
           xtext  comcusb
 
-          end    cftp
+ rfl=     end    cftp

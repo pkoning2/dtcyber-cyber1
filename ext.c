@@ -158,7 +158,8 @@ CpWord extOp (CpWord req)
     }
     if (retval != RETNODATA)
     {
-        DEBUGPRINT ("req %llo, reqp %p, *reqp %llo\n", req, reqp, *reqp);
+        DEBUGPRINT ("req %llo, reqp %p, reqp[]  %llo %llo %llo %llo %llo\n",
+                    req, reqp, reqp[0], reqp[1], reqp[2], reqp[3], reqp[4]);
         DEBUGPRINT ("return value %llo\n", retval);
     }
     return retval;
@@ -278,7 +279,12 @@ static CpWord envOp (CpWord req)
 **                              "socknum" is not actually a socket number;
 **                              instead, it is an index into our NetPortSet.
 **
-**                              "mode" is 0 for text, 1 for binary.
+**                              "mode" is a bit mask.  The bottom bit
+**                              is 0 for text, 1 for binary.  The upper
+**                              bits are modifier flags:
+**                                  text:   4/reserved, 1/no partial lines
+**                                  binary: 4/reserved, 1/no partial words
+**
 **                              This applies only to read and write calls.
 **                              Other values are reserved.
 **
@@ -298,6 +304,7 @@ static CpWord sockOp (CpWord req)
     int retval;
     int true_opt = 1;
     int mode;
+    int modeflags;
     int buflen;
     CpWord *bufp;
     CpWord d;
@@ -310,12 +317,16 @@ static CpWord sockOp (CpWord req)
     socklen_t sl;
     int charset;
     char resultstr[MAXNET];
+    volatile u8 *prev_out;
+    int prev_oc;
     
     if (reqp == NULL)
     {
         return 0;
     }
     mode = ((reqp[1] >> 54) & Mask6);
+    modeflags = mode >> 1;
+    mode &= 1;
     socknum = reqp[1] & 0xffffffff;
     if (socknum > extSockets)
     {
@@ -481,19 +492,20 @@ static CpWord sockOp (CpWord req)
         // Report error status from dtRead only if there isn't any
         // data left to be processed.
         //
-        if (retval < 0 && dtEmpty (fet))
-        {
-            if (retval == -1)
-            {
-                return RETNULL;
-            }
-            return RETERRNO;
-        }
         if (dtEmpty (fet))
         {
+            if (retval < 0)
+            {
+                if (retval == -1)
+                {
+                    return RETNULL;
+                }
+                return RETERRNO;
+            }
             return RETNODATA;
         }
-        DEBUGPRINT ("dtRead %d, %d bytes buffered\n", retval, dtFetData (fet));
+        //DEBUGPRINT ("dtRead %d, %d bytes buffered\n", retval, dtFetData (fet));
+        prev_out = fet->out;
         c = dtReado (fet);
         if (mode == 1)
         {
@@ -504,7 +516,8 @@ static CpWord sockOp (CpWord req)
             shift = 60 - 6;
         }
         d = 0;
-        oc = 0;
+        oc = prev_oc =  0;
+        
         for (ic = 0; ; ic++)
         {
             // DEBUGPRINT (" byte %03o (%02x) shift %d\n", c, c, shift);
@@ -531,10 +544,12 @@ static CpWord sockOp (CpWord req)
                     if (shift == 0)
                     {
                         *bufp++ = d;
-                        DEBUGPRINT (" %020llo\n", d);
+                            DEBUGPRINT (" %020llo\n", d);
                         buflen--;
                         d = 0;
                         shift = 60 - 8;
+                        prev_oc = oc + 1;
+                        prev_out = fet->out;
                     }
                     else
                     {
@@ -559,7 +574,7 @@ static CpWord sockOp (CpWord req)
                     break;
                 }
                 // PLATO text mode
-                if (c == '\r')
+                if (c == '\n')
                 {
                     c = dtReado (fet);
                     if (c < 0)
@@ -568,7 +583,7 @@ static CpWord sockOp (CpWord req)
                     }
                     continue;
                 }
-                else if (c == '\n')
+                else if (c == '\r')
                 {
                     // End of line
                     *bufp++ = d;
@@ -594,6 +609,8 @@ static CpWord sockOp (CpWord req)
                     {
                         oc = ((oc + 10) / 10) * 10;
                     }
+                    prev_oc = oc;
+                    prev_out = fet->out;
                 }
                 else
                 {
@@ -652,6 +669,27 @@ static CpWord sockOp (CpWord req)
             *bufp = d;
             DEBUGPRINT (" %020llo\n", d);
         }
+        if (modeflags & 1)
+        {
+            // whole wordpairs/lines only
+            oc = prev_oc;
+            fet->out = prev_out;
+            if (oc == 0)
+            {
+                // If the connection is gone and the data that's
+                // left is less than what we want to get right now,
+                // return the error for the lost connection.
+                if (retval < 0)
+                {
+                    if (retval == -1)
+                    {
+                        return RETNULL;
+                    }
+                    return RETERRNO;
+                }
+                return RETNODATA;
+            }
+        }
         DEBUGPRINT ("chars to Cyber: %d\n", oc);
         reqp[4] = oc;
         return RETOK;
@@ -707,7 +745,7 @@ static CpWord sockOp (CpWord req)
                 {
                     *cp = d << 4;
                     d = *bufp++;
-                    DEBUGPRINT (" %020llo\n", d);
+                    //DEBUGPRINT (" %020llo\n", d);
                     *cp++ |= (d >> 56) & 0x0f;
                     shift = 60 - 8 - 4;
                 }

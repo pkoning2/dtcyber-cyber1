@@ -148,10 +148,10 @@ return(opl)
 
 ** handle -socket control-
 
- scctrl   call   nxtnam      (x6) = control optio keyword
+ scctrl   call   nxtnam      (x6) = control option keyword
           zr     x6,err2few  error if no keyword
           sa1    sftab-1     (a1) = address of 0th keyword
-          mx0    48          (x0) = mask for keyword name
+          mx0    42          (x0) = mask for keyword name
  scctrl1  sa1    a1+1        (x1) = next keyword table entry
           zr     x1,errname  error if end of table
           bx2    x0*x1       (x2) = next keyword
@@ -166,8 +166,10 @@ return(opl)
 
 ** list of flags keywords for the -socket control- command
 
- sftab    vfd    48/0lbinary,18/0
-          vfd    48/0ltext,18/1
+ sftab    vfd    42/0ltext,18/0
+          vfd    42/0lbinary,18/1
+          vfd    42/0llines,18/2
+          vfd    42/0lwords,18/3
           con    0
 
 ** handle -socket connect-
@@ -304,7 +306,8 @@ return(opl)
 *                shutdown (controlled close) of a socket
 *
 *         socket control,sockidx,flags
-*                set socket mode; flags is *binary* or *text*.
+*                set socket mode; flags is *binary*, *text*,
+*                *words* or *lines*.
 *
 *         socket listen,sockidx,ipaddr,port,backlog
 *                bind an address and tcp port number, then listen
@@ -407,6 +410,7 @@ return(opl)
           sa2    varbuf+2    get flags value
           lx2    xcodel-6    position to high bits
           mx0    6
+          bx2    x0*x2       isolate new flags
           bx6    -x0*x1      clear out old flags
           bx6    x6+x2       merge in new
           sa6    a1          update socket entry
@@ -434,7 +438,7 @@ return(opl)
           sa6    sxbuf+4     set in request
           eq     scdo        do the bind/listen and exit
           space  5,11
-**        -socket bind-, -socket connect-
+**        -socket connect-
 
  scconn   rj     getsocz     get socket number, must be free
           bx6    x1
@@ -749,14 +753,14 @@ return(opl)
  extcall  call   systst1     error if not write-cm lesson
           eq     collctc     collect two arguments, first storeable
 *deck exec10
-*i socket.69
+*i socket.70
 *
 *         *ovarg1* = 0       -socket-
 *                  = 1       -extcall-
-*i socket.75
+*i socket.76
           sa1    ovarg1
           nz     x1,extcx    do -extcall- command
-*i socket.437
+*i socket.439
  extcall  title  -extcall- command execution
 ***
 *         -extcall- command
