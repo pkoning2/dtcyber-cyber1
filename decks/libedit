@@ -10,7 +10,7 @@ common,system.
 *attach,libd01.
 *attach,ppubin.
 attach,pbin.
-*attach,cbin.
+attach,cbin.
 *attach,fbin.
 *attach,platlib.
 *attach,mbin.
@@ -28,9 +28,11 @@ libedit,p=system.
 *return,output.
 rewind,new.
 itemize,new.
-* cy871ay
+* cy871az
 label,tape,vsn=ndt,lb=ku,po=w.
 rewind,new.
 copyei,new,tape.
 ~
 *file pbin
+*file cbin
+*file ftpbin
