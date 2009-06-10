@@ -128,6 +128,7 @@ exit.
           rj     sendctl     send final status
           sx2    shut
           rj     netio       then close the socket
+          message complete,3,r
           endrun
 
  doput    rj     sendfil     send file to server
@@ -137,6 +138,7 @@ exit.
           rj     sendctl     receive final status
           sx2    shut
           rj     netio       then close the socket
+          message complete,3,r
           endrun
 
  cerr1    message ctlbuf+1,,r
@@ -147,6 +149,7 @@ exit.
  cerr2    message cerrm2,,r
           eq     cerr
 
+ complete dis    ,* complete.*
  cerrm2   dis    ,* file transfer error.*
  cftpd    title  file transfer daemon main loop
 
