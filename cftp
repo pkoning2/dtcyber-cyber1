@@ -126,6 +126,7 @@ exit.
           sa6    ctlbuf
           sx6    4
           rj     sendctl     send final status
+          pl     x6,cerr2    if error
           sx2    shut
           rj     netio       then close the socket
           message complete,3,r
@@ -160,10 +161,15 @@ exit.
           mx1    0
           sa6    dsock
           rj     psock       wipe planted data socket numbers
-          sx2    accept
-          rj     netio       wait for a connection
-          pl     x6,derr1    if error
-          sa1    dsock
+ ftpd5    sx2    accept
+          ex2    x2          check for an incoming connection
+          ng     x2,ftpd6    if connection received
+          sx2    x2-2        check for *nodata* status
+          nz     x2,derr1    if some other error
+          wait   200         wait 200 ms
+          eq     ftpd5
+          
+ ftpd6    sa1    dsock
           rj     psock       plant data socket number
           sx6    netmax
           sa6    ctlbuf
@@ -176,8 +182,9 @@ exit.
           sa2    a1+b1
           sx6    b1          *done* bit
           bx6    x6+x1
-          sa6    rfn
-          sa6    fet         set file name in fet
+          bx7    x1          
+          sa7    rfn         save file name
+          sa6    fet         set file name in fet with *done* set
           sa1    a6+b1
           sx6    x1          *first*
           sa6    a1+b1       *in* = *first*
@@ -216,6 +223,21 @@ exit.
           rj     sendctl     receive final status
           sx2    shut
           rj     netio       then close the socket
+          sa1    rfn         get file name
+          sb3    msgbuf
+          sb5    -getdone    message template
+          sb2    1r+
+          rj     snm         insert file name into message
+          sa1    wc          get word count
+          rj     cdd
+          sb2    b2-b1
+          mx1    1
+          ax1    b2
+          bx1    x4*x1       get number zero filled
+          sb5    msgbuf
+          sb2    1r/
+          rj     snm         insert length
+          message msgbuf,,r  send transfer complete message to dayfile
           eq     ftpdgo      loop for next request
 
  getdir   attach fet,,,,r
@@ -268,8 +290,24 @@ exit.
           sa6    ctlbuf
           sx6    4
           rj     sendctl     send final status
+          pl     x6,ftpderr  if error sending status
           sx2    shut
           rj     netio       then close the socket
+          sa1    rfn         get file name
+          sb3    msgbuf
+          sb5    -putdone    message template
+          sb2    1r+
+          rj     snm         insert file name into message
+          sa1    wc          get word count
+          rj     cdd
+          sb2    b2-b1
+          mx1    1
+          ax1    b2
+          bx1    x4*x1       get number zero filled
+          sb5    msgbuf
+          sb2    1r/
+          rj     snm         insert length
+          message msgbuf,,r  send transfer complete message to dayfile
           eq     ftpdgo      loop for next request
 
  derr1    message derrm1,,r
@@ -277,15 +315,20 @@ exit.
           rj     netio
           abort
 
+ getdone  dis    ,* +++++++ sent, /////// words.*
+ putdone  dis    ,* +++++++ received, /////// words.*
  derrm1   dis    ,* accept error.*
           title  send a file to the other cftpd
 **        read local file from *fet* and send it to the other end
 *
 *         exit   (x6) < 0 if ok
-*
+*                (wc) = file word count
+* 
 *         uses   lots of registers
 
  sendfil  subr
+          sx6    0
+          sa6    wc          initialize word count
           sa1    fet
           mx6    42
           bx6    x6*x1
@@ -306,6 +349,9 @@ exit.
  sendf4   bx6    x1
           sa6    ctlbuf      set word count
           sa7    a6+b1       set flag
+          sa2    wc
+          ix7    x2+x6       advance word count
+          sa7    a2
           sx6    x1+2        total word count = data + header
           rj     sendctl     send that
           pl     x6,sendfilx if error
@@ -336,10 +382,13 @@ exit.
 *         entry  *fet* is open
 *
 *         exit   (x6) < 0 if ok
+*                (wc) = file word count
 *
 *         uses   lots of registers
 
  rcvfil   subr
+          sx6    0
+          sa6    wc          initialize word count
           sa1    fet
           mx6    42
           bx6    x6*x1
@@ -362,6 +411,10 @@ exit.
           sb4    netbuf      buffer fwa
           rj     readn       read the specified count of words
           pl     x6,rcvfe1   if error
+          sa1    wc
+          sa2    ctlbuf      get message word count
+          ix7    x1+x2       advance word count
+          sa7    a1
           sa1    ctlbuf      get original word count again
           writew fet,netbuf,x1
  rcvf2    sa1    ctlbuf+1
@@ -400,13 +453,20 @@ exit.
           sb4    ctlbuf
           rj     readn       read specified word count
           ng     x6,readctlx if ok
+          bx1    x6          copy error code
+          rj     cdd         convert to decimal display code
+          sb2    b2-b1
+          mx6    1
+          ax6    b2
+          bx6    x4*x6       get number zero filled
+          sa6    readerr+2   set in message
           message readerr,,r
           sx2    reset
           ex2    x2          reset the connection
           sx6    1
           eq     readctlx    error exit
 
- readerr  dis    ,* control message read error.*
+ readerr  dis    ,* message read error xxxx*
           title  send a control message
 
 **        send control message possibly with additional data
@@ -430,13 +490,20 @@ exit.
           sx2    write
           rj     netio
           ng     x6,sendctlx if ok
+          bx1    x6          copy error code
+          rj     cdd         convert to decimal display code
+          sb2    b2-b1
+          mx6    1
+          ax6    b2
+          bx6    x4*x6       get number zero filled
+          sa6    senderr+2   set in message
           message senderr,,r
           sx2    reset
           ex2    x2          reset the connection
           sx6    1
           eq     sendctlx    error exit
 
- senderr  dis    ,* message send error.*
+ senderr  dis    ,* message send error xxxx*
           title  receive message of exactly n words
 **        receive exactly the given word count
 *
@@ -497,18 +564,29 @@ exit.
 * 
 *         this routine retries the socket operation so long as
 *         it returns status code 2 (*eagain*), i.e., no data
-*         or not ready yet.
+*         or not ready yet, up to a limit of 1000 recalls which
+*         is about 25 seconds.
 
+ nettmo   message tmoerr,,r
+          sx6    2           set no data error code to indicate timeout
  neterr   sa6    netstat     save return value
  netio    subr
+          sx6    1000
+          sa6    recalls     initialize count of tries
  netio1   ex6    x2          do it
           ng     x6,netiox   if ok
           sx1    x6-2        check for *eagain* status code
           nz     x1,neterr   if interesting error
+          sa1    recalls
+          sx6    x1-1        count down retries
+          ng     x6,nettmo   if timeout
+          sa6    a1
           recall             wait a bit
           eq     netio1      try again
 
  netstat  data   0
+ recalls  data   0
+ tmoerr   dis    ,* network timeout.*
           title  reprieve handler
 
  doexit   sx1    rsetall
@@ -518,13 +596,15 @@ exit.
           space  4,10
 ** common decks
           
+          xtext  comccdd
           xtext  comccio
           xtext  comcpfm
           xtext  comcrdw
           xtext  comcsys
           xtext  comcwtw
           xtext  comspfm
-
+          xtext  comcsnm
+          
 ** note - netmax must be less than dtcyber socket ring buffer
 *  size divided by 7.5.
           
@@ -541,7 +621,8 @@ exit.
  lfn      data   0           local side file name
  rfn      data   0           remote side file name
  mtu      con    netmax      max chunk size (netmax, unless reduced by the other end)
-          
+ wc       data   0           count of words transfered in daemon mode
+                    
  reset    vfd    42/0,6/s.rset,12/e.sock
  rss      data   0
 
@@ -583,7 +664,7 @@ exit.
           bss    netmax      space for max length data
           bss    5           extra space for the readw/writew overrun area
  netbuf   equ    ctlbuf+2    file data starts here
-
+ msgbuf   equ    ctlbuf+2    also used for dayfile message assembly
  errbuf   equ    ctlbuf+1    message area for *pfm* errors
           title  client initialization
 
@@ -728,6 +809,7 @@ exit.
           pl     x6,err8     if connect failure
           sx6    2
           rj     readctl     get server hello message
+          pl     x6,err8     error at this point is connect failure
           sa1    ctlbuf      get mtu
           ax6    x1,b1
           lx6    1           force it to be even
