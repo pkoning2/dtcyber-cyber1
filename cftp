@@ -223,21 +223,8 @@ exit.
           rj     sendctl     receive final status
           sx2    shut
           rj     netio       then close the socket
-          sa1    rfn         get file name
-          sb3    msgbuf
           sb5    -getdone    message template
-          sb2    1r+
-          rj     snm         insert file name into message
-          sa1    wc          get word count
-          rj     cdd
-          sb2    b2-b1
-          mx1    1
-          ax1    b2
-          bx1    x4*x1       get number zero filled
-          sb5    msgbuf
-          sb2    1r/
-          rj     snm         insert length
-          message msgbuf,,r  send transfer complete message to dayfile
+          rj     donemsg     issue transfer complete message
           eq     ftpdgo      loop for next request
 
  getdir   attach fet,,,,r
@@ -293,11 +280,75 @@ exit.
           pl     x6,ftpderr  if error sending status
           sx2    shut
           rj     netio       then close the socket
+          sb5    -putdone    message template
+          rj     donemsg     issue transfer done message
+          eq     ftpdgo      loop for next request
+
+ derr1    message derrm1,,r
+          sx2    rsetall
+          rj     netio
+          abort
+
+ getdone  dis    ,* +++++++ sent to %%%.&&&.<<<.>>>, /////// words.*
+ putdone  dis ,* +++++++ received from %%%.&&&.<<<.>>>, /////// words.*
+ derrm1   dis    ,* accept error.*
+          title  assemble transfer complete message
+**        assemble transfer complete message
+*
+*         (b5) = negative of message fwa
+*
+*         uses   lots of regs.
+
+ donemsg  subr
           sa1    rfn         get file name
           sb3    msgbuf
-          sb5    -putdone    message template
           sb2    1r+
           rj     snm         insert file name into message
+          sa1    asaddr      get host address
+          ax1    24
+          rj     cdd
+          sb2    b2-b1
+          mx1    1
+          ax1    b2
+          bx1    x4*x1       get number zero filled
+          sb5    msgbuf
+          sb2    1r%
+          rj     snm         insert length
+          sa1    asaddr      get host address
+          ax1    16
+          mx2    -8
+          bx1    -x2*x1
+          rj     cdd
+          sb2    b2-b1
+          mx1    1
+          ax1    b2
+          bx1    x4*x1       get number zero filled
+          sb5    msgbuf
+          sb2    1r&
+          rj     snm         insert length
+          sa1    asaddr      get host address
+          ax1    8
+          mx2    -8
+          bx1    -x2*x1
+          rj     cdd
+          sb2    b2-b1
+          mx1    1
+          ax1    b2
+          bx1    x4*x1       get number zero filled
+          sb5    msgbuf
+          sb2    1r<
+          rj     snm         insert length
+          sa1    asaddr      get host address
+          mx2    -8
+          bx1    -x2*x1
+          rj     cdd
+          sb2    b2-b1
+          mx1    1
+          ax1    b2
+          bx1    x4*x1       get number zero filled
+          sb5    msgbuf
+          sb2    1r>
+          rj     snm         insert length
           sa1    wc          get word count
           rj     cdd
           sb2    b2-b1
@@ -308,16 +359,7 @@ exit.
           sb2    1r/
           rj     snm         insert length
           message msgbuf,,r  send transfer complete message to dayfile
-          eq     ftpdgo      loop for next request
-
- derr1    message derrm1,,r
-          sx2    rsetall
-          rj     netio
-          abort
-
- getdone  dis    ,* +++++++ sent, /////// words.*
- putdone  dis    ,* +++++++ received, /////// words.*
- derrm1   dis    ,* accept error.*
+          eq     donemsgx          
           title  send a file to the other cftpd
 **        read local file from *fet* and send it to the other end
 *
