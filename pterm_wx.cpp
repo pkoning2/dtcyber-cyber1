@@ -8842,6 +8842,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
     in_addr_t host;
     int true_opt = 1;
     
+    m_portset.maxPorts = 1;
     dtInitPortset (&m_portset, BufSiz);
     m_fet = m_portset.portVec;
     
