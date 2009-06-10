@@ -8842,6 +8842,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
     in_addr_t host;
     int true_opt = 1;
     
+    m_portset.callBack = NULL;
     m_portset.maxPorts = 1;
     dtInitPortset (&m_portset, BufSiz);
     m_fet = m_portset.portVec;
@@ -8948,7 +8949,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
                 m_owner->ptermSendKey (xofkey);
             }
         }
-        if (wasEmpty && !IsEmpty ())
+        if (!IsEmpty ())
         {
             // Send a do-nothing event to the frame; that will wake up the main
             // thread and cause it to process the words we buffered.
