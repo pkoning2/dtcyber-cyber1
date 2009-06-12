@@ -15,6 +15,8 @@
 #include <sys/types.h>
 #if defined(_WIN32)
 #include <winsock.h>
+typedef u_long in_addr_t;
+#define EINPROGRESS WSAEINPROGRESS
 #else
 #include <stdbool.h>
 #include <netinet/in.h>

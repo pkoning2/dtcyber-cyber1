@@ -25,16 +25,17 @@
 #include <time.h>
 #include <sys/types.h>
 #if defined(_WIN32)
-#include <winsock.h>
+	#include <winsock.h>
+	#define close(x) closesocket(x)
 #else
-#include <sys/time.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <pthread.h>
+	#include <sys/time.h>
+	#include <fcntl.h>
+	#include <unistd.h>
+	#include <sys/socket.h>
+	#include <netdb.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <pthread.h>
 #endif
 
 /*
@@ -222,6 +223,10 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
     server.sin_port = htons(port);
 
     retval = connect (connFd, (struct sockaddr *)&server, sizeof(server));
+
+//Joe comments: wonder if this code needs to be in a loop with a sleep since the documents i read re: blocking/non-blocking in windoze suggest this may be necessary,
+//              or if a callback function needs to be implemented to handle it.  we'll see.
+
     if (retval < 0 && errno != EINPROGRESS)
         {
 #if !defined(_WIN32)
@@ -1471,7 +1476,7 @@ void dtSendPending (NetFet *fet, NetPortSet *ps)
     {
     int connFd = fet->connFd;
     int sent = 0, pend;
-    u8 *waitptr;
+//    u8 *waitptr;
 
     if (fet->sendCount == 0)
         {

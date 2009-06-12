@@ -536,7 +536,8 @@ public:
     void StoreWord (int word);
 
 private:
-    NetFet      m_fet;
+    NetPortSet  m_portset;
+    NetFet      *m_fet;
     u32         m_displayRing[RINGSIZE];
     volatile int m_displayIn, m_displayOut;
     u32         m_gswRing[GSWRINGSIZE];
@@ -617,7 +618,9 @@ public:
     int         m_scale;
     bool        m_stretch;
     bool        m_showStatusBar;
+#if !defined(__WXMAC__)
     bool        m_showMenuBar;
+#endif
     bool        m_noColor;
     wxColour    m_fgColor;
     wxColour    m_bgColor;
@@ -8835,7 +8838,7 @@ PtermConnection::~PtermConnection ()
     {
         ptermCloseGsw ();
     }
-    dtCloseFet (&m_fet);
+    dtClose (m_fet, &m_portset, TRUE);
 }
 
 PtermConnection::ExitCode PtermConnection::Entry (void)
