@@ -1,0 +1,377 @@
+settl(*)
+setasl(*)
+setjsl(*)
+* update compass file copies on plato from the
+* master in the OPL.
+attach,opl=plaopl.
+attach,ipl.
+attach,nos=opl871.
+* Repeat the pattern below for each plato copy
+* to be updated.
+*
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit autload
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,autload)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit backlib
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,backlib)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit backone
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,backone)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit comnds
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,comnds)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit cond
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,cond)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit condc
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,condc)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit copymf
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,copymf)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit copypf
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,copypf)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit covlay2
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,covlay2)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit covlay3
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,covlay3)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit dd60
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,dd60)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit dsn1
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,dsn1)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit exec1
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,exec1)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit exec10
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,exec10)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit exec2
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,exec2)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit exec3
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,exec3)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit exec6
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,exec6)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit exec7
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,exec7)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit exec9
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,exec9)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit filex
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,filex)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit format
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,format)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit fovlay1
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,fovlay1)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit fovlay3
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,fovlay3)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit fovlay4
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,fovlay4)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit ftext
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,ftext)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit instalp
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,instalp)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit ioput
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,ioput)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit lcomnd
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,lcomnd)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit lesson
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,lesson)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit lex1
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,lex1)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit logicx
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,logicx)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit logsitx
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,logsitx)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit main
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,main)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit mainov
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,mainov)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit mastor
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,mastor)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit mastor2
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,mastor2)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit mrq
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,mrq)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit mrq1
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,mrq1)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit msubs
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,msubs)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit namex
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,namex)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit nprt
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,nprt)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit outform
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,outform)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit paramc
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,paramc)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit pctext
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,pctext)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit pftext
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,pftext)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit pio
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,pio)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit placsmd
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,placsmd)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit plasmrq
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,plasmrq)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit platxt
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,platxt)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit pms
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,pms)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit pni2
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,pni2)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit polls
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,polls)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit psys
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,psys)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit putilty
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,putilty)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit record2
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,record2)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit recordx
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,recordx)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit syscon
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,syscon)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit sysless
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,sysless)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit tovlay
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,tovlay)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit tprta
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,tprta)
+return,p,src.
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit tutorx
+rewind,src.
+skipr,src.
+copybr,src,p.
+pmod(mp,p,tutorx)
+return,p,src.
