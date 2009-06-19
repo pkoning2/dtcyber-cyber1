@@ -11,10 +11,39 @@ if(.not.file(npl,as))define,npl=ipl.
 modify(n,u,c=0)
 return(opl)
 ~
-*/ **/---   block=01-e opl2              83/09/22. 20.24    source
+*/ ---   block=01-e opl2                 83/09/22. 20.24    source
 *oplfile opl2
 */
-*/ **/---   block=01-e socket            09/02/03. 12.00    source
+*/ ---   block=01-e pf y2k               09/06/19. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Fix pf blabel write to handle 21st century
+*/
+*/ -------------------------------------------------------------------
+*ident pfy2k
+*deck pf
+*d pf.4161
+          pl     x6,cbl0     if 20th century
+          sx6    x6+100      adjust for 21st
+ cbl0     sa6    pdate
+*/ end pf
+*/ ---   block=01-e pf modify            09/06/19. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Extend pf blabel write to handle modify compatible labels
+*/
+*/ -------------------------------------------------------------------
+*ident pfmod
+*deck pf
+*i pf.4122
+          zr     x2,lbd1     if block label comment
+          sa2    bline2      try alternate form of block label
+          IX2    X2-X3
+*d pf.4128
+ lbd1     MX0    30
+*i pf.5472
+ bline2   DATA   10L*/ ---   B     modify compatible block label
+*/ ---   block=01-e socket               09/02/03. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Add -socket- command
@@ -724,7 +753,7 @@ return(opl)
           endov
 */ end socket
 */
-*/ **/---   block=01-e extcall           09/04/27. 12.00    source
+*/ ---   block=01-e extcall              09/04/27. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Add -extcall- command
@@ -787,7 +816,7 @@ return(opl)
           eq     sockret     set *zreturn* from socket op result
 */ end extcall          
 */
-*/ **/---   block=01-e nprt              08/07/22. 12.00    source
+*/ ---   block=01-e nprt                 08/07/22. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Make notesfile printing (nprt) work
@@ -832,7 +861,7 @@ return(opl)
  NCB      EQU    10          NUMBER OF ECS BLOCK BUFFERS                
 */ end nprt
 */
-*/ **/---   block=01-e notesys           07/08/29. 12.00    source
+*/ ---   block=01-e notesys              07/08/29. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Give "notesys" *wrt* privileges
@@ -844,7 +873,7 @@ return(opl)
           LTYPE  NOTESYS,(BIN,SYS,wrt,D2,SYSNV)
 */ end notesys
 */
-*/ **/---   block=01-e jsfont           07/05/24. 12.00    source
+*/ ---   block=01-e jsfont               07/05/24. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Turn on -font- for pterm
@@ -913,7 +942,7 @@ sbtpterm equ    16          pterm for cyber1 software
           call   fontext,5200b,x1
 
 */
-*/ **/---   block=01-e tprtuse           07/05/14. 12.00    source
+*/ ---   block=01-e tprtuse              07/05/14. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Fix tprint to print -use- commands
@@ -923,7 +952,7 @@ sbtpterm equ    16          pterm for cyber1 software
 *deck tprta
 *yank AI27611
 */
-*/ **/---   block=01-e ascii              06/03/28. 12.00    source
+*/ ---   block=01-e ascii                06/03/28. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Allow ppt commands without fuss
@@ -938,7 +967,7 @@ sbtpterm equ    16          pterm for cyber1 software
 *d COVLAY2.733,COVLAY2.793
 */ end covlay2
 */
-*/ **/---   block=01-e ascii              06/03/28. 12.00    source
+*/ ---   block=01-e ascii                06/03/28. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ make ASCII terminals work if CIU is also present
@@ -950,7 +979,7 @@ sbtpterm equ    16          pterm for cyber1 software
 +         EQ     OUTF555     14 - ASCII terminal
 */ end outform
 */
-*/ **/---   block=01-e cerlpack              06/03/28. 12.00    source
+*/ ---   block=01-e cerlpack             06/03/28. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Use CERL-style real packs
@@ -962,7 +991,7 @@ sbtpterm equ    16          pterm for cyber1 software
           SYSTEM png,,PNGWRD
 */ end mastor
 */
-*/ **/---   block=01-e hostname              06/03/28. 12.00    source
+*/ ---   block=01-e hostname             06/03/28. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Get system name from the environment.
@@ -1012,7 +1041,7 @@ sbtpterm equ    16          pterm for cyber1 software
 *d TOVLAY.948,tovlay.952
 */ end tovlay
 */
-*/ **/---   block=01-e logout              05/11/02. 12.00    source
+*/ ---   block=01-e logout               05/11/02. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Send out nopcode 3 when logout is being done, so the niu knows
@@ -1049,7 +1078,7 @@ sbtpterm equ    16          pterm for cyber1 software
  pkeyt2   SX2    X1-ABORTK
 */ end logout
 */
-*/ **/---   block=01-e nocmp              05/09/30. 12.00    source
+*/ ---   block=01-e nocmp                05/09/30. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Do not crash on missing conden overlays (like central tutor or
@@ -1067,7 +1096,7 @@ sbtpterm equ    16          pterm for cyber1 software
 */ end nocmp
 */
 */
-*/ **/---   block=01-e dtxon              05/08/17. 12.00    source
+*/ ---   block=01-e dtxon                05/08/17. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Add xon/xoff processing.  These keys are generated in pterm
@@ -1164,7 +1193,7 @@ sbtpterm equ    16          pterm for cyber1 software
           bx6    -x1*x6      clear *xoff*
 */end mainov
 */
-*/ **/---   block=01-e dd60hlp              05/08/03. 12.00    source
+*/ ---   block=01-e dd60hlp              05/08/03. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Fix right screen display for Console.
@@ -1176,7 +1205,7 @@ sbtpterm equ    16          pterm for cyber1 software
 ,,    .    (    ))
 */ end dd60
 */
-*/ **/---   block=01-e blkeras              05/02/08. 12.00    source
+*/ ---   block=01-e blkeras              05/02/08. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Remove filler nop*s after block erase for PPT terminals.
@@ -1191,7 +1220,7 @@ sbtpterm equ    16          pterm for cyber1 software
 *d fovlay4.1372,fovlay4.1410
           eq     outloop
 */
-*/ **/---   block=01-e dterase              05/02/08. 12.00    source
+*/ ---   block=01-e dterase              05/02/08. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Send nop code with data 2 to indicate output has been aborted
@@ -1207,7 +1236,7 @@ sbtpterm equ    16          pterm for cyber1 software
           packwrd x7         send *abort output* pterm nop
 */ end putilty
 */
-*/ **/---   block=01-e bdspsdm              05/01/22. 12.00    source
+*/ ---   block=01-e bdspsdm              05/01/22. 12.00    source
 */ -------------------------------------------------------------------
 */
 */ Remove check for SDM= entry point in B display retrieval
@@ -1220,7 +1249,7 @@ sbtpterm equ    16          pterm for cyber1 software
 *d mrq1.2985,mrq1.2986
 */ end mrq1
 */
-*/ **/---   block=01-e cfo              05/01/21. 15.00    source
+*/ ---   block=01-e cfo                  05/01/21. 15.00    source
 */ -------------------------------------------------------------------
 */
 */ Reinstate the "CFO type-in" MRQ request, so chess4p2 will work.
@@ -1318,7 +1347,7 @@ sbtpterm equ    16          pterm for cyber1 software
  cfobuf   bss    4*5         space for cfo data (36 chars max)
 */ end mrq1
 */
-*/ **/---   block=01-e bigkeys              05/01/13. 12.19    source
+*/ ---   block=01-e bigkeys              05/01/13. 12.19    source
 */ -------------------------------------------------------------------
 */
 */ Make the key buffer larger and parameterize things right to get
@@ -1607,7 +1636,7 @@ sbtpterm equ    16          pterm for cyber1 software
 
 */ end pni2
 */
-*/ **/---   block=01-e signoff              05/01/13. 12.19    source
+*/ ---   block=01-e signoff              05/01/13. 12.19    source
 */ -------------------------------------------------------------------
 */
 */ Treat the disconnect key as special, so it always gets through
@@ -1627,7 +1656,7 @@ sbtpterm equ    16          pterm for cyber1 software
           zjn    kyo227      if *offky2*, overwrite last key
 */ end pio
 */
-*/ **/---   block=01-e no acct              04/12/06. 12.19    source
+*/ ---   block=01-e no acct              04/12/06. 12.19    source
 */ -------------------------------------------------------------------
 */
 */ turn off detailed accounting
@@ -1640,7 +1669,7 @@ sbtpterm equ    16          pterm for cyber1 software
 */ end instalp
 */
 */ -------------------------------------------------------------------
-*/ **/---   block=01-e nopcode              83/09/22. 20.24    source
+*/ ---   block=01-e nopcode              83/09/22. 20.24    source
 */ -------------------------------------------------------------------
 */
 */ send nop words (word value 1) for nopcode
@@ -1656,7 +1685,7 @@ sbtpterm equ    16          pterm for cyber1 software
 */ end fovlay1
 */
 */ -------------------------------------------------------------------
-*/ **/---   block=01-e frame1024              83/09/22. 20.24    source
+*/ ---   block=01-e frame1024            83/09/22. 20.24    source
 */ -------------------------------------------------------------------
 */
 */ increase frame count to 1024 (was 128) and mout buffer to 1000
@@ -1688,7 +1717,7 @@ sbtpterm equ    16          pterm for cyber1 software
 */ end ftext
 */
 */ -------------------------------------------------------------------
-*/ **/---   block=01-e fastniu              83/09/22. 20.24    source
+*/ ---   block=01-e fastniu              83/09/22. 20.24    source
 */ -------------------------------------------------------------------
 */
 */ change framat-pio interface so dtcyber emulated niu works correctly
@@ -1781,7 +1810,7 @@ sbtpterm equ    16          pterm for cyber1 software
 */ end format
 */
 */ -------------------------------------------------------------------
-*/ **/---   block=01-e back2exit              83/09/22. 20.24    source
+*/ ---   block=01-e back2exit            83/09/22. 20.24    source
 */ -------------------------------------------------------------------
 */
 */ remove "press -back- to exit"
@@ -1792,7 +1821,7 @@ sbtpterm equ    16          pterm for cyber1 software
 */ end mainov
 */
 */ -------------------------------------------------------------------
-*/ **/---   block=01-e systype              83/09/22. 20.24    source
+*/ ---   block=01-e systype              83/09/22. 20.24    source
 */ -------------------------------------------------------------------
 */
 */ set os level and system type
@@ -1821,7 +1850,7 @@ sbtpterm equ    16          pterm for cyber1 software
 */ end syscon
 */
 */ -------------------------------------------------------------------
-*/ **/---   block=01-e nos2.1              83/09/22. 20.24    source
+*/ ---   block=01-e nos2.1               83/09/22. 20.24    source
 */ -------------------------------------------------------------------
 */
 */ some edits needed to make things build on nos 2.1-580.
@@ -1849,7 +1878,7 @@ sbtpterm equ    16          pterm for cyber1 software
 */ end pms
 */
 */ -------------------------------------------------------------------
-*/ **/---   block=01-e restfaa              83/09/22. 20.24    text
+*/ ---   block=01-e restfaa              83/09/22. 20.24    text
 */ -------------------------------------------------------------------
 */ -------------------------------------------------------------------
 */
@@ -1857,12 +1886,12 @@ sbtpterm equ    16          pterm for cyber1 software
 */
 */ -------------------------------------------------------------------
 */
-*/ **/---   block=01-e platlvl              83/09/22. 20.24    source
+*/ ---   block=01-e platlvl              83/09/22. 20.24    source
 *ident,cyb97b
 *deck,placsmd
 *d,cyb97a.1
  platlvl  micro  1,,/99'a/
-*/ **/---   block=01-g pni800x              81/05/27. 16.21    source
+*/ ---   block=01-g pni800x              81/05/27. 16.21    source
 */ -------------------------------------------------------------------
 *ident,pni800x
 *deck,pni2
@@ -1938,7 +1967,7 @@ sbtpterm equ    16          pterm for cyber1 software
 
  wcb5a    bx1    x6          restore *x1*
 */ -------------------------------------------------------------------
-*/ **/---   block=02-a jpoutfx              81/08/14. 13.55    source
+*/ ---   block=02-a jpoutfx              81/08/14. 13.55    source
 */ -------------------------------------------------------------------
 *ident,jpoutfx
 *deck,tutorx
@@ -1965,7 +1994,7 @@ sbtpterm equ    16          pterm for cyber1 software
 * /---   block      deffont    00 000   78/10/03  16.08
 *d,varsfix.2,varsfix.5
 */ -------------------------------------------------------------------
-*/ **/---   block=02-b faadev               81/08/14. 13.55    source
+*/ ---   block=02-b faadev               81/08/14. 13.55    source
 */ -------------------------------------------------------------------
 *ident,faadev
 */ added cyber1 and cyber2 -- gpk 04.08.23.
@@ -1989,7 +2018,7 @@ sbtpterm equ    16          pterm for cyber1 software
           data   0lcybdev    cybis development system
           data   0lfaa       faa system (used by uol)
 */ -------------------------------------------------------------------
-*/ **/---   block=02-c lviofix              81/10/27. 11.56    source
+*/ ---   block=02-c lviofix              81/10/27. 11.56    source
 */ -------------------------------------------------------------------
 *ident,lviofix
 *deck,autload
@@ -2066,7 +2095,7 @@ sbtpterm equ    16          pterm for cyber1 software
           sa4    tbrvnum     router var info
           ax4    18          right justify ^$ of rvars
           sx4    x4          (x4) = ^$ of rvars
-*/ **/---   block=02-d lviofix              81/10/27. 11.56    source
+*/ ---   block=02-d lviofix              81/10/27. 11.56    source
           ix4    x3+x4       (x4) = lwa +1 of rvars
           ix3    x1-x3
 +         zr     x3,*+1      if first word, skip *nz* check
@@ -2140,7 +2169,7 @@ sbtpterm equ    16          pterm for cyber1 software
 
 ***       *x1* has cm address to store into
           sx6    lvarbuf     see if local var stored into
-*/ **/---   block=02-e lviofix              81/10/27. 11.57    source
+*/ ---   block=02-e lviofix              81/10/27. 11.57    source
           ix6    x1-x6       negative if not local var
           ng     x6,dscmnl2  -- if not local var
           call   lvload,-1   save updated local vars
@@ -2191,14 +2220,14 @@ sbtpterm equ    16          pterm for cyber1 software
 *
 *d,ncvrbuf.27,ncvrbuf.28
 */ -------------------------------------------------------------------
-*/ **/---   block=02-f filedfx              81/11/14. 12.12    source
+*/ ---   block=02-f filedfx              81/11/14. 12.12    source
 */ -------------------------------------------------------------------
 *ident,filedfx
 *deck,tutorx
 *d,tutor1x.44
           bx7    -x1*x6      bit 0; 1=filedit, 0=jumpout
 */ -------------------------------------------------------------------
-*/ **/---   block=02-g fgtcrsx              81/11/18. 12.13    source
+*/ ---   block=02-g fgtcrsx              81/11/18. 12.13    source
 */ -------------------------------------------------------------------
 *ident,fgtcrsx
 *deck,exec7
@@ -2224,7 +2253,7 @@ sbtpterm equ    16          pterm for cyber1 software
 *i,exec7.2041
  kfgt     bss    1           fgt mode'/ (-1=yes, 1=no)
 */ -------------------------------------------------------------------
-*/ **/---   block=03-a statnfx              82/05/21. 09.02    source
+*/ ---   block=03-a statnfx              82/05/21. 09.02    source
 */ -------------------------------------------------------------------
 *ident,statnfx
 *deck,logsitx
@@ -2236,7 +2265,7 @@ sbtpterm equ    16          pterm for cyber1 software
  stir     bx6    x1
           sa6    a3          store name in statemp+12
 */ -------------------------------------------------------------------
-*/ **/---   block=03-d date4                82/10/03. 17.05    source
+*/ ---   block=03-d date4                82/10/03. 17.05    source
 */ -------------------------------------------------------------------
 *ident,date4
 *deck,comnds
@@ -2319,7 +2348,7 @@ sbtpterm equ    16          pterm for cyber1 software
 *i,psys.686
 * /---   block      routines   00 000   82/10/03  16.36
 */ -------------------------------------------------------------------
-*/ **/---   block=03-e cdaty2k              82/10/10. 00.00    source
+*/ ---   block=03-e cdaty2k              82/10/10. 00.00    source
 */ -------------------------------------------------------------------
 *ident,cdaty2k
 *deck,exec9
@@ -2403,7 +2432,7 @@ sbtpterm equ    16          pterm for cyber1 software
 *          ix1    x1-x0       (jul * 4)-1-(146097 * year)
 **        above lines commented out because checking for
 **        leap year in year 2000 does not compute correctly.
-*/ **/---   block=03-f cdaty2k              82/10/10. 22.19    source
+*/ ---   block=03-f cdaty2k              82/10/10. 22.19    source
 **        this will have to be fixed further before year
 **        2100 to prevent leap year.  10/09/98 cmh
 
@@ -2479,7 +2508,7 @@ sbtpterm equ    16          pterm for cyber1 software
           pl     x3,*+2      if 1970 or greater, skip
 +         sx0    2r20        set to year 20xx
           eq     *+2
-*/ **/---   block=03-g cdaty2k              82/10/10. 12.36    source
+*/ ---   block=03-g cdaty2k              82/10/10. 12.36    source
 +         sx0    2r19        set to year 19xx
 +         lx0    12          position century for date
           bx1    x1+x0       (x1) = mm/dd/xx00
@@ -2556,7 +2585,7 @@ sbtpterm equ    16          pterm for cyber1 software
           lx1    3*6         move year to right side
           eq     dshf
 
-*/ **/---   block=04-a cdaty2k              82/10/10. 12.36    source
+*/ ---   block=04-a cdaty2k              82/10/10. 12.36    source
  dshf0    sb1    6           y2k form of format 3
           ne     b1,b3,dshf  year is on left now
           lx7    5*6         move the year to right
@@ -2567,7 +2596,7 @@ sbtpterm equ    16          pterm for cyber1 software
 *d,exec9.1117,exec9.1118
  datesl   con    10h00/00/0000
 */ -------------------------------------------------------------------
-*/ **/---   block=04-c buy2k                83/02/20. 12.28    source
+*/ ---   block=04-c buy2k                83/02/20. 12.28    source
 */ -------------------------------------------------------------------
 *ident,buy2k
 *deck,backlib
@@ -2633,7 +2662,7 @@ sbtpterm equ    16          pterm for cyber1 software
           sx1    x7          get 2 digit portion of yr 2000
  buildo1  rj     cdd
 */ -------------------------------------------------------------------
-*/ **/---   block=04-f datinfx              86/01/30. 20.25    source
+*/ ---   block=04-f datinfx              86/01/30. 20.25    source
 */ -------------------------------------------------------------------
 *ident,datinfx
 *deck,filex
