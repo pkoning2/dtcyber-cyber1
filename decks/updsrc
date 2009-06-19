@@ -75,11 +75,11 @@ skipr,src.
 copybr,src,p.
 pmod(mp,p,dd60)
 return,p,src.
-modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit dsn1
+modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit dsn,dsn1
 rewind,src.
 skipr,src.
 copybr,src,p.
-pmod(mp,p,dsn1)
+pmod(mp,p,dsn)
 return,p,src.
 modify,c=0,s=src,n=0,z./*oplfile nos,ipl/*edit exec1
 rewind,src.
