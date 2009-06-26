@@ -29,6 +29,7 @@ long npuNetTelnetPort;
 long npuNetTelnetConns;
 u16 deadstartPanel[MaxDeadStart];
 u8 deadstartCount;
+long extSockets;
 
 void opSetMsg (const char *p)
 {
@@ -80,6 +81,10 @@ void rtcInit(char *model, u8 increment, long setMHz)
 }
 
 void npuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
+{
+}
+
+void initExt (void)
 {
 }
 
