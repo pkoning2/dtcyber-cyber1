@@ -1200,7 +1200,15 @@ architecture behav of cdc_tb is
   signal w999_90 : std_logic := '0';
   signal w999_91 : std_logic := '0';
   signal w999_92 : std_logic := '0';
+  signal w_12w6_90 :  coaxsig := '0';
+  signal w_12w6_91 :  coaxsig := '0';
+  signal w_12w6_92 :  coaxsig := '0';
+  signal w_12w6_93 :  coaxsig := '0';
+  signal w_12w6_94 :  coaxsig := '0';
+  signal w_12w6_95 :  coaxsig := '0';
+  signal w_12w6_96 :  coaxsig := '0';
   signal zero : std_logic := '0';
+  signal one : std_logic := '1';
 begin
    --  Component instantiation.
    uut : cdc6600 port map (clk1 => clk1,
@@ -1776,13 +1784,13 @@ begin
                           w999_90 => w999_90,
                           w999_91 => w999_91,
                           w999_92 => w999_92,
-    w_12w6_90 => zero,
-    w_12w6_91 => zero,
-    w_12w6_92 => zero,
-    w_12w6_93 => zero,
-    w_12w6_94 => zero,
-    w_12w6_95 => zero,
-    w_12w6_96 => zero,
+    w_12w6_90 => w_12w6_90,
+    w_12w6_91 => w_12w6_91,
+    w_12w6_92 => w_12w6_92,
+    w_12w6_93 => w_12w6_93,
+    w_12w6_94 => w_12w6_94,
+    w_12w6_95 => w_12w6_95,
+    w_12w6_96 => w_12w6_96,
     w_12w6_97 => zero,
     w_12w8_90 => zero,
     w_12w8_91 => zero,
@@ -1820,6 +1828,7 @@ begin
      reset <= '1';
      wait for 25 ns;
      reset <= '0';
+
      while not endfile (vector_file) loop
        readline (vector_file, l);
        read (l, d);                     -- delay in 25 ns units
@@ -1851,6 +1860,13 @@ begin
        w999_90 <= testdata (1);
        w999_91 <= testdata (2);
        w999_92 <= testdata (3);
+       w_12w6_90 <= testdata (4);
+       w_12w6_91 <= testdata (5);
+       w_12w6_92 <= testdata (6);
+       w_12w6_93 <= testdata (7);
+       w_12w6_94 <= testdata (8);
+       w_12w6_95 <= testdata (9);
+       w_12w6_96 <= testdata (10);
        for i in 1 to d loop
          wait for 25 ns;
          if clk1 = '1' then
