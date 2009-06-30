@@ -32,11 +32,12 @@ endif
 endif
 ifeq ("$(HOST)","Darwin")
 ARCHCFLAGS ?= -arch i386 -arch ppc
+CXX = /usr/bin/g++
 #ARCHCFLAGS =  -arch ppc
 #EXTRALIBS= -lwxpng-2.6 -lwxtiff-2.6
-DEFWXDIR = /usr/local/wxstaticu.264
+#DEFWXDIR = /usr/local/wxstaticu.264
+DEFWXDIR = /usr/local/wxstaticu.2810
 ARCHFLAGS=-arch i386
-DEFWXDIR=/usr
 MSGFLAGS =  
 SDLINCL=-FSDL
 SDLLIBS=-Wl,-framework,SDL
@@ -79,7 +80,13 @@ LANGUAGES = $(shell cat languages)
 MOFILES = $(addsuffix /pterm.mo,$(LANGUAGES))
 endif
 
-.PHONY : pterm-kit langdirs wxversion pterm-v$(PTERMVERSION).tar.bz2
+.PHONY : pterm-kit langdirs wxversion pterm-v$(PTERMVERSION).tar.bz2 info
+
+info:
+	echo wxdir: $(WXDIR)
+	echo path:  $(PATH)
+	echo wxversion: $(WXVERSION)
+	echo gccversion: $(GCCVERSION)
 
 pterm:	$(PTOBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \

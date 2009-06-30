@@ -1,0 +1,1 @@
+../configure --with-macosx-sdk=/Developer/SDKs/MacOSX10.4u.sdk --with-macosx-version-min=10.4 --enable-universal_binary --enable-intl --enable-config --enable-mdi --enable-postscript --enable-printarch --enable-clipboard --enable-gif --with-opengl --prefix=/usr/local/wxstaticu.2810 --disable-shared --enable-static --enable-monolithic --enable-unicode
