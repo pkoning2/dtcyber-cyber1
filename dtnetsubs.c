@@ -26,7 +26,11 @@
 #include <sys/types.h>
 #if defined(_WIN32)
 	#include <winsock.h>
-	#define close(x) closesocket(x)
+	//the following are a supreme hack.  Joe
+	#define close(x)	closesocket(x)
+	#define errno		WSAGetLastError()
+	#define EAGAIN		WSAEWOULDBLOCK
+	#define EINPROGRESS WSAEWOULDBLOCK
 #else
 	#include <sys/time.h>
 	#include <fcntl.h>
