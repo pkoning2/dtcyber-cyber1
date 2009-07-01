@@ -277,6 +277,7 @@ extern "C"
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 #include <stdlib.h>
 #include "const.h"
@@ -661,7 +662,6 @@ private:
 };
 
 // define a scrollable canvas for drawing onto
-//class PtermCanvas : public wxScrolledWindow
 class PtermCanvas : public wxScrolledWindow
 {
 public:
@@ -732,6 +732,9 @@ public:
         else
             return NULL;
     }
+	wxMenuBar   *menuBar;
+	wxMenu      *menuFile;
+	wxMenu      *menuHelp;
 };
 
 static PtermMainFrame *PtermFrameParent;
@@ -851,6 +854,7 @@ public:
         else
             return DisplayMargin;
     }
+    void ptermSetStatus (wxString &str);
     
     wxMemoryDC  *m_memDC;
     bool        tracePterm;
@@ -1062,7 +1066,6 @@ private:
     void ptermFullErase (void);
     void ptermBlockErase (int x1, int y1, int x2, int y2);
     void ptermSetName (wxString &winName);
-    void ptermSetStatus (wxString &str);
     void ptermLoadChar (int snum, int cnum, const u16 *data);
     void ptermLoadRomChars (void);
     void ptermPaint (int pat);
@@ -7048,8 +7051,7 @@ void PtermFrame::ptermSetStation (int station, bool showtitle, bool showstatus)
 		}
 		if (ptermApp->m_showStation)
 		{
-			l_str.Printf(wxT("%s"), l_str.c_str());
-			l_str.Append(l_station.c_str());
+			l_str.Append(l_station);
 		}
 		ptermSetName (l_str);
 	}
@@ -8848,8 +8850,11 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
     bool wasEmpty;
     struct hostent *hp;
     in_addr_t host;
+    struct in_addr host2;
     int true_opt = 1;
-    
+    int addrcount, r;
+    wxString msg;
+
     m_portset.callBack = NULL;
     m_portset.maxPorts = 1;
     dtInitPortset (&m_portset, BufSiz);
@@ -8862,14 +8867,23 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
         wxWakeUpIdle ();
         return (ExitCode) 1;
     }
-    memcpy (&host, hp->h_addr, sizeof (host));
+    for (addrcount = 0; hp->h_addr_list[addrcount] != NULL; addrcount++) ;
+    srandomdev ();
+    i = random () >> 10;
+    r = i % addrcount;
+    //printf ("%d, entry %d\n", i, r);
+    memcpy (&host, hp->h_addr_list[r], sizeof (host));
+    host2.s_addr = host;
+    //printf ("trying %s\n", inet_ntoa(host2));
+//    msg.Printf (_("Connecting to %s"), inet_ntoa (host2));
+//    m_owner->ptermSetStatus (msg);
     if (dtConnect (m_fet, NULL, host, m_port) < 0)
     {
         StoreWord (C_CONNFAIL);
         wxWakeUpIdle ();
         return (ExitCode) 1;
     }
-
+    
     while (true)
     {
         // The reason for waiting a limited time here rather than
