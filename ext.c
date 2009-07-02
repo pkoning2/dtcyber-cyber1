@@ -885,8 +885,10 @@ static CpWord termConnOp (CpWord req)
     {
     case 0:
         return niuConn (reqp[1]);
+#ifdef NPU_SUPPORT
     case 1:
         return npuConn (reqp[1]);
+#endif
     default:
         return MINUS1;
     }
