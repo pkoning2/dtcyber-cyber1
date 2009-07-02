@@ -280,6 +280,7 @@ extern "C"
 #include <arpa/inet.h>
 #endif
 #include <stdlib.h>
+#include <time.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -1599,6 +1600,7 @@ bool PtermApp::OnInit (void)
     
     sprintf (traceFn, "pterm%d.trc", getpid ());
 
+    srand (time (NULL));
     m_locale.Init(wxLANGUAGE_DEFAULT);
     m_locale.AddCatalog(wxT("pterm"));
 
@@ -8868,8 +8870,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
         return (ExitCode) 1;
     }
     for (addrcount = 0; hp->h_addr_list[addrcount] != NULL; addrcount++) ;
-    srandomdev ();
-    i = random () >> 10;
+    i = rand () >> 10;
     r = i % addrcount;
     //printf ("%d, entry %d\n", i, r);
     memcpy (&host, hp->h_addr_list[r], sizeof (host));
