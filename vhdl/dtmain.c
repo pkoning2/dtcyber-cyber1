@@ -27,6 +27,8 @@ long opPort;
 long opConns;
 long npuNetTelnetPort;
 long npuNetTelnetConns;
+long pniPort;
+long pniConns;
 u16 deadstartPanel[MaxDeadStart];
 u8 deadstartCount;
 long extSockets;
