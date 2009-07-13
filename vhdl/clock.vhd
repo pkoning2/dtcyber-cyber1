@@ -2,9 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Authors: Paul Koning, Dave Redell, Al Kossow
---
--- Based on the original design by Seymour Cray and his team
+-- Copyright (C) 2008 by Paul Koning
 --
 -- Clock source.  This pinout is designed to be a drop-in replacement
 -- for the TD module at 1H02 in the standard 6600 (sn 1-7) design.

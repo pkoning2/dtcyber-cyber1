@@ -1,6 +1,13 @@
 #
-# Scanned from 63016700A_6600_Chassis_Tabs_12_Apr65.pdf
-# as supplied on bitsavers.org by Al Kossow
+# OCR from 63016700A_6600_Chassis_Tabs_12_Apr65.pdf
+#
+# That document is one of the CDC 6600 "Chassis Tabs" manuals
+# which document the detailed hardware design of the 6600 as
+# created by Seymour Cray and his team at Control Data.
+# These manuals are in the public domain.
+#
+# Scans supplied from the Computer History Museum collection
+# by Al Kossow.
 #
 QI	12A01
 1

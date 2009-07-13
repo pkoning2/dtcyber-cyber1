@@ -2,9 +2,14 @@
 --
 -- CDC 6600 model
 --
--- Authors: Paul Koning, Dave Redell, Al Kossow
+-- Copyright (C) 2008 by Paul Koning
 --
--- Based on the original design by Seymour Cray and his team
+-- Derived from the original 6600 module design
+-- by Seymour Cray and his team at Control Data,
+-- as documented in CDC 6600 "Chassis Tabs" manuals,
+-- which are in the public domain.  Scans supplied
+-- from the Computer History Museum collection
+-- by Dave Redell and Al Kossow.
 --
 -- QK module, rev D -- incrementer
 --

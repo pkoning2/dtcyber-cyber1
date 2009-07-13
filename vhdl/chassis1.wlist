@@ -1,7 +1,13 @@
 #
-# Scanned from 63019800A_Chassis_Tabs_01_Mar65.pdf
-# first part from Dave Redell, rest from the scan
-# supplied on bitsavers.org by Al Kossow
+# OCR from 63019800A_Chassis_Tabs_01_Mar65.pdf
+#
+# That document is one of the CDC 6600 "Chassis Tabs" manuals
+# which document the detailed hardware design of the 6600 as
+# created by Seymour Cray and his team at Control Data.
+# These manuals are in the public domain.
+#
+# Scans supplied from the Computer History Museum collection
+# by Dave Redell and Al Kossow.
 #
 MEM	1A1
 1	C3	2	11

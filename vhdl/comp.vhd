@@ -1,3 +1,11 @@
+-------------------------------------------------------------------------------
+--
+-- CDC 6600 model
+--
+-- Copyright (C) 2008 by Paul Koning
+--
+-------------------------------------------------------------------------------
+
 -- Component declarations for the components in cyberdefs.vhd
 
   component inv
