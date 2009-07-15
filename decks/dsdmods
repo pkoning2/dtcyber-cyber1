@@ -1,0 +1,38 @@
+dsd.
+user(sys,system)
+attach,opl=opl871.
+modify.
+compass,i,b=dsdbin,s=nostext,s=pptext,a,l.
+purge,dsdbin/na.
+define,dsdbin.
+~
+*edit dsd
+*IDENT jobecs
+*deck dsd
+*d 252L678.98
+          ljm    DSM6        SET ABSOLUTE RAE                           
+*d DSD79.2,DSD79.3
+          stm    usrflag     set not a uem access
+          ldd    cp
+          adn    5
+          crd    cm          read flx
+          ldd    cm
+          stm    emfl
+          ldd    cm+1
+          stm    emfl+1
+          ldd    cp
+          adn    4
+          crd    cm          read rax
+          ldd    cm
+          stm    emra
+          ldd    cm+1
+          ujn    dsm6.1
+*i 252L678.109
+          LDN    2           INDICATE READ FROM USER EXTENDED MEMORY
+          stm    usrflag
+*d 252L678.118
+ dsm6.1   stm    emra+1
+*d DSD.8100
+          ldm    usrflag     select uem or system read
+*i DSD.8195
+ usrflag  con    0           0 for system ecs, 2 for uem
