@@ -1,0 +1,16 @@
+asm.
+user(plato,plato)
+settl(*)
+setasl(*)
+setjsl(*)
+rfl,170000.
+attach,procfil.
+*
+set(r1g=0)
+*
+begin(setupg,procfil,noslvl=871)
+*begin(condens,procfil,ml=871,list=0)
+begin(condens,procfil,ml=871,list=output)
+* copy the link map
+rewind,full.
+copyei,full,output.
