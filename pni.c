@@ -57,6 +57,7 @@
 #define FLOW_XOFF   1       /* XOFF from terminal */
 #define FLOW_TCP    2       /* dtSend backpressure */
 #define FLOW_DOPTS  4       /* Need to send PTS to Framat  */
+#define FLOW_DOABT  8       /* Need to send ABT to Framat  */
 
 /*
 **  -----------------------
@@ -93,7 +94,7 @@ typedef struct portParam
 **  Private Function Prototypes
 **  ---------------------------
 */
-static int rcb (CpWord *buf, CpWord *iop, int buflen, CpWord *dest);
+static int rcb (CpWord *buf, struct Io *iop, int buflen, CpWord *dest);
 static void storeKey (int key, int station);
 static bool storeChar (int c, char **pp);
 static bool framatReq (int req, int station);
@@ -322,7 +323,9 @@ CpWord pniOp (CpWord req)
     pniPorts.callBack = pniWelcome;
     pniPorts.kind = "PNI";
     
+#if DEBUG != 2
     dtInitPortset (&pniPorts, MAXNET);
+#endif
 
     /*
     **  Allocate the operator status buffer
@@ -358,14 +361,22 @@ void pniCheck (void)
     NetFet *np;
     int port, key;
     char buf[2];
-    
+#if DEBUG == 2
+    struct Keybuf *kp;
+    static int cpidx;
+#endif
+
     if (!pniActive)
     {
         return;
     }
+#if DEBUG != 2
+    memcpy (&fpniio, afpniio, sizeof (fpniio));
+#else
     fpniio.in = *afpniio;
+#endif
     oldout = fpniio.out;
-    while ((len = rcb (afpnib, (CpWord *)&fpniio, fpnilen, netbuf)) != 0)
+    while ((len = rcb (afpnib, &fpniio, fpnilen, netbuf)) != 0)
     {
         //  Message header format
         //
@@ -383,8 +394,8 @@ void pniCheck (void)
         hdr = netbuf[0];
         station = hdr & Mask12;
         opcode = (hdr >> 48) & Mask12;
-        oldout = fpniio.out;
         DEBUGPRINT ("Message from framat, len %d, %llo, ptrs %llo %llo -> %llo\n", len, hdr, fpniio.in, oldout, fpniio.out);
+        oldout = fpniio.out;
 
         if (station < firstStation || station >= lastStation)
         {
@@ -427,10 +438,12 @@ void pniCheck (void)
             if (len > 0)
             {
                 DEBUGPRINT ("Send %d bytes to terminal %d\n", len, station);
+#if DEBUG != 2
                 if (!pniSendstr (station, ascbuf, len))
                 {
                     pp->flowFlags |= FLOW_TCP;
                 }
+#endif
             }
             if (pp->flowFlags == 0)
             {
@@ -442,7 +455,7 @@ void pniCheck (void)
             // Abort output
             DEBUGPRINT ("Abort output, terminal %d\n", station);
             // Send Abort done
-            framatReq (F_ABT, station);
+            pp->flowFlags |= FLOW_DOABT;
             break;
         case 2:
         case 5:
@@ -460,15 +473,24 @@ void pniCheck (void)
             // Set new keycode conversion
             DEBUGPRINT ("Set new keycode conversion/flow control, station %d\n", station);
             pp->newKbd = TRUE;
+            // Send "new kb" echo code to terminal?
             break;
         default:
             DEBUGPRINT ("Invalid framat request code %04o, station %d\n", opcode, station);
         }
     }
+#if DEBUG != 2
+    /* 
+    ** Write back the "out" pointer
+    */
+    afpniio[1] = fpniio.out;
+#endif
+
     /*
     **  Scan the active connections, round robin, looking
     **  for one that has pending input. 
     */
+#if DEBUG != 2
     port = lastInPort;
     for (;;)
     {
@@ -525,11 +547,7 @@ void pniCheck (void)
             i = dtReadw (np, buf, 1);       /* Get a byte */
             if (i < 0)
             {
-                if (port == lastInPort)
-                {
-                    key = -1;
-                    break;                  /* no input anywhere */
-                }
+                key = -1;
                 break;                      /* we don't have enough data yet */
             }
             key = buf[0] & Mask7;
@@ -694,22 +712,48 @@ void pniCheck (void)
                 pp->flowFlags = 0;
             }
         }
+        else if ((pp->flowFlags & FLOW_DOABT) != 0)
+        {
+            // Need to send ABT
+            if (framatReq (F_ABT, port + firstStation))
+            {
+                // Sent successfully, clear flag
+                pp->flowFlags &= ~FLOW_DOABT;
+            }
+        }
     }
-    
+#else
+    // Show what the real PNI is doing
+    memcpy (&pnifio, apnifio, sizeof (pnifio));
+    if (pnifio.in != pnifio.out)
+    {
+        DEBUGPRINT ("Requests PNI to Framat, in %06llo, out %06llo, first req %020llo\n", pnifio.in, pnifio.out, apnifb[pnifio.out]);
+    }
+    // Look at the first station's keybuffer
+    kp = (struct Keybuf *) (akb + (firstStation * NKEYLTH));
+    if ((kp->buf[CKPPIDX] & Mask12) != cpidx)
+    {
+        int i;
+        DEBUGPRINT ("Key buffer:\n");
+        for (i = 0; i < NKEYLTH; i++)
+        {
+            DEBUGPRINT ("  %020llo\n", ((CpWord *) kp)[i]);
+        }
+        cpidx = kp->buf[CKPPIDX] & Mask12;
+    }
+#endif
 }
 
-static int rcb (CpWord *buf, CpWord *iop, int buflen, CpWord *dest)
+static int rcb (CpWord *buf, struct Io *iop, int buflen, CpWord *dest)
 {
-    struct Io io;
     int len;
     CpWord hdr;
     
-    memcpy (&io, iop, sizeof (io));
-    if (io.in == io.out)
+    if (iop->in == iop->out)
     {
         return 0;
     }
-    hdr = *dest = buf[io.out];
+    hdr = *dest = buf[iop->out];
 
     //  MESSAGE HEADER FORMAT
     //
@@ -728,41 +772,40 @@ static int rcb (CpWord *buf, CpWord *iop, int buflen, CpWord *dest)
     if (len > 1 && len < buflen)
     {        
         // message has data, read it from circular buffer
-        if (io.out + len <= buflen)
+        if (iop->out + len <= buflen)
         {
             // no wrap
-            memcpy (dest, buf + io.out, len * sizeof (CpWord));
-            if (io.out + len < buflen)
+            memcpy (dest, buf + iop->out, len * sizeof (CpWord));
+            if (iop->out + len < buflen)
             {
-                io.out += len;
+                iop->out += len;
             }
             else
             {
-                io.out = 0;
+                iop->out = 0;
             }
         }
         else
         {
-            memcpy (dest, buf + io.out, (buflen - io.out) * sizeof (CpWord));
-            dest += buflen - io.out;
-            len -= buflen - io.out;
+            memcpy (dest, buf + iop->out, (buflen - iop->out) * sizeof (CpWord));
+            dest += buflen - iop->out;
+            len -= buflen - iop->out;
             memcpy (dest, buf, len * sizeof (CpWord));
-            io.out = len;
+            iop->out = len;
         }
     }
-    else if (++io.out == buflen)
+    else if (++iop->out == buflen)
     {
-        io.out = 0;
+        iop->out = 0;
     }
-    iop[1] = io.out;
-    
+
     return len;
 }
 
 static void storeKey (int key, int station)
 {
     struct Keybuf *kp;
-    int ppidx, newppidx, cpidx;
+    int ppidx, cpidx;
     int word, shift;
     
     if (station < firstStation || station >= lastStation)
@@ -770,26 +813,26 @@ static void storeKey (int key, int station)
         DEBUGPRINT ("storeKey: station out of range, %d\n");
         return;
     }
-    
+#if DEBUG != 2    
     kp = (struct Keybuf *) (akb + (station * NKEYLTH));
-    ppidx = kp->buf[CKPPIDX] & Mask12;
+    /*
+    **  The key buffer uses in/out pointers, but not in the usual
+    **  way.  The in pointer is incremented before the store,
+    **  rather than afterward.
+    */
+    ppidx = (kp->buf[CKPPIDX] & Mask12) + 1;
     cpidx = kp->cpidx & Mask12;
-    newppidx = ppidx + 1;
-    if (newppidx == IDXLIM)
+    if (ppidx == IDXLIM)
     {
-        newppidx = 0;
+        ppidx = 0;
     }
-    if (cpidx == newppidx)
+    if (cpidx == ppidx)
     {
         // Key buffer is full.  Check for special keys
         if (key == OFFKY2 || key == ((kp->cpidx >> 12) & Mask11))
         {
-            // Overwrite the last stored key by backing up the pointers
-            newppidx = ppidx;
-            if (--ppidx < 0)
-            {
-                ppidx = IDXLIM - 1;
-            }
+            // Overwrite the last stored key
+            ppidx = kp->buf[CKPPIDX] & Mask12;
         }
         else
         {
@@ -801,7 +844,7 @@ static void storeKey (int key, int station)
     shift = 48 - (ppidx % 5) * 12;
     kp->buf[word] = (kp->buf[word] & ~((CpWord) Mask12 << shift)) | ((CpWord) (key & Mask11) << (shift + 1));
     DEBUGPRINT ("stored key: %020llo pp index %d cp index %d, offset %d, shift %d\n", kp->buf[word], ppidx, cpidx, word, shift);
-    kp->buf[CKPPIDX] = (kp->buf[CKPPIDX] & ~Mask12) | newppidx;
+    kp->buf[CKPPIDX] = (kp->buf[CKPPIDX] & ~Mask12) | ppidx;
 
     // Now that we've stored the key, set the bit in the 
     // site/station bitmap.  We don't need the readback
@@ -809,6 +852,9 @@ static void storeKey (int key, int station)
     // nothing else can get in the middle of this...
     abt[station >> 5] |= 1 + (0x1ULL << ((station & 0x1f) + 16));
     DEBUGPRINT ("Key bitmap: %020llo\n", abt[station >> 5]);
+#else
+    DEBUGPRINT ("Store key: %d\n", key);
+#endif
 }
 
 static bool storeChar (int c, char **pp)
@@ -831,6 +877,7 @@ static bool storeChar (int c, char **pp)
 
 static bool framatReq (int req, int station)
 {
+#if DEBUG != 2
     int newin;
     
     memcpy (&pnifio, apnifio, sizeof (pnifio));
@@ -848,6 +895,9 @@ static bool framatReq (int req, int station)
     *(apnifb + pnifio.in) = ((CpWord) req << 48) | station | 000100050000ULL;
     DEBUGPRINT ("PNI to Framat req %020llo, station %d at offset %d\n", *(apnifb + pnifio.in), station, pnifio.in);
     *apnifio = newin;
+#else
+    DEBUGPRINT ("PNI to Framat req %04o\n", req);
+#endif
     return TRUE;
 }
 
@@ -888,7 +938,10 @@ static void pniUpdateStatus (void)
 static void pniWelcome(NetFet *np, int stat)
 {
     PortParam *mp;
-
+    char termname[10];
+    CpWord termid;
+    int i;
+    
     mp = portVector + stat;
     stat += firstStation;
     mp->np = np;
@@ -924,7 +977,14 @@ static void pniWelcome(NetFet *np, int stat)
     np->ownerInfo = stat;
     pniActiveConns++;
     pniUpdateStatus ();
-
+    sprintf (termname, "te%02x", stat - firstStation + 1);
+    termid = 0;
+    for (i = 0; i < 4; i++)
+    {
+        termid |= (CpWord) asciiToCdc[termname[i]] << (54 - 6 * i);
+    }
+    *(aasccon + stat) = termid;
+    
     /*
     **  If we're not logged out yet (i.e. PLATO dropped the *offky2*)
     **  that was sent when the connection dropped on this port the
@@ -940,9 +1000,9 @@ static void pniWelcome(NetFet *np, int stat)
         }
 
     /*
-    **  Indicate flow is on and permit to send needed. 
+    **  Indicate flow is on and abort needed. 
     */
-    mp->flowFlags = FLOW_DOPTS;
+    mp->flowFlags = FLOW_DOABT;
     
 #define WELCOME_PFX \
     "\033\002"      /* Enter PLATO mode */                              \
