@@ -144,6 +144,10 @@ int main(int argc, char **argv)
             **  operator network thread.
             */
             operCheckRequests ();
+            /*
+            **  Also check for PNI action required.
+            */
+            pniCheck ();
             }
         
         /*

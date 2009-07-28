@@ -171,37 +171,37 @@
 #define TRACEN(str)                                             \
     if (tracePterm)                                             \
         {                                                       \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc);  \
+        fprintf (traceF, "%s seq %6d wc %3d " str "\n", dtNowString (), seq, wc);  \
         }
 
 #define TRACE(str, arg)                                             \
     if (tracePterm)                                                 \
         {                                                           \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg); \
+        fprintf (traceF, "%s seq %6d wc %3d " str "\n", dtNowString (), seq, wc, arg); \
         }
 
 #define TRACE2(str, arg, arg2)                                          \
     if (tracePterm)                                                     \
         {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg, arg2); \
+        fprintf (traceF, "%s seq %6d wc %3d " str "\n", dtNowString (), seq, wc, arg, arg2); \
         }
 
 #define TRACE3(str, arg, arg2, arg3)                                    \
     if (tracePterm)                                                     \
         {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg, arg2, arg3); \
+        fprintf (traceF, "%s seq %6d wc %3d " str "\n", dtNowString (), seq, wc, arg, arg2, arg3); \
         }
 
 #define TRACE4(str, a, a2, a3, a4)                                      \
     if (tracePterm)                                                     \
         {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, a, a2, a3, a4); \
+        fprintf (traceF, "%s seq %6d wc %3d " str "\n", dtNowString (), seq, wc, a, a2, a3, a4); \
         }
 
 #define TRACE6(str, a, a2, a3, a4, a5, a6)                              \
     if (tracePterm)                                                     \
         {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, a, a2, a3, a4, a5, a6); \
+        fprintf (traceF, "%s seq %6d wc %3d " str "\n", dtNowString (), seq, wc, a, a2, a3, a4, a5, a6); \
         }
 
 // Map PLATO coordinates to window coordinates
@@ -2169,7 +2169,7 @@ PtermMainFrame::PtermMainFrame (void)
 // frame constructor
 PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wxPoint &pos)
     : PtermFrameBase(PtermFrameParent, -1, title, pos, wxDefaultSize),
-      tracePterm (false),
+      tracePterm (true),
       m_nextFrame (NULL),
       m_prevFrame (NULL),
       m_foregroundPen (ptermApp->m_fgColor, ((ptermApp->m_stretch) ? 1 : ptermApp->m_scale), wxSOLID),

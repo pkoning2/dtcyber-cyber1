@@ -203,6 +203,13 @@ CpWord extOp (CpWord req);
 void initExt (void);
 
 /*
+**  pni.c
+*/
+CpWord pniOp (CpWord req);
+void initPni (void);
+void pniCheck (void);
+
+/*
 **  dump.c
 */
 void dumpInit(void);
@@ -269,13 +276,14 @@ void ddWaitIO (DiskIO *io);
 int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int portnum);
 int dtCheckInput(int connFd, void *buf, int size, int time);
 void dtInitPortset (NetPortSet *ps, int ringSize);
+void dtClosePortset (NetPortSet *ps);
 int dtClose (NetFet *np, NetPortSet *ps, bool hard);
 NetFet * dtFindInput (NetPortSet *ps, int time);
 void dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
 const char *dtNowString (void);
-void dtSendTlv (NetFet *fet, NetPortSet *ps, 
-                int tag, int len, const void *value);
-void dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len);
+int dtSendTlv (NetFet *fet, NetPortSet *ps, 
+               int tag, int len, const void *value);
+int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len);
 int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog);
 int dtAccept (NetFet *fet, NetFet *acceptFet);
 void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd);
@@ -356,6 +364,8 @@ extern long telnetPort;
 extern long telnetConns;
 extern long npuNetTelnetConns;
 extern long npuNetTelnetPort;
+extern long pniPort;
+extern long pniConns;
 extern long platoPort;
 extern long platoConns;
 extern long platoLocalPort;

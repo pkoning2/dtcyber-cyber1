@@ -169,6 +169,7 @@
 #define Mask12                  07777
 #define Mask15                  077777
 #define Mask18                  0777777
+#define Mask21                  07777777
 #define Mask24                  077777777
 #define Mask24Ecs               077777700
 #define Mask30                  07777777777

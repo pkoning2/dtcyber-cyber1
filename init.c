@@ -103,6 +103,8 @@ const intParam intParamList[] =
     { "nputelnetconns", &npuNetTelnetConns, 3 },
     { "nputelnetport", &npuNetTelnetPort, 6610 },
 #endif
+    { "pniconns", &pniConns, 32 },
+    { "pniport", &pniPort, 8005 },
     { "platoport", &platoPort, DefNiuPort },
     { "platoconns", &platoConns, 4 },
     { "platolocalport", &platoLocalPort, DefNiuPort + 1 },

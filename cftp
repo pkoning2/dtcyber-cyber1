@@ -96,7 +96,7 @@ exit.
  s.conn   equ    5           connect
  s.read   equ    6           read data
  s.write  equ    7           write data
- s.rall   equ    8           reset all (reset list of sockets)
+ s.rmul   equ    8           reset all (reset list of sockets)
 
  cftp     title  file transfer client main processing
           
@@ -687,7 +687,7 @@ exit.
  wbuf     data   0
  wbuflen  data   0
           
- rsetall  vfd    42/0,6/s.rall,12/e.sock
+ rsetall  vfd    42/0,6/s.rmul,12/e.sock
           data   0
           con    socks
           data   2

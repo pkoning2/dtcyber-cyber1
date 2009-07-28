@@ -270,6 +270,7 @@ typedef struct NetPortSet_s
     ConnCb      *callBack;              /* function to call for new conn */
     const char  *kind;                  /* What is this portset for? */
     bool        localOnly;              /* TRUE to listen on 127.0.0.1 */
+    bool        close;                  /* TRUE to shut down thread */
     } NetPortSet;
 
 /*

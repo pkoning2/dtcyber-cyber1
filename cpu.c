@@ -347,8 +347,8 @@ static INLINE bool cpuReadMem(CPUVARGS2 (u32 address, CpWord *data))
             }
         else
             {
-            /* out of range address and exit not selected is a NOP */
-            return(FALSE);
+            /* out of range address and exit not selected reads location 0 */
+            absAddr = 0;
             }
         }
 
@@ -1437,7 +1437,7 @@ void cpuExchangeJump(CPUVARG)
     activeCpu->cpuStopped = cpuFetchOpWord(CPUARGS2 (activeCpu->regP, &activeCpu->opWord));
     if (activeCpu->cpuStopped)
         {
-        printf ("huh?\n");
+        activeCpu->opWord = 0;
         }
     
     t = activeCpu->opWord;

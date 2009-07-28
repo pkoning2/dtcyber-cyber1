@@ -402,6 +402,35 @@ void dtInitPortset (NetPortSet *ps, int ringSize)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Close a portset.
+**
+**  Parameters:     Name        Description.
+**                  ps          Pointer to NetPortSet to use
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void dtClosePortset (NetPortSet *ps)
+    {
+    int i;
+    NetFet *fet;
+
+    for (i = 0; i < ps->maxPorts; i++)
+        {
+        fet = &ps->portVec[i];
+        if (fet->first)
+            {
+            free (fet->first);
+            fet->first = 0;
+            }
+        }
+    if (ps->portNum != 0)
+        {
+        ps->close = TRUE;
+        }
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Close a network port
 **
 **  Parameters:     Name        Description.
@@ -506,71 +535,68 @@ NetFet * dtFindInput (NetPortSet *ps, int time)
     timeout.tv_sec = time / 1000;
     timeout.tv_usec = (time * 1000) % 1000000;
     
-    for (;;)
+    if (ps->sendCount == 0)
         {
-        if (ps->sendCount == 0)
-            {
-            i = select(ps->maxFd + 1, &readFds, NULL, &exceptFds, &timeout);
-            }
-        else
-            {
-            i = select(ps->maxFd + 1, &readFds, &sendFds, &exceptFds, &timeout);
-            }
-        if (i <= 0)
-            {
-            return NULL;
-            }
-        if (ps->sendCount != 0 && 
-            memcmp (&sendFds, &nullSet, sizeof (fd_set)) != 0)
-            {
-            /*
-            **  Some connections that were blocked are now unblocked
-            */
-            np = ps->portVec;
-            for (i = 0; i < ps->maxPorts; i++)
-                {
-                if (dtActive (np) &&
-                    FD_ISSET (np->connFd, &sendFds))
-                    {
-                    dtSendPending (np, ps);
-                    }
-                np++;
-                }
-            }
-        if (memcmp (&exceptFds, &nullSet, sizeof (fd_set)) != 0)
-            {
-            /*
-            **  Some exceptions were found, handle them here.
-            */
-            np = ps->portVec;
-            for (i = 0; i < ps->maxPorts; i++)
-                {
-                if (dtActive (np) &&
-                    FD_ISSET (np->connFd, &exceptFds))
-                    {
-                    dtClose (np, ps, TRUE);
-                    }
-                np++;
-                }
-            }
-        if (memcmp (&readFds, &nullSet, sizeof (fd_set)) != 0)
-            {
-            /*
-            **  Some read data was seen, find which port
-            */
-            np = ps->portVec;
-            for (i = 0; i < ps->maxPorts; i++)
-                {
-                if (dtActive (np) &&
-                    FD_ISSET (np->connFd, &readFds))
-                    {
-                    return np;
-                    }
-                np++;
-                }
-            }
+        i = select(ps->maxFd + 1, &readFds, NULL, &exceptFds, &timeout);
+        }
+    else
+        {
+        i = select(ps->maxFd + 1, &readFds, &sendFds, &exceptFds, &timeout);
+        }
+    if (i <= 0)
+        {
         return NULL;
         }
+    if (ps->sendCount != 0 && 
+        memcmp (&sendFds, &nullSet, sizeof (fd_set)) != 0)
+        {
+        /*
+        **  Some connections that were blocked are now unblocked
+        */
+        np = ps->portVec;
+        for (i = 0; i < ps->maxPorts; i++)
+            {
+            if (dtActive (np) &&
+                FD_ISSET (np->connFd, &sendFds))
+                {
+                dtSendPending (np, ps);
+                }
+            np++;
+            }
+        }
+    if (memcmp (&exceptFds, &nullSet, sizeof (fd_set)) != 0)
+        {
+        /*
+        **  Some exceptions were found, handle them here.
+        */
+        np = ps->portVec;
+        for (i = 0; i < ps->maxPorts; i++)
+            {
+            if (dtActive (np) &&
+                FD_ISSET (np->connFd, &exceptFds))
+                {
+                dtClose (np, ps, TRUE);
+                }
+            np++;
+            }
+        }
+    if (memcmp (&readFds, &nullSet, sizeof (fd_set)) != 0)
+        {
+        /*
+        **  Some read data was seen, find which port
+        */
+        np = ps->portVec;
+        for (i = 0; i < ps->maxPorts; i++)
+            {
+            if (dtActive (np) &&
+                FD_ISSET (np->connFd, &readFds))
+                {
+                return np;
+                }
+            np++;
+            }
+        }
+    return NULL;
     }
 
 /*--------------------------------------------------------------------------
@@ -583,11 +609,13 @@ NetFet * dtFindInput (NetPortSet *ps, int time)
 **------------------------------------------------------------------------*/
 const char *dtNowString (void)
     {
-    static char ts[40];
-    time_t t;
+    static char ts[64], us[12];
+    struct timeval tv;
 
-    time (&t);
-    strftime (ts, sizeof (ts) - 1, "%y/%m/%d %H.%M.%S.", localtime (&t));
+    gettimeofday (&tv, NULL);
+    strftime (ts, sizeof (ts) - 1, "%y/%m/%d %H.%M.%S.", localtime (&tv.tv_sec));
+    sprintf (us, "%06d.", tv.tv_usec);
+    strcat (ts, us);
     return ts;
     }
 
@@ -933,26 +961,31 @@ void dtCloseFet (NetFet *fet, bool hard)
 **                  len         data length
 **                  value       buffer holding the data
 **
-**  Returns:        Nothing. 
+**  Returns:        -1 if ok, 0 if ok but full, >0 if nothing was sent. 
 **
 **------------------------------------------------------------------------*/
-void dtSendTlv (NetFet *fet, NetPortSet *ps, 
-                int tag, int len, const void *value)
+int dtSendTlv (NetFet *fet, NetPortSet *ps, 
+               int tag, int len, const void *value)
     {
     u8  tl[2];
+    int retval;
     
     if (tag > 255 || len > 255)
         {
 #if !defined(_WIN32)
         fprintf (stderr, "dtSendTlv: bad tag/len %d %d\n", tag, len);
 #endif
-        return;
+        return EINVAL;
         }
     
     tl[0] = tag;
     tl[1] = len;
-    dtSend (fet, ps, tl, 2);
-    dtSend (fet, ps, value, len);
+    retval = dtSend (fet, ps, tl, 2);
+    if (retval < 0)
+        {
+        retval = dtSend (fet, ps, value, -len);
+        }
+    return retval;
     }
 
 /*--------------------------------------------------------------------------
@@ -964,10 +997,12 @@ void dtSendTlv (NetFet *fet, NetPortSet *ps,
 **                  len         data length
 **                  buf         buffer holding the data
 **
-**  Returns:        Nothing. 
+**  Returns:        -1 if ok, 0 if ok but full, >0 if nothing was sent. 
+**                  Note that this is an all or nothing send; unlike socket
+**                  send calls there isn't a partial send.
 **
 **------------------------------------------------------------------------*/
-void dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
+int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
     {
     int connFd = fet->connFd;
     int sent = 0, pend, newcount;
@@ -978,7 +1013,7 @@ void dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
     */
     if (connFd == 0)
         {
-        return;
+        return ENOTCONN;
         }
     
     /*
@@ -988,21 +1023,29 @@ void dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
     
     /*
     ** Only try to send new data if nothing is currently still pending.
+    ** Otherwise return EAGAIN (indicating no data was sent).
+    **
+    ** For internal use: if len < 0, send unconditionally.  This is
+    ** used in dtSendTlv, it is not for general use.
     */
-    if (fet->sendCount == 0)
+    if (fet->sendCount == 0 || len < 0)
         {
+        if (len < 0)
+            {
+            len = -len;
+            }
         if (len > 0 && connFd != 0)
             {
             sent = send (connFd, buf, len, MSG_NOSIGNAL);
             if (sent < 0)
                 {
-                if (errno != EAGAIN)
-                    {
-                    return;
-                    }
-                sent = 0;
+                return errno;
                 }
             }
+        }
+    else
+        {
+        return EAGAIN;
         }
 
     /*
@@ -1041,7 +1084,12 @@ void dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
             memcpy (waitptr + fet->sendCount, (u8 *)buf + sent, pend);
             fet->sendCount = newcount;
             }
+        /*
+        **  Indicate that this send worked but the next one will not.
+        */
+        return 0;
         }
+    return -1;
     }
 
 /*--------------------------------------------------------------------------
@@ -1298,7 +1346,7 @@ static void dtThread(void *param)
         **  Note that closing the data sockets is the responsibility
         **  of the code that uses those sockets.
         */
-        if (!emulationActive)
+        if (!emulationActive || ps->close)
             {
             dtCloseSocket (listenFd, TRUE);
             ThreadReturn;

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2006, Tom Hunter, Paul Koning (see license.txt)
+**  Copyright (c) 2006, Paul Koning (see license.txt)
 **
 **  Name: ext.c
 **
@@ -153,6 +153,9 @@ CpWord extOp (CpWord req)
     case 2:
         retval = termConnOp (req);
         break;
+    case 3:
+        retval = pniOp (req);
+        break;
     default:
         retval = RETINVREQ;
     }
@@ -266,7 +269,8 @@ static CpWord envOp (CpWord req)
 **                                  5: connect
 **                                  6: read
 **                                  7: write
-**                                  8: reset all
+**                                  8: reset multiple sockets
+**                                  9: reset all ext sockets
 **
 **                              For the "get socket" request, socknum must
 **                              be zero, and the socket number obtained is 
@@ -699,7 +703,7 @@ static CpWord sockOp (CpWord req)
         // 2: 1/ecs, 35/0, 24/bufaddr
         // 3: 60/chars
         // chars is 8 bit bytes in binary mode, 6 bit chars in text mode.  
-        // Char countincludes the end of line code (at least one 00 char) 
+        // Char count includes the end of line code (at least one 00 char) 
         // if last line ends in end of line.
         ic = reqp[3];
         if (ic > MAXNET)
@@ -815,11 +819,22 @@ static CpWord sockOp (CpWord req)
             }
         }
         oc = cp - (unsigned char *) resultstr;
-        dtSend (fet, &extPorts, resultstr, oc);
-        DEBUGPRINT ("dtSend (%d, ptr, %d)\n", fet, oc);
+        retval = dtSend (fet, &extPorts, resultstr, oc);
+        DEBUGPRINT ("dtSend (%d, ptr, %d) returned %d\n", fet, oc, retval);
+        if (retval > 0)
+        {
+            if (retval == EAGAIN)
+            {
+                return RETNODATA;
+            }
+            else
+            {
+                return RETERROR (retval);
+            }
+        }
         return RETOK;
     case 8:
-        // Reset all -- takes a buffer full of socket numbers
+        // Reset multiple -- takes a buffer full of socket numbers
         // request dependent fields:
         // 2: 1/ecs, 35/0, 24/bufaddr
         // 3: 60/bufwords
@@ -840,13 +855,25 @@ static CpWord sockOp (CpWord req)
             *bufp++ = 0;
             if (idx != 0)
             {
-                fet = socktofet (idx);                
-                DEBUGPRINT ("closing socket %d at index %d\n", fet->connFd, i + 1);
-                dtClose (fet, &extPorts, TRUE);
+                if (idx <= extSockets)
+                {
+                    fet = socktofet (idx);                
+                    DEBUGPRINT ("closing socket %d at index %d\n", fet->connFd, i + 1);
+                    dtClose (fet, &extPorts, TRUE);
+                }
             }
         }
         return RETOK;
-            
+    case 9:
+        // Reset all -- reset every socket controlled by ext.
+        // No request dependent fields.
+        for (i = 1; i <= extSockets; i++)
+        {
+            fet = socktofet (i);                
+            DEBUGPRINT ("closing socket %d\n", fet->connFd);
+            dtClose (fet, &extPorts, TRUE);
+        }
+        return RETOK;
     default:
         return RETINVREQ;
     }

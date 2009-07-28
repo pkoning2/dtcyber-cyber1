@@ -1,4 +1,3 @@
-#define DEBUG 1
 /*--------------------------------------------------------------------------
 **
 **  Copyright (c) 2009, Paul Koning (see license.txt)
@@ -65,11 +64,34 @@
 **  -----------------------
 */
 #ifdef DEBUG
-#define DEBUGPRINT printf
+#define DEBUGPRINT(fmt, ...) printf ("%s " fmt, dtNowString (), ## __VA_ARGS__ )
 #else
 #define DEBUGPRINT(fmt, ...)
 #endif
 
+#define WELCOME_MSG \
+    "\033\002"      /* Enter PLATO mode */                              \
+    "\033\014"  /* Full screen erase */                                 \
+    "\033\024"  /* Mode rewrite */                                      \
+    "\037"      /* Mode 3 (text plotting) */                            \
+    "\033\062\044\140\044\100" /* Load X and Y 128 */                   \
+    "Press  NEXT  to begin"
+#define OFF_MSG \
+    "\033\002"      /* Enter PLATO mode */                              \
+    "\033\024"  /* Mode rewrite */                                      \
+    "\037"      /* Mode 3 (text plotting) */                            \
+    "\033\062\056\140\044\110" /* Load Y 448, X 136 */                  \
+    "                              "                                    \
+    "\033\062\055\160\044\110" /* Load Y 432, X 136 */                  \
+    "       plato  off             "                                    \
+    "\033\062\055\140\044\110" /* Load Y 416, X 136 */                  \
+    "                              "                                    \
+    "\035"      /* Mode 2 (line drawing) */                             \
+    "\033\062\056\160\053\130" /* Load Y 464, X 376 */                  \
+    "\033\062\056\160\044\110" /* Load Y 464, X 136 */                  \
+    "\033\062\055\140\044\110" /* Load Y 416, X 136 */                  \
+    "\033\062\055\140\053\130" /* Load Y 416, X 376 */                  \
+    
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
@@ -217,7 +239,8 @@ CpWord pniOp (CpWord req)
     int i, len;
     PortParam *pp;
     
-    if (reqp[1] == 0)
+    DEBUGPRINT ("PniOp, request is %020llo\n", reqp[1]);
+    if (reqp[1] == 0 || reqp[1] == Mask60)
     {
         if (pniActive)
         {
@@ -226,7 +249,13 @@ CpWord pniOp (CpWord req)
             {
                 if (pp->np != NULL)
                 {
-                    dtClose (pp->np, &pniPorts, TRUE);
+                    if (reqp[1] != 0)
+                    {
+                        // Off with message
+                        DEBUGPRINT ("Sending offmsg to station %d\n", i + firstStation);
+                        pniSendstr (i + firstStation, OFF_MSG, 0);
+                    }
+                    dtClose (pp->np, &pniPorts, FALSE);
                 }
                 pp++;
             }
@@ -239,6 +268,7 @@ CpWord pniOp (CpWord req)
                 netbuf = NULL;
             }
             dtClosePortset (&pniPorts);
+            printf("PNI turned off\n");
         }
         return RETOK;
     }
@@ -339,7 +369,8 @@ CpWord pniOp (CpWord req)
     /*
     **  Print a friendly message.
     */
-    printf("PNI initialised, stations %d through %d\n", firstStation, lastStation - 1);
+    printf("PNI initialised, first station %d-%d, %d stations\n",
+           firstStation >> 5, firstStation & 0x1f, stations);
     
     pniActive = TRUE;
     return RETOK;
@@ -352,6 +383,7 @@ void initPni (void)
 void pniCheck (void)
 {
     int len, i, j;
+    bool lastword;
     int station;
     int opcode;
     CpWord oldout, hdr;
@@ -413,26 +445,28 @@ void pniCheck (void)
             {
                 w = *wp++;
                 DEBUGPRINT (" %015llx\n", w);
-                if (storeChar (w >> 52, &p)) break;
-                if (storeChar (w >> 44, &p)) break;
-                if (storeChar (w >> 36, &p)) break;
-                if (storeChar (w >> 28, &p)) break;
-                if (storeChar (w >> 20, &p)) break;
-                if (storeChar (w >> 12, &p)) break;
-                if (storeChar (w >>  4, &p)) break;
-                if (i + 1 == len) break;
+                lastword = (i + 1 == len);
+                if (storeChar (w >> 52, &p) && lastword) break;
+                if (storeChar (w >> 44, &p) && lastword) break;
+                if (storeChar (w >> 36, &p) && lastword) break;
+                if (storeChar (w >> 28, &p) && lastword) break;
+                if (storeChar (w >> 20, &p) && lastword) break;
+                if (storeChar (w >> 12, &p) && lastword) break;
+                if (storeChar (w >>  4, &p) && lastword) break;
+                if (lastword) break;
                 j = (w << 4) & 0x70;
                 w = *wp++;
+                lastword = (i + 2 == len);
                 DEBUGPRINT (" %015llx\n", w);
                 j |= (w >> 56) & Mask4;
-                if (storeChar (j, &p)) break;
-                if (storeChar (w >> 48, &p)) break;
-                if (storeChar (w >> 40, &p)) break;
-                if (storeChar (w >> 32, &p)) break;
-                if (storeChar (w >> 24, &p)) break;
-                if (storeChar (w >> 16, &p)) break;
-                if (storeChar (w >>  8, &p)) break;
-                if (storeChar (w, &p)) break;
+                if (storeChar (j, &p) && lastword) break;
+                if (storeChar (w >> 48, &p) && lastword) break;
+                if (storeChar (w >> 40, &p) && lastword) break;
+                if (storeChar (w >> 32, &p) && lastword) break;
+                if (storeChar (w >> 24, &p) && lastword) break;
+                if (storeChar (w >> 16, &p) && lastword) break;
+                if (storeChar (w >>  8, &p) && lastword) break;
+                storeChar (w, &p);
             }
             len = p - ascbuf;
             if (len > 0)
@@ -442,14 +476,12 @@ void pniCheck (void)
                 if (!pniSendstr (station, ascbuf, len))
                 {
                     pp->flowFlags |= FLOW_TCP;
+                    DEBUGPRINT ("Flow set to off\n");
                 }
 #endif
             }
-            if (pp->flowFlags == 0)
-            {
-                // Send Permit to Send shortly
-                pp->flowFlags |= FLOW_DOPTS;
-            }
+            // Send Permit to Send at next opportunity
+            pp->flowFlags |= FLOW_DOPTS;
             break;
         case 1:
             // Abort output
@@ -703,22 +735,31 @@ void pniCheck (void)
     {
         pp = portVector + port;
         np = pp->np;
-        if (pp->flowFlags == FLOW_DOPTS)
+        if (pp->flowFlags != 0)
         {
-            // Need to send PTS, and no flow-off flags are set
-            if (framatReq (F_PTS, port + firstStation))
+            // Some flags are set, figure out what to do
+            if ((pp->flowFlags & FLOW_DOABT) != 0)
             {
-                // Sent successfully, clear flag
-                pp->flowFlags = 0;
+                // Need to send ABT
+                if (framatReq (F_ABT, port + firstStation))
+                {
+                    // Sent successfully, clear flag
+                    pp->flowFlags &= ~FLOW_DOABT;
+                }
             }
-        }
-        else if ((pp->flowFlags & FLOW_DOABT) != 0)
-        {
-            // Need to send ABT
-            if (framatReq (F_ABT, port + firstStation))
+            if ((pp->flowFlags & FLOW_TCP) != 0 && np->sendCount == 0)
             {
-                // Sent successfully, clear flag
-                pp->flowFlags &= ~FLOW_DOABT;
+                // Flow was off due to TCP and it's ready now
+                pp->flowFlags &= ~FLOW_TCP;
+            }
+            if (pp->flowFlags == FLOW_DOPTS)
+            {
+                // Need to send PTS, and no flow-off flags are set
+                if (framatReq (F_PTS, port + firstStation))
+                {
+                    // Sent successfully, clear flag
+                    pp->flowFlags = 0;
+                }
             }
         }
     }
@@ -746,7 +787,7 @@ void pniCheck (void)
 
 static int rcb (CpWord *buf, struct Io *iop, int buflen, CpWord *dest)
 {
-    int len;
+    int len, len2;
     CpWord hdr;
     
     if (iop->in == iop->out)
@@ -787,11 +828,12 @@ static int rcb (CpWord *buf, struct Io *iop, int buflen, CpWord *dest)
         }
         else
         {
-            memcpy (dest, buf + iop->out, (buflen - iop->out) * sizeof (CpWord));
-            dest += buflen - iop->out;
-            len -= buflen - iop->out;
-            memcpy (dest, buf, len * sizeof (CpWord));
-            iop->out = len;
+            len2 = buflen - iop->out;
+            memcpy (dest, buf + iop->out, len2 * sizeof (CpWord));
+            dest += len2;
+            len2 = len - len2;
+            memcpy (dest, buf, len2 * sizeof (CpWord));
+            iop->out = len2;
         }
     }
     else if (++iop->out == buflen)
@@ -1004,14 +1046,8 @@ static void pniWelcome(NetFet *np, int stat)
     */
     mp->flowFlags = FLOW_DOABT;
     
-#define WELCOME_PFX \
-    "\033\002"      /* Enter PLATO mode */                              \
-        "\033\014"  /* Full screen erase */                             \
-        "\033\024"  /* Mode rewrite */                                  \
-        "\037"      /* Mode 3 (text plotting) */                        \
-        "\033\062\044\140\044\100" /* Load X and Y 128 */
 
-    pniSendstr (stat, WELCOME_PFX "Press  NEXT  to begin", 0);
+    pniSendstr (stat, WELCOME_MSG, 0);
 } 
 
 /*--------------------------------------------------------------------------
@@ -1034,6 +1070,6 @@ static bool pniSendstr(int stat, const char *p, int len)
         len = strlen (p);
     }
     fet = pniPorts.portVec + (stat - firstStation);
-    return (dtSend(fet, &pniPorts, p, strlen (p)) < 0);
+    return (dtSend (fet, &pniPorts, p, strlen (p)) < 0);
 }
 
