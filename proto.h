@@ -206,7 +206,6 @@ void initExt (void);
 **  pni.c
 */
 CpWord pniOp (CpWord req);
-void initPni (void);
 void pniCheck (void);
 
 /*
