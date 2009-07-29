@@ -140,6 +140,7 @@ long pniConns;
 static struct PniPtr apni;
 static bool pniActive = FALSE;
 static CpWord *akb;
+static struct stbank *ast;
 static CpWord *aasccon;
 static CpWord *abt;
 static CpWord *afpnib;
@@ -301,6 +302,8 @@ CpWord pniOp (CpWord req)
     }
     lastStation = firstStation + stations;
     akb = cpuAccessMem ((1ULL << 59) | apni.akb, lastStation * NKEYLTH);
+    ast = (struct stbank *) cpuAccessMem ((1ULL << 59) | apni.ast, 
+                                          lastStation * sizeof (struct stbank) / sizeof (CpWord));
     aasccon = cpuAccessMem ((1ULL << 59) | apni.aasccon, lastStation);
     abt = cpuAccessMem ((1ULL << 59) | apni.abt, stations >> 5);  // one word per site
     fpnilen = (apni.sd[SIMNAM].fod >> 42) & Mask18;
@@ -394,6 +397,7 @@ void pniCheck (void)
     NetFet *np;
     int port, key;
     char buf[2];
+    struct stbank *sb;
 #if DEBUG == 2
     struct Keybuf *kp;
     static int cpidx;
@@ -694,12 +698,21 @@ void pniCheck (void)
             case yhigh:
                 if (key >= 0100)
                 {
+                    // Form the coordinate data
                     key = pp->keyAsm | ((key & 037) << 5);
+                    sb = ast + (port + firstStation);
+                    // Check that we're on the right station bank
+                    if ((sb->stflags & Mask18) == port + firstStation)
+                    {
+                        // Merge the fine grid position data
+                        sb->cwsinfo = (sb->cwsinfo & ~ULL (03777777)) | key;
+                    }
+                    else
+                    {
+                        DEBUGPRINT ("station bank mismatch, station %d\n", port + firstStation);
+                    }
                 }
-                else
-                {
-                    key = -1;
-                }
+                key = -1;
                 pp->escState = norm;
                 break;
             }
