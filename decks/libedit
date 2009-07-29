@@ -4,9 +4,9 @@ common,system.
 *
 *attach,cmrd25.
 *attach,cmrd26.
-*attach,eqpd25.
-*attach,iprd00.
-*attach,iprd01.
+attach,eqpd25.
+attach,iprd00.
+attach,iprd01.
 *attach,libd01.
 *attach,ppubin.
 attach,pbin.
@@ -36,3 +36,6 @@ copyei,new,tape.
 ~
 *file pbin
 *file dsdbin
+*file iprd00
+*file iprd01
+*file eqpd25

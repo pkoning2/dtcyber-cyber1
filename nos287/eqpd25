@@ -16,7 +16,7 @@ EQ060=lt,EQ=5,CH=12,tn=4.
 EQ061=lt,EQ=7,CH=12,tn=4,id=1.	plato lesson printer
 EQ063=CR,EQ=4,CH=12.
 EQ064=CP,EQ=6,CH=12.
-eq066=np,eq=7,pi=1,ch=6,nd=1,sa=on.      NPU (2550)
+*eq066=np,eq=7,pi=1,ch=6,nd=1,sa=on.      NPU (2550)
 EQ067=RM,PT=1,CH=15.
 SYSTEM=6. 
 FAMILY=7. 

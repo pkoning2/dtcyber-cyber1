@@ -118,7 +118,7 @@ typedef struct portParam
 */
 static int rcb (CpWord *buf, struct Io *iop, int buflen, CpWord *dest);
 static void storeKey (int key, int station);
-static bool storeChar (int c, char **pp);
+static void storeChar (int c, char **pp);
 static bool framatReq (int req, int station);
 static void pniWelcome(NetFet *np, int stat);
 static bool pniSendstr(int stat, const char *p, int len);
@@ -389,6 +389,7 @@ void pniCheck (void)
     CpWord oldout, hdr;
     char *p;
     CpWord *wp, w;
+    int shift;
     PortParam *pp;
     NetFet *np;
     int port, key;
@@ -422,6 +423,7 @@ void pniCheck (void)
         //  12/Message sequence number
         //  12/CPU word count of message (including header)
         //  12/PPU word count of message (including header)
+        //     For data messages this is instead the byte count + 1
         //  12/Station number
         hdr = netbuf[0];
         station = hdr & Mask12;
@@ -441,32 +443,31 @@ void pniCheck (void)
             // Data message, send it to the terminal
             p = ascbuf;
             wp = netbuf + 1;
-            for (i = 1; i < len; i += 2)
+            shift = -8;
+            len = ((hdr >> 12) & Mask12) - 1;
+            for (i = 0; i < len; i++)
             {
-                w = *wp++;
-                DEBUGPRINT (" %015llx\n", w);
-                lastword = (i + 1 == len);
-                if (storeChar (w >> 52, &p) && lastword) break;
-                if (storeChar (w >> 44, &p) && lastword) break;
-                if (storeChar (w >> 36, &p) && lastword) break;
-                if (storeChar (w >> 28, &p) && lastword) break;
-                if (storeChar (w >> 20, &p) && lastword) break;
-                if (storeChar (w >> 12, &p) && lastword) break;
-                if (storeChar (w >>  4, &p) && lastword) break;
-                if (lastword) break;
-                j = (w << 4) & 0x70;
-                w = *wp++;
-                lastword = (i + 2 == len);
-                DEBUGPRINT (" %015llx\n", w);
-                j |= (w >> 56) & Mask4;
-                if (storeChar (j, &p) && lastword) break;
-                if (storeChar (w >> 48, &p) && lastword) break;
-                if (storeChar (w >> 40, &p) && lastword) break;
-                if (storeChar (w >> 32, &p) && lastword) break;
-                if (storeChar (w >> 24, &p) && lastword) break;
-                if (storeChar (w >> 16, &p) && lastword) break;
-                if (storeChar (w >>  8, &p) && lastword) break;
-                storeChar (w, &p);
+                if (shift == -4)
+                {
+                    j = (w << 4) & 0x70;
+                    w = *wp++;
+                    DEBUGPRINT (" %015llx\n", w);
+                    j |= (w >> 56) & Mask4;
+                    shift = 48;
+                }
+                else
+                {
+                    if (shift == -8)
+                    {
+                        // Start a new CM word
+                        w = *wp++;
+                        shift = 52;
+                        DEBUGPRINT (" %015llx\n", w);
+                    }
+                    j = (w >> shift) & Mask8;
+                    shift -= 8;
+                }
+                storeChar (j, &p);
             }
             len = p - ascbuf;
             if (len > 0)
@@ -844,6 +845,19 @@ static int rcb (CpWord *buf, struct Io *iop, int buflen, CpWord *dest)
     return len;
 }
 
+static inline void storeChar (int c, char **pp)
+{
+    char *p = *pp;
+    
+    *p = c;
+    if (c == 0xff)
+    {
+        // Telnet escape
+        *++p = c;
+    }
+    *pp = ++p;
+}
+
 static void storeKey (int key, int station)
 {
     struct Keybuf *kp;
@@ -897,24 +911,6 @@ static void storeKey (int key, int station)
 #else
     DEBUGPRINT ("Store key: %d\n", key);
 #endif
-}
-
-static bool storeChar (int c, char **pp)
-{
-    char *p = *pp;
-    
-    c &= Mask8;
-    *p = c;
-    if (c == 0xff)
-    {
-        // Telnet escape
-        *++p = c;
-    }
-    if (c != 0)
-    {
-        *pp = ++p;
-    }
-    return (c == 0);
 }
 
 static bool framatReq (int req, int station)
@@ -1070,6 +1066,6 @@ static bool pniSendstr(int stat, const char *p, int len)
         len = strlen (p);
     }
     fet = pniPorts.portVec + (stat - firstStation);
-    return (dtSend (fet, &pniPorts, p, strlen (p)) < 0);
+    return (dtSend (fet, &pniPorts, p, len) < 0);
 }
 

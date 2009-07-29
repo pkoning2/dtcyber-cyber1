@@ -15,6 +15,7 @@ if [ "$1" = "" ]; then
     cp sys/871/cy871.ecs.initial sys/871/cy871.ecs
     ./dtcyber cybis871auto | tee cyberlog &
 else
+#    ./dtcyber $1  | tee cyberlog &
     ./dtcyber $1 &
 fi
 
