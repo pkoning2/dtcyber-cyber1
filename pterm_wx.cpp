@@ -2169,7 +2169,7 @@ PtermMainFrame::PtermMainFrame (void)
 // frame constructor
 PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wxPoint &pos)
     : PtermFrameBase(PtermFrameParent, -1, title, pos, wxDefaultSize),
-      tracePterm (true),
+      tracePterm (false),
       m_nextFrame (NULL),
       m_prevFrame (NULL),
       m_foregroundPen (ptermApp->m_fgColor, ((ptermApp->m_stretch) ? 1 : ptermApp->m_scale), wxSOLID),
