@@ -106,7 +106,6 @@ typedef struct portParam
     int         keyAsm;
     int         flowFlags;
     bool        newKbd;
-    bool        loggedIn;
     bool        sendLogout;
     bool        forceLogout;
 } PortParam;
@@ -120,9 +119,11 @@ static int rcb (CpWord *buf, struct Io *iop, int buflen, CpWord *dest);
 static void storeKey (int key, int station);
 static void storeChar (int c, char **pp);
 static bool framatReq (int req, int station);
-static void pniWelcome(NetFet *np, int stat);
-static bool pniSendstr(int stat, const char *p, int len);
+static void pniWelcome (NetFet *np, int stat);
+static bool pniSendstr (int stat, const char *p, int len);
 static void pniUpdateStatus (void);
+static bool pniLoggedIn (int stat);
+static struct stbank * pniStationBank (int stat);
 
 /*
 **  ----------------
@@ -211,27 +212,25 @@ const int asc2plato2[128] = {
 **--------------------------------------------------------------------------
 */
 /*--------------------------------------------------------------------------
-**  Purpose:        Initialise PNI
+**  Purpose:        Process a PNI operation (external op function 3)
 **
 **  Parameters:     Name        Description.
-**                  eqNo        equipment number
-**                  unitNo      normally unit number, here abused as input channel.
-**                  channelNo   output channel number.
-**                  deviceName  optional device file name
+**                  req         Request word
 **
-**  Returns:        Nothing.
+**  Returns:        Status (-1 for ok, other values for errors)
+**
+**  This turns PNI emulation on or off.
+** 
+**  Request format:
+**       48/0, 12/3
+**       60/PNI initialization pointer
+** 
+**  The PNI initialization pointer is the ECS address of the PNI 
+**  pointers block, or 0 to turn off PNI emulation.  If -0 is 
+**  supplied, PNI is turned off but a "plato off" message is transmitted
+**  to all connected stations.
 **
 **------------------------------------------------------------------------*/
-// pniOp (external operation function code 3)
-//
-// This turns PNI emulation on or off.
-//
-// Request format:
-//      48/0, 12/3
-//      60/PNI initialization pointer
-//
-// The PNI initialization pointer is the ECS address of the PNI 
-// pointers block, or 0 to turn off PNI emulation.
 
 CpWord pniOp (CpWord req)
 {
@@ -379,10 +378,17 @@ CpWord pniOp (CpWord req)
     return RETOK;
 }
 
-void initPni (void)
-{
-}
-
+/*--------------------------------------------------------------------------
+**  Purpose:        Check for PNI things to do
+**
+**  Parameters:     None
+**
+**  Returns:        Nothing
+**
+**  This function does the periodic PNI things: check for output,
+**  check for input, check to see if requests need to be sent to Framat.
+**
+**------------------------------------------------------------------------*/
 void pniCheck (void)
 {
     int len, i, j;
@@ -498,7 +504,7 @@ void pniCheck (void)
         case 5:
             // Logout terminal
             DEBUGPRINT ("Log out terminal %d\n", station);
-            pp->loggedIn = FALSE;
+            // Actually we do nothing here
             break;
         case 3:
             // Return terminal type
@@ -700,16 +706,11 @@ void pniCheck (void)
                 {
                     // Form the coordinate data
                     key = pp->keyAsm | ((key & 037) << 5);
-                    sb = ast + (port + firstStation);
-                    // Check that we're on the right station bank
-                    if ((sb->stflags & Mask18) == port + firstStation)
+                    sb = pniStationBank (port + firstStation);
+                    if (sb != NULL)
                     {
                         // Merge the fine grid position data
                         sb->cwsinfo = (sb->cwsinfo & ~ULL (03777777)) | key;
-                    }
-                    else
-                    {
-                        DEBUGPRINT ("station bank mismatch, station %d\n", port + firstStation);
                     }
                 }
                 key = -1;
@@ -799,6 +800,23 @@ void pniCheck (void)
 #endif
 }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Read from the Framat to PNI request ring
+**
+**  Parameters:     Name        Description.
+**                  buf         Buffer pointer
+**                  iop         In/out pointers address
+**                  buflen      Length of buffer
+**                  dest        Where to write the data
+**
+**  Returns:        Count of words read (0 if nothing pending)
+**
+**  This function reads the entire block of pending data in the
+**  Framat to PNI request ring.  Note that the dest buffer must
+**  be big enough, i.e., it has to be sized to at least the ring
+**  buffer size.  The "out" pointer is updated.
+**
+**------------------------------------------------------------------------*/
 static int rcb (CpWord *buf, struct Io *iop, int buflen, CpWord *dest)
 {
     int len, len2;
@@ -858,6 +876,19 @@ static int rcb (CpWord *buf, struct Io *iop, int buflen, CpWord *dest)
     return len;
 }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Store an ASCII character into the outbound network buffer
+**
+**  Parameters:     Name        Description.
+**                  c           Character code
+**                  pp          Pointer to character buffer
+**
+**  Returns:        nothing, but the buffer pointer is updated.
+**
+**  This function basically just stores what it is give, but if the
+**  byte is 0xff (Telnet escape) it escapes it.
+**
+**------------------------------------------------------------------------*/
 static inline void storeChar (int c, char **pp)
 {
     char *p = *pp;
@@ -871,6 +902,16 @@ static inline void storeChar (int c, char **pp)
     *pp = ++p;
 }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Store a key (in PLATO coding) in the PLATO key buffer
+**
+**  Parameters:     Name        Description.
+**                  key         Key code
+**                  stat        Station number
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
 static void storeKey (int key, int station)
 {
     struct Keybuf *kp;
@@ -926,6 +967,17 @@ static void storeKey (int key, int station)
 #endif
 }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Send a PNI to Framat request word
+**
+**  Parameters:     Name        Description.
+**                  req         Request code
+**                  stat        Station number
+**
+**  Returns:        TRUE if the request was stored
+**                  FALSE if request ring buffer was full
+**
+**------------------------------------------------------------------------*/
 static bool framatReq (int req, int station)
 {
 #if DEBUG != 2
@@ -1007,7 +1059,7 @@ static void pniWelcome(NetFet *np, int stat)
                stat / 32, stat % 32);
         pniActiveConns--;
         pniUpdateStatus ();
-        if (mp->loggedIn)
+        if (pniLoggedIn (stat))
             {
             /*
             **  If we're not logged out yet, set a flag to send
@@ -1044,7 +1096,7 @@ static void pniWelcome(NetFet *np, int stat)
     **  key input handler for each key entered by the user, until
     **  PLATO indicates that the logout has been done.
     */
-    if (mp->loggedIn)
+    if (pniLoggedIn (stat))
         {
         printf ("need to force logout for port %d\n", stat);
         mp->forceLogout = TRUE;
@@ -1081,4 +1133,46 @@ static bool pniSendstr(int stat, const char *p, int len)
     fet = pniPorts.portVec + (stat - firstStation);
     return (dtSend (fet, &pniPorts, p, len) < 0);
 }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Test if a station is logged in
+**
+**  Parameters:     Name        Description.
+**                  stat        Station number
+**
+**  Returns:        TRUE if logged in
+**
+**------------------------------------------------------------------------*/
+static bool pniLoggedIn (int stat)
+{
+    struct stbank *sb = pniStationBank (stat);
+    
+    return (sb != NULL && (sb->bankadd & Sign60) == 0);
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Return a station bank pointer
+**
+**  Parameters:     Name        Description.
+**                  stat        Station number
+**
+**  Returns:        NULL if invalid station number or lookup failure.
+**
+**------------------------------------------------------------------------*/
+static struct stbank * pniStationBank (int stat)
+{
+    struct stbank *sb;
+
+    sb = ast + stat;
+    
+    // Check that we're on the right station bank
+    if ((sb->stflags & Mask18) != stat)
+    {
+        DEBUGPRINT ("station bank mismatch, station %d\n", stat);
+        sb = NULL;
+    }
+
+    return sb;
+}
+
 
