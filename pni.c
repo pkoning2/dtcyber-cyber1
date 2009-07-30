@@ -207,6 +207,39 @@ const int asc2plato2[128] = {
 /*
 **--------------------------------------------------------------------------
 **
+**  Inline Functions
+**
+**--------------------------------------------------------------------------
+*/
+/*--------------------------------------------------------------------------
+**  Purpose:        Store an ASCII character into the outbound network buffer
+**
+**  Parameters:     Name        Description.
+**                  c           Character code
+**                  pp          Pointer to character buffer
+**
+**  Returns:        nothing, but the buffer pointer is updated.
+**
+**  This function basically just stores what it is give, but if the
+**  byte is 0xff (Telnet escape) it escapes it.
+**
+**------------------------------------------------------------------------*/
+static inline void storeChar (int c, char **pp)
+{
+    char *p = *pp;
+    
+    *p = c;
+    if (c == 0xff)
+    {
+        // Telnet escape
+        *++p = c;
+    }
+    *pp = ++p;
+}
+
+/*
+**--------------------------------------------------------------------------
+**
 **  Public Functions
 **
 **--------------------------------------------------------------------------
@@ -874,32 +907,6 @@ static int rcb (CpWord *buf, struct Io *iop, int buflen, CpWord *dest)
     }
 
     return len;
-}
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Store an ASCII character into the outbound network buffer
-**
-**  Parameters:     Name        Description.
-**                  c           Character code
-**                  pp          Pointer to character buffer
-**
-**  Returns:        nothing, but the buffer pointer is updated.
-**
-**  This function basically just stores what it is give, but if the
-**  byte is 0xff (Telnet escape) it escapes it.
-**
-**------------------------------------------------------------------------*/
-static inline void storeChar (int c, char **pp)
-{
-    char *p = *pp;
-    
-    *p = c;
-    if (c == 0xff)
-    {
-        // Telnet escape
-        *++p = c;
-    }
-    *pp = ++p;
 }
 
 /*--------------------------------------------------------------------------
