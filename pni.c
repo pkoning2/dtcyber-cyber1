@@ -76,21 +76,31 @@
     "\037"      /* Mode 3 (text plotting) */                            \
     "\033\062\044\140\044\100" /* Load X and Y 128 */                   \
     "Press  NEXT  to begin"
+#define NOPLATO_MSG \
+    "\033\002"      /* Enter PLATO mode */                              \
+    "\033\014"  /* Full screen erase */                                 \
+    "\033\024"  /* Mode rewrite */                                      \
+    "\037"      /* Mode 3 (text plotting) */                            \
+    "\033\062\044\140\044\100" /* Load X and Y 128 */                   \
+    "PLATO not active"
 #define OFF_MSG \
     "\033\002"      /* Enter PLATO mode */                              \
+    "\033a\100\174\177\177" /* Foreground color yellow */               \
+    "\033b\100\100\100\100" /* Background color black */                \
     "\033\024"  /* Mode rewrite */                                      \
     "\037"      /* Mode 3 (text plotting) */                            \
     "\033\062\056\140\044\110" /* Load Y 448, X 136 */                  \
     "                              "                                    \
     "\033\062\055\160\044\110" /* Load Y 432, X 136 */                  \
-    "       plato  off             "                                    \
+    "          plato  off          "                                    \
     "\033\062\055\140\044\110" /* Load Y 416, X 136 */                  \
     "                              "                                    \
-    "\035"      /* Mode 2 (line drawing) */                             \
-    "\033\062\056\160\053\130" /* Load Y 464, X 376 */                  \
-    "\033\062\056\160\044\110" /* Load Y 464, X 136 */                  \
-    "\033\062\055\140\044\110" /* Load Y 416, X 136 */                  \
-    "\033\062\055\140\053\130" /* Load Y 416, X 376 */                  \
+    "\035"      /* Mode 1 (line drawing) */                             \
+    "\055\140\053\130" /* Y 416, X 376 */                               \
+    "\056\160\053\130" /* Y 464, X 376 */                               \
+    "\056\160\044\110" /* Y 464, X 136 */                               \
+    "\055\140\044\110" /* Y 416, X 136 */                               \
+    "\055\140\053\130" /* Y 416, X 376 */                               \
     
 /*
 **  -----------------------------------------
@@ -124,6 +134,7 @@ static bool pniSendstr (int stat, const char *p, int len);
 static void pniUpdateStatus (void);
 static bool pniLoggedIn (int stat);
 static struct stbank * pniStationBank (int stat);
+static void pniActivateStation (int stat);
 
 /*
 **  ----------------
@@ -264,33 +275,94 @@ static inline void storeChar (int c, char **pp)
 **  to all connected stations.
 **
 **------------------------------------------------------------------------*/
+void initPni (void)
+{
+    /*
+    **  Until PNI starts, supply some defaults.
+    */
+    stations = pniConns;
+    firstStation = 32 + platoConns;
+    
+    portVector = calloc(1, sizeof(PortParam) * pniConns);
+    if (portVector == NULL)
+    {
+        fprintf(stderr, "Failed to allocate PNI context block\n");
+        exit (1);
+    }
+    /*
+    **  Create the thread which will deal with TCP connections.
+    */
+    pniPorts.portNum = pniPort;
+    pniPorts.maxPorts = pniConns;
+    pniPorts.localOnly = FALSE;
+    pniPorts.callBack = pniWelcome;
+    pniPorts.kind = "PNI";
+    
+#if DEBUG != 2
+    dtInitPortset (&pniPorts, MAXNET);
+#endif
 
+    /*
+    **  Allocate the operator status buffer
+    */
+    if (statusBuf == NULL)
+    {
+        statusBuf = opInitStatus ("PNI", 0, 0);
+        pniUpdateStatus ();
+    }
+
+    /*
+    **  Print a friendly message.
+    */
+    printf("PNI initialised, %d stations\n", pniConns);
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Process a PNI operation (external op function 3)
+**
+**  Parameters:     Name        Description.
+**                  req         Request word
+**
+**  Returns:        Status (-1 for ok, other values for errors)
+**
+**  This turns PNI emulation on or off.
+** 
+**  Request format:
+**       48/0, 12/3
+**       60/PNI initialization pointer
+** 
+**  The PNI initialization pointer is the ECS address of the PNI 
+**  pointers block, or 0 to turn off PNI emulation.  If -0 is 
+**  supplied, PNI is turned off but a "plato off" message is transmitted
+**  to all connected stations.
+**
+**------------------------------------------------------------------------*/
 CpWord pniOp (CpWord req)
 {
     CpWord *reqp = cpuAccessMem (req, 2);
     CpWord *pnii;
-    int i, len;
+    int i, stat, len;
     PortParam *pp;
+    char termname[10];
+    CpWord termid;
     
     DEBUGPRINT ("PniOp, request is %020llo\n", reqp[1]);
     if (reqp[1] == 0 || reqp[1] == Mask60)
     {
         if (pniActive)
         {
-            pp = portVector;
-            for (i = 0; i < stations; i++)
+            if (reqp[1] != 0)
             {
-                if (pp->np != NULL)
+                // Off with message
+                for (i = 0; i < stations; i++)
                 {
-                    if (reqp[1] != 0)
+                    pp = portVector + i;
+                    if (pp->np != NULL)
                     {
-                        // Off with message
                         DEBUGPRINT ("Sending offmsg to station %d\n", i + firstStation);
                         pniSendstr (i + firstStation, OFF_MSG, 0);
                     }
-                    dtClose (pp->np, &pniPorts, FALSE);
                 }
-                pp++;
             }
             pniActive = FALSE;
             if (netbuf != NULL)
@@ -300,7 +372,6 @@ CpWord pniOp (CpWord req)
                 ascbuf = NULL;
                 netbuf = NULL;
             }
-            dtClosePortset (&pniPorts);
             printf("PNI turned off\n");
         }
         return RETOK;
@@ -368,46 +439,26 @@ CpWord pniOp (CpWord req)
         return RETERROR (ENOMEM);
     }
 
-    portVector = calloc(1, sizeof(PortParam) * stations);
-    if (portVector == NULL)
-    {
-        fprintf(stderr, "Failed to allocate PNI context block\n");
-        free (netbuf);
-        free (ascbuf);
-        return RETERROR (ENOMEM);
-    }
-
     lastInPort = 0;
-    
-    /*
-    **  Create the thread which will deal with TCP connections.
-    */
-    pniPorts.portNum = pniPort;
-    pniPorts.maxPorts = stations;
-    pniPorts.localOnly = FALSE;
-    pniPorts.callBack = pniWelcome;
-    pniPorts.kind = "PNI";
-    
-#if DEBUG != 2
-    dtInitPortset (&pniPorts, MAXNET);
-#endif
+    pniActive = TRUE;
 
-    /*
-    **  Allocate the operator status buffer
-    */
-    if (statusBuf == NULL)
+    // Send "Press NEXT to begin" to any connected terminals
+    // and set their termid word because this is a new
+    // PLATO load.
+    for (stat = 0; stat < stations; stat++)
     {
-        statusBuf = opInitStatus ("PNI", 0, 0);
-        pniUpdateStatus ();
+        pp = portVector + stat;
+        if (pp->np != NULL)
+        {
+            pniActivateStation (stat);
+        }
     }
 
     /*
     **  Print a friendly message.
     */
-    printf("PNI initialised, first station %d-%d, %d stations\n",
+    printf("PNI started, first station %d-%d, %d stations\n",
            firstStation >> 5, firstStation & 0x1f, stations);
-    
-    pniActive = TRUE;
     return RETOK;
 }
 
@@ -418,8 +469,9 @@ CpWord pniOp (CpWord req)
 **
 **  Returns:        Nothing
 **
-**  This function does the periodic PNI things: check for output,
-**  check for input, check to see if requests need to be sent to Framat.
+**  This function does the periodic PNI things: check for input,
+**  check for output, check to see if requests need to be sent to Framat.
+**  If PNI is not active, we still check for input (discarding all of it).
 **
 **------------------------------------------------------------------------*/
 void pniCheck (void)
@@ -440,126 +492,6 @@ void pniCheck (void)
 #if DEBUG == 2
     struct Keybuf *kp;
     static int cpidx;
-#endif
-
-    if (!pniActive)
-    {
-        return;
-    }
-#if DEBUG != 2
-    memcpy (&fpniio, afpniio, sizeof (fpniio));
-#else
-    fpniio.in = *afpniio;
-#endif
-    oldout = fpniio.out;
-    while ((len = rcb (afpnib, &fpniio, fpnilen, netbuf)) != 0)
-    {
-        //  Message header format
-        //
-        //  12/Function code
-        //         0 - Data message
-        //         1 - Output abort
-        //         2 - Logout terminal
-        //         3 - Return terminal type via echo key
-        //         4 - Enable flow control and new keycode translation
-        //         5 - Logout terminal immediately
-        //  12/Message sequence number
-        //  12/CPU word count of message (including header)
-        //  12/PPU word count of message (including header)
-        //     For data messages this is instead the byte count + 1
-        //  12/Station number
-        hdr = netbuf[0];
-        station = hdr & Mask12;
-        opcode = (hdr >> 48) & Mask12;
-        DEBUGPRINT ("Message from framat, len %d, %llo, ptrs %llo %llo -> %llo\n", len, hdr, fpniio.in, oldout, fpniio.out);
-        oldout = fpniio.out;
-
-        if (station < firstStation || station >= lastStation)
-        {
-            DEBUGPRINT ("Station %d out of range\n", station);
-            continue;
-        }
-        pp = portVector + (station - firstStation);
-        switch (opcode)
-        {
-        case 0:
-            // Data message, send it to the terminal
-            p = ascbuf;
-            wp = netbuf + 1;
-            shift = -8;
-            len = ((hdr >> 12) & Mask12) - 1;
-            for (i = 0; i < len; i++)
-            {
-                if (shift == -4)
-                {
-                    j = (w << 4) & 0x70;
-                    w = *wp++;
-                    DEBUGPRINT (" %015llx\n", w);
-                    j |= (w >> 56) & Mask4;
-                    shift = 48;
-                }
-                else
-                {
-                    if (shift == -8)
-                    {
-                        // Start a new CM word
-                        w = *wp++;
-                        shift = 52;
-                        DEBUGPRINT (" %015llx\n", w);
-                    }
-                    j = (w >> shift) & Mask8;
-                    shift -= 8;
-                }
-                storeChar (j, &p);
-            }
-            len = p - ascbuf;
-            if (len > 0)
-            {
-                DEBUGPRINT ("Send %d bytes to terminal %d\n", len, station);
-#if DEBUG != 2
-                if (!pniSendstr (station, ascbuf, len))
-                {
-                    pp->flowFlags |= FLOW_TCP;
-                    DEBUGPRINT ("Flow set to off\n");
-                }
-#endif
-            }
-            // Send Permit to Send at next opportunity
-            pp->flowFlags |= FLOW_DOPTS;
-            break;
-        case 1:
-            // Abort output
-            DEBUGPRINT ("Abort output, terminal %d\n", station);
-            // Send Abort done
-            pp->flowFlags |= FLOW_DOABT;
-            break;
-        case 2:
-        case 5:
-            // Logout terminal
-            DEBUGPRINT ("Log out terminal %d\n", station);
-            // Actually we do nothing here
-            break;
-        case 3:
-            // Return terminal type
-            DEBUGPRINT ("Return terminal type, station %d\n", station);
-            // Tell PLATO that we have an ASCII terminal
-            storeKey (0214, station);
-            break;
-        case 4:
-            // Set new keycode conversion
-            DEBUGPRINT ("Set new keycode conversion/flow control, station %d\n", station);
-            pp->newKbd = TRUE;
-            // Send "new kb" echo code to terminal?
-            break;
-        default:
-            DEBUGPRINT ("Invalid framat request code %04o, station %d\n", opcode, station);
-        }
-    }
-#if DEBUG != 2
-    /* 
-    ** Write back the "out" pointer
-    */
-    afpniio[1] = fpniio.out;
 #endif
 
     /*
@@ -779,6 +711,133 @@ void pniCheck (void)
         }
     }
     lastInPort = port;
+#endif
+    if (!pniActive)
+    {
+        return;
+    }
+
+    /*
+    **  Look for requests from Framat
+    */
+#if DEBUG != 2
+    memcpy (&fpniio, afpniio, sizeof (fpniio));
+#else
+    fpniio.in = *afpniio;
+#endif
+    oldout = fpniio.out;
+    while ((len = rcb (afpnib, &fpniio, fpnilen, netbuf)) != 0)
+    {
+        //  Message header format
+        //
+        //  12/Function code
+        //         0 - Data message
+        //         1 - Output abort
+        //         2 - Logout terminal
+        //         3 - Return terminal type via echo key
+        //         4 - Enable flow control and new keycode translation
+        //         5 - Logout terminal immediately
+        //  12/Message sequence number
+        //  12/CPU word count of message (including header)
+        //  12/PPU word count of message (including header)
+        //     For data messages this is instead the byte count + 1
+        //  12/Station number
+        hdr = netbuf[0];
+        station = hdr & Mask12;
+        opcode = (hdr >> 48) & Mask12;
+        DEBUGPRINT ("Message from framat, len %d, %llo, ptrs %llo %llo -> %llo\n", len, hdr, fpniio.in, oldout, fpniio.out);
+        oldout = fpniio.out;
+
+        if (station < firstStation || station >= lastStation)
+        {
+            DEBUGPRINT ("Station %d out of range\n", station);
+            continue;
+        }
+        pp = portVector + (station - firstStation);
+        switch (opcode)
+        {
+        case 0:
+            // Data message, send it to the terminal
+            p = ascbuf;
+            wp = netbuf + 1;
+            shift = -8;
+            len = ((hdr >> 12) & Mask12) - 1;
+            for (i = 0; i < len; i++)
+            {
+                if (shift == -4)
+                {
+                    j = (w << 4) & 0x70;
+                    w = *wp++;
+                    DEBUGPRINT (" %015llx\n", w);
+                    j |= (w >> 56) & Mask4;
+                    shift = 48;
+                }
+                else
+                {
+                    if (shift == -8)
+                    {
+                        // Start a new CM word
+                        w = *wp++;
+                        shift = 52;
+                        DEBUGPRINT (" %015llx\n", w);
+                    }
+                    j = (w >> shift) & Mask8;
+                    shift -= 8;
+                }
+                storeChar (j, &p);
+            }
+            len = p - ascbuf;
+            if (len > 0)
+            {
+                DEBUGPRINT ("Send %d bytes to terminal %d\n", len, station);
+#if DEBUG != 2
+                if (!pniSendstr (station, ascbuf, len))
+                {
+                    pp->flowFlags |= FLOW_TCP;
+                    DEBUGPRINT ("Flow set to off\n");
+                }
+#endif
+            }
+            // Send Permit to Send at next opportunity
+            pp->flowFlags |= FLOW_DOPTS;
+            break;
+        case 1:
+            // Abort output
+            DEBUGPRINT ("Abort output, terminal %d\n", station);
+            // Send Abort done
+            pp->flowFlags |= FLOW_DOABT;
+            break;
+        case 2:
+        case 5:
+            // Logout terminal
+            DEBUGPRINT ("Log out terminal %d\n", station);
+            // Actually we do nothing here
+            break;
+        case 3:
+            // Return terminal type
+            DEBUGPRINT ("Return terminal type, station %d\n", station);
+            // Tell PLATO that we have an ASCII terminal
+            storeKey (0214, station);
+            break;
+        case 4:
+            // Set new keycode conversion
+            DEBUGPRINT ("Set new keycode conversion/flow control, station %d\n", station);
+            pp->newKbd = TRUE;
+            // Send "new kb" echo code to terminal?
+            break;
+        default:
+            DEBUGPRINT ("Invalid framat request code %04o, station %d\n", opcode, station);
+        }
+    }
+#if DEBUG != 2
+    /* 
+    **  Write back the "out" pointer
+    */
+    afpniio[1] = fpniio.out;
+
+    /*
+    **  Send any necessary requests to Framat
+    */
     for (port = 0; port < stations; port++)
     {
         pp = portVector + port;
@@ -925,6 +984,10 @@ static void storeKey (int key, int station)
     int ppidx, cpidx;
     int word, shift;
     
+    if (!pniActive)
+    {
+        return;
+    }
     if (station < firstStation || station >= lastStation)
     {
         DEBUGPRINT ("storeKey: station out of range, %d\n");
@@ -1048,9 +1111,6 @@ static void pniUpdateStatus (void)
 static void pniWelcome(NetFet *np, int stat)
 {
     PortParam *mp;
-    char termname[10];
-    CpWord termid;
-    int i;
     
     mp = portVector + stat;
     stat += firstStation;
@@ -1066,7 +1126,7 @@ static void pniWelcome(NetFet *np, int stat)
                stat / 32, stat % 32);
         pniActiveConns--;
         pniUpdateStatus ();
-        if (pniLoggedIn (stat))
+        if (pniActive && pniLoggedIn (stat))
             {
             /*
             **  If we're not logged out yet, set a flag to send
@@ -1087,14 +1147,13 @@ static void pniWelcome(NetFet *np, int stat)
     np->ownerInfo = stat;
     pniActiveConns++;
     pniUpdateStatus ();
-    sprintf (termname, "te%02x", stat - firstStation + 1);
-    termid = 0;
-    for (i = 0; i < 4; i++)
-    {
-        termid |= (CpWord) asciiToCdc[termname[i]] << (54 - 6 * i);
-    }
-    *(aasccon + stat) = termid;
     
+    if (!pniActive)
+    {
+        pniSendstr (stat, NOPLATO_MSG, 0);
+        return;
+    }
+
     /*
     **  If we're not logged out yet (i.e. PLATO dropped the *offky2*)
     **  that was sent when the connection dropped on this port the
@@ -1104,18 +1163,12 @@ static void pniWelcome(NetFet *np, int stat)
     **  PLATO indicates that the logout has been done.
     */
     if (pniLoggedIn (stat))
-        {
+    {
         printf ("need to force logout for port %d\n", stat);
         mp->forceLogout = TRUE;
-        }
+    }
 
-    /*
-    **  Indicate flow is on and abort needed. 
-    */
-    mp->flowFlags = FLOW_DOABT;
-    
-
-    pniSendstr (stat, WELCOME_MSG, 0);
+    pniActivateStation (stat - firstStation);
 } 
 
 /*--------------------------------------------------------------------------
@@ -1182,4 +1235,41 @@ static struct stbank * pniStationBank (int stat)
     return sb;
 }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Activate a station
+**
+**  Parameters:     Name        Description.
+**                  stat        station number relative to start of PNI
+**
+**  Returns:        nothing
+**
+**  This routine does the things we want to do when a new connection is made.
+**  It is separate from the "welcome" routine because we also do this for
+**  existing connections when PNI is activated by PLATO.
+**
+**------------------------------------------------------------------------*/
+static void pniActivateStation (int stat)
+{
+    PortParam *mp;
+    char termname[10];
+    CpWord termid;
+    int i;
+    
+    mp = portVector + stat;
+    stat += firstStation;
+    sprintf (termname, "te%02x", stat - firstStation + 1);
+    termid = 0;
+    for (i = 0; i < 4; i++)
+    {
+        termid |= (CpWord) asciiToCdc[termname[i]] << (54 - 6 * i);
+    }
+    *(aasccon + stat) = termid;
+
+    /*
+    **  Indicate flow is on and abort needed. 
+    */
+    mp->flowFlags = FLOW_DOABT;
+    
+    pniSendstr (stat, WELCOME_MSG, 0);
+}
 

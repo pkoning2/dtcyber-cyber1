@@ -167,6 +167,7 @@ void initStartup(const char *config)
     initDeadstart();
     initEquipment();
     initExt();
+    initPni();
     }
 
 /*--------------------------------------------------------------------------
