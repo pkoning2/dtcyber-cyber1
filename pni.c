@@ -689,18 +689,25 @@ void pniCheck (void)
             }
                 
         }
-        if (pp->forceLogout)
+        if (key >= 0 && pp->escState == norm)
         {
-            /*
-            **  If we're not logged out yet, send *offky2* which
-            **  tells PLATO to log out this station.
-            */
-            storeKey (OFFKY2, port + firstStation);
-            printf ("continuing to force logout port %d\n", port);
-            break;
-        }
-        else if (key >= 0 && pp->escState == norm)
-        {
+            if (pp->forceLogout)
+            {
+                /*
+                **  If we're not logged out yet, send *offky2* which
+                **  tells PLATO to log out this station instead of
+                **  the key that was typed
+                */
+                if (pniLoggedIn (port + firstStation))
+                {
+                    key = OFFKY2;
+                    printf ("continuing to force logout port %d\n", port + firstStation);
+                }
+                else
+                {
+                    pp->forceLogout = FALSE;
+                }
+            }
             DEBUGPRINT ("pni key %04o\n", key);
             storeKey (key, port + firstStation);
             pp->keyAsm = 0;
