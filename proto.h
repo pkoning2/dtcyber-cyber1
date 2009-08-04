@@ -167,7 +167,6 @@ CpWord niuConn (u32 portNo);
 **  npu.c
 */
 void npuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
-CpWord npuConn (u32 portNo);
 
 /*
 **  tpmux.c
@@ -208,6 +207,7 @@ void initExt (void);
 CpWord pniOp (CpWord req);
 void initPni (void);
 void pniCheck (void);
+CpWord pniConn (u32 portNo);
 
 /*
 **  dump.c

@@ -900,6 +900,37 @@ void pniCheck (void)
 }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Return connected IP address for a port
+**
+**  Parameters:     Name        Description.
+**                  stat        Port number
+**
+**  Returns:        IP address, 0 if no connection, -1 if error.
+**
+**------------------------------------------------------------------------*/
+CpWord pniConn (u32 stat)
+{
+    NetFet *fet;
+    if (stat >= stations)
+    {
+        return MINUS1;
+    }
+    fet = pniPorts.portVec + stat;
+    if (fet->connFd == 0)
+    {
+        return 0;
+    }
+    return ntohl (fet->from.s_addr);
+}
+
+/*
+**--------------------------------------------------------------------------
+**
+**  Private Functions
+**
+**--------------------------------------------------------------------------
+*/
+/*--------------------------------------------------------------------------
 **  Purpose:        Read from the Framat to PNI request ring
 **
 **  Parameters:     Name        Description.
