@@ -890,9 +890,9 @@ static CpWord sockOp (CpWord req)
 **                              60/port number
 **                              60/port type
 **
-**                              Port type is 0 for NIU, 1 for NPU.
+**                              Port type is 0 for NIU, 1 for PNI.
 **                              Port number is 0 based, relative to
-**                              the ports maintained by NIU and NPU.
+**                              the ports maintained by NIU and PNI.
 **
 **  Returns:        IP address for connection (right justified, network order)
 **                  0 if no connection
@@ -912,10 +912,8 @@ static CpWord termConnOp (CpWord req)
     {
     case 0:
         return niuConn (reqp[1]);
-#ifdef NPU_SUPPORT
     case 1:
-        return npuConn (reqp[1]);
-#endif
+        return pniConn (reqp[1]);
     default:
         return MINUS1;
     }
