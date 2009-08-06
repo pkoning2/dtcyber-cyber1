@@ -1295,9 +1295,9 @@ static void pniActivateStation (int stat)
     
     mp = portVector + stat;
     stat += firstStation;
-    sprintf (termname, "te%02x", stat - firstStation + 1);
+    sprintf (termname, "te%02x   ", stat - firstStation + 1);
     termid = 0;
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < 7; i++)
     {
         termid |= (CpWord) asciiToCdc[termname[i]] << (54 - 6 * i);
     }
