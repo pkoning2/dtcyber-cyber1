@@ -848,7 +848,7 @@ void pniCheck (void)
     {
         pp = portVector + port;
         np = pp->np;
-        if (pp->flowFlags != 0)
+        if (pp->flowFlags != 0 && np != NULL)
         {
             // Some flags are set, figure out what to do
             if ((pp->flowFlags & FLOW_DOABT) != 0)
