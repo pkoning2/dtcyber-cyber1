@@ -345,8 +345,6 @@ CpWord pniOp (CpWord req)
     CpWord *pnii;
     int i, stat, len;
     PortParam *pp;
-    char termname[10];
-    CpWord termid;
     
     DEBUGPRINT ("PniOp, request is %020llo\n", reqp[1]);
     if (reqp[1] == 0 || reqp[1] == Mask60)
