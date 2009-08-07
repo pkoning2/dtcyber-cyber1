@@ -196,10 +196,12 @@ const int asc2plato[128] = {
 };
 
 // New ASCII to PLATO key translation table, for XON/XOFF support
+// Note that XON and XOFF are handled separately and translate
+// to "not used" (-1) here.
 const int asc2plato2[128] = {
   -1, 0032, 0030, 0033, 0021, 0072,   -1, 0022, 
 0023, 0014, 0065, 0025, 0035, 0026, 0070, 0075, 
-  -1,01606, 0031,01607, 0062,   -1, 0073, 0020, 
+  -1,   -1, 0031,   -1, 0062,   -1, 0073, 0020, 
 0067, 0063, 0027,   -1, 0054, 0071, 0066, 0140, 
 0100, 0176, 0177, 0056, 0044, 0045, 0012, 0047, 
 0051, 0173, 0050, 0016, 0137, 0017, 0136, 0135, 
@@ -536,7 +538,7 @@ void pniCheck (void)
             */
             storeKey (OFFKY2, port + firstStation);
             pp->sendLogout = FALSE;
-            break;
+            continue;
         }
         if (np == NULL || !dtActive (np))
         {
@@ -552,13 +554,13 @@ void pniCheck (void)
             ** We'll try to process a whole escape sequence, if
             ** it's available, but if not we'll go on to another port.
             */
-            i = dtReadw (np, buf, 1);       /* Get a byte */
+            i = dtReado (np);               /* Get a byte */
             if (i < 0)
             {
                 key = -1;
                 break;                      /* we don't have enough data yet */
             }
-            key = buf[0] & Mask7;
+            key = i & Mask7;
             DEBUGPRINT ("pni input, char code %03o, state %d\n", key, (int) (pp->escState));
             switch (pp->escState)
             {
@@ -687,7 +689,6 @@ void pniCheck (void)
             {
                 break;
             }
-                
         }
         if (key >= 0 && pp->escState == norm)
         {
