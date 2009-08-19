@@ -25,5 +25,5 @@ x6 in6 n1 v6 afslice
 r1 n1 v6 120
 q1 n2 n1 out mnpn
 r2 n2 v6 56
-c1 n2 0 0.1uF
+c1 n2 0 1uF
 .ends af

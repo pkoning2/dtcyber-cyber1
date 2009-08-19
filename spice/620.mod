@@ -7,7 +7,7 @@ Q1       n8 n2 0 mpnp
 Q2       n7 n8 n5 mpnp
 Q3       n16 n10 0 mpnp
 Q4       n7 n16 n13 mpnp
-R1       n3 in1 91
+R1       0 in1 91
 R2       n2 in1 1000
 R3       n4 n2 1000
 R4       n8 vee 6800
@@ -18,7 +18,7 @@ R8       vee n7 910
 R9       0 n5 1000
 R10      out1 n5 180
 R11      vcc 0 2200
-R12      n11 in2 91
+R12      0 in2 91
 R13      n10 in2 1000
 R14      n12 n10 1000
 R15      n16 vee 6800

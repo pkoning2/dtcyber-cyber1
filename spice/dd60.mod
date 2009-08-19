@@ -93,8 +93,11 @@ xy4 vy4 iy4 by4 diff
 xy5 vy5 iy5 by5 diff
 xy6 vy6 iy6 by6 diff
 *
+*** Options
+.option method=gear
+*
 *** Run the test
 *
-.tran 2ns 2800ns
+.tran 1ns 2800ns
 *
 .end
