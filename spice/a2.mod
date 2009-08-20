@@ -13,7 +13,7 @@ R10      n10 v2k 15k
 R11      c4b n14 5k
 R12      n11 v2k 15k
 R13      n18 c4a 5k
-R27      c1a n1 5k
+R27      c1a n1 2500
 R29      n15 n14 1500
 R30      n1 c1b 470
 * R32      2500
