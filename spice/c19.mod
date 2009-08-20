@@ -3,8 +3,8 @@
 C1       n3 n10 22pF
 Q1       n3 in1 trim1 mpnp
 Q2       vee n3 n4 mpnp
-Q3       trim2 in2 n10 mpnp
-Q4       n12 n10 vee mpnp
+Q3       n10 in2 trim2 mpnp
+Q4       vee n10 n12 mpnp
 R1       vee n3 2200
 R2       trim1 vcc 4700
 R3       0 trim1 1500
