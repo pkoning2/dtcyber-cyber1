@@ -1,8 +1,10 @@
 * testing
 .include 3cx100a5.mod
-xtest a g 0 3cx100a5
-vg g 0 0v
-va a 0 1000v
-*.dc va 0 1200 10 vg -15 +30 1
-.dc va 0 1200 10
+.include 12bh7a.mod
+*xtest a g 0 3cx100a5
+xtest a g 0 12bh7a
+vg g 0 -5v
+va a 0 600
+.dc va 0 600 10 vg -40 0 5
+*.dc va 0 300 10
 .end

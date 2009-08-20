@@ -9,6 +9,7 @@
 *    ex   1.25
 *    kg1  53
 *    kp   400
+*    kvb  6000
 
 .SUBCKT 3CX100A5 A G K
 *
