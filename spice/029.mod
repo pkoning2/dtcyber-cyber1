@@ -1,6 +1,6 @@
 * NGspice model -- 029 module for dd60
 *
-* diff input, trimmer cap, diff output
+* diff input, trimmer cap & gain control, diff output
 *
 .subckt 029 p1 p7 p8 p2 p10 p4 vcc vee
 Q1A      n5 p1 n2 MNPN
@@ -24,7 +24,6 @@ R5A      vee p10 1.2k
 R5C      vee p4 1.2k
 R6A      0 p10 2.2k
 R6C      0 p4 2.2k
-R7       p8 p2 2.5k
 R7A      n6 vcc 330
 R7C      n14 vcc 330
 R8A      vee p5 4.7k

@@ -6,8 +6,8 @@
 .include 029.mod
 .include 040.mod
 *
-* Connections: differential inputs, c1 trimmer, differential outputs,
-* vcc and vee.
+* Connections: differential inputs, trimmers / gain controls, 
+* differential outputs, vcc and vee.
 *
 .subckt a7 in1 in2 in3 in4 c1a c1b c2a c2b  out1 out2 out3 out4 vcc vee
 xm2 in1 in2 in3 in4 039
