@@ -1,9 +1,18 @@
 * NGspice model -- 6612 AF module 
 *
 * input stage (one input, one output, 6 volt supply)
-.model diode d
+* 
+* This is modeled as two stages, because the driver of the AF input
+* is a twisted pair driver, not a simple logic level.  So the model
+* includes that driver along with the AF input transistor.
 .subckt afslice in out v6
-r1 in n1 150
+r11 in n11 150
+qd n12 n11 0 mnpn
+r12 v6 n12 470
+r13 n12 n13 120
+*d11 n13 0 diode
+r14 n12 tp 56
+r1 tp n1 150
 q1 n2 n1 0 mnpn
 r2 n2 v6 330
 r3 n2 out 100
