@@ -1,5 +1,9 @@
 * Component models for interesting devices
 *
+* Regular diode
+*
+.model diode d
+*
 * Zener diodes
 *
 .model mz56 d(bv=5.6V)
@@ -7,13 +11,18 @@
 .model mz16 d(bv=16V)
 *
 * Transistors.  These are placeholders because I can't tell what the
-* actual transistors were.  The ones used are middle-aged silicon
-* transistors in metal can packages.
+* actual transistors were.  
 *
-* 2N2405
-.model mnpn npn(level=1, bf=60)
-* 2N2303
-.model mpnp pnp(level=1, bf=75)
+* The CDC 6600 Training Manual (60147400), appendix B, describes the
+* basic circuit properties.  It shows the "on" state of the transistor
+* as having Ib = 1 mA, Ic = 10 mA, implying a beta of 10.  So that's
+* what is used here for the NPN transistor, and for lack of more
+* information for the PNP transistor as well.  Note that the DD60
+* is an analog design that uses several different transistor types,
+* so this is clearly a simplification, hopefully not too serious.
+*
+.model mnpn npn(level=1, bf=10)
+.model mpnp pnp(level=1, bf=10)
 *
 * Tubes
 *
