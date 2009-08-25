@@ -70,6 +70,7 @@ int main (int argc, char **argv)
         exit (3);
     }
     fprintf (f, "* include file for dd60 control signals to AF modules\n");
+    fprintf (f, "* char code %03o\n", ch);
     sig (f, ch, 0);
     sig (f, ch, 1);
     fclose (f);
