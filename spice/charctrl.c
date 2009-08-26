@@ -1,23 +1,44 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define START 20
+
 typedef unsigned char u8;
 
 #include "../chargen6612.h"
 
 void sig (FILE *f, int ch, int xy)
 {
-    int i, v, delta;
+    int i, v, delta, mini, maxi;
     char coord;
     int prev, cur;
     
     for (v = 1; v <= 6; v++)
     {
-        prev = -1;
+        mini = maxi = -1;
+        prev = 0;
         coord = xy ? 'y' : 'x';
-        fprintf (f, "v%c%d v%c%d 0 pwl (", coord, v, coord, v);
+        fprintf (f, "v%c%d v%c%d 0 pwl (0ns 0 ", coord, v, coord, v);
         for (i = 0; i < 28; i++)
         {
+            if (dd60chars[ch][i].x == 0 &&
+                dd60chars[ch][i].y == 0 && dd60chars[ch][i].unblank == 0)
+            {
+                if (mini < 0)
+                {
+                    continue;
+                }
+                
+            }
+            else
+            {
+                maxi = i;
+            }
+            if (mini < 0)
+            {
+                mini = i - 1;
+            }
+            
             if (xy)
             {
                 cur = dd60chars[ch][i].y;
@@ -30,20 +51,16 @@ void sig (FILE *f, int ch, int xy)
             cur = (cur < v) ? 0 : 1;
             if (cur != prev)
             {
-                if (prev != -1)
-                {
-                    fprintf (f, "%dns %d ", i * 100, prev);
-                    delta = 5;
-                }
-                else
-                {
-                    delta = 0;
-                }
-                fprintf (f, "%dns %d ", i * 100 + delta, cur);
+                fprintf (f, "%dns %d ", (i - mini) * 100 - 100 + START, prev);
+                fprintf (f, "%dns %d ", (i - mini) * 100 - 100 + START + 5, cur);
                 prev = cur;
             }
         }
         fprintf (f, "%dns %d)\n", 2800, prev);
+    }
+    if (xy)
+    {
+        fprintf (f, ".tran .1ns %dns\n", (maxi - mini) * 100 + 200);
     }
 }
 
