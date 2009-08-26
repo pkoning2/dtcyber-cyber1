@@ -2,6 +2,13 @@
 *
 * For now this models only the character shape signal path (X and Y)
 *
+*
+* Note: the capacitors are set by trial & error.  They are "peaking"
+* capacitors -- they compensate for the high frequency drop of the 
+* rest of the circuitry.  Too low a value produces rounded-off waveforms;
+* too high a value produces overshoots.  The values set below are
+* picked to produce slight overshoot.
+*
 .include parts.mod
 .include a2.mod
 .include a6.mod
@@ -12,8 +19,8 @@
 *
 xa6 in1 in2 in3 in4 a6c1a a6c1b a6c2a a6c2b a6out1 a6out2 a6out3 a6out4 vcc vee a6
 * c1/c2 : 10 to 100
-c16 a6c1a a6c1b 10pF
-c26 a6c2a a6c2b 10pF
+c16 a6c1a a6c1b 20pF
+c26 a6c2a a6c2b 20pF
 *
 xa7 a6out1 a6out2 a6out3 a6out4 a7c1a a7c1b a7c2a a7c2b a7out1 a7out2 a7out3 a7out4 vcc vee a7
 * c1/c2: 110 to 580
@@ -29,11 +36,11 @@ r8 a7c2a a7vc 180
 xa2x a7out1 a7out2 c1a c1b c4a c4b def1 def2 v600 v2k a2
 * c1/c2: 1400 to 3055
 * c3/c4: 55 to 300
-c1 c1a c1b 1000pF
-c4 c4a c4b 50pF
+c1 c1a c1b 750pF
+c4 c4a c4b 40pF
 xa2y a7out3 a7out4 c2a c2b c3a c3b def3 def4 v600 v2k a2
-c2 c2a c2b 1000pF
-c3 c3a c3b 50pF
+c2 c2a c2b 300pF
+c3 c3a c3b 20pF
 *
 * Make single ended output for ease of interpretation
 ex 0 x def1 def2 1
@@ -94,8 +101,5 @@ xy6 vy6 iy6 by6 diff
 *** Options
 .option method=gear
 *
-*** Run the test
-*
-.tran .1ns 2800ns
 *
 .end
