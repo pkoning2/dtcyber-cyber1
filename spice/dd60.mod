@@ -42,6 +42,20 @@ xa2y a7out3 a7out4 c2a c2b c3a c3b def3 def4 v600 v2k a2
 c2 c2a c2b 300pF
 c3 c3a c3b 20pF
 *
+* Model the deflection electrodes of the CRTs
+*
+* Currently these values are guesses, extrapolated from the values
+* for a 6 inch CRT.  As a rough guess the 12 inch numbers are double
+* that.  Double again because there are two CRTs, with deflection
+* electrodes in parallel.
+* Commented out for now, it doesn't look right.
+*cd1 0 def1 20pF
+*cd2 0 def2 20pF
+*cd3 0 def3 25pF
+*cd4 0 def4 25pF
+*cd1d2 def1 def2 10pF
+*cd3d4 def3 def4 10pF
+*
 * Make single ended output for ease of interpretation
 ex 0 x def1 def2 1
 ey 0 y def3 def4 1
