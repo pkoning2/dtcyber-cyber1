@@ -21,9 +21,19 @@ const char consoleToAscii[64] =
 
 void sig (FILE *f, int ch, int xy)
 {
-    int i, v, delta, mini, maxi;
+    int i, v, delta, mini, maxi, end;
     char coord;
     int prev, cur;
+    
+    for (end = 27; end > 0; end--)
+    {
+        if (dd60chars[ch][end].x != 0 ||
+            dd60chars[ch][end].y != 0 ||
+            dd60chars[ch][end].unblank != 0)
+        {
+            break;
+        }
+    }
     
     for (v = 1; v <= 6; v++)
     {
@@ -31,7 +41,7 @@ void sig (FILE *f, int ch, int xy)
         prev = 0;
         coord = xy ? 'y' : 'x';
         fprintf (f, "v%c%d v%c%d 0 pwl (0ns 0 ", coord, v, coord, v);
-        for (i = 0; i < 28; i++)
+        for (i = 0; i <= end; i++)
         {
             if (dd60chars[ch][i].x == 0 &&
                 dd60chars[ch][i].y == 0 && dd60chars[ch][i].unblank == 0)
