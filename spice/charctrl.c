@@ -7,6 +7,18 @@ typedef unsigned char u8;
 
 #include "../chargen6612.h"
 
+const char consoleToAscii[64] =
+    {
+    /* 00-07 */ 0,      'A',    'B',    'C',    'D',    'E',    'F',    'G',
+    /* 10-17 */ 'H',    'I',    'J',    'K',    'L',    'M',    'N',    'O',
+    /* 20-27 */ 'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',
+    /* 30-37 */ 'X',    'Y',    'Z',    '0',    '1',    '2',    '3',    '4',
+    /* 40-47 */ '5',    '6',    '7',    '8',    '9',    '+',    '-',    '*',
+    /* 50-57 */ '/',    '(',    ')',    ' ',    '=',    ' ',    ',',    '.',
+    /* 60-67 */  0,      0,      0,      0,      0,      0,      0,      0,
+    /* 70-77 */  0,      0,      0,      0,      0,      0,      0,      0
+    };
+
 void sig (FILE *f, int ch, int xy)
 {
     int i, v, delta, mini, maxi;
@@ -75,9 +87,14 @@ int main (int argc, char **argv)
         exit (1);
     }
     ch = strtol (argv[1], NULL, 8);
-    if (ch < 0 || ch >= 060)
+    if (ch <= 0 || ch >= 060)
     {
         printf ("char code %o out of range\n", ch);
+        exit (2);
+    }
+    if (consoleToAscii[ch] == ' ')
+    {
+        printf ("that's a space\n");
         exit (2);
     }
     f = fopen ("vctrl.mod", "w");
@@ -87,7 +104,7 @@ int main (int argc, char **argv)
         exit (3);
     }
     fprintf (f, "* include file for dd60 control signals to AF modules\n");
-    fprintf (f, "* char code %03o\n", ch);
+    fprintf (f, "* char code %03o: %c\n", ch, consoleToAscii[ch]);
     sig (f, ch, 0);
     sig (f, ch, 1);
     fclose (f);
