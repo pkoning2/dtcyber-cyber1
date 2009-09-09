@@ -82,7 +82,7 @@ void sig (FILE *f, int ch, int xy)
     }
     if (xy)
     {
-        fprintf (f, ".tran .1ns %dns\n", (maxi - mini) * 100 + 200);
+        fprintf (f, ".tran 1ns %dns\n", (maxi - mini) * 100 + 200);
     }
 }
 
