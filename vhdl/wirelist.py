@@ -2,7 +2,7 @@
 
 """Process CDC 6600 wiring list
 
-Copyright (C) 2008 Paul Koning
+Copyright (C) 2008, 2009 Paul Koning
 """
 
 import re
@@ -119,12 +119,18 @@ def get_coax (name, slot, pin):
     curch.coax[name] = w
     return w
 
-def normname (name):
-    """Some coax names start with a digit; if so put on a prefix.
+def normname (name, chnum):
+    """Some coax names start with the chassis number, some leave it
+    unstated.  Also, some coax names have all two digit cable numbers,
+    other have one or two.  Normalize the name so it has a chassis
+    number and two-digit cable number.  Put a prefix "c_" in front
+    to keep VHDL happy.
     """
-    if name[0].isdigit ():
-        name = "w_" + name
-    return name
+    chassis, cable = name.lower ().split ("w")
+    if not chassis:
+        chassis = "%d" % chnum
+    cable = int (cable)
+    return "c_%sw%02d" % (chassis, cable)
 
 def get_module_type (tname):
     """Retrieve a module type by type name, returning the ModuleType
@@ -250,7 +256,7 @@ class Chassis (object):
         return mi
 
     def portlist (self):
-        """Return the port defintions of the chassis, as a list of
+        """Return the port definitions of the chassis, as a list of
         tuples.  Each tuple consists of signal name, direction
         name, and type name.
         """
@@ -278,7 +284,7 @@ class Chassis (object):
             wt = c.pindef (p)
             dir, stype = wt
             #if stype == "coaxsig" or stype == "analog":
-            portlist.append ((normname (w), dir, stype))
+            portlist.append ((w, dir, stype))
             #else:
             #    error ("coax %s unexpected type %s" % (w, stype))
         return portlist
@@ -359,7 +365,7 @@ class Chassis (object):
                 if wt:
                     dir, stype = wt
                     wlist.append ("  signal %s : %s;\n" %
-                                  (normname (w), stype))
+                                  (w, stype))
         return "".join (wlist)
     
     def print_vhdl (self, f):
@@ -461,7 +467,7 @@ def top_vhdl (f):
             wt = c.pindef (p)
             dir, stype = wt
             #if stype == "coaxsig" or stype == "analog":
-            clist.append ("    %s : %s %s" % (normname (w), dir, stype))
+            clist.append ("    %s : %s %s" % (w, dir, stype))
     print >> f, "%s);\nend cdc6600;\n" % ";\n".join (clist)
     print >> f, "\narchitecture chassis of cdc6600 is"
     for ch in chassis_list:
@@ -482,7 +488,7 @@ def top_vhdl (f):
         c, p = wire.ends[0]
         wt = c.pindef (p)
         dir, stype = wt
-        print >> f, "  signal %s : %s;" % (normname (w), stype)
+        print >> f, "  signal %s : %s;" % (w, stype)
     print >> f, "begin -- chassis"
     for ch in chassis_list:
         if ch is None:
@@ -658,7 +664,8 @@ class Connector (object):
                         wname = "%s_%s_%s_%d" % (dest, pin2, self.name, p)
                     w = get_wire (wname, self, p, wlen)
             elif dest.startswith ("w"):
-                wname = "%s_%s" % (dest, pin2)
+                wname = "%s_%s" % (normname (dest, self.module.chassis),
+                                   pin2)
                 w = get_coax (wname, self, p)
             else:
                 error ("Invalid destination slot ID")
@@ -735,16 +742,15 @@ class ModuleInstance (object):
                                 # Output pin, model the wire delay here
                                 clist.append ("    %s => %s_%d" %
                                               (p, self.name, pnum))
-                                wn = normname (w.name)
                                 dlist.append ("""  wire_%s : wire generic map (
     length => %d)
   port map (
     i => %s_%d,
     o => %s);
-""" % (wn, w.length, self.name, pnum, wn))
+""" % (w.name, w.length, self.name, pnum, w.name))
                             else:
                                 clist.append ("    %s => %s" %
-                                              (p, normname (w.name)))
+                                              (p, w.name))
                         elif dir == "in":
                             # TEMP: tie half-connected inputs to idle
                             # if they are twisted pair, to outside if coax
@@ -752,14 +758,14 @@ class ModuleInstance (object):
                                    stype == "analog" or \
                                    "w" in w.name:
                                 clist.append ("    %s => %s" %
-                                              (p, normname (w.name)))
+                                              (p, w.name))
                             else:
                                 clist.append ("    %s => one" % p)
                         elif dir == "out" and \
                              (True or stype == "coaxsig" or stype == "analog"):
                             # TEMP: hook up coax (to the outside)
                             clist.append ("    %s => %s" %
-                                          (p, normname (w.name)))
+                                          (p, w.name))
                     elif dir == "in":
                         warnpins[((self.chassis, self.name), p[1:])] = "unconnected input"
                         #error ("Unconnected input pin %s in %s" %
