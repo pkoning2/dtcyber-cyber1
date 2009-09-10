@@ -529,6 +529,7 @@ class ModuleType (object):
             v = open (name + ".vhd", "r")
         except:
             error ("Error opening %s.vhd" % name)
+            return
         entpat = re.compile ("entity %s is" % name, re.I)
         ent = False
         while True:
@@ -615,6 +616,10 @@ class Connector (object):
             if len (fields) == 1:
                 # Unconnected pin, skip
                 continue
+            if len (fields) < 3 or len (fields) > 4:
+                # Incomplete entry, or excess fields
+                error ("Wrong number of fields")
+                continue
             if count == 30 and fields[1] in ("cb1", "cb2", "cb3", "+6"):
                 # Memory power pins, ignore
                 continue
@@ -627,7 +632,11 @@ class Connector (object):
             wlen = 0
             if len (fields) > 3:
                 # Wire length appears to be in inches (modulo typos)
-                wlen = int (fields[3])
+                try:
+                    wlen = int (fields[3])
+                except ValueError:
+                    error ("Invalid wire length field")
+                    wlen = 99
             dslot = get_slot (dest)
             if dslot:
                 # Normalize the name
@@ -638,14 +647,22 @@ class Connector (object):
                     self.pins[p] = ground
                     continue
                 else:
-                    if (self.slotid, p) < (dslot, int (pin2)):
+                    try:
+                        to = int (pin2)
+                    except ValueError:
+                        error ("Invalid destination pin number")
+                        continue
+                    if (self.slotid, p) < (dslot, to):
                         wname = "%s_%d_%s_%s" % (self.name, p, dest, pin2)
                     else:
                         wname = "%s_%s_%s_%d" % (dest, pin2, self.name, p)
                     w = get_wire (wname, self, p, wlen)
-            else:
+            elif dest.startswith ("w"):
                 wname = "%s_%s" % (dest, pin2)
                 w = get_coax (wname, self, p)
+            else:
+                error ("Invalid destination slot ID")
+                continue
             self.pins[p] = w
             
     def pindef (self, num):
