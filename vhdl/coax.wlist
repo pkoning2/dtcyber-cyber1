@@ -10,6 +10,7 @@
 # Scans supplied from the Computer History Museum collection
 # by Al Kossow.
 #
+CABLES
 # Chassis 1
 1W02  5W09
 1W03  5W24
@@ -256,8 +257,8 @@
 # Chassis 11
 12W02  1W29
 12W01  1W30
-12W05 50W01
-12W06 50W02
+#12W05 50W01
+#12W06 50W02
 #12W07 50W01
 #12W08 50W02
 #
