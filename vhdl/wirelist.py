@@ -53,6 +53,7 @@ octalpat = re.compile (r"\W0([0-7]+)")
 
 curfile = ""
 curline = ""
+curmod  = ""
 linenum = 0
 
 commentpat = re.compile (r"#.*$")
@@ -70,7 +71,7 @@ def getline (f):
 
 def error (text):
     if curline:
-        print "%s:%d: %s\n%s" % (curfile, linenum, text, curline)
+        print "%s:%d (%s): %s\n%s" % (curfile, linenum, curmod, text, curline)
     else:
         print text
         
@@ -805,6 +806,8 @@ def process_file (f):
                 curcnum = ch
                 curch = chassis_list[ch]
             slot = slotname (slotid)
+            global curmod
+            curmod = "%s %s" % (mt, slot)
             module = curch.add_module (mt, slot)
             c = Connector (slot, module)
             module.add_connector (c)
