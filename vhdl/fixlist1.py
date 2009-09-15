@@ -79,12 +79,21 @@ try:
                 p1 = m.group (1)
                 p2 = p1.replace ("I", "1")
                 p2 = p2.replace ("O", "0")
+                p2 = p2.replace ("S", "5")
                 p2 = p2.replace ("\014", "")
                 p = int (p2)
                 if p != i:
                     raise KeyError
                 elif p1 != p2:
                     t[line] = p2 + t[line][len (p1):]
+                if m.group (2) == "\t":
+                    p = m.end (2) + 1
+                    p1 = t[line][p:]
+                    p2 = p1.replace ("I", "1")
+                    p2 = p2.replace ("O", "0")
+                    p2 = p2.replace ("S", "5")
+                    if p1 != p2:
+                        t[line] = t[line][:p] + p2                    
             except:
                 act = raw_input ("%d: %s" % (i, t[line])).upper ()
                 if act == "R":
