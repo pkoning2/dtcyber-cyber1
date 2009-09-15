@@ -4,7 +4,9 @@ import os
 import re
 import sys
 
-f = open ("chassis2.wlist","r")
+chnum = str (int (sys.argv[1]))
+
+f = open ("chassis%s.wlist" % chnum,"r")
 t = f.read ()
 t = t.replace ("\r", "").split ("\n")
 header = [ ]
@@ -14,7 +16,7 @@ while t[0].startswith ("#"):
 
 line = 0
 
-mod = re.compile ("\014?([A-Z]*)[ \t]+(\d)([A-R])(\d+)$")
+mod = re.compile ("\014?([A-Z]*)[ \t]+(\d\d?)([A-R])(\d+)$")
 pin = re.compile ("\014?(.[^\t]?)(\t|$)")
 pin1 = re.compile ("\014?1\t")
 
@@ -32,8 +34,8 @@ try:
         if m1:
             if len (m1.group (1)) == 2 and \
                    m1.group (3) == row and int (m1.group (4)) == col:
-                if m1.group (2) != "2":
-                    t[line] = t[line][:m1.start (2)] + "2" + t[line][m1.end (2):]
+                if m1.group (2) != chnum:
+                    t[line] = t[line][:m1.start (2)] + chnum + t[line][m1.end (2):]
                 print t[line]
             else:
                 mline = raw_input ("mod %s%d: %s: " % (row, col, t[line])).upper ()
@@ -43,7 +45,7 @@ try:
                     continue
                 if mline:
                     if len (mline) <= 3:
-                        mline += "\t2%s%d" % (row, col)
+                        mline += "\t%s%s%d" % (chnum, row, col)
                     if mline.startswith (" "):
                         t[line] = "\014" + mline[1:]
                     else:
@@ -59,7 +61,7 @@ try:
                 col -= 1
                 continue
             if len (mline) <= 3:
-                mline += "\t2%s%d" % (row, col)
+                mline += "\t%s%s%d" % (chnum, row, col)
             if mline.startswith (" "):
                 t[line] = "\014" + mline[1:]
             else:
@@ -111,7 +113,7 @@ try:
                     t.insert (line, act)
             line += 1
 except:
-    f = open ("chassis2.new", "w")
+    f = open ("chassis%s.new" % chnum, "w")
     f.write ("\n".join (header))
     f.write ("\n")
     f.write ("\n".join (t))
@@ -119,7 +121,7 @@ except:
     f.close ()
     raise
 
-f = open ("chassis2.new", "w")
+f = open ("chassis%s.new" % chnum, "w")
 f.write ("\n".join (header))
 f.write ("\n")
 f.write ("\n".join (t))
