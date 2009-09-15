@@ -130,7 +130,11 @@ def normname (name, chnum):
     chassis, cable = name.lower ().split ("w")
     if not chassis:
         chassis = "%d" % chnum
-    cable = int (cable)
+    try:
+        cable = int (cable)
+    except ValueError:
+        error ("Bad cable number")
+        cable = 9999
     return "c_%sw%02d" % (chassis, cable)
 
 def get_module_type (tname):
