@@ -44,7 +44,7 @@ warnpins = { }
 connections = { }
 
 portpat = re.compile (r"\s*([\w\s,]+):\s*(in|out|inout)\s+(std_logic|coaxsig|analog|misc)\s*(?:\:=\s'.')?(\))?\s*;", re.I)
-slotpat = re.compile (r"([a-r])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)", re.I)
+slotpat = re.compile (r"([a-r])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)$", re.I)
 chslotpat = re.compile (r"([1-9]|1[0-6])([a-r])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)", re.I)
 vhdlcommentpat = re.compile (r"--.*$")
 wiresplit = re.compile (r"([a-r]\d+)_(\d+)_([a-r]\d+)_(\d+)")
@@ -648,6 +648,8 @@ class Connector (object):
                 except ValueError:
                     error ("Invalid wire length field")
                     wlen = 99
+            elif not dest.startswith ("w"):
+                error ("Missing wire length field")
             dslot = get_slot (dest)
             if dslot:
                 # Normalize the name
@@ -660,6 +662,9 @@ class Connector (object):
                 else:
                     try:
                         to = int (pin2)
+                        if to < 1 or to > 30:
+                            # Allow up to 30 for memory
+                            error ("Destination pin number out of range")
                     except ValueError:
                         error ("Invalid destination pin number")
                         continue
