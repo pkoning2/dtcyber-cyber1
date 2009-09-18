@@ -50,6 +50,7 @@ vhdlcommentpat = re.compile (r"--.*$")
 wiresplit = re.compile (r"([a-r]\d+)_(\d+)_([a-r]\d+)_(\d+)")
 gensplit = re.compile (r"([a-z]+)(\(.+)")
 octalpat = re.compile (r"\W0([0-7]+)")
+coaxpat = re.compile (r"[0-9]*w", re.I)
 
 curfile = ""
 curline = ""
@@ -627,12 +628,14 @@ class Connector (object):
             if len (fields) == 1:
                 # Unconnected pin, skip
                 continue
+            if len (fields) > 1 and \
+                   count == 30 and \
+                   fields[1] in ("cb1", "cb2", "cb3", "+6"):
+                # Memory power pins, ignore
+                continue
             if len (fields) < 3 or len (fields) > 4:
                 # Incomplete entry, or excess fields
                 error ("Wrong number of fields")
-                continue
-            if count == 30 and fields[1] in ("cb1", "cb2", "cb3", "+6"):
-                # Memory power pins, ignore
                 continue
             dest = fields[1]
             if dest == "good" or dest == "gnd" or dest == "grd":
@@ -648,7 +651,7 @@ class Connector (object):
                 except ValueError:
                     error ("Invalid wire length field")
                     wlen = 99
-            elif not dest.startswith ("w"):
+            elif not coaxpat.match (dest):
                 error ("Missing wire length field")
             dslot = get_slot (dest)
             if dslot:
@@ -673,7 +676,7 @@ class Connector (object):
                     else:
                         wname = "%s_%s_%s_%d" % (dest, pin2, self.name, p)
                     w = get_wire (wname, self, p, wlen)
-            elif dest.startswith ("w"):
+            elif coaxpat.match (dest):
                 wname = "%s_%s" % (normname (dest, self.module.chassis),
                                    pin2)
                 w = get_coax (wname, self, p)
