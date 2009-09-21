@@ -63,7 +63,7 @@ class eltype (object):
         for p in sorted (self.pins):
             if not p.startswith ("tp"):
                 continue
-            ports.append ("      %s : %s %s" % (p, d, t))
+            ports.append ("      %s : out %s" % (p, t))
         for p in sorted (self.pins):
             d, t = self.pins[p]
             if d != "out" or p.startswith ("tp"):
