@@ -158,11 +158,7 @@ class cmod (eltype):
         
     def addelements (self):
         while True:
-            tlist = elements
-            try:
-                del tlist[self.name]
-            except KeyError:
-                pass
+            tlist = [ e for e in elements if e != self.name ]
             completions (tlist)
             eltype = raw_input ("element: ")
             completions ()
@@ -174,7 +170,9 @@ class cmod (eltype):
                 self.addassign (pin, temp)
             else:
                 self.addelement (eltype)
-
+        # This updates various lists
+        self.printmodule ()
+        
     def printassigns (self):
         assigns = [ ]
         for p in sorted (self.assigns):
