@@ -201,11 +201,13 @@ class cmod (eltype):
     def istemp (self, pin):
         """Tells whether the pin is a temp signal or not
         """
-        if self.name.endswith ("slice"):
-            return pin.startswith ("t")
+        if "slice" in self.name:
+            return pin.startswith ("t") and not pin.startswith ("tp")
         else:
             # If it's not a pin and not a testpoint, it's a temp
-            return not pin.startswith ("p") and not pin.startswith ("tp")
+            return pin == "p" or \
+                   (not pin.startswith ("p") and \
+                    not pin.startswith ("tp"))
 
     def printmodule (self):
         """return module definition
@@ -261,11 +263,8 @@ end gates;
         """
         f = file ("%s.vhd" % self.name, "w")
         print >> f, self.printheader ()
-        try:
-            slice = elements["%sslice" % self.name]
-            print >> f, slice.printmodule ()
-        except KeyError:
-            pass
+        for slice in [ e for e in elements if "slice" in e ]:
+            print >> f, elements[slice].printmodule ()
         print >> f, self.printmodule ()
         f.close ()
 
