@@ -56,9 +56,10 @@ class eltype (object):
             d, t = self.pins[p]
             if d == "out":
                 continue
-            elif d == "optin":
-                d = "in"
-            ports.append ("      %s : %s %s" % (p, d, t))
+            if d == "optin":
+                ports.append ("      %s : in  %s := '1'" % (p, t))
+            else:
+                ports.append ("      %s : in  %s" % (p, t))
         for p in sorted (self.pins):
             if not p.startswith ("tp"):
                 continue
@@ -120,6 +121,8 @@ class element (object):
             if self.eltype.pins[p][0] == "out":
                 continue
             pto = self.portmap[p]
+            if pto.startswith ("-"):
+                pto = pto[1:]
             entries.append ("    %s => %s" % (p, pto))
         for p in sorted (self.portmap):
             if self.eltype.pins[p][0] != "out":
@@ -226,6 +229,9 @@ class cmod (eltype):
                 if self.istemp (pto):
                     temps[pto] = ptype
                 else:
+                    if pto.startswith ("-"):
+                        pto = pto[1:]
+                        dir = "optin"
                     self.addpin ((pto, ), dir, ptype)
         for t in sorted (temps):
             v = temps[t]

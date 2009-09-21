@@ -54,14 +54,14 @@ architecture gates of kaslice1 is
 
   component rsflop
     port (
-      r : in std_logic;
-      r2 : in std_logic;
-      r3 : in std_logic;
-      r4 : in std_logic;
-      s : in std_logic;
-      s2 : in std_logic;
-      s3 : in std_logic;
-      s4 : in std_logic;
+      r : in  std_logic;
+      r2 : in  std_logic := '1';
+      r3 : in  std_logic := '1';
+      r4 : in  std_logic := '1';
+      s : in  std_logic;
+      s2 : in  std_logic := '1';
+      s3 : in  std_logic := '1';
+      s4 : in  std_logic := '1';
       q : out std_logic;
       qb : out std_logic);
 
@@ -157,14 +157,14 @@ architecture gates of kaslice2 is
 
   component rsflop
     port (
-      r : in std_logic;
-      r2 : in std_logic;
-      r3 : in std_logic;
-      r4 : in std_logic;
-      s : in std_logic;
-      s2 : in std_logic;
-      s3 : in std_logic;
-      s4 : in std_logic;
+      r : in  std_logic;
+      r2 : in  std_logic := '1';
+      r3 : in  std_logic := '1';
+      r4 : in  std_logic := '1';
+      s : in  std_logic;
+      s2 : in  std_logic := '1';
+      s3 : in  std_logic := '1';
+      s4 : in  std_logic := '1';
       q : out std_logic;
       qb : out std_logic);
 
