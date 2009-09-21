@@ -46,7 +46,7 @@
   component cxdriver
     port (
       a : in  std_logic;                      -- source
-      a2, a3, a4 : in std_logic := '1';   -- optional extra inputs
+      a2, a3, a4, a5 : in std_logic := '1';   -- optional extra inputs
       y : out coaxsig);                       -- destination
   end component;
   component cxreceiver
