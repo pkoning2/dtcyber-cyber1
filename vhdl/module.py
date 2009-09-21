@@ -158,7 +158,12 @@ class cmod (eltype):
         
     def addelements (self):
         while True:
-            completions (elements)
+            tlist = elements
+            try:
+                del tlist[self.name]
+            except KeyError:
+                pass
+            completions (tlist)
             eltype = raw_input ("element: ")
             completions ()
             if not eltype:
