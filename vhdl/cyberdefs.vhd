@@ -255,6 +255,7 @@ entity cxdriver is
   
   port (
     a : in  std_logic;                        -- source
+    a2, a3, a4 : in std_logic := '1';   -- optional extra inputs
     y : out coaxsig);                         -- destination
 
 end cxdriver;
@@ -263,7 +264,7 @@ architecture bool of cxdriver is
   signal ai : std_logic;
   signal yi : std_logic;
 begin  -- bool
-  ai <= '1' when a = 'U' else a;
+  ai <= '1' when a = 'U' else a and a2 and a3 and a4;
   yi <= ai after tc;
   y <= not (yi);                        -- coax is positive logic...
 end bool;

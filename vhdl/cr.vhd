@@ -31,6 +31,7 @@ architecture gates of crslice is
   component cxdriver
     port (
       a : in  std_logic;
+      a2, a3, a4 : in std_logic := '1';   -- optional extra inputs
       y : out coaxsig);
 
   end component;
