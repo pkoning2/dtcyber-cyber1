@@ -21,11 +21,11 @@ use work.sigs.all;
 
 entity qmslice is
     port (
-      a : in std_logic;
-      b : in std_logic := '1';
-      k : in std_logic;
-      k2 : in std_logic := '1';
-      k3 : in std_logic := '1';
+      a : in  std_logic;
+      b : in  std_logic;
+      k : in  std_logic;
+      k2 : in  std_logic;
+      k3 : in  std_logic;
       qa : out std_logic;
       qb : out std_logic;
       y : out std_logic);
@@ -34,8 +34,8 @@ end qmslice;
 architecture gates of qmslice is
   component g2
     port (
-      a : in std_logic;
-      b : in std_logic;
+      a : in  std_logic;
+      b : in  std_logic;
       y : out std_logic;
       y2 : out std_logic);
 
@@ -43,13 +43,17 @@ architecture gates of qmslice is
 
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a : in  std_logic;
+      b : in  std_logic;
+      c : in  std_logic;
+      y : out std_logic;
+      y2 : out std_logic);
+
   end component;
 
   component inv
     port (
-      a : in std_logic;
+      a : in  std_logic;
       y : out std_logic);
 
   end component;
@@ -67,11 +71,15 @@ begin -- gates
     a => a,
     y => t1);
 
+
   u2 : g2 port map (
     a => t1,
     b => b,
     y => ta,
     y2 => tb);
+
+  qa <= ta;
+  qb <= tb;
 
   u3 : g3 port map (
     a => k,
@@ -80,23 +88,25 @@ begin -- gates
     y => t2,
     y2 => t3);
 
+
   u4 : g2 port map (
     a => t3,
     b => tb,
     y => t4);
+
 
   u5 : g2 port map (
     a => t2,
     b => ta,
     y => t5);
 
+
   u6 : g2 port map (
     a => t4,
     b => t5,
     y => y);
 
-qa <= ta;
-qb <= tb;
+
 
 end gates;
 
@@ -106,34 +116,34 @@ use work.sigs.all;
 
 entity qm is
     port (
-      p10 : in std_logic;
-      p13 : in std_logic;
-      p14 : in std_logic;
-      p18 : in std_logic;
-      p25 : in std_logic;
-      p26 : in std_logic;
-      p27 : in std_logic;
-      p28 : in std_logic;
+      p10 : in  std_logic;
+      p13 : in  std_logic;
+      p14 : in  std_logic;
+      p18 : in  std_logic;
+      p25 : in  std_logic;
+      p26 : in  std_logic;
+      p27 : in  std_logic;
+      p28 : in  std_logic;
       tp1 : out std_logic;
       tp2 : out std_logic;
       tp3 : out std_logic;
       tp4 : out std_logic;
       tp5 : out std_logic;
       tp6 : out std_logic;
-      p20 : out std_logic;
-      p24 : out std_logic;
       p3 : out std_logic;
       p5 : out std_logic;
       p7 : out std_logic;
-      p9 : out std_logic);
+      p9 : out std_logic;
+      p20 : out std_logic;
+      p24 : out std_logic);
 
 end qm;
 architecture gates of qm is
   component g3
     port (
-      a : in std_logic;
-      b : in std_logic;
-      c : in std_logic;
+      a : in  std_logic;
+      b : in  std_logic;
+      c : in  std_logic;
       y : out std_logic;
       y2 : out std_logic);
 
@@ -141,10 +151,10 @@ architecture gates of qm is
 
   component g4
     port (
-      a : in std_logic;
-      b : in std_logic;
-      c : in std_logic;
-      d : in std_logic;
+      a : in  std_logic;
+      b : in  std_logic;
+      c : in  std_logic;
+      d : in  std_logic;
       y : out std_logic;
       y2 : out std_logic);
 
@@ -152,11 +162,11 @@ architecture gates of qm is
 
   component qmslice
     port (
-      a : in std_logic;
-      b : in std_logic := '1';
-      k : in std_logic;
-      k2 : in std_logic := '1';
-      k3 : in std_logic := '1';
+      a : in  std_logic;
+      b : in  std_logic;
+      k : in  std_logic;
+      k2 : in  std_logic;
+      k3 : in  std_logic;
       qa : out std_logic;
       qb : out std_logic;
       y : out std_logic);
@@ -184,6 +194,10 @@ begin -- gates
     qb => b,
     y => t1);
 
+  p9 <= t1;
+  tp1 <= t1;
+  tp3 <= a;
+
   u2 : qmslice port map (
     a => p14,
     k => k,
@@ -191,6 +205,10 @@ begin -- gates
     qa => c,
     qb => d,
     y => t2);
+
+  p24 <= t2;
+  tp2 <= c;
+  tp6 <= t2;
 
   u3 : qmslice port map (
     a => p18,
@@ -201,6 +219,10 @@ begin -- gates
     qb => f,
     y => t3);
 
+  p20 <= t3;
+  tp4 <= e;
+  tp5 <= t3;
+
   u4 : g4 port map (
     a => p26,
     b => p25,
@@ -208,24 +230,17 @@ begin -- gates
     d => p27,
     y2 => k);
 
+
   u5 : g3 port map (
     a => a,
     b => c,
     c => e,
     y2 => t4);
 
-p20 <= t3;
-p24 <= t2;
-p3 <= t4;
-p5 <= t4;
-p7 <= t4;
-p9 <= t1;
-tp1 <= t1;
-tp2 <= c;
-tp3 <= a;
-tp4 <= e;
-tp5 <= t3;
-tp6 <= t2;
+  p3 <= t4;
+  p5 <= t4;
+  p7 <= t4;
+
 
 end gates;
 

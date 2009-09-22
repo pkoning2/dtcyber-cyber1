@@ -23,7 +23,7 @@ entity crslice is
     port (
       a : in  std_logic;
       in1 : in  std_logic;
-      tp : out std_logic;
+      tp : out coaxsig;
       y : out coaxsig);
 
 end crslice;
@@ -31,7 +31,10 @@ architecture gates of crslice is
   component cxdriver
     port (
       a : in  std_logic;
-      a2, a3, a4, a5 : in std_logic := '1';   -- optional extra inputs
+      a2 : in  std_logic := '1';
+      a3 : in  std_logic := '1';
+      a4 : in  std_logic := '1';
+      a5 : in  std_logic := '1';
       y : out coaxsig);
 
   end component;
@@ -53,11 +56,13 @@ begin -- gates
     b => a,
     y => t1);
 
+  tp <= t1;
+
   u2 : cxdriver port map (
     a => t1,
     y => y);
 
-tp <= t1;
+
 
 end gates;
 
@@ -67,6 +72,9 @@ use work.sigs.all;
 
 entity cr is
     port (
+      p5 : in  std_logic;
+      p7 : in  std_logic;
+      p9 : in  std_logic;
       p11 : in  std_logic;
       p13 : in  std_logic;
       p14 : in  std_logic;
@@ -76,23 +84,20 @@ entity cr is
       p22 : in  std_logic;
       p24 : in  std_logic;
       p26 : in  std_logic;
-      p5 : in  std_logic;
-      p7 : in  std_logic;
-      p9 : in  std_logic;
       tp1 : out std_logic;
       tp2 : out std_logic;
       tp5 : out std_logic;
       tp6 : out std_logic;
+      p4 : out coaxsig;
+      p6 : out coaxsig;
+      p8 : out coaxsig;
       p10 : out coaxsig;
       p12 : out coaxsig;
       p19 : out coaxsig;
       p21 : out coaxsig;
       p23 : out std_logic;
       p25 : out std_logic;
-      p27 : out coaxsig;
-      p4 : out coaxsig;
-      p6 : out coaxsig;
-      p8 : out coaxsig);
+      p27 : out coaxsig);
 
 end cr;
 architecture gates of cr is
@@ -100,7 +105,7 @@ architecture gates of cr is
     port (
       a : in  std_logic;
       in1 : in  std_logic;
-      tp : out std_logic;
+      tp : out coaxsig;
       y : out coaxsig);
 
   end component;
@@ -124,10 +129,7 @@ begin -- gates
     tp => tp1,
     y => p12);
 
-  u10 : g2 port map (
-    a => p14,
-    b => p17,
-    y2 => a);
+  tp2 <= a;
 
   u2 : crslice port map (
     a => a,
@@ -135,35 +137,44 @@ begin -- gates
     tp => tp6,
     y => p19);
 
+
   u3 : crslice port map (
     a => a,
     in1 => p7,
     y => p10);
+
 
   u4 : crslice port map (
     a => a,
     in1 => p24,
     y => p21);
 
+
   u5 : crslice port map (
     a => a,
     in1 => p9,
     y => p8);
+
 
   u6 : crslice port map (
     a => a,
     in1 => p22,
     y => t1);
 
+  p23 <= t1;
+  p25 <= t1;
+
   u7 : crslice port map (
     a => a,
     in1 => p11,
     y => p6);
 
+
   u8 : crslice port map (
     a => a,
     in1 => p13,
     y => p4);
+
 
   u9 : crslice port map (
     a => p15,
@@ -171,9 +182,13 @@ begin -- gates
     tp => tp5,
     y => p27);
 
-p23 <= t1;
-p25 <= t1;
-tp2 <= a;
+
+  u10 : g2 port map (
+    a => p14,
+    b => p17,
+    y2 => a);
+
+
 
 end gates;
 

@@ -25,8 +25,8 @@ entity mdslice is
       b : in  std_logic;
       c : in  std_logic;
       in1 : in  std_logic;
-      in2 : in  std_logic := '1';
-      in3 : in  std_logic := '1';
+      in2 : in  std_logic;
+      in3 : in  std_logic;
       tp : out std_logic;
       q : out std_logic;
       qb : out std_logic);
@@ -77,19 +77,22 @@ begin -- gates
     c => a,
     y => t1);
 
+
   u2 : rsflop port map (
     r => b,
     s => t1,
     s2 => in3,
     q => t2);
 
+  q <= t2;
+  tp <= t2;
+
   u3 : g2 port map (
     a => t2,
     b => c,
     y => qb);
 
-q <= t2;
-tp <= t2;
+
 
 end gates;
 
@@ -99,6 +102,8 @@ use work.sigs.all;
 
 entity md is
     port (
+      p4 : in  std_logic;
+      p6 : in  std_logic;
       p11 : in  std_logic;
       p12 : in  std_logic;
       p13 : in  std_logic;
@@ -112,26 +117,24 @@ entity md is
       p26 : in  std_logic;
       p27 : in  std_logic;
       p28 : in  std_logic;
-      p4 : in  std_logic;
-      p6 : in  std_logic;
       tp1 : out std_logic;
       tp2 : out std_logic;
       tp3 : out std_logic;
       tp4 : out std_logic;
       tp5 : out std_logic;
       tp6 : out std_logic;
-      p10 : out std_logic;
-      p15 : out std_logic;
-      p19 : out std_logic;
       p2 : out std_logic;
-      p20 : out std_logic;
-      p23 : out std_logic;
-      p25 : out std_logic;
       p3 : out std_logic;
       p5 : out std_logic;
       p7 : out std_logic;
       p8 : out std_logic;
-      p9 : out std_logic);
+      p9 : out std_logic;
+      p10 : out std_logic;
+      p15 : out std_logic;
+      p19 : out std_logic;
+      p20 : out std_logic;
+      p23 : out std_logic;
+      p25 : out std_logic);
 
 end md;
 architecture gates of md is
@@ -148,8 +151,8 @@ architecture gates of md is
       b : in  std_logic;
       c : in  std_logic;
       in1 : in  std_logic;
-      in2 : in  std_logic := '1';
-      in3 : in  std_logic := '1';
+      in2 : in  std_logic;
+      in3 : in  std_logic;
       tp : out std_logic;
       q : out std_logic;
       qb : out std_logic);
@@ -170,6 +173,7 @@ begin -- gates
     qb => p2,
     tp => tp1);
 
+
   u2 : mdslice port map (
     a => a,
     b => b,
@@ -179,6 +183,7 @@ begin -- gates
     qb => p5,
     tp => tp2);
 
+
   u3 : mdslice port map (
     a => a,
     b => b,
@@ -187,6 +192,7 @@ begin -- gates
     q => p10,
     qb => p8,
     tp => tp3);
+
 
   u4 : mdslice port map (
     a => a,
@@ -199,6 +205,7 @@ begin -- gates
     qb => p20,
     tp => tp4);
 
+
   u5 : mdslice port map (
     a => a,
     b => b,
@@ -209,6 +216,7 @@ begin -- gates
     q => p15,
     qb => p9,
     tp => tp5);
+
 
   u6 : mdslice port map (
     a => a,
@@ -221,17 +229,21 @@ begin -- gates
     qb => p23,
     tp => tp6);
 
+
   u7 : inv port map (
     a => p11,
     y => a);
+
 
   u8 : inv port map (
     a => p13,
     y => b);
 
+
   u9 : inv port map (
     a => p14,
     y => c);
+
 
 
 end gates;

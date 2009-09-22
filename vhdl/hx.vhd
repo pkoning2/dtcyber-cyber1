@@ -21,54 +21,54 @@ use work.sigs.all;
 
 entity hx is
     port (
-      p1 : in std_logic;
-      p10 : in std_logic;
-      p13 : in std_logic;
-      p15 : in std_logic;
-      p16 : in std_logic;
-      p18 : in std_logic;
-      p19 : in coaxsig;
-      p2 : in std_logic;
-      p20 : in std_logic;
-      p21 : in std_logic;
-      p23 : in std_logic;
-      p25 : in std_logic;
-      p26 : in std_logic;
-      p27 : in std_logic;
-      p28 : in std_logic;
-      p3 : in std_logic;
-      p4 : in std_logic;
-      p5 : in std_logic;
-      p7 : in std_logic;
+      p1 : in  std_logic;
+      p2 : in  std_logic;
+      p3 : in  std_logic;
+      p4 : in  std_logic;
+      p5 : in  std_logic;
+      p7 : in  std_logic;
+      p10 : in  std_logic;
+      p13 : in  std_logic;
+      p15 : in  std_logic;
+      p16 : in  std_logic;
+      p18 : in  std_logic;
+      p19 : in  coaxsig;
+      p20 : in  std_logic;
+      p21 : in  std_logic;
+      p23 : in  std_logic;
+      p25 : in  std_logic;
+      p26 : in  std_logic;
+      p27 : in  std_logic;
+      p28 : in  std_logic;
       tp1 : out std_logic;
       tp2 : out std_logic;
       tp3 : out std_logic;
       tp4 : out std_logic;
       tp5 : out std_logic;
       tp6 : out std_logic;
+      p6 : out std_logic;
+      p8 : out std_logic;
+      p9 : out std_logic;
       p11 : out std_logic;
       p12 : out std_logic;
       p14 : out std_logic;
       p17 : out std_logic;
       p22 : out std_logic;
-      p24 : out std_logic;
-      p6 : out std_logic;
-      p8 : out std_logic;
-      p9 : out std_logic);
+      p24 : out std_logic);
 
 end hx;
 architecture gates of hx is
   component cxreceiver
     port (
-      a : in coaxsig;
+      a : in  coaxsig;
       y : out std_logic);
 
   end component;
 
   component g2
     port (
-      a : in std_logic;
-      b : in std_logic;
+      a : in  std_logic;
+      b : in  std_logic;
       y : out std_logic;
       y2 : out std_logic);
 
@@ -76,9 +76,9 @@ architecture gates of hx is
 
   component g3
     port (
-      a : in std_logic;
-      b : in std_logic;
-      c : in std_logic;
+      a : in  std_logic;
+      b : in  std_logic;
+      c : in  std_logic;
       y : out std_logic;
       y2 : out std_logic);
 
@@ -86,12 +86,12 @@ architecture gates of hx is
 
   component g6
     port (
-      a : in std_logic;
-      b : in std_logic;
-      c : in std_logic;
-      d : in std_logic;
-      e : in std_logic;
-      f : in std_logic;
+      a : in  std_logic;
+      b : in  std_logic;
+      c : in  std_logic;
+      d : in  std_logic;
+      e : in  std_logic;
+      f : in  std_logic;
       y : out std_logic;
       y2 : out std_logic);
 
@@ -126,20 +126,13 @@ begin -- gates
     a => p19,
     y => t1);
 
-  u10 : g6 port map (
-    a => p21,
-    b => p23,
-    c => p26,
-    d => p25,
-    e => p28,
-    f => p27,
-    y => tp5,
-    y2 => t6);
 
   u2 : rsflop port map (
     r => p20,
     s => t1,
     q => t2);
+
+  tp6 <= t2;
 
   u3 : g6 port map (
     a => p5,
@@ -150,16 +143,23 @@ begin -- gates
     f => p2,
     y => a);
 
+  p9 <= a;
+  tp2 <= a;
+
   u4 : rsflop port map (
     r => p10,
     s => a,
     q => t3,
     qb => b);
 
+  p8 <= t3;
+  tp1 <= t3;
+
   u5 : g2 port map (
     a => p4,
     b => t3,
     y => p6);
+
 
   u6 : g3 port map (
     a => p15,
@@ -167,32 +167,42 @@ begin -- gates
     c => p18,
     y => t4);
 
+  p12 <= t4;
+  tp4 <= t4;
+
   u7 : g2 port map (
     a => p16,
     b => p18,
     y => p17);
+
 
   u8 : g2 port map (
     a => a,
     b => b,
     y => t5);
 
+  p14 <= t5;
+  tp3 <= t5;
+
   u9 : g2 port map (
     a => p13,
     b => t5,
     y => p11);
 
-p12 <= t4;
-p14 <= t5;
-p22 <= t6;
-p24 <= t6;
-p8 <= t3;
-p9 <= a;
-tp1 <= t3;
-tp2 <= a;
-tp3 <= t5;
-tp4 <= t4;
-tp6 <= t2;
+
+  u10 : g6 port map (
+    a => p21,
+    b => p23,
+    c => p26,
+    d => p25,
+    e => p28,
+    f => p27,
+    y => tp5,
+    y2 => t6);
+
+  p22 <= t6;
+  p24 <= t6;
+
 
 end gates;
 

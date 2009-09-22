@@ -65,15 +65,18 @@ begin -- gates
     b => a,
     y => t1);
 
+
   u2 : g2 port map (
     a => in2,
     b => b,
     y => t2);
 
+
   u3 : g2 port map (
     a => in3,
     b => c,
     y => t3);
+
 
   u4 : cxdriver port map (
     a => in4,
@@ -83,8 +86,9 @@ begin -- gates
     a5 => t3,
     y => t4);
 
-tp <= t4;
-y <= t4;
+  tp <= t4;
+  y <= t4;
+
 
 end gates;
 
@@ -94,6 +98,13 @@ use work.sigs.all;
 
 entity rm is
     port (
+      p2 : in  std_logic;
+      p3 : in  std_logic;
+      p4 : in  std_logic;
+      p5 : in  std_logic;
+      p7 : in  std_logic;
+      p8 : in  std_logic;
+      p9 : in  std_logic;
       p10 : in  std_logic;
       p11 : in  std_logic;
       p12 : in  std_logic;
@@ -103,7 +114,6 @@ entity rm is
       p17 : in  std_logic;
       p18 : in  std_logic;
       p19 : in  std_logic;
-      p2 : in  std_logic;
       p20 : in  std_logic;
       p21 : in  std_logic;
       p22 : in  std_logic;
@@ -111,20 +121,14 @@ entity rm is
       p25 : in  std_logic;
       p26 : in  std_logic;
       p27 : in  std_logic;
-      p3 : in  std_logic;
-      p4 : in  std_logic;
-      p5 : in  std_logic;
-      p7 : in  std_logic;
-      p8 : in  std_logic;
-      p9 : in  std_logic;
       tp1 : out std_logic;
       tp2 : out std_logic;
       tp5 : out std_logic;
       tp6 : out std_logic;
-      p1 : out coaxsig;
-      p23 : out coaxsig;
-      p28 : out coaxsig;
-      p6 : out coaxsig);
+      p1 : out std_logic;
+      p6 : out std_logic;
+      p23 : out std_logic;
+      p28 : out std_logic);
 
 end rm;
 architecture gates of rm is
@@ -167,6 +171,7 @@ begin -- gates
     tp => tp1,
     y => p1);
 
+
   u2 : rmslice port map (
     a => a,
     b => b,
@@ -178,6 +183,7 @@ begin -- gates
     in5 => p10,
     tp => tp2,
     y => p6);
+
 
   u3 : rmslice port map (
     a => a,
@@ -191,6 +197,7 @@ begin -- gates
     tp => tp5,
     y => p23);
 
+
   u4 : rmslice port map (
     a => a,
     b => b,
@@ -203,17 +210,21 @@ begin -- gates
     tp => tp6,
     y => p28);
 
+
   u5 : inv port map (
     a => p12,
     y => a);
+
 
   u6 : inv port map (
     a => p14,
     y => b);
 
+
   u7 : inv port map (
     a => p17,
     y => c);
+
 
 
 end gates;

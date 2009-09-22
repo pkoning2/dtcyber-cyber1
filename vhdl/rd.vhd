@@ -22,6 +22,12 @@ use work.sigs.all;
 entity rd is
     port (
       p1 : in  std_logic;
+      p2 : in  std_logic;
+      p3 : in  std_logic;
+      p4 : in  std_logic;
+      p5 : in  std_logic;
+      p8 : in  std_logic;
+      p9 : in  std_logic;
       p10 : in  std_logic;
       p12 : in  std_logic;
       p13 : in  std_logic;
@@ -30,7 +36,6 @@ entity rd is
       p17 : in  std_logic;
       p18 : in  std_logic;
       p19 : in  std_logic;
-      p2 : in  std_logic;
       p20 : in  std_logic;
       p21 : in  std_logic;
       p22 : in  std_logic;
@@ -38,23 +43,18 @@ entity rd is
       p24 : in  std_logic;
       p25 : in  std_logic;
       p28 : in  std_logic;
-      p3 : in  std_logic;
-      p4 : in  std_logic;
-      p5 : in  std_logic;
-      p8 : in  std_logic;
-      p9 : in  std_logic;
       tp1 : out std_logic;
       tp2 : out std_logic;
       tp3 : out std_logic;
       tp4 : out std_logic;
       tp5 : out std_logic;
       tp6 : out std_logic;
+      p6 : out std_logic;
+      p7 : out std_logic;
       p11 : out std_logic;
       p16 : out std_logic;
       p26 : out std_logic;
-      p27 : out std_logic;
-      p6 : out std_logic;
-      p7 : out std_logic);
+      p27 : out std_logic);
 
 end rd;
 architecture gates of rd is
@@ -98,6 +98,9 @@ begin -- gates
     s4 => p1,
     q => t1);
 
+  p11 <= t1;
+  tp1 <= t1;
+
   u2 : rsflop port map (
     r => x,
     s => p15,
@@ -106,11 +109,17 @@ begin -- gates
     s4 => p14,
     q => t2);
 
+  p16 <= t2;
+  tp4 <= t2;
+
   u3 : rsflop port map (
     r => a,
     s => p10,
     s2 => p8,
     q => t3);
+
+  p7 <= t3;
+  tp2 <= t3;
 
   u4 : rsflop port map (
     r => x,
@@ -120,11 +129,17 @@ begin -- gates
     s4 => p20,
     q => t4);
 
+  p26 <= t4;
+  tp5 <= t4;
+
   u5 : rsflop port map (
     r => a,
     s => p2,
     s2 => p4,
     q => t5);
+
+  p6 <= t5;
+  tp3 <= t5;
 
   u6 : rsflop port map (
     r => x,
@@ -134,26 +149,19 @@ begin -- gates
     s4 => p25,
     q => t6);
 
+  p27 <= t6;
+  tp6 <= t6;
+
   u7 : inv port map (
     a => p5,
     y => a);
+
 
   u8 : inv port map (
     a => p18,
     y => x);
 
-p11 <= t1;
-p16 <= t2;
-p26 <= t4;
-p27 <= t6;
-p6 <= t5;
-p7 <= t3;
-tp1 <= t1;
-tp2 <= t3;
-tp3 <= t5;
-tp4 <= t2;
-tp5 <= t4;
-tp6 <= t6;
+
 
 end gates;
 

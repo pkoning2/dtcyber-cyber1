@@ -22,6 +22,12 @@ use work.sigs.all;
 entity ke is
     port (
       p1 : in  std_logic;
+      p2 : in  std_logic;
+      p3 : in  std_logic;
+      p4 : in  std_logic;
+      p5 : in  std_logic;
+      p6 : in  std_logic;
+      p8 : in  std_logic;
       p10 : in  std_logic;
       p11 : in  std_logic;
       p13 : in  std_logic;
@@ -29,29 +35,23 @@ entity ke is
       p17 : in  std_logic;
       p18 : in  std_logic;
       p19 : in  std_logic;
-      p2 : in  std_logic;
       p20 : in  std_logic;
       p21 : in  std_logic;
       p22 : in  std_logic;
       p23 : in  std_logic;
       p25 : in  std_logic;
       p27 : in  std_logic;
-      p3 : in  std_logic;
-      p4 : in  std_logic;
-      p5 : in  std_logic;
-      p6 : in  std_logic;
-      p8 : in  std_logic;
       tp1 : out std_logic;
       tp2 : out std_logic;
       tp5 : out std_logic;
       tp6 : out std_logic;
+      p7 : out std_logic;
+      p9 : out std_logic;
       p12 : out std_logic;
       p14 : out std_logic;
       p16 : out std_logic;
       p24 : out std_logic;
-      p28 : out std_logic;
-      p7 : out std_logic;
-      p9 : out std_logic);
+      p28 : out std_logic);
 
 end ke;
 architecture gates of ke is
@@ -110,19 +110,23 @@ begin -- gates
     b => p6,
     y => t1);
 
+
   u2 : inv port map (
     a => p2,
     y => t2);
+
 
   u3 : g2 port map (
     a => p1,
     b => t2,
     y => t3);
 
+
   u4 : g2 port map (
     a => p2,
     b => p4,
     y => t4);
+
 
   u5 : g6 port map (
     a => p8,
@@ -134,6 +138,9 @@ begin -- gates
     y => t5,
     y2 => p9);
 
+  p7 <= t5;
+  tp1 <= t5;
+
   u6 : g4 port map (
     a => p27,
     b => p25,
@@ -141,6 +148,8 @@ begin -- gates
     d => p21,
     y => t6,
     y2 => p28);
+
+  tp2 <= t6;
 
   u7 : g4 port map (
     a => p22,
@@ -150,6 +159,9 @@ begin -- gates
     y => t7,
     y2 => p16);
 
+  p24 <= t7;
+  tp5 <= t7;
+
   u8 : g4 port map (
     a => p17,
     b => p15,
@@ -158,13 +170,9 @@ begin -- gates
     y => t8,
     y2 => p12);
 
-p14 <= t8;
-p24 <= t7;
-p7 <= t5;
-tp1 <= t5;
-tp2 <= t6;
-tp5 <= t7;
-tp6 <= t8;
+  p14 <= t8;
+  tp6 <= t8;
+
 
 end gates;
 
