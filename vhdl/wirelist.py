@@ -682,6 +682,8 @@ class Connector (object):
                         wname = "%s_%s_%s_%d" % (dest, pin2, self.name, p)
                     w = get_wire (wname, self, p, wlen)
             elif coaxpat.match (dest):
+                if len (fields) > 3:
+                    error ("coax with extraneous \"length\" field")
                 wname = "%s_%s" % (normname (dest, self.module.chassis),
                                    pin2)
                 w = get_coax (wname, self, p)
