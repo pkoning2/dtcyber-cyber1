@@ -125,10 +125,10 @@ entity rm is
       tp2 : out std_logic;
       tp5 : out std_logic;
       tp6 : out std_logic;
-      p1 : out std_logic;
-      p6 : out std_logic;
-      p23 : out std_logic;
-      p28 : out std_logic);
+      p1 : out coaxsig;
+      p6 : out coaxsig;
+      p23 : out coaxsig;
+      p28 : out coaxsig);
 
 end rm;
 architecture gates of rm is
