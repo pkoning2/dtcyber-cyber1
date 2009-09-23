@@ -51,6 +51,7 @@ entity ke is
       p14 : out std_logic;
       p16 : out std_logic;
       p24 : out std_logic;
+      p26 : out std_logic;
       p28 : out std_logic);
 
 end ke;
@@ -149,6 +150,7 @@ begin -- gates
     y => t6,
     y2 => p28);
 
+  p26 <= t6;
   tp2 <= t6;
 
   u7 : g4 port map (
