@@ -271,7 +271,8 @@ class cmod (eltype):
                     if pto.startswith ("-"):
                         pto = pto[1:]
                         dir = "optin"
-                    self.addpin ((pto, ), dir, ptype)
+                    if not pto in self.pins:
+                        self.addpin ((pto, ), dir, ptype)
         for t in sorted (temps):
             v = temps[t]
             sigs.append ("  signal %s : %s;\n" % (t, v))
@@ -320,10 +321,12 @@ end gates;
         print >> f, self.printmodule ()
         f.close ()
 
-_re_arch = re.compile (r"architecture gates of (\w+?) is.+?begin(.+?)end gates;", re.S)
+_re_arch = re.compile (r"entity +(.+?) +is\s+?port +\((.+?)\).+?end +\1.+?architecture gates of \1 is.+?begin(.+?)end gates;", re.S)
 _re_portmap = re.compile (r"(\w+) : (\w+) port map \((.+?)\)", re.S)
 _re_pinmap = re.compile (r"(\w+) => (\w+)")
 _re_assign = re.compile (r"(\w+) <= (\w+)")
+_re_ent = re.compile (r"entity +(.+?) +is\s+?port +\((.+?)\).+?end +\1", re.S)
+_re_pin = re.compile (r"([a-z0-9, ]+): +(in|out) +(std_logic|coaxsig)( +:= +'[01]')?")
 
 def readmodule (modname):
     """Read a module definition VHD file and return the top
@@ -336,21 +339,32 @@ def readmodule (modname):
     for m in _re_arch.finditer (mtext):
         e = cmod (m.group (1))
         #print m.group (1)
-        for c in _re_portmap.finditer (m.group (2)):
+        for c in _re_portmap.finditer (m.group (3)):
             u = element (c.group (1), c.group (2), False)
             #print "element", c.group (1), c.group (2)
             e.elements[c.group (1)] = u
             for pin in _re_pinmap.finditer (c.group (3)):
                 #print "pin", pin.group (1), pin.group (2)
                 u.portmap[pin.group (1)] = pin.group (2)
-        for a in _re_assign.finditer (m.group (2)):
+        for a in _re_assign.finditer (m.group (3)):
             e.addassign (a.group (1), a.group (2))
             #print "assign", a.group (1), a.group (2)
         e.printmodule ()
+        # Look over the entity definition to pick up pins marked
+        # as optional inputs.  If we encoutered them in the architecture
+        # section, update the pin type.
+        for pins in _re_pin.finditer (m.group (2)):
+            dir = pins.group (2)
+            ptype = pins.group (3)
+            if pins.group (4):
+                if dir != "in":
+                    print "Unexpected default in", pins.group ()
+                else:
+                    for p in pins.group (1).replace (" ", "").split (","):
+                        if p in e.pins:
+                            e.pins[p] = ("optin", ptype)
     return e
  
-_re_ent = re.compile (r"entity +(.+?) +is\s+?port +\((.+?)\).+?end +\1", re.S)
-_re_pin = re.compile (r"([a-z0-9, ]+): +(in|out) +(std_logic|coaxsig)( +:= +'[01]')?")
 
 def stdelements ():
     f = open ("cyberdefs.vhd", "r")
