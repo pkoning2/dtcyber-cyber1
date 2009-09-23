@@ -22,10 +22,10 @@ use work.sigs.all;
 entity qmslice is
     port (
       a : in  std_logic;
-      b : in  std_logic;
+      b : in  std_logic := '1';
       k : in  std_logic;
-      k2 : in  std_logic;
-      k3 : in  std_logic;
+      k2 : in  std_logic := '1';
+      k3 : in  std_logic := '1';
       qa : out std_logic;
       qb : out std_logic;
       y : out std_logic);
@@ -163,10 +163,10 @@ architecture gates of qm is
   component qmslice
     port (
       a : in  std_logic;
-      b : in  std_logic;
+      b : in  std_logic := '1';
       k : in  std_logic;
-      k2 : in  std_logic;
-      k3 : in  std_logic;
+      k2 : in  std_logic := '1';
+      k3 : in  std_logic := '1';
       qa : out std_logic;
       qb : out std_logic;
       y : out std_logic);
