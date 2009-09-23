@@ -52,6 +52,7 @@ entity fc is
       p16 : out std_logic;
       p18 : out std_logic;
       p24 : out std_logic;
+      p27 : out std_logic;
       p28 : out std_logic);
 
 end fc;
@@ -197,7 +198,7 @@ begin -- gates
     b => a,
     y2 => i);
 
-  p11 <= i;
+  p27 <= i;
   tp3 <= i;
 
   u13 : g3 port map (

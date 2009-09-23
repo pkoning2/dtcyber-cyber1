@@ -46,7 +46,9 @@ entity mi is
       p11 : out std_logic;
       p13 : out std_logic;
       p14 : out std_logic;
+      p15 : out std_logic;
       p16 : out std_logic;
+      p18 : out std_logic;
       p20 : out std_logic;
       p22 : out std_logic;
       p24 : out std_logic;
@@ -135,6 +137,7 @@ begin -- gates
     y => t3,
     y2 => p11);
 
+  p14 <= t3;
   p16 <= e;
   tp3 <= t3;
 
@@ -144,7 +147,7 @@ begin -- gates
     c => c,
     y => t4);
 
-  p14 <= t4;
+  p15 <= t4;
   p20 <= c;
   p24 <= b;
   p26 <= b;
@@ -206,6 +209,7 @@ begin -- gates
     a => p21,
     y => a);
 
+  p18 <= a;
 
   u14 : inv port map (
     a => p27,
