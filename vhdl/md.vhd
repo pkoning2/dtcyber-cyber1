@@ -25,8 +25,8 @@ entity mdslice is
       b : in  std_logic;
       c : in  std_logic;
       in1 : in  std_logic;
-      in2 : in  std_logic;
-      in3 : in  std_logic;
+      in2 : in  std_logic := '1';
+      in3 : in  std_logic := '1';
       tp : out std_logic;
       q : out std_logic;
       qb : out std_logic);
@@ -151,8 +151,8 @@ architecture gates of md is
       b : in  std_logic;
       c : in  std_logic;
       in1 : in  std_logic;
-      in2 : in  std_logic;
-      in3 : in  std_logic;
+      in2 : in  std_logic := '1';
+      in3 : in  std_logic := '1';
       tp : out std_logic;
       q : out std_logic;
       qb : out std_logic);
