@@ -671,6 +671,11 @@ class Connector (object):
                     except ValueError:
                         error ("Invalid destination pin number")
                         continue
+                    try:
+                        self.pindef (p)
+                    except KeyError:
+                        error ("Connection to unassigned pin")
+                        continue
                     if (self.slotid, p) < (dslot, to):
                         wname = "%s_%d_%s_%s" % (self.name, p, dest, pin2)
                     else:
@@ -689,11 +694,7 @@ class Connector (object):
         """Get the definition of the pin, from the ModuleType object.
         """
         pname = "p%d" % (num + self.offset)
-        try:
-            return self.module.Type.pins[pname]
-        except KeyError:
-            print pname, self.name, self.module.tname
-            raise
+        return self.module.Type.pins[pname]
 
     def chslotid (self):
         return self.module.chslotid ()
