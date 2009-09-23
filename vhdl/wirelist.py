@@ -529,6 +529,7 @@ class ModuleType (object):
         port definitions.
         """
         self.pins = { }
+        self.generic = [ ]
         self.name = name
         self.readdef (name)
 
@@ -549,7 +550,6 @@ class ModuleType (object):
             if l and not entpat.search (l):
                 continue
             break
-        self.generic = [ ]
         ingeneric = False
         while True:
             l = v.readline ()
