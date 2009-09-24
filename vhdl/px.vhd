@@ -63,10 +63,9 @@ architecture gates of px is
       a : in  coaxsig;                        -- source
       y : out std_logic);                     -- destination
   end component;
-  component rsflop
+  component r2sflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      s2, s3, s4, r2, r3, r4  : in  std_logic := '1';-- extra set, reset if needed
+      s, r, r2  : in  std_logic;                  -- set, reset
       q, qb : out std_logic);                 -- q and q.bar
   end component;
   signal c, d, e, g : std_logic;
@@ -84,10 +83,10 @@ begin  -- gates
     a => p2,
     b => t2,
     y => t3);
-  u4 : rsflop port map (
+  u4 : r2sflop port map (
     s  => t1,
     r  => t2,
-    r3 => p12,
+    r2 => p12,
     q  => t4,
     qb => c);
   tp1 <= t4;

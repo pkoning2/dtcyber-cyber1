@@ -47,10 +47,9 @@ architecture gates of prslice is
       a : in  coaxsig;                    -- source
       y : out std_logic);                 -- destination
   end component;
-  component rsflop
+  component rs2flop
     port (
-      s, r  : in  std_logic;                  -- inputs
-      s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset if needed
+      s, s2, r  : in  std_logic;                  -- inputs
       q, qb : out std_logic);                 -- outputs
   end component;
   signal s  : std_logic;
@@ -64,7 +63,7 @@ begin  -- gates
   u2 : cxreceiver port map (
     a => idata,
     y => ii);
-  u3 : rsflop port map (
+  u3 : rs2flop port map (
     s  => s,
     s2 => ii,
     r  => r,

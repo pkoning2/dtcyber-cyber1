@@ -59,10 +59,10 @@ architecture gates of pq is
       a : in  coaxsig;                        -- source
       y : out std_logic);                     -- destination
   end component;
-  component rsflop
+  component r4s4flop
     port (
       s, r  : in  std_logic;                  -- set, reset
-      s2, s3, s4, r2, r3, r4  : in  std_logic := '1';-- extra set, reset if needed
+      s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset
       q, qb : out std_logic);                 -- q and q.bar
   end component;
   signal a, g, h, j, k : std_logic;
@@ -94,10 +94,11 @@ begin  -- gates
   u7 : cxreceiver port map (
     a => p21,
     y => t7);
-  u8 : rsflop port map (
+  u8 : r4s4flop port map (
     s  => t2,
     s2 => t3,
     s3 => t4,
+    s4 => '1',
     r  => t5,
     r2 => t6,
     r3 => t7,

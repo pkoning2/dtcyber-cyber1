@@ -54,7 +54,6 @@ architecture gates of pf is
   component rsflop
     port (
       s, r  : in  std_logic;                  -- set, reset
-      s2, s3, s4, r2, r3, r4  : in  std_logic := '1';-- extra set, reset if needed
       q, qb : out std_logic);                 -- q and q.bar
   end component;
   signal a, i, e, d, g, k, c, j, w, x : std_logic;

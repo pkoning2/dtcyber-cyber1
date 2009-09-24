@@ -52,16 +52,11 @@ architecture gates of kaslice1 is
 
   end component;
 
-  component rsflop
+  component rs2flop
     port (
       r : in  std_logic;
-      r2 : in  std_logic := '1';
-      r3 : in  std_logic := '1';
-      r4 : in  std_logic := '1';
       s : in  std_logic;
-      s2 : in  std_logic := '1';
-      s3 : in  std_logic := '1';
-      s4 : in  std_logic := '1';
+      s2 : in  std_logic;
       q : out std_logic;
       qb : out std_logic);
 
@@ -80,7 +75,7 @@ begin -- gates
     y => t1);
 
 
-  u2 : rsflop port map (
+  u2 : rs2flop port map (
     r => c,
     s => t1,
     s2 => i2,
@@ -163,16 +158,11 @@ architecture gates of kaslice2 is
 
   end component;
 
-  component rsflop
+  component rs2flop
     port (
       r : in  std_logic;
-      r2 : in  std_logic := '1';
-      r3 : in  std_logic := '1';
-      r4 : in  std_logic := '1';
       s : in  std_logic;
-      s2 : in  std_logic := '1';
-      s3 : in  std_logic := '1';
-      s4 : in  std_logic := '1';
+      s2 : in  std_logic;
       q : out std_logic;
       qb : out std_logic);
 
@@ -187,7 +177,7 @@ begin -- gates
     y => t1);
 
 
-  u2 : rsflop port map (
+  u2 : rs2flop port map (
     r => c,
     s => t1,
     s2 => i2,

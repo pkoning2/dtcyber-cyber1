@@ -52,16 +52,11 @@ architecture gates of mdslice is
 
   end component;
 
-  component rsflop
+  component rs2flop
     port (
       r : in  std_logic;
-      r2 : in  std_logic := '1';
-      r3 : in  std_logic := '1';
-      r4 : in  std_logic := '1';
       s : in  std_logic;
-      s2 : in  std_logic := '1';
-      s3 : in  std_logic := '1';
-      s4 : in  std_logic := '1';
+      s2 : in  std_logic;
       q : out std_logic;
       qb : out std_logic);
 
@@ -78,7 +73,7 @@ begin -- gates
     y => t1);
 
 
-  u2 : rsflop port map (
+  u2 : rs2flop port map (
     r => b,
     s => t1,
     s2 => in3,

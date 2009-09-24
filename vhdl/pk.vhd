@@ -69,10 +69,10 @@ architecture gates of pk is
       a : in  coaxsig;                    -- source
       y : out std_logic);                 -- destination
   end component;
-  component rsflop
+  component r4s4flop
     port (
       s, r  : in  std_logic;                  -- inputs
-      s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset if needed
+      s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset
       q, qb : out std_logic);                 -- outputs
   end component;
   signal b, c : std_logic;                    -- internal enables
@@ -128,10 +128,11 @@ begin  -- gates
   u13 : cxreceiver port map (
     a => p8,
     y => p8i);
-  u14 : rsflop port map (
+  u14 : r4s4flop port map (
     s  => fi,
     s2 => p15i,
     s3 => b,
+    s4 => '1',
     r  => ei,
     r2 => p8i,
     r3 => a,
@@ -151,13 +152,15 @@ begin  -- gates
   u19 : cxreceiver port map (
     a => p14,
     y => p14i);
-  u20 : rsflop port map (
+  u20 : r4s4flop port map (
     s  => ai,
     s2 => p23,
     s3 => b,
     s4 => p25i,
     r  => ii,
     r2 => p14i,
+    r3 => '1',
+    r4 => '1',
     q  => a,
     qb => p21);
   tp5 <= a;

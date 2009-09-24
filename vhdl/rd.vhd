@@ -65,16 +65,23 @@ architecture gates of rd is
 
   end component;
 
-  component rsflop
+  component rs2flop
     port (
       r : in  std_logic;
-      r2 : in  std_logic := '1';
-      r3 : in  std_logic := '1';
-      r4 : in  std_logic := '1';
       s : in  std_logic;
-      s2 : in  std_logic := '1';
-      s3 : in  std_logic := '1';
-      s4 : in  std_logic := '1';
+      s2 : in  std_logic;
+      q : out std_logic;
+      qb : out std_logic);
+
+  end component;
+
+  component rs4flop
+    port (
+      r : in  std_logic;
+      s : in  std_logic;
+      s2 : in  std_logic;
+      s3 : in  std_logic;
+      s4 : in  std_logic;
       q : out std_logic;
       qb : out std_logic);
 
@@ -90,7 +97,7 @@ architecture gates of rd is
   signal x : std_logic;
 
 begin -- gates
-  u1 : rsflop port map (
+  u1 : rs4flop port map (
     r => x,
     s => p9,
     s2 => p3,
@@ -101,7 +108,7 @@ begin -- gates
   p11 <= t1;
   tp1 <= t1;
 
-  u2 : rsflop port map (
+  u2 : rs4flop port map (
     r => x,
     s => p15,
     s2 => p17,
@@ -112,7 +119,7 @@ begin -- gates
   p16 <= t2;
   tp4 <= t2;
 
-  u3 : rsflop port map (
+  u3 : rs2flop port map (
     r => a,
     s => p10,
     s2 => p8,
@@ -121,7 +128,7 @@ begin -- gates
   p7 <= t3;
   tp2 <= t3;
 
-  u4 : rsflop port map (
+  u4 : rs4flop port map (
     r => x,
     s => p28,
     s2 => p24,
@@ -132,7 +139,7 @@ begin -- gates
   p26 <= t4;
   tp5 <= t4;
 
-  u5 : rsflop port map (
+  u5 : rs2flop port map (
     r => a,
     s => p2,
     s2 => p4,
@@ -141,7 +148,7 @@ begin -- gates
   p6 <= t5;
   tp3 <= t5;
 
-  u6 : rsflop port map (
+  u6 : rs4flop port map (
     r => x,
     s => p19,
     s2 => p21,

@@ -312,23 +312,112 @@ use work.sigs.all;
 entity rsflop is
   port (
     s, r  : in  std_logic;                    -- set, reset
-    s2, s3, s4, r2, r3, r4  : in  std_logic := '1';  -- extra set, reset if needed
     q, qb : out std_logic);                   -- q and q.bar
 
 end rsflop;
 
 architecture beh of rsflop is
-  component g5
-    port (
-      a, b, c, d, e : in  std_logic;          -- inputs
-      y, y2   : out std_logic);                  -- output
-  end component;
-  signal ri, si, qi : std_logic := '0';
+  signal qi : std_logic := '0';
+begin  -- beh
+  qi <= '0' when r = '0'
+        else '1' when s = '0'
+        else unaffected;
+  q <= qi after t;
+  qb <= not (qi) after t;
+
+end beh;
+
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+entity rs4flop is
+  port (
+    s, r  : in  std_logic;                    -- set, reset
+    s2, s3, s4  : in  std_logic;  -- extra set
+    q, qb : out std_logic);                   -- q and q.bar
+
+end rs4flop;
+
+architecture beh of rs4flop is
+  signal si, qi : std_logic := '0';
 begin  -- beh
   si <= s and s2 and s3 and s4;
+  qi <= '0' when r = '0'
+        else '1' when si = '0'
+        else unaffected;
+  q <= qi after t;
+  qb <= not (qi) after t;
+
+end beh;
+
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+entity r4s4flop is
+  port (
+    s, r  : in  std_logic;                    -- set, reset
+    s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset
+    q, qb : out std_logic);                   -- q and q.bar
+
+end r4s4flop;
+
+architecture beh of r4s4flop is
+  signal ri, si, qi : std_logic := '0';
+begin  -- beh
   ri <= r and r2 and r3 and r4;
+  si <= s and s2 and s3 and s4;
   qi <= '0' when ri = '0'
         else '1' when si = '0'
+        else unaffected;
+  q <= qi after t;
+  qb <= not (qi) after t;
+
+end beh;
+
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+entity rs2flop is
+  port (
+    s, r  : in  std_logic;                    -- set, reset
+    s2  : in  std_logic;                 -- extra set
+    q, qb : out std_logic);                   -- q and q.bar
+
+end rs2flop;
+
+architecture beh of rs2flop is
+  signal si, qi : std_logic;
+begin  -- beh
+  si <= s and s2;
+  qi <= '0' when r = '0'
+        else '1' when si = '0'
+        else unaffected;
+  q <= qi after t;
+  qb <= not (qi) after t;
+
+end beh;
+
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+entity r2sflop is
+  port (
+    s, r  : in  std_logic;                    -- set, reset
+    r2  : in  std_logic;                -- extra reset
+    q, qb : out std_logic);                   -- q and q.bar
+
+end r2sflop;
+
+architecture beh of r2sflop is
+  signal ri, qi : std_logic := '0';
+begin  -- beh
+  ri <= r and r2;
+  qi <= '0' when ri = '0'
+        else '1' when s = '0'
         else unaffected;
   q <= qi after t;
   qb <= not (qi) after t;

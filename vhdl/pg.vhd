@@ -40,10 +40,9 @@ architecture gates of pgslice is
       a, b, c : in  std_logic;                -- inputs
       y, y2       : out std_logic);               -- output
   end component;
-  component rsflop
+  component rs2flop
     port (
-      s, r  : in  std_logic;                  -- inputs
-      s2, s3, s4, r2, r3, r4  : in  std_logic := '1';  -- extra set, reset if needed
+      s, s2, r  : in  std_logic;                  -- inputs
       q, qb : out std_logic);                 -- outputs
   end component;
   signal s1, s2, ti : std_logic;           -- intermediate values
@@ -59,7 +58,7 @@ begin  -- gates
     b => i2,
     c => d,
     y => s2);
-  u3 : rsflop port map (
+  u3 : rs2flop port map (
     s  => s1,
     s2 => s2,
     r  => a,

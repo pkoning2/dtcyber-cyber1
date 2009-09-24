@@ -103,16 +103,13 @@ architecture gates of gc is
 
   end component;
 
-  component rsflop
+  component rs4flop
     port (
       r : in  std_logic;
-      r2 : in  std_logic := '1';
-      r3 : in  std_logic := '1';
-      r4 : in  std_logic := '1';
       s : in  std_logic;
-      s2 : in  std_logic := '1';
-      s3 : in  std_logic := '1';
-      s4 : in  std_logic := '1';
+      s2 : in  std_logic;
+      s3 : in  std_logic;
+      s4 : in  std_logic;
       q : out std_logic;
       qb : out std_logic);
 
@@ -143,7 +140,7 @@ architecture gates of gc is
   signal t12 : std_logic;
 
 begin -- gates
-  u1 : rsflop port map (
+  u1 : rs4flop port map (
     r => a,
     s => p2,
     s2 => p3,
@@ -185,7 +182,7 @@ begin -- gates
     y => p9);
 
 
-  u7 : rsflop port map (
+  u7 : rs4flop port map (
     r => a,
     s => p22,
     s2 => p20,
@@ -226,7 +223,7 @@ begin -- gates
     y => p11);
 
 
-  u13 : rsflop port map (
+  u13 : rs4flop port map (
     r => a,
     s => p27,
     s2 => p26,

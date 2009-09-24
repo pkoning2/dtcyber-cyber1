@@ -57,7 +57,6 @@ architecture gates of hq is
   component rsflop
     port (
       s, r  : in  std_logic;                  -- set, reset
-      s2, s3, s4, r2, r3, r4  : in  std_logic := '1';-- extra set, reset if needed
       q, qb : out std_logic);                 -- q and q.bar
   end component;
   signal t1, t2, t3, t4, t5, t6 : std_logic;

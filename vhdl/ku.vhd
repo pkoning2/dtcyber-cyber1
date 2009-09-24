@@ -61,13 +61,7 @@ architecture gates of kuslice is
   component rsflop
     port (
       r : in  std_logic;
-      r2 : in  std_logic := '1';
-      r3 : in  std_logic := '1';
-      r4 : in  std_logic := '1';
       s : in  std_logic;
-      s2 : in  std_logic := '1';
-      s3 : in  std_logic := '1';
-      s4 : in  std_logic := '1';
       q : out std_logic;
       qb : out std_logic);
 

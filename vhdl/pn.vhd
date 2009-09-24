@@ -41,10 +41,9 @@ architecture gates of pnslice is
       a, b : in  std_logic;                   -- inputs
       y, y2   : out std_logic);                  -- output
   end component;
-  component rsflop
+  component r2sflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      s2, s3, s4, r2, r3, r4  : in  std_logic := '1';-- extra set, reset if needed
+      s, r, r2  : in  std_logic;                  -- set, reset
       q, qb : out std_logic);                 -- q and q.bar
   end component;
   signal si, ri, qbi, qi : std_logic;
@@ -58,7 +57,7 @@ begin  -- gates
     a => r,
     b => b,
     y => ri);
-  u3 : rsflop port map (
+  u3 : r2sflop port map (
     s  => si,
     r  => ri,
     r2 => c,

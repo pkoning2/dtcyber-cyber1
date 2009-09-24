@@ -36,10 +36,9 @@ architecture gates of aeslice is
       a, b, c : in  std_logic;                -- inputs
       y, y2   : out std_logic);                  -- output
   end component;
-  component rsflop
+  component r2sflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      s2, s3, s4, r2, r3, r4  : in  std_logic := '1';-- extra set, reset if needed
+      s, r, r2  : in  std_logic;                  -- set, reset
       q, qb : out std_logic);                 -- q and q.bar
   end component;
   signal t1, t2, t3, t4 : std_logic;
@@ -55,7 +54,7 @@ begin  -- gates
     b => r2,
     c => a,
     y => t2);
-  u3 : rsflop port map (
+  u3 : r2sflop port map (
     s  => t1,
     r  => t2,
     r2 => r3,
