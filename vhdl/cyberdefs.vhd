@@ -343,7 +343,6 @@ entity latch is
   
   port (
     d, clk : in  std_logic;                   -- data (set), clock
-    r      : in  std_logic := '0';            -- optional reset
     q, qb  : out std_logic);                  -- q and q.bar
 
 end latch;
@@ -351,15 +350,36 @@ end latch;
 architecture beh of latch is
   signal clki : std_logic;
   signal qi : std_logic;
-  signal qib : std_logic;
 begin  -- beh
   clki <= clk after t * 2;
-  qi <= '0' when r = '1' else
-      d when clki = '1' else unaffected;
-  qib <= '1' when r = '1' else
-       not (d) when clki = '1' else unaffected;
+  qi <= d when clki = '1' else unaffected;
   q <= qi after t;
-  qb <= qib after t;
+  qb <= not (qi) after t;
+
+end beh;
+
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+entity latchr is
+  
+  port (
+    d, clk : in  std_logic;                   -- data (set), clock
+    r      : in  std_logic;                   -- reset
+    q, qb  : out std_logic);                  -- q and q.bar
+
+end latchr;
+
+architecture beh of latchr is
+  signal clki : std_logic;
+  signal qi : std_logic;
+begin  -- beh
+  clki <= clk after t * 2;
+  qi <= '0' when r = '0' else
+      d when clki = '1' else unaffected;
+  q <= qi after t;
+  qb <= not (qi) after t;
 
 end beh;
 

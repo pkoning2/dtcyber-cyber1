@@ -43,10 +43,10 @@ architecture gates of xi is
       a, b : in  std_logic;                   -- inputs
       y, y2   : out std_logic);                  -- output
   end component;
-  component latch
+  component latchr
     port (
       d, clk : in  std_logic;                 -- data (set), clock
-      r      : in  std_logic := '0';          -- optional reset
+      r      : in  std_logic;               -- reset
       q, qb  : out std_logic);                -- q and q.bar
   end component;
   signal c : std_logic;
@@ -63,42 +63,42 @@ begin  -- gates
   u3 : inv2 port map (
     a  => p12,
     y2 => p14);
-  u4 : latch port map (
+  u4 : latchr port map (
     d   => p1,
     clk => p9,
     r   => c,
     q   => t1);
   tp1 <= t1;
   p3 <= t1;
-  u5 : latch port map (
+  u5 : latchr port map (
     d   => p24,
     clk => p20,
     r   => c,
     q   => t2);
   tp4 <= t2;
   p22 <= t2;
-  u6 : latch port map (
+  u6 : latchr port map (
     d   => p4,
     clk => p9,
     r   => c,
     q   => t3);
   tp2 <= t3;
   p6 <= t3;
-  u7 : latch port map (
+  u7 : latchr port map (
     d   => p25,
     clk => p20,
     r   => c,
     q   => t4);
   tp5 <= t4;
   p23 <= t4;
-  u8 : latch port map (
+  u8 : latchr port map (
     d   => p5,
     clk => p9,
     r   => c,
     q   => t5);
   tp3 <= t5;
   p7 <= t5;
-  u9 : latch port map (
+  u9 : latchr port map (
     d   => p28,
     clk => p20,
     r   => c,
