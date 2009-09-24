@@ -34,13 +34,13 @@ entity rmslice is
 
 end rmslice;
 architecture gates of rmslice is
-  component cxdriver
+  component cxdriver5
     port (
       a : in  std_logic;
-      a2 : in  std_logic := '1';
-      a3 : in  std_logic := '1';
-      a4 : in  std_logic := '1';
-      a5 : in  std_logic := '1';
+      a2 : in  std_logic;
+      a3 : in  std_logic;
+      a4 : in  std_logic;
+      a5 : in  std_logic;
       y : out coaxsig);
 
   end component;
@@ -78,7 +78,7 @@ begin -- gates
     y => t3);
 
 
-  u4 : cxdriver port map (
+  u4 : cxdriver5 port map (
     a => in4,
     a2 => in5,
     a3 => t1,

@@ -255,7 +255,6 @@ entity cxdriver is
   
   port (
     a : in  std_logic;                        -- source
-    a2, a3, a4, a5 : in std_logic := '1';   -- optional extra inputs
     y : out coaxsig);                         -- destination
 
 end cxdriver;
@@ -264,7 +263,27 @@ architecture bool of cxdriver is
   signal ai : std_logic;
   signal yi : std_logic;
 begin  -- bool
-  ai <= '1' when a = 'U' else a and a2 and a3 and a4 and a5;
+  ai <= '1' when a = 'U' else a;
+  yi <= ai after tc;
+  y <= not (yi);                        -- coax is positive logic...
+end bool;
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+entity cxdriver5 is
+  
+  port (
+    a, a2, a3, a4, a5 : in  std_logic;        -- sources
+    y : out coaxsig);                         -- destination
+
+end cxdriver5;
+
+architecture bool of cxdriver5 is
+  signal ai : std_logic;
+  signal yi : std_logic;
+begin  -- bool
+  ai <= '1' when a = 'U' else a;
   yi <= ai after tc;
   y <= not (yi);                        -- coax is positive logic...
 end bool;
