@@ -67,16 +67,26 @@ class eltype (object):
         for name in namelist:
             self.pins[name] = (dir, ptype)
 
+    def inputs (self):
+        """Return a list of input pin names, sorted by name
+        """
+        return sorted ([p for p in self.pins if self.pins[p][0] != "out"])
+
+    def outputs (self):
+        """Return a list of output pin names, sorted by name
+        """
+        return sorted ([p for p in self.pins
+                        if not p.startswith ("tp") and
+                        self.pins[p][0] == "out"])
+        
     def printports (self):
         """Return the ports definition of this element type.
         Pins are grouped as inputs, test points, outputs, and
         alphabetically within the group.
         """
         ports = [ ]
-        for p in sorted (self.pins):
+        for p in self.inputs ():
             d, t = self.pins[p]
-            if d == "out":
-                continue
             if d == "optin":
                 ports.append ("      %s : in  %s := '1'" % (p, t))
             else:
@@ -85,10 +95,7 @@ class eltype (object):
             if not p.startswith ("tp"):
                 continue
             ports.append ("      %s : out %s" % (p, t))
-        for p in sorted (self.pins):
-            d, t = self.pins[p]
-            if d != "out" or p.startswith ("tp"):
-                continue
+        for p in self.outputs ():
             ports.append ("      %s : %s %s" % (p, d, t))
         return """    port (
 %s);
@@ -106,33 +113,58 @@ class eltype (object):
 class element (object):
     """Instance of a logic element
     """
-    def __init__ (self, name, elname, prompt = True):
+    def __init__ (self, name, elname):
         self.name = name
         self.eltype = elements[elname]
         self.portmap = { }
-        if prompt:
-            print "inputs:"
-            for p in sorted (self.eltype.pins):
-                if self.eltype.pins[p][0] == "in":
-                    pto = raw_input ("%s: " % p)
-                    self.portmap[p] = pto
-            print "outputs:"
-            for p in sorted (self.eltype.pins):
-                if self.eltype.pins[p][0] == "out":
-                    pto = raw_input ("%s: " % p)
-                    if pto:
-                        self.portmap[p] = pto
-            prompt_optin = True
-            for p in sorted (self.eltype.pins):
-                if self.eltype.pins[p][0] == "optin":
-                    if prompt_optin:
-                        opt = raw_input ("any optional inputs? ")
-                        if not opt.lower ().startswith ("y"):
-                            break
-                    prompt_optin = False
-                    pto = raw_input ("%s: " % p)
-                    if pto:
-                        self.portmap[p] = pto
+
+    def addportmap (self, parent, formal, actual):
+        dir, ptype = self.eltype.pins[formal]
+        opt = False
+        if actual.startswith ("-"):
+            if dir not in ("in", "optin"):
+                print "Optional input flag but %s is not an input" % formal
+                return
+            actual = actual[1:]
+            opt = True
+        try:
+            adir, atype = parent.pins[actual]
+            # Pin already defined, that's legal only for inputs
+            if dir == "out" or adir == "out" or ptype != atype:
+                print "Invalid redefinition for pin", actual
+                return
+            if opt:
+                parent.pins[actual] = ("optin", atype)
+        except KeyError:
+            # Pin not yet defined, define it
+            parent.pins[actual] = (dir, ptype)
+        self.portmap[formal] = actual
+        
+    def promptports (self, parent):
+        """Interactively build the portmap for this element
+        """
+        print "inputs:"
+        for p in sorted (self.eltype.pins):
+            if self.eltype.pins[p][0] == "in":
+                pto = raw_input ("%s: " % p)
+                self.addportmap (parent, p, pto)
+        print "outputs:"
+        for p in sorted (self.eltype.pins):
+            if self.eltype.pins[p][0] == "out":
+                pto = raw_input ("%s: " % p)
+                if pto:
+                    self.addportmap (parent, p, pto)
+        prompt_optin = True
+        for p in sorted (self.eltype.pins):
+            if self.eltype.pins[p][0] == "optin":
+                if prompt_optin:
+                    opt = raw_input ("any optional inputs? ")
+                    if not opt.lower ().startswith ("y"):
+                        break
+                prompt_optin = False
+                pto = raw_input ("%s: " % p)
+                if pto:
+                    self.addportmap (parent, p, pto)
 
     def printportmap (self):
         """Return the port map.  Entries are grouped inputs
@@ -174,7 +206,8 @@ class cmod (eltype):
         self.elcount += 1
         elname = "u%d" % self.elcount
         print "element %s" % elname
-        self.elements[elname] = element (elname, eltype)
+        e = self.elements[elname] = element (elname, eltype)
+        e.promptports (self)
 
     def addassign (self, pin, temp):
         """Add an assignment of an output signal from a temp
@@ -364,7 +397,7 @@ def readmodule (modname):
         gates = m.group (5) == "gates"
         if gates:
             for c in _re_portmap.finditer (m.group (6)):
-                u = element (c.group (1), c.group (2), False)
+                u = element (c.group (1), c.group (2))
                 #print "element", c.group (1), c.group (2)
                 e.elements[c.group (1)] = u
                 for pin in _re_pinmap.finditer (c.group (3)):
