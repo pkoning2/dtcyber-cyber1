@@ -2,7 +2,7 @@
 
 """Create a module definition VHDL file
 
--- Copyright (C) 2009 by Paul Koning
+Copyright (C) 2009 by Paul Koning
 """
 
 import readline
@@ -80,7 +80,7 @@ class eltype (object):
             if d == "optin":
                 ports.append ("      %s : in  %s := '1'" % (p, t))
             else:
-                ports.append ("      %s : in  %s" % (p, t))
+                ports.append ("      %s : %-3s %s" % (p, d, t))
         for p in sorted (self.pins):
             if not p.startswith ("tp"):
                 continue
@@ -157,13 +157,14 @@ class element (object):
 
     
 class cmod (eltype):
-    """A Cyber module
+    """A Cyber module or element of a module
     """
     def __init__ (self, name):
         eltype.__init__ (self, name)
         self.name = name
         self.elements = { }
         self.assigns = { }
+        self.generics = { }
         self.elcount = 0
 
     def addelement (self, eltype):
@@ -224,7 +225,7 @@ class cmod (eltype):
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- %s
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -236,18 +237,22 @@ class cmod (eltype):
 -- %s module
 --
 -------------------------------------------------------------------------------
-""" % self.name.upper ()
+""" % (__doc__.split ("\n")[2], self.name.upper ())
 
     def istemp (self, pin):
-        """Tells whether the pin is a temp signal or not
+        """Tells whether the pin is a temp signal or not.  For modules
+        (things with two-character names), it's a pin if its name starts
+        with "p" or "tp" and a temp otherwise.  For other elements,
+        it's a temp if it starts with "t" and a "pin" (i.e., a port)
+        otherwise.
         """
-        if "slice" in self.name:
-            return pin.startswith ("t") and not pin.startswith ("tp")
+        if len (self.name) == 2:
+            # Module: if it's not a pin and not a testpoint, it's a temp
+            return not _re_pinname.match (pin) and\
+                   not pin.startswith ("tp")
         else:
-            # If it's not a pin and not a testpoint, it's a temp
-            return pin == "p" or \
-                   (not pin.startswith ("p") and \
-                    not pin.startswith ("tp"))
+            # Element: if it starts with t but isn't a testpoint, it's a pin
+            return pin.startswith ("t") and not pin.startswith ("tp")
 
     def printmodule (self):
         """return module definition
@@ -257,6 +262,7 @@ class cmod (eltype):
         components = [ ]
         gates = [ ]
         sigs = [ ]
+        generics = [ ]
         assigndict = dict (self.assigns)
         for e in self.elements.itervalues ():
             eltypes[e.eltype.name] = 1
@@ -284,12 +290,18 @@ class cmod (eltype):
             assigns, assigndict = self.printassigns (assigndict, e)
             gates.append (assigns)
         assigns, assigndict = self.printassigns (assigndict)
+        for g in sorted (self.generics):
+            generics.append ("    %s : %s" % (g, self.generics[g]))
+        if generics:
+            generics = "generic (\n%s);\n" % ";\n".join (generics)
+        else:
+            generics = ""
         return """library IEEE;
 use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity %s is
-%s
+%s%s
 end %s;
 architecture gates of %s is
 %s
@@ -299,6 +311,7 @@ begin -- gates
 %s
 end gates;
 """ % (self.name,
+       generics,
        self.printports (),
        self.name,
        self.name,
@@ -321,54 +334,79 @@ end gates;
         print >> f, self.printmodule ()
         f.close ()
 
-_re_arch = re.compile (r"entity +(.+?) +is\s+?port +\((.+?)\).+?end +\1.+?architecture gates of \1 is.+?begin(.+?)end gates;", re.S)
-_re_portmap = re.compile (r"(\w+) : (\w+) port map \((.+?)\)", re.S)
-_re_pinmap = re.compile (r"(\w+) => (\w+)")
-_re_assign = re.compile (r"(\w+) <= (\w+)")
+_re_arch = re.compile (r"entity +(.+?) +is\s+?(generic +\((.+?)\);\s+?)?port +\((.+?)\).+?end +\1.+?architecture (\w+) of \1 is.+?begin(.+?)end \w+;", re.S)
+_re_portmap = re.compile (r"(\w+)\s*:\s*(\w+) port map \((.+?)\)", re.S)
+_re_generic = re.compile (r"(\w+)\s*:\s*(\w+)")
+_re_pinmap = re.compile (r"(\w+)\s*=>\s*(\w+)")
+_re_assign = re.compile (r"(\w+)\s*<=\s*(\w+)")
 _re_ent = re.compile (r"entity +(.+?) +is\s+?port +\((.+?)\).+?end +\1", re.S)
-_re_pin = re.compile (r"([a-z0-9, ]+): +(in|out) +(std_logic|coaxsig)( +:= +'[01]')?")
+_re_pin = re.compile (r"([a-z0-9, ]+):\s+(inout|in|out)\s+(std_logic|coaxsig|analog|misc)( +:= +'[01]')?")
+_re_comment = re.compile (r"--.*$", re.M)
+_re_pinname = re.compile (r"p\d+$")
 
 def readmodule (modname):
     """Read a module definition VHD file and return the top
     level module object
     """
     f = open ("%s.vhd" % modname, "r")
-    mtext = f.read ()
+    # Read the file, stripping comments
+    mtext = _re_comment.sub ("", f.read ())
     f.close ()
     e = None
     for m in _re_arch.finditer (mtext):
         e = cmod (m.group (1))
         #print m.group (1)
-        for c in _re_portmap.finditer (m.group (3)):
-            u = element (c.group (1), c.group (2), False)
-            #print "element", c.group (1), c.group (2)
-            e.elements[c.group (1)] = u
-            for pin in _re_pinmap.finditer (c.group (3)):
-                #print "pin", pin.group (1), pin.group (2)
-                u.portmap[pin.group (1)] = pin.group (2)
-        for a in _re_assign.finditer (m.group (3)):
-            e.addassign (a.group (1), a.group (2))
-            #print "assign", a.group (1), a.group (2)
+        # Process any generics
+        if m.group (2):
+            for g in _re_generic.finditer (m.group (3)):
+                e.generics[g.group (1)] = g.group (2)
+        # Parse the architecture section, if it's "gates"
+        gates = m.group (5) == "gates"
+        if gates:
+            for c in _re_portmap.finditer (m.group (6)):
+                u = element (c.group (1), c.group (2), False)
+                #print "element", c.group (1), c.group (2)
+                e.elements[c.group (1)] = u
+                for pin in _re_pinmap.finditer (c.group (3)):
+                    #print "pin", pin.group (1), pin.group (2)
+                    u.portmap[pin.group (1)] = pin.group (2)
+            for a in _re_assign.finditer (m.group (6)):
+                e.addassign (a.group (1), a.group (2))
+                #print "assign", a.group (1), a.group (2)
         e.printmodule ()
         # Look over the entity definition to pick up pins marked
         # as optional inputs.  If we encoutered them in the architecture
         # section, update the pin type.
-        for pins in _re_pin.finditer (m.group (2)):
+        # If the architecture section wasn't "gates" then process
+        # all pin entries, since we don't have any other source for
+        # ports information.  Ditto if the type was "misc" (wire jumpers).
+        for pins in _re_pin.finditer (m.group (4)):
             dir = pins.group (2)
             ptype = pins.group (3)
-            if pins.group (4):
-                if dir != "in":
-                    print "Unexpected default in", pins.group ()
-                else:
-                    for p in pins.group (1).replace (" ", "").split (","):
-                        if p in e.pins:
-                            e.pins[p] = ("optin", ptype)
+            if dir == "inout" and ptype != "misc":
+                print "Unexpected type %s for inout pin" % ptype
+                continue
+            if gates:
+                if pins.group (4):
+                    if dir != "in":
+                        print "Unexpected default in", pins.group ()
+                        continue
+                    dir = "optin"
+                elif ptype != "misc":
+                    continue
+            #print pins.groups ()
+            for p in pins.group (1).replace (" ", "").split (","):
+                if p in e.pins or not gates or ptype == "misc":
+                    e.pins[p] = (dir, ptype)
+    if e is None:
+        print "No module found in %s.vhd" % modname
     return e
  
 
 def stdelements ():
     f = open ("cyberdefs.vhd", "r")
-    std = f.read ()
+    # Read the file, stripping comments
+    std = _re_comment.sub ("", f.read ())
     f.close ()
     for e in _re_ent.finditer (std):
         c = eltype (e.group (1))
