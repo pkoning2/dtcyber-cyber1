@@ -31,17 +31,18 @@ completions ()
 
 elements = { }
 
-_re_k = re.compile ("(.+?)(\d*)")
+_re_k = re.compile ("(.+?)(\d+)(.*)$")
 def ancmp (a, b):
+    a = str (a)
+    b = str (b)
     am = _re_k.match (a)
     bm = _re_k.match (b)
-    if am.group (2) and bm.group (2):
-        ak = ( am.group (1), int (am.group (2)) )
-        bk = ( bm.group (1), int (bm.group (2)) )
+    if am and bm and am.group (2) and bm.group (2):
+        ak = ( am.group (1), int (am.group (2)), am.group (3) )
+        bk = ( bm.group (1), int (bm.group (2)), bm.group (3) )
     else:
         ak = a
         bk = b
-    #print a, b, ak, bk
     return cmp (ak, bk)
 
 def sorted (it):
@@ -51,33 +52,79 @@ def sorted (it):
     l.sort (ancmp)
     return l
 
-class eltype (object):
-    """Logic element type
+class hitem (object):
+    """A hashable container, hashed by name
     """
     def __init__ (self, name):
         self.name = name
-        self.pins = { }
+
+    def __str__ (self):
+        return self.name
+
+    def __eq__ (self, other):
+        return self.name == str (other)
+
+    def __hash__ (self):
+        return hash (self.name)
+        
+class Pin (hitem):
+    """Pin of a logic element type
+    """
+    def __init__ (self, name, dir, ptype, opt = False):
+        hitem.__init__ (self, name)
+        self.dir = dir
+        self.ptype = ptype
+        self.opt = opt
+    
+    def printdecl (self):
+        if self.opt:
+            return "%s : %-3s %s := '1'" % (self.name, self.dir, self.ptype)
+        else:
+            return "%s : %-3s %s" % (self.name, self.dir, self.ptype)
+
+    def testpoint (self):
+        return self.name.startswith ("tp")
+    
+class ElementType (object):
+    """Logic element type
+    """
+    def __init__ (self, name):
         global elements
         elements[name] = self
+        self.name = name
+        self.pins = { }
         
-    def addpin (self, namelist, dir, ptype = "std_logic"):
-        if dir not in ("in", "out", "optin"):
+    def addpin (self, namelist, dir, ptype = "std_logic", opt = False):
+        if dir not in ("in", "out"):
             print "Unrecognized pin direction", dir
             return
         for name in namelist:
-            self.pins[name] = (dir, ptype)
+            if name in self.pins:
+                print "Pin", name, "already defined"
+            else:
+                self.pins[name] = Pin (name, dir, ptype)
 
     def inputs (self):
-        """Return a list of input pin names, sorted by name
+        """Return a list of input pins, sorted by name
         """
-        return sorted ([p for p in self.pins if self.pins[p][0] != "out"])
+        return sorted ([p for p in self.pins.itervalues ()
+                        if p.dir != "out"])
+
+    def reqinputs (self):
+        """Return a list of required input pins, sorted by name
+        """
+        return [ p for p in self.inputs () if not p.opt ]
+
+    def optinputs (self):
+        """Return a list of required input pins, sorted by name
+        """
+        return [ p for p in self.inputs () if p.opt ]
 
     def outputs (self):
-        """Return a list of output pin names, sorted by name
+        """Return a list of output pins, sorted by name
         """
-        return sorted ([p for p in self.pins
-                        if not p.startswith ("tp") and
-                        self.pins[p][0] == "out"])
+        return sorted ([p for p in self.pins.itervalues ()
+                        if p.dir == "out"])
         
     def printports (self):
         """Return the ports definition of this element type.
@@ -86,17 +133,14 @@ class eltype (object):
         """
         ports = [ ]
         for p in self.inputs ():
-            d, t = self.pins[p]
-            if d == "optin":
-                ports.append ("      %s : in  %s := '1'" % (p, t))
-            else:
-                ports.append ("      %s : %-3s %s" % (p, d, t))
-        for p in sorted (self.pins):
-            if not p.startswith ("tp"):
-                continue
-            ports.append ("      %s : out %s" % (p, t))
-        for p in self.outputs ():
-            ports.append ("      %s : %s %s" % (p, d, t))
+            ports.append ("      %s" % p.printdecl ())
+        o = self.outputs ()
+        for p in o:
+            if p.testpoint ():
+                ports.append ("      %s" % p.printdecl ())
+        for p in o:
+            if not p.testpoint ():
+                ports.append ("      %s" % p.printdecl ())
         return """    port (
 %s);
 """ % ";\n".join (ports)
@@ -110,61 +154,110 @@ class eltype (object):
 """ % (self.name, self.printports ())
 
 
-class element (object):
+class Signal (hitem):
+    """A signal (pin or temporary) in an element instance
+    """
+    def __init__ (self, name):
+        hitem.__init__ (self, name)
+        self.source = None
+        self._sources = set ()
+        self.destcount = 0
+        self.opt = False
+        self.ptype = None
+    
+    def setsource (self, source):
+        if self.source:
+            print "Duplicate assignment to signal", self.name
+        elif isinstance (source, Pin) and source.dir != "out":
+            print "Signal source must be output pin", self.name, source.name
+        else:
+            self.source = source
+            self.ptype = source.ptype
+            self._sources.add (source)
+
+    def sources (self):
+        for s in self._sources:
+            self._sources |= s.sources ()
+        return self._sources
+
+    def printassign (self):
+        if self.source:
+            if not self.ptype:
+                self.ptype = self.source.ptype
+            return "%s <= %s" % (self.name, self.source.name)
+        else:
+            print "No source for", self.name
+            return "-- no source for %s" % self.name
+        
+class ElementInstance (object):
     """Instance of a logic element
     """
     def __init__ (self, name, elname):
         self.name = name
         self.eltype = elements[elname]
         self.portmap = { }
-
+        self.iportmap = { }
+        self.sigs = { }
+        
     def addportmap (self, parent, formal, actual):
-        dir, ptype = self.eltype.pins[formal]
+        pin = self.eltype.pins[formal]
+        dir = pin.dir
+        ptype = pin.ptype
         opt = False
         if actual.startswith ("-"):
-            if dir not in ("in", "optin"):
+            if dir != "in":
                 print "Optional input flag but %s is not an input" % formal
                 return
             actual = actual[1:]
             opt = True
-        try:
-            adir, atype = parent.pins[actual]
-            # Pin already defined, that's legal only for inputs
-            if dir == "out" or adir == "out" or ptype != atype:
-                print "Invalid redefinition for pin", actual
+        if self.istemp (actual):
+            # Actual signal name is a temp.  That's valid only for outputs
+            if dir != "out":
+                print "temp signal can only be assigned to element output"
                 return
-            if opt:
-                parent.pins[actual] = ("optin", atype)
-        except KeyError:
-            # Pin not yet defined, define it
-            parent.pins[actual] = (dir, ptype)
-        self.portmap[formal] = actual
+        if dir == "out":
+            # Assigning to output, must be a not yet defined signal name
+            if actual in self.sigs:
+                print "duplicate output assignment to", actual
+                return
+            sig = Signal (actual)
+        else:
+            # Input, can be used multiple times
+            try:
+                sig = self.sigs[actual]
+            except KeyError:
+                # signal not yet defined, define it
+                self.sigs[actual] = Signal (actual)
+        if dir == "out":
+            sig.setsource (pin)
+        else:
+            sig.destcount += 1
+        # Save both directions of the mapping
+        self.portmap[formal] = sig
+        self.iportmap[actual] = pin
         
     def promptports (self, parent):
         """Interactively build the portmap for this element
         """
         print "inputs:"
-        for p in sorted (self.eltype.pins):
-            if self.eltype.pins[p][0] == "in":
-                pto = raw_input ("%s: " % p)
-                self.addportmap (parent, p, pto)
+        for p in self.eltype.reqinputs ():
+            pto = raw_input ("%s: " % p)
+            self.addportmap (parent, p, pto)
         print "outputs:"
-        for p in sorted (self.eltype.pins):
-            if self.eltype.pins[p][0] == "out":
-                pto = raw_input ("%s: " % p)
-                if pto:
-                    self.addportmap (parent, p, pto)
+        for p in self.eltype.outputs ():
+            pto = raw_input ("%s: " % p)
+            if pto:
+                self.addportmap (parent, p, pto)
         prompt_optin = True
-        for p in sorted (self.eltype.pins):
-            if self.eltype.pins[p][0] == "optin":
-                if prompt_optin:
-                    opt = raw_input ("any optional inputs? ")
-                    if not opt.lower ().startswith ("y"):
-                        break
-                prompt_optin = False
-                pto = raw_input ("%s: " % p)
-                if pto:
-                    self.addportmap (parent, p, pto)
+        for p in self.eltype.optinputs ():
+            if prompt_optin:
+                opt = raw_input ("any optional inputs? ")
+                if not opt.lower ().startswith ("y"):
+                    break
+            prompt_optin = False
+            pto = raw_input ("%s: " % p)
+            if pto:
+                self.addportmap (parent, p, pto)
 
     def printportmap (self):
         """Return the port map.  Entries are grouped inputs
@@ -172,14 +265,14 @@ class element (object):
         """
         entries = [ ]
         for p in sorted (self.portmap):
-            if self.eltype.pins[p][0] == "out":
+            if self.eltype.pins[p].dir == "out":
                 continue
             pto = self.portmap[p]
             if pto.startswith ("-"):
                 pto = pto[1:]
             entries.append ("    %s => %s" % (p, pto))
         for p in sorted (self.portmap):
-            if self.eltype.pins[p][0] != "out":
+            if self.eltype.pins[p].dir != "out":
                 continue
             pto = self.portmap[p]
             entries.append ("    %s => %s" % (p, pto))
@@ -188,11 +281,11 @@ class element (object):
 """ % (self.name, self.eltype.name, ",\n".join (entries))
 
     
-class cmod (eltype):
+class cmod (ElementType):
     """A Cyber module or element of a module
     """
     def __init__ (self, name):
-        eltype.__init__ (self, name)
+        ElementType.__init__ (self, name)
         self.name = name
         self.elements = { }
         self.assigns = { }
@@ -206,7 +299,7 @@ class cmod (eltype):
         self.elcount += 1
         elname = "u%d" % self.elcount
         print "element %s" % elname
-        e = self.elements[elname] = element (elname, eltype)
+        e = self.elements[elname] = ElementInstance (elname, eltype)
         e.promptports (self)
 
     def addassign (self, pin, temp):
@@ -281,7 +374,7 @@ class cmod (eltype):
         """
         if len (self.name) == 2:
             # Module: if it's not a pin and not a testpoint, it's a temp
-            return not _re_pinname.match (pin) and\
+            return not _re_pinname.match (pin) and \
                    not pin.startswith ("tp")
         else:
             # Element: if it starts with t but isn't a testpoint, it's a pin
@@ -301,17 +394,18 @@ class cmod (eltype):
             eltypes[e.eltype.name] = 1
             #print e.eltype.name
             for p, pto in e.portmap.iteritems ():
-                dir, ptype = e.eltype.pins[p]
-                if dir == "optin":
-                    dir = "in"
+                pin = e.eltype.pins[p]
+                dir = pin.dir
+                ptype = pin.ptype
+                opt = False
                 if self.istemp (pto):
                     temps[pto] = ptype
                 else:
                     if pto.startswith ("-"):
                         pto = pto[1:]
-                        dir = "optin"
+                        opt = True
                     if not pto in self.pins:
-                        self.addpin ((pto, ), dir, ptype)
+                        self.addpin ((pto, ), dir, ptype, opt)
         for t in sorted (temps):
             v = temps[t]
             sigs.append ("  signal %s : %s;\n" % (t, v))
@@ -397,7 +491,7 @@ def readmodule (modname):
         gates = m.group (5) == "gates"
         if gates:
             for c in _re_portmap.finditer (m.group (6)):
-                u = element (c.group (1), c.group (2))
+                u = ElementInstance (c.group (1), c.group (2))
                 #print "element", c.group (1), c.group (2)
                 e.elements[c.group (1)] = u
                 for pin in _re_pinmap.finditer (c.group (3)):
@@ -416,6 +510,7 @@ def readmodule (modname):
         for pins in _re_pin.finditer (m.group (4)):
             dir = pins.group (2)
             ptype = pins.group (3)
+            opt = False
             if dir == "inout" and ptype != "misc":
                 print "Unexpected type %s for inout pin" % ptype
                 continue
@@ -424,13 +519,13 @@ def readmodule (modname):
                     if dir != "in":
                         print "Unexpected default in", pins.group ()
                         continue
-                    dir = "optin"
+                    opt = True
                 elif ptype != "misc":
                     continue
             #print pins.groups ()
             for p in pins.group (1).replace (" ", "").split (","):
                 if p in e.pins or not gates or ptype == "misc":
-                    e.pins[p] = (dir, ptype)
+                    e.pins[p] = Pin (p, dir, ptype, opt)
     if e is None:
         print "No module found in %s.vhd" % modname
     return e
@@ -442,17 +537,18 @@ def stdelements ():
     std = _re_comment.sub ("", f.read ())
     f.close ()
     for e in _re_ent.finditer (std):
-        c = eltype (e.group (1))
+        c = ElementType (e.group (1))
         for pins in _re_pin.finditer (e.group (2)):
             dir = pins.group (2)
             ptype = pins.group (3)
+            opt = False
             if pins.group (4):
                 if dir != "in":
                     print "Unexpected default in", pins.group ()
                 else:
-                    dir = "optin"
+                    opt = True
             pinlist = pins.group (1).replace (" ", "").split (",")
-            c.addpin (pinlist, dir, ptype)
+            c.addpin (pinlist, dir, ptype, opt)
         #print c.name, c.printports ()
 
 # Load the standard element definitions
