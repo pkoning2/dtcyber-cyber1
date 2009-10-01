@@ -228,7 +228,30 @@ class Signal (hitem):
         else:
             print "No source for", self.name
             return "-- no source for %s" % self.name
-        
+
+class ConstSignal (Signal):
+    """A signal that is a constant (not a pin)
+    """
+    def __init__ (self, name):
+        Signal.__init__ (self, name)
+
+    def setsource (self, source):
+        pass
+
+    def addsource (self, source):
+        pass
+
+    def delsource (self, source):
+        pass
+
+    def sources (self):
+        return set ()
+
+    def printassign (self):
+        return ""
+
+sigone = ConstSignal ("'1'")
+
 class ElementInstance (object):
     """Instance of a logic element
     """
@@ -254,8 +277,11 @@ class ElementInstance (object):
             opt = True
         if dir == "out":
             # Assigning to output, must be a new signal, or one that
-            # doesn't have an output yet
-            if actual in parent.signals:
+            # doesn't have an output yet.  Special case: '1' is a valid
+            # actual
+            if actual == "'1'":
+                sig = onesignal
+            elif actual in parent.signals:
                 sig = parent.signals[actual]
                 if sig.source:
                     print "duplicate output assignment to", actual
@@ -446,7 +472,7 @@ class cmod (ElementType):
                     # It has a source so it's an output
                     self.addpin ((str (s),), "out", s.ptype)
                 else:
-                    # opt?
+                    # Optional pins are added before calling this method
                     self.addpin ((str (s),), "in", s.ptype)
         for s in self.signals.itervalues ():
             if not self.istemp (s):
@@ -464,10 +490,11 @@ class cmod (ElementType):
                                 again = True
                                 visited.add (src)
                                 for s2 in src.pin.sources ():
-                                    try:
-                                        s.addsource (src.parent.portmap[s2])
-                                    except KeyError:
-                                        print "Missing input", s2, "for", src
+                                    if not s2.opt:
+                                        try:
+                                            s.addsource (src.parent.portmap[s2])
+                                        except KeyError:
+                                            print "Missing input", s2, "for", src
                     for src in list (s.sources ()):
                         if self.istemp (src) or isinstance (src, PinInstance):
                             s.delsource (src)
@@ -544,7 +571,7 @@ end gates;
 _re_arch = re.compile (r"entity +(.+?) +is\s+?(generic +\((.+?)\);\s+?)?port +\((.+?)\).+?end +\1.+?architecture (\w+) of \1 is.+?begin(.+?)end \w+;", re.S)
 _re_portmap = re.compile (r"(\w+)\s*:\s*(\w+) port map \((.+?)\)", re.S)
 _re_generic = re.compile (r"(\w+)\s*:\s*(\w+)")
-_re_pinmap = re.compile (r"(\w+)\s*=>\s*(\w+)")
+_re_pinmap = re.compile (r"(\w+)\s*=>\s*(\w+|'1')")
 _re_assign = re.compile (r"(\w+)\s*<=\s*(\w+)")
 _re_ent = re.compile (r"entity +(.+?) +is\s+?port +\((.+?)\).+?end +\1", re.S)
 _re_pin = re.compile (r"([a-z0-9, ]+):\s+(inout|in|out)\s+(std_logic|coaxsig|analog|misc)( +:= +'[01]')?")
@@ -580,7 +607,6 @@ def readmodule (modname):
             for a in _re_assign.finditer (m.group (6)):
                 e.addassign (a.group (1), a.group (2))
                 #print "assign", a.group (1), a.group (2)
-        e.finish ()
         # Look over the entity definition to pick up pins marked
         # as optional inputs.  If we encoutered them in the architecture
         # section, update the pin type.
@@ -604,8 +630,9 @@ def readmodule (modname):
                     continue
             #print pins.groups ()
             for p in pins.group (1).replace (" ", "").split (","):
-                if p in e.pins or not gates or ptype == "misc":
+                if p in e.pins or opt or not gates or ptype == "misc":
                     e.pins[p] = Pin (p, dir, ptype, opt)
+        e.finish ()
     if e is None:
         print "No module found in %s.vhd" % modname
     return e
