@@ -56,7 +56,7 @@ class hitem (object):
     """A hashable container, hashed by name
     """
     def __init__ (self, name):
-        self.name = name
+        self.name = str (name)
 
     def __str__ (self):
         return self.name
@@ -75,6 +75,10 @@ class Pin (hitem):
         self.dir = dir
         self.ptype = ptype
         self.opt = opt
+        self._sources = set ()
+
+    def sources (self):
+        return self._sources
     
     def printdecl (self):
         if self.opt:
@@ -153,7 +157,16 @@ class ElementType (object):
   end component;
 """ % (self.name, self.printports ())
 
-
+    def finish (self):
+        """Do any actions we can't do until all the pieces have been defined
+        """
+        sources = set ()
+        for p in self.reqinputs ():
+            sources.add (p)
+        sources = frozenset (sources)
+        for p in self.outputs ():
+            p._sources = sources
+            
 class Signal (hitem):
     """A signal (pin or temporary) in an element instance
     """
@@ -176,14 +189,15 @@ class Signal (hitem):
             self._sources.add (source)
 
     def sources (self):
-        for s in self._sources:
+        for s in list (self._sources):
             self._sources |= s.sources ()
+        if self.source:
+            if not self.ptype:
+                self.ptype = self.source.ptype
         return self._sources
 
     def printassign (self):
         if self.source:
-            if not self.ptype:
-                self.ptype = self.source.ptype
             return "%s <= %s" % (self.name, self.source.name)
         else:
             print "No source for", self.name
@@ -197,7 +211,6 @@ class ElementInstance (object):
         self.eltype = elements[elname]
         self.portmap = { }
         self.iportmap = { }
-        self.sigs = { }
         
     def addportmap (self, parent, formal, actual):
         pin = self.eltype.pins[formal]
@@ -210,24 +223,26 @@ class ElementInstance (object):
                 return
             actual = actual[1:]
             opt = True
-        if self.istemp (actual):
-            # Actual signal name is a temp.  That's valid only for outputs
-            if dir != "out":
-                print "temp signal can only be assigned to element output"
-                return
         if dir == "out":
-            # Assigning to output, must be a not yet defined signal name
-            if actual in self.sigs:
-                print "duplicate output assignment to", actual
-                return
-            sig = Signal (actual)
+            # Assigning to output, must be a new signal, or one that
+            # doesn't have an output yet
+            if actual in parent.signals:
+                sig = parent.signals[actual]
+                if sig.source:
+                    print "duplicate output assignment to", actual
+                    return
+            else:
+                sig = parent.signals[actual] = Signal (actual)
         else:
             # Input, can be used multiple times
             try:
-                sig = self.sigs[actual]
+                sig = parent.signals[actual]
+                if sig.ptype != ptype:
+                    print "signal type mismatch", sig.ptype, ptype
             except KeyError:
                 # signal not yet defined, define it
-                self.sigs[actual] = Signal (actual)
+                sig = parent.signals[actual] = Signal (actual)
+                sig.ptype = ptype
         if dir == "out":
             sig.setsource (pin)
         else:
@@ -268,8 +283,6 @@ class ElementInstance (object):
             if self.eltype.pins[p].dir == "out":
                 continue
             pto = self.portmap[p]
-            if pto.startswith ("-"):
-                pto = pto[1:]
             entries.append ("    %s => %s" % (p, pto))
         for p in sorted (self.portmap):
             if self.eltype.pins[p].dir != "out":
@@ -288,25 +301,33 @@ class cmod (ElementType):
         ElementType.__init__ (self, name)
         self.name = name
         self.elements = { }
-        self.assigns = { }
+        self.signals = { }
         self.generics = { }
-        self.elcount = 0
 
     def addelement (self, eltype):
         if eltype not in elements or eltype == self.name:
             print "No such element"
             return
-        self.elcount += 1
-        elname = "u%d" % self.elcount
+        elname = "u%d" % (len (self.elements) + 1)
         print "element %s" % elname
         e = self.elements[elname] = ElementInstance (elname, eltype)
         e.promptports (self)
 
-    def addassign (self, pin, temp):
+    def addassign (self, to, fname):
         """Add an assignment of an output signal from a temp
         """
-        self.assigns[pin] = temp
-        self.addpin ((pin,), "out", "std_logic")
+        if not self.istemp (fname):
+            print "assignment source is not a temp signal"
+            return
+        if to in self.signals:
+            print to, "already defined"
+            return
+        tsig = self.signals[to] = Signal (to)
+        try:
+            fsig = self.signals[fname]
+        except KeyError:
+            fsig = self.signals[fname] = Signal (fname)
+        tsig.setsource (fsig)
         
     def addelements (self):
         while True:
@@ -323,28 +344,30 @@ class cmod (ElementType):
             else:
                 self.addelement (eltype)
         # This updates various lists
-        self.printmodule ()
+        self.finish ()
         
-    def printassigns (self, assigndict, comp = None):
+    def printassigns (self, sigdict, comp = None):
         """Format the signal assignments from the supplied dictionary.
         If comp is supplied, include only the assignments whose
         right-hand side appears in the right hand sides of the
         portmap of comp.  Returns a pair of formatted string and
         remaining dictionary.  The remaining dictionary contains
-        the assignments that were not formatted (not matched in comp).
+        the signals that were not formatted (not matched in comp,
+        or not a signal defined by an assignment).
         """
         assigns = [ ]
         if comp:
-            cports = comp.portmap.values ()
+            cports = set (comp.portmap.values ())
         else:
             cports = None
-        for p in sorted (assigndict):
-            pto = assigndict[p]
-            if cports and pto not in cports:
-                continue
-            assigns.append ("  %s <= %s;\n" % (p, pto))
-            del assigndict[p]
-        return ("".join (assigns), assigndict)
+        for p in sorted (sigdict):
+            sig = sigdict[p]
+            if sig.source and \
+                   isinstance (sig.source, Signal) and \
+                   (cports is None or sig.source in cports):
+                assigns.append ("  %s;\n" % sig.printassign ())
+                del sigdict[p]
+        return ("".join (assigns), sigdict)
     
     def printheader (self):
         return """-------------------------------------------------------------------------------
@@ -372,6 +395,7 @@ class cmod (ElementType):
         it's a temp if it starts with "t" and a "pin" (i.e., a port)
         otherwise.
         """
+        pin = str (pin)
         if len (self.name) == 2:
             # Module: if it's not a pin and not a testpoint, it's a temp
             return not _re_pinname.match (pin) and \
@@ -380,43 +404,44 @@ class cmod (ElementType):
             # Element: if it starts with t but isn't a testpoint, it's a pin
             return pin.startswith ("t") and not pin.startswith ("tp")
 
+    def finish (self):
+        """Do various actions that can't be done until the module
+        definition is complete
+        """
+        for s in self.signals.itervalues ():
+            if not self.istemp (s) and not s in self.pins:
+                s.sources ()
+                if s.source:
+                    # It has a source so it's an output
+                    self.addpin ((str (s),), "out", s.ptype)
+                else:
+                    # opt?
+                    self.addpin ((str (s),), "in", s.ptype)
+                    
     def printmodule (self):
         """return module definition
         """
-        eltypes = { }
+        eltypes = set ()
         temps = { }
         components = [ ]
         gates = [ ]
-        sigs = [ ]
+        signals = [ ]
         generics = [ ]
-        assigndict = dict (self.assigns)
+        sigdict = dict (self.signals)
         for e in self.elements.itervalues ():
-            eltypes[e.eltype.name] = 1
+            eltypes.add (e.eltype.name)
             #print e.eltype.name
-            for p, pto in e.portmap.iteritems ():
-                pin = e.eltype.pins[p]
-                dir = pin.dir
-                ptype = pin.ptype
-                opt = False
-                if self.istemp (pto):
-                    temps[pto] = ptype
-                else:
-                    if pto.startswith ("-"):
-                        pto = pto[1:]
-                        opt = True
-                    if not pto in self.pins:
-                        self.addpin ((pto, ), dir, ptype, opt)
-        for t in sorted (temps):
-            v = temps[t]
-            sigs.append ("  signal %s : %s;\n" % (t, v))
+        for s in sorted (self.signals.itervalues ()):
+            if self.istemp (s):
+                signals.append ("  signal %s : %s;\n" % (s.name, s.ptype))
         for e in sorted (eltypes):
             components.append (elements[e].printcomp ())
         for en in sorted (self.elements):
             e = self.elements[en]
             gates.append (e.printportmap ())
-            assigns, assigndict = self.printassigns (assigndict, e)
+            assigns, sigdict = self.printassigns (sigdict, e)
             gates.append (assigns)
-        assigns, assigndict = self.printassigns (assigndict)
+        assigns, sigdict = self.printassigns (sigdict)
         for g in sorted (self.generics):
             generics.append ("    %s : %s" % (g, self.generics[g]))
         if generics:
@@ -443,7 +468,7 @@ end gates;
        self.name,
        self.name,
        "\n".join (components),
-       "".join (sigs),
+       "".join (signals),
        "\n".join (gates),
        assigns)
 
@@ -496,11 +521,11 @@ def readmodule (modname):
                 e.elements[c.group (1)] = u
                 for pin in _re_pinmap.finditer (c.group (3)):
                     #print "pin", pin.group (1), pin.group (2)
-                    u.portmap[pin.group (1)] = pin.group (2)
+                    u.addportmap (e, pin.group (1), pin.group (2))
             for a in _re_assign.finditer (m.group (6)):
                 e.addassign (a.group (1), a.group (2))
                 #print "assign", a.group (1), a.group (2)
-        e.printmodule ()
+        e.finish ()
         # Look over the entity definition to pick up pins marked
         # as optional inputs.  If we encoutered them in the architecture
         # section, update the pin type.
