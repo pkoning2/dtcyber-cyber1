@@ -166,7 +166,24 @@ class ElementType (object):
         sources = frozenset (sources)
         for p in self.outputs ():
             p._sources = sources
-            
+
+
+class PinInstance (object):
+    """An instance of a pin belonging to an ElementInstance
+    """
+    def __init__ (self, parent, pin):
+        self.pin = pin
+        self.parent = parent
+
+    def __getattr__ (self, name):
+        return self.pin.__dict__[name]
+
+    def __str__ (self):
+        return "%s.%s" % (self.parent, self.pin)
+
+    def sources (self):
+        return set ()
+    
 class Signal (hitem):
     """A signal (pin or temporary) in an element instance
     """
@@ -181,13 +198,22 @@ class Signal (hitem):
     def setsource (self, source):
         if self.source:
             print "Duplicate assignment to signal", self.name
-        elif isinstance (source, Pin) and source.dir != "out":
-            print "Signal source must be output pin", self.name, source.name
-        else:
-            self.source = source
-            self.ptype = source.ptype
-            self._sources.add (source)
+            return
+        if isinstance (source, PinInstance):
+            if source.dir != "out":
+                print "Signal source must be output pin", self.name, source.name
+                return
+        self.source = source
+        self.ptype = source.ptype
+        self.addsource (source)
 
+    def addsource (self, source):
+        self._sources.add (source)
+        self.sources ()
+        
+    def delsource (self, source):
+        self._sources.discard (source)
+        
     def sources (self):
         for s in list (self._sources):
             self._sources |= s.sources ()
@@ -211,7 +237,10 @@ class ElementInstance (object):
         self.eltype = elements[elname]
         self.portmap = { }
         self.iportmap = { }
-        
+
+    def __str__ (self):
+        return self.name
+    
     def addportmap (self, parent, formal, actual):
         pin = self.eltype.pins[formal]
         dir = pin.dir
@@ -244,12 +273,12 @@ class ElementInstance (object):
                 sig = parent.signals[actual] = Signal (actual)
                 sig.ptype = ptype
         if dir == "out":
-            sig.setsource (pin)
+            sig.setsource (PinInstance (self, pin))
         else:
             sig.destcount += 1
         # Save both directions of the mapping
         self.portmap[formal] = sig
-        self.iportmap[actual] = pin
+        self.iportmap[actual] = (self, pin)
         
     def promptports (self, parent):
         """Interactively build the portmap for this element
@@ -408,16 +437,42 @@ class cmod (ElementType):
         """Do various actions that can't be done until the module
         definition is complete
         """
+        #print "finishing", self.name
+        for s in self.signals.itervalues ():
+            s.sources ()
         for s in self.signals.itervalues ():
             if not self.istemp (s) and not s in self.pins:
-                s.sources ()
                 if s.source:
                     # It has a source so it's an output
                     self.addpin ((str (s),), "out", s.ptype)
                 else:
                     # opt?
                     self.addpin ((str (s),), "in", s.ptype)
-                    
+        for s in self.signals.itervalues ():
+            if not self.istemp (s):
+                p = self.pins[s]
+                if p.dir == "out":
+                    again = True
+                    visited = set ()
+                    while again:
+                        again = False
+                        sources = list (s.sources ())
+                        for src in sources:
+                            if src in visited:
+                                continue
+                            if isinstance (src, PinInstance):
+                                again = True
+                                visited.add (src)
+                                for s2 in src.pin.sources ():
+                                    try:
+                                        s.addsource (src.parent.portmap[s2])
+                                    except KeyError:
+                                        print "Missing input", s2, "for", src
+                    for src in list (s.sources ()):
+                        if self.istemp (src) or isinstance (src, PinInstance):
+                            s.delsource (src)
+                    p._sources = frozenset (s.sources ())
+                        
     def printmodule (self):
         """return module definition
         """
@@ -574,7 +629,7 @@ def stdelements ():
                     opt = True
             pinlist = pins.group (1).replace (" ", "").split (",")
             c.addpin (pinlist, dir, ptype, opt)
-        #print c.name, c.printports ()
+        c.finish ()
 
 # Load the standard element definitions
 stdelements ()
