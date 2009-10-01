@@ -29,7 +29,7 @@ entity rmslice is
       in3 : in  std_logic;
       in4 : in  std_logic;
       in5 : in  std_logic;
-      tp : out std_logic;
+      tp : out coaxsig;
       y : out coaxsig);
 
 end rmslice;
@@ -121,10 +121,10 @@ entity rm is
       p25 : in  std_logic;
       p26 : in  std_logic;
       p27 : in  std_logic;
-      tp1 : out std_logic;
-      tp2 : out std_logic;
-      tp5 : out std_logic;
-      tp6 : out std_logic;
+      tp1 : out coaxsig;
+      tp2 : out coaxsig;
+      tp5 : out coaxsig;
+      tp6 : out coaxsig;
       p1 : out coaxsig;
       p6 : out coaxsig;
       p23 : out coaxsig;
@@ -149,7 +149,7 @@ architecture gates of rm is
       in3 : in  std_logic;
       in4 : in  std_logic;
       in5 : in  std_logic;
-      tp : out std_logic;
+      tp : out coaxsig;
       y : out coaxsig);
 
   end component;
