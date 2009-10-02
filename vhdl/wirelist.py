@@ -12,7 +12,7 @@ import getopt
 
 header = """-------------------------------------------------------------------------------
 --
--- CDC 6600 model
+-- CDC 6600 model -- %s
 --
 -- Converted from wire lists by Paul Koning
 --
