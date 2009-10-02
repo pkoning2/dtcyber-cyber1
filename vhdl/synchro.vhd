@@ -46,31 +46,31 @@ begin  -- synchro
       ocv := ( p101, p102, p103, p104, p105, p106, p107, p108, p109, p110,
                p111, p112, p113, p114, p115, p116, p117, p118, '0' );
       wait for 10 ns;
-      ocv := ( ocv (1) or p101, ocv (2) or p102, ocv (3) or p103,
-               ocv (4) or p104, ocv (5) or p105, ocv (6) or p106,
-               ocv (7) or p107, ocv (8) or p108, ocv (9) or p109,
-               ocv (10) or p110, ocv (11) or p111, ocv (12) or p112,
-               ocv (13) or p113, ocv (14) or p114, ocv (15) or p115,
-               ocv (16) or p116, ocv (17) or p117, ocv (18) or p118, '0' );
+      ocv := ( ocv (0) or p101, ocv (1) or p102, ocv (2) or p103,
+               ocv (3) or p104, ocv (4) or p105, ocv (5) or p106,
+               ocv (6) or p107, ocv (7) or p108, ocv (8) or p109,
+               ocv (9) or p110, ocv (11) or p111, ocv (11) or p112,
+               ocv (12) or p113, ocv (13) or p114, ocv (14) or p115,
+               ocv (15) or p116, ocv (16) or p117, ocv (17) or p118, '0' );
       
       icv := idle;
       dtsynchro (chnum, icv, ocv);
-      p1  <= transport icv (1);  p1  <= transport '0' after 25 ns;
-      p2  <= transport icv (2);  p2  <= transport '0' after 25 ns;
-      p3  <= transport icv (3);  p3  <= transport '0' after 25 ns;
-      p4  <= transport icv (4);  p4  <= transport '0' after 25 ns;
-      p5  <= transport icv (5);  p5  <= transport '0' after 25 ns;
-      p6  <= transport icv (6);  p6  <= transport '0' after 25 ns;
-      p7  <= transport icv (7);  p7  <= transport '0' after 25 ns;
-      p8  <= transport icv (8);  p8  <= transport '0' after 25 ns;
-      p9  <= transport icv (9);  p9  <= transport '0' after 25 ns;
-      p10 <= transport icv (10); p10 <= transport '0' after 25 ns;
-      p11 <= transport icv (11); p11 <= transport '0' after 25 ns;
-      p12 <= transport icv (12); p12 <= transport '0' after 25 ns;
-      p13 <= transport icv (13); p13 <= transport '0' after 25 ns;
-      p14 <= transport icv (14); p14 <= transport '0' after 25 ns;
-      p15 <= transport icv (15); p15 <= transport '0' after 25 ns;
-      p16 <= transport icv (16); p16 <= transport '0' after 25 ns;
+      p1  <= transport icv (0);  p1  <= transport '0' after 25 ns;
+      p2  <= transport icv (1);  p2  <= transport '0' after 25 ns;
+      p3  <= transport icv (2);  p3  <= transport '0' after 25 ns;
+      p4  <= transport icv (3);  p4  <= transport '0' after 25 ns;
+      p5  <= transport icv (4);  p5  <= transport '0' after 25 ns;
+      p6  <= transport icv (5);  p6  <= transport '0' after 25 ns;
+      p7  <= transport icv (6);  p7  <= transport '0' after 25 ns;
+      p8  <= transport icv (7);  p8  <= transport '0' after 25 ns;
+      p9  <= transport icv (8);  p9  <= transport '0' after 25 ns;
+      p10 <= transport icv (9);  p10 <= transport '0' after 25 ns;
+      p11 <= transport icv (10); p11 <= transport '0' after 25 ns;
+      p12 <= transport icv (11); p12 <= transport '0' after 25 ns;
+      p13 <= transport icv (12); p13 <= transport '0' after 25 ns;
+      p14 <= transport icv (13); p14 <= transport '0' after 25 ns;
+      p15 <= transport icv (14); p15 <= transport '0' after 25 ns;
+      p16 <= transport icv (15); p16 <= transport '0' after 25 ns;
       
     end if;
   end process;

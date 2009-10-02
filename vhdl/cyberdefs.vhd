@@ -29,7 +29,8 @@ package sigs is
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
   subtype coaxsig is std_logic range 'U' to '1';  -- signal on coax
-  subtype coaxsigs is std_logic_vector (1 to 19);    -- CDC standard coax cable
+  subtype coaxsigs is std_logic_vector (0 to 18);    -- CDC standard coax cable
+  subtype tpcable is std_logic_vector (0 to 23);    -- CDC standard tp cable
   subtype ppword is UNSIGNED (11 downto 0);  -- PPU word (12 bits)
   subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
   type ppmem is array (0 to 4095) of ppint;  -- standard 4kx12 memory array
