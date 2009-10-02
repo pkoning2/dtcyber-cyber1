@@ -24,10 +24,11 @@ def complete_list (start, i):
                 return c
     return None
 
-readline.parse_and_bind ("tab: complete")
-readline.parse_and_bind ("set show-all-if-ambiguous on")
-readline.set_completer (complete_list)
-completions ()
+def init_completions ():
+    readline.parse_and_bind ("tab: complete")
+    readline.parse_and_bind ("set show-all-if-ambiguous on")
+    readline.set_completer (complete_list)
+    completions ()
 
 elements = { }
 
@@ -385,6 +386,7 @@ class cmod (ElementType):
         tsig.setsource (fsig)
         
     def addelements (self):
+        init_completions ()
         while True:
             tlist = [ e for e in elements if e != self.name ]
             completions (tlist)
@@ -423,9 +425,8 @@ class cmod (ElementType):
                 assigns.append ("  %s;\n" % sig.printassign ())
                 del sigdict[p]
         return ("".join (assigns), sigdict)
-    
-    def printheader (self):
-        return """-------------------------------------------------------------------------------
+
+    header = """-------------------------------------------------------------------------------
 --
 -- CDC 6600 model
 --
@@ -441,7 +442,10 @@ class cmod (ElementType):
 -- %s module
 --
 -------------------------------------------------------------------------------
-""" % (__doc__.split ("\n")[2], self.name.upper ())
+"""
+    
+    def printheader (self):
+        return self.header % (__doc__.split ("\n")[2], self.name.upper ())
 
     def istemp (self, pin):
         """Tells whether the pin is a temp signal or not.  For modules
