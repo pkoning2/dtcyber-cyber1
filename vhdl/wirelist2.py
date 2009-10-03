@@ -19,8 +19,8 @@ real_length = 60     # simulate wire delay for wires this long, None to disable
 
 _re_wstrip = re.compile ("(^[\014\\s]+|\\s*#.*$)", re.M)
 _re_wmod = re.compile ("(\\w+)(\\(.+?\\))?\t(\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+)((\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+))?")
-_re_wline = re.compile ("^(\\d+)\t+(\\w+)\t+(\\w+)")
-_re_chslot = re.compile (r"([1-9]|1[0-6])?([a-r](:?0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?))$", re.I)
+_re_wline = re.compile ("^(\\d+)\t+(\\w+)\t+(\\w+)(:?\t(\\d+))?", re.M)
+_re_chslot = re.compile (r"([1-9]|1[0-6])?([a-r])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)$", re.I)
 _re_cable = re.compile (r"(\d+)?w(\d+)$")
 
 class Chassis (cmodule.cmod):
@@ -58,12 +58,26 @@ class Chassis (cmodule.cmod):
             if not (w.source and w.dest):
                 print "half-connected wire", w
 
+    def normslot (self, slot):
+        """Normalize a slot name.  Strip off leading chassis number,
+        if present (must be correct if present).  Make slot number 2 digits.
+        """
+        m = _re_chslot.match (slot)
+        if not m:
+            error ("Invalid module slot ID %s" % slot)
+            return None
+        if m.group (1):
+            if int (m.group (1)) != self.cnum:
+                error ("Module slot ID %s chassis number is not %d" % (slot, self.cnum))
+                return None
+        return "%s%02d" % (m.group (2), int (m.group (3)))
+        
     def normcable (self, name):
         """Normalize a cable name.  Make cable number 2 digits, and
         prefix with chassis number.  If chassis number was already present,
         verify that it's correct.
         """
-        m = _re_cable (name)
+        m = _re_cable.match (name)
         if not m:
             error ("Invalid cable name %s" % name)
             return None
@@ -74,40 +88,33 @@ class Chassis (cmodule.cmod):
         return "%dw%02d" % (self.cnum, int (m.group (2)))
 
     def findcable (self, name):
-        name = self.normname (name)
+        name = self.normcable (name)
         if not name:
             return None
         try:
             return self.cables[name]
         except KeyError:
-            return None
+            # TEMP :
+            c = self.cables[name] = Coax (name)
+            return c
         
-    def checkconnector (self, slot):
-        m = _re_chslot.match (slot)
-        if not m:
-            error ("Invalid module slot ID %s" % slot)
-            return None
-        if m.group (1):
-            if int (m.group (1)) != self.cnum:
-                error ("Module slot ID %s chassis number is not %d" % (slot, self.cnum))
-                return None
-        return m.group (2)
-        
-    def addconnector (self, slot, modinst):
+    def addconnector (self, slot, modinst, offset = 0):
         """Add a connector for the named slot.  Check that the slot name
         is valid and that it's not a duplicate entry.
         """
-        cslot = self.checkconnector (slot)
-        if cslot:
-            if cslot in self.connectors:
+        slot = self.normslot (slot)
+        if slot:
+            if slot in self.connectors:
                 error ("Slot %s already defined" % slot)
             else:
-                self.connectors[cslot] = Connector (cslot, modinst)
+                c = self.connectors[slot] = Connector (slot, modinst, self, offset)
+                return c
 
     def addmodule (self, slot, modname):
         """Add a module and its connector.  Returns the module instance
         """
-        if not self.checkconnector (slot):
+        slot = self.normslot (slot)
+        if not slot:
             return
         try:
             mtype = cmodule.elements[modname]
@@ -115,24 +122,67 @@ class Chassis (cmodule.cmod):
             print "reading", modname
             mtype = cmodule.readmodule (modname)
         inst = self.elements[slot] = cmodule.ElementInstance (slot, modname)
-        self.addconnector (slot, inst)
         return inst
     
     def processwlist (self, wl):
+        """Process a wirelist file for this chassis
+        """
         for sl in _re_wmod.finditer (wl):
             inst = self.addmodule (sl.group (3), sl.group (1))
+            c = self.addconnector (sl.group (3), inst)
+            c.processwlist (sl.group (4))
             #if sl.group (2):
             #    inst.generics = sl.group (2)
             if sl.group (5):
-                self.addconnector (sl.group (6), inst)
+                c = self.addconnector (sl.group (6), inst, 100)
+                c.processwlist (sl.group (7))
 
 class Connector (object):
     """A connector for a module, in a slot
     """
-    def __init__ (self, slot, inst):
-        self.name = slot
+    def __init__ (self, slot, inst, chassis, offset = 0):
+        self.name = chassis.normslot (slot)
         self.modinst = inst
+        self.offset = offset
+        self.chassis = chassis
         
+    def mipin (self, pname):
+        return "p%d" % (int (pname[1:]) + self.offset)
+
+    def addportmap (self, parent, formal, actual):
+        self.modinst.addportmap (parent, self.mipin (formal), actual)
+
+    def processwlist (self, wl):
+        """Process the pins data from the wirelist for this connector
+        """
+        for m in _re_wline.finditer (wl):
+            pnum = int (m.group (1))
+            pname = "p%d" % pnum
+            if m.group (3) == "x":
+                # ground
+                if m.group (2) == "good" or \
+                   m.group (2) == "grd" or \
+                   m.group (2) == "gnd" or \
+                   self.chassis.normslot (m.group (2)) == self.name:
+                    self.addportmap (self.chassis, pname, "'1'")
+                else:
+                    error ("Strange ground-like entry %s", m.groups ())
+            elif m.group (2).startswith ("w"):
+                # cable
+                dir = self.modinst.eltype.pins[self.mipin (pname)].dir
+                w = Coaxwire (self.chassis, m.group (2), m.group (3), dir)
+                self.chassis.signals[w.name] = w
+                self.addportmap (self.chassis, pname, w.name)
+            else:
+                toslot = self.chassis.normslot (m.group (2))
+                topin = int (m.group (3))
+                if m.group (4):
+                    wlen = int (m.group (4))
+                else:
+                    wlen = 0
+                wname = "w_%s_%d_%s_%s" % (self.name, pnum, toslot, topin)
+                self.addportmap (self.chassis, pname, wname)
+                
 def error (text):
     print text
 
@@ -162,9 +212,9 @@ class Cablewire (cmodule.Signal):
     It may be coax or twisted pair, internal (if coax) or external.
     """
     def __init__ (self, chassis, cable, wirenum, dir):
-        cable = chassis.findcable (cablename)
+        cable = chassis.findcable (cable)
         name = cable.makecname (wirenum, dir)
-        cmodule.signal.__init__ (self, name)
+        cmodule.Signal.__init__ (self, name)
         self.cable = cable
         self.dir = dir
 
@@ -180,8 +230,8 @@ class Tpwire (Cablewire):
     """A strand of twised-pair cable terminating at some pin in this chassis.
     These appear only in connections to the deadstart panel.
     """
-    def __init__ (self, chassis, cablename, wirenum):
-        Cablewire.__init__ (self, chassis, coaxname, wirenum, "in")
+    def __init__ (self, chassis, cable, wirenum):
+        Cablewire.__init__ (self, chassis, cable, wirenum, "in")
         self.ptype = "std_logic"
         
 class Cable (cmodule.hitem):
