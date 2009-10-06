@@ -22,7 +22,7 @@ use work.sigs.all;
 entity paslice is
   
   port (
-    d, clk : in  std_logic;             -- data and clock
+    d, clk, clk2 : in  std_logic;             -- data and clocks
     tp     : out std_logic;             -- test point
     q1, q2 : out std_logic);            -- outputs
 
@@ -34,23 +34,24 @@ architecture gates of paslice is
       a  : in  std_logic;                     -- input
       y, y2  : out std_logic);                    -- output
   end component;
-  component latch
+  component latch2
     port (
-      d, clk : in  std_logic;                 -- data (set), clock
+      d, clk, clk2 : in  std_logic;                 -- data (set), clocks
       q, qb  : out std_logic);                -- q and q.bar
   end component;
-  signal qi, qi2 : std_logic;                 -- latch output
+  signal tq, tq2 : std_logic;                 -- latch output
 begin  -- gates
-  u1 : latch port map (
+  u1 : latch2 port map (
     d   => d,
     clk => clk,
-    q   => qi);
-  tp <= qi;
+    clk2 => clk2,
+    q   => tq);
+  tp <= tq;
   u2 : inv2 port map (
-    a => qi,
-    y2 => qi2);
-  q1 <= qi2;
-  q2 <= qi2;
+    a => tq,
+    y2 => tq2);
+  q1 <= tq2;
+  q2 <= tq2;
 end gates;
 
 library IEEE;
@@ -71,47 +72,50 @@ end pa;
 architecture gates of pa is
   component paslice
     port (
-      d, clk : in  std_logic;           -- data and clock
+      d, clk, clk2 : in  std_logic;           -- data and clocks
       tp     : out std_logic;           -- test point
       q1, q2 : out std_logic);          -- outputs
   end component;
-  signal b, d : std_logic;       -- strobes
 begin  -- gates
-  b <= p9 and p7;                       -- gate delay is modeled in latch
-  d <= p20 and p22;
   u5 : paslice port map (
     d   => p8,
-    clk => b,
+    clk => p9,
+    clk2 => p7,
     tp  => tp1,
     q1  => p1,
     q2  => p3);
   u6 : paslice port map (
     d   => p5,
-    clk => b,
+    clk => p9,
+    clk2 => p7,
     tp  => tp2,
     q1  => p2,
     q2  => p6);
   u7 : paslice port map (
     d   => p12,
-    clk => b,
+    clk => p9,
+    clk2 => p7,
     tp  => tp3,
     q1  => p14,
     q2  => p10);
   u8 : paslice port map (
     d   => p21,
-    clk => d,
+    clk => p20,
+    clk2 => p22,
     tp  => tp4,
     q1  => p19,
     q2  => p17);
   u9 : paslice port map (
     d   => p24,
-    clk => d,
+    clk => p20,
+    clk2 => p22,
     tp  => tp5,
     q1  => p27,
     q2  => p25);
   u10 : paslice port map (
     d   => p23,
-    clk => d,
+    clk => p20,
+    clk2 => p22,
     tp  => tp6,
     q1  => p28,
     q2  => p26);

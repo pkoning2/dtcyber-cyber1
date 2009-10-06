@@ -452,6 +452,75 @@ end beh;
 library IEEE;
 use IEEE.std_logic_1164.all;
 use work.sigs.all;
+entity latch2 is
+  
+  port (
+    d, clk, clk2 : in  std_logic;                   -- data (set), clocks
+    q, qb  : out std_logic);                  -- q and q.bar
+
+end latch2;
+
+architecture beh of latch2 is
+  signal clki : std_logic;
+  signal qi : std_logic;
+begin  -- beh
+  clki <= (clk and clk2) after t * 2;
+  qi <= d when clki = '1' else unaffected;
+  q <= qi after t;
+  qb <= not (qi) after t;
+
+end beh;
+
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+entity latchd2 is
+  
+  port (
+    d, d2, clk : in  std_logic;                   -- data (set), clock
+    q, qb  : out std_logic);                  -- q and q.bar
+
+end latchd2;
+
+architecture beh of latchd2 is
+  signal clki : std_logic;
+  signal qi : std_logic;
+begin  -- beh
+  clki <= clk after t * 2;
+  qi <= (d and d2) when clki = '1' else unaffected;
+  q <= qi after t;
+  qb <= not (qi) after t;
+
+end beh;
+
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+entity latchd4 is
+  
+  port (
+    d, d2, e, e2, clk : in  std_logic;                   -- data (set), clock
+    q, qb  : out std_logic);                  -- q and q.bar
+
+end latchd4;
+
+architecture beh of latchd4 is
+  signal clki : std_logic;
+  signal qi : std_logic;
+begin  -- beh
+  clki <= clk after t * 2;
+  qi <= ((d and e) or (d2 and e2)) when clki = '1' else unaffected;
+  q <= qi after t;
+  qb <= not (qi) after t;
+
+end beh;
+
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
 entity latchr is
   
   port (
@@ -481,7 +550,7 @@ use work.sigs.all;
 entity wire is
   
   generic (
-    length : integer := 0);                -- length in inches
+    length : integer);                -- length in inches
 
   port (
     i  : in  std_logic;                 -- input
@@ -495,8 +564,5 @@ architecture beh of wire is
 begin  -- beh
 
   o <= transport i after idelay;
-  -- What a hack... modeling a (long) wire as an unconditional
-  -- 5 ns delay doubles the speed of the GHDL simulator
-  --o <= i after t;
 
 end beh;

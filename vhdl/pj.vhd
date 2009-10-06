@@ -39,19 +39,19 @@ architecture gates of pjslice is
       d, clk : in  std_logic;                 -- data (set), clock
       q, qb  : out std_logic);                -- q and q.bar
   end component;
-  signal qi, qi2 : std_logic;                 -- latch output
+  signal tqi, tqi2 : std_logic;                 -- latch output
 begin  -- gates
   u1 : latch port map (
     d   => d,
     clk => clk,
-    q   => qi);
-  tp <= qi;
+    q   => tqi);
+  tp <= tqi;
   u2 : inv2 port map (
-    a => qi,
+    a => tqi,
     y => qb,
-    y2 => qi2);
-  q1 <= qi2;
-  q2 <= qi2;
+    y2 => tqi2);
+  q1 <= tqi2;
+  q2 <= tqi2;
 end gates;
 
 library IEEE;

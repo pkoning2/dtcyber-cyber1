@@ -135,6 +135,7 @@ entity mf is
       p21 : in  std_logic;
       p22 : in  std_logic;
       tp1 : out std_logic;
+      tp2 : out std_logic;
       tp3 : out std_logic;
       tp4 : out std_logic;
       tp5 : out std_logic;
@@ -206,7 +207,7 @@ begin -- gates
     a => p17,
     y => c);
 
-  p2 <= c;
+  tp2 <= c;
 
   u4 : inv port map (
     a => p15,

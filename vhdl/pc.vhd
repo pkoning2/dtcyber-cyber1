@@ -19,35 +19,6 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
-entity pcslice is
-  
-  port (
-    d1, d2 : in  std_logic;             -- inputs
-    e1, e2 : in  std_logic;             -- enables
-    clk    : in  std_logic;             -- clock
-    q      : out std_logic);            -- output
-
-end pcslice;
-
-architecture gates of pcslice is
-  component latch
-    port (
-      d, clk : in  std_logic;                 -- data (set), clock
-      q, qb  : out std_logic);                -- q and q.bar
-  end component;
-  signal d : std_logic;          -- combined input
-begin  -- gates
-  d <= (d1 and e1) or (d2 and e2);
-  u1 : latch port map (
-    d   => d,
-    clk => clk,
-    q   => q);
-end gates;
-
-library IEEE;
-use IEEE.std_logic_1164.all;
-use work.sigs.all;
-
 entity pc is
   
   port (
@@ -71,10 +42,10 @@ architecture gates of pc is
       a, b : in  std_logic;                   -- inputs
       y, y2    : out std_logic);                  -- output
   end component;
-  component pcslice
+  component latchd4
     port (
-      d1, d2 : in  std_logic;             -- inputs
-      e1, e2 : in  std_logic;             -- enables
+      d, d2 : in  std_logic;             -- inputs
+      e, e2 : in  std_logic;             -- enables
       clk    : in  std_logic;             -- clock
       q      : out std_logic);            -- output
   end component;
@@ -92,36 +63,36 @@ begin  -- gates
     a => e,
     b => p20,
     y => f);
-  u3 : pcslice port map (
-    d1  => p7,
-    e1  => e,
+  u3 : latchd4 port map (
+    d  => p7,
+    e  => e,
     d2  => p5,
     e2  => f,
     clk => p11,
     q   => q1);
   tp1 <= q1;
   p14 <= q1;
-  u4 : pcslice port map (
-    d1  => p8,
-    e1  => e,
+  u4 : latchd4 port map (
+    d  => p8,
+    e  => e,
     d2  => p6,
     e2  => f,
     clk => p22,
     q   => q2);
   tp2 <= q2;
   p9 <= q2;
-  u5 : pcslice port map (
-    d1  => p23,
-    e1  => e,
+  u5 : latchd4 port map (
+    d  => p23,
+    e  => e,
     d2  => p25,
     e2  => f,
     clk => p11,
     q   => q3);
   tp5 <= q3;
   p18 <= q3;
-  u6 : pcslice port map (
-    d1  => p24,
-    e1  => e,
+  u6 : latchd4 port map (
+    d  => p24,
+    e  => e,
     d2  => p26,
     e2  => f,
     clk => p22,

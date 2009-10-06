@@ -183,7 +183,7 @@ begin -- gates
 
   u9 : inv port map (
     a => p15,
-    y => e);
+    y => i);
 
 
   u10 : g2 port map (

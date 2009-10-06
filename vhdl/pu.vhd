@@ -45,29 +45,29 @@ architecture gates of puslice is
       s, r  : in  std_logic;                  -- set, reset
       q, qb : out std_logic);                 -- q and q.bar
   end component;
-  signal ri, si, qi, qbi : std_logic;
+  signal tri, tsi, tqi, tqbi : std_logic;
 begin  -- gates
 
   u1 : g2 port map (
     a => s,
     b => e,
-    y => si);
+    y => tsi);
   u2 : g2 port map (
     a => r,
     b => e,
-    y => ri);
+    y => tri);
   u3 : rsflop port map (
-    r  => ri,
-    s  => si,
-    q  => qi,
-    qb => qbi);
-  tp <= qi;
+    r  => tri,
+    s  => tsi,
+    q  => tqi,
+    qb => tqbi);
+  tp <= tqi;
   u4 : inv2 port map (
-    a  => qi,
+    a  => tqi,
     y  => q1,
     y2 => q2);
   u5 : inv2 port map (
-    a  => qbi,
+    a  => tqbi,
     y2 => qb);
 
 end gates;

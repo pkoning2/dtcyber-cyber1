@@ -35,20 +35,20 @@ architecture gates of pbslice is
       d, clk : in  std_logic;                 -- data (set), clock
       q, qb  : out std_logic);                -- q and q.bar
   end component;
-  signal q1, q2 : std_logic;     -- stage outputs
+  signal tq1, tq2 : std_logic;     -- stage outputs
 begin  -- gates
   u1 : latch port map (
     d   => i,
     clk => c1,
-    q   => q1);
-  tp1 <= q1;
+    q   => tq1);
+  tp1 <= tq1;
   u2 : latch port map (
-    d   => q1,
+    d   => tq1,
     clk => c2,
-    q   => q2);
-  tp2 <= q2;
+    q   => tq2);
+  tp2 <= tq2;
   u3 : latch port map (
-    d   => q2,
+    d   => tq2,
     clk => c3,
     q   => q);
 end gates;

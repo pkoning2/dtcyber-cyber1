@@ -41,30 +41,30 @@ architecture gates of tgslice is
       a, b, c, d : in  std_logic;             -- inputs
       y, y2   : out std_logic);                  -- output
   end component;
-  signal ii1, ii2, ii3, ii4 : std_logic;
+  signal ti1, ti2, ti3, ti4 : std_logic;
   signal ti : std_logic;                      -- internal copy of output
 begin  -- gates
   u1 : g2 port map (
     a => i1,
     b => a,
-    y => ii1);
+    y => ti1);
   u2 : g2 port map (
     a => i2,
     b => b,
-    y => ii2);
+    y => ti2);
   u3 : g2 port map (
     a => i3,
     b => c,
-    y => ii3);
+    y => ti3);
   u4 : g2 port map (
     a => i4,
     b => d,
-    y => ii4);
+    y => ti4);
   u5 : g4 port map (
-    a  => ii1,
-    b  => ii2,
-    c  => ii3,
-    d  => ii4,
+    a  => ti1,
+    b  => ti2,
+    c  => ti3,
+    d  => ti4,
     y  => ti,
     y2 => qb);
   tp <= ti;

@@ -54,12 +54,12 @@ begin  -- gates
     b => t1,
     y => ya);
   u3 : g2 port map (
-    a => b,
+    a => cb,
     b => t1,
     y => yb);
   u4 : g2 port map (
     a => t1,
-    b => c,
+    b => cc,
     y => yc);
 
 end gates;

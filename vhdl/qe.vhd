@@ -89,9 +89,9 @@ architecture gates of qe is
       a, b : in  std_logic;                   -- inputs
       y, y2   : out std_logic);                  -- output
   end component;
-  component latch
+  component latchd2
     port (
-      d, clk : in  std_logic;                 -- data (set), clock
+      d, d2, clk : in  std_logic;                 -- data (set), clock
       q, qb  : out std_logic);                -- q and q.bar
   end component;
   component qeslice
@@ -100,12 +100,12 @@ architecture gates of qe is
       ya, yb, yc : out std_logic);
   end component;
   signal a, b, e, f : std_logic;
-  signal di1, di2, t2, t3, t4 : std_logic;
+  signal t2, t3, t4 : std_logic;
 begin  -- gates
 
-  di1 <= p7 and p11;
   u1 : latch port map (
-    d   => di1,
+    d   => p7,
+    d1  +. p11,
     clk => p10,
     q   => t2);
   u3 : inv port map (
@@ -158,9 +158,9 @@ begin  -- gates
     a => t3,
     b => f,
     y => p13);
-  di2 <= p20 and p24;
   u12 : latch port map (
-    d   => di2,
+    d   => p20,
+    d1  +. p24,
     clk => p10,
     q   => e);
   u13 : inv port map (
