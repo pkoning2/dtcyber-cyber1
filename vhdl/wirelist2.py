@@ -57,7 +57,9 @@ class Chassis (cmodule.cmod):
         """
         for w in sorted (self.signals):
             w = self.signals[w]
-            if not (w.source and w.destcount) and not isinstance (w, Cable):
+            if not (w.source and w.destcount) and \
+                   not isinstance (w, Cable) and \
+                   w.ptype != "misc":
                 if w.source:
                     print w, "has no destination"
                 else:
