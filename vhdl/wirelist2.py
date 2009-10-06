@@ -12,9 +12,7 @@ import getopt
 import cmodule
 
 chassis_list = [ None ] * 17
-curch = None
-curcnum = None
-ground = "ground"
+curslot = None
 real_length = 60     # simulate wire delay for wires this long, None to disable
 
 _re_wstrip = re.compile ("(^[\014\\s]+|\\s*#.*$)", re.M)
@@ -22,15 +20,15 @@ _re_wmod = re.compile ("(\\w+)(\\(.+?\\))?\t(\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+)((\
 _re_wline = re.compile ("^(\\d+)\t+(\\w+)\t+(\\w+)(:?\t(\\d+))?", re.M)
 _re_chslot = re.compile (r"([1-9]|1[0-6])?([a-r])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)$", re.I)
 _re_cable = re.compile (r"(\d+)?w(\d+)$")
+_re_cables = re.compile (r"^(\d+w\d+)\s+(\d+w\d+)", re.M)
 
 class Chassis (cmodule.cmod):
     """An instance of a 6000 chassis.
     """
     def __init__ (self, num):
-        self.cnum = num
         cmodule.cmod.__init__ (self, "chassis%d" % num)
+        self.cnum = num
         self.connectors = { }
-        self.cables = { }
         
     header = """-------------------------------------------------------------------------------
 --
@@ -51,13 +49,25 @@ class Chassis (cmodule.cmod):
     def printheader (self):
         return self.header % self.cnum
 
+    def printassigns (self, sigdict, comp = None):
+        return ("", dict ())
+    
     def finish (self):
         """Check for internal consistency
         """
         for w in sorted (self.signals):
-            if not (w.source and w.dest):
-                print "half-connected wire", w
-
+            w = self.signals[w]
+            if not (w.source and w.destcount) and not isinstance (w, Cable):
+                if w.source:
+                    print w, "has no destination"
+                else:
+                    print w, "has no source"
+        for w in self.signals.itervalues ():
+            if isinstance (w, Cable):
+                for dir in ("in", "out"):
+                    if dir in w.dirs:
+                        self.addpin (("%s_%s" % (w, dir),), dir, w.ptype)
+                
     def normslot (self, slot):
         """Normalize a slot name.  Strip off leading chassis number,
         if present (must be correct if present).  Make slot number 2 digits.
@@ -87,16 +97,18 @@ class Chassis (cmodule.cmod):
                 return
         return "%dw%02d" % (self.cnum, int (m.group (2)))
 
-    def findcable (self, name):
-        name = self.normcable (name)
+    def findcable (self, name, ctype):
+        name = "c_%s" % self.normcable (name)
         if not name:
             return None
         try:
-            return self.cables[name]
+            c = self.signals[name]
+            if not isinstance (c, ctype):
+                error ("cable type mismatch %" % name)
         except KeyError:
-            # TEMP :
-            c = self.cables[name] = Coax (name)
-            return c
+            #print "adding cable", name
+            c = self.signals[name] = ctype (name)
+        return c
         
     def addconnector (self, slot, modinst, offset = 0):
         """Add a connector for the named slot.  Check that the slot name
@@ -119,8 +131,8 @@ class Chassis (cmodule.cmod):
         try:
             mtype = cmodule.elements[modname]
         except KeyError:
-            print "reading", modname
-            mtype = cmodule.readmodule (modname)
+            #print "reading", modname
+            mtype = cmodule.readmodule (modname, True)
         inst = self.elements[slot] = cmodule.ElementInstance (slot, modname)
         return inst
     
@@ -145,18 +157,39 @@ class Connector (object):
         self.modinst = inst
         self.offset = offset
         self.chassis = chassis
-        
-    def mipin (self, pname):
-        return "p%d" % (int (pname[1:]) + self.offset)
+
+    def tpwire (self, pnum, toslot, topin, wlen = 0):
+        """Generate a wire name.  Wires are named w_out_in except if the wire
+        is long enough that we simulate its delay, in which case a _d is added
+        onto the end of the name
+        """
+        pin = self.modinst.eltype.pins[self.mipin (pnum)]
+        if pin.dir == "out":
+            wname = "w_%s_%d_%s_%s" % (self.name, pnum, toslot, topin)
+            if real_length and wlen > real_length:
+                wd = cmodule.ElementInstance (wname, "wire")
+                self.chassis.elements[wname] = wd
+                wd.addportmap (self.chassis, "o", wname)
+                wname += "_d"
+                wd.addportmap (self.chassis, "i", wname)
+                wd.addgenericmap (self.chassis, "length", str (wlen))
+        else:
+            wname = "w_%s_%s_%s_%d" % (toslot, topin, self.name, pnum)
+        return wname
+    
+    def mipin (self, pnum):
+        return "p%d" % (pnum + self.offset)
 
     def addportmap (self, parent, formal, actual):
-        self.modinst.addportmap (parent, self.mipin (formal), actual)
+        self.modinst.addportmap (parent, self.mipin (pn (formal)), actual)
 
     def processwlist (self, wl):
         """Process the pins data from the wirelist for this connector
         """
+        global curslot
+        curslot = self.name
         for m in _re_wline.finditer (wl):
-            pnum = int (m.group (1))
+            pnum = pn (m.group (1))
             pname = "p%d" % pnum
             if m.group (3) == "x":
                 # ground
@@ -166,26 +199,39 @@ class Connector (object):
                    self.chassis.normslot (m.group (2)) == self.name:
                     self.addportmap (self.chassis, pname, "'1'")
                 else:
-                    error ("Strange ground-like entry %s", m.groups ())
-            elif m.group (2).startswith ("w"):
+                    error ("Strange ground-like entry %s" % str (m.groups ()))
+            elif "w" in m.group (2):
                 # cable
-                dir = self.modinst.eltype.pins[self.mipin (pname)].dir
-                w = Coaxwire (self.chassis, m.group (2), m.group (3), dir)
-                self.chassis.signals[w.name] = w
-                self.addportmap (self.chassis, pname, w.name)
+                dir = self.modinst.eltype.pins[self.mipin (pnum)].dir
+                wnum = int (m.group (3))
+                if wnum >= 101 and wnum <= 224:
+                    w = Tpwire (self.chassis, m.group (2), m.group (3), dir)
+                else:
+                    w = Coaxwire (self.chassis, m.group (2), m.group (3), dir)
+                self.chassis.signals[w.cable.name] = w.cable
+                self.addportmap (self.chassis, pname, w)
             else:
                 toslot = self.chassis.normslot (m.group (2))
-                topin = int (m.group (3))
+                topin = pn (m.group (3))
                 if m.group (4):
                     wlen = int (m.group (4))
                 else:
                     wlen = 0
-                wname = "w_%s_%d_%s_%s" % (self.name, pnum, toslot, topin)
+                wname = self.tpwire (pnum, toslot, topin, wlen)
                 self.addportmap (self.chassis, pname, wname)
                 
 def error (text):
-    print text
+    if curslot:
+        print "%s: %s" % (curslot, text)
+    else:
+        print text
 
+def pn (pname):
+    if pname.startswith ("p"):
+        return int (pname[1:])
+    else:
+        return int (pname)
+    
 _re_fncnum = re.compile (r"chassis(\d+)\.")
 def readwlist (fn):
     """Read the wire list from the named file
@@ -211,27 +257,28 @@ class Cablewire (cmodule.Signal):
     """A strand of a cable terminating at some pin in this chassis.
     It may be coax or twisted pair, internal (if coax) or external.
     """
-    def __init__ (self, chassis, cable, wirenum, dir):
-        cable = chassis.findcable (cable)
+    def __init__ (self, chassis, cable, cabletype, wirenum, dir):
+        cable = chassis.findcable (cable, cabletype)
         name = cable.makecname (wirenum, dir)
         cmodule.Signal.__init__ (self, name)
         self.cable = cable
         self.dir = dir
-
+        cable.dirs.add (dir)
+        
 class Coaxwire (Cablewire):
     """A strand of coax terminating at some pin in this chassis.
     It may be internal or external.
     """
     def __init__ (self, chassis, coaxname, wirenum, dir):
-        Cablewire.__init__ (self, chassis, coaxname, wirenum, dir)
+        Cablewire.__init__ (self, chassis, coaxname, Coax, wirenum, dir)
         self.ptype = "coaxsig"
 
 class Tpwire (Cablewire):
     """A strand of twised-pair cable terminating at some pin in this chassis.
     These appear only in connections to the deadstart panel.
     """
-    def __init__ (self, chassis, cable, wirenum):
-        Cablewire.__init__ (self, chassis, cable, wirenum, "in")
+    def __init__ (self, chassis, cable, wirenum, dir):
+        Cablewire.__init__ (self, chassis, cable, Tpcable, wirenum, dir)
         self.ptype = "std_logic"
         
 class Cable (cmodule.hitem):
@@ -239,16 +286,19 @@ class Cable (cmodule.hitem):
     """
     def __init__ (self, name):
         cmodule.hitem.__init__ (self, name)
+        self.source = None
+        self._sources = set ()
+        self.ptype = None
+        self.dirs = set ()
         
 class Coax (Cable):
     """A coax cable.  This is modeled as separate input and output cables,
     unless the cable is internal.
     """
-    def __init__ (self, name, internal = False):
+    def __init__ (self, name):
         Cable.__init__ (self, name)
-        self.internal = internal
-        self.used = { "in" : False, "out" : False }
-
+        self.ptype = "coaxsigs"
+        
     def makecname (self, wnum, dir):
         try:
             wnum = int (wnum)
@@ -259,11 +309,7 @@ class Coax (Cable):
                 wnum -= 889
             else:
                 return "Invalid wire number %d" % wnum
-            self.used[dir] = True
-            if self.internal:
-                return "c_%s[%d]" % (self.name, wnum)
-            else:
-                return "c_%s_%s[%d]" % (self.name, dir, wnum)
+            return "%s_%s[%d]" % (self.name, dir, wnum)
         except:
             return "Invalid wire number %s" % wnum
 
@@ -271,10 +317,10 @@ class Tpcable (Cable):
     """A twisted pair cable.  This is modeled as just one cable because
     we only have these as inputs (from the deadstart panel)
     """
-    def __init__ (self, name, internal = False):
+    def __init__ (self, name):
         Cable.__init__ (self, name)
-        self.used = False
-
+        self.ptype = "tpcable"
+        
     def makecname (self, wnum, dir):
         if dir != "in":
             return "Invalid direction for %s" % wnum
@@ -282,8 +328,7 @@ class Tpcable (Cable):
             # TP cable is indexed 0-based
             x, y = divmod (int (wnum), 100)
             wnum = y * 2 + x - 3
-            self.used = True
-            return "c_%s[%d]" % (self.name, wnum)
+            return "%s[%d]" % (self.name, wnum)
         except:
             return "Invalid wire number %s" % wnum
         

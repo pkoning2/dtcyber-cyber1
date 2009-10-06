@@ -98,6 +98,7 @@ class ElementType (object):
         elements[name] = self
         self.name = name
         self.pins = { }
+        self.generics = { }
         
     def addpin (self, namelist, dir, ptype = "std_logic", opt = False):
         if dir not in ("in", "out"):
@@ -136,7 +137,14 @@ class ElementType (object):
         Pins are grouped as inputs, test points, outputs, and
         alphabetically within the group.
         """
+        generics = [ ]
         ports = [ ]
+        for g in sorted (self.generics):
+            generics.append ("      %s : %s" % (g, self.generics[g]))
+        if generics:
+            generics = "    generic (\n%s);\n" % ";\n".join (generics)
+        else:
+            generics = ""
         for p in self.inputs ():
             ports.append ("      %s" % p.printdecl ())
         o = self.outputs ()
@@ -146,9 +154,9 @@ class ElementType (object):
         for p in o:
             if not p.testpoint ():
                 ports.append ("      %s" % p.printdecl ())
-        return """    port (
+        return """%s    port (
 %s);
-""" % ";\n".join (ports)
+""" % (generics, ";\n".join (ports))
 
     def printcomp (self):
         """Return the component definition of this element type
@@ -261,50 +269,64 @@ class ElementInstance (object):
         self.eltype = elements[elname]
         self.portmap = { }
         self.iportmap = { }
-
+        self.genericmap = { }
+        
     def __str__ (self):
         return self.name
-    
+
+    def addgenericmap (self, parent, formal, actual):
+        """Add a generic map entry.  "formal" is the generic name;
+        "actual" is the generic item value.
+        """
+        if formal in self.eltype.generics:
+            self.genericmap[formal] = actual
+        else:
+            print "Generic map for unknown generic %s" % formal
+            
     def addportmap (self, parent, formal, actual):
-        pin = self.eltype.pins[formal]
+        """Add a port map entry.  "formal" is the element type pin name;
+        "actual" is the signal to map to it, or a string naming a signal.
+        """
+        opt = False
+        if isinstance (actual, str):
+            if actual.startswith ("-"):
+                if dir != "in":
+                    print "Optional input flag but %s is not an input" % formal
+                    return
+                actual = actual[1:]
+                opt = True
+            if actual == "'1'":
+                actual = sigone
+            else:
+                actual = parent.findsignal (actual)
+        try:
+            pin = self.eltype.pins[formal]
+        except KeyError:
+            if actual is not sigone:
+                print "Port map to unknown pin %s" % formal
+            return
         dir = pin.dir
         ptype = pin.ptype
-        opt = False
-        if actual.startswith ("-"):
-            if dir != "in":
-                print "Optional input flag but %s is not an input" % formal
-                return
-            actual = actual[1:]
-            opt = True
         if dir == "out":
             # Assigning to output, must be a new signal, or one that
             # doesn't have an output yet.  Special case: '1' is a valid
             # actual
-            if actual == "'1'":
-                sig = onesignal
-            elif actual in parent.signals:
-                sig = parent.signals[actual]
-                if sig.source:
-                    print "duplicate output assignment to", actual
-                    return
-            else:
-                sig = parent.signals[actual] = Signal (actual)
+            if actual.source:
+                print "duplicate output assignment to", actual
+                return
         else:
             # Input, can be used multiple times
-            try:
-                sig = parent.signals[actual]
-                if sig.ptype != ptype:
-                    print "signal type mismatch", sig.ptype, ptype
-            except KeyError:
-                # signal not yet defined, define it
-                sig = parent.signals[actual] = Signal (actual)
-                sig.ptype = ptype
+            if actual.ptype:
+                if actual.ptype != ptype:
+                    print "signal type mismatch", self.name, actual, actual.ptype, ptype
+            else:
+                actual.ptype = ptype
         if dir == "out":
-            sig.setsource (PinInstance (self, pin))
+            actual.setsource (PinInstance (self, pin))
         else:
-            sig.destcount += 1
+            actual.destcount += 1
         # Save both directions of the mapping
-        self.portmap[formal] = sig
+        self.portmap[formal] = actual
         self.iportmap[actual] = (self, pin)
         
     def promptports (self, parent):
@@ -333,7 +355,18 @@ class ElementInstance (object):
     def printportmap (self):
         """Return the port map.  Entries are grouped inputs
         then outputs, and alphabetically within the group.
+        The generic map, if present, is also formatted preceding
+        the port map.
         """
+        if self.genericmap:
+            generics = [ ]
+            for g in sorted (self.genericmap):
+                generics.append ("    %s => %s" % (g, self.genericmap[g]))
+            generics = """generic map (
+%s);
+  """ % ",\n".join (generics)
+        else:
+            generics = ""
         entries = [ ]
         for p in sorted (self.portmap):
             if self.eltype.pins[p].dir == "out":
@@ -345,9 +378,9 @@ class ElementInstance (object):
                 continue
             pto = self.portmap[p]
             entries.append ("    %s => %s" % (p, pto))
-        return """  %s : %s port map (
+        return """  %s : %s %sport map (
 %s);
-""" % (self.name, self.eltype.name, ",\n".join (entries))
+""" % (self.name, self.eltype.name, generics, ",\n".join (entries))
 
     
 class cmod (ElementType):
@@ -358,7 +391,6 @@ class cmod (ElementType):
         self.name = name
         self.elements = { }
         self.signals = { }
-        self.generics = { }
 
     def addelement (self, eltype):
         if eltype not in elements or eltype == self.name:
@@ -369,20 +401,23 @@ class cmod (ElementType):
         e = self.elements[elname] = ElementInstance (elname, eltype)
         e.promptports (self)
 
+    def findsignal (self, name):
+        """Find a currently defined signal, or create a new one
+        """
+        try:
+            return self.signals[name]
+        except KeyError:
+            s = self.signals[name] = Signal (name)
+            return s
+
     def addassign (self, to, fname):
         """Add an assignment of an output signal from a temp
         """
-        if not self.istemp (fname):
-            print "assignment source is not a temp signal"
-            return
         if to in self.signals:
             print to, "already defined"
             return
-        tsig = self.signals[to] = Signal (to)
-        try:
-            fsig = self.signals[fname]
-        except KeyError:
-            fsig = self.signals[fname] = Signal (fname)
+        tsig = self.findsignal (to)
+        fsig = self.findsignal (fname)
         tsig.setsource (fsig)
         
     def addelements (self):
@@ -488,7 +523,7 @@ class cmod (ElementType):
                         again = False
                         sources = list (s.sources ())
                         for src in sources:
-                            if src in visited:
+                            if src in visited or src.opt:
                                 continue
                             if isinstance (src, PinInstance):
                                 again = True
@@ -502,7 +537,10 @@ class cmod (ElementType):
                     for src in list (s.sources ()):
                         if self.istemp (src) or isinstance (src, PinInstance):
                             s.delsource (src)
-                    p._sources = frozenset (s.sources ())
+                    srcpins = set ()
+                    for src in s.sources ():
+                        srcpins.add (self.pins[src])
+                    p._sources = frozenset (srcpins)
                         
     def printmodule (self):
         """return module definition
@@ -512,7 +550,6 @@ class cmod (ElementType):
         components = [ ]
         gates = [ ]
         signals = [ ]
-        generics = [ ]
         sigdict = dict (self.signals)
         for e in self.elements.itervalues ():
             eltypes.add (e.eltype.name)
@@ -528,18 +565,12 @@ class cmod (ElementType):
             assigns, sigdict = self.printassigns (sigdict, e)
             gates.append (assigns)
         assigns, sigdict = self.printassigns (sigdict)
-        for g in sorted (self.generics):
-            generics.append ("    %s : %s" % (g, self.generics[g]))
-        if generics:
-            generics = "generic (\n%s);\n" % ";\n".join (generics)
-        else:
-            generics = ""
         return """library IEEE;
 use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity %s is
-%s%s
+%s
 end %s;
 architecture gates of %s is
 %s
@@ -549,7 +580,6 @@ begin -- gates
 %s
 end gates;
 """ % (self.name,
-       generics,
        self.printports (),
        self.name,
        self.name,
@@ -577,12 +607,11 @@ _re_portmap = re.compile (r"(\w+)\s*:\s*(\w+) port map \((.+?)\)", re.S)
 _re_generic = re.compile (r"(\w+)\s*:\s*(\w+)")
 _re_pinmap = re.compile (r"(\w+)\s*=>\s*(\w+|'1')")
 _re_assign = re.compile (r"(\w+)\s*<=\s*(\w+)")
-_re_ent = re.compile (r"entity +(.+?) +is\s+?port +\((.+?)\).+?end +\1", re.S)
 _re_pin = re.compile (r"([a-z0-9, ]+):\s+(inout|in|out)\s+(std_logic|coaxsig|analog|misc)( +:= +'[01]')?")
 _re_comment = re.compile (r"--.*$", re.M)
 _re_pinname = re.compile (r"p\d+$")
 
-def readmodule (modname):
+def readmodule (modname, allports = False):
     """Read a module definition VHD file and return the top
     level module object
     """
@@ -630,11 +659,11 @@ def readmodule (modname):
                         print "Unexpected default in", pins.group ()
                         continue
                     opt = True
-                elif ptype != "misc":
+                elif ptype != "misc" and not allports:
                     continue
             #print pins.groups ()
             for p in pins.group (1).replace (" ", "").split (","):
-                if p in e.pins or opt or not gates or ptype == "misc":
+                if p in e.pins or opt or allports or not gates or ptype == "misc":
                     e.pins[p] = Pin (p, dir, ptype, opt)
         e.finish ()
     if e is None:
@@ -647,9 +676,13 @@ def stdelements ():
     # Read the file, stripping comments
     std = _re_comment.sub ("", f.read ())
     f.close ()
-    for e in _re_ent.finditer (std):
+    for e in _re_arch.finditer (std):
         c = ElementType (e.group (1))
-        for pins in _re_pin.finditer (e.group (2)):
+        # Process any generics
+        if e.group (2):
+            for g in _re_generic.finditer (e.group (3)):
+                c.generics[g.group (1)] = g.group (2)
+        for pins in _re_pin.finditer (e.group (4)):
             dir = pins.group (2)
             ptype = pins.group (3)
             opt = False
