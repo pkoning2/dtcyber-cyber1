@@ -59,7 +59,7 @@ class Chassis (cmodule.cmod):
             w = self.signals[w]
             if not (w.source and w.destcount) and \
                    not isinstance (w, Cable) and \
-                   w.ptype != "misc":
+                   w.ptype != "analog":
                 if w.source:
                     print w, "has no destination"
                 else:
@@ -69,6 +69,8 @@ class Chassis (cmodule.cmod):
                 for dir in ("in", "out"):
                     if dir in w.dirs:
                         self.addpin (("%s_%s" % (w, dir),), dir, w.ptype)
+            elif w.ptype == "analog":
+                self.addpin ((w,), "out", w.ptype)
                 
     def normslot (self, slot):
         """Normalize a slot name.  Strip off leading chassis number,
@@ -160,10 +162,12 @@ class Connector (object):
         self.offset = offset
         self.chassis = chassis
 
-    def tpwire (self, pnum, toslot, topin, wlen = 0):
-        """Generate a wire name.  Wires are named w_out_in except if the wire
-        is long enough that we simulate its delay, in which case a _d is added
-        onto the end of the name
+    def chwire (self, pnum, toslot, topin, wlen = 0):
+        """Generate a wire name for a wire inside a chassis (twisted pair).
+        Wires are named w_out_in except if the wire is long enough that we
+        simulate its delay, in which case a _d is added onto the end of
+        the name and the wire is hooked up to an instance of the "wire"
+        element that actually implements the delay.
         """
         pin = self.modinst.eltype.pins[self.mipin (pnum)]
         if pin.dir == "out":
@@ -205,21 +209,43 @@ class Connector (object):
             elif "w" in m.group (2):
                 # cable
                 dir = self.modinst.eltype.pins[self.mipin (pnum)].dir
+                ptype = self.modinst.eltype.pins[self.mipin (pnum)].ptype
                 wnum = int (m.group (3))
-                if wnum >= 101 and wnum <= 224:
-                    w = Tpwire (self.chassis, m.group (2), m.group (3), dir)
+                if ptype == "misc":
+                    # We ignore misc signals since they are only there
+                    # to document things like jumpers and other non-logic
+                    # stuff that doesn't map to VHDL
+                    continue
+                elif ptype == "analog":
+                    # analog corresponds to a 3-bit bus in the VHDL model so
+                    # we model that as a separately named signal rather than
+                    # a strand in a cable (since it would make the cable
+                    # not be homogeneous data type)
+                    w = "c_%s_%d" % (self.chassis.normcable (m.group (2)), wnum)
                 else:
-                    w = Coaxwire (self.chassis, m.group (2), m.group (3), dir)
-                self.chassis.signals[w.cable.name] = w.cable
+                    if wnum >= 101 and wnum <= 224:
+                        w = Tpwire (self.chassis, m.group (2), m.group (3),
+                                    dir, ptype)
+                    else:
+                        w = Coaxwire (self.chassis, m.group (2), m.group (3),
+                                      dir, ptype)
+                    self.chassis.signals[w.cable.name] = w.cable
                 self.addportmap (self.chassis, pname, w)
             else:
+                # Regular slot to slot twisted pair wire
+                ptype = self.modinst.eltype.pins[self.mipin (pnum)].ptype
+                if ptype == "misc":
+                    # We ignore misc signals since they are only there
+                    # to document things like jumpers and other non-logic
+                    # stuff that doesn't map to VHDL
+                    continue
                 toslot = self.chassis.normslot (m.group (2))
                 topin = pn (m.group (3))
                 if m.group (4):
                     wlen = int (m.group (4))
                 else:
                     wlen = 0
-                wname = self.tpwire (pnum, toslot, topin, wlen)
+                wname = self.chwire (pnum, toslot, topin, wlen)
                 self.addportmap (self.chassis, pname, wname)
                 
 def error (text):
@@ -259,29 +285,29 @@ class Cablewire (cmodule.Signal):
     """A strand of a cable terminating at some pin in this chassis.
     It may be coax or twisted pair, internal (if coax) or external.
     """
-    def __init__ (self, chassis, cable, cabletype, wirenum, dir):
+    def __init__ (self, chassis, cable, cabletype, wirenum, dir, ptype):
         cable = chassis.findcable (cable, cabletype)
         name = cable.makecname (wirenum, dir)
         cmodule.Signal.__init__ (self, name)
         self.cable = cable
         self.dir = dir
+        self.ptype = ptype
         cable.dirs.add (dir)
+        cable.strands[wirenum] = self
         
 class Coaxwire (Cablewire):
     """A strand of coax terminating at some pin in this chassis.
     It may be internal or external.
     """
-    def __init__ (self, chassis, coaxname, wirenum, dir):
-        Cablewire.__init__ (self, chassis, coaxname, Coax, wirenum, dir)
-        self.ptype = "coaxsig"
+    def __init__ (self, chassis, coaxname, wirenum, dir, ptype = "coaxsig"):
+        Cablewire.__init__ (self, chassis, coaxname, Coax, wirenum, dir, ptype)
 
 class Tpwire (Cablewire):
     """A strand of twised-pair cable terminating at some pin in this chassis.
     These appear only in connections to the deadstart panel.
     """
-    def __init__ (self, chassis, cable, wirenum, dir):
-        Cablewire.__init__ (self, chassis, cable, Tpcable, wirenum, dir)
-        self.ptype = "std_logic"
+    def __init__ (self, chassis, cable, wirenum, dir, ptype = "std_logic"):
+        Cablewire.__init__ (self, chassis, cable, Tpcable, wirenum, dir, ptype)
         
 class Cable (cmodule.hitem):
     """A cable (coax or twisted pair)
@@ -290,8 +316,8 @@ class Cable (cmodule.hitem):
         cmodule.hitem.__init__ (self, name)
         self.source = None
         self._sources = set ()
-        self.ptype = None
         self.dirs = set ()
+        self.strands = { }
         
 class Coax (Cable):
     """A coax cable.  This is modeled as separate input and output cables,
@@ -304,11 +330,10 @@ class Coax (Cable):
     def makecname (self, wnum, dir):
         try:
             wnum = int (wnum)
-            # Note that coaxsigs (a coax cable) is indexed 1-based
             if wnum >= 90 and wnum <= 99:
-                wnum -= 89
+                wnum -= 90
             elif wnum >= 900 and wnum <= 908:
-                wnum -= 889
+                wnum -= 890
             else:
                 return "Invalid wire number %d" % wnum
             return "%s_%s[%d]" % (self.name, dir, wnum)
@@ -327,7 +352,6 @@ class Tpcable (Cable):
         if dir != "in":
             return "Invalid direction for %s" % wnum
         try:
-            # TP cable is indexed 0-based
             x, y = divmod (int (wnum), 100)
             wnum = y * 2 + x - 3
             return "%s[%d]" % (self.name, wnum)
