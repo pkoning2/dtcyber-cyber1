@@ -17,7 +17,7 @@ real_length = 60     # simulate wire delay for wires this long, None to disable
 
 _re_wstrip = re.compile ("(^[\014\\s]+|\\s*#.*$)", re.M)
 _re_wmod = re.compile ("([a-z]+)(\\(.+?\\))?\t(\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+)((\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+))?")
-_re_wline = re.compile ("^(\\d+)\t+(\\w+)\t+(\\w+)(:?\t(\\d+))?", re.M)
+_re_wline = re.compile ("^(\\d+)(?:$|\t+(\\w+)\t+(\\w+)(:?\t(\\d+))?)?", re.M)
 _re_chslot = re.compile (r"(0?[1-9]|1[0-6])?([a-r])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)$", re.I)
 _re_cable = re.compile (r"(\d+)?w(\d+)$")
 _re_cables = re.compile (r"^(\d+w\d+)\s+(\d+w\d+)", re.M)
@@ -195,8 +195,19 @@ class Connector (object):
         """
         global curslot
         curslot = self.name
+        epin = 1
         for m in _re_wline.finditer (wl):
             pnum = pn (m.group (1))
+            if pnum != epin:
+                error ("pins out of order, expected %d, got %d" % (epin, pnum))
+            epin += 1
+            if m.group (2) is None:
+                # Unused pin, carry on
+                continue
+            try:
+                mpin = self.modinst.eltype.pins[self.mipin (pnum)]
+            except KeyError:
+                mpin = None
             pname = "p%d" % pnum
             if m.group (3) == "x":
                 # ground
@@ -204,13 +215,19 @@ class Connector (object):
                    m.group (2) == "grd" or \
                    m.group (2) == "gnd" or \
                    self.chassis.normslot (m.group (2)) == self.name:
-                    self.addportmap (self.chassis, pname, "'1'")
+                    if mpin is not None:
+                        # ignore ground pin connections that are memory
+                        # power/ground rather than module signals
+                        self.addportmap (self.chassis, pname, "'1'")
                 else:
                     error ("Strange ground-like entry %s" % str (m.groups ()))
             elif "w" in m.group (2):
                 # cable
-                dir = self.modinst.eltype.pins[self.mipin (pnum)].dir
-                ptype = self.modinst.eltype.pins[self.mipin (pnum)].ptype
+                if mpin is None:
+                    error ("pin %d undefined or out of range" % pnum)
+                    continue
+                dir = mpin.dir
+                ptype = mpin.ptype
                 wnum = int (m.group (3))
                 if ptype == "misc":
                     # We ignore misc signals since they are only there
@@ -234,7 +251,10 @@ class Connector (object):
                 self.addportmap (self.chassis, pname, w)
             else:
                 # Regular slot to slot twisted pair wire
-                ptype = self.modinst.eltype.pins[self.mipin (pnum)].ptype
+                if mpin is None:
+                    error ("pin %d undefined or out of range" % pnum)
+                    continue
+                ptype = mpin.ptype
                 if ptype == "misc":
                     # We ignore misc signals since they are only there
                     # to document things like jumpers and other non-logic
@@ -248,6 +268,9 @@ class Connector (object):
                     wlen = 0
                 wname = self.chwire (pnum, toslot, topin, wlen)
                 self.addportmap (self.chassis, pname, wname)
+        if self.mipin (epin) in self.modinst.eltype.pins:
+            # next pin should not exist or we have an incomplete list
+            error ("not enough pins for connector")
                 
 def error (text):
     if curslot:
