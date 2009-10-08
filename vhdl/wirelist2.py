@@ -57,13 +57,15 @@ class Chassis (cmodule.cmod):
         """
         for w in sorted (self.signals):
             w = self.signals[w]
-            if not (w.source and w.destcount) and \
+            if not (w.source and w.destcount == 1) and \
                    not isinstance (w, Cable) and \
                    w.ptype != "analog":
-                if w.source:
-                    print w, "has no destination"
-                else:
+                if not w.source:
                     print w, "has no source"
+                if not w.destcount:
+                    print w, "has no destination"
+                elif w.destcount > 1:
+                    print w, "has multiple destinations"
         for w in self.signals.itervalues ():
             if isinstance (w, Cable):
                 for dir in ("in", "out"):
@@ -317,7 +319,10 @@ class Cablewire (cmodule.Signal):
         self.dir = dir
         self.ptype = ptype
         cable.dirs.add (dir)
-        cable.strands[wirenum] = self
+        if wirenum in cable.strands:
+            error ("wire %s already defined for %s" % (wirenum, cable.name))
+        else:
+            cable.strands[wirenum] = self
         
 class Coaxwire (Cablewire):
     """A strand of coax terminating at some pin in this chassis.
@@ -382,3 +387,33 @@ class Tpcable (Cable):
         except:
             return "Invalid wire number %s" % wnum
         
+
+if __name__ == "__main__":
+    topname = "cdc6600"
+    opts, args = getopt.getopt (sys.argv[1:], "t:")
+    if len (args) < 1:
+        print "usage: %s wirelist [ wirelist ... ]" % sys.argv[0]
+        sys.exit (1)
+    for opt, val in opts:
+        if opt == "-t":
+            # top level filename (default: "cdc6600")
+            if val == "-":
+                topname = None
+            else:
+                topname = val
+    for f in args:
+        c = readwlist (f)
+        c.finish ()
+    #if topname:
+    #    f = open ("%s.vhd" % topname, "w")
+    #    top_vhdl (f)
+    #    f.close ()
+    #for ch in chassis_list:
+    #    if ch is None:
+    #        continue
+    #    f = open ("%s.vhd" % ch.name, "w")
+    #    ch.print_vhdl (f)
+    #    f.close ()
+    #    f = open ("%s.html" % ch.name, "w")
+    #    ch.print_modmap (f)
+    #    f.close ()
