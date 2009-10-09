@@ -61,11 +61,11 @@ class Chassis (cmodule.cmod):
                    not isinstance (w, Cable) and \
                    w.ptype != "analog":
                 if not w.source:
-                    print w, "has no source"
+                    print "%s: %s has no source" % (w.destname, w)
                 if not w.destcount:
-                    print w, "has no destination"
+                    print "%s: %s has no destination" % (w.sourcename, w)
                 elif w.destcount > 1:
-                    print w, "has multiple destinations"
+                    print "%s: %s has multiple destinations" % (w.sourcename, w)
         for w in self.signals.itervalues ():
             if isinstance (w, Cable):
                 for dir in ("in", "out"):
@@ -165,26 +165,39 @@ class Connector (object):
         self.offset = offset
         self.chassis = chassis
 
-    def chwire (self, pnum, toslot, topin, wlen = 0):
-        """Generate a wire name for a wire inside a chassis (twisted pair).
+    def chwire (self, pnum, toslot, topin, dir, wlen = 0):
+        """Generate a Wire object for a wire inside a chassis (twisted pair).
         Wires are named w_out_in except if the wire is long enough that we
-        simulate its delay, in which case a _d is added onto the end of
-        the name and the wire is hooked up to an instance of the "wire"
+        simulate its delay, in which case the name is wd_out_in 
+        and the wire is hooked up to an instance of the "wire"
         element that actually implements the delay.
         """
-        pin = self.modinst.eltype.pins[self.mipin (pnum)]
-        if pin.dir == "out":
-            wname = "w_%s_%d_%s_%s" % (self.name, pnum, toslot, topin)
-            if real_length and wlen > real_length:
-                wd = cmodule.ElementInstance (wname, "wire")
-                self.chassis.elements[wname] = wd
-                wd.addportmap (self.chassis, "o", wname)
-                wname += "_d"
-                wd.addportmap (self.chassis, "i", wname)
-                wd.addgenericmap (self.chassis, "length", str (wlen))
+        end1 = "%s_%d" % (self.name, pnum)
+        end2 = "%s_%s" % (toslot, topin)
+        if dir == "out":
+            try:
+                w = self.chassis.signals["w_%s_%s" % (end1, end2)]
+            except KeyError:
+                # Wire is not defined yet.  Define it
+                w = Wire (end1, end2)
+                if real_length and wlen > real_length:
+                    wdname = str (w)
+                    wd = cmodule.ElementInstance (wdname, "wire")
+                    self.chassis.elements[wdname] = wd
+                    w2 = Wire (end1, end2, "d")
+                    self.chassis.signals[w] = w
+                    wd.addportmap (self.chassis, "o", w)
+                    w = w2
+                    wd.addportmap (self.chassis, "i", w)
+                    wd.addgenericmap (self.chassis, "length", str (wlen))
+                self.chassis.signals[w] = w
         else:
-            wname = "w_%s_%s_%s_%d" % (toslot, topin, self.name, pnum)
-        return wname
+            try:
+                w = self.chassis.signals["w_%s_%s" % (end2, end1)]
+            except KeyError:
+                w = Wire (end2, end1)
+                self.chassis.signals[w] = w
+        return w
     
     def mipin (self, pnum):
         return "p%d" % (pnum + self.offset)
@@ -256,6 +269,7 @@ class Connector (object):
                 if mpin is None:
                     error ("pin %d undefined or out of range" % pnum)
                     continue
+                dir = mpin.dir
                 ptype = mpin.ptype
                 if ptype == "misc":
                     # We ignore misc signals since they are only there
@@ -268,8 +282,8 @@ class Connector (object):
                     wlen = int (m.group (4))
                 else:
                     wlen = 0
-                wname = self.chwire (pnum, toslot, topin, wlen)
-                self.addportmap (self.chassis, pname, wname)
+                w = self.chwire (pnum, toslot, topin, dir, wlen)
+                self.addportmap (self.chassis, pname, w)
         if self.mipin (epin) in self.modinst.eltype.pins:
             # next pin should not exist or we have an incomplete list
             error ("not enough pins for connector")
@@ -300,11 +314,13 @@ def readwlist (fn):
 
 class Wire (cmodule.Signal):
     """A wire (twisted pair) between two connector pins in the same chassis.
+    The wire is named w_out_in where out and in are slot_pin.
     """
-    def __init__ (self, end1, end2):
-        name = makename (end1, end2)
+    def __init__ (self, end1, end2, prefix = ""):
+        name = "w%s_%s_%s" % (prefix, end1, end2)
         cmodule.Signal.__init__ (self, name)
-        self.dest = None
+        self.sourcename = end1
+        self.destname = end2
         self.ptype = "std_logic"
         
 class Cablewire (cmodule.Signal):
