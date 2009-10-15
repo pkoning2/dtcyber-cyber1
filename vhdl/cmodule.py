@@ -482,8 +482,8 @@ class cmod (ElementType):
     def printheader (self):
         return self.header % (__doc__.split ("\n")[2], self.name.upper ())
 
-    def istemp (self, pin):
-        """Tells whether the pin is a temp signal or not.  For modules
+    def isinternal (self, pin):
+        """Tells whether the pin is an internal signal or not.  For modules
         (things with two-character names), it's a pin if its name starts
         with "p" or "tp" and a temp otherwise.  For other elements,
         it's a temp if it starts with "t" and a "pin" (i.e., a port)
@@ -506,7 +506,7 @@ class cmod (ElementType):
         for s in self.signals.itervalues ():
             s.sources ()
         for s in self.signals.itervalues ():
-            if not self.istemp (s) and not s in self.pins:
+            if not self.isinternal (s) and not s in self.pins:
                 if s.source:
                     # It has a source so it's an output
                     self.addpin ((str (s),), "out", s.ptype)
@@ -514,7 +514,7 @@ class cmod (ElementType):
                     # Optional pins are added before calling this method
                     self.addpin ((str (s),), "in", s.ptype)
         for s in self.signals.itervalues ():
-            if not self.istemp (s):
+            if not self.isinternal (s):
                 p = self.pins[s]
                 if p.dir == "out":
                     again = True
@@ -535,7 +535,7 @@ class cmod (ElementType):
                                         except KeyError:
                                             print "Missing input", s2, "for", src
                     for src in list (s.sources ()):
-                        if self.istemp (src) or isinstance (src, PinInstance):
+                        if self.isinternal (src) or isinstance (src, PinInstance):
                             s.delsource (src)
                     srcpins = set ()
                     for src in s.sources ():
@@ -555,7 +555,7 @@ class cmod (ElementType):
             eltypes.add (e.eltype.name)
             #print e.eltype.name
         for s in sorted (self.signals.itervalues ()):
-            if self.istemp (s):
+            if self.isinternal (s):
                 signals.append ("  signal %s : %s;\n" % (s.name, s.ptype))
         for e in sorted (eltypes):
             components.append (elements[e].printcomp ())

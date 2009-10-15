@@ -49,6 +49,9 @@ class Chassis (cmodule.cmod):
     def printheader (self):
         return self.header % self.cnum
 
+    def isinternal (self, name):
+        return True
+    
     def printassigns (self, sigdict, comp = None):
         return ("", dict ())
     
