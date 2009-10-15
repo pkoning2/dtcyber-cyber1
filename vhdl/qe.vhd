@@ -103,9 +103,9 @@ architecture gates of qe is
   signal t2, t3, t4 : std_logic;
 begin  -- gates
 
-  u1 : latch port map (
+  u1 : latchd2 port map (
     d   => p7,
-    d1  +. p11,
+    d2  => p11,
     clk => p10,
     q   => t2);
   u3 : inv port map (
@@ -158,9 +158,9 @@ begin  -- gates
     a => t3,
     b => f,
     y => p13);
-  u12 : latch port map (
+  u12 : latchd2 port map (
     d   => p20,
-    d1  +. p24,
+    d2  => p24,
     clk => p10,
     q   => e);
   u13 : inv port map (
