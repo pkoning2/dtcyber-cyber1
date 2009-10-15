@@ -49,8 +49,8 @@ class Chassis (cmodule.cmod):
     def printheader (self):
         return self.header % self.cnum
 
-    def isinternal (self, name):
-        return True
+    def isinternal (self, sig):
+        return not isinstance (sig, Cable)
     
     def printassigns (self, sigdict, comp = None):
         return ("", dict ())
@@ -368,8 +368,7 @@ class Cable (cmodule.hitem):
         self.strands = { }
         
 class Coax (Cable):
-    """A coax cable.  This is modeled as separate input and output cables,
-    unless the cable is internal.
+    """A coax cable.  This is modeled as separate input and output cables.
     """
     def __init__ (self, name):
         Cable.__init__ (self, name)
@@ -402,7 +401,7 @@ class Tpcable (Cable):
         try:
             x, y = divmod (int (wnum), 100)
             wnum = y * 2 + x - 3
-            return "%s[%d]" % (self.name, wnum)
+            return "%s_in[%d]" % (self.name, wnum)
         except:
             return "Invalid wire number %s" % wnum
         

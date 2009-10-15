@@ -595,7 +595,8 @@ end gates;
         f = file ("%s.vhd" % self.name, "w")
         print >> f, self.printheader ()
         for e in self.elements:
-            if "slice" in self.elements[e].eltype.name:
+            if "slice" in self.elements[e].eltype.name and \
+                   self.elements[e].eltype.name.startswith (self.name):
                 slices[self.elements[e].eltype.name] = 1
         for slice in sorted (slices):
             print >> f, elements[slice].printmodule ()
