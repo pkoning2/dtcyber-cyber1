@@ -363,7 +363,7 @@ class ElementInstance (object):
             for g in sorted (self.genericmap):
                 generics.append ("    %s => %s" % (g, self.genericmap[g]))
             generics = """generic map (
-%s);
+%s)
   """ % ",\n".join (generics)
         else:
             generics = ""
