@@ -63,15 +63,20 @@ class Cyber (cmodule.cmod):
             if not isinstance (w, Cable):
                 # Default signals
                 self.addpin ((w,), "in", w.ptype)
-        # Connect up any loose input cables
+        # Handle any loose input cables
         for c in self.elements.itervalues ():
             for s in c.eltype.pins.itervalues ():
                 if s.dir == "in" and s not in c.portmap:
                     if s.ptype == "coaxsigs":
                         c.addportmap (self, s, "idlecoax")
                     else:
-                        c.addportmap (self, s, "idletp")
-                    
+                        # Twisted pair cables are for the deadstart panel,
+                        # bring that out
+                        s2 = cmodule.Signal (s.name)
+                        s2.ptype = s.ptype
+                        c.addportmap (self, s, s2)
+                        self.addpin ((s2,), "in", s2.ptype)
+                        
     def findchassis (self, cnum):
         """Return the chassis instance object, allocating it if necessary.
         """

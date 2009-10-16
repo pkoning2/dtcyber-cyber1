@@ -28,9 +28,11 @@ architecture behav of cdc_tb is
    --  Declaration of the component that will be instantiated.
   component cdc6600 
   port (
+    c_1w37_in : in  tpcable;
     clk1, clk2, clk3, clk4, reset : in std_logic
 );
   end component;
+  signal c_1w37_in : tpcable := idletp;  -- Deadstart switches
   signal reset : std_logic := '1';      -- power-up reset
   signal clk1 : std_logic := '1';        -- clock phase 1
   signal clk2, clk3, clk4 : std_logic := '0';  -- clock phase 2-4
@@ -38,19 +40,21 @@ architecture behav of cdc_tb is
   signal one : std_logic := '1';
 begin
    --  Component instantiation.
-   uut : cdc6600 port map (clk1 => clk1,
-                          clk2 => clk2,
-                          clk3 => clk3,
-                          clk4 => clk4,
-                          reset => reset
-                           );
+   uut : cdc6600 port map (
+      c_1w37_in => c_1w37_in,
+      clk1 => clk1,
+      clk2 => clk2,
+      clk3 => clk3,
+      clk4 => clk4,
+      reset => reset
+      );
    --  This process does the real job.
    -- purpose: Drive reset and the clocks
    -- type   : combinational
    -- inputs : 
    -- outputs: 
    test: process
-     variable c1, c2, c3, c4 : integer := 0;
+     variable minor : integer := 0;     -- minor cycles count
    begin  -- process test
      dtmain;
      reset <= '1';
@@ -71,6 +75,12 @@ begin
        elsif clk4 = '1' then
          clk4 <= '0';
          clk1 <= '1';
+       end if;
+       minor := minor + 1;
+       if minor = 1 then
+         c_1w37_in(2) <= '1';
+       elsif minor = 50 then
+         c_1w37_in(2) <= '0';         
        end if;
      end loop;
    end process test;
