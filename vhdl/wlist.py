@@ -27,6 +27,7 @@ class Cyber (cmodule.cmod):
     """
     def __init__ (self):
         cmodule.cmod.__init__ (self, "cdc6600")
+        self.conntext = None
         
     header = """-------------------------------------------------------------------------------
 --
@@ -56,29 +57,36 @@ class Cyber (cmodule.cmod):
     def finish (self):
         """Check for internal consistency
         """
-        for e in self.elements.values ():
-            if not e.portmap:
-                del self.elements[e.name]
-
+        self.processconns2 ()
+        
     def findchassis (self, cnum):
         """Return the chassis instance object, allocating it if necessary.
         """
         if cnum < 1 or cnum > 16:
             error ("Chassis number %d out of range" % cnum)
             return
-        cname = "chassis%d" % cnum
+        ctname = "chassis%d" % cnum
+        ciname = "ch%d" % cnum
         try:
-            c = self.elements[cname]
+            c = self.elements[ciname]
         except KeyError:
             # Check if the element type exists
-            cmodule.elements[cname]
-            c = self.elements[cname] = cmodule.ElementInstance (cname, cname)
+            cmodule.elements[ctname]
+            c = self.elements[ciname] = cmodule.ElementInstance (ciname, ctname)
         return c
 
     def processconns (self, text):
         """Process a connections file ("coax tabs")
         """
-        for m in _re_cables.finditer (text):
+        if self.conntext:
+            self.conntext += text
+        else:
+            self.conntext = text
+            
+    def processconns2 (self):
+        """Process the saved connections text
+        """
+        for m in _re_cables.finditer (self.conntext):
             end1, c1 = normcable (m.group (1))
             end2, c2 = normcable (m.group (2))
             if end1 == end2:
@@ -122,7 +130,7 @@ class Cyber (cmodule.cmod):
 toplevel = Cyber ()
 
 class Chassis (cmodule.cmod):
-    """An instance of a 6000 chassis.
+    """The definition of a 6000 chassis.
     """
     def __init__ (self, num):
         cmodule.cmod.__init__ (self, "chassis%d" % num)
@@ -149,7 +157,8 @@ class Chassis (cmodule.cmod):
         return self.header % self.cnum
 
     def isinternal (self, sig):
-        return not isinstance (sig, Cable)
+        return not isinstance (sig, Cable) and \
+               sig.ptype != "analog"
     
     def printassigns (self, sigdict, comp = None):
         return ("", dict ())
@@ -453,12 +462,10 @@ def process_file (fn):
             cnum = int (m2.group (1))
             c = findchassis (cnum)
             c.processwlist (text)
-            c.finish ()
         else:
             error ("Chassis number not found in %s" % fn)
     else:
         toplevel.processconns (text)
-        toplevel.finish ()
         
 class Wire (cmodule.Signal):
     """A wire (twisted pair) between two connector pins in the same chassis.
@@ -571,6 +578,9 @@ if __name__ == "__main__":
     for f in args:
         print "processing", f
         process_file (f)
+    for c in chassis_list.itervalues ():
+        c.finish ()
+    toplevel.finish ()
     if topname:
         toplevel.name = topname
         toplevel.write ()

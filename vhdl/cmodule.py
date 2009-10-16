@@ -154,9 +154,13 @@ class ElementType (object):
         for p in o:
             if not p.testpoint ():
                 ports.append ("      %s" % p.printdecl ())
-        return """%s    port (
+        if ports:
+            ports = """    port (
 %s);
-""" % (generics, ";\n".join (ports))
+""" % ";\n".join (ports)
+        else:
+            ports = ""
+        return generics + ports
 
     def printcomp (self):
         """Return the component definition of this element type
