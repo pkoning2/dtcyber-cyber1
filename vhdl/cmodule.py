@@ -264,6 +264,7 @@ class ConstSignal (Signal):
         return ""
 
 sigone = ConstSignal ("'1'")
+sigzero = ConstSignal ("'0'")
 
 class ElementInstance (object):
     """Instance of a logic element
@@ -301,6 +302,8 @@ class ElementInstance (object):
                 opt = True
             if actual == "'1'":
                 actual = sigone
+            elif actual == "'0'":
+                actual = sigzero
             else:
                 actual = parent.findsignal (actual)
         try:

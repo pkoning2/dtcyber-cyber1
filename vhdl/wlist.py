@@ -49,7 +49,7 @@ class Cyber (cmodule.cmod):
         return self.header
 
     def isinternal (self, sig):
-        return True
+        return isinstance (sig, Cable)
     
     def printassigns (self, sigdict, comp = None):
         return ("", dict ())
@@ -58,7 +58,20 @@ class Cyber (cmodule.cmod):
         """Check for internal consistency
         """
         self.processconns2 ()
-        
+        # Hook up the standard signals
+        for w in self.signals.itervalues ():
+            if not isinstance (w, Cable):
+                # Default signals
+                self.addpin ((w,), "in", w.ptype)
+        # Connect up any loose input cables
+        for c in self.elements.itervalues ():
+            for s in c.eltype.pins.itervalues ():
+                if s.dir == "in" and s not in c.portmap:
+                    if s.ptype == "coaxsigs":
+                        c.addportmap (self, s, "idlecoax")
+                    else:
+                        c.addportmap (self, s, "idletp")
+                    
     def findchassis (self, cnum):
         """Return the chassis instance object, allocating it if necessary.
         """
@@ -73,6 +86,7 @@ class Cyber (cmodule.cmod):
             # Check if the element type exists
             cmodule.elements[ctname]
             c = self.elements[ciname] = cmodule.ElementInstance (ciname, ctname)
+            addstd (self, c)
         return c
 
     def processconns (self, text):
@@ -86,6 +100,8 @@ class Cyber (cmodule.cmod):
     def processconns2 (self):
         """Process the saved connections text
         """
+        if not self.conntext:
+            return
         for m in _re_cables.finditer (self.conntext):
             end1, c1 = normcable (m.group (1))
             end2, c2 = normcable (m.group (2))
@@ -157,19 +173,24 @@ class Chassis (cmodule.cmod):
         return self.header % self.cnum
 
     def isinternal (self, sig):
-        return not isinstance (sig, Cable) and \
+        return isinstance (sig, Wire) and \
                sig.ptype != "analog"
     
     def printassigns (self, sigdict, comp = None):
         return ("", dict ())
     
     def finish (self):
-        """Check for internal consistency
+        """Check for internal consistency: missing inputs required
+        for used outputs of modules, wires connected at only one
+        end.  Also do things that can't be done until this point:
+        provide default inputs for input pins that aren't connected
+        (ghdl requires that, silly thing), and define chassis "pins"
+        for signals that go outside.
         """
         for w in sorted (self.signals):
             w = self.signals[w]
-            if not (w.source and w.destcount == 1) and \
-                   not isinstance (w, Cable) and \
+            if isinstance (w, Wire) and \
+                   not (w.source and w.destcount == 1) and \
                    w.ptype != "analog":
                 if not w.source:
                     print "%s: %s has no source" % (w.destname, w)
@@ -177,6 +198,26 @@ class Chassis (cmodule.cmod):
                     print "%s: %s has no destination" % (w.sourcename, w)
                 elif w.destcount > 1:
                     print "%s: %s has multiple destinations" % (w.sourcename, w)
+        for m in sorted (self.elements):
+            m = self.elements[m]
+            unused = set ()
+            for p in m.eltype.pins.itervalues ():
+                if p.dir == "in" and p not in m.portmap:
+                    unused.add (p)
+                    if p.ptype == "std_logic":
+                        m.addportmap (self, p, "'1'")
+                    else:
+                        # Coax idle state is 0 not 1
+                        m.addportmap (self, p, "'0'")
+            # Don't do the missing input check; there are lots of cases
+            # where inputs are left unconnected because the logic is
+            # such that they are don't cares.
+            #for pn in m.portmap:
+            #    p = m.eltype.pins[pn]
+            #    if p.dir == "out":
+            #        for src in p.sources ():
+            #            if src in unused:
+            #                print "%s: missing input %s for output %s" % (m, src, pn)
         for w in self.signals.itervalues ():
             if isinstance (w, Cable):
                 for dir in ("in", "out"):
@@ -184,6 +225,9 @@ class Chassis (cmodule.cmod):
                         self.addpin (("%s_%s" % (w, dir),), dir, w.ptype)
             elif w.ptype == "analog":
                 self.addpin ((w,), "out", w.ptype)
+            elif not isinstance (w, Wire):
+                # Default signals
+                self.addpin ((w,), "in", w.ptype)
                 
     def normslot (self, slot):
         """Normalize a slot name.  Strip off leading chassis number,
@@ -243,6 +287,7 @@ class Chassis (cmodule.cmod):
             #print "reading", modname
             mtype = cmodule.readmodule (modname, True)
         inst = self.elements[slot] = cmodule.ElementInstance (slot, modname)
+        addstd (self, inst)
         return inst
     
     def processwlist (self, wl):
@@ -267,7 +312,7 @@ class Connector (object):
         self.modinst = inst
         self.offset = offset
         self.chassis = chassis
-
+                
     def chwire (self, pnum, toslot, topin, dir, wlen = 0):
         """Generate a Wire object for a wire inside a chassis (twisted pair).
         Wires are named w_out_in except if the wire is long enough that we
@@ -391,7 +436,17 @@ class Connector (object):
             # next pin should not exist or we have an incomplete list
             error ("not enough pins for connector")
 
-
+def addstd (parent, inst):
+    """ Automatically connect up reset and clk1-4 pins, if present
+    """
+    for stdpin in ("reset", "clk1", "clk2", "clk3", "clk4"):
+        if stdpin in inst.eltype.pins:
+            try:
+                s = parent.signals[stdpin]
+            except KeyError:
+                s = parent.signals[stdpin] = cmodule.Signal (stdpin)
+                s.ptype = "std_logic"
+            inst.addportmap (parent, stdpin, stdpin)
             
 def normcable (name, cnum = 0):
     """Normalize a cable name.  Make cable number 2 digits, and
