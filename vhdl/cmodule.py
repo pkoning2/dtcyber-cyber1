@@ -89,7 +89,21 @@ class Pin (hitem):
 
     def testpoint (self):
         return self.name.startswith ("tp")
-    
+
+class Generic (hitem):
+    """Generic of a logic element type
+    """
+    def __init__ (self, name, ptype, defval = None):
+        hitem.__init__ (self, name)
+        self.ptype = ptype
+        self.defval = defval
+
+    def printdecl (self):
+        if self.defval:
+            return "%s : %s%s" % (self.name, self.ptype, self.defval)
+        else:
+            return "%s : %s" % (self.name, self.ptype)
+            
 class ElementType (object):
     """Logic element type
     """
@@ -140,7 +154,7 @@ class ElementType (object):
         generics = [ ]
         ports = [ ]
         for g in sorted (self.generics):
-            generics.append ("      %s : %s" % (g, self.generics[g]))
+            generics.append ("      %s" % self.generics[g].printdecl ())
         if generics:
             generics = "    generic (\n%s);\n" % ";\n".join (generics)
         else:
@@ -612,7 +626,7 @@ end gates;
 
 _re_arch = re.compile (r"entity +(.+?) +is\s+?(generic +\((.+?)\);\s+?)?port +\((.+?)\).+?end +\1.+?architecture (\w+) of \1 is.+?begin(.+?)end \w+;", re.S)
 _re_portmap = re.compile (r"(\w+)\s*:\s*(\w+) port map \((.+?)\)", re.S)
-_re_generic = re.compile (r"(\w+)\s*:\s*(\w+)")
+_re_generic = re.compile (r"(\w+)\s*:\s*(\w+)( +:= +.+)?")
 _re_pinmap = re.compile (r"(\w+)\s*=>\s*(\w+|'1')")
 _re_assign = re.compile (r"(\w+)\s*<=\s*(\w+)")
 _re_pin = re.compile (r"([a-z0-9, ]+):\s+(inout|in|out)\s+(std_logic|coaxsig|analog|misc)( +:= +'[01]')?")
@@ -634,7 +648,9 @@ def readmodule (modname, allports = False):
         # Process any generics
         if m.group (2):
             for g in _re_generic.finditer (m.group (3)):
-                e.generics[g.group (1)] = g.group (2)
+                e.generics[g.group (1)] = Generic (g.group (1),
+                                                   g.group (2),
+                                                   g.group (3))
         # Parse the architecture section, if it's "gates"
         gates = m.group (5) == "gates"
         if gates:
@@ -689,7 +705,9 @@ def stdelements ():
         # Process any generics
         if e.group (2):
             for g in _re_generic.finditer (e.group (3)):
-                c.generics[g.group (1)] = g.group (2)
+                c.generics[g.group (1)] = Generic (g.group (1),
+                                                   g.group (2),
+                                                   g.group (3))
         for pins in _re_pin.finditer (e.group (4)):
             dir = pins.group (2)
             ptype = pins.group (3)
