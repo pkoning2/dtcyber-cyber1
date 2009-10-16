@@ -90,6 +90,10 @@ void initExt (void)
 {
 }
 
+void initPni (void)
+{
+}
+
 void dtmain (void)
 {
     initStartup ("vhdl");
