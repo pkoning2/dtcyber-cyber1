@@ -298,8 +298,10 @@ class Chassis (cmodule.cmod):
             c = self.addconnector (sl.group (3), inst)
             if c:
                 c.processwlist (sl.group (4))
-                #if sl.group (2):
-                #    inst.generics = sl.group (2)
+                if sl.group (2):
+                    for formal in inst.eltype.generics:
+                        inst.addgenericmap (self, formal, sl.group (2))
+                        break
                 if sl.group (5):
                     c = self.addconnector (sl.group (6), inst, 100)
                     c.processwlist (sl.group (7))
