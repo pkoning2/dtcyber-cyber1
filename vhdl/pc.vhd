@@ -46,8 +46,8 @@ architecture gates of pc is
     port (
       d, d2 : in  std_logic;             -- inputs
       e, e2 : in  std_logic;             -- enables
-      clk    : in  std_logic;             -- clock
-      q      : out std_logic);            -- output
+      clk   : in  std_logic;             -- clock
+      q, qb : out std_logic);            -- output
   end component;
   signal e, f : std_logic;       -- selects
   signal q1, q2, q3, q4 : std_logic;    -- outputs
