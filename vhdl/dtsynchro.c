@@ -37,6 +37,7 @@
 #endif
 
 static bool pending_in[19][040];
+static minor = 0;
 
 void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
 {
@@ -95,6 +96,11 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
     }
     
     // Check for master clear
+    if (oc[17])
+    {
+        DPRINTF ("%d %o: master clear\n", minor, chnum);
+    }
+    
     if (chnum == 0 && oc[17])
     {
         deadStart ();
@@ -106,19 +112,19 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
     // so we check them before saving the channel state)
     if (oc[12])
     {
-        DPRINTF ("%o: connect\n", chnum);
+        DPRINTF ("%d %o: connect\n", minor, chnum);
         channelActivate ();
     }
     if (oc[13])
     {
-        DPRINTF ("%o: disconnect\n", chnum);
+        DPRINTF ("%d %o: disconnect\n", minor, chnum);
         channelDisconnect ();
     }
     
     // Process function
     if (oc[16])
     {
-        DPRINTF ("%o: function %04o", chnum, dout);
+        DPRINTF ("%d %o: function %04o", minor, chnum, dout);
         channelFunction (dout);
         if (!(activeChannel->full))
         {
@@ -135,13 +141,13 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
         if (oc[15])
         {
             activeChannel->full = FALSE;
-            DPRINTF ("%o: empty\n", chnum);
+            DPRINTF ("%d %o: empty\n", minor, chnum);
         }
         if (oc[14])
         {
             activeChannel->full = TRUE;
             activeChannel->data = dout;
-            DPRINTF ("%o: output data %04o\n", chnum, dout);
+            DPRINTF ("%d %o: output data %04o\n", minor, chnum, dout);
         }
     
         // Now save the channel state so we can generate input pulses
@@ -160,13 +166,13 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
         {
             // Disconnect, send inactive
             pending_in[13][chnum] = TRUE;
-            DPRINTF ("%o: device disconnect\n", chnum);
+            DPRINTF ("%d %o: device disconnect\n", minor, chnum);
         }
         else if (prev_ch.full && !activeChannel->full)
         {
             // Output accepted, send empty
             pending_in[15][chnum] = TRUE;
-            DPRINTF ("%o: device empty\n", chnum);
+            DPRINTF ("%d %o: device empty\n", minor, chnum);
         }
         else if (!prev_ch.full && activeChannel->full)
         {
@@ -180,7 +186,8 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
                     pending_in[i][chnum] = TRUE;
                 }
             }
-            DPRINTF ("%o: device input data %04o\n", chnum, din);
+            DPRINTF ("%d %o: device input data %04o\n", minor, chnum, din);
         }
     }
+    minor++;
 }
