@@ -54,7 +54,7 @@ begin
    -- inputs : 
    -- outputs: 
    test: process
-     variable minor : integer := 0;     -- minor cycles count
+     variable cycle25 : integer := 0;     -- 25 ns cycles count
    begin  -- process test
      dtmain;
      reset <= '1';
@@ -76,10 +76,10 @@ begin
          clk4 <= '0';
          clk1 <= '1';
        end if;
-       minor := minor + 1;
-       if minor = 1 then
+       cycle25 := cycle25 + 1;
+       if cycle25 = 4 then
          c_1w37_in(2) <= '1';
-       elsif minor = 50 then
+       elsif cycle25 = 360 then
          c_1w37_in(2) <= '0';         
        end if;
      end loop;
