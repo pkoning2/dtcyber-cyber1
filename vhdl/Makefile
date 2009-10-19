@@ -3,7 +3,8 @@ MODULE_SRCS = $(wildcard ??.vhd)
 MODULES = clock.o clockh.o mem.o  synchro.o $(MODULE_SRCS:.vhd=.o)
 #CHASSIS_SRCS = $(wildcard chassis*.wlist)
 # omit chassis 2 for now:
-CHASSIS_SRCS = chassis1.wlist chassis11.wlist chassis12.wlist
+#CHASSIS_SRCS = chassis1.wlist chassis11.wlist chassis12.wlist
+CHASSIS_SRCS = chassis1.wlist chassis11.wlist 
 CHASSIS_V = $(CHASSIS_SRCS:.wlist=.vhd)
 CHASSIS = $(CHASSIS_SRCS:.wlist=.o)
 CABLE_SRCS = $(wildcard coax*.wlist)
