@@ -336,7 +336,7 @@ class Connector (object):
                 # Wire is not defined yet.  Define it
                 w = Wire (end1, end2)
                 if real_length and wlen > real_length:
-                    wdname = "delay_%s" % w
+                    wdname = "wd_%s" % w
                     wd = cmodule.ElementInstance (wdname, "wire")
                     self.chassis.elements[wdname] = wd
                     w2 = Wire (end1, end2, "d")
