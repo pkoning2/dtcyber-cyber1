@@ -19,19 +19,22 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
-entity qcslice is
+entity qcslice1 is
   
   port (
     a, b, c : in  std_logic;
-    d, e    : in  std_logic := '1';     -- optional inputs
     tp      : out std_logic;            -- test point
     y       : out std_logic;            -- output
-    ya      : out std_logic;            -- nor gate output (matches test point)
-    yb      : out std_logic);           -- bottom output
+    ya      : out std_logic);           -- nor gate output (matches test point)
 
-end qcslice;
+end qcslice1;
 
-architecture gates of qcslice is
+architecture gates of qcslice1 is
+  component inv is
+      port (
+          a  : in  std_logic;                       -- input
+          y  : out std_logic);                      -- output
+    end component;
   component g2
     port (
       a, b : in  std_logic;                   -- inputs
@@ -44,19 +47,63 @@ begin  -- gates
     a => a,
     b => b,
     y => t1);
-  u2 : g2 port map (
+  u2 : inv port map (
     a => c,
-    b => d,
     y => t2);
-  yb <= t2;
   u3 : g2 port map (
     a => t1,
     b => t2,
-    y => t3);
+    y => t3,
+    y2 => y);
   tp <= t3;
   ya <= t3;
+  
+end gates;
+
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use work.sigs.all;
+
+entity qcslice2 is
+  
+  port (
+    a, b, c, d, e : in  std_logic;
+    tp      : out std_logic;            -- test point
+    y       : out std_logic;            -- output
+    ya      : out std_logic;            -- inverter output (matches test point)
+    yb      : out std_logic);           -- bottom output
+
+end qcslice2;
+
+architecture gates of qcslice2 is
+  component g2
+    port (
+      a, b : in  std_logic;                   -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  component g3
+    port (
+      a, b, c : in  std_logic;                   -- inputs
+      y, y2   : out std_logic);                  -- output
+  end component;
+  signal t1, t2 : std_logic;
+begin  -- gates
+
+  u1 : g2 port map (
+    a => a,
+    b => b,
+    y2 => t1);
+  tp <= t1;
+  ya <= t1;
+  u2 : g3 port map (
+    a => t1,
+    b => c,
+    c => d,
+    y => t2);
+  yb <= t2;
   u4 : g2 port map (
-    a => t3,
+    a => t1,
     b => e,
     y => y);
   
@@ -78,68 +125,74 @@ entity qc is
 end qc;
 
 architecture gates of qc is
-  component qcslice
+  component qcslice1
     port (
       a, b, c : in  std_logic;
-      d, e    : in  std_logic := '1';     -- optional inputs
       tp      : out std_logic;            -- test point
       y       : out std_logic;            -- output
-      ya      : out std_logic;            -- nor gate output (matches test point)
+      ya      : out std_logic);           -- nor gate output (matches test point)
+  end component;
+  component qcslice2
+    port (
+      a, b, c, d, e : in  std_logic;
+      tp      : out std_logic;            -- test point
+      y       : out std_logic;            -- output
+      ya      : out std_logic;            -- inverter output (matches test point)
       yb      : out std_logic);           -- bottom output
   end component;
   signal a, b, c, d, e, f : std_logic;
 begin  -- gates
 
-  u1 : qcslice port map (
+  u1 : qcslice1 port map (
     a  => p6,
     b  => p4,
     c  => p8,
     tp => tp1,
     y  => p10,
     ya => a);
-  u2 : qcslice port map (
+  u2 : qcslice2 port map (
     a  => p5,
     b  => p3,
     c  => a,
     d  => f,
+    e  => a,
     tp => tp2,
     y  => p7,
     ya => e,
-    yb => p13,
-    e  => a);
-  u3 : qcslice port map (
+    yb => p13);
+  u3 : qcslice2 port map (
     a  => p15,
     b  => p19,
     c  => b,
     d  => d,
+    e  => b,
     tp => tp3,
     y  => p17,
     ya => f,
-    yb => p12,
-    e  => b);
-  u4 : qcslice port map (
+    yb => p12);
+  u4 : qcslice1 port map (
     a  => p14,
     b  => p16,
     c  => p20,
     tp => tp4,
     y  => p11,
     ya => b);
-  u5 : qcslice port map (
+  u5 : qcslice1 port map (
     a  => p25,
     b  => p27,
     c  => p23,
     tp => tp5,
     y  => p21,
     ya => c);
-  u6 : qcslice port map (
+  u6 : qcslice2 port map (
     a  => p26,
     b  => p28,
     c  => c,
     d  => e,
+    e  => c,
     tp => tp6,
     y  => p24,
     ya => d,
-    yb => p18,
-    e  => c);
+    yb => p18);
   
 end gates;
