@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2008 by Paul Koning
+-- Copyright (C) 2008-2009 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -36,7 +36,12 @@ package sigs is
   subtype ppword is UNSIGNED (11 downto 0);  -- PPU word (12 bits)
   subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
   type ppmem is array (0 to 4095) of ppint;  -- standard 4kx12 memory array
-  type imem  is array (natural range <>) of ppint;  -- initial data for ppmem
+  type ippmem  is array (natural range <>) of ppint;  -- initial data for ppmem
+  subtype cpword is UNSIGNED (59 downto 0);  -- CPU word (60 bits)
+--  subtype cpint is integer range 0 to 1152921504606846975;  -- CPU word, as an integer
+--  type cpmem is array (0 to 4095) of cpint;  -- 4kx60 memory array
+  type cpmem is array (0 to 4095) of cpword;  -- 4kx60 memory array
+--  type icpmem  is array (natural range <>) of cpint;  -- initial data for cpmem
   subtype misc is std_logic range '0' to '1';  -- used for non-logic pins
   subtype analog is UNSIGNED (2 downto 0);    -- 6612 character drawing signal
   

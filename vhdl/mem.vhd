@@ -19,31 +19,29 @@ use IEEE.numeric_std.all;
 
 use work.sigs.all;
 
-entity memarray is
+entity memarray12 is
   
   generic (
-    idata : imem);
+    idata : ippmem);
   port (
     addr   : in  ppword;                -- Memory address
     rdata  : out ppword;                -- read data
-    rdatab : out ppword;                -- read data complemented
     wdata  : in  ppword;                -- write data (complemented)
     reset  : in  std_logic;             -- power-up reset
     strobe : in  std_logic;             -- read/write strobe
     write  : in  std_logic);            -- write request
 
-end memarray;
+end memarray12;
 
-architecture beh of memarray is
+architecture beh of memarray12 is
 begin  -- beh
 
   -- purpose: read/write process
   -- type   : sequential
   -- inputs : read, write, addr, wdata
-  -- outputs: rdata, rdatab
+  -- outputs: rdata
   rw: process (strobe, reset)
     variable areg : integer;              -- Address as an integer
-    variable dreg : ppint;              -- data, as an integer
     variable mdata : ppmem;             -- memory array
     variable tdata : ppword;            -- copy of read data
   begin  -- process rw
@@ -54,13 +52,60 @@ begin  -- beh
     elsif strobe'event and strobe = '1' then  -- rising clock edge
       areg := TO_INTEGER (addr);
       if write = '1' then
-        if idata'high = 1 then
-          mdata (areg) := TO_INTEGER (not (wdata));
-        end if;
+        mdata (areg) := TO_INTEGER (not (wdata));
       else
         tdata := TO_UNSIGNED (mdata (areg), 12);
         rdata <= tdata;
-        rdatab <= not (tdata);
+      end if;
+    end if;
+  end process rw;
+end beh;
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+
+use work.sigs.all;
+
+entity memarray60 is
+  
+--  generic (
+--    idata : icpmem);
+  port (
+    addr   : in  ppword;                -- Memory address
+    rdata  : out cpword;                -- read data
+    wdata  : in  cpword;                -- write data (complemented)
+    reset  : in  std_logic;             -- power-up reset
+    strobe : in  std_logic;             -- read/write strobe
+    write  : in  std_logic);            -- write request
+
+end memarray60;
+
+architecture beh of memarray60 is
+begin  -- beh
+
+  -- purpose: read/write process
+  -- type   : sequential
+  -- inputs : read, write, addr, wdata
+  -- outputs: rdata
+  rw: process (strobe, reset)
+    variable areg : integer;              -- Address as an integer
+    variable mdata : cpmem;             -- memory array
+    variable tdata : cpword;            -- copy of read data
+  begin  -- process rw
+--    if reset = '1' then
+--      for i in 0 to idata'high loop
+--        mdata (i) := idata (i);
+--      end loop;  -- i
+--    elsif
+  if strobe'event and strobe = '1' then  -- rising clock edge
+      areg := TO_INTEGER (addr);
+      if write = '1' then
+--        mdata (areg) := TO_INTEGER (not (wdata));
+        mdata (areg) := not (wdata);
+      else
+        tdata := mdata (areg);
+        rdata <= tdata;
       end if;
     end if;
   end process rw;
@@ -73,7 +118,7 @@ use work.sigs.all;
 
 entity mem is
   generic (
-    idata : imem := (0,0));
+    idata : ippmem := (0,0));
   
   port (
     reset  : in  std_logic;              -- power-up reset
@@ -134,24 +179,24 @@ entity mem is
 end mem;
 
 architecture beh of mem is
-  component memarray
+  component memarray12
     generic (
-      idata : imem);
+      idata : ippmem);
     port (
       addr   : in  ppword;                -- Memory address
       rdata  : out ppword;                -- read data
-      rdatab : out ppword;                -- read data complemented
       wdata  : in  ppword;                -- write data (complemented)
       reset  : in  std_logic;             -- power-up reset
       strobe : in  std_logic;             -- read/write strobe
       write  : in  std_logic);            -- write operation
   end component;
   signal s, w : std_logic;
+  signal tdata, tdatab : ppword;                -- copy of read data
 begin  -- beh
 
   s <= not (p123) or not (p121);
   w <= not (p121);
-  ar : memarray generic map (
+  ar : memarray12 generic map (
     idata => idata)
     port map (
     addr(0) => p22,
@@ -178,32 +223,34 @@ begin  -- beh
     wdata(9) => p125,
     wdata(10) => p30,
     wdata(11) => p2,
-    rdata(0) => p1,
-    rdata(1) => p27,
-    rdata(2) => p128,
-    rdata(3) => p102,
-    rdata(4) => p5,
-    rdata(5) => p23,
-    rdata(6) => p106,
-    rdata(7) => p124,
-    rdata(8) => p19,
-    rdata(9) => p9,
-    rdata(10) => p110,
-    rdata(11) => p120,
-    rdatab(0) => p3,
-    rdatab(1) => p29,
-    rdatab(2) => p130,
-    rdatab(3) => p104,
-    rdatab(4) => p7,
-    rdatab(5) => p25,
-    rdatab(6) => p108,
-    rdatab(7) => p126,
-    rdatab(8) => p21,
-    rdatab(9) => p11,
-    rdatab(10) => p112,
-    rdatab(11) => p122,
+    rdata => tdata,
     reset => reset,
     write => w,
     strobe => s);
+  tdatab <= tdata;
+  p1   <= tdata(0);
+  p27  <= tdata(1);
+  p128 <= tdata(2);
+  p102 <= tdata(3);
+  p5   <= tdata(4);
+  p23  <= tdata(5);
+  p106 <= tdata(6);
+  p124 <= tdata(7);
+  p19  <= tdata(8);
+  p9   <= tdata(9);
+  p110 <= tdata(10);
+  p120 <= tdata(11);
+  p3   <= tdatab(0);
+  p29  <= tdatab(1);
+  p130 <= tdatab(2);
+  p104 <= tdatab(3);
+  p7   <= tdatab(4);
+  p25  <= tdatab(5);
+  p108 <= tdatab(6);
+  p126 <= tdatab(7);
+  p21  <= tdatab(8);
+  p11  <= tdatab(9);
+  p112 <= tdatab(10);
+  p122 <= tdatab(11);
 
 end beh;
