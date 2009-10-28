@@ -223,6 +223,14 @@ class Chassis (cmodule.cmod):
             #        for src in p.sources ():
             #            if src in unused:
             #                print "%s: missing input %s for output %s" % (m, src, pn)
+        for w in self.signals.values ():
+            if isinstance (w, Cable):
+                for dir in ("in", "out"):
+                    cname = "%s_%s" % (w, dir)
+                    try:
+                        del self.signals[cname]
+                    except KeyError:
+                        pass
         for w in self.signals.itervalues ():
             if isinstance (w, Cable):
                 for dir in ("in", "out"):
@@ -398,26 +406,40 @@ class Connector (object):
                     continue
                 dir = mpin.dir
                 ptype = mpin.ptype
-                wnum = int (m.group (3))
-                if ptype == "misc":
-                    # We ignore misc signals since they are only there
-                    # to document things like jumpers and other non-logic
-                    # stuff that doesn't map to VHDL
-                    continue
-                elif ptype == "analog":
-                    # analog corresponds to a 3-bit bus in the VHDL model so
-                    # we model that as a separately named signal rather than
-                    # a strand in a cable (since it would make the cable
-                    # not be homogeneous data type)
-                    w = "c_%s_%d" % (self.chassis.normcable (m.group (2)), wnum)
-                else:
-                    if wnum >= 101 and wnum <= 224:
-                        w = Tpwire (self.chassis, m.group (2), m.group (3),
-                                    dir, ptype)
+                if m.group (3) in ("in", "out"):
+                    # Whole cable -- for fake modules that model things
+                    # at a different VHDL level
+                    if m.group (3) != dir:
+                        error ("direction mismatch for pin %s" % pname)
+                    if ptype == "coaxsigs":
+                        ctype = Coax
                     else:
-                        w = Coaxwire (self.chassis, m.group (2), m.group (3),
-                                      dir, ptype)
-                    self.chassis.signals[w.cable.name] = w.cable
+                        ctype = Tpcable
+                    cable = self.chassis.findcable (self.chassis.normcable (m.group (2)), ctype)
+                    cable.dirs.add (dir)
+                    w = "%s_%s" % (cable.name, dir)
+                    self.chassis.signals[cable] = cable
+                else:
+                    wnum = int (m.group (3))
+                    if ptype == "misc":
+                        # We ignore misc signals since they are only there
+                        # to document things like jumpers and other non-logic
+                        # stuff that doesn't map to VHDL
+                        continue
+                    elif ptype == "analog":
+                        # analog corresponds to a 3-bit bus in the VHDL model so
+                        # we model that as a separately named signal rather than
+                        # a strand in a cable (since it would make the cable
+                        # not be homogeneous data type)
+                        w = "c_%s_%d" % (self.chassis.normcable (m.group (2)), wnum)
+                    else:
+                        if wnum >= 101 and wnum <= 224:
+                            w = Tpwire (self.chassis, m.group (2), m.group (3),
+                                        dir, ptype)
+                        else:
+                            w = Coaxwire (self.chassis, m.group (2), m.group (3),
+                                          dir, ptype)
+                        self.chassis.signals[w.cable.name] = w.cable
                 self.addportmap (self.chassis, pname, w)
             else:
                 # Regular slot to slot twisted pair wire

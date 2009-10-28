@@ -629,7 +629,7 @@ _re_portmap = re.compile (r"(\w+)\s*:\s*(\w+) port map \((.+?)\)", re.S)
 _re_generic = re.compile (r"(\w+)\s*:\s*(\w+)( +:= +.+)?")
 _re_pinmap = re.compile (r"(\w+)\s*=>\s*(\w+|'1')")
 _re_assign = re.compile (r"(\w+)\s*<=\s*(\w+)")
-_re_pin = re.compile (r"([a-z0-9, ]+):\s+(inout|in|out)\s+(std_logic|coaxsig|analog|misc)( +:= +'[01]')?")
+_re_pin = re.compile (r"([a-z0-9, ]+):\s+(inout|in|out)\s+([a-z0-9_]+)( +:= +'[01]')?")
 _re_comment = re.compile (r"--.*$", re.M)
 _re_pinname = re.compile (r"p\d+$")
 
