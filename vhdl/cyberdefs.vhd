@@ -283,12 +283,18 @@ entity cxdriver5 is
 end cxdriver5;
 
 architecture bool of cxdriver5 is
+  component cxdriver
+    port (
+      a : in  std_logic;                        -- source
+      y : out coaxsig);                       -- destination
+  end component;
   signal ai : std_logic;
   signal yi : std_logic;
 begin  -- bool
-  ai <= '1' when a = 'U' else a;
-  yi <= ai after tc;
-  y <= not (yi);                        -- coax is positive logic...
+  ai <= a and a2 and a3 and a4 and a5;
+  u1 : cxdriver port map (
+    a => ai,
+    y => y);
 end bool;
 
 library IEEE;
@@ -343,14 +349,19 @@ entity rs4flop is
 end rs4flop;
 
 architecture beh of rs4flop is
-  signal si, qi : std_logic := '0';
+  component rsflop
+    port (
+      s, r  : in  std_logic;                  -- set, reset
+      q, qb : out std_logic);                 -- q and q.bar
+  end component;
+  signal si : std_logic := '0';
 begin  -- beh
   si <= s and s2 and s3 and s4;
-  qi <= '0' when r = '0'
-        else '1' when si = '0'
-        else unaffected;
-  q <= qi after t;
-  qb <= not (qi) after t;
+  u1 : rsflop port map (
+    s  => si,
+    r  => r,
+    q  => q,
+    qb => qb);
 
 end beh;
 
@@ -367,15 +378,20 @@ entity r4s4flop is
 end r4s4flop;
 
 architecture beh of r4s4flop is
+  component rsflop
+    port (
+      s, r  : in  std_logic;                  -- set, reset
+      q, qb : out std_logic);                 -- q and q.bar
+  end component;
   signal ri, si, qi : std_logic := '0';
 begin  -- beh
   ri <= r and r2 and r3 and r4;
   si <= s and s2 and s3 and s4;
-  qi <= '0' when ri = '0'
-        else '1' when si = '0'
-        else unaffected;
-  q <= qi after t;
-  qb <= not (qi) after t;
+  u1 : rsflop port map (
+    s  => si,
+    r  => ri,
+    q  => q,
+    qb => qb);
 
 end beh;
 
@@ -392,14 +408,19 @@ entity rs2flop is
 end rs2flop;
 
 architecture beh of rs2flop is
-  signal si, qi : std_logic;
+  component rsflop
+    port (
+      s, r  : in  std_logic;                  -- set, reset
+      q, qb : out std_logic);                 -- q and q.bar
+  end component;
+  signal si : std_logic;
 begin  -- beh
   si <= s and s2;
-  qi <= '0' when r = '0'
-        else '1' when si = '0'
-        else unaffected;
-  q <= qi after t;
-  qb <= not (qi) after t;
+  u1 : rsflop port map (
+    s  => si,
+    r  => r,
+    q  => q,
+    qb => qb);
 
 end beh;
 
@@ -416,14 +437,19 @@ entity r2sflop is
 end r2sflop;
 
 architecture beh of r2sflop is
-  signal ri, qi : std_logic := '0';
+  component rsflop
+    port (
+      s, r  : in  std_logic;                  -- set, reset
+      q, qb : out std_logic);                 -- q and q.bar
+  end component;
+  signal ri : std_logic := '0';
 begin  -- beh
   ri <= r and r2;
-  qi <= '0' when ri = '0'
-        else '1' when s = '0'
-        else unaffected;
-  q <= qi after t;
-  qb <= not (qi) after t;
+  u1 : rsflop port map (
+    s  => s,
+    r  => ri,
+    q  => q,
+    qb => qb);
 
 end beh;
 
@@ -463,13 +489,19 @@ entity latch2 is
 end latch2;
 
 architecture beh of latch2 is
+  component latch
+    port (
+      d, clk : in  std_logic;                 -- data (set), clock
+      q, qb  : out std_logic);                -- q and q.bar
+  end component;
   signal clki : std_logic;
-  signal qi : std_logic;
 begin  -- beh
-  clki <= (clk and clk2) after t * 2;
-  qi <= d when clki = '1' else unaffected;
-  q <= qi after t;
-  qb <= not (qi) after t;
+  clki <= clk and clk2;
+  u1 : latch port map (
+    d   => d,
+    clk => clki,
+    q   => q,
+    qb  => qb);
 
 end beh;
 
@@ -486,13 +518,19 @@ entity latchd2 is
 end latchd2;
 
 architecture beh of latchd2 is
-  signal clki : std_logic;
-  signal qi : std_logic;
+  component latch
+    port (
+      d, clk : in  std_logic;                 -- data (set), clock
+      q, qb  : out std_logic);                -- q and q.bar
+  end component;
+  signal di : std_logic;
 begin  -- beh
-  clki <= clk after t * 2;
-  qi <= (d and d2) when clki = '1' else unaffected;
-  q <= qi after t;
-  qb <= not (qi) after t;
+  di <= d and d2;
+  u1 : latch port map (
+    d   => di,
+    clk => clk,
+    q   => q,
+    qb  => qb);
 
 end beh;
 
@@ -509,13 +547,19 @@ entity latchd4 is
 end latchd4;
 
 architecture beh of latchd4 is
-  signal clki : std_logic;
-  signal qi : std_logic;
+  component latch
+    port (
+      d, clk : in  std_logic;                 -- data (set), clock
+      q, qb  : out std_logic);                -- q and q.bar
+  end component;
+  signal di : std_logic;
 begin  -- beh
-  clki <= clk after t * 2;
-  qi <= ((d and e) or (d2 and e2)) when clki = '1' else unaffected;
-  q <= qi after t;
-  qb <= not (qi) after t;
+  di <= (d and e) or (d2 and e2);
+  u1 : latch port map (
+    d   => di,
+    clk => clk,
+    q   => q,
+    qb  => qb);
 
 end beh;
 
