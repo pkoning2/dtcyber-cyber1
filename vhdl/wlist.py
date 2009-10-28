@@ -444,9 +444,9 @@ class Connector (object):
             error ("not enough pins for connector")
 
 def addstd (parent, inst):
-    """ Automatically connect up reset and clk1-4 pins, if present
+    """ Automatically connect up reset and clock pins, if present
     """
-    for stdpin in ("reset", "clk1", "clk2", "clk3", "clk4"):
+    for stdpin in ("reset", "clk1", "clk2", "clk3", "clk4", "clk40"):
         if stdpin in inst.eltype.pins:
             try:
                 s = parent.signals[stdpin]
