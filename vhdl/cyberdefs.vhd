@@ -35,10 +35,10 @@ package sigs is
   constant idletp : tpcable := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
   subtype ppword is UNSIGNED (11 downto 0);  -- PPU word (12 bits)
   subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
-  type ppmem is array (0 to 4095) of ppint;  -- standard 4kx12 memory array
+  type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
   type ippmem  is array (natural range <>) of ppint;  -- initial data for ppmem
   subtype cpword is UNSIGNED (59 downto 0);  -- CPU word (60 bits)
---  subtype cpint is integer range 0 to 1152921504606846975;  -- CPU word, as an integer
+--  type cpint is  range 0 to 1152921504606846975;  -- CPU word, as an integer
 --  type cpmem is array (0 to 4095) of cpint;  -- 4kx60 memory array
   type cpmem is array (0 to 4095) of cpword;  -- 4kx60 memory array
 --  type icpmem  is array (natural range <>) of cpint;  -- initial data for cpmem
