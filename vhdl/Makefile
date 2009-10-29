@@ -27,6 +27,8 @@ LINKSWITCH := -Wl,
 OPTIMIZE ?=
 #OPTIMIZE ?= -O2
 
+GHDLOPTS := $(OPTIMIZE)   ### --finteger64
+
 cdc_tb:	$(OBJS)
 	ghdl -e $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
 
@@ -34,11 +36,11 @@ cdc_tb2:	$(filter-out cdc_tb.o,$(OBJS)) cdc_tb2.o chassis12.o
 	ghdl -e $(addprefix $(LINKSWITCH),$(filter-out cdc_tb2.o chassis12.o $(VOBJS),$+) $(FLIBS))  cdc_tb2
 
 cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
-	ghdl -a $<
+	ghdl -a $(GHDLOPTS) $<
 	touch cyberdefs.stamp
 
 %.o : %.vhd cyberdefs.stamp
-	ghdl -a $(OPTIMIZE) $<
+	ghdl -a $(GHDLOPTS) $<
 
 %.o : %.c
 	$(CC) -O2  $(CFLAGS) -I .. -I . -c $<
@@ -51,7 +53,7 @@ cdc6600.vhd $(CHASSIS_V) : $(CHASSIS_SRCS) $(CABLE_SRCS)
 #	python wirelist.py -t - chassis12.wlist
 
 $(VLIB): cyberdefs.vhd
-	ghdl -a $<
+	ghdl -a $(GHDLOPTS) $<
 
 clean:
 	rm -f *.o *.cf cyberdefs.stamp cdc6600.vhd chassis*.vhd
