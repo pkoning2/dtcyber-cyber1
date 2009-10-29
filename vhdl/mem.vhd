@@ -43,19 +43,17 @@ begin  -- beh
   rw: process (strobe, reset)
     variable areg : integer;              -- Address as an integer
     variable mdata : ppmem;             -- memory array
-    variable tdata : ppword;            -- copy of read data
   begin  -- process rw
     if reset = '1' then
       for i in 0 to idata'high loop
-        mdata (i) := idata (i);
+        mdata (i) := TO_UNSIGNED (idata (i), 12);
       end loop;  -- i
     elsif strobe'event and strobe = '1' then  -- rising clock edge
       areg := TO_INTEGER (addr);
       if write = '1' then
-        mdata (areg) := TO_INTEGER (not (wdata));
+        mdata (areg) := not (wdata);
       else
-        tdata := TO_UNSIGNED (mdata (areg), 12);
-        rdata <= tdata;
+        rdata <= mdata (areg);
       end if;
     end if;
   end process rw;
@@ -91,7 +89,6 @@ begin  -- beh
   rw: process (strobe, reset)
     variable areg : integer;              -- Address as an integer
     variable mdata : cpmem;             -- memory array
-    variable tdata : cpword;            -- copy of read data
   begin  -- process rw
 --    if reset = '1' then
 --      for i in 0 to idata'high loop
@@ -104,8 +101,7 @@ begin  -- beh
 --        mdata (areg) := TO_INTEGER (not (wdata));
         mdata (areg) := not (wdata);
       else
-        tdata := mdata (areg);
-        rdata <= tdata;
+        rdata <= mdata (areg);
       end if;
     end if;
   end process rw;
