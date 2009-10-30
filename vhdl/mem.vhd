@@ -72,7 +72,7 @@ entity memarray60 is
   port (
     addr   : in  ppword;                -- Memory address
     rdata  : out cpword;                -- read data
-    wdata  : in  cpword;                -- write data (complemented)
+    wdata  : in  cpword;                -- write data
     reset  : in  std_logic;             -- power-up reset
     strobe : in  std_logic;             -- read/write strobe
     write  : in  std_logic);            -- write request
@@ -92,14 +92,13 @@ begin  -- beh
   begin  -- process rw
 --    if reset = '1' then
 --      for i in 0 to idata'high loop
---        mdata (i) := idata (i);
+--        mdata (i) := TO_UNSIGNED (idata (i), 60);
 --      end loop;  -- i
 --    elsif
   if strobe'event and strobe = '1' then  -- rising clock edge
       areg := TO_INTEGER (addr);
       if write = '1' then
---        mdata (areg) := TO_INTEGER (not (wdata));
-        mdata (areg) := not (wdata);
+        mdata (areg) := wdata;
       else
         rdata <= mdata (areg);
       end if;
