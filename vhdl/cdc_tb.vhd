@@ -29,7 +29,7 @@ architecture behav of cdc_tb is
   component cdc6600 
   port (
     c_1w37_in : in  tpcable;
-    clk40 : in std_logic;
+    -- clk40 : in std_logic;
     clk1, clk2, clk3, clk4, reset : in std_logic
 );
   end component;
@@ -44,7 +44,7 @@ begin
    --  Component instantiation.
    uut : cdc6600 port map (
       c_1w37_in => c_1w37_in,
-      clk40 => clk40,
+      -- clk40 => clk40,
       clk1 => clk1,
       clk2 => clk2,
       clk3 => clk3,
