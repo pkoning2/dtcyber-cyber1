@@ -36,6 +36,7 @@ package sigs is
   subtype ppword is UNSIGNED (11 downto 0);  -- PPU word (12 bits)
   subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
+  subtype bankaddr is UNSIGNED (4 downto 0);  -- Bank address (5 bits)
   type ippmem  is array (natural range <>) of ppint;  -- initial data for ppmem
   subtype cpword is UNSIGNED (59 downto 0);  -- CPU word (60 bits)
 --  type cpint is  range 0 to 1152921504606846975;  -- CPU word, as an integer
