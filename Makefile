@@ -27,16 +27,17 @@ include Makefile.dd60
 
 ifeq ("$(HOST)","Darwin")
 ifeq ("$(SDKDIR)","")
-SDKDIR := /Developer/SDKs/MacOSX10.4u.sdk
+SDKDIR := /Developer/SDKs/MacOSX10.5.sdk
 endif
 LIBS    +=  -Wl,-syslibroot,$(SDKDIR)
 INCL    += -isysroot $(SDKDIR) -I$(SDKDIR)/Developer/Headers/FlatCarbon
-LDFLAGS +=  -Wl,-framework,CoreServices -mmacosx-version-min=10.4
-CFLAGS  +=  -mmacosx-version-min=10.4
+LDFLAGS +=  -Wl,-framework,CoreServices -mmacosx-version-min=10.5
+CFLAGS  +=  -mmacosx-version-min=10.5
 PPCARCHFLAGS = -arch ppc
 G5CFLAGS = -mcpu=G5 -mtune=G5 -falign-loops=16 -falign-functions=16 -falign-labels=16 -mpowerpc64
 G3CFLAGS = -mcpu=G3 -mtune=G3
 X86ARCHFLAGS = -arch i386
+X86_64ARCHFLAGS = -arch x86_64
 TOOLLDFLAGS = -arch i386 -arch ppc
 endif
 
@@ -71,16 +72,20 @@ dtcyber:
 	mkdir -p g3; \
 	cd g3; \
 	ln -sf ../Makefile.* .; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)"
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G3\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)"
 	mkdir -p g5; \
 	cd g5; \
 	ln -sf ../Makefile.* .; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL) DUAL_HOST_CPUS=1 PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)"
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G5\"'" VPATH=.. DUAL=$(DUAL) DUAL_HOST_CPUS=1 PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)"
 	mkdir -p x86; \
 	cd x86 ; \
 	ln -sf ../Makefile.* .; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86CFLAGS) $(EXTRACFLAGS)" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86ARCHFLAGS)"
-	lipo -create -output dtcyber g3/gxdtcyber g5/gxdtcyber x86/gxdtcyber
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"i386\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86ARCHFLAGS)"
+	mkdir -p x86_64; \
+	cd x86_64 ; \
+	ln -sf ../Makefile.* .; \
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86_64CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"x86_64\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86_64ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86_64ARCHFLAGS)"
+	lipo -create -output dtcyber g3/gxdtcyber g5/gxdtcyber x86/gxdtcyber x86_64/gxdtcyber
 
 gxdtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) $(ARCHCFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)

@@ -322,7 +322,7 @@ static void rtcDisconnect(void)
 **------------------------------------------------------------------------*/
 static void rtcInit2(long setMHz)
     {
-#if defined(__x86_64)
+#if defined(__x86_64) && !defined(__APPLE__)
     Hz = ULL (1000000);
 #else
     u64 hz = 0;
