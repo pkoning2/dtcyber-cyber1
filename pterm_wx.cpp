@@ -658,6 +658,10 @@ public:
 
 	bool		m_RosterMonitor;
 
+    FILE *m_testdata;
+    bool m_testascii;
+    bool m_testreq;
+
 private:
     wxLocale    m_locale; // locale we'll be using
     
@@ -752,6 +756,7 @@ class PtermFrame : public PtermFrameBase, public emul8080
 {
     friend void PtermCanvas::OnDraw(wxDC &dc);
     friend void PtermApp::OnHelpKeys (wxCommandEvent &event);
+    friend bool PtermApp::OnInit (void);
     friend int PtermConnection::NextWord (void);
 public:
     // ctor(s)
@@ -1594,6 +1599,9 @@ bool PtermApp::OnInit (void)
     wxString str;
     wxString filename;
 	bool skipinit = false;
+
+    m_testascii = false;
+    m_testreq = false;
     
     ptermApp = this;
     m_firstFrame = m_helpFrame = NULL;
@@ -1648,6 +1656,22 @@ bool PtermApp::OnInit (void)
 			//load profile
 			skipinit = ptermApp->LoadProfile(profile,filename);
 		}
+		else if (str.Right(4).CmpNoCase(wxT(".dat"))==0)
+        {
+            // test data file
+            m_testdata = fopen (str.mb_str(), "r");
+            if (m_testdata == NULL)
+            {
+                perror ("Error opening test data file");
+                exit (99);
+            }
+            str = argv[1];
+            if (argc > 2 && str.Left (2) == wxT ("-a"))
+            {
+                m_testascii = true;
+            }
+            m_testreq = true;
+        }
 	}
 
 	//check if skipping initial read of settings due to successful load of settings
@@ -1731,9 +1755,56 @@ bool PtermApp::OnInit (void)
 
     // create the main application window
     // If arguments are present, always connect without asking
-    if (!DoConnect (!(m_connect || argc > 1)))
+    if (!m_testreq && (!DoConnect (!(m_connect || argc > 1))))
     {
         return false;
+    }
+    
+    if (m_testreq)
+    {
+        char tline[200];
+        int w;
+        PtermFrame *frame;
+        
+        frame = new PtermFrame(str, -1, _("Test execution"));
+
+        if (frame != NULL)
+        {
+            if (m_firstFrame != NULL)
+            {
+                m_firstFrame->m_prevFrame = frame;
+            }
+            frame->m_nextFrame = m_firstFrame;
+            m_firstFrame = frame;
+            if (m_testascii)
+            {
+                printf ("reading test data for ascii mode.,,\n");
+                frame->m_dumbTty = false;
+            }
+            else
+            {
+                printf ("reading test data for classic mode...\n");
+            }
+            for (;;)
+            {
+                tline[0] = '\0';
+                fgets (tline, 199, m_testdata);
+                if (tline[0] == '\0')
+                {
+                    fclose (m_testdata);
+                    m_testdata = NULL;
+                    break;
+                }
+                if (sscanf (tline, "%o", &w) != 0)
+                {
+                    // Successful conversion, process the word
+                    frame->procPlatoWord (w, m_testascii);
+                }
+            }
+            printf ("done with test data\n");
+            
+            m_helpFrame = frame;
+        }
     }
     
     // Add some handlers so we can save the screen in various formats
