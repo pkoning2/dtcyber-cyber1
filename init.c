@@ -162,7 +162,7 @@ void initStartup(const char *config)
     **  Read and process cyber.ini file.
     */
     printf("Starting initialisation\n");
-#if defined(__APPLE__)
+#if defined(__APPLE__) && defined (ARCHNAME)
     printf (" Built for " ARCHNAME "\n");
 #endif
     initCyber(config);

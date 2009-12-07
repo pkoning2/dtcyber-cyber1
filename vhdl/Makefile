@@ -1,4 +1,6 @@
 VLIB = work-obj93.cf
+HOST := $(shell uname)
+MACHINE := $(shell uname -m)
 MODULE_SRCS = $(wildcard ??.vhd)
 MODULES = clock.o clockh.o mem.o  synchro.o $(MODULE_SRCS:.vhd=.o)
 #CHASSIS_SRCS = $(wildcard chassis*.wlist)
@@ -24,16 +26,22 @@ OBJS = $(VOBJS) $(FOREIGN)
 VPATH = ..
 LINKSWITCH := -Wl,
 
+ifeq ("$(HOST)","Darwin")
+CCOPTS := -arch i386
+ASMOPTS := -Wa,-arch -Wa,i386
+LDOPTS := -Wl,-arch -Wl,i386
+endif
+
 OPTIMIZE ?=
 #OPTIMIZE ?= -O2
 
-GHDLOPTS := $(OPTIMIZE)   ### --finteger64
+GHDLOPTS := $(OPTIMIZE) $(ASMOPTS) $(LDOPTS)  ### --finteger64
 
 cdc_tb:	$(OBJS)
-	ghdl -e $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
+	ghdl -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
 
 cdc_tb2:	$(filter-out cdc_tb.o,$(OBJS)) cdc_tb2.o chassis12.o
-	ghdl -e $(addprefix $(LINKSWITCH),$(filter-out cdc_tb2.o chassis12.o $(VOBJS),$+) $(FLIBS))  cdc_tb2
+	ghdl -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out cdc_tb2.o chassis12.o $(VOBJS),$+) $(FLIBS))  cdc_tb2
 
 cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
 	ghdl -a $(GHDLOPTS) $<
@@ -43,7 +51,7 @@ cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
 	ghdl -a $(GHDLOPTS) $<
 
 %.o : %.c
-	$(CC) -O2  $(CFLAGS) -I .. -I . -c $<
+	$(CC) -O2  $(CFLAGS) $(CCOPTS) -I .. -I . -c $<
 
 cdc6600.vhd $(CHASSIS_V) : $(CHASSIS_SRCS) $(CABLE_SRCS)
 	# Note: cables must be last
