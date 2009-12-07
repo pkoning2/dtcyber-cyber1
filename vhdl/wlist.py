@@ -209,7 +209,7 @@ class Chassis (cmodule.cmod):
             for p in m.eltype.pins.itervalues ():
                 if p.dir == "in" and p not in m.portmap:
                     unused.add (p)
-                    if p.ptype == "std_logic":
+                    if p.ptype == "logicsig":
                         m.addportmap (self, p, "'1'")
                     else:
                         # Coax idle state is 0 not 1
@@ -474,7 +474,7 @@ def addstd (parent, inst):
                 s = parent.signals[stdpin]
             except KeyError:
                 s = parent.signals[stdpin] = cmodule.Signal (stdpin)
-                s.ptype = "std_logic"
+                s.ptype = "logicsig"
             inst.addportmap (parent, stdpin, stdpin)
             
 def normcable (name, cnum = 0):
@@ -560,7 +560,7 @@ class Wire (cmodule.Signal):
         cmodule.Signal.__init__ (self, name)
         self.sourcename = end1
         self.destname = end2
-        self.ptype = "std_logic"
+        self.ptype = "logicsig"
         
 class Cablewire (cmodule.Signal):
     """A strand of a cable terminating at some pin in this chassis.
@@ -590,7 +590,7 @@ class Tpwire (Cablewire):
     """A strand of twised-pair cable terminating at some pin in this chassis.
     These appear only in connections to the deadstart panel.
     """
-    def __init__ (self, chassis, cable, wirenum, dir, ptype = "std_logic"):
+    def __init__ (self, chassis, cable, wirenum, dir, ptype = "logicsig"):
         Cablewire.__init__ (self, chassis, cable, Tpcable, wirenum, dir, ptype)
         
 class Cable (cmodule.hitem):

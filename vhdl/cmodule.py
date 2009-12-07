@@ -114,7 +114,7 @@ class ElementType (object):
         self.pins = { }
         self.generics = { }
         
-    def addpin (self, namelist, dir, ptype = "std_logic", opt = False):
+    def addpin (self, namelist, dir, ptype = "logicsig", opt = False):
         if dir not in ("in", "out"):
             print "Unrecognized pin direction", dir
             return
