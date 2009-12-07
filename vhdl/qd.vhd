@@ -22,30 +22,30 @@ use work.sigs.all;
 entity qdslice is
   
   port (
-    a, b, c, d, e, f, g : in  std_logic;   -- inputs
-    ca, cb, cc, cd      : in  std_logic;   -- controls
-    tp1, tp2            : out std_logic;   -- test points
-    y                   : out std_logic);  -- output
+    a, b, c, d, e, f, g : in  logicsig;   -- inputs
+    ca, cb, cc, cd      : in  logicsig;   -- controls
+    tp1, tp2            : out logicsig;   -- test points
+    y                   : out logicsig);  -- output
 
 end qdslice;
 
 architecture qdslice of qdslice is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g4
     port (
-      a, b, c, d : in  std_logic;             -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c, d : in  logicsig;             -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1, t2, t3, t4, t5, t6, t7, t8 : std_logic;
+  signal t1, t2, t3, t4, t5, t6, t7, t8 : logicsig;
 begin  -- qdslice
 
   u1 : g2 port map (
@@ -97,34 +97,34 @@ use work.sigs.all;
 entity qd is
   
   port (
-    p11, p4, p9, p6, p20, p27, p22, p25 : in  std_logic;
-    p8, p18, p23, p13                   : in  std_logic;
-    p7, p3, p5, p24, p26, p28           : in  std_logic;
-    p21                                 : in  std_logic;
-    tp1, tp2, tp5, tp6                  : out std_logic;  -- test points
-    p12, p19, p10, p15, p16             : out std_logic);
+    p11, p4, p9, p6, p20, p27, p22, p25 : in  logicsig;
+    p8, p18, p23, p13                   : in  logicsig;
+    p7, p3, p5, p24, p26, p28           : in  logicsig;
+    p21                                 : in  logicsig;
+    tp1, tp2, tp5, tp6                  : out logicsig;  -- test points
+    p12, p19, p10, p15, p16             : out logicsig);
 
 end qd;
 
 architecture gates of qd is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component qdslice
     port (
-      a, b, c, d, e, f, g : in  std_logic;   -- inputs
-      ca, cb, cc, cd      : in  std_logic;   -- controls
-      tp1, tp2            : out std_logic;   -- test points
-      y                   : out std_logic);  -- output
+      a, b, c, d, e, f, g : in  logicsig;   -- inputs
+      ca, cb, cc, cd      : in  logicsig;   -- controls
+      tp1, tp2            : out logicsig;   -- test points
+      y                   : out logicsig);  -- output
   end component;
-  signal a, b, c, d, t1 : std_logic;
+  signal a, b, c, d, t1 : logicsig;
 begin  -- gates
 
   u1 : inv port map (

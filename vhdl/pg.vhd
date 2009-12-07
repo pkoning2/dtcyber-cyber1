@@ -17,35 +17,36 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
+use work.sigs.all;
 
 entity pgslice is
   
   port (
-    i1, i2     : in  std_logic;               -- input bits
-    a          : in  std_logic;               -- reset
-    b, d, e    : in  std_logic;               -- common enables/clocks
-    tp         : out std_logic;               -- test point
-    q          : out std_logic);              -- output
+    i1, i2     : in  logicsig;               -- input bits
+    a          : in  logicsig;               -- reset
+    b, d, e    : in  logicsig;               -- common enables/clocks
+    tp         : out logicsig;               -- test point
+    q          : out logicsig);              -- output
 
 end pgslice;
 
 architecture gates of pgslice is
   component inv
     port (
-      a : in  std_logic;                      -- input
-      y : out std_logic);                     -- output
+      a : in  logicsig;                      -- input
+      y : out logicsig);                     -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2       : out std_logic);               -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2       : out logicsig);               -- output
   end component;
   component rs2flop
     port (
-      s, s2, r  : in  std_logic;                  -- inputs
-      q, qb : out std_logic);                 -- outputs
+      s, s2, r  : in  logicsig;                  -- inputs
+      q, qb : out logicsig);                 -- outputs
   end component;
-  signal t1, t2, ti : std_logic;           -- intermediate values
+  signal t1, t2, ti : logicsig;           -- intermediate values
 begin  -- gates
 
   u1 : g3 port map (
@@ -72,42 +73,43 @@ end gates;
 
 library IEEE;
 use IEEE.std_logic_1164.all;
+use work.sigs.all;
 
 entity pg is
 
   port (
-    p10, p8, p9, p21, p7, p23 : in  std_logic;  -- enables
-    p5, p3, p6, p4            : in  std_logic;  -- inputs 1 and 2
-    p25, p27, p26, p28        : in  std_logic;  -- inputs 3 and 4
-    p13, p14, p17, p20        : out std_logic;  -- outputs
-    tp1, tp2, tp5, tp6        : out std_logic);  -- test points
+    p10, p8, p9, p21, p7, p23 : in  logicsig;  -- enables
+    p5, p3, p6, p4            : in  logicsig;  -- inputs 1 and 2
+    p25, p27, p26, p28        : in  logicsig;  -- inputs 3 and 4
+    p13, p14, p17, p20        : out logicsig;  -- outputs
+    tp1, tp2, tp5, tp6        : out logicsig);  -- test points
 
 end pg;
 
 architecture gates of pg is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2    : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2    : out logicsig);                  -- output
   end component;
   component inv
     port (
-      a : in  std_logic;                      -- input
-      y : out std_logic);                     -- output
+      a : in  logicsig;                      -- input
+      y : out logicsig);                     -- output
   end component;
   component inv2
     port (
-      a : in  std_logic;                      -- input
-      y, y2 : out std_logic);                     -- output
+      a : in  logicsig;                      -- input
+      y, y2 : out logicsig);                     -- output
   end component;
   component pgslice
     port (
-      i1, i2     : in  std_logic;               -- input bits
-      a, b, d, e : in  std_logic;               -- common enables/clocks
-      tp         : out std_logic;               -- test point
-      q          : out std_logic);              -- output
+      i1, i2     : in  logicsig;               -- input bits
+      a, b, d, e : in  logicsig;               -- common enables/clocks
+      tp         : out logicsig;               -- test point
+      q          : out logicsig);              -- output
   end component;
-  signal a, b, d, e : std_logic;          -- control signals
+  signal a, b, d, e : logicsig;          -- control signals
 begin  -- gates
 
   u1 : inv port map (

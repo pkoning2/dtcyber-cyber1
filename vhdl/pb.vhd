@@ -22,20 +22,20 @@ use work.sigs.all;
 entity pbslice is
   
   port (
-    i          : in  std_logic;         -- input
-    c1, c2, c3 : in  std_logic;         -- clocks for the 3 stages
-    tp1, tp2   : out std_logic;         -- test points
-    q          : out std_logic);        -- output
+    i          : in  logicsig;         -- input
+    c1, c2, c3 : in  logicsig;         -- clocks for the 3 stages
+    tp1, tp2   : out logicsig;         -- test points
+    q          : out logicsig);        -- output
 
 end pbslice;
 
 architecture gates of pbslice is
   component latch
     port (
-      d, clk : in  std_logic;                 -- data (set), clock
-      q, qb  : out std_logic);                -- q and q.bar
+      d, clk : in  logicsig;                 -- data (set), clock
+      q, qb  : out logicsig);                -- q and q.bar
   end component;
-  signal tq1, tq2 : std_logic;     -- stage outputs
+  signal tq1, tq2 : logicsig;     -- stage outputs
 begin  -- gates
   u1 : latch port map (
     d   => i,
@@ -60,20 +60,20 @@ use work.sigs.all;
 entity pb is
   
   port (
-    p7, p6, p10                  : in  std_logic;    -- inputs
-    p5, p22, p27                 : in  std_logic;    -- stage clocks
-    tp1, tp2, tp3, tp4, tp5, tp6 : out std_logic;    -- test points
-    p9, p3, p1                   : out std_logic);   -- outputs
+    p7, p6, p10                  : in  logicsig;    -- inputs
+    p5, p22, p27                 : in  logicsig;    -- stage clocks
+    tp1, tp2, tp3, tp4, tp5, tp6 : out logicsig;    -- test points
+    p9, p3, p1                   : out logicsig);   -- outputs
 
 end pb;
 
 architecture gates of pb is
   component pbslice
     port (
-      i          : in  std_logic;         -- input
-      c1, c2, c3 : in  std_logic;         -- clocks for the 3 stages
-      tp1, tp2   : out std_logic;         -- test points
-      q          : out std_logic);        -- output
+      i          : in  logicsig;         -- input
+      c1, c2, c3 : in  logicsig;         -- clocks for the 3 stages
+      tp1, tp2   : out logicsig;         -- test points
+      q          : out logicsig);        -- output
   end component;
 begin  -- gates
   u1 : pbslice port map (

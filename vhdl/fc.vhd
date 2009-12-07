@@ -21,105 +21,105 @@ use work.sigs.all;
 
 entity fc is
     port (
-      p1 : in  std_logic;
-      p3 : in  std_logic;
-      p7 : in  std_logic;
-      p9 : in  std_logic;
-      p13 : in  std_logic;
-      p14 : in  std_logic;
-      p17 : in  std_logic;
-      p19 : in  std_logic;
-      p20 : in  std_logic;
-      p21 : in  std_logic;
-      p22 : in  std_logic;
-      p23 : in  std_logic;
-      p25 : in  std_logic;
-      p26 : in  std_logic;
-      tp1 : out std_logic;
-      tp3 : out std_logic;
-      tp4 : out std_logic;
-      tp5 : out std_logic;
-      tp6 : out std_logic;
-      p2 : out std_logic;
-      p4 : out std_logic;
-      p5 : out std_logic;
-      p6 : out std_logic;
-      p8 : out std_logic;
-      p10 : out std_logic;
-      p11 : out std_logic;
-      p12 : out std_logic;
-      p15 : out std_logic;
-      p16 : out std_logic;
-      p18 : out std_logic;
-      p24 : out std_logic;
-      p27 : out std_logic;
-      p28 : out std_logic);
+      p1 : in  logicsig;
+      p3 : in  logicsig;
+      p7 : in  logicsig;
+      p9 : in  logicsig;
+      p13 : in  logicsig;
+      p14 : in  logicsig;
+      p17 : in  logicsig;
+      p19 : in  logicsig;
+      p20 : in  logicsig;
+      p21 : in  logicsig;
+      p22 : in  logicsig;
+      p23 : in  logicsig;
+      p25 : in  logicsig;
+      p26 : in  logicsig;
+      tp1 : out logicsig;
+      tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
+      p2 : out logicsig;
+      p4 : out logicsig;
+      p5 : out logicsig;
+      p6 : out logicsig;
+      p8 : out logicsig;
+      p10 : out logicsig;
+      p11 : out logicsig;
+      p12 : out logicsig;
+      p15 : out logicsig;
+      p16 : out logicsig;
+      p18 : out logicsig;
+      p24 : out logicsig;
+      p27 : out logicsig;
+      p28 : out logicsig);
 
 end fc;
 architecture gates of fc is
   component g2
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component g3
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component g5
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      d : in  std_logic;
-      e : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      d : in  logicsig;
+      e : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component inv
     port (
-      a : in  std_logic;
-      y : out std_logic);
+      a : in  logicsig;
+      y : out logicsig);
 
   end component;
 
   component inv2
     port (
-      a : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
-  signal a : std_logic;
-  signal b : std_logic;
-  signal c : std_logic;
-  signal d : std_logic;
-  signal e : std_logic;
-  signal g : std_logic;
-  signal h : std_logic;
-  signal i : std_logic;
-  signal j : std_logic;
-  signal k : std_logic;
-  signal t1 : std_logic;
-  signal t2 : std_logic;
-  signal t3 : std_logic;
-  signal t4 : std_logic;
-  signal t5 : std_logic;
-  signal t6 : std_logic;
-  signal t7 : std_logic;
+  signal a : logicsig;
+  signal b : logicsig;
+  signal c : logicsig;
+  signal d : logicsig;
+  signal e : logicsig;
+  signal g : logicsig;
+  signal h : logicsig;
+  signal i : logicsig;
+  signal j : logicsig;
+  signal k : logicsig;
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal t3 : logicsig;
+  signal t4 : logicsig;
+  signal t5 : logicsig;
+  signal t6 : logicsig;
+  signal t7 : logicsig;
 
 begin -- gates
   u1 : inv port map (

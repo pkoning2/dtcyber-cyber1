@@ -21,8 +21,8 @@ use work.sigs.all;
 
 entity crslice is
     port (
-      a : in  std_logic;
-      in1 : in  std_logic;
+      a : in  logicsig;
+      in1 : in  logicsig;
       tp : out coaxsig;
       y : out coaxsig);
 
@@ -30,21 +30,21 @@ end crslice;
 architecture gates of crslice is
   component cxdriver
     port (
-      a : in  std_logic;
+      a : in  logicsig;
       y : out coaxsig);
 
   end component;
 
   component g2
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
-  signal t1 : std_logic;
+  signal t1 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -68,22 +68,22 @@ use work.sigs.all;
 
 entity cr is
     port (
-      p5 : in  std_logic;
-      p7 : in  std_logic;
-      p9 : in  std_logic;
-      p11 : in  std_logic;
-      p13 : in  std_logic;
-      p14 : in  std_logic;
-      p15 : in  std_logic;
-      p16 : in  std_logic;
-      p17 : in  std_logic;
-      p22 : in  std_logic;
-      p24 : in  std_logic;
-      p26 : in  std_logic;
-      tp1 : out std_logic;
-      tp2 : out std_logic;
-      tp5 : out std_logic;
-      tp6 : out std_logic;
+      p5 : in  logicsig;
+      p7 : in  logicsig;
+      p9 : in  logicsig;
+      p11 : in  logicsig;
+      p13 : in  logicsig;
+      p14 : in  logicsig;
+      p15 : in  logicsig;
+      p16 : in  logicsig;
+      p17 : in  logicsig;
+      p22 : in  logicsig;
+      p24 : in  logicsig;
+      p26 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
       p4 : out coaxsig;
       p6 : out coaxsig;
       p8 : out coaxsig;
@@ -91,16 +91,16 @@ entity cr is
       p12 : out coaxsig;
       p19 : out coaxsig;
       p21 : out coaxsig;
-      p23 : out std_logic;
-      p25 : out std_logic;
+      p23 : out logicsig;
+      p25 : out logicsig;
       p27 : out coaxsig);
 
 end cr;
 architecture gates of cr is
   component crslice
     port (
-      a : in  std_logic;
-      in1 : in  std_logic;
+      a : in  logicsig;
+      in1 : in  logicsig;
       tp : out coaxsig;
       y : out coaxsig);
 
@@ -108,14 +108,14 @@ architecture gates of cr is
 
   component g2
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
-  signal a : std_logic;
+  signal a : logicsig;
   signal t1 : coaxsig;
 
 begin -- gates

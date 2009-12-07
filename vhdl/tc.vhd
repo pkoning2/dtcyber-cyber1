@@ -23,28 +23,28 @@ use work.sigs.all;
 entity tc is
   
   port (
-    p3, p5, p14, p16            : in  std_logic;  -- inputs
-    tp1, tp5                    : out std_logic;  -- test point 1 (stage 1)
-    tp2, tp6                    : out std_logic;  -- test point 2 (stage 2)
-    p1, p2, p4, p6, p7, p8      : out std_logic;  -- outputs 1
-    p9, p10, p11, p12, p13, p15 : out std_logic;  -- outputs 1
-    p17, p18, p19, p20, p21, p22 : out std_logic;  -- outputs 2
-    p23, p24, p25, p26, p27, p28 : out std_logic);  -- outputs 2
+    p3, p5, p14, p16            : in  logicsig;  -- inputs
+    tp1, tp5                    : out logicsig;  -- test point 1 (stage 1)
+    tp2, tp6                    : out logicsig;  -- test point 2 (stage 2)
+    p1, p2, p4, p6, p7, p8      : out logicsig;  -- outputs 1
+    p9, p10, p11, p12, p13, p15 : out logicsig;  -- outputs 1
+    p17, p18, p19, p20, p21, p22 : out logicsig;  -- outputs 2
+    p23, p24, p25, p26, p27, p28 : out logicsig);  -- outputs 2
 
 end tc;
 
 architecture gates of tc is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2    : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2    : out logicsig);                  -- output
   end component;
-  signal a, b, c, d : std_logic;
+  signal a, b, c, d : logicsig;
 begin  -- gates
   u1 : g2 port map (
     a => p3,

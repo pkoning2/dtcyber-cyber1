@@ -22,26 +22,26 @@ use work.sigs.all;
 entity iv is
   
   port (
-    p6, p8, p26                           : in  std_logic;
-    tp1, tp2, tp5, tp6                    : out std_logic;  -- test points
-    p23, p1, p21, p20, p17, p4, p2, p28   : out std_logic;
-    p16, p10, p14, p11, p12, p9, p13, p15 : out std_logic);
+    p6, p8, p26                           : in  logicsig;
+    tp1, tp2, tp5, tp6                    : out logicsig;  -- test points
+    p23, p1, p21, p20, p17, p4, p2, p28   : out logicsig;
+    p16, p10, p14, p11, p12, p9, p13, p15 : out logicsig);
 
 end iv;
 
 architecture gates of iv is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal a, b, c, d, e, f : std_logic;
-  signal t1, t2, t3, t4 : std_logic;
+  signal a, b, c, d, e, f : logicsig;
+  signal t1, t2, t3, t4 : logicsig;
 begin  -- gates
 
   u1 : inv2 port map (

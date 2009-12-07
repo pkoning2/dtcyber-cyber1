@@ -22,30 +22,30 @@ use work.sigs.all;
 entity psslice is
   
   port (
-    a  : in  std_logic;
-    tp : out std_logic;                 -- test point
-    b  : in  std_logic;                 -- enable
-    y  : out std_logic);
+    a  : in  logicsig;
+    tp : out logicsig;                 -- test point
+    b  : in  logicsig;                 -- enable
+    y  : out logicsig);
 
 end psslice;
 
 architecture gates of psslice is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1, t2 : std_logic;
+  signal t1, t2 : logicsig;
 begin  -- gates
 
   u1 : inv2 port map (
@@ -69,9 +69,9 @@ use work.sigs.all;
 entity ps is
   
   port (
-    p2, p4, p8, p10, p16, p18, p22, p24, p27 : in    std_logic;
-    tp1, tp2, tp3, tp4, tp6                  : out   std_logic;  -- test points
-    p5, p11, p19, p25                        : out   std_logic;
+    p2, p4, p8, p10, p16, p18, p22, p24, p27 : in    logicsig;
+    tp1, tp2, tp3, tp4, tp6                  : out   logicsig;  -- test points
+    p5, p11, p19, p25                        : out   logicsig;
     p28, p26                                 : inout misc);      -- bias
 
 end ps;
@@ -83,17 +83,17 @@ end ps;
 architecture gates of ps is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component psslice
     port (
-      a  : in  std_logic;
-      tp : out std_logic;                 -- test point
-      b  : in  std_logic;                 -- enable
-      y  : out std_logic);
+      a  : in  logicsig;
+      tp : out logicsig;                 -- test point
+      b  : in  logicsig;                 -- enable
+      y  : out logicsig);
   end component;
-  signal a : std_logic;
+  signal a : logicsig;
 begin  -- gates
   u1 : inv2 port map (
     a  => p27,

@@ -22,64 +22,64 @@ use work.sigs.all;
 entity pk is
   
   port (
-    p19 : in  std_logic;               -- select channel
+    p19 : in  logicsig;               -- select channel
     p15 : in  coaxsig := '1';                 -- coax full input
-    p6  : in  std_logic;               -- full
-    p17 : in  std_logic;               -- empty
+    p6  : in  logicsig;               -- full
+    p17 : in  logicsig;               -- empty
     p8  : in  coaxsig := '1';                 -- coax empty input
-    p23 : in  std_logic;               -- master clear
-    p5  : in  std_logic;               -- function
+    p23 : in  logicsig;               -- master clear
+    p5  : in  logicsig;               -- function
     p3  : out coaxsig;                        -- function coax output
     p9  : out coaxsig;                        -- empty coax output
-    p10 : out std_logic;                      -- empty out
+    p10 : out logicsig;                      -- empty out
     p18 : out coaxsig;                        -- inactive coax out
     p14 : in  coaxsig := '1';                 -- inactive coax in
-    p21 : out std_logic;                      -- inactive out
+    p21 : out logicsig;                      -- inactive out
     p25 : in  coaxsig := '1';                 -- active coax in
     p22 : out coaxsig;                        -- active coax out
-    p12 : in  std_logic;               -- active in
-    p27 : in  std_logic;               -- inactive in
-    p24, p26, p28 : out std_logic;            -- empty out
+    p12 : in  logicsig;               -- active in
+    p27 : in  logicsig;               -- inactive in
+    p24, p26, p28 : out logicsig;            -- empty out
     p13 : out coaxsig;                        -- coax full out
-    tp1 : out std_logic;                      -- test point 1
-    tp2 : out std_logic;                      -- test point 2
-    tp5 : out std_logic;                      -- test point 5
-    tp6 : out std_logic);                     -- test point 6
+    tp1 : out logicsig;                      -- test point 1
+    tp2 : out logicsig;                      -- test point 2
+    tp5 : out logicsig;                      -- test point 5
+    tp6 : out logicsig);                     -- test point 6
 
 end pk;
 
 architecture gates of pk is
   component inv
     port (
-      a : in  std_logic;                      -- input
-      y : out std_logic);                     -- output
+      a : in  logicsig;                      -- input
+      y : out logicsig);                     -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2    : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2    : out logicsig);                  -- output
   end component;
   component cxdriver
     port (
-      a : in  std_logic;                        -- source
+      a : in  logicsig;                        -- source
       y : out coaxsig);                       -- destination
   end component;
   component cxreceiver
     port (
       a : in  coaxsig;                    -- source
-      y : out std_logic);                 -- destination
+      y : out logicsig);                 -- destination
   end component;
   component r4s4flop
     port (
-      s, r  : in  std_logic;                  -- inputs
-      s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset
-      q, qb : out std_logic);                 -- outputs
+      s, r  : in  logicsig;                  -- inputs
+      s2, s3, s4, r2, r3, r4  : in  logicsig;  -- extra set, reset
+      q, qb : out logicsig);                 -- outputs
   end component;
-  signal b, c : std_logic;                    -- internal enables
-  signal ai, ii, fi, ei : std_logic;          -- internal gate output terms
-  signal fq, f2 : std_logic;                  -- full rsflop outputs
-  signal a : std_logic;                       -- active rsflop output
-  signal p15i, p8i, p25i, p14i : std_logic;   -- internal coax inputs
+  signal b, c : logicsig;                    -- internal enables
+  signal ai, ii, fi, ei : logicsig;          -- internal gate output terms
+  signal fq, f2 : logicsig;                  -- full rsflop outputs
+  signal a : logicsig;                       -- active rsflop output
+  signal p15i, p8i, p25i, p14i : logicsig;   -- internal coax inputs
 begin  -- gates
 
   u1 : inv port map (

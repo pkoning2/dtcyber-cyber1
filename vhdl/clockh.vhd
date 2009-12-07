@@ -16,14 +16,14 @@ use work.sigs.all;
 entity clockh is
   
   port (
-    clk1, clk2, clk3, clk4 : in std_logic;  -- clocks from the outside world
-    p16, p11, p13, p18, p10 : in std_logic := '0'; -- inputs (ignored)
+    clk1, clk2, clk3, clk4 : in logicsig;  -- clocks from the outside world
+    p16, p11, p13, p18, p10 : in logicsig := '0'; -- inputs (ignored)
     p12 : in coaxsig := '0';                -- external coax clock (ignored)
-    p15, p17, p19, p20 : in std_logic := '0';  -- inputs (ignored)
-    p2, p4, p6, p8, p14 : out std_logic;    -- clock phase 3
-    p1, p3, p5, p7 : out std_logic;         -- clock phase 4
-    p22, p24, p26, p28 : out std_logic;     -- clock phase 1
-    p21, p23, p25, p27 : out std_logic);    -- clock phase 2
+    p15, p17, p19, p20 : in logicsig := '0';  -- inputs (ignored)
+    p2, p4, p6, p8, p14 : out logicsig;    -- clock phase 3
+    p1, p3, p5, p7 : out logicsig;         -- clock phase 4
+    p22, p24, p26, p28 : out logicsig;     -- clock phase 1
+    p21, p23, p25, p27 : out logicsig);    -- clock phase 2
 
 end clockh;
 

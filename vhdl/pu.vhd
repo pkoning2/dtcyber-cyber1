@@ -22,30 +22,30 @@ use work.sigs.all;
 entity puslice is
   
   port (
-    s, r, e : in  std_logic;
-    tp      : out std_logic;            -- test point
-    q1, q2  : out std_logic;            -- q outputs
-    qb      : out std_logic);           -- qb output
+    s, r, e : in  logicsig;
+    tp      : out logicsig;            -- test point
+    q1, q2  : out logicsig;            -- q outputs
+    qb      : out logicsig);           -- qb output
 
 end puslice;
 
 architecture gates of puslice is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component rsflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal tri, tsi, tqi, tqbi : std_logic;
+  signal tri, tsi, tqi, tqbi : logicsig;
 begin  -- gates
 
   u1 : g2 port map (
@@ -79,28 +79,28 @@ use work.sigs.all;
 entity pu is
   
   port (
-    p10, p11, p17, p19, p18           : in  std_logic;
-    tp1, tp5, tp6                     : out std_logic;  -- test points
-    p9, p8, p1, p4, p3, p6, p7        : out std_logic;
+    p10, p11, p17, p19, p18           : in  logicsig;
+    tp1, tp5, tp6                     : out logicsig;  -- test points
+    p9, p8, p1, p4, p3, p6, p7        : out logicsig;
     p14, p16, p15                     : inout misc;  -- analog stuff
-    p22, p21, p28, p27, p26, p25, p24 : out std_logic);
+    p22, p21, p28, p27, p26, p25, p24 : out logicsig);
 
 end pu;
 
 architecture gates of pu is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component puslice
     port (
-      s, r, e : in  std_logic;
-      tp      : out std_logic;            -- test point
-      q1, q2  : out std_logic;            -- q outputs
-      qb      : out std_logic);           -- qb output
+      s, r, e : in  logicsig;
+      tp      : out logicsig;            -- test point
+      q1, q2  : out logicsig;            -- q outputs
+      qb      : out logicsig);           -- qb output
   end component;
-  signal a, t1, t2 : std_logic;
+  signal a, t1, t2 : logicsig;
 begin  -- gates
 
   u1 : inv2 port map (

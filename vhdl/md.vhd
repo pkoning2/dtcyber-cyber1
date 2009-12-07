@@ -21,49 +21,49 @@ use work.sigs.all;
 
 entity mdslice is
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      in1 : in  std_logic;
-      in2 : in  std_logic := '1';
-      in3 : in  std_logic := '1';
-      tp : out std_logic;
-      q : out std_logic;
-      qb : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      in1 : in  logicsig;
+      in2 : in  logicsig := '1';
+      in3 : in  logicsig := '1';
+      tp : out logicsig;
+      q : out logicsig;
+      qb : out logicsig);
 
 end mdslice;
 architecture gates of mdslice is
   component g2
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component g3
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component rs2flop
     port (
-      r : in  std_logic;
-      s : in  std_logic;
-      s2 : in  std_logic;
-      q : out std_logic;
-      qb : out std_logic);
+      r : in  logicsig;
+      s : in  logicsig;
+      s2 : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
 
   end component;
 
-  signal t1 : std_logic;
-  signal t2 : std_logic;
+  signal t1 : logicsig;
+  signal t2 : logicsig;
 
 begin -- gates
   u1 : g3 port map (
@@ -97,66 +97,66 @@ use work.sigs.all;
 
 entity md is
     port (
-      p4 : in  std_logic;
-      p6 : in  std_logic;
-      p11 : in  std_logic;
-      p12 : in  std_logic;
-      p13 : in  std_logic;
-      p14 : in  std_logic;
-      p16 : in  std_logic;
-      p17 : in  std_logic;
-      p18 : in  std_logic;
-      p21 : in  std_logic;
-      p22 : in  std_logic;
-      p24 : in  std_logic;
-      p26 : in  std_logic;
-      p27 : in  std_logic;
-      p28 : in  std_logic;
-      tp1 : out std_logic;
-      tp2 : out std_logic;
-      tp3 : out std_logic;
-      tp4 : out std_logic;
-      tp5 : out std_logic;
-      tp6 : out std_logic;
-      p2 : out std_logic;
-      p3 : out std_logic;
-      p5 : out std_logic;
-      p7 : out std_logic;
-      p8 : out std_logic;
-      p9 : out std_logic;
-      p10 : out std_logic;
-      p15 : out std_logic;
-      p19 : out std_logic;
-      p20 : out std_logic;
-      p23 : out std_logic;
-      p25 : out std_logic);
+      p4 : in  logicsig;
+      p6 : in  logicsig;
+      p11 : in  logicsig;
+      p12 : in  logicsig;
+      p13 : in  logicsig;
+      p14 : in  logicsig;
+      p16 : in  logicsig;
+      p17 : in  logicsig;
+      p18 : in  logicsig;
+      p21 : in  logicsig;
+      p22 : in  logicsig;
+      p24 : in  logicsig;
+      p26 : in  logicsig;
+      p27 : in  logicsig;
+      p28 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
+      p2 : out logicsig;
+      p3 : out logicsig;
+      p5 : out logicsig;
+      p7 : out logicsig;
+      p8 : out logicsig;
+      p9 : out logicsig;
+      p10 : out logicsig;
+      p15 : out logicsig;
+      p19 : out logicsig;
+      p20 : out logicsig;
+      p23 : out logicsig;
+      p25 : out logicsig);
 
 end md;
 architecture gates of md is
   component inv
     port (
-      a : in  std_logic;
-      y : out std_logic);
+      a : in  logicsig;
+      y : out logicsig);
 
   end component;
 
   component mdslice
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      in1 : in  std_logic;
-      in2 : in  std_logic := '1';
-      in3 : in  std_logic := '1';
-      tp : out std_logic;
-      q : out std_logic;
-      qb : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      in1 : in  logicsig;
+      in2 : in  logicsig := '1';
+      in3 : in  logicsig := '1';
+      tp : out logicsig;
+      q : out logicsig;
+      qb : out logicsig);
 
   end component;
 
-  signal a : std_logic;
-  signal b : std_logic;
-  signal c : std_logic;
+  signal a : logicsig;
+  signal b : logicsig;
+  signal c : logicsig;
 
 begin -- gates
   u1 : mdslice port map (

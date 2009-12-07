@@ -17,25 +17,26 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
+use work.sigs.all;
 
 entity td is
   
   port (
-    p1, p3, p2, p4, p25, p27, p26, p28 : in  std_logic;
-    tp1, tp2, tp5, tp6                 : out std_logic;  -- test points
-    p6, p8, p10, p12, p14              : out std_logic;
-    p5, p7, p9, p11, p13               : out std_logic;
-    p16, p18, p20, p22, p24            : out std_logic;
-    p15, p17, p19, p21, p23            : out std_logic);
+    p1, p3, p2, p4, p25, p27, p26, p28 : in  logicsig;
+    tp1, tp2, tp5, tp6                 : out logicsig;  -- test points
+    p6, p8, p10, p12, p14              : out logicsig;
+    p5, p7, p9, p11, p13               : out logicsig;
+    p16, p18, p20, p22, p24            : out logicsig;
+    p15, p17, p19, p21, p23            : out logicsig);
 
 end td;
 architecture gates of td is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1, t2, t5, t6 : std_logic;
+  signal t1, t2, t5, t6 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (

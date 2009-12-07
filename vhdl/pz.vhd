@@ -22,29 +22,29 @@ use work.sigs.all;
 entity pzslice is
   
   port (
-    d, clk, r : in  std_logic;
-    tp        : out std_logic;            -- test point
-    q         : out std_logic);
+    d, clk, r : in  logicsig;
+    tp        : out logicsig;            -- test point
+    q         : out logicsig);
 
 end pzslice;
 
 architecture gates of pzslice is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component rsflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal t1, t2 : std_logic;
+  signal t1, t2 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (
@@ -69,31 +69,31 @@ use work.sigs.all;
 entity pz is
   
   port (
-    p4, p2, p6, p19, p27, p22    : in  std_logic;
-    p17, p9, p16, p10            : in  std_logic;
-    tp1, tp2, tp3, tp4, tp5, tp6 : out std_logic;  -- test points
-    p5, p3, p7, p21, p25, p23    : out std_logic);
+    p4, p2, p6, p19, p27, p22    : in  logicsig;
+    p17, p9, p16, p10            : in  logicsig;
+    tp1, tp2, tp3, tp4, tp5, tp6 : out logicsig;  -- test points
+    p5, p3, p7, p21, p25, p23    : out logicsig);
 
 end pz;
 
 architecture gates of pz is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component pzslice
     port (
-      d, clk, r : in  std_logic;
-      tp        : out std_logic;            -- test point
-      q         : out std_logic);
+      d, clk, r : in  logicsig;
+      tp        : out logicsig;            -- test point
+      q         : out logicsig);
   end component;
-  signal a, c, t1 : std_logic;
+  signal a, c, t1 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (

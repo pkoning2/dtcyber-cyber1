@@ -21,35 +21,35 @@ use work.sigs.all;
 
 entity abslice is
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      q1 : out std_logic;
-      q2 : out std_logic;
-      q3 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      q1 : out logicsig;
+      q2 : out logicsig;
+      q3 : out logicsig);
 
 end abslice;
 architecture gates of abslice is
   component g2
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component inv
     port (
-      a : in  std_logic;
-      y : out std_logic);
+      a : in  logicsig;
+      y : out logicsig);
 
   end component;
 
-  signal t1 : std_logic;
-  signal t2 : std_logic;
-  signal t3 : std_logic;
-  signal t4 : std_logic;
-  signal t5 : std_logic;
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal t3 : logicsig;
+  signal t4 : logicsig;
+  signal t5 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -92,46 +92,46 @@ use work.sigs.all;
 
 entity ab is
     port (
-      p1 : in  std_logic;
-      p3 : in  std_logic;
-      p5 : in  std_logic;
-      p8 : in  std_logic;
-      p11 : in  std_logic;
-      p13 : in  std_logic;
-      p18 : in  std_logic;
-      p20 : in  std_logic;
-      p23 : in  std_logic;
-      p24 : in  std_logic;
-      p26 : in  std_logic;
-      p28 : in  std_logic;
-      tp1 : out std_logic;
-      tp2 : out std_logic;
-      tp3 : out std_logic;
-      tp4 : out std_logic;
-      tp5 : out std_logic;
-      tp6 : out std_logic;
-      p4 : out std_logic;
-      p6 : out std_logic;
-      p10 : out std_logic;
-      p12 : out std_logic;
-      p14 : out std_logic;
-      p15 : out std_logic;
-      p16 : out std_logic;
-      p17 : out std_logic;
-      p19 : out std_logic;
-      p21 : out std_logic;
-      p25 : out std_logic;
-      p27 : out std_logic);
+      p1 : in  logicsig;
+      p3 : in  logicsig;
+      p5 : in  logicsig;
+      p8 : in  logicsig;
+      p11 : in  logicsig;
+      p13 : in  logicsig;
+      p18 : in  logicsig;
+      p20 : in  logicsig;
+      p23 : in  logicsig;
+      p24 : in  logicsig;
+      p26 : in  logicsig;
+      p28 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
+      p4 : out logicsig;
+      p6 : out logicsig;
+      p10 : out logicsig;
+      p12 : out logicsig;
+      p14 : out logicsig;
+      p15 : out logicsig;
+      p16 : out logicsig;
+      p17 : out logicsig;
+      p19 : out logicsig;
+      p21 : out logicsig;
+      p25 : out logicsig;
+      p27 : out logicsig);
 
 end ab;
 architecture gates of ab is
   component abslice
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      q1 : out std_logic;
-      q2 : out std_logic;
-      q3 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      q1 : out logicsig;
+      q2 : out logicsig;
+      q3 : out logicsig);
 
   end component;
 

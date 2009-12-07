@@ -23,44 +23,44 @@ entity hq is
   
   port (
     p12                                    : in  coaxsig;  -- master clock input
-    p10                                    : in  std_logic;  -- clock latch reset
-    p16, p13, p15, p19                     : in  std_logic;  -- clock I, II, III, IV
-    p11, p18, p17, p20                     : in  std_logic;
-    tp1, tp2, tp3, tp4, tp5, tp6           : out std_logic;  -- test points
-    p14                                    : out std_logic;
-    p2, p4, p6, p8, p1, p3, p5, p7         : out std_logic;
-    p22, p24, p26, p28, p21, p23, p25, p27 : out std_logic);
+    p10                                    : in  logicsig;  -- clock latch reset
+    p16, p13, p15, p19                     : in  logicsig;  -- clock I, II, III, IV
+    p11, p18, p17, p20                     : in  logicsig;
+    tp1, tp2, tp3, tp4, tp5, tp6           : out logicsig;  -- test points
+    p14                                    : out logicsig;
+    p2, p4, p6, p8, p1, p3, p5, p7         : out logicsig;
+    p22, p24, p26, p28, p21, p23, p25, p27 : out logicsig);
 
 end hq;
 
 architecture gates of hq is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component cxreceiver
     port (
       a : in  coaxsig;                        -- source
-      y : out std_logic);                     -- destination
+      y : out logicsig);                     -- destination
   end component;
   component rsflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal t1, t2, t3, t4, t5, t6 : std_logic;
-  signal t7, t8, t9, t10, t11 : std_logic;
+  signal t1, t2, t3, t4, t5, t6 : logicsig;
+  signal t7, t8, t9, t10, t11 : logicsig;
 begin  -- gates
 
   u1 : inv port map (

@@ -22,23 +22,23 @@ use work.sigs.all;
 entity qeslice is
   
   port (
-    a, b, c    : in  std_logic;
-    ya, yb, yc : out std_logic);
+    a, b, c    : in  logicsig;
+    ya, yb, yc : out logicsig);
 
 end qeslice;
 
 architecture qeslice of qeslice is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1 : std_logic;
+  signal t1 : logicsig;
 begin  -- qeslice
 
   u1 : inv port map (
@@ -64,43 +64,43 @@ use work.sigs.all;
 entity qe is
   
   port (
-    p7, p11, p3, p4, p19              : in  std_logic;
-    p23, p25, p12, p20, p24, p6, p10  : in  std_logic;
-    tp1, tp2, tp5, tp6                : out std_logic;  -- test points
-    p8, p2, p1, p5, p18, p16          : out std_logic;
-    p26, p28, p21, p27, p17, p15, p13 : out std_logic;
-    p22, p9, p14                      : out std_logic);
+    p7, p11, p3, p4, p19              : in  logicsig;
+    p23, p25, p12, p20, p24, p6, p10  : in  logicsig;
+    tp1, tp2, tp5, tp6                : out logicsig;  -- test points
+    p8, p2, p1, p5, p18, p16          : out logicsig;
+    p26, p28, p21, p27, p17, p15, p13 : out logicsig;
+    p22, p9, p14                      : out logicsig);
 
 end qe;
 
 architecture gates of qe is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component latchd2
     port (
-      d, d2, clk : in  std_logic;                 -- data (set), clock
-      q, qb  : out std_logic);                -- q and q.bar
+      d, d2, clk : in  logicsig;                 -- data (set), clock
+      q, qb  : out logicsig);                -- q and q.bar
   end component;
   component qeslice
     port (
-      a, b, c    : in  std_logic;
-      ya, yb, yc : out std_logic);
+      a, b, c    : in  logicsig;
+      ya, yb, yc : out logicsig);
   end component;
-  signal a, b, e, f : std_logic;
-  signal t2, t3, t4 : std_logic;
+  signal a, b, e, f : logicsig;
+  signal t2, t3, t4 : logicsig;
 begin  -- gates
 
   u1 : latchd2 port map (

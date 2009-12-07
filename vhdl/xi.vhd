@@ -22,35 +22,35 @@ use work.sigs.all;
 entity xi is
   
   port (
-    p1, p24, p4, p25, p5, p28    : in  std_logic;
-    p20, p9                      : in  std_logic;   -- latch clocks
-    p21, p11                     : in  std_logic;   -- clear
-    p19, p12                     : in  std_logic;   -- key down, key up
-    tp1, tp2, tp3, tp4, tp5, tp6 : out std_logic;   -- test points
-    p3, p22, p6, p23, p7, p26    : out std_logic;
-    p17, p14                     : out std_logic);  -- key down, key up
+    p1, p24, p4, p25, p5, p28    : in  logicsig;
+    p20, p9                      : in  logicsig;   -- latch clocks
+    p21, p11                     : in  logicsig;   -- clear
+    p19, p12                     : in  logicsig;   -- key down, key up
+    tp1, tp2, tp3, tp4, tp5, tp6 : out logicsig;   -- test points
+    p3, p22, p6, p23, p7, p26    : out logicsig;
+    p17, p14                     : out logicsig);  -- key down, key up
 
 end xi;
 
 architecture gates of xi is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component latchr
     port (
-      d, clk : in  std_logic;                 -- data (set), clock
-      r      : in  std_logic;               -- reset
-      q, qb  : out std_logic);                -- q and q.bar
+      d, clk : in  logicsig;                 -- data (set), clock
+      r      : in  logicsig;               -- reset
+      q, qb  : out logicsig);                -- q and q.bar
   end component;
-  signal c : std_logic;
-  signal t1, t2, t3, t4, t5, t6 : std_logic;
+  signal c : logicsig;
+  signal t1, t2, t3, t4, t5, t6 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (

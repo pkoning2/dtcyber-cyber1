@@ -21,104 +21,104 @@ use work.sigs.all;
 
 entity gd is
     port (
-      p8 : in  std_logic;
-      p9 : in  std_logic;
-      p10 : in  std_logic;
-      p13 : in  std_logic;
-      p16 : in  std_logic;
-      p17 : in  std_logic;
-      p18 : in  std_logic;
-      p20 : in  std_logic;
-      p22 : in  std_logic;
-      tp1 : out std_logic;
-      tp2 : out std_logic;
-      tp3 : out std_logic;
-      tp4 : out std_logic;
-      tp5 : out std_logic;
-      tp6 : out std_logic;
-      p1 : out std_logic;
-      p4 : out std_logic;
-      p5 : out std_logic;
-      p12 : out std_logic;
-      p15 : out std_logic;
-      p19 : out std_logic;
-      p21 : out std_logic;
-      p24 : out std_logic;
-      p26 : out std_logic;
-      p27 : out std_logic;
-      p28 : out std_logic);
+      p8 : in  logicsig;
+      p9 : in  logicsig;
+      p10 : in  logicsig;
+      p13 : in  logicsig;
+      p16 : in  logicsig;
+      p17 : in  logicsig;
+      p18 : in  logicsig;
+      p20 : in  logicsig;
+      p22 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
+      p1 : out logicsig;
+      p4 : out logicsig;
+      p5 : out logicsig;
+      p12 : out logicsig;
+      p15 : out logicsig;
+      p19 : out logicsig;
+      p21 : out logicsig;
+      p24 : out logicsig;
+      p26 : out logicsig;
+      p27 : out logicsig;
+      p28 : out logicsig);
 
 end gd;
 architecture gates of gd is
   component g2
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component g3
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component g4
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      d : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      d : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component inv
     port (
-      a : in  std_logic;
-      y : out std_logic);
+      a : in  logicsig;
+      y : out logicsig);
 
   end component;
 
   component inv2
     port (
-      a : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
-  signal a : std_logic;
-  signal c : std_logic;
-  signal d : std_logic;
-  signal e : std_logic;
-  signal f : std_logic;
-  signal g : std_logic;
-  signal h : std_logic;
-  signal i : std_logic;
-  signal j : std_logic;
-  signal k : std_logic;
-  signal l : std_logic;
-  signal m : std_logic;
-  signal n : std_logic;
-  signal t1 : std_logic;
-  signal t2 : std_logic;
-  signal t3 : std_logic;
-  signal t4 : std_logic;
-  signal t5 : std_logic;
-  signal t6 : std_logic;
-  signal t7 : std_logic;
-  signal t8 : std_logic;
-  signal t9 : std_logic;
-  signal t10 : std_logic;
-  signal t11 : std_logic;
+  signal a : logicsig;
+  signal c : logicsig;
+  signal d : logicsig;
+  signal e : logicsig;
+  signal f : logicsig;
+  signal g : logicsig;
+  signal h : logicsig;
+  signal i : logicsig;
+  signal j : logicsig;
+  signal k : logicsig;
+  signal l : logicsig;
+  signal m : logicsig;
+  signal n : logicsig;
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal t3 : logicsig;
+  signal t4 : logicsig;
+  signal t5 : logicsig;
+  signal t6 : logicsig;
+  signal t7 : logicsig;
+  signal t8 : logicsig;
+  signal t9 : logicsig;
+  signal t10 : logicsig;
+  signal t11 : logicsig;
 
 begin -- gates
   u1 : g2 port map (

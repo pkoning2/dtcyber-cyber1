@@ -22,20 +22,20 @@ use work.sigs.all;
 entity ip is
   
   port (
-    p4, p6, p8, p10, p12, p14    : in  std_logic;
-    p1, p3, p5, p7, p9, p11      : in  std_logic;
-    p17, p19, p21, p23, p25, p27 : in  std_logic;
-    p16, p18, p20, p22, p24, p26 : in  std_logic;
-    tp1, tp2, tp5, tp6           : out std_logic;  -- test points
-    p13, p2, p28, p15            : out std_logic);
+    p4, p6, p8, p10, p12, p14    : in  logicsig;
+    p1, p3, p5, p7, p9, p11      : in  logicsig;
+    p17, p19, p21, p23, p25, p27 : in  logicsig;
+    p16, p18, p20, p22, p24, p26 : in  logicsig;
+    tp1, tp2, tp5, tp6           : out logicsig;  -- test points
+    p13, p2, p28, p15            : out logicsig);
 
 end ip;
 
 architecture gates of ip is
   component g6
     port (
-      a, b, c, d, e, f : in  std_logic;       -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c, d, e, f : in  logicsig;       -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
 
 begin  -- gates

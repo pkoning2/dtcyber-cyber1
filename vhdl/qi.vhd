@@ -23,40 +23,40 @@ entity qislice is
   
   port (
     s          : in  coaxsig;           -- input cable
-    r, e       : in  std_logic;         -- reset, enable
-    q1, q2, qb : out std_logic;         -- latch outputs
+    r, e       : in  logicsig;         -- reset, enable
+    q1, q2, qb : out logicsig;         -- latch outputs
     q          : out coaxsig;           -- output cable
-    tp         : out std_logic);        -- test point
+    tp         : out logicsig);        -- test point
 
 end qislice;
 
 architecture gates of qislice is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component cxdriver
     port (
-      a : in  std_logic;                      -- source
+      a : in  logicsig;                      -- source
       y : out coaxsig);                       -- destination
   end component;
   component cxreceiver
     port (
       a : in  coaxsig;                        -- source
-      y : out std_logic);                     -- destination
+      y : out logicsig);                     -- destination
   end component;
   component rsflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal t1, t2, t3, t4 : std_logic;
+  signal t1, t2, t3, t4 : logicsig;
 begin  -- gates
 
   u1 : cxreceiver port map (
@@ -91,10 +91,10 @@ entity qi is
   
   port (
     p3, p13, p16, p26            : in  coaxsig;    -- input cables
-    p12                          : in  std_logic;  -- clear/enable
-    tp1, tp2, tp5, tp6           : out std_logic;  -- test points
-    p7, p5, p6, p9, p11, p8      : out std_logic;
-    p20, p18, p23, p22, p24, p25 : out std_logic;
+    p12                          : in  logicsig;  -- clear/enable
+    tp1, tp2, tp5, tp6           : out logicsig;  -- test points
+    p7, p5, p6, p9, p11, p8      : out logicsig;
+    p20, p18, p23, p22, p24, p25 : out logicsig;
     p1, p15, p14, p28            : out coaxsig);   -- output cable
 
 end qi;
@@ -103,17 +103,17 @@ architecture gates of qi is
   component qislice
     port (
       s          : in  coaxsig;           -- input cable
-      r, e       : in  std_logic;         -- reset, enable
-      q1, q2, qb : out std_logic;         -- latch outputs
+      r, e       : in  logicsig;         -- reset, enable
+      q1, q2, qb : out logicsig;         -- latch outputs
       q          : out coaxsig;           -- output cable
-      tp         : out std_logic);        -- test point
+      tp         : out logicsig);        -- test point
   end component;
     component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
-  signal a, b, t1, t2 : std_logic;
+  signal a, b, t1, t2 : logicsig;
 begin  -- gates
 
   u1 : inv2 port map (

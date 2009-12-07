@@ -22,25 +22,25 @@ use work.sigs.all;
 entity qcslice1 is
   
   port (
-    a, b, c : in  std_logic;
-    tp      : out std_logic;            -- test point
-    y       : out std_logic;            -- output
-    ya      : out std_logic);           -- nor gate output (matches test point)
+    a, b, c : in  logicsig;
+    tp      : out logicsig;            -- test point
+    y       : out logicsig;            -- output
+    ya      : out logicsig);           -- nor gate output (matches test point)
 
 end qcslice1;
 
 architecture gates of qcslice1 is
   component inv is
       port (
-          a  : in  std_logic;                       -- input
-          y  : out std_logic);                      -- output
+          a  : in  logicsig;                       -- input
+          y  : out logicsig);                      -- output
     end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1, t2, t3 : std_logic;
+  signal t1, t2, t3 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (
@@ -68,26 +68,26 @@ use work.sigs.all;
 entity qcslice2 is
   
   port (
-    a, b, c, d, e : in  std_logic;
-    tp      : out std_logic;            -- test point
-    y       : out std_logic;            -- output
-    ya      : out std_logic;            -- inverter output (matches test point)
-    yb      : out std_logic);           -- bottom output
+    a, b, c, d, e : in  logicsig;
+    tp      : out logicsig;            -- test point
+    y       : out logicsig;            -- output
+    ya      : out logicsig;            -- inverter output (matches test point)
+    yb      : out logicsig);           -- bottom output
 
 end qcslice2;
 
 architecture gates of qcslice2 is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1, t2 : std_logic;
+  signal t1, t2 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (
@@ -117,30 +117,30 @@ use work.sigs.all;
 entity qc is
   
   port (
-    p6, p4, p8, p15, p19, p25, p27, p23        : in  std_logic;
-    p5, p3, p14, p16, p20, p26, p28            : in  std_logic;
-    tp1, tp2, tp3, tp4, tp5, tp6               : out std_logic;  -- test points
-    p10, p17, p21, p7, p11, p24, p12, p13, p18 : out std_logic);
+    p6, p4, p8, p15, p19, p25, p27, p23        : in  logicsig;
+    p5, p3, p14, p16, p20, p26, p28            : in  logicsig;
+    tp1, tp2, tp3, tp4, tp5, tp6               : out logicsig;  -- test points
+    p10, p17, p21, p7, p11, p24, p12, p13, p18 : out logicsig);
 
 end qc;
 
 architecture gates of qc is
   component qcslice1
     port (
-      a, b, c : in  std_logic;
-      tp      : out std_logic;            -- test point
-      y       : out std_logic;            -- output
-      ya      : out std_logic);           -- nor gate output (matches test point)
+      a, b, c : in  logicsig;
+      tp      : out logicsig;            -- test point
+      y       : out logicsig;            -- output
+      ya      : out logicsig);           -- nor gate output (matches test point)
   end component;
   component qcslice2
     port (
-      a, b, c, d, e : in  std_logic;
-      tp      : out std_logic;            -- test point
-      y       : out std_logic;            -- output
-      ya      : out std_logic;            -- inverter output (matches test point)
-      yb      : out std_logic);           -- bottom output
+      a, b, c, d, e : in  logicsig;
+      tp      : out logicsig;            -- test point
+      y       : out logicsig;            -- output
+      ya      : out logicsig;            -- inverter output (matches test point)
+      yb      : out logicsig);           -- bottom output
   end component;
-  signal a, b, c, d, e, f : std_logic;
+  signal a, b, c, d, e, f : logicsig;
 begin  -- gates
 
   u1 : qcslice1 port map (

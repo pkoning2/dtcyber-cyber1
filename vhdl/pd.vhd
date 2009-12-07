@@ -17,29 +17,30 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
+use work.sigs.all;
 
 entity pdslice is
   
   port (
-    i : in  std_logic;                        -- input
-    clk : in std_logic;                       -- clock
-    tp : out std_logic;                       -- test point output
-    q, qb : out std_logic);                   -- outputs
+    i : in  logicsig;                        -- input
+    clk : in logicsig;                       -- clock
+    tp : out logicsig;                       -- test point output
+    q, qb : out logicsig);                   -- outputs
 
 end pdslice;
 
 architecture gates of pdslice is
   component inv2
     port (
-      a : in  std_logic;                      -- input
-      y, y2 : out std_logic);                     -- output
+      a : in  logicsig;                      -- input
+      y, y2 : out logicsig);                     -- output
   end component;
   component latch
     port (
-      d, clk : in  std_logic;                   -- data (set), clock
-      q, qb  : out std_logic);                  -- q and q.bar
+      d, clk : in  logicsig;                   -- data (set), clock
+      q, qb  : out logicsig);                  -- q and q.bar
   end component;
-  signal ti : std_logic;                      -- copy of test point
+  signal ti : logicsig;                      -- copy of test point
 begin  -- gates
 
   u1 : latch port map (
@@ -56,29 +57,30 @@ end gates;
 
 library IEEE;
 use IEEE.std_logic_1164.all;
+use work.sigs.all;
 
 entity pd is
   
   port (
-    p16 : in  std_logic;                       -- clock input
-    p14, p13, p18, p17 : in  std_logic;  -- inputs
-    tp1, tp2, tp5, tp6 : out std_logic;       -- test points
-    p11, p7, p9, p6, p4 : out std_logic;  -- bit 1 outputs
-    p12, p10, p8, p5, p3 : out std_logic;  -- bit 2 outputs
-    p19, p20, p25, p23, p28 : out std_logic;  -- bit 3 outputs
-    p22, p24, p26, p21, p27 : out std_logic);  -- bit 4 outputs
+    p16 : in  logicsig;                       -- clock input
+    p14, p13, p18, p17 : in  logicsig;  -- inputs
+    tp1, tp2, tp5, tp6 : out logicsig;       -- test points
+    p11, p7, p9, p6, p4 : out logicsig;  -- bit 1 outputs
+    p12, p10, p8, p5, p3 : out logicsig;  -- bit 2 outputs
+    p19, p20, p25, p23, p28 : out logicsig;  -- bit 3 outputs
+    p22, p24, p26, p21, p27 : out logicsig);  -- bit 4 outputs
 end pd;
 
 architecture gates of pd is
   component pdslice
     port (
-      i : in  std_logic;                      -- input
-      clk : in std_logic;                     -- clock
-      tp    : out std_logic;                  -- test point output
-      q, qb : out std_logic);                 -- outputs
+      i : in  logicsig;                      -- input
+      clk : in logicsig;                     -- clock
+      tp    : out logicsig;                  -- test point output
+      q, qb : out logicsig);                 -- outputs
   end component;
-  signal q1, q2, q3, q4 : std_logic;
-  signal qb1, qb2, qb3, qb4 : std_logic;
+  signal q1, q2, q3, q4 : logicsig;
+  signal qb1, qb2, qb3, qb4 : logicsig;
 begin  -- gates
   
   u1 : pdslice port map (

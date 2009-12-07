@@ -22,25 +22,25 @@ use work.sigs.all;
 entity tjslice is
   
   port (
-    a      : in  std_logic;             -- select
-    b, c   : in  std_logic;             -- inputs
-    tp     : out std_logic;             -- test point
-    y1, y2 : out std_logic);            -- outputs
+    a      : in  logicsig;             -- select
+    b, c   : in  logicsig;             -- inputs
+    tp     : out logicsig;             -- test point
+    y1, y2 : out logicsig);            -- outputs
 
 end tjslice;
 
 architecture gates of tjslice is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1, t2, t3, t4, t5 : std_logic;
+  signal t1, t2, t3, t4, t5 : logicsig;
 begin  -- gates
 
   u1 : inv2 port map (
@@ -72,21 +72,21 @@ use work.sigs.all;
 entity tj is
   
   port (
-    p10, p9, p8, p7, p6, p5      : in  std_logic;
-    p24, p25, p26, p21, p22, p23 : in  std_logic;
-    tp1, tp2, tp5, tp6           : out std_logic;  -- test points
-    p12, p14, p4, p11            : out std_logic;
-    p27, p20, p19, p17           : out std_logic);
+    p10, p9, p8, p7, p6, p5      : in  logicsig;
+    p24, p25, p26, p21, p22, p23 : in  logicsig;
+    tp1, tp2, tp5, tp6           : out logicsig;  -- test points
+    p12, p14, p4, p11            : out logicsig;
+    p27, p20, p19, p17           : out logicsig);
 
 end tj;
 
 architecture gates of tj is
   component tjslice
     port (
-      a      : in  std_logic;             -- select
-      b, c   : in  std_logic;             -- inputs
-      tp     : out std_logic;             -- test point
-      y1, y2 : out std_logic);            -- outputs
+      a      : in  logicsig;             -- select
+      b, c   : in  logicsig;             -- inputs
+      tp     : out logicsig;             -- test point
+      y1, y2 : out logicsig);            -- outputs
   end component;
 begin  -- gates
 

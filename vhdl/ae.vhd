@@ -22,26 +22,26 @@ use work.sigs.all;
 entity aeslice is
   
   port (
-    a, s1, s2 : in  std_logic;
-    r1, r2    : in  std_logic;
-    r3        : in  std_logic;
-    tp        : out std_logic;          -- test point
-    q, qb     : out std_logic);
+    a, s1, s2 : in  logicsig;
+    r1, r2    : in  logicsig;
+    r3        : in  logicsig;
+    tp        : out logicsig;          -- test point
+    q, qb     : out logicsig);
 
 end aeslice;
 
 architecture gates of aeslice is
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component r2sflop
     port (
-      s, r, r2  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r, r2  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal t1, t2, t3, t4 : std_logic;
+  signal t1, t2, t3, t4 : logicsig;
 begin  -- gates
 
   u1 : g3 port map (
@@ -72,37 +72,37 @@ use work.sigs.all;
 entity ae is
   
   port (
-    p3, p5, p2, p4     : in  std_logic;
-    p11, p7, p14, p12  : in  std_logic;
-    p15, p13, p24, p22 : in  std_logic;
-    p21, p23, p28, p26 : in  std_logic;
-    p16, p19, p17      : in  std_logic;
-    tp1, tp2, tp5, tp6 : out std_logic;  -- test points
-    p8, p1, p10, p9    : out std_logic;
-    p20, p18, p25, p27 : out std_logic);
+    p3, p5, p2, p4     : in  logicsig;
+    p11, p7, p14, p12  : in  logicsig;
+    p15, p13, p24, p22 : in  logicsig;
+    p21, p23, p28, p26 : in  logicsig;
+    p16, p19, p17      : in  logicsig;
+    tp1, tp2, tp5, tp6 : out logicsig;  -- test points
+    p8, p1, p10, p9    : out logicsig;
+    p20, p18, p25, p27 : out logicsig);
 
 end ae;
 
 architecture gates of ae is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component aeslice
     port (
-      a, s1, s2 : in  std_logic;
-      r1, r2    : in  std_logic;
-      r3        : in  std_logic;
-      tp        : out std_logic;          -- test point
-      q, qb     : out std_logic);
+      a, s1, s2 : in  logicsig;
+      r1, r2    : in  logicsig;
+      r3        : in  logicsig;
+      tp        : out logicsig;          -- test point
+      q, qb     : out logicsig);
   end component;
-  signal a, c : std_logic;
+  signal a, c : logicsig;
 begin  -- gates
 
   u1 : inv2 port map (

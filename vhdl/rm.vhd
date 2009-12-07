@@ -21,14 +21,14 @@ use work.sigs.all;
 
 entity rmslice is
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      in1 : in  std_logic;
-      in2 : in  std_logic;
-      in3 : in  std_logic;
-      in4 : in  std_logic;
-      in5 : in  std_logic;
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      in1 : in  logicsig;
+      in2 : in  logicsig;
+      in3 : in  logicsig;
+      in4 : in  logicsig;
+      in5 : in  logicsig;
       tp : out coaxsig;
       y : out coaxsig);
 
@@ -36,27 +36,27 @@ end rmslice;
 architecture gates of rmslice is
   component cxdriver5
     port (
-      a : in  std_logic;
-      a2 : in  std_logic;
-      a3 : in  std_logic;
-      a4 : in  std_logic;
-      a5 : in  std_logic;
+      a : in  logicsig;
+      a2 : in  logicsig;
+      a3 : in  logicsig;
+      a4 : in  logicsig;
+      a5 : in  logicsig;
       y : out coaxsig);
 
   end component;
 
   component g2
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
-  signal t1 : std_logic;
-  signal t2 : std_logic;
-  signal t3 : std_logic;
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal t3 : logicsig;
   signal t4 : coaxsig;
 
 begin -- gates
@@ -98,29 +98,29 @@ use work.sigs.all;
 
 entity rm is
     port (
-      p2 : in  std_logic;
-      p3 : in  std_logic;
-      p4 : in  std_logic;
-      p5 : in  std_logic;
-      p7 : in  std_logic;
-      p8 : in  std_logic;
-      p9 : in  std_logic;
-      p10 : in  std_logic;
-      p11 : in  std_logic;
-      p12 : in  std_logic;
-      p13 : in  std_logic;
-      p14 : in  std_logic;
-      p16 : in  std_logic;
-      p17 : in  std_logic;
-      p18 : in  std_logic;
-      p19 : in  std_logic;
-      p20 : in  std_logic;
-      p21 : in  std_logic;
-      p22 : in  std_logic;
-      p24 : in  std_logic;
-      p25 : in  std_logic;
-      p26 : in  std_logic;
-      p27 : in  std_logic;
+      p2 : in  logicsig;
+      p3 : in  logicsig;
+      p4 : in  logicsig;
+      p5 : in  logicsig;
+      p7 : in  logicsig;
+      p8 : in  logicsig;
+      p9 : in  logicsig;
+      p10 : in  logicsig;
+      p11 : in  logicsig;
+      p12 : in  logicsig;
+      p13 : in  logicsig;
+      p14 : in  logicsig;
+      p16 : in  logicsig;
+      p17 : in  logicsig;
+      p18 : in  logicsig;
+      p19 : in  logicsig;
+      p20 : in  logicsig;
+      p21 : in  logicsig;
+      p22 : in  logicsig;
+      p24 : in  logicsig;
+      p25 : in  logicsig;
+      p26 : in  logicsig;
+      p27 : in  logicsig;
       tp1 : out coaxsig;
       tp2 : out coaxsig;
       tp5 : out coaxsig;
@@ -134,29 +134,29 @@ end rm;
 architecture gates of rm is
   component inv
     port (
-      a : in  std_logic;
-      y : out std_logic);
+      a : in  logicsig;
+      y : out logicsig);
 
   end component;
 
   component rmslice
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      in1 : in  std_logic;
-      in2 : in  std_logic;
-      in3 : in  std_logic;
-      in4 : in  std_logic;
-      in5 : in  std_logic;
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      in1 : in  logicsig;
+      in2 : in  logicsig;
+      in3 : in  logicsig;
+      in4 : in  logicsig;
+      in5 : in  logicsig;
       tp : out coaxsig;
       y : out coaxsig);
 
   end component;
 
-  signal a : std_logic;
-  signal b : std_logic;
-  signal c : std_logic;
+  signal a : logicsig;
+  signal b : logicsig;
+  signal c : logicsig;
 
 begin -- gates
   u1 : rmslice port map (

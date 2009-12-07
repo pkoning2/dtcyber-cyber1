@@ -23,29 +23,29 @@ entity pislice is
   
   port (
     s     : in  coaxsig;
-    r     : in  std_logic;
-    tp    : out std_logic;              -- test point
-    q, qb : out std_logic);
+    r     : in  logicsig;
+    tp    : out logicsig;              -- test point
+    q, qb : out logicsig);
 
 end pislice;
 
 architecture gates of pislice is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component cxreceiver
     port (
       a : in  coaxsig;                        -- source
-      y : out std_logic);                     -- destination
+      y : out logicsig);                     -- destination
   end component;
   component rsflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal t1, t2 : std_logic;
+  signal t1, t2 : logicsig;
 begin  -- gates
 
   u1 : cxreceiver port map (
@@ -70,32 +70,32 @@ entity pi is
   
   port (
     p5, p10, p24, p7, p21, p26  : in  coaxsig;
-    p16, p15                    : in  std_logic;
-    tp1, tp2, tp3, tp4, tp5, tp6 : out std_logic;  -- test points
-    p9, p12, p13, p14, p28, p27 : out std_logic;
-    p1, p4, p18, p17, p22, p19  : out std_logic);
+    p16, p15                    : in  logicsig;
+    tp1, tp2, tp3, tp4, tp5, tp6 : out logicsig;  -- test points
+    p9, p12, p13, p14, p28, p27 : out logicsig;
+    p1, p4, p18, p17, p22, p19  : out logicsig);
 
 end pi;
 
 architecture gates of pi is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component pislice
     port (
       s     : in  coaxsig;
-      r     : in  std_logic;
-      tp    : out std_logic;              -- test point
-      q, qb : out std_logic);
+      r     : in  logicsig;
+      tp    : out logicsig;              -- test point
+      q, qb : out logicsig);
   end component;
-  signal a, t1 : std_logic;
+  signal a, t1 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (

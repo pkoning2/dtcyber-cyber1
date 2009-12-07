@@ -22,22 +22,22 @@ use work.sigs.all;
 entity hc is
   
   port (
-    p7, p5, p23, p25        : in  std_logic;
-    tp1, tp2, tp5, tp6      : out std_logic;  -- test points
-    p2, p4, p6, p9, p11     : out std_logic;
-    p13, p8, p10, p12, p14  : out std_logic;
-    p16, p18, p20, p22, p17 : out std_logic;
-    p19, p21, p24, p26, p28 : out std_logic);
+    p7, p5, p23, p25        : in  logicsig;
+    tp1, tp2, tp5, tp6      : out logicsig;  -- test points
+    p2, p4, p6, p9, p11     : out logicsig;
+    p13, p8, p10, p12, p14  : out logicsig;
+    p16, p18, p20, p22, p17 : out logicsig;
+    p19, p21, p24, p26, p28 : out logicsig);
 
 end hc;
 
 architecture gates of hc is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1, t2, t3, t4 : std_logic;
+  signal t1, t2, t3, t4 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (

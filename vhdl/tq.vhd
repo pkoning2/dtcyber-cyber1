@@ -21,22 +21,22 @@ use work.sigs.all;
 
 entity tqslice is
     port (
-      a : in  std_logic;
-      y : out std_logic;
-      y1 : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      y : out logicsig;
+      y1 : out logicsig;
+      y2 : out logicsig);
 
 end tqslice;
 architecture gates of tqslice is
   component inv2
     port (
-      a : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
-  signal t1 : std_logic;
+  signal t1 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
@@ -56,61 +56,61 @@ use work.sigs.all;
 
 entity tq is
     port (
-      p2 : in  std_logic;
-      p5 : in  std_logic;
-      p7 : in  std_logic;
-      p12 : in  std_logic;
-      p13 : in  std_logic;
-      p18 : in  std_logic;
-      p21 : in  std_logic;
-      p24 : in  std_logic;
-      p27 : in  std_logic;
-      tp1 : out std_logic;
-      tp2 : out std_logic;
-      tp3 : out std_logic;
-      tp4 : out std_logic;
-      tp5 : out std_logic;
-      tp6 : out std_logic;
-      p1 : out std_logic;
-      p3 : out std_logic;
-      p4 : out std_logic;
-      p6 : out std_logic;
-      p8 : out std_logic;
-      p9 : out std_logic;
-      p10 : out std_logic;
-      p11 : out std_logic;
-      p14 : out std_logic;
-      p15 : out std_logic;
-      p16 : out std_logic;
-      p17 : out std_logic;
-      p19 : out std_logic;
-      p20 : out std_logic;
-      p22 : out std_logic;
-      p23 : out std_logic;
-      p25 : out std_logic;
-      p26 : out std_logic;
-      p28 : out std_logic);
+      p2 : in  logicsig;
+      p5 : in  logicsig;
+      p7 : in  logicsig;
+      p12 : in  logicsig;
+      p13 : in  logicsig;
+      p18 : in  logicsig;
+      p21 : in  logicsig;
+      p24 : in  logicsig;
+      p27 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
+      p1 : out logicsig;
+      p3 : out logicsig;
+      p4 : out logicsig;
+      p6 : out logicsig;
+      p8 : out logicsig;
+      p9 : out logicsig;
+      p10 : out logicsig;
+      p11 : out logicsig;
+      p14 : out logicsig;
+      p15 : out logicsig;
+      p16 : out logicsig;
+      p17 : out logicsig;
+      p19 : out logicsig;
+      p20 : out logicsig;
+      p22 : out logicsig;
+      p23 : out logicsig;
+      p25 : out logicsig;
+      p26 : out logicsig;
+      p28 : out logicsig);
 
 end tq;
 architecture gates of tq is
   component inv2
     port (
-      a : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component tqslice
     port (
-      a : in  std_logic;
-      y : out std_logic;
-      y1 : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      y : out logicsig;
+      y1 : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
-  signal t1 : std_logic;
+  signal t1 : logicsig;
 
 begin -- gates
   u1 : tqslice port map (

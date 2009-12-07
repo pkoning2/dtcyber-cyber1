@@ -22,25 +22,25 @@ use work.sigs.all;
 entity ti is
   
   port (
-    p1, p3, p5, p7, p2, p4, p6, p8, p10, p12, p14         : in  std_logic;
-    p15, p17, p19, p21, p23, p25, p27, p22, p24, p26, p28 : in  std_logic;
-    tp1, tp2, tp3, tp4, tp5, tp6                          : out std_logic;  -- test points
-    p13, p9, p11, p16, p18, p20                           : out std_logic);
+    p1, p3, p5, p7, p2, p4, p6, p8, p10, p12, p14         : in  logicsig;
+    p15, p17, p19, p21, p23, p25, p27, p22, p24, p26, p28 : in  logicsig;
+    tp1, tp2, tp3, tp4, tp5, tp6                          : out logicsig;  -- test points
+    p13, p9, p11, p16, p18, p20                           : out logicsig);
 
 end ti;
 
 architecture gates of ti is
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g4
     port (
-      a, b, c, d : in  std_logic;             -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c, d : in  logicsig;             -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1, t2, t3, t4, t5, t6 : std_logic;
+  signal t1, t2, t3, t4, t5, t6 : logicsig;
 begin  -- gates
 
   u1 : g4 port map (

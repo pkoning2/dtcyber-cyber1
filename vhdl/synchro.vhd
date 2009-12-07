@@ -42,7 +42,9 @@ begin  -- synchro
     if p2(16)'event and p2(16) = '0' then
       ocv := p3;
       wait for 10 ns;
-      ocv := ocv or p3;
+      for i in ocv'range loop
+        ocv(i) := ocv(i) or p3(i);
+      end loop;  -- i
       
       icv := idle;
       dtsynchro (chnum, icv, ocv);

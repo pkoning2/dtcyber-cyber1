@@ -29,17 +29,17 @@ architecture behav of cdc_tb is
   component cdc6600 
   port (
     c_1w37_in : in  tpcable;
-    -- clk40 : in std_logic;
-    clk1, clk2, clk3, clk4, reset : in std_logic
+    -- clk40 : in logicsig;
+    clk1, clk2, clk3, clk4, reset : in logicsig
 );
   end component;
   signal c_1w37_in : tpcable := idletp;  -- Deadstart switches
-  signal reset : std_logic := '1';      -- power-up reset
-  signal clk1 : std_logic := '1';        -- clock phase 1
-  signal clk2, clk3, clk4 : std_logic := '0';  -- clock phase 2-4
-  signal clk40 : std_logic := '0';      -- 40 MHz clock
-  signal zero : std_logic := '0';
-  signal one : std_logic := '1';
+  signal reset : logicsig := '1';      -- power-up reset
+  signal clk1 : logicsig := '1';        -- clock phase 1
+  signal clk2, clk3, clk4 : logicsig := '0';  -- clock phase 2-4
+  signal clk40 : logicsig := '0';      -- 40 MHz clock
+  signal zero : logicsig := '0';
+  signal one : logicsig := '1';
 begin
    --  Component instantiation.
    uut : cdc6600 port map (

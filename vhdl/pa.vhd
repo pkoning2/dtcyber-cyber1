@@ -22,24 +22,24 @@ use work.sigs.all;
 entity paslice is
   
   port (
-    d, clk, clk2 : in  std_logic;             -- data and clocks
-    tp     : out std_logic;             -- test point
-    q1, q2 : out std_logic);            -- outputs
+    d, clk, clk2 : in  logicsig;             -- data and clocks
+    tp     : out logicsig;             -- test point
+    q1, q2 : out logicsig);            -- outputs
 
 end paslice;
 
 architecture gates of paslice is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2  : out logicsig);                    -- output
   end component;
   component latch2
     port (
-      d, clk, clk2 : in  std_logic;                 -- data (set), clocks
-      q, qb  : out std_logic);                -- q and q.bar
+      d, clk, clk2 : in  logicsig;                 -- data (set), clocks
+      q, qb  : out logicsig);                -- q and q.bar
   end component;
-  signal tq, tq2 : std_logic;                 -- latch output
+  signal tq, tq2 : logicsig;                 -- latch output
 begin  -- gates
   u1 : latch2 port map (
     d   => d,
@@ -61,20 +61,20 @@ use work.sigs.all;
 entity pa is
   
   port (
-    p8, p5, p12, p21, p24, p23   : in  std_logic;   -- inputs
-    p9, p7, p20, p22             : in  std_logic;   -- strobes
-    tp1, tp2, tp3, tp4, tp5, tp6 : out std_logic;   -- test points
-    p1, p3, p2, p6, p14, p10     : out std_logic;   -- outputs
-    p19, p17, p27, p25, p28, p26 : out std_logic);  -- more outputs
+    p8, p5, p12, p21, p24, p23   : in  logicsig;   -- inputs
+    p9, p7, p20, p22             : in  logicsig;   -- strobes
+    tp1, tp2, tp3, tp4, tp5, tp6 : out logicsig;   -- test points
+    p1, p3, p2, p6, p14, p10     : out logicsig;   -- outputs
+    p19, p17, p27, p25, p28, p26 : out logicsig);  -- more outputs
 
 end pa;
 
 architecture gates of pa is
   component paslice
     port (
-      d, clk, clk2 : in  std_logic;           -- data and clocks
-      tp     : out std_logic;           -- test point
-      q1, q2 : out std_logic);          -- outputs
+      d, clk, clk2 : in  logicsig;           -- data and clocks
+      tp     : out logicsig;           -- test point
+      q1, q2 : out logicsig);          -- outputs
   end component;
 begin  -- gates
   u5 : paslice port map (

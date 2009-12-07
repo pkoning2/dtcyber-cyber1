@@ -22,35 +22,35 @@ use work.sigs.all;
 entity pc is
   
   port (
-    p7, p5, p8, p6, p23, p25, p24, p26 : in  std_logic;   -- inputs
-    p22, p11                           : in  std_logic;   -- clocks
-    p13, p20                           : in  std_logic;   -- selects
-    tp1, tp2, tp5, tp6                 : out std_logic;   -- test points
-    p14, p9, p18, p21                  : out std_logic;   -- outputs
-    p2, p4, p15, p17                   : out std_logic);  -- pullups
+    p7, p5, p8, p6, p23, p25, p24, p26 : in  logicsig;   -- inputs
+    p22, p11                           : in  logicsig;   -- clocks
+    p13, p20                           : in  logicsig;   -- selects
+    tp1, tp2, tp5, tp6                 : out logicsig;   -- test points
+    p14, p9, p18, p21                  : out logicsig;   -- outputs
+    p2, p4, p15, p17                   : out logicsig);  -- pullups
 
 end pc;
 
 architecture gates of pc is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2    : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2    : out logicsig);                  -- output
   end component;
   component latchd4
     port (
-      d, d2 : in  std_logic;             -- inputs
-      e, e2 : in  std_logic;             -- enables
-      clk   : in  std_logic;             -- clock
-      q, qb : out std_logic);            -- output
+      d, d2 : in  logicsig;             -- inputs
+      e, e2 : in  logicsig;             -- enables
+      clk   : in  logicsig;             -- clock
+      q, qb : out logicsig);            -- output
   end component;
-  signal e, f : std_logic;       -- selects
-  signal q1, q2, q3, q4 : std_logic;    -- outputs
+  signal e, f : logicsig;       -- selects
+  signal q1, q2, q3, q4 : logicsig;    -- outputs
 begin  -- gates
   p2 <= '0';
   p4 <= '0';

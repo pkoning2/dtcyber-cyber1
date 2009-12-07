@@ -21,50 +21,50 @@ use work.sigs.all;
 
 entity qmslice is
     port (
-      a : in  std_logic;
-      b : in  std_logic := '1';
-      k : in  std_logic;
-      k2 : in  std_logic := '1';
-      k3 : in  std_logic := '1';
-      qa : out std_logic;
-      qb : out std_logic;
-      y : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig := '1';
+      k : in  logicsig;
+      k2 : in  logicsig := '1';
+      k3 : in  logicsig := '1';
+      qa : out logicsig;
+      qb : out logicsig;
+      y : out logicsig);
 
 end qmslice;
 architecture gates of qmslice is
   component g2
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component g3
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component inv
     port (
-      a : in  std_logic;
-      y : out std_logic);
+      a : in  logicsig;
+      y : out logicsig);
 
   end component;
 
-  signal t1 : std_logic;
-  signal t2 : std_logic;
-  signal t3 : std_logic;
-  signal t4 : std_logic;
-  signal t5 : std_logic;
-  signal ta : std_logic;
-  signal tb : std_logic;
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal t3 : logicsig;
+  signal t4 : logicsig;
+  signal t5 : logicsig;
+  signal ta : logicsig;
+  signal tb : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -116,74 +116,74 @@ use work.sigs.all;
 
 entity qm is
     port (
-      p10 : in  std_logic;
-      p13 : in  std_logic;
-      p14 : in  std_logic;
-      p18 : in  std_logic;
-      p25 : in  std_logic;
-      p26 : in  std_logic;
-      p27 : in  std_logic;
-      p28 : in  std_logic;
-      tp1 : out std_logic;
-      tp2 : out std_logic;
-      tp3 : out std_logic;
-      tp4 : out std_logic;
-      tp5 : out std_logic;
-      tp6 : out std_logic;
-      p3 : out std_logic;
-      p5 : out std_logic;
-      p7 : out std_logic;
-      p9 : out std_logic;
-      p20 : out std_logic;
-      p24 : out std_logic);
+      p10 : in  logicsig;
+      p13 : in  logicsig;
+      p14 : in  logicsig;
+      p18 : in  logicsig;
+      p25 : in  logicsig;
+      p26 : in  logicsig;
+      p27 : in  logicsig;
+      p28 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
+      p3 : out logicsig;
+      p5 : out logicsig;
+      p7 : out logicsig;
+      p9 : out logicsig;
+      p20 : out logicsig;
+      p24 : out logicsig);
 
 end qm;
 architecture gates of qm is
   component g3
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component g4
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      d : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      d : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component qmslice
     port (
-      a : in  std_logic;
-      b : in  std_logic := '1';
-      k : in  std_logic;
-      k2 : in  std_logic := '1';
-      k3 : in  std_logic := '1';
-      qa : out std_logic;
-      qb : out std_logic;
-      y : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig := '1';
+      k : in  logicsig;
+      k2 : in  logicsig := '1';
+      k3 : in  logicsig := '1';
+      qa : out logicsig;
+      qb : out logicsig;
+      y : out logicsig);
 
   end component;
 
-  signal a : std_logic;
-  signal b : std_logic;
-  signal c : std_logic;
-  signal d : std_logic;
-  signal e : std_logic;
-  signal f : std_logic;
-  signal k : std_logic;
-  signal t1 : std_logic;
-  signal t2 : std_logic;
-  signal t3 : std_logic;
-  signal t4 : std_logic;
+  signal a : logicsig;
+  signal b : logicsig;
+  signal c : logicsig;
+  signal d : logicsig;
+  signal e : logicsig;
+  signal f : logicsig;
+  signal k : logicsig;
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal t3 : logicsig;
+  signal t4 : logicsig;
 
 begin -- gates
   u1 : qmslice port map (

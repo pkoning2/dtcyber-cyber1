@@ -22,25 +22,25 @@ use work.sigs.all;
 entity tfslice is
   
   port (
-    i1, i2, i3, i4 : in  std_logic;     -- inputs
-    a, b, c, d     : in  std_logic;     -- selects
-    e              : in  std_logic;
-    y              : out std_logic);
+    i1, i2, i3, i4 : in  logicsig;     -- inputs
+    a, b, c, d     : in  logicsig;     -- selects
+    e              : in  logicsig;
+    y              : out logicsig);
 
 end tfslice;
 
 architecture gates of tfslice is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g5
     port (
-      a, b, c, d, e : in  std_logic;          -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c, d, e : in  logicsig;          -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1, t2, t3, t4 : std_logic;
+  signal t1, t2, t3, t4 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (
@@ -76,33 +76,33 @@ use work.sigs.all;
 entity tf is
   
   port (
-    p8, p22, p7, p21, p6, p24, p5, p23 : in  std_logic;
-    p4, p26, p3, p25, p1, p27, p2, p28 : in  std_logic;
-    p9, p10, p20                       : in  std_logic;
-    tp1, tp2, tp5, tp6                 : out std_logic;  -- test points
-    p13, p11, p19                      : out std_logic);
+    p8, p22, p7, p21, p6, p24, p5, p23 : in  logicsig;
+    p4, p26, p3, p25, p1, p27, p2, p28 : in  logicsig;
+    p9, p10, p20                       : in  logicsig;
+    tp1, tp2, tp5, tp6                 : out logicsig;  -- test points
+    p13, p11, p19                      : out logicsig);
 
 end tf;
 
 architecture gates of tf is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component tfslice
     port (
-      i1, i2, i3, i4 : in  std_logic;     -- inputs
-      a, b, c, d     : in  std_logic;     -- selects
-      e              : in  std_logic;
-      y              : out std_logic);
+      i1, i2, i3, i4 : in  logicsig;     -- inputs
+      a, b, c, d     : in  logicsig;     -- selects
+      e              : in  logicsig;
+      y              : out logicsig);
   end component;
-  signal a, b, c, d, e, f, g, t1 : std_logic;
+  signal a, b, c, d, e, f, g, t1 : logicsig;
 begin  -- gates
 
   u1 : inv port map (

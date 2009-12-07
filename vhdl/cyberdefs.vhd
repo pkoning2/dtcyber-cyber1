@@ -23,16 +23,19 @@ use IEEE.numeric_std.all;
 
 package sigs is
 
-  constant v0 : std_logic := '1';             -- low voltage (logic 1)
-  constant v1 : std_logic := '0';             -- high voltage (logic 0)
+  subtype coaxsig is std_ulogic range 'U' to '1';  -- signal on coax
+  subtype logicsig is std_ulogic range 'U' to '1';  -- logic or tp signal
+  constant v0 : logicsig := '1';             -- low voltage (logic 1)
+  constant v1 : logicsig := '0';             -- high voltage (logic 0)
   constant t : time := 5 ns;            -- basic stage delay
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
-  subtype coaxsig is std_logic range 'U' to '1';  -- signal on coax
-  subtype coaxsigs is std_logic_vector (0 to 18);    -- CDC standard coax cable
+  type coaxsigs is array (0 to 18) of coaxsig;    -- CDC standard coax cable
   constant idlecoax : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
-  subtype tpcable is std_logic_vector (0 to 23);    -- CDC standard tp cable
+  --constant idlecoax : coaxsigs := (other => '0');
+  type tpcable is array (0 to 23) of logicsig;    -- CDC standard tp cable
   constant idletp : tpcable := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
+  --constant idletp : tpcable := (other => '0');
   subtype ppword is UNSIGNED (11 downto 0);  -- PPU word (12 bits)
   subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
@@ -43,7 +46,7 @@ package sigs is
 --  type cpmem is array (0 to 4095) of cpint;  -- 4kx60 memory array
   type cpmem is array (0 to 4095) of cpword;  -- 4kx60 memory array
 --  type icpmem  is array (natural range <>) of cpint;  -- initial data for cpmem
-  subtype misc is std_logic range '0' to '1';  -- used for non-logic pins
+  type misc is ('x', 'y');  -- used for non-logic pins
   subtype analog is UNSIGNED (2 downto 0);    -- 6612 character drawing signal
   
   procedure dtsynchro (
@@ -82,14 +85,14 @@ use work.sigs.all;
 entity inv is
   
   port (
-    a  : in  std_logic;                       -- input
-    y  : out std_logic);                      -- output
+    a  : in  logicsig;                       -- input
+    y  : out logicsig);                      -- output
 
 end inv;
 
 architecture bool of inv is
-  signal ii : std_logic;
-  signal oi : std_logic;
+  signal ii : logicsig;
+  signal oi : logicsig;
 begin  -- bool
   ii <= '1' when a = 'U' else a;
   oi <= not (ii) after t;
@@ -106,14 +109,14 @@ use work.sigs.all;
 entity inv2 is
   
   port (
-    a  : in  std_logic;                       -- input
-    y, y2  : out std_logic);                      -- output
+    a  : in  logicsig;                       -- input
+    y, y2  : out logicsig);                      -- output
 
 end inv2;
 
 architecture bool of inv2 is
-  signal ii : std_logic;
-  signal oi, oi2 : std_logic;
+  signal ii : logicsig;
+  signal oi, oi2 : logicsig;
 begin  -- bool
   ii <= '1' when a = 'U' else a;
   oi <= not (ii) after t;
@@ -133,14 +136,14 @@ use work.sigs.all;
 entity g2 is
   
   port (
-    a, b : in  std_logic;                     -- inputs
-    y, y2    : out std_logic);                    -- output
+    a, b : in  logicsig;                     -- inputs
+    y, y2    : out logicsig);                    -- output
 
 end g2;
 
 architecture bool of g2 is
-  signal ai, bi : std_logic;
-  signal yi, y2i : std_logic;
+  signal ai, bi : logicsig;
+  signal yi, y2i : logicsig;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
@@ -157,14 +160,14 @@ use work.sigs.all;
 entity g3 is
   
   port (
-    a, b, c : in  std_logic;                  -- inputs
-    y, y2    : out std_logic);                    -- output
+    a, b, c : in  logicsig;                  -- inputs
+    y, y2    : out logicsig);                    -- output
 
 end g3;
 
 architecture bool of g3 is
-  signal ai, bi, ci : std_logic;
-  signal yi, y2i : std_logic;
+  signal ai, bi, ci : logicsig;
+  signal yi, y2i : logicsig;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
@@ -182,14 +185,14 @@ use work.sigs.all;
 entity g4 is
   
   port (
-    a, b, c, d : in  std_logic;               -- inputs
-    y, y2    : out std_logic);                    -- output
+    a, b, c, d : in  logicsig;               -- inputs
+    y, y2    : out logicsig);                    -- output
 
 end g4;
 
 architecture bool of g4 is
-  signal ai, bi, ci, di : std_logic;
-  signal yi, y2i : std_logic;
+  signal ai, bi, ci, di : logicsig;
+  signal yi, y2i : logicsig;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
@@ -208,14 +211,14 @@ use work.sigs.all;
 entity g5 is
   
   port (
-    a, b, c, d, e : in  std_logic;            -- inputs
-    y, y2    : out std_logic);                    -- output
+    a, b, c, d, e : in  logicsig;            -- inputs
+    y, y2    : out logicsig);                    -- output
 
 end g5;
 
 architecture bool of g5 is
-  signal ai, bi, ci, di, ei : std_logic;
-  signal yi, y2i : std_logic;
+  signal ai, bi, ci, di, ei : logicsig;
+  signal yi, y2i : logicsig;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
@@ -235,14 +238,14 @@ use work.sigs.all;
 entity g6 is
   
   port (
-    a, b, c, d, e, f : in  std_logic;         -- inputs
-    y, y2    : out std_logic);                    -- output
+    a, b, c, d, e, f : in  logicsig;         -- inputs
+    y, y2    : out logicsig);                    -- output
 
 end g6;
 
 architecture bool of g6 is
-  signal ai, bi, ci, di, ei, fi : std_logic;
-  signal yi, y2i : std_logic;
+  signal ai, bi, ci, di, ei, fi : logicsig;
+  signal yi, y2i : logicsig;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   bi <= '1' when b = 'U' else b;
@@ -263,14 +266,14 @@ use work.sigs.all;
 entity cxdriver is
   
   port (
-    a : in  std_logic;                        -- source
+    a : in  logicsig;                        -- source
     y : out coaxsig);                         -- destination
 
 end cxdriver;
 
 architecture bool of cxdriver is
-  signal ai : std_logic;
-  signal yi : std_logic;
+  signal ai : logicsig;
+  signal yi : logicsig;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   yi <= ai after tc;
@@ -283,7 +286,7 @@ use work.sigs.all;
 entity cxdriver5 is
   
   port (
-    a, a2, a3, a4, a5 : in  std_logic;        -- sources
+    a, a2, a3, a4, a5 : in  logicsig;        -- sources
     y : out coaxsig);                         -- destination
 
 end cxdriver5;
@@ -291,11 +294,11 @@ end cxdriver5;
 architecture bool of cxdriver5 is
   component cxdriver
     port (
-      a : in  std_logic;                        -- source
+      a : in  logicsig;                        -- source
       y : out coaxsig);                       -- destination
   end component;
-  signal ai : std_logic;
-  signal yi : std_logic;
+  signal ai : logicsig;
+  signal yi : logicsig;
 begin  -- bool
   ai <= a and a2 and a3 and a4 and a5;
   u1 : cxdriver port map (
@@ -310,12 +313,12 @@ entity cxreceiver is
   
   port (
     a : in  coaxsig;                    -- source
-    y : out std_logic);                 -- destination
+    y : out logicsig);                 -- destination
 
 end cxreceiver;
 
 architecture bool of cxreceiver is
-  signal ai : std_logic;
+  signal ai : logicsig;
 begin  -- bool
   ai <= '1' when a = 'U' else a;
   y <= not (ai);                        -- coax is positive logic...
@@ -326,13 +329,13 @@ use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity rsflop is
   port (
-    s, r  : in  std_logic;                    -- set, reset
-    q, qb : out std_logic);                   -- q and q.bar
+    s, r  : in  logicsig;                    -- set, reset
+    q, qb : out logicsig);                   -- q and q.bar
 
 end rsflop;
 
 architecture beh of rsflop is
-  signal qi : std_logic := '0';
+  signal qi : logicsig := '0';
 begin  -- beh
   qi <= '0' when r = '0'
         else '1' when s = '0'
@@ -348,19 +351,19 @@ use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity rs4flop is
   port (
-    s, r  : in  std_logic;                    -- set, reset
-    s2, s3, s4  : in  std_logic;  -- extra set
-    q, qb : out std_logic);                   -- q and q.bar
+    s, r  : in  logicsig;                    -- set, reset
+    s2, s3, s4  : in  logicsig;  -- extra set
+    q, qb : out logicsig);                   -- q and q.bar
 
 end rs4flop;
 
 architecture beh of rs4flop is
   component rsflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal si : std_logic := '0';
+  signal si : logicsig := '0';
 begin  -- beh
   si <= s and s2 and s3 and s4;
   u1 : rsflop port map (
@@ -377,19 +380,19 @@ use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity r4s4flop is
   port (
-    s, r  : in  std_logic;                    -- set, reset
-    s2, s3, s4, r2, r3, r4  : in  std_logic;  -- extra set, reset
-    q, qb : out std_logic);                   -- q and q.bar
+    s, r  : in  logicsig;                    -- set, reset
+    s2, s3, s4, r2, r3, r4  : in  logicsig;  -- extra set, reset
+    q, qb : out logicsig);                   -- q and q.bar
 
 end r4s4flop;
 
 architecture beh of r4s4flop is
   component rsflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal ri, si, qi : std_logic := '0';
+  signal ri, si, qi : logicsig := '0';
 begin  -- beh
   ri <= r and r2 and r3 and r4;
   si <= s and s2 and s3 and s4;
@@ -407,19 +410,19 @@ use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity rs2flop is
   port (
-    s, r  : in  std_logic;                    -- set, reset
-    s2  : in  std_logic;                 -- extra set
-    q, qb : out std_logic);                   -- q and q.bar
+    s, r  : in  logicsig;                    -- set, reset
+    s2  : in  logicsig;                 -- extra set
+    q, qb : out logicsig);                   -- q and q.bar
 
 end rs2flop;
 
 architecture beh of rs2flop is
   component rsflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal si : std_logic;
+  signal si : logicsig;
 begin  -- beh
   si <= s and s2;
   u1 : rsflop port map (
@@ -436,19 +439,19 @@ use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity r2sflop is
   port (
-    s, r  : in  std_logic;                    -- set, reset
-    r2  : in  std_logic;                -- extra reset
-    q, qb : out std_logic);                   -- q and q.bar
+    s, r  : in  logicsig;                    -- set, reset
+    r2  : in  logicsig;                -- extra reset
+    q, qb : out logicsig);                   -- q and q.bar
 
 end r2sflop;
 
 architecture beh of r2sflop is
   component rsflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal ri : std_logic := '0';
+  signal ri : logicsig := '0';
 begin  -- beh
   ri <= r and r2;
   u1 : rsflop port map (
@@ -466,14 +469,14 @@ use work.sigs.all;
 entity latch is
   
   port (
-    d, clk : in  std_logic;                   -- data (set), clock
-    q, qb  : out std_logic);                  -- q and q.bar
+    d, clk : in  logicsig;                   -- data (set), clock
+    q, qb  : out logicsig);                  -- q and q.bar
 
 end latch;
 
 architecture beh of latch is
-  signal clki : std_logic;
-  signal qi : std_logic;
+  signal clki : logicsig;
+  signal qi : logicsig;
 begin  -- beh
   clki <= clk after t * 2;
   qi <= d when clki = '1' else unaffected;
@@ -489,18 +492,18 @@ use work.sigs.all;
 entity latch2 is
   
   port (
-    d, clk, clk2 : in  std_logic;                   -- data (set), clocks
-    q, qb  : out std_logic);                  -- q and q.bar
+    d, clk, clk2 : in  logicsig;                   -- data (set), clocks
+    q, qb  : out logicsig);                  -- q and q.bar
 
 end latch2;
 
 architecture beh of latch2 is
   component latch
     port (
-      d, clk : in  std_logic;                 -- data (set), clock
-      q, qb  : out std_logic);                -- q and q.bar
+      d, clk : in  logicsig;                 -- data (set), clock
+      q, qb  : out logicsig);                -- q and q.bar
   end component;
-  signal clki : std_logic;
+  signal clki : logicsig;
 begin  -- beh
   clki <= clk and clk2;
   u1 : latch port map (
@@ -518,18 +521,18 @@ use work.sigs.all;
 entity latchd2 is
   
   port (
-    d, d2, clk : in  std_logic;                   -- data (set), clock
-    q, qb  : out std_logic);                  -- q and q.bar
+    d, d2, clk : in  logicsig;                   -- data (set), clock
+    q, qb  : out logicsig);                  -- q and q.bar
 
 end latchd2;
 
 architecture beh of latchd2 is
   component latch
     port (
-      d, clk : in  std_logic;                 -- data (set), clock
-      q, qb  : out std_logic);                -- q and q.bar
+      d, clk : in  logicsig;                 -- data (set), clock
+      q, qb  : out logicsig);                -- q and q.bar
   end component;
-  signal di : std_logic;
+  signal di : logicsig;
 begin  -- beh
   di <= d and d2;
   u1 : latch port map (
@@ -547,18 +550,18 @@ use work.sigs.all;
 entity latchd4 is
   
   port (
-    d, d2, e, e2, clk : in  std_logic;                   -- data (set), clock
-    q, qb  : out std_logic);                  -- q and q.bar
+    d, d2, e, e2, clk : in  logicsig;                   -- data (set), clock
+    q, qb  : out logicsig);                  -- q and q.bar
 
 end latchd4;
 
 architecture beh of latchd4 is
   component latch
     port (
-      d, clk : in  std_logic;                 -- data (set), clock
-      q, qb  : out std_logic);                -- q and q.bar
+      d, clk : in  logicsig;                 -- data (set), clock
+      q, qb  : out logicsig);                -- q and q.bar
   end component;
-  signal di : std_logic;
+  signal di : logicsig;
 begin  -- beh
   di <= (d and e) or (d2 and e2);
   u1 : latch port map (
@@ -576,15 +579,15 @@ use work.sigs.all;
 entity latchr is
   
   port (
-    d, clk : in  std_logic;                   -- data (set), clock
-    r      : in  std_logic;                   -- reset
-    q, qb  : out std_logic);                  -- q and q.bar
+    d, clk : in  logicsig;                   -- data (set), clock
+    r      : in  logicsig;                   -- reset
+    q, qb  : out logicsig);                  -- q and q.bar
 
 end latchr;
 
 architecture beh of latchr is
-  signal clki : std_logic;
-  signal qi : std_logic;
+  signal clki : logicsig;
+  signal qi : logicsig;
 begin  -- beh
   clki <= clk after t * 2;
   qi <= '0' when r = '0' else
@@ -605,8 +608,8 @@ entity wire is
     length : integer);                -- length in inches
 
   port (
-    i  : in  std_logic;                 -- input
-    o  : out std_logic);                -- output
+    i  : in  logicsig;                 -- input
+    o  : out logicsig);                -- output
 
 end wire;
 

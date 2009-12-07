@@ -22,34 +22,34 @@ use work.sigs.all;
 entity qaslice is
   
   port (
-    d1, clk1, d2, clk2       : in  std_logic;
-    tp1, tp3                 : out std_logic;  -- test points
-    qb11, qb12, q1, q12, qb2 : out std_logic);
+    d1, clk1, d2, clk2       : in  logicsig;
+    tp1, tp3                 : out logicsig;  -- test points
+    qb11, qb12, q1, q12, qb2 : out logicsig);
 
 end qaslice;
 
 architecture gates of qaslice is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component latch
     port (
-      d, clk : in  std_logic;                 -- data (set), clock
-      q, qb  : out std_logic);                -- q and q.bar
+      d, clk : in  logicsig;                 -- data (set), clock
+      q, qb  : out logicsig);                -- q and q.bar
   end component;
-  signal t1, t2, t3 : std_logic;
+  signal t1, t2, t3 : logicsig;
 begin  -- gates
 
   u1 : latch port map (
@@ -86,21 +86,21 @@ use work.sigs.all;
 entity qa is
   
   port (
-    p14, p19                     : in  std_logic;
-    p11, p15, p12, p16, p27, p26 : in  std_logic;
-    tp1, tp2, tp3, tp4, tp5, tp6 : out std_logic;  -- test points
-    p5, p3, p6, p9, p1           : out std_logic;
-    p17, p13, p2, p10, p8        : out std_logic;
-    p25, p21, p22, p23, p28      : out std_logic);
+    p14, p19                     : in  logicsig;
+    p11, p15, p12, p16, p27, p26 : in  logicsig;
+    tp1, tp2, tp3, tp4, tp5, tp6 : out logicsig;  -- test points
+    p5, p3, p6, p9, p1           : out logicsig;
+    p17, p13, p2, p10, p8        : out logicsig;
+    p25, p21, p22, p23, p28      : out logicsig);
 
 end qa;
 
 architecture gates of qa is
   component qaslice
     port (
-      d1, clk1, d2, clk2       : in  std_logic;
-      tp1, tp3                 : out std_logic;  -- test points
-      qb11, qb12, q1, q12, qb2 : out std_logic);
+      d1, clk1, d2, clk2       : in  logicsig;
+      tp1, tp3                 : out logicsig;  -- test points
+      qb11, qb12, q1, q12, qb2 : out logicsig);
   end component;
 begin  -- gates
 

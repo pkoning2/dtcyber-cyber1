@@ -22,41 +22,41 @@ use work.sigs.all;
 entity pw is
   
   port (
-    p2, p4, p7, p5, p11, p9, p3                : in  std_logic;
-    p22, p19, p17, p20, p26, p16, p10          : in  std_logic;
-    tp1, tp5, tp6                              : out std_logic;  -- test points
-    p8, p23, p21, p14, p12, p25, p27, p28, p24 : out std_logic);
+    p2, p4, p7, p5, p11, p9, p3                : in  logicsig;
+    p22, p19, p17, p20, p26, p16, p10          : in  logicsig;
+    tp1, tp5, tp6                              : out logicsig;  -- test points
+    p8, p23, p21, p14, p12, p25, p27, p28, p24 : out logicsig);
 
 end pw;
 
 architecture gates of pw is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g4
     port (
-      a, b, c, d : in  std_logic;             -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c, d : in  logicsig;             -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal d, f, g, j, k, e : std_logic;
-  signal t1, t2, t3, t4, t5, t6, t7, t8, t9, t10 : std_logic;
+  signal d, f, g, j, k, e : logicsig;
+  signal t1, t2, t3, t4, t5, t6, t7, t8, t9, t10 : logicsig;
 begin  -- gates
 
   u1 : inv2 port map (

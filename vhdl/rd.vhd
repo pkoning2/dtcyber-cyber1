@@ -21,80 +21,80 @@ use work.sigs.all;
 
 entity rd is
     port (
-      p1 : in  std_logic;
-      p2 : in  std_logic;
-      p3 : in  std_logic;
-      p4 : in  std_logic;
-      p5 : in  std_logic;
-      p8 : in  std_logic;
-      p9 : in  std_logic;
-      p10 : in  std_logic;
-      p12 : in  std_logic;
-      p13 : in  std_logic;
-      p14 : in  std_logic;
-      p15 : in  std_logic;
-      p17 : in  std_logic;
-      p18 : in  std_logic;
-      p19 : in  std_logic;
-      p20 : in  std_logic;
-      p21 : in  std_logic;
-      p22 : in  std_logic;
-      p23 : in  std_logic;
-      p24 : in  std_logic;
-      p25 : in  std_logic;
-      p28 : in  std_logic;
-      tp1 : out std_logic;
-      tp2 : out std_logic;
-      tp3 : out std_logic;
-      tp4 : out std_logic;
-      tp5 : out std_logic;
-      tp6 : out std_logic;
-      p6 : out std_logic;
-      p7 : out std_logic;
-      p11 : out std_logic;
-      p16 : out std_logic;
-      p26 : out std_logic;
-      p27 : out std_logic);
+      p1 : in  logicsig;
+      p2 : in  logicsig;
+      p3 : in  logicsig;
+      p4 : in  logicsig;
+      p5 : in  logicsig;
+      p8 : in  logicsig;
+      p9 : in  logicsig;
+      p10 : in  logicsig;
+      p12 : in  logicsig;
+      p13 : in  logicsig;
+      p14 : in  logicsig;
+      p15 : in  logicsig;
+      p17 : in  logicsig;
+      p18 : in  logicsig;
+      p19 : in  logicsig;
+      p20 : in  logicsig;
+      p21 : in  logicsig;
+      p22 : in  logicsig;
+      p23 : in  logicsig;
+      p24 : in  logicsig;
+      p25 : in  logicsig;
+      p28 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
+      p6 : out logicsig;
+      p7 : out logicsig;
+      p11 : out logicsig;
+      p16 : out logicsig;
+      p26 : out logicsig;
+      p27 : out logicsig);
 
 end rd;
 architecture gates of rd is
   component inv
     port (
-      a : in  std_logic;
-      y : out std_logic);
+      a : in  logicsig;
+      y : out logicsig);
 
   end component;
 
   component rs2flop
     port (
-      r : in  std_logic;
-      s : in  std_logic;
-      s2 : in  std_logic;
-      q : out std_logic;
-      qb : out std_logic);
+      r : in  logicsig;
+      s : in  logicsig;
+      s2 : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
 
   end component;
 
   component rs4flop
     port (
-      r : in  std_logic;
-      s : in  std_logic;
-      s2 : in  std_logic;
-      s3 : in  std_logic;
-      s4 : in  std_logic;
-      q : out std_logic;
-      qb : out std_logic);
+      r : in  logicsig;
+      s : in  logicsig;
+      s2 : in  logicsig;
+      s3 : in  logicsig;
+      s4 : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
 
   end component;
 
-  signal a : std_logic;
-  signal t1 : std_logic;
-  signal t2 : std_logic;
-  signal t3 : std_logic;
-  signal t4 : std_logic;
-  signal t5 : std_logic;
-  signal t6 : std_logic;
-  signal x : std_logic;
+  signal a : logicsig;
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal t3 : logicsig;
+  signal t4 : logicsig;
+  signal t5 : logicsig;
+  signal t6 : logicsig;
+  signal x : logicsig;
 
 begin -- gates
   u1 : rs4flop port map (

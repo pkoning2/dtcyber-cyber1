@@ -23,7 +23,7 @@ use work.sigs.all;
 entity afslice is
   
   port (
-    a, b, c, d, e, f : in  std_logic;
+    a, b, c, d, e, f : in  logicsig;
     tp               : out analog;      -- test point
     q                : out analog);
 
@@ -31,7 +31,7 @@ end afslice;
 
 architecture beh of afslice is
   function dtoa (
-    a, b, c, d, e, f : std_logic)       -- inputs
+    a, b, c, d, e, f : logicsig)       -- inputs
     return integer is
     variable acc : integer;
   begin  -- dtoa
@@ -69,10 +69,10 @@ use work.sigs.all;
 entity af is
   
   port (
-    p2, p4, p6, p8, p10, p12     : in  std_logic;
-    p1, p3, p5, p7, p9, p11      : in  std_logic;
-    p18, p20, p22, p24, p26, p28 : in  std_logic;
-    p17, p19, p21, p23, p25, p27 : in  std_logic;
+    p2, p4, p6, p8, p10, p12     : in  logicsig;
+    p1, p3, p5, p7, p9, p11      : in  logicsig;
+    p18, p20, p22, p24, p26, p28 : in  logicsig;
+    p17, p19, p21, p23, p25, p27 : in  logicsig;
     tp1, tp2, tp5, tp6           : out analog;  -- test points
     p14, p13, p16, p15           : out analog);
 
@@ -81,7 +81,7 @@ end af;
 architecture gates of af is
   component afslice
     port (
-      a, b, c, d, e, f : in  std_logic;
+      a, b, c, d, e, f : in  logicsig;
       tp               : out analog;      -- test point
       q                : out analog);
   end component;

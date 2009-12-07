@@ -26,9 +26,9 @@ entity cmbank is
     go                     : in  coaxsig;
     addr                   : in  ppword;     -- memory address (12 bits)
     baddr                  : in  bankaddr;   -- bank address (5 bits)
-    clk1, clk2, clk3, clk4 : in  std_logic;  -- clocks
-    reset                  : in  std_logic;  -- reset
-    write                  : in  std_logic;  -- write request
+    clk1, clk2, clk3, clk4 : in  logicsig;  -- clocks
+    reset                  : in  logicsig;  -- reset
+    write                  : in  logicsig;  -- write request
     wdata                  : in  cpword;     -- write data bus
     rdata                  : out cpword;     -- read data bus
     accept                 : out coaxsig);   -- accept signal
@@ -43,13 +43,13 @@ architecture cmbank of cmbank is
       addr   : in  ppword;                -- Memory address
       rdata  : out cpword;                -- read data
       wdata  : in  cpword;                -- write data
-      reset  : in  std_logic;             -- power-up reset
-      strobe : in  std_logic;             -- read/write strobe
-      write  : in  std_logic);            -- write operation
+      reset  : in  logicsig;             -- power-up reset
+      strobe : in  logicsig;             -- read/write strobe
+      write  : in  logicsig);            -- write operation
   end component;
   signal maddr : ppword;                -- 12 bit address
   signal trdata, twdata : cpword;       -- copies of read and write data
-  signal twrite : std_logic := '0';     -- write enable
+  signal twrite : logicsig := '0';     -- write enable
   constant bnum : bankaddr := TO_UNSIGNED (banknum, 5);
 begin  -- cmbank  
   mem : memarray60 port map (
@@ -64,7 +64,7 @@ begin  -- cmbank
   -- outputs: accept, twrite
   ssc: process (clk1, reset)
     variable seq : integer := 0;        -- sequence counter
-    variable acc, tw1, tw2 : std_logic := '0';
+    variable acc, tw1, tw2 : logicsig := '0';
   begin  -- process ssc
     if reset = '0' then                 -- asynchronous reset (active low)
       seq := 0;
@@ -121,7 +121,7 @@ entity cmem is
     rdregu1, rdregu2               : out coaxsigs;  -- read data to upper regs
     rdpp1, rdpp2, rdpp3, rdpp4     : out coaxsigs;  -- read data to pp pyramid
     accept                         : out coaxsig;  -- accepts to stunt box
-    clk1, clk2, clk3, clk4         : in  std_logic);  -- clocks
+    clk1, clk2, clk3, clk4         : in  logicsig);  -- clocks
 
 end cmem;
 

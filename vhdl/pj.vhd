@@ -22,24 +22,24 @@ use work.sigs.all;
 entity pjslice is
   
   port (
-    d, clk     : in  std_logic;             -- data and clock
-    tp         : out std_logic;             -- test point
-    qb, q1, q2 : out std_logic);            -- outputs
+    d, clk     : in  logicsig;             -- data and clock
+    tp         : out logicsig;             -- test point
+    qb, q1, q2 : out logicsig);            -- outputs
 
 end pjslice;
 
 architecture gates of pjslice is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2  : out logicsig);                    -- output
   end component;
   component latch
     port (
-      d, clk : in  std_logic;                 -- data (set), clock
-      q, qb  : out std_logic);                -- q and q.bar
+      d, clk : in  logicsig;                 -- data (set), clock
+      q, qb  : out logicsig);                -- q and q.bar
   end component;
-  signal tqi, tqi2 : std_logic;                 -- latch output
+  signal tqi, tqi2 : logicsig;                 -- latch output
 begin  -- gates
   u1 : latch port map (
     d   => d,
@@ -61,27 +61,27 @@ use work.sigs.all;
 entity pj is
   
   port (
-    p8, p5, p12, p21, p24, p23                  : in  std_logic;  -- inputs
-    p9, p7, p20, p22                            : in  std_logic;  -- clocks
-    tp1, tp2, tp3, tp4, tp5, tp6                : out std_logic;  -- test points
-    p4, p1, p3, p11, p2, p6, p13, p14, p10      : out std_logic;
-    p15, p19, p17, p16, p27, p18, p25, p28, p26 : out std_logic);
+    p8, p5, p12, p21, p24, p23                  : in  logicsig;  -- inputs
+    p9, p7, p20, p22                            : in  logicsig;  -- clocks
+    tp1, tp2, tp3, tp4, tp5, tp6                : out logicsig;  -- test points
+    p4, p1, p3, p11, p2, p6, p13, p14, p10      : out logicsig;
+    p15, p19, p17, p16, p27, p18, p25, p28, p26 : out logicsig);
 
 end pj;
 
 architecture gates of pj is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2    : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2    : out logicsig);                  -- output
   end component;
   component pjslice
     port (
-      d, clk     : in  std_logic;             -- data and clock
-      tp         : out std_logic;             -- test point
-      qb, q1, q2 : out std_logic);            -- outputs
+      d, clk     : in  logicsig;             -- data and clock
+      tp         : out logicsig;             -- test point
+      qb, q1, q2 : out logicsig);            -- outputs
   end component;
-  signal b, d : std_logic;       -- strobes
+  signal b, d : logicsig;       -- strobes
 begin  -- gates
   u1 : g2 port map (
     a => p9,

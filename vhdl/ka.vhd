@@ -21,53 +21,53 @@ use work.sigs.all;
 
 entity kaslice1 is
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      d : in  std_logic;
-      e : in  std_logic;
-      f : in  std_logic;
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      d : in  logicsig;
+      e : in  logicsig;
+      f : in  logicsig;
       i1 : in  coaxsig;
-      i2 : in  std_logic;
-      tp : out std_logic;
-      q1 : out std_logic;
-      q2 : out std_logic;
-      q3 : out std_logic);
+      i2 : in  logicsig;
+      tp : out logicsig;
+      q1 : out logicsig;
+      q2 : out logicsig;
+      q3 : out logicsig);
 
 end kaslice1;
 architecture gates of kaslice1 is
   component cxreceiver
     port (
       a : in  coaxsig;
-      y : out std_logic);
+      y : out logicsig);
 
   end component;
 
   component g2
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component rs2flop
     port (
-      r : in  std_logic;
-      s : in  std_logic;
-      s2 : in  std_logic;
-      q : out std_logic;
-      qb : out std_logic);
+      r : in  logicsig;
+      s : in  logicsig;
+      s2 : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
 
   end component;
 
-  signal t1 : std_logic;
-  signal t2 : std_logic;
-  signal t3 : std_logic;
-  signal t4 : std_logic;
-  signal t5 : std_logic;
-  signal t6 : std_logic;
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal t3 : logicsig;
+  signal t4 : logicsig;
+  signal t5 : logicsig;
+  signal t6 : logicsig;
 
 begin -- gates
   u1 : cxreceiver port map (
@@ -129,47 +129,47 @@ use work.sigs.all;
 
 entity kaslice2 is
     port (
-      c : in  std_logic;
-      d : in  std_logic;
-      e : in  std_logic;
-      f : in  std_logic;
+      c : in  logicsig;
+      d : in  logicsig;
+      e : in  logicsig;
+      f : in  logicsig;
       i1 : in  coaxsig;
-      i2 : in  std_logic;
-      tp : out std_logic;
-      q1 : out std_logic;
-      q2 : out std_logic;
-      q3 : out std_logic);
+      i2 : in  logicsig;
+      tp : out logicsig;
+      q1 : out logicsig;
+      q2 : out logicsig;
+      q3 : out logicsig);
 
 end kaslice2;
 architecture gates of kaslice2 is
   component cxreceiver
     port (
       a : in  coaxsig;
-      y : out std_logic);
+      y : out logicsig);
 
   end component;
 
   component g2
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component rs2flop
     port (
-      r : in  std_logic;
-      s : in  std_logic;
-      s2 : in  std_logic;
-      q : out std_logic;
-      qb : out std_logic);
+      r : in  logicsig;
+      s : in  logicsig;
+      s2 : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
 
   end component;
 
-  signal t1 : std_logic;
-  signal t2 : std_logic;
+  signal t1 : logicsig;
+  signal t2 : logicsig;
 
 begin -- gates
   u1 : cxreceiver port map (
@@ -214,90 +214,90 @@ entity ka is
     port (
       p6 : in  coaxsig;
       p7 : in  coaxsig;
-      p8 : in  std_logic;
-      p9 : in  std_logic;
-      p13 : in  std_logic;
-      p14 : in  std_logic;
-      p15 : in  std_logic;
-      p16 : in  std_logic;
-      p18 : in  std_logic;
-      p19 : in  std_logic;
+      p8 : in  logicsig;
+      p9 : in  logicsig;
+      p13 : in  logicsig;
+      p14 : in  logicsig;
+      p15 : in  logicsig;
+      p16 : in  logicsig;
+      p18 : in  logicsig;
+      p19 : in  logicsig;
       p21 : in  coaxsig;
       p24 : in  coaxsig;
-      p26 : in  std_logic;
-      tp1 : out std_logic;
-      tp2 : out std_logic;
-      tp5 : out std_logic;
-      tp6 : out std_logic;
-      p1 : out std_logic;
-      p3 : out std_logic;
-      p4 : out std_logic;
-      p10 : out std_logic;
-      p11 : out std_logic;
-      p12 : out std_logic;
-      p17 : out std_logic;
-      p20 : out std_logic;
-      p22 : out std_logic;
-      p23 : out std_logic;
-      p25 : out std_logic;
-      p27 : out std_logic;
-      p28 : out std_logic);
+      p26 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
+      p1 : out logicsig;
+      p3 : out logicsig;
+      p4 : out logicsig;
+      p10 : out logicsig;
+      p11 : out logicsig;
+      p12 : out logicsig;
+      p17 : out logicsig;
+      p20 : out logicsig;
+      p22 : out logicsig;
+      p23 : out logicsig;
+      p25 : out logicsig;
+      p27 : out logicsig;
+      p28 : out logicsig);
 
 end ka;
 architecture gates of ka is
   component inv
     port (
-      a : in  std_logic;
-      y : out std_logic);
+      a : in  logicsig;
+      y : out logicsig);
 
   end component;
 
   component inv2
     port (
-      a : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component kaslice1
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      d : in  std_logic;
-      e : in  std_logic;
-      f : in  std_logic;
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      d : in  logicsig;
+      e : in  logicsig;
+      f : in  logicsig;
       i1 : in  coaxsig;
-      i2 : in  std_logic;
-      tp : out std_logic;
-      q1 : out std_logic;
-      q2 : out std_logic;
-      q3 : out std_logic);
+      i2 : in  logicsig;
+      tp : out logicsig;
+      q1 : out logicsig;
+      q2 : out logicsig;
+      q3 : out logicsig);
 
   end component;
 
   component kaslice2
     port (
-      c : in  std_logic;
-      d : in  std_logic;
-      e : in  std_logic;
-      f : in  std_logic;
+      c : in  logicsig;
+      d : in  logicsig;
+      e : in  logicsig;
+      f : in  logicsig;
       i1 : in  coaxsig;
-      i2 : in  std_logic;
-      tp : out std_logic;
-      q1 : out std_logic;
-      q2 : out std_logic;
-      q3 : out std_logic);
+      i2 : in  logicsig;
+      tp : out logicsig;
+      q1 : out logicsig;
+      q2 : out logicsig;
+      q3 : out logicsig);
 
   end component;
 
-  signal a : std_logic;
-  signal b : std_logic;
-  signal c : std_logic;
-  signal d : std_logic;
-  signal e : std_logic;
-  signal f : std_logic;
+  signal a : logicsig;
+  signal b : logicsig;
+  signal c : logicsig;
+  signal d : logicsig;
+  signal e : logicsig;
+  signal f : logicsig;
 
 begin -- gates
   u1 : kaslice1 port map (

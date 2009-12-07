@@ -22,31 +22,31 @@ use work.sigs.all;
 entity pnslice is
   
   port (
-    s, r  : in  std_logic;            -- inputs
-    a, b  : in  std_logic;            -- enables
-    c     : in  std_logic;            -- reset
-    tp    : out std_logic;            -- test point
-    q, q2 : out std_logic);           -- outputs
+    s, r  : in  logicsig;            -- inputs
+    a, b  : in  logicsig;            -- enables
+    c     : in  logicsig;            -- reset
+    tp    : out logicsig;            -- test point
+    q, q2 : out logicsig);           -- outputs
 
 end pnslice;
 
 architecture gates of pnslice is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component r2sflop
     port (
-      s, r, r2  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r, r2  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal tsi, tri, tqbi, tqi : std_logic;
+  signal tsi, tri, tqbi, tqi : logicsig;
 begin  -- gates
 
   u1 : g2 port map (
@@ -79,28 +79,28 @@ use work.sigs.all;
 entity pn is
   
   port (
-    p2, p3, p1, p4, p28, p25, p27, p26                : in  std_logic;
-    p20, p18, p17                                     : in  std_logic;
-    tp1, tp2, tp5, tp6 : out std_logic;  -- test points
-    p15, p5, p12, p8, p21, p19, p24, p22 : out std_logic);
+    p2, p3, p1, p4, p28, p25, p27, p26                : in  logicsig;
+    p20, p18, p17                                     : in  logicsig;
+    tp1, tp2, tp5, tp6 : out logicsig;  -- test points
+    p15, p5, p12, p8, p21, p19, p24, p22 : out logicsig);
 
 end pn;
 
 architecture gates of pn is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component pnslice
     port (
-      s, r  : in  std_logic;            -- inputs
-      a, b  : in  std_logic;            -- enables
-      c     : in  std_logic;            -- reset
-      tp    : out std_logic;            -- test point
-      q, q2 : out std_logic);           -- outputs
+      s, r  : in  logicsig;            -- inputs
+      a, b  : in  logicsig;            -- enables
+      c     : in  logicsig;            -- reset
+      tp    : out logicsig;            -- test point
+      q, q2 : out logicsig);           -- outputs
   end component;
-  signal a, b, c : std_logic;
+  signal a, b, c : logicsig;
 begin  -- gates
 
   u1 : inv2 port map (

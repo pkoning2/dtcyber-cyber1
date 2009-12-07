@@ -22,36 +22,36 @@ use work.sigs.all;
 entity pp is
   
   port (
-    p19, p16, p21, p1, p3, p12, p9, p7, p20        : in  std_logic;
-    p2, p6, p8, p11, p23, p27, p28, p15            : in  std_logic;
-    tp1, tp2, tp5, tp6                             : out std_logic;  -- test points
-    p14, p4, p5, p10, p13, p18, p22, p25, p26, p17 : out std_logic);
+    p19, p16, p21, p1, p3, p12, p9, p7, p20        : in  logicsig;
+    p2, p6, p8, p11, p23, p27, p28, p15            : in  logicsig;
+    tp1, tp2, tp5, tp6                             : out logicsig;  -- test points
+    p14, p4, p5, p10, p13, p18, p22, p25, p26, p17 : out logicsig);
 
 end pp;
 
 architecture gates of pp is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g4
     port (
-      a, b, c, d : in  std_logic;             -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c, d : in  logicsig;             -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal a : std_logic;
-  signal t1, t2, t3, t4, t5, t6, t7, t8 : std_logic;
+  signal a : logicsig;
+  signal t1, t2, t3, t4, t5, t6, t7, t8 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (

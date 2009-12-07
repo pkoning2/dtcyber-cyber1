@@ -22,29 +22,29 @@ use work.sigs.all;
 entity aaslice is
   
   port (
-    s1, s2, r1, r2 : in  std_logic;
-    tp             : out std_logic;     -- test point
-    q1, q2, qb     : out std_logic);
+    s1, s2, r1, r2 : in  logicsig;
+    tp             : out logicsig;     -- test point
+    q1, q2, qb     : out logicsig);
 
 end aaslice;
 
 architecture gates of aaslice is
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component rsflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal t1, t2, t3, t4 : std_logic;
+  signal t1, t2, t3, t4 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (
@@ -77,20 +77,20 @@ use work.sigs.all;
 entity aa is
   
   port (
-    p5, p7, p6, p8, p12, p14, p11, p13     : in  std_logic;
-    p15, p17, p16, p18, p22, p24, p21, p23 : in  std_logic;
-    tp1, tp2, tp5, tp6                     : out std_logic;  -- test points
-    p2, p4, p9, p1, p3, p10                : out std_logic;
-    p26, p28, p19, p25, p27, p20           : out std_logic);
+    p5, p7, p6, p8, p12, p14, p11, p13     : in  logicsig;
+    p15, p17, p16, p18, p22, p24, p21, p23 : in  logicsig;
+    tp1, tp2, tp5, tp6                     : out logicsig;  -- test points
+    p2, p4, p9, p1, p3, p10                : out logicsig;
+    p26, p28, p19, p25, p27, p20           : out logicsig);
 
 end aa;
 
 architecture gates of aa is
   component aaslice
     port (
-      s1, s2, r1, r2 : in  std_logic;
-      tp             : out std_logic;     -- test point
-      q1, q2, qb     : out std_logic);
+      s1, s2, r1, r2 : in  logicsig;
+      tp             : out logicsig;     -- test point
+      q1, q2, qb     : out logicsig);
   end component;
 begin  -- gates
 

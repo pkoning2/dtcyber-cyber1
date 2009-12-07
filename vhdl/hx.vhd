@@ -21,105 +21,105 @@ use work.sigs.all;
 
 entity hx is
     port (
-      p1 : in  std_logic;
-      p2 : in  std_logic;
-      p3 : in  std_logic;
-      p4 : in  std_logic;
-      p5 : in  std_logic;
-      p7 : in  std_logic;
-      p10 : in  std_logic;
-      p13 : in  std_logic;
-      p15 : in  std_logic;
-      p16 : in  std_logic;
-      p18 : in  std_logic;
+      p1 : in  logicsig;
+      p2 : in  logicsig;
+      p3 : in  logicsig;
+      p4 : in  logicsig;
+      p5 : in  logicsig;
+      p7 : in  logicsig;
+      p10 : in  logicsig;
+      p13 : in  logicsig;
+      p15 : in  logicsig;
+      p16 : in  logicsig;
+      p18 : in  logicsig;
       p19 : in  coaxsig;
-      p20 : in  std_logic;
-      p21 : in  std_logic;
-      p23 : in  std_logic;
-      p25 : in  std_logic;
-      p26 : in  std_logic;
-      p27 : in  std_logic;
-      p28 : in  std_logic;
-      tp1 : out std_logic;
-      tp2 : out std_logic;
-      tp3 : out std_logic;
-      tp4 : out std_logic;
-      tp5 : out std_logic;
-      tp6 : out std_logic;
-      p6 : out std_logic;
-      p8 : out std_logic;
-      p9 : out std_logic;
-      p11 : out std_logic;
-      p12 : out std_logic;
-      p14 : out std_logic;
-      p17 : out std_logic;
-      p22 : out std_logic;
-      p24 : out std_logic);
+      p20 : in  logicsig;
+      p21 : in  logicsig;
+      p23 : in  logicsig;
+      p25 : in  logicsig;
+      p26 : in  logicsig;
+      p27 : in  logicsig;
+      p28 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
+      p6 : out logicsig;
+      p8 : out logicsig;
+      p9 : out logicsig;
+      p11 : out logicsig;
+      p12 : out logicsig;
+      p14 : out logicsig;
+      p17 : out logicsig;
+      p22 : out logicsig;
+      p24 : out logicsig);
 
 end hx;
 architecture gates of hx is
   component cxreceiver
     port (
       a : in  coaxsig;
-      y : out std_logic);
+      y : out logicsig);
 
   end component;
 
   component g2
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component g3
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component g6
     port (
-      a : in  std_logic;
-      b : in  std_logic;
-      c : in  std_logic;
-      d : in  std_logic;
-      e : in  std_logic;
-      f : in  std_logic;
-      y : out std_logic;
-      y2 : out std_logic);
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      d : in  logicsig;
+      e : in  logicsig;
+      f : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
   end component;
 
   component rsflop
     port (
-      r : in  std_logic;
-      r2 : in  std_logic := '1';
-      r3 : in  std_logic := '1';
-      r4 : in  std_logic := '1';
-      s : in  std_logic;
-      s2 : in  std_logic := '1';
-      s3 : in  std_logic := '1';
-      s4 : in  std_logic := '1';
-      q : out std_logic;
-      qb : out std_logic);
+      r : in  logicsig;
+      r2 : in  logicsig := '1';
+      r3 : in  logicsig := '1';
+      r4 : in  logicsig := '1';
+      s : in  logicsig;
+      s2 : in  logicsig := '1';
+      s3 : in  logicsig := '1';
+      s4 : in  logicsig := '1';
+      q : out logicsig;
+      qb : out logicsig);
 
   end component;
 
-  signal a : std_logic;
-  signal b : std_logic;
-  signal t1 : std_logic;
-  signal t2 : std_logic;
-  signal t3 : std_logic;
-  signal t4 : std_logic;
-  signal t5 : std_logic;
-  signal t6 : std_logic;
+  signal a : logicsig;
+  signal b : logicsig;
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal t3 : logicsig;
+  signal t4 : logicsig;
+  signal t5 : logicsig;
+  signal t6 : logicsig;
 
 begin -- gates
   u1 : cxreceiver port map (

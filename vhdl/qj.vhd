@@ -23,10 +23,10 @@ entity qjslice is
   
   port (
     s    : in  coaxsig;
-    r    : in  std_logic;
-    q    : out std_logic;
-    a, b : in  std_logic;
-    tp   : out std_logic;               -- test point
+    r    : in  logicsig;
+    q    : out logicsig;
+    a, b : in  logicsig;
+    tp   : out logicsig;               -- test point
     q2   : out coaxsig);
 
 end qjslice;
@@ -34,25 +34,25 @@ end qjslice;
 architecture gates of qjslice is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component cxdriver
     port (
-      a : in  std_logic;                      -- source
+      a : in  logicsig;                      -- source
       y : out coaxsig);                       -- destination
   end component;
   component cxreceiver
     port (
       a : in  coaxsig;                        -- source
-      y : out std_logic);                     -- destination
+      y : out logicsig);                     -- destination
   end component;
   component rsflop
     port (
-      s, r  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal t1, t2, t3 : std_logic;
+  signal t1, t2, t3 : logicsig;
 begin  -- gates
 
   u1 : cxreceiver port map (
@@ -82,10 +82,10 @@ entity qj is
   
   port (
     p23, p22, p21, p10, p9, p8   : in  coaxsig;
-    p11, p6, p4, p27, p25, p20   : in  std_logic;
-    p18                          : in  std_logic;  -- clock/enable
-    tp1, tp2, tp3, tp4, tp5, tp6 : out std_logic;  -- test
-    p19, p17, p15, p16, p14, p12 : out std_logic;
+    p11, p6, p4, p27, p25, p20   : in  logicsig;
+    p18                          : in  logicsig;  -- clock/enable
+    tp1, tp2, tp3, tp4, tp5, tp6 : out logicsig;  -- test
+    p19, p17, p15, p16, p14, p12 : out logicsig;
     p7, p5, p3, p28, p26, p24    : out coaxsig);
 
 end qj;
@@ -93,24 +93,24 @@ end qj;
 architecture gates of qj is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component qjslice
     port (
       s    : in  coaxsig;
-      r    : in  std_logic;
-      q    : out std_logic;
-      a, b : in  std_logic;
-      tp   : out std_logic;               -- test point
+      r    : in  logicsig;
+      q    : out logicsig;
+      a, b : in  logicsig;
+      tp   : out logicsig;               -- test point
       q2   : out coaxsig);
   end component;
-  signal t1, a, c : std_logic;
+  signal t1, a, c : logicsig;
 begin  -- gates
 
   u1 : inv2 port map (

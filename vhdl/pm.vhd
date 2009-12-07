@@ -22,45 +22,45 @@ use work.sigs.all;
 entity pm is
   
   port (
-    p8, p6, p10, p4                 : in std_logic;
-    p17, p13, p23, p21, p3, p5, p25 : in std_logic;
-    p26, p24, p22                   : in std_logic;
-    tp1, tp2, tp5, tp6              : out std_logic;  -- test points
-    p1, p2, p7, p11, p16, p9        : out std_logic;
-    p20, p19, p12, p14              : out std_logic;
-    p18, p15, p28, p27              : out std_logic);
+    p8, p6, p10, p4                 : in logicsig;
+    p17, p13, p23, p21, p3, p5, p25 : in logicsig;
+    p26, p24, p22                   : in logicsig;
+    tp1, tp2, tp5, tp6              : out logicsig;  -- test points
+    p1, p2, p7, p11, p16, p9        : out logicsig;
+    p20, p19, p12, p14              : out logicsig;
+    p18, p15, p28, p27              : out logicsig);
   
 end pm;
 
 architecture gates of pm is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g4
     port (
-      a, b, c, d : in  std_logic;             -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c, d : in  logicsig;             -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal a, b, c, d, e, f, g, h : std_logic;
-  signal j, k, l, m, n, r, t : std_logic;
-  signal t1, t2, t3, t4, t5, t6 : std_logic;
+  signal a, b, c, d, e, f, g, h : logicsig;
+  signal j, k, l, m, n, r, t : logicsig;
+  signal t1, t2, t3, t4, t5, t6 : logicsig;
 begin  -- gates
 
   u1 : inv port map (

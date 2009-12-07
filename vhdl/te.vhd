@@ -22,25 +22,25 @@ use work.sigs.all;
 entity teslice is
   
   port (
-    a, b, c    : in  std_logic;         -- inputs
-    e1, e2, e3 : in  std_logic;         -- enables
-    tp         : out std_logic;         -- test point
-    y          : out std_logic);        -- output
+    a, b, c    : in  logicsig;         -- inputs
+    e1, e2, e3 : in  logicsig;         -- enables
+    tp         : out logicsig;         -- test point
+    y          : out logicsig);        -- output
 
 end teslice;
 
 architecture gates of teslice is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1, t2, t3, t4 : std_logic;
+  signal t1, t2, t3, t4 : logicsig;
 begin  -- gates
 
   u1 : g2 port map (
@@ -71,28 +71,28 @@ use work.sigs.all;
 entity te is
   
   port (
-    p6, p4, p2, p7, p13, p12, p24, p26, p28  : in  std_logic;
-    p5, p3, p1, p22, p18, p17, p23, p25, p27 : in  std_logic;
-    p14, p15, p16                            : in  std_logic;
-    tp1, tp2, tp3, tp4, tp5, tp6             : out std_logic;  -- test points
-    p9, p10, p21, p8, p19, p20               : out std_logic);
+    p6, p4, p2, p7, p13, p12, p24, p26, p28  : in  logicsig;
+    p5, p3, p1, p22, p18, p17, p23, p25, p27 : in  logicsig;
+    p14, p15, p16                            : in  logicsig;
+    tp1, tp2, tp3, tp4, tp5, tp6             : out logicsig;  -- test points
+    p9, p10, p21, p8, p19, p20               : out logicsig);
 
 end te;
 
 architecture gates of te is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component teslice
     port (
-      a, b, c    : in  std_logic;         -- inputs
-      e1, e2, e3 : in  std_logic;         -- enables
-      tp         : out std_logic;         -- test point
-      y          : out std_logic);        -- output
+      a, b, c    : in  logicsig;         -- inputs
+      e1, e2, e3 : in  logicsig;         -- enables
+      tp         : out logicsig;         -- test point
+      y          : out logicsig);        -- output
   end component;
-  signal a, b, c : std_logic;
+  signal a, b, c : logicsig;
 begin  -- gates
 
   u1 : inv port map (

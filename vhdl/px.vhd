@@ -23,54 +23,54 @@ entity px is
   
   port (
     p11                          : in  coaxsig;
-    p7, p2, p5, p9, p6, p12, p4  : in  std_logic;
-    p22, p10, p23, p24, p21, p26 : in  std_logic;
-    tp1, tp2, tp5, tp6           : out std_logic;  -- test points
-    p13, p28, p18, p17, p20      : out std_logic;
-    p15, p14, p16, p3, p1        : out std_logic;
-    p8, p27, p25, p19            : out std_logic);
+    p7, p2, p5, p9, p6, p12, p4  : in  logicsig;
+    p22, p10, p23, p24, p21, p26 : in  logicsig;
+    tp1, tp2, tp5, tp6           : out logicsig;  -- test points
+    p13, p28, p18, p17, p20      : out logicsig;
+    p15, p14, p16, p3, p1        : out logicsig;
+    p8, p27, p25, p19            : out logicsig);
 
 end px;
 
 architecture gates of px is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g5
     port (
-      a, b, c, d, e : in  std_logic;          -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c, d, e : in  logicsig;          -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component cxreceiver
     port (
       a : in  coaxsig;                        -- source
-      y : out std_logic);                     -- destination
+      y : out logicsig);                     -- destination
   end component;
   component r2sflop
     port (
-      s, r, r2  : in  std_logic;                  -- set, reset
-      q, qb : out std_logic);                 -- q and q.bar
+      s, r, r2  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
   end component;
-  signal c, d, e, g : std_logic;
-  signal t1, t2, t3, t4, t5, t6, t7, t8 : std_logic;
-  signal t9, t10, t11, t12, t13, t14 : std_logic;
+  signal c, d, e, g : logicsig;
+  signal t1, t2, t3, t4, t5, t6, t7, t8 : logicsig;
+  signal t9, t10, t11, t12, t13, t14 : logicsig;
 begin  -- gates
 
   u1 : cxreceiver port map (

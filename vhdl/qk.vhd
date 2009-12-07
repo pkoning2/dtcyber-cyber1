@@ -22,26 +22,26 @@ use work.sigs.all;
 entity qkslice is
   
   port (
-    k      : in  std_logic;             -- control input
-    k2, k3 : in std_logic := '1';       -- additional control inputs
-    a, b   : in  std_logic;             -- inputs
-    tp     : out std_logic;             -- test point
-    y      : out std_logic);
+    k      : in  logicsig;             -- control input
+    k2, k3 : in logicsig := '1';       -- additional control inputs
+    a, b   : in  logicsig;             -- inputs
+    tp     : out logicsig;             -- test point
+    y      : out logicsig);
 
 end qkslice;
 
 architecture gates of qkslice is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal t1, t2, t3, t4, t5 : std_logic;
+  signal t1, t2, t3, t4, t5 : logicsig;
 begin  -- gates
 
   u1 : g3 port map (
@@ -75,43 +75,43 @@ use work.sigs.all;
 entity qk is
   
   port (
-    p13, p14, p18                : in  std_logic;
-    p26, p25, p28, p27           : in  std_logic;
-    tp1, tp2, tp3, tp4, tp5, tp6 : out std_logic;  -- test points
-    p9, p24, p20, p3, p5, p7     : out std_logic);
+    p13, p14, p18                : in  logicsig;
+    p26, p25, p28, p27           : in  logicsig;
+    tp1, tp2, tp3, tp4, tp5, tp6 : out logicsig;  -- test points
+    p9, p24, p20, p3, p5, p7     : out logicsig);
 
 end qk;
 
 architecture gates of qk is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component g3
     port (
-      a, b, c : in  std_logic;                -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c : in  logicsig;                -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component g4
     port (
-      a, b, c, d : in  std_logic;             -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b, c, d : in  logicsig;             -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component qkslice
     port (
-      k      : in  std_logic;             -- control input
-      k2, k3 : in std_logic := '1';       -- additional control inputs
-      a, b   : in  std_logic;             -- inputs
-      tp     : out std_logic;             -- test point
-      y      : out std_logic);
+      k      : in  logicsig;             -- control input
+      k2, k3 : in logicsig := '1';       -- additional control inputs
+      a, b   : in  logicsig;             -- inputs
+      tp     : out logicsig;             -- test point
+      y      : out logicsig);
   end component;
-  signal a, b, c, d, e, f, k, t : std_logic;
+  signal a, b, c, d, e, f, k, t : logicsig;
 begin  -- gates
 
   u1 : inv2 port map (

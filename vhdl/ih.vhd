@@ -22,27 +22,27 @@ use work.sigs.all;
 entity ih is
   
   port (
-    p6, p4, p24, p26                       : in  std_logic;
-    p1, p2, p3, p5                         : in  std_logic;
-    p23, p25, p27, p28                     : in  std_logic;
-    tp1, tp2, tp5, tp6                     : out std_logic;  -- test points
-    p13, p14, p11, p12, p9, p10, p7, p8    : out std_logic;
-    p21, p22, p19, p20, p15, p16, p17, p18 : out std_logic);
+    p6, p4, p24, p26                       : in  logicsig;
+    p1, p2, p3, p5                         : in  logicsig;
+    p23, p25, p27, p28                     : in  logicsig;
+    tp1, tp2, tp5, tp6                     : out logicsig;  -- test points
+    p13, p14, p11, p12, p9, p10, p7, p8    : out logicsig;
+    p21, p22, p19, p20, p15, p16, p17, p18 : out logicsig);
 
 end ih;
 
 architecture gates of ih is
   component inv
     port (
-      a  : in  std_logic;                     -- input
-      y  : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y  : out logicsig);                    -- output
   end component;
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
-  signal a, b, c, d : std_logic;
+  signal a, b, c, d : logicsig;
 begin  -- gates
 
   u1 : inv port map (

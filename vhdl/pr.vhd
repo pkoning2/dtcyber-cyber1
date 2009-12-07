@@ -22,38 +22,38 @@ use work.sigs.all;
 entity prslice is
   
   port (
-    d, clk : in  std_logic;                   -- data, clock
+    d, clk : in  logicsig;                   -- data, clock
     idata  : in  coaxsig;                     -- input data coax
-    r      : in  std_logic;                   -- reset
-    tp     : out std_logic;                   -- test point
+    r      : in  logicsig;                   -- reset
+    tp     : out logicsig;                   -- test point
     odata  : out coaxsig;                     -- output data coax
-    qb     : out std_logic);                  -- output (negated)
+    qb     : out logicsig);                  -- output (negated)
 
 end prslice;
 
 architecture gates of prslice is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2    : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2    : out logicsig);                  -- output
   end component;
   component cxdriver
     port (
-      a : in  std_logic;                        -- source
+      a : in  logicsig;                        -- source
       y : out coaxsig);                         -- destination
   end component;
   component cxreceiver
     port (
       a : in  coaxsig;                    -- source
-      y : out std_logic);                 -- destination
+      y : out logicsig);                 -- destination
   end component;
   component rs2flop
     port (
-      s, s2, r  : in  std_logic;                  -- inputs
-      q, qb : out std_logic);                 -- outputs
+      s, s2, r  : in  logicsig;                  -- inputs
+      q, qb : out logicsig);                 -- outputs
   end component;
-  signal ts  : std_logic;
-  signal ti : std_logic;         -- internal copy of coax in
+  signal ts  : logicsig;
+  signal ti : logicsig;         -- internal copy of coax in
 begin  -- gates
 
   u1 : g2 port map (
@@ -82,56 +82,56 @@ use work.sigs.all;
 entity pr is
   
   port (
-    p19 : in  std_logic;               -- clock
-    p14 : in  std_logic;               -- clear
-    p17 : in  std_logic;               -- bit 0
+    p19 : in  logicsig;               -- clock
+    p14 : in  logicsig;               -- clear
+    p17 : in  logicsig;               -- bit 0
     p6  : in  coaxsig := '1';                 -- coax data in bit 0
     p5  : out coaxsig;                        -- coax data out bit 0
-    p8  : out std_logic;                      -- registered data 0
-    p15 : in  std_logic;               -- bit 1
+    p8  : out logicsig;                      -- registered data 0
+    p15 : in  logicsig;               -- bit 1
     p4  : in  coaxsig := '1';                 -- coax data in bit 1
     p11 : out coaxsig;                        -- coax data out bit 1
-    p7  : out std_logic;                      -- registered data 1
-    p16 : in  std_logic;               -- bit 2
+    p7  : out logicsig;                      -- registered data 1
+    p16 : in  logicsig;               -- bit 2
     p23 : in  coaxsig := '1';                 -- coax data in bit 2
     p28 : out coaxsig;                        -- coax data out bit 2
-    p21 : out std_logic;                      -- registered data 2
-    p18 : in  std_logic;               -- bit 3
+    p21 : out logicsig;                      -- registered data 2
+    p18 : in  logicsig;               -- bit 3
     p27 : in  coaxsig := '1';                 -- coax data in bit 3
     p24 : out coaxsig;                        -- coax data out bit 3
-    p22 : out std_logic;                      -- registered data 3
-    p2  : in  std_logic;
+    p22 : out logicsig;                      -- registered data 3
+    p2  : in  logicsig;
     p1  : out coaxsig;
-    tp1, tp2, tp5, tp6 : out std_logic);      -- test points
+    tp1, tp2, tp5, tp6 : out logicsig);      -- test points
 
 end pr;
 
 architecture gates of pr is
   component prslice
     port (
-      d, clk : in  std_logic;                   -- data, clock
+      d, clk : in  logicsig;                   -- data, clock
       idata  : in  coaxsig;                     -- input data coax
-      r      : in  std_logic;                   -- reset
-      tp     : out std_logic;                   -- test point
+      r      : in  logicsig;                   -- reset
+      tp     : out logicsig;                   -- test point
       odata  : out coaxsig;                     -- output data coax
-      qb     : out std_logic);                  -- output (negated)
+      qb     : out logicsig);                  -- output (negated)
   end component;
   component inv
     port (
-      a : in  std_logic;                      -- input
-      y : out std_logic);                     -- output
+      a : in  logicsig;                      -- input
+      y : out logicsig);                     -- output
   end component;
   component inv2
     port (
-      a  : in  std_logic;                     -- input
-      y, y2 : out std_logic);                    -- output
+      a  : in  logicsig;                     -- input
+      y, y2 : out logicsig);                    -- output
   end component;
   component cxdriver
     port (
-      a : in  std_logic;                      -- source
+      a : in  logicsig;                      -- source
       y : out coaxsig);                       -- destination
   end component;
-  signal a, b : std_logic;                    -- buffered clock
+  signal a, b : logicsig;                    -- buffered clock
 begin  -- gates
 
   u1 : inv port map (

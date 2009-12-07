@@ -22,8 +22,8 @@ use work.sigs.all;
 entity plslice is
   
   port (
-    a, b : in  std_logic;
-    tp   : out std_logic;               -- test point
+    a, b : in  logicsig;
+    tp   : out logicsig;               -- test point
     y    : out coaxsig);
 
 end plslice;
@@ -31,15 +31,15 @@ end plslice;
 architecture gates of plslice is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component cxdriver
     port (
-      a : in  std_logic;                      -- source
+      a : in  logicsig;                      -- source
       y : out coaxsig);                       -- destination
   end component;
-  signal t : std_logic;
+  signal t : logicsig;
 begin  -- gates
 
   u1 : g2 port map (
@@ -59,9 +59,9 @@ use work.sigs.all;
 entity pl is
   
   port (
-    p9, p13, p20, p11, p18, p22 : in  std_logic;
-    p10, p21                    : in  std_logic;
-    tp1, tp2, tp3, tp4, tp5, tp6 : out std_logic;  -- test points
+    p9, p13, p20, p11, p18, p22 : in  logicsig;
+    p10, p21                    : in  logicsig;
+    tp1, tp2, tp3, tp4, tp5, tp6 : out logicsig;  -- test points
     p8, p4, p25, p6, p27, p23   : out coaxsig);
 
 end pl;
@@ -69,16 +69,16 @@ end pl;
 architecture gates of pl is
   component g2
     port (
-      a, b : in  std_logic;                   -- inputs
-      y, y2   : out std_logic);                  -- output
+      a, b : in  logicsig;                   -- inputs
+      y, y2   : out logicsig);                  -- output
   end component;
   component plslice
     port (
-      a, b : in  std_logic;
-      tp   : out std_logic;               -- test point
+      a, b : in  logicsig;
+      tp   : out logicsig;               -- test point
       y    : out coaxsig);
   end component;
-  signal a : std_logic;
+  signal a : logicsig;
 begin  -- gates
 
   u1 : g2 port map (
