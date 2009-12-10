@@ -7200,7 +7200,8 @@ CLOCK	1H2
 4	J16	14	3
 5	H11	20	13
 6	K27	13	15
-7	H11	24	13
+#7	H11	24	13
+7	j16	x	2   # speed up master clear pulses
 8	M24	16	17
 #9	H12	9	13
 9	j16	x	2   # speed up master clear pulses

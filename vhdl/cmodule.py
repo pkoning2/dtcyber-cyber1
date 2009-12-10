@@ -586,9 +586,7 @@ class cmod (ElementType):
             assigns, sigdict = self.printassigns (sigdict, e)
             gates.append (assigns)
         assigns, sigdict = self.printassigns (sigdict)
-        return """library IEEE;
-use IEEE.std_logic_1164.all;
-use work.sigs.all;
+        return """use work.sigs.all;
 
 entity %s is
 %s

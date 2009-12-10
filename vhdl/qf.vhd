@@ -15,8 +15,6 @@
 --
 -------------------------------------------------------------------------------
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity qfslice is
@@ -64,8 +62,6 @@ begin  -- gates
 
 end gates;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity qf is

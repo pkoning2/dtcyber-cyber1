@@ -15,8 +15,6 @@
 --
 -------------------------------------------------------------------------------
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity plslice is
@@ -52,8 +50,6 @@ begin  -- gates
     y => y);
 
 end gates;
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity pl is

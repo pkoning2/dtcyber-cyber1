@@ -15,8 +15,6 @@
 --
 -------------------------------------------------------------------------------
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity kaslice1 is
@@ -123,8 +121,6 @@ begin -- gates
 
 end gates;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity kaslice2 is
@@ -206,8 +202,6 @@ begin -- gates
 
 end gates;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity ka is
@@ -382,7 +376,7 @@ begin -- gates
     y => f);
 
 
-  p27 <= v1;
+  p27 <= '0';
 
 end gates;
 

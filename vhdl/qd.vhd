@@ -15,8 +15,6 @@
 --
 -------------------------------------------------------------------------------
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity qdslice is
@@ -90,8 +88,6 @@ begin  -- qdslice
 end qdslice;
 
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 
 entity qd is

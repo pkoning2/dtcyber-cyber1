@@ -16,8 +16,7 @@
 -------------------------------------------------------------------------------
 
 library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.numeric_std.all;
+use IEEE.numeric_bit.all;
 use work.sigs.all;
 
 entity afslice is
@@ -62,8 +61,7 @@ end beh;
 
 
 library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.numeric_std.all;
+use IEEE.numeric_bit.all;
 use work.sigs.all;
 
 entity af is

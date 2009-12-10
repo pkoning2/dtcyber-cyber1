@@ -16,8 +16,7 @@
 --  A testbench has no ports.
 
 library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.numeric_std.all;
+use IEEE.numeric_bit.all;
 use std.textio.all;
 use work.sigs.all;
 

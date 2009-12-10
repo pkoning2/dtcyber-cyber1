@@ -14,8 +14,7 @@
 -------------------------------------------------------------------------------
 
 library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.numeric_std.all;
+use IEEE.numeric_bit.all;
 
 -- Common definitions for CDC 6600 model
 
@@ -23,10 +22,8 @@ use IEEE.numeric_std.all;
 
 package sigs is
 
-  subtype coaxsig is std_ulogic range 'U' to '1';  -- signal on coax
-  subtype logicsig is std_ulogic range 'U' to '1';  -- logic or tp signal
-  constant v0 : logicsig := '1';             -- low voltage (logic 1)
-  constant v1 : logicsig := '0';             -- high voltage (logic 0)
+  subtype coaxsig is bit;                 -- signal on coax
+  subtype logicsig is bit;                -- logic or tp signal
   constant t : time := 5 ns;            -- basic stage delay
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
@@ -79,8 +76,6 @@ package body sigs is
   
 end sigs;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity inv is
   
@@ -91,20 +86,16 @@ entity inv is
 end inv;
 
 architecture bool of inv is
-  signal ii : logicsig;
-  signal oi : logicsig;
 begin  -- bool
-  ii <= '1' when a = 'U' else a;
-  oi <= not (ii) after t;
-  y <= oi;
-
+  inv: process (a)
+  begin  -- process inv
+    y <= not (a) after t;
+  end process inv;
 end bool;
 
 -- inv2 is two inverters in a row, used by the 6600 for fanout
 -- (or perhaps for delay)
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity inv2 is
   
@@ -115,23 +106,18 @@ entity inv2 is
 end inv2;
 
 architecture bool of inv2 is
-  signal ii : logicsig;
-  signal oi, oi2 : logicsig;
 begin  -- bool
-  ii <= '1' when a = 'U' else a;
-  oi <= not (ii) after t;
-  oi2 <= ii after 2 * t;
-  y <= oi;
-  y2 <= oi2;
-  
+  inv: process (a)
+  begin  -- process inv
+    y <= not (a) after t;
+    y2 <= a after 2 * t;
+  end process inv;
 end bool;
 
 -- The CDC docs talk about the gates as "NOR", meaning "NOT OR".
 -- In standard terminology, that's "NAND" (AND NOT).  So we'll
 -- write the that way here.
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity g2 is
   
@@ -142,20 +128,16 @@ entity g2 is
 end g2;
 
 architecture bool of g2 is
-  signal ai, bi : logicsig;
-  signal yi, y2i : logicsig;
 begin  -- bool
-  ai <= '1' when a = 'U' else a;
-  bi <= '1' when b = 'U' else b;
-  yi <= not (ai and bi) after t;
-  y2i <= (ai and bi) after 2 * t;
-  y <= yi;
-  y2 <= y2i;
-  
+  g2: process (a, b)
+    variable t1 : logicsig;
+  begin  -- process g2
+    t1 := a and b;
+    y <= not (t1) after t;
+    y2 <= t1 after t * 2;
+  end process g2;
 end bool;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity g3 is
   
@@ -166,21 +148,16 @@ entity g3 is
 end g3;
 
 architecture bool of g3 is
-  signal ai, bi, ci : logicsig;
-  signal yi, y2i : logicsig;
 begin  -- bool
-  ai <= '1' when a = 'U' else a;
-  bi <= '1' when b = 'U' else b;
-  ci <= '1' when c = 'U' else c;
-  yi <= not (ai and bi and ci) after t;
-  y2i <= (ai and bi and ci) after 2 * t;
-  y <= yi;
-  y2 <= y2i;
-
+  g3: process (a, b, c)
+    variable t1 : logicsig;
+  begin  -- process g3
+    t1 := a and b and c;
+    y <= not (t1) after t;
+    y2 <= t1 after t * 2;
+  end process g3;
 end bool;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity g4 is
   
@@ -191,22 +168,16 @@ entity g4 is
 end g4;
 
 architecture bool of g4 is
-  signal ai, bi, ci, di : logicsig;
-  signal yi, y2i : logicsig;
 begin  -- bool
-  ai <= '1' when a = 'U' else a;
-  bi <= '1' when b = 'U' else b;
-  ci <= '1' when c = 'U' else c;
-  di <= '1' when d = 'U' else d;
-  yi <= not (ai and bi and ci and di) after t;
-  y2i <= (ai and bi and ci and di) after 2 * t;
-  y <= yi;
-  y2 <= y2i;
-
+  g4: process (a, b, c, d)
+    variable t1 : logicsig;
+  begin  -- process g4
+    t1 := a and b and c and d;
+    y <= not (t1) after t;
+    y2 <= t1 after t * 2;
+  end process g4;
 end bool;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity g5 is
   
@@ -217,23 +188,16 @@ entity g5 is
 end g5;
 
 architecture bool of g5 is
-  signal ai, bi, ci, di, ei : logicsig;
-  signal yi, y2i : logicsig;
 begin  -- bool
-  ai <= '1' when a = 'U' else a;
-  bi <= '1' when b = 'U' else b;
-  ci <= '1' when c = 'U' else c;
-  di <= '1' when d = 'U' else d;
-  ei <= '1' when e = 'U' else e;
-  yi <= not (ai and bi and ci and di and ei) after t;
-  y2i <= (ai and bi and ci and di and ei) after 2 * t;
-  y <= yi;
-  y2 <= y2i;
-
+  g5: process (a, b, c, d, e)
+    variable t1 : logicsig;
+  begin  -- process g5
+    t1 := a and b and c and d and e;
+    y <= not (t1) after t;
+    y2 <= t1 after t * 2;
+  end process g5;
 end bool;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity g6 is
   
@@ -247,21 +211,15 @@ architecture bool of g6 is
   signal ai, bi, ci, di, ei, fi : logicsig;
   signal yi, y2i : logicsig;
 begin  -- bool
-  ai <= '1' when a = 'U' else a;
-  bi <= '1' when b = 'U' else b;
-  ci <= '1' when c = 'U' else c;
-  di <= '1' when d = 'U' else d;
-  ei <= '1' when e = 'U' else e;
-  fi <= '1' when f = 'U' else f;
-  yi <= not (ai and bi and ci and di and ei and fi) after t;
-  y2i <= (ai and bi and ci and di and ei and fi) after 2 * t;
-  y <= yi;
-  y2 <= y2i;
-
+  g6: process (a, b, c, d, e, f)
+    variable t1 : logicsig;
+  begin  -- process g6
+    t1 := a and b and c and d and e and f;
+    y <= not (t1) after t;
+    y2 <= t1 after t * 2;
+  end process g6;
 end bool;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity cxdriver is
   
@@ -272,16 +230,13 @@ entity cxdriver is
 end cxdriver;
 
 architecture bool of cxdriver is
-  signal ai : logicsig;
-  signal yi : logicsig;
 begin  -- bool
-  ai <= '1' when a = 'U' else a;
-  yi <= ai after tc;
-  y <= not (yi);                        -- coax is positive logic...
+  inv: process (a)
+  begin  -- process inv
+    y <= not (a) after tc;
+  end process inv;
 end bool;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity cxdriver5 is
   
@@ -292,22 +247,15 @@ entity cxdriver5 is
 end cxdriver5;
 
 architecture bool of cxdriver5 is
-  component cxdriver
-    port (
-      a : in  logicsig;                        -- source
-      y : out coaxsig);                       -- destination
-  end component;
-  signal ai : logicsig;
-  signal yi : logicsig;
 begin  -- bool
-  ai <= a and a2 and a3 and a4 and a5;
-  u1 : cxdriver port map (
-    a => ai,
-    y => y);
+  g5: process (a, a2, a3, a4, a5)
+    variable t1 : logicsig;
+  begin  -- process g5
+    t1 := a and a2 and a3 and a4 and a5;
+    y <= not (t1) after tc;
+  end process g5;
 end bool;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity cxreceiver is
   
@@ -320,12 +268,9 @@ end cxreceiver;
 architecture bool of cxreceiver is
   signal ai : logicsig;
 begin  -- bool
-  ai <= '1' when a = 'U' else a;
-  y <= not (ai);                        -- coax is positive logic...
+  y <= not (a);                        -- coax is positive logic...
 end bool;
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity rsflop is
   port (
@@ -335,19 +280,21 @@ entity rsflop is
 end rsflop;
 
 architecture beh of rsflop is
-  signal qi : logicsig := '0';
 begin  -- beh
-  qi <= '0' when r = '0'
-        else '1' when s = '0'
-        else unaffected;
-  q <= qi after t;
-  qb <= not (qi) after t;
-
+  rsflop: process (r, s)
+    variable qi : logicsig;
+  begin  -- process rsflop
+    if r = '0' then
+      qi := '0';
+    elsif s = '0' then
+      qi := '1';
+    end if;
+    q <= qi after t;
+    qb <= not (qi) after t;
+  end process rsflop;
 end beh;
 
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity rs4flop is
   port (
@@ -375,8 +322,6 @@ begin  -- beh
 end beh;
 
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity r4s4flop is
   port (
@@ -405,8 +350,6 @@ begin  -- beh
 end beh;
 
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity rs2flop is
   port (
@@ -434,8 +377,6 @@ begin  -- beh
 end beh;
 
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity r2sflop is
   port (
@@ -463,8 +404,6 @@ begin  -- beh
 end beh;
 
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity latch is
   
@@ -476,18 +415,20 @@ end latch;
 
 architecture beh of latch is
   signal clki : logicsig;
-  signal qi : logicsig;
 begin  -- beh
   clki <= clk after t * 2;
-  qi <= d when clki = '1' else unaffected;
-  q <= qi after t;
-  qb <= not (qi) after t;
-
+  latch: process (clki, d)
+    variable qi : logicsig;
+  begin  -- process level sensitive latch
+    if clki = '1' then  -- clock (enable) asserted
+      qi := d;
+    end if;
+    q <= qi after t;
+    qb <= not (qi) after t;
+  end process latch;
 end beh;
 
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity latch2 is
   
@@ -515,8 +456,6 @@ begin  -- beh
 end beh;
 
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity latchd2 is
   
@@ -544,8 +483,6 @@ begin  -- beh
 end beh;
 
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity latchd4 is
   
@@ -573,8 +510,6 @@ begin  -- beh
 end beh;
 
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
 entity latchr is
   
@@ -590,16 +525,20 @@ architecture beh of latchr is
   signal qi : logicsig;
 begin  -- beh
   clki <= clk after t * 2;
-  qi <= '0' when r = '0' else
-      d when clki = '1' else unaffected;
-  q <= qi after t;
-  qb <= not (qi) after t;
-
+  latch: process (clki, d, r)
+    variable qi : logicsig;
+  begin  -- process level sensitive latch with reset
+    if r = '0' then
+      qi := '0';
+    elsif clki = '1' then  -- clock (enable) asserted
+      qi := d;
+    end if;
+    q <= qi after t;
+    qb <= not (qi) after t;
+  end process latch;
 end beh;
 
 
-library IEEE;
-use IEEE.std_logic_1164.all;
 use work.sigs.all;
   
 entity wire is

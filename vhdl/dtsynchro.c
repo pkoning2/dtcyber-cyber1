@@ -14,7 +14,7 @@
 // leading edge of the output signals (control and data) and the
 // leading edge of any input signals.
 //
-// icv and ocv are 19-entry vectors of std_logic corresponding to 
+// icv and ocv are 19-entry vectors of bit corresponding to 
 // the input and output cables.  icv is idle (all 0) on entry; ocv
 // contains the states of the output wires (1 for any wires with
 // output pulses on them).  On exit from this function, icv is
@@ -32,6 +32,11 @@
 
 #ifdef DEBUG
 #define DPRINTF printf
+#if DEBUG > 1
+#define DDPRINTF printf
+#else
+#define DDPRINTF(f...)
+#endif
 #else
 #define DPRINTF(f...)
 #endif
@@ -45,11 +50,13 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
     u32 dout, din;
     ChSlot prev_ch;
     bool ic[19], oc[19];
-    enum std_logic o = one;
+    enum bit o = one;
     
     activeChannel = channel + chnum;
 
-    // Convert between std_logic values and boolean.  
+    DDPRINTF ("dtsynchro channel %o\n", chnum);
+    
+    // Convert between bit values and boolean.  
 
     // Send pending input, then clear pending
     for (i = 0; i < 16; i++)
@@ -57,32 +64,33 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
         if (pending_in[i][chnum])
         {
             incable[i] = one;
-            //DPRINTF ("1");
+            DDPRINTF ("1");
         }
         else 
         {
             incable[i] = zero;
-            //DPRINTF ("0");
+            DDPRINTF ("0");
         }
         pending_in[i][chnum] = FALSE;
     }
-    //DPRINTF ("...  ");
+    DDPRINTF ("...  ");
 
     // Convert output
     for (i = 0; i < 19; i++)
     {
+        DDPRINTF ("%d", outcable[i]);
         if (outcable[i] == o)
         {
             oc[i] = TRUE;
-            //DPRINTF ("1");
+            DDPRINTF ("1");
         }
         else
         {
             oc[i] = FALSE;
-            //DPRINTF ("0");
+            DDPRINTF ("0");
         }
     }
-    //DPRINTF ("\n");
+    DDPRINTF ("\n");
     
     // Convert output data to integer
     dout = 0;
