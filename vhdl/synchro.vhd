@@ -32,7 +32,6 @@ begin  -- synchro
   -- inputs : p2, p3
   -- outputs: p1
   sync: process
-    constant idle : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
     variable icv : coaxsigs;
     variable ocv : coaxsigs;
   begin  -- process
@@ -44,10 +43,9 @@ begin  -- synchro
         ocv(i) := ocv(i) or p3(i);
       end loop;  -- i
       
-      icv := idle;
+      icv := idlecoax;
       dtsynchro (chnum, icv, ocv);
-      p1 <= transport icv;
-      p1 <= transport idle after 25 ns;
+      p1 <= icv, idlecoax after 25 ns;
       
     end if;
   end process;

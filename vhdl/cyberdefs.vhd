@@ -28,11 +28,9 @@ package sigs is
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
   type coaxsigs is array (0 to 18) of coaxsig;    -- CDC standard coax cable
-  constant idlecoax : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
-  --constant idlecoax : coaxsigs := (other => '0');
+  constant idlecoax : coaxsigs := (others => '0');
   type tpcable is array (0 to 23) of logicsig;    -- CDC standard tp cable
-  constant idletp : tpcable := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
-  --constant idletp : tpcable := (other => '0');
+  constant idletp : tpcable := (others => '0');
   subtype ppword is UNSIGNED (11 downto 0);  -- PPU word (12 bits)
   subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
