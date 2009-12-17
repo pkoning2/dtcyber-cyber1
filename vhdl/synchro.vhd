@@ -29,7 +29,7 @@ entity synchro is
 end synchro;
 
 architecture synchro of synchro is
-  signal ocv : coaxsigs := idlecoax;
+  signal icv, ocv : coaxsigs := idlecoax;
 begin  -- synchro
   -- purpose: input latch
   -- type   : combinational
@@ -49,16 +49,18 @@ begin  -- synchro
   -- purpose: Simulate 6600 synchronizer, connected to DtCyber
   -- type   : sequential
   -- inputs : p2, ocv
-  -- outputs: p1
+  -- outputs: icv
   sync: process (p2(16))
-    variable icv, t : coaxsigs;
+    variable t_icv, t_ocv : coaxsigs;
   begin  -- process
     if p2(16)'event and p2(16) = '1' then
-      icv := idlecoax;
-      t := ocv;
-      dtsynchro (chnum, icv, t);
-      p1 <= icv, idlecoax after 25 ns;
+      t_icv := idlecoax;
+      t_ocv := ocv;
+      dtsynchro (chnum, t_icv, t_ocv);
+      icv <= t_icv;
     end if;
   end process;
-
+  inputpulses: for i in icv'range generate
+    p1(i) <= icv(i) and p2(16);
+  end generate;
 end synchro;
