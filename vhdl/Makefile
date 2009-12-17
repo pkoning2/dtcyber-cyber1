@@ -37,17 +37,17 @@ OPTIMIZE ?=
 
 GHDLOPTS := $(OPTIMIZE) $(ASMOPTS) $(LDOPTS) $(EXTRAGOPTS)  ### --finteger64
 
-cdc_tb:	$(OBJS) cyberdefs.stamp
-	ghdl -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS) cyberdefs.stamp,$+) $(FLIBS))  cdc_tb
+cdc_tb:	$(OBJS)
+	ghdl -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
 
-cdc_tb2:	$(filter-out cdc_tb.o,$(OBJS)) cdc_tb2.o chassis12.o cyberdefs.stamp
-	ghdl -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out cyberdefs.stamp cdc_tb2.o chassis12.o $(VOBJS),$+) $(FLIBS))  cdc_tb2
+cdc_tb2:	$(filter-out cdc_tb.o,$(OBJS)) cdc_tb2.o chassis12.o
+	ghdl -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out cdc_tb2.o chassis12.o $(VOBJS),$+) $(FLIBS))  cdc_tb2
 
 cyberdefs.o cyberdefs.stamp: cyberdefs.vhd
 	ghdl -a $(GHDLOPTS) $<
 	touch cyberdefs.stamp
 
-%.o : %.vhd
+%.o : %.vhd cyberdefs.stamp
 	ghdl -a $(GHDLOPTS) $<
 
 %.o : %.c
@@ -68,4 +68,4 @@ clean:
 
 $(TOP): $(CHASSIS)
 
-#$(CHASSIS): $(MODULES)
+$(CHASSIS): $(MODULES)
