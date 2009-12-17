@@ -35,6 +35,7 @@ package sigs is
   subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
   subtype bankaddr is UNSIGNED (4 downto 0);  -- Bank address (5 bits)
+  type imem is array (natural range <>) of integer;  -- initial data for memory
   type ippmem  is array (natural range <>) of ppint;  -- initial data for ppmem
   subtype cpword is UNSIGNED (59 downto 0);  -- CPU word (60 bits)
 --  type cpint is  range 0 to 1152921504606846975;  -- CPU word, as an integer
@@ -558,3 +559,74 @@ begin  -- beh
   o <= transport i after idelay;
 
 end beh;
+
+-- Memory array, loosely based on the Xilinx Virtex 6 embedded memory.
+-- Various sizes are available, see the book.  For that matter, this
+-- behavior model also allows sizes that don't actually exist in the FPGA...
+
+library IEEE;
+use IEEE.numeric_bit.all;
+use work.sigs.all;
+
+entity memarray is
+  
+  generic (
+    abits : integer := 12;              -- number of address bits
+    dbits : integer := 8;               -- number of data bits
+    idata : imem);                      -- initial value of memory
+  port (
+    addr_a  : in  UNSIGNED(abits - 1 downto 0);  -- port A address
+    rdata_a : out UNSIGNED(dbits - 1 downto 0);  -- port A data out
+    wdata_a : in  UNSIGNED(dbits - 1 downto 0);  -- port A data in
+    clk_a   : in  logicsig;                      -- port A clock
+    write_a : in  logicsig;                      -- port A write enable
+    ena_a   : in  logicsig;                      -- port A enable
+    addr_b  : in  UNSIGNED(abits - 1 downto 0);  -- port B address
+    rdata_b : out UNSIGNED(dbits - 1 downto 0);  -- port B data out
+    wdata_b : in  UNSIGNED(dbits - 1 downto 0);  -- port B data in
+    clk_b   : in  logicsig;                      -- port B clock
+    write_b : in  logicsig;                      -- port B write enable
+    ena_b   : in  logicsig;                      -- port B enable
+    reset   : in  logicsig);                     -- power-up reset
+
+end memarray;
+
+architecture beh of memarray is
+begin  -- beh
+
+  rw: process (clk_a, clk_b, reset)
+    constant maxaddr : integer := 2 ** abits - 1;  -- max address
+    subtype mdata_t is unsigned (dbits - 1 downto 0);
+    type marray_t is array (0 to maxaddr) of mdata_t;
+    variable areg : integer;              -- Address as an integer
+    variable mdata : marray_t;
+  begin  -- process rw
+    areg := 0;                          -- dummy init, it's not a latch
+    if reset = '1' then
+      for i in 0 to idata'high loop
+        mdata (i) := TO_UNSIGNED (idata (i), dbits);
+      end loop;  -- i
+    end if;
+    if clk_a'event and clk_a = '1' then  -- rising clock edge, port A
+      if ena_a = '1' then
+        areg := TO_INTEGER (addr_a);
+        if write_a = '1' then
+          mdata (areg) := wdata_a;
+        else
+          rdata_a <= mdata (areg);
+        end if;
+      end if;
+    end if;
+    if clk_b'event and clk_b = '1' then  -- rising clock edge, port B
+      if ena_b = '1' then
+        areg := TO_INTEGER (addr_b);
+        if write_b = '1' then
+          mdata (areg) := wdata_b;
+        else
+          rdata_b <= mdata (areg);
+        end if;
+      end if;
+    end if;
+  end process rw;
+end beh;
+
