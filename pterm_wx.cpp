@@ -1656,7 +1656,8 @@ bool PtermApp::OnInit (void)
 			//load profile
 			skipinit = ptermApp->LoadProfile(profile,filename);
 		}
-		else if (str.Right(4).CmpNoCase(wxT(".dat"))==0)
+		else if (str.Right(4).CmpNoCase(wxT(".dat"))==0 ||
+                 str.Right(4).CmpNoCase(wxT(".trc"))==0)
         {
             // test data file
             m_testdata = fopen (str.mb_str(), "r");
@@ -2090,6 +2091,7 @@ void PtermApp::OnAbout(wxCommandEvent&)
 {
     wxMessageBox(wxT (STRPRODUCTNAME " V" STRFILEVER
                       "\n  built with wxWidgets V" WXVERSION
+                      "\n  build date " PTERMBUILDDATE
                       "\n" STRLEGALCOPYRIGHT),
                       _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
 }
