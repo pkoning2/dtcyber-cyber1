@@ -102,6 +102,7 @@ endif
 
 wxversion.h: wxversion
 	echo "#define WXVERSION \"$(WXVERSION)\"" > wxversion.h.tmp
+	date +"#define PTERMBUILDDATE \"%e %B %Y\"" >> wxversion.h.tmp
 	if [ ! -r wxversion.h ]; then mv -f wxversion.h.tmp wxversion.h; else \
 	  if cmp -s wxversion.h.tmp wxversion.h; then rm -f wxversion.h.tmp; \
 	    else mv -f wxversion.h.tmp wxversion.h; fi; fi
