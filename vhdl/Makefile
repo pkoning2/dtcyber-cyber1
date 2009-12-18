@@ -36,7 +36,7 @@ endif
 OPTIMIZE ?=
 #OPTIMIZE ?= -O2
 
-GHDLOPTS := $(OPTIMIZE) $(ASMOPTS) $(LDOPTS) $(EXTRAGOPTS)  ### --finteger64
+GHDLOPTS := $(OPTIMIZE) $(ASMOPTS) $(LDOPTS) $(EXTRAGFLAGS)  ### --finteger64
 
 cdc_tb:	$(OBJS)
 	ghdl -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
