@@ -1,0 +1,572 @@
+/////////////////////////////////////////////////////////////////////////////
+// Name:        pterm_screen.cpp
+// Purpose:     pterm screen class
+// Authors:     Paul Koning, Joe Stanton
+// Modified by: 
+// Created:     13/2/2009
+// Copyright:   (c) Paul Koning, Joe Stanton
+// Licence:     DtCyber license
+/////////////////////////////////////////////////////////////////////////////
+
+#include "pterm.h"
+
+// Map PLATO coordinates to wx style screen bitmap coordinates
+#define XMADJUST(x) ((x) & 0777)
+#define YMADJUST(y) (511 - ((y) & 0777))
+
+// These are the strings to use for the "special" characters.
+// On classic terminals, the formatter generates these from
+// the regular ROM characters with a sequence of backspaces and
+// the like.  In ASCII mode, we have to do it; we do it
+// roughly the same way.  Each row is indexed by the
+// special char code - 0xf0.  Each entry is a pair:
+//  char code, Y offset.  Char code 0 is the terminator.
+// All are plotted at the same X implicitly.
+static const u8 M1specials[][8] =
+{ { 0x3a, 0, 0x29, 0, 0 },              // embed left
+  { 0x3b, 0, 0x2a, 0, 0 },              // embed right
+  { 0x3c, 0, 0x3c, 11, 0x03, 1, 0 },    // copyright body
+  { 0xa7, 0, 0xa8, 0, 0 },              // box
+  { 0xa0, 0, 0xa3, 0, 0xa2, 0, 0 },     // diamond
+  { 0x28, 0, 0xbe, 0, 0 },              // cross product
+  { 0x9e, 0, 0x9f, 0, 0 },              // hacek
+  { 0xa0, 0, 0xa2, 0, 0 },              // universal delimiter
+  { 0xaf, (u8) -3, 0 },                 // dot product
+  { 0x9e, (u8) -11, 0 },                // cedilla
+};
+
+/* data for plato font, set 0. */
+const unsigned short plato_m0[] = {
+    0x0000, 0x0000, 0x0330, 0x0330, 0x0000, 0x0000, 0x0000, 0x0000, // :
+    0x0060, 0x0290, 0x0290, 0x0290, 0x0290, 0x01e0, 0x0010, 0x0000, // a
+    0x1ff0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x00c0, 0x0000, // b
+    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0210, 0x0120, 0x0000, // c
+    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x1ff0, 0x0000, // d
+    0x00c0, 0x01a0, 0x0290, 0x0290, 0x0290, 0x0290, 0x0190, 0x0000, // e
+    0x0000, 0x0000, 0x0210, 0x0ff0, 0x1210, 0x1000, 0x0800, 0x0000, // f
+    0x01a8, 0x0254, 0x0254, 0x0254, 0x0254, 0x0194, 0x0208, 0x0000, // g
+    0x1000, 0x1ff0, 0x0100, 0x0200, 0x0200, 0x0200, 0x01f0, 0x0000, // h
+    0x0000, 0x0000, 0x0210, 0x13f0, 0x0010, 0x0000, 0x0000, 0x0000, // i
+    0x0000, 0x0002, 0x0202, 0x13fc, 0x0000, 0x0000, 0x0000, 0x0000, // j
+    0x1010, 0x1ff0, 0x0080, 0x0140, 0x0220, 0x0210, 0x0010, 0x0000, // k
+    0x0000, 0x0000, 0x1010, 0x1ff0, 0x0010, 0x0000, 0x0000, 0x0000, // l
+    0x03f0, 0x0200, 0x0200, 0x01f0, 0x0200, 0x0200, 0x01f0, 0x0000, // m
+    0x0200, 0x03f0, 0x0100, 0x0200, 0x0200, 0x0200, 0x01f0, 0x0000, // n
+    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x00c0, 0x0000, // o
+    0x03fe, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x00c0, 0x0000, // p
+    0x00c0, 0x0120, 0x0210, 0x0210, 0x0210, 0x0120, 0x03fe, 0x0000, // q
+    0x0200, 0x03f0, 0x0100, 0x0200, 0x0200, 0x0200, 0x0100, 0x0000, // r
+    0x0120, 0x0290, 0x0290, 0x0290, 0x0290, 0x0290, 0x0060, 0x0000, // s
+    0x0200, 0x0200, 0x1fe0, 0x0210, 0x0210, 0x0210, 0x0000, 0x0000, // t
+    0x03e0, 0x0010, 0x0010, 0x0010, 0x0010, 0x03e0, 0x0010, 0x0000, // u
+    0x0200, 0x0300, 0x00c0, 0x0030, 0x00c0, 0x0300, 0x0200, 0x0000, // v
+    0x03e0, 0x0010, 0x0020, 0x01c0, 0x0020, 0x0010, 0x03e0, 0x0000, // w
+    0x0200, 0x0210, 0x0120, 0x00c0, 0x00c0, 0x0120, 0x0210, 0x0000, // x
+    0x0382, 0x0044, 0x0028, 0x0010, 0x0020, 0x0040, 0x0380, 0x0000, // y
+    0x0310, 0x0230, 0x0250, 0x0290, 0x0310, 0x0230, 0x0000, 0x0000, // z
+    0x0010, 0x07e0, 0x0850, 0x0990, 0x0a10, 0x07e0, 0x0800, 0x0000, // 0
+    0x0000, 0x0000, 0x0410, 0x0ff0, 0x0010, 0x0000, 0x0000, 0x0000, // 1
+    0x0000, 0x0430, 0x0850, 0x0890, 0x0910, 0x0610, 0x0000, 0x0000, // 2
+    0x0000, 0x0420, 0x0810, 0x0910, 0x0910, 0x06e0, 0x0000, 0x0000, // 3
+    0x0000, 0x0080, 0x0180, 0x0280, 0x0480, 0x0ff0, 0x0080, 0x0000, // 4
+    0x0000, 0x0f10, 0x0910, 0x0910, 0x0920, 0x08c0, 0x0000, 0x0000, // 5
+    0x0000, 0x03e0, 0x0510, 0x0910, 0x0910, 0x00e0, 0x0000, 0x0000, // 6
+    0x0000, 0x0800, 0x0830, 0x08c0, 0x0b00, 0x0c00, 0x0000, 0x0000, // 7
+    0x0000, 0x06e0, 0x0910, 0x0910, 0x0910, 0x06e0, 0x0000, 0x0000, // 8
+    0x0000, 0x0700, 0x0890, 0x0890, 0x08a0, 0x07c0, 0x0000, 0x0000, // 9
+    0x0000, 0x0080, 0x0080, 0x03e0, 0x0080, 0x0080, 0x0000, 0x0000, // +
+    0x0000, 0x0080, 0x0080, 0x0080, 0x0080, 0x0080, 0x0000, 0x0000, // -
+    0x0000, 0x0240, 0x0180, 0x0660, 0x0180, 0x0240, 0x0000, 0x0000, // *
+    0x0010, 0x0020, 0x0040, 0x0080, 0x0100, 0x0200, 0x0400, 0x0000, // /
+    0x0000, 0x0000, 0x0000, 0x0000, 0x07e0, 0x0810, 0x1008, 0x0000, // (
+    0x1008, 0x0810, 0x07e0, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // )
+    0x0640, 0x0920, 0x0920, 0x1ff0, 0x0920, 0x0920, 0x04c0, 0x0000, // $
+    0x0000, 0x0140, 0x0140, 0x0140, 0x0140, 0x0140, 0x0000, 0x0000, // =
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // space
+    0x0000, 0x0000, 0x0034, 0x0038, 0x0000, 0x0000, 0x0000, 0x0000, // ,
+    0x0000, 0x0000, 0x0030, 0x0030, 0x0000, 0x0000, 0x0000, 0x0000, // .
+    0x0000, 0x0080, 0x0080, 0x02a0, 0x0080, 0x0080, 0x0000, 0x0000, // divide
+    0x0000, 0x0000, 0x0000, 0x0000, 0x1ff8, 0x1008, 0x1008, 0x0000, // [
+    0x1008, 0x1008, 0x1ff8, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // ]
+    0x0c20, 0x1240, 0x0c80, 0x0100, 0x0260, 0x0490, 0x0860, 0x0000, // %
+    0x0000, 0x0000, 0x0240, 0x0180, 0x0180, 0x0240, 0x0000, 0x0000, // multiply
+    0x0080, 0x0140, 0x0220, 0x0770, 0x0140, 0x0140, 0x0140, 0x0000, // assign
+    0x0000, 0x0000, 0x0000, 0x1c00, 0x0000, 0x0000, 0x0000, 0x0000, // '
+    0x0000, 0x0000, 0x1c00, 0x0000, 0x1c00, 0x0000, 0x0000, 0x0000, // "
+    0x0000, 0x0000, 0x0000, 0x1f90, 0x0000, 0x0000, 0x0000, 0x0000, // !
+    0x0000, 0x0000, 0x0334, 0x0338, 0x0000, 0x0000, 0x0000, 0x0000, // ;
+    0x0000, 0x0080, 0x0140, 0x0220, 0x0410, 0x0000, 0x0000, 0x0000, // <
+    0x0000, 0x0000, 0x0410, 0x0220, 0x0140, 0x0080, 0x0000, 0x0000, // >
+    0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, // _
+    0x0000, 0x0c00, 0x1000, 0x10d0, 0x1100, 0x0e00, 0x0000, 0x0000, // ?
+    0x1c1c, 0x1224, 0x0948, 0x0490, 0x0220, 0x0140, 0x0080, 0x0000, // arrow
+    0x0000, 0x0000, 0x0000, 0x000a, 0x0006, 0x0000, 0x0000, 0x0000, // cedilla
+};
+
+/* data for plato font, set 1. */
+const unsigned short plato_m1[] = {
+    0x0500, 0x0500, 0x1fc0, 0x0500, 0x1fc0, 0x0500, 0x0500, 0x0000, // #
+    0x07f0, 0x0900, 0x1100, 0x1100, 0x1100, 0x0900, 0x07f0, 0x0000, // A
+    0x1ff0, 0x1210, 0x1210, 0x1210, 0x1210, 0x0e10, 0x01e0, 0x0000, // B
+    0x07c0, 0x0820, 0x1010, 0x1010, 0x1010, 0x1010, 0x0820, 0x0000, // C
+    0x1ff0, 0x1010, 0x1010, 0x1010, 0x1010, 0x0820, 0x07c0, 0x0000, // D
+    0x1ff0, 0x1110, 0x1110, 0x1110, 0x1010, 0x1010, 0x1010, 0x0000, // E
+    0x1ff0, 0x1100, 0x1100, 0x1100, 0x1000, 0x1000, 0x1000, 0x0000, // F
+    0x07c0, 0x0820, 0x1010, 0x1010, 0x1090, 0x1090, 0x08e0, 0x0000, // G
+    0x1ff0, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x1ff0, 0x0000, // H
+    0x0000, 0x1010, 0x1010, 0x1ff0, 0x1010, 0x1010, 0x0000, 0x0000, // I
+    0x0020, 0x0010, 0x1010, 0x1010, 0x1fe0, 0x1000, 0x1000, 0x0000, // J
+    0x1ff0, 0x0080, 0x0100, 0x0280, 0x0440, 0x0820, 0x1010, 0x0000, // K
+    0x1ff0, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0000, // L
+    0x1ff0, 0x0800, 0x0400, 0x0200, 0x0400, 0x0800, 0x1ff0, 0x0000, // M
+    0x1ff0, 0x0800, 0x0600, 0x0100, 0x00c0, 0x0020, 0x1ff0, 0x0000, // N
+    0x07c0, 0x0820, 0x1010, 0x1010, 0x1010, 0x0820, 0x07c0, 0x0000, // O
+    0x1ff0, 0x1100, 0x1100, 0x1100, 0x1100, 0x1100, 0x0e00, 0x0000, // P
+    0x07c0, 0x0820, 0x1010, 0x1018, 0x1014, 0x0824, 0x07c0, 0x0000, // Q
+    0x1ff0, 0x1100, 0x1100, 0x1180, 0x1140, 0x1120, 0x0e10, 0x0000, // R
+    0x0e20, 0x1110, 0x1110, 0x1110, 0x1110, 0x1110, 0x08e0, 0x0000, // S
+    0x1000, 0x1000, 0x1000, 0x1ff0, 0x1000, 0x1000, 0x1000, 0x0000, // T
+    0x1fe0, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x1fe0, 0x0000, // U
+    0x1800, 0x0700, 0x00c0, 0x0030, 0x00c0, 0x0700, 0x1800, 0x0000, // V
+    0x1fe0, 0x0010, 0x0020, 0x03c0, 0x0020, 0x0010, 0x1fe0, 0x0000, // W
+    0x1830, 0x0440, 0x0280, 0x0100, 0x0280, 0x0440, 0x1830, 0x0000, // X
+    0x1800, 0x0400, 0x0200, 0x01f0, 0x0200, 0x0400, 0x1800, 0x0000, // Y
+    0x1830, 0x1050, 0x1090, 0x1110, 0x1210, 0x1410, 0x1830, 0x0000, // Z
+    0x0000, 0x1000, 0x2000, 0x2000, 0x1000, 0x1000, 0x2000, 0x0000, // ~
+    0x0000, 0x0000, 0x1000, 0x0000, 0x1000, 0x0000, 0x0000, 0x0000, // dieresis
+    0x0000, 0x1000, 0x2000, 0x4000, 0x2000, 0x1000, 0x0000, 0x0000, // circumflex
+    0x0000, 0x0000, 0x0000, 0x1000, 0x2000, 0x4000, 0x0000, 0x0000, // acute
+    0x0000, 0x4000, 0x2000, 0x1000, 0x0000, 0x0000, 0x0000, 0x0000, // grave
+    0x0000, 0x0100, 0x0300, 0x07f0, 0x0300, 0x0100, 0x0000, 0x0000, // uparrow
+    0x0080, 0x0080, 0x0080, 0x0080, 0x03e0, 0x01c0, 0x0080, 0x0000, // rightarrow 
+    0x0000, 0x0040, 0x0060, 0x07f0, 0x0060, 0x0040, 0x0000, 0x0000, // downarrow
+    0x0080, 0x01c0, 0x03e0, 0x0080, 0x0080, 0x0080, 0x0080, 0x0000, // leftarrow
+    0x0000, 0x0080, 0x0100, 0x0100, 0x0080, 0x0080, 0x0100, 0x0000, // low tilde
+    0x1010, 0x1830, 0x1450, 0x1290, 0x1110, 0x1010, 0x1010, 0x0000, // Sigma
+    0x0030, 0x00d0, 0x0310, 0x0c10, 0x0310, 0x00d0, 0x0030, 0x0000, // Delta
+    0x0000, 0x0380, 0x0040, 0x0040, 0x0040, 0x0380, 0x0000, 0x0000, // union
+    0x0000, 0x01c0, 0x0200, 0x0200, 0x0200, 0x01c0, 0x0000, 0x0000, // intersect
+    0x0000, 0x0000, 0x0000, 0x0080, 0x0f78, 0x1004, 0x1004, 0x0000, // {
+    0x1004, 0x1004, 0x0f78, 0x0080, 0x0000, 0x0000, 0x0000, 0x0000, // }
+    0x00e0, 0x0d10, 0x1310, 0x0c90, 0x0060, 0x0060, 0x0190, 0x0000, // &
+    0x0150, 0x0160, 0x0140, 0x01c0, 0x0140, 0x0340, 0x0540, 0x0000, // not equal
+    0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, // space
+    0x0000, 0x0000, 0x0000, 0x1ff0, 0x0000, 0x0000, 0x0000, 0x0000, // |
+    0x0000, 0x0c00, 0x1200, 0x1200, 0x0c00, 0x0000, 0x0000, 0x0000, // degree
+    0x0000, 0x02a0, 0x02a0, 0x02a0, 0x02a0, 0x02a0, 0x0000, 0x0000, // equiv
+    0x01e0, 0x0210, 0x0210, 0x01a0, 0x0060, 0x0090, 0x0310, 0x0000, // alpha
+    0x0002, 0x03fc, 0x0510, 0x0910, 0x0910, 0x0690, 0x0060, 0x0000, // beta
+    0x0000, 0x0ce0, 0x1310, 0x1110, 0x0890, 0x0460, 0x0000, 0x0000, // delta
+    0x0000, 0x1030, 0x0cc0, 0x0300, 0x00c0, 0x0030, 0x0000, 0x0000, // lambda
+    0x0002, 0x0002, 0x03fc, 0x0010, 0x0010, 0x03e0, 0x0010, 0x0000, // mu
+    0x0100, 0x0200, 0x03f0, 0x0200, 0x03f0, 0x0200, 0x0400, 0x0000, // pi
+    0x0006, 0x0038, 0x00e0, 0x0110, 0x0210, 0x0220, 0x01c0, 0x0000, // rho
+    0x00e0, 0x0110, 0x0210, 0x0310, 0x02e0, 0x0200, 0x0200, 0x0000, // sigma
+    0x01e0, 0x0210, 0x0010, 0x00e0, 0x0010, 0x0210, 0x01e0, 0x0000, // omega
+    0x0220, 0x0220, 0x0520, 0x0520, 0x08a0, 0x08a0, 0x0000, 0x0000, // less/equal
+    0x0000, 0x08a0, 0x08a0, 0x0520, 0x0520, 0x0220, 0x0220, 0x0000, // greater/equal
+    0x07c0, 0x0920, 0x1110, 0x1110, 0x1110, 0x0920, 0x07c0, 0x0000, // theta
+    0x01e0, 0x0210, 0x04c8, 0x0528, 0x05e8, 0x0220, 0x01c0, 0x0000, // @
+    0x0400, 0x0200, 0x0100, 0x0080, 0x0040, 0x0020, 0x0010, 0x0000, /* \ */
+    0x01e0, 0x0210, 0x0210, 0x01e0, 0x0290, 0x0290, 0x01a0, 0x0000, // oe
+};
+
+PtermScreen::PtermScreen ()
+    : wxBitmap (512, 512),
+      m_currentFg (ptermApp->m_fgColor),
+      m_currentBg (ptermApp->m_bgColor)
+{
+    m_pixels = new wxNativePixelData (*this);
+    if (m_pixels == NULL)
+    {
+        fprintf (stderr, "Bitmap pixel access not available\n");
+        exit (42);
+    }
+    m_iter = new wxNativePixelData::Iterator (*m_pixels);
+    ptermFullErase ();
+}
+
+void PtermScreen::ptermDrawChar (int x, int y, int snum, int cnum)
+{
+    int &cx = (vertical) ? y : x;
+    int &cy = (vertical) ? x : y;
+    int i, j, saveY, dx, dy, sdy;
+    wxNativePixelData::Iterator::ChannelType fred, fgreen, fblue;
+    wxNativePixelData::Iterator::ChannelType bred, bgreen, bblue;
+    const u16 *charp;
+    u16 charw;
+    
+    SaveChar (x, y, snum, cnum, wemode, large != 0);
+    
+    if (modexor || (mode & 1))
+    {
+        // mode rewrite or write
+        fred = fg_red;
+        fgreen = fg_green;
+        fblue = fg_blue;
+        bred = bg_red;
+        bgreen = bg_green;
+        bblue = bg_blue;
+    }
+    else
+    {
+        // mode inverse or erase
+        fred = bg_red;
+        fgreen = bg_green;
+        fblue = bg_blue;
+        bred = fg_red;
+        bgreen = fg_green;
+        bblue = fg_blue;
+    }
+    x = currentX;
+    y = currentY;
+    saveY = cy;
+    dx = dy = (large) ? 2 : 1;
+    sdy = 1;
+    if (vertical)
+    {
+        sdy = -1;
+        dy = -dy;
+    }
+    if (snum == 0)
+    {
+        charp = plato_m0;
+    }
+    else if (snum == 1)
+    {
+        charp = plato_m1;
+    }
+    else
+    {
+        charp = plato_m23 + (snum - 2) * (8 * 64);
+    }
+    charp += 8 * cnum;
+        
+    for (j = 0; j < 8; j++)
+    {
+        cy = saveY;
+        charw = *charp++;
+        for (i = 0; i < 16; i++)
+        {
+            if ((charw & 1) == 0)
+            {
+                // background, do we erase it?
+                if (mode & 2)
+                {
+                    charw >>= 1;
+                    cy += dy;
+                    continue;
+                }
+                m_iter->MoveTo (&m_pixels, XMADJUST (x), YMADJUST (y));
+                m_iter->Red () = bred;
+                m_iter->Green () = bgreen;
+                m_iter->Blue () = bblue;
+                if (large)
+                {
+                    // This uses MoveTo rather than ++ in case x is 511,
+                    // so wrap is handled correctly.
+                    m_iter->MoveTo (&m_pixels, XMADJUST (x + 1), YMADJUST (y));
+                    m_iter->Red () = bred;
+                    m_iter->Green () = bgreen;
+                    m_iter->Blue () = bblue;
+                    m_iter->MoveTo (&m_pixels, XMADJUST (x), YMADJUST (y + sdy));
+                    m_iter->Red () = bred;
+                    m_iter->Green () = bgreen;
+                    m_iter->Blue () = bblue;
+                    m_iter->MoveTo (&m_pixels, XMADJUST (x + 1),
+                                    YMADJUST (y + sdy));
+                    m_iter->Red () = bred;
+                    m_iter->Green () = bgreen;
+                    m_iter->Blue () = bblue;
+                }
+            }
+            else
+            {
+                mode = savemode;
+            }
+            m_iter->MoveTo (&m_pixels, XMADJUST (x), YMADJUST (y));
+            m_iter->Red () = fred;
+            m_iter->Green () = fgreen;
+            m_iter->Blue () = fblue;
+            if (large)
+            {
+                // This uses MoveTo rather than ++ in case x is 511,
+                // so wrap is handled correctly.
+                m_iter->MoveTo (&m_pixels, XMADJUST (x + 1), YMADJUST (y));
+                m_iter->Red () = fred;
+                m_iter->Green () = fgreen;
+                m_iter->Blue () = fblue;
+                m_iter->MoveTo (&m_pixels, XMADJUST (x), YMADJUST (y + sdy));
+                m_iter->Red () = fred;
+                m_iter->Green () = fgreen;
+                m_iter->Blue () = fblue;
+                m_iter->MoveTo (&m_pixels, XMADJUST (x + 1), YMADJUST (y + sdy));
+                m_iter->Red () = fred;
+                m_iter->Green () = fgreen;
+                m_iter->Blue () = fblue;
+            }
+            charw >>= 1;
+            cy += dy;
+        }
+        cx += dx;
+    }
+}
+
+void PtermScreen::ptermDrawPoint (int x, int y)
+{
+    int xm, ym;
+    wxNativePixelData::Iterator::ChannelType red, green, blue;
+    
+    xm = XMADJUST (x);
+    ym = YMADJUST (y);
+    if (modexor || (mode & 1))
+    {
+        // mode rewrite or write
+        red = fg_red;
+        green = fg_green;
+        blue = fg_blue;
+    }
+    else
+    {
+        // mode inverse or erase
+        red = bg_red;
+        green = bg_green;
+        blue = bg_blue;
+    }
+    m_iter->MoveTo (&m_pixels, xm, ym);
+    m_iter->Red () = red;
+    m_iter->Green () = green;
+    m_iter->Blue () = blue;
+}
+
+void PtermScreen::ptermDrawLine(int x1, int y1, int x2, int y2)
+{
+    int t;
+    wxNativePixelData::Iterator::ChannelType red, green, blue;
+	int dx, dy;
+	int stepx, stepy;
+
+    x1 = XMADJUST (x1);
+    y1 = YMADJUST (y1);
+    x2 = XMADJUST (x2);
+    y2 = YMADJUST (y2);
+    if (modexor || (mode & 1))
+    {
+        // mode rewrite or write
+        red = fg_red;
+        green = fg_green;
+        blue = fg_blue;
+    }
+    else
+    {
+        // mode inverse or erase
+        red = bg_red;
+        green = bg_green;
+        blue = bg_blue;
+    }
+	//draw lines
+    dx = x2 - x1;
+	dy = y2 - y1;
+    if (dx < 0)
+    {
+        dx = -dx;
+        stepx = -1;
+    }
+    else
+    {
+        stepx = 1; 
+    }
+    if (dy < 0)
+    {
+        dy = -dy;
+        stepy = -1;
+    }
+    else
+    {
+        stepy = 1;
+    }
+    dx <<= 1;
+    dy <<= 1;
+	
+	// draw first point
+    m_iter->MoveTo (&m_pixels, x1, y1);
+    m_iter->Red () = red;
+    m_iter->Green () = green;
+    m_iter->Blue () = blue;
+	
+	//check for shallow line
+    if (dx > dy) 
+	{
+        int fraction = dy - (dx >> 1);
+        while (x1 != x2) 
+		{
+            if (fraction >= 0) 
+			{
+                y1 += stepy;
+                fraction -= dx;
+            }
+            x1 += stepx;
+            fraction += dy;
+            m_iter->MoveTo (&m_pixels, x1, y1);
+            m_iter->Red () = red;
+            m_iter->Green () = green;
+            m_iter->Blue () = blue;
+        }
+    } 
+	//otherwise steep line
+	else 
+	{
+        int fraction = dx - (dy >> 1);
+        while (y1 != y2) 
+		{
+            if (fraction >= 0) 
+			{
+                x1 += stepx;
+                fraction -= dy;
+            }
+            y1 += stepy;
+            fraction += dx;
+            m_iter->MoveTo (&m_pixels, x1, y1);
+            m_iter->Red () = red;
+            m_iter->Green () = green;
+            m_iter->Blue () = blue;
+        }
+    }
+}
+
+void PtermScreen::ptermFullErase (void)
+{
+    ptermBlockErase (0, 0, 511, 511);
+}
+
+void PtermScreen::ptermBlockErase (int x1, int y1, int x2, int y2)
+{
+    int i, j, t;
+    wxNativePixelData::Iterator::ChannelType red, green, blue;
+    int xm1, ym1, xm2, ym2, x, y;
+
+    xm1 = XMADJUST (x1);
+    ym1 = YMADJUST (y1);
+    xm2 = XMADJUST (x2);
+    ym2 = YMADJUST (y2);
+    if (modexor || (mode & 1))
+    {
+        // mode rewrite or write
+        red = fg_red;
+        green = fg_green;
+        blue = fg_blue;
+    }
+    else
+    {
+        // mode inverse or erase
+        red = bg_red;
+        green = bg_green;
+        blue = bg_blue;
+    }
+    if (xm1 > xm2)
+    {
+        t = xm1;
+        xm1 = xm2;
+        xm2 = t;
+    }
+    if (ym1 > ym2)
+    {
+        t = ym1;
+        ym1 = ym2;
+        ym2 = t;
+    }
+	for (y = ym1; y <= ym2; y++)
+    {
+        m_iter.MoveTo (&m_pixels, y, xm1);
+        for (x = xm1; y <= xm2; x++)
+        {
+            m_iter->Red () = red;
+            m_iter->Green () = green;
+            m_iter->Blue () = blue;
+            ++m_iter;
+        }
+    }
+    
+	//wipe text map
+    if (x1 > x2)
+    {
+        t = x1;
+        x1 = x2;
+        x2 = t;
+    }
+    if (y1 > y2)
+    {
+        t = y1;
+        y1 = y2;
+        y2 = t;
+    }
+	int scol = x1 / 8;
+	int cols = (x2 - x1)/8 + 1;
+	int srow = y / 16;
+    int rows = (y2 - y1) / 16 + 1;
+    for (int row = srow; rows > 0; row++, rows--)
+    {
+        memset (&textmap[row * 64 + scol], 055, 2 * cols);
+    }
+}
+
+void PtermScreen::ptermPaint (int pat)
+{
+    int xm, ym;
+    
+    xm = XMADJUST (currentX);
+    ym = YMADJUST (currentY);
+
+    // TBD
+}
+
+void ptermSetColor (wxColour fg, wxColour bg)
+{
+    fg_red = fg.Red ();
+    fg_green = fg.Green ();
+    fg_blue = fg.Blue ();
+    bg_red = bg.Red ();
+    bg_green = bg.Green ();
+    bg_blue = bg.Blue ();
+}
+
+void PtermScreen::SaveChar (int x, int y, int snum, int cnum, 
+                            int w, bool large_p)
+{
+    char c = 055;
+	u16 oc;
+
+    // Convert the current x/y to a coarse grid position, and save
+    // the current character code (snum << 6 + cnum) into the textmap
+    // array.  Note that the Y coordinate starts with 0 for the bottom
+    // line, just as the fine grid Y coordinate does.
+    x /= 8;
+    y /= 16;
+    if ((w & 1) && snum < 4)	// allow altfont but store as standard font
+    {
+        c = ((snum & 1) << 6) + cnum;
+    }
+	oc = textmap[y * 64 + x];
+	if (c == 055)
+    {
+        textmap[y * 64 + x] = (055 << 8) | 055;
+    }
+	else if ((oc & 0xff) != 055)
+	{
+		oc = (oc & 0xff) | (c << 8);
+		textmap[y * 64 + x] = oc;
+	}
+	else
+	{
+		textmap[y * 64 + x] = (055 << 8) | (c & 0xff);
+	}
+	if (large_p)
+	{
+		x = (x + 1) & 077;
+		textmap[y * 64 + x] = 055;
+		y = (y + 1) & 037;
+		textmap[y * 64 + x] = 055;
+		x = (x - 1) & 077;
+		textmap[y * 64 + x] = 055;
+	}
+}
