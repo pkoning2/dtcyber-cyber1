@@ -607,20 +607,32 @@ end gates;
        "\n".join (gates),
        assigns)
 
-    def write (self):
-        """Write module definition to a file
+    def write (self, writedep = True):
+        """Write module definition to a file.  Writedep says whether to
+        write a .d file (dependencies file).
         """
-        slices = { }
+        slices = set ()
+        deps = set ()
         f = file ("%s.vhd" % self.name, "w")
         print >> f, self.printheader ()
         for e in self.elements:
             if "slice" in self.elements[e].eltype.name and \
                    self.elements[e].eltype.name.startswith (self.name):
-                slices[self.elements[e].eltype.name] = 1
+                slices.add (self.elements[e].eltype.name)
+            else:
+                deps.add (self.elements[e].eltype.name)
         for slice in sorted (slices):
             print >> f, elements[slice].printmodule ()
         print >> f, self.printmodule ()
         f.close ()
+        deps.discard ("wire")
+        if writedep:
+            df = file ("%s.d" % self.name, "w")
+            print >> df, "%s.o: %s.vhd" % (self.name, self.name),
+            for dep in sorted (deps):
+                print >> df, "%s.o" % dep,
+            print >> df
+            df.close ()
 
 _re_arch = re.compile (r"entity +(.+?) +is\s+?(generic +\((.+?)\);\s+?)?port +\((.+?)\).+?end +\1.+?architecture (\w+) of \1 is.+?begin(.+?)end \w+;", re.S)
 _re_portmap = re.compile (r"(\w+)\s*:\s*(\w+) port map \((.+?)\)", re.S)

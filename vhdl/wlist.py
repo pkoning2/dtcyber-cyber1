@@ -667,7 +667,7 @@ if __name__ == "__main__":
     toplevel.finish ()
     if topname:
         toplevel.name = topname
-        toplevel.write ()
+        toplevel.write (False)
     for cname in sorted (chassis_list):
         ch = chassis_list[cname]
         ch.write ()
