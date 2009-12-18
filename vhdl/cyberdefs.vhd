@@ -35,13 +35,8 @@ package sigs is
   subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
   subtype bankaddr is UNSIGNED (4 downto 0);  -- Bank address (5 bits)
-  type imem is array (natural range <>) of integer;  -- initial data for memory
-  type ippmem  is array (natural range <>) of ppint;  -- initial data for ppmem
   subtype cpword is UNSIGNED (59 downto 0);  -- CPU word (60 bits)
---  type cpint is  range 0 to 1152921504606846975;  -- CPU word, as an integer
---  type cpmem is array (0 to 4095) of cpint;  -- 4kx60 memory array
   type cpmem is array (0 to 4095) of cpword;  -- 4kx60 memory array
---  type icpmem  is array (natural range <>) of cpint;  -- initial data for cpmem
   type misc is ('x', 'y');  -- used for non-logic pins
   subtype analog is UNSIGNED (2 downto 0);    -- 6612 character drawing signal
   
@@ -572,8 +567,7 @@ entity memarray is
   
   generic (
     abits : integer := 12;              -- number of address bits
-    dbits : integer := 8;               -- number of data bits
-    idata : imem);                      -- initial value of memory
+    dbits : integer := 8);              -- number of data bits
   port (
     addr_a  : in  UNSIGNED(abits - 1 downto 0);  -- port A address
     rdata_a : out UNSIGNED(dbits - 1 downto 0);  -- port A data out
@@ -581,12 +575,12 @@ entity memarray is
     clk_a   : in  logicsig;                      -- port A clock
     write_a : in  logicsig;                      -- port A write enable
     ena_a   : in  logicsig;                      -- port A enable
-    addr_b  : in  UNSIGNED(abits - 1 downto 0);  -- port B address
-    rdata_b : out UNSIGNED(dbits - 1 downto 0);  -- port B data out
-    wdata_b : in  UNSIGNED(dbits - 1 downto 0);  -- port B data in
-    clk_b   : in  logicsig;                      -- port B clock
-    write_b : in  logicsig;                      -- port B write enable
-    ena_b   : in  logicsig;                      -- port B enable
+    addr_b  : in  UNSIGNED(abits - 1 downto 0) := (others => '0');  -- port B address
+    rdata_b : out UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data out
+    wdata_b : in  UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data in
+    clk_b   : in  logicsig := '0';               -- port B clock
+    write_b : in  logicsig := '0';               -- port B write enable
+    ena_b   : in  logicsig := '0';               -- port B enable
     reset   : in  logicsig);                     -- power-up reset
 
 end memarray;
@@ -602,11 +596,6 @@ begin  -- beh
     variable mdata : marray_t;
   begin  -- process rw
     areg := 0;                          -- dummy init, it's not a latch
-    if reset = '1' then
-      for i in 0 to idata'high loop
-        mdata (i) := TO_UNSIGNED (idata (i), dbits);
-      end loop;  -- i
-    end if;
     if clk_a'event and clk_a = '1' then  -- rising clock edge, port A
       if ena_a = '1' then
         areg := TO_INTEGER (addr_a);

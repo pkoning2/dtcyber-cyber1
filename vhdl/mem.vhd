@@ -18,99 +18,7 @@ use IEEE.numeric_bit.all;
 
 use work.sigs.all;
 
-entity memarray12 is
-  
-  generic (
-    idata : ippmem);
-  port (
-    addr   : in  ppword;                -- Memory address
-    rdata  : out ppword;                -- read data
-    wdata  : in  ppword;                -- write data (complemented)
-    reset  : in  logicsig;             -- power-up reset
-    strobe : in  logicsig;             -- read/write strobe
-    write  : in  logicsig);            -- write request
-
-end memarray12;
-
-architecture beh of memarray12 is
-begin  -- beh
-
-  -- purpose: read/write process
-  -- type   : sequential
-  -- inputs : read, write, addr, wdata
-  -- outputs: rdata
-  rw: process (strobe, reset)
-    variable areg : integer;              -- Address as an integer
-    variable mdata : ppmem;             -- memory array
-  begin  -- process rw
-    if reset = '1' then
-      for i in 0 to idata'high loop
-        mdata (i) := TO_UNSIGNED (idata (i), 12);
-      end loop;  -- i
-    elsif strobe'event and strobe = '1' then  -- rising clock edge
-      areg := TO_INTEGER (addr);
-      if write = '1' then
-        mdata (areg) := not (wdata);
-      else
-        rdata <= mdata (areg);
-      end if;
-    end if;
-  end process rw;
-end beh;
-
-library IEEE;
-use IEEE.numeric_bit.all;
-
-use work.sigs.all;
-
-entity memarray60 is
-  
---  generic (
---    idata : icpmem);
-  port (
-    addr   : in  ppword;                -- Memory address
-    rdata  : out cpword;                -- read data
-    wdata  : in  cpword;                -- write data
-    reset  : in  logicsig;             -- power-up reset
-    strobe : in  logicsig;             -- read/write strobe
-    write  : in  logicsig);            -- write request
-
-end memarray60;
-
-architecture beh of memarray60 is
-begin  -- beh
-
-  -- purpose: read/write process
-  -- type   : sequential
-  -- inputs : read, write, addr, wdata
-  -- outputs: rdata
-  rw: process (strobe, reset)
-    variable areg : integer;              -- Address as an integer
-    variable mdata : cpmem;             -- memory array
-  begin  -- process rw
---    if reset = '1' then
---      for i in 0 to idata'high loop
---        mdata (i) := TO_UNSIGNED (idata (i), 60);
---      end loop;  -- i
---    elsif
-  if strobe'event and strobe = '1' then  -- rising clock edge
-      areg := TO_INTEGER (addr);
-      if write = '1' then
-        mdata (areg) := wdata;
-      else
-        rdata <= mdata (areg);
-      end if;
-    end if;
-  end process rw;
-end beh;
-
-
-use work.sigs.all;
-
 entity mem is
-  generic (
-    idata : ippmem := (0,0));
-  
   port (
     reset  : in  logicsig;              -- power-up reset
     p22 : in logicsig;                  -- addr(0)
@@ -170,78 +78,59 @@ entity mem is
 end mem;
 
 architecture beh of mem is
-  component memarray12
+  component memarray is
+      
     generic (
-      idata : ippmem);
+      abits : integer := 12;              -- number of address bits
+      dbits : integer := 8);              -- number of data bits
     port (
-      addr   : in  ppword;                -- Memory address
-      rdata  : out ppword;                -- read data
-      wdata  : in  ppword;                -- write data (complemented)
-      reset  : in  logicsig;             -- power-up reset
-      strobe : in  logicsig;             -- read/write strobe
-      write  : in  logicsig);            -- write operation
+      addr_a  : in  UNSIGNED(abits - 1 downto 0);  -- port A address
+      rdata_a : out UNSIGNED(dbits - 1 downto 0);  -- port A data out
+      wdata_a : in  UNSIGNED(dbits - 1 downto 0);  -- port A data in
+      clk_a   : in  logicsig;                      -- port A clock
+      write_a : in  logicsig;                      -- port A write enable
+      ena_a   : in  logicsig;                      -- port A enable
+      addr_b  : in  UNSIGNED(abits - 1 downto 0) := (others => '0');  -- port B address
+      rdata_b : out UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data out
+      wdata_b : in  UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data in
+      clk_b   : in  logicsig := '0';               -- port B clock
+      write_b : in  logicsig := '0';               -- port B write enable
+      ena_b   : in  logicsig := '0';               -- port B enable
+      reset   : in  logicsig);                     -- power-up reset
   end component;
   signal s, w : logicsig;
-  signal tdata, tdatab : ppword;                -- copy of read data
+  signal areg : ppword;                 -- copy of address
+  signal wreg : unsigned(15 downto 0);  -- copy of write data
+  signal tdata : unsigned(15 downto 0); -- copy of read data
 begin  -- beh
 
   s <= not (p123) or not (p121);
   w <= not (p121);
-  ar : memarray12 generic map (
-    idata => idata)
+  areg <= (p16, p18, p14, p12, p111, p113, p109, p107, p10, p8, p20, p22);
+  wreg <= "0000" & not ((p2, p30, p125, p103, p4, p28, p101, p127, p26, p6, p105, p129));
+  arl : memarray generic map (
+      abits => 12,
+      dbits => 8)
     port map (
-    addr(0) => p22,
-    addr(1) => p20,
-    addr(2) => p8,
-    addr(3) => p10,
-    addr(4) => p107,
-    addr(5) => p109,
-    addr(6) => p113,
-    addr(7) => p111,
-    addr(8) => p12,
-    addr(9) => p14,
-    addr(10) => p18,
-    addr(11) => p16,
-    wdata(0) => p129,
-    wdata(1) => p105,
-    wdata(2) => p6,
-    wdata(3) => p26,
-    wdata(4) => p127,
-    wdata(5) => p101,
-    wdata(6) => p28,
-    wdata(7) => p4,
-    wdata(8) => p103,
-    wdata(9) => p125,
-    wdata(10) => p30,
-    wdata(11) => p2,
-    rdata => tdata,
-    reset => reset,
-    write => w,
-    strobe => s);
-  tdatab <= tdata;
-  p1   <= tdata(0);
-  p27  <= tdata(1);
-  p128 <= tdata(2);
-  p102 <= tdata(3);
-  p5   <= tdata(4);
-  p23  <= tdata(5);
-  p106 <= tdata(6);
-  p124 <= tdata(7);
-  p19  <= tdata(8);
-  p9   <= tdata(9);
-  p110 <= tdata(10);
-  p120 <= tdata(11);
-  p3   <= tdatab(0);
-  p29  <= tdatab(1);
-  p130 <= tdatab(2);
-  p104 <= tdatab(3);
-  p7   <= tdatab(4);
-  p25  <= tdatab(5);
-  p108 <= tdatab(6);
-  p126 <= tdatab(7);
-  p21  <= tdatab(8);
-  p11  <= tdatab(9);
-  p112 <= tdatab(10);
-  p122 <= tdatab(11);
+      addr_a => areg,
+      wdata_a => wreg(7 downto 0),
+      rdata_a => tdata(7 downto 0),
+      reset => reset,
+      write_a => w,
+      ena_a => s,
+      clk_a => s);
+  arh : memarray generic map (
+      abits => 12,
+      dbits => 8)
+    port map (
+      addr_a => areg,
+      wdata_a => wreg(15 downto 8),
+      rdata_a => tdata(15 downto 8),
+      reset => reset,
+      write_a => w,
+      ena_a => s,
+      clk_a => s);
+  (p120, p110, p9, p19, p124, p106, p23, p5, p102, p128, p27, p1) <= tdata(11 downto 0);
+  (p122, p112, p11, p21, p126, p108, p25, p7, p104, p130, p29, p3) <= tdata(11 downto 0);
 
 end beh;
