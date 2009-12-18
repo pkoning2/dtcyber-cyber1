@@ -11,12 +11,72 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
+-- Behavioral model of CM.  This is the entire CM, all
+-- banks of it.  We don't bother trying to model this at
+-- the module level, that just adds a lot of detail for
+-- no great benefit.
+--
 -------------------------------------------------------------------------------
 
 library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.numeric_std.all;
+use IEEE.numeric_bit.all;
+use work.sigs.all;
 
+
+-- cmarray is a 60 bit memory array, with a single read and write port.
+-- it models the 5 12-bit memory arrays (though inside it's actually
+-- 8 8-bit arrays, since that's what the FPGA provides)
+
+entity cmarray is
+  port (
+    addr   : in  ppword;                -- memory address
+    rdata  : out cpword;                -- read data
+    wdata  : in  cpword;                -- write data (complemented)
+    reset  : in  logicsig;              -- power-up reset
+    clk    : in  logicsig;              -- memory clock
+    ena    : in  logicsig;              -- enable
+    write  : in  logicsig);             -- write request
+end cmarray;
+
+architecture beh of cmarray is
+  component memarray is
+    generic (
+      abits : integer := 12;              -- number of address bits
+      dbits : integer := 8);              -- number of data bits
+    port (
+      addr_a  : in  UNSIGNED(abits - 1 downto 0);  -- port A address
+      rdata_a : out UNSIGNED(dbits - 1 downto 0);  -- port A data out
+      wdata_a : in  UNSIGNED(dbits - 1 downto 0);  -- port A data in
+      clk_a   : in  logicsig;                      -- port A clock
+      write_a : in  logicsig;                      -- port A write enable
+      ena_a   : in  logicsig;                      -- port A enable
+      addr_b  : in  UNSIGNED(abits - 1 downto 0) := (others => '0');  -- port B address
+      rdata_b : out UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data out
+      wdata_b : in  UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data in
+      clk_b   : in  logicsig := '0';               -- port B clock
+      write_b : in  logicsig := '0';               -- port B write enable
+      ena_b   : in  logicsig := '0';               -- port B enable
+      reset   : in  logicsig);                     -- power-up reset
+  end component;
+  signal trdata, twdata : UNSIGNED(63 downto 0);
+begin  -- beh
+  twdata <= "0000" & not (wdata);
+  arrays: for bank in 0 to 7 generate
+    membank : memarray port map (
+      addr_a  => addr,
+      rdata_a => trdata(63 - (bank * 8) downto 56 - (bank * 8)),
+      wdata_a => twdata(63 - (bank * 8) downto 56 - (bank * 8)),
+      clk_a   => clk,
+      ena_a   => ena,
+      write_a => write,
+      reset   => reset);
+  end generate arrays;
+  rdata <= trdata(59 downto 0);
+end beh;
+
+
+library IEEE;
+use IEEE.numeric_bit.all;
 use work.sigs.all;
 
 entity cmbank is
@@ -36,69 +96,81 @@ entity cmbank is
 end cmbank;
 
 architecture cmbank of cmbank is
-  component memarray60
---    generic (
---      idata : ippmem);
+  component cmarray is
     port (
-      addr   : in  ppword;                -- Memory address
+      addr   : in  ppword;                -- memory address
       rdata  : out cpword;                -- read data
       wdata  : in  cpword;                -- write data
-      reset  : in  logicsig;             -- power-up reset
-      strobe : in  logicsig;             -- read/write strobe
-      write  : in  logicsig);            -- write operation
+      reset  : in  logicsig;              -- power-up reset
+      clk    : in  logicsig;              -- memory clock
+      ena    : in  logicsig;              -- enable
+      write  : in  logicsig);             -- write request
   end component;
+
   signal maddr : ppword;                -- 12 bit address
-  signal trdata, twdata : cpword;       -- copies of read and write data
-  signal twrite : logicsig := '0';     -- write enable
+  signal trdata, twdata : cpword;       -- copy of read and write data
+  signal tena : logicsig := '0';        -- write control to memory
+  signal twrite : logicsig := '0';      -- write control to memory
   constant bnum : bankaddr := TO_UNSIGNED (banknum, 5);
+  signal seq, next_seq : natural range 0 to 9 := 0; -- sequencer state
+  signal do_write, writereq : boolean := false;     -- true if write requested
 begin  -- cmbank  
-  mem : memarray60 port map (
+  mem : cmarray port map (
     addr   => maddr,
     rdata  => trdata,
     wdata  => twdata,
-    strobe => clk2,
+    clk    => clk2,
+    ena    => tena,
     write  => twrite);
-  -- purpose: storage sequence state machine
-  -- type   : sequential
-  -- inputs : clk1, reset, baddr, go
-  -- outputs: accept, twrite
-  ssc: process (clk1, reset)
-    variable seq : integer := 0;        -- sequence counter
-    variable acc, tw1, tw2 : logicsig := '0';
+
+  -- purpose: state machine for next state and other outputs from storage sequencer
+  -- type   : combinational
+  -- inputs : seq, go, write
+  -- outputs: next_seq, do_write
+  ssc_next: process (seq, write)
+  begin  -- process ssc_next
+    -- start with some default outputs
+    do_write <= false;
+    case seq is
+      when 0 =>
+        if go = '1' and baddr = bnum then
+          next_seq <= 1;
+        else
+          next_seq <= seq;              -- no request for this bank, stay in t0
+        end if;
+      when 2 =>
+        if write = '1' then
+          do_write <= true;
+        end if;
+      when 9 =>
+        next_seq <= 0;
+      when others =>
+        next_seq <= seq + 1;
+    end case;
+  end process ssc_next;
+  -- purpose: storage sequence machine
+  -- type   : combinational
+  -- inputs : clk1, next_seq, do_write
+  -- outputs: seq, writereq
+  ssc: process (clk1)
   begin  -- process ssc
-    if reset = '0' then                 -- asynchronous reset (active low)
-      seq := 0;
-      tw1 := '0';
-      tw2 := '0';
-      acc := '0';
-    elsif clk1'event and clk1 = '1' then  -- rising clock edge
-      if (seq = 0) and (go = '1') and (baddr = bnum) then
-        seq := 1;
-      elsif seq = 9 then
-        seq := 0;
-      else
-        seq := seq + 1;
-      end if;
-      if seq = 2 then
-        acc := '1';
-      else
-        acc := '0';
-      end if;
-      if seq = 4 then
-        tw1 := write;
-      elsif seq = 6 then
-        tw1 := '0';
-      end if;
-      if seq = 5 then
-        tw2 := tw1;
-      else
-        tw2 := '0';
-      end if;
-      accept <= acc and clk1;
-      twrite <= tw2;
+    if clk1'event and clk1 = '1' then
+      case next_seq is
+        when 1 =>
+          maddr <= addr;
+        when 3 =>
+          writereq <= do_write;
+        when 5 =>
+          twdata <= wdata;
+        when others => null;
+      end case;
+      seq <= next_seq;
     end if;
   end process ssc;
-  twdata <= wdata when (twrite = '1') and (clk1 = '1') else unaffected;
+  accept <= '1' when seq = 1 and clk1 = '1' else '0';
+  tena <= '1' when seq = 4 or (seq = 6 and writereq);
+  twrite <= '1' when seq = 6 and writereq;
+  rdata <= trdata when seq = 5 and clk1 = '1' else (others => '0');
 end cmbank;
 
 library IEEE;
@@ -111,7 +183,7 @@ entity cmem is
   
   port (
     go                             : in  coaxsig;  -- go from stunt box
-    addr                           : in  coaxsigs;  -- memory address from stunt box
+    addr                           : in  coaxsigs; -- memory address from stunt box
     wdata1, wdata2, wdata3, wdata4 : in  coaxsigs;  -- write data trunk cables
     write                          : in  coaxsig;  -- write request
     periph, ecs                    : in  coaxsig;  -- read data routing signals
@@ -126,28 +198,79 @@ entity cmem is
 end cmem;
 
 architecture beh of cmem is
+  component cmbank is
+    generic (
+      banknum : integer);                 -- bank number
+    port (
+      go                     : in  coaxsig;
+      addr                   : in  ppword;     -- memory address (12 bits)
+      baddr                  : in  bankaddr;   -- bank address (5 bits)
+      clk1, clk2, clk3, clk4 : in  logicsig;  -- clocks
+      reset                  : in  logicsig;  -- reset
+      write                  : in  logicsig;  -- write request
+      wdata                  : in  cpword;     -- write data bus
+      rdata                  : out cpword;     -- read data bus
+      accept                 : out coaxsig);   -- accept signal
+  end component;
+  type rvec_t is array (0 to 31) of cpword;
+  type acc_t is array (0 to 31) of coaxsig;
   signal taddr : ppword;
   signal bank : bankaddr;
+  signal twdata : cpword;
+  signal trdata : rvec_t;               -- read contributions from banks
+  signal rdata : cpword;                -- merged read data to trunks
+  signal taccept : acc_t;               -- accept contributions from banks
 begin  -- beh
-  -- Unswizzle the address cable
-  taddr(0) <= addr(16);
-  taddr(1) <= addr(17);
-  taddr(2) <= addr(18);
-  taddr(3) <= addr(0);
-  taddr(4) <= addr(1);
-  taddr(5) <= addr(2);
-  taddr(6) <= addr(3);
-  taddr(7) <= addr(4);
-  taddr(8) <= addr(5);
-  taddr(9) <= addr(6);
-  taddr(10) <= addr(7);
-  taddr(11) <= addr(8);
-  bank(0) <= addr(11);
-  bank(1) <= addr(12);
-  bank(2) <= addr(13);
-  bank(3) <= addr(14);
-  bank(4) <= addr(15);
-  -- Unswizzle the write data cables
+  -- Unswizzle the address cable (from stunt box, chassis 5 Q34-Q39)
+  taddr <= (addr(8), addr(7), addr(6), addr(5), addr(4), addr(3),
+            addr(2), addr(1), addr(0), addr(18), addr(17), addr(16));
+  bank <= (addr(15), addr(14), addr(13), addr(12), addr(11));
+
+  -- Unswizzle the write data cables (from store distributor, chassis 2 B12-B21)
+  wcables: for b in 0 to 14 generate
+    twdata(b) <= wdata1(b);
+    twdata(b + 15) <= wdata1(b);
+    twdata(b + 30) <= wdata1(b);
+    twdata(b + 45) <= wdata1(b);
+  end generate wcables;
+
+  mbank: for b in 0 to 31 generate
+    cm : cmbank
+      generic map (
+        banknum => b)
+      port map (
+        go     => go,
+        addr   => taddr,
+        baddr  => bank,
+        clk1   => clk1,
+        clk2   => clk2,
+        clk3   => clk3,
+        clk4   => clk4,
+--        reset  => reset,
+        write  => write,
+        wdata  => twdata,
+        rdata  => trdata(b),
+        accept => taccept(b));
+  end generate mbank;
+  
+  -- merge bank contributions
+  trunks: process (trdata, taccept)
+    variable ttrdata : cpword;
+    variable ttaccept : coaxsig;
+  begin  -- process trunks
+    ttrdata := (others => '0');
+    ttaccept := '0';
+    for i in trdata'range loop
+      for j in cpword'range loop
+        ttrdata(j) := ttrdata(j) or trdata(i)(j);
+      end loop;  -- j
+      ttaccept := ttaccept or taccept(i);
+    end loop;  -- i
+    
+    accept <= ttaccept;
+    rdata <= ttrdata;
+  end process trunks;
+
   -- Swizzle the read data for the output trunks
 
 end beh;

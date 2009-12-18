@@ -11,6 +11,8 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
+-- Model of PP memory
+--
 -------------------------------------------------------------------------------
 
 library IEEE;
@@ -79,7 +81,6 @@ end mem;
 
 architecture beh of mem is
   component memarray is
-      
     generic (
       abits : integer := 12;              -- number of address bits
       dbits : integer := 8);              -- number of data bits
