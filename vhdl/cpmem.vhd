@@ -212,11 +212,6 @@ architecture beh of cmem is
       rdata                  : out cpword;     -- read data bus
       accept                 : out coaxsig);   -- accept signal
   end component;
-  component rsflop is
-    port (
-      s, r  : in  logicsig;                    -- set, reset
-      q, qb : out logicsig);                   -- q and q.bar
-  end component;
   type rvec_t is array (0 to 31) of cpword;
   type acc_t is array (0 to 31) of coaxsig;
   signal laddr : coaxsigs;
@@ -228,36 +223,43 @@ architecture beh of cmem is
   signal taccept : acc_t;               -- accept contributions from banks
 begin  -- beh
   -- Latch and unswizzle the address cable (from stunt box, chassis 5 Q34-Q39)
-  alatches: for b in addr'range generate
-    alatch : rsflop port map (
-      s => addr(b),
-      r => clk4,
-      q => laddr(b));
-  end generate alatches;
+  alatch: process (addr, clk4)
+  begin  -- process alatch
+    if clk4 = '1' then
+      laddr <= (others => '0');
+    end if;
+    for i in addr'range loop
+      if addr(i) = '1' then
+        laddr(i) <= '1';
+      end if;
+    end loop;
+  end process alatch;
   taddr <= (laddr(8), laddr(7), laddr(6), laddr(5), laddr(4), laddr(3),
             laddr(2), laddr(1), laddr(0), laddr(18), laddr(17), laddr(16));
   bank <= (laddr(15), laddr(14), laddr(13), laddr(12), laddr(11));
 
   -- latch and unswizzle the write data cables (from store distributor,
   -- chassis 2 B12-B21)
-  wcables: for b in 0 to 14 generate
-    wc1 : rsflop port map (
-      s => wdata1(b),
-      r => clk4,
-      q => twdata(b));
-    wc2 : rsflop port map (
-      s => wdata2(b),
-      r => clk4,
-      q => twdata(b + 15));
-    wc3 : rsflop port map (
-      s => wdata3(b),
-      r => clk4,
-      q => twdata(b + 30));
-    wc4 : rsflop port map (
-      s => wdata4(b),
-      r => clk4,
-      q => twdata(b + 45));
-  end generate wcables;
+  wlatch: process (wdata1, wdata2, wdata3, wdata4, clk4)
+  begin  -- process alatch
+    if clk4 = '1' then
+      twdata <= (others => '0');
+    end if;
+    for i in 0 to 14 loop
+      if wdata1(i) = '1' then
+        twdata(i) <= '1';
+      end if;
+      if wdata2(i) = '1' then
+        twdata(i + 15) <= '1';
+      end if;
+      if wdata3(i) = '1' then
+        twdata(i + 30) <= '1';
+      end if;
+      if wdata4(i) = '1' then
+        twdata(i + 45) <= '1';
+      end if;
+    end loop;
+  end process wlatch;
 
   -- 32 memory banks, 4k by 60 each
   mbank: for b in 0 to 31 generate
