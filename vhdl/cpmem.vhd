@@ -31,7 +31,7 @@ entity cmarray is
   port (
     addr   : in  ppword;                -- memory address
     rdata  : out cpword;                -- read data
-    wdata  : in  cpword;                -- write data (complemented)
+    wdata  : in  cpword;                -- write data
     reset  : in  logicsig;              -- power-up reset
     clk    : in  logicsig;              -- memory clock
     ena    : in  logicsig;              -- enable
@@ -60,7 +60,7 @@ architecture beh of cmarray is
   end component;
   signal trdata, twdata : UNSIGNED(63 downto 0);
 begin  -- beh
-  twdata <= "0000" & not (wdata);
+  twdata <= "0000" & wdata;
   arrays: for bank in 0 to 7 generate
     membank : memarray port map (
       addr_a  => addr,
@@ -86,9 +86,9 @@ entity cmbank is
     go                     : in  coaxsig;
     addr                   : in  ppword;     -- memory address (12 bits)
     baddr                  : in  bankaddr;   -- bank address (5 bits)
-    clk1, clk2, clk3, clk4 : in  logicsig;  -- clocks
-    reset                  : in  logicsig;  -- reset
-    write                  : in  logicsig;  -- write request
+    clk1, clk2, clk3, clk4 : in  logicsig;   -- clocks
+    reset                  : in  logicsig;   -- reset
+    write                  : in  logicsig;   -- write request
     wdata                  : in  cpword;     -- write data bus
     rdata                  : out cpword;     -- read data bus
     accept                 : out coaxsig);   -- accept signal
@@ -119,7 +119,7 @@ begin  -- cmbank
     addr   => maddr,
     rdata  => trdata,
     wdata  => twdata,
-    clk    => clk2,
+    clk    => clk4,
     ena    => tena,
     write  => twrite);
 
@@ -212,8 +212,14 @@ architecture beh of cmem is
       rdata                  : out cpword;     -- read data bus
       accept                 : out coaxsig);   -- accept signal
   end component;
+  component rsflop is
+    port (
+      s, r  : in  logicsig;                    -- set, reset
+      q, qb : out logicsig);                   -- q and q.bar
+  end component;
   type rvec_t is array (0 to 31) of cpword;
   type acc_t is array (0 to 31) of coaxsig;
+  signal laddr : coaxsigs;
   signal taddr : ppword;
   signal bank : bankaddr;
   signal twdata : cpword;
@@ -221,19 +227,39 @@ architecture beh of cmem is
   signal rdata : cpword;                -- merged read data to trunks
   signal taccept : acc_t;               -- accept contributions from banks
 begin  -- beh
-  -- Unswizzle the address cable (from stunt box, chassis 5 Q34-Q39)
-  taddr <= (addr(8), addr(7), addr(6), addr(5), addr(4), addr(3),
-            addr(2), addr(1), addr(0), addr(18), addr(17), addr(16));
-  bank <= (addr(15), addr(14), addr(13), addr(12), addr(11));
+  -- Latch and unswizzle the address cable (from stunt box, chassis 5 Q34-Q39)
+  alatches: for b in addr'range generate
+    alatch : rsflop port map (
+      s => addr(b),
+      r => clk4,
+      q => laddr(b));
+  end generate alatches;
+  taddr <= (laddr(8), laddr(7), laddr(6), laddr(5), laddr(4), laddr(3),
+            laddr(2), laddr(1), laddr(0), laddr(18), laddr(17), laddr(16));
+  bank <= (laddr(15), laddr(14), laddr(13), laddr(12), laddr(11));
 
-  -- Unswizzle the write data cables (from store distributor, chassis 2 B12-B21)
+  -- latch and unswizzle the write data cables (from store distributor,
+  -- chassis 2 B12-B21)
   wcables: for b in 0 to 14 generate
-    twdata(b) <= wdata1(b);
-    twdata(b + 15) <= wdata1(b);
-    twdata(b + 30) <= wdata1(b);
-    twdata(b + 45) <= wdata1(b);
+    wc1 : rsflop port map (
+      s => wdata1(b),
+      r => clk4,
+      q => twdata(b));
+    wc2 : rsflop port map (
+      s => wdata2(b),
+      r => clk4,
+      q => twdata(b + 15));
+    wc3 : rsflop port map (
+      s => wdata3(b),
+      r => clk4,
+      q => twdata(b + 30));
+    wc4 : rsflop port map (
+      s => wdata4(b),
+      r => clk4,
+      q => twdata(b + 45));
   end generate wcables;
 
+  -- 32 memory banks, 4k by 60 each
   mbank: for b in 0 to 31 generate
     cm : cmbank
       generic map (
