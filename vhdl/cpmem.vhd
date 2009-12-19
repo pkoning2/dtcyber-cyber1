@@ -168,8 +168,8 @@ begin  -- cmbank
     end if;
   end process ssc;
   accept <= '1' when seq = 1 and clk1 = '1' else '0';
-  tena <= '1' when seq = 4 or (seq = 6 and writereq);
-  twrite <= '1' when seq = 6 and writereq;
+  tena <= '1' when seq = 4 or (seq = 6 and writereq) else '0';
+  twrite <= '1' when seq = 6 and writereq else '0';
   rdata <= trdata when seq = 5 and clk1 = '1' else (others => '0');
 end cmbank;
 
@@ -179,7 +179,7 @@ use IEEE.numeric_std.all;
 
 use work.sigs.all;
 
-entity cmem is
+entity cpmem is
   
   port (
     go                             : in  coaxsig;  -- go from stunt box
@@ -195,9 +195,9 @@ entity cmem is
     accept                         : out coaxsig;  -- accepts to stunt box
     clk1, clk2, clk3, clk4         : in  logicsig);  -- clocks
 
-end cmem;
+end cpmem;
 
-architecture beh of cmem is
+architecture beh of cpmem is
   component cmbank is
     generic (
       banknum : integer);                 -- bank number
@@ -236,7 +236,7 @@ begin  -- beh
   end process alatch;
   taddr <= (laddr(8), laddr(7), laddr(6), laddr(5), laddr(4), laddr(3),
             laddr(2), laddr(1), laddr(0), laddr(18), laddr(17), laddr(16));
-  bank <= (laddr(15), laddr(14), laddr(13), laddr(12), laddr(11));
+  bank  <= (laddr(15), laddr(14), laddr(13), laddr(12), laddr(11));
 
   -- latch and unswizzle the write data cables (from store distributor,
   -- chassis 2 B12-B21)
