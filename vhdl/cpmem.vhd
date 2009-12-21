@@ -234,6 +234,10 @@ begin  -- beh
       end if;
     end loop;
   end process alatch;
+  -- chassis 4I20
+  -- write is w19-902
+  -- go is w19-901
+  -- read periph is w19-904
   taddr <= (laddr(8), laddr(7), laddr(6), laddr(5), laddr(4), laddr(3),
             laddr(2), laddr(1), laddr(0), laddr(18), laddr(17), laddr(16));
   bank  <= (laddr(15), laddr(14), laddr(13), laddr(12), laddr(11));
@@ -300,5 +304,22 @@ begin  -- beh
   end process trunks;
 
   -- Swizzle the read data for the output trunks
-
+  -- chassis 4, bit 15:
+  -- control (ch5) w14 904
+  -- ecs (not shown)
+  -- periph (ch1) w7 90
+  -- register (ch7) w18 900
+  -- chassis 1 cm to pyramid: bit 0..14 W04-90..904, 15..29 W05-90.904
+  -- 30..37 W06-900..907, 38..44 W06-90..96, 45..52 W07-900..907,
+  -- 53..59 W07-90..96
+  -- chassis 5 input register (A-E 41,42):
+  -- 45..52 W03-900-907, 53..59 W03-90..96, 30..37 W04-900..907,
+  -- 38..44 W04-90..90, 15..18 W01-904..907, 19 W01-900, 20 W01-90,
+  -- 21..29 W01-91..99, 0..3 W02-904..907, 4 W02-900 5..14 W02-90..99
+  -- chassis 7 entry trunk (A-C 37-42): -- register bits 0..35
+  -- 0..7 W05-900..907, 8..14 W05-90..96
+  -- 15..22 W06-900..907, 23..29 W06-90..96
+  -- 30..35 W07-900..905
+  -- chassis 8 memory trunk (A01-08, B01-04): -- register bits 36..59
+  -- 36..44 W05-900..908, 45..59 W06-90..904
 end beh;
