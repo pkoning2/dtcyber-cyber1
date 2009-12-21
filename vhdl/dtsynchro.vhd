@@ -11,12 +11,14 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
+-- Synchronizer that connects to DtCyber emulated I/O device
+--
 -------------------------------------------------------------------------------
 
 
 use work.sigs.all;
 
-entity synchro is
+entity dtsynchro is
   
   generic (
     chnum : integer);                   -- connected channel number
@@ -26,9 +28,9 @@ entity synchro is
     p2 : in coaxsigs;                   -- clock wires on the above
     p3 : in coaxsigs);                  -- output cable from channel
 
-end synchro;
+end dtsynchro;
 
-architecture synchro of synchro is
+architecture synchro of dtsynchro is
   signal icv, ocv : coaxsigs := idlecoax;
 begin  -- synchro
   -- purpose: input latch
@@ -56,7 +58,7 @@ begin  -- synchro
     if p2(16)'event and p2(16) = '1' then
       t_icv := idlecoax;
       t_ocv := ocv;
-      dtsynchro (chnum, t_icv, t_ocv);
+      dtconn (chnum, t_icv, t_ocv);
       icv <= t_icv;
     end if;
   end process;

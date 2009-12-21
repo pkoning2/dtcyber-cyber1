@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2008 by Paul Koning
 #
-SYNCHRO(0)	11A1
+DTSYNCHRO(0)	11A1
 1	W13	out
 2	W13	in
 3	W14	in
@@ -33,7 +33,7 @@ SYNCHRO(0)	11A1
 28
 29
 30
-SYNCHRO(8)	11A2
+DTSYNCHRO(8)	11A2
 1	W29	out
 2	W29	in
 3	W30	in

@@ -40,11 +40,11 @@ package sigs is
   type misc is ('x', 'y');  -- used for non-logic pins
   subtype analog is UNSIGNED (2 downto 0);    -- 6612 character drawing signal
   
-  procedure dtsynchro (
+  procedure dtconn (
     constant chnum : in    integer;     -- Channel number for this synchronizer
     incable        : inout coaxsigs;    -- Input cable
     outcable       : inout coaxsigs);   -- Output cable
-  attribute foreign of dtsynchro : procedure is "VHPIDIRECT dtsynchro";
+  attribute foreign of dtconn : procedure is "VHPIDIRECT dtconn";
 
   procedure dtmain ;
   attribute foreign of dtmain : procedure is "VHPIDIRECT dtmain";
@@ -54,13 +54,13 @@ end sigs;
 package body sigs is
 
   -- purpose: Dummy body
-  procedure dtsynchro (
+  procedure dtconn (
     constant chnum : in    integer;
     incable        : inout coaxsigs;
     outcable       : inout coaxsigs) is
-  begin  -- dtsynchro
+  begin  -- dtconn
     assert false severity failure;
-  end dtsynchro;
+  end dtconn;
   
   -- purpose: Dummy body
   procedure dtmain  is

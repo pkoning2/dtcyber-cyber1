@@ -44,7 +44,7 @@
 static bool pending_in[19][040];
 static int minor[040];
 
-void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
+void dtconn (int chnum, coaxsigs incable, coaxsigs outcable)
 {
     int i;
     u32 dout, din;
@@ -54,7 +54,7 @@ void dtsynchro (int chnum, coaxsigs incable, coaxsigs outcable)
     
     activeChannel = channel + chnum;
 
-    DDPRINTF ("dtsynchro channel %o\n", chnum);
+    DDPRINTF ("dtconn channel %o\n", chnum);
     
     // Convert between bit values and boolean.  
 

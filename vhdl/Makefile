@@ -2,7 +2,7 @@ VLIB = work-obj93.cf
 HOST := $(shell uname)
 MACHINE := $(shell uname -m)
 MODULE_SRCS = $(wildcard ??.vhd)
-MODULES = clock.o clockh.o mem.o  synchro.o $(MODULE_SRCS:.vhd=.o)
+MODULES = clock.o clockh.o mem.o  dtsynchro.o $(MODULE_SRCS:.vhd=.o)
 #CHASSIS_SRCS = $(wildcard chassis*.wlist)
 # omit chassis 2 for now:
 #CHASSIS_SRCS = chassis1.wlist chassis11.wlist chassis12.wlist
@@ -12,7 +12,7 @@ CHASSIS_O = $(CHASSIS_SRCS:.wlist=.o)
 CHASSIS_D = $(CHASSIS_SRCS:.wlist=.d)
 CABLE_SRCS = $(wildcard coax*.wlist)
 
-FOREIGN = dtsynchro.o \
+FOREIGN = dtconn.o \
 	channel.o console.o cr405.o dd6603.o dd8xx.o mux6676.o \
 	lp1612.o mt607.o mt669.o dcc6681.o \
 	cr3447.o ddp.o niu.o lp3000.o cp3446.o \
