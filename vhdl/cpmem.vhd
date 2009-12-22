@@ -44,21 +44,21 @@ architecture beh of cmarray is
       abits : integer := 12;              -- number of address bits
       dbits : integer := 8);              -- number of data bits
     port (
-      addr_a  : in  UNSIGNED(abits - 1 downto 0);  -- port A address
-      rdata_a : out UNSIGNED(dbits - 1 downto 0);  -- port A data out
-      wdata_a : in  UNSIGNED(dbits - 1 downto 0);  -- port A data in
+      addr_a  : in  logicbus(abits - 1 downto 0);  -- port A address
+      rdata_a : out logicbus(dbits - 1 downto 0);  -- port A data out
+      wdata_a : in  logicbus(dbits - 1 downto 0);  -- port A data in
       clk_a   : in  logicsig;                      -- port A clock
       write_a : in  logicsig;                      -- port A write enable
       ena_a   : in  logicsig;                      -- port A enable
-      addr_b  : in  UNSIGNED(abits - 1 downto 0) := (others => '0');  -- port B address
-      rdata_b : out UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data out
-      wdata_b : in  UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data in
+      addr_b  : in  logicbus(abits - 1 downto 0) := (others => '0');  -- port B address
+      rdata_b : out logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data out
+      wdata_b : in  logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data in
       clk_b   : in  logicsig := '0';               -- port B clock
       write_b : in  logicsig := '0';               -- port B write enable
       ena_b   : in  logicsig := '0';               -- port B enable
       reset   : in  logicsig);                     -- power-up reset
   end component;
-  signal trdata, twdata : UNSIGNED(63 downto 0);
+  signal trdata, twdata : logicbus(63 downto 0);
 begin  -- beh
   twdata <= "0000" & wdata;
   arrays: for bank in 0 to 7 generate
@@ -111,7 +111,7 @@ architecture cmbank of cmbank is
   signal trdata, twdata : cpword;       -- copy of read and write data
   signal tena : logicsig := '0';        -- write control to memory
   signal twrite : logicsig := '0';      -- write control to memory
-  constant bnum : bankaddr := TO_UNSIGNED (banknum, 5);
+  constant bnum : UNSIGNED := TO_UNSIGNED (banknum, 5);
   signal seq, next_seq : natural range 0 to 9 := 0; -- sequencer state
   signal do_write, writereq : boolean := false;     -- true if write requested
 begin  -- cmbank  
@@ -133,7 +133,7 @@ begin  -- cmbank
     do_write <= false;
     case seq is
       when 0 =>
-        if go = '1' and baddr = bnum then
+        if go = '1' and UNSIGNED (baddr) = bnum then
           next_seq <= 1;
         else
           next_seq <= seq;              -- no request for this bank, stay in t0
@@ -230,10 +230,6 @@ architecture beh of cpmem is
   signal taccept : acc_t;               -- accept contributions from banks
   signal maccept : coaxsig;             -- merged accept
   signal mrdata : cpword;               -- merged read data
-  alias w1 : coaxbus (14 downto 0) is wdata1(0 to 14);
-  alias w2 : coaxbus (14 downto 0) is wdata2(0 to 14);
-  alias w3 : coaxbus (14 downto 0) is wdata3(0 to 14);
-  alias w4 : coaxbus (14 downto 0) is wdata4(0 to 14);
 begin  -- beh
   -- Latch and unswizzle the address cable (from stunt box, chassis 5 Q34-Q39)
   alatch : ireg port map (
@@ -250,7 +246,8 @@ begin  -- beh
 
   -- latch the write data cables (from store distributor,
   -- chassis 2 B12-B21)
-  iwdata <= w4 & w3 & w2 & w1;
+  iwdata <= wdata4 (14 downto 0) & wdata3 (14 downto 0) &
+            wdata2 (14 downto 0) & wdata1 (14 downto 0);
   wlatch : ireg port map (
     ibus => iwdata,
     clr  => clk4,
