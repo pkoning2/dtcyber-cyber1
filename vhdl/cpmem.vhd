@@ -255,9 +255,7 @@ begin  -- beh
     ibus => iwdata,
     clr  => clk4,
     obus => lwdata);
-  wbus: for i in lwdata'range generate
-    twdata(i) <= lwdata(i);
-  end generate wbus;
+  twdata <= cpword (lwdata);
   -- 32 memory banks, 4k by 60 each
   mbank: for b in 0 to 31 generate
     cm : cmbank
