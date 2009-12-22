@@ -63,12 +63,12 @@ void dtconn (int chnum, coaxsigs incable, coaxsigs outcable)
     {
         if (pending_in[i][chnum])
         {
-            incable[i] = one;
+            incable[18 - i] = one;
             DDPRINTF ("1");
         }
         else 
         {
-            incable[i] = zero;
+            incable[18 - i] = zero;
             DDPRINTF ("0");
         }
         pending_in[i][chnum] = FALSE;
@@ -79,7 +79,7 @@ void dtconn (int chnum, coaxsigs incable, coaxsigs outcable)
     for (i = 0; i < 19; i++)
     {
         DDPRINTF ("%d", outcable[i]);
-        if (outcable[i] == o)
+        if (outcable[18 - i] == o)
         {
             oc[i] = TRUE;
             DDPRINTF ("1");

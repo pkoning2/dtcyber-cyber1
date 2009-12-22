@@ -85,15 +85,15 @@ architecture beh of mem is
       abits : integer := 12;              -- number of address bits
       dbits : integer := 8);              -- number of data bits
     port (
-      addr_a  : in  UNSIGNED(abits - 1 downto 0);  -- port A address
-      rdata_a : out UNSIGNED(dbits - 1 downto 0);  -- port A data out
-      wdata_a : in  UNSIGNED(dbits - 1 downto 0);  -- port A data in
+      addr_a  : in  logicbus(abits - 1 downto 0);  -- port A address
+      rdata_a : out logicbus(dbits - 1 downto 0);  -- port A data out
+      wdata_a : in  logicbus(dbits - 1 downto 0);  -- port A data in
       clk_a   : in  logicsig;                      -- port A clock
       write_a : in  logicsig;                      -- port A write enable
       ena_a   : in  logicsig;                      -- port A enable
-      addr_b  : in  UNSIGNED(abits - 1 downto 0) := (others => '0');  -- port B address
-      rdata_b : out UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data out
-      wdata_b : in  UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data in
+      addr_b  : in  logicbus(abits - 1 downto 0) := (others => '0');  -- port B address
+      rdata_b : out logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data out
+      wdata_b : in  logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data in
       clk_b   : in  logicsig := '0';               -- port B clock
       write_b : in  logicsig := '0';               -- port B write enable
       ena_b   : in  logicsig := '0';               -- port B enable
@@ -101,14 +101,16 @@ architecture beh of mem is
   end component;
   signal s, w : logicsig;
   signal areg : ppword;                 -- copy of address
-  signal wreg : unsigned(15 downto 0);  -- copy of write data
-  signal tdata : unsigned(15 downto 0); -- copy of read data
+  signal twreg : logicbus (11 downto 0);
+  signal wreg : logicbus (15 downto 0);  -- copy of write data
+  signal tdata : logicbus (15 downto 0); -- copy of read data
 begin  -- beh
 
   s <= not (p123) or not (p121);
   w <= not (p121);
   areg <= (p16, p18, p14, p12, p111, p113, p109, p107, p10, p8, p20, p22);
-  wreg <= "0000" & not ((p2, p30, p125, p103, p4, p28, p101, p127, p26, p6, p105, p129));
+  twreg <= (p2, p30, p125, p103, p4, p28, p101, p127, p26, p6, p105, p129);
+  wreg <= logicbus ("0000" & not UNSIGNED (twreg));
   arl : memarray generic map (
       abits => 12,
       dbits => 8)

@@ -23,20 +23,22 @@ use IEEE.numeric_bit.all;
 package sigs is
 
   subtype coaxsig is bit;                 -- signal on coax
+  type coaxbus is array (natural range <>) of coaxsig;  -- coax cable, any width
   subtype logicsig is bit;                -- logic or tp signal
+  type logicbus is array (natural range <>) of logicsig;  -- logic bus, any width
+
   constant t : time := 5 ns;            -- basic stage delay
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
-  type coaxbus is array (natural range <>) of coaxsig;  -- coax cable, any width
-  subtype coaxsigs is coaxbus (0 to 18);    -- CDC standard coax cable
+  subtype coaxsigs is coaxbus (18 downto 0);    -- CDC standard coax cable
   constant idlecoax : coaxsigs := (others => '0');
-  type tpcable is array (0 to 23) of logicsig;    -- CDC standard tp cable
+  subtype tpcable is logicbus (23 downto 0);    -- CDC standard tp cable
   constant idletp : tpcable := (others => '0');
-  subtype ppword is UNSIGNED (11 downto 0);  -- PPU word (12 bits)
+  subtype ppword is logicbus (11 downto 0);  -- PPU word (12 bits)
   subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
   type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
-  subtype bankaddr is UNSIGNED (4 downto 0);  -- Bank address (5 bits)
-  subtype cpword is UNSIGNED (59 downto 0);  -- CPU word (60 bits)
+  subtype bankaddr is logicbus (4 downto 0);  -- Bank address (5 bits)
+  subtype cpword is logicbus (59 downto 0);  -- CPU word (60 bits)
   type cpmem is array (0 to 4095) of cpword;  -- 4kx60 memory array
   type misc is ('x', 'y');  -- used for non-logic pins
   subtype analog is UNSIGNED (2 downto 0);    -- 6612 character drawing signal
@@ -49,7 +51,6 @@ package sigs is
 
   procedure dtmain ;
   attribute foreign of dtmain : procedure is "VHPIDIRECT dtmain";
-
 end sigs;
 
 package body sigs is
@@ -570,15 +571,15 @@ entity memarray is
     abits : integer := 12;              -- number of address bits
     dbits : integer := 8);              -- number of data bits
   port (
-    addr_a  : in  UNSIGNED(abits - 1 downto 0);  -- port A address
-    rdata_a : out UNSIGNED(dbits - 1 downto 0);  -- port A data out
-    wdata_a : in  UNSIGNED(dbits - 1 downto 0);  -- port A data in
+    addr_a  : in  logicbus(abits - 1 downto 0);  -- port A address
+    rdata_a : out logicbus(dbits - 1 downto 0);  -- port A data out
+    wdata_a : in  logicbus(dbits - 1 downto 0);  -- port A data in
     clk_a   : in  logicsig;                      -- port A clock
     write_a : in  logicsig;                      -- port A write enable
     ena_a   : in  logicsig;                      -- port A enable
-    addr_b  : in  UNSIGNED(abits - 1 downto 0) := (others => '0');  -- port B address
-    rdata_b : out UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data out
-    wdata_b : in  UNSIGNED(dbits - 1 downto 0) := (others => '0');  -- port B data in
+    addr_b  : in  logicbus(abits - 1 downto 0) := (others => '0');  -- port B address
+    rdata_b : out logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data out
+    wdata_b : in  logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data in
     clk_b   : in  logicsig := '0';               -- port B clock
     write_b : in  logicsig := '0';               -- port B write enable
     ena_b   : in  logicsig := '0';               -- port B enable
@@ -591,7 +592,7 @@ begin  -- beh
 
   rw: process (clk_a, clk_b, reset)
     constant maxaddr : integer := 2 ** abits - 1;  -- max address
-    subtype mdata_t is unsigned (dbits - 1 downto 0);
+    subtype mdata_t is logicbus (dbits - 1 downto 0);
     type marray_t is array (0 to maxaddr) of mdata_t;
     variable areg : integer;              -- Address as an integer
     variable mdata : marray_t;
@@ -599,7 +600,7 @@ begin  -- beh
     areg := 0;                          -- dummy init, it's not a latch
     if clk_a'event and clk_a = '1' then  -- rising clock edge, port A
       if ena_a = '1' then
-        areg := TO_INTEGER (addr_a);
+        areg := TO_INTEGER (UNSIGNED (addr_a));
         if write_a = '1' then
           mdata (areg) := wdata_a;
         else
@@ -609,7 +610,7 @@ begin  -- beh
     end if;
     if clk_b'event and clk_b = '1' then  -- rising clock edge, port B
       if ena_b = '1' then
-        areg := TO_INTEGER (addr_b);
+        areg := TO_INTEGER (UNSIGNED (addr_b));
         if write_b = '1' then
           mdata (areg) := wdata_b;
         else

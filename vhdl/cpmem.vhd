@@ -256,6 +256,7 @@ begin  -- beh
     clr  => clk4,
     obus => lwdata);
   twdata <= cpword (lwdata);
+  
   -- 32 memory banks, 4k by 60 each
   mbank: for b in 0 to 31 generate
     cm : cmbank
