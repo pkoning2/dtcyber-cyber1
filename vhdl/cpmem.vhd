@@ -212,28 +212,34 @@ architecture beh of cpmem is
       rdata                  : out cpword;     -- read data bus
       accept                 : out coaxsig);   -- accept signal
   end component;
+  component ireg 
+    port (
+      clr : in bit;                       -- clear pulse
+      ibus : in coaxbus;                  -- input bus
+      obus : out coaxbus);                -- output bus
+  end component;
   type rvec_t is array (0 to 31) of cpword;
   type acc_t is array (0 to 31) of coaxsig;
   signal laddr : coaxsigs;
   signal taddr : ppword;
   signal bank : bankaddr;
+  signal iwdata, lwdata : coaxbus (59 downto 0);
   signal twdata : cpword;
   signal trdata : rvec_t;               -- read contributions from banks
   signal rdata : cpword;                -- merged read data to trunks
   signal taccept : acc_t;               -- accept contributions from banks
+  signal maccept : coaxsig;             -- merged accept
+  signal mrdata : cpword;               -- merged read data
+  alias w1 : coaxbus (14 downto 0) is wdata1(0 to 14);
+  alias w2 : coaxbus (14 downto 0) is wdata2(0 to 14);
+  alias w3 : coaxbus (14 downto 0) is wdata3(0 to 14);
+  alias w4 : coaxbus (14 downto 0) is wdata4(0 to 14);
 begin  -- beh
   -- Latch and unswizzle the address cable (from stunt box, chassis 5 Q34-Q39)
-  alatch: process (addr, clk4)
-  begin  -- process alatch
-    if clk4 = '1' then
-      laddr <= (others => '0');
-    end if;
-    for i in addr'range loop
-      if addr(i) = '1' then
-        laddr(i) <= '1';
-      end if;
-    end loop;
-  end process alatch;
+  alatch : ireg port map (
+    ibus => addr,
+    clr  => clk4,
+    obus => laddr);
   -- chassis 4I20
   -- write is w19-902
   -- go is w19-901
@@ -242,29 +248,16 @@ begin  -- beh
             laddr(2), laddr(1), laddr(0), laddr(18), laddr(17), laddr(16));
   bank  <= (laddr(15), laddr(14), laddr(13), laddr(12), laddr(11));
 
-  -- latch and unswizzle the write data cables (from store distributor,
+  -- latch the write data cables (from store distributor,
   -- chassis 2 B12-B21)
-  wlatch: process (wdata1, wdata2, wdata3, wdata4, clk4)
-  begin  -- process alatch
-    if clk4 = '1' then
-      twdata <= (others => '0');
-    end if;
-    for i in 0 to 14 loop
-      if wdata1(i) = '1' then
-        twdata(i) <= '1';
-      end if;
-      if wdata2(i) = '1' then
-        twdata(i + 15) <= '1';
-      end if;
-      if wdata3(i) = '1' then
-        twdata(i + 30) <= '1';
-      end if;
-      if wdata4(i) = '1' then
-        twdata(i + 45) <= '1';
-      end if;
-    end loop;
-  end process wlatch;
-
+  iwdata <= w4 & w3 & w2 & w1;
+  wlatch : ireg port map (
+    ibus => iwdata,
+    clr  => clk4,
+    obus => lwdata);
+  wbus: for i in lwdata'range generate
+    twdata(i) <= lwdata(i);
+  end generate wbus;
   -- 32 memory banks, 4k by 60 each
   mbank: for b in 0 to 31 generate
     cm : cmbank
@@ -304,22 +297,19 @@ begin  -- beh
   end process trunks;
 
   -- Swizzle the read data for the output trunks
-  -- chassis 4, bit 15:
-  -- control (ch5) w14 904
-  -- ecs (not shown)
-  -- periph (ch1) w7 90
-  -- register (ch7) w18 900
-  -- chassis 1 cm to pyramid: bit 0..14 W04-90..904, 15..29 W05-90.904
+  -- chassis 1 cm to pyramid:
+  -- 0..14 W04-90..904, 15..29 W05-90.904
   -- 30..37 W06-900..907, 38..44 W06-90..96, 45..52 W07-900..907,
   -- 53..59 W07-90..96
   -- chassis 5 input register (A-E 41,42):
-  -- 45..52 W03-900-907, 53..59 W03-90..96, 30..37 W04-900..907,
-  -- 38..44 W04-90..90, 15..18 W01-904..907, 19 W01-900, 20 W01-90,
-  -- 21..29 W01-91..99, 0..3 W02-904..907, 4 W02-900 5..14 W02-90..99
-  -- chassis 7 entry trunk (A-C 37-42): -- register bits 0..35
+  -- 0..3 W02-904..907, 4 W02-900 5..14 W02-90..99
+  -- 15..18 W01-904..907, 19 W01-900, 20..29 W01-90..99
+  -- 30..37 W04-900..907, 38..44 W04-90..90, 
+  -- 45..52 W03-900..907, 53..59 W03-90..96, 
+  -- chassis 7 entry trunk (A-C 37-42): (register bits 0..35)
   -- 0..7 W05-900..907, 8..14 W05-90..96
   -- 15..22 W06-900..907, 23..29 W06-90..96
   -- 30..35 W07-900..905
-  -- chassis 8 memory trunk (A01-08, B01-04): -- register bits 36..59
+  -- chassis 8 memory trunk (A01-08, B01-04): (register bits 36..59)
   -- 36..44 W05-900..908, 45..59 W06-90..904
 end beh;
