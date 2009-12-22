@@ -31,23 +31,22 @@ entity dtsynchro is
 end dtsynchro;
 
 architecture synchro of dtsynchro is
+  component ireg 
+    port (
+      clr : in bit;                       -- clear pulse
+      ibus : in coaxbus;                  -- input bus
+      obus : out coaxbus);                -- output bus
+  end component;
   signal icv, ocv : coaxsigs := idlecoax;
 begin  -- synchro
   -- purpose: input latch
   -- type   : combinational
   -- inputs : p3, p2(16)
   -- outputs: ocv
-  ilatch: process (p3, p2(16))
-  begin  -- process ilatch
-    if p2(16) = '1' then
-      ocv <= idlecoax;
-    end if;
-    for i in p3'range loop
-      if p3(i) = '1' then
-        ocv(i) <= '1';
-      end if;
-    end loop;
-  end process ilatch;
+  ilatch : ireg port map (
+    ibus => p3,
+    clr  => p2(16),
+    obus => ocv);
   -- purpose: Simulate 6600 synchronizer, connected to DtCyber
   -- type   : sequential
   -- inputs : p2, ocv

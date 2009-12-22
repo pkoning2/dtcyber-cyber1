@@ -27,7 +27,8 @@ package sigs is
   constant t : time := 5 ns;            -- basic stage delay
   constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
-  type coaxsigs is array (0 to 18) of coaxsig;    -- CDC standard coax cable
+  type coaxbus is array (natural range <>) of coaxsig;  -- coax cable, any width
+  subtype coaxsigs is coaxbus (0 to 18);    -- CDC standard coax cable
   constant idlecoax : coaxsigs := (others => '0');
   type tpcable is array (0 to 23) of logicsig;    -- CDC standard tp cable
   constant idletp : tpcable := (others => '0');
@@ -619,3 +620,32 @@ begin  -- beh
   end process rw;
 end beh;
 
+use work.sigs.all;
+
+entity ireg is
+  
+  port (
+    clr : in bit;                       -- clear pulse
+    ibus : in coaxbus;                    -- input bus
+    obus : out coaxbus);                  -- output bus
+
+end ireg;
+
+architecture beh of ireg is
+begin  -- ireg
+  -- purpose: input latch
+  ilatch: process (ibus, clr)
+  begin  -- process ilatch
+    if clr = '1' then
+      for i in obus'range loop
+        obus(i) <= '0';
+      end loop;  -- i
+      --obus <= (others => '0');
+    end if;
+    for i in ibus'range loop
+      if ibus(i) = '1' then
+        obus(i) <= '1';
+      end if;
+    end loop;
+  end process ilatch;
+end beh;
