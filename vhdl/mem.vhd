@@ -21,6 +21,8 @@ use IEEE.numeric_bit.all;
 use work.sigs.all;
 
 entity mem is
+  generic (
+    bnum : integer := 0);               -- mem number for meminit
   port (
     reset  : in  logicsig;              -- power-up reset
     p22 : in logicsig;                  -- addr(0)
@@ -82,18 +84,18 @@ end mem;
 architecture beh of mem is
   component memarray is
     generic (
-      abits : integer := 12;              -- number of address bits
-      dbits : integer := 8);              -- number of data bits
+      bnum  : integer := 0;             -- bank number for meminit
+      abits : integer := 12);             -- number of address bits
     port (
       addr_a  : in  logicbus(abits - 1 downto 0);  -- port A address
-      rdata_a : out logicbus(dbits - 1 downto 0);  -- port A data out
-      wdata_a : in  logicbus(dbits - 1 downto 0);  -- port A data in
+      rdata_a : out logicbus(7 downto 0);  -- port A data out
+      wdata_a : in  logicbus(7 downto 0);  -- port A data in
       clk_a   : in  logicsig;                      -- port A clock
       write_a : in  logicsig;                      -- port A write enable
       ena_a   : in  logicsig;                      -- port A enable
       addr_b  : in  logicbus(abits - 1 downto 0) := (others => '0');  -- port B address
-      rdata_b : out logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data out
-      wdata_b : in  logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data in
+      rdata_b : out logicbus(7 downto 0) := (others => '0');  -- port B data out
+      wdata_b : in  logicbus(7 downto 0) := (others => '0');  -- port B data in
       clk_b   : in  logicsig := '0';               -- port B clock
       write_b : in  logicsig := '0';               -- port B write enable
       ena_b   : in  logicsig := '0';               -- port B enable
@@ -112,8 +114,8 @@ begin  -- beh
   twreg <= (p2, p30, p125, p103, p4, p28, p101, p127, p26, p6, p105, p129);
   wreg <= logicbus ("0000" & not UNSIGNED (twreg));
   arl : memarray generic map (
-      abits => 12,
-      dbits => 8)
+      bnum  => bnum * 2 + 1,
+      abits => 12)
     port map (
       addr_a => areg,
       wdata_a => wreg(7 downto 0),
@@ -123,8 +125,8 @@ begin  -- beh
       ena_a => s,
       clk_a => s);
   arh : memarray generic map (
-      abits => 12,
-      dbits => 8)
+      bnum  => bnum * 2,
+      abits => 12)
     port map (
       addr_a => areg,
       wdata_a => wreg(15 downto 8),

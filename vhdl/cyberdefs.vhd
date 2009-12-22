@@ -36,12 +36,11 @@ package sigs is
   constant idletp : tpcable := (others => '0');
   subtype ppword is logicbus (11 downto 0);  -- PPU word (12 bits)
   subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
-  type ppmem is array (0 to 4095) of ppword;  -- standard 4kx12 memory array
   subtype bankaddr is logicbus (4 downto 0);  -- Bank address (5 bits)
   subtype cpword is logicbus (59 downto 0);  -- CPU word (60 bits)
-  type cpmem is array (0 to 4095) of cpword;  -- 4kx60 memory array
   type misc is ('x', 'y');  -- used for non-logic pins
   subtype analog is UNSIGNED (2 downto 0);    -- 6612 character drawing signal
+  type bytemem is array (natural range <>) of logicbus (7 downto 0);
   
   procedure dtconn (
     constant chnum : in    integer;     -- Channel number for this synchronizer
@@ -51,6 +50,11 @@ package sigs is
 
   procedure dtmain ;
   attribute foreign of dtmain : procedure is "VHPIDIRECT dtmain";
+
+  procedure meminit (
+    constant bnum : in    integer;      -- bank number
+    marray        : inout bytemem);     -- array to initialize
+  attribute foreign of meminit : procedure is "VHPIDIRECT meminit";
 end sigs;
 
 package body sigs is
@@ -65,11 +69,18 @@ package body sigs is
   end dtconn;
   
   -- purpose: Dummy body
-  procedure dtmain  is
+  procedure dtmain is
   begin  -- dtmain
     assert false severity failure;
   end dtmain;
-  
+
+  procedure meminit (
+    constant bnum : in    integer;      -- bank number
+    marray        : inout bytemem) is 
+  begin  -- meminit
+    assert false severity failure;
+  end meminit;
+
 end sigs;
 
 use work.sigs.all;
@@ -568,18 +579,18 @@ use work.sigs.all;
 entity memarray is
   
   generic (
-    abits : integer := 12;              -- number of address bits
-    dbits : integer := 8);              -- number of data bits
+    bnum  : integer := 0;               -- bank number for meminit
+    abits : integer := 12);             -- number of address bits
   port (
     addr_a  : in  logicbus(abits - 1 downto 0);  -- port A address
-    rdata_a : out logicbus(dbits - 1 downto 0);  -- port A data out
-    wdata_a : in  logicbus(dbits - 1 downto 0);  -- port A data in
+    rdata_a : out logicbus(7 downto 0);  -- port A data out
+    wdata_a : in  logicbus(7 downto 0);  -- port A data in
     clk_a   : in  logicsig;                      -- port A clock
     write_a : in  logicsig;                      -- port A write enable
     ena_a   : in  logicsig;                      -- port A enable
     addr_b  : in  logicbus(abits - 1 downto 0) := (others => '0');  -- port B address
-    rdata_b : out logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data out
-    wdata_b : in  logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data in
+    rdata_b : out logicbus(7 downto 0) := (others => '0');  -- port B data out
+    wdata_b : in  logicbus(7 downto 0) := (others => '0');  -- port B data in
     clk_b   : in  logicsig := '0';               -- port B clock
     write_b : in  logicsig := '0';               -- port B write enable
     ena_b   : in  logicsig := '0';               -- port B enable
@@ -592,12 +603,14 @@ begin  -- beh
 
   rw: process (clk_a, clk_b, reset)
     constant maxaddr : integer := 2 ** abits - 1;  -- max address
-    subtype mdata_t is logicbus (dbits - 1 downto 0);
-    type marray_t is array (0 to maxaddr) of mdata_t;
+    subtype marray_t is bytemem (0 to maxaddr);
     variable areg : integer;              -- Address as an integer
     variable mdata : marray_t;
   begin  -- process rw
     areg := 0;                          -- dummy init, it's not a latch
+    if reset = '1' then
+      meminit (bnum, mdata);
+    end if;
     if clk_a'event and clk_a = '1' then  -- rising clock edge, port A
       if ena_a = '1' then
         areg := TO_INTEGER (UNSIGNED (addr_a));

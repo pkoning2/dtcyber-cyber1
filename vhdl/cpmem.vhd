@@ -28,6 +28,8 @@ use work.sigs.all;
 -- 8 8-bit arrays, since that's what the FPGA provides)
 
 entity cmarray is
+  generic (
+    bnum  : integer := 0);             -- bank number for meminit
   port (
     addr   : in  ppword;                -- memory address
     rdata  : out cpword;                -- read data
@@ -41,18 +43,18 @@ end cmarray;
 architecture beh of cmarray is
   component memarray is
     generic (
-      abits : integer := 12;              -- number of address bits
-      dbits : integer := 8);              -- number of data bits
+      bnum  : integer := 0;             -- bank number for meminit
+      abits : integer := 12);             -- number of address bits
     port (
       addr_a  : in  logicbus(abits - 1 downto 0);  -- port A address
-      rdata_a : out logicbus(dbits - 1 downto 0);  -- port A data out
-      wdata_a : in  logicbus(dbits - 1 downto 0);  -- port A data in
+      rdata_a : out logicbus(7 downto 0);  -- port A data out
+      wdata_a : in  logicbus(7 downto 0);  -- port A data in
       clk_a   : in  logicsig;                      -- port A clock
       write_a : in  logicsig;                      -- port A write enable
       ena_a   : in  logicsig;                      -- port A enable
       addr_b  : in  logicbus(abits - 1 downto 0) := (others => '0');  -- port B address
-      rdata_b : out logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data out
-      wdata_b : in  logicbus(dbits - 1 downto 0) := (others => '0');  -- port B data in
+      rdata_b : out logicbus(7 downto 0) := (others => '0');  -- port B data out
+      wdata_b : in  logicbus(7 downto 0) := (others => '0');  -- port B data in
       clk_b   : in  logicsig := '0';               -- port B clock
       write_b : in  logicsig := '0';               -- port B write enable
       ena_b   : in  logicsig := '0';               -- port B enable
@@ -62,7 +64,9 @@ architecture beh of cmarray is
 begin  -- beh
   twdata <= "0000" & wdata;
   arrays: for bank in 0 to 7 generate
-    membank : memarray port map (
+    membank : memarray generic map (
+      bnum => bnum * 8 + bank + 100)
+    port map (
       addr_a  => addr,
       rdata_a => trdata(63 - (bank * 8) downto 56 - (bank * 8)),
       wdata_a => twdata(63 - (bank * 8) downto 56 - (bank * 8)),
@@ -97,6 +101,8 @@ end cmbank;
 
 architecture cmbank of cmbank is
   component cmarray is
+    generic (
+      bnum  : integer := 0);             -- bank number for meminit
     port (
       addr   : in  ppword;                -- memory address
       rdata  : out cpword;                -- read data
@@ -115,7 +121,9 @@ architecture cmbank of cmbank is
   signal seq, next_seq : natural range 0 to 9 := 0; -- sequencer state
   signal do_write, writereq : boolean := false;     -- true if write requested
 begin  -- cmbank  
-  mem : cmarray port map (
+  mem : cmarray generic map (
+    bnum => banknum)
+   port map (
     addr   => maddr,
     rdata  => trdata,
     wdata  => twdata,
