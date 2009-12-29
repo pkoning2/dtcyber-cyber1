@@ -23,7 +23,7 @@ entity czslice is
       b : in  logicsig;
       d : in  logicsig;
       i : in  logicsig;
-      i2 : in  logicsig;
+      i2 : in  logicsig := '0';
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;

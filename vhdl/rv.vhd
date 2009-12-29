@@ -22,7 +22,7 @@ entity rvslice is
       a : in  logicsig;
       b : in  logicsig;
       i : in  logicsig;
-      i2 : in  logicsig;
+      i2 : in  logicsig := '1';
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
