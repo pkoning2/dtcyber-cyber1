@@ -7,6 +7,8 @@ Copyright (C) 2009 by Paul Koning
 
 import readline
 import re
+import sys
+import time
 
 def completions (c = None):
     global _completions
@@ -214,12 +216,12 @@ class PinInstance (object):
 class Signal (hitem):
     """A signal (pin or temporary) in an element instance
     """
-    def __init__ (self, name):
+    def __init__ (self, name, opt = False):
         hitem.__init__ (self, name)
         self.source = None
         self._sources = set ()
         self.destcount = 0
-        self.opt = False
+        self.opt = opt
         self.ptype = None
     
     def setsource (self, source):
@@ -261,7 +263,8 @@ class ConstSignal (Signal):
     """
     def __init__ (self, name):
         Signal.__init__ (self, name)
-
+        self.ptype = "logicsig"
+        
     def setsource (self, source):
         pass
 
@@ -306,6 +309,14 @@ class ElementInstance (object):
         """Add a port map entry.  "formal" is the element type pin name;
         "actual" is the signal to map to it, or a string naming a signal.
         """
+        try:
+            pin = self.eltype.pins[formal]
+        except KeyError:
+            if actual is not sigone:
+                print "Port map to unknown pin %s" % formal
+            return
+        dir = pin.dir
+        ptype = pin.ptype
         opt = False
         if isinstance (actual, str):
             if actual.startswith ("-"):
@@ -319,15 +330,7 @@ class ElementInstance (object):
             elif actual == "'0'":
                 actual = sigzero
             else:
-                actual = parent.findsignal (actual)
-        try:
-            pin = self.eltype.pins[formal]
-        except KeyError:
-            if actual is not sigone:
-                print "Port map to unknown pin %s" % formal
-            return
-        dir = pin.dir
-        ptype = pin.ptype
+                actual = parent.findsignal (actual, opt)
         if dir == "out":
             # Assigning to output, must be a new signal, or one that
             # doesn't have an output yet.  Special case: '1' is a valid
@@ -422,13 +425,13 @@ class cmod (ElementType):
         e = self.elements[elname] = ElementInstance (elname, eltype)
         e.promptports (self)
 
-    def findsignal (self, name):
+    def findsignal (self, name, opt = False):
         """Find a currently defined signal, or create a new one
         """
         try:
             return self.signals[name]
         except KeyError:
-            s = self.signals[name] = Signal (name)
+            s = self.signals[name] = Signal (name, opt)
             return s
 
     def addassign (self, to, fname):
@@ -486,7 +489,7 @@ class cmod (ElementType):
 --
 -- CDC 6600 model
 --
--- %s
+-- Copyright (C) %d by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -501,7 +504,7 @@ class cmod (ElementType):
 """
     
     def printheader (self):
-        return self.header % (__doc__.split ("\n")[2], self.name.upper ())
+        return self.header % (time.localtime ().tm_year, self.name.upper ())
 
     def isinternal (self, pin):
         """Tells whether the pin is an internal signal or not.  For modules
@@ -733,3 +736,9 @@ def stdelements ():
 
 # Load the standard element definitions
 stdelements ()
+
+if __name__ == "__main__":
+    modname = sys.argv[1]
+    newmod = cmod (modname)
+    newmod.addelements ()
+    newmod.write (False)
