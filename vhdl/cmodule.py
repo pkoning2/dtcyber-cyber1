@@ -124,7 +124,7 @@ class ElementType (object):
             if name in self.pins:
                 print "Pin", name, "already defined"
             else:
-                self.pins[name] = Pin (name, dir, ptype)
+                self.pins[name] = Pin (name, dir, ptype, opt)
 
     def inputs (self):
         """Return a list of input pins, sorted by name
@@ -535,8 +535,8 @@ class cmod (ElementType):
                     # It has a source so it's an output
                     self.addpin ((str (s),), "out", s.ptype)
                 else:
-                    # Optional pins are added before calling this method
-                    self.addpin ((str (s),), "in", s.ptype)
+                    #print "adding", s, s.ptype, s.opt
+                    self.addpin ((str (s),), "in", s.ptype, s.opt)
         for s in self.signals.itervalues ():
             if not self.isinternal (s):
                 p = self.pins[s]
