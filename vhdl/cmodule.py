@@ -34,7 +34,7 @@ def init_completions ():
 
 elements = { }
 
-_re_k = re.compile ("(.+?)(\d+)(.*)$")
+_re_k = re.compile (r"(.+?)(\d+)(.*)$")
 def ancmp (a, b):
     a = str (a)
     b = str (b)
@@ -510,7 +510,7 @@ class cmod (ElementType):
         """Tells whether the pin is an internal signal or not.  For modules
         (things with two-character names), it's a pin if its name starts
         with "p" or "tp" and a temp otherwise.  For other elements,
-        it's a temp if it starts with "t" and a "pin" (i.e., a port)
+        it's a temp if it t followed by digits, and a "pin" (i.e., a port)
         otherwise.
         """
         pin = str (pin)
@@ -520,7 +520,7 @@ class cmod (ElementType):
                    not pin.startswith ("tp")
         else:
             # Element: if it starts with t but isn't a testpoint, it's a pin
-            return pin.startswith ("t") and not pin.startswith ("tp")
+            return _re_temp.match (pin)
 
     def finish (self):
         """Do various actions that can't be done until the module
@@ -645,6 +645,7 @@ _re_assign = re.compile (r"(\w+)\s*<=\s*(\w+)")
 _re_pin = re.compile (r"([a-z0-9, ]+):\s+(inout|in|out)\s+([a-z0-9_]+)( +:= +'[01]')?")
 _re_comment = re.compile (r"--.*$", re.M)
 _re_pinname = re.compile (r"p\d+$")
+_re_temp = re.compile (r"t\d+$")
 
 def readmodule (modname, allports = False):
     """Read a module definition VHD file and return the top
@@ -736,9 +737,3 @@ def stdelements ():
 
 # Load the standard element definitions
 stdelements ()
-
-if __name__ == "__main__":
-    modname = sys.argv[1]
-    newmod = cmod (modname)
-    newmod.addelements ()
-    newmod.write (False)
