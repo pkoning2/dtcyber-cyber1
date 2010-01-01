@@ -39,6 +39,7 @@ entity aq is
       p2 : out logicsig;
       p3 : out logicsig;
       p4 : out logicsig;
+      p5 : out logicsig;
       p6 : out logicsig;
       p7 : out logicsig;
       p8 : out logicsig;
@@ -109,7 +110,6 @@ architecture gates of aq is
   signal l : logicsig;
   signal m : logicsig;
   signal n : logicsig;
-  signal p5=t5 : logicsig;
   signal r : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
@@ -196,9 +196,9 @@ begin -- gates
     b => n,
     c => r,
     d => p19,
-    y => t5,
-    y2 => p5=t5);
+    y => t5);
 
+  p5 <= t5;
   p26 <= m;
 
   u12 : g2 port map (

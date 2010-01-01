@@ -99,7 +99,6 @@ architecture gates of aj is
 
   end component;
 
-  signal  : logicsig;
   signal a : logicsig;
   signal b : logicsig;
   signal c : logicsig;
@@ -237,7 +236,7 @@ begin -- gates
     r  => c,
     r2 => e,
     r3 => '1',
-    r4 => '4',
+    r4 => '1',
     s  => x,
     s2 => y,
     s3 => '1',

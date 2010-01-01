@@ -126,7 +126,7 @@ begin -- gates
   tp1 <= d;
 
   u2 : g2 port map (
-    a => p2,
+    a => p4,
     b => e,
     y => j);
 

@@ -97,7 +97,6 @@ architecture gates of ib is
 
   end component;
 
-  signal  : logicsig;
   signal a : logicsig;
   signal b : logicsig;
   signal c : logicsig;

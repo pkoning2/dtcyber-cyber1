@@ -37,6 +37,7 @@ entity iy is
       tp1 : out logicsig;
       tp2 : out logicsig;
       tp3 : out logicsig;
+      tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;

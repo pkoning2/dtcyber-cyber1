@@ -102,6 +102,16 @@ architecture gates of ak is
 
   end component;
 
+  component rs2flop
+    port (
+      r : in  logicsig;
+      s : in  logicsig;
+      s2 : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
+
+  end component;
+
   signal a : logicsig;
   signal b : logicsig;
   signal c : logicsig;

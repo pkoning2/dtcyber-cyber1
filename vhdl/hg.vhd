@@ -107,14 +107,12 @@ architecture gates of hg is
 
   end component;
 
-  signal  : logicsig;
   signal a : logicsig;
   signal b : logicsig;
   signal c : logicsig;
   signal e : logicsig;
   signal f : logicsig;
   signal g : logicsig;
-  signal g3 : logicsig;
   signal m : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
@@ -158,7 +156,7 @@ begin -- gates
 
 
   u5 : g2 port map (
-    a => g3,
+    a => t3,
     b => p19,
     y => m,
     y2 => p18);
@@ -208,13 +206,6 @@ begin -- gates
 
   p24 <= t6;
   tp6 <= t6;
-
-  u13 : g4 port map (
-    a => p17,
-    b => m,
-    c => ,
-    d => );
-
 
   u14 : g3 port map (
     a => p17,
