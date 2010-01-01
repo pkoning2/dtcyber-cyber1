@@ -11,6 +11,7 @@ chmap = eval (f.read ())
 f.close ()
 
 checked = set ()
+checked.add ("--")
 
 for r in xrange (18):
     rc = chr (65 + r)
