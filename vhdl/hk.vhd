@@ -19,7 +19,6 @@ use work.sigs.all;
 
 entity hk is
     port (
-      p1 : in  logicsig;
       p2 : in  logicsig;
       p4 : in  logicsig;
       p7 : in  logicsig;
@@ -36,6 +35,7 @@ entity hk is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
+      p1 : out logicsig;
       p3 : out logicsig;
       p5 : out logicsig;
       p6 : out logicsig;

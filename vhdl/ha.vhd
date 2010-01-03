@@ -219,8 +219,7 @@ begin -- gates
     a => j,
     b => c,
     c => t10,
-    y => t11,
-    y2 => g2);
+    y => t11);
 
 
   u15 : g2 port map (

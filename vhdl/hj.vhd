@@ -32,6 +32,7 @@ entity hj is
       p27 : in  logicsig;
       p28 : in  logicsig;
       tp1 : out logicsig;
+      tp2 : out logicsig;
       tp3 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;

@@ -102,7 +102,6 @@ architecture gates of hn is
   signal a : logicsig;
   signal b : logicsig;
   signal c : logicsig;
-  signal g2 : logicsig;
   signal n : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
@@ -138,7 +137,7 @@ begin -- gates
 
 
   u4 : g2 port map (
-    a => g2,
+    a => t2,
     b => c,
     y => p3,
     y2 => p4);

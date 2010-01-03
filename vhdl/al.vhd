@@ -46,6 +46,7 @@ entity al is
       tp6 : out logicsig;
       p6 : out logicsig;
       p7 : out logicsig;
+      p10 : out logicsig;
       p17 : out logicsig;
       p23 : out logicsig;
       p24 : out logicsig;
@@ -129,7 +130,6 @@ architecture gates of al is
   signal c : logicsig;
   signal d : logicsig;
   signal e : logicsig;
-  signal p10=t13 : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
@@ -252,9 +252,9 @@ begin -- gates
     a => t10,
     b => t8,
     c => c,
-    y => t13,
-    y2 => p10=t13);
+    y => t13);
 
+  p10 <= t13;
 
   u16 : g2 port map (
     a => t13,
