@@ -23,8 +23,7 @@ entity ikslice is
       i1 : in  logicsig;
       i2 : in  logicsig;
       n : in  logicsig;
-      s : in  logicsig;
-      t : in  logicsig;
+      clk : in  logicsig;
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
@@ -41,16 +40,6 @@ architecture gates of ikslice is
 
   end component;
 
-  component g3
-    port (
-      a : in  logicsig;
-      b : in  logicsig;
-      c : in  logicsig;
-      y : out logicsig;
-      y2 : out logicsig);
-
-  end component;
-
   component inv
     port (
       a : in  logicsig;
@@ -58,32 +47,20 @@ architecture gates of ikslice is
 
   end component;
 
-  component rs2flop
+  component latchd2
     port (
-      r : in  logicsig;
-      s : in  logicsig;
-      s2 : in  logicsig;
-      q : out logicsig;
-      qb : out logicsig);
-
+      d, d2, clk : in  logicsig;                 -- data (set), clock
+      q, qb  : out logicsig);                -- q and q.bar
   end component;
 
-  signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
 
 begin -- gates
-  u1 : g3 port map (
-    a => n,
-    b => i1,
-    c => t,
-    y => t1);
-
-
-  u2 : rs2flop port map (
-    r => s,
-    s => i2,
-    s2 => t1,
+  u2 : latchd2 port map (
+    clk => clk,
+    d => n,
+    d2 => i1,
     q => t2);
 
   q1 <= t2;
@@ -166,8 +143,7 @@ architecture gates of ik is
       i1 : in  logicsig;
       i2 : in  logicsig;
       n : in  logicsig;
-      s : in  logicsig;
-      t : in  logicsig;
+      clk : in  logicsig;
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
@@ -192,7 +168,6 @@ architecture gates of ik is
 
   signal a : logicsig;
   signal n : logicsig;
-  signal s : logicsig;
   signal t : logicsig;
   signal t1 : logicsig;
   signal x : logicsig;
@@ -203,13 +178,11 @@ begin -- gates
     i1 => p6,
     i2 => p3,
     n => n,
-    s => s,
-    t => t,
+    clk => p16,
     q1 => p4,
     q2 => p2,
     q3 => p1);
 
-  tp2 <= t;
   tp5 <= a;
 
   u2 : ikslice port map (
@@ -217,8 +190,7 @@ begin -- gates
     i1 => p7,
     i2 => p10,
     n => n,
-    s => s,
-    t => t,
+    clk => p16,
     q1 => p9,
     q2 => p8,
     q3 => p5,
@@ -230,8 +202,7 @@ begin -- gates
     i1 => p11,
     i2 => x,
     n => n,
-    s => s,
-    t => t,
+    clk => p16,
     q1 => p12,
     q2 => p17,
     q3 => p15,
@@ -245,9 +216,9 @@ begin -- gates
 
   u5 : inv2 port map (
     a => p16,
-    y => s,
     y2 => t);
 
+  tp2 <= t;
 
   u6 : inv port map (
     a => p23,
