@@ -21,8 +21,8 @@ entity jxslice is
     port (
       i1 : in  logicsig;
       m : in  logicsig;
-      s : in  logicsig;
-      u : in  logicsig;
+      clk : in  logicsig;
+      t : in  logicsig;
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
@@ -66,10 +66,10 @@ architecture gates of jxslice is
 
   end component;
 
-  component rsflop
+  component latch
     port (
-      r : in  logicsig;
-      s : in  logicsig;
+      clk : in  logicsig;
+      d : in  logicsig;
       q : out logicsig;
       qb : out logicsig);
 
@@ -82,20 +82,14 @@ architecture gates of jxslice is
 begin -- gates
   u1 : g3 port map (
     a => m,
-    b => u,
+    b => t,
     c => i1,
     y => q1);
 
 
-  u2 : g2 port map (
-    a => i1,
-    b => u,
-    y => t1);
-
-
-  u3 : rsflop port map (
-    r => s,
-    s => t1,
+  u3 : latch port map (
+    clk => clk,
+    d => i1,
     q => t2);
 
   q2 <= t2;
@@ -179,8 +173,8 @@ architecture gates of jx is
     port (
       i1 : in  logicsig;
       m : in  logicsig;
-      s : in  logicsig;
-      u : in  logicsig;
+      clk : in  logicsig;
+      t : in  logicsig;
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
@@ -192,7 +186,6 @@ architecture gates of jx is
 
   signal m : logicsig;
   signal n : logicsig;
-  signal s : logicsig;
   signal t : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
@@ -201,8 +194,8 @@ begin -- gates
   u1 : jxslice port map (
     i1 => p5,
     m => m,
-    s => s,
-    u => t,
+    clk => p17,
+    t => t,
     q1 => p7,
     q2 => p4,
     q3 => p1,
@@ -216,8 +209,8 @@ begin -- gates
   u2 : jxslice port map (
     i1 => p11,
     m => m,
-    s => s,
-    u => t,
+    clk => p17,
+    t => t,
     q1 => p13,
     q2 => p14,
     q3 => p15,
@@ -229,8 +222,8 @@ begin -- gates
   u3 : jxslice port map (
     i1 => p24,
     m => m,
-    s => s,
-    u => t,
+    clk => p17,
+    t => t,
     q1 => p22,
     q2 => p25,
     q3 => p28,
@@ -241,7 +234,6 @@ begin -- gates
 
   u4 : inv2 port map (
     a => p17,
-    y => s,
     y2 => t);
 
 
