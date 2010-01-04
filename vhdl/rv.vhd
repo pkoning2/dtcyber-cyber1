@@ -19,8 +19,7 @@ use work.sigs.all;
 
 entity rvslice is
     port (
-      a : in  logicsig;
-      b : in  logicsig;
+      clk : in  logicsig;
       i : in  logicsig;
       i2 : in  logicsig := '1';
       tp : out logicsig;
@@ -30,15 +29,6 @@ entity rvslice is
 
 end rvslice;
 architecture gates of rvslice is
-  component g2
-    port (
-      a : in  logicsig;
-      b : in  logicsig;
-      y : out logicsig;
-      y2 : out logicsig);
-
-  end component;
-
   component inv2
     port (
       a : in  logicsig;
@@ -47,31 +37,21 @@ architecture gates of rvslice is
 
   end component;
 
-  component rs2flop
+  component latchs
     port (
-      r : in  logicsig;
-      s : in  logicsig;
-      s2 : in  logicsig;
-      q : out logicsig;
-      qb : out logicsig);
-
+      d, clk : in  logicsig;                 -- data (set), clock
+      s      : in  logicsig;               -- set
+      q, qb  : out logicsig);                -- q and q.bar
   end component;
 
-  signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
 
 begin -- gates
-  u1 : g2 port map (
-    a => i,
-    b => b,
-    y => t1);
-
-
-  u2 : rs2flop port map (
-    r => a,
-    s => t1,
-    s2 => i2,
+  u2 : latchs port map (
+    clk => clk,
+    d => i,
+    s => i2,
     q => t2);
 
   tp <= t2;
@@ -147,10 +127,9 @@ architecture gates of rv is
 
   component rvslice
     port (
-      a : in  logicsig;
-      b : in  logicsig;
+      clk : in  logicsig;
       i : in  logicsig;
-      i2 : in  logicsig;
+      i2 : in  logicsig := '1';
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
@@ -158,28 +137,11 @@ architecture gates of rv is
 
   end component;
 
-  signal a : logicsig;
-  signal b : logicsig;
-  signal c : logicsig;
-  signal d : logicsig;
   signal t2 : logicsig;
 
 begin -- gates
-  u1 : inv2 port map (
-    a => p16,
-    y => a,
-    y2 => b);
-
-
-  u2 : inv2 port map (
-    a => p28,
-    y => c,
-    y2 => d);
-
-
   u3 : rvslice port map (
-    a => a,
-    b => b,
+    clk => p16,
     i => p13,
     i2 => p6,
     q1 => p8,
@@ -189,8 +151,7 @@ begin -- gates
 
 
   u4 : rvslice port map (
-    a => a,
-    b => b,
+    clk => p16,
     i => p18,
     q1 => p19,
     q2 => p23,
@@ -199,8 +160,7 @@ begin -- gates
 
 
   u5 : rvslice port map (
-    a => a,
-    b => b,
+    clk => p16,
     i => p14,
     q1 => p7,
     q2 => p4,
@@ -209,8 +169,7 @@ begin -- gates
 
 
   u6 : rvslice port map (
-    a => c,
-    b => d,
+    clk => p28,
     i => p26,
     q1 => p25,
     q2 => p20,
@@ -219,8 +178,7 @@ begin -- gates
 
 
   u7 : rvslice port map (
-    a => c,
-    b => d,
+    clk => p28,
     i => p15,
     q1 => p11,
     q2 => p1,
@@ -229,8 +187,7 @@ begin -- gates
 
 
   u8 : rvslice port map (
-    a => c,
-    b => d,
+    clk => p28,
     i => p17,
     q2 => t2,
     q3 => p24,
