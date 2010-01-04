@@ -19,8 +19,7 @@ use work.sigs.all;
 
 entity czslice is
     port (
-      a : in  logicsig;
-      b : in  logicsig;
+      clk : in  logicsig;
       d : in  logicsig;
       i : in  logicsig;
       i2 : in  logicsig := '0';
@@ -48,17 +47,16 @@ architecture gates of czslice is
 
   end component;
 
-  component rsflop
+  component latch
     port (
-      r : in  logicsig;
-      s : in  logicsig;
+      clk : in  logicsig;
+      d : in  logicsig;
       q : out logicsig;
       qb : out logicsig);
 
   end component;
 
   signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
@@ -70,16 +68,10 @@ begin -- gates
 
   q1 <= t1;
 
-  u2 : g2 port map (
-    a => t1,
-    b => a,
-    y => t2);
-
-
-  u3 : rsflop port map (
-    r => b,
-    s => t2,
-    q => t3);
+  u3 : latch port map (
+    clk => clk,
+    d   => t1,
+    q   => t3);
 
   q2 <= t3;
   tp <= t3;
@@ -132,9 +124,8 @@ end cz;
 architecture gates of cz is
   component czslice
     port (
-      a : in  logicsig;
-      b : in  logicsig;
-      d : in  logicsig;
+      clk : in  logicsig;
+      d : in logicsig;
       i : in  logicsig;
       i2 : in  logicsig;
       tp : out logicsig;
@@ -169,17 +160,15 @@ architecture gates of cz is
 
   end component;
 
-  component rsflop
+  component latch
     port (
-      r : in  logicsig;
-      s : in  logicsig;
+      clk : in  logicsig;
+      d : in  logicsig;
       q : out logicsig;
       qb : out logicsig);
 
   end component;
 
-  signal a : logicsig;
-  signal b : logicsig;
   signal c : logicsig;
   signal d : logicsig;
   signal t1 : logicsig;
@@ -188,13 +177,11 @@ architecture gates of cz is
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t7 : logicsig;
   signal t8 : logicsig;
 
 begin -- gates
   u1 : czslice port map (
-    a => a,
-    b => b,
+    clk => p18,
     i => p26,
     i2 => t1,
     q1 => p28,
@@ -204,8 +191,7 @@ begin -- gates
 
 
   u2 : czslice port map (
-    a => a,
-    b => b,
+    clk => p18,
     d => d,
     i => p22,
     i2 => t2,
@@ -223,8 +209,7 @@ begin -- gates
 
 
   u4 : czslice port map (
-    a => a,
-    b => b,
+    clk => p18,
     d => d,
     i => p20,
     i2 => t4,
@@ -242,8 +227,7 @@ begin -- gates
 
 
   u6 : czslice port map (
-    a => a,
-    b => b,
+    clk => p18,
     d => d,
     i => p3,
     q1 => p1,
@@ -259,27 +243,15 @@ begin -- gates
     y => t4);
 
 
-  u8 : g2 port map (
-    a => p19,
-    b => a,
-    y => t7);
-
-
-  u9 : rsflop port map (
-    r => b,
-    s => t7,
+  u9 : latch port map (
+    clk => p18,
+    d => p19,
     q => t8);
 
 
   u10 : inv port map (
     a => t8,
     y => c);
-
-
-  u11 : inv2 port map (
-    a => p18,
-    y => b,
-    y2 => a);
 
 
 
