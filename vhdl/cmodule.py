@@ -431,8 +431,11 @@ class cmod (ElementType):
         elname = self.nextelement ()
         print "element %s" % elname
         e = self.elements[elname] = ElementInstance (elname, eltype)
-        e.promptports (self)
-
+        try:
+            e.promptports (self)
+        except EOFError:
+            del self.elements[elname]
+            
     def findsignal (self, name, opt = False):
         """Find a currently defined signal, or create a new one
         """
@@ -618,7 +621,7 @@ end gates;
        "\n".join (gates),
        assigns)
 
-    def write (self, writedep = True):
+    def write (self, writedep = False):
         """Write module definition to a file.  Writedep says whether to
         write a .d file (dependencies file).
         """
