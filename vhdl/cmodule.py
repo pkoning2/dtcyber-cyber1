@@ -416,11 +416,19 @@ class cmod (ElementType):
         self.elements = { }
         self.signals = { }
 
+    def nextelement (self):
+        n = len (self.elements) + 1
+        while True:
+            elname = "u%d" % n
+            if elname not in self.elements:
+                return elname
+            n += 1
+            
     def addelement (self, eltype):
         if eltype not in elements or eltype == self.name:
             print "No such element"
             return
-        elname = "u%d" % (len (self.elements) + 1)
+        elname = self.nextelement ()
         print "element %s" % elname
         e = self.elements[elname] = ElementInstance (elname, eltype)
         e.promptports (self)
