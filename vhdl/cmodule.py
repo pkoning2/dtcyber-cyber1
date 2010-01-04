@@ -358,11 +358,11 @@ class ElementInstance (object):
         """
         print "inputs:"
         for p in self.eltype.reqinputs ():
-            pto = raw_input ("%s: " % p)
+            pto = getport (p)
             self.addportmap (parent, p, pto)
         print "outputs:"
         for p in self.eltype.outputs ():
-            pto = raw_input ("%s: " % p)
+            pto = getport (p)
             if pto:
                 self.addportmap (parent, p, pto)
         prompt_optin = True
@@ -372,7 +372,7 @@ class ElementInstance (object):
                 if not opt.lower ().startswith ("y"):
                     break
             prompt_optin = False
-            pto = raw_input ("%s: " % p)
+            pto = getport (p)
             if pto:
                 self.addportmap (parent, p, pto)
 
@@ -706,8 +706,15 @@ def readmodule (modname, allports = False):
     if e is None:
         print "No module found in %s.vhd" % modname
     return e
- 
 
+def getport (p):
+    while True:
+        pto = raw_input ("%s: " % p)
+        if "=" in pto or pto in elements:
+            print "Invalid port", pto
+        else:
+            return pto
+        
 def stdelements ():
     f = open ("cyberdefs.vhd", "r")
     # Read the file, stripping comments
