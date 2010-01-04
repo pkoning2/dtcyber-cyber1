@@ -143,7 +143,6 @@ architecture gates of iz is
 
   end component;
 
-  signal  : logicsig;
   signal a : logicsig;
 
 begin -- gates

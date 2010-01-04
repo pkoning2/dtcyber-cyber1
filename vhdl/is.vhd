@@ -17,7 +17,7 @@
 
 use work.sigs.all;
 
-entity is is
+entity mod_is is
     port (
       p4 : in  logicsig;
       p6 : in  logicsig;
@@ -52,8 +52,8 @@ entity is is
       p27 : out logicsig;
       p28 : out logicsig);
 
-end is;
-architecture gates of is is
+end mod_is;
+architecture gates of mod_is is
   component g2
     port (
       a : in  logicsig;

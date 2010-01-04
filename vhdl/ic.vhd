@@ -84,14 +84,6 @@ architecture gates of ic is
 
   end component;
 
-  component inv2
-    port (
-      a : in  logicsig;
-      y : out logicsig;
-      y2 : out logicsig);
-
-  end component;
-
   component rsflop
     port (
       r : in  logicsig;

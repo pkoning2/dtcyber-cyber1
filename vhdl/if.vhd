@@ -17,7 +17,7 @@
 
 use work.sigs.all;
 
-entity if is
+entity mod_if is
     port (
       p6 : in  logicsig;
       p7 : in  logicsig;
@@ -47,8 +47,8 @@ entity if is
       p25 : out logicsig;
       p27 : out logicsig);
 
-end if;
-architecture gates of if is
+end mod_if;
+architecture gates of mod_if is
   component g2
     port (
       a : in  logicsig;

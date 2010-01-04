@@ -26,7 +26,7 @@ entity il is
       p5 : in  logicsig;
       p7 : in  logicsig;
       p9 : in  logicsig;
-      p11 : in  logicsig;
+      p10 : in  logicsig;
       p13 : in  logicsig;
       p18 : in  logicsig;
       p19 : in  coaxsig;
@@ -43,7 +43,7 @@ entity il is
       tp6 : out logicsig;
       p6 : out logicsig;
       p8 : out logicsig;
-      p10 : out logicsig;
+      p11 : out logicsig;
       p12 : out logicsig;
       p17 : out logicsig;
       p22 : out logicsig;

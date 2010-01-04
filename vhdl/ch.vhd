@@ -68,7 +68,6 @@ architecture gates of ch is
 
   end component;
 
-  signal  : logicsig;
   signal a : logicsig;
   signal c : logicsig;
   signal t1 : logicsig;
