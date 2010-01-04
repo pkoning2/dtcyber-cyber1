@@ -9,6 +9,7 @@ import readline
 import re
 import sys
 import time
+import os
 
 def completions (c = None):
     global _completions
@@ -410,7 +411,15 @@ class ElementInstance (object):
 class cmod (ElementType):
     """A Cyber module or element of a module
     """
-    def __init__ (self, name):
+    def __init__ (self, name = None):
+        if not name:
+            name = raw_input ("Module name: ")
+            try:
+                os.stat (name + ".vhd")
+                print "%s.vhd already exists"
+                raise OSError
+            except OSError:
+                pass
         ElementType.__init__ (self, name)
         self.name = name
         self.elements = { }
@@ -434,6 +443,7 @@ class cmod (ElementType):
         try:
             e.promptports (self)
         except EOFError:
+            print
             del self.elements[elname]
             
     def findsignal (self, name, opt = False):
