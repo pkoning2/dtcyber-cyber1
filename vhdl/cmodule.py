@@ -583,7 +583,7 @@ class cmod (ElementType):
                                         try:
                                             s.addsource (src.parent.portmap[s2])
                                         except KeyError:
-                                            print "Missing input", s2, "for", src
+                                            print self.name, "Missing input", s2, "for", src
                     for src in list (s.sources ()):
                         if self.isinternal (src) or isinstance (src, PinInstance):
                             s.delsource (src)
