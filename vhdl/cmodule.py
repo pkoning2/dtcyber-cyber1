@@ -238,8 +238,9 @@ class Signal (hitem):
         self.addsource (source)
 
     def addsource (self, source):
-        self._sources.add (source)
-        self.sources ()
+        if not isinstance (source, ConstSignal):
+            self._sources.add (source)
+            self.sources ()
         
     def delsource (self, source):
         self._sources.discard (source)
