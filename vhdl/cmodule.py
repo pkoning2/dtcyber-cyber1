@@ -11,6 +11,8 @@ import sys
 import time
 import os
 
+vhdl_keywords = ("if", "in", "is", "to")
+
 def completions (c = None):
     global _completions
     if c:
@@ -421,6 +423,8 @@ class cmod (ElementType):
                 raise OSError
             except OSError:
                 pass
+        if name in vhdl_keywords:
+            name = "mod_" + name
         ElementType.__init__ (self, name)
         self.name = name
         self.elements = { }
