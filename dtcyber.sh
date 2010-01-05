@@ -2,11 +2,16 @@
 
 # first start dtcyber
 HOSTNAME=$(hostname)
+HOST2=${HOSTNAME%.*}
+HOST2=${HOST2##*.}
+
 if [ "${HOSTNAME}" = "monster" ]; then 
 	HOSTNAME="cyber1"
 elif [ "${HOSTNAME}" = "pkoning-laptop" ]; then 
 	HOSTNAME="pkoning"
 elif [ "${HOSTNAME}" = "paul-konings-macbook-pro.local" ]; then 
+	HOSTNAME="pkoning"
+elif [ "${HOST2}" = "equallogic" ]; then 
 	HOSTNAME="pkoning"
 fi
 export HOSTNAME
