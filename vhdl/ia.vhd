@@ -17,7 +17,7 @@
 
 use work.sigs.all;
 
-entity IA is
+entity ia is
     port (
       p2 : in  logicsig;
       p4 : in  logicsig;
@@ -51,8 +51,8 @@ entity IA is
       p19 : out logicsig;
       p20 : out logicsig);
 
-end IA;
-architecture gates of IA is
+end ia;
+architecture gates of ia is
   component g2
     port (
       a : in  logicsig;
