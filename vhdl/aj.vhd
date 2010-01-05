@@ -74,16 +74,12 @@ architecture gates of aj is
 
   end component;
 
-  component r4s4flop
+  component latch22
     port (
-      r : in  logicsig;
-      r2 : in  logicsig;
-      r3 : in  logicsig;
-      r4 : in  logicsig;
-      s : in  logicsig;
-      s2 : in  logicsig;
-      s3 : in  logicsig;
-      s4 : in  logicsig;
+      clk : in  logicsig;
+      clk2 : in  logicsig;
+      d : in  logicsig;
+      d2 : in  logicsig;
       q : out logicsig;
       qb : out logicsig);
 
@@ -101,52 +97,25 @@ architecture gates of aj is
 
   signal a : logicsig;
   signal b : logicsig;
-  signal c : logicsig;
-  signal d : logicsig;
-  signal e : logicsig;
-  signal f : logicsig;
-  signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
   signal t4 : logicsig;
-  signal x : logicsig;
-  signal y : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
   signal t11 : logicsig;
   signal t12 : logicsig;
-  signal t13 : logicsig;
 
 begin -- gates
-  u1 : g2 port map (
-    a => a,
-    b => d,
-    y => t1);
-
-  tp2 <= a;
-
   u2 : g2 port map (
     a => p1,
     b => p3,
     y => t2);
 
-
-  u3 : g2 port map (
-    a => f,
-    b => t2,
-    y => t3);
-
-
-  u4 : r4s4flop port map (
-    r => e,
-    r2 => c,
-    r3 => '1',
-    r4 => '1',
-    s => t1,
-    s2 => t3,
-    s3 => '1',
-    s4 => '1',
-    q => t4);
+  u3 : latch22 port map (
+    clk  => p7,
+    clk2 => p22,
+    d    => a,
+    d2   => t2,
+    q    => t4);
 
   p4 <= t4;
   tp1 <= t4;
@@ -157,40 +126,29 @@ begin -- gates
     y => p6);
 
 
-  u6 : g2 port map (
-    a => b,
-    b => d,
-    y => x);
-
-  tp5 <= b;
-
   u7 : g2 port map (
     a => p28,
     b => p26,
-    y => y);
-
-
-  u8 : g2 port map (
-    a => f,
-    b => y,
     y => t7);
 
 
-  u9 : r4s4flop port map (
-    r => c,
-    r2 => e,
-    r3 => '1',
-    r4 => '1',
-    s => x,
-    s2 => t7,
-    s3 => '1',
-    s4 => '1',
-    q => t8,
-    qb => p23);
+  u8 : latch22 port map (
+    clk  => p7,
+    clk2 => p22,
+    d    => b,
+    d2   => t7,
+    q    => t8,
+    qb   => p23);
 
+  p14 <= t8;
   p21 <= t8;
   tp6 <= t8;
 
+  u9 : inv port map (
+    a => t8,
+    y => p5);
+
+  
   u10 : g2 port map (
     a => p24,
     b => t8,
@@ -202,6 +160,8 @@ begin -- gates
     s => p11,
     s2 => p9,
     q => a);
+
+  tp2 <= a;
 
 
   u13 : inv2 port map (
@@ -220,34 +180,8 @@ begin -- gates
     s2 => p18,
     q => b);
 
+  tp5 <= b;
 
-  u15 : inv2 port map (
-    a => p7,
-    y => c,
-    y2 => d);
-
-
-  u16 : inv2 port map (
-    a => p22,
-    y => e,
-    y2 => f);
-
-  u17 : r4s4flop port map (
-    r  => c,
-    r2 => e,
-    r3 => '1',
-    r4 => '1',
-    s  => x,
-    s2 => y,
-    s3 => '1',
-    s4 => '1',
-    q  => t13);
-
-  p14 <= t13;
-
-  u18 : inv port map (
-    a => t13,
-    y => p5);
 
 end gates;
 

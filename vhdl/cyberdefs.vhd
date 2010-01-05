@@ -491,10 +491,39 @@ end beh;
 
 
 use work.sigs.all;
+entity latch22 is
+  
+  port (
+    d, clk, d2, clk2 : in  logicsig;         -- data (set), clocks
+    q, qb  : out logicsig);                  -- q and q.bar
+
+end latch22;
+
+architecture beh of latch22 is
+  signal clki, clki2 : logicsig;
+begin  -- beh
+  clki <= clk after t * 2;
+  clki2 <= clk2 after t * 2;
+  latch: process (clki, clki2, d, d2)
+    variable qi : logicsig;
+  begin  -- process level sensitive latch
+    if clki = '1' then  -- clock (enable) asserted
+      qi := d;
+    end if;
+    if clki2 = '1' then  -- clock 2 (enable) asserted
+      qi := d2;
+    end if;
+    q <= qi after t;
+    qb <= not (qi) after t;
+  end process latch;
+end beh;
+
+
+use work.sigs.all;
 entity latchd4 is
   
   port (
-    d, d2, e, e2, clk : in  logicsig;                   -- data (set), clock
+    d, d2, e, e2, clk : in  logicsig;        -- data (set), clock
     q, qb  : out logicsig);                  -- q and q.bar
 
 end latchd4;
