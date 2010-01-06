@@ -13,6 +13,12 @@ import os
 
 vhdl_keywords = ("if", "in", "is", "to")
 
+def modname (name):
+    if name in vhdl_keywords:
+        return "mod_" + name
+    else:
+        return name
+    
 def completions (c = None):
     global _completions
     if c:
@@ -292,7 +298,7 @@ class ElementInstance (object):
     """
     def __init__ (self, name, elname):
         self.name = name
-        self.eltype = elements[elname]
+        self.eltype = elements[modname (elname)]
         self.portmap = { }
         self.iportmap = { }
         self.genericmap = { }
@@ -423,10 +429,8 @@ class cmod (ElementType):
                 raise OSError
             except OSError:
                 pass
-        if name in vhdl_keywords:
-            name = "mod_" + name
-            self.ismodule = True
-        elif name.startswith ("mod_") and len (name) == 6:
+        name = modname (name)
+        if name.startswith ("mod_") and len (name) == 6:
             self.ismodule = True
         else:
             self.ismodule = (len (name) == 2)
