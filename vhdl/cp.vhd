@@ -11,13 +11,13 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- IP module
+-- CP module
 --
 -------------------------------------------------------------------------------
 
 use work.sigs.all;
 
-entity ip is
+entity cp is
     port (
       p3 : in  logicsig;
       p4 : in  logicsig;
@@ -54,8 +54,8 @@ entity ip is
       p27 : out logicsig;
       p28 : out logicsig);
 
-end ip;
-architecture gates of ip is
+end cp;
+architecture gates of cp is
   component g2
     port (
       a : in  logicsig;
