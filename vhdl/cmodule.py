@@ -425,6 +425,11 @@ class cmod (ElementType):
                 pass
         if name in vhdl_keywords:
             name = "mod_" + name
+            self.ismodule = True
+        elif name.startswith ("mod_") and len (name) == 6:
+            self.ismodule = True
+        else:
+            self.ismodule = (len (name) == 2)
         ElementType.__init__ (self, name)
         self.name = name
         self.elements = { }
@@ -540,7 +545,7 @@ class cmod (ElementType):
         otherwise.
         """
         pin = str (pin)
-        if len (self.name) == 2:
+        if self.ismodule:
             # Module: if it's not a pin and not a testpoint, it's a temp
             return not _re_pinname.match (pin) and \
                    not pin.startswith ("tp")
@@ -589,7 +594,11 @@ class cmod (ElementType):
                             s.delsource (src)
                     srcpins = set ()
                     for src in s.sources ():
-                        srcpins.add (self.pins[src])
+                        try:
+                            srcpins.add (self.pins[src])
+                        except KeyError:
+                            print "key error", src, "not in pins for", self.name
+                            raise
                     p._sources = frozenset (srcpins)
                         
     def printmodule (self):
@@ -677,6 +686,7 @@ def readmodule (modname, allports = False):
     level module object
     """
     f = open ("%s.vhd" % modname, "r")
+    #print "reading module", modname
     # Read the file, stripping comments
     mtext = _re_comment.sub ("", f.read ())
     f.close ()
