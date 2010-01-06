@@ -182,6 +182,7 @@ architecture gates of cz is
 begin -- gates
   u1 : czslice port map (
     clk => p18,
+    d => '1',
     i => p26,
     i2 => t1,
     q1 => p28,
