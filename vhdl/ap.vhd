@@ -43,6 +43,7 @@ entity ap is
       p12 : out logicsig;
       p14 : out logicsig;
       p17 : out logicsig;
+      p18 : out logicsig;
       p19 : out logicsig;
       p21 : out logicsig;
       p23 : out logicsig;
@@ -239,7 +240,8 @@ begin -- gates
 
   p21 <= t5;
   tp4 <= t6;
-
+  p18 <= t6;
+  
   u17 : g3 port map (
     a => g,
     b => j,
