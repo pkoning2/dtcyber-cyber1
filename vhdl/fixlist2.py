@@ -65,8 +65,84 @@ class Pin (object):
         self.connto = topin
 
     
-mod = re.compile ("([A-Z]*)[ \t]+(\d\d?)([A-R])(\d+)$")
-_re_wline = re.compile ("^(\\d+)(?:$|\t+(\\w+)\t+(\\w+)(:?\t(\\d+))?)?")
+_re_mod = re.compile ("([A-Z]*)[ \t]+(\d\d?)([A-R])(\d+)$")
+_re_pin = re.compile ("^(\\d+)")
+_re_wline = re.compile ("^(\\d+)(?:\t+(\\w+)\t+(\\w+)(:?\t(\\w+))?)?\s*$")
+_re_checkline = re.compile ("^(\\d+)(?:\t+(GOOD|GRD|GND|[A-RW]\\d+)\t+(X|\\d+)(:?\t(\\d+))?)?$")
+
+def interact (changepin, curpin, newin):
+    which = ""
+    ln = changepin.linenum
+    if newin:
+        newrow, newcol, newpin = newin
+        newmod = "%s%02d" % (newrow, newcol)
+        newmod = modules[newmod]
+        newpin = newmod.pin (newpin)
+        m3 = _re_wline.match (t[newpin.linenum])
+    else:
+        m3 = None
+    if changepin != curpin:
+        which = "other: "
+        m2 = _re_wline.match (t[curpin.linenum])
+        m = _re_wline.match (t[ln])
+        newlen = (m and m.group (4)) or m2.group (4) or \
+                 (m3 and m3.group (4)) or ""
+    else:
+        m = _re_wline.match (t[ln])
+        newlen = (m and m.group (4)) or \
+                 (m3 and m3.group (4)) or ""                 
+    while True:
+        repl = raw_input ("%s%s: " % (which, t[ln])).upper ()
+        if repl:
+            if repl == "R":
+                if not newin:
+                    print "No replacement available"
+                    continue
+                newrow, newcol, newpin = newin
+                repl = "%d\t%s%02d\t%d%s" % (changepin.num, newrow, newcol, newpin, newlen)
+                print repl
+                n = _re_checkline.match (repl)
+                if not n:
+                    print "???invalid format"
+                    continue
+            elif not repl[0].isdigit ():
+                repl = "%d\t%s" % (changepin.num, repl)
+            repl = repl.strip ()
+            n = _re_checkline.match (repl)
+            if not n:
+                print "invalid format", repl
+                continue
+        break
+    t[ln] = repl
+    # Now update the connection
+    if changepin.connto:
+        torow, tocol, topin = changepin.connto
+        tomod = "%s%02d" % (torow, tocol)
+        tomod = modules[tomod]
+        topin = tomod.pin (topin)
+    else:
+        topin = None
+    if not n.group (2) or n.group (2).startswith ("W") or \
+           n.group (3) == "X":
+        newpin = None
+    else:
+        try:
+            newmod = modules[n.group (2)]
+            newpin = newmod.pin (int (n.group (3)))
+        except KeyError:
+            newpin = None
+    if topin:
+        # We were connected to a pin.  Remove this pin from its
+        # connections set
+        topin.conns.discard (changepin.pinid ())
+    if newpin:
+        changepin.connto = newpin.pinid ()
+        newpin.conns.add (changepin.pinid ())
+    else:
+        changepin.connto = None
+    # Delete any error messages since we replaced the line
+    changepin.errmsg = None
+    
 
 row = "A"
 col = 0
@@ -77,7 +153,7 @@ try:
         if t[line].startswith ("#"):
             line += 1
             continue
-        m1 = mod.match (t[line].upper ())
+        m1 = _re_mod.match (t[line].upper ())
         if m1:
             modname = normslot (m1.group (3) + m1.group (4))
         else:
@@ -95,15 +171,19 @@ try:
                 print "Unexpected EOF in", modname, i
                 sys.exit (1)
             #print t[line]
+            pm = _re_pin.match (t[line])
             m = _re_wline.match (t[line].upper ())
             line += 1
             try:
-                pnum = int (m.group (1))
+                pnum = int (pm.group (1))
             except:
                 curpin.seterr ("bad pin number")
                 continue
             if pnum != i:
                 curpin.seterr ("pin out of sequence")
+                continue
+            if not m:
+                curpin.seterr ("invalid line")
                 continue
             if m.group (2) is None:
                 # Unused pin, carry on
@@ -116,6 +196,11 @@ try:
                    m.group (2) == modname:
                     # Grounded input, ignore
                     continue
+            if m.group (4):
+                try:
+                    int (m.group (4))
+                except:
+                    curpin.seterr ("bad length")
             try:
                 topin = int (m.group (3))
             except:
@@ -157,30 +242,33 @@ try:
     for modname in sorted (modules.keys ()):
         curmod = modules[modname]
         for curpin in curmod.pins:
-            doreplace = False
-            if curpin.connto:
+            if curpin.errmsg:
+                doreplace = False
+                newin = None
                 myset = set ((curpin.pinid (),))
-                torow, tocol, topin = curpin.connto
-                tomod = "%s%02d" % (torow, tocol)
-                tomod = modules[tomod]
-                topin = tomod.pin (topin)
-                toset = set ((curpin.connto,))
-                if curpin.conns != toset or topin.conns != myset:
+                if curpin.connto:
+                    torow, tocol, topin = curpin.connto
+                    tomod = "%s%02d" % (torow, tocol)
+                    tomod = modules[tomod]
+                    topin = tomod.pin (topin)
+                    toset = set ((curpin.connto,))
+                else:
+                    toset = set ()
+                    tomod = topin = None
+                if curpin.conns != toset or \
+                       (topin and topin.conns != myset):
                     if curpin.conns != toset:
                         doreplace = interactive
-                        ln = curpin.linenum
+                        changepin = curpin
                         newin = None
-                        if curpin.errmsg:
-                            print "%s: %s: %s," % (modname, t[curpin.linenum], curpin.errmsg),
-                        else:
-                            print "%s: %s:" % (modname, t[curpin.linenum]),
+                        print "%s: %s: %s," % (modname, t[curpin.linenum], curpin.errmsg),
                         if curpin.connto:
                             print "connection mismatch, out %s%d.%d, in" % curpin.connto,
                         else:
                             print "connection mismatch, out None, in",
-                        if not curpin.conns:
+                        if not curpin.conns and topin:
                             print "None",
-                            ln = topin.linenum
+                            changepin = topin
                             newin = curpin.pinid ()
                         for inconn in sorted (list (curpin.conns)):
                             newin = inconn
@@ -197,29 +285,56 @@ try:
                         for inconn in sorted (list (topin.conns)):
                             print "%s%d.%d" % inconn,
                         print
-            elif curpin.errmsg:
-                doreplace = interactive
-                ln = curpin.linenum
-                print "%s: %s: %s" % (modname, t[curpin.linenum], curpin.errmsg)
-            if doreplace:
-                which = ""
-                if ln != curpin.linenum:
-                    which = "other: "
-                    m2 = _re_wline.match (t[curpin.linenum])
-                    m = _re_wline.match (t[ln])
-                    newlen = m.group (4) or m2.group (4) or ""
                 else:
-                    m = _re_wline.match (t[ln])
-                    newlen = m.group (4) or ""
-                repl = raw_input ("%s%s: " % (which, t[ln])).upper ()
-                if repl:
-                    if repl == "R" and newin:
-                        newrow, newcol, newpin = newin
-                        repl = "%s\t%s%02d\t%d%s" % (m.group (1), newrow, newcol, newpin, newlen)
-                        print repl
-                    elif not repl[0].isdigit ():
-                        repl = "%s\t%s" % (m.group (1), repl)
-                    t[ln] = repl
+                    doreplace = interactive
+                    changepin = curpin
+                    print "%s: %s: %s" % (modname, t[curpin.linenum], curpin.errmsg)
+                if doreplace:
+                    interact (changepin, curpin, newin)
+    for modname in sorted (modules.keys ()):
+        curmod = modules[modname]
+        for curpin in curmod.pins:
+            doreplace = False
+            newin = None
+            if curpin.connto:
+                myset = set ((curpin.pinid (),))
+                torow, tocol, topin = curpin.connto
+                tomod = "%s%02d" % (torow, tocol)
+                tomod = modules[tomod]
+                topin = tomod.pin (topin)
+                toset = set ((curpin.connto,))
+                if curpin.conns != toset or topin.conns != myset:
+                    if curpin.conns != toset:
+                        doreplace = interactive
+                        changepin = curpin
+                        newin = None
+                        print "%s: %s:" % (modname, t[curpin.linenum]),
+                        if curpin.connto:
+                            print "connection mismatch, out %s%d.%d, in" % curpin.connto,
+                        else:
+                            print "connection mismatch, out None, in",
+                        if not curpin.conns:
+                            print "None",
+                            changepin = topin
+                            newin = curpin.pinid ()
+                        for inconn in sorted (list (curpin.conns)):
+                            newin = inconn
+                            print "%s%d.%d" % inconn,
+                        print
+                    else:
+                        print "%s: %s:" % (modname, t[curpin.linenum]),
+                        if topin.connto:
+                            print "other connection mismatch, out %s%d.%d, in" % topin.connto,
+                        else:
+                            print "other connection mismatch, out None, in",
+                        if not topin.conns:
+                            print "None",
+                        for inconn in sorted (list (topin.conns)):
+                            print "%s%d.%d" % inconn,
+                        print
+            if doreplace:
+                interact (changepin, curpin, newin)
+
 except:
     f = open ("chassis%s.new" % chnum, "w")
     f.write ("\n".join (t))
