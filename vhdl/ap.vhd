@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -19,6 +19,7 @@ use work.sigs.all;
 
 entity ap is
     port (
+      p3 : in  logicsig;
       p11 : in  logicsig;
       p13 : in  logicsig;
       p15 : in  logicsig;
@@ -32,6 +33,7 @@ entity ap is
       tp6 : out logicsig;
       p1 : out logicsig;
       p2 : out logicsig;
+      p4 : out logicsig;
       p5 : out logicsig;
       p6 : out logicsig;
       p7 : out logicsig;
@@ -123,6 +125,7 @@ begin -- gates
     y => p2,
     y2 => p1);
 
+  p4 <= a;
   p9 <= e;
 
   u2 : inv2 port map (
@@ -267,6 +270,12 @@ begin -- gates
 
   p19 <= t10;
   tp6 <= t10;
+
+  u21 : inv2 port map (
+    a => p3,
+    y => a,
+    y2 => b);
+
 
 
 end gates;
