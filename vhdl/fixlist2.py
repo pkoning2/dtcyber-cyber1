@@ -93,25 +93,26 @@ def interact (changepin, curpin, newin):
                  (m3 and m3.group (4)) or ""                 
     while True:
         repl = raw_input ("%s%s: " % (which, t[ln])).upper ()
-        if repl:
-            if repl == "R":
-                if not newin:
-                    print "No replacement available"
-                    continue
-                newrow, newcol, newpin = newin
-                repl = "%d\t%s%02d\t%d%s" % (changepin.num, newrow, newcol, newpin, newlen)
-                print repl
-                n = _re_checkline.match (repl)
-                if not n:
-                    print "???invalid format"
-                    continue
-            elif not repl[0].isdigit ():
-                repl = "%d\t%s" % (changepin.num, repl)
-            repl = repl.strip ()
+        if not repl:
+            return
+        if repl == "R":
+            if not newin:
+                print "No replacement available"
+                continue
+            newrow, newcol, newpin = newin
+            repl = "%d\t%s%02d\t%d%s" % (changepin.num, newrow, newcol, newpin, newlen)
+            print repl
             n = _re_checkline.match (repl)
             if not n:
-                print "invalid format", repl
+                print "???invalid format"
                 continue
+        elif not repl[0].isdigit ():
+            repl = "%d\t%s" % (changepin.num, repl)
+        repl = repl.strip ()
+        n = _re_checkline.match (repl)
+        if not n:
+            print "invalid format", repl
+            continue
         break
     t[ln] = repl
     # Now update the connection
