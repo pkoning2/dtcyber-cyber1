@@ -673,6 +673,8 @@ end gates;
             df = file ("%s.d" % self.name, "w")
             print >> df, "%s.o: %s.vhd" % (self.name, self.name),
             for dep in sorted (deps):
+                if dep.startswith ("mod_"):
+                    dep = dep[4:]
                 print >> df, "%s.o" % dep,
             print >> df
             df.close ()
