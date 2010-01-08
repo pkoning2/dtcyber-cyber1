@@ -106,7 +106,6 @@ architecture gates of tm is
   signal r : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
@@ -182,9 +181,11 @@ begin -- gates
   u11 : g2 port map (
     a => a,
     b => b,
-    y => t3,
+    y => c,
     y2 => t4);
 
+  p1 <= t4;
+  p3 <= t4;
   p20 <= t4;
   p22 <= t4;
   tp3 <= t4;
@@ -197,7 +198,7 @@ begin -- gates
 
   u13 : latchd2 port map (
     clk => p24,
-    d => t3,
+    d => c,
     d2 => t5,
     q => t6);
 
