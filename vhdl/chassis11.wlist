@@ -3,9 +3,9 @@
 # Copyright (C) 2008 by Paul Koning
 #
 DTSYNCHRO(0)	11A1
-1	W13	out
-2	W13	in
-3	W14	in
+1	W30	out
+2	W30	in
+3	W31	in
 4
 5
 6
@@ -31,12 +31,10 @@ DTSYNCHRO(0)	11A1
 26
 27
 28
-29
-30
 DTSYNCHRO(8)	11A2
-1	W29	out
-2	W29	in
-3	W30	in
+1	W40	out
+2	W40	in
+3	W41	in
 4
 5
 6
@@ -62,5 +60,28 @@ DTSYNCHRO(8)	11A2
 26
 27
 28
-29
-30
+CPMEM	11A3
+1	W1	in
+2	W2	in
+3	W3	in
+4	W4	in
+5	W5	in
+6	W6	in
+7	W7	out
+8	W8	out
+9	W9	out
+10	W10	out
+11	W11	out
+12	W12	out
+13	W13	out
+14	W14	out
+15	W15	out
+16	W16	out
+17	W17	out
+18	W18	out
+19	W19	out
+20	W10	out
+21	W21	out
+22	W22	out
+23	W23	out
+24	W2	out
