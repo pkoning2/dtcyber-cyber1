@@ -45,6 +45,9 @@ entity il is
       p8 : out logicsig;
       p11 : out logicsig;
       p12 : out logicsig;
+      p14 : out logicsig;
+      p15 : out logicsig;
+      p16 : out logicsig;
       p17 : out logicsig;
       p22 : out logicsig;
       p24 : out logicsig);
@@ -125,20 +128,23 @@ begin -- gates
     s => a,
     q => t3);
 
+  p8 <= t3;
+  tp1 <= t3;
 
   u5 : g2 port map (
     a => t3,
     b => p4,
     y => p6);
 
-  p8 <= t3;
-  tp1 <= t3;
 
   u6 : g2 port map (
     a => a,
     b => b,
     y => t4);
 
+  p14 <= t4;
+  p15 <= t4;
+  p16 <= t4;
   tp5 <= t4;
 
   u7 : g2 port map (
