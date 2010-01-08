@@ -109,12 +109,12 @@ entity co is
       p13 : in  logicsig;
       p16 : in  logicsig;
       p17 : in  logicsig;
+      p19 : in  logicsig;
       p20 : in  logicsig;
       p23 : in  logicsig;
       p24 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      p29 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
       tp3 : out logicsig;
@@ -234,7 +234,7 @@ begin -- gates
 
 
   u6 : inv port map (
-    a => p29,
+    a => p19,
     y => t3);
 
 
