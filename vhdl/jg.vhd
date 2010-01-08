@@ -43,7 +43,7 @@ entity jg is
       tp6 : out logicsig;
       p1 : out logicsig;
       p10 : out logicsig;
-      p16 : out logicsig;
+      p17 : out logicsig;
       p28 : out logicsig);
 
 end jg;
@@ -267,7 +267,7 @@ begin -- gates
     c => j,
     y => t16);
 
-  p16 <= t16;
+  p17 <= t16;
   tp5 <= t16;
 
 
