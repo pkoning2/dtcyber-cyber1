@@ -351,7 +351,8 @@ class ElementInstance (object):
         else:
             # Input, can be used multiple times
             if actual.ptype:
-                if actual.ptype != ptype:
+                if actual.ptype != ptype and \
+                       not isinstance (actual, ConstSignal):
                     print "signal type mismatch", self.name, actual, actual.ptype, ptype
             else:
                 actual.ptype = ptype
