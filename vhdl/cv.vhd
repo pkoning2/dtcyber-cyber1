@@ -33,6 +33,7 @@ entity cv is
       p1 : out logicsig;
       p5 : out logicsig;
       p6 : out logicsig;
+      p7 : out logicsig;
       p12 : out logicsig;
       p19 : out logicsig;
       p23 : out logicsig;
@@ -98,7 +99,6 @@ architecture gates of cv is
   signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
-  signal t7 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -213,7 +213,7 @@ begin -- gates
     b => t5,
     c => c,
     d => e,
-    y2 => t7);
+    y2 => p7);
 
 
 
