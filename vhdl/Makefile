@@ -4,9 +4,8 @@ MACHINE := $(shell uname -m)
 MODULE_SRCS = $(wildcard ??.vhd)
 MODULES = clock.o clockh.o mem.o  dtsynchro.o $(MODULE_SRCS:.vhd=.o)
 #CHASSIS_SRCS = $(wildcard chassis*.wlist)
-# omit chassis 2 for now:
 #CHASSIS_SRCS = chassis1.wlist chassis11.wlist chassis12.wlist
-CHASSIS_SRCS = chassis1.wlist chassis11.wlist 
+CHASSIS_SRCS = chassis1.wlist chassis2.wlist chassis5.wlist chassis11.wlist 
 CHASSIS_V = $(CHASSIS_SRCS:.wlist=.vhd)
 CHASSIS_O = $(CHASSIS_SRCS:.wlist=.o)
 CHASSIS_D = $(CHASSIS_SRCS:.wlist=.d)

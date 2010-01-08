@@ -28,11 +28,17 @@ architecture behav of cdc_tb is
   component cdc6600 
   port (
     c_1w37_in : in  tpcable;
+    c_2w15_in : in  tpcable;
+    c_2w16_in : in  tpcable;
+    c_2w17_in : in  tpcable;
     -- clk40 : in logicsig;
     clk1, clk2, clk3, clk4, reset : in logicsig
 );
   end component;
   signal c_1w37_in : tpcable := idletp;  -- Deadstart switches
+  signal c_2w15_in : tpcable := idletp;  -- Deadstart panel
+  signal c_2w16_in : tpcable := idletp;  -- Deadstart panel
+  signal c_2w17_in : tpcable := idletp;  -- Deadstart panel
   signal reset : logicsig := '1';      -- power-up reset
   signal clk1 : logicsig := '1';        -- clock phase 1
   signal clk2, clk3, clk4 : logicsig := '0';  -- clock phase 2-4
@@ -43,6 +49,9 @@ begin
    --  Component instantiation.
    uut : cdc6600 port map (
       c_1w37_in => c_1w37_in,
+      c_2w15_in => c_2w15_in,
+      c_2w16_in => c_2w16_in,
+      c_2w17_in => c_2w17_in,
       -- clk40 => clk40,
       clk1 => clk1,
       clk2 => clk2,
