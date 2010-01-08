@@ -195,7 +195,7 @@ entity cpmem is
     wdata1, wdata2, wdata3, wdata4 : in  coaxsigs;  -- write data trunk cables
     write                          : in  coaxsig;  -- write request
     periph, ecs                    : in  coaxsig;  -- read data routing signals
-    rdctrl                         : out coaxsigs;  -- read data to control
+    rdctrl1, rdctrl2, rdctrl3, rdctrl4 : out coaxsigs;  -- read data to control
     rdecs1, rdecs2, rdecs3, rdecs4 : out coaxsigs;  -- read data to ecs
     rdregl1, rdregl2, rdregl3      : out coaxsigs;  -- read data to lower regs
     rdregu1, rdregu2               : out coaxsigs;  -- read data to upper regs
@@ -228,13 +228,14 @@ architecture beh of cpmem is
   end component;
   type rvec_t is array (0 to 31) of cpword;
   type acc_t is array (0 to 31) of coaxsig;
+  subtype coaxword is coaxbus (59 downto 0);  -- cpword, coax signal type
   signal laddr : coaxsigs;
   signal taddr : ppword;
   signal bank : bankaddr;
-  signal iwdata, lwdata : coaxbus (59 downto 0);
+  signal iwdata, lwdata : coaxword;
   signal twdata : cpword;
   signal trdata : rvec_t;               -- read contributions from banks
-  signal rdata : cpword;                -- merged read data to trunks
+  signal rdata : coaxword;                -- merged read data to trunks
   signal taccept : acc_t;               -- accept contributions from banks
   signal maccept : coaxsig;             -- merged accept
   signal mrdata : cpword;               -- merged read data
@@ -297,7 +298,7 @@ begin  -- beh
     end loop;  -- i
     
     accept <= ttaccept;
-    rdata <= ttrdata;
+    rdata <= coaxword (ttrdata);
   end process trunks;
 
   -- Swizzle the read data for the output trunks
@@ -305,15 +306,49 @@ begin  -- beh
   -- 0..14 W04-90..904, 15..29 W05-90.904
   -- 30..37 W06-900..907, 38..44 W06-90..96, 45..52 W07-900..907,
   -- 53..59 W07-90..96
+  -- ***TODO: need to AND with pp read data output enable
+  rdpp1 (14 downto 0) <= rdata (14 downto 0);
+  rdpp2 (14 downto 0) <= rdata (29 downto 15);
+  rdpp3 (14 downto 0) <= rdata (44 downto 30);
+  rdpp4 (14 downto 0) <= rdata (59 downto 45);
+  
   -- chassis 5 input register (A-E 41,42):
   -- 0..3 W02-904..907, 4 W02-900 5..14 W02-90..99
   -- 15..18 W01-904..907, 19 W01-900, 20..29 W01-90..99
   -- 30..37 W04-900..907, 38..44 W04-90..90, 
   -- 45..52 W03-900..907, 53..59 W03-90..96, 
+  rdctrl1 (17 downto 14) <= rdata (3 downto 0);
+  rdctrl1 (10) <= rdata (4);
+  rdctrl1 (9 downto 0) <= rdata (14 downto 5);
+  rdctrl2 (17 downto 14) <= rdata (18 downto 15);
+  rdctrl2 (10) <= rdata (19);
+  rdctrl2 (9 downto 0) <= rdata (29 downto 20);
+  rdctrl3 (17 downto 14) <= rdata (33 downto 30);
+  rdctrl3 (10) <= rdata (34);
+  rdctrl3 (9 downto 0) <= rdata (44 downto 35);
+  rdctrl4 (17 downto 14) <= rdata (48 downto 45);
+  rdctrl4 (10) <= rdata (49);
+  rdctrl4 (9 downto 0) <= rdata (59 downto 50);
+
+  -- ECS is done the easy way:
+  rdecs1 (14 downto 0) <= rdata (14 downto 0);
+  rdecs2 (14 downto 0) <= rdata (29 downto 15);
+  rdecs3 (14 downto 0) <= rdata (44 downto 30);
+  rdecs4 (14 downto 0) <= rdata (59 downto 45);
+
   -- chassis 7 entry trunk (A-C 37-42): (register bits 0..35)
   -- 0..7 W05-900..907, 8..14 W05-90..96
   -- 15..22 W06-900..907, 23..29 W06-90..96
   -- 30..35 W07-900..905
+  rdregl1 (17 downto 10) <= rdata (7 downto 0);
+  rdregl1 (6 downto 0) <= rdata (14 downto 8);
+  rdregl2 (17 downto 10) <= rdata (22 downto 15);
+  rdregl2 (6 downto 0) <= rdata (29 downto 23);
+  rdregl3 (15 downto 10) <= rdata (35 downto 30);
+  
   -- chassis 8 memory trunk (A01-08, B01-04): (register bits 36..59)
   -- 36..44 W05-900..908, 45..59 W06-90..904
+  rdregu1 (18 downto 10) <= rdata (44 downto 36);
+  rdregu2 (14 downto 0) <= rdata (59 downto 45);
+  
 end beh;
