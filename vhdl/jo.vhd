@@ -40,6 +40,7 @@ entity jo is
       tp6 : out logicsig;
       p1 : out logicsig;
       p4 : out logicsig;
+      p6 : out logicsig;
       p7 : out logicsig;
       p8 : out logicsig;
       p9 : out logicsig;
@@ -183,6 +184,7 @@ begin -- gates
     a => p5,
     y2 => t9);
 
+  p6 <= t9;
 
   u13 : latch2 port map (
     clk => p15,
