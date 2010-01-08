@@ -32,7 +32,7 @@ package sigs is
   constant tc : time := 25 ns;          -- coax delay (including transistors)
   subtype coaxsigs is coaxbus (18 downto 0);    -- CDC standard coax cable
   constant idlecoax : coaxsigs := (others => '0');
-  subtype tpcable is logicbus (23 downto 0);    -- CDC standard tp cable
+  subtype tpcable is logicbus (47 downto 0);    -- CDC standard tp cable
   constant idletp : tpcable := (others => '0');
   subtype ppword is logicbus (11 downto 0);  -- PPU word (12 bits)
   subtype ppint is integer range 0 to 4095;  -- PPU word, as an integer
