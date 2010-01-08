@@ -5,7 +5,10 @@ import re
 import sys
 
 chnum = str (int (sys.argv[1]))
-interactive = len (sys.argv) > 2
+if len (sys.argv) > 2:
+    interactive = sys.argv[2].upper ()
+else:
+    interactive = None
 
 f = open ("chassis%s.wlist" % chnum,"r")
 t = f.read ()
@@ -290,7 +293,7 @@ try:
                     doreplace = interactive
                     changepin = curpin
                     print "%s: %s: %s" % (modname, t[curpin.linenum], curpin.errmsg)
-                if doreplace:
+                if doreplace and modname[0] >= doreplace:
                     interact (changepin, curpin, newin)
     for modname in sorted (modules.keys ()):
         curmod = modules[modname]
@@ -333,7 +336,7 @@ try:
                         for inconn in sorted (list (topin.conns)):
                             print "%s%d.%d" % inconn,
                         print
-            if doreplace:
+            if doreplace and modname[0] >= doreplace:
                 interact (changepin, curpin, newin)
 
 except:
