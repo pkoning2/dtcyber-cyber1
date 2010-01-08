@@ -33,6 +33,7 @@ entity jv is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
+      p1 : out logicsig;
       p2 : out logicsig;
       p4 : out logicsig;
       p7 : out logicsig;
@@ -215,6 +216,10 @@ begin -- gates
     y => f);
 
 
-
+  u22 : g2 port map (
+    a  => t2,
+    b  => f,
+    y  => p1);
+  
 end gates;
 
