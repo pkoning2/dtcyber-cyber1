@@ -196,9 +196,9 @@ entity qr is
       p7 : in  coaxsig;
       p8 : in  logicsig;
       p10 : in  logicsig;
+      p12 : in  logicsig;
       p14 : in  logicsig;
       p17 : in  logicsig;
-      p21 : in  logicsig;
       p22 : in  logicsig;
       p23 : in  logicsig;
       p24 : in  coaxsig;
@@ -277,7 +277,7 @@ architecture gates of qr is
 
 begin -- gates
   u1 : inv port map (
-    a => p21,
+    a => p12,
     y => a);
 
 
