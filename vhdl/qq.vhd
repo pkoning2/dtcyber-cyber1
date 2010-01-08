@@ -22,6 +22,7 @@ entity qq is
       p1 : in  logicsig;
       p2 : in  logicsig;
       p3 : in  logicsig;
+      p4 : in  logicsig;
       p5 : in  logicsig;
       p7 : in  logicsig;
       p10 : in  logicsig;
@@ -153,7 +154,7 @@ begin -- gates
 
 
   u5 : inv2 port map (
-    a => p5,
+    a => p4,
     y => t6,
     y2 => t7);
 
