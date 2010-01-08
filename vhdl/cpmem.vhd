@@ -334,8 +334,10 @@ begin  -- beh
   -- ***TODO: need to AND with pp read data output enable
   rdpp1 (14 downto 0) <= rdata (14 downto 0);
   rdpp2 (14 downto 0) <= rdata (29 downto 15);
-  rdpp3 (14 downto 0) <= rdata (44 downto 30);
-  rdpp4 (14 downto 0) <= rdata (59 downto 45);
+  rdpp3 (17 downto 10) <= rdata (37 downto 30);
+  rdpp3 (6 downto 0) <= rdata (44 downto 38);
+  rdpp4 (17 downto 10) <= rdata (52 downto 45);
+  rdpp4 (6 downto 0) <= rdata (59 downto 53);
   
   -- chassis 5 input register (A-E 41,42):
   -- 0..3 W02-904..907, 4 W02-900 5..14 W02-90..99
