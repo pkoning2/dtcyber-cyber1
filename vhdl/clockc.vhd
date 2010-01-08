@@ -45,6 +45,6 @@ begin  -- beh
   p21 <= clk3;
   p23 <= clk3;
   p25 <= clk3;
-  p27 <= clk4;
+  p27 <= clk3;
   
 end beh;
