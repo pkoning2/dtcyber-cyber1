@@ -98,13 +98,7 @@ architecture gates of hx is
   component rsflop
     port (
       r : in  logicsig;
-      r2 : in  logicsig := '1';
-      r3 : in  logicsig := '1';
-      r4 : in  logicsig := '1';
       s : in  logicsig;
-      s2 : in  logicsig := '1';
-      s3 : in  logicsig := '1';
-      s4 : in  logicsig := '1';
       q : out logicsig;
       qb : out logicsig);
 
