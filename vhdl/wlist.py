@@ -436,11 +436,17 @@ class Connector (object):
                         if wnum >= 101 and wnum <= 224:
                             w = Tpwire (self.chassis, m.group (2), m.group (3),
                                         dir, ptype)
-                        else:
+                        elif (wnum >= 90 and wnum <= 99) or \
+                             (wnum >= 900 and wnum <= 908):
                             w = Coaxwire (self.chassis, m.group (2), m.group (3),
                                           dir, ptype)
-                        self.chassis.signals[w.cable.name] = w.cable
-                self.addportmap (self.chassis, pname, w)
+                        else:
+                            error ("invalid cable wire number %d" % wnum)
+                            w = None
+                        if w:
+                            self.chassis.signals[w.cable.name] = w.cable
+                if w:
+                    self.addportmap (self.chassis, pname, w)
             else:
                 # Regular slot to slot twisted pair wire
                 if mpin is None:
