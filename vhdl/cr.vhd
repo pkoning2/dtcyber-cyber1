@@ -71,8 +71,8 @@ entity cr is
       p13 : in  logicsig;
       p14 : in  logicsig;
       p15 : in  logicsig;
-      p16 : in  logicsig;
       p17 : in  logicsig;
+      p18 : in  logicsig;
       p22 : in  logicsig;
       p24 : in  logicsig;
       p26 : in  logicsig;
@@ -170,7 +170,7 @@ begin -- gates
 
   u9 : crslice port map (
     a => p15,
-    in1 => p16,
+    in1 => p18,
     tp => tp5,
     y => p27);
 
