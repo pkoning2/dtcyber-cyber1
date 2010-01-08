@@ -94,6 +94,7 @@ entity mq is
       p12 : in  logicsig;
       p13 : in  logicsig;
       p16 : in  logicsig;
+      p17 : in  logicsig;
       p23 : in  logicsig;
       p24 : in  logicsig;
       p28 : in  logicsig;
@@ -109,6 +110,7 @@ entity mq is
       p7 : out logicsig;
       p9 : out logicsig;
       p11 : out logicsig;
+      p15 : out logicsig;
       p20 : out logicsig;
       p21 : out logicsig;
       p22 : out logicsig;
@@ -202,6 +204,9 @@ begin -- gates
     y => c);
 
 
+  u8 : inv port map (
+    a => p17,
+    y => p15);
 
 end gates;
 
