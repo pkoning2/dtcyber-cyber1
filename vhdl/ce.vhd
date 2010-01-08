@@ -46,6 +46,7 @@ entity ce is
       p12 : out logicsig;
       p13 : out logicsig;
       p15 : out logicsig;
+      p16 : out logicsig;
       p17 : out logicsig;
       p19 : out logicsig;
       p26 : out logicsig;
@@ -206,6 +207,7 @@ begin -- gates
     y => t1,
     y2 => p15);
 
+  p16 <= t1;
 
   u17 : g2 port map (
     a => t1,
