@@ -36,6 +36,8 @@ entity tm is
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
+      p1 : out logicsig;
+      p3 : out logicsig;
       p4 : out logicsig;
       p5 : out logicsig;
       p8 : out logicsig;
