@@ -190,17 +190,15 @@ use work.sigs.all;
 entity cpmem is
   
   port (
-    go                             : in  coaxsig;  -- go from stunt box
-    addr                           : in  coaxsigs; -- memory address from stunt box
-    wdata1, wdata2, wdata3, wdata4 : in  coaxsigs;  -- write data trunk cables
-    write                          : in  coaxsig;  -- write request
-    periph, ecs                    : in  coaxsig;  -- read data routing signals
-    rdctrl1, rdctrl2, rdctrl3, rdctrl4 : out coaxsigs;  -- read data to control
-    rdecs1, rdecs2, rdecs3, rdecs4 : out coaxsigs;  -- read data to ecs
-    rdregl1, rdregl2, rdregl3      : out coaxsigs;  -- read data to lower regs
-    rdregu1, rdregu2               : out coaxsigs;  -- read data to upper regs
-    rdpp1, rdpp2, rdpp3, rdpp4     : out coaxsigs;  -- read data to pp pyramid
-    accept                         : out coaxsig;  -- accepts to stunt box
+    p1                 : in coaxsigs;   -- go, write, etc from stunt box
+    p2                 : in coaxsigs;   -- address from stunt box
+    p3, p4, p5, p6     : in coaxsigs;   -- write data trunk
+    p7, p8, p9, p10    : out coaxsigs;  -- read trunk to control
+    p11, p12, p13, p14 : out coaxsigs;  -- read data trunk to ecs
+    p15, p16, p17      : out coaxsigs;  -- read data trunk to lower regs
+    p18, p19           : out coaxsigs;  -- read data trunk to upper regs
+    p20, p21, p22, p23 : out coaxsigs;  -- read data trunk to ppu
+    p24                : out coaxsigs;  -- accept to stunt box
     clk1, clk2, clk3, clk4         : in  logicsig);  -- clocks
 
 end cpmem;
@@ -229,6 +227,33 @@ architecture beh of cpmem is
   type rvec_t is array (0 to 31) of cpword;
   type acc_t is array (0 to 31) of coaxsig;
   subtype coaxword is coaxbus (59 downto 0);  -- cpword, coax signal type
+  alias go : coaxsig is p1(11);         -- go from stunt box
+  alias write : coaxsig is p1(12);      -- write from stunt box
+  alias periph : coaxsig is p1(14);     -- peripheral read from stunt box
+  alias ecs : coaxsig is p1(15);        -- ecs read from stunt box
+  alias addr : coaxsigs is p2;          -- address from stunt box
+  alias wdata1 : coaxsigs is p3;        -- write data trunk
+  alias wdata2 : coaxsigs is p4;
+  alias wdata3 : coaxsigs is p5;
+  alias wdata4 : coaxsigs is p6;
+  alias rdctrl1 : coaxsigs is p7;       -- read data to control
+  alias rdctrl2 : coaxsigs is p8;
+  alias rdctrl3 : coaxsigs is p9;
+  alias rdctrl4 : coaxsigs is p10;
+  alias rdecs1 : coaxsigs is p11;       -- read data to ecs
+  alias rdecs2 : coaxsigs is p12;
+  alias rdecs3 : coaxsigs is p13;
+  alias rdecs4 : coaxsigs is p14;
+  alias rdregl1 : coaxsigs is p15;      -- read data to lower registers
+  alias rdregl2 : coaxsigs is p16;
+  alias rdregl3 : coaxsigs is p17;
+  alias rdregu1 : coaxsigs is p18;      -- read data to upper registers
+  alias rdregu2 : coaxsigs is p19;
+  alias rdpp1 : coaxsigs is p20;        -- read data to pp read pyramid
+  alias rdpp2 : coaxsigs is p21;
+  alias rdpp3 : coaxsigs is p22;
+  alias rdpp4 : coaxsigs is p23;
+  alias accept : coaxsig is p24(9);     -- accept to stunt box
   signal laddr : coaxsigs;
   signal taddr : ppword;
   signal bank : bankaddr;
