@@ -44,6 +44,7 @@ entity jm is
       p16 : out logicsig;
       p17 : out logicsig;
       p18 : out logicsig;
+      p20 : out logicsig;
       p21 : out logicsig;
       p23 : out logicsig;
       p25 : out logicsig;
@@ -135,7 +136,8 @@ begin -- gates
     y => w,
     y2 => t1);
 
-
+  p20 <= w;
+  
   u3 : g2 port map (
     a => e,
     b => t1,
