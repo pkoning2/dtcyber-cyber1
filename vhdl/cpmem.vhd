@@ -124,10 +124,11 @@ begin  -- cmbank
   mem : cmarray generic map (
     bnum => banknum)
    port map (
+    reset  => reset,
     addr   => maddr,
     rdata  => trdata,
     wdata  => twdata,
-    clk    => clk4,
+    clk    => clk2,
     ena    => tena,
     write  => twrite);
 
@@ -135,7 +136,7 @@ begin  -- cmbank
   -- type   : combinational
   -- inputs : seq, go, write
   -- outputs: next_seq, do_write
-  ssc_next: process (seq, write)
+  ssc_next: process (seq, write, go, baddr)
   begin  -- process ssc_next
     -- start with some default outputs
     do_write <= false;
@@ -147,6 +148,7 @@ begin  -- cmbank
           next_seq <= seq;              -- no request for this bank, stay in t0
         end if;
       when 2 =>
+        next_seq <= seq + 1;
         if write = '1' then
           do_write <= true;
         end if;
@@ -157,7 +159,7 @@ begin  -- cmbank
     end case;
   end process ssc_next;
   -- purpose: storage sequence machine
-  -- type   : combinational
+  -- type   : sequential
   -- inputs : clk1, next_seq, do_write
   -- outputs: seq, writereq
   ssc: process (clk1)
@@ -199,6 +201,7 @@ entity cpmem is
     p18, p19           : out coaxsigs;  -- read data trunk to upper regs
     p20, p21, p22, p23 : out coaxsigs;  -- read data trunk to ppu
     p24                : out coaxsigs;  -- accept to stunt box
+    reset  : in  logicsig;              -- power-up reset
     clk1, clk2, clk3, clk4         : in  logicsig);  -- clocks
 
 end cpmem;
@@ -227,10 +230,6 @@ architecture beh of cpmem is
   type rvec_t is array (0 to 31) of cpword;
   type acc_t is array (0 to 31) of coaxsig;
   subtype coaxword is coaxbus (59 downto 0);  -- cpword, coax signal type
-  alias go : coaxsig is p1(11);         -- go from stunt box
-  alias write : coaxsig is p1(12);      -- write from stunt box
-  alias periph : coaxsig is p1(14);     -- peripheral read from stunt box
-  alias ecs : coaxsig is p1(15);        -- ecs read from stunt box
   alias addr : coaxsigs is p2;          -- address from stunt box
   alias wdata1 : coaxsigs is p3;        -- write data trunk
   alias wdata2 : coaxsigs is p4;
@@ -254,7 +253,12 @@ architecture beh of cpmem is
   alias rdpp3 : coaxsigs is p22;
   alias rdpp4 : coaxsigs is p23;
   alias accept : coaxsig is p24(9);     -- accept to stunt box
+  signal lctrl : coaxsigs;              -- Latched control wires
   signal laddr : coaxsigs;
+  alias go : coaxsig is lctrl(11);         -- go from stunt box
+  alias write : coaxsig is lctrl(12);      -- write from stunt box
+  alias periph : coaxsig is lctrl(14);     -- peripheral read from stunt box
+  alias ecs : coaxsig is lctrl(15);        -- ecs read from stunt box
   signal taddr : ppword;
   signal bank : bankaddr;
   signal iwdata, lwdata : coaxword;
@@ -262,13 +266,16 @@ architecture beh of cpmem is
   signal trdata : rvec_t;               -- read contributions from banks
   signal rdata : coaxword;                -- merged read data to trunks
   signal taccept : acc_t;               -- accept contributions from banks
-  signal maccept : coaxsig;             -- merged accept
-  signal mrdata : cpword;               -- merged read data
 begin  -- beh
+  -- Latch the control signals
+  clatch : ireg port map (
+    ibus => p1,
+    clr  => clk2,
+    obus => lctrl);
   -- Latch and unswizzle the address cable (from stunt box, chassis 5 Q34-Q39)
   alatch : ireg port map (
     ibus => addr,
-    clr  => clk4,
+    clr  => clk2,
     obus => laddr);
   -- chassis 4I20
   -- write is w19-902
@@ -284,7 +291,7 @@ begin  -- beh
             wdata2 (14 downto 0) & wdata1 (14 downto 0);
   wlatch : ireg port map (
     ibus => iwdata,
-    clr  => clk4,
+    clr  => clk2,
     obus => lwdata);
   twdata <= cpword (lwdata);
   
@@ -301,7 +308,7 @@ begin  -- beh
         clk2   => clk2,
         clk3   => clk3,
         clk4   => clk4,
---        reset  => reset,
+        reset  => reset,
         write  => write,
         wdata  => twdata,
         rdata  => trdata(b),
