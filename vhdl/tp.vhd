@@ -65,6 +65,13 @@ architecture gates of tp is
 
   end component;
 
+  component inv
+    port (
+      a : in  logicsig;
+      y : out logicsig);
+
+  end component;
+
   component inv2
     port (
       a : in  logicsig;
@@ -122,7 +129,7 @@ begin -- gates
     y => tp4,
     y2 => t3);
 
-  u4 : inv port map (
+  u7 : inv port map (
     a => t3,
     y => t7);
   
