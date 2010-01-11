@@ -259,6 +259,7 @@ architecture beh of cpmem is
   alias write : coaxsig is lctrl(12);      -- write from stunt box
   alias periph : coaxsig is lctrl(14);     -- peripheral read from stunt box
   alias ecs : coaxsig is lctrl(15);        -- ecs read from stunt box
+  signal dgo : logicsig;                -- go delayed one cycle
   signal taddr : ppword;
   signal bank : bankaddr;
   signal iwdata, lwdata : coaxword;
@@ -277,10 +278,15 @@ begin  -- beh
     ibus => addr,
     clr  => clk2,
     obus => laddr);
-  -- chassis 4I20
-  -- write is w19-902
-  -- go is w19-901
-  -- read periph is w19-904
+  -- Delay "go" by one minor cycle to align it with the address
+  -- In the original design that is done by passing it through the
+  -- "go" fanout in chassis 4
+  godelay : process (clk2)
+  begin  -- process
+    if clk2'event and clk2 = '1' then  -- rising clock edge
+      dgo <= go;
+    end if;
+  end process;
   taddr <= (laddr(8), laddr(7), laddr(6), laddr(5), laddr(4), laddr(3),
             laddr(2), laddr(1), laddr(0), laddr(18), laddr(17), laddr(16));
   bank  <= (laddr(15), laddr(14), laddr(13), laddr(12), laddr(11));
@@ -301,7 +307,7 @@ begin  -- beh
       generic map (
         banknum => b)
       port map (
-        go     => go,
+        go     => dgo,
         addr   => taddr,
         baddr  => bank,
         clk1   => clk1,
