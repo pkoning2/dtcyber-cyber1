@@ -177,7 +177,7 @@ begin  -- cmbank
       seq <= next_seq;
     end if;
   end process ssc;
-  accept <= '1' when seq = 1 and clk1 = '1' else '0';
+  accept <= '1' when seq = 1 and clk2 = '1' else '0';
   tena <= '1' when seq = 4 or (seq = 6 and writereq) else '0';
   twrite <= '1' when seq = 6 and writereq else '0';
   rdata <= trdata when seq = 5 and clk1 = '1' else (others => '0');
@@ -201,6 +201,7 @@ entity cpmem is
     p18, p19           : out coaxsigs;  -- read data trunk to upper regs
     p20, p21, p22, p23 : out coaxsigs;  -- read data trunk to ppu
     p24                : out coaxsigs;  -- accept to stunt box
+    p25                : out coaxsigs;  -- read resume to PP
     reset  : in  logicsig;              -- power-up reset
     clk1, clk2, clk3, clk4         : in  logicsig);  -- clocks
 
@@ -253,6 +254,8 @@ architecture beh of cpmem is
   alias rdpp3 : coaxsigs is p22;
   alias rdpp4 : coaxsigs is p23;
   alias accept : coaxsig is p24(9);     -- accept to stunt box
+  alias c5full : coaxsig is p25(15);    -- set c5 full to PP
+  alias rresume : coaxsig is p25(16);   -- read resume to PP
   signal lctrl : coaxsigs;              -- Latched control wires
   signal laddr : coaxsigs;
   alias go : coaxsig is lctrl(11);         -- go from stunt box
@@ -260,12 +263,14 @@ architecture beh of cpmem is
   alias periph : coaxsig is lctrl(14);     -- peripheral read from stunt box
   alias ecs : coaxsig is lctrl(15);        -- ecs read from stunt box
   signal dgo : logicsig;                -- go delayed one cycle
+  signal periphd1, periphd2 : logicsig;  -- periph read delayed 1 and 2 clocks
   signal taddr : ppword;
   signal bank : bankaddr;
   signal iwdata, lwdata : coaxword;
   signal twdata : cpword;
   signal trdata : rvec_t;               -- read contributions from banks
   signal rdata : coaxword;                -- merged read data to trunks
+  signal prdata : coaxword;             -- read data for PP
   signal taccept : acc_t;               -- accept contributions from banks
 begin  -- beh
   -- Latch the control signals
@@ -285,6 +290,8 @@ begin  -- beh
   begin  -- process
     if clk2'event and clk2 = '1' then  -- rising clock edge
       dgo <= go;
+      periphd1 <= periph;
+      periphd2 <= periphd1;
     end if;
   end process;
   taddr <= (laddr(8), laddr(7), laddr(6), laddr(5), laddr(4), laddr(3),
@@ -337,6 +344,9 @@ begin  -- beh
     
     accept <= ttaccept;
     rdata <= coaxword (ttrdata);
+    for i in cpword'range loop
+      prdata(i) <= ttrdata(i) and periphd2;
+    end loop;  -- i
   end process trunks;
 
   -- Swizzle the read data for the output trunks
@@ -344,13 +354,16 @@ begin  -- beh
   -- 0..14 W04-90..904, 15..29 W05-90.904
   -- 30..37 W06-900..907, 38..44 W06-90..96, 45..52 W07-900..907,
   -- 53..59 W07-90..96
-  -- ***TODO: need to AND with pp read data output enable
-  rdpp1 (14 downto 0) <= rdata (14 downto 0);
-  rdpp2 (14 downto 0) <= rdata (29 downto 15);
-  rdpp3 (17 downto 10) <= rdata (37 downto 30);
-  rdpp3 (6 downto 0) <= rdata (44 downto 38);
-  rdpp4 (17 downto 10) <= rdata (52 downto 45);
-  rdpp4 (6 downto 0) <= rdata (59 downto 53);
+  rdpp1 (14 downto 0) <= prdata (14 downto 0);
+  rdpp2 (14 downto 0) <= prdata (29 downto 15);
+  rdpp3 (17 downto 10) <= prdata (37 downto 30);
+  rdpp3 (6 downto 0) <= prdata (44 downto 38);
+  rdpp4 (17 downto 10) <= prdata (52 downto 45);
+  rdpp4 (6 downto 0) <= prdata (59 downto 53);
+
+  -- generate read resume to PP
+  c5full <= periphd2 and clk1;
+  rresume <= periphd2 and clk1;
   
   -- chassis 5 input register (A-E 41,42):
   -- 0..3 W02-904..907, 4 W02-900 5..14 W02-90..99
