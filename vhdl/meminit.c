@@ -91,7 +91,7 @@ void meminit (int bnum, membyte *memp)
                 perror ("malloc");
                 exit (1);
             }
-            while (fscanf (f, "%ho", p++) != 0) 
+            while (!feof (f) && fscanf (f, "%ho", p++) != 0) 
             {
                 pplen[pp]++;
             }
@@ -136,7 +136,7 @@ void meminit (int bnum, membyte *memp)
                 perror ("malloc");
                 exit (1);
             }
-            while (fscanf (f, "%llo", c++) != 0) 
+            while (!feof (f) && fscanf (f, "%llo", c++) != 0) 
             {
                 cplen++;
             }
