@@ -83,7 +83,7 @@ begin  -- gates
     y => t3);
   u4 : r2sflop port map (
     s  => t1,
-    r  => t2,
+    r  => t3,
     r2 => p12,
     q  => t4,
     qb => c);
