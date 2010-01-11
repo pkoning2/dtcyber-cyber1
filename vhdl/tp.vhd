@@ -77,6 +77,10 @@ architecture gates of tp is
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
+  signal t5 : logicsig;
+  signal t6 : logicsig;
+  signal t7 : logicsig;
+  signal t8 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
@@ -84,24 +88,33 @@ begin -- gates
     y => tp1,
     y2 => t1);
 
-  p3 <= t1;
-  p5 <= t1;
-  p7 <= t1;
-  p9 <= t1;
-  p11 <= t1;
+  u5 : inv port map (
+    a => t1,
+    y => t5);
+  
+  p3 <= t5;
+  p5 <= t5;
+  p7 <= t5;
+  p9 <= t5;
+  p11 <= t5;
 
   u2 : inv2 port map (
     a => p14,
     y => tp2,
     y2 => t2);
 
-  p2 <= t2;
-  p4 <= t2;
-  p6 <= t2;
-  p8 <= t2;
-  p10 <= t2;
-  p12 <= t2;
   tp3 <= t2;
+
+  u6 : inv port map (
+    a => t2,
+    y => t6);
+
+  p2 <= t6;
+  p4 <= t6;
+  p6 <= t6;
+  p8 <= t6;
+  p10 <= t6;
+  p12 <= t6;
 
   u3 : g2 port map (
     a => p13,
@@ -109,11 +122,15 @@ begin -- gates
     y => tp4,
     y2 => t3);
 
-  p17 <= t3;
-  p19 <= t3;
-  p21 <= t3;
-  p23 <= t3;
-  p25 <= t3;
+  u4 : inv port map (
+    a => t3,
+    y => t7);
+  
+  p17 <= t7;
+  p19 <= t7;
+  p21 <= t7;
+  p23 <= t7;
+  p25 <= t7;
 
   u4 : g2 port map (
     a => p27,
@@ -121,13 +138,18 @@ begin -- gates
     y => tp5,
     y2 => t4);
 
-  p16 <= t4;
-  p18 <= t4;
-  p20 <= t4;
-  p22 <= t4;
-  p24 <= t4;
-  p26 <= t4;
   tp6 <= t4;
+  
+  u8 : inv port map (
+    a => t4,
+    y => t8);
+  
+  p16 <= t8;
+  p18 <= t8;
+  p20 <= t8;
+  p22 <= t8;
+  p24 <= t8;
+  p26 <= t8;
 
 
 end gates;
