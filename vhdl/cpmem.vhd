@@ -18,6 +18,39 @@
 --
 -------------------------------------------------------------------------------
 
+--
+-- Summary of interface timing (from/to the rest of the 6600 model).
+-- Times are given in nanoseconds relative to a somewhat arbitrary
+-- origin (apparently the time when the memory reference request is
+-- entered into the stunt box).  Much of this comes from the memory
+-- timing chart in CDC manual 60147400 (6600 Training Manual), along
+-- with the CPU and memory block diagrams.  Note that the timing is as
+-- seen by the cpmem component, which subsumes various fanout and data
+-- distributor components that the manual describe separately.  For
+-- example "go" as seen here precedes the address, because we get
+-- "go" direct from the stunt box in chassis 5 rather than by way of
+-- a "go" fanout block in chassis 4.
+--
+-- These times are from the receiving end point of view.
+--
+-- Translation to clock phases: clk1 is T20, clk2 is T45, and so on.
+--
+-- Inputs to cpmem:
+-- Go:          T180
+-- Address:     T240
+-- Write:       T240
+-- PP read tag: T260
+-- Write data:  T600
+--
+-- Outputs from cpmem:
+-- Accept:      T300
+-- Read data:   T650
+-- Read resume: T650
+--
+-- Sequence controller sequence numbers:
+-- The SSC state machine advances on clk1, starting with sequence number 1
+-- on the clk1 following the address.  So sequence 1 corresponds to T300.
+
 library IEEE;
 use IEEE.numeric_bit.all;
 use work.sigs.all;
@@ -144,13 +177,11 @@ begin  -- cmbank
       when 0 =>
         if go = '1' and UNSIGNED (baddr) = bnum then
           next_seq <= 1;
+          if write = '1' then
+            do_write <= true;
+          end if;
         else
           next_seq <= seq;              -- no request for this bank, stay in t0
-        end if;
-      when 2 =>
-        next_seq <= seq + 1;
-        if write = '1' then
-          do_write <= true;
         end if;
       when 9 =>
         next_seq <= 0;
@@ -162,25 +193,25 @@ begin  -- cmbank
   -- type   : sequential
   -- inputs : clk1, next_seq, do_write
   -- outputs: seq, writereq
-  ssc: process (clk1)
+  ssc: process (clk3)
   begin  -- process ssc
-    if clk1'event and clk1 = '1' then
+    if clk3'event and clk3 = '1' then
       case next_seq is
         when 1 =>
           maddr <= addr;
-        when 3 =>
+        when 2 =>
           writereq <= do_write;
-        when 5 =>
+        when 4 =>
           twdata <= wdata;
         when others => null;
       end case;
       seq <= next_seq;
     end if;
   end process ssc;
-  accept <= '1' when seq = 1 and clk2 = '1' else '0';
-  tena <= '1' when seq = 4 or (seq = 6 and writereq) else '0';
-  twrite <= '1' when seq = 6 and writereq else '0';
-  rdata <= trdata when seq = 5 and clk1 = '1' else (others => '0');
+  accept <= '1' when seq = 1 and clk3 = '1' else '0';
+  tena <= '1' when seq = 3 or (seq = 5 and writereq) else '0';
+  twrite <= '1' when seq = 5 and writereq else '0';
+  rdata <= trdata when seq = 4 and clk2 = '1' else (others => '0');
 end cmbank;
 
 library IEEE;
@@ -222,6 +253,12 @@ architecture beh of cpmem is
       rdata                  : out cpword;     -- read data bus
       accept                 : out coaxsig);   -- accept signal
   end component;
+  component ireg1
+    port (
+      clr : in bit;                       -- clear pulse
+      i : in coaxsig;                     -- input
+      o : out coaxsig);                   -- output
+  end component;
   component ireg 
     port (
       clr : in bit;                       -- clear pulse
@@ -231,6 +268,10 @@ architecture beh of cpmem is
   type rvec_t is array (0 to 31) of cpword;
   type acc_t is array (0 to 31) of coaxsig;
   subtype coaxword is coaxbus (59 downto 0);  -- cpword, coax signal type
+  alias go : coaxsig is p1(11);         -- go from stunt box
+  alias write : coaxsig is p1(12);      -- write from stunt box
+  alias periph : coaxsig is p1(14);     -- peripheral read from stunt box
+  alias ecs : coaxsig is p1(15);        -- ecs read from stunt box
   alias addr : coaxsigs is p2;          -- address from stunt box
   alias wdata1 : coaxsigs is p3;        -- write data trunk
   alias wdata2 : coaxsigs is p4;
@@ -257,11 +298,8 @@ architecture beh of cpmem is
   alias c5full : coaxsig is p25(15);    -- set c5 full to PP
   alias rresume : coaxsig is p25(16);   -- read resume to PP
   signal lctrl : coaxsigs;              -- Latched control wires
-  signal laddr : coaxsigs;
-  alias go : coaxsig is lctrl(11);         -- go from stunt box
-  alias write : coaxsig is lctrl(12);      -- write from stunt box
-  alias periph : coaxsig is lctrl(14);     -- peripheral read from stunt box
-  alias ecs : coaxsig is lctrl(15);        -- ecs read from stunt box
+  signal laddr : coaxsigs;              -- Latched address cable
+  signal lgo, lwrite, lperiph : coaxsig;         -- latched go, write, readpp
   signal dgo : logicsig;                -- go delayed one cycle
   signal periphd1, periphd2 : logicsig;  -- periph read delayed 1 and 2 clocks
   signal taddr : ppword;
@@ -274,23 +312,37 @@ architecture beh of cpmem is
   signal taccept : acc_t;               -- accept contributions from banks
 begin  -- beh
   -- Latch the control signals
-  clatch : ireg port map (
-    ibus => p1,
-    clr  => clk2,
-    obus => lctrl);
+  golatch : ireg1 port map (
+    i   => go,
+    clr => clk2,
+    o   => lgo);
+  wrlatch : ireg1 port map (
+    i   => write,
+    clr => clk4,
+    o   => lwrite);
+  pplatch : ireg1 port map (
+    i   => periph,
+    clr => clk4,
+    o   => lperiph);
   -- Latch and unswizzle the address cable (from stunt box, chassis 5 Q34-Q39)
   alatch : ireg port map (
     ibus => addr,
-    clr  => clk2,
+    clr  => clk4,
     obus => laddr);
-  -- Delay "go" by one minor cycle to align it with the address
+  -- Delay "go" by about 50 ns cycle to align it with the address
   -- In the original design that is done by passing it through the
   -- "go" fanout in chassis 4
-  godelay : process (clk2)
+  godelay : process (clk1)
   begin  -- process
-    if clk2'event and clk2 = '1' then  -- rising clock edge
-      dgo <= go;
-      periphd1 <= periph;
+    if clk1'event and clk1 = '1' then  -- rising clock edge
+      dgo <= lgo;
+    end if;
+  end process;
+  -- Delay "periph" by 2 cycles for use with the read data reply to the PPU.
+  ppdelay : process (clk3)
+  begin  -- process
+    if clk3'event and clk3 = '1' then  -- rising clock edge
+      periphd1 <= lperiph;
       periphd2 <= periphd1;
     end if;
   end process;
@@ -304,7 +356,7 @@ begin  -- beh
             wdata2 (14 downto 0) & wdata1 (14 downto 0);
   wlatch : ireg port map (
     ibus => iwdata,
-    clr  => clk2,
+    clr  => clk3,
     obus => lwdata);
   twdata <= cpword (lwdata);
   
@@ -362,8 +414,8 @@ begin  -- beh
   rdpp4 (6 downto 0) <= prdata (59 downto 53);
 
   -- generate read resume to PP
-  c5full <= periphd2 and clk1;
-  rresume <= periphd2 and clk1;
+  c5full <= periphd2 and clk2;
+  rresume <= periphd2 and clk2;
   
   -- chassis 5 input register (A-E 41,42):
   -- 0..3 W02-904..907, 4 W02-900 5..14 W02-90..99

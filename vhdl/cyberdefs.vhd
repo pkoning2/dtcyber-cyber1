@@ -699,6 +699,31 @@ end beh;
 
 use work.sigs.all;
 
+entity ireg1 is
+  
+  port (
+    clr : in bit;                       -- clear pulse
+    i : in coaxsig;                     -- input
+    o : out coaxsig);                   -- output
+
+end ireg1;
+
+architecture beh of ireg1 is
+begin  -- ireg1
+  -- purpose: input latch
+  ilatch: process (i, clr)
+  begin  -- process ilatch
+    if clr = '1' then
+      o <= '0';
+    end if;
+    if i = '1' then
+        o <= '1';
+    end if;
+  end process ilatch;
+end beh;
+
+use work.sigs.all;
+
 entity ireg is
   
   port (
