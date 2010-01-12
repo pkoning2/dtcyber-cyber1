@@ -40,7 +40,8 @@ package sigs is
   subtype cpword is logicbus (59 downto 0);  -- CPU word (60 bits)
   type misc is ('x', 'y');  -- used for non-logic pins
   subtype analog is UNSIGNED (2 downto 0);    -- 6612 character drawing signal
-  type bytemem is array (natural range <>) of logicbus (7 downto 0);
+  subtype byte is logicbus (7 downto 0);
+  type bytemem is array (natural range <>) of byte;
   
   procedure dtconn (
     constant chnum : in    integer;     -- Channel number for this synchronizer
@@ -52,8 +53,9 @@ package sigs is
   attribute foreign of dtmain : procedure is "VHPIDIRECT dtmain";
 
   procedure meminit (
-    constant bnum : in    integer;      -- bank number
-    marray        : inout bytemem);     -- array to initialize
+    constant bnum   : in    integer;      -- bank number
+    constant offset : in    integer;      -- byte offset
+    mbyte           : inout byte);        -- byte to initialize
   attribute foreign of meminit : procedure is "VHPIDIRECT meminit";
 end sigs;
 
@@ -75,8 +77,9 @@ package body sigs is
   end dtmain;
 
   procedure meminit (
-    constant bnum : in    integer;      -- bank number
-    marray        : inout bytemem) is 
+    constant bnum   : in    integer;      -- bank number
+    constant offset : in    integer;      -- byte offset
+    mbyte           : inout byte) is      -- byte to initialize
   begin  -- meminit
     assert false severity failure;
   end meminit;
@@ -667,7 +670,9 @@ begin  -- beh
   begin  -- process rw
     areg := 0;                          -- dummy init, it's not a latch
     if reset = '1' then
-      meminit (bnum, mdata);
+      for i in mdata'range loop
+        meminit (bnum, i, mdata(i));
+      end loop;  -- i
     end if;
     if clk_a'event and clk_a = '1' then  -- rising clock edge, port A
       if ena_a = '1' then

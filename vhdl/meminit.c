@@ -35,22 +35,21 @@ cpword *cpdata;
 int pplen[10];
 int cplen;
 
-void storebyte (int byte, membyte *memp)
+void storebyte (int byte, membyte memp)
 {
     int i;
-    enum bit *bp = &memp[0][0];
     
     // Convert 8-bit integer to bit_vector
     for (i = 0; i < 8; i++)
     {
         if (byte & 0200)
         {
-            *bp++ = one;
+            memp[7 - i] = one;
             //DDPRINTF ("1");
         }
         else 
         {
-            *bp++ = zero;
+            memp[7 - i] = zero;
             //DDPRINTF ("0");
         }
         byte <<= 1;
@@ -58,7 +57,7 @@ void storebyte (int byte, membyte *memp)
     //DDPRINTF ("\n");
 }
 
-void meminit (int bnum, membyte *memp)
+void meminit (int bnum, int offset, membyte memp)
 {
     int i, pp, byte, bank;
     char fn[20];
@@ -100,18 +99,17 @@ void meminit (int bnum, membyte *memp)
         if (pplen[pp] >= 0)
         {
             p = ppdata[pp];
-            i = pplen[pp];
-            while (--i >= 0)
+            pplen[pp];
+            if (offset < pplen[pp])
             {
                 if (byte)
                 {
-                    storebyte (*p++, memp);
+                    storebyte (p[offset], memp);
                 }
                 else
                 {
-                    storebyte ((*p++) >> 8, memp);
+                    storebyte (p[offset] >> 8, memp);
                 }
-                memp += sizeof (membyte);
             }
         }
     }
@@ -145,11 +143,9 @@ void meminit (int bnum, membyte *memp)
         if (cplen >= 0)
         {
             c = cpdata;
-            i = cplen;
-            while (--i >= 0)
+            if (offset < cplen)
             {
-                storebyte (((*p++) >> ((7 - byte) * 8)) & 0xff, memp);
-                memp += sizeof (membyte);
+                storebyte ((c[offset] >> ((7 - byte) * 8)) & 0xff, memp);
             }
         }
     }
