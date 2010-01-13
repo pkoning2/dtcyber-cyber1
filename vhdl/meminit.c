@@ -44,12 +44,12 @@ void storebyte (int byte, membyte memp)
     {
         if (byte & 0200)
         {
-            memp[7 - i] = one;
+            memp[i] = one;
             //DDPRINTF ("1");
         }
         else 
         {
-            memp[7 - i] = zero;
+            memp[i] = zero;
             //DDPRINTF ("0");
         }
         byte <<= 1;
@@ -90,7 +90,7 @@ void meminit (int bnum, int offset, membyte memp)
                 perror ("malloc");
                 exit (1);
             }
-            while (!feof (f) && fscanf (f, "%ho", p++) != 0) 
+            while (pplen[pp] < 4096 && !feof (f) && fscanf (f, "%ho", p++) != 0) 
             {
                 pplen[pp]++;
             }
@@ -128,13 +128,13 @@ void meminit (int bnum, int offset, membyte memp)
                 cplen = -1;
                 return;
             }
-            cpdata = c = malloc (4096 * sizeof (cpword));
+            cpdata = c = malloc (4096 * 32 * sizeof (cpword));
             if (c == NULL)
             {
                 perror ("malloc");
                 exit (1);
             }
-            while (!feof (f) && fscanf (f, "%llo", c++) != 0) 
+            while (cplen < 4096 * 32 && !feof (f) && fscanf (f, "%llo", c++) != 0) 
             {
                 cplen++;
             }
@@ -142,10 +142,10 @@ void meminit (int bnum, int offset, membyte memp)
         }
         if (cplen >= 0)
         {
-            c = cpdata;
+            offset = offset * 32 + bank;
             if (offset < cplen)
             {
-                storebyte ((c[offset] >> ((7 - byte) * 8)) & 0xff, memp);
+                storebyte ((cpdata[offset] >> ((7 - byte) * 8)) & 0xff, memp);
             }
         }
     }
