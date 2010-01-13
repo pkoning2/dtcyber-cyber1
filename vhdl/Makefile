@@ -35,20 +35,21 @@ endif
 OPTIMIZE ?=
 #OPTIMIZE ?= -O2
 
+GHDL ?= ghdl
 GHDLOPTS := $(OPTIMIZE) $(ASMOPTS) $(LDOPTS) $(EXTRAGFLAGS)  ### --finteger64
 
 cdc_tb:	$(OBJS)
-	ghdl -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
+	$(GHDL) -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
 
 cdc_tb2:	$(filter-out cdc_tb.o,$(OBJS)) cdc_tb2.o chassis12.o
-	ghdl -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out cdc_tb2.o chassis12.o $(VOBJS),$+) $(FLIBS))  cdc_tb2
+	$(GHDL) -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out cdc_tb2.o chassis12.o $(VOBJS),$+) $(FLIBS))  cdc_tb2
 
 cyberdefs.o $(VLIB) cyberdefs.stamp: cyberdefs.vhd
-	ghdl -a $(GHDLOPTS) $<
+	$(GHDL) -a $(GHDLOPTS) $<
 	touch cyberdefs.stamp
 
 %.o : %.vhd cyberdefs.stamp
-	ghdl -a $(GHDLOPTS) $<
+	$(GHDL) -a $(GHDLOPTS) $<
 
 %.o : %.c
 	$(CC) -O2  $(CFLAGS) $(CCOPTS) -I .. -I . -c $<
