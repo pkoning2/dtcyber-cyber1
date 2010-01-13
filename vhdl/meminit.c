@@ -99,7 +99,6 @@ void meminit (int bnum, int offset, membyte memp)
         if (pplen[pp] >= 0)
         {
             p = ppdata[pp];
-            pplen[pp];
             if (offset < pplen[pp])
             {
                 if (byte)
