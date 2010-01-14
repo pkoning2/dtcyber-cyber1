@@ -153,6 +153,7 @@ architecture cmbank of cmbank is
   constant bnum : UNSIGNED := TO_UNSIGNED (banknum, 5);
   signal seq, next_seq : natural range 0 to 9 := 0; -- sequencer state
   signal do_write, writereq : boolean := false;     -- true if write requested
+  signal do_accept : logicsig;          -- accept signal to be sent
 begin  -- cmbank  
   mem : cmarray generic map (
     bnum => banknum)
@@ -194,21 +195,25 @@ begin  -- cmbank
   -- inputs : clk1, next_seq, do_write
   -- outputs: seq, writereq
   ssc: process (clk3)
+    variable send_accept : logicsig := '0';
   begin  -- process ssc
     if clk3'event and clk3 = '1' then
+      send_accept := '0';
       case next_seq is
         when 1 =>
           maddr <= addr;
         when 2 =>
           writereq <= do_write;
+          send_accept := '1';
         when 4 =>
           twdata <= wdata;
-        when others => null;
+        when others =>
+          null;
       end case;
       seq <= next_seq;
     end if;
+    accept <= send_accept and clk3;
   end process ssc;
-  accept <= '1' when seq = 1 and clk3 = '1' else '0';
   tena <= '1' when seq = 3 or (seq = 5 and writereq) else '0';
   twrite <= '1' when seq = 5 and writereq else '0';
   rdata <= trdata when seq = 4 and clk2 = '1' else (others => '0');
