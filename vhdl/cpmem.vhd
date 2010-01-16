@@ -202,8 +202,8 @@ begin  -- cmbank
       case next_seq is
         when 1 =>
           maddr <= addr;
-        when 2 =>
           writereq <= do_write;
+        when 2 =>
           send_accept := '1';
         when 4 =>
           twdata <= wdata;
@@ -379,7 +379,7 @@ begin  -- beh
         clk3   => clk3,
         clk4   => clk4,
         reset  => reset,
-        write  => write,
+        write  => lwrite,
         wdata  => twdata,
         rdata  => trdata(b),
         accept => taccept(b));
