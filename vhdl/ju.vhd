@@ -153,7 +153,7 @@ begin -- gates
 
   u4 : g2 port map (
     a => p5,
-    b => t5,
+    b => t4,
     y => t6);
 
   p19 <= t6;
