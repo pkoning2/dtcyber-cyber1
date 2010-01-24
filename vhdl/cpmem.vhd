@@ -153,7 +153,6 @@ architecture cmbank of cmbank is
   constant bnum : UNSIGNED := TO_UNSIGNED (banknum, 5);
   signal seq, next_seq : natural range 0 to 9 := 0; -- sequencer state
   signal do_write, writereq : boolean := false;     -- true if write requested
-  signal do_accept : logicsig;          -- accept signal to be sent
 begin  -- cmbank  
   mem : cmarray generic map (
     bnum => banknum)
@@ -205,7 +204,7 @@ begin  -- cmbank
           writereq <= do_write;
         when 2 =>
           send_accept := '1';
-        when 4 =>
+        when 3 =>
           twdata <= wdata;
         when others =>
           null;
@@ -214,8 +213,8 @@ begin  -- cmbank
     end if;
     accept <= send_accept and clk3;
   end process ssc;
-  tena <= '1' when seq = 3 or (seq = 5 and writereq) else '0';
-  twrite <= '1' when seq = 5 and writereq else '0';
+  twrite <= '1' when seq = 7 and writereq else '0';
+  tena <= '1' when seq = 3 or twrite = '1' else '0';
   rdata <= trdata when seq = 4 and clk2 = '1' else (others => '0');
 end cmbank;
 
@@ -306,7 +305,7 @@ architecture beh of cpmem is
   signal laddr : coaxsigs;              -- Latched address cable
   signal lgo, lwrite, lperiph : coaxsig;         -- latched go, write, readpp
   signal dgo : logicsig;                -- go delayed one cycle
-  signal periphd1, periphd2 : logicsig;  -- periph read delayed 1 and 2 clocks
+  signal periphd1, periphd2, periphd3 : logicsig;  -- periph read delayed n clks
   signal taddr : ppword;
   signal bank : bankaddr;
   signal iwdata, lwdata : coaxword;
@@ -349,6 +348,7 @@ begin  -- beh
     if clk3'event and clk3 = '1' then  -- rising clock edge
       periphd1 <= lperiph;
       periphd2 <= periphd1;
+      periphd3 <= periphd2;
     end if;
   end process;
   taddr <= (laddr(8), laddr(7), laddr(6), laddr(5), laddr(4), laddr(3),
@@ -361,7 +361,7 @@ begin  -- beh
             wdata2 (14 downto 0) & wdata1 (14 downto 0);
   wlatch : ireg port map (
     ibus => iwdata,
-    clr  => clk3,
+    clr  => clk4,
     obus => lwdata);
   twdata <= cpword (lwdata);
   
@@ -425,7 +425,7 @@ begin  -- beh
   -- chassis 5 input register (A-E 41,42):
   -- 0..3 W02-904..907, 4 W02-900 5..14 W02-90..99
   -- 15..18 W01-904..907, 19 W01-900, 20..29 W01-90..99
-  -- 30..37 W04-900..907, 38..44 W04-90..90, 
+  -- 30..37 W04-900..907, 38..44 W04-90..96, 
   -- 45..52 W03-900..907, 53..59 W03-90..96, 
   rdctrl1 (17 downto 14) <= rdata (3 downto 0);
   rdctrl1 (10) <= rdata (4);
@@ -433,12 +433,10 @@ begin  -- beh
   rdctrl2 (17 downto 14) <= rdata (18 downto 15);
   rdctrl2 (10) <= rdata (19);
   rdctrl2 (9 downto 0) <= rdata (29 downto 20);
-  rdctrl3 (17 downto 14) <= rdata (33 downto 30);
-  rdctrl3 (10) <= rdata (34);
-  rdctrl3 (9 downto 0) <= rdata (44 downto 35);
-  rdctrl4 (17 downto 14) <= rdata (48 downto 45);
-  rdctrl4 (10) <= rdata (49);
-  rdctrl4 (9 downto 0) <= rdata (59 downto 50);
+  rdctrl3 (17 downto 10) <= rdata (37 downto 30);
+  rdctrl3 (6 downto 0) <= rdata (44 downto 38);
+  rdctrl4 (17 downto 10) <= rdata (52 downto 45);
+  rdctrl4 (6 downto 0) <= rdata (59 downto 53);
 
   -- ECS is done the easy way:
   rdecs1 (14 downto 0) <= rdata (14 downto 0);

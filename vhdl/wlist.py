@@ -18,7 +18,7 @@ real_length = 60     # simulate wire delay for wires this long, None to disable
 _re_wstrip = re.compile ("(^[\014\\s]+|\\s*#.*$)", re.M)
 _re_wmod = re.compile ("([a-z]+)(\\(.+?\\))?\t(\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+)((\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+))?")
 _re_wline = re.compile ("^(\\d+)(?:$|\t+(\\w+)\t+(\\w+)(:?\t(\\d+))?)?", re.M)
-_re_chslot = re.compile (r"(0?[1-9]|1[0-6])?([a-r])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)$", re.I)
+_re_chslot = re.compile (r"(0?[1-9]|1[0-6])?([a-rz])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)$", re.I)
 _re_cable = re.compile (r"(\d+)?w(\d+)$")
 _re_cables = re.compile (r"^(\d+w\d+)\s+(\d+w\d+)", re.M)
 
