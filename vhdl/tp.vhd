@@ -95,15 +95,6 @@ begin -- gates
     y => tp1,
     y2 => t1);
 
-  u5 : inv port map (
-    a => t1,
-    y => t5);
-  
-  p3 <= t5;
-  p5 <= t5;
-  p7 <= t5;
-  p9 <= t5;
-  p11 <= t5;
 
   u2 : inv2 port map (
     a => p14,
@@ -111,6 +102,31 @@ begin -- gates
     y2 => t2);
 
   tp3 <= t2;
+
+  u3 : g2 port map (
+    a => p13,
+    b => p15,
+    y => tp4,
+    y2 => t3);
+
+
+  u4 : g2 port map (
+    a => p27,
+    b => p28,
+    y => tp5,
+    y2 => t4);
+
+  tp6 <= t4;
+
+  u5 : inv port map (
+    a => t1,
+    y => t5);
+
+  p3 <= t5;
+  p5 <= t5;
+  p7 <= t5;
+  p9 <= t5;
+  p11 <= t5;
 
   u6 : inv port map (
     a => t2,
@@ -123,34 +139,20 @@ begin -- gates
   p10 <= t6;
   p12 <= t6;
 
-  u3 : g2 port map (
-    a => p13,
-    b => p15,
-    y => tp4,
-    y2 => t3);
-
   u7 : inv port map (
     a => t3,
     y => t7);
-  
+
   p17 <= t7;
   p19 <= t7;
   p21 <= t7;
   p23 <= t7;
   p25 <= t7;
 
-  u4 : g2 port map (
-    a => p27,
-    b => p28,
-    y => tp5,
-    y2 => t4);
-
-  tp6 <= t4;
-  
   u8 : inv port map (
     a => t4,
     y => t8);
-  
+
   p16 <= t8;
   p18 <= t8;
   p20 <= t8;

@@ -127,6 +127,7 @@ begin -- gates
     y => p24,
     y2 => t1);
 
+  p17 <= d;
 
   u2 : g2 port map (
     a => t1,
@@ -157,6 +158,7 @@ begin -- gates
     y => p1,
     y2 => t4);
 
+  p10 <= e;
   p28 <= t4;
 
   u6 : g2 port map (
@@ -200,7 +202,6 @@ begin -- gates
 
   p20 <= t9;
   tp4 <= t9;
-  p17 <= d;
 
   u12 : rsflop port map (
     r => p16,
@@ -230,7 +231,6 @@ begin -- gates
     qb => e);
 
   tp2 <= t13;
-  p10 <= e;
 
   u16 : rsflop port map (
     r => p11,

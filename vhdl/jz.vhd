@@ -106,6 +106,7 @@ begin -- gates
   qb2 <= t3;
   qb3 <= t3;
 
+
 end gates;
 
 use work.sigs.all;
@@ -280,7 +281,6 @@ architecture gates of jz is
   signal b : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
 
 begin -- gates
   u1 : jzslice port map (

@@ -118,7 +118,6 @@ architecture gates of jc is
   signal t11 : logicsig;
   signal t12 : logicsig;
   signal t13 : logicsig;
-  signal t14 : logicsig;
   signal t15 : logicsig;
   signal t16 : logicsig;
 
@@ -228,7 +227,7 @@ begin -- gates
     y2 => p22);
 
   p19 <= t15;
-  
+
   u17 : g2 port map (
     a => t15,
     b => p,

@@ -238,10 +238,10 @@ begin -- gates
     y => t5,
     y2 => t6);
 
+  p18 <= t6;
   p21 <= t5;
   tp4 <= t6;
-  p18 <= t6;
-  
+
   u17 : g3 port map (
     a => g,
     b => j,

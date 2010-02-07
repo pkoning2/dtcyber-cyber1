@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -19,10 +19,9 @@ use work.sigs.all;
 
 entity jxslice is
     port (
+      clk : in  logicsig;
       i1 : in  logicsig;
       m : in  logicsig;
-      clk : in  logicsig;
-      t : in  logicsig;
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
@@ -32,15 +31,6 @@ entity jxslice is
 
 end jxslice;
 architecture gates of jxslice is
-  component g2
-    port (
-      a : in  logicsig;
-      b : in  logicsig;
-      y : out logicsig;
-      y2 : out logicsig);
-
-  end component;
-
   component g3
     port (
       a : in  logicsig;
@@ -75,7 +65,7 @@ architecture gates of jxslice is
 
   end component;
 
-  signal t1 : logicsig;
+  signal t : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
 
@@ -171,10 +161,9 @@ architecture gates of jx is
 
   component jxslice
     port (
+      clk : in  logicsig;
       i1 : in  logicsig;
       m : in  logicsig;
-      clk : in  logicsig;
-      t : in  logicsig;
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
@@ -192,10 +181,9 @@ architecture gates of jx is
 
 begin -- gates
   u1 : jxslice port map (
+    clk => p17,
     i1 => p5,
     m => m,
-    clk => p17,
-    t => t,
     q1 => p7,
     q2 => p4,
     q3 => p1,
@@ -207,10 +195,9 @@ begin -- gates
   tp4 <= m;
 
   u2 : jxslice port map (
+    clk => p17,
     i1 => p11,
     m => m,
-    clk => p17,
-    t => t,
     q1 => p13,
     q2 => p14,
     q3 => p15,
@@ -220,10 +207,9 @@ begin -- gates
 
 
   u3 : jxslice port map (
+    clk => p17,
     i1 => p24,
     m => m,
-    clk => p17,
-    t => t,
     q1 => p22,
     q2 => p25,
     q3 => p28,

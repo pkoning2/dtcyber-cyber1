@@ -95,7 +95,7 @@ entity jh is
       p3 : out coaxsig;
       p5 : out coaxsig;
       p7 : out coaxsig;
-      p9 : out logicsig;
+      p9 : out coaxsig;
       p11 : out coaxsig;
       p13 : out coaxsig;
       p18 : out coaxsig;

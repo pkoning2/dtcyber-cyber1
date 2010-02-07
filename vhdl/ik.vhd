@@ -20,10 +20,10 @@ use work.sigs.all;
 entity ikslice is
     port (
       a : in  logicsig;
+      clk : in  logicsig;
       i1 : in  logicsig;
       i2 : in  logicsig;
       n : in  logicsig;
-      clk : in  logicsig;
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
@@ -49,9 +49,13 @@ architecture gates of ikslice is
 
   component latchd2s
     port (
-      d, d2, clk : in  logicsig;                 -- data (set), clock
-      s : in logicsig;                    -- asynch set
-      q, qb  : out logicsig);                -- q and q.bar
+      clk : in  logicsig;
+      d : in  logicsig;
+      d2 : in  logicsig;
+      s : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
+
   end component;
 
   signal t2 : logicsig;
@@ -142,10 +146,10 @@ architecture gates of ik is
   component ikslice
     port (
       a : in  logicsig;
+      clk : in  logicsig;
       i1 : in  logicsig;
       i2 : in  logicsig;
       n : in  logicsig;
-      clk : in  logicsig;
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
@@ -177,10 +181,10 @@ architecture gates of ik is
 begin -- gates
   u1 : ikslice port map (
     a => a,
+    clk => p16,
     i1 => p6,
     i2 => p3,
     n => n,
-    clk => p16,
     q1 => p4,
     q2 => p2,
     q3 => p1);
@@ -189,10 +193,10 @@ begin -- gates
 
   u2 : ikslice port map (
     a => a,
+    clk => p16,
     i1 => p7,
     i2 => p10,
     n => n,
-    clk => p16,
     q1 => p9,
     q2 => p8,
     q3 => p5,
@@ -201,10 +205,10 @@ begin -- gates
 
   u3 : ikslice port map (
     a => a,
+    clk => p16,
     i1 => p11,
     i2 => x,
     n => n,
-    clk => p16,
     q1 => p12,
     q2 => p17,
     q3 => p15,

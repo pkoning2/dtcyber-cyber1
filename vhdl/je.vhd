@@ -87,13 +87,13 @@ begin -- gates
     s4 => '1',
     q => t2);
 
+  tp <= t2;
 
   u4 : g2 port map (
     a => t2,
     b => b,
     y => t3);
 
-  tp <= t2;
 
   u5 : g2 port map (
     a => i4,

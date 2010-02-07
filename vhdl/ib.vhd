@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -54,13 +54,6 @@ architecture gates of ib is
       b : in  logicsig;
       y : out logicsig;
       y2 : out logicsig);
-
-  end component;
-
-  component inv
-    port (
-      a : in  logicsig;
-      y : out logicsig);
 
   end component;
 

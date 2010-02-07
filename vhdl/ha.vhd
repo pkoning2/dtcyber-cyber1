@@ -121,7 +121,6 @@ architecture gates of ha is
   signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
-  signal t9 : logicsig;
   signal t10 : logicsig;
   signal t11 : logicsig;
   signal t12 : logicsig;
@@ -209,8 +208,8 @@ begin -- gates
 
 
   u13 : rsflop port map (
-    r => t9,
-    s => t8,
+    r => t8,
+    s => t7,
     q => a,
     qb => t10);
 

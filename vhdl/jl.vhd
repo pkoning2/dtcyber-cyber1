@@ -258,14 +258,14 @@ begin -- gates
     b => d,
     y => t12);
 
+
   u20 : rsflop port map (
     r => t12,
     s => t11,
     q => t13);
 
-  tp3 <= t13;
   p7 <= t13;
-
+  tp3 <= t13;
 
   u21 : inv2 port map (
     a => p15,
@@ -294,6 +294,7 @@ begin -- gates
     c => p26,
     d => p27,
     y => p28);
+
 
 
 end gates;

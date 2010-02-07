@@ -177,8 +177,8 @@ begin -- gates
     b => t7,
     y => t8);
 
-  tp4 <= t8;
   p16 <= t8;
+  tp4 <= t8;
 
   u9 : inv port map (
     a => p23,

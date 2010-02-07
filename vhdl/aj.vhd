@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -110,15 +110,17 @@ begin -- gates
     b => p3,
     y => t2);
 
+
   u3 : latch22 port map (
-    clk  => p7,
+    clk => p7,
     clk2 => p22,
-    d    => a,
-    d2   => t2,
-    q    => t4);
+    d => a,
+    d2 => t2,
+    q => t4);
 
   p4 <= t4;
   tp1 <= t4;
+  tp2 <= a;
 
   u5 : g2 port map (
     a => t4,
@@ -133,22 +135,23 @@ begin -- gates
 
 
   u8 : latch22 port map (
-    clk  => p7,
+    clk => p7,
     clk2 => p22,
-    d    => b,
-    d2   => t7,
-    q    => t8,
-    qb   => p23);
+    d => b,
+    d2 => t7,
+    q => t8,
+    qb => p23);
 
   p14 <= t8;
   p21 <= t8;
+  tp5 <= b;
   tp6 <= t8;
 
   u9 : inv port map (
     a => t8,
     y => p5);
 
-  
+
   u10 : g2 port map (
     a => p24,
     b => t8,
@@ -160,8 +163,6 @@ begin -- gates
     s => p11,
     s2 => p9,
     q => a);
-
-  tp2 <= a;
 
 
   u13 : inv2 port map (
@@ -180,7 +181,6 @@ begin -- gates
     s2 => p18,
     q => b);
 
-  tp5 <= b;
 
 
 end gates;

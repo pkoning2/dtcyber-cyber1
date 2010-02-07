@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -21,7 +21,7 @@ entity crslice is
     port (
       a : in  logicsig;
       in1 : in  logicsig;
-      tp : out coaxsig;
+      tp : out logicsig;
       y : out coaxsig);
 
 end crslice;
@@ -87,8 +87,8 @@ entity cr is
       p12 : out coaxsig;
       p19 : out coaxsig;
       p21 : out coaxsig;
-      p23 : out logicsig;
-      p25 : out logicsig;
+      p23 : out coaxsig;
+      p25 : out coaxsig;
       p27 : out coaxsig);
 
 end cr;
@@ -97,7 +97,7 @@ architecture gates of cr is
     port (
       a : in  logicsig;
       in1 : in  logicsig;
-      tp : out coaxsig;
+      tp : out logicsig;
       y : out coaxsig);
 
   end component;

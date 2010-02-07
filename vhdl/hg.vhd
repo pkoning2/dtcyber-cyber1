@@ -72,17 +72,6 @@ architecture gates of hg is
 
   end component;
 
-  component g4
-    port (
-      a : in  logicsig;
-      b : in  logicsig;
-      c : in  logicsig;
-      d : in  logicsig;
-      y : out logicsig;
-      y2 : out logicsig);
-
-  end component;
-
   component inv
     port (
       a : in  logicsig;

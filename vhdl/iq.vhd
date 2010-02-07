@@ -19,7 +19,6 @@ use work.sigs.all;
 
 entity iq is
     port (
-      p1 : in  logicsig;
       p2 : in  logicsig;
       p3 : in  logicsig;
       p7 : in  logicsig;

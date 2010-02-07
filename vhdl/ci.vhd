@@ -73,17 +73,6 @@ architecture gates of ci is
 
   end component;
 
-  component g4
-    port (
-      a : in  logicsig;
-      b : in  logicsig;
-      c : in  logicsig;
-      d : in  logicsig;
-      y : out logicsig;
-      y2 : out logicsig);
-
-  end component;
-
   component inv
     port (
       a : in  logicsig;
@@ -108,8 +97,6 @@ architecture gates of ci is
 
   end component;
 
-  signal a : logicsig;
-  signal b : logicsig;
   signal c : logicsig;
   signal d : logicsig;
   signal t1 : logicsig;
@@ -151,19 +138,17 @@ begin -- gates
     y => t2);
 
 
-  tp1 <= t4;
-
   u7 : inv port map (
     a => t4,
     y => p3);
 
-
-  tp2 <= t6;
+  tp1 <= t4;
 
   u10 : inv port map (
     a => t6,
     y => p4);
 
+  tp2 <= t6;
 
   u11 : g3 port map (
     a => t1,

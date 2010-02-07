@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2008 by Paul Koning
+-- Copyright (C) 2008-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -11,132 +11,198 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- PZ module, rev E -- memory inhibit driver
+-- PZ module
 --
 -------------------------------------------------------------------------------
 
 use work.sigs.all;
 
 entity pzslice is
-  
-  port (
-    d, clk, r : in  logicsig;
-    tp        : out logicsig;            -- test point
-    q         : out logicsig);
+    port (
+      clk : in  logicsig;
+      d : in  logicsig;
+      r : in  logicsig;
+      tp : out logicsig;
+      q : out logicsig);
 
 end pzslice;
-
 architecture gates of pzslice is
-  component inv2
-    port (
-      a  : in  logicsig;                     -- input
-      y, y2 : out logicsig);                    -- output
-  end component;
   component g2
     port (
-      a, b : in  logicsig;                   -- inputs
-      y, y2   : out logicsig);                  -- output
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
   end component;
+
+  component inv2
+    port (
+      a : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
+  end component;
+
   component rsflop
     port (
-      s, r  : in  logicsig;                  -- set, reset
-      q, qb : out logicsig);                 -- q and q.bar
-  end component;
-  signal t1, t2 : logicsig;
-begin  -- gates
+      r : in  logicsig;
+      s : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
 
+  end component;
+
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+
+begin -- gates
   u1 : g2 port map (
     a => d,
     b => clk,
     y => t1);
+
+
   u2 : rsflop port map (
-    s => t1,
     r => r,
+    s => t1,
     q => t2);
+
   tp <= t2;
+
   u3 : inv2 port map (
-    a  => t2,
+    a => t2,
     y2 => q);
+
+
 
 end gates;
 
 use work.sigs.all;
 
 entity pz is
-  
-  port (
-    p4, p2, p6, p19, p27, p22    : in  logicsig;
-    p17, p9, p16, p10            : in  logicsig;
-    tp1, tp2, tp3, tp4, tp5, tp6 : out logicsig;  -- test points
-    p5, p3, p7, p21, p25, p23    : out logicsig);
+    port (
+      p2 : in  logicsig;
+      p4 : in  logicsig;
+      p6 : in  logicsig;
+      p9 : in  logicsig;
+      p10 : in  logicsig;
+      p16 : in  logicsig;
+      p17 : in  logicsig;
+      p19 : in  logicsig;
+      p22 : in  logicsig;
+      p27 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
+      p3 : out logicsig;
+      p5 : out logicsig;
+      p7 : out logicsig;
+      p21 : out logicsig;
+      p23 : out logicsig;
+      p25 : out logicsig);
 
 end pz;
-
 architecture gates of pz is
-  component inv
-    port (
-      a  : in  logicsig;                     -- input
-      y  : out logicsig);                    -- output
-  end component;
   component g2
     port (
-      a, b : in  logicsig;                   -- inputs
-      y, y2   : out logicsig);                  -- output
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
   end component;
+
+  component inv
+    port (
+      a : in  logicsig;
+      y : out logicsig);
+
+  end component;
+
   component pzslice
     port (
-      d, clk, r : in  logicsig;
-      tp        : out logicsig;            -- test point
-      q         : out logicsig);
-  end component;
-  signal a, c, t1 : logicsig;
-begin  -- gates
+      clk : in  logicsig;
+      d : in  logicsig;
+      r : in  logicsig;
+      tp : out logicsig;
+      q : out logicsig);
 
+  end component;
+
+  signal a : logicsig;
+  signal c : logicsig;
+  signal t1 : logicsig;
+
+begin -- gates
   u1 : g2 port map (
-    a  => p17,
-    b  => p9,
+    a => p17,
+    b => p9,
     y2 => a);
+
+
   u2 : g2 port map (
-    a  => p16,
-    b  => p10,
+    a => p16,
+    b => p10,
     y2 => t1);
+
+
+  u3 : pzslice port map (
+    clk => a,
+    d => p4,
+    r => c,
+    q => p5,
+    tp => tp1);
+
+
+  u4 : pzslice port map (
+    clk => a,
+    d => p2,
+    r => c,
+    q => p3,
+    tp => tp2);
+
+
+  u5 : pzslice port map (
+    clk => a,
+    d => p6,
+    r => c,
+    q => p7,
+    tp => tp3);
+
+
+  u6 : pzslice port map (
+    clk => a,
+    d => p19,
+    r => c,
+    q => p21,
+    tp => tp4);
+
+
+  u7 : pzslice port map (
+    clk => a,
+    d => p27,
+    r => c,
+    q => p25,
+    tp => tp5);
+
+
+  u8 : pzslice port map (
+    clk => a,
+    d => p22,
+    r => c,
+    q => p23,
+    tp => tp6);
+
+
   u9 : inv port map (
     a => t1,
     y => c);
-  u3 : pzslice port map (
-    d   => p4,
-    clk => a,
-    r   => c,
-    tp  => tp1,
-    q   => p5);
-  u4 : pzslice port map (
-    d   => p2,
-    clk => a,
-    r   => c,
-    tp  => tp2,
-    q   => p3);
-  u5 : pzslice port map (
-    d   => p6,
-    clk => a,
-    r   => c,
-    tp  => tp3,
-    q   => p7);
-  u6 : pzslice port map (
-    d   => p19,
-    clk => a,
-    r   => c,
-    tp  => tp4,
-    q   => p21);
-  u7 : pzslice port map (
-    d   => p27,
-    clk => a,
-    r   => c,
-    tp  => tp5,
-    q   => p25);
-  u8 : pzslice port map (
-    d   => p22,
-    clk => a,
-    r   => c,
-    tp  => tp6,
-    q   => p23);
+
+
+
 end gates;
+

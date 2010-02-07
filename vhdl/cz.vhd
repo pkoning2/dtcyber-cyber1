@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -22,7 +22,7 @@ entity czslice is
       clk : in  logicsig;
       d : in  logicsig;
       i : in  logicsig;
-      i2 : in  logicsig := '0';
+      i2 : in  logicsig := '1';
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
@@ -70,8 +70,8 @@ begin -- gates
 
   u3 : latch port map (
     clk => clk,
-    d   => t1,
-    q   => t3);
+    d => t1,
+    q => t3);
 
   q2 <= t3;
   tp <= t3;
@@ -125,9 +125,9 @@ architecture gates of cz is
   component czslice
     port (
       clk : in  logicsig;
-      d : in logicsig;
+      d : in  logicsig;
       i : in  logicsig;
-      i2 : in  logicsig;
+      i2 : in  logicsig := '1';
       tp : out logicsig;
       q1 : out logicsig;
       q2 : out logicsig;
@@ -149,14 +149,6 @@ architecture gates of cz is
     port (
       a : in  logicsig;
       y : out logicsig);
-
-  end component;
-
-  component inv2
-    port (
-      a : in  logicsig;
-      y : out logicsig;
-      y2 : out logicsig);
 
   end component;
 

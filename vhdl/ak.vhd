@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -93,20 +93,20 @@ architecture gates of ak is
 
   end component;
 
-  component rsflop
-    port (
-      r : in  logicsig;
-      s : in  logicsig;
-      q : out logicsig;
-      qb : out logicsig);
-
-  end component;
-
   component rs2flop
     port (
       r : in  logicsig;
       s : in  logicsig;
       s2 : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
+
+  end component;
+
+  component rsflop
+    port (
+      r : in  logicsig;
+      s : in  logicsig;
       q : out logicsig;
       qb : out logicsig);
 
@@ -215,10 +215,10 @@ begin -- gates
   tp4 <= a;
 
   u14 : rs2flop port map (
-    r  => b,
-    s  => t1,
+    r => b,
+    s => t1,
     s2 => p22,
-    q  => r);
+    q => r);
 
   p24 <= r;
   tp2 <= r;

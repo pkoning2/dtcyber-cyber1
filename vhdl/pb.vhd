@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2008 by Paul Koning
+-- Copyright (C) 2008-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -11,91 +11,126 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- PB module rev D -- barrel latches
+-- PB module
 --
 -------------------------------------------------------------------------------
 
 use work.sigs.all;
 
 entity pbslice is
-  
-  port (
-    i          : in  logicsig;         -- input
-    c1, c2, c3 : in  logicsig;         -- clocks for the 3 stages
-    tp1, tp2   : out logicsig;         -- test points
-    q          : out logicsig);        -- output
+    port (
+      c1 : in  logicsig;
+      c2 : in  logicsig;
+      c3 : in  logicsig;
+      i : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      q : out logicsig);
 
 end pbslice;
-
 architecture gates of pbslice is
   component latch
     port (
-      d, clk : in  logicsig;                 -- data (set), clock
-      q, qb  : out logicsig);                -- q and q.bar
+      clk : in  logicsig;
+      d : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
+
   end component;
-  signal tq1, tq2 : logicsig;     -- stage outputs
-begin  -- gates
+
+  signal tq1 : logicsig;
+  signal tq2 : logicsig;
+
+begin -- gates
   u1 : latch port map (
-    d   => i,
     clk => c1,
-    q   => tq1);
+    d => i,
+    q => tq1);
+
   tp1 <= tq1;
+
   u2 : latch port map (
-    d   => tq1,
     clk => c2,
-    q   => tq2);
+    d => tq1,
+    q => tq2);
+
   tp2 <= tq2;
+
   u3 : latch port map (
-    d   => tq2,
     clk => c3,
-    q   => q);
+    d => tq2,
+    q => q);
+
+
+
 end gates;
 
 use work.sigs.all;
 
 entity pb is
-  
-  port (
-    p7, p6, p10                  : in  logicsig;    -- inputs
-    p5, p22, p27                 : in  logicsig;    -- stage clocks
-    tp1, tp2, tp3, tp4, tp5, tp6 : out logicsig;    -- test points
-    p9, p3, p1                   : out logicsig);   -- outputs
+    port (
+      p5 : in  logicsig;
+      p6 : in  logicsig;
+      p7 : in  logicsig;
+      p10 : in  logicsig;
+      p22 : in  logicsig;
+      p27 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
+      p1 : out logicsig;
+      p3 : out logicsig;
+      p9 : out logicsig);
 
 end pb;
-
 architecture gates of pb is
   component pbslice
     port (
-      i          : in  logicsig;         -- input
-      c1, c2, c3 : in  logicsig;         -- clocks for the 3 stages
-      tp1, tp2   : out logicsig;         -- test points
-      q          : out logicsig);        -- output
+      c1 : in  logicsig;
+      c2 : in  logicsig;
+      c3 : in  logicsig;
+      i : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      q : out logicsig);
+
   end component;
-begin  -- gates
+
+
+begin -- gates
   u1 : pbslice port map (
-    i   => p7,
-    c1  => p5,
-    c2  => p22,
-    c3  => p27,
+    c1 => p5,
+    c2 => p22,
+    c3 => p27,
+    i => p7,
+    q => p9,
     tp1 => tp1,
-    tp2 => tp4,
-    q   => p9);
+    tp2 => tp4);
+
+
   u2 : pbslice port map (
-    i   => p6,
-    c1  => p5,
-    c2  => p22,
-    c3  => p27,
+    c1 => p5,
+    c2 => p22,
+    c3 => p27,
+    i => p6,
+    q => p3,
     tp1 => tp2,
-    tp2 => tp5,
-    q   => p3);
+    tp2 => tp5);
+
+
   u3 : pbslice port map (
-    i   => p10,
-    c1  => p5,
-    c2  => p22,
-    c3  => p27,
+    c1 => p5,
+    c2 => p22,
+    c3 => p27,
+    i => p10,
+    q => p1,
     tp1 => tp3,
-    tp2 => tp6,
-    q   => p1);
-  
+    tp2 => tp6);
+
+
 
 end gates;
+
