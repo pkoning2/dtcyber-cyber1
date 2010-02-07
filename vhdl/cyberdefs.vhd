@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2008-2009 by Paul Koning
+-- Copyright (C) 2008-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -440,6 +440,34 @@ end beh;
 
 
 use work.sigs.all;
+entity latchs is
+  
+  port (
+    d, clk : in  logicsig;                   -- data (set), clock
+    s : in logicsig;                    -- asynch set
+    q, qb  : out logicsig);                  -- q and q.bar
+
+end latchs;
+
+architecture beh of latchs is
+  signal clki : logicsig;
+begin  -- beh
+  clki <= clk after t * 2;
+  latchs: process (clki, s, d)
+    variable qi : logicsig;
+  begin  -- process level sensitive latch
+    if s = '0' then
+      qi := '1';
+    elsif clki = '1' then  -- clock (enable) asserted
+      qi := d;
+    end if;
+    q <= qi after t;
+    qb <= not (qi) after t;
+  end process latchs;
+end beh;
+
+
+use work.sigs.all;
 entity latch2 is
   
   port (
@@ -487,6 +515,36 @@ begin  -- beh
   u1 : latch port map (
     d   => di,
     clk => clk,
+    q   => q,
+    qb  => qb);
+
+end beh;
+
+
+use work.sigs.all;
+entity latchd2s is
+  
+  port (
+    d, d2, clk : in  logicsig;                   -- data (set), clock
+    s : in logicsig;                    -- asynch set
+    q, qb  : out logicsig);                  -- q and q.bar
+
+end latchd2s;
+
+architecture beh of latchd2s is
+  component latchs
+    port (
+      d, clk : in  logicsig;                 -- data (set), clock
+      s : in logicsig;                    -- asynch set
+      q, qb  : out logicsig);                -- q and q.bar
+  end component;
+  signal di : logicsig;
+begin  -- beh
+  di <= d and d2;
+  u1 : latchs port map (
+    d   => di,
+    clk => clk,
+    s   => s,
     q   => q,
     qb  => qb);
 

@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -47,9 +47,10 @@ architecture gates of ikslice is
 
   end component;
 
-  component latchd2
+  component latchd2s
     port (
       d, d2, clk : in  logicsig;                 -- data (set), clock
+      s : in logicsig;                    -- asynch set
       q, qb  : out logicsig);                -- q and q.bar
   end component;
 
@@ -57,10 +58,11 @@ architecture gates of ikslice is
   signal t3 : logicsig;
 
 begin -- gates
-  u2 : latchd2 port map (
+  u2 : latchd2s port map (
     clk => clk,
     d => n,
     d2 => i1,
+    s => i2,
     q => t2);
 
   q1 <= t2;
