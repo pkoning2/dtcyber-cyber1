@@ -36,9 +36,97 @@ entity qdslice is
 
 end qdslice;
 architecture gates of qdslice is
+  component g2
+    port (
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
+  end component;
+
+  component g3
+    port (
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
+  end component;
+
+  component g4
+    port (
+      a : in  logicsig;
+      b : in  logicsig;
+      c : in  logicsig;
+      d : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
+  end component;
+
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal t3 : logicsig;
+  signal t4 : logicsig;
+  signal t5 : logicsig;
+  signal t6 : logicsig;
+  signal t7 : logicsig;
+  signal t8 : logicsig;
 
 begin -- gates
+  u1 : g2 port map (
+    a => cc,
+    b => a,
+    y => t1);
+
+
+  u2 : g2 port map (
+    a => t1,
+    b => b,
+    y => t2,
+    y2 => t3);
+
+  tp2 <= t3;
+
+  u3 : g3 port map (
+    a => t2,
+    b => c,
+    c => ca,
+    y => t4);
+
+
+  u4 : g3 port map (
+    a => t3,
+    b => d,
+    c => ca,
+    y => t5);
+
+
+  u5 : g2 port map (
+    a => t3,
+    b => cb,
+    y => t6);
+
+
+  u6 : g4 port map (
+    a => cd,
+    b => e,
+    c => f,
+    d => g,
+    y => t7);
+
+
+  u7 : g4 port map (
+    a => t7,
+    b => t6,
+    c => t4,
+    d => t5,
+    y => t8);
+
+  tp1 <= t8;
+  y <= t8;
 
 
 end gates;

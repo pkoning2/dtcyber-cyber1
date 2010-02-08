@@ -2,7 +2,7 @@
 
 """Create a module definition VHDL file
 
-Copyright (C) 2009 by Paul Koning
+Copyright (C) 2009-2010 by Paul Koning
 """
 
 import readline
@@ -418,6 +418,8 @@ class ElementInstance (object):
 """ % (self.name, self.eltype.name, generics, ",\n".join (entries))
 
     
+_re_strip = re.compile ("[ \t\n]+")
+
 class cmod (ElementType):
     """A Cyber module or element of a module
     """
@@ -436,6 +438,8 @@ class cmod (ElementType):
         else:
             self.ismodule = (len (name) == 2)
         ElementType.__init__ (self, name)
+        self.firstyear = self.cyears = None
+        self.oldtext = None
         self.name = name
         self.elements = { }
         self.signals = { }
@@ -473,11 +477,17 @@ class cmod (ElementType):
     def addassign (self, to, fname):
         """Add an assignment of an output signal from a temp
         """
+        #print "assign %s <= %s" % (to, fname)
         if to in self.signals:
             print to, "already defined"
             return
         tsig = self.findsignal (to)
-        fsig = self.findsignal (fname)
+        if fname == "'0'":
+            fsig = sigzero
+        elif fname == "'1'":
+            fsig = sigone
+        else:
+            fsig = self.findsignal (fname)
         tsig.setsource (fsig)
         
     def addelements (self):
@@ -525,7 +535,7 @@ class cmod (ElementType):
 --
 -- CDC 6600 model
 --
--- Copyright (C) %d by Paul Koning
+-- Copyright (C) %s by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -538,9 +548,18 @@ class cmod (ElementType):
 --
 -------------------------------------------------------------------------------
 """
-    
+
+    def copyyears (self):
+        if self.cyears:
+            return self.cyears
+        now = str (time.localtime ().tm_year)
+        if self.firstyear and self.firstyear == now:
+            return "%s" % now
+        else:
+            return "%s-%s" % (self.firstyear, now)
+        
     def printheader (self):
-        return self.header % (time.localtime ().tm_year, self.name.upper ())
+        return self.header % (self.copyyears (), self.name.upper ())
 
     def isinternal (self, pin):
         """Tells whether the pin is an internal signal or not.  For modules
@@ -652,12 +671,12 @@ end gates;
 
     def write (self, writedep = False):
         """Write module definition to a file.  Writedep says whether to
-        write a .d file (dependencies file).
+        write a .d file (dependencies file).  If the definition is
+        unchanged (except for layout and comments), don't write it.
         """
         slices = set ()
         deps = set ()
-        f = file ("%s.vhd" % self.name, "w")
-        print >> f, self.printheader ()
+        newtext = [ ]
         for e in self.elements:
             if "slice" in self.elements[e].eltype.name and \
                    self.elements[e].eltype.name.startswith (self.name):
@@ -665,11 +684,26 @@ end gates;
             else:
                 deps.add (self.elements[e].eltype.name)
         for slice in sorted (slices):
-            print >> f, elements[slice].printmodule ()
-        print >> f, self.printmodule ()
-        f.close ()
-        deps.discard ("wire")
+            newtext.append (elements[slice].printmodule ())
+        newtext.append (self.printmodule ())
+        newtext = '\n'.join (newtext)
+        if self.oldtext:
+            n = _re_comment.sub ("", newtext)
+            n = _re_strip.sub (" ", n).strip ()
+            o = _re_strip.sub (" ", self.oldtext)
+        else:
+            n = "new"
+            o = "old"
+        if n == o:
+            print "Module %s is unchanged" % self.name
+        else:
+            f = file ("%s.vhd" % self.name, "w")
+            self.cyears = None
+            print >> f, self.printheader ()
+            print >> f, newtext
+            f.close ()
         if writedep:
+            deps.discard ("wire")
             df = file ("%s.d" % self.name, "w")
             print >> df, "%s.o: %s.vhd" % (self.name, self.name),
             for dep in sorted (deps):
@@ -683,10 +717,11 @@ _re_arch = re.compile (r"entity +(.+?) +is\s+?(generic +\((.+?)\);\s+?)?port +\(
 _re_portmap = re.compile (r"(\w+)\s*:\s*(\w+) port map \((.+?)\)", re.S)
 _re_generic = re.compile (r"(\w+)\s*:\s*(\w+)( +:= +.+)?")
 _re_pinmap = re.compile (r"(\w+)\s*=>\s*(\w+|'1')")
-_re_assign = re.compile (r"(\w+)\s*<=\s*(\w+)")
+_re_assign = re.compile (r"(\w+)\s*<=\s*(['\w]+)")
 _re_pin = re.compile (r"([a-z0-9, ]+):\s+(inout|in|out)\s+([a-z0-9_]+)( +:= +'[01]')?")
 _re_comment = re.compile (r"--.*$", re.M)
 _re_pinname = re.compile (r"p\d+$")
+_re_cright = re.compile (r"copyright \(c\) (\d+)((?:[-, ]+\d+)*)", re.I)
 
 def readmodule (modname, allports = False):
     """Read a module definition VHD file and return the top
@@ -695,11 +730,21 @@ def readmodule (modname, allports = False):
     f = open ("%s.vhd" % modname, "r")
     #print "reading module", modname
     # Read the file, stripping comments
-    mtext = _re_comment.sub ("", f.read ())
+    mtext = f.read ()
+    m = _re_cright.search (mtext)
+    if m:
+        firstyear = m.group (1)
+        cyears = m.group (1) + m.group (2)
+    else:
+        firstyear = cyears = None
+    mtext = _re_comment.sub ("", mtext)
     f.close ()
     e = None
     for m in _re_arch.finditer (mtext):
         e = cmod (m.group (1))
+        e.firstyear = firstyear
+        e.cyears = cyears
+        e.oldtext = mtext.strip ()
         #print m.group (1)
         # Process any generics
         if m.group (2):
@@ -708,7 +753,7 @@ def readmodule (modname, allports = False):
                                                    g.group (2),
                                                    g.group (3))
         # Parse the architecture section, if it's "gates"
-        gates = m.group (5) == "gates"
+        gates = (m.group (5) == "gates" or m.group (5) == m.group (1))
         if gates:
             for c in _re_portmap.finditer (m.group (6)):
                 u = ElementInstance (c.group (1), c.group (2))

@@ -28,9 +28,42 @@ entity qeslice is
 
 end qeslice;
 architecture gates of qeslice is
+  component g2
+    port (
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
+  end component;
+
+  component inv
+    port (
+      a : in  logicsig;
+      y : out logicsig);
+
+  end component;
+
+  signal t1 : logicsig;
 
 begin -- gates
+  u1 : inv port map (
+    a => b,
+    y => t1);
+
+  yb <= t1;
+
+  u2 : g2 port map (
+    a => a,
+    b => t1,
+    y => ya);
+
+
+  u3 : g2 port map (
+    a => t1,
+    b => c,
+    y => yc);
+
 
 
 end gates;
