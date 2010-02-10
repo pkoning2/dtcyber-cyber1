@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- XI module
+-- XI module -- 6612 keyboard input buffers
 --
 -------------------------------------------------------------------------------
 

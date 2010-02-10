@@ -82,11 +82,12 @@ class hitem (object):
 class Pin (hitem):
     """Pin of a logic element type
     """
-    def __init__ (self, name, dir, ptype, opt = False):
+    def __init__ (self, name, dir, ptype, opt = False, optval = None):
         hitem.__init__ (self, name)
         self.dir = dir
         self.ptype = ptype
         self.opt = opt
+        self.optval = optval
         self._sources = set ()
 
     def sources (self):
@@ -94,7 +95,8 @@ class Pin (hitem):
     
     def printdecl (self):
         if self.opt:
-            return "%s : %-3s %s := '1'" % (self.name, self.dir, self.ptype)
+            return "%s : %-3s %s := %s" % (self.name, self.dir,
+                                            self.ptype, self.optval)
         else:
             return "%s : %-3s %s" % (self.name, self.dir, self.ptype)
 
@@ -125,7 +127,8 @@ class ElementType (object):
         self.pins = { }
         self.generics = { }
         
-    def addpin (self, namelist, dir, ptype = "logicsig", opt = False):
+    def addpin (self, namelist, dir, ptype = "logicsig",
+                opt = False, optval = None):
         if dir not in ("in", "out"):
             print "Unrecognized pin direction", dir
             return
@@ -133,7 +136,7 @@ class ElementType (object):
             if name in self.pins:
                 print "Pin", name, "already defined"
             else:
-                self.pins[name] = Pin (name, dir, ptype, opt)
+                self.pins[name] = Pin (name, dir, ptype, opt, optval)
 
     def inputs (self):
         """Return a list of input pins, sorted by name
@@ -231,6 +234,7 @@ class Signal (hitem):
         self._sources = set ()
         self.destcount = 0
         self.opt = opt
+        self.optval = None
         self.ptype = None
     
     def setsource (self, source):
@@ -549,17 +553,26 @@ class cmod (ElementType):
 -------------------------------------------------------------------------------
 """
 
-    def copyyears (self):
-        if self.cyears:
-            return self.cyears
-        now = str (time.localtime ().tm_year)
-        if self.firstyear and self.firstyear == now:
-            return "%s" % now
-        else:
-            return "%s-%s" % (self.firstyear, now)
-        
     def printheader (self):
-        return self.header % (self.copyyears (), self.name.upper ())
+        ohdr = None
+        now = str (time.localtime ().tm_year)
+        if self.ohdr:
+            ohdr = self.ohdr
+            m = _re_cright.search (ohdr)
+            if m:
+                firstyear = m.group (1)
+                cyears = m.group (1) + m.group (2)
+                if now not in cyears:
+                    if firstyear == now:
+                        cyears = firstyear
+                    else:
+                        cyears = "%s-%s" % (firstyear, now)
+                    ohdr =_re_cright.sub ("Copyright (C) %s" % cyears, ohdr)
+            else:
+                ohdr = None
+        if not ohdr:
+            ohdr = self.header % (now, self.name.upper ())
+        return ohdr
 
     def isinternal (self, pin):
         """Tells whether the pin is an internal signal or not.  For modules
@@ -583,6 +596,8 @@ class cmod (ElementType):
         """
         #print "finishing", self.name
         for s in self.signals.itervalues ():
+            if s.ptype is None:
+                s.ptype = "logicsig"
             s.sources ()
         for s in self.signals.itervalues ():
             if not self.isinternal (s) and not s in self.pins:
@@ -591,7 +606,7 @@ class cmod (ElementType):
                     self.addpin ((str (s),), "out", s.ptype)
                 else:
                     #print "adding", s, s.ptype, s.opt
-                    self.addpin ((str (s),), "in", s.ptype, s.opt)
+                    self.addpin ((str (s),), "in", s.ptype, s.opt, s.optval)
         for s in self.signals.itervalues ():
             if not self.isinternal (s):
                 p = self.pins[s]
@@ -648,6 +663,8 @@ class cmod (ElementType):
             assigns, sigdict = self.printassigns (sigdict, e)
             gates.append (assigns)
         assigns, sigdict = self.printassigns (sigdict)
+        if not gates and not assigns.strip ():
+            raise Exception, "Empty architecture"
         return """use work.sigs.all;
 
 entity %s is
@@ -683,9 +700,13 @@ end gates;
                 slices.add (self.elements[e].eltype.name)
             else:
                 deps.add (self.elements[e].eltype.name)
-        for slice in sorted (slices):
-            newtext.append (elements[slice].printmodule ())
-        newtext.append (self.printmodule ())
+        try:
+            for slice in sorted (slices):
+                newtext.append (elements[slice].printmodule ())
+            newtext.append (self.printmodule ())
+        except Exception, msg:
+            print "Module %s: %s" % (self.name, msg)
+            return
         newtext = '\n'.join (newtext)
         if self.oldtext:
             n = _re_comment.sub ("", newtext)
@@ -720,6 +741,7 @@ _re_pinmap = re.compile (r"(\w+)\s*=>\s*(\w+|'1')")
 _re_assign = re.compile (r"(\w+)\s*<=\s*(['\w]+)")
 _re_pin = re.compile (r"([a-z0-9, ]+):\s+(inout|in|out)\s+([a-z0-9_]+)( +:= +'[01]')?")
 _re_comment = re.compile (r"--.*$", re.M)
+_re_chdr = re.compile ("(--.*\n)+", re.M)
 _re_pinname = re.compile (r"p\d+$")
 _re_cright = re.compile (r"copyright \(c\) (\d+)((?:[-, ]+\d+)*)", re.I)
 
@@ -731,19 +753,17 @@ def readmodule (modname, allports = False):
     #print "reading module", modname
     # Read the file, stripping comments
     mtext = f.read ()
-    m = _re_cright.search (mtext)
+    ohdr = None
+    m = _re_chdr.match (mtext)
     if m:
-        firstyear = m.group (1)
-        cyears = m.group (1) + m.group (2)
-    else:
-        firstyear = cyears = None
+        ohdr = m.group (0)
+        mtext = mtext[m.end ():]
     mtext = _re_comment.sub ("", mtext)
     f.close ()
     e = None
     for m in _re_arch.finditer (mtext):
         e = cmod (m.group (1))
-        e.firstyear = firstyear
-        e.cyears = cyears
+        e.ohdr = ohdr
         e.oldtext = mtext.strip ()
         #print m.group (1)
         # Process any generics
@@ -775,6 +795,7 @@ def readmodule (modname, allports = False):
             dir = pins.group (2)
             ptype = pins.group (3)
             opt = False
+            optval = None
             if dir == "inout" and ptype != "misc":
                 print "Unexpected type %s for inout pin" % ptype
                 continue
@@ -784,12 +805,13 @@ def readmodule (modname, allports = False):
                         print "Unexpected default in", pins.group ()
                         continue
                     opt = True
+                    optval = pins.group ()[-3:]
                 elif ptype != "misc" and not allports:
                     continue
             #print pins.groups ()
             for p in pins.group (1).replace (" ", "").split (","):
                 if p in e.pins or opt or allports or not gates or ptype == "misc":
-                    e.pins[p] = Pin (p, dir, ptype, opt)
+                    e.pins[p] = Pin (p, dir, ptype, opt, optval)
         e.finish ()
     if e is None:
         print "No module found in %s.vhd" % modname

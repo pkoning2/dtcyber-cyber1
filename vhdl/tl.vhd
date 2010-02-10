@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- TL module
+-- TL module -- assorted gates and inverters
 --
 -------------------------------------------------------------------------------
 

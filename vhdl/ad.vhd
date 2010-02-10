@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- AD module
+-- AD module - 6612 S register
 --
 -------------------------------------------------------------------------------
 

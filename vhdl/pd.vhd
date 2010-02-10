@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- PD module
+-- PD module rev D
 --
 -------------------------------------------------------------------------------
 

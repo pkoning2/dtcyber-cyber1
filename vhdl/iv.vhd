@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- IV module
+-- IV module, 3 to 8 decode with true and complement outputs
 --
 -------------------------------------------------------------------------------
 

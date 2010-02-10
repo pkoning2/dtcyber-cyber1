@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- TB module
+-- TB module, rev C -- 3-6 input gates
 --
 -------------------------------------------------------------------------------
 

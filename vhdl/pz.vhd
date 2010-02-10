@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- PZ module
+-- PZ module, rev E -- memory inhibit driver
 --
 -------------------------------------------------------------------------------
 

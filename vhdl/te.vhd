@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- TE module
+-- TE module, rev C -- hex 3-input mux
 --
 -------------------------------------------------------------------------------
 

@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- PK module
+-- PK module rev D -- channel control
 --
 -------------------------------------------------------------------------------
 

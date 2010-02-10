@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- TI module
+-- TI module, rev C -- 3 and 4 input gates
 --
 -------------------------------------------------------------------------------
 

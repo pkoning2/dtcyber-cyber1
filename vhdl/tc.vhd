@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- TC module
+-- TC module, rev D -- dual 12 output fanout
 --
 -------------------------------------------------------------------------------
 

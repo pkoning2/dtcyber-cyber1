@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- QJ module
+-- QJ module -- 6 x coax latch, coax driver
 --
 -------------------------------------------------------------------------------
 

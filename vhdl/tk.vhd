@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- TK module
+-- TK module, rev C -- 3 to 8 decode
 --
 -------------------------------------------------------------------------------
 

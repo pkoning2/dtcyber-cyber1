@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- CB module
+-- CB module -- 6 way fanout and big fanout
 --
 -------------------------------------------------------------------------------
 

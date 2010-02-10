@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- TH module
+-- TH module, rev C -- assorted fanouts
 --
 -------------------------------------------------------------------------------
 

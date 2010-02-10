@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- TA module
+-- TA module, rev C -- 6 input gates
 --
 -------------------------------------------------------------------------------
 

@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- QD module
+-- QD module, rev C -- add/boolean ops control
 --
 -------------------------------------------------------------------------------
 

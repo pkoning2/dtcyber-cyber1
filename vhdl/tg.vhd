@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- TG module
+-- TG module, rev H -- 4 input mux
 --
 -------------------------------------------------------------------------------
 

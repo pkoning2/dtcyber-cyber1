@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- PA module
+-- PA module rev C -- memory address register (S register)
 --
 -------------------------------------------------------------------------------
 

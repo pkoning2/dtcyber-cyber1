@@ -11,7 +11,7 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- PG module
+-- PG module rev C  - storage address register (G)
 --
 -------------------------------------------------------------------------------
 
