@@ -1,7 +1,7 @@
-[timestart] 15382000000
+[timestart] 15158000000
 [size] 1393 856
 [pos] -1 -1
-*-28.167751 16755000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-29.521803 17755000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] uut.
 [treeopen] uut.ch1.d26.
 [treeopen] uut.ch1.d35.
@@ -75,6 +75,8 @@ uut.clk4
 @28
 +Go_FF uut.ch5.g30.tp1
 +All_quiet uut.ch5.f26.p10
+@24
+#Inch_counter uut.ch5.g32.tp1 uut.ch5.g32.tp4
 @200
 -CM
 @28
