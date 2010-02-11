@@ -54,7 +54,7 @@ cyberdefs.o $(VLIB) cyberdefs.stamp: cyberdefs.vhd
 %.o : %.c
 	$(CC) -O2  $(CFLAGS) $(CCOPTS) -I .. -I . -c $<
 
-cdc6600.vhd $(CHASSIS_V) $(CHASSIS_D) : $(CHASSIS_SRCS) $(CABLE_SRCS)
+cdc6600.vhd : $(CHASSIS_SRCS) $(CABLE_SRCS) wlist.py cmodule.py
 	# Note: cables must be last
 	python wlist.py  $(CHASSIS_SRCS) $(CABLE_SRCS)
 
