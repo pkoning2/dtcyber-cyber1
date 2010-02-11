@@ -93,7 +93,7 @@ begin
        cycle25 := cycle25 + 1;
        if cycle25 = 4 then
          c_1w37_in(2) <= '1';
-       elsif cycle25 = 360 then
+       elsif cycle25 = 180 then
          c_1w37_in(2) <= '0';         
        end if;
      end loop;
