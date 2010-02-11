@@ -37,20 +37,18 @@ entity jc is
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
-      p2 : out logicsig;
+      p2_p9 : out logicsig;
       p4 : out logicsig;
       p5 : out logicsig;
       p6 : out logicsig;
-      p9 : out logicsig;
       p12 : out logicsig;
       p14 : out logicsig;
-      p17 : out logicsig;
+      p17_p28 : out logicsig;
       p19 : out logicsig;
       p20 : out logicsig;
       p22 : out logicsig;
       p23 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p27 : out logicsig);
 
 end jc;
 architecture gates of jc is
@@ -112,12 +110,10 @@ architecture gates of jc is
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
   signal t9 : logicsig;
   signal t10 : logicsig;
   signal t11 : logicsig;
   signal t12 : logicsig;
-  signal t13 : logicsig;
   signal t15 : logicsig;
   signal t16 : logicsig;
 
@@ -167,10 +163,8 @@ begin -- gates
   u7 : inv2 port map (
     a => p,
     y => p27,
-    y2 => t5);
+    y2 => p17_p28);
 
-  p17 <= t5;
-  p28 <= t5;
 
   u8 : rsflop port map (
     r => a,
@@ -216,10 +210,8 @@ begin -- gates
   u14 : inv2 port map (
     a => t,
     y => p1,
-    y2 => t13);
+    y2 => p2_p9);
 
-  p2 <= t13;
-  p9 <= t13;
 
   u16 : inv2 port map (
     a => r,

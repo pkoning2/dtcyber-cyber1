@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -37,8 +37,6 @@ entity gc is
       p27 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
@@ -46,12 +44,12 @@ entity gc is
       p8 : out logicsig;
       p9 : out logicsig;
       p11 : out logicsig;
-      p13 : out logicsig;
+      p13_tp4 : out logicsig;
       p14 : out logicsig;
       p15 : out logicsig;
       p17 : out logicsig;
       p19 : out logicsig;
-      p21 : out logicsig;
+      p21_tp3 : out logicsig;
       p28 : out logicsig);
 
 end gc;
@@ -132,10 +130,8 @@ architecture gates of gc is
   signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
-  signal t9 : logicsig;
   signal t10 : logicsig;
   signal t11 : logicsig;
-  signal t12 : logicsig;
 
 begin -- gates
   u1 : rs4flop port map (
@@ -270,11 +266,9 @@ begin -- gates
     a => b,
     b => d,
     c => f,
-    y => t9,
+    y => p13_tp4,
     y2 => p19);
 
-  p13 <= t9;
-  tp4 <= t9;
 
   u21 : g4 port map (
     a => b,
@@ -296,10 +290,8 @@ begin -- gates
     a => t10,
     b => c,
     c => t11,
-    y => t12);
+    y => p21_tp3);
 
-  p21 <= t12;
-  tp3 <= t12;
 
 
 end gates;

@@ -27,16 +27,14 @@ entity jm is
       p22 : in  logicsig;
       p24 : in  logicsig;
       p26 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
       p2 : out logicsig;
       p3 : out logicsig;
       p5 : out logicsig;
       p7 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
+      p9_tp2 : out logicsig;
+      p10_tp1 : out logicsig;
       p11 : out logicsig;
       p12 : out logicsig;
       p13 : out logicsig;
@@ -45,9 +43,8 @@ entity jm is
       p17 : out logicsig;
       p18 : out logicsig;
       p20 : out logicsig;
-      p21 : out logicsig;
+      p21_p25 : out logicsig;
       p23 : out logicsig;
-      p25 : out logicsig;
       p27 : out logicsig;
       p28 : out logicsig);
 
@@ -105,11 +102,6 @@ architecture gates of jm is
   signal n : logicsig;
   signal r : logicsig;
   signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t4 : logicsig;
-  signal v : logicsig;
-  signal w : logicsig;
-  signal x : logicsig;
   signal y : logicsig;
   signal z : logicsig;
 
@@ -119,32 +111,27 @@ begin -- gates
     b => j,
     c => h,
     d => n,
-    y => v);
+    y => p16);
 
   p15 <= l;
-  p16 <= v;
   p17 <= h;
-  p21 <= n;
+  p21_p25 <= n;
   p23 <= j;
-  p25 <= n;
 
   u2 : g4 port map (
     a => l,
     b => j,
     c => g,
     d => n,
-    y => w,
+    y => p20,
     y2 => t1);
 
-  p20 <= w;
-  
+
   u3 : g2 port map (
     a => e,
     b => t1,
-    y => t2);
+    y => p9_tp2);
 
-  p9 <= t2;
-  tp2 <= t2;
 
   u4 : g3 port map (
     a => t1,
@@ -167,9 +154,8 @@ begin -- gates
     b => i,
     c => h,
     d => n,
-    y => x);
+    y => p18);
 
-  p18 <= x;
 
   u7 : g4 port map (
     a => l,
@@ -201,10 +187,8 @@ begin -- gates
     a => r,
     b => a,
     c => d,
-    y => t4);
+    y => p10_tp1);
 
-  p10 <= t4;
-  tp1 <= t4;
 
   u11 : g3 port map (
     a => r,

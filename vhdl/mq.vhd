@@ -23,8 +23,7 @@ entity mqslice is
       clk : in  logicsig;
       i1 : in  logicsig;
       i2 : in  logicsig := '1';
-      tp : out logicsig;
-      qb : out logicsig;
+      qb_tp : out logicsig;
       y : out logicsig);
 
 end mqslice;
@@ -56,7 +55,6 @@ architecture gates of mqslice is
   end component;
 
   signal t1 : logicsig;
-  signal t2 : logicsig;
 
 begin -- gates
   u1 : latchd2 port map (
@@ -74,10 +72,8 @@ begin -- gates
 
   u3 : inv port map (
     a => t1,
-    y => t2);
+    y => qb_tp);
 
-  qb <= t2;
-  tp <= t2;
 
 
 end gates;
@@ -98,24 +94,18 @@ entity mq is
       p23 : in  logicsig;
       p24 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
-      p3 : out logicsig;
+      p3_tp1 : out logicsig;
       p5 : out logicsig;
-      p7 : out logicsig;
+      p7_tp2 : out logicsig;
       p9 : out logicsig;
-      p11 : out logicsig;
+      p11_tp3 : out logicsig;
       p15 : out logicsig;
       p20 : out logicsig;
       p21 : out logicsig;
-      p22 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
+      p22_tp4 : out logicsig;
+      p25_tp5 : out logicsig;
+      p26_tp6 : out logicsig;
       p27 : out logicsig);
 
 end mq;
@@ -133,8 +123,7 @@ architecture gates of mq is
       clk : in  logicsig;
       i1 : in  logicsig;
       i2 : in  logicsig := '1';
-      tp : out logicsig;
-      qb : out logicsig;
+      qb_tp : out logicsig;
       y : out logicsig);
 
   end component;
@@ -147,8 +136,7 @@ begin -- gates
     clk => p13,
     i1 => p2,
     i2 => p4,
-    qb => p3,
-    tp => tp1,
+    qb_tp => p3_tp1,
     y => p1);
 
 
@@ -157,8 +145,7 @@ begin -- gates
     clk => p13,
     i1 => p6,
     i2 => p8,
-    qb => p7,
-    tp => tp2,
+    qb_tp => p7_tp2,
     y => p5);
 
 
@@ -167,8 +154,7 @@ begin -- gates
     clk => p13,
     i1 => p10,
     i2 => p12,
-    qb => p11,
-    tp => tp3,
+    qb_tp => p11_tp3,
     y => p9);
 
 
@@ -176,8 +162,7 @@ begin -- gates
     c => c,
     clk => p13,
     i1 => p23,
-    qb => p22,
-    tp => tp4,
+    qb_tp => p22_tp4,
     y => p20);
 
 
@@ -185,8 +170,7 @@ begin -- gates
     c => c,
     clk => p13,
     i1 => p24,
-    qb => p25,
-    tp => tp5,
+    qb_tp => p25_tp5,
     y => p21);
 
 
@@ -194,8 +178,7 @@ begin -- gates
     c => c,
     clk => p13,
     i1 => p28,
-    qb => p26,
-    tp => tp6,
+    qb_tp => p26_tp6,
     y => p27);
 
 
@@ -207,6 +190,8 @@ begin -- gates
   u8 : inv port map (
     a => p17,
     y => p15);
+
+
 
 end gates;
 

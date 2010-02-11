@@ -25,8 +25,7 @@ entity aeslice is
       r3 : in  logicsig;
       s1 : in  logicsig;
       s2 : in  logicsig;
-      tp : out logicsig;
-      q : out logicsig;
+      q_tp : out logicsig;
       qb : out logicsig);
 
 end aeslice;
@@ -53,7 +52,6 @@ architecture gates of aeslice is
 
   signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : g3 port map (
@@ -74,11 +72,9 @@ begin -- gates
     r => t2,
     r2 => r3,
     s => t1,
-    q => t4,
+    q => q_tp,
     qb => qb);
 
-  q <= t4;
-  tp <= t4;
 
 
 end gates;
@@ -106,17 +102,13 @@ entity ae is
       p24 : in  logicsig;
       p26 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
-      p8 : out logicsig;
+      p8_tp1 : out logicsig;
       p9 : out logicsig;
-      p10 : out logicsig;
+      p10_tp2 : out logicsig;
       p18 : out logicsig;
-      p20 : out logicsig;
-      p25 : out logicsig;
+      p20_tp5 : out logicsig;
+      p25_tp6 : out logicsig;
       p27 : out logicsig);
 
 end ae;
@@ -129,8 +121,7 @@ architecture gates of ae is
       r3 : in  logicsig;
       s1 : in  logicsig;
       s2 : in  logicsig;
-      tp : out logicsig;
-      q : out logicsig;
+      q_tp : out logicsig;
       qb : out logicsig);
 
   end component;
@@ -174,9 +165,8 @@ begin -- gates
     r3 => c,
     s1 => p3,
     s2 => p5,
-    q => p8,
-    qb => p1,
-    tp => tp1);
+    q_tp => p8_tp1,
+    qb => p1);
 
 
   u4 : aeslice port map (
@@ -186,9 +176,8 @@ begin -- gates
     r3 => c,
     s1 => p11,
     s2 => p7,
-    q => p10,
-    qb => p9,
-    tp => tp2);
+    q_tp => p10_tp2,
+    qb => p9);
 
 
   u5 : aeslice port map (
@@ -198,9 +187,8 @@ begin -- gates
     r3 => c,
     s1 => p15,
     s2 => p13,
-    q => p20,
-    qb => p18,
-    tp => tp5);
+    q_tp => p20_tp5,
+    qb => p18);
 
 
   u6 : aeslice port map (
@@ -210,9 +198,8 @@ begin -- gates
     r3 => c,
     s1 => p21,
     s2 => p23,
-    q => p25,
-    qb => p27,
-    tp => tp6);
+    q_tp => p25_tp6,
+    qb => p27);
 
 
 

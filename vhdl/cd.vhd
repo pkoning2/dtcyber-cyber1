@@ -23,10 +23,8 @@ entity cdslice is
       i1 : in  logicsig;
       i2 : in  logicsig;
       i3 : in  logicsig;
-      tp : out logicsig;
+      tp_y1_y2 : out logicsig;
       a : out logicsig;
-      y1 : out logicsig;
-      y2 : out logicsig;
       y3 : out logicsig);
 
 end cdslice;
@@ -82,9 +80,7 @@ begin -- gates
     b => t3,
     y => t4);
 
-  tp <= t4;
-  y1 <= t4;
-  y2 <= t4;
+  tp_y1_y2 <= t4;
 
   u6 : g2 port map (
     a => t4,
@@ -113,26 +109,17 @@ entity cd is
       p23 : in  logicsig;
       p25 : in  logicsig;
       p26 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
+      p1_p2_tp2 : out logicsig;
       p5 : out logicsig;
       p6 : out logicsig;
-      p7 : out logicsig;
-      p10 : out logicsig;
+      p7_p10_tp1 : out logicsig;
       p13 : out logicsig;
       p15 : out logicsig;
-      p16 : out logicsig;
+      p16_tp3 : out logicsig;
       p18 : out logicsig;
-      p21 : out logicsig;
-      p24 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p21_p24_tp6 : out logicsig;
+      p27_p28_tp5 : out logicsig);
 
 end cd;
 architecture gates of cd is
@@ -142,10 +129,8 @@ architecture gates of cd is
       i1 : in  logicsig;
       i2 : in  logicsig;
       i3 : in  logicsig;
-      tp : out logicsig;
+      tp_y1_y2 : out logicsig;
       a : out logicsig;
-      y1 : out logicsig;
-      y2 : out logicsig;
       y3 : out logicsig);
 
   end component;
@@ -191,7 +176,6 @@ architecture gates of cd is
   signal d : logicsig;
   signal f : logicsig;
   signal t1 : logicsig;
-  signal t2 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -216,9 +200,7 @@ begin -- gates
     i2 => p11,
     i3 => p12,
     a => a,
-    tp => tp1,
-    y1 => p10,
-    y2 => p7,
+    tp_y1_y2 => p7_p10_tp1,
     y3 => p5);
 
 
@@ -228,9 +210,7 @@ begin -- gates
     i2 => p3,
     i3 => p4,
     a => c,
-    tp => tp2,
-    y1 => p2,
-    y2 => p1,
+    tp_y1_y2 => p1_p2_tp2,
     y3 => p13);
 
 
@@ -240,9 +220,7 @@ begin -- gates
     i2 => p26,
     i3 => p25,
     a => d,
-    tp => tp5,
-    y1 => p27,
-    y2 => p28,
+    tp_y1_y2 => p27_p28_tp5,
     y3 => p18);
 
 
@@ -252,9 +230,7 @@ begin -- gates
     i2 => p22,
     i3 => p19,
     a => b,
-    tp => tp6,
-    y1 => p21,
-    y2 => p24,
+    tp_y1_y2 => p21_p24_tp6,
     y3 => p15);
 
 
@@ -264,10 +240,8 @@ begin -- gates
     c => c,
     d => d,
     y => tp4,
-    y2 => t2);
+    y2 => p16_tp3);
 
-  p16 <= t2;
-  tp3 <= t2;
 
 
 end gates;

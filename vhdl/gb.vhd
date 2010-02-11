@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -25,9 +25,8 @@ entity gbslice is
       d : in  logicsig;
       in1 : in  logicsig;
       in2 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      y : out logicsig);
+      tp1_y : out logicsig;
+      tp2 : out logicsig);
 
 end gbslice;
 architecture gates of gbslice is
@@ -76,7 +75,6 @@ architecture gates of gbslice is
   signal t5 : logicsig;
   signal t6 : logicsig;
   signal t7 : logicsig;
-  signal t8 : logicsig;
   signal ts : logicsig;
 
 begin -- gates
@@ -124,10 +122,8 @@ begin -- gates
     b => t5,
     c => t6,
     d => t7,
-    y => t8);
+    y => tp1_y);
 
-  tp1 <= t8;
-  y <= t8;
 
 
 end gates;
@@ -146,13 +142,10 @@ entity gb is
       p21 : in  logicsig;
       p25 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p8 : out logicsig;
-      p13 : out logicsig;
-      p23 : out logicsig);
+      p8_tp1 : out logicsig;
+      p13_tp5 : out logicsig;
+      p23_tp6 : out logicsig);
 
 end gb;
 architecture gates of gb is
@@ -164,9 +157,8 @@ architecture gates of gb is
       d : in  logicsig;
       in1 : in  logicsig;
       in2 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      y : out logicsig);
+      tp1_y : out logicsig;
+      tp2 : out logicsig);
 
   end component;
 
@@ -190,9 +182,8 @@ begin -- gates
     d => d,
     in1 => p3,
     in2 => p5,
-    tp1 => tp1,
-    tp2 => tp2,
-    y => p8);
+    tp1_y => p8_tp1,
+    tp2 => tp2);
 
 
   u2 : gbslice port map (
@@ -202,8 +193,7 @@ begin -- gates
     d => d,
     in1 => p21,
     in2 => p10,
-    tp1 => tp5,
-    y => p13);
+    tp1_y => p13_tp5);
 
 
   u3 : gbslice port map (
@@ -213,8 +203,7 @@ begin -- gates
     d => d,
     in1 => p27,
     in2 => p25,
-    tp1 => tp6,
-    y => p23);
+    tp1_y => p23_tp6);
 
 
   u4 : inv port map (

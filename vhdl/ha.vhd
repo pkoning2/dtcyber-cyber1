@@ -33,14 +33,10 @@ entity ha is
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
-      p3 : out logicsig;
-      p4 : out logicsig;
-      p6 : out logicsig;
-      p21 : out logicsig;
-      p23 : out logicsig;
-      p24 : out logicsig;
-      p26 : out logicsig);
+      p1_p4 : out logicsig;
+      p3_p6 : out logicsig;
+      p21_p24 : out logicsig;
+      p23_p26 : out logicsig);
 
 end ha;
 architecture gates of ha is
@@ -124,10 +120,6 @@ architecture gates of ha is
   signal t10 : logicsig;
   signal t11 : logicsig;
   signal t12 : logicsig;
-  signal t13 : logicsig;
-  signal t14 : logicsig;
-  signal t15 : logicsig;
-  signal t16 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -244,37 +236,29 @@ begin -- gates
     a => g,
     b => f,
     y => tp2,
-    y2 => t13);
+    y2 => p3_p6);
 
-  p3 <= t13;
-  p6 <= t13;
 
   u18 : g2 port map (
     a => h,
     b => f,
     y => tp5,
-    y2 => t14);
+    y2 => p21_p24);
 
-  p21 <= t14;
-  p24 <= t14;
 
   u19 : g2 port map (
     a => g,
     b => e,
     y => tp3,
-    y2 => t15);
+    y2 => p1_p4);
 
-  p1 <= t15;
-  p4 <= t15;
 
   u21 : g2 port map (
     a => h,
     b => e,
     y => tp6,
-    y2 => t16);
+    y2 => p23_p26);
 
-  p23 <= t16;
-  p26 <= t16;
 
 
 end gates;

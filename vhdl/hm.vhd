@@ -34,23 +34,17 @@ entity hm is
       p20 : in  logicsig;
       p24 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p4 : out logicsig;
-      p10 : out logicsig;
+      p4_tp2 : out logicsig;
+      p10_tp1 : out logicsig;
       p11 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
+      p13_tp4 : out logicsig;
+      p14_tp3 : out logicsig;
       p15 : out logicsig;
-      p19 : out logicsig;
+      p19_tp5 : out logicsig;
       p21 : out logicsig;
       p22 : out logicsig;
       p23 : out logicsig;
-      p25 : out logicsig;
+      p25_tp6 : out logicsig;
       p26 : out logicsig;
       p28 : out logicsig);
 
@@ -100,17 +94,11 @@ architecture gates of hm is
   signal h : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
-  signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
-  signal t10 : logicsig;
-  signal t11 : logicsig;
-  signal t12 : logicsig;
-  signal t13 : logicsig;
   signal t14 : logicsig;
 
 begin -- gates
@@ -148,10 +136,8 @@ begin -- gates
   u6 : g2 port map (
     a => t1,
     b => t2,
-    y => t3);
+    y => p10_tp1);
 
-  p10 <= t3;
-  tp1 <= t3;
 
   u7 : g2 port map (
     a => g,
@@ -168,10 +154,8 @@ begin -- gates
   u9 : g2 port map (
     a => t4,
     b => t5,
-    y => t6);
+    y => p4_tp2);
 
-  p4 <= t6;
-  tp2 <= t6;
 
   u10 : inv port map (
     a => p12,
@@ -195,36 +179,28 @@ begin -- gates
   u13 : g2 port map (
     a => t8,
     b => t9,
-    y => t10);
+    y => p14_tp3);
 
-  p14 <= t10;
-  tp3 <= t10;
 
   u14 : g2 port map (
     a => f,
     b => p27,
     y => p21,
-    y2 => t11);
+    y2 => p19_tp5);
 
-  p19 <= t11;
-  tp5 <= t11;
 
   u15 : g2 port map (
     a => p27,
     b => e,
     y => p23,
-    y2 => t12);
+    y2 => p25_tp6);
 
-  p25 <= t12;
-  tp6 <= t12;
 
   u16 : g2 port map (
     a => b,
     b => d,
-    y => t13);
+    y => p13_tp4);
 
-  p13 <= t13;
-  tp4 <= t13;
 
   u17 : g2 port map (
     a => b,

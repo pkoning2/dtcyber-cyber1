@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -24,12 +24,8 @@ entity cqslice is
       c : in  logicsig;
       i1 : in  logicsig;
       i2 : in  logicsig;
-      tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
-      q3 : out logicsig;
-      q4 : out logicsig;
-      q5 : out logicsig;
+      q1_q2 : out logicsig;
+      q3_q4_q5_tp : out logicsig;
       q6 : out logicsig);
 
 end cqslice;
@@ -64,7 +60,6 @@ architecture gates of cqslice is
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t7 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -83,10 +78,7 @@ begin -- gates
     y => t3,
     y2 => t4);
 
-  q3 <= t4;
-  q4 <= t4;
-  q5 <= t4;
-  tp <= t4;
+  q3_q4_q5_tp <= t4;
 
   u4 : inv port map (
     a => t4,
@@ -108,10 +100,8 @@ begin -- gates
   u7 : g2 port map (
     a => t2,
     b => t6,
-    y2 => t7);
+    y2 => q1_q2);
 
-  q1 <= t7;
-  q2 <= t7;
 
 
 end gates;
@@ -129,27 +119,16 @@ entity cq is
       p20 : in  logicsig;
       p21 : in  logicsig;
       p22 : in  logicsig;
-      tp1 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
-      p3 : out logicsig;
-      p4 : out logicsig;
-      p5 : out logicsig;
+      p1_p3_p5_tp1 : out logicsig;
+      p2_p4 : out logicsig;
       p6 : out logicsig;
-      p8 : out logicsig;
-      p10 : out logicsig;
-      p13 : out logicsig;
-      p15 : out logicsig;
-      p17 : out logicsig;
+      p8_p10 : out logicsig;
+      p13_p15_p17_t1 : out logicsig;
       p19 : out logicsig;
       p23 : out logicsig;
-      p24 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p24_p26_p28_tp6 : out logicsig;
+      p25_p27 : out logicsig);
 
 end cq;
 architecture gates of cq is
@@ -160,12 +139,8 @@ architecture gates of cq is
       c : in  logicsig;
       i1 : in  logicsig;
       i2 : in  logicsig;
-      tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
-      q3 : out logicsig;
-      q4 : out logicsig;
-      q5 : out logicsig;
+      q1_q2 : out logicsig;
+      q3_q4_q5_tp : out logicsig;
       q6 : out logicsig);
 
   end component;
@@ -208,13 +183,9 @@ begin -- gates
     c => c,
     i1 => p9,
     i2 => p7,
-    q1 => p2,
-    q2 => p4,
-    q3 => p5,
-    q4 => p3,
-    q5 => p1,
-    q6 => p6,
-    tp => tp1);
+    q1_q2 => p2_p4,
+    q3_q4_q5_tp => p1_p3_p5_tp1,
+    q6 => p6);
 
 
   u2 : cqslice port map (
@@ -223,13 +194,9 @@ begin -- gates
     c => c,
     i1 => p18,
     i2 => p16,
-    q1 => p8,
-    q2 => p10,
-    q3 => p13,
-    q4 => p15,
-    q5 => p17,
-    q6 => p19,
-    tp => t1);
+    q1_q2 => p8_p10,
+    q3_q4_q5_tp => p13_p15_p17_t1,
+    q6 => p19);
 
 
   u3 : inv port map (
@@ -243,13 +210,9 @@ begin -- gates
     c => c,
     i1 => p20,
     i2 => p22,
-    q1 => p27,
-    q2 => p25,
-    q3 => p24,
-    q4 => p26,
-    q5 => p28,
-    q6 => p23,
-    tp => tp6);
+    q1_q2 => p25_p27,
+    q3_q4_q5_tp => p24_p26_p28_tp6,
+    q6 => p23);
 
 
   u5 : inv port map (

@@ -23,8 +23,7 @@ entity paslice is
       clk2 : in  logicsig;
       d : in  logicsig;
       tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig);
+      q1_q2 : out logicsig);
 
 end paslice;
 architecture gates of paslice is
@@ -47,7 +46,6 @@ architecture gates of paslice is
   end component;
 
   signal tq : logicsig;
-  signal tq2 : logicsig;
 
 begin -- gates
   u1 : latch2 port map (
@@ -60,10 +58,8 @@ begin -- gates
 
   u2 : inv2 port map (
     a => tq,
-    y2 => tq2);
+    y2 => q1_q2);
 
-  q1 <= tq2;
-  q2 <= tq2;
 
 
 end gates;
@@ -88,18 +84,12 @@ entity pa is
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
-      p3 : out logicsig;
-      p6 : out logicsig;
-      p10 : out logicsig;
-      p14 : out logicsig;
-      p17 : out logicsig;
-      p19 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p1_p3 : out logicsig;
+      p2_p6 : out logicsig;
+      p10_p14 : out logicsig;
+      p17_p19 : out logicsig;
+      p25_p27 : out logicsig;
+      p26_p28 : out logicsig);
 
 end pa;
 architecture gates of pa is
@@ -109,8 +99,7 @@ architecture gates of pa is
       clk2 : in  logicsig;
       d : in  logicsig;
       tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig);
+      q1_q2 : out logicsig);
 
   end component;
 
@@ -120,8 +109,7 @@ begin -- gates
     clk => p9,
     clk2 => p7,
     d => p8,
-    q1 => p1,
-    q2 => p3,
+    q1_q2 => p1_p3,
     tp => tp1);
 
 
@@ -129,8 +117,7 @@ begin -- gates
     clk => p9,
     clk2 => p7,
     d => p5,
-    q1 => p2,
-    q2 => p6,
+    q1_q2 => p2_p6,
     tp => tp2);
 
 
@@ -138,8 +125,7 @@ begin -- gates
     clk => p9,
     clk2 => p7,
     d => p12,
-    q1 => p14,
-    q2 => p10,
+    q1_q2 => p10_p14,
     tp => tp3);
 
 
@@ -147,8 +133,7 @@ begin -- gates
     clk => p20,
     clk2 => p22,
     d => p21,
-    q1 => p19,
-    q2 => p17,
+    q1_q2 => p17_p19,
     tp => tp4);
 
 
@@ -156,8 +141,7 @@ begin -- gates
     clk => p20,
     clk2 => p22,
     d => p24,
-    q1 => p27,
-    q2 => p25,
+    q1_q2 => p25_p27,
     tp => tp5);
 
 
@@ -165,8 +149,7 @@ begin -- gates
     clk => p20,
     clk2 => p22,
     d => p23,
-    q1 => p28,
-    q2 => p26,
+    q1_q2 => p26_p28,
     tp => tp6);
 
 

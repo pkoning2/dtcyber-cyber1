@@ -34,16 +34,14 @@ entity pw is
       p22 : in  logicsig;
       p26 : in  logicsig;
       tp1 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p8 : out logicsig;
       p12 : out logicsig;
       p14 : out logicsig;
-      p21 : out logicsig;
+      p21_tp5 : out logicsig;
       p23 : out logicsig;
       p24 : out logicsig;
       p25 : out logicsig;
-      p27 : out logicsig;
+      p27_tp6 : out logicsig;
       p28 : out logicsig);
 
 end pw;
@@ -186,8 +184,7 @@ begin -- gates
     y => t7,
     y2 => t8);
 
-  p21 <= t7;
-  tp5 <= t7;
+  p21_tp5 <= t7;
 
   u14 : g2 port map (
     a => p16,
@@ -214,8 +211,7 @@ begin -- gates
     c => t9,
     y => t10);
 
-  p27 <= t10;
-  tp6 <= t10;
+  p27_tp6 <= t10;
 
   u18 : g2 port map (
     a => t7,

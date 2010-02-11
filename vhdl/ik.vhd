@@ -24,9 +24,8 @@ entity ikslice is
       i1 : in  logicsig;
       i2 : in  logicsig;
       n : in  logicsig;
-      tp : out logicsig;
       q1 : out logicsig;
-      q2 : out logicsig;
+      q2_tp : out logicsig;
       q3 : out logicsig);
 
 end ikslice;
@@ -76,8 +75,7 @@ begin -- gates
     b => a,
     y2 => t3);
 
-  q2 <= t3;
-  tp <= t3;
+  q2_tp <= t3;
 
   u4 : inv port map (
     a => t3,
@@ -104,19 +102,17 @@ entity ik is
       p23 : in  logicsig;
       p24 : in  logicsig;
       p25 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p2 : out logicsig;
       p4 : out logicsig;
       p5 : out logicsig;
-      p8 : out logicsig;
+      p8_tp1 : out logicsig;
       p9 : out logicsig;
       p12 : out logicsig;
       p15 : out logicsig;
-      p17 : out logicsig;
+      p17_tp6 : out logicsig;
       p21 : out logicsig;
       p26 : out logicsig;
       p27 : out logicsig;
@@ -150,9 +146,8 @@ architecture gates of ik is
       i1 : in  logicsig;
       i2 : in  logicsig;
       n : in  logicsig;
-      tp : out logicsig;
       q1 : out logicsig;
-      q2 : out logicsig;
+      q2_tp : out logicsig;
       q3 : out logicsig);
 
   end component;
@@ -186,7 +181,7 @@ begin -- gates
     i2 => p3,
     n => n,
     q1 => p4,
-    q2 => p2,
+    q2_tp => p2,
     q3 => p1);
 
   tp5 <= a;
@@ -198,9 +193,8 @@ begin -- gates
     i2 => p10,
     n => n,
     q1 => p9,
-    q2 => p8,
-    q3 => p5,
-    tp => tp1);
+    q2_tp => p8_tp1,
+    q3 => p5);
 
 
   u3 : ikslice port map (
@@ -210,9 +204,8 @@ begin -- gates
     i2 => x,
     n => n,
     q1 => p12,
-    q2 => p17,
-    q3 => p15,
-    tp => tp6);
+    q2_tp => p17_tp6,
+    q3 => p15);
 
 
   u4 : inv port map (

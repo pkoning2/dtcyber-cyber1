@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -35,13 +35,11 @@ entity ia is
       p28 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p3 : out logicsig;
       p5 : out logicsig;
-      p11 : out logicsig;
+      p11_tp3 : out logicsig;
       p12 : out logicsig;
       p14 : out logicsig;
       p15 : out logicsig;
@@ -49,7 +47,7 @@ entity ia is
       p17 : out logicsig;
       p18 : out logicsig;
       p19 : out logicsig;
-      p20 : out logicsig);
+      p20_tp4 : out logicsig);
 
 end ia;
 architecture gates of ia is
@@ -210,8 +208,7 @@ begin -- gates
     e => t5,
     y => t6);
 
-  p11 <= t6;
-  tp3 <= t6;
+  p11_tp3 <= t6;
 
   u17 : g2 port map (
     a => t6,
@@ -256,8 +253,7 @@ begin -- gates
     e => t11,
     y => t12);
 
-  p20 <= t12;
-  tp4 <= t12;
+  p20_tp4 <= t12;
 
   u24 : g2 port map (
     a => t12,

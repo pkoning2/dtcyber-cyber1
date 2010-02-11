@@ -23,8 +23,7 @@ entity tjslice is
       b : in  logicsig;
       c : in  logicsig;
       tp : out logicsig;
-      y1 : out logicsig;
-      y2 : out logicsig);
+      y1_y2 : out logicsig);
 
 end tjslice;
 architecture gates of tjslice is
@@ -49,7 +48,6 @@ architecture gates of tjslice is
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
@@ -74,10 +72,8 @@ begin -- gates
   u4 : g2 port map (
     a => t3,
     b => t4,
-    y => t5);
+    y => y1_y2);
 
-  y1 <= t5;
-  y2 <= t5;
 
 
 end gates;
@@ -102,14 +98,10 @@ entity tj is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p4 : out logicsig;
-      p11 : out logicsig;
-      p12 : out logicsig;
-      p14 : out logicsig;
-      p17 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p27 : out logicsig);
+      p4_p11 : out logicsig;
+      p12_p14 : out logicsig;
+      p17_p19 : out logicsig;
+      p20_p27 : out logicsig);
 
 end tj;
 architecture gates of tj is
@@ -119,8 +111,7 @@ architecture gates of tj is
       b : in  logicsig;
       c : in  logicsig;
       tp : out logicsig;
-      y1 : out logicsig;
-      y2 : out logicsig);
+      y1_y2 : out logicsig);
 
   end component;
 
@@ -131,8 +122,7 @@ begin -- gates
     b => p9,
     c => p8,
     tp => tp1,
-    y1 => p12,
-    y2 => p14);
+    y1_y2 => p12_p14);
 
 
   u2 : tjslice port map (
@@ -140,8 +130,7 @@ begin -- gates
     b => p6,
     c => p5,
     tp => tp2,
-    y1 => p4,
-    y2 => p11);
+    y1_y2 => p4_p11);
 
 
   u3 : tjslice port map (
@@ -149,8 +138,7 @@ begin -- gates
     b => p25,
     c => p26,
     tp => tp5,
-    y1 => p27,
-    y2 => p20);
+    y1_y2 => p20_p27);
 
 
   u4 : tjslice port map (
@@ -158,8 +146,7 @@ begin -- gates
     b => p22,
     c => p23,
     tp => tp6,
-    y1 => p19,
-    y2 => p17);
+    y1_y2 => p17_p19);
 
 
 

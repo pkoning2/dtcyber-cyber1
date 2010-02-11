@@ -31,26 +31,19 @@ entity mi is
       p23 : in  logicsig;
       p25 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
-      p3 : out logicsig;
+      p1_tp2 : out logicsig;
+      p3_tp1 : out logicsig;
       p9 : out logicsig;
       p10 : out logicsig;
       p11 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
+      p13_tp5 : out logicsig;
+      p14_tp3 : out logicsig;
+      p15_tp4 : out logicsig;
       p16 : out logicsig;
       p18 : out logicsig;
       p20 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig;
-      p26 : out logicsig;
+      p22_tp6 : out logicsig;
+      p24_p26 : out logicsig;
       p28 : out logicsig);
 
 end mi;
@@ -94,12 +87,6 @@ architecture gates of mi is
   signal g : logicsig;
   signal h : logicsig;
   signal i : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
 
 begin -- gates
   u1 : g6 port map (
@@ -109,21 +96,17 @@ begin -- gates
     d => p6,
     e => p4,
     f => p2,
-    y => t1,
+    y => p3_tp1,
     y2 => p9);
 
-  p3 <= t1;
   p10 <= h;
-  tp1 <= t1;
 
   u2 : g3 port map (
     a => g,
     b => h,
     c => i,
-    y => t2);
+    y => p1_tp2);
 
-  p1 <= t2;
-  tp2 <= t2;
 
   u3 : g6 port map (
     a => d,
@@ -132,34 +115,27 @@ begin -- gates
     d => g,
     e => h,
     f => i,
-    y => t3,
+    y => p14_tp3,
     y2 => p11);
 
-  p14 <= t3;
   p16 <= e;
-  tp3 <= t3;
 
   u4 : g3 port map (
     a => a,
     b => b,
     c => c,
-    y => t4);
+    y => p15_tp4);
 
-  p15 <= t4;
   p18 <= a;
   p20 <= c;
-  p24 <= b;
-  p26 <= b;
-  tp4 <= t4;
+  p24_p26 <= b;
 
   u5 : g3 port map (
     a => d,
     b => e,
     c => f,
-    y => t5);
+    y => p13_tp5);
 
-  p13 <= t5;
-  tp5 <= t5;
 
   u6 : g6 port map (
     a => a,
@@ -168,11 +144,9 @@ begin -- gates
     d => d,
     e => e,
     f => f,
-    y => t6,
+    y => p22_tp6,
     y2 => p28);
 
-  p22 <= t6;
-  tp6 <= t6;
 
   u7 : inv port map (
     a => p7,

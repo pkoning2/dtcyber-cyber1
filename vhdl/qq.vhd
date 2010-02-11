@@ -43,8 +43,7 @@ entity qq is
       tp5 : out logicsig;
       tp6 : out logicsig;
       p6 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
+      p8_p9 : out logicsig;
       p14 : out logicsig;
       p15 : out logicsig;
       p22 : out logicsig;
@@ -125,7 +124,6 @@ architecture gates of qq is
   signal t14 : logicsig;
   signal t15 : logicsig;
   signal t16 : logicsig;
-  signal t17 : logicsig;
   signal t18 : logicsig;
   signal t19 : logicsig;
 
@@ -225,11 +223,9 @@ begin -- gates
 
   u15 : inv2 port map (
     a => t16,
-    y => t17,
+    y => p8_p9,
     y2 => p6);
 
-  p8 <= t17;
-  p9 <= t17;
 
   u16 : g5 port map (
     a => p17,

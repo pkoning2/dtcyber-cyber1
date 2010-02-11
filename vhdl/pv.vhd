@@ -39,12 +39,11 @@ entity pv is
       tp1 : out logicsig;
       tp2 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p7 : out logicsig;
       p11 : out logicsig;
       p13 : out logicsig;
-      p17 : out logicsig;
+      p17_tp6 : out logicsig;
       p19 : out logicsig;
       p28 : out logicsig);
 
@@ -223,8 +222,7 @@ begin -- gates
     c => d,
     y => t6);
 
-  p17 <= t6;
-  tp6 <= t6;
+  p17_tp6 <= t6;
 
   u16 : g2 port map (
     a => t5,

@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -26,8 +26,7 @@ entity mfslice is
       in1 : in  logicsig;
       in2 : in  logicsig;
       tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
+      q1_q2 : out logicsig;
       q3 : out logicsig;
       q4 : out logicsig;
       q5 : out logicsig;
@@ -86,8 +85,7 @@ begin -- gates
     y => tp,
     y2 => t5);
 
-  q1 <= t5;
-  q2 <= t5;
+  q1_q2 <= t5;
 
   u6 : g2 port map (
     a => t5,
@@ -139,16 +137,13 @@ entity mf is
       p2 : out logicsig;
       p3 : out logicsig;
       p4 : out logicsig;
-      p5 : out logicsig;
-      p6 : out logicsig;
-      p11 : out logicsig;
+      p5_p6 : out logicsig;
+      p11_p13 : out logicsig;
       p12 : out logicsig;
-      p13 : out logicsig;
       p14 : out logicsig;
       p16 : out logicsig;
       p18 : out logicsig;
-      p23 : out logicsig;
-      p24 : out logicsig;
+      p23_p24 : out logicsig;
       p25 : out logicsig;
       p26 : out logicsig;
       p27 : out logicsig;
@@ -172,8 +167,7 @@ architecture gates of mf is
       in1 : in  logicsig;
       in2 : in  logicsig;
       tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
+      q1_q2 : out logicsig;
       q3 : out logicsig;
       q4 : out logicsig;
       q5 : out logicsig;
@@ -217,8 +211,7 @@ begin -- gates
     d => d,
     in1 => p7,
     in2 => p8,
-    q1 => p6,
-    q2 => p5,
+    q1_q2 => p5_p6,
     q3 => p3,
     q4 => p4,
     q5 => p2,
@@ -233,8 +226,7 @@ begin -- gates
     d => d,
     in1 => p9,
     in2 => p10,
-    q1 => p11,
-    q2 => p13,
+    q1_q2 => p11_p13,
     q3 => p18,
     q4 => p16,
     q5 => p14,
@@ -249,8 +241,7 @@ begin -- gates
     d => d,
     in1 => p22,
     in2 => p21,
-    q1 => p23,
-    q2 => p24,
+    q1_q2 => p23_p24,
     q3 => p25,
     q4 => p26,
     q5 => p27,

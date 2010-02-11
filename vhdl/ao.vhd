@@ -39,17 +39,15 @@ entity ao is
       p27 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
-      p2 : out logicsig;
+      p2_tp5 : out logicsig;
       p6 : out logicsig;
       p7 : out logicsig;
       p13 : out logicsig;
       p14 : out logicsig;
-      p15 : out logicsig;
+      p15_tp3 : out logicsig;
       p19 : out logicsig;
       p24 : out logicsig;
       p28 : out logicsig);
@@ -165,8 +163,7 @@ begin -- gates
     q => t1,
     qb => j);
 
-  p2 <= t1;
-  tp5 <= t1;
+  p2_tp5 <= t1;
 
   u3 : g2 port map (
     a => t1,
@@ -196,8 +193,7 @@ begin -- gates
     s2 => a,
     q => t5);
 
-  p15 <= t5;
-  tp3 <= t5;
+  p15_tp3 <= t5;
 
   u7 : inv port map (
     a => t5,

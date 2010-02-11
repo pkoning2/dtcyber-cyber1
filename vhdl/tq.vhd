@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -21,8 +21,7 @@ entity tqslice is
     port (
       a : in  logicsig;
       y : out logicsig;
-      y1 : out logicsig;
-      y2 : out logicsig);
+      y1_y2 : out logicsig);
 
 end tqslice;
 architecture gates of tqslice is
@@ -34,16 +33,13 @@ architecture gates of tqslice is
 
   end component;
 
-  signal t1 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
     a => a,
     y => y,
-    y2 => t1);
+    y2 => y1_y2);
 
-  y1 <= t1;
-  y2 <= t1;
 
 
 end gates;
@@ -67,25 +63,15 @@ entity tq is
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
-      p3 : out logicsig;
-      p4 : out logicsig;
-      p6 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
-      p11 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
-      p16 : out logicsig;
-      p17 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p22 : out logicsig;
-      p23 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p28 : out logicsig);
+      p1_p3 : out logicsig;
+      p4_p6 : out logicsig;
+      p8_p10 : out logicsig;
+      p9_p11 : out logicsig;
+      p14_p16 : out logicsig;
+      p15_p17_p19 : out logicsig;
+      p20_p22 : out logicsig;
+      p23_p25 : out logicsig;
+      p26_p28 : out logicsig);
 
 end tq;
 architecture gates of tq is
@@ -101,75 +87,62 @@ architecture gates of tq is
     port (
       a : in  logicsig;
       y : out logicsig;
-      y1 : out logicsig;
-      y2 : out logicsig);
+      y1_y2 : out logicsig);
 
   end component;
 
-  signal t1 : logicsig;
 
 begin -- gates
   u1 : tqslice port map (
     a => p12,
     y => tp1,
-    y1 => p9,
-    y2 => p11);
+    y1_y2 => p9_p11);
 
 
   u2 : tqslice port map (
     a => p13,
     y => tp2,
-    y1 => p14,
-    y2 => p16);
+    y1_y2 => p14_p16);
 
 
   u3 : tqslice port map (
     a => p7,
     y => tp3,
-    y1 => p8,
-    y2 => p10);
+    y1_y2 => p8_p10);
 
 
   u4 : tqslice port map (
     a => p24,
     y => tp4,
-    y1 => p25,
-    y2 => p23);
+    y1_y2 => p23_p25);
 
 
   u5 : tqslice port map (
     a => p21,
     y => tp6,
-    y1 => p22,
-    y2 => p20);
+    y1_y2 => p20_p22);
 
 
   u6 : tqslice port map (
     a => p2,
-    y1 => p1,
-    y2 => p3);
+    y1_y2 => p1_p3);
 
 
   u7 : tqslice port map (
     a => p27,
-    y1 => p28,
-    y2 => p26);
+    y1_y2 => p26_p28);
 
 
   u8 : tqslice port map (
     a => p5,
-    y1 => p4,
-    y2 => p6);
+    y1_y2 => p4_p6);
 
 
   u10 : inv2 port map (
     a => p18,
     y => tp5,
-    y2 => t1);
+    y2 => p15_p17_p19);
 
-  p15 <= t1;
-  p17 <= t1;
-  p19 <= t1;
 
 
 end gates;

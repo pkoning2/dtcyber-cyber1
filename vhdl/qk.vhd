@@ -24,8 +24,7 @@ entity qkslice is
       k : in  logicsig;
       k2 : in  logicsig := '1';
       k3 : in  logicsig := '1';
-      tp : out logicsig;
-      y : out logicsig);
+      tp_y : out logicsig);
 
 end qkslice;
 architecture gates of qkslice is
@@ -52,7 +51,6 @@ architecture gates of qkslice is
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
 
 begin -- gates
   u1 : g3 port map (
@@ -78,10 +76,8 @@ begin -- gates
   u4 : g2 port map (
     a => t3,
     b => t4,
-    y => t5);
+    y => tp_y);
 
-  tp <= t5;
-  y <= t5;
 
 
 end gates;
@@ -97,18 +93,13 @@ entity qk is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p3 : out logicsig;
-      p5 : out logicsig;
-      p7 : out logicsig;
-      p9 : out logicsig;
-      p20 : out logicsig;
-      p24 : out logicsig);
+      p3_p5_p7 : out logicsig;
+      p9_tp1 : out logicsig;
+      p20_tp5 : out logicsig;
+      p24_tp6 : out logicsig);
 
 end qk;
 architecture gates of qk is
@@ -155,8 +146,7 @@ architecture gates of qk is
       k : in  logicsig;
       k2 : in  logicsig := '1';
       k3 : in  logicsig := '1';
-      tp : out logicsig;
-      y : out logicsig);
+      tp_y : out logicsig);
 
   end component;
 
@@ -167,7 +157,6 @@ architecture gates of qk is
   signal e : logicsig;
   signal f : logicsig;
   signal k : logicsig;
-  signal t : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
@@ -215,8 +204,7 @@ begin -- gates
     a => a,
     b => b,
     k => k,
-    tp => tp1,
-    y => p9);
+    tp_y => p9_tp1);
 
 
   u9 : qkslice port map (
@@ -224,8 +212,7 @@ begin -- gates
     b => d,
     k => k,
     k2 => a,
-    tp => tp6,
-    y => p24);
+    tp_y => p24_tp6);
 
 
   u10 : qkslice port map (
@@ -234,19 +221,15 @@ begin -- gates
     k => k,
     k2 => a,
     k3 => c,
-    tp => tp5,
-    y => p20);
+    tp_y => p20_tp5);
 
 
   u11 : g3 port map (
     a => a,
     b => c,
     c => e,
-    y2 => t);
+    y2 => p3_p5_p7);
 
-  p3 <= t;
-  p5 <= t;
-  p7 <= t;
 
 
 end gates;

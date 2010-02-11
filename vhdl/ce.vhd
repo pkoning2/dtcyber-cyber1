@@ -28,23 +28,19 @@ entity ce is
       p23 : in  logicsig;
       p24 : in  logicsig;
       p25 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
       tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
       p2 : out logicsig;
       p3 : out logicsig;
       p6 : out logicsig;
-      p7 : out logicsig;
-      p8 : out logicsig;
+      p7_tp1 : out logicsig;
+      p8_tp2 : out logicsig;
       p9 : out logicsig;
       p10 : out logicsig;
       p11 : out logicsig;
-      p12 : out logicsig;
-      p13 : out logicsig;
+      p12_tp5 : out logicsig;
+      p13_tp4 : out logicsig;
       p15 : out logicsig;
       p16 : out logicsig;
       p17 : out logicsig;
@@ -114,8 +110,7 @@ begin -- gates
     b => a,
     y => b);
 
-  p8 <= b;
-  tp2 <= b;
+  p8_tp2 <= b;
 
   u3 : inv2 port map (
     a => b,
@@ -127,8 +122,7 @@ begin -- gates
     b => a,
     y => c);
 
-  p7 <= c;
-  tp1 <= c;
+  p7_tp1 <= c;
 
   u5 : inv2 port map (
     a => c,
@@ -179,8 +173,7 @@ begin -- gates
     c => i,
     y => g);
 
-  p12 <= g;
-  tp5 <= g;
+  p12_tp5 <= g;
 
   u13 : inv2 port map (
     a => g,
@@ -193,8 +186,7 @@ begin -- gates
     c => i,
     y => h);
 
-  p13 <= h;
-  tp4 <= h;
+  p13_tp4 <= h;
 
   u15 : inv2 port map (
     a => h,

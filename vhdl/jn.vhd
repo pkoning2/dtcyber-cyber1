@@ -28,7 +28,6 @@ entity jn is
       p24 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp4 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
       p2 : out logicsig;
@@ -40,9 +39,8 @@ entity jn is
       p10 : out logicsig;
       p18 : out logicsig;
       p20 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig);
+      p25_tp4 : out logicsig;
+      p26_p27 : out logicsig);
 
 end jn;
 architecture gates of jn is
@@ -111,9 +109,7 @@ architecture gates of jn is
   signal m : logicsig;
   signal p : logicsig;
   signal r : logicsig;
-  signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
   signal t4 : logicsig;
 
 begin -- gates
@@ -122,10 +118,8 @@ begin -- gates
     b => j,
     c => h,
     d => p,
-    y => t1);
+    y => p25_tp4);
 
-  p25 <= t1;
-  tp4 <= t1;
 
   u2 : g3 port map (
     a => l,
@@ -138,10 +132,8 @@ begin -- gates
   u3 : g2 port map (
     a => r,
     b => t2,
-    y => t3);
+    y => p26_p27);
 
-  p26 <= t3;
-  p27 <= t3;
 
   u4 : g2 port map (
     a => t2,

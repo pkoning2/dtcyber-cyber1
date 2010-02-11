@@ -31,18 +31,14 @@ entity pc is
       p24 : in  logicsig;
       p25 : in  logicsig;
       p26 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p2 : out logicsig;
       p4 : out logicsig;
-      p9 : out logicsig;
-      p14 : out logicsig;
+      p9_tp2 : out logicsig;
+      p14_tp1 : out logicsig;
       p15 : out logicsig;
       p17 : out logicsig;
-      p18 : out logicsig;
-      p21 : out logicsig);
+      p18_tp5 : out logicsig;
+      p21_tp6 : out logicsig);
 
 end pc;
 architecture gates of pc is
@@ -76,10 +72,6 @@ architecture gates of pc is
 
   signal e : logicsig;
   signal f : logicsig;
-  signal q1 : logicsig;
-  signal q2 : logicsig;
-  signal q3 : logicsig;
-  signal q4 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -99,10 +91,8 @@ begin -- gates
     d2 => p5,
     e => e,
     e2 => f,
-    q => q1);
+    q => p14_tp1);
 
-  p14 <= q1;
-  tp1 <= q1;
 
   u4 : latchd4 port map (
     clk => p22,
@@ -110,10 +100,8 @@ begin -- gates
     d2 => p6,
     e => e,
     e2 => f,
-    q => q2);
+    q => p9_tp2);
 
-  p9 <= q2;
-  tp2 <= q2;
 
   u5 : latchd4 port map (
     clk => p11,
@@ -121,10 +109,8 @@ begin -- gates
     d2 => p25,
     e => e,
     e2 => f,
-    q => q3);
+    q => p18_tp5);
 
-  p18 <= q3;
-  tp5 <= q3;
 
   u6 : latchd4 port map (
     clk => p22,
@@ -132,10 +118,8 @@ begin -- gates
     d2 => p26,
     e => e,
     e2 => f,
-    q => q4);
+    q => p21_tp6);
 
-  p21 <= q4;
-  tp6 <= q4;
 
   p2 <= '0';
   p4 <= '0';

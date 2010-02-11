@@ -22,10 +22,8 @@ entity adslice is
       e : in  logicsig;
       r : in  logicsig;
       s : in  logicsig;
-      tp : out logicsig;
-      q : out logicsig;
-      qb1 : out logicsig;
-      qb2 : out logicsig);
+      q_tp : out logicsig;
+      qb1_qb2 : out logicsig);
 
 end adslice;
 architecture gates of adslice is
@@ -56,9 +54,7 @@ architecture gates of adslice is
   end component;
 
   signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -70,18 +66,14 @@ begin -- gates
   u2 : rsflop port map (
     r => r,
     s => t1,
-    q => t2,
+    q => q_tp,
     qb => t3);
 
-  q <= t2;
-  tp <= t2;
 
   u3 : inv2 port map (
     a => t3,
-    y => t4);
+    y => qb1_qb2);
 
-  qb1 <= t4;
-  qb2 <= t4;
 
 
 end gates;
@@ -100,30 +92,18 @@ entity ad is
       p18 : in  logicsig;
       p24 : in  logicsig;
       p25 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
-      p3 : out logicsig;
-      p6 : out logicsig;
-      p7 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
-      p12 : out logicsig;
-      p17 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
-      p23 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p1_p2 : out logicsig;
+      p3_tp2 : out logicsig;
+      p6_tp1 : out logicsig;
+      p7_p8 : out logicsig;
+      p9_p10 : out logicsig;
+      p12_tp3 : out logicsig;
+      p17_tp4 : out logicsig;
+      p19_p20 : out logicsig;
+      p21_p22 : out logicsig;
+      p23_tp6 : out logicsig;
+      p26_tp5 : out logicsig;
+      p27_p28 : out logicsig);
 
 end ad;
 architecture gates of ad is
@@ -132,10 +112,8 @@ architecture gates of ad is
       e : in  logicsig;
       r : in  logicsig;
       s : in  logicsig;
-      tp : out logicsig;
-      q : out logicsig;
-      qb1 : out logicsig;
-      qb2 : out logicsig);
+      q_tp : out logicsig;
+      qb1_qb2 : out logicsig);
 
   end component;
 
@@ -182,60 +160,48 @@ begin -- gates
     e => a,
     r => c,
     s => p18,
-    q => p17,
-    qb1 => p19,
-    qb2 => p20,
-    tp => tp4);
+    q_tp => p17_tp4,
+    qb1_qb2 => p19_p20);
 
 
   u5 : adslice port map (
     e => a,
     r => d,
     s => p5,
-    q => p6,
-    qb1 => p8,
-    qb2 => p7,
-    tp => tp1);
+    q_tp => p6_tp1,
+    qb1_qb2 => p7_p8);
 
 
   u6 : adslice port map (
     e => a,
     r => c,
     s => p25,
-    q => p26,
-    qb1 => p28,
-    qb2 => p27,
-    tp => tp5);
+    q_tp => p26_tp5,
+    qb1_qb2 => p27_p28);
 
 
   u7 : adslice port map (
     e => a,
     r => d,
     s => p4,
-    q => p3,
-    qb1 => p1,
-    qb2 => p2,
-    tp => tp2);
+    q_tp => p3_tp2,
+    qb1_qb2 => p1_p2);
 
 
   u8 : adslice port map (
     e => a,
     r => c,
     s => p24,
-    q => p23,
-    qb1 => p21,
-    qb2 => p22,
-    tp => tp6);
+    q_tp => p23_tp6,
+    qb1_qb2 => p21_p22);
 
 
   u9 : adslice port map (
     e => a,
     r => d,
     s => p11,
-    q => p12,
-    qb1 => p10,
-    qb2 => p9,
-    tp => tp3);
+    q_tp => p12_tp3,
+    qb1_qb2 => p9_p10);
 
 
 

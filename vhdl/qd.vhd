@@ -30,9 +30,8 @@ entity qdslice is
       e : in  logicsig;
       f : in  logicsig;
       g : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      y : out logicsig);
+      tp1_y : out logicsig;
+      tp2 : out logicsig);
 
 end qdslice;
 architecture gates of qdslice is
@@ -73,7 +72,6 @@ architecture gates of qdslice is
   signal t5 : logicsig;
   signal t6 : logicsig;
   signal t7 : logicsig;
-  signal t8 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -123,10 +121,8 @@ begin -- gates
     b => t6,
     c => t4,
     d => t5,
-    y => t8);
+    y => tp1_y);
 
-  tp1 <= t8;
-  y <= t8;
 
 
 end gates;
@@ -154,15 +150,11 @@ entity qd is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
-      p10 : out logicsig;
-      p12 : out logicsig;
-      p15 : out logicsig;
-      p16 : out logicsig;
-      p19 : out logicsig);
+      p10_p15_p16 : out logicsig;
+      p12_tp1 : out logicsig;
+      p19_tp6 : out logicsig);
 
 end qd;
 architecture gates of qd is
@@ -194,9 +186,8 @@ architecture gates of qd is
       e : in  logicsig;
       f : in  logicsig;
       g : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      y : out logicsig);
+      tp1_y : out logicsig;
+      tp2 : out logicsig);
 
   end component;
 
@@ -204,7 +195,6 @@ architecture gates of qd is
   signal b : logicsig;
   signal c : logicsig;
   signal d : logicsig;
-  signal t1 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -229,11 +219,8 @@ begin -- gates
 
   u5 : inv2 port map (
     a => p21,
-    y2 => t1);
+    y2 => p10_p15_p16);
 
-  p10 <= t1;
-  p15 <= t1;
-  p16 <= t1;
 
   u6 : qdslice port map (
     a => p11,
@@ -247,9 +234,8 @@ begin -- gates
     e => p7,
     f => p3,
     g => p5,
-    tp1 => tp1,
-    tp2 => tp2,
-    y => p12);
+    tp1_y => p12_tp1,
+    tp2 => tp2);
 
 
   u7 : qdslice port map (
@@ -264,9 +250,8 @@ begin -- gates
     e => p24,
     f => p26,
     g => p28,
-    tp1 => tp6,
-    tp2 => tp5,
-    y => p19);
+    tp1_y => p19_tp6,
+    tp2 => tp5);
 
 
 

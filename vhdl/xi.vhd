@@ -31,20 +31,14 @@ entity xi is
       p24 : in  logicsig;
       p25 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p3 : out logicsig;
-      p6 : out logicsig;
-      p7 : out logicsig;
+      p3_tp1 : out logicsig;
+      p6_tp2 : out logicsig;
+      p7_tp3 : out logicsig;
       p14 : out logicsig;
       p17 : out logicsig;
-      p22 : out logicsig;
-      p23 : out logicsig;
-      p26 : out logicsig);
+      p22_tp4 : out logicsig;
+      p23_tp5 : out logicsig;
+      p26_tp6 : out logicsig);
 
 end xi;
 architecture gates of xi is
@@ -76,12 +70,6 @@ architecture gates of xi is
   end component;
 
   signal c : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -104,55 +92,43 @@ begin -- gates
     clk => p9,
     d => p1,
     r => c,
-    q => t1);
+    q => p3_tp1);
 
-  p3 <= t1;
-  tp1 <= t1;
 
   u5 : latchr port map (
     clk => p20,
     d => p24,
     r => c,
-    q => t2);
+    q => p22_tp4);
 
-  p22 <= t2;
-  tp4 <= t2;
 
   u6 : latchr port map (
     clk => p9,
     d => p4,
     r => c,
-    q => t3);
+    q => p6_tp2);
 
-  p6 <= t3;
-  tp2 <= t3;
 
   u7 : latchr port map (
     clk => p20,
     d => p25,
     r => c,
-    q => t4);
+    q => p23_tp5);
 
-  p23 <= t4;
-  tp5 <= t4;
 
   u8 : latchr port map (
     clk => p9,
     d => p5,
     r => c,
-    q => t5);
+    q => p7_tp3);
 
-  p7 <= t5;
-  tp3 <= t5;
 
   u9 : latchr port map (
     clk => p20,
     d => p28,
     r => c,
-    q => t6);
+    q => p26_tp6);
 
-  p26 <= t6;
-  tp6 <= t6;
 
 
 end gates;

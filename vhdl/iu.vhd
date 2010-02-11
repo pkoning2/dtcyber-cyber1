@@ -31,24 +31,20 @@ entity iu is
       p25 : in  logicsig;
       p26 : in  logicsig;
       p27 : in  logicsig;
-      tp : out logicsig;
-      tp1 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p3 : out logicsig;
       p4 : out logicsig;
       p6 : out logicsig;
       p7 : out logicsig;
       p9 : out logicsig;
-      p10 : out logicsig;
+      p10_tp1 : out logicsig;
       p11 : out logicsig;
-      p13 : out logicsig;
+      p13_tp : out logicsig;
       p15 : out logicsig;
       p16 : out logicsig;
       p17 : out logicsig;
-      p18 : out logicsig;
-      p19 : out logicsig;
+      p18_tp5 : out logicsig;
+      p19_tp6 : out logicsig;
       p24 : out logicsig;
       p28 : out logicsig);
 
@@ -75,10 +71,7 @@ architecture gates of iu is
   signal c : logicsig;
   signal d : logicsig;
   signal e : logicsig;
-  signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -91,8 +84,7 @@ begin -- gates
     a => p12,
     y => b);
 
-  p10 <= b;
-  tp1 <= b;
+  p10_tp1 <= b;
 
   u3 : inv port map (
     a => p8,
@@ -115,19 +107,15 @@ begin -- gates
   u6 : g2 port map (
     a => p21,
     b => p22,
-    y => t1,
+    y => p19_tp6,
     y2 => t2);
 
-  p19 <= t1;
-  tp6 <= t1;
 
   u7 : g2 port map (
     a => t2,
     b => a,
-    y => t3);
+    y => p13_tp);
 
-  p13 <= t3;
-  tp <= t3;
 
   u8 : g2 port map (
     a => t2,
@@ -156,10 +144,8 @@ begin -- gates
   u12 : g2 port map (
     a => t2,
     b => p20,
-    y => t4);
+    y => p18_tp5);
 
-  p18 <= t4;
-  tp5 <= t4;
 
   u13 : g2 port map (
     a => t2,

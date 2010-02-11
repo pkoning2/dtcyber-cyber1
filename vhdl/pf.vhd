@@ -30,24 +30,12 @@ entity pf is
       p27 : in  logicsig;
       p28 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
-      p11 : out logicsig;
-      p12 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
-      p17 : out logicsig;
+      p9_p11_p13_tp2 : out logicsig;
+      p10_p12_p14_tp3 : out logicsig;
+      p17_p19_p21_tp5 : out logicsig;
       p18 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig);
+      p20_p22_p24_tp4 : out logicsig);
 
 end pf;
 architecture gates of pf is
@@ -102,8 +90,6 @@ architecture gates of pf is
   signal i : logicsig;
   signal j : logicsig;
   signal k : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
@@ -149,11 +135,8 @@ begin -- gates
     c => c,
     y => w);
 
-  p17 <= w;
-  p19 <= w;
-  p21 <= w;
+  p17_p19_p21_tp5 <= w;
   tp1 <= a;
-  tp5 <= w;
 
   u7 : g3 port map (
     a => a,
@@ -161,30 +144,19 @@ begin -- gates
     c => d,
     y => x);
 
-  p9 <= x;
-  p11 <= x;
-  p13 <= x;
-  tp2 <= x;
+  p9_p11_p13_tp2 <= x;
 
   u8 : g2 port map (
     a => i,
     b => g,
-    y => t1);
+    y => p20_p22_p24_tp4);
 
-  p20 <= t1;
-  p22 <= t1;
-  p24 <= t1;
-  tp4 <= t1;
 
   u9 : g2 port map (
     a => i,
     b => k,
-    y => t2);
+    y => p10_p12_p14_tp3);
 
-  p10 <= t2;
-  p12 <= t2;
-  p14 <= t2;
-  tp3 <= t2;
 
   u10 : inv2 port map (
     a => p3,

@@ -45,12 +45,11 @@ entity pq is
       p9 : out logicsig;
       p10 : out logicsig;
       p12 : out logicsig;
-      p13 : out logicsig;
+      p13_p27 : out logicsig;
       p14 : out logicsig;
       p15 : out logicsig;
       p18 : out logicsig;
-      p20 : out logicsig;
-      p27 : out logicsig);
+      p20 : out logicsig);
 
 end pq;
 architecture gates of pq is
@@ -189,8 +188,7 @@ begin -- gates
     a => t8,
     y2 => t9);
 
-  p13 <= t9;
-  p27 <= t9;
+  p13_p27 <= t9;
 
   u10 : inv port map (
     a => t9,

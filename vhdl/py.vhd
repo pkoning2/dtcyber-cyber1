@@ -38,16 +38,13 @@ entity py is
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
-      p5 : out logicsig;
+      p1_p2 : out logicsig;
+      p5_p8 : out logicsig;
       p6 : out logicsig;
-      p7 : out logicsig;
-      p8 : out logicsig;
+      p7_p18 : out logicsig;
       p9 : out logicsig;
       p11 : out logicsig;
       p12 : out logicsig;
-      p18 : out logicsig;
       p21 : out logicsig;
       p22 : out logicsig;
       p27 : out logicsig;
@@ -113,13 +110,10 @@ architecture gates of py is
   signal a : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
-  signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
-  signal t9 : logicsig;
   signal t10 : logicsig;
   signal t11 : logicsig;
   signal t12 : logicsig;
@@ -145,10 +139,8 @@ begin -- gates
   u3 : inv2 port map (
     a => t2,
     y => p6,
-    y2 => t3);
+    y2 => p1_p2);
 
-  p1 <= t3;
-  p2 <= t3;
 
   u4 : cxreceiver port map (
     a => p16,
@@ -165,10 +157,8 @@ begin -- gates
   u6 : inv2 port map (
     a => t5,
     y => p9,
-    y2 => t6);
+    y2 => p7_p18);
 
-  p7 <= t6;
-  p18 <= t6;
 
   u7 : cxreceiver port map (
     a => p10,
@@ -185,10 +175,8 @@ begin -- gates
   u9 : inv2 port map (
     a => t8,
     y => p12,
-    y2 => t9);
+    y2 => p5_p8);
 
-  p5 <= t9;
-  p8 <= t9;
 
   u10 : cxreceiver port map (
     a => p26,

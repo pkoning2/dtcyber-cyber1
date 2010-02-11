@@ -38,12 +38,10 @@ entity px is
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
-      p3 : out logicsig;
+      p3_p14_p16 : out logicsig;
       p8 : out logicsig;
       p13 : out logicsig;
-      p14 : out logicsig;
       p15 : out logicsig;
-      p16 : out logicsig;
       p17 : out logicsig;
       p18 : out logicsig;
       p19 : out logicsig;
@@ -278,9 +276,7 @@ begin -- gates
     y => tp5,
     y2 => t14);
 
-  p3 <= t14;
-  p14 <= t14;
-  p16 <= t14;
+  p3_p14_p16 <= t14;
 
   u23 : inv port map (
     a => t14,

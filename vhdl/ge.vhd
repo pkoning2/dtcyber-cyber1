@@ -34,15 +34,13 @@ entity ge is
       p23 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p6 : out logicsig;
-      p10 : out logicsig;
-      p14 : out logicsig;
+      p10_p14 : out logicsig;
       p15 : out logicsig;
-      p16 : out logicsig;
+      p16_tp3 : out logicsig;
       p24 : out logicsig;
       p26 : out logicsig;
       p27 : out logicsig);
@@ -97,7 +95,6 @@ architecture gates of ge is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -159,12 +156,9 @@ begin -- gates
     d => f,
     e => g,
     y => t2,
-    y2 => t4);
+    y2 => p10_p14);
 
-  p10 <= t4;
-  p14 <= t4;
-  p16 <= t2;
-  tp3 <= t2;
+  p16_tp3 <= t2;
 
   u10 : g2 port map (
     a => t2,

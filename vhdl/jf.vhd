@@ -25,9 +25,8 @@ entity jfslice is
       i1 : in  logicsig;
       i2 : in  logicsig;
       i3 : in  logicsig;
-      tp1 : out logicsig;
+      tp1_y1 : out logicsig;
       tp2 : out logicsig;
-      y1 : out logicsig;
       y2 : out logicsig;
       y3 : out logicsig;
       y4 : out logicsig);
@@ -62,7 +61,6 @@ architecture gates of jfslice is
   end component;
 
   signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
 
@@ -75,10 +73,8 @@ begin -- gates
 
   u2 : inv2 port map (
     a => i2,
-    y2 => t2);
+    y2 => tp1_y1);
 
-  tp1 <= t2;
-  y1 <= t2;
 
   u3 : g2 port map (
     a => i2,
@@ -125,7 +121,6 @@ entity jf is
       p23 : in  logicsig;
       p24 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
@@ -135,7 +130,7 @@ entity jf is
       p7 : out logicsig;
       p9 : out logicsig;
       p10 : out logicsig;
-      p11 : out logicsig;
+      p11_tp1 : out logicsig;
       p12 : out logicsig;
       p21 : out logicsig;
       p25 : out logicsig;
@@ -167,9 +162,8 @@ architecture gates of jf is
       i1 : in  logicsig;
       i2 : in  logicsig;
       i3 : in  logicsig;
-      tp1 : out logicsig;
+      tp1_y1 : out logicsig;
       tp2 : out logicsig;
-      y1 : out logicsig;
       y2 : out logicsig;
       y3 : out logicsig;
       y4 : out logicsig);
@@ -203,9 +197,8 @@ begin -- gates
     i1 => p14,
     i2 => p8,
     i3 => p13,
-    tp1 => tp1,
+    tp1_y1 => p11_tp1,
     tp2 => tp2,
-    y1 => p11,
     y2 => p12,
     y3 => p10,
     y4 => p9);
@@ -218,8 +211,8 @@ begin -- gates
     i1 => p4,
     i2 => p2,
     i3 => p5,
+    tp1_y1 => p1,
     tp2 => tp5,
-    y1 => p1,
     y2 => p7,
     y3 => p6,
     y4 => p3);
@@ -232,8 +225,8 @@ begin -- gates
     i1 => p23,
     i2 => p27,
     i3 => p24,
+    tp1_y1 => p28,
     tp2 => tp6,
-    y1 => p28,
     y2 => p21,
     y3 => p25,
     y4 => p26);

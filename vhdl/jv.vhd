@@ -37,20 +37,16 @@ entity jv is
       p2 : out logicsig;
       p4 : out logicsig;
       p7 : out logicsig;
-      p9 : out logicsig;
+      p9_p15_p17_p19 : out logicsig;
       p10 : out logicsig;
       p11 : out logicsig;
       p12 : out logicsig;
       p13 : out logicsig;
       p14 : out logicsig;
-      p15 : out logicsig;
       p16 : out logicsig;
-      p17 : out logicsig;
       p18 : out logicsig;
-      p19 : out logicsig;
-      p22 : out logicsig;
-      p23 : out logicsig;
-      p28 : out logicsig);
+      p22_p28 : out logicsig;
+      p23 : out logicsig);
 
 end jv;
 architecture gates of jv is
@@ -86,8 +82,6 @@ architecture gates of jv is
   signal f : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -171,20 +165,14 @@ begin -- gates
   u14 : inv2 port map (
     a => p24,
     y => tp5,
-    y2 => t3);
+    y2 => p9_p15_p17_p19);
 
-  p9 <= t3;
-  p15 <= t3;
-  p17 <= t3;
-  p19 <= t3;
 
   u15 : inv2 port map (
     a => p21,
     y => tp6,
-    y2 => t4);
+    y2 => p22_p28);
 
-  p22 <= t4;
-  p28 <= t4;
 
   u16 : inv port map (
     a => p8,
@@ -217,9 +205,11 @@ begin -- gates
 
 
   u22 : g2 port map (
-    a  => t2,
-    b  => f,
-    y  => p1);
-  
+    a => t2,
+    b => f,
+    y => p1);
+
+
+
 end gates;
 

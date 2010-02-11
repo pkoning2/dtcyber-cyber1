@@ -32,8 +32,7 @@ entity pt is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p9 : out logicsig;
-      p11 : out logicsig;
+      p9_p11 : out logicsig;
       p15 : out logicsig;
       p17 : out logicsig;
       p19 : out logicsig);
@@ -102,7 +101,6 @@ architecture gates of pt is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
   signal t7 : logicsig;
@@ -135,10 +133,8 @@ begin -- gates
   u4 : g2 port map (
     a => k,
     b => t3,
-    y => t4);
+    y => p9_p11);
 
-  p9 <= t4;
-  p11 <= t4;
 
   u5 : g2 port map (
     a => t3,

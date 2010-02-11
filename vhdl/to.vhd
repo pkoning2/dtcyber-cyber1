@@ -32,23 +32,10 @@ entity mod_to is
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
-      p9 : out logicsig;
-      p11 : out logicsig;
+      p9_p11_p13 : out logicsig;
       p12 : out logicsig;
-      p13 : out logicsig;
       p15 : out logicsig;
-      p17 : out logicsig;
-      p18 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
-      p23 : out logicsig;
-      p24 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p17_p18_p19_p20_p21_p22_p23_p24_p25_p26_p27_p28 : out logicsig);
 
 end mod_to;
 architecture gates of mod_to is
@@ -90,8 +77,6 @@ architecture gates of mod_to is
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -134,28 +119,13 @@ begin -- gates
 
   u7 : inv port map (
     a => t4,
-    y => t5);
+    y => p17_p18_p19_p20_p21_p22_p23_p24_p25_p26_p27_p28);
 
-  p17 <= t5;
-  p18 <= t5;
-  p19 <= t5;
-  p20 <= t5;
-  p21 <= t5;
-  p22 <= t5;
-  p23 <= t5;
-  p24 <= t5;
-  p25 <= t5;
-  p26 <= t5;
-  p27 <= t5;
-  p28 <= t5;
 
   u8 : inv2 port map (
     a => p2,
-    y2 => t6);
+    y2 => p9_p11_p13);
 
-  p9 <= t6;
-  p11 <= t6;
-  p13 <= t6;
 
   u9 : inv port map (
     a => p3,

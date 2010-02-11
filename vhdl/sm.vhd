@@ -22,8 +22,7 @@ entity smslice is
       clk : in  logicsig;
       d : in  logicsig;
       tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
+      q1_q2 : out logicsig;
       qb : out logicsig);
 
 end smslice;
@@ -46,7 +45,6 @@ architecture gates of smslice is
   end component;
 
   signal t1 : logicsig;
-  signal t2 : logicsig;
 
 begin -- gates
   u1 : latch port map (
@@ -59,10 +57,8 @@ begin -- gates
   u2 : inv2 port map (
     a => t1,
     y => qb,
-    y2 => t2);
+    y2 => q1_q2);
 
-  q1 <= t2;
-  q2 <= t2;
 
 
 end gates;
@@ -85,25 +81,18 @@ entity sm is
       tp3 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
-      p3 : out logicsig;
+      p1_p3 : out logicsig;
+      p2_p6 : out logicsig;
       p4 : out logicsig;
-      p6 : out logicsig;
-      p10 : out logicsig;
+      p10_p14 : out logicsig;
       p11 : out logicsig;
       p13 : out logicsig;
-      p14 : out logicsig;
       p15 : out logicsig;
       p16 : out logicsig;
-      p17 : out logicsig;
-      p18 : out logicsig;
-      p19 : out logicsig;
-      p22 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
+      p17_p19 : out logicsig;
+      p18_p27 : out logicsig;
+      p22_p26 : out logicsig;
+      p25_tp6 : out logicsig;
       p28 : out logicsig);
 
 end sm;
@@ -146,8 +135,7 @@ architecture gates of sm is
       clk : in  logicsig;
       d : in  logicsig;
       tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
+      q1_q2 : out logicsig;
       qb : out logicsig);
 
   end component;
@@ -155,15 +143,13 @@ architecture gates of sm is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
   signal x : logicsig;
 
 begin -- gates
   u1 : smslice port map (
     clk => p7,
     d => p8,
-    q1 => p1,
-    q2 => p3,
+    q1_q2 => p1_p3,
     qb => p4,
     tp => tp1);
 
@@ -171,8 +157,7 @@ begin -- gates
   u2 : smslice port map (
     clk => p7,
     d => p5,
-    q1 => p2,
-    q2 => p6,
+    q1_q2 => p2_p6,
     qb => p11,
     tp => tp2);
 
@@ -180,8 +165,7 @@ begin -- gates
   u3 : smslice port map (
     clk => p7,
     d => p12,
-    q1 => p14,
-    q2 => p10,
+    q1_q2 => p10_p14,
     qb => p13,
     tp => tp3);
 
@@ -189,8 +173,7 @@ begin -- gates
   u4 : smslice port map (
     clk => p20,
     d => p21,
-    q1 => p19,
-    q2 => p17,
+    q1_q2 => p17_p19,
     qb => p15,
     tp => tp4);
 
@@ -198,8 +181,7 @@ begin -- gates
   u5 : smslice port map (
     clk => p20,
     d => p24,
-    q1 => p27,
-    q2 => p18,
+    q1_q2 => p18_p27,
     qb => p16,
     tp => tp5);
 
@@ -220,8 +202,7 @@ begin -- gates
     d => p23,
     q => t2);
 
-  p25 <= t2;
-  tp6 <= t2;
+  p25_tp6 <= t2;
 
   u9 : inv2 port map (
     a => t2,
@@ -232,10 +213,8 @@ begin -- gates
   u10 : g2 port map (
     a => t3,
     b => x,
-    y => t4);
+    y => p22_p26);
 
-  p22 <= t4;
-  p26 <= t4;
 
 
 end gates;

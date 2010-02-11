@@ -34,20 +34,15 @@ entity jt is
       p24 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp2 : out logicsig;
       tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p6 : out logicsig;
+      p6_tp2 : out logicsig;
       p8 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
-      p16 : out logicsig;
-      p17 : out logicsig;
+      p13_p16 : out logicsig;
+      p14_p17 : out logicsig;
       p19 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig);
+      p25_tp5 : out logicsig;
+      p26_tp6 : out logicsig);
 
 end jt;
 architecture gates of jt is
@@ -113,16 +108,11 @@ architecture gates of jt is
   signal g : logicsig;
   signal m : logicsig;
   signal n : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
-  signal t10 : logicsig;
 
 begin -- gates
   u1 : rsflop port map (
@@ -136,10 +126,8 @@ begin -- gates
   u2 : g2 port map (
     a => a,
     b => p20,
-    y => t1);
+    y => p14_p17);
 
-  p14 <= t1;
-  p17 <= t1;
 
   u3 : rsflop port map (
     r => p7,
@@ -151,10 +139,8 @@ begin -- gates
   u4 : g2 port map (
     a => b,
     b => p18,
-    y => t2);
+    y => p13_p16);
 
-  p13 <= t2;
-  p16 <= t2;
 
   u5 : g2 port map (
     a => f,
@@ -192,10 +178,8 @@ begin -- gates
   u10 : rsflop port map (
     r => e,
     s => t4,
-    q => t5);
+    q => p25_tp5);
 
-  p25 <= t5;
-  tp5 <= t5;
 
   u11 : g2 port map (
     a => m,
@@ -219,10 +203,8 @@ begin -- gates
   u14 : rsflop port map (
     r => e,
     s => t6,
-    q => t7);
+    q => p26_tp6);
 
-  p26 <= t7;
-  tp6 <= t7;
 
   u15 : rs2flop port map (
     r => c,
@@ -240,10 +222,8 @@ begin -- gates
   u17 : rsflop port map (
     r => e,
     s => t9,
-    q => t10);
+    q => p6_tp2);
 
-  p6 <= t10;
-  tp2 <= t10;
 
   u18 : inv2 port map (
     a => p9,

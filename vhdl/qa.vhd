@@ -28,8 +28,7 @@ entity qaslice is
       q1 : out logicsig;
       q12 : out logicsig;
       qb2 : out logicsig;
-      qb11 : out logicsig;
-      qb12 : out logicsig);
+      qb11_qb12 : out logicsig);
 
 end qaslice;
 architecture gates of qaslice is
@@ -67,7 +66,6 @@ architecture gates of qaslice is
   end component;
 
   signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
 
 begin -- gates
@@ -80,11 +78,9 @@ begin -- gates
 
   u2 : inv2 port map (
     a => t1,
-    y => t2,
+    y => qb11_qb12,
     y2 => q1);
 
-  qb11 <= t2;
-  qb12 <= t2;
 
   u3 : latch port map (
     clk => clk2,
@@ -127,18 +123,15 @@ entity qa is
       tp6 : out logicsig;
       p1 : out logicsig;
       p2 : out logicsig;
-      p3 : out logicsig;
-      p5 : out logicsig;
+      p3_p5 : out logicsig;
       p6 : out logicsig;
       p8 : out logicsig;
       p9 : out logicsig;
       p10 : out logicsig;
-      p13 : out logicsig;
-      p17 : out logicsig;
-      p21 : out logicsig;
+      p13_p17 : out logicsig;
+      p21_p25 : out logicsig;
       p22 : out logicsig;
       p23 : out logicsig;
-      p25 : out logicsig;
       p28 : out logicsig);
 
 end qa;
@@ -154,8 +147,7 @@ architecture gates of qa is
       q1 : out logicsig;
       q12 : out logicsig;
       qb2 : out logicsig;
-      qb11 : out logicsig;
-      qb12 : out logicsig);
+      qb11_qb12 : out logicsig);
 
   end component;
 
@@ -169,8 +161,7 @@ begin -- gates
     q1 => p6,
     q12 => p9,
     qb2 => p1,
-    qb11 => p5,
-    qb12 => p3,
+    qb11_qb12 => p3_p5,
     tp1 => tp1,
     tp3 => tp3);
 
@@ -183,8 +174,7 @@ begin -- gates
     q1 => p2,
     q12 => p10,
     qb2 => p8,
-    qb11 => p17,
-    qb12 => p13,
+    qb11_qb12 => p13_p17,
     tp1 => tp2,
     tp3 => tp4);
 
@@ -197,8 +187,7 @@ begin -- gates
     q1 => p22,
     q12 => p23,
     qb2 => p28,
-    qb11 => p25,
-    qb12 => p21,
+    qb11_qb12 => p21_p25,
     tp1 => tp5,
     tp3 => tp6);
 

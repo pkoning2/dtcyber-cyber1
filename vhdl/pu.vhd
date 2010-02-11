@@ -110,20 +110,12 @@ entity pu is
       tp1 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
-      p3 : out logicsig;
-      p4 : out logicsig;
-      p6 : out logicsig;
-      p7 : out logicsig;
+      p1_p3_p4_p6_p7 : out logicsig;
       p8 : out logicsig;
       p9 : out logicsig;
       p21 : out logicsig;
       p22 : out logicsig;
-      p24 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p24_p25_p26_p27_p28 : out logicsig);
 
 end pu;
 architecture gates of pu is
@@ -148,8 +140,6 @@ architecture gates of pu is
   end component;
 
   signal a : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
@@ -164,14 +154,9 @@ begin -- gates
     s => p10,
     q1 => p9,
     q2 => p8,
-    qb => t1,
+    qb => p1_p3_p4_p6_p7,
     tp => tp1);
 
-  p1 <= t1;
-  p3 <= t1;
-  p4 <= t1;
-  p6 <= t1;
-  p7 <= t1;
 
   u3 : puslice port map (
     e => a,
@@ -179,14 +164,9 @@ begin -- gates
     s => p19,
     q1 => p22,
     q2 => p21,
-    qb => t2,
+    qb => p24_p25_p26_p27_p28,
     tp => tp6);
 
-  p24 <= t2;
-  p25 <= t2;
-  p26 <= t2;
-  p27 <= t2;
-  p28 <= t2;
 
 
 end gates;

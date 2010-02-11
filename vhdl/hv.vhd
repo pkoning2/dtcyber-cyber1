@@ -36,12 +36,11 @@ entity hv is
       p27 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p2 : out logicsig;
-      p6 : out logicsig;
+      p6_tp3 : out logicsig;
       p8 : out logicsig;
       p9 : out logicsig;
       p10 : out logicsig;
@@ -117,7 +116,6 @@ architecture gates of hv is
   signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
-  signal t9 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
@@ -263,10 +261,8 @@ begin -- gates
     c => g,
     d => h,
     e => i,
-    y => t9);
+    y => p6_tp3);
 
-  p6 <= t9;
-  tp3 <= t9;
 
 
 end gates;

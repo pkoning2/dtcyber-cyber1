@@ -28,9 +28,8 @@ entity jaslice is
       i2 : in  logicsig;
       i3 : in  coaxsig;
       i4 : in  logicsig;
-      tp1 : out logicsig;
+      tp1_y1 : out logicsig;
       tp2 : out logicsig;
-      y1 : out logicsig;
       y2 : out logicsig;
       y3 : out logicsig);
 
@@ -103,8 +102,7 @@ begin -- gates
     s => t1,
     q => t2);
 
-  tp1 <= t2;
-  y1 <= t2;
+  tp1_y1 <= t2;
 
   u3 : inv port map (
     a => t2,
@@ -188,14 +186,12 @@ entity ja is
       p25 : in  logicsig;
       p27 : in  coaxsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
-      p11 : out logicsig;
+      p11_tp2 : out logicsig;
       p13 : out logicsig;
       p18 : out logicsig;
-      p20 : out logicsig;
+      p20_tp5 : out logicsig;
       p28 : out logicsig);
 
 end ja;
@@ -226,9 +222,8 @@ architecture gates of ja is
       i2 : in  logicsig;
       i3 : in  coaxsig;
       i4 : in  logicsig;
-      tp1 : out logicsig;
+      tp1_y1 : out logicsig;
       tp2 : out logicsig;
-      y1 : out logicsig;
       y2 : out logicsig;
       y3 : out logicsig);
 
@@ -272,9 +267,8 @@ begin -- gates
     i2 => p5,
     i3 => p3,
     i4 => p8,
-    tp1 => tp2,
+    tp1_y1 => p11_tp2,
     tp2 => tp1,
-    y1 => p11,
     y2 => p13,
     y3 => p1);
 
@@ -289,9 +283,8 @@ begin -- gates
     i2 => p22,
     i3 => p27,
     i4 => p25,
-    tp1 => tp5,
+    tp1_y1 => p20_tp5,
     tp2 => tp6,
-    y1 => p20,
     y2 => p18,
     y3 => p28);
 

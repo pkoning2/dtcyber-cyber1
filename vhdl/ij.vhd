@@ -36,17 +36,14 @@ entity ij is
       p23 : in  logicsig;
       p25 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p3 : out logicsig;
       p5 : out logicsig;
       p7 : out logicsig;
-      p9 : out logicsig;
-      p11 : out logicsig;
-      p20 : out logicsig;
+      p9_tp1 : out logicsig;
+      p11_tp2 : out logicsig;
+      p20_tp6 : out logicsig;
       p22 : out logicsig;
       p24 : out logicsig;
       p26 : out logicsig;
@@ -75,10 +72,7 @@ architecture gates of ij is
 
   end component;
 
-  signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : g5 port map (
@@ -87,10 +81,8 @@ begin -- gates
     c => p13,
     d => p16,
     e => p15,
-    y => t1);
+    y => p11_tp2);
 
-  p11 <= t1;
-  tp2 <= t1;
 
   u2 : g2 port map (
     a => p17,
@@ -102,10 +94,8 @@ begin -- gates
   u3 : g2 port map (
     a => t2,
     b => p10,
-    y => t3);
+    y => p9_tp1);
 
-  p9 <= t3;
-  tp1 <= t3;
 
   u4 : g2 port map (
     a => t2,
@@ -134,10 +124,8 @@ begin -- gates
   u8 : g2 port map (
     a => t2,
     b => p19,
-    y => t4);
+    y => p20_tp6);
 
-  p20 <= t4;
-  tp6 <= t4;
 
   u9 : g2 port map (
     a => t2,

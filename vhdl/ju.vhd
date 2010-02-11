@@ -33,24 +33,20 @@ entity ju is
       p24 : in  logicsig;
       p26 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
-      p4 : out logicsig;
+      p4_tp2 : out logicsig;
       p9 : out logicsig;
       p10 : out logicsig;
-      p12 : out logicsig;
+      p12_tp1 : out logicsig;
       p13 : out logicsig;
       p14 : out logicsig;
-      p16 : out logicsig;
+      p16_tp3 : out logicsig;
       p17 : out logicsig;
       p18 : out logicsig;
       p19 : out logicsig;
-      p20 : out logicsig;
+      p20_tp5 : out logicsig;
       p25 : out logicsig;
       p28 : out logicsig);
 
@@ -111,14 +107,11 @@ architecture gates of ju is
   end component;
 
   signal a : logicsig;
-  signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t7 : logicsig;
-  signal t8 : logicsig;
   signal t9 : logicsig;
   signal t10 : logicsig;
   signal t11 : logicsig;
@@ -129,12 +122,10 @@ begin -- gates
   u1 : rsflop port map (
     r => p7,
     s => p8,
-    q => t1,
+    q => p12_tp1,
     qb => t2);
 
   p9 <= t2;
-  p12 <= t1;
-  tp1 <= t1;
 
   u2 : inv port map (
     a => p3,
@@ -147,8 +138,7 @@ begin -- gates
     y => t4,
     y2 => t5);
 
-  p16 <= t4;
-  tp3 <= t4;
+  p16_tp3 <= t4;
   tp4 <= t5;
 
   u4 : g2 port map (
@@ -169,19 +159,15 @@ begin -- gates
   u6 : g2 port map (
     a => t6,
     b => p2,
-    y => t7,
+    y => p4_tp2,
     y2 => p1);
 
-  p4 <= t7;
-  tp2 <= t7;
 
   u7 : g2 port map (
     a => p22,
     b => t5,
-    y => t8);
+    y => p20_tp5);
 
-  p20 <= t8;
-  tp5 <= t8;
 
   u8 : inv2 port map (
     a => t5,

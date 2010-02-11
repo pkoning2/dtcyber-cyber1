@@ -24,13 +24,10 @@ entity jzslice is
       i3 : in  logicsig;
       i4 : in  logicsig;
       i5 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       a : out logicsig;
-      q : out logicsig;
-      qb1 : out logicsig;
-      qb2 : out logicsig;
-      qb3 : out logicsig);
+      q_tp1 : out logicsig;
+      qb1_qb2_qb3 : out logicsig);
 
 end jzslice;
 architecture gates of jzslice is
@@ -72,7 +69,6 @@ architecture gates of jzslice is
 
   signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
 
 begin -- gates
   u1 : rs4flop port map (
@@ -83,8 +79,7 @@ begin -- gates
     s4 => '1',
     q => t1);
 
-  q <= t1;
-  tp1 <= t1;
+  q_tp1 <= t1;
 
   u2 : inv2 port map (
     a => t1,
@@ -100,11 +95,8 @@ begin -- gates
 
   u4 : inv port map (
     a => t2,
-    y => t3);
+    y => qb1_qb2_qb3);
 
-  qb1 <= t3;
-  qb2 <= t3;
-  qb3 <= t3;
 
 
 end gates;
@@ -219,23 +211,17 @@ entity jz is
       p25 : in  logicsig;
       p27 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
       tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
-      p3 : out logicsig;
-      p9 : out logicsig;
+      p1_p2_p3 : out logicsig;
+      p9_tp2 : out logicsig;
       p11 : out logicsig;
       p14 : out logicsig;
       p16 : out logicsig;
       p17 : out logicsig;
-      p23 : out logicsig;
-      p24 : out logicsig;
-      p26 : out logicsig;
-      p28 : out logicsig);
+      p23_tp5 : out logicsig;
+      p24_p26_p28 : out logicsig);
 
 end jz;
 architecture gates of jz is
@@ -253,13 +239,10 @@ architecture gates of jz is
       i3 : in  logicsig;
       i4 : in  logicsig;
       i5 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       a : out logicsig;
-      q : out logicsig;
-      qb1 : out logicsig;
-      qb2 : out logicsig;
-      qb3 : out logicsig);
+      q_tp1 : out logicsig;
+      qb1_qb2_qb3 : out logicsig);
 
   end component;
 
@@ -290,11 +273,8 @@ begin -- gates
     i4 => p4,
     i5 => p5,
     a => b,
-    q => p9,
-    qb1 => p2,
-    qb2 => p3,
-    qb3 => p1,
-    tp1 => tp2,
+    q_tp1 => p9_tp2,
+    qb1_qb2_qb3 => p1_p2_p3,
     tp2 => tp1);
 
 
@@ -305,11 +285,8 @@ begin -- gates
     i4 => p27,
     i5 => p22,
     a => a,
-    q => p23,
-    qb1 => p26,
-    qb2 => p24,
-    qb3 => p28,
-    tp1 => tp5,
+    q_tp1 => p23_tp5,
+    qb1_qb2_qb3 => p24_p26_p28,
     tp2 => tp6);
 
 

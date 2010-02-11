@@ -29,16 +29,12 @@ entity jb is
       p25 : in  logicsig;
       p26 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p8 : out logicsig;
+      p8_tp2 : out logicsig;
       p10 : out logicsig;
-      p12 : out logicsig;
+      p12_tp3 : out logicsig;
       p22 : out logicsig;
-      p24 : out logicsig;
-      p28 : out logicsig);
+      p24_tp6 : out logicsig;
+      p28_tp5 : out logicsig);
 
 end jb;
 architecture gates of jb is
@@ -104,8 +100,7 @@ begin -- gates
     d2 => p3,
     q => t2);
 
-  p8 <= t2;
-  tp2 <= t2;
+  p8_tp2 <= t2;
 
   u3 : g2 port map (
     a => t2,
@@ -120,8 +115,7 @@ begin -- gates
     d2 => p3,
     q => t4);
 
-  p12 <= t4;
-  tp3 <= t4;
+  p12_tp3 <= t4;
 
   u5 : g2 port map (
     a => t4,
@@ -147,8 +141,7 @@ begin -- gates
     d2 => p26,
     q => t7);
 
-  p24 <= t7;
-  tp6 <= t7;
+  p24_tp6 <= t7;
 
   u9 : g2 port map (
     a => t7,
@@ -163,8 +156,7 @@ begin -- gates
     d2 => p26,
     q => t9);
 
-  p28 <= t9;
-  tp5 <= t9;
+  p28_tp5 <= t9;
 
   u11 : g2 port map (
     a => t9,

@@ -33,23 +33,17 @@ entity pm is
       p24 : in  logicsig;
       p25 : in  logicsig;
       p26 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
+      p1_tp1 : out logicsig;
       p2 : out logicsig;
       p7 : out logicsig;
       p9 : out logicsig;
-      p11 : out logicsig;
-      p12 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
+      p11_tp2 : out logicsig;
+      p12_p14 : out logicsig;
+      p15_tp5 : out logicsig;
       p16 : out logicsig;
       p18 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p27 : out logicsig;
+      p19_p20 : out logicsig;
+      p27_tp6 : out logicsig;
       p28 : out logicsig);
 
 end pm;
@@ -114,12 +108,6 @@ architecture gates of pm is
   signal n : logicsig;
   signal r : logicsig;
   signal t : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -174,11 +162,9 @@ begin -- gates
   u10 : g2 port map (
     a => e,
     b => f,
-    y => t1,
+    y => p1_tp1,
     y2 => p2);
 
-  p1 <= t1;
-  tp1 <= t1;
 
   u11 : inv2 port map (
     a => f,
@@ -190,10 +176,8 @@ begin -- gates
     b => c,
     c => e,
     d => g,
-    y2 => t2);
+    y2 => p19_p20);
 
-  p19 <= t2;
-  p20 <= t2;
 
   u13 : g3 port map (
     a => j,
@@ -212,11 +196,9 @@ begin -- gates
   u15 : g2 port map (
     a => c,
     b => d,
-    y => t3,
+    y => p11_tp2,
     y2 => p16);
 
-  p11 <= t3;
-  tp2 <= t3;
 
   u16 : inv2 port map (
     a => d,
@@ -228,10 +210,8 @@ begin -- gates
     b => d,
     c => f,
     d => h,
-    y2 => t4);
+    y2 => p12_p14);
 
-  p12 <= t4;
-  p14 <= t4;
 
   u18 : g3 port map (
     a => k,
@@ -250,11 +230,9 @@ begin -- gates
   u20 : g2 port map (
     a => h,
     b => g,
-    y => t5,
+    y => p15_tp5,
     y2 => p18);
 
-  p15 <= t5;
-  tp5 <= t5;
 
   u21 : g4 port map (
     a => p24,
@@ -275,11 +253,9 @@ begin -- gates
   u23 : g2 port map (
     a => b,
     b => a,
-    y => t6,
+    y => p27_tp6,
     y2 => p28);
 
-  p27 <= t6;
-  tp6 <= t6;
 
 
 end gates;

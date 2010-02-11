@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -33,22 +33,16 @@ entity gi is
       p24 : in  logicsig;
       p26 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p4 : out logicsig;
       p6 : out logicsig;
       p8 : out logicsig;
-      p10 : out logicsig;
-      p12 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
-      p17 : out logicsig;
-      p19 : out logicsig;
+      p10_tp3 : out logicsig;
+      p12_tp2 : out logicsig;
+      p14_tp1 : out logicsig;
+      p15_tp6 : out logicsig;
+      p17_tp5 : out logicsig;
+      p19_tp4 : out logicsig;
       p21 : out logicsig;
       p23 : out logicsig;
       p25 : out logicsig;
@@ -64,12 +58,6 @@ architecture gates of gi is
 
   end component;
 
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
@@ -94,45 +82,33 @@ begin -- gates
 
   u5 : inv2 port map (
     a => p9,
-    y2 => t1);
+    y2 => p10_tp3);
 
-  p10 <= t1;
-  tp3 <= t1;
 
   u6 : inv2 port map (
     a => p11,
-    y2 => t2);
+    y2 => p12_tp2);
 
-  p12 <= t2;
-  tp2 <= t2;
 
   u7 : inv2 port map (
     a => p13,
-    y2 => t3);
+    y2 => p14_tp1);
 
-  p14 <= t3;
-  tp1 <= t3;
 
   u8 : inv2 port map (
     a => p16,
-    y2 => t4);
+    y2 => p15_tp6);
 
-  p15 <= t4;
-  tp6 <= t4;
 
   u9 : inv2 port map (
     a => p18,
-    y2 => t5);
+    y2 => p17_tp5);
 
-  p17 <= t5;
-  tp5 <= t5;
 
   u10 : inv2 port map (
     a => p20,
-    y2 => t6);
+    y2 => p19_tp4);
 
-  p19 <= t6;
-  tp4 <= t6;
 
   u11 : inv2 port map (
     a => p22,

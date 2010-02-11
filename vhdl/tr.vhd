@@ -38,19 +38,13 @@ entity tr is
       p24 : in  logicsig;
       p26 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
-      p7 : out logicsig;
-      p10 : out logicsig;
-      p13 : out logicsig;
-      p16 : out logicsig;
+      p1_tp3 : out logicsig;
+      p7_tp2 : out logicsig;
+      p10_tp6 : out logicsig;
+      p13_tp1 : out logicsig;
+      p16_tp5 : out logicsig;
       p19 : out logicsig;
-      p22 : out logicsig;
+      p22_tp4 : out logicsig;
       p25 : out logicsig;
       p28 : out logicsig);
 
@@ -75,37 +69,25 @@ architecture gates of tr is
 
   end component;
 
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
     a => p15,
     b => p17,
-    y => t1);
+    y => p13_tp1);
 
-  p13 <= t1;
-  tp1 <= t1;
 
   u2 : g2 port map (
     a => p3,
     b => p5,
-    y => t2);
+    y => p1_tp3);
 
-  p1 <= t2;
-  tp3 <= t2;
 
   u3 : g2 port map (
     a => p14,
     b => p12,
-    y => t3);
+    y => p16_tp5);
 
-  p16 <= t3;
-  tp5 <= t3;
 
   u4 : g2 port map (
     a => p21,
@@ -122,27 +104,21 @@ begin -- gates
   u6 : g2 port map (
     a => p9,
     b => p11,
-    y => t4);
+    y => p7_tp2);
 
-  p7 <= t4;
-  tp2 <= t4;
 
   u7 : g2 port map (
     a => p20,
     b => p18,
-    y => t5);
+    y => p22_tp4);
 
-  p22 <= t5;
-  tp4 <= t5;
 
   u8 : g3 port map (
     a => p8,
     b => p6,
     c => p4,
-    y => t6);
+    y => p10_tp6);
 
-  p10 <= t6;
-  tp6 <= t6;
 
   u9 : g2 port map (
     a => p27,

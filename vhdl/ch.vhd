@@ -30,13 +30,11 @@ entity ch is
       p26 : in  logicsig;
       p28 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p3 : out logicsig;
       p5 : out logicsig;
-      p7 : out logicsig;
+      p7_tp2 : out logicsig;
       p9 : out logicsig;
       p11 : out logicsig;
       p13 : out logicsig;
@@ -45,7 +43,7 @@ entity ch is
       p18 : out logicsig;
       p19 : out logicsig;
       p20 : out logicsig;
-      p21 : out logicsig;
+      p21_tp6 : out logicsig;
       p23 : out logicsig;
       p25 : out logicsig;
       p27 : out logicsig);
@@ -72,14 +70,12 @@ architecture gates of ch is
   signal c : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
-  signal t10 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -125,10 +121,8 @@ begin -- gates
   u9 : g2 port map (
     a => c,
     b => t2,
-    y => t3);
+    y => p7_tp2);
 
-  p7 <= t3;
-  tp2 <= t3;
 
   u10 : inv port map (
     a => p15,
@@ -229,10 +223,8 @@ begin -- gates
   u27 : g2 port map (
     a => c,
     b => t9,
-    y => t10);
+    y => p21_tp6);
 
-  p21 <= t10;
-  tp6 <= t10;
 
 
 end gates;

@@ -37,20 +37,15 @@ entity il is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
       p6 : out logicsig;
-      p8 : out logicsig;
+      p8_tp1 : out logicsig;
       p11 : out logicsig;
       p12 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
-      p16 : out logicsig;
+      p14_p15_p16_tp5 : out logicsig;
       p17 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig);
+      p22_p24 : out logicsig);
 
 end il;
 architecture gates of il is
@@ -98,7 +93,6 @@ architecture gates of il is
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
 
 begin -- gates
   u1 : cxreceiver port map (
@@ -128,8 +122,7 @@ begin -- gates
     s => a,
     q => t3);
 
-  p8 <= t3;
-  tp1 <= t3;
+  p8_tp1 <= t3;
 
   u5 : g2 port map (
     a => t3,
@@ -142,10 +135,7 @@ begin -- gates
     b => b,
     y => t4);
 
-  p14 <= t4;
-  p15 <= t4;
-  p16 <= t4;
-  tp5 <= t4;
+  p14_p15_p16_tp5 <= t4;
 
   u7 : g2 port map (
     a => p13,
@@ -173,10 +163,8 @@ begin -- gates
     e => p28,
     f => p27,
     y => tp4,
-    y2 => t5);
+    y2 => p22_p24);
 
-  p22 <= t5;
-  p24 <= t5;
 
 
 end gates;

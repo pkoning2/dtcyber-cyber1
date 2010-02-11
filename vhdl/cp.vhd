@@ -42,17 +42,12 @@ entity cp is
       p24 : in  logicsig;
       p25 : in  logicsig;
       p26 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
-      p15 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p1_tp3 : out logicsig;
+      p2_tp1 : out logicsig;
+      p15_tp2 : out logicsig;
+      p27_tp6 : out logicsig;
+      p28_tp4 : out logicsig);
 
 end cp;
 architecture gates of cp is
@@ -99,14 +94,9 @@ architecture gates of cp is
   signal d : logicsig;
   signal e : logicsig;
   signal f : logicsig;
-  signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
-  signal t7 : logicsig;
-  signal t9 : logicsig;
 
 begin -- gates
   u1 : g5 port map (
@@ -121,10 +111,8 @@ begin -- gates
   u2 : g2 port map (
     a => f,
     b => a,
-    y => t1);
+    y => p2_tp1);
 
-  p2 <= t1;
-  tp1 <= t1;
 
   u3 : g2 port map (
     a => c,
@@ -149,10 +137,8 @@ begin -- gates
     a => t2,
     b => t3,
     c => t4,
-    y => t5);
+    y => p15_tp2);
 
-  p15 <= t5;
-  tp2 <= t5;
 
   u8 : g5 port map (
     a => p4,
@@ -166,10 +152,8 @@ begin -- gates
   u9 : g2 port map (
     a => e,
     b => a,
-    y => t6);
+    y => p1_tp3);
 
-  p1 <= t6;
-  tp3 <= t6;
 
   u10 : g5 port map (
     a => p17,
@@ -177,10 +161,8 @@ begin -- gates
     c => p21,
     d => p23,
     e => p25,
-    y2 => t7);
+    y2 => p28_tp4);
 
-  p28 <= t7;
-  tp4 <= t7;
 
   u11 : inv port map (
     a => p16,
@@ -205,10 +187,8 @@ begin -- gates
   u14 : g2 port map (
     a => d,
     b => a,
-    y => t9);
+    y => p27_tp6);
 
-  p27 <= t9;
-  tp6 <= t9;
 
 
 end gates;

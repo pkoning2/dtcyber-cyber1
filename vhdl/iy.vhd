@@ -35,21 +35,14 @@ entity iy is
       p25 : in  logicsig;
       p27 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
-      p3 : out logicsig;
-      p9 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
-      p16 : out logicsig;
+      p1_p3_p9 : out logicsig;
+      p13_tp2 : out logicsig;
+      p14_tp3 : out logicsig;
+      p16_tp4 : out logicsig;
       p17 : out logicsig;
-      p20 : out logicsig;
+      p20_tp5 : out logicsig;
       p21 : out logicsig;
-      p26 : out logicsig;
+      p26_tp6 : out logicsig;
       p28 : out logicsig);
 
 end iy;
@@ -111,22 +104,17 @@ architecture gates of iy is
   end component;
 
   signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
   signal t7 : logicsig;
-  signal t8 : logicsig;
   signal t9 : logicsig;
   signal t10 : logicsig;
   signal t11 : logicsig;
-  signal t12 : logicsig;
   signal t13 : logicsig;
   signal t14 : logicsig;
   signal t15 : logicsig;
-  signal t16 : logicsig;
-  signal t18 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -137,10 +125,8 @@ begin -- gates
   u2 : g2 port map (
     a => t1,
     b => p15,
-    y2 => t2);
+    y2 => p13_tp2);
 
-  p13 <= t2;
-  tp2 <= t2;
 
   u3 : inv port map (
     a => p15,
@@ -157,8 +143,7 @@ begin -- gates
     a => p18,
     y => t5);
 
-  p20 <= t5;
-  tp5 <= t5;
+  p20_tp5 <= t5;
 
   u6 : inv port map (
     a => p19,
@@ -175,10 +160,8 @@ begin -- gates
   u8 : g2 port map (
     a => t4,
     b => t7,
-    y => t8);
+    y => p16_tp4);
 
-  p16 <= t8;
-  tp4 <= t8;
 
   u9 : inv port map (
     a => p23,
@@ -202,10 +185,8 @@ begin -- gates
     b => p22,
     c => p24,
     d => t11,
-    y => t12);
+    y => p26_tp6);
 
-  p26 <= t12;
-  tp6 <= t12;
 
   u13 : inv2 port map (
     a => p27,
@@ -231,11 +212,8 @@ begin -- gates
 
   u16 : inv port map (
     a => t15,
-    y => t16);
+    y => p1_p3_p9);
 
-  p1 <= t16;
-  p3 <= t16;
-  p9 <= t16;
 
   u17 : inv port map (
     a => p11,
@@ -244,10 +222,8 @@ begin -- gates
 
   u18 : inv port map (
     a => p12,
-    y => t18);
+    y => p14_tp3);
 
-  p14 <= t18;
-  tp3 <= t18;
 
 
 end gates;

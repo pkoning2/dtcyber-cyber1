@@ -36,23 +36,17 @@ entity cu is
       p24 : in  logicsig;
       p25 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p4 : out logicsig;
-      p5 : out logicsig;
+      p4_tp1 : out logicsig;
+      p5_tp4 : out logicsig;
       p6 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
+      p9_tp3 : out logicsig;
+      p10_tp5 : out logicsig;
       p14 : out logicsig;
-      p16 : out logicsig;
+      p16_tp6 : out logicsig;
       p20 : out logicsig;
       p21 : out logicsig;
-      p26 : out logicsig;
-      p28 : out logicsig);
+      p26_p28 : out logicsig);
 
 end cu;
 architecture gates of cu is
@@ -115,21 +109,16 @@ architecture gates of cu is
 
   signal a : logicsig;
   signal b : logicsig;
-  signal c : logicsig;
   signal d : logicsig;
-  signal e : logicsig;
   signal f : logicsig;
   signal g : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
   signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
-  signal t9 : logicsig;
-  signal t10 : logicsig;
 
 begin -- gates
   u1 : rsflop port map (
@@ -146,9 +135,8 @@ begin -- gates
     e => f,
     y => t2);
 
-  p9 <= a;
+  p9_tp3 <= a;
   tp2 <= t2;
-  tp3 <= a;
 
   u3 : g2 port map (
     a => t2,
@@ -165,11 +153,9 @@ begin -- gates
   u5 : rsflop port map (
     r => p3,
     s => t4,
-    q => t5,
+    q => p4_tp1,
     qb => p6);
 
-  p4 <= t5;
-  tp1 <= t5;
 
   u6 : latch port map (
     clk => p11,
@@ -181,20 +167,16 @@ begin -- gates
   u7 : latch port map (
     clk => p11,
     d => p13,
-    q => c,
+    q => p5_tp4,
     qb => d);
 
-  p5 <= c;
-  tp4 <= c;
 
   u8 : latch port map (
     clk => p11,
     d => p7,
-    q => e,
+    q => p10_tp5,
     qb => f);
 
-  p10 <= e;
-  tp5 <= e;
 
   u9 : g4 port map (
     a => p23,
@@ -223,10 +205,8 @@ begin -- gates
     b => p24,
     c => p22,
     d => t7,
-    y => t9);
+    y => p16_tp6);
 
-  p16 <= t9;
-  tp6 <= t9;
 
   u13 : inv port map (
     a => p18,
@@ -236,10 +216,8 @@ begin -- gates
   u14 : g2 port map (
     a => p27,
     b => p25,
-    y2 => t10);
+    y2 => p26_p28);
 
-  p26 <= t10;
-  p28 <= t10;
 
 
 end gates;

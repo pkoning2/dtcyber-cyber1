@@ -32,21 +32,17 @@ entity cg is
       p21 : in  logicsig;
       p25 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp6 : out logicsig;
       p2 : out logicsig;
-      p3 : out logicsig;
-      p5 : out logicsig;
-      p6 : out logicsig;
+      p3_p5 : out logicsig;
+      p6_tp2 : out logicsig;
       p7 : out logicsig;
       p9 : out logicsig;
       p20 : out logicsig;
       p22 : out logicsig;
-      p23 : out logicsig;
+      p23_tp6 : out logicsig;
       p24 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p26_p28 : out logicsig;
+      p27 : out logicsig);
 
 end cg;
 architecture gates of cg is
@@ -124,15 +120,12 @@ architecture gates of cg is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
   signal t5 : logicsig;
-  signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
   signal t10 : logicsig;
   signal t11 : logicsig;
-  signal t12 : logicsig;
   signal t13 : logicsig;
   signal t14 : logicsig;
   signal t15 : logicsig;
@@ -181,17 +174,14 @@ begin -- gates
   u7 : g2 port map (
     a => t1,
     b => b,
-    y => t4,
+    y => p9,
     y2 => t5);
 
-  p9 <= t4;
 
   u8 : inv port map (
     a => t5,
-    y => t6);
+    y => p3_p5);
 
-  p3 <= t6;
-  p5 <= t6;
 
   u9 : latch port map (
     clk => p14,
@@ -211,8 +201,7 @@ begin -- gates
     c => t8,
     y => c);
 
-  p6 <= c;
-  tp2 <= c;
+  p6_tp2 <= c;
 
   u12 : rsflop port map (
     r => f,
@@ -243,10 +232,8 @@ begin -- gates
 
   u16 : inv port map (
     a => t11,
-    y => t12);
+    y => p26_p28);
 
-  p26 <= t12;
-  p28 <= t12;
 
   u17 : latch port map (
     clk => p14,
@@ -265,8 +252,7 @@ begin -- gates
     c => t14,
     y => t15);
 
-  p23 <= t15;
-  tp6 <= t15;
+  p23_tp6 <= t15;
 
   u20 : rsflop port map (
     r => f,

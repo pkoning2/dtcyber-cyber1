@@ -37,12 +37,10 @@ entity pe is
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
+      p1_p13_p14 : out logicsig;
       p9 : out logicsig;
       p11 : out logicsig;
       p12 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
       p15 : out logicsig;
       p17 : out logicsig;
       p18 : out logicsig;
@@ -133,7 +131,6 @@ architecture gates of pe is
   signal r : logicsig;
   signal s : logicsig;
   signal t : logicsig;
-  signal t1 : logicsig;
   signal u : logicsig;
   signal v : logicsig;
   signal w : logicsig;
@@ -242,11 +239,8 @@ begin -- gates
 
   u14 : inv2 port map (
     a => r,
-    y2 => t1);
+    y2 => p1_p13_p14);
 
-  p1 <= t1;
-  p13 <= t1;
-  p14 <= t1;
 
   u15 : g3 port map (
     a => r,

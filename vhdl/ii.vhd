@@ -37,17 +37,15 @@ entity ii is
       p28 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
       p3 : out logicsig;
       p5 : out logicsig;
       p8 : out logicsig;
       p10 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
+      p14_tp5 : out logicsig;
+      p15_tp3 : out logicsig;
       p16 : out logicsig;
       p18 : out logicsig;
       p20 : out logicsig;
@@ -121,10 +119,8 @@ architecture gates of ii is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
   signal t10 : logicsig;
@@ -176,10 +172,8 @@ begin -- gates
   u7 : g2 port map (
     a => e,
     b => f,
-    y => t4);
+    y => p14_tp5);
 
-  p14 <= t4;
-  tp5 <= t4;
 
   u8 : rsflop port map (
     r => t2,
@@ -217,11 +211,9 @@ begin -- gates
   u13 : g2 port map (
     a => g,
     b => h,
-    y => t7,
+    y => p15_tp3,
     y2 => t8);
 
-  p15 <= t7;
-  tp3 <= t7;
 
   u14 : g3 port map (
     a => t6,

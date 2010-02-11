@@ -32,19 +32,13 @@ entity aj is
       p24 : in  logicsig;
       p26 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
-      p4 : out logicsig;
+      p4_tp1 : out logicsig;
       p5 : out logicsig;
       p6 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
-      p17 : out logicsig;
-      p19 : out logicsig;
-      p21 : out logicsig;
+      p13_p15_p17_p19 : out logicsig;
+      p14_p21_tp6 : out logicsig;
       p23 : out logicsig;
       p27 : out logicsig);
 
@@ -102,7 +96,6 @@ architecture gates of aj is
   signal t7 : logicsig;
   signal t8 : logicsig;
   signal t11 : logicsig;
-  signal t12 : logicsig;
 
 begin -- gates
   u2 : g2 port map (
@@ -118,8 +111,7 @@ begin -- gates
     d2 => t2,
     q => t4);
 
-  p4 <= t4;
-  tp1 <= t4;
+  p4_tp1 <= t4;
   tp2 <= a;
 
   u5 : g2 port map (
@@ -142,10 +134,8 @@ begin -- gates
     q => t8,
     qb => p23);
 
-  p14 <= t8;
-  p21 <= t8;
+  p14_p21_tp6 <= t8;
   tp5 <= b;
-  tp6 <= t8;
 
   u9 : inv port map (
     a => t8,
@@ -168,12 +158,8 @@ begin -- gates
   u13 : inv2 port map (
     a => p8,
     y => t11,
-    y2 => t12);
+    y2 => p13_p15_p17_p19);
 
-  p13 <= t12;
-  p15 <= t12;
-  p17 <= t12;
-  p19 <= t12;
 
   u14 : rs2flop port map (
     r => t11,

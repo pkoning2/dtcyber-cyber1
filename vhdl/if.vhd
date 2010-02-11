@@ -28,7 +28,6 @@ entity mod_if is
       p24 : in  logicsig;
       p26 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
@@ -39,7 +38,7 @@ entity mod_if is
       p13 : out logicsig;
       p14 : out logicsig;
       p15 : out logicsig;
-      p17 : out logicsig;
+      p17_tp2 : out logicsig;
       p18 : out logicsig;
       p20 : out logicsig;
       p21 : out logicsig;
@@ -73,16 +72,13 @@ architecture gates of mod_if is
   signal f : logicsig;
   signal g : logicsig;
   signal h : logicsig;
-  signal t1 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
     a => a,
     b => e,
-    y => t1);
+    y => p17_tp2);
 
-  p17 <= t1;
-  tp2 <= t1;
 
   u2 : inv port map (
     a => p7,

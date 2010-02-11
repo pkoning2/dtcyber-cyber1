@@ -30,19 +30,14 @@ entity sl is
       p19 : in  logicsig;
       p20 : in  coaxsig;
       p25 : in  coaxsig;
-      tp1 : out logicsig;
       tp3 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
-      p3 : out logicsig;
-      p4 : out logicsig;
-      p5 : out logicsig;
+      p1_p3_p5 : out logicsig;
+      p2_p4_p8 : out logicsig;
       p7 : out logicsig;
-      p8 : out logicsig;
       p9 : out logicsig;
-      p10 : out logicsig;
+      p10_tp1 : out logicsig;
       p11 : out logicsig);
 
 end sl;
@@ -116,7 +111,6 @@ architecture gates of sl is
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
   signal t10 : logicsig;
@@ -153,8 +147,7 @@ begin -- gates
     a => x,
     y => t4);
 
-  p10 <= x;
-  tp1 <= x;
+  p10_tp1 <= x;
 
   u5 : g2 port map (
     a => w,
@@ -168,17 +161,12 @@ begin -- gates
     c => t5,
     y2 => t6);
 
-  p2 <= t6;
-  p4 <= t6;
-  p8 <= t6;
+  p2_p4_p8 <= t6;
 
   u7 : inv port map (
     a => t6,
-    y => t7);
+    y => p1_p3_p5);
 
-  p1 <= t7;
-  p3 <= t7;
-  p5 <= t7;
 
   u8 : cxreceiver port map (
     a => p20,

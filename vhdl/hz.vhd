@@ -41,15 +41,12 @@ entity hz is
       p27 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
-      p19 : out logicsig;
+      p1_tp3 : out logicsig;
+      p19_p21_p22 : out logicsig;
       p20 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
       p23 : out logicsig;
       p24 : out logicsig;
       p28 : out logicsig);
@@ -140,12 +137,10 @@ architecture gates of hz is
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
   signal t10 : logicsig;
   signal t11 : logicsig;
-  signal t12 : logicsig;
 
 begin -- gates
   u1 : g5 port map (
@@ -214,10 +209,8 @@ begin -- gates
     c => p4,
     d => p5,
     e => p6,
-    y => t7);
+    y => p1_tp3);
 
-  p1 <= t7;
-  tp3 <= t7;
 
   u9 : g2 port map (
     a => p12,
@@ -253,11 +246,8 @@ begin -- gates
   u14 : g2 port map (
     a => t11,
     b => g,
-    y => t12);
+    y => p19_p21_p22);
 
-  p19 <= t12;
-  p21 <= t12;
-  p22 <= t12;
 
   u15 : inv port map (
     a => t11,

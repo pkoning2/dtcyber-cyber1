@@ -26,21 +26,16 @@ entity qt is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       tp3 : out logicsig;
-      tp4 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
-      p3 : out logicsig;
-      p5 : out logicsig;
-      p7 : out logicsig;
-      p9 : out logicsig;
+      p3_p5_p7 : out logicsig;
+      p9_tp1 : out logicsig;
       p10 : out logicsig;
-      p20 : out logicsig;
+      p20_tp6 : out logicsig;
       p21 : out logicsig;
       p23 : out logicsig;
-      p24 : out logicsig);
+      p24_tp4 : out logicsig);
 
 end qt;
 architecture gates of qt is
@@ -99,7 +94,6 @@ architecture gates of qt is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
   signal t7 : logicsig;
@@ -165,11 +159,8 @@ begin -- gates
     a => p13,
     b => p14,
     c => p18,
-    y2 => t4);
+    y2 => p3_p5_p7);
 
-  p3 <= t4;
-  p5 <= t4;
-  p7 <= t4;
 
   u9 : inv2 port map (
     a => k,
@@ -194,8 +185,7 @@ begin -- gates
     b => t8,
     y => t9);
 
-  p9 <= t9;
-  tp1 <= t9;
+  p9_tp1 <= t9;
 
   u13 : inv2 port map (
     a => t9,
@@ -226,8 +216,7 @@ begin -- gates
     b => t13,
     y => t14);
 
-  p24 <= t14;
-  tp4 <= t14;
+  p24_tp4 <= t14;
 
   u19 : inv2 port map (
     a => t14,
@@ -259,8 +248,7 @@ begin -- gates
     b => t18,
     y => t19);
 
-  p20 <= t19;
-  tp6 <= t19;
+  p20_tp6 <= t19;
 
   u24 : inv2 port map (
     a => t19,

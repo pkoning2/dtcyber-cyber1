@@ -100,18 +100,12 @@ entity jr is
       p27 : in  logicsig;
       p28 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p2 : out logicsig;
-      p9 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
-      p18 : out logicsig;
-      p24 : out logicsig);
+      p2_tp2 : out logicsig;
+      p9_tp3 : out logicsig;
+      p13_p14_p15_p18 : out logicsig;
+      p24_tp4 : out logicsig);
 
 end jr;
 architecture gates of jr is
@@ -156,9 +150,6 @@ architecture gates of jr is
   signal h : logicsig;
   signal i : logicsig;
   signal j : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
 
 begin -- gates
   u1 : jrslice port map (
@@ -177,8 +168,7 @@ begin -- gates
     a => a,
     f => f);
 
-  p2 <= f;
-  tp2 <= f;
+  p2_tp2 <= f;
 
   u3 : jrslice port map (
     i1 => p11,
@@ -212,10 +202,8 @@ begin -- gates
     c => c,
     d => d,
     e => e,
-    y2 => t1);
+    y2 => p9_tp3);
 
-  p9 <= t1;
-  tp3 <= t1;
 
   u7 : g5 port map (
     a => f,
@@ -223,20 +211,14 @@ begin -- gates
     c => h,
     d => i,
     e => j,
-    y => t2);
+    y => p24_tp4);
 
-  p24 <= t2;
-  tp4 <= t2;
 
   u8 : g2 port map (
     a => p17,
     b => p20,
-    y2 => t3);
+    y2 => p13_p14_p15_p18);
 
-  p13 <= t3;
-  p14 <= t3;
-  p15 <= t3;
-  p18 <= t3;
 
 
 end gates;

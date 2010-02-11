@@ -26,28 +26,22 @@ entity jd is
       p17 : in  logicsig;
       p26 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p2 : out logicsig;
       p4 : out logicsig;
-      p5 : out logicsig;
+      p5_tp1 : out logicsig;
       p7 : out logicsig;
       p9 : out logicsig;
-      p10 : out logicsig;
+      p10_tp2 : out logicsig;
       p11 : out logicsig;
       p12 : out logicsig;
-      p14 : out logicsig;
+      p14_tp3 : out logicsig;
       p16 : out logicsig;
-      p18 : out logicsig;
+      p18_tp4 : out logicsig;
       p20 : out logicsig;
       p21 : out logicsig;
       p22 : out logicsig;
-      p23 : out logicsig;
-      p24 : out logicsig;
+      p23_tp5 : out logicsig;
+      p24_tp6 : out logicsig;
       p25 : out logicsig;
       p27 : out logicsig);
 
@@ -104,8 +98,7 @@ begin -- gates
     q => t1,
     qb => p25);
 
-  p24 <= t1;
-  tp6 <= t1;
+  p24_tp6 <= t1;
 
   u4 : g2 port map (
     a => a,
@@ -119,8 +112,7 @@ begin -- gates
     q => t2,
     qb => p4);
 
-  p5 <= t2;
-  tp1 <= t2;
+  p5_tp1 <= t2;
 
   u6 : g2 port map (
     a => f,
@@ -134,8 +126,7 @@ begin -- gates
     q => t3,
     qb => p20);
 
-  p23 <= t3;
-  tp5 <= t3;
+  p23_tp5 <= t3;
 
   u8 : g2 port map (
     a => a,
@@ -149,8 +140,7 @@ begin -- gates
     q => t4,
     qb => p9);
 
-  p10 <= t4;
-  tp2 <= t4;
+  p10_tp2 <= t4;
 
   u10 : g2 port map (
     a => t4,
@@ -164,8 +154,7 @@ begin -- gates
     q => t5,
     qb => p21);
 
-  p18 <= t5;
-  tp4 <= t5;
+  p18_tp4 <= t5;
 
   u12 : g2 port map (
     a => t5,
@@ -179,8 +168,7 @@ begin -- gates
     q => t6,
     qb => p11);
 
-  p14 <= t6;
-  tp3 <= t6;
+  p14_tp3 <= t6;
 
   u14 : g2 port map (
     a => t6,

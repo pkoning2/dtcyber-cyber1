@@ -33,14 +33,12 @@ entity iq is
       p25 : in  logicsig;
       p27 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp6 : out logicsig;
       p4 : out logicsig;
       p6 : out logicsig;
       p8 : out logicsig;
       p12 : out logicsig;
-      p14 : out logicsig;
-      p18 : out logicsig;
+      p14_tp2 : out logicsig;
+      p18_tp6 : out logicsig;
       p22 : out logicsig;
       p24 : out logicsig;
       p26 : out logicsig;
@@ -68,8 +66,6 @@ architecture gates of iq is
   end component;
 
   signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
 
 begin -- gates
   u1 : g3 port map (
@@ -83,10 +79,8 @@ begin -- gates
   u2 : g2 port map (
     a => t1,
     b => p16,
-    y => t2);
+    y => p14_tp2);
 
-  p14 <= t2;
-  tp2 <= t2;
 
   u3 : g2 port map (
     a => t1,
@@ -115,10 +109,8 @@ begin -- gates
   u7 : g2 port map (
     a => t1,
     b => p19,
-    y => t3);
+    y => p18_tp6);
 
-  p18 <= t3;
-  tp6 <= t3;
 
   u8 : g2 port map (
     a => t1,

@@ -33,21 +33,17 @@ entity hg is
       p25 : in  logicsig;
       p27 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
       tp3 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p4 : out logicsig;
-      p8 : out logicsig;
-      p10 : out logicsig;
-      p12 : out logicsig;
+      p8_tp2 : out logicsig;
+      p10_p12 : out logicsig;
       p18 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
+      p20_p21 : out logicsig;
       p22 : out logicsig;
-      p24 : out logicsig;
+      p24_tp6 : out logicsig;
       p26 : out logicsig;
       p28 : out logicsig);
 
@@ -104,16 +100,12 @@ architecture gates of hg is
   signal g : logicsig;
   signal m : logicsig;
   signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
-  signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
-  signal t9 : logicsig;
   signal t10 : logicsig;
-  signal t11 : logicsig;
 
 begin -- gates
   u1 : latch port map (
@@ -133,10 +125,8 @@ begin -- gates
   u3 : g2 port map (
     a => p3,
     b => t1,
-    y => t2);
+    y => p8_tp2);
 
-  p8 <= t2;
-  tp2 <= t2;
 
   u4 : g2 port map (
     a => p9,
@@ -190,11 +180,9 @@ begin -- gates
   u12 : latch port map (
     clk => p14,
     d => p23,
-    q => t6,
+    q => p24_tp6,
     qb => e);
 
-  p24 <= t6;
-  tp6 <= t6;
 
   u14 : g3 port map (
     a => p17,
@@ -213,10 +201,8 @@ begin -- gates
 
   u16 : inv port map (
     a => t8,
-    y => t9);
+    y => p10_p12);
 
-  p10 <= t9;
-  p12 <= t9;
 
   u17 : inv port map (
     a => p25,
@@ -234,10 +220,8 @@ begin -- gates
     a => e,
     b => f,
     y => p22,
-    y2 => t11);
+    y2 => p20_p21);
 
-  p20 <= t11;
-  p21 <= t11;
 
 
 end gates;

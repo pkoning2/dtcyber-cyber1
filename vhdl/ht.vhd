@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -40,7 +40,6 @@ entity ht is
       tp3 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
       p2 : out logicsig;
       p3 : out logicsig;
       p4 : out logicsig;
@@ -48,7 +47,7 @@ entity ht is
       p7 : out logicsig;
       p11 : out logicsig;
       p16 : out logicsig;
-      p17 : out logicsig;
+      p17_tp6 : out logicsig;
       p20 : out logicsig;
       p24 : out logicsig;
       p25 : out logicsig;
@@ -77,7 +76,6 @@ architecture gates of ht is
   signal c : logicsig;
   signal d : logicsig;
   signal e : logicsig;
-  signal t1 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -179,10 +177,8 @@ begin -- gates
   u17 : g2 port map (
     a => p21,
     b => p18,
-    y => t1);
+    y => p17_tp6);
 
-  p17 <= t1;
-  tp6 <= t1;
 
 
 end gates;

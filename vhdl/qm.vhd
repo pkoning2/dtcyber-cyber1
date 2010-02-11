@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -120,18 +120,13 @@ entity qm is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p3 : out logicsig;
-      p5 : out logicsig;
-      p7 : out logicsig;
-      p9 : out logicsig;
-      p20 : out logicsig;
-      p24 : out logicsig);
+      p3_p5_p7 : out logicsig;
+      p9_tp1 : out logicsig;
+      p20_tp5 : out logicsig;
+      p24_tp6 : out logicsig);
 
 end qm;
 architecture gates of qm is
@@ -176,10 +171,6 @@ architecture gates of qm is
   signal e : logicsig;
   signal f : logicsig;
   signal k : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : qmslice port map (
@@ -188,10 +179,8 @@ begin -- gates
     k => k,
     qa => a,
     qb => b,
-    y => t1);
+    y => p9_tp1);
 
-  p9 <= t1;
-  tp1 <= t1;
   tp3 <= a;
 
   u2 : qmslice port map (
@@ -200,11 +189,9 @@ begin -- gates
     k2 => a,
     qa => c,
     qb => d,
-    y => t2);
+    y => p24_tp6);
 
-  p24 <= t2;
   tp2 <= c;
-  tp6 <= t2;
 
   u3 : qmslice port map (
     a => p18,
@@ -213,11 +200,9 @@ begin -- gates
     k3 => c,
     qa => e,
     qb => f,
-    y => t3);
+    y => p20_tp5);
 
-  p20 <= t3;
   tp4 <= e;
-  tp5 <= t3;
 
   u4 : g4 port map (
     a => p26,
@@ -231,11 +216,8 @@ begin -- gates
     a => a,
     b => c,
     c => e,
-    y2 => t4);
+    y2 => p3_p5_p7);
 
-  p3 <= t4;
-  p5 <= t4;
-  p7 <= t4;
 
 
 end gates;

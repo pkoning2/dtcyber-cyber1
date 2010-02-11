@@ -23,30 +23,10 @@ entity hc is
       p7 : in  logicsig;
       p23 : in  logicsig;
       p25 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p2 : out logicsig;
-      p4 : out logicsig;
-      p6 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
-      p11 : out logicsig;
-      p12 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
-      p16 : out logicsig;
-      p17 : out logicsig;
-      p18 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig;
-      p26 : out logicsig;
-      p28 : out logicsig);
+      tp1_tp2 : out logicsig;
+      tp5_tp6 : out logicsig;
+      p2_p4_p6_p8_p9_p10_p11_p12_p13_p14 : out logicsig;
+      p16_p17_p18_p19_p20_p21_p22_p24_p26_p28 : out logicsig);
 
 end hc;
 architecture gates of hc is
@@ -59,49 +39,21 @@ architecture gates of hc is
 
   end component;
 
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
     a => p7,
     b => p5,
-    y => t1,
-    y2 => t2);
+    y => tp1_tp2,
+    y2 => p2_p4_p6_p8_p9_p10_p11_p12_p13_p14);
 
-  p2 <= t2;
-  p4 <= t2;
-  p6 <= t2;
-  p8 <= t2;
-  p9 <= t2;
-  p10 <= t2;
-  p11 <= t2;
-  p12 <= t2;
-  p13 <= t2;
-  p14 <= t2;
-  tp1 <= t1;
-  tp2 <= t1;
 
   u2 : g2 port map (
     a => p23,
     b => p25,
-    y => t3,
-    y2 => t4);
+    y => tp5_tp6,
+    y2 => p16_p17_p18_p19_p20_p21_p22_p24_p26_p28);
 
-  p16 <= t4;
-  p17 <= t4;
-  p18 <= t4;
-  p19 <= t4;
-  p20 <= t4;
-  p21 <= t4;
-  p22 <= t4;
-  p24 <= t4;
-  p26 <= t4;
-  p28 <= t4;
-  tp5 <= t3;
-  tp6 <= t3;
 
 
 end gates;

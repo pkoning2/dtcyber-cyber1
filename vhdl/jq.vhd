@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -77,8 +77,7 @@ entity jq is
       p24 : in  logicsig;
       p26 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp5 : out logicsig;
+      tp2_tp5 : out logicsig;
       tp6 : out logicsig;
       p4 : out coaxsig;
       p6 : out coaxsig;
@@ -119,8 +118,7 @@ begin -- gates
     b => p17,
     y2 => a);
 
-  tp2 <= a;
-  tp5 <= a;
+  tp2_tp5 <= a;
 
   u2 : jqslice port map (
     a => a,

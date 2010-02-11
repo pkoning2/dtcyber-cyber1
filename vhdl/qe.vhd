@@ -92,15 +92,13 @@ entity qe is
       p2 : out logicsig;
       p5 : out logicsig;
       p8 : out logicsig;
-      p9 : out logicsig;
+      p9_p14_p22 : out logicsig;
       p13 : out logicsig;
-      p14 : out logicsig;
       p15 : out logicsig;
       p16 : out logicsig;
       p17 : out logicsig;
       p18 : out logicsig;
       p21 : out logicsig;
-      p22 : out logicsig;
       p26 : out logicsig;
       p27 : out logicsig;
       p28 : out logicsig);
@@ -158,7 +156,6 @@ architecture gates of qe is
   signal f : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : latchd2 port map (
@@ -252,11 +249,8 @@ begin -- gates
   u14 : inv2 port map (
     a => p6,
     y => tp6,
-    y2 => t4);
+    y2 => p9_p14_p22);
 
-  p9 <= t4;
-  p14 <= t4;
-  p22 <= t4;
 
 
 end gates;

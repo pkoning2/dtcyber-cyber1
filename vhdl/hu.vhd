@@ -30,18 +30,14 @@ entity hu is
       p21 : in  logicsig;
       p25 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p3 : out logicsig;
       p6 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
+      p8_tp1 : out logicsig;
+      p9_tp2 : out logicsig;
       p13 : out logicsig;
-      p14 : out logicsig;
-      p16 : out logicsig;
+      p14_tp5 : out logicsig;
+      p16_tp6 : out logicsig;
       p18 : out logicsig;
       p19 : out logicsig;
       p20 : out logicsig;
@@ -110,13 +106,10 @@ architecture gates of hu is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
-  signal t10 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
@@ -145,8 +138,7 @@ begin -- gates
     y => p13,
     y2 => d);
 
-  p16 <= d;
-  tp6 <= d;
+  p16_tp6 <= d;
 
   u5 : inv2 port map (
     a => p17,
@@ -197,10 +189,8 @@ begin -- gates
   u12 : g2 port map (
     a => t3,
     b => p12,
-    y => t4);
+    y => p14_tp5);
 
-  p14 <= t4;
-  tp5 <= t4;
 
   u13 : g3 port map (
     a => b,
@@ -218,10 +208,8 @@ begin -- gates
   u15 : g2 port map (
     a => t6,
     b => p10,
-    y => t7);
+    y => p9_tp2);
 
-  p9 <= t7;
-  tp2 <= t7;
 
   u16 : g3 port map (
     a => c,
@@ -239,10 +227,8 @@ begin -- gates
   u18 : g2 port map (
     a => t9,
     b => p7,
-    y => t10);
+    y => p8_tp1);
 
-  p8 <= t10;
-  tp1 <= t10;
 
 
 end gates;

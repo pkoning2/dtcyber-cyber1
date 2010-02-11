@@ -32,24 +32,20 @@ entity jo is
       p24 : in  logicsig;
       p26 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
       tp3 : out logicsig;
-      tp4 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p4 : out logicsig;
       p6 : out logicsig;
-      p7 : out logicsig;
+      p7_tp2 : out logicsig;
       p8 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
+      p9_tp1 : out logicsig;
+      p10_tp4 : out logicsig;
       p11 : out logicsig;
       p13 : out logicsig;
       p20 : out logicsig;
       p21 : out logicsig;
-      p22 : out logicsig;
+      p22_tp6 : out logicsig;
       p23 : out logicsig;
       p25 : out logicsig;
       p28 : out logicsig);
@@ -99,7 +95,6 @@ architecture gates of jo is
   signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
-  signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
@@ -154,10 +149,8 @@ begin -- gates
   u8 : g2 port map (
     a => t3,
     b => t5,
-    y => t6);
+    y => p9_tp1);
 
-  p9 <= t6;
-  tp1 <= t6;
 
   u9 : inv2 port map (
     a => p24,
@@ -171,8 +164,7 @@ begin -- gates
     d => t7,
     q => t8);
 
-  p22 <= t8;
-  tp6 <= t8;
+  p22_tp6 <= t8;
 
   u11 : g2 port map (
     a => t8,
@@ -192,8 +184,7 @@ begin -- gates
     d => t9,
     q => t10);
 
-  p7 <= t10;
-  tp2 <= t10;
+  p7_tp2 <= t10;
 
   u14 : g2 port map (
     a => t10,
@@ -213,8 +204,7 @@ begin -- gates
     d => t11,
     q => t12);
 
-  p10 <= t12;
-  tp4 <= t12;
+  p10_tp4 <= t12;
 
   u17 : inv port map (
     a => p12,

@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -31,20 +31,17 @@ entity ma is
       p1 : out logicsig;
       p3 : out logicsig;
       p5 : out logicsig;
-      p6 : out logicsig;
+      p6_p14 : out logicsig;
       p7 : out logicsig;
       p8 : out logicsig;
-      p9 : out logicsig;
-      p12 : out logicsig;
-      p14 : out logicsig;
+      p9_p23 : out logicsig;
+      p12_p28 : out logicsig;
       p16 : out logicsig;
       p17 : out logicsig;
       p18 : out logicsig;
       p19 : out logicsig;
       p21 : out logicsig;
-      p23 : out logicsig;
-      p25 : out logicsig;
-      p28 : out logicsig);
+      p25 : out logicsig);
 
 end ma;
 architecture gates of ma is
@@ -118,16 +115,14 @@ begin -- gates
     q => a,
     qb => b);
 
-  p6 <= n;
-  p14 <= n;
+  p6_p14 <= n;
   tp1 <= a;
 
   u2 : inv port map (
     a => a,
     y => c);
 
-  p12 <= c;
-  p28 <= c;
+  p12_p28 <= c;
 
   u3 : inv port map (
     a => b,
@@ -147,8 +142,7 @@ begin -- gates
     a => e,
     y => g);
 
-  p9 <= g;
-  p23 <= g;
+  p9_p23 <= g;
 
   u6 : inv port map (
     a => f,

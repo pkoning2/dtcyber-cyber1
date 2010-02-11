@@ -35,22 +35,18 @@ entity hk is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
-      p3 : out logicsig;
+      p1_p3_p14 : out logicsig;
       p5 : out logicsig;
       p6 : out logicsig;
       p8 : out logicsig;
       p9 : out logicsig;
       p10 : out logicsig;
-      p14 : out logicsig;
       p16 : out logicsig;
       p17 : out logicsig;
-      p20 : out logicsig;
+      p20_p26_p28 : out logicsig;
       p22 : out logicsig;
       p24 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p27 : out logicsig);
 
 end hk;
 architecture gates of hk is
@@ -116,9 +112,7 @@ architecture gates of hk is
   signal t5 : logicsig;
   signal t6 : logicsig;
   signal t7 : logicsig;
-  signal t8 : logicsig;
   signal t9 : logicsig;
-  signal t10 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -256,11 +250,8 @@ begin -- gates
   u21 : g2 port map (
     a => p25,
     b => p15,
-    y2 => t8);
+    y2 => p20_p26_p28);
 
-  p20 <= t8;
-  p26 <= t8;
-  p28 <= t8;
 
   u22 : g2 port map (
     a => b,
@@ -271,11 +262,8 @@ begin -- gates
   u24 : g2 port map (
     a => p15,
     b => t9,
-    y2 => t10);
+    y2 => p1_p3_p14);
 
-  p1 <= t10;
-  p3 <= t10;
-  p14 <= t10;
 
 
 end gates;

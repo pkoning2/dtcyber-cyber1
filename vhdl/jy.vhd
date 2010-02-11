@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -22,10 +22,8 @@ entity jyslice is
       i1 : in  logicsig;
       i2 : in  logicsig;
       s : in  logicsig;
-      tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
-      q3 : out logicsig;
+      q1_tp : out logicsig;
+      q2_q3 : out logicsig;
       q4 : out logicsig);
 
 end jyslice;
@@ -65,15 +63,13 @@ begin -- gates
     s2 => i2,
     q => t1);
 
-  q1 <= t1;
-  tp <= t1;
+  q1_tp <= t1;
 
   u2 : inv2 port map (
     a => t1,
     y2 => t2);
 
-  q2 <= t2;
-  q3 <= t2;
+  q2_q3 <= t2;
 
   u3 : inv port map (
     a => t2,
@@ -100,27 +96,20 @@ entity jy is
       p23 : in  logicsig;
       p24 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
-      p2 : out logicsig;
-      p4 : out logicsig;
-      p6 : out logicsig;
+      p2_p4 : out logicsig;
+      p6_tp3 : out logicsig;
       p7 : out logicsig;
       p12 : out logicsig;
-      p13 : out logicsig;
+      p13_tp2 : out logicsig;
       p16 : out logicsig;
-      p17 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
+      p17_tp4 : out logicsig;
+      p20_p21 : out logicsig;
       p22 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p25_tp6 : out logicsig;
+      p26_p28 : out logicsig;
+      p27 : out logicsig);
 
 end jy;
 architecture gates of jy is
@@ -145,17 +134,14 @@ architecture gates of jy is
       i1 : in  logicsig;
       i2 : in  logicsig;
       s : in  logicsig;
-      tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
-      q3 : out logicsig;
+      q1_tp : out logicsig;
+      q2_q3 : out logicsig;
       q4 : out logicsig);
 
   end component;
 
   signal s : logicsig;
   signal t1 : logicsig;
-  signal t2 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -184,10 +170,8 @@ begin -- gates
 
   u5 : inv port map (
     a => p11,
-    y => t2);
+    y => p13_tp2);
 
-  p13 <= t2;
-  tp2 <= t2;
 
   u6 : inv port map (
     a => p15,
@@ -199,33 +183,27 @@ begin -- gates
     i1 => p5,
     i2 => p3,
     s => s,
-    q1 => p6,
-    q2 => p4,
-    q3 => p2,
-    q4 => p1,
-    tp => tp3);
+    q1_tp => p6_tp3,
+    q2_q3 => p2_p4,
+    q4 => p1);
 
 
   u8 : jyslice port map (
     i1 => p18,
     i2 => p19,
     s => s,
-    q1 => p17,
-    q2 => p20,
-    q3 => p21,
-    q4 => p22,
-    tp => tp4);
+    q1_tp => p17_tp4,
+    q2_q3 => p20_p21,
+    q4 => p22);
 
 
   u9 : jyslice port map (
     i1 => p23,
     i2 => p24,
     s => s,
-    q1 => p25,
-    q2 => p26,
-    q3 => p28,
-    q4 => p27,
-    tp => tp6);
+    q1_tp => p25_tp6,
+    q2_q3 => p26_p28,
+    q4 => p27);
 
 
 

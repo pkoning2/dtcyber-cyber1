@@ -31,28 +31,12 @@ entity th is
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p2 : out logicsig;
-      p4 : out logicsig;
-      p5 : out logicsig;
-      p7 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
-      p11 : out logicsig;
-      p12 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
-      p16 : out logicsig;
-      p17 : out logicsig;
-      p18 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
-      p23 : out logicsig;
-      p24 : out logicsig;
-      p27 : out logicsig);
+      p2_p4_p10_p12 : out logicsig;
+      p5_p9_p11_p13 : out logicsig;
+      p7_p8_p14 : out logicsig;
+      p15_p21_p22 : out logicsig;
+      p16_p18_p20_p24 : out logicsig;
+      p17_p19_p23_p27 : out logicsig);
 
 end th;
 architecture gates of th is
@@ -64,71 +48,43 @@ architecture gates of th is
 
   end component;
 
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
     a => p1,
     y => tp1,
-    y2 => t1);
+    y2 => p7_p8_p14);
 
-  p7 <= t1;
-  p8 <= t1;
-  p14 <= t1;
 
   u2 : inv2 port map (
     a => p6,
     y => tp2,
-    y2 => t2);
+    y2 => p5_p9_p11_p13);
 
-  p5 <= t2;
-  p9 <= t2;
-  p11 <= t2;
-  p13 <= t2;
 
   u3 : inv2 port map (
     a => p3,
     y => tp3,
-    y2 => t3);
+    y2 => p2_p4_p10_p12);
 
-  p2 <= t3;
-  p4 <= t3;
-  p10 <= t3;
-  p12 <= t3;
 
   u4 : inv2 port map (
     a => p26,
     y => tp4,
-    y2 => t4);
+    y2 => p17_p19_p23_p27);
 
-  p17 <= t4;
-  p19 <= t4;
-  p23 <= t4;
-  p27 <= t4;
 
   u5 : inv2 port map (
     a => p25,
     y => tp5,
-    y2 => t5);
+    y2 => p16_p18_p20_p24);
 
-  p16 <= t5;
-  p18 <= t5;
-  p20 <= t5;
-  p24 <= t5;
 
   u6 : inv2 port map (
     a => p28,
     y => tp6,
-    y2 => t6);
+    y2 => p15_p21_p22);
 
-  p15 <= t6;
-  p21 <= t6;
-  p22 <= t6;
 
 
 end gates;

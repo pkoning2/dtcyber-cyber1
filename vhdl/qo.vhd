@@ -41,14 +41,12 @@ entity qo is
       p28 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p4 : out logicsig;
-      p11 : out logicsig;
+      p11_tp3 : out logicsig;
       p12 : out logicsig;
-      p13 : out logicsig;
+      p13_tp4 : out logicsig;
       p20 : out logicsig;
       p23 : out logicsig;
       p25 : out logicsig);
@@ -119,8 +117,6 @@ architecture gates of qo is
   signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
-  signal t9 : logicsig;
-  signal t10 : logicsig;
   signal t11 : logicsig;
   signal t12 : logicsig;
   signal t13 : logicsig;
@@ -181,19 +177,15 @@ begin -- gates
     a => p3,
     b => p1,
     c => p2,
-    y => t9);
+    y => p11_tp3);
 
-  p11 <= t9;
-  tp3 <= t9;
 
   u10 : g3 port map (
     a => p14,
     b => p16,
     c => p18,
-    y => t10);
+    y => p13_tp4);
 
-  p13 <= t10;
-  tp4 <= t10;
 
   u11 : rsflop port map (
     r => p27,

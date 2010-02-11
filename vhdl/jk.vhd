@@ -36,7 +36,6 @@ entity jk is
       tp3 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
       p2 : out coaxsig;
       p4 : out logicsig;
       p7 : out logicsig;
@@ -47,7 +46,7 @@ entity jk is
       p16 : out logicsig;
       p19 : out logicsig;
       p21 : out logicsig;
-      p25 : out logicsig;
+      p25_tp6 : out logicsig;
       p26 : out logicsig;
       p27 : out logicsig);
 
@@ -250,8 +249,7 @@ begin -- gates
     s => t15,
     q => t16);
 
-  p25 <= t16;
-  tp6 <= t16;
+  p25_tp6 <= t16;
 
   u21 : inv port map (
     a => t16,

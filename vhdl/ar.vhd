@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -36,7 +36,6 @@ entity ar is
       p25 : in  logicsig;
       p27 : in  logicsig;
       tp1 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
@@ -44,7 +43,7 @@ entity ar is
       p2 : out logicsig;
       p4 : out logicsig;
       p11 : out logicsig;
-      p12 : out logicsig;
+      p12_tp3 : out logicsig;
       p15 : out logicsig;
       p16 : out logicsig;
       p17 : out logicsig;
@@ -109,7 +108,6 @@ architecture gates of ar is
   signal t8 : logicsig;
   signal t9 : logicsig;
   signal t10 : logicsig;
-  signal t11 : logicsig;
   signal t12 : logicsig;
   signal t13 : logicsig;
   signal t14 : logicsig;
@@ -253,10 +251,8 @@ begin -- gates
   u24 : g2 port map (
     a => m,
     b => t10,
-    y2 => t11);
+    y2 => p12_tp3);
 
-  p12 <= t11;
-  tp3 <= t11;
 
   u25 : inv port map (
     a => p21,

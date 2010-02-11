@@ -38,13 +38,12 @@ entity jl is
       p27 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p3 : out logicsig;
       p5 : out logicsig;
-      p7 : out logicsig;
+      p7_tp3 : out logicsig;
       p10 : out logicsig;
       p13 : out logicsig;
       p14 : out logicsig;
@@ -130,8 +129,6 @@ architecture gates of jl is
   signal t10 : logicsig;
   signal t11 : logicsig;
   signal t12 : logicsig;
-  signal t13 : logicsig;
-  signal x : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -158,9 +155,8 @@ begin -- gates
     a => d,
     b => t2,
     y => f,
-    y2 => x);
+    y2 => p10);
 
-  p10 <= x;
   tp1 <= d;
 
   u5 : inv port map (
@@ -262,10 +258,8 @@ begin -- gates
   u20 : rsflop port map (
     r => t12,
     s => t11,
-    q => t13);
+    q => p7_tp3);
 
-  p7 <= t13;
-  tp3 <= t13;
 
   u21 : inv2 port map (
     a => p15,

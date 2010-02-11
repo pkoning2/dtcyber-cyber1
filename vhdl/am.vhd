@@ -31,27 +31,8 @@ entity am is
       tp3 : out logicsig;
       tp4 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
-      p3 : out logicsig;
-      p4 : out logicsig;
-      p5 : out logicsig;
-      p6 : out logicsig;
-      p7 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
-      p11 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
-      p23 : out logicsig;
-      p24 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p28 : out logicsig);
+      p1_p2_p3_p4_p5_p6_p7_p9_p11_p13 : out logicsig;
+      p8_p14_p19_p20_p21_p22_p23_p24_p25_p26_p28 : out logicsig);
 
 end am;
 architecture gates of am is
@@ -98,8 +79,6 @@ architecture gates of am is
   signal d : logicsig;
   signal e : logicsig;
   signal t : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
 
 begin -- gates
   u1 : g4 port map (
@@ -108,18 +87,8 @@ begin -- gates
     c => d,
     d => t,
     y => tp1,
-    y2 => t1);
+    y2 => p1_p2_p3_p4_p5_p6_p7_p9_p11_p13);
 
-  p1 <= t1;
-  p2 <= t1;
-  p3 <= t1;
-  p4 <= t1;
-  p5 <= t1;
-  p6 <= t1;
-  p7 <= t1;
-  p9 <= t1;
-  p11 <= t1;
-  p13 <= t1;
   tp2 <= d;
   tp3 <= c;
   tp4 <= b;
@@ -130,19 +99,8 @@ begin -- gates
     c => d,
     d => t,
     y => tp6,
-    y2 => t2);
+    y2 => p8_p14_p19_p20_p21_p22_p23_p24_p25_p26_p28);
 
-  p8 <= t2;
-  p14 <= t2;
-  p19 <= t2;
-  p20 <= t2;
-  p21 <= t2;
-  p22 <= t2;
-  p23 <= t2;
-  p24 <= t2;
-  p25 <= t2;
-  p26 <= t2;
-  p28 <= t2;
 
   u3 : inv port map (
     a => p15,

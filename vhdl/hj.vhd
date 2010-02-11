@@ -35,11 +35,10 @@ entity hj is
       tp2 : out logicsig;
       tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
       p4 : out logicsig;
-      p9 : out logicsig;
+      p9_tp5 : out logicsig;
       p10 : out logicsig;
       p11 : out logicsig;
       p13 : out logicsig;
@@ -139,9 +138,8 @@ begin -- gates
     c => j,
     y => h);
 
-  p9 <= j;
+  p9_tp5 <= j;
   tp3 <= h;
-  tp5 <= j;
 
   u5 : g2 port map (
     a => t2,
@@ -156,7 +154,6 @@ begin -- gates
     y => g);
 
   tp2 <= g;
-
 
   u7 : g3 port map (
     a => t2,

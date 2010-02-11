@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -35,16 +35,12 @@ entity mj is
       p20 : in  logicsig;
       p21 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
-      p2 : out logicsig;
+      p2_p15_tp1 : out logicsig;
       p14 : out logicsig;
-      p15 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig;
+      p22_p24_tp6 : out logicsig;
       p26 : out logicsig;
       p28 : out logicsig);
 
@@ -112,7 +108,6 @@ architecture gates of mj is
   signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
-  signal t9 : logicsig;
   signal t10 : logicsig;
   signal t11 : logicsig;
   signal t12 : logicsig;
@@ -121,7 +116,6 @@ architecture gates of mj is
   signal t15 : logicsig;
   signal t16 : logicsig;
   signal t17 : logicsig;
-  signal t18 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -179,11 +173,8 @@ begin -- gates
 
   u8 : inv port map (
     a => t8,
-    y => t9);
+    y => p2_p15_tp1);
 
-  p2 <= t9;
-  p15 <= t9;
-  tp1 <= t9;
 
   u9 : g2 port map (
     a => t7,
@@ -264,11 +255,8 @@ begin -- gates
 
   u20 : inv port map (
     a => t17,
-    y => t18);
+    y => p22_p24_tp6);
 
-  p22 <= t18;
-  p24 <= t18;
-  tp6 <= t18;
 
   u21 : inv port map (
     a => p5,

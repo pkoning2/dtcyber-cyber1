@@ -28,13 +28,11 @@ entity qrslice is
       i2 : in  logicsig;
       i3 : in  coaxsig;
       i4 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
+      tp1_y1 : out logicsig;
       h : out logicsig;
       i : out logicsig;
-      l : out logicsig;
+      l_tp2 : out logicsig;
       m : out logicsig;
-      y1 : out logicsig;
       y2 : out logicsig;
       y3 : out logicsig);
 
@@ -116,8 +114,7 @@ begin -- gates
     q => t2,
     qb => i);
 
-  tp1 <= t2;
-  y1 <= t2;
+  tp1_y1 <= t2;
 
   u3 : inv2 port map (
     a => t2,
@@ -151,8 +148,7 @@ begin -- gates
     q => t7,
     qb => m);
 
-  l <= t7;
-  tp2 <= t7;
+  l_tp2 <= t7;
 
   u8 : inv port map (
     a => t7,
@@ -204,16 +200,13 @@ entity qr is
       p24 : in  coaxsig;
       p25 : in  coaxsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p9 : out logicsig;
-      p11 : out logicsig;
+      p11_tp2 : out logicsig;
       p16 : out logicsig;
       p18 : out logicsig;
       p19 : out logicsig;
-      p20 : out logicsig;
+      p20_tp5 : out logicsig;
       p28 : out logicsig);
 
 end qr;
@@ -253,13 +246,11 @@ architecture gates of qr is
       i2 : in  logicsig;
       i3 : in  coaxsig;
       i4 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
+      tp1_y1 : out logicsig;
       h : out logicsig;
       i : out logicsig;
-      l : out logicsig;
+      l_tp2 : out logicsig;
       m : out logicsig;
-      y1 : out logicsig;
       y2 : out logicsig;
       y3 : out logicsig);
 
@@ -273,6 +264,7 @@ architecture gates of qr is
   signal h : logicsig;
   signal i : logicsig;
   signal l : logicsig;
+  signal l_tp6 : logicsig;
   signal m : logicsig;
 
 begin -- gates
@@ -307,9 +299,8 @@ begin -- gates
     i2 => p5,
     i3 => p3,
     i4 => p8,
-    tp1 => tp2,
-    tp2 => tp1,
-    y1 => p11,
+    l_tp2 => tp1,
+    tp1_y1 => p11_tp2,
     y2 => p9,
     y3 => p1);
 
@@ -326,14 +317,13 @@ begin -- gates
     i4 => p23,
     h => h,
     i => i,
-    l => l,
+    l_tp2 => l,
     m => m,
-    tp1 => tp5,
-    tp2 => tp6,
-    y1 => p20,
+    tp1_y1 => p20_tp5,
     y2 => p18,
     y3 => p28);
 
+  l_tp6 <= l;
 
   u7 : g2 port map (
     a => h,

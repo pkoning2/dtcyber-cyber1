@@ -24,8 +24,7 @@ entity aaslice is
       s1 : in  logicsig;
       s2 : in  logicsig;
       tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
+      q1_q2 : out logicsig;
       qb : out logicsig);
 
 end aaslice;
@@ -59,7 +58,6 @@ architecture gates of aaslice is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -84,10 +82,8 @@ begin -- gates
 
   u4 : inv2 port map (
     a => t3,
-    y2 => t4);
+    y2 => q1_q2);
 
-  q1 <= t4;
-  q2 <= t4;
 
 
 end gates;
@@ -116,18 +112,14 @@ entity aa is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
-      p3 : out logicsig;
-      p4 : out logicsig;
+      p1_p3 : out logicsig;
+      p2_p4 : out logicsig;
       p9 : out logicsig;
       p10 : out logicsig;
       p19 : out logicsig;
       p20 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p25_p27 : out logicsig;
+      p26_p28 : out logicsig);
 
 end aa;
 architecture gates of aa is
@@ -138,8 +130,7 @@ architecture gates of aa is
       s1 : in  logicsig;
       s2 : in  logicsig;
       tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
+      q1_q2 : out logicsig;
       qb : out logicsig);
 
   end component;
@@ -151,8 +142,7 @@ begin -- gates
     r2 => p8,
     s1 => p5,
     s2 => p7,
-    q1 => p2,
-    q2 => p4,
+    q1_q2 => p2_p4,
     qb => p9,
     tp => tp1);
 
@@ -162,8 +152,7 @@ begin -- gates
     r2 => p13,
     s1 => p12,
     s2 => p14,
-    q1 => p1,
-    q2 => p3,
+    q1_q2 => p1_p3,
     qb => p10,
     tp => tp2);
 
@@ -173,8 +162,7 @@ begin -- gates
     r2 => p18,
     s1 => p15,
     s2 => p17,
-    q1 => p26,
-    q2 => p28,
+    q1_q2 => p26_p28,
     qb => p19,
     tp => tp5);
 
@@ -184,8 +172,7 @@ begin -- gates
     r2 => p23,
     s1 => p22,
     s2 => p24,
-    q1 => p25,
-    q2 => p27,
+    q1_q2 => p25_p27,
     qb => p20,
     tp => tp6);
 

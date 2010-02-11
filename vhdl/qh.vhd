@@ -24,8 +24,7 @@ entity qhslice is
       c : in  logicsig;
       d : in  logicsig := '1';
       e : in  logicsig := '1';
-      tp : out logicsig;
-      y : out logicsig);
+      tp_y : out logicsig);
 
 end qhslice;
 architecture gates of qhslice is
@@ -50,7 +49,6 @@ architecture gates of qhslice is
 
   signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -69,10 +67,8 @@ begin -- gates
     a => t1,
     b => t2,
     c => e,
-    y => t3);
+    y => tp_y);
 
-  tp <= t3;
-  y <= t3;
 
 
 end gates;
@@ -103,18 +99,12 @@ entity qh is
       p25 : in  logicsig;
       p26 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
-      p3 : out logicsig;
-      p11 : out logicsig;
-      p16 : out logicsig;
-      p19 : out logicsig;
-      p28 : out logicsig);
+      p1_tp3 : out logicsig;
+      p3_tp1 : out logicsig;
+      p11_tp2 : out logicsig;
+      p16_tp4 : out logicsig;
+      p19_tp6 : out logicsig;
+      p28_tp5 : out logicsig);
 
 end qh;
 architecture gates of qh is
@@ -125,8 +115,7 @@ architecture gates of qh is
       c : in  logicsig;
       d : in  logicsig := '1';
       e : in  logicsig := '1';
-      tp : out logicsig;
-      y : out logicsig);
+      tp_y : out logicsig);
 
   end component;
 
@@ -136,15 +125,13 @@ begin -- gates
     a => p10,
     c => p12,
     e => p5,
-    tp => tp1,
-    y => p3);
+    tp_y => p3_tp1);
 
 
   u2 : qhslice port map (
     a => p7,
     c => p9,
-    tp => tp2,
-    y => p11);
+    tp_y => p11_tp2);
 
 
   u3 : qhslice port map (
@@ -152,8 +139,7 @@ begin -- gates
     b => p4,
     c => p6,
     d => p8,
-    tp => tp3,
-    y => p1);
+    tp_y => p1_tp3);
 
 
   u4 : qhslice port map (
@@ -161,8 +147,7 @@ begin -- gates
     b => p15,
     c => p17,
     e => p14,
-    tp => tp4,
-    y => p16);
+    tp_y => p16_tp4);
 
 
   u5 : qhslice port map (
@@ -171,8 +156,7 @@ begin -- gates
     c => p25,
     d => p27,
     e => p26,
-    tp => tp5,
-    y => p28);
+    tp_y => p28_tp5);
 
 
   u6 : qhslice port map (
@@ -180,8 +164,7 @@ begin -- gates
     b => p20,
     c => p22,
     d => p24,
-    tp => tp6,
-    y => p19);
+    tp_y => p19_tp6);
 
 
 

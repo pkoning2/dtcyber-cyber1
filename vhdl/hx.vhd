@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -38,21 +38,16 @@ entity hx is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p6 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
+      p8_tp1 : out logicsig;
+      p9_tp2 : out logicsig;
       p11 : out logicsig;
-      p12 : out logicsig;
-      p14 : out logicsig;
+      p12_tp4 : out logicsig;
+      p14_tp3 : out logicsig;
       p17 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig);
+      p22_p24 : out logicsig);
 
 end hx;
 architecture gates of hx is
@@ -109,9 +104,7 @@ architecture gates of hx is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
   signal t5 : logicsig;
-  signal t6 : logicsig;
 
 begin -- gates
   u1 : cxreceiver port map (
@@ -135,8 +128,7 @@ begin -- gates
     f => p2,
     y => a);
 
-  p9 <= a;
-  tp2 <= a;
+  p9_tp2 <= a;
 
   u4 : rsflop port map (
     r => p10,
@@ -144,8 +136,7 @@ begin -- gates
     q => t3,
     qb => b);
 
-  p8 <= t3;
-  tp1 <= t3;
+  p8_tp1 <= t3;
 
   u5 : g2 port map (
     a => p4,
@@ -157,10 +148,8 @@ begin -- gates
     a => p15,
     b => p16,
     c => p18,
-    y => t4);
+    y => p12_tp4);
 
-  p12 <= t4;
-  tp4 <= t4;
 
   u7 : g2 port map (
     a => p16,
@@ -173,8 +162,7 @@ begin -- gates
     b => b,
     y => t5);
 
-  p14 <= t5;
-  tp3 <= t5;
+  p14_tp3 <= t5;
 
   u9 : g2 port map (
     a => p13,
@@ -190,10 +178,8 @@ begin -- gates
     e => p28,
     f => p27,
     y => tp5,
-    y2 => t6);
+    y2 => p22_p24);
 
-  p22 <= t6;
-  p24 <= t6;
 
 
 end gates;

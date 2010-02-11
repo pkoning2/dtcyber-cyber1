@@ -41,9 +41,7 @@ entity pk is
       p18 : out coaxsig;
       p21 : out logicsig;
       p22 : out coaxsig;
-      p24 : out logicsig;
-      p26 : out logicsig;
-      p28 : out logicsig);
+      p24_p26_p28 : out logicsig);
 
 end pk;
 architecture gates of pk is
@@ -97,7 +95,6 @@ architecture gates of pk is
   signal b : logicsig;
   signal c : logicsig;
   signal ei : logicsig;
-  signal f2 : logicsig;
   signal fi : logicsig;
   signal fq : logicsig;
   signal ii : logicsig;
@@ -196,11 +193,8 @@ begin -- gates
 
   u15 : inv port map (
     a => fq,
-    y => f2);
+    y => p24_p26_p28);
 
-  p24 <= f2;
-  p26 <= f2;
-  p28 <= f2;
 
   u18 : cxreceiver port map (
     a => p25,

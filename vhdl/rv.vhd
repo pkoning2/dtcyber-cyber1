@@ -23,9 +23,8 @@ entity rvslice is
       i : in  logicsig;
       i2 : in  logicsig := '1';
       tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
-      q3 : out logicsig);
+      q1_q3 : out logicsig;
+      q2 : out logicsig);
 
 end rvslice;
 architecture gates of rvslice is
@@ -48,7 +47,6 @@ architecture gates of rvslice is
   end component;
 
   signal t2 : logicsig;
-  signal t3 : logicsig;
 
 begin -- gates
   u2 : latchs port map (
@@ -62,10 +60,8 @@ begin -- gates
   u3 : inv2 port map (
     a => t2,
     y => q2,
-    y2 => t3);
+    y2 => q1_q3);
 
-  q1 <= t3;
-  q3 <= t3;
 
 
 end gates;
@@ -91,23 +87,18 @@ entity rv is
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
-      p2 : out logicsig;
+      p2_p11 : out logicsig;
       p3 : out logicsig;
       p4 : out logicsig;
-      p5 : out logicsig;
-      p7 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
-      p11 : out logicsig;
-      p19 : out logicsig;
+      p5_p19 : out logicsig;
+      p7_p9 : out logicsig;
+      p8_p10 : out logicsig;
       p20 : out logicsig;
       p21 : out logicsig;
       p22 : out logicsig;
       p23 : out logicsig;
       p24 : out logicsig;
-      p25 : out logicsig;
-      p27 : out logicsig);
+      p25_p27 : out logicsig);
 
 end rv;
 architecture gates of rv is
@@ -126,9 +117,8 @@ architecture gates of rv is
       i : in  logicsig;
       i2 : in  logicsig := '1';
       tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
-      q3 : out logicsig);
+      q1_q3 : out logicsig;
+      q2 : out logicsig);
 
   end component;
 
@@ -139,53 +129,48 @@ begin -- gates
     clk => p16,
     i => p13,
     i2 => p6,
-    q1 => p8,
+    q1_q3 => p8_p10,
     q2 => p3,
-    q3 => p10,
     tp => tp1);
 
 
   u4 : rvslice port map (
     clk => p16,
     i => p18,
-    q1 => p19,
+    q1_q3 => p5_p19,
     q2 => p23,
-    q3 => p5,
     tp => tp2);
 
 
   u5 : rvslice port map (
     clk => p16,
     i => p14,
-    q1 => p7,
+    q1_q3 => p7_p9,
     q2 => p4,
-    q3 => p9,
     tp => tp3);
 
 
   u6 : rvslice port map (
     clk => p28,
     i => p26,
-    q1 => p25,
+    q1_q3 => p25_p27,
     q2 => p20,
-    q3 => p27,
     tp => tp4);
 
 
   u7 : rvslice port map (
     clk => p28,
     i => p15,
-    q1 => p11,
+    q1_q3 => p2_p11,
     q2 => p1,
-    q3 => p2,
     tp => tp5);
 
 
   u8 : rvslice port map (
     clk => p28,
     i => p17,
+    q1_q3 => p24,
     q2 => t2,
-    q3 => p24,
     tp => tp6);
 
   p21 <= t2;

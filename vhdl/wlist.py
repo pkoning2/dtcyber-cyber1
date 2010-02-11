@@ -2,7 +2,7 @@
 
 """Process CDC 6600 wiring list
 
-Copyright (C) 2008, 2009 Paul Koning
+Copyright (C) 2008-2010 Paul Koning
 """
 
 import re
@@ -192,6 +192,16 @@ class Chassis (cmodule.cmod):
         (ghdl requires that, silly thing), and define chassis "pins"
         for signals that go outside.
         """
+        for m in self.elements.itervalues ():
+            for f, a in m.portmap.iteritems ():
+                a = str (a)
+                if a in self.aliases:
+                    #print "changing %s to %s" % (a, self.aliases[a])
+                    m.portmap[f] = self.aliases[a]
+                    try:
+                        del self.signals[a]
+                    except KeyError:
+                        pass
         for w in sorted (self.signals):
             w = self.signals[w]
             if isinstance (w, Wire) and \
@@ -330,8 +340,8 @@ class Connector (object):
                 
     def chwire (self, pnum, toslot, topin, dir, wlen = 0):
         """Generate a Wire object for a wire inside a chassis (twisted pair).
-        Wires are named w_out_in except if the wire is long enough that we
-        simulate its delay, in which case the name is wd_out_in 
+        Wires are named w_out except if the wire is long enough that we
+        simulate its delay, in which case the name is wd_out 
         and the wire is hooked up to an instance of the "wire"
         element that actually implements the delay.
         """
@@ -339,24 +349,27 @@ class Connector (object):
         end2 = "%s_%s" % (toslot, topin)
         if dir == "out":
             try:
-                w = self.chassis.signals["w_%s_%s" % (end1, end2)]
+                w = self.chassis.signals["w_%s" % end1]
             except KeyError:
-                # Wire is not defined yet.  Define it
-                w = Wire (end1, end2)
-                if real_length and wlen > real_length:
-                    wdname = "wd_%s" % w
-                    wd = cmodule.ElementInstance (wdname, "wire")
-                    self.chassis.elements[wdname] = wd
-                    w2 = Wire (end1, end2, "d")
+                try:
+                    w = self.chassis.aliases["w_%s" % end1]
+                except KeyError:
+                    # Wire is not defined yet.  Define it
+                    w = Wire (end1, end2)
+                    if real_length and wlen > real_length:
+                        wdname = "wd_%s" % w
+                        wd = cmodule.ElementInstance (wdname, "wire")
+                        self.chassis.elements[wdname] = wd
+                        w2 = Wire (end1, end2, "d")
+                        self.chassis.signals[w] = w
+                        wd.addportmap (self.chassis, "o", w)
+                        w = w2
+                        wd.addportmap (self.chassis, "i", w)
+                        wd.addgenericmap (self.chassis, "length", str (wlen))
                     self.chassis.signals[w] = w
-                    wd.addportmap (self.chassis, "o", w)
-                    w = w2
-                    wd.addportmap (self.chassis, "i", w)
-                    wd.addgenericmap (self.chassis, "length", str (wlen))
-                self.chassis.signals[w] = w
         else:
             try:
-                w = self.chassis.signals["w_%s_%s" % (end2, end1)]
+                w = self.chassis.signals["w_%s" % end2]
             except KeyError:
                 w = Wire (end2, end1)
                 self.chassis.signals[w] = w
@@ -366,7 +379,7 @@ class Connector (object):
         return "p%d" % (pnum + self.offset)
 
     def addportmap (self, parent, formal, actual):
-        self.modinst.addportmap (parent, self.mipin (pn (formal)), actual)
+        self.modinst.addportmap (parent, formal, actual)
 
     def processwlist (self, wl):
         """Process the pins data from the wirelist for this connector
@@ -383,9 +396,12 @@ class Connector (object):
                 # Unused pin, carry on
                 continue
             try:
-                mpin = self.modinst.eltype.pins[self.mipin (pnum)]
+                mpin = self.modinst.eltype.pinnames[self.mipin (pnum)]
             except KeyError:
-                mpin = None
+                try:
+                    mpin = self.modinst.eltype.pins[self.mipin (pnum)]
+                except KeyError:
+                    mpin = None
             pname = "p%d" % pnum
             if m.group (3) == "x":
                 # ground
@@ -454,6 +470,7 @@ class Connector (object):
                     continue
                 dir = mpin.dir
                 ptype = mpin.ptype
+                pname = mpin.name
                 if ptype == "misc":
                     # We ignore misc signals since they are only there
                     # to document things like jumpers and other non-logic
@@ -513,9 +530,11 @@ def error (text):
     else:
         print text
 
+_re_pnum = re.compile (r"p(\d+)")
 def pn (pname):
-    if pname.startswith ("p"):
-        return int (pname[1:])
+    m = _re_pnum.match (pname)
+    if m:
+        return int (m.group (1))
     else:
         return int (pname)
 
@@ -559,10 +578,10 @@ def process_file (fn):
         
 class Wire (cmodule.Signal):
     """A wire (twisted pair) between two connector pins in the same chassis.
-    The wire is named w_out_in where out and in are slot_pin.
+    The wire is named w_out where out is slot_pin.
     """
     def __init__ (self, end1, end2, prefix = ""):
-        name = "w%s_%s_%s" % (prefix, end1, end2)
+        name = "w%s_%s" % (prefix, end1)
         cmodule.Signal.__init__ (self, name)
         self.sourcename = end1
         self.destname = end2

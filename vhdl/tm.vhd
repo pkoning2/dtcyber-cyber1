@@ -31,23 +31,17 @@ entity tm is
       p23 : in  logicsig;
       p24 : in  logicsig;
       tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
-      p3 : out logicsig;
+      p1_p3_p20_p22_tp3 : out logicsig;
       p4 : out logicsig;
       p5 : out logicsig;
       p8 : out logicsig;
       p9 : out logicsig;
       p10 : out logicsig;
-      p14 : out logicsig;
-      p17 : out logicsig;
+      p14_tp2 : out logicsig;
+      p17_tp5 : out logicsig;
       p19 : out logicsig;
-      p20 : out logicsig;
-      p22 : out logicsig;
       p25 : out logicsig;
       p26 : out logicsig;
       p27 : out logicsig;
@@ -108,7 +102,6 @@ architecture gates of tm is
   signal r : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
 
@@ -148,8 +141,7 @@ begin -- gates
     y => a,
     y2 => e);
 
-  p14 <= e;
-  tp2 <= e;
+  p14_tp2 <= e;
 
   u7 : g2 port map (
     a => p16,
@@ -157,8 +149,7 @@ begin -- gates
     y => b,
     y2 => f);
 
-  p17 <= f;
-  tp5 <= f;
+  p17_tp5 <= f;
 
   u8 : g2 port map (
     a => p2,
@@ -184,13 +175,8 @@ begin -- gates
     a => a,
     b => b,
     y => c,
-    y2 => t4);
+    y2 => p1_p3_p20_p22_tp3);
 
-  p1 <= t4;
-  p3 <= t4;
-  p20 <= t4;
-  p22 <= t4;
-  tp3 <= t4;
 
   u12 : inv port map (
     a => p23,

@@ -28,24 +28,9 @@ entity qg is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p2 : out logicsig;
-      p4 : out logicsig;
-      p7 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
-      p11 : out logicsig;
-      p12 : out logicsig;
-      p13 : out logicsig;
-      p15 : out logicsig;
-      p16 : out logicsig;
-      p17 : out logicsig;
-      p18 : out logicsig;
-      p20 : out logicsig;
-      p22 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p2_p4_p8_p22_p26_p28 : out logicsig;
+      p7_p9_p10_p11_p12_p13 : out logicsig;
+      p15_p16_p17_p18_p20_p27 : out logicsig);
 
 end qg;
 architecture gates of qg is
@@ -86,10 +71,7 @@ architecture gates of qg is
   signal d : logicsig;
   signal e : logicsig;
   signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
-  signal t5 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -107,14 +89,8 @@ begin -- gates
 
   u3 : inv2 port map (
     a => c,
-    y2 => t2);
+    y2 => p7_p9_p10_p11_p12_p13);
 
-  p7 <= t2;
-  p9 <= t2;
-  p10 <= t2;
-  p11 <= t2;
-  p12 <= t2;
-  p13 <= t2;
 
   u4 : g2 port map (
     a => p25,
@@ -131,14 +107,8 @@ begin -- gates
 
   u6 : inv2 port map (
     a => d,
-    y2 => t4);
+    y2 => p15_p16_p17_p18_p20_p27);
 
-  p15 <= t4;
-  p16 <= t4;
-  p17 <= t4;
-  p18 <= t4;
-  p20 <= t4;
-  p27 <= t4;
 
   u7 : g2 port map (
     a => c,
@@ -149,14 +119,8 @@ begin -- gates
 
   u8 : inv2 port map (
     a => e,
-    y => t5);
+    y => p2_p4_p8_p22_p26_p28);
 
-  p2 <= t5;
-  p4 <= t5;
-  p8 <= t5;
-  p22 <= t5;
-  p26 <= t5;
-  p28 <= t5;
 
   u9 : inv port map (
     a => p5,

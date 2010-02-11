@@ -29,20 +29,16 @@ entity iw is
       p20 : in  logicsig;
       p22 : in  logicsig;
       p24 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
+      p1_tp5 : out logicsig;
       p3 : out logicsig;
       p4 : out logicsig;
       p5 : out logicsig;
       p6 : out logicsig;
       p8 : out logicsig;
-      p10 : out logicsig;
+      p10_tp1 : out logicsig;
       p12 : out logicsig;
-      p14 : out logicsig;
-      p17 : out logicsig;
+      p14_tp2 : out logicsig;
+      p17_tp6 : out logicsig;
       p19 : out logicsig;
       p21 : out logicsig;
       p23 : out logicsig;
@@ -77,10 +73,7 @@ architecture gates of iw is
   signal f : logicsig;
   signal g : logicsig;
   signal h : logicsig;
-  signal t1 : logicsig;
   signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -117,8 +110,7 @@ begin -- gates
     a => p11,
     y => f);
 
-  p10 <= f;
-  tp1 <= f;
+  p10_tp1 <= f;
 
   u7 : inv port map (
     a => p9,
@@ -135,19 +127,15 @@ begin -- gates
   u9 : g2 port map (
     a => p15,
     b => p16,
-    y => t1,
+    y => p1_tp5,
     y2 => t2);
 
-  p1 <= t1;
-  tp5 <= t1;
 
   u10 : g2 port map (
     a => t2,
     b => e,
-    y => t3);
+    y => p14_tp2);
 
-  p14 <= t3;
-  tp2 <= t3;
 
   u11 : g2 port map (
     a => t2,
@@ -170,10 +158,8 @@ begin -- gates
   u14 : g2 port map (
     a => t2,
     b => a,
-    y => t4);
+    y => p17_tp6);
 
-  p17 <= t4;
-  tp6 <= t4;
 
   u15 : g2 port map (
     a => t2,

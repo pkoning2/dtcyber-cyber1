@@ -23,8 +23,7 @@ entity coslice is
       i1 : in  logicsig;
       i2 : in  logicsig;
       i3 : in  logicsig;
-      tp : out logicsig;
-      y : out logicsig;
+      tp_y : out logicsig;
       y2 : out logicsig);
 
 end coslice;
@@ -60,7 +59,6 @@ architecture gates of coslice is
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
@@ -85,11 +83,9 @@ begin -- gates
     a => t4,
     b => t3,
     c => a,
-    y => t5,
+    y => tp_y,
     y2 => y2);
 
-  tp <= t5;
-  y <= t5;
 
 
 end gates;
@@ -115,22 +111,17 @@ entity co is
       p24 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p3 : out logicsig;
-      p4 : out logicsig;
-      p8 : out logicsig;
+      p4_tp1 : out logicsig;
+      p8_tp2 : out logicsig;
       p9 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
+      p14_tp3 : out logicsig;
+      p15_tp5 : out logicsig;
       p18 : out logicsig;
       p21 : out logicsig;
       p22 : out logicsig;
-      p25 : out logicsig;
+      p25_tp6 : out logicsig;
       p26 : out logicsig);
 
 end co;
@@ -141,8 +132,7 @@ architecture gates of co is
       i1 : in  logicsig;
       i2 : in  logicsig;
       i3 : in  logicsig;
-      tp : out logicsig;
-      y : out logicsig;
+      tp_y : out logicsig;
       y2 : out logicsig);
 
   end component;
@@ -187,7 +177,6 @@ architecture gates of co is
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
   signal t6 : logicsig;
 
 begin -- gates
@@ -196,20 +185,17 @@ begin -- gates
     i1 => p27,
     i2 => p28,
     i3 => p24,
-    tp => tp6,
-    y => p25,
+    tp_y => p25_tp6,
     y2 => p26);
 
-  p15 <= a;
-  tp5 <= a;
+  p15_tp5 <= a;
 
   u2 : coslice port map (
     a => a,
     i1 => p2,
     i2 => p1,
     i3 => p5,
-    tp => tp1,
-    y => p4,
+    tp_y => p4_tp1,
     y2 => p3);
 
 
@@ -218,8 +204,7 @@ begin -- gates
     i1 => p6,
     i2 => p7,
     i3 => p11,
-    tp => tp2,
-    y => p8,
+    tp_y => p8_tp2,
     y2 => p9);
 
 
@@ -267,10 +252,8 @@ begin -- gates
     b => p12,
     c => p13,
     d => t4,
-    y => t5);
+    y => p14_tp3);
 
-  p14 <= t5;
-  tp3 <= t5;
 
   u12 : inv port map (
     a => p16,

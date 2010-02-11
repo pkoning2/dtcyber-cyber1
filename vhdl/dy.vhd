@@ -29,28 +29,19 @@ entity dy is
       p22 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
-      p2 : out logicsig;
-      p3 : out logicsig;
-      p4 : out logicsig;
-      p6 : out logicsig;
+      p1_p2_p3 : out logicsig;
+      p4_p6 : out logicsig;
       p7 : out logicsig;
-      p9 : out logicsig;
-      p11 : out logicsig;
+      p9_p19_p20 : out logicsig;
+      p11_tp3 : out logicsig;
       p12 : out logicsig;
       p14 : out logicsig;
       p15 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
+      p21_tp6 : out logicsig;
       p23 : out logicsig;
-      p24 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
+      p24_p26 : out logicsig;
+      p25_p27 : out logicsig;
       p28 : out logicsig);
 
 end dy;
@@ -118,15 +109,11 @@ architecture gates of dy is
   signal e : logicsig;
   signal f : logicsig;
   signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t7 : logicsig;
-  signal t8 : logicsig;
   signal t9 : logicsig;
-  signal t10 : logicsig;
   signal t11 : logicsig;
   signal t12 : logicsig;
   signal t19 : logicsig;
@@ -142,13 +129,9 @@ begin -- gates
   u2 : inv2 port map (
     a => t1,
     y => e,
-    y2 => t2);
+    y2 => p1_p2_p3);
 
-  p1 <= t2;
-  p2 <= t2;
-  p3 <= t2;
-  p4 <= e;
-  p6 <= e;
+  p4_p6 <= e;
 
   u3 : latch port map (
     clk => p16,
@@ -174,8 +157,7 @@ begin -- gates
     b => f,
     y => p7);
 
-  p21 <= f;
-  tp6 <= f;
+  p21_tp6 <= f;
 
   u7 : latch port map (
     clk => p16,
@@ -186,13 +168,9 @@ begin -- gates
 
   u8 : inv2 port map (
     a => t6,
-    y => t7,
-    y2 => t8);
+    y => p25_p27,
+    y2 => p24_p26);
 
-  p24 <= t8;
-  p25 <= t7;
-  p26 <= t8;
-  p27 <= t7;
 
   u9 : inv2 port map (
     a => p18,
@@ -213,18 +191,14 @@ begin -- gates
     b => p13,
     y => p23);
 
-  p9 <= t9;
-  p19 <= t9;
-  p20 <= t9;
+  p9_p19_p20 <= t9;
 
   u12 : g3 port map (
     a => t9,
     b => e,
     c => p13,
-    y => t10);
+    y => p11_tp3);
 
-  p11 <= t10;
-  tp3 <= t10;
 
   u13 : cxreceiver port map (
     a => p10,

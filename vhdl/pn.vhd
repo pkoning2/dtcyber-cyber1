@@ -25,8 +25,7 @@ entity pnslice is
       r : in  logicsig;
       s : in  logicsig;
       tp : out logicsig;
-      q : out logicsig;
-      q2 : out logicsig);
+      q_q2 : out logicsig);
 
 end pnslice;
 architecture gates of pnslice is
@@ -57,7 +56,6 @@ architecture gates of pnslice is
   end component;
 
   signal tqbi : logicsig;
-  signal tqi : logicsig;
   signal tri : logicsig;
   signal tsi : logicsig;
 
@@ -84,10 +82,8 @@ begin -- gates
 
   u4 : inv port map (
     a => tqbi,
-    y => tqi);
+    y => q_q2);
 
-  q <= tqi;
-  q2 <= tqi;
 
 
 end gates;
@@ -111,14 +107,10 @@ entity pn is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p5 : out logicsig;
-      p8 : out logicsig;
-      p12 : out logicsig;
-      p15 : out logicsig;
-      p19 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig);
+      p5_p15 : out logicsig;
+      p8_p12 : out logicsig;
+      p19_p21 : out logicsig;
+      p22_p24 : out logicsig);
 
 end pn;
 architecture gates of pn is
@@ -138,8 +130,7 @@ architecture gates of pn is
       r : in  logicsig;
       s : in  logicsig;
       tp : out logicsig;
-      q : out logicsig;
-      q2 : out logicsig);
+      q_q2 : out logicsig);
 
   end component;
 
@@ -169,8 +160,7 @@ begin -- gates
     c => c,
     r => p3,
     s => p2,
-    q => p15,
-    q2 => p5,
+    q_q2 => p5_p15,
     tp => tp1);
 
 
@@ -180,8 +170,7 @@ begin -- gates
     c => c,
     r => p4,
     s => p1,
-    q => p12,
-    q2 => p8,
+    q_q2 => p8_p12,
     tp => tp2);
 
 
@@ -191,8 +180,7 @@ begin -- gates
     c => c,
     r => p25,
     s => p28,
-    q => p21,
-    q2 => p19,
+    q_q2 => p19_p21,
     tp => tp5);
 
 
@@ -202,8 +190,7 @@ begin -- gates
     c => c,
     r => p26,
     s => p27,
-    q => p24,
-    q2 => p22,
+    q_q2 => p22_p24,
     tp => tp6);
 
 

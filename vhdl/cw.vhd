@@ -37,20 +37,15 @@ entity cw is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
       tp4 : out logicsig;
       tp6 : out logicsig;
       p6 : out logicsig;
-      p8 : out logicsig;
+      p8_tp1 : out logicsig;
       p11 : out logicsig;
       p12 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
-      p16 : out logicsig;
+      p14_p15_p16_tp2 : out logicsig;
       p17 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig);
+      p22_p24 : out logicsig);
 
 end cw;
 architecture gates of cw is
@@ -118,7 +113,6 @@ architecture gates of cw is
   signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
-  signal t6 : logicsig;
 
 begin -- gates
   u1 : cxreceiver port map (
@@ -163,8 +157,7 @@ begin -- gates
     q => t4,
     qb => b);
 
-  p8 <= t4;
-  tp1 <= t4;
+  p8_tp1 <= t4;
 
   u7 : g2 port map (
     a => p4,
@@ -177,10 +170,7 @@ begin -- gates
     b => b,
     y => t5);
 
-  p14 <= t5;
-  p15 <= t5;
-  p16 <= t5;
-  tp2 <= t5;
+  p14_p15_p16_tp2 <= t5;
 
   u9 : g2 port map (
     a => t5,
@@ -196,10 +186,8 @@ begin -- gates
     e => p28,
     f => p27,
     y => tp4,
-    y2 => t6);
+    y2 => p22_p24);
 
-  p22 <= t6;
-  p24 <= t6;
 
 
 end gates;

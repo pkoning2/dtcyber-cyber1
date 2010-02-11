@@ -23,11 +23,9 @@ entity czslice is
       d : in  logicsig;
       i : in  logicsig;
       i2 : in  logicsig := '1';
-      tp : out logicsig;
       q1 : out logicsig;
-      q2 : out logicsig;
-      q3 : out logicsig;
-      q4 : out logicsig);
+      q2_tp : out logicsig;
+      q3_q4 : out logicsig);
 
 end czslice;
 architecture gates of czslice is
@@ -59,7 +57,6 @@ architecture gates of czslice is
   signal t1 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -73,8 +70,7 @@ begin -- gates
     d => t1,
     q => t3);
 
-  q2 <= t3;
-  tp <= t3;
+  q2_tp <= t3;
 
   u4 : g2 port map (
     a => d,
@@ -85,10 +81,8 @@ begin -- gates
   u5 : g2 port map (
     a => t4,
     b => i2,
-    y => t5);
+    y => q3_q4);
 
-  q3 <= t5;
-  q4 <= t5;
 
 
 end gates;
@@ -103,21 +97,14 @@ entity cz is
       p20 : in  logicsig;
       p22 : in  logicsig;
       p26 : in  logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
       tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
-      p5 : out logicsig;
-      p7 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
-      p11 : out logicsig;
+      p5_p7 : out logicsig;
+      p8_p9 : out logicsig;
+      p11_p24 : out logicsig;
       p21 : out logicsig;
       p23 : out logicsig;
-      p24 : out logicsig;
-      p25 : out logicsig;
-      p27 : out logicsig;
+      p25_p27 : out logicsig;
       p28 : out logicsig);
 
 end cz;
@@ -128,11 +115,9 @@ architecture gates of cz is
       d : in  logicsig;
       i : in  logicsig;
       i2 : in  logicsig := '1';
-      tp : out logicsig;
       q1 : out logicsig;
-      q2 : out logicsig;
-      q3 : out logicsig;
-      q4 : out logicsig);
+      q2_tp : out logicsig;
+      q3_q4 : out logicsig);
 
   end component;
 
@@ -166,9 +151,12 @@ architecture gates of cz is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
+  signal t3_tp6 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
+  signal t5_tp3 : logicsig;
   signal t6 : logicsig;
+  signal t6_tp2 : logicsig;
   signal t8 : logicsig;
 
 begin -- gates
@@ -178,9 +166,8 @@ begin -- gates
     i => p26,
     i2 => t1,
     q1 => p28,
-    q3 => p25,
-    q4 => p27,
-    tp => tp5);
+    q2_tp => tp5,
+    q3_q4 => p25_p27);
 
 
   u2 : czslice port map (
@@ -189,11 +176,10 @@ begin -- gates
     i => p22,
     i2 => t2,
     q1 => p23,
-    q2 => t3,
-    q3 => p24,
-    q4 => p11,
-    tp => tp6);
+    q2_tp => t3,
+    q3_q4 => p11_p24);
 
+  t3_tp6 <= t3;
 
   u3 : g2 port map (
     a => t3,
@@ -207,11 +193,10 @@ begin -- gates
     i => p20,
     i2 => t4,
     q1 => p21,
-    q2 => t5,
-    q3 => p8,
-    q4 => p9,
-    tp => tp3);
+    q2_tp => t5,
+    q3_q4 => p8_p9);
 
+  t5_tp3 <= t5;
 
   u5 : g2 port map (
     a => t5,
@@ -224,11 +209,10 @@ begin -- gates
     d => d,
     i => p3,
     q1 => p1,
-    q2 => t6,
-    q3 => p5,
-    q4 => p7,
-    tp => tp2);
+    q2_tp => t6,
+    q3_q4 => p5_p7);
 
+  t6_tp2 <= t6;
 
   u7 : g2 port map (
     a => t6,

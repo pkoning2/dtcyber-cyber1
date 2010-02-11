@@ -35,20 +35,16 @@ entity ci is
       p27 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p3 : out logicsig;
       p4 : out logicsig;
-      p8 : out logicsig;
-      p12 : out logicsig;
+      p8_tp5 : out logicsig;
+      p12_tp6 : out logicsig;
       p14 : out logicsig;
       p15 : out logicsig;
       p18 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig;
+      p20_p22 : out logicsig;
+      p21_p24 : out logicsig;
       p26 : out logicsig;
       p28 : out logicsig);
 
@@ -108,10 +104,6 @@ architecture gates of ci is
   signal t13 : logicsig;
   signal t14 : logicsig;
   signal t15 : logicsig;
-  signal t16 : logicsig;
-  signal t17 : logicsig;
-  signal t18 : logicsig;
-  signal t19 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -200,10 +192,8 @@ begin -- gates
   u19 : g2 port map (
     a => p11,
     b => t15,
-    y => t16);
+    y => p12_tp6);
 
-  p12 <= t16;
-  tp6 <= t16;
 
   u20 : g2 port map (
     a => p16,
@@ -220,26 +210,20 @@ begin -- gates
   u22 : g2 port map (
     a => t15,
     b => p9,
-    y => t17);
+    y => p8_tp5);
 
-  p8 <= t17;
-  tp5 <= t17;
 
   u23 : inv2 port map (
     a => p23,
     y => p26,
-    y2 => t18);
+    y2 => p21_p24);
 
-  p21 <= t18;
-  p24 <= t18;
 
   u24 : inv2 port map (
     a => p19,
     y => p18,
-    y2 => t19);
+    y2 => p20_p22);
 
-  p20 <= t19;
-  p22 <= t19;
 
 
 end gates;

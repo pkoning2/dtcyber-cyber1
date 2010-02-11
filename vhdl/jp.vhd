@@ -35,8 +35,7 @@ entity jp is
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
-      p11 : out logicsig;
-      p21 : out logicsig;
+      p11_p21 : out logicsig;
       p22 : out logicsig;
       p25 : out logicsig;
       p26 : out logicsig);
@@ -100,7 +99,6 @@ architecture gates of jp is
   signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
-  signal t9 : logicsig;
 
 begin -- gates
   u1 : latch22 port map (
@@ -187,10 +185,8 @@ begin -- gates
   u13 : g2 port map (
     a => t6,
     b => t8,
-    y => t9);
+    y => p11_p21);
 
-  p11 <= t9;
-  p21 <= t9;
 
 
 end gates;

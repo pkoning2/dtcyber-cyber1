@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -25,8 +25,7 @@ entity kuslice is
       d : in  logicsig;
       e : in  logicsig := '1';
       in1 : in  coaxsig;
-      tp : out logicsig;
-      q1 : out logicsig;
+      q1_tp : out logicsig;
       q2 : out logicsig;
       q3 : out logicsig;
       q4 : out logicsig);
@@ -84,8 +83,7 @@ begin -- gates
     q => t2,
     qb => t3);
 
-  q1 <= t2;
-  tp <= t2;
+  q1_tp <= t2;
 
   u3 : g2 port map (
     a => b,
@@ -137,23 +135,18 @@ entity ku is
       p16 : in  coaxsig;
       p18 : in  coaxsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p3 : out logicsig;
       p5 : out logicsig;
-      p7 : out logicsig;
-      p10 : out logicsig;
+      p7_p10 : out logicsig;
       p17 : out logicsig;
       p19 : out logicsig;
-      p20 : out logicsig;
+      p20_tp1 : out logicsig;
       p21 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig;
+      p22_tp3 : out logicsig;
+      p24_tp4 : out logicsig;
       p25 : out logicsig;
-      p26 : out logicsig;
+      p26_tp6 : out logicsig;
       p27 : out logicsig);
 
 end ku;
@@ -181,8 +174,7 @@ architecture gates of ku is
       d : in  logicsig;
       e : in  logicsig := '1';
       in1 : in  coaxsig;
-      tp : out logicsig;
-      q1 : out logicsig;
+      q1_tp : out logicsig;
       q2 : out logicsig;
       q3 : out logicsig;
       q4 : out logicsig);
@@ -194,7 +186,6 @@ architecture gates of ku is
   signal c : logicsig;
   signal d : logicsig;
   signal e : logicsig;
-  signal t1 : logicsig;
 
 begin -- gates
   u1 : kuslice port map (
@@ -204,10 +195,9 @@ begin -- gates
     d => d,
     e => e,
     in1 => p12,
-    q1 => p20,
+    q1_tp => p20_tp1,
     q2 => p25,
-    q3 => p1,
-    tp => tp1);
+    q3 => p1);
 
 
   u2 : kuslice port map (
@@ -217,10 +207,9 @@ begin -- gates
     d => d,
     e => e,
     in1 => p14,
-    q1 => p22,
+    q1_tp => p22_tp3,
     q2 => p21,
-    q3 => p3,
-    tp => tp3);
+    q3 => p3);
 
 
   u3 : kuslice port map (
@@ -230,10 +219,9 @@ begin -- gates
     d => d,
     e => e,
     in1 => p16,
-    q1 => p24,
+    q1_tp => p24_tp4,
     q2 => p19,
-    q3 => p5,
-    tp => tp4);
+    q3 => p5);
 
 
   u4 : kuslice port map (
@@ -242,13 +230,10 @@ begin -- gates
     c => c,
     d => d,
     in1 => p18,
-    q1 => p26,
+    q1_tp => p26_tp6,
     q2 => p17,
-    q4 => t1,
-    tp => tp6);
+    q4 => p7_p10);
 
-  p7 <= t1;
-  p10 <= t1;
 
   u5 : inv port map (
     a => p9,

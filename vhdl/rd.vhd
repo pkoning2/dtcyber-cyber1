@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -41,18 +41,12 @@ entity rd is
       p24 : in  logicsig;
       p25 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p6 : out logicsig;
-      p7 : out logicsig;
-      p11 : out logicsig;
-      p16 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig);
+      p6_tp3 : out logicsig;
+      p7_tp2 : out logicsig;
+      p11_tp1 : out logicsig;
+      p16_tp4 : out logicsig;
+      p26_tp5 : out logicsig;
+      p27_tp6 : out logicsig);
 
 end rd;
 architecture gates of rd is
@@ -86,12 +80,6 @@ architecture gates of rd is
   end component;
 
   signal a : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
   signal x : logicsig;
 
 begin -- gates
@@ -101,10 +89,8 @@ begin -- gates
     s2 => p3,
     s3 => p13,
     s4 => p1,
-    q => t1);
+    q => p11_tp1);
 
-  p11 <= t1;
-  tp1 <= t1;
 
   u2 : rs4flop port map (
     r => x,
@@ -112,19 +98,15 @@ begin -- gates
     s2 => p17,
     s3 => p12,
     s4 => p14,
-    q => t2);
+    q => p16_tp4);
 
-  p16 <= t2;
-  tp4 <= t2;
 
   u3 : rs2flop port map (
     r => a,
     s => p10,
     s2 => p8,
-    q => t3);
+    q => p7_tp2);
 
-  p7 <= t3;
-  tp2 <= t3;
 
   u4 : rs4flop port map (
     r => x,
@@ -132,19 +114,15 @@ begin -- gates
     s2 => p24,
     s3 => p22,
     s4 => p20,
-    q => t4);
+    q => p26_tp5);
 
-  p26 <= t4;
-  tp5 <= t4;
 
   u5 : rs2flop port map (
     r => a,
     s => p2,
     s2 => p4,
-    q => t5);
+    q => p6_tp3);
 
-  p6 <= t5;
-  tp3 <= t5;
 
   u6 : rs4flop port map (
     r => x,
@@ -152,10 +130,8 @@ begin -- gates
     s2 => p21,
     s3 => p23,
     s4 => p25,
-    q => t6);
+    q => p27_tp6);
 
-  p27 <= t6;
-  tp6 <= t6;
 
   u7 : inv port map (
     a => p5,

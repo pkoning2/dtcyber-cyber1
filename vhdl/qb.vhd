@@ -31,26 +31,17 @@ entity qb is
       p21 : in  logicsig;
       p25 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
-      p2 : out logicsig;
-      p4 : out logicsig;
-      p6 : out logicsig;
-      p8 : out logicsig;
+      p2_tp1 : out logicsig;
+      p4_tp2 : out logicsig;
+      p6_tp4 : out logicsig;
+      p8_tp3 : out logicsig;
       p12 : out logicsig;
-      p14 : out logicsig;
-      p16 : out logicsig;
+      p14_p16 : out logicsig;
       p18 : out logicsig;
-      p20 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig;
-      p26 : out logicsig;
-      p28 : out logicsig);
+      p20_p22_p24 : out logicsig;
+      p26_tp6 : out logicsig;
+      p28_tp5 : out logicsig);
 
 end qb;
 architecture gates of qb is
@@ -97,22 +88,14 @@ architecture gates of qb is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
-  signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
-  signal t10 : logicsig;
-  signal t11 : logicsig;
   signal t12 : logicsig;
   signal t13 : logicsig;
   signal t14 : logicsig;
-  signal t15 : logicsig;
   signal t16 : logicsig;
   signal t17 : logicsig;
   signal t18 : logicsig;
-  signal t19 : logicsig;
   signal x : logicsig;
 
 begin -- gates
@@ -155,26 +138,20 @@ begin -- gates
   u7 : g2 port map (
     a => c,
     b => t1,
-    y => t4);
+    y => p4_tp2);
 
-  p4 <= t4;
-  tp2 <= t4;
 
   u8 : g2 port map (
     a => b,
     b => t2,
-    y => t5);
+    y => p8_tp3);
 
-  p8 <= t5;
-  tp3 <= t5;
 
   u9 : g2 port map (
     a => a,
     b => t3,
-    y => t6);
+    y => p6_tp4);
 
-  p6 <= t6;
-  tp4 <= t6;
 
   u10 : g3 port map (
     a => p21,
@@ -186,10 +163,8 @@ begin -- gates
   u11 : inv2 port map (
     a => x,
     y => p18,
-    y2 => t7);
+    y2 => p26_tp6);
 
-  p26 <= t7;
-  tp6 <= t7;
 
   u12 : g2 port map (
     a => a,
@@ -205,21 +180,16 @@ begin -- gates
   u14 : g2 port map (
     a => t8,
     b => t9,
-    y => t10,
+    y => p2_tp1,
     y2 => p1);
 
-  p2 <= t10;
-  tp1 <= t10;
 
   u15 : g3 port map (
     a => a,
     b => b,
     c => c,
-    y2 => t11);
+    y2 => p20_p22_p24);
 
-  p20 <= t11;
-  p22 <= t11;
-  p24 <= t11;
 
   u16 : g2 port map (
     a => e,
@@ -243,10 +213,8 @@ begin -- gates
     a => t12,
     b => t13,
     c => t14,
-    y => t15);
+    y => p14_p16);
 
-  p14 <= t15;
-  p16 <= t15;
 
   u20 : g3 port map (
     a => x,
@@ -270,11 +238,9 @@ begin -- gates
     a => t18,
     b => t16,
     c => t17,
-    y => t19,
+    y => p28_tp5,
     y2 => p12);
 
-  p28 <= t19;
-  tp5 <= t19;
 
 
 end gates;

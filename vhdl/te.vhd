@@ -25,8 +25,7 @@ entity teslice is
       e1 : in  logicsig;
       e2 : in  logicsig;
       e3 : in  logicsig;
-      tp : out logicsig;
-      y : out logicsig);
+      tp_y : out logicsig);
 
 end teslice;
 architecture gates of teslice is
@@ -52,7 +51,6 @@ architecture gates of teslice is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -77,10 +75,8 @@ begin -- gates
     a => t1,
     b => t2,
     c => t3,
-    y => t4);
+    y => tp_y);
 
-  tp <= t4;
-  y <= t4;
 
 
 end gates;
@@ -110,18 +106,12 @@ entity te is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig);
+      p8_tp2 : out logicsig;
+      p9_tp1 : out logicsig;
+      p10_tp3 : out logicsig;
+      p19_tp4 : out logicsig;
+      p20_tp6 : out logicsig;
+      p21_tp5 : out logicsig);
 
 end te;
 architecture gates of te is
@@ -140,8 +130,7 @@ architecture gates of te is
       e1 : in  logicsig;
       e2 : in  logicsig;
       e3 : in  logicsig;
-      tp : out logicsig;
-      y : out logicsig);
+      tp_y : out logicsig);
 
   end component;
 
@@ -172,8 +161,7 @@ begin -- gates
     e1 => a,
     e2 => b,
     e3 => c,
-    tp => tp1,
-    y => p9);
+    tp_y => p9_tp1);
 
 
   u5 : teslice port map (
@@ -183,8 +171,7 @@ begin -- gates
     e1 => a,
     e2 => b,
     e3 => c,
-    tp => tp2,
-    y => p8);
+    tp_y => p8_tp2);
 
 
   u6 : teslice port map (
@@ -194,8 +181,7 @@ begin -- gates
     e1 => a,
     e2 => b,
     e3 => c,
-    tp => tp3,
-    y => p10);
+    tp_y => p10_tp3);
 
 
   u7 : teslice port map (
@@ -205,8 +191,7 @@ begin -- gates
     e1 => a,
     e2 => b,
     e3 => c,
-    tp => tp4,
-    y => p19);
+    tp_y => p19_tp4);
 
 
   u8 : teslice port map (
@@ -216,8 +201,7 @@ begin -- gates
     e1 => a,
     e2 => b,
     e3 => c,
-    tp => tp5,
-    y => p21);
+    tp_y => p21_tp5);
 
 
   u9 : teslice port map (
@@ -227,8 +211,7 @@ begin -- gates
     e1 => a,
     e2 => b,
     e3 => c,
-    tp => tp6,
-    y => p20);
+    tp_y => p20_tp6);
 
 
 

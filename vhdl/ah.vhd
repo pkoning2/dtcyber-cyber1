@@ -32,18 +32,15 @@ entity ah is
       tp1 : out logicsig;
       tp2 : out logicsig;
       tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
-      p3 : out logicsig;
+      p3_p7 : out logicsig;
       p6 : out logicsig;
-      p7 : out logicsig;
       p8 : out logicsig;
       p15 : out logicsig;
       p18 : out logicsig;
       p22 : out logicsig;
-      p23 : out logicsig;
-      p24 : out logicsig;
+      p23_tp5 : out logicsig;
+      p24_tp4 : out logicsig;
       p26 : out logicsig;
       p28 : out logicsig);
 
@@ -125,13 +122,10 @@ architecture gates of ah is
   signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
-  signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
   signal t10 : logicsig;
   signal t11 : logicsig;
-  signal t12 : logicsig;
-  signal t13 : logicsig;
   signal x : logicsig;
   signal z : logicsig;
 
@@ -179,10 +173,8 @@ begin -- gates
   u7 : g2 port map (
     a => t5,
     b => t4,
-    y => t6);
+    y => p23_tp5);
 
-  p23 <= t6;
-  tp5 <= t6;
 
   u8 : inv port map (
     a => p19,
@@ -244,10 +236,8 @@ begin -- gates
   u17 : inv2 port map (
     a => p17,
     y => x,
-    y2 => t12);
+    y2 => p24_tp4);
 
-  p24 <= t12;
-  tp4 <= t12;
 
   u18 : inv2 port map (
     a => p10,
@@ -264,10 +254,8 @@ begin -- gates
   u20 : g2 port map (
     a => d,
     b => g,
-    y => t13);
+    y => p3_p7);
 
-  p3 <= t13;
-  p7 <= t13;
 
 
 end gates;

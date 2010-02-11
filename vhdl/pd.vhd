@@ -76,26 +76,14 @@ entity pd is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p3 : out logicsig;
-      p4 : out logicsig;
-      p5 : out logicsig;
-      p6 : out logicsig;
-      p7 : out logicsig;
-      p8 : out logicsig;
-      p9 : out logicsig;
-      p10 : out logicsig;
-      p11 : out logicsig;
-      p12 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
-      p23 : out logicsig;
-      p24 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p3_p5 : out logicsig;
+      p4_p6 : out logicsig;
+      p7_p9_p11 : out logicsig;
+      p8_p10_p12 : out logicsig;
+      p19_p20_p25 : out logicsig;
+      p21_p27 : out logicsig;
+      p22_p24_p26 : out logicsig;
+      p23_p28 : out logicsig);
 
 end pd;
 architecture gates of pd is
@@ -109,67 +97,39 @@ architecture gates of pd is
 
   end component;
 
-  signal q1 : logicsig;
-  signal q2 : logicsig;
-  signal q3 : logicsig;
-  signal q4 : logicsig;
-  signal qb1 : logicsig;
-  signal qb2 : logicsig;
-  signal qb3 : logicsig;
-  signal qb4 : logicsig;
 
 begin -- gates
   u1 : pdslice port map (
     clk => p16,
     i => p14,
-    q => q1,
-    qb => qb1,
+    q => p7_p9_p11,
+    qb => p4_p6,
     tp => tp1);
 
-  p4 <= qb1;
-  p6 <= qb1;
-  p7 <= q1;
-  p9 <= q1;
-  p11 <= q1;
 
   u2 : pdslice port map (
     clk => p16,
     i => p13,
-    q => q2,
-    qb => qb2,
+    q => p8_p10_p12,
+    qb => p3_p5,
     tp => tp2);
 
-  p3 <= qb2;
-  p5 <= qb2;
-  p8 <= q2;
-  p10 <= q2;
-  p12 <= q2;
 
   u3 : pdslice port map (
     clk => p16,
     i => p18,
-    q => q3,
-    qb => qb3,
+    q => p19_p20_p25,
+    qb => p23_p28,
     tp => tp5);
 
-  p19 <= q3;
-  p20 <= q3;
-  p23 <= qb3;
-  p25 <= q3;
-  p28 <= qb3;
 
   u4 : pdslice port map (
     clk => p16,
     i => p17,
-    q => q4,
-    qb => qb4,
+    q => p22_p24_p26,
+    qb => p21_p27,
     tp => tp6);
 
-  p21 <= qb4;
-  p22 <= q4;
-  p24 <= q4;
-  p26 <= q4;
-  p27 <= qb4;
 
 
 end gates;

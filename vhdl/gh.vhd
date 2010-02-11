@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -26,19 +26,13 @@ entity gh is
       p25 : in  logicsig;
       p26 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p1 : out logicsig;
-      p3 : out logicsig;
-      p5 : out logicsig;
-      p6 : out logicsig;
-      p17 : out logicsig;
-      p19 : out logicsig;
-      p23 : out logicsig);
+      p1_p3_p5_p23 : out logicsig;
+      p6_tp1 : out logicsig;
+      p17_tp5 : out logicsig;
+      p19_tp6 : out logicsig);
 
 end gh;
 architecture gates of gh is
@@ -98,21 +92,17 @@ architecture gates of gh is
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
   signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
-  signal t10 : logicsig;
   signal t11 : logicsig;
   signal t12 : logicsig;
   signal t13 : logicsig;
   signal t14 : logicsig;
-  signal t15 : logicsig;
   signal t20 : logicsig;
   signal t21 : logicsig;
   signal t22 : logicsig;
-  signal t23 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
@@ -137,10 +127,8 @@ begin -- gates
   u4 : g2 port map (
     a => t3,
     b => t4,
-    y => t5);
+    y => p6_tp1);
 
-  p6 <= t5;
-  tp1 <= t5;
 
   u5 : g2 port map (
     a => a,
@@ -166,10 +154,8 @@ begin -- gates
   u8 : g2 port map (
     a => t8,
     b => t9,
-    y => t10);
+    y => p17_tp5);
 
-  p17 <= t10;
-  tp5 <= t10;
 
   u9 : inv2 port map (
     a => a,
@@ -192,10 +178,8 @@ begin -- gates
   u12 : g2 port map (
     a => t13,
     b => t14,
-    y => t15);
+    y => p19_tp6);
 
-  p19 <= t15;
-  tp6 <= t15;
 
   u13 : inv port map (
     a => p8,
@@ -234,12 +218,8 @@ begin -- gates
     a => a,
     b => c,
     c => e,
-    y2 => t23);
+    y2 => p1_p3_p5_p23);
 
-  p1 <= t23;
-  p3 <= t23;
-  p5 <= t23;
-  p23 <= t23;
 
   u20 : g4 port map (
     a => p26,

@@ -36,7 +36,6 @@ entity mod_in is
       p24 : in  logicsig;
       p26 : in  logicsig;
       p28 : in  logicsig;
-      tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
@@ -45,7 +44,7 @@ entity mod_in is
       p9 : out logicsig;
       p13 : out logicsig;
       p17 : out logicsig;
-      p19 : out logicsig;
+      p19_tp2 : out logicsig;
       p21 : out logicsig;
       p23 : out logicsig;
       p25 : out logicsig;
@@ -122,7 +121,6 @@ architecture gates of mod_in is
   signal a : logicsig;
   signal b : logicsig;
   signal c : logicsig;
-  signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
@@ -154,10 +152,8 @@ begin -- gates
 
   u4 : inv2 port map (
     a => b,
-    y2 => t1);
+    y2 => p19_tp2);
 
-  p19 <= t1;
-  tp2 <= t1;
 
   u5 : rsflop port map (
     r => p15,

@@ -41,16 +41,10 @@ entity tb is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p12 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
-      p16 : out logicsig;
-      p17 : out logicsig;
-      p18 : out logicsig;
+      p12_p13_p15_p17 : out logicsig;
+      p14_p16_p18 : out logicsig;
       p19 : out logicsig;
-      p20 : out logicsig;
-      p22 : out logicsig);
+      p20_p22 : out logicsig);
 
 end tb;
 architecture gates of tb is
@@ -100,9 +94,6 @@ architecture gates of tb is
 
   end component;
 
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
 
 begin -- gates
   u1 : g6 port map (
@@ -123,12 +114,8 @@ begin -- gates
     d => p8,
     e => p10,
     y => tp2,
-    y2 => t1);
+    y2 => p12_p13_p15_p17);
 
-  p12 <= t1;
-  p13 <= t1;
-  p15 <= t1;
-  p17 <= t1;
 
   u3 : g4 port map (
     a => p21,
@@ -136,21 +123,16 @@ begin -- gates
     c => p25,
     d => p27,
     y => tp5,
-    y2 => t2);
+    y2 => p14_p16_p18);
 
-  p14 <= t2;
-  p16 <= t2;
-  p18 <= t2;
 
   u4 : g3 port map (
     a => p24,
     b => p26,
     c => p28,
     y => tp6,
-    y2 => t3);
+    y2 => p20_p22);
 
-  p20 <= t3;
-  p22 <= t3;
 
 
 end gates;

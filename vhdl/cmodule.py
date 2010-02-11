@@ -125,6 +125,7 @@ class ElementType (object):
         elements[name] = self
         self.name = name
         self.pins = { }
+        self.pinnames = { }
         self.generics = { }
         
     def addpin (self, namelist, dir, ptype = "logicsig",
@@ -133,10 +134,17 @@ class ElementType (object):
             print "Unrecognized pin direction", dir
             return
         for name in namelist:
+            if self.name == "pa" and self.name == "p3":
+                raise Exception
             if name in self.pins:
                 print "Pin", name, "already defined"
             else:
-                self.pins[name] = Pin (name, dir, ptype, opt, optval)
+                self.pins[name] = p = Pin (name, dir, ptype, opt, optval)
+                # In case a list of signals is passed in
+                name = str (name)
+                if "_" in name:
+                    for n in name.split ("_"):
+                        self.pinnames[n] = p
 
     def inputs (self):
         """Return a list of input pins, sorted by name
@@ -207,7 +215,7 @@ class ElementType (object):
         sources = frozenset (sources)
         for p in self.outputs ():
             p._sources = sources
-
+            
 
 class PinInstance (object):
     """An instance of a pin belonging to an ElementInstance
@@ -236,9 +244,10 @@ class Signal (hitem):
         self.opt = opt
         self.optval = None
         self.ptype = None
-    
+        self.aliases = set ()
+        
     def setsource (self, source):
-        if self.source:
+        if self.source and self.source != source:
             print "Duplicate assignment to signal", self.name
             return
         if isinstance (source, PinInstance):
@@ -323,12 +332,17 @@ class ElementInstance (object):
         """Add a port map entry.  "formal" is the element type pin name;
         "actual" is the signal to map to it, or a string naming a signal.
         """
+        # First see if it's an alias -- a name of a pin that has multiple
+        # names because it's a fanout
         try:
-            pin = self.eltype.pins[formal]
+            pin = self.eltype.pinnames[formal]
         except KeyError:
-            if actual is not sigone:
-                print "Port map to unknown pin %s" % formal
-            return
+            try:
+                pin = self.eltype.pins[formal]
+            except KeyError:
+                if actual is not sigone:
+                    print "Port map to unknown pin %s" % formal
+                return
         dir = pin.dir
         ptype = pin.ptype
         opt = False
@@ -365,7 +379,17 @@ class ElementInstance (object):
         else:
             actual.destcount += 1
         # Save both directions of the mapping
-        self.portmap[formal] = actual
+        if pin.name in self.portmap and (not ptype or ptype == "logicsig"):
+            # Multiple outputs for an output signal, that's a fanout.
+            # Make the new actual an alias of the previous one.  
+            oa = self.portmap[pin.name]
+            #print "adding alias %s for %s" % (actual.name, oa.name)
+            oa.aliases.add (oa.name)
+            oa.aliases.add (actual.name)
+            parent.aliases[actual.name] = oa
+            del parent.signals[actual]
+        else:
+            self.portmap[pin.name] = actual
         self.iportmap[actual] = (self, pin)
         
     def promptports (self, parent):
@@ -436,9 +460,10 @@ class cmod (ElementType):
                 raise OSError
             except OSError:
                 pass
-        name = modname (name)
+        self.modname = name = modname (name)
         if name.startswith ("mod_") and len (name) == 6:
             self.ismodule = True
+            self.modname = name[-2:]
         else:
             self.ismodule = (len (name) == 2)
         ElementType.__init__ (self, name)
@@ -447,7 +472,8 @@ class cmod (ElementType):
         self.name = name
         self.elements = { }
         self.signals = { }
-
+        self.aliases = { }
+        
     def nextelement (self):
         n = len (self.elements) + 1
         while True:
@@ -482,18 +508,26 @@ class cmod (ElementType):
         """Add an assignment of an output signal from a temp
         """
         #print "assign %s <= %s" % (to, fname)
-        if to in self.signals:
-            print to, "already defined"
-            return
-        tsig = self.findsignal (to)
         if fname == "'0'":
             fsig = sigzero
         elif fname == "'1'":
             fsig = sigone
         else:
             fsig = self.findsignal (fname)
-        tsig.setsource (fsig)
-        
+        if fsig is sigzero or fsig is sigone or \
+               fsig.ptype and fsig.ptype != "logicsig":
+            if to in self.signals:
+                print to, "already defined"
+                return
+            tsig = self.findsignal (to)
+            tsig.setsource (fsig)
+        else:
+            for s in self.signals.itervalues ():
+                if to in s.aliases:
+                    print to, "already defined"
+                    return
+            fsig.aliases.add (to)
+
     def addelements (self):
         init_completions ()
         while True:
@@ -598,15 +632,43 @@ class cmod (ElementType):
         for s in self.signals.itervalues ():
             if s.ptype is None:
                 s.ptype = "logicsig"
+        for s in self.signals.itervalues ():
+            if not self.isinternal (s) and not s in self.pins:
+                if not s.source:
+                    # It has no source so it's an input
+                    #print "adding", s, s.ptype, s.opt
+                    self.addpin ((str (s),), "in", s.ptype, s.opt, s.optval)
+        for s in self.signals.values ():
+            if s.aliases:
+                oname = s.name
+                if not (s.destcount or \
+                        (s in self.pins and self.pins[s].dir == "in")):
+                    if self.isinternal (oname):
+                        s.aliases.discard (oname)
+                    elif not "_" in oname:
+                        # Add original name, if we haven't already built
+                        # the composite name
+                        s.aliases.add (oname)
+                a = sorted (s.aliases)
+                an = "_".join (a)
+                #print "signal %s, aliases %s" % (str(s), an)
+                if s.destcount or \
+                       (s in self.pins and self.pins[s].dir == "in"):
+                    #print "new signal set from", s
+                    tsig = self.findsignal (an)
+                    tsig.setsource (s)
+                else:
+                    #print "changing signal %s to name %s" % (s, an)
+                    del self.signals[s.name]
+                    s.name = an
+                    self.signals[an] = s
+        for s in self.signals.itervalues ():
             s.sources ()
         for s in self.signals.itervalues ():
             if not self.isinternal (s) and not s in self.pins:
                 if s.source:
                     # It has a source so it's an output
                     self.addpin ((str (s),), "out", s.ptype)
-                else:
-                    #print "adding", s, s.ptype, s.opt
-                    self.addpin ((str (s),), "in", s.ptype, s.opt, s.optval)
         for s in self.signals.itervalues ():
             if not self.isinternal (s):
                 p = self.pins[s]
@@ -718,7 +780,7 @@ end gates;
         if n == o:
             print "Module %s is unchanged" % self.name
         else:
-            f = file ("%s.vhd" % self.name, "w")
+            f = file ("%s.vhd" % self.modname, "w")
             self.cyears = None
             print >> f, self.printheader ()
             print >> f, newtext
@@ -742,7 +804,7 @@ _re_assign = re.compile (r"(\w+)\s*<=\s*(['\w]+)")
 _re_pin = re.compile (r"([a-z0-9, ]+):\s+(inout|in|out)\s+([a-z0-9_]+)( +:= +'[01]')?")
 _re_comment = re.compile (r"--.*$", re.M)
 _re_chdr = re.compile ("(--.*\n)+", re.M)
-_re_pinname = re.compile (r"p\d+$")
+_re_pinname = re.compile (r"p\d+(_|$)")
 _re_cright = re.compile (r"copyright \(c\) (\d+)((?:[-, ]+\d+)*)", re.I)
 
 def readmodule (modname, allports = False):
@@ -791,6 +853,7 @@ def readmodule (modname, allports = False):
         # If the architecture section wasn't "gates" then process
         # all pin entries, since we don't have any other source for
         # ports information.  Ditto if the type was "misc" (wire jumpers).
+        e.finish ()
         for pins in _re_pin.finditer (m.group (4)):
             dir = pins.group (2)
             ptype = pins.group (3)
@@ -810,8 +873,11 @@ def readmodule (modname, allports = False):
                     continue
             #print pins.groups ()
             for p in pins.group (1).replace (" ", "").split (","):
-                if p in e.pins or opt or allports or not gates or ptype == "misc":
+                if p not in e.pinnames and \
+                   (p in e.pins or opt or allports or \
+                    not gates or ptype == "misc"):
                     e.pins[p] = Pin (p, dir, ptype, opt, optval)
+        # Do this again to handle pins we added above
         e.finish ()
     if e is None:
         print "No module found in %s.vhd" % modname
@@ -850,6 +916,16 @@ def stdelements ():
             pinlist = pins.group (1).replace (" ", "").split (",")
             c.addpin (pinlist, dir, ptype, opt)
         c.finish ()
+
+def allmodules ():
+    # Read all modules (files with names of the form xy.vhd).
+    # On completion, dictionary "modules" contains the modules
+    # that were read.
+    global modules
+    modules = { }
+    for mn in [ n[:2] for n in os.listdir (".") if len (n) == 6 and
+                n.endswith (".vhd") ]:
+        modules[mn] = readmodule (mn)
 
 # Load the standard element definitions
 stdelements ()

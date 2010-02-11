@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -23,10 +23,7 @@ entity gfslice is
       in1 : in  logicsig;
       in2 : in  logicsig;
       k : in  logicsig;
-      tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
-      q3 : out logicsig);
+      q1_q2_q3_tp : out logicsig);
 
 end gfslice;
 architecture gates of gfslice is
@@ -40,7 +37,6 @@ architecture gates of gfslice is
   end component;
 
   signal t1 : logicsig;
-  signal t2 : logicsig;
   signal ta : logicsig;
 
 begin -- gates
@@ -59,12 +55,8 @@ begin -- gates
   u3 : g2 port map (
     a => ta,
     b => f,
-    y => t2);
+    y => q1_q2_q3_tp);
 
-  q1 <= t2;
-  q2 <= t2;
-  q3 <= t2;
-  tp <= t2;
 
 
 end gates;
@@ -86,27 +78,12 @@ entity gf is
       p20 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p3 : out logicsig;
-      p4 : out logicsig;
-      p5 : out logicsig;
-      p6 : out logicsig;
-      p7 : out logicsig;
-      p8 : out logicsig;
-      p13 : out logicsig;
-      p15 : out logicsig;
-      p17 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
-      p23 : out logicsig;
-      p24 : out logicsig;
-      p25 : out logicsig;
-      p26 : out logicsig);
+      p3_p5_p7_tp2 : out logicsig;
+      p4_p6_p8_tp1 : out logicsig;
+      p13_p15_p17_tp3 : out logicsig;
+      p21_p23_p25_tp6 : out logicsig;
+      p22_p24_p26_tp5 : out logicsig);
 
 end gf;
 architecture gates of gf is
@@ -125,10 +102,7 @@ architecture gates of gf is
       in1 : in  logicsig;
       in2 : in  logicsig;
       k : in  logicsig;
-      tp : out logicsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
-      q3 : out logicsig);
+      q1_q2_q3_tp : out logicsig);
 
   end component;
 
@@ -159,10 +133,7 @@ begin -- gates
     in1 => p1,
     in2 => p2,
     k => k,
-    q1 => p7,
-    q2 => p5,
-    q3 => p3,
-    tp => tp2);
+    q1_q2_q3_tp => p3_p5_p7_tp2);
 
 
   u2 : gfslice port map (
@@ -170,10 +141,7 @@ begin -- gates
     in1 => p10,
     in2 => p9,
     k => k,
-    q1 => p8,
-    q2 => p6,
-    q3 => p4,
-    tp => tp1);
+    q1_q2_q3_tp => p4_p6_p8_tp1);
 
 
   u3 : gfslice port map (
@@ -181,10 +149,7 @@ begin -- gates
     in1 => p28,
     in2 => p27,
     k => k,
-    q1 => p22,
-    q2 => p24,
-    q3 => p26,
-    tp => tp5);
+    q1_q2_q3_tp => p22_p24_p26_tp5);
 
 
   u4 : gfslice port map (
@@ -192,10 +157,7 @@ begin -- gates
     in1 => p19,
     in2 => p20,
     k => k,
-    q1 => p21,
-    q2 => p23,
-    q3 => p25,
-    tp => tp6);
+    q1_q2_q3_tp => p21_p23_p25_tp6);
 
 
   u5 : gfslice port map (
@@ -203,10 +165,7 @@ begin -- gates
     in1 => p11,
     in2 => p12,
     k => k,
-    q1 => p17,
-    q2 => p15,
-    q3 => p13,
-    tp => tp3);
+    q1_q2_q3_tp => p13_p15_p17_tp3);
 
 
   u6 : inv2 port map (

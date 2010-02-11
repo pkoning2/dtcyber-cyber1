@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -25,8 +25,7 @@ entity mdslice is
       in1 : in  logicsig;
       in2 : in  logicsig := '1';
       in3 : in  logicsig := '1';
-      tp : out logicsig;
-      q : out logicsig;
+      q_tp : out logicsig;
       qb : out logicsig);
 
 end mdslice;
@@ -77,8 +76,7 @@ begin -- gates
     s2 => in3,
     q => t2);
 
-  q <= t2;
-  tp <= t2;
+  q_tp <= t2;
 
   u3 : g2 port map (
     a => t2,
@@ -108,24 +106,18 @@ entity md is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p2 : out logicsig;
-      p3 : out logicsig;
+      p3_tp1 : out logicsig;
       p5 : out logicsig;
-      p7 : out logicsig;
+      p7_tp2 : out logicsig;
       p8 : out logicsig;
       p9 : out logicsig;
-      p10 : out logicsig;
-      p15 : out logicsig;
-      p19 : out logicsig;
+      p10_tp3 : out logicsig;
+      p15_tp5 : out logicsig;
+      p19_tp4 : out logicsig;
       p20 : out logicsig;
       p23 : out logicsig;
-      p25 : out logicsig);
+      p25_tp6 : out logicsig);
 
 end md;
 architecture gates of md is
@@ -144,8 +136,7 @@ architecture gates of md is
       in1 : in  logicsig;
       in2 : in  logicsig := '1';
       in3 : in  logicsig := '1';
-      tp : out logicsig;
-      q : out logicsig;
+      q_tp : out logicsig;
       qb : out logicsig);
 
   end component;
@@ -160,9 +151,8 @@ begin -- gates
     b => b,
     c => c,
     in1 => p4,
-    q => p3,
-    qb => p2,
-    tp => tp1);
+    q_tp => p3_tp1,
+    qb => p2);
 
 
   u2 : mdslice port map (
@@ -170,9 +160,8 @@ begin -- gates
     b => b,
     c => c,
     in1 => p6,
-    q => p7,
-    qb => p5,
-    tp => tp2);
+    q_tp => p7_tp2,
+    qb => p5);
 
 
   u3 : mdslice port map (
@@ -180,9 +169,8 @@ begin -- gates
     b => b,
     c => c,
     in1 => p12,
-    q => p10,
-    qb => p8,
-    tp => tp3);
+    q_tp => p10_tp3,
+    qb => p8);
 
 
   u4 : mdslice port map (
@@ -192,9 +180,8 @@ begin -- gates
     in1 => p22,
     in2 => p24,
     in3 => p21,
-    q => p19,
-    qb => p20,
-    tp => tp4);
+    q_tp => p19_tp4,
+    qb => p20);
 
 
   u5 : mdslice port map (
@@ -204,9 +191,8 @@ begin -- gates
     in1 => p16,
     in2 => p18,
     in3 => p17,
-    q => p15,
-    qb => p9,
-    tp => tp5);
+    q_tp => p15_tp5,
+    qb => p9);
 
 
   u6 : mdslice port map (
@@ -216,9 +202,8 @@ begin -- gates
     in1 => p26,
     in2 => p28,
     in3 => p27,
-    q => p25,
-    qb => p23,
-    tp => tp6);
+    q_tp => p25_tp6,
+    qb => p23);
 
 
   u7 : inv port map (

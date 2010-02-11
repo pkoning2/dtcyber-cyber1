@@ -41,18 +41,12 @@ entity ti is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p9 : out logicsig;
-      p11 : out logicsig;
-      p13 : out logicsig;
-      p16 : out logicsig;
-      p18 : out logicsig;
-      p20 : out logicsig);
+      p9_tp2 : out logicsig;
+      p11_tp3 : out logicsig;
+      p13_tp1 : out logicsig;
+      p16_tp4 : out logicsig;
+      p18_tp5 : out logicsig;
+      p20_tp6 : out logicsig);
 
 end ti;
 architecture gates of ti is
@@ -77,12 +71,6 @@ architecture gates of ti is
 
   end component;
 
-  signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
-  signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
 
 begin -- gates
   u1 : g4 port map (
@@ -90,58 +78,46 @@ begin -- gates
     b => p3,
     c => p5,
     d => p7,
-    y => t1);
+    y => p13_tp1);
 
-  p13 <= t1;
-  tp1 <= t1;
 
   u2 : g4 port map (
     a => p2,
     b => p4,
     c => p6,
     d => p8,
-    y => t2);
+    y => p9_tp2);
 
-  p9 <= t2;
-  tp2 <= t2;
 
   u3 : g3 port map (
     a => p10,
     b => p12,
     c => p14,
-    y => t3);
+    y => p11_tp3);
 
-  p11 <= t3;
-  tp3 <= t3;
 
   u4 : g3 port map (
     a => p15,
     b => p17,
     c => p19,
-    y => t4);
+    y => p16_tp4);
 
-  p16 <= t4;
-  tp4 <= t4;
 
   u5 : g4 port map (
     a => p21,
     b => p23,
     c => p25,
     d => p27,
-    y => t5);
+    y => p18_tp5);
 
-  p18 <= t5;
-  tp5 <= t5;
 
   u6 : g4 port map (
     a => p22,
     b => p24,
     c => p26,
     d => p28,
-    y => t6);
+    y => p20_tp6);
 
-  p20 <= t6;
-  tp6 <= t6;
 
 
 end gates;

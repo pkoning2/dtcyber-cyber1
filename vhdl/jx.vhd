@@ -22,9 +22,8 @@ entity jxslice is
       clk : in  logicsig;
       i1 : in  logicsig;
       m : in  logicsig;
-      tp : out logicsig;
       q1 : out logicsig;
-      q2 : out logicsig;
+      q2_tp : out logicsig;
       q3 : out logicsig;
       q4 : out logicsig;
       q5 : out logicsig);
@@ -82,8 +81,7 @@ begin -- gates
     d => i1,
     q => t2);
 
-  q2 <= t2;
-  tp <= t2;
+  q2_tp <= t2;
 
   u4 : inv2 port map (
     a => t2,
@@ -111,30 +109,24 @@ entity jx is
       p17 : in  logicsig;
       p23 : in  logicsig;
       p24 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p1 : out logicsig;
       p2 : out logicsig;
       p3 : out logicsig;
-      p4 : out logicsig;
+      p4_tp1 : out logicsig;
       p7 : out logicsig;
       p8 : out logicsig;
       p9 : out logicsig;
-      p10 : out logicsig;
+      p10_tp2 : out logicsig;
       p13 : out logicsig;
-      p14 : out logicsig;
+      p14_tp3 : out logicsig;
       p15 : out logicsig;
       p16 : out logicsig;
       p18 : out logicsig;
-      p19 : out logicsig;
-      p20 : out logicsig;
+      p19_tp5 : out logicsig;
+      p20_tp4 : out logicsig;
       p21 : out logicsig;
       p22 : out logicsig;
-      p25 : out logicsig;
+      p25_tp6 : out logicsig;
       p26 : out logicsig;
       p27 : out logicsig;
       p28 : out logicsig);
@@ -164,9 +156,8 @@ architecture gates of jx is
       clk : in  logicsig;
       i1 : in  logicsig;
       m : in  logicsig;
-      tp : out logicsig;
       q1 : out logicsig;
-      q2 : out logicsig;
+      q2_tp : out logicsig;
       q3 : out logicsig;
       q4 : out logicsig;
       q5 : out logicsig);
@@ -176,8 +167,6 @@ architecture gates of jx is
   signal m : logicsig;
   signal n : logicsig;
   signal t : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
 
 begin -- gates
   u1 : jxslice port map (
@@ -185,25 +174,22 @@ begin -- gates
     i1 => p5,
     m => m,
     q1 => p7,
-    q2 => p4,
+    q2_tp => p4_tp1,
     q3 => p1,
     q4 => p2,
-    q5 => p3,
-    tp => tp1);
+    q5 => p3);
 
-  p20 <= m;
-  tp4 <= m;
+  p20_tp4 <= m;
 
   u2 : jxslice port map (
     clk => p17,
     i1 => p11,
     m => m,
     q1 => p13,
-    q2 => p14,
+    q2_tp => p14_tp3,
     q3 => p15,
     q4 => p18,
-    q5 => p16,
-    tp => tp3);
+    q5 => p16);
 
 
   u3 : jxslice port map (
@@ -211,11 +197,10 @@ begin -- gates
     i1 => p24,
     m => m,
     q1 => p22,
-    q2 => p25,
+    q2_tp => p25_tp6,
     q3 => p28,
     q4 => p27,
-    q5 => p26,
-    tp => tp6);
+    q5 => p26);
 
 
   u4 : inv2 port map (
@@ -227,10 +212,8 @@ begin -- gates
     a => m,
     b => t,
     c => p6,
-    y => t1);
+    y => p10_tp2);
 
-  p10 <= t1;
-  tp2 <= t1;
 
   u6 : g3 port map (
     a => p6,
@@ -250,10 +233,8 @@ begin -- gates
     a => m,
     b => t,
     c => p23,
-    y => t2);
+    y => p19_tp5);
 
-  p19 <= t2;
-  tp5 <= t2;
 
   u9 : g3 port map (
     a => p23,

@@ -31,26 +31,14 @@ entity mod_is is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p1 : out logicsig;
+      p1_p3_p5_p7 : out logicsig;
       p2 : out logicsig;
-      p3 : out logicsig;
-      p5 : out logicsig;
-      p7 : out logicsig;
-      p8 : out logicsig;
+      p8_p12_p13_p14 : out logicsig;
       p10 : out logicsig;
-      p12 : out logicsig;
-      p13 : out logicsig;
-      p14 : out logicsig;
-      p15 : out logicsig;
+      p15_p17_p19_p21 : out logicsig;
       p16 : out logicsig;
-      p17 : out logicsig;
-      p19 : out logicsig;
-      p21 : out logicsig;
-      p22 : out logicsig;
-      p24 : out logicsig;
-      p26 : out logicsig;
-      p27 : out logicsig;
-      p28 : out logicsig);
+      p22_p24_p26_p28 : out logicsig;
+      p27 : out logicsig);
 
 end mod_is;
 architecture gates of mod_is is
@@ -106,14 +94,10 @@ architecture gates of mod_is is
   signal a : logicsig;
   signal b : logicsig;
   signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
   signal t5 : logicsig;
-  signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
-  signal t9 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -127,12 +111,8 @@ begin -- gates
 
   u2 : inv port map (
     a => t1,
-    y => t2);
+    y => p1_p3_p5_p7);
 
-  p1 <= t2;
-  p3 <= t2;
-  p5 <= t2;
-  p7 <= t2;
 
   u3 : g3 port map (
     a => a,
@@ -146,12 +126,8 @@ begin -- gates
 
   u4 : inv port map (
     a => t3,
-    y => t4);
+    y => p15_p17_p19_p21);
 
-  p15 <= t4;
-  p17 <= t4;
-  p19 <= t4;
-  p21 <= t4;
 
   u5 : g4 port map (
     a => b,
@@ -161,17 +137,13 @@ begin -- gates
     y => t7,
     y2 => t5);
 
-  tp6 <= t7;
   p27 <= t5;
+  tp6 <= t7;
 
   u6 : inv port map (
     a => t5,
-    y => t6);
+    y => p22_p24_p26_p28);
 
-  p22 <= t6;
-  p24 <= t6;
-  p26 <= t6;
-  p28 <= t6;
 
   u7 : g5 port map (
     a => p9,
@@ -186,12 +158,8 @@ begin -- gates
 
   u8 : inv port map (
     a => t8,
-    y => t9);
+    y => p8_p12_p13_p14);
 
-  p8 <= t9;
-  p12 <= t9;
-  p13 <= t9;
-  p14 <= t9;
 
 
 end gates;

@@ -118,12 +118,9 @@ entity tf is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p11 : out logicsig;
-      p13 : out logicsig;
-      p19 : out logicsig);
+      p11_p13_p19_tp1 : out logicsig);
 
 end tf;
 architecture gates of tf is
@@ -166,7 +163,6 @@ architecture gates of tf is
   signal e : logicsig;
   signal f : logicsig;
   signal g : logicsig;
-  signal t1 : logicsig;
 
 begin -- gates
   u1 : inv port map (
@@ -234,12 +230,8 @@ begin -- gates
     a => e,
     b => f,
     c => g,
-    y => t1);
+    y => p11_p13_p19_tp1);
 
-  p11 <= t1;
-  p13 <= t1;
-  p19 <= t1;
-  tp1 <= t1;
 
 
 end gates;

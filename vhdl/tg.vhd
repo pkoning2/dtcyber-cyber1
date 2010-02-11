@@ -27,8 +27,7 @@ entity tgslice is
       i2 : in  logicsig;
       i3 : in  logicsig;
       i4 : in  logicsig;
-      tp : out logicsig;
-      q : out logicsig;
+      q_tp : out logicsig;
       qb : out logicsig);
 
 end tgslice;
@@ -53,7 +52,6 @@ architecture gates of tgslice is
 
   end component;
 
-  signal ti : logicsig;
   signal ti1 : logicsig;
   signal ti2 : logicsig;
   signal ti3 : logicsig;
@@ -89,11 +87,9 @@ begin -- gates
     b => ti2,
     c => ti3,
     d => ti4,
-    y => ti,
+    y => q_tp,
     y2 => qb);
 
-  q <= ti;
-  tp <= ti;
 
 
 end gates;
@@ -122,18 +118,14 @@ entity tg is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p9 : out logicsig;
-      p10 : out logicsig;
-      p13 : out logicsig;
+      p10_tp2 : out logicsig;
+      p13_tp1 : out logicsig;
       p14 : out logicsig;
-      p17 : out logicsig;
+      p17_tp5 : out logicsig;
       p18 : out logicsig;
       p19 : out logicsig;
-      p20 : out logicsig);
+      p20_tp6 : out logicsig);
 
 end tg;
 architecture gates of tg is
@@ -154,8 +146,7 @@ architecture gates of tg is
       i2 : in  logicsig;
       i3 : in  logicsig;
       i4 : in  logicsig;
-      tp : out logicsig;
-      q : out logicsig;
+      q_tp : out logicsig;
       qb : out logicsig);
 
   end component;
@@ -195,9 +186,8 @@ begin -- gates
     i2 => p4,
     i3 => p6,
     i4 => p8,
-    q => p13,
-    qb => p14,
-    tp => tp1);
+    q_tp => p13_tp1,
+    qb => p14);
 
 
   u6 : tgslice port map (
@@ -209,9 +199,8 @@ begin -- gates
     i2 => p3,
     i3 => p5,
     i4 => p7,
-    q => p10,
-    qb => p9,
-    tp => tp2);
+    q_tp => p10_tp2,
+    qb => p9);
 
 
   u7 : tgslice port map (
@@ -223,9 +212,8 @@ begin -- gates
     i2 => p26,
     i3 => p24,
     i4 => p22,
-    q => p17,
-    qb => p18,
-    tp => tp5);
+    q_tp => p17_tp5,
+    qb => p18);
 
 
   u8 : tgslice port map (
@@ -237,9 +225,8 @@ begin -- gates
     i2 => p25,
     i3 => p23,
     i4 => p21,
-    q => p20,
-    qb => p19,
-    tp => tp6);
+    q_tp => p20_tp6,
+    qb => p19);
 
 
 

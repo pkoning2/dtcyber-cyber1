@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -30,25 +30,19 @@ entity aq is
       p22 : in  logicsig;
       p23 : in  logicsig;
       p24 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
       p2 : out logicsig;
       p3 : out logicsig;
-      p4 : out logicsig;
+      p4_tp1 : out logicsig;
       p5 : out logicsig;
-      p6 : out logicsig;
+      p6_tp2 : out logicsig;
       p7 : out logicsig;
-      p8 : out logicsig;
+      p8_tp3 : out logicsig;
       p12 : out logicsig;
       p13 : out logicsig;
       p17 : out logicsig;
-      p18 : out logicsig;
-      p20 : out logicsig;
-      p21 : out logicsig;
+      p18_tp4 : out logicsig;
+      p20_tp5 : out logicsig;
+      p21_tp6 : out logicsig;
       p25 : out logicsig;
       p26 : out logicsig);
 
@@ -111,15 +105,10 @@ architecture gates of aq is
   signal m : logicsig;
   signal n : logicsig;
   signal r : logicsig;
-  signal t1 : logicsig;
-  signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t7 : logicsig;
-  signal t8 : logicsig;
-  signal t9 : logicsig;
   signal t10 : logicsig;
 
 begin -- gates
@@ -145,20 +134,16 @@ begin -- gates
     a => a,
     b => c,
     c => f,
-    y2 => t1);
+    y2 => p4_tp1);
 
-  p4 <= t1;
-  tp1 <= t1;
 
   u5 : g3 port map (
     a => b,
     b => d,
     c => e,
     y => p13,
-    y2 => t2);
+    y2 => p6_tp2);
 
-  p6 <= t2;
-  tp2 <= t2;
 
   u6 : inv port map (
     a => p23,
@@ -207,27 +192,22 @@ begin -- gates
     y => t6);
 
   p7 <= t6;
-  p18 <= l;
-  tp4 <= l;
+  p18_tp4 <= l;
 
   u13 : g2 port map (
     a => t5,
     b => t6,
-    y => t7);
+    y => p8_tp3);
 
-  p8 <= t7;
-  tp3 <= t7;
 
   u14 : g4 port map (
     a => p11,
     b => h,
     c => g,
     d => p22,
-    y => t8,
+    y => p20_tp5,
     y2 => p3);
 
-  p20 <= t8;
-  tp5 <= t8;
 
   u15 : g2 port map (
     a => p22,
@@ -238,10 +218,8 @@ begin -- gates
   u16 : g2 port map (
     a => p19,
     b => m,
-    y => t9);
+    y => p21_tp6);
 
-  p21 <= t9;
-  tp6 <= t9;
 
   u17 : inv port map (
     a => p16,

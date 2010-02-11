@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2010 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -89,26 +89,18 @@ entity ks is
       p22 : in  logicsig;
       p25 : in  logicsig;
       p28 : in  logicsig;
-      tp1 : out logicsig;
-      tp2 : out logicsig;
-      tp3 : out logicsig;
       tp4 : out logicsig;
-      tp5 : out logicsig;
-      tp6 : out logicsig;
-      p2 : out logicsig;
-      p3 : out logicsig;
-      p5 : out logicsig;
+      p2_tp3 : out logicsig;
+      p3_tp1 : out logicsig;
+      p5_p9_tp2 : out logicsig;
       p6 : out logicsig;
       p8 : out logicsig;
-      p9 : out logicsig;
-      p11 : out logicsig;
+      p11_p20 : out logicsig;
       p13 : out logicsig;
       p15 : out logicsig;
       p16 : out logicsig;
-      p20 : out logicsig;
-      p23 : out logicsig;
-      p24 : out logicsig;
-      p26 : out logicsig;
+      p23_p24_tp5 : out logicsig;
+      p26_tp6 : out logicsig;
       p27 : out logicsig);
 
 end ks;
@@ -166,8 +158,6 @@ architecture gates of ks is
   signal e : logicsig;
   signal f : logicsig;
   signal t1 : logicsig;
-  signal t2 : logicsig;
-  signal t3 : logicsig;
 
 begin -- gates
   u1 : ksslice port map (
@@ -185,8 +175,7 @@ begin -- gates
     f => f,
     q => b);
 
-  p26 <= b;
-  tp6 <= b;
+  p26_tp6 <= b;
 
   u3 : ksslice port map (
     a => p1,
@@ -194,8 +183,7 @@ begin -- gates
     f => f,
     q => c);
 
-  p2 <= c;
-  tp3 <= c;
+  p2_tp3 <= c;
 
   u4 : ksslice port map (
     a => p4,
@@ -203,8 +191,7 @@ begin -- gates
     f => f,
     q => d);
 
-  p3 <= d;
-  tp1 <= d;
+  p3_tp1 <= d;
 
   u5 : ksslice port map (
     a => p10,
@@ -212,9 +199,7 @@ begin -- gates
     f => f,
     q => t1);
 
-  p5 <= t1;
-  p9 <= t1;
-  tp2 <= t1;
+  p5_p9_tp2 <= t1;
 
   u6 : inv port map (
     a => t1,
@@ -225,11 +210,8 @@ begin -- gates
     a => p22,
     e => e,
     f => f,
-    q => t2);
+    q => p23_p24_tp5);
 
-  p23 <= t2;
-  p24 <= t2;
-  tp5 <= t2;
 
   u8 : g6 port map (
     a => p18,
@@ -239,10 +221,8 @@ begin -- gates
     e => d,
     f => p12,
     y => tp4,
-    y2 => t3);
+    y2 => p11_p20);
 
-  p11 <= t3;
-  p20 <= t3;
 
   u9 : g2 port map (
     a => p21,

@@ -32,12 +32,10 @@ entity cm is
       p23 : in  logicsig;
       p26 : in  logicsig;
       p27 : in  logicsig;
-      tp1 : out logicsig;
       tp2 : out logicsig;
       tp3 : out logicsig;
       tp4 : out logicsig;
-      tp6 : out logicsig;
-      p3 : out logicsig;
+      p3_tp1 : out logicsig;
       p7 : out logicsig;
       p8 : out logicsig;
       p9 : out logicsig;
@@ -46,7 +44,7 @@ entity cm is
       p13 : out logicsig;
       p14 : out logicsig;
       p16 : out logicsig;
-      p19 : out logicsig;
+      p19_tp6 : out logicsig;
       p21 : out logicsig;
       p24 : out logicsig;
       p25 : out logicsig;
@@ -116,7 +114,6 @@ architecture gates of cm is
   signal c : logicsig;
   signal d : logicsig;
   signal e : logicsig;
-  signal f : logicsig;
   signal g : logicsig;
   signal j : logicsig;
   signal k : logicsig;
@@ -125,7 +122,6 @@ architecture gates of cm is
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
   signal t6 : logicsig;
   signal t7 : logicsig;
 
@@ -160,11 +156,9 @@ begin -- gates
     c => l,
     d => t3,
     e => t4,
-    y => t5);
+    y => p3_tp1);
 
-  p3 <= t5;
   p13 <= l;
-  tp1 <= t5;
 
   u6 : g2 port map (
     a => p27,
@@ -206,11 +200,9 @@ begin -- gates
     b => j,
     c => k,
     d => b,
-    y => f,
+    y => p19_tp6,
     y2 => g);
 
-  p19 <= f;
-  tp6 <= f;
 
   u13 : g2 port map (
     a => j,

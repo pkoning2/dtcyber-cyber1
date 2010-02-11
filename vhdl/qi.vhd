@@ -24,8 +24,7 @@ entity qislice is
       s : in  coaxsig;
       tp : out logicsig;
       q : out coaxsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
+      q1_q2 : out logicsig;
       qb : out logicsig);
 
 end qislice;
@@ -93,8 +92,7 @@ begin -- gates
     y => qb,
     y2 => t3);
 
-  q1 <= t3;
-  q2 <= t3;
+  q1_q2 <= t3;
 
   u4 : g2 port map (
     a => t3,
@@ -124,19 +122,15 @@ entity qi is
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out coaxsig;
-      p5 : out logicsig;
+      p5_p7 : out logicsig;
       p6 : out logicsig;
-      p7 : out logicsig;
       p8 : out logicsig;
-      p9 : out logicsig;
-      p11 : out logicsig;
+      p9_p11 : out logicsig;
       p14 : out coaxsig;
       p15 : out coaxsig;
-      p18 : out logicsig;
-      p20 : out logicsig;
-      p22 : out logicsig;
+      p18_p20 : out logicsig;
+      p22_p24 : out logicsig;
       p23 : out logicsig;
-      p24 : out logicsig;
       p25 : out logicsig;
       p28 : out coaxsig);
 
@@ -157,8 +151,7 @@ architecture gates of qi is
       s : in  coaxsig;
       tp : out logicsig;
       q : out coaxsig;
-      q1 : out logicsig;
-      q2 : out logicsig;
+      q1_q2 : out logicsig;
       qb : out logicsig);
 
   end component;
@@ -190,8 +183,7 @@ begin -- gates
     r => a,
     s => p3,
     q => p1,
-    q1 => p7,
-    q2 => p5,
+    q1_q2 => p5_p7,
     qb => p6,
     tp => tp1);
 
@@ -201,8 +193,7 @@ begin -- gates
     r => a,
     s => p13,
     q => p15,
-    q1 => p9,
-    q2 => p11,
+    q1_q2 => p9_p11,
     qb => p8,
     tp => tp2);
 
@@ -212,8 +203,7 @@ begin -- gates
     r => a,
     s => p16,
     q => p14,
-    q1 => p20,
-    q2 => p18,
+    q1_q2 => p18_p20,
     qb => p23,
     tp => tp5);
 
@@ -223,8 +213,7 @@ begin -- gates
     r => a,
     s => p26,
     q => p28,
-    q1 => p22,
-    q2 => p24,
+    q1_q2 => p22_p24,
     qb => p25,
     tp => tp6);
 
