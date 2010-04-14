@@ -27,16 +27,18 @@ VPATH = ..
 LINKSWITCH := -Wl,
 
 ifeq ("$(HOST)","Darwin")
-CCOPTS := -arch i386
-ASMOPTS := -Wa,-arch -Wa,i386
-LDOPTS := -Wl,-arch -Wl,i386
+#CCOPTS := -arch i386
+#ASMOPTS := -Wa,-arch -Wa,i386
+#LDOPTS := -Wl,-arch -Wl,i386
+CCOPTS := -m64
+GOPTS := -Wc,$(CCOPTS)
 endif
 
 OPTIMIZE ?=
 #OPTIMIZE ?= -O2
 
 GHDL ?= ghdl
-GHDLOPTS := $(OPTIMIZE) $(ASMOPTS) $(LDOPTS) $(EXTRAGFLAGS)  ### --finteger64
+GHDLOPTS := $(OPTIMIZE) $(GOPTS) $(ASMOPTS) $(LDOPTS) $(EXTRAGFLAGS)
 
 cdc_tb:	$(OBJS)
 	$(GHDL) -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
