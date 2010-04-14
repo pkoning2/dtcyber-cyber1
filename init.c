@@ -59,8 +59,6 @@ typedef struct
 static void initCyber(const char *config);
 static void initEquipment(void);
 static void initDeadstart(void);
-static bool initOpenSection(const char *name);
-static char *initGetNextLine(void);
 static bool initGetOctal(const char *entry, int defValue, long *value);
 static bool initGetInteger(const char *entry, int defValue, long *value);
 static bool initGetString(const char *entry, char *defString, char *str, int strLen);
@@ -76,6 +74,7 @@ extern u8 deadstartCount;
 long cpuRatio;
 char autoDateString[32];
 char autoString[32];
+char platoSection[40];
 
 /*
 **  -----------------
@@ -103,19 +102,12 @@ const intParam intParamList[] =
     { "nputelnetconns", &npuNetTelnetConns, 3 },
     { "nputelnetport", &npuNetTelnetPort, 6610 },
 #endif
-    { "pniconns", &pniConns, 32 },
-    { "pniport", &pniPort, 8005 },
-    { "platoport", &platoPort, DefNiuPort },
-    { "platoconns", &platoConns, 4 },
-    { "platolocalport", &platoLocalPort, DefNiuPort + 1 },
-    { "platolocalconns", &platoLocalConns, 2 },
     { "operport", &opPort, DefOpPort },
     { "operconns", &opConns, 4 },
     { "consoleport", &dd60Port, DefDd60Port },
     { "consoleconns", &dd60Conns, 4 },
     { "tpmuxport", &tpmuxPort, DefTpmuxPort },
     { "tpmuxconns", &tpmuxConns, 2 },
-    { "operstation", &niuOpstat, -1 },
     { "sockets", &extSockets, 128 },
     { NULL, NULL, 0 }                   /* End marker */
 };
@@ -190,6 +182,33 @@ u32 initConvertEndian(u32 value)
     result |= (value & 0x000000ff) << 24;
 
     return(result);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Save current startup file position
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Current position
+**
+**------------------------------------------------------------------------*/
+long initSavePosition (void)
+    {
+    return ftell (fcb);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Restore startup file position
+**
+**  Parameters:     Name        Description.
+**                  pos         Saved position
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void initRestorePosition (long pos)
+    {
+    fseek(fcb, pos, SEEK_SET);
     }
 
 /*
@@ -342,6 +361,11 @@ static void initCyber(const char *config)
         {
         traceMask = (u16)mask;
         }
+
+    /*
+    **  Get PLATO section name.
+    */
+    initGetString("plato", "", platoSection, sizeof(platoSection));
 
     /*
     **  Get a set of integer parameters
@@ -535,7 +559,7 @@ static void initDeadstart(void)
 **  Returns:        TRUE if section was found, FALSE otherwise.
 **
 **------------------------------------------------------------------------*/
-static bool initOpenSection(const char *name)
+bool initOpenSection(const char *name)
     {
     char lineBuffer[MaxLine];
     char section[40];
@@ -582,7 +606,7 @@ static bool initOpenSection(const char *name)
 **  Returns:        Pointer to line buffer
 **
 **------------------------------------------------------------------------*/
-static char *initGetNextLine(void)
+char *initGetNextLine(void)
     {
     static char lineBuffer[MaxLine];
     char *cp;

@@ -240,7 +240,7 @@ typedef struct NetFet_s
 /*
 **  Callback function for new connection.
 */
-typedef void (ConnCb) (NetFet *np, int portNum);
+typedef void (ConnCb) (NetFet *np, int portNum, void *arg);
 
 /*
 **  Tread function
@@ -268,6 +268,7 @@ typedef struct NetPortSet_s
     int         sendCount;              /* count of fd's in sendSet */
     int         maxFd;                  /* highest port fd value */
     ConnCb      *callBack;              /* function to call for new conn */
+    void        *callArg;               /* argument to the above */
     const char  *kind;                  /* What is this portset for? */
     bool        localOnly;              /* TRUE to listen on 127.0.0.1 */
     bool        close;                  /* TRUE to shut down thread */

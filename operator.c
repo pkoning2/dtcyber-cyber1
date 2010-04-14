@@ -93,7 +93,7 @@ typedef struct
 */
 static int opRequest(NetFet *np);
 static ThreadFunRet opThread (void *param);
-static void opSetup(NetFet *np, int index);
+static void opSetup(NetFet *np, int index, void *arg);
 static void opSendStatus (StatusData *sd);
 static void opUpdateSysStatus (void);
 
@@ -1406,7 +1406,7 @@ static void opResetTrace(char *cmdParams)
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void opSetup (NetFet *np, int index)
+static void opSetup (NetFet *np, int index, void *arg)
     {
     int i;
     const char **sp;

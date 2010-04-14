@@ -49,8 +49,8 @@ static NetPortSet niuAsciiPorts;
 
 static void niuSendstr(int stat, const char *p);
 static void niuSendWord(int stat, int word);
-static void niuAsciiWelcome(NetFet *np, int stat);
-static void niuRemoteWelcome(NetFet *np, int stat);
+static void niuAsciiWelcome(NetFet *np, int stat, void *arg);
+static void niuRemoteWelcome(NetFet *np, int stat, void *arg);
 static void bbSendNiu(int stat);
 static void bbSendAscii(int stat);
 
@@ -279,7 +279,7 @@ static void niuSendWord(int stat, int word)
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuRemoteWelcome(NetFet *np, int stat)
+static void niuRemoteWelcome(NetFet *np, int stat, void *arg)
     {
     if (np->connFd == 0)
         {
@@ -305,7 +305,7 @@ static void niuRemoteWelcome(NetFet *np, int stat)
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuAsciiWelcome(NetFet *np, int stat)
+static void niuAsciiWelcome(NetFet *np, int stat, void *arg)
     {
     if (np->connFd == 0)
         {

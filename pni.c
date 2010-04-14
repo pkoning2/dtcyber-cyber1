@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2009, Paul Koning (see license.txt)
+**  Copyright (c) 2009-2010, Paul Koning (see license.txt)
 **
 **  Name: pni.c
 **
@@ -63,6 +63,8 @@
 **  Private Macro Functions
 **  -----------------------
 */
+#define STAT2IDX(s) ((s) - pniFirstStation)
+#define IDX2STAT(i) ((i) + pniFirstStation)
 #ifdef DEBUG
 #define DEBUGPRINT(fmt, ...) printf ("%s " fmt, dtNowString (), ## __VA_ARGS__ )
 #else
@@ -109,9 +111,21 @@
 */
 enum EscState { norm, esc, key3, xlow, xhigh, ylow, yhigh };
 
+typedef struct siteParam
+{
+    u32     port;
+    int     terms;
+    int     first;
+    const char *siteName;
+    void    *statusBuf;
+    bool    local;
+    NetPortSet pniPorts;
+} SiteParam;
+
 typedef struct portParam
 {
     NetFet      *np;
+    SiteParam   *sp;
     enum EscState escState;
     int         keyAsm;
     int         flowFlags;
@@ -119,6 +133,7 @@ typedef struct portParam
     bool        sendLogout;
     bool        forceLogout;
 } PortParam;
+
 
 /*
 **  ---------------------------
@@ -129,9 +144,9 @@ static int rcb (CpWord *buf, struct Io *iop, int buflen, CpWord *dest);
 static void storeKey (int key, int station);
 static void storeChar (int c, char **pp);
 static bool framatReq (int req, int station);
-static void pniWelcome (NetFet *np, int stat);
+static void pniWelcome (NetFet *np, int stat, void *arg);
 static bool pniSendstr (int stat, const char *p, int len);
-static void pniUpdateStatus (void);
+static void pniUpdateStatus (SiteParam *sp);
 static bool pniLoggedIn (int stat);
 static struct stbank * pniStationBank (int stat);
 static void pniActivateStation (int stat);
@@ -141,8 +156,6 @@ static void pniActivateStation (int stat);
 **  Public Variables
 **  ----------------
 */
-long pniPort;
-long pniConns;
 
 /*
 **  -----------------
@@ -161,16 +174,16 @@ static int fpnilen;
 static CpWord *apnifb;
 static CpWord *apnifio;
 static int pniflen;
-static int firstStation;
-static int stations;
+static int pniFirstStation;
+static int pniStations;        // Count of stations actually enabled by PLATO
 static int lastStation;
 static CpWord *netbuf;
 static char *ascbuf;
 static PortParam *portVector;
-static NetPortSet pniPorts;
 static int lastInPort;
-static void *statusBuf;
 static int pniActiveConns;
+static int sites;
+static SiteParam *siteVector;
 
 static struct Io fpniio;
 static struct Io pnifio;
@@ -258,65 +271,171 @@ static inline void storeChar (int c, char **pp)
 **--------------------------------------------------------------------------
 */
 /*--------------------------------------------------------------------------
-**  Purpose:        Process a PNI operation (external op function 3)
+**  Purpose:        Initialize PNI
 **
 **  Parameters:     Name        Description.
-**                  req         Request word
 **
-**  Returns:        Status (-1 for ok, other values for errors)
+**  Returns:        nothing
 **
-**  This turns PNI emulation on or off.
-** 
-**  Request format:
-**       48/0, 12/3
-**       60/PNI initialization pointer
-** 
-**  The PNI initialization pointer is the ECS address of the PNI 
-**  pointers block, or 0 to turn off PNI emulation.  If -0 is 
-**  supplied, PNI is turned off but a "plato off" message is transmitted
-**  to all connected stations.
+**  The network parameters are taken from the "plato" 
+**  section in the cyber.ini file.  The lines in that section specify PLATO
+**  terminal connection information, for both NIU and PNI.  The entries have
+**  the following format:
+**    type=name,count,port[,local]
+**  where "type" is "pni" or "niu", "name" is a string identifying this group
+**  of terminals (for example a PLATO site name).  "count" and "port" are decimal
+**  integers, the number of terminals and the TCP listen port respectively.
+**  "local" is omitted for a general access port, or the keyword "local" to have
+**  the specified port number available only on the local address (127.0.0.1).
+**
+**  For PNI, the "plato" section is required.
 **
 **------------------------------------------------------------------------*/
 void initPni (void)
 {
-    /*
-    **  Until PNI starts, supply some defaults.
-    */
-    stations = pniConns;
-    firstStation = 32 + platoConns;
+    SiteParam *sp;
+    long sectionPos;
+    char *line;
+    char *token;
+    char *sitename;
+    int i, j, terms, port;
+    bool local;
+    PortParam *pp;
     
-    portVector = calloc(1, sizeof(PortParam) * pniConns);
+    if (platoSection[0] == '\0')
+    {
+        return;
+    }
+    
+    if (!initOpenSection(platoSection))
+    {
+        fprintf(stderr, "Required section [%s] not found in startup file\n", platoSection);
+        exit(1);
+    }
+    sectionPos = initSavePosition ();
+
+    /*
+    **  Process options and count port number lines
+    */
+    sites = 0;
+    while  ((line = initGetNextLine()) != NULL)
+    {
+        if (strncmp (line, "pni=,", 4) == 0)
+        {
+            sites++;
+        }
+    }
+        
+    /*
+    **  Allocate site data structures, then parse port number lines
+    */
+    siteVector = calloc (1, sites * sizeof (SiteParam));
+    if (siteVector == NULL)
+    {
+        fprintf (stderr, "Failure allocating PNI site data vector\n");
+        exit (1);
+    }
+    initRestorePosition (sectionPos);
+    sp = siteVector;
+    pniStations = 0;
+    /*
+    **  First PNI station is after last NIU station, rounded up to
+    **  physical site boundary.
+    */
+    pniFirstStation = (niuStationEnd + 31) & (~31);
+    while  ((line = initGetNextLine()) != NULL)
+    {
+        if (strncmp (line, "pni=,", 4) != 0)
+        {
+            continue;
+        }
+        
+        token = strtok(line + 4, ",\n");
+        if (token == NULL)
+        {
+            fprintf (stderr, "Bad line in PLATO section: %s\n", line);
+            continue;
+        }
+        sitename = strdup (token);
+        token = strtok (NULL, ",\n");
+        if (token == NULL)
+        {
+            fprintf (stderr, "Bad line in PLATO section: %s\n", line);
+            continue;
+        }
+        terms = atoi (token);
+        token = strtok (NULL, ",\n");
+        if (token == NULL)
+        {
+            fprintf (stderr, "Bad line in PLATO section: %s\n", line);
+            continue;
+        }
+        port = atoi (token);
+        token = strtok (NULL, ",\n");
+        local = FALSE;
+        if (token != NULL)
+        {
+            /* Possible "local" keyword */
+            if (strncmp (token, "local", 5) != 0)
+            {
+                fprintf (stderr, "Bad line in PLATO section: %s\n", line);
+                continue;
+            }
+            local = TRUE;
+        }
+        sp->first = IDX2STAT (pniStations);
+        sp->port = port;
+        sp->terms = terms;
+        sp->local = local;
+        sp->siteName = sitename;
+        sp++;
+        pniStations += terms;
+    }
+
+    portVector = pp = calloc(1, sizeof(PortParam) * pniStations);
     if (portVector == NULL)
     {
         fprintf(stderr, "Failed to allocate PNI context block\n");
         exit (1);
     }
-    /*
-    **  Create the thread which will deal with TCP connections.
-    */
-    pniPorts.portNum = pniPort;
-    pniPorts.maxPorts = pniConns;
-    pniPorts.localOnly = FALSE;
-    pniPorts.callBack = pniWelcome;
-    pniPorts.kind = "PNI";
-    
-#if DEBUG != 2
-    dtInitPortset (&pniPorts, MAXNET);
-#endif
 
-    /*
-    **  Allocate the operator status buffer
-    */
-    if (statusBuf == NULL)
+    for (i = 0; i < sites; i++)
     {
-        statusBuf = opInitStatus ("PNI", 0, 0);
-        pniUpdateStatus ();
-    }
+        sp = siteVector + i;
 
+        /*
+        **  Create the threads which will deal with TCP connections.
+        */
+        sp->pniPorts.portNum = sp->port;
+        sp->pniPorts.maxPorts = sp->terms;
+        sp->pniPorts.localOnly = sp->local;
+        sp->pniPorts.callBack = pniWelcome;
+        sp->pniPorts.callArg = sp;
+        sp->pniPorts.kind = sp->siteName;
+        dtInitPortset (&(sp->pniPorts), MAXNET);
+        /*
+        **  Allocate the operator status buffer
+        */
+        if (sp->statusBuf == NULL)
+        {
+            sp->statusBuf = opInitStatus ("PNI", sp->first, sp->terms);
+            pniUpdateStatus (sp);
+        }
+        /*
+        **  Initialize some pointers in the PortParam blocks
+        */
+        for (j = 0; j < sp->terms; j++)
+        {
+            pp->sp = sp;
+            pp->np = sp->pniPorts.portVec + j;
+            pp++;
+        }
+    }
+    
     /*
     **  Print a friendly message.
     */
-    printf("PNI initialised, %d stations\n", pniConns);
+    printf("PNI initialised, %d stations\n", pniStations);
 }
 
 /*--------------------------------------------------------------------------
@@ -345,6 +464,7 @@ CpWord pniOp (CpWord req)
     CpWord *pnii;
     int i, stat, len;
     PortParam *pp;
+    int stations;
     
     DEBUGPRINT ("PniOp, request is %020llo\n", reqp[1]);
     if (reqp[1] == 0 || reqp[1] == Mask60)
@@ -354,13 +474,13 @@ CpWord pniOp (CpWord req)
             if (reqp[1] != 0)
             {
                 // Off with message
-                for (i = 0; i < stations; i++)
+                for (i = 0; i < pniStations; i++)
                 {
                     pp = portVector + i;
                     if (pp->np != NULL)
                     {
-                        DEBUGPRINT ("Sending offmsg to station %d\n", i + firstStation);
-                        pniSendstr (i + firstStation, OFF_MSG, 0);
+                        DEBUGPRINT ("Sending offmsg to station %d\n", IDX2STAT (i));
+                        pniSendstr (IDX2STAT (i), OFF_MSG, 0);
                     }
                 }
             }
@@ -391,19 +511,19 @@ CpWord pniOp (CpWord req)
     memcpy (&apni, pnii, sizeof (apni));
 
     // Convert ECS addresses to pointers, and extract fields
-    firstStation = ((apni.sd[SIMNAM].site >> 12) & Mask12) << 5;
+    pniFirstStation = ((apni.sd[SIMNAM].site >> 12) & Mask12) << 5;
     stations = (apni.sd[SIMNAM].site & Mask12) << 5;
-    DEBUGPRINT ("pni on, first station %d, count %d\n", firstStation, stations);
-    if (stations <= 0 || pniConns == 0)
+    DEBUGPRINT ("pni on, first station %d, count %d\n", pniFirstStation, stations);
+    if (stations <= 0 || pniStations == 0 || pniFirstStation < niuStationEnd)
     {
         return RETINVREQ;
     }
-    if (stations > pniConns)
+    if (stations > pniStations)
     {
-        fprintf (stderr, "Warning: PNI On with more stations than configured: %d %d\n", stations, pniConns);
-        stations = pniConns;
+        fprintf (stderr, "Warning: PNI On with more stations than configured: %d %d\n", stations, pniStations);
+        stations = pniStations;
     }
-    lastStation = firstStation + stations;
+    lastStation = pniFirstStation + stations;
     akb = cpuAccessMem ((1ULL << 59) | apni.akb, lastStation * NKEYLTH);
     ast = (struct stbank *) cpuAccessMem ((1ULL << 59) | apni.ast, 
                                           lastStation * sizeof (struct stbank) / sizeof (CpWord));
@@ -458,7 +578,7 @@ CpWord pniOp (CpWord req)
     **  Print a friendly message.
     */
     printf("PNI started, first station %d-%d, %d stations\n",
-           firstStation >> 5, firstStation & 0x1f, stations);
+           pniFirstStation >> 5, pniFirstStation & 0x1f, stations);
     return RETOK;
 }
 
@@ -476,7 +596,7 @@ CpWord pniOp (CpWord req)
 **------------------------------------------------------------------------*/
 void pniCheck (void)
 {
-    int len, i, j;
+    int len, i, j, snum;
     bool lastword;
     int station;
     int opcode;
@@ -489,37 +609,39 @@ void pniCheck (void)
     int port, key;
     char buf[2];
     struct stbank *sb;
-#if DEBUG == 2
-    struct Keybuf *kp;
-    static int cpidx;
-#endif
+    NetPortSet *psp;
+    SiteParam *sp;
 
     /*
     **  Scan the active connections, round robin, looking
     **  for one that has pending input. 
     */
-#if DEBUG != 2
     port = lastInPort;
     for (;;)
     {
-        if (++port == stations)
+        if (++port == pniStations)
         {
             /*
             **  Whenever we finish a scan pass through the ports
             **  (i.e., we've wrapped around) look for more data.
             */
             port = 0;
-            for (;;)
+            for (snum = 0; snum < sites; snum++)
             {
-                np = dtFindInput (&pniPorts, 0);
-                if (np == NULL)
+                for (;;)
                 {
-                    break;
-                }
-                i = dtRead  (np, &pniPorts, -1);
-                if (i < 0)
-                {
-                    dtClose (np, &pniPorts, TRUE);
+                    sp = siteVector + snum;
+                    psp = &(sp->pniPorts);
+                    np = dtFindInput (psp, 0);
+                    if (np == NULL)
+                    {
+                        break;
+                    }
+                    i = dtRead  (np, psp, -1);
+                    if (i < 0)
+                    {
+                        dtClose (np, psp, TRUE);
+                    }
                 }
             }
         }
@@ -534,7 +656,7 @@ void pniCheck (void)
             **  *offky2* which tells PLATO to log out this
             **  station.
             */
-            storeKey (OFFKY2, port + firstStation);
+            storeKey (OFFKY2, IDX2STAT (port));
             pp->sendLogout = FALSE;
             continue;
         }
@@ -671,7 +793,7 @@ void pniCheck (void)
                 {
                     // Form the coordinate data
                     key = pp->keyAsm | ((key & 037) << 5);
-                    sb = pniStationBank (port + firstStation);
+                    sb = pniStationBank (IDX2STAT (port));
                     if (sb != NULL)
                     {
                         // Merge the fine grid position data
@@ -697,10 +819,10 @@ void pniCheck (void)
                 **  tells PLATO to log out this station instead of
                 **  the key that was typed
                 */
-                if (pniLoggedIn (port + firstStation))
+                if (pniLoggedIn (IDX2STAT (port)))
                 {
                     key = OFFKY2;
-                    printf ("continuing to force logout port %d\n", port + firstStation);
+                    printf ("continuing to force logout port %d\n", IDX2STAT (port));
                 }
                 else
                 {
@@ -708,7 +830,7 @@ void pniCheck (void)
                 }
             }
             DEBUGPRINT ("pni key %04o\n", key);
-            storeKey (key, port + firstStation);
+            storeKey (key, IDX2STAT (port));
             pp->keyAsm = 0;
         }
         if (port == lastInPort)
@@ -717,7 +839,7 @@ void pniCheck (void)
         }
     }
     lastInPort = port;
-#endif
+
     if (!pniActive)
     {
         return;
@@ -726,11 +848,7 @@ void pniCheck (void)
     /*
     **  Look for requests from Framat
     */
-#if DEBUG != 2
     memcpy (&fpniio, afpniio, sizeof (fpniio));
-#else
-    fpniio.in = *afpniio;
-#endif
     oldout = fpniio.out;
     while ((len = rcb (afpnib, &fpniio, fpnilen, netbuf)) != 0)
     {
@@ -754,12 +872,12 @@ void pniCheck (void)
         DEBUGPRINT ("Message from framat, len %d, %llo, ptrs %llo %llo -> %llo\n", len, hdr, fpniio.in, oldout, fpniio.out);
         oldout = fpniio.out;
 
-        if (station < firstStation || station >= lastStation)
+        if (station < pniFirstStation || station >= lastStation)
         {
             DEBUGPRINT ("Station %d out of range\n", station);
             continue;
         }
-        pp = portVector + (station - firstStation);
+        pp = portVector + STAT2IDX (station);
         switch (opcode)
         {
         case 0:
@@ -796,13 +914,11 @@ void pniCheck (void)
             if (len > 0)
             {
                 DEBUGPRINT ("Send %d bytes to terminal %d\n", len, station);
-#if DEBUG != 2
                 if (!pniSendstr (station, ascbuf, len))
                 {
                     pp->flowFlags |= FLOW_TCP;
                     DEBUGPRINT ("Flow set to off\n");
                 }
-#endif
             }
             // Send Permit to Send at next opportunity
             pp->flowFlags |= FLOW_DOPTS;
@@ -835,7 +951,6 @@ void pniCheck (void)
             DEBUGPRINT ("Invalid framat request code %04o, station %d\n", opcode, station);
         }
     }
-#if DEBUG != 2
     /* 
     **  Write back the "out" pointer
     */
@@ -844,7 +959,7 @@ void pniCheck (void)
     /*
     **  Send any necessary requests to Framat
     */
-    for (port = 0; port < stations; port++)
+    for (port = 0; port < pniStations; port++)
     {
         pp = portVector + port;
         np = pp->np;
@@ -854,7 +969,7 @@ void pniCheck (void)
             if ((pp->flowFlags & FLOW_DOABT) != 0)
             {
                 // Need to send ABT
-                if (framatReq (F_ABT, port + firstStation))
+                if (framatReq (F_ABT, IDX2STAT (port)))
                 {
                     // Sent successfully, clear flag
                     pp->flowFlags &= ~FLOW_DOABT;
@@ -868,7 +983,7 @@ void pniCheck (void)
             if (pp->flowFlags == FLOW_DOPTS)
             {
                 // Need to send PTS, and no flow-off flags are set
-                if (framatReq (F_PTS, port + firstStation))
+                if (framatReq (F_PTS, IDX2STAT (port)))
                 {
                     // Sent successfully, clear flag
                     pp->flowFlags = 0;
@@ -876,26 +991,6 @@ void pniCheck (void)
             }
         }
     }
-#else
-    // Show what the real PNI is doing
-    memcpy (&pnifio, apnifio, sizeof (pnifio));
-    if (pnifio.in != pnifio.out)
-    {
-        DEBUGPRINT ("Requests PNI to Framat, in %06llo, out %06llo, first req %020llo\n", pnifio.in, pnifio.out, apnifb[pnifio.out]);
-    }
-    // Look at the first station's keybuffer
-    kp = (struct Keybuf *) (akb + (firstStation * NKEYLTH));
-    if ((kp->buf[CKPPIDX] & Mask12) != cpidx)
-    {
-        int i;
-        DEBUGPRINT ("Key buffer:\n");
-        for (i = 0; i < NKEYLTH; i++)
-        {
-            DEBUGPRINT ("  %020llo\n", ((CpWord *) kp)[i]);
-        }
-        cpidx = kp->buf[CKPPIDX] & Mask12;
-    }
-#endif
 }
 
 /*--------------------------------------------------------------------------
@@ -909,12 +1004,14 @@ void pniCheck (void)
 **------------------------------------------------------------------------*/
 CpWord pniConn (u32 stat)
 {
+    PortParam *mp;
     NetFet *fet;
-    if (stat >= stations)
+    if (stat >= pniStations)
     {
         return MINUS1;
     }
-    fet = pniPorts.portVec + stat;
+    mp = portVector + STAT2IDX (stat);
+    fet = mp->np;
     if (fet->connFd == 0)
     {
         return 0;
@@ -1025,12 +1122,11 @@ static void storeKey (int key, int station)
     {
         return;
     }
-    if (station < firstStation || station >= lastStation)
+    if (station < pniFirstStation || station >= lastStation)
     {
         DEBUGPRINT ("storeKey: station out of range, %d\n");
         return;
     }
-#if DEBUG != 2    
     kp = (struct Keybuf *) (akb + (station * NKEYLTH));
     /*
     **  The key buffer uses in/out pointers, but not in the usual
@@ -1069,9 +1165,6 @@ static void storeKey (int key, int station)
     // nothing else can get in the middle of this...
     abt[station >> 5] |= 1 + (0x1ULL << ((station & 0x1f) + 16));
     DEBUGPRINT ("Key bitmap: %020llo\n", abt[station >> 5]);
-#else
-    DEBUGPRINT ("Store key: %d\n", key);
-#endif
 }
 
 /*--------------------------------------------------------------------------
@@ -1087,7 +1180,6 @@ static void storeKey (int key, int station)
 **------------------------------------------------------------------------*/
 static bool framatReq (int req, int station)
 {
-#if DEBUG != 2
     int newin;
     
     memcpy (&pnifio, apnifio, sizeof (pnifio));
@@ -1105,9 +1197,7 @@ static bool framatReq (int req, int station)
     *(apnifb + pnifio.in) = ((CpWord) req << 48) | station | 000100050000ULL;
     DEBUGPRINT ("PNI to Framat req %020llo, station %d at offset %d\n", *(apnifb + pnifio.in), station, pnifio.in);
     *apnifio = newin;
-#else
-    DEBUGPRINT ("PNI to Framat req %04o\n", req);
-#endif
+
     return TRUE;
 }
 
@@ -1115,24 +1205,26 @@ static bool framatReq (int req, int station)
 **  Purpose:        Update operator status
 **
 **  Parameters:     Name        Description.
+**                  sp          Pointer to SiteParam for this port
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void pniUpdateStatus (void)
+static void pniUpdateStatus (SiteParam *sp)
 {
     char msg[64];
     
-    sprintf (msg, "%d connection%s", pniActiveConns,
-             (pniActiveConns != 1) ? "s" : "");
-    if (pniActiveConns == 0)
+    if (sp->pniPorts.curPorts == 0)
     {
-        opSetStatus (statusBuf, NULL);
+        sprintf (msg, "site %s", sp->siteName);
     }
     else
     {
-        opSetStatus (statusBuf, msg);
+        sprintf (msg, "site %s, %d connection%s",
+                 sp->siteName, sp->pniPorts.curPorts,
+                 (sp->pniPorts.curPorts != 1) ? "s" : "");
     }
+    opSetStatus (sp->statusBuf, msg);
 }
 
 /*--------------------------------------------------------------------------
@@ -1141,16 +1233,18 @@ static void pniUpdateStatus (void)
 **  Parameters:     Name        Description.
 **                  np          NetFet pointer
 **                  stat        station number relative to start of PNI
+**                  arg         generic argument: the SiteParam pointer
 **
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void pniWelcome(NetFet *np, int stat)
+static void pniWelcome(NetFet *np, int stat, void *arg)
 {
     PortParam *mp;
+    SiteParam *sp = (SiteParam *) arg;
     
-    mp = portVector + stat;
-    stat += firstStation;
+    stat += sp->first;
+    mp = portVector + STAT2IDX (stat);
     mp->np = np;
     
     if (np->connFd == 0)
@@ -1162,7 +1256,7 @@ static void pniWelcome(NetFet *np, int stat)
                dtNowString (), inet_ntoa (np->from), 
                stat / 32, stat % 32);
         pniActiveConns--;
-        pniUpdateStatus ();
+        pniUpdateStatus (sp);
         if (pniActive && pniLoggedIn (stat))
             {
             /*
@@ -1183,7 +1277,7 @@ static void pniWelcome(NetFet *np, int stat)
 
     np->ownerInfo = stat;
     pniActiveConns++;
-    pniUpdateStatus ();
+    pniUpdateStatus (sp);
     
     if (!pniActive)
     {
@@ -1205,7 +1299,7 @@ static void pniWelcome(NetFet *np, int stat)
         mp->forceLogout = TRUE;
     }
 
-    pniActivateStation (stat - firstStation);
+    pniActivateStation (STAT2IDX (stat));
 } 
 
 /*--------------------------------------------------------------------------
@@ -1221,14 +1315,16 @@ static void pniWelcome(NetFet *np, int stat)
 **------------------------------------------------------------------------*/
 static bool pniSendstr(int stat, const char *p, int len)
 {
+    PortParam *mp;
     NetFet *fet;
 
     if (len == 0)
     {
         len = strlen (p);
     }
-    fet = pniPorts.portVec + (stat - firstStation);
-    return (dtSend (fet, &pniPorts, p, len) < 0);
+    mp = portVector + STAT2IDX (stat);
+    fet = mp->np;
+    return (dtSend (fet, &(mp->sp->pniPorts), p, len) < 0);
 }
 
 /*--------------------------------------------------------------------------
@@ -1293,8 +1389,8 @@ static void pniActivateStation (int stat)
     int i;
     
     mp = portVector + stat;
-    stat += firstStation;
-    sprintf (termname, "te%02x   ", stat - firstStation + 1);
+    sprintf (termname, "te%02x   ", stat + 1);
+    stat = IDX2STAT (stat);
     termid = 0;
     for (i = 0; i < 7; i++)
     {

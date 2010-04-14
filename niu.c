@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003-2005, Tom Hunter, Paul Koning (see license.txt)
+**  Copyright (c) 2003-2010, Tom Hunter, Paul Koning (see license.txt)
 **
 **  Name: niu.c
 **
@@ -39,9 +39,10 @@
 **  Private Constants
 **  -----------------
 */
-#define NiuLocalOffset          1           /* starting station for local */
-#define NiuRemoteOffset         32          /* starting station for remotes */
-#define NiuLocalBufSize         50          /* size of local input buffer */
+#define niuFirstStation    1
+#define STAT2IDX(s) ((s) - niuFirstStation)
+#define IDX2STAT(i) ((i) + niuFirstStation)
+
 #define NetBufSize              256
 
 /* -ext- words for operator box */
@@ -80,20 +81,25 @@
 #define FcNiuDeselectOutput     07000
 
 /*
-**  -----------------------
-**  Private Macro Functions
-**  -----------------------
-*/
-#define STATIONS                (NiuRemoteOffset + platoConns)
-
-/*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
 **  -----------------------------------------
 */
+typedef struct siteParam
+    {
+    u32     port;
+    int     terms;
+    int     first;
+    const char *siteName;
+    void    *statusBuf;
+    bool    local;
+    NetPortSet niuPorts;
+    } SiteParam;
+
 typedef struct portParam
     {
     NetFet     *np;
+    SiteParam   *sp;
     u32         currOutput;
     u8          currInput[2];
     bool        loggedIn;
@@ -112,13 +118,11 @@ static FcStatus niuOutFunc(PpWord funcCode);
 static void niuOutIo(void);
 static void niuActivate(void);
 static void niuDisconnect(void);
-static void niuWelcome(NetFet *np, int stat);
-static void niuLocalWelcome(NetFet *np, int stat);
-static void niuRemoteWelcome(NetFet *np, int stat);
+static void niuWelcome(NetFet *np, int stat, void *);
 void niuSendstr(int stat, const char *p);
 void niuSendWord(int stat, int word);
 static void niuSend(int stat, int word);
-static void niuUpdateStatus (void);
+static void niuUpdateStatus (SiteParam *sp);
 static void niuOpdata (int word);
 #if !defined(_WIN32)
 static ThreadFunRet niuThread (void *param);
@@ -131,11 +135,8 @@ static void niuDoAlert (const char *msg);
 **  Public Variables
 **  ----------------
 */
-long platoPort;
-long platoConns;
-long platoLocalPort;
-long platoLocalConns;
-long niuOpstat;
+int niuStations;
+int niuStationEnd;
 extern u32 sequence;
 
 /*
@@ -146,8 +147,6 @@ extern u32 sequence;
 static DevSlot *in;
 static DevSlot *out;
 static PortParam *portVector;
-static NetPortSet niuPorts;
-static NetPortSet niuLocalPorts;
 static int currInPort;
 static int lastInPort;
 static int obytes;
@@ -162,6 +161,9 @@ static bool traced=FALSE;
 static void *statusBuf;
 static int niuActiveConns;
 static u32 niuLastAlertReset;
+static int niuOpstat;
+static int sites;
+static SiteParam *siteVector;
 
 /*
 **--------------------------------------------------------------------------
@@ -181,9 +183,37 @@ static u32 niuLastAlertReset;
 **
 **  Returns:        Nothing.
 **
+**  The network parameters are taken from the "plato" 
+**  section in the cyber.ini file.  The lines in that section specify PLATO
+**  terminal connection information, for both NIU and PNI.  The entries have
+**  the following format:
+**    type=name,count,port[,local]
+**  where "type" is "pni" or "niu", "name" is a string identifying this group
+**  of terminals (for example a PLATO site name).  "count" and "port" are decimal
+**  integers, the number of terminals and the TCP listen port respectively.
+**  "local" is omitted for a general access port, or the keyword "local" to have
+**  the specified port number available only on the local address (127.0.0.1).
+**  In addition, NIU initialization recognizes two additional entries in
+**  the "plato" section:
+**    realtiming        indicates that 1200 baud operation is simulated
+**    operstation=n     set operator station to n
+**  If these are omitted then high speed mode is used and no operator station
+**  is defined.
+**
+**  If the "plato" section is omitted, a default configuration is supplied.
+**
 **------------------------------------------------------------------------*/
 void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     {
+    char *line;
+    char *token;
+    char *sitename;
+    int i, j, terms, port, first;
+    bool local;
+    PortParam *mp;
+    SiteParam *sp;
+    long savedPos, sectionPos;
+    
     (void)eqNo;
 
     if (in != NULL)
@@ -192,17 +222,133 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         exit (1);
         }
 
-    if (deviceName != NULL && deviceName[0] != ';')
+    if (platoSection[0] != '\0')
         {
-        if (strcmp (deviceName, "realtiming") == 0)
+        savedPos = initSavePosition ();
+        
+        if (!initOpenSection(platoSection))
             {
-            realTiming = TRUE;
+            fprintf(stderr, "Required section [%s] not found in startup file\n", platoSection);
+            exit(1);
             }
-        else
+        sectionPos = initSavePosition ();
+
+        /*
+        **  Process options and count port number lines
+        */
+        sites = 0;
+        while  ((line = initGetNextLine()) != NULL)
             {
-            fprintf (stderr, "Unrecognized NIU option '%s'\n", deviceName);
+            token = strtok(line, "=");
+            if (strcmp (line, "realtiming") == 0)
+                {
+                realTiming = TRUE;
+                continue;
+                }
+            else if (token != NULL && strcmp (token, "operstation") == 0)
+                {
+                token = strtok(NULL, "=");
+                if (token != NULL)
+                    {
+                    niuOpstat = atoi (token);
+                    }
+                else
+                    {
+                    fprintf (stderr, "Invalid oper station\n");
+                    }
+                }
+            else if (strcmp (token, "niu") == 0)
+                {
+                sites++;
+                }
+            }
+        
+        /*
+        **  Allocate site data structures, then parse port number lines
+        */
+        siteVector = calloc (1, sites * sizeof (SiteParam));
+        if (siteVector == NULL)
+            {
+            fprintf (stderr, "Failure allocating NIU site data vector\n");
             exit (1);
             }
+        initRestorePosition (sectionPos);
+        sp = siteVector;
+        niuStations = 0;
+        while  ((line = initGetNextLine()) != NULL)
+            {
+            if (strncmp (line, "niu=,", 4) != 0)
+                {
+                continue;
+                }
+            token = strtok(line + 4, ",\n");
+            if (token == NULL)
+                {
+                fprintf (stderr, "Bad line in PLATO section: %s\n", line);
+                continue;
+                }
+            sitename = strdup (token);
+            token = strtok (NULL, ",\n");
+            if (token == NULL)
+                {
+                fprintf (stderr, "Bad line in PLATO section: %s\n", line);
+                continue;
+                }
+            terms = atoi (token);
+            token = strtok (NULL, ",\n");
+            if (token == NULL)
+                {
+                fprintf (stderr, "Bad line in PLATO section: %s\n", line);
+                continue;
+                }
+            port = atoi (token);
+            token = strtok (NULL, ",\n");
+            local = FALSE;
+            if (token != NULL)
+                {
+                /* Possible "local" keyword */
+                if (strncmp (token, "local", 5) != 0)
+                    {
+                    fprintf (stderr, "Bad line in PLATO section: %s\n", line);
+                    continue;
+                    }
+                local = TRUE;
+                }
+            sp->first = IDX2STAT (niuStations);
+            sp->port = port;
+            sp->terms = terms;
+            sp->local = local;
+            sp->siteName = sitename;
+            sp++;
+            niuStations += terms;
+            }
+        initRestorePosition (savedPos);
+        }
+    else
+        {
+        /*
+        **  No PLATO section, supply defaults
+        */
+        sites = 2;
+        siteVector = calloc (1, sites * sizeof (SiteParam));
+        if (siteVector == NULL)
+            {
+            fprintf (stderr, "Failure allocating NIU site data vector\n");
+            exit (1);
+            }
+        sp = siteVector;
+        sp->first = IDX2STAT (0);
+        sp->local = TRUE;
+        sp->port = DefNiuPort + 1;
+        sp->terms = 2;
+        sp->siteName = "local";
+        sp++;
+        sp->first = IDX2STAT (2);
+        sp->local = FALSE;
+        sp->port = DefNiuPort;
+        sp->terms = 4;
+        sp->siteName = "remote";
+        niuStations = 6;
         }
     
     /*
@@ -221,46 +367,53 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     out->func = niuOutFunc;
     out->io = niuOutIo;
 
-    /*
-    **  We allow up to 31 local stations
-    */
-    if (platoLocalConns > NiuRemoteOffset - NiuLocalOffset)
-        {
-        platoLocalConns = NiuRemoteOffset - NiuLocalOffset;
-        }
-    
-    portVector = calloc(1, sizeof(PortParam) * STATIONS);
+    niuStationEnd = IDX2STAT (niuStations);
+    portVector = calloc(1, sizeof(PortParam) * niuStations);
     if (portVector == NULL)
         {
         fprintf(stderr, "Failed to allocate NIU context block\n");
         exit(1);
         }
 
+    mp = portVector;
+    
+    for (i = 0; i < sites; i++)
+        {
+        sp = siteVector + i;
+
+        /*
+        **  Create the threads which will deal with TCP connections.
+        */
+        sp->niuPorts.portNum = sp->port;
+        sp->niuPorts.maxPorts = sp->terms;
+        sp->niuPorts.localOnly = sp->local;
+        sp->niuPorts.callBack = niuWelcome;
+        sp->niuPorts.callArg = sp;
+        sp->niuPorts.kind = sp->siteName;
+        dtInitPortset (&(sp->niuPorts), NetBufSize);
+        /*
+        **  Allocate the operator status buffer
+        */
+        if (sp->statusBuf == NULL)
+        {
+            sp->statusBuf = opInitStatus ("NIU", sp->first, sp->terms);
+            niuUpdateStatus (sp);
+        }
+
+        /*
+        **  Initialize some pointers in the PortParam blocks
+        */
+        for (j = 0; j < sp->terms; j++)
+            {
+            mp->sp = sp;
+            mp->np = sp->niuPorts.portVec + j;
+            mp++;
+            }
+        }
+    
     currInPort = -1;
-    lastInPort = NiuLocalOffset;        /* Start first scan at 0-2 */
+    lastInPort = 0;        /* Start first scan at 0-1 */
     
-    /*
-    **  Create the threads which will deal with TCP connections.
-    */
-    niuPorts.portNum = platoPort;
-    niuPorts.maxPorts = platoConns;
-    niuPorts.localOnly = FALSE;
-    niuPorts.callBack = niuRemoteWelcome;
-    niuPorts.kind = "NIU";
-    niuLocalPorts.portNum = platoLocalPort;
-    niuLocalPorts.maxPorts = platoLocalConns;
-    niuLocalPorts.localOnly = TRUE;
-    niuLocalPorts.callBack = niuLocalWelcome;
-    niuLocalPorts.kind = "NIU";
-    
-    dtInitPortset (&niuPorts, NetBufSize);
-    dtInitPortset (&niuLocalPorts, NetBufSize);
-
-    /*
-    **  Allocate the operator status buffer
-    */
-    statusBuf = opInitStatus ("NIU", channelNo, 0);
-
     /*
     **  Start the operator alert box thread, if needed.
     **
@@ -281,35 +434,26 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Return connected IP address for a port
+**  Purpose:        Return connected IP address for a station
 **
 **  Parameters:     Name        Description.
-**                  stat        Port number
+**                  stat        station number
 **
 **  Returns:        IP address, 0 if no connection, -1 if error.
 **
 **------------------------------------------------------------------------*/
 CpWord niuConn (u32 stat)
     {
+    PortParam *mp;
     NetFet *fet;
-    if (stat < NiuRemoteOffset)
+
+    stat = STAT2IDX (stat);
+    if (stat < 0 || stat >= niuStations)
         {
-        stat -= NiuLocalOffset;
-        if (stat < 0 || stat >= platoLocalConns)
-            {
-            return MINUS1;
-            }
-        fet = niuLocalPorts.portVec + stat;
+        return MINUS1;
         }
-    else
-        {
-        stat -= NiuRemoteOffset;
-        if (stat >= platoConns)
-            {
-            return MINUS1;
-            }
-        fet = niuPorts.portVec + stat;
-        }
+    mp = portVector + stat;
+    fet = mp->np;
     if (fet->connFd == 0)
         {
         return 0;
@@ -354,7 +498,7 @@ static FcStatus niuInFunc(PpWord funcCode)
         **  function to the NIU.  We then mark all stations as logged
         **  out, since clearly that is what they are right then.
         */
-        for (i = 0; i < STATIONS; i++)
+        for (i = 0; i < niuStations; i++)
             {
             mp = portVector + i;
             mp->loggedIn = FALSE;
@@ -407,9 +551,11 @@ static FcStatus niuOutFunc(PpWord funcCode)
 static void niuInIo(void)
     {
     int port;
+    SiteParam *lvp;
     PortParam *mp;
     NetFet *np;
-    int i;
+    NetPortSet *psp;
+    int i, sp;
     
     if ((activeDevice->fcode != FcNiuSelectBlackBox &&
          activeDevice->fcode != FcNiuSelectInput) ||
@@ -429,37 +575,29 @@ static void niuInIo(void)
         port = lastInPort;
         for (;;)
             {
-            if (++port == STATIONS)
+            if (++port == niuStations)
                 {
                 /*
                 **  Whenever we finish a scan pass through the ports
                 **  (i.e., we've wrapped around) look for more data.
                 */
-                port = NiuLocalOffset;
-                for (;;)
+                port = 0;
+                for (sp = 0; sp < sites; sp++)
                     {
-                    np = dtFindInput (&niuPorts, 0);
-                    if (np == NULL)
+                    for (;;)
                         {
-                        break;
-                        }
-                    i = dtRead  (np, &niuPorts, -1);
-                    if (i < 0)
-                        {
-                        dtClose (np, &niuPorts, TRUE);
-                        }
-                    }
-                for (;;)
-                    {
-                    np = dtFindInput (&niuLocalPorts, 0);
-                    if (np == NULL)
-                        {
-                        break;
-                        }
-                    i = dtRead  (np, &niuLocalPorts, -1);
-                    if (i < 0)
-                        {
-                        dtClose (np, &niuLocalPorts, TRUE);
+                        lvp = siteVector + sp;
+                        psp = &(lvp->niuPorts);
+                        np = dtFindInput (psp, 0);
+                        if (np == NULL)
+                            {
+                            break;
+                            }
+                        i = dtRead  (np, psp, -1);
+                        if (i < 0)
+                            {
+                            dtClose (np, psp, TRUE);
+                            }
                         }
                     }
                 }
@@ -528,7 +666,7 @@ static void niuInIo(void)
             break;
             }
         currInPort = lastInPort = port;
-        activeChannel->data = 04000 + currInPort;
+        activeChannel->data = 04000 + (IDX2STAT (currInPort));
         activeChannel->full = TRUE;
 #ifdef DEBUG
         printf ("niu input data (station number) %04o\n", 
@@ -656,12 +794,12 @@ static void niuOutIo(void)
     if (frameStart)
         {
         /* Frame just ended -- send pending output words */
-        for (port = 1; port < STATIONS; port++)
+        for (port = 0; port < niuStations; port++)
             {
             mp = portVector + port;
             if (mp->currOutput != 0)
                 {
-                niuSendWord (port, mp->currOutput);
+                niuSendWord (IDX2STAT (port), mp->currOutput);
                 mp->currOutput = 0;
                 }
             }
@@ -696,24 +834,26 @@ static void niuDisconnect(void)
 **  Purpose:        Update operator status
 **
 **  Parameters:     Name        Description.
+**                  sp          Pointer to SiteParam for this port
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuUpdateStatus (void)
+static void niuUpdateStatus (SiteParam *sp)
     {
     char msg[64];
     
-    sprintf (msg, "%d connection%s", niuActiveConns,
-             (niuActiveConns != 1) ? "s" : "");
-    if (niuActiveConns == 0)
+    if (sp->niuPorts.curPorts == 0)
         {
-        opSetStatus (statusBuf, NULL);
+        sprintf (msg, "site %s", sp->siteName);
         }
     else
         {
-        opSetStatus (statusBuf, msg);
+        sprintf (msg, "site %s, %d connection%s",
+                 sp->siteName, sp->niuPorts.curPorts,
+                 (sp->niuPorts.curPorts != 1) ? "s" : "");
         }
+    opSetStatus (sp->statusBuf, msg);
     }
 
 /*--------------------------------------------------------------------------
@@ -722,15 +862,18 @@ static void niuUpdateStatus (void)
 **  Parameters:     Name        Description.
 **                  np          NetFet pointer
 **                  stat        station number
+**                  arg         generic argument: the SiteParam pointer
 **
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuWelcome(NetFet *np, int stat)
+static void niuWelcome(NetFet *np, int stat, void *arg)
     {
     PortParam *mp;
-
-    mp = portVector + stat;
+    SiteParam *sp = (SiteParam *) arg;
+    
+    stat += sp->first;
+    mp = portVector + STAT2IDX (stat);
     mp->np = np;
     
     if (np->connFd == 0)
@@ -742,7 +885,7 @@ static void niuWelcome(NetFet *np, int stat)
                dtNowString (), inet_ntoa (np->from), 
                stat / 32, stat % 32);
         niuActiveConns--;
-        niuUpdateStatus ();
+        niuUpdateStatus (sp);
         if (mp->loggedIn)
             {
             /*
@@ -763,7 +906,7 @@ static void niuWelcome(NetFet *np, int stat)
 
     np->ownerInfo = stat;
     niuActiveConns++;
-    niuUpdateStatus ();
+    niuUpdateStatus (sp);
 
     /*
     **  If we're not logged out yet (i.e. PLATO dropped the *offky2*)
@@ -797,26 +940,6 @@ static void niuWelcome(NetFet *np, int stat)
         niuSendstr (stat, "PLATO not active");
         }
     
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Send a welcome message to a local or remote station
-**
-**  Parameters:     Name        Description.
-**                  np          NetFet pointer
-**                  stat        NetFet index
-**
-**  Returns:        nothing.
-**
-**------------------------------------------------------------------------*/
-static void niuLocalWelcome(NetFet *np, int stat)
-    {
-    niuWelcome (np, stat + NiuLocalOffset);
-    }
-
-static void niuRemoteWelcome(NetFet *np, int stat)
-    {
-    niuWelcome (np, stat + NiuRemoteOffset);
     }
 
 /*--------------------------------------------------------------------------
@@ -912,7 +1035,8 @@ static void niuSend(int stat, int word)
     {
     PortParam *mp;
 
-    if (stat == 0 || stat >= STATIONS)
+    stat = STAT2IDX (stat);
+    if (stat < 0 || stat >= niuStations)
         {
         return;
         }
@@ -966,12 +1090,15 @@ static void niuSend(int stat, int word)
 **------------------------------------------------------------------------*/
 void niuSendWord(int stat, int word)
     {
+    int idx;
+    PortParam *mp;
     NetFet *fet;
     NetPortSet *ps;
     u8 data[3];
 
+    idx = STAT2IDX (stat);
 #ifdef TRACE
-    if (stat > 0 && stat < STATIONS)
+    if (idx >= 0 && idx < niuStations)
         {
         traced = TRUE;
         if (niuF == NULL)
@@ -991,25 +1118,8 @@ void niuSendWord(int stat, int word)
         niuOpdata (word);
         }
     
-    if (stat < NiuRemoteOffset)
-        {
-        stat -= NiuLocalOffset;
-        if (stat < 0 || stat >= platoLocalConns)
-            {
-            return;
-            }
-        ps = &niuLocalPorts;
-        }
-    else
-        {
-        stat -= NiuRemoteOffset;
-        if (stat >= platoConns)
-            {
-            return;
-            }
-        ps = &niuPorts;
-        }
-    fet = ps->portVec + stat;
+    mp = portVector + idx;
+    fet = mp->np;
     
     data[0] = word >> 12;
     data[1] = ((word >> 6) & 077) | 0200;

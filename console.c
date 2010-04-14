@@ -285,7 +285,7 @@ static void consolePoll (void);
 static void consoleSetXY (int code, int data);
 static void consoleSendOutput (int start, int end);
 static void consoleReinitPoll (void);
-static void consoleConnect(NetFet *np, int index);
+static void consoleConnect(NetFet *np, int index, void *arg);
 static void consoleUpdateStatus (void);
 
 /*
@@ -1414,7 +1414,7 @@ static void consoleSendOutput (int start, int end)
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void consoleConnect (NetFet *np, int index)
+static void consoleConnect (NetFet *np, int index, void *arg)
     {
     PortParam *mp;
 

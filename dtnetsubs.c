@@ -478,9 +478,10 @@ int dtClose (NetFet *np, NetPortSet *ps, bool hard)
         FD_CLR (fd, &ps->sendSet);
         }
     dtCloseFet (np, hard);
+    ps->curPorts--;
     if (ps->callBack != NULL)
         {
-        (*ps->callBack) (np, np - ps->portVec);
+        (*ps->callBack) (np, np - ps->portVec, ps->callArg);
         }
     if (fd == ps->maxFd)
         {
@@ -495,7 +496,7 @@ int dtClose (NetFet *np, NetPortSet *ps, bool hard)
             }
         ps->maxFd = j;
         }
-    ps->curPorts--;
+
     return 0;
     }
 
@@ -1243,7 +1244,7 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
         
         if (ps->callBack != NULL)
             {
-            (*ps->callBack) (fet, fet - ps->portVec);
+            (*ps->callBack) (fet, fet - ps->portVec, ps->callArg);
             }
         }
     

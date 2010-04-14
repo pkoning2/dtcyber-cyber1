@@ -23,6 +23,10 @@
 */
 void initStartup(const char *);
 u32 initConvertEndian(u32 value);
+bool initOpenSection(const char *name);
+char *initGetNextLine(void);
+long initSavePosition (void);
+void initRestorePosition (long pos);
 
 /*
 **  deadstart.c
@@ -364,12 +368,8 @@ extern long telnetPort;
 extern long telnetConns;
 extern long npuNetTelnetConns;
 extern long npuNetTelnetPort;
-extern long pniPort;
-extern long pniConns;
-extern long platoPort;
-extern long platoConns;
-extern long platoLocalPort;
-extern long platoLocalConns;
+extern int niuStations;
+extern int niuStationEnd;
 extern long opPort;
 extern long opConns;
 extern long dd60Port;
@@ -385,9 +385,9 @@ extern bool keyboardTrue;
 extern u32 rtcClock;
 extern char autoDateString[];
 extern char autoString[];
+extern char platoSection[];
 extern u32 channelDelayMask;
 extern long cmWaitRatio;
-extern long niuOpstat;
 extern NetFet connlist;
 extern void (*updateConnections) (void);
 extern long extSockets;
