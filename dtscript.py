@@ -15,6 +15,7 @@ import threading
 import struct
 
 NETMAX = 4096
+DEBUG = False
 
 class Connection (socket.socket):
     """A network connection.  Derived from socket, with some more
@@ -43,6 +44,10 @@ class Connection (socket.socket):
             self.readmore ()
         ret = self.pendingdata[:bytes]
         self.pendingdata = self.pendingdata[bytes:]
+        if DEBUG:
+            for c in ret:
+                print "%02x" % ord (c),
+            print
         return ret
 
     def readmin (self, minbytes = 1):
@@ -262,6 +267,8 @@ class Pterm (Connection, threading.Thread):
                 word = byte << 12 | \
                        ((ord (word[0]) & 077) << 6) | \
                        (ord (word[1]) & 077)
+                if DEBUG:
+                    print "%07o" % word
                 if word & 01000000:
                     # Data word
                     if self.mode == 3:
