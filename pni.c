@@ -1279,6 +1279,13 @@ static void pniWelcome(NetFet *np, int stat, void *arg)
     pniActiveConns++;
     pniUpdateStatus (sp);
     
+    /*
+    **  Initialize port state.
+    */
+    mp->escState = norm;
+    mp->newKbd = FALSE;
+    mp->flowFlags = 0;
+    
     if (!pniActive)
     {
         pniSendstr (stat, NOPLATO_MSG, 0);
