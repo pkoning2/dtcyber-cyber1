@@ -997,7 +997,7 @@ void pniCheck (void)
 **  Purpose:        Return connected IP address for a port
 **
 **  Parameters:     Name        Description.
-**                  stat        Port number
+**                  stat        Port number relative to the start of PNI
 **
 **  Returns:        IP address, 0 if no connection, -1 if error.
 **
@@ -1010,7 +1010,7 @@ CpWord pniConn (u32 stat)
     {
         return MINUS1;
     }
-    mp = portVector + STAT2IDX (stat);
+    mp = portVector + stat;
     fet = mp->np;
     if (fet->connFd == 0)
     {
@@ -1232,7 +1232,7 @@ static void pniUpdateStatus (SiteParam *sp)
 **
 **  Parameters:     Name        Description.
 **                  np          NetFet pointer
-**                  stat        station number relative to start of PNI
+**                  stat        station number relative to start of site
 **                  arg         generic argument: the SiteParam pointer
 **
 **  Returns:        nothing.
