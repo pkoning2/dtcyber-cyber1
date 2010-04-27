@@ -14,6 +14,27 @@ return(opl)
 */ ---   block=01-e opl2                 83/09/22. 20.24    source
 *oplfile opl2
 */
+*/ ---   block=01-e p5 block             10/04/24. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Workaround for ASCII PPT block erase bug
+*/
+*/ -------------------------------------------------------------------
+*ident p5block
+*deck fovlay5
+*d FOVLAY5.851
+          pl     x1,sxy3     if not *send all parts*
+          bx1    x3          show all fields as changed
+ sxy3     BX6    X3*X1       EXTRACT UPPER BIT OF EACH FIELD
+*d fovlay5.1665,fovlay5.1666
+          SX4    512         DESTROY X/Y
+          SX3    X4
+          mx6    1           force full x/y send next time
+          sa6    dangle
+*i fovlay5.2711
+          mx6    1           force full x/y send next time
+          sa6    dangle
+*/
 */ ---   block=01-e pni emul             09/07/08. 12.00    source
 */ -------------------------------------------------------------------
 */
