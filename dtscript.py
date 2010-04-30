@@ -168,9 +168,11 @@ class Oper (Connection, threading.Thread):
                     else:
                         fields = v.split (None, 3)
                         if len (fields) >= 3:
-                            skey = (int (fields[1], 8), int (fields[2], 8))
                             try:
+                                skey = (int (fields[1], 8), int (fields[2], 8))
                                 self.statusdict[skey] = fields[3]
+                            except ValueError:
+                                pass
                             except IndexError:
                                 self.statusdict[skey] = ""
             except socket.timeout:
@@ -477,18 +479,19 @@ class Pterm (Connection, threading.Thread):
         """
         return '\n'.join (self.lines)
 
-    def login (self, user, group, passwd = None):
+    def login (self, user, group, passwd = None, waitauthor = True):
         self.sendkey (self.NEXT)
         self.sendstr (user, self.NEXT, 10)
         self.sendstr (group, self.SHIFT + self.STOP, 10)
         if passwd:
             self.sendstr (passwd, self.NEXT, 10)
-        # Handle any extraneous pages before author mode, like
-        # a message page or a consultant signon page.
-        for i in range(4):
-            if self.waitarrow (5):
-                break
-            self.sendkey (self.NEXT)
+        # If requested, handle any extraneous pages before author mode, 
+        # like a message page or a consultant signon page.
+        if waitauthor:
+            for i in range(4):
+                if self.waitarrow (5):
+                    break
+                self.sendkey (self.NEXT)
 
     def logout (self):
         while "Press  NEXT  to begin" not in str (self):
@@ -685,5 +688,6 @@ class Dd60 (Connection, threading.Thread):
                 self.mode = ch & 7
             elif action == self.ENDBLOCK:
                 self.screen = self.pending
+                self.pending = self.erase ()
         else:
             self.process_char (ch)
