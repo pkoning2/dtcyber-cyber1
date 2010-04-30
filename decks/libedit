@@ -11,7 +11,7 @@ attach,iprd01.
 *attach,ppubin.
 attach,pbin.
 attach,cbin.
-*attach,fbin.
+attach,fbin.
 *attach,platlib.
 *attach,mbin.
 *attach,ubin.
@@ -29,13 +29,9 @@ libedit,p=system.
 *return,output.
 rewind,new.
 itemize,new.
-* cy871ba
+* cy871bb
 label,tape,vsn=ndt,lb=ku,po=w.
 rewind,new.
 copyei,new,tape.
 ~
-*file pbin
-*file dsdbin
-*file iprd00
-*file iprd01
-*file eqpd25
+*file fbin

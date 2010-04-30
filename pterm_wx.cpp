@@ -82,8 +82,8 @@
 //#define SUBTYPE         0x74	// original value, 116=portal
 #define SUBTYPE         1
 //#define TERMCONFIG      0
-#define TERMCONFIG      0x40    // touch panel present
-//#define TERMCONFIG      0x60    // touch panel present
+//#define TERMCONFIG      0x40    // touch panel present
+#define TERMCONFIG      0x60    // touch panel present, 32k
 #define	ASC_ZFGT		0x01
 #define	ASC_ZPCKEYS		0x02
 #define	ASC_ZKERMIT		0x04
@@ -603,6 +603,8 @@ public:
     bool        m_connect;
     wxString    m_hostName;
     int         m_port;
+    int         m_termType;
+    
 	//tab2
 	bool        m_IsRegistrar;
 	bool        m_showSignon;
@@ -1598,10 +1600,11 @@ bool PtermApp::OnInit (void)
     wxString rgb;
     wxString str;
     wxString filename;
-	bool skipinit = false;
+    bool skipinit = false;
 
     m_testascii = false;
     m_testreq = false;
+    m_termType = 0;
     
     ptermApp = this;
     m_firstFrame = m_helpFrame = NULL;
@@ -1619,9 +1622,9 @@ bool PtermApp::OnInit (void)
     logwindow = new wxLogWindow (NULL, wxT("pterm log"), true, false);
 #endif
 
-    if (argc > 3)
+    if (argc > 4)
     {
-        printf ("usage: pterm [ hostname [ portnum ]]\n"
+        printf ("usage: pterm [ hostname [ portnum [ termtype ]]]\n"
 			    "   or: pterm [ filename.ppf ]\n");
         exit (1);
     }
@@ -1631,7 +1634,7 @@ bool PtermApp::OnInit (void)
 	//check for PPF file specified on command line
     if (argc > 1)
 	{
-		str = argv[argc-1];
+		str = argv[argc - 1];
 		if (str.Right(4).CmpNoCase(wxT(".ppf"))==0 || str.Right(5).CmpNoCase(wxT(".ppf\""))==0)
 		{
 			wxString filename;
@@ -1667,6 +1670,7 @@ bool PtermApp::OnInit (void)
                 exit (99);
             }
             str = argv[1];
+            str = argv[1];
             if (argc > 2 && str.Left (2) == wxT ("-a"))
             {
                 m_testascii = true;
@@ -1687,13 +1691,26 @@ bool PtermApp::OnInit (void)
 		m_config->Read (wxT (PREF_SHELLFIRST), &m_ShellFirst, wxT(""));
 		m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
 		if (argc > 1)
-			m_hostName = argv[1];
+        {
+            m_hostName = argv[1];
+        }
 		else
+        {
 			m_config->Read (wxT (PREF_HOST), &m_hostName, DEFAULTHOST);
+        }
 		if (argc > 2)
+        {
 			m_port = atoi (wxString (argv[2]).mb_str());
+            if (argc > 3)
+            {
+                m_termType = atoi (wxString (argv[3]).mb_str ());
+                printf ("terminal type override %d\n", m_termType);
+            }
+        }
 		else
+        {
 			m_port = m_config->Read (wxT (PREF_PORT), DefNiuPort);
+        }
 		//tab2
 		m_showSignon = (m_config->Read (wxT (PREF_SHOWSIGNON), 0L) != 0);
 		m_showSysName = (m_config->Read (wxT (PREF_SHOWSYSNAME), 0L) != 0);
@@ -2459,7 +2476,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     if (port > 0)
     {
         // Create and start the network processing thread
-		TRACE2 ("Connecting to: %s:%d", host.c_str(), port);
+		TRACE2 ("Connecting to: %s:%d", host.mb_str ().data (), port);
         m_conn = new PtermConnection (this, host, port);
         if (m_conn->Create () != wxTHREAD_NO_ERROR)
         {
@@ -4993,7 +5010,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 				if (m_fontPMD)
 				{
 					TRACEN ("plato meta data complete: font data accepted");
-					TRACE3 ("Font selected: %s,%d,%d", m_fontface.c_str(), m_fontsize, m_fontbold|m_fontitalic|m_fontstrike|m_fontunderln);
+					TRACE3 ("Font selected: %s,%d,%d", m_fontface.mb_str ().data (), m_fontsize, m_fontbold|m_fontitalic|m_fontstrike|m_fontunderln);
 					m_fontPMD = false;
 				}
 				else if (m_fontinfo)
@@ -5008,7 +5025,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 				}
 				else
 				{
-					TRACE ("plato meta data complete: %s", m_PMD.c_str());
+					TRACE ("plato meta data complete: %s", m_PMD.mb_str ().data ());
 					ProcessPlatoMetaData();
 				}
 				m_PMD = wxT("");
@@ -5280,12 +5297,15 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         {
                         case 0160:
                             // 160 is terminal type query
-                            TRACE ("load echo termtype %d", ASCTYPE);
                             n = 0160 + ASCTYPE;
+                            TRACE ("load echo termtype %d", n);
                             break;
                         case 0x71:
-                            TRACE ("load echo subtype %d", SUBTYPE);
-                            n = SUBTYPE;
+                            if ((n = ptermApp->m_termType) == 0)
+                            {
+                                n = SUBTYPE;
+                            }
+                            TRACE ("load echo subtype %d", n);
                             break;
                         case 0x72:
                             TRACEN ("load echo loadfile (unused)");
@@ -5761,8 +5781,11 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 {
                 case 0160:
                     // 160 is terminal type query
-                    TRACE ("load echo termtype %d", TERMTYPE);
-                    d = 0160 + TERMTYPE;
+                    if ((d = ptermApp->m_termType) == 0)
+                    {
+                        d = 0160 + TERMTYPE;
+                    }
+                    TRACE ("load echo termtype %d", d);
                     break;
                 case 0x7b:
 					// hex 7b is beep
@@ -6357,7 +6380,7 @@ void PtermFrame::SetFontFlags (int n)
 	m_fontbold = ((n & 0x02) != 0);
 	m_fontstrike = ((n & 0x04) != 0);
 	m_fontunderln = ((n & 0x08) != 0);
-	TRACE3 ("Font selected: %s,%d,%d", m_fontface.c_str(), m_fontsize, n & 0x0f);
+	TRACE3 ("Font selected: %s,%d,%d", m_fontface.mb_str ().data (), m_fontsize, n & 0x0f);
 }
 
 /*--------------------------------------------------------------------------
@@ -6451,7 +6474,7 @@ void PtermFrame::ptermRestoreWindow (int d)
 **------------------------------------------------------------------------*/
 void PtermFrame::WriteTraceMessage (wxString msg)
 {
-	TRACE ("%s",msg.c_str());
+	TRACE ("%s",msg.mb_str ().data ());
 	return;
 }
 
