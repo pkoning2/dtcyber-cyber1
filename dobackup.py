@@ -28,7 +28,7 @@ PWDFILE = "backuppwd.txt"
 
 # Two hostnames to send the backup to, None to skip that one.
 BACKUPDEST1 = None
-BACKUPDEST2 = "akdesign.dyndns.org"
+BACKUPDEST2 = "cyber1backup@akdesign.dyndns.org"
 
 import sys
 import os
@@ -108,10 +108,10 @@ def doshutdown (delay):
     while delay:
         announce (pterm, "Interruption for backups in %d minutes..." % delay)
         if delay < 5:
-            time.sleep (delay * 60 / 10)
+            time.sleep (delay * 60)
             break
         delay -= 5
-        time.sleep (300 / 10)
+        time.sleep (300)
 
     # Second step: announce interruption for backup now
     announce (pterm, "Interruption for backups...")
@@ -198,15 +198,15 @@ def dostartup ():
     """Restart PLATO.
     """
     log ("Starting DtCyber and PLATO")
-    ret = os.system ("./dtcyber-remote.sh")
-    log ("Started, status is %d" % ret)
+    subprocess.Popen (("./dtcyber-remote.sh",))
     time.sleep (5)
     pterm = dtscript.Pterm ()
     for i in range (50):
-        if "Press  NEXT  to begin" in pterm.str ():
+        if "Press  NEXT  to begin" in str (pterm):
             break
         log ("Waiting for PLATO ready, %d" % i)
-        time.sleep (5)
+        time.sleep (10)
+    pterm.stop ()
     log ("PLATO is ready")
 
 class Blackbox (subprocess.Popen):
@@ -257,6 +257,14 @@ def getsize (path):
     result = du.stdout.read ().split ()
     return int (result[0])
 
+def docopy ():
+    for dest in (BACKUPDEST1, BACKUPDEST2):
+        if dest is None:
+            continue
+        log ("Copying %s to %s" % (tarball, dest))
+        scp = subprocess.Popen (("scp", "-i", "cyber1backup", tarball, "%s:" % dest))
+        scp.wait ()
+        
 # ***TEST
 CYBER1ROOT="/Users/pkoning/Documents/svn/dtcyber"
 BACKUPITEMS=("pack",)
@@ -276,11 +284,11 @@ def main ():
         time.sleep (30)
         progress = backup.progress ()
         if progress == -1:
-            log ("Backup is complete")
+            log ("Backup tarball has been written, restarting PLATO")
             break
         elapsed += 0.5
-        total = int (elapsed * backupsize / progress)
-        left = (total - elapsed) + 1
+        total = elapsed * backupsize / progress
+        left = int (total - elapsed) + 1
         if left <= 1:
             blackbox.newmsg ("Cyber1 full backup nearly done...")
         else:
@@ -295,11 +303,8 @@ def main ():
     log ("Compressing tarball")
     ret = os.system ("nice bzip2 -v %s" % tarball)
     tarball += ".bz2"
-    for dest in (BACKUPDEST1, BACKUPDEST2):
-        if dest is none:
-            continue
-        log ("Copying %s to %s" % (tarball, dest))
-
+    docopy ()
+    
     # All done
     log ("Full backup is finished")
     
