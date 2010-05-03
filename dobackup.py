@@ -22,8 +22,8 @@ BACKUPPWD = None
 
 # More parameters
 SHUTDOWNDELAY = 15        # minutes
-BACKUPITEMS = ("pack", "sys/871")
-
+BACKUPITEMS = (".",)
+CYBER1ROOT = "/home/cyber1/D"
 PWDFILE = "backuppwd.txt"
 
 # Two hostnames to send the backup to, None to skip that one.
@@ -41,16 +41,19 @@ if BACKUPPWD is None:
     BACKUPPWD = f.readline ().strip ()
     f.close ()
 
+def log (str):
+    print "%s: %s" % (time.strftime ("%T"), str)
+    
 def sendstr (pterm, str):
     """Send a string in pieces with some delays to make it reliable.
     """
-    print "sending", str
     while str:
         pterm.sendstr (str[:6])
         str = str[6:]
         time.sleep (0.5)
         
 def announce (pterm, str):
+    log ("Announcing: %s" % str)
     sendstr (pterm, "1")
     time.sleep (1)
     sendstr (pterm, "1")
@@ -64,10 +67,8 @@ def announce (pterm, str):
     pterm.sendkey (pterm.SHIFT + pterm.COPY)
     pterm.sendkey (pterm.NEXT)
     time.sleep (10)
-    print "again"
     pterm.sendkey (pterm.LAB)
     time.sleep (10)
-    print "again"
     pterm.sendkey (pterm.LAB)
     time.sleep (5)
     pterm.sendkey (pterm.BACK)
@@ -83,7 +84,7 @@ def doshutdown (delay):
         if i < 3:
             time.sleep (2)
         else:
-            print "Failed to log in %s/%s or start sysopts" % (BACKUPUSER, BACKUPGROUP)
+            log ("Failed to log in %s/%s or start sysopts" % (BACKUPUSER, BACKUPGROUP))
             pterm.stop ()
             sys.exit (1)
     # Before we do the actual work, connect to console and
@@ -96,7 +97,7 @@ def doshutdown (delay):
         if i < 3:
             time.sleep (2)
         else:
-            print "Failed to connect to Mastor K display"
+            log ("Failed to connect to Mastor K display")
             pterm.stop ()
             cons.stop ()
             sys.exit (1)
@@ -116,6 +117,7 @@ def doshutdown (delay):
     announce (pterm, "Interruption for backups...")
 
     # Third step: full system backout
+    log ("Starting backout")
     sendstr (pterm, "3")
     time.sleep (1)
     pterm.sendkey (pterm.SHIFT + pterm.LAB)
@@ -126,7 +128,7 @@ def doshutdown (delay):
         if i < 19:
             time.sleep (2)
         else:
-            print "Backout did not complete"
+            log ("Backout did not complete")
             pterm.stop ()
             cons.stop ()
             oper.stop ()
@@ -134,10 +136,10 @@ def doshutdown (delay):
 
     # Shut down Mastor
     pterm.stop ()
-    print "stopping mastor"
-    cons.sendstr ("k,mas1.\n")
+    log ("Stopping mastor")
+    cons.sendstr ("[k,mas1.\n")
     time.sleep (2)
-    cons.sendstr ("k.stop\n")
+    cons.sendstr ("[k.stop\n")
 
     # Wait for Mastor to exit
     for i in range (10):
@@ -146,25 +148,26 @@ def doshutdown (delay):
         if i < 9:
             time.sleep (2)
         else:
-            print "Mastor did not stop"
+            log ("Mastor did not stop")
     
     # See if there is any other non-subsystem job,
     # which is likely to be cftp
     cons.sendstr ("[ab\n")
     time.sleep (1)
-    cons.sendstr ("b,a\n")
+    cons.sendstr ("[b,a\n")
     time.sleep (2)
     for i in range (5, 23):
         if cons.screen[1][i][5] == 'A':
             # First char of JSN is A, typical for user job
-            print "dropping", cons.screen[1][i][5:9]
-            cons.sendstr ("dro%s.\n" % cons.screen[1][i][5:9])
+            log ("dropping %s" % cons.screen[1][i][5:9])
+            cons.sendstr ("[dro%s.\n" % cons.screen[1][i][5:9])
             time.sleep(2)
 
     # issue Checkpoint System
-    cons.sendstr ("unlock.\n")
+    log ("Checkpoint system")
+    cons.sendstr ("[unlock.\n")
     time.sleep (2)
-    cons.sendstr ("che\n")
+    cons.sendstr ("[che\n")
 
     # wait for checkpoint to complete
     for i in range (10):
@@ -173,7 +176,7 @@ def doshutdown (delay):
         if i < 9:
             time.sleep (2)
         else:
-            print "Checkpoint did not finish"
+            log ("Checkpoint did not finish")
 
     # Step the system
     cons.sendstr ("[step.\n")
@@ -181,37 +184,41 @@ def doshutdown (delay):
 
     # Shut down DtCyber
     cons.stop ()
+    log ("Shutting down DtCyber")
     oper.command ("UNLOCK.")
     if oper.locked:
-        print "Operator interface did not unlock"
+        log ("Operator interface did not unlock")
         oper.stop ()
         sys.exit (1)
     oper.command ("SHUTDOWN.")
     oper.stop ()
-    print "All shut down"
+    log ("Shut down complete")
     
 def dostartup ():
     """Restart PLATO.
     """
-    print "Starting DtCyber and PLATO"
+    log ("Starting DtCyber and PLATO")
     ret = os.system ("./dtcyber-remote.sh")
-    print "Started, status is", ret
+    log ("Started, status is %d" % ret)
     time.sleep (5)
     pterm = dtscript.Pterm ()
     for i in range (50):
         if "Press  NEXT  to begin" in pterm.str ():
             break
-        print "Waiting for PLATO ready,", i
+        log ("Waiting for PLATO ready, %d" % i)
         time.sleep (5)
+    log ("PLATO is ready")
 
 class Blackbox (subprocess.Popen):
     """A specialization of subprocess for the blackbox utility.
     """
     def __init__ (self, msg):
+        log ("Starting blackbox: %s" % msg)
         subprocess.Popen.__init__ (self, ("./blackbox", msg),
                                    stdin = subprocess.PIPE)
 
     def newmsg (self, msg):
+        log ("Setting blackbox message: %s" % msg)
         self.stdin.write ("%s\n" % msg)
         
     def stop (self):
@@ -219,11 +226,12 @@ class Blackbox (subprocess.Popen):
         for i in range (10):
             if self.poll () is not None:
                 break
-            print "Waiting for blackbox to exit"
+            log ("Waiting for blackbox to exit")
             if i < 9:
                 time.sleep (2)
             else:
                 os.kill (self.pid, 9)
+        log ("Blackbox stopped")
                 
 class Backup (subprocess.Popen):
     """Another specialization of subprocess for doing a backup
@@ -232,6 +240,7 @@ class Backup (subprocess.Popen):
     def __init__ (self, tarball, items):
         self.tarball = tarball
         args = ("tar", "cf", tarball) + items
+        log ("Starting backup of %s to %s" % (str (items), tarball))
         subprocess.Popen.__init__ (self, args)
 
     def progress (self):
@@ -248,6 +257,51 @@ def getsize (path):
     result = du.stdout.read ().split ()
     return int (result[0])
 
+# ***TEST
+CYBER1ROOT="/Users/pkoning/Documents/svn/dtcyber"
+BACKUPITEMS=("pack",)
+
 def main ():
+    os.chdir (CYBER1ROOT)
+    tarball = "cyber1-%s.tar" % time.strftime ("%F")
+    backupsize = 0
+    for item in BACKUPITEMS:
+        backupsize += getsize (item)
+    log ("Uncompressed backup size is about %d MB" % (backupsize >> 10))
     doshutdown (SHUTDOWNDELAY)
+    blackbox = Blackbox ("Cyber1 full backup in progress...")
+    backup = Backup (tarball, BACKUPITEMS)
+    elapsed = 0
+    while True:
+        time.sleep (30)
+        progress = backup.progress ()
+        if progress == -1:
+            log ("Backup is complete")
+            break
+        elapsed += 0.5
+        total = int (elapsed * backupsize / progress)
+        left = (total - elapsed) + 1
+        if left <= 1:
+            blackbox.newmsg ("Cyber1 full backup nearly done...")
+        else:
+            blackbox.newmsg ("Cyber1 full backup will finish in about %d minutes" % left)
+    blackbox.newmsg ("Cyber1 is about to restart...")
+    time.sleep (10)
+    blackbox.stop ()
+    dostartup ()
+
+    # PLATO is back up, now we can compress and copy the backup
+    # tarball in the background.
+    log ("Compressing tarball")
+    ret = os.system ("nice bzip2 -v %s" % tarball)
+    tarball += ".bz2"
+    for dest in (BACKUPDEST1, BACKUPDEST2):
+        if dest is none:
+            continue
+        log ("Copying %s to %s" % (tarball, dest))
+
+    # All done
+    log ("Full backup is finished")
     
+if __name__ == "__main__":
+    main ()
