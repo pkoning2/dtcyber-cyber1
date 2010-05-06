@@ -46,8 +46,7 @@ class Connection (socket.socket):
         self.pendingdata = self.pendingdata[bytes:]
         if DEBUG:
             for c in ret:
-                print "%02x" % ord (c),
-            print
+                print "%02x %03o %3d" % (ord (c), ord (c), ord (c))
         return ret
 
     def readmin (self, minbytes = 1):
