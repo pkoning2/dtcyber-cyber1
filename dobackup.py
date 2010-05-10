@@ -22,8 +22,10 @@ BACKUPPWD = None
 
 # More parameters
 SHUTDOWNDELAY = 15        # minutes
-BACKUPITEMS = (".",)
+BACKUPITEMS = ("pack", "sys/871")
 CYBER1ROOT = "/home/cyber1/D"
+BACKUPDEST = "backups"    # relative to CYBER1ROOT
+TMPDEST = "/tmp"          # place where tarball goes until finished
 PWDFILE = "backuppwd.txt"
 
 # Two hostnames to send the backup to, None to skip that one.
@@ -257,7 +259,7 @@ def getsize (path):
     result = du.stdout.read ().split ()
     return int (result[0])
 
-def docopy ():
+def docopy (tarball):
     for dest in (BACKUPDEST1, BACKUPDEST2):
         if dest is None:
             continue
@@ -268,17 +270,19 @@ def docopy ():
 # ***TEST
 CYBER1ROOT="/Users/pkoning/Documents/svn/dtcyber"
 BACKUPITEMS=("pack",)
+SHUTDOWNDELAY = 1        # minutes
 
 def main ():
     os.chdir (CYBER1ROOT)
-    tarball = "cyber1-%s.tar" % time.strftime ("%F")
+    tarbase = "cyber1-%s.tar" % time.strftime ("%F")
+    ttarball = os.path.join (TMPDEST, tarbase)
     backupsize = 0
     for item in BACKUPITEMS:
         backupsize += getsize (item)
     log ("Uncompressed backup size is about %d MB" % (backupsize >> 10))
     doshutdown (SHUTDOWNDELAY)
     blackbox = Blackbox ("Cyber1 full backup in progress...")
-    backup = Backup (tarball, BACKUPITEMS)
+    backup = Backup (ttarball, BACKUPITEMS)
     elapsed = 0
     while True:
         time.sleep (30)
@@ -301,9 +305,14 @@ def main ():
     # PLATO is back up, now we can compress and copy the backup
     # tarball in the background.
     log ("Compressing tarball")
-    ret = os.system ("nice bzip2 -v %s" % tarball)
-    tarball += ".bz2"
-    docopy ()
+    ret = os.system ("nice bzip2 -v %s" % ttarball)
+    ttarball += ".bz2"
+    tarball = os.path.join (BACKUPDEST, tarbase) + ".bz2"
+
+    # The tarball is finished, so move it to its final destination,
+    # then copy it for the "push" destinations
+    os.rename (ttarball, tarball)
+    docopy (tarball)
     
     # All done
     log ("Full backup is finished")
