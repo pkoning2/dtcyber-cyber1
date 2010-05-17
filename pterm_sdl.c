@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2005, Paul Koning (see license.txt)
+**  Copyright (c) 2005-2010, Paul Koning (see license.txt)
 **
 **  Name: pterm_sdl.c
 **
@@ -24,6 +24,8 @@
 #else
 #include <SDL.h>
 #endif
+#include <math.h>
+
 #include "const.h"
 #include "types.h"
 
@@ -46,6 +48,10 @@ struct gswState_t
     int clocksPerWord;
     bool playing;
     bool cis;
+    /* IIR filter state for IIR based RC filter */
+    double a;
+    double b;
+    double z;
 };
 
 struct gswState_t gswState;
@@ -68,7 +74,10 @@ extern int ptermNextGswWord (void *connection, int catchup);
 int ptermOpenGsw (void *user)
 {
     SDL_AudioSpec *req;
-
+    double t;
+    const double r = 20e3;
+    const double c = .01e-6;
+    
     if (gswState.user != NULL)
     {
         return -1;
@@ -103,6 +112,15 @@ int ptermOpenGsw (void *user)
     gswState.user = user;
     gswState.phaseStep = (double) CRYSTAL / audioSpec.freq;
     gswState.clocksPerWord = audioSpec.freq / 60;
+
+    // Initialize the RC filter state.  This is an IIR filter
+    // as described in Frerking's DSP book, page 60.
+
+    t = 1.0 / audioSpec.freq;
+    gswState.a = t / (r * c);
+    gswState.b = exp (-gswState.a);
+    gswState.z = 0.0;
+
 #ifdef DEBUG
     printf ("sound opened, freq %d format %d channels %d samples %d\n",
             audioSpec.freq, audioSpec.format,
@@ -272,7 +290,18 @@ static void gswCallback (void *userdata, u8 *stream, int len)
             printf ("audio out of range: %x\n", audio);
         }
         
-       --gswState.clocksLeft;
+        --gswState.clocksLeft;
+
+        // Feed the raw audio into the RC filter
+        gswState.z = (gswState.z * gswState.b) + audio;
+        audio = gswState.z * gswState.a;
+
+        // Limit it to legal byte values
+        if (audio > 255)
+        {
+            audio = 255;
+        }
+        
         *stream++ = audio;
         --len;
     }
