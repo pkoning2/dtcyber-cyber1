@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 // Name:        pterm_wx.cpp
 // Purpose:     pterm interface to wxWindows 
 // Authors:     Paul Koning, Joe Stanton
@@ -35,13 +35,6 @@
 #define ascxof			0x13
 
 #define GSWRINGSIZE 100
-
-#define C_NODATA        -1
-#define C_CONNFAIL      -2
-#define C_DISCONNECT    -3
-#define C_GSWEND        -4
-#define C_CONNECTING    -5
-#define C_CONNECTED     -6
 
 #define STATUS_TIP      0
 #define STATUS_TRC      1
@@ -82,8 +75,8 @@
 //#define SUBTYPE         0x74	// original value, 116=portal
 #define SUBTYPE         1
 //#define TERMCONFIG      0
-//#define TERMCONFIG      0x40    // touch panel present
-#define TERMCONFIG      0x60    // touch panel present, 32k
+#define TERMCONFIG      0x40    // touch panel present
+//#define TERMCONFIG      0x60    // touch panel present, 32k
 #define	ASC_ZFGT		0x01
 #define	ASC_ZPCKEYS		0x02
 #define	ASC_ZKERMIT		0x04
@@ -165,44 +158,19 @@
 **  Private Macro Functions
 **  -----------------------
 */
-#define TRACEX(str,arg)                                             \
-        fprintf (traceF, str "\n",arg);  \
-
-#define TRACEN(str)                                             \
+#define TRACEX(fmt, ...)                                        \
     if (tracePterm)                                             \
         {                                                       \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc);  \
+        struct timeval tv;                                      \
+        char tbuf[10];                                          \
+        gettimeofday (&tv, NULL);                               \
+        strftime (tbuf, 10, "%T", localtime (&tv.tv_sec));      \
+        fprintf (traceF, "%s.%03d: " fmt,                       \
+                 tbuf, tv.tv_usec / 1000, ## __VA_ARGS__);      \
         }
 
-#define TRACE(str, arg)                                             \
-    if (tracePterm)                                                 \
-        {                                                           \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg); \
-        }
-
-#define TRACE2(str, arg, arg2)                                          \
-    if (tracePterm)                                                     \
-        {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg, arg2); \
-        }
-
-#define TRACE3(str, arg, arg2, arg3)                                    \
-    if (tracePterm)                                                     \
-        {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg, arg2, arg3); \
-        }
-
-#define TRACE4(str, a, a2, a3, a4)                                      \
-    if (tracePterm)                                                     \
-        {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, a, a2, a3, a4); \
-        }
-
-#define TRACE6(str, a, a2, a3, a4, a5, a6)                              \
-    if (tracePterm)                                                     \
-        {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, a, a2, a3, a4, a5, a6); \
-        }
+#define TRACE(str, ...)                                         \
+    TRACEX ("seq %6d wc %3d " str "\n", seq, wc, ## __VA_ARGS__);
 
 // Map PLATO coordinates to window coordinates
 #define XADJUST(x) ((x) * ((m_stretch) ? 1 : m_scale) + GetXMargin ())
@@ -283,9 +251,11 @@ extern "C"
 #endif
 #include <stdlib.h>
 #include <time.h>
+#include <sys/time.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
+#include "pterm.h"
 #include "ptermversion.h"
 #include "8080a.h"
 #include "8080avar.h"
@@ -2476,7 +2446,7 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     if (port > 0)
     {
         // Create and start the network processing thread
-		TRACE2 ("Connecting to: %s:%d", host.mb_str ().data (), port);
+		TRACE ("Connecting to: %s:%d", host.mb_str ().data (), port);
         m_conn = new PtermConnection (this, host, port);
         if (m_conn->Create () != wxTHREAD_NO_ERROR)
         {
@@ -4560,7 +4530,7 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool newscale
 
 void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
 {
-    TRACE6 ("fg: %d %d %d; bg: %d %d %d", newfg.Red(), newfg.Green(), newfg.Blue(), newbg.Red(), newbg.Green(), newbg.Blue());
+    TRACE ("fg: %d %d %d; bg: %d %d %d", newfg.Red(), newfg.Green(), newfg.Blue(), newbg.Red(), newbg.Green(), newbg.Blue());
 
 	//always set color for all modes
     m_backgroundBrush.SetColour (newbg);
@@ -4934,7 +4904,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
     seq++;
     if (tracePterm)
     {
-        fprintf (traceF, "%07o ", d);
+        TRACEX ("%07o ", d);
     }
     if (ascii)
     {
@@ -4949,7 +4919,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
         {
             if (d == (033 << 8) + 002)   // ESC STX
             {
-                TRACEN ("Entering PLATO terminal mode");
+                TRACE ("Entering PLATO terminal mode");
                 m_dumbTty = false;
                 mode = (3 << 2) + 1;    // set character mode, rewrite
                 ptermSetStation (-1, true, ptermApp->m_showStatusBar);   // Show connected in ASCII mode
@@ -5009,18 +4979,18 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             {
 				if (m_fontPMD)
 				{
-					TRACEN ("plato meta data complete: font data accepted");
-					TRACE3 ("Font selected: %s,%d,%d", m_fontface.mb_str ().data (), m_fontsize, m_fontbold|m_fontitalic|m_fontstrike|m_fontunderln);
+					TRACE ("plato meta data complete: font data accepted");
+					TRACE ("Font selected: %s,%d,%d", m_fontface.mb_str ().data (), m_fontsize, m_fontbold|m_fontitalic|m_fontstrike|m_fontunderln);
 					m_fontPMD = false;
 				}
 				else if (m_fontinfo)
 				{
-					TRACEN ("plato meta data complete: get font data accepted and sent");
+					TRACE ("plato meta data complete: get font data accepted and sent");
 					m_fontinfo = false;
 				}
 				else if (m_osinfo)
 				{
-					TRACEN ("plato meta data complete: get operating system info accepted and sent");
+					TRACE ("plato meta data complete: get operating system info accepted and sent");
 					m_osinfo = false;
 				}
 				else
@@ -5038,11 +5008,11 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             switch (d)
             {
             case 002:   // ESC STX
-                TRACEN ("Still in PLATO terminal mode");
+                TRACE ("Still in PLATO terminal mode");
                 m_dumbTty = false;
                 break;
             case 003:   // ESC ETX
-                TRACEN ("Leaving PLATO terminal mode");
+                TRACE ("Leaving PLATO terminal mode");
                 m_dumbTty = true;
                 m_flowCtrl = false;
                 m_sendFgt = false;
@@ -5050,12 +5020,12 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 currentY = 496;
                 break;
             case 014:   // ESC FF
-                TRACEN ("Full screen erase");
+                TRACE ("Full screen erase");
                 ptermFullErase ();
                 break;
             case 026:
 				// mode xor (also sets mode write for off-screen DC operations)
-                TRACEN ("load mode xor");
+                TRACE ("load mode xor");
 				modexor = true;
                 mode = (mode & ~3) + 2;
 				break;
@@ -5071,18 +5041,18 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case '2':
                 // Load coordinate
-                TRACEN ("Start load coordinate");
+                TRACE ("Start load coordinate");
                 m_ascState = ldc;
                 m_ascBytes = 0;
                 break;
             case '@':
                 // superscript
-                TRACEN ("Superscript");
+                TRACE ("Superscript");
                 cy = (cy + supdelta) & 0777;
                 break;
             case 'A':
                 // subscript
-                TRACEN ("Subscript");
+                TRACE ("Subscript");
                 cy = (cy - supdelta) & 0777;
                 break;
             case 'B':
@@ -5097,27 +5067,27 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 setCmem (d - 'B');
                 break;
             case 'J':
-                TRACEN ("Horizontal writing mode");
+                TRACE ("Horizontal writing mode");
                 setVertical (false);
                 break;
             case 'K':
-                TRACEN ("Vertical writing mode");
+                TRACE ("Vertical writing mode");
                 setVertical (true);
                 break;
             case 'L':
-                TRACEN ("Forward writing mode");
+                TRACE ("Forward writing mode");
                 setReverse (false);
                 break;
             case 'M':
-                TRACEN ("Reverse writing mode");
+                TRACE ("Reverse writing mode");
                 setReverse (true);
                 break;
             case 'N':
-                TRACEN ("Normal size writing mode");
+                TRACE ("Normal size writing mode");
                 setLarge (false);
                 break;
             case 'O':
-                TRACEN ("Double size writing mode");
+                TRACE ("Double size writing mode");
                 setLarge (true);
                 break;
             case 'P':
@@ -5128,13 +5098,13 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             case 'Q':
                 m_ascState = ssf;
                 m_ascBytes = 0;
-                TRACEN ("Start SSF");
+                TRACE ("Start SSF");
                 break;
             case 'R':
                 // external data
                 m_ascState = ext;
                 m_ascBytes = 0;
-                TRACEN ("Start ext");
+                TRACE ("Start ext");
                 break;
             case 'S':
 				modexor = false;
@@ -5158,18 +5128,18 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 'W':
                 // Load memory address
-                TRACEN ("Start LDA");
+                TRACE ("Start LDA");
                 m_ascState = lda;
                 m_ascBytes = 0;
                 break;
 			case 'X':
-				TRACEN ("Start load plato meta data");
+				TRACE ("Start load plato meta data");
 				m_ascState = pmd;
 				m_ascBytes = 0;
 				break;
             case 'Y':
                 // load echo
-                TRACEN ("Start LDE");
+                TRACE ("Start LDE");
                 m_ascState = lde;
                 m_ascBytes = 0;
                 break;
@@ -5180,25 +5150,25 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 'a':
                 // set foreground color
-                TRACEN ("Start foreground color");
+                TRACE ("Start foreground color");
                 m_ascState = fg;
                 m_ascBytes = 0;
                 break;
             case 'b':
                 // set background color
-                TRACEN ("Start background color");
+                TRACE ("Start background color");
                 m_ascState = bg;
                 m_ascBytes = 0;
                 break;
             case 'c':
                 // paint
-                TRACEN ("Start paint");
+                TRACE ("Start paint");
                 m_ascState = paint;
                 m_ascBytes = 0;
                 break;
             case 'g':
                 // set gray-scale foreground color
-                TRACEN ("Start grayscale foreground color");
+                TRACE ("Start grayscale foreground color");
                 m_ascState = gsfg;
                 m_ascBytes = 0;
                 break;
@@ -5213,22 +5183,22 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             {
             case 010:   // backspace
                 cx = (cx - deltax) & 0777;
-                TRACEN ("backspace");
+                TRACE ("backspace");
                 break;
             case 011:   // tab
-                TRACEN ("tab");
+                TRACE ("tab");
                 cx = (cx + deltax) & 0777;
                 break;
             case 012:   // linefeed
-                TRACEN ("linefeed");
+                TRACE ("linefeed");
                 cy = (cy - deltay) & 0777;
                 break;
             case 013:   // vertical tab
-                TRACEN ("vertical tab");
+                TRACE ("vertical tab");
                 cy = (cy - deltay) & 0777;
                 break;
             case 014:   // form feed
-                TRACEN ("form feed");
+                TRACE ("form feed");
                 if (vertical)
                 {
                     cx = deltay - 1;
@@ -5243,7 +5213,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             case 015:   // carriage return
                 cx = margin;
                 cy = (cy - deltay) & 0777;
-				TRACE2 ("CR to %d %d", currentX, currentY);
+				TRACE ("CR to %d %d", currentX, currentY);
                 break;
             case 031:   // EM
                 mode = (mode & 3) + (4 << 2);
@@ -5261,7 +5231,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 036:   // RS -- used by PNI in connect handshake
                 m_ascState = pni_rs;
-                TRACEN ("pni start download, ignoring next 3 commands");
+                TRACE ("pni start download, ignoring next 3 commands");
                 break;
             case 037:   // FS
                 mode = (mode & 3) + (3 << 2);
@@ -5277,7 +5247,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     {
                         currentX = lastX;
                         currentY = lastY;
-                        TRACE2 ("load coordinate %d %d", currentX, currentY);
+                        TRACE ("load coordinate %d %d", currentX, currentY);
                     }
                     break;
                 case paint:
@@ -5308,19 +5278,19 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             TRACE ("load echo subtype %d", n);
                             break;
                         case 0x72:
-                            TRACEN ("load echo loadfile (unused)");
+                            TRACE ("load echo loadfile (unused)");
                             n = 0;
                             break;
                         case 0x73:
                             // hex 73 is report terminal config
-                            TRACEN ("load echo termdata");
+                            TRACE ("load echo termdata");
                             n = TERMCONFIG;
                             break;
                         case 0x7b:
                             // hex 7b is beep
                             if (ptermApp->m_beepEnable)
                             {
-                                TRACEN ("beep");
+                                TRACE ("beep");
                                 wxBell ();
 								if (!IsActive())
 									RequestUserAttention(wxUSER_ATTENTION_INFO);
@@ -5333,7 +5303,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             break;
                         case 0x52:
                             // hex 52 is enable flow control
-                            TRACEN ("enable flow control");
+                            TRACE ("enable flow control");
                             m_flowCtrl = true;
                             n = 0x53;
                             break;
@@ -5344,7 +5314,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             m_sendFgt = true;
                             break;
                         default:
-                            TRACE2 ("load echo %d (0x%02x)", n, n);
+                            TRACE ("load echo %d (0x%02x)", n, n);
                         }
                         if (n == 0x7b)
                             break;          // -beep- does NOT send an echo code in reply
@@ -5413,12 +5383,12 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 								cwscnt++;
 								if      (cwscnt==1 && n==CWS_SAVE)			
 								{
-									TRACEN ("CWS: specify save function");
+									TRACE ("CWS: specify save function");
 									cwsfun = CWS_SAVE;
 								}
 								else if (cwscnt==1 && n==CWS_RESTORE)	
 								{
-									TRACEN ("CWS: specify restore function");
+									TRACE ("CWS: specify restore function");
 									cwsfun = CWS_RESTORE;
 								}
 								else if (cwscnt==1 || cwscnt>6)
@@ -5442,7 +5412,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 								cwscnt = 0;
 								if (n==CWS_EXEC)
 								{
-									TRACEN ("CWS: process exec");
+									TRACE ("CWS: process exec");
 									switch (cwsfun)
 									{
 									case CWS_SAVE:
@@ -5545,7 +5515,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         }
                         break;
                     case 3: // text mode
-                        TRACE2 ("char %03o (%c)", d, d);
+                        TRACE ("char %03o (%c)", d, d);
                         m_ascState = none;
                         m_ascBytes = 0;
 						i = currentCharset;
@@ -5729,7 +5699,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 					if (settitleflag)
 						ProcessPlatoMetaData();
 				}
-                TRACEN ("nop");
+                TRACE ("nop");
                 break;
 
             case 1:     // load mode
@@ -5746,7 +5716,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     // full screen erase
                     ptermFullErase ();
                 }
-                TRACE2 ("load mode %d screen %d", mode, (d & 1));
+                TRACE ("load mode %d screen %d", mode, (d & 1));
                 break;
             
             case 2:     // load coordinate
@@ -5773,7 +5743,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     setMargin (coord);
                     msg = "margin";
                 }
-                TRACE3 ("load coord %c %d %s", (d & 01000) ? 'Y' : 'X', d & 0777, msg);
+                TRACE ("load coord %c %d %s", (d & 01000) ? 'Y' : 'X', d & 0777, msg);
                 break;
             case 3:     // echo
                 d &= 0177;
@@ -5791,7 +5761,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 					// hex 7b is beep
 					if (ptermApp->m_beepEnable)
 					{
-						TRACEN ("beep");
+						TRACE ("beep");
 						wxBell ();
 						if (!IsActive())
 							RequestUserAttention(wxUSER_ATTENTION_INFO);
@@ -5823,7 +5793,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             
             case 4:     // load address
                 memaddr = d & 077777;
-                TRACE2 ("load address %o (0x%x)", memaddr, memaddr);
+                TRACE ("load address %o (0x%x)", memaddr, memaddr);
                 break;
             
             case 5:     // SSF on PPT
@@ -5875,12 +5845,12 @@ int PtermFrame::AssemblePaint (int d)
     {
         m_ascBytes = 0;
         m_ascState = none;
-        TRACE2 ("paint %03o (0x%04x)", m_assembler, m_assembler);
+        TRACE ("paint %03o (0x%04x)", m_assembler, m_assembler);
         return m_assembler;
     }
     else
     {
-        TRACE2 ("paint byte %d: %d", m_ascBytes, d & 077);
+        TRACE ("paint byte %d: %d", m_ascBytes, d & 077);
     }
     return -1;
 }
@@ -5905,12 +5875,12 @@ int PtermFrame::AssembleData (int d)
     {
         m_ascBytes = 0;
         m_ascState = none;
-        TRACE2 ("data %07o (0x%04x)", m_assembler, m_assembler);
+        TRACE ("data %07o (0x%04x)", m_assembler, m_assembler);
         return m_assembler;
     }
     else
     {
-        TRACE2 ("data byte %d: %d", m_ascBytes, d & 077);
+        TRACE ("data byte %d: %d", m_ascBytes, d & 077);
     }
     return -1;
 }
@@ -5940,7 +5910,7 @@ int PtermFrame::AssembleColor (int d)
     }
     else
     {
-        TRACE2 ("color byte %d: %d", m_ascBytes, d & 077);
+        TRACE ("color byte %d: %d", m_ascBytes, d & 077);
     }
     return -1;
 }
@@ -5970,7 +5940,7 @@ int PtermFrame::AssembleGrayScale (int d)
     }
     else
     {
-        TRACE2 ("gray-scale color byte %d: %d", m_ascBytes, d & 0177);
+        TRACE ("gray-scale color byte %d: %d", m_ascBytes, d & 0177);
     }
     return -1;
 }
@@ -6010,7 +5980,7 @@ bool PtermFrame::AssembleCoord (int d)
         m_assembler = (lastX << 16) + lastY;
         m_ascBytes = 0;
         m_ascState = none;
-        TRACE3 ("low X %d, coordinates %d %d", c, lastX, lastY);
+        TRACE ("low X %d, coordinates %d %d", c, lastX, lastY);
         return true;
     case 3:
         TRACE ("low Y %d", c);
@@ -6039,7 +6009,7 @@ int PtermFrame::AssembleAsciiPlatoMetaData (int d)
 	int od = d;
     const int chardelay = atoi(ptermApp->m_charDelay.mb_str());
 
-    TRACE2 ("plato meta data: %d (counter=%d)", d, m_ascBytes+1);
+    TRACE ("plato meta data: %d (counter=%d)", d, m_ascBytes+1);
 	d &= 077;
     if (m_ascBytes==0)
 		m_PMD = wxT("");
@@ -6380,7 +6350,7 @@ void PtermFrame::SetFontFlags (int n)
 	m_fontbold = ((n & 0x02) != 0);
 	m_fontstrike = ((n & 0x04) != 0);
 	m_fontunderln = ((n & 0x08) != 0);
-	TRACE3 ("Font selected: %s,%d,%d", m_fontface.mb_str ().data (), m_fontsize, n & 0x0f);
+	TRACE ("Font selected: %s,%d,%d", m_fontface.mb_str ().data (), m_fontsize, n & 0x0f);
 }
 
 /*--------------------------------------------------------------------------
@@ -6672,7 +6642,7 @@ void PtermFrame::mode0 (u32 d)
     
     x = (d >> 9) & 0777;
     y = d & 0777;
-    TRACE2 ("dot %d %d", x, y);
+    TRACE ("dot %d %d", x, y);
     ptermDrawPoint (x, y);
     currentX = x;
     currentY = y;
@@ -6693,7 +6663,7 @@ void PtermFrame::mode1 (u32 d)
     
     x = (d >> 9) & 0777;
     y = d & 0777;
-    TRACE2 ("lineto %d %d", x, y);
+    TRACE ("lineto %d %d", x, y);
     ptermDrawLine (currentX, currentY, x, y);
     currentX = x;
     currentY = y;
@@ -6720,7 +6690,7 @@ void PtermFrame::mode2 (u32 d)
     chaddr = memaddr - ReadRAMW (C2ORIGIN);
     if (chaddr < 0 || chaddr > 127 * 16)
     {
-        TRACE2 ("memdata %04x to %04x", d & 0xffff, memaddr);
+        TRACE ("memdata %04x to %04x", d & 0xffff, memaddr);
     }
     else
     {
@@ -6728,7 +6698,7 @@ void PtermFrame::mode2 (u32 d)
         if (((d >> 16) & 3) == 0)
         {
             // load data
-            TRACE2 ("character memdata %06o to char word %04o", d & 0xffff, chaddr);
+            TRACE ("character memdata %06o to char word %04o", d & 0xffff, chaddr);
             plato_m23[chaddr] = d & 0xffff;
             if ((++chaddr & 7) == 0)
             {
@@ -6752,7 +6722,7 @@ void PtermFrame::mode2 (u32 d)
 **------------------------------------------------------------------------*/
 void PtermFrame::mode3 (u32 d)
 {
-    TRACE6 ("char %02o %02o %02o (%c%c%c)",
+    TRACE ("char %02o %02o %02o (%c%c%c)",
             (d >> 12) & 077, (d >> 6) & 077, d & 077,
             rom01char[(d >> 12) & 077], 
             rom01char[(d >> 6) & 077], 
@@ -6785,7 +6755,7 @@ void PtermFrame::mode4 (u32 d)
     x2 = (d >> 9) & 0777;
     y2 = d & 0777;
     
-    TRACE4 ("block erase %d %d to %d %d", x1, y1, x2, y2);
+    TRACE ("block erase %d %d to %d %d", x1, y1, x2, y2);
 
     ptermBlockErase (x1, y1, x2, y2);
     currentX = x1;
@@ -6908,7 +6878,7 @@ void PtermFrame::ptermSendKey (int key)
     {
         if (tracePterm)
         {
-            fprintf (traceF, "key to plato %03o\n", key);
+            TRACEX ("key to plato %03o\n", key);
         }
 #ifdef DEBUGLOG
         wxLogMessage (wxT("key to plato %03o"), key);
@@ -6970,11 +6940,11 @@ void PtermFrame::ptermSendKey (int key)
                 {
                     if (len == 1)
                     {
-                        fprintf (traceF, "ascii mode key to plato 0x%02x\n", data[0] & 0xff);
+                        TRACEX ("ascii mode key to plato 0x%02x\n", data[0] & 0xff);
                     }
                     else
                     {
-                        fprintf (traceF, "ascii mode key to plato 0x%02x 0x%02x\n", data[0], data[1] & 0xff);
+                        TRACEX ("ascii mode key to plato 0x%02x 0x%02x\n", data[0], data[1] & 0xff);
                     }
                 }
                 m_conn->SendData (data, len);
@@ -6993,10 +6963,7 @@ void PtermFrame::ptermSendKey (int key)
                         return;
                     }
                     data[0] = Parity (ascxof);
-                    if (tracePterm)
-                    {
-                        fprintf (traceF, "ascii mode key to plato XOFF\n");
-                    }
+                    TRACEX ("ascii mode key to plato XOFF\n");
                 }
                 else if (key == xonkey)
                 {
@@ -7006,9 +6973,7 @@ void PtermFrame::ptermSendKey (int key)
                     }
                     data[0] = Parity (ascxon);
                     if (tracePterm)
-                    {
-                        fprintf (traceF, "ascii mode key to plato XON\n");
-                    }
+                    TRACEX ("ascii mode key to plato XON\n");
                 }
                 else
                 {
@@ -7018,8 +6983,8 @@ void PtermFrame::ptermSendKey (int key)
                     data[2] = Parity (0140 + (key >> 6));
                     if (tracePterm)
                     {
-                        fprintf (traceF, "ascii mode key to plato 0x%02x 0x%02x 0x%02x\n", 
-                                 data[0] & 0xff, data[1] & 0xff, data[2] & 0xff);
+                        TRACEX ("ascii mode key to plato 0x%02x 0x%02x 0x%02x\n", 
+                                data[0] & 0xff, data[1] & 0xff, data[2] & 0xff);
                     }
                 }
                 m_conn->SendData (data, len);
@@ -7193,8 +7158,8 @@ int PtermFrame::check_pc8080a (void)
     {
         if (tracePterm)
         {
-            fprintf (traceF, "Resident call %04x DE=%04x HL=%04x\n", 
-                     PC, DE.pair, HL.pair);
+            TRACEX ("Resident call %04x DE=%04x HL=%04x\n", 
+                    PC, DE.pair, HL.pair);
         }
     }
     

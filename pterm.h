@@ -163,50 +163,6 @@
 //rostering
 #define	PREF_ROSTERFILE  "RosterFile"
 
-/*
-**  -----------------------
-**  Private Macro Functions
-**  -----------------------
-*/
-#define TRACEX(str,arg)                                             \
-        fprintf (traceF, str "\n",arg);  \
-
-#define TRACEN(str)                                             \
-    if (tracePterm)                                             \
-        {                                                       \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc);  \
-        }
-
-#define TRACE(str, arg)                                             \
-    if (tracePterm)                                                 \
-        {                                                           \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg); \
-        }
-
-#define TRACE2(str, arg, arg2)                                          \
-    if (tracePterm)                                                     \
-        {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg, arg2); \
-        }
-
-#define TRACE3(str, arg, arg2, arg3)                                    \
-    if (tracePterm)                                                     \
-        {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, arg, arg2, arg3); \
-        }
-
-#define TRACE4(str, a, a2, a3, a4)                                      \
-    if (tracePterm)                                                     \
-        {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, a, a2, a3, a4); \
-        }
-
-#define TRACE6(str, a, a2, a3, a4, a5, a6)                              \
-    if (tracePterm)                                                     \
-        {                                                               \
-        fprintf (traceF, "seq %6d wc %3d " str "\n", seq, wc, a, a2, a3, a4, a5, a6); \
-        }
-
 // Map PLATO coordinates to window coordinates
 #define XADJUST(x) ((x) * ((m_stretch) ? 1 : m_scale) + GetXMargin ())
 #define YADJUST(y) ((511 - (y)) * ((m_stretch) ? 1 : m_scale)  + GetYMargin ())
@@ -294,6 +250,7 @@ extern "C"
 #include "wx/html/forcelnk.h"
 //FORCE_LINK(gnome_print)
 #endif
+}
 
 // For wxWidgets 2.8
 #ifdef  _WX_PLATINFO_H_
@@ -304,7 +261,5 @@ extern "C"
 #define wxMAC_DARWIN wxOS_MAC_OSX_DARWIN
 #endif
 #endif
-
-FILE *traceF;
 
 #endif  // _PTERM_H
