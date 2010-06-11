@@ -205,11 +205,15 @@ pterm_sdl.d : pterm_sdl.c
 	mv -f /tmp/$@ $@
 
 %.mo : %.po
-	msgfmt -o $@ $<
+	if [[ "$(shell which msgfmt)" != "" ]] ; then
+		msgfmt -o $@ $<
+	fi
 
 %.po : pterm_wx.cpp
-	xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
-	msgmerge $(MSGFLAGS) $@ pterm.pot
+	if [[ "$(shell which xgettext)" != "" ]] ; then
+		xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
+		msgmerge $(MSGFLAGS) $@ pterm.pot
+	fi
 
 
 ifeq ($(MAKECMDGOALS),pterm)

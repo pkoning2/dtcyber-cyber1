@@ -3291,6 +3291,7 @@ void PtermFrame::OnExec (wxCommandEvent &event)
     else
     {
 		wxString url = text.GetText();
+		url.Replace(wxT ("\r"), wxT (""));
 		url.Replace(wxT ("\n"), wxT (""));
         wxExecute (ptermApp->m_Browser + wxT (" ") + url);
     }
