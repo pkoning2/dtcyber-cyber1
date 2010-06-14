@@ -142,8 +142,7 @@ Pterm.app: pterm pterm-info.plist.in pterm.icns
 	/bin/echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
-#	for d in $(LANGUAGES); do cp $$d/pterm.mo `wx-config --prefix`/share/locale/$$d/LC_MESSAGES/wxstd.mo Pterm.app/Contents/Resources/$$d; done
-	for d in $(LANGUAGES); do cp $$d/pterm.mo Pterm.app/Contents/Resources/$$d; done
+	if [[ "$(shell which msgfmt)" != "" ]] ; then for d in $(LANGUAGES); do cp $$d/pterm.mo `wx-config --prefix`/share/locale/$$d/LC_MESSAGES/wxstd.mo Pterm.app/Contents/Resources/$$d; done ; for d in $(LANGUAGES); do cp $$d/pterm.mo Pterm.app/Contents/Resources/$$d; done; fi
 	touch $@
 
 pterm-empty.dmg:
@@ -205,15 +204,10 @@ pterm_sdl.d : pterm_sdl.c
 	mv -f /tmp/$@ $@
 
 %.mo : %.po
-	if [[ "$(shell which msgfmt)" != "" ]] ; then
-		msgfmt -o $@ $<
-	fi
+	if [[ "$(shell which msgfmt)" != "" ]] ; then msgfmt -o $@ $< ; fi
 
 %.po : pterm_wx.cpp
-	if [[ "$(shell which xgettext)" != "" ]] ; then
-		xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
-		msgmerge $(MSGFLAGS) $@ pterm.pot
-	fi
+	if [[ "$(shell which xgettext)" != "" ]] ; then xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp ; msgmerge $(MSGFLAGS) $@ pterm.pot ; fi
 
 
 ifeq ($(MAKECMDGOALS),pterm)

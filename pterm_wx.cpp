@@ -51,7 +51,7 @@
 #define PASTE_LINEDELAY 500
 
 // Size of the window and pixmap.
-// This is: a screen high with marging top and botton.
+// This is: a screen high with margin top and botton.
 // Pixmap has two rows added, which are storage for the
 // patterns for the character sets (ROM and loadable)
 #define vXSize(s)		(512 * ((m_stretch) ? 1 : s) + (2 * DisplayMargin))
@@ -776,7 +776,7 @@ public:
     void OnPageSetup (wxCommandEvent& event);
     void OnPref (wxCommandEvent& event);
     void OnActivate (wxActivateEvent &event);
-    void UpdateSettings (wxColour &newfg, wxColour &newbf, bool newscale2);
+    void UpdateSettings (wxColour &newfg, wxColour &newbf, bool scale_to_200);
     void SavePreferences (void);
     void SetColors (wxColour &newfg, wxColour &newbg, int newscale);
     void FixTextCharMaps (void);
@@ -1037,7 +1037,7 @@ private:
     }
     
 
-    void UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap, wxColour &newfg, wxColour &newbf, bool newscale2);
+    void UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap, wxColour &newfg, wxColour &newbf, bool scale_to_200);
 
     // PLATO drawing primitives
     void ptermDrawChar (int x, int y, int snum, int cnum);
@@ -1538,7 +1538,7 @@ BEGIN_EVENT_TABLE(PtermFrame, wxFrame)
 #if defined (__WXMSW__)
     EVT_ICONIZE(PtermFrame::OnIconize)
 #endif
-    END_EVENT_TABLE ()
+    END_EVENT_TABLE ();
 
 BEGIN_EVENT_TABLE(PtermApp, wxApp)
     EVT_MENU(Pterm_Connect, PtermApp::OnConnect)
@@ -1546,14 +1546,14 @@ BEGIN_EVENT_TABLE(PtermApp, wxApp)
     EVT_MENU(Pterm_Quit,    PtermApp::OnQuit)
     EVT_MENU(Pterm_HelpKeys, PtermApp::OnHelpKeys)
     EVT_MENU(Pterm_About, PtermApp::OnAbout)
-    END_EVENT_TABLE ()
+    END_EVENT_TABLE ();
 
 // Create a new application object: this macro will allow wxWindows to create
 // the application object during program execution (it's better than using a
 // static object for many reasons) and also implements the accessor function
 // wxGetApp () which will return the reference of the right type (i.e. PtermApp and
 // not wxApp)
-IMPLEMENT_APP(PtermApp)
+IMPLEMENT_APP(PtermApp);
 
 // ============================================================================
 // implementation
@@ -2435,7 +2435,9 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
     m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->Clear ();
 
-    SetClientSize (vXRealSize(m_scale) + 2, vYRealSize(m_scale) + 2);
+// Why is there a "+2" for vXRealSize(), vYRealSize here?
+//    SetClientSize (vXRealSize(m_scale) + 2, vYRealSize(m_scale) + 2);
+    SetClientSize (vXRealSize(m_scale)-1, vYRealSize(m_scale)-1);
     m_canvas = new PtermCanvas (this);
 
     /*
@@ -3217,7 +3219,8 @@ void PtermFrame::SetStatusBarState (bool bstate)
 void PtermFrame::OnToggle2xMode (wxCommandEvent &)
 {
 	//toggle status
-	ptermApp->m_scale = (ptermApp->m_scale==2) ? 1 : 2;
+//	ptermApp->m_scale = (ptermApp->m_scale==2) ? 1 : 2;
+	ptermApp->m_scale = 3 - ptermApp->m_scale;	// toggle between 1 and 2
 	m_canvas->m_scale = ptermApp->m_scale;
 	m_scale = ptermApp->m_scale;
 	menuPopup->Check(Pterm_Toggle2xMode,(ptermApp->m_scale==2));
@@ -3225,6 +3228,10 @@ void PtermFrame::OnToggle2xMode (wxCommandEvent &)
 	SavePreferences();
     
 	SetScaleState();
+
+	m_canvas->Refresh (true);
+	m_canvas->SetFocus ();
+	m_canvas->Update();
 }
 
 void PtermFrame::SetScaleState (void)
@@ -3933,8 +3940,8 @@ void PtermFrame::SetResizeState(void)
 {
 	int w,h;
 
-    if (!m_stretch)
-		return;
+//    if (!m_stretch)
+//		return;
 	if (m_canvas == NULL)
 		return;
 
@@ -4473,11 +4480,11 @@ void PtermFrame::ptermLoadRomChars (void)
     }
 }
 
-void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool newscale2)
+void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool scale_to_200)
 {
     const bool recolor = (ptermApp->m_fgColor != newfg ||
                           ptermApp->m_bgColor != newbg);
-    const int newscale = (newscale2) ? 2 : 1;
+    const int newscale = (scale_to_200) ? 2 : 1;
     const bool rescale = (newscale != m_scale);
     int i;
     wxBitmap *newmap;
@@ -4492,10 +4499,11 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool newscale
     wxClientDC dc(m_canvas);
 
 	if (!m_stretch)
-		UpdateDC (m_memDC, m_bitmap, newfg, newbg, newscale2);
+		UpdateDC (m_memDC, m_bitmap, newfg, newbg, scale_to_200);
     if (rescale)
     {
-		SetClientSize (vXRealSize (newscale) + 2, vYRealSize (newscale) + 2);
+		// SetClientSize (vXRealSize (newscale) + 2, vYRealSize (newscale) + 2);
+		SetClientSize (vXRealSize (newscale) - 1, vYRealSize (newscale) - 1);
 		m_canvas->SetSize (vXRealSize (newscale), vYRealSize (newscale));
 		m_canvas->SetVirtualSize (vXRealSize (newscale), vYRealSize (newscale));
 		if (!m_fullScreen)
@@ -4507,7 +4515,7 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool newscale
 		if (m_stretch)
 			dc.SetUserScale(m_xscale,m_yscale);
 		else
-			UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor, ptermApp->m_bgColor, newscale2);
+			UpdateDC (m_charDC[4], m_charmap[4], ptermApp->m_fgColor, ptermApp->m_bgColor, scale_to_200);
 		// Just allocate new bitmaps for the others, we'll repaint them below
 		for (i = 0; i < 4; i++)
 		{
@@ -7442,7 +7450,7 @@ BEGIN_EVENT_TABLE(PtermPrefDialog, wxDialog)
 	EVT_LISTBOX_DCLICK(wxID_ANY, PtermPrefDialog::OnDoubleClick)
 	EVT_TEXT(wxID_ANY, PtermPrefDialog::OnChange)
 	EVT_COMBOBOX(wxID_ANY, PtermPrefDialog::OnComboSelect)
-    END_EVENT_TABLE()
+    END_EVENT_TABLE();
 
 PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxString &title, wxPoint pos, wxSize size)
     : wxDialog (parent, id, title, pos, size),
@@ -8588,7 +8596,7 @@ BEGIN_EVENT_TABLE(PtermConnDialog, wxDialog)
 	EVT_LISTBOX_DCLICK(wxID_ANY, PtermConnDialog::OnDoubleClick)
 	EVT_TEXT(wxID_ANY, PtermConnDialog::OnChange)
     EVT_BUTTON(wxID_ANY, PtermConnDialog::OnButton)
-    END_EVENT_TABLE()
+    END_EVENT_TABLE();
 
 PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint pos, wxSize loc)
     : wxDialog (NULL, id, title, pos, loc)
@@ -8803,7 +8811,7 @@ void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
 BEGIN_EVENT_TABLE(PtermConnFailDialog, wxDialog)
     EVT_CLOSE(PtermConnFailDialog::OnClose)
     EVT_BUTTON(wxID_ANY, PtermConnFailDialog::OnButton)
-    END_EVENT_TABLE()
+    END_EVENT_TABLE();
 
 PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title, wxPoint pos, wxSize loc)
     : wxDialog (NULL, id, title, pos, loc)
@@ -9496,19 +9504,28 @@ BEGIN_EVENT_TABLE(PtermCanvas, wxScrolledWindow)
     EVT_RIGHT_UP(PtermCanvas::OnMouseContextMenu)
     EVT_MOTION(PtermCanvas::OnMouseMotion)
 	EVT_MOUSEWHEEL(PtermCanvas::OnMouseWheel)
-    END_EVENT_TABLE ()
+    END_EVENT_TABLE ();
 
 PtermCanvas::PtermCanvas(PtermFrame *parent)
-    : wxScrolledWindow(parent, -1, wxDefaultPosition,  wxSize (vXSize(m_scale), vYSize(m_scale)), wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE),
-      m_mouseX (-1)
+    : wxScrolledWindow(parent, -1, wxDefaultPosition,
+                       wxSize (vXSize(parent->m_scale), vYSize(parent->m_scale)),
+    				   wxHSCROLL | wxVSCROLL | wxFULL_REPAINT_ON_RESIZE /* , "Default Name" */),
+      m_regionX (0),
+      m_regionY (0),
+//      m_regionHeight (vScreenSize(parent->m_scale)),
+//      m_regionWidth (vScreenSize(parent->m_scale)),
+      m_regionHeight (0),
+      m_regionWidth (0),
+      m_mouseX (-1),
+      m_mouseY (-1),
+      m_scale (parent->m_scale),
+      m_stretch (parent->m_stretch),
+      m_owner (parent),
+      m_touchEnabled (false)
 {
     wxClientDC dc(this);
 
-
-    m_owner = parent;
-	m_scale = m_owner->m_scale;
-	m_stretch = m_owner->m_stretch;
-
+	SetInitialSize (wxSize (vXRealSize(m_scale), vYRealSize(m_scale)));
     SetVirtualSize (vXRealSize(m_scale), vYRealSize(m_scale));
     
     SetBackgroundColour (ptermApp->m_bgColor);
@@ -9517,7 +9534,7 @@ PtermCanvas::PtermCanvas(PtermFrame *parent)
 		SetScrollRate (0, 0);
 		SetScrollRate (1, 1);
 	}
-    dc.SetClippingRegion (GetXMargin (), GetYMargin (), vRealScreenSize(m_owner->m_scale), vRealScreenSize(m_owner->m_scale));
+    dc.SetClippingRegion (GetXMargin (), GetYMargin (), vRealScreenSize(m_scale), vRealScreenSize(m_scale));
     SetFocus ();
     FullErase ();
 }
@@ -10131,7 +10148,8 @@ void PtermCanvas::FullErase (void)
     // Erase the text "backing store"
     memset (textmap, 055, sizeof (textmap));
 
-    ClearRegion ();
+    // ClearRegion ();
+    m_owner->ClearBackground();
 }
 
 void PtermCanvas::ClearRegion (void)
