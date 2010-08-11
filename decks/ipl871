@@ -1237,7 +1237,7 @@ sbtpterm equ    16          pterm for cyber1 software
           lx6    xofbit      position to *xoff* bit
           bx6    -x6*x2      clear *xoff*
           sa6    a2
-          eq     xpkey       write back station bank
+          eq     xpkey2      write back station bank
 */ end main
 */
 *deck logicx
