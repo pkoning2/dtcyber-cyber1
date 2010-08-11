@@ -98,7 +98,7 @@ typedef struct siteParam
 
 typedef struct portParam
     {
-    NetFet     *np;
+    NetFet      *np;
     SiteParam   *sp;
     u32         currOutput;
     u8          currInput[2];
@@ -158,7 +158,6 @@ static bool realTiming;
 static FILE *niuF;
 static bool traced=FALSE;
 #endif
-static void *statusBuf;
 static int niuActiveConns;
 static u32 niuLastAlertReset;
 static int niuOpstat;
@@ -208,7 +207,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     char *line;
     char *token;
     char *sitename;
-    int i, j, terms, port, first;
+    int i, j, terms, port;
     bool local;
     PortParam *mp;
     SiteParam *sp;
@@ -1120,6 +1119,7 @@ void niuSendWord(int stat, int word)
     
     mp = portVector + idx;
     fet = mp->np;
+    ps = &(mp->sp->niuPorts);
     
     data[0] = word >> 12;
     data[1] = ((word >> 6) & 077) | 0200;

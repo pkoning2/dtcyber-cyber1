@@ -5329,7 +5329,10 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             break;          // -beep- does NOT send an echo code in reply
                         n += 0200;
                         if (m_conn->RingCount () > RINGXOFF1)
+                        {
+                            printf ("pend echo %d, previous was %d\n", n, m_pendingEcho);
                             m_pendingEcho = n;
+                        }
                         else
                         {
                             ptermSendKey (n);
@@ -9014,6 +9017,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
                 */
                 if (IsFull ())
                 {
+                    printf ("ring is full\n");
                     break;
                 }
 
@@ -9034,7 +9038,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
                 {
                     break;
                 }
-                else if (m_connMode == niu && platowd == 2)
+                else if (m_connMode == niu && 0)//platowd == 2)
                 {
                     m_savedGswMode = m_gswWord2 = 0;
                     if (m_gswActive)
@@ -9051,6 +9055,8 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
 
                 StoreWord (platowd);
                 i = RingCount ();
+                printf ("Stored %07o, ring count is %d\n", platowd, i);
+                
                 if (m_gswActive && !m_gswStarted && i >= GSWRINGSIZE / 2)
                 {
                     ptermStartGsw ();
@@ -9219,7 +9225,8 @@ int PtermConnection::NextRingWord (void)
         }
         m_displayOut = next;
     }
-
+    printf ("consumed word %07o, ring count now %d\n", word, i);
+    
     if (i < RINGXOFF1 && m_owner->m_pendingEcho != -1)
     {
         m_owner->ptermSendKey (m_owner->m_pendingEcho);

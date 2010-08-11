@@ -88,7 +88,6 @@ long extSockets;
 **  Private Variables
 **  -----------------
 */
-static struct sockaddr_in addr;
 static NetPortSet extPorts;
 NetFet acceptFet;
 
@@ -196,12 +195,11 @@ CpWord extOp (CpWord req)
 static CpWord envOp (CpWord req)
 {
     CpWord *reqp = cpuAccessMem (req, 2);
-    CpWord *bufp;
     char reqstr[11];
     char resultstr[MAXENV];
     char *p = reqstr;
     int i;
-    char c;
+    int c;
     CpWord result;
     
     if (reqp == NULL)
@@ -306,7 +304,6 @@ static CpWord sockOp (CpWord req)
     int fd;
     int socknum;
     int retval;
-    int true_opt = 1;
     int mode;
     int modeflags;
     int buflen;
@@ -318,7 +315,6 @@ static CpWord sockOp (CpWord req)
     int shift;
     int pc;
     int i, idx, pcnt;
-    socklen_t sl;
     int charset;
     char resultstr[MAXNET];
     volatile u8 *prev_out;
@@ -946,6 +942,7 @@ static NetFet *getFet (void)
         }
         fet++;
     }
+    return NULL;
 }
 
 /*---------------------------  End Of File  ------------------------------*/

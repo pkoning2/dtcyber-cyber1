@@ -39,7 +39,7 @@ endif
 endif
 
 CFLAGS  = -O2 -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST)
-CONLYFLAGS =  -std=gnu99 
+CONLYFLAGS =  -std=gnu99 -Wall -Werror -Wno-format
 
 SOBJS	= charset.o dtnetsubs.o
 SXOBJS  = dt_x11.o

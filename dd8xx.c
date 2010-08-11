@@ -214,15 +214,15 @@ static void dd8xxActivate(void);
 static void dd8xxDisconnect(void);
 static void dd8xxSeek(DiskParam *dp);
 static void dd8xxSeekNextSector(DiskParam *dp, bool gap);
-static void dd8xxDump(PpWord data);
-static void dd8xxFlush(void);
 static PpWord dd8xxReadClassic(DiskParam *dp);
 static PpWord dd8xxReadPacked(DiskParam *dp);
 static void dd8xxWriteClassic(DiskParam *dp, PpWord data);
 static void dd8xxWritePacked(DiskParam *dp, PpWord data);
 static void dd8xxSectorWrite(DiskParam *dp, PpWord *sector);
 static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState);
+#if DEBUG
 static char *dd8xxFunc2String(PpWord funcCode);
+#endif
 static void dd8xxLoad(DevSlot *dp, int unitNo, char *fn);
 
 /*
@@ -896,7 +896,6 @@ static void dd8xxIo(void)
     i8 unitNo;
     bool opened;
     DiskParam *dp;
-    i32 pos;
 
     unitNo = activeDevice->selectedUnit;
     if (unitNo != -1)
@@ -1780,9 +1779,9 @@ static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState)
 **  Returns:        String equivalent of function code.
 **
 **------------------------------------------------------------------------*/
+#if DEBUG
 static char *dd8xxFunc2String(PpWord funcCode)
     {
-#if DEBUG
     switch(funcCode)
         {
     case Fc8xxConnect                :  return "Connect";              
@@ -1819,9 +1818,9 @@ static char *dd8xxFunc2String(PpWord funcCode)
     case Fc8xxDeadstart              :  return "Deadstart";            
     case Fc8xxStartMemLoad           :  return "StartMemLoad";         
         }
-#endif
     return "UNKNOWN";
     }
+#endif
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Perform load/unload on 844/885 disk.
@@ -1837,7 +1836,6 @@ static void dd8xxLoad(DevSlot *ds, int unitNo, char *fn)
     u8 unitMode = 'r';
     char *p;
     static char msgBuf[80];
-    long endPos = 0;
     
     if (unitNo < 0 || unitNo >= MAXDDUNITS)
         {

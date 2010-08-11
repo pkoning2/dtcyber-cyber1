@@ -597,17 +597,15 @@ CpWord pniOp (CpWord req)
 void pniCheck (void)
 {
     int len, i, j, snum;
-    bool lastword;
     int station;
     int opcode;
     CpWord oldout, hdr;
     char *p;
-    CpWord *wp, w;
+    CpWord *wp, w = 0;
     int shift;
     PortParam *pp;
     NetFet *np;
     int port, key;
-    char buf[2];
     struct stbank *sb;
     NetPortSet *psp;
     SiteParam *sp;
@@ -1401,7 +1399,7 @@ static void pniActivateStation (int stat)
     termid = 0;
     for (i = 0; i < 7; i++)
     {
-        termid |= (CpWord) asciiToCdc[termname[i]] << (54 - 6 * i);
+        termid |= (CpWord) asciiToCdc[(int) termname[i]] << (54 - 6 * i);
     }
     *(aasccon + stat) = termid;
 

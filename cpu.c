@@ -733,8 +733,6 @@ void cpuPpWriteMem(u32 address, CpWord data)
 **------------------------------------------------------------------------*/
 CpWord * cpuAccessMem(CpWord address, int length)
     {
-	u32 absAddr;
-
 	if (address & (1ULL << 59))
 	    {
 		/* ECS pointer */
