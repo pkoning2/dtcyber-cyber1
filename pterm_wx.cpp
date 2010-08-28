@@ -8935,6 +8935,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
     bool connActive = false;
     
     m_portset.callBack = NULL;
+    m_portset.portNum = 0;      // No listening
     m_portset.maxPorts = 1;
     dtInitPortset (&m_portset, BufSiz);
     m_fet = m_portset.portVec;
