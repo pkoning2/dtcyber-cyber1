@@ -9055,8 +9055,10 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
 
                 StoreWord (platowd);
                 i = RingCount ();
+#ifdef DEBUG
                 printf ("Stored %07o, ring count is %d\n", platowd, i);
-                
+#endif
+
                 if (m_gswActive && !m_gswStarted && i >= GSWRINGSIZE / 2)
                 {
                     ptermStartGsw ();
@@ -9225,8 +9227,9 @@ int PtermConnection::NextRingWord (void)
         }
         m_displayOut = next;
     }
+#ifdef DEBUG
     printf ("consumed word %07o, ring count now %d\n", word, i);
-    
+#endif
     if (i < RINGXOFF1 && m_owner->m_pendingEcho != -1)
     {
         m_owner->ptermSendKey (m_owner->m_pendingEcho);
