@@ -71,9 +71,9 @@ v2k v2k 0 2kv
 * 6612 D/A output
 *
 xafx ix1 ix2 ix3 ix4 ix5 ix6 x1 v6 af
-xafxb bx1 bx2 bx3 bx3 bx5 bx6 x2 v6 af
+xafxb bx1 bx2 bx3 bx4 bx5 bx6 x2 v6 af
 xafy iy1 iy2 iy3 iy4 iy5 iy6 y1 v6 af
-xafyb by1 by2 by3 by3 by5 by6 y2 v6 af
+xafyb by1 by2 by3 by4 by5 by6 y2 v6 af
 *
 * cable from 6612
 *
