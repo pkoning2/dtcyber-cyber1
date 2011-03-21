@@ -1356,14 +1356,11 @@ static void dtCloseSocket (int connFd, bool hard)
 #if defined(_WIN32)
     closesocket(connFd);
 #else
-    if (hard)
-        {
-        close(connFd);
-        }
-    else
+    if (!hard)
         {
         shutdown (connFd, SHUT_RDWR);
         }
+    close(connFd);
 #endif
     }
 
