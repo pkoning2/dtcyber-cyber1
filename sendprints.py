@@ -68,8 +68,9 @@ def dofile (name):
     text = inf.readlines ()
     inf.close ()
     if "".join (text[:20]).find ("USER NAME =  ") != -1:
-        print name, "is a system job printout, deleted"
-        os.remove (name)
+        print name, "is a system job printout, saved to dumps"
+        #os.remove (name)
+        os.rename (name, os.path.join ("dumps", name))
         return
     if text[-1].find ("UCLP,") == -1:
         print name, "appears to be an incomplete printout"
@@ -138,12 +139,16 @@ def dofile (name):
                                      filename = lesson)
                     msg.set_payload ([ desc, printout])
                 s = smtplib.SMTP (MAILHOST)
-                s.sendmail ("postmaster@cyberserv.org", [ mailto ], msg.as_string ())
-                if notify:
-                    os.remove (name)
-                else:
-                    print name, "lesson", lesson, "sent to", mailto
-                    os.rename (name, os.path.join ("sent", name))
+                try:
+                    s.sendmail ("postmaster@cyberserv.org", [ mailto ], msg.as_string ())
+                    if notify:
+                        os.remove (name)
+                    else:
+                        print name, "lesson", lesson, "sent to", mailto
+                        os.rename (name, os.path.join ("sent", name))
+                except smtplib.SMTPException, data:
+                    print "error sending", name, "to", mailto, "\n ", data
+                    os.rename (name, os.path.join ("failed", name))
                 break
     except StopIteration:
         print "no mail to section found in", name
