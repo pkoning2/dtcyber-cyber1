@@ -2229,38 +2229,78 @@ PtermMainFrame::PtermMainFrame (void)
 // frame constructor
 PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wxPoint &pos)
     : PtermFrameBase(PtermFrameParent, -1, title, pos, wxDefaultSize),
+      // m_memDC not initialized
       tracePterm (false),
       m_nextFrame (NULL),
       m_prevFrame (NULL),
+      m_pendingEcho (-1),
+	  m_bCancelPaste (false),
+	  m_bPasteActive (false),
+      m_conn (NULL),
+      m_dumbTty (true),
+      // menuBar not initialized
+      // menuFile not initialized
+      // menuEdit not initialized
+      // menuView not initialized
+      // menuHelp not initialized
+      // menuPopup not initialized
+      // m_statusBar not initialized
+	  m_scale (ptermApp->m_scale),
+	  m_stretch (ptermApp->m_stretch),
+	  m_xscale (ptermApp->m_scale),
+	  m_yscale (ptermApp->m_scale),
+	  // m_font not initialized
+	  m_usefont( false ),
+	  // m_usefont not initialized
+	  // m_fontfamily not initialized
+	  // m_fontface not initialized
+	  // m_fontsize not initialized
+	  // m_fontitalic not initialized
+	  // m_fontbold not initialized
+	  // m_fontstrike not initialized
+	  // m_fontunderln not initialized
+	  // m_fontwidth not initialized
+	  // m_fontheight not initialized
+	  m_fontPMD( false ),
+	  m_fontinfo( false ),
+	  m_osinfo( false ),
       m_foregroundPen (ptermApp->m_fgColor, ((ptermApp->m_stretch) ? 1 : ptermApp->m_scale), wxSOLID),
       m_backgroundPen (ptermApp->m_bgColor, ((ptermApp->m_stretch) ? 1 : ptermApp->m_scale), wxSOLID),
       m_foregroundBrush (ptermApp->m_fgColor, wxSOLID),
       m_backgroundBrush (ptermApp->m_bgColor, wxSOLID),
+      // m_bitmap not initialized
       m_canvas (NULL),
-      m_conn (NULL),
+      // m_curProfile not initialized
+      // m_ShellFirst not initialized
+      // m_hostName not initialized
       m_port (port),
       m_timer (this, Pterm_Timer),
       m_fullScreen (false),
       m_station (0),
       m_pasteTimer (this, Pterm_PasteTimer),
+      // m_pasteText not initialized
       m_pasteIndex (-1),
+      // m_pastePrint not initialized
       m_pasteNextKeyCnt (0),
 	  m_SendRoster (false),
 	  m_WaitReady (false),
-	  m_bCancelPaste (false),
-	  m_bPasteActive (false),
+	  // m_charmap not initialized
+	  // m_charDC not initialized
+	  // m_dirty not initialized
       m_nextword (0),
       m_delay (0),
+	  modexor( false ),
       currentX (0),
       currentY (496),
       memaddr (0),
+      // plato_m23 not initialized
       memlpc (0),
       wc (0),
       seq (0),
       modewords (0),
-      m_dumbTty (true),
       m_ascState (none),
       m_ascBytes (0),
+      // m_assembler not initialized
       lastX (0),
       lastY (0),
       m_flowCtrl (false),
@@ -2269,21 +2309,13 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
       m_defBg (ptermApp->m_bgColor),
       m_currentFg (ptermApp->m_fgColor),
       m_currentBg (ptermApp->m_bgColor),
-      m_pendingEcho (-1),
-	  m_scale (ptermApp->m_scale),
-	  m_stretch (ptermApp->m_stretch),
-	  m_xscale (ptermApp->m_scale),
-	  m_yscale (ptermApp->m_scale),
-	  m_usefont( false ),
-	  m_fontPMD( false ),
-	  m_fontinfo( false ),
-	  m_osinfo( false ),
-	  modexor( false ),
+      // m_loadingPMD not initialized
+      // m_PMD not initialized
 	  cwsmode( 0 ),
 	  cwsfun ( 0 ),
-	  cwswin ( 0 ),
-	  cwscnt ( 0 )
-
+	  cwscnt ( 0 ),
+	  cwswin ( 0 )
+	  // cwswindow not initialized
 {
     int i;
 
@@ -2762,7 +2794,7 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 
 void PtermFrame::OnPasteTimer (wxTimerEvent &)
 {
-    wxChar c;
+    wxChar c = 0;
     int p;
     int delay = 0;
     unsigned int nextindex;
@@ -3219,10 +3251,7 @@ void PtermFrame::SetStatusBarState (bool bstate)
 void PtermFrame::OnToggle2xMode (wxCommandEvent &)
 {
 	//toggle status
-//	ptermApp->m_scale = (ptermApp->m_scale==2) ? 1 : 2;
-	ptermApp->m_scale = 3 - ptermApp->m_scale;	// toggle between 1 and 2
-	m_canvas->m_scale = ptermApp->m_scale;
-	m_scale = ptermApp->m_scale;
+	ptermApp->m_scale = 3 - ptermApp->m_scale;
 	menuPopup->Check(Pterm_Toggle2xMode,(ptermApp->m_scale==2));
 	menuView->Check(Pterm_Toggle2xModeView,(ptermApp->m_scale==2));
 	SavePreferences();
@@ -3932,7 +3961,7 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
 
 void PtermFrame::OnResize (wxSizeEvent& event)
 {
-	if (m_stretch) 
+//	if (m_stretch) 
 		SetResizeState();
 }
 
@@ -4498,8 +4527,9 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool scale_to
 
     wxClientDC dc(m_canvas);
 
-	if (!m_stretch)
+//	if (!m_stretch)
 		UpdateDC (m_memDC, m_bitmap, newfg, newbg, scale_to_200);
+
     if (rescale)
     {
 		// SetClientSize (vXRealSize (newscale) + 2, vYRealSize (newscale) + 2);
@@ -4625,14 +4655,14 @@ void PtermFrame::FixTextCharMaps (void)
 
 }
 
-void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap, wxColour &newfg, wxColour &newbg, bool newscale2)
+void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap, wxColour &newfg, wxColour &newbg, bool scale_to_200)
 {
     int fr, fg, fb, br, bg, bb, ofr, ofg, ofb;
     int r, g, b, oh, ow, nh, nw, h, w;
     u8 *odata, *ndata, *newbits = NULL;
     const bool recolor = (ptermApp->m_fgColor != newfg ||
                           ptermApp->m_bgColor != newbg);
-    const int newscale = (newscale2) ? 2 : 1;
+    const int newscale = (scale_to_200) ? 2 : 1;
     const bool rescale = (newscale != m_scale);
     wxMemoryDC tmpDC;
 	wxBitmap *newbitmap;
@@ -4703,7 +4733,7 @@ void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap, wxColour &newfg, w
             {
 				if (!m_stretch)
 				{
-					if (newscale2)
+					if (scale_to_200)
 					{
 						// from scale 1 to scale 2
 						ndata[0] = ndata[3] = r;
@@ -4732,7 +4762,7 @@ void PtermFrame::UpdateDC (wxMemoryDC *dc, wxBitmap *&bitmap, wxColour &newfg, w
         }
 		if (!m_stretch && rescale)
 		{
-			if (newscale2)
+			if (scale_to_200)
 			{
 				// from scale 1 to scale 2 -- duplicate scan line just completed
 				memcpy (ndata, ndata - (nw * 3), nw * 3);
@@ -5615,6 +5645,8 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         break;
                     }
                     break;
+                case pni_rs:
+                	break;
                 }
             }
         }
@@ -6146,7 +6178,7 @@ bool PtermFrame::AssembleClassicPlatoMetaData (int d)
     TRACE ("plato meta data: %d", d);
 	if (m_PMD.Len()==1000)
 	{
-		TRACE ("plato meta data limit reached: 1000 bytes","");
+		TRACE ("plato meta data limit reached: 1000 bytes");
 		m_loadingPMD = false;
 		return true;
 	}
@@ -7346,6 +7378,13 @@ Note:
 
 *******************************************************************************/
 
+/*
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    NOTE:  this routine obviously needs some more work, as it has
+    paths thru it (case 1, 2) that can pass thru the routine without
+    setting the value of -retval-.  --bg 2010/06/18
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+*/
 Uint8 PtermFrame::input8080a (Uint8 data)
 {
 
@@ -8923,12 +8962,12 @@ PtermConnection::~PtermConnection ()
 
 PtermConnection::ExitCode PtermConnection::Entry (void)
 {
-    u32 platowd;
+    u32 platowd = 0;
     int i;
     bool wasEmpty;
     struct hostent *hp;
     in_addr_t host;
-    int true_opt = 1;
+//    int true_opt = 1;
     int addrcount, r, conntries;
     in_addr_t *addresses = NULL;
     wxString msg;
@@ -9035,7 +9074,7 @@ PtermConnection::ExitCode PtermConnection::Entry (void)
                     break;
                 }
             
-                if (platowd == C_NODATA)
+                if (platowd == (u32)C_NODATA)	// makes me nervous -- bg
                 {
                     break;
                 }
@@ -9523,8 +9562,6 @@ PtermCanvas::PtermCanvas(PtermFrame *parent)
     				   wxHSCROLL | wxVSCROLL | wxFULL_REPAINT_ON_RESIZE /* , "Default Name" */),
       m_regionX (0),
       m_regionY (0),
-//      m_regionHeight (vScreenSize(parent->m_scale)),
-//      m_regionWidth (vScreenSize(parent->m_scale)),
       m_regionHeight (0),
       m_regionWidth (0),
       m_mouseX (-1),

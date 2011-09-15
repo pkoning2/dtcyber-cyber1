@@ -187,7 +187,7 @@ pterm-rpm: pterm-src pterm.spec.in ptermversion.h
 pterm.dep: $(PTOBJS:.o=.d)
 
 %.o : %.cpp
-	$(CXX) -c $(CFLAGS) $(CXXFLAGS) $<
+	$(CXX) -c -Wall $(CFLAGS) $(CXXFLAGS) $<
 
 pterm_sdl.o : pterm_sdl.c
 	$(CC) $(CFLAGS) $(SDLCFLAGS) -c $<
