@@ -159,7 +159,8 @@ static FILE *niuF;
 static bool traced=FALSE;
 #endif
 static int niuActiveConns;
-static u32 niuLastAlertReset;
+static u32 niuAlertCount;
+static u32 niuLastAlertCount;
 static int niuOpstat;
 static int sites;
 static SiteParam *siteVector;
@@ -1159,7 +1160,7 @@ static void niuOpdata(int word)
     */
     if (word == ext + resett)
         {
-        if (niuLastAlertReset == 0)
+        if (niuAlertCount == 0)
             {
             /*
             **  First keepalive message since startup or since it was shut off,
@@ -1167,7 +1168,7 @@ static void niuOpdata(int word)
             */
             niuDoAlert (OPERBOX_UP);
             }
-        niuLastAlertReset = rtcClock;
+        niuAlertCount++;
         }
     else if (word == ext + resetb)
         {
@@ -1175,7 +1176,7 @@ static void niuOpdata(int word)
         **  Report a shutdown
         */
         niuDoAlert (OPERBOX_DOWN);
-        niuLastAlertReset = 0;
+        niuAlertCount = 0;
         }
 #endif
     }
@@ -1207,7 +1208,7 @@ static void *niuThread(void *param)
     **  If the alert wasn't shut off, raise the alarm now as part
     **  of DtCyber termination.
     */
-    if (niuLastAlertReset != 0)
+    if (niuAlertCount != 0)
         {
         niuDoAlert (OPERBOX_CRASH);
         }
@@ -1225,12 +1226,19 @@ static void *niuThread(void *param)
 **------------------------------------------------------------------------*/
 static void niuCheckAlert (void)
     {
-    if (niuLastAlertReset != 0 &&
-        (rtcClock - niuLastAlertReset) / 1000000 > ALERT_TIMEOUT)
+    /*
+    **  Raise the alarm if it is enabled, and no progress has 
+    **  been seen since last time.  
+    */
+    if (niuAlertCount != 0 && niuAlertCount == niuLastAlertCount)
         {
         /* Only raise the alarm once */
-        niuLastAlertReset = 0;
+        niuAlertCount = 0;
         niuDoAlert (OPERBOX_CRASH);
+        }
+    else
+        {
+        niuLastAlertCount = niuAlertCount;
         }
     }
 
