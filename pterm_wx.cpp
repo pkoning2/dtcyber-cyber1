@@ -1640,7 +1640,6 @@ bool PtermApp::OnInit (void)
                 exit (99);
             }
             str = argv[1];
-            str = argv[1];
             if (argc > 2 && str.Left (2) == wxT ("-a"))
             {
                 m_testascii = true;
@@ -1750,7 +1749,7 @@ bool PtermApp::OnInit (void)
     
     if (m_testreq)
     {
-        char tline[200];
+        char tline[200], *p;
         int w;
         PtermFrame *frame;
         
@@ -1763,6 +1762,8 @@ bool PtermApp::OnInit (void)
                 m_firstFrame->m_prevFrame = frame;
             }
             frame->m_nextFrame = m_firstFrame;
+            frame->tracePterm = true;
+            traceF = stderr;
             m_firstFrame = frame;
             if (m_testascii)
             {
@@ -1783,7 +1784,13 @@ bool PtermApp::OnInit (void)
                     m_testdata = NULL;
                     break;
                 }
-                if (sscanf (tline, "%o", &w) != 0)
+                p = tline;
+                if (p[2] == ':')
+                {
+                    // Timestamp at start of line, skip it
+                    p += 14;
+                }
+                if (sscanf (p, "%o", &w) != 0)
                 {
                     // Successful conversion, process the word
                     frame->procPlatoWord (w, m_testascii);
@@ -4273,6 +4280,7 @@ void PtermFrame::ptermFullErase (void)
     wxClientDC dc(m_canvas);
 
     m_canvas->FullErase ();
+    m_usefont = false;
     PrepareDC (dc);
     dc.SetPen (m_backgroundPen);
     dc.SetBrush (m_backgroundBrush);
@@ -4579,31 +4587,6 @@ void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
 
 	for (int i = 0; i<5; i++)
 		m_dirty[i] = true;
-
-/*
-	//mode erase
-	m_charDC[2]->SetBackground (m_backgroundBrush);
-	m_charDC[2]->Clear ();
-	m_charDC[2]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[4], 0, 0, wxAND_INVERT);
-    
-	//mode write
-	m_charDC[3]->SetBackground (m_foregroundBrush);
-	m_charDC[3]->Clear ();
-	m_charDC[3]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[4], 0, 0, wxAND_INVERT);
-    
-	//mode inverse
-	m_charDC[0]->SetBackground (m_foregroundBrush);
-    m_charDC[0]->Clear ();
-    m_charDC[0]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[4], 0, 0, wxAND);
-    m_charDC[0]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[2], 0, 0, wxOR);
-
-	//mode rewrite
-    m_charDC[1]->SetBackground (m_backgroundBrush);
-    m_charDC[1]->Clear ();
-    m_charDC[1]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[4], 0, 0, wxAND);
-    m_charDC[1]->Blit (0, 0, vCharXSize (newscale), vCharYSize (newscale), m_charDC[3], 0, 0, wxOR);
-*/
-
 }
 
 void PtermFrame::FixTextCharMaps (void)
@@ -5234,7 +5217,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 break;
             case 013:   // vertical tab
                 TRACE ("vertical tab");
-                cy = (cy - deltay) & 0777;
+                cy = (cy + deltay) & 0777;
                 break;
             case 014:   // form feed
                 TRACE ("form feed");
@@ -5507,12 +5490,12 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         wxColour c ((n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff);
                         if (ascState == fg)
                         {
-                            //TRACE ("set foreground color %06x", n);
+                            TRACE ("set foreground color %06x", n);
                             m_currentFg = c;
                         }
                         else
                         {
-                            //TRACE ("set background color %06x", n);
+                            TRACE ("set background color %06x", n);
                             m_currentBg = c;
                         }
                         SetColors (m_currentFg, m_currentBg, m_scale);
@@ -5526,7 +5509,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         wxColour c (n & 0xff, n & 0xff, n & 0xff);
                         if (ascState == gsfg)
                         {
-                            //TRACE ("set gray-scale foreground color %06x", n);
+                            TRACE ("set gray-scale foreground color %06x", n);
                             m_currentFg = c;
                         }
                         SetColors (m_currentFg, m_currentBg, m_scale);
