@@ -95,7 +95,6 @@ static int opRequest(NetFet *np);
 static ThreadFunRet opThread (void *param);
 static void opSetup(NetFet *np, int index, void *arg);
 static void opSendStatus (StatusData *sd);
-static void opUpdateSysStatus (void);
 
 static void opCmdShutdown(char *cmdParams);
 static void opCmdLoad(char *cmdParams);
@@ -138,6 +137,7 @@ long opPort;
 long opConns;
 bool debugDisplay = FALSE;
 bool opDebugging = FALSE;
+bool opPlatoAlert = FALSE;
 
 /*
 **  -----------------
@@ -457,6 +457,42 @@ void operCheckRequests (void)
         np++;
         }
         
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Update the operator system status line
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+void opUpdateSysStatus (void)
+    {
+    if (!emulationActive)
+        {
+        sprintf (statusSys.buf + 1,
+                 "DtCyber shut down");
+        }
+    else if (opActiveConns > 1)
+        {
+        sprintf (statusSys.buf + 1,
+                 "%8s  %5s  %11s  %d operators",
+                 (opLocked) ? "" : "UNLOCKED",
+                 (opDebugging) ? "DEBUG" : "",
+                 (opPlatoAlert) ? "PLATO ALERT" : "",
+                 opActiveConns);
+        }
+    else
+        {
+        sprintf (statusSys.buf + 1,
+                 "%8s  %5s  %11s",
+                 (opLocked) ? "" : "UNLOCKED",
+                 (opDebugging) ? "DEBUG" : "",
+                 (opPlatoAlert) ? "PLATO ALERT" : "");
+        }
+    statusSys.len = strlen (statusSys.buf + 1) + 1;
+    opSendStatus (&statusSys);
     }
 
 /*
@@ -1523,40 +1559,6 @@ static void opSendStatus (StatusData *sd)
             dtSendTlv (np, &opPorts, OpStatus, sd->len, sd->buf);
             }
         }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Update the operator system status line
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        nothing.
-**
-**------------------------------------------------------------------------*/
-static void opUpdateSysStatus (void)
-    {
-    if (!emulationActive)
-        {
-        sprintf (statusSys.buf + 1,
-                 "DtCyber shut down");
-        }
-    else if (opActiveConns > 1)
-        {
-        sprintf (statusSys.buf + 1,
-                 "%8s  %5s    %d operators",
-                 (opLocked) ? "" : "UNLOCKED",
-                 (opDebugging) ? "DEBUG" : "",
-                 opActiveConns);
-        }
-    else
-        {
-        sprintf (statusSys.buf + 1,
-                 "%8s  %5s",
-                 (opLocked) ? "" : "UNLOCKED",
-                 (opDebugging) ? "DEBUG" : "");
-        }
-    statusSys.len = strlen (statusSys.buf + 1) + 1;
-    opSendStatus (&statusSys);
     }
 
 /*--------------------------------------------------------------------------

@@ -1,19 +1,25 @@
 #!/bin/bash
 
 # This script is invoked by DtCyber out of the niu operator box
-# watcher thread (if enabled).  It is passed a single string
-# argument:
+# watcher thread (if enabled).  It is passed two string arguments:
 #
+#  Argument 1:
 #	up	operator box was turned on (i.e., PLATO started)
 #	down	operator box was turned off (PLATO planned shutdown)
 #	crash	operator box keepalive timeout (PLATO crashed)
+#  Argument 2:
+#       Name of a file in /tmp that contains the message to send.
+#       That message will contain a string saying what happened, 
+#       plus debug information if applicable.  The file should be
+#       deleted by this script.
 
 # These three strings define the list of email addresses to send
 # to on a status change report.  Null string means don't send.
 
-to_up="pkoning@equallogic.com"
-to_down="pkoning@equallogic.com"
-to_crash="pkoning@equallogic.com"
+to_up="paul_koning@dell.com"
+to_down="paul_koning@dell.com"
+to_crash="paul_koning@dell.com"
+to_opcall="paul_koning@dell.com"
 
 echo "`date "+%y/%m/%d %H.%M.%S"`. PLATO $1."
 
@@ -21,6 +27,7 @@ case "$1" in
     up)         to="${to_up}";;
     down)       to="${to_down}";;
     crash)      to="${to_crash}";;
+    operator*)  to="${to_opcall}";;
     *)          echo "$0: unexpected argument $1";
 		exit 1;;
 esac
@@ -29,8 +36,11 @@ if [ `hostname` = "pkoning-laptop" ]; then
     unset to
 fi
 
+echo $1 $2
+echo $to
+cat $2
+
 if [ -n "${to}" ]; then
-    echo "Subject: PLATO $1" > /tmp/opermsg
-    /usr/sbin/sendmail ${to} < /tmp/opermsg
-    rm -f /tmp/opermsg
+    /usr/sbin/sendmail ${to} < $2
 fi
+rm -f $2

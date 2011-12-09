@@ -166,6 +166,7 @@ void mux6676Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 */
 void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 CpWord niuConn (u32 portNo);
+void niuDoAlert (int code);
 
 /*
 **  npu.c
@@ -220,9 +221,11 @@ void dumpInit(void);
 void dumpTerminate(void);
 void dumpAll(void);
 void dumpCpu(void);
+void dumpCpuInfo(FILE *f);
 void dumpCpuMem(FILE *f, u32 start, u32 end, u32 ra);
 void dumpEcs(FILE *f, u32 start, u32 end);
 void dumpPpu(u8 pp);
+void dumpPpuInfo(FILE *f, u8 ppu);
 void dumpPpuMem(FILE *f, u8 ppu, u32 start, u32 end);
 void dumpDisassemblePpu(u8 pp);
 
@@ -251,6 +254,7 @@ void opSetMsg (const char *p);
 void opSetStatus (void *buf, const char *msg);
 void * opInitStatus (const char *type, int ch, int un);
 void operCheckRequests (void);
+void opUpdateSysStatus (void);
 
 /*
 **  log.c
@@ -381,6 +385,7 @@ extern u32 cycles;
 extern long cpuRatio;
 extern bool debugDisplay;
 extern bool opDebugging;
+extern bool opPlatoAlert;
 extern bool keyboardTrue;
 extern u32 rtcClock;
 extern char autoDateString[];

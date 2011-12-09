@@ -58,6 +58,8 @@
 #define FLOW_DOPTS  4       /* Need to send PTS to Framat  */
 #define FLOW_DOABT  8       /* Need to send ABT to Framat  */
 
+#define OPERBOX_CRASH           2
+
 /*
 **  -----------------------
 **  Private Macro Functions
@@ -76,6 +78,7 @@
     "\033\014"  /* Full screen erase */                                 \
     "\033\024"  /* Mode rewrite */                                      \
     "\037"      /* Mode 3 (text plotting) */                            \
+    "\033\102"  /* Select memory M0 */                                  \
     "\033\062\044\140\044\100" /* Load X and Y 128 */                   \
     "Press  NEXT  to begin"
 #define NOPLATO_MSG \
@@ -83,6 +86,7 @@
     "\033\014"  /* Full screen erase */                                 \
     "\033\024"  /* Mode rewrite */                                      \
     "\037"      /* Mode 3 (text plotting) */                            \
+    "\033\102"  /* Select memory M0 */                                  \
     "\033\062\044\140\044\100" /* Load X and Y 128 */                   \
     "PLATO not active"
 #define OFF_MSG \
@@ -91,6 +95,7 @@
     "\033b\100\100\100\100" /* Background color black */                \
     "\033\024"  /* Mode rewrite */                                      \
     "\037"      /* Mode 3 (text plotting) */                            \
+    "\033\102"  /* Select memory M0 */                                  \
     "\033\062\056\140\044\110" /* Load Y 448, X 136 */                  \
     "                              "                                    \
     "\033\062\055\160\044\110" /* Load Y 432, X 136 */                  \
@@ -483,6 +488,8 @@ CpWord pniOp (CpWord req)
                         pniSendstr (IDX2STAT (i), OFF_MSG, 0);
                     }
                 }
+                // Send plato crash notification
+                niuDoAlert (OPERBOX_CRASH);
             }
             pniActive = FALSE;
             if (netbuf != NULL)

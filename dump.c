@@ -141,6 +141,86 @@ void dumpAll(void)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Dump CPU info (exchange packages, basically)
+**
+**  Parameters:     Name        Description.
+**                  f           File descriptor to write to.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void dumpCpuInfo (FILE *f)
+    {
+    u8 i, j;
+    CpWord data;
+
+    for (i = 0; i < cpuCount; i++)
+        {
+        fprintf (f, "Cpu %d%s:\n", i,
+                 (monitorCpu == i) ? " (in monitor mode)" : "");
+        
+        fprintf(f, "P       %06o  ", cpu[i].regP);
+        fprintf(f, "A%d %06o  ", 0, cpu[i].regA[0]);
+        fprintf(f, "B%d %06o", 0, cpu[i].regB[0]);
+        fprintf(f, "\n");
+                           
+        fprintf(f, "RAcm    %06o  ", cpu[i].regRaCm);
+        fprintf(f, "A%d %06o  ", 1, cpu[i].regA[1]);
+        fprintf(f, "B%d %06o", 1, cpu[i].regB[1]);
+        fprintf(f, "\n");
+                           
+        fprintf(f, "FLcm    %06o  ", cpu[i].regFlCm);
+        fprintf(f, "A%d %06o  ", 2, cpu[i].regA[2]);
+        fprintf(f, "B%d %06o", 2, cpu[i].regB[2]);
+        fprintf(f, "\n");
+                           
+        fprintf(f, "RAecs %08o  ", cpu[i].regRaEcs);
+        fprintf(f, "A%d %06o  ", 3, cpu[i].regA[3]);
+        fprintf(f, "B%d %06o", 3, cpu[i].regB[3]);
+        fprintf(f, "\n");
+                           
+        fprintf(f, "FLecs %08o  ", cpu[i].regFlEcs);
+        fprintf(f, "A%d %06o  ", 4, cpu[i].regA[4]);
+        fprintf(f, "B%d %06o", 4, cpu[i].regB[4]);
+        fprintf(f, "\n");
+                           
+        fprintf(f, "EM    %08o  ", cpu[i].exitMode);
+        fprintf(f, "A%d %06o  ", 5, cpu[i].regA[5]);
+        fprintf(f, "B%d %06o", 5, cpu[i].regB[5]);
+        fprintf(f, "\n");
+                           
+        fprintf(f, "MA      %06o  ", cpu[i].regMa);
+        fprintf(f, "A%d %06o  ", 6, cpu[i].regA[6]);
+        fprintf(f, "B%d %06o", 6, cpu[i].regB[6]);
+        fprintf(f, "\n");
+                           
+        fprintf(f, "ECOND       %02o  ", cpu[i].exitCondition);
+        fprintf(f, "A%d %06o  ", 7, cpu[i].regA[7]);
+        fprintf(f, "B%d %06o  ", 7, cpu[i].regB[7]);
+        fprintf(f, "\n");
+        fprintf(f, "STOP         %d  ", cpu[i].cpuStopped ? 1 : 0);
+        fprintf(f, "\n");
+        fprintf(f, "\n");
+    
+        for (j = 0; j < 8; j++)
+            {
+            fprintf(f, "X%d ", j);
+            data = cpu[i].regX[j];
+            fprintf(f, "%04o %04o %04o %04o %04o   ",
+                    (PpWord)((data >> 48) & Mask12),
+                    (PpWord)((data >> 36) & Mask12),
+                    (PpWord)((data >> 24) & Mask12),
+                    (PpWord)((data >> 12) & Mask12),
+                    (PpWord)((data      ) & Mask12));
+            fprintf(f, "\n");
+            }
+
+        fprintf(f, "\n");
+        }
+    }
+
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Dump CPU.
 **
 **  Parameters:     Name        Description.
@@ -150,8 +230,6 @@ void dumpAll(void)
 **------------------------------------------------------------------------*/
 void dumpCpu(void)
     {
-    u8 i, j;
-    CpWord data;
 
     if (cpuDF == NULL)
         {
@@ -162,70 +240,7 @@ void dumpCpu(void)
             }
         }
 
-    for (i = 0; i < cpuCount; i++)
-        {
-        fprintf (cpuDF, "Cpu %d%s:\n", i,
-                 (monitorCpu == i) ? " (in monitor mode)" : "");
-        
-        fprintf(cpuDF, "P       %06o  ", cpu[i].regP);
-        fprintf(cpuDF, "A%d %06o  ", 0, cpu[i].regA[0]);
-        fprintf(cpuDF, "B%d %06o", 0, cpu[i].regB[0]);
-        fprintf(cpuDF, "\n");
-                           
-        fprintf(cpuDF, "RAcm    %06o  ", cpu[i].regRaCm);
-        fprintf(cpuDF, "A%d %06o  ", 1, cpu[i].regA[1]);
-        fprintf(cpuDF, "B%d %06o", 1, cpu[i].regB[1]);
-        fprintf(cpuDF, "\n");
-                           
-        fprintf(cpuDF, "FLcm    %06o  ", cpu[i].regFlCm);
-        fprintf(cpuDF, "A%d %06o  ", 2, cpu[i].regA[2]);
-        fprintf(cpuDF, "B%d %06o", 2, cpu[i].regB[2]);
-        fprintf(cpuDF, "\n");
-                           
-        fprintf(cpuDF, "RAecs %08o  ", cpu[i].regRaEcs);
-        fprintf(cpuDF, "A%d %06o  ", 3, cpu[i].regA[3]);
-        fprintf(cpuDF, "B%d %06o", 3, cpu[i].regB[3]);
-        fprintf(cpuDF, "\n");
-                           
-        fprintf(cpuDF, "FLecs %08o  ", cpu[i].regFlEcs);
-        fprintf(cpuDF, "A%d %06o  ", 4, cpu[i].regA[4]);
-        fprintf(cpuDF, "B%d %06o", 4, cpu[i].regB[4]);
-        fprintf(cpuDF, "\n");
-                           
-        fprintf(cpuDF, "EM    %08o  ", cpu[i].exitMode);
-        fprintf(cpuDF, "A%d %06o  ", 5, cpu[i].regA[5]);
-        fprintf(cpuDF, "B%d %06o", 5, cpu[i].regB[5]);
-        fprintf(cpuDF, "\n");
-                           
-        fprintf(cpuDF, "MA      %06o  ", cpu[i].regMa);
-        fprintf(cpuDF, "A%d %06o  ", 6, cpu[i].regA[6]);
-        fprintf(cpuDF, "B%d %06o", 6, cpu[i].regB[6]);
-        fprintf(cpuDF, "\n");
-                           
-        fprintf(cpuDF, "ECOND       %02o  ", cpu[i].exitCondition);
-        fprintf(cpuDF, "A%d %06o  ", 7, cpu[i].regA[7]);
-        fprintf(cpuDF, "B%d %06o  ", 7, cpu[i].regB[7]);
-        fprintf(cpuDF, "\n");
-        fprintf(cpuDF, "STOP         %d  ", cpu[i].cpuStopped ? 1 : 0);
-        fprintf(cpuDF, "\n");
-        fprintf(cpuDF, "\n");
-    
-        for (j = 0; j < 8; j++)
-            {
-            fprintf(cpuDF, "X%d ", j);
-            data = cpu[i].regX[j];
-            fprintf(cpuDF, "%04o %04o %04o %04o %04o   ",
-                    (PpWord)((data >> 48) & Mask12),
-                    (PpWord)((data >> 36) & Mask12),
-                    (PpWord)((data >> 24) & Mask12),
-                    (PpWord)((data >> 12) & Mask12),
-                    (PpWord)((data      ) & Mask12));
-            fprintf(cpuDF, "\n");
-            }
-
-        fprintf(cpuDF, "\n");
-        }
-
+    dumpCpuInfo (cpuDF);
     dumpCpuMem (cpuDF, 0, cpuMaxMemory, 0);
     }
 
@@ -234,6 +249,7 @@ void dumpCpu(void)
 **  Purpose:        Dump a range of CPU memory.
 **
 **  Parameters:     Name        Description.
+**                  f           File descriptor to write to.
 **                  start       Start address.
 **                  end         LWA + 1 of dump.
 **                  ra          RA to apply to start and end addresses
@@ -250,6 +266,7 @@ void dumpCpuMem(FILE *f, u32 start, u32 end, u32 ra)
 **  Purpose:        Dump a range of ECS memory.
 **
 **  Parameters:     Name        Description.
+**                  f           File descriptor to write to.
 **                  start       Start address.
 **                  end         LWA + 1 of dump.
 **
@@ -259,6 +276,25 @@ void dumpCpuMem(FILE *f, u32 start, u32 end, u32 ra)
 void dumpEcs(FILE *f, u32 start, u32 end)
     {
     dumpMem(f, start, end, 0, ecsMem);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Dump PPU info (processor state).
+**
+**  Parameters:     Name        Description.
+**                  f           File descriptor to write to.
+**                  pp          PPU number.
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void dumpPpuInfo (FILE *pf, u8 pp)
+    {
+    fprintf(pf, "P   %04o\n", ppu[pp].regP);
+    fprintf(pf, "A %06o\n", ppu[pp].regA);
+    fprintf(pf, "IO    %02o\n", ppu[pp].ioWaitType);
+    fprintf(pf, "STOP  %02o\n", ppu[pp].stopped);
+    fprintf(pf, "\n");
     }
 
 /*--------------------------------------------------------------------------
@@ -287,11 +323,7 @@ void dumpPpu(u8 pp)
         }
     pf = ppuDF[pp];
 
-    fprintf(pf, "P   %04o\n", ppu[pp].regP);
-    fprintf(pf, "A %06o\n", ppu[pp].regA);
-    fprintf(pf, "IO    %02o\n", ppu[pp].ioWaitType);
-    fprintf(pf, "STOP  %02o\n", ppu[pp].stopped);
-    fprintf(pf, "\n");
+    dumpPpuInfo (pf, pp);
     dumpPpuMem (pf, pp, 0, PpMemSize);
     }
 
@@ -299,6 +331,7 @@ void dumpPpu(u8 pp)
 **  Purpose:        Dump PPU memory.
 **
 **  Parameters:     Name        Description.
+**                  f           File descriptor to write to.
 **                  pp          PPU number.
 **                  start       Start address.
 **                  end         LWA + 1 of dump.
