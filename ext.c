@@ -71,9 +71,9 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static CpWord envOp (CpWord req);
-static CpWord sockOp (CpWord req);
-static CpWord termConnOp (CpWord req);
+static CpWord envOp (CPUVARGS1 (CpWord req));
+static CpWord sockOp (CPUVARGS1 (CpWord req));
+static CpWord termConnOp (CPUVARGS1 (CpWord req));
 static NetFet *getFet (void);
 
 /*
@@ -132,9 +132,9 @@ void initExt (void)
 **  Returns:        result of the request (60 bits)
 **
 **------------------------------------------------------------------------*/
-CpWord extOp (CpWord req)
+CpWord extOp (CPUVARGS1 (CpWord req))
 {
-    CpWord *reqp = cpuAccessMem (req, 1);
+    CpWord *reqp = cpuAccessMem (CPUARGS2 (req, 1));
     CpWord retval;
     
     if (reqp == NULL)
@@ -144,16 +144,16 @@ CpWord extOp (CpWord req)
     switch (*reqp & Mask12)
     {
     case 0:
-        retval = envOp (req);
+        retval = envOp (CPUARGS1 (req));
         break;
     case 1:
-        retval = sockOp (req);
+        retval = sockOp (CPUARGS1 (req));
         break;
     case 2:
-        retval = termConnOp (req);
+        retval = termConnOp (CPUARGS1 (req));
         break;
     case 3:
-        retval = pniOp (req);
+        retval = pniOp (CPUARGS1 (req));
         break;
     default:
         retval = RETINVREQ;
@@ -192,9 +192,9 @@ CpWord extOp (CpWord req)
 **                  of lovariable value, in display code.  0 if not found.
 **
 **------------------------------------------------------------------------*/
-static CpWord envOp (CpWord req)
+static CpWord envOp (CPUVARGS1 (CpWord req))
 {
-    CpWord *reqp = cpuAccessMem (req, 2);
+    CpWord *reqp = cpuAccessMem (CPUARGS2 (req, 2));
     char reqstr[11];
     char resultstr[MAXENV];
     char *p = reqstr;
@@ -296,10 +296,10 @@ static CpWord envOp (CpWord req)
 **                  For host OS errors, status is 1000 + errno value.
 **
 **------------------------------------------------------------------------*/
-static CpWord sockOp (CpWord req)
+static CpWord sockOp (CPUVARGS1 (CpWord req))
 {
     // Check for a 5 word request buffer always (even though most requests require less)
-    CpWord *reqp = cpuAccessMem (req, 5);
+    CpWord *reqp = cpuAccessMem (CPUARGS2 (req, 5));
     NetFet *fet = NULL, *dataFet;
     int fd;
     int socknum;
@@ -480,7 +480,7 @@ static CpWord sockOp (CpWord req)
         {
             return RETINVREQ;
         }
-        bufp = cpuAccessMem (reqp[2], buflen);
+        bufp = cpuAccessMem (CPUARGS2 (reqp[2], buflen));
         // DEBUGPRINT ("read mode %d to %06llo length %d\n", mode, reqp[2], buflen);
         reqp[4] = 0;
         if (bufp == NULL)
@@ -726,7 +726,7 @@ static CpWord sockOp (CpWord req)
             }
             shift = 60 - 8;
         }
-        bufp = cpuAccessMem (reqp[2], buflen);
+        bufp = cpuAccessMem (CPUARGS2 (reqp[2], buflen));
         DEBUGPRINT ("write mode %d from %06llo length %lld bytes (%d words)\n", mode, reqp[2], reqp[3], buflen);
         if (bufp == NULL)
         {
@@ -840,7 +840,7 @@ static CpWord sockOp (CpWord req)
         {
             return RETINVREQ;
         }
-        bufp = cpuAccessMem (reqp[2], buflen);
+        bufp = cpuAccessMem (CPUARGS2 (reqp[2], buflen));
         if (bufp == NULL)
         {
             return RETINVREQ;
@@ -895,9 +895,9 @@ static CpWord sockOp (CpWord req)
 **                  -1 if error (port number or port type out of range)
 **
 **------------------------------------------------------------------------*/
-static CpWord termConnOp (CpWord req)
+static CpWord termConnOp (CPUVARGS1 (CpWord req))
 {
-    CpWord *reqp = cpuAccessMem (req, 3);
+    CpWord *reqp = cpuAccessMem (CPUARGS2 (req, 3));
     
     if (reqp == NULL)
     {

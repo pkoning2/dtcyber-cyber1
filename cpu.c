@@ -62,29 +62,10 @@
 **  -----------------------
 */
 
-/* 
-**  Macros for enabling dual CPU emulation.  These are constructed
-**  so the case when dual CPU emulation is turned off do NOT get the
-**  added (even if small) overhead of passing a cpu context pointer
-**  to all the emulation primitives.
-*/
 #ifdef DUAL_CPU
-#define CPUVARG         CpuContext *activeCpu
-#define CPUVARGS2(x, y) CpuContext *activeCpu, x, y
-#define CPUVARGS3(x, y, z) CpuContext *activeCpu, x, y, z
-#define CPUARG          activeCpu
-#define CPUARGS2(x, y)  activeCpu, x, y
-#define CPUARGS3(x, y, z) activeCpu, x, y, z
 #define MAXCPUS         2
 #else
-#define CPUVARG         void
-#define CPUVARGS2(x, y) x, y
-#define CPUVARGS3(x, y, z) x, y, z
-#define CPUARG
-#define CPUARGS2(x, y)  x, y
-#define CPUARGS3(x, y, z) x, y, z
 #define MAXCPUS         1
-#define cpuStep         cpuStepAll
 #endif
 
 /*
@@ -123,9 +104,11 @@ static void cpuExchangeJump(CPUVARG);
 #ifdef CPU_THREADS
 static void cpuCreateThread(int cpuNum);
 static ThreadFunRet cpuThread(void *param);
-#elif defined (DUAL_CPU)
-static void cpuStep(CPUVARG);
 #endif /* CPU_THREADS */
+
+#ifdef DUAL_CPU
+void cpuStep(CPUVARG);
+#endif
 
 static void cpOp00(CPUVARG);
 static void cpOp01(CPUVARG);
@@ -731,7 +714,7 @@ void cpuPpWriteMem(u32 address, CpWord data)
 **  Returns:        Pointer to first word, or NULL if out of range
 **
 **------------------------------------------------------------------------*/
-CpWord * cpuAccessMem(CpWord address, int length)
+CpWord * cpuAccessMem(CPUVARGS2 (CpWord address, int length))
     {
 	if (address & (1ULL << 59))
 	    {
@@ -770,16 +753,23 @@ CpWord * cpuAccessMem(CpWord address, int length)
 **
 **  Returns:        Nothing.
 **
+**  This steps all CPUs, unless multi-threading is used for the additional
+**  CPUs, in which case it steps only CPU 0.
+**
 **------------------------------------------------------------------------*/
-#if !defined (CPU_THREADS) && defined (DUAL_CPU)
+#if defined (DUAL_CPU)
 void cpuStepAll (void)
     {
+#if !defined (CPU_THREADS)
     int cpuNum;
     
     for (cpuNum = 0; cpuNum < cpuCount; cpuNum++)
         {
         cpuStep(cpu + cpuNum);
         }
+#else
+    cpuStep (cpu);
+#endif
     }
 #endif
 
@@ -2506,7 +2496,7 @@ static void cpOp01(CPUVARG)
         **  RI or IBj -- which is 7600 only.  So we steal it for 
         **  dealing with the world outside the emulator.
         */
-        activeCpu->regX[activeCpu->opJ] = extOp (activeCpu->regX[activeCpu->opK]);
+        activeCpu->regX[activeCpu->opJ] = extOp (CPUARGS1 (activeCpu->regX[activeCpu->opK]));
         break;
         }
     }

@@ -463,9 +463,9 @@ void initPni (void)
 **  to all connected stations.
 **
 **------------------------------------------------------------------------*/
-CpWord pniOp (CpWord req)
+CpWord pniOp (CPUVARGS1 (CpWord req))
 {
-    CpWord *reqp = cpuAccessMem (req, 2);
+    CpWord *reqp = cpuAccessMem (CPUARGS2 (req, 2));
     CpWord *pnii;
     int i, stat, len;
     PortParam *pp;
@@ -509,8 +509,8 @@ CpWord pniOp (CpWord req)
         return RETINVREQ;
     }
     
-    pnii = cpuAccessMem ((1ULL << 59) | reqp[1], 
-                         sizeof (struct PniPtr) / sizeof (CpWord));
+    pnii = cpuAccessMem (CPUARGS2 ((1ULL << 59) | reqp[1], 
+                                   sizeof (struct PniPtr) / sizeof (CpWord)));
     if (pnii == NULL)
     {
         return RETINVREQ;
@@ -531,17 +531,28 @@ CpWord pniOp (CpWord req)
         stations = pniStations;
     }
     lastStation = pniFirstStation + stations;
-    akb = cpuAccessMem ((1ULL << 59) | apni.akb, lastStation * NKEYLTH);
-    ast = (struct stbank *) cpuAccessMem ((1ULL << 59) | apni.ast, 
-                                          lastStation * sizeof (struct stbank) / sizeof (CpWord));
-    aasccon = cpuAccessMem ((1ULL << 59) | apni.aasccon, lastStation);
-    abt = cpuAccessMem ((1ULL << 59) | apni.abt, stations >> 5);  // one word per site
+    akb = cpuAccessMem (CPUARGS2 ((1ULL << 59) | apni.akb,
+                                  lastStation * NKEYLTH));
+    ast = (struct stbank *) cpuAccessMem (CPUARGS2 ((1ULL << 59) | apni.ast, 
+                                                    lastStation * sizeof (struct stbank) / sizeof (CpWord)));
+    aasccon = cpuAccessMem (CPUARGS2 ((1ULL << 59) | apni.aasccon, 
+                                      lastStation));
+    abt = cpuAccessMem (CPUARGS2 ((1ULL << 59) | apni.abt, 
+                                  stations >> 5));  // one word per site
     fpnilen = (apni.sd[SIMNAM].fod >> 42) & Mask18;
-    afpnib = cpuAccessMem ((1ULL << 59) | ((apni.sd[SIMNAM].fod >> 21) & Mask21), fpnilen);
-    afpniio = cpuAccessMem ((1ULL << 59) | (apni.sd[SIMNAM].fod & Mask21), 2);
+    afpnib = cpuAccessMem (CPUARGS2 ((1ULL << 59) |
+                                     ((apni.sd[SIMNAM].fod >> 21) & Mask21), 
+                                     fpnilen));
+    afpniio = cpuAccessMem (CPUARGS2 ((1ULL << 59) |
+                                      (apni.sd[SIMNAM].fod & Mask21), 
+                                      2));
     pniflen = (apni.sd[SIMNAM].frb >> 42) & Mask18;
-    apnifb = cpuAccessMem ((1ULL << 59) | ((apni.sd[SIMNAM].frb >> 21) & Mask21), pniflen);
-    apnifio = cpuAccessMem ((1ULL << 59) | (apni.sd[SIMNAM].frb & Mask21), 2);
+    apnifb = cpuAccessMem (CPUARGS2 ((1ULL << 59) |
+                                     ((apni.sd[SIMNAM].frb >> 21) & Mask21), 
+                                     pniflen));
+    apnifio = cpuAccessMem (CPUARGS2 ((1ULL << 59) |
+                                      (apni.sd[SIMNAM].frb & Mask21), 
+                                      2));
     if (akb == NULL || aasccon == NULL || abt == NULL ||
         afpnib == NULL || afpniio == NULL ||
         apnifb == NULL || apnifio == NULL)

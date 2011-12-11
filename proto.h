@@ -73,7 +73,7 @@ bool cpuPpReadMem(u32 address, CpWord *data);
 void cpuPpWriteMem(u32 address, CpWord data);
 bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs);
 int cpuIssueExchange(u8 cpnum, u32 addr, int monitor);
-CpWord * cpuAccessMem(CpWord address, int length);
+CpWord * cpuAccessMem(CPUVARGS2 (CpWord, int length));
 
 /*
 **  dcc6681.c
@@ -203,13 +203,13 @@ void traceCM(u32 start, u32 end);
 /*
 **  ext.c
 */
-CpWord extOp (CpWord req);
+CpWord extOp (CPUVARGS1 (CpWord req));
 void initExt (void);
 
 /*
 **  pni.c
 */
-CpWord pniOp (CpWord req);
+CpWord pniOp (CPUVARGS1 (CpWord req));
 void initPni (void);
 void pniCheck (void);
 CpWord pniConn (u32 portNo);

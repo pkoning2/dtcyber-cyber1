@@ -154,11 +154,11 @@ int main(int argc, char **argv)
         **  Execute PP, CPU and RTC.
         */
         ppStep();
-#ifndef CPU_THREADS
+
+        /*
+        **  Step all CPUs (or just CPU 0 if multithreaded)
+        */
         cpuStepAll();
-#else
-        cpuStep(cpu);
-#endif
         if (channelDelayMask != 0)
             {
             channelStep();

@@ -286,7 +286,15 @@ static void initCyber(const char *config)
         fprintf (stderr, "Entry 'cpus' invalid in section [%s] in %s -- correct values are 1 or 2\n", config, startupFile);
         exit (1);
         }
-    
+#ifndef DUAL_CPU
+    if (cpus != 1)
+        {
+        fprintf (stderr, "Entry 'cpus=2' ignored, no dual CPU support\n");
+        cpus = 1;
+        }
+#else
+    printf ("Running with %d CPUs\n", cpus);
+#endif
     initGetInteger ("cpuratio", 1, &cpuRatio);
     if (cpuRatio < 1 || cpuRatio > 50)
         {
