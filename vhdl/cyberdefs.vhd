@@ -28,7 +28,6 @@ package sigs is
   type logicbus is array (natural range <>) of logicsig;  -- logic bus, any width
 
   constant t : time := 5 ns;            -- basic stage delay
-  constant tp : time := 10 ns;          -- twisted pair wire delay
   constant tc : time := 25 ns;          -- coax delay (including transistors)
   subtype coaxsigs is coaxbus (18 downto 0);    -- CDC standard coax cable
   constant idlecoax : coaxsigs := (others => '0');
