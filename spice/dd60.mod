@@ -77,10 +77,10 @@ xafyb by1 by2 by3 by4 by5 by6 y2 v6 af
 *
 * cable from 6612
 *
-r1 x1 0 75
-r2 x2 0 75
-r3 y1 0 75
-r4 y2 0 75
+*r1 x1 0 75
+*r2 x2 0 75
+*r3 y1 0 75
+*r4 y2 0 75
 * Simulate line loss with a lumped resistor
 rl1 x1 x1a 8
 rl2 x2 x2a 8
@@ -111,6 +111,11 @@ xy3 vy3 iy3 by3 diff
 xy4 vy4 iy4 by4 diff
 xy5 vy5 iy5 by5 diff
 xy6 vy6 iy6 by6 diff
+*
+* For display purposes, generate the "digital" x/y
+*
+bdx dx 0 v=v(vx1)+v(vx2)+v(vx3)+v(vx4)+v(vx5)+v(vx6)
+bdy dy 0 v=v(vy1)+v(vy2)+v(vy3)+v(vy4)+v(vy5)+v(vy6)
 *
 *** Options
 .option method=gear
