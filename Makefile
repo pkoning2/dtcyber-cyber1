@@ -66,26 +66,31 @@ ifeq ("$(HOST)","Darwin")
 
 # Mac
 
+ifdef DUAL
+MACTARGETS=g5 x86_64
+else
+MACTARGETS=g3 g5 x86 x86_64
+endif
+
 .PHONY : dtcyber 
 
 dtcyber:
-	mkdir -p g3; \
-	cd g3; \
-	ln -sf ../Makefile.* .; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G3\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)"
-	mkdir -p g5; \
-	cd g5; \
-	ln -sf ../Makefile.* .; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G5\"'" VPATH=.. DUAL=$(DUAL) DUAL_HOST_CPUS=1 PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)"
-	mkdir -p x86; \
-	cd x86 ; \
-	ln -sf ../Makefile.* .; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"i386\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86ARCHFLAGS)"
-	mkdir -p x86_64; \
-	cd x86_64 ; \
-	ln -sf ../Makefile.* .; \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86_64CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"x86_64\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86_64ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86_64ARCHFLAGS)"
-	lipo -create -output dtcyber g3/gxdtcyber g5/gxdtcyber x86/gxdtcyber x86_64/gxdtcyber
+	mkdir -p $(MACTARGETS)
+ifndef DUAL
+	( cd g3 && \
+	ln -sf ../Makefile.* . && \
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G3\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)" )
+	( cd x86 && \
+	ln -sf ../Makefile.* . && \
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"i386\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86ARCHFLAGS)" )
+endif
+	( cd g5 && \
+	ln -sf ../Makefile.* . && \
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G5\"'" VPATH=.. DUAL=$(DUAL) DUAL_HOST_CPUS=1 PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)" )
+	( cd x86_64 && \
+	ln -sf ../Makefile.* . && \
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86_64CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"x86_64\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86_64ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86_64ARCHFLAGS)" )
+	lipo -create -output dtcyber `for d in $(MACTARGETS); do echo $$d/gxdtcyber; done`
 
 gxdtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) $(ARCHCFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)

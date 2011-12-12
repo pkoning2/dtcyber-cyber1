@@ -30,7 +30,7 @@ LDFLAGS += $(EXTRALDFLAGS)
 # If dual cpu emulation requested ("make DUAL=yes") then turn that on.
 # If the host has dual CPUs, turn on CPU threads for this.
 # (Note that dual cpu emulation on a single CPU host is a bit silly,
-# though it is legal.)
+# though it is sort of legal.)
 ifdef DUAL
 MACHINECFLAGS += -DDUAL_CPU
 ifneq ($(DUAL_HOST_CPUS), 0)
