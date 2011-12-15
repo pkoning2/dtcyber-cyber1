@@ -1,0 +1,15 @@
+mtr.
+user(sys,system)
+attach,opl=opl871.
+modify.
+compass,i,b=mtrbin,s=nostext,s=pptext,a,l.
+purge,mtrbin/na.
+define,mtrbin.
+~
+*edit mtr
+*IDENT fixclok
+*deck mtr
+*d mtr.503,mtr.506
+ TIM2     ADC    -MLSC       CYCLES TILL RTCL WRITTEN
+*d MTR47.2,271L716.1346
+*d 271L716.1394,271L716.1400
