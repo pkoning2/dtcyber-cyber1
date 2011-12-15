@@ -269,14 +269,16 @@ static void rtcIo(void)
         us = (rtcCycles * ULL (1000000)) / Hz;
         clock = rtcClock + us;
         
-        if (activePpu->id == 0 || !mtr)
+        if (activePpu->id == 0)
             {
+            mtr = TRUE;
             rtcPrev += (us * Hz) / ULL (1000000);
             rtcClock = clock;
             }
-        else if (activePpu->id == 0)
+        else if (!mtr)
             {
-            mtr = TRUE;
+            rtcPrev += (us * Hz) / ULL (1000000);
+            rtcClock = clock;
             }
         }
 #else
