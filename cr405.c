@@ -83,10 +83,11 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus cr405Func(PpWord funcCode);
-static void cr405Io(void);
-static void cr405Activate(void);
-static void cr405Disconnect(void);
+static FcStatus cr405Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode);
+static void cr405Io(ChSlot *activeChannel, DevSlot *activeDevice);
+static void cr405Activate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void cr405Disconnect(ChSlot *activeChannel, DevSlot *activeDevice);
 
 /*
 **  ----------------
@@ -155,7 +156,8 @@ void cr405Init(u8 eqNo, u8 unitCount, u8 channelNo, char *deviceName)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus cr405Func(PpWord funcCode)
+static FcStatus cr405Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode)
     {
     switch (funcCode)
         {
@@ -202,7 +204,7 @@ static FcStatus cr405Func(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cr405Io(void)
+static void cr405Io(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     int len;
 
@@ -274,7 +276,7 @@ static void cr405Io(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cr405Activate(void)
+static void cr405Activate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -286,7 +288,7 @@ static void cr405Activate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cr405Disconnect(void)
+static void cr405Disconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 

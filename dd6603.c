@@ -101,11 +101,13 @@ typedef struct diskParam
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus dd6603Func(PpWord funcCode);
-static void dd6603Io(void);
-static void dd6603Activate(void);
-static void dd6603Disconnect(void);
-static i32 dd6603Seek(i32 track, i32 head, i32 sector);
+static FcStatus dd6603Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                           PpWord funcCode);
+static void dd6603Io(ChSlot *activeChannel, DevSlot *activeDevice);
+static void dd6603Activate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void dd6603Disconnect(ChSlot *activeChannel, DevSlot *activeDevice);
+static i32 dd6603Seek(ChSlot *activeChannel, DevSlot *activeDevice,
+                      i32 track, i32 head, i32 sector);
 
 /*
 **  ----------------
@@ -194,7 +196,8 @@ void dd6603Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus dd6603Func(PpWord funcCode)
+static FcStatus dd6603Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                           PpWord funcCode)
     {
     FILE *fcb = activeDevice->fcb[activeDevice->selectedUnit];
     DiskParam *dp = (DiskParam *)activeDevice->context[activeDevice->selectedUnit];
@@ -208,7 +211,8 @@ static FcStatus dd6603Func(PpWord funcCode)
     case Fc6603ReadSector:
         activeDevice->fcode = funcCode;
         dp->sector = funcCode & Fc6603SectMask;
-        pos = dd6603Seek(dp->track, dp->head, dp->sector);
+        pos = dd6603Seek(activeChannel, activeDevice,
+                         dp->track, dp->head, dp->sector);
         if (pos < 0)
             {
             return(FcDeclined);
@@ -220,7 +224,8 @@ static FcStatus dd6603Func(PpWord funcCode)
     case Fc6603WriteSector:
         activeDevice->fcode = funcCode;
         dp->sector = funcCode & Fc6603SectMask;
-        pos = dd6603Seek(dp->track, dp->head, dp->sector);
+        pos = dd6603Seek(activeChannel, activeDevice,
+                         dp->track, dp->head, dp->sector);
         if (pos < 0)
             {
             return(FcDeclined);
@@ -265,7 +270,7 @@ static FcStatus dd6603Func(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd6603Io(void)
+static void dd6603Io(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     FILE *fcb = activeDevice->fcb[activeDevice->selectedUnit];
 
@@ -314,7 +319,7 @@ static void dd6603Io(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd6603Activate(void)
+static void dd6603Activate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -326,7 +331,7 @@ static void dd6603Activate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd6603Disconnect(void)
+static void dd6603Disconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -342,7 +347,8 @@ static void dd6603Disconnect(void)
 **                  is invalid.
 **
 **------------------------------------------------------------------------*/
-static i32 dd6603Seek(i32 track, i32 head, i32 sector)
+static i32 dd6603Seek(ChSlot *activeChannel, DevSlot *activeDevice,
+                      i32 track, i32 head, i32 sector)
     {
     i32 result;
     i32 sectorsPerTrack = MaxOuterSectors;

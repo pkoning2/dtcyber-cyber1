@@ -1,3 +1,4 @@
+#define CcDebug 1
 /*--------------------------------------------------------------------------
 **
 **  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
@@ -56,6 +57,7 @@
     }
 
 #define IndexLocation                                                       \
+    PpWord location;                                                        \
     if (opD != 0)                                                           \
         {                                                                   \
         location = activePpu->mem[opD] + activePpu->mem[activePpu->regP];   \
@@ -83,82 +85,85 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static void ppOpPSN(void);    // 00
-static void ppOpLJM(void);    // 01
-static void ppOpRJM(void);    // 02
-static void ppOpUJN(void);    // 03
-static void ppOpZJN(void);    // 04
-static void ppOpNJN(void);    // 05
-static void ppOpPJN(void);    // 06
-static void ppOpMJN(void);    // 07
-static void ppOpSHN(void);    // 10
-static void ppOpLMN(void);    // 11
-static void ppOpLPN(void);    // 12
-static void ppOpSCN(void);    // 13
-static void ppOpLDN(void);    // 14
-static void ppOpLCN(void);    // 15
-static void ppOpADN(void);    // 16
-static void ppOpSBN(void);    // 17
-static void ppOpLDC(void);    // 20
-static void ppOpADC(void);    // 21
-static void ppOpLPC(void);    // 22
-static void ppOpLMC(void);    // 23
-static void ppOpPSN(void);    // 24
-static void ppOpPSN(void);    // 25
-static void ppOpEXN(void);    // 26
-static void ppOpRPN(void);    // 27
-static void ppOpLDD(void);    // 30
-static void ppOpADD(void);    // 31
-static void ppOpSBD(void);    // 32
-static void ppOpLMD(void);    // 33
-static void ppOpSTD(void);    // 34
-static void ppOpRAD(void);    // 35
-static void ppOpAOD(void);    // 36
-static void ppOpSOD(void);    // 37
-static void ppOpLDI(void);    // 40
-static void ppOpADI(void);    // 41
-static void ppOpSBI(void);    // 42
-static void ppOpLMI(void);    // 43
-static void ppOpSTI(void);    // 44
-static void ppOpRAI(void);    // 45
-static void ppOpAOI(void);    // 46
-static void ppOpSOI(void);    // 47
-static void ppOpLDM(void);    // 50
-static void ppOpADM(void);    // 51
-static void ppOpSBM(void);    // 52
-static void ppOpLMM(void);    // 53
-static void ppOpSTM(void);    // 54
-static void ppOpRAM(void);    // 55
-static void ppOpAOM(void);    // 56
-static void ppOpSOM(void);    // 57
-static void ppOpCRD(void);    // 60
-static void ppOpCRM(void);    // 61
-static void ppOpCWD(void);    // 62
-static void ppOpCWM(void);    // 63
-static void ppOpAJM(void);    // 64
-static void ppOpIJM(void);    // 65
-static void ppOpFJM(void);    // 66
-static void ppOpEJM(void);    // 67
-static void ppOpIAN(void);    // 70
-static void ppOpIAM(void);    // 71
-static void ppOpOAN(void);    // 72
-static void ppOpOAM(void);    // 73
-static void ppOpACN(void);    // 74
-static void ppOpDCN(void);    // 75
-static void ppOpFAN(void);    // 76
-static void ppOpFNC(void);    // 77
+static void ppOpPSN (PpSlot *activePpu, PpByte opD);    // 00
+static void ppOpLJM (PpSlot *activePpu, PpByte opD);    // 01
+static void ppOpRJM (PpSlot *activePpu, PpByte opD);    // 02
+static void ppOpUJN (PpSlot *activePpu, PpByte opD);    // 03
+static void ppOpZJN (PpSlot *activePpu, PpByte opD);    // 04
+static void ppOpNJN (PpSlot *activePpu, PpByte opD);    // 05
+static void ppOpPJN (PpSlot *activePpu, PpByte opD);    // 06
+static void ppOpMJN (PpSlot *activePpu, PpByte opD);    // 07
+static void ppOpSHN (PpSlot *activePpu, PpByte opD);    // 10
+static void ppOpLMN (PpSlot *activePpu, PpByte opD);    // 11
+static void ppOpLPN (PpSlot *activePpu, PpByte opD);    // 12
+static void ppOpSCN (PpSlot *activePpu, PpByte opD);    // 13
+static void ppOpLDN (PpSlot *activePpu, PpByte opD);    // 14
+static void ppOpLCN (PpSlot *activePpu, PpByte opD);    // 15
+static void ppOpADN (PpSlot *activePpu, PpByte opD);    // 16
+static void ppOpSBN (PpSlot *activePpu, PpByte opD);    // 17
+static void ppOpLDC (PpSlot *activePpu, PpByte opD);    // 20
+static void ppOpADC (PpSlot *activePpu, PpByte opD);    // 21
+static void ppOpLPC (PpSlot *activePpu, PpByte opD);    // 22
+static void ppOpLMC (PpSlot *activePpu, PpByte opD);    // 23
+static void ppOpPSN (PpSlot *activePpu, PpByte opD);    // 24
+static void ppOpPSN (PpSlot *activePpu, PpByte opD);    // 25
+static void ppOpEXN (PpSlot *activePpu, PpByte opD);    // 26
+static void ppOpRPN (PpSlot *activePpu, PpByte opD);    // 27
+static void ppOpLDD (PpSlot *activePpu, PpByte opD);    // 30
+static void ppOpADD (PpSlot *activePpu, PpByte opD);    // 31
+static void ppOpSBD (PpSlot *activePpu, PpByte opD);    // 32
+static void ppOpLMD (PpSlot *activePpu, PpByte opD);    // 33
+static void ppOpSTD (PpSlot *activePpu, PpByte opD);    // 34
+static void ppOpRAD (PpSlot *activePpu, PpByte opD);    // 35
+static void ppOpAOD (PpSlot *activePpu, PpByte opD);    // 36
+static void ppOpSOD (PpSlot *activePpu, PpByte opD);    // 37
+static void ppOpLDI (PpSlot *activePpu, PpByte opD);    // 40
+static void ppOpADI (PpSlot *activePpu, PpByte opD);    // 41
+static void ppOpSBI (PpSlot *activePpu, PpByte opD);    // 42
+static void ppOpLMI (PpSlot *activePpu, PpByte opD);    // 43
+static void ppOpSTI (PpSlot *activePpu, PpByte opD);    // 44
+static void ppOpRAI (PpSlot *activePpu, PpByte opD);    // 45
+static void ppOpAOI (PpSlot *activePpu, PpByte opD);    // 46
+static void ppOpSOI (PpSlot *activePpu, PpByte opD);    // 47
+static void ppOpLDM (PpSlot *activePpu, PpByte opD);    // 50
+static void ppOpADM (PpSlot *activePpu, PpByte opD);    // 51
+static void ppOpSBM (PpSlot *activePpu, PpByte opD);    // 52
+static void ppOpLMM (PpSlot *activePpu, PpByte opD);    // 53
+static void ppOpSTM (PpSlot *activePpu, PpByte opD);    // 54
+static void ppOpRAM (PpSlot *activePpu, PpByte opD);    // 55
+static void ppOpAOM (PpSlot *activePpu, PpByte opD);    // 56
+static void ppOpSOM (PpSlot *activePpu, PpByte opD);    // 57
+static void ppOpCRD (PpSlot *activePpu, PpByte opD);    // 60
+static void ppOpCRM (PpSlot *activePpu, PpByte opD);    // 61
+static void ppOpCWD (PpSlot *activePpu, PpByte opD);    // 62
+static void ppOpCWM (PpSlot *activePpu, PpByte opD);    // 63
+static void ppOpAJM (PpSlot *activePpu, PpByte opD);    // 64
+static void ppOpIJM (PpSlot *activePpu, PpByte opD);    // 65
+static void ppOpFJM (PpSlot *activePpu, PpByte opD);    // 66
+static void ppOpEJM (PpSlot *activePpu, PpByte opD);    // 67
+static void ppOpIAN (PpSlot *activePpu, PpByte opD);    // 70
+static void ppOpIAM (PpSlot *activePpu, PpByte opD);    // 71
+static void ppOpOAN (PpSlot *activePpu, PpByte opD);    // 72
+static void ppOpOAM (PpSlot *activePpu, PpByte opD);    // 73
+static void ppOpACN (PpSlot *activePpu, PpByte opD);    // 74
+static void ppOpDCN (PpSlot *activePpu, PpByte opD);    // 75
+static void ppOpFAN (PpSlot *activePpu, PpByte opD);    // 76
+static void ppOpFNC (PpSlot *activePpu, PpByte opD);    // 77
 
+static void ppStep(PpSlot *activePpu);
 static INLINE u32 ppAdd18(u32 op1, u32 op2);
 static INLINE u32 ppSubtract18(u32 op1, u32 op2);
 static void ppInterlock(PpWord func);
-
+#ifdef USE_THREADS
+static void ppCreateThread(int ppNum);
+static ThreadFunRet ppThread(void *param);
+#endif
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
 PpSlot *ppu;
-PpSlot *activePpu;
 u8 ppuCount;
 FILE *devF;
 
@@ -167,16 +172,12 @@ FILE *devF;
 **  Private Variables
 **  -----------------
 */
-static u8 pp = 0;
-static PpWord opCode;
-static PpByte opF;
-static PpByte opD;
-static PpWord location;
-static u32 acc18;
-static bool noHang;
-static u32 cpuMemStart, cpuMemLen;  // for tracing CRD/CRM/CWD/CWM
+/* Pointers used in the idle detection machinery.  */
+static PpWord ia = -1;
+static PpWord ir = -1;
+static u32 pprl = -1;
 
-static void (*decodePpuOpcode[])(void) = 
+static void (*decodePpuOpcode[]) (PpSlot *activePpu, PpByte opD) = 
     {
     ppOpPSN,    // 00
     ppOpLJM,    // 01
@@ -264,6 +265,8 @@ static void (*decodePpuOpcode[])(void) =
 **------------------------------------------------------------------------*/
 static INLINE u32 ppAdd18(u32 op1, u32 op2)
     {
+    u32 acc18;
+    
     acc18 = (op1 & Mask18) - (~op2 & Mask18);
     if ((acc18 & Overflow18) != 0)
         {
@@ -286,6 +289,8 @@ static INLINE u32 ppAdd18(u32 op1, u32 op2)
 **------------------------------------------------------------------------*/
 static INLINE u32 ppSubtract18(u32 op1, u32 op2)
     {
+    u32 acc18;
+    
     acc18 = (op1 & Mask18) - (op2 & Mask18);
     if ((acc18 & Overflow18) != 0)
         {
@@ -315,6 +320,8 @@ static INLINE u32 ppSubtract18(u32 op1, u32 op2)
 **------------------------------------------------------------------------*/
 void ppInit(u8 count)
     {
+    int pp;
+
     /*
     **  Allocate ppu structures.
     */
@@ -332,10 +339,27 @@ void ppInit(u8 count)
     for (pp = 0; pp < ppuCount; pp++)
         {
         ppu[pp].id = pp;
+        ppu[pp].state = ' ';
+#ifdef USE_THREADS
+        pthread_cond_init (&ppu[pp].cond, NULL);
+        pthread_mutex_init (&ppu[pp].mutex, NULL);
+#endif
         }
 
-    pp = 0;
-
+    /*
+    **  Set the pointers for idle detection, if enabled.
+    */
+    switch (idleMode)
+        {
+    case 287:
+        ia = 075;
+        ir = 050;
+        pprl = 051;
+        break;
+    case 0:
+        ia = ir = pprl = -1;
+        }
+    
     /*
     **  Print a friendly message.
     */
@@ -355,15 +379,81 @@ void ppTerminate(void)
     free(ppu);
     }
 
+#ifdef USE_THREADS
+void ppStartThreads (void)
+    {
+    int pp;
+    
+    /*
+    **  Initialise all ppus.
+    */
+    for (pp = 0; pp < ppuCount; pp++)
+        {
+        ppu[pp].id = pp;
+        ppu[pp].state = ' ';
+        ppCreateThread (pp);
+        }
+    }
+
 /*--------------------------------------------------------------------------
-**  Purpose:        Execute one instruction in an active PPU.
+**  Purpose:        Create a thread for a PP
+**
+**  Parameters:     Name        Description.
+**                  ppNum      Pp number to set up
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void ppCreateThread(int ppNum)
+    {
+#if defined(_WIN32)
+#error "Windows multithread PP support TBS"
+#else
+    int rc;
+
+    /*
+    **  Create POSIX thread with default attributes.
+    */
+    rc = pthread_create(&ppu[ppNum].thread, NULL, ppThread, ppu + ppNum);
+    if (rc < 0)
+        {
+        fprintf(stderr, "Failed to create pp %d thread\n", ppNum);
+        exit(1);
+        }
+    printf ("pp %d thread running\n", ppNum);
+#endif
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Thread execution function for a PP
+**
+**  Parameters:     Name        Description.
+**                  param       pointer to PP context
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static ThreadFunRet ppThread(void *param)
+    {
+    PpSlot *activePpu = (PpSlot *) param;
+
+    for (;;)
+        {
+        ppStep (activePpu);
+        }
+    }
+#endif /* USE_THREADS */
+
+#ifndef USE_THREADS
+/*--------------------------------------------------------------------------
+**  Purpose:        Execute one instruction in all PPUs.
 **
 **  Parameters:     Name        Description.
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void ppStep(void)
+void ppStepAll (void)
     {
     u8 i;
 
@@ -373,323 +463,340 @@ void ppStep(void)
     for (i = 0; i < ppuCount; i++)
         {
         /*
-        **  Advance to next PPU.
+        **  Step one PPU.
         */
-        activePpu = ppu + i;
+        ppStep (ppu + i);
+        }
+    }
+#endif /* USE_THREADS */
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Execute one instruction in a PPU.
+**
+**  Parameters:     Name        Description.
+**                  activePpu   Pointer to PPU slot state
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static void ppStep(PpSlot *activePpu)
+    {
+    ChSlot *activeChannel;
+    PpWord opCode;
+    PpByte opF, opD;
+    
+    /*
+    **  Check if this one is active.
+    */
+    if (!activePpu->stopped)
+        {
         /*
-        **  Check if this one is active.
+        **  If we need to make this PP wait a bit, do so.
+        **  (We do that for CWM, not as much as the real
+        **  hardware would but enough that some delay
+        **  sensitive crud like 1MT/1LT interaction works.)
         */
-        if (!activePpu->stopped)
+        if (activePpu->delay)
+            {
+            --activePpu->delay;
+            return;
+            }
+            
+        /*
+        **  Extract next PPU instruction.
+        */
+        opCode = activePpu->mem[activePpu->regP];
+        opF = (opCode >> 6) & 077;
+        opD = opCode & 077;
+
+#if CcDebug == 1
+        if (traceMask != 0)
             {
             /*
-            **  If we need to make this PP wait a bit, do so.
-            **  (We do that for CWM, not as much as the real
-            **  hardware would but enough that some delay
-            **  sensitive crud like 1MT/1LT interaction works.)
-            */
-            if (activePpu->delay)
-                {
-                --activePpu->delay;
-                continue;
-                }
-            
-            /*
-            **  Extract next PPU instruction.
-            */
-            opCode = activePpu->mem[activePpu->regP];
-            opF = (opCode >> 6) & 077;
-            opD = opCode & 077;
-
-#if CcDebug == 1
-            if (traceMask != 0)
-                {
-                /*
-                **  If the previous instruction was an I/O, then we do
-                **  the last few trace steps (registers after, etc.) here
-                **  rather than right after instruction execution, so that 
-                **  the information displayed reflects the completion of any
-                **  I/O that was done.  In particular, for I/O instructions
-                **  the A register is updated after the instruction
-                **  is "finished", so to show A correctly we display it now.
-                */
-                if (activePpu->ioFlag)
-                    {
-                    /*
-                    **  Trace result.
-                    */
-                    traceRegisters();
-
-                    /*
-                    **  Trace new channel status.
-                    */
-                    traceChannel(opD);
-
-                    traceEnd();
-                    /*
-                    **  Trace memory touched by IAM/OAM, and if necessary,
-                    **  A register after IAM/IAN/OAM/OAN
-                    */
-                    if (activePpu->ppMemLen > 0)
-                        {
-                        tracePM ();
-                        activePpu->ppMemLen = 0;
-                        }
-                    }
-            
-                /*
-                **  Trace instructions.
-                */
-                traceSequence();
-                traceRegisters();
-                traceOpcode();
-                }
-#endif
-
-            /*
-            **  Increment register P.
-            */
-            PpIncrement(activePpu->regP);
-
-            /*
-            **  Execute PPU instruction.
-            */
-            activePpu->ioFlag = FALSE;
-            decodePpuOpcode[opF]();
-
-#if CcDebug == 1
-            /*
-            **  If the current instruction is an I/O, then we do
-            **  the last few trace steps (registers after, etc.) later
+            **  If the previous instruction was an I/O, then we do
+            **  the last few trace steps (registers after, etc.) here
             **  rather than right after instruction execution, so that 
             **  the information displayed reflects the completion of any
-            **  I/O that was done.  
+            **  I/O that was done.  In particular, for I/O instructions
+            **  the A register is updated after the instruction
+            **  is "finished", so to show A correctly we display it now.
             */
-            if (traceMask != 0 && !activePpu->ioFlag)
+            if (activePpu->ioFlag)
                 {
                 /*
                 **  Trace result.
                 */
-                traceRegisters();
+                traceRegisters(activePpu);
 
                 /*
                 **  Trace new channel status.
                 */
-                if (opF >= 064)
-                    {
-                    traceChannel(opD);
-                    }
+                traceChannel(activePpu, opD);
 
-                traceEnd();
+                traceEnd(activePpu);
                 /*
-                **  Trace memory touched by central read/write
+                **  Trace memory touched by IAM/OAM, and if necessary,
+                **  A register after IAM/IAN/OAM/OAN
                 */
-                if (cpuMemLen > 0)
+                if (activePpu->ppMemLen > 0)
                     {
-                    traceCM (cpuMemStart, cpuMemLen);
-                    cpuMemLen = 0;
+                    tracePM (activePpu);
+                    activePpu->ppMemLen = 0;
                     }
                 }
+            
+            /*
+            **  Trace instructions.
+            */
+            traceSequence(activePpu);
+            traceRegisters(activePpu);
+            traceOpcode(activePpu);
+            }
 #endif
-            }
 
-        if ((activePpu->ioWaitType & WaitMany) != 0 && !activePpu->channel->active)
+        /*
+        **  Increment register P.
+        */
+        PpIncrement(activePpu->regP);
+
+        /*
+        **  Execute PPU instruction.
+        */
+        activePpu->ioFlag = FALSE;
+        decodePpuOpcode[opF](activePpu, opD);
+
+#if CcDebug == 1
+        /*
+        **  If the current instruction is an I/O, then we do
+        **  the last few trace steps (registers after, etc.) later
+        **  rather than right after instruction execution, so that 
+        **  the information displayed reflects the completion of any
+        **  I/O that was done.  
+        */
+        if (traceMask != 0 && !activePpu->ioFlag)
             {
             /*
-            **  Channel with IAM or OAM has been deactivated.
+            **  Trace result.
             */
-            activeChannel = activePpu->channel;
-            activeChannel->ioDevice = NULL;
-            activeChannel->full = FALSE;
+            traceRegisters(activePpu);
 
             /*
-            **  Handle PPU to PPU channel disconnection.
+            **  Trace new channel status.
             */
-            if (activePpu->ioWaitType == WaitInMany)
+            if (opF >= 064)
                 {
-                activePpu->mem[activePpu->regP] = 0;
+                traceChannel(activePpu, opD);
                 }
 
-            activePpu->ioWaitType = WaitNone;
-            activePpu->stopped = FALSE;
-            activePpu->regP = activePpu->mem[0];
-            PpIncrement(activePpu->regP);
+            traceEnd(activePpu);
+            }
+#endif
+        }
+
+    if ((activePpu->ioWaitType & WaitMany) != 0 && !activePpu->channel->active)
+        {
+        /*
+        **  Channel with IAM or OAM has been deactivated.
+        */
+        activeChannel = activePpu->channel;
+        activeChannel->ioDevice = NULL;
+        activeChannel->full = FALSE;
+
+        /*
+        **  Handle PPU to PPU channel disconnection.
+        */
+        if (activePpu->ioWaitType == WaitInMany)
+            {
+            activePpu->mem[activePpu->regP] = 0;
             }
 
-        if (activePpu->ioWaitType == WaitInOne && !activePpu->channel->active && activePpu->channel->id != ChClock)
+        activePpu->ioWaitType = WaitNone;
+        activePpu->stopped = FALSE;
+        activePpu->state = ' ';
+        activePpu->regP = activePpu->mem[0];
+        PpIncrement(activePpu->regP);
+        }
+
+    if (activePpu->ioWaitType == WaitInOne && !activePpu->channel->active && activePpu->channel->id != ChClock)
+        {
+        /*
+        **  Channel with IAN has been deactivated (ignore RTC channel - it may be active or not - nobody cares).
+        */
+        activeChannel = activePpu->channel;
+        activeChannel->ioDevice = NULL;
+        activeChannel->full = FALSE;
+        activePpu->ioWaitType = WaitNone;
+        activePpu->stopped = FALSE;
+        activePpu->state = ' ';
+        activePpu->regA = 0;
+        }
+
+    if (activePpu->ioWaitType == WaitOutOne && !activePpu->channel->active)
+        {
+        activeChannel = activePpu->channel;
+        activeChannel->ioDevice = NULL;
+        activeChannel->full = FALSE;
+        activePpu->ioWaitType = WaitNone;
+        activePpu->stopped = FALSE;
+        activePpu->state = ' ';
+        }
+
+    if ((activePpu->ioWaitType & WaitIn) != 0)
+        {
+        activeChannel = activePpu->channel;
+
+        while ((activePpu->ioWaitType & WaitIn) != 0)
             {
             /*
-            **  Channel with IAN has been deactivated (ignore RTC channel - it may be active or not - nobody cares).
+            **  Loop so long as we want input and have some
             */
-            activeChannel = activePpu->channel;
-            activeChannel->ioDevice = NULL;
-            activeChannel->full = FALSE;
-            activePpu->ioWaitType = WaitNone;
-            activePpu->stopped = FALSE;
-            activePpu->regA = 0;
-            }
-
-        if (activePpu->ioWaitType == WaitOutOne && !activePpu->channel->active)
-            {
-            activeChannel = activePpu->channel;
-            activeChannel->ioDevice = NULL;
-            activeChannel->full = FALSE;
-            activePpu->ioWaitType = WaitNone;
-            activePpu->stopped = FALSE;
-            }
-
-        if ((activePpu->ioWaitType & WaitIn) != 0)
-            {
-            activeChannel = activePpu->channel;
-
-            while ((activePpu->ioWaitType & WaitIn) != 0)
+            if (!activeChannel->full)
                 {
                 /*
-                **  Loop so long as we want input and have some
+                **  Handle possible input.
                 */
-                if (!activeChannel->full)
-                    {
-                    /*
-                    **  Handle possible input.
-                    */
-                    channelIo();
-                    }
+                channelIo(activeChannel);
+                }
 
-                if (activeChannel->full || activeChannel->id == 014)
+            if (activeChannel->full || activeChannel->id == ChClock)
+                {
+                /*
+                **  Handle input.
+                */
+                switch (activePpu->ioWaitType)
                     {
-                    /*
-                    **  Handle input.
-                    */
-                    switch (activePpu->ioWaitType)
+                case WaitInOne:
+                    activePpu->regA = activeChannel->data & Mask12;
+                    activePpu->ioWaitType = WaitNone;
+                    activePpu->stopped = FALSE;
+                    activePpu->state = ' ';
+                    activeChannel->full = FALSE;
+                    if (activeChannel->discAfterInput)
                         {
-                    case WaitInOne:
-                        activePpu->regA = activeChannel->data & Mask12;
-                        activePpu->ioWaitType = WaitNone;
-                        activePpu->stopped = FALSE;
-                        activeChannel->full = FALSE;
-                        if (activeChannel->discAfterInput)
-                            {
-                            activeChannel->discAfterInput = FALSE;
-                            activeChannel->active = FALSE;
-                            activeChannel->ioDevice = NULL;
-                            }
-                        break;
+                        activeChannel->discAfterInput = FALSE;
+                        activeChannel->active = FALSE;
+                        activeChannel->ioDevice = NULL;
+                        }
+                    break;
 
-                    case WaitInMany:
-                        activePpu->mem[activePpu->regP] = activeChannel->data & Mask12;
-                        activePpu->regP = (activePpu->regP + 1) & Mask12;
-                        activePpu->regA = (activePpu->regA - 1) & Mask18;
-                        activeChannel->full = FALSE;
-                        activePpu->ppMemLen++;
+                case WaitInMany:
+                    activePpu->mem[activePpu->regP] = activeChannel->data & Mask12;
+                    activePpu->regP = (activePpu->regP + 1) & Mask12;
+                    activePpu->regA = (activePpu->regA - 1) & Mask18;
+                    activeChannel->full = FALSE;
+                    activePpu->ppMemLen++;
                     
-                        if (activeChannel->discAfterInput)
+                    if (activeChannel->discAfterInput)
+                        {
+                        activeChannel->discAfterInput = FALSE;
+                        activeChannel->active = FALSE;
+                        activeChannel->ioDevice = NULL;
+                        if (activePpu->regA != 0)
                             {
-                            activeChannel->discAfterInput = FALSE;
-                            activeChannel->active = FALSE;
-                            activeChannel->ioDevice = NULL;
-                            if (activePpu->regA != 0)
-                                {
-                                activePpu->mem[activePpu->regP] = 0;
-                                }
-                            activePpu->ioWaitType = WaitNone;
-                            activePpu->stopped = FALSE;
-                            activePpu->regP = activePpu->mem[0];
-                            PpIncrement(activePpu->regP);
+                            activePpu->mem[activePpu->regP] = 0;
                             }
-                        else if (activePpu->regA == 0)
-                            {
-                            activePpu->ioWaitType = WaitNone;
-                            activePpu->stopped = FALSE;
-                            activePpu->regP = activePpu->mem[0];
-                            PpIncrement(activePpu->regP);
-                            }
-
-                        break;
+                        activePpu->ioWaitType = WaitNone;
+                        activePpu->stopped = FALSE;
+                        activePpu->state = ' ';
+                        activePpu->regP = activePpu->mem[0];
+                        PpIncrement(activePpu->regP);
                         }
-                    }
-                else
-                    {
-                    /*
-                    **  No more data right now, look again next cycle.
-                    */
+                    else if (activePpu->regA == 0)
+                        {
+                        activePpu->ioWaitType = WaitNone;
+                        activePpu->stopped = FALSE;
+                        activePpu->state = ' ';
+                        activePpu->regP = activePpu->mem[0];
+                        PpIncrement(activePpu->regP);
+                        }
+
                     break;
                     }
                 }
-            }
-
-        if ((activePpu->ioWaitType & WaitOut) != 0)
-            {
-            /*
-            **  Handle output.
-            */
-            activeChannel = activePpu->channel;
-            while ((activePpu->ioWaitType & WaitOut) != 0)
+            else
                 {
                 /*
-                **  Loop so long as we want more output and the channel can take it.
+                **  No more data right now, look again next cycle.
                 */
+                break;
+                }
+            }
+        }
 
-                if (!activeChannel->full)
+    if ((activePpu->ioWaitType & WaitOut) != 0)
+        {
+        /*
+        **  Handle output.
+        */
+        activeChannel = activePpu->channel;
+        while ((activePpu->ioWaitType & WaitOut) != 0)
+            {
+            /*
+            **  Loop so long as we want more output and the channel can take it.
+            */
+
+            if (!activeChannel->full)
+                {
+                switch (activePpu->ioWaitType)
                     {
-                    switch (activePpu->ioWaitType)
+                case WaitOutOne:
+                    activeChannel->data = (PpWord)activePpu->regA & Mask12;
+                    activePpu->ioWaitType = WaitNone;
+                    activePpu->stopped = FALSE;
+                    activePpu->state = ' ';
+                    activeChannel->full = TRUE;
+                    break;
+
+                case WaitOutMany:
+                    activeChannel->data = activePpu->mem[activePpu->regP] & Mask12;
+                    activePpu->regP = (activePpu->regP + 1) & Mask12;
+                    activePpu->regA = (activePpu->regA - 1) & Mask18;
+                    activePpu->ppMemLen++;
+                    activeChannel->full = TRUE;
+
+                    if (activePpu->regA == 0)
                         {
-                    case WaitOutOne:
-                        activeChannel->data = (PpWord)activePpu->regA & Mask12;
                         activePpu->ioWaitType = WaitNone;
                         activePpu->stopped = FALSE;
-                        activeChannel->full = TRUE;
-                        break;
-
-                    case WaitOutMany:
-                        activeChannel->data = activePpu->mem[activePpu->regP] & Mask12;
-                        activePpu->regP = (activePpu->regP + 1) & Mask12;
-                        activePpu->regA = (activePpu->regA - 1) & Mask18;
-                        activePpu->ppMemLen++;
-                        activeChannel->full = TRUE;
-
-                        if (activePpu->regA == 0)
-                            {
-                            activePpu->ioWaitType = WaitNone;
-                            activePpu->stopped = FALSE;
-                            activePpu->regP = activePpu->mem[0];
-                            PpIncrement(activePpu->regP);
-                            break;
-                            }
-
+                        activePpu->state = ' ';
+                        activePpu->regP = activePpu->mem[0];
+                        PpIncrement(activePpu->regP);
                         break;
                         }
-                    }
-                else
-                    {
-                    /*
-                    **  Channel is not ready for more data, stop looping
-                    */
+
                     break;
                     }
+                }
+            else
+                {
+                /*
+                **  Channel is not ready for more data, stop looping
+                */
+                break;
+                }
                 
 
-                if (activeChannel->full)
+            if (activeChannel->full)
+                {
+                /*
+                **  Discard data for channels we don't yet know how to deal with.
+                */
+                if (activeChannel->id > 014 && activeChannel->id < 020)
                     {
-                    /*
-                    **  Discard data for channels we don't yet know how to deal with.
-                    */
-                    if (activeChannel->id > 014 && activeChannel->id < 020)
-                        {
-                        activeChannel->full = FALSE;
-                        } 
+                    activeChannel->full = FALSE;
+                    } 
 
-                    /*
-                    **  Handle possible output.
-                    */
-                    channelIo();
-                    }
-                else
-                    {
-                    /*
-                    **  We have no more data, stop looping
-                    */
-                    break;
-                    }
+                /*
+                **  Handle possible output.
+                */
+                channelIo(activeChannel);
+                }
+            else
+                {
+                /*
+                **  We have no more data, stop looping
+                */
+                break;
                 }
             }
         }
@@ -714,6 +821,7 @@ void ppStep(void)
 **------------------------------------------------------------------------*/
 static void ppStatusAndControl(PpWord func)
     {
+    ChSlot *activeChannel = channel + ChStatusAndControl;
     static PpWord ppStatusAndControlRegister[StatusAndControlWords] = {0};
     u8 code;
     u8 designator;
@@ -930,6 +1038,7 @@ static void ppStatusAndControl(PpWord func)
 **------------------------------------------------------------------------*/
 static void ppInterlock(PpWord func)
     {
+    ChSlot *activeChannel = channel + ChInterlock;
     static PpWord ppInterlockRegister[InterlockWords] = {0};
     u8 code;
     u8 designator;
@@ -1088,12 +1197,16 @@ static void ppInterlock(PpWord func)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void ppOpPSN(void)     // 00
+static void ppOpPSN (PpSlot *activePpu, PpByte opD)     // 00
     {
     /*
     **  Do nothing.
     */
 #if DebugOps == 1
+    PpWord opCode;
+
+    opCode = activePpu->mem[activePpu->regP];
+    
     /*
     **  For tracing under program control, a PSN opcode of 2542 
     **  turns on tracing for this PPU, and 2576 turns it off.
@@ -1113,13 +1226,13 @@ static void ppOpPSN(void)     // 00
 #endif
     }
 
-static void ppOpLJM(void)     // 01
+static void ppOpLJM (PpSlot *activePpu, PpByte opD)     // 01
     {
     IndexLocation;
     activePpu->regP = location;
     }
 
-static void ppOpRJM(void)     // 02
+static void ppOpRJM (PpSlot *activePpu, PpByte opD)     // 02
     {
     IndexLocation;
     activePpu->mem[location] = activePpu->regP;
@@ -1127,12 +1240,12 @@ static void ppOpRJM(void)     // 02
     activePpu->regP = location;
     }
 
-static void ppOpUJN(void)     // 03
+static void ppOpUJN (PpSlot *activePpu, PpByte opD)     // 03
     {
     PpAddOffset(activePpu->regP, opD);
     }
 
-static void ppOpZJN(void)     // 04
+static void ppOpZJN (PpSlot *activePpu, PpByte opD)     // 04
     {
     if (activePpu->regA == 0)
         {
@@ -1140,7 +1253,7 @@ static void ppOpZJN(void)     // 04
         }
     }
 
-static void ppOpNJN(void)     // 05
+static void ppOpNJN (PpSlot *activePpu, PpByte opD)     // 05
     {
     if (activePpu->regA != 0)
         {
@@ -1148,7 +1261,7 @@ static void ppOpNJN(void)     // 05
         }
     }
 
-static void ppOpPJN(void)     // 06
+static void ppOpPJN (PpSlot *activePpu, PpByte opD)     // 06
     {
     if (activePpu->regA < 0400000)
         {
@@ -1156,7 +1269,7 @@ static void ppOpPJN(void)     // 06
         }
     }
 
-static void ppOpMJN(void)     // 07
+static void ppOpMJN (PpSlot *activePpu, PpByte opD)     // 07
     {
     if (activePpu->regA > 0377777)
         {
@@ -1164,7 +1277,7 @@ static void ppOpMJN(void)     // 07
         }
     }
 
-static void ppOpSHN(void)     // 10
+static void ppOpSHN (PpSlot *activePpu, PpByte opD)     // 10
     {
     u64 acc;
 
@@ -1182,66 +1295,66 @@ static void ppOpSHN(void)     // 10
         }
     }
 
-static void ppOpLMN(void)     // 11
+static void ppOpLMN (PpSlot *activePpu, PpByte opD)     // 11
     {
     activePpu->regA ^= opD;
     }
 
-static void ppOpLPN(void)     // 12
+static void ppOpLPN (PpSlot *activePpu, PpByte opD)     // 12
     {
     activePpu->regA &= opD;
     }
 
-static void ppOpSCN(void)     // 13
+static void ppOpSCN (PpSlot *activePpu, PpByte opD)     // 13
     {
     activePpu->regA &= ~(opD & 077);
     }
 
-static void ppOpLDN(void)     // 14
+static void ppOpLDN (PpSlot *activePpu, PpByte opD)     // 14
     {
     activePpu->regA = opD;
     }
 
-static void ppOpLCN(void)     // 15
+static void ppOpLCN (PpSlot *activePpu, PpByte opD)     // 15
     {
     activePpu->regA = ~opD & Mask18;
     }
 
-static void ppOpADN(void)     // 16
+static void ppOpADN (PpSlot *activePpu, PpByte opD)     // 16
     {
     activePpu->regA = ppAdd18(activePpu->regA, opD);
     }
 
-static void ppOpSBN(void)     // 17
+static void ppOpSBN (PpSlot *activePpu, PpByte opD)     // 17
     {
     activePpu->regA = ppSubtract18(activePpu->regA, opD);
     }
 
-static void ppOpLDC(void)     // 20
+static void ppOpLDC (PpSlot *activePpu, PpByte opD)     // 20
     {
     activePpu->regA = (opD << 12) | (activePpu->mem[activePpu->regP] & Mask12);
     PpIncrement(activePpu->regP);
     }
 
-static void ppOpADC(void)     // 21
+static void ppOpADC (PpSlot *activePpu, PpByte opD)     // 21
     {
     activePpu->regA = ppAdd18(activePpu->regA, (opD << 12) | (activePpu->mem[activePpu->regP] & Mask12));
     PpIncrement(activePpu->regP);
     }
 
-static void ppOpLPC(void)     // 22
+static void ppOpLPC (PpSlot *activePpu, PpByte opD)     // 22
     {
     activePpu->regA &= (opD << 12) | (activePpu->mem[activePpu->regP] & Mask12);
     PpIncrement(activePpu->regP);
     }
 
-static void ppOpLMC(void)     // 23
+static void ppOpLMC (PpSlot *activePpu, PpByte opD)     // 23
     {
     activePpu->regA ^= (opD << 12) | (activePpu->mem[activePpu->regP] & Mask12);
     PpIncrement(activePpu->regP);
     }
 
-static void ppOpEXN(void)     // 26
+static void ppOpEXN (PpSlot *activePpu, PpByte opD)     // 26
     {
     u32 exchangeAddress = 0;
     int cpnum = opD & 007;
@@ -1293,7 +1406,7 @@ static void ppOpEXN(void)     // 26
         PpDecrement(activePpu->regP);
         return;
         }
-#ifdef CPU_THREADS
+#ifdef USE_THREADS
 	if (cpnum != 0) 
         {
 	    while (exchangeCpu != -1) ;
@@ -1301,191 +1414,221 @@ static void ppOpEXN(void)     // 26
 #endif
     }
 
-static void ppOpRPN(void)     // 27
+static void ppOpRPN (PpSlot *activePpu, PpByte opD)     // 27
     {
     activePpu->regA = cpuGetP(opD);
     }
 
-static void ppOpLDD(void)     // 30
+static void ppOpLDD (PpSlot *activePpu, PpByte opD)     // 30
     {
     activePpu->regA = activePpu->mem[opD] & Mask12;
     activePpu->regA &= Mask18;
     }
 
-static void ppOpADD(void)     // 31
+static void ppOpADD (PpSlot *activePpu, PpByte opD)     // 31
     {
     activePpu->regA = ppAdd18(activePpu->regA, activePpu->mem[opD] & Mask12);
     }
 
-static void ppOpSBD(void)     // 32
+static void ppOpSBD (PpSlot *activePpu, PpByte opD)     // 32
     {
     activePpu->regA = ppSubtract18(activePpu->regA, activePpu->mem[opD] & Mask12);
     }
 
-static void ppOpLMD(void)     // 33
+static void ppOpLMD (PpSlot *activePpu, PpByte opD)     // 33
     {
     activePpu->regA ^= activePpu->mem[opD] & Mask12;
     activePpu->regA &= Mask18;
     }
 
-static void ppOpSTD(void)     // 34
+static void ppOpSTD (PpSlot *activePpu, PpByte opD)     // 34
     {
     activePpu->mem[opD] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpRAD(void)     // 35
+static void ppOpRAD (PpSlot *activePpu, PpByte opD)     // 35
     {
     activePpu->regA = ppAdd18(activePpu->regA, activePpu->mem[opD] & Mask12);
     activePpu->mem[opD] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpAOD(void)     // 36
+static void ppOpAOD (PpSlot *activePpu, PpByte opD)     // 36
     {
     activePpu->regA = ppAdd18(activePpu->mem[opD] & Mask12, 1);
     activePpu->mem[opD] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpSOD(void)     // 37
+static void ppOpSOD (PpSlot *activePpu, PpByte opD)     // 37
     {
     activePpu->regA = ppSubtract18(activePpu->mem[opD] & Mask12, 1);
     activePpu->mem[opD] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpLDI(void)     // 40
+static void ppOpLDI (PpSlot *activePpu, PpByte opD)     // 40
     {
+    PpWord location;
+    
     location = activePpu->mem[opD] & Mask12;
     activePpu->regA = activePpu->mem[location] & Mask12;
     }
 
-static void ppOpADI(void)     // 41
+static void ppOpADI (PpSlot *activePpu, PpByte opD)     // 41
     {
+    PpWord location;
+
     location = activePpu->mem[opD] & Mask12;
     activePpu->regA = ppAdd18(activePpu->regA, activePpu->mem[location] & Mask12);
     }
 
-static void ppOpSBI(void)     // 42
+static void ppOpSBI (PpSlot *activePpu, PpByte opD)     // 42
     {
+    PpWord location;
+
     location = activePpu->mem[opD] & Mask12;
     activePpu->regA = ppSubtract18(activePpu->regA, activePpu->mem[location] & Mask12);
     }
 
-static void ppOpLMI(void)     // 43
+static void ppOpLMI (PpSlot *activePpu, PpByte opD)     // 43
     {
+    PpWord location;
+
     location = activePpu->mem[opD] & Mask12;
     activePpu->regA ^= activePpu->mem[location] & Mask12;
     activePpu->regA &= Mask18;
     }
 
-static void ppOpSTI(void)     // 44
+static void ppOpSTI (PpSlot *activePpu, PpByte opD)     // 44
     {
+    PpWord location;
+
     location = activePpu->mem[opD] & Mask12;
     activePpu->mem[location] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpRAI(void)     // 45
+static void ppOpRAI (PpSlot *activePpu, PpByte opD)     // 45
     {
+    PpWord location;
+
     location = activePpu->mem[opD] & Mask12;
     activePpu->regA = ppAdd18(activePpu->regA, activePpu->mem[location] & Mask12);
     activePpu->mem[location] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpAOI(void)     // 46
+static void ppOpAOI (PpSlot *activePpu, PpByte opD)     // 46
     {
+    PpWord location;
+
     location = activePpu->mem[opD] & Mask12;
     activePpu->regA = ppAdd18(activePpu->mem[location] & Mask12, 1);
     activePpu->mem[location] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpSOI(void)     // 47
+static void ppOpSOI (PpSlot *activePpu, PpByte opD)     // 47
     {
+    PpWord location;
+
     location = activePpu->mem[opD] & Mask12;
     activePpu->regA = ppSubtract18(activePpu->mem[location] & Mask12, 1);
     activePpu->mem[location] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpLDM(void)     // 50
+static void ppOpLDM (PpSlot *activePpu, PpByte opD)     // 50
     {
     IndexLocation;
     activePpu->regA = activePpu->mem[location] & Mask12;
     }
 
-static void ppOpADM(void)     // 51
+static void ppOpADM (PpSlot *activePpu, PpByte opD)     // 51
     {
     IndexLocation;
     activePpu->regA = ppAdd18(activePpu->regA, activePpu->mem[location] & Mask12);
     }
 
-static void ppOpSBM(void)     // 52
+static void ppOpSBM (PpSlot *activePpu, PpByte opD)     // 52
     {
     IndexLocation;
     activePpu->regA = ppSubtract18(activePpu->regA, activePpu->mem[location] & Mask12);
     }
 
-static void ppOpLMM(void)     // 53
+static void ppOpLMM (PpSlot *activePpu, PpByte opD)     // 53
     {
     IndexLocation;
     activePpu->regA ^= activePpu->mem[location] & Mask12;
     }
 
-static void ppOpSTM(void)     // 54
+static void ppOpSTM (PpSlot *activePpu, PpByte opD)     // 54
     {
     IndexLocation;
     activePpu->mem[location] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpRAM(void)     // 55
+static void ppOpRAM (PpSlot *activePpu, PpByte opD)     // 55
     {
     IndexLocation;
     activePpu->regA = ppAdd18(activePpu->regA, activePpu->mem[location] & Mask12);
     activePpu->mem[location] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpAOM(void)     // 56
+static void ppOpAOM (PpSlot *activePpu, PpByte opD)     // 56
     {
     IndexLocation;
     activePpu->regA = ppAdd18(activePpu->mem[location] & Mask12, 1);
     activePpu->mem[location] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpSOM(void)     // 57
+static void ppOpSOM (PpSlot *activePpu, PpByte opD)     // 57
     {
     IndexLocation;
     activePpu->regA = ppSubtract18(activePpu->mem[location] & Mask12, 1);
     activePpu->mem[location] = (PpWord)activePpu->regA & Mask12;
     }
 
-static void ppOpCRD(void)     // 60
+static void ppOpCRD (PpSlot *activePpu, PpByte opD)     // 60
     {
     CpWord data;
+    u32 cpuMemStart;
 
     cpuMemStart = activePpu->regA & Mask18;
-    cpuMemLen = 1;
-    if (cpuPpReadMem(activePpu->regA & Mask18, &data))
+    if (cpuPpReadMem(cpuMemStart, &data))
         {
+        if (((opD & Mask12) == ir && 
+             cpuMemStart == activePpu->mem[ia]))
+            {
+            /* Input register read.  See if we're idle. */
+            if (data == 0)
+                {
+                activePpu->state = 'X';
+                }
+            else
+                {
+                activePpu->state = ' ';
+                }
+            }
         activePpu->mem[opD++ & Mask12] = (PpWord)((data >> 48) & Mask12);
         activePpu->mem[opD++ & Mask12] = (PpWord)((data >> 36) & Mask12);
         activePpu->mem[opD++ & Mask12] = (PpWord)((data >> 24) & Mask12);
         activePpu->mem[opD++ & Mask12] = (PpWord)((data >> 12) & Mask12);
         activePpu->mem[opD   & Mask12] = (PpWord)((data      ) & Mask12);
         }
+
+    /*
+    **  Trace memory touched by central read/write
+    */
+    traceCM (activePpu, cpuMemStart, 1);
     }
 
-static void ppOpCRM(void)     // 61
+static void ppOpCRM (PpSlot *activePpu, PpByte opD)     // 61
     {
     CpWord data;
     PpWord length;
+    u32 cpuMemStart, cpuMemLen;
+    PpWord location;
 
     location = activePpu->mem[activePpu->regP] & Mask12;
     cpuMemStart = activePpu->regA & Mask18;
     cpuMemLen = length = activePpu->mem[opD] & Mask12;
     activePpu->mem[0] = activePpu->regP;
 
-    /*
-    **  Delay one major cycle per cm word.
-    */
-//    activePpu->delay = length;
-    activePpu->delay = 0;
-    
     while (length--)
         {
         if (cpuPpReadMem(activePpu->regA & Mask18, &data))
@@ -1501,13 +1644,19 @@ static void ppOpCRM(void)     // 61
         activePpu->regA &= Mask18;
         }                                                             
 
+    /*
+    **  Trace memory touched by central read/write
+    */
+    traceCM (activePpu, cpuMemStart, cpuMemLen);
+
     activePpu->regP = activePpu->mem[0];
     PpIncrement(activePpu->regP);
     }
 
-static void ppOpCWD(void)     // 62
+static void ppOpCWD (PpSlot *activePpu, PpByte opD)     // 62
     {
     CpWord data;
+    u32 cpuMemStart;
 
     data = activePpu->mem[opD++ & Mask12] & Mask12;
     data <<= 12;
@@ -1524,15 +1673,27 @@ static void ppOpCWD(void)     // 62
     data |= activePpu->mem[opD   & Mask12] & Mask12;
 
     cpuMemStart = activePpu->regA & Mask18;
-    cpuMemLen = 1;
-    cpuPpWriteMem(activePpu->regA & Mask18, data); 
+    cpuPpWriteMem(cpuMemStart, data); 
+    
+    /* If this is an MTR request, mark PP0 not idle. */
+    if (cpuMemStart == pprl && activePpu->id != 0)
+        {
+        ppu[0].state = ' ';
+        }
+
+    /*
+    **  Trace memory touched by central read/write
+    */
+    traceCM (activePpu, cpuMemStart, 1);
     }
 
-static void ppOpCWM(void)     // 63
+static void ppOpCWM (PpSlot *activePpu, PpByte opD)     // 63
     {
     CpWord data;
     PpWord length;
-
+    u32 cpuMemStart, cpuMemLen;
+    PpWord location;
+    
     location = activePpu->mem[activePpu->regP] & Mask12;
     cpuMemStart = activePpu->regA & Mask18;
     cpuMemLen = length = activePpu->mem[opD] & Mask12;
@@ -1566,11 +1727,18 @@ static void ppOpCWM(void)     // 63
         activePpu->regA &= Mask18;
         }
 
+    /*
+    **  Trace memory touched by central read/write
+    */
+    traceCM (activePpu, cpuMemStart, cpuMemLen);
+
     PpIncrement(activePpu->regP);
     }
 
-static void ppOpAJM(void)     // 64
+static void ppOpAJM (PpSlot *activePpu, PpByte opD)     // 64
     {
+    PpWord location;
+
     opD &= 037;
     location = activePpu->mem[activePpu->regP];
     location &= Mask12;
@@ -1582,8 +1750,10 @@ static void ppOpAJM(void)     // 64
         }
     }
 
-static void ppOpIJM(void)     // 65
+static void ppOpIJM (PpSlot *activePpu, PpByte opD)     // 65
     {
+    PpWord location;
+
     opD &= 037;
     location = activePpu->mem[activePpu->regP];
     location &= Mask12;
@@ -1595,8 +1765,11 @@ static void ppOpIJM(void)     // 65
         }
     }
 
-static void ppOpFJM(void)     // 66
+static void ppOpFJM (PpSlot *activePpu, PpByte opD)     // 66
     {
+    ChSlot *activeChannel;
+    PpWord location;
+
     location = activePpu->mem[activePpu->regP];
     location &= Mask12;
     PpIncrement(activePpu->regP);
@@ -1605,7 +1778,7 @@ static void ppOpFJM(void)     // 66
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
 
-    channelProbe();
+    channelProbe(activeChannel);
 
     if (opD < channelCount && activeChannel->full)
         {
@@ -1613,8 +1786,11 @@ static void ppOpFJM(void)     // 66
         }
     }
 
-static void ppOpEJM(void)     // 67
+static void ppOpEJM (PpSlot *activePpu, PpByte opD)     // 67
     {
+    ChSlot *activeChannel;
+    PpWord location;
+
     location = activePpu->mem[activePpu->regP];
     location &= Mask12;
     PpIncrement(activePpu->regP);
@@ -1623,7 +1799,7 @@ static void ppOpEJM(void)     // 67
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
 
-    channelProbe();
+    channelProbe(activeChannel);
 
     if (opD >= channelCount || !activeChannel->full)
         {
@@ -1631,30 +1807,39 @@ static void ppOpEJM(void)     // 67
         }
     }
 
-static void ppOpIAN(void)     // 70
+static void ppOpIAN (PpSlot *activePpu, PpByte opD)     // 70
     {
+    ChSlot *activeChannel;
+    bool noHang;
+
     noHang = (opD & 040) != 0;
     opD &= 037;
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
 
-    if (!activeChannel->active && opD != 014)
+    if (!activeChannel->active && opD != ChClock)
         {
         if (!noHang)
             {
             PpDecrement(activePpu->regP);
+            activePpu->state = 'H';
             }
         return;
         }
 
     activeChannel->delayStatus = 0;
+    activeChannel->ppu = activePpu->id;
     activePpu->ioWaitType = WaitInOne;
     activePpu->stopped = TRUE;
     activePpu->ioFlag = TRUE;
+    activePpu->state = 'R';
     }
 
-static void ppOpIAM(void)     // 71
+static void ppOpIAM (PpSlot *activePpu, PpByte opD)     // 71
     {
+    ChSlot *activeChannel;
+    PpWord location;
+
     opD &= 037;
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
@@ -1672,14 +1857,19 @@ static void ppOpIAM(void)     // 71
         activePpu->mem[0] = activePpu->regP;
         activePpu->regP = location;
         activeChannel->delayStatus = 0;
+        activeChannel->ppu = activePpu->id;
         activePpu->ppMemLen = 0;
         activePpu->ioWaitType = WaitInMany;
         activePpu->stopped = TRUE;
+        activePpu->state = 'R';
         }
     }
 
-static void ppOpOAN(void)     // 72
+static void ppOpOAN (PpSlot *activePpu, PpByte opD)     // 72
     {
+    ChSlot *activeChannel;
+    bool noHang;
+
     noHang = (opD & 040) != 0;
     opD &= 037;
     activeChannel = channel + opD;
@@ -1708,32 +1898,42 @@ static void ppOpOAN(void)     // 72
         if (!noHang)
             {
             PpDecrement(activePpu->regP);
+            activePpu->state = 'H';
             }
         return;
         }
 
     activeChannel->delayStatus = 0;
+    activeChannel->ppu = activePpu->id;
     activePpu->ioWaitType = WaitOutOne;
     activePpu->stopped = TRUE;
     activePpu->ioFlag = TRUE;
+    activePpu->state = 'W';
     }
 
-static void ppOpOAM(void)     // 73
+static void ppOpOAM (PpSlot *activePpu, PpByte opD)     // 73
     {
+    ChSlot *activeChannel;
+
     opD &= 037;
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
     activePpu->mem[0] = activePpu->regP;
     activePpu->ppMemStart = activePpu->regP = activePpu->mem[activePpu->regP] & Mask12;
     activeChannel->delayStatus = 0;
+    activeChannel->ppu = activePpu->id;
     activePpu->ioWaitType = WaitOutMany;
     activePpu->ppMemLen = 0;
     activePpu->stopped = TRUE;
     activePpu->ioFlag = TRUE;
+    activePpu->state = 'W';
     }
 
-static void ppOpACN(void)     // 74
+static void ppOpACN (PpSlot *activePpu, PpByte opD)     // 74
     {
+    ChSlot *activeChannel;
+    bool noHang;
+
     noHang = (opD & 040) != 0;
     opD &= 037;
     /*
@@ -1752,15 +1952,19 @@ static void ppOpACN(void)     // 74
         if (!noHang)
             {
             PpDecrement(activePpu->regP);
+            activePpu->state = 'H';
             }
         return;
         }
 
-    channelActivate();
+    channelActivate(activeChannel);
     }
 
-static void ppOpDCN(void)     // 75
+static void ppOpDCN (PpSlot *activePpu, PpByte opD)     // 75
     {
+    ChSlot *activeChannel;
+    bool noHang;
+
     noHang = (opD & 040) != 0;
     opD &= 037;
 
@@ -1780,15 +1984,19 @@ static void ppOpDCN(void)     // 75
         if (!noHang)
             {
             PpDecrement(activePpu->regP);
+            activePpu->state = 'H';
             }
         return;
         }
 
-    channelDisconnect();
+    channelDisconnect(activeChannel);
     }
 
-static void ppOpFAN(void)     // 76
+static void ppOpFAN (PpSlot *activePpu, PpByte opD)     // 76
     {
+    ChSlot *activeChannel;
+    bool noHang;
+
     noHang = (opD & 040) != 0;
     opD &= 037;
     activeChannel = channel + opD;
@@ -1806,16 +2014,20 @@ static void ppOpFAN(void)     // 76
         if (!noHang)
             {
             PpDecrement(activePpu->regP);
+            activePpu->state = 'H';
             }
         return;
         }
 
-    channelFunction((PpWord)(activePpu->regA & Mask12));
+    channelFunction(activeChannel, activePpu->regA & Mask12);
     activePpu->ioFlag = TRUE;
     }
 
-static void ppOpFNC(void)     // 77
+static void ppOpFNC (PpSlot *activePpu, PpByte opD)     // 77
     {
+    ChSlot *activeChannel;
+    bool noHang;
+
     noHang = (opD & 040) != 0;
     opD &= 037;
     activeChannel = channel + opD;
@@ -1833,11 +2045,12 @@ static void ppOpFNC(void)     // 77
         if (!noHang)
             {
             PpDecrement(activePpu->regP);
+            activePpu->state = 'H';
             }
         return;
         }
 
-    channelFunction((PpWord)(activePpu->mem[activePpu->regP] & Mask12));
+    channelFunction(activeChannel, activePpu->mem[activePpu->regP] & Mask12);
     PpIncrement(activePpu->regP);
     activePpu->ioFlag = TRUE;
     }

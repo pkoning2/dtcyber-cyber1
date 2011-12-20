@@ -171,10 +171,11 @@ typedef struct lpContext
 */
 static void lp3000Init(u8 unitNo, u8 eqNo, u8 channelNo, int flags,
                        const char *deviceName);
-static FcStatus lp3000Func(PpWord funcCode);
-static void lp3000Io(void);
-static void lp3000Activate(void);
-static void lp3000Disconnect(void);
+static FcStatus lp3000Func(ChSlot *activeChannel, DevSlot *active3000Device,
+                           PpWord funcCode);
+static void lp3000Io(ChSlot *activeChannel, DevSlot *active3000Device);
+static void lp3000Activate(ChSlot *activeChannel, DevSlot *active3000Device);
+static void lp3000Disconnect(ChSlot *activeChannel, DevSlot *active3000Device);
 static void lp3000Load(DevSlot *up, int, char *fn);
 static void lp3000Unload(DevSlot *up, char *newFn);
 
@@ -464,7 +465,8 @@ static void lp3000Unload(DevSlot *up, char *newFn)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus lp3000Func(PpWord funcCode)
+static FcStatus lp3000Func(ChSlot *activeChannel, DevSlot *active3000Device,
+                           PpWord funcCode)
     {
     FILE *fcb;
     LpContext *lc;
@@ -546,7 +548,8 @@ static FcStatus lp3000Func(PpWord funcCode)
             }
     
         /* Update interrupt summary flag in unit block */
-        dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
+        dcc6681InterruptDev (active3000Device,
+                             (lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
 
         /* fall through */
     case Fc6681DevStatusReq:
@@ -628,13 +631,15 @@ static FcStatus lp3000Func(PpWord funcCode)
                 lc->flags &= ~Lp3000IntReady;
                 }
             /* Update interrupt summary flag in unit block */
-            dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
+            dcc6681InterruptDev (active3000Device,
+                                 (lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
         case Fc3555RelIntReady:
             lc->flags &= ~(Lp3000IntReadyEna | Lp3000IntReady);
             /* Update interrupt summary flag in unit block */
-            dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
+            dcc6681InterruptDev (active3000Device,
+                                 (lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
         case Fc3555SelIntEnd:
@@ -648,13 +653,15 @@ static FcStatus lp3000Func(PpWord funcCode)
                 lc->flags &= ~Lp3000IntEnd;
                 }
             /* Update interrupt summary flag in unit block */
-            dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
+            dcc6681InterruptDev (active3000Device,
+                                 (lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
         case Fc3555RelIntEnd:
             lc->flags &= ~(Lp3000IntEndEna | Lp3000IntEnd);
             /* Update interrupt summary flag in unit block */
-            dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
+            dcc6681InterruptDev (active3000Device,
+                                 (lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
             }
         }
@@ -705,13 +712,15 @@ static FcStatus lp3000Func(PpWord funcCode)
                 lc->flags &= ~Lp3000IntReady;
                 }
             /* Update interrupt summary flag in unit block */
-            dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
+            dcc6681InterruptDev (active3000Device,
+                                 (lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
         case Fc3152RelIntReady:
             lc->flags &= ~(Lp3000IntReadyEna | Lp3000IntReady);
             /* Update interrupt summary flag in unit block */
-            dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
+            dcc6681InterruptDev (active3000Device,
+                                 (lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
         case Fc3152SelIntEnd:
@@ -725,13 +734,15 @@ static FcStatus lp3000Func(PpWord funcCode)
                 lc->flags &= ~Lp3000IntEnd;
                 }
             /* Update interrupt summary flag in unit block */
-            dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
+            dcc6681InterruptDev (active3000Device,
+                                 (lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
 
         case Fc3152RelIntEnd:
             lc->flags &= ~(Lp3000IntEndEna | Lp3000IntEnd);
             /* Update interrupt summary flag in unit block */
-            dcc6681Interrupt((lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
+            dcc6681InterruptDev (active3000Device,
+                                 (lc->flags & (Lp3000IntReady | Lp3000IntEnd)) != 0);
             return(FcProcessed);
             }
         }
@@ -747,7 +758,7 @@ static FcStatus lp3000Func(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void lp3000Io(void)
+static void lp3000Io(ChSlot *activeChannel, DevSlot *active3000Device)
     {
     FILE *fcb;
     LpContext *lc;
@@ -808,7 +819,7 @@ static void lp3000Io(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void lp3000Activate(void)
+static void lp3000Activate(ChSlot *activeChannel, DevSlot *active3000Device)
     {
     }
 
@@ -820,7 +831,7 @@ static void lp3000Activate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void lp3000Disconnect(void)
+static void lp3000Disconnect(ChSlot *activeChannel, DevSlot *active3000Device)
     {
     FILE *fcb = active3000Device->fcb[0];
 

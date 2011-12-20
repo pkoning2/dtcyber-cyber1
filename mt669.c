@@ -258,17 +258,18 @@ typedef struct tapeBuf
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus mt669Func(PpWord funcCode);
-static void mt669Io(void);
-static void mt669Activate(void);
-static void mt669Disconnect(void);
-static void mt669FuncRelease(void);
-static void mt669Unpack(u32 recLen);
-static void mt669FuncRead(void);
-static void mt669FuncForespace(void);
-static void mt669FuncBackspace(void);
-static void mt669FuncReadBkw(void);
-static void mt669FuncReposition(void);
+static FcStatus mt669Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode);
+static void mt669Io(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mt669Activate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mt669Disconnect(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mt669FuncRelease(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mt669Unpack(DevSlot *activeDevice, u32 recLen);
+static void mt669FuncRead(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mt669FuncForespace(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mt669FuncBackspace(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mt669FuncReadBkw(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mt669FuncReposition(ChSlot *activeChannel, DevSlot *activeDevice);
 static void mt669Load(DevSlot *dp, int unitNo, char *fn);
 #if DEBUG
 static char *mt669Func2String(PpWord funcCode);
@@ -521,7 +522,8 @@ static void mt669Load(DevSlot *dp, int unitNo, char *fn)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus mt669Func(PpWord funcCode)
+static FcStatus mt669Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode)
     {
     u32 recLen1;
     u8 unitNo;
@@ -551,7 +553,7 @@ static FcStatus mt669Func(PpWord funcCode)
         return(FcDeclined);
 
     case Fc669Release:
-        mt669FuncRelease();
+        mt669FuncRelease(activeChannel, activeDevice);
         return(FcProcessed);
 
     case Fc669ClearUnit:
@@ -611,22 +613,22 @@ static FcStatus mt669Func(PpWord funcCode)
 
     case Fc669ReadBkw:
         activeDevice->fcode = funcCode;
-        mt669FuncReadBkw();
+        mt669FuncReadBkw(activeChannel, activeDevice);
         break;
 
     case Fc669Reposition:
         activeDevice->fcode = funcCode;
-        mt669FuncReposition();
+        mt669FuncReposition(activeChannel, activeDevice);
         break;
 
     case Fc669Forespace:
         activeDevice->fcode = funcCode;
-        mt669FuncForespace();
+        mt669FuncForespace(activeChannel, activeDevice);
         break;
 
     case Fc669Backspace:
         activeDevice->fcode = funcCode;
-        mt669FuncBackspace();
+        mt669FuncBackspace(activeChannel, activeDevice);
         break;
 
     case Fc669WriteEOF:
@@ -794,7 +796,7 @@ static FcStatus mt669Func(PpWord funcCode)
     case Fc669ReadFwd:
     case Fc6681Read2EOR:
         activeDevice->fcode = funcCode;
-        mt669FuncRead();
+        mt669FuncRead(activeChannel, activeDevice);
         break;
 
     case Fc669FormatUnit:
@@ -814,7 +816,7 @@ static FcStatus mt669Func(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt669Io(void)
+static void mt669Io(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     u8 unitNo;
     TapeBuf *tp;
@@ -1061,7 +1063,7 @@ static void mt669Io(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt669Activate(void)
+static void mt669Activate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -1073,7 +1075,7 @@ static void mt669Activate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt669Disconnect(void)
+static void mt669Disconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     FILE *fcb;
     TapeBuf *tp;
@@ -1254,7 +1256,7 @@ static void mt669Disconnect(void)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-static void mt669FuncRelease(void)
+static void mt669FuncRelease(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     activeDevice->fcode = 0;
     activeDevice->status = St669NoUnit;
@@ -1269,7 +1271,7 @@ static void mt669FuncRelease(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt669Unpack(u32 recLen)
+static void mt669Unpack(DevSlot *activeDevice, u32 recLen)
     {
     u32 i;
     u16 c1, c2, c3;
@@ -1405,7 +1407,7 @@ static void mt669Unpack(u32 recLen)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt669FuncRead(void)
+static void mt669FuncRead(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     u32 len;
     u32 recLen0;
@@ -1574,7 +1576,7 @@ static void mt669FuncRead(void)
     /*
     **  Convert the raw data into PP words suitable for a channel.
     */
-    mt669Unpack(recLen1);
+    mt669Unpack(activeDevice, recLen1);
 
     /*
     **  Setup length, buffer pointer and block number.
@@ -1597,7 +1599,7 @@ static void mt669FuncRead(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt669FuncReadBkw(void)
+static void mt669FuncReadBkw(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     u32 len;
     u32 recLen0;
@@ -1736,7 +1738,7 @@ static void mt669FuncReadBkw(void)
         /*
         **  Convert the raw data into PP words suitable for a channel.
         */
-        mt669Unpack(recLen1);
+        mt669Unpack(activeDevice, recLen1);
 
         /*
         **  Setup length and buffer pointer.
@@ -1782,7 +1784,7 @@ static void mt669FuncReadBkw(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt669FuncForespace(void)
+static void mt669FuncForespace(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     u32 len;
     u32 recLen0;
@@ -1936,7 +1938,7 @@ static void mt669FuncForespace(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt669FuncBackspace(void)
+static void mt669FuncBackspace(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     u32 len;
     u32 recLen0;
@@ -2082,7 +2084,7 @@ static void mt669FuncBackspace(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt669FuncReposition(void)
+static void mt669FuncReposition(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     u32 len;
     u32 recLen0;

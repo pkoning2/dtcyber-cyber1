@@ -121,7 +121,7 @@ typedef struct decCpControl
 **  Private Function Prototypes
 **  ---------------------------
 */
-static bool ppuTraced (void);
+static bool ppuTraced (PpSlot *activePpu);
 static void freset (FILE **f, const char *fn);
 
 /*
@@ -390,7 +390,7 @@ void traceInit(void)
         fprintf(stderr, "Failed to allocate PP trace FILE pointers\n");
         exit(1);
         }
-
+    
     traceSequenceNo = 0;
     }
 
@@ -1065,7 +1065,7 @@ void traceReset(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void traceSequence(void)
+void traceSequence(PpSlot *activePpu)
     {
     char traceName[20];
 
@@ -1077,7 +1077,7 @@ void traceSequence(void)
     /*
     **  Bail out if no trace of this PPU is requested.
     */
-    activePpu->traceLine = ppuTraced();
+    activePpu->traceLine = ppuTraced(activePpu);
     if (!activePpu->traceLine)
         {
         return;
@@ -1112,7 +1112,7 @@ void traceSequence(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void traceRegisters(void)
+void traceRegisters(PpSlot *activePpu)
     {
     /*
     **  Bail out if no trace of this PPU is requested.
@@ -1138,7 +1138,7 @@ void traceRegisters(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void traceOpcode(void)
+void traceOpcode(PpSlot *activePpu)
     {
     PpWord opCode;
     u8 addrMode;
@@ -1266,7 +1266,8 @@ u8 traceDisassembleOpcode(char *str, PpWord *pm)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void traceChannelFunction(PpWord funcCode)
+void traceChannelFunction(PpSlot *activePpu, PpWord funcCode,
+                          ChSlot *activeChannel)
     {
     if (devF == NULL)
         {
@@ -1291,7 +1292,7 @@ void traceChannelFunction(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void tracePrint(char *str)
+void tracePrint(PpSlot *activePpu, char *str)
     {
     char traceName[20];
 
@@ -1353,7 +1354,7 @@ void traceCpuPrint(CpuContext *activeCpu, char *str)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void traceChannel(u8 ch)
+void traceChannel(PpSlot *activePpu, u8 ch)
     {
     /*
     **  Bail out if no trace of this PPU is requested.
@@ -1376,7 +1377,7 @@ void traceChannel(u8 ch)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void traceCM(u32 start, u32 len)
+void traceCM(PpSlot *activePpu, u32 start, u32 len)
     {
     /*
     **  Bail out if no trace of this PPU is requested.
@@ -1399,7 +1400,7 @@ void traceCM(u32 start, u32 len)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void tracePM(void)
+void tracePM(PpSlot *activePpu)
     {
     /*
     **  Bail out if no trace of this PPU is requested.
@@ -1427,7 +1428,7 @@ void tracePM(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void traceEnd(void)
+void traceEnd(PpSlot *activePpu)
     {
     /*
     **  Bail out if no trace of this PPU is requested.
@@ -1500,7 +1501,7 @@ static void freset (FILE **f, const char *fn)
 **  Returns:        TRUE if yes
 **
 **------------------------------------------------------------------------*/
-static bool ppuTraced(void)
+static bool ppuTraced(PpSlot *activePpu)
     {
     PpWord opCode;
     u8 id = activePpu->id;

@@ -70,10 +70,11 @@ typedef struct portParam
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus mux6676Func(PpWord funcCode);
-static void mux6676Io(void);
-static void mux6676Activate(void);
-static void mux6676Disconnect(void);
+static FcStatus mux6676Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                            PpWord funcCode);
+static void mux6676Io(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mux6676Activate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mux6676Disconnect(ChSlot *activeChannel, DevSlot *activeDevice);
 static void mux6676CreateThread(DevSlot *dp);
 static int mux6676CheckInput(PortParam *mp);
 #if defined(_WIN32)
@@ -176,7 +177,8 @@ void mux6676Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus mux6676Func(PpWord funcCode)
+static FcStatus mux6676Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                            PpWord funcCode)
     {
     u8 unitNo;
     PortParam *mp;
@@ -219,7 +221,7 @@ static FcStatus mux6676Func(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mux6676Io(void)
+static void mux6676Io(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     u8 unitNo;
     PortParam *mp;
@@ -314,7 +316,7 @@ static void mux6676Io(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mux6676Activate(void)
+static void mux6676Activate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -326,7 +328,7 @@ static void mux6676Activate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mux6676Disconnect(void)
+static void mux6676Disconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 

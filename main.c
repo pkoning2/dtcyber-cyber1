@@ -153,16 +153,18 @@ int main(int argc, char **argv)
         /*
         **  Execute PP, CPU and RTC.
         */
-        ppStep();
+#ifndef USE_THREADS
+        ppStepAll();
+#endif
 
         /*
         **  Step all CPUs (or just CPU 0 if multithreaded)
         */
         cpuStepAll();
-        if (channelDelayMask != 0)
-            {
-            channelStep();
-            }
+
+        /*
+        **  Step the clock (if not doing real time)
+        */
         rtcTick();
         }
 

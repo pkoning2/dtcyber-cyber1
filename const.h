@@ -216,33 +216,6 @@
 
 #define LogErrorLocation        __FILE__, __LINE__
 
-/* 
-**  Macros for enabling dual CPU emulation.  These are constructed
-**  so the case when dual CPU emulation is turned off do NOT get the
-**  added (even if small) overhead of passing a cpu context pointer
-**  to all the emulation primitives.
-*/
-#ifdef DUAL_CPU
-#define CPUVARG         CpuContext *activeCpu
-#define CPUVARGS1(x)    CpuContext *activeCpu, x
-#define CPUVARGS2(x, y) CpuContext *activeCpu, x, y
-#define CPUVARGS3(x, y, z) CpuContext *activeCpu, x, y, z
-#define CPUARG          activeCpu
-#define CPUARGS1(x)     activeCpu, x
-#define CPUARGS2(x, y)  activeCpu, x, y
-#define CPUARGS3(x, y, z) activeCpu, x, y, z
-#else
-#define CPUVARG         void
-#define CPUVARGS1(x)    x
-#define CPUVARGS2(x, y) x, y
-#define CPUVARGS3(x, y, z) x, y, z
-#define CPUARG
-#define CPUARGS1(x)     x
-#define CPUARGS2(x, y)  x, y
-#define CPUARGS3(x, y, z) x, y, z
-#define cpuStep         cpuStepAll
-#endif
-
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* CONST_H */
 

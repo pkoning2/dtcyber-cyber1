@@ -17,11 +17,15 @@
 #include <winsock.h>
 typedef u_long in_addr_t;
 #define EINPROGRESS WSAEINPROGRESS
+#undef USE_THREADS
 #else
 #include <stdbool.h>
 #include <netinet/in.h>
 #define _POSIX_C_SOURCE_199309L
 #include <unistd.h>
+#ifdef USE_THREADS
+#include <pthread.h>
+#endif
 #endif
 
 #ifdef _POSIX_ASYNCHRONOUS_IO
@@ -132,11 +136,11 @@ typedef struct devSlot
     struct devSlot  *next;              /* next device attached to this channel or converter */
     struct chSlot   *channel;           /* channel this device is attached to */
     FILE            *fcb[MaxUnits];     /* unit data file control block */
-    void            (*activate)(void);  /* channel activation function */        
-    void            (*disconnect)(void);/* channel deactivation function */
-    FcStatus        (*func)(PpWord);    /* function request handler */
-    void            (*io)(void);        /* output request handler */
-    void            (*load)(struct devSlot *, int, char *); /* load/unload request handler */
+    void            (*activate)(struct chSlot *, struct devSlot *);
+    void            (*disconnect)(struct chSlot *, struct devSlot *);
+    FcStatus        (*func)(struct chSlot *, struct devSlot *, PpWord);
+    void            (*io)(struct chSlot *, struct devSlot *);
+    void            (*load)(struct devSlot *, int, char *);
     void            *context[MaxUnits2];/* device specific context data */
     void            *controllerContext; /* controller specific context data */
     PpWord          status;             /* device status */
@@ -154,6 +158,10 @@ typedef struct chSlot
     {                                   
     DevSlot         *firstDevice;       /* linked list of devices attached to this channel */
     DevSlot         *ioDevice;          /* device which deals with current function */
+#ifdef USE_THREADS
+    pthread_cond_t  cond;               /* Condition variable for stalls */
+    pthread_mutex_t mutex;              /* Mutex to protect channel state */
+#endif
     PpWord          data;               /* channel data */
     PpWord          status;             /* channel status */
     bool            active;             /* channel active flag */
@@ -161,26 +169,32 @@ typedef struct chSlot
     bool            discAfterInput;     /* disconnect channel after input flag */
     u8              id;                 /* channel number */
     u8              delayStatus;        /* time to delay change of empty/full status */
-    u8              delayDisconnect;    /* time to delay disconnect */
+    u8              ppu;                /* Requesting PPU (if Io call) */
     } ChSlot;                           
                                         
 /*
 **  PPU control block.
 */                                        
-typedef struct                          
+typedef struct
     {                                   
     ChSlot          *channel;           /* associated channel (-1 is none) */
     u32             regA;               /* Register A (18 bit) */
     int             delay;              /* Time to delay before next instruction */
     PpWord          regP;               /* Program counter (12 bit) */
+#ifdef USE_THREADS
+    pthread_t       thread;             /* Thread in which this PP runs */
+    pthread_cond_t  cond;               /* Condition variable for stalls */
+    pthread_mutex_t mutex;              /* Mutex to protect cond */
+#endif
     PpWord          mem[PpMemSize];     /* PP memory */
-    u16             ppMemStart;         /* Start of IAM/OAM for tracing */
-    u16             ppMemLen;           /* Length of IAM/OAM for tracing */
+    u16             ppMemStart;         /* Start of transfer for tracing */
+    u16             ppMemLen;           /* Length of transfer for tracing */
     u8              ioWaitType;         /* Indicates what kind of I/O we wait for */
     u8              id;                 /* PP number */
     bool            stopped;            /* PP stopped */
     bool            traceLine;          /* Trace one line for this PP */
     bool            ioFlag;             /* Last instruction was an I/O */
+    char            state;              /* PP state (character code) */
     } PpSlot;                           
 
 /*
@@ -210,6 +224,7 @@ typedef struct
     u8              opI;                /* I field of current instruction */
     u8              opJ;                /* J field of current instruction */
     u8              opK;                /* K field (first 3 bits only) */
+    char            state;              /* CPU state (character code) */
     } CpuContext;
 /*
 **  Network "FET"
@@ -287,14 +302,12 @@ typedef struct NetPortSet_s
 /*
 **  Disk I/O control struct.
 **
-**  This support async I/O, if the host OS has it.
+**  This was originally designed for async I/O, but that has been
+**  dropped since threading is easier and at least as effective.
 */
 
 typedef struct 
     {
-#ifdef _POSIX_ASYNCHRONOUS_IO
-    struct aiocb iocb;
-#endif
     off_t       pos;
     void        *buf;
     int         fd;

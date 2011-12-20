@@ -183,8 +183,10 @@ typedef struct diskSize
 
 typedef struct diskParam
     {
-    PpWord      (*read)(struct diskParam *);
-    void        (*write)(struct diskParam *, PpWord);
+        PpWord      (*read)(ChSlot *activeChannel, DevSlot *activeDevice,
+                            struct diskParam *);
+        void        (*write)(ChSlot *activeChannel, DevSlot *activeDevice,
+                             struct diskParam *, PpWord);
     DiskIO      ioDesc;
     i32         sector;
     i32         track;
@@ -208,18 +210,27 @@ typedef struct diskParam
 **  ---------------------------
 */
 static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSize *size, u8 diskType);
-static FcStatus dd8xxFunc(PpWord funcCode);
-static void dd8xxIo(void);
-static void dd8xxActivate(void);
-static void dd8xxDisconnect(void);
-static void dd8xxSeek(DiskParam *dp);
-static void dd8xxSeekNextSector(DiskParam *dp, bool gap);
-static PpWord dd8xxReadClassic(DiskParam *dp);
-static PpWord dd8xxReadPacked(DiskParam *dp);
-static void dd8xxWriteClassic(DiskParam *dp, PpWord data);
-static void dd8xxWritePacked(DiskParam *dp, PpWord data);
-static void dd8xxSectorWrite(DiskParam *dp, PpWord *sector);
-static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState);
+static FcStatus dd8xxFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode);
+static void dd8xxIo(ChSlot *activeChannel, DevSlot *activeDevice);
+static void dd8xxActivate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void dd8xxDisconnect(ChSlot *activeChannel, DevSlot *activeDevice);
+static void dd8xxSeek(ChSlot *activeChannel, DevSlot *activeDevice,
+                      DiskParam *dp);
+static void dd8xxSeekNextSector(ChSlot *activeChannel, DevSlot *activeDevice,
+                                DiskParam *dp, bool gap);
+static PpWord dd8xxReadClassic(ChSlot *activeChannel, DevSlot *activeDevice,
+                               DiskParam *dp);
+static PpWord dd8xxReadPacked(ChSlot *activeChannel, DevSlot *activeDevice,
+                              DiskParam *dp);
+static void dd8xxWriteClassic(ChSlot *activeChannel, DevSlot *activeDevice,
+                              DiskParam *dp, PpWord data);
+static void dd8xxWritePacked(ChSlot *activeChannel, DevSlot *activeDevice,
+                             DiskParam *dp, PpWord data);
+static void dd8xxSectorWrite(ChSlot *activeChannel, DevSlot *activeDevice,
+                             DiskParam *dp, PpWord *sector);
+static void dd844SetClearFlaw(ChSlot *activeChannel, DevSlot *activeDevice,
+                              DiskParam *dp, PpWord flawState);
 #if DEBUG
 static char *dd8xxFunc2String(PpWord funcCode);
 #endif
@@ -307,7 +318,7 @@ void dd885Init_1(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **------------------------------------------------------------------------*/
 static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSize *size, u8 diskType)
     {
-    DevSlot *ds;
+    DevSlot *activeDevice;
     DiskParam *dp;
     DiskParam **dpvec;
     time_t mTime;
@@ -315,7 +326,8 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     u8 yy, mm, dd;
     u8 containerType = CtPacked;
     char *opt = NULL;
-
+    ChSlot *activeChannel;
+    
     (void)eqNo;
 
 #if DEBUG
@@ -328,18 +340,18 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     /*
     **  Setup channel functions.
     */
-    ds = channelAttach(channelNo, eqNo, DtDd8xx);
-    activeDevice = ds;
-    ds->activate = dd8xxActivate;
-    ds->disconnect = dd8xxDisconnect;
-    ds->func = dd8xxFunc;
-    ds->io = dd8xxIo;
-    ds->load = dd8xxLoad;
+    activeChannel = channel + channelNo;
+    activeDevice = channelAttach(channelNo, eqNo, DtDd8xx);
+    activeDevice->activate = dd8xxActivate;
+    activeDevice->disconnect = dd8xxDisconnect;
+    activeDevice->func = dd8xxFunc;
+    activeDevice->io = dd8xxIo;
+    activeDevice->load = dd8xxLoad;
 
     /*
     **  Save disk parameters.
     */
-    ds->selectedUnit = unitNo;
+    activeDevice->selectedUnit = unitNo;
     dp = (DiskParam *)calloc(1, sizeof(DiskParam));
     if (dp == NULL)
         {
@@ -488,7 +500,7 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     /*
     **  Link device parameters.
     */
-    dpvec = (DiskParam **) (ds->context[0]);
+    dpvec = (DiskParam **) (activeDevice->context[0]);
     if (dpvec == NULL)
         {
         dpvec = (DiskParam **) malloc (sizeof (DiskParam *) * MAXDDUNITS);
@@ -497,7 +509,7 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
             fprintf (stderr, "Failed to allocate DiskParam vector");
             exit (1);
             }
-        ds->context[0] = dpvec;
+        activeDevice->context[0] = dpvec;
         }
     dpvec[unitNo] = dp;
 
@@ -533,8 +545,8 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
             dp->cylinder = size->maxCylinders - 1;
             dp->track = size->maxTracks - 1;
             dp->sector = size->maxSectors - 1;
-            dd8xxSeek(dp);
-            dd8xxSectorWrite(dp, mySector);
+            dd8xxSeek(activeChannel, activeDevice, dp);
+            dd8xxSectorWrite(activeChannel, activeDevice, dp, mySector);
 
             /*
             **  Position to cylinder with the disk's factory and utility
@@ -559,8 +571,9 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
                 {
                 for (dp->sector = 0; dp->sector < size->maxSectors; dp->sector++)
                     {
-                    dd8xxSeek(dp);
-                    dd8xxSectorWrite(dp, mySector);
+                    dd8xxSeek(activeChannel, activeDevice, dp);
+                    dd8xxSectorWrite(activeChannel, activeDevice, 
+                                     dp, mySector);
                     }
                 }
 
@@ -585,8 +598,8 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
 
             dp->track = 0;
             dp->sector = 0;
-            dd8xxSeek(dp);
-            dd8xxSectorWrite(dp, mySector);
+            dd8xxSeek(activeChannel, activeDevice, dp);
+            dd8xxSectorWrite(activeChannel, activeDevice, dp, mySector);
             }
         else
             {
@@ -604,7 +617,7 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
         dp->track = 0;
         dp->sector = 0;
         dp->interlace = 1;
-        dd8xxSeek(dp);
+        dd8xxSeek(activeChannel, activeDevice, dp);
         }
 
     /*
@@ -623,7 +636,8 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus dd8xxFunc(PpWord funcCode)
+static FcStatus dd8xxFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode)
     {
     i8 unitNo;
     DiskParam *dp;
@@ -831,7 +845,7 @@ static FcStatus dd8xxFunc(PpWord funcCode)
             break;
             }
 
-        dd8xxSeek(dp);
+        dd8xxSeek(activeChannel, activeDevice, dp);
         activeDevice->recordLength = SectorSize;
         break;
 
@@ -891,7 +905,7 @@ static FcStatus dd8xxFunc(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxIo(void)
+static void dd8xxIo(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     i8 unitNo;
     bool opened;
@@ -985,7 +999,7 @@ static void dd8xxIo(void)
                 if (dp != NULL)
                     {
                     dp->sector = activeChannel->data;
-                    dd8xxSeek(dp);
+                    dd8xxSeek(activeChannel, activeDevice, dp);
                     }
                 else
                     {
@@ -1022,7 +1036,8 @@ static void dd8xxIo(void)
                 /*
                 **  The first word in the sector contains the data length.
                 */
-                activeDevice->recordLength = dp->read(dp);
+                activeDevice->recordLength = dp->read(activeChannel, 
+                                                      activeDevice, dp);
                 if (activeDevice->recordLength > SectorSize)
                     {
                     activeDevice->recordLength = SectorSize;
@@ -1032,7 +1047,8 @@ static void dd8xxIo(void)
                 }
             else
                 {
-                activeChannel->data = dp->read(dp);
+                activeChannel->data = dp->read(activeChannel, 
+                                               activeDevice, dp);
                 }
 
             activeChannel->full = TRUE;
@@ -1040,7 +1056,7 @@ static void dd8xxIo(void)
             if (--activeDevice->recordLength == 0)
                 {
                 activeChannel->discAfterInput = TRUE;
-                dd8xxSeekNextSector(dp, FALSE);
+                dd8xxSeekNextSector(activeChannel, activeDevice, dp, FALSE);
                 }
             }
         break;
@@ -1068,13 +1084,14 @@ static void dd8xxIo(void)
 #endif
         if (!activeChannel->full)
             {
-            activeChannel->data = dp->read(dp);
+            activeChannel->data = dp->read(activeChannel, activeDevice, dp);
             activeChannel->full = TRUE;
 
             if (--activeDevice->recordLength == 0)
                 {
                 activeChannel->discAfterInput = TRUE;
-                dd8xxSeekNextSector(dp, activeDevice->fcode == Fc8xxGapRead);
+                dd8xxSeekNextSector(activeChannel, activeDevice, 
+                                    dp, activeDevice->fcode == Fc8xxGapRead);
                 }
             }
         break;
@@ -1111,13 +1128,15 @@ static void dd8xxIo(void)
                 }
             else
                 {
-                dp->write(dp, activeChannel->data);
+                dp->write(activeChannel, activeDevice, 
+                          dp, activeChannel->data);
                 }
             activeChannel->full = FALSE;
 
             if (--activeDevice->recordLength == 0 && !dp->readonly)
                 {
-                    dd8xxSeekNextSector(dp, activeDevice->fcode == Fc8xxGapWrite ||
+                    dd8xxSeekNextSector(activeChannel, activeDevice, dp,
+                                        activeDevice->fcode == Fc8xxGapWrite ||
                                         activeDevice->fcode == Fc8xxGapWrite);
                 }
             }
@@ -1205,7 +1224,7 @@ static void dd8xxIo(void)
             }
         if (!activeChannel->full)
             {
-            activeChannel->data = dp->read(dp);
+            activeChannel->data = dp->read(activeChannel, activeDevice, dp);
             activeChannel->full = TRUE;
 
 #if DEBUG
@@ -1225,7 +1244,8 @@ static void dd8xxIo(void)
 #if DEBUG
             fprintf(dd8xxLog, " %04o[%d]", activeChannel->data, activeChannel->data);
 #endif
-            dd844SetClearFlaw(dp, activeChannel->data);
+            dd844SetClearFlaw(activeChannel, activeDevice, 
+                              dp, activeChannel->data);
             activeChannel->full = FALSE;
             }
         break;
@@ -1255,7 +1275,7 @@ static void dd8xxIo(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxActivate(void)
+static void dd8xxActivate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -1267,7 +1287,7 @@ static void dd8xxActivate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxDisconnect(void)
+static void dd8xxDisconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -1283,7 +1303,8 @@ static void dd8xxDisconnect(void)
 **  async I/O is not being used, a seek is done to that offset.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxSeek(DiskParam *dp)
+static void dd8xxSeek(ChSlot *activeChannel, DevSlot *activeDevice,
+                      DiskParam *dp)
     {
     i32 result;
 
@@ -1339,7 +1360,8 @@ static void dd8xxSeek(DiskParam *dp)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-static void dd8xxSeekNextSector(DiskParam *dp, bool gap)
+static void dd8xxSeekNextSector(ChSlot *activeChannel, DevSlot *activeDevice,
+                                DiskParam *dp, bool gap)
     {
     dp->sector += dp->interlace + (gap ? 2 : 0);
 
@@ -1392,7 +1414,7 @@ static void dd8xxSeekNextSector(DiskParam *dp, bool gap)
             }
         }
 
-    dd8xxSeek(dp);
+    dd8xxSeek(activeChannel, activeDevice, dp);
     }
 
 /*--------------------------------------------------------------------------
@@ -1404,7 +1426,8 @@ static void dd8xxSeekNextSector(DiskParam *dp, bool gap)
 **  Returns:        PP word read.
 **
 **------------------------------------------------------------------------*/
-static PpWord dd8xxReadClassic(DiskParam *dp)
+static PpWord dd8xxReadClassic(ChSlot *activeChannel, DevSlot *activeDevice,
+                               DiskParam *dp)
     {
     int count;
     
@@ -1454,7 +1477,8 @@ static PpWord dd8xxReadClassic(DiskParam *dp)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxWriteClassic(DiskParam *dp, PpWord data)
+static void dd8xxWriteClassic(ChSlot *activeChannel, DevSlot *activeDevice,
+                              DiskParam *dp, PpWord data)
     {
     /*
     **  Fail gracefully if we write too much data.
@@ -1499,7 +1523,8 @@ static void dd8xxWriteClassic(DiskParam *dp, PpWord data)
 **  Returns:        PP word read.
 **
 **------------------------------------------------------------------------*/
-static PpWord dd8xxReadPacked(DiskParam *dp)
+static PpWord dd8xxReadPacked(ChSlot *activeChannel, DevSlot *activeDevice,
+                              DiskParam *dp)
     {
     u16 byteCount;
     static u8 sector[512];
@@ -1576,7 +1601,8 @@ static PpWord dd8xxReadPacked(DiskParam *dp)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxWritePacked(DiskParam *dp, PpWord data)
+static void dd8xxWritePacked(ChSlot *activeChannel, DevSlot *activeDevice,
+                             DiskParam *dp, PpWord data)
     {
     u16 byteCount;
     static u8 sector[512];
@@ -1648,13 +1674,14 @@ static void dd8xxWritePacked(DiskParam *dp, PpWord data)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxSectorWrite(DiskParam *dp, PpWord *sector)
+static void dd8xxSectorWrite(ChSlot *activeChannel, DevSlot *activeDevice,
+                             DiskParam *dp, PpWord *sector)
     {
     u16 byteCount;
 
     for (byteCount = SectorSize; byteCount > 0; byteCount--)
         {
-        dp->write(dp, *sector++);
+        dp->write(activeChannel, activeDevice, dp, *sector++);
         }
     }
 
@@ -1668,7 +1695,8 @@ static void dd8xxSectorWrite(DiskParam *dp, PpWord *sector)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState)
+static void dd844SetClearFlaw(ChSlot *activeChannel, DevSlot *activeDevice,
+                              DiskParam *dp, PpWord flawState)
     {
     u8 unitNo;
     int index;
@@ -1705,7 +1733,7 @@ static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState)
     dp->cylinder = dp->size.maxCylinders - 1;
     dp->track = 0;
     dp->sector = 2;
-    dd8xxSeek(dp);
+    dd8xxSeek(activeChannel, activeDevice, dp);
     ddQueueRead (&dp->ioDesc, mySector, 2 * SectorSize);
     ddWaitIO (&dp->ioDesc);
     
@@ -1766,8 +1794,8 @@ static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState)
     /*
     **  Update the 844 utility map sector.
     */
-    dd8xxSeek(dp);
-    dd8xxSectorWrite(dp, mySector);
+    dd8xxSeek(activeChannel, activeDevice, dp);
+    dd8xxSectorWrite(activeChannel, activeDevice, dp, mySector);
     }
 
 /*--------------------------------------------------------------------------
@@ -1830,7 +1858,7 @@ static char *dd8xxFunc2String(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dd8xxLoad(DevSlot *ds, int unitNo, char *fn)
+static void dd8xxLoad(DevSlot *activeDevice, int unitNo, char *fn)
     {
     DiskParam *dp;
     u8 unitMode = 'r';
@@ -1863,9 +1891,9 @@ static void dd8xxLoad(DevSlot *ds, int unitNo, char *fn)
             return;
             }
         ddClose (&dp->ioDesc);
-        if (ds->selectedUnit == unitNo)
+        if (activeDevice->selectedUnit == unitNo)
             {
-            ds->selectedUnit = -1;
+            activeDevice->selectedUnit = -1;
             }
         opSetStatus (dp->statusBuf, "");
         opSetMsg ("DD8xx unloaded");

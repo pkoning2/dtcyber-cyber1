@@ -671,7 +671,6 @@ static void opCmdLoad(char *cmdParams)
         {
         if (dp->load)
             {
-            activeDevice = dp;
             dp->load (dp, unit, cmdParams + rest);
             done = TRUE;
             }
@@ -712,7 +711,6 @@ static void opCmdUnload(char *cmdParams)
         {
         if (dp->load)
             {
-            activeDevice = dp;
             dp->load (dp, unit, NULL);
             }
         dp = dp->next;
@@ -1068,14 +1066,14 @@ static void opConnlist(char *cmdParams)
                     }
                 if (cp->ownerInfo < 0 || cp->ownerInfo > 1023)
                     {
-                    sprintf (cstat, "%c%3d. %-7s %5lld to %s:%d", 
+                    sprintf (cstat, "%c%3d. %-7s %5llu to %s:%d", 
                              j, j - StatusFirstDev,
                              kind, cp->ownerInfo,
                              inet_ntoa (cp->from), ntohs (cp->fromPort));
                     }
                 else
                     {
-                    sprintf (cstat, "%c%3d. %-7s %2lld-%-2lld to %s:%d", 
+                    sprintf (cstat, "%c%3d. %-7s %2llu-%-2llu to %s:%d", 
                              j, j - StatusFirstDev,
                              kind, cp->ownerInfo / 32, cp->ownerInfo & 31,
                              inet_ntoa (cp->from), ntohs (cp->fromPort));

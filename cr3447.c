@@ -114,11 +114,12 @@ typedef struct
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus cr3447Func(PpWord funcCode);
-static void cr3447Io(void);
+static FcStatus cr3447Func(ChSlot *activeChannel, DevSlot *active3000Device,
+                           PpWord funcCode);
+static void cr3447Io(ChSlot *activeChannel, DevSlot *active3000Device);
 static void cr3447Load(DevSlot *, int, char *);
-static void cr3447Activate(void);
-static void cr3447Disconnect(void);
+static void cr3447Activate(ChSlot *activeChannel, DevSlot *active3000Device);
+static void cr3447Disconnect(ChSlot *activeChannel, DevSlot *active3000Device);
 static void cr3447NextCard (DevSlot *up, CrContext *cc);
 static void cr3447NextDeck (DevSlot *up, CrContext *cc);
 
@@ -251,7 +252,8 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus cr3447Func(PpWord funcCode)
+static FcStatus cr3447Func(ChSlot *activeChannel, DevSlot *active3000Device,
+                           PpWord funcCode)
     {
     CrContext *cc;
     FcStatus st;
@@ -328,7 +330,7 @@ static FcStatus cr3447Func(PpWord funcCode)
         break;
         }
 
-    dcc6681Interrupt((cc->status & cc->intmask) != 0);
+    dcc6681InterruptDev (active3000Device, (cc->status & cc->intmask) != 0);
     return(st);
     }
 
@@ -340,7 +342,7 @@ static FcStatus cr3447Func(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cr3447Io(void)
+static void cr3447Io(ChSlot *activeChannel, DevSlot *active3000Device)
     {
     CrContext *cc;
     int c;
@@ -391,7 +393,7 @@ static void cr3447Io(void)
             **  If the function is input to EOR, disconnect to indicate EOR.
             */
             cr3447NextCard (active3000Device, cc);
-            if (activeDevice->fcode == Fc6681InputToEor)
+            if (active3000Device->fcode == Fc6681InputToEor)
                 {
                 /* End of card but we're still ready */
                 cc->status |= StCr3447EoiInt | StCr3447Ready;
@@ -419,7 +421,7 @@ static void cr3447Io(void)
         break;
         }
     
-    dcc6681Interrupt((cc->status & cc->intmask) != 0);
+    dcc6681InterruptDev (active3000Device, (cc->status & cc->intmask) != 0);
     }
 
 /*--------------------------------------------------------------------------
@@ -517,7 +519,7 @@ static void cr3447Load(DevSlot *up, int eqNo, char *fn)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cr3447Activate(void)
+static void cr3447Activate(ChSlot *activeChannel, DevSlot *active3000Device)
     {
     }
 
@@ -529,7 +531,7 @@ static void cr3447Activate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cr3447Disconnect(void)
+static void cr3447Disconnect(ChSlot *activeChannel, DevSlot *active3000Device)
     {
     CrContext *cc;
     
@@ -537,7 +539,8 @@ static void cr3447Disconnect(void)
     if (cc != NULL)
         {
         cc->status |= StCr3447EoiInt;
-        dcc6681Interrupt((cc->status & cc->intmask) != 0);
+        dcc6681InterruptDev (active3000Device, 
+                             (cc->status & cc->intmask) != 0);
         if (active3000Device->fcb[0] != NULL && cc->col != 0)
             {
             cr3447NextCard(active3000Device, cc);

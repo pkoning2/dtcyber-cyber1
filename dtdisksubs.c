@@ -7,7 +7,7 @@
 **  Name: dtdisksubs.c
 **
 **  Description:
-**      Disk I/O subroutines, with async I/O support
+**      Disk I/O subroutines
 **
 **--------------------------------------------------------------------------
 */
@@ -43,14 +43,6 @@
 #include "types.h"
 #include "proto.h"
 
-#ifdef _POSIX_ASYNCHRONOUS_IO
-#include <aio.h>
-#ifndef _POSIX_REALTIME_SIGNALS
-#error "no signals"
-#endif
-#include <signal.h>
-#endif
-
 /*
 **  -----------------
 **  Private Constants
@@ -63,11 +55,6 @@
 **  Private Macro Functions
 **  -----------------------
 */
-#ifdef _POSIX_ASYNCHRONOUS_IO
-#define ASYNC_IO 0
-#else
-#define ASYNC_IO 0
-#endif
 
 /*
 **  -----------------------------------------
@@ -80,9 +67,6 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-#if ASYNC_IO
-static void ddAioDone (int signo, siginfo_t *info, void *ignored);
-#endif
 static void ddOpenSetup (DiskIO *io, int fd);
 
 /*
@@ -96,10 +80,6 @@ static void ddOpenSetup (DiskIO *io, int fd);
 **  Private Variables
 **  -----------------
 */
-#if ASYNC_IO
-static bool handlerSet = FALSE;
-static sigset_t aio_completion_signals;
-#endif
 
 /*
 **--------------------------------------------------------------------------
@@ -179,24 +159,6 @@ bool ddCreate (DiskIO *io, const char *name)
 **------------------------------------------------------------------------*/
 bool ddIOPending (DiskIO *io)
     {
-#if ASYNC_IO
-    int err, ret;
-    
-    if (!io->ioPending)
-        {
-        return FALSE;
-        }
-    err = aio_error (&io->iocb);
-    if (err == EINPROGRESS)
-        {
-        return TRUE;
-        }
-    ret = aio_return (&io->iocb);
-#if DEBUG
-    printf ("io no longer pending fd %d err %d ret %d\n", io->fd, err, ret);
-#endif
-    io->ioPending = FALSE;
-#endif
     return FALSE;
     }
 
@@ -263,30 +225,8 @@ void ddQueueRead (DiskIO *io, void *buf, int bytes)
     **  Make sure any prior I/O on this unit is done.  Then mark I/O
     **  as in progress, and start the actual operation.
     */
-#if ASYNC_IO
-    ddWaitIO (io);
-    io->buf = buf;
-    io->count = bytes;
-    io->ioPending = TRUE;
-    io->iocb.aio_fildes = io->fd;
-    io->iocb.aio_offset = io->pos;
-    io->iocb.aio_buf = buf;
-    io->iocb.aio_nbytes = bytes;
-#ifdef HOST_Linux
-    io->iocb.aio_sigevent.sigev_notify = SIGEV_NONE;
-#else
-    io->iocb.aio_sigevent.sigev_notify = SIGEV_SIGNAL;
-    io->iocb.aio_sigevent.sigev_signo = SIGRTMIN;
-    io->iocb.aio_sigevent.sigev_value.sival_ptr = io;
-#endif
-    ret = aio_read (&io->iocb);
-#else
     lseek (io->fd, io->pos, SEEK_SET);
     ret = read (io->fd, buf, bytes);
-#endif
-#if DEBUG
-    printf ("aio_read fd %d pos %d ret %d err %d\n", io->fd, io->pos, ret, errno);
-#endif
     }
 
 /*--------------------------------------------------------------------------
@@ -310,30 +250,8 @@ void ddQueueWrite (DiskIO *io, const void *buf, int bytes)
     **  Make sure any prior I/O on this unit is done.  Then mark I/O
     **  as in progress, and start the actual operation.
     */
-#if ASYNC_IO
-    ddWaitIO (io);
-    io->buf = (void *) buf;
-    io->count = bytes;
-    io->ioPending = TRUE;
-    io->iocb.aio_fildes = io->fd;
-    io->iocb.aio_offset = io->pos;
-    io->iocb.aio_buf = (void *) buf;
-    io->iocb.aio_nbytes = bytes;
-#ifdef HOST_Linux
-    io->iocb.aio_sigevent.sigev_notify = SIGEV_NONE;
-#else
-    io->iocb.aio_sigevent.sigev_notify = SIGEV_SIGNAL;
-    io->iocb.aio_sigevent.sigev_signo = SIGRTMIN;
-    io->iocb.aio_sigevent.sigev_value.sival_ptr = io;
-#endif
-    ret = aio_write (&io->iocb);
-#else
     lseek (io->fd, io->pos, SEEK_SET);
     ret = write (io->fd, buf, bytes);
-#endif
-#if DEBUG
-    printf ("aio_write fd %d pos %d ret %d err %d\n", io->fd, io->pos, ret, errno);
-#endif
     }
 
 /*--------------------------------------------------------------------------
@@ -362,28 +280,6 @@ void ddSeek (DiskIO *io, off_t pos)
 **------------------------------------------------------------------------*/
 void ddWaitIO (DiskIO *io)
     {
-#if ASYNC_IO
-    const struct aiocb *alist[1];
-    int ret, err;
-    
-    if (!io->ioPending)
-        {
-        return;
-        }
-#if DEBUG
-    printf ("aio waiting fd %d\n", io->fd);
-#endif
-    alist[0] = &io->iocb;
-    aio_suspend (alist, 1, NULL);
-    io->ioPending = FALSE;
-#ifdef HOST_Linux
-    err = aio_error (&io->iocb);
-    ret = aio_return (&io->iocb);
-#if DEBUG
-    printf ("aio wait fd %d err %d ret %d\n", io->fd, err, ret);
-#endif
-#endif
-#endif
     }
 
 /*
@@ -393,48 +289,6 @@ void ddWaitIO (DiskIO *io)
 **
 **--------------------------------------------------------------------------
 */
-
-#if ASYNC_IO
-/*--------------------------------------------------------------------------
-**  Purpose:        Signal handler for AIO completion
-**
-**  Parameters:     Name        Description.
-**                  signo       Signal number
-**                  info        Signal associated info
-**                  ignored     not used
-**
-**  Returns:        Nothing
-**
-**------------------------------------------------------------------------*/
-static void ddAioDone (int signo, siginfo_t *info, void *ignored)
-    {
-    DiskIO *io;
-    int err, ret;
-    
-    io = (DiskIO *) info->si_value.sival_ptr;
-#if DEBUG
-    printf ("aio done fd %d\n", io->fd);
-#endif
-    
-    if (signo != SIG_AIO_DONE ||
-        info->si_code != SI_ASYNCIO)
-        {
-        fprintf (stderr, "spurious call to ddAioDone, signal %d\n", signo);
-        return;
-        }
-    if (!io->ioPending)
-        {
-        fprintf (stderr, "Completion but I/O not marked as pending");
-        }
-    err = aio_error (&io->iocb);
-    ret = aio_return (&io->iocb);
-#if DEBUG
-    printf ("aio done fd %d err %d ret %d\n", io->fd, err, ret);
-#endif
-    
-    io->ioPending = FALSE;
-    }
-#endif
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Common setup code for open and create
@@ -448,25 +302,6 @@ static void ddAioDone (int signo, siginfo_t *info, void *ignored)
 **------------------------------------------------------------------------*/
 static void ddOpenSetup (DiskIO *io, int fd)
     {
-#if ASYNC_IO
-#ifndef HOST_Linux
-    struct sigaction sa;
-    
-    if (!handlerSet)
-        {
-        /*
-        **  Declare the signal handler for async I/O
-        */
-        handlerSet = TRUE;
-        sigemptyset (&aio_completion_signals);
-        sigaddset (&aio_completion_signals, SIG_AIO_DONE);
-        sa.sa_flags = SA_SIGINFO;
-        sigemptyset (&sa.sa_mask);
-        sa.sa_sigaction = ddAioDone;
-        sigaction (SIG_AIO_DONE, &sa, NULL);
-        }
-#endif
-#endif
     io->ioPending = FALSE;
     io->fd = fd;
     }

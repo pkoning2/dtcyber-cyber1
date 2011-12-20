@@ -66,7 +66,7 @@ ifeq ("$(HOST)","Darwin")
 
 # Mac
 
-ifdef DUAL
+ifdef THREADS
 MACTARGETS=g5 x86_64
 else
 MACTARGETS=g3 g5 x86 x86_64
@@ -76,20 +76,20 @@ endif
 
 dtcyber:
 	mkdir -p $(MACTARGETS)
-ifndef DUAL
+ifndef THREADS
 	( cd g3 && \
 	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G3\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)" )
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G3\"'" VPATH=.. THREADS=$(THREADS) PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)" )
 	( cd x86 && \
 	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"i386\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86ARCHFLAGS)" )
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"i386\"'" VPATH=.. THREADS=$(THREADS) PTERMVERSION=xxx ARCHCFLAGS="$(X86ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86ARCHFLAGS)" )
 endif
 	( cd g5 && \
 	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G5\"'" VPATH=.. DUAL=$(DUAL) DUAL_HOST_CPUS=1 PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)" )
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G5\"'" VPATH=.. THREADS=$(THREADS) THREADS_HOST_CPUS=1 PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)" )
 	( cd x86_64 && \
 	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86_64CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"x86_64\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86_64ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86_64ARCHFLAGS)" )
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86_64CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"x86_64\"'" VPATH=.. THREADS=$(THREADS) PTERMVERSION=xxx ARCHCFLAGS="$(X86_64ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86_64ARCHFLAGS)" )
 	lipo -create -output dtcyber `for d in $(MACTARGETS); do echo $$d/gxdtcyber; done`
 
 gxdtcyber: $(OBJS)

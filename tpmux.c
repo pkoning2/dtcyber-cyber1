@@ -238,10 +238,11 @@ typedef struct portParam
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus tpMuxFunc(PpWord funcCode);
-static void tpMuxIo(void);
-static void tpMuxActivate(void);
-static void tpMuxDisconnect(void);
+static FcStatus tpMuxFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode);
+static void tpMuxIo(ChSlot *activeChannel, DevSlot *activeDevice);
+static void tpMuxActivate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void tpMuxDisconnect(ChSlot *activeChannel, DevSlot *activeDevice);
 static void tpMuxCreateThread(DevSlot *dp);
 static int tpMuxCheckInput(PortParam *mp);
 #if defined(_WIN32)
@@ -339,7 +340,8 @@ void tpMuxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus tpMuxFunc(PpWord funcCode)
+static FcStatus tpMuxFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode)
     {
     int funcParam;
 
@@ -404,7 +406,7 @@ static FcStatus tpMuxFunc(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void tpMuxIo(void)
+static void tpMuxIo(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     PortParam *mp;
 
@@ -484,7 +486,7 @@ static void tpMuxIo(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void tpMuxActivate(void)
+static void tpMuxActivate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -496,7 +498,7 @@ static void tpMuxActivate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void tpMuxDisconnect(void)
+static void tpMuxDisconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     PortParam *mp;
 

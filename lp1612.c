@@ -87,10 +87,11 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus lp1612Func(PpWord funcCode);
-static void lp1612Io(void);
-static void lp1612Activate(void);
-static void lp1612Disconnect(void);
+static FcStatus lp1612Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                           PpWord funcCode);
+static void lp1612Io(ChSlot *activeChannel, DevSlot *activeDevice);
+static void lp1612Activate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void lp1612Disconnect(ChSlot *activeChannel, DevSlot *activeDevice);
 static void lp1612Load(DevSlot *dp, int unitNo, char *fn);
 
 
@@ -260,7 +261,8 @@ static void lp1612Load(DevSlot *dp, int unitNo, char *fn)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus lp1612Func(PpWord funcCode)
+static FcStatus lp1612Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                           PpWord funcCode)
     {
     FILE *fcb = activeDevice->fcb[0];
 
@@ -314,7 +316,7 @@ static FcStatus lp1612Func(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void lp1612Io(void)
+static void lp1612Io(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     FILE *fcb = activeDevice->fcb[0];
 
@@ -352,7 +354,7 @@ static void lp1612Io(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void lp1612Activate(void)
+static void lp1612Activate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -364,7 +366,7 @@ static void lp1612Activate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void lp1612Disconnect(void)
+static void lp1612Disconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 

@@ -52,7 +52,6 @@
 **  ----------------
 */
 ChSlot *channel;
-ChSlot *activeChannel;
 DevSlot *activeDevice;
 u8 channelCount;
 u32 channelDelayMask;
@@ -100,6 +99,10 @@ void channelInit(u8 count)
     for (ch = 0; ch < channelCount; ch++)
         {
         channel[ch].id = ch;
+#ifdef USE_THREADS
+        pthread_cond_init (&channel[ch].cond, NULL);
+        pthread_mutex_init (&channel[ch].mutex, NULL);
+#endif
         }
 
     /*
@@ -216,7 +219,8 @@ DevSlot *channelFindDevice(u8 channelNo, u8 devType)
 DevSlot *channelAttach(u8 channelNo, u8 eqNo, u8 devType)
     {
     DevSlot *device;
-
+    ChSlot *activeChannel;
+    
     activeChannel = channel + channelNo;
     device = activeChannel->firstDevice;
 
@@ -265,14 +269,15 @@ DevSlot *channelAttach(u8 channelNo, u8 eqNo, u8 devType)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void channelFunction(PpWord funcCode)
+void channelFunction(ChSlot *activeChannel, PpWord funcCode)
     {
+    DevSlot *activeDevice;
     FcStatus status = FcDeclined;
 
     activeChannel->full = FALSE;
     for (activeDevice = activeChannel->firstDevice; activeDevice != NULL; activeDevice = activeDevice->next)
         {
-        status = activeDevice->func(funcCode);
+        status = activeDevice->func (activeChannel, activeDevice, funcCode);
         if (status == FcAccepted)
             {
             /*
@@ -311,14 +316,16 @@ void channelFunction(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void channelActivate(void)
+void channelActivate(ChSlot *activeChannel)
     {
+    DevSlot *activeDevice;
+
     activeChannel->active = TRUE;
 
     if (activeChannel->ioDevice != NULL)
         {
         activeDevice = activeChannel->ioDevice;
-        activeDevice->activate();
+        activeDevice->activate (activeChannel, activeDevice);
         }
     }
 
@@ -330,14 +337,16 @@ void channelActivate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void channelDisconnect(void)
+void channelDisconnect(ChSlot *activeChannel)
     {
+    DevSlot *activeDevice;
+
     activeChannel->active = FALSE;
 
     if (activeChannel->ioDevice != NULL)
         {
         activeDevice = activeChannel->ioDevice;
-        activeDevice->disconnect();
+        activeDevice->disconnect (activeChannel, activeDevice);
         }
     else
         {
@@ -353,7 +362,7 @@ void channelDisconnect(void)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-void channelProbe(void)
+void channelProbe(ChSlot *activeChannel)
     {
     /*
     **  The following gives individual drivers an opportunity to delay
@@ -366,7 +375,7 @@ void channelProbe(void)
         activeChannel->delayStatus = 5;
         }
 
-    channelIo();
+    channelIo (activeChannel);
     }
 
 /*--------------------------------------------------------------------------
@@ -377,45 +386,18 @@ void channelProbe(void)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-void channelIo(void)
+void channelIo(ChSlot *activeChannel)
     {
+    DevSlot *activeDevice;
+
     /*
     **  Perform request.
     */
-    if (   (activeChannel->active || activeChannel->id == 014)
+    if ((activeChannel->active || activeChannel->id == ChClock)
         && activeChannel->ioDevice != NULL)
         {
         activeDevice = activeChannel->ioDevice;
-        activeDevice->io();
-        }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Handle delayed channel disconnect.
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void channelStep(void)
-    {
-    ChSlot *cc;
-    /*
-    **  Process any delayed disconnects.
-    */
-    for (ch = 0; ch < channelCount; ch++)
-        {
-        cc = &channel[ch];
-        if (cc->delayDisconnect != 0)
-            {
-            cc->delayDisconnect -= 1;
-            if (cc->delayDisconnect == 0)
-                {
-                cc->active = FALSE;
-                channelDelayMask &= ~(1 << activeChannel->id);
-                }
-            }
+        activeDevice->io (activeChannel, activeDevice);
         }
     }
 

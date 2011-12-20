@@ -24,14 +24,15 @@ attach,fbin.
 attach,plprocs.
 attach,ftpbin.
 attach,dsdbin.
+attach,mtrbin.
 *
 libedit,p=system.
 *return,output.
 rewind,new.
 itemize,new.
-* cy871bd
+* cy871be
 label,tape,vsn=ndt,lb=ku,po=w.
 rewind,new.
 copyei,new,tape.
 ~
-*file pbin
+*file mtrbin

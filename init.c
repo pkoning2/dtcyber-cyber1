@@ -50,6 +50,11 @@ typedef struct
     long        defval;
     } intParam;
 
+struct idleEntry
+    {
+    const char *name;
+    int code;
+    };
     
 /*
 **  ---------------------------
@@ -75,6 +80,7 @@ long cpuRatio;
 char autoDateString[32];
 char autoString[32];
 char platoSection[40];
+int idleMode;
 
 /*
 **  -----------------
@@ -110,6 +116,13 @@ const intParam intParamList[] =
     { "tpmuxconns", &tpmuxConns, 2 },
     { "sockets", &extSockets, 128 },
     { NULL, NULL, 0 }                   /* End marker */
+};
+
+const struct idleEntry idleTable[] =
+{
+    { "nos287", 287 },
+    { "nos2.8.7", 287 },
+    { NULL, 0 }
 };
 
 /*
@@ -233,6 +246,7 @@ static void initCyber(const char *config)
     char model[40];
     char cmFile[256];
     char ecsFile[256];
+    char idle[256];
     long memory;
     long ecsBanks;
     long cpus;
@@ -241,7 +255,8 @@ static void initCyber(const char *config)
     long pps;
     long mask;
     const intParam *paramp;
-
+    const struct idleEntry *gp;
+    
     if (!initOpenSection(config))
         {
         fprintf(stderr, "Required section [%s] not found in %s\n", config, startupFile);
@@ -286,14 +301,14 @@ static void initCyber(const char *config)
         fprintf (stderr, "Entry 'cpus' invalid in section [%s] in %s -- correct values are 1 or 2\n", config, startupFile);
         exit (1);
         }
-#ifndef DUAL_CPU
+#ifndef USE_THREADS
     if (cpus != 1)
         {
         fprintf (stderr, "Entry 'cpus=2' ignored, no dual CPU support\n");
         cpus = 1;
         }
 #else
-    printf ("Running with %d CPUs\n", cpus);
+    printf ("Running with %ld CPUs\n", cpus);
 #endif
     initGetInteger ("cpuratio", 1, &cpuRatio);
     if (cpuRatio < 1 || cpuRatio > 50)
@@ -309,7 +324,23 @@ static void initCyber(const char *config)
     
     (void)initGetString("cmFile", "", cmFile, sizeof(cmFile));
     (void)initGetString("ecsFile", "", ecsFile, sizeof(ecsFile));
-
+    
+    /*
+    **  See if we want OS specific idle processing.
+    */
+    if (initGetString ("idleMode", "", idle, sizeof (idle)))
+        {
+        gp = idleTable;
+        while (gp->name != NULL)
+            {
+            if (strcmp (gp->name, idle) == 0)
+                {
+                idleMode = gp->code;
+                break;
+                }
+            }
+        }
+    
     cpuInit(model, cpus, memory, ecsBanks, cmFile, ecsFile);
 
     /*
@@ -744,11 +775,18 @@ static bool initGetInteger(const char *entry, int defValue, long *value)
 **  Returns:        TRUE if entry was found, FALSE otherwise.
 **
 **------------------------------------------------------------------------*/
-static bool initGetString(const char *entry, char *defString, char *str, int strLen)
+static bool initGetString(const char *entryname, char *defString, char *str, int strLen)
     {
-    u8 entryLength = strlen(entry);
+    u8 entryLength = strlen(entryname) + 1;
     char *line;
     char *pos;
+    char entry[40];
+
+    /*
+    **  Build entry label.
+    */
+    strcpy (entry, entryname);
+    strcat (entry, "=");
 
     /*
     **  Leave room for zero terminator.

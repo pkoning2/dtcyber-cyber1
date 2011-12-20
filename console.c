@@ -1,3 +1,4 @@
+#define CcDebug 1
 /*--------------------------------------------------------------------------
 **
 **  Copyright (c) 2003-2004, Tom Hunter (see license.txt)
@@ -207,6 +208,9 @@
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
 #endif
+#ifdef USE_THREADS
+#include <pthread.h>
+#endif
 
 /*
 **  -----------------
@@ -269,10 +273,11 @@ typedef struct pollData
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus consoleFunc(PpWord funcCode);
-static void consoleIo(void);
-static void consoleActivate(void);
-static void consoleDisconnect(void);
+static FcStatus consoleFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                            PpWord funcCode);
+static void consoleIo(ChSlot *activeChannel, DevSlot *activeDevice);
+static void consoleActivate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void consoleDisconnect(ChSlot *activeChannel, DevSlot *activeDevice);
 
 static ThreadFunRet consoleThread (void *param);
 static int consoleInput (NetFet *np);
@@ -332,6 +337,10 @@ static u8 keyRing[KeyBufSize];
 static u32 keyIn, keyOut;
 static bool keyboardSendUp;
 static bool sendToAll;
+
+#ifdef USE_THREADS
+pthread_cond_t console_cond;
+#endif
 
 /*
 **--------------------------------------------------------------------------
@@ -554,7 +563,8 @@ void consoleSetKeyboardTrue (bool flag)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus consoleFunc(PpWord funcCode)
+static FcStatus consoleFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                            PpWord funcCode)
     {
     switch (funcCode)
         {
@@ -596,7 +606,7 @@ static FcStatus consoleFunc(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void consoleIo(void)
+static void consoleIo(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     int ch;
     int i;
@@ -789,7 +799,7 @@ static void consoleIo(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void consoleActivate(void)
+static void consoleActivate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -801,7 +811,7 @@ static void consoleActivate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void consoleDisconnect(void)
+static void consoleDisconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -877,6 +887,9 @@ static int consoleInput (NetFet *np)
         if (buf <= 062)
             {
             consoleQueueKey (buf);
+#ifdef USE_THREADS
+//            pthread_cond_signal (&console_cond);
+#endif
             }
         else
             {
@@ -1294,6 +1307,7 @@ static void consoleSendOutput (int start, int end)
 #endif
     u32 us;
     char buf[160];
+    char *p;
     u8 endBlock = Dd60EndBlock;
     
 #if defined(_WIN32)
@@ -1301,24 +1315,30 @@ static void consoleSendOutput (int start, int end)
     us = (tm.time * 1000 + tm.millitm) * 1000;
 #endif
     
-    if (debugDisplay)
+    if (1 ||debugDisplay)
         {
         /*
         **  Display P registers of PPUs and CPU and current trace mask.
         */
-        buf[0] = Dd60SetTrace;
-        sprintf(buf + 1, "PP P-reg %04o %04o %04o %04o %04o %04o %04o %04o %04o %04o   CPU P-reg %06o",
-                ppu[0].regP, ppu[1].regP, ppu[2].regP, ppu[3].regP, ppu[4].regP,
-                ppu[5].regP, ppu[6].regP, ppu[7].regP, ppu[8].regP, ppu[9].regP,
-                cpu[0].regP); 
-
+        p = buf;
+        *p++ = Dd60SetTrace;
+        strcpy (p, "PP P-reg");
+        p += strlen (p);
+        for (i = 0; i < 10; i++)
+            {
+            sprintf (p, " %04o%c", ppu[i].regP, ppu[i].state);
+            p += 6;
+            }
+        sprintf (p, "   CPU P-reg %06o%c", cpu[0].regP, cpu[0].state);
+        p += strlen (p);
+        
         if (cpuCount > 1)
             {
-            sprintf(buf + strlen(buf), " %06o", cpu[1].regP);
+            sprintf (p, "   CPU P-reg %06o%c", cpu[1].regP, cpu[1].state);
+            p += strlen (p);
             }
             
-        sprintf(buf + strlen(buf),
-                "   Trace %c%c%c%c%c%c%c%c%c%c%c%c%c%c %c%c%c%c%c%c%c%c%c%c%c%c",
+        sprintf(p, "   Trace %c%c%c%c%c %c%c%c%c%c %c%c%c%c %c%c%c%c%c%c %c%c%c%c%c%c",
                 (traceMask >> 0) & 1 ? '0' : '-',
                 (traceMask >> 1) & 1 ? '1' : '-',
                 (traceMask >> 2) & 1 ? '2' : '-',
@@ -1345,6 +1365,7 @@ static void consoleSendOutput (int start, int end)
                 (chTraceMask >> 9) & 1 ? '9' : '-',
                 (chTraceMask >> 10) & 1 ? 'A' : '-', 
                 (chTraceMask >> 11) & 1 ? 'B' : '-');
+
         for (i = 1; buf[i] != '\0'; i++)
             {
                 buf[i] = asciiToCdc[(u8) buf[i]];

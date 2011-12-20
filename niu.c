@@ -118,12 +118,14 @@ typedef struct portParam
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus niuInFunc(PpWord funcCode);
-static void niuInIo(void);
-static FcStatus niuOutFunc(PpWord funcCode);
-static void niuOutIo(void);
-static void niuActivate(void);
-static void niuDisconnect(void);
+static FcStatus niuInFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode);
+static void niuInIo(ChSlot *activeChannel, DevSlot *activeDevice);
+static FcStatus niuOutFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                           PpWord funcCode);
+static void niuOutIo(ChSlot *activeChannel, DevSlot *activeDevice);
+static void niuActivate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void niuDisconnect(ChSlot *activeChannel, DevSlot *activeDevice);
 static void niuWelcome(NetFet *np, int stat, void *);
 void niuSendstr(int stat, const char *p);
 void niuSendWord(int stat, int word);
@@ -543,7 +545,8 @@ void niuDoAlert (int code)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus niuInFunc(PpWord funcCode)
+static FcStatus niuInFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode)
     {
     PortParam *mp;
     int i;
@@ -587,7 +590,8 @@ static FcStatus niuInFunc(PpWord funcCode)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus niuOutFunc(PpWord funcCode)
+static FcStatus niuOutFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                           PpWord funcCode)
     {
     switch (funcCode)
         {
@@ -614,7 +618,7 @@ static FcStatus niuOutFunc(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuInIo(void)
+static void niuInIo(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     int port;
     SiteParam *lvp;
@@ -763,7 +767,7 @@ static void niuInIo(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuOutIo(void)
+static void niuOutIo(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     PpWord d;
     int port;
@@ -880,7 +884,7 @@ static void niuOutIo(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuActivate(void)
+static void niuActivate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -892,7 +896,7 @@ static void niuActivate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuDisconnect(void)
+static void niuDisconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 

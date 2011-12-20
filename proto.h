@@ -46,19 +46,22 @@ void channelInit(u8 count);
 void channelTerminate(void);
 DevSlot *channelFindDevice(u8 channelNo, u8 devType);
 DevSlot *channelAttach(u8 channelNo, u8 eqNo, u8 devType);
-void channelFunction(PpWord funcCode);
-void channelActivate(void);
-void channelDisconnect(void);
-void channelProbe(void);
-void channelIo(void);
-void channelStep(void);
+void channelFunction(ChSlot *activeChannel, PpWord funcCode);
+void channelActivate(ChSlot *activeChannel);
+void channelDisconnect(ChSlot *activeChannel);
+void channelProbe(ChSlot *activeChannel);
+void channelIo(ChSlot *activeChannel);
 
 /*
 **  pp.c
 */
 void ppInit(u8 count);
 void ppTerminate(void);
-void ppStep(void);
+#ifndef USE_THREADS
+void ppStepAll(void);
+#else
+void ppStartThreads (void);
+#endif
 
 /*
 **  cpu.c
@@ -73,14 +76,13 @@ bool cpuPpReadMem(u32 address, CpWord *data);
 void cpuPpWriteMem(u32 address, CpWord data);
 bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs);
 int cpuIssueExchange(u8 cpnum, u32 addr, int monitor);
-CpWord * cpuAccessMem(CPUVARGS2 (CpWord, int length));
+CpWord * cpuAccessMem(CpuContext *activeCpu, CpWord, int length);
 
 /*
 **  dcc6681.c
 */
 DevSlot *dcc6681Attach(u8 channelNo, u8 eqNo, u8 unitNo, u8 devType);
 DevSlot *dcc6681FindDevice(u8 channelNo, u8 equipmentNo, u8 devType);
-void dcc6681Interrupt(bool status);
 void dcc6681InterruptDev(DevSlot *dp, bool status);
 
 /*
@@ -184,32 +186,33 @@ void tpMuxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName);
 void traceInit(void);
 void traceStop(void);
 void traceTerminate(void);
-void traceSequence(void);
-void traceRegisters(void);
-void traceOpcode(void);
-void tracePM(void);
+void traceSequence(PpSlot *activePpu);
+void traceRegisters(PpSlot *activePpu);
+void traceOpcode(PpSlot *activePpu);
+void tracePM(PpSlot *activePpu);
 u8 traceDisassembleOpcode(char *str, PpWord *pm);
-void traceChannelFunction(PpWord funcCode);
-void tracePrint(char *str);
+void traceChannelFunction(PpSlot *activePpu, PpWord funcCode,
+                          ChSlot *activeChannel);
+void tracePrint(PpSlot *activePpu, char *str);
 void traceCpuPrint(CpuContext *activeCpu, char *str);
-void traceChannel(u8 ch);
-void traceEnd(void);
+void traceChannel(PpSlot *activePpu, u8 ch);
+void traceEnd(PpSlot *activePpu);
 void traceReset(void);
-void traceCpu(CpuContext *activeCpu, 
-              u32 p, u8 opFm, u8 opI, u8 opJ, u8 opK, u32 opAddress);
+void traceCpu(CpuContext *activeCpu, u32 p, u8 opFm, 
+              u8 opI, u8 opJ, u8 opK, u32 opAddress);
 void traceExchange(CpuContext *cc, u32 addr, char *title);
-void traceCM(u32 start, u32 end);
+void traceCM(PpSlot *activePpu, u32 start, u32 end);
 
 /*
 **  ext.c
 */
-CpWord extOp (CPUVARGS1 (CpWord req));
+CpWord extOp (CpuContext *activeCpu, CpWord req);
 void initExt (void);
 
 /*
 **  pni.c
 */
-CpWord pniOp (CPUVARGS1 (CpWord req));
+CpWord pniOp (CpuContext *activeCpu, CpWord req);
 void initPni (void);
 void pniCheck (void);
 CpWord pniConn (u32 portNo);
@@ -330,10 +333,6 @@ extern PpSlot *ppu;
 extern ChSlot *channel;
 extern u8 ppuCount;
 extern u8 channelCount;
-extern PpSlot *activePpu;
-extern ChSlot *activeChannel;
-extern DevSlot *activeDevice;
-extern DevSlot *active3000Device;
 extern CpuContext cpu[];
 extern u8 cpuCount;
 extern volatile int monitorCpu;
@@ -396,6 +395,7 @@ extern long cmWaitRatio;
 extern NetFet connlist;
 extern void (*updateConnections) (void);
 extern long extSockets;
+extern int idleMode;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

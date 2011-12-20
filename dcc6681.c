@@ -88,18 +88,18 @@ typedef struct dccControl
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus dcc6681Func(PpWord funcCode);
-static void dcc6681Io(void);
+static FcStatus dcc6681Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                            PpWord funcCode);
+static void dcc6681Io(ChSlot *activeChannel, DevSlot *activeDevice);
 static void dcc6681Load(DevSlot *, int, char *);
-static void dcc6681Activate(void);
-static void dcc6681Disconnect(void);
+static void dcc6681Activate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void dcc6681Disconnect(ChSlot *activeChannel, DevSlot *activeDevice);
 
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
-DevSlot *active3000Device;
 
 /*
 **  -----------------
@@ -296,20 +296,6 @@ void dcc6681InterruptDev(DevSlot *dp, bool status)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Update interrupt status of current equipment.
-**
-**  Parameters:     Name        Description.
-**                  status      new interrupt status
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void dcc6681Interrupt(bool status)
-    {
-    dcc6681InterruptDev(activeDevice, status);
-    }
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Execute function code on 6681 data channel converter.
 **
 **  Parameters:     Name        Description.
@@ -318,9 +304,11 @@ void dcc6681Interrupt(bool status)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus dcc6681Func(PpWord funcCode)
+static FcStatus dcc6681Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                            PpWord funcCode)
     {
     DccControl *mp = (DccControl *)activeDevice->context[0];
+    DevSlot *active3000Device;
     DevSlot *device;
     i8 u;
     i8 e;
@@ -365,7 +353,8 @@ static FcStatus dcc6681Func(PpWord funcCode)
             if (active3000Device != NULL)
                 {
                 active3000Device->selectedUnit = -1;
-                (active3000Device->func)(funcCode);
+                (active3000Device->func)(activeChannel, active3000Device,
+                                         funcCode);
                 }
             }
 
@@ -387,7 +376,8 @@ static FcStatus dcc6681Func(PpWord funcCode)
         active3000Device = mp->device3000[e];
         activeDevice->fcode = funcCode;
         funcCode &= Fc6681IoModeMask;
-        return((active3000Device->func)(funcCode));
+        return((active3000Device->func)(activeChannel, active3000Device, 
+                                        funcCode));
 
     case Fc6681InputToEor:
     case Fc6681Input:
@@ -404,7 +394,8 @@ static FcStatus dcc6681Func(PpWord funcCode)
         mp->ios = funcCode & Fc6681IoIosMask;
         mp->bcd = funcCode & Fc6681IoBcdMask;
         funcCode &= Fc6681IoModeMask;
-        return((active3000Device->func)(funcCode));
+        return((active3000Device->func)(activeChannel, active3000Device, 
+                                        funcCode));
         }
 
     switch (funcCode & Fc6681ConnectEquipmentMask)
@@ -438,7 +429,7 @@ static FcStatus dcc6681Func(PpWord funcCode)
 
         active3000Device = mp->device3000[e];
         funcCode &= Fc6681ConnectFuncMask;
-        (active3000Device->func) (funcCode);
+        (active3000Device->func) (activeChannel, active3000Device, funcCode);
         mp->status = StFc6681Ready;
         return(FcProcessed);
         }
@@ -455,10 +446,11 @@ static FcStatus dcc6681Func(PpWord funcCode)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-static void dcc6681Io(void)
+static void dcc6681Io(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     DccControl *mp = (DccControl *)activeDevice->context[0];
     DevSlot *device;
+    DevSlot *active3000Device;
     i8 u;
     i8 e;
     PpWord stat;
@@ -503,7 +495,8 @@ static void dcc6681Io(void)
         if (activeChannel->full)
             {
             active3000Device = mp->device3000[mp->connectedEquipment];
-            (active3000Device->func) (activeChannel->data);
+            (active3000Device->func) (activeChannel, active3000Device, 
+                                      activeChannel->data);
             activeChannel->full = FALSE;
             activeDevice->fcode = 0;
             }
@@ -514,7 +507,7 @@ static void dcc6681Io(void)
     case Fc6681Output:
     case Fc6681DevStatusReq:
         active3000Device = mp->device3000[mp->connectedEquipment];
-        (active3000Device->io)();
+        (active3000Device->io)(activeChannel, active3000Device);
         break;
         
     case Fc6681DccStatusReq:
@@ -577,7 +570,6 @@ static void dcc6681Load(DevSlot *dp, int eqNo, char *fn)
         opSetMsg ("$LOAD/UNLOAD NOT SUPPORTED ON EQUIPMENT");
         return;
         }
-    active3000Device = device;
     (device->load)(device, eqNo, fn);
     }
 
@@ -589,9 +581,10 @@ static void dcc6681Load(DevSlot *dp, int eqNo, char *fn)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dcc6681Activate(void)
+static void dcc6681Activate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     DccControl *mp = (DccControl *)activeDevice->context[0];
+    DevSlot *active3000Device;
     i8 e;
 
     e = mp->connectedEquipment;
@@ -606,7 +599,7 @@ static void dcc6681Activate(void)
         return;
         }
 
-    (active3000Device->activate)();
+    (active3000Device->activate)(activeChannel, active3000Device);
     }
 
 /*--------------------------------------------------------------------------
@@ -617,9 +610,10 @@ static void dcc6681Activate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void dcc6681Disconnect(void)
+static void dcc6681Disconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     DccControl *mp = (DccControl *)activeDevice->context[0];
+    DevSlot *active3000Device;
     i8 e;
 
     e = mp->connectedEquipment;
@@ -634,7 +628,7 @@ static void dcc6681Disconnect(void)
         return;
         }
 
-    (active3000Device->disconnect)();
+    (active3000Device->disconnect)(activeChannel, active3000Device);
     }
 
 /*---------------------------  End Of File  ------------------------------*/

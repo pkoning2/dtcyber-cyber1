@@ -90,10 +90,11 @@ typedef struct
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus ddpFunc(PpWord funcCode);
-static void ddpIo(void);
-static void ddpActivate(void);
-static void ddpDisconnect(void);
+static FcStatus ddpFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                        PpWord funcCode);
+static void ddpIo(ChSlot *activeChannel, DevSlot *activeDevice);
+static void ddpActivate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void ddpDisconnect(ChSlot *activeChannel, DevSlot *activeDevice);
 
 /*
 **  ----------------
@@ -172,7 +173,8 @@ void ddpInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static FcStatus ddpFunc(PpWord funcCode)
+static FcStatus ddpFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                        PpWord funcCode)
     {
     DdpContext *dc;
 
@@ -209,7 +211,7 @@ static FcStatus ddpFunc(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void ddpIo(void)
+static void ddpIo(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     DdpContext *dc;
 
@@ -367,7 +369,7 @@ static void ddpIo(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void ddpActivate(void)
+static void ddpActivate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -379,7 +381,7 @@ static void ddpActivate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void ddpDisconnect(void)
+static void ddpDisconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
 #if 0
     DdpContext *dc;

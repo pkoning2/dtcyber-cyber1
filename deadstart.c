@@ -45,10 +45,11 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus deadFunc(PpWord funcCode);
-static void deadIo(void);
-static void deadActivate(void);
-static void deadDisconnect(void);
+static FcStatus deadFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                         PpWord funcCode);
+static void deadIo(ChSlot *activeChannel, DevSlot *activeDevice);
+static void deadActivate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void deadDisconnect(ChSlot *activeChannel, DevSlot *activeDevice);
 
 /*
 **  ----------------
@@ -109,6 +110,7 @@ void deadStart(void)
     */
     dsSequence = -1;
 
+
     for (pp = 0; pp < ppuCount; pp++)
         {
         /*
@@ -140,6 +142,7 @@ void deadStart(void)
         */
         ppu[pp].ioWaitType = WaitInMany;
         ppu[pp].stopped = TRUE;
+        ppu[pp].state = 'R';
 
         /*
         **  Clear P registers and location zero of each PP.
@@ -157,6 +160,10 @@ void deadStart(void)
     **  Start load of PPU0.
     */
     channel[0].ioDevice = dp;
+
+#ifdef USE_THREADS
+    ppStartThreads ();
+#endif
     }
 
 /*--------------------------------------------------------------------------
@@ -168,8 +175,10 @@ void deadStart(void)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus deadFunc(PpWord funcCode)
+static FcStatus deadFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                         PpWord funcCode)
     {
+    (void)activeChannel;
     (void)funcCode;
 
     return(FcDeclined);
@@ -183,7 +192,7 @@ static FcStatus deadFunc(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void deadIo(void)
+static void deadIo(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     if (activeChannel->full ||
         !activeChannel->active)
@@ -217,7 +226,7 @@ static void deadIo(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void deadActivate(void)
+static void deadActivate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -229,7 +238,7 @@ static void deadActivate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void deadDisconnect(void)
+static void deadDisconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 

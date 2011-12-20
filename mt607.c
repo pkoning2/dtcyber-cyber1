@@ -111,10 +111,11 @@ typedef struct tapeBuf
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus mt607Func(PpWord funcCode);
-static void mt607Io(void);
-static void mt607Activate(void);
-static void mt607Disconnect(void);
+static FcStatus mt607Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode);
+static void mt607Io(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mt607Activate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void mt607Disconnect(ChSlot *activeChannel, DevSlot *activeDevice);
 
 /*
 **  ----------------
@@ -203,7 +204,8 @@ void mt607Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus mt607Func(PpWord funcCode)
+static FcStatus mt607Func(ChSlot *activeChannel, DevSlot *activeDevice,
+                          PpWord funcCode)
     {
     u32 len;
     u32 recLen0;
@@ -360,7 +362,7 @@ static FcStatus mt607Func(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt607Io(void)
+static void mt607Io(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     TapeBuf *tp;
 
@@ -418,7 +420,7 @@ static void mt607Io(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt607Activate(void)
+static void mt607Activate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -430,7 +432,7 @@ static void mt607Activate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void mt607Disconnect(void)
+static void mt607Disconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 

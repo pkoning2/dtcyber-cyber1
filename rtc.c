@@ -88,10 +88,11 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus rtcFunc(PpWord funcCode);
-static void rtcIo(void);
-static void rtcActivate(void);
-static void rtcDisconnect(void);
+static FcStatus rtcFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                        PpWord funcCode);
+static void rtcIo(ChSlot *activeChannel, DevSlot *activeDevice);
+static void rtcActivate(ChSlot *activeChannel, DevSlot *activeDevice);
+static void rtcDisconnect(ChSlot *activeChannel, DevSlot *activeDevice);
 #if RDTSC
 static void rtcInit2 (long MHz);
 #endif
@@ -140,7 +141,7 @@ void rtcInit(char *model, u8 increment, long setMHz)
     {
     DevSlot *dp;
 
-    dp = channelAttach(014, 0, DtRtc);
+    dp = channelAttach(ChClock, 0, DtRtc);
 
     dp->activate = rtcActivate;
     dp->disconnect = rtcDisconnect;
@@ -158,18 +159,18 @@ void rtcInit(char *model, u8 increment, long setMHz)
 #endif
         }
     rtcIncrement = increment;
-    activeChannel->ioDevice = dp;
+    channel[ChClock].ioDevice = dp;
 
     if (strcmp(model, "6600") == 0)
         {
-        activeChannel->active = TRUE;
-        activeChannel->full = TRUE;
+        channel[ChClock].active = TRUE;
+        channel[ChClock].full = TRUE;
         rtcFull = TRUE;
         }
     else
         {
-        activeChannel->active = FALSE;
-        activeChannel->full = FALSE;
+        channel[ChClock].active = FALSE;
+        channel[ChClock].full = FALSE;
         rtcFull = FALSE;
         }
     }
@@ -211,7 +212,8 @@ void rtcTick(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static FcStatus rtcFunc(PpWord funcCode)
+static FcStatus rtcFunc(ChSlot *activeChannel, DevSlot *activeDevice,
+                        PpWord funcCode)
     {
     (void)funcCode;
 
@@ -226,7 +228,7 @@ static FcStatus rtcFunc(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void rtcIo(void)
+static void rtcIo(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     u32 clock = 0;
     
@@ -269,11 +271,15 @@ static void rtcIo(void)
         us = (rtcCycles * ULL (1000000)) / Hz;
         clock = rtcClock + us;
         
-        if (activePpu->id == 0)
+        if (activeChannel->ppu == 0)
             {
             mtr = TRUE;
             rtcPrev += (us * Hz) / ULL (1000000);
             rtcClock = clock;
+            if (us < 800)
+                {
+                ppu[0].state = 'T';
+                }
             }
         else if (!mtr)
             {
@@ -296,7 +302,7 @@ static void rtcIo(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void rtcActivate(void)
+static void rtcActivate(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
@@ -308,7 +314,7 @@ static void rtcActivate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void rtcDisconnect(void)
+static void rtcDisconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 

@@ -104,11 +104,12 @@ typedef struct
 **  Private Function Prototypes
 **  ---------------------------
 */
-static FcStatus cp3446Func(PpWord funcCode);
-static void cp3446Io(void);
+static FcStatus cp3446Func(ChSlot *activeChannel, DevSlot *active3000Device,
+                           PpWord funcCode);
+static void cp3446Io(ChSlot *activeChannel, DevSlot *active3000Device);
 static void cp3446Load(DevSlot *, int, char *);
-static void cp3446Activate(void);
-static void cp3446Disconnect(void);
+static void cp3446Activate(ChSlot *activeChannel, DevSlot *active3000Device);
+static void cp3446Disconnect(ChSlot *activeChannel, DevSlot *active3000Device);
 static void cp3446FlushCard (DevSlot *up, CrContext *cc);
 /*
 **  ----------------
@@ -237,7 +238,8 @@ void cp3446Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 **  Returns:        FcStatus
 **
 **------------------------------------------------------------------------*/
-static FcStatus cp3446Func(PpWord funcCode)
+static FcStatus cp3446Func(ChSlot *activeChannel, DevSlot *active3000Device,
+                           PpWord funcCode)
     {
     CrContext *cc;
     FcStatus st;
@@ -320,7 +322,7 @@ static FcStatus cp3446Func(PpWord funcCode)
         break;
         }
 
-    dcc6681Interrupt((cc->status & cc->intmask) != 0);
+    dcc6681InterruptDev (active3000Device, (cc->status & cc->intmask) != 0);
     return(st);
     }
 
@@ -332,7 +334,7 @@ static FcStatus cp3446Func(PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cp3446Io(void)
+static void cp3446Io(ChSlot *activeChannel, DevSlot *active3000Device)
     {
     CrContext *cc;
     char c;
@@ -429,7 +431,7 @@ static void cp3446Io(void)
     if (DEBUG)
         printf ("data %04o, status now %04o\n",
                 activeChannel->data, cc->status);
-    dcc6681Interrupt((cc->status & cc->intmask) != 0);
+    dcc6681InterruptDev (active3000Device, (cc->status & cc->intmask) != 0);
     }
 
 /*--------------------------------------------------------------------------
@@ -521,7 +523,7 @@ static void cp3446Load(DevSlot *up, int eqNo, char *fn)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cp3446Activate(void)
+static void cp3446Activate(ChSlot *activeChannel, DevSlot *active3000Device)
 {
 }
 
@@ -533,7 +535,7 @@ static void cp3446Activate(void)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cp3446Disconnect(void)
+static void cp3446Disconnect(ChSlot *activeChannel, DevSlot *active3000Device)
     {
     CrContext *cc;
     
@@ -541,7 +543,8 @@ static void cp3446Disconnect(void)
     if (cc != NULL)
         {
         cc->status |= StCp3446EoiInt;
-        dcc6681Interrupt((cc->status & cc->intmask) != 0);
+        dcc6681InterruptDev (active3000Device, 
+                             (cc->status & cc->intmask) != 0);
         if (active3000Device->fcb[0] != NULL && cc->col != 0)
             {
             cp3446FlushCard(active3000Device, cc);
