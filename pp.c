@@ -379,19 +379,59 @@ void ppTerminate(void)
     free(ppu);
     }
 
-#ifdef USE_THREADS
-void ppStartThreads (void)
+void ppStart (void)
     {
     int pp;
     
-    /*
-    **  Initialise all ppus.
-    */
     for (pp = 0; pp < ppuCount; pp++)
         {
+        /*
+        **  Initialise PPU.
+        */
+        memset(ppu + pp, 0, sizeof(ppu[0]));
         ppu[pp].id = pp;
-        ppu[pp].state = ' ';
+
+        /*
+        **  Assign PPs to the corresponding channels.
+        */
+        if (pp < 012)
+            {
+            ppu[pp].channel = channel + pp;
+            }
+        else
+            {
+            ppu[pp].channel = channel + (pp - 012 + 020);
+            }
+
+        /*
+        **  Set all PPs to INPUT (71) instruction.
+        */
+        ppu[pp].ioWaitType = WaitInMany;
+        ppu[pp].stopped = TRUE;
+        ppu[pp].state = 'R';
+        ppu[pp].ioFlag = TRUE;
+        ppu[pp].ppMemLen = 0;
+        ppu[pp].ppMemStart = 0;
+#if CcDebug == 1
+        traceSequence(&ppu[pp]);
+#endif
+        /*
+        **  Clear P registers and location zero of each PP.
+        */
+        ppu[pp].regP   = 0;
+        ppu[pp].mem[0] = 0;
+
+        /*
+        **  Set all A registers to an input word count of 10000.
+        */
+        ppu[pp].regA = 010000;
+
+#ifdef USE_THREADS
+        /*
+        **  Start thread for PPU
+        */
         ppCreateThread (pp);
+#endif
         }
     }
 
@@ -399,11 +439,12 @@ void ppStartThreads (void)
 **  Purpose:        Create a thread for a PP
 **
 **  Parameters:     Name        Description.
-**                  ppNum      Pp number to set up
+**                  ppNum       Pp number to set up
 **
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
+#ifdef USE_THREADS
 static void ppCreateThread(int ppNum)
     {
 #if defined(_WIN32)
@@ -655,7 +696,7 @@ static void ppStep(PpSlot *activePpu)
                 /*
                 **  Handle possible input.
                 */
-                channelIo(activeChannel);
+                channelIo(activePpu, activeChannel);
                 }
 
             if (activeChannel->full || activeChannel->id == ChClock)
@@ -789,7 +830,7 @@ static void ppStep(PpSlot *activePpu)
                 /*
                 **  Handle possible output.
                 */
-                channelIo(activeChannel);
+                channelIo(activePpu, activeChannel);
                 }
             else
                 {
@@ -1737,6 +1778,7 @@ static void ppOpCWM (PpSlot *activePpu, PpByte opD)     // 63
 
 static void ppOpAJM (PpSlot *activePpu, PpByte opD)     // 64
     {
+    ChSlot *activeChannel;
     PpWord location;
 
     opD &= 037;
@@ -1744,14 +1786,25 @@ static void ppOpAJM (PpSlot *activePpu, PpByte opD)     // 64
     location &= Mask12;
     PpIncrement(activePpu->regP);
 
-    if (opD < channelCount && channel[opD].active)
+    if (opD < channelCount)
         {
-        activePpu->regP = location;
+        activeChannel = channel + opD;
+#ifdef USE_THREADS
+        pthread_mutex_lock (&activeChannel->mutex);
+#endif
+        if (activeChannel->active)
+            {
+            activePpu->regP = location;
+            }
+#ifdef USE_THREADS
+        pthread_mutex_unlock (&activeChannel->mutex);
+#endif
         }
     }
 
 static void ppOpIJM (PpSlot *activePpu, PpByte opD)     // 65
     {
+    ChSlot *activeChannel;
     PpWord location;
 
     opD &= 037;
@@ -1759,7 +1812,21 @@ static void ppOpIJM (PpSlot *activePpu, PpByte opD)     // 65
     location &= Mask12;
     PpIncrement(activePpu->regP);
 
-    if (opD >= channelCount || !channel[opD].active)
+    if (opD < channelCount)
+        {
+        activeChannel = channel + opD;
+#ifdef USE_THREADS
+        pthread_mutex_lock (&activeChannel->mutex);
+#endif
+        if (!(activeChannel->active))
+            {
+            activePpu->regP = location;
+            }
+#ifdef USE_THREADS
+        pthread_mutex_unlock (&activeChannel->mutex);
+#endif
+        }
+    else
         {
         activePpu->regP = location;
         }
@@ -1775,14 +1842,20 @@ static void ppOpFJM (PpSlot *activePpu, PpByte opD)     // 66
     PpIncrement(activePpu->regP);
 
     opD &= 037;
-    activeChannel = channel + opD;
-    activePpu->channel = activeChannel;
-
-    channelProbe(activeChannel);
-
-    if (opD < channelCount && activeChannel->full)
+    if (opD < channelCount)
         {
-        activePpu->regP = location;
+        activeChannel = channel + opD;
+#ifdef USE_THREADS
+        pthread_mutex_lock (&activeChannel->mutex);
+#endif
+        channelProbe(activePpu, activeChannel);
+        if (activeChannel->full)
+            {
+            activePpu->regP = location;
+            }
+#ifdef USE_THREADS
+        pthread_mutex_unlock (&activeChannel->mutex);
+#endif
         }
     }
 
@@ -1796,14 +1869,20 @@ static void ppOpEJM (PpSlot *activePpu, PpByte opD)     // 67
     PpIncrement(activePpu->regP);
 
     opD &= 037;
-    activeChannel = channel + opD;
-    activePpu->channel = activeChannel;
-
-    channelProbe(activeChannel);
-
-    if (opD >= channelCount || !activeChannel->full)
+    if (opD < channelCount)
         {
-        activePpu->regP = location;
+        activeChannel = channel + opD;
+#ifdef USE_THREADS
+        pthread_mutex_lock (&activeChannel->mutex);
+#endif
+        channelProbe(activePpu, activeChannel);
+        if (!(activeChannel->full))
+            {
+            activePpu->regP = location;
+            }
+#ifdef USE_THREADS
+        pthread_mutex_unlock (&activeChannel->mutex);
+#endif
         }
     }
 
@@ -1817,6 +1896,9 @@ static void ppOpIAN (PpSlot *activePpu, PpByte opD)     // 70
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
 
+#ifdef USE_THREADS
+    pthread_mutex_lock (&activeChannel->mutex);
+#endif
     if (!activeChannel->active && opD != ChClock)
         {
         if (!noHang)
@@ -1824,15 +1906,20 @@ static void ppOpIAN (PpSlot *activePpu, PpByte opD)     // 70
             PpDecrement(activePpu->regP);
             activePpu->state = 'H';
             }
+#ifdef USE_THREADS
+        pthread_mutex_unlock (&activeChannel->mutex);
+#endif
         return;
         }
 
     activeChannel->delayStatus = 0;
-    activeChannel->ppu = activePpu->id;
     activePpu->ioWaitType = WaitInOne;
     activePpu->stopped = TRUE;
     activePpu->ioFlag = TRUE;
     activePpu->state = 'R';
+#ifdef USE_THREADS
+    pthread_mutex_unlock (&activeChannel->mutex);
+#endif
     }
 
 static void ppOpIAM (PpSlot *activePpu, PpByte opD)     // 71
@@ -1846,6 +1933,9 @@ static void ppOpIAM (PpSlot *activePpu, PpByte opD)     // 71
     activePpu->ppMemStart = location = activePpu->mem[activePpu->regP] & Mask12;
     activePpu->ioFlag = TRUE;
 
+#ifdef USE_THREADS
+    pthread_mutex_lock (&activeChannel->mutex);
+#endif
     if (!activeChannel->active)
         {
         activePpu->mem[location] = 0;
@@ -1857,12 +1947,14 @@ static void ppOpIAM (PpSlot *activePpu, PpByte opD)     // 71
         activePpu->mem[0] = activePpu->regP;
         activePpu->regP = location;
         activeChannel->delayStatus = 0;
-        activeChannel->ppu = activePpu->id;
         activePpu->ppMemLen = 0;
         activePpu->ioWaitType = WaitInMany;
         activePpu->stopped = TRUE;
         activePpu->state = 'R';
         }
+#ifdef USE_THREADS
+    pthread_mutex_unlock (&activeChannel->mutex);
+#endif
     }
 
 static void ppOpOAN (PpSlot *activePpu, PpByte opD)     // 72
@@ -1893,6 +1985,9 @@ static void ppOpOAN (PpSlot *activePpu, PpByte opD)     // 72
         return;
         }
 
+#ifdef USE_THREADS
+    pthread_mutex_lock (&activeChannel->mutex);
+#endif
     if (!activeChannel->active)
         {
         if (!noHang)
@@ -1900,15 +1995,20 @@ static void ppOpOAN (PpSlot *activePpu, PpByte opD)     // 72
             PpDecrement(activePpu->regP);
             activePpu->state = 'H';
             }
+#ifdef USE_THREADS
+        pthread_mutex_unlock (&activeChannel->mutex);
+#endif
         return;
         }
 
     activeChannel->delayStatus = 0;
-    activeChannel->ppu = activePpu->id;
     activePpu->ioWaitType = WaitOutOne;
     activePpu->stopped = TRUE;
     activePpu->ioFlag = TRUE;
     activePpu->state = 'W';
+#ifdef USE_THREADS
+    pthread_mutex_unlock (&activeChannel->mutex);
+#endif
     }
 
 static void ppOpOAM (PpSlot *activePpu, PpByte opD)     // 73
@@ -1918,15 +2018,20 @@ static void ppOpOAM (PpSlot *activePpu, PpByte opD)     // 73
     opD &= 037;
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
+#ifdef USE_THREADS
+    pthread_mutex_lock (&activeChannel->mutex);
+#endif
     activePpu->mem[0] = activePpu->regP;
     activePpu->ppMemStart = activePpu->regP = activePpu->mem[activePpu->regP] & Mask12;
     activeChannel->delayStatus = 0;
-    activeChannel->ppu = activePpu->id;
     activePpu->ioWaitType = WaitOutMany;
     activePpu->ppMemLen = 0;
     activePpu->stopped = TRUE;
     activePpu->ioFlag = TRUE;
     activePpu->state = 'W';
+#ifdef USE_THREADS
+    pthread_mutex_unlock (&activeChannel->mutex);
+#endif
     }
 
 static void ppOpACN (PpSlot *activePpu, PpByte opD)     // 74
@@ -1947,6 +2052,9 @@ static void ppOpACN (PpSlot *activePpu, PpByte opD)     // 74
     activeChannel = channel + opD;
     activePpu->channel = activeChannel;
 
+#ifdef USE_THREADS
+    pthread_mutex_lock (&activeChannel->mutex);
+#endif
     if (activeChannel->active)
         {
         if (!noHang)
@@ -1954,10 +2062,16 @@ static void ppOpACN (PpSlot *activePpu, PpByte opD)     // 74
             PpDecrement(activePpu->regP);
             activePpu->state = 'H';
             }
+#ifdef USE_THREADS
+        pthread_mutex_unlock (&activeChannel->mutex);
+#endif
         return;
         }
 
-    channelActivate(activeChannel);
+    channelActivate(activePpu, activeChannel);
+#ifdef USE_THREADS
+    pthread_mutex_unlock (&activeChannel->mutex);
+#endif
     }
 
 static void ppOpDCN (PpSlot *activePpu, PpByte opD)     // 75
@@ -1979,6 +2093,9 @@ static void ppOpDCN (PpSlot *activePpu, PpByte opD)     // 75
     activeChannel = channel + opD;
     activePpu->channel = NULL;
 
+#ifdef USE_THREADS
+    pthread_mutex_lock (&activeChannel->mutex);
+#endif
     if (!activeChannel->active)
         {
         if (!noHang)
@@ -1986,10 +2103,16 @@ static void ppOpDCN (PpSlot *activePpu, PpByte opD)     // 75
             PpDecrement(activePpu->regP);
             activePpu->state = 'H';
             }
+#ifdef USE_THREADS
+        pthread_mutex_unlock (&activeChannel->mutex);
+#endif
         return;
         }
 
-    channelDisconnect(activeChannel);
+    channelDisconnect(activePpu, activeChannel);
+#ifdef USE_THREADS
+    pthread_mutex_unlock (&activeChannel->mutex);
+#endif
     }
 
 static void ppOpFAN (PpSlot *activePpu, PpByte opD)     // 76
@@ -2009,6 +2132,9 @@ static void ppOpFAN (PpSlot *activePpu, PpByte opD)     // 76
         return;
         }
 
+#ifdef USE_THREADS
+    pthread_mutex_lock (&activeChannel->mutex);
+#endif
     if (activeChannel->active)
         {
         if (!noHang)
@@ -2016,11 +2142,17 @@ static void ppOpFAN (PpSlot *activePpu, PpByte opD)     // 76
             PpDecrement(activePpu->regP);
             activePpu->state = 'H';
             }
+#ifdef USE_THREADS
+        pthread_mutex_unlock (&activeChannel->mutex);
+#endif
         return;
         }
 
-    channelFunction(activeChannel, activePpu->regA & Mask12);
+    channelFunction(activePpu, activeChannel, activePpu->regA & Mask12);
     activePpu->ioFlag = TRUE;
+#ifdef USE_THREADS
+    pthread_mutex_unlock (&activeChannel->mutex);
+#endif
     }
 
 static void ppOpFNC (PpSlot *activePpu, PpByte opD)     // 77
@@ -2040,6 +2172,9 @@ static void ppOpFNC (PpSlot *activePpu, PpByte opD)     // 77
         return;
         }
 
+#ifdef USE_THREADS
+    pthread_mutex_lock (&activeChannel->mutex);
+#endif
     if (activeChannel->active)
         {
         if (!noHang)
@@ -2047,12 +2182,19 @@ static void ppOpFNC (PpSlot *activePpu, PpByte opD)     // 77
             PpDecrement(activePpu->regP);
             activePpu->state = 'H';
             }
+#ifdef USE_THREADS
+        pthread_mutex_unlock (&activeChannel->mutex);
+#endif
         return;
         }
 
-    channelFunction(activeChannel, activePpu->mem[activePpu->regP] & Mask12);
+    channelFunction(activePpu, activeChannel,
+                    activePpu->mem[activePpu->regP] & Mask12);
     PpIncrement(activePpu->regP);
     activePpu->ioFlag = TRUE;
+#ifdef USE_THREADS
+    pthread_mutex_unlock (&activeChannel->mutex);
+#endif
     }
 
 /*---------------------------  End Of File  ------------------------------*/

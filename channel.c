@@ -52,7 +52,6 @@
 **  ----------------
 */
 ChSlot *channel;
-DevSlot *activeDevice;
 u8 channelCount;
 u32 channelDelayMask;
 
@@ -269,7 +268,7 @@ DevSlot *channelAttach(u8 channelNo, u8 eqNo, u8 devType)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void channelFunction(ChSlot *activeChannel, PpWord funcCode)
+void channelFunction(PpSlot *activePpu, ChSlot *activeChannel, PpWord funcCode)
     {
     DevSlot *activeDevice;
     FcStatus status = FcDeclined;
@@ -316,7 +315,7 @@ void channelFunction(ChSlot *activeChannel, PpWord funcCode)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void channelActivate(ChSlot *activeChannel)
+void channelActivate(PpSlot *activePpu, ChSlot *activeChannel)
     {
     DevSlot *activeDevice;
 
@@ -337,7 +336,7 @@ void channelActivate(ChSlot *activeChannel)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void channelDisconnect(ChSlot *activeChannel)
+void channelDisconnect(PpSlot *activePpu, ChSlot *activeChannel)
     {
     DevSlot *activeDevice;
 
@@ -362,7 +361,7 @@ void channelDisconnect(ChSlot *activeChannel)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-void channelProbe(ChSlot *activeChannel)
+void channelProbe(PpSlot *activePpu, ChSlot *activeChannel)
     {
     /*
     **  The following gives individual drivers an opportunity to delay
@@ -375,7 +374,7 @@ void channelProbe(ChSlot *activeChannel)
         activeChannel->delayStatus = 5;
         }
 
-    channelIo (activeChannel);
+    channelIo (activePpu, activeChannel);
     }
 
 /*--------------------------------------------------------------------------
@@ -386,7 +385,7 @@ void channelProbe(ChSlot *activeChannel)
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-void channelIo(ChSlot *activeChannel)
+void channelIo(PpSlot *activePpu, ChSlot *activeChannel)
     {
     DevSlot *activeDevice;
 
@@ -397,6 +396,7 @@ void channelIo(ChSlot *activeChannel)
         && activeChannel->ioDevice != NULL)
         {
         activeDevice = activeChannel->ioDevice;
+        activeChannel->ppu = activePpu->id;
         activeDevice->io (activeChannel, activeDevice);
         }
     }

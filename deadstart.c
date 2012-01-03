@@ -86,10 +86,20 @@ int dsSequence;       /* deadstart sequencer */
 void deadStart(void)
     {
     DevSlot *dp;
-    u8 pp;
+    int ch;
 
     dp = channelAttach(0, 0, DtDeadStartPanel);
 
+    /*
+    **  Set all channels to active and empty.
+    */
+    for (ch = 0; ch < chCount; ch++)
+        {
+        channel[ch].active = TRUE;
+        channel[ch].full = FALSE;
+        channel[ch].ioDevice = NULL;
+        }
+    
     dp->activate = deadActivate;
     dp->disconnect = deadDisconnect;
     dp->func = deadFunc;
@@ -110,60 +120,12 @@ void deadStart(void)
     */
     dsSequence = -1;
 
-
-    for (pp = 0; pp < ppuCount; pp++)
-        {
-        /*
-        **  Initialise PPU.
-        */
-        memset(ppu + pp, 0, sizeof(ppu[0]));
-        ppu[pp].id = pp;
-
-        /*
-        **  Assign PPs to the corresponding channels.
-        */
-        if (pp < 012)
-            {
-            ppu[pp].channel = channel + pp;
-            channel[pp].active = TRUE;
-            channel[pp].full = FALSE;
-            channel[pp].ioDevice = NULL;
-            }
-        else
-            {
-            ppu[pp].channel = channel + (pp - 012 + 020);
-            channel[pp - 012 + 020].active = TRUE;
-            channel[pp - 012 + 020].full = FALSE;
-            channel[pp - 012 + 020].ioDevice = NULL;
-            }
-
-        /*
-        **  Set all PPs to INPUT (71) instruction.
-        */
-        ppu[pp].ioWaitType = WaitInMany;
-        ppu[pp].stopped = TRUE;
-        ppu[pp].state = 'R';
-
-        /*
-        **  Clear P registers and location zero of each PP.
-        */
-        ppu[pp].regP   = 0;
-        ppu[pp].mem[0] = 0;
-
-        /*
-        **  Set all A registers to an input word count of 10000.
-        */
-        ppu[pp].regA = 010000;
-        }
-
     /*
     **  Start load of PPU0.
     */
     channel[0].ioDevice = dp;
 
-#ifdef USE_THREADS
-    ppStartThreads ();
-#endif
+    ppStart ();
     }
 
 /*--------------------------------------------------------------------------

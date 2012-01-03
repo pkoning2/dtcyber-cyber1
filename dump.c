@@ -527,7 +527,7 @@ static void dumpMem(FILE *f, u32 start, u32 end, u32 ra, CpWord *mem)
     {
     u32 addr;
     CpWord data, data2;
-    CpWord lastData, lastData2;
+    CpWord lastData, lastData2 = 0;
     bool duplicateLine;
     u8 ch;
     u8 i;
@@ -546,7 +546,10 @@ static void dumpMem(FILE *f, u32 start, u32 end, u32 ra, CpWord *mem)
         f = cpuDF;
         }
     lastData = ~mem[start + ra];
-    lastData2 = ~mem[start + 1 + ra];
+    if (start + 1 + ra < cpuMaxMemory)
+        {
+        lastData2 = ~mem[start + 1 + ra];
+        }
     duplicateLine = FALSE;
     for (addr = start; addr < end; addr += 2)
         {

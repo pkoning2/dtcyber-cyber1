@@ -827,12 +827,12 @@ static void mt669Io(ChSlot *activeChannel, DevSlot *activeDevice)
     **  when probed via FJM and EJM PP opcodes. It has no effect on real
     **  I/O timing.
     */
-    if (activeChannel->delayStatus != 0)
+    if (activeChannel->delayStatus > 0)
         {
         activeChannel->delayStatus -= 1;
         }
 
-    if (activeChannel->delayStatus != 0)
+    if (activeChannel->delayStatus > 0)
         {
         return;
         }
@@ -908,7 +908,7 @@ static void mt669Io(ChSlot *activeChannel, DevSlot *activeDevice)
         break;
 
     case Fc669ReadBkw:
-       dc6681UnitStatus = 01101;
+        dc6681UnitStatus = 01101;
         if (activeChannel->full)
             {          
             break;     

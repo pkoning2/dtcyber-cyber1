@@ -130,7 +130,7 @@ typedef struct
 
 /*
 **  Device control block.
-*/                                        
+*/
 typedef struct devSlot                  
     {                                   
     struct devSlot  *next;              /* next device attached to this channel or converter */
@@ -169,13 +169,13 @@ typedef struct chSlot
     bool            discAfterInput;     /* disconnect channel after input flag */
     u8              id;                 /* channel number */
     u8              delayStatus;        /* time to delay change of empty/full status */
-    u8              ppu;                /* Requesting PPU (if Io call) */
+    u8              ppu;                /* PPU making the I/O request */
     } ChSlot;                           
                                         
 /*
 **  PPU control block.
 */                                        
-typedef struct
+typedef struct ppSlot
     {                                   
     ChSlot          *channel;           /* associated channel (-1 is none) */
     u32             regA;               /* Register A (18 bit) */

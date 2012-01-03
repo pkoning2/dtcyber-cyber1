@@ -72,16 +72,6 @@ enabling interrupts, and resetting the cycle counter.
 void emul8080::ResetProc(void)
 {
 	/***********************************************************************
-	* Declarations:
-	* ------------
-	*
-	*   i - This integer is used as a temporary looping variable for
-	* clearing the 8080a's non-ROM memory area.
-	***********************************************************************/
-	Uint16 i;
-
-
-	/***********************************************************************
 	* Initializations:
 	* ---------------
 	*
@@ -173,7 +163,7 @@ void emul8080::main8080a (void)
 	* been fetched from RAM.
 	***********************************************************************/
 	Uint8 CARRYOVER;
-	Uint8 OPCODE;
+	Uint8 OPCODE = 0;
 
 
 	/***********************************************************************

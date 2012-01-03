@@ -46,21 +46,20 @@ void channelInit(u8 count);
 void channelTerminate(void);
 DevSlot *channelFindDevice(u8 channelNo, u8 devType);
 DevSlot *channelAttach(u8 channelNo, u8 eqNo, u8 devType);
-void channelFunction(ChSlot *activeChannel, PpWord funcCode);
-void channelActivate(ChSlot *activeChannel);
-void channelDisconnect(ChSlot *activeChannel);
-void channelProbe(ChSlot *activeChannel);
-void channelIo(ChSlot *activeChannel);
+void channelFunction(PpSlot *activePpu, ChSlot *activeChannel, PpWord funcCode);
+void channelActivate(PpSlot *activePpu, ChSlot *activeChannel);
+void channelDisconnect(PpSlot *activePpu, ChSlot *activeChannel);
+void channelProbe(PpSlot *activePpu, ChSlot *activeChannel);
+void channelIo(PpSlot *activePpu, ChSlot *activeChannel);
 
 /*
 **  pp.c
 */
 void ppInit(u8 count);
 void ppTerminate(void);
+void ppStart (void);
 #ifndef USE_THREADS
 void ppStepAll(void);
-#else
-void ppStartThreads (void);
 #endif
 
 /*
@@ -396,6 +395,7 @@ extern NetFet connlist;
 extern void (*updateConnections) (void);
 extern long extSockets;
 extern int idleMode;
+extern long chCount;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

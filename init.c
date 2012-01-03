@@ -81,6 +81,7 @@ char autoDateString[32];
 char autoString[32];
 char platoSection[40];
 int idleMode;
+long chCount;
 
 /*
 **  -----------------
@@ -92,7 +93,6 @@ static long sectionStart;
 static char *startupFile = "cyber.ini";
 static char deadstart[40];
 static char equipment[40];
-static long chCount;
 static union
     {
     u32 number;
