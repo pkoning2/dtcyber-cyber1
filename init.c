@@ -307,9 +307,8 @@ static void initCyber(const char *config)
         fprintf (stderr, "Entry 'cpus=2' ignored, no dual CPU support\n");
         cpus = 1;
         }
-#else
-    printf ("Running with %ld CPUs\n", cpus);
 #endif
+    printf ("Running with %ld CPUs\n", cpus);
     initGetInteger ("cpuratio", 1, &cpuRatio);
     if (cpuRatio < 1 || cpuRatio > 50)
         {

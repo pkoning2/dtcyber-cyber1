@@ -95,9 +95,16 @@ void deadStart(void)
     */
     for (ch = 0; ch < chCount; ch++)
         {
-        channel[ch].active = TRUE;
-        channel[ch].full = FALSE;
-        channel[ch].ioDevice = NULL;
+        /*
+        **  Don't do the special channels here, they are initialized 
+        **  below, or in their specific init routines.
+        */
+        if (ch < ChClock || ch >= 020)
+            {
+            channel[ch].active = TRUE;
+            channel[ch].full = FALSE;
+            channel[ch].ioDevice = NULL;
+            }
         }
     
     dp->activate = deadActivate;
