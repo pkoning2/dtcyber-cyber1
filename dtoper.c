@@ -139,12 +139,16 @@ static char dataBuf[OpDataSize + 1];
 
 static char **syntax;
 static int syntaxCnt = 0;
+static u8 *syntaxFlags;
+
 static OpMsg *messages;
 static int msgCount = 0;
 
 static char *status[StatusLines];
 static int statusTop = StatusOff;
 static int statusMax = 0;
+
+static u8 statusFlags;
 
 static OpMsg cmdEcho = { CmdX, CmdY, 0020, 0, cmdBuf };
 static OpMsg errmsg = { 0020, 0014, 0020, 0, NULL };   // pointer filled in
@@ -267,6 +271,15 @@ int main (int argc, char **argv)
                     syntax = realloc (syntax, (++syntaxCnt) * sizeof (char *));
                     cp = syntax[syntaxCnt - 1] = (char *) malloc (i + 1);
                     strcpy (cp, p);
+                    //printf ("syntax %d: %s", syntaxCnt-1, cp);
+                    break;
+                case OpSyntaxFlags:
+                    if (syntaxFlags != NULL)
+                        {
+                        free (syntaxFlags);
+                        }
+                    syntaxFlags = malloc (syntaxCnt * sizeof (*syntaxFlags));
+                    memcpy (syntaxFlags, p, syntaxCnt * sizeof (*syntaxFlags));
                     break;
                 case OpStatus:
                     /*
@@ -313,6 +326,13 @@ int main (int argc, char **argv)
                         {
                         opScroll (j);
                         }
+                    break;
+                case OpFlags:
+                    /*
+                    **  Data format is:
+                    **      flags (one byte)
+                    */
+                    statusFlags = *(u8 *) p;
                     break;
                 case OpReply:
                     /*
@@ -647,6 +667,14 @@ static int opScanCmd (void)
     
     for (i = 0; i < syntaxCnt; i++)
         {
+        //printf ("%d: flags %d, status %d, syntax %s", i, syntaxFlags[i], statusFlags, syntax[i]);
+        if (syntaxFlags != NULL &&
+            (syntaxFlags[i] & statusFlags) != syntaxFlags[i])
+            {
+            /* Unlock or debug required but not in effect, skip this one. */
+            continue;
+            }
+        
         for (b = cmdBuf, p = syntax[i]; ; b++)
             {
             if (*b == '\0')

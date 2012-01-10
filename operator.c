@@ -156,43 +156,47 @@ static const char *syntax[] =
     ** x means any character other than comma (case preserved).
     ** anything else means that character (case insensitive if letter).
     ** command is complete if matched to end of some entry.
+    **
+    ** The first character in each entry defines the syntax flags
+    ** (used by sufficiently new versions of dtoper): space means
+    ** normal command, U requires unlocked, D requires debug enabled.
     */
     {
-    "END.\n",               /* This is handled locally at the other end */
-    "SHUTDOWN.\n",
-    "LOAD,7,7,x,W.\n",
-    "LOAD,7,7,x\n",
-    "UNLOAD,7,7.\n",
-    "DUMP,CPU.\n",
-    "DUMP,CM,7,7.\n",
-    "DUMP,ECS,7,7.\n",
-    "DUMP,PPU7.\n",
-    "DISASSEMBLE,PPU7.\n",
-    "SET,KEYBOARD=TRUE.\n",
-    "SET,KEYBOARD=EASY.\n",
-    "DEBUG,DISPLAY=ON.\n",
-    "DEBUG,DISPLAY=OFF.\n",
-    "LOCK.\n",
-    "UNLOCK.\n",
-    "DEADSTART.\n",
-    "SHOW,DEVICES.\n",
-    "SHOW,CONNECTIONS.\n",
+    " END.\n",               /* This is handled locally at the other end */
+    "USHUTDOWN.\n",
+    " LOAD,7,7,x,W.\n",
+    " LOAD,7,7,x\n",
+    " UNLOAD,7,7.\n",
+    " DUMP,CPU.\n",
+    " DUMP,CM,7,7.\n",
+    " DUMP,ECS,7,7.\n",
+    " DUMP,PPU7.\n",
+    " DISASSEMBLE,PPU7.\n",
+    " SET,KEYBOARD=TRUE.\n",
+    " SET,KEYBOARD=EASY.\n",
+    " DEBUG,DISPLAY=ON.\n",
+    " DEBUG,DISPLAY=OFF.\n",
+    "ULOCK.\n",
+    " UNLOCK.\n",
+    "UDEADSTART.\n",
+    " SHOW,DEVICES.\n",
+    " SHOW,CONNECTIONS.\n",
 #if CcDebug == 1
-    "DEBUG,ON.\n",
-    "DEBUG,OFF.\n",
-    "TRACE,PPU7.\n",
-    "TRACE,CHANNEL7.\n",
-    "TRACE,CPU7.\n",
-    "TRACE,CP7.\n",
-    "TRACE,XJ.\n",
-    "TRACE,ECS.\n",
-    "UNTRACE,.\n",
-    "UNTRACE,PPU7.\n",
-    "UNTRACE,CHANNEL7.\n",
-    "UNTRACE,CPU7.\n",
-    "UNTRACE,XJ.\n",
-    "UNTRACE,ECS.\n",
-    "UNTRACE,RESET.\n",
+    " DEBUG,ON.\n",
+    "DDEBUG,OFF.\n",
+    "DTRACE,PPU7.\n",
+    "DTRACE,CHANNEL7.\n",
+    "DTRACE,CPU7.\n",
+    "DTRACE,CP7.\n",
+    "DTRACE,XJ.\n",
+    "DTRACE,ECS.\n",
+    " UNTRACE,.\n",
+    " UNTRACE,PPU7.\n",
+    " UNTRACE,CHANNEL7.\n",
+    " UNTRACE,CPU7.\n",
+    " UNTRACE,XJ.\n",
+    " UNTRACE,ECS.\n",
+    " UNTRACE,RESET.\n",
 #endif
     NULL,
     };
@@ -279,6 +283,7 @@ static StatusData statusSys;
 static StatusData statusHdr;
 static int opActiveConns;
 static bool opLocked = TRUE;
+static u8 statusFlags;
 
 /*
 **--------------------------------------------------------------------------
@@ -491,6 +496,9 @@ void opUpdateSysStatus (void)
                  (opDebugging) ? "DEBUG" : "",
                  (opPlatoAlert) ? "PLATO ALERT" : "");
         }
+    statusFlags = ((opLocked) ? 0 : OpUnlocked) |
+                  ((opDebugging) ? OpDebug : 0);
+
     statusSys.len = strlen (statusSys.buf + 1) + 1;
     opSendStatus (&statusSys);
     }
@@ -1463,15 +1471,29 @@ static void opSetup (NetFet *np, int index, void *arg)
     
     /*
     **  We have to send two sets of data:
-    **      1. the fixed text (command list, version string etc.)
-    **      2. the parse strings
+    **      1. the parse strings
+    **      2. the parse string flags (sent separately for compatibility).
+    **      3. the fixed text (command list, version string etc.)
     */
     sp = syntax;
+    p = msgbuf;
     while (*sp != NULL)
         {
-        dtSendTlv (np, &opPorts, OpSyntax, strlen (*sp), *sp);
+        switch (**sp)
+            {
+        case 'D':
+            *p++ = OpDebug;
+            break;
+        case 'U':
+            *p++ = OpUnlocked;
+            break;
+        default:
+            *p++ = 0;
+            }
+        dtSendTlv (np, &opPorts, OpSyntax, strlen (*sp) - 1, *sp + 1);
         sp++;
         }
+    dtSendTlv (np, &opPorts, OpSyntaxFlags, p - msgbuf, msgbuf);
     msgp = msg;
     while (msgp->text != NULL)
         {
@@ -1555,6 +1577,7 @@ static void opSendStatus (StatusData *sd)
         if (dtActive (np))
             {
             dtSendTlv (np, &opPorts, OpStatus, sd->len, sd->buf);
+            dtSendTlv (np, &opPorts, OpFlags, 1, &statusFlags);
             }
         }
     }

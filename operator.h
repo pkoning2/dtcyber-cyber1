@@ -30,5 +30,14 @@
 #define OpSyntax        3           /* Command parse pattern data */
 #define OpStatus        4           /* Right screen (status text) data */
 #define OpInitialized   5           /* Initial data all done */
+#define OpSyntaxFlags   6           /* Syntax control flags */
+#define OpFlags         7           /* Current state flags */
+
+/*
+**  Syntax flag values.  Also used in OpFlags to indicate that the 
+**  corresponding state is currently set.
+*/
+#define OpUnlocked      1           /* Valid only if unlocked */
+#define OpDebug         2           /* Valid only if debug set */
 
 #endif  /* OPERATOR_H */
