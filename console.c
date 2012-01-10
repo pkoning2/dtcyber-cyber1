@@ -1315,7 +1315,7 @@ static void consoleSendOutput (int start, int end)
     us = (tm.time * 1000 + tm.millitm) * 1000;
 #endif
     
-    if (1 ||debugDisplay)
+    if (debugDisplay)
         {
         /*
         **  Display P registers of PPUs and CPU and current trace mask.

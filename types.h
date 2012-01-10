@@ -17,15 +17,12 @@
 #include <winsock.h>
 typedef u_long in_addr_t;
 #define EINPROGRESS WSAEINPROGRESS
-#undef USE_THREADS
 #else
 #include <stdbool.h>
 #include <netinet/in.h>
 #define _POSIX_C_SOURCE_199309L
 #include <unistd.h>
-#ifdef USE_THREADS
 #include <pthread.h>
-#endif
 #endif
 
 #ifdef _POSIX_ASYNCHRONOUS_IO
@@ -158,10 +155,8 @@ typedef struct chSlot
     {                                   
     DevSlot         *firstDevice;       /* linked list of devices attached to this channel */
     DevSlot         *ioDevice;          /* device which deals with current function */
-#ifdef USE_THREADS
     pthread_cond_t  cond;               /* Condition variable for stalls */
     pthread_mutex_t mutex;              /* Mutex to protect channel state */
-#endif
     PpWord          data;               /* channel data */
     PpWord          status;             /* channel status */
     bool            active;             /* channel active flag */
@@ -180,12 +175,11 @@ typedef struct ppSlot
     ChSlot          *channel;           /* associated channel (-1 is none) */
     u32             regA;               /* Register A (18 bit) */
     int             delay;              /* Time to delay before next instruction */
-    PpWord          regP;               /* Program counter (12 bit) */
-#ifdef USE_THREADS
+    int             cycles;             /* Emulated cycle count */
     pthread_t       thread;             /* Thread in which this PP runs */
     pthread_cond_t  cond;               /* Condition variable for stalls */
     pthread_mutex_t mutex;              /* Mutex to protect cond */
-#endif
+    PpWord          regP;               /* Program counter (12 bit) */
     PpWord          mem[PpMemSize];     /* PP memory */
     u16             ppMemStart;         /* Start of transfer for tracing */
     u16             ppMemLen;           /* Length of transfer for tracing */

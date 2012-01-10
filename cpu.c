@@ -56,11 +56,7 @@
 **  -----------------------
 */
 
-#ifdef USE_THREADS
 #define MAXCPUS         2
-#else
-#define MAXCPUS         1
-#endif
 
 /*
 **  -----------------------------------------
@@ -80,6 +76,8 @@ typedef struct opDispatch
 */
 static INLINE void cpuReadMem(CpuContext *activeCpu, u32 address, CpWord *data);
 static INLINE void cpuWriteMem(CpuContext *activeCpu, u32 address, CpWord *data);
+static void cpuMemError (CpuContext *activeCpu, u32 address);
+static void cpuMemWriteAction (CpWord data, int action, int pp);
 static INLINE void cpuRegASemantics(CpuContext *activeCpu);
 static INLINE u32 cpuAdd18(u32 op1, u32 op2);
 static INLINE u32 cpuSubtract18(u32 op1, u32 op2);
@@ -94,10 +92,8 @@ static void cpuCmuCompareUncollated(CpuContext *activeCpu);
 static void cpuTraceCtl(CpuContext *activeCpu);
 #endif
 static void cpuExchangeJump(CpuContext *activeCpu);
-#ifdef USE_THREADS
 static void cpuCreateThread(int cpuNum);
 static ThreadFunRet cpuThread(void *param);
-#endif /* USE_THREADS */
 
 static void cpuStep(CpuContext *activeCpu);
 
@@ -172,7 +168,9 @@ static void cpOp77(CpuContext *activeCpu);
 **  ----------------
 */
 CpWord *cpMem;
+u8 *cpMemActions;
 CpWord *ecsMem;
+u8 *ecsMemActions;
 u32 ecsFlagRegister;
 u8 cpuCount;
 CpuContext cpu[MAXCPUS];
@@ -181,6 +179,8 @@ volatile int exchangeCpu = -1;
 u32 cpuMaxMemory;
 u32 cpuMemMask;
 u32 ecsMaxMemory;
+pthread_cond_t exchange_cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t exchange_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
 **  -----------------
@@ -189,18 +189,11 @@ u32 ecsMaxMemory;
 */
 
 static volatile u32 exchangeTo;
-#ifdef USE_THREADS
 static pthread_t cpu_thread;
-pthread_cond_t exchange_cond = PTHREAD_COND_INITIALIZER;
-static pthread_mutex_t exchange_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t flagreg_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
 
 static FILE *cmHandle;
 static FILE *ecsHandle;
-
-/* Pointers used in the idle detection machinery.  */
-static u32 ppal = -1;
 
 static const u32 cpOp01Length[8] = { 30, 30, 30, 30, 15, 15, 15, 15 };
 
@@ -300,22 +293,11 @@ static INLINE void cpuReadMem(CpuContext *activeCpu, u32 address, CpWord *data)
     
     if (address >= activeCpu->regFlCm)
         {
+        cpuMemError (activeCpu, address);
+        
         activeCpu->exitCondition |= EcAddressOutOfRange;
-        if ((activeCpu->exitMode & EmAddressOutOfRange) != 0)
+        if (activeCpu->cpuStopped)
             {
-            /*
-            **  Exit mode selected.
-            */
-            if (activeCpu->regRaCm < cpuMaxMemory)
-                {
-                cpMem[activeCpu->regRaCm] = ((CpWord)activeCpu->exitCondition << 48) | ((CpWord)(activeCpu->regP + 1) << 30);
-                }
-
-            activeCpu->regP = 0;
-            *data = cpMem[0] & Mask60;
-            // ????????????? jump to monitor address ??????????????
-            activeCpu->cpuStopped = TRUE;
-            activeCpu->state = 'S';
             return;
             }
         else
@@ -341,30 +323,21 @@ static INLINE void cpuReadMem(CpuContext *activeCpu, u32 address, CpWord *data)
 static INLINE void cpuWriteMem(CpuContext *activeCpu, u32 address, CpWord *data)
     {
     u32 absAddr = cpuAdd18 (address, activeCpu->regRaCm) & cpuMemMask;
+    int action;
+    CpWord d = *data & Mask60;
     
     if (address >= activeCpu->regFlCm)
         {
-        activeCpu->exitCondition |= EcAddressOutOfRange;
-        if ((activeCpu->exitMode & EmAddressOutOfRange) != 0)
-            {
-            /*
-            **  Exit mode selected.
-            */
-            if (activeCpu->regRaCm < cpuMaxMemory)
-                {
-                cpMem[activeCpu->regRaCm] = ((CpWord)activeCpu->exitCondition << 48) | ((CpWord)(activeCpu->regP + 1) << 30);
-                }
-
-            activeCpu->regP = 0;
-            // ????????????? jump to monitor address ??????????????
-            activeCpu->cpuStopped = TRUE;
-            activeCpu->state = 'S';
-            }
-
+        cpuMemError (activeCpu, address);
         return;
         }
 
-    cpMem[absAddr] = *data & Mask60;
+    cpMem[absAddr] = d;
+    action = cpMemActions[absAddr];
+    if (action != 0)
+        {
+        cpuMemWriteAction (d, action, -1);
+        }
     }
 
 
@@ -416,7 +389,13 @@ void cpuInit(char *model, u32 count, u32 memory, u32 ecsBanks,
         fprintf(stderr, "Failed to allocate CPU memory\n");
         exit(1);
         }
-
+    cpMemActions = calloc (memory, sizeof (*cpMemActions));
+    if (cpMemActions == NULL)
+        {
+        fprintf(stderr, "Failed to allocate CPU memory actions vector\n");
+        exit(1);
+        }
+    
     cpuMaxMemory = memory;
     cpuMemMask = memory - 1;
 
@@ -427,6 +406,12 @@ void cpuInit(char *model, u32 count, u32 memory, u32 ecsBanks,
     if (ecsMem == NULL)
         {
         fprintf(stderr, "Failed to allocate ECS memory\n");
+        exit(1);
+        }
+    ecsMemActions = calloc (ecsBanks * EcsBankSize, sizeof(*ecsMemActions));
+    if (ecsMemActions == NULL)
+        {
+        fprintf(stderr, "Failed to allocate ECS memory actions vector\n");
         exit(1);
         }
 
@@ -445,12 +430,7 @@ void cpuInit(char *model, u32 count, u32 memory, u32 ecsBanks,
         cpu[cpuNum].id = cpuNum;
         cpu[cpuNum].cpuStopped = TRUE;
         cpu[cpuNum].state = 'S';
-#ifdef USE_THREADS
-        if (cpuNum > 0)
-            {
-            cpuCreateThread(cpuNum);
-            }
-#endif
+        cpuCreateThread(cpuNum);
         }
 
     /*
@@ -517,18 +497,6 @@ void cpuInit(char *model, u32 count, u32 memory, u32 ecsBanks,
                 exit(1);
                 }
             }
-        }
-
-    /*
-    **  Set the pointers for idle detection, if enabled.
-    */
-    switch (idleMode)
-        {
-    case 287:
-        ppal = 052;
-        break;
-    case 0:
-        ppal = -1;
         }
     
     /*
@@ -600,6 +568,7 @@ u32 cpuGetP(u8 cp)
 **  Purpose:        Tell a CPU to exchange
 **
 **  Parameters:     Name        Description.
+**                  activeCpu   CPU context of invoking CPU (NULL if from PPU)
 **                  cp          CPU number
 **                  addr        Exchange package address
 **                  monitor     0 to leave monitor mode
@@ -607,19 +576,25 @@ u32 cpuGetP(u8 cp)
 **                              >0 to enter monitor mode.
 **                              monitor == 2 means exchange to MA.
 **
+**  The caller must lock the exchange mutex before calling this function
+**  and unlock it after return.
+**
 **  Returns:
-**      0 if the CPU is ready to exchange, non-0 to tell caller to
-**      retry. 
+**      0 if the CPU is ready to exchange, non-0 to indicate exchange
+**         cannot be done right now.
+**
 **      The non-0 value is a reason code:
 **      1. Another exchange is pending.
 **      2. monitor is 1 (enter monitor mode) but another CPU is currently
-**         in monitor mode.  CPU XJ will stall for that case, PP MXN/MAN
-**         turns into a pass.
+**         in monitor mode. 
+**
+**      If the exchange is done by a CPU, this function waits for the exchange
+**      to be accepted, instead of returning non-zero status.
 **
 **------------------------------------------------------------------------*/
 FILE **cpuTF;
 int foo;
-int cpuIssueExchange(u8 cp, u32 addr, int monitor)
+int cpuIssueExchange (CpuContext *activeCpu, u8 cp, u32 addr, int monitor)
     {
     if (cp >= cpuCount)
         {
@@ -629,22 +604,22 @@ int cpuIssueExchange(u8 cp, u32 addr, int monitor)
         {
         foo++;
         }
-#ifdef USE_THREADS
-    pthread_mutex_lock (&exchange_mutex);
-#endif
-    if (monitor > 0 && monitorCpu != -1)
+    for (;;)
         {
-#ifdef USE_THREADS
-        pthread_mutex_unlock (&exchange_mutex);
-#endif
-        return 2;
-        }
-    if (exchangeCpu != -1)
-        {
-#ifdef USE_THREADS
-        pthread_mutex_unlock (&exchange_mutex);
-#endif
-        return 1;
+        /* Check for monitor mode conflict and wait for it if necessary, */
+        if ((monitor > 0 && monitorCpu != -1) || exchangeCpu != -1)
+            {
+            if (activeCpu == NULL)
+                {
+                /* PP exchange, return monitor mode conflict status. */
+                return (monitor > 0 && monitorCpu != -1) ? 2 : 1;
+                }
+            pth_check (pthread_cond_wait (&exchange_cond, &exchange_mutex));
+            }
+        else
+            {
+            break;
+            }
         }
     if (monitor == 2)
         {
@@ -663,9 +638,12 @@ int cpuIssueExchange(u8 cp, u32 addr, int monitor)
         monitorCpu = -1;
         }
     exchangeCpu = cp;
-#ifdef USE_THREADS
-    pthread_mutex_unlock (&exchange_mutex);
-#endif
+
+    /*
+    **  Wake up a stopped CPU
+    */
+    pth_check (pthread_cond_broadcast (&exchange_cond));
+
     return 0;
     }
 
@@ -674,16 +652,85 @@ int cpuIssueExchange(u8 cp, u32 addr, int monitor)
 **                  within limits.
 **
 **  Parameters:     Name        Description.
+**                  activePpu   PPU state pointer
 **                  address     Absolute CM address to read.
 **                  data        Pointer to 60 bit word which gets the data.
 **
 **  Returns:        TRUE if access failed, FALSE otherwise;
 **
 **------------------------------------------------------------------------*/
-bool cpuPpReadMem(u32 address, CpWord *data)
+bool cpuPpReadMem(PpSlot *activePpu, u32 address, CpWord *data)
     {
-    address %= cpuMaxMemory;
-    *data = cpMem[address & cpuMemMask] & Mask60;
+    CpWord d;
+    int act, arg, pp;
+    
+    address &= cpuMemMask;
+    act = cpMemActions[address];
+    
+    if (act == 0)
+        {
+        *data = cpMem[address] & Mask60;
+        }
+    else
+        {
+        arg = GETACTARG (act);
+        pp = activePpu->id;
+        pth_check (pthread_mutex_lock (&activePpu->mutex));
+        for (;;)
+            {
+            d = cpMem[address] & Mask60;
+            switch (GETACTION (act))
+                {
+            case ACTION_PPIR:
+                if (pp == arg)
+                    {
+                    if ((d >> 48) == 0)
+                        {
+                        /* Pool PP with nothing to do */
+                        activePpu->state = 'X';
+                        if (usingThreads)
+                            {
+                            pth_check (pthread_cond_wait (&activePpu->cond,
+                                                          &activePpu->mutex));
+                            continue;
+                            }
+                        }
+                    else
+                        {
+                        activePpu->state = ' ';
+                        }
+                    }
+                break;
+            case ACTION_PPOR:
+                if (pp == arg)
+                    {
+                    /* OR read by owning PPU */
+                    if ((d >> 48) != 0)
+                        {
+                        /* Pool PP with request still pending */
+                        activePpu->state = ((d >> 48) >= cpum) ? 'C' : 'M';
+                        if (usingThreads)
+                            {
+                            pth_check (pthread_cond_wait (&activePpu->cond,
+                                                          &activePpu->mutex));
+                            continue;
+                            }
+                        }
+                    else
+                        {
+                        activePpu->state = ' ';
+                        }
+                    }
+                break;
+            default:
+                break;
+                }
+            break;
+            }
+        pth_check (pthread_mutex_unlock (&activePpu->mutex));
+        *data = d;
+        }
+            
     return(TRUE);
     }
 
@@ -692,16 +739,26 @@ bool cpuPpReadMem(u32 address, CpWord *data)
 **                  within limits.
 **
 **  Parameters:     Name        Description.
+**                  activePpu   PPU state pointer
 **                  address     Absolute CM address
 **                  data        60 bit word which holds the data to be written.
 **
 **  Returns:        Nothing
 **
 **------------------------------------------------------------------------*/
-void cpuPpWriteMem(u32 address, CpWord data)
+void cpuPpWriteMem(PpSlot *activePpu, u32 address, CpWord data)
     {
-    address %= cpuMaxMemory;
-    cpMem[address & cpuMemMask] = data & Mask60;
+    int act;
+    
+    address &= cpuMemMask;
+    act = cpMemActions[address];
+    data &= Mask60;
+    
+    cpMem[address] = data;
+    if (act != 0)
+        {
+        cpuMemWriteAction (data, act, activePpu->id);
+        }        
     }
 
 /*--------------------------------------------------------------------------
@@ -747,31 +804,6 @@ CpWord * cpuAccessMem(CpuContext *activeCpu, CpWord address, int length)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Execute next instruction in the CPUs.
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Nothing.
-**
-**  This steps all CPUs, unless multi-threading is used for the additional
-**  CPUs, in which case it steps only CPU 0.
-**
-**------------------------------------------------------------------------*/
-void cpuStepAll (void)
-    {
-#if !defined (USE_THREADS)
-    int cpuNum;
-    
-    for (cpuNum = 0; cpuNum < cpuCount; cpuNum++)
-        {
-        cpuStep(cpu + cpuNum);
-        }
-#else
-    cpuStep (cpu);
-#endif
-    }
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Transfer one word to/from ECS.
 **
 **  Parameters:     Name        Description.
@@ -794,13 +826,11 @@ bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs)
         u32 flagWord = address & Mask18;
         bool result = FALSE;
         
-#ifdef USE_THREADS
         /* No need to lock the mutex for a flag read */
         if (flagFunction != 6)
             {
-            pthread_mutex_lock (&flagreg_mutex);
+            pth_check (pthread_mutex_lock (&flagreg_mutex));
             }
-#endif
 
         switch (flagFunction)
             {
@@ -850,12 +880,10 @@ bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs)
             break;
             }
 
-#ifdef USE_THREADS
         if (flagFunction != 6)
             {
-            pthread_mutex_unlock (&flagreg_mutex);
+            pth_check (pthread_mutex_unlock (&flagreg_mutex));
             }
-#endif
 
         return result;
         }
@@ -896,7 +924,92 @@ bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs)
 **--------------------------------------------------------------------------
 */
 
-#ifdef USE_THREADS
+static void cpuMemWriteAction (CpWord data, int act, int pp)
+    {
+    int arg;
+
+    arg = GETACTARG (act);
+    
+    switch (GETACTION (act))
+        {
+    case ACTION_PPIR:
+        if ((data >> 48) != 0)
+            {
+            /* Waking up a PPU */
+            if (usingThreads)
+                {
+                pth_check (pthread_cond_signal (&ppu[arg].cond));
+                }
+            }
+        break;
+    case ACTION_PPOR:
+    case ACTION_DSDOR:
+        if (pp == arg)
+            {
+            /* OR request issued */
+            if ((data >> 48) < cpum || GETACTION (act) == ACTION_DSDOR)
+                {
+                if (usingThreads)
+                    {
+                    /* MTR function, wake up MTR */
+                    pth_check (pthread_cond_signal (&ppu[0].cond));
+                    }
+                }
+            }
+        else
+            {
+            /* OR write by someone else (MTR/CPUMTR presumably) */
+            if ((data >> 48) == 0)
+                {
+                if (usingThreads)
+                    {
+                    pth_check (pthread_cond_signal (&ppu[arg].cond));
+                    }
+                }
+            }
+        break;
+    case ACTION_PNGREQ:
+        if ((data >> 47) & 1)
+            {
+            /* Request issued to PNG */
+            if (usingThreads)
+                {
+                pth_check (pthread_cond_signal (&ppu[arg].cond));
+                }
+            }
+        break;
+    case ACTION_WRITE:
+        /* Wake up on any write, no matter the value */
+        if (usingThreads)
+            {
+            pth_check (pthread_cond_signal (&ppu[arg].cond));
+            }
+        break;
+    default:
+        break;
+        }
+    }
+
+static void cpuMemError (CpuContext *activeCpu, u32 address)
+    {
+    activeCpu->exitCondition |= EcAddressOutOfRange;
+    if ((activeCpu->exitMode & EmAddressOutOfRange) != 0)
+        {
+        /*
+        **  Exit mode selected.
+        */
+        if (activeCpu->regRaCm < cpuMaxMemory)
+            {
+            cpMem[activeCpu->regRaCm] = ((CpWord)activeCpu->exitCondition << 48) | ((CpWord)(activeCpu->regP + 1) << 30);
+            }
+
+        activeCpu->regP = 0;
+        // ????????????? jump to monitor address ??????????????
+        activeCpu->cpuStopped = TRUE;
+        activeCpu->state = 'S';
+        }
+    }
+
 /*--------------------------------------------------------------------------
 **  Purpose:        Create a thread for a CPU
 **
@@ -908,9 +1021,6 @@ bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs)
 **------------------------------------------------------------------------*/
 void cpuCreateThread(int cpuNum)
     {
-#if defined(_WIN32)
-#error "Windows multithread CPU support TBS"
-#else
     int rc;
 
     /*
@@ -922,7 +1032,10 @@ void cpuCreateThread(int cpuNum)
         fprintf(stderr, "Failed to create cpu %d thread\n", cpuNum);
         exit(1);
         }
-#endif
+    else
+        {
+        printf ("cpu %d thread running\n", cpuNum);
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -943,7 +1056,6 @@ static ThreadFunRet cpuThread(void *param)
         cpuStep (activeCpu);
         }
     }
-#endif /* USE_THREADS */
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Execute next instruction in some CPU.
@@ -958,150 +1070,167 @@ static void cpuStep(CpuContext *activeCpu)
     {
     u32 oldRegP;
     u32 length;
-    int cpucycle;
     
     /*
     **  If this CPU needs to be exchanged, do that first.
     **  Note that this check must come BEFORE the "stopped" check.
     */
-    if (activeCpu->id == exchangeCpu)
+    pth_check (pthread_mutex_lock (&exchange_mutex));
+
+    /*
+    **  Only perform exchange jump on instruction boundary or when stopped.
+    */
+    while (activeCpu->opOffset == 60 || activeCpu->cpuStopped)
         {
-        cpuExchangeJump (activeCpu);
+        if (activeCpu->id == exchangeCpu)
+            {
+            cpuExchangeJump (activeCpu);
+            break;
+            }
+        else if (activeCpu->cpuStopped)
+            {
+            /*
+            **  No exchange pending and stopped. Wait for exchange.
+            */
+            pth_check (pthread_cond_wait (&exchange_cond, &exchange_mutex));
+            }
+        else
+            {
+            break;
+            }
         }
+    pth_check (pthread_mutex_unlock (&exchange_mutex));
         
     if (activeCpu->cpuStopped)
         {
         return;
         }
 
-    for (cpucycle = 0; cpucycle < cpuRatio; cpucycle++)
+    /*
+    **  Execute one CM word atomically.
+    */
+    do
         {
         /*
-        **  Execute one CM word atomically.
+        **  Decode based on type.
         */
-        do
+        activeCpu->opFm = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 6)) & Mask6);
+        activeCpu->opI       = (u8)((activeCpu->opWord >> (activeCpu->opOffset -  9)) & Mask3);
+        activeCpu->opJ       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 12)) & Mask3);
+        length = decodeCpuOpcode[activeCpu->opFm].length;
+        if (length == 0)
             {
-            /*
-            **  Decode based on type.
-            */
-            activeCpu->opFm = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 6)) & Mask6);
-            activeCpu->opI       = (u8)((activeCpu->opWord >> (activeCpu->opOffset -  9)) & Mask3);
-            activeCpu->opJ       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 12)) & Mask3);
-            length = decodeCpuOpcode[activeCpu->opFm].length;
-            if (length == 0)
-                {
-                length = cpOp01Length[activeCpu->opI];
-                }
+            length = cpOp01Length[activeCpu->opI];
+            }
         
-            if (length == 15)
-                {
-                activeCpu->opK       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 15)) & Mask3);
-                activeCpu->opAddress = 0;
+        if (length == 15)
+            {
+            activeCpu->opK       = (u8)((activeCpu->opWord >> (activeCpu->opOffset - 15)) & Mask3);
+            activeCpu->opAddress = 0;
 
-                activeCpu->opOffset -= 15;
-                }
-            else
+            activeCpu->opOffset -= 15;
+            }
+        else
+            {
+            if (activeCpu->opOffset == 15)
                 {
-                if (activeCpu->opOffset == 15)
-                    {
-                    /*
-                    **  Stop when packing is invalid - this is the
-                    **  behaviour of the 6400 and 6500. 
-                    */
+                /*
+                **  Stop when packing is invalid - this is the
+                **  behaviour of the 6400 and 6500. 
+                */
 #if CcDebug == 1
-                    traceCpuPrint(activeCpu, "Invalid packing\n");
+                traceCpuPrint(activeCpu, "Invalid packing\n");
 #endif
-                    activeCpu->cpuStopped = TRUE;
-                    activeCpu->state = 'S';
-                    return;
-                    }
-
-                activeCpu->opK       = 0;
-                activeCpu->opAddress = (u32)((activeCpu->opWord >> (activeCpu->opOffset - 30)) & Mask18);
-
-                activeCpu->opOffset -= 30;
-                }
-
-            oldRegP = activeCpu->regP;
-
-            /*
-            **  Force B0 to 0.
-            */
-            activeCpu->regB[0] = 0;
-
-            /*
-            **  Execute instruction.
-            */
-            decodeCpuOpcode[activeCpu->opFm].execute (activeCpu);
-
-            /*
-            **  Force B0 to 0.
-            */
-            activeCpu->regB[0] = 0;
-
-#if CcDebug == 1
-            /*
-            **  Don't trace COS's idle loop.
-            */
-            //    if ((activeCpu->regRaCm + activeCpu->regP) > 02062)
-
-            /*
-            **  To make things faster, do a quick check first to see if any
-            **  tracing at all has been requested (i.e., trace mask != 0).
-            **  That makes a surprisingly large difference.
-            **
-            **  Don't trace NOS's idle loop.
-            **  If control point tracing is set, act accordingly.
-            **  The control point check relies on the property that the
-            **  monitor address in the CPU points to the exchange package
-            **  area at the start of the CP area for the CP when that CP
-            **  has the CPU.  This is more portable than looking for
-            **  the active CP value in low memory.
-            */
-            if (traceMask != 0 &&
-                /*activeCpu->regRaCm != 0 && */
-                1)//activeCpu->regP > 0100)
-                {
-                if (traceCp == 0 || 
-                    (activeCpu->id != monitorCpu &&
-                     activeCpu->regMa == (traceCp << 7)))
-                    {
-                    traceCpu(activeCpu, oldRegP, activeCpu->opFm,
-                             activeCpu->opI, activeCpu->opJ,
-                             activeCpu->opK, activeCpu->opAddress);
-                    }
-#if DebugOps == 1
-                if (activeCpu->opFm == 061 && activeCpu->opI == 0 && activeCpu->opJ != 0)
-                    {
-                    cpuTraceCtl (activeCpu);
-                    }
-#endif
-                }
-#endif
-
-            if (activeCpu->cpuStopped)
-                {
-                if (activeCpu->opOffset == 0)
-                    {
-                    activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-                    }
-#if CcDebug == 1
-                traceCpuPrint(activeCpu, (char*)"Stopped\n");
-#endif
+                activeCpu->cpuStopped = TRUE;
+                activeCpu->state = 'S';
                 return;
                 }
 
-            /*
-            **  Fetch next instruction word if necessary.
-            */
+            activeCpu->opK       = 0;
+            activeCpu->opAddress = (u32)((activeCpu->opWord >> (activeCpu->opOffset - 30)) & Mask18);
+
+            activeCpu->opOffset -= 30;
+            }
+
+        oldRegP = activeCpu->regP;
+
+        /*
+        **  Force B0 to 0.
+        */
+        activeCpu->regB[0] = 0;
+
+        /*
+        **  Execute instruction.
+        */
+        decodeCpuOpcode[activeCpu->opFm].execute (activeCpu);
+
+        /*
+        **  Force B0 to 0.
+        */
+        activeCpu->regB[0] = 0;
+
+#if CcDebug == 1
+        /*
+        **  Don't trace COS's idle loop.
+        */
+        //    if ((activeCpu->regRaCm + activeCpu->regP) > 02062)
+
+        /*
+        **  To make things faster, do a quick check first to see if any
+        **  tracing at all has been requested (i.e., trace mask != 0).
+        **  That makes a surprisingly large difference.
+        **
+        **  Don't trace NOS's idle loop.
+        **  If control point tracing is set, act accordingly.
+        **  The control point check relies on the property that the
+        **  monitor address in the CPU points to the exchange package
+        **  area at the start of the CP area for the CP when that CP
+        **  has the CPU.  This is more portable than looking for
+        **  the active CP value in low memory.
+        */
+        if (traceMask != 0 &&
+            /*activeCpu->regRaCm != 0 && */
+            1)//activeCpu->regP > 0100)
+            {
+            if (traceCp == 0 || 
+                (activeCpu->id != monitorCpu &&
+                 activeCpu->regMa == (traceCp << 7)))
+                {
+                traceCpu(activeCpu, oldRegP, activeCpu->opFm,
+                         activeCpu->opI, activeCpu->opJ,
+                         activeCpu->opK, activeCpu->opAddress);
+                }
+#if DebugOps == 1
+            if (activeCpu->opFm == 061 && activeCpu->opI == 0 && activeCpu->opJ != 0)
+                {
+                cpuTraceCtl (activeCpu);
+                }
+#endif
+            }
+#endif
+
+        if (activeCpu->cpuStopped)
+            {
             if (activeCpu->opOffset == 0)
                 {
                 activeCpu->regP = (activeCpu->regP + 1) & Mask18;
-                cpuReadMem(activeCpu, activeCpu->regP, &activeCpu->opWord);
-                activeCpu->opOffset = 60;
                 }
-            } while (activeCpu->opOffset != 60);
-        }
+#if CcDebug == 1
+            traceCpuPrint(activeCpu, (char*)"Stopped\n");
+#endif
+            return;
+            }
+
+        /*
+        **  Fetch next instruction word if necessary.
+        */
+        if (activeCpu->opOffset == 0)
+            {
+            activeCpu->regP = (activeCpu->regP + 1) & Mask18;
+            cpuReadMem(activeCpu, activeCpu->regP, &activeCpu->opWord);
+            activeCpu->opOffset = 60;
+            }
+        } while (activeCpu->opOffset != 60);
     }
 
 /*--------------------------------------------------------------------------
@@ -1119,14 +1248,11 @@ bool cpuEcsFlagRegister(u32 ecsAddress)
     u32 flagWord = ecsAddress & Mask18;
     bool result = TRUE;     /* Assume ok */
         
-#ifdef USE_THREADS
     /* No need to lock the mutex for a flag read */
     if (flagFunction != 6)
         {
-        pthread_mutex_lock (&flagreg_mutex);
+        pth_check (pthread_mutex_lock (&flagreg_mutex));
         }
-#endif
-
 
     switch (flagFunction)
         {
@@ -1176,12 +1302,10 @@ bool cpuEcsFlagRegister(u32 ecsAddress)
         break;
         }
 
-#ifdef USE_THREADS
     if (flagFunction != 6)
         {
-        pthread_mutex_unlock (&flagreg_mutex);
+        pth_check (pthread_mutex_unlock (&flagreg_mutex));
         }
-#endif
     /*
     **  Exit with status
     */
@@ -1248,8 +1372,13 @@ bool cpuDdpTransfer(u32 ecsAddress, CpWord *data, bool writeToEcs)
 **  Returns:        Nothing
 **
 **  We come here when the CPU step loop notices that an exchange
-**  has been requested for this CPU.  The exchange address is given
-**  by variable exchangeTo.
+**  has been requested for this CPU, and either the CPU is stopped
+**  or we're on parcel 0.   The exchange address is given by
+**  variable exchangeTo.
+**
+**  The caller must lock the exchange mutex before calling this function
+**  and unlock it after return.
+**
 **  When we're done, other threads waiting for the exchange to be
 **  completed are signaled to wake up.
 **
@@ -1261,14 +1390,6 @@ void cpuExchangeJump(CpuContext *activeCpu)
     u32 addr;
     CpWord t;
     
-    /*
-    **  Only perform exchange jump on instruction boundary or when stopped.
-    */
-    if (activeCpu->opOffset != 60 && !activeCpu->cpuStopped)
-        {
-        return;
-        }
-
 #if CcDebug == 1
     traceExchange(activeCpu, exchangeTo, "Old");
 #endif
@@ -1409,14 +1530,8 @@ void cpuExchangeJump(CpuContext *activeCpu)
     /*
     **  Exchange is done, wake up whoever is waiting for that.
     */
-#ifdef USE_THREADS
-    pthread_mutex_lock (&exchange_mutex);
     exchangeCpu = -1;
-//    pthread_cond_broadcast (&exchange_cond);
-    pthread_mutex_unlock (&exchange_mutex);
-#else
-    exchangeCpu = -1;
-#endif
+    pth_check (pthread_cond_broadcast (&exchange_cond));
 
     /*
     **  Activate CPU.
@@ -1444,6 +1559,14 @@ void cpuExchangeJump(CpuContext *activeCpu)
         {
         activeCpu->cpuStopped = TRUE;
         activeCpu->state = 'X';
+        }
+    else if (activeCpu->id == monitorCpu)
+        {
+        activeCpu->state = 'M';
+        }
+    else
+        {
+        activeCpu->state = ' ';
         }
     activeCpu->opOffset = 60;
     }
@@ -2408,7 +2531,6 @@ static void cpOp01(CpuContext *activeCpu)
     int monitor;
     u32 addr, oldP;
     u8 oldOffset;
-    int ret;
 
     switch (activeCpu->opI)
         {
@@ -2440,6 +2562,7 @@ static void cpOp01(CpuContext *activeCpu)
         /*
         **  XJ  K
         */
+        pth_check (pthread_mutex_lock (&exchange_mutex));
         if (activeCpu->id == monitorCpu)
             {
             monitor = 0;    /* leave monitor mode */
@@ -2450,41 +2573,32 @@ static void cpOp01(CpuContext *activeCpu)
             monitor = 2;    /* enter monitor mode at MA */
             addr = 0;
             }
+
+        /* See if an exchange is already pending for this CPU. */
+        if (activeCpu->id == exchangeCpu)
+            {
+            /* Let the pending exchange happen, then we'll do this one later. */
+            pth_check (pthread_mutex_unlock (&exchange_mutex));
+            return;
+            }
+        
         oldP = activeCpu->regP;
         oldOffset = activeCpu->opOffset;
 
         /* Set up CPU state for the continuation point */
         activeCpu->regP = (activeCpu->regP + 1) & Mask18;
         activeCpu->opOffset = 60;
+
+        /* Stop the CPU so the exchange is seen right away. */
+        activeCpu->cpuStopped = TRUE;
+        
         /* 
         **  Don't need to fetch the next instruction word; that will
         **  be done when we exchange back to this point.
         */
 
-        if ((ret = cpuIssueExchange (activeCpu->id, addr, monitor)) != 0)
-            {
-            /*
-            **  Need to retry until ready to exchange.
-            **  In the multi-threaded version,
-            **  wait on the exchange condition variable.
-            **  That variable is signaled at each exchange, so
-            **  it's a good time to drive the retry.
-            */
-#ifdef USE_THREADS
-            pthread_mutex_lock (&exchange_mutex);
-            if (monitorCpu != -1)
-                {
-//                pthread_cond_wait (&exchange_cond, &exchange_mutex);
-                }
-            pthread_mutex_unlock (&exchange_mutex);
-#endif
-            /*
-            **  Point back to the XJ instruction
-            */
-            activeCpu->regP = oldP;
-            activeCpu->opOffset = oldOffset + 30;
-            return;
-            }
+        cpuIssueExchange (activeCpu, activeCpu->id, addr, monitor);
+        pth_check (pthread_mutex_unlock (&exchange_mutex));
         break;
         
     case 4:

@@ -12,6 +12,8 @@
 **--------------------------------------------------------------------------
 */
 
+#include <assert.h>
+
 /*
 **  ----------------
 **  Public Constants
@@ -203,6 +205,18 @@
 #define MINUS1                  ((~1) & Mask60)
 
 /*
+**  Action codes
+*/
+#define ACTION_NONE             0       /* No action needed */
+#define ACTION_PPIR             1       /* Pool PP IR */
+#define ACTION_PPOR             2       /* Pool PP OR */
+#define ACTION_DSDOR            3       /* DSD OR */
+#define ACTION_MTRREQ           ACTION_PPIR    /* CPUMTR to MTR request */
+#define ACTION_PNGREQ           4       /* Request to PNG */
+#define ACTION_WRITE            5       /* Wake PP on any write */
+#define ACTION_RES1             6       /* Not used yet */
+#define ACTION_RES2             7       /* Not used yet */
+/*
 **  ----------------------
 **  Public Macro Functions
 **  ----------------------
@@ -215,6 +229,23 @@
 #endif
 
 #define LogErrorLocation        __FILE__, __LINE__
+
+#define SETACTION(code,arg) ((code) | ((arg) << 3))
+#define GETACTION(act) ((act) & 7)
+#define GETACTARG(act) ((act) >> 3)
+
+#define pth_check(call)                         \
+    do                                          \
+        {                                       \
+        int pth_sts;                            \
+        if ((pth_sts = (call)) != 0)            \
+            {                                   \
+            fprintf (stderr, "error %d in %s:%d\n"  \
+                     #call "\n%s\n", pth_sts,                 \
+                     __FILE__, __LINE__, strerror (pth_sts)); \
+            assert (pth_sts == 0);;                           \
+            }                                                 \
+        } while (0)
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* CONST_H */

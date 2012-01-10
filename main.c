@@ -54,7 +54,6 @@
 */
 int ppKeyIn;
 bool emulationActive = TRUE;
-u32 cycles;
 
 /*
 **  -----------------
@@ -127,11 +126,6 @@ int main(int argc, char **argv)
     while (emulationActive)
         {
         /*
-        **  Count major cycles.
-        */
-        cycles++;
-
-        /*
         ** Check if it's time for a screen update
         */
         if (--consoleCheckCycles < 0)
@@ -153,19 +147,10 @@ int main(int argc, char **argv)
         /*
         **  Execute PP, CPU and RTC.
         */
-#ifndef USE_THREADS
-        ppStepAll();
-#endif
-
-        /*
-        **  Step all CPUs (or just CPU 0 if multithreaded)
-        */
-        cpuStepAll();
-
-        /*
-        **  Step the clock (if not doing real time)
-        */
-        rtcTick();
+        if (!usingThreads)
+            {
+            ppStepAll();
+            }
         }
 
 #if 0

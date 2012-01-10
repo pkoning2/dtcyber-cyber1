@@ -110,7 +110,7 @@ static void cp3446Io(ChSlot *activeChannel, DevSlot *active3000Device);
 static void cp3446Load(DevSlot *, int, char *);
 static void cp3446Activate(ChSlot *activeChannel, DevSlot *active3000Device);
 static void cp3446Disconnect(ChSlot *activeChannel, DevSlot *active3000Device);
-static void cp3446FlushCard (DevSlot *up, CrContext *cc);
+static void cp3446FlushCard (ChSlot *activeChannel, DevSlot *up, CrContext *cc);
 /*
 **  ----------------
 **  Public Variables
@@ -370,7 +370,7 @@ static void cp3446Io(ChSlot *activeChannel, DevSlot *active3000Device)
         **  So we simulate card in motion for 20 major cycles.
         */
         if (!activeChannel->full ||
-            cycles - cc->getcardcycle < 20)
+            ppu[activeChannel->ppu].cycles - cc->getcardcycle < 20)
             {
             break;
             }
@@ -378,7 +378,7 @@ static void cp3446Io(ChSlot *activeChannel, DevSlot *active3000Device)
         if (cc->col >= 80)
             {
             /* Write the card we just finished. */
-            cp3446FlushCard (active3000Device, cc);
+            cp3446FlushCard (activeChannel, active3000Device, cc);
             }
         else
             {
@@ -463,7 +463,7 @@ static void cp3446Load(DevSlot *up, int eqNo, char *fn)
     /*
     **  Close the old device file.
     */
-    cp3446FlushCard (up, cc);
+    cp3446FlushCard (NULL, up, cc);
     fflush(up->fcb[0]);
     fclose(up->fcb[0]);
     up->fcb[0] = NULL;
@@ -547,7 +547,7 @@ static void cp3446Disconnect(ChSlot *activeChannel, DevSlot *active3000Device)
                              (cc->status & cc->intmask) != 0);
         if (active3000Device->fcb[0] != NULL && cc->col != 0)
             {
-            cp3446FlushCard(active3000Device, cc);
+            cp3446FlushCard(activeChannel, active3000Device, cc);
             }
         }
     }
@@ -560,7 +560,7 @@ static void cp3446Disconnect(ChSlot *activeChannel, DevSlot *active3000Device)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cp3446FlushCard(DevSlot *up, CrContext *cc)
+static void cp3446FlushCard (ChSlot *activeChannel, DevSlot *up, CrContext *cc)
     {
     int lc;
     
@@ -570,7 +570,10 @@ static void cp3446FlushCard(DevSlot *up, CrContext *cc)
         }
     
     /* Remember the cycle counter when the card punch started */
-    cc->getcardcycle = cycles;
+    if (activeChannel != NULL)
+        {
+        cc->getcardcycle = ppu[activeChannel->ppu].cycles;
+        }
     
     /* Put in the line terminator, omitting trailing blanks */
     lc = cc->lastnbcol + 1;

@@ -76,12 +76,13 @@ static bool initGetString(const char *entry, char *defString, char *str, int str
 bool bigEndian;
 extern u16 deadstartPanel[];
 extern u8 deadstartCount;
-long cpuRatio;
 char autoDateString[32];
 char autoString[32];
 char platoSection[40];
 int idleMode;
 long chCount;
+long allowThreads;
+long debugMode;
 
 /*
 **  -----------------
@@ -115,6 +116,8 @@ const intParam intParamList[] =
     { "tpmuxport", &tpmuxPort, DefTpmuxPort },
     { "tpmuxconns", &tpmuxConns, 2 },
     { "sockets", &extSockets, 128 },
+    { "threaded", &allowThreads, 0 },
+    { "debug", &debugMode, 0 },
     { NULL, NULL, 0 }                   /* End marker */
 };
 
@@ -301,26 +304,7 @@ static void initCyber(const char *config)
         fprintf (stderr, "Entry 'cpus' invalid in section [%s] in %s -- correct values are 1 or 2\n", config, startupFile);
         exit (1);
         }
-#ifndef USE_THREADS
-    if (cpus != 1)
-        {
-        fprintf (stderr, "Entry 'cpus=2' ignored, no dual CPU support\n");
-        cpus = 1;
-        }
-#endif
     printf ("Running with %ld CPUs\n", cpus);
-    initGetInteger ("cpuratio", 1, &cpuRatio);
-    if (cpuRatio < 1 || cpuRatio > 50)
-        {
-        fprintf (stderr, "Entry 'cpuratio' invalid in section [%s] in %s -- correct value is between 1 and 50\n", config, startupFile);
-        exit (1);
-        }
-    else
-        {
-        printf ("Running with %ld CPU instructions per PPU instruction\n",
-                cpuRatio);
-        }
-    
     (void)initGetString("cmFile", "", cmFile, sizeof(cmFile));
     (void)initGetString("ecsFile", "", ecsFile, sizeof(ecsFile));
     
@@ -414,6 +398,9 @@ static void initCyber(const char *config)
         initGetInteger (paramp->name, paramp->defval, paramp->varp);
         paramp++;
         }
+
+    debugDisplay = (traceMask != 0) || (debugMode != 0);
+
     /*
     **  Get auto date string (prompt used to trigger auto-entry of
     **  the date and time) and auto string (initial text entered

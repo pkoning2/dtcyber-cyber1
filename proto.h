@@ -58,9 +58,7 @@ void channelIo(PpSlot *activePpu, ChSlot *activeChannel);
 void ppInit(u8 count);
 void ppTerminate(void);
 void ppStart (void);
-#ifndef USE_THREADS
 void ppStepAll(void);
-#endif
 
 /*
 **  cpu.c
@@ -68,13 +66,12 @@ void ppStepAll(void);
 void cpuInit(char *model, u32 cpus, u32 memory, u32 ecsBanks, char *cmFile, char *ecsFile);
 void cpuTerminate(void);
 u32 cpuGetP(u8 cpnum);
-void cpuStepAll(void);
 bool cpuEcsFlagRegister(u32 ecsAddress);
 bool cpuDdpTransfer(u32 ecsAddress, CpWord *data, bool writeToEcs);
-bool cpuPpReadMem(u32 address, CpWord *data);
-void cpuPpWriteMem(u32 address, CpWord data);
+bool cpuPpReadMem (PpSlot *activePpu, u32 address, CpWord *data);
+void cpuPpWriteMem (PpSlot *activePpu, u32 address, CpWord data);
 bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs);
-int cpuIssueExchange(u8 cpnum, u32 addr, int monitor);
+int cpuIssueExchange (CpuContext *activeCpu, u8 cpnum, u32 addr, int monitor);
 CpWord * cpuAccessMem(CpuContext *activeCpu, CpWord, int length);
 
 /*
@@ -337,7 +334,9 @@ extern u8 cpuCount;
 extern volatile int monitorCpu;
 extern volatile int exchangeCpu;
 extern CpWord *cpMem;
+extern u8 *cpMemActions;
 extern CpWord *ecsMem;
+extern u8 *ecsMemActions;
 extern u32 cpuMaxMemory;
 extern u32 cpuMemMask;
 extern u32 ecsMaxMemory;
@@ -379,8 +378,6 @@ extern long dd60Conns;
 extern long tpmuxPort;
 extern long tpmuxConns;
 extern FILE **ppuTF;
-extern u32 cycles;
-extern long cpuRatio;
 extern bool debugDisplay;
 extern bool opDebugging;
 extern bool opPlatoAlert;
@@ -396,6 +393,12 @@ extern void (*updateConnections) (void);
 extern long extSockets;
 extern int idleMode;
 extern long chCount;
+extern bool mtr;
+extern long allowThreads;
+extern bool usingThreads;
+extern int cpum;
+extern pthread_cond_t exchange_cond;
+extern pthread_mutex_t exchange_mutex;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

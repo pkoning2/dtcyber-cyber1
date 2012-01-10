@@ -38,22 +38,17 @@
 **  -----------------
 */
 #if defined(__GNUC__) && defined(__i386)
-#define RDTSC 1
 #elif defined(__GNUC__) && defined(__x86_64)
-#define RDTSC 1
 #elif defined(_WIN32)
-#define RDTSC 1
 #elif defined(__GNUC__) && defined(__APPLE__)
-#define RDTSC 1
 #else
-#define RDTSC 0
+#error "Don't know how to do real-time clock emulation"
 #endif
 /*
 **  -----------------------
 **  Private Macro Functions
 **  -----------------------
 */
-#if RDTSC
 #if defined(__GNUC__) && defined(__APPLE__)
 #define rdtscll(val) \
     val = UnsignedWideToUInt64 (AbsoluteToNanoseconds (UpTime ()))
@@ -75,7 +70,6 @@
 		val = foo.QuadPart; \
 	} while (0)
 #endif
-#endif
 
 /*
 **  -----------------------------------------
@@ -93,9 +87,7 @@ static FcStatus rtcFunc(ChSlot *activeChannel, DevSlot *activeDevice,
 static void rtcIo(ChSlot *activeChannel, DevSlot *activeDevice);
 static void rtcActivate(ChSlot *activeChannel, DevSlot *activeDevice);
 static void rtcDisconnect(ChSlot *activeChannel, DevSlot *activeDevice);
-#if RDTSC
 static void rtcInit2 (long MHz);
-#endif
 
 /*
 **  ----------------
@@ -104,6 +96,7 @@ static void rtcInit2 (long MHz);
 */
 u32 rtcClock = 0;
 u8 rtcIncrement;
+bool mtr = FALSE;
 
 /*
 **  -----------------
@@ -111,13 +104,10 @@ u8 rtcIncrement;
 **  -----------------
 */
 static bool rtcFull;
-#if RDTSC
 static u64 Hz;
 static u32 maxDelta;
 static u64 rtcPrev;
 static bool caughtUp = FALSE;
-static bool mtr = FALSE;
-#endif
 /*
 **--------------------------------------------------------------------------
 **
@@ -151,12 +141,7 @@ void rtcInit(char *model, u8 increment, long setMHz)
 
     if (increment == 0)
         {
-#if RDTSC
         rtcInit2 (setMHz);
-#else
-        fprintf (stderr, "Invalid clock increment 0, defaulting to 1\n");
-        increment = 1;
-#endif
         }
     rtcIncrement = increment;
     channel[ChClock].ioDevice = dp;
@@ -173,26 +158,6 @@ void rtcInit(char *model, u8 increment, long setMHz)
         channel[ChClock].full = FALSE;
         rtcFull = FALSE;
         }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Do a clock tick
-**
-**  Parameters:     Name        Description.
-**
-**  Returns:        Nothing.
-**
-**  If *increment* is specified as non-zero, this process counts emulator
-**  cycles as an approximation of real time.  If *increment* is zero, then
-**  the channel read handler keeps track of real time and adjusts the
-**  RTC reading to match.  The rtcClock variable is 32 bits, so other parts
-**  of the emulator can use it to keep track of elapsed time efficiently;
-**  it is masked to 12 bits in the channel read handler.
-**
-**------------------------------------------------------------------------*/
-void rtcTick(void)
-    {
-    rtcClock = rtcClock + rtcIncrement;
     }
 
 /*
@@ -231,12 +196,20 @@ static FcStatus rtcFunc(ChSlot *activeChannel, DevSlot *activeDevice,
 static void rtcIo(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     u32 clock = 0;
-    
-#if RDTSC
+    int pp;
     u64 rtcCycles = 0, now;
     u32 us = 0;
     
-    if (rtcIncrement == 0)
+    pp = activeChannel->ppu;
+    if (pp != 0 || !mtr || rtcIncrement != 0)
+        {
+        if (pp == 0)
+            {
+            mtr = TRUE;
+            }
+        clock = ppu[pp].cycles;
+        }
+    else
         {
         if (rtcPrev == 0)
             {
@@ -271,25 +244,13 @@ static void rtcIo(ChSlot *activeChannel, DevSlot *activeDevice)
         us = (rtcCycles * ULL (1000000)) / Hz;
         clock = rtcClock + us;
         
-        if (activeChannel->ppu == 0)
+        rtcPrev += (us * Hz) / ULL (1000000);
+        rtcClock = clock;
+        if (us < 800)
             {
-            mtr = TRUE;
-            rtcPrev += (us * Hz) / ULL (1000000);
-            rtcClock = clock;
-            if (us < 800)
-                {
-                ppu[0].state = 'T';
-                }
-            }
-        else if (!mtr)
-            {
-            rtcPrev += (us * Hz) / ULL (1000000);
-            rtcClock = clock;
+            ppu[0].state = 'T';
             }
         }
-#else
-    clock = rtcClock;
-#endif    
     activeChannel->full = rtcFull;
     activeChannel->data = clock & Mask12;
     }
@@ -318,7 +279,6 @@ static void rtcDisconnect(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     }
 
-#if RDTSC
 /*--------------------------------------------------------------------------
 **  Purpose:        RTC initialization when using the Pentium cycle counter
 **
@@ -391,6 +351,5 @@ static void rtcInit2(long setMHz)
     maxDelta = Hz / ULL (1250);   /* 800 microseconds, to keep mtr happy */
     printf ("using high resolution hardware clock at %lld Hz\n", Hz);
     }
-#endif
 
 /*---------------------------  End Of File  ------------------------------*/

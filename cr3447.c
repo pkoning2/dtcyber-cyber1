@@ -120,7 +120,7 @@ static void cr3447Io(ChSlot *activeChannel, DevSlot *active3000Device);
 static void cr3447Load(DevSlot *, int, char *);
 static void cr3447Activate(ChSlot *activeChannel, DevSlot *active3000Device);
 static void cr3447Disconnect(ChSlot *activeChannel, DevSlot *active3000Device);
-static void cr3447NextCard (DevSlot *up, CrContext *cc);
+static void cr3447NextCard (ChSlot *activeChannel, DevSlot *up, CrContext *cc);
 static void cr3447NextDeck (DevSlot *up, CrContext *cc);
 
 /*
@@ -204,7 +204,7 @@ void cr3447Init(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 
         up->fcb[0] = fcb;
         cc->status = StCr3447Ready;
-        cr3447NextCard (up, cc);        /* Read the first card */
+        cr3447NextCard (NULL, up, cc);        /* Read the first card */
         }
     else
         {
@@ -375,7 +375,7 @@ static void cr3447Io(ChSlot *activeChannel, DevSlot *active3000Device)
         **  So we simulate card in motion for 20 major cycles.
         */
         if (   activeChannel->full
-            || cycles - cc->getcardcycle < 20)
+            || ppu[activeChannel->ppu].cycles - cc->getcardcycle < 20)
             {
             break;
             }
@@ -392,7 +392,7 @@ static void cr3447Io(ChSlot *activeChannel, DevSlot *active3000Device)
             **  Read the next card.
             **  If the function is input to EOR, disconnect to indicate EOR.
             */
-            cr3447NextCard (active3000Device, cc);
+            cr3447NextCard (activeChannel, active3000Device, cc);
             if (active3000Device->fcode == Fc6681InputToEor)
                 {
                 /* End of card but we're still ready */
@@ -543,7 +543,7 @@ static void cr3447Disconnect(ChSlot *activeChannel, DevSlot *active3000Device)
                              (cc->status & cc->intmask) != 0);
         if (active3000Device->fcb[0] != NULL && cc->col != 0)
             {
-            cr3447NextCard(active3000Device, cc);
+            cr3447NextCard (activeChannel, active3000Device, cc);
             }
         }
     }
@@ -556,7 +556,7 @@ static void cr3447Disconnect(ChSlot *activeChannel, DevSlot *active3000Device)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-static void cr3447NextCard (DevSlot *up, CrContext *cc)
+static void cr3447NextCard (ChSlot *activeChannel, DevSlot *up, CrContext *cc)
     {
     char *cp;
     char c;
@@ -564,7 +564,10 @@ static void cr3447NextCard (DevSlot *up, CrContext *cc)
     /* 
     **  Remember the cycle counter when the card was called for.
     */
-    cc->getcardcycle = cycles;
+    if (activeChannel != NULL)
+        {
+        cc->getcardcycle = ppu[activeChannel->ppu].cycles;
+        }
     
     /*
     **  Read the next card.
@@ -654,7 +657,7 @@ static void cr3447NextDeck (DevSlot *up, CrContext *cc)
             {
             up->fcb[0] = fcb;
             cc->status = StCr3447Ready;
-            cr3447NextCard (up, cc);
+            cr3447NextCard (NULL, up, cc);
             opSetStatus (cc->statusBuf, d->name);
             }
         free (d->name);

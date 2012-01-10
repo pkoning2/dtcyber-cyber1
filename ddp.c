@@ -256,7 +256,7 @@ static void ddpIo(ChSlot *activeChannel, DevSlot *activeDevice)
                 /*
                 **  Delay a bit before we set channel full.
                 */
-                dc->endaddrcycle = cycles;
+                dc->endaddrcycle = ppu[activeChannel->ppu].cycles;
 
                 /*
                 **  A flag register reference occurs when bit 23 is set address.
@@ -287,7 +287,8 @@ static void ddpIo(ChSlot *activeChannel, DevSlot *activeDevice)
 
         if (activeDevice->fcode == FcDdpReadECS)
             {
-            if (!activeChannel->full && cycles - dc->endaddrcycle > 20)
+            if (!activeChannel->full && 
+                ppu[activeChannel->ppu].cycles - dc->endaddrcycle > 20)
                 {
                 if (dc->dbyte == -1)
                     {
