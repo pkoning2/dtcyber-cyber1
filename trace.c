@@ -230,7 +230,7 @@ static DecCpControl rjDecode[010] =
     { CK,         "RJ    %6.6o",          R },    // 0
     { CjK,        "RE    B%o+%6.6o",      RZBE }, // 1
     { CjK,        "WE    B%o+%6.6o",      RZBE }, // 2
-    { CK,         "XJ    %6.6o",          R },    // 3
+    { CK,         "XJ    B%o+%6.6o",      RB },   // 3
     { Cjk,        "RX%o   X%o",           RNXXE },// 4
     { Cjk,        "WX%o   X%o",           RNXXE },// 5
     { Cjk,        "EX%o   X%o",           RNXX }, // 6
@@ -809,7 +809,7 @@ void traceCpu(CpuContext *activeCpu,
         break;
         }
 
-    fprintf(cpuTF[cpuNum], "\n");
+    fprintf(cpuTF[cpuNum], " %c\n", activeCpu->state);
     if (decode == rjDecode &&
         (opI == 1 || opI == 2))
         {
@@ -839,11 +839,12 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
     u8 i;
     int cpn = cc->id;
     char traceName[20];
+    int cpuNum = cc ->id;
     
     /*
     **  Bail out if no trace of exchange jumps is requested.
     */
-    if ((traceMask & TraceXj) == 0)
+    if ((traceMask & (TraceXj | TraceCpu (cpuNum))) == 0)
         {
         return;
         }
@@ -879,17 +880,17 @@ void traceExchange(CpuContext *cc, u32 addr, char *title)
     fprintf(cpuTF[cpn], "B%d %06o", 2, cc->regB[2]);
     fprintf(cpuTF[cpn], "\n");
                            
-    fprintf(cpuTF[cpn], "RAecs %08o  ", cc->regRaEcs);
+    fprintf(cpuTF[cpn], "EM    %08o  ", cc->exitMode);
     fprintf(cpuTF[cpn], "A%d %06o  ", 3, cc->regA[3]);
     fprintf(cpuTF[cpn], "B%d %06o", 3, cc->regB[3]);
     fprintf(cpuTF[cpn], "\n");
                            
-    fprintf(cpuTF[cpn], "FLecs %08o  ", cc->regFlEcs);
+    fprintf(cpuTF[cpn], "RAecs %08o  ", cc->regRaEcs);
     fprintf(cpuTF[cpn], "A%d %06o  ", 4, cc->regA[4]);
     fprintf(cpuTF[cpn], "B%d %06o", 4, cc->regB[4]);
     fprintf(cpuTF[cpn], "\n");
                            
-    fprintf(cpuTF[cpn], "EM    %08o  ", cc->exitMode);
+    fprintf(cpuTF[cpn], "FLecs %08o  ", cc->regFlEcs);
     fprintf(cpuTF[cpn], "A%d %06o  ", 5, cc->regA[5]);
     fprintf(cpuTF[cpn], "B%d %06o", 5, cc->regB[5]);
     fprintf(cpuTF[cpn], "\n");
@@ -1364,7 +1365,10 @@ void traceChannel(PpSlot *activePpu, u8 ch)
         return;
         }
 
-    fprintf(ppuTF[activePpu->id], "  CH:%c%c", channel[ch].active ? 'A' : 'D', channel[ch].full ? 'F' : 'E');
+    fprintf(ppuTF[activePpu->id], " %c CH:%c%c",
+            activePpu->state,
+            channel[ch].active ? 'A' : 'D',
+            channel[ch].full ? 'F' : 'E');
     }
 
 /*--------------------------------------------------------------------------
@@ -1441,7 +1445,7 @@ void traceEnd(PpSlot *activePpu)
     /*
     **  Print newline.
     */
-    fprintf(ppuTF[activePpu->id], "\n");
+    fprintf(ppuTF[activePpu->id], " %c\n", activePpu->state);
 
     /*
     ** See if we just jumped to PPR and if so, whether it's time to turn off trace
