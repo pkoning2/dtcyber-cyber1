@@ -43,7 +43,7 @@ public:
     unsigned int GetMinAngle() const { return (m_maxAngle - m_range) % 360; }
     int GetMaxAngle() const { return m_maxAngle; }
     int GetValue () const { return m_setting; }
-    int SetValue (int value);
+    void SetValue (int value);
 
 private:
     int m_min;

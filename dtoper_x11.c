@@ -275,12 +275,13 @@ char opWindowInput(void)
     /*
     **  Process X11 events until we find something interesting.
     **  Interesting == a keystroke or a need to refresh the screen.
-    **  If there's nothing pending, just return.
+    **  If there's nothing pending, wait.
     */
     while (XEventsQueued(disp, QueuedAfterFlush))
+    //while (1)
         {
         XNextEvent(disp, &event);
-
+        printf ("Received event id %d\n", event.type);
         switch (event.type)
             {
         case MappingNotify:
@@ -316,6 +317,7 @@ void windowSendString (int x, int y, int font,
     char cb[80];
     
     FontInfo *currentFontInfo;
+    //printf ("x %d y %d blank %d str: %s\n", x, y, blank, str);
     
     if (font == FontSmall)
         {
@@ -346,6 +348,28 @@ void windowSendString (int x, int y, int font,
                     str, strlen (str));
         }
     }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Send an expose event
+**
+**  Parameters:     None.
+**
+**  Returns:        Nothing.
+**
+**  This function is for use by threads, to send an expose event to the
+**  main thread.
+**
+**------------------------------------------------------------------------*/
+void sendRefresh (void)
+    {
+    XExposeEvent ev;
+    
+    memset (&ev, 0, sizeof (ev));
+    ev.type = Expose;
+    printf ("send event status %d\n", XSendEvent (disp, window, TRUE, 0,
+                                                  (XEvent *) &ev));
+    }
+
 
 /*
 **--------------------------------------------------------------------------

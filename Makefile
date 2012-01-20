@@ -21,10 +21,6 @@ include Makefile.common
 
 include Makefile.wxpterm
 
-include Makefile.dtoper
-
-include Makefile.dd60
-
 ifeq ("$(HOST)","Darwin")
 ifeq ("$(SDKDIR)","")
 SDKDIR := /Developer/SDKs/MacOSX10.5.sdk

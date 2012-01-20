@@ -51,13 +51,13 @@ static void niuSendstr(int stat, const char *p);
 static void niuSendWord(int stat, int word);
 static void niuAsciiWelcome(NetFet *np, int stat, void *arg);
 static void niuRemoteWelcome(NetFet *np, int stat, void *arg);
+static void ignoreData(NetFet *np, int bytes);
 static void bbSendNiu(int stat);
 static void bbSendAscii(int stat);
 
 int main (int argc, char **argv)
     {
     int stat, i;
-    NetFet *np;
     char msg2[200];
     
     if (argc < 2)
@@ -76,10 +76,12 @@ int main (int argc, char **argv)
     niuPorts.maxPorts = platoConns;
     niuPorts.localOnly = FALSE;
     niuPorts.callBack = niuRemoteWelcome;
+    niuPorts.dataCallBack = ignoreData;
     niuAsciiPorts.portNum = asciiPort;
     niuAsciiPorts.maxPorts = asciiConns;
     niuAsciiPorts.localOnly = FALSE;
     niuAsciiPorts.callBack = niuAsciiWelcome;
+    niuAsciiPorts.dataCallBack = ignoreData;
     
     dtInitPortset (&niuPorts, 1024);
     dtInitPortset (&niuAsciiPorts, 1024);
@@ -90,35 +92,6 @@ int main (int argc, char **argv)
     
     for (;;)
         {
-        /*
-        **  Read and discard any input; also handle disconnects.
-        */
-        for (;;)
-            {
-            np = dtFindInput (&niuPorts, 0);
-            if (np == NULL)
-                {
-                break;
-                }
-            i = dtRead  (np, &niuPorts, -1);
-            if (i < 0)
-                {
-                dtClose (np, &niuPorts, TRUE);
-                }
-            }
-        for (;;)
-            {
-            np = dtFindInput (&niuAsciiPorts, 0);
-            if (np == NULL)
-                {
-                break;
-                }
-            i = dtRead  (np, &niuPorts, -1);
-            if (i < 0)
-                {
-                dtClose (np, &niuAsciiPorts, TRUE);
-                }
-            }
         for (stat = 0; stat < platoConns; stat++)
             {
             bbSendNiu (stat);
@@ -144,6 +117,10 @@ int main (int argc, char **argv)
             }
         else if (i > 0)
             {
+            if (i > 56)
+                {
+                printf ("max of 56 characters recommended for clarity\n");
+                }
             free (msg);
             msg2[i - 1] ='\0';
             msg = strdup (msg2);
@@ -319,6 +296,22 @@ static void niuAsciiWelcome(NetFet *np, int stat, void *arg)
     **  New connection for this port.  Send a message right now
     */
     bbSendAscii (stat);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Handle received data
+**
+**  Parameters:     Name        Description.
+**                  np          NetFet pointer
+**                  bytes       Byte count
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void ignoreData (NetFet *np, int bytes, void *arg)
+    {
+    /* Discard all received data */
+    np->out = np->in;
     }
 
 /*--------------------------------------------------------------------------

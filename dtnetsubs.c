@@ -76,6 +76,7 @@
 **  ---------------------------
 */
 static ThreadFunRet dtThread (void *param);
+static ThreadFunRet dtDataThread (void *param);
 static void dtCloseSocket (int connFd, bool hard);
 static int dtGetw (NetFet *fet, void *buf, int len, bool read);
 static void dtSendPending (NetFet *fet, NetPortSet *ps);
@@ -121,9 +122,6 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
     {
     struct sockaddr_in server;
     int connFd, retval;
-#if defined(_WIN32) || defined (__APPLE__)
-    int true_opt = 1;
-#endif
     
     /*
     **  Create TCP socket
@@ -136,16 +134,6 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
 #endif
         return -1;
         }
-
-#if defined(_WIN32)
-    ioctlsocket (connFd, FIONBIO, &true_opt);
-#else
-    fcntl (connFd, F_SETFL, O_NONBLOCK);
-#endif
-#ifdef __APPLE__
-    setsockopt (connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                (char *)&true_opt, sizeof(true_opt));
-#endif
 
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
@@ -427,106 +415,6 @@ int dtClose (NetFet *np, NetPortSet *ps, bool hard)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Find a NetFet with data waiting
-**
-**  Parameters:     Name        Description.
-**                  ps          Pointer to NetPortSet
-**                  time        Timeout in ms, or 0 to return immediately
-**                              if no data
-**
-**  Returns:        pointer to NetFet with data, NULL if timeout
-**
-**  This function waits for received data or for a change of status
-**  on any of the ports associated with the supplied NetPortSet.
-**  Any status change (disconnect) is handled directly.
-**  If data is received, a pointer to one of the NetFets that has data
-**  is returned.
-**  If no data is received within the timeout period, NULL is returned.
-**
-**------------------------------------------------------------------------*/
-NetFet * dtFindInput (NetPortSet *ps, int time)
-    {
-    int i;
-    fd_set readFds;
-    fd_set sendFds;
-    fd_set exceptFds;
-    struct timeval timeout;
-    NetFet *np;
-
-    readFds = ps->activeSet;
-    if (ps->sendCount != 0)
-        {
-        sendFds = ps->sendSet;
-        }
-    exceptFds = ps->activeSet;
-    timeout.tv_sec = time / 1000;
-    timeout.tv_usec = (time * 1000) % 1000000;
-    
-    if (ps->sendCount == 0)
-        {
-        i = select(ps->maxFd + 1, &readFds, NULL, &exceptFds, &timeout);
-        }
-    else
-        {
-        i = select(ps->maxFd + 1, &readFds, &sendFds, &exceptFds, &timeout);
-        }
-    if (i <= 0)
-        {
-        return NULL;
-        }
-    if (ps->sendCount != 0 && 
-        memcmp (&sendFds, &nullSet, sizeof (fd_set)) != 0)
-        {
-        /*
-        **  Some connections that were blocked are now unblocked
-        */
-        np = ps->portVec;
-        for (i = 0; i < ps->maxPorts; i++)
-            {
-            if (dtActive (np) &&
-                FD_ISSET (np->connFd, &sendFds))
-                {
-                dtSendPending (np, ps);
-                }
-            np++;
-            }
-        }
-    if (memcmp (&exceptFds, &nullSet, sizeof (fd_set)) != 0)
-        {
-        /*
-        **  Some exceptions were found, handle them here.
-        */
-        np = ps->portVec;
-        for (i = 0; i < ps->maxPorts; i++)
-            {
-            if (dtActive (np) &&
-                FD_ISSET (np->connFd, &exceptFds))
-                {
-                dtClose (np, ps, TRUE);
-                }
-            np++;
-            }
-        }
-    if (memcmp (&readFds, &nullSet, sizeof (fd_set)) != 0)
-        {
-        /*
-        **  Some read data was seen, find which port
-        */
-        np = ps->portVec;
-        for (i = 0; i < ps->maxPorts; i++)
-            {
-            if (dtActive (np) &&
-                FD_ISSET (np->connFd, &readFds))
-                {
-                return np;
-                }
-            np++;
-            }
-        }
-    return NULL;
-    }
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Format a timestamp
 **
 **  Parameters:     Name        Description.
@@ -544,112 +432,6 @@ const char *dtNowString (void)
     sprintf (us, "%06d.", tv.tv_usec);
     strcat (ts, us);
     return ts;
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Read more data from the network
-**
-**  Parameters:     Name        Description.
-**                  fet         NetFet pointer
-**                  ps          Pointer to NetPortSet to use
-**                  time        Max time to wait in ms; 0 means do not
-**                              wait, -1 means wait indefinitely
-**
-**  Returns:        0  if ok
-**                  -1 if disconnected
-**                  -2 if some other error
-**
-**------------------------------------------------------------------------*/
-int dtRead (NetFet *fet, NetPortSet *ps, int time)
-    {
-    int connFd = fet->connFd;
-    int i;
-    fd_set readFds;
-    fd_set exceptFds;
-    struct timeval timeout;
-    u8 *in, *out, *nextin;
-    int size;
-    
-    /*
-    ** First send any pending data (if possible).
-    */
-    dtSendPending (fet, ps);
-    
-    if (time != -1)
-        {
-        FD_ZERO(&readFds);
-        FD_ZERO(&exceptFds);
-        FD_SET(connFd, &readFds);
-        FD_SET(connFd, &exceptFds);
-
-        timeout.tv_sec = time / 1000;
-        timeout.tv_usec = (time * 1000) % 1000000;
-
-        select(connFd + 1, &readFds, NULL, &exceptFds, &timeout);
-        if (!FD_ISSET(connFd, &readFds))
-            {
-            if (FD_ISSET(connFd, &exceptFds))
-                {
-                return(-2);
-                }
-            else
-                {
-                return(0);
-                }
-            }
-        }
-
-    /*
-    **  Copy the pointers, since they are volatile.
-    */
-    in = (u8 *) (fet->in);
-    out = (u8 *) (fet->out);
-
-    if (in < out)
-        {
-        /*
-        **  If the out pointer is beyond the in pointer, we can
-        **  fill the space in between, leaving one free word
-        */
-        size = out - in - 1;
-        }
-    else
-        {
-        /*
-        **  Otherwise, we read from the current in pointer to the
-        **  end of the buffer -- except if the out pointer is right
-        **  at the start of the buffer, in which case we have to 
-        **  leave the last word unused.
-        */
-        size = fet->end - in;
-        if (out == fet->first)
-            {
-            size--;
-            }
-        }
-    if (size == 0)
-        {
-        /*
-        ** No room for new data, so return but do not call that an error.
-        */
-        return 0;
-        }
-
-    i = recv(fet->connFd, in, size, MSG_NOSIGNAL);
-    if (i > 0)
-        {
-        nextin = in + i;
-        if (nextin == fet->end)
-            {
-            nextin = fet->first;
-            }
-        fet->in = nextin;
-        return 0;
-        }
-    else
-        {
-        return(-1);
-        }
     }
 
 /*--------------------------------------------------------------------------
@@ -1048,16 +830,6 @@ int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog)
         return -1;
         }
 
-#if defined(_WIN32)
-    ioctlsocket (fet->connFd, FIONBIO, &true_opt);
-#else
-    fcntl (fet->connFd, F_SETFL, O_NONBLOCK);
-#endif
-#ifdef __APPLE__
-    setsockopt (fet->connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                (char *)&true_opt, sizeof(true_opt));
-#endif
-
     setsockopt(fet->connFd, SOL_SOCKET, SO_REUSEADDR,
                (char *)&true_opt, sizeof (true_opt));
     memset(&server, 0, sizeof(server));
@@ -1107,20 +879,10 @@ int dtAccept (NetFet *fet, NetFet *acceptFet)
         }
 
     /*
-    **  Set Keepalive, non-blocking socket, and no signals.
-    **
-    **  Non-blocking ensures that we won't block if some network
-    **  link is having trouble.  Ideally that's detected and handled
-    **  more elegantly, but at least no one else will suffer even
-    **  without any special handling.
+    **  Set Keepalive and no signals.
     */
     setsockopt(connFd, SOL_SOCKET, SO_KEEPALIVE,
                (char *)&true_opt, sizeof(true_opt));
-#if defined(_WIN32)
-    ioctlsocket (connFd, FIONBIO, &true_opt);
-#else
-    fcntl (connFd, F_SETFL, O_NONBLOCK);
-#endif
 #ifdef __APPLE__
     setsockopt(connFd, SOL_SOCKET, SO_NOSIGPIPE,
                (char *)&true_opt, sizeof(true_opt));
@@ -1142,7 +904,7 @@ int dtAccept (NetFet *fet, NetFet *acceptFet)
 **
 **  Parameters:     Name        Description.
 **                  fet         NetFet pointer
-**                  ps          Pointer to NetPortSet to use (NULL not to)
+**                  ps          Pointer to NetPortSet to use
 **                  connFd      File descriptor for connection socket
 **
 **  Returns:        Nothing. 
@@ -1160,19 +922,21 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
     **  Track this FET in the NetPortSet, if supplied
     */
     fet->ps = ps;
-    if (ps != NULL)
+    FD_SET (fet->connFd, &ps->activeSet);
+    ps->curPorts++;
+    if (ps->maxFd < connFd)
         {
-        FD_SET (fet->connFd, &ps->activeSet);
-        ps->curPorts++;
-        if (ps->maxFd < connFd)
-            {
-            ps->maxFd = connFd;
-            }
+        ps->maxFd = connFd;
+        }
         
-        if (ps->callBack != NULL)
-            {
-            (*ps->callBack) (fet, fet - ps->portVec, ps->callArg);
-            }
+    /*
+    **  Create the data receive thread
+    */
+    dtCreateThread (dtDataThread, fet);
+
+    if (ps->callBack != NULL)
+        {
+        (*ps->callBack) (fet, fet - ps->portVec, ps->callArg);
         }
     
     /* 
@@ -1196,7 +960,85 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
 **--------------------------------------------------------------------------
 */
 /*--------------------------------------------------------------------------
-**  Purpose:        TCP thread.
+**  Purpose:        Read more data from the network, if there is any
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**                  ps          Pointer to NetPortSet to use
+**
+**  Returns:        >=0 if ok, value is count of bytes received
+**                  -1 if disconnected
+**                  -2 if some other error
+**
+**  This function waits for data or error.
+**
+**------------------------------------------------------------------------*/
+static int dtRead (NetFet *fet, NetPortSet *ps)
+    {
+    int i;
+    u8 *in, *out, *nextin;
+    int size;
+    
+    /*
+    ** First send any pending data (if possible).
+    */
+    dtSendPending (fet, ps);
+    
+    /*
+    **  Copy the pointers, since they are volatile.
+    */
+    in = (u8 *) (fet->in);
+    out = (u8 *) (fet->out);
+
+    if (in < out)
+        {
+        /*
+        **  If the out pointer is beyond the in pointer, we can
+        **  fill the space in between, leaving one free word
+        */
+        size = out - in - 1;
+        }
+    else
+        {
+        /*
+        **  Otherwise, we read from the current in pointer to the
+        **  end of the buffer -- except if the out pointer is right
+        **  at the start of the buffer, in which case we have to 
+        **  leave the last word unused.
+        */
+        size = fet->end - in;
+        if (out == fet->first)
+            {
+            size--;
+            }
+        }
+    if (size == 0)
+        {
+        /*
+        ** No room for new data, so return but do not call that an error.
+        */
+        return 0;
+        }
+
+    i = recv(fet->connFd, in, size, MSG_NOSIGNAL);
+    if (i > 0)
+        {
+        nextin = in + i;
+        if (nextin == fet->end)
+            {
+            nextin = fet->first;
+            }
+        fet->in = nextin;
+        return i;
+        }
+    else
+        {
+        return(-1);
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Thread for listening for inbound TCP connections.
 **
 **  Parameters:     Name        Description.
 **                  param       Pointer to NetPortSet to use
@@ -1302,20 +1144,10 @@ static void dtThread(void *param)
         connFd = accept(ps->listenFd, (struct sockaddr *)&from, &fromLen);
 
         /*
-        **  Set Keepalive, non-blocking socket, and no signals.
-        **
-        **  Non-blocking ensures that we won't block if some network
-        **  link is having trouble.  Ideally that's detected and handled
-        **  more elegantly, but at least no one else will suffer even
-        **  without any special handling.
+        **  Set Keepalive and no signals.
         */
         setsockopt(connFd, SOL_SOCKET, SO_KEEPALIVE,
                    (char *)&true_opt, sizeof(true_opt));
-#if defined(_WIN32)
-        ioctlsocket (connFd, FIONBIO, &true_opt);
-#else
-        fcntl (connFd, F_SETFL, O_NONBLOCK);
-#endif
 #ifdef __APPLE__
         setsockopt(connFd, SOL_SOCKET, SO_NOSIGPIPE,
                    (char *)&true_opt, sizeof(true_opt));
@@ -1339,6 +1171,72 @@ static void dtThread(void *param)
         np->fromPort = from.sin_port;
         dtActivateFet (np, ps, connFd);
         }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Thread for listening for new data on a connection
+**
+**  Parameters:     Name        Description.
+**                  param       Pointer to NetFet to use
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+#if defined(_WIN32)
+static void dtDataThread(void *param)
+#else
+    static void *dtDataThread(void *param)
+#endif
+    {
+    NetFet *np = (NetFet *) param;
+    NetPortSet *ps = np->ps;
+    int bytes;
+    
+    while (1)
+        {
+        /*
+        **  If DtCyber is closing down, close the socket
+        **  and exit the thread.
+        */
+        if (!emulationActive || ps->close)
+            {
+            break;
+            }
+        
+        /*
+        **  Do we have any data?
+        */
+        bytes = dtRead (np, ps);
+
+        if (bytes == 0)
+            {
+            /*
+            **  Buffer is full, sleep a while to let other threads empty it.
+            */
+#if defined(_WIN32)
+            Sleep(1000);
+#else
+            /* usleep(10000000); */
+            sleep(1);
+#endif
+            continue;
+            }
+            
+        /*
+        **  Handle errors.
+        */
+        if (bytes < 0)
+            {
+            break;
+            }
+        
+        if (ps->dataCallBack)
+            {
+                (*ps->dataCallBack) (np, bytes, ps->dataCallArg);
+            }
+        }
+    dtClose (np, ps, TRUE);
+    ThreadReturn;
     }
 
 /*--------------------------------------------------------------------------

@@ -107,26 +107,35 @@ wxversion.h: wxversion
 	  if cmp -s wxversion.h.tmp wxversion.h; then rm -f wxversion.h.tmp; \
 	    else mv -f wxversion.h.tmp wxversion.h; fi; fi
 
-dd60x:	$(SOBJS) dd60x.o knob.o iir.o 
+dd60:	$(SOBJS) dd60.o knob.o iir.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX) $(LDFLAGS) -o $@ $+ $(SDLLIBS) $(WXLIBS) $(SETPATH)
+	$(CXX) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
+
+dtoper:	$(SOBJS) dtoper.o 
+	export LD_RUN_PATH=$(WXDIR)/lib ; \
+	$(CXX) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
 # console display test program
 cc545:	cc545.o knob.o iir.o
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
-ifeq ("$(HOST)","Linux")
-# GCC 3.3.2-1 (from RedHat) miscompiles this on Linux if -O2 is used!
-knob.o : knob.cpp
-	$(CXX) -c $(CFLAGS) $(CXXFLAGS) -O1 $<
-endif
-
 ifeq ("$(HOST)","Darwin")
 
-dd60x.app: dd60x
-	mkdir -p dd60x.app/Contents/MacOS
-	cp dd60x dd60x.app/Contents/MacOS
+dd60.app: dd60 dd60.icns dd60-info.plist
+	mkdir -p dd60.app/Contents/MacOS dd60.app/Contents/Resources
+	/bin/echo -n "APPL????" > dd60.app/Contents/PkgInfo
+	cp dd60 dd60.app/Contents/MacOS
+	cp dd60-info.plist dd60.app/Contents/Info.plist
+	cp dd60.icns dd60.app/Contents/Resources/
+	touch $@
+
+dtoper.app: dtoper dtoper.icns dtoper-info.plist
+	mkdir -p dtoper.app/Contents/MacOS dtoper.app/Contents/Resources
+	/bin/echo -n "APPL????" > dtoper.app/Contents/PkgInfo
+	cp dtoper dtoper.app/Contents/MacOS
+	cp dtoper-info.plist dtoper.app/Contents/Info.plist
+	cp dtoper.icns dtoper.app/Contents/Resources/
 	touch $@
 
 cc545.app: cc545

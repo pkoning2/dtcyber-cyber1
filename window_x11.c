@@ -185,7 +185,7 @@ extern void dtXinit(void);
 void windowInit(void)
     {
     int rc;
-    KeySym modList[2];
+//    KeySym modList[2];
     XWMHints wmhints;
     int screen;
     XWindowAttributes a;
@@ -342,6 +342,7 @@ void windowInit(void)
     XSetForeground(disp, pgc, pfg);
     XDEBUG(disp, "set pixmap foreground");
 
+#if 0
     /*
     **  Create mappings of some ALT-key combinations to strings.
     */
@@ -373,7 +374,8 @@ void windowInit(void)
     XXRebindKeysym(disp, 'n', modList, 1, "$n", 2);
     XXRebindKeysym(disp, 'N', modList, 1, "$n", 2);
     XDEBUG(disp, "rebound keysyms (a pile of them)");
-    
+#endif
+
     /*
     **  Initialise input.
     */
@@ -457,7 +459,7 @@ int windowInput(void)
     /*
     **  Process any X11 events.
     */
-    while (XEventsQueued(disp, QueuedAfterFlush))
+    while (1)
         {
         XNextEvent(disp, &event);
 
@@ -546,12 +548,13 @@ void windowShowDisplay (bool erase)
     **  Output any pending data from the line buffer
     */
     windowShowLine ();
-
+    
     /*
     **  Update display from pixmap.
     */
     XCopyPlane(disp, pixmap, window, wgc, 0, 0, XSize, YSize, 0, 0, 1);
-
+    XFlush (disp);
+    
     /*
     **  Erase pixmap for next round.
     */
