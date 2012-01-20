@@ -43,13 +43,19 @@
 #define StatusLines 255
 #define StatusWin   20
 #define StatusOff   2
-#define NetBufSize  1024
+#define NetBufSize  4096
 #define DisplayMargin	20
+#define SmallPointSize  12
+#define MediumPointSize 18
 
 // Size of the window.
 // This is: a screen high and wide, with marging top and botton
-#define XSize           (02000 + 2 * DisplayMargin)
-#define YSize           (01000 + 2 * DisplayMargin)
+#define XBaseSize       02000
+#define YBaseSize       01000
+#define XSize           (XBaseSize + 2 * DisplayMargin)
+#define YSize           (YBaseSize + 2 * DisplayMargin)
+#define AdjustX(x) (DisplayMargin + (x))
+#define AdjustY(y) (YBaseSize + DisplayMargin - (y))
 
 #define DtOperVersion   "DtCyber Operator Window"
 
@@ -70,8 +76,6 @@
         fprintf (traceF, str "\n", arg); \
         }
 
-#define opWidth(x) ((x == FontSmall) ? smallFontWidth : mediumFontWidth)
-
 /*
 **  -----------------------------------------
 **  Private Typedef and Structure Definitions
@@ -87,8 +91,8 @@ typedef struct opMsg
     {
     int     x;
     int     y;
-    int     fontSize;
-    int     bold;
+    bool    small;
+    bool    bold;
     char    *text;
     } OpMsg;
 
@@ -169,7 +173,6 @@ extern GtkSettings * gtk_settings_get_default (void);
 // ----------------------------------------------------------------------------
 // global variables
 // ----------------------------------------------------------------------------
-
 bool emulationActive = true;
 
 // Global print data, to remember settings during the session
@@ -194,6 +197,7 @@ static wxLogWindow *logwindow;
 #endif
 
 static void connCallback (NetFet *np, int portNum, void *arg);
+static void dataCallback (NetFet *np, int bytes, void *arg);
 
 // ----------------------------------------------------------------------------
 // private classes
@@ -245,6 +249,10 @@ public:
     
     void WritePrefs (void);
     
+    wxFont      m_smallFont;
+    wxFont      m_mediumFont;
+    wxFont      m_boldFont;
+    
     wxColour    m_fgColor;
     wxConfig    *m_config;
 
@@ -275,12 +283,8 @@ class DtoperCanvas: public wxScrolledWindow
 public:
     DtoperCanvas (DtoperFrame *parent);
 
-    void OnDraw (wxDC &dc);
-    void OnEraseBackground (wxEraseEvent &);
     void OnKey (wxKeyEvent& event);
-    void sendString (int x, int y, int font, bool bold,
-                     const char *str, bool blank);
-    
+    void OnPaint (wxPaintEvent &event);
 
 private:
     DtoperFrame *m_owner;
@@ -312,7 +316,7 @@ static DtoperMainFrame *DtoperFrameParent;
 // Define a new frame type: this is going to be our main frame
 class DtoperFrame : public DtoperFrameBase
 {
-    friend void DtoperCanvas::OnDraw(wxDC &dc);
+    friend void DtoperCanvas::OnPaint (wxPaintEvent &event);
     friend void DtoperPrintout::DrawPage (wxDC *dc);
     
     typedef wxAlphaPixelData PixelData;
@@ -322,12 +326,14 @@ public:
     DtoperFrame(int port, int readDelay, const wxString& title);
     ~DtoperFrame ();
 
-    // Callback handler
+    // Callback handlers
     void connCallback (void);
+    void dataCallback (void);
 
     // event handlers (these functions should _not_ be virtual)
     void OnClose (wxCloseEvent& event);
-    void OnTimer (wxTimerEvent& event);
+    void OnIdle (wxIdleEvent& event);
+    void OnKey (wxKeyEvent& event);
     void OnQuit (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
     void OnSaveScreen (wxCommandEvent &event);
@@ -340,6 +346,9 @@ public:
     void PrepareDC(wxDC& dc);
     void dtoperSendKey(int key);
     void dtoperSetTrace (bool fileaction);
+
+    void paintCanvas (wxPaintDC &dc);
+    void opSendString (wxPaintDC &dc, OpMsg *m);
 
     bool        traceDtoper;
     DtoperFrame   *m_nextFrame;
@@ -364,26 +373,25 @@ private:
 
     char **syntax;
     int syntaxCnt;
+    u8 *syntaxFlags;
+    
     OpMsg *messages;
     int msgCount;
 
     char *status[StatusLines];
     int statusTop;
     int statusMax;
+    int statusFlags;
 
     OpMsg cmdEcho;
     OpMsg errmsg;
     char errmsgBuf[OpCmdSize + 1];
 
-    int smallFontWidth;
-    int mediumFontWidth;
     bool initDone;
 
-
-    // DTOPER drawing primitives
-    void opSendString (OpMsg *m, bool blank);
-    void opRequest(void);
     int opScanCmd (void);
+    void opRequest(void);
+    void opSetMsg (const char *p);
     void opScroll (int top);
     void opConnCallback (NetFet *np, int stat, void *arg);
 
@@ -483,7 +491,7 @@ enum
 // simple menu events like this the static method is much simpler.
 BEGIN_EVENT_TABLE(DtoperFrame, wxFrame)
     EVT_CLOSE(DtoperFrame::OnClose)
-    EVT_TIMER(Dtoper_Timer, DtoperFrame::OnTimer)
+    EVT_IDLE(DtoperFrame::OnIdle)
     EVT_ACTIVATE(DtoperFrame::OnActivate)
     EVT_MENU(Dtoper_Close, DtoperFrame::OnQuit)
     EVT_MENU(Dtoper_CopyScreen, DtoperFrame::OnCopyScreen)
@@ -519,6 +527,14 @@ static void connCallback (NetFet *, int, void *arg)
 
     frame->connCallback ();
 }
+
+static void dataCallback (NetFet *, int, void *arg)
+{
+    DtoperFrame *frame = (DtoperFrame *) arg;
+
+    frame->dataCallback ();
+}
+
 
 // ----------------------------------------------------------------------------
 // the application class
@@ -567,9 +583,10 @@ bool DtoperApp::OnInit (void)
     */
     m_readDelay = 100;
 
-    // 20 255 80 is RGB for DTOPER green
-    m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("20 255 80"));
+    // 0 255 0 is RGB for DTOPER green
+    m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("0 255 0"));
     sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
+    m_scale = 1;
     m_fgColor = wxColour (r, g, b);
     m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
     m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
@@ -596,6 +613,14 @@ bool DtoperApp::OnInit (void)
     wxImage::AddHandler (new wxTIFFHandler);
     wxImage::AddHandler (new wxXPMHandler);
 
+    // Create the fonts we need
+    m_smallFont = wxFont (SmallPointSize, wxFONTFAMILY_MODERN,
+                          wxFONTSTYLE_NORMAL, wxFONTWEIGHT_LIGHT);
+    m_mediumFont = m_smallFont;
+    m_mediumFont.SetPointSize (MediumPointSize);
+    m_boldFont = m_mediumFont;
+    m_boldFont.SetWeight (wxFONTWEIGHT_BOLD);
+    
     // success: wxApp::OnRun () will be called which will enter the main message
     // loop and the application will run. If we returned false here, the
     // application would exit immediately.
@@ -740,10 +765,11 @@ void DtoperApp::OnQuit(wxCommandEvent&)
         frame->Close (true);
         frame = nextframe;
     }
-#if DTOPER_MDI // defined(__WXMAC__)
+#if DTOPER_MDI
     // On the Mac, deleting all the windows doesn't terminate the
     // program, so we make it stop this way.
     ExitMainLoop ();
+    emulationActive = false;
 #endif
 }
 
@@ -807,23 +833,33 @@ DtoperFrame::DtoperFrame(int port, int readDelay,
     m_timer (this, Dtoper_Timer),
     cmdLen (0),
     nextKey (0),
+    syntax (NULL),
     syntaxCnt (0),
+    syntaxFlags (NULL),
+    messages (NULL),
     msgCount (0),
     statusTop (StatusOff),
     statusMax (0),
+    statusFlags (0),
     initDone (false)
 {
     int true_opt = 1;
-
+    int i;
+    
+    for (i = 0; i < StatusLines; i++)
+    {
+        status[i] = NULL;
+    }
     cmdEcho.x = CmdX;
     cmdEcho.y = CmdY;
-    cmdEcho.fontSize = 16;
-    cmdEcho.bold = 0;
+    cmdEcho.small = false;
+    cmdEcho.bold = false;
     cmdEcho.text = cmdBuf;
+    memset (cmdBuf, 0, sizeof (cmdBuf));
     errmsg.x = 0020;
     errmsg.y = 0014;
-    errmsg.fontSize = 16;
-    errmsg.bold = 0;
+    errmsg.small = false;
+    errmsg.bold = false;
     errmsg.text = NULL;     // filled in later
 
     // set the frame icon
@@ -892,6 +928,7 @@ DtoperFrame::DtoperFrame(int port, int readDelay,
 
     operPorts.maxPorts = 1;
     operPorts.callBack = ::connCallback;
+    operPorts.dataCallBack = ::dataCallback;
 
     dtInitPortset (&operPorts, NetBufSize);
     m_fet = operPorts.portVec;
@@ -905,7 +942,7 @@ DtoperFrame::DtoperFrame(int port, int readDelay,
 
         msg.Printf (_("Failed to connect to %d"), m_port);
             
-        wxMessageDialog alert (this, msg, wxString (_("Alert")), wxOK);
+        wxMessageDialog alert (this, msg, _("Alert"), wxOK);
             
         alert.ShowModal ();
         Close ();
@@ -958,6 +995,7 @@ DtoperFrame::~DtoperFrame ()
 void DtoperFrame::opRequest(void)
 {
     int i;
+    int ppKeyIn;
 
     if (nextKey)
     {
@@ -973,6 +1011,7 @@ void DtoperFrame::opRequest(void)
     {
         return;
     }
+    //printf ("opRequest: %c\n", ppKeyIn);
     if (cmdLen == 0)
     {
         /*
@@ -1031,7 +1070,15 @@ void DtoperFrame::opRequest(void)
             cmdBuf[--cmdLen] = '\0';
             if (strcmp (cmdBuf, "END.") == 0)
             {
-                emulationActive = FALSE;
+                Close (true);
+#if DTOPER_MDI
+                if (m_prevFrame == NULL && m_nextFrame == NULL)
+                {
+                    // If it's the last frame, close the program even on Mac.
+                    dtoperApp->ExitMainLoop ();
+                    emulationActive = false;
+                }
+#endif
                 return;
             }
             dtSendTlv (m_fet, &operPorts, OpCommand, strlen (cmdBuf), cmdBuf);
@@ -1051,6 +1098,152 @@ void DtoperFrame::opRequest(void)
             nextKey = i;
         }
     }
+    Refresh ();
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Scroll device status window to a given line
+**
+**  Parameters:     Name        Description.
+**                  top         New top line index
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+void DtoperFrame::opScroll (int top)
+{
+    if (top + StatusWin >= statusMax)
+    {
+        top = statusMax - StatusWin + 1;
+    }
+    if (top < StatusOff)
+    {
+        top = StatusOff;
+    }
+    statusTop = top;
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Set operator message
+**
+**  Parameters:     Name        Description.
+**                  p           string pointer
+**                              If string begins with $, make it bold
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void DtoperFrame::opSetMsg (const char *p)
+{
+    if (p != NULL && *p == '$')
+    {
+        p++;
+        errmsg.bold = TRUE;
+    }
+    else
+    {
+        if (p == NULL)
+        {
+            p = " ";
+        }
+        errmsg.bold = FALSE;
+    }
+    strncpy (errmsgBuf, p, OpCmdSize);
+    errmsg.text = errmsgBuf;
+    Refresh ();
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Scan the command table to match against a partial command
+**
+**  Parameters:     Name        Description.
+**                  none
+**
+**  Returns:        -1 for bad string.
+**                  0 for multiple matches, different next character.
+**                  c > 0 means next legal character is always c.
+**
+**------------------------------------------------------------------------*/
+int DtoperFrame::opScanCmd (void)
+{
+    char *p, *b;
+    int match = -1;
+    int i;
+    
+    for (i = 0; i < syntaxCnt; i++)
+    {
+        //printf ("%d: flags %d, status %d, syntax %s", i, syntaxFlags[i], statusFlags, syntax[i]);
+        if (syntaxFlags != NULL &&
+            (syntaxFlags[i] & statusFlags) != syntaxFlags[i])
+        {
+            /* Unlock or debug required but not in effect, skip this one. */
+            continue;
+        }
+        
+        for (b = cmdBuf, p = syntax[i]; ; b++)
+        {
+            if (*b == '\0')
+            {
+                if (match == -1 || match == *p)
+                {
+                    match = *p;
+                    if (match == 'x' || match == '7')
+                    {
+                        match = 0;
+                    }
+                }
+                else
+                {
+                    match = 0;
+                }
+                break;
+            }
+            else if (*p == '7')     // octal digit match
+            {
+                if (*b < '0' || *b > '7')
+                {
+                    break;          // no match on this pattern
+                }
+                if (b[1] != '\0' &&
+                    (b[1] < '0' || b[1] > '7'))
+                {
+                    p++;        // if next is not digit, advance pattern
+                }
+            }
+            else if (*p == 'x')
+            {
+                // 'x' matches any character other than the argument
+                // separator (comma).
+                if (*b == ',')
+                {
+                    break;
+                }
+                if (b[1] != '\0' &&
+                    b[1] == p[1])
+                {
+                    p++;        // if next input == next pattern, advance
+                }
+            }
+            else if (*p == '\0')
+            {
+                break;
+            }
+            else
+            {
+                if (isupper (*p))
+                {
+                    *b = toupper (*b);
+                }
+                if (*b != *p)
+                {
+                    break;          // no match on this pattern
+                }
+                p++;
+            }
+        }   
+    }
+    
+    return match;
 }
 
 // event handlers
@@ -1059,13 +1252,19 @@ void DtoperFrame::connCallback (void)
 {
 }
 
-void DtoperFrame::OnTimer (wxTimerEvent &)
+void DtoperFrame::dataCallback (void)
+{
+    wxWakeUpIdle ();
+}
+
+void DtoperFrame::OnIdle (wxIdleEvent &event)
 {
     int i, j;
     OpMsg *msgp;
     char *p;
     char *cp;
-
+    bool changes = false;
+    
     for (;;)
     {
         i = dtReadtlv (m_fet, dataBuf, OpDataSize);
@@ -1078,6 +1277,7 @@ void DtoperFrame::OnTimer (wxTimerEvent &)
             }
             break;
         }
+        changes = true;
         p = dataBuf + 2;
         p[i] = '\0';        /* put in a string terminator */
         switch (dataBuf[0])
@@ -1101,8 +1301,8 @@ void DtoperFrame::OnTimer (wxTimerEvent &)
             j = *(u8 *) (p++);
             j += *(u8 *) (p++) << 8;
             msgp->y = j;
-            msgp->fontSize = *p++;
-            msgp->bold = *p++;
+            msgp->small = (*p++ <= 010);
+            msgp->bold = (*p++ != 0);
             i -= 6;             /* adjust i to string length */
             if (i == 0)
             {
@@ -1112,12 +1312,26 @@ void DtoperFrame::OnTimer (wxTimerEvent &)
             {
                 msgp->text = (char *) malloc (i + 1);
                 strcpy (msgp->text, p);
+                if (msgCount == 1)
+                {
+                    wxString sysname = wxString::FromAscii (p);
+                    
+                    dtoperSetName (sysname);
+                }
             }
             break;
         case OpSyntax:
             syntax = (char **) realloc (syntax, (++syntaxCnt) * sizeof (char *));
             cp = syntax[syntaxCnt - 1] = (char *) malloc (i + 1);
             strcpy (cp, p);
+            break;
+        case OpSyntaxFlags:
+            if (syntaxFlags != NULL)
+            {
+                free (syntaxFlags);
+            }
+            syntaxFlags = (u8 *) malloc (syntaxCnt * sizeof (*syntaxFlags));
+            memcpy (syntaxFlags, p, syntaxCnt * sizeof (*syntaxFlags));
             break;
         case OpStatus:
             /*
@@ -1165,6 +1379,13 @@ void DtoperFrame::OnTimer (wxTimerEvent &)
                 opScroll (j);
             }
             break;
+        case OpFlags:
+            /*
+            **  Data format is:
+            **      flags (one byte)
+            */
+            statusFlags = *(u8 *) p;
+            break;
         case OpReply:
             /*
             **  A reply causes the following actions:
@@ -1186,6 +1407,12 @@ void DtoperFrame::OnTimer (wxTimerEvent &)
             break;
         }
     }
+    if (changes)
+    {
+        Refresh ();
+    }
+    
+    event.Skip ();        // let others see the event, too
 }
     
 void DtoperFrame::OnClose (wxCloseEvent &)
@@ -1357,6 +1584,10 @@ void DtoperFrame::PrepareDC(wxDC& dc)
 {
     dc.SetAxisOrientation (true, false);
     dc.SetBackground (*wxBLACK_BRUSH);
+    dc.SetTextBackground (*wxBLACK);
+    dc.SetTextForeground (dtoperApp->m_fgColor);    
+    dc.SetBrush (m_foregroundBrush);
+    dc.SetPen (m_foregroundPen);
 }
 
 void DtoperFrame::dtoperSetName (wxString &winName)
@@ -1461,6 +1692,144 @@ void DtoperFrame::dtoperShowTrace (bool enable)
         m_statusBar->SetStatusText(wxT (""), STATUS_TRC);
     }
 }
+
+void DtoperFrame::paintCanvas (wxPaintDC &dc)
+{
+    int i, line;
+    int x = AdjustX (StatusX);
+    int y;
+
+    PrepareDC (dc);
+    
+    if (messages != NULL)
+    {
+        for (i = 0; i < msgCount; i++)
+        {
+            opSendString (dc, &messages[i]);
+        }
+    }
+    
+    // The majority of the text is always in small font
+    dc.SetFont (dtoperApp->m_smallFont);
+    if (status[0] != NULL)
+    {
+        dc.DrawText (wxString::FromAscii (status[0]), x, 
+                     AdjustY (StatusY + 020));
+    }
+    if (status[1] != NULL)
+    {
+        dc.DrawText (wxString::FromAscii (status[1]), x, 
+                     AdjustY (StatusY - 020));
+    }
+    
+    line = 0;
+    if (statusTop != StatusOff)
+    {
+        dc.DrawText (wxT ("        (more)"), x, 
+                     AdjustY (StatusY - StatusOff * 020));
+        line++;
+    }
+    
+    for (i = statusTop; i <= statusMax; i++)
+    {
+        y = AdjustY (StatusY - 020 * (line + StatusOff));
+        if (status[i] != NULL)
+        {
+            if (line >= StatusWin && i < statusMax)
+            {
+                dc.DrawText (wxT ("        (more)"), x, y);
+                line++;
+                break;
+            }
+            dc.DrawText (wxString::FromAscii (status[i]), x, y);
+        }
+        line++;
+    }
+    opSendString (dc, &cmdEcho);
+    opSendString (dc, &errmsg);
+}
+
+void DtoperFrame::OnKey (wxKeyEvent &event)
+{
+    unsigned int key;
+
+    key = event.m_keyCode;
+    //printf ("ctrl %d shift %d alt %d key %d\n", event.m_controlDown, event.m_shiftDown, event.m_altDown, key);
+    if (key == WXK_ALT || key == WXK_SHIFT || key == WXK_CONTROL)
+    {
+        // We don't take any action on the modifier key keydown events,
+        // but we do want to make sure they are seen by the rest of
+        // the system.
+        // The same applies to keys sent to the help window (which has
+        // no connection on which to send them).
+        event.Skip ();
+        return;
+    }
+
+    if (event.m_controlDown)
+    {
+        if (key == ']')         // control-] : trace
+        {
+            traceDtoper = !traceDtoper;
+            dtoperSetTrace (true);
+            return;
+        }
+        event.Skip ();
+        return;
+    }
+
+    if (key != 0)
+    {
+        userKey = key;
+    }
+    if (userKey != 0)
+    {
+        do
+        {
+            opRequest ();
+        } while (nextKey != 0);
+    }
+}
+
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Send a string to the console.
+**
+**  Parameters:     Name        Description.
+**                  dc          The wxPaintDC to use for drawing
+**                  m           message structure pointer
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void DtoperFrame::opSendString (wxPaintDC &dc, OpMsg *m)
+{
+    int x = AdjustX (m->x);
+    int y = AdjustY (m->y);
+    
+    if (m->small)
+    {
+        dc.SetFont (dtoperApp->m_smallFont);
+    }
+    else if (m->bold)
+    {
+        dc.SetFont (dtoperApp->m_boldFont);
+    }
+    else
+    {
+        dc.SetFont (dtoperApp->m_mediumFont);
+    }
+    
+    if (m->text == NULL)
+    {
+        dc.DrawText (wxT (" "), x, y);
+    }
+    else
+    {
+        dc.DrawText (wxString::FromAscii (m->text), x, y);
+    }
+}
+
 
 // ----------------------------------------------------------------------------
 // DtoperPrefDialog
@@ -1662,179 +2031,36 @@ void DtoperConnDialog::OnOK (wxCommandEvent &)
 // the event tables connect the wxWindows events with the functions (event
 // handlers) which process them.
 BEGIN_EVENT_TABLE(DtoperCanvas, wxScrolledWindow)
-    EVT_KEY_DOWN(DtoperCanvas::OnKey)
-    EVT_ERASE_BACKGROUND(DtoperCanvas::OnEraseBackground)
+    EVT_CHAR (DtoperCanvas::OnKey)
+    EVT_PAINT (DtoperCanvas::OnPaint)
     END_EVENT_TABLE ()
 
 DtoperCanvas::DtoperCanvas(DtoperFrame *parent)
     : wxScrolledWindow(parent, -1, wxDefaultPosition, 
-                       wxSize (XSize, YSize),
-                       wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE)
+                       wxSize (XSize, YSize), wxHSCROLL | wxVSCROLL)
 {
     wxClientDC dc(this);
 
     m_owner = parent;
     SetVirtualSize (XSize, YSize);
-    dc.SetClippingRegion (DisplayMargin, DisplayMargin, XSize, YSize);
+    dc.SetClippingRegion (DisplayMargin, DisplayMargin, XBaseSize, YBaseSize);
     SetBackgroundColour (*wxBLACK);
+    SetForegroundColour (dtoperApp->m_fgColor);
     SetScrollRate (1, 1);
     SetFocus ();
 }
 
-void DtoperCanvas::OnDraw(wxDC &dc)
+void DtoperCanvas::OnPaint (wxPaintEvent &event)
 {
-    int i, line;
+    wxPaintDC dc(this);
 
-    smallFontWidth = windowGetOperFontWidth(FontSmall);
-    mediumFontWidth = windowGetOperFontWidth(FontMedium);
-
-    if (messages != NULL)
-    {
-        for (i = 0; i < msgCount; i++)
-        {
-            opSendString (&messages[i], FALSE);
-        }
-    }
-    
-    if (status[0] != NULL)
-    {
-        sendString (StatusX, StatusY + 020, 010, 
-                    FALSE, status[0], TRUE);
-    }
-    if (status[1] != NULL)
-    {
-        sendString (StatusX, StatusY - 020, 010, 
-                    FALSE, status[1], TRUE);
-    }
-    
-    line = 0;
-    if (statusTop != StatusOff)
-    {
-        sendString (StatusX, StatusY - StatusOff * 020, 010, 
-                    FALSE, "        (more)", TRUE);
-        line++;
-    }
-    
-    for (i = statusTop; i <= statusMax; i++)
-    {
-        if (status[i] != NULL)
-        {
-            if (line >= StatusWin && i < statusMax)
-            {
-                sendString (StatusX, 
-                            StatusY - 020 * (line + StatusOff), 010, 
-                            FALSE, "        (more)", TRUE);
-                line++;
-                break;
-            }
-            sendString (StatusX,
-                        StatusY - 020 * (line + StatusOff), 010, 
-                        FALSE, status[i], TRUE);
-        }
-        else
-        {
-            sendString (StatusX,
-                        StatusY - 020 * (line + StatusOff), 010, 
-                        FALSE, "              ", TRUE);
-        }
-        line++;
-    }
-    while (line <= StatusWin)
-    {
-        sendString (StatusX,
-                    StatusY - 020 * (line + StatusOff), 010, 
-                    FALSE, "", TRUE);
-        line++;
-    }
-
-    opSendString (&cmdEcho, TRUE);
-    opSendString (&errmsg, TRUE);
+    m_owner->paintCanvas (dc);
 }
 
-void DtoperCanvas::sendString (int x, int y, int font,
-                               bool bold, const char *str, bool blank)
+void DtoperCanvas::OnKey (wxKeyEvent& event)
 {
-    char cb[80];
-    
-    FontInfo *currentFontInfo;
-    //printf ("x %d y %d blank %d str: %s\n", x, y, blank, str);
-    
-    if (font == FontSmall)
-    {
-        currentFontInfo = &smallOperFont;
-    }
-    else
-    {
-        currentFontInfo = &mediumOperFont;
-    }
-    if (bold)
-    {
-        XSetFont(disp, wgc, currentFontInfo->boldId);
-    }
-    else
-    {
-        XSetFont(disp, wgc, currentFontInfo->normalId);
-    }
-
-    if (blank)
-    {
-        memset (cb, ' ', 64);
-        memcpy (cb, str, strlen (str));
-        XDrawImageString(disp, window, wgc, XADJUST(x), YADJUST(y), cb, 64);
-    }
-    else
-    {
-        XDrawString(disp, window, wgc, XADJUST(x), YADJUST(y), 
-                    str, strlen (str));
-    }
+    m_owner->OnKey (event);
 }
-
-void DtoperCanvas::OnEraseBackground (wxEraseEvent &)
-{
-    // Do nothing, to avoid flashing.
-}
-
-void DtoperCanvas::OnKey (wxKeyEvent &event)
-{
-    unsigned int key;
-
-    key = event.m_keyCode;
-    if (key == WXK_ALT || key == WXK_SHIFT || key == WXK_CONTROL)
-    {
-        // We don't take any action on the modifier key keydown events,
-        // but we do want to make sure they are seen by the rest of
-        // the system.
-        // The same applies to keys sent to the help window (which has
-        // no connection on which to send them).
-        event.Skip ();
-        return;
-    }
-
-    if (event.m_controlDown)
-    {
-        if (key == ']')         // control-] : trace
-        {
-            m_owner->traceDtoper = !m_owner->traceDtoper;
-            m_owner->dtoperSetTrace (true);
-            return;
-        }
-        event.Skip ();
-        return;
-    }
-
-    if (key != 0)
-    {
-        userKey = key;
-    }
-    if (userKey != 0)
-    {
-        do
-        {
-            opRequest ();
-        } while (nextKey != 0);
-    }
-}
-
 
 // ----------------------------------------------------------------------------
 // Dtoper printing helper class
@@ -1887,6 +2113,7 @@ bool DtoperPrintout::HasPage(int pageNum)
 
 void DtoperPrintout::DrawPage (wxDC *dc)
 {
+#if 0
     wxMemoryDC screenDC;
     double maxX = XSize;
     double maxY = YSize;
@@ -1958,6 +2185,7 @@ void DtoperPrintout::DrawPage (wxDC *dc)
     screenDC.SelectObject (printmap);
     dc->Blit (0, 0, XSize, YSize, &screenDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
+#endif
 }
 
 /*---------------------------  End Of File  ------------------------------*/
