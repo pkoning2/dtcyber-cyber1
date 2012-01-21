@@ -51,7 +51,7 @@ static void niuSendstr(int stat, const char *p);
 static void niuSendWord(int stat, int word);
 static void niuAsciiWelcome(NetFet *np, int stat, void *arg);
 static void niuRemoteWelcome(NetFet *np, int stat, void *arg);
-static void ignoreData(NetFet *np, int bytes);
+static void ignoreData(NetFet *np, int bytes, void *arg);
 static void bbSendNiu(int stat);
 static void bbSendAscii(int stat);
 
