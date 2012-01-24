@@ -187,7 +187,6 @@ wxPageSetupDialogData* g_pageSetupData;
 
 class DtoperApp;
 static DtoperApp *dtoperApp;
-static NetPortSet operPorts;
 
 static FILE *traceF;
 static char traceFn[20];
@@ -195,9 +194,6 @@ static char traceFn[20];
 #ifdef DEBUG
 static wxLogWindow *logwindow;
 #endif
-
-static void connCallback (NetFet *np, int portNum, void *arg);
-static void dataCallback (NetFet *np, int bytes, void *arg);
 
 // ----------------------------------------------------------------------------
 // private classes
@@ -327,8 +323,8 @@ public:
     ~DtoperFrame ();
 
     // Callback handlers
-    void connCallback (void);
-    void dataCallback (void);
+    static void connCallback (NetFet *np, int portNum, void *arg);
+    static void dataCallback (NetFet *np, int bytes, void *arg);
 
     // event handlers (these functions should _not_ be virtual)
     void OnClose (wxCloseEvent& event);
@@ -360,6 +356,7 @@ private:
     wxPen       m_foregroundPen;
     wxBrush     m_foregroundBrush;
     DtoperCanvas  *m_canvas;
+    NetPortSet  m_portset;
     NetFet      *m_fet;
     int         m_port;
     int         m_readDelay;
@@ -521,18 +518,14 @@ IMPLEMENT_APP(DtoperApp)
 // implementation
 // ============================================================================
 
-static void connCallback (NetFet *, int, void *arg)
+void DtoperFrame::connCallback (NetFet *, int, void *arg)
 {
-    DtoperFrame *frame = (DtoperFrame *) arg;
-
-    frame->connCallback ();
+    wxWakeUpIdle ();
 }
 
-static void dataCallback (NetFet *, int, void *arg)
+void DtoperFrame::dataCallback (NetFet *, int, void *arg)
 {
-    DtoperFrame *frame = (DtoperFrame *) arg;
-
-    frame->dataCallback ();
+    wxWakeUpIdle ();
 }
 
 
@@ -926,15 +919,15 @@ DtoperFrame::DtoperFrame(int port, int readDelay,
     
     m_canvas = new DtoperCanvas (this);
 
-    operPorts.maxPorts = 1;
-    operPorts.callBack = ::connCallback;
-    operPorts.dataCallBack = ::dataCallback;
+    m_portset.maxPorts = 1;
+    m_portset.callBack = connCallback;
+    m_portset.dataCallBack = dataCallback;
 
-    dtInitPortset (&operPorts, NetBufSize);
-    m_fet = operPorts.portVec;
+    dtInitPortset (&m_portset, NetBufSize);
+    m_fet = m_portset.portVec;
 
     // Open the connection
-    if (dtConnect (m_fet, &operPorts, inet_addr ("127.0.0.1"), m_port) < 0)
+    if (dtConnect (m_fet, &m_portset, inet_addr ("127.0.0.1"), m_port) < 0)
     {
         wxString msg;
             
@@ -1081,7 +1074,7 @@ void DtoperFrame::opRequest(void)
 #endif
                 return;
             }
-            dtSendTlv (m_fet, &operPorts, OpCommand, strlen (cmdBuf), cmdBuf);
+            dtSendTlv (m_fet, &m_portset, OpCommand, strlen (cmdBuf), cmdBuf);
             return;
         }
         else 
@@ -1248,15 +1241,6 @@ int DtoperFrame::opScanCmd (void)
 
 // event handlers
 
-void DtoperFrame::connCallback (void)
-{
-}
-
-void DtoperFrame::dataCallback (void)
-{
-    wxWakeUpIdle ();
-}
-
 void DtoperFrame::OnIdle (wxIdleEvent &event)
 {
     int i, j;
@@ -1419,7 +1403,7 @@ void DtoperFrame::OnClose (wxCloseEvent &)
 {
     if (dtActive (m_fet))
     {
-        dtClose (m_fet, &operPorts, true);
+        dtClose (m_fet, &m_portset, true);
     }
 
     Destroy ();

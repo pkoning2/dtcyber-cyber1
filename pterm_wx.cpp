@@ -299,7 +299,7 @@ static const u32 keyboardhelp[] = {
 // global variables
 // ----------------------------------------------------------------------------
 
-bool emulationActive = false;
+bool emulationActive = true;
 
 // Global print data, to remember settings during the session
 wxPrintData *g_printData;
@@ -458,8 +458,8 @@ private:
 };
 
 
-// Pterm processing thread
-class PtermConnection : public wxThread
+// Pterm connection state
+class PtermConnection
 {
 public:
     // override base class virtuals
@@ -467,7 +467,11 @@ public:
     PtermConnection (PtermFrame *owner, wxString &host, int port);
     ~PtermConnection ();
     
-    virtual ExitCode Entry (void);
+    // Callback handlers
+    static void s_connCallback (NetFet *np, int portNum, void *arg);
+    static void s_dataCallback (NetFet *np, int bytes, void *arg);
+    void connCallback (void);
+    void dataCallback (void);
 
     int AssembleNiuWord (void);
     int AssembleAsciiWord (void);
@@ -527,6 +531,7 @@ private:
     enum { both, niu, ascii } m_connMode;
     int         m_pending;
     in_addr_t   m_hostAddr;
+    bool        m_connActive;
     
     int NextRingWord (void);
 };
@@ -2491,11 +2496,6 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
         // Create and start the network processing thread
 		trace ("Connecting to: %s:%d", host.mb_str ().data (), port);
         m_conn = new PtermConnection (this, host, port);
-        if (m_conn->Create () != wxTHREAD_NO_ERROR)
-        {
-            return;
-        }
-        m_conn->Run ();
     }
     Show(true);
 
@@ -2778,11 +2778,6 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 			if (m_port > 0)
 			{
 				m_conn = new PtermConnection (this, m_hostName, m_port);
-				if (m_conn->Create () != wxTHREAD_NO_ERROR)
-				{
-					return;
-				}
-				m_conn->Run ();
 			}
 			break;
 		default:
@@ -3139,7 +3134,8 @@ void PtermFrame::OnClose (wxCloseEvent &)
     
     if (m_conn != NULL)
     {
-        m_conn->Delete ();
+        delete m_conn;
+        m_conn = NULL;
     }
 
     m_memDC->SetBackground (wxNullBrush);
@@ -8947,8 +8943,7 @@ void PtermConnFailDialog::OnClose (wxCloseEvent& event)
 // ----------------------------------------------------------------------------
 
 PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
-    : wxThread (wxTHREAD_JOINABLE),
-      m_displayIn (0),
+    : m_displayIn (0),
       m_displayOut (0),
       m_gswIn (0),
       m_gswOut (0),
@@ -8959,9 +8954,51 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
       m_savedGswMode (0),
       m_gswWord2 (0),
       m_connMode (both),
-      m_pending (0)
+      m_pending (0),
+      m_connActive (false)
 {
+    struct hostent *hp;
+    in_addr_t hostaddr;
+    int i, addrcount, r, conntries;
+    in_addr_t *addresses = NULL;
+
     m_hostName = host;
+
+    m_portset.callBack = s_connCallback;
+    m_portset.dataCallBack = s_dataCallback;
+    m_portset.callArg = m_portset.dataCallArg = this;
+    m_portset.portNum = 0;      // No listening
+    m_portset.maxPorts = 1;
+    dtInitPortset (&m_portset, BufSiz);
+    m_fet = m_portset.portVec;
+    
+    hp = gethostbyname (m_hostName.mb_str());
+    if (hp == NULL || hp->h_length == 0)
+    {
+        StoreWord (C_CONNFAIL);
+        wxWakeUpIdle ();
+        return;
+    }
+
+    for (addrcount = 0; hp->h_addr_list[addrcount] != NULL; addrcount++) ;
+    addresses = new in_addr_t[addrcount];
+    for (i = 0; i < addrcount; i++)
+    {
+        memcpy (&addresses[i], hp->h_addr_list[i], sizeof (int));
+    }
+    for (conntries = 0; conntries < addrcount; conntries++)
+    {
+        while (addresses[(r = (rand () >> 10) % addrcount)] == 0) ;
+        hostaddr = addresses[r];
+        m_hostAddr = ntohl (hostaddr);
+        addresses[r] = 0;
+        StoreWord (C_CONNECTING);
+        wxWakeUpIdle ();
+        if (dtConnect (m_fet, &m_portset, hostaddr, m_port) >= 0)
+        {
+            break;
+        }
+    }
 }
 
 PtermConnection::~PtermConnection ()
@@ -8973,179 +9010,122 @@ PtermConnection::~PtermConnection ()
     dtClose (m_fet, &m_portset, TRUE);
 }
 
-PtermConnection::ExitCode PtermConnection::Entry (void)
+void PtermConnection::s_connCallback (NetFet *, int, void *arg)
+{
+    PtermConnection *self = (PtermConnection *) arg;
+    
+    self->connCallback ();
+}
+
+void PtermConnection::s_dataCallback (NetFet *, int, void *arg)
+{
+    PtermConnection *self = (PtermConnection *) arg;
+    
+    self->dataCallback ();
+}
+
+void PtermConnection::connCallback (void)
+{
+    if (m_fet->connFd == 0)
+    {
+        // lost connection
+        m_savedGswMode = m_gswWord2 = 0;
+        if (m_gswActive)
+        {
+            m_gswActive = m_gswStarted = false;
+            ptermCloseGsw ();
+        }
+        if (m_connActive)
+        {
+            StoreWord (C_DISCONNECT);
+        }
+    }
+    wxWakeUpIdle ();
+}
+
+void PtermConnection::dataCallback (void)
 {
     u32 platowd = 0;
     int i;
     bool wasEmpty;
-    struct hostent *hp;
-    in_addr_t host;
-//    int true_opt = 1;
-    int addrcount, r, conntries;
-    in_addr_t *addresses = NULL;
-    wxString msg;
-    bool connActive = false;
-    
-    m_portset.callBack = NULL;
-    m_portset.portNum = 0;      // No listening
-    m_portset.maxPorts = 1;
-    dtInitPortset (&m_portset, BufSiz);
-    m_fet = m_portset.portVec;
-    
-    hp = gethostbyname (m_hostName.mb_str());
-    if (hp == NULL || hp->h_length == 0)
+
+    // We received something so the connection is now active
+    if (!m_connActive)
     {
-        StoreWord (C_CONNFAIL);
-        wxWakeUpIdle ();
-        return (ExitCode) 1;
+        m_connActive = true;
+        StoreWord (C_CONNECTED);
     }
-    for (addrcount = 0; hp->h_addr_list[addrcount] != NULL; addrcount++) ;
-    addresses = new in_addr_t[addrcount];
-    for (i = 0; i < addrcount; i++)
+
+    wasEmpty = IsEmpty ();
+        
+    for (;;)
     {
-        memcpy (&addresses[i], hp->h_addr_list[i], sizeof (int));
-    }
-    for (conntries = 0; conntries < addrcount; conntries++)
-    {
-        while (addresses[(r = (rand () >> 10) % addrcount)] == 0) ;
-        host = addresses[r];
-        m_hostAddr = ntohl (host);
-        addresses[r] = 0;
-        StoreWord (C_CONNECTING);
-        wxWakeUpIdle ();
-        if (dtConnect (m_fet, NULL, host, m_port) < 0)
+        /*
+        **  Assemble words from the network buffer, all the
+        **  while looking for "abort output" codes (word == 2).
+        */
+        if (IsFull ())
         {
-            continue;
+            printf ("ring is full\n");
+            break;
         }
 
-        while (true)
+        switch (m_connMode)
         {
-            // The reason for waiting a limited time here rather than
-            // using the more obvious -1 (wait forever) is to make sure
-            // we come out of the network wait and call TestDestroy
-            // reasonably often.  Otherwise, closing the window doesn't work.
-            i = dtRead (m_fet, &m_portset, 200);
-#ifdef DEBUG
-            printf ("dtRead status %i\n", i);
-#endif
-            if (TestDestroy ())
-            {
-                connActive = true;
-                break;
-            }
-            if (i < 0)
-            {
-                m_savedGswMode = m_gswWord2 = 0;
-                if (m_gswActive)
-                {
-                    m_gswActive = m_gswStarted = false;
-                    ptermCloseGsw ();
-                }
-
-                if (connActive)
-                {
-                    StoreWord (C_DISCONNECT);
-                }
-                else
-                {
-                    break;
-                }
-                wxWakeUpIdle ();
-                break;
-            }
-            // We received something so the connection is now active
-            if (!connActive)
-            {
-                connActive = true;
-                StoreWord (C_CONNECTED);
-            }
-
-            wasEmpty = IsEmpty ();
-        
-            for (;;)
-            {
-                /*
-                **  Assemble words from the network buffer, all the
-                **  while looking for "abort output" codes (word == 2).
-                */
-                if (IsFull ())
-                {
-                    printf ("ring is full\n");
-                    break;
-                }
-
-                switch (m_connMode)
-                {
-                case niu:
-                    platowd = AssembleNiuWord ();
-                    break;
-                case ascii:
-                    platowd = AssembleAsciiWord ();
-                    break;
-                case both:
-                    platowd = AssembleAutoWord ();
-                    break;
-                }
+        case niu:
+            platowd = AssembleNiuWord ();
+            break;
+        case ascii:
+            platowd = AssembleAsciiWord ();
+            break;
+        case both:
+            platowd = AssembleAutoWord ();
+            break;
+        }
             
-                if (platowd == (u32)C_NODATA)	// makes me nervous -- bg
-                {
-                    break;
-                }
-                else if (m_connMode == niu && 0)//platowd == 2)
-                {
-                    m_savedGswMode = m_gswWord2 = 0;
-                    if (m_gswActive)
-                    {
-                        m_gswActive = m_gswStarted = false;
-                        ptermCloseGsw ();
-                    }
+        if (platowd == (u32)C_NODATA)	// makes me nervous -- bg
+        {
+            break;
+        }
+        else if (m_connMode == niu && 0)//platowd == 2)
+        {
+            m_savedGswMode = m_gswWord2 = 0;
+            if (m_gswActive)
+            {
+                m_gswActive = m_gswStarted = false;
+                ptermCloseGsw ();
+            }
                 
-                    // erase abort marker -- reset the ring to be empty
-                    wxCriticalSectionLocker lock (m_pointerLock);
+            // erase abort marker -- reset the ring to be empty
+            wxCriticalSectionLocker lock (m_pointerLock);
 
-                    m_displayOut = m_displayIn;
-                }
+            m_displayOut = m_displayIn;
+        }
 
-                StoreWord (platowd);
-                i = RingCount ();
+        StoreWord (platowd);
+        i = RingCount ();
 #ifdef DEBUG
-                printf ("Stored %07o, ring count is %d\n", platowd, i);
+        printf ("Stored %07o, ring count is %d\n", platowd, i);
 #endif
 
-                if (m_gswActive && !m_gswStarted && i >= GSWRINGSIZE / 2)
-                {
-                    ptermStartGsw ();
-                    m_gswStarted = true;
-                }
-            
-                if (i == RINGXOFF1 || i == RINGXOFF2)
-                {
-                    m_owner->ptermSendKey (xofkey);
-                }
-            }
-            if (!IsEmpty ())
-            {
-                // Send a do-nothing event to the frame; that will wake up
-                // the main thread and cause it to process the words we 
-                // buffered.
-                wxWakeUpIdle ();
-            }
-        }
-        if (!connActive)
+        if (m_gswActive && !m_gswStarted && i >= GSWRINGSIZE / 2)
         {
-            // Error on receive before we received anything means
-            // connect failure.  Try another address, if we have another.
-            continue;
+            ptermStartGsw ();
+            m_gswStarted = true;
         }
-
-        delete addresses;
-        return (ExitCode) 0;
+            
+        if (i == RINGXOFF1 || i == RINGXOFF2)
+        {
+            m_owner->ptermSendKey (xofkey);
+        }
     }
-        
-    delete addresses;
-    StoreWord (C_CONNFAIL);
-    wxWakeUpIdle ();
-    return (ExitCode) 1;
+    if (!IsEmpty ())
+    {
+        // Send a do-nothing event to the frame; that will wake up
+        // the main thread and cause it to process the words we 
+        // buffered.
+        wxWakeUpIdle ();
+    }
 }
 
 int PtermConnection::AssembleNiuWord (void)

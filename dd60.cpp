@@ -181,7 +181,6 @@ static Dd60App *dd60App;
 class Dd60Panel;
 static Dd60Panel *dd60Panel;
 static wxFrame *dd60PanelFrame;
-static NetPortSet consolePorts;
 
 static FILE *traceF;
 static char traceFn[20];
@@ -190,8 +189,6 @@ static char traceFn[20];
 static wxLogWindow *logwindow;
 #endif
 
-static void connCallback (NetFet *np, int portNum, void *arg);
-static void dataCallback (NetFet *np, int bytes, void *arg);
 
 // ----------------------------------------------------------------------------
 // private classes
@@ -319,9 +316,9 @@ public:
     Dd60Frame(int port, int interval, bool fastupdate, const wxString& title);
     ~Dd60Frame ();
 
-    // Callback handler
-    void connCallback (void);
-    void dataCallback (void);
+    // Callback handlers
+    static void connCallback (NetFet *np, int portNum, void *arg);
+    static void dataCallback (NetFet *np, int bytes, void *arg);
 
     // event handlers (these functions should _not_ be virtual)
     void OnClose (wxCloseEvent& event);
@@ -357,6 +354,7 @@ private:
     uint32_t    m_blue;
     
     Dd60Canvas  *m_canvas;
+    NetPortSet  m_portset;
     NetFet      *m_fet;
     int         m_port;
     int         m_interval;
@@ -642,18 +640,14 @@ static double normInt (int intens, int size)
     return intens * step;
 }
 
-static void connCallback (NetFet *, int, void *arg)
+void Dd60Frame::connCallback (NetFet *, int, void *arg)
 {
-    Dd60Frame *frame = (Dd60Frame *) arg;
-
-    frame->connCallback ();
+    wxWakeUpIdle ();
 }
 
-static void dataCallback (NetFet *, int, void *arg)
+void Dd60Frame::dataCallback (NetFet *, int, void *arg)
 {
-    Dd60Frame *frame = (Dd60Frame *) arg;
-
-    frame->dataCallback ();
+    wxWakeUpIdle ();
 }
 
 // ----------------------------------------------------------------------------
@@ -1127,15 +1121,15 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
 
     dd60LoadChars ();
 
-    consolePorts.maxPorts = 1;
-    consolePorts.callBack = ::connCallback;
-    consolePorts.dataCallBack = ::dataCallback;
+    m_portset.maxPorts = 1;
+    m_portset.callBack = connCallback;
+    m_portset.dataCallBack = dataCallback;
 
-    dtInitPortset (&consolePorts, NetBufSize);
-    m_fet = consolePorts.portVec;
+    dtInitPortset (&m_portset, NetBufSize);
+    m_fet = m_portset.portVec;
 
     // Open the connection
-    if (dtConnect (m_fet, &consolePorts, inet_addr ("127.0.0.1"), m_port) < 0)
+    if (dtConnect (m_fet, &m_portset, inet_addr ("127.0.0.1"), m_port) < 0)
     {
         wxString msg;
             
@@ -1201,15 +1195,6 @@ Dd60Frame::~Dd60Frame ()
 }
 
 // event handlers
-
-void Dd60Frame::connCallback (void)
-{
-}
-
-void Dd60Frame::dataCallback (void)
-{
-    wxWakeUpIdle ();
-}
 
 void Dd60Frame::OnIdle (wxIdleEvent &event)
 {
@@ -1412,7 +1397,7 @@ void Dd60Frame::OnClose (wxCloseEvent &)
 {
     if (dtActive (m_fet))
     {
-        dtClose (m_fet, &consolePorts, true);
+        dtClose (m_fet, &m_portset, true);
     }
 
     Destroy ();
