@@ -2517,8 +2517,10 @@ void Dd60Printout::DrawPage (wxDC *dc)
             g = data[1] / 255.0;
             b = data[2] / 255.0;
 
-            // convert to grayscale
-            r = r * 0.3 + g * 0.59 + b * 0.11;
+            // convert to grayscale, using the max of the three channel
+            // luminosities to produce a good crisp black & white image.
+            r = (r > g) ? r : g;
+            r = (r > b) ? r : b;
             graypix = int (r * 255);
             if (graypix > 255)
             {
