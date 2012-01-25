@@ -1121,6 +1121,7 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
 
     dd60LoadChars ();
 
+    memset (&m_portset, 0, sizeof (m_portset));
     m_portset.maxPorts = 1;
     m_portset.callBack = connCallback;
     m_portset.dataCallBack = dataCallback;
