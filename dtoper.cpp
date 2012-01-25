@@ -870,7 +870,7 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
 
     wxMenu *menuEdit = new wxMenu;
 
-    menuEdit->Append (Dtoper_CopyScreen, _("&Copy Screen\tCtrl-C"), _("Copy screen to clipboard"));
+    menuEdit->Append (Dtoper_CopyScreen, _("&Copy Text\tCtrl-C"), _("Copy text to clipboard"));
 
     // now append the freshly created menu to the menu bar...
     wxMenuBar *menuBar = new wxMenuBar ();
@@ -1413,24 +1413,48 @@ void DtoperFrame::OnActivate (wxActivateEvent &event)
 
 void DtoperFrame::OnCopyScreen (wxCommandEvent &)
 {
-#if 0
-    wxBitmapDataObject *screen;
-
-    screen = new wxBitmapDataObject(*m_screenmap);
-
+    int i;
+    wxString s;
+    
     if (wxTheClipboard->Open ())
     {
-        if (!wxTheClipboard->SetData (screen))
+        if (messages != NULL)
         {
-            wxLogError (_("Can't copy image to the clipboard"));
+            for (i = 0; i < msgCount; i++)
+            {
+                if (messages[i].text != NULL)
+                {
+                    s += wxString::FromAscii (messages[i].text);
+                }
+                s += wxT ("\n");
+            }
         }
+    
+        for (i = 0; i <= statusMax; i++)
+        {
+            if (status[i] != NULL)
+            {
+                s += wxString::FromAscii (status[i]);
+                s += wxT ("\n");
+            }
+        }
+        if (cmdEcho.text != NULL)
+        {
+            s += wxString::FromAscii (cmdEcho.text);
+        }
+        s += wxT ("\n");
+        if (errmsg.text != NULL)
+        {
+            s += wxString::FromAscii (errmsg.text);
+        }
+        s += wxT ("\n");
+        wxTheClipboard->SetData (new wxTextDataObject (s));
         wxTheClipboard->Close ();
     }
     else
     {
         wxLogError (_("Can't open clipboard."));
     }
-#endif
 }
 
 void DtoperFrame::OnSaveScreen (wxCommandEvent &)
