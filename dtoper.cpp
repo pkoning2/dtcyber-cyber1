@@ -253,7 +253,6 @@ public:
     wxConfig    *m_config;
 
     int         m_port;
-    int         m_readDelay;
     
     // scale is 1 or 2 for full size and double, respectively.
     int         m_scale;
@@ -319,7 +318,7 @@ class DtoperFrame : public DtoperFrameBase
 
 public:
     // ctor(s)
-    DtoperFrame(int port, int readDelay, const wxString& title);
+    DtoperFrame(int port, const wxString& title);
     ~DtoperFrame ();
 
     // Callback handlers
@@ -343,8 +342,8 @@ public:
     void dtoperSendKey(int key);
     void dtoperSetTrace (bool fileaction);
 
-    void paintCanvas (wxPaintDC &dc);
-    void opSendString (wxPaintDC &dc, OpMsg *m);
+    void paintCanvas (wxDC &dc);
+    void opSendString (wxDC &dc, OpMsg *m);
 
     bool        traceDtoper;
     DtoperFrame   *m_nextFrame;
@@ -359,8 +358,6 @@ private:
     NetPortSet  m_portset;
     NetFet      *m_fet;
     int         m_port;
-    int         m_readDelay;
-    wxTimer     m_timer;
 
     char cmdBuf[OpCmdSize + 1];
     int cmdLen;
@@ -570,12 +567,6 @@ bool DtoperApp::OnInit (void)
         m_port = m_config->Read (wxT (PREF_PORT), DefOpPort);
     }
 
-    /*
-    **  Set the network read timeout.  Keep it under 100 ms
-    **  for decent keyboard responsiveness.
-    */
-    m_readDelay = 100;
-
     // 0 255 0 is RGB for DTOPER green
     m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("0 255 0"));
     sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
@@ -664,7 +655,7 @@ bool DtoperApp::DoConnect (bool ask)
     }
 
     // create the main application window
-    frame = new DtoperFrame(m_port, m_readDelay, wxT("Dtoper"));
+    frame = new DtoperFrame(m_port, wxT("Dtoper"));
 
     if (frame != NULL)
     {
@@ -809,8 +800,7 @@ DtoperMainFrame::DtoperMainFrame (void)
 // ----------------------------------------------------------------------------
 
 // frame constructor
-DtoperFrame::DtoperFrame(int port, int readDelay, 
-                     const wxString& title)
+DtoperFrame::DtoperFrame(int port, const wxString& title)
   : DtoperFrameBase(DtoperFrameParent, -1, title,
 		   wxDefaultPosition,
 		   wxDefaultSize),
@@ -822,8 +812,6 @@ DtoperFrame::DtoperFrame(int port, int readDelay,
     m_foregroundBrush (dtoperApp->m_fgColor, wxSOLID),
     m_canvas (NULL),
     m_port (port),
-    m_readDelay (readDelay),
-    m_timer (this, Dtoper_Timer),
     cmdLen (0),
     nextKey (0),
     syntax (NULL),
@@ -919,6 +907,7 @@ DtoperFrame::DtoperFrame(int port, int readDelay,
     
     m_canvas = new DtoperCanvas (this);
 
+    memset (&m_portset, 0, sizeof (m_portset));
     m_portset.maxPorts = 1;
     m_portset.callBack = connCallback;
     m_portset.dataCallBack = dataCallback;
@@ -950,8 +939,6 @@ DtoperFrame::DtoperFrame(int port, int readDelay,
                 (char *)&true_opt, sizeof(true_opt));
 #endif
 
-    m_timer.Start (m_readDelay);
-    
     Show(true);
 }
 
@@ -1507,7 +1494,6 @@ void DtoperFrame::OnSaveScreen (wxCommandEvent &)
 
 void DtoperFrame::OnPrint (wxCommandEvent &)
 {
-#if 0
     wxPrintDialogData printDialogData (*g_printData);
 
     printDialogData.EnableSelection (false);
@@ -1524,12 +1510,10 @@ void DtoperFrame::OnPrint (wxCommandEvent &)
     {
         (*g_printData) = printer.GetPrintDialogData ().GetPrintData ();
     }
-#endif
 }
 
 void DtoperFrame::OnPrintPreview (wxCommandEvent &)
 {
-#if 0
     // Pass two printout objects: for preview, and possible printing.
     wxPrintDialogData printDialogData (*g_printData);
     wxPrintPreview *preview = new wxPrintPreview (new DtoperPrintout (this),
@@ -1550,7 +1534,6 @@ void DtoperFrame::OnPrintPreview (wxCommandEvent &)
     frame->Centre(wxBOTH);
     frame->Initialize();
     frame->Show();
-#endif
 }
 
 void DtoperFrame::OnPageSetup(wxCommandEvent &)
@@ -1677,14 +1660,12 @@ void DtoperFrame::dtoperShowTrace (bool enable)
     }
 }
 
-void DtoperFrame::paintCanvas (wxPaintDC &dc)
+void DtoperFrame::paintCanvas (wxDC &dc)
 {
     int i, line;
     int x = AdjustX (StatusX);
     int y;
 
-    PrepareDC (dc);
-    
     if (messages != NULL)
     {
         for (i = 0; i < msgCount; i++)
@@ -1786,7 +1767,7 @@ void DtoperFrame::OnKey (wxKeyEvent &event)
 **  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-void DtoperFrame::opSendString (wxPaintDC &dc, OpMsg *m)
+void DtoperFrame::opSendString (wxDC &dc, OpMsg *m)
 {
     int x = AdjustX (m->x);
     int y = AdjustY (m->y);
@@ -2038,6 +2019,7 @@ void DtoperCanvas::OnPaint (wxPaintEvent &event)
 {
     wxPaintDC dc(this);
 
+    m_owner->PrepareDC (dc);
     m_owner->paintCanvas (dc);
 }
 
@@ -2097,7 +2079,6 @@ bool DtoperPrintout::HasPage(int pageNum)
 
 void DtoperPrintout::DrawPage (wxDC *dc)
 {
-#if 0
     wxMemoryDC screenDC;
     double maxX = XSize;
     double maxY = YSize;
@@ -2125,51 +2106,11 @@ void DtoperPrintout::DrawPage (wxDC *dc)
     double posX = (double) ((w - (XSize * actualScale)) / 2.0);
     double posY = (double) ((h - (YSize * actualScale)) / 2.0);
 
-    double r, g, b;
-    int graypix;
-    
     // Set the scale and origin
     dc->SetUserScale (actualScale, actualScale);
     dc->SetDeviceOrigin ((long) posX, (long) posY);
 
-    // Re-color the image
-    wxImage screenImage = m_owner->m_screenmap->ConvertToImage ();
-
-    unsigned char *data = screenImage.GetData ();
-    
-    w = screenImage.GetWidth ();
-    h = screenImage.GetHeight ();
-
-    for (int j = 0; j < h; j++)
-    {
-        for (int i = 0; i < w; i++)
-        {
-            r = data[0] / 255.0;
-            g = data[1] / 255.0;
-            b = data[2] / 255.0;
-
-            // convert to grayscale
-            r = r * 0.3 + g * 0.59 + b * 0.11;
-            graypix = int (r * 255);
-            if (graypix > 255)
-            {
-                graypix = 255;
-            }
-
-            // Invert it so text is dark on white background
-            graypix = 255 - graypix;
-            data[0] = data[1] = data[2] = graypix;
-
-            data += 3;
-        }
-    }
-
-    wxBitmap printmap (screenImage);
-
-    screenDC.SelectObject (printmap);
-    dc->Blit (0, 0, XSize, YSize, &screenDC, 0, 0, wxCOPY);
-    screenDC.SelectObject (wxNullBitmap);
-#endif
+    m_owner->paintCanvas (*dc);
 }
 
 /*---------------------------  End Of File  ------------------------------*/
