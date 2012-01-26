@@ -1469,7 +1469,7 @@ void DtoperFrame::OnSaveScreen (wxCommandEvent &)
                                   "TIF files (*.tif)|*.tif|"
                                   "XPM files (*.xpm)|*.xpm|"
                                   "All files (*.*)|*.*"),
-                     wxSAVE | wxOVERWRITE_PROMPT);
+                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     
     if (fd.ShowModal () != wxID_OK)
     {

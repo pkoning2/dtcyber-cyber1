@@ -36,7 +36,7 @@ CXX = /usr/bin/g++
 #ARCHCFLAGS =  -arch ppc
 #EXTRALIBS= -lwxpng-2.6 -lwxtiff-2.6
 #DEFWXDIR = /usr/local/wxstaticu.264
-DEFWXDIR = /usr/local/wxstaticu.2810
+DEFWXDIR = /usr/local/wxstaticu.293
 ARCHFLAGS=-arch i386
 MSGFLAGS =  
 SDLINCL=-FSDL
@@ -109,11 +109,11 @@ wxversion.h: wxversion
 
 dd60:	$(SOBJS) dd60.o knob.o iir.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
+	$(CXX)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
 dtoper:	$(SOBJS) dtoper.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
+	$(CXX)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
 # console display test program
 cc545:	cc545.o knob.o iir.o

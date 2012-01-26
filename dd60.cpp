@@ -1083,7 +1083,6 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
     uint8_t *pb = (uint8_t *) pmap;
     uint32_t t;
     
-    m_pixmap->UseAlpha ();
     t = *pmap;
     *pmap = 0;
     p.Alpha () = 255;
@@ -1214,7 +1213,6 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     }
     
     m_pixmap = new PixelData (*m_screenmap);
-    m_pixmap->UseAlpha ();
 
     if (m_fet->connFd == 0)
     {
@@ -1269,7 +1267,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
                 // simulate decay because it looks weird
                 for (i = 0; i < wds; i++)
                 {
-                    *pmap++ = 0;
+                    *pmap++ = m_maxalpha;
                 }
             }
             else
@@ -1450,7 +1448,7 @@ void Dd60Frame::OnSaveScreen (wxCommandEvent &)
                                   "TIF files (*.tif)|*.tif|"
                                   "XPM files (*.xpm)|*.xpm|"
                                   "All files (*.*)|*.*"),
-                     wxSAVE | wxOVERWRITE_PROMPT);
+                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     
     if (fd.ShowModal () != wxID_OK)
     {
@@ -1459,10 +1457,24 @@ void Dd60Frame::OnSaveScreen (wxCommandEvent &)
     filename = fd.GetPath ();
     
     wxImage screenImage = m_screenmap->ConvertToImage ();
+    
     wxFileName fn (filename);
     
     dd60App->m_defDir = fn.GetPath ();
     ext = fn.GetExt ();
+    if (ext == wxT (""))
+    {
+        switch (fd.GetFilterIndex ())
+        {
+        case 0: fn.SetExt (wxT ("png")); break;
+        case 1: fn.SetExt (wxT ("bmp")); break;
+        case 2: fn.SetExt (wxT ("pnm")); break;
+        case 3: fn.SetExt (wxT ("tif")); break;
+        case 4: fn.SetExt (wxT ("xpm")); break;
+        }
+        filename = fn.GetFullPath ();
+        ext = fn.GetExt ();
+    }
     if (ext.CmpNoCase (wxT ("bmp")) == 0)
     {
         type = wxBITMAP_TYPE_BMP;
