@@ -47,6 +47,9 @@ SXOBJS  = dt_x11.o
 %.o : %.c
 	$(CC) $(CFLAGS) $(CONLYFLAGS) -c $<
 
+$(PWD)/%.o : %.c
+	$(CC) $(CFLAGS) $(CONLYFLAGS) -c $<
+
 %.pcf : %.bdf
 	#bdftopcf -o $@ $<
 	touch $@

@@ -49,7 +49,7 @@ OBJS    = main.o init.o trace.o dump.o \
           lp1612.o mt607.o mt669.o dcc6681.o rtc.o log.o \
 	  cr3447.o ddp.o niu.o lp3000.o cp3446.o \
 	  tpmux.o dtdisksubs.o ext.o pni.o \
-	  $(SOBJS)
+	  $(PWD)/charset.o $(PWD)/dtnetsubs.o
 
 ifneq ("$(NPU_SUPPORT)","")
 OBJS +=	  npu_async.o npu_bip.o npu_hip.o npu_svm.o npu_tip.o npu_net.o
@@ -94,7 +94,7 @@ gxdtcyber: $(OBJS)
 clean:
 	rm -rf *.o *.d *.i *.ii *.pcf g3 g5 x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app
 
-blackbox: blackbox.o charset.o dtnetsubs.o
+blackbox: blackbox.o $(SOBJS)
 	$(CC) $(LDFLAGS) $(TOOLLDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 else
@@ -104,7 +104,7 @@ else
 dtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
-blackbox: blackbox.o charset.o dtnetsubs.o
+blackbox: blackbox.o $(SOBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 clean:
