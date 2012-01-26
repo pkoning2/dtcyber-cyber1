@@ -3702,7 +3702,7 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
                                   "TIF files (*.tif)|*.tif|"
                                   "XPM files (*.xpm)|*.xpm|"
                                   "All files (*.*)|*.*"),
-                     wxSAVE | wxOVERWRITE_PROMPT);
+                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     
     if (fd.ShowModal () != wxID_OK)
     {
@@ -6143,11 +6143,11 @@ int PtermFrame::AssembleAsciiPlatoMetaData (int d)
     {
 		if (d >= 1 && d <= 26)
 		{
-			m_PMD.Append('a'+d-1,1);
+			m_PMD.Append((char) ('a'+d-1),1);
 		}
 		else if (d >= 27 && d <= 36)
 		{
-			m_PMD.Append('0'+d-27,1);
+			m_PMD.Append((char) ('0'+d-27),1);
 		}
 		else if (d == 38)
 		{
@@ -6197,11 +6197,11 @@ bool PtermFrame::AssembleClassicPlatoMetaData (int d)
 		d &= 077;
 		if (d >= 1 && d <= 26)
 		{
-			m_PMD.Append('a'+d-1,1);
+			m_PMD.Append((char) ('a'+d-1),1);
 		}
 		else if (d >= 27 && d <= 36)
 		{
-			m_PMD.Append('0'+d-27,1);
+			m_PMD.Append((char) ('0'+d-27),1);
 		}
 		else if (d == 38)
 		{
@@ -9795,7 +9795,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             pc = 0127;      // up arrow (w)
             break;
         case WXK_NUMPAD9:
-        case WXK_NUMPAD_PRIOR:
+        case WXK_NUMPAD_PAGEUP:
             pc = 0105;      // up right (e)
             break;
         case WXK_NUMPAD4:
@@ -9815,7 +9815,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             pc = 0130;      // down arrow (x)
             break;
         case WXK_NUMPAD3:
-        case WXK_NUMPAD_NEXT:
+        case WXK_NUMPAD_PAGEDOWN:
             pc = 0103;      // down right (c)
             break;
         }
@@ -9901,18 +9901,12 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         case WXK_NUMPAD_DOWN:
             pc = 0130;      // down arrow (x)
             break;
-        case WXK_PRIOR:
-#if (WXK_PRIOR != WXK_PAGEUP)
         case WXK_PAGEUP:
-#endif
-        case WXK_NUMPAD_PRIOR:
+        case WXK_NUMPAD_PAGEUP:
             pc = 020;       // super
             break;
-        case WXK_NEXT:
-#if (WXK_NEXT != WXK_PAGEDOWN)
         case WXK_PAGEDOWN:
-#endif
-        case WXK_NUMPAD_NEXT:
+        case WXK_NUMPAD_PAGEDOWN:
             pc = 021;       // sub
             break;
         case WXK_F3:

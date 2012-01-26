@@ -331,7 +331,6 @@ public:
     void OnKey (wxKeyEvent& event);
     void OnQuit (wxCommandEvent& event);
     void OnCopyScreen (wxCommandEvent &event);
-    void OnSaveScreen (wxCommandEvent &event);
     void OnPrint (wxCommandEvent& event);
     void OnPrintPreview (wxCommandEvent& event);
     void OnPageSetup (wxCommandEvent& event);
@@ -455,7 +454,6 @@ enum
     // menu items
     Dtoper_CopyScreen = 1,
     Dtoper_ConnectAgain,
-    Dtoper_SaveScreen,
 
     // timers
     Dtoper_Timer,        // display pacing
@@ -489,7 +487,6 @@ BEGIN_EVENT_TABLE(DtoperFrame, wxFrame)
     EVT_ACTIVATE(DtoperFrame::OnActivate)
     EVT_MENU(Dtoper_Close, DtoperFrame::OnQuit)
     EVT_MENU(Dtoper_CopyScreen, DtoperFrame::OnCopyScreen)
-    EVT_MENU(Dtoper_SaveScreen, DtoperFrame::OnSaveScreen)
     EVT_MENU(Dtoper_Print, DtoperFrame::OnPrint)
     EVT_MENU(Dtoper_Preview, DtoperFrame::OnPrintPreview)
     EVT_MENU(Dtoper_Page_Setup, DtoperFrame::OnPageSetup)
@@ -599,7 +596,12 @@ bool DtoperApp::OnInit (void)
 
     // Create the fonts we need
     m_smallFont = wxFont (SmallPointSize, wxFONTFAMILY_MODERN,
-                          wxFONTSTYLE_NORMAL, wxFONTWEIGHT_LIGHT);
+                          wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    if (!m_smallFont.IsOk ())
+    {
+        fprintf (stderr, "Failed to allocate font\n");
+        exit (1);
+    }
     m_mediumFont = m_smallFont;
     m_mediumFont.SetPointSize (MediumPointSize);
     m_boldFont = m_mediumFont;
@@ -854,8 +856,6 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
                       _("Connect to DtCyber"));
 
     // The accelerators actually will be Command-xxx on the Mac
-    menuFile->Append (Dtoper_SaveScreen, _("&Save Screen\tCtrl-S"),
-                      _("Save screen image to file"));
     menuFile->Append (Dtoper_Print, _("&Print...\tCtrl-P"),
                       _("Print screen content"));
     menuFile->Append (Dtoper_Page_Setup, _("P&age Setup..."), _("Printout page setup"));
@@ -1455,65 +1455,6 @@ void DtoperFrame::OnCopyScreen (wxCommandEvent &)
     {
         wxLogError (_("Can't open clipboard."));
     }
-}
-
-void DtoperFrame::OnSaveScreen (wxCommandEvent &)
-{
-#if 0
-    wxString filename, ext;
-    wxBitmapType type;
-    wxFileDialog fd (this, _("Save screen to"), dtoperApp->m_defDir,
-                     wxT(""), wxT("PNG files (*.png)|*.png|"
-                                  "BMP files (*.bmp)|*.bmp|"
-                                  "PNM files (*.pnm)|*.pnm|"
-                                  "TIF files (*.tif)|*.tif|"
-                                  "XPM files (*.xpm)|*.xpm|"
-                                  "All files (*.*)|*.*"),
-                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
-    
-    if (fd.ShowModal () != wxID_OK)
-    {
-        return;
-    }
-    filename = fd.GetPath ();
-    
-    wxImage screenImage = m_screenmap->ConvertToImage ();
-    wxFileName fn (filename);
-    
-    dtoperApp->m_defDir = fn.GetPath ();
-    ext = fn.GetExt ();
-    if (ext.CmpNoCase (wxT ("bmp")) == 0)
-    {
-        type = wxBITMAP_TYPE_BMP;
-    }
-    else if (ext.CmpNoCase (wxT ("png")) == 0)
-    {
-        type = wxBITMAP_TYPE_PNG;
-    }
-    else if (ext.CmpNoCase (wxT ("pnm")) == 0)
-    {
-        type = wxBITMAP_TYPE_PNM;
-    }
-    else if (ext.CmpNoCase (wxT ("tif")) == 0 ||
-             ext.CmpNoCase (wxT ("tiff")) == 0)
-    {
-        type = wxBITMAP_TYPE_TIF;
-	// 32773 is PACKBITS -- not referenced symbolically because tiff.h
-	// isn't necessarily anywhere, for some reason.
-        screenImage.SetOption (wxIMAGE_OPTION_COMPRESSION, 32773);
-    }
-    else if (ext.CmpNoCase (wxT ("xpm")) == 0)
-    {
-        type = wxBITMAP_TYPE_XPM;
-    }
-    else
-    {
-        screenImage.SaveFile (filename);
-        return;
-    }
-    
-    screenImage.SaveFile (filename, type);
-#endif
 }
 
 void DtoperFrame::OnPrint (wxCommandEvent &)
