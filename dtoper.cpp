@@ -31,7 +31,6 @@
 #define PREF_FOREGROUND "foreground"
 #define PREF_PORT       "port"
 #define PREF_CONNECT    "autoconnect"
-#define PREF_STATUSBAR  "statusbar"
 
 #define OpCmdSize   64
 #define OpStatSize  64
@@ -141,6 +140,7 @@ extern "C"
 #include "proto.h"
 
 #include "operator.h"
+#include "ptermversion.h"
 
 #if wxUSE_LIBGNOMEPRINT
 #include "wx/html/forcelnk.h"
@@ -261,7 +261,6 @@ public:
     int         m_focus;
     int         m_intens;
     bool        m_connect;
-    bool        m_showStatusBar;
     DtoperFrame  *m_firstFrame;
     wxString    m_defDir;
     
@@ -335,7 +334,6 @@ public:
     void OnPrintPreview (wxCommandEvent& event);
     void OnPageSetup (wxCommandEvent& event);
     void OnActivate (wxActivateEvent &event);
-    void UpdateSettings (bool newstatusbar);
     
     void PrepareDC(wxDC& dc);
     void dtoperSendKey(int key);
@@ -350,7 +348,7 @@ public:
     bool        truekb;
 
 private:
-    wxStatusBar *m_statusBar;       // present even if not displayed
+    wxStatusBar *m_statusBar;
     wxPen       m_foregroundPen;
     wxBrush     m_foregroundBrush;
     DtoperCanvas  *m_canvas;
@@ -416,7 +414,6 @@ public:
 
     wxColour        m_fgColor;
     bool            m_connect;
-    bool            m_showStatusBar;
     wxString        m_port;
     
 private:
@@ -570,7 +567,6 @@ bool DtoperApp::OnInit (void)
     m_scale = 1;
     m_fgColor = wxColour (r, g, b);
     m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
-    m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
 
 #if DTOPER_MDI
     // On Mac, the style rule is that the application keeps running even
@@ -677,27 +673,22 @@ void DtoperApp::OnAbout(wxCommandEvent&)
     wxString msg;
 
     msg.Printf (_T("DtCyber console (DTOPER) emulator %s.\n%s"),
-                wxT ("V2.0.0" ),
-                _("Copyright \xA9 2012 by Paul Koning."));
+                wxT ("V2.0.0"
+                     "\n  built with wxWidgets V" WXVERSION
+                     "\n  build date " PTERMBUILDDATE ),
+                _("Copyright \xA9 2004-2012 by Paul Koning."));
     
     wxMessageBox(msg, _("About Dtoper"), wxOK | wxICON_INFORMATION, NULL);
 }
 
 void DtoperApp::OnPref (wxCommandEvent&)
 {
-    DtoperFrame *frame;
     DtoperPrefDialog dlg (NULL, wxID_ANY, _("Dtoper Preferences"));
     
     if (dlg.ShowModal () == wxID_OK)
     {
         m_fgColor = dlg.m_fgColor;
 
-        for (frame = m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
-        {
-            frame->UpdateSettings (dlg.m_showStatusBar);
-        }
-        
-        m_showStatusBar = dlg.m_showStatusBar;
         m_port = atoi (wxString (dlg.m_port).mb_str ());
         m_connect = dlg.m_connect;
         
@@ -716,7 +707,6 @@ void DtoperApp::WritePrefs (void)
     m_config->Write (wxT (PREF_FOREGROUND), rgb);
     m_config->Write (wxT (PREF_PORT), m_port);
     m_config->Write (wxT (PREF_CONNECT), (m_connect) ? 1 : 0);
-    m_config->Write (wxT (PREF_STATUSBAR), (m_showStatusBar) ? 1 : 0);
     m_config->Flush ();
 }
 
@@ -788,8 +778,6 @@ DtoperMainFrame::DtoperMainFrame (void)
     wxMenu *helpMenu = new wxMenu;
 
     helpMenu->Append(Dtoper_About, _("&About Dtoper"), _("Show about dialog"));
-    
-    menuBar->Append(helpMenu, wxT("&Help"));
 
     // ... and attach this menu bar to the frame
     SetMenuBar(menuBar);
@@ -885,21 +873,16 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
 
     helpMenu->Append(Dtoper_About, _("&About Dtoper"),
                      _("Show about dialog"));
-    
-    menuBar->Append(helpMenu, wxT("&Help"));
 
     // ... and attach this menu bar to the frame
     SetMenuBar(menuBar);
 #endif // wxUSE_MENUS
 
-    // create a status bar, if this isn't a help window
+    // create a status bar
     m_statusBar = new wxStatusBar (this, wxID_ANY);
     m_statusBar->SetFieldsCount (STATUSPANES);
     m_statusBar->SetStatusText(_(" Connecting..."), STATUS_CONN);
-    if (dtoperApp->m_showStatusBar)
-    {
-        SetStatusBar (m_statusBar);
-    }
+    SetStatusBar (m_statusBar);
     
     SetCursor (*wxHOURGLASS_CURSOR);
 
@@ -1535,18 +1518,6 @@ void DtoperFrame::dtoperSetStatus (wxString &str)
     m_statusBar->SetStatusText(str, STATUS_CONN);
 }
 
-void DtoperFrame::UpdateSettings (bool newstatusbar)
-{
-    if (newstatusbar)
-    {
-        SetStatusBar (m_statusBar);
-    }
-    else
-    {
-        SetStatusBar (NULL);
-    }
-}
-
 /*--------------------------------------------------------------------------
 **  Purpose:        Display visual indication of trace status
 **
@@ -1690,8 +1661,6 @@ void DtoperFrame::OnKey (wxKeyEvent &event)
         // We don't take any action on the modifier key keydown events,
         // but we do want to make sure they are seen by the rest of
         // the system.
-        // The same applies to keys sent to the help window (which has
-        // no connection on which to send them).
         event.Skip ();
         return;
     }
@@ -1780,7 +1749,6 @@ DtoperPrefDialog::DtoperPrefDialog (DtoperFrame *parent, wxWindowID id, const wx
     wxStaticBoxSizer *sbs;
     wxFlexGridSizer *fgs;
     
-    m_showStatusBar = dtoperApp->m_showStatusBar;
     m_connect = dtoperApp->m_connect;
     m_fgColor = dtoperApp->m_fgColor;
     m_port.Printf (wxT ("%d"), dtoperApp->m_port);
@@ -1815,9 +1783,6 @@ DtoperPrefDialog::DtoperPrefDialog (DtoperFrame *parent, wxWindowID id, const wx
     sbs = new wxStaticBoxSizer (new wxStaticBox (this, wxID_ANY,
                                                  _("Display settings")),
                                 wxVERTICAL);
-    m_statusCheck = new wxCheckBox (this, -1, _("Status bar"));
-    m_statusCheck->SetValue (m_showStatusBar);
-    sbs->Add (m_statusCheck, 0, wxALL, 8);
     fgs = new wxFlexGridSizer (2, 2, 8, 8);
     m_fgButton = new wxBitmapButton (this, wxID_ANY, fgBitmap);
     fgs->Add (m_fgButton);
@@ -1871,7 +1836,6 @@ void DtoperPrefDialog::OnButton (wxCommandEvent& event)
         m_fgColor = wxColour (20, 255, 80);
         m_connect = true;
         m_autoConnect->SetValue (true);
-        m_showStatusBar = true;
         m_statusCheck->SetValue (true);
         str.Printf (wxT ("%d"), DefOpPort);
         m_portText->SetValue (str);
@@ -1886,10 +1850,6 @@ void DtoperPrefDialog::OnCheckbox (wxCommandEvent& event)
     if (event.GetEventObject () == m_autoConnect)
     {
         m_connect = event.IsChecked ();
-    }
-    else if (event.GetEventObject () == m_statusCheck)
-    {
-        m_showStatusBar = event.IsChecked ();
     }
 }
 

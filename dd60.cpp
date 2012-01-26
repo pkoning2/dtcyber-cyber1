@@ -55,7 +55,6 @@
 #define PREF_FOREGROUND "foreground"
 #define PREF_PORT       "port"
 #define PREF_CONNECT    "autoconnect"
-#define PREF_STATUSBAR  "statusbar"
 #define PREF_SIZEX      "sizeX"
 #define PREF_SIZEY      "sizeY"
 #define PREF_FOCUS      "focus"
@@ -123,6 +122,7 @@ extern "C"
 #include "types.h"
 #include "proto.h"
 #include "dd60version.h"
+#include "ptermversion.h"
 #include "iir.h"
 #include "knob.h"
 
@@ -255,7 +255,6 @@ public:
     int         m_slowintens;
     int         m_intens;
     bool        m_connect;
-    bool        m_showStatusBar;
     Dd60Frame  *m_firstFrame;
     wxString    m_defDir;
     
@@ -330,7 +329,7 @@ public:
     void OnPrintPreview (wxCommandEvent& event);
     void OnPageSetup (wxCommandEvent& event);
     void OnActivate (wxActivateEvent &event);
-    void UpdateSettings (bool newstatusbar);
+    void UpdateSettings (void);
     
     void PrepareDC(wxDC& dc);
     void dd60SendKey(int key);
@@ -343,7 +342,7 @@ public:
     bool        truekb;
 
 private:
-    wxStatusBar *m_statusBar;       // present even if not displayed
+    wxStatusBar *m_statusBar;
     wxPen       m_foregroundPen;
     wxBrush     m_foregroundBrush;
     wxBitmap    *m_screenmap;
@@ -409,7 +408,6 @@ public:
 
     wxColour        m_fgColor;
     bool            m_connect;
-    bool            m_showStatusBar;
     wxString        m_port;
     
 private:
@@ -734,7 +732,6 @@ bool Dd60App::OnInit (void)
     sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
     m_fgColor = wxColour (r, g, b);
     m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
-    m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
 
     m_sizeX = m_config->Read (wxT (PREF_SIZEX), DefSizeX);
     m_sizeY = m_config->Read (wxT (PREF_SIZEY), DefSizeY);
@@ -853,8 +850,10 @@ void Dd60App::OnAbout(wxCommandEvent&)
     wxString msg;
 
     msg.Printf (_T("DtCyber console (DD60) emulator %s.\n%s"),
-                wxT ("V" DD60VERSION),
-                _("Copyright \xA9 2005 by Paul Koning."));
+                wxT ("V" DD60VERSION
+                     "\n  built with wxWidgets V" WXVERSION
+                     "\n  build date " PTERMBUILDDATE),
+                _("Copyright \xA9 2004-2012 by Paul Koning."));
     
     wxMessageBox(msg, _("About Dd60"), wxOK | wxICON_INFORMATION, NULL);
 }
@@ -870,10 +869,9 @@ void Dd60App::OnPref (wxCommandEvent&)
 
         for (frame = m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
         {
-            frame->UpdateSettings (dlg.m_showStatusBar);
+            frame->UpdateSettings ();
         }
         
-        m_showStatusBar = dlg.m_showStatusBar;
         m_port = atoi (wxString (dlg.m_port).mb_str ());
         m_connect = dlg.m_connect;
         
@@ -892,7 +890,6 @@ void Dd60App::WritePrefs (void)
     m_config->Write (wxT (PREF_FOREGROUND), rgb);
     m_config->Write (wxT (PREF_PORT), m_port);
     m_config->Write (wxT (PREF_CONNECT), (m_connect) ? 1 : 0);
-    m_config->Write (wxT (PREF_STATUSBAR), (m_showStatusBar) ? 1 : 0);
     m_config->Write (wxT (PREF_SIZEX), m_sizeX);
     m_config->Write (wxT (PREF_SIZEY), m_sizeY);
     m_config->Write (wxT (PREF_FOCUS), m_focus);
@@ -1062,10 +1059,7 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
     m_statusBar = new wxStatusBar (this, wxID_ANY);
     m_statusBar->SetFieldsCount (STATUSPANES);
     m_statusBar->SetStatusText(_(" Connecting..."), STATUS_CONN);
-    if (dd60App->m_showStatusBar)
-    {
-        SetStatusBar (m_statusBar);
-    }
+    SetStatusBar (m_statusBar);
     
     SetCursor (*wxHOURGLASS_CURSOR);
 
@@ -1741,17 +1735,8 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
     }
 }
 
-void Dd60Frame::UpdateSettings (bool newstatusbar)
+void Dd60Frame::UpdateSettings (void)
 {
-    if (newstatusbar)
-    {
-        SetStatusBar (m_statusBar);
-    }
-    else
-    {
-        SetStatusBar (NULL);
-    }
-    
     dd60LoadChars ();
 }
 
@@ -1956,7 +1941,6 @@ Dd60PrefDialog::Dd60PrefDialog (Dd60Frame *parent, wxWindowID id, const wxString
     wxStaticBoxSizer *sbs;
     wxFlexGridSizer *fgs;
     
-    m_showStatusBar = dd60App->m_showStatusBar;
     m_connect = dd60App->m_connect;
     m_fgColor = dd60App->m_fgColor;
     m_port.Printf (wxT ("%d"), dd60App->m_port);
@@ -1991,9 +1975,6 @@ Dd60PrefDialog::Dd60PrefDialog (Dd60Frame *parent, wxWindowID id, const wxString
     sbs = new wxStaticBoxSizer (new wxStaticBox (this, wxID_ANY,
                                                  _("Display settings")),
                                 wxVERTICAL);
-    m_statusCheck = new wxCheckBox (this, -1, _("Status bar"));
-    m_statusCheck->SetValue (m_showStatusBar);
-    sbs->Add (m_statusCheck, 0, wxALL, 8);
     fgs = new wxFlexGridSizer (2, 2, 8, 8);
     m_fgButton = new wxBitmapButton (this, wxID_ANY, fgBitmap);
     fgs->Add (m_fgButton);
@@ -2047,7 +2028,6 @@ void Dd60PrefDialog::OnButton (wxCommandEvent& event)
         m_fgColor = wxColour (20, 255, 80);
         m_connect = true;
         m_autoConnect->SetValue (true);
-        m_showStatusBar = true;
         m_statusCheck->SetValue (true);
         str.Printf (wxT ("%d"), DefDd60Port);
         m_portText->SetValue (str);
@@ -2062,10 +2042,6 @@ void Dd60PrefDialog::OnCheckbox (wxCommandEvent& event)
     if (event.GetEventObject () == m_autoConnect)
     {
         m_connect = event.IsChecked ();
-    }
-    else if (event.GetEventObject () == m_statusCheck)
-    {
-        m_showStatusBar = event.IsChecked ();
     }
 }
 
