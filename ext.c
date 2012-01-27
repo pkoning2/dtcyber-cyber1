@@ -117,7 +117,7 @@ void initExt (void)
     **  a vector of NetFets.  Pass 0 for the buffer size to defer
     **  allocating the FET data buffer until later.
     */
-    dtInitPortset (&extPorts, 0);
+    dtInitPortset (&extPorts, 0, 0);
 }
 
 /*--------------------------------------------------------------------------
@@ -269,6 +269,7 @@ static CpWord envOp (CPUVARGS1 (CpWord req))
 **                                  7: write
 **                                  8: reset multiple sockets
 **                                  9: reset all ext sockets
+**                                 10: get socket buffer info
 **
 **                              For the "get socket" request, socknum must
 **                              be zero, and the socket number obtained is 
@@ -357,11 +358,8 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
         // no request dependent fields.
         if (fet != NULL)
         {
-            if (dtClose (fet, &extPorts, FALSE) == 0)
-            {
-                return RETOK;
-            }
-            return RETNODATA;
+            dtClose (fet, &extPorts, FALSE);
+            return RETOK;
         }
         return RETNOSOCK;
     case 2:
@@ -377,7 +375,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
             {
                 return RETERROR (ENOMEM);
             }
-            if (dtInitFet (fet, MAXNET) != 0)
+            if (dtInitFet (fet, MAXNET, MAXNET) != 0)
             {
                 return RETERRNO;
             }
@@ -426,7 +424,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
             close (fd);
             return RETERROR (ENOMEM);
         }
-        if (dtInitFet (dataFet, MAXNET) != 0)
+        if (dtInitFet (dataFet, MAXNET, MAXNET) != 0)
         {
             close (fd);
             return RETERROR (ENOMEM);
@@ -487,24 +485,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
         {
             return RETINVREQ;
         }
-        retval = dtRead (fet, &extPorts, 0);
-        //
-        // Report error status from dtRead only if there isn't any
-        // data left to be processed.
-        //
-        if (dtEmpty (fet))
-        {
-            if (retval < 0)
-            {
-                if (retval == -1)
-                {
-                    return RETNULL;
-                }
-                return RETERRNO;
-            }
-            return RETNODATA;
-        }
-        //DEBUGPRINT ("dtRead %d, %d bytes buffered\n", retval, dtFetData (fet));
+
         prev_out = fet->out;
         c = dtReado (fet);
         if (mode == 1)
@@ -679,13 +660,9 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                 // If the connection is gone and the data that's
                 // left is less than what we want to get right now,
                 // return the error for the lost connection.
-                if (retval < 0)
+                if (fet->connFd == 0)
                 {
-                    if (retval == -1)
-                    {
-                        return RETNULL;
-                    }
-                    return RETERRNO;
+                    return RETNULL;
                 }
                 return RETNODATA;
             }
@@ -870,6 +847,16 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
             dtClose (fet, &extPorts, TRUE);
         }
         return RETOK;
+    case 10:
+        // get socket info
+        // no request dependent fields.
+        // This one has nonstandard return values: error is -1, success
+        // is 24/, 18/sendcount, 18/receivecount
+        if (fet != NULL)
+        {
+            return (dtSendData (fet) << 18) + dtFetData (fet);
+        }
+        return MINUS1;
     default:
         return RETINVREQ;
     }

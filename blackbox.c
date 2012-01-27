@@ -49,8 +49,6 @@ static NetPortSet niuAsciiPorts;
 
 static void niuSendstr(int stat, const char *p);
 static void niuSendWord(int stat, int word);
-static void niuAsciiWelcome(NetFet *np, int stat, void *arg);
-static void niuRemoteWelcome(NetFet *np, int stat, void *arg);
 static void ignoreData(NetFet *np, int bytes, void *arg);
 static void bbSendNiu(int stat);
 static void bbSendAscii(int stat);
@@ -75,16 +73,14 @@ int main (int argc, char **argv)
     niuPorts.portNum = platoPort;
     niuPorts.maxPorts = platoConns;
     niuPorts.localOnly = FALSE;
-    niuPorts.callBack = niuRemoteWelcome;
     niuPorts.dataCallBack = ignoreData;
     niuAsciiPorts.portNum = asciiPort;
     niuAsciiPorts.maxPorts = asciiConns;
     niuAsciiPorts.localOnly = FALSE;
-    niuAsciiPorts.callBack = niuAsciiWelcome;
     niuAsciiPorts.dataCallBack = ignoreData;
     
-    dtInitPortset (&niuPorts, 1024);
-    dtInitPortset (&niuAsciiPorts, 1024);
+    dtInitPortset (&niuPorts, 1024, 1024);
+    dtInitPortset (&niuAsciiPorts, 1024, 1024);
 
     printf ("Current message is: '%s'\n", msg);
     printf ("Enter a new message at any time, or Ctrl-D to stop blackbox.\n");
@@ -244,58 +240,6 @@ static void niuSendWord(int stat, int word)
     data[2] = (word & 077) | 0300;
 
     dtSend(fet, &niuPorts, data, 3);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Handle connect/disconnect
-**
-**  Parameters:     Name        Description.
-**                  np          NetFet pointer
-**                  stat        station number
-**
-**  Returns:        nothing.
-**
-**------------------------------------------------------------------------*/
-static void niuRemoteWelcome(NetFet *np, int stat, void *arg)
-    {
-    if (np->connFd == 0)
-        {
-        /*
-        **  Connection was dropped.
-        */
-        return;
-        }
-
-    /*
-    **  New connection for this port.  Send a message right now
-    */
-    bbSendNiu (stat);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Handle connect/disconnect
-**
-**  Parameters:     Name        Description.
-**                  np          NetFet pointer
-**                  stat        station number
-**
-**  Returns:        nothing.
-**
-**------------------------------------------------------------------------*/
-static void niuAsciiWelcome(NetFet *np, int stat, void *arg)
-    {
-    if (np->connFd == 0)
-        {
-        /*
-        **  Connection was dropped.
-        */
-        return;
-        }
-
-    /*
-    **  New connection for this port.  Send a message right now
-    */
-    bbSendAscii (stat);
     }
 
 /*--------------------------------------------------------------------------

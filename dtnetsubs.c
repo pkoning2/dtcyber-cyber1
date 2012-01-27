@@ -77,9 +77,9 @@
 */
 static ThreadFunRet dtThread (void *param);
 static ThreadFunRet dtDataThread (void *param);
+static ThreadFunRet dtSendThread (void *param);
 static void dtCloseSocket (int connFd, bool hard);
 static int dtGetw (NetFet *fet, void *buf, int len, bool read);
-static void dtSendPending (NetFet *fet, NetPortSet *ps);
 
 /*
 **  ----------------
@@ -97,7 +97,6 @@ void (*updateConnections) (void) = NULL;
 #if !defined(_WIN32)
 static pthread_t dt_thread;
 #endif
-static fd_set nullSet;
 
 /*
 **--------------------------------------------------------------------------
@@ -213,7 +212,8 @@ void dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
 **
 **  Parameters:     Name        Description.
 **                  ps          Pointer to NetPortSet to use
-**                  ringSize    FET buffer size for each port
+**                  ringSize    FET receive buffer size for each port
+**                  sendringSize FET transmit buffer size for each port
 **
 **  Returns:        Nothing.
 **
@@ -229,6 +229,10 @@ void dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
 **      portNum     TCP port number to listen to (0 to not listen)
 **      callBack    pointer to function to be called when a new connection
 **                  appears, or NULL if none is needed
+**      callArg     void * argument to pass to the above, if needed
+**      dataCallBack pointer to function to be called when new data
+**                  appears, or NULL if none is needed
+**      dataCallArg void * argument to pass to the above, if needed
 **      localOnly   TRUE to listen only to local connections (127.0.0.1),
 **                  FALSE to allow connections from anywhere.
 **
@@ -236,20 +240,24 @@ void dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
 **  or by the thread it creates that actually does the listening to
 **  new connections.
 **
-**  Each time a new connection is seen, curPorts is incremented, activeSet
-**  is adjusted to include the new socket fd into the set, and one of
+**  Each time a new connection is seen, curPorts is incremented and one of
 **  the PortVec entries is loaded with the data for the new connection.
 **  That data is the socket fd, and the remote IP address.
 **
 **  If a callback function pointer is specified, that callback function
-**  is called with the NetFet entry that was filled in, and the
-**  portVec array index where that entry lives.  The callback function
+**  is called with the NetFet entry that was filled in, the portVec array
+**  index where that entry lives, and the callArg value.  The callback function
 **  is also called when the NetFet is closed; the two cases are
 **  distinguished by the fact that the connFd is non-zero if the connection
 **  is open, and zero if it is closed.
 **
+**  Similarly, if a data callback function pointer is specified, that callback
+**  function is called whenever the receive thread receives more data.
+**  The callback function is called with the FET pointer, the count of received
+**  bytes, and the dataCallArg value.
+**
 **------------------------------------------------------------------------*/
-void dtInitPortset (NetPortSet *ps, int ringSize)
+void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize)
     {
 #if defined(_WIN32)
     static bool firstMux = TRUE;
@@ -263,10 +271,6 @@ void dtInitPortset (NetPortSet *ps, int ringSize)
     **  Initialize the NetPortSet structure part way
     */
     ps->curPorts = 0;
-    FD_ZERO(&ps->activeSet);
-    ps->sendCount = 0;
-    FD_ZERO(&ps->sendSet);
-    ps->maxFd = 0;
     ps->portVec = calloc(1, sizeof(NetFet) * ps->maxPorts);
     if (ps->portVec == NULL)
         {
@@ -278,7 +282,7 @@ void dtInitPortset (NetPortSet *ps, int ringSize)
         }
     for (i = 0; i < ps->maxPorts; i++)
         {
-        if (dtInitFet (&ps->portVec[i], ringSize) != 0)
+        if (dtInitFet (&ps->portVec[i], ringSize, sendringsize) != 0)
             {
 #if !defined(_WIN32)
             fprintf (stderr, "dtInitPortSet: failed to allocate %d byte buffer for FET\n", 
@@ -312,7 +316,6 @@ void dtInitPortset (NetPortSet *ps, int ringSize)
         {
         dtCreateThread (dtThread, ps);
         }
-    FD_ZERO(&nullSet);
     }
 
 /*--------------------------------------------------------------------------
@@ -352,66 +355,42 @@ void dtClosePortset (NetPortSet *ps)
 **                  ps          Pointer to NetPortSet that np belongs to
 **                  hard        TRUE for reset, FALSE for shutdown
 **
-**  Returns:        0 if ok
-**                  -1 if send data is still pending and hard is FALSE.
+**  Returns:        nothing
 **
 **  This function is used to close sockets for inbound connections -- those
 **  that were created by the dtCreateListener mechanism.
 **------------------------------------------------------------------------*/
-int dtClose (NetFet *np, NetPortSet *ps, bool hard)
+void dtClose (NetFet *np, NetPortSet *ps, bool hard)
     {
-    int fd, i, j;
-    NetFet *t;
-
     /*
     **  Return success if already closed.
     */
     if (!np->inUse)
         {
-        return 0;
+        return;
         }
     
-    if (!hard && np->sendCount != 0)
+    if (!hard && np->sendin != np->sendout)
         {
         /*
-        ** First send any pending data (if possible).
-        ** Return with failure if we can't send yet.
+        ** If we have pending send data, mark the FET as pending close
         */
-        dtSendPending (np, ps);
-        if (np->sendCount != 0)
+        pthread_mutex_lock (&np->mutex);
+        if (np->sendin != np->sendout)
             {
-            return -1;
+            np->closePending = TRUE;
+            pthread_mutex_unlock (&np->mutex);
+            return;
             }
+        pthread_mutex_unlock (&np->mutex);
         }
         
-    fd = np->connFd;
-    FD_CLR(fd, &ps->activeSet);
-    if (np->sendCount != 0)
-        {
-        ps->sendCount--;
-        FD_CLR (fd, &ps->sendSet);
-        }
     dtCloseFet (np, hard);
     ps->curPorts--;
     if (ps->callBack != NULL)
         {
         (*ps->callBack) (np, np - ps->portVec, ps->callArg);
         }
-    if (fd == ps->maxFd)
-        {
-        j = 0;
-        for (i = 0; i < ps->maxPorts; i++)
-            {
-            t = ps->portVec + i;
-            if (t->connFd > j)
-                {
-                j = t->connFd;
-                }
-            }
-        ps->maxFd = j;
-        }
-
-    return 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -588,19 +567,28 @@ int dtReadtlv (NetFet *fet, void *buf, int len)
 **
 **  Parameters:     Name        Description.
 **                  fet         NetFet pointer
-**                  bufsiz      Size of buffer to allocate (0 not to)
+**                  bufsiz      Size of receive buffer to allocate (0 not to)
+**                  sendbufsiz  Size of send buffer to allocate (0 not to)
 **
 **  Returns:        0 if ok, -1 if malloc failed
 **
 **------------------------------------------------------------------------*/
-int dtInitFet (NetFet *fet, int bufsiz)
+int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz)
     {
-    u8 *buf = NULL;
+    u8 *buf = NULL, *buf2 = NULL;
 
     if (bufsiz > 0)
         {
         buf = (u8 *) malloc (bufsiz);
         if (buf == NULL)
+            {
+            return -1;
+            }
+        }
+    if (sendbufsiz > 0)
+        {
+        buf2 = (u8 *) malloc (sendbufsiz);
+        if (buf2 == NULL)
             {
             return -1;
             }
@@ -612,8 +600,13 @@ int dtInitFet (NetFet *fet, int bufsiz)
     fet->in = buf;
     fet->out = buf;
     fet->end = buf + bufsiz;
-    fet->sendData = NULL;
-    fet->sendCount = fet->sendBufCount = 0;
+    fet->sendfirst = buf2;
+    fet->sendin = buf2;
+    fet->sendout = buf2;
+    fet->sendend = buf2 + sendbufsiz;
+    pthread_cond_init (&fet->cond, NULL);
+    pthread_mutex_init (&fet->mutex, NULL);
+
     return 0;
     }
 
@@ -630,19 +623,15 @@ int dtInitFet (NetFet *fet, int bufsiz)
 void dtCloseFet (NetFet *fet, bool hard)
     {
     dtCloseSocket (fet->connFd, hard);
-    /* Free any pending output data */
-    if (fet->sendData != NULL)
-        {
-        free (fet->sendData);
-        fet->sendData = NULL;
-        fet->sendCount = fet->sendBufCount = 0;
-        }
+
     fet->connFd = 0;            /* Mark FET not open anymore */
     fet->in = fet->first;
     fet->out = fet->first;
+    fet->sendin = fet->sendfirst;
+    fet->sendout = fet->sendfirst;
     fet->ownerInfo = 0;
     fet->inUse = 0;
-    
+    pthread_cond_signal (&fet->cond);
     /* 
     ** Remove from the active list.
     ** If there is no link, this is a listen FET as opposed to a data
@@ -679,6 +668,12 @@ int dtSendTlv (NetFet *fet, NetPortSet *ps,
     u8  tl[2];
     int retval;
     
+    if (fet->sendfirst == NULL)
+        {
+        fprintf (stderr, "dtSend called without send buffer allocated\n");
+        exit (1);
+        }
+    
     if (tag > 255 || len > 255)
         {
 #if !defined(_WIN32)
@@ -686,14 +681,16 @@ int dtSendTlv (NetFet *fet, NetPortSet *ps,
 #endif
         return EINVAL;
         }
+    if (len + 2 > dtSendFree (fet))
+        {
+        return 1;
+        }
     
     tl[0] = tag;
     tl[1] = len;
-    retval = dtSend (fet, ps, tl, 2);
-    if (retval < 0)
-        {
-        retval = dtSend (fet, ps, value, -len);
-        }
+    dtSend (fet, ps, tl, 2);
+    retval = dtSend (fet, ps, value, len);
+
     return retval;
     }
 
@@ -714,8 +711,8 @@ int dtSendTlv (NetFet *fet, NetPortSet *ps,
 int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
     {
     int connFd = fet->connFd;
-    int sent = 0, pend, newcount;
-    u8 *waitptr;
+    int size;
+    u8 *in, *out, *nextin;
     
     /*
     ** Ignore calls when connection is not open.
@@ -725,74 +722,72 @@ int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
         return ENOTCONN;
         }
     
-    /*
-    ** First send any pending data (if possible).
-    */
-    dtSendPending (fet, ps);
-    
-    /*
-    ** Only try to send new data if nothing is currently still pending.
-    ** Otherwise return EAGAIN (indicating no data was sent).
-    **
-    ** For internal use: if len < 0, send unconditionally.  This is
-    ** used in dtSendTlv, it is not for general use.
-    */
-    if (fet->sendCount == 0 || len < 0)
+    if (fet->sendfirst == NULL)
         {
-        if (len < 0)
-            {
-            len = -len;
-            }
-        if (len > 0 && connFd != 0)
-            {
-            sent = send (connFd, buf, len, MSG_NOSIGNAL);
-            if (sent < 0)
-                {
-                return errno;
-                }
-            }
+        fprintf (stderr, "dtSend called without send buffer allocated\n");
+        exit (1);
         }
-    else
+    
+    if (len > dtSendFree (fet))
         {
         return EAGAIN;
         }
 
+
     /*
-    ** If some data was unsent, or if no send was done because we already
-    ** had data pending, append the unsent data to the pending data.
+    **  Copy the pointers, since they are volatile.
     */
-    pend = len - sent;
-    if (pend > 0)
+    in = nextin = (u8 *) (fet->sendin);
+    out = (u8 *) (fet->sendout);
+
+    while (len > 0)
         {
-        newcount = fet->sendCount + pend;
-        if (newcount > fet->sendBufCount)
+        if (in < out)
             {
-            waitptr = realloc (fet->sendData, newcount);
-            if (waitptr != NULL)
-                {
-                fet->sendBufCount = newcount;
-                fet->sendData = waitptr;
-                }
+            /*
+            **  If the out pointer is beyond the in pointer, we can
+            **  fill the space in between, leaving one free word
+            */
+            size = out - in - 1;
             }
         else
             {
-            waitptr = fet->sendData;
-            }
-        if (waitptr != NULL)
-            {
-            if (fet->sendCount == 0)
+            /*
+            **  Otherwise, we read from the current in pointer to the
+            **  end of the buffer -- except if the out pointer is right
+            **  at the start of the buffer, in which case we have to 
+            **  leave the last word unused.
+            */
+            size = fet->sendend - in;
+            if (out == fet->sendfirst)
                 {
-                /*
-                ** Transition from nothing pending to something pending.
-                ** Add this connection to the fd_set of connections that
-                ** have pending data waiting for space.
-                */
-                FD_SET (connFd, &ps->sendSet);
-                ps->sendCount++;
+                size--;
                 }
-            memcpy (waitptr + fet->sendCount, (u8 *)buf + sent, pend);
-            fet->sendCount = newcount;
             }
+        if (size > len)
+            {
+            size = len;
+            }
+        
+        memcpy (in, buf, size);
+        buf += size;
+        len -= size;
+        nextin = in + size;
+        if (nextin == fet->end)
+            {
+            nextin = fet->first;
+            }
+        in = nextin;
+        }
+
+    /*
+    ** Update the IN pointer, then wake the send thread.
+    */
+    fet->sendin = in;
+    pthread_cond_signal (&fet->cond);
+    
+    if (dtSendFree (fet) == 0)
+        {
         /*
         **  Indicate that this send worked but the next one will not.
         */
@@ -919,20 +914,25 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
     fet->inUse = 1;
 
     /*
-    **  Track this FET in the NetPortSet, if supplied
+    **  Initialize the ring pointers
     */
+    fet->in = fet->out = fet->first;
+    fet->sendin = fet->sendout = fet->sendfirst;
+    
     fet->ps = ps;
-    FD_SET (fet->connFd, &ps->activeSet);
     ps->curPorts++;
-    if (ps->maxFd < connFd)
-        {
-        ps->maxFd = connFd;
-        }
         
     /*
-    **  Create the data receive thread
+    **  Create the data receive and transmit threads, if needed
     */
-    dtCreateThread (dtDataThread, fet);
+    if (fet->first != NULL)
+        {
+        dtCreateThread (dtDataThread, fet);
+        }
+    if (fet->sendfirst != NULL)
+        {
+        dtCreateThread (dtSendThread, fet);
+        }
 
     if (ps->callBack != NULL)
         {
@@ -978,11 +978,6 @@ static int dtRead (NetFet *fet, NetPortSet *ps)
     int i;
     u8 *in, *out, *nextin;
     int size;
-    
-    /*
-    ** First send any pending data (if possible).
-    */
-    dtSendPending (fet, ps);
     
     /*
     **  Copy the pointers, since they are volatile.
@@ -1204,6 +1199,14 @@ static void dtDataThread(void *param)
             }
         
         /*
+        **  If the socket is closed now, exit.
+        */
+        if (!dtActive (np))
+            {
+            ThreadReturn;
+            }
+        
+        /*
         **  Do we have any data?
         */
         bytes = dtRead (np, ps);
@@ -1236,6 +1239,113 @@ static void dtDataThread(void *param)
             }
         }
     dtClose (np, ps, TRUE);
+    ThreadReturn;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Thread for sending pending transmit data on a connection
+**
+**  Parameters:     Name        Description.
+**                  param       Pointer to NetFet to use
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+#if defined(_WIN32)
+static void dtSendThread(void *param)
+#else
+    static void *dtSendThread(void *param)
+#endif
+    {
+    NetFet *np = (NetFet *) param;
+    NetPortSet *ps = np->ps;
+    u8 *in, *out, *nextout;
+    int size;
+    int bytes;
+    
+    while (1)
+        {
+        /*
+        **  If DtCyber is closing down, os the socket is closed,
+        **  exit the thread.
+        */
+        if (!emulationActive || ps->close || !dtActive (np))
+            {
+            break;
+            }
+        
+        /*
+        **  Do we have any data?
+        */
+        if (dtSendEmpty (np))
+            {
+            /*
+            **  If we have a soft close (shutdown) pending, and we no
+            **  longer have data to send, do the actual shutdown.
+            */
+            if (np->closePending)
+                {
+                dtCloseFet (np, FALSE);
+                break;
+                }
+            
+            /*
+            **  If there appears to be no data, acquire the mutex,
+            **  then check again.  If we're still empty, wait on the
+            **  condition (which is signaled by the main thread when
+            **  data is put into the send ring).  Then go back to the
+            **  top of the loop to check for reasons to exit.
+            */
+            pthread_mutex_lock (&np->mutex);
+            if (dtSendEmpty (np))
+                {
+                pthread_cond_wait (&np->cond, &np->mutex);
+                pthread_mutex_unlock (&np->mutex);
+                continue;
+                }
+            }
+        
+        /*
+        **  Copy the pointers, since they are volatile.
+        */
+        in = (u8 *) (np->sendin);
+        out = (u8 *) (np->sendout);
+
+        if (out < in)
+            {
+            /*
+            **  If the in pointer is beyond the out pointer, we can
+            **  send the data in between.
+            */
+            size = in - out;
+            }
+        else
+            {
+            /*
+            **  Otherwise, we send from the current out pointer to the
+            **  end of the buffer.
+            */
+            size = np->sendend - out;
+            }
+        bytes = send (np->connFd, out, size, MSG_NOSIGNAL);
+            
+        /*
+        **  Handle errors.
+        */
+        if (bytes < 0)
+            {
+            break;
+            }
+        else
+            {
+            nextout = out + bytes;
+            if (nextout == np->sendend)
+                {
+                nextout = np->sendfirst;
+                }
+            np->sendout = nextout;
+            }
+        }
     ThreadReturn;
     }
 
@@ -1335,58 +1445,6 @@ static int dtGetw (NetFet *fet, void *buf, int len, bool read)
         fet->out = out + len;
         }
     return 0;
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Send pending data, if any
-**
-**  Parameters:     Name        Description.
-**                  fet         NetFet pointer
-**                  ps          Pointer to NetPortSet to use
-**
-**  Returns:        Nothing. 
-**
-**------------------------------------------------------------------------*/
-void dtSendPending (NetFet *fet, NetPortSet *ps)
-    {
-    int connFd = fet->connFd;
-    int sent = 0, pend;
-//    u8 *waitptr;
-
-    if (fet->sendCount == 0)
-        {
-        return;
-        }
-    sent = send (connFd, fet->sendData, fet->sendCount, MSG_NOSIGNAL);
-    if (sent < 0)
-        {
-        if (errno != EAGAIN)
-            {
-            /*
-            ** Some strange error.  Pretend the whole send worked,
-            ** which results in the pending data being discarded.
-            */
-            sent = fet->sendCount;
-            }
-        else
-            {
-            sent = 0;
-            }
-        }
-    pend = fet->sendCount = fet->sendCount - sent;
-    
-    if (pend == 0)
-        {
-        free (fet->sendData);
-        fet->sendData = NULL;
-        fet->sendBufCount = 0;
-        ps->sendCount--;
-        FD_CLR (fet->connFd, &ps->sendSet);
-        }
-    else
-        {
-        memmove (fet->sendData, fet->sendData + sent, pend);
-        }
     }
 
 /*---------------------------  End Of File  ------------------------------*/

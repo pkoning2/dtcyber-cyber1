@@ -43,6 +43,7 @@
 #define StatusWin   20
 #define StatusOff   2
 #define NetBufSize  4096
+#define SendBufSize 256
 #define DisplayMargin	20
 #define SmallPointSize  12
 #define MediumPointSize 18
@@ -895,7 +896,7 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
     m_portset.callBack = connCallback;
     m_portset.dataCallBack = dataCallback;
 
-    dtInitPortset (&m_portset, NetBufSize);
+    dtInitPortset (&m_portset, NetBufSize, SendBufSize);
     m_fet = m_portset.portVec;
 
     // Open the connection
@@ -1581,7 +1582,7 @@ void DtoperFrame::dtoperSendKey(int key)
         wxLogMessage ("key to plato %03o", key);
 #endif
     }
-    send (m_fet->connFd, &data, 1, 0);
+    dtSend (m_fet, &m_portset, &data, 1);
 }
 
 void DtoperFrame::dtoperShowTrace (bool enable)

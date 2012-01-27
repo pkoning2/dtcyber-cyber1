@@ -283,9 +283,9 @@ void ddWaitIO (DiskIO *io);
 */
 int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int portnum);
 int dtCheckInput(int connFd, void *buf, int size, int time);
-void dtInitPortset (NetPortSet *ps, int ringSize);
+void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize);
 void dtClosePortset (NetPortSet *ps);
-int dtClose (NetFet *np, NetPortSet *ps, bool hard);
+void dtClose (NetFet *np, NetPortSet *ps, bool hard);
 void dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
 const char *dtNowString (void);
 int dtSendTlv (NetFet *fet, NetPortSet *ps, 
@@ -300,7 +300,7 @@ int dtReadw (NetFet *fet, void *buf, int len);
 int dtPeekw (NetFet *fet, void *buf, int len);
 int dtReadmax (NetFet *fet, void *buf, int len);
 int dtReadtlv (NetFet *fet, void *buf, int len);
-int dtInitFet (NetFet *fet, int bufsiz);
+int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz);
 void dtCloseFet (NetFet *fet, bool hard);
 
 /* We could do these as functions but they are short, so... */
@@ -314,6 +314,18 @@ void dtCloseFet (NetFet *fet, bool hard);
      : (fet)->end - (fet)->out + (fet)->in - (fet)->first)
 #define dtFetFree(fet) \
     ((fet)->end - (fet)->first - dtFetData (fet) - 1)
+
+#define dtSendEmpty(fet) \
+    ((fet)->sendin == (fet)->sendout)
+#define dtSendFull(fet) \
+    ((fet)->sendin + 1 == (fet)->sendout || \
+     ((fet)->sendin + 1 == (fet)->sendend && (fet)->sendout == (fet)->sendfirst))
+#define dtSendData(fet) \
+    (((fet)->sendin >= (fet)->sendout) ? (fet)->sendin - (fet)->sendout \
+     : (fet)->sendend - (fet)->sendout + (fet)->sendin - (fet)->sendfirst)
+#define dtSendFree(fet) \
+    ((fet)->sendend - (fet)->sendfirst - dtSendData (fet) - 1)
+
 #define dtActive(fet) \
     ((fet)->connFd != 0)
 

@@ -42,6 +42,7 @@
 */
 #define OpCmdSize       64
 #define NetBufSize      256
+#define SendBufSize     4096
 #define StatusLineMax   255
 #define StatusSys       0       /* Line number of operator system status */
 #define StatusHdr       1       /* Line number of status header line */
@@ -92,7 +93,6 @@ typedef struct
 **  ---------------------------
 */
 static int opRequest(NetFet *np);
-static ThreadFunRet opThread (void *param);
 static void opSetup(NetFet *np, int index, void *arg);
 static void opSendStatus (StatusData *sd);
 
@@ -329,8 +329,7 @@ void opInit(void)
     opPorts.localOnly = TRUE;
     opPorts.callBack = opSetup;
     opPorts.kind = "oper";
-    dtInitPortset (&opPorts, NetBufSize);
-    dtCreateThread (opThread, 0);
+    dtInitPortset (&opPorts, NetBufSize, SendBufSize);
     }
 
 
@@ -502,48 +501,6 @@ void opUpdateSysStatus (void)
 **
 **--------------------------------------------------------------------------
 */
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Operator command thread
-**
-**  Parameters:     Name        Description.
-**                  param       unused
-**
-**  Returns:        nothing
-**
-**------------------------------------------------------------------------*/
-static ThreadFunRet opThread (void *param)
-    {
-    int i;
-    NetFet *np;
-    
-    printf ("operator thread running\n");
-    
-    for (;;)
-        {
-        if (!emulationActive)
-            {
-            /* We just executed "shutdown" */
-            ThreadReturn;
-            }
-        /*
-        **  Get any additional network data 
-        */
-        for (;;)
-            {
-            np = dtFindInput (&opPorts, 1000);
-            if (np == NULL)
-                {
-                break;
-                }
-            i = dtRead  (np, &opPorts, -1);
-            if (i < 0)
-                {
-                dtClose (np, &opPorts, TRUE);
-                }
-            }
-        }
-    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Process operator request

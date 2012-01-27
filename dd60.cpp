@@ -1119,7 +1119,7 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
     m_portset.callBack = connCallback;
     m_portset.dataCallBack = dataCallback;
 
-    dtInitPortset (&m_portset, NetBufSize);
+    dtInitPortset (&m_portset, NetBufSize, 0);
     m_fet = m_portset.portVec;
 
     // Open the connection
