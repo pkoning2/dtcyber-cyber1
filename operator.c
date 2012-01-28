@@ -243,7 +243,7 @@ static OpCmd decode[] =
 
 // Note: Y values of zero are filled in by opInit
 static OpMsg msg[] =
-    { { 0120, 0760, 0010, 0, "" },      /* Filled in */
+    { { 0020, 0760, 0010, 0, "" },      /* Filled in */
       { 0120, 0730, 0020, 0, "OPERATOR INTERFACE" },
       { 0020, 0700, 0010, 0, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
       { 0020,    0, 0010, 0, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },

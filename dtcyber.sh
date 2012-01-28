@@ -45,8 +45,8 @@ sleep 1
 echo ""
 
 # now start one each of the UIs
-./dd60 .06 &
-./dtoper &
+./dd60 .06 5007 &
+./dtoper 5006 &
 # ./pterm localhost 5005 &
 
 echo ui started

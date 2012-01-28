@@ -512,6 +512,11 @@ IMPLEMENT_APP(DtoperApp)
 
 void DtoperFrame::connCallback (NetFet *, int, void *arg)
 {
+    if (!dtActive (m_fet))
+    {
+        opSetMsg ("$Disconnected");
+    }
+
     wxWakeUpIdle ();
 }
 
@@ -1226,9 +1231,9 @@ void DtoperFrame::OnIdle (wxIdleEvent &event)
         //printf ("data: len %d code %d\n", i, dataBuf[0]);
         if (i < 0)
         {
-            if (i == -2)
+            if (!dtActive (m_fet))
             {
-                opSetMsg ("$Disconnected");
+                m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
             }
             break;
         }

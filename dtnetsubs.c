@@ -670,7 +670,7 @@ int dtSendTlv (NetFet *fet, NetPortSet *ps,
     
     if (fet->sendfirst == NULL)
         {
-        fprintf (stderr, "dtSend called without send buffer allocated\n");
+        fprintf (stderr, "dtSendTlv called without send buffer allocated\n");
         exit (1);
         }
     
@@ -773,9 +773,9 @@ int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
         buf += size;
         len -= size;
         nextin = in + size;
-        if (nextin == fet->end)
+        if (nextin == fet->sendend)
             {
-            nextin = fet->first;
+            nextin = fet->sendfirst;
             }
         in = nextin;
         }
@@ -908,9 +908,8 @@ int dtAccept (NetFet *fet, NetFet *acceptFet)
 void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
     {
     /*
-    **  Set the FD number in the FET.
+    **  Mark the FET in use
     */
-    fet->connFd = connFd;
     fet->inUse = 1;
 
     /*
@@ -921,7 +920,13 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
     
     fet->ps = ps;
     ps->curPorts++;
-        
+
+    /*
+    **  Now that everything is initialized, set the FD number in the FET
+    **  to mark it open.
+    */
+    fet->connFd = connFd;
+
     /*
     **  Create the data receive and transmit threads, if needed
     */
@@ -1303,6 +1308,7 @@ static void dtSendThread(void *param)
                 pthread_mutex_unlock (&np->mutex);
                 continue;
                 }
+            pthread_mutex_unlock (&np->mutex);
             }
         
         /*

@@ -23,7 +23,6 @@
 */
 #define DEFAULTHOST		wxT ("cyberserv.org")
 #define CURRENT_PROFILE	wxT (" Current ")
-#define BufSiz			256
 #define RINGSIZE		5000
 #define RINGXON1		(RINGSIZE/3)
 #define RINGXON2		(RINGSIZE/4)
@@ -8969,7 +8968,7 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
     m_portset.callArg = m_portset.dataCallArg = this;
     m_portset.portNum = 0;      // No listening
     m_portset.maxPorts = 1;
-    dtInitPortset (&m_portset, BufSiz);
+    dtInitPortset (&m_portset, BufSiz, 0);
     m_fet = m_portset.portVec;
     
     hp = gethostbyname (m_hostName.mb_str());
