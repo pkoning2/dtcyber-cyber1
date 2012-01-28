@@ -20,10 +20,11 @@
 
 #define NetBufSize      16384
 
-#define STATUS_TIP      0
-#define STATUS_TRC      1
+#define STATUS_TRC      0
 #define STATUS_CONN     2
+
 #define STATUSPANES     3
+#define KNOBPANE        1
 
 // character pattern sizes in pixels, allowing for going over the
 // allotted space some.
@@ -179,8 +180,6 @@ wxPageSetupDialogData* g_pageSetupData;
 class Dd60App;
 static Dd60App *dd60App;
 class Dd60Panel;
-static Dd60Panel *dd60Panel;
-static wxFrame *dd60PanelFrame;
 
 static FILE *traceF;
 static char traceFn[20];
@@ -281,6 +280,20 @@ private:
     DECLARE_EVENT_TABLE ()
 };
 
+class Dd60StatusBar : public wxBoxSizer
+{
+public:
+    Dd60StatusBar (wxWindow *parent);
+    void SetPanel (Dd60Panel *panel);
+    void SetStatusText (const wxChar *str, int idx);
+    
+    wxWindow *m_parent;
+    wxStaticText *msg1;
+    wxStaticText *msg3;
+    Dd60Panel *m_panel;
+};
+
+
 #if defined(__WXMAC__)
 #define DD60_MDI 1
 #else
@@ -342,7 +355,7 @@ public:
     bool        truekb;
 
 private:
-    wxStatusBar *m_statusBar;
+    Dd60StatusBar *m_statusBar;
     wxPen       m_foregroundPen;
     wxBrush     m_foregroundBrush;
     wxBitmap    *m_screenmap;
@@ -377,6 +390,8 @@ private:
     int         currentY;
     int         currentXOffset;
 
+    wxBoxSizer  *m_sizer;
+    
     // DD60 drawing primitives
     void dd60SetName (wxString &winName);
     void dd60SetStatus (wxString &str);
@@ -439,7 +454,7 @@ private:
 class Dd60Panel : public wxPanel
 {
 public:
-    Dd60Panel (wxFrame *parent);
+    Dd60Panel (Dd60Frame *parent);
 
     int sizeX (void) const
     { 
@@ -469,6 +484,7 @@ public:
     void OnScroll (wxScrollEvent& event);
 
 private:
+    Dd60Frame   *m_parent;
     wxFlexGridSizer  *m_sizer;
     wxKnob      *m_sizeX;
     wxKnob      *m_sizeY;
@@ -747,12 +763,6 @@ bool Dd60App::OnInit (void)
         m_intens = m_slowintens;
     }
     
-    dd60PanelFrame = new wxFrame (NULL, wxID_ANY, _("DD60 controls"),
-                                  wxDefaultPosition, wxDefaultSize,
-                                  wxFRAME_TOOL_WINDOW | wxMINIMIZE_BOX);
-    dd60Panel = new Dd60Panel (dd60PanelFrame);
-    dd60PanelFrame->Show (true);
-
 #if DD60_MDI
     // On Mac, the style rule is that the application keeps running even
     // if all its windows are closed.
@@ -789,11 +799,6 @@ int Dd60App::OnExit (void)
     delete logwindow;
 #endif
 
-#if DD60_MDI
-    // We only need to do this in the MDI (Mac) case; for the other
-    // platforms, the panel is deleted when the last regular window is.
-    dd60PanelFrame->Destroy ();
-#endif
     return 0;
 }
 
@@ -1005,10 +1010,12 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
 {
     int i;
     int true_opt = 1;
-
-    // set the frame icon
-//    SetIcon(wxICON(dd60_32));
-
+    Dd60Panel *panel;
+    
+    m_sizer = new wxBoxSizer (wxVERTICAL);
+    SetSizer (m_sizer);
+    m_sizer->Fit (this);
+    
 #if wxUSE_MENUS
     // create a menu bar
 
@@ -1032,7 +1039,7 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
     menuFile->Append (Dd60_Quit, _("E&xit\tCtrl-Q"), _("Quit this program"));
 
     wxMenu *menuEdit = new wxMenu;
-
+    
     menuEdit->Append (Dd60_CopyScreen, _("&Copy Screen\tCtrl-C"), _("Copy screen to clipboard"));
 
     // now append the freshly created menu to the menu bar...
@@ -1056,10 +1063,10 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
 #endif // wxUSE_MENUS
 
     // create a status bar, if this isn't a help window
-    m_statusBar = new wxStatusBar (this, wxID_ANY);
-    m_statusBar->SetFieldsCount (STATUSPANES);
+    m_statusBar = new Dd60StatusBar (this);
+    panel = new Dd60Panel (this);
+    m_statusBar->SetPanel (panel);
     m_statusBar->SetStatusText(_(" Connecting..."), STATUS_CONN);
-    SetStatusBar (m_statusBar);
     
     SetCursor (*wxHOURGLASS_CURSOR);
 
@@ -1150,6 +1157,10 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
     dd60SendKey (m_interval);
     dd60SendKey (Dd60KeyXon);
 
+    m_sizer->Add (m_canvas);
+    m_sizer->Add (m_statusBar);
+    SetSizer (m_sizer);
+    m_sizer->Fit (this);
     Show(true);
 }
 
@@ -1178,13 +1189,6 @@ Dd60Frame::~Dd60Frame ()
     else
     {
         dd60App->m_firstFrame = m_nextFrame;
-#if !DD60_MDI
-        if (dd60App->m_firstFrame == NULL)
-        {
-            dd60PanelFrame->Destroy ();
-        }
-#endif
-
     }
 }
 
@@ -1620,7 +1624,7 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
     const int gv = dd60App->m_fgColor.Green ();
     const int bv = dd60App->m_fgColor.Blue ();
     const double intensity = normInt (dd60App->m_intens, height);
-    const double sigma = dd60Panel->beamsize ();
+    const double sigma = m_statusBar->m_panel->beamsize ();
     const int beamr = int (ceil (3 * sigma));
 #define r1_029 2000
 #define m_c1_029 300
@@ -2114,8 +2118,9 @@ BEGIN_EVENT_TABLE(Dd60Panel, wxPanel)
     EVT_SCROLL(Dd60Panel::OnScroll)
 END_EVENT_TABLE()
 
-Dd60Panel::Dd60Panel (wxFrame *parent) :
-    wxPanel (parent)
+Dd60Panel::Dd60Panel (Dd60Frame *parent) :
+    wxPanel (parent),
+    m_parent (parent)
 {
     wxSizerFlags sf;
     wxSize knobSize (50, 50);
@@ -2142,23 +2147,54 @@ Dd60Panel::Dd60Panel (wxFrame *parent) :
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Intensity")), sf);
     SetSizerAndFit (m_sizer);
 //    m_sizer->SetSizeHints (this);
-    parent->SetClientSize (GetSize ());
+    //parent->SetClientSize (GetSize ());
 //    m_sizer->RecalcSizes ();
 }
 
 void Dd60Panel::OnScroll (wxScrollEvent &)
 {
-    Dd60Frame *frame;
-    
     dd60App->m_sizeX = m_sizeX->GetValue ();
     dd60App->m_sizeY = m_sizeY->GetValue ();
     dd60App->m_focus = m_focus->GetValue ();
     dd60App->m_intens = m_intens->GetValue ();
     dd60App->WritePrefs ();
     
-    for (frame = dd60App->m_firstFrame; frame != NULL; frame = frame->m_nextFrame)
+    m_parent->dd60LoadChars ();
+}
+
+// ----------------------------------------------------------------------------
+// Dd60StatusBar
+// ----------------------------------------------------------------------------
+
+Dd60StatusBar::Dd60StatusBar (wxWindow *parent)
+    : wxBoxSizer (wxHORIZONTAL),
+      m_parent (parent),
+      m_panel (NULL)
+{
+    msg1 = new wxStaticText (parent, wxID_ANY, wxT (""), 
+                             wxDefaultPosition, wxSize (XSize/3, 15));
+    msg3 = new wxStaticText (parent, wxID_ANY, wxT (""), 
+                             wxDefaultPosition, wxSize (XSize/3, 15));
+}
+
+void Dd60StatusBar::SetPanel (Dd60Panel *panel)
+{
+    m_panel = panel;
+    Add (msg1, 0, wxRIGHT | wxALIGN_CENTER_VERTICAL, 20);
+    Add (panel, 1, wxLEFT | wxRIGHT, 15);
+    Add (msg3, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 20);
+}
+
+void Dd60StatusBar::SetStatusText (const wxChar *str, int idx)
+{
+    switch (idx)
     {
-        frame->dd60LoadChars ();
+    case STATUS_TRC:
+        msg1->SetLabel (str);
+        break;
+    case STATUS_CONN:
+        msg3->SetLabel (str);
+        break;
     }
 }
 
