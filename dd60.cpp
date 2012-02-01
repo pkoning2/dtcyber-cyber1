@@ -2249,8 +2249,6 @@ void Dd60Canvas::OnKey (wxKeyEvent &event)
         // We don't take any action on the modifier key keydown events,
         // but we do want to make sure they are seen by the rest of
         // the system.
-        // The same applies to keys sent to the help window (which has
-        // no connection on which to send them).
         event.Skip ();
         return;
     }
