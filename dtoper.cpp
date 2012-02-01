@@ -510,11 +510,16 @@ IMPLEMENT_APP(DtoperApp)
 // implementation
 // ============================================================================
 
-void DtoperFrame::connCallback (NetFet *, int, void *arg)
+void DtoperFrame::connCallback (NetFet *fet, int, void *arg)
 {
-    if (!dtActive (m_fet))
+    DtoperFrame *frame = (DtoperFrame *) arg;
+
+    if (!dtActive (fet))
     {
-        opSetMsg ("$Disconnected");
+        frame->cmdBuf[0] = '\0';
+        frame->cmdLen = 0;
+        frame->cmdEcho.bold = FALSE;
+        frame->opSetMsg ("$Disconnected");
     }
 
     wxWakeUpIdle ();
@@ -899,6 +904,7 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
     memset (&m_portset, 0, sizeof (m_portset));
     m_portset.maxPorts = 1;
     m_portset.callBack = connCallback;
+    m_portset.callArg = this;
     m_portset.dataCallBack = dataCallback;
 
     dtInitPortset (&m_portset, NetBufSize, SendBufSize);
