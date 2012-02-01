@@ -34,6 +34,8 @@ public:
                  const wxValidator &validator = wxDefaultValidator,
                  const wxString &name = wxT ("knob"));
 
+    bool AcceptsFocus (void) const { return false; }
+
     // retrieve/change the range
     void SetRange (int minValue, int maxValue);
     int GetMin() const { return m_min; }

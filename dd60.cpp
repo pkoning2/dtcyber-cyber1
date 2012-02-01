@@ -40,9 +40,9 @@
 #define DefRemoteInterval 3.0
 
 // Default preference settings
-#define DefSizeX        82
-#define DefSizeY        90
-#define DefFocus        93
+#define DefSizeX        84
+#define DefSizeY        99
+#define DefFocus        82
 #define DefIntensity    160         // For fast (decaying) refresh
 #define DefSlowIntens   195         // For slow (replacing) refresh
 
@@ -455,6 +455,8 @@ class Dd60Panel : public wxPanel
 {
 public:
     Dd60Panel (Dd60Frame *parent);
+
+    bool AcceptsFocus (void) const { return false; }
 
     int sizeX (void) const
     { 
@@ -1224,6 +1226,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
             
         alert.ShowModal ();
         Close (TRUE);
+        event.Skip ();
         return;
     }
     //printf ("%d bytes from cyber\n", dtFetData (m_fet));
@@ -1618,8 +1621,8 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
     // delta from one char to the next:
     const int nextchar = tsize * tsize * 4;
     // sizeX and sizeY are percentages of the nominal size
-    const int width = size * dd60App->m_sizeX / 100;
-    const int height = size * dd60App->m_sizeY / 100;
+    const double width = size * dd60App->m_sizeX / 100.0;
+    const double height = size * dd60App->m_sizeY / 100.0;
     const int rv = dd60App->m_fgColor.Red ();
     const int gv = dd60App->m_fgColor.Green ();
     const int bv = dd60App->m_fgColor.Blue ();
@@ -2240,7 +2243,7 @@ void Dd60Canvas::OnKey (wxKeyEvent &event)
     unsigned int key;
 
     key = event.m_keyCode;
-
+    
     if (key == WXK_ALT || key == WXK_SHIFT || key == WXK_CONTROL)
     {
         // We don't take any action on the modifier key keydown events,
