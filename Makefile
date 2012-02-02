@@ -13,13 +13,9 @@ ifeq ($(MAKECMDGOALS),)
 MAKECMDGOALS=all
 endif
 
-all: dtcyber pterm dtoper dd60 blackbox
-
 DEPFILES=
 
 include Makefile.common
-
-include Makefile.wxpterm
 
 ifeq ("$(HOST)","Darwin")
 ifeq ("$(SDKDIR)","")
@@ -56,7 +52,7 @@ OBJS +=	  npu_async.o npu_bip.o npu_hip.o npu_svm.o npu_tip.o npu_net.o
 VERSIONCFLAGS +=   -DNPU_SUPPORT=1
 endif
 
-.PHONY : clean dep kit
+.PHONY : clean dep kit all
 
 ifeq ("$(HOST)","Darwin")
 
@@ -69,6 +65,8 @@ MACTARGETS=g3 g5 x86 x86_64
 endif
 
 .PHONY : dtcyber 
+
+all: dtcyber Pterm.app dtoper.app dd60.app blackbox
 
 dtcyber:
 	mkdir -p $(MACTARGETS)
@@ -92,7 +90,7 @@ gxdtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) $(ARCHCFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)
 
 clean:
-	rm -rf *.o *.d *.i *.ii *.pcf g3 g5 x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app
+	rm -rf *.o *.d *.i *.ii *.pcf g3 g5 x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app dtoper.app dd60.app
 
 blackbox: blackbox.o $(SOBJS)
 	$(CC) $(LDFLAGS) $(TOOLLDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
@@ -100,6 +98,8 @@ blackbox: blackbox.o $(SOBJS)
 else
 
 # not Mac
+
+all: dtcyber pterm dtoper dd60 blackbox
 
 dtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
@@ -130,5 +130,7 @@ endif
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
+
+include Makefile.wxpterm
 
 #---------------------------  End Of File  --------------------------------
