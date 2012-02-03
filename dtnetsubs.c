@@ -1255,7 +1255,6 @@ static void dtDataThread(void *param)
             }
         (*ps->callBack) (np, np - ps->portVec, ps->callArg);
         }
-    printf ("data thread ps %p fet %p (%d)\n", ps, np, np - ps->portVec);
     
     while (1)
         {
@@ -1265,7 +1264,6 @@ static void dtDataThread(void *param)
         */
         if (!emulationActive || ps->close)
             {
-            printf ("data thread exit\n");
             break;
             }
         
@@ -1274,7 +1272,6 @@ static void dtDataThread(void *param)
         */
         if (!dtActive (np))
             {
-            printf ("data thread fet %p found closed\n", np);
             ThreadReturn;
             }
         
