@@ -640,7 +640,10 @@ static void niuInIo(void)
         port = lastInPort;
         for (;;)
             {
-            ++port;
+            if (++port == niuStations)
+                {
+                    port = 0;
+                }
             mp = portVector + port;
             np = mp->np;
             
