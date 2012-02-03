@@ -24,6 +24,8 @@
 #include "proto.h"
 #include <time.h>
 #include <sys/types.h>
+#include <poll.h>
+
 #if defined(_WIN32)
 	#include <winsock.h>
 	//the following are a supreme hack.  Joe
@@ -742,7 +744,6 @@ int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
         return EAGAIN;
         }
 
-
     /*
     **  Copy the pointers, since they are volatile.
     */
@@ -968,7 +969,12 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
         dtCreateThread (dtSendThread, fet);
         }
 
-    if (ps->callBack != NULL)
+    /*
+    **  Connection callback comes from the receive thread to avoid receive
+    **  race conditions, provided there is a receive thread.  If not, make 
+    **  the callback here.
+    */
+    if (ps->callBack != NULL && fet->first == NULL)
         {
         (*ps->callBack) (fet, fet - ps->portVec, ps->callArg);
         }
@@ -1220,7 +1226,28 @@ static void dtDataThread(void *param)
     NetFet *np = (NetFet *) param;
     NetPortSet *ps = np->ps;
     int bytes;
+    struct pollfd pfd;
     
+    /*
+    **  If a connection callback is defined, wait for socket ready or error,
+    **  then issue the callback.  If an error occurs, close the socket instead
+    **  (which will generate a close callback).  This way, the callback should
+    **  occur when the connection is actually up, as opposed to immediately
+    **  after an outgoing connection request is issued.
+    */
+    if (ps->callBack != NULL)
+        {
+        pfd.fd = np->connFd;
+        pfd.events = POLLOUT;
+        poll (&pfd, 1, -1);
+        if (pfd.revents & (POLLHUP | POLLNVAL | POLLERR))
+            {
+            dtClose (np, ps, TRUE);
+            ThreadReturn;
+            }
+        (*ps->callBack) (np, np - ps->portVec, ps->callArg);
+        }
+
     while (1)
         {
         /*
@@ -1248,13 +1275,12 @@ static void dtDataThread(void *param)
         if (bytes == 0)
             {
             /*
-            **  Buffer is full, sleep a while to let other threads empty it.
+            **  Buffer is full, sleep 100 ms to let other threads empty it.
             */
 #if defined(_WIN32)
-            Sleep(1000);
+            Sleep(100);
 #else
-            /* usleep(10000000); */
-            sleep(1);
+            usleep (1000000);
 #endif
             continue;
             }
