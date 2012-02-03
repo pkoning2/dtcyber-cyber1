@@ -1242,11 +1242,6 @@ static void consoleSendOutput (int start, int end)
     char buf[160];
     u8 endBlock = Dd60EndBlock;
     
-#if defined(_WIN32)
-    _ftime (&tm);
-    us = (tm.time * 1000 + tm.millitm) * 1000;
-#endif
-    
     if (debugDisplay)
         {
         /*
