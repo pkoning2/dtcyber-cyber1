@@ -408,6 +408,10 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
         {
             return RETNOSOCK;
         }
+        if (!fet->listen)
+        {
+            return RETINVREQ;
+        }        
         reqp[2] = reqp[3] = 0;
         fd = dtAccept (fet, &acceptFet);
         if (fd == 0)

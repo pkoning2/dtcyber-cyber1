@@ -121,7 +121,10 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
     {
     struct sockaddr_in server;
     int connFd, retval;
-    
+#ifdef __APPLE__
+    int true_opt = 1;
+#endif
+
     /*
     **  Create TCP socket
     */
@@ -133,6 +136,11 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
 #endif
         return -1;
         }
+
+#ifdef __APPLE__
+    setsockopt (connFd, SOL_SOCKET, SO_NOSIGPIPE,
+                (char *)&true_opt, sizeof(true_opt));
+#endif
 
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
@@ -577,6 +585,8 @@ int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz)
     {
     u8 *buf = NULL, *buf2 = NULL;
 
+    memset (fet, 0, sizeof (*fet));
+    
     if (bufsiz > 0)
         {
         buf = (u8 *) malloc (bufsiz);
@@ -595,7 +605,6 @@ int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz)
         }
 
     fet->prev = fet->next = NULL;
-    fet->connFd = 0;                /* no socket yet */
     fet->first = buf;
     fet->in = buf;
     fet->out = buf;
@@ -606,7 +615,7 @@ int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz)
     fet->sendend = buf2 + sendbufsiz;
     pthread_cond_init (&fet->cond, NULL);
     pthread_mutex_init (&fet->mutex, NULL);
-
+    
     return 0;
     }
 
@@ -825,6 +834,15 @@ int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog)
         return -1;
         }
 
+#if defined(_WIN32)
+    ioctlsocket (fet->connFd, FIONBIO, &true_opt);
+#else
+    fcntl (fet->connFd, F_SETFL, O_NONBLOCK);
+#endif
+#ifdef __APPLE__
+    setsockopt (fet->connFd, SOL_SOCKET, SO_NOSIGPIPE,
+                (char *)&true_opt, sizeof(true_opt));
+#endif
     setsockopt(fet->connFd, SOL_SOCKET, SO_REUSEADDR,
                (char *)&true_opt, sizeof (true_opt));
     memset(&server, 0, sizeof(server));
@@ -835,13 +853,18 @@ int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog)
     if (bind (fet->connFd, (struct sockaddr *)&server, sizeof(server)) < 0)
         {
         close (fet->connFd);
+        fet->connFd = 0;
         return -1;
         }
     if (listen (fet->connFd, backlog) < 0)
         {
         close (fet->connFd);
+        fet->connFd = 0;
         return -1;
-        }    
+        }
+
+    fet->listen = TRUE;
+    
     return 0;
     }
 
@@ -853,7 +876,8 @@ int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog)
 **                  acceptFet   NetFet for data connection
 **
 **  Returns:        File descriptor for data connection.
-**                  0 if nothing was waiting.
+**                   0 if nothing was waiting.
+**                  -1 if this is not a listen NetFet.
 **
 **------------------------------------------------------------------------*/
 int dtAccept (NetFet *fet, NetFet *acceptFet)
@@ -866,6 +890,11 @@ int dtAccept (NetFet *fet, NetFet *acceptFet)
     /*
     **  Accept a connection.
     */
+    if (!fet->listen)
+    {
+        return -1;
+    }
+    
     fromLen = sizeof (from);
     connFd = accept (fet->connFd, (struct sockaddr *) &from, &fromLen);
     if (connFd < 0)

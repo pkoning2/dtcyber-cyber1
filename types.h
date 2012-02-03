@@ -248,6 +248,7 @@ typedef struct NetFet_s
     u64         ownerInfo;              /* Data supplied by socket owner */
     u8          inUse;                  /* In use flag */
     bool        closePending;           /* Close (...FALSE) pending */
+    bool        listen;                 /* Is this a bind/listen socket? */
     } NetFet;
 
 
