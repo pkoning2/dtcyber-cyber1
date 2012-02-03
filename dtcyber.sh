@@ -8,8 +8,8 @@ HOST2=${HOST2##*.}
 OS=$(uname)
 
 if [ "${OS}" = "Darwin" ]; then
-    dd60="dd60.app/Contents/MacOs/dd60"
-    dtoper="dtoper.app/Contents/MacOs/dtoper"
+    dd60="open -a dd60 --args"
+    dtoper="open -a dtoper --args"
 else
     dd60="./dd60"
     dtoper="./dtoper"
@@ -55,10 +55,8 @@ sleep 1
 echo ""
 
 # now start one each of the UIs
-if [ "${OS}" != "Darwin" ]; then
-    ${dd60} .06 5007 &
-    ${dtoper} 5006 &
-fi
+${dd60} .1 5007 &
+${dtoper} 5006 &
 # ./pterm localhost 5005 &
 
 echo ui started
