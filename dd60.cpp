@@ -18,7 +18,7 @@
 **  -----------------
 */
 
-#define NetBufSize      16384
+#define NetBufSize      32768
 
 #define STATUS_TRC      0
 #define STATUS_CONN     2
@@ -119,6 +119,7 @@ extern "C"
 #include <arpa/inet.h>
 #endif
 #include <stdlib.h>
+#include <sys/time.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -1200,7 +1201,12 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
 {
     int i, data;
     static int pendingData = 0;
-    
+#if DEBUG
+    struct timeval t, t2;
+    int datacount = dtFetData (m_fet);
+    int dt, dut;
+#endif
+
     if (!dtActive (m_fet))
     {
         event.Skip ();
@@ -1229,8 +1235,10 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
         event.Skip ();
         return;
     }
-    //printf ("%d bytes from cyber\n", dtFetData (m_fet));
-    
+#if DEBUG
+    gettimeofday (&t, NULL);
+#endif
+
     for (;;)
     {
         if (pendingData != 0)
@@ -1389,6 +1397,20 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
         m_canvas->DoPrepareDC (dc);
         dc.DrawBitmap (*m_screenmap, 0, 0, false);
     }
+#if DEBUG
+    if (datacount)
+    {
+        gettimeofday (&t2, NULL);
+        dt = t2.tv_sec - t.tv_sec;
+        dut = t2.tv_usec - t.tv_usec;
+        if (dut < 0)
+        {
+            dut += 1000000;
+            dt--;
+        }
+        printf ("%d bytes from cyber in %d.%06d seconds\n", datacount, dt, dut);
+    }
+#endif
 
     event.Skip ();
 }
