@@ -253,8 +253,8 @@ typedef struct portParam
     {
     u32         interval;       /* frame interval, in microseconds */
     u32         lastFrame;      /* time when previous frame was sent */
-    bool        stopped;        /* TRUE if output stopped */
-    bool        sendNow;        /* TRUE to force sending of next frame */
+    volatile bool stopped;      /* TRUE if output stopped */
+    volatile bool sendNow;      /* TRUE to force sending of next frame */
     } PortParam;
 
 typedef struct pollData
@@ -1199,7 +1199,7 @@ static void consoleReinitPoll (void)
 **------------------------------------------------------------------------*/
 static void consoleSendFrame (NetFet *fet, int start, int end)
     {
-#if 1//#ifdef DEBUG
+#ifdef DEBUG
     printf ("%d ", (start > end) ? end + DispBufSize - start : end - start);
     fflush (stdout);
 #endif
