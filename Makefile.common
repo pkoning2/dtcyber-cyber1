@@ -18,11 +18,11 @@ THRLIBS    = -lpthread
 MACHINECFLAGS =
 DUAL_HOST_CPUS ?= 0
 ifeq ("$(MACHINE)","x86_64")
-LDFLAGS = -g2
+LDFLAGS ?= -g2
 XLIBS      += -L/usr/X11R6/lib64
 DUAL_HOST_CPUS = 1
 else
-LDFLAGS = -g2
+LDFLAGS ?= -g2
 XLIBS      += -L/usr/X11R6/lib
 endif
 LDFLAGS += $(EXTRALDFLAGS)
