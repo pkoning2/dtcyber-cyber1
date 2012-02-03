@@ -300,7 +300,6 @@ int dtReadw (NetFet *fet, void *buf, int len);
 int dtPeekw (NetFet *fet, void *buf, int len);
 int dtReadmax (NetFet *fet, void *buf, int len);
 int dtReadtlv (NetFet *fet, void *buf, int len);
-int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz);
 void dtCloseFet (NetFet *fet, bool hard);
 
 /* We could do these as functions but they are short, so... */

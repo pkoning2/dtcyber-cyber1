@@ -82,6 +82,7 @@ static ThreadFunRet dtDataThread (void *param);
 static ThreadFunRet dtSendThread (void *param);
 static void dtCloseSocket (int connFd, bool hard);
 static int dtGetw (NetFet *fet, void *buf, int len, bool read);
+static int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz);
 
 /*
 **  ----------------
@@ -298,7 +299,7 @@ void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize)
             fprintf (stderr, "dtInitPortSet: failed to allocate %d byte buffer for FET\n", 
                      ringSize);
 #endif
-            exit (1);
+            return;
             }
         }
     
@@ -573,55 +574,6 @@ int dtReadtlv (NetFet *fet, void *buf, int len)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Allocate a buffer and initialize the FET pointers
-**
-**  Parameters:     Name        Description.
-**                  fet         NetFet pointer
-**                  bufsiz      Size of receive buffer to allocate (0 not to)
-**                  sendbufsiz  Size of send buffer to allocate (0 not to)
-**
-**  Returns:        0 if ok, -1 if malloc failed
-**
-**------------------------------------------------------------------------*/
-int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz)
-    {
-    u8 *buf = NULL, *buf2 = NULL;
-
-    memset (fet, 0, sizeof (*fet));
-    
-    if (bufsiz > 0)
-        {
-        buf = (u8 *) malloc (bufsiz);
-        if (buf == NULL)
-            {
-            return -1;
-            }
-        }
-    if (sendbufsiz > 0)
-        {
-        buf2 = (u8 *) malloc (sendbufsiz);
-        if (buf2 == NULL)
-            {
-            return -1;
-            }
-        }
-
-    fet->prev = fet->next = NULL;
-    fet->first = buf;
-    fet->in = buf;
-    fet->out = buf;
-    fet->end = buf + bufsiz;
-    fet->sendfirst = buf2;
-    fet->sendin = buf2;
-    fet->sendout = buf2;
-    fet->sendend = buf2 + sendbufsiz;
-    pthread_cond_init (&fet->cond, NULL);
-    pthread_mutex_init (&fet->mutex, NULL);
-    
-    return 0;
-    }
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Close the NetFet and reset the FET pointers
 **
 **  Parameters:     Name        Description.
@@ -821,7 +773,9 @@ int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
 int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog)
     {
     struct sockaddr_in server;
+#if defined (_WIN32) || defined (__APPLE__)
     int true_opt = 1;
+#endif
 
     /*
     **  Create TCP socket
@@ -937,10 +891,23 @@ int dtAccept (NetFet *fet, NetFet *acceptFet)
 **------------------------------------------------------------------------*/
 void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
     {
+#if defined (_WIN32)
+    int false_opt = 0;
+#endif
+
     /*
     **  Mark the FET in use
     */
     fet->inUse = 1;
+
+    /*
+    **  Clear non-blocking state (in case this FET came from dtBind which uses that)
+    */
+#if defined(_WIN32)
+    ioctlsocket (connFd, FIONBIO, &false_opt);
+#else
+    fcntl (connFd, F_SETFL, 0);
+#endif
 
     /*
     **  Initialize the ring pointers
@@ -999,6 +966,47 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
 **
 **--------------------------------------------------------------------------
 */
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Allocate a buffer and initialize the FET pointers
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**                  bufsiz      Size of receive buffer to allocate
+**                  sendbufsiz  Size of send buffer to allocate
+**
+**  Returns:        0 if ok, -1 if malloc failed
+**
+**------------------------------------------------------------------------*/
+static int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz)
+    {
+    u8 *buf = NULL, *buf2 = NULL;
+
+    buf = (u8 *) malloc (bufsiz);
+    if (buf == NULL)
+        {
+        return -1;
+        }
+    buf2 = (u8 *) malloc (sendbufsiz);
+    if (buf2 == NULL)
+        {
+        return -1;
+        }
+    fet->prev = fet->next = NULL;
+    fet->first = buf;
+    fet->in = buf;
+    fet->out = buf;
+    fet->end = buf + bufsiz;
+    fet->sendfirst = buf2;
+    fet->sendin = buf2;
+    fet->sendout = buf2;
+    fet->sendend = buf2 + sendbufsiz;
+    pthread_cond_init (&fet->cond, NULL);
+    pthread_mutex_init (&fet->mutex, NULL);
+    
+    return 0;
+    }
+
 /*--------------------------------------------------------------------------
 **  Purpose:        Read more data from the network, if there is any
 **
@@ -1247,7 +1255,8 @@ static void dtDataThread(void *param)
             }
         (*ps->callBack) (np, np - ps->portVec, ps->callArg);
         }
-
+    printf ("data thread ps %p fet %p (%d)\n", ps, np, np - ps->portVec);
+    
     while (1)
         {
         /*
@@ -1256,6 +1265,7 @@ static void dtDataThread(void *param)
         */
         if (!emulationActive || ps->close)
             {
+            printf ("data thread exit\n");
             break;
             }
         
@@ -1264,6 +1274,7 @@ static void dtDataThread(void *param)
         */
         if (!dtActive (np))
             {
+            printf ("data thread fet %p found closed\n", np);
             ThreadReturn;
             }
         
@@ -1295,7 +1306,7 @@ static void dtDataThread(void *param)
         
         if (ps->dataCallBack)
             {
-                (*ps->dataCallBack) (np, bytes, ps->dataCallArg);
+            (*ps->dataCallBack) (np, bytes, ps->dataCallArg);
             }
         }
     dtClose (np, ps, TRUE);

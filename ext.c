@@ -114,10 +114,9 @@ void initExt (void)
     
     /*
     **  Initialize the portset, which among other things allocates
-    **  a vector of NetFets.  Pass 0 for the buffer size to defer
-    **  allocating the FET data buffer until later.
+    **  a vector of NetFets.
     */
-    dtInitPortset (&extPorts, 0, 0);
+    dtInitPortset (&extPorts, MAXNET, MAXNET);
 }
 
 /*--------------------------------------------------------------------------
@@ -375,10 +374,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
             {
                 return RETERROR (ENOMEM);
             }
-            if (dtInitFet (fet, MAXNET, MAXNET) != 0)
-            {
-                return RETERRNO;
-            }
+            fet->inUse = true;
             fet->ownerInfo = reqp[2];
             reqp[1] = fettosock (fet);
             return RETOK;
@@ -424,11 +420,6 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
         }
         dataFet = getFet ();
         if (dataFet == NULL)
-        {
-            close (fd);
-            return RETERROR (ENOMEM);
-        }
-        if (dtInitFet (dataFet, MAXNET, MAXNET) != 0)
         {
             close (fd);
             return RETERROR (ENOMEM);
@@ -492,6 +483,11 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
 
         prev_out = fet->out;
         c = dtReado (fet);
+        if (c < 0)
+        {
+            return RETNODATA;
+        }
+        
         if (mode == 1)
         {
             shift = 60 - 8;
@@ -503,6 +499,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
         d = 0;
         oc = prev_oc =  0;
         
+        // ****** FIXME ****** This backing up of the pointer is not thread-safe.
         for (ic = 0; ; ic++)
         {
             // DEBUGPRINT (" byte %03o (%02x) shift %d\n", c, c, shift);
