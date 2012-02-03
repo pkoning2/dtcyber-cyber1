@@ -1209,6 +1209,8 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
 
     if (!dtActive (m_fet))
     {
+        m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+
         event.Skip ();
         return;
     }
@@ -1220,21 +1222,6 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     
     m_pixmap = new PixelData (*m_screenmap);
 
-    if (m_fet->connFd == 0)
-    {
-        wxString msg;
-            
-        m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
-
-        msg.Printf (_("Connection lost to %d"), m_port);
-            
-        wxMessageDialog alert (this, msg, wxString (_("Alert")), wxOK);
-            
-        alert.ShowModal ();
-        Close (TRUE);
-        event.Skip ();
-        return;
-    }
 #if DEBUG
     gettimeofday (&t, NULL);
 #endif
@@ -2171,9 +2158,6 @@ Dd60Panel::Dd60Panel (Dd60Frame *parent) :
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Focus")), sf);
     m_sizer->Add (new wxStaticText (this, wxID_ANY, _("Intensity")), sf);
     SetSizerAndFit (m_sizer);
-//    m_sizer->SetSizeHints (this);
-    //parent->SetClientSize (GetSize ());
-//    m_sizer->RecalcSizes ();
 }
 
 void Dd60Panel::OnScroll (wxScrollEvent &)
@@ -2182,6 +2166,14 @@ void Dd60Panel::OnScroll (wxScrollEvent &)
     dd60App->m_sizeY = m_sizeY->GetValue ();
     dd60App->m_focus = m_focus->GetValue ();
     dd60App->m_intens = m_intens->GetValue ();
+    if (dd60App->m_fastupdate)
+    {
+        dd60App->m_fastintens = dd60App->m_intens;
+    }
+    else
+    {
+        dd60App->m_slowintens = dd60App->m_intens;
+    }
     dd60App->WritePrefs ();
     
     m_parent->dd60LoadChars ();
