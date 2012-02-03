@@ -5,6 +5,16 @@ HOSTNAME=$(hostname)
 HOST2=${HOSTNAME%.*}
 HOST2=${HOST2##*.}
 
+OS=$(uname)
+
+if [ "${OS}" = "Darwin" ]; then
+    dd60="dd60.app/Contents/MacOs/dd60"
+    dtoper="dtoper.app/Contents/MacOs/dtoper"
+else
+    dd60="./dd60"
+    dtoper="./dtoper"
+fi
+
 if [ "${HOSTNAME}" = "monster" ]; then 
 	HOSTNAME="cyber1"
 elif [ "${HOSTNAME}" = "pkoning-laptop" ]; then 
@@ -45,8 +55,10 @@ sleep 1
 echo ""
 
 # now start one each of the UIs
-./dd60 .06 5007 &
-./dtoper 5006 &
+if [ "${OS}" != "Darwin" ]; then
+    ${dd60} .06 5007 &
+    ${dtoper} 5006 &
+fi
 # ./pterm localhost 5005 &
 
 echo ui started
