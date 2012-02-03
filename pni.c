@@ -485,7 +485,7 @@ CpWord pniOp (CPUVARGS1 (CpWord req))
                 for (i = 0; i < pniStations; i++)
                 {
                     pp = portVector + i;
-                    if (pp->np != NULL)
+                    if (dtActive (pp->np))
                     {
                         DEBUGPRINT ("Sending offmsg to station %d\n", IDX2STAT (i));
                         pniSendstr (IDX2STAT (i), OFF_MSG, 0);
@@ -589,7 +589,7 @@ CpWord pniOp (CPUVARGS1 (CpWord req))
     for (stat = 0; stat < stations; stat++)
     {
         pp = portVector + stat;
-        if (pp->np != NULL)
+        if (dtActive (pp->np))
         {
             pniActivateStation (stat);
         }
@@ -751,7 +751,7 @@ void pniCheck (void)
     {
         pp = portVector + port;
         np = pp->np;
-        if (pp->flowFlags != 0 && np != NULL)
+        if (pp->flowFlags != 0)
         {
             // Some flags are set, figure out what to do
             if ((pp->flowFlags & FLOW_DOABT) != 0)
@@ -781,10 +781,21 @@ void pniCheck (void)
     }
 }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Send a welcome message to a station
+**
+**  Parameters:     Name        Description.
+**                  np          NetFet pointer
+**                  bytes       Byte count
+**                  arg         generic argument: the SiteParam pointer
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
 static void pniDataCallback (NetFet *np, int bytes, void *arg)
 {
     SiteParam *sp = (SiteParam *) arg;
-    int port = np - sp->pniPorts.portVec;
+    int port = STAT2IDX ((np - sp->pniPorts.portVec) + sp->first);
     PortParam *pp = portVector + port;
     int i, key;
     struct stbank *sb;
@@ -975,7 +986,7 @@ CpWord pniConn (u32 stat)
     }
     mp = portVector + stat;
     fet = mp->np;
-    if (fet->connFd == 0)
+    if (!dtActive (fet))
     {
         return 0;
     }
@@ -1210,7 +1221,7 @@ static void pniWelcome(NetFet *np, int stat, void *arg)
     mp = portVector + STAT2IDX (stat);
     mp->np = np;
     
-    if (np->connFd == 0)
+    if (!dtActive (np))
         {
         /*
         **  Connection was dropped.
