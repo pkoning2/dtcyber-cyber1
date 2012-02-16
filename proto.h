@@ -296,6 +296,7 @@ int dtAccept (NetFet *fet, NetFet *acceptFet);
 void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd);
 
 int dtReado (NetFet *fet);
+int dtReadoi (NetFet *fet, int *outidx);
 int dtReadw (NetFet *fet, void *buf, int len);
 int dtPeekw (NetFet *fet, void *buf, int len);
 int dtReadmax (NetFet *fet, void *buf, int len);
@@ -327,6 +328,10 @@ void dtCloseFet (NetFet *fet, bool hard);
 
 #define dtActive(fet) \
     ((fet)->connFd != 0)
+
+/* This goes with dtReadoi */
+#define dtUpdateOut(fet,outidx) \
+    (fet)->out = (outidx) + fet->first
 
 /*
 **  -----------------

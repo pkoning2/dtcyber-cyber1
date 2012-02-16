@@ -460,6 +460,56 @@ int dtReado (NetFet *fet)
     }
 
 /*--------------------------------------------------------------------------
+**  Purpose:        Read one byte from the network buffer, with index
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**                  out         Pointer to int which is the current "out" 
+**                              index.  If passed as -1, the fet's out 
+**                              index is used.  The updated out index is
+**                              passed back.
+**
+**  Returns:        -1 if no data available, or the next byte as
+**                  an unsigned value.
+**
+**------------------------------------------------------------------------*/
+int dtReadoi (NetFet *fet, int *outidx)
+    {
+    u8 *in, *out, *nextout;
+    u8 b;
+
+    /*
+    **  Copy the pointers, since they are volatile.
+    */
+    in = (u8 *) (fet->in);
+    if (*outidx < 0)
+        {
+        out = (u8 *) (fet->out);
+        }
+    else
+        {
+        out = fet->first + *outidx;
+        if (out >= fet->end)
+            {
+            return -1;
+            }
+        }
+    
+    if (out == in)
+        {
+        return -1;
+        }
+    nextout = out + 1;
+    if (nextout == fet->end)
+        {
+        nextout = fet->first;
+        }
+    b = *out;
+    *outidx = nextout - fet->first;
+    return b;
+    }
+
+/*--------------------------------------------------------------------------
 **  Purpose:        Read a specified number of bytes from the network buffer
 **
 **  Parameters:     Name        Description.

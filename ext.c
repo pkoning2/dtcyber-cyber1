@@ -281,19 +281,21 @@ static CpWord envOp (CPUVARGS1 (CpWord req))
 **                              "socknum" is not actually a socket number;
 **                              instead, it is an index into our NetPortSet.
 **
-**                              "mode" is a bit mask.  The bottom bit
-**                              is 0 for text, 1 for binary.  The upper
-**                              bits are modifier flags:
-**                                  text:   4/reserved, 1/no partial lines
-**                                  binary: 4/reserved, 1/no partial words
-**
-**                              This applies only to read and write calls.
-**                              Other values are reserved.
+**                              "mode" is a bit mask:
+**                                  4/, 1/no partials, 1/binary
+**                                "binary" means 8-bit binary data is
+**                                  transferred (otherwise translate ASCII
+**                                  to display code and store in line format)
+**                                  Applies to read and write functions.
+**                                "no partials" means only full lines (text)
+**                                  or full words (binary) are read.
+**                                  Applies only to read functions.
 **
 **                              See below for reqdependent fields.
 **
 **  Returns:        Operation status.  -1 for success, >= 0 for error.
 **                  For host OS errors, status is 1000 + errno value.
+**                  Exception: for code 10, see below.
 **
 **------------------------------------------------------------------------*/
 static CpWord sockOp (CPUVARGS1 (CpWord req))
@@ -317,7 +319,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
     int i, idx, pcnt;
     int charset;
     char resultstr[MAXNET];
-    volatile u8 *prev_out;
+    int out, prev_out;
     int prev_oc;
     
     if (reqp == NULL)
@@ -464,6 +466,19 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
         // not be a line terminator at the end of the last line.
         // In other words, if char[count-1] != 0 then the last line
         // is a partial line.
+        // If the "no partials" bit is set in word 1, then normally only
+        // full lines (text mode) or full words (binary mode) are returned.
+        // For binary mode, that means an even number of words since bytes
+        // are packed 7.5 per word.  The exceptions are:
+        //  - If the connection has closed, the final data is delivered
+        //    even if it is a partial line or word
+        //  - In text mode, if a complete line is waiting to be received,
+        //    but the buffer is not big enough for the line, part of it
+        //    will be delivered, and the rest is available for the next
+        //    receive call.  Note that if multiple lines are waiting,
+        //    and there is space for some but not all lines, the full lines
+        //    that fit will be delivered.  So the partial line case applies
+        //    only if the line that's too long is the first line waiting.
         if (fet == NULL)
         {
             return RETNOSOCK;
@@ -481,8 +496,8 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
             return RETINVREQ;
         }
 
-        prev_out = fet->out;
-        c = dtReado (fet);
+        prev_out = out = -1;
+        c = dtReadoi (fet, &out);
         if (c < 0)
         {
             return RETNODATA;
@@ -499,7 +514,6 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
         d = 0;
         oc = prev_oc =  0;
         
-        // ****** FIXME ****** This backing up of the pointer is not thread-safe.
         for (ic = 0; ; ic++)
         {
             // DEBUGPRINT (" byte %03o (%02x) shift %d\n", c, c, shift);
@@ -531,7 +545,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                         d = 0;
                         shift = 60 - 8;
                         prev_oc = oc + 1;
-                        prev_out = fet->out;
+                        prev_out = out;
                     }
                     else
                     {
@@ -543,7 +557,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                 {
                     break;
                 }
-                c = dtReado (fet);
+                c = dtReadoi (fet, &out);
                 if (c < 0)
                 {
                     break;
@@ -592,7 +606,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                         oc = ((oc + 10) / 10) * 10;
                     }
                     prev_oc = oc;
-                    prev_out = fet->out;
+                    prev_out = out;
                 }
                 else
                 {
@@ -638,7 +652,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                         oc++;
                     }
                 }
-                c = dtReado (fet);
+                c = dtReadoi (fet, &out);
                 if (c < 0)
                 {
                     break;
@@ -655,7 +669,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
         {
             // whole wordpairs/lines only
             oc = prev_oc;
-            fet->out = prev_out;
+            out = prev_out;
             if (oc == 0)
             {
                 // If the connection is gone and the data that's
@@ -670,6 +684,12 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
         }
         DEBUGPRINT ("chars to Cyber: %d\n", oc);
         reqp[4] = oc;
+        // Consume the characters that we processed, if any
+        if (out >= 0)
+        {
+            dtUpdateOut (fet, out);
+        }
+        
         return RETOK;
     case 7:
         // write
