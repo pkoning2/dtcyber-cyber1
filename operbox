@@ -83,13 +83,13 @@ def sendmail (args, to):
 # pair is the function to call and its argument.
 if "koning" in socket.gethostname ():
     actions = { "up" : ( #( post, True ),
-                         ( sendmail, "paulkoning@comcast.net" ),
+                         #( sendmail, "paulkoning@comcast.net" ),
                          ),
                 "down" : ( #( post, False ),
-                           ( sendmail, "paulkoning@comcast.net" ),
+                           #( sendmail, "paulkoning@comcast.net" ),
                            ),
                 "crash" : ( #( post, False ),
-                            ( sendmail, "paulkoning@comcast.net" ),
+                            #( sendmail, "paulkoning@comcast.net" ),
                             ),
                 "operator call" : ( #( sendmail, "paulkoning@comcast.net" ),
                                   )
