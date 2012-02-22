@@ -782,7 +782,7 @@ void pniCheck (void)
 }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Send a welcome message to a station
+**  Purpose:        Data callback for a connection
 **
 **  Parameters:     Name        Description.
 **                  np          NetFet pointer
@@ -936,34 +936,30 @@ static void pniDataCallback (NetFet *np, int bytes, void *arg)
             pp->escState = norm;
             break;
         }
-        // If we're done with the esc sequence, done with this port
-        if (pp->escState == norm)
+    
+        if (key >= 0 && pp->escState == norm)
         {
-            break;
-        }
-    }
-    if (key >= 0 && pp->escState == norm)
-    {
-        if (pp->forceLogout)
-        {
-            /*
-            **  If we're not logged out yet, send *offky2* which
-            **  tells PLATO to log out this station instead of
-            **  the key that was typed
-            */
-            if (pniLoggedIn (IDX2STAT (port)))
+            if (pp->forceLogout)
             {
-                key = OFFKY2;
-                printf ("continuing to force logout port %d\n", IDX2STAT (port));
+                /*
+                **  If we're not logged out yet, send *offky2* which
+                **  tells PLATO to log out this station instead of
+                **  the key that was typed
+                */
+                if (pniLoggedIn (IDX2STAT (port)))
+                {
+                    key = OFFKY2;
+                    printf ("continuing to force logout port %d\n", IDX2STAT (port));
+                }
+                else
+                {
+                    pp->forceLogout = FALSE;
+                }
             }
-            else
-            {
-                pp->forceLogout = FALSE;
-            }
+            DEBUGPRINT ("pni key %04o\n", key);
+            storeKey (key, IDX2STAT (port));
+            pp->keyAsm = 0;
         }
-        DEBUGPRINT ("pni key %04o\n", key);
-        storeKey (key, IDX2STAT (port));
-        pp->keyAsm = 0;
     }
 }
 
