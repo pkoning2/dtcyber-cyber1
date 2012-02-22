@@ -312,7 +312,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
     CpWord *bufp;
     CpWord d;
     unsigned char *cp;
-    int c;
+    int prev_c, c;
     int ic, oc;
     int shift;
     int pc;
@@ -496,7 +496,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
             return RETINVREQ;
         }
 
-        prev_out = out = -1;
+        prev_c = prev_out = out = -1;
         c = dtReadoi (fet, &out);
         if (c < 0)
         {
@@ -557,6 +557,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                 {
                     break;
                 }
+                prev_c = c;
                 c = dtReadoi (fet, &out);
                 if (c < 0)
                 {
@@ -570,18 +571,20 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                     break;
                 }
                 // PLATO text mode
-                if (c == '\n')
+                if (c == '\n' && prev_c == '\r')
                 {
-                    c = dtReado (fet);
+                    // treat \r\n as a single newline
+                    prev_c = c;
+                    c = dtReadoi (fet, &out);
                     if (c < 0)
                     {
                         break;
                     }
                     continue;
                 }
-                else if (c == '\r')
+                else if (c == '\r' || c == '\n')
                 {
-                    // End of line
+                    // \r (optionally followed by \n) or \n by itself is newline
                     *bufp++ = d;
                     DEBUGPRINT (" %020llo\n", d);
                     buflen--;
@@ -614,7 +617,8 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                     if (pc < 0)
                     {
                         // char with no PLATO equivalent
-                        c = dtReado (fet);
+                        prev_c = c;
+                        c = dtReadoi (fet, &out);
                         if (c < 0)
                         {
                             break;
@@ -652,6 +656,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                         oc++;
                     }
                 }
+                prev_c = c;
                 c = dtReadoi (fet, &out);
                 if (c < 0)
                 {
