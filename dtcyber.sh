@@ -7,13 +7,6 @@ HOST2=${HOST2##*.}
 
 OS=$(uname)
 
-if [ "${OS}" = "Darwin" ]; then
-    dd60="open -a dd60 --args"
-    dtoper="open -a dtoper --args"
-else
-    dd60="./dd60"
-    dtoper="./dtoper"
-fi
 
 if [ "${HOSTNAME}" = "monster" ]; then 
 	HOSTNAME="cyber1"
@@ -55,8 +48,15 @@ sleep 1
 echo ""
 
 # now start one each of the UIs
-${dd60} .1 5007 &
-${dtoper} 5006 &
-# ./pterm localhost 5005 &
+
+if [ "${OS}" = "Darwin" ]; then
+    open -a dd60 --args .1 5007
+    open -a dtoper --args 5006
+    # open -a Pterm --args localhost 5005
+else
+    ./dd60 .1 5007 &
+    ./dtoper 5006 &
+    # ./pterm localhost 5005 &
+fi
 
 echo ui started
