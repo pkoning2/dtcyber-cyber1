@@ -281,6 +281,7 @@ void ddWaitIO (DiskIO *io);
 /*
 **  dtnetsubs.c
 */
+void dtInit (void);
 int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int portnum);
 int dtCheckInput(int connFd, void *buf, int size, int time);
 void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize);

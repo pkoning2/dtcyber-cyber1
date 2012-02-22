@@ -83,13 +83,14 @@ static ThreadFunRet dtSendThread (void *param);
 static void dtCloseSocket (int connFd, bool hard);
 static int dtGetw (NetFet *fet, void *buf, int len, bool read);
 static int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz);
+static void dtActivateFet2 (NetFet *fet, NetPortSet *ps);
 
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
-NetFet connlist = { &connlist, &connlist };  /* trailing fields default to 0 */
+NetFet connlist;
 void (*updateConnections) (void) = NULL;
 
 /*
@@ -100,6 +101,8 @@ void (*updateConnections) (void) = NULL;
 #if !defined(_WIN32)
 static pthread_t dt_thread;
 #endif
+static pthread_mutex_t connMutex;
+static bool dtInited;
 
 /*
 **--------------------------------------------------------------------------
@@ -108,6 +111,25 @@ static pthread_t dt_thread;
 **
 **--------------------------------------------------------------------------
 */
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Initialize dtnetsubs global state
+**
+**  Parameters:     none
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void dtInit (void)
+    {
+    if (!dtInited)
+        {
+        dtInited = TRUE;
+        pthread_mutex_init (&connMutex, NULL);
+        connlist.next = connlist.prev = &connlist;
+        }
+    }
+
 /*--------------------------------------------------------------------------
 **  Purpose:        Establish an outbound connection
 **
@@ -278,6 +300,11 @@ void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize)
 #endif
     int i;
 
+    /*
+    **  Initialize dtnetsubs if needed
+    */
+    dtInit ();
+    
     /*
     **  Initialize the NetPortSet structure part way
     */
@@ -652,9 +679,11 @@ void dtCloseFet (NetFet *fet, bool hard)
     */
     if (fet->prev != NULL)
         {
+        pthread_mutex_lock (&connMutex);
         fet->prev->next = fet->next;
         fet->next->prev = fet->prev;
         fet->prev = fet->next = NULL;
+        pthread_mutex_unlock (&connMutex);
         if (updateConnections != NULL)
             {
             (*updateConnections) ();
@@ -987,25 +1016,13 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
         }
 
     /*
-    **  Connection callback comes from the receive thread to avoid receive
-    **  race conditions, provided there is a receive thread.  If not, make 
-    **  the callback here.
+    **  Final actions (callback and connection list handling) are done
+    **  from the receive data thread handler if there is a receive thread.
+    **  If not, do them here.
     */
-    if (ps->callBack != NULL && fet->first == NULL)
+    if (fet->first == NULL)
         {
-        (*ps->callBack) (fet, fet - ps->portVec, ps->callArg);
-        }
-    
-    /* 
-    ** Link this FET into the active list. 
-    */
-    fet->next = connlist.next;
-    fet->prev = &connlist;
-    fet->next->prev = fet;
-    connlist.next = fet;
-    if (updateConnections != NULL)
-        {
-        (*updateConnections) ();
+        dtActivateFet2 (fet, ps);
         }
     }
 
@@ -1287,24 +1304,21 @@ static void dtDataThread(void *param)
     struct pollfd pfd;
     
     /*
-    **  If a connection callback is defined, wait for socket ready or error,
-    **  then issue the callback.  If an error occurs, close the socket instead
-    **  (which will generate a close callback).  This way, the callback should
-    **  occur when the connection is actually up, as opposed to immediately
-    **  after an outgoing connection request is issued.
+    **  Wait for socket ready or error, then do the final connection activation.
+    **  If an error occurs, close the socket instead (which will generate 
+    **  a close callback).  This way, the callback should occur when the
+    **  connection is actually up, as opposed to immediately after an outgoing
+    **  connection request is issued.
     */
-    if (ps->callBack != NULL)
+    pfd.fd = np->connFd;
+    pfd.events = POLLOUT;
+    poll (&pfd, 1, -1);
+    if (pfd.revents & (POLLHUP | POLLNVAL | POLLERR))
         {
-        pfd.fd = np->connFd;
-        pfd.events = POLLOUT;
-        poll (&pfd, 1, -1);
-        if (pfd.revents & (POLLHUP | POLLNVAL | POLLERR))
-            {
-            dtClose (np, ps, TRUE);
-            ThreadReturn;
-            }
-        (*ps->callBack) (np, np - ps->portVec, ps->callArg);
+        dtClose (np, ps, TRUE);
+        ThreadReturn;
         }
+    dtActivateFet2 (np, ps);
     
     while (1)
         {
@@ -1564,6 +1578,38 @@ static int dtGetw (NetFet *fet, void *buf, int len, bool read)
         fet->out = out + len;
         }
     return 0;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Last steps to activate the NetFet
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**                  ps          Pointer to NetPortSet to use
+**
+**  Returns:        Nothing. 
+**
+**------------------------------------------------------------------------*/
+static void dtActivateFet2 (NetFet *fet, NetPortSet *ps)
+    {
+    if (ps->callBack != NULL)
+        {
+        (*ps->callBack) (fet, fet - ps->portVec, ps->callArg);
+        }
+    
+    /* 
+    ** Link this FET into the active list. 
+    */
+    pthread_mutex_lock (&connMutex);
+    fet->next = connlist.next;
+    fet->prev = &connlist;
+    fet->next->prev = fet;
+    connlist.next = fet;
+    pthread_mutex_unlock (&connMutex);
+    if (updateConnections != NULL)
+        {
+        (*updateConnections) ();
+        }
     }
 
 /*---------------------------  End Of File  ------------------------------*/
