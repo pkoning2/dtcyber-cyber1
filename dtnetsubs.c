@@ -84,6 +84,7 @@ static void dtCloseSocket (int connFd, bool hard);
 static int dtGetw (NetFet *fet, void *buf, int len, bool read);
 static int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz);
 static void dtActivateFet2 (NetFet *fet, NetPortSet *ps);
+static int dtSendo (NetFet *fet, u8 byte);
 
 /*
 **  ----------------
@@ -182,7 +183,7 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
 #if !defined(_WIN32)
         fprintf(stderr, "dtConnect: Can't connect to %08x %d, errno %d\n", 
                 host, port, errno);
-        perror ("Can't connect");
+        perror ("dtConnect");
 #endif
         close (connFd);
         return -1;
@@ -707,7 +708,6 @@ void dtCloseFet (NetFet *fet, bool hard)
 int dtSendTlv (NetFet *fet, NetPortSet *ps, 
                int tag, int len, const void *value)
     {
-    u8  tl[2];
     int retval;
     
     if (fet->sendfirst == NULL)
@@ -728,9 +728,8 @@ int dtSendTlv (NetFet *fet, NetPortSet *ps,
         return 1;
         }
     
-    tl[0] = tag;
-    tl[1] = len;
-    dtSend (fet, ps, tl, 2);
+    dtSendo (fet, tag);
+    dtSendo (fet, len);
     retval = dtSend (fet, ps, value, len);
 
     return retval;
@@ -1610,6 +1609,47 @@ static void dtActivateFet2 (NetFet *fet, NetPortSet *ps)
         {
         (*updateConnections) ();
         }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Write one byte to the network send buffer
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**                  byte        Byte to send
+**
+**  Returns:        -1 if it worked, 0 if not.
+**
+**      Note that this function does not wake the send thread.  It is 
+**      intended for cases like dtSendTlv where several pieces are sent,
+**      and the final one of those will wake the send thread.
+**
+**------------------------------------------------------------------------*/
+static int dtSendo (NetFet *fet, u8 byte)
+    {
+    u8 *in, *out, *nextin;
+    
+    /*
+    **  Copy the pointers, since they are volatile.
+    */
+    in = (u8 *) (fet->sendin);
+    out = (u8 *) (fet->sendout);
+    nextin = in + 1;
+    if (nextin == fet->sendend)
+        {
+        nextin = fet->sendfirst;
+        }
+
+    if (nextin == out)
+        {
+        /*
+        **  We're full
+        */
+        return 0;
+        }
+    *in = byte;
+    fet->sendin = nextin;
+    return -1;
     }
 
 /*---------------------------  End Of File  ------------------------------*/
