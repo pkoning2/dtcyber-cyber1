@@ -851,9 +851,7 @@ int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
 int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog)
     {
     struct sockaddr_in server;
-#if defined (_WIN32) || defined (__APPLE__)
     int true_opt = 1;
-#endif
 
     /*
     **  Create TCP socket
