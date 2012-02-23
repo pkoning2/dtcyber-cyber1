@@ -8998,6 +8998,11 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
             break;
         }
     }
+    if (conntries == addrcount)
+    {
+        // We ran out of addresses
+        StoreWord (C_CONNFAIL);
+    }
 }
 
 PtermConnection::~PtermConnection ()
@@ -9529,7 +9534,7 @@ void PtermConnection::StoreWord (int word)
 void PtermConnection::SendData (const void *data, int len)
 {
     // Windows has the wrong type for the buffer pointer argument...
-    send(m_fet->connFd, (const char *) data, len, 0);
+    send (m_fet->connFd, (const char *) data, len, 0);
 }
 
 // ----------------------------------------------------------------------------
