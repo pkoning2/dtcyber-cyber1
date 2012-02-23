@@ -356,6 +356,7 @@ public:
     bool        truekb;
 
 private:
+    bool        m_firstTime;
     Dd60StatusBar *m_statusBar;
     wxPen       m_foregroundPen;
     wxBrush     m_foregroundBrush;
@@ -996,6 +997,7 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
     m_nextFrame (NULL),
     m_prevFrame (NULL),
     truekb (false),
+    m_firstTime (true),
     m_foregroundPen (dd60App->m_fgColor, dd60App->m_scale, wxSOLID),
     m_foregroundBrush (dd60App->m_fgColor, wxSOLID),
     m_canvas (NULL),
@@ -1147,18 +1149,13 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
         Close ();
         return;
     }
-    m_statusBar->SetStatusText(_(" Connected"), STATUS_CONN);
-    SetCursor (wxNullCursor);
+    m_statusBar->SetStatusText(_(" Connecting"), STATUS_CONN);
     setsockopt (m_fet->connFd, SOL_SOCKET, SO_KEEPALIVE,
                 (char *)&true_opt, sizeof(true_opt));
 #ifdef __APPLE__
     setsockopt (m_fet->connFd, SOL_SOCKET, SO_NOSIGPIPE,
                 (char *)&true_opt, sizeof(true_opt));
 #endif
-
-    // Set update rate, then turn on the display data stream.
-    dd60SendKey (m_interval);
-    dd60SendKey (Dd60KeyXon);
 
     m_sizer->Add (m_canvas);
     m_sizer->Add (m_statusBar);
@@ -1213,6 +1210,18 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
 
         event.Skip ();
         return;
+    }
+
+    // First time through here?  That means the connection just went live.
+    if (m_firstTime)
+    {
+        m_firstTime = false;
+        m_statusBar->SetStatusText(_(" Connected"), STATUS_CONN);
+        SetCursor (wxNullCursor);
+
+        // Set update rate, then turn on the display data stream.
+        dd60SendKey (m_interval);
+        dd60SendKey (Dd60KeyXon);
     }
 
     if (m_interval == Dd60FastRate + 0)
