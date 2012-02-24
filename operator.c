@@ -1011,6 +1011,7 @@ static void opConnlist(char *cmdParams)
         if (dtActive (np))
             {
             dtSendTlv (np, &opPorts, OpStatus, statusHdr.len, statusHdr.buf);
+            pthread_mutex_lock (&connMutex);
             for (j = StatusFirstDev, cp = connlist.next; 
                  j < StatusLineMax && cp != &connlist;
                  j++, cp = cp->next)
@@ -1039,6 +1040,7 @@ static void opConnlist(char *cmdParams)
                     }
                 dtSendTlv (np, &opPorts, OpStatus, strlen (cstat), cstat);
                 }
+            pthread_mutex_unlock (&connMutex);
             for ( ; j < StatusLineMax; j++)
                 {
                 cstat[0] = j;

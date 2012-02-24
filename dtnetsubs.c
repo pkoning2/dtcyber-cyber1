@@ -92,6 +92,7 @@ static int dtSendo (NetFet *fet, u8 byte);
 **  ----------------
 */
 NetFet connlist;
+pthread_mutex_t connMutex;
 void (*updateConnections) (void) = NULL;
 
 /*
@@ -102,7 +103,6 @@ void (*updateConnections) (void) = NULL;
 #if !defined(_WIN32)
 static pthread_t dt_thread;
 #endif
-static pthread_mutex_t connMutex;
 static bool dtInited;
 
 /*
@@ -354,35 +354,6 @@ void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize)
     if (ps->portNum != 0)
         {
         dtCreateThread (dtThread, ps);
-        }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Close a portset.
-**
-**  Parameters:     Name        Description.
-**                  ps          Pointer to NetPortSet to use
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-void dtClosePortset (NetPortSet *ps)
-    {
-    int i;
-    NetFet *fet;
-
-    for (i = 0; i < ps->maxPorts; i++)
-        {
-        fet = &ps->portVec[i];
-        if (fet->first)
-            {
-            free (fet->first);
-            fet->first = 0;
-            }
-        }
-    if (ps->portNum != 0)
-        {
-        ps->close = TRUE;
         }
     }
 
@@ -1223,7 +1194,7 @@ static void dtThread(void *param)
         **  Note that closing the data sockets is the responsibility
         **  of the code that uses those sockets.
         */
-        if (!emulationActive || ps->close)
+        if (!emulationActive)
             {
             dtCloseSocket (listenFd, TRUE);
             ThreadReturn;
@@ -1323,7 +1294,7 @@ static void dtDataThread(void *param)
         **  If DtCyber is closing down, close the socket
         **  and exit the thread.
         */
-        if (!emulationActive || ps->close)
+        if (!emulationActive)
             {
             break;
             }
@@ -1387,7 +1358,6 @@ static void dtSendThread(void *param)
 #endif
     {
     NetFet *np = (NetFet *) param;
-    NetPortSet *ps = np->ps;
     u8 *in, *out, *nextout;
     int size;
     int bytes;
@@ -1395,10 +1365,10 @@ static void dtSendThread(void *param)
     while (1)
         {
         /*
-        **  If DtCyber is closing down, os the socket is closed,
+        **  If DtCyber is closing down, or the socket is closed,
         **  exit the thread.
         */
-        if (!emulationActive || ps->close || !dtActive (np))
+        if (!emulationActive || !dtActive (np))
             {
             break;
             }
@@ -1597,6 +1567,11 @@ static void dtActivateFet2 (NetFet *fet, NetPortSet *ps)
     /* 
     ** Link this FET into the active list. 
     */
+    if (fet->prev != NULL)
+        {
+        printf ("linking fet into connlist but it's already linked! %p, %p, %p\n", fet, fet->prev, fet->next);
+        }
+
     pthread_mutex_lock (&connMutex);
     fet->next = connlist.next;
     fet->prev = &connlist;

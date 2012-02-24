@@ -409,6 +409,7 @@ extern char platoSection[];
 extern u32 channelDelayMask;
 extern long cmWaitRatio;
 extern NetFet connlist;
+extern pthread_mutex_t connMutex;
 extern void (*updateConnections) (void);
 extern long extSockets;
 
