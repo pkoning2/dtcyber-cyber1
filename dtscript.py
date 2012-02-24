@@ -213,6 +213,7 @@ class Oper (Connection, MyThread):
         retval = '\n'.join (self.status)
         while retval.endswith ("\n\n"):
             retval = retval[:-1]
+        return retval
 
 class Pterm (Connection, MyThread):
     """A connection to an NIU port, i.e., a "classic" type pterm.
