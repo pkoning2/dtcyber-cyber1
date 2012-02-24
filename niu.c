@@ -684,7 +684,8 @@ static void niuInIo(void)
                 */
                 mp->currInput[0] = 01753 >> 7;
                 mp->currInput[1] = 01753 & 0177;
-                printf ("continuing to force logout port %d\n", port);
+                printf ("continuing to force logout station %d\n", 
+                        IDX2STAT (port));
                 break;
                 }
 #ifdef DEBUG
@@ -960,7 +961,7 @@ static void niuWelcome(NetFet *np, int stat, void *arg)
     */
     if (mp->loggedIn)
         {
-        printf ("need to force logout for port %d\n", stat);
+        printf ("need to force logout for station %d\n", stat);
         mp->forceLogout = TRUE;
         }
 
