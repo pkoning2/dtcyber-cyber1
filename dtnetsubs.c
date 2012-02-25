@@ -642,7 +642,6 @@ void dtCloseFet (NetFet *fet, bool hard)
     fet->sendin = fet->sendfirst;
     fet->sendout = fet->sendfirst;
     fet->ownerInfo = 0;
-    fet->inUse = 0;
     pthread_cond_signal (&fet->cond);
     /* 
     ** Remove from the active list.
@@ -661,6 +660,12 @@ void dtCloseFet (NetFet *fet, bool hard)
             (*updateConnections) ();
             }
         }
+
+    /*
+    **  Finally mark it free.  Do this last, otherwise the FET
+    **  might be grabbed prematurely by a new connection.
+    */
+    fet->inUse = 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -1237,7 +1242,7 @@ static void dtThread(void *param)
         **  current vs. max count earlier.
         */
         np = ps->portVec;
-        while (dtActive (np))
+        while (np->inUse)
             {
             np++;
             }
