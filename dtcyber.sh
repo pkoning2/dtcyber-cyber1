@@ -16,14 +16,16 @@ elif [ "${HOSTNAME}" = "paul-konings-macbook-pro.local" ]; then
 	HOSTNAME="pkoning"
 elif [ "${HOST2}" = "equallogic" ]; then 
 	HOSTNAME="pkoning"
+elif [ "${HOST2}" = "plato4" ]; then 
+	HOSTNAME="pkoning"
 fi
 export HOSTNAME
 ulimit -c unlimited
 if [ "$1" = "" ]; then
     cp sys/871/cy871.ecs.initial sys/871/cy871.ecs
-    ./dtcyber cybis871auto | tee cyberlog &
+    ./dtcyber cybis871auto 2>&1 | tee cyberlog &
 else
-#    ./dtcyber $1  | tee cyberlog &
+#    ./dtcyber $1 2>&1  | tee cyberlog &
     ./dtcyber $1 &
 fi
 
