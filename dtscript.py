@@ -13,6 +13,7 @@ import time
 import socket
 import threading
 import struct
+import re
 
 NETMAX = 4096
 DEBUG = False
@@ -109,6 +110,7 @@ class elist (list):
                 self.append ("")
             self.append (val)
             
+statre = re.compile (r"DEBUG|UNLOCKED|ALERT|(\d+) operators")
 class Oper (Connection, MyThread):
     """A connection to the DtCyber operator interface.  It includes
     a thread that collects data from DtCyber and updates local
@@ -125,8 +127,9 @@ class Oper (Connection, MyThread):
         self.response = ""
         self.responses = 0
         self.status = elist ()
-        self.locked = False
+        self.locked = True
         self.debug = False
+        self.plato_alert = False
         self.statusdict = { }
         self.operators = 1
         self.start ()
@@ -157,7 +160,10 @@ class Oper (Connection, MyThread):
                     # OpText -- fixed text (left screen material)
                     x, y, size, bold = struct.unpack ("<HHBB", v[:6])
                     i = (0760 - y) / 16
-                    self.fixedtext[i] = v[6:]
+                    try:
+                        self.fixedtext[i] = v[6:]
+                    except IndexError:
+                        print "bad index", i, "for", x, y, size, bold, v[6:]
                 elif t == 3 or t == 5:
                     # OpSyntax or OpInitialized, ignore
                     pass
@@ -171,13 +177,21 @@ class Oper (Connection, MyThread):
                     v = v[1:]
                     self.status[i] = v
                     if i == 0:
-                        # System status line, update locked and debug status
-                        self.locked = not v.startswith ("UNLOCKED")
-                        self.debug = v[10:15] == "DEBUG"
-                        #if len (v) > 15:
-                        #    self.operators = int (v[15:].split ()[0])
-                        #else:
-                        #    self.operators = 1
+                        # System status line, update some status
+                        self.debug = self.plato_alert = False
+                        self.locked = True
+                        self.operators = 1
+                        for m in statre.finditer (v):
+                            if m.group (1):
+                                self.operators = int (m.group (1))
+                            else:
+                                ms = m.group (0)
+                                if ms == "DEBUG":
+                                    self.debug = True
+                                elif ms == "UNLOCKED":
+                                    self.locked = False
+                                elif ms == "ALERT":
+                                    self.plato_alert = True
                     else:
                         fields = v.split (None, 3)
                         if len (fields) >= 3:
