@@ -102,6 +102,7 @@ void (*updateConnections) (void) = NULL;
 */
 #if !defined(_WIN32)
 static pthread_t dt_thread;
+static pthread_attr_t dt_detach;
 #endif
 static bool dtInited;
 
@@ -128,6 +129,10 @@ void dtInit (void)
         dtInited = TRUE;
         pthread_mutex_init (&connMutex, NULL);
         connlist.next = connlist.prev = &connlist;
+#if !defined(_WIN32)
+        pthread_attr_init (&dt_detach);
+        pthread_attr_setdetachstate (&dt_detach, 1);
+#endif
         }
     }
 
@@ -201,10 +206,10 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
 **                  fp          Pointer to thread function
 **                  param       thread function parameter
 **
-**  Returns:        Nothing.
+**  Returns:        0 if ok, !=0 if not
 **
 **------------------------------------------------------------------------*/
-void dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
+int dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
     {
 #if defined(_WIN32)
     DWORD dwThreadId; 
@@ -223,21 +228,24 @@ void dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
 
     if (hThread == NULL)
         {
-        exit(1);
+        return 1;
         }
+    CloseHandle (hThread);
+    return 0;
 #else
     int rc;
 
     /*
-    **  Create POSIX thread with default attributes.
+    **  Create POSIX thread with detacted attribut.
     */
-    rc = pthread_create(&dt_thread, NULL, fp, param);
+    rc = pthread_create(&dt_thread, &dt_detach, fp, param);
     if (rc < 0)
         {
-        perror ("Failed to create thread");
-        exit(1);
+        fprintf (stderr, "Failed to create thread:\n %s\n", strerror (rc));
+        return rc;
         }
 #endif
+    return 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -353,7 +361,10 @@ void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize)
 #endif
     if (ps->portNum != 0)
         {
-        dtCreateThread (dtThread, ps);
+        if (dtCreateThread (dtThread, ps))
+            {
+            exit (1);
+            }
         }
     }
 
@@ -943,6 +954,8 @@ int dtAccept (NetFet *fet, NetFet *acceptFet)
 **------------------------------------------------------------------------*/
 void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
     {
+    int rc;
+    
 #if defined (_WIN32)
     int false_opt = 0;
 #endif
@@ -979,13 +992,14 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
     /*
     **  Create the data receive and transmit threads, if needed
     */
+    rc = 1;
     if (fet->first != NULL)
         {
-        dtCreateThread (dtDataThread, fet);
+        rc = dtCreateThread (dtDataThread, fet);
         }
-    if (fet->sendfirst != NULL)
+    if (rc == 0 && fet->sendfirst != NULL)
         {
-        dtCreateThread (dtSendThread, fet);
+        rc = dtCreateThread (dtSendThread, fet);
         }
 
     /*
@@ -993,7 +1007,11 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
     **  from the receive data thread handler if there is a receive thread.
     **  If not, do them here.
     */
-    if (fet->first == NULL)
+    if (rc)
+        {
+        dtClose (fet, ps, TRUE);
+        }
+    else if (fet->first == NULL)
         {
         dtActivateFet2 (fet, ps);
         }

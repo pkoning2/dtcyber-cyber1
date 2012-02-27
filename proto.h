@@ -287,7 +287,7 @@ int dtCheckInput(int connFd, void *buf, int size, int time);
 void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize);
 void dtClosePortset (NetPortSet *ps);
 void dtClose (NetFet *np, NetPortSet *ps, bool hard);
-void dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
+int dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
 const char *dtNowString (void);
 int dtSendTlv (NetFet *fet, NetPortSet *ps, 
                int tag, int len, const void *value);

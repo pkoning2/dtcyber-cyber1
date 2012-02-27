@@ -430,7 +430,10 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 #if !defined(_WIN32)
     if (niuOpstat > 0)
         {
-        dtCreateThread (niuThread, NULL);
+        if (dtCreateThread (niuThread, NULL))
+            {
+            exit (1);
+            }
         }
 #endif
 
