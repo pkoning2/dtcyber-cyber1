@@ -1371,6 +1371,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
                 mode = data & 3;
                 break;
             case Dd60EndBlock:
+                TRACEN ("End of block");
                 if (m_interval != Dd60FastRate + 0)
                 {
                     m_startBlock = true;
