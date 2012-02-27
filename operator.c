@@ -149,6 +149,9 @@ static char tlvBuf[OpCmdSize];
 static NetPortSet opPorts;
 static int statusType = StatusDevs;
 
+static bool updateDev;
+static bool updateConn;
+
 static const char *syntax[] = 
     /*
     ** Simple command decode table with DSD style completion.
@@ -380,10 +383,7 @@ void opSetStatus (void *buf, const char *msg)
         {
         sd->len = StatusMsgPfx;
         }
-    if (statusType == StatusDevs)
-        {
-        opSendStatus (sd);
-        }
+    updateDev = TRUE;
     }
 
 /*--------------------------------------------------------------------------
@@ -437,6 +437,30 @@ void operCheckRequests (void)
     int i;
     NetFet *np;
 
+    /*
+    **  Send any pending updates.  We do that here to avoid race
+    **  conditions between threads.
+    */
+    if (updateDev)
+        {
+        updateDev = FALSE;
+        if (statusType == StatusDevs)
+            {
+            for (i = StatusFirstDev; i < statusLineCnt; i++)
+                {
+                opSendStatus (statusLines[i]);
+                }
+            }        
+        }
+    if (updateConn)
+        {
+        updateConn = FALSE;
+        if (statusType == StatusConns)
+            {
+            opConnlist (NULL);
+            }
+        }
+    
     /*
     **  Look for commands from any of the connected 
     **  operator displays.
@@ -1530,10 +1554,7 @@ static void opSendStatus (StatusData *sd)
 **------------------------------------------------------------------------*/
 static void operUpdateConnections (void)
     {
-    if (statusType == StatusConns)
-        {
-        opConnlist (NULL);
-        }
+    updateConn = TRUE;
     }
 
 /*---------------------------  End Of File  ------------------------------*/
