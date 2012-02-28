@@ -102,7 +102,7 @@ blackbox: blackbox.o $(SOBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 clean:
-	rm -f *.d *.o *.pcf dtcyber dd60 dtoper pterm pterm*.zip pterm*.tar.gz
+	rm -f *.d *.o *.i *.ii *.pcf dtcyber dd60 dtoper pterm pterm*.zip pterm*.tar.gz
 endif
 
 kit:	pterm-kit

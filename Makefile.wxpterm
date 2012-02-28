@@ -53,16 +53,16 @@ endif
 #SETPATH= -Wl,-rpath,$(WXDIR)/lib -Wl,-rpath,$(SDLPATH)/lib
 endif
 
-# if the wxmumble dir doesn't exist, try for plain /usr/local
+# if the wxmumble dir doesn't exist, try for plain /usr
 ifeq ("$(wildcard $(DEFWXDIR))","")
-DEFWXDIR=/usr/local
+DEFWXDIR=/usr
 endif
 WXDIR ?= $(DEFWXDIR)
 
 PATH:=$(WXDIR)/bin:/usr/local/bin:$(PATH)
 
 WXCONFIG ?= wx-config
-CXXFLAGS = `$(WXCONFIG) --cxxflags`
+CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing
 WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
 WXVERSION = `$(WXCONFIG) --version` 
 
@@ -167,31 +167,27 @@ pterm-$(PTERMVERSION).dmg: ptermkit.dmg
 	hdiutil convert -format UDZO $< -o $@
 	hdiutil internet-enable -yes $@
 
-pterm-kit: 
-	$(MAKE) pterm TYPE=static 
-	$(MAKE) pterm-$(PTERMVERSION).dmg TYPE=static 
+pterm-kit: pterm-$(PTERMVERSION).dmg
 
 else
-pterm-kit:  $(MOFILES) pterm-v$(PTERMVERSION).tar.bz2
-	$(MAKE) pterm TYPE=static 
+
+pterm-kit: pterm.spec.in ptermversion.h $(MOFILES) pterm-v$(PTERMVERSION).tar.bz2
+	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm.spec.in > pterm.spec
+	cp $(HOME)/pterm-v$(PTERMVERSION).tar.bz2 /usr/src/redhat/SOURCES
+	rpmbuild -ba pterm.spec
+	cp /usr/src/redhat/RPMS/i386/pterm-$(PTERMVERSION)-1.i386.rpm .
+	cp /usr/src/redhat/SRPMS/pterm-$(PTERMVERSION)-1.src.rpm .
 
 endif
-pterm-v$(PTERMVERSION).tar.bz2:
-	tar cjf pterm-v$(PTERMVERSION).tar.bz2 --exclude '*CVS*' --exclude '*~'  --exclude '*.po' license.txt *.h pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c pterm_32.xpm Makefile.wxpterm Makefile.common Makefile languages pterm $(LANGUAGES)
 
 mofiles: $(MOFILES)
 
-pterm-src: ptermversion.h
+pterm-v$(PTERMVERSION).tar.bz2: ptermversion.h
 	mkdir pterm-$(PTERMVERSION)
 	cd pterm-$(PTERMVERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
-	cd pterm-$(PTERMVERSION); for f in license.txt *.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c 8080a.cpp Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
-	tar chzf $(HOME)/pterm-linux-src-v$(PTERMVERSION).tar.gz pterm-$(PTERMVERSION)
+	cd pterm-$(PTERMVERSION); for f in license.txt *.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c 8080a.cpp Makefile.wxpterm Makefile.common Makefile languages getkitver.py ; do ln -s ../$$f .; done
+	tar chjf $(HOME)/pterm-v$(PTERMVERSION).tar.bz2 pterm-$(PTERMVERSION)
 	rm -rf pterm-$(PTERMVERSION)
-
-pterm-rpm: pterm-src pterm.spec.in ptermversion.h
-	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm.spec.in > pterm.spec
-	cp $(HOME)/pterm-linux-src-v$(PTERMVERSION).tar.gz /usr/src/redhat/SOURCES
-	rpmbuild -ba pterm.spec
 
 pterm.dep: $(PTOBJS:.o=.d)
 
@@ -213,10 +209,15 @@ pterm_sdl.d : pterm_sdl.c
 	mv -f /tmp/$@ $@
 
 %.mo : %.po
-	if [[ "$(shell which msgfmt)" != "" ]] ; then msgfmt -o $@ $< ; fi
+	msgfmt -o $@ $<
 
-%.po : pterm_wx.cpp
-	if [[ "$(shell which xgettext)" != "" ]] ; then xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp ; msgmerge $(MSGFLAGS) $@ pterm.pot ; fi
+pterm.pot : pterm_wx.cpp
+	xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
+
+%.po :  pterm.pot
+	msgmerge $(MSGFLAGS) $@ pterm.pot
+
+pterm_wx.o : pterm_wx.cpp wxversion.h
 
 
 ifeq ($(MAKECMDGOALS),pterm)
