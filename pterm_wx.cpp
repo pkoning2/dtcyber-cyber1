@@ -427,7 +427,7 @@ static void tracestr (const char *s)
     
     gettimeofday (&tv, NULL);
     strftime (tbuf, 10, "%T", localtime (&tv.tv_sec));
-    fprintf (traceF, "%s.%03ld: %s\n", tbuf, tv.tv_usec / 1000, s);
+    fprintf (traceF, "%s.%03ld: %s\n", tbuf, (long) tv.tv_usec / 1000, s);
 }
 
 // ----------------------------------------------------------------------------
@@ -1590,9 +1590,9 @@ bool PtermApp::OnInit (void)
     
     sprintf (traceFn, "pterm%d.trc", getpid ());
 
-    srand (time (NULL));
-    m_locale.Init(wxLANGUAGE_DEFAULT);
-    m_locale.AddCatalog(wxT("pterm"));
+    srand (time (NULL)); 
+    m_locale.Init (wxLANGUAGE_DEFAULT);
+    m_locale.AddCatalog (wxT ("pterm"));
 
 #ifdef DEBUGLOG
     logwindow = new wxLogWindow (NULL, wxT("pterm log"), true, false);
