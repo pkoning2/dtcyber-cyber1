@@ -216,7 +216,7 @@ pterm.pot : pterm_wx.cpp
 	xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
 
 %.po :  pterm.pot
-	msgmerge $(MSGFLAGS)$@ pterm.pot
+	msgmerge $(MSGFLAGS) $@ pterm.pot
 
 pterm_wx.o : pterm_wx.cpp wxversion.h
 
