@@ -145,13 +145,15 @@ cc545.app: cc545
 
 Pterm.app: pterm pterm-info.plist.in pterm.icns 
 	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm-info.plist.in > pterm-info.plist
-	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en
-	mkdir -p $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES))
+	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en.lproj
+	mkdir -p $(addprefix $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES)),.lproj)
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
 	/bin/echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
-	if [[ "$(shell which msgfmt)" != "" ]] ; then for d in $(LANGUAGES); do cp $$d/pterm.mo `wx-config --prefix`/share/locale/$$d/LC_MESSAGES/wxstd.mo Pterm.app/Contents/Resources/$$d; done ; for d in $(LANGUAGES); do cp $$d/pterm.mo Pterm.app/Contents/Resources/$$d; done; fi
+	for d in $(LANGUAGES); do \
+	    cp $$d/pterm.mo Pterm.app/Contents/Resources/$${d}.lproj; \
+	done
 	touch $@
 
 pterm-empty.dmg:
@@ -215,7 +217,7 @@ pterm.pot : pterm_wx.cpp
 	xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
 
 %.po :  pterm.pot
-	msgmerge $(MSGFLAGS) $@ pterm.pot
+	msgmerge $(MSGFLAGS) -o $(@).new $@ pterm.pot && mv -f $(@).new $@
 
 pterm_wx.o : pterm_wx.cpp wxversion.h
 
