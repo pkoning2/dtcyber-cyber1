@@ -36,7 +36,6 @@ msgid "Keyboard Help"
 msgstr "Toetsenbordbeschrijving"
 
 #: pterm_wx.cpp:2204 pterm_wx.cpp:2378
-#, fuzzy
 msgid "New Connection..."
 msgstr "Nieuwe verbinding..."
 
@@ -131,12 +130,10 @@ msgid "Close this window"
 msgstr "Sluit dit venster"
 
 #: pterm_wx.cpp:2401 pterm_wx.cpp:2647
-#, fuzzy
 msgid "Display menu bar"
 msgstr "Verbindingstoestandbalk aanzetten"
 
 #: pterm_wx.cpp:2404 pterm_wx.cpp:2650
-#, fuzzy
 msgid "Display status bar"
 msgstr "Verbindingstoestandbalk aanzetten"
 
@@ -149,7 +146,6 @@ msgid "Stretch display"
 msgstr "Beeld rekken"
 
 #: pterm_wx.cpp:2411 pterm_wx.cpp:2657
-#, fuzzy
 msgid "Full Screen"
 msgstr "Schermvullend\tCtrl-U"
 
@@ -214,7 +210,6 @@ msgid "Paste ASCII"
 msgstr "Voer tekst in"
 
 #: pterm_wx.cpp:2657
-#, fuzzy
 msgid "Display full screen"
 msgstr "Schermvullende weergave"
 
@@ -239,62 +234,50 @@ msgid "Can't open clipboard."
 msgstr "Openen van klembord mislukt."
 
 #: pterm_wx.cpp:3346
-#, fuzzy
 msgid "Can't open clipboard to execute."
 msgstr "Openen van klembord mislukt."
 
 #: pterm_wx.cpp:3352
-#, fuzzy
 msgid "No text data on clipboard to execute"
 msgstr "Het klembord bevat geen tekst om uit te voeren"
 
 #: pterm_wx.cpp:3361
-#, fuzzy
 msgid "Can't paste data from the clipboard to execute"
 msgstr "Ophalen van gegevens van klembord mislukt"
 
 #: pterm_wx.cpp:3386
-#, fuzzy
 msgid "Can't open clipboard to save email address"
 msgstr "Openen van klembord om email-adres te halen mislukt."
 
 #: pterm_wx.cpp:3392
-#, fuzzy
 msgid "No text data on clipboard for email address"
 msgstr "Het klembord bevat geen tekst voor email-adres"
 
 #: pterm_wx.cpp:3401
-#, fuzzy
 msgid "Can't get email address data from the clipboard"
 msgstr "Ophalen van email-adres van klembord mislukt"
 
 #: pterm_wx.cpp:3452
-#, fuzzy
 msgid "Can't open clipboard to save search key"
 msgstr "Openen van klembord voor zoektekst mislukt."
 
 #: pterm_wx.cpp:3458
-#, fuzzy
 msgid "No text data on clipboard for search"
 msgstr "Het klembord bevat geen zoektekst"
 
 #: pterm_wx.cpp:3467
-#, fuzzy
 msgid "Can't get search key data from the clipboard"
 msgstr "Ophalen van zoektekst van klembord mislukt"
 
 #: pterm_wx.cpp:3502
-#, fuzzy
 msgid "Can't open clipboard to save text"
 msgstr "Openen van klembord om tekst te bewaren mislukt."
 
 #: pterm_wx.cpp:3508
-#, fuzzy
 msgid "No text data on clipboard for spell check"
 msgstr "Het klembord bevat geen tekst voor spelcontrole"
 
 #: pterm_wx.cpp:3517
-#, fuzzy
 msgid "Can't paste text from the clipboard"
 msgstr "Ophalen van tekst van klembord mislukt"
 
@@ -399,7 +382,6 @@ msgid "Default Host"
 msgstr "Standaardsysteem"
 
 #: pterm_wx.cpp:7692
-#, fuzzy
 msgid "Default Port*"
 msgstr "Standardpoortnummer*"
 
@@ -410,7 +392,6 @@ msgstr "* 5004=Klassiek, 8005=Kleur-terminal"
 # msgid "New Connection...\tCtrl-N"
 # msgstr "Nieuwe verbinding...\tCtrl-N"
 #: pterm_wx.cpp:7705
-#, fuzzy
 msgid "Connection"
 msgstr "Nogmaals Verbinden"
 
@@ -435,7 +416,6 @@ msgid "Show site-station numbers in frame title"
 msgstr "Toon stationsnummer op de titelbalk"
 
 #: pterm_wx.cpp:7729
-#, fuzzy
 msgid "Title"
 msgstr "Bestand"
 
@@ -444,7 +424,6 @@ msgid "Settings on this page let you fine-tune your PLATO experience."
 msgstr "Op deze pagine stelt U in hoe PLATO vertoond wordt."
 
 #: pterm_wx.cpp:7737
-#, fuzzy
 msgid "Simulate 1200 baud"
 msgstr "1200 Baud simuleren"
 
@@ -453,7 +432,6 @@ msgid "Enable GSW (not in ASCII)"
 msgstr "GSW muziekdoos aanzetten (niet in kleur-terminal)"
 
 #: pterm_wx.cpp:7742
-#, fuzzy
 msgid "Enable numeric keypad for arrow operation"
 msgstr "Numeriek toetsenbord voor pijlen"
 
@@ -470,7 +448,6 @@ msgid "Enable control-key menu accelerators"
 msgstr "Zet de control-toets aan"
 
 #: pterm_wx.cpp:7757
-#, fuzzy
 msgid "Enable -beep-"
 msgstr "-beep-commando aanzetten"
 
@@ -483,7 +460,6 @@ msgid "Disable mouse drag (select)"
 msgstr "Set selecteren met de muis uit"
 
 #: pterm_wx.cpp:7769
-#, fuzzy
 msgid "Emulation"
 msgstr "Emulatie-instellingen"
 
@@ -496,12 +472,10 @@ msgid "Disable -color- (ASCII mode)"
 msgstr "-color-commando uitzetten"
 
 #: pterm_wx.cpp:7802 pterm_wx.cpp:7812
-#, fuzzy
 msgid "Foreground color*"
 msgstr "Voorgrondkleur*"
 
 #: pterm_wx.cpp:7807 pterm_wx.cpp:7816
-#, fuzzy
 msgid "Background color*"
 msgstr "Achtergrondkleur*"
 
@@ -510,7 +484,6 @@ msgid "* NOTE: Applied in Classic mode or if -color- is disabled in ASCII mode"
 msgstr "* Dit wordt gebruikt in een klassieke terminal of als -color- uitgezet is"
 
 #: pterm_wx.cpp:7826
-#, fuzzy
 msgid "Display"
 msgstr "Scherminstellingen"
 
@@ -563,7 +536,6 @@ msgid "* NOTE: Conversions are applied at 8-character intervals."
 msgstr "* Deze vervangingen worden om de 8 karakters gedaan."
 
 #: pterm_wx.cpp:7894
-#, fuzzy
 msgid "Pasting"
 msgstr "Afdrukken"
 
@@ -654,17 +626,14 @@ msgid "Host name"
 msgstr "Systeemnaam"
 
 #: pterm_wx.cpp:8707
-#, fuzzy
 msgid "Port*"
 msgstr "Poortnummer*"
 
 #: pterm_wx.cpp:8729
-#, fuzzy
 msgid "Connect"
 msgstr "Verbinden"
 
 #: pterm_wx.cpp:8895
-#, fuzzy
 msgid "New Connection"
 msgstr "Nieuwe verbinding"
 
@@ -726,7 +695,6 @@ msgid "%s on "
 msgstr "%s naar "
 
 #: pterm_wx.cpp:9433
-#, fuzzy
 msgid " Retrying..."
 msgstr "Nogmaals proberen..."
 
