@@ -427,7 +427,7 @@ static void tracestr (const char *s)
     
     gettimeofday (&tv, NULL);
     strftime (tbuf, 10, "%T", localtime (&tv.tv_sec));
-    fprintf (traceF, "%s.%03d: %s\n", tbuf, tv.tv_usec / 1000, s);
+    fprintf (traceF, "%s.%03ld: %s\n", tbuf, tv.tv_usec / 1000, s);
 }
 
 // ----------------------------------------------------------------------------
@@ -2610,16 +2610,16 @@ void PtermFrame::BuildEditMenu (int port)
     if (ptermApp->m_TutorColor && port > 0)
 	{
 		menuEdit->AppendSeparator ();
-		menuEdit->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
-		menuEdit->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
-		menuEdit->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
-		menuEdit->Append(Pterm_Macro3, _("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), _("<c,zc.keys>"));
-		menuEdit->Append(Pterm_Macro4, _("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), _("<c,zc.text>"));
-		menuEdit->Append(Pterm_Macro5, _("color zc.errf") ACCELERATOR ("\tCtrl-5"), _("color zc.errf"));
-		menuEdit->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
-		menuEdit->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
-		menuEdit->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
-		menuEdit->Append(Pterm_Macro9, _("Menu colorization") ACCELERATOR ("\tCtrl-9"), _("Menu colorization"));
+		menuEdit->Append(Pterm_Macro0, wxT("Box 8x") ACCELERATOR ("\tCtrl-0"), wxT("Box 8x"));
+		menuEdit->Append(Pterm_Macro1, wxT("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), wxT("<c,zc.errf>"));
+		menuEdit->Append(Pterm_Macro2, wxT("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), wxT("<c,zc.info>"));
+		menuEdit->Append(Pterm_Macro3, wxT("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), wxT("<c,zc.keys>"));
+		menuEdit->Append(Pterm_Macro4, wxT("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), wxT("<c,zc.text>"));
+		menuEdit->Append(Pterm_Macro5, wxT("color zc.errf") ACCELERATOR ("\tCtrl-5"), wxT("color zc.errf"));
+		menuEdit->Append(Pterm_Macro6, wxT("color zc.info") ACCELERATOR ("\tCtrl-6"), wxT("color zc.info"));
+		menuEdit->Append(Pterm_Macro7, wxT("color zc.keys") ACCELERATOR ("\tCtrl-7"), wxT("color zc.keys"));
+		menuEdit->Append(Pterm_Macro8, wxT("color zc.text") ACCELERATOR ("\tCtrl-8"), wxT("color zc.text"));
+		menuEdit->Append(Pterm_Macro9, wxT("Menu colorization") ACCELERATOR ("\tCtrl-9"), wxT("Menu colorization"));
 	}
     menuEdit->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
     menuEdit->Enable (Pterm_Exec, false);
@@ -2658,16 +2658,16 @@ void PtermFrame::BuildPopupMenu (int port)
     if (ptermApp->m_TutorColor && port > 0)
 	{
 		menuPopup->AppendSeparator ();
-		menuPopup->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
-		menuPopup->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
-		menuPopup->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
-		menuPopup->Append(Pterm_Macro3, _("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), _("<c,zc.keys>"));
-		menuPopup->Append(Pterm_Macro4, _("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), _("<c,zc.text>"));
-		menuPopup->Append(Pterm_Macro5, _("color zc.errf") ACCELERATOR ("\tCtrl-5"), _("color zc.errf"));
-		menuPopup->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
-		menuPopup->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
-		menuPopup->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
-		menuPopup->Append(Pterm_Macro9, _("Menu colorization") ACCELERATOR ("\tCtrl-9"), _("Menu colorization"));
+		menuPopup->Append(Pterm_Macro0, wxT("Box 8x") ACCELERATOR ("\tCtrl-0"), wxT("Box 8x"));
+		menuPopup->Append(Pterm_Macro1, wxT("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), wxT("<c,zc.errf>"));
+		menuPopup->Append(Pterm_Macro2, wxT("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), wxT("<c,zc.info>"));
+		menuPopup->Append(Pterm_Macro3, wxT("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), wxT("<c,zc.keys>"));
+		menuPopup->Append(Pterm_Macro4, wxT("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), wxT("<c,zc.text>"));
+		menuPopup->Append(Pterm_Macro5, wxT("color zc.errf") ACCELERATOR ("\tCtrl-5"), wxT("color zc.errf"));
+		menuPopup->Append(Pterm_Macro6, wxT("color zc.info") ACCELERATOR ("\tCtrl-6"), wxT("color zc.info"));
+		menuPopup->Append(Pterm_Macro7, wxT("color zc.keys") ACCELERATOR ("\tCtrl-7"), wxT("color zc.keys"));
+		menuPopup->Append(Pterm_Macro8, wxT("color zc.text") ACCELERATOR ("\tCtrl-8"), wxT("color zc.text"));
+		menuPopup->Append(Pterm_Macro9, wxT("Menu colorization") ACCELERATOR ("\tCtrl-9"), wxT("Menu colorization"));
 	}
     menuPopup->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
     menuPopup->Enable (Pterm_Exec, false);
@@ -3009,10 +3009,10 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 								wxT(")>")
 								};
 			int kplato[] =  {
-							asciiToPlato['.'], 014,
+							asciiToPlato[(u8) '.'], 014,
 							014,			   -1,
-							024,               asciiToPlato['0'],
-							024,               asciiToPlato['1']
+							024,               asciiToPlato[(u8) '0'],
+							024,               asciiToPlato[(u8) '1']
 							};
 			for (int i = 0; !found && i < (int)(sizeof(tascii) / sizeof(tascii[0])); i++)
 				if (tascii[i].Cmp(m_pasteText.Mid(nextindex,tascii[i].Length())) == 0)
@@ -3043,7 +3043,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 				break;
 			case wxT('\xBB'):	// arrow
 	            ptermSendKey (024);
-	            p = asciiToPlato['6'];
+	            p = asciiToPlato[(u8) '6'];
 				break;
 			}
 			found = true;
@@ -4029,9 +4029,12 @@ void PtermFrame::SetResizeState(void)
 	//wxMessageBox(str, _("DEBUG"), wxOK | wxICON_INFORMATION, NULL);
 
 	m_canvas->SetSize (w,h);
-	m_canvas->SetVirtualSize (vXRealSize (m_xscale), vYRealSize (m_yscale));
+	m_canvas->SetVirtualSize (int (vXRealSize (m_xscale)),
+                              int (vYRealSize (m_yscale)));
     dc.DestroyClippingRegion ();
-    dc.SetClippingRegion (GetXMargin (), GetYMargin (), vRealScreenSize (m_xscale), vRealScreenSize (m_yscale));
+    dc.SetClippingRegion (GetXMargin (), GetYMargin (),
+                          int (vRealScreenSize (m_xscale)),
+                          int (vRealScreenSize (m_yscale)));
 	dc.SetUserScale(m_xscale,m_yscale);
 
 	ResetScrollRate(m_canvas);
@@ -7837,14 +7840,14 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	fgs511 = new wxFlexGridSizer( 2, 3, 0, 0 );
 	lblCharDelay = new wxStaticText( tab5, wxID_ANY, _("Delay between chars"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs511->Add( lblCharDelay, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-	txtCharDelay = new wxTextCtrl( tab5, wxID_ANY, _("50"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
+	txtCharDelay = new wxTextCtrl( tab5, wxID_ANY, wxT("50"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
 	txtCharDelay->SetMaxLength( 3 ); 
 	fgs511->Add( txtCharDelay, 0, wxALL, 5 );
 	lblCharDelay2 = new wxStaticText( tab5, wxID_ANY, _("milliseconds"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs511->Add( lblCharDelay2, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	lblLineDelay = new wxStaticText( tab5, wxID_ANY, _("Delay after end of line"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs511->Add( lblLineDelay, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	txtLineDelay = new wxTextCtrl( tab5, wxID_ANY, _("100"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
+	txtLineDelay = new wxTextCtrl( tab5, wxID_ANY, wxT("100"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
 	txtLineDelay->SetMaxLength( 3 ); 
 	fgs511->Add( txtLineDelay, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 	lblLineDelay2 = new wxStaticText( tab5, wxID_ANY, _("milliseconds"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7854,10 +7857,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	fgs512 = new wxFlexGridSizer( 2, 3, 0, 0 );
 	lblAutoNewLine = new wxStaticText( tab5, wxID_ANY, _("Automatic new line every"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs512->Add( lblAutoNewLine, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	cboAutoLF = new wxComboBox( tab5, wxID_ANY, _("60"), wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0|wxTAB_TRAVERSAL );
-	cboAutoLF->Append( _("0") );
-	cboAutoLF->Append( _("60") );
-	cboAutoLF->Append( _("120") );
+	cboAutoLF = new wxComboBox( tab5, wxID_ANY, wxT("60"), wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0|wxTAB_TRAVERSAL );
+	cboAutoLF->Append( wxT("0") );
+	cboAutoLF->Append( wxT("60") );
+	cboAutoLF->Append( wxT("120") );
 	cboAutoLF->SetMinSize( wxSize( 65,-1 ) );
 	fgs512->Add( cboAutoLF, 1, wxALL, 5 );
 	lblAutoNewLine2 = new wxStaticText( tab5, wxID_ANY, _("characters"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -9983,7 +9986,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             // this by forcing the keycode.
             if (key == '<')
             {
-                pc = asciiToPlato[','];
+                pc = asciiToPlato[(u8) ','];
             }
         }
     }
