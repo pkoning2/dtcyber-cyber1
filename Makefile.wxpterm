@@ -38,7 +38,6 @@ CXX = /usr/bin/g++
 #DEFWXDIR = /usr/local/wxstaticu.264
 DEFWXDIR = /usr/local/wxstaticu.2810
 ARCHFLAGS=-arch i386
-MSGFLAGS =  
 SDLINCL=-FSDL
 SDLLIBS=-Wl,-framework,SDL
 else
@@ -217,7 +216,7 @@ pterm.pot : pterm_wx.cpp
 	xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
 
 %.po :  pterm.pot
-	msgmerge $(MSGFLAGS) -o $(@).new $@ pterm.pot && mv -f $(@).new $@
+	msgmerge $(MSGFLAGS)$@ pterm.pot
 
 pterm_wx.o : pterm_wx.cpp wxversion.h
 
