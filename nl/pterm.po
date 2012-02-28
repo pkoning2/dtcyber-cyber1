@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-02-28 11:15-0500\n"
+"POT-Creation-Date: 2012-02-28 12:10-0500\n"
 "PO-Revision-Date: 2012-02-28 11:30-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -147,7 +147,7 @@ msgstr "Beeld rekken"
 
 #: pterm_wx.cpp:2411 pterm_wx.cpp:2657
 msgid "Full Screen"
-msgstr "Schermvullend\tCtrl-U"
+msgstr "Schermvullend"
 
 #: pterm_wx.cpp:2411
 msgid "Display in full screen mode"
@@ -481,7 +481,8 @@ msgstr "Achtergrondkleur*"
 
 #: pterm_wx.cpp:7821
 msgid "* NOTE: Applied in Classic mode or if -color- is disabled in ASCII mode"
-msgstr "* Dit wordt gebruikt in een klassieke terminal of als -color- uitgezet is"
+msgstr ""
+"* Dit wordt gebruikt in een klassieke terminal of als -color- uitgezet is"
 
 #: pterm_wx.cpp:7826
 msgid "Display"
@@ -517,7 +518,8 @@ msgstr "Woorden mogen over twee regels gebroken worden"
 
 #: pterm_wx.cpp:7872
 msgid "Use TUTOR pasting (certain sequences are treated specially)"
-msgstr "Gebruik TUTOR invoegregels (sommige letterpatronen worden anders behandeld)"
+msgstr ""
+"Gebruik TUTOR invoegregels (sommige letterpatronen worden anders behandeld)"
 
 #: pterm_wx.cpp:7875
 msgid "Convert periods followed by 7 spaces into period/tab*"
@@ -701,4 +703,3 @@ msgstr "Nogmaals proberen..."
 #: pterm_wx.cpp:10181
 msgid "Can't copy text to the clipboard"
 msgstr "Kopieren van tekst naar het klembord mislukt"
-
