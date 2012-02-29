@@ -82,7 +82,7 @@ def sendmail (args, to):
 # Dictionary of actions.  Each value is a tuple of pairs, where each
 # pair is the function to call and its argument.
 machine = socket.gethostname ()
-if "koning" in :machine or "plato4" in machine:
+if "koning" in machine or "plato4" in machine:
     actions = { "up" : ( #( post, True ),
                          #( sendmail, "paulkoning@comcast.net" ),
                          ),
@@ -106,7 +106,11 @@ else:
                 }
 
 def main (args):
-    action = actions[args[0].lower ()]
+    try:
+        action = actions[args[0].lower ()]
+    except KeyError:
+        print >> sys.stdout, "Unknown request", args[0]
+        sys.exit (1)
     for func, actarg in action:
         func (args, actarg)
 
