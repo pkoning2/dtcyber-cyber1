@@ -81,7 +81,8 @@ def sendmail (args, to):
 
 # Dictionary of actions.  Each value is a tuple of pairs, where each
 # pair is the function to call and its argument.
-if "koning" in socket.gethostname ():
+machine = socket.gethostname ()
+if "koning" in :machine or "plato4" in machine:
     actions = { "up" : ( #( post, True ),
                          #( sendmail, "paulkoning@comcast.net" ),
                          ),
