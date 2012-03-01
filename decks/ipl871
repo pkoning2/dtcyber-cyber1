@@ -395,6 +395,7 @@ return(opl)
  slptr    con    0           address of socket list
           con    sockmax
 *deck lex1
+*i SDCFIX.2
           sysnam tsocket
           sysnam sockmax
 *deck exec10
