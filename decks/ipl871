@@ -14,6 +14,17 @@ return(opl)
 */ ---   block=01-e opl2                 83/09/22. 20.24    source
 *oplfile opl2
 */
+*/ ---   block=01-e rvar leak            12/03/01. 12.00    source
+*/ -------------------------------------------------------------------
+*/
+*/ Fix router variable leak if no router lesson
+*/
+*/ -------------------------------------------------------------------
+*ident rvleak
+*deck tutorx
+*d TUTOR1X.1370
+          ZR     X1,ROUT10
+*/
 */ ---   block=01-e call fin             10/12/25. 12.00    source
 */ -------------------------------------------------------------------
 */
