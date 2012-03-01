@@ -1224,26 +1224,22 @@ static void dtThread(void *param)
             }
         
         /*
-        **  Do we have any free ports?  If not, sleep a bit
-        **  and look again.
-        */
-        if (ps->curPorts == ps->maxPorts)
-            {
-#if defined(_WIN32)
-            Sleep(1000);
-#else
-            /* usleep(10000000); */
-            sleep(1);
-#endif
-            continue;
-            }
-            
-        /*
         **  Wait for a connection.
         */
         fromLen = sizeof(from);
         connFd = accept(ps->listenFd, (struct sockaddr *)&from, &fromLen);
 
+        /*
+        **  Do we have any free ports?  If not, kill this connection.
+        **  We do this so the caller isn't left hanging, wondering why
+        **  nothing is happening.
+        */
+        if (ps->curPorts == ps->maxPorts)
+            {
+            close (connFd);
+            continue;
+            }
+            
         /*
         **  Set Keepalive and no signals.
         */
