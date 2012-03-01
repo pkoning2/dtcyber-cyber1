@@ -45,8 +45,13 @@
 #define NetBufSize  4096
 #define SendBufSize 256
 #define DisplayMargin	20
+#if  defined(__WXMAC__)
 #define SmallPointSize  12
 #define MediumPointSize 18
+#else
+#define SmallPointSize  10
+#define MediumPointSize 16
+#endif
 
 // Size of the window.
 // This is: a screen high and wide, with marging top and botton
