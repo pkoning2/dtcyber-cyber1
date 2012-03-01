@@ -1236,6 +1236,9 @@ void DtoperFrame::OnIdle (wxIdleEvent &event)
     char *cp;
     bool changes = false;
     
+    // In every case, let others see this event too.
+    event.Skip ();
+
     for (;;)
     {
         i = dtReadtlv (m_fet, dataBuf, OpDataSize);
@@ -1382,8 +1385,6 @@ void DtoperFrame::OnIdle (wxIdleEvent &event)
     {
         Refresh ();
     }
-    
-    event.Skip ();        // let others see the event, too
 }
     
 void DtoperFrame::OnClose (wxCloseEvent &)

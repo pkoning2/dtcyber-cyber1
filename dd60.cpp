@@ -1203,12 +1203,13 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     int datacount = dtFetData (m_fet);
     int dt, dut;
 #endif
+    
+    // In every case, let others see this event too.
+    event.Skip ();
 
     if (!dtActive (m_fet))
     {
         m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
-
-        event.Skip ();
         return;
     }
 
@@ -1408,8 +1409,6 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
         printf ("%d bytes from cyber in %d.%06d seconds\n", datacount, dt, dut);
     }
 #endif
-
-    event.Skip ();
 }
     
 void Dd60Frame::OnClose (wxCloseEvent &)

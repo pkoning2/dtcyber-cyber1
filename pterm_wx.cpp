@@ -2709,17 +2709,14 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 {
     int word;
 
-	// Do nothing for the help window or other connection-less windows
-	if (m_conn == NULL)
-	{
-		return;
-	}
+    // In every case, let others see this event too.
+    event.Skip ();
 
+	// Do nothing for the help window or other connection-less windows
 	// If our timer is running, we're using the timer event to drive
 	// the display, so ignore idle events.
-	if (m_timer.IsRunning ())
+	if (m_conn == NULL || m_timer.IsRunning ())
 	{
-		event.Skip ();
 		return;
 	}
 
@@ -2738,7 +2735,6 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
     
 		if (word == C_NODATA || word == C_CONNFAIL)
 		{
-			event.Skip ();
 			break;
 		}
 
@@ -2756,7 +2752,6 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 			{
 				m_timer.Start (17);
 			}
-			event.Skip ();
 			return;
 		}
         
@@ -2769,7 +2764,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 	}
 
 	switch (word)
-		{
+    {
 		case C_NODATA:
 			break;
 		case C_CONNFAIL:
@@ -2781,8 +2776,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 			break;
 		default:
 			event.RequestMore ();
-		}
-
+    }
 }
 
 void PtermFrame::OnTimer (wxTimerEvent &)
