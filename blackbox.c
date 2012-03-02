@@ -58,9 +58,11 @@ int main (int argc, char **argv)
     {
     int stat, i, detflag = 0;
     char msg2[200];
+#ifndef __APPLE__
     FILE *pidfile;
     char *fname;
-    
+#endif
+
     if (argc < 2)
         {
         msg = strdup ("PLATO is down for the moment");
@@ -70,6 +72,10 @@ int main (int argc, char **argv)
         i = 1;
         if (argc > 2)
             {
+#ifdef __APPLE__
+            printf ("usage: blackbox [ message ]\n");
+            exit (1);
+#else
             if (strcmp (argv[1], "-d") != 0)
                 {
                 printf ("usage: blackbox [ [ -d ] message ]\n");
@@ -77,6 +83,7 @@ int main (int argc, char **argv)
                 }
             i = 2;
             detflag = 1;
+#endif
             }
         msg = strdup (argv[i]);
         }
@@ -96,6 +103,7 @@ int main (int argc, char **argv)
     printf ("Current message is: '%s'\n", msg);
     if (detflag)
         {
+#ifndef __APPLE__
         daemon (1, 0);
         /*
         **  Create the pidfile after the daemon() because that
@@ -108,6 +116,7 @@ int main (int argc, char **argv)
         free (fname);
         fprintf (pidfile, "%d\n", getpid ());
         fclose (pidfile);
+#endif
         }
     else
         {
