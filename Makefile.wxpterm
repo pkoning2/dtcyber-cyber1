@@ -215,11 +215,8 @@ pterm_sdl.d : pterm_sdl.c
 pterm.pot : pterm_wx.cpp
 	xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
 
-# Do this the hard way because on the Mac it doesn't work when done
-# the normal way, for some reason.
 %.po :  pterm.pot
-	msgmerge -o $(@).tmp $@ pterm.pot
-	mv -f $(@).tmp $@
+	msgmerge $(MSGFLAGS) $@ pterm.pot
 
 pterm_wx.o : pterm_wx.cpp wxversion.h
 
