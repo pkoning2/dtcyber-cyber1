@@ -25,6 +25,7 @@
 **  Include Files
 **  -------------
 */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,6 +58,8 @@ int main (int argc, char **argv)
     {
     int stat, i, detflag = 0;
     char msg2[200];
+    FILE *pidfile;
+    char *fname;
     
     if (argc < 2)
         {
@@ -90,16 +93,31 @@ int main (int argc, char **argv)
     niuAsciiPorts.localOnly = FALSE;
     niuAsciiPorts.dataCallBack = ignoreData;
     
-    dtInitPortset (&niuPorts, 1024, 1024);
-    dtInitPortset (&niuAsciiPorts, 1024, 1024);
-
     printf ("Current message is: '%s'\n", msg);
-    if (!detflag)
+    if (detflag)
+        {
+        daemon (1, 0);
+        /*
+        **  Create the pidfile after the daemon() because that
+        **  does a fork, i.e., you get a new pid from it.
+        **  Also, for the same reason the calls to dtInitPortset
+        **  (which create threads) have to be after this point.
+        */
+        asprintf (&fname, "%s.pid", argv[0]);
+        pidfile = fopen (fname, "w");
+        free (fname);
+        fprintf (pidfile, "%d\n", getpid ());
+        fclose (pidfile);
+        }
+    else
         {
         printf ("Enter a new message at any time, or Ctrl-D to stop blackbox.\n");
         fcntl (fileno (stdin), F_SETFL, O_NONBLOCK);
         }
     
+    dtInitPortset (&niuPorts, 1024, 1024);
+    dtInitPortset (&niuAsciiPorts, 1024, 1024);
+
     for (;;)
         {
         for (stat = 0; stat < platoConns; stat++)
@@ -129,12 +147,12 @@ int main (int argc, char **argv)
                 }
             else if (i > 0)
                 {
+                msg2[i - 1] ='\0';
                 if (i > 56)
                     {
                     printf ("max of 56 characters recommended for clarity\n");
                     }
                 free (msg);
-                msg2[i - 1] ='\0';
                 msg = strdup (msg2);
                 }
             }
