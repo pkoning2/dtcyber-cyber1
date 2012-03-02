@@ -9088,7 +9088,7 @@ void PtermConnection::dataCallback (void)
         {
             break;
         }
-        else if (m_connMode == niu && 0)//platowd == 2)
+        else if (m_connMode == niu && platowd == 2)
         {
             m_savedGswMode = m_gswWord2 = 0;
             if (m_gswActive)
