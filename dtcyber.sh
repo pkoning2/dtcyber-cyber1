@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This script can be invoked as dtcyber-remote.sh, in which case
+# it does not start the UI apps.
+REMOTE=${0##*-}
+
 # first start dtcyber
 HOSTNAME=$(hostname)
 HOST1=${HOSTNAME%%.*}
@@ -25,7 +29,15 @@ fi
 export HOSTNAME
 ulimit -c unlimited
 
-rm cyberlog
+# If blackbox is running, make it go away
+if [ -s "blackbox.pid" ]; then
+    kill `cat blackbox.pid`
+    rm -f blackbox.pid
+    sleep 3
+    echo "Blackbox stopped"
+fi
+
+rm -f cyberlog
 if [ "$1" = "" ]; then
     cp sys/871/cy871.ecs.initial sys/871/cy871.ecs
     ./dtcyber cybis871auto 2>&1 | tee cyberlog &
@@ -54,16 +66,20 @@ sleep 1
 
 echo ""
 
-# now start one each of the UIs
-
-if [ "${OS}" = "Darwin" ]; then
-    open -a dd60 --args .1 5007
-    open -a dtoper --args 5006
-    # open -a Pterm --args localhost 5005
+if [ "${REMOTE}" = "remote.sh" ]; then
+    echo "dtcyber is running"
 else
-    ./dd60 .1 5007 &
-    ./dtoper 5006 &
-    # ./pterm localhost 5005 &
+    # now start one each of the UIs
+    
+    if [ "${OS}" = "Darwin" ]; then
+        open -a dd60 --args .1 5007
+        open -a dtoper --args 5006
+        # open -a Pterm --args localhost 5005
+    else
+        ./dd60 .1 5007 &
+        ./dtoper 5006 &
+        # ./pterm localhost 5005 &
+    fi
+    
+    echo ui started
 fi
-
-echo ui started
