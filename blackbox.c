@@ -56,7 +56,7 @@ static void bbSendAscii(int stat);
 
 int main (int argc, char **argv)
     {
-    int stat, i;
+    int stat, i, detflag = 0;
     NetFet *np;
     char msg2[200];
     
@@ -66,7 +66,18 @@ int main (int argc, char **argv)
         }
     else
         {
-        msg = strdup (argv[1]);
+        i = 1;
+        if (argc > 2)
+            {
+            if (strcmp (argv[1], "-d") != 0)
+                {
+                printf ("usage: blackbox [ [ -d ] message ]\n");
+                exit (1);
+                }
+            i = 2;
+            detflag = 1;
+            }
+        msg = strdup (argv[i]);
         }
     
     /*
@@ -85,8 +96,11 @@ int main (int argc, char **argv)
     dtInitPortset (&niuAsciiPorts, 1024);
 
     printf ("Current message is: '%s'\n", msg);
-    printf ("Enter a new message at any time, or Ctrl-D to stop blackbox.\n");
-    fcntl (fileno (stdin), F_SETFL, O_NONBLOCK);
+    if (!detflag)
+        {
+        printf ("Enter a new message at any time, or Ctrl-D to stop blackbox.\n");
+        fcntl (fileno (stdin), F_SETFL, O_NONBLOCK);
+        }
     
     for (;;)
         {
@@ -137,16 +151,19 @@ int main (int argc, char **argv)
         **  Check for a new message, or exit.
         */
         sleep (5);
-        i = read (fileno (stdin), msg2, sizeof (msg2));
-        if (i == 0)
+        if (!detflag)
             {
-            return 0;
-            }
-        else if (i > 0)
-            {
-            free (msg);
-            msg2[i - 1] ='\0';
-            msg = strdup (msg2);
+            i = read (fileno (stdin), msg2, sizeof (msg2));
+            if (i == 0)
+                {
+                return 0;
+                }
+            else if (i > 0)
+                {
+                free (msg);
+                msg2[i - 1] ='\0';
+                msg = strdup (msg2);
+                }
             }
         }
     }
