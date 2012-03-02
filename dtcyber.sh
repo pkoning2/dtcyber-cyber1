@@ -2,25 +2,30 @@
 
 # first start dtcyber
 HOSTNAME=$(hostname)
+HOST1=${HOSTNAME%%.*}
 HOST2=${HOSTNAME%.*}
 HOST2=${HOST2##*.}
 
 OS=$(uname)
 
 
-if [ "${HOSTNAME}" = "monster" ]; then 
-	HOSTNAME="cyber1"
-elif [ "${HOSTNAME}" = "pkoning-laptop" ]; then 
-	HOSTNAME="pkoning"
-elif [ "${HOSTNAME}" = "paul-konings-macbook-pro.local" ]; then 
-	HOSTNAME="pkoning"
+if [ "${HOST1}" = "monster" ]; then 
+    HOSTNAME="cyber1"
+elif [ "$HOST1" = "bullwinkle" ]; then
+    HOSTNAME="cyber1"
+elif [ "${HOST1}" = "pkoning-laptop" ]; then 
+    HOSTNAME="pkoning"
+elif [ "${HOST1}" = "paul-konings-macbook-pro" ]; then 
+    HOSTNAME="pkoning"
 elif [ "${HOST2}" = "equallogic" ]; then 
-	HOSTNAME="pkoning"
-elif [ "${HOST2}" = "plato4" ]; then 
-	HOSTNAME="pkoning"
+    HOSTNAME="pkoning"
+elif [ "${HOST1}" = "plato4" ]; then 
+    HOSTNAME="pkoning"
 fi
 export HOSTNAME
 ulimit -c unlimited
+
+rm cyberlog
 if [ "$1" = "" ]; then
     cp sys/871/cy871.ecs.initial sys/871/cy871.ecs
     ./dtcyber cybis871auto 2>&1 | tee cyberlog &
@@ -32,15 +37,15 @@ fi
 echo dtcyber started
 
 # wait for each of the ports to appear
-until netstat -tna | grep -q 127.0.0.1.5005; do
+until netstat -tna | fgrep -q 127.0.0.1:5005; do
     sleep 1
     echo -n "."
 done
-until netstat -tna | grep -q 127.0.0.1.5006; do
+until netstat -tna | fgrep -q 127.0.0.1:5006; do
     sleep 1
     echo -n "."
 done
-until netstat -tna | grep -q 127.0.0.1.5007; do
+until netstat -tna | fgrep -q 127.0.0.1:5007; do
     sleep 1
     echo -n "."
 done
