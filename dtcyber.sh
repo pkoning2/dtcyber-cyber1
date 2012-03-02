@@ -3,6 +3,9 @@
 # This script can be invoked as dtcyber-remote.sh, in which case
 # it does not start the UI apps.
 REMOTE=${0##*-}
+SCRDIR=${0%/*}
+
+cd ${SCRDIR}
 
 # first start dtcyber
 HOSTNAME=$(hostname)
@@ -12,6 +15,11 @@ HOST2=${HOST2##*.}
 
 OS=$(uname)
 
+if [ "${REMOTE}" = "remote.sh" ]; then
+    TEE=">"
+else
+    TEE="| tee "
+fi
 
 if [ "${HOST1}" = "monster" ]; then 
     HOSTNAME="cyber1"
@@ -40,10 +48,9 @@ fi
 rm -f cyberlog
 if [ "$1" = "" ]; then
     cp sys/871/cy871.ecs.initial sys/871/cy871.ecs
-    ./dtcyber cybis871auto 2>&1 | tee cyberlog &
+    eval "./dtcyber cybis871auto 2>&1 ${TEE} cyberlog &"
 else
-#    ./dtcyber $1 2>&1  | tee cyberlog &
-    ./dtcyber $1 &
+    eval "./dtcyber $1 2>&1  ${TEE} cyberlog"
 fi
 
 echo dtcyber started
