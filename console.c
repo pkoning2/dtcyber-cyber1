@@ -236,6 +236,7 @@
 #define KeyBufSize              50      /* Input buffer size */
 #define MaxPolls                5       /* Number of poll cycles we track */
 #define NetBufSize              256
+#define SendBufSize             20480
 
 /*
 **  -----------------------
@@ -252,8 +253,8 @@ typedef struct portParam
     {
     u32         interval;       /* frame interval, in microseconds */
     u32         lastFrame;      /* time when previous frame was sent */
-    bool        stopped;        /* TRUE if output stopped */
-    bool        sendNow;        /* TRUE to force sending of next frame */
+    volatile bool stopped;      /* TRUE if output stopped */
+    volatile bool sendNow;      /* TRUE to force sending of next frame */
     } PortParam;
 
 typedef struct pollData
@@ -274,8 +275,7 @@ static void consoleIo(void);
 static void consoleActivate(void);
 static void consoleDisconnect(void);
 
-static ThreadFunRet consoleThread (void *param);
-static int consoleInput (NetFet *np);
+static void consoleInput (NetFet *np, int bytes, void *arg);
 
 static void consoleByte1 (int byte);
 static void consoleByte2 (int byte1, int byte2);
@@ -424,9 +424,9 @@ void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     consolePorts.maxPorts = dd60Conns;
     consolePorts.localOnly = TRUE;
     consolePorts.callBack = consoleConnect;
+    consolePorts.dataCallBack = consoleInput;
     consolePorts.kind = "dd60";
-    dtInitPortset (&consolePorts, NetBufSize);
-    dtCreateThread (consoleThread, 0);
+    dtInitPortset (&consolePorts, NetBufSize, SendBufSize);
 
     /*
     **  Print a friendly message.
@@ -502,18 +502,6 @@ void consoleCheckOutput(void)
                                currentPoll.start);
             pollIn = 0;
             }
-
-        /*
-        **  This next line is necessary at least on NetBSD, because
-        **  that uses the pth version of pthreads, which is non-preemptive,
-        **  so other threads like the socket listener threads in mux6676
-        **  and niu don't get a chance to run; we're CPU bound here.
-        ** 
-        **  Don't do it on Linux because Linux has kernel based threads,
-        */
-#if !defined(__linux__) && !defined(_WIN32)
-//        sched_yield();
-#endif
         }
     }
 
@@ -806,172 +794,130 @@ static void consoleDisconnect(void)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Console listener thread
-**
-**  Parameters:     Name        Description.
-**                  param       unused
-**
-**  Returns:        nothing
-**
-**------------------------------------------------------------------------*/
-static ThreadFunRet consoleThread (void *param)
-    {
-    int i;
-    NetFet *np;
-    
-    printf ("console thread running\n");
-    
-    for (;;)
-        {
-        np = dtFindInput (&consolePorts, 100);
-        if (np == NULL)
-            {
-            continue;
-            }
-        
-        i = consoleInput (np);
-        if (i < 0)
-            {
-            dtClose (np, &consolePorts, TRUE);
-            }
-        else if (!emulationActive)
-            {
-            /* We just executed "shutdown" */
-            ThreadReturn;
-            }
-        }
-    }
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Process console input
 **
 **  Parameters:     Name        Description.
 **                  np          NetFet with input
+**                  bytes       count of received bytes
+**                  arg         void * argument, if needed
 **
-**  Returns:        -1 for disconnect, 0 if command processed.
+**  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
-static int consoleInput (NetFet *np)
+static void consoleInput (NetFet *np, int bytes, void *arg)
     {
-    u8 buf;
-    int i;
+    int buf;
     int port;
     PortParam *mp;
     int delay_opt;
     
-    /*
-    **  Try to receive a byte of data
-    */
-    i = recv (np->connFd, &buf, 1, MSG_NOSIGNAL);
-    if (i <= 0)
-        {
-        return -1;
-        }
-    
     /* Figure out which port (connection index) this is */
     port = np - consolePorts.portVec;
     mp = portVector + port;
-    switch (buf & 0300)
+
+    while ((buf = dtReado (np)) >= 0)
         {
-    case Dd60KeyDown:
-        if (buf <= 062)
+        switch (buf & 0300)
             {
-            consoleQueueKey (buf);
-            }
-        else
-            {
-            switch (buf)
+        case Dd60KeyDown:
+            if (buf <= 062)
                 {
-            case  Dd60KeyTest:
-                npuAction = TRUE;
-                printf ("npuAction set\n");
-                break;
-            case  Dd60KeyXoff:
-                mp->stopped = TRUE;
-                break;
-            case Dd60KeyXon:
-                mp->stopped = FALSE;
-                mp->sendNow = TRUE;     /* Send new data ASAP */
-                break;
-#if CcDebug == 1
-            case Dd60TraceCp0:
-                if (opDebugging)
-                    {
-                    traceMask ^= TraceCpu0;
-                    debugDisplay |= (traceMask != 0);
-                    traceStop ();
-                    }
-                break;
-            case Dd60TraceCp1:
-                if (opDebugging)
-                    {
-                    traceMask ^= TraceCpu1;
-                    debugDisplay |= (traceMask != 0);
-                    traceStop ();
-                    }
-                break;
-            case Dd60TraceEcs:
-                if (opDebugging)
-                    {
-                    traceMask ^= TraceEcs;
-                    debugDisplay |= (traceMask != 0);
-                    traceStop ();
-                    }
-                break;
-            case Dd60TraceXj:
-                if (opDebugging)
-                    {
-                    traceMask ^= TraceXj;
-                    debugDisplay |= (traceMask != 0);
-                    traceStop ();
-                    }
-                break;
-            case Dd60TraceAll:
-                if (opDebugging && traceMask == 0 && chTraceMask == 0)
-                    {
-                    traceMask = ~0;
-                    debugDisplay = TRUE;
-                    }
-                else
-                    {
-                    traceMask = 0;
-                    chTraceMask = 0;
-                    traceStop ();
-                    }
-#endif
-                break;
+                consoleQueueKey (buf);
                 }
-            }
-        break;
-    case Dd60KeyUp:
-        if ((buf & 077) <= 062)
-            {
-            consoleQueueKey ((buf & 077) | 0200);
-            }
+            else
+                {
+                switch (buf)
+                    {
+                case  Dd60KeyTest:
+                    npuAction = TRUE;
+                    printf ("npuAction set\n");
+                    break;
+                case  Dd60KeyXoff:
+                    mp->stopped = TRUE;
+                    break;
+                case Dd60KeyXon:
+                    mp->stopped = FALSE;
+                    mp->sendNow = TRUE;     /* Send new data ASAP */
+                    break;
 #if CcDebug == 1
-        else if (opDebugging && buf >= Dd60TracePp0 && buf <= Dd60TracePp0 + 011)
-            {
-            /* PPU trace toggle */
-            traceMask ^= (1 << (buf - Dd60TracePp0));
-            debugDisplay |= (traceMask != 0);
-            traceStop ();
-            }
+                case Dd60TraceCp0:
+                    if (opDebugging)
+                        {
+                        traceMask ^= TraceCpu0;
+                        debugDisplay |= (traceMask != 0);
+                        traceStop ();
+                        }
+                    break;
+                case Dd60TraceCp1:
+                    if (opDebugging)
+                        {
+                        traceMask ^= TraceCpu1;
+                        debugDisplay |= (traceMask != 0);
+                        traceStop ();
+                        }
+                    break;
+                case Dd60TraceEcs:
+                    if (opDebugging)
+                        {
+                        traceMask ^= TraceEcs;
+                        debugDisplay |= (traceMask != 0);
+                        traceStop ();
+                        }
+                    break;
+                case Dd60TraceXj:
+                    if (opDebugging)
+                        {
+                        traceMask ^= TraceXj;
+                        debugDisplay |= (traceMask != 0);
+                        traceStop ();
+                        }
+                    break;
+                case Dd60TraceAll:
+                    if (opDebugging && traceMask == 0 && chTraceMask == 0)
+                        {
+                        traceMask = ~0;
+                        debugDisplay = TRUE;
+                        }
+                    else
+                        {
+                        traceMask = 0;
+                        chTraceMask = 0;
+                        traceStop ();
+                        }
 #endif
-        break;
-    case Dd60FastRate:
-        mp->interval = (buf & 077) * 20000;
-        delay_opt = (mp->interval == 0);
-        setsockopt (np->connFd, SOL_SOCKET, TCP_NODELAY,
-                    (char *) &delay_opt, sizeof (delay_opt));
-        break;
-    case Dd60SlowRate:
-        mp->interval = (buf & 077) * 1000000;
-        delay_opt = (mp->interval == 0);
-        setsockopt (np->connFd, SOL_SOCKET, TCP_NODELAY,
-                    (char *) &delay_opt, sizeof (delay_opt));
-        break;
+                    break;
+                    }
+                }
+            break;
+        case Dd60KeyUp:
+            if ((buf & 077) <= 062)
+                {
+                consoleQueueKey ((buf & 077) | 0200);
+                }
+#if CcDebug == 1
+            else if (opDebugging && buf >= Dd60TracePp0 && buf <= Dd60TracePp0 + 011)
+                {
+                /* PPU trace toggle */
+                traceMask ^= (1 << (buf - Dd60TracePp0));
+                debugDisplay |= (traceMask != 0);
+                traceStop ();
+                }
+#endif
+            break;
+        case Dd60FastRate:
+            mp->interval = (buf & 077) * 20000;
+            delay_opt = (mp->interval == 0);
+            setsockopt (np->connFd, SOL_SOCKET, TCP_NODELAY,
+                        (char *) &delay_opt, sizeof (delay_opt));
+            break;
+        case Dd60SlowRate:
+            mp->interval = (buf & 077) * 1000000;
+            delay_opt = (mp->interval == 0);
+            setsockopt (np->connFd, SOL_SOCKET, TCP_NODELAY,
+                        (char *) &delay_opt, sizeof (delay_opt));
+            break;
+            }
         }
-    return 0;
     }
 
 /*--------------------------------------------------------------------------
@@ -1295,11 +1241,6 @@ static void consoleSendOutput (int start, int end)
     u32 us;
     char buf[160];
     u8 endBlock = Dd60EndBlock;
-    
-#if defined(_WIN32)
-    _ftime (&tm);
-    us = (tm.time * 1000 + tm.millitm) * 1000;
-#endif
     
     if (debugDisplay)
         {

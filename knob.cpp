@@ -76,7 +76,7 @@ void wxKnob::SetRange (int minValue, int maxValue)
     }
 }
     
-int wxKnob::SetValue (int value)
+void wxKnob::SetValue (int value)
 {
     if (value < m_min)
         value = m_min;
@@ -88,13 +88,11 @@ int wxKnob::SetValue (int value)
         m_setting = value;
         Refresh ();
         Update ();
-        
     }
 }
 
 void wxKnob::OnPaint(wxPaintEvent& WXUNUSED(event))
 {
-    int sizeX, sizeY;
     double theta;
     double dx, dy;
     int cx, cy;
@@ -115,7 +113,7 @@ void wxKnob::OnPaint(wxPaintEvent& WXUNUSED(event))
     r2 = irnd (r * .45);
     lw = int (ceil (r / 15.));
     
-    dc.BeginDrawing();
+    //dc.BeginDrawing();
 
     p.SetWidth (lw);
     dc.SetPen (p);
@@ -124,7 +122,7 @@ void wxKnob::OnPaint(wxPaintEvent& WXUNUSED(event))
     dc.DrawLine (cx + irnd (r * dx), cy + irnd (r * dy),
                  cx + irnd (r2 * dx), cy + irnd (r2 * dy));
     
-    dc.EndDrawing();
+    //dc.EndDrawing();
 
 }
 

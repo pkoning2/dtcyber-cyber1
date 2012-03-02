@@ -38,7 +38,6 @@ CXX = /usr/bin/g++
 #DEFWXDIR = /usr/local/wxstaticu.264
 DEFWXDIR = /usr/local/wxstaticu.2810
 ARCHFLAGS=-arch i386
-MSGFLAGS =  
 SDLINCL=-FSDL
 SDLLIBS=-Wl,-framework,SDL
 else
@@ -53,16 +52,16 @@ endif
 #SETPATH= -Wl,-rpath,$(WXDIR)/lib -Wl,-rpath,$(SDLPATH)/lib
 endif
 
-# if the wxmumble dir doesn't exist, try for plain /usr/local
+# if the wxmumble dir doesn't exist, try for plain /usr
 ifeq ("$(wildcard $(DEFWXDIR))","")
-DEFWXDIR=/usr/local
+DEFWXDIR=/usr
 endif
 WXDIR ?= $(DEFWXDIR)
 
 PATH:=$(WXDIR)/bin:/usr/local/bin:$(PATH)
 
 WXCONFIG ?= wx-config
-CXXFLAGS = `$(WXCONFIG) --cxxflags`
+CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing
 WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
 WXVERSION = `$(WXCONFIG) --version` 
 
@@ -107,26 +106,35 @@ wxversion.h: wxversion
 	  if cmp -s wxversion.h.tmp wxversion.h; then rm -f wxversion.h.tmp; \
 	    else mv -f wxversion.h.tmp wxversion.h; fi; fi
 
-dd60x:	$(SOBJS) dd60x.o knob.o iir.o 
+dd60:	$(SOBJS) dd60.o knob.o iir.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX) $(LDFLAGS) -o $@ $+ $(SDLLIBS) $(WXLIBS) $(SETPATH)
+	$(CXX)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
+
+dtoper:	$(SOBJS) dtoper.o 
+	export LD_RUN_PATH=$(WXDIR)/lib ; \
+	$(CXX)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
 # console display test program
 cc545:	cc545.o knob.o iir.o
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
-ifeq ("$(HOST)","Linux")
-# GCC 3.3.2-1 (from RedHat) miscompiles this on Linux if -O2 is used!
-knob.o : knob.cpp
-	$(CXX) -c $(CFLAGS) $(CXXFLAGS) -O1 $<
-endif
-
 ifeq ("$(HOST)","Darwin")
 
-dd60x.app: dd60x
-	mkdir -p dd60x.app/Contents/MacOS
-	cp dd60x dd60x.app/Contents/MacOS
+dd60.app: dd60 dd60.icns dd60-info.plist
+	mkdir -p dd60.app/Contents/MacOS dd60.app/Contents/Resources
+	/bin/echo -n "APPL????" > dd60.app/Contents/PkgInfo
+	cp dd60 dd60.app/Contents/MacOS
+	cp dd60-info.plist dd60.app/Contents/Info.plist
+	cp dd60.icns dd60.app/Contents/Resources/
+	touch $@
+
+dtoper.app: dtoper dtoper.icns dtoper-info.plist
+	mkdir -p dtoper.app/Contents/MacOS dtoper.app/Contents/Resources
+	/bin/echo -n "APPL????" > dtoper.app/Contents/PkgInfo
+	cp dtoper dtoper.app/Contents/MacOS
+	cp dtoper-info.plist dtoper.app/Contents/Info.plist
+	cp dtoper.icns dtoper.app/Contents/Resources/
 	touch $@
 
 cc545.app: cc545
@@ -134,15 +142,17 @@ cc545.app: cc545
 	cp cc545 cc545.app/Contents/MacOS
 	touch $@
 
-Pterm.app: pterm pterm-info.plist.in pterm.icns 
+Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES) 
 	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm-info.plist.in > pterm-info.plist
-	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en
-	mkdir -p $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES))
+	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en.lproj
+	mkdir -p $(addprefix $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES)),.lproj)
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
 	/bin/echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
-	if [[ "$(shell which msgfmt)" != "" ]] ; then for d in $(LANGUAGES); do cp $$d/pterm.mo `wx-config --prefix`/share/locale/$$d/LC_MESSAGES/wxstd.mo Pterm.app/Contents/Resources/$$d; done ; for d in $(LANGUAGES); do cp $$d/pterm.mo Pterm.app/Contents/Resources/$$d; done; fi
+	for d in $(LANGUAGES); do \
+	    cp $$d/pterm.mo Pterm.app/Contents/Resources/$${d}.lproj; \
+	done
 	touch $@
 
 pterm-empty.dmg:
@@ -158,31 +168,27 @@ pterm-$(PTERMVERSION).dmg: ptermkit.dmg
 	hdiutil convert -format UDZO $< -o $@
 	hdiutil internet-enable -yes $@
 
-pterm-kit: 
-	$(MAKE) pterm TYPE=static 
-	$(MAKE) pterm-$(PTERMVERSION).dmg TYPE=static 
+pterm-kit: pterm-$(PTERMVERSION).dmg
 
 else
-pterm-kit:  $(MOFILES) pterm-v$(PTERMVERSION).tar.bz2
-	$(MAKE) pterm TYPE=static 
+
+pterm-kit: pterm.spec.in ptermversion.h $(MOFILES) pterm-v$(PTERMVERSION).tar.bz2
+	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm.spec.in > pterm.spec
+	cp $(HOME)/pterm-v$(PTERMVERSION).tar.bz2 /usr/src/redhat/SOURCES
+	rpmbuild -ba pterm.spec
+	cp /usr/src/redhat/RPMS/i386/pterm-$(PTERMVERSION)-1.i386.rpm .
+	cp /usr/src/redhat/SRPMS/pterm-$(PTERMVERSION)-1.src.rpm .
 
 endif
-pterm-v$(PTERMVERSION).tar.bz2:
-	tar cjf pterm-v$(PTERMVERSION).tar.bz2 --exclude '*CVS*' --exclude '*~'  --exclude '*.po' license.txt *.h pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c pterm_32.xpm Makefile.wxpterm Makefile.common Makefile languages pterm $(LANGUAGES)
 
 mofiles: $(MOFILES)
 
-pterm-src: ptermversion.h
+pterm-v$(PTERMVERSION).tar.bz2: ptermversion.h
 	mkdir pterm-$(PTERMVERSION)
 	cd pterm-$(PTERMVERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
-	cd pterm-$(PTERMVERSION); for f in license.txt *.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c 8080a.cpp Makefile.wxpterm Makefile.common Makefile languages ; do ln -s ../$$f .; done
-	tar chzf $(HOME)/pterm-linux-src-v$(PTERMVERSION).tar.gz pterm-$(PTERMVERSION)
+	cd pterm-$(PTERMVERSION); for f in license.txt *.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c 8080a.cpp Makefile.wxpterm Makefile.common Makefile languages getkitver.py ; do ln -s ../$$f .; done
+	tar chjf $(HOME)/pterm-v$(PTERMVERSION).tar.bz2 pterm-$(PTERMVERSION)
 	rm -rf pterm-$(PTERMVERSION)
-
-pterm-rpm: pterm-src pterm.spec.in ptermversion.h
-	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm.spec.in > pterm.spec
-	cp $(HOME)/pterm-linux-src-v$(PTERMVERSION).tar.gz /usr/src/redhat/SOURCES
-	rpmbuild -ba pterm.spec
 
 pterm.dep: $(PTOBJS:.o=.d)
 
@@ -204,10 +210,18 @@ pterm_sdl.d : pterm_sdl.c
 	mv -f /tmp/$@ $@
 
 %.mo : %.po
-	if [[ "$(shell which msgfmt)" != "" ]] ; then msgfmt -o $@ $< ; fi
+	msgfmt -o $@ $<
 
-%.po : pterm_wx.cpp
-	if [[ "$(shell which xgettext)" != "" ]] ; then xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp ; msgmerge $(MSGFLAGS) $@ pterm.pot ; fi
+pterm.pot : pterm_wx.cpp
+	xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
+
+# Do this the hard way because on the Mac it doesn't work when done
+# the normal way, for some reason.
+%.po :  pterm.pot
+	msgmerge -o $(@).tmp $@ pterm.pot
+	mv -f $(@).tmp $@
+
+pterm_wx.o : pterm_wx.cpp wxversion.h
 
 
 ifeq ($(MAKECMDGOALS),pterm)

@@ -281,13 +281,13 @@ void ddWaitIO (DiskIO *io);
 /*
 **  dtnetsubs.c
 */
+void dtInit (void);
 int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int portnum);
 int dtCheckInput(int connFd, void *buf, int size, int time);
-void dtInitPortset (NetPortSet *ps, int ringSize);
+void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize);
 void dtClosePortset (NetPortSet *ps);
-int dtClose (NetFet *np, NetPortSet *ps, bool hard);
-NetFet * dtFindInput (NetPortSet *ps, int time);
-void dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
+void dtClose (NetFet *np, NetPortSet *ps, bool hard);
+int dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
 const char *dtNowString (void);
 int dtSendTlv (NetFet *fet, NetPortSet *ps, 
                int tag, int len, const void *value);
@@ -296,13 +296,12 @@ int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog);
 int dtAccept (NetFet *fet, NetFet *acceptFet);
 void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd);
 
-int dtRead (NetFet *fet, NetPortSet *ps, int time);
 int dtReado (NetFet *fet);
+int dtReadoi (NetFet *fet, int *outidx);
 int dtReadw (NetFet *fet, void *buf, int len);
 int dtPeekw (NetFet *fet, void *buf, int len);
 int dtReadmax (NetFet *fet, void *buf, int len);
 int dtReadtlv (NetFet *fet, void *buf, int len);
-int dtInitFet (NetFet *fet, int bufsiz);
 void dtCloseFet (NetFet *fet, bool hard);
 
 /* We could do these as functions but they are short, so... */
@@ -316,8 +315,24 @@ void dtCloseFet (NetFet *fet, bool hard);
      : (fet)->end - (fet)->out + (fet)->in - (fet)->first)
 #define dtFetFree(fet) \
     ((fet)->end - (fet)->first - dtFetData (fet) - 1)
+
+#define dtSendEmpty(fet) \
+    ((fet)->sendin == (fet)->sendout)
+#define dtSendFull(fet) \
+    ((fet)->sendin + 1 == (fet)->sendout || \
+     ((fet)->sendin + 1 == (fet)->sendend && (fet)->sendout == (fet)->sendfirst))
+#define dtSendData(fet) \
+    (((fet)->sendin >= (fet)->sendout) ? (fet)->sendin - (fet)->sendout \
+     : (fet)->sendend - (fet)->sendout + (fet)->sendin - (fet)->sendfirst)
+#define dtSendFree(fet) \
+    ((fet)->sendend - (fet)->sendfirst - dtSendData (fet) - 1)
+
 #define dtActive(fet) \
     ((fet)->connFd != 0)
+
+/* This goes with dtReadoi */
+#define dtUpdateOut(fet,outidx) \
+    (fet)->out = (outidx) + fet->first
 
 /*
 **  -----------------
@@ -394,6 +409,7 @@ extern char platoSection[];
 extern u32 channelDelayMask;
 extern long cmWaitRatio;
 extern NetFet connlist;
+extern pthread_mutex_t connMutex;
 extern void (*updateConnections) (void);
 extern long extSockets;
 

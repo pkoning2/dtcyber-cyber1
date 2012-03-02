@@ -17,11 +17,21 @@
 #include <winsock.h>
 typedef u_long in_addr_t;
 #define EINPROGRESS WSAEINPROGRESS
+#define pthread_mutex_t CRITICAL_SECTION
+#define pthread_mutex_init InitializeCriticalSection
+#define pthread_mutex_lock EnterCriticalSection
+#define pthread_mutex_unlock LeaveCriticalSection
+#define pthread_cond_t  CONDITION_VARIABLE
+#define pthread_cond_init InitializeConditionVariable
+#define pthread_cond_wait(c, m) SleepConditionVariableCS ((c), (m), INFINITE)
+#define pthread_cond_signal WakeConditionVariable
+#define pthread_cond_broadcast WakeAllConditionVariable
 #else
 #include <stdbool.h>
 #include <netinet/in.h>
 #define _POSIX_C_SOURCE_199309L
 #include <unistd.h>
+#include <pthread.h>
 #endif
 
 #ifdef _POSIX_ASYNCHRONOUS_IO
@@ -214,7 +224,7 @@ typedef struct
 /*
 **  Network "FET"
 **
-**  Ok, it's not quite a classic FET, but it's pretty similar and it
+**  Ok, it's not quite a classic FET, but it's somewhat similar and it
 **  supports many of the same kinds of operations.
 */
 typedef struct NetFet_s
@@ -222,25 +232,31 @@ typedef struct NetFet_s
     struct NetFet_s *prev;              /* circular list pointers */
     struct NetFet_s *next;
     int         connFd;                 /* File descriptor for socket */
-    u8          *first;                 /* Start of ring buffer */
+    u8          *first;                 /* Start of receive ring buffer */
     volatile u8 *in;                    /* Fill (write) pointer */
     volatile u8 *out;                   /* Empty (read) pointer */
     u8          *end;                   /* End of ring buffer + 1 */
+    u8          *sendfirst;             /* Start of transmit ring buffer */
+    volatile u8 *sendin;                /* Fill (write) pointer */
+    volatile u8 *sendout;               /* Empty (read) pointer */
+    u8          *sendend;               /* End of ring buffer + 1 */
+    pthread_cond_t  cond;               /* Condition variable for waking send thread */
+    pthread_mutex_t mutex;              /* Mutex to protect sendcond */
     struct in_addr from;                /* remote IP address */
     int         fromPort;               /* remote TCP port number */
-    u8          *sendData;              /* Pending data to send */
-    int         sendCount;              /* Count of sendData bytes */
-    int         sendBufCount;           /* Size of sendData realloc */
     struct NetPortSet_s *ps;            /* PortSet this belongs to */
     u64         ownerInfo;              /* Data supplied by socket owner */
     u8          inUse;                  /* In use flag */
+    bool        closePending;           /* Close (...FALSE) pending */
+    bool        listen;                 /* Is this a bind/listen socket? */
     } NetFet;
 
 
 /*
-**  Callback function for new connection.
+**  Callback function for new connection and new data.
 */
 typedef void (ConnCb) (NetFet *np, int portNum, void *arg);
+typedef void (DataCb) (NetFet *np, int bytes, void *arg);
 
 /*
 **  Tread function
@@ -263,15 +279,12 @@ typedef struct NetPortSet_s
     NetFet      *portVec;               /* array of NetFets */
     int         listenFd;               /* listen socket fd */
     int         portNum;                /* TCP port number to listen to */
-    fd_set      activeSet;              /* fd_set for active port fd's */
-    fd_set      sendSet;                /* fd_set for fd's with send data */
-    int         sendCount;              /* count of fd's in sendSet */
-    int         maxFd;                  /* highest port fd value */
     ConnCb      *callBack;              /* function to call for new conn */
     void        *callArg;               /* argument to the above */
+    DataCb      *dataCallBack;          /* function to call for new data */
+    void        *dataCallArg;           /* argument to the above */
     const char  *kind;                  /* What is this portset for? */
     bool        localOnly;              /* TRUE to listen on 127.0.0.1 */
-    bool        close;                  /* TRUE to shut down thread */
     } NetPortSet;
 
 /*

@@ -50,7 +50,8 @@
 #define RETERROR(x) (1000 + x)
 #define RETERRNO    RETERROR(errno)
 
-#define MAXNET      4096
+#define NetBufSize  256
+#define SendBufSize 4096
 #define SIMNAM      0       /* Which NAM site is the simulated one */
 
 #define FLOW_XOFF   1       /* XOFF from terminal */
@@ -135,7 +136,6 @@ typedef struct portParam
     int         keyAsm;
     int         flowFlags;
     bool        newKbd;
-    bool        sendLogout;
     bool        forceLogout;
 } PortParam;
 
@@ -150,6 +150,7 @@ static void storeKey (int key, int station);
 static void storeChar (int c, char **pp);
 static bool framatReq (int req, int station);
 static void pniWelcome (NetFet *np, int stat, void *arg);
+static void pniDataCallback (NetFet *np, int bytes, void *arg);
 static bool pniSendstr (int stat, const char *p, int len);
 static void pniUpdateStatus (SiteParam *sp);
 static bool pniLoggedIn (int stat);
@@ -409,15 +410,17 @@ void initPni (void)
         sp = siteVector + i;
 
         /*
-        **  Create the threads which will deal with TCP connections.
+        **  Create the portsets which will deal with TCP connections.
         */
         sp->pniPorts.portNum = sp->port;
         sp->pniPorts.maxPorts = sp->terms;
         sp->pniPorts.localOnly = sp->local;
         sp->pniPorts.callBack = pniWelcome;
+        sp->pniPorts.dataCallBack = pniDataCallback;
+        sp->pniPorts.dataCallArg = sp;
         sp->pniPorts.callArg = sp;
         sp->pniPorts.kind = sp->siteName;
-        dtInitPortset (&(sp->pniPorts), MAXNET);
+        dtInitPortset (&(sp->pniPorts), NetBufSize, SendBufSize);
         /*
         **  Allocate the operator status buffer
         */
@@ -482,7 +485,7 @@ CpWord pniOp (CPUVARGS1 (CpWord req))
                 for (i = 0; i < pniStations; i++)
                 {
                     pp = portVector + i;
-                    if (pp->np != NULL)
+                    if (dtActive (pp->np))
                     {
                         DEBUGPRINT ("Sending offmsg to station %d\n", IDX2STAT (i));
                         pniSendstr (IDX2STAT (i), OFF_MSG, 0);
@@ -586,7 +589,7 @@ CpWord pniOp (CPUVARGS1 (CpWord req))
     for (stat = 0; stat < stations; stat++)
     {
         pp = portVector + stat;
-        if (pp->np != NULL)
+        if (dtActive (pp->np))
         {
             pniActivateStation (stat);
         }
@@ -614,7 +617,7 @@ CpWord pniOp (CPUVARGS1 (CpWord req))
 **------------------------------------------------------------------------*/
 void pniCheck (void)
 {
-    int len, i, j, snum;
+    int len, i, j;
     int station;
     int opcode;
     CpWord oldout, hdr;
@@ -623,238 +626,7 @@ void pniCheck (void)
     int shift;
     PortParam *pp;
     NetFet *np;
-    int port, key;
-    struct stbank *sb;
-    NetPortSet *psp;
-    SiteParam *sp;
-
-    /*
-    **  Scan the active connections, round robin, looking
-    **  for one that has pending input. 
-    */
-    port = lastInPort;
-    for (;;)
-    {
-        if (++port == pniStations)
-        {
-            /*
-            **  Whenever we finish a scan pass through the ports
-            **  (i.e., we've wrapped around) look for more data.
-            */
-            port = 0;
-            for (snum = 0; snum < sites; snum++)
-            {
-                for (;;)
-                {
-                    sp = siteVector + snum;
-                    psp = &(sp->pniPorts);
-                    np = dtFindInput (psp, 0);
-                    if (np == NULL)
-                    {
-                        break;
-                    }
-                    i = dtRead  (np, psp, -1);
-                    if (i < 0)
-                    {
-                        dtClose (np, psp, TRUE);
-                    }
-                }
-            }
-        }
-
-        pp = portVector + port;
-        np = pp->np;
-            
-        if (pp->sendLogout)
-        {
-            /*
-            **  If we disconnected without logging out, send
-            **  *offky2* which tells PLATO to log out this
-            **  station.
-            */
-            storeKey (OFFKY2, IDX2STAT (port));
-            pp->sendLogout = FALSE;
-            continue;
-        }
-        if (np == NULL || !dtActive (np))
-        {
-            if (port == lastInPort)
-            {
-                break;                      /* no input anywhere */
-            }
-            continue;
-        }
-        for (;;)
-        {
-            /*
-            ** We'll try to process a whole escape sequence, if
-            ** it's available, but if not we'll go on to another port.
-            */
-            i = dtReado (np);               /* Get a byte */
-            if (i < 0)
-            {
-                key = -1;
-                break;                      /* we don't have enough data yet */
-            }
-            key = i & Mask7;
-            DEBUGPRINT ("pni input, char code %03o, state %d\n", key, (int) (pp->escState));
-            switch (pp->escState)
-            {
-            case norm:
-                if (key == 033)
-                {
-                    pp->escState = esc;
-                    continue;
-                }
-                else if (pp->newKbd)
-                {
-                    if (key == 0x11)
-                    {
-                        // XON
-                        pp->flowFlags &= ~FLOW_XOFF;
-                        if (pp->flowFlags == 0)
-                        {
-                            pp->flowFlags = FLOW_DOPTS;
-                        }
-                    }
-                    else if (key == 0x13)
-                    {
-                        // XOFF
-                        pp->flowFlags |= FLOW_XOFF;
-                    }
-                    key = asc2plato2[key];
-                }
-                else
-                {
-                    key = asc2plato[key];
-                }
-                break;
-            case esc:
-                // Escape sequence.  There are only a few possibilities.
-                switch (key)
-                {
-                case 4: 
-                    key = 0x31;     // sub1
-                    break;
-                case 0x17:
-                    key = 0x30;     // super1
-                    break;
-                case 0x1d:
-                    key = 0x3c;     // square1
-                    break;
-                case 0x1f:
-                    pp->escState = xlow;
-                    continue;       // fine grid touch
-                default:
-                    if (key >= 0100)
-                    {
-                        pp->escState = key3;
-                        pp->keyAsm = key & 077;
-                        continue;
-                    }
-                    key = -1;
-                    break;
-                }
-                pp->escState = norm;
-                break;
-            case key3:
-                if (key >= 0100)
-                {
-                    key = ((key & 077) << 6) + pp->keyAsm;
-                }
-                else
-                {
-                    key = -1;
-                }
-                pp->escState = norm;
-                break;
-            case xlow:
-                if (key >= 0100)
-                {
-                    pp->keyAsm = (key & 037) << 10;
-                    pp->escState = xhigh;
-                }
-                else
-                {
-                    key = -1;
-                    pp->escState = norm;
-                }
-                break;
-            case xhigh:
-                if (key >= 0100)
-                {
-                    pp->keyAsm |= (key & 037) << 15;
-                    pp->escState = ylow;
-                }
-                else
-                {
-                    key = -1;
-                    pp->escState = norm;
-                }
-                break;
-            case ylow:
-                if (key >= 0100)
-                {
-                    pp->keyAsm |= (key & 037);
-                    pp->escState = yhigh;
-                }
-                else
-                {
-                    key = -1;
-                    pp->escState = norm;
-                }
-                break;
-            case yhigh:
-                if (key >= 0100)
-                {
-                    // Form the coordinate data
-                    key = pp->keyAsm | ((key & 037) << 5);
-                    sb = pniStationBank (IDX2STAT (port));
-                    if (sb != NULL)
-                    {
-                        // Merge the fine grid position data
-                        sb->cwsinfo = (sb->cwsinfo & ~ULL (03777777)) | key;
-                    }
-                }
-                key = -1;
-                pp->escState = norm;
-                break;
-            }
-            // If we're done with the esc sequence, done with this port
-            if (pp->escState == norm)
-            {
-                break;
-            }
-        }
-        if (key >= 0 && pp->escState == norm)
-        {
-            if (pp->forceLogout)
-            {
-                /*
-                **  If we're not logged out yet, send *offky2* which
-                **  tells PLATO to log out this station instead of
-                **  the key that was typed
-                */
-                if (pniLoggedIn (IDX2STAT (port)))
-                {
-                    key = OFFKY2;
-                    printf ("continuing to force logout port %d\n", IDX2STAT (port));
-                }
-                else
-                {
-                    pp->forceLogout = FALSE;
-                }
-            }
-            DEBUGPRINT ("pni key %04o\n", key);
-            storeKey (key, IDX2STAT (port));
-            pp->keyAsm = 0;
-        }
-        if (port == lastInPort)
-        {
-            break;                      /* no input anywhere */
-        }
-    }
-    lastInPort = port;
+    int port;
 
     if (!pniActive)
     {
@@ -979,7 +751,7 @@ void pniCheck (void)
     {
         pp = portVector + port;
         np = pp->np;
-        if (pp->flowFlags != 0 && np != NULL)
+        if (pp->flowFlags != 0)
         {
             // Some flags are set, figure out what to do
             if ((pp->flowFlags & FLOW_DOABT) != 0)
@@ -991,7 +763,7 @@ void pniCheck (void)
                     pp->flowFlags &= ~FLOW_DOABT;
                 }
             }
-            if ((pp->flowFlags & FLOW_TCP) != 0 && np->sendCount == 0)
+            if ((pp->flowFlags & FLOW_TCP) != 0 && np->sendin == np->sendout)
             {
                 // Flow was off due to TCP and it's ready now
                 pp->flowFlags &= ~FLOW_TCP;
@@ -1005,6 +777,188 @@ void pniCheck (void)
                     pp->flowFlags = 0;
                 }
             }
+        }
+    }
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Data callback for a connection
+**
+**  Parameters:     Name        Description.
+**                  np          NetFet pointer
+**                  bytes       Byte count
+**                  arg         generic argument: the SiteParam pointer
+**
+**  Returns:        nothing.
+**
+**------------------------------------------------------------------------*/
+static void pniDataCallback (NetFet *np, int bytes, void *arg)
+{
+    SiteParam *sp = (SiteParam *) arg;
+    int port = STAT2IDX ((np - sp->pniPorts.portVec) + sp->first);
+    PortParam *pp = portVector + port;
+    int i, key;
+    struct stbank *sb;
+    
+    for (;;)
+    {
+        /*
+        ** We'll try to process a whole escape sequence, if
+        ** it's available, but if not we'll go on to another port.
+        */
+        i = dtReado (np);               /* Get a byte */
+        if (i < 0)
+        {
+            key = -1;
+            break;                      /* we don't have enough data yet */
+        }
+        key = i & Mask7;
+        DEBUGPRINT ("pni input, char code %03o, state %d\n", key, (int) (pp->escState));
+        switch (pp->escState)
+        {
+        case norm:
+            if (key == 033)
+            {
+                pp->escState = esc;
+                continue;
+            }
+            else if (pp->newKbd)
+            {
+                if (key == 0x11)
+                {
+                    // XON
+                    pp->flowFlags &= ~FLOW_XOFF;
+                    if (pp->flowFlags == 0)
+                    {
+                        pp->flowFlags = FLOW_DOPTS;
+                    }
+                }
+                else if (key == 0x13)
+                {
+                    // XOFF
+                    pp->flowFlags |= FLOW_XOFF;
+                }
+                key = asc2plato2[key];
+            }
+            else
+            {
+                key = asc2plato[key];
+            }
+            break;
+        case esc:
+            // Escape sequence.  There are only a few possibilities.
+            switch (key)
+            {
+            case 4: 
+                key = 0x31;     // sub1
+                break;
+            case 0x17:
+                key = 0x30;     // super1
+                break;
+            case 0x1d:
+                key = 0x3c;     // square1
+                break;
+            case 0x1f:
+                pp->escState = xlow;
+                continue;       // fine grid touch
+            default:
+                if (key >= 0100)
+                {
+                    pp->escState = key3;
+                    pp->keyAsm = key & 077;
+                    continue;
+                }
+                key = -1;
+                break;
+            }
+            pp->escState = norm;
+            break;
+        case key3:
+            if (key >= 0100)
+            {
+                key = ((key & 077) << 6) + pp->keyAsm;
+            }
+            else
+            {
+                key = -1;
+            }
+            pp->escState = norm;
+            break;
+        case xlow:
+            if (key >= 0100)
+            {
+                pp->keyAsm = (key & 037) << 10;
+                pp->escState = xhigh;
+            }
+            else
+            {
+                key = -1;
+                pp->escState = norm;
+            }
+            break;
+        case xhigh:
+            if (key >= 0100)
+            {
+                pp->keyAsm |= (key & 037) << 15;
+                pp->escState = ylow;
+            }
+            else
+            {
+                key = -1;
+                pp->escState = norm;
+            }
+            break;
+        case ylow:
+            if (key >= 0100)
+            {
+                pp->keyAsm |= (key & 037);
+                pp->escState = yhigh;
+            }
+            else
+            {
+                key = -1;
+                pp->escState = norm;
+            }
+            break;
+        case yhigh:
+            if (key >= 0100)
+            {
+                // Form the coordinate data
+                key = pp->keyAsm | ((key & 037) << 5);
+                sb = pniStationBank (IDX2STAT (port));
+                if (sb != NULL)
+                {
+                    // Merge the fine grid position data
+                    sb->cwsinfo = (sb->cwsinfo & ~ULL (03777777)) | key;
+                }
+            }
+            key = -1;
+            pp->escState = norm;
+            break;
+        }
+    
+        if (key >= 0 && pp->escState == norm)
+        {
+            if (pp->forceLogout)
+            {
+                /*
+                **  If we're not logged out yet, send *offky2* which
+                **  tells PLATO to log out this station instead of
+                **  the key that was typed
+                */
+                if (pniLoggedIn (IDX2STAT (port)))
+                {
+                    key = OFFKY2;
+                    printf ("continuing to force logout port %d\n", IDX2STAT (port));
+                }
+                else
+                {
+                    pp->forceLogout = FALSE;
+                }
+            }
+            DEBUGPRINT ("pni key %04o\n", key);
+            storeKey (key, IDX2STAT (port));
+            pp->keyAsm = 0;
         }
     }
 }
@@ -1028,7 +982,7 @@ CpWord pniConn (u32 stat)
     }
     mp = portVector + stat;
     fet = mp->np;
-    if (fet->connFd == 0)
+    if (!dtActive (fet))
     {
         return 0;
     }
@@ -1263,7 +1217,7 @@ static void pniWelcome(NetFet *np, int stat, void *arg)
     mp = portVector + STAT2IDX (stat);
     mp->np = np;
     
-    if (np->connFd == 0)
+    if (!dtActive (np))
         {
         /*
         **  Connection was dropped.
@@ -1276,10 +1230,11 @@ static void pniWelcome(NetFet *np, int stat, void *arg)
         if (pniActive && pniLoggedIn (stat))
             {
             /*
-            **  If we're not logged out yet, set a flag to send
-            **  *offky2*, which tells PLATO to log out this station.
+            **  If we disconnected without logging out, send
+            **  *offky2* which tells PLATO to log out this
+            **  station.
             */
-            mp->sendLogout = TRUE;
+            storeKey (OFFKY2, stat);
             }
         return;
         }

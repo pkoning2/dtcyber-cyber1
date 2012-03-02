@@ -6,8 +6,10 @@ License: DtCyber
 Group: User Interface/Desktops
 URL: http://www.cyber1.org
 Packager: Paul Koning <paul@cyber1.org>
-Source: /lhome/pkoning/pterm-linux-src-v%{version}.tar.gz
+Source: /lhome/pkoning/pterm-v%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+BuildRequires: wxGTK-devel SDL-devel gettext-devel python
+Requires: wxGTK SDL
 
 %description
 The pterm program emulates a PLATO terminal (at the moment the

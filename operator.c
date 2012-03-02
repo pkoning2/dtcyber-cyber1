@@ -42,6 +42,7 @@
 */
 #define OpCmdSize       64
 #define NetBufSize      256
+#define SendBufSize     4096
 #define StatusLineMax   255
 #define StatusSys       0       /* Line number of operator system status */
 #define StatusHdr       1       /* Line number of status header line */
@@ -92,7 +93,6 @@ typedef struct
 **  ---------------------------
 */
 static int opRequest(NetFet *np);
-static ThreadFunRet opThread (void *param);
 static void opSetup(NetFet *np, int index, void *arg);
 static void opSendStatus (StatusData *sd);
 
@@ -148,6 +148,9 @@ static char tlvBuf[OpCmdSize];
 #define cmdBuf (tlvBuf + 2)
 static NetPortSet opPorts;
 static int statusType = StatusDevs;
+
+static bool updateDev;
+static bool updateConn;
 
 static const char *syntax[] = 
     /*
@@ -243,7 +246,7 @@ static OpCmd decode[] =
 
 // Note: Y values of zero are filled in by opInit
 static OpMsg msg[] =
-    { { 0120, 0760, 0010, 0, "" },      /* Filled in */
+    { { 0020, 0760, 0010, 0, "" },      /* Filled in */
       { 0120, 0730, 0020, 0, "OPERATOR INTERFACE" },
       { 0020, 0700, 0010, 0, "LOAD,CH,EQ,FILE    Load file for ch/eq, read-only." },
       { 0020,    0, 0010, 0, "LOAD,CH,EQ,FILE,W. Load file for ch/eq, read/write." },
@@ -329,8 +332,7 @@ void opInit(void)
     opPorts.localOnly = TRUE;
     opPorts.callBack = opSetup;
     opPorts.kind = "oper";
-    dtInitPortset (&opPorts, NetBufSize);
-    dtCreateThread (opThread, 0);
+    dtInitPortset (&opPorts, NetBufSize, SendBufSize);
     }
 
 
@@ -381,10 +383,7 @@ void opSetStatus (void *buf, const char *msg)
         {
         sd->len = StatusMsgPfx;
         }
-    if (statusType == StatusDevs)
-        {
-        opSendStatus (sd);
-        }
+    updateDev = TRUE;
     }
 
 /*--------------------------------------------------------------------------
@@ -438,6 +437,30 @@ void operCheckRequests (void)
     int i;
     NetFet *np;
 
+    /*
+    **  Send any pending updates.  We do that here to avoid race
+    **  conditions between threads.
+    */
+    if (updateDev)
+        {
+        updateDev = FALSE;
+        if (statusType == StatusDevs)
+            {
+            for (i = StatusFirstDev; i < statusLineCnt; i++)
+                {
+                opSendStatus (statusLines[i]);
+                }
+            }        
+        }
+    if (updateConn)
+        {
+        updateConn = FALSE;
+        if (statusType == StatusConns)
+            {
+            opConnlist (NULL);
+            }
+        }
+    
     /*
     **  Look for commands from any of the connected 
     **  operator displays.
@@ -502,48 +525,6 @@ void opUpdateSysStatus (void)
 **
 **--------------------------------------------------------------------------
 */
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Operator command thread
-**
-**  Parameters:     Name        Description.
-**                  param       unused
-**
-**  Returns:        nothing
-**
-**------------------------------------------------------------------------*/
-static ThreadFunRet opThread (void *param)
-    {
-    int i;
-    NetFet *np;
-    
-    printf ("operator thread running\n");
-    
-    for (;;)
-        {
-        if (!emulationActive)
-            {
-            /* We just executed "shutdown" */
-            ThreadReturn;
-            }
-        /*
-        **  Get any additional network data 
-        */
-        for (;;)
-            {
-            np = dtFindInput (&opPorts, 1000);
-            if (np == NULL)
-                {
-                break;
-                }
-            i = dtRead  (np, &opPorts, -1);
-            if (i < 0)
-                {
-                dtClose (np, &opPorts, TRUE);
-                }
-            }
-        }
-    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Process operator request
@@ -1054,6 +1035,7 @@ static void opConnlist(char *cmdParams)
         if (dtActive (np))
             {
             dtSendTlv (np, &opPorts, OpStatus, statusHdr.len, statusHdr.buf);
+            pthread_mutex_lock (&connMutex);
             for (j = StatusFirstDev, cp = connlist.next; 
                  j < StatusLineMax && cp != &connlist;
                  j++, cp = cp->next)
@@ -1082,6 +1064,7 @@ static void opConnlist(char *cmdParams)
                     }
                 dtSendTlv (np, &opPorts, OpStatus, strlen (cstat), cstat);
                 }
+            pthread_mutex_unlock (&connMutex);
             for ( ; j < StatusLineMax; j++)
                 {
                 cstat[0] = j;
@@ -1571,10 +1554,7 @@ static void opSendStatus (StatusData *sd)
 **------------------------------------------------------------------------*/
 static void operUpdateConnections (void)
     {
-    if (statusType == StatusConns)
-        {
-        opConnlist (NULL);
-        }
+    updateConn = TRUE;
     }
 
 /*---------------------------  End Of File  ------------------------------*/

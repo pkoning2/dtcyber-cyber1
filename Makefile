@@ -13,19 +13,31 @@ ifeq ($(MAKECMDGOALS),)
 MAKECMDGOALS=all
 endif
 
-all: dtcyber pterm dtoper dd60 blackbox
-
 DEPFILES=
 
 include Makefile.common
 
-include Makefile.wxpterm
+CDEBUG = -DCcDebug=1
 
-include Makefile.dtoper
+OBJS    = main.o init.o trace.o dump.o \
+          device.o channel.o cpu.o pp.o float.o shift.o operator.o \
+          deadstart.o console.o cr405.o dd6603.o dd8xx.o mux6676.o \
+          lp1612.o mt607.o mt669.o dcc6681.o rtc.o log.o \
+	  cr3447.o ddp.o niu.o lp3000.o cp3446.o \
+	  tpmux.o dtdisksubs.o ext.o pni.o \
+	  $(PWD)/charset.o $(PWD)/dtnetsubs.o
 
-include Makefile.dd60
+ifneq ("$(NPU_SUPPORT)","")
+OBJS +=	  npu_async.o npu_bip.o npu_hip.o npu_svm.o npu_tip.o npu_net.o
+VERSIONCFLAGS +=   -DNPU_SUPPORT=1
+endif
+
+.PHONY : clean dep kit all
 
 ifeq ("$(HOST)","Darwin")
+
+# Mac
+
 ifeq ("$(SDKDIR)","")
 SDKDIR := /Developer/SDKs/MacOSX10.5.sdk
 endif
@@ -39,32 +51,6 @@ G3CFLAGS = -mcpu=G3 -mtune=G3
 X86ARCHFLAGS = -arch i386
 X86_64ARCHFLAGS = -arch x86_64
 TOOLLDFLAGS = -arch i386 -arch ppc
-endif
-
-ifeq ("$(HOST)","Linux")
-#LIBS += -lposix-aio
-endif
-
-CDEBUG = -DCcDebug=1
-
-OBJS    = main.o init.o trace.o dump.o \
-          device.o channel.o cpu.o pp.o float.o shift.o operator.o \
-          deadstart.o console.o cr405.o dd6603.o dd8xx.o mux6676.o \
-          lp1612.o mt607.o mt669.o dcc6681.o rtc.o log.o \
-	  cr3447.o ddp.o niu.o lp3000.o cp3446.o \
-	  tpmux.o dtdisksubs.o ext.o pni.o \
-	  $(SOBJS)
-
-ifneq ("$(NPU_SUPPORT)","")
-OBJS +=	  npu_async.o npu_bip.o npu_hip.o npu_svm.o npu_tip.o npu_net.o
-VERSIONCFLAGS +=   -DNPU_SUPPORT=1
-endif
-
-.PHONY : clean dep kit
-
-ifeq ("$(HOST)","Darwin")
-
-# Mac
 
 ifdef DUAL
 MACTARGETS=g5 x86_64
@@ -74,45 +60,49 @@ endif
 
 .PHONY : dtcyber 
 
+all: dtcyber Pterm.app dtoper.app dd60.app blackbox
+
 dtcyber:
 	mkdir -p $(MACTARGETS)
 ifndef DUAL
 	( cd g3 && \
 	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G3\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)" )
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G3CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G3\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)" LDFLAGS="$(LDFLAGS)" )
 	( cd x86 && \
 	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"i386\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86ARCHFLAGS)" )
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"i386\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86ARCHFLAGS)" LDFLAGS="$(LDFLAGS)" )
 endif
 	( cd g5 && \
 	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G5\"'" VPATH=.. DUAL=$(DUAL) DUAL_HOST_CPUS=1 PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)" )
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(G5CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"PPC G5\"'" VPATH=.. DUAL=$(DUAL) DUAL_HOST_CPUS=1 PTERMVERSION=xxx ARCHCFLAGS="$(PPCARCHFLAGS)" LDFLAGS="$(LDFLAGS)" )
 	( cd x86_64 && \
 	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86_64CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"x86_64\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86_64ARCHFLAGS)" LDFLAGS="$(LDFLAGS) $(X86_64ARCHFLAGS)" )
+	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86_64CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"x86_64\"'" VPATH=.. DUAL=$(DUAL) PTERMVERSION=xxx ARCHCFLAGS="$(X86_64ARCHFLAGS)" LDFLAGS="$(LDFLAGS)" )
 	lipo -create -output dtcyber `for d in $(MACTARGETS); do echo $$d/gxdtcyber; done`
 
 gxdtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) $(ARCHCFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)
 
 clean:
-	rm -rf *.o *.d *.i *.ii *.pcf g3 g5 x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app
+	rm -rf *.o *.d *.i *.ii *.pcf g3 g5 x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app dtoper.app dd60.app
 
-blackbox: blackbox.o charset.o dtnetsubs.o
+blackbox: blackbox.o $(SOBJS)
 	$(CC) $(LDFLAGS) $(TOOLLDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 else
 
 # not Mac
 
+all: dtcyber pterm dtoper dd60 blackbox
+
 dtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
-blackbox: blackbox.o charset.o dtnetsubs.o
+blackbox: blackbox.o $(SOBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 clean:
-	rm -f *.d *.o *.pcf dtcyber dd60 dtoper pterm pterm*.zip pterm*.tar.gz
+	rm -f *.d *.o *.i *.ii *.pcf dtcyber dd60 dtoper pterm pterm*.zip pterm*.tar.gz
 endif
 
 kit:	pterm-kit
@@ -134,5 +124,7 @@ endif
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
+
+include Makefile.wxpterm
 
 #---------------------------  End Of File  --------------------------------

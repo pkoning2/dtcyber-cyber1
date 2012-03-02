@@ -23,7 +23,6 @@
 */
 #define DEFAULTHOST		wxT ("cyberserv.org")
 #define CURRENT_PROFILE	wxT (" Current ")
-#define BufSiz			256
 #define RINGSIZE		5000
 #define RINGXON1		(RINGSIZE/3)
 #define RINGXON2		(RINGSIZE/4)
@@ -299,7 +298,7 @@ static const u32 keyboardhelp[] = {
 // global variables
 // ----------------------------------------------------------------------------
 
-bool emulationActive = false;
+bool emulationActive = true;
 
 // Global print data, to remember settings during the session
 wxPrintData *g_printData;
@@ -428,7 +427,7 @@ static void tracestr (const char *s)
     
     gettimeofday (&tv, NULL);
     strftime (tbuf, 10, "%T", localtime (&tv.tv_sec));
-    fprintf (traceF, "%s.%03d: %s\n", tbuf, tv.tv_usec / 1000, s);
+    fprintf (traceF, "%s.%03ld: %s\n", tbuf, (long) tv.tv_usec / 1000, s);
 }
 
 // ----------------------------------------------------------------------------
@@ -458,8 +457,8 @@ private:
 };
 
 
-// Pterm processing thread
-class PtermConnection : public wxThread
+// Pterm connection state
+class PtermConnection
 {
 public:
     // override base class virtuals
@@ -467,7 +466,11 @@ public:
     PtermConnection (PtermFrame *owner, wxString &host, int port);
     ~PtermConnection ();
     
-    virtual ExitCode Entry (void);
+    // Callback handlers
+    static void s_connCallback (NetFet *np, int portNum, void *arg);
+    static void s_dataCallback (NetFet *np, int bytes, void *arg);
+    void connCallback (void);
+    void dataCallback (void);
 
     int AssembleNiuWord (void);
     int AssembleAsciiWord (void);
@@ -527,6 +530,7 @@ private:
     enum { both, niu, ascii } m_connMode;
     int         m_pending;
     in_addr_t   m_hostAddr;
+    bool        m_connActive;
     
     int NextRingWord (void);
 };
@@ -1586,9 +1590,9 @@ bool PtermApp::OnInit (void)
     
     sprintf (traceFn, "pterm%d.trc", getpid ());
 
-    srand (time (NULL));
-    m_locale.Init(wxLANGUAGE_DEFAULT);
-    m_locale.AddCatalog(wxT("pterm"));
+    srand (time (NULL)); 
+    m_locale.Init (wxLANGUAGE_DEFAULT);
+    m_locale.AddCatalog (wxT ("pterm"));
 
 #ifdef DEBUGLOG
     logwindow = new wxLogWindow (NULL, wxT("pterm log"), true, false);
@@ -2491,11 +2495,6 @@ PtermFrame::PtermFrame(wxString &host, int port, const wxString& title, const wx
         // Create and start the network processing thread
 		trace ("Connecting to: %s:%d", host.mb_str ().data (), port);
         m_conn = new PtermConnection (this, host, port);
-        if (m_conn->Create () != wxTHREAD_NO_ERROR)
-        {
-            return;
-        }
-        m_conn->Run ();
     }
     Show(true);
 
@@ -2611,16 +2610,16 @@ void PtermFrame::BuildEditMenu (int port)
     if (ptermApp->m_TutorColor && port > 0)
 	{
 		menuEdit->AppendSeparator ();
-		menuEdit->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
-		menuEdit->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
-		menuEdit->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
-		menuEdit->Append(Pterm_Macro3, _("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), _("<c,zc.keys>"));
-		menuEdit->Append(Pterm_Macro4, _("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), _("<c,zc.text>"));
-		menuEdit->Append(Pterm_Macro5, _("color zc.errf") ACCELERATOR ("\tCtrl-5"), _("color zc.errf"));
-		menuEdit->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
-		menuEdit->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
-		menuEdit->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
-		menuEdit->Append(Pterm_Macro9, _("Menu colorization") ACCELERATOR ("\tCtrl-9"), _("Menu colorization"));
+		menuEdit->Append(Pterm_Macro0, wxT("Box 8x") ACCELERATOR ("\tCtrl-0"), wxT("Box 8x"));
+		menuEdit->Append(Pterm_Macro1, wxT("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), wxT("<c,zc.errf>"));
+		menuEdit->Append(Pterm_Macro2, wxT("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), wxT("<c,zc.info>"));
+		menuEdit->Append(Pterm_Macro3, wxT("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), wxT("<c,zc.keys>"));
+		menuEdit->Append(Pterm_Macro4, wxT("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), wxT("<c,zc.text>"));
+		menuEdit->Append(Pterm_Macro5, wxT("color zc.errf") ACCELERATOR ("\tCtrl-5"), wxT("color zc.errf"));
+		menuEdit->Append(Pterm_Macro6, wxT("color zc.info") ACCELERATOR ("\tCtrl-6"), wxT("color zc.info"));
+		menuEdit->Append(Pterm_Macro7, wxT("color zc.keys") ACCELERATOR ("\tCtrl-7"), wxT("color zc.keys"));
+		menuEdit->Append(Pterm_Macro8, wxT("color zc.text") ACCELERATOR ("\tCtrl-8"), wxT("color zc.text"));
+		menuEdit->Append(Pterm_Macro9, wxT("Menu colorization") ACCELERATOR ("\tCtrl-9"), wxT("Menu colorization"));
 	}
     menuEdit->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
     menuEdit->Enable (Pterm_Exec, false);
@@ -2659,16 +2658,16 @@ void PtermFrame::BuildPopupMenu (int port)
     if (ptermApp->m_TutorColor && port > 0)
 	{
 		menuPopup->AppendSeparator ();
-		menuPopup->Append(Pterm_Macro0, _("Box 8x") ACCELERATOR ("\tCtrl-0"), _("Box 8x"));
-		menuPopup->Append(Pterm_Macro1, _("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), _("<c,zc.errf>"));
-		menuPopup->Append(Pterm_Macro2, _("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), _("<c,zc.info>"));
-		menuPopup->Append(Pterm_Macro3, _("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), _("<c,zc.keys>"));
-		menuPopup->Append(Pterm_Macro4, _("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), _("<c,zc.text>"));
-		menuPopup->Append(Pterm_Macro5, _("color zc.errf") ACCELERATOR ("\tCtrl-5"), _("color zc.errf"));
-		menuPopup->Append(Pterm_Macro6, _("color zc.info") ACCELERATOR ("\tCtrl-6"), _("color zc.info"));
-		menuPopup->Append(Pterm_Macro7, _("color zc.keys") ACCELERATOR ("\tCtrl-7"), _("color zc.keys"));
-		menuPopup->Append(Pterm_Macro8, _("color zc.text") ACCELERATOR ("\tCtrl-8"), _("color zc.text"));
-		menuPopup->Append(Pterm_Macro9, _("Menu colorization") ACCELERATOR ("\tCtrl-9"), _("Menu colorization"));
+		menuPopup->Append(Pterm_Macro0, wxT("Box 8x") ACCELERATOR ("\tCtrl-0"), wxT("Box 8x"));
+		menuPopup->Append(Pterm_Macro1, wxT("<c,zc.errf>") ACCELERATOR ("\tCtrl-1"), wxT("<c,zc.errf>"));
+		menuPopup->Append(Pterm_Macro2, wxT("<c,zc.info>") ACCELERATOR ("\tCtrl-2"), wxT("<c,zc.info>"));
+		menuPopup->Append(Pterm_Macro3, wxT("<c,zc.keys>") ACCELERATOR ("\tCtrl-3"), wxT("<c,zc.keys>"));
+		menuPopup->Append(Pterm_Macro4, wxT("<c,zc.text>") ACCELERATOR ("\tCtrl-4"), wxT("<c,zc.text>"));
+		menuPopup->Append(Pterm_Macro5, wxT("color zc.errf") ACCELERATOR ("\tCtrl-5"), wxT("color zc.errf"));
+		menuPopup->Append(Pterm_Macro6, wxT("color zc.info") ACCELERATOR ("\tCtrl-6"), wxT("color zc.info"));
+		menuPopup->Append(Pterm_Macro7, wxT("color zc.keys") ACCELERATOR ("\tCtrl-7"), wxT("color zc.keys"));
+		menuPopup->Append(Pterm_Macro8, wxT("color zc.text") ACCELERATOR ("\tCtrl-8"), wxT("color zc.text"));
+		menuPopup->Append(Pterm_Macro9, wxT("Menu colorization") ACCELERATOR ("\tCtrl-9"), wxT("Menu colorization"));
 	}
     menuPopup->Enable (Pterm_Copy, false);			// screen-region related options are disabled until a region is selected
     menuPopup->Enable (Pterm_Exec, false);
@@ -2710,17 +2709,14 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 {
     int word;
 
-	// Do nothing for the help window or other connection-less windows
-	if (m_conn == NULL)
-	{
-		return;
-	}
+    // In every case, let others see this event too.
+    event.Skip ();
 
+	// Do nothing for the help window or other connection-less windows
 	// If our timer is running, we're using the timer event to drive
 	// the display, so ignore idle events.
-	if (m_timer.IsRunning ())
+	if (m_conn == NULL || m_timer.IsRunning ())
 	{
-		event.Skip ();
 		return;
 	}
 
@@ -2739,7 +2735,6 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
     
 		if (word == C_NODATA || word == C_CONNFAIL)
 		{
-			event.Skip ();
 			break;
 		}
 
@@ -2757,7 +2752,6 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 			{
 				m_timer.Start (17);
 			}
-			event.Skip ();
 			return;
 		}
         
@@ -2770,7 +2764,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 	}
 
 	switch (word)
-		{
+    {
 		case C_NODATA:
 			break;
 		case C_CONNFAIL:
@@ -2778,17 +2772,11 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 			if (m_port > 0)
 			{
 				m_conn = new PtermConnection (this, m_hostName, m_port);
-				if (m_conn->Create () != wxTHREAD_NO_ERROR)
-				{
-					return;
-				}
-				m_conn->Run ();
 			}
 			break;
 		default:
 			event.RequestMore ();
-		}
-
+    }
 }
 
 void PtermFrame::OnTimer (wxTimerEvent &)
@@ -3015,10 +3003,10 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 								wxT(")>")
 								};
 			int kplato[] =  {
-							asciiToPlato['.'], 014,
+							asciiToPlato[(u8) '.'], 014,
 							014,			   -1,
-							024,               asciiToPlato['0'],
-							024,               asciiToPlato['1']
+							024,               asciiToPlato[(u8) '0'],
+							024,               asciiToPlato[(u8) '1']
 							};
 			for (int i = 0; !found && i < (int)(sizeof(tascii) / sizeof(tascii[0])); i++)
 				if (tascii[i].Cmp(m_pasteText.Mid(nextindex,tascii[i].Length())) == 0)
@@ -3049,7 +3037,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 				break;
 			case wxT('\xBB'):	// arrow
 	            ptermSendKey (024);
-	            p = asciiToPlato['6'];
+	            p = asciiToPlato[(u8) '6'];
 				break;
 			}
 			found = true;
@@ -3139,7 +3127,8 @@ void PtermFrame::OnClose (wxCloseEvent &)
     
     if (m_conn != NULL)
     {
-        m_conn->Delete ();
+        delete m_conn;
+        m_conn = NULL;
     }
 
     m_memDC->SetBackground (wxNullBrush);
@@ -3706,7 +3695,7 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
                                   "TIF files (*.tif)|*.tif|"
                                   "XPM files (*.xpm)|*.xpm|"
                                   "All files (*.*)|*.*"),
-                     wxSAVE | wxOVERWRITE_PROMPT);
+                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     
     if (fd.ShowModal () != wxID_OK)
     {
@@ -4034,9 +4023,12 @@ void PtermFrame::SetResizeState(void)
 	//wxMessageBox(str, _("DEBUG"), wxOK | wxICON_INFORMATION, NULL);
 
 	m_canvas->SetSize (w,h);
-	m_canvas->SetVirtualSize (vXRealSize (m_xscale), vYRealSize (m_yscale));
+	m_canvas->SetVirtualSize (int (vXRealSize (m_xscale)),
+                              int (vYRealSize (m_yscale)));
     dc.DestroyClippingRegion ();
-    dc.SetClippingRegion (GetXMargin (), GetYMargin (), vRealScreenSize (m_xscale), vRealScreenSize (m_yscale));
+    dc.SetClippingRegion (GetXMargin (), GetYMargin (),
+                          int (vRealScreenSize (m_xscale)),
+                          int (vRealScreenSize (m_yscale)));
 	dc.SetUserScale(m_xscale,m_yscale);
 
 	ResetScrollRate(m_canvas);
@@ -6147,11 +6139,11 @@ int PtermFrame::AssembleAsciiPlatoMetaData (int d)
     {
 		if (d >= 1 && d <= 26)
 		{
-			m_PMD.Append('a'+d-1,1);
+			m_PMD.Append((char) ('a'+d-1),1);
 		}
 		else if (d >= 27 && d <= 36)
 		{
-			m_PMD.Append('0'+d-27,1);
+			m_PMD.Append((char) ('0'+d-27),1);
 		}
 		else if (d == 38)
 		{
@@ -6201,11 +6193,11 @@ bool PtermFrame::AssembleClassicPlatoMetaData (int d)
 		d &= 077;
 		if (d >= 1 && d <= 26)
 		{
-			m_PMD.Append('a'+d-1,1);
+			m_PMD.Append((char) ('a'+d-1),1);
 		}
 		else if (d >= 27 && d <= 36)
 		{
-			m_PMD.Append('0'+d-27,1);
+			m_PMD.Append((char) ('0'+d-27),1);
 		}
 		else if (d == 38)
 		{
@@ -7842,14 +7834,14 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	fgs511 = new wxFlexGridSizer( 2, 3, 0, 0 );
 	lblCharDelay = new wxStaticText( tab5, wxID_ANY, _("Delay between chars"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs511->Add( lblCharDelay, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-	txtCharDelay = new wxTextCtrl( tab5, wxID_ANY, _("50"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
+	txtCharDelay = new wxTextCtrl( tab5, wxID_ANY, wxT("50"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
 	txtCharDelay->SetMaxLength( 3 ); 
 	fgs511->Add( txtCharDelay, 0, wxALL, 5 );
 	lblCharDelay2 = new wxStaticText( tab5, wxID_ANY, _("milliseconds"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs511->Add( lblCharDelay2, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 	lblLineDelay = new wxStaticText( tab5, wxID_ANY, _("Delay after end of line"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs511->Add( lblLineDelay, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	txtLineDelay = new wxTextCtrl( tab5, wxID_ANY, _("100"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
+	txtLineDelay = new wxTextCtrl( tab5, wxID_ANY, wxT("100"), wxDefaultPosition, wxSize( 48,-1 ), 0 );
 	txtLineDelay->SetMaxLength( 3 ); 
 	fgs511->Add( txtLineDelay, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
 	lblLineDelay2 = new wxStaticText( tab5, wxID_ANY, _("milliseconds"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -7859,10 +7851,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	fgs512 = new wxFlexGridSizer( 2, 3, 0, 0 );
 	lblAutoNewLine = new wxStaticText( tab5, wxID_ANY, _("Automatic new line every"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgs512->Add( lblAutoNewLine, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-	cboAutoLF = new wxComboBox( tab5, wxID_ANY, _("60"), wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0|wxTAB_TRAVERSAL );
-	cboAutoLF->Append( _("0") );
-	cboAutoLF->Append( _("60") );
-	cboAutoLF->Append( _("120") );
+	cboAutoLF = new wxComboBox( tab5, wxID_ANY, wxT("60"), wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0|wxTAB_TRAVERSAL );
+	cboAutoLF->Append( wxT("0") );
+	cboAutoLF->Append( wxT("60") );
+	cboAutoLF->Append( wxT("120") );
 	cboAutoLF->SetMinSize( wxSize( 65,-1 ) );
 	fgs512->Add( cboAutoLF, 1, wxALL, 5 );
 	lblAutoNewLine2 = new wxStaticText( tab5, wxID_ANY, _("characters"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -8947,8 +8939,7 @@ void PtermConnFailDialog::OnClose (wxCloseEvent& event)
 // ----------------------------------------------------------------------------
 
 PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
-    : wxThread (wxTHREAD_JOINABLE),
-      m_displayIn (0),
+    : m_displayIn (0),
       m_displayOut (0),
       m_gswIn (0),
       m_gswOut (0),
@@ -8959,9 +8950,56 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
       m_savedGswMode (0),
       m_gswWord2 (0),
       m_connMode (both),
-      m_pending (0)
+      m_pending (0),
+      m_connActive (false)
 {
+    struct hostent *hp;
+    in_addr_t hostaddr;
+    int i, addrcount, r, conntries;
+    in_addr_t *addresses = NULL;
+
     m_hostName = host;
+
+    m_portset.callBack = s_connCallback;
+    m_portset.dataCallBack = s_dataCallback;
+    m_portset.callArg = m_portset.dataCallArg = this;
+    m_portset.portNum = 0;      // No listening
+    m_portset.maxPorts = 1;
+    dtInitPortset (&m_portset, BufSiz, 0);
+    m_fet = m_portset.portVec;
+    
+    hp = gethostbyname (m_hostName.mb_str());
+    if (hp == NULL || hp->h_length == 0)
+    {
+        StoreWord (C_CONNFAIL);
+        wxWakeUpIdle ();
+        return;
+    }
+
+    for (addrcount = 0; hp->h_addr_list[addrcount] != NULL; addrcount++) ;
+    addresses = new in_addr_t[addrcount];
+    for (i = 0; i < addrcount; i++)
+    {
+        memcpy (&addresses[i], hp->h_addr_list[i], sizeof (int));
+    }
+    for (conntries = 0; conntries < addrcount; conntries++)
+    {
+        while (addresses[(r = (rand () >> 10) % addrcount)] == 0) ;
+        hostaddr = addresses[r];
+        m_hostAddr = ntohl (hostaddr);
+        addresses[r] = 0;
+        StoreWord (C_CONNECTING);
+        wxWakeUpIdle ();
+        if (dtConnect (m_fet, &m_portset, hostaddr, m_port) >= 0)
+        {
+            break;
+        }
+    }
+    if (conntries == addrcount)
+    {
+        // We ran out of addresses
+        StoreWord (C_CONNFAIL);
+    }
 }
 
 PtermConnection::~PtermConnection ()
@@ -8973,179 +9011,122 @@ PtermConnection::~PtermConnection ()
     dtClose (m_fet, &m_portset, TRUE);
 }
 
-PtermConnection::ExitCode PtermConnection::Entry (void)
+void PtermConnection::s_connCallback (NetFet *, int, void *arg)
+{
+    PtermConnection *self = (PtermConnection *) arg;
+    
+    self->connCallback ();
+}
+
+void PtermConnection::s_dataCallback (NetFet *, int, void *arg)
+{
+    PtermConnection *self = (PtermConnection *) arg;
+    
+    self->dataCallback ();
+}
+
+void PtermConnection::connCallback (void)
+{
+    if (m_fet->connFd == 0)
+    {
+        // lost connection
+        m_savedGswMode = m_gswWord2 = 0;
+        if (m_gswActive)
+        {
+            m_gswActive = m_gswStarted = false;
+            ptermCloseGsw ();
+        }
+        if (m_connActive)
+        {
+            StoreWord (C_DISCONNECT);
+        }
+    }
+    wxWakeUpIdle ();
+}
+
+void PtermConnection::dataCallback (void)
 {
     u32 platowd = 0;
     int i;
     bool wasEmpty;
-    struct hostent *hp;
-    in_addr_t host;
-//    int true_opt = 1;
-    int addrcount, r, conntries;
-    in_addr_t *addresses = NULL;
-    wxString msg;
-    bool connActive = false;
-    
-    m_portset.callBack = NULL;
-    m_portset.portNum = 0;      // No listening
-    m_portset.maxPorts = 1;
-    dtInitPortset (&m_portset, BufSiz);
-    m_fet = m_portset.portVec;
-    
-    hp = gethostbyname (m_hostName.mb_str());
-    if (hp == NULL || hp->h_length == 0)
+
+    // We received something so the connection is now active
+    if (!m_connActive)
     {
-        StoreWord (C_CONNFAIL);
-        wxWakeUpIdle ();
-        return (ExitCode) 1;
+        m_connActive = true;
+        StoreWord (C_CONNECTED);
     }
-    for (addrcount = 0; hp->h_addr_list[addrcount] != NULL; addrcount++) ;
-    addresses = new in_addr_t[addrcount];
-    for (i = 0; i < addrcount; i++)
+
+    wasEmpty = IsEmpty ();
+        
+    for (;;)
     {
-        memcpy (&addresses[i], hp->h_addr_list[i], sizeof (int));
-    }
-    for (conntries = 0; conntries < addrcount; conntries++)
-    {
-        while (addresses[(r = (rand () >> 10) % addrcount)] == 0) ;
-        host = addresses[r];
-        m_hostAddr = ntohl (host);
-        addresses[r] = 0;
-        StoreWord (C_CONNECTING);
-        wxWakeUpIdle ();
-        if (dtConnect (m_fet, NULL, host, m_port) < 0)
+        /*
+        **  Assemble words from the network buffer, all the
+        **  while looking for "abort output" codes (word == 2).
+        */
+        if (IsFull ())
         {
-            continue;
+            printf ("ring is full\n");
+            break;
         }
 
-        while (true)
+        switch (m_connMode)
         {
-            // The reason for waiting a limited time here rather than
-            // using the more obvious -1 (wait forever) is to make sure
-            // we come out of the network wait and call TestDestroy
-            // reasonably often.  Otherwise, closing the window doesn't work.
-            i = dtRead (m_fet, &m_portset, 200);
-#ifdef DEBUG
-            printf ("dtRead status %i\n", i);
-#endif
-            if (TestDestroy ())
-            {
-                connActive = true;
-                break;
-            }
-            if (i < 0)
-            {
-                m_savedGswMode = m_gswWord2 = 0;
-                if (m_gswActive)
-                {
-                    m_gswActive = m_gswStarted = false;
-                    ptermCloseGsw ();
-                }
-
-                if (connActive)
-                {
-                    StoreWord (C_DISCONNECT);
-                }
-                else
-                {
-                    break;
-                }
-                wxWakeUpIdle ();
-                break;
-            }
-            // We received something so the connection is now active
-            if (!connActive)
-            {
-                connActive = true;
-                StoreWord (C_CONNECTED);
-            }
-
-            wasEmpty = IsEmpty ();
-        
-            for (;;)
-            {
-                /*
-                **  Assemble words from the network buffer, all the
-                **  while looking for "abort output" codes (word == 2).
-                */
-                if (IsFull ())
-                {
-                    printf ("ring is full\n");
-                    break;
-                }
-
-                switch (m_connMode)
-                {
-                case niu:
-                    platowd = AssembleNiuWord ();
-                    break;
-                case ascii:
-                    platowd = AssembleAsciiWord ();
-                    break;
-                case both:
-                    platowd = AssembleAutoWord ();
-                    break;
-                }
+        case niu:
+            platowd = AssembleNiuWord ();
+            break;
+        case ascii:
+            platowd = AssembleAsciiWord ();
+            break;
+        case both:
+            platowd = AssembleAutoWord ();
+            break;
+        }
             
-                if (platowd == (u32)C_NODATA)	// makes me nervous -- bg
-                {
-                    break;
-                }
-                else if (m_connMode == niu && 0)//platowd == 2)
-                {
-                    m_savedGswMode = m_gswWord2 = 0;
-                    if (m_gswActive)
-                    {
-                        m_gswActive = m_gswStarted = false;
-                        ptermCloseGsw ();
-                    }
+        if (platowd == (u32)C_NODATA)	// makes me nervous -- bg
+        {
+            break;
+        }
+        else if (m_connMode == niu && 0)//platowd == 2)
+        {
+            m_savedGswMode = m_gswWord2 = 0;
+            if (m_gswActive)
+            {
+                m_gswActive = m_gswStarted = false;
+                ptermCloseGsw ();
+            }
                 
-                    // erase abort marker -- reset the ring to be empty
-                    wxCriticalSectionLocker lock (m_pointerLock);
+            // erase abort marker -- reset the ring to be empty
+            wxCriticalSectionLocker lock (m_pointerLock);
 
-                    m_displayOut = m_displayIn;
-                }
+            m_displayOut = m_displayIn;
+        }
 
-                StoreWord (platowd);
-                i = RingCount ();
+        StoreWord (platowd);
+        i = RingCount ();
 #ifdef DEBUG
-                printf ("Stored %07o, ring count is %d\n", platowd, i);
+        printf ("Stored %07o, ring count is %d\n", platowd, i);
 #endif
 
-                if (m_gswActive && !m_gswStarted && i >= GSWRINGSIZE / 2)
-                {
-                    ptermStartGsw ();
-                    m_gswStarted = true;
-                }
-            
-                if (i == RINGXOFF1 || i == RINGXOFF2)
-                {
-                    m_owner->ptermSendKey (xofkey);
-                }
-            }
-            if (!IsEmpty ())
-            {
-                // Send a do-nothing event to the frame; that will wake up
-                // the main thread and cause it to process the words we 
-                // buffered.
-                wxWakeUpIdle ();
-            }
-        }
-        if (!connActive)
+        if (m_gswActive && !m_gswStarted && i >= GSWRINGSIZE / 2)
         {
-            // Error on receive before we received anything means
-            // connect failure.  Try another address, if we have another.
-            continue;
+            ptermStartGsw ();
+            m_gswStarted = true;
         }
-
-        delete addresses;
-        return (ExitCode) 0;
+            
+        if (i == RINGXOFF1 || i == RINGXOFF2)
+        {
+            m_owner->ptermSendKey (xofkey);
+        }
     }
-        
-    delete addresses;
-    StoreWord (C_CONNFAIL);
-    wxWakeUpIdle ();
-    return (ExitCode) 1;
+    if (!IsEmpty ())
+    {
+        // Send a do-nothing event to the frame; that will wake up
+        // the main thread and cause it to process the words we 
+        // buffered.
+        wxWakeUpIdle ();
+    }
 }
 
 int PtermConnection::AssembleNiuWord (void)
@@ -9550,7 +9531,7 @@ void PtermConnection::StoreWord (int word)
 void PtermConnection::SendData (const void *data, int len)
 {
     // Windows has the wrong type for the buffer pointer argument...
-    send(m_fet->connFd, (const char *) data, len, 0);
+    send (m_fet->connFd, (const char *) data, len, 0);
 }
 
 // ----------------------------------------------------------------------------
@@ -9815,7 +9796,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             pc = 0127;      // up arrow (w)
             break;
         case WXK_NUMPAD9:
-        case WXK_NUMPAD_PRIOR:
+        case WXK_NUMPAD_PAGEUP:
             pc = 0105;      // up right (e)
             break;
         case WXK_NUMPAD4:
@@ -9835,7 +9816,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             pc = 0130;      // down arrow (x)
             break;
         case WXK_NUMPAD3:
-        case WXK_NUMPAD_NEXT:
+        case WXK_NUMPAD_PAGEDOWN:
             pc = 0103;      // down right (c)
             break;
         }
@@ -9921,18 +9902,12 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         case WXK_NUMPAD_DOWN:
             pc = 0130;      // down arrow (x)
             break;
-        case WXK_PRIOR:
-#if (WXK_PRIOR != WXK_PAGEUP)
         case WXK_PAGEUP:
-#endif
-        case WXK_NUMPAD_PRIOR:
+        case WXK_NUMPAD_PAGEUP:
             pc = 020;       // super
             break;
-        case WXK_NEXT:
-#if (WXK_NEXT != WXK_PAGEDOWN)
         case WXK_PAGEDOWN:
-#endif
-        case WXK_NUMPAD_NEXT:
+        case WXK_NUMPAD_PAGEDOWN:
             pc = 021;       // sub
             break;
         case WXK_F3:
@@ -10005,7 +9980,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             // this by forcing the keycode.
             if (key == '<')
             {
-                pc = asciiToPlato[','];
+                pc = asciiToPlato[(u8) ','];
             }
         }
     }

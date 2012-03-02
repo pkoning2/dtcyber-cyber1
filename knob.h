@@ -34,6 +34,8 @@ public:
                  const wxValidator &validator = wxDefaultValidator,
                  const wxString &name = wxT ("knob"));
 
+    bool AcceptsFocus (void) const { return false; }
+
     // retrieve/change the range
     void SetRange (int minValue, int maxValue);
     int GetMin() const { return m_min; }
@@ -43,7 +45,7 @@ public:
     unsigned int GetMinAngle() const { return (m_maxAngle - m_range) % 360; }
     int GetMaxAngle() const { return m_maxAngle; }
     int GetValue () const { return m_setting; }
-    int SetValue (int value);
+    void SetValue (int value);
 
 private:
     int m_min;
