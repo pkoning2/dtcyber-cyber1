@@ -39,6 +39,12 @@
 #define DefaultInterval 0.06
 #define DefRemoteInterval 3.0
 
+#if  defined(__WXMAC__)
+#define SmallPointSize  12
+#else
+#define SmallPointSize  10
+#endif
+
 // Default preference settings
 #define DefSizeX        84
 #define DefSizeY        99
@@ -392,6 +398,11 @@ private:
     int         currentY;
     int         currentXOffset;
 
+    // Trace related state
+    unsigned int trace_idx;
+    char        trace_txt[120];
+    wxFont      m_traceFont;
+    
     wxBoxSizer  *m_sizer;
     
     // DD60 drawing primitives
@@ -1017,10 +1028,21 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
     int true_opt = 1;
     Dd60Panel *panel;
     
+    trace_txt[0] = '\0';
+    
     m_sizer = new wxBoxSizer (wxVERTICAL);
     SetSizer (m_sizer);
     m_sizer->Fit (this);
     
+    // Create the font for the trace line
+    m_traceFont = wxFont (SmallPointSize, wxFONTFAMILY_MODERN,
+                          wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    if (!m_traceFont.IsOk ())
+    {
+        fprintf (stderr, "Failed to allocate font\n");
+        exit (1);
+    }
+
 #if wxUSE_MENUS
     // create a menu bar
 
@@ -1349,10 +1371,8 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
                 break;
             case Dd60SetTrace:
                 TRACEN ("Trace line");
-                mode = Dd60CharSmall;
-                currentXOffset = OffLeftScreen;
-                currentX = TraceX;
-                currentY = TraceY;
+                mode = Dd60Trace;
+                trace_idx = 0;
                 break;
             case Dd60SetKbTrue:
                 TRACE1 ("Set KB true mode %d", data & 1);
@@ -1383,8 +1403,10 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
         if (m_startBlock)
         {
             wxWindowDC dc (m_canvas);
-            m_canvas->DoPrepareDC (dc);
+            PrepareDC (dc);
             dc.DrawBitmap (*m_screenmap, 0, 0, false);
+            dc.SetFont (m_traceFont);
+            dc.DrawText (wxString::FromAscii (trace_txt), TraceX, TraceY);
         }
     }
     delete m_pixmap;
@@ -1392,8 +1414,10 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     if (m_interval == Dd60FastRate + 0)
     {
         wxWindowDC dc (m_canvas);
-        m_canvas->DoPrepareDC (dc);
+        PrepareDC (dc);
         dc.DrawBitmap (*m_screenmap, 0, 0, false);
+        dc.SetFont (m_traceFont);
+        dc.DrawText (wxString::FromAscii (trace_txt), TraceX, TraceY);
     }
 #if DEBUG
     if (datacount)
@@ -1586,6 +1610,10 @@ void Dd60Frame::PrepareDC(wxDC& dc)
 {
     dc.SetAxisOrientation (true, false);
     dc.SetBackground (*wxBLACK_BRUSH);
+    dc.SetBrush (m_foregroundBrush);
+    dc.SetPen (m_foregroundPen);
+    dc.SetTextBackground (*wxBLACK);
+    dc.SetTextForeground (dd60App->m_fgColor);    
 }
 
 void Dd60Frame::dd60SetName (wxString &winName)
@@ -1790,6 +1818,18 @@ void Dd60Frame::procDd60Char (unsigned int d)
     
     switch (mode)
     {
+    case Dd60Trace:
+        if (trace_idx >= sizeof (trace_txt) - 1)
+        {
+            return;
+        }
+        if (d == 0)
+        {
+            d = 055;
+        }
+        trace_txt[trace_idx++] = cdcToAscii[d];
+        trace_txt[trace_idx] = '\0';
+        return;
     case Dd60CharSmall:
     case Dd60Dot:
         inc = 8;
@@ -2248,6 +2288,7 @@ Dd60Canvas::Dd60Canvas(Dd60Frame *parent)
     m_owner = parent;
     SetVirtualSize (XSize, YSize);
     dc.SetClippingRegion (DisplayMargin, DisplayMargin, XSize, YSize);
+    SetForegroundColour (dd60App->m_fgColor);    
     SetBackgroundColour (*wxBLACK);
     SetScrollRate (1, 1);
     SetFocus ();
@@ -2255,7 +2296,10 @@ Dd60Canvas::Dd60Canvas(Dd60Frame *parent)
 
 void Dd60Canvas::OnDraw(wxDC &dc)
 {
+    PrepareDC (dc);
     dc.DrawBitmap (*m_owner->m_screenmap, 0, 0, false);
+    dc.SetFont (m_owner->m_traceFont);
+    dc.DrawText (wxString::FromAscii (m_owner->trace_txt), TraceX, TraceY);
 }
 
 void Dd60Canvas::OnEraseBackground (wxEraseEvent &)
