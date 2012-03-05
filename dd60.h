@@ -43,6 +43,7 @@
 #define Dd60CharMedium  1
 #define Dd60CharLarge   2
 #define Dd60Dot         3
+#define Dd60Trace       4           /* Pseudo mode for the trace data line */
 
 /*
 **  Data type codes in upper 2 bits of incoming data (display to dtcyber)
@@ -73,8 +74,8 @@
 #define DisplayMargin	        20
 #define OffLeftScreen           0
 #define OffRightScreen          01020
-#define TraceX                  (10 - DisplayMargin)
-#define TraceY                  (10 - DisplayMargin)
+#define TraceX                  10
+#define TraceY                  10
 
 /*
 **  Size of the window and pixmap.
