@@ -98,10 +98,8 @@ void channelInit(u8 count)
     for (ch = 0; ch < channelCount; ch++)
         {
         channel[ch].id = ch;
-#ifdef USE_THREADS
         pthread_cond_init (&channel[ch].cond, NULL);
         pthread_mutex_init (&channel[ch].mutex, NULL);
-#endif
         }
 
     /*

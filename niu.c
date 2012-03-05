@@ -44,6 +44,7 @@
 #define IDX2STAT(i) ((i) + niuFirstStation)
 
 #define NetBufSize              256
+#define SendBufSize             2048
 
 /* -ext- words for operator box */
 #define resett 0170000      /* keepalive (should show up every 10 seconds) */
@@ -398,7 +399,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         sp->niuPorts.callBack = niuWelcome;
         sp->niuPorts.callArg = sp;
         sp->niuPorts.kind = sp->siteName;
-        dtInitPortset (&(sp->niuPorts), NetBufSize);
+        dtInitPortset (&(sp->niuPorts), NetBufSize, SendBufSize);
         /*
         **  Allocate the operator status buffer
         */
@@ -431,7 +432,10 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 #if !defined(_WIN32)
     if (niuOpstat > 0)
         {
-        dtCreateThread (niuThread, NULL);
+        if (dtCreateThread (niuThread, NULL))
+            {
+            exit (1);
+            }
         }
 #endif
 
@@ -621,11 +625,9 @@ static FcStatus niuOutFunc(ChSlot *activeChannel, DevSlot *activeDevice,
 static void niuInIo(ChSlot *activeChannel, DevSlot *activeDevice)
     {
     int port;
-    SiteParam *lvp;
     PortParam *mp;
     NetFet *np;
-    NetPortSet *psp;
-    int i, sp;
+    int i;
     
     if ((activeDevice->fcode != FcNiuSelectBlackBox &&
          activeDevice->fcode != FcNiuSelectInput) ||
@@ -647,31 +649,8 @@ static void niuInIo(ChSlot *activeChannel, DevSlot *activeDevice)
             {
             if (++port == niuStations)
                 {
-                /*
-                **  Whenever we finish a scan pass through the ports
-                **  (i.e., we've wrapped around) look for more data.
-                */
-                port = 0;
-                for (sp = 0; sp < sites; sp++)
-                    {
-                    for (;;)
-                        {
-                        lvp = siteVector + sp;
-                        psp = &(lvp->niuPorts);
-                        np = dtFindInput (psp, 0);
-                        if (np == NULL)
-                            {
-                            break;
-                            }
-                        i = dtRead  (np, psp, -1);
-                        if (i < 0)
-                            {
-                            dtClose (np, psp, TRUE);
-                            }
-                        }
-                    }
+                    port = 0;
                 }
-
             mp = portVector + port;
             np = mp->np;
             
@@ -712,7 +691,8 @@ static void niuInIo(ChSlot *activeChannel, DevSlot *activeDevice)
                 */
                 mp->currInput[0] = 01753 >> 7;
                 mp->currInput[1] = 01753 & 0177;
-                printf ("continuing to force logout port %d\n", port);
+                printf ("continuing to force logout station %d\n", 
+                        IDX2STAT (port));
                 break;
                 }
 #ifdef DEBUG
@@ -988,7 +968,7 @@ static void niuWelcome(NetFet *np, int stat, void *arg)
     */
     if (mp->loggedIn)
         {
-        printf ("need to force logout for port %d\n", stat);
+        printf ("need to force logout for station %d\n", stat);
         mp->forceLogout = TRUE;
         }
 

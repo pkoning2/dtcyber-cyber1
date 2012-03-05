@@ -1,46 +1,121 @@
-#!/bin/bash
+#!/usr/bin/env python
+# -*- Mode: python -*-
 
-# This script is invoked by DtCyber out of the niu operator box
-# watcher thread (if enabled).  It is passed two string arguments:
-#
-#  Argument 1:
-#	up	operator box was turned on (i.e., PLATO started)
-#	down	operator box was turned off (PLATO planned shutdown)
-#	crash	operator box keepalive timeout (PLATO crashed)
-#  Argument 2:
-#       Name of a file in /tmp that contains the message to send.
-#       That message will contain a string saying what happened, 
-#       plus debug information if applicable.  The file should be
-#       deleted by this script.
+"""This script is invoked by DtCyber out of the niu operator box
+watcher thread (if enabled).  It is passed two string arguments:
 
-# These three strings define the list of email addresses to send
-# to on a status change report.  Null string means don't send.
+  Argument 1:
+	up	operator box was turned on (i.e., PLATO started)
+	down	operator box was turned off (PLATO planned shutdown)
+	crash	operator box keepalive timeout (PLATO crashed)
+  Argument 2:
+       Name of a file in /tmp that contains the message to send.
+       That message will contain a string saying what happened, 
+       plus debug information if applicable.  The file should be
+       deleted by this script.
 
-to_up="paul_koning@dell.com"
-to_down="paul_koning@dell.com"
-to_crash="paul_koning@dell.com"
-to_opcall="paul_koning@dell.com"
+These three strings define the list of email addresses to send
+to on a status change report.  Null string means don't send.
 
-echo "`date "+%y/%m/%d %H.%M.%S"`. PLATO $1."
+       2005.03.15   p. koning   Initial version.
+       2012.01.04   p. koning   Convert to Python.
+"""
 
-case "$1" in
-    up)         to="${to_up}";;
-    down)       to="${to_down}";;
-    crash)      to="${to_crash}";;
-    operator*)  to="${to_opcall}";;
-    *)          echo "$0: unexpected argument $1";
-		exit 1;;
-esac
+import sys
+import os
+import time
+import httplib
+import smtplib
+import email.Message
+import socket
 
-if [ `hostname` = "pkoning-laptop" ]; then
-    unset to
-fi
+# Where to send web post updates:
+POSTHOST = "www.cyber1.org"
 
-echo $1 $2
-echo $to
-cat $2
+# Where to send email:
+MAILHOST = "localhost"
 
-if [ -n "${to}" ]; then
-    /usr/sbin/sendmail ${to} < $2
-fi
-rm -f $2
+def post (args, up):
+    """Post a status update to www.cyber1.org.  The second argument
+    indicates whether the system is now up (True) or down (False).
+    """
+    conn = httplib.HTTPConnection (POSTHOST)
+    if up:
+        postdata = "zusers=-1"
+    else:
+        postdata = "zusers=0"
+    conn.request ("POST", "/ping.asp",
+                  body = postdata,
+                  headers = { "Content-Type" : "application/x-www-form-urlencoded" } )
+    resp = conn.getresponse ()
+    if resp.status >= 200 and resp.status <= 299:
+        #print "temp: POST status:", resp.status, resp.reason
+        pass     # OK status
+    else:
+        print "POST status:", resp.status, resp.reason
+    conn.close ()
+
+def sendmail (args, to):
+    """Send a status update email to some address.  The first argument
+    is the arguments tuple from the script invocation, i.e., the
+    current status and the name of a file with additional stuff in it.
+    The second argument is the destination email address.
+    """
+    msg = email.Message.Message ()
+    msg.add_header ("From", "\"Cyber1\" <postmaster@cyberserv.org>")
+    msg.add_header ("To", to)
+    msg.add_header ("Reply-To", to)
+    msg.add_header ("Subject", "PLATO %s" % args[0])
+    try:
+        f = open (args[1], "r")
+        msg.set_payload (f.read ())
+        f.close ()
+        os.remove (args[1])
+    except OSError:
+        pass
+    s = smtplib.SMTP (MAILHOST)
+    try:
+        s.sendmail ("postmaster@cyberserv.org", [ to ], msg.as_string ())
+    except smtplib.SMTPException, data:
+        print "error sending to", to, "\n ", data
+
+# Dictionary of actions.  Each value is a tuple of pairs, where each
+# pair is the function to call and its argument.
+machine = socket.gethostname ()
+if "koning" in machine or "plato4" in machine:
+    actions = { "up" : ( #( post, True ),
+                         #( sendmail, "paulkoning@comcast.net" ),
+                         ),
+                "down" : ( #( post, False ),
+                           #( sendmail, "paulkoning@comcast.net" ),
+                           ),
+                "crash" : ( #( post, False ),
+                            #( sendmail, "paulkoning@comcast.net" ),
+                            ),
+                "operator call" : ( #( sendmail, "paulkoning@comcast.net" ),
+                                  )
+                }
+else: 
+    actions = { "up" : ( ( post, True ),
+                         ( sendmail, "help@cyber1.org" ), ),
+                "down" : ( ( post, False ),
+                           ( sendmail, "help@cyber1.org" ), ),
+                "crash" : ( ( post, False ),
+                            ( sendmail, "help@cyber1.org" ), ),
+                "operator call" : ( ( sendmail, "help@cyber1.org" ), )
+                }
+
+def main (args):
+    try:
+        action = actions[args[0].lower ()]
+    except KeyError:
+        print >> sys.stdout, "Unknown request", args[0]
+        sys.exit (1)
+    for func, actarg in action:
+        func (args, actarg)
+
+if __name__ == "__main__":
+    if len (sys.argv) > 2:
+        main (sys.argv[1:])
+    else:
+        print "usage: operbox action filename"

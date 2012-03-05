@@ -198,6 +198,8 @@ public:
     {
         ResetProc ();
     }
+    virtual ~emul8080 () {};
+    
     void main8080a (void);
     void ResetProc (void);
 

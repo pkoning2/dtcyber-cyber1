@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd">
+<plist version="0.9">
+<dict>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.cyber1.</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>dtoper</string>
+	<key>CFBundleIconFile</key>
+	<string>dtoper.icns</string>
+	<key>CFBundleName</key>
+	<string>Dtoper</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>4.1.11</string>
+	<key>CFBundleShortVersionString</key>
+	<string>4.1.11</string>
+	<key>CFBundleGetInfoString</key>
+	<string>Dtoper V2.0.0, (c) 2012 Paul Koning</string>
+	<key>CFBundleLongVersionString</key>
+	<string>2.0.0, (c) 2012 Paul Koning</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>nl</string>
+	</array>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright 2012 Paul Koning</string>
+	<key>LSRequiresCarbon</key>
+        <true/>
+	<key>CSResourcesFileMapped</key>
+	<true/>
+</dict>
+</plist>

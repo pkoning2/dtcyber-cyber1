@@ -13,9 +13,25 @@ import time
 import socket
 import threading
 import struct
+import re
 
 NETMAX = 4096
 DEBUG = False
+
+class MyThread (threading.Thread):
+    """A thread with stop method.
+    """
+    def __init__ (self):
+        threading.Thread.__init__ (self)
+        self.stopnow = False
+
+    def stop (self):
+        """Stop the thread associated with this connection.  The actual
+        handling of "stopnow" needs to go into the class that uses this.
+        """
+        if not self.stopnow and self.isAlive ():
+            self.stopnow = True
+            self.join ()
 
 class Connection (socket.socket):
     """A network connection.  Derived from socket, with some more
@@ -94,7 +110,8 @@ class elist (list):
                 self.append ("")
             self.append (val)
             
-class Oper (Connection, threading.Thread):
+statre = re.compile (r"DEBUG|UNLOCKED|ALERT|(\d+) operators")
+class Oper (Connection, MyThread):
     """A connection to the DtCyber operator interface.  It includes
     a thread that collects data from DtCyber and updates local
     state to reflect what it hears.
@@ -103,19 +120,19 @@ class Oper (Connection, threading.Thread):
         """port is the operator interface port number, default
         is 5006.
         """
-        threading.Thread.__init__ (self)
+        MyThread.__init__ (self)
         Connection.__init__ (self, "localhost", port)
         self.settimeout (5)
-        self.stopnow = False
         self.fixedtext = elist ()
         self.response = ""
         self.responses = 0
         self.status = elist ()
-        self.locked = False
+        self.locked = True
         self.debug = False
+        self.plato_alert = False
         self.statusdict = { }
-        self.start ()
         self.operators = 1
+        self.start ()
 
     def run (self):
         """Collect data from DtCyber.  We sort out the various
@@ -143,7 +160,10 @@ class Oper (Connection, threading.Thread):
                     # OpText -- fixed text (left screen material)
                     x, y, size, bold = struct.unpack ("<HHBB", v[:6])
                     i = (0760 - y) / 16
-                    self.fixedtext[i] = v[6:]
+                    try:
+                        self.fixedtext[i] = v[6:]
+                    except IndexError:
+                        print "bad index", i, "for", x, y, size, bold, v[6:]
                 elif t == 3 or t == 5:
                     # OpSyntax or OpInitialized, ignore
                     pass
@@ -157,13 +177,21 @@ class Oper (Connection, threading.Thread):
                     v = v[1:]
                     self.status[i] = v
                     if i == 0:
-                        # System status line, update locked and debug status
-                        self.locked = not v.startswith ("UNLOCKED")
-                        self.debug = v[10:15] == "DEBUG"
-                        if len (v) > 15:
-                            self.operators = int (v[15:].split ()[0])
-                        else:
-                            self.operators = 1
+                        # System status line, update some status
+                        self.debug = self.plato_alert = False
+                        self.locked = True
+                        self.operators = 1
+                        for m in statre.finditer (v):
+                            if m.group (1):
+                                self.operators = int (m.group (1))
+                            else:
+                                ms = m.group (0)
+                                if ms == "DEBUG":
+                                    self.debug = True
+                                elif ms == "UNLOCKED":
+                                    self.locked = False
+                                elif ms == "ALERT":
+                                    self.plato_alert = True
                     else:
                         fields = v.split (None, 3)
                         if len (fields) >= 3:
@@ -179,11 +207,6 @@ class Oper (Connection, threading.Thread):
             except EOFError:
                 break
         self.stopnow = True
-
-    def stop (self):
-        if not self.stopnow:
-            self.stopnow = True
-            self.join ()
 
     def command (self, text):
         """Send a command string.  Returns the response from DtCyber,
@@ -201,9 +224,12 @@ class Oper (Connection, threading.Thread):
         area (right screen of the dtoper display, but in full rather
         than limited to what fits in 30 or so lines).
         """
-        return '\n'.join (self.status)
+        retval = '\n'.join (self.status)
+        while retval.endswith ("\n\n"):
+            retval = retval[:-1]
+        return retval
 
-class Pterm (Connection, threading.Thread):
+class Pterm (Connection, MyThread):
     """A connection to an NIU port, i.e., a "classic" type pterm.
     It includes a thread that collects data from DtCyber and updates
     local state to reflect what it hears.
@@ -236,7 +262,7 @@ class Pterm (Connection, threading.Thread):
         Note that this must be an NIU ('classic' protocol) port;
         ASCII mode is not supported.
         """
-        threading.Thread.__init__ (self)
+        MyThread.__init__ (self)
         Connection.__init__ (self, host, port)
         self.settimeout (5)
         self.lines = [ ]
@@ -244,7 +270,6 @@ class Pterm (Connection, threading.Thread):
             self.lines.append (None)
         self.fserase ()
         self.station = None
-        self.stopnow = False
         self.start ()
         
     def run (self):
@@ -308,11 +333,6 @@ class Pterm (Connection, threading.Thread):
                 break
         self.stopnow = True
         
-    def stop (self):
-        if not self.stopnow:
-            self.stopnow = True
-            self.join ()
-
     def fserase (self):
         self.mode = 3          # char
         self.wemode = 3        # rewrite
@@ -498,7 +518,7 @@ class Pterm (Connection, threading.Thread):
             self.waitarrow (4)
             
 
-class Dd60 (Connection, threading.Thread):
+class Dd60 (Connection, MyThread):
     """A connection to the DtCyber console (green tubes).  It includes
     a thread that collects data from DtCyber and updates local
     state to reflect what it hears.
@@ -533,20 +553,19 @@ class Dd60 (Connection, threading.Thread):
         values shorter than a second or two are not recommended
         because of excessive overhead.
         """
-        threading.Thread.__init__ (self)
+        MyThread.__init__ (self)
         Connection.__init__ (self, "localhost", port)
         self.settimeout (5)
         self.erase ()
-        self.stopnow = False
         self.interval = -1
         self.setinterval (interval)
         self.sendkey (070)                 # XON to start output flow
         self.mode = self.DOT + self.LEFT   # no display until mode set
         self.x = 0
         self.y = 31
-        self.start ()
         self.screen = self.erase ()
         self.pending = self.erase ()
+        self.start ()
 
     def erase (self):
         left = [ ]
@@ -577,11 +596,6 @@ class Dd60 (Connection, threading.Thread):
             except EOFError:
                 break
         self.stopnow = True
-
-    def stop (self):
-        if not self.stopnow:
-            self.stopnow = True
-            self.join ()
 
     def sendkey (self, key):
         self.sendall (chr (key))

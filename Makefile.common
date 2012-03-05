@@ -18,29 +18,26 @@ THRLIBS    = -lpthread
 MACHINECFLAGS =
 DUAL_HOST_CPUS ?= 0
 ifeq ("$(MACHINE)","x86_64")
-LDFLAGS = -g2
+LDFLAGS ?= -g2
 XLIBS      += -L/usr/X11R6/lib64
 DUAL_HOST_CPUS = 1
 else
-LDFLAGS = -g2
+LDFLAGS ?= -g2
 XLIBS      += -L/usr/X11R6/lib
 endif
 LDFLAGS += $(EXTRALDFLAGS)
 
-# If threaded emulation requested ("make THREADS=yes") then turn that on.
-ifdef THREADS
-#ifneq ($(DUAL_HOST_CPUS), 0)
-MACHINECFLAGS += -DUSE_THREADS
-#endif
-endif
-
-CFLAGS  = -O2 -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST) -Wall -Werror -Wno-format
-CONLYFLAGS =  -std=gnu99
+OPTIMIZE ?= -O2
+CFLAGS  = $(OPTIMIZE) -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST)
+CONLYFLAGS =  -std=gnu99 -Wall -Werror -Wno-format
 
 SOBJS	= charset.o dtnetsubs.o
 SXOBJS  = dt_x11.o
 
 %.o : %.c %.d
+	$(CC) $(CFLAGS) $(CONLYFLAGS) -c $<
+
+$(PWD)/%.o : %.c
 	$(CC) $(CFLAGS) $(CONLYFLAGS) -c $<
 
 %.pcf : %.bdf

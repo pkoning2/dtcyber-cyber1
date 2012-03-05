@@ -114,10 +114,9 @@ void initExt (void)
     
     /*
     **  Initialize the portset, which among other things allocates
-    **  a vector of NetFets.  Pass 0 for the buffer size to defer
-    **  allocating the FET data buffer until later.
+    **  a vector of NetFets.
     */
-    dtInitPortset (&extPorts, 0);
+    dtInitPortset (&extPorts, MAXNET, MAXNET);
 }
 
 /*--------------------------------------------------------------------------
@@ -269,6 +268,7 @@ static CpWord envOp (CpuContext *activeCpu, CpWord req)
 **                                  7: write
 **                                  8: reset multiple sockets
 **                                  9: reset all ext sockets
+**                                 10: get socket buffer info
 **
 **                              For the "get socket" request, socknum must
 **                              be zero, and the socket number obtained is 
@@ -281,19 +281,21 @@ static CpWord envOp (CpuContext *activeCpu, CpWord req)
 **                              "socknum" is not actually a socket number;
 **                              instead, it is an index into our NetPortSet.
 **
-**                              "mode" is a bit mask.  The bottom bit
-**                              is 0 for text, 1 for binary.  The upper
-**                              bits are modifier flags:
-**                                  text:   4/reserved, 1/no partial lines
-**                                  binary: 4/reserved, 1/no partial words
-**
-**                              This applies only to read and write calls.
-**                              Other values are reserved.
+**                              "mode" is a bit mask:
+**                                  4/, 1/no partials, 1/binary
+**                                "binary" means 8-bit binary data is
+**                                  transferred (otherwise translate ASCII
+**                                  to display code and store in line format)
+**                                  Applies to read and write functions.
+**                                "no partials" means only full lines (text)
+**                                  or full words (binary) are read.
+**                                  Applies only to read functions.
 **
 **                              See below for reqdependent fields.
 **
 **  Returns:        Operation status.  -1 for success, >= 0 for error.
 **                  For host OS errors, status is 1000 + errno value.
+**                  Exception: for code 10, see below.
 **
 **------------------------------------------------------------------------*/
 static CpWord sockOp (CpuContext *activeCpu, CpWord req)
@@ -310,14 +312,14 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
     CpWord *bufp;
     CpWord d;
     unsigned char *cp;
-    int c;
+    int prev_c, c;
     int ic, oc;
     int shift;
     int pc;
     int i, idx, pcnt;
     int charset;
     char resultstr[MAXNET];
-    volatile u8 *prev_out;
+    int out, prev_out;
     int prev_oc;
     
     if (reqp == NULL)
@@ -357,11 +359,8 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
         // no request dependent fields.
         if (fet != NULL)
         {
-            if (dtClose (fet, &extPorts, FALSE) == 0)
-            {
-                return RETOK;
-            }
-            return RETNODATA;
+            dtClose (fet, &extPorts, FALSE);
+            return RETOK;
         }
         return RETNOSOCK;
     case 2:
@@ -377,10 +376,7 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
             {
                 return RETERROR (ENOMEM);
             }
-            if (dtInitFet (fet, MAXNET) != 0)
-            {
-                return RETERRNO;
-            }
+            fet->inUse = true;
             fet->ownerInfo = reqp[2];
             reqp[1] = fettosock (fet);
             return RETOK;
@@ -410,6 +406,10 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
         {
             return RETNOSOCK;
         }
+        if (!fet->listen)
+        {
+            return RETINVREQ;
+        }        
         reqp[2] = reqp[3] = 0;
         fd = dtAccept (fet, &acceptFet);
         if (fd == 0)
@@ -422,11 +422,6 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
         }
         dataFet = getFet ();
         if (dataFet == NULL)
-        {
-            close (fd);
-            return RETERROR (ENOMEM);
-        }
-        if (dtInitFet (dataFet, MAXNET) != 0)
         {
             close (fd);
             return RETERROR (ENOMEM);
@@ -471,6 +466,19 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
         // not be a line terminator at the end of the last line.
         // In other words, if char[count-1] != 0 then the last line
         // is a partial line.
+        // If the "no partials" bit is set in word 1, then normally only
+        // full lines (text mode) or full words (binary mode) are returned.
+        // For binary mode, that means an even number of words since bytes
+        // are packed 7.5 per word.  The exceptions are:
+        //  - If the connection has closed, the final data is delivered
+        //    even if it is a partial line or word
+        //  - In text mode, if a complete line is waiting to be received,
+        //    but the buffer is not big enough for the line, part of it
+        //    will be delivered, and the rest is available for the next
+        //    receive call.  Note that if multiple lines are waiting,
+        //    and there is space for some but not all lines, the full lines
+        //    that fit will be delivered.  So the partial line case applies
+        //    only if the line that's too long is the first line waiting.
         if (fet == NULL)
         {
             return RETNOSOCK;
@@ -487,26 +495,14 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
         {
             return RETINVREQ;
         }
-        retval = dtRead (fet, &extPorts, 0);
-        //
-        // Report error status from dtRead only if there isn't any
-        // data left to be processed.
-        //
-        if (dtEmpty (fet))
+
+        prev_c = prev_out = out = -1;
+        c = dtReadoi (fet, &out);
+        if (c < 0)
         {
-            if (retval < 0)
-            {
-                if (retval == -1)
-                {
-                    return RETNULL;
-                }
-                return RETERRNO;
-            }
             return RETNODATA;
         }
-        //DEBUGPRINT ("dtRead %d, %d bytes buffered\n", retval, dtFetData (fet));
-        prev_out = fet->out;
-        c = dtReado (fet);
+        
         if (mode == 1)
         {
             shift = 60 - 8;
@@ -549,7 +545,7 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
                         d = 0;
                         shift = 60 - 8;
                         prev_oc = oc + 1;
-                        prev_out = fet->out;
+                        prev_out = out;
                     }
                     else
                     {
@@ -561,7 +557,8 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
                 {
                     break;
                 }
-                c = dtReado (fet);
+                prev_c = c;
+                c = dtReadoi (fet, &out);
                 if (c < 0)
                 {
                     break;
@@ -574,18 +571,20 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
                     break;
                 }
                 // PLATO text mode
-                if (c == '\n')
+                if (c == '\n' && prev_c == '\r')
                 {
-                    c = dtReado (fet);
+                    // treat \r\n as a single newline
+                    prev_c = c;
+                    c = dtReadoi (fet, &out);
                     if (c < 0)
                     {
                         break;
                     }
                     continue;
                 }
-                else if (c == '\r')
+                else if (c == '\r' || c == '\n')
                 {
-                    // End of line
+                    // \r (optionally followed by \n) or \n by itself is newline
                     *bufp++ = d;
                     DEBUGPRINT (" %020llo\n", d);
                     buflen--;
@@ -610,7 +609,7 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
                         oc = ((oc + 10) / 10) * 10;
                     }
                     prev_oc = oc;
-                    prev_out = fet->out;
+                    prev_out = out;
                 }
                 else
                 {
@@ -618,7 +617,8 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
                     if (pc < 0)
                     {
                         // char with no PLATO equivalent
-                        c = dtReado (fet);
+                        prev_c = c;
+                        c = dtReadoi (fet, &out);
                         if (c < 0)
                         {
                             break;
@@ -656,7 +656,8 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
                         oc++;
                     }
                 }
-                c = dtReado (fet);
+                prev_c = c;
+                c = dtReadoi (fet, &out);
                 if (c < 0)
                 {
                     break;
@@ -673,25 +674,27 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
         {
             // whole wordpairs/lines only
             oc = prev_oc;
-            fet->out = prev_out;
+            out = prev_out;
             if (oc == 0)
             {
                 // If the connection is gone and the data that's
                 // left is less than what we want to get right now,
                 // return the error for the lost connection.
-                if (retval < 0)
+                if (fet->connFd == 0)
                 {
-                    if (retval == -1)
-                    {
-                        return RETNULL;
-                    }
-                    return RETERRNO;
+                    return RETNULL;
                 }
                 return RETNODATA;
             }
         }
         DEBUGPRINT ("chars to Cyber: %d\n", oc);
         reqp[4] = oc;
+        // Consume the characters that we processed, if any
+        if (out >= 0)
+        {
+            dtUpdateOut (fet, out);
+        }
+        
         return RETOK;
     case 7:
         // write
@@ -870,6 +873,16 @@ static CpWord sockOp (CpuContext *activeCpu, CpWord req)
             dtClose (fet, &extPorts, TRUE);
         }
         return RETOK;
+    case 10:
+        // get socket info
+        // no request dependent fields.
+        // This one has nonstandard return values: error is -1, success
+        // is 24/, 18/sendcount, 18/receivecount
+        if (fet != NULL)
+        {
+            return (dtSendData (fet) << 18) + dtFetData (fet);
+        }
+        return MINUS1;
     default:
         return RETINVREQ;
     }

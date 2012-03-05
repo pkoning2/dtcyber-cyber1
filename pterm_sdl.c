@@ -75,7 +75,10 @@ int ptermOpenGsw (void *user)
 {
     SDL_AudioSpec *req;
     double t;
-    const double r = 20e3;
+
+    // RC filter is the summing network resistor (100k) and the
+    // coupling capacitor (.01 uF).  We'll model that using an IIR.
+    const double r = 100e3;
     const double c = .01e-6;
     
     if (gswState.user != NULL)

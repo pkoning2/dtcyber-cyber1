@@ -25,6 +25,7 @@
 **  Include Files
 **  -------------
 */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,24 +50,42 @@ static NetPortSet niuAsciiPorts;
 
 static void niuSendstr(int stat, const char *p);
 static void niuSendWord(int stat, int word);
-static void niuAsciiWelcome(NetFet *np, int stat, void *arg);
-static void niuRemoteWelcome(NetFet *np, int stat, void *arg);
+static void ignoreData(NetFet *np, int bytes, void *arg);
 static void bbSendNiu(int stat);
 static void bbSendAscii(int stat);
 
 int main (int argc, char **argv)
     {
-    int stat, i;
-    NetFet *np;
+    int stat, i, detflag = 0;
     char msg2[200];
-    
+#ifndef __APPLE__
+    FILE *pidfile;
+    char *fname;
+#endif
+
     if (argc < 2)
         {
         msg = strdup ("PLATO is down for the moment");
         }
     else
         {
-        msg = strdup (argv[1]);
+        i = 1;
+        if (argc > 2)
+            {
+#ifdef __APPLE__
+            printf ("usage: blackbox [ message ]\n");
+            exit (1);
+#else
+            if (strcmp (argv[1], "-d") != 0)
+                {
+                printf ("usage: blackbox [ [ -d ] message ]\n");
+                exit (1);
+                }
+            i = 2;
+            detflag = 1;
+#endif
+            }
+        msg = strdup (argv[i]);
         }
     
     /*
@@ -75,50 +94,41 @@ int main (int argc, char **argv)
     niuPorts.portNum = platoPort;
     niuPorts.maxPorts = platoConns;
     niuPorts.localOnly = FALSE;
-    niuPorts.callBack = niuRemoteWelcome;
+    niuPorts.dataCallBack = ignoreData;
     niuAsciiPorts.portNum = asciiPort;
     niuAsciiPorts.maxPorts = asciiConns;
     niuAsciiPorts.localOnly = FALSE;
-    niuAsciiPorts.callBack = niuAsciiWelcome;
+    niuAsciiPorts.dataCallBack = ignoreData;
     
-    dtInitPortset (&niuPorts, 1024);
-    dtInitPortset (&niuAsciiPorts, 1024);
-
     printf ("Current message is: '%s'\n", msg);
-    printf ("Enter a new message at any time, or Ctrl-D to stop blackbox.\n");
-    fcntl (fileno (stdin), F_SETFL, O_NONBLOCK);
+    if (detflag)
+        {
+#ifndef __APPLE__
+        daemon (1, 0);
+        /*
+        **  Create the pidfile after the daemon() because that
+        **  does a fork, i.e., you get a new pid from it.
+        **  Also, for the same reason the calls to dtInitPortset
+        **  (which create threads) have to be after this point.
+        */
+        asprintf (&fname, "%s.pid", argv[0]);
+        pidfile = fopen (fname, "w");
+        free (fname);
+        fprintf (pidfile, "%d\n", getpid ());
+        fclose (pidfile);
+#endif
+        }
+    else
+        {
+        printf ("Enter a new message at any time, or Ctrl-D to stop blackbox.\n");
+        fcntl (fileno (stdin), F_SETFL, O_NONBLOCK);
+        }
     
+    dtInitPortset (&niuPorts, 1024, 1024);
+    dtInitPortset (&niuAsciiPorts, 1024, 1024);
+
     for (;;)
         {
-        /*
-        **  Read and discard any input; also handle disconnects.
-        */
-        for (;;)
-            {
-            np = dtFindInput (&niuPorts, 0);
-            if (np == NULL)
-                {
-                break;
-                }
-            i = dtRead  (np, &niuPorts, -1);
-            if (i < 0)
-                {
-                dtClose (np, &niuPorts, TRUE);
-                }
-            }
-        for (;;)
-            {
-            np = dtFindInput (&niuAsciiPorts, 0);
-            if (np == NULL)
-                {
-                break;
-                }
-            i = dtRead  (np, &niuPorts, -1);
-            if (i < 0)
-                {
-                dtClose (np, &niuAsciiPorts, TRUE);
-                }
-            }
         for (stat = 0; stat < platoConns; stat++)
             {
             bbSendNiu (stat);
@@ -137,16 +147,23 @@ int main (int argc, char **argv)
         **  Check for a new message, or exit.
         */
         sleep (5);
-        i = read (fileno (stdin), msg2, sizeof (msg2));
-        if (i == 0)
+        if (!detflag)
             {
-            return 0;
-            }
-        else if (i > 0)
-            {
-            free (msg);
-            msg2[i - 1] ='\0';
-            msg = strdup (msg2);
+            i = read (fileno (stdin), msg2, sizeof (msg2));
+            if (i == 0)
+                {
+                return 0;
+                }
+            else if (i > 0)
+                {
+                msg2[i - 1] ='\0';
+                if (i > 56)
+                    {
+                    printf ("max of 56 characters recommended for clarity\n");
+                    }
+                free (msg);
+                msg = strdup (msg2);
+                }
             }
         }
     }
@@ -270,55 +287,19 @@ static void niuSendWord(int stat, int word)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Handle connect/disconnect
+**  Purpose:        Handle received data
 **
 **  Parameters:     Name        Description.
 **                  np          NetFet pointer
-**                  stat        station number
+**                  bytes       Byte count
 **
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuRemoteWelcome(NetFet *np, int stat, void *arg)
+static void ignoreData (NetFet *np, int bytes, void *arg)
     {
-    if (np->connFd == 0)
-        {
-        /*
-        **  Connection was dropped.
-        */
-        return;
-        }
-
-    /*
-    **  New connection for this port.  Send a message right now
-    */
-    bbSendNiu (stat);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Handle connect/disconnect
-**
-**  Parameters:     Name        Description.
-**                  np          NetFet pointer
-**                  stat        station number
-**
-**  Returns:        nothing.
-**
-**------------------------------------------------------------------------*/
-static void niuAsciiWelcome(NetFet *np, int stat, void *arg)
-    {
-    if (np->connFd == 0)
-        {
-        /*
-        **  Connection was dropped.
-        */
-        return;
-        }
-
-    /*
-    **  New connection for this port.  Send a message right now
-    */
-    bbSendAscii (stat);
+    /* Discard all received data */
+    np->out = np->in;
     }
 
 /*--------------------------------------------------------------------------

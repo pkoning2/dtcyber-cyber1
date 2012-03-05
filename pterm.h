@@ -26,7 +26,7 @@
 */
 #define DEFAULTHOST		wxT ("cyberserv.org")
 #define CURRENT_PROFILE	wxT (" Current ")
-#define BufSiz			256
+#define BufSiz			2048
 #define RINGSIZE		5000
 #define RINGXON1		(RINGSIZE/3)
 #define RINGXON2		(RINGSIZE/4)

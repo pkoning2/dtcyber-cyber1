@@ -91,6 +91,11 @@ int main(int argc, char **argv)
     logInit();
 
     /*
+    **  Setup networking machinery
+    */
+    dtInit ();
+    
+    /*
     **  Allow optional command line parameter to specify section to run in "cyber.ini".
     */
     if (argc == 2)
