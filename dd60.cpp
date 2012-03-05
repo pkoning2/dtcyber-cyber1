@@ -1823,7 +1823,9 @@ void Dd60Frame::procDd60Char (unsigned int d)
         for (i = 0; i < size; i++)
         {
             p.MoveTo (*m_pixmap, firstx, firsty + i);
-#ifdef __SSE2__
+#if 0 //#ifdef __SSE2__
+            // Disable this code for now because it requires 16-byte
+            // alignment and I see no way to guarantee that.
             typedef u8 v8qi __attribute__ ((vector_size (8)));
             v8qi *pmap = (v8qi *)(p.m_ptr);
             v8qi *pdata = (v8qi *) data;
