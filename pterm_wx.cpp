@@ -3287,6 +3287,7 @@ void PtermFrame::OnToggle2xMode (wxCommandEvent &)
 	SavePreferences();
     
 	SetScaleState();
+	m_scale = ptermApp->m_scale;
 
 	m_canvas->Refresh (true);
 	m_canvas->SetFocus ();
@@ -4310,10 +4311,11 @@ void PtermFrame::ptermFullErase (void)
     PrepareDC (dc);
     dc.SetPen (m_backgroundPen);
     dc.SetBrush (m_backgroundBrush);
-	// erase entire canvas in background color which means the margins to; but is faster
+	// erase entire canvas in background color which means the margins too; but is faster
     //dc.Clear ();	
 	// erase just 512x512
-    dc.DrawRectangle (XTOP, YTOP, 512 * ((m_stretch) ? 1 : m_scale), 512);
+    int screen_dimension_size = ((m_stretch)? m_scale * 512 : 512);
+    dc.DrawRectangle (XTOP, YTOP, screen_dimension_size, screen_dimension_size);
     m_memDC->SetBackground (m_backgroundBrush);
     m_memDC->Clear ();
 }
@@ -4594,7 +4596,8 @@ void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg, bool scale_to
 	SetColors (newfg, newbg, newscale);	// boo hiss! this creates the weird mode inverse problem when switching scales.
 
 	m_canvas->SetBackgroundColour (newbg);
-	m_canvas->m_scale = m_scale;
+	// m_canvas->m_scale = m_scale;
+	m_canvas->m_scale = newscale;
 	m_canvas->Refresh ();
 	m_defFg = newfg;
 	m_defBg = newbg;
@@ -10183,7 +10186,7 @@ void PtermCanvas::FullErase (void)
     // Erase the text "backing store"
     memset (textmap, 055, sizeof (textmap));
 
-    // ClearRegion ();
+    ClearRegion ();
     m_owner->ClearBackground();
 }
 
@@ -10192,7 +10195,7 @@ void PtermCanvas::ClearRegion (void)
     // Cancel any region selection
     if (m_regionHeight != 0 || m_regionWidth != 0)
     {
-	    m_regionHeight = 0;
+		m_regionHeight = 0;
 		m_regionWidth = 0;
 		m_owner->GetMenuBar ()->Enable (Pterm_Copy, false);
 		m_owner->GetMenuBar ()->Enable (Pterm_Exec, false);
@@ -10202,8 +10205,8 @@ void PtermCanvas::ClearRegion (void)
 		m_owner->menuPopup->Enable (Pterm_Exec, false);
 		m_owner->menuPopup->Enable (Pterm_MailTo, false);
 		m_owner->menuPopup->Enable (Pterm_SearchThis, false);
-        if (m_owner->m_statusBar != NULL)
-            m_owner->m_statusBar->SetStatusText (wxT(""), STATUS_TIP);
+		if (m_owner->m_statusBar != NULL)
+			m_owner->m_statusBar->SetStatusText (wxT(""), STATUS_TIP);
 		Refresh (false);
 	}
 }

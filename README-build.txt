@@ -23,7 +23,14 @@ The wxWidgets version currently being used by Pterm is 2.8.10.
 
 It would appear that the latest incarnation of DtCyber/Pterm also contains a dependency on a
 sound library called libSDL.  You can download the run-time libraries (and sources if you are
-interested) at http://www.libsdl.org/download-1.2.php .
+interested) at http://www.libsdl.org/download-1.2.php .  For the MacOSX build, download the
+.dmg at http://www.libsdl.org/release/SDL-1.2.15.dmg, or if you're still building Pterm for
+PPC, use http://www.libsdl.org/release/SDL-1.2.15-OSX10.4.dmg.  When building Pterm.app for
+the Mac, double-click the downloaded .dmg from www.libsdl.org to mount /Volumes/SDL to the
+desktop.  The Makefile now assumes /Volumes/SDL is where it will find the SDL.framework.
+If you happen to have the framework locally already, then just tell the make where it lives:
+
+	make Pterm.app SDL_FRAMEWORK_PATH=</path/to/where/the/SDL.framework/lives>
 
 One final note - for the Mac application there is a dependency on the command-line tool
 "gettext", which also appears to have a partner in crime, "msgfmt".  There is an Open Source
@@ -41,3 +48,12 @@ copied into the Pterm.app application.
 message files that are copied into the Pterm.app application.  The failure to do either of
 these tasks on MacOS is not fatal.  It just means that some localizable text will not be
 localized if you don't have those tools.  It's not fatal to the build.
+
+If you want to install gettext, you can find a GZIP'ed TAR file at http://ftp.gnu.org/gnu/gettext/ .
+To install it (according to http://www.rmnl.net/read-about/installing-gettext-snow-leopard-django/ )
+the wy to install it is to:
+
+	cd <location of gettext sources>
+	./configure
+	make
+	sudo make install
