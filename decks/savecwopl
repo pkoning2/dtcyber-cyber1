@@ -1,0 +1,8 @@
+bcp(cm140000)
+user(plato,plato)
+attach,bcpopl.
+update,b,p=bcpopl,n=bcptape,*=$$$$.
+assign,51,tape,d=pe,lb=ku.
+r.
+copybf,bcptape,tape.
+catalog,tape,r.

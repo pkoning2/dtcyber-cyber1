@@ -1,0 +1,6 @@
+bcp(cm140000)
+user(plato,plato)
+attach,bcpopl.
+update,s=s,f,p=bcpopl,*=$$$$.
+rewind,s.
+copysbf,s,output.
