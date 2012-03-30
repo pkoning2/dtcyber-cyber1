@@ -1,0 +1,5 @@
+cmpupd(cm160000,t77770)
+user,plato,plato.
+attach,oldpl=cprndpl.
+attach,opl=cmpopl2/m=w.
+upmod,p=oldpl,n=opl.

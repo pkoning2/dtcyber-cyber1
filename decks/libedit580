@@ -1,0 +1,18 @@
+job(cm140000,t77770)
+user(plato,plato)
+common,system.
+*
+attach,cmrdck5,cmrdck6,cmrdck7,cmrdc10.
+*
+libedit,p=system.
+return,output.
+rewind,new.
+itemize,new.
+label,tape,vsn=ndt,lb=ku,po=w.
+rewind,new.
+copyei,new,tape.
+~
+*file cmrdck5
+*file cmrdck6
+*file cmrdck7
+*file cmrdc10
