@@ -1,0 +1,32 @@
+tm.
+user(sys,system)
+attach,opl=opl871.
+modify.
+compass,i,b=tmbin,s=nostext,s=pptext,a.
+purge,tmbin/na.
+define,tmbin.
+~
+*IDENT PA0GRI1
+*DECK COMPTMA
+*DELETE COMPTMA.603
+*EDIT COMPTMA
+*DECK COMSIOU
+*DELETE COMSIOU.18 
+ MX       EQU    7           DTCYBER USES CHANNEL 7
+*EDIT COMSIOU
+*DECK 1TM
+*DELETE V23L617.57 
+          UJP    INIX        ALWAYS RETURN 
+*DELETE 1TM.4569 
+          UJP    CIT2
+*EDIT 1TM
+*IDENT PA0GRI2 
+*DECK 1TN
+*DELETE 1TN.942
+          FAN    MC
+          ACN    MC
+*DELETE 1TN.955
+ STM1     BSS    0 
+*INSERT 1TN.971
+          DCN    MC
+*EDIT 1TN
