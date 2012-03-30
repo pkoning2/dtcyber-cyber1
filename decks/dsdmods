@@ -1,5 +1,8 @@
 dsd.
 user(sys,system)
+settl(*)
+setasl(*)
+setjsl(*)
 attach,opl=opl871.
 modify.
 compass,i,b=dsdbin,s=nostext,s=pptext,a,l.
