@@ -40,7 +40,8 @@ DEFWXDIR = /usr/local/wxstaticu.2810
 ARCHFLAGS=-arch i386
 SDLINCL=-FSDL
 SDLLIBS=-Wl,-framework,SDL
-SDL_FRAMEWORK_PATH ?= /Volumes/SDL
+SDL_FRAMEWORK_PATHS ?= /Library/Frameworks /Volumes/SDL
+SDL_FRAMEWORK_PATH ?= $(shell for d in $(SDL_FRAMEWORK_PATHS); do if [ -e $$d/SDL.framework ]; then echo $$d; break; fi; done)
 else
 SDLPATH ?= /usr/local
 SDLINCL ?= `sdl-config --cflags`
