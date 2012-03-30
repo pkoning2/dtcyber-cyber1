@@ -50,7 +50,7 @@ if [ "$1" = "" ]; then
     cp sys/871/cy871.ecs.initial sys/871/cy871.ecs
     eval "./dtcyber cybis871auto 2>&1 ${TEE} cyberlog &"
 else
-    eval "./dtcyber $1 2>&1  ${TEE} cyberlog"
+    eval "./dtcyber $1 2>&1  ${TEE} cyberlog &"
 fi
 
 echo dtcyber started
