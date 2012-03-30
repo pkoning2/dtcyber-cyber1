@@ -1,0 +1,20 @@
+mods.
+user(plato,plato)
+settl(*)
+setasl(*)
+setjsl(*)
+rfl,170000.
+attach(opl=opl871)
+modify.
+compass,i,b=mtbin,s=nostext,s=pptext,a.
+purge,mtbin/na.
+define,mtbin.
+~
+*IDENT 1MTMOD
+*DECK 1MT
+*I 21133
+          BSS    2           THIS MAY NOT MEET CODING STANDARDS
+*D 21729
+ .RED6    IJM    RED11,CH    IF *1MT* FINISHED INPUT
+          AJM    *,CH        WAIT FOR *1MT* to DCN CHANNEL
+*EDIT 1MT
