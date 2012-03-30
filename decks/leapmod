@@ -1,0 +1,49 @@
+cpumtr.
+user(sys,system)
+settl(*)
+setasl(*)
+setjsl(*)
+attach,opl=opl871.
+modify.
+compass,i,b=mtrbin,s=nostext,s=pptext,a,l.
+purge,mtrbin/na.
+define,mtrbin.
+~
+*edit cpumtr
+*edit mtr
+*edit dsd
+*IDENT leapfix
+*deck cpumtr
+*d 253L688.667,253L688.672
+          BX7    X7-X7
+*i NS2797.4
+          bx6    x2
+          mx7    -2
+          lx6    -30         position year to bottom
+          bx7    -x7*x6
+          sx7    x7-2
+          SX6    28          RESET FEBRUARY *TDLM* ENTRY
+          nz     x7,adt2.1   if not leap year
+          sx6    29
+ adt2.1   sa6    tdlm+2      set february length
+*d NS2797.19
+ adt2.0   bx4    x2
+          lx4    -24+18
+          bx4    -x7*x4
+          sa4    x4+tdlm     get day limit for current month
+*d 253L688.703,253L688.704
+          ix6    x4-x6
+          pl     x6,adt3     if not end of month
+*d 253L688.711,253L688.713
+*d 253L688.721
+*d 253L688.722,253L688.727
+*d 253L688.820
+*deck mtr
+*d NS2726.40
+*deck dsd
+*d DSD.3377,dsd.3378
+*d DSD.3425,dsd.3427
+*d dsd.17515
+*d dsd.17525,dsd.17526
+*d DSD.18272,DSD.18274
+*d DSD.18336,DSD.18337
