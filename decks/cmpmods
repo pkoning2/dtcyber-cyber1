@@ -1,0 +1,1118 @@
+cmpupd(cm160000,t77770)  -*- mode: update;-*-
+user,plato,plato.
+attach(cmpopl)
+modify(p=cmpopl,i,a,lo=e)
+attach,lgo=cstc/m=w.
+*define,cstc.
+rewind(compile)
+compass(i,x=cmpopl,s=iptext,s=psstext,s=scptext,s=cpctext,s=cputext)
+~
+*ident    cstc
+*deck     compcom
+*delete   cps064.2
+ cp.name  micro  1,, cst1$
+*ident    cstc1
+*deck     compass
+*delete   cp139cp.95
+          ident  cst,orgz
+*delete   cp139cp.100
+          entry  cst         primary entry point
+*delete   cp139cp.142
+ cst      sb1    1
+*/        end mod
+*deck     compass
+*edit     compass
+*ident    sqz
+*/        add cerl squoze files
+*delete   cmp24.281,cmp24.282
+          sa7    rnsz        preset to no local sqz
+          nz     x3,rns0     if compressed
+          mx0    12
+          bx0    x0*x5
+          nz     x0,rns1     if normal card
+          sx3    b1          mark modify 63 char set
+          sx6    b1          mark end action
+          sa6    rnsz
+ rns0     sa5    a0+2
+*delete   cmp30.4633,cmp24.395
+          sa1    cct         card count
+          sa3    rnsz        check sqz
+          zr     x3,rnz1     not sqz
+          sa4    a0+b1       get modword
+          mx6    0
+          bx7    x4
+          eq     rns8
+        
+rnz1      sa3    cp.iform
+*delete   cmp24.462
+          nz     x3,rns8b    if compressed
+          sa1    a0          check for sqz
+          mx6    12
+          bx6    x6*x1
+          nz     x6,rns8b
+          sx3    b1          mark as modify 63
+ rns8b    sa1    editm
+*insert   cmp24.488
+ rnsz     data   0           for cerl sqz flag
+*delete   cmp24.177,cps146.5
+ rnc1     readw  x2,a0,b1    check for cerl sqz
+          sa3    a0
+          mx6    12
+          bx6    x6*x3       
+          nz     x6,rnc1a    if normal card
+          bx6    x3          move mod field for modify type
+          sa6    a0+b1
+          mx6    0           clear seq
+          sa6    a0
+          readc  x2,a0+2,10  read rest of card
+          sx0    a0+2        mark text
+          sa3    a0+b1       get modword
+          sx3    x3
+          ng     x3,rnc1     deleted
+          eq     rncx        exit
+        
+ rnc1a    sx0    a0          for normal card
+          mx6    -12         is the first word the last one
+          bx6    -x6*x3
+          zr     x6,rncx     if only card
+          readc  x2,a0+b1,9  read rest of card
+*insert   compass.4326
+          zr     x2,cpl3     if possible sqz card
+*delete   compass.4328
+ cpl1a    bx6    x2
+*delete   compass.4332
+ cpl1b    sb6    b2
+*insert   cmp24.42
+          mx2    12
+          bx2    x2*x5
+          zr     x2,cpl      if cerl sqz
+*insert   cmp24.59
+        
+        
+*         process possible modword
+        
+ cpl3     sa2    a2+b1       get possible modword
+          ux3,b3 x2
+          sx3    b3+1777b    test for sqz
+          nz     x3,cpl1a    if modify format
+          bx3    x2          isolate name
+          ax3    18
+          lx3    18
+          bx7    x3+x7       pack name
+          bx2    x2-x3       clear name
+          mx6    -14         save year,month,day
+          bx2    -x6*x2
+          bx6    x2
+          ax6    4+5         isolate year
+          sa3    x6+ymdvals
+          lx3    30
+          ax3    30          mask year
+          bx7    x3+x7       pack year
+          sa7    a6+b1
+          lx6    4+5
+          bx2    x2-x6       clear year
+          bx7    x2
+          ax7    5           isolate month
+          sa3    x7+ymdvals
+          ax3    30          mask month
+          lx3    -18         position month
+          bx6    x3
+          lx7    5
+          bx2    x2-x7       clear month
+          sa3    x2+ymdvals
+          ax3    30
+          lx3    -18-18
+          bx6    x3+x6
+          sa6    a7+b1
+          eq     cpl1b       back for next card
+        
+*         year, month, day table
+        
+          list   g
+        
+ ymdvals  bss    0
+ year     set    73          base year
+ day      set    0           there*s a zero year
+        
+          dup    32,5
+ day      decmic day,2
+ year     decmic year,2
+          vfd    30/3r/"day",30/3r "year"
+ year     set    year+1
+ day      set    day+1
+        
+        
+          list   *
+*deck     compass
+*edit     compass
+*ident    cerlwrt
+*/        fixes l=0 problem for small outputs
+*delete   cps009.5,cmp30.2319
+          mi     x1,cmp6a    if anything was writen
+          zr     x4,cmp7     if buffer is empty
+          write  e           process buffer
+ cmp6a    writer e,recall
+*insert   cmp042.235
+          sa1    zmsg        transfer warning message
+          sa2    a1+b1
+          sa3    a2+b1
+          sa4    a3+b1
+          bx6    x1
+          sa6    line
+          bx7    x2
+          sa7    a6+b1
+          bx6    x3
+          bx7    x4
+          sa6    a7+b1
+          sa7    a6+b1
+          rj     listerf     list message
+*/        end mod
+*ident    cerlcst
+*deck     compass
+*/ modifications for common symbols text options
+*/        cst permanent tables and xtext tables
+*insert cmp30.18
+*       
+*             c              system common text from file *csystxt*
+*             c=0            no common text
+*             c=fname        common systems test from file *fname*
+*insert compass.68
+*         c=0
+*i f4810a.275
+          vfd    12/0lc,18/optc,30/csystxt
+*i f4810a.297
+ optc     data   0lcsystxt
+*insert compass.629
+ lsysmic  data   0           length of system micros
+ csystxt  data   0           special common systems text
+*insert compass.656
+ csyname  data   0           special name if given
+*insert compass.783
+ q        error  (see listing for comment.)
+ x        error  (macro purged and redefined)
+ y        error  (duplicate common block definition ignored.)
+ z        error  (system common blocks redefined.)
+*insert compass.1024
+ csyms    space  4
+***       csyms - table of common system symbols
+*       
+*                contains information necessary to define
+*                common blocks and their associated symbols
+*       
+*       
+*         format of table
+*       
+*         word1 - length of absolute symbol definitions
+*         word2 - first symbol
+*         word3 - value
+*         ***
+*         word i - length of first common block information
+*         word i+1 - common block name
+*         word i+2 - 30/length,30/params
+*         word i+3 - first symbol
+*         word i+4 - value
+*         ***
+*         word n-1 - last symbol of last block
+*         word n   - value of last symbol
+        
+        
+ csyms    table
+ cysdef   space  4
+***       common symbols macro text table
+*       
+*         see macdef for format
+        
+        
+ cysdef   table
+ cysmac   space  4
+***       cysmac - table of macro names for common symbols text
+*       
+*         format of entry
+*       
+*         word 1 - macro name
+*         word 2 - macro definition (lower 18 bits bias into cysdef)
+        
+        
+ cysmac   table
+ cysmic   space  4
+***       cysmic - table of micro definitions for common symbols text
+*       
+*                see sysmic for format
+        
+        
+ cysmic   table
+*insert compass.13957
+          bx6    x3          save length of mictab
+          sa6    lsysmic
+*insert compass.6405
+***       cmtext - generate special common systems text
+*       
+*       
+*csystext cmtext
+*       
+*         similar to stext but generates texts useful for
+*         relocatable programs
+        
+        
+          qual   pass1
+ cmtext   sa1    absfg       error if absolute assembly
+          nz     x1,ctx3
+          sa1    csystxt     check if cst option available
+          nz     x1,ctx3     error if envoked
+          sa1    locsym      test formats
+          sa2    badloc
+          zr     x2,ctx1
+          mx1    0           force ident name
+          sx6    b1
+          sa6    lerr        bad name
+          sa6    eflg
+ ctx1     nz     x1,ctx2     check name given
+          sa1    idnam       otherwise use ident name
+ ctx2     rj     ljust
+          sa7    csyname
+          mx6    0           clear out cst function
+          sa6    l.csyms
+          eq     ctl70
+ ctx3     sx6    b1
+          sa6    oerr
+          sa6    eflg
+          eq     ctl70
+        
+        
+**        cmtext - generate common system text
+        
+        
+          qual   pass2
+ cmtext   sx6    0           clear name
+          sa6    csyname
+          eq     zlist
+          space  4
+*insert compass.6711
+ cst      space  4
+***       cst - common symbols table
+*       
+*       
+*         cst
+*         defines system common symbols
+*         as if they were defined by the routine
+        
+        
+          qual   pass1
+ cst      sa1    absfg       not available to absolute assembles
+          nz     x1,cst2
+          sa1    locsym      test blank loc symbol
+          rj     ljust       left jusify symbol
+          sa2    badloc
+          zr     x2,cst1     symbol ok
+          sx6    b1
+          sa6    lerr
+          sa6    eflg
+ cst1     sa2    csystxt     check same or change text
+          nz     x7,cst3     defining new text
+          nz     x2,cst4
+ cst2     sx6    b1          no text mark error
+          sa6    oerr
+          sa6    eflg
+          eq     ctl70
+        
+ cst3     sa7    csystxt     plant text name
+          zr     x2,cst4     no previous text
+          bx6    x7-x2
+          zr     x6,cst4     same as previous
+          sx6    b1          mark redefined
+          mx7    0
+          sa6    zerr
+          sa6    eflg
+          sa7    l.csyms     cancel previous symbols
+ cst4     rj     ldc
+          rj     cmac        define macros
+          rj     cmic        define micros
+ cst5     mx6    0
+          sa6    p1tempa     set to block 0 for absolutes
+          sa6    p1temp
+          rj     xdef        define externals
+          sa1    p1temp      set length for absolutes
+          sx6    x1+b1
+          sa6    a1
+          sa2    o.csyms
+          sb7    x2
+          sa2    x1+b7
+          bx6    x2
+          sa6    p1tempb     set length
+          rj     cdef        define symbols
+ cst6     sa1    l.csyms     end test
+          sa2    p1temp      bias to next item
+          ix6    x1-x2
+          zr     x6,ctl70    --- exit
+          rj     cuse        process use
+          rj     cdef        define symbols
+          eq     cst6
+        
+*         cdef   define common symbols
+        
+ cdef     ps                 return exit
+ cdef1    sa1    p1temp
+          sa2    p1tempb
+          zr     x2,cdef     -- exit
+          sx6    x1+2        bump bias
+          sx7    x2-2        bump length
+          sa6    a1
+          sa7    a2
+          sa3    o.csyms     get item
+          sb2    x3
+          sa1    x1+b2       fetch symbol
+          sa2    a1+b1       fetch value
+          sa3    p1tempa     fetch reloc
+          mx4    0           not external
+          sx5    2           mark symbol as xtext
+          rj     ydefsym
+          eq     cdef1       loop to next entry
+        
+**        define macros associated with common systems text
+        
+ cmac     ps                 return exit
+          sa1    l.cysmac    process names
+          zr     x1,cmac     no defs
+          sa2    optype
+          bx6    x2
+          sa6    p1tempd     save optype
+          mx6    0
+          sa6    l.duptab
+          manage duptab,x1   transfer to temp table for processing
+          sx1    x3+         length to x1
+          sa2    o.cysmac
+          sa3    o.duptab
+          rj     move
+          sa3    l.macdef    present table length
+          zr     x3,cmac2
+          sa4    o.duptab    set up to bias macro entries
+          sa5    l.duptab
+          sb7    x5
+          sb4    x4+b1       set to table pointer word
+          sb4    b4+b7
+          sb2    b1+b1       b2=2
+ cmac1    sa1    b4-b7
+          ix6    x1+x3
+          sa6    a1
+          sb7    b7-b2
+          nz     b7,cmac1
+        
+ cmac2    sa1    l.cysdef    transfer macro text
+          manage macdef,x1
+          sa1    l.cysdef
+          ix3    x2+x3       determine first word for new text
+          ix3    x3-x1
+          sa2    o.cysdef
+          rj     move        move text
+        
+*         enter names into opcode table
+        
+ cmac3    sa4    o.duptab
+          sa1    x4+         get name
+          rj     tluop       test in table
+          zr     x6,cmac4    sense no entry
+          sa4    o.duptab    pick name to purge
+          sa1    x4+
+          rj     pgo         purge entry for this assembly
+          sx6    1
+          sa6    xerr        and mark
+ cmac4    sa4    o.duptab
+          sa1    x4          get name
+          sa2    a1+b1       and definition
+          rj     entop
+          sa4    o.duptab
+          sa5    l.duptab
+          sx6    x4+2
+          sx7    x5-2
+          sa6    a4
+          sa7    a5
+          nz     x7,cmac3    loop
+          sa1    p1tempd     restore op type
+          bx6    x1
+          sa6    optype
+          eq     cmac        -- exit
+        
+**        enter common symbols micros
+        
+ cmic     ps                 return exit
+          sa1    l.cysmic    move micros
+          zr     x1,cmic     if no defs
+          manage mictab,x1
+          sa1    l.cysmic    prepare to move defs
+          ix3    x2+x3
+          ix3    x3-x1
+          sa2    o.cysmic
+          rj     move
+          eq     cmic
+        
+*         cuse               set up use table entry for cst
+        
+ cuse     ps                 return exit
+          sa1    p1temp      bias to length
+          sx6    x1+3        set bias to first symbol
+          sa2    o.csyms     get length
+          sb2    x2
+          sa1    x1+b2
+          sx7    x1-2        adjust length for defining
+          sa6    p1temp
+          sa7    p1tempb
+          sa4    a1+b1       get use name
+          sb3    b0          use counter
+          sb2    b1+b1       b2=2
+          sb6    -4
+          sa1    o.usetab    check prior existance
+          sa2    l.usetab
+          sa3    ui
+          ix1    x1+x3
+          ix2    x2-x3
+          sb7    x2+b6
+          sb4    x1+b7       lwa + 1
+ cuse1    ng     b7,cuse2    sense not in list
+          sa1    b4-b7       fetch block name
+          sb7    b7+b6
+          sb3    b3+b1       block counter
+          bx1    x1-x4
+          nz     x1,cuse1    loop to next block
+          sa2    a1+b2       check block type
+          zr     x2,cuse1    sense program block, not common
+          sx6    b1          mark error
+          sa6    yerr        mark non fattle error
+          sa6    eflg        mark it
+          sa1    p1tempb     adjust bias and table length
+          sa2    p1temp      to ignor block entries
+          ix6    x1+x2
+          sa6    a2
+          mx7    0
+          sa7    a1          clear block entries
+          eq     cuse        --exit
+        
+ cuse2    sx6    b3          save index
+          sa6    p1tempc
+          manage usetab,-b6  reserve table space
+          sa4    p1temp      get name back
+          sa5    o.csyms
+          sb2    x4-2
+          sa4    x5+b2
+          sb7    x3-4
+          sa5    a4+b1       fetch block params
+          mx0    30
+          bx7    -x0*x5
+          lx6    x4
+          sa6    x2+b7       plant name
+          sa7    a6+b1       and some params
+          sx6    b1          mark commonality
+          bx7    x0*x5
+          ax7    30
+          sa6    a7+b1       commonality
+          sa7    a6+b1       and present length
+          sa1    ui+1        set up block number
+          sa2    p1tempc
+          ix6    x1+x2
+          sa6    p1tempa
+          sa6    usecnt
+          sa6    ui+2        update use block count
+          eq     cuse        -- exit
+ xdef     space  4
+**        enter cst externals into tables
+        
+        
+ xdef     ps                 return exit
+          mx1    0           set blank qualifier
+          rj     sqv
+          sa1    p1temp
+          sa2    o.csyms     get length of primatives
+          sb2    x2
+          sx6    x1+b1       increment table pointer
+          sa6    a1
+          sa1    x1+b2
+          bx6    x1          length of primatives
+          sa6    p1tempb
+        
+*         define primatives
+        
+ xdef1    sa1    p1temp      increment relative pointers
+          sa2    p1tempb
+          sx6    x1+1
+          sx7    x2-1
+          ng     x7,xdef4    now define sysmbols
+          sa6    a1
+          sa7    a2
+          sa3    o.csyms     get primative
+          sb2    x3
+          sa1    x1+b2
+          bx6    x1
+          sa6    p1tempc     save primative
+          rj     tlusymt     look up symbol
+          lx2    59-31
+          ng     x2,xdef2    if external
+          lx2    1
+          ng     x2,xdef3    if defined
+          manage extab,1     add symbol to ext table
+          sb7    x3-1
+          sa1    p1tempc
+          bx6    x1
+          sa6    x2+b7       plant name
+          bx4    x3          external number
+          sx5    2           mark symbol as xtext
+          mx2    0           value = 0
+          sx3    b0          relocation
+          rj     ydefsym     define it
+          eq     xdef1
+ xdef2    rx4    x3          get equivalent
+          mx0    -21
+          bx2    -x0*x4
+          nz     x2,xdef3    not a primative..  error
+          ax4    21          get ext number
+          mx0    -9
+          bx4    -x0*x4
+          sb7    x4-1        true relative position
+          sa3    o.extab
+          sa4    x3+b7       get symbol
+          bx3    x4-x1
+          zr     x3,xdef1    if definition ok
+ xdef3    sx6    1           mark d error
+          sa6    eflg
+          sa6    derr
+          eq     xdef1
+        
+*         define biased external symbols
+        
+ xdef4    sa1    p1temp      fetch length of ext symbols
+          sx6    x1+b1
+          sa6    a1
+          sa2    o.csyms
+          sb2    x2
+          sa2    x1+b2       length
+          bx6    x2
+          sa6    p1tempb     plant length
+ xdef5    sa1    p1temp      increment table pointers
+          sa2    p1tempb
+          sx6    x1+3
+          sx7    x2-3
+          ng     x7,xdef8    end of table test
+          sa6    a1
+          sa7    a2
+          sa3    o.csyms     get entry
+          sb7    x3
+          sa1    x1+b7       symbol
+          sa2    a1+b1       equivalent
+          sa3    a2+b1       and primative
+          bx6    x1
+          bx7    x2          
+          sa6    p1tempc     and save them
+          sa7    p1tempd
+          bx6    x3
+          sa6    p1tempe
+          rj     tlusymt     look up symbol
+          lx2    59-31
+          ng     x2,xdef6    if external
+          lx2    1
+          ng     x2,xdef7    if defined
+          sa1    p1tempe     get primative
+          rj     tlusymt     look up symbol
+          rx4    x3          fetch equiv
+          mx0    -9
+          ax4    21          get external number
+          bx4    -x0*x4
+          sa1    p1tempc     symbol
+          sa2    p1tempd
+          mx0    -21
+          bx2    -x0*x2
+          sx3    b0          relocation
+          sx5    2           mark symbol as xtext
+          rj     ydefsym
+          eq     xdef5
+ xdef6    rx4    x3          fetch equiv
+          mx0    -21
+          bx3    -x0*x4
+          sa2    p1tempd     compare with value and ext
+          bx5    -x0*x2
+          ix6    x5-x3
+          nz     x6,xdef7    if not same value
+          ax4    21
+          mx0    -9
+          bx4    -x0*x4
+          sb7    x4-1
+          sa2    o.extab     get external symbol
+          sa2    x2+b7
+          sa1    p1tempe
+          bx6    x1-x2
+          zr     x6,xdef5    if same definition
+ xdef7    sx6    1           mark duplicate def
+          sa6    eflg
+          sa6    derr
+          eq     xdef5
+ xdef8    sa1    qval+1      reset qualification
+          bx6    x1
+          sa6    a1-b1
+          eq     xdef        exit
+        
+        
+**        cst - activate common symbols
+        
+          qual   pass2
+ cst      sx6    0
+          sa6    p2temp      set up to enter externals
+          rj     xdef
+          eq     zlist
+ cst      space  4
+**        enter cst externals into entref
+        
+        
+ xdef     ps                 return exit
+          mx1    0
+          rj     sqv         set to blank qualifier
+          sa1    p2temp      increment csyms pointer
+          sx6    x1+b1
+          sa6    a1
+          sa2    o.csyms     get length of external table
+          sb7    x2          
+          sa1    x1+b7       fetch length
+          bx6    x1
+          sa6    p2tempa
+ xdef1    sa1    p2temp      increment pointers
+          sa2    p2tempa
+          sx6    x1+1
+          sx7    x2-1
+          ng     x7,xdef2    endtest
+          sa6    a1
+          sa7    a2
+          sb7    x1
+          sa1    o.csyms     get symbol
+          sa1    x1+b7
+          rj     tlusymt     look up symbol
+          zr     x3,xdef1    if not defined
+          sx1    1rx
+          rj     entref      enter item
+          eq     xdef1
+ xdef2    sa1    qval+1      restore qualifier
+          bx7    x1
+          sa7    a1-b1
+          eq     xdef        exit
+*insert compass.7490
+          rj     gcs
+*insert compass.12768
+ gcs      space  4
+**        get common symbols system text
+        
+ gcs      ps                 return exit
+          sa1    csyname     check for common systems text required
+          zr     x1,gcs      no
+          sx6    a0          save a0
+          sa6    p1temp
+          recall x
+          sa1    csyname
+          sx6    1
+          bx6    x1+x6
+          sa6    x           set up name file
+          sa2    ercnt
+          nz     x2,gcs3     no text if errors
+          sa4    date        generate ident table
+          bx6    x1
+          lx7    x4
+          sa6    dpba+1
+          sa7    a6+b1
+          rewind x
+          recall x
+          writew x,dpba,17b
+          writew x,(=50000101bs36),1
+          sa1    l.usetab    reserve space
+          sa2    l.symtab
+          ax1    1
+          ix1    x1+x2
+          sa2    l.extab     external table length
+          ix1    x1+x2
+          manage duptab,x1+b1
+          sa3    o.duptab    set up store
+          sx3    x3+2        set destination for move
+          sa1    l.extab     length of move
+          sa2    o.extab     origin
+          bx6    x1          plant table length
+          sa6    x3-1        length at beginning
+          rj     move        move externals
+          sa1    l.extab     set up a7
+          sa2    o.duptab
+          sb7    x1+2
+          sa7    x2+b7
+          sb6    a7          save begining table address
+          rj     dfs         dump externals
+          sx6    a7-b6
+          sa6    b6          plant length of external table
+          sa7    a7+b1       for absolute symbol length
+          sa5    =16777bs21  surpress ext etc.
+          sb5    b0          set up to dump abs syms
+          sb6    a7          save beginning loc
+          rj     dbs
+          sx6    a7-b6
+          sa6    b6
+          rj     fcb         get common symbols
+          sa1    o.duptab    mark total length
+          sb6    x1
+          sx6    a7-b6
+          sa6    b6
+          writew x,b6,x6+b1  write out symbols
+          sx6    b0
+          sa6    l.duptab    clear work table
+          sa1    l.macdef    transfer macros
+          sa5    lsysmac     only program macros
+          ix6    x1-x5
+          sa6    p1temp      write length
+          writew x,a6,b1
+          sa1    o.macdef
+          sa2    p1temp
+          ix6    x1+x5
+          writew x,x6,x2
+        
+*         transfer micro table
+        
+          sa1    l.mictab
+          sa5    lsysmic     length of system micros
+          ix6    x1-x5       length of programer micros
+          sa6    p1temp      write length
+          writew x,a6,1
+          sa1    o.mictab
+          sa5    lsysmic
+          ix1    x1+x5       origin of programmer micros
+          sa3    p1temp
+          zr     x3,gcs0     if no micros
+          writew x2,x1,x3
+        
+*         transfer opcodes to duptab
+        
+ gcs0     sa1    l.optab
+          manage duptab,x1+b1
+          sb6    x2
+          sb7    x3-1
+          mx1    1
+          sa4    o.optab
+          sa7    x2
+          sb4    x4+b7       lwa + 1
+          sa5    lsysmac
+          mx0    12
+          lx1    -2
+          sb2    b1+b1       b2=2
+          sb5    57
+          sb4    b4+b1
+        
+*         scan optab and transfer macro names
+        
+ gcs1     zr     b7,gcs2     if end of operation table
+          sa2    b4-b7
+          sb7    b7-b2
+          ax6    x2,b5
+          bx7    x1+x6
+          nz     x7,gcs1     sense no program macro
+          sa3    a2-b1       fetch name
+          bx6    -x0*x3      clean up
+          ix7    x2-x5
+          lx2    12
+          ng     x2,gcs1     if opsyn
+          sa6    a7+b1
+          sa7    a6+b1
+          nz     b7,gcs1     if not end of operation table
+        
+ gcs2     sx6    a7-b6       length of macro names
+          sa6    b6
+          writew x,b6,x6+b1
+          sx6    b0
+          sa6    l.duptab    clear work table
+ gcs3     writer x,r
+          recall x
+          sa1    p1temp
+          sa0    x1
+          mx6    0           clear option
+          sa6    csyname
+          eq     gcs         -- exit
+ fcb      space  4
+        
+**        find common blocks and dump symbols
+        
+ fcb      ps                 return exit
+          sa1    ui          set up scan
+          sa2    o.usetab
+          ix2    x1+x2
+          sa0    x2-4
+          sb3    b0
+        
+ fcb1     sa1    o.usetab    set up end test
+          sa2    l.usetab
+          sb7    x1
+          sb7    x2+b7       lwa + 1
+          sb2    2
+          sb6    4
+ fcb2     sa0    a0+b6       bump to next use
+          sb4    a0          set up end test
+          ge     b4,b7,fcb   -- exit
+          sa1    a0+b2       get common word
+          sb3    b3+b1       bump block number
+          zr     x1,fcb2     sense no common block
+        
+ fcb3     sa1    a0          get block name
+          sa2    a1+b1       params
+          sa3    a2+b2       and length
+          lx3    30
+          sa7    a7+b1
+          sb6    a7          save  first cell
+          lx6    x1
+          bx7    x2+x3
+          sa6    a7+b1
+          sa7    a6+b1
+          sa1    ui+1        construct block number
+          sb3    b3-b1
+          sb3    x1+b3
+          sb5    -b3
+          sa5    =16000bs21   supress sst, external
+          rj     dbs
+          sx6    a7-b6       length of table
+          sa6    b6
+          eq     fcb1        and loop to next block
+ dbs      space  4
+*         dump all symbols for a given block
+*         enter with b5 set to negative of block
+*         and x5 symbol supression mask
+*       
+*         uses   a - 1,2,3,4,6,7
+*                b - 1,2,4,5,7
+*                x - 0,1,2,3,4,5,6,7
+        
+        
+ dbs      ps                 return exit
+          sa1    o.symtab    get symbol table parameters
+          sa2    l.symtab
+          sb7    x2
+          sb4    x1+b7       lwa + 1
+          sb2    b1+b1       b2=2
+          mx0    12          qual mask
+          mx1    -21         value mask
+          mx2    -9          block mask
+        
+ dbs1     zr     b7,dbs      -- exit
+          sa3    b4-b7       fetch symbol
+          sb7    b7-b2
+          zr     x3,dbs1     symbol vacuous
+          sa4    a3+b1       get value
+          bx6    x0*x3
+          nz     x6,dbs1     sense qualified symbol
+          bx6    x3
+          ax3    36
+          sx3    x3-2r'?
+          zr     x3,dbs1     sense local symbol
+          bx3    x4*x5
+          nz     x3,dbs1     sense symbol supression (external etc.)
+          bx7    -x1*x4      fetch value
+          ax4    21          position block
+          bx4    -x2*x4
+          sx4    x4+b5
+          nz     x4,dbs1     block test
+          sa6    a7+b1       plant symbol
+          sa7    a6+b1       and value
+          eq     dbs1
+ dfs      space  4
+**        dump external sysmbols for cst
+        
+        
+ dfs      ps                 return exit
+          sa1    o.symtab    fetch symbol table params
+          sa2    l.symtab
+          sb7    x2
+          sb4    x1+b7       lwa + 1 
+          sb2    b1+b1       b2=2
+          mx1    -21         value mask
+          mx2    -9          primative mask
+ dfs1     zr     b7,dfs      end test
+          sa3    b4-b7       fetch symbol
+          sb7    b7-b2
+          zr     x3,dfs1     if vacuous
+          sa4    a3+b1       fetch equivalent
+          bx7    x4
+          lx4    59-31       check exteranal bit
+          pl     x4,dfs1     if not external
+          bx4    x7
+          ax4    21          get exteranl number
+          bx4    -x2*x4
+          sb3    x4-1        true relative position in talbe
+          sa5    o.extab
+          sa5    x5+b3
+          bx0    x3-x5
+          zr     x0,dfs1     if primative definition
+          bx6    x3          symbol
+          bx7    -x1*x7      value
+          sa6    a7+b1
+          sa7    a6+b1
+          bx7    x5          primative symbol
+          sa7    a7+b1
+          eq     dfs1
+ ldc      space  4
+***       load common systems text
+        
+ ldc      ps                 return exit
+          sa1    csystxt     check option active
+          zr     x1,ldc
+          sa1    l.csyms     no defs
+          nz     x1,ldc      ignor
+          rj     lct         load common systems text
+          nz     x0,cys2     note error
+          sa1    o.memory    verify text format
+          sa2    o.endtab
+          ix2    x2-x1
+          sa3    x1+b1       fetch symbol table length
+          sb6    x3+b1       bias to next table
+          sb7    x2-10b      maximum length
+          ax3    18
+          ge     b6,b7,cys2  if bad
+          ng     b6,cys2     if bad text
+          nz     x3,cys2
+          sa4    a3+b6       fetch macdef length
+          sb3    x4+b1
+          ax4    18
+          sb6    b3+b6
+          ng     b3,cys2
+          ge     b6,b7,cys2
+          nz     x3,cys2
+          sa4    a3+b6       fetch micro length
+          sb3    x4+b1
+          ax4    18
+          sb6    b3+b6       total length to here
+          ng     b3,cys2
+          ge     b6,b7,cys2
+          nz     x4,cys2
+          sa4    a3+b6       fetch macro name length
+          sb3    x4+b1
+          ax4    18
+          sb6    b3+b6
+          nz     x4,cys2
+          ng     b3,cys2
+          ge     b6,b7,cys2
+          sx6    b6+b1       set memory length
+          sa6    l.memory
+          rj     cstcm       load cm
+          eq     ldc         --exit
+        
+        
+ cys2     message (=c* bad commons text.*)
+          eq     ldc
+ cstcm    space  4
+***       cstcm - load cst tables into central memory
+*       
+        
+        
+ cstcm    ps                 return exit
+          sa1    o.memory
+          sa1    x1+b1       fetch symbol table length
+          mx6    0
+          sa6    l.csyms     zero table length
+          manage csyms,x1
+          sa4    o.memory    adjust tables
+          sa5    l.memory
+          sa1    x4+b1
+          sx6    x1+2
+          ix7    x5-x6       new length
+          ix6    x4+x6       new origin
+          sa6    a4
+          sa7    a5
+          sx2    x4+2        symbols origin
+          sa3    o.csyms
+          rj     move
+          sa2    o.memory
+          sa1    x2          get length of macro defs
+          mx6    0
+          sa6    l.cysdef    set length to zero
+          manage cysdef,x1   get room for defs
+          sa4    o.memory    and transfer them
+          sa1    x4          length
+          ix3    x2+x3       origin calc
+          ix3    x3-x1       origin in table
+          sx2    x4+b1
+          rj     move
+          sa4    o.memory    update memory table
+          sa5    l.memory
+          sa1    x4
+          sx6    x1+b1
+          ix7    x5-x6       change length
+          ix6    x4+x6       and origin
+          sa6    a4
+          sa7    a5
+          sa1    x6          get cysmic length
+          mx6    0
+          sa6    l.cysmic    set length to zero
+          manage cysmic,x1
+          sa4    o.memory    and transfer to table
+          sa1    x4
+          ix3    x2+x3
+          ix3    x3-x1
+          sx2    x4+b1
+          rj     move
+          sa4    o.memory
+          sa5    l.memory
+          sa1    x4
+          sx6    x1+b1       bump to macro names
+          ix7    x5-x6
+          ix6    x4+x6
+          sa6    a4
+          sa7    a5
+          sa1    x6          get length of macro names
+          mx6    0
+          sa6    l.cysmac    set length to zero
+          manage cysmac,x1
+          sx1    x3
+          sx3    x2
+          sa2    o.memory
+          sx2    x2+b1
+          rj     move
+          sx6    0           clear temp table
+          sa6    l.memory
+          eq     cstcm       --exit
+        
+***       load common systems text
+        
+ lct      ps                 return exit
+          recall x           use xtext buffer
+          sa1    csystxt     form fet entries
+          sx6    b1
+          bx6    x1+x6
+          sa6    x
+          rj     mtd         move tables down to make room
+          sa1    o.memory
+          sa2    o.endtab
+          ix2    x2-x1
+          sx0    x1          origin
+          sa0    x2          and length
+ lct0     rewind x
+ lct1     read   x
+ lct2     readw  x,x0,1      read 7700 table
+          ng     x1,lct      if eof
+          nz     x1,lct1     if eor
+          sa2    x0          check format
+          lx2    18d
+          sx6    x2-770000b
+          zr     x6,lct4
+ lct3     readw  x,x0,a0     skip to end of record
+          zr     x1,lgt3     loop
+          eq     lgt1        loop
+ lct4     lx2    6
+          sx5    x2          skip table
+ lct5     readw  x,x0,1
+          sx5    x5-1
+          nz     x5,lct5
+          readw  x,x0,1
+          nz     x1,lct      -- error exit
+          sa1    x0
+          sa2    =50000101bs36
+          bx6    x1-x2
+          ax6    36
+          nz     x6,lct      wrong overlay, exit
+          readw  x,x0+b1,a0-b1
+          zr     x1,lct6     if not enough room
+          sx0    b0
+          eq     lct         return
+        
+ lct6     message lcta,,r
+          eq     lct         exit
+        
+ lcta     data   c*insufficient storage for cst text.*
+        
+*insert cps064.1768
+          pseudo 4,cmtext
+          pseudo 4,cst
+*/ end mod
+}
