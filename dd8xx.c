@@ -894,19 +894,16 @@ static FcStatus dd8xxFunc(PpWord funcCode)
 static void dd8xxIo(void)
     {
     i8 unitNo;
-    bool opened;
     DiskParam *dp;
 
     unitNo = activeDevice->selectedUnit;
     if (unitNo != -1)
         {
         dp = ((DiskParam **) (activeDevice->context[0]))[unitNo];
-        opened = ddOpened (&dp->ioDesc);
         }
     else
         {
         dp = NULL;
-        opened = FALSE;
         }
 
     switch (activeDevice->fcode)
@@ -1670,15 +1667,12 @@ static void dd8xxSectorWrite(DiskParam *dp, PpWord *sector)
 **------------------------------------------------------------------------*/
 static void dd844SetClearFlaw(DiskParam *dp, PpWord flawState)
     {
-    u8 unitNo;
     int index;
     PpWord flawWord0;
     PpWord flawWord1;
 	PpWord sectorFlaw;
 	PpWord trackFlaw;
     bool setFlaw;
-
-    unitNo = activeDevice->selectedUnit;
 
     /*
     **  Assemble flaw words.

@@ -90,6 +90,7 @@ static INLINE bool cpuWriteMem(CPUVARGS2 (u32 address, CpWord *data));
 static INLINE void cpuRegASemantics(CPUVARG);
 static INLINE u32 cpuAdd18(u32 op1, u32 op2);
 static INLINE u32 cpuSubtract18(u32 op1, u32 op2);
+static bool cpuFlError(CPUVARG);
 static void cpuEcsTransfer(CPUVARGS2 (bool writeToEcs, bool toReg));
 static bool cpuCmuGetByte(CPUVARGS3 (u32 address, u32 pos, u8 *byte));
 static bool cpuCmuPutByte(CPUVARGS3 (u32 address, u32 pos, u8 byte));
@@ -312,20 +313,9 @@ static INLINE bool cpuReadMem(CPUVARGS2 (u32 address, CpWord *data))
     
     if (address >= activeCpu->regFlCm)
         {
-        activeCpu->exitCondition |= EcAddressOutOfRange;
-        if ((activeCpu->exitMode & EmAddressOutOfRange) != 0)
+        if (cpuFlError (CPUARG))
             {
-            /*
-            **  Exit mode selected.
-            */
-            if (activeCpu->regRaCm < cpuMaxMemory)
-                {
-                cpMem[activeCpu->regRaCm] = ((CpWord)activeCpu->exitCondition << 48) | ((CpWord)(activeCpu->regP + 1) << 30);
-                }
-
-            activeCpu->regP = 0;
             *data = cpMem[0] & Mask60;
-            // ????????????? jump to monitor address ??????????????
             return(TRUE);
             }
         else
@@ -356,28 +346,92 @@ static INLINE bool cpuWriteMem(CPUVARGS2 (u32 address, CpWord *data))
     
     if (address >= activeCpu->regFlCm)
         {
-        activeCpu->exitCondition |= EcAddressOutOfRange;
-        if ((activeCpu->exitMode & EmAddressOutOfRange) != 0)
-            {
-            /*
-            **  Exit mode selected.
-            */
-            if (activeCpu->regRaCm < cpuMaxMemory)
-                {
-                cpMem[activeCpu->regRaCm] = ((CpWord)activeCpu->exitCondition << 48) | ((CpWord)(activeCpu->regP + 1) << 30);
-                }
-
-            activeCpu->regP = 0;
-            // ????????????? jump to monitor address ??????????????
-            return(TRUE);
-            }
-
-        return(FALSE);
+        return cpuFlError (CPUARG);
         }
 
     cpMem[absAddr] = *data & Mask60;
 
     return(FALSE);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Implement A register sematics.
+**
+**  Parameters:     Name        Description.
+**                  activeCpu   CPU context pointer
+**
+**  Returns:        Nothing.
+**
+**------------------------------------------------------------------------*/
+static INLINE void cpuRegASemantics(CPUVARG)
+    {
+    if (activeCpu->opI == 0)
+        {
+        return;
+        }
+
+    if (activeCpu->opI <= 5)
+        {
+        /*
+        **  Read semantics.
+        */
+        activeCpu->cpuStopped = cpuReadMem(CPUARGS2 (activeCpu->regA[activeCpu->opI], activeCpu->regX + activeCpu->opI));
+        }
+    else
+        {
+        /*
+        **  Write semantics.
+        */
+        activeCpu->cpuStopped = cpuWriteMem(CPUARGS2 (activeCpu->regA[activeCpu->opI], activeCpu->regX + activeCpu->opI));
+        }
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        18 bit ones-complement addition with subtractive adder
+**
+**  Parameters:     Name        Description.
+**                  op1         18 bit operand1
+**                  op2         18 bit operand2
+**
+**  Returns:        18 bit result.
+**
+**------------------------------------------------------------------------*/
+static INLINE u32 cpuAdd18(u32 op1, u32 op2)
+    {
+    u32 acc18;
+
+    acc18 = (op1 & Mask18) - (~op2 & Mask18);
+    if ((acc18 & Overflow18) != 0)
+        {
+        acc18 -= 1;
+        acc18 &= Mask18;
+        }
+
+    return(acc18);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        18 bit ones-complement subtraction
+**
+**  Parameters:     Name        Description.
+**                  op1         18 bit operand1
+**                  op2         18 bit operand2
+**
+**  Returns:        18 bit result.
+**
+**------------------------------------------------------------------------*/
+static INLINE u32 cpuSubtract18(u32 op1, u32 op2)
+    {
+    u32 acc18;
+
+    acc18 = (op1 & Mask18) - (op2 & Mask18);
+    if ((acc18 & Overflow18) != 0)
+        {
+        acc18 -= 1;
+        acc18 &= Mask18;
+        }
+
+    return(acc18);
     }
 
 
@@ -897,6 +951,29 @@ bool cpuEcsAccess(u32 address, CpWord *data, bool writeToEcs)
 **
 **--------------------------------------------------------------------------
 */
+
+static bool cpuFlError (CPUVARG)
+    {
+    activeCpu->exitCondition |= EcAddressOutOfRange;
+    if ((activeCpu->exitMode & EmAddressOutOfRange) != 0)
+        {
+        /*
+        **  Exit mode selected.
+        */
+        if (activeCpu->regRaCm < cpuMaxMemory)
+            {
+            cpMem[activeCpu->regRaCm] = ((CpWord)activeCpu->exitCondition << 48) | ((CpWord)(activeCpu->regP + 1) << 30);
+            }
+
+        activeCpu->regP = 0;
+        // ????????????? jump to monitor address ??????????????
+        return TRUE;
+        }
+    else
+        {
+        return FALSE;
+        }
+    }
 
 #ifdef CPU_THREADS
 /*--------------------------------------------------------------------------
@@ -1493,86 +1570,6 @@ static void cpuTraceCtl (CPUVARG)
 
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Implement A register sematics.
-**
-**  Parameters:     Name        Description.
-**                  activeCpu   CPU context pointer
-**
-**  Returns:        Nothing.
-**
-**------------------------------------------------------------------------*/
-static INLINE void cpuRegASemantics(CPUVARG)
-    {
-    if (activeCpu->opI == 0)
-        {
-        return;
-        }
-
-    if (activeCpu->opI <= 5)
-        {
-        /*
-        **  Read semantics.
-        */
-        activeCpu->cpuStopped = cpuReadMem(CPUARGS2 (activeCpu->regA[activeCpu->opI], activeCpu->regX + activeCpu->opI));
-        }
-    else
-        {
-        /*
-        **  Write semantics.
-        */
-        activeCpu->cpuStopped = cpuWriteMem(CPUARGS2 (activeCpu->regA[activeCpu->opI], activeCpu->regX + activeCpu->opI));
-        }
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        18 bit ones-complement addition with subtractive adder
-**
-**  Parameters:     Name        Description.
-**                  op1         18 bit operand1
-**                  op2         18 bit operand2
-**
-**  Returns:        18 bit result.
-**
-**------------------------------------------------------------------------*/
-static INLINE u32 cpuAdd18(u32 op1, u32 op2)
-    {
-    u32 acc18;
-
-    acc18 = (op1 & Mask18) - (~op2 & Mask18);
-    if ((acc18 & Overflow18) != 0)
-        {
-        acc18 -= 1;
-        acc18 &= Mask18;
-        }
-
-    return(acc18);
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        18 bit ones-complement subtraction
-**
-**  Parameters:     Name        Description.
-**                  op1         18 bit operand1
-**                  op2         18 bit operand2
-**
-**  Returns:        18 bit result.
-**
-**------------------------------------------------------------------------*/
-static INLINE u32 cpuSubtract18(u32 op1, u32 op2)
-    {
-    u32 acc18;
-
-    acc18 = (op1 & Mask18) - (op2 & Mask18);
-    if ((acc18 & Overflow18) != 0)
-        {
-        acc18 -= 1;
-        acc18 &= Mask18;
-        }
-
-    return(acc18);
-    }
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Transfer block to/from ECS initiated by a CPU instruction.
 **
 **  Parameters:     Name        Description.
@@ -1887,7 +1884,7 @@ static void cpuCmuMoveIndirect(CPUVARG)
     u32 k1, k2;
     u32 c1, c2;
     u32 ll;
-    u8 byte;
+    u8 byte = 0;
 
     //<<<<<<<<<<<<<<<<<<<<<<<< don't forget to optimise c1 == c2 cases.
 

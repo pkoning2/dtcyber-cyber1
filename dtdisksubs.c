@@ -255,8 +255,6 @@ void ddClose (DiskIO *io)
 **------------------------------------------------------------------------*/
 void ddQueueRead (DiskIO *io, void *buf, int bytes)
     {
-    int ret;
-    
     /*
     **  Start reading a sector.
     **
@@ -279,10 +277,10 @@ void ddQueueRead (DiskIO *io, void *buf, int bytes)
     io->iocb.aio_sigevent.sigev_signo = SIGRTMIN;
     io->iocb.aio_sigevent.sigev_value.sival_ptr = io;
 #endif
-    ret = aio_read (&io->iocb);
+    aio_read (&io->iocb);
 #else
     lseek (io->fd, io->pos, SEEK_SET);
-    ret = read (io->fd, buf, bytes);
+    read (io->fd, buf, bytes);
 #endif
 #if DEBUG
     printf ("aio_read fd %d pos %d ret %d err %d\n", io->fd, io->pos, ret, errno);
@@ -302,8 +300,6 @@ void ddQueueRead (DiskIO *io, void *buf, int bytes)
 **------------------------------------------------------------------------*/
 void ddQueueWrite (DiskIO *io, const void *buf, int bytes)
     {
-    int ret;
-    
     /*
     **  Start writing a sector.
     **
@@ -326,10 +322,10 @@ void ddQueueWrite (DiskIO *io, const void *buf, int bytes)
     io->iocb.aio_sigevent.sigev_signo = SIGRTMIN;
     io->iocb.aio_sigevent.sigev_value.sival_ptr = io;
 #endif
-    ret = aio_write (&io->iocb);
+    aio_write (&io->iocb);
 #else
     lseek (io->fd, io->pos, SEEK_SET);
-    ret = write (io->fd, buf, bytes);
+    write (io->fd, buf, bytes);
 #endif
 #if DEBUG
     printf ("aio_write fd %d pos %d ret %d err %d\n", io->fd, io->pos, ret, errno);

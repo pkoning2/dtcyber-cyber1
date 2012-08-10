@@ -526,7 +526,9 @@ static FcStatus mt669Func(PpWord funcCode)
     u32 recLen1;
     u8 unitNo;
     TapeBuf *tp;
+#if MAXTAPE != 0
     i32 position;
+#endif
 
     unitNo = activeDevice->selectedUnit;
     tp = (TapeBuf *)activeDevice->context[unitNo];
@@ -632,8 +634,8 @@ static FcStatus mt669Func(PpWord funcCode)
     case Fc669WriteEOF:
         activeDevice->fcode = funcCode;
         tp->bp = tp->ioBuffer;
-        position = ftell(activeDevice->fcb[unitNo]);
 #if MAXTAPE != 0
+        position = ftell(activeDevice->fcb[unitNo]);
         if (position > MAXTAPE)
             {
             tp->deviceStatus |= St669EOT;
@@ -674,8 +676,8 @@ static FcStatus mt669Func(PpWord funcCode)
         activeDevice->recordLength = 0;
         tp->deviceStatus = tp->initialStatus;
         anyWrite = funcCode;
-        position = ftell(activeDevice->fcb[unitNo]);
 #if MAXTAPE != 0
+        position = ftell(activeDevice->fcb[unitNo]);
         if (position > MAXTAPE)
             {
             tp->deviceStatus |= St669EOT;

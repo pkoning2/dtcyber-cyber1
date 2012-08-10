@@ -620,7 +620,10 @@ void pniCheck (void)
     int len, i, j;
     int station;
     int opcode;
-    CpWord oldout, hdr;
+#ifdef DEBUG
+    CpWord oldout;
+#endif
+    CpWord hdr;
     char *p;
     CpWord *wp, w = 0;
     int shift;
@@ -637,7 +640,9 @@ void pniCheck (void)
     **  Look for requests from Framat
     */
     memcpy (&fpniio, afpniio, sizeof (fpniio));
+#ifdef DEBUG
     oldout = fpniio.out;
+#endif
     while ((len = rcb (afpnib, &fpniio, fpnilen, netbuf)) != 0)
     {
         //  Message header format
@@ -657,9 +662,10 @@ void pniCheck (void)
         hdr = netbuf[0];
         station = hdr & Mask12;
         opcode = (hdr >> 48) & Mask12;
+#ifdef DEBUG
         DEBUGPRINT ("Message from framat, len %d, %llo, ptrs %llo %llo -> %llo\n", len, hdr, fpniio.in, oldout, fpniio.out);
         oldout = fpniio.out;
-
+#endif
         if (station < pniFirstStation || station >= lastStation)
         {
             DEBUGPRINT ("Station %d out of range\n", station);
