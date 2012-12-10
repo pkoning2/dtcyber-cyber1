@@ -927,7 +927,7 @@ private:
     // m_charDC[i] is the device context into which m_charmap[i] is mapped.
     wxBitmap    *m_charmap[5];
     wxMemoryDC  *m_charDC[5];
-	bool		m_dirty[4];	//dirty flag
+	bool		m_dirty[5];	//dirty flag
 
     // The next word to be processed, and its associated delay.
     // We set this if we pick up a word from the connection object, and
