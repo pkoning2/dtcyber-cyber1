@@ -222,7 +222,7 @@ pterm.pot : pterm_wx.cpp
 %.po :  pterm.pot
 	msgmerge $(MSGFLAGS) $@ pterm.pot
 
-pterm_wx.o : pterm_wx.cpp wxversion.h
+pterm_wx.o : pterm_wx.cpp wxversion.h ptermversion.h
 
 
 ifeq ($(MAKECMDGOALS),pterm)
