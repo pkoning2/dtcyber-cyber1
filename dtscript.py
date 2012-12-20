@@ -525,8 +525,11 @@ class Dd60 (Connection, MyThread):
 
     The last full screen worth of content is available via attribute
     'screen' which is the left and right screens as a tuple;  each
-    screen is an array of 32 strings, each 64 characters long, containing
+    screen is an array of 51 strings, each 64 characters long, containing
     the content of that screen.
+
+    Why 51?  Because while the small character height is 8, it appears
+    that there is a common convention to space things 10 units apart.
     """
     # A blank line
     line64 = 64 * ' '
@@ -556,13 +559,14 @@ class Dd60 (Connection, MyThread):
         MyThread.__init__ (self)
         Connection.__init__ (self, "localhost", port)
         self.settimeout (5)
-        self.erase ()
         self.interval = -1
         self.setinterval (interval)
         self.sendkey (070)                 # XON to start output flow
         self.mode = self.DOT + self.LEFT   # no display until mode set
+        self.seq = 0
         self.x = 0
         self.y = 31
+        self.lineheight = 10
         self.screen = self.erase ()
         self.pending = self.erase ()
         self.start ()
@@ -570,7 +574,7 @@ class Dd60 (Connection, MyThread):
     def erase (self):
         left = [ ]
         right = [ ]
-        for i in xrange (32):
+        for i in xrange (512 // self.lineheight):
             left.append (self.line64)
             right.append (self.line64)
         return left, right
@@ -648,7 +652,7 @@ class Dd60 (Connection, MyThread):
 
     def screentext (self, n):
         """Returns the current contents of the specified screen
-        (0 or 1), as a string, 32 lines of 64 characters each.
+        (0 or 1), as a string, 51 lines of 64 characters each.
         """
         return '\n'.join (self.screen[n])
 
@@ -675,10 +679,14 @@ class Dd60 (Connection, MyThread):
         else:
             side = 0
         mode = self.mode & 3
+        ch = self.consoleToAscii[ch]
         if mode != self.DOT:
-            line = self.pending[side][self.y]
-            
-            self.pending[side][self.y] = line[:self.x] + self.consoleToAscii[ch] + line[self.x + 1:]
+            if ch != ' ':
+                try:
+                    line = self.pending[side][self.y]
+                    self.pending[side][self.y] = line[:self.x] + ch + line[self.x + 1:]
+                except IndexError:
+                    pass
             x = self.x + 1
             if mode == self.MEDIUM:
                 x += 1
@@ -694,13 +702,134 @@ class Dd60 (Connection, MyThread):
             # Control code
             action = ch & 0270
             if action == self.SETX:
-                self.x = (((ch << 8) + self.next ()) & 0770) / 8
+                self.x = (((ch << 8) + self.next ()) & 0770) // 8
             elif action == self.SETY:
-                self.y = 31 - (((ch << 8) + self.next ()) & 0760) / 16
+                self.y = (512 // self.lineheight) - (((ch << 8) + self.next ()) & 0777) // self.lineheight
             elif action == self.SETMODE:
                 self.mode = ch & 7
             elif action == self.ENDBLOCK:
                 self.screen = self.pending
                 self.pending = self.erase ()
+                self.seq += 1
         else:
             self.process_char (ch)
+
+    def wait_update (self):
+        """Wait until the screen has been updated twice.  This ensures
+        that any keyboard input has been reflected in the currently
+        visible screen text.
+        """
+        seq = self.seq
+        while self.seq < seq + 2:
+            time.sleep (self.interval)
+            
+class Console (Dd60, Pterm):
+    """Subclass of Dd60 to add PLATO terminal functionality via
+    the "console" program.
+    """
+    TERM   = Pterm.SHIFT + Pterm.ANS
+    MULT   = 012
+    DIVIDE = 013
+    SPACE  = 0100
+    
+    specials = { Pterm.NEXT   : "\n",
+                 Pterm.ANS    : "]n",
+                 Pterm.ASSIGN : "]a",
+                 Pterm.BACK   : "]b",
+                 Pterm.COPY   : "]=",
+                 Pterm.DATA   : "](",
+                       DIVIDE : "]d",
+                 Pterm.EDIT   : "]n",
+                 Pterm.ERASE  : "]\h",
+                 Pterm.HELP   : "]h",
+                 Pterm.LAB    : "]/",
+                 Pterm.MICRO  : "]+",
+                       MULT   : "]m",
+                       SPACE  : " ",
+                 Pterm.SQUARE : "]-",
+                 Pterm.STOP   : "])",
+                 Pterm.SUB    : "]8",
+                 Pterm.SUPER  : "]7",
+                 Pterm.TAB    : "][",
+                       TERM   : "]9}" }
+
+    # Pick and choose from the base classes
+    _sendkey = Dd60.sendkey
+    #_sendstr = Dd60.sendstr
+    sendstr = Pterm.sendstr
+
+    def _sendstr (self, s):
+        print "sending", s
+        Dd60.sendstr (self, s)
+        
+    def __init__ (self, port = 5007, interval = 3):
+        self.plato = False
+        Dd60.__init__ (self, port, interval)
+        
+    def sendkey (self,key):
+        """Convert PLATO key code to CONSOLE key sequence.
+        """
+        if not self.plato:
+            self._sendkey (key)
+            return
+        try:
+            fkey = self.specials[key]
+            self._sendstr (fkey)
+        except KeyError:
+            if key & self.SHIFT:
+                self._sendstr ("[")
+                key &= ~self.SHIFT
+            if key & 0100:
+                # Letters
+                key &= 077
+            elif key < 012:
+                # Digits
+                key += 033
+            self._sendkey (key)
+
+    def login (self, *args):
+        """Override the pterm login.  We ignore arguments,
+        just go to the author mode page.
+        """
+        # First check if we're in DIS or O26.
+        while self.screen[0][1][:4] == "O26.":
+            self._sendstr ("[xr.\n")
+            self.wait_update ()
+        while self.screen[0][1][:4] == "DIS ":
+            self._sendstr ("[drop.\n")
+            self.wait_update ()
+        if "NEXT    Z    X" not in self.screentext (1):
+            self._sendstr ("[xconsole.\n")
+
+        # The console (station 0-0) starts in whatever
+        # state things were left in.  So we need to get it
+        # to "author mode" which may require a trip via
+        # "press next to begin" and/or "lesson desired"
+        while True:
+            self.wait_update ()
+            left = self.screentext (0)
+            print left
+            print self.seq
+            if "AUTHOR MODE" in left:
+                break
+            elif "PRESS  NEXT  TO BEGIN" in left \
+                 or "LESSON DESIRED" in left:
+                # back
+                self._sendstr ("[b")
+            else:
+                # shift-stop
+                self._sendstr ("[])")
+        self.plato = True
+                
+    def logout (self):
+        self.plato = False
+        while True:
+            left = self.screentext (0)
+            if "LESSON DESIRED" in left:
+                break
+            else:
+                # shift-stop
+                self._sendstr ("[])")
+                self.wait_update ()
+        # exit console utility
+        self._sendstr ("[]x")
