@@ -640,9 +640,8 @@ class Dd60 (Connection, MyThread):
         """
         for c in text:
             key = self.asciiToConsole[ord (c)]
-            if key == 0:
-                continue
-            self.sendkey (key)
+            if key:
+                self.sendkey (key)
 
     def __repr__ (self):
         """The representation of the object is the current contents
@@ -719,6 +718,8 @@ class Dd60 (Connection, MyThread):
         that any keyboard input has been reflected in the currently
         visible screen text.
         """
+        # Wait for any flurry of updates to settle
+        time.sleep (self.interval)
         seq = self.seq
         while self.seq < seq + 2:
             time.sleep (self.interval)
@@ -733,34 +734,43 @@ class Console (Dd60, Pterm):
     SPACE  = 0100
     
     specials = { Pterm.NEXT   : "\n",
-                 Pterm.ANS    : "]n",
-                 Pterm.ASSIGN : "]a",
-                 Pterm.BACK   : "]b",
-                 Pterm.COPY   : "]=",
-                 Pterm.DATA   : "](",
-                       DIVIDE : "]d",
-                 Pterm.EDIT   : "]n",
-                 Pterm.ERASE  : "]\h",
-                 Pterm.HELP   : "]h",
-                 Pterm.LAB    : "]/",
-                 Pterm.MICRO  : "]+",
-                       MULT   : "]m",
+                 Pterm.ANS    : "[n",
+                 Pterm.ASSIGN : "[a",
+                 Pterm.BACK   : "[b",
+                 Pterm.COPY   : "[=",
+                 Pterm.DATA   : "[(",
+                       DIVIDE : "[d",
+                 Pterm.EDIT   : "[n",
+                 Pterm.ERASE  : "\010",
+                 Pterm.HELP   : "[h",
+                 Pterm.LAB    : "[/",
+                 Pterm.MICRO  : "[+",
+                       MULT   : "[m",
                        SPACE  : " ",
-                 Pterm.SQUARE : "]-",
-                 Pterm.STOP   : "])",
-                 Pterm.SUB    : "]8",
-                 Pterm.SUPER  : "]7",
-                 Pterm.TAB    : "][",
-                       TERM   : "]9}" }
+                 Pterm.SQUARE : "[-",
+                 Pterm.STOP   : "[)",
+                 Pterm.SUB    : "[8",
+                 Pterm.SUPER  : "[7",
+                 Pterm.TAB    : "[[",
+                       TERM   : "[9}" }
 
-    # Pick and choose from the base classes
+    # Shorthands for some base class methods
     _sendkey = Dd60.sendkey
-    #_sendstr = Dd60.sendstr
-    sendstr = Pterm.sendstr
 
-    def _sendstr (self, s):
-        print "sending", s
-        Dd60.sendstr (self, s)
+    def dd60_sendstr (self, text):
+        """Send a text string, converting from ASCII as we go.
+        There is no delay in here, so don't send too much.
+        """
+        for c in text:
+            key = self.asciiToConsole[ord (c)]
+            if key:
+                self._sendkey (key)
+            
+    def sendstr (self, s):
+        if self.plato:
+            Pterm.sendstr (self, s)
+        else:
+            self.dd60_sendstr (s)
         
     def __init__ (self, port = 5007, interval = 3):
         self.plato = False
@@ -770,14 +780,14 @@ class Console (Dd60, Pterm):
         """Convert PLATO key code to CONSOLE key sequence.
         """
         if not self.plato:
-            self._sendkey (key)
+            Dd60.sendkey (self, key)
             return
         try:
             fkey = self.specials[key]
-            self._sendstr (fkey)
+            self.dd60_sendstr (fkey)
         except KeyError:
             if key & self.SHIFT:
-                self._sendstr ("[")
+                self.dd60_sendstr ("[")
                 key &= ~self.SHIFT
             if key & 0100:
                 # Letters
@@ -785,28 +795,31 @@ class Console (Dd60, Pterm):
             elif key < 012:
                 # Digits
                 key += 033
-            self._sendkey (key)
+            Dd60.sendkey (self, key)
 
     def login (self, *args):
         """Override the pterm login.  We ignore arguments,
         just go to the author mode page.
         """
+        self.plato = False
+        self.wait_update ()
+        
         # First check if we're in DIS or O26.
         while self.screen[0][1][:4] == "O26.":
-            self._sendstr ("[xr.\n")
+            self.sendstr ("[xr.\n")
             self.wait_update ()
         while self.screen[0][1][:4] == "DIS ":
-            self._sendstr ("[drop.\n")
+            self.sendstr ("[drop.\n")
             self.wait_update ()
         if "NEXT    Z    X" not in self.screentext (1):
-            self._sendstr ("[xconsole.\n")
+            self.sendstr ("[xconsole.\n")
+            self.wait_update ()
 
         # The console (station 0-0) starts in whatever
         # state things were left in.  So we need to get it
         # to "author mode" which may require a trip via
         # "press next to begin" and/or "lesson desired"
         while True:
-            self.wait_update ()
             left = self.screentext (0)
             print left
             print self.seq
@@ -815,21 +828,23 @@ class Console (Dd60, Pterm):
             elif "PRESS  NEXT  TO BEGIN" in left \
                  or "LESSON DESIRED" in left:
                 # back
-                self._sendstr ("[b")
+                self.sendstr ("[b")
             else:
                 # shift-stop
-                self._sendstr ("[])")
+                self.sendstr ("[])")
+            self.wait_update ()
         self.plato = True
                 
     def logout (self):
         self.plato = False
+        self.wait_update ()
         while True:
             left = self.screentext (0)
             if "LESSON DESIRED" in left:
                 break
             else:
                 # shift-stop
-                self._sendstr ("[])")
+                self.sendstr ("[])")
                 self.wait_update ()
         # exit console utility
-        self._sendstr ("[]x")
+        self.sendstr ("[]x")
