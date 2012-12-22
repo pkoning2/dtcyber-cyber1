@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Tool for scripting interaction with DtCyber
 
@@ -42,7 +42,7 @@ class Connection (socket.socket):
         """
         socket.socket.__init__ (self, socket.AF_INET, socket.SOCK_STREAM)
         self.connect ((host, port))
-        self.pendingdata = ""
+        self.pendingdata = b""
 
     def readmore (self):
         """Read some more network data and append it to pendingdata.
@@ -62,7 +62,7 @@ class Connection (socket.socket):
         self.pendingdata = self.pendingdata[bytes:]
         if DEBUG:
             for c in ret:
-                print "%02x %03o %3d" % (ord (c), ord (c), ord (c))
+                print("%02x %03o %3d" % (c, c, c))
         return ret
 
     def readmin (self, minbytes = 1):
@@ -72,7 +72,7 @@ class Connection (socket.socket):
         while len (self.pendingdata) < bytes:
             self.readmore ()
         ret = self.pendingdata
-        self.pendingdata = ""
+        self.pendingdata = b""
         return ret
         
     def readtlv (self):
@@ -80,8 +80,8 @@ class Connection (socket.socket):
         as a tuple.
         """
         tl = self.read (2)
-        t = ord (tl[0])
-        l = ord (tl[1])
+        t = tl[0]
+        l = tl[1]
         v = self.read (l)
         return t, v
     
@@ -159,11 +159,11 @@ class Oper (Connection, MyThread):
                 if t == 2:
                     # OpText -- fixed text (left screen material)
                     x, y, size, bold = struct.unpack ("<HHBB", v[:6])
-                    i = (0760 - y) / 16
+                    i = (0o760 - y) / 16
                     try:
                         self.fixedtext[i] = v[6:]
                     except IndexError:
-                        print "bad index", i, "for", x, y, size, bold, v[6:]
+                        print("bad index", i, "for", x, y, size, bold, v[6:])
                 elif t == 3 or t == 5:
                     # OpSyntax or OpInitialized, ignore
                     pass
@@ -173,7 +173,7 @@ class Oper (Connection, MyThread):
                     self.responses += 1
                 elif t == 4:
                     # OpStatus
-                    i = ord (v[0])
+                    i = v[0]
                     v = v[1:]
                     self.status[i] = v
                     if i == 0:
@@ -214,7 +214,7 @@ class Oper (Connection, MyThread):
         """
         seq = self.responses
         self.sendall (struct.pack ("<BB", 0, len (text)) + text)
-        for i in xrange (20):
+        for i in range (20):
             if self.responses != seq:
                 return self.response
             time.sleep (0.3)
@@ -235,23 +235,23 @@ class Pterm (Connection, MyThread):
     local state to reflect what it hears.
     """
     # Keycodes
-    NEXT  = 026
-    ERASE = 023
-    BACK  = 030
-    STOP  = 032
-    TAB   = 014
-    ASSIGN = 015
-    SUPER = 020
-    SUB   = 021
-    SQUARE = 034
-    ANS   = 022
-    COPY  = 033
-    DATA  = 031
-    EDIT  = 027
-    MICRO = 024
-    HELP  = 025
-    LAB   = 035
-    SHIFT = 040
+    NEXT  = 0o26
+    ERASE = 0o23
+    BACK  = 0o30
+    STOP  = 0o32
+    TAB   = 0o14
+    ASSIGN = 0o15
+    SUPER = 0o20
+    SUB   = 0o21
+    SQUARE = 0o34
+    ANS   = 0o22
+    COPY  = 0o33
+    DATA  = 0o31
+    EDIT  = 0o27
+    MICRO = 0o24
+    HELP  = 0o25
+    LAB   = 0o35
+    SHIFT = 0o40
 
     # A blank line
     line64 = 64 * ' '
@@ -266,7 +266,7 @@ class Pterm (Connection, MyThread):
         Connection.__init__ (self, host, port)
         self.settimeout (5)
         self.lines = [ ]
-        for i in xrange (32):
+        for i in range (32):
             self.lines.append (None)
         self.fserase ()
         self.station = None
@@ -285,17 +285,17 @@ class Pterm (Connection, MyThread):
                 if self.stopnow:
                     self.close ()
                     break
-                byte = ord (self.read (1))
-                if byte & 0200:
-                    print "output out of sync"
+                byte = self.read (1)[0]
+                if byte & 0o200:
+                    print("output out of sync")
                     continue
                 word = self.read (2)
                 word = byte << 12 | \
-                       ((ord (word[0]) & 077) << 6) | \
-                       (ord (word[1]) & 077)
+                       ((word[0] & 0o77) << 6) | \
+                       (word[1] & 0o77)
                 if DEBUG:
-                    print "%07o" % word
-                if word & 01000000:
+                    print("%07o" % word)
+                if word & 0o1000000:
                     # Data word
                     if self.mode == 3:
                         # Character plotting mode
@@ -307,25 +307,25 @@ class Pterm (Connection, MyThread):
                     cmd = word >> 15
                     if cmd == 0:
                         # NOP command
-                        if (word & 077000) == 042000:
+                        if (word & 0o77000) == 0o42000:
                             # Station number report code
-                            self.station = word & 0777
+                            self.station = word & 0o777
                     elif cmd == 1:
                         # Load Mode command
                         if word & 1:
                             self.fserase ()
-                        mode = (word >> 1) & 037
+                        mode = (word >> 1) & 0o37
                         self.wemode = mode & 3
                         self.mode = mode >> 2
                     elif cmd == 2:
                         # Load Coordinate command
-                        coord = word & 0777
-                        if word & 01000:
+                        coord = word & 0o777
+                        if word & 0o1000:
                             self.y = coord
                         else:
                             self.x = coord
                     elif cmd == 3:
-                        key = (word & 0177) + 0200
+                        key = (word & 0o177) + 0o200
                         self.sendkey (key)
             except socket.timeout:
                 pass
@@ -341,13 +341,13 @@ class Pterm (Connection, MyThread):
         self.y = 496
         self.uncover = False
         self.arrow = False     # last char was not arrow (prompt)
-        for i in xrange (32):
+        for i in range (32):
             self.lines[i] = self.line64
             
     def sendkey (self, key):
-        key &= 01777
+        key &= 0o1777
         #print "sending key", key
-        data = struct.pack ("<BB", key >> 7, (0200 | key & 0177))
+        data = struct.pack ("<BB", key >> 7, (0o200 | key & 0o177))
         self.sendall (data)
         self.arrow = False
 
@@ -369,38 +369,38 @@ class Pterm (Connection, MyThread):
     # for the entries for ctrl-i, ctrl-j, and rubout, which are
     # TAB, NEXT, and ERASE respectively.
     asciiToPlato= \
-       (  -1,    022,    030,    033,    031,    027,    064,    013,
-         025,    014,    026,     -1,    035,    024,     -1,     -1,
-         020,    034,     -1,    032,    062,     -1,     -1,     -1,
-         012,    021,     -1,     -1,     -1,     -1,     -1,     -1,
-        0100,   0176,   0177, 074044,   0044,   0045, 074016,   0047,
-        0051,   0173,   0050,   0016,   0137,   0017,   0136,   0135,
-        0000,   0001,   0002,   0003,   0004,   0005,   0006,   0007,
-        0010,   0011,   0174,   0134,   0040,   0133,   0041,   0175,
-       074005,  0141,   0142,   0143,   0144,   0145,   0146,   0147,
-        0150,   0151,   0152,   0153,   0154,   0155,   0156,   0157,
-        0160,   0161,   0162,   0163,   0164,   0165,   0166,   0167,
-        0170,   0171,   0172,   0042, 074135,   0043, 074130,   0046,
-       074121,  0101,   0102,   0103,   0104,   0105,   0106,   0107,
-        0110,   0111,   0112,   0113,   0114,   0115,   0116,   0117,
-        0120,   0121,   0122,   0123,   0124,   0125,   0126,   0127,
-        0130,   0131,   0132, 074042, 074151, 074043, 074116,    023,
+       (  -1,    0o22,    0o30,    0o33,    0o31,    0o27,    0o64,    0o13,
+         0o25,    0o14,    0o26,     -1,    0o35,    0o24,     -1,     -1,
+         0o20,    0o34,     -1,    0o32,    0o62,     -1,     -1,     -1,
+         0o12,    0o21,     -1,     -1,     -1,     -1,     -1,     -1,
+        0o100,   0o176,   0o177, 0o74044,   0o044,   0o045, 0o74016,   0o047,
+        0o051,   0o173,   0o050,   0o016,   0o137,   0o017,   0o136,   0o135,
+        0000,   0o001,   0o002,   0o003,   0o004,   0o005,   0o006,   0o007,
+        0o010,   0o011,   0o174,   0o134,   0o040,   0o133,   0o041,   0o175,
+       0o74005,  0o141,   0o142,   0o143,   0o144,   0o145,   0o146,   0o147,
+        0o150,   0o151,   0o152,   0o153,   0o154,   0o155,   0o156,   0o157,
+        0o160,   0o161,   0o162,   0o163,   0o164,   0o165,   0o166,   0o167,
+        0o170,   0o171,   0o172,   0o042, 0o74135,   0o043, 0o74130,   0o046,
+       0o74121,  0o101,   0o102,   0o103,   0o104,   0o105,   0o106,   0o107,
+        0o110,   0o111,   0o112,   0o113,   0o114,   0o115,   0o116,   0o117,
+        0o120,   0o121,   0o122,   0o123,   0o124,   0o125,   0o126,   0o127,
+        0o130,   0o131,   0o132, 0o74042, 0o74151, 0o74043, 0o74116,    0o23,
           -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
           -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
           -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
           -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
-          -1,     -1,     -1,     -1,     -1,     -1,    074151,  -1,
-          -1,    074143,  -1,     -1,     -1,     -1,     -1,     -1,
-          -1,     -1,     -1,     -1,     -1,    074115,  -1,     -1,
+          -1,     -1,     -1,     -1,     -1,     -1,    0o74151,  -1,
+          -1,    0o74143,  -1,     -1,     -1,     -1,     -1,     -1,
+          -1,     -1,     -1,     -1,     -1,    0o74115,  -1,     -1,
           -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
-         0141121,0141105,0141130,0141116,0141125, -1,     -1,   0143103,
-         0145121,0145105,0145130,0145125,0151121,0151105,0151130,0151125,
-          -1,    0156116,0157121,0157105,0157130, -1, 0157125,  0012,
-          -1,    0165121,0165105,0165130,0165125,0171105, -1,     -1,
-         0101121,0101105,0101130,0101116,0101125, -1,     -1,   0103103,
-         0105121,0105105,0105130,0105125,0111121,0111105,0111130,0111125,
-          -1,    0116116,0117121,0117105,0117130, -1, 0117125,  0013,
-          -1,    0125121,0125105,0125130,0125125,0131105, -1,   0131125
+         0o141121,0o141105,0o141130,0o141116,0o141125, -1,     -1,   0o143103,
+         0o145121,0o145105,0o145130,0o145125,0o151121,0o151105,0o151130,0o151125,
+          -1,    0o156116,0o157121,0o157105,0o157130, -1, 0o157125,  0o012,
+          -1,    0o165121,0o165105,0o165130,0o165125,0o171105, -1,     -1,
+         0o101121,0o101105,0o101130,0o101116,0o101125, -1,     -1,   0o103103,
+         0o105121,0o105105,0o105130,0o105125,0o111121,0o111105,0o111130,0o111125,
+          -1,    0o116116,0o117121,0o117105,0o117130, -1, 0o117125,  0o013,
+          -1,    0o125121,0o125105,0o125130,0o125125,0o131105, -1,   0o131125
        )
 
     def sendstr (self, s, term = None, wait = None):
@@ -413,75 +413,77 @@ class Pterm (Connection, MyThread):
         if wait:
             self.waitarrow (wait)
         for c in s:
-            key = self.asciiToPlato[ord (c)]
+            key = self.asciiToPlato[c]
             if key == -1:
                 continue
             if key >> 9:
                 k1 = key >> 9
-                k2 = key & 0777
+                k2 = key & 0o777
                 self.sendkey (k1)
-                if k1 != 074:
-                    self.sendkey (074)
+                if k1 != 0o74:
+                    self.sendkey (0o74)
                 self.sendkey (k2)
             else:
                 self.sendkey (key)
         if term:
             self.sendkey (term)
 
-    rom = ( ":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.\xF7[]%\xD7\xAB'\"!;<>_?\xBB ",
-            "#ABCDEFGHIJKLMNOPQRSTUVWXYZ~\xA8^\xB4`    ~    {}&  |\xB0     \xB5       @\\ " )
+    rom = ( ":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.\u00F7[]%\u00D7\u00AB'\"!;<>_?\u00BB ",
+            "#ABCDEFGHIJKLMNOPQRSTUVWXYZ~\u00A8^\u00B4`    ~    {}&  |\u00B0     \u00B5       @\\ " )
 
     def char (self, c):
         """Display a character at current x/y.
         """
-        if self.mem > 1:
-            # not rom character, ignore it
-            return
-        c &= 077
-        if c == 077:
+        c &= 0o77
+        if c == 0o77:
             # uncover
             self.uncover = not self.uncover
             return
         if self.uncover:
             # handle uncover codes
             self.uncover = False
-            if c == 010:
+            if c == 0o10:
                 # backspace
-                self.x = (self.x - 8) & 0777
-            elif c == 011:
+                self.x = (self.x - 8) & 0o777
+            elif c == 0o11:
                 # "tab"
-                self.x = (self.x + 8) & 0777
-            elif c == 012:
+                self.x = (self.x + 8) & 0o777
+            elif c == 0o12:
                 # line feed
-                self.y = (self.y - 16) & 0777
-            elif c == 013:
+                self.y = (self.y - 16) & 0o777
+            elif c == 0o13:
                 # vertical tab
-                self.y = (self.y + 16) & 0777
-            elif c == 014:
+                self.y = (self.y + 16) & 0o777
+            elif c == 0o14:
                 # form feed
                 self.x, self.y = 0, 496
-            elif c == 015:
+            elif c == 0o15:
                 # carriage return
                 self.x = 0
-                self.y = (self.y - 16) & 0777
-            elif c == 016:
+                self.y = (self.y - 16) & 0o777
+            elif c == 0o16:
                 # super
-                self.y = (self.y + 5) & 0777
-            elif c == 017:
+                self.y = (self.y + 5) & 0o777
+            elif c == 0o17:
                 # sub
-                self.y = (self.y - 5) & 0777
-            elif c >= 020 and c <= 027:
-                self.mem = c - 020
+                self.y = (self.y - 5) & 0o777
+            elif c >= 0o20 and c <= 0o27:
+                self.mem = c - 0o20
         else:
             cx = self.x // 8
             # line 0 is the top line
             cy = 31 - (self.y // 16)
             if self.wemode & 1:
                 # mode write or rewrite
-                # Set the arrow flag, unless this is a space.
-                if self.mem > 1 or c != 055:
-                    self.arrow = self.mem == 0 and c == 076
-                c = self.rom[self.mem][c]
+                if self.mem > 1:
+                    # Not rom char, clear arrow flag
+                    self.arrow = False
+                    c = ' '
+                else:
+                    if c != 0o55:
+                        # Set the arrow flag, unless this is a space.
+                        self.arrow = self.mem == 0 and c == 0o76
+                    c = self.rom[self.mem][c]
             else:
                 # mode erase, write a space
                 self.arrow = False
@@ -490,7 +492,7 @@ class Pterm (Connection, MyThread):
             l1 = l[:cx]
             l2 = l[cx + 1:]
             self.lines[cy] = l1 + c + l2
-            self.x = (self.x + 8) & 0777
+            self.x = (self.x + 8) & 0o777
 
     def __repr__ (self):
         """The representation of the object is the current contents
@@ -544,10 +546,10 @@ class Dd60 (Connection, MyThread):
 
     # Command codes (output stream non-data codes).  Unlisted codes
     # are ignored.
-    SETX = 0200
-    SETY = 0210
-    SETMODE = 0240
-    ENDBLOCK = 0250
+    SETX = 0o200
+    SETY = 0o210
+    SETMODE = 0o240
+    ENDBLOCK = 0o250
     
     def __init__ (self, port = 5007, interval = 3):
         """port is the console port number, default is 5007.
@@ -561,7 +563,7 @@ class Dd60 (Connection, MyThread):
         self.settimeout (5)
         self.interval = -1
         self.setinterval (interval)
-        self.sendkey (070)                 # XON to start output flow
+        self.sendkey (0o70)                 # XON to start output flow
         self.mode = self.DOT + self.LEFT   # no display until mode set
         self.seq = 0
         self.x = 0
@@ -574,15 +576,15 @@ class Dd60 (Connection, MyThread):
     def erase (self):
         left = [ ]
         right = [ ]
-        for i in xrange (512 // self.lineheight):
+        for i in range (512 // self.lineheight):
             left.append (self.line64)
             right.append (self.line64)
         return left, right
     
-    def next (self):
+    def __next__ (self):
         """Return next byte of Cyber output, as an integer.
         """
-        return ord (self.read (1))
+        return self.read (1)[0]
     
     def run (self):
         """Collect data from DtCyber, and store it away into the
@@ -593,7 +595,7 @@ class Dd60 (Connection, MyThread):
                 if self.stopnow:
                     self.close ()
                     break
-                ch = self.next ()
+                ch = next(self)
                 self.process_output (ch)
             except socket.timeout:
                 pass
@@ -610,29 +612,29 @@ class Dd60 (Connection, MyThread):
             if interval > 63:
                 interval = 63
             if interval < 1:
-                self.sendkey (0200 + int (interval * 50))
+                self.sendkey (0o200 + int (interval * 50))
             else:
-                self.sendkey (0300 + int (interval))
+                self.sendkey (0o300 + int (interval))
 
     # This table is nearly the same as the one in charset.c, except
     # that the entry for rubout is ERASE.
     asciiToConsole = \
     (   0,      0,      0,      0,      0,      0,      0,      0,
-        061,    0,      060,    0,      0,      060,    0,      0,
+        0o61,    0,      0o60,    0,      0,      0o60,    0,      0,
         0,      0,      0,      0,      0,      0,      0,      0,
         0,      0,      0,      0,      0,      0,      0,      0,
-        062,    0,      0,      0,      0,      0,      0,      0,
-        051,    052,    047,    045,    056,    046,    057,    050,
-        033,    034,    035,    036,    037,    040,    041,    042,
-        043,    044,    0,      0,      0,      054,    0,      0,
-        0,      01,     02,     03,     04,     05,     06,     07,
-        010,    011,    012,    013,    014,    015,    016,    017,
-        020,    021,    022,    023,    024,    025,    026,    027,
-        030,    031,    032,    053,    0,      055,    0,      0,
-        0,      01,     02,     03,     04,     05,     06,     07,
-        010,    011,    012,    013,    014,    015,    016,    017,
-        020,    021,    022,    023,    024,    025,    026,    027,
-        030,    031,    032,    0,      0,      0,      0,      061 )
+        0o62,    0,      0,      0,      0,      0,      0,      0,
+        0o51,    0o52,    0o47,    0o45,    0o56,    0o46,    0o57,    0o50,
+        0o33,    0o34,    0o35,    0o36,    0o37,    0o40,    0o41,    0o42,
+        0o43,    0o44,    0,      0,      0,      0o54,    0,      0,
+        0,      0o1,     0o2,     0o3,     0o4,     0o5,     0o6,     0o7,
+        0o10,    0o11,    0o12,    0o13,    0o14,    0o15,    0o16,    0o17,
+        0o20,    0o21,    0o22,    0o23,    0o24,    0o25,    0o26,    0o27,
+        0o30,    0o31,    0o32,    0o53,    0,      0o55,    0,      0,
+        0,      0o1,     0o2,     0o3,     0o4,     0o5,     0o6,     0o7,
+        0o10,    0o11,    0o12,    0o13,    0o14,    0o15,    0o16,    0o17,
+        0o20,    0o21,    0o22,    0o23,    0o24,    0o25,    0o26,    0o27,
+        0o30,    0o31,    0o32,    0,      0,      0,      0,      0o61 )
     
     def sendstr (self, text):
         """Send a text string, converting from ASCII as we go.
@@ -691,19 +693,19 @@ class Dd60 (Connection, MyThread):
                 x += 1
             elif mode == self.LARGE:
                 x += 3
-            self.x = x & 077
+            self.x = x & 0o77
 
     def process_output (self, ch):
         """Process Cyber output data.  Sort control codes (upper bit set)
         from data codes (upper bit clear). 
         """
-        if ch & 0200:
+        if ch & 0o200:
             # Control code
-            action = ch & 0270
+            action = ch & 0o270
             if action == self.SETX:
-                self.x = (((ch << 8) + self.next ()) & 0770) // 8
+                self.x = (((ch << 8) + next(self)) & 0o770) // 8
             elif action == self.SETY:
-                self.y = (512 // self.lineheight) - (((ch << 8) + self.next ()) & 0777) // self.lineheight
+                self.y = (512 // self.lineheight) - (((ch << 8) + next(self)) & 0o777) // self.lineheight
             elif action == self.SETMODE:
                 self.mode = ch & 7
             elif action == self.ENDBLOCK:
@@ -729,9 +731,9 @@ class Console (Dd60, Pterm):
     the "console" program.
     """
     TERM   = Pterm.SHIFT + Pterm.ANS
-    MULT   = 012
-    DIVIDE = 013
-    SPACE  = 0100
+    MULT   = 0o12
+    DIVIDE = 0o13
+    SPACE  = 0o100
     
     specials = { Pterm.NEXT   : "\n",
                  Pterm.ANS    : "[n",
@@ -789,12 +791,12 @@ class Console (Dd60, Pterm):
             if key & self.SHIFT:
                 self.dd60_sendstr ("[")
                 key &= ~self.SHIFT
-            if key & 0100:
+            if key & 0o100:
                 # Letters
-                key &= 077
-            elif key < 012:
+                key &= 0o77
+            elif key < 0o12:
                 # Digits
-                key += 033
+                key += 0o33
             Dd60.sendkey (self, key)
 
     def login (self, *args):
@@ -821,8 +823,8 @@ class Console (Dd60, Pterm):
         # "press next to begin" and/or "lesson desired"
         while True:
             left = self.screentext (0)
-            print left
-            print self.seq
+            print(left)
+            print(self.seq)
             if "AUTHOR MODE" in left:
                 break
             elif "PRESS  NEXT  TO BEGIN" in left \
