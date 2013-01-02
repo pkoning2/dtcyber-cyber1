@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Script for doing unattended backups of cyber1
 
@@ -32,6 +32,10 @@ PWDFILE = "backuppwd.txt"
 BACKUPDEST1 = None
 BACKUPDEST2 = "cyber1backup@akdesign.dyndns.org"
 
+# Base arguments for scp
+# Speed limit: 400 kb/s, identity file: cyber1backup.
+SCPARGS = ( "scp", "-l", "400", "-q", "-i", "cyber1backup" )
+
 import sys
 import os
 import dtscript
@@ -44,71 +48,80 @@ if BACKUPPWD is None:
     f.close ()
 
 def log (str):
-    print "%s: %s" % (time.strftime ("%T"), str)
+    print ("%s: %s" % (time.strftime ("%T"), str))
     
-def sendstr (pterm, str):
+def sendstr (term, str):
     """Send a string in pieces with some delays to make it reliable.
     """
     while str:
-        pterm.sendstr (str[:6])
+        term.sendstr (str[:6])
         str = str[6:]
         time.sleep (0.5)
         
-def announce (pterm, str):
+def announce (cons, str):
     log ("Announcing: %s" % str)
-    sendstr (pterm, "1")
-    time.sleep (1)
-    sendstr (pterm, "1")
-    time.sleep (1)
-    sendstr (pterm, str + "\n")
-    time.sleep (1)
-    pterm.sendkey (pterm.BACK)
-    time.sleep (1)
-    sendstr (pterm, "2")
-    time.sleep (1)
-    pterm.sendkey (pterm.SHIFT + pterm.COPY)
-    pterm.sendkey (pterm.NEXT)
+    sendstr (cons, "1")
+    cons.wait_update ()
+    sendstr (cons, "1")
+    cons.wait_update ()
+    sendstr (cons, str + "\n")
+    cons.wait_update ()
+    cons.sendkey (cons.BACK)
+    cons.wait_update ()
+    sendstr (cons, "2")
+    cons.wait_update ()
+    cons.sendkey (cons.SHIFT + cons.COPY)
+    cons.sendkey (cons.NEXT)
     time.sleep (10)
-    pterm.sendkey (pterm.LAB)
+    cons.sendkey (cons.LAB)
     time.sleep (10)
-    pterm.sendkey (pterm.LAB)
+    cons.sendkey (cons.LAB)
     time.sleep (5)
-    pterm.sendkey (pterm.BACK)
+    cons.sendkey (cons.BACK)
+
+system = "S Y S T E M".encode ("dd60")
+mastor = "M A S T O R".encode ("dd60")
+nojsn = "JSN NOT FOUND".encode ("dd60")
+chk = "CHECKPOINT COMPLETE".encode ("dd60")
 
 def doshutdown (delay):
     """Shut down PLATO in "delay" minutes.
     """
-    pterm = dtscript.Pterm ()
-    pterm.login (BACKUPUSER, BACKUPGROUP, BACKUPPWD, False)
-    for i in range (4):
-        if "S Y S T E M" in pterm.lines[5]:
-            break
-        if i < 3:
-            time.sleep (2)
-        else:
-            log ("Failed to log in %s/%s or start sysopts" % (BACKUPUSER, BACKUPGROUP))
-            pterm.stop ()
-            sys.exit (1)
     # Before we do the actual work, connect to console and
     # operator interface and check that things look ok
-    cons = dtscript.Dd60 (interval = 1)
-    cons.sendstr ("k,mas1.\n")
+    cons = dtscript.Console (interval = 1)
+    cons.todsd ()
+    cons.sendstr ("[k,mas1.\n")
     for i in range (4):
-        if "M A S T O R" in cons.screen[0][7]:
+        if mastor in cons.screen[0][16]:
             break
         if i < 3:
             time.sleep (2)
         else:
             log ("Failed to connect to Mastor K display")
-            pterm.stop ()
             cons.stop ()
             sys.exit (1)
     oper = dtscript.Oper ()
 
+    # Start the CONSOLE utility and get us into sysopts (1)
+    cons.login ()
+    cons.sendstr ("1")
+    cons.wait_update ()
+    for i in range (10):
+        if system in cons.screen[0][8]:
+            break
+        if i < 9:
+            time.sleep (2)
+        else:
+            log ("Failed to start sysopts")
+            cons.stop ()
+            oper.stop ()
+            sys.exit (1)
+    
     # First step: put up a 1st line message and broadcast that.
     # Repeat every 5 minutes until we've done the delay
     while delay:
-        announce (pterm, "Interruption for backups in %d minutes..." % delay)
+        announce (cons, "Interruption for backups in %d minutes..." % delay)
         if delay < 5:
             time.sleep (delay * 60)
             break
@@ -116,28 +129,27 @@ def doshutdown (delay):
         time.sleep (300)
 
     # Second step: announce interruption for backup now
-    announce (pterm, "Interruption for backups...")
+    announce (cons, "Interruption for backups...")
 
     # Third step: full system backout
     log ("Starting backout")
-    sendstr (pterm, "3")
+    sendstr (cons, "3")
     time.sleep (1)
-    pterm.sendkey (pterm.SHIFT + pterm.LAB)
+    cons.sendkey (cons.SHIFT + cons.LAB)
     time.sleep (60)
     for i in range (20):
-        if "S Y S T E M" in pterm.lines[5]:
+        if system in cons.screen[0][8]:
             break
         if i < 19:
             time.sleep (2)
         else:
             log ("Backout did not complete")
-            pterm.stop ()
             cons.stop ()
             oper.stop ()
             sys.exit (1)
 
     # Shut down Mastor
-    pterm.stop ()
+    cons.logout ()
     log ("Stopping mastor")
     cons.sendstr ("[k,mas1.\n")
     time.sleep (2)
@@ -145,7 +157,7 @@ def doshutdown (delay):
 
     # Wait for Mastor to exit
     for i in range (10):
-        if "JSN NOT FOUND" in cons.screen[0][4]:
+        if nojsn in cons.screen[0][9]:
             break
         if i < 9:
             time.sleep (2)
@@ -155,25 +167,25 @@ def doshutdown (delay):
     # See if there is any other non-subsystem job,
     # which is likely to be cftp
     cons.sendstr ("[ab\n")
-    time.sleep (1)
+    cons.wait_update ()
     cons.sendstr ("[b,a\n")
-    time.sleep (2)
-    for i in range (5, 23):
-        if cons.screen[1][i][5] == 'A':
+    cons,wait_update ()
+    for i in range (12, 47):
+        if cons.screen[1][i][5] == 1:
             # First char of JSN is A, typical for user job
             log ("dropping %s" % cons.screen[1][i][5:9])
-            cons.sendstr ("[dro%s.\n" % cons.screen[1][i][5:9])
-            time.sleep(2)
+            cons.sendstr ("[dro%s.\n" % cons.screen[1][i][5:9].decode ("dd60"))
+            cons.wait_update ()
 
     # issue Checkpoint System
     log ("Checkpoint system")
     cons.sendstr ("[unlock.\n")
-    time.sleep (2)
+    cons.wait_update ()
     cons.sendstr ("[che\n")
 
     # wait for checkpoint to complete
     for i in range (10):
-        if "CHECKPOINT COMPLETE" in cons.screen[1][23]:
+        if chk in cons.screen[1][48]:
             break
         if i < 9:
             time.sleep (2)
@@ -182,7 +194,7 @@ def doshutdown (delay):
 
     # Step the system
     cons.sendstr ("[step.\n")
-    time.sleep (2)
+    cons.wait_update ()
 
     # Shut down DtCyber
     cons.stop ()
@@ -264,7 +276,7 @@ def docopy (tarball):
         if dest is None:
             continue
         log ("Copying %s to %s" % (tarball, dest))
-        scp = subprocess.Popen (("scp", "-i", "cyber1backup", tarball, "%s:" % dest))
+        scp = subprocess.Popen (SCPARGS + (tarball, "%s:" % dest))
         scp.wait ()
         
 # ***TEST
@@ -305,9 +317,9 @@ def main ():
     # PLATO is back up, now we can compress and copy the backup
     # tarball in the background.
     log ("Compressing tarball")
-    ret = os.system ("nice bzip2 -v %s" % ttarball)
-    ttarball += ".bz2"
-    tarball = os.path.join (BACKUPDEST, tarbase) + ".bz2"
+    ret = os.system ("nice xz -v %s" % ttarball)
+    ttarball += ".xz"
+    tarball = os.path.join (BACKUPDEST, tarbase) + ".xz"
 
     # The tarball is finished, so move it to its final destination,
     # then copy it for the "push" destinations
