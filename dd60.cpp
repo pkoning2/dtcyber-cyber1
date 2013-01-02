@@ -85,6 +85,12 @@
         fprintf (traceF, str "\n", arg); \
         }
 
+#define TRACE2(str, arg1, arg2)                                         \
+    if (traceDd60)                                                 \
+        {                                                           \
+            fprintf (traceF, str "\n", arg1, arg2);                       \
+        }
+
 // ----------------------------------------------------------------------------
 // headers
 // ----------------------------------------------------------------------------
@@ -1324,7 +1330,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     
         if ((data & 0200) == 0)
         {
-            TRACE1 ("Char %o", data);
+            TRACE2 ("Char %o (%c)", data, cdcToAscii[data]);
             procDd60Char (data);
         }
         else
