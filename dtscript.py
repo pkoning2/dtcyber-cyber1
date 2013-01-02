@@ -14,6 +14,8 @@ import socket
 import threading
 import struct
 import re
+import copy
+import unicodedata
 
 NETMAX = 4096
 DEBUG = False
@@ -62,7 +64,7 @@ class Connection (socket.socket):
         self.pendingdata = self.pendingdata[bytes:]
         if DEBUG:
             for c in ret:
-                print("%02x %03o %3d" % (c, c, c))
+                print ("%02x %03o %3d" % (c, c, c))
         return ret
 
     def readmin (self, minbytes = 1):
@@ -163,7 +165,7 @@ class Oper (Connection, MyThread):
                     try:
                         self.fixedtext[i] = v[6:]
                     except IndexError:
-                        print("bad index", i, "for", x, y, size, bold, v[6:])
+                        print ("bad index", i, "for", x, y, size, bold, v[6:])
                 elif t == 3 or t == 5:
                     # OpSyntax or OpInitialized, ignore
                     pass
@@ -229,6 +231,503 @@ class Oper (Connection, MyThread):
             retval = retval[:-1]
         return retval
 
+""" Python Character Mapping Codec plato generated from './plato.txt' with gencodec.py.
+
+"""#"
+
+import codecs
+
+### Codec APIs
+
+class PlatoCodec (codecs.Codec):
+
+    def encode (self, input, errors = 'strict'):
+        return codecs.charmap_encode (input, errors, plato_encoding_table)
+
+    def decode(self,input, errors = 'strict'):
+        return codecs.charmap_decode (input, errors, plato_decoding_table)
+
+class PlatoIncrementalEncoder (codecs.IncrementalEncoder):
+    def encode (self, input, final = False):
+        return codecs.charmap_encode (input, self.errors, plato_encoding_table)[0]
+
+class PlatoIncrementalDecoder (codecs.IncrementalDecoder):
+    def decode(self, input, final = False):
+        return codecs.charmap_decode (input, self.errors, plato_decoding_table)[0]
+
+class PlatoStreamWriter (PlatoCodec ,codecs.StreamWriter):
+    pass
+
+class PlatoStreamReader (PlatoCodec, codecs.StreamReader):
+    pass
+
+### encodings module API
+
+def plato_getregentry (name):
+    if name == "plato":
+        return codecs.CodecInfo (
+            name = 'plato',
+            encode = PlatoCodec ().encode,
+            decode = PlatoCodec ().decode,
+            incrementalencoder = PlatoIncrementalEncoder,
+            incrementaldecoder = PlatoIncrementalDecoder,
+            streamreader = PlatoStreamReader,
+            streamwriter = PlatoStreamWriter,
+            )
+    elif name == "platokb":
+        return codecs.CodecInfo (
+            name = 'platokb',
+            encode = PlatoKbCodec ().encode,
+            decode = PlatoCodec ().decode,
+            incrementalencoder = PlatoKbIncrementalEncoder,
+            incrementaldecoder = PlatoIncrementalDecoder,
+            streamreader = PlatoStreamReader,
+            streamwriter = PlatoKbStreamWriter,
+            )
+
+### Decoding Table
+
+plato_decoding_table = (
+    ':'         #  0x00 -> COLON
+    'a'         #  0x01 -> LATIN SMALL LETTER A
+    'b'         #  0x02 -> LATIN SMALL LETTER B
+    'c'         #  0x03 -> LATIN SMALL LETTER C
+    'd'         #  0x04 -> LATIN SMALL LETTER D
+    'e'         #  0x05 -> LATIN SMALL LETTER E
+    'f'         #  0x06 -> LATIN SMALL LETTER F
+    'g'         #  0x07 -> LATIN SMALL LETTER G
+    'h'         #  0x08 -> LATIN SMALL LETTER H
+    'i'         #  0x09 -> LATIN SMALL LETTER I
+    'j'         #  0x0A -> LATIN SMALL LETTER J
+    'k'         #  0x0B -> LATIN SMALL LETTER K
+    'l'         #  0x0C -> LATIN SMALL LETTER L
+    'm'         #  0x0D -> LATIN SMALL LETTER M
+    'n'         #  0x0E -> LATIN SMALL LETTER N
+    'o'         #  0x0F -> LATIN SMALL LETTER O
+    'q'         #  0x10 -> LATIN SMALL LETTER P
+    'q'         #  0x11 -> LATIN SMALL LETTER Q
+    'r'         #  0x12 -> LATIN SMALL LETTER R
+    's'         #  0x13 -> LATIN SMALL LETTER S
+    't'         #  0x14 -> LATIN SMALL LETTER T
+    'u'         #  0x15 -> LATIN SMALL LETTER U
+    'v'         #  0x16 -> LATIN SMALL LETTER V
+    'w'         #  0x17 -> LATIN SMALL LETTER W
+    'x'         #  0x18 -> LATIN SMALL LETTER X
+    'y'         #  0x19 -> LATIN SMALL LETTER Y
+    'z'         #  0x1A -> LATIN SMALL LETTER Z
+    '0'         #  0x1B -> DIGIT ZERO
+    '1'         #  0x1C -> DIGIT ONE
+    '2'         #  0x1D -> DIGIT TWO
+    '3'         #  0x1E -> DIGIT THREE
+    '4'         #  0x1F -> DIGIT FOUR
+    '5'         #  0x20 -> DIGIT FIVE
+    '6'         #  0x21 -> DIGIT SIX
+    '7'         #  0x22 -> DIGIT SEVEN
+    '8'         #  0x23 -> DIGIT EIGHT
+    '9'         #  0x24 -> DIGIT NINE
+    '+'         #  0x25 -> PLUS SIGN
+    '-'         #  0x26 -> HYPHEN-MINUS
+    '*'         #  0x27 -> ASTERISK
+    '/'         #  0x28 -> SOLIDUS
+    '('         #  0x29 -> LEFT PARENTHESIS
+    ')'         #  0x2A -> RIGHT PARENTHESIS
+    '$'         #  0x2B -> DOLLAR SIGN
+    '='         #  0x2C -> EQUALS SIGN
+    ' '         #  0x2D -> SPACE
+    ','         #  0x2E -> COMMA
+    '.'         #  0x2F -> FULL STOP
+    '\xf7'      #  0x30 -> DIVISION SIGN
+    '['         #  0x31 -> LEFT SQUARE BRACKET
+    ']'         #  0x32 -> RIGHT SQUARE BRACKET
+    '%'         #  0x33 -> PERCENT SIGN
+    '\xd7'      #  0x34 -> MULTIPLICATION SIGN
+    '\xab'      #  0x35 -> LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+    "'"         #  0x36 -> APOSTROPHE
+    '"'         #  0x37 -> QUOTATION MARK
+    '!'         #  0x38 -> EXCLAMATION MARK
+    ';'         #  0x39 -> SEMICOLON
+    '<'         #  0x3A -> LESS-THAN SIGN
+    '>'         #  0x3B -> GREATER-THAN SIGN
+    '_'         #  0x3C -> LOW LINE
+    '?'         #  0x3D -> QUESTION MARK
+    '\xbb'      #  0x3E -> RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+    '\ufffe'    #  0x3F -> UNDEFINED
+    '#'         #  0x40 -> NUMBER SIGN
+    'A'         #  0x41 -> LATIN CAPITAL LETTER A
+    'B'         #  0x42 -> LATIN CAPITAL LETTER B
+    'C'         #  0x43 -> LATIN CAPITAL LETTER C
+    'D'         #  0x44 -> LATIN CAPITAL LETTER D
+    'E'         #  0x45 -> LATIN CAPITAL LETTER E
+    'F'         #  0x46 -> LATIN CAPITAL LETTER F
+    'G'         #  0x47 -> LATIN CAPITAL LETTER G
+    'H'         #  0x48 -> LATIN CAPITAL LETTER H
+    'I'         #  0x49 -> LATIN CAPITAL LETTER I
+    'J'         #  0x4A -> LATIN CAPITAL LETTER J
+    'K'         #  0x4B -> LATIN CAPITAL LETTER K
+    'L'         #  0x4C -> LATIN CAPITAL LETTER L
+    'M'         #  0x4D -> LATIN CAPITAL LETTER M
+    'N'         #  0x4E -> LATIN CAPITAL LETTER N
+    'O'         #  0x4F -> LATIN CAPITAL LETTER O
+    'P'         #  0x50 -> LATIN CAPITAL LETTER P
+    'Q'         #  0x51 -> LATIN CAPITAL LETTER Q
+    'R'         #  0x52 -> LATIN CAPITAL LETTER R
+    'S'         #  0x53 -> LATIN CAPITAL LETTER S
+    'T'         #  0x54 -> LATIN CAPITAL LETTER T
+    'U'         #  0x55 -> LATIN CAPITAL LETTER U
+    'V'         #  0x56 -> LATIN CAPITAL LETTER V
+    'W'         #  0x57 -> LATIN CAPITAL LETTER W
+    'X'         #  0x58 -> LATIN CAPITAL LETTER X
+    'Y'         #  0x59 -> LATIN CAPITAL LETTER Y
+    'Z'         #  0x5A -> LATIN CAPITAL LETTER Z
+    '~'         #  0x5B -> TILDE
+    '\xa8'      #  0x5C -> DIAERESIS
+    '^'         #  0x5D -> CIRCUMFLEX ACCENT
+    '\xb4'      #  0x5E -> ACUTE ACCENT
+    '`'         #  0x5F -> GRAVE ACCENT
+    '\u2191'    #  0x60 -> UPWARDS ARROW
+    '\u2192'    #  0x61 -> RIGHTWARDS ARROW
+    '\u2193'    #  0x62 -> DOWNWARDS ARROW
+    '\u2190'    #  0x63 -> LEFTWARDS ARROW
+    '\u223c'    #  0x64 -> TILDE OPERATOR
+    '\u03a3'    #  0x65 -> GREEK CAPITAL LETTER SIGMA
+    '\u0394'    #  0x66 -> GREEK CAPITAL LETTER DELTA
+    '\u222a'    #  0x67 -> UNION
+    '\u2229'    #  0x68 -> INTERSECTION
+    '{'         #  0x69 -> LEFT CURLY BRACKET
+    '}'         #  0x6A -> RIGHT CURLY BRACKET
+    '&'         #  0x6B -> AMPERSAND
+    '\u2260'    #  0x6C -> NOT EQUAL TO
+    ' '         #  0x6D -> SPACE
+    '|'         #  0x6E -> VERTICAL LINE
+    '\xb0'      #  0x6F -> DEGREE SIGN
+    '\u2261'    #  0x70 -> IDENTICAL TO
+    '\u03b1'    #  0x71 -> GREEK SMALL LETTER ALPHA
+    '\u03b2'    #  0x72 -> GREEK SMALL LETTER BETA
+    '\u03b4'    #  0x73 -> GREEK SMALL LETTER DELTA
+    '\u03bb'    #  0x74 -> GREEK SMALL LETTER LAMBDA
+    '\u03bc'    #  0x75 -> GREEK SMALL LETTER MU
+    '\u03c0'    #  0x76 -> GREEK SMALL LETTER PI
+    '\u03c1'    #  0x77 -> GREEK SMALL LETTER RHO
+    '\u03c3'    #  0x78 -> GREEK SMALL LETTER SIGMA
+    '\u03c9'    #  0x79 -> GREEK SMALL LETTER OMEGA
+    '\u2264'    #  0x7A -> LESS-THAN OR EQUAL TO
+    '\u2265'    #  0x7B -> GREATER-THAN OR EQUAL TO
+    '\u0398'    #  0x7C -> GREEK CAPITAL LETTER THETA
+    '@'         #  0x7D -> COMMERCIAL AT
+    '\\'        #  0x7E -> REVERSE SOLIDUS
+    '\n'        #  0x7F -> Use as a way to get newline
+)
+# Decoding table must be 256 chars long
+plato_decoding_table += '\ufffe' * (256 - len (plato_decoding_table))
+
+### Encoding table
+plato_encoding_table=codecs.charmap_build(plato_decoding_table)
+
+### Decoding Table
+
+platokb_decoding_table = (
+    '0'         #  0x00 -> DIGIT ZERO
+    '1'         #  0x01 -> DIGIT ONE
+    '2'         #  0x02 -> DIGIT TWO
+    '3'         #  0x03 -> DIGIT THREE
+    '4'         #  0x04 -> DIGIT FOUR
+    '5'         #  0x05 -> DIGIT FIVE
+    '6'         #  0x06 -> DIGIT SIX
+    '7'         #  0x07 -> DIGIT SEVEN
+    '8'         #  0x08 -> DIGIT EIGHT
+    '9'         #  0x09 -> DIGIT NINE
+    '\xd7'      #  0x0A -> MULTIPLICATION SIGN
+    '\xf7'      #  0x0B -> DIVISION SIGN
+    '\t'        #  0x0C -> HORIZONTAL TABULATION
+    '\xab'      #  0x0D -> LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+    '+'         #  0x0E -> PLUS SIGN
+    '-'         #  0x0F -> HYPHEN-MINUS
+    '\ufffe'    #  0x10 -> UNDEFINED
+    '\ufffe'    #  0x11 -> UNDEFINED
+    '\ufffe'    #  0x12 -> UNDEFINED
+    '\x7f'      #  0x13 -> DELETE
+    '\ufffe'    #  0x14 -> UNDEFINED
+    '\ufffe'    #  0x15 -> UNDEFINED
+    '\n'        #  0x16 -> LINE FEED
+    '\ufffe'    #  0x17 -> UNDEFINED
+    '\ufffe'    #  0x18 -> UNDEFINED
+    '\ufffe'    #  0x19 -> UNDEFINED
+    '\ufffe'    #  0x1A -> UNDEFINED
+    '\ufffe'    #  0x1B -> UNDEFINED
+    '\ufffe'    #  0x1C -> UNDEFINED
+    '\ufffe'    #  0x1D -> UNDEFINED
+    '\ufffe'    #  0x1E -> UNDEFINED
+    '\ufffe'    #  0x1F -> UNDEFINED
+    '<'         #  0x20 -> LESS-THAN SIGN
+    '>'         #  0x21 -> GREATER-THAN SIGN
+    '['         #  0x22 -> LEFT SQUARE BRACKET
+    ']'         #  0x23 -> RIGHT SQUARE BRACKET
+    '$'         #  0x24 -> DOLLAR SIGN
+    '%'         #  0x25 -> PERCENT SIGN
+    '_'         #  0x26 -> LOW LINE
+    "'"         #  0x27 -> APOSTROPHE
+    '*'         #  0x28 -> ASTERISK
+    '('         #  0x29 -> LEFT PARENTHESIS
+    '\u222a'    #  0x2A -> UNION
+    '\u2229'    #  0x2B -> INTERSECTION
+    '\ufffe'    #  0x2C -> UNDEFINED
+    '\ufffe'    #  0x2D -> UNDEFINED
+    '\u03a3'    #  0x2E -> GREEK CAPITAL LETTER SIGMA
+    '\u0394'    #  0x2F -> GREEK CAPITAL LETTER DELTA
+    '\ufffe'    #  0x30 -> UNDEFINED
+    '\ufffe'    #  0x31 -> UNDEFINED
+    '\ufffe'    #  0x32 -> UNDEFINED
+    '\ufffe'    #  0x33 -> UNDEFINED
+    '\ufffe'    #  0x34 -> UNDEFINED
+    '\ufffe'    #  0x35 -> UNDEFINED
+    '\ufffe'    #  0x36 -> UNDEFINED
+    '\ufffe'    #  0x37 -> UNDEFINED
+    '\ufffe'    #  0x38 -> UNDEFINED
+    '\ufffe'    #  0x39 -> UNDEFINED
+    '\ufffe'    #  0x3A -> UNDEFINED
+    '\ufffe'    #  0x3B -> UNDEFINED
+    '\ufffe'    #  0x3C -> UNDEFINED
+    '\ufffe'    #  0x3D -> UNDEFINED
+    '\ufffe'    #  0x3E -> UNDEFINED
+    '\ufffe'    #  0x3F -> UNDEFINED
+    ' '         #  0x40 -> SPACE
+    'a'         #  0x41 -> LATIN SMALL LETTER A
+    'b'         #  0x42 -> LATIN SMALL LETTER B
+    'c'         #  0x43 -> LATIN SMALL LETTER C
+    'd'         #  0x44 -> LATIN SMALL LETTER D
+    'e'         #  0x45 -> LATIN SMALL LETTER E
+    'f'         #  0x46 -> LATIN SMALL LETTER F
+    'g'         #  0x47 -> LATIN SMALL LETTER G
+    'h'         #  0x48 -> LATIN SMALL LETTER H
+    'i'         #  0x49 -> LATIN SMALL LETTER I
+    'j'         #  0x4A -> LATIN SMALL LETTER J
+    'k'         #  0x4B -> LATIN SMALL LETTER K
+    'l'         #  0x4C -> LATIN SMALL LETTER L
+    'm'         #  0x4D -> LATIN SMALL LETTER M
+    'n'         #  0x4E -> LATIN SMALL LETTER N
+    'o'         #  0x4F -> LATIN SMALL LETTER O
+    'p'         #  0x50 -> LATIN SMALL LETTER P
+    'q'         #  0x51 -> LATIN SMALL LETTER Q
+    'r'         #  0x52 -> LATIN SMALL LETTER R
+    's'         #  0x53 -> LATIN SMALL LETTER S
+    't'         #  0x54 -> LATIN SMALL LETTER T
+    'u'         #  0x55 -> LATIN SMALL LETTER U
+    'v'         #  0x56 -> LATIN SMALL LETTER V
+    'w'         #  0x57 -> LATIN SMALL LETTER W
+    'x'         #  0x58 -> LATIN SMALL LETTER X
+    'y'         #  0x59 -> LATIN SMALL LETTER Y
+    'z'         #  0x5A -> LATIN SMALL LETTER Z
+    '='         #  0x5B -> EQUALS SIGN
+    ';'         #  0x5C -> SEMICOLON
+    '/'         #  0x5D -> SOLIDUS
+    '.'         #  0x5E -> FULL STOP
+    ','         #  0x5F -> COMMA
+    '\x08'      #  0x60 -> BACKSPACE
+    'A'         #  0x61 -> LATIN CAPITAL LETTER A
+    'B'         #  0x62 -> LATIN CAPITAL LETTER B
+    'C'         #  0x63 -> LATIN CAPITAL LETTER C
+    'D'         #  0x64 -> LATIN CAPITAL LETTER D
+    'E'         #  0x65 -> LATIN CAPITAL LETTER E
+    'F'         #  0x66 -> LATIN CAPITAL LETTER F
+    'G'         #  0x67 -> LATIN CAPITAL LETTER G
+    'H'         #  0x68 -> LATIN CAPITAL LETTER H
+    'I'         #  0x69 -> LATIN CAPITAL LETTER I
+    'J'         #  0x6A -> LATIN CAPITAL LETTER J
+    'K'         #  0x6B -> LATIN CAPITAL LETTER K
+    'L'         #  0x6C -> LATIN CAPITAL LETTER L
+    'M'         #  0x6D -> LATIN CAPITAL LETTER M
+    'N'         #  0x6E -> LATIN CAPITAL LETTER N
+    'O'         #  0x6F -> LATIN CAPITAL LETTER O
+    'P'         #  0x70 -> LATIN CAPITAL LETTER P
+    'Q'         #  0x71 -> LATIN CAPITAL LETTER Q
+    'R'         #  0x72 -> LATIN CAPITAL LETTER R
+    'S'         #  0x73 -> LATIN CAPITAL LETTER S
+    'T'         #  0x74 -> LATIN CAPITAL LETTER T
+    'U'         #  0x75 -> LATIN CAPITAL LETTER U
+    'V'         #  0x76 -> LATIN CAPITAL LETTER V
+    'W'         #  0x77 -> LATIN CAPITAL LETTER W
+    'X'         #  0x78 -> LATIN CAPITAL LETTER X
+    'Y'         #  0x79 -> LATIN CAPITAL LETTER Y
+    'Z'         #  0x7A -> LATIN CAPITAL LETTER Z
+    ')'         #  0x7B -> RIGHT PARENTHESIS
+    ':'         #  0x7C -> COLON
+    '?'         #  0x7D -> QUESTION MARK
+    '!'         #  0x7E -> EXCLAMATION MARK
+    '"'         #  0x7F -> QUOTATION MARK
+    # Codes 80 and up represent ACCESS codes
+    '\u226e'    #  0x80 -> NOT LESS-THAN
+    '\u226f'    #  0x81 -> NOT GREATER-THAN
+    '\ufffe'    #  0x82 -> UNDEFINED
+    '\ufffe'    #  0x83 -> UNDEFINED
+    '\ufffe'    #  0x84 -> UNDEFINED
+    '@'         #  0x85 -> COMMERCIAL AT
+    '\xbb'      #  0x86 -> RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+    '\ufffe'    #  0x87 -> UNDEFINED
+    '\ufffe'    #  0x88 -> UNDEFINED
+    '\ufffe'    #  0x89 -> UNDEFINED
+    '\xb0'      #  0x8A -> DEGREE SIGN
+    '\ufffe'    #  0x8B -> UNDEFINED
+    '\ufffe'    #  0x8C -> UNDEFINED
+    '\ufffe'    #  0x8D -> UNDEFINED
+    '&'         #  0x8E -> AMPERSAND
+    '\ufffe'    #  0x8F -> UNDEFINED
+    '\ufffe'    #  0x90 -> UNDEFINED
+    '\ufffe'    #  0x91 -> UNDEFINED
+    '\ufffe'    #  0x92 -> UNDEFINED
+    '\ufffe'    #  0x93 -> UNDEFINED
+    '\ufffe'    #  0x94 -> UNDEFINED
+    '\ufffe'    #  0x95 -> UNDEFINED
+    '\ufffe'    #  0x96 -> UNDEFINED
+    '\ufffe'    #  0x97 -> UNDEFINED
+    '\ufffe'    #  0x98 -> UNDEFINED
+    '\ufffe'    #  0x99 -> UNDEFINED
+    '\ufffe'    #  0x9A -> UNDEFINED
+    '\ufffe'    #  0x9B -> UNDEFINED
+    '\ufffe'    #  0x9C -> UNDEFINED
+    '\ufffe'    #  0x9D -> UNDEFINED
+    '\ufffe'    #  0x9E -> UNDEFINED
+    '\ufffe'    #  0x9F -> UNDEFINED
+    '\u2264'    #  0xA0 -> LESS-THAN OR EQUAL TO
+    '\u2265'    #  0xA1 -> GREATER-THAN OR EQUAL TO
+    '{'         #  0xA2 -> LEFT CURLY BRACKET
+    '}'         #  0xA3 -> RIGHT CURLY BRACKET
+    '#'         #  0xA4 -> NUMBER SIGN
+    '\ufffe'    #  0xA5 -> UNDEFINED
+    '\ufffe'    #  0xA6 -> UNDEFINED
+    '\ufffe'    #  0xA7 -> UNDEFINED
+    '\ufffe'    #  0xA8 -> UNDEFINED
+    '\ufffe'    #  0xA9 -> UNDEFINED
+    '\u2a2f'    #  0xAA -> VECTOR OR CROSS PRODUCT
+    '\ufffe'    #  0xAB -> UNDEFINED
+    '\ufffe'    #  0xAC -> UNDEFINED
+    '\ufffe'    #  0xAD -> UNDEFINED
+    '\ufffe'    #  0xAE -> UNDEFINED
+    '\ufffe'    #  0xAF -> UNDEFINED
+    '\ufffe'    #  0xB0 -> UNDEFINED
+    '\ufffe'    #  0xB1 -> UNDEFINED
+    '\ufffe'    #  0xB2 -> UNDEFINED
+    '\ufffe'    #  0xB3 -> UNDEFINED
+    '\ufffe'    #  0xB4 -> UNDEFINED
+    '\ufffe'    #  0xB5 -> UNDEFINED
+    '\ufffe'    #  0xB6 -> UNDEFINED
+    '\ufffe'    #  0xB7 -> UNDEFINED
+    '\ufffe'    #  0xB8 -> UNDEFINED
+    '\ufffe'    #  0xB9 -> UNDEFINED
+    '\ufffe'    #  0xBA -> UNDEFINED
+    '\ufffe'    #  0xBB -> UNDEFINED
+    '\ufffe'    #  0xBC -> UNDEFINED
+    '\ufffe'    #  0xBD -> UNDEFINED
+    '\ufffe'    #  0xBE -> UNDEFINED
+    '\ufffe'    #  0xBF -> UNDEFINED
+    '\ufffe'    #  0xC0 -> UNDEFINED
+    '\u03b1'    #  0xC1 -> GREEK SMALL LETTER ALPHA
+    '\u03b2'    #  0xC2 -> GREEK SMALL LETTER BETA
+    '\u0327'    #  0xC3 -> COMBINING CEDILLA
+    '\u03b4'    #  0xC4 -> GREEK SMALL LETTER DELTA
+    '\u0301'    #  0xC5 -> COMBINING ACUTE ACCENT
+    '\ufffe'    #  0xC6 -> UNDEFINED
+    '\xe6'      #  0xC7 -> LATIN SMALL LETTER AE
+    '\xf8'      #  0xC8 -> LATIN SMALL LETTER O WITH STROKE
+    '\ufffe'    #  0xC9 -> UNDEFINED
+    '\xe5'      #  0xCA -> LATIN SMALL LETTER A WITH RING ABOVE
+    '\xe4'      #  0xCB -> LATIN SMALL LETTER A WITH DIAERESIS
+    '\u03bb'    #  0xCC -> GREEK SMALL LETTER LAMBDA
+    '\u03bc'    #  0xCD -> GREEK SMALL LETTER MU
+    '\u0303'    #  0xCE -> COMBINING TILDE
+    '\xb0'      #  0xCF -> DEGREE SIGN
+    '\u03c0'    #  0xD0 -> GREEK SMALL LETTER PI
+    '\u0300'    #  0xD1 -> COMBINING GRAVE ACCENT
+    '\u03c1'    #  0xD2 -> GREEK SMALL LETTER RHO
+    '\u03c3'    #  0xD3 -> GREEK SMALL LETTER SIGMA
+    '\u0398'    #  0xD4 -> GREEK CAPITAL LETTER THETA
+    '\u0308'    #  0xD5 -> COMBINING DIERESIS
+    '\u030c'    #  0xD6 -> COMBINING CARON
+    '\u03c9'    #  0xD7 -> GREEK SMALL LETTER OMEGA
+    '\u0302'    #  0xD8 -> COMBINING CIRCUMFLEX ACCENT
+    '\xf6'      #  0xD9 -> LATIN SMALL LETTER O WITH DIAERESIS
+    '\ufffe'    #  0xDA -> UNDEFINED
+    '\u2260'    #  0xDB -> NOT EQUAL TO
+    '\u223c'    #  0xDC -> TILDE OPERATOR
+    '\\'        #  0xDD -> REVERSE SOLIDUS
+    '\ufffe'    #  0xDE -> UNDEFINED
+    '\u2195'    #  0xDF -> UP DOWN ARROW
+    '\ufffe'    #  0xE0 -> UNDEFINED
+    '\u2190'    #  0xE1 -> LEFTWARDS ARROW
+    '\ufffe'    #  0xE2 -> UNDEFINED
+    '\xa9'      #  0xE3 -> COPYRIGHT SIGN
+    '\u2192'    #  0xE4 -> RIGHTWARDS ARROW
+    '\ufffe'    #  0xE5 -> UNDEFINED
+    '\u2666'    #  0xE6 -> BLACK DIAMOND SUIT
+    '\xc6'      #  0xE7 -> LATIN CAPITAL LETTER AE
+    '\xd8'      #  0xE8 -> LATIN CAPITAL LETTER O WITH STROKE
+    '|'         #  0xE9 -> VERTICAL LINE
+    '\xc5'      #  0xEA -> LATIN CAPITAL LETTER A WITH RING ABOVE
+    '\xc4'      #  0xEB -> LATIN CAPITAL LETTER A WITH DIAERESIS
+    '\ufffe'    #  0xEC -> UNDEFINED
+    '\ufffe'    #  0xED -> UNDEFINED
+    '\ufffe'    #  0xEE -> UNDEFINED
+    '\u25a1'    #  0xEF -> WHITE SQUARE
+    '\ufffe'    #  0xF0 -> UNDEFINED
+    '\ufffe'    #  0xF1 -> UNDEFINED
+    '\ufffe'    #  0xF2 -> UNDEFINED
+    '\ufffe'    #  0xF3 -> UNDEFINED
+    '\ufffe'    #  0xF4 -> UNDEFINED
+    '\ufffe'    #  0xF5 -> UNDEFINED
+    '\ufffe'    #  0xF6 -> UNDEFINED
+    '\u2191'    #  0xF7 -> UPWARDS ARROW
+    '\u2193'    #  0xF8 -> DOWNWARDS ARROW
+    '\xd6'      #  0xF9 -> LATIN CAPITAL LETTER O WITH DIAERESIS
+    '\ufffe'    #  0xFA -> UNDEFINED
+    '\u2261'    #  0xFB -> IDENTICAL TO
+)
+
+class PlatoKbCodec (codecs.Codec):
+
+    def encode (self, input, errors = 'strict'):
+        # Separate out the diacritical marks
+        ninput = unicodedata.normalize ("NFD", input)
+        result = [ ]
+        for c in ninput:
+            try:
+                r = platokb_encoding_table[c]
+                result.append (r)
+            except KeyError:
+                pass
+        return b''.join (result), len (input)
+    
+class PlatoKbIncrementalEncoder (codecs.IncrementalEncoder):
+    def encode (self, input, final = False):
+        return PlatoKbCodec.encode (self, input, self.errors)[0]
+
+class PlatoKbStreamWriter (PlatoKbCodec ,codecs.StreamWriter):
+    pass
+
+def keyframe (key):
+    """Frame a key code for transmission to PLATO.
+    """
+    return struct.pack ("<BB", key >> 7, (0o200 | key & 0o177))
+
+def unframe (key):
+    """Reverse of keyframe ()
+    """
+    k1, k2 = struct.unpack ("<BB", key)
+    if k2 & 0o200:
+        return (k1 << 7) | (k2 & 0o177)
+    raise ValueError
+
+platokb_encoding_table = dict ()
+for i, c in enumerate (platokb_decoding_table):
+    keycodes = [ ]
+    if i & 0x80:
+        # Codes 80 and up represent MICRO codes (ACCESS codes)
+        keycodes.append (keyframe (0o074))
+        i &= 0x7f
+    keycodes.append (keyframe (i))
+    platokb_encoding_table[c] = b''.join (keycodes)
+platokb_encoding_table['\r'] = platokb_encoding_table['\n']
+
+codecs.register (plato_getregentry)
+
 class Pterm (Connection, MyThread):
     """A connection to an NIU port, i.e., a "classic" type pterm.
     It includes a thread that collects data from DtCyber and updates
@@ -254,7 +753,7 @@ class Pterm (Connection, MyThread):
     SHIFT = 0o40
 
     # A blank line
-    line64 = 64 * ' '
+    line64 = 64 * b'\055'
 
     def __init__ (self, host = "localhost", port = 5004):
         """host is the host name to connect to, default is localhost.
@@ -266,8 +765,7 @@ class Pterm (Connection, MyThread):
         Connection.__init__ (self, host, port)
         self.settimeout (5)
         self.lines = [ ]
-        for i in range (32):
-            self.lines.append (None)
+        self.lines = [ bytearray (64) for i in range (32) ]
         self.fserase ()
         self.station = None
         self.start ()
@@ -287,14 +785,14 @@ class Pterm (Connection, MyThread):
                     break
                 byte = self.read (1)[0]
                 if byte & 0o200:
-                    print("output out of sync")
+                    print ("output out of sync")
                     continue
                 word = self.read (2)
                 word = byte << 12 | \
                        ((word[0] & 0o77) << 6) | \
                        (word[1] & 0o77)
                 if DEBUG:
-                    print("%07o" % word)
+                    print ("%07o" % word)
                 if word & 0o1000000:
                     # Data word
                     if self.mode == 3:
@@ -342,13 +840,13 @@ class Pterm (Connection, MyThread):
         self.uncover = False
         self.arrow = False     # last char was not arrow (prompt)
         for i in range (32):
-            self.lines[i] = self.line64
+            self.lines[i][:] = self.line64
             
     def sendkey (self, key):
         key &= 0o1777
         #print "sending key", key
-        data = struct.pack ("<BB", key >> 7, (0o200 | key & 0o177))
-        self.sendall (data)
+        key = keyframe (key)
+        self.sendall (key)
         self.arrow = False
 
     def waitarrow (self, wait):
@@ -365,44 +863,6 @@ class Pterm (Connection, MyThread):
             wait -= delay
         return False
 
-    # This table is nearly the same as the one in charset.c, except
-    # for the entries for ctrl-i, ctrl-j, and rubout, which are
-    # TAB, NEXT, and ERASE respectively.
-    asciiToPlato= \
-       (  -1,    0o22,    0o30,    0o33,    0o31,    0o27,    0o64,    0o13,
-         0o25,    0o14,    0o26,     -1,    0o35,    0o24,     -1,     -1,
-         0o20,    0o34,     -1,    0o32,    0o62,     -1,     -1,     -1,
-         0o12,    0o21,     -1,     -1,     -1,     -1,     -1,     -1,
-        0o100,   0o176,   0o177, 0o74044,   0o044,   0o045, 0o74016,   0o047,
-        0o051,   0o173,   0o050,   0o016,   0o137,   0o017,   0o136,   0o135,
-        0000,   0o001,   0o002,   0o003,   0o004,   0o005,   0o006,   0o007,
-        0o010,   0o011,   0o174,   0o134,   0o040,   0o133,   0o041,   0o175,
-       0o74005,  0o141,   0o142,   0o143,   0o144,   0o145,   0o146,   0o147,
-        0o150,   0o151,   0o152,   0o153,   0o154,   0o155,   0o156,   0o157,
-        0o160,   0o161,   0o162,   0o163,   0o164,   0o165,   0o166,   0o167,
-        0o170,   0o171,   0o172,   0o042, 0o74135,   0o043, 0o74130,   0o046,
-       0o74121,  0o101,   0o102,   0o103,   0o104,   0o105,   0o106,   0o107,
-        0o110,   0o111,   0o112,   0o113,   0o114,   0o115,   0o116,   0o117,
-        0o120,   0o121,   0o122,   0o123,   0o124,   0o125,   0o126,   0o127,
-        0o130,   0o131,   0o132, 0o74042, 0o74151, 0o74043, 0o74116,    0o23,
-          -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
-          -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
-          -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
-          -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
-          -1,     -1,     -1,     -1,     -1,     -1,    0o74151,  -1,
-          -1,    0o74143,  -1,     -1,     -1,     -1,     -1,     -1,
-          -1,     -1,     -1,     -1,     -1,    0o74115,  -1,     -1,
-          -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
-         0o141121,0o141105,0o141130,0o141116,0o141125, -1,     -1,   0o143103,
-         0o145121,0o145105,0o145130,0o145125,0o151121,0o151105,0o151130,0o151125,
-          -1,    0o156116,0o157121,0o157105,0o157130, -1, 0o157125,  0o012,
-          -1,    0o165121,0o165105,0o165130,0o165125,0o171105, -1,     -1,
-         0o101121,0o101105,0o101130,0o101116,0o101125, -1,     -1,   0o103103,
-         0o105121,0o105105,0o105130,0o105125,0o111121,0o111105,0o111130,0o111125,
-          -1,    0o116116,0o117121,0o117105,0o117130, -1, 0o117125,  0o013,
-          -1,    0o125121,0o125105,0o125130,0o125125,0o131105, -1,   0o131125
-       )
-
     def sendstr (self, s, term = None, wait = None):
         """Send a text string, converting from ASCII as we go.
         There is no delay in here, so don't send too much.
@@ -412,24 +872,10 @@ class Pterm (Connection, MyThread):
         """
         if wait:
             self.waitarrow (wait)
-        for c in s:
-            key = self.asciiToPlato[c]
-            if key == -1:
-                continue
-            if key >> 9:
-                k1 = key >> 9
-                k2 = key & 0o777
-                self.sendkey (k1)
-                if k1 != 0o74:
-                    self.sendkey (0o74)
-                self.sendkey (k2)
-            else:
-                self.sendkey (key)
+        s = s.encode ("platokb", "ignore")
+        self.sendall (s)
         if term:
             self.sendkey (term)
-
-    rom = ( ":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.\u00F7[]%\u00D7\u00AB'\"!;<>_?\u00BB ",
-            "#ABCDEFGHIJKLMNOPQRSTUVWXYZ~\u00A8^\u00B4`    ~    {}&  |\u00B0     \u00B5       @\\ " )
 
     def char (self, c):
         """Display a character at current x/y.
@@ -478,27 +924,24 @@ class Pterm (Connection, MyThread):
                 if self.mem > 1:
                     # Not rom char, clear arrow flag
                     self.arrow = False
-                    c = ' '
+                    c = 0o55
                 else:
                     if c != 0o55:
+                        c += self.mem * 0o100
                         # Set the arrow flag, unless this is a space.
-                        self.arrow = self.mem == 0 and c == 0o76
-                    c = self.rom[self.mem][c]
+                        self.arrow = (c == 0o76)
             else:
                 # mode erase, write a space
                 self.arrow = False
-                c = ' '
-            l = self.lines[cy]
-            l1 = l[:cx]
-            l2 = l[cx + 1:]
-            self.lines[cy] = l1 + c + l2
+                c = 0o55
+            self.lines[cy][cx] = c
             self.x = (self.x + 8) & 0o777
 
     def __repr__ (self):
         """The representation of the object is the current contents
         of the screen, as a string of 32 lines each 64 characters long.
         """
-        return '\n'.join (self.lines)
+        return b'\177'.join (self.lines).decode ("plato")
 
     def login (self, user, group, passwd = None, waitauthor = True):
         self.sendkey (self.NEXT)
@@ -519,6 +962,144 @@ class Pterm (Connection, MyThread):
             self.sendkey (self.SHIFT + self.STOP)
             self.waitarrow (4)
             
+# Python Character Mapping Codec dd60 generated from './console.txt' with gencodec.py,
+# then edited a fair amount.
+
+import codecs
+
+### Codec APIs
+
+class Dd60Codec (codecs.Codec):
+
+    def encode (self,input,errors='strict'):
+        return codecs.charmap_encode (input,errors,dd60_encoding_table)
+
+    def decode (self,input,errors='strict'):
+        return codecs.charmap_decode (input,errors,dd60_decoding_table)
+
+class Dd60IncrementalEncoder (codecs.IncrementalEncoder):
+    def encode (self, input, final = False):
+        return codecs.charmap_encode (input,self.errors,dd60_encoding_table)[0]
+
+class Dd60IncrementalDecoder (codecs.IncrementalDecoder):
+    def decode (self, input, final = False):
+        return codecs.charmap_decode (input,self.errors,dd60_decoding_table)[0]
+
+class Dd60StreamWriter (Dd60Codec, codecs.StreamWriter):
+    pass
+
+class Dd60StreamReader (Dd60Codec, codecs.StreamReader):
+    pass
+
+class Dd60KbCodec (Dd60Codec):
+
+    def encode (self,input,errors='strict'):
+        return codecs.charmap_encode (input,errors,dd60kb_encoding_table)
+
+class Dd60KbIncrementalEncoder (Dd60IncrementalEncoder):
+    def encode (self, input, final = False):
+        return codecs.charmap_encode (input,self.errors,dd60_encoding_table)[0]
+
+### encodings module API
+
+def dd60_getregentry (name):
+    if name == "dd60":
+        return codecs.CodecInfo (
+            name = 'dd60',
+            encode = Dd60Codec ().encode,
+            decode = Dd60Codec ().decode,
+            incrementalencoder = Dd60IncrementalEncoder,
+            incrementaldecoder = Dd60IncrementalDecoder,
+            streamreader = Dd60StreamReader,
+            streamwriter = Dd60StreamWriter,
+        )
+    elif name == "dd60kb":
+        return codecs.CodecInfo (
+            name = 'dd60kb',
+            encode = Dd60KbCodec ().encode,
+            decode = Dd60KbCodec ().decode,
+            incrementalencoder = Dd60KbIncrementalEncoder,
+            # These 3 are unchanged:
+            incrementaldecoder = Dd60IncrementalDecoder,
+            streamreader = Dd60StreamReader,
+            streamwriter = Dd60StreamWriter,
+        )
+
+
+### Decoding Table
+
+dd60_decoding_table = (
+    ' '         #  0x00 -> SPACE
+    'A'         #  0x01 -> LATIN CAPITAL LETTER A
+    'B'         #  0x02 -> LATIN CAPITAL LETTER B
+    'C'         #  0x03 -> LATIN CAPITAL LETTER C
+    'D'         #  0x04 -> LATIN CAPITAL LETTER D
+    'E'         #  0x05 -> LATIN CAPITAL LETTER E
+    'F'         #  0x06 -> LATIN CAPITAL LETTER F
+    'G'         #  0x07 -> LATIN CAPITAL LETTER G
+    'H'         #  0x08 -> LATIN CAPITAL LETTER H
+    'I'         #  0x09 -> LATIN CAPITAL LETTER I
+    'J'         #  0x0A -> LATIN CAPITAL LETTER J
+    'K'         #  0x0B -> LATIN CAPITAL LETTER K
+    'L'         #  0x0C -> LATIN CAPITAL LETTER L
+    'M'         #  0x0D -> LATIN CAPITAL LETTER M
+    'N'         #  0x0E -> LATIN CAPITAL LETTER N
+    'O'         #  0x0F -> LATIN CAPITAL LETTER O
+    'P'         #  0x10 -> LATIN CAPITAL LETTER P
+    'Q'         #  0x11 -> LATIN CAPITAL LETTER Q
+    'R'         #  0x12 -> LATIN CAPITAL LETTER R
+    'S'         #  0x13 -> LATIN CAPITAL LETTER S
+    'T'         #  0x14 -> LATIN CAPITAL LETTER T
+    'U'         #  0x15 -> LATIN CAPITAL LETTER U
+    'V'         #  0x16 -> LATIN CAPITAL LETTER V
+    'W'         #  0x17 -> LATIN CAPITAL LETTER W
+    'X'         #  0x18 -> LATIN CAPITAL LETTER X
+    'Y'         #  0x19 -> LATIN CAPITAL LETTER Y
+    'Z'         #  0x1A -> LATIN CAPITAL LETTER Z
+    '0'         #  0x1B -> DIGIT ZERO
+    '1'         #  0x1C -> DIGIT ONE
+    '2'         #  0x1D -> DIGIT TWO
+    '3'         #  0x1E -> DIGIT THREE
+    '4'         #  0x1F -> DIGIT FOUR
+    '5'         #  0x20 -> DIGIT FIVE
+    '6'         #  0x21 -> DIGIT SIX
+    '7'         #  0x22 -> DIGIT SEVEN
+    '8'         #  0x23 -> DIGIT EIGHT
+    '9'         #  0x24 -> DIGIT NINE
+    '+'         #  0x25 -> PLUS SIGN
+    '-'         #  0x26 -> HYPHEN-MINUS
+    '*'         #  0x27 -> ASTERISK
+    '/'         #  0x28 -> SOLIDUS
+    '('         #  0x29 -> LEFT PARENTHESIS
+    ')'         #  0x2A -> RIGHT PARENTHESIS
+    ' '         #  0x2B -> SPACE
+    '='         #  0x2C -> EQUALS SIGN
+    ' '         #  0x2D -> SPACE
+    ','         #  0x2E -> COMMA
+    '.'         #  0x2F -> FULL STOP
+    '\n'        #  0x30 -> NEWLINE
+)
+# Decoding table must be 256 chars long
+dd60_decoding_table += '\ufffe' * (256 - len (dd60_decoding_table))
+
+### Encoding table
+dd60_encoding_table = codecs.charmap_build (dd60_decoding_table)
+
+# Some tweaks to the encoding to handle space, lowercase
+dd60_encoding_table[ord (' ')] = 0o55
+for c in range (ord ('A'), ord ('Z') + 1):
+    dd60_encoding_table[c + 32] = dd60_encoding_table[c]
+
+# A slightly different encoding table to encode keyboard data, which
+# has a few different codes.
+dd60kb_encoding_table = copy.copy (dd60_encoding_table)
+dd60kb_encoding_table[0o010] = 0o61        # Backspace (erase)
+dd60kb_encoding_table[0o177] = 0o61        # Backspace (erase)
+dd60kb_encoding_table[ord (' ')] = 0o62    # Space
+dd60kb_encoding_table[ord ('[')] = 0o53    # Left blank
+dd60kb_encoding_table[ord (']')] = 0o55    # Right blank
+
+codecs.register (dd60_getregentry)
 
 class Dd60 (Connection, MyThread):
     """A connection to the DtCyber console (green tubes).  It includes
@@ -527,14 +1108,17 @@ class Dd60 (Connection, MyThread):
 
     The last full screen worth of content is available via attribute
     'screen' which is the left and right screens as a tuple;  each
-    screen is an array of 51 strings, each 64 characters long, containing
+    screen is an array of 64 strings, each 64 characters long, containing
     the content of that screen.
 
-    Why 51?  Because while the small character height is 8, it appears
-    that there is a common convention to space things 10 units apart.
+    We use 64 lines (8 unit height) because that's the smallest line
+    spacing found in use.  The actual line spacing varies -- 10 units
+    in the A display, 12 in the B display, a mix of 8 and 9 in the E
+    display, and so on.  This way, we may get some spurious blank lines
+    in the screen image but won't miss anything.
     """
     # A blank line
-    line64 = 64 * ' '
+    line64 = 64 * b'\055'
 
     # Mode codes
     LEFT = 0
@@ -568,18 +1152,21 @@ class Dd60 (Connection, MyThread):
         self.seq = 0
         self.x = 0
         self.y = 31
-        self.lineheight = 10
-        self.screen = self.erase ()
-        self.pending = self.erase ()
+        self.lineheight = 8
+        self.screen = [ bytearray (64) for i in range (64) ], \
+                      [ bytearray (64) for i in range (64) ]
+        self.erase (self.screen)
+        self.pending = [ bytearray (64) for i in range (64) ], \
+                       [ bytearray (64) for i in range (64) ]
+        self.erase (self.pending)
         self.start ()
 
-    def erase (self):
-        left = [ ]
-        right = [ ]
-        for i in range (512 // self.lineheight):
-            left.append (self.line64)
-            right.append (self.line64)
-        return left, right
+    def erase (self, screen):
+        lines = 512 // self.lineheight
+        left, right = screen
+        for i in range (64):
+            left[i][:] = self.line64
+            right[i][:] = self.line64
     
     def __next__ (self):
         """Return next byte of Cyber output, as an integer.
@@ -604,7 +1191,7 @@ class Dd60 (Connection, MyThread):
         self.stopnow = True
 
     def sendkey (self, key):
-        self.sendall (chr (key))
+        self.sendall (struct.pack ("B", key))
         
     def setinterval (self, interval):
         if self.interval != interval:
@@ -616,34 +1203,12 @@ class Dd60 (Connection, MyThread):
             else:
                 self.sendkey (0o300 + int (interval))
 
-    # This table is nearly the same as the one in charset.c, except
-    # that the entry for rubout is ERASE.
-    asciiToConsole = \
-    (   0,      0,      0,      0,      0,      0,      0,      0,
-        0o61,    0,      0o60,    0,      0,      0o60,    0,      0,
-        0,      0,      0,      0,      0,      0,      0,      0,
-        0,      0,      0,      0,      0,      0,      0,      0,
-        0o62,    0,      0,      0,      0,      0,      0,      0,
-        0o51,    0o52,    0o47,    0o45,    0o56,    0o46,    0o57,    0o50,
-        0o33,    0o34,    0o35,    0o36,    0o37,    0o40,    0o41,    0o42,
-        0o43,    0o44,    0,      0,      0,      0o54,    0,      0,
-        0,      0o1,     0o2,     0o3,     0o4,     0o5,     0o6,     0o7,
-        0o10,    0o11,    0o12,    0o13,    0o14,    0o15,    0o16,    0o17,
-        0o20,    0o21,    0o22,    0o23,    0o24,    0o25,    0o26,    0o27,
-        0o30,    0o31,    0o32,    0o53,    0,      0o55,    0,      0,
-        0,      0o1,     0o2,     0o3,     0o4,     0o5,     0o6,     0o7,
-        0o10,    0o11,    0o12,    0o13,    0o14,    0o15,    0o16,    0o17,
-        0o20,    0o21,    0o22,    0o23,    0o24,    0o25,    0o26,    0o27,
-        0o30,    0o31,    0o32,    0,      0,      0,      0,      0o61 )
-    
     def sendstr (self, text):
         """Send a text string, converting from ASCII as we go.
         There is no delay in here, so don't send too much.
         """
-        for c in text:
-            key = self.asciiToConsole[ord (c)]
-            if key:
-                self.sendkey (key)
+        text = text.encode ("dd60kb", "ignore")
+        self.sendall (text)
 
     def __repr__ (self):
         """The representation of the object is the current contents
@@ -651,24 +1216,18 @@ class Dd60 (Connection, MyThread):
         """
         return self.screentext (1)
 
-    def screentext (self, n):
+    def screentext (self, n, nums = False):
         """Returns the current contents of the specified screen
-        (0 or 1), as a string, 51 lines of 64 characters each.
+        (0 or 1), as a string, 64 lines of 64 characters each.
         """
-        return '\n'.join (self.screen[n])
+        if nums:
+            ret = [ ]
+            for i, l in enumerate (self.screen[n]):
+                ret.append ("%d: %s" % (i, l.decode ("dd60", "ignore")))
+            return '\n'.join (ret)
+        return str (b'\060'.join (self.screen[n]).decode ("dd60", "ignore"))
 
-    # This table comes from charset.c, replacing 0 (unused) entries
-    # by blank
-    consoleToAscii = \
-    ( ' ',    'A',    'B',    'C',    'D',    'E',    'F',    'G',
-      'H',    'I',    'J',    'K',    'L',    'M',    'N',    'O',
-      'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',
-      'X',    'Y',    'Z',    '0',    '1',    '2',    '3',    '4',
-      '5',    '6',    '7',    '8',    '9',    '+',    '-',    '*',
-      '/',    '(',    ')',    ' ',    '=',    ' ',    ',',    '.',
-      ' ',    ' ',    ' ',    ' ',    ' ',    ' ',    ' ',    ' ',
-      ' ',    ' ',    ' ',    ' ',    ' ',    ' ',    ' ',    ' ' )
-
+    spaces = frozenset ((0, 0o55))
     def process_char (self, ch):
         """Process a data byte.  If not in dot mode, store it in the
         correct position of the current line.  Medium and large chars
@@ -680,12 +1239,10 @@ class Dd60 (Connection, MyThread):
         else:
             side = 0
         mode = self.mode & 3
-        ch = self.consoleToAscii[ch]
         if mode != self.DOT:
-            if ch != ' ':
+            if ch not in self.spaces:
                 try:
-                    line = self.pending[side][self.y]
-                    self.pending[side][self.y] = line[:self.x] + ch + line[self.x + 1:]
+                    self.pending[side][self.y][self.x] = ch
                 except IndexError:
                     pass
             x = self.x + 1
@@ -709,8 +1266,10 @@ class Dd60 (Connection, MyThread):
             elif action == self.SETMODE:
                 self.mode = ch & 7
             elif action == self.ENDBLOCK:
-                self.screen = self.pending
-                self.pending = self.erase ()
+                # Swap the two buffers
+                self.screen, self.pending = self.pending, self.screen
+                # then erase the current one
+                self.erase (self.pending)
                 self.seq += 1
         else:
             self.process_char (ch)
@@ -725,54 +1284,177 @@ class Dd60 (Connection, MyThread):
         seq = self.seq
         while self.seq < seq + 2:
             time.sleep (self.interval)
+        #print (self.screentext(0,1))
+        #print (self.seq)
+
+    o26 = "O26.".encode ("dd60")
+    dis = "DIS ".encode ("dd60")
+    cons = "NEXT    Z    X".encode ("dd60")
+    
+    def todsd (self):
+        """Force us into DSD if we're in some other recognizable
+        utilities.
+        """
+        while self.screen[0][2][:4] == self.o26:
+            self.sendstr ("[xr.\n")
+            self.wait_update ()
+        while self.screen[0][2][:4] == self.dis:
+            self.sendstr ("[drop.\n")
+            self.wait_update ()
+        while self.cons in self.screen[1][24]:
+            self.sendstr ("[]x")
+            self.wait_update ()
             
+TERM   = Pterm.SHIFT + Pterm.ANS
+conskeymap1 = (
+    # Mapping of (unshifted) PLATO keyboard codes to CONSOLE input
+    # This part is for codes 000 to 035
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "[m",    # Multiply
+    "[d",    # Divide
+    "[[",    # Tab
+    "[a",    # Assign
+    "+",
+    "-",
+    "[7",    # Super
+    "[8",    # Sub
+    "][9",   # Ans ("Shift-Term")
+    "\010",  # Erase
+    "[+",    # Micro
+    "[h",    # Help
+    "\n",    # Next
+    "[*",    # Edit
+    "[b",    # Back
+    "[(",    # Data
+    "[)",    # Stop
+    "[=",    # Copy
+    "[-",    # Box
+    "[/"     # Lab
+    )
+conskeymap2 = (
+    # Mapping of (unshifted) PLATO keyboard codes to CONSOLE input
+    # This part is for codes 100 to 137
+    " ",
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "j",
+    "k",
+    "l",
+    "m",
+    "n",
+    "o",
+    "p",
+    "q",
+    "r",
+    "s",
+    "t",
+    "u",
+    "v",
+    "w",
+    "x",
+    "y",
+    "z",
+    "=",
+    "[,",    # semicolon
+    "/",
+    ".",
+    ","
+    )
+
+# Key code for shifted characters in CONSOLE.
+shiftcode = "]".encode ("dd60kb")
+
+# conskeymap is a dictionary that maps from PLATO key codes to the
+# corresponding CONSOLE key sequence
+conskeymap = dict ()
+for p, k in enumerate (conskeymap1):
+    k = k.encode ("dd60kb")
+    conskeymap[p] = k
+    conskeymap[p ^ 0o040] = shiftcode + k
+for p, k in enumerate (conskeymap2):
+    k = k.encode ("dd60kb")
+    conskeymap[p + 0o100] = k
+    conskeymap[p + 0o140] = shiftcode + k
+conskeymap[TERM] = "[9".encode ("dd60kb")
+
+# Now build an encoding dictionary for encoding strings into
+# CONSOLE key sequences.  This is done by starting from the
+# platokb_encoding_table and replacing each value (the PLATO key
+# code or sequence of codes) by the corresponding CONSOLE sequence.
+consolekb_encoding_table = dict ()
+for k, v in platokb_encoding_table.items ():
+    v2 = [ ]
+    for i in range (0, len (v), 2):
+        # The value (encoded string) in the platokb encoding table
+        # is in framed form, ready for transmission.  We need to
+        # convert each framed key code back to the actual code that
+        # represents.
+        pk = unframe (v[i:i + 2])
+        v2.append (conskeymap[pk])
+    consolekb_encoding_table[k] = b''.join (v2)
+
+class ConsoleKbCodec (codecs.Codec):
+
+    def encode (self, input, errors = 'strict'):
+        # Separate out the diacritical marks
+        ninput = unicodedata.normalize ("NFD", input)
+        result = [ ]
+        for c in ninput:
+            try:
+                r = consolekb_encoding_table[c]
+                result.append (r)
+            except KeyError:
+                pass
+        return b''.join (result), len (input)
+    
+class ConsoleKbIncrementalEncoder (codecs.IncrementalEncoder):
+    def encode (self, input, final = False):
+        return ConsoleKbCodec.encode (self, input, self.errors)[0]
+
+class ConsoleKbStreamWriter (ConsoleKbCodec ,codecs.StreamWriter):
+    pass
+
+def console_getregentry (name):
+    if name == "consolekb":
+        return codecs.CodecInfo (
+            name = 'consolekb',
+            encode = ConsoleKbCodec ().encode,
+            decode = Dd60Codec ().decode,
+            incrementalencoder = ConsoleKbIncrementalEncoder,
+            incrementaldecoder = Dd60IncrementalDecoder,
+            streamreader = Dd60StreamReader,
+            streamwriter = ConsoleKbStreamWriter,
+            )
+
+codecs.register (console_getregentry)
+    
 class Console (Dd60, Pterm):
     """Subclass of Dd60 to add PLATO terminal functionality via
     the "console" program.
     """
-    TERM   = Pterm.SHIFT + Pterm.ANS
-    MULT   = 0o12
-    DIVIDE = 0o13
-    SPACE  = 0o100
-    
-    specials = { Pterm.NEXT   : "\n",
-                 Pterm.ANS    : "[n",
-                 Pterm.ASSIGN : "[a",
-                 Pterm.BACK   : "[b",
-                 Pterm.COPY   : "[=",
-                 Pterm.DATA   : "[(",
-                       DIVIDE : "[d",
-                 Pterm.EDIT   : "[n",
-                 Pterm.ERASE  : "\010",
-                 Pterm.HELP   : "[h",
-                 Pterm.LAB    : "[/",
-                 Pterm.MICRO  : "[+",
-                       MULT   : "[m",
-                       SPACE  : " ",
-                 Pterm.SQUARE : "[-",
-                 Pterm.STOP   : "[)",
-                 Pterm.SUB    : "[8",
-                 Pterm.SUPER  : "[7",
-                 Pterm.TAB    : "[[",
-                       TERM   : "[9}" }
 
-    # Shorthands for some base class methods
-    _sendkey = Dd60.sendkey
-
-    def dd60_sendstr (self, text):
-        """Send a text string, converting from ASCII as we go.
-        There is no delay in here, so don't send too much.
-        """
-        for c in text:
-            key = self.asciiToConsole[ord (c)]
-            if key:
-                self._sendkey (key)
-            
     def sendstr (self, s):
         if self.plato:
-            Pterm.sendstr (self, s)
+            s = s.encode ("consolekb", "ignore")
+            self.sendall (s)
         else:
-            self.dd60_sendstr (s)
+            Dd60.sendstr (self, s)
         
     def __init__ (self, port = 5007, interval = 3):
         self.plato = False
@@ -785,20 +1467,13 @@ class Console (Dd60, Pterm):
             Dd60.sendkey (self, key)
             return
         try:
-            fkey = self.specials[key]
-            self.dd60_sendstr (fkey)
+            self.sendall (conskeymap[key])
         except KeyError:
-            if key & self.SHIFT:
-                self.dd60_sendstr ("[")
-                key &= ~self.SHIFT
-            if key & 0o100:
-                # Letters
-                key &= 0o77
-            elif key < 0o12:
-                # Digits
-                key += 0o33
-            Dd60.sendkey (self, key)
+            pass
 
+    author = "AUTHOR MODE".encode ("dd60")
+    lesdes = "LESSON DESIRED".encode ("dd60")
+    
     def login (self, *args):
         """Override the pterm login.  We ignore arguments,
         just go to the author mode page.
@@ -806,29 +1481,28 @@ class Console (Dd60, Pterm):
         self.plato = False
         self.wait_update ()
         
-        # First check if we're in DIS or O26.
-        while self.screen[0][1][:4] == "O26.":
-            self.sendstr ("[xr.\n")
-            self.wait_update ()
-        while self.screen[0][1][:4] == "DIS ":
-            self.sendstr ("[drop.\n")
-            self.wait_update ()
-        if "NEXT    Z    X" not in self.screentext (1):
+        if Dd60.cons not in self.screen[1][24]:
+            # We're not already in console.  First get us
+            # to DSD.
+            self.todsd ()
             self.sendstr ("[xconsole.\n")
             self.wait_update ()
-
+        if Dd60.cons not in self.screen[1][24]:
+            print ("Failed to start Console")
+            return
+        
         # The console (station 0-0) starts in whatever
         # state things were left in.  So we need to get it
         # to "author mode" which may require a trip via
         # "press next to begin" and/or "lesson desired"
         while True:
-            left = self.screentext (0)
-            print(left)
-            print(self.seq)
-            if "AUTHOR MODE" in left:
+            left = self.screen[0]
+            #print ("author:", self.author in left[12] or self.author in left[13])
+            #print ("lesson desired:", self.lesdes in left[14])
+            if self.author in left[12] or \
+                   self.author in left[13]:
                 break
-            elif "PRESS  NEXT  TO BEGIN" in left \
-                 or "LESSON DESIRED" in left:
+            elif self.lesdes in left[14]:
                 # back
                 self.sendstr ("[b")
             else:
@@ -841,8 +1515,8 @@ class Console (Dd60, Pterm):
         self.plato = False
         self.wait_update ()
         while True:
-            left = self.screentext (0)
-            if "LESSON DESIRED" in left:
+            left = self.screen[0]
+            if self.lesdes in left[14]:
                 break
             else:
                 # shift-stop
