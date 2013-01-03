@@ -465,7 +465,7 @@ def main ():
             pass
     if cmd:
         log ("Compressing tarball with %s" % cmd)
-        p = subprocess.Popen (("nice", cmd, "-v", ttarball))
+        p = subprocess.Popen (("nice", cmd, "-v9", ttarball))
         ret = p.wait ()
         if ret:
             log ("Compression failed with exit status %d" % ret)
