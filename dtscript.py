@@ -161,22 +161,24 @@ class Oper (Connection, MyThread):
                 if t == 2:
                     # OpText -- fixed text (left screen material)
                     x, y, size, bold = struct.unpack ("<HHBB", v[:6])
-                    i = (0o760 - y) / 16
+                    i = (0o760 - y) // 16
+                    v = v[6:].decode ("ascii", "ignore")
                     try:
-                        self.fixedtext[i] = v[6:]
+                        self.fixedtext[i] = v
                     except IndexError:
-                        print ("bad index", i, "for", x, y, size, bold, v[6:])
+                        print ("bad index", i, "for", x, y, size, bold, v)
                 elif t == 3 or t == 5:
                     # OpSyntax or OpInitialized, ignore
                     pass
                 elif t == 1:
                     # OpReply
-                    self.response = v
+                    self.response = v.decode ("ascii", "ignore")
                     self.responses += 1
                 elif t == 4:
                     # OpStatus
                     i = v[0]
                     v = v[1:]
+                    v = v.decode ("ascii", "ignore")
                     self.status[i] = v
                     if i == 0:
                         # System status line, update some status
@@ -215,7 +217,7 @@ class Oper (Connection, MyThread):
         if one was received within 3 seconds.
         """
         seq = self.responses
-        self.sendall (struct.pack ("<BB", 0, len (text)) + text)
+        self.sendall (struct.pack ("<BB", 0, len (text)) + text.encode ("ascii", "ignore"))
         for i in range (20):
             if self.responses != seq:
                 return self.response
@@ -934,6 +936,11 @@ class Pterm (Connection, MyThread):
                 # mode erase, write a space
                 self.arrow = False
                 c = 0o55
+            # Note that there are two encodings for space (055 and 155,
+            # since space is in both M0 and M1 ROM pages).  But the way
+            # the flow above works, we only ever use 055.  That makes
+            # it possible to do reliable matches against the PLATO-coded
+            # data in the lines[] array.
             self.lines[cy][cx] = c
             self.x = (self.x + 8) & 0o777
 
