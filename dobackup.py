@@ -16,17 +16,13 @@ data server and to akdesign.dyndns.org (Paul Koning's system).
 # a separate file.  The latter is preferred for security, it allows
 # the password string to be more tightly protected.
 
-BACKUPUSER = "backups"
-BACKUPGROUP = "o"
-BACKUPPWD = None
-
 # More parameters
-SHUTDOWNDELAY = 15        # minutes
+SHUTDOWNDELAY = 15        # minutes from first warning to shutdown
+FALLBACKDELAY = 60        # minutes to be down for PDT to PST time zone change
 BACKUPITEMS = ("pack", "sys/871")
 CYBER1ROOT = "/home/cyber1/D"
 BACKUPDEST = "backups"    # relative to CYBER1ROOT
 TMPDEST = "/tmp"          # place where tarball goes until finished
-PWDFILE = "backuppwd.txt"
 
 # Two hostnames to send the backup to, None to skip that one.
 BACKUPDEST1 = None
@@ -38,24 +34,21 @@ SCPARGS = ( "scp", "-l", "400", "-q", "-i", "cyber1backup" )
 
 import sys
 import os
+import re
 import dtscript
 import time
 import subprocess
 
-if BACKUPPWD is None:
-    f = file (PWDFILE, "r")
-    BACKUPPWD = f.readline ().strip ()
-    f.close ()
-
 def log (str):
     print ("%s: %s" % (time.strftime ("%T"), str))
-    
+
+PIECE = 4
 def sendstr (term, str):
     """Send a string in pieces with some delays to make it reliable.
     """
     while str:
-        term.sendstr (str[:6])
-        str = str[6:]
+        term.sendstr (str[:PIECE])
+        str = str[PIECE:]
         time.sleep (0.5)
         
 def announce (cons, str):
@@ -79,13 +72,13 @@ def announce (cons, str):
     time.sleep (5)
     cons.sendkey (cons.BACK)
 
-system = "S Y S T E M".encode ("dd60")
 mastor = "M A S T O R".encode ("dd60")
-nojsn = "JSN NOT FOUND".encode ("dd60")
-chk = "CHECKPOINT COMPLETE".encode ("dd60")
 
-def doshutdown (delay):
-    """Shut down PLATO in "delay" minutes.
+def startui ():
+    """Start the user interfaces and get them ready for the real work.
+
+    This returns the console and operator interface objects.  The console
+    is at this point logged in and sitting at the Author Mode page.
     """
     # Before we do the actual work, connect to console and
     # operator interface and check that things look ok
@@ -105,6 +98,22 @@ def doshutdown (delay):
 
     # Start the CONSOLE utility and get us into sysopts (1)
     cons.login ()
+    return cons, oper
+
+system = "S Y S T E M".encode ("dd60")
+ipedit1 = "INSTALLATION PARAMETERS".encode ("dd60")
+ipedit2 = "ENTER THE TIME ZONE".encode ("dd60")
+nojsn = "JSN NOT FOUND".encode ("dd60")
+chk = "CHECKPOINT COMPLETE".encode ("dd60")
+
+def doshutdown (cons, oper, delay, tzdelay, newtz):
+    """Shut down PLATO in "delay" minutes.  "cons" and "oper" are the
+    user interface objects.
+
+    "tzdelay" says whether a timezone change is needed.  Non-zero means
+    yes.  2 means yes and we have to be down for an hour.  "newtz" is
+    the new timezone string to be set.
+    """
     cons.sendstr ("1")
     cons.wait_update ()
     for i in range (10):
@@ -121,7 +130,11 @@ def doshutdown (delay):
     # First step: put up a 1st line message and broadcast that.
     # Repeat every 5 minutes until we've done the delay
     while delay:
-        announce (cons, "Interruption for backups in %d minutes..." % delay)
+        if tzdelay == 2:
+            msg = "One hour shutdown for timezone change in %d minutes" % delay
+        else:
+            msg = "Interruption for backups in %d minutes..." % delay
+        announce (cons, msg)
         if delay < 5:
             time.sleep (delay * 60)
             break
@@ -129,7 +142,11 @@ def doshutdown (delay):
         time.sleep (300)
 
     # Second step: announce interruption for backup now
-    announce (cons, "Interruption for backups...")
+    if tzdelay == 2:
+        msg = "One hour shutdown for timezone change...              "
+    else:
+        msg = "Interruption for backups...              "
+    announce (cons, msg)
 
     # Third step: full system backout
     log ("Starting backout")
@@ -148,6 +165,44 @@ def doshutdown (delay):
             oper.stop ()
             sys.exit (1)
 
+    # If we need a timezone change, set the new timezone now so that
+    # upon restart it will be what we want it to be.
+    if tzdelay:
+        # Need to change timezone.  First go back to Author Mode
+        cons.login ()
+        cons.sendstr ("ipedit")
+        cons.sendkey (cons.DATA)
+        cons.wait_update ()
+        ok = False
+        for i in range (10):
+            if ipedit1 in cons.screen[0][4]:
+                ok = True
+                break
+            if i < 9:
+                time.sleep (2)
+            else:
+                log ("Failed to start ipedit")
+        if ok:
+            cons.sendstr ("c")
+            cons.wait_update ()
+            ok = False
+            for i in range (10):
+                if ipedit2 in cons.screen[0][24]:
+                    ok = True
+                    break
+                if i < 9:
+                    time.sleep (2)
+                else:
+                    log ("Failed to reach timezone page in ipedit")
+        if ok:
+            cons.sendstr (newtz)
+            cons.sendkey (cons.NEXT)
+            log ("Timezone updated to %s" % newtz)
+            cons.wait_update ()
+            cons.sendkey (cons.BACK)
+            cons.wait_update ()
+            cons.sendkey (cons.BACK)
+            
     # Shut down Mastor
     cons.logout ()
     log ("Stopping mastor")
@@ -169,12 +224,13 @@ def doshutdown (delay):
     cons.sendstr ("[ab\n")
     cons.wait_update ()
     cons.sendstr ("[b,a\n")
-    cons,wait_update ()
+    cons.wait_update ()
     for i in range (12, 47):
         if cons.screen[1][i][5] == 1:
             # First char of JSN is A, typical for user job
-            log ("dropping %s" % cons.screen[1][i][5:9])
-            cons.sendstr ("[dro%s.\n" % cons.screen[1][i][5:9].decode ("dd60"))
+            jsn = cons.screen[1][i][5:9].decode ("dd60", "ignore")
+            log ("Dropping %s" % jsn)
+            cons.sendstr ("[dro%s.\n" % jsn)
             cons.wait_update ()
 
     # issue Checkpoint System
@@ -229,11 +285,13 @@ class Blackbox (subprocess.Popen):
     def __init__ (self, msg):
         log ("Starting blackbox: %s" % msg)
         subprocess.Popen.__init__ (self, ("./blackbox", msg),
-                                   stdin = subprocess.PIPE)
+                                   stdin = subprocess.PIPE,
+                                   universal_newlines = True)
 
     def newmsg (self, msg):
         log ("Setting blackbox message: %s" % msg)
-        self.stdin.write ("%s\n" % msg)
+        print (msg, file = self.stdin)
+        self.stdin.flush ()
         
     def stop (self):
         self.stdin.close ()
@@ -278,11 +336,49 @@ def docopy (tarball):
         log ("Copying %s to %s" % (tarball, dest))
         scp = subprocess.Popen (SCPARGS + (tarball, "%s:" % dest))
         scp.wait ()
-        
-# ***TEST
-CYBER1ROOT="/Users/pkoning/Documents/svn/dtcyber"
-BACKUPITEMS=("pack",)
-SHUTDOWNDELAY = 1        # minutes
+
+_time_re = re.compile (r"\d\d?\*\d\d\*\d\d [AP]M ([A-Z][A-Z][A-Z])")
+def checktz (cons, newtz):
+    """Check if the timezone needs to be changed.  Arguments are the
+    console object and the current timezone string (from the host OS).
+    The console should be logged in (at Author Mode).
+
+    Returns 0 if no change, 1 if a change is needed but no long shutdown,
+    and 2 if a change is needed with a 1 hour shutdown.  The short vs.
+    long shutdown is because PLATO only deals with local time and many
+    lessons don't handle time going backwards.  So the change in the fall
+    (from daylight to standard time) requires a one hour shutdown to
+    avoid backing up time by an hour.
+    """
+    for i in range (10):
+        cons.sendkey (cons.SHIFT + cons.ERASE)
+        cons.sendstr ("\nT")
+        cons.wait_update ()
+        m = _time_re.search (cons.screentext (0))
+        if m:
+            break
+        if i < 9:
+            time.sleep (2)
+        else:
+            log ("Time string not found in checktz, screen is:")
+            log (cons.screentext (0))
+            return 0
+    curtz = m.group (1)
+    if curtz == newtz:
+        log ("Time zone is up to date")
+        return 0
+    if newtz[1] == 'S':
+        # Changing to standard time, long delay
+        log ("Changing from %s to %s, one hour delay" % (curtz, newtz))
+        return 2
+    log ("Changing from %s to %s, no delay needed" % (curtz, newtz))
+    return 1
+
+## ***TEST
+#CYBER1ROOT="/Users/pkoning/Documents/svn/dtcyber"
+#BACKUPITEMS=("pack/xfer",)
+#SHUTDOWNDELAY = 1        # minutes
+#FALLBACKDELAY = 5        # minutes
 
 def main ():
     os.chdir (CYBER1ROOT)
@@ -292,19 +388,44 @@ def main ():
     for item in BACKUPITEMS:
         backupsize += getsize (item)
     log ("Uncompressed backup size is about %d MB" % (backupsize >> 10))
-    doshutdown (SHUTDOWNDELAY)
-    blackbox = Blackbox ("Cyber1 full backup in progress...")
+    cons, oper = startui ()
+    newtz = time.strftime ("%Z")
+    tzdelay = checktz (cons, newtz)
+    doshutdown (cons, oper, SHUTDOWNDELAY, tzdelay, newtz)
+    if tzdelay == 2:
+        msg = time.strftime ("Cyber1 down for timezone change until around %I:%M %p",
+                             time.localtime (time.time () + 3700))
+    else:
+        msg = "Cyber1 full backup in progress..."
+    blackbox = Blackbox (msg)
     backup = Backup (ttarball, BACKUPITEMS)
     elapsed = 0
     while True:
         time.sleep (30)
-        progress = backup.progress ()
-        if progress == -1:
-            log ("Backup tarball has been written, restarting PLATO")
-            break
+        if backup:
+            progress = backup.progress ()
+            if progress == -1:
+                if tzdelay == 2 and elapsed < FALLBACKDELAY:
+                    log ("Backup is finished, waiting for the rest of the hour")
+                    backup = None
+                    progress = backupsize
+                else:
+                    log ("Backup tarball has been written, restarting PLATO")
+                    break
         elapsed += 0.5
         total = elapsed * backupsize / progress
         left = int (total - elapsed) + 1
+        if tzdelay == 2:
+            # Waiting for an hour.  Check if it's been that long and
+            # the backup indeed finished.
+            if elapsed < FALLBACKDELAY:
+                # Not long enough yet, keep waiting
+                continue
+            if not backup:
+                # It's time, and the backup is finished already
+                break
+        # Waiting for backup to finish (either not a long shutdown, or
+        # backup actually took longer than an hour).  Set the message.
         if left <= 1:
             blackbox.newmsg ("Cyber1 full backup nearly done...")
         else:
@@ -315,11 +436,44 @@ def main ():
     dostartup ()
 
     # PLATO is back up, now we can compress and copy the backup
-    # tarball in the background.
-    log ("Compressing tarball")
-    ret = os.system ("nice xz -v %s" % ttarball)
-    ttarball += ".xz"
-    tarball = os.path.join (BACKUPDEST, tarbase) + ".xz"
+    # tarball in the background.  First see what compression tool we have
+    z = open (os.devnull)
+    cmd = None
+    ext = ""
+    try:
+        p = subprocess.Popen (("xz", "-h"), stdout = z, stderr = z)
+        if p.wait () == 0:
+            cmd = "xz"
+            ext = ".xz"
+    except OSError:
+        pass
+    if not cmd:
+        try:
+            p = subprocess.Popen (("bzip2", "-h"), stdout = z, stderr = z)
+            if p.wait () == 0:
+                cmd = "bzip2"
+                ext = ".bz2"
+        except OSError:
+            pass
+    if not cmd:
+        try:
+            p = subprocess.Popen (("gzip", "-h"), stdout = z, stderr = z)
+            if p.wait () == 0:
+                cmd = "gzip"
+                ext = ".gz"
+        except OSError:
+            pass
+    if cmd:
+        log ("Compressing tarball with %s" % cmd)
+        p = subprocess.Popen (("nice", cmd, "-v", ttarball))
+        ret = p.wait ()
+        if ret:
+            log ("Compression failed with exit status %d" % ret)
+        else:
+            ttarball += ext
+    else:
+        log ("Skipping tarball compression, no useable compressor found")
+    tarball = os.path.join (BACKUPDEST, tarbase) + ext
 
     # The tarball is finished, so move it to its final destination,
     # then copy it for the "push" destinations
