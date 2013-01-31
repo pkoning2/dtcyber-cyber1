@@ -439,10 +439,15 @@ def main ():
     cmd = None
     ext = ""
     try:
-        if subprocess.call (("xz", "-h"), stdout = z, stderr = z) == 0:
-            cmd = "xz"
-            ext = ".xz"
-    except OSError:
+        # We have to gather the output from xz because (on Linux, at
+        # least) it objects if stdout is /dev/null.  Bug...
+        # Instead of returning a status as subprocess.call does, check_output
+        # raises an exception if the exit status is nonzero.  Handle that
+        # by a different "except" clause below.  
+        t = subprocess.check_output (("xz", "-h"))
+        cmd = "xz"
+        ext = ".xz"
+    except (OSError, subprocess.CalledProcessError):
         pass
     if not cmd:
         try:
