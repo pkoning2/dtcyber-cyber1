@@ -268,7 +268,7 @@ def dostartup ():
     """Restart PLATO.
     """
     log ("Starting DtCyber and PLATO")
-    subprocess.Popen (("./dtcyber-remote.sh",))
+    subprocess.call (("./dtcyber-remote.sh",))
     time.sleep (5)
     pterm = dtscript.Pterm ()
     for i in range (50):
@@ -325,8 +325,7 @@ class Backup (subprocess.Popen):
         return os.stat (self.tarball).st_size >> 10
 
 def getsize (path):
-    du = subprocess.Popen (("du", "-ks", path), stdout = subprocess.PIPE)
-    result = du.stdout.read ().split ()
+    result = subprocess.check_output (("du", "-ks", path))
     return int (result[0])
 
 def docopy (tarball):
@@ -334,8 +333,7 @@ def docopy (tarball):
         if dest is None:
             continue
         log ("Copying %s to %s" % (tarball, dest))
-        scp = subprocess.Popen (SCPARGS + (tarball, "%s:" % dest))
-        scp.wait ()
+        subprocess.call (SCPARGS + (tarball, "%s:" % dest))
 
 _time_re = re.compile (r"\d\d?\*\d\d\*\d\d [AP]M ([A-Z][A-Z][A-Z])")
 def checktz (cons, newtz):
@@ -441,32 +439,28 @@ def main ():
     cmd = None
     ext = ""
     try:
-        p = subprocess.Popen (("xz", "-h"), stdout = z, stderr = z)
-        if p.wait () == 0:
+        if subprocess.call (("xz", "-h"), stdout = z, stderr = z) == 0:
             cmd = "xz"
             ext = ".xz"
     except OSError:
         pass
     if not cmd:
         try:
-            p = subprocess.Popen (("bzip2", "-h"), stdout = z, stderr = z)
-            if p.wait () == 0:
+            if subprocess.call (("bzip2", "-h"), stdout = z, stderr = z) == 0:
                 cmd = "bzip2"
                 ext = ".bz2"
         except OSError:
             pass
     if not cmd:
         try:
-            p = subprocess.Popen (("gzip", "-h"), stdout = z, stderr = z)
-            if p.wait () == 0:
+            if subprocess.call (("gzip", "-h"), stdout = z, stderr = z) == 0:
                 cmd = "gzip"
                 ext = ".gz"
         except OSError:
             pass
     if cmd:
         log ("Compressing tarball with %s" % cmd)
-        p = subprocess.Popen (("nice", cmd, "-v9", ttarball))
-        ret = p.wait ()
+        ret = subprocess.call (("nice", cmd, "-v9", ttarball))
         if ret:
             log ("Compression failed with exit status %d" % ret)
         else:
