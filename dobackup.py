@@ -38,6 +38,7 @@ import re
 import dtscript
 import time
 import subprocess
+import shutil
 
 def log (str):
     print ("%s: %s" % (time.strftime ("%T"), str))
@@ -475,8 +476,10 @@ def main ():
     tarball = os.path.join (BACKUPDEST, tarbase) + ext
 
     # The tarball is finished, so move it to its final destination,
-    # then copy it for the "push" destinations
-    os.rename (ttarball, tarball)
+    # then copy it for the "push" destinations.  Note we use shutil
+    # rather than simply os.rename, because this may be a cross-filesystem
+    # rename and os.rename doesn't do that.
+    shutil.move (ttarball, tarball)
     docopy (tarball)
     
     # All done
