@@ -65,7 +65,7 @@
     do  {            \
         struct timeval tv;                          \
         gettimeofday (&tv, NULL);                   \
-        val = tv.tv_sec * 1000000 + tv.tv_usec;     \
+        val = (u64) tv.tv_sec * 1000000ULL + (u64) tv.tv_usec;   \
     } while (0)
 #elif defined(_WIN32)
 #define rdtscll(val) \
