@@ -31,6 +31,8 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #endif
 #include <errno.h>
 
@@ -521,6 +523,7 @@ void niuDoAlert (int code)
 
     if (fork () == 0)
         {
+		setsid ();
         execlp (OPERBOX_EXEC, OPERBOX_EXEC, msg, OPERBOX_MSGFILE, NULL);
         
         /*
@@ -1266,9 +1269,15 @@ static void niuThread(void *param)
 static void *niuThread(void *param)
 #endif
     {
+    int status;
+    
     while (emulationActive)
         {
         niuCheckAlert ();
+        /* Clean up any child processes that have exited.  */
+        if (waitpid (-1, &status, WNOHANG) > 0)
+            printf ("child exited\n");
+        
         sleep (ALERT_TIMEOUT);
         }
 
