@@ -269,7 +269,7 @@ def dostartup ():
     """Restart PLATO.
     """
     log ("Starting DtCyber and PLATO")
-    subprocess.call (("./dtcyber-remote.sh",))
+    subprocess.call (("./dtcyber-remote.sh",), stderr = subprocess.STDOUT)
     time.sleep (5)
     pterm = dtscript.Pterm ()
     for i in range (50):
@@ -287,6 +287,7 @@ class Blackbox (subprocess.Popen):
         log ("Starting blackbox: %s" % msg)
         subprocess.Popen.__init__ (self, ("./blackbox", msg),
                                    stdin = subprocess.PIPE,
+                                   stderr = subprocess.STDOUT,
                                    universal_newlines = True)
 
     def newmsg (self, msg):
@@ -314,7 +315,7 @@ class Backup (subprocess.Popen):
         self.tarball = tarball
         args = ("tar", "cf", tarball) + items
         log ("Starting backup of %s to %s" % (str (items), tarball))
-        subprocess.Popen.__init__ (self, args)
+        subprocess.Popen.__init__ (self, args, stderr = subprocess.STDOUT)
 
     def progress (self):
         """Returns progress, in the form of the current
@@ -334,7 +335,8 @@ def docopy (tarball):
         if dest is None:
             continue
         log ("Copying %s to %s" % (tarball, dest))
-        subprocess.call (SCPARGS + (tarball, "%s:" % dest))
+        subprocess.call (SCPARGS + (tarball, "%s:" % dest),
+                         stderr = subprocess.STDOUT)
 
 _time_re = re.compile (r"\d\d?\*\d\d\*\d\d [AP]M ([A-Z][A-Z][A-Z])")
 def checktz (cons, newtz):
@@ -466,7 +468,8 @@ def main ():
             pass
     if cmd:
         log ("Compressing tarball with %s" % cmd)
-        ret = subprocess.call (("nice", cmd, "-v9", ttarball))
+        ret = subprocess.call (("nice", cmd, "-v9", ttarball),
+                               stderr = subprocess.STDOUT)
         if ret:
             log ("Compression failed with exit status %d" % ret)
         else:
