@@ -119,6 +119,10 @@
 #define PREF_SHOWHOST    "ShowHost"
 #define PREF_SHOWSTATION "ShowStation"
 //tab3
+// Note: while the code still refers to "1200 baud" in its variable
+// names (no good reason to change those) the actual emulated speed
+// is 60 words per second, which is 1260 baud in the classic CERL NIU
+// emulation (since it had 21 bits per word).
 #define PREF_1200BAUD    "classicSpeed"
 #define PREF_GSW         "gswenable"
 #define PREF_ARROWS      "numpadArrows"
@@ -4614,7 +4618,7 @@ void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
     m_foregroundBrush.SetColour (newfg);
     m_foregroundPen.SetColour (newfg);
 
-	for (int i = 0; i<5; i++)
+	for (int i = 0; i < 5; i++)
 		m_dirty[i] = true;
 }
 
@@ -7731,7 +7735,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 	page3 = new wxBoxSizer( wxVERTICAL );
 	lblExplain3 = new wxStaticText( tab3, wxID_ANY, _("Settings on this page let you fine-tune your PLATO experience."), wxDefaultPosition, wxDefaultSize, 0 );
 	page3->Add( lblExplain3, 0, wxALL, 5 );
-	chkSimulate1200Baud = new wxCheckBox( tab3, wxID_ANY, _("Simulate 1200 baud"), wxDefaultPosition, wxDefaultSize, 0 );
+	chkSimulate1200Baud = new wxCheckBox( tab3, wxID_ANY, _("Simulate 1260 baud"), wxDefaultPosition, wxDefaultSize, 0 );
 	page3->Add( chkSimulate1200Baud, 0, wxALL, 5 );
 	chkEnableGSW = new wxCheckBox( tab3, wxID_ANY, _("Enable GSW (not in ASCII)"), wxDefaultPosition, wxDefaultSize, 0 );
 	chkEnableGSW->SetValue(true);
@@ -9361,7 +9365,7 @@ int PtermConnection::NextWord (void)
         }
     }
             
-    // See if emulating 1200 baud, or the -delay- NOP code
+    // See if emulating 1260 baud, or the -delay- NOP code
     if (ptermApp->m_classicSpeed ||
         word == 1)
     {
@@ -10002,8 +10006,16 @@ void PtermCanvas::OnChar(wxKeyEvent& event)
         m_owner->m_conn->Ascii () && m_owner->m_dumbTty)
     {
         key = event.m_keyCode;
+        if (key == 023 || key == WXK_PAUSE || key == WXK_F10)
+        {
+            /* Ctrl-S or F10.  Presumably shift-stop, so turn it into NEXT.  */
+            key = 015;
+        }
+        m_owner->tracex ("dumb tty key to plato %03o", key);
 #ifdef DEBUGLOG
-        wxLogMessage (wxT("dumb tty key %d\n"), key);
+        wxLogMessage (wxT("dumb tty key %03o\n"), key);
+#elif DEBUGKEY
+        printf ("dumb tty key to plato %03o\n", key);
 #endif
         m_owner->m_conn->SendData (&key, 1);
         return;
