@@ -9,6 +9,7 @@ to allow an ASCII mode PPT to be a DtCyber terminal.
 """
 
 import sys
+import os
 import socket
 import threading
 import serial
@@ -16,9 +17,13 @@ import random
 import time
 import logging
 import logging.handlers
-#from daemon import DaemonContext
+from daemon import DaemonContext
+import argparse
 
-DEFTERM = "/dev/tty.KeySerial1"
+if sys.platform == "darwin":
+    DEFTERM = "/dev/tty.KeySerial1"
+else:
+    DEFTERM = "/dev/ttyUSB0"
 CYBER1 = "cyberserv.org"
 NEXTPORT = 8050
 STOP1PORT = 8005
@@ -29,9 +34,6 @@ STOP1 = '\x11' #'\x3a'    # (in no-flow-control mode)
 TIMEOUT = 10 * 60 # Inactivity timeout in seconds
 TRACE = 2
 DEFPIDFILE = "/var/run/ppt.pid"
-LOGFILE = "/var/log/ppt.log"
-LOGKEEP = 5
-LOG_LEVEL = "DEBUG"
 
 # The control sequences are:
 # Exit PLATO mode, Enter PLATO mode, full screen erase, mode rewrite,
@@ -44,6 +46,49 @@ LOG_LEVEL = "DEBUG"
 WELCOME_MSG = "\033\002\033\002\033\014\033\024\037\033\102" \
               "\033\062\044{:c}\044{:c}Press  NEXT  to begin"
 
+pptparser = argparse.ArgumentParser ()
+pptparser.add_argument ("term", nargs = '?', default = DEFTERM,
+                        help = "Terminal port device name (default: {})".format (DEFTERM))
+pptparser.add_argument ("host", nargs = '?', default = CYBER1,
+                        help = "Destination host (default: {})".format (CYBER1))
+pptparser.add_argument ("-d", "--daemon", action = "store_true",
+                        default = False,
+                        help = "Run as daemon.  Requires a log file name to be specified.")
+pptparser.add_argument ("--pid-file", metavar = "FN",
+                        default = DEFPIDFILE,
+                        help = "PID file, if daemon (default: {})".format (DEFPIDFILE))
+pptparser.add_argument ("-L", "--log-file", metavar = "FN",
+                        help = "Log file (default: log to stderr).  Required if daemon.")
+pptparser.add_argument ("-e", "--log-level", default = "INFO",
+                        metavar = "L",
+                        choices = ("TRACE", "DEBUG", "INFO",
+                                   "WARNING", "ERROR"),
+                        help = "Log level (default: INFO)")
+pptparser.add_argument ("-k", "--keep", type = int, default = 0, metavar = "N",
+                        help = """Number of log files to keep with nightly
+rotation.  Requires a log file name to be specified.
+Default = no nightly rotation.""")
+
+class pidfile:
+    def __init__ (self, fn):
+        self.fn = fn
+
+    def __enter__ (self):
+        try:
+            f = open (self.fn, "wt")
+        except Exception as exc:
+            logging.exception ("failure creating pidfile %s", self.fn)
+            return
+        f.write ("%d\n" % os.getpid ())
+        f.close ()
+
+    def __exit__ (self, exc_type, exc_value, traceback):
+        try:
+            os.remove (self.fn)
+        except Exception as exc:
+            logging.exception ("error removing pidfile %s", self.fn)
+            return
+        
 # This one is like the one in the "logging" module but with the
 # decimal comma corrected to a decimal point.
 def formatTime(self, record, datefmt=None):
@@ -74,7 +119,7 @@ class StopThread (threading.Thread):
         handling of "stopnow" needs to go into the class that uses this.
         """
         if not self.stopnow and self.isAlive ():
-            logging.trace ("Stopping thread %s", self)
+            logging.trace ("Stopping thread ()".format (self))
             self.stopnow = True
             self.join ()
 
@@ -157,7 +202,7 @@ def talk (host, term, action):
         port = STOP1PORT
     else:
         port = NEXTPORT
-    logging.debug ("Starting connection to %s port %d", host, port)
+    logging.debug ("Starting connection to {} port {}".format (host, port))
     try:
         sock = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
         logging.trace ("connecting")
@@ -192,7 +237,7 @@ def talk (host, term, action):
     outbound.stop ()
         
 def mainloop (term, host):
-    logging.info ("Starting ppt.py for terminal %s to host %s", term, host)
+    logging.info ("Starting ppt.py for terminal {} to host {}".format (term, host))
     term = serial.Serial (port = term, baudrate = SPEED,
                           parity = 'E', bytesize = 7)
     while True:
@@ -200,21 +245,45 @@ def mainloop (term, host):
         talk (host, term, action)
     
 if __name__ == "__main__":
-    host = CYBER1
-    term = DEFTERM
+    p = pptparser.parse_args ()
+    daemoncontext = None
     logging.addLevelName (TRACE, "TRACE")
-    #h = logging.handlers.TimedRotatingFileHandler (filename = LOGFILE,
-    #                                               when = "midnight",
-    #                                               backupCount = LOGKEEP)
-    h = logging.StreamHandler (sys.stderr)
+    if p.log_file:
+        if p.keep:
+            h = logging.handlers.TimedRotatingFileHandler (filename = p.log_file,
+                                                           when = "midnight",
+                                                           backupCount = p.keep)
+        else:
+            h = logging.FileHandler (filename = p.log_file, mode = "w")
+        # If we run as daemon, we want to keep the handler's stream open
+    else:
+        if p.keep:
+            print ("--keep requires --log-file")
+            sys.exit (1)
+        if p.daemon:
+            print ("--daemon requires --log-file")
+            sys.exit (1)
+        h = logging.StreamHandler (sys.stderr)
     rootlogger = logging.getLogger ()
-    fmt = logging.Formatter ("%(asctime)s: %(threadName)s: %(message)s")
+    fmt = logging.Formatter ("%(asctime)s: %(message)s")
     h.setFormatter (fmt)
     rootlogger.addHandler (h)
-    rootlogger.setLevel (LOG_LEVEL)
-    if len (sys.argv) > 1:
-        term = sys.argv[1]
-    if len (sys.argv) > 2:
-        host = sys.argv[2]
-    mainloop (term, host)
-        
+    rootlogger.setLevel (p.log_level)
+    try:
+        if p.daemon:
+            daemoncontext = DaemonContext (files_preserve = [ h.stream ],
+                                           pidfile = pidfile (p.pid_file))
+            logging.info ("Becoming daemon")
+            daemoncontext.open ()
+        mainloop (p.term, p.host)
+    except SystemExit as exc:
+        logging.info ("Exiting: {}".format (exc))
+    except KeyboardInterrupt:
+        logging.info ("Exiting due to Ctrl/C")
+    except Exception:
+        logging.exception ("Exception caught in main")
+    finally:
+        logging.info ("ppt.py shut down")
+        logging.shutdown ()
+        if daemoncontext:
+            daemoncontext.close ()
