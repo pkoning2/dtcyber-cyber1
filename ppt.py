@@ -46,6 +46,9 @@ DEFPIDFILE = "/var/run/ppt.pid"
 WELCOME_MSG = "\033\002\033\002\033\014\033\024\037\033\102" \
               "\033\062\044{:c}\044{:c}Press  NEXT  to begin"
 
+# Connect error message:
+CERR_MSG = "\033\062\042\140\040\130Connect error: {}"
+
 pptparser = argparse.ArgumentParser ()
 pptparser.add_argument ("term", nargs = '?', default = DEFTERM,
                         help = "Terminal port device name (default: {})".format (DEFTERM))
@@ -208,8 +211,10 @@ def talk (host, term, action):
         logging.trace ("connecting")
         sock.connect ((host, port))
         logging.trace ("connected")
-    except socket.error:
-        logging.exception ("Connecting")
+    except socket.error as e:
+        logging.exception ("Error while connecting to %s %d", host, port)
+        term.write (CERR_MSG.format (e))
+        time.sleep (5)    # Allow time for people to see the message
         return
     inbound = fromcyber (sock, term)
     outbound = tocyber (sock, term)
@@ -247,6 +252,7 @@ def mainloop (term, host):
 if __name__ == "__main__":
     p = pptparser.parse_args ()
     daemoncontext = None
+    logging.trace = trace
     logging.addLevelName (TRACE, "TRACE")
     if p.log_file:
         if p.keep:
