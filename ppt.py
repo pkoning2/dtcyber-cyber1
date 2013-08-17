@@ -29,17 +29,21 @@ NEXTPORT = 8050
 STOP1PORT = 8005
 SPEED = 2400
 RECVMAX = 1024
-NEXT = '\x0d' #'\x16'
-STOP1 = '\x11' #'\x3a'    # (in no-flow-control mode)
+NEXT = '\x0d'
+ANS = '\x07'
+STOP1 = '\x11' # (in no-flow-control mode)
 TIMEOUT = 10 * 60 # Inactivity timeout in seconds
 TRACE = 2
 DEFPIDFILE = "/var/run/ppt.pid"
+PPTVER = "1.0.0"
+PPTREV = "$LastChangedRevision$".split ()[1]
 
 # The control sequences are:
 # Exit PLATO mode, Enter PLATO mode, full screen erase, mode rewrite,
-# mode 3 (text plotting), select memory M0, load X/Y.
-# The two arguments supply the low X/Y value, and must be an integer
-# in the range 0140 to 0177 for the first and 0100 to 0137 for the second.
+# mode 3 (text plotting), select memory M0, load Y/X.
+# The two arguments supply the low Y/X value, and must be an integer
+# in the range 0140 to 0177 for the first (Y) and 0100 to 0137 for
+# the second (X).
 #
 # The "Exit PLATO mode" code is sent to force flow control off, that way
 # we don't have to deal with two different character codes.
@@ -48,6 +52,9 @@ WELCOME_MSG = "\033\002\033\002\033\014\033\024\037\033\102" \
 
 # Connect error message:
 CERR_MSG = "\033\062\042\140\040\130Connect error: {}"
+
+# Program/host information message:
+INFO_MSG = "\033\062\057\140\040\120ppy.py {} ({}) on {} {}"
 
 pptparser = argparse.ArgumentParser ()
 pptparser.add_argument ("term", nargs = '?', default = DEFTERM,
@@ -196,6 +203,14 @@ def getaction (term):
         c = term.read (1)
         if c == NEXT or c == STOP1:
             return c
+        if c == ANS:
+            try:
+                addr = socket.gethostbyname (socket.gethostname ())
+            except socket.error:
+                addr = "addr unknown"
+            msg = INFO_MSG.format (PPTVER, PPTREV, addr, term.port)
+            term.write (msg)
+            time.sleep (8)
 
 def talk (host, term, action):
     """ Connect (port chosen based on the "action" key code) to the
@@ -221,6 +236,8 @@ def talk (host, term, action):
     logging.trace ("threads active")
     # Both I/O threads are started.  Loop, mostly sleeping, looking
     # for inactivity or loss of connection.  If so, exit.
+    # But first, send a NEXT key to PLATO.
+    sock.send (NEXT)
     try:
         while True:
             time.sleep (10)
@@ -275,6 +292,12 @@ if __name__ == "__main__":
     h.setFormatter (fmt)
     rootlogger.addHandler (h)
     rootlogger.setLevel (p.log_level)
+    try:
+        addr = socket.gethostbyname (socket.gethostname ())
+    except socket.error:
+        addr = "addr unknown"
+    msg = "ppy.py {} ({}) on {} {}".format (PPTVER, PPTREV, addr, p.term)
+    logging.info (msg)
     try:
         if p.daemon:
             daemoncontext = DaemonContext (files_preserve = [ h.stream ],
