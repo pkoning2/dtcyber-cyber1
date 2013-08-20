@@ -460,7 +460,7 @@ CpWord niuConn (u32 stat)
     NetFet *fet;
 
     stat = STAT2IDX (stat);
-    if (stat < 0 || stat >= niuStations)
+    if (stat >= niuStations)
         {
         return MINUS1;
         }

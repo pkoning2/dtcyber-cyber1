@@ -1814,9 +1814,9 @@ bool PtermApp::OnInit (void)
     
     // Add some handlers so we can save the screen in various formats
     // Note that the BMP handler is always loaded, don't do it again.
-//temp    wxImage::AddHandler (new wxPNGHandler);
+    wxImage::AddHandler (new wxPNGHandler);
     wxImage::AddHandler (new wxPNMHandler);
-//temp    wxImage::AddHandler (new wxTIFFHandler);
+    wxImage::AddHandler (new wxTIFFHandler);
     wxImage::AddHandler (new wxXPMHandler);
 
     // success: wxApp::OnRun () will be called which will enter the main message
@@ -2096,6 +2096,7 @@ void PtermApp::OnAbout(wxCommandEvent&)
     wxMessageBox(wxT (STRPRODUCTNAME " V" STRFILEVER
                       "\n  built with wxWidgets V" WXVERSION
                       "\n  build date " PTERMBUILDDATE
+                      "\n  SVN revision " PTERMSVNREV
                       "\n" STRLEGALCOPYRIGHT),
                       _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
 }
@@ -3695,52 +3696,62 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
     wxBitmapType type;
     wxFileDialog fd (this, _("Save screen to"), ptermApp->m_defDir,
                      wxT(""), wxT("PNG files (*.png)|*.png|"
+                                  "TIF files (*.tif)|*.tif|"
                                   "BMP files (*.bmp)|*.bmp|"
                                   "PNM files (*.pnm)|*.pnm|"
-                                  "TIF files (*.tif)|*.tif|"
-                                  "XPM files (*.xpm)|*.xpm|"
-                                  "All files (*.*)|*.*"),
+                                  "XPM files (*.xpm)|*.xpm"),
                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    int idx;
+    // This list must match order and content of the filter list above
+    static const wxChar *exts[] = { wxT ("png"), wxT ("tif"),
+                                    wxT ("bmp"), wxT ("pnm"),
+                                    wxT ("xpm") };
     
     if (fd.ShowModal () != wxID_OK)
     {
         return;
     }
     filename = fd.GetPath ();
-    
+    idx = fd.GetFilterIndex ();
     screenDC.SelectObject (screenmap);
     screenDC.Blit (0, 0, vScreenSize(m_scale), vScreenSize(m_scale), m_memDC, 0, 0, wxCOPY);
     screenDC.SelectObject (wxNullBitmap);
 
     wxImage screenImage = screenmap.ConvertToImage ();
     wxFileName fn (filename);
+    wxString filt_ext (exts[idx]);
     
     ptermApp->m_defDir = fn.GetPath ();
     ext = fn.GetExt ();
+    if (! (ext.CmpNoCase (filt_ext) == 0 ||
+           (idx == 1 && ext.CmpNoCase (wxT ("tiff")) == 0)))
+    {
+        // Filename extension doesn't match the selected format, fix that.
+        // Note that we accept "tiff" as alternate for "tif" (filter index 1).
+        ext = filt_ext;
+        fn.SetFullName (fn.GetFullName () + wxT (".") + ext);
+        filename = fn.GetFullPath ();
+    }
     if (ext.CmpNoCase (wxT ("bmp")) == 0)
     {
         type = wxBITMAP_TYPE_BMP;
     }
-#if 0 //temp
     else if (ext.CmpNoCase (wxT ("png")) == 0)
     {
         type = wxBITMAP_TYPE_PNG;
     }
-#endif
     else if (ext.CmpNoCase (wxT ("pnm")) == 0)
     {
         type = wxBITMAP_TYPE_PNM;
     }
-#if 0 //temp
     else if (ext.CmpNoCase (wxT ("tif")) == 0 ||
              ext.CmpNoCase (wxT ("tiff")) == 0)
     {
         type = wxBITMAP_TYPE_TIF;
-	// 32773 is PACKBITS -- not referenced symbolically because tiff.h
-	// isn't necessarily anywhere, for some reason.
+    	// 32773 is PACKBITS -- not referenced symbolically because tiff.h
+	    // isn't necessarily anywhere, for some reason.
         screenImage.SetOption (wxIMAGE_OPTION_COMPRESSION, 32773);
     }
-#endif
     else if (ext.CmpNoCase (wxT ("xpm")) == 0)
     {
         type = wxBITMAP_TYPE_XPM;

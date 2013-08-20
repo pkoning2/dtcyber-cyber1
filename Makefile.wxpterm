@@ -31,8 +31,7 @@ endif
 endif
 endif
 ifeq ("$(HOST)","Darwin")
-ARCHCFLAGS ?= -arch i386 -arch ppc
-CXX = /usr/bin/g++
+ARCHCFLAGS ?= -arch i386
 #ARCHCFLAGS =  -arch ppc
 #EXTRALIBS= -lwxpng-2.6 -lwxtiff-2.6
 #DEFWXDIR = /usr/local/wxstaticu.264
@@ -60,12 +59,19 @@ DEFWXDIR=/usr
 endif
 WXDIR ?= $(DEFWXDIR)
 
-PATH:=$(WXDIR)/bin:/usr/local/bin:$(PATH)
+PATH:=$(WXDIR)/bin:$(PATH)
 
 WXCONFIG ?= wx-config
 CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing
 WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
 WXVERSION = `$(WXCONFIG) --version` 
+
+PTERMSVN = `svn info pterm_wx.cpp | awk '/Revision/{print $$2}'`
+ifeq ("`svn status pterm_wx.cpp`", "")
+PTERMSVNREV = $(PTERMSVN)
+else
+PTERMSVNREV = "$(PTERMSVN)+"
+endif
 
 GCCVERSION := $(shell gcc --version | head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
@@ -77,17 +83,19 @@ SDLCFLAGS = $(SDLINCL)
 PTOBJS	= $(SOBJS) pterm_sdl.o pterm_wx.o 8080a.o
 
 ifneq ("$(PTERMVERSION)","xxx")
-LANGUAGES = $(shell cat languages)
-MOFILES = $(addsuffix /pterm.mo,$(LANGUAGES))
+#LANGUAGES = $(shell cat languages)
+#MOFILES = $(addsuffix /pterm.mo,$(LANGUAGES))
+LANGUAGES =
+MOFILES =
 endif
 
 .PHONY : pterm-kit langdirs wxversion pterm-v$(PTERMVERSION).tar.bz2 info
 
 info:
-	echo wxdir: $(WXDIR)
-	echo path:  $(PATH)
-	echo wxversion: $(WXVERSION)
-	echo gccversion: $(GCCVERSION)
+	@echo wxdir: $(WXDIR)
+	@echo path:  $(PATH)
+	@echo wxversion: $(WXVERSION)
+	@echo gccversion: $(GCCVERSION)
 
 pterm:	$(PTOBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
@@ -102,9 +110,10 @@ endif
 endif
 
 wxversion.h: wxversion
-	echo "#define WXVERSION \"$(WXVERSION)\"" > wxversion.h.tmp
-	date +"#define PTERMBUILDDATE \"%e %B %Y\"" >> wxversion.h.tmp
-	if [ ! -r wxversion.h ]; then mv -f wxversion.h.tmp wxversion.h; else \
+	@echo "#define WXVERSION \"$(WXVERSION)\"" > wxversion.h.tmp
+	@date +"#define PTERMBUILDDATE \"%e %B %Y\"" >> wxversion.h.tmp
+	@echo "#define PTERMSVNREV \"$(PTERMSVNREV)\"" >> wxversion.h.tmp
+	@if [ ! -r wxversion.h ]; then mv -f wxversion.h.tmp wxversion.h; else \
 	  if cmp -s wxversion.h.tmp wxversion.h; then rm -f wxversion.h.tmp; \
 	    else mv -f wxversion.h.tmp wxversion.h; fi; fi
 

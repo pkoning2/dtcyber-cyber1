@@ -1048,7 +1048,7 @@ static void opConnlist(char *cmdParams)
                     {
                     kind = "";
                     }
-                if (cp->ownerInfo < 0 || cp->ownerInfo > 1023)
+                if (cp->ownerInfo > 1023)
                     {
                     sprintf (cstat, "%c%3d. %-7s %5lld to %s:%d", 
                              j, j - StatusFirstDev,
