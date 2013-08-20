@@ -66,11 +66,12 @@ CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing
 WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
 WXVERSION = `$(WXCONFIG) --version` 
 
-PTERMSVN = `svn info pterm_wx.cpp | awk '/Revision/{print $$2}'`
-ifeq ("`svn status pterm_wx.cpp`", "")
-PTERMSVNREV = $(PTERMSVN)
+PTERMSVN := $(shell svn info pterm_wx.cpp | awk '/Revision/{print $$2}')
+PTERMSTAT := $(shell svn status pterm_wx.cpp)
+ifeq ("$(PTERMSTAT)","")
+PTERMSVNREV := $(PTERMSVN)
 else
-PTERMSVNREV = "$(PTERMSVN)+"
+PTERMSVNREV := "$(PTERMSVN)+"
 endif
 
 GCCVERSION := $(shell gcc --version | head -1 | awk '{print $$3}')
@@ -96,6 +97,7 @@ info:
 	@echo path:  $(PATH)
 	@echo wxversion: $(WXVERSION)
 	@echo gccversion: $(GCCVERSION)
+	@echo ptermsvn: $(PTERMSVNREV)
 
 pterm:	$(PTOBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
