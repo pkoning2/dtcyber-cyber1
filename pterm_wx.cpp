@@ -3028,6 +3028,12 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
             // Most get ignored
 			switch (c)
 			{
+            case wxT ('\r'):    // Return
+                if (nextindex + 1 < m_pasteText.Len () && 
+                    m_pasteText[nextindex + 1] == '\n')
+                    break;      // Ignore return if newline follows (DOS style)
+                c = wxT ('\n');
+                // Fall through to treat as newline                
 			case wxT ('\n'):
                 p = 026;        // NEXT
 				break;
@@ -3044,6 +3050,8 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 	            ptermSendKey (024);
 	            p = asciiToPlato[(u8) '6'];
 				break;
+            default:
+                printf ("unexpected char in paste: 0x%02x\n", c);
 			}
 			found = true;
         }
