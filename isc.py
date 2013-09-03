@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Bridge utility for PPT to DtCyber
+"""Internet Site Controller
 
 Copyright (C) 2011-2013 by Paul Koning
 
@@ -60,7 +60,7 @@ WELCOME_MSG = "\033\002\033\002\033\014\033\024\037\033\102" \
 CERR_MSG = "\033\062\042\140\040\130Connect error: {}"
 
 # Program/host information message:
-INFO_MSG = "\033\062\057\140\040\120Internet site controller {} ({})\r    on {} {}"
+INFO_MSG = "\033\062\057\140\040\120Internet Site Controller {} ({})\r    on {} {}"
 
 pptparser = argparse.ArgumentParser ()
 pptparser.add_argument ("term", nargs = '?', default = DEFTERM,
