@@ -288,7 +288,7 @@ def talk (host, port, term, action):
         raise KeyboardInterrupt
         
 def mainloop (term, host, port):
-    logging.info ("Starting ppt.py for terminal {} to host {} port {}".format (term, host, port))
+    logging.info ("Starting isc.py for terminal {} to host {} port {}".format (term, host, port))
     if UART:
         uart = "UART{}".format (term)
         term = "/dev/ttyO{}".format (term)
