@@ -1,0 +1,12 @@
+[Unit]
+Description=Internet Site Controller for port 4
+After=syslog.target network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/isc.py --log-file /var/log/isc4.log --keep 5 4
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

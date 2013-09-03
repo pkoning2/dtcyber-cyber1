@@ -1,0 +1,12 @@
+[Unit]
+Description=Internet Site Controller for port 1
+After=syslog.target network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/isc.py --log-file /var/log/isc1.log --keep 5 1
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
