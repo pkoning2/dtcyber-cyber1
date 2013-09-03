@@ -13,6 +13,7 @@ import os
 import socket
 import select
 import threading
+import signal
 import serial
 import random
 import time
@@ -136,7 +137,7 @@ class StopThread (threading.Thread):
         handling of "stopnow" needs to go into the class that uses this.
         """
         if not self.stopnow and self.isAlive ():
-            logging.trace ("Stopping thread %s", self)
+            logging.debug ("Stopping thread %s", self.name)
             self.stopnow = True
             self.join ()
 
@@ -184,7 +185,7 @@ class fromcyber (StopThread):
         while not self.stopnow:
             r, w, x = select.select (slist, wlist, slist, IOTIMEOUT)
             if x:
-                logging.trace ("Exiting due to exception from select ()")
+                logging.debug ("Exiting due to exception from select ()")
                 break
             if not r:
                 logging.trace ("No data from PLATO")
@@ -243,7 +244,7 @@ def talk (host, port, term, action):
         sock = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
         logging.trace ("connecting")
         sock.connect ((host, port))
-        logging.trace ("connected")
+        logging.debug ("connected")
     except socket.error as e:
         logging.exception ("Error while connecting to %s %d", host, port)
         term.write (CERR_MSG.format (e))
@@ -262,17 +263,17 @@ def talk (host, port, term, action):
             now = time.time ()
             # Check inbound thread
             if not inbound.is_alive ():
-                logging.trace ("Exiting due to inbound exit")
+                logging.debug ("Exiting due to inbound exit")
                 break
             if inbound.lastio and now - inbound.lastio > TIMEOUT:
-                logging.trace ("Exiting due to inbound timeout")
+                logging.debug ("Exiting due to inbound timeout")
                 break
             # Check outbound thread
             if not outbound.is_alive ():
-                logging.trace ("Exiting due to outbound exit")
+                logging.debug ("Exiting due to outbound exit")
                 break
             if outbound.lastio and now - outbound.lastio > TIMEOUT:
-                logging.trace ("Exiting due to outbound timeout")
+                logging.debug ("Exiting due to outbound timeout")
                 break
     except KeyboardInterrupt:
         interrupted = True
@@ -298,7 +299,12 @@ def mainloop (term, host, port):
     while True:
         action = getaction (term)
         talk (host, port, term, action)
-    
+
+def sighandler (signum, frame):
+    global signalled
+    signalled = True
+    raise KeyboardInterrupt
+
 if __name__ == "__main__":
     p = pptparser.parse_args ()
     daemoncontext = None
@@ -325,6 +331,10 @@ if __name__ == "__main__":
     h.setFormatter (fmt)
     rootlogger.addHandler (h)
     rootlogger.setLevel (p.log_level)
+    # Handle SIGTERM as a sign to quit
+    global signalled
+    signalled = False
+    signal.signal (signal.SIGTERM, sighandler)
     try:
         addr = socket.gethostbyname (socket.gethostname ())
     except socket.error:
@@ -341,11 +351,14 @@ if __name__ == "__main__":
     except SystemExit as exc:
         logging.info ("Exiting: {}".format (exc))
     except KeyboardInterrupt:
-        logging.info ("Exiting due to Ctrl/C")
+        if signalled:
+            logging.info ("Exiting due to SIGTERM")
+        else:
+            logging.info ("Exiting due to Ctrl/C")
     except Exception:
         logging.exception ("Exception caught in main")
     finally:
-        logging.info ("ppt.py shut down")
+        logging.info ("%s shut down", sys.argv[0])
         logging.shutdown ()
         if daemoncontext:
             daemoncontext.close ()
