@@ -19,7 +19,11 @@ import logging
 import logging.handlers
 from daemon import DaemonContext
 import argparse
-
+try:
+    from Adafruit_BBIO import UART
+except ImportError:
+    UART = None
+    
 if sys.platform == "darwin":
     DEFTERM = "/dev/tty.KeySerial1"
 else:
@@ -54,7 +58,7 @@ WELCOME_MSG = "\033\002\033\002\033\014\033\024\037\033\102" \
 CERR_MSG = "\033\062\042\140\040\130Connect error: {}"
 
 # Program/host information message:
-INFO_MSG = "\033\062\057\140\040\120ppy.py {} ({}) on {} {}"
+INFO_MSG = "\033\062\057\140\040\120Internet site controller {} ({})\r    on {} {}"
 
 pptparser = argparse.ArgumentParser ()
 pptparser.add_argument ("term", nargs = '?', default = DEFTERM,
@@ -129,7 +133,7 @@ class StopThread (threading.Thread):
         handling of "stopnow" needs to go into the class that uses this.
         """
         if not self.stopnow and self.isAlive ():
-            logging.trace ("Stopping thread ()".format (self))
+            logging.trace ("Stopping thread %s", self)
             self.stopnow = True
             self.join ()
 
@@ -260,6 +264,11 @@ def talk (host, term, action):
         
 def mainloop (term, host):
     logging.info ("Starting ppt.py for terminal {} to host {}".format (term, host))
+    if UART:
+        uart = "UART{}".format (term)
+        term = "/dev/ttyO{}".format (term)
+        logging.info ("Configuring %s", uart)
+        UART.setup (uart)
     term = serial.Serial (port = term, baudrate = SPEED,
                           parity = 'E', bytesize = 7)
     while True:
