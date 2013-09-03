@@ -32,6 +32,7 @@ else:
     DEFTERM = "/dev/ttyUSB0"
 CYBER1 = "cyberserv.org"
 DEFPORT = 8050
+STOP1PORT = 8005
 SPEED = 2400
 RECVMAX = 1024
 NEXT = '\x0d'
@@ -239,6 +240,8 @@ def talk (host, port, term, action):
     or disconnect.
     """
     interrupted = False
+    if port == DEFPORT and action == STOP1:
+        port = STOP1PORT
     logging.info ("Starting connection to {} port {}".format (host, port))
     try:
         sock = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
