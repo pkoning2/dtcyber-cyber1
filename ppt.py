@@ -11,6 +11,7 @@ to allow an ASCII mode PPT to be a DtCyber terminal.
 import sys
 import os
 import socket
+import select
 import threading
 import serial
 import random
@@ -29,15 +30,15 @@ if sys.platform == "darwin":
 else:
     DEFTERM = "/dev/ttyUSB0"
 CYBER1 = "cyberserv.org"
-NEXTPORT = 8050
-#STOP1PORT = 8005
-STOP1PORT = NEXTPORT    # Use the same port either way, but different signon key
+DEFPORT = 8050
 SPEED = 2400
 RECVMAX = 1024
 NEXT = '\x0d'
 ANS = '\x07'
 STOP1 = '\x11' # (in no-flow-control mode)
 TIMEOUT = 10 * 60 # Inactivity timeout in seconds
+IOTIMEOUT = 2
+LOCALTIMEOUT = 2 * 60
 TRACE = 2
 DEFPIDFILE = "/var/run/ppt.pid"
 PPTVER = "1.0.0"
@@ -66,8 +67,9 @@ pptparser.add_argument ("term", nargs = '?', default = DEFTERM,
                         help = "Terminal port device name (default: {})".format (DEFTERM))
 pptparser.add_argument ("host", nargs = '?', default = CYBER1,
                         help = "Destination host (default: {})".format (CYBER1))
-pptparser.add_argument ("-d", "--daemon", action = "store_true",
-                        default = False,
+pptparser.add_argument ("port", nargs = '?', default = DEFPORT, type = int,
+                        help = "Destination port (default: {})".format (DEFPORT))
+pptparser.add_argument ("-d", "--daemon", action = "store_true", default = False,
                         help = "Run as daemon.  Requires a log file name to be specified.")
 pptparser.add_argument ("--pid-file", metavar = "FN",
                         default = DEFPIDFILE,
@@ -145,19 +147,21 @@ class tocyber (StopThread):
         StopThread.__init__ (self)
         self.term = term
         self.sock = sock
-        self.lastio = 0
+        self.lastio = None
         self.start ()
         
     def run (self):
         """Read from the terminal and send to the socket.
         """
-        self.term.setTimeout (10)
+        self.term.setTimeout (IOTIMEOUT)
         while not self.stopnow:
             data = self.term.read ()
+            logging.trace ("%d bytes from terminal", len (data))
             if data:
                 self.lastio = time.time ()
                 try:
                     self.sock.sendall (data)
+                    logging.trace ("data sent to PLATO")
                 except socket.error:
                     logging.exception ("Sending on socket to PLATO")
                     return
@@ -169,22 +173,33 @@ class fromcyber (StopThread):
         StopThread.__init__ (self)
         self.term = term
         self.sock = sock
-        self.lastio = 0
+        self.lastio = None
         self.start ()
         
     def run (self):
         """Read from the socket and send to the terminal.
         """
+        slist = [ self.sock ]
+        wlist = [ ]
         while not self.stopnow:
+            r, w, x = select.select (slist, wlist, slist, IOTIMEOUT)
+            if x:
+                logging.trace ("Exiting due to exception from select ()")
+                break
+            if not r:
+                logging.trace ("No data from PLATO")
+                continue
             try:
                 data = self.sock.recv (RECVMAX)
             except socket.error:
                 logging.exception ("Receiving on socket to PLATO")
                 return
+            logging.trace ("%d bytes from PLATO", len (data))
             if data:
                 data = data.replace (b"\377\377", b"\377")
                 self.lastio = time.time ()
                 self.term.write (data)
+                logging.trace ("data sent to terminal")
             else:
                 logging.debug ("EOF reading socket to PLATO")
                 return
@@ -203,6 +218,7 @@ def getaction (term):
     False otherwise.
     """
     logging.debug ("Starting local interaction")
+    term.setTimeout (LOCALTIMEOUT)
     while True:
         pressnext (term)
         c = term.read (1)
@@ -217,15 +233,12 @@ def getaction (term):
             term.write (msg)
             time.sleep (8)
 
-def talk (host, term, action):
-    """ Connect (port chosen based on the "action" key code) to the
-    PLATO host, and talk to it until timeout or disconnect.
+def talk (host, port, term, action):
+    """ Connect to the PLATO host/port, and talk to it until timeout
+    or disconnect.
     """
-    if action == STOP1:
-        port = STOP1PORT
-    else:
-        port = NEXTPORT
-    logging.debug ("Starting connection to {} port {}".format (host, port))
+    interrupted = False
+    logging.info ("Starting connection to {} port {}".format (host, port))
     try:
         sock = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
         logging.trace ("connecting")
@@ -245,26 +258,36 @@ def talk (host, term, action):
     sock.send (action)
     try:
         while True:
-            time.sleep (10)
+            time.sleep (IOTIMEOUT)
             now = time.time ()
             # Check inbound thread
-            if not inbound.is_alive () or now - inbound.lastio > TIMEOUT:
+            if not inbound.is_alive ():
+                logging.trace ("Exiting due to inbound exit")
+                break
+            if inbound.lastio and now - inbound.lastio > TIMEOUT:
+                logging.trace ("Exiting due to inbound timeout")
                 break
             # Check outbound thread
-            if not outbound.is_alive () or now - outbound.lastio > TIMEOUT:
+            if not outbound.is_alive ():
+                logging.trace ("Exiting due to outbound exit")
+                break
+            if outbound.lastio and now - outbound.lastio > TIMEOUT:
+                logging.trace ("Exiting due to outbound timeout")
                 break
     except KeyboardInterrupt:
-        pass
-    logging.trace ("Closing down connection")
+        interrupted = True
+    logging.info ("Closing down connection")
     try:
         sock.close ()
     except socket.error:
         pass
     inbound.stop ()
     outbound.stop ()
+    if interrupted:
+        raise KeyboardInterrupt
         
-def mainloop (term, host):
-    logging.info ("Starting ppt.py for terminal {} to host {}".format (term, host))
+def mainloop (term, host, port):
+    logging.info ("Starting ppt.py for terminal {} to host {} port {}".format (term, host, port))
     if UART:
         uart = "UART{}".format (term)
         term = "/dev/ttyO{}".format (term)
@@ -274,7 +297,7 @@ def mainloop (term, host):
                           parity = 'E', bytesize = 7)
     while True:
         action = getaction (term)
-        talk (host, term, action)
+        talk (host, port, term, action)
     
 if __name__ == "__main__":
     p = pptparser.parse_args ()
@@ -314,7 +337,7 @@ if __name__ == "__main__":
                                            pidfile = pidfile (p.pid_file))
             logging.info ("Becoming daemon")
             daemoncontext.open ()
-        mainloop (p.term, p.host)
+        mainloop (p.term, p.host, p.port)
     except SystemExit as exc:
         logging.info ("Exiting: {}".format (exc))
     except KeyboardInterrupt:
