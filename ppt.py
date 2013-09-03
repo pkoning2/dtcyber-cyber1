@@ -30,7 +30,8 @@ else:
     DEFTERM = "/dev/ttyUSB0"
 CYBER1 = "cyberserv.org"
 NEXTPORT = 8050
-STOP1PORT = 8005
+#STOP1PORT = 8005
+STOP1PORT = NEXTPORT    # Use the same port either way, but different signon key
 SPEED = 2400
 RECVMAX = 1024
 NEXT = '\x0d'
@@ -144,7 +145,7 @@ class tocyber (StopThread):
         StopThread.__init__ (self)
         self.term = term
         self.sock = sock
-        self.lastio = None
+        self.lastio = 0
         self.start ()
         
     def run (self):
@@ -168,7 +169,7 @@ class fromcyber (StopThread):
         StopThread.__init__ (self)
         self.term = term
         self.sock = sock
-        self.lastio = None
+        self.lastio = 0
         self.start ()
         
     def run (self):
@@ -240,8 +241,8 @@ def talk (host, term, action):
     logging.trace ("threads active")
     # Both I/O threads are started.  Loop, mostly sleeping, looking
     # for inactivity or loss of connection.  If so, exit.
-    # But first, send a NEXT key to PLATO.
-    sock.send (NEXT)
+    # But first, send the supplied key to PLATO.
+    sock.send (action)
     try:
         while True:
             time.sleep (10)
