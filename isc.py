@@ -10,6 +10,7 @@ to allow an ASCII mode PPT to be a DtCyber terminal.
 
 import sys
 import os
+import re
 import socket
 import select
 import threading
@@ -21,6 +22,7 @@ import logging
 import logging.handlers
 from daemon import DaemonContext
 import argparse
+import subprocess
 try:
     from Adafruit_BBIO import UART
 except ImportError:
@@ -62,7 +64,10 @@ WELCOME_MSG = "\033\002\033\002\033\014\033\024\037\033\102" \
 CERR_MSG = "\033\062\042\140\040\130Connect error: {}"
 
 # Program/host information message:
-INFO_MSG = "\033\062\057\140\040\120Internet Site Controller {} ({})\r    on {} {}"
+INFO_MSG = "\033\062\054\000\040\120\033ZInternet Site Controller {} ({})\r  on {} {}"
+
+# Exit PLATO mode control sequence (ESC Ctrl/C)
+EXITPLATO = "\033\003"
 
 pptparser = argparse.ArgumentParser ()
 pptparser.add_argument ("term", nargs = '?', default = DEFTERM,
@@ -87,6 +92,13 @@ pptparser.add_argument ("-k", "--keep", type = int, default = 0, metavar = "N",
                         help = """Number of log files to keep with nightly
 rotation.  Requires a log file name to be specified.
 Default = no nightly rotation.""")
+
+def _pstrip (m):
+    return chr (ord (m.group (0)) & 127)
+
+_parity_re = re.compile (r"[\200-\377]")
+def pstrip (s):
+    return _parity_re.sub (_pstrip, s)
 
 class pidfile:
     def __init__ (self, fn):
@@ -158,8 +170,8 @@ class tocyber (StopThread):
         self.term.setTimeout (IOTIMEOUT)
         while not self.stopnow:
             data = self.term.read ()
-            logging.trace ("%d bytes from terminal", len (data))
             if data:
+                logging.trace ("data from terminal: %r", pstrip (data))
                 self.lastio = time.time ()
                 try:
                     self.sock.sendall (data)
@@ -196,12 +208,15 @@ class fromcyber (StopThread):
             except socket.error:
                 logging.exception ("Receiving on socket to PLATO")
                 return
-            logging.trace ("%d bytes from PLATO", len (data))
             if data:
+                logging.trace ("data from PLATO: %r", pstrip (data))
                 data = data.replace (b"\377\377", b"\377")
                 self.lastio = time.time ()
                 self.term.write (data)
                 logging.trace ("data sent to terminal")
+                if data.find (EXITPLATO) != -1:
+                    time.sleep (2)
+                    return
             else:
                 logging.debug ("EOF reading socket to PLATO")
                 return
@@ -213,6 +228,19 @@ def pressnext (term):
     msg = WELCOME_MSG.format (random.randint (0140, 0177),
                               random.randint (0100, 0137))
     term.write (msg)
+
+hostaddr = None
+_addr_re = re.compile (r"inet .+?(\d+\.\d+\.\d+\.\d+)", re.I)
+def gethostaddr ():
+    global hostaddr
+    if not hostaddr:
+        t = subprocess.check_output (("ifconfig", "-a"))
+        for m in _addr_re.finditer (t):
+            a = m.group (1)
+            if a != "127.0.0.1":
+                hostaddr = a
+                break
+    return hostaddr
 
 def getaction (term):
     """Not connected state: send Press NEXT to begin message to the terminal,
@@ -227,9 +255,8 @@ def getaction (term):
         if c == NEXT or c == STOP1:
             return c
         if c == ANS:
-            try:
-                addr = socket.gethostbyname (socket.gethostname ())
-            except socket.error:
+            addr = gethostaddr ()
+            if not addr:
                 addr = "addr unknown"
             msg = INFO_MSG.format (PPTVER, PPTREV, addr, term.port)
             term.write (msg)
