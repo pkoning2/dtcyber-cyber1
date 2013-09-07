@@ -160,12 +160,11 @@ _stop_re = re.compile ("[" + STOP + STOP1 + "]")
 class tocyber (StopThread):
     """A class for the thread that sends data to DtCyber
     """
-    def __init__ (self, sock, term, fromcyber):
+    def __init__ (self, sock, term):
         StopThread.__init__ (self)
         self.term = term
         self.sock = sock
         self.lastio = None
-        self.fromcyber = fromcyber
         self.start ()
         
     def run (self):
@@ -185,7 +184,6 @@ class tocyber (StopThread):
                     return
                 if _stop_re.search (data):
                     # STOP or SHIFT-STOP pressed, flush output
-                    self.fromcyber.flush = True
                     logging.trace ("Flushing output")
                     self.term.flushOutput ()
             
@@ -197,7 +195,6 @@ class fromcyber (StopThread):
         self.term = term
         self.sock = sock
         self.lastio = None
-        self.flush = False
         self.start ()
         
     def run (self):
@@ -206,18 +203,11 @@ class fromcyber (StopThread):
         slist = [ self.sock ]
         wlist = [ ]
         while not self.stopnow:
-            if self.flush:
-                tmo = 0
-            else:
-                tmo = IOTIMEOUT
-            r, w, x = select.select (slist, wlist, slist, tmo)
+            r, w, x = select.select (slist, wlist, slist, IOTIMEOUT)
             if x:
                 logging.debug ("Exiting due to exception from select ()")
                 break
             if not r:
-                if self.flush:
-                    self.flush = False
-                    logging.trace ("Flush complete")
                 logging.trace ("No data from PLATO")
                 continue
             try:
@@ -226,10 +216,6 @@ class fromcyber (StopThread):
                 logging.exception ("Receiving on socket to PLATO")
                 return
             if data:
-                if self.flush:
-                    logging.trace ("flushing %d bytes", len (data))
-                    self.flush = False
-                    continue
                 logging.trace ("data from PLATO: %r", pstrip (data))
                 data = data.replace (b"\377\377", b"\377")
                 self.lastio = time.time ()
@@ -302,7 +288,7 @@ def talk (host, port, term, action):
         time.sleep (5)    # Allow time for people to see the message
         return
     inbound = fromcyber (sock, term)
-    outbound = tocyber (sock, term, inbound)
+    outbound = tocyber (sock, term)
     logging.trace ("threads active")
     # Both I/O threads are started.  Loop, mostly sleeping, looking
     # for inactivity or loss of connection.  If so, exit.
