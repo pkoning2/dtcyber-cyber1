@@ -1,0 +1,1 @@
+optargs=quiet drm.debug=7 capemgr.disable_partno=BB-BONELT-HDMI,BB-BONELT-HDMIN,BB-UART1,BB-UART2,BB-UART4,BB-UART5

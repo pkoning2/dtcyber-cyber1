@@ -1,0 +1,7 @@
+LEDs: 2.5 mA * 3
+EEPROM: 0.5 mA
+RS232: 1.6 mA per output + 2 mA overhead
+
+total 7.5 + 0.5 + 7 + 2 = 17 mA
+
+round up plus margin = 30 mA

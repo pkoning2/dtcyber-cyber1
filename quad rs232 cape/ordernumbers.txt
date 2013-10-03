@@ -1,0 +1,20 @@
+Parts for 4 port RS-232 convertor for BeagleBoard, per board:
+
+From Digikey:
+
+1 24LC256SN (SOIC-8) (24LC256T-I/SNCT-ND)	  $0.91
+1 75C23243DL (SSOP48) (296-13321-1-ND)		  $6.58
+1 Phoenix 12 pin connector #1725753 (277-1283-ND) $7.69
+3 Osram green CHIPLED (0603) (475-1409-1-ND)	  $0.68 per 10
+4 0.22 uF (0603) (1276-1112-1-ND)		  $0.34 per 10
+3 0.1 uF (0603) (1276-1005-1-ND)		  $0.19 per 10
+2 10uF tantalum (1206) (399-10116-1-ND)		  $2.80 per 10
+1 10k ohm resistor (0603) (P10KGCT-ND)		  $0.46 per 50
+3 470 ohm resistor (0603) (P470GCT-ND)		  $0.46 per 50
+3 4.7k ohm resistor (0603) (P4.7KGCT-ND)	  $0.46 per 50
+2 5.6k ohm resistor (0603) (P5.6KGCT-ND)	  $0.46 per 50
+1 2-pole switch (4-lead SMD) (CT2192LPST-ND)	  $0.60
+
+From Adafruit:
+
+2 2x23 stacking connectors #SSHQ-123-D-08-G-LF (706) $4.95 per pair

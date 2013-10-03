@@ -1,0 +1,12 @@
+Digikey:
+
+Solder stuff:
+Desoldering braid: 
+	    EB1023-ND
+	    EB1021-ND
+	    EB1027-ND
+Tip cleaner: 0051512599-ND
+
+Adafruit:
+1 Adafruit Bone Box (699)			     $19.95
+1 Altoids mints sized tin (97)			     $2.50
