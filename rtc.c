@@ -21,7 +21,8 @@
 #if defined(_WIN32)
 #include <winsock.h>
 #elif defined(__APPLE__)
-#include <DriverServices.h>
+#include <mach/mach.h>
+#include <mach/mach_time.h>
 #elif defined(__GNUC__) && defined(__x86_64)
 #include <sys/time.h>
 #else
@@ -56,7 +57,16 @@
 #if RDTSC
 #if defined(__GNUC__) && defined(__APPLE__)
 #define rdtscll(val) \
-    val = UnsignedWideToUInt64 (AbsoluteToNanoseconds (UpTime ()))
+    do               \
+        {            \
+        static mach_timebase_info_data_t    sTimebaseInfo;  \
+        val = mach_absolute_time ();                        \
+        if ( sTimebaseInfo.denom == 0 )                     \
+        {                                                   \
+        (void) mach_timebase_info(&sTimebaseInfo);          \
+        }                                                   \
+        val = (unsigned long long) val * sTimebaseInfo.numer / sTimebaseInfo.denom; \
+        } while (0)
 #elif defined(__GNUC__) && defined(__i386)
 #define rdtscll(val) \
     __asm__ __volatile__("rdtsc" : "=A" (val))
