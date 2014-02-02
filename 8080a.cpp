@@ -2396,7 +2396,7 @@ void emul8080::main8080a (void)
 	* of register A is moved into register A.
 	***********************************************************************/
 			case MOVAA:
-				A = A;
+				//A = A;
 				break;
 
 

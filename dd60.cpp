@@ -447,8 +447,6 @@ public:
 private:
     void paintBitmap (wxBitmap &bm, wxColour &color);
     
-    Dd60Frame *m_owner;
-
     DECLARE_EVENT_TABLE ()
 };
 
@@ -2006,8 +2004,7 @@ BEGIN_EVENT_TABLE(Dd60PrefDialog, wxDialog)
     END_EVENT_TABLE()
 
 Dd60PrefDialog::Dd60PrefDialog (Dd60Frame *parent, wxWindowID id, const wxString &title)
-    : wxDialog (parent, id, title),
-      m_owner (parent)
+    : wxDialog (parent, id, title)
 {
     wxBitmap fgBitmap (20, 12);
     wxBoxSizer *bs, *ds, *ods;

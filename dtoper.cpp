@@ -425,8 +425,6 @@ public:
 private:
     void paintBitmap (wxBitmap &bm, wxColour &color);
     
-    DtoperFrame *m_owner;
-
     DECLARE_EVENT_TABLE ()
 };
 
@@ -1759,8 +1757,7 @@ BEGIN_EVENT_TABLE(DtoperPrefDialog, wxDialog)
     END_EVENT_TABLE()
 
 DtoperPrefDialog::DtoperPrefDialog (DtoperFrame *parent, wxWindowID id, const wxString &title)
-    : wxDialog (parent, id, title),
-      m_owner (parent)
+    : wxDialog (parent, id, title)
 {
     wxBitmap fgBitmap (20, 12);
     wxBoxSizer *bs, *ds, *ods;
