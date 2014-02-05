@@ -319,8 +319,6 @@ class DtoperFrame : public DtoperFrameBase
     friend void DtoperCanvas::OnPaint (wxPaintEvent &event);
     friend void DtoperPrintout::DrawPage (wxDC *dc);
     
-    typedef wxAlphaPixelData PixelData;
-
 public:
     // ctor(s)
     DtoperFrame(int port, const wxString& title);
@@ -590,13 +588,6 @@ bool DtoperApp::OnInit (void)
     DtoperFrameParent->Show (true);
 #endif
 
-    // create the main application window
-    // If arguments are present, always connect without asking
-    if (!DoConnect (!(m_connect || argc > 1)))
-    {
-        return false;
-    }
-    
     // Add some handlers so we can save the screen in various formats
     // Note that the BMP handler is always loaded, don't do it again.
     wxImage::AddHandler (new wxPNGHandler);
@@ -616,6 +607,13 @@ bool DtoperApp::OnInit (void)
     m_mediumFont.SetPointSize (MediumPointSize);
     m_boldFont = m_mediumFont;
     m_boldFont.SetWeight (wxFONTWEIGHT_BOLD);
+    
+    // create the main application window
+    // If arguments are present, always connect without asking
+    if (!DoConnect (!(m_connect || argc > 1)))
+    {
+        return false;
+    }
     
     // success: wxApp::OnRun () will be called which will enter the main message
     // loop and the application will run. If we returned false here, the
