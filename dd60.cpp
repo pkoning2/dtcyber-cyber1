@@ -790,13 +790,6 @@ bool Dd60App::OnInit (void)
     Dd60FrameParent->Show (true);
 #endif
 
-    // create the main application window
-    // If arguments are present, always connect without asking
-    if (!DoConnect (!(m_connect || argc > 1)))
-    {
-        return false;
-    }
-    
     // Add some handlers so we can save the screen in various formats
     // Note that the BMP handler is always loaded, don't do it again.
     wxImage::AddHandler (new wxPNGHandler);
@@ -804,6 +797,13 @@ bool Dd60App::OnInit (void)
     wxImage::AddHandler (new wxTIFFHandler);
     wxImage::AddHandler (new wxXPMHandler);
 
+    // create the main application window
+    // If arguments are present, always connect without asking
+    if (!DoConnect (!(m_connect || argc > 1)))
+    {
+        return false;
+    }
+    
     // success: wxApp::OnRun () will be called which will enter the main message
     // loop and the application will run. If we returned false here, the
     // application would exit immediately.
@@ -1411,6 +1411,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
             dc.DrawBitmap (*m_screenmap, 0, 0, false);
             dc.SetFont (m_traceFont);
             dc.DrawText (wxString::FromAscii (trace_txt), TraceX, TraceY);
+            Refresh ();
         }
     }
     delete m_pixmap;
@@ -1422,6 +1423,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
         dc.DrawBitmap (*m_screenmap, 0, 0, false);
         dc.SetFont (m_traceFont);
         dc.DrawText (wxString::FromAscii (trace_txt), TraceX, TraceY);
+        Refresh ();
     }
 #if DEBUG
     if (datacount)
@@ -2299,7 +2301,6 @@ Dd60Canvas::Dd60Canvas(Dd60Frame *parent)
 
 void Dd60Canvas::OnDraw(wxDC &dc)
 {
-    PrepareDC (dc);
     dc.DrawBitmap (*m_owner->m_screenmap, 0, 0, false);
     dc.SetFont (m_owner->m_traceFont);
     dc.DrawText (wxString::FromAscii (m_owner->trace_txt), TraceX, TraceY);
