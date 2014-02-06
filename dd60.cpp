@@ -877,7 +877,7 @@ void Dd60App::OnAbout(wxCommandEvent&)
                 wxT ("V" DD60VERSION
                      "\n  built with wxWidgets V" WXVERSION
                      "\n  build date " PTERMBUILDDATE),
-                _("Copyright \xA9 2004-2012 by Paul Koning."));
+                _("Copyright \xA9 2004-2014 by Paul Koning."));
     
     wxMessageBox(msg, _("About Dd60"), wxOK | wxICON_INFORMATION, NULL);
 }
