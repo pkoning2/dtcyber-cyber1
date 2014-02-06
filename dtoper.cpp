@@ -688,7 +688,7 @@ void DtoperApp::OnAbout(wxCommandEvent&)
                 wxT ("V2.0.0"
                      "\n  built with wxWidgets V" WXVERSION
                      "\n  build date " PTERMBUILDDATE ),
-                _("Copyright \xA9 2004-2012 by Paul Koning."));
+                _("Copyright \xA9 2004-2014 by Paul Koning."));
     
     wxMessageBox(msg, _("About Dtoper"), wxOK | wxICON_INFORMATION, NULL);
 }
@@ -790,6 +790,8 @@ DtoperMainFrame::DtoperMainFrame (void)
     wxMenu *helpMenu = new wxMenu;
 
     helpMenu->Append(Dtoper_About, _("&About Dtoper"), _("Show about dialog"));
+    
+    menuBar->Append(helpMenu, wxT("&Help"));
 
     // ... and attach this menu bar to the frame
     SetMenuBar(menuBar);
