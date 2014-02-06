@@ -1406,11 +1406,6 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
         }
         if (m_startBlock)
         {
-            wxWindowDC dc (m_canvas);
-            PrepareDC (dc);
-            dc.DrawBitmap (*m_screenmap, 0, 0, false);
-            dc.SetFont (m_traceFont);
-            dc.DrawText (wxString::FromAscii (trace_txt), TraceX, TraceY);
             Refresh ();
         }
     }
@@ -1418,11 +1413,6 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     
     if (m_interval == Dd60FastRate + 0)
     {
-        wxWindowDC dc (m_canvas);
-        PrepareDC (dc);
-        dc.DrawBitmap (*m_screenmap, 0, 0, false);
-        dc.SetFont (m_traceFont);
-        dc.DrawText (wxString::FromAscii (trace_txt), TraceX, TraceY);
         Refresh ();
     }
 #if DEBUG
