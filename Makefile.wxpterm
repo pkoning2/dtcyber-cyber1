@@ -9,11 +9,9 @@
 #
 #--------------------------------------------------------------------------
 
-include Makefile.common
-
 PTERMVERSION ?= $(shell ./getkitver.py  ptermversion.h)
 
-TYPE ?= static
+#TYPE ?= static
 ifeq ("$(TYPE)","static")
 DEFWXDIR = /usr/local/wxstaticu
 SETPATH=
@@ -35,13 +33,24 @@ ARCHCFLAGS ?= -arch i386
 #ARCHCFLAGS =  -arch ppc
 #EXTRALIBS= -lwxpng-2.6 -lwxtiff-2.6
 #DEFWXDIR = /usr/local/wxstaticu.264
-DEFWXDIR = /usr/local/wxstaticu.2810
-ARCHFLAGS=-arch i386
-SDLINCL=-FSDL
-SDLLIBS=-Wl,-framework,SDL
-SDL_FRAMEWORK_PATHS ?= /Library/Frameworks /Volumes/SDL
-SDL_FRAMEWORK_PATH ?= $(shell for d in $(SDL_FRAMEWORK_PATHS); do if [ -e $$d/SDL.framework ]; then echo $$d; break; fi; done)
+#DEFWXDIR = /usr/local/wxstaticu.2810
+#DEFWXDIR = /usr/local/wx295
+DEFWXDIR = /usr/local
+INCL ?= -I/usr/local/include -I/usr/include
+#SDLINCL=-I/Library/Frameworks/SDL2.framework/Headers
+#SDLLIBS=-F/Library/Frameworks/SDL2.framework
+SDLPATH ?= /usr/local
+SDLINCL ?= `sdl2-config --cflags`
+PATH:=$(SDLPATH)/bin:$(PATH)
+ifeq ("$(TYPE)","static")
+SDLLIBS ?= `sdl2-config --static-libs`
 else
+SDLLIBS ?= `sdl2-config --libs`
+endif
+##SDL_FRAMEWORK_PATHS ?= /Library/Frameworks /Volumes/SDL
+##SDL_FRAMEWORK_PATH ?= $(shell for d in $(SDL_FRAMEWORK_PATHS); do if [ -e $$d/SDL.framework ]; then echo $$d; break; fi; done)
+endif
+#else
 SDLPATH ?= /usr/local
 SDLINCL ?= `sdl-config --cflags`
 PATH:=$(SDLPATH)/bin:$(PATH)
@@ -51,7 +60,7 @@ else
 SDLLIBS ?= `sdl-config --libs`
 endif
 #SETPATH= -Wl,-rpath,$(WXDIR)/lib -Wl,-rpath,$(SDLPATH)/lib
-endif
+#endif
 
 # if the wxmumble dir doesn't exist, try for plain /usr
 ifeq ("$(wildcard $(DEFWXDIR))","")
@@ -74,7 +83,7 @@ else
 PTERMSVNREV := "$(PTERMSVN)+"
 endif
 
-GCCVERSION := $(shell gcc --version | head -1 | awk '{print $$3}')
+GCCVERSION := $(shell gcc --version 2>/dev/null| head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
 
 MSGFLAGS ?= -U
@@ -101,7 +110,7 @@ info:
 
 pterm:	$(PTOBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SETPATH) $(STATICSW)
+	$(CXX) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(LIBS) $(SETPATH)
 ifeq ("$(TYPE)","static")
 ifeq ("$(HOST)","Darwin")
 	#strip $@
@@ -121,16 +130,16 @@ wxversion.h: wxversion
 
 dd60:	$(SOBJS) dd60.o knob.o iir.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
+	$(CXX)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
 
 dtoper:	$(SOBJS) dtoper.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
+	$(CXX)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
 
 # console display test program
 cc545:	cc545.o knob.o iir.o
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(SETPATH)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
 
 ifeq ("$(HOST)","Darwin")
 
@@ -160,7 +169,6 @@ Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES)
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en.lproj
 	mkdir -p $(addprefix $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES)),.lproj)
 	mkdir -p Pterm.app/Contents/Frameworks
-	cp -RL $(SDL_FRAMEWORK_PATH)/SDL.framework Pterm.app/Contents/Frameworks
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
 	/bin/echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
@@ -236,14 +244,13 @@ pterm.pot : pterm_wx.cpp
 pterm_wx.o : pterm_wx.cpp wxversion.h ptermversion.h
 
 
-ifeq ($(MAKECMDGOALS),pterm)
+# for pterm
 INCL+=$(SDLINCL)
 DEPFILES+=  $(PTOBJS:.o=.d) 
-endif
-ifeq ($(MAKECMDGOALS),all)
-INCL+=$(SDLINCL)
-DEPFILES+=  $(PTOBJS:.o=.d) 
-endif
+# for dd60
+DEPFILES+= dd60.d knob.d iir.d
+# for dtoper
+DEPFILES+= dtoper.d
 
 #---------------------------  End Of File  --------------------------------
 

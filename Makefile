@@ -27,6 +27,9 @@ OBJS    = main.o init.o trace.o dump.o \
 	  tpmux.o dtdisksubs.o ext.o pni.o \
 	  $(PWD)/charset.o $(PWD)/dtnetsubs.o
 
+CC      = gcc
+CXX     = g++
+
 ifneq ("$(NPU_SUPPORT)","")
 OBJS +=	  npu_async.o npu_bip.o npu_hip.o npu_svm.o npu_tip.o npu_net.o
 VERSIONCFLAGS +=   -DNPU_SUPPORT=1
@@ -39,19 +42,18 @@ ifeq ("$(HOST)","Darwin")
 # Mac
 
 ifeq ("$(SDKDIR)","")
-SDKDIR := /Developer/SDKs/MacOSX10.6.sdk
+#SDKDIR := /Developer/SDKs/MacOSX10.8.sdk
+SDKDIR := /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
 endif
-ifeq ("$(CLANG)", "")
-CC      = gcc
-CXX     = g++
-else
-CC      = clang
-CXX     = c++
+CLANG := $(shell gcc --version 2>/dev/null| fgrep LLVM)
+ifneq ("$(CLANG)", "")
+CXXLIB := -stdlib=libstdc++
 endif
-LIBS    +=  -Wl,-syslibroot,$(SDKDIR)
-INCL    += -isysroot $(SDKDIR) -I$(SDKDIR)/Developer/Headers/FlatCarbon
-LDFLAGS +=  -Wl,-framework,CoreServices -mmacosx-version-min=10.6
-CFLAGS  +=  -mmacosx-version-min=10.6
+LIBS    +=  -Wl,-syslibroot,$(SDKDIR) -L$(SDKDIR)/usr/lib -L/usr/lib
+INCL    += -isysroot $(SDKDIR)
+#LDFLAGS +=  -Wl,-framework,CoreServices -mmacosx-version-min=10.8
+LDFLAGS +=  -mmacosx-version-min=10.8 $(CXXLIB)
+CFLAGS  +=  -mmacosx-version-min=10.8 $(CXXLIB)
 X86ARCHFLAGS = -arch i386
 X86_64ARCHFLAGS = -arch x86_64
 TOOLLDFLAGS = -arch i386
@@ -103,20 +105,16 @@ buildall: clean all
 
 dep:	pterm.dep dd60.dep dtoper.dep $(OBJS:.o=.d) blackbox.d
 
-ifeq ($(MAKECMDGOALS),dtcyber)
-DEPFILES+= $(OBJS:.o=.d) blackbox.d
-endif
-ifeq ($(MAKECMDGOALS),all)
-DEPFILES+= $(OBJS:.o=.d) blackbox.d
-endif
-ifeq ($(MAKECMDGOALS),blackbox)
+# For dtcyber
+DEPFILES+= $(OBJS:.o=.d) 
+# For blackbox
 DEPFILES+= blackbox.d niu.d charset.d dtnetsubs.d
-endif
 
+include Makefile.wxpterm
+
+# This must be last
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
-
-include Makefile.wxpterm
 
 #---------------------------  End Of File  --------------------------------

@@ -28,10 +28,10 @@
 #define CURRENT_PROFILE	wxT (" Current ")
 #define BufSiz			2048
 #define RINGSIZE		5000
-#define RINGXON1		(RINGSIZE/3)
-#define RINGXON2		(RINGSIZE/4)
-#define RINGXOFF1		(RINGSIZE-RINGXON1)
-#define RINGXOFF2		(RINGSIZE-RINGXON2)
+#define RINGXON1		(RINGSIZE / 3)
+#define RINGXON2		(RINGSIZE / 4)
+#define RINGXOFF1		(RINGSIZE - RINGXON1)
+#define RINGXOFF2		(RINGSIZE - RINGXON2)
 #define xonkey			01606
 #define xofkey			01607
 #define ascxon			0x11
@@ -183,7 +183,8 @@
 #define YMTOP (YMADJUST (511))
 
 // Macro to include keyboard accelerator only if option enabled
-#define ACCELERATOR(x) + ((ptermApp->m_useAccel) ? wxString(wxT (x)) : wxString(wxT("")))
+#define ACCELERATOR(x) + ((ptermApp->m_useAccel) ? wxString (wxT (x)) : \
+                          wxString (wxT ("")))
 // Macro to include keyboard accelerator only if MAC
 //#if defined(__WXMAC__)
 //#define MACACCEL(x) + wxString (wxT (x))
