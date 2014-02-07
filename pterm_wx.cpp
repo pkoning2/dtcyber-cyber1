@@ -4,7 +4,7 @@
 
 Working, subject to more testing: char, line, dot, memory load modes
 both ascii and classic.  Connection failure handling.  Print screen.
-Save screen.
+Save screen.  flood fill (~paint~) command.
 
 Partially working: print preview.  It displays the preview if you've
 done a Print first (even if canceled).  It displays a blank page
@@ -19,10 +19,9 @@ for ANS) is weird, it seems to do nothing the first keystroke but if I
 do it again subsequent ones work.  ~diag~ option a then a is useful
 for testing this.  
 
-Not coded yet: Font mode, flood fill (~paint~) command, scrolling in
-dumb terminal mode. Print screen is probably missing some pieces, save
-and restore window ditto.  Display of selected region for mouse
-selection (for copy text feature).
+Not coded yet: Font mode, scrolling in dumb terminal mode. Save and
+restore window.  Display of selected region for mouse selection (for
+copy text feature).
 
 Not figured out yet: 2x mode, ~stretch~ mode (whatever that is ~ 
 Joe created it and I~ve never understood it).
@@ -1092,17 +1091,18 @@ private:
         }
     }
     
-
     // PLATO drawing primitives
     void ptermDrawChar (int x, int y, int snum, int cnum);
     void ptermDrawPoint (int x, int y);
     void ptermUpdatePoint (int x, int y, uint32_t pixval, bool xor_p,
-                           PixelData &pixmap);
+                           PixelData & pixmap);
     void ptermDrawLine (int x1, int y1, int x2, int y2);
     void ptermFullErase (void);
     void ptermBlockErase (int x1, int y1, int x2, int y2);
     void ptermSetName (wxString &winName);
     void ptermPaint (int pat);
+    void ptermPaintWalker1 (int x, int y, PixelData & pixmap);
+    void ptermPaintWalker2 (int x, int y, PixelData & pixmap);
     void ptermSaveWindow (int d);
     void ptermRestoreWindow (int d);
     void ResetScrollRate (PtermCanvas *c);
@@ -4543,14 +4543,93 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
 
 void PtermFrame::ptermPaint (int pat)
 {
-    wxClientDC dc (m_canvas);
     int xm, ym;
-    
-    PrepareDC (dc);
+    PixelData pixmap (*m_bitmap);
     
     xm = XMADJUST (currentX);
     ym = YMADJUST (currentY);
 
+    // According to the spec, "pat" is either a memory/char number, or if 0
+    // means "fill with solid color".  What we're doing here is only the 
+    // latter case, just as in previous versions of pterm.
+    //
+    // The algorithm used is simply a recursive walk of the bitmap starting
+    // at the current x/y.  More preciseli, two walks: in the first we replace
+    // all non-background pixels by a magic value.  In the second, we replace
+    // that magic value by the foreground.
+    // The reason for doing it that way is that the recursion won't terminate
+    // correctly if we paint the pixels in one pass; an already-painted
+    // pixel will be visited repeatedly.  And we can't skip "already painted"
+    // pixels entirely because they might just be an isolated set of pixels
+    // that are already foreground, and we should go right across them.
+    ptermPaintWalker1 (xm, ym, pixmap);
+    ptermPaintWalker2 (xm, ym, pixmap);
+}
+
+void PtermFrame::ptermPaintWalker1 (int x, int y, PixelData & pixmap)
+{
+    PixelData::Iterator p (pixmap);
+    uint32_t *pmap;
+    
+    p.MoveTo (pixmap, x, y);
+    pmap = (uint32_t *)(p.m_ptr);
+    if (*pmap == m_bgpix || *pmap == 0)
+    {
+        return;
+    }
+
+    // Set the current pixel to background so we don't revisit it
+    *pmap = 0;
+    
+    if (x > 0)
+    {
+        ptermPaintWalker1 (x - 1, y, pixmap);
+    }
+    if (x < 511)
+    {
+        ptermPaintWalker1 (x + 1, y, pixmap);
+    }
+    if (y > 0)
+    {
+        ptermPaintWalker1 (x, y - 1, pixmap);
+    }
+    if (y < 511)
+    {
+        ptermPaintWalker1 (x, y + 1, pixmap);
+    }
+}
+
+void PtermFrame::ptermPaintWalker2 (int x, int y, PixelData & pixmap)
+{
+    PixelData::Iterator p (pixmap);
+    uint32_t *pmap;
+    
+    p.MoveTo (pixmap, x, y);
+    pmap = (uint32_t *)(p.m_ptr);
+    if (*pmap != 0)
+    {
+        return;
+    }
+
+    // Set the current pixel to foreground
+    *pmap = m_fgpix;
+    
+    if (x > 0)
+    {
+        ptermPaintWalker2 (x - 1, y, pixmap);
+    }
+    if (x < 511)
+    {
+        ptermPaintWalker2 (x + 1, y, pixmap);
+    }
+    if (y > 0)
+    {
+        ptermPaintWalker2 (x, y - 1, pixmap);
+    }
+    if (y < 511)
+    {
+        ptermPaintWalker2 (x, y + 1, pixmap);
+    }
 }
 
 void PtermFrame::ptermSetName (wxString &winName)
