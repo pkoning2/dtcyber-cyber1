@@ -8,8 +8,7 @@ both ascii and classic.  Connection failure handling.
 Not working: ~Option~ modifier for entering function keys (like Option-A
 for ANS) is weird, it seems to do nothing the first keystroke but if I
 do it again subsequent ones work.  ~diag~ option a then a is useful
-for testing this.  Print screen failed similarly the last time I tried
-it.
+for testing this.  Print screen fails with some asserts.
 
 Not coded yet: Font mode, flood fill (~paint~) command, scrolling in
 dumb terminal mode. Print screen is probably missing some pieces, save
@@ -946,7 +945,6 @@ private:
     uint32_t    m_fgpix;
     uint32_t    m_bgpix;
     wxBitmap    *m_bitmap;
-    PixelData   *m_pixmap;
     uint32_t    m_maxalpha;
     uint32_t    m_red;
     uint32_t    m_green;
@@ -1089,7 +1087,8 @@ private:
     // PLATO drawing primitives
     void ptermDrawChar (int x, int y, int snum, int cnum);
     void ptermDrawPoint (int x, int y);
-    void ptermUpdatePoint (int x, int y, uint32_t pixval, bool xor_p);
+    void ptermUpdatePoint (int x, int y, uint32_t pixval, bool xor_p,
+                           PixelData &pixmap);
     void ptermDrawLine (int x1, int y1, int x2, int y2);
     void ptermFullErase (void);
     void ptermBlockErase (int x1, int y1, int x2, int y2);
@@ -2382,7 +2381,6 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
       // m_fgpix not initialized
       // m_bgpix not initialized
       m_bitmap (NULL),
-      m_pixmap (NULL),
       m_canvas (NULL),
       // m_curProfile not initialized
       // m_ShellFirst not initialized
@@ -2586,56 +2584,56 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
 
     m_bitmap = new wxBitmap (vRealScreenSize (m_scale),
                              vRealScreenSize (m_scale), -1);
-    m_pixmap = new PixelData (*m_bitmap);
-    if (!m_pixmap)
     {
-        // ... raw access to bitmap data unavailable, do something else ...
-        printf ("no raw bitmap access\n");
-        exit (1);
-    }
+         PixelData pixmap (*m_bitmap);
 
-    // Find out how RGBA map to the parts of a 32 bit value, so we can access
-    // things as 32 bit arrays and still be implementation independent.
-    PixelData::Iterator p (*m_pixmap);
-    uint32_t *pmap = (uint32_t *) (p.m_ptr);
-    uint8_t *pb = (uint8_t *) pmap;
-    uint32_t t;
+         if (!pixmap)
+         {
+             // ... raw access to bitmap data unavailable, do something else ...
+             printf ("no raw bitmap access\n");
+             exit (1);
+         }
+
+         // Find out how RGBA map to the parts of a 32 bit value, so we can access
+         // things as 32 bit arrays and still be implementation independent.
+         PixelData::Iterator p (pixmap);
+         uint32_t *pmap = (uint32_t *) (p.m_ptr);
+         uint8_t *pb = (uint8_t *) pmap;
+         uint32_t t;
     
-    t = *pmap;
-    *pmap = 0;
-    p.Alpha () = 255;
-    m_maxalpha = *pmap;
-    *pmap = 0;
-    p.Red () = 1;
-    for (i = 0; i < 4; i++)
-    {
-        if (pb[i]) m_red = i;
+         t = *pmap;
+         *pmap = 0;
+         p.Alpha () = 255;
+         m_maxalpha = *pmap;
+         *pmap = 0;
+         p.Red () = 1;
+         for (i = 0; i < 4; i++)
+         {
+             if (pb[i]) m_red = i;
+         }
+         *pmap = 0;
+         p.Green () = 1;
+         for (i = 0; i < 4; i++)
+         {
+             if (pb[i]) m_green = i;
+         }
+         *pmap = 0;
+         p.Blue () = 1;
+         for (i = 0; i < 4; i++)
+         {
+             if (pb[i]) m_blue = i;
+         }
+         *pmap = t;
+         //printf ("%d %d %d %d\n", m_maxalpha, m_red, m_green, m_blue);
     }
-    *pmap = 0;
-    p.Green () = 1;
-    for (i = 0; i < 4; i++)
-    {
-        if (pb[i]) m_green = i;
-    }
-    *pmap = 0;
-    p.Blue () = 1;
-    for (i = 0; i < 4; i++)
-    {
-        if (pb[i]) m_blue = i;
-    }
-    *pmap = t;
-    //printf ("%d %d %d %d\n", m_maxalpha, m_red, m_green, m_blue);
-
+    
 // Why is there a "+2" for vXRealSize (), vYRealSize here?
 //    SetClientSize (vXRealSize (m_scale) + 2, vYRealSize (m_scale) + 2);
     SetColors (m_currentFg, m_currentBg, m_scale);    
     SetClientSize (vXRealSize (m_scale) - 1, vYRealSize (m_scale) - 1);
     m_canvas = new PtermCanvas (this);
 
-    // Note that ptermFullErase needs m_pixmap
     ptermFullErase ();
-    delete m_pixmap;
-    m_pixmap = NULL;
 
     if (port > 0)
     {
@@ -4306,6 +4304,7 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
     const u16 *charp;
     u16 charw;
     wxClientDC dc (m_canvas);
+    PixelData pixmap (*m_bitmap);
     
     m_canvas->SaveChar (x, y, snum, cnum, wemode, large!=0);
     
@@ -4365,22 +4364,22 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
                     cy += dy;
                     continue;
                 }
-                ptermUpdatePoint (x, y, bpix, false);
+                ptermUpdatePoint (x, y, bpix, false, pixmap);
                 if (large)
                 {
-                    ptermUpdatePoint (x + 1, y, bpix, false);
-                    ptermUpdatePoint (x, y + sdy, bpix, false);
-                    ptermUpdatePoint (x + 1, y + sdy, bpix, false);
+                    ptermUpdatePoint (x + 1, y, bpix, false, pixmap);
+                    ptermUpdatePoint (x, y + sdy, bpix, false, pixmap);
+                    ptermUpdatePoint (x + 1, y + sdy, bpix, false, pixmap);
                 }
             }
             else
             {
-                ptermUpdatePoint (x, y, fpix, modexor);
+                ptermUpdatePoint (x, y, fpix, modexor, pixmap);
                 if (large)
                 {
-                    ptermUpdatePoint (x + 1, y, fpix, modexor);
-                    ptermUpdatePoint (x, y + sdy, fpix, modexor);
-                    ptermUpdatePoint (x + 1, y + sdy, fpix, modexor);
+                    ptermUpdatePoint (x + 1, y, fpix, modexor, pixmap);
+                    ptermUpdatePoint (x, y + sdy, fpix, modexor, pixmap);
+                    ptermUpdatePoint (x + 1, y + sdy, fpix, modexor, pixmap);
                 }
             }
             charw >>= 1;
@@ -4392,27 +4391,30 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
 
 void PtermFrame::ptermDrawPoint (int x, int y)
 {
+    PixelData pixmap (*m_bitmap);
+
     if (modexor || (mode & 1))
     {
         // mode rewrite or write
-        ptermUpdatePoint (x, y, m_fgpix, modexor);
+        ptermUpdatePoint (x, y, m_fgpix, modexor, pixmap);
     }
     else
     {
         // mode inverse or erase
-        ptermUpdatePoint (x, y, m_bgpix, false);
+        ptermUpdatePoint (x, y, m_bgpix, false, pixmap);
     }
 }
 
-void PtermFrame::ptermUpdatePoint (int x, int y, uint32_t pixval, bool xor_p)
+void PtermFrame::ptermUpdatePoint (int x, int y, uint32_t pixval, bool xor_p,
+                                   PixelData &pixmap)
 {
-    PixelData::Iterator p (*m_pixmap);
+    PixelData::Iterator p (pixmap);
     uint32_t *pmap;
     
     x = XMADJUST (x & 0777);
     y = YMADJUST (y & 0777);
     
-    p.MoveTo (*m_pixmap, x, y);
+    p.MoveTo (pixmap, x, y);
     pmap = (uint32_t *)(p.m_ptr);
 
     if (modexor)
@@ -4502,6 +4504,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     int t;
     int x, y;
     uint32_t pix;
+    PixelData pixmap (*m_bitmap);
     
     if (x1 > x2)
         t = x1, x1 = x2, x2 = t;
@@ -4523,7 +4526,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     {
         for (y = y1; y <= y2; y++)
         {
-            ptermUpdatePoint (x, y, pix, modexor);
+            ptermUpdatePoint (x, y, pix, modexor, pixmap);
         }
     }
     
@@ -4712,11 +4715,6 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 
     bool settitleflag = false;
     
-    // Many of the processing functions need to touch the screen bitmap,
-    // so allocate the raw bitmap access object here and free it on
-    // the way out.
-    m_pixmap = new PixelData (*m_bitmap);
-
     if (m_usefont && currentCharset <= 1)
     {
         supdelta = (m_fontheight/3);
@@ -5679,10 +5677,6 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             }
         }
     }
-    
-    // All done with bitmap access
-    delete m_pixmap;
-    m_pixmap = NULL;
 }
 
 /*--------------------------------------------------------------------------
