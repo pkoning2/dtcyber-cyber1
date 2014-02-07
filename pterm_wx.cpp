@@ -1,4 +1,36 @@
 #define DEBUG 1
+/*
+** This code is incomplete.  Status is as follows:
+
+Working, subject to more testing: char, line, dot, memory load modes
+both ascii and classic.
+
+Not working: failure to connect handling (blows up on an assert in
+wxWidgets, at least in my build of wx which seems to be a debug
+build).  ~Option~ modifier for entering function keys (like Option-A
+for ANS) is weird, it seems to do nothing the first keystroke but if I
+do it again subsequent ones work.  ~diag~ option a then a is useful
+for testing this.  Print screen failed similarly the last time I tried
+it.
+
+Not coded yet: Font mode, flood fill (~paint~) command, scrolling in
+dumb terminal mode. Print screen is probably missing some pieces, save
+and restore window ditto.  Display of selected region for mouse
+selection (for copy text feature).
+
+Not figured out yet: 2x mode, ~stretch~ mode (whatever that is ~ 
+Joe created it and I~ve never understood it).
+
+The key of the new design is that it just uses a 512x512 bitmap with
+raw pixel access to construct all the screen content, then it displays
+that bitmap on the window.  Similarly, I~d display that bitmap on the
+printout, or process it for save-screen, etc.  Display transformations
+like stretch and 2x scale should be done when that bitmap is
+displayed, not by making the bitmap itself different.
+
+*/
+
+
 ////////////////////////////////////////////////////////////////////////////
 // Name:        pterm_wx.cpp
 // Purpose:     pterm interface to wxWindows 
