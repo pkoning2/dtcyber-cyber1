@@ -219,7 +219,6 @@ class Dd60Printout: public wxPrintout
     {}
   bool OnPrintPage (int page);
   bool HasPage (int page);
-  bool OnBeginDocument (int startPage, int endPage);
   void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo);
   void DrawPage (wxDC *dc);
 
@@ -2507,14 +2506,6 @@ void Chargen::Step (void)
 // ----------------------------------------------------------------------------
 // Dd60 printing helper class
 // ----------------------------------------------------------------------------
-
-bool Dd60Printout::OnBeginDocument(int startPage, int endPage)
-{
-    if (!wxPrintout::OnBeginDocument (startPage, endPage))
-        return false;
-
-    return true;
-}
 
 bool Dd60Printout::OnPrintPage (int page)
 {

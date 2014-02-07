@@ -219,7 +219,6 @@ class DtoperPrintout: public wxPrintout
     {}
   bool OnPrintPage (int page);
   bool HasPage (int page);
-  bool OnBeginDocument (int startPage, int endPage);
   void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo);
   void DrawPage (wxDC *dc);
 
@@ -1971,14 +1970,6 @@ void DtoperCanvas::OnKey (wxKeyEvent& event)
 // ----------------------------------------------------------------------------
 // Dtoper printing helper class
 // ----------------------------------------------------------------------------
-
-bool DtoperPrintout::OnBeginDocument(int startPage, int endPage)
-{
-    if (!wxPrintout::OnBeginDocument (startPage, endPage))
-        return false;
-
-    return true;
-}
 
 bool DtoperPrintout::OnPrintPage (int page)
 {
