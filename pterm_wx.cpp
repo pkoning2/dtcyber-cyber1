@@ -4,13 +4,15 @@
 
 Working, subject to more testing: char, line, dot, memory load modes
 both ascii and classic.  Connection failure handling.  Print screen.
+Save screen.
 
 Partially working: print preview.  It displays the preview if you've
 done a Print first (even if canceled).  It displays a blank page
 otherwise.  The odd thing is that the preview window is displayed
 before OnPrintPage is called, so this looks like a failure to update
 the window correctly.  But that is true whether Print is done first,
-or not.
+or not.  Also odd is that the code uses the same logic as in dd60.cpp,
+and there it works without any problems.
 
 Not working: ~Option~ modifier for entering function keys (like Option-A
 for ANS) is weird, it seems to do nothing the first keystroke but if I
@@ -3935,7 +3937,6 @@ void PtermFrame::OnUpdateUIPaste (wxUpdateUIEvent& event)
 
 void PtermFrame::OnSaveScreen (wxCommandEvent &)
 {
-    wxBitmap screenmap (vRealScreenSize (m_scale), vRealScreenSize (m_scale));
     wxMemoryDC screenDC;
     wxString filename, ext;
     wxBitmapType type;
@@ -3958,12 +3959,8 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
     }
     filename = fd.GetPath ();
     idx = fd.GetFilterIndex ();
-    screenDC.SelectObject (screenmap);
-    //screenDC.Blit (0, 0, vScreenSize (m_scale), vScreenSize (m_scale),
-    //               m_memDC, 0, 0, wxCOPY);
-    screenDC.SelectObject (wxNullBitmap);
 
-    wxImage screenImage = screenmap.ConvertToImage ();
+    wxImage screenImage = m_bitmap->ConvertToImage ();
     wxFileName fn (filename);
     wxString filt_ext (exts[idx]);
     
