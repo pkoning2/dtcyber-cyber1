@@ -3,12 +3,19 @@
 ** This code is incomplete.  Status is as follows:
 
 Working, subject to more testing: char, line, dot, memory load modes
-both ascii and classic.  Connection failure handling.
+both ascii and classic.  Connection failure handling.  Print screen.
+
+Partially working: print preview.  It displays the preview if you've
+done a Print first (even if canceled).  It displays a blank page
+otherwise.  The odd thing is that the preview window is displayed
+before OnPrintPage is called, so this looks like a failure to update
+the window correctly.  But that is true whether Print is done first,
+or not.
 
 Not working: ~Option~ modifier for entering function keys (like Option-A
 for ANS) is weird, it seems to do nothing the first keystroke but if I
 do it again subsequent ones work.  ~diag~ option a then a is useful
-for testing this.  Print screen fails with some asserts.
+for testing this.  
 
 Not coded yet: Font mode, flood fill (~paint~) command, scrolling in
 dumb terminal mode. Print screen is probably missing some pieces, save
@@ -499,7 +506,6 @@ public:
     {}
     bool OnPrintPage (int page);
     bool HasPage (int page);
-    bool OnBeginDocument (int startPage, int endPage);
     void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom,
                       int *selPageTo);
     void DrawPage (wxDC *dc);
@@ -789,7 +795,8 @@ class PtermFrame : public PtermFrameBase, public emul8080
     friend void PtermApp::OnHelpKeys (wxCommandEvent &event);
     friend bool PtermApp::OnInit (void);
     friend int PtermConnection::NextWord (void);
-
+    friend void PtermPrintout::DrawPage (wxDC *);
+    
     typedef wxAlphaPixelData PixelData;
 
 public:
@@ -4358,18 +4365,15 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
             if ((charw & 1) == 0)
             {
                 // background, do we erase it?
-                if (mode & 2)
+                if ((mode & 2) == 0)
                 {
-                    charw >>= 1;
-                    cy += dy;
-                    continue;
-                }
-                ptermUpdatePoint (x, y, bpix, false, pixmap);
-                if (large)
-                {
-                    ptermUpdatePoint (x + 1, y, bpix, false, pixmap);
-                    ptermUpdatePoint (x, y + sdy, bpix, false, pixmap);
-                    ptermUpdatePoint (x + 1, y + sdy, bpix, false, pixmap);
+                    ptermUpdatePoint (x, y, bpix, false, pixmap);
+                    if (large)
+                    {
+                        ptermUpdatePoint (x + 1, y, bpix, false, pixmap);
+                        ptermUpdatePoint (x, y + sdy, bpix, false, pixmap);
+                        ptermUpdatePoint (x + 1, y + sdy, bpix, false, pixmap);
+                    }
                 }
             }
             else
@@ -10405,14 +10409,6 @@ int PtermPrintout::GetYMargin (void) const
     return m_owner->GetYMargin ();
 }
 
-bool PtermPrintout::OnBeginDocument (int startPage, int endPage)
-{
-    if (!wxPrintout::OnBeginDocument (startPage, endPage))
-        return false;
-
-    return true;
-}
-
 bool PtermPrintout::OnPrintPage (int page)
 {
     wxDC *dc = GetDC ();
@@ -10423,14 +10419,7 @@ bool PtermPrintout::OnPrintPage (int page)
         {
             DrawPage (dc);
         }
-#if 0
-        dc->SetDeviceOrigin (0, 0);
-        dc->SetUserScale (1.0, 1.0);
 
-        wxChar buf[200];
-        wxSprintf (buf, wxT ("PAGE %d"), page);
-        dc->DrawText (buf, 10, 10);
-#endif
         return true;
     }
 
@@ -10453,9 +10442,6 @@ bool PtermPrintout::HasPage (int pageNum)
 
 void PtermPrintout::DrawPage (wxDC *dc)
 {
-    wxBitmap screenmap (ptermApp->m_CurFrameScreenSize,
-                        ptermApp->m_CurFrameScreenSize);
-    wxMemoryDC screenDC;
     int obr, obg, obb;
     double maxX = ptermApp->m_CurFrameScreenSize;
     double maxY = ptermApp->m_CurFrameScreenSize;
@@ -10490,11 +10476,7 @@ void PtermPrintout::DrawPage (wxDC *dc)
     dc->SetDeviceOrigin ((long) posX, (long) posY);
 
     // Re-color the image
-    screenDC.SelectObject (screenmap);
-    //screenDC.Blit (0, 0, ptermApp->m_CurFrameScreenSize, ptermApp->m_CurFrameScreenSize, m_owner->m_memDC, 0, 0, wxCOPY);
-    screenDC.SelectObject (wxNullBitmap);
-
-    wxImage screenImage = screenmap.ConvertToImage ();
+    wxImage screenImage = m_owner->m_bitmap->ConvertToImage ();
 
     unsigned char *data = screenImage.GetData ();
     
@@ -10526,10 +10508,7 @@ void PtermPrintout::DrawPage (wxDC *dc)
 
     wxBitmap printmap (screenImage);
 
-    screenDC.SelectObject (printmap);
-    dc->Blit (XTOP, YTOP, ptermApp->m_CurFrameScreenSize,
-              ptermApp->m_CurFrameScreenSize, &screenDC, 0, 0, wxCOPY);
-    screenDC.SelectObject (wxNullBitmap);
+    dc->DrawBitmap (printmap, 0, 0);
 }
 
 /*---------------------------  End Of File  ------------------------------*/
