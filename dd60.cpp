@@ -2546,7 +2546,6 @@ bool Dd60Printout::HasPage(int pageNum)
 
 void Dd60Printout::DrawPage (wxDC *dc)
 {
-    wxMemoryDC screenDC;
     double maxX = XSize;
     double maxY = YSize;
 
@@ -2573,7 +2572,6 @@ void Dd60Printout::DrawPage (wxDC *dc)
     double posX = (double) ((w - (XSize * actualScale)) / 2.0);
     double posY = (double) ((h - (YSize * actualScale)) / 2.0);
 
-    double r, g, b;
     int graypix;
     
     // Set the scale and origin
@@ -2592,18 +2590,16 @@ void Dd60Printout::DrawPage (wxDC *dc)
     {
         for (int i = 0; i < w; i++)
         {
-            r = data[0] / 255.0;
-            g = data[1] / 255.0;
-            b = data[2] / 255.0;
-
             // convert to grayscale, using the max of the three channel
             // luminosities to produce a good crisp black & white image.
-            r = (r > g) ? r : g;
-            r = (r > b) ? r : b;
-            graypix = int (r * 255);
-            if (graypix > 255)
+            graypix = data[0];
+            if (data[1] > graypix)
             {
-                graypix = 255;
+                graypix = data[1];
+            }
+            if (data[2] > graypix)
+            {
+                graypix = data[2];
             }
 
             // Invert it so text is dark on white background
@@ -2616,9 +2612,7 @@ void Dd60Printout::DrawPage (wxDC *dc)
 
     wxBitmap printmap (screenImage);
 
-    screenDC.SelectObject (printmap);
-    dc->Blit (0, 0, XSize, YSize, &screenDC, 0, 0, wxCOPY);
-    screenDC.SelectObject (wxNullBitmap);
+    dc->DrawBitmap (printmap, 0, 0);
 }
 
 /*---------------------------  End Of File  ------------------------------*/
