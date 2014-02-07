@@ -3,11 +3,9 @@
 ** This code is incomplete.  Status is as follows:
 
 Working, subject to more testing: char, line, dot, memory load modes
-both ascii and classic.
+both ascii and classic.  Connection failure handling.
 
-Not working: failure to connect handling (blows up on an assert in
-wxWidgets, at least in my build of wx which seems to be a debug
-build).  ~Option~ modifier for entering function keys (like Option-A
+Not working: ~Option~ modifier for entering function keys (like Option-A
 for ANS) is weird, it seems to do nothing the first keystroke but if I
 do it again subsequent ones work.  ~diag~ option a then a is useful
 for testing this.  Print screen failed similarly the last time I tried
@@ -1822,7 +1820,6 @@ bool PtermApp::OnInit (void)
                 m_firstFrame->m_prevFrame = frame;
             }
             frame->m_nextFrame = m_firstFrame;
-            frame->m_pixmap = new PtermFrame::PixelData (*frame->m_bitmap);
             frame->tracePterm = true;
             traceF = stderr;
             m_firstFrame = frame;
@@ -1857,7 +1854,6 @@ bool PtermApp::OnInit (void)
                     frame->procPlatoWord (w, m_testascii);
                 }
             }
-            delete frame->m_pixmap;
             frame->Refresh ();
             
             printf ("done with test data\n");
@@ -2217,7 +2213,6 @@ void PtermApp::OnHelpKeys (wxCommandEvent &)
                 m_firstFrame->m_prevFrame = frame;
             }
             frame->m_nextFrame = m_firstFrame;
-            frame->m_pixmap = new PtermFrame::PixelData (*frame->m_bitmap);
             m_firstFrame = frame;
             for (i = 0;
                  i < sizeof (keyboardhelp) / sizeof (keyboardhelp[0]);
@@ -2225,7 +2220,6 @@ void PtermApp::OnHelpKeys (wxCommandEvent &)
             {
                 frame->procPlatoWord (keyboardhelp[i], false);
             }
-            delete frame->m_pixmap;
             m_helpFrame = frame;
             frame->Refresh ();
         }
@@ -2385,7 +2379,10 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
       m_fontPMD (false),
       m_fontinfo (false),
       m_osinfo (false),
-      // m_bitmap not initialized
+      // m_fgpix not initialized
+      // m_bgpix not initialized
+      m_bitmap (NULL),
+      m_pixmap (NULL),
       m_canvas (NULL),
       // m_curProfile not initialized
       // m_ShellFirst not initialized
@@ -2635,8 +2632,10 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
     SetClientSize (vXRealSize (m_scale) - 1, vYRealSize (m_scale) - 1);
     m_canvas = new PtermCanvas (this);
 
+    // Note that ptermFullErase needs m_pixmap
     ptermFullErase ();
     delete m_pixmap;
+    m_pixmap = NULL;
 
     if (port > 0)
     {
@@ -2905,7 +2904,6 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
         return;
     }
 
-    m_pixmap = new PixelData (*m_bitmap);
     if (m_nextword != 0)
     {
         procPlatoWord (m_nextword, m_conn->Ascii ());
@@ -2939,7 +2937,6 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
             {
                 m_timer.Start (17);
             }
-            delete m_pixmap;
             
             if (refresh)
             {
@@ -2957,7 +2954,6 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
         procPlatoWord (word, m_conn->Ascii ());
         refresh = true;
     }
-    delete m_pixmap;
 
     if (refresh)
     {
@@ -2989,8 +2985,6 @@ void PtermFrame::OnTimer (wxTimerEvent &)
         return;
     }
 
-    m_pixmap = new PixelData (*m_bitmap);
-
 #ifdef DEBUGLOG
     wxLogMessage (wxT ("processing data from plato %07o"), m_nextword);
 #elif DEBUG
@@ -3008,7 +3002,6 @@ void PtermFrame::OnTimer (wxTimerEvent &)
         {
             m_nextword = 0;
             m_timer.Stop ();
-            delete m_pixmap;
 
             return;
         }
@@ -3025,7 +3018,6 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 #endif
         procPlatoWord (word, m_conn->Ascii ());
     }
-    delete m_pixmap;
 }
 
 void PtermFrame::OnPasteTimer (wxTimerEvent &)
@@ -4720,6 +4712,11 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
 
     bool settitleflag = false;
     
+    // Many of the processing functions need to touch the screen bitmap,
+    // so allocate the raw bitmap access object here and free it on
+    // the way out.
+    m_pixmap = new PixelData (*m_bitmap);
+
     if (m_usefont && currentCharset <= 1)
     {
         supdelta = (m_fontheight/3);
@@ -4790,7 +4787,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         // TODO
                     }
                     // Erase the line we just moved to.
-                    mode = (2 << 2) + 1;    // set character mode, erase
+                    mode = (3 << 2) + 2;    // set character mode, erase
                     ptermBlockErase (0, currentY, 511, currentY + 15);
                     mode = (3 << 2) + 1;    // set character mode, rewrite
                 }
@@ -5682,6 +5679,10 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             }
         }
     }
+    
+    // All done with bitmap access
+    delete m_pixmap;
+    m_pixmap = NULL;
 }
 
 /*--------------------------------------------------------------------------
