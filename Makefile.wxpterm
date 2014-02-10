@@ -90,6 +90,12 @@ ifneq ("$(PTERMVERSION)","xxx")
 LANGUAGES =
 MOFILES =
 endif
+LINK=$(CXX)
+##ifeq ("$(TYPE)","static")
+ifeq ("$(HOST)","Darwin")
+LINK=$(CC) -lstdc++-static
+endif
+##endif
 
 .PHONY : pterm-kit langdirs wxversion pterm-v$(PTERMVERSION).tar.bz2 info
 
@@ -102,10 +108,11 @@ info:
 
 pterm:	$(PTOBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(LIBS) $(SETPATH)
+	$(LINK) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(LIBS) $(SETPATH)
 ifeq ("$(TYPE)","static")
 ifeq ("$(HOST)","Darwin")
 	#strip $@
+
 
 else
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
@@ -122,16 +129,16 @@ wxversion.h: wxversion
 
 dd60:	$(SOBJS) dd60.o knob.o iir.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
+	$(LINK)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
 
 dtoper:	$(SOBJS) dtoper.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
+	$(LINK)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
 
 # console display test program
 cc545:	cc545.o knob.o iir.o
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
+	$(LINK) $(CXXFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
 
 ifeq ("$(HOST)","Darwin")
 
@@ -160,7 +167,6 @@ Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES)
 	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm-info.plist.in > pterm-info.plist
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en.lproj
 	mkdir -p $(addprefix $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES)),.lproj)
-	mkdir -p Pterm.app/Contents/Frameworks
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
 	/bin/echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm

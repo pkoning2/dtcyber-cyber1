@@ -42,8 +42,9 @@ ifeq ("$(HOST)","Darwin")
 # Mac
 
 ifeq ("$(SDKDIR)","")
-#SDKDIR := /Developer/SDKs/MacOSX10.8.sdk
-SDKDIR := /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
+OSXVER ?= 10.6
+OSXMIN ?= 10.4
+SDKDIR := /Developer/SDKs/MacOSX$(OSXVER).sdk
 endif
 CLANG := $(shell gcc --version 2>/dev/null| fgrep LLVM)
 ifneq ("$(CLANG)", "")
@@ -51,9 +52,8 @@ CXXLIB := -stdlib=libstdc++
 endif
 LIBS    +=  -Wl,-syslibroot,$(SDKDIR) -L$(SDKDIR)/usr/lib -L/usr/lib
 INCL    += -isysroot $(SDKDIR)
-#LDFLAGS +=  -Wl,-framework,CoreServices -mmacosx-version-min=10.8
-LDFLAGS +=  -mmacosx-version-min=10.8 $(CXXLIB)
-CFLAGS  +=  -mmacosx-version-min=10.8 $(CXXLIB)
+LDFLAGS +=  -mmacosx-version-min=$(OSXMIN) $(CXXLIB)
+CFLAGS  +=  -mmacosx-version-min=$(OSXMIN) $(CXXLIB)
 X86ARCHFLAGS = -arch i386
 X86_64ARCHFLAGS = -arch x86_64
 TOOLLDFLAGS = -arch i386
@@ -113,8 +113,10 @@ DEPFILES+= blackbox.d niu.d charset.d dtnetsubs.d
 include Makefile.wxpterm
 
 # This must be last
+ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
+endif
 endif
 
 #---------------------------  End Of File  --------------------------------
