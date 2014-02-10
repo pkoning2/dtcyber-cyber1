@@ -37,18 +37,10 @@ ARCHCFLAGS ?= -arch i386
 #DEFWXDIR = /usr/local/wx295
 DEFWXDIR = /usr/local
 INCL ?= -I/usr/local/include -I/usr/include
-#SDLINCL=-I/Library/Frameworks/SDL2.framework/Headers
-#SDLLIBS=-F/Library/Frameworks/SDL2.framework
 SDLPATH ?= /usr/local
-SDLINCL ?= `sdl2-config --cflags`
+SDLINCL ?= `sdl-config --cflags`
 PATH:=$(SDLPATH)/bin:$(PATH)
-ifeq ("$(TYPE)","static")
-SDLLIBS ?= `sdl2-config --static-libs`
-else
-SDLLIBS ?= `sdl2-config --libs`
-endif
-##SDL_FRAMEWORK_PATHS ?= /Library/Frameworks /Volumes/SDL
-##SDL_FRAMEWORK_PATH ?= $(shell for d in $(SDL_FRAMEWORK_PATHS); do if [ -e $$d/SDL.framework ]; then echo $$d; break; fi; done)
+SDLLIBS ?= `sdl-config --static-libs`
 endif
 #else
 SDLPATH ?= /usr/local
