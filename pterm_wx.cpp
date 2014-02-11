@@ -4,7 +4,8 @@
 
 Working, subject to more testing: char, line, dot, memory load modes
 both ascii and classic.  Connection failure handling.  Print screen.
-Save screen.  flood fill (~paint~) command.
+Save screen.  flood fill (-paint-) command.  -font- command and text
+display when in font mode.  Full screen mode.
 
 Partially working: print preview.  It displays the preview if you've
 done a Print first (even if canceled).  It displays a blank page
@@ -14,21 +15,20 @@ the window correctly.  But that is true whether Print is done first,
 or not.  Also odd is that the code uses the same logic as in dd60.cpp,
 and there it works without any problems.
 
-Not working: ~Option~ modifier for entering function keys (like Option-A
+Not working: -Option- modifier for entering function keys (like Option-A
 for ANS) is weird, it seems to do nothing the first keystroke but if I
-do it again subsequent ones work.  ~diag~ option a then a is useful
+do it again subsequent ones work.  -diag- option a then a is useful
 for testing this.  
 
-Not coded yet: Font mode, scrolling in dumb terminal mode. Save and
+Not coded yet: Scrolling in dumb terminal mode. Save and
 restore window.  Display of selected region for mouse selection (for
 copy text feature).
 
-Not figured out yet: 2x mode, ~stretch~ mode (whatever that is ~ 
-Joe created it and I~ve never understood it).
+Not figured out yet: 2x mode, -stretch- mode.
 
 The key of the new design is that it just uses a 512x512 bitmap with
 raw pixel access to construct all the screen content, then it displays
-that bitmap on the window.  Similarly, I~d display that bitmap on the
+that bitmap on the window.  Similarly, I'd display that bitmap on the
 printout, or process it for save-screen, etc.  Display transformations
 like stretch and 2x scale should be done when that bitmap is
 displayed, not by making the bitmap itself different.
@@ -93,9 +93,6 @@ displayed, not by making the bitmap itself different.
 // patterns for the character sets (ROM and loadable)
 #define vXSize(s)       (512 * ((m_stretch) ? 1 : s) + (2 * DisplayMargin))
 #define vYSize(s)       (512 * ((m_stretch) ? 1 : s) + (2 * DisplayMargin))
-#define vCharXSize(s)   (512 * ((m_stretch) ? 1 : s))
-#define vCharYSize(s)   ((CSETS * 16) * ((m_stretch) ? 1 : s))
-#define tvCharYSize(s)  ((4 * 16) * ((m_stretch) ? 1 : s))
 #define vScreenSize(s)  (512 * ((m_stretch) ? 1 : s))
 #define vXRealSize(s)       (512 * (s) + (2 * DisplayMargin))
 #define vYRealSize(s)       (512 * (s) + (2 * DisplayMargin))
@@ -103,8 +100,6 @@ displayed, not by making the bitmap itself different.
 
 //#define XSize           (vYSize (ptermApp->m_scale))
 //#define YSize           (vXSize (ptermApp->m_scale))
-//#define CharXSize       (vCharXSize (ptermApp->m_scale))
-//#define CharYSize       (vCharYSize (ptermApp->m_scale))
 //#define ScreenSize      (vRealScreenSize (ptermApp->m_scale))
 
 #define TERMTYPE        10
@@ -205,8 +200,8 @@ displayed, not by making the bitmap itself different.
 #define YADJUST(y) ((511 - (y)) * ((m_stretch) ? 1 : m_scale)  + GetYMargin ())
 
 // Map PLATO coordinates to backing store bitmap coordinates
-#define XMADJUST(x) ((x) * ((m_stretch) ? 1 : m_scale))
-#define YMADJUST(y) ((511 - (y)) * ((m_stretch) ? 1 : m_scale))
+#define XMADJUST(x) (x)
+#define YMADJUST(y) (511 - (y))
 
 // inverse mapping (for processing touch input)
 #define XUNADJUST(x) (((x) - GetXMargin ()) / ((m_stretch) ? 1 : m_scale))
@@ -909,6 +904,7 @@ public:
     void trace (const char *, ...);
     void tracex (const char *, ...);
     
+    wxMemoryDC  *m_memDC;
     bool        tracePterm;
     PtermFrame  *m_nextFrame;
     PtermFrame  *m_prevFrame;
@@ -1107,7 +1103,6 @@ private:
     void ptermRestoreWindow (int d);
     void ResetScrollRate (PtermCanvas *c);
     
-    void drawChar (wxDC &dc, int x, int y, int snum, int cnum);
     void drawFontChar (int x, int y, int c);
     void procPlatoWord (u32 d, bool ascii);
     void plotChar (int c);
@@ -2353,6 +2348,7 @@ PtermMainFrame::PtermMainFrame (void)
 PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
                         const wxPoint &pos)
     : PtermFrameBase (PtermFrameParent, -1, title, pos, wxDefaultSize),
+      // m_memDC not initialized
       tracePterm (false),
       m_nextFrame (NULL),
       m_prevFrame (NULL),
@@ -2374,7 +2370,6 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
       m_yscale (ptermApp->m_scale),
       // m_font not initialized
       m_usefont (false),
-      // m_usefont not initialized
       // m_fontfamily not initialized
       // m_fontface not initialized
       // m_fontsize not initialized
@@ -2635,6 +2630,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
          *pmap = t;
          //printf ("%d %d %d %d\n", m_maxalpha, m_red, m_green, m_blue);
     }
+    m_memDC = new wxMemoryDC ();
     
 // Why is there a "+2" for vXRealSize (), vYRealSize here?
 //    SetClientSize (vXRealSize (m_scale) + 2, vYRealSize (m_scale) + 2);
@@ -4228,7 +4224,6 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
         SetResizeState ();
 
     menuPopup->Check (Pterm_FullScreen, m_fullScreen);
-    menuView->Check (Pterm_FullScreenView, m_fullScreen);
 
     m_canvas->Refresh ();
     m_canvas->SetFocus ();
@@ -4693,42 +4688,13 @@ void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
     
 }
 
-void PtermFrame::drawChar (wxDC &dc, int x, int y, int snum, int cnum)
-{
-    int charX, charY, sizeX, sizeY, screenX, screenY, memX, memY;
-
-    charX = cnum * 8 * ((m_stretch) ? 1 : m_scale);
-    charY = snum * 16 * ((m_stretch) ? 1 : m_scale);
-    sizeX = 8;
-    sizeY = 16;
-
-    screenX = XADJUST (x);
-    screenY = YADJUST (y + 15);
-    memX = XMADJUST (x);
-    memY = YMADJUST (y + 15);
-
-    if (x < 0)
-    {
-        sizeX += x;
-        charX -= x * ((m_stretch) ? 1 : m_scale);
-        screenX = XADJUST (0);
-        memX = XMADJUST (0);
-    }
-    if (y < 0)
-    {
-        sizeY += y;
-    }
-}
-
 void PtermFrame::drawFontChar (int x, int y, int c)
 {
-    int screenX, screenY, memX, memY;
-    wxClientDC dc (m_canvas);
     wxString chr;
 
     chr.Printf (wxT ("%c"), c);
 
-#if 0
+    m_memDC->SelectObject (*m_bitmap);
     switch (wemode)
     {
     case 0:         // inverse
@@ -4753,20 +4719,21 @@ void PtermFrame::drawFontChar (int x, int y, int c)
     
     m_memDC->GetTextExtent (chr, &m_fontwidth, &m_fontheight);
 
-    screenX = XADJUST (x);
-    screenY = YADJUST (y + m_fontheight - 1);
-    memX = XMADJUST (x);
-    memY = YMADJUST (y + m_fontheight - 1);
+    x = XMADJUST (x);
+    y = YMADJUST (y + m_fontheight - 1);
 
     currentX += m_fontwidth;
     
     if (modexor)
+    {
         m_memDC->SetLogicalFunction (wxXOR);
-    m_memDC->DrawText (chr, memX, memY);
-    if (modexor)
+    }
+    else
+    {
         m_memDC->SetLogicalFunction (wxCOPY);
-    dc.Blit (screenX, screenY, m_fontwidth, m_fontheight, m_memDC, memX, memY);
-#endif
+    }
+    m_memDC->DrawText (chr, x, y);
+    m_memDC->SelectObject (wxNullBitmap);
 }
 
 /*--------------------------------------------------------------------------
@@ -4797,7 +4764,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
     
     if (m_usefont && currentCharset <= 1)
     {
-        supdelta = (m_fontheight/3);
+        supdelta = (m_fontheight / 3);
         // Not going to support reverse/vertical in font mode until I get documentation
         // on what worked with -font- in the past.  JWS 5/27/2007
         deltax = 8;
@@ -5581,9 +5548,9 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 else if ((d & NOP_MASKDATA) == NOP_FONTINFO)
                 {
                     const int chardelay = atoi (ptermApp->m_charDelay.mb_str ());
-                    ptermSendExt ((int)m_fontwidth);
+                    ptermSendExt ((int) m_fontwidth);
                     wxMilliSleep (chardelay);
-                    ptermSendExt ((int)m_fontheight);
+                    ptermSendExt ((int) m_fontheight);
                     wxMilliSleep (chardelay);
                 }
                 else if ((d & NOP_MASKDATA) == NOP_OSINFO)
@@ -5957,9 +5924,9 @@ int PtermFrame::AssembleAsciiPlatoMetaData (int d)
         m_fontinfo = true;
         m_ascBytes = 0;
         m_ascState = none;
-        ptermSendExt ((int)m_fontwidth);
+        ptermSendExt ((int) m_fontwidth);
         wxMilliSleep (chardelay);
-        ptermSendExt ((int)m_fontheight);
+        ptermSendExt ((int) m_fontheight);
         wxMilliSleep (chardelay);
         return 0;
     }
@@ -6301,16 +6268,23 @@ void PtermFrame::SetFontActive ()
     if (m_usefont)
     {
         m_font = new wxFont;
-        //m_font->New (m_fontsize, m_fontfamily, wxFONTFLAG_NOT_ANTIALIASED, m_fontface);
-        m_font->New (m_fontsize, m_fontfamily, wxFONTFLAG_ANTIALIASED | (m_fontstrike ? wxFONTFLAG_STRIKETHROUGH : 0), m_fontface);
+        m_font->New (m_fontsize, m_fontfamily,
+                     wxFONTFLAG_ANTIALIASED |
+                     (m_fontstrike ? wxFONTFLAG_STRIKETHROUGH : 0),
+                     m_fontface);
         m_font->SetFaceName (m_fontface);
         m_font->SetFamily (m_fontfamily);
         m_font->SetPointSize (m_fontsize);
         m_font->SetStyle (m_fontitalic ? wxFONTSTYLE_ITALIC : wxFONTSTYLE_NORMAL);
         m_font->SetWeight (m_fontbold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL);
         m_font->SetUnderlined (m_fontunderln);
-        //m_memDC->SetFont (*m_font);
-        //m_memDC->GetTextExtent (wxT (" "), &m_fontwidth, &m_fontheight);
+
+        // We need to select a bitmap into the memDC for GetTextExtent
+        // to be accepted.
+        m_memDC->SelectObject (*m_bitmap);
+        m_memDC->SetFont (*m_font);
+		m_memDC->GetTextExtent (wxT (" "), &m_fontwidth, &m_fontheight);
+        m_memDC->SelectObject (wxNullBitmap);
     }
 }
 
@@ -6451,7 +6425,7 @@ void PtermFrame::plotChar (int c)
     
     if (m_usefont && currentCharset <= 1)
     {
-        supdelta = (m_fontheight/3);
+        supdelta = (m_fontheight / 3);
         // Not going to support reverse/vertical in font mode until I get documentation
         // on what worked with -font- in the past.  JWS 5/27/2007
         deltax = 8;
@@ -6563,7 +6537,9 @@ void PtermFrame::plotChar (int c)
         }
     }
     else if (m_usefont && currentCharset <= 1)
-        drawFontChar (currentX, currentY, rom01char[c+64*currentCharset]);
+    {
+        drawFontChar (currentX, currentY, rom01char[c + 64 * currentCharset]);
+    }
     else
     {
         ptermDrawChar (currentX, currentY, currentCharset, c);
@@ -6942,7 +6918,7 @@ void PtermFrame::ptermSendKey (int key)
 **------------------------------------------------------------------------*/
 void PtermFrame::ptermSendKeys (int key[])
 {
-    for (int i=0; key[i] != -1; i++)
+    for (int i = 0; key[i] != -1; i++)
     {
         ptermSendKey (key[i]);
         m_pasteTimer.Start (atoi (ptermApp->m_charDelay.mb_str ()), true);
@@ -9743,7 +9719,9 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
 
     if (!m_owner->HasConnection () ||
         (m_owner->m_conn->Ascii () && m_owner->m_dumbTty) ||
-        key == WXK_ALT || key == WXK_SHIFT || key == WXK_RAW_CONTROL)
+        key == WXK_ALT ||
+        key == WXK_SHIFT ||
+        key == WXK_RAW_CONTROL)
     {
         // We don't take any action on the modifier key keydown events,
         // but we do want to make sure they are seen by the rest of
