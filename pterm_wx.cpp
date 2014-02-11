@@ -5,26 +5,22 @@
 Working, subject to more testing: char, line, dot, memory load modes
 both ascii and classic.  Connection failure handling.  Print screen.
 Save screen.  flood fill (-paint-) command.  -font- command and text
-display when in font mode.  Full screen mode.
+display when in font mode.  Full screen mode.  Print preview.
+Copy text.
 
-Partially working: print preview.  It displays the preview if you've
-done a Print first (even if canceled).  It displays a blank page
-otherwise.  The odd thing is that the preview window is displayed
-before OnPrintPage is called, so this looks like a failure to update
-the window correctly.  But that is true whether Print is done first,
-or not.  Also odd is that the code uses the same logic as in dd60.cpp,
-and there it works without any problems.
-
-Not working: -Option- modifier for entering function keys (like Option-A
-for ANS) is weird, it seems to do nothing the first keystroke but if I
-do it again subsequent ones work.  -diag- option a then a is useful
-for testing this.  
+Partially working: -Option- modifier for entering function keys (like
+Option-A for ANS) is weird, it seems to do nothing the first keystroke
+but if I do it again subsequent ones work.  -diag- option a then a is
+useful for testing this.
 
 Not coded yet: Scrolling in dumb terminal mode. Save and
-restore window.  Display of selected region for mouse selection (for
-copy text feature).
+restore window.  
 
-Not figured out yet: 2x mode, -stretch- mode.
+Partially tested: 2x mode, -stretch- mode.  This seems to be a lot
+more complicated than it needs to be; revisit how it's done in light
+of the new design.
+
+Not working: scrollbars (they don't appear).
 
 The key of the new design is that it just uses a 512x512 bitmap with
 raw pixel access to construct all the screen content, then it displays
@@ -97,10 +93,6 @@ displayed, not by making the bitmap itself different.
 #define vXRealSize(s)       (512 * (s) + (2 * DisplayMargin))
 #define vYRealSize(s)       (512 * (s) + (2 * DisplayMargin))
 #define vRealScreenSize(s)  (512 * (s))
-
-//#define XSize           (vYSize (ptermApp->m_scale))
-//#define YSize           (vXSize (ptermApp->m_scale))
-//#define ScreenSize      (vRealScreenSize (ptermApp->m_scale))
 
 #define TERMTYPE        10
 #define ASCTYPE         12
@@ -686,8 +678,6 @@ public:
     int lastY;
 
     PtermFrame *m_CurFrame;
-    int m_CurFrameScreenSize;
-    int m_CurFrameScale;
 
     bool        m_RosterMonitor;
 
@@ -703,7 +693,7 @@ private:
 };
 
 // define a scrollable canvas for drawing onto
-class PtermCanvas : public wxScrolledWindow
+class PtermCanvas : public wxScrolledCanvas
 {
 public:
     PtermCanvas (PtermFrame *parent);
@@ -950,6 +940,8 @@ private:
     uint32_t    m_bgpix;
     wxBitmap    *m_bitmap;
     uint32_t    m_maxalpha;
+    uint32_t    m_selpix;
+    wxBitmap    *m_selmap;
     uint32_t    m_red;
     uint32_t    m_green;
     uint32_t    m_blue;
@@ -1089,6 +1081,9 @@ private:
     
     // PLATO drawing primitives
     void ptermDrawChar (int x, int y, int snum, int cnum);
+    void ptermDrawCharInto (int x, int y, const u16 *charp,
+                            uint32_t fpix, uint32_t bpix, int cmode,
+                            bool xor_p, PixelData &pixmap);
     void ptermDrawPoint (int x, int y);
     void ptermUpdatePoint (int x, int y, uint32_t pixval, bool xor_p,
                            PixelData & pixmap);
@@ -2384,7 +2379,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
       m_osinfo (false),
       // m_fgpix not initialized
       // m_bgpix not initialized
-      m_bitmap (NULL),
+      // m_bitmap not initialized
       m_canvas (NULL),
       // m_curProfile not initialized
       // m_ShellFirst not initialized
@@ -2586,8 +2581,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
         m_statusBar = NULL;
     }
 
-    m_bitmap = new wxBitmap (vRealScreenSize (m_scale),
-                             vRealScreenSize (m_scale), -1);
+    m_bitmap = new wxBitmap (512, 512, -1);
     {
          PixelData pixmap (*m_bitmap);
 
@@ -2627,10 +2621,15 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
          {
              if (pb[i]) m_blue = i;
          }
+         // Pixel value for selected text is translucent white
+         p.Alpha () = 180;
+         p.Red () = p.Green () = p.Blue () = 255;
+         m_selpix = *pmap;
          *pmap = t;
          //printf ("%d %d %d %d\n", m_maxalpha, m_red, m_green, m_blue);
     }
     m_memDC = new wxMemoryDC ();
+    m_selmap = new wxBitmap (512, 512, -1);
     
 // Why is there a "+2" for vXRealSize (), vYRealSize here?
 //    SetClientSize (vXRealSize (m_scale) + 2, vYRealSize (m_scale) + 2);
@@ -3406,16 +3405,9 @@ void PtermFrame::OnActivate (wxActivateEvent &event)
 
 void PtermFrame::OnCopyScreen (wxCommandEvent &)
 {
-    wxBitmap screenmap (vRealScreenSize (m_scale), vRealScreenSize (m_scale));
-    wxMemoryDC screenDC;
     wxBitmapDataObject *screen;
 
-    screenDC.SelectObject (screenmap);
-    //screenDC.Blit (0, 0, vScreenSize (m_scale), vScreenSize (m_scale),
-    //               m_memDC, 0, 0, wxCOPY);
-    screenDC.SelectObject (wxNullBitmap);
-
-    screen = new wxBitmapDataObject (screenmap);
+    screen = new wxBitmapDataObject (*m_bitmap);
 
     if (wxTheClipboard->Open ())
     {
@@ -4013,9 +4005,6 @@ void PtermFrame::OnPrint (wxCommandEvent &)
     
     wxPrinter printer (& printDialogData);
     
-    ptermApp->m_CurFrameScreenSize = vRealScreenSize (m_scale);
-    ptermApp->m_CurFrameScale = m_scale;
-
     PtermPrintout printout (this);
     if (!printer.Print (this, &printout, true /*prompt*/))
     {
@@ -4296,28 +4285,14 @@ void PtermFrame::PrepareDC (wxDC& dc)
 
 void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
 {
-    int &cx = (vertical) ? y : x;
-    int &cy = (vertical) ? x : y;
-    int i, j, saveY, dx, dy, sdy;
     uint32_t fpix, bpix;
     const u16 *charp;
-    u16 charw;
-    wxClientDC dc (m_canvas);
     PixelData pixmap (*m_bitmap);
+    PixelData selmap (*m_selmap);
     
-    m_canvas->SaveChar (x, y, snum, cnum, wemode, large!=0);
+    m_canvas->SaveChar (x, y, snum, cnum, wemode, large != 0);
     
     // Drawing a character is done simply by drawing the dots one by one.
-    x = currentX;
-    y = currentY;
-    saveY = cy;
-    dx = dy = (large) ? 2 : 1;
-    sdy = 1;
-    if (vertical)
-    {
-        sdy = -1;
-        dy = -dy;
-    }
     if (snum == 0)
     {
         charp = plato_m0;
@@ -4348,6 +4323,33 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
         bpix = m_fgpix;
     }
 
+    // We draw the character twice: once onto the screen bitmap,
+    // and once onto the selection region bitmap.  The latter reflects
+    // the text currently stored in the savemap, which is coarse grid
+    // aligned.  Note that the selection map is shown in what amounts
+    // to -mode inverse-
+    ptermDrawCharInto (x, y, charp, fpix, bpix, mode, modexor, pixmap);
+    ptermDrawCharInto (x & 0770, y & 0760, charp, 0, m_selpix, 1, false, selmap);
+}
+
+void PtermFrame::ptermDrawCharInto (int x, int y, const u16 *charp,
+                                    uint32_t fpix, uint32_t bpix, int cmode,
+                                    bool xor_p, PixelData &pixmap)
+{
+    int &cx = (vertical) ? y : x;
+    int &cy = (vertical) ? x : y;
+    int i, j, saveY, dx, dy, sdy;
+    u16 charw;
+
+    saveY = cy;
+    dx = dy = (large) ? 2 : 1;
+    sdy = 1;
+    if (vertical)
+    {
+        sdy = -1;
+        dy = -dy;
+    }
+
     for (j = 0; j < 8; j++)
     {
         cy = saveY;
@@ -4357,7 +4359,7 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
             if ((charw & 1) == 0)
             {
                 // background, do we erase it?
-                if ((mode & 2) == 0)
+                if ((cmode & 2) == 0)
                 {
                     ptermUpdatePoint (x, y, bpix, false, pixmap);
                     if (large)
@@ -4370,12 +4372,12 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
             }
             else
             {
-                ptermUpdatePoint (x, y, fpix, modexor, pixmap);
+                ptermUpdatePoint (x, y, fpix, xor_p, pixmap);
                 if (large)
                 {
-                    ptermUpdatePoint (x + 1, y, fpix, modexor, pixmap);
-                    ptermUpdatePoint (x, y + sdy, fpix, modexor, pixmap);
-                    ptermUpdatePoint (x + 1, y + sdy, fpix, modexor, pixmap);
+                    ptermUpdatePoint (x + 1, y, fpix, xor_p, pixmap);
+                    ptermUpdatePoint (x, y + sdy, fpix, xor_p, pixmap);
+                    ptermUpdatePoint (x + 1, y + sdy, fpix, xor_p, pixmap);
                 }
             }
             charw >>= 1;
@@ -4413,7 +4415,7 @@ void PtermFrame::ptermUpdatePoint (int x, int y, uint32_t pixval, bool xor_p,
     p.MoveTo (pixmap, x, y);
     pmap = (uint32_t *)(p.m_ptr);
 
-    if (modexor)
+    if (xor_p)
     {
         *pmap ^= pixval;
     }
@@ -4501,6 +4503,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     int x, y;
     uint32_t pix;
     PixelData pixmap (*m_bitmap);
+    PixelData selmap (*m_selmap);
     
     if (x1 > x2)
         t = x1, x1 = x2, x2 = t;
@@ -4526,13 +4529,24 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
         }
     }
     
-    //wipe text map
+    // Wipe text map
     int scol = int (x1 / 8);
     int cols = int (ceil ((x2 - x1) / 8)) + 1;
     int srow = int (y1 / 16);
     int rows = int (ceil ((y2 - y1) / 16)) + 1;
     for (int row = srow; rows > 0; row++, rows--)
+    {
         memset (&m_canvas->textmap[row * 64 + scol], 055, 2 * cols);
+    }
+    
+    // Wipe the corresponding region of the selection image
+    for (x = scol * 8; x < (scol + cols) * 8; x++)
+    {
+        for (y = srow * 16; y < (srow + rows) * 16; y++)
+        {
+            ptermUpdatePoint (x, y, 0, false, selmap);
+        }
+    }
 
 }
 
@@ -9595,7 +9609,7 @@ void PtermConnection::SendData (const void *data, int len)
 
 // the event tables connect the wxWindows events with the functions (event
 // handlers) which process them.
-BEGIN_EVENT_TABLE (PtermCanvas, wxScrolledWindow)
+BEGIN_EVENT_TABLE (PtermCanvas, wxScrolledCanvas)
     EVT_CHAR (PtermCanvas::OnChar)
     EVT_KEY_DOWN (PtermCanvas::OnKeyDown)
     EVT_LEFT_DOWN (PtermCanvas::OnMouseDown)
@@ -9606,10 +9620,11 @@ BEGIN_EVENT_TABLE (PtermCanvas, wxScrolledWindow)
     END_EVENT_TABLE ();
 
 PtermCanvas::PtermCanvas (PtermFrame *parent)
-    : wxScrolledWindow (parent, -1, wxDefaultPosition,
+    : wxScrolledCanvas (parent, -1, wxDefaultPosition,
                        wxSize (vXSize (parent->m_scale),
                                vYSize (parent->m_scale)),
-                       wxHSCROLL | wxVSCROLL | wxFULL_REPAINT_ON_RESIZE /* , "Default Name" */),
+                       wxHSCROLL | wxVSCROLL | wxFULL_REPAINT_ON_RESIZE
+                        /* , "Default Name" */),
       m_regionX (0),
       m_regionY (0),
       m_regionHeight (0),
@@ -9650,36 +9665,37 @@ int PtermCanvas::GetYMargin (void) const
 
 void PtermCanvas::OnDraw (wxDC &dc)
 {
-    int i, j, c;
-    int charX, charY, sizeX, sizeY;
+    const int scale = (m_stretch) ? 1 : m_scale;
     
+    dc.DestroyClippingRegion ();
+    
+    if (m_owner->m_stretch)
+    {
+        dc.SetUserScale (m_owner->m_xscale, m_owner->m_yscale);
+    }
+    else
+    {
+        dc.SetUserScale (m_owner->m_scale, m_owner->m_scale);
+    }
     dc.DrawBitmap (*m_owner->m_bitmap, XTOP, YTOP, false);
     
 #if DEBUG
     printf ("Drawing bitmap onto the window canvas at %d %d\n", XTOP, YTOP);
 #endif
 
-#if 0
     if (m_regionHeight != 0 && m_regionWidth != 0)
     {
-        sizeX = 8 * ((m_stretch) ? 1 : m_scale);
-        sizeY = 16 * ((m_stretch) ? 1 : m_scale);
-        for (i = m_regionY; i < m_regionY + m_regionHeight; i++)
-        {
-            for (j = m_regionX; j < m_regionX + m_regionWidth; j++)
-            {
-                c = textmap[i * 64 + j] & 0xff;
-                charX = (c & 077) * 8 * ((m_stretch) ? 1 : m_scale);
-                charY = (c >> 6) * 16 * ((m_stretch) ? 1 : m_scale);
-                dc.Blit (XADJUST (j * 8), YADJUST (i * 16 + 15), 
-//                         sizeX, sizeY, m_owner->m_charDC[4],
-//                         charX, charY, wxCOPY);
-                         sizeX, sizeY, m_owner->m_charDC[1],
-                         charX, charY, wxSRC_INVERT);
-            }
-        }
-    }
+        dc.SetClippingRegion (XADJUST (8 * m_regionX), 
+                              YADJUST (16 * (m_regionY + m_regionHeight)), 
+                              m_regionWidth * 8 * scale,
+                              m_regionHeight * 16 * scale);
+        dc.DrawBitmap (*m_owner->m_selmap, XTOP, YTOP, false);
+    
+#if DEBUG
+        printf ("Drawing selection region onto the window canvas at %d %d, top %d %d, size %d %d\n",
+                XTOP, YTOP, m_regionX, m_regionY, m_regionWidth, m_regionHeight);
 #endif
+    }
 }
 
 void PtermCanvas::OnKeyDown (wxKeyEvent &event)
@@ -10446,7 +10462,7 @@ WXLRESULT PtermCanvas::MSWWindowProc (WXUINT message, WXWPARAM wParam,
         m_lastKeydownProcessed = HandleKeyDown ((WORD) wParam, lParam);
         return 0;
     }
-    return wxScrolledWindow::MSWWindowProc (message, wParam, lParam);
+    return wxScrolledCanvas::MSWWindowProc (message, wParam, lParam);
 }
 #endif
 
@@ -10497,33 +10513,22 @@ bool PtermPrintout::HasPage (int pageNum)
 void PtermPrintout::DrawPage (wxDC *dc)
 {
     int obr, obg, obb;
-    double maxX = ptermApp->m_CurFrameScreenSize;
-    double maxY = ptermApp->m_CurFrameScreenSize;
-    int m_scale = ptermApp->m_CurFrameScale;
-    int m_stretch = ptermApp->m_stretch;
-
-    // Let's have at least 50 device units margin
-    double marginX = 50;
-    double marginY = 50;
-
-    // Add the margin to the graphic size
-    maxX += (2*marginX);
-    maxY += (2*marginY);
-
     // Get the size of the DC in pixels
     int w, h;
     dc->GetSize (&w, &h);
 
-    // Calculate a suitable scaling factor
-    double scaleX = (double) (w / maxX);
-    double scaleY = (double) (h / maxY);
+    // Calculate a suitable scaling factor.  "Suitable" means chosen so
+    // that the page size corresponds to 600 screen pixels, so we get
+    // about 45 pixels worth of margin all around.
+    double scaleX = w / 600.0;
+    double scaleY = h / 600.0;
 
     // Use x or y scaling factor, whichever fits on the DC
     double actualScale = wxMin (scaleX, scaleY);
 
     // Calculate the position on the DC for centring the graphic
-    double posX = (double) ((w - (ptermApp->m_CurFrameScreenSize * actualScale)) / 2.0);
-    double posY = (double) ((h - (ptermApp->m_CurFrameScreenSize * actualScale)) / 2.0);
+    double posX = (w - 512. * actualScale) / 2.0;
+    double posY = (h - 512. * actualScale) / 2.0;
 
     // Set the scale and origin
     dc->SetUserScale (actualScale, actualScale);
