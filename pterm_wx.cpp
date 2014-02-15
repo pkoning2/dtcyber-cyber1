@@ -57,6 +57,7 @@ displayed, not by making the bitmap itself different.
 */
 #define DEFAULTHOST     wxT ("cyberserv.org")
 #define CURRENT_PROFILE wxT (" Current ")
+#define BufSiz			2048
 #define RINGSIZE        5000
 #define RINGXON1        (RINGSIZE / 3)
 #define RINGXON2        (RINGSIZE / 4)
@@ -68,6 +69,13 @@ displayed, not by making the bitmap itself different.
 #define ascxof          0x13
 
 #define GSWRINGSIZE 100
+
+#define C_NODATA        -1
+#define C_CONNFAIL      -2
+#define C_DISCONNECT    -3
+#define C_GSWEND        -4
+#define C_CONNECTING    -5
+#define C_CONNECTED     -6
 
 #define STATUS_TIP      0
 #define STATUS_TRC      1
@@ -87,12 +95,8 @@ displayed, not by making the bitmap itself different.
 // This is: a screen high with margin top and botton.
 // Pixmap has two rows added, which are storage for the
 // patterns for the character sets (ROM and loadable)
-#define vXSize(s)       (512 * ((m_stretch) ? 1 : s) + (2 * DisplayMargin))
-#define vYSize(s)       (512 * ((m_stretch) ? 1 : s) + (2 * DisplayMargin))
-#define vScreenSize(s)  (512 * ((m_stretch) ? 1 : s))
-#define vXRealSize(s)       (512 * (s) + (2 * DisplayMargin))
-#define vYRealSize(s)       (512 * (s) + (2 * DisplayMargin))
-#define vRealScreenSize(s)  (512 * (s))
+#define XSize       (512 * m_xscale + (2 * DisplayMargin))
+#define YSize       (512 * m_yscale + (2 * DisplayMargin))
 
 #define TERMTYPE        10
 #define ASCTYPE         12
@@ -187,17 +191,19 @@ displayed, not by making the bitmap itself different.
 **  -----------------------
 */
 
-// Map PLATO coordinates to window coordinates
-#define XADJUST(x) ((x) * ((m_stretch) ? 1 : m_scale) + GetXMargin ())
-#define YADJUST(y) ((511 - (y)) * ((m_stretch) ? 1 : m_scale)  + GetYMargin ())
-
-// Map PLATO coordinates to backing store bitmap coordinates
-#define XMADJUST(x) (x)
-#define YMADJUST(y) (511 - (y))
+// Map PLATO coordinates to window coordinates.  These are used
+// in the PtermCanvas methods, so they refer to the scale and margin
+// values via m_owner.
+#define XADJUST(x) int ((x) * m_owner->m_xscale + m_owner->m_xmargin)
+#define YADJUST(y) int ((511 - (y)) * m_owner->m_yscale  + m_owner->m_ymargin)
 
 // inverse mapping (for processing touch input)
-#define XUNADJUST(x) (((x) - GetXMargin ()) / ((m_stretch) ? 1 : m_scale))
-#define YUNADJUST(y) (511 - ((y) - GetYMargin ()) / ((m_stretch) ? 1 : m_scale))
+#define XUNADJUST(x) int (((x) - m_owner->m_xmargin) / m_owner->m_xscale)
+#define YUNADJUST(y) int (511 - ((y) - m_owner->m_ymargin) / m_owner->m_yscale)
+
+// Map PLATO coordinates to backing store bitmap coordinates.
+#define XMADJUST(x) (x)
+#define YMADJUST(y) (511 - (y))
 
 // force coordinate into the range 0..511
 #define BOUND(x) x = (((x < 0) ? 0 : ((x > 511) ? 511 : x)))
@@ -276,7 +282,6 @@ extern "C"
 #include "const.h"
 #include "types.h"
 #include "proto.h"
-#include "pterm.h"
 #include "ptermversion.h"
 #include "8080a.h"
 #include "8080avar.h"
@@ -497,8 +502,6 @@ public:
     void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom,
                       int *selPageTo);
     void DrawPage (wxDC *dc);
-    inline int GetXMargin (void) const;
-    inline int GetYMargin (void) const;
 
 private:
     PtermFrame *m_owner;
@@ -644,7 +647,7 @@ public:
     bool        m_DisableShiftSpace;
     bool        m_DisableMouseDrag;
     //tab4
-    int         m_scale;
+    bool        m_scale2;
     bool        m_stretch;
     bool        m_showStatusBar;
 #if !defined (__WXMAC__)
@@ -730,8 +733,6 @@ public:
     int m_regionWidth;
     int m_mouseX;
     int m_mouseY;
-    int m_scale;
-    bool m_stretch;
     
 private:
     PtermFrame *m_owner;
@@ -805,9 +806,7 @@ public:
     void OnToggleStatusBar (wxCommandEvent &event);
     void SetStatusBarState (bool bstate);
     void OnToggle2xMode (wxCommandEvent &event);
-    void SetScaleState (void);
     void OnToggleStretchMode (wxCommandEvent &event);
-    void SetStretchState (void);
     void OnCopyScreen (wxCommandEvent &event);
     void OnCopy (wxCommandEvent &event);
     void OnExec (wxCommandEvent &event);
@@ -832,12 +831,11 @@ public:
     void OnPageSetup (wxCommandEvent& event);
     void OnPref (wxCommandEvent& event);
     void OnActivate (wxActivateEvent &event);
-    void UpdateSettings (wxColour &newfg, wxColour &newbf, bool scale_to_200);
     void SavePreferences (void);
-    void SetColors (wxColour &newfg, wxColour &newbg, int newscale);
+    void SetColors (wxColour &newfg, wxColour &newbg);
     void OnFullScreen (wxCommandEvent &event);
     void OnResize (wxSizeEvent& event);
-    void SetResizeState (void);
+    void UpdateDisplayState (void);
 #if defined (__WXMSW__)
     void OnIconize (wxIconizeEvent &event);
 #endif
@@ -848,7 +846,6 @@ public:
     void BuildStatusBar (void);
     void SendRoster (void);
     void KillRoster (void);
-    void PrepareDC (wxDC& dc);
     void ptermSendKey (int key);
     void ptermSendKeys (int key[]);
     void ptermSendTouch (int x, int y);
@@ -869,26 +866,6 @@ public:
     bool HasConnection (void) const
     {
         return (m_conn != NULL);
-    }
-    int GetXMargin (void) const
-    {
-        if (m_fullScreen)
-        {
-            int i = GetClientSize ().x - vRealScreenSize (m_scale);
-            return (i < 0) ? 0 : i / (2 * m_scale);
-        }
-        else
-            return DisplayMargin;
-    }
-    int GetYMargin (void) const
-    {
-        if (m_fullScreen)
-        {
-            int i = GetClientSize ().y - vRealScreenSize (m_scale);
-            return (i < 0) ? 0 : i / (2 * m_scale);
-        }
-        else
-            return DisplayMargin;
     }
     void ptermSetStatus (wxString &str);
     void trace (const char *, ...);
@@ -914,10 +891,19 @@ public:
     wxMenu      *menuPopup;
     wxStatusBar *m_statusBar;       // present even if not displayed
 
-    int         m_scale;
+    // These 3 flags together control how, and to what size, the 
+    // PLATO image is displayed.
+    bool        m_scale2;
     bool        m_stretch;
+    bool        m_fullScreen;
+    // These are the X and Y scale factors, derived from the flags above
+    // and in the case of stretch mode, the current window or display size.
     float       m_xscale, m_yscale;
-
+    // These are the current margins.  Usually those are simply DisplayMargin,
+    // but in full screen mode they account for the entire space beyond the
+    // actual display area.
+    int         m_xmargin, m_ymargin;
+    
     //fonts
     wxFont      *m_font;
     bool        m_usefont;
@@ -951,8 +937,8 @@ private:
     wxString    m_hostName;
     int         m_port;
     wxTimer     m_timer;
-    bool        m_fullScreen;
     int         m_station;
+    wxRect      m_rect;         // Used to save window size/pos
     
     // Stuff for pacing Paste operations
     wxTimer     m_pasteTimer;
@@ -1096,7 +1082,6 @@ private:
     void ptermPaintWalker2 (int x, int y, PixelData & pixmap);
     void ptermSaveWindow (int d);
     void ptermRestoreWindow (int d);
-    void ResetScrollRate (PtermCanvas *c);
     
     void drawFontChar (int x, int y, int c);
     void procPlatoWord (u32 d, bool ascii);
@@ -1752,9 +1737,7 @@ bool PtermApp::OnInit (void)
         m_DisableShiftSpace = (m_config->Read (wxT (PREF_SHIFTSPACE), 0L) != 0);
         m_DisableMouseDrag = (m_config->Read (wxT (PREF_MOUSEDRAG), 0L) != 0);
         //tab4
-        m_scale = m_config->Read (wxT (PREF_SCALE), 1);
-        if (m_scale != 1 && m_scale != 2)
-            m_scale = 1;
+        m_scale2 = (m_config->Read (wxT (PREF_SCALE), 1) == 2);
         m_stretch = (m_config->Read (wxT (PREF_STRETCH), 0L) != 0);
         m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
 #if !defined (__WXMAC__)
@@ -2002,103 +1985,103 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
             value.Trim (true);
             value.Trim (false);
             //tab0
-            if     (token.Cmp (wxT (PREF_CURPROFILE))==0)
+            if     (token.Cmp (wxT (PREF_CURPROFILE)) == 0)
                 m_curProfile    = profile;
             //tab1
-            else if (token.Cmp (wxT (PREF_SHELLFIRST))==0)
+            else if (token.Cmp (wxT (PREF_SHELLFIRST)) == 0)
                 m_ShellFirst    = value;
-            else if (token.Cmp (wxT (PREF_CONNECT))==0)
-                m_connect       = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_HOST))==0)
+            else if (token.Cmp (wxT (PREF_CONNECT)) == 0)
+                m_connect       = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_HOST)) == 0)
                 m_hostName      = value;
-            else if (token.Cmp (wxT (PREF_PORT))==0)
+            else if (token.Cmp (wxT (PREF_PORT)) == 0)
             {
                 value.ToLong (&lvalue, 10);
                 m_port          = (int)lvalue;
             }
             //tab2
-            else if (token.Cmp (wxT (PREF_SHOWSIGNON))==0)
-                m_showSignon    = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_SHOWSYSNAME))==0)
-                m_showSysName   = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_SHOWHOST))==0)
-                m_showHost      = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_SHOWSTATION))==0)
-                m_showStation   = (value.Cmp (wxT ("1"))==0);
+            else if (token.Cmp (wxT (PREF_SHOWSIGNON)) == 0)
+                m_showSignon    = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_SHOWSYSNAME)) == 0)
+                m_showSysName   = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_SHOWHOST)) == 0)
+                m_showHost      = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_SHOWSTATION)) == 0)
+                m_showStation   = (value.Cmp (wxT ("1")) == 0);
 
             //tab3
-            else if (token.Cmp (wxT (PREF_1200BAUD))==0)
-                m_classicSpeed  = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_GSW))==0)
-                m_gswEnable     = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_ARROWS))==0)
-                m_numpadArrows  = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_IGNORECAP))==0)
-                m_ignoreCapLock = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_PLATOKB))==0)
-                m_platoKb       = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_ACCEL))==0)
+            else if (token.Cmp (wxT (PREF_1200BAUD)) == 0)
+                m_classicSpeed  = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_GSW)) == 0)
+                m_gswEnable     = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_ARROWS)) == 0)
+                m_numpadArrows  = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_IGNORECAP)) == 0)
+                m_ignoreCapLock = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_PLATOKB)) == 0)
+                m_platoKb       = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_ACCEL)) == 0)
             {
 #if defined (__WXMAC__)
                 m_useAccel      = true;
 #else
-                m_useAccel      = (value.Cmp (wxT ("1"))==0);
+                m_useAccel      = (value.Cmp (wxT ("1")) == 0);
 #endif
             }
-            else if (token.Cmp (wxT (PREF_BEEP))==0)
-                m_beepEnable    = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_SHIFTSPACE))==0)
-                m_DisableShiftSpace = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_MOUSEDRAG))==0)
-                m_DisableMouseDrag  = (value.Cmp (wxT ("1"))==0);
+            else if (token.Cmp (wxT (PREF_BEEP)) == 0)
+                m_beepEnable    = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_SHIFTSPACE)) == 0)
+                m_DisableShiftSpace = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_MOUSEDRAG)) == 0)
+                m_DisableMouseDrag  = (value.Cmp (wxT ("1")) == 0);
 
             //tab4
-            else if (token.Cmp (wxT (PREF_SCALE))==0)
-                m_scale         = (value.Cmp (wxT ("2"))==0) ? 2 : 1;
-            else if (token.Cmp (wxT (PREF_STRETCH))==0)
-                m_stretch       = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_STATUSBAR))==0)
-                m_showStatusBar = (value.Cmp (wxT ("1"))==0);
+            else if (token.Cmp (wxT (PREF_SCALE)) == 0)
+                m_scale2        = (value.Cmp (wxT ("2")) == 0);
+            else if (token.Cmp (wxT (PREF_STRETCH)) == 0)
+                m_stretch       = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_STATUSBAR)) == 0)
+                m_showStatusBar = (value.Cmp (wxT ("1")) == 0);
 #if !defined (__WXMAC__)
-            else if (token.Cmp (wxT (PREF_MENUBAR))==0)
-                m_showMenuBar   = (value.Cmp (wxT ("1"))==0);
+            else if (token.Cmp (wxT (PREF_MENUBAR)) == 0)
+                m_showMenuBar   = (value.Cmp (wxT ("1")) == 0);
 #endif
-            else if (token.Cmp (wxT (PREF_NOCOLOR))==0)
-                m_noColor       = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_FOREGROUND))==0)
+            else if (token.Cmp (wxT (PREF_NOCOLOR)) == 0)
+                m_noColor       = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_FOREGROUND)) == 0)
             {
                 sscanf (value.mb_str (), "%d %d %d", &r, &g, &b);
                 m_fgColor       = wxColour (r, g, b);
             }
-            else if (token.Cmp (wxT (PREF_BACKGROUND))==0)
+            else if (token.Cmp (wxT (PREF_BACKGROUND)) == 0)
             {
                 sscanf (value.mb_str (), "%d %d %d", &r, &g, &b);
                 m_bgColor       = wxColour (r, g, b);
             }
             //tab5
-            else if (token.Cmp (wxT (PREF_CHARDELAY))==0)
+            else if (token.Cmp (wxT (PREF_CHARDELAY)) == 0)
                 m_charDelay     = value;
-            else if (token.Cmp (wxT (PREF_LINEDELAY))==0)
+            else if (token.Cmp (wxT (PREF_LINEDELAY)) == 0)
                 m_lineDelay     = value;
-            else if (token.Cmp (wxT (PREF_AUTOLF))==0)
+            else if (token.Cmp (wxT (PREF_AUTOLF)) == 0)
                 m_autoLF        = value;
-            else if (token.Cmp (wxT (PREF_SPLITWORDS))==0)
-                m_splitWords    = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_SMARTPASTE))==0)
-                m_smartPaste    = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_CONVDOT7))==0)
-                m_convDot7      = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_CONV8SP))==0)
-                m_conv8Sp       = (value.Cmp (wxT ("1"))==0);
-            else if (token.Cmp (wxT (PREF_TUTORCOLOR))==0)
-                m_TutorColor    = (value.Cmp (wxT ("1"))==0);
+            else if (token.Cmp (wxT (PREF_SPLITWORDS)) == 0)
+                m_splitWords    = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_SMARTPASTE)) == 0)
+                m_smartPaste    = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_CONVDOT7)) == 0)
+                m_convDot7      = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_CONV8SP)) == 0)
+                m_conv8Sp       = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_TUTORCOLOR)) == 0)
+                m_TutorColor    = (value.Cmp (wxT ("1")) == 0);
 
             //tab6
-            else if (token.Cmp (wxT (PREF_BROWSER))==0)
+            else if (token.Cmp (wxT (PREF_BROWSER)) == 0)
                 m_Browser       = value;
-            else if (token.Cmp (wxT (PREF_EMAIL))==0)
+            else if (token.Cmp (wxT (PREF_EMAIL)) == 0)
                 m_Email         = value;
-            else if (token.Cmp (wxT (PREF_SEARCHURL))==0)
+            else if (token.Cmp (wxT (PREF_SEARCHURL)) == 0)
                 m_SearchURL     = value;
         }
         if (file.Eof ())
@@ -2132,7 +2115,7 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
     m_config->Write (wxT (PREF_HOST), m_hostName);
     m_config->Write (wxT (PREF_PORT), m_port);
     //tab4
-    m_config->Write (wxT (PREF_SCALE), m_scale);
+    m_config->Write (wxT (PREF_SCALE), (m_scale2) ? 2 : 1);
     m_config->Write (wxT (PREF_STRETCH), (m_stretch) ? 1 : 0);
     m_config->Write (wxT (PREF_STATUSBAR), (m_showStatusBar) ? 1 : 0);
 #if !defined (__WXMAC__)
@@ -2359,10 +2342,11 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
       // menuHelp not initialized
       // menuPopup not initialized
       // m_statusBar not initialized
-      m_scale (ptermApp->m_scale),
+      m_scale2 (ptermApp->m_scale2),
       m_stretch (ptermApp->m_stretch),
-      m_xscale (ptermApp->m_scale),
-      m_yscale (ptermApp->m_scale),
+      m_fullScreen (false),
+      m_xscale ((m_scale2) ? 2 : 1),
+      m_yscale ((m_scale2) ? 2 : 1),
       // m_font not initialized
       m_usefont (false),
       // m_fontfamily not initialized
@@ -2380,14 +2364,14 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
       // m_fgpix not initialized
       // m_bgpix not initialized
       // m_bitmap not initialized
-      m_canvas (NULL),
+      // m_canvas not initialized
       // m_curProfile not initialized
       // m_ShellFirst not initialized
       // m_hostName not initialized
       m_port (port),
       m_timer (this, Pterm_Timer),
-      m_fullScreen (false),
       m_station (0),
+      // m_rect not initialized
       m_pasteTimer (this, Pterm_PasteTimer),
       // m_pasteText not initialized
       m_pasteIndex (-1),
@@ -2510,7 +2494,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
     menuView->Check (Pterm_ToggleStatusBarView, ptermApp->m_showStatusBar);
     menuView->AppendCheckItem (Pterm_Toggle2xModeView, _("Zoom display 200%"),
                                _("Zoom display 200%"));
-    menuView->Check (Pterm_Toggle2xModeView, (ptermApp->m_scale==2));
+    menuView->Check (Pterm_Toggle2xModeView, (ptermApp->m_scale2));
     menuView->AppendCheckItem (Pterm_ToggleStretchModeView,
                                _("Stretch display"), _("Stretch display"));
     menuView->Check (Pterm_ToggleStretchModeView, ptermApp->m_stretch);
@@ -2631,13 +2615,12 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
     m_memDC = new wxMemoryDC ();
     m_selmap = new wxBitmap (512, 512, -1);
     
-// Why is there a "+2" for vXRealSize (), vYRealSize here?
-//    SetClientSize (vXRealSize (m_scale) + 2, vYRealSize (m_scale) + 2);
-    SetColors (m_currentFg, m_currentBg, m_scale);    
-    SetClientSize (vXRealSize (m_scale) - 1, vYRealSize (m_scale) - 1);
     m_canvas = new PtermCanvas (this);
 
+    SetColors (m_currentFg, m_currentBg);    
+    SetClientSize (XSize, YSize);
     ptermFullErase ();
+    UpdateDisplayState ();
 
     if (port > 0)
     {
@@ -2646,8 +2629,6 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
         m_conn = new PtermConnection (this, host, port);
     }
     Show (true);
-
-    ResetScrollRate (m_canvas);
 
 }
 
@@ -2682,15 +2663,6 @@ void PtermFrame::trace (const char *fmt, ...)
     }
 }
 
-
-void PtermFrame::ResetScrollRate (PtermCanvas *window)
-{
-    if (!m_stretch) 
-    {
-        window->SetScrollRate (0, 0);
-        window->SetScrollRate (1, 1);
-    }
-}
 
 PtermFrame::~PtermFrame ()
 {
@@ -2821,7 +2793,7 @@ void PtermFrame::BuildPopupMenu (int port)
     menuPopup->Check (Pterm_ToggleStatusBar, ptermApp->m_showStatusBar);
     menuPopup->AppendCheckItem (Pterm_Toggle2xMode, _("Zoom display 200%"),
                                 _("Zoom display 200%"));
-    menuPopup->Check (Pterm_Toggle2xMode, (ptermApp->m_scale==2));
+    menuPopup->Check (Pterm_Toggle2xMode, (ptermApp->m_scale2));
     menuPopup->AppendCheckItem (Pterm_ToggleStretchMode, _("Stretch display"),
                                 _("Stretch display"));
     menuPopup->Check (Pterm_ToggleStretchMode, ptermApp->m_stretch);
@@ -2878,7 +2850,6 @@ void PtermFrame::BuildStatusBar (void)
         else
             m_statusBar->SetStatusText (wxT (""), STATUS_TRC);
         SetStatusBar (m_statusBar);
-        ResetScrollRate (m_canvas);
     }
     else
     {
@@ -3005,7 +2976,7 @@ void PtermFrame::OnTimer (wxTimerEvent &)
             m_nextword = 0;
             m_timer.Stop ();
 
-            return;
+            break;
         }
         m_delay = (word >> 19);
         m_nextword = word & 01777777;
@@ -3020,6 +2991,8 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 #endif
         procPlatoWord (word, m_conn->Ascii ());
     }
+
+    Refresh ();
 }
 
 void PtermFrame::OnPasteTimer (wxTimerEvent &)
@@ -3368,8 +3341,8 @@ void PtermFrame::OnClose (wxCloseEvent &)
     {
         GetPosition (&x, &y);
         wxDisplaySize (&xs, &ys);
-        if (x > 0 && x < xs - vXSize (m_scale) &&
-            y > 0 && y < ys - vYSize (m_scale))
+        if (x > 0 && x < xs - XSize &&
+            y > 0 && y < ys - YSize)
         {
             ptermApp->lastX = x;
             ptermApp->lastY = y;
@@ -3455,10 +3428,7 @@ void PtermFrame::SetMenuBarState (bool bstate)
     }
 
     //check if size changed
-    GetClientSize (&nw, &nh);
-    SetSize (ww, wh - (nh - oh));
-    ResetScrollRate (m_canvas);
-
+    UpdateDisplayState ();
 }
 #endif
 
@@ -3471,12 +3441,6 @@ void PtermFrame::OnToggleStatusBar (wxCommandEvent &)
 
 void PtermFrame::SetStatusBarState (bool bstate)
 {
-    int ww, wh, ow, oh, nw, nh;
-
-    //get window parameters pre-prefs
-    GetSize (&ww, &wh);
-    GetClientSize (&ow, &oh);
-
     //show/hide status bar
     menuPopup->Check (Pterm_ToggleStatusBar, bstate);
     menuView->Check (Pterm_ToggleStatusBarView, bstate);
@@ -3484,61 +3448,29 @@ void PtermFrame::SetStatusBarState (bool bstate)
     BuildStatusBar ();
 
     //check if size changed
-    GetClientSize (&nw, &nh);
-    SetSize (ww, wh - (nh - oh));
-    ResetScrollRate (m_canvas);
-
+    UpdateDisplayState ();
 }
 
 void PtermFrame::OnToggle2xMode (wxCommandEvent &)
 {
     //toggle status
-    ptermApp->m_scale = 3 - ptermApp->m_scale;
-    menuPopup->Check (Pterm_Toggle2xMode, (ptermApp->m_scale == 2));
-    menuView->Check (Pterm_Toggle2xModeView, (ptermApp->m_scale == 2));
+    m_scale2 = ptermApp->m_scale2 = !ptermApp->m_scale2;
     SavePreferences ();
-    
-    SetScaleState ();
-    m_scale = ptermApp->m_scale;
 
-    m_canvas->Refresh (true);
-    m_canvas->SetFocus ();
-    m_canvas->Update ();
-}
-
-void PtermFrame::SetScaleState (void)
-{
-    //refit
-    UpdateSettings (ptermApp->m_fgColor, ptermApp->m_bgColor,
-                    (ptermApp->m_scale==2));
-    FitInside ();
-    ResetScrollRate (m_canvas);
+    UpdateDisplayState ();
 }
 
 void PtermFrame::OnToggleStretchMode (wxCommandEvent &)
 {
 
     //toggle status
-    ptermApp->m_stretch = !ptermApp->m_stretch;
-    m_canvas->m_stretch = ptermApp->m_stretch;
-    m_stretch = ptermApp->m_stretch;
-    menuPopup->Check (Pterm_ToggleStretchMode, ptermApp->m_stretch);
-    menuView->Check (Pterm_ToggleStretchModeView, ptermApp->m_stretch);
+    m_stretch = ptermApp->m_stretch = !ptermApp->m_stretch;
     SavePreferences ();
 
     //refit
-    SetStretchState ();
+    UpdateDisplayState ();
 
 }
-void PtermFrame::SetStretchState (void)
-{
-    //refit
-    if (m_stretch)
-        SetResizeState ();
-    else
-        SetScaleState ();
-}
-
 void PtermFrame::OnCopy (wxCommandEvent &event)
 {
     m_canvas->OnCopy (event);
@@ -4058,12 +3990,6 @@ void PtermFrame::OnPageSetup (wxCommandEvent &)
 
 void PtermFrame::OnPref (wxCommandEvent&)
 {
-    int ww, wh, ow, oh, nw, nh;
-
-    //get window parameters pre-prefs
-    GetSize (&ww, &wh);
-    GetClientSize (&ow, &oh);
-
     //show dialog
     PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"),
                          wxDefaultPosition, wxSize (451, 400));
@@ -4071,7 +3997,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
     //process changes if OK clicked
     if (dlg.ShowModal () == wxID_OK)
     {
-        UpdateSettings (dlg.m_fgColor, dlg.m_bgColor, dlg.m_scale2);
+        SetColors (dlg.m_fgColor, dlg.m_bgColor);
         //get prefs
         ptermApp->m_lastTab = dlg.m_lastTab;
         //tab0
@@ -4097,13 +4023,6 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_DisableShiftSpace = dlg.m_DisableShiftSpace;
         ptermApp->m_DisableMouseDrag = dlg.m_DisableMouseDrag;
         //tab4
-        //ptermApp->m_scale = (dlg.m_scale2) ? 2 : 1;
-        //m_scale = ptermApp->m_scale;
-        //ptermApp->m_stretch = dlg.m_stretch;
-        //ptermApp->m_showStatusBar = dlg.m_showStatusBar;
-#if !defined (__WXMAC__)
-        //ptermApp->m_showMenuBar = dlg.m_showMenuBar;
-#endif
         ptermApp->m_noColor = dlg.m_noColor;
         ptermApp->m_fgColor = dlg.m_fgColor;
         ptermApp->m_bgColor = dlg.m_bgColor;
@@ -4137,9 +4056,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
         BuildStatusBar ();
 
         //check if size changed
-        GetClientSize (&nw, &nh);
-        SetSize (ww, wh- (nh-oh));
-        ResetScrollRate (m_canvas);
+        UpdateDisplayState ();
     }
 }
 
@@ -4171,7 +4088,7 @@ void PtermFrame::SavePreferences (void)
     ptermApp->m_config->Write (wxT (PREF_SHIFTSPACE), (ptermApp->m_DisableShiftSpace) ? 1 : 0);
     ptermApp->m_config->Write (wxT (PREF_MOUSEDRAG), (ptermApp->m_DisableMouseDrag) ? 1 : 0);
     //tab4
-    ptermApp->m_config->Write (wxT (PREF_SCALE), ptermApp->m_scale);
+    ptermApp->m_config->Write (wxT (PREF_SCALE), (ptermApp->m_scale2) ? 2 : 1);
     ptermApp->m_config->Write (wxT (PREF_STRETCH), (ptermApp->m_stretch) ? 1 : 0);
     ptermApp->m_config->Write (wxT (PREF_STATUSBAR), (ptermApp->m_showStatusBar) ? 1 : 0);
 #if !defined (__WXMAC__)
@@ -4202,36 +4119,42 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
 {
     m_fullScreen = !m_fullScreen;
     
+    // If we're switching to full screen mode, save the current
+    // window position and size
     if (m_fullScreen)
-        m_canvas->SetScrollRate (0, 0);
-    else
-        ResetScrollRate (m_canvas);
+    {
+        m_rect = GetRect ();
+    }
+    
+    // Tell wxWidgets the desired full screen mode.
+	ShowFullScreen (m_fullScreen);
 
-    ShowFullScreen (m_fullScreen);
-
-    if (m_stretch)
-        SetResizeState ();
-
-    menuPopup->Check (Pterm_FullScreen, m_fullScreen);
-
-    m_canvas->Refresh ();
-    m_canvas->SetFocus ();
+    // If we're exiting full screen mode, restore the window position
+    // and size
+    if (!m_fullScreen)
+    {
+        SetSize (m_rect);
+    }
+    
+    UpdateDisplayState ();
 }
 
 void PtermFrame::OnResize (wxSizeEvent& event)
 {
-//  if (m_stretch) 
-        SetResizeState ();
+    UpdateDisplayState ();
 }
 
-void PtermFrame::SetResizeState (void)
+// This method recalculates all the display control variables: full screen
+// mode, scale values, virtual size, etc., based on the current display
+// mode flags and the window or display size.
+void PtermFrame::UpdateDisplayState (void)
 {
-    int w, h;
-
-//    if (!m_stretch)
-//      return;
+    int h, w;
+    
     if (m_canvas == NULL)
+    {
         return;
+    }
 
     if (m_fullScreen)
     {
@@ -4241,28 +4164,68 @@ void PtermFrame::SetResizeState (void)
     else
     {
         GetClientSize (&w, &h);
-        m_xscale = (w-2*DisplayMargin) / 512.0;
-        m_yscale = (h-2*DisplayMargin) / 512.0;
+    }
+    m_canvas->SetSize (w, h);
+    
+    // If stretching, the client and virtual sizes are the same, and
+    // we scale the image to match.  Otherwise, the scaling is 2x or 1x
+    // and the client size is 512 * the scale, plus margins.
+    if (m_stretch)
+    {
+		m_xscale = (w - 2 * DisplayMargin) / 512.0;
+		m_yscale = (h - 2 * DisplayMargin) / 512.0;
+        m_xmargin = m_xscale * DisplayMargin;
+        m_ymargin = m_yscale * DisplayMargin;
+        m_canvas->SetVirtualSize (w, h);
+    }
+    else
+    {
+        if (m_scale2)
+        {
+            m_xscale = m_yscale = 2.;
+        }
+        else
+        {
+            m_xscale = m_yscale = 1.;
+        }
+        if (m_fullScreen)
+        {
+            m_xmargin = (w - 512 * m_xscale) / 2;
+            m_ymargin = (h - 512 * m_yscale) / 2;
+        }
+        else
+        {
+            m_xmargin = m_ymargin = DisplayMargin;
+        }
+        m_canvas->SetVirtualSize (XSize, YSize);
     }
 
+    // Turn off scrollbars in full screen mode.
+    if (m_fullScreen)
+    {
+        m_canvas->SetScrollRate (0, 0);
+    }
+    else
+    {
+        m_canvas->SetScrollRate (1, 1);
+    }
+
+    // Set the scale for the display window
     wxClientDC dc (m_canvas);
 
-    //wxString str;
-    //str.Printf ("%d, %d", w, h);
-    //wxMessageBox (str, _("DEBUG"), wxOK | wxICON_INFORMATION, NULL);
-
-    m_canvas->SetSize (w, h);
-    m_canvas->SetVirtualSize (int (vXRealSize (m_xscale)),
-                              int (vYRealSize (m_yscale)));
-    dc.DestroyClippingRegion ();
-    dc.SetClippingRegion (GetXMargin (), GetYMargin (),
-                          int (vRealScreenSize (m_xscale)),
-                          int (vRealScreenSize (m_yscale)));
     dc.SetUserScale (m_xscale, m_yscale);
 
-    ResetScrollRate (m_canvas);
+    // Set the menu/popup check marks.  Note that there is no menubar
+    // in full screen mode, so no full screen check on the menubar!
+    menuPopup->Check (Pterm_Toggle2xMode, (m_scale2));
+    menuPopup->Check (Pterm_ToggleStretchMode, m_stretch);
+    menuPopup->Check (Pterm_FullScreen, m_fullScreen);
+    menuView->Check (Pterm_Toggle2xModeView, (m_scale2));
+    menuView->Check (Pterm_ToggleStretchModeView, m_stretch);
 
+    // Update the display and return focus to the current display window.
     m_canvas->Refresh ();
+    m_canvas->SetFocus ();
 }
 
 #if defined (__WXMSW__)
@@ -4271,17 +4234,11 @@ void PtermFrame::OnIconize (wxIconizeEvent &event)
     // this helps control to a certain extent, the scrollbars that
     // sometimes appear when restoring from iconized state.
     if (!IsIconized ())
-        ResetScrollRate (m_canvas);
+    {
+        UpdateDisplayState ();
+    }
 }
 #endif
-
-void PtermFrame::PrepareDC (wxDC& dc)
-{
-    dc.SetAxisOrientation (true, false);
-    //dc.SetBackground (m_backgroundBrush);
-    if (m_stretch)
-        dc.SetUserScale (m_xscale, m_yscale);
-}
 
 void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
 {
@@ -4434,11 +4391,6 @@ void PtermFrame::ptermDrawLine (int x1, int y1, int x2, int y2)
     dy = y2 - y1;
     if (dx < 0) { dx = -dx;  stepx = -1; } else { stepx = 1; }
     if (dy < 0) { dy = -dy;  stepy = -1; } else { stepy = 1; }
-    if (!m_stretch)
-    {
-        stepx *= (m_scale == 2) ? 2 : 1;
-        stepy *= (m_scale == 2) ? 2 : 1;
-    }
     dx <<= 1;
     dy <<= 1;
     
@@ -4662,23 +4614,7 @@ void PtermFrame::ptermSetStatus (wxString &str)
         m_statusBar->SetStatusText (str, STATUS_CONN);
 }
 
-void PtermFrame::UpdateSettings (wxColour &newfg, wxColour &newbg,
-                                 bool scale_to_200)
-{
-    const int newscale = (scale_to_200) ? 2 : 1;
-
-    ptermShowTrace ();
-    
-    m_canvas->SetFocus ();
-
-    SetColors (newfg, newbg, newscale); // boo hiss! this creates the weird mode inverse problem when switching scales.
-
-    m_canvas->m_scale = newscale;
-    m_defFg = newfg;
-    m_defBg = newbg;
-}
-
-void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
+void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg)
 {
     union {
         uint32_t pix;
@@ -4687,6 +4623,9 @@ void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg, int newscale)
     
     trace ("fg: %d %d %d; bg: %d %d %d", newfg.Red (), newfg.Green (),
            newfg.Blue (), newbg.Red (), newbg.Green (), newbg.Blue ());
+
+    m_defFg = newfg;
+    m_defBg = newbg;
 
     // Calculate the new pixel values
     cvtpix.pix = m_maxalpha;
@@ -5380,7 +5319,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             trace ("set background color %06x", n);
                             m_currentBg = c;
                         }
-                        SetColors (m_currentFg, m_currentBg, m_scale);
+                        SetColors (m_currentFg, m_currentBg);
                     }
                     break;
                 case gsfg:
@@ -5394,7 +5333,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             trace ("set gray-scale foreground color %06x", n);
                             m_currentFg = c;
                         }
-                        SetColors (m_currentFg, m_currentBg, m_scale);
+                        SetColors (m_currentFg, m_currentBg);
                     }
                     break;
                 case pmd:
@@ -6248,7 +6187,7 @@ void PtermFrame::SetFontFaceAndFamily (int n)
 **------------------------------------------------------------------------*/
 void PtermFrame::SetFontSize (int n)
 {
-    m_fontsize = (n < 1 ? 1 : (n > 63 ? 63 : n)) * m_scale;
+    m_fontsize = (n < 1 ? 1 : (n > 63 ? 63 : n));
 }
 
 /*--------------------------------------------------------------------------
@@ -6281,17 +6220,17 @@ void PtermFrame::SetFontActive ()
     m_usefont = (m_fontface.Cmp (wxT (""))!=0 && m_fontface.Cmp (wxT ("default"))!=0);
     if (m_usefont)
     {
-        m_font = new wxFont;
-        m_font->New (m_fontsize, m_fontfamily,
-                     wxFONTFLAG_ANTIALIASED |
-                     (m_fontstrike ? wxFONTFLAG_STRIKETHROUGH : 0),
-                     m_fontface);
-        m_font->SetFaceName (m_fontface);
-        m_font->SetFamily (m_fontfamily);
-        m_font->SetPointSize (m_fontsize);
-        m_font->SetStyle (m_fontitalic ? wxFONTSTYLE_ITALIC : wxFONTSTYLE_NORMAL);
-        m_font->SetWeight (m_fontbold ? wxFONTWEIGHT_BOLD : wxFONTWEIGHT_NORMAL);
-        m_font->SetUnderlined (m_fontunderln);
+        wxFontInfo fi (wxSize (m_fontsize * m_xscale, m_fontsize * m_yscale));
+        
+        fi.FaceName (m_fontface);
+        fi.Family (m_fontfamily);
+        fi.AntiAliased (true);
+        fi.Bold (m_fontbold);
+        fi.Italic (m_fontitalic);
+        fi.Underlined (m_fontunderln);
+        fi.Strikethrough (m_fontstrike);
+        
+        m_font = new wxFont (fi);
 
         // We need to select a bitmap into the memDC for GetTextExtent
         // to be accepted.
@@ -6313,6 +6252,7 @@ void PtermFrame::SetFontActive ()
 **------------------------------------------------------------------------*/
 void PtermFrame::ptermSaveWindow (int d)
 {
+#if 0
     int x, y, w, h;
     x = ((m_stretch) ? 1 : m_scale)*cwswindow[d].data[0];
     y = ((m_stretch) ? 1 : m_scale)* (512-cwswindow[d].data[1]);
@@ -6324,6 +6264,7 @@ void PtermFrame::ptermSaveWindow (int d)
     cwswindow[d].bm = new wxBitmap (w, h, -1);
     cwswindow[d].dc->SelectObject (*cwswindow[d].bm);
     //cwswindow[d].dc->Blit (0, 0, w, h, m_memDC, x, y, wxCOPY);
+#endif
 }
 
 /*--------------------------------------------------------------------------
@@ -6337,6 +6278,7 @@ void PtermFrame::ptermSaveWindow (int d)
 **------------------------------------------------------------------------*/
 void PtermFrame::ptermRestoreWindow (int d)
 {
+#if 0
     int x, y, w, h;
     x = ((m_stretch) ? 1 : m_scale)*cwswindow[d].data[0];
     y = ((m_stretch) ? 1 : m_scale)* (512-cwswindow[d].data[1]);
@@ -6344,17 +6286,15 @@ void PtermFrame::ptermRestoreWindow (int d)
     h = ((m_stretch) ? 1 : m_scale)* (cwswindow[d].data[1]-cwswindow[d].data[3]);
     if (cwswindow[d].ok)
     {
-#if 0
         trace ("CWS: process restore; window %d", d);
         m_memDC->Blit (x, y, w, h, cwswindow[d].dc, 0, 0, wxCOPY);
         wxClientDC dc (m_canvas);
-        PrepareDC (dc);
         dc.Blit (XTOP, YTOP, vScreenSize (m_scale), vScreenSize (m_scale), m_memDC, 0, 0, wxCOPY);
         cwswindow[d].ok = false;
         delete cwswindow[d].bm;
         delete cwswindow[d].dc;
-#endif
     }
+#endif
 }
 
 /*--------------------------------------------------------------------------
@@ -8144,7 +8084,7 @@ void PtermPrefDialog::SetControlState (void)
     m_DisableShiftSpace = ptermApp->m_DisableShiftSpace;
     m_DisableMouseDrag = ptermApp->m_DisableMouseDrag;
     //tab4
-    m_scale2 = (ptermApp->m_scale != 1);
+    m_scale2 = ptermApp->m_scale2;
     m_stretch = ptermApp->m_stretch;
     m_showStatusBar = ptermApp->m_showStatusBar;
 #if !defined (__WXMAC__)
@@ -9620,10 +9560,9 @@ BEGIN_EVENT_TABLE (PtermCanvas, wxScrolledCanvas)
     END_EVENT_TABLE ();
 
 PtermCanvas::PtermCanvas (PtermFrame *parent)
-    : wxScrolledCanvas (parent, -1, wxDefaultPosition,
-                       wxSize (vXSize (parent->m_scale),
-                               vYSize (parent->m_scale)),
-                       wxHSCROLL | wxVSCROLL | wxFULL_REPAINT_ON_RESIZE
+    : wxScrolledCanvas (parent, -1, wxDefaultPosition, 
+                        wxDefaultSize,
+                        wxHSCROLL | wxVSCROLL | wxFULL_REPAINT_ON_RESIZE
                         /* , "Default Name" */),
       m_regionX (0),
       m_regionY (0),
@@ -9631,52 +9570,30 @@ PtermCanvas::PtermCanvas (PtermFrame *parent)
       m_regionWidth (0),
       m_mouseX (-1),
       m_mouseY (-1),
-      m_scale (parent->m_scale),
-      m_stretch (parent->m_stretch),
       m_owner (parent),
       m_touchEnabled (false)
 {
     wxClientDC dc (this);
 
-    SetInitialSize (wxSize (vXRealSize (m_scale), vYRealSize (m_scale)));
-    SetVirtualSize (vXRealSize (m_scale), vYRealSize (m_scale));
-    
     SetBackgroundColour (ptermApp->m_bgColor);
-    if (!m_stretch)
-    {
-        SetScrollRate (0, 0);
-        SetScrollRate (1, 1);
-    }
-    dc.SetClippingRegion (GetXMargin (), GetYMargin (),
-                          vRealScreenSize (m_scale),
-                          vRealScreenSize (m_scale));
-    SetFocus ();
     FullErase ();
 }
 
 int PtermCanvas::GetXMargin (void) const
 {
-    return m_owner->GetXMargin ();
+    return m_owner->m_xmargin;
 }
 int PtermCanvas::GetYMargin (void) const
 {
-    return m_owner->GetYMargin ();
+    return m_owner->m_ymargin;
 }
 
 void PtermCanvas::OnDraw (wxDC &dc)
 {
-    const int scale = (m_stretch) ? 1 : m_scale;
-    
     dc.DestroyClippingRegion ();
-    
-    if (m_owner->m_stretch)
-    {
-        dc.SetUserScale (m_owner->m_xscale, m_owner->m_yscale);
-    }
-    else
-    {
-        dc.SetUserScale (m_owner->m_scale, m_owner->m_scale);
-    }
+    dc.SetUserScale (m_owner->m_xscale, m_owner->m_yscale);
+    dc.SetClippingRegion (m_owner->m_xmargin,
+                          m_owner->m_ymargin, 512, 512);
     dc.DrawBitmap (*m_owner->m_bitmap, XTOP, YTOP, false);
     
 #if DEBUG
@@ -9687,8 +9604,8 @@ void PtermCanvas::OnDraw (wxDC &dc)
     {
         dc.SetClippingRegion (XADJUST (8 * m_regionX), 
                               YADJUST (16 * (m_regionY + m_regionHeight)), 
-                              m_regionWidth * 8 * scale,
-                              m_regionHeight * 16 * scale);
+                              m_regionWidth * 8,
+                              m_regionHeight * 16);
         dc.DrawBitmap (*m_owner->m_selmap, XTOP, YTOP, false);
     
 #if DEBUG
@@ -10469,15 +10386,6 @@ WXLRESULT PtermCanvas::MSWWindowProc (WXUINT message, WXWPARAM wParam,
 // ----------------------------------------------------------------------------
 // Pterm printing helper class
 // ----------------------------------------------------------------------------
-
-int PtermPrintout::GetXMargin (void) const
-{
-    return m_owner->GetXMargin ();
-}
-int PtermPrintout::GetYMargin (void) const
-{
-    return m_owner->GetYMargin ();
-}
 
 bool PtermPrintout::OnPrintPage (int page)
 {
