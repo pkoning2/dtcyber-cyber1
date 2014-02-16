@@ -178,8 +178,6 @@ displayed, not by making the bitmap itself different.
 #define PREF_BROWSER     "Browser"
 #define PREF_EMAIL       "EmailClient"
 #define PREF_SEARCHURL   "SearchURL"
-//rostering
-#define PREF_ROSTERFILE  "RosterFile"
 
 /*
 **  -----------------------
@@ -658,8 +656,6 @@ public:
     wxString    m_Browser;      
     wxString    m_Email;      
     wxString    m_SearchURL;      
-    //rostering
-    wxString    m_RosterFile;      
 
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
@@ -669,8 +665,6 @@ public:
     int lastY;
 
     PtermFrame *m_CurFrame;
-
-    bool        m_RosterMonitor;
 
     FILE *m_testdata;
     bool m_testascii;
@@ -832,8 +826,6 @@ public:
     void BuildEditMenu (int port);
     void BuildPopupMenu (int port);
     void BuildStatusBar (void);
-    void SendRoster (void);
-    void KillRoster (void);
     void ptermSendKey (int key);
     void ptermSendKeys (int key[]);
     void ptermSendTouch (int x, int y);
@@ -935,10 +927,6 @@ private:
     bool        m_pastePrint;
     int         m_pasteNextKeyCnt;
 
-    //stuff for sending roster
-    bool        m_SendRoster;
-    bool        m_WaitReady;
-    
     // The next word to be processed, and its associated delay.
     // We set this if we pick up a word from the connection object, and
     // either it comes with an associated delay, or "true timing" is selected
@@ -1754,9 +1742,6 @@ bool PtermApp::OnInit (void)
         m_config->Read (wxT (PREF_BROWSER), &m_Browser, wxT (""));
         m_config->Read (wxT (PREF_EMAIL), &m_Email, wxT (""));
         m_config->Read (wxT (PREF_SEARCHURL), &m_SearchURL, wxT (""));
-        //rostering
-        m_config->Read (wxT (PREF_ROSTERFILE), &m_RosterFile,
-                        wxT ("C:\\Documents and Settings\\Joe\\Desktop\\Cyber1\\new_roster.txt"));
     }
 
 #if PTERM_MDI
@@ -2365,8 +2350,6 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
       m_pasteIndex (-1),
       // m_pastePrint not initialized
       m_pasteNextKeyCnt (0),
-      m_SendRoster (false),
-      m_WaitReady (false),
       m_nextword (0),
       m_delay (0),
       modexor (false),
@@ -2999,14 +2982,9 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     if (m_bCancelPaste || m_pasteIndex < 0 ||
         m_pasteIndex >= (int) m_pasteText.Len ())
     {
-        //delete roster file if done
-        if (m_SendRoster && m_pasteIndex >= (int) m_pasteText.Len ())
-            KillRoster ();
         //reset flags
         m_bCancelPaste = false;
         m_bPasteActive = false;
-        m_SendRoster = false;
-        m_WaitReady = false;
         return;
     }
 
@@ -3074,94 +3052,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 
 
         bool found = false;
-        // check if sending roster but waiting for "ready" signal
-        if (m_SendRoster && m_WaitReady)
-        {
-/*
-            wxString l_text;
-            l_text.Printf (wxT ("Waiting for '*READY*', found: %c%c%c%c%c%c%c"), 
-                rom01char[m_canvas->textmap[0 * 64 + 0] & 0xff],
-                rom01char[m_canvas->textmap[0 * 64 + 1] & 0xff],
-                rom01char[m_canvas->textmap[0 * 64 + 2] & 0xff],
-                rom01char[m_canvas->textmap[0 * 64 + 3] & 0xff],
-                rom01char[m_canvas->textmap[0 * 64 + 4] & 0xff],
-                rom01char[m_canvas->textmap[0 * 64 + 5] & 0xff],
-                rom01char[m_canvas->textmap[0 * 64 + 6] & 0xff]
-                );
-            wxMessageBox (l_text, _("DEBUG"), wxOK | wxICON_INFORMATION, NULL);
-            l_text.Printf (wxT ("Waiting for '*READY*', found: %d%d%d%d%d%d%d"), 
-                m_canvas->textmap[32 * 64 + 0] & 0xff,
-                m_canvas->textmap[32 * 64 + 1] & 0xff,
-                m_canvas->textmap[32 * 64 + 2] & 0xff,
-                m_canvas->textmap[32 * 64 + 3] & 0xff,
-                m_canvas->textmap[32 * 64 + 4] & 0xff,
-                m_canvas->textmap[32 * 64 + 5] & 0xff,
-                m_canvas->textmap[32 * 64 + 6] & 0xff
-                );
-            wxMessageBox (l_text, _("DEBUG"), wxOK | wxICON_INFORMATION, NULL);
-            l_text.Printf (wxT ("Waiting for '*READY*', found: %d%d%d%d%d%d%d"), 
-                m_canvas->textmap[31 * 64 + 0] & 0xff,
-                m_canvas->textmap[31 * 64 + 1] & 0xff,
-                m_canvas->textmap[31 * 64 + 2] & 0xff,
-                m_canvas->textmap[31 * 64 + 3] & 0xff,
-                m_canvas->textmap[31 * 64 + 4] & 0xff,
-                m_canvas->textmap[31 * 64 + 5] & 0xff,
-                m_canvas->textmap[31 * 64 + 6] & 0xff
-                );
-            wxMessageBox (l_text, _("DEBUG"), wxOK | wxICON_INFORMATION, NULL);
-*/
-            if (((rom01char[m_canvas->textmap[0 * 64 + 0] & 0xff]) == '*') && 
-                ((rom01char[m_canvas->textmap[0 * 64 + 1] & 0xff]) == 'R') && 
-                ((rom01char[m_canvas->textmap[0 * 64 + 2] & 0xff]) == 'E') && 
-                ((rom01char[m_canvas->textmap[0 * 64 + 3] & 0xff]) == 'A') && 
-                ((rom01char[m_canvas->textmap[0 * 64 + 4] & 0xff]) == 'D') && 
-                ((rom01char[m_canvas->textmap[0 * 64 + 5] & 0xff]) == 'Y') && 
-                ((rom01char[m_canvas->textmap[0 * 64 + 6] & 0xff]) == '*')) 
-            {
-                //wxMessageBox (wxT ("Got *READY* at 3201"), _("DEBUG"), wxOK | wxICON_INFORMATION, NULL);
-                m_WaitReady = false;
-                int omode = mode;
-                mode = 2;
-                ptermBlockErase (0, 0, 7 * 8, 15);
-                mode = omode;
-            }
-            else
-            {
-                nextindex--;
-                delay = 100;
-                m_WaitReady = true;
-            found = true;
-            }
-        }
-        // check if sending roster
-        else if (m_SendRoster)
-        {
-            wxString tascii[] = {
-                                wxT ("[DELAY10]"),
-                                wxT ("[WAITREADY]") 
-                                };
-            for (int i = 0;
-                 !found && i < (int) (sizeof (tascii) / sizeof (tascii[0]));
-                 i++)
-                if (tascii[i].Cmp (m_pasteText.Mid (nextindex,
-                                                    tascii[i].Length ())) == 0)
-                {
-                    switch (i)
-                    {
-                    case 0:
-                        delay = 10000;
-                        m_WaitReady = false;
-                        break;
-                    case 1:
-                        delay = 100;
-                        m_WaitReady = true;
-                        break;
-                    }
-                    nextindex += tascii[i].Length () - 1;
-                    found = true;
-                }
-        }
-        else if (ptermApp->m_smartPaste)
+        if (ptermApp->m_smartPaste)
         {
             wxString tascii[] = {
                                 wxT (".       "), 
@@ -3300,14 +3191,9 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     }
     else
     {
-        //delete roster file if done
-        if (m_SendRoster)
-            KillRoster ();
         //reset flags
         m_bCancelPaste = false;
         m_bPasteActive = false;
-        m_SendRoster = false;
-        m_WaitReady = false;
     }
 }
 
@@ -3749,52 +3635,6 @@ void PtermFrame::OnMacro9 (wxCommandEvent &event)
     int key4[] = {0024, 0000, 0103, 0137, 0132, 0103, 0136, 0124, 0105, 0130,
                   0124, 0024, 0001, -1};
     ptermSendKeys (key4);
-}
-
-void PtermFrame::SendRoster (void)
-{
-    //read contents of Roster File
-    
-    wxString buffer;
-
-    //exit if not registrar
-    if (!ptermApp->m_IsRegistrar)
-        return;
-
-    //open file
-    wxTextFile file (ptermApp->m_RosterFile);
-    if (!file.Exists ())
-        return;
-    if (!file.Open ())
-        return;
-
-    //read file
-    m_pasteText.Clear ();
-    for (buffer = file.GetFirstLine (); ; buffer = file.GetNextLine ())
-    {
-        m_pasteText.Append (buffer);
-        m_pasteText.Append (wxT ("\n"));
-        if (file.Eof ())
-            break;
-    }
-    file.Close ();
-    //force certain options to expected values
-    ptermApp->m_splitWords = false;
-    ptermApp->m_smartPaste = false;
-    ptermApp->m_autoLF = wxT ("0");
-    ptermApp->m_conv8Sp = false;
-    ptermApp->m_convDot7 = false;
-    //start pasting
-    m_SendRoster = true;
-    m_pasteIndex = 0;
-    m_pasteNextKeyCnt = 0;
-    m_pasteTimer.Start (atoi (ptermApp->m_charDelay.mb_str ()), true);
-}
-
-void PtermFrame::KillRoster (void)
-{
-    //delete file
-    wxRemoveFile (ptermApp->m_RosterFile);
 }
 
 void PtermFrame::OnPaste (wxCommandEvent &event)
@@ -6033,15 +5873,6 @@ void PtermFrame::ProcessPlatoMetaData ()
     wxString l_group;
     wxString l_system;
     wxString l_station;
-
-    //special check for roster
-    if (m_SendRoster)
-        return;
-    if ((fnd = m_PMD.Find (wxT ("sendroster;"))) != -1)
-    {
-        SendRoster ();
-        return;
-    }
 
     //initialize
     l_name = wxT ("");
