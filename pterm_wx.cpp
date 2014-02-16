@@ -6,7 +6,7 @@ Working, subject to more testing: char, line, dot, memory load modes
 both ascii and classic.  Connection failure handling.  Print screen.
 Save screen.  flood fill (-paint-) command.  -font- command and text
 display when in font mode.  Full screen mode.  Print preview.
-Copy text.
+Copy text.  2x mode, -stretch- mode.  Scrollbars.
 
 Partially working: -Option- modifier for entering function keys (like
 Option-A for ANS) is weird, it seems to do nothing the first keystroke
@@ -16,11 +16,7 @@ useful for testing this.
 Not coded yet: Scrolling in dumb terminal mode. Save and
 restore window.  
 
-Partially tested: 2x mode, -stretch- mode.  This seems to be a lot
-more complicated than it needs to be; revisit how it's done in light
-of the new design.
-
-Not working: scrollbars (they don't appear).
+Not tested yet: GSW mode.
 
 The key of the new design is that it just uses a 512x512 bitmap with
 raw pixel access to construct all the screen content, then it displays
@@ -207,14 +203,6 @@ displayed, not by making the bitmap itself different.
 
 // force coordinate into the range 0..511
 #define BOUND(x) x = (((x < 0) ? 0 : ((x > 511) ? 511 : x)))
-
-// Define top left corner of the PLATO drawing area, in windowing
-// system coordinates (which have origin at the top and Y axis upside down)
-#define XTOP (XADJUST (0))
-#define YTOP (YADJUST (511))
-// Ditto but for the backing store bitmap
-#define XMTOP (XMADJUST (0))
-#define YMTOP (YMADJUST (511))
 
 // Macro to include keyboard accelerator only if option enabled
 #define ACCELERATOR(x) + ((ptermApp->m_useAccel) ? wxString (wxT (x)) : \
@@ -9591,26 +9579,33 @@ int PtermCanvas::GetYMargin (void) const
 void PtermCanvas::OnDraw (wxDC &dc)
 {
     dc.DestroyClippingRegion ();
+    dc.SetUserScale (1, 1);
+    dc.SetDeviceOrigin (0, 0);
+    dc.SetClippingRegion (m_owner->m_xmargin, m_owner->m_ymargin,
+                          512 * m_owner->m_xscale, 512 * m_owner->m_yscale);
+    dc.SetDeviceOrigin (m_owner->m_xmargin, m_owner->m_ymargin);
     dc.SetUserScale (m_owner->m_xscale, m_owner->m_yscale);
-    dc.SetClippingRegion (m_owner->m_xmargin,
-                          m_owner->m_ymargin, 512, 512);
-    dc.DrawBitmap (*m_owner->m_bitmap, XTOP, YTOP, false);
+    dc.DrawBitmap (*m_owner->m_bitmap, 0, 0, false);
     
 #if DEBUG
-    printf ("Drawing bitmap onto the window canvas at %d %d\n", XTOP, YTOP);
+    printf ("Drawing bitmap onto the window canvas\n");
 #endif
 
     if (m_regionHeight != 0 && m_regionWidth != 0)
     {
+        dc.SetUserScale (1, 1);
+        dc.SetDeviceOrigin (0, 0);
         dc.SetClippingRegion (XADJUST (8 * m_regionX), 
                               YADJUST (16 * (m_regionY + m_regionHeight)), 
-                              m_regionWidth * 8,
-                              m_regionHeight * 16);
-        dc.DrawBitmap (*m_owner->m_selmap, XTOP, YTOP, false);
+                              m_regionWidth * 8 * m_owner->m_xscale,
+                              m_regionHeight * 16 * m_owner->m_yscale);
+        dc.SetDeviceOrigin (m_owner->m_xmargin, m_owner->m_ymargin);
+        dc.SetUserScale (m_owner->m_xscale, m_owner->m_yscale);
+        dc.DrawBitmap (*m_owner->m_selmap, 0, 0, false);
     
 #if DEBUG
-        printf ("Drawing selection region onto the window canvas at %d %d, top %d %d, size %d %d\n",
-                XTOP, YTOP, m_regionX, m_regionY, m_regionWidth, m_regionHeight);
+        printf ("Drawing selection region onto the window canvas, top %d %d, size %d %d\n",
+                m_regionX, m_regionY, m_regionWidth, m_regionHeight);
 #endif
     }
 }
@@ -10104,17 +10099,6 @@ void PtermCanvas::OnCopy (wxCommandEvent &)
         return;
     }
     
-#ifdef DEBUG
-    for (i = 0; i < sizeof (textmap) / sizeof (textmap[0]); i++)
-    {
-        printf ("%c", rom01char[textmap[i ^ 03700] & 0xff]);
-        if ((i & 077) == 077)
-        {
-            printf ("\n");
-        }
-    }
-#endif
-
     // regionX and regionY are the lowest coordinate corner of
     // the copy region, i.e., the lower left corner, expressed in
     // 0-based coarse grid coordinates.
