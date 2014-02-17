@@ -6,15 +6,14 @@ Working, subject to more testing: char, line, dot, memory load modes
 both ascii and classic.  Connection failure handling.  Print screen.
 Save screen.  flood fill (-paint-) command.  -font- command and text
 display when in font mode.  Full screen mode.  Print preview.
-Copy text.  2x mode, -stretch- mode.  Scrollbars.
+Copy text.  2x mode, -stretch- mode.  Scrollbars.  Save/restore window.
 
 Partially working: -Option- modifier for entering function keys (like
 Option-A for ANS) is weird, it seems to do nothing the first keystroke
 but if I do it again subsequent ones work.  -diag- option a then a is
 useful for testing this.
 
-Not coded yet: Scrolling in dumb terminal mode. Save and
-restore window.  
+Not coded yet: Scrolling in dumb terminal mode. 
 
 Not tested yet: GSW mode.
 
@@ -200,7 +199,7 @@ displayed, not by making the bitmap itself different.
 #define YMADJUST(y) (511 - (y))
 
 // force coordinate into the range 0..511
-#define BOUND(x) x = (((x < 0) ? 0 : ((x > 511) ? 511 : x)))
+#define BOUND(x) (((x < 0) ? 0 : ((x > 511) ? 511 : x)))
 
 // Macro to include keyboard accelerator only if option enabled
 #define ACCELERATOR(x) + ((ptermApp->m_useAccel) ? wxString (wxT (x)) : \
@@ -617,7 +616,6 @@ public:
     int         m_termType;
     
     //tab2
-    bool        m_IsRegistrar;
     bool        m_showSignon;
     bool        m_showSysName;
     bool        m_showHost;
@@ -982,7 +980,6 @@ private:
         {
         bool        ok;
         int         data[4];
-        wxMemoryDC  *dc;
         wxBitmap    *bm;
         };
     cws cwswindow[10];
@@ -1585,7 +1582,6 @@ bool PtermApp::OnInit (void)
     m_firstFrame = m_helpFrame = NULL;
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
-    m_IsRegistrar = false;
     //g_beep = new wxSound (sizeof (touch_beep), touch_beep);
 #if !defined (__WXMAC__)
     g_beep = new wxSound (wxT ("touch-beep.wav"), TRUE);
@@ -4501,7 +4497,7 @@ void PtermFrame::drawFontChar (int x, int y, int c)
     m_memDC->GetTextExtent (chr, &m_fontwidth, &m_fontheight);
 
     x = XMADJUST (x);
-    y = YMADJUST (y + m_fontheight - 1);
+    y = YMADJUST (BOUND (y + m_fontheight - 1));
 
     currentX += m_fontwidth;
     
@@ -5020,6 +5016,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     // check for special TERM area save/restore
                     case CWS_TERMSAVE:
                         trace ("ext completed %04x", n);
+                        // data items are, in order: xleft, ytop, xright, ybot
                         cwswindow[0].data[0] = 0;
                         cwswindow[0].data[1] = 48;
                         cwswindow[0].data[2] = 511;
@@ -5055,36 +5052,49 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                             // check for cws data mode
                             case 1:
                                 cwscnt++;
-                                if     (cwscnt==1 && n==CWS_SAVE)          
+                                if     (cwscnt == 1 && n == CWS_SAVE)          
                                 {
                                     trace ("CWS: specify save function");
                                     cwsfun = CWS_SAVE;
                                 }
-                                else if (cwscnt==1 && n==CWS_RESTORE)   
+                                else if (cwscnt == 1 && n == CWS_RESTORE)   
                                 {
                                     trace ("CWS: specify restore function");
                                     cwsfun = CWS_RESTORE;
                                 }
-                                else if (cwscnt==1 || cwscnt>6)
+                                else if (cwscnt == 1 || cwscnt > 6)
                                 {
+                                    // unknown function; terminate cws mode
                                     trace ("CWS: invalid function; %d", n);
-                                    cwsmode=0, cwsfun=0, cwscnt=0;  // unknown function; terminate cws mode
+                                    cwsmode = 0;
+                                    cwsfun = 0;
+                                    cwscnt = 0;
                                 }
-                                else if (cwscnt==2)
+                                else if (cwscnt == 2)
                                 {
-                                    trace ("CWS: specify window; %d", n);
-                                    cwswin = n;
+                                    if (n < sizeof (cwswindow) / sizeof (cwswindow[0]))
+                                    {
+                                        trace ("CWS: specify window; %d", n);
+                                        cwswin = n;
+                                    }
+                                    else
+                                    {
+                                        trace ("CWS: invalid window; %d", n);
+                                        cwsmode = 0;
+                                        cwsfun = 0;
+                                        cwscnt = 0;
+                                    }
                                 }
-                                else if (cwscnt<7)
+                                else if (cwscnt < 7)
                                 {
                                     trace ("CWS: data; %d", n);
-                                    cwswindow[cwswin].data[cwscnt-3] = n;
+                                    cwswindow[cwswin].data[cwscnt - 3] = n;
                                 }
                                 break;
                             // check for cws execute mode
                             case 2:
                                 cwscnt = 0;
-                                if (n==CWS_EXEC)
+                                if (n == CWS_EXEC)
                                 {
                                     trace ("CWS: process exec");
                                     switch (cwsfun)
@@ -5099,7 +5109,11 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                                 }
                                 else
                                 {
-                                    cwsmode=0, cwsfun=0, cwscnt=0;  // unknown function; terminate cws mode
+                                    // unknown function; terminate cws mode
+                                    trace ("CWS: invalid function; %d", n);
+                                    cwsmode = 0;
+                                    cwsfun = 0;
+                                    cwscnt = 0;
                                 }
                                 break;
                             }
@@ -5907,14 +5921,12 @@ void PtermFrame::ProcessPlatoMetaData ()
     }
 
     //make title string based on flags
-    ptermApp->m_IsRegistrar = false;
     l_str = wxT ("");
     if (ptermApp->m_showSignon)
     {
         l_str = l_name;
         l_str.Append (wxT ("/"));
         l_str += l_group;
-        ptermApp->m_IsRegistrar = (l_str.Cmp (wxT ("registrar/o")) == 0);
     }
     if (ptermApp->m_showSysName)
     {
@@ -6064,56 +6076,59 @@ void PtermFrame::SetFontActive ()
 **  Purpose:        Save a screen "window"
 **
 **  Parameters:     Name        Description.
-**                  d           window number
+**                  d           window number (range checked by caller)
 **
 **  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
 void PtermFrame::ptermSaveWindow (int d)
 {
-#if 0
-    int x, y, w, h;
-    x = ((m_stretch) ? 1 : m_scale)*cwswindow[d].data[0];
-    y = ((m_stretch) ? 1 : m_scale)* (512-cwswindow[d].data[1]);
-    w = ((m_stretch) ? 1 : m_scale)* (cwswindow[d].data[2]-cwswindow[d].data[0]);
-    h = ((m_stretch) ? 1 : m_scale)* (cwswindow[d].data[1]-cwswindow[d].data[3]);
+    wxBitmap *bm = new wxBitmap (512, 512, -1);
+    wxMemoryDC dc (*bm);
+
+    // We'll just copy the whole screen worth of bitmap, at restore time
+    // we'll do a selective restore.  Note that just constructing a wxBitmap
+    // with the copy constructor doesn't work, that gives us a reference to
+    // the other bitmap.  We actually have to copy the data, which Blit does
+    // easily.
     trace ("CWS: process save; window %d", d);
     cwswindow[d].ok = true;
-    cwswindow[d].dc = new wxMemoryDC;
-    cwswindow[d].bm = new wxBitmap (w, h, -1);
-    cwswindow[d].dc->SelectObject (*cwswindow[d].bm);
-    //cwswindow[d].dc->Blit (0, 0, w, h, m_memDC, x, y, wxCOPY);
-#endif
+    m_memDC->SelectObject (*m_bitmap);
+    dc.Blit (0, 0, 512, 512, m_memDC, 0, 0);
+    m_memDC->SelectObject (wxNullBitmap);
+    cwswindow[d].bm = bm;
 }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Restore a screen "window"
 **
 **  Parameters:     Name        Description.
-**                  d           window number
+**                  d           window number (range checked by caller)
 **
 **  Returns:        nothing
 **
 **------------------------------------------------------------------------*/
 void PtermFrame::ptermRestoreWindow (int d)
 {
-#if 0
     int x, y, w, h;
-    x = ((m_stretch) ? 1 : m_scale)*cwswindow[d].data[0];
-    y = ((m_stretch) ? 1 : m_scale)* (512-cwswindow[d].data[1]);
-    w = ((m_stretch) ? 1 : m_scale)* (cwswindow[d].data[2]-cwswindow[d].data[0]);
-    h = ((m_stretch) ? 1 : m_scale)* (cwswindow[d].data[1]-cwswindow[d].data[3]);
+
+    x = XMADJUST (BOUND (cwswindow[d].data[0]));
+    y = YMADJUST (BOUND (cwswindow[d].data[1]));
+    w = BOUND (cwswindow[d].data[2] - cwswindow[d].data[0]);
+    h = BOUND (cwswindow[d].data[1] - cwswindow[d].data[3]);
     if (cwswindow[d].ok)
     {
-        trace ("CWS: process restore; window %d", d);
-        m_memDC->Blit (x, y, w, h, cwswindow[d].dc, 0, 0, wxCOPY);
-        wxClientDC dc (m_canvas);
-        dc.Blit (XTOP, YTOP, vScreenSize (m_scale), vScreenSize (m_scale), m_memDC, 0, 0, wxCOPY);
+        wxMemoryDC srcdc (*cwswindow[d].bm);
+
+        trace ("CWS: process restore; window %d, region %d %d %d %d",
+               d, x, y, w, h);
+        m_memDC->SelectObject (*m_bitmap);
+        m_memDC->Blit (x, y, w, h, &srcdc, x, y);
+        m_memDC->SelectObject (wxNullBitmap);
+
         cwswindow[d].ok = false;
         delete cwswindow[d].bm;
-        delete cwswindow[d].dc;
     }
-#endif
 }
 
 /*--------------------------------------------------------------------------
@@ -10145,10 +10160,10 @@ void PtermCanvas::UpdateRegion (wxMouseEvent &event)
             y1 = m_mouseY;
             y2 = y;
         }
-        BOUND (x1);
-        BOUND (x2);
-        BOUND (y1);
-        BOUND (y2);
+        x1 = BOUND (x1);
+        x2 = BOUND (x2);
+        y1 = BOUND (y1);
+        y2 = BOUND (y2);
         m_regionX = x1 / 8;
         m_regionY = y1 / 16;
         m_regionWidth = (x2 + 1 - (m_regionX * 8)) / 8;
