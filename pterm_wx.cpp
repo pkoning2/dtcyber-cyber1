@@ -6060,7 +6060,8 @@ void PtermFrame::SetFontActive ()
     m_usefont = (m_fontface.Cmp (wxT (""))!=0 && m_fontface.Cmp (wxT ("default"))!=0);
     if (m_usefont)
     {
-        wxFontInfo fi (wxSize (m_fontsize * m_xscale, m_fontsize * m_yscale));
+        // Set size in pixels (not points), height is supplied, width defaulted
+        wxFontInfo fi (wxSize (0, m_fontsize));
         
         fi.FaceName (m_fontface);
         fi.Family (m_fontfamily);
