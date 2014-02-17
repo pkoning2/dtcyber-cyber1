@@ -7,13 +7,14 @@ both ascii and classic.  Connection failure handling.  Print screen.
 Save screen.  flood fill (-paint-) command.  -font- command and text
 display when in font mode.  Full screen mode.  Print preview.
 Copy text.  2x mode, -stretch- mode.  Scrollbars.  Save/restore window.
+Scrolling in dumb terminal mode. 
 
 Partially working: -Option- modifier for entering function keys (like
 Option-A for ANS) is weird, it seems to do nothing the first keystroke
 but if I do it again subsequent ones work.  -diag- option a then a is
 useful for testing this.
 
-Not coded yet: Scrolling in dumb terminal mode. 
+Not coded yet: 
 
 Not tested yet: GSW mode.
 
@@ -4606,7 +4607,15 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     else
                     {
                         // On the bottom line... scroll.
-                        // TODO
+                        PixelData pixmap (*m_bitmap);
+
+                        PixelData::Iterator from (pixmap);
+                        PixelData::Iterator to (pixmap);
+    
+                        from.MoveTo (pixmap, 0, 16);
+                        to.MoveTo (pixmap, 0, 0);
+
+                        memmove (to.m_ptr, from.m_ptr, (512 - 16) * 512 * 4);
                     }
                     // Erase the line we just moved to.
                     mode = (3 << 2) + 2;    // set character mode, erase
