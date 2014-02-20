@@ -1,4 +1,5 @@
 #define DEBUG 1
+#define DEBUGKEY 1
 /*
 ** This code is incomplete.  Status is as follows:
 
@@ -1058,7 +1059,7 @@ private:
     void ptermRestoreWindow (int d);
     
     void drawFontChar (int x, int y, int c);
-    void procPlatoWord (u32 d, bool ascii);
+    bool procPlatoWord (u32 d, bool ascii);
     void plotChar (int c);
     void mode0 (u32 d);
     void mode1 (u32 d);
@@ -2847,8 +2848,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 
     if (m_nextword != 0)
     {
-        procPlatoWord (m_nextword, m_conn->Ascii ());
-        refresh = true;
+        refresh |= procPlatoWord (m_nextword, m_conn->Ascii ());
         m_nextword = 0;
     }
 
@@ -2892,8 +2892,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 #elif DEBUG
         printf ("processing data from plato %07o\n", word);
 #endif
-        procPlatoWord (word, m_conn->Ascii ());
-        refresh = true;
+        refresh |= procPlatoWord (word, m_conn->Ascii ());
     }
 
     if (refresh)
@@ -2920,6 +2919,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 void PtermFrame::OnTimer (wxTimerEvent &)
 {
     int word;
+    bool refresh = false;
     
     if (--m_delay > 0)
     {
@@ -2931,7 +2931,7 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 #elif DEBUG
     printf ("processing data from plato %07o\n", m_nextword);
 #endif
-    procPlatoWord (m_nextword, m_conn->Ascii ());
+    refresh = procPlatoWord (m_nextword, m_conn->Ascii ());
     
     // See what's next.  If no delay is called for, just process it, keep
     // going until no more data or we get a word with delay.
@@ -2957,10 +2957,13 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 #elif DEBUG
         printf ("processing data from plato %07o\n", word);
 #endif
-        procPlatoWord (word, m_conn->Ascii ());
+        refresh |= procPlatoWord (word, m_conn->Ascii ());
     }
 
-    Refresh ();
+    if (refresh)
+    {
+        Refresh ();
+    }
 }
 
 void PtermFrame::OnPasteTimer (wxTimerEvent &)
@@ -4521,16 +4524,17 @@ void PtermFrame::drawFontChar (int x, int y, int c)
 **                  d           19-bit word
 **                  ascii       true if using ASCII protocol
 **
-**  Returns:        nothing
+**  Returns:        true if the bitmap has changed, false otherwise.
 **
 **------------------------------------------------------------------------*/
-void PtermFrame::procPlatoWord (u32 d, bool ascii)
+bool PtermFrame::procPlatoWord (u32 d, bool ascii)
 {
     mptr mp;
     const char *msg = "";
     int i, j, n = 0;
     AscState    ascState;
-
+    bool changed = false;
+    
     // used in load coordinate
     int &coord = (d & 01000) ? currentY : currentX;
     int &cx = (vertical) ? currentY : currentX;
@@ -4582,6 +4586,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             }
             else if ((d >> 8) == 0)
             {
+                changed = true;
                 if (d >= 32 && d < 127)
                 {
                     d = asciiM0[d];
@@ -4687,6 +4692,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             case 014:   // ESC FF
                 trace ("Full screen erase");
                 ptermFullErase ();
+                changed = true;
                 break;
             case 026:
                 // mode xor (also sets mode write for off-screen DC operations)
@@ -5035,6 +5041,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                     case CWS_TERMRESTORE:
                         trace ("ext completed %04x", n);
                         ptermRestoreWindow (0);
+                        changed = true;
                         break;
                     default:
                         trace ("ext completed %04x", n);
@@ -5113,6 +5120,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                                         break;
                                     case CWS_RESTORE:
                                         ptermRestoreWindow (cwswin);
+                                        changed = true;
                                         break;
                                     }
                                 }
@@ -5196,12 +5204,14 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         if (AssembleCoord (d))
                         {
                             mode0 ((lastX << 9) + lastY);
+                            changed = true;
                         }
                         break;
                     case 1:
                         if (AssembleCoord (d))
                         {
                             mode1 ((lastX << 9) + lastY);
+                            changed = true;
                         }
                         break;
                     case 2:
@@ -5215,6 +5225,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         trace ("char %03o (%c)", d, d);
                         m_ascState = none;
                         m_ascBytes = 0;
+                        changed = true;
                         i = currentCharset;
                         if (m_usefont && i == 0)
                             drawFontChar (currentX, currentY, d);
@@ -5281,6 +5292,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                         {
                             modewords++;
                             mode4 ((lastX << 9) + lastY);
+                            changed = true;
                         }
                         break;
                     case 5:
@@ -5323,9 +5335,13 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
     
         if (d & 01000000)
         {
+            const int dmode = mode >> 2;
+            
             modewords++;
-            mp = modePtr[mode >> 2];
+            mp = modePtr[dmode];
             (this->*mp) (d);
+            // Modes 0, 1, 3, 4 change the screen
+            changed = (dmode <= 4 && dmode != 2);
         }
         else
         {
@@ -5414,6 +5430,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
                 {
                     // full screen erase
                     ptermFullErase ();
+                    changed = true;
                 }
                 trace ("load mode %d screen %d", mode, (d & 1));
                 break;
@@ -5528,6 +5545,7 @@ void PtermFrame::procPlatoWord (u32 d, bool ascii)
             }
         }
     }
+    return changed;
 }
 
 /*--------------------------------------------------------------------------
@@ -9406,7 +9424,8 @@ BEGIN_EVENT_TABLE (PtermCanvas, wxScrolledCanvas)
 PtermCanvas::PtermCanvas (PtermFrame *parent)
     : wxScrolledCanvas (parent, -1, wxDefaultPosition, 
                         wxDefaultSize,
-                        wxHSCROLL | wxVSCROLL | wxFULL_REPAINT_ON_RESIZE
+                        wxHSCROLL | wxVSCROLL | wxFULL_REPAINT_ON_RESIZE |
+                        wxWANTS_CHARS
                         /* , "Default Name" */),
       m_regionX (0),
       m_regionY (0),
@@ -9419,6 +9438,7 @@ PtermCanvas::PtermCanvas (PtermFrame *parent)
 {
     wxClientDC dc (this);
 
+    DisableKeyboardScrolling ();
     SetBackgroundColour (ptermApp->m_bgColor);
     FullErase ();
 }
@@ -9481,6 +9501,12 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     // keystrokes that aren't function keys or other special keys, and
     // neither Ctrl nor Alt are active.
 
+#if DEBUG
+    printf ("keydown: ctrl %d shift %d alt %d keycode %ld\n",
+            event.RawControlDown (), event.ShiftDown (),
+            event.AltDown (), event.m_keyCode);
+#endif
+
     if (m_owner->m_bPasteActive)
     {
         // If pasting is active, this key is NOT passed on to the application
@@ -9495,11 +9521,6 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         shift = 040;
     }
     key = event.m_keyCode;
-#if DEBUG
-    printf ("ctrl %d shift %d alt %d keycode %ld\n",
-            event.RawControlDown (), event.ShiftDown (),
-            event.AltDown (), event.m_keyCode);
-#endif
 
     if (!m_owner->HasConnection () ||
         (m_owner->m_conn->Ascii () && m_owner->m_dumbTty) ||
@@ -9510,13 +9531,15 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         // We don't take any action on the modifier key keydown events,
         // but we do want to make sure they are seen by the rest of
         // the system.
-        // Note that wxWidgets V3 maps the Mac Command key to WXK_CONTROL,
-        // "to improve compatibility with other systems".  Gah.  But
-        // fortunately, WXK_RAW_CONTROL means the real control key.
         // The same applies to keys sent to the help window (which has
         // no connection on which to send them).
         // And finally, it applies to ASCII when in dumb TTY mode, in
         // that case we just want to send ASCII keycodes straight.
+        //
+        // Note that wxWidgets V3 maps the Mac Command key to WXK_CONTROL,
+        // "to improve compatibility with other systems".  Gah.  But
+        // fortunately, WXK_RAW_CONTROL means the real control key.
+
         event.Skip ();
         return;
     }
@@ -9842,6 +9865,11 @@ void PtermCanvas::OnChar (wxKeyEvent& event)
     int shift = 0;
     int pc = -1;
 
+#if DEBUG
+    printf ("onchar: ctrl %d shift %d alt %d keycode %ld\n",
+            event.RawControlDown (), event.ShiftDown (),
+            event.AltDown (), event.m_keyCode);
+#endif
     // Dumb TTY input is handled here, always
     if (m_owner->HasConnection () &&
         m_owner->m_conn->Ascii () && m_owner->m_dumbTty)
