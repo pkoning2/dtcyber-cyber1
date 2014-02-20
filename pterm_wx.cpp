@@ -10,21 +10,11 @@ display when in font mode.  Full screen mode.  Print preview.
 Copy text.  2x mode, -stretch- mode.  Scrollbars.  Save/restore window.
 Scrolling in dumb terminal mode. 
 
-Partially working: -Option- modifier for entering function keys (like
-Option-A for ANS) is weird, it seems to do nothing the first keystroke
-but if I do it again subsequent ones work.  -diag- option a then a is
-useful for testing this.
-
 Not coded yet: 
 
-Not tested yet: GSW mode.
-
-The key of the new design is that it just uses a 512x512 bitmap with
-raw pixel access to construct all the screen content, then it displays
-that bitmap on the window.  Similarly, I'd display that bitmap on the
-printout, or process it for save-screen, etc.  Display transformations
-like stretch and 2x scale should be done when that bitmap is
-displayed, not by making the bitmap itself different.
+Not working right: GSW mode.  It plays for a while, then stops.  The trace
+suggests that it's sending XOFF to stop the flow (ring buffer filling up),
+and then XON to restart it, but there is no further data even after XON.
 
 */
 
@@ -38,6 +28,15 @@ displayed, not by making the bitmap itself different.
 // Copyright:   (c) Paul Koning, Joe Stanton
 // Licence:     DtCyber license
 /////////////////////////////////////////////////////////////////////////////
+
+/*
+The key of the new design is that it just uses a 512x512 bitmap with
+raw pixel access to construct most of the screen content, then it displays
+that bitmap on the window.  Similarly, it displays that bitmap on the
+printout, or process it for save-screen, etc.  Display transformations
+like stretch and 2x scale are done when that bitmap is displayed, not 
+by making the bitmap itself different.
+*/
 
 // ============================================================================
 // declarations
@@ -686,7 +685,7 @@ public:
     void ptermTouchPanel (bool enable);
 
     void OnDraw (wxDC &dc);
-    void OnKeyDown (wxKeyEvent& event);
+    void OnCharHook (wxKeyEvent& event);
     void OnChar (wxKeyEvent& event);
     void OnMouseDown (wxMouseEvent &event);
     void OnMouseUp (wxMouseEvent &event);
@@ -9413,7 +9412,7 @@ void PtermConnection::SendData (const void *data, int len)
 // handlers) which process them.
 BEGIN_EVENT_TABLE (PtermCanvas, wxScrolledCanvas)
     EVT_CHAR (PtermCanvas::OnChar)
-    EVT_KEY_DOWN (PtermCanvas::OnKeyDown)
+    EVT_CHAR_HOOK (PtermCanvas::OnCharHook)
     EVT_LEFT_DOWN (PtermCanvas::OnMouseDown)
     EVT_LEFT_UP (PtermCanvas::OnMouseUp)
     EVT_RIGHT_UP (PtermCanvas::OnMouseContextMenu)
@@ -9486,7 +9485,7 @@ void PtermCanvas::OnDraw (wxDC &dc)
     }
 }
 
-void PtermCanvas::OnKeyDown (wxKeyEvent &event)
+void PtermCanvas::OnCharHook (wxKeyEvent &event)
 {
     unsigned int key;
     int shift = 0;
@@ -9502,9 +9501,9 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     // neither Ctrl nor Alt are active.
 
 #if DEBUG
-    printf ("keydown: ctrl %d shift %d alt %d keycode %ld\n",
+    printf ("keydown: ctrl %d shift %d alt %d keycode %d\n",
             event.RawControlDown (), event.ShiftDown (),
-            event.AltDown (), event.m_keyCode);
+            event.AltDown (), event.GetKeyCode ());
 #endif
 
     if (m_owner->m_bPasteActive)
@@ -9520,7 +9519,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     {
         shift = 040;
     }
-    key = event.m_keyCode;
+    key = event.GetKeyCode ();
 
     if (!m_owner->HasConnection () ||
         (m_owner->m_conn->Ascii () && m_owner->m_dumbTty) ||
@@ -9844,7 +9843,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
                 return;
             }
             // On Linux (wx/GTK), there's a keyboard handling error:
-            // shifted comma key produces an OnKeyDown event with 
+            // shifted comma key produces an OnCharHook event with 
             // key = '<', which is wrong, it should be the unshifted 
             // code.  All other codes appear to be correct, and it also
             // works right on other platforms.  Weird...  Work around
@@ -9866,15 +9865,16 @@ void PtermCanvas::OnChar (wxKeyEvent& event)
     int pc = -1;
 
 #if DEBUG
-    printf ("onchar: ctrl %d shift %d alt %d keycode %ld\n",
+    printf ("onchar: ctrl %d shift %d alt %d keycode %d\n",
             event.RawControlDown (), event.ShiftDown (),
-            event.AltDown (), event.m_keyCode);
+            event.AltDown (), event.GetKeyCode ());
 #endif
+
     // Dumb TTY input is handled here, always
     if (m_owner->HasConnection () &&
         m_owner->m_conn->Ascii () && m_owner->m_dumbTty)
     {
-        key = event.m_keyCode;
+        key = event.GetKeyCode ();
         if (key == 023 || key == WXK_PAUSE || key == WXK_F10)
         {
             /* Ctrl-S or F10.  Presumably shift-stop, so turn it into NEXT.  */
@@ -9901,7 +9901,7 @@ void PtermCanvas::OnChar (wxKeyEvent& event)
     {
         shift = 040;
     }
-    key = event.m_keyCode;
+    key = event.GetKeyCode ();
 
     //see if we can ignore the caplock
     if (ptermApp->m_ignoreCapLock && isalpha (key) &&
