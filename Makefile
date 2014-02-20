@@ -114,8 +114,10 @@ include Makefile.wxpterm
 
 # This must be last
 ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),gxdtcyber)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
+endif
 endif
 endif
 
