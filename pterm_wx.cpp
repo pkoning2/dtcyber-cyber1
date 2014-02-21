@@ -69,7 +69,6 @@ by making the bitmap itself different.
 #define C_NODATA        -1
 #define C_CONNFAIL      -2
 #define C_DISCONNECT    -3
-#define C_GSWEND        -4
 #define C_CONNECTING    -5
 #define C_CONNECTED     -6
 
@@ -3305,14 +3304,17 @@ void PtermFrame::OnToggleStatusBar (wxCommandEvent &)
 
 void PtermFrame::SetStatusBarState (bool bstate)
 {
+    wxSize csize = GetClientSize ();
+    
     //show/hide status bar
     menuPopup->Check (Pterm_ToggleStatusBar, bstate);
     menuView->Check (Pterm_ToggleStatusBarView, bstate);
     SavePreferences ();
     BuildStatusBar ();
 
-    //check if size changed
-    UpdateDisplayState ();
+    // restore the client size, which will adjust the overall frame size
+    // to account for the status bar change.
+    SetClientSize (csize);
 }
 
 void PtermFrame::OnToggle2xMode (wxCommandEvent &)
@@ -8905,7 +8907,6 @@ void PtermConnection::dataCallback (void)
 {
     u32 platowd = 0;
     int i;
-    bool wasEmpty;
 
     // We received something so the connection is now active
     if (!m_connActive)
@@ -8914,8 +8915,6 @@ void PtermConnection::dataCallback (void)
         StoreWord (C_CONNECTED);
     }
 
-    wasEmpty = IsEmpty ();
-        
     for (;;)
     {
         /*
@@ -9158,15 +9157,8 @@ int PtermConnection::NextWord (void)
             next = 0;
         }
         m_gswOut = next;
-        if (word == C_GSWEND)
-        {
-            m_gswActive = m_gswStarted = false;
-            ptermCloseGsw ();
-        }
-        else
-        {
-            return word;
-        }
+
+        return word;
     }
 
     // Take data from the main input ring
