@@ -206,11 +206,11 @@ by making the bitmap itself different.
 #define ACCELERATOR(x) + ((ptermApp->m_useAccel) ? wxString (wxT (x)) : \
                           wxString (wxT ("")))
 // Macro to include keyboard accelerator only if MAC
-//#if defined (__WXMAC__)
-//#define MACACCEL(x) + wxString (wxT (x))
-//#else
-//#define v(x)
-//#endif
+#if defined (__WXMAC__)
+#define MACACCEL(x) + wxString (wxT (x))
+#else
+#define MACACCEL(x)
+#endif
 
 // ----------------------------------------------------------------------------
 // headers
@@ -2253,7 +2253,8 @@ PtermMainFrame::PtermMainFrame (void)
     menuFile = new wxMenu;
     menuFile->Append (Pterm_Connect, _("New Connection...")
                       ACCELERATOR ("\tCtrl-N"), _("Connect to a PLATO host"));
-    menuFile->Append (Pterm_Pref, _("Preferences..."),
+    menuFile->Append (Pterm_Pref, _("Preferences...")
+                      MACACCEL ("\tCtrl-,"),
                       _("Set program configuration"));
     menuFile->AppendSeparator ();
     menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
@@ -2271,13 +2272,7 @@ PtermMainFrame::PtermMainFrame (void)
     // now append the freshly created menu to the menu bar...
     menuBar = new wxMenuBar ();
     menuBar->Append (menuFile, _("File"));
-#if defined (__WXMAC__)
-    // On the Mac the menu name has to be exactly "&Help" for the About item
-    // to  be recognized.  Ugh.
-    menuBar->Append (menuHelp, wxT ("&Help"));
-#else
     menuBar->Append (menuHelp, _("Help"));
-#endif
 
     // ... and attach this menu bar to the frame
 #if !defined (__WXMAC__)
@@ -2440,7 +2435,8 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
     menuFile->Append (Pterm_Preview, _("Print Preview"),
                       _("Preview screen print"));
     menuFile->AppendSeparator ();
-    menuFile->Append (Pterm_Pref, _("Preferences..."),
+    menuFile->Append (Pterm_Pref, _("Preferences...")
+                      MACACCEL ("\tCtrl-,"),
                       _("Set program configuration"));
     menuFile->AppendSeparator ();
     menuFile->Append (Pterm_Close, _("Close") ACCELERATOR ("\tCtrl-W"),
@@ -2661,16 +2657,8 @@ void PtermFrame::BuildMenuBar (void)
     menuBar = new wxMenuBar ();
     menuBar->Append (menuFile, _("File"));
     menuBar->Append (menuEdit, _("Edit"));
-#if !0//PTERM_MDI
     menuBar->Append (menuView, _("View"));
-#endif
-#if defined (__WXMAC__)
-    // On the Mac the menu name has to be exactly "&Help" for the About item
-    // to  be recognized.  Ugh.
-    menuBar->Append (menuHelp, wxT ("&Help"));
-#else
     menuBar->Append (menuHelp, _("Help"));
-#endif
 }
 
 void PtermFrame::BuildEditMenu (int port)
@@ -3874,12 +3862,13 @@ void PtermFrame::OnPref (wxCommandEvent&)
         BuildPopupMenu (1);
         SetMenuBar (NULL);
         BuildEditMenu (1);
+#if 0 // this doesn't work
         BuildMenuBar ();
 #if !defined (__WXMAC__)
         if (m_conn != NULL && !m_fullScreen && ptermApp->m_showMenuBar)
 #endif
             SetMenuBar (menuBar);
-
+#endif
         BuildStatusBar ();
 
         //check if size changed
@@ -4113,7 +4102,8 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
     // aligned.  Note that the selection map is shown in what amounts
     // to -mode inverse-
     ptermDrawCharInto (x, y, charp, fpix, bpix, mode, modexor, pixmap);
-    ptermDrawCharInto (x & 0770, y & 0760, charp, 0, m_selpix, 1, false, selmap);
+    ptermDrawCharInto (x & 0770, y & 0760, charp, 0, m_selpix,
+                       1, false, selmap);
 }
 
 void PtermFrame::ptermDrawCharInto (int x, int y, const u16 *charp,
@@ -4323,7 +4313,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     {
         for (y = srow * 16; y < (srow + rows) * 16; y++)
         {
-            ptermUpdatePoint (x, y, 0, false, selmap);
+            ptermUpdatePoint (x, y, m_selpix, false, selmap);
         }
     }
 
