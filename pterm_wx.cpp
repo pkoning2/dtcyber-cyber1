@@ -905,7 +905,8 @@ private:
     uint32_t    m_bgpix;
     wxBitmap    *m_bitmap;
     uint32_t    m_maxalpha;
-    uint32_t    m_selpix;
+    uint32_t    m_selpixf;
+    uint32_t    m_selpixb;
     wxBitmap    *m_selmap;
     uint32_t    m_red;
     uint32_t    m_green;
@@ -2569,12 +2570,14 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
          {
              if (pb[i]) m_blue = i;
          }
-         // Pixel value for selected text is translucent white
-         p.Alpha () = 180;
+         // Pixel value for selected text is white on 
+         // translucent gray background.
+         p.Alpha () = 255;
          p.Red () = p.Green () = p.Blue () = 255;
-         m_selpix = *pmap;
+         m_selpixf = *pmap;
+         p.Alpha () = 140;
+         m_selpixb = *pmap;
          *pmap = t;
-         //printf ("%d %d %d %d\n", m_maxalpha, m_red, m_green, m_blue);
     }
     m_memDC = new wxMemoryDC ();
     m_selmap = new wxBitmap (512, 512, -1);
@@ -4099,10 +4102,9 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
     // We draw the character twice: once onto the screen bitmap,
     // and once onto the selection region bitmap.  The latter reflects
     // the text currently stored in the savemap, which is coarse grid
-    // aligned.  Note that the selection map is shown in what amounts
-    // to -mode inverse-
+    // aligned.  
     ptermDrawCharInto (x, y, charp, fpix, bpix, mode, modexor, pixmap);
-    ptermDrawCharInto (x & 0770, y & 0760, charp, 0, m_selpix,
+    ptermDrawCharInto (x & 0770, y & 0760, charp, m_selpixf, m_selpixb,
                        1, false, selmap);
 }
 
@@ -4303,7 +4305,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     int cols = int (ceil ((x2 - x1) / 8)) + 1;
     int srow = int (y1 / 16);
     int rows = int (ceil ((y2 - y1) / 16)) + 1;
-    for (int row = srow; rows > 0; row++, rows--)
+    for (int row = srow; row < srow + rows; row++)
     {
         memset (&m_canvas->textmap[row * 64 + scol], 055, 2 * cols);
     }
@@ -4313,7 +4315,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     {
         for (y = srow * 16; y < (srow + rows) * 16; y++)
         {
-            ptermUpdatePoint (x, y, m_selpix, false, selmap);
+            ptermUpdatePoint (x, y, m_selpixb, false, selmap);
         }
     }
 
