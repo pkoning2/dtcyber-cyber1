@@ -1583,8 +1583,7 @@ bool PtermApp::OnInit (void)
     m_firstFrame = m_helpFrame = NULL;
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
-    //g_beep = new wxSound (sizeof (touch_beep), touch_beep);
-#if !defined (__WXMAC__)
+#if defined (__WXMSW__)
     g_beep = new wxSound (wxT ("touch-beep.wav"), TRUE);
     if (!g_beep->IsOk ()) printf ("beep load failed\n");
 #endif
@@ -1725,11 +1724,11 @@ bool PtermApp::OnInit (void)
         sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
         m_bgColor = wxColour (r, g, b);
         //tab5
-        m_charDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_CHARDELAY),
+        m_charDelay.Printf (wxT ("%ld"), m_config->Read (wxT (PREF_CHARDELAY),
                                                         PASTE_CHARDELAY));
-        m_lineDelay.Printf (wxT ("%d"), m_config->Read (wxT (PREF_LINEDELAY),
+        m_lineDelay.Printf (wxT ("%ld"), m_config->Read (wxT (PREF_LINEDELAY),
                                                         PASTE_LINEDELAY));
-        m_autoLF.Printf (wxT ("%d"), m_config->Read (wxT (PREF_AUTOLF), 0L));
+        m_autoLF.Printf (wxT ("%ld"), m_config->Read (wxT (PREF_AUTOLF), 0L));
         m_splitWords = (m_config->Read (wxT (PREF_SPLITWORDS), 0L) != 0);
         m_smartPaste = (m_config->Read (wxT (PREF_SMARTPASTE), 0L) != 0);
         m_convDot7 = (m_config->Read (wxT (PREF_CONVDOT7), 0L) != 0);
@@ -2529,7 +2528,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
         m_statusBar = NULL;
     }
 
-    m_bitmap = new wxBitmap (512, 512, -1);
+    m_bitmap = new wxBitmap (512, 512, 32);
     {
          PixelData pixmap (*m_bitmap);
 
@@ -2579,7 +2578,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
          *pmap = t;
     }
     m_memDC = new wxMemoryDC ();
-    m_selmap = new wxBitmap (512, 512, -1);
+    m_selmap = new wxBitmap (512, 512, 32);
     
     m_canvas = new PtermCanvas (this);
 
@@ -6104,7 +6103,7 @@ void PtermFrame::SetFontActive ()
 **------------------------------------------------------------------------*/
 void PtermFrame::ptermSaveWindow (int d)
 {
-    wxBitmap *bm = new wxBitmap (512, 512, -1);
+    wxBitmap *bm = new wxBitmap (512, 512, 32);
     wxMemoryDC dc (*bm);
 
     // We'll just copy the whole screen worth of bitmap, at restore time
