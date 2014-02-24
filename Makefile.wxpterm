@@ -11,31 +11,11 @@
 
 PTERMVERSION ?= $(shell ./getkitver.py  ptermversion.h)
 
-#TYPE ?= static
-ifeq ("$(TYPE)","static")
-DEFWXDIR = /usr/local/wxstaticu
-SETPATH=
-else
-ifeq ("$(TYPE)","debugascii")
-DEFWXDIR = /usr/local/wxshared
-ifneq ("$(HOST)","Darwin")
-EXTRALIBS= -lXinerama
-endif
-else
-DEFWXDIR = /usr/local/wxshareud
-ifneq ("$(HOST)","Darwin")
-EXTRALIBS= -lXinerama
-endif
-endif
-endif
+DEFWXDIR = /usr/local
+
 ifeq ("$(HOST)","Darwin")
 ARCHCFLAGS ?= -arch i386
 #ARCHCFLAGS =  -arch ppc
-#EXTRALIBS= -lwxpng-2.6 -lwxtiff-2.6
-#DEFWXDIR = /usr/local/wxstaticu.264
-#DEFWXDIR = /usr/local/wxstaticu.2810
-#DEFWXDIR = /usr/local/wx295
-DEFWXDIR = /usr/local
 INCL ?= -I/usr/local/include -I/usr/include
 SDLPATH ?= /usr/local
 SDLINCL ?= `sdl-config --cflags`
@@ -51,8 +31,6 @@ SDLLIBS ?= `sdl-config --static-libs`
 else
 SDLLIBS ?= `sdl-config --libs`
 endif
-#SETPATH= -Wl,-rpath,$(WXDIR)/lib -Wl,-rpath,$(SDLPATH)/lib
-#endif
 
 # if the wxmumble dir doesn't exist, try for plain /usr
 ifeq ("$(wildcard $(DEFWXDIR))","")

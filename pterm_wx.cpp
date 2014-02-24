@@ -3269,7 +3269,7 @@ void PtermFrame::OnToggleMenuBar (wxCommandEvent &)
 
 void PtermFrame::SetMenuBarState (bool bstate)
 {
-    int ww, wh, ow, oh, nw, nh;
+    int ww, wh, ow, oh;
 
     //get window parameters pre-prefs
     GetSize (&ww, &wh);
@@ -5081,7 +5081,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                                 }
                                 else if (cwscnt == 2)
                                 {
-                                    if (n < sizeof (cwswindow) / sizeof (cwswindow[0]))
+                                    if ((unsigned) n < sizeof (cwswindow) / sizeof (cwswindow[0]))
                                     {
                                         trace ("CWS: specify window; %d", n);
                                         cwswin = n;
@@ -9845,7 +9845,6 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
 void PtermCanvas::OnChar (wxKeyEvent& event)
 {
     unsigned int key;
-    int shift = 0;
     int pc = -1;
 
 #if DEBUG
@@ -9881,10 +9880,6 @@ void PtermCanvas::OnChar (wxKeyEvent& event)
         event.Skip ();
         return;
     }
-    if (event.ShiftDown ())
-    {
-        shift = 040;
-    }
     key = event.GetKeyCode ();
 
     //see if we can ignore the caplock
@@ -9893,12 +9888,10 @@ void PtermCanvas::OnChar (wxKeyEvent& event)
     {
         if (wxGetKeyState (WXK_SHIFT))
         {
-            shift = 040;
             key = toupper (key);
         }
         else
         {
-            shift = 0;
             key = tolower (key);
         }
     }
