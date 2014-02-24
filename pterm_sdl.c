@@ -24,12 +24,11 @@
 
 #include "const.h"
 #include "types.h"
+#include "pterm.h"
 
 #define FREQ        22050           /* desired sound system data rate */
 #define CRYSTAL     3872000         /* GSW clock crystal frequency */
 #define SAMPLES     4096            /* number of samples to give to SDL each time */
-
-#define C_NODATA        -1
 
 struct gswState_t
 {
@@ -54,7 +53,6 @@ SDL_AudioSpec audioSpec;
 bool audioOpened;
 
 static void gswCallback (void *userdata, uint8_t  *stream, int len);
-extern int ptermNextGswWord (void *connection, int catchup);
 
 /*
 **  This function assigns the GSW to the specified "user" (a pointer to some
@@ -197,7 +195,7 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
             // If we have no more data, supply silence.
             word = ptermNextGswWord (gswState.user, catchup);
             catchup = 0;
-            if (word == C_NODATA)
+            if (word == C_NODATA || word == C_GSWEND)
             {
                 while (len > 0)
                 {

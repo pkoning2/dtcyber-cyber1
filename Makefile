@@ -17,7 +17,6 @@ DEPFILES=
 
 include Makefile.common
 
-CDEBUG = -DCcDebug=1
 
 OBJS    = main.o init.o trace.o dump.o \
           device.o channel.o cpu.o pp.o float.o shift.o operator.o \
