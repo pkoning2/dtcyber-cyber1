@@ -93,6 +93,9 @@ extern "C"
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+
+#include <sndfile.h>
+
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -626,6 +629,7 @@ public:
     void OnPaste (wxCommandEvent &event);
     void OnUpdateUIPaste (wxUpdateUIEvent& event);
     void OnSaveScreen (wxCommandEvent &event);
+    void OnSaveAudio (wxCommandEvent &event);
     void OnPrint (wxCommandEvent& event);
     void OnPrintPreview (wxCommandEvent& event);
     void OnPageSetup (wxCommandEvent& event);
@@ -720,6 +724,10 @@ public:
     //operating system request
     bool        m_osinfo;
 
+    // GSW sound output file handling
+    wxString    m_gswFile;
+    int         m_gswFFmt;
+    
 private:
     uint32_t    m_fgpix;
     uint32_t    m_bgpix;
@@ -1128,6 +1136,7 @@ enum
     Pterm_CopyScreen,
     Pterm_ConnectAgain,
     Pterm_SaveScreen,
+    Pterm_SaveAudio,
     Pterm_HelpKeys,
     Pterm_PastePrint,
     Pterm_FullScreen,
@@ -1351,6 +1360,7 @@ BEGIN_EVENT_TABLE (PtermFrame, wxFrame)
     EVT_MENU (Pterm_PastePrint, PtermFrame::OnPaste)
     EVT_UPDATE_UI (Pterm_Paste, PtermFrame::OnUpdateUIPaste)
     EVT_MENU (Pterm_SaveScreen, PtermFrame::OnSaveScreen)
+    EVT_MENU (Pterm_SaveAudio, PtermFrame::OnSaveAudio)
     EVT_MENU (Pterm_Print, PtermFrame::OnPrint)
     EVT_MENU (Pterm_Preview, PtermFrame::OnPrintPreview)
     EVT_MENU (Pterm_Page_Setup, PtermFrame::OnPageSetup)
@@ -2145,6 +2155,8 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
       m_fontPMD (false),
       m_fontinfo (false),
       m_osinfo (false),
+      // m_gswFile not initialized
+      m_gswFFmt (0),
       // m_fgpix not initialized
       // m_bgpix not initialized
       // m_bitmap not initialized
@@ -2247,6 +2259,10 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
     }
     menuFile->Append (Pterm_SaveScreen, _("Save Screen")
                       ACCELERATOR ("\tCtrl-S"), _("Save screen image to file"));
+    // Save audio is disabled until we know that we have a classic connection
+    menuFile->Append (Pterm_SaveAudio, _("Save GSW Audio"),
+                      _("Save GSW sound to audio file"));
+    menuFile->Enable (Pterm_SaveAudio, false);
     menuFile->Append (Pterm_Print, _("Print...")
                       ACCELERATOR ("\tCtrl-P"), _("Print screen content"));
     menuFile->Append (Pterm_Page_Setup, _("Page Setup..."),
@@ -2261,6 +2277,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
     menuFile->Append (Pterm_Close, _("Close") ACCELERATOR ("\tCtrl-W"),
                       _("Close this window"));
     menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
+
     //edit menu options
     BuildEditMenu (port);
 
@@ -3567,6 +3584,55 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
     }
     
     screenImage.SaveFile (filename, type);
+}
+
+void PtermFrame::OnSaveAudio (wxCommandEvent &)
+{
+    wxString filename, ext;
+    wxFileDialog fd (this, _("Save GSW audio to"), ptermApp->m_defDir,
+                     wxT (""), wxT ("WAV files (*.wav)|*.wav|"
+                                    "AIFF files (*.aiff)|*.aiff|"
+                                    "AU files (*.au)|*.au"),
+                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    int idx, type;
+    // This list must match order and content of the filter list above
+    static const wxChar *exts[] = { wxT ("wav"), wxT ("aiff"),
+                                    wxT ("au") };
+    
+    if (fd.ShowModal () != wxID_OK)
+    {
+        return;
+    }
+    filename = fd.GetPath ();
+    idx = fd.GetFilterIndex ();
+
+    wxFileName fn (filename);
+    wxString filt_ext (exts[idx]);
+    
+    ptermApp->m_defDir = fn.GetPath ();
+    ext = fn.GetExt ();
+    if (ext.CmpNoCase (filt_ext) != 0)
+    {
+        // Filename extension doesn't match the selected format, fix that.
+        ext = filt_ext;
+        fn.SetFullName (fn.GetFullName () + wxT (".") + ext);
+        filename = fn.GetFullPath ();
+    }
+    if (ext.CmpNoCase (wxT ("wav")) == 0)
+    {
+        type = SF_FORMAT_WAV;
+    }
+    else if (ext.CmpNoCase (wxT ("aiff")) == 0)
+    {
+        type = SF_FORMAT_AIFF;
+    }
+    else
+    {
+        type = SF_FORMAT_AU;
+    }
+
+    m_gswFFmt = type;
+    m_gswFile = fn.GetFullPath ();
 }
 
 void PtermFrame::OnPrint (wxCommandEvent &)
@@ -8697,6 +8763,7 @@ PtermConnection::~PtermConnection ()
     if (m_gswActive)
     {
         ptermCloseGsw ();
+        m_owner->m_gswFile = wxString ();
     }
     dtClose (m_fet, &m_portset, TRUE);
 }
@@ -8725,6 +8792,7 @@ void PtermConnection::connCallback (void)
         {
             m_gswActive = m_gswStarted = false;
             ptermCloseGsw ();
+            m_owner->m_gswFile = wxString ();
         }
         if (m_connActive)
         {
@@ -8782,6 +8850,7 @@ void PtermConnection::dataCallback (void)
             {
                 m_gswActive = m_gswStarted = false;
                 ptermCloseGsw ();
+                m_owner->m_gswFile = wxString ();
                 m_owner->ptermShowTrace ();
             }
                 
@@ -8873,6 +8942,7 @@ int PtermConnection::AssembleAutoWord (void)
         (buf[2] & 0300) == 0300)
     {
         m_connMode = niu;
+        m_owner->menuFile->Enable (Pterm_SaveAudio, true);
         return AssembleNiuWord ();
     }
     else
@@ -8994,6 +9064,7 @@ int PtermConnection::NextWord (void)
         {
             m_gswActive = m_gswStarted = false;
             ptermCloseGsw ();
+            m_owner->m_gswFile = wxString ();
             m_owner->ptermShowTrace ();
         }
         else
@@ -9034,7 +9105,8 @@ int PtermConnection::NextWord (void)
             // mode word, just save it
             m_savedGswMode = word;
         }
-        else if (ptermOpenGsw (this) == 0)
+        else if (ptermOpenGsw (this, m_owner->m_gswFile, 
+                               m_owner->m_gswFFmt) == 0)
         {
             m_gswActive = true;
             m_gswWord2 = word;

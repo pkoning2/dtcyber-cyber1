@@ -32,6 +32,9 @@ else
 SDLLIBS ?= `sdl-config --libs`
 endif
 
+SNDINCL ?= /usr/local/include
+SNDLIBS ?= -L/usr/local/lib -lsndfile
+
 # if the wxmumble dir doesn't exist, try for plain /usr
 ifeq ("$(wildcard $(DEFWXDIR))","")
 DEFWXDIR=/usr
@@ -41,7 +44,7 @@ WXDIR ?= $(DEFWXDIR)
 PATH:=$(WXDIR)/bin:$(PATH)
 
 WXCONFIG ?= wx-config
-CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing
+CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing  -I $(SNDINCL)
 WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
 WXVERSION = `$(WXCONFIG) --version` 
 
@@ -86,7 +89,7 @@ info:
 
 pterm:	$(PTOBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(LINK) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(LIBS) $(SETPATH)
+	$(LINK) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(LIBS) $(SETPATH)
 ifeq ("$(TYPE)","static")
 ifeq ("$(HOST)","Darwin")
 	#strip $@
@@ -195,7 +198,7 @@ pterm.dep: $(PTOBJS:.o=.d)
 	$(CXX) -c -Wall $(CFLAGS) $(CXXFLAGS) $<
 
 pterm_sdl.o : pterm_sdl.c
-	$(CC) $(CFLAGS) $(SDLCFLAGS) -c $<
+	$(CC) $(CFLAGS) $(SDLCFLAGS) -I $(SNDINCL) -c $<
 
 
 %.d : %.cpp
@@ -205,7 +208,7 @@ pterm_sdl.o : pterm_sdl.c
 
 pterm_sdl.d : pterm_sdl.c
 	/bin/echo -n "$@ " > /tmp/$@
-	$(CC) $(INCL) $(SDLCFLAGS) -MM -MG $< >> /tmp/$@
+	$(CC) $(INCL) $(SDLCFLAGS) -I $(SNDINCL) -MM -MG $< >> /tmp/$@
 	mv -f /tmp/$@ $@
 
 %.mo : %.po

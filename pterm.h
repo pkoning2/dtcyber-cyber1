@@ -200,7 +200,7 @@
 extern int ptermNextGswWord (void *connection, int idle);
 
 // pterm_sdl.c:
-extern int ptermOpenGsw (void *user);
+extern int ptermOpenGsw (void *user, const char *fn, int format);
 extern int ptermProcGswData (int data);
 extern void ptermCloseGsw (void);
 extern void ptermStartGsw (void);

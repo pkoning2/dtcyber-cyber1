@@ -22,6 +22,8 @@
 #include <SDL.h>
 #include <math.h>
 
+#include <sndfile.h>
+
 #include "const.h"
 #include "types.h"
 #include "pterm.h"
@@ -48,6 +50,9 @@ struct gswState_t
     /* IIR filter state for IIR based RC filter */
     double a;
     double z;
+    /* Sound file state */
+    SF_INFO sfinfo;
+    SNDFILE	*sfile ;
 };
 
 struct gswState_t gswState;
@@ -60,13 +65,20 @@ static void gswCallback (void *userdata, uint8_t  *stream, int len);
 **  This function assigns the GSW to the specified "user" (a pointer to some
 **  appropriate handle, e.g., a Connection object).
 **
+**  Arguments:
+**      user    Pointer to a distinguishing handle.
+**      fn      File name for audio output file, or NULL/empty string
+**              if no output file.
+**      fmt     libsndfile format code (the main format code; we'll
+**              fill in the subcode that says 16 bit signed PCM)
+**
 **  Return value:
 **      -1  Error (GSW unavailable for any reason; it may be disabled or
 **          some other connection may be using it).  You'll also get this
 **          if you call twice.
 **       0  Success (caller now owns the GSW)
 */
-int ptermOpenGsw (void *user)
+int ptermOpenGsw (void *user, const char *fn, int fmt)
 {
     SDL_AudioSpec *req;
     double t;
@@ -122,6 +134,27 @@ int ptermOpenGsw (void *user)
     gswState.a = t / (t + r * c);
     gswState.z = 0.0;
 
+    // If a sound file name was supplied, open it
+    if (fn != NULL && fn[0] !='\0')
+    {
+        gswState.sfinfo.samplerate = audioSpec.freq;
+        gswState.sfinfo.frames = -1;
+        gswState.sfinfo.channels = 1;
+        gswState.sfinfo.format = fmt | SF_FORMAT_PCM_16;
+        
+        gswState.sfile = sf_open (fn, SFM_WRITE, &gswState.sfinfo);
+        if (gswState.sfile == NULL)
+        {
+            printf ("Error opening sound file\n");
+        }
+#ifdef DEBUG
+        else
+        {
+            printf ("sound file opened to %s\n", fn);
+        }
+#endif
+    }
+
 #ifdef DEBUG
     printf ("sound opened, freq %d format %d channels %d samples %d\n",
             audioSpec.freq, audioSpec.format,
@@ -137,6 +170,15 @@ void ptermCloseGsw (void)
 {
     gswState.playing = FALSE;
     SDL_PauseAudio (1);
+    if (gswState.sfile != NULL)
+    {
+        sf_close (gswState.sfile);
+        gswState.sfile = NULL;
+#ifdef DEBUG
+        printf ("sound file closed\n");
+#endif
+    }
+    
     gswState.user = NULL;
 #ifdef DEBUG
     printf ("sound stopped\n");
@@ -185,6 +227,7 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
     int audio;
     double dph;
     int items;
+    void *buf = b;
     
     len /= sizeof (*stream);
     items = len;            // Remember the total number requested
@@ -216,7 +259,7 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
                     *stream++ = audioSpec.silence;
                     --len;
                 }
-                return;
+                break;
             }
             
             // We have a word; figure out what it means.  In all cases,
@@ -320,5 +363,22 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
         
         *stream++ = audio;
         --len;
+    }
+
+    if (gswState.sfile != NULL)
+    {
+        // Sound output file is open, write this burst to it
+        if (sf_write_short (gswState.sfile, buf, items) != items)
+        {
+            puts (sf_strerror (gswState.sfile));
+            gswState.sfile = NULL;
+        }
+#ifdef DEBUG
+        else
+        {
+            printf ("%d words written to sound file\n", items);
+        }
+#endif
+            
     }
 }
