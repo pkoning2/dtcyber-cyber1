@@ -362,6 +362,10 @@ public:
     {
         return (m_connMode == ascii);
     }
+    bool GswActive (void) const
+    {
+        return m_gswActive;
+    }
     void StoreWord (int word);
 
 private:
@@ -662,6 +666,7 @@ public:
         return (m_conn != NULL);
     }
     void ptermSetStatus (wxString &str);
+    void ptermShowTrace ();
     void trace (const char *, ...);
     void tracex (const char *, ...);
     
@@ -886,7 +891,6 @@ private:
     void mode7 (u32 d);
     void progmode (u32 d, int origin);
     void ptermSetStation (int station, bool showtitle, bool showstatus);
-    void ptermShowTrace ();
     
     bool AssembleCoord (int d);
     int AssemblePaint (int d);
@@ -2613,15 +2617,17 @@ void PtermFrame::BuildStatusBar (void)
         m_statusBar = new wxStatusBar (this, wxID_ANY);
         m_statusBar->SetFieldsCount (STATUSPANES);
         if (m_conn == NULL)
+        {
             m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+        }
         else
+        {
             ptermSetStation (m_station, true, true);
-        if (tracePterm)
-            m_statusBar->SetStatusText (_(" Trace "), STATUS_TRC);
-        else if (ptermApp->m_platoKb)
-            m_statusBar->SetStatusText (_(" PLATO keyboard "), STATUS_TRC);
-        else
-            m_statusBar->SetStatusText (wxT (""), STATUS_TRC);
+        }
+
+        // Fill in the "trace" (second) pane
+        ptermShowTrace ();
+        
         SetStatusBar (m_statusBar);
     }
     else
@@ -6678,11 +6684,21 @@ void PtermFrame::ptermShowTrace ()
     if (m_statusBar != NULL)
     {
         if (tracePterm)
+        {
             m_statusBar->SetStatusText (_(" Trace "), STATUS_TRC);
+        }
+        else if (m_conn != NULL && m_conn->GswActive ())
+        {
+            m_statusBar->SetStatusText (wxT ("\u266C"), STATUS_TRC);
+        }
         else if (ptermApp->m_platoKb)
+        {
             m_statusBar->SetStatusText (_(" PLATO keyboard "), STATUS_TRC);
+        }
         else
+        {
             m_statusBar->SetStatusText (wxT (""), STATUS_TRC);
+        }
     }
 }
 
@@ -8766,6 +8782,7 @@ void PtermConnection::dataCallback (void)
             {
                 m_gswActive = m_gswStarted = false;
                 ptermCloseGsw ();
+                m_owner->ptermShowTrace ();
             }
                 
             // erase abort marker -- reset the ring to be empty
@@ -8977,6 +8994,7 @@ int PtermConnection::NextWord (void)
         {
             m_gswActive = m_gswStarted = false;
             ptermCloseGsw ();
+            m_owner->ptermShowTrace ();
         }
         else
         {
@@ -9020,7 +9038,7 @@ int PtermConnection::NextWord (void)
         {
             m_gswActive = true;
             m_gswWord2 = word;
-            delay = 1;
+            m_owner->ptermShowTrace ();
                 
             if (!m_gswStarted && RingCount () >= GSWRINGSIZE / 2)
             {
