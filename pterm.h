@@ -197,7 +197,7 @@
 // External references
 
 // pterm_wx.cpp:
-extern int ptermNextGswWord (void *connection, int catchup);
+extern int ptermNextGswWord (void *connection, int idle);
 
 // pterm_sdl.c:
 extern int ptermOpenGsw (void *user);

@@ -26,9 +26,10 @@
 #include "types.h"
 #include "pterm.h"
 
-#define FREQ        22050           /* desired sound system data rate */
-#define CRYSTAL     3872000         /* GSW clock crystal frequency */
-#define SAMPLES     4096            /* number of samples to give to SDL each time */
+#define FREQ        22050           // desired sound system data rate
+#define CRYSTAL     3872000         // GSW clock crystal frequency
+#define SAMPLES     4096            // number of samples per callback
+#define MAXIDLE     5               // time to stop if this many idle callbacks
 
 struct gswState_t
 {
@@ -41,6 +42,7 @@ struct gswState_t
     int voice;
     int clocksLeft;
     int clocksPerWord;
+    int nodata;
     bool playing;
     bool cis;
     /* IIR filter state for IIR based RC filter */
@@ -108,6 +110,9 @@ int ptermOpenGsw (void *user)
     gswState.user = user;
     gswState.phaseStep = (double) CRYSTAL / audioSpec.freq;
     gswState.clocksPerWord = audioSpec.freq / 60;
+
+    // We haven't seen any callbacks with no data available yet
+    gswState.nodata = 0;
 
     // Initialize the RC filter state.  This is an IIR filter
     // as described in Wikipedia:
@@ -177,11 +182,12 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
 {
     int16_t *stream = (int16_t *) b;
     int i, word, voice;
-    int catchup = 1;
     int audio;
     double dph;
+    int items;
     
     len /= sizeof (*stream);
+    items = len;            // Remember the total number requested
     
 #ifdef DEBUG
     printf ("callback %d words\n", len);
@@ -192,11 +198,19 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
         {
             // Finished processing the current word worth of data
             // (1/60th of a second), get the next word from the main emulation.
-            // If we have no more data, supply silence.
-            word = ptermNextGswWord (gswState.user, catchup);
-            catchup = 0;
+            // If we have no more data, supply silence.  Tell the
+            // main code if we've been idle long; if yes, it will stop
+            // playing.  "idle long" is defined by the number of callbacks
+            // in which we had no data at all.
+            word = ptermNextGswWord (gswState.user, gswState.nodata > MAXIDLE);
             if (word == C_NODATA || word == C_GSWEND)
             {
+                if (len == items)
+                {
+                    // If this was no data right at the start of the callback,
+                    // increment the idle count.
+                    gswState.nodata++;
+                }
                 while (len > 0)
                 {
                     *stream++ = audioSpec.silence;
@@ -207,6 +221,7 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
             
             // We have a word; figure out what it means.  In all cases,
             // it means we have 1/60th second more data.  
+            gswState.nodata = 0;
             gswState.clocksLeft = gswState.clocksPerWord;
             if ((word >> 16) == 3)
             {

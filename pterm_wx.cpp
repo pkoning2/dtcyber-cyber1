@@ -9113,16 +9113,22 @@ int PtermConnection::NextWord (void)
     return word;
 }
 
-// Get a word from the main data ring for the GSW emulation.  The 
-// "catchup" flag is true if this is the first word for the current
-// burst of sound data, meaning that the display should be made to
-// catch up to this point.  We do that by walking back through the
-// ring of data from GSW to the display (m_gswRing) clearing out the
-// delay setting for any words that haven't been processed yet.
-// This is necessary because the GSW paces the display.  The 1/60th
-// second timer roughly does the same, but in case it is off the two
-// could end up out of sync, so we force them to resync here.
-int PtermConnection::NextGswWord (bool catchup)
+// Get a word from the main data ring for the GSW emulation.  The
+// "idle" flag is true if the GSW has seen several consecutive periods
+// (adding up to about a second of play) in which there was no data
+// for it to process.  We treat that as end of song, something that is
+// not explicitly encoded in the GSW data stream.
+//
+// When a word is given to the GSW, it is stored in the "gsw ring" which
+// holds words to be processed by the terminal emulation display machinery
+// whenever GSW emulation is active.  That's a small ring, because entries
+// are added to it at 60 per second and they are processed promptly.
+// This approach means the GSW is doing the display pacing, rather than
+// some other timer.  That ties the display directly to the audio stream,
+// which we want so things like "watch music display while it is playing"
+// work right.
+
+int PtermConnection::NextGswWord (bool idle)
 {
     int next, word;
 
@@ -9139,23 +9145,6 @@ int PtermConnection::NextGswWord (bool catchup)
     else
     {
         next = m_gswOut;
-        if (catchup)
-        {
-            while (next != m_gswIn)
-            {
-                // The display has some catching up to do.
-                if (int (m_gswRing[next]) >= 0)
-                {
-                    m_gswRing[next] &= 01777777;
-                }
-                next++;
-                if (next == GSWRINGSIZE)
-                {
-                    next = 0;
-                }
-            }
-            wxWakeUpIdle ();
-        }
         next = m_gswIn + 1;
         if (next == GSWRINGSIZE)
         {
@@ -9168,26 +9157,22 @@ int PtermConnection::NextGswWord (bool catchup)
             return C_NODATA;
         }
         word = NextRingWord ();
-
-#if 0  // I'm not convinced yet this is reliable.
-        // If there is no data, and this is the first word of a GSW sound
-        // burst (about 200 ms), we treat that as "end of song" and will
-        // turn off GSW.
-        if (catchup && word == C_NODATA)
+        if (word == C_NODATA && idle)
         {
             word = C_GSWEND;
         }
-#endif
-        m_gswRing[m_gswIn] = word | (1 << 19);
+        
+        m_gswRing[m_gswIn] = word;
         m_gswIn = next;
+        wxWakeUpIdle ();
     }
     
     return word;
 }
 
-int ptermNextGswWord (void *connection, int catchup)
+int ptermNextGswWord (void *connection, int idle)
 {
-    return ((PtermConnection *) connection)->NextGswWord (catchup != 0);
+    return ((PtermConnection *) connection)->NextGswWord (idle != 0);
 }
 
 void PtermConnection::StoreWord (int word)
