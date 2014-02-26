@@ -84,7 +84,7 @@ int ptermOpenGsw (void *user, const char *fn, int fmt)
     double t;
 
     // RC filter is the summing network resistor (100k) and the
-    // coupling capacitor (.01 uF).  We'll model that using an IIR.
+    // associated capacitor (.01 uF).  We'll model that using an IIR.
     const double r = 100e3;
     const double c = .01e-6;
     

@@ -146,7 +146,6 @@
 #define PREF_CONV8SP     "conv8Sp"
 #define PREF_TUTORCOLOR  "TutorColor"
 //tab6
-#define PREF_BROWSER     "Browser"
 #define PREF_EMAIL       "EmailClient"
 #define PREF_SEARCHURL   "SearchURL"
 

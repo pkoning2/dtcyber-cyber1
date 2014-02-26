@@ -8,7 +8,11 @@ display when in font mode.  Full screen mode.  Print preview.
 Copy text.  2x mode, -stretch- mode.  Scrollbars.  Save/restore window.
 Scrolling in dumb terminal mode.  GSW mode.
 
-Not working: <none>
+Partially working: preference changes.  On non-Mac, need to clean up 
+handling of menu bar add/remove.
+
+Not working: select a region, bring up preferences, ok, click to 
+clear region -> crash.
 
 Not tested: <none>
 
@@ -474,7 +478,6 @@ public:
     bool        m_conv8Sp;
     bool        m_TutorColor;
     //tab6
-    wxString    m_Browser;      
     wxString    m_Email;      
     wxString    m_SearchURL;      
 
@@ -1007,7 +1010,6 @@ public:
     wxCheckBox* chkConvert8Spaces;
     wxCheckBox* chkTutorColor;
     //tab6
-    wxTextCtrl* txtBrowser;
     wxTextCtrl* txtEmail;
     wxTextCtrl* txtSearchURL;
     //button bar
@@ -1059,7 +1061,6 @@ public:
     bool            m_conv8Sp;
     bool            m_TutorColor;
     //tab6
-    wxString        m_Browser;
     wxString        m_Email;
     wxString        m_SearchURL;
     
@@ -1565,7 +1566,6 @@ bool PtermApp::OnInit (void)
         m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);
         m_TutorColor = (m_config->Read (wxT (PREF_TUTORCOLOR), 0L) != 0);
         //tab6
-        m_config->Read (wxT (PREF_BROWSER), &m_Browser, wxT (""));
         m_config->Read (wxT (PREF_EMAIL), &m_Email, wxT (""));
         m_config->Read (wxT (PREF_SEARCHURL), &m_SearchURL, wxT (""));
     }
@@ -1876,8 +1876,6 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
                 m_TutorColor    = (value.Cmp (wxT ("1")) == 0);
 
             //tab6
-            else if (token.Cmp (wxT (PREF_BROWSER)) == 0)
-                m_Browser       = value;
             else if (token.Cmp (wxT (PREF_EMAIL)) == 0)
                 m_Email         = value;
             else if (token.Cmp (wxT (PREF_SEARCHURL)) == 0)
@@ -1937,7 +1935,6 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
     m_config->Write (wxT (PREF_CONV8SP), (m_conv8Sp) ? 1 : 0);
     m_config->Write (wxT (PREF_TUTORCOLOR), (m_TutorColor) ? 1 : 0);
     //tab6
-    m_config->Write (wxT (PREF_BROWSER), m_Browser);
     m_config->Write (wxT (PREF_EMAIL), m_Email);
     m_config->Write (wxT (PREF_SEARCHURL), m_SearchURL);
     m_config->Flush ();
@@ -3207,9 +3204,11 @@ void PtermFrame::OnExec (wxCommandEvent &event)
     else
     {
         wxString url = text.GetText ();
-        url.Replace (wxT ("\r"), wxT (""));
-        url.Replace (wxT ("\n"), wxT (""));
-        wxExecute (ptermApp->m_Browser + wxT (" ") + url);
+        // Trim spaces, tabs, and line endings from right and left ends
+        url.Trim ();
+        url.Trim (false);
+        wxLaunchDefaultBrowser (url, wxBROWSER_NEW_WINDOW |
+                                wxBROWSER_NOBUSYCURSOR);
     }
 
     wxTheClipboard->Close ();
@@ -3337,8 +3336,8 @@ void PtermFrame::OnSearchThis (wxCommandEvent &event)
                 newchr.Printf (wxT ("%%%02x"), pnt[cnt]);
             l_FixText += newchr;
         }
-        wxExecute (ptermApp->m_Browser + wxT (" ") + ptermApp->m_SearchURL +
-                   l_FixText);
+        wxLaunchDefaultBrowser (ptermApp->m_SearchURL + l_FixText,
+                                wxBROWSER_NEW_WINDOW | wxBROWSER_NOBUSYCURSOR);
     }
 
     wxTheClipboard->Close ();
@@ -3388,8 +3387,8 @@ void PtermFrame::OnSpellCheck (wxCommandEvent &event)
                 newchr.Printf (wxT ("%%%02x"), pnt[cnt]);
             l_FixText += newchr;
         }
-        wxExecute (ptermApp->m_Browser + wxT (" ") + ptermApp->m_SearchURL +
-                   l_FixText);
+        wxLaunchDefaultBrowser (ptermApp->m_SearchURL + l_FixText,
+                                wxBROWSER_NEW_WINDOW | wxBROWSER_NOBUSYCURSOR);
     }
 
     wxTheClipboard->Close ();
@@ -3743,7 +3742,6 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_conv8Sp = dlg.m_conv8Sp;
         ptermApp->m_TutorColor = dlg.m_TutorColor;
         //tab6
-        ptermApp->m_Browser = dlg.m_Browser;
         ptermApp->m_Email = dlg.m_Email;
         ptermApp->m_SearchURL = dlg.m_SearchURL;
 
@@ -3817,7 +3815,6 @@ void PtermFrame::SavePreferences (void)
     ptermApp->m_config->Write (wxT (PREF_CONV8SP), (ptermApp->m_conv8Sp) ? 1 : 0);
     ptermApp->m_config->Write (wxT (PREF_TUTORCOLOR), (ptermApp->m_TutorColor) ? 1 : 0);
     //tab6
-    ptermApp->m_config->Write (wxT (PREF_BROWSER), ptermApp->m_Browser);
     ptermApp->m_config->Write (wxT (PREF_EMAIL), ptermApp->m_Email);
     ptermApp->m_config->Write (wxT (PREF_SEARCHURL), ptermApp->m_SearchURL);
     ptermApp->m_config->Flush ();
@@ -7155,10 +7152,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     wxStaticText* lblExplainConversions;
     //tab6
     wxScrolledWindow* tab6;
-    wxStaticText* lblBrowser;
     wxStaticText* lblEmail;
     wxStaticText* lblSearchURL;
-//  wxTextCtrl* txtBrowser;
 //  wxTextCtrl* txtEmail;
 //  wxTextCtrl* txtSearchURL;
     //button  bar
@@ -7603,14 +7598,6 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     page6 = new wxFlexGridSizer (0, 1, 0, 0);
     page6->AddGrowableCol (0);
     page6->SetFlexibleDirection (wxBOTH);
-    lblBrowser = new wxStaticText (tab6, wxID_ANY,
-                                   _("Specify browser to use for menu option 'Execute URL'"),
-                                   wxDefaultPosition, wxDefaultSize, 0);
-    page6->Add (lblBrowser, 0, wxALIGN_BOTTOM|wxALL, 5);
-    txtBrowser = new wxTextCtrl (tab6, wxID_ANY, wxT (""), wxPoint (-1, -1),
-                                 wxDefaultSize, 0 | wxTAB_TRAVERSAL);
-    txtBrowser->SetMaxLength (255); 
-    page6->Add (txtBrowser, 0, wxALL | wxEXPAND, 5);
     lblEmail = new wxStaticText (tab6, wxID_ANY,
                                  _("Command line for menu option 'Mail to...' (%s=address)"),
                                  wxDefaultPosition, wxDefaultSize, 0);
@@ -7778,8 +7765,6 @@ bool PtermPrefDialog::SaveProfile (wxString profile)
     buffer.Printf (wxT (PREF_TUTORCOLOR "=%d"), (m_TutorColor) ? 1 : 0);
     file.AddLine (buffer);
     //tab6
-    buffer.Printf (wxT (PREF_BROWSER "=%s"), m_Browser.c_str ());
-    file.AddLine (buffer);
     buffer.Printf (wxT (PREF_EMAIL "=%s"), m_Email.c_str ());
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_SEARCHURL "=%s"), m_SearchURL.c_str ());
@@ -7863,7 +7848,6 @@ void PtermPrefDialog::SetControlState (void)
     m_conv8Sp = ptermApp->m_conv8Sp;
     m_TutorColor = ptermApp->m_TutorColor;
     //tab6
-    m_Browser = ptermApp->m_Browser;
     m_Email = ptermApp->m_Email;
     m_SearchURL = ptermApp->m_SearchURL;
     
@@ -7939,7 +7923,6 @@ void PtermPrefDialog::SetControlState (void)
     chkConvert8Spaces->SetValue (m_conv8Sp);
     chkTutorColor->SetValue (m_TutorColor);
     //tab6
-    txtBrowser->SetValue (m_Browser);
     txtEmail->SetValue (m_Email);
     txtSearchURL->SetValue (m_SearchURL);
 
@@ -8127,7 +8110,6 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_conv8Sp = false;
         m_TutorColor = false;
         //tab6
-        m_Browser = wxT ("");
         m_Email = wxT ("");
         m_SearchURL = wxT ("");
 
@@ -8173,7 +8155,6 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         chkConvert8Spaces->SetValue (m_conv8Sp);
         chkTutorColor->SetValue (m_TutorColor);
         //tab6
-        txtBrowser->SetValue (m_Browser);
         txtEmail->SetValue (m_Email);
         txtSearchURL->SetValue (m_SearchURL);
     }
@@ -8336,8 +8317,6 @@ void PtermPrefDialog::OnChange (wxCommandEvent& event)
     else if (event.GetEventObject () == txtLineDelay)
         m_lineDelay = txtLineDelay->GetLineText (0);
     //tab6
-    else if (event.GetEventObject () == txtBrowser)
-        m_Browser = txtBrowser->GetLineText (0);
     else if (event.GetEventObject () == txtEmail)
         m_Email = txtEmail->GetLineText (0);
     else if (event.GetEventObject () == txtSearchURL)
