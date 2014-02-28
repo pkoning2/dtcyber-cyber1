@@ -26,6 +26,7 @@
 */
 #define DEFAULTHOST     wxT ("cyberserv.org")
 #define CURRENT_PROFILE wxT (" Current ")
+#define DEFAULTSEARCH   wxT ("http://www.google.com/search?q=")
 #define BufSiz          2048
 #define RINGSIZE        5000
 #define RINGXON1        (RINGSIZE / 3)
