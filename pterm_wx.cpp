@@ -4403,11 +4403,6 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
     m_currentWord = d;
     if (ascii)
     {
-        if (!m_dumbTty)
-        {
-            int c = ((d & 127) >= 32 && (d & 127) < 127) ? d & 127 : '.';
-            debug ("%04x  %c", d, c);
-        }
         if (m_dumbTty)
         {
             if (d == (033 << 8) + 002)   // ESC STX
@@ -4423,12 +4418,15 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                 if (d >= 32 && d < 127)
                 {
                     d = asciiM0[d];
-                    if ((d & 0xf0) != 0xf0)
+                    if (d != 0xff)
                     {
                         // Force mode rewrite
                         mode = (3 << 2) + 1;
-                        ptermDrawChar (currentX, currentY, (d & 0x80) >> 7,
-                                       d & 0x7f);
+                        i = (d & 0x80) >> 7;
+                        d &= 0x7f;
+                        SaveChar (currentX, currentY, rom01char[d + i * 64],
+                                  false);
+                        ptermDrawChar (currentX, currentY, i, d);
                         currentX = (currentX + 8) & 0777;
                     }
                 }
@@ -4444,16 +4442,34 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                     }
                     else
                     {
-                        // On the bottom line... scroll.
+                        // On the bottom line... scroll both the
+                        // display and the selection image bitmaps.
+                        // And scroll the saved text map.  And cancel
+                        // any selected region because the image
+                        // scrolled out from under the region.  No,
+                        // we're not going to adjust the region
+                        // positions...
                         PixelData pixmap (*m_bitmap);
+                        PixelData selmap (*m_selmap);
 
                         PixelData::Iterator from (pixmap);
                         PixelData::Iterator to (pixmap);
+                        PixelData::Iterator sfrom (selmap);
+                        PixelData::Iterator sto (selmap);
     
                         from.MoveTo (pixmap, 0, 16);
                         to.MoveTo (pixmap, 0, 0);
+                        sfrom.MoveTo (selmap, 0, 16);
+                        sto.MoveTo (selmap, 0, 0);
 
                         memmove (to.m_ptr, from.m_ptr, (512 - 16) * 512 * 4);
+                        memmove (sto.m_ptr, sfrom.m_ptr, (512 - 16) * 512 * 4);
+                        // Note that the textmap has y==0 for the bottom line
+                        memmove (&textmap[64][0], &textmap[0][0],
+                                 (sizeof (textmap) / 32) * 31);
+                        memset (&textmap[0][0], 0, sizeof (textmap) / 32);
+
+                        ClearRegion ();
                     }
                     // Erase the line we just moved to.
                     mode = (3 << 2) + 2;    // set character mode, erase
