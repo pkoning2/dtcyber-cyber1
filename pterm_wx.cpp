@@ -282,6 +282,11 @@ Trace debugF;
 // written as Unicode escapes.  Too bad C doesn't accept plain Unicode
 // text inside quoted strings, as Python does.  Comments say what characters
 // those escapes reference.
+// The first 64 characters are for the set 0 codes; the rest are for
+// the set 1 codes.  Codes past offset 64 in set 1 correspond to the
+// "special" characters in ASCII mode, which are essentially built-in
+// composites that on a Classic terminal would be made by the formatter.
+// Here we just treat them as extra characters for simplicity.
 static const wxChar rom01char[] =
     wxT (":abcdefg"
          "hijklmno"
@@ -301,50 +306,55 @@ static const wxChar rom01char[] =
          "\u2263\u03B1\u03B2\u03B4"     // equiv, alpha, beta, delta
          "\u03BB\u03BC\u03C0\u03C1"     // lambda, mu, pi, rho
          "\u03C3\u03C9\u2264\u2265"     // sigma, omega, less/equal, grt/equal
-         "\u0398@\\ ");                 // Theta
+         "\u0398@\\ "                   // Theta
+         "\u2993\u2994\u00A9\u25AB"     // embed left, right, copyright, box
+         "\u25C6\u2715\u02C7\u2195"     // diamond, cross prod, hacek, up/down
+         "\u25CB\u00B8");               // dot product, cedilla
 
-// 0x40 bit is M0/M1 selector (into the classic ROM)
-// 0xff means unused code.  The other codes 0xf0 and up
+// high bit is M0/M1 selector (into the classic ROM)
+// 0xff means unused code.  Codes 0xc0 and up
 // are specials:
-// 0xf0: embed left
-// 0xf1: embed right
-// 0xf2: copyright body
-// 0xf3: box
-// 0xf4: diamond
-// 0xf5: cross product
-// 0xf6: hacek
-// 0xf7: universal delimiter
-// 0xf8: dot product
-// 0xf9: cedilla
+// 0xc0: embed left
+// 0xc1: embed right
+// 0xc2: copyright body
+// 0xc3: box
+// 0xc4: diamond
+// 0xc5: cross product
+// 0xc6: hacek
+// 0xc7: universal delimiter
+// 0xc8: dot product
+// 0xc9: cedilla
+// Those are handled as additional entries in the M1 
+// character ROM (beyond the usual 64 entries).
 static const u8 asciiM0[] = 
 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0x2d, 0x38, 0x37, 0x40, 0x2b, 0x33, 0x6b, 0x36,
+  0x2d, 0x38, 0x37, 0x80, 0x2b, 0x33, 0xab, 0x36,
   0x29, 0x2a, 0x27, 0x25, 0x2e, 0x26, 0x2f, 0x28,
   0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22,
   0x23, 0x24, 0x00, 0x39, 0x3a, 0x2c, 0x3b, 0x3d,
-  0x7d, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
-  0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
-  0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
-  0x58, 0x59, 0x5a, 0x31, 0x7e, 0x32, 0x5d, 0x3c,
-  0x5f, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+  0xbd, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
+  0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f,
+  0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
+  0x98, 0x99, 0x9a, 0x31, 0xbe, 0x32, 0x9d, 0x3c,
+  0x9f, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
   0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-  0x18, 0x19, 0x1a, 0x69, 0x6e, 0x6a, 0x64, 0xff
+  0x18, 0x19, 0x1a, 0xa9, 0xae, 0xaa, 0xa4, 0xff
 };
 static const u8 asciiM1[] = 
 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0x2d, 0x28, 0x70, 0x5b, 0x35, 0x6c, 0x60, 0x61,
-  0x62, 0x63, 0x34, 0x65, 0x66, 0x67, 0x68, 0x30,
-  0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,
-  0x79, 0x7a, 0x7b, 0x7c, 0xf0, 0x6f, 0xf1, 0x3e,
-  0xf2, 0x5c, 0xf3, 0xf8, 0xf4, 0xf5, 0x5e, 0xf9,
-  0xf6, 0xf7, 0x6e, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0x2d, 0x28, 0xb0, 0x9b, 0x35, 0xac, 0xa0, 0xa1,
+  0xa2, 0xa3, 0x34, 0xa5, 0xa6, 0xa7, 0xa8, 0x30,
+  0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7, 0xb8,
+  0xb9, 0xba, 0xbb, 0xbc, 0xc0, 0xaf, 0xc1, 0x3e,
+  0xc2, 0x9c, 0xc3, 0xc8, 0xc4, 0xc5, 0x9e, 0xc9,
+  0xc6, 0xc7, 0xae, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -352,7 +362,6 @@ static const u8 asciiM1[] =
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 };
-
 static const u8 asciiKeycodes[] =
 { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
   0x38, 0x39, 0x26, 0x60, 0x0a, 0x5e, 0x2b, 0x2d,
@@ -371,34 +380,6 @@ static const u8 asciiKeycodes[] =
   0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
   0x58, 0x59, 0x5a, 0x29, 0x3a, 0x3f, 0x21, 0x22
 };
-
-// These are the strings to use for the "special" characters.
-// On classic terminals, the formatter generates these from
-// the regular ROM characters with a sequence of backspaces and
-// the like.  In ASCII mode, we have to do it; we do it
-// roughly the same way.  Each row is indexed by the
-// special char code - 0xf0.  Each entry is a pair:
-//  char code, Y offset.  Char code 0 is the terminator.
-// All are plotted at the same X implicitly.
-static const u8 M1specials[][8] =
-{ { 0x3a, 0, 0x29, 0, 0 },              // embed left
-  { 0x3b, 0, 0x2a, 0, 0 },              // embed right
-  { 0x3c, 0, 0x3c, 11, 0x03, 1, 0 },    // copyright body
-  { 0xa7, 0, 0xa8, 0, 0 },              // box
-  { 0xa0, 0, 0xa3, 0, 0xa2, 0, 0 },     // diamond
-  { 0x28, 0, 0xbe, 0, 0 },              // cross product
-  { 0x9e, 0, 0x9f, 0, 0 },              // hacek
-  { 0xa0, 0, 0xa2, 0, 0 },              // universal delimiter
-  { 0xaf, (u8) -3, 0 },                 // dot product
-  { 0x9e, (u8) -11, 0 },                // cedilla
-};
-
-// Unicode characters for the ASCII "special" characters, indexed the
-// same as M1specials[].  Note that "copyright body" is mapped to 
-// copyright sign, but in addition there is special handling to strip
-// the preceding and following parentheses.
-static const wxChar M1chars[] =
-    wxT ("\u2993\u2994\u00A9\u25AB\u25C6\u2715\u02C7\u2195\u25CB\u00B8");
 
 static const wxChar copyright = L'\u00A9';
 
@@ -998,7 +979,7 @@ private:
     }
     
     // PLATO drawing primitives
-    void ptermDrawChar (int x, int y, int snum, int cnum);
+    void ptermDrawChar (int x, int y, int snum, int cnum, bool autobs = false);
     void ptermDrawCharInto (int x, int y, const u16 *charp,
                             uint32_t fpix, uint32_t bpix, int cmode,
                             bool xor_p, PixelData &pixmap);
@@ -1421,7 +1402,7 @@ const unsigned short plato_m1[] = {
     0x0000, 0x0000, 0x0000, 0x1000, 0x2000, 0x4000, 0x0000, 0x0000, // acute
     0x0000, 0x4000, 0x2000, 0x1000, 0x0000, 0x0000, 0x0000, 0x0000, // grave
     0x0000, 0x0100, 0x0300, 0x07f0, 0x0300, 0x0100, 0x0000, 0x0000, // uparrow
-    0x0080, 0x0080, 0x0080, 0x0080, 0x03e0, 0x01c0, 0x0080, 0x0000, // rightarrow 
+    0x0080, 0x0080, 0x0080, 0x0080, 0x03e0, 0x01c0, 0x0080, 0x0000, // rtarrow 
     0x0000, 0x0040, 0x0060, 0x07f0, 0x0060, 0x0040, 0x0000, 0x0000, // downarrow
     0x0080, 0x01c0, 0x03e0, 0x0080, 0x0080, 0x0080, 0x0080, 0x0000, // leftarrow
     0x0000, 0x0080, 0x0100, 0x0100, 0x0080, 0x0080, 0x0100, 0x0000, // low tilde
@@ -1452,6 +1433,22 @@ const unsigned short plato_m1[] = {
     0x01e0, 0x0210, 0x04c8, 0x0528, 0x05e8, 0x0220, 0x01c0, 0x0000, // @
     0x0400, 0x0200, 0x0100, 0x0080, 0x0040, 0x0020, 0x0010, 0x0000, /* \ */
     0x01e0, 0x0210, 0x0210, 0x01e0, 0x0290, 0x0290, 0x01a0, 0x0000, // oe
+
+    // "Special" character patterns: these are beyond the regular
+    // 6-bit character indices, and are used when "special" ASCII
+    // mode characters are encountered.  Rather than display them
+    // from pieces, we just treat them as additional character
+    // patterns.
+    0x0000, 0x0080, 0x0140, 0x0220, 0x07f0, 0x0810, 0x1008, 0x0000, // l-embed
+    0x1008, 0x0810, 0x07f0, 0x0220, 0x0140, 0x0080, 0x0000, 0x0000, // r-embed
+    0x2184, 0x2244, 0x2424, 0x2424, 0x2424, 0x2424, 0x2244, 0x2004, // copyright
+    0x0000, 0x03c0, 0x0240, 0x0240, 0x0240, 0x03c0, 0x0000, 0x0000, // box
+    0x0080, 0x01c0, 0x03e0, 0x07f0, 0x03e0, 0x01c0, 0x0080, 0x0000, // diamond
+    0x0410, 0x0220, 0x0140, 0x0080, 0x0140, 0x0220, 0x0410, 0x0000, // cross
+    0x0000, 0x4000, 0x2000, 0x1000, 0x2000, 0x4000, 0x0000, 0x0000, // hacek
+    0x0000, 0x0140, 0x0360, 0x07f0, 0x0360, 0x0140, 0x0000, 0x0000, // delim
+    0x0000, 0x0180, 0x0240, 0x0240, 0x0180, 0x0000, 0x0000, 0x0000, // dot prod
+    0x0000, 0x0000, 0x0000, 0x0002, 0x0004, 0x0008, 0x0000, 0x0000, // cedilla
 };
 
 
@@ -3903,7 +3900,7 @@ void PtermFrame::OnIconize (wxIconizeEvent &event)
 }
 #endif
 
-void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
+void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum, bool autobs)
 {
     uint32_t fpix, bpix;
     const u16 *charp;
@@ -3942,10 +3939,12 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum)
     // We draw the character twice: once onto the screen bitmap,
     // and once onto the selection region bitmap.  The latter reflects
     // the text currently stored in the savemap, which is coarse grid
-    // aligned.  
+    // aligned.  Selection region bitmap entries are normally drawn
+    // in mode rewrite, except for autobackspace where we want to
+    // save the resulting combined character shape.
     ptermDrawCharInto (x, y, charp, fpix, bpix, mode, modexor, pixmap);
     ptermDrawCharInto (x & 0770, y & 0760, charp, m_selpixf, m_selpixb,
-                       1, false, selmap);
+                       (autobs ? 3 : 1), false, selmap);
 }
 
 void PtermFrame::ptermDrawCharInto (int x, int y, const u16 *charp,
@@ -4366,7 +4365,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
 {
     mptr mp;
     const char *msg = "";
-    int i, j, n = 0;
+    int i, n = 0;
     AscState    ascState;
     bool changed = false;
     
@@ -5075,12 +5074,12 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                                 // For the ROM characters, the even vs. odd
                                 // (M0 vs. M1) choice is given by the top bit
                                 // of the ASCII translation table.
-                                i = (d & 0x40) >> 6;
+                                i = (d & 0x80) >> 7;
                             }
                             else if (i == 1)
                             {
                                 d = asciiM1[d];
-                                i = (d & 0x40) >> 6;
+                                i = (d & 0x80) >> 7;
                             }
                             else
                             {
@@ -5090,40 +5089,13 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                                 // The set choice is simply what the host sent.
                                 d = (d - 040) & 077;
                             }
-                            if (d >= 0xf0)
+                            if (d != 0xff)
                             {
-                                if (d != 0xff)
-                                {
-                                    // A builtin composite
-                                    int savemode = mode;
-                                    int sy = cy;
-                                
-                                    d -= 0xf0;
-                                    SaveChar (currentX, currentY, M1chars[d],
-                                              large);
-                                    for (i = 0; i < 8; i += 2)
-                                    {
-                                        n = M1specials[d][i];
-                                        if (n == 0)
-                                        {
-                                            break;
-                                        }
-                                        j = (i8) M1specials[d][i + 1];
-                                        cy += j;
-                                        ptermDrawChar (currentX, currentY,
-                                                       n >> 7, n & 0x7f);
-                                        cy = sy;
-                                        mode |= 2;
-                                    }
-                                    mode = savemode;
-                                    cx = (cx + deltax) & 0777;
-                                }
-                            }   
-                            else 
-                            {
-                                SaveChar (currentX, currentY, rom01char[d],
+                                d &= 0x7f;
+                                SaveChar (currentX, currentY,
+                                          rom01char[d + i * 64],
                                           large);
-                                ptermDrawChar (currentX, currentY, i, d & 0x3f);
+                                ptermDrawChar (currentX, currentY, i, d);
                                 cx = (cx + deltax) & 0777;
                             }
                         }
