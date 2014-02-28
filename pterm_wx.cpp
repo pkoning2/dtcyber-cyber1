@@ -2516,9 +2516,10 @@ void PtermFrame::BuildMenuBar (void)
     menuBar->Append (menuView, _("View"));
     menuBar->Append (menuHelp, _("Help"));
 
-#if defined (__WXMAC__)
-    SetMenuBar (menuBar);
+#if !defined (__WXMAC__)
+    if (!m_fullScreen && ptermApp->m_showMenuBar)
 #endif
+        SetMenuBar (menuBar);
 }
 
 // NOTE: Accelerators are actually Command-xxx on the Mac
