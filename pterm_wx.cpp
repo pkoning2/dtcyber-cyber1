@@ -278,6 +278,149 @@ Trace debugF;
 #define debug(x,...) /* Nothing */
 #endif
 
+/*
+**  Note that we have valid entries (entry != -1) here only for those keys
+**  where we do not need to do anything unusual for Shift.  For example,
+**  "space" is not decoded here because Shift-Space gets a different code.
+**  However, that doesn't apply to control keystrokes; those are shown
+**  here even though shift affects them in the PLATO/Portal key conventions.
+**
+**  "Composite" keys -- codes that are a single key on a conventional ASCII
+**  style keyboard but require two keystrokes in PLATO -- are represented in
+**  the table as 6-digit entries.  The upper 3 digits are the prefix code
+**  (074: ACCESS), the low 3 digits are the suffix.
+**  Keys that require three keycodes in PLATO are represented here by
+**  the first and third of those three keycodes; the second is always 
+**  074 (ACCESS).  Keys in that category in this table are accent marks,
+**  which autobackspace on PLATO so we represent them as space followed by
+**  the accent key.
+*/
+const int asciiToPlato[128] =
+{
+ /*                                                                         */
+ /* 000- */ -1,    022,    030,    033,    031,    027,    064,    013,
+ /*                                                                         */
+ /* 010- */025,     -1,     -1,     -1,    035,    024,     -1,     -1,
+ /*                                                                         */
+ /* 020- */020,    034,     -1,    032,    062,     -1,     -1,     -1,
+ /*                                                                         */
+ /* 030- */012,    021,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*          space   !       "       #       $       %       &       '      */
+ /* 040- */ -1,      0176,   0177, 074044,   0044,   0045, 074016,   0047,
+ /*          (       )       *       +       ,       -       .       /      */
+ /* 050- */  0051,   0173,   0050,   0016,   0137,   0017,   0136,   0135,
+ /*          0       1       2       3       4       5       6       7      */
+ /* 060- */  0000,   0001,   0002,   0003,   0004,   0005,   0006,   0007,
+ /*          8       9       :       ;       <       =       >       ?      */
+ /* 070- */  0010,   0011,   0174,   0134,   0040,   0133,   0041,   0175,
+ /*          @       A       B       C       D       E       F       G      */
+ /* 100- */ 074005,  0141,   0142,   0143,   0144,   0145,   0146,   0147,
+ /*          H       I       J       K       L       M       N       O      */
+ /* 110- */  0150,   0151,   0152,   0153,   0154,   0155,   0156,   0157,
+ /*          P       Q       R       S       T       U       V       W      */
+ /* 120- */  0160,   0161,   0162,   0163,   0164,   0165,   0166,   0167,
+ /*          X       Y       Z       [       \       ]       ^       _      */
+ /* 130- */  0170,   0171,   0172,   0042, 074135,   0043,0100130,   0046,
+ /*          `       a       b       c       d       e       f       g      */
+ /* 140- */0100121,  0101,   0102,   0103,   0104,   0105,   0106,   0107,
+ /*          h       i       j       k       l       m       n       o      */
+ /* 150- */  0110,   0111,   0112,   0113,   0114,   0115,   0116,   0117,
+ /*          p       q       r       s       t       u       v       w      */
+ /* 160- */  0120,   0121,   0122,   0123,   0124,   0125,   0126,   0127,
+ /*          x       y       z       {       |       }       ~              */
+ /* 170- */  0130,   0131,   0132, 074042, 074151, 074043,0100116,  -1,
+};
+
+/* Keycode translation for ALT-keypress */
+const i8 altKeyToPlato[128] =
+{
+ /*                                                                         */
+ /* 000- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*                                                                         */
+ /* 010- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*                                                                         */
+ /* 020- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*                                                                         */
+ /* 030- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*          space   !       "       #       $       %       &       '      */
+ /* 040- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,   
+ /*          (       )       *       +       ,       -       .       /      */
+ /* 050- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,   
+ /*          0       1       2       3       4       5       6       7      */
+ /* 060- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,   
+ /*          8       9       :       ;       <       =       >       ?      */
+ /* 070- */ -1,     -1,     -1,     -1,     -1,      0015,  -1,     -1,   
+ /*          @       A       B       C       D       E       F       G      */
+ /* 100- */ -1,      0062,   0070,   0073,   0071,   0067,   0064,  -1,   
+ /*          H       I       J       K       L       M       N       O      */
+ /* 110- */  0065,  -1,     -1,     -1,      0075,   0064,   0066,  -1,   
+ /*          P       Q       R       S       T       U       V       W      */
+ /* 120- */ -1,      0074,   0063,   0072,   0062,  -1,     -1,     -1,   
+ /*          X       Y       Z       [       \       ]       ^       _      */
+ /* 130- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,   
+ /*          `       a       b       c       d       e       f       g      */
+ /* 140- */ -1,      0022,   0030,   0033,   0031,   0027,   0064,  -1,   
+ /*          h       i       j       k       l       m       n       o      */
+ /* 150- */  0025,  -1,     -1,     -1,      0035,   0024,   0026,  -1,   
+ /*          p       q       r       s       t       u       v       w      */
+ /* 160- */ -1,      0034,   0023,   0032,   0062,  -1,     -1,     -1,   
+ /*          x       y       z       {       |       }       ~              */
+ /* 170- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1
+};
+
+/*
+**  This table is for translating PLATO text as it would appear in a
+**  printout (typically upper case only).  Shift shows up as a separate
+**  character (') and has to be handled specially, and some other punctuation
+**  characters have unexpected meanings:
+**      "   multiply
+**      #   divide
+**      &   super
+**      !   sub
+**      ?   cr
+**      \   font
+**      ^   access
+**      @   backspace
+**      _   assign
+**  In this table, the unshifted code values appear.  -1 means no
+**  translation, -2 marks Shift.
+*/
+const int printoutToPlato[128] =
+{
+ /*                                                                         */
+ /* 000- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*                                                                         */
+ /* 010- */ -1,    014,    026,     -1,     -1,     -1,     -1,     -1,
+ /*                                                                         */
+ /* 020- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*                                                                         */
+ /* 030- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,
+ /*          space   !       "       #       $       %       &       '      */
+ /* 040- */  0100,   0021,   0012,   0013,   0044,   0045,   0020,  -2,
+ /*          (       )       *       +       ,       -       .       /      */
+ /* 050- */  0051,   0173,   0050,   0016,   0137,   0017,   0136,   0135,
+ /*          0       1       2       3       4       5       6       7      */
+ /* 060- */  0000,   0001,   0002,   0003,   0004,   0005,   0006,   0007,
+ /*          8       9       :       ;       <       =       >       ?      */
+ /* 070- */  0010,   0011,   0174,   0134,   0040,   0133,   0041,   0175,
+ /*          @       A       B       C       D       E       F       G      */
+ /* 100- */  0140,   0101,   0102,   0103,   0104,   0105,   0106,   0107,
+ /*          H       I       J       K       L       M       N       O      */
+ /* 110- */  0110,   0111,   0112,   0113,   0114,   0115,   0116,   0117,
+ /*          P       Q       R       S       T       U       V       W      */
+ /* 120- */  0120,   0121,   0122,   0123,   0124,   0125,   0126,   0127,
+ /*          X       Y       Z       [       \       ]       ^       _      */
+ /* 130- */  0130,   0131,   0132,   0042,   0064,   0043,   0074,   0015,
+ /*          `       a       b       c       d       e       f       g      */
+ /* 140- */ -1,      0101,   0102,   0103,   0104,   0105,   0106,   0107,
+ /*          h       i       j       k       l       m       n       o      */
+ /* 150- */  0110,   0111,   0112,   0113,   0114,   0115,   0116,   0117,
+ /*          p       q       r       s       t       u       v       w      */
+ /* 160- */  0120,   0121,   0122,   0123,   0124,   0125,   0126,   0127,
+ /*          x       y       z       {       |       }       ~              */
+ /* 170- */  0130,   0131,   0132,  -1,     -1,     -1,     -1,     -1,
+};
+
 // A bunch of these characters are outside the ASCII set, so they are
 // written as Unicode escapes.  Too bad C doesn't accept plain Unicode
 // text inside quoted strings, as Python does.  Comments say what characters
@@ -1721,7 +1864,7 @@ bool PtermApp::OnInit (void)
     if (m_testreq)
     {
         char tline[200], *p;
-        int w;
+        int w, seq, pseq = -1;
         PtermFrame *frame;
         
         frame = new PtermFrame (str, -1, _("Test execution"));
@@ -1762,9 +1905,13 @@ bool PtermApp::OnInit (void)
                     // Timestamp at start of line, skip it
                     p += 14;
                 }
-                if (sscanf (p, "%o", &w) != 0)
+                if (sscanf (p, "%o seq %d", &w, &seq) != 0 &&
+                    seq != pseq)
                 {
-                    // Successful conversion, process the word
+                    // Successful conversion, process the word,
+                    // provided it is new (different sequence number
+                    // than before)
+                    pseq = seq;
                     frame->procPlatoWord (w, m_testascii);
                 }
             }
@@ -6323,6 +6470,7 @@ void PtermFrame::mode4 (u32 d)
     
     if (modewords & 1)
     {
+        trace ("block erase first word");
         mode4start = d;
         return;
     }

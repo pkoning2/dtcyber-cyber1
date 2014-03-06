@@ -63,7 +63,7 @@ MSGFLAGS ?= -U
 
 SDLCFLAGS = $(SDLINCL)
 
-PTOBJS	= $(SOBJS) pterm_sdl.o pterm_wx.o 8080a.o
+PTOBJS	= dtnetsubs.o pterm_sdl.o pterm_wx.o 8080a.o
 
 ifneq ("$(PTERMVERSION)","xxx")
 #LANGUAGES = $(shell cat languages)
