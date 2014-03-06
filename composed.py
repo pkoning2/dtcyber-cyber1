@@ -75,11 +75,10 @@ asc2plato = [
 
 pastedasc2plato = list (asc2plato)
 for i in range (32):
-    if i != ord ("\n"):
-        pastedasc2plato[i] = None
-    else:
-        pastedasc2plato[i] = 0o026        
-pastedasc2plato[ord (" ")] = 0o100
+    pastedasc2plato[i] = None
+pastedasc2plato[ord ("\t")] = 0o014   # TAB
+pastedasc2plato[ord ("\n")] = 0o026   # NEXT
+pastedasc2plato[ord (" ")] = 0o100    # Space
 
 # Dictionary to map non-ASCII Unicode values to PLATO key codes.  The
 # representation of the PLATO key codes it the same as above.

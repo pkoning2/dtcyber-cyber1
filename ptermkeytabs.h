@@ -72,7 +72,7 @@ const uint32_t pastedAsciiToPlato[128] = {
    None, None,
    None, None,
    None, None,
-   None, None,
+   None, KEY (0014, None, None, None),
    KEY (0026, None, None, None), None,
    None, None,
    None, None,
