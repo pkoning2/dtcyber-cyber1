@@ -7,7 +7,7 @@ Save screen.  flood fill (-paint-) command.  -font- command and text
 display when in font mode.  Full screen mode.  Print preview.
 Copy text.  2x mode, -stretch- mode.  Scrollbars.  Save/restore window.
 Scrolling in dumb terminal mode.  GSW mode.  Touch in zoomed and stretch
-modes.
+modes.  Full screen and position save/restore for multi-screen systems.
 
 New features: unicode copy/paste.
 
@@ -84,6 +84,7 @@ by making the bitmap itself different.
 #include <wx/utils.h>
 #include <wx/rawbmp.h>
 #include <wx/uri.h>
+#include <wx/display.h>
 
 extern "C"
 {
@@ -3933,8 +3934,11 @@ void PtermFrame::UpdateDisplayState (void)
 
     if (m_fullScreen)
     {
-        w = wxSystemSettings::GetMetric (wxSYS_SCREEN_X);
-        h = wxSystemSettings::GetMetric (wxSYS_SCREEN_Y);
+        wxDisplay d (wxDisplay::GetFromWindow (this));
+        wxRect r = d.GetGeometry ();
+        
+        w = r.width;
+        h = r.height;
     }
     else
     {

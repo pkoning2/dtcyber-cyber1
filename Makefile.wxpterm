@@ -32,8 +32,9 @@ else
 SDLLIBS ?= `sdl-config --libs`
 endif
 
-SNDINCL ?= /usr/local/include
-SNDLIBS ?= -L/usr/local/lib -lsndfile
+SNDDIR ?= /usr/local
+SNDINCL ?= $(SNDDIR)/include
+SNDLIBS ?= -L$(SNDDIR)/lib -lsndfile
 
 # if the wxmumble dir doesn't exist, try for plain /usr
 ifeq ("$(wildcard $(DEFWXDIR))","")
