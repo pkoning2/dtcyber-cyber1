@@ -6,12 +6,15 @@ both ascii and classic.  Connection failure handling.  Print screen.
 Save screen.  flood fill (-paint-) command.  -font- command and text
 display when in font mode.  Full screen mode.  Print preview.
 Copy text.  2x mode, -stretch- mode.  Scrollbars.  Save/restore window.
-Scrolling in dumb terminal mode.  GSW mode.
+Scrolling in dumb terminal mode.  GSW mode.  Touch in zoomed and stretch
+modes.
 
 New features: unicode copy/paste.
 
 Incomplete: unicode copy is done, except for accented character
 handling.  Unicode paste is not there yet.
+
+Not working: <none>
 
 Not tested: <none>
 
@@ -179,7 +182,9 @@ public:
     Trace ();
     void Open (const char *fn = NULL);
     void Close (void);
-    void Log (const char *fmt, ...);
+    // Note that the "format" attribute gives the argument index counting
+    // the implied "this" as argument #1.
+    void Log (const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
     void Log (const wxString &s);
     bool Active (void) const
     {
@@ -779,9 +784,8 @@ public:
     WXLRESULT MSWWindowProc (WXUINT message, WXWPARAM wParam, WXLPARAM lParam);
 #endif
     
-    inline int GetXMargin (void) const;
-    inline int GetYMargin (void) const;
-
+    void Unadjust (int x, int y, int *xx, int *yy) const;
+    
     int m_mouseX;
     int m_mouseY;
     
@@ -957,7 +961,8 @@ public:
     float       m_xscale, m_yscale;
     // These are the current margins.  Usually those are simply DisplayMargin,
     // but in full screen mode they account for the entire space beyond the
-    // actual display area.
+    // actual display area.  They are in units of PLATO pixels, i.e., the
+    // screen margins are this times m_xscale and m_yscale respectively.
     int         m_xmargin, m_ymargin;
     
     //fonts
@@ -1714,6 +1719,9 @@ bool PtermApp::OnInit (void)
     }
 
     m_config = new wxConfig (wxT ("Pterm"));
+    lastX = m_config->Read (wxT (PREF_XPOS), 0L);
+    lastY = m_config->Read (wxT (PREF_YPOS), 0L);
+    debug ("saved x/y is %d, %d", lastX, lastY);
 
     //check for PPF file specified on command line
     if (argc > 1)
@@ -2006,10 +2014,7 @@ bool PtermApp::DoConnect (bool ask)
         }
     }
     
-
     // create the main application window
-    lastX = m_config->Read (wxT (PREF_XPOS), 0L);
-    lastY = m_config->Read (wxT (PREF_YPOS), 0L);
     if (lastX == 0 && lastY == 0)
     {
         frame = new PtermFrame (m_hostName, m_port, wxT ("Pterm"));
@@ -3061,7 +3066,7 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 void PtermFrame::OnPasteTimer (wxTimerEvent &)
 {
     wxChar c = 0;
-    int p;
+    uint32_t p;
     int delay = 0;
     unsigned int nextindex;
     int shift = 0;
@@ -3171,38 +3176,6 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
                     found = true;
                 }
         }
-        if (!found && (c <= wxT (' ')))
-        {
-            // Most get ignored
-            switch (c)
-            {
-            case wxT ('\r'):    // Return
-                if (nextindex + 1 < m_pasteText.Len () && 
-                    m_pasteText[nextindex + 1] == '\n')
-                    break;      // Ignore return if newline follows (DOS style)
-                c = wxT ('\n');
-                // Fall through to treat as newline                
-            case wxT ('\n'):
-                p = 026;        // NEXT
-                break;
-            case wxT ('\t'):
-                p = 014;        // TAB
-                break;
-            case wxT (' '):
-                p = 0100;       // space
-                break;
-            case wxT ('\xAB'):   // assignment arrow
-                p = 015;
-                break;
-            case wxT ('\xBB'):   // arrow
-                ptermSendKey1 (024);
-                p = asciiToPlato[(u8) '6'];
-                break;
-            default:
-                printf ("unexpected char in paste: 0x%02x\n", c);
-            }
-            found = true;
-        }
         if (!found &&
             (c < (int)(sizeof (asciiToPlato) / sizeof (asciiToPlato[0]))))
         {
@@ -3307,6 +3280,7 @@ void PtermFrame::OnClose (wxCloseEvent &)
     {
         GetPosition (&x, &y);
         wxDisplaySize (&xs, &ys);
+        debug ("Window position %d, %d display size %d, %d", x, y, xs, ys);
         if (x > 0 && x < xs - XSize &&
             y > 0 && y < ys - YSize)
         {
@@ -3976,8 +3950,8 @@ void PtermFrame::UpdateDisplayState (void)
     {
 		m_xscale = (w - 2 * DisplayMargin) / 512.0;
 		m_yscale = (h - 2 * DisplayMargin) / 512.0;
-        m_xmargin = m_xscale * DisplayMargin;
-        m_ymargin = m_yscale * DisplayMargin;
+        m_xmargin = DisplayMargin;
+        m_ymargin = DisplayMargin;
         m_canvas->SetVirtualSize (w, h);
     }
     else
@@ -3992,8 +3966,8 @@ void PtermFrame::UpdateDisplayState (void)
         }
         if (m_fullScreen)
         {
-            m_xmargin = (w - 512 * m_xscale) / 2;
-            m_ymargin = (h - 512 * m_yscale) / 2;
+            m_xmargin = (w / m_xscale - 512) / 2;
+            m_ymargin = (h / m_yscale - 512) / 2;
         }
         else
         {
@@ -4003,8 +3977,11 @@ void PtermFrame::UpdateDisplayState (void)
     }
 
     // Turn off scrollbars in full screen mode.
-    m_canvas->SetScrollRate (0, 0);
-    if (!m_fullScreen)
+    if (m_fullScreen)
+    {
+        m_canvas->SetScrollRate (0, 0);
+    }
+    else
     {
         m_canvas->SetScrollRate (1, 1);
     }
@@ -4252,6 +4229,8 @@ void PtermFrame::ptermFullErase (void)
     ptermBlockErase (0, 0, 511, 511);
     modexor = savexor;
     mode = savemode;
+
+    ClearRegion ();
 }
 
 void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
@@ -9632,13 +9611,17 @@ PtermCanvas::PtermCanvas (PtermFrame *parent)
     SetBackgroundColour (ptermApp->m_bgColor);
 }
 
-int PtermCanvas::GetXMargin (void) const
+// Convert device x/y (on the scrolled canvas) to PLATO x/y.  This
+// takes into account the current scroll position as well as scaling.
+void PtermCanvas::Unadjust (int x, int y, int *xx, int *yy) const
 {
-    return m_owner->m_xmargin;
-}
-int PtermCanvas::GetYMargin (void) const
-{
-    return m_owner->m_ymargin;
+    int xu, yu;
+
+    CalcUnscrolledPosition (x, y, &xu, &yu);
+    debug ("scrolled %d, %d maps to %d %d", x, y, xu, yu);
+
+    *xx = xu / m_owner->m_xscale - m_owner->m_xmargin;
+    *yy = 511 - (yu / m_owner->m_yscale - m_owner->m_ymargin);
 }
 
 void PtermCanvas::OnDraw (wxDC &dc)
@@ -9646,28 +9629,22 @@ void PtermCanvas::OnDraw (wxDC &dc)
     const int rh = m_owner->m_regionHeight;
     const int rw = m_owner->m_regionWidth;
 
-    dc.DestroyClippingRegion ();
-    dc.SetUserScale (1, 1);
-    dc.SetDeviceOrigin (0, 0);
-    dc.SetClippingRegion (m_owner->m_xmargin, m_owner->m_ymargin,
-                          512 * m_owner->m_xscale, 512 * m_owner->m_yscale);
-    dc.SetDeviceOrigin (m_owner->m_xmargin, m_owner->m_ymargin);
     dc.SetUserScale (m_owner->m_xscale, m_owner->m_yscale);
-    dc.DrawBitmap (*m_owner->m_bitmap, 0, 0, false);
+    dc.SetClippingRegion (m_owner->m_xmargin, m_owner->m_ymargin, 512, 512);
+    dc.DrawBitmap (*m_owner->m_bitmap, m_owner->m_xmargin,
+                   m_owner->m_ymargin, false);
     
     debug ("Drawing bitmap onto the window canvas");
 
     if (rh != 0 && rw != 0)
     {
-        dc.SetUserScale (1, 1);
-        dc.SetDeviceOrigin (0, 0);
-        dc.SetClippingRegion (XADJUST (8 * m_owner->m_regionX), 
-                              YADJUST (16 * (m_owner->m_regionY + rh)), 
-                              rw * 8 * m_owner->m_xscale,
-                              rh * 16 * m_owner->m_yscale);
-        dc.SetDeviceOrigin (m_owner->m_xmargin, m_owner->m_ymargin);
-        dc.SetUserScale (m_owner->m_xscale, m_owner->m_yscale);
-        dc.DrawBitmap (*m_owner->m_selmap, 0, 0, false);
+        dc.SetClippingRegion (m_owner->m_xmargin + (8 * m_owner->m_regionX), 
+                              m_owner->m_ymargin + 511 -
+                              (16 * (m_owner->m_regionY + rh)), 
+                              rw * 8, rh * 16);
+        dc.DrawBitmap (*m_owner->m_selmap, m_owner->m_xmargin,
+                       m_owner->m_ymargin, false);
+        dc.DestroyClippingRegion ();
     
         debug ("Drawing selection region, top %d %d, size %d %d",
                 m_owner->m_regionX, m_owner->m_regionY, rw, rh);
@@ -10120,18 +10097,19 @@ void PtermCanvas::OnMouseWheel (wxMouseEvent &event)
 
 void PtermCanvas::OnMouseDown (wxMouseEvent &event)
 {
-    m_mouseX = XUNADJUST (event.m_x);
-    m_mouseY = YUNADJUST (event.m_y);
+    Unadjust (event.m_x, event.m_y, &m_mouseX, &m_mouseY);
     m_owner->ClearRegion ();
     event.Skip ();
 }
 
 void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
 {
+    int xx, yy;
+    
     if (m_mouseX >= 0 && event.m_leftDown)
     {
-        m_owner->UpdateRegion (XUNADJUST (event.m_x), YUNADJUST (event.m_y),
-                               m_mouseX, m_mouseY);
+        Unadjust (event.m_x, event.m_y, &xx, &yy);
+        m_owner->UpdateRegion (xx, yy, m_mouseX, m_mouseY);
     }
     
     event.Skip ();
@@ -10152,8 +10130,7 @@ void PtermCanvas::OnMouseUp (wxMouseEvent &event)
         return;
     }
 
-    x = XUNADJUST (event.m_x);
-    y = YUNADJUST (event.m_y);
+    Unadjust (event.m_x, event.m_y, &x, &y);
 
     m_owner->UpdateRegion (x, y, m_mouseX, m_mouseY);
 

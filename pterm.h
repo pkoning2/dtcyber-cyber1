@@ -53,7 +53,7 @@
 #define STATUSPANES     3
 
 #define KeyBufSize      50
-#define DisplayMargin   8
+#define DisplayMargin   5
 
 #define MouseTolerance  3       // # pixels tolerance before we call it "drag"
 
@@ -63,8 +63,8 @@
 
 // Size of the window and pixmap.
 // This is: a screen high with margin top and bottom.
-#define XSize       (512 * m_xscale + (2 * DisplayMargin))
-#define YSize       (512 * m_yscale + (2 * DisplayMargin))
+#define XSize       ((512 + (2 * DisplayMargin)) * m_xscale)
+#define YSize       ((512 + (2 * DisplayMargin)) * m_yscale)
 
 #define TERMTYPE        10
 #define ASCTYPE         12
@@ -155,16 +155,6 @@
 **  Private Macro Functions
 **  -----------------------
 */
-
-// Map PLATO coordinates to window coordinates.  These are used
-// in the PtermCanvas methods, so they refer to the scale and margin
-// values via m_owner.
-#define XADJUST(x) int ((x) * m_owner->m_xscale + m_owner->m_xmargin)
-#define YADJUST(y) int ((511 - (y)) * m_owner->m_yscale  + m_owner->m_ymargin)
-
-// inverse mapping (for processing touch input)
-#define XUNADJUST(x) int (((x) - m_owner->m_xmargin) / m_owner->m_xscale)
-#define YUNADJUST(y) int (511 - ((y) - m_owner->m_ymargin) / m_owner->m_yscale)
 
 // Map PLATO coordinates to backing store bitmap coordinates.
 #define XMADJUST(x) (x)
