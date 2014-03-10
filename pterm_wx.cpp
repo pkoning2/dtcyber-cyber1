@@ -742,8 +742,8 @@ public:
     wxString    m_defDir;
     PtermFrame  *m_helpFrame;
 
-    int lastX;
-    int lastY;
+    int         prefX;
+    int         prefY;
 
     PtermFrame *m_CurFrame;
 
@@ -847,8 +847,7 @@ class PtermFrame : public PtermFrameBase, public emul8080
 
 public:
     // ctor(s)
-    PtermFrame (wxString &host, int port, const wxString& title,
-                const wxPoint &pos = wxDefaultPosition);
+    PtermFrame (wxString &host, int port, const wxString& title);
     ~PtermFrame ();
 
     // event handlers (these functions should _not_ be virtual)
@@ -1683,7 +1682,7 @@ IMPLEMENT_APP (PtermApp);
 // 'Main program' equivalent: the program execution "starts" here
 bool PtermApp::OnInit (void)
 {
-    int r, g, b;
+    int r, g, b, dspi, sz;
     wxString rgb;
     wxString str;
     wxString filename;
@@ -1720,9 +1719,6 @@ bool PtermApp::OnInit (void)
     }
 
     m_config = new wxConfig (wxT ("Pterm"));
-    lastX = m_config->Read (wxT (PREF_XPOS), 0L);
-    lastY = m_config->Read (wxT (PREF_YPOS), 0L);
-    debug ("saved x/y is %d, %d", lastX, lastY);
 
     //check for PPF file specified on command line
     if (argc > 1)
@@ -1863,6 +1859,55 @@ bool PtermApp::OnInit (void)
     PtermFrameParent->Show (true);
 #endif
 
+    // Pick up the preferred x/y (saved from last time).  Adjust these
+    // to make sure that the top left corner of the window is on screen,
+    // and second (if possible) that the whole window is.
+    prefX = m_config->Read (wxT (PREF_XPOS), 0L);
+    prefY = m_config->Read (wxT (PREF_YPOS), 0L);
+    debug ("saved x/y is %d, %d", prefX, prefY);
+    dspi = wxDisplay::GetFromPoint (wxPoint (prefX, prefY));
+    if (dspi == wxNOT_FOUND)
+    {
+        dspi = 0;
+    }
+    
+    wxDisplay dsp (dspi);
+    wxRect ca = dsp.GetClientArea ();
+    
+    debug ("display %d client area pos %d, %d size %d, %d",
+           dspi, ca.x, ca.y, ca.width, ca.height);
+    
+    // Adjust to make the bottom right corner be on-screen
+    sz = 512 + 2 * DisplayMargin;
+    if (m_scale2)
+    {
+        sz *= 2;
+    }
+    prefX += sz;
+    prefY += sz;
+    // width and height have some adjustment added to it to allow for
+    // window decoration.  
+    if (prefX > ca.x + ca.width - 5)
+    {
+        prefX = ca.x + ca.width - 5;
+    }
+    if (prefY > ca.y + ca.height - 25)
+    {
+        prefY = ca.y + ca.height - 25;
+    }
+    // From the adjusted bottom right, get the adjusted top left
+    prefX -= sz;
+    prefY -= sz;
+    if (prefX < ca.x)
+    {
+        prefX = ca.x;
+    }
+    if (prefY < ca.y)
+    {
+        prefY = ca.y;
+    }
+    debug ("adjusted x/y is %d, %d", prefX, prefY);
+    
     // create the main application window
     // If arguments are present, always connect without asking
     if (!m_testreq && (!DoConnect (!(m_connect || argc > 1))))
@@ -1949,8 +1994,8 @@ int PtermApp::OnExit (void)
 {
     wxTheClipboard->Flush ();
 
-    m_config->Write (wxT (PREF_XPOS), lastX);
-    m_config->Write (wxT (PREF_YPOS), lastY);
+    m_config->Write (wxT (PREF_XPOS), prefX);
+    m_config->Write (wxT (PREF_YPOS), prefY);
     m_config->Flush ();
 
     delete g_printData;
@@ -2016,15 +2061,7 @@ bool PtermApp::DoConnect (bool ask)
     }
     
     // create the main application window
-    if (lastX == 0 && lastY == 0)
-    {
-        frame = new PtermFrame (m_hostName, m_port, wxT ("Pterm"));
-    }
-    else
-    {
-        frame = new PtermFrame (m_hostName, m_port, wxT ("Pterm"),
-                                wxPoint (lastX, lastY));
-    }
+    frame = new PtermFrame (m_hostName, m_port, wxT ("Pterm"));
 
     if (frame != NULL)
     {
@@ -2382,9 +2419,10 @@ PtermMainFrame::PtermMainFrame (void)
 // ----------------------------------------------------------------------------
 
 // frame constructor
-PtermFrame::PtermFrame (wxString &host, int port, const wxString& title,
-                        const wxPoint &pos)
-    : PtermFrameBase (PtermFrameParent, -1, title, pos, wxDefaultSize),
+PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
+    : PtermFrameBase (PtermFrameParent, -1, title, 
+                      wxPoint (ptermApp->prefX, ptermApp->prefY),
+                      wxDefaultSize),
       // m_memDC not initialized
       tracePterm (false),
       m_currentWord (0),
@@ -3265,7 +3303,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 
 void PtermFrame::OnClose (wxCloseEvent &)
 {
-    int x, y, xs, ys;
+    int x, y;
     
     if (m_conn != NULL)
     {
@@ -3277,18 +3315,12 @@ void PtermFrame::OnClose (wxCloseEvent &)
     {
         ptermApp->m_helpFrame = NULL;
     }
-    else
-    {
-        GetPosition (&x, &y);
-        wxDisplaySize (&xs, &ys);
-        debug ("Window position %d, %d display size %d, %d", x, y, xs, ys);
-        if (x > 0 && x < xs - XSize &&
-            y > 0 && y < ys - YSize)
-        {
-            ptermApp->lastX = x;
-            ptermApp->lastY = y;
-        }
-    }
+
+    // Save the position of this window as our preferred position
+    GetPosition (&x, &y);
+    ptermApp->prefX = x;
+    ptermApp->prefY = y;
+    debug ("Window position on exit is %d, %d", x, y);
 
     if (m_nextFrame != NULL && IsActive ())
     {
