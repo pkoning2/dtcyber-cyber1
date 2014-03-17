@@ -96,8 +96,8 @@ u2plato = {
     "\u00e6" : (0o74, 0o107),		# ae
     "\u00f7" : 0o013,        		# divide
     "\u00f8" : (0o74, 0o110),		# o slash
-    "\u02c7" : (0o74, 0o126),        	# hacek
-    "\u02dc" : (0o74, 0o116),        	# tilde
+    "\u02c7" : (0o100, 0o74, 0o126),    # hacek
+    "\u02dc" : (0o100, 0o74, 0o116),    # tilde
     "\u0300" : (0o74, 0o121),		# combining grave
     "\u0301" : (0o74, 0o105),         	# combining acute
     "\u0302" : (0o74, 0o130),		# combining circumflex (caret)
@@ -105,7 +105,7 @@ u2plato = {
     "\u0308" : (0o74, 0o125),         	# combining dieresis
     "\u030c" : (0o74, 0o126),        	# combining hacek
     "\u0327" : (0o74, 0o103),         	# combining cedilla
-    "\u0396" : 0o057,        		# Delta
+    "\u0394" : 0o057,        		# Delta
     "\u0398" : (0o74, 0o124),        	# Theta
     "\u03a3" : 0o056,        		# Sigma
     "\u03b1" : (0o74, 0o101),        	# alpha
