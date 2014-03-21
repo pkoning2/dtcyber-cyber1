@@ -84,6 +84,8 @@ by making the bitmap itself different.
 #include <wx/rawbmp.h>
 #include <wx/uri.h>
 #include <wx/display.h>
+#include <wx/validate.h>
+#include <wx/valnum.h>
 
 extern "C"
 {
@@ -7867,9 +7869,13 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     lblDefaultPort = new wxStaticText (tab1, wxID_ANY, _("Default Port*"),
                                        wxDefaultPosition, wxDefaultSize, 0);
     fgs111->Add (lblDefaultPort, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+    wxIntegerValidator<long> portval;
+    portval.SetRange (1, 65535);
+    
     cboDefaultPort = new wxComboBox (tab1, wxID_ANY, wxT ("5004"),
                                      wxDefaultPosition, wxSize (75, -1),
-                                     0, NULL, 0);
+                                     0, NULL, 0, portval);
     cboDefaultPort->Append (wxT ("5004"));
     cboDefaultPort->Append (wxT ("8005"));
     fgs111->Add (cboDefaultPort, 0, wxALL, 5);
@@ -8076,12 +8082,21 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     bs51->Add (lblExplain5, 0, wxALL, 5);
 
     wxFlexGridSizer* fgs511;
+    wxIntegerValidator<long> cdval, ldval, autoval;
+
     fgs511 = new wxFlexGridSizer (2, 3, 0, 0);
+    // We don't really want the delays to be as low as 1 ms, but if the
+    // lower bound is more than that, you can't enter a value starting from
+    // a blank field because that would be less than 10...
+    cdval.SetRange (1, 1000);
+    ldval.SetRange (1, 1000);
+    autoval.SetRange (0, 120);
     lblCharDelay = new wxStaticText (tab5, wxID_ANY, _("Delay between chars"),
                                      wxDefaultPosition, wxDefaultSize, 0);
     fgs511->Add (lblCharDelay, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
     txtCharDelay = new wxTextCtrl (tab5, wxID_ANY, wxT ("50"),
-                                   wxDefaultPosition, wxSize (48, -1), 0);
+                                   wxDefaultPosition, wxSize (48, -1), 0,
+                                   cdval);
     txtCharDelay->SetMaxLength (3); 
     fgs511->Add (txtCharDelay, 0, wxALL, 5);
     lblCharDelay2 = new wxStaticText (tab5, wxID_ANY, _("milliseconds"),
@@ -8092,7 +8107,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                      wxDefaultPosition, wxDefaultSize, 0);
     fgs511->Add (lblLineDelay, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
     txtLineDelay = new wxTextCtrl (tab5, wxID_ANY, wxT ("100"),
-                                   wxDefaultPosition, wxSize (48, -1), 0);
+                                   wxDefaultPosition, wxSize (48, -1), 0,
+                                   ldval);
     txtLineDelay->SetMaxLength (3); 
     fgs511->Add (txtLineDelay, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
     lblLineDelay2 = new wxStaticText (tab5, wxID_ANY, _("milliseconds"),
@@ -8106,8 +8122,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                        _("Automatic new line every"),
                                        wxDefaultPosition, wxDefaultSize, 0);
     fgs512->Add (lblAutoNewLine, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
     cboAutoLF = new wxComboBox (tab5, wxID_ANY, wxT ("60"), wxDefaultPosition,
-                                wxSize (-1, -1), 0, NULL, 0 | wxTAB_TRAVERSAL);
+                                wxSize (-1, -1), 0, NULL, 0 | wxTAB_TRAVERSAL,
+                                autoval);
     cboAutoLF->Append (wxT ("0"));
     cboAutoLF->Append (wxT ("60"));
     cboAutoLF->Append (wxT ("120"));
@@ -8991,9 +9009,13 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
                                 wxDefaultPosition, wxDefaultSize, 0);
     lblPort->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
     fgs111->Add (lblPort, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+
+    wxIntegerValidator<long> portval;
+    portval.SetRange (1, 65535);
+    
     cboPort = new wxComboBox (this, wxID_ANY, wxT ("5004"),
                               wxDefaultPosition, wxDefaultSize, 0,
-                              NULL, wxTAB_TRAVERSAL);
+                              NULL, wxTAB_TRAVERSAL, portval);
     cboPort->Append (wxT ("5004"));
     cboPort->Append (wxT ("8005"));
     cboPort->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
