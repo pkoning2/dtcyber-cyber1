@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+
+"""Wrapper to run dtcyber as a daemon
+
+"""
+
+import sys
+if sys.version_info[0] < 3:
+    print ("dtcyberd requires Python 3.2 or later")
+    sys.exit (1)
+
+try:
+    import argparse
+except ImportError:
+    print ("dtcyberd requires Python 3.2 or later")
+    sys.exit (1)
+
+import os
+import pwd
+import subprocess
+from daemon import DaemonContext
+
+DEFPIDFILE = os.path.basename (sys.argv[0]) + ".pid"
+
+dnparser = argparse.ArgumentParser ()
+dnparser.add_argument ("config", nargs = "?",
+                       help = "Configuration to run")
+dnparser.add_argument ("--pid-file", metavar = "FN",
+                       default = DEFPIDFILE,
+                       help = "PID file (default: %s)" % DEFPIDFILE)
+dnparser.add_argument ("-l", "--log-file", metavar = "FN",
+                       default = "cyber.log",
+                       help = "Log file (default: cyber.log)")
+dnparser.add_argument ("-d", "--directory", metavar = "D",
+                       help = "Directory to change to (default: no change)")
+dnparser.add_argument ("-u", "--user",
+                       help = "Username to switch to (default: no change)")
+
+class pidfile:
+    def __init__ (self, fn):
+        self.fn = fn
+
+    def __enter__ (self):
+        try:
+            f = open (self.fn, "wt")
+        except Exception as exc:
+            logging.exception ("failure creating pidfile %s", self.fn)
+            return
+        f.write ("%d\n" % os.getpid ())
+        f.close ()
+
+    def __exit__ (self, exc_type, exc_value, traceback):
+        try:
+            os.remove (self.fn)
+        except Exception as exc:
+            logging.exception ("error removing pidfile %s", self.fn)
+            return
+        
+def main ():
+    """Main program.  Parses command arguments and runs dtcyber as
+    a subprocess.
+    """
+    p = dnparser.parse_args ()
+    uid = None
+    gid = None
+    if p.user:
+        # Username specified, map to uid
+        try:
+            pw = pwd.getpwnam (p.user)
+            uid = pw.pw_uid
+            gid = pw.pw_gid
+        except KeyError:
+            pass
+    dir = p.directory or "."
+    logfile = open (p.log_file, "wt+")
+    # Note that files_preserve seems to be needed even though the
+    # documentation claims that the stdout argument value is
+    # automatically preserved.
+    daemoncontext = DaemonContext (stdout = logfile,
+                                   files_preserve = [ logfile ],
+                                   uid = uid, gid = gid,
+                                   working_directory = dir,
+                                   umask = 0o022,
+                                   pidfile = pidfile (p.pid_file))
+    daemoncontext.open ()
+    args = [ "./dtcyber" ]
+    if p.config:
+        args.append (p.config)
+    print ("starting ", " ".join (args))
+    try:
+        subprocess.call (args, stderr = subprocess.STDOUT)
+    except SystemExit as exc:
+        print ("Exiting:", exc)
+    except Exception:
+        print ("Exception caught in main")
+    finally:
+        print ("dtcyberd exiting")
+        daemoncontext.close ()
+
+if __name__ == "__main__":
+    main ()
+    
