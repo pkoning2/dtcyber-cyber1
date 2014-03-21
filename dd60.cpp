@@ -117,6 +117,8 @@
 #include "wx/print.h"
 #include "wx/printdlg.h"
 #include "wx/rawbmp.h"
+#include <wx/validate.h>
+#include <wx/valnum.h>
 
 extern "C"
 {
@@ -245,7 +247,7 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
 
-    bool DoConnect (bool ask);
+    bool DoConnect (bool ask, double interval = 0.0);
     static wxColour SelectColor (wxColour &initcol);
     
     void WritePrefs (void);
@@ -253,9 +255,7 @@ public:
     wxColour    m_fgColor;
     wxConfig    *m_config;
 
-    int         m_port;
-    int         m_interval;
-    bool        m_fastupdate;
+    long        m_port;
     
     // scale is 1 or 2 for full size and double, respectively.
     int         m_scale;
@@ -264,8 +264,8 @@ public:
     int         m_focus;
     int         m_fastintens;
     int         m_slowintens;
-    int         m_intens;
     bool        m_connect;
+    double      m_interval;
     Dd60Frame  *m_firstFrame;
     wxString    m_defDir;
     
@@ -337,7 +337,7 @@ class Dd60Frame : public Dd60FrameBase
 
 public:
     // ctor(s)
-    Dd60Frame(int port, int interval, bool fastupdate, const wxString& title);
+    Dd60Frame(int port, double interval, const wxString& title);
     ~Dd60Frame ();
 
     // Callback handlers
@@ -365,6 +365,8 @@ public:
     Dd60Frame   *m_nextFrame;
     Dd60Frame   *m_prevFrame;
     bool        truekb;
+    int         m_intens;
+    bool        m_fastupdate;
 
 private:
     bool        m_firstTime;
@@ -383,7 +385,6 @@ private:
     NetFet      *m_fet;
     int         m_port;
     int         m_interval;
-    bool        m_fastupdate;
     bool        m_startBlock;
 
     // Character patterns are stored in three pixel vectors.  These are
@@ -458,8 +459,10 @@ public:
     void OnOK (wxCommandEvent& event);
     void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
     wxTextCtrl      *m_portText;
+    wxComboBox      *m_delayText;
     
     wxString        m_port;
+    wxString        m_delay;
     
 private:
     DECLARE_EVENT_TABLE ()
@@ -717,7 +720,7 @@ bool Dd60App::OnInit (void)
 
     if (argc > 2)
     {
-        m_port = atoi (wxString (argv[2]).mb_str ());
+        argv[2].ToCLong (&m_port);
     }
     else
     {
@@ -726,7 +729,7 @@ bool Dd60App::OnInit (void)
 
     if (argc > 1)
     {
-        interval = strtod (wxString (argv[1]).mb_str (), NULL);
+        argv[1].ToCDouble (&interval);
         if (interval != 0.0 && (interval < 0.02 || interval > 63.0))
         {
             fprintf (stderr, "interval value out of range\n");
@@ -745,21 +748,8 @@ bool Dd60App::OnInit (void)
         }
     }
 
-    /* 
-    **  Convert the interval to an integer value in 20 ms units
-    */
-    m_interval = interval / 0.02;
-    m_fastupdate = (interval <= 0.5);
-    
-    if (m_interval > 077)
-    {
-        /* If it doesn't fit, use the "slow" coding */
-        m_interval = Dd60SlowRate + (m_interval / 50);
-    }
-    else
-    {
-        m_interval += Dd60FastRate;
-    }
+    // Use this interval as the initial default
+    m_interval = interval;
 
     // 20 255 80 is RGB for DD60 green
     m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("20 255 80"));
@@ -772,14 +762,6 @@ bool Dd60App::OnInit (void)
     m_focus = m_config->Read (wxT (PREF_FOCUS), DefFocus);
     m_fastintens = m_config->Read (wxT (PREF_FASTINTENS), DefIntensity);
     m_slowintens = m_config->Read (wxT (PREF_SLOWINTENS), DefSlowIntens);
-    if (m_fastupdate)
-    {
-        m_intens = m_fastintens;
-    }
-    else
-    {
-        m_intens = m_slowintens;
-    }
     
 #if DD60_MDI
     // On Mac, the style rule is that the application keeps running even
@@ -798,7 +780,7 @@ bool Dd60App::OnInit (void)
 
     // create the main application window
     // If arguments are present, always connect without asking
-    if (!DoConnect (!(m_connect || argc > 1)))
+    if (!DoConnect (!(m_connect || argc > 1), interval))
     {
         return false;
     }
@@ -825,7 +807,7 @@ void Dd60App::OnConnect (wxCommandEvent &event)
     DoConnect (event.GetId () == Dd60_Connect);
 }
 
-bool Dd60App::DoConnect (bool ask)
+bool Dd60App::DoConnect (bool ask, double interval)
 {
     Dd60Frame *frame;
 
@@ -843,7 +825,27 @@ bool Dd60App::DoConnect (bool ask)
             }
             else
             {
-                m_port = atoi (wxString (dlg.m_port).mb_str ());
+                dlg.m_port.ToCLong (&m_port);
+            }
+            if (dlg.m_delay.IsEmpty ())
+            {
+                if (m_port == DefDd60Port)
+                {
+                    interval = DefaultInterval;
+                }
+                else
+                {
+                    interval = DefRemoteInterval;
+                }
+            }
+            else
+            {
+                dlg.m_delay.ToCDouble (&interval);
+                if (interval != 0.0 && (interval < 0.02 || interval > 63.0))
+                {
+                    fprintf (stderr, "interval value out of range\n");
+                    return false;
+                }
             }
         }
         else
@@ -853,7 +855,7 @@ bool Dd60App::DoConnect (bool ask)
     }
 
     // create the main application window
-    frame = new Dd60Frame(m_port, m_interval, m_fastupdate, wxT("Dd60"));
+    frame = new Dd60Frame(m_port, interval, wxT("Dd60"));
 
     if (frame != NULL)
     {
@@ -863,6 +865,9 @@ bool Dd60App::DoConnect (bool ask)
         }
         frame->m_nextFrame = m_firstFrame;
         m_firstFrame = frame;
+
+        // Use this interval as the default next time
+        m_interval = interval;
     }
     
     return (frame != NULL);
@@ -1002,8 +1007,7 @@ Dd60MainFrame::Dd60MainFrame (void)
 // ----------------------------------------------------------------------------
 
 // frame constructor
-Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate, 
-                     const wxString& title)
+Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
   : Dd60FrameBase(Dd60FrameParent, -1, title,
 		   wxDefaultPosition,
 		   wxDefaultSize),
@@ -1016,8 +1020,6 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
     m_foregroundBrush (dd60App->m_fgColor, wxSOLID),
     m_canvas (NULL),
     m_port (port),
-    m_interval (interval),
-    m_fastupdate (fastupdate),
     m_startBlock (true),
     m_char8 (NULL),
     m_char16 (NULL),
@@ -1033,6 +1035,31 @@ Dd60Frame::Dd60Frame(int port, int interval, bool fastupdate,
     
     trace_txt[0] = '\0';
     
+    /* 
+    **  Convert the interval to an integer value in 20 ms units
+    */
+    m_interval = interval / 0.02;
+    m_fastupdate = (interval <= 0.5);
+    
+    if (m_interval > 077)
+    {
+        /* If it doesn't fit, use the "slow" coding */
+        m_interval = Dd60SlowRate + (m_interval / 50);
+    }
+    else
+    {
+        m_interval += Dd60FastRate;
+    }
+
+    if (m_fastupdate)
+    {
+        m_intens = dd60App->m_fastintens;
+    }
+    else
+    {
+        m_intens = dd60App->m_slowintens;
+    }
+
     m_sizer = new wxBoxSizer (wxVERTICAL);
     SetSizer (m_sizer);
     m_sizer->Fit (this);
@@ -1667,7 +1694,7 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
     const int rv = dd60App->m_fgColor.Red ();
     const int gv = dd60App->m_fgColor.Green ();
     const int bv = dd60App->m_fgColor.Blue ();
-    const double intensity = normInt (dd60App->m_intens, height);
+    const double intensity = normInt (m_intens, height);
     const double sigma = m_statusBar->m_panel->beamsize ();
     const int beamr = int (ceil (3 * sigma));
 #define r1_029 2000
@@ -2023,10 +2050,12 @@ Dd60PrefDialog::Dd60PrefDialog (Dd60Frame *parent, wxWindowID id, const wxString
     m_autoConnect->SetValue (m_connect);
     sbs->Add (m_autoConnect, 0,   wxTOP | wxLEFT | wxRIGHT, 8);
     fgs = new wxFlexGridSizer (1, 2, 8, 8);
+
+    wxIntegerValidator<long> portval;
+    portval.SetRange (1, 65535);
     m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
-                                 wxDefaultPosition, wxSize (160+40, 18),
-                                 0, *new wxTextValidator (wxFILTER_NUMERIC,
-                                                          &m_port));
+                                 wxDefaultPosition, wxDefaultSize,
+                                 0, portval);
     fgs->Add (new wxStaticText (this, wxID_ANY, _("Default Port")));
     fgs->Add (m_portText);
     sbs->Add (fgs, 0, wxALL, 8);
@@ -2133,6 +2162,12 @@ Dd60ConnDialog::Dd60ConnDialog (wxWindowID id, const wxString &title)
 {
     wxBoxSizer *ds, *ods;
     wxFlexGridSizer *fgs;
+    wxIntegerValidator<long> portval;
+    wxFloatingPointValidator<double> delayval;
+    
+    portval.SetRange (1, 65535);
+    delayval.SetRange (0, 63.0);
+    delayval.SetPrecision (2);
 
     // Sizer for the whole dialog box content
     ds = new wxBoxSizer (wxVERTICAL);
@@ -2141,13 +2176,23 @@ Dd60ConnDialog::Dd60ConnDialog (wxWindowID id, const wxString &title)
     m_port.Printf (wxT ("%d"), dd60App->m_port);
 
     m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
-                                 wxDefaultPosition, wxSize (160, 18),
-                                 0, *new wxTextValidator (wxFILTER_NUMERIC,
-                                                          &m_port));
-    fgs = new wxFlexGridSizer (1, 2, 8, 8);
+                                 wxDefaultPosition, wxDefaultSize,
+                                 0, portval);
+    wxString defDelay;
+    defDelay.Printf ("%.2f", dd60App->m_interval);
+    m_delayText = new wxComboBox (this, wxID_ANY, defDelay,
+                                  wxDefaultPosition, wxSize (75, -1),
+                                  0, NULL, 0, delayval);
+    m_delayText->Append (wxT ("0"));
+    m_delayText->Append (wxT ("0.06"));
+    m_delayText->Append (wxT ("3.0"));
+    
+    fgs = new wxFlexGridSizer (2, 2, 8, 8);
       
     fgs->Add (new wxStaticText (this, wxID_ANY, _("Port")));
     fgs->Add (m_portText);
+    fgs->Add (new wxStaticText (this, wxID_ANY, _("Update interval")));
+    fgs->Add (m_delayText);
 
     // Final section: the buttons
     ds->Add (fgs, 0, wxTOP | wxLEFT | wxRIGHT, 10);
@@ -2164,6 +2209,7 @@ Dd60ConnDialog::Dd60ConnDialog (wxWindowID id, const wxString &title)
 void Dd60ConnDialog::OnOK (wxCommandEvent &)
 {
         m_port = m_portText->GetLineText (0);
+        m_delay = m_delayText->GetValue ();
         EndModal (wxID_OK);
 }
 
@@ -2194,7 +2240,7 @@ Dd60Panel::Dd60Panel (Dd60Frame *parent) :
     m_focus = new wxKnob (this, wxID_ANY, dd60App->m_focus, 45, 120,
                           240, 300, wxDefaultPosition, knobSize);
     m_sizer->Add (m_focus, sf);
-    m_intens = new wxKnob (this, wxID_ANY, dd60App->m_intens, 125, 225,
+    m_intens = new wxKnob (this, wxID_ANY, parent->m_intens, 125, 225,
                            240, 300, wxDefaultPosition, knobSize);
     m_sizer->Add (m_intens, sf);
     sf.Border (wxLEFT | wxRIGHT | wxBOTTOM);
@@ -2210,14 +2256,14 @@ void Dd60Panel::OnScroll (wxScrollEvent &)
     dd60App->m_sizeX = m_sizeX->GetValue ();
     dd60App->m_sizeY = m_sizeY->GetValue ();
     dd60App->m_focus = m_focus->GetValue ();
-    dd60App->m_intens = m_intens->GetValue ();
-    if (dd60App->m_fastupdate)
+    m_parent->m_intens = m_intens->GetValue ();
+    if (m_parent->m_fastupdate)
     {
-        dd60App->m_fastintens = dd60App->m_intens;
+        dd60App->m_fastintens = m_parent->m_intens;
     }
     else
     {
-        dd60App->m_slowintens = dd60App->m_intens;
+        dd60App->m_slowintens = m_parent->m_intens;
     }
     dd60App->WritePrefs ();
     
