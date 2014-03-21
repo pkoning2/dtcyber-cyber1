@@ -88,8 +88,11 @@ def main ():
         args.append (p.config)
     print ("starting ", " ".join (args))
     try:
-        subprocess.call (args, stderr = subprocess.STDOUT)
+        dtcyber = subprocess.Popen (args, stderr = subprocess.STDOUT)
+        dtcyber.wait ()
     except SystemExit as exc:
+        dtcyber.terminate ()
+        dtcyber.wait (10)
         print ("Exiting:", exc)
     except Exception:
         print ("Exception caught in main")
