@@ -18,7 +18,9 @@ except ImportError:
 import os
 import pwd
 import subprocess
+import traceback
 from daemon import DaemonContext
+from dtscript import Oper
 
 DEFPIDFILE = os.path.basename (sys.argv[0]) + ".pid"
 
@@ -55,7 +57,21 @@ class pidfile:
         except Exception as exc:
             logging.exception ("error removing pidfile %s", self.fn)
             return
-        
+
+def doshutdown (dtcyber):
+    """Attempt to shut down dtcyber via the operator interface.
+    """
+    print ("trying to shut down dtcyber")
+    try:
+        oper = Oper ()
+        s = oper.command ("UNLOCK.")
+        s = oper.command ("SHUTDOWN.")
+        oper.stop ()
+        w = dtcyber.wait (2)
+    except Exception as exc:
+        print ("Exception caught in doshutdown", exc)
+        traceback.print_exc ()
+    print ("dtcyber shut down complete")
 def main ():
     """Main program.  Parses command arguments and runs dtcyber as
     a subprocess.
@@ -77,6 +93,7 @@ def main ():
     # documentation claims that the stdout argument value is
     # automatically preserved.
     daemoncontext = DaemonContext (stdout = logfile,
+                                   stderr = logfile,
                                    files_preserve = [ logfile ],
                                    uid = uid, gid = gid,
                                    working_directory = dir,
@@ -89,14 +106,23 @@ def main ():
     print ("starting ", " ".join (args))
     try:
         dtcyber = subprocess.Popen (args, stderr = subprocess.STDOUT)
+    except Exception:
+        print ("Failed to create dtcyber subprocess")
+        daemoncontext.close ()
+        sys.exit (1)
+
+    try:
         dtcyber.wait ()
     except SystemExit as exc:
-        dtcyber.terminate ()
-        dtcyber.wait (10)
         print ("Exiting:", exc)
-    except Exception:
-        print ("Exception caught in main")
+    except Exception as exc:
+        print ("Exception caught in main", exc)
+        traceback.print_exc ()
     finally:
+        # We don't go through a full shutdown, but at least cleanly
+        # close the emulator on exit.
+        if dtcyber.poll () is None:
+            doshutdown (dtcyber)
         print ("dtcyberd exiting")
         daemoncontext.close ()
 
