@@ -9075,7 +9075,7 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
     // initialize values
     m_ShellFirst = ptermApp->m_ShellFirst;
     m_host = ptermApp->m_hostName;
-    m_port.Printf (wxT ("%d"), ptermApp->m_port);
+    m_port.Printf (wxT ("%ld"), ptermApp->m_port);
 
     // set object value properties
     txtShellFirst->SetValue (m_ShellFirst);
@@ -9115,7 +9115,7 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
             m_curProfile = profile;
             m_ShellFirst = ptermApp->m_ShellFirst;
             m_host = ptermApp->m_hostName;
-            m_port.Printf (wxT ("%d"), ptermApp->m_port);
+            m_port.Printf (wxT ("%ld"), ptermApp->m_port);
             txtShellFirst->SetValue (m_ShellFirst);
             txtHost->SetValue (m_host);
             cboPort->SetValue (m_port);
@@ -9152,7 +9152,7 @@ void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
             m_curProfile = profile;
             m_ShellFirst = ptermApp->m_ShellFirst;
             m_host = ptermApp->m_hostName;
-            m_port.Printf (wxT ("%d"), ptermApp->m_port);
+            m_port.Printf (wxT ("%ld"), ptermApp->m_port);
             txtShellFirst->SetValue (m_ShellFirst);
             txtHost->SetValue (m_host);
             cboPort->SetValue (m_port);
@@ -9233,7 +9233,7 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     else
         str.Printf (_("The host did not respond to the connection request.\nYou may open a new connection, try this connection\nagain, or exit."));
     lblPrompt->SetLabel (str);
-    str.Printf (_("\nFailed: %s:%d"), ptermApp->m_hostName,
+    str.Printf (_("\nFailed: %s:%ld"), ptermApp->m_hostName,
                 ptermApp->m_port);
     lblHost->SetLabel (str);
 
