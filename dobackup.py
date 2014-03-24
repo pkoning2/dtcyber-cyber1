@@ -40,17 +40,22 @@ import time
 import subprocess
 import shutil
 
+mastor = "M A S T O R".encode ("dd60")
+system = "S Y S T E M".encode ("dd60")
+ipedit1 = "INSTALLATION PARAMETERS".encode ("dd60")
+ipedit2 = "ENTER THE TIME ZONE".encode ("dd60")
+nojsn = "JSN NOT FOUND".encode ("dd60")
+chk = "CHECKPOINT COMPLETE".encode ("dd60")
+
 def log (str):
     print ("%s: %s" % (time.strftime ("%T"), str))
 
-PIECE = 4
 def sendstr (term, str):
-    """Send a string in pieces with some delays to make it reliable.
+    """Send a string one char at a time for reliability.
     """
-    while str:
-        term.sendstr (str[:PIECE])
-        str = str[PIECE:]
-        time.sleep (0.5)
+    for c in str:
+        term.sendstr (c)
+        time.sleep (0.2)
         
 def announce (cons, str):
     log ("Announcing: %s" % str)
@@ -73,21 +78,25 @@ def announce (cons, str):
     time.sleep (5)
     cons.sendkey (cons.BACK)
 
-mastor = "M A S T O R".encode ("dd60")
-
 def startui ():
-    """Start the user interfaces and get them ready for the real work.
+    """Start the console interface and get it ready for the real work.
 
-    This returns the console and operator interface objects.  The console
+    This returns the console interface object.  The console
     is at this point logged in and sitting at the Author Mode page.
     """
-    # Before we do the actual work, connect to console and
-    # operator interface and check that things look ok
+    # Before we do the actual work, connect to console 
+    # interface and check that things look ok
     cons = dtscript.Console (interval = 1)
     cons.todsd ()
+    platoup = True    # Assume PLATO is active
+    cons.sendstr ("[uns\n")       # Cancel step just in case it was set
     cons.sendstr ("[k,mas1.\n")
     for i in range (4):
         if mastor in cons.screen[0][16]:
+            break
+        elif nojsn in cons.screen[0][9]:
+            log ("PLATO is not running")
+            platoup = False
             break
         if i < 3:
             time.sleep (2)
@@ -95,131 +104,127 @@ def startui ():
             log ("Failed to connect to Mastor K display")
             cons.stop ()
             sys.exit (1)
-    oper = dtscript.Oper ()
 
     # Start the CONSOLE utility and get us into sysopts (1)
-    cons.login ()
-    return cons, oper
+    if platoup:
+        cons.login ()
+    return cons, platoup
 
-system = "S Y S T E M".encode ("dd60")
-ipedit1 = "INSTALLATION PARAMETERS".encode ("dd60")
-ipedit2 = "ENTER THE TIME ZONE".encode ("dd60")
-nojsn = "JSN NOT FOUND".encode ("dd60")
-chk = "CHECKPOINT COMPLETE".encode ("dd60")
+def doshutdown (cons, platoup, delay, tzdelay, newtz):
+    """Shut down PLATO in "delay" minutes.  "cons" is the console
+    interface object.
 
-def doshutdown (cons, oper, delay, tzdelay, newtz):
-    """Shut down PLATO in "delay" minutes.  "cons" and "oper" are the
-    user interface objects.
+    "platoup" says whether PLATO is active.  If False, skip the
+    PLATO shutdown step.
 
     "tzdelay" says whether a timezone change is needed.  Non-zero means
     yes.  2 means yes and we have to be down for an hour.  "newtz" is
     the new timezone string to be set.
     """
-    cons.sendstr ("1")
-    cons.wait_update ()
-    for i in range (10):
-        if system in cons.screen[0][8]:
-            break
-        if i < 9:
-            time.sleep (2)
-        else:
-            log ("Failed to start sysopts")
-            cons.stop ()
-            oper.stop ()
-            sys.exit (1)
-    
-    # First step: put up a 1st line message and broadcast that.
-    # Repeat every 5 minutes until we've done the delay
-    while delay:
-        if tzdelay == 2:
-            msg = "One hour shutdown for timezone change in %d minutes" % delay
-        else:
-            msg = "Interruption for backups in %d minutes..." % delay
-        announce (cons, msg)
-        if delay < 5:
-            time.sleep (delay * 60)
-            break
-        delay -= 5
-        time.sleep (300)
-
-    # Second step: announce interruption for backup now
-    if tzdelay == 2:
-        msg = "One hour shutdown for timezone change...              "
-    else:
-        msg = "Interruption for backups...              "
-    announce (cons, msg)
-
-    # Third step: full system backout
-    log ("Starting backout")
-    sendstr (cons, "3")
-    time.sleep (1)
-    cons.sendkey (cons.SHIFT + cons.LAB)
-    time.sleep (60)
-    for i in range (20):
-        if system in cons.screen[0][8]:
-            break
-        if i < 19:
-            time.sleep (2)
-        else:
-            log ("Backout did not complete")
-            cons.stop ()
-            oper.stop ()
-            sys.exit (1)
-
-    # If we need a timezone change, set the new timezone now so that
-    # upon restart it will be what we want it to be.
-    if tzdelay:
-        # Need to change timezone.  First go back to Author Mode
-        cons.login ()
-        cons.sendstr ("ipedit")
-        cons.sendkey (cons.DATA)
+    if platoup:
+        cons.sendstr ("1")
         cons.wait_update ()
-        ok = False
         for i in range (10):
-            if ipedit1 in cons.screen[0][4]:
-                ok = True
+            if system in cons.screen[0][8]:
                 break
             if i < 9:
                 time.sleep (2)
             else:
-                log ("Failed to start ipedit")
-        if ok:
-            cons.sendstr ("c")
+                log ("Failed to start sysopts")
+                cons.stop ()
+                sys.exit (1)
+
+        # First step: put up a 1st line message and broadcast that.
+        # Repeat every 5 minutes until we've done the delay
+        while delay:
+            if tzdelay == 2:
+                msg = "One hour shutdown for timezone change in %d minutes" % delay
+            else:
+                msg = "Interruption for backups in %d minutes..." % delay
+            announce (cons, msg)
+            if delay < 5:
+                time.sleep (delay * 60)
+                break
+            delay -= 5
+            time.sleep (300)
+
+        # Second step: announce interruption for backup now
+        if tzdelay == 2:
+            msg = "One hour shutdown for timezone change...              "
+        else:
+            msg = "Interruption for backups...              "
+        announce (cons, msg)
+
+        # Third step: full system backout
+        log ("Starting backout")
+        sendstr (cons, "3")
+        time.sleep (1)
+        cons.sendkey (cons.SHIFT + cons.LAB)
+        time.sleep (60)
+        for i in range (20):
+            if system in cons.screen[0][8]:
+                break
+            if i < 19:
+                time.sleep (2)
+            else:
+                log ("Backout did not complete")
+                cons.stop ()
+                sys.exit (1)
+
+        # If we need a timezone change, set the new timezone now so that
+        # upon restart it will be what we want it to be.
+        if tzdelay:
+            # Need to change timezone.  First go back to Author Mode
+            cons.login ()
+            cons.sendstr ("ipedit")
+            cons.sendkey (cons.DATA)
             cons.wait_update ()
             ok = False
             for i in range (10):
-                if ipedit2 in cons.screen[0][24]:
+                if ipedit1 in cons.screen[0][4]:
                     ok = True
                     break
                 if i < 9:
                     time.sleep (2)
                 else:
-                    log ("Failed to reach timezone page in ipedit")
-        if ok:
-            cons.sendstr (newtz)
-            cons.sendkey (cons.NEXT)
-            log ("Timezone updated to %s" % newtz)
-            cons.wait_update ()
-            cons.sendkey (cons.BACK)
-            cons.wait_update ()
-            cons.sendkey (cons.BACK)
-            
-    # Shut down Mastor
-    cons.logout ()
-    log ("Stopping mastor")
-    cons.sendstr ("[k,mas1.\n")
-    time.sleep (2)
-    cons.sendstr ("[k.stop\n")
+                    log ("Failed to start ipedit")
+            if ok:
+                cons.sendstr ("c")
+                cons.wait_update ()
+                ok = False
+                for i in range (10):
+                    if ipedit2 in cons.screen[0][24]:
+                        ok = True
+                        break
+                    if i < 9:
+                        time.sleep (2)
+                    else:
+                        log ("Failed to reach timezone page in ipedit")
+            if ok:
+                cons.sendstr (newtz)
+                cons.sendkey (cons.NEXT)
+                log ("Timezone updated to %s" % newtz)
+                cons.wait_update ()
+                cons.sendkey (cons.BACK)
+                cons.wait_update ()
+                cons.sendkey (cons.BACK)
 
-    # Wait for Mastor to exit
-    for i in range (10):
-        if nojsn in cons.screen[0][9]:
-            break
-        if i < 9:
-            time.sleep (2)
-        else:
-            log ("Mastor did not stop")
-    
+        # Shut down Mastor
+        cons.logout ()
+        log ("Stopping mastor")
+        cons.sendstr ("[k,mas1.\n")
+        time.sleep (2)
+        cons.sendstr ("[k.stop\n")
+
+        # Wait for Mastor to exit
+        for i in range (10):
+            if nojsn in cons.screen[0][9]:
+                break
+            if i < 9:
+                time.sleep (2)
+            else:
+                log ("Mastor did not stop")
+
     # See if there is any other non-subsystem job,
     # which is likely to be cftp
     cons.sendstr ("[ab\n")
@@ -256,20 +261,14 @@ def doshutdown (cons, oper, delay, tzdelay, newtz):
     # Shut down DtCyber
     cons.stop ()
     log ("Shutting down DtCyber")
-    oper.command ("UNLOCK.")
-    if oper.locked:
-        log ("Operator interface did not unlock")
-        oper.stop ()
-        sys.exit (1)
-    oper.command ("SHUTDOWN.")
-    oper.stop ()
+    subprocess.call (("/etc/rc.d/init.d/dtcyberd", "stop"))
     log ("Shut down complete")
     
 def dostartup ():
     """Restart PLATO.
     """
     log ("Starting DtCyber and PLATO")
-    subprocess.call (("./dtcyber-remote.sh",), stderr = subprocess.STDOUT)
+    subprocess.call (("/etc/rc.d/init.d/dtcyberd", "start"))
     time.sleep (5)
     pterm = dtscript.Pterm ()
     for i in range (50):
@@ -376,7 +375,7 @@ def checktz (cons, newtz):
     return 1
 
 ## ***TEST
-#CYBER1ROOT="/Users/pkoning/Documents/svn/dtcyber"
+#CYBER1ROOT="/buildarea/dtcyber/dtcyber"
 #BACKUPITEMS=("pack/xfer",)
 #SHUTDOWNDELAY = 1        # minutes
 #FALLBACKDELAY = 5        # minutes
@@ -389,10 +388,14 @@ def main ():
     for item in BACKUPITEMS:
         backupsize += getsize (item)
     log ("Uncompressed backup size is about %d MB" % (backupsize >> 10))
-    cons, oper = startui ()
-    newtz = time.strftime ("%Z")
-    tzdelay = checktz (cons, newtz)
-    doshutdown (cons, oper, SHUTDOWNDELAY, tzdelay, newtz)
+    cons, platoup = startui ()
+    if platoup:
+        newtz = time.strftime ("%Z")
+        tzdelay = checktz (cons, newtz)
+    else:
+        newtz = None
+        tzdelay = 0
+    doshutdown (cons, platoup, SHUTDOWNDELAY, tzdelay, newtz)
     if tzdelay == 2:
         msg = time.strftime ("Cyber1 down for timezone change until around %I:%M %p",
                              time.localtime (time.time () + 3700))

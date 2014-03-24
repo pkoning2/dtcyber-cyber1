@@ -1,0 +1,27 @@
+# Settings for dtcyberd
+
+# SECTION="" means do the autostart case (cybis871auto)
+SECTION=""
+DIR=/buildarea/dtcyber/dtcyber
+PIDFILE=${DIR}/dtcyberd.pid
+USER=pkoning
+
+# Some stuff that ideally would not be done this way...
+HOSTNAME=$(hostname)
+HOST1=${HOSTNAME%%.*}
+HOST2=${HOSTNAME%.*}
+HOST2=${HOST2##*.}
+
+if [ "${HOST1}" = "monster" ]; then 
+    HOSTNAME="cyber1"
+elif [ "$HOST1" = "bullwinkle" ]; then
+    HOSTNAME="cyber1"
+elif [ "${HOST1}" = "pkoning-laptop" ]; then 
+    HOSTNAME="pkoning"
+elif [ "${HOST1}" = "paul-konings-macbook-pro" ]; then 
+    HOSTNAME="pkoning"
+elif [ "${HOST2}" = "equallogic" ]; then 
+    HOSTNAME="pkoning"
+elif [ "${HOST1}" = "plato4" ]; then 
+    HOSTNAME="pkoning"
+fi

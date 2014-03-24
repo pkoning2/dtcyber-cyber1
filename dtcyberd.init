@@ -1,0 +1,135 @@
+#!/bin/bash
+#
+# dtcyberd        Startup script for the DtCyber emulator as a daemon
+#
+# chkconfig: 345 88 12
+# description: The dtcyberd daemon starts the DtCyber emulator as a daemon
+# processname: dtcyberd
+# config: /etc/sysconfig/dtcyberd
+# pidfile: /var/run/dtcyberd.pid
+#
+### BEGIN INIT INFO
+# Provides: dtcyberd
+# Required-Start: $local_fs $remote_fs $network
+# Required-Stop: $local_fs $remote_fs $network
+# Short-Description: start and stop the dtcyberd daemon
+# Description: The dtcyberd daemon starts the DtCyber emulator as a daemon
+### END INIT INFO
+
+prog=dtcyberd
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+[ -f /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
+
+if [ -z "$DIR" ]; then
+    echo "Required element DIR missing in /etc/sysconfig/dtcyberd"
+    exit 2
+fi
+
+exec=${DIR}/dtcyberd
+pidfile=${PIDFILE-${DIR}/dtcyberd.pid}
+lockfile=${LOCKFILE-/var/lock/subsys/$prog}
+bbpidfile=${DIR}/blackbox.pid
+
+if [ -n "$USER" ]; then
+    user="-u $USER"
+fi
+
+if [ "$SECTION" = "" ]; then
+    cp sys/871/cy871.ecs.initial sys/871/cy871.ecs
+    SECTION="cybis871auto"
+fi
+args="-d ${DIR} $user $SECTION"
+
+start() {
+    [ -x $exec ] || exit 5
+    [ -f $config ] || exit 6
+    export HOSTNAME
+    ulimit -c unlimited
+    if [ -f ${bbpidfile} ]; then
+	echo -n $"Stopping blackbox: "
+	killproc -p ${bbpidfile} blackbox
+	retval=$?
+	if [ $retval -eq 0 ]; then
+	    success $"Stopping blackbox"
+	fi
+	echo
+    fi
+    echo -n $"Starting $prog: "
+    $exec $args
+    retval=$?
+    if [ $retval -eq 0 ]; then
+	success $"Starting $prog"
+	touch $lockfile 2> /dev/null
+    fi
+    echo
+    return $retval
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc -p ${pidfile} $prog
+    retval=$?
+    if [ $retval -eq 0 ]; then
+	success $"Stopping $prog"
+	rm -f $lockfile
+    fi
+    echo
+    return $retval
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+    restart
+}
+
+force_reload() {
+    restart
+}
+
+rh_status() {
+    # run checks to determine if the service is running or use generic status
+    status -p ${pidfile} $prog
+}
+
+rh_status_q() {
+    rh_status >/dev/null 2>&1
+}
+
+case "$1" in
+    start)
+        rh_status_q && exit 0
+        $1
+        ;;
+    stop)
+        rh_status_q || exit 0
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    reload)
+        rh_status_q || exit 7
+        $1
+        ;;
+    force-reload)
+        force_reload
+        ;;
+    status)
+        rh_status
+        ;;
+    condrestart|try-restart)
+        rh_status_q || exit 0
+        restart
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+        exit 2
+esac
+exit $?

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/local/bin/python3
 
 """Wrapper to run dtcyber as a daemon
 
@@ -72,6 +72,7 @@ def doshutdown (dtcyber):
         print ("Exception caught in doshutdown", exc)
         traceback.print_exc ()
     print ("dtcyber shut down complete")
+    
 def main ():
     """Main program.  Parses command arguments and runs dtcyber as
     a subprocess.
