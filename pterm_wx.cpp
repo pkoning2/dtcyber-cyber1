@@ -33,12 +33,12 @@ Not coded yet: <none>
 /////////////////////////////////////////////////////////////////////////////
 
 /*
-The key of the new design is that it just uses a 512x512 bitmap with
+The key of the Pterm V5 design is that it just uses a 512x512 bitmap with
 raw pixel access to construct most of the screen content, then it displays
 that bitmap on the window.  Similarly, it displays that bitmap on the
-printout, or process it for save-screen, etc.  Display transformations
+printout, or processes it for save-screen, etc.  Display transformations
 like stretch and 2x scale are done when that bitmap is displayed, not 
-by making the bitmap itself different.
+by making the bitmap itself different.  
 */
 
 // ============================================================================
@@ -6981,6 +6981,7 @@ void PtermFrame::ptermShowTrace ()
         }
         else if (m_conn != NULL && m_conn->GswActive ())
         {
+            // Display a musical note.
             m_statusBar->SetStatusText (wxT ("\u266C"), STATUS_TRC);
         }
         else if (ptermApp->m_platoKb)
