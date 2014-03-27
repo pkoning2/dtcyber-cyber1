@@ -49,12 +49,14 @@ CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing  -I $(SNDINCL)
 WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
 WXVERSION = `$(WXCONFIG) --version` 
 
+ifneq ("$(wildcard .svn)","")
 PTERMSVN := $(shell svn info pterm_wx.cpp | awk '/Revision/{print $$2}')
 PTERMSTAT := $(shell svn status pterm_wx.cpp)
 ifeq ("$(PTERMSTAT)","")
 PTERMSVNREV := $(PTERMSVN)
 else
 PTERMSVNREV := "$(PTERMSVN)+"
+endif
 endif
 
 GCCVERSION := $(shell gcc --version 2>/dev/null| head -1 | awk '{print $$3}')
@@ -79,7 +81,13 @@ LINK=$(CC) -lstdc++-static
 endif
 ##endif
 
-.PHONY : pterm-kit langdirs wxversion pterm-v$(PTERMVERSION).tar.bz2 info
+PTDEPS = $(PTOBJS:.o=.d) 
+ifneq ("$(wildcard sourcefiles.py)","")
+.PHONY : pterm-tar 
+PTSRCS = $(shell ./sourcefiles.py $(PTDEPS))
+endif
+
+.PHONY : pterm-kit langdirs wxversion info
 
 info:
 	@echo wxdir: $(WXDIR)
@@ -104,7 +112,9 @@ endif
 wxversion.h: wxversion
 	@echo "#define WXVERSION \"$(WXVERSION)\"" > wxversion.h.tmp
 	@date +"#define PTERMBUILDDATE \"%e %B %Y\"" >> wxversion.h.tmp
+ifneq ("$(PTERMSVNREV)", "")
 	@echo "#define PTERMSVNREV \"$(PTERMSVNREV)\"" >> wxversion.h.tmp
+endif
 	@if [ ! -r wxversion.h ]; then mv -f wxversion.h.tmp wxversion.h; else \
 	  if cmp -s wxversion.h.tmp wxversion.h; then rm -f wxversion.h.tmp; \
 	    else mv -f wxversion.h.tmp wxversion.h; fi; fi
@@ -175,9 +185,9 @@ pterm-kit: pterm-$(PTERMVERSION).dmg
 
 else
 
-pterm-kit: pterm.spec.in ptermversion.h $(MOFILES) pterm-v$(PTERMVERSION).tar.bz2
+pterm-kit: pterm.spec.in ptermversion.h $(MOFILES) pterm-$(PTERMVERSION).tar.bz2
 	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm.spec.in > pterm.spec
-	cp $(HOME)/pterm-v$(PTERMVERSION).tar.bz2 /usr/src/redhat/SOURCES
+	cp pterm-$(PTERMVERSION).tar.bz2 /usr/src/redhat/SOURCES
 	rpmbuild -ba pterm.spec
 	cp /usr/src/redhat/RPMS/i386/pterm-$(PTERMVERSION)-1.i386.rpm .
 	cp /usr/src/redhat/SRPMS/pterm-$(PTERMVERSION)-1.src.rpm .
@@ -186,14 +196,16 @@ endif
 
 mofiles: $(MOFILES)
 
-pterm-v$(PTERMVERSION).tar.bz2: ptermversion.h
+ifneq ("$(PTSRCS)", "")
+pterm-tar: pterm-$(PTERMVERSION).tar.bz2
+
+pterm-$(PTERMVERSION).tar.bz2: ptermversion.h license.txt $(PTSRCS) Makefile Makefile.wxpterm Makefile.common languages getkitver.py
 	mkdir pterm-$(PTERMVERSION)
 	cd pterm-$(PTERMVERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
-	cd pterm-$(PTERMVERSION); for f in license.txt *.h pterm_32.xpm pterm_wx.cpp pterm_sdl.c charset.c dtnetsubs.c 8080a.cpp Makefile.wxpterm Makefile.common Makefile languages getkitver.py ; do ln -s ../$$f .; done
-	tar chjf $(HOME)/pterm-v$(PTERMVERSION).tar.bz2 pterm-$(PTERMVERSION)
+	cd pterm-$(PTERMVERSION); for f in $^ ; do ln -s ../$$f .; done
+	tar chjf pterm-$(PTERMVERSION).tar.bz2 pterm-$(PTERMVERSION)
 	rm -rf pterm-$(PTERMVERSION)
-
-pterm.dep: $(PTOBJS:.o=.d)
+endif
 
 %.o : %.cpp
 	$(CXX) -c -Wall $(CFLAGS) $(CXXFLAGS) $<
@@ -227,10 +239,13 @@ pterm_wx.o : pterm_wx.cpp wxversion.h ptermversion.h
 # for pterm
 INCL+=$(SDLINCL)
 DEPFILES+=  $(PTOBJS:.o=.d) 
+
+ifneq ("$(wildcard dd60.c)","")
 # for dd60
 DEPFILES+= dd60.d knob.d iir.d
 # for dtoper
 DEPFILES+= dtoper.d
+endif
 
 #---------------------------  End Of File  --------------------------------
 

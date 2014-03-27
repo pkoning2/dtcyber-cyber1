@@ -34,7 +34,7 @@ OBJS +=	  npu_async.o npu_bip.o npu_hip.o npu_svm.o npu_tip.o npu_net.o
 VERSIONCFLAGS +=   -DNPU_SUPPORT=1
 endif
 
-.PHONY : clean dep kit all
+.PHONY : clean kit all
 
 ifeq ("$(HOST)","Darwin")
 
@@ -61,7 +61,11 @@ MACTARGETS=x86 x86_64
 
 .PHONY : dtcyber 
 
+ifneq ("$(wildcard main.c)","")
 all: dtcyber Pterm.app dtoper.app dd60.app blackbox
+else
+all: Pterm.app
+endif
 
 dtcyber:
 	mkdir -p $(MACTARGETS)
@@ -86,7 +90,11 @@ else
 
 # not Mac
 
+ifneq ("$(wildcard main.c)","")
 all: dtcyber pterm dtoper dd60 blackbox
+else
+all: pterm
+endif
 
 dtcyber: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
@@ -95,19 +103,19 @@ blackbox: blackbox.o $(SOBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 clean:
-	rm -f *.d *.o *.i *.ii *.pcf dtcyber dd60 dtoper pterm pterm*.zip pterm*.tar.gz
+	rm -f *.d *.o *.i *.ii *.pcf dtcyber dd60 dtoper pterm pterm*.zip pterm*.tar.bz2
 endif
 
 kit:	pterm-kit
 
 buildall: clean all
 
-dep:	pterm.dep dd60.dep dtoper.dep $(OBJS:.o=.d) blackbox.d
-
+ifneq ("$(wildcard main.c)","")
 # For dtcyber
 DEPFILES+= $(OBJS:.o=.d) 
 # For blackbox
 DEPFILES+= blackbox.d niu.d charset.d dtnetsubs.d
+endif
 
 include Makefile.wxpterm
 

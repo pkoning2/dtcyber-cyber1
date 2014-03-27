@@ -2305,7 +2305,9 @@ void PtermApp::OnAbout (wxCommandEvent&)
     wxMessageBox (wxT (STRPRODUCTNAME " V" STRFILEVER
                       "\n  built with wxWidgets V" WXVERSION
                       "\n  build date " PTERMBUILDDATE
+#ifdef PTERMSVNREV
                       "\n  SVN revision " PTERMSVNREV
+#endif
                       "\n" STRLEGALCOPYRIGHT),
                       _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
 }
@@ -8147,13 +8149,13 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     chkSmartPaste->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
     bs51->Add (chkSmartPaste, 0, wxALL, 5);
     chkConvertDot7 = new wxCheckBox (tab5, wxID_ANY,
-                                     _("Convert periods followed by 7 spaces into period/tab*"),
+                                     _("Convert periods followed by 7 spaces into period/tab"),
                                      wxDefaultPosition, wxDefaultSize, 0);
     chkConvertDot7->SetValue (true);
     //chkConvertDot7->Hide ();
     bs51->Add (chkConvertDot7, 0, wxALL, 5);
     chkConvert8Spaces = new wxCheckBox (tab5, wxID_ANY,
-                                        _("Convert 8 consecutive spaces into a tab*"),
+                                        _("Convert 8 consecutive spaces into a tab"),
                                         wxDefaultPosition, wxDefaultSize, 0);
     chkConvert8Spaces->SetValue (true);
     //chkConvert8Spaces->Hide ();
