@@ -219,7 +219,7 @@ class fromcyber (StopThread):
                 logging.trace ("data from PLATO: %r", pstrip (data))
                 data = data.replace (b"\377\377", b"\377")
                 self.lastio = time.time ()
-                self.term.write (data)
+                self.term.write (data.encode ())
                 logging.trace ("data sent to terminal")
                 if data.find (EXITPLATO) != -1:
                     time.sleep (2)
@@ -234,7 +234,7 @@ def pressnext (term):
     """
     msg = WELCOME_MSG.format (random.randint (96, 127),
                               random.randint (64, 95))
-    term.write (msg)
+    term.write (msg.encode ())
 
 hostaddr = None
 _addr_re = re.compile (r"inet .+?(\d+\.\d+\.\d+\.\d+)", re.I)
@@ -266,7 +266,7 @@ def getaction (term):
             if not addr:
                 addr = "addr unknown"
             msg = INFO_MSG.format (PPTVER, PPTREV, addr, term.port)
-            term.write (msg)
+            term.write (msg.encode ())
             time.sleep (8)
 
 def talk (host, port, term, action):
@@ -284,7 +284,7 @@ def talk (host, port, term, action):
         logging.debug ("connected")
     except socket.error as e:
         logging.exception ("Error while connecting to %s %d", host, port)
-        term.write (CERR_MSG.format (e))
+        term.write (CERR_MSG.format (e).encode ())
         time.sleep (5)    # Allow time for people to see the message
         return
     inbound = fromcyber (sock, term)
@@ -373,9 +373,11 @@ if __name__ == "__main__":
     signalled = False
     signal.signal (signal.SIGTERM, sighandler)
     try:
-        addr = socket.gethostbyname (socket.gethostname ())
-    except socket.error:
         addr = "addr unknown"
+        addr = socket.gethostname ()
+        addr = socket.gethostbyname (addr)
+    except socket.error:
+        pass    # Use addr -- however far we got in the 3 lines above
     msg = "ppy.py {} ({}) on {} {}".format (PPTVER, PPTREV, addr, p.term)
     logging.info (msg)
     try:
