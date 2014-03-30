@@ -24,16 +24,13 @@
 #include "proto.h"
 #include <time.h>
 #include <sys/types.h>
-#include <poll.h>
 
 #if defined(_WIN32)
 	#include <winsock.h>
 	//the following are a supreme hack.  Joe
 	#define close(x)	closesocket(x)
-	#define errno		WSAGetLastError()
-	#define EAGAIN		WSAEWOULDBLOCK
-	#define EINPROGRESS WSAEWOULDBLOCK
 #else
+    #include <poll.h>
 	#include <sys/time.h>
 	#include <fcntl.h>
 	#include <unistd.h>

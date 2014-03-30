@@ -45,6 +45,8 @@ by making the bitmap itself different.
 // declarations
 // ============================================================================
 
+#define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
+
 // ----------------------------------------------------------------------------
 // headers
 // ----------------------------------------------------------------------------
@@ -98,10 +100,10 @@ extern "C"
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 #endif
 #include <stdlib.h>
 #include <time.h>
-#include <sys/time.h>
 
 #include <sndfile.h>
 
@@ -186,7 +188,11 @@ public:
     void Close (void);
     // Note that the "format" attribute gives the argument index counting
     // the implied "this" as argument #1.
+#ifdef _MSC_VER
+    void Log (const char *fmt, ...);
+#else
     void Log (const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+#endif
     void Log (const wxString &s);
     bool Active (void) const
     {
@@ -260,15 +266,19 @@ void Trace::Log (const char *fmt, ...)
 
 void Trace::Log (const wxString &s)
 {
+#ifndef _MSC_VER
     struct timeval tv;
     char tbuf[10];
+#endif
     wxString hdr;
 
     if (Active ())
     {
+#ifndef _MSC_VER
         gettimeofday (&tv, NULL);
         strftime (tbuf, 10, "%T", localtime (&tv.tv_sec));
         hdr.Printf ("%s.%03ld: ", tbuf, (long) tv.tv_usec / 1000);
+#endif
         hdr.Append (s);
         hdr.Append ("\n");
         tp->Output (hdr);
@@ -314,8 +324,8 @@ Trace debugF;
 #define KEY1(a) KEY ((a), None, None, None)
 typedef struct 
 {
-    uint32_t u;
-    uint32_t p;
+    u32 u;
+    u32 p;
 } ukey;
 
 typedef wxChar cmentry[4];
@@ -454,28 +464,28 @@ const int printoutToPlato[128] =
 // composites that on a Classic terminal would be made by the formatter.
 // Here we just treat them as extra characters for simplicity.
 static const wxChar rom01char[] =
-    wxT (":abcdefg"
-         "hijklmno"
-         "pqrstuvw"
-         "xyz01234"
-         "56789+-*"
-         "/()$= ,."
-         "\u00F7[]%\u00D7\u21E6'\""     // divide, multiply, left arrow (assign)
-         "!;<>_?\u2AA2 "                // double greater than (plato "arrow")
-         "#ABCDEFG"
-         "HIJKLMNO"
-         "PQRSTUVW"
-         "XYZ\u02DC\u00A8^\u00B4`"      // small tilde, dieresis, acute
-         "\u2191\u2192\u2193\u2190"     // up, right, down, left arrow
-         "~\u03A3\u0394\u222A"          // Sigma, Delta, union
-         "\u2229{}&\u2260 |\u00B0"      // intersection, not-equal, degree
-         "\u2263\u03B1\u03B2\u03B4"     // equiv, alpha, beta, delta
-         "\u03BB\u03BC\u03C0\u03C1"     // lambda, mu, pi, rho
-         "\u03C3\u03C9\u2264\u2265"     // sigma, omega, less/equal, grt/equal
-         "\u0398@\\ "                   // Theta
-         "\u2993\u2994\u00A9\u25AB"     // embed left, right, copyright, box
-         "\u25C6\u2715\u02C7\u2195"     // diamond, cross prod, hacek, up/down
-         "\u25CB\u00B8");               // dot product, cedilla
+    L":abcdefg"
+    L"hijklmno"
+    L"pqrstuvw"
+    L"xyz01234"
+    L"56789+-*"
+    L"/()$= ,."
+    L"\u00F7[]%\u00D7\u21E6'\""     // divide, multiply, left arrow (assign)
+    L"!;<>_?\u2AA2 "                // double greater than (plato "arrow")
+    L"#ABCDEFG"
+    L"HIJKLMNO"
+    L"PQRSTUVW"
+    L"XYZ\u02DC\u00A8^\u00B4`"      // small tilde, dieresis, acute
+    L"\u2191\u2192\u2193\u2190"     // up, right, down, left arrow
+    L"~\u03A3\u0394\u222A"          // Sigma, Delta, union
+    L"\u2229{}&\u2260 |\u00B0"      // intersection, not-equal, degree
+    L"\u2263\u03B1\u03B2\u03B4"     // equiv, alpha, beta, delta
+    L"\u03BB\u03BC\u03C0\u03C1"     // lambda, mu, pi, rho
+    L"\u03C3\u03C9\u2264\u2265"     // sigma, omega, less/equal, grt/equal
+    L"\u0398@\\ "                   // Theta
+    L"\u2993\u2994\u00A9\u25AB"     // embed left, right, copyright, box
+    L"\u25C6\u2715\u02C7\u2195"     // diamond, cross prod, hacek, up/down
+    L"\u25CB\u00B8";               // dot product, cedilla
 
 // Tables to map ASCII characters to the correct character image.  There
 // are two tables, one for the M0 set, one for the M1 set.  Note that
@@ -920,7 +930,7 @@ public:
     void BuildPopupMenu (int port);
 	void BuildStatusBar (bool connecting = false);
     void ptermSendKey1 (int key);
-    void ptermSendKey (uint32_t keys);
+    void ptermSendKey (u32 keys);
     void ptermSendKeys (const int key[]);
     void ptermSendTouch (int x, int y);
     void ptermSendExt (int key);
@@ -1003,16 +1013,16 @@ public:
     int         m_gswFFmt;
     
 private:
-    uint32_t    m_fgpix;
-    uint32_t    m_bgpix;
+    u32         m_fgpix;
+    u32         m_bgpix;
     wxBitmap    *m_bitmap;
-    uint32_t    m_maxalpha;
-    uint32_t    m_selpixf;
-    uint32_t    m_selpixb;
+    u32         m_maxalpha;
+    u32         m_selpixf;
+    u32         m_selpixb;
     wxBitmap    *m_selmap;
-    uint32_t    m_red;
-    uint32_t    m_green;
-    uint32_t    m_blue;
+    u32         m_red;
+    u32         m_green;
+    u32         m_blue;
     PtermCanvas *m_canvas;
     wxString    m_curProfile;
     wxString    m_ShellFirst;
@@ -1147,10 +1157,10 @@ private:
     // PLATO drawing primitives
     void ptermDrawChar (int x, int y, int snum, int cnum, bool autobs = false);
     void ptermDrawCharInto (int x, int y, const u16 *charp,
-                            uint32_t fpix, uint32_t bpix, int cmode,
+                            u32 fpix, u32 bpix, int cmode,
                             bool xor_p, PixelData &pixmap);
     void ptermDrawPoint (int x, int y);
-    void ptermUpdatePoint (int x, int y, uint32_t pixval, bool xor_p,
+    void ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
                            PixelData & pixmap);
     void ptermDrawLine (int x1, int y1, int x2, int y2);
     void ptermFullErase (void);
@@ -1207,8 +1217,8 @@ private:
     bool m_autobs;
     
     // 8080a emulation support
-    Uint8 input8080a (Uint8 data);
-    void output8080a (Uint8 data, Uint8 acc);
+    u8 input8080a (u8 data);
+    void output8080a (u8 data, u8 acc);
     int check_pc8080a (void);
 
     // any class wishing to process wxWindows events must use this macro
@@ -1773,7 +1783,7 @@ bool PtermApp::OnInit (void)
                  str.Right (4).CmpNoCase (wxT (".trc")) == 0)
         {
             // test data file
-            m_testdata = fopen (str.fn_str (), "r");
+            m_testdata = fopen (str, "r");
             if (m_testdata == NULL)
             {
                 perror ("Error opening test data file");
@@ -2302,14 +2312,14 @@ wxString PtermApp::ProfileFileName (wxString profile)
 
 void PtermApp::OnAbout (wxCommandEvent&)
 {
-    wxMessageBox (wxT (STRPRODUCTNAME " V" STRFILEVER
-                      "\n  built with wxWidgets V" WXVERSION
-                      "\n  build date " PTERMBUILDDATE
+    wxMessageBox (wxT (STRPRODUCTNAME) L" V" wxT (STRFILEVER)
+                      L"\n  built with wxWidgets V" wxT (WXVERSION)
+                      L"\n  build date " wxT (PTERMBUILDDATE)
 #ifdef PTERMSVNREV
-                      "\n  SVN revision " PTERMSVNREV
+                      L"\n  SVN revision " wxT (PTERMSVNREV)
 #endif
-                      "\n" STRLEGALCOPYRIGHT),
-                      _("About Pterm"), wxOK | wxICON_INFORMATION, NULL);
+                      L"\n" wxT (STRLEGALCOPYRIGHT),
+                      _(L"About Pterm"), wxOK | wxICON_INFORMATION, NULL);
 }
 
 void PtermApp::OnHelpKeys (wxCommandEvent &)
@@ -2605,9 +2615,9 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
          // Find out how RGBA map to the parts of a 32 bit value, so we can access
          // things as 32 bit arrays and still be implementation independent.
          PixelData::Iterator p (pixmap);
-         uint32_t *pmap = (uint32_t *) (p.m_ptr);
-         uint8_t *pb = (uint8_t *) pmap;
-         uint32_t t;
+         u32 *pmap = (u32 *) (p.m_ptr);
+         u8 *pb = (u8 *) pmap;
+         u32 t;
     
          t = *pmap;
          *pmap = 0;
@@ -3132,7 +3142,7 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 void PtermFrame::OnPasteTimer (wxTimerEvent &)
 {
     wxChar c = 0, c2 = 0;
-    uint32_t p;
+    u32 p;
     int pp, i, nextindex, nextpos;
     int delay = 0;
 
@@ -3718,11 +3728,12 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
     wxString filename, ext;
     wxBitmapType type;
     wxFileDialog fd (this, _("Save screen to"), ptermApp->m_defDir,
-                     wxT (""), wxT ("PNG files (*.png)|*.png|"
-                                    "TIF files (*.tif)|*.tif|"
-                                    "BMP files (*.bmp)|*.bmp|"
-                                    "PNM files (*.pnm)|*.pnm|"
-                                    "XPM files (*.xpm)|*.xpm"),
+                     wxT (""),
+                     wxT ("PNG files (*.png)|*.png|")
+                     wxT ("TIF files (*.tif)|*.tif|")
+                     wxT ("BMP files (*.bmp)|*.bmp|")
+                     wxT ("PNM files (*.pnm)|*.pnm|")
+                     wxT ("XPM files (*.xpm)|*.xpm"),
                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     int idx;
     // This list must match order and content of the filter list above
@@ -3789,9 +3800,10 @@ void PtermFrame::OnSaveAudio (wxCommandEvent &)
 {
     wxString filename, ext;
     wxFileDialog fd (this, _("Save GSW audio to"), ptermApp->m_defDir,
-                     wxT (""), wxT ("WAV files (*.wav)|*.wav|"
-                                    "AIFF files (*.aiff)|*.aiff|"
-                                    "AU files (*.au)|*.au"),
+                     wxT (""), 
+                     wxT ("WAV files (*.wav)|*.wav|")
+                     wxT ("AIFF files (*.aiff)|*.aiff|")
+                     wxT ("AU files (*.au)|*.au"),
                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     int idx, type;
     // This list must match order and content of the filter list above
@@ -4152,7 +4164,7 @@ void PtermFrame::OnIconize (wxIconizeEvent &event)
 
 void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum, bool autobs)
 {
-    uint32_t fpix, bpix;
+    u32 fpix, bpix;
     const u16 *charp;
     PixelData pixmap (*m_bitmap);
     PixelData selmap (*m_selmap);
@@ -4198,7 +4210,7 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum, bool autobs)
 }
 
 void PtermFrame::ptermDrawCharInto (int x, int y, const u16 *charp,
-                                    uint32_t fpix, uint32_t bpix, int cmode,
+                                    u32 fpix, u32 bpix, int cmode,
                                     bool xor_p, PixelData &pixmap)
 {
     int &cx = (vertical) ? y : x;
@@ -4268,17 +4280,17 @@ void PtermFrame::ptermDrawPoint (int x, int y)
     }
 }
 
-void PtermFrame::ptermUpdatePoint (int x, int y, uint32_t pixval, bool xor_p,
+void PtermFrame::ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
                                    PixelData &pixmap)
 {
     PixelData::Iterator p (pixmap);
-    uint32_t *pmap;
+    u32 *pmap;
     
     x = XMADJUST (x & 0777);
     y = YMADJUST (y & 0777);
     
     p.MoveTo (pixmap, x, y);
-    pmap = (uint32_t *)(p.m_ptr);
+    pmap = (u32 *)(p.m_ptr);
 
     if (xor_p)
     {
@@ -4362,7 +4374,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
 {
     int t;
     int x, y;
-    uint32_t pix;
+    u32 pix;
     PixelData pixmap (*m_bitmap);
     PixelData selmap (*m_selmap);
     
@@ -4392,9 +4404,9 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     
     // Wipe text map
     int scol = int (x1 / 8);
-    int cols = int (ceil ((x2 - x1) / 8)) + 1;
+    int cols = int (ceil (double ((x2 - x1) / 8))) + 1;
     int srow = int (y1 / 16);
-    int rows = int (ceil ((y2 - y1) / 16)) + 1;
+    int rows = int (ceil (double ((y2 - y1) / 16))) + 1;
     for (int row = srow; row < srow + rows; row++)
     {
         for (int col = scol; col < scol + cols; col++)
@@ -4445,10 +4457,10 @@ void PtermFrame::ptermPaint (int pat)
 void PtermFrame::ptermPaintWalker1 (int x, int y, PixelData & pixmap)
 {
     PixelData::Iterator p (pixmap);
-    uint32_t *pmap;
+    u32 *pmap;
     
     p.MoveTo (pixmap, x, y);
-    pmap = (uint32_t *)(p.m_ptr);
+    pmap = (u32 *)(p.m_ptr);
     if (*pmap == m_bgpix || *pmap == 0)
     {
         return;
@@ -4478,10 +4490,10 @@ void PtermFrame::ptermPaintWalker1 (int x, int y, PixelData & pixmap)
 void PtermFrame::ptermPaintWalker2 (int x, int y, PixelData & pixmap)
 {
     PixelData::Iterator p (pixmap);
-    uint32_t *pmap;
+    u32 *pmap;
     
     p.MoveTo (pixmap, x, y);
-    pmap = (uint32_t *)(p.m_ptr);
+    pmap = (u32 *)(p.m_ptr);
     if (*pmap != 0)
     {
         return;
@@ -4534,8 +4546,8 @@ void PtermFrame::ptermSetStatus (wxString &str)
 void PtermFrame::SetColors (wxColour &newfg, wxColour &newbg)
 {
     union {
-        uint32_t pix;
-        uint8_t p[4];
+        u32 pix;
+        u8 p[4];
     } cvtpix;
     
     trace ("fg: %d %d %d; bg: %d %d %d", newfg.Red (), newfg.Green (),
@@ -6681,7 +6693,7 @@ void PtermFrame::progmode (u32 d, int origin)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-void PtermFrame::ptermSendKey (uint32_t keys)
+void PtermFrame::ptermSendKey (u32 keys)
 {
     int i, key;
     
@@ -7535,7 +7547,7 @@ Note:
     setting the value of -retval-.  --bg 2010/06/18
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
-Uint8 PtermFrame::input8080a (Uint8 data)
+u8 PtermFrame::input8080a (u8 data)
 {
 
     /***********************************************************************
@@ -7544,7 +7556,7 @@ Uint8 PtermFrame::input8080a (Uint8 data)
     *
     *   retval - This variable contains data read from an input device.
     ***********************************************************************/
-    Uint8 retval;
+    u8 retval;
 
 
     switch (data)
@@ -7605,7 +7617,7 @@ Note:
 
 *******************************************************************************/
 
-void PtermFrame::output8080a (Uint8 data, Uint8 acc)
+void PtermFrame::output8080a (u8 data, u8 acc)
 {
     switch (data)
     {
@@ -8276,83 +8288,83 @@ bool PtermPrefDialog::SaveProfile (wxString profile)
 
     //write prefs
     //tab0
-    buffer.Printf (wxT (PREF_CURPROFILE "=%s"), profile);
+    buffer.Printf (wxT (PREF_CURPROFILE) wxT ("=%s"), profile);
     file.AddLine (buffer);
     //tab1
-    buffer.Printf (wxT (PREF_CONNECT "=%d"), (m_connect) ? 1 : 0);
+    buffer.Printf (wxT (PREF_CONNECT) wxT ("=%d"), (m_connect) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SHELLFIRST "=%s"), m_ShellFirst);
+    buffer.Printf (wxT (PREF_SHELLFIRST) wxT ("=%s"), m_ShellFirst);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_HOST "=%s"), m_host);
+    buffer.Printf (wxT (PREF_HOST) wxT ("=%s"), m_host);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_PORT "=%s"), m_port);
+    buffer.Printf (wxT (PREF_PORT) wxT ("=%s"), m_port);
     file.AddLine (buffer);
     //tab2
-    buffer.Printf (wxT (PREF_SHOWSIGNON "=%d"), (m_showSignon) ? 1 : 0);
+    buffer.Printf (wxT (PREF_SHOWSIGNON) wxT ("=%d"), (m_showSignon) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SHOWSYSNAME "=%d"), (m_showSysName) ? 1 : 0);
+    buffer.Printf (wxT (PREF_SHOWSYSNAME) wxT ("=%d"), (m_showSysName) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SHOWHOST "=%d"), (m_showHost) ? 1 : 0);
+    buffer.Printf (wxT (PREF_SHOWHOST) wxT ("=%d"), (m_showHost) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SHOWSTATION "=%d"), (m_showStation) ? 1 : 0);
+    buffer.Printf (wxT (PREF_SHOWSTATION) wxT ("=%d"), (m_showStation) ? 1 : 0);
     file.AddLine (buffer);
     //tab3
-    buffer.Printf (wxT (PREF_1200BAUD "=%d"), (m_classicSpeed) ? 1 : 0);
+    buffer.Printf (wxT (PREF_1200BAUD) wxT ("=%d"), (m_classicSpeed) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_GSW "=%d"), (m_gswEnable) ? 1 : 0);
+    buffer.Printf (wxT (PREF_GSW) wxT ("=%d"), (m_gswEnable) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_ARROWS "=%d"), (m_numpadArrows) ? 1 : 0);
+    buffer.Printf (wxT (PREF_ARROWS) wxT ("=%d"), (m_numpadArrows) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_IGNORECAP "=%d"), (m_ignoreCapLock) ? 1 : 0);
+    buffer.Printf (wxT (PREF_IGNORECAP) wxT ("=%d"), (m_ignoreCapLock) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_PLATOKB "=%d"), (m_platoKb) ? 1 : 0);
+    buffer.Printf (wxT (PREF_PLATOKB) wxT ("=%d"), (m_platoKb) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_ACCEL "=%d"), (m_useAccel) ? 1 : 0);
+    buffer.Printf (wxT (PREF_ACCEL) wxT ("=%d"), (m_useAccel) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_BEEP "=%d"), (m_beepEnable) ? 1 : 0);
+    buffer.Printf (wxT (PREF_BEEP) wxT ("=%d"), (m_beepEnable) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SHIFTSPACE "=%d"), (m_DisableShiftSpace) ? 1 : 0);
+    buffer.Printf (wxT (PREF_SHIFTSPACE) wxT ("=%d"), (m_DisableShiftSpace) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_MOUSEDRAG "=%d"), (m_DisableMouseDrag) ? 1 : 0);
+    buffer.Printf (wxT (PREF_MOUSEDRAG) wxT ("=%d"), (m_DisableMouseDrag) ? 1 : 0);
     file.AddLine (buffer);
     //tab4
-    buffer.Printf (wxT (PREF_SCALE "=%d"), (m_scale2) ? 2 : 1);
+    buffer.Printf (wxT (PREF_SCALE) wxT ("=%d"), (m_scale2) ? 2 : 1);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_STRETCH "=%d"), (m_stretch) ? 1 : 0);
+    buffer.Printf (wxT (PREF_STRETCH) wxT ("=%d"), (m_stretch) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_STATUSBAR "=%d"), (m_showStatusBar) ? 1 : 0);
+    buffer.Printf (wxT (PREF_STATUSBAR) wxT ("=%d"), (m_showStatusBar) ? 1 : 0);
     file.AddLine (buffer);
 #if !defined (__WXMAC__)
-    buffer.Printf (wxT (PREF_MENUBAR "=%d"), (m_showMenuBar) ? 1 : 0);
+    buffer.Printf (wxT (PREF_MENUBAR) wxT ("=%d"), (m_showMenuBar) ? 1 : 0);
     file.AddLine (buffer);
 #endif
-    buffer.Printf (wxT (PREF_NOCOLOR "=%d"), (m_noColor) ? 1 : 0);
+    buffer.Printf (wxT (PREF_NOCOLOR) wxT ("=%d"), (m_noColor) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_FOREGROUND "=%d %d %d"), m_fgColor.Red (), m_fgColor.Green (), m_fgColor.Blue ());
+    buffer.Printf (wxT (PREF_FOREGROUND) wxT ("=%d %d %d"), m_fgColor.Red (), m_fgColor.Green (), m_fgColor.Blue ());
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_BACKGROUND "=%d %d %d"), m_bgColor.Red (), m_bgColor.Green (), m_bgColor.Blue ());
+    buffer.Printf (wxT (PREF_BACKGROUND) wxT ("=%d %d %d"), m_bgColor.Red (), m_bgColor.Green (), m_bgColor.Blue ());
     file.AddLine (buffer);
     //tab5
-    buffer.Printf (wxT (PREF_CHARDELAY "=%s"), m_charDelay);
+    buffer.Printf (wxT (PREF_CHARDELAY) wxT ("=%s"), m_charDelay);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_LINEDELAY "=%s"), m_lineDelay);
+    buffer.Printf (wxT (PREF_LINEDELAY) wxT ("=%s"), m_lineDelay);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_AUTOLF "=%s"), m_autoLF);
+    buffer.Printf (wxT (PREF_AUTOLF) wxT ("=%s"), m_autoLF);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SPLITWORDS "=%d"), (m_splitWords) ? 1 : 0);
+    buffer.Printf (wxT (PREF_SPLITWORDS) wxT ("=%d"), (m_splitWords) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SMARTPASTE "=%d"), (m_smartPaste) ? 1 : 0);
+    buffer.Printf (wxT (PREF_SMARTPASTE) wxT ("=%d"), (m_smartPaste) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_CONVDOT7 "=%d"), (m_convDot7) ? 1 : 0);
+    buffer.Printf (wxT (PREF_CONVDOT7) wxT ("=%d"), (m_convDot7) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_CONV8SP "=%d"), (m_conv8Sp) ? 1 : 0);
+    buffer.Printf (wxT (PREF_CONV8SP) wxT ("=%d"), (m_conv8Sp) ? 1 : 0);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_TUTORCOLOR "=%d"), (m_TutorColor) ? 1 : 0);
+    buffer.Printf (wxT (PREF_TUTORCOLOR) wxT ("=%d"), (m_TutorColor) ? 1 : 0);
     file.AddLine (buffer);
     //tab6
-    buffer.Printf (wxT (PREF_EMAIL "=%s"), m_Email);
+    buffer.Printf (wxT (PREF_EMAIL) wxT ("=%s"), m_Email);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SEARCHURL "=%s"), m_SearchURL);
+    buffer.Printf (wxT (PREF_SEARCHURL) wxT ("=%s"), m_SearchURL);
     file.AddLine (buffer);
 
     //write to disk
@@ -9944,7 +9956,7 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
 {
     unsigned int key;
     int shift = 0;
-    uint32_t pc = None;
+    u32 pc = None;
     bool ctrl;
 
     // Most keyboard inputs are handled here, because if we defer them to
@@ -10319,7 +10331,7 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
 void PtermCanvas::OnChar (wxKeyEvent& event)
 {
     unsigned int key;
-    uint32_t pc = None;
+    u32 pc = None;
 
     debug ("onchar: ctrl %d shift %d alt %d keycode %d",
             event.RawControlDown (), event.ShiftDown (),

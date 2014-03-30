@@ -16,7 +16,9 @@
 #if defined(_WIN32)
 #include <winsock.h>
 typedef u_long in_addr_t;
+#ifndef EINPROGRESS
 #define EINPROGRESS WSAEINPROGRESS
+#endif
 #define pthread_mutex_t CRITICAL_SECTION
 #define pthread_mutex_init InitializeCriticalSection
 #define pthread_mutex_lock EnterCriticalSection
