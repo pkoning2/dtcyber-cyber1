@@ -232,8 +232,8 @@ def pressnext (term):
     """Send a Press NEXT to begin message to the terminal, at a random
     X/I near 128, 128.
     """
-    msg = WELCOME_MSG.format (random.randint (0140, 0177),
-                              random.randint (0100, 0137))
+    msg = WELCOME_MSG.format (random.randint (96, 127),
+                              random.randint (64, 95))
     term.write (msg)
 
 hostaddr = None
