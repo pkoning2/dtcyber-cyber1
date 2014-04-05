@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Internet Site Controller
 
-Copyright (C) 2011-2013 by Paul Koning
+Copyright (C) 2011-2014 by Paul Koning
 
 This utility connects between a serial port and a DtCyber connection
 to allow an ASCII mode PPT to be a DtCyber terminal.
@@ -38,10 +38,10 @@ DEFPORT = 8050
 STOP1PORT = 8005
 SPEED = 2400
 RECVMAX = 1024
-NEXT = '\x0d'
-ANS = '\x07'
-STOP = '\x01'
-STOP1 = '\x11' # (in no-flow-control mode)
+NEXT = b'\x0d'
+ANS = b'\x07'
+STOP = b'\x01'
+STOP1 = b'\x11' # (in no-flow-control mode)
 TIMEOUT = 10 * 60 # Inactivity timeout in seconds
 IOTIMEOUT = 2
 LOCALTIMEOUT = 2 * 60
@@ -69,7 +69,7 @@ CERR_MSG = "\033\062\042\140\040\130Connect error: {}"
 INFO_MSG = "\033\062\054\000\040\120\033ZInternet Site Controller {} ({})\r  on {} {}"
 
 # Exit PLATO mode control sequence (ESC Ctrl/C)
-EXITPLATO = "\033\003"
+EXITPLATO = b"\033\003"
 
 pptparser = argparse.ArgumentParser ()
 pptparser.add_argument ("term", nargs = '?', default = DEFTERM,
@@ -95,12 +95,8 @@ pptparser.add_argument ("-k", "--keep", type = int, default = 0, metavar = "N",
 rotation.  Requires a log file name to be specified.
 Default = no nightly rotation.""")
 
-def _pstrip (m):
-    return chr (ord (m.group (0)) & 127)
-
-_parity_re = re.compile (r"[\200-\377]")
 def pstrip (s):
-    return _parity_re.sub (_pstrip, s)
+    return bytes ([ b & 127 for b in s ])
 
 class pidfile:
     def __init__ (self, fn):
@@ -156,7 +152,7 @@ class StopThread (threading.Thread):
             self.stopnow = True
             self.join ()
 
-_stop_re = re.compile ("[" + STOP + STOP1 + "]")
+_stop_re = re.compile (b"[" + STOP + STOP1 + b"]")
 class tocyber (StopThread):
     """A class for the thread that sends data to DtCyber
     """
@@ -186,7 +182,7 @@ class tocyber (StopThread):
                     # STOP or SHIFT-STOP pressed, flush output
                     logging.trace ("Flushing output")
                     self.term.flushOutput ()
-            
+
 class fromcyber (StopThread):
     """A class for the thread that receives data from DtCyber
     """
@@ -219,7 +215,7 @@ class fromcyber (StopThread):
                 logging.trace ("data from PLATO: %r", pstrip (data))
                 data = data.replace (b"\377\377", b"\377")
                 self.lastio = time.time ()
-                self.term.write (data.encode ())
+                self.term.write (data)
                 logging.trace ("data sent to terminal")
                 if data.find (EXITPLATO) != -1:
                     time.sleep (2)
@@ -237,7 +233,7 @@ def pressnext (term):
     term.write (msg.encode ())
 
 hostaddr = None
-_addr_re = re.compile (r"inet .+?(\d+\.\d+\.\d+\.\d+)", re.I)
+_addr_re = re.compile (rb"inet .+?(\d+\.\d+\.\d+\.\d+)", re.I)
 def gethostaddr ():
     global hostaddr
     if not hostaddr:
@@ -259,6 +255,7 @@ def getaction (term):
     while True:
         pressnext (term)
         c = term.read (1)
+        logging.trace ("local read %s", c)
         if c == NEXT or c == STOP1:
             return c
         if c == ANS:
