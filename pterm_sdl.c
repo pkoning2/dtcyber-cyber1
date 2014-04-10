@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2005-2010, Paul Koning (see license.txt)
+**  Copyright (c) 2005-2010, Paul Koning (see pterm-license.txt)
 **
 **  Name: pterm_sdl.c
 **
@@ -298,7 +298,7 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
                             // form delta phase per audio clock, as a scaled
                             // integer, binary point to the right of the top bit.
 //                            gswState.step[voice] = ldexp (dph, 31);
-                            gswState.step[voice] = dph * 2147483648.0;
+                            gswState.step[voice] = (int) (dph * 2147483648.0);
                             
 #ifdef DEBUG
                             printf ("voice %d word %06o step %08x (%g) dph %g (%g Hz)\n",
@@ -354,7 +354,7 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
 
         // Feed the raw audio into the RC filter
         gswState.z = gswState.z * (1.0 - gswState.a) + audio * gswState.a;
-        audio = gswState.z;
+        audio = (int) (gswState.z);
 
         if (audio < -32767 || audio > 32767)
         {

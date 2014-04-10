@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------
 #
-#   Copyright (c) 2005, Paul Koning (see license.txt)
+#   Copyright (c) 2005, Paul Koning (see pterm-license.txt)
 #
 #   Name: Makefile.wxpterm
 #
@@ -16,11 +16,8 @@ DEFWXDIR = /usr/local
 ifeq ("$(HOST)","Darwin")
 ARCHCFLAGS ?= -arch i386
 #ARCHCFLAGS =  -arch ppc
-INCL ?= -I/usr/local/include -I/usr/include
-SDLPATH ?= /usr/local
-SDLINCL ?= `sdl-config --cflags`
-PATH:=$(SDLPATH)/bin:$(PATH)
-SDLLIBS ?= `sdl-config --static-libs`
+INCL ?= -I/usr/local/include -I/usr/include -F/Library/Frameworks/SDL2.framework
+SDLLIBS ?= -Wl,-framework,SDL2
 endif
 #else
 SDLPATH ?= /usr/local
@@ -97,16 +94,13 @@ info:
 	@echo ptermsvn: $(PTERMSVNREV)
 
 pterm:	$(PTOBJS)
-	export LD_RUN_PATH=$(WXDIR)/lib ; \
 	$(LINK) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(LIBS) $(SETPATH)
-ifeq ("$(TYPE)","static")
 ifeq ("$(HOST)","Darwin")
-	#strip $@
+	strip $@
 
 
 else
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
-endif
 endif
 
 wxversion.h: wxversion
@@ -157,19 +151,30 @@ cc545.app: cc545
 
 Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES) 
 	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm-info.plist.in > pterm-info.plist
+	rm -rf Pterm.app
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en.lproj
 	mkdir -p $(addprefix $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES)),.lproj)
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
 	/bin/echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
+	for f in libexpat.1.dylib libz.1.dylib libiconv.2.dylib; do \
+		install_name_tool -change /usr/lib/$$f @loader_path/../Frameworks/$$f Pterm.app/Contents/MacOS/pterm; \
+	done
+	install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL2 @loader_path/../Frameworks/SDL2.framework/Versions/A/SDL2 Pterm.app/Contents/MacOS/pterm
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
 	for d in $(LANGUAGES); do \
 	    cp $$d/pterm.mo Pterm.app/Contents/Resources/$${d}.lproj; \
 	done
-	touch $@
+	mkdir -p Pterm.app/Contents/Frameworks
+	cp /usr/lib/libexpat.1.dylib Pterm.app/Contents/Frameworks
+	cp /usr/lib/libz.1.dylib Pterm.app/Contents/Frameworks
+	cp /usr/lib/libiconv.2.dylib Pterm.app/Contents/Frameworks
+	cp -a /Library/Frameworks/SDL2.framework Pterm.app/Contents/Frameworks
+	rm -rf Pterm.app/Contents/Frameworks/SDL2.framework/Headers
+	rm -rf Pterm.app/Contents/Frameworks/SDL2.framework/Versions/Current/Headers
 
 pterm-empty.dmg:
-	hdiutil create -size 12m pterm-empty.dmg -layout NONE
+	hdiutil create -size 32m pterm-empty.dmg -layout NONE
 	dev=`hdid -nomount pterm-empty.dmg` ; newfs_hfs -v ptermvol $$dev ; hdiutil detach $$dev
 
 ptermkit.dmg: Pterm.app pterm-empty.dmg
@@ -199,7 +204,7 @@ mofiles: $(MOFILES)
 ifneq ("$(PTSRCS)", "")
 pterm-tar: pterm-$(PTERMVERSION).tar.bz2
 
-pterm-$(PTERMVERSION).tar.bz2: ptermversion.h license.txt $(PTSRCS) Makefile Makefile.wxpterm Makefile.common languages getkitver.py
+pterm-$(PTERMVERSION).tar.bz2: ptermversion.h license.txt pterm-license.txt $(PTSRCS) Makefile Makefile.wxpterm Makefile.common languages getkitver.py
 	mkdir pterm-$(PTERMVERSION)
 	cd pterm-$(PTERMVERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
 	cd pterm-$(PTERMVERSION); for f in $^ ; do ln -s ../$$f .; done

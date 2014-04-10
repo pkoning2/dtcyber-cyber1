@@ -29,7 +29,7 @@ Not coded yet: <none>
 // Modified by: 
 // Created:     03/26/2005
 // Copyright:   (c) Paul Koning, Joe Stanton
-// Licence:     DtCyber license
+// Licence:     see pterm-license.txt
 /////////////////////////////////////////////////////////////////////////////
 
 /*
@@ -59,6 +59,10 @@ by making the bitmap itself different.
 
 #ifdef __BORLANDC__
 #pragma hdrstop
+#endif
+
+#ifdef _WIN32
+#include <wx/setup.h>
 #endif
 
 // for all others, include the necessary headers (this file is usually all you
@@ -266,15 +270,21 @@ void Trace::Log (const char *fmt, ...)
 
 void Trace::Log (const wxString &s)
 {
-#ifndef _MSC_VER
-    struct timeval tv;
     char tbuf[10];
-#endif
     wxString hdr;
 
     if (Active ())
     {
-#ifndef _MSC_VER
+#ifdef _WIN32
+        SYSTEMTIME tv;
+	
+        GetLocalTime (&tv);
+        GetTimeFormatA (LOCALE_SYSTEM_DEFAULT, 0, &tv, 
+                        "'HH':'mm':'ss'.", &tbuf[0], 10);
+        hdr.Printf ("%s.%03d: ", tbuf, tv.wMilliseconds);
+#else
+        struct timeval tv;
+
         gettimeofday (&tv, NULL);
         strftime (tbuf, 10, "%T", localtime (&tv.tv_sec));
         hdr.Printf ("%s.%03ld: ", tbuf, (long) tv.tv_usec / 1000);
@@ -1058,11 +1068,11 @@ private:
     int         memaddr;
     u16         plato_m23[128 * 8];
     int         memlpc;
-#define uncover     (RAM[M_CCR] & 0x80)
-#define reverse     (RAM[M_CCR] & 0x40)
-#define large       (RAM[M_CCR] & 0x20)
+#define uncover     ((RAM[M_CCR] & 0x80) != 0)
+#define reverse     ((RAM[M_CCR] & 0x40) != 0 )
+#define large       ((RAM[M_CCR] & 0x20) != 0)
 #define currentCharset ((RAM[M_CCR] & 0x0e) >> 1)
-#define vertical    (RAM[M_CCR] & 0x01)
+#define vertical    ((RAM[M_CCR] & 0x01) != 0)
     int         wc;
     int         seq;
     int         modewords;
@@ -1729,12 +1739,15 @@ bool PtermApp::OnInit (void)
     debugF.Open ();
 #endif
 #if defined (__WXMSW__)
+    const int pid = GetCurrentProcessId ();
     g_beep = new wxSound (wxT ("touch-beep.wav"), TRUE);
     if (!g_beep->IsOk ()) printf ("beep load failed\n");
+#else
+    const int pid = getpid ();
 #endif
     
     // File name to use for tracing, if we enable tracing
-    sprintf (traceFn, "pterm%d.trc", getpid ());
+    sprintf (traceFn, "pterm%d.trc", pid);
 
     srand (time (NULL)); 
     m_locale.Init (wxLANGUAGE_DEFAULT);

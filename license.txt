@@ -1,5 +1,4 @@
-
-Copyright (c) 2002 - 2004 Tom Hunter
+Copyright (c) 2002 - 2014 Tom Hunter, Paul Koning
 
 This software is provided 'as-is', without any express or implied warranty.
 In no event will the author be held liable for any damages arising from
@@ -19,4 +18,7 @@ to alter it and redistribute it, subject to the following restrictions:
 
 4. This notice may not be removed or altered from any source or binary
    distribution.
+
+See pterm-license.txt for more detailed license information relating
+to Pterm.
 

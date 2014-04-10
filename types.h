@@ -20,14 +20,13 @@ typedef u_long in_addr_t;
 #define EINPROGRESS WSAEINPROGRESS
 #endif
 #define pthread_mutex_t CRITICAL_SECTION
-#define pthread_mutex_init InitializeCriticalSection
+#define pthread_mutex_init(x, y) InitializeCriticalSection ((x))
 #define pthread_mutex_lock EnterCriticalSection
 #define pthread_mutex_unlock LeaveCriticalSection
-#define pthread_cond_t  CONDITION_VARIABLE
-#define pthread_cond_init InitializeConditionVariable
-#define pthread_cond_wait(c, m) SleepConditionVariableCS ((c), (m), INFINITE)
-#define pthread_cond_signal WakeConditionVariable
-#define pthread_cond_broadcast WakeAllConditionVariable
+#define pthread_cond_t  HANDLE
+#define pthread_cond_init(x, y) *(x) = CreateEvent (NULL, TRUE, FALSE, NULL)
+#define pthread_cond_wait(c, m) WaitForSingleObject ((c), INFINITE)
+#define pthread_cond_signal SetEvent
 #else
 #include <stdbool.h>
 #include <netinet/in.h>
@@ -58,7 +57,7 @@ typedef u_long in_addr_t;
     **  MS Win32 systems
     */
 #if !defined(__cplusplus)
-	typedef int bool;
+    typedef unsigned char bool;
 #endif
     typedef signed char  i8;
     typedef signed short i16;

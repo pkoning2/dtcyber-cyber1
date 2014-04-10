@@ -10,6 +10,12 @@
 **--------------------------------------------------------------------------
 */
 
+// ============================================================================
+// declarations
+// ============================================================================
+
+#define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
+
 /*
 **  -------------
 **  Include Files
@@ -422,11 +428,22 @@ void dtClose (NetFet *np, NetPortSet *ps, bool hard)
 const char *dtNowString (void)
     {
     static char ts[64], us[12];
+#ifdef _WIN32
+	SYSTEMTIME tv;
+	
+	GetLocalTime (&tv);
+	GetDateFormatA (LOCALE_SYSTEM_DEFAULT, 0, &tv, 
+                    "'yy'/'MM'/'dd' ", &ts[0], 10);
+	GetTimeFormatA (LOCALE_SYSTEM_DEFAULT, 0, &tv, 
+                    "'HH':'mm':'ss'.", &ts[9], 10);
+    sprintf (us, "%06d.", tv.wMilliseconds);
+#else
     struct timeval tv;
 
     gettimeofday (&tv, NULL);
     strftime (ts, sizeof (ts) - 1, "%y/%m/%d %H.%M.%S.", localtime (&tv.tv_sec));
     sprintf (us, "%06d.", tv.tv_usec);
+#endif
     strcat (ts, us);
     return ts;
     }
@@ -794,7 +811,7 @@ int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
             }
         
         memcpy (in, buf, size);
-        buf += size;
+        buf = (u8 *) buf + size;
         len -= size;
         nextin = in + size;
         if (nextin == fet->sendend)
@@ -1285,6 +1302,7 @@ static void dtDataThread(void *param)
     NetFet *np = (NetFet *) param;
     NetPortSet *ps = np->ps;
     int bytes;
+#ifndef _WIN32
     struct pollfd pfd;
     
     /*
@@ -1302,6 +1320,7 @@ static void dtDataThread(void *param)
         dtClose (np, ps, TRUE);
         ThreadReturn;
         }
+#endif
     dtActivateFet2 (np, ps);
     
     while (1)
