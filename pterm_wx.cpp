@@ -1177,8 +1177,7 @@ private:
     void ptermBlockErase (int x1, int y1, int x2, int y2);
     void ptermSetName (wxString &winName);
     void ptermPaint (int pat);
-    void ptermPaintWalker1 (int x, int y, PixelData & pixmap);
-    void ptermPaintWalker2 (int x, int y, PixelData & pixmap);
+    void ptermPaintWalker (int x, int y, PixelData & pixmap, int pass);
     void ptermSaveWindow (int d);
     void ptermRestoreWindow (int d);
     
@@ -2509,7 +2508,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
       // m_fgpix not initialized
       // m_bgpix not initialized
       // m_bitmap not initialized
-      // m_canvas not initialized
+	  m_canvas (NULL),
       // m_curProfile not initialized
       // m_ShellFirst not initialized
       // m_hostName not initialized
@@ -4463,73 +4462,103 @@ void PtermFrame::ptermPaint (int pat)
     // pixel will be visited repeatedly.  And we can't skip "already painted"
     // pixels entirely because they might just be an isolated set of pixels
     // that are already foreground, and we should go right across them.
-    ptermPaintWalker1 (xm, ym, pixmap);
-    ptermPaintWalker2 (xm, ym, pixmap);
+    ptermPaintWalker (xm, ym, pixmap, 0);
+    ptermPaintWalker (xm, ym, pixmap, 1);
 }
 
-void PtermFrame::ptermPaintWalker1 (int x, int y, PixelData & pixmap)
+// Pass 0 means: stop if you hit background pixels; replace all others by 
+// special value 0 (for use by pass 1).
+// Pass 1 means: stop if you hit a pixel that's not 0; replace 0 by foreground.
+#define wdone(pmap, pass) ((pass && *pmap != 0) || \
+                           (!pass && (*pmap == m_bgpix || *pmap == 0)))
+void PtermFrame::ptermPaintWalker (int x, int y, PixelData & pixmap, int pass)
 {
     PixelData::Iterator p (pixmap);
     u32 *pmap;
+    int px;
+    const int newpixel = pass ? m_fgpix : 0;
     
     p.MoveTo (pixmap, x, y);
     pmap = (u32 *)(p.m_ptr);
-    if (*pmap == m_bgpix || *pmap == 0)
+    if (wdone (pmap, pass))
     {
         return;
     }
-
-    // Set the current pixel to background so we don't revisit it
-    *pmap = 0;
     
-    if (x > 0)
+    // First fill the current scanline, to +x then to -x
+    for (px = x; px < 512; px++)
     {
-        ptermPaintWalker1 (x - 1, y, pixmap);
+        // Stop walking the scan line if we hit the end of the line
+        p.MoveTo (pixmap, px, y);
+        pmap = (u32 *)(p.m_ptr);
+        if (wdone (pmap, pass))
+        {
+            break;
+        }
+        
+        *pmap = newpixel;
     }
-    if (x < 511)
+    for (px = x - 1; px >= 0; px--)
     {
-        ptermPaintWalker1 (x + 1, y, pixmap);
-    }
-    if (y > 0)
-    {
-        ptermPaintWalker1 (x, y - 1, pixmap);
-    }
-    if (y < 511)
-    {
-        ptermPaintWalker1 (x, y + 1, pixmap);
-    }
-}
+        // Stop walking the scan line if we hit the end of the line
+        p.MoveTo (pixmap, px, y);
+        pmap = (u32 *)(p.m_ptr);
+        if (wdone (pmap, pass))
+        {
+            break;
+        }
 
-void PtermFrame::ptermPaintWalker2 (int x, int y, PixelData & pixmap)
-{
-    PixelData::Iterator p (pixmap);
-    u32 *pmap;
-    
-    p.MoveTo (pixmap, x, y);
-    pmap = (u32 *)(p.m_ptr);
-    if (*pmap != 0)
-    {
-        return;
+        *pmap = newpixel;
     }
 
-    // Set the current pixel to foreground
-    *pmap = m_fgpix;
-    
-    if (x > 0)
+    // Next, walk along the just-filled line, and recursively fill the
+    // lines above and below it.
+    for (px = x; px < 512; px++)
     {
-        ptermPaintWalker2 (x - 1, y, pixmap);
+        // Stop walking the scan line if we hit something that isn't part of
+        // the line (not the new pixel value)
+        p.MoveTo (pixmap, px, y);
+        pmap = (u32 *)(p.m_ptr);
+        if (*pmap != newpixel)
+        {
+            break;
+        }
+
+        // Recursively process the line at y + 1, if we're not at the edge.
+        if (y < 511)
+        {
+            ptermPaintWalker (px, y + 1, pixmap, pass);
+        }
+
+        // Recursively process the line at y - 1, if we're not at the edge.
+        if (y > 0)
+        {
+            ptermPaintWalker (px, y - 1, pixmap, pass);
+        }
     }
-    if (x < 511)
+
+    for (px = x - 1; px >= 0; px--)
     {
-        ptermPaintWalker2 (x + 1, y, pixmap);
-    }
-    if (y > 0)
-    {
-        ptermPaintWalker2 (x, y - 1, pixmap);
-    }
-    if (y < 511)
-    {
-        ptermPaintWalker2 (x, y + 1, pixmap);
+        // Stop walking the scan line if we hit something that isn't part of
+        // the line (not the new pixel value)
+        p.MoveTo (pixmap, px, y);
+        pmap = (u32 *)(p.m_ptr);
+        if (*pmap != newpixel)
+        {
+            break;
+        }
+
+        // Recursively process the line at y + 1, if we're not at the edge.
+        if (y < 511)
+        {
+            ptermPaintWalker (px, y + 1, pixmap, pass);
+        }
+
+        // Recursively process the line at y - 1, if we're not at the edge.
+        if (y > 0)
+        {
+            ptermPaintWalker (px, y - 1, pixmap, pass);
+        }
     }
 }
 
