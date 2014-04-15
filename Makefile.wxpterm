@@ -14,10 +14,13 @@ PTERMVERSION ?= $(shell ./getkitver.py  ptermversion.h)
 DEFWXDIR = /usr/local
 
 ifeq ("$(HOST)","Darwin")
-ARCHCFLAGS ?= -arch i386
-#ARCHCFLAGS =  -arch ppc
-INCL ?= -I/usr/local/include -I/usr/include -F/Library/Frameworks/SDL2.framework
-SDLLIBS ?= -Wl,-framework,SDL2
+ifeq ("$(wildcard /Library/Frameworks/SDL2.framework)","")
+SDLFW ?= SDL
+else
+SDLFW ?= SDL2
+endif
+SDLLIBS ?= -Wl,-framework,$(SDLFW)
+INCL ?= -I/usr/local/include -I/usr/include -F/Library/Frameworks/$(SDLFW).framework
 endif
 #else
 SDLPATH ?= /usr/local
@@ -72,11 +75,6 @@ LANGUAGES =
 MOFILES =
 endif
 LINK=$(CXX)
-##ifeq ("$(TYPE)","static")
-ifeq ("$(HOST)","Darwin")
-LINK=$(CC) -lstdc++-static
-endif
-##endif
 
 PTDEPS = $(PTOBJS:.o=.d) 
 ifneq ("$(wildcard sourcefiles.py)","")
@@ -88,15 +86,16 @@ endif
 
 info:
 	@echo wxdir: $(WXDIR)
+	@echo sdl: $(SDLFW)
 	@echo path:  $(PATH)
 	@echo wxversion: $(WXVERSION)
 	@echo gccversion: $(GCCVERSION)
 	@echo ptermsvn: $(PTERMSVNREV)
 
 pterm:	$(PTOBJS)
-	$(LINK) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(LIBS) $(SETPATH)
+	$(LINK) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(LIBS) $(SETPATH) -lstdc++
 ifeq ("$(HOST)","Darwin")
-	strip $@
+	#strip $@
 
 
 else
@@ -157,21 +156,15 @@ Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES)
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
 	/bin/echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
-	for f in libexpat.1.dylib libz.1.dylib libiconv.2.dylib; do \
-		install_name_tool -change /usr/lib/$$f @loader_path/../Frameworks/$$f Pterm.app/Contents/MacOS/pterm; \
-	done
-	install_name_tool -change @rpath/SDL2.framework/Versions/A/SDL2 @loader_path/../Frameworks/SDL2.framework/Versions/A/SDL2 Pterm.app/Contents/MacOS/pterm
+	install_name_tool -change @rpath/$(SDLFW).framework/Versions/A/$(SDLFW) @loader_path/../Frameworks/$(SDLFW).framework/Versions/A/$(SDLFW) Pterm.app/Contents/MacOS/pterm
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
 	for d in $(LANGUAGES); do \
 	    cp $$d/pterm.mo Pterm.app/Contents/Resources/$${d}.lproj; \
 	done
 	mkdir -p Pterm.app/Contents/Frameworks
-	cp /usr/lib/libexpat.1.dylib Pterm.app/Contents/Frameworks
-	cp /usr/lib/libz.1.dylib Pterm.app/Contents/Frameworks
-	cp /usr/lib/libiconv.2.dylib Pterm.app/Contents/Frameworks
-	cp -a /Library/Frameworks/SDL2.framework Pterm.app/Contents/Frameworks
-	rm -rf Pterm.app/Contents/Frameworks/SDL2.framework/Headers
-	rm -rf Pterm.app/Contents/Frameworks/SDL2.framework/Versions/Current/Headers
+	cp -R /Library/Frameworks/$(SDLFW).framework Pterm.app/Contents/Frameworks
+	rm -rf Pterm.app/Contents/Frameworks/$(SDLFW).framework/Headers
+	rm -rf Pterm.app/Contents/Frameworks/$(SDLFW).framework/Versions/Current/Headers
 
 pterm-empty.dmg:
 	hdiutil create -size 32m pterm-empty.dmg -layout NONE

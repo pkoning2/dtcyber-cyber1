@@ -41,13 +41,16 @@ ifeq ("$(HOST)","Darwin")
 # Mac
 
 ifeq ("$(SDKDIR)","")
-OSXVER ?= 10.6
-OSXMIN ?= 10.4
+OSXVER ?= 10.5
 SDKDIR := /Developer/SDKs/MacOSX$(OSXVER).sdk
+OSXMIN ?= 10.4
 endif
 CLANG := $(shell gcc --version 2>/dev/null| fgrep LLVM)
 ifneq ("$(CLANG)", "")
 CXXLIB := -stdlib=libstdc++
+ARCHCFLAGS ?= -arch i386
+else
+ARCHCFLAGS ?= -arch i386 -arch ppc
 endif
 LIBS    +=  -Wl,-syslibroot,$(SDKDIR) -L$(SDKDIR)/usr/lib -L/usr/lib
 INCL    += -isysroot $(SDKDIR)
