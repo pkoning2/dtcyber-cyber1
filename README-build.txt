@@ -33,6 +33,12 @@ If a packaged version of wxWidgets 3.0 or later is available for your
 system, install that (the development files).  If not, build wxWidgets
 from sources; see the wxWidgets documentation for details.
 
+    Note: you should build the wxWidgets shared libraries.  For
+    reasons that are not clear, currently wxWidgets static libraries
+    do not work in 32 bit builds.  (Things build fine, but the pterm
+    executable crashes deep in the bowels of X11.)  Shared libraries
+    work fine in both 32 and 64 bit builds.
+
 Now build pterm with "make pterm".  The result should be a pterm
 executable, which you can run from the build directory or move to any
 other convenient directory.
