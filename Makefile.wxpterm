@@ -75,7 +75,6 @@ ifneq ("$(PTERMVERSION)","xxx")
 LANGUAGES =
 MOFILES =
 endif
-LINK=$(CXX)
 
 PTDEPS = $(PTOBJS:.o=.d) 
 ifneq ("$(wildcard sourcefiles.py)","")
