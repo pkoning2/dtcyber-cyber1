@@ -46,11 +46,13 @@ endif
 CLANG := $(shell gcc --version 2>/dev/null| fgrep LLVM)
 ifneq ("$(CLANG)", "")
 LINK=$(CC) -lstdc++-static -stdlib=libstdc++ 
-ARCHCFLAGS ?= -arch i386
+ARCHCFLAGS ?= -arch i386 -arch x86_64
+ARCHLDFLAGS ?= -arch i386
 OSXVER ?= 10.6
 else
 LINK=$(CXX)
-ARCHCFLAGS ?= -arch i386 -arch ppc
+ARCHCFLAGS ?= -arch i386 -arch ppc -arch x86_64 -arch ppc64
+ARCHLDFLAGS ?= -arch i386 -arch ppc
 OSXVER ?= 10.5
 endif
 SDKDIR := /Developer/SDKs/MacOSX$(OSXVER).sdk
@@ -60,7 +62,6 @@ LDFLAGS +=  -mmacosx-version-min=$(OSXMIN) $(CXXLIB)
 CFLAGS  +=  -mmacosx-version-min=$(OSXMIN) $(CXXLIB)
 X86ARCHFLAGS = -arch i386
 X86_64ARCHFLAGS = -arch x86_64
-TOOLLDFLAGS = -arch i386
 
 MACTARGETS=x86 x86_64
 
@@ -72,24 +73,8 @@ else
 all: Pterm.app
 endif
 
-dtcyber:
-	mkdir -p $(MACTARGETS)
-	( cd x86 && \
-	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"i386\"'" VPATH=.. DUAL=$(DUAL) CC=$(CC) PTERMVERSION=xxx ARCHCFLAGS="$(X86ARCHFLAGS)" LDFLAGS="$(LDFLAGS)" )
-	( cd x86_64 && \
-	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86_64CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"x86_64\"'" VPATH=.. DUAL=$(DUAL) CC=$(CC) PTERMVERSION=xxx ARCHCFLAGS="$(X86_64ARCHFLAGS)" LDFLAGS="$(LDFLAGS)" )
-	lipo -create -output dtcyber `for d in $(MACTARGETS); do echo $$d/gxdtcyber; done`
-
-gxdtcyber: $(OBJS)
-	$(CC) $(LDFLAGS) $(ARCHCFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)
-
 clean:
 	rm -rf *.o *.d *.i *.ii *.pcf x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app dtoper.app dd60.app
-
-blackbox: blackbox.o $(SOBJS)
-	$(CC) $(LDFLAGS) $(TOOLLDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 else
 
@@ -101,15 +86,15 @@ else
 all: pterm
 endif
 
-dtcyber: $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
-
-blackbox: blackbox.o $(SOBJS)
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
-
 clean:
 	rm -f *.d *.o *.i *.ii *.pcf dtcyber dd60 dtoper pterm pterm*.zip pterm*.tar.bz2
 endif
+
+dtcyber: $(OBJS)
+	$(CC) $(LDFLAGS) $(ARCHCFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
+
+blackbox: blackbox.o $(SOBJS)
+	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 kit:	pterm-kit
 

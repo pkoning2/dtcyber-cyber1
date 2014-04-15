@@ -31,6 +31,12 @@
 */
 #define MaxLine                 512
 
+#ifdef __LP64__
+#define WIDTH "64"
+#else
+#define WIDTH "32"
+#endif
+
 /*
 **  -----------------------
 **  Private Macro Functions
@@ -153,10 +159,8 @@ void initStartup(const char *config)
     /*
     **  Read and process cyber.ini file.
     */
+    printf("DtCyber (" WIDTH " bit build) by Tom Hunter, Paul Koning, \n Gerard J. v.d. Grinten, and Steve Peltz\n\n");
     printf("Starting initialisation\n");
-#if defined(__APPLE__) && defined (ARCHNAME)
-    printf (" Built for " ARCHNAME "\n");
-#endif
     initCyber(config);
     initDeadstart();
     initEquipment();

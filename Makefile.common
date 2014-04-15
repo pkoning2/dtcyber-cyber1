@@ -40,7 +40,7 @@ endif
 
 OPTIMIZE ?= -O2
 CFLAGS  = $(OPTIMIZE) -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST) $(PFLAGS)
-LDFLAGS += $(PFLAGS)
+LDFLAGS += $(PFLAGS) $(ARCHLDFLAGS)
 CONLYFLAGS =  -std=gnu99 -Wall -Werror -Wno-format
 
 SOBJS	= charset.o dtnetsubs.o

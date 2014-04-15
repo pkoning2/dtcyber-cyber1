@@ -63,6 +63,8 @@ endif
 GCCVERSION := $(shell gcc --version 2>/dev/null| head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
 
+C2FLAGS  = $(OPTIMIZE) -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHLDFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST) $(PFLAGS)
+
 MSGFLAGS ?= -U
 
 SDLCFLAGS = $(SDLINCL)
@@ -93,7 +95,7 @@ info:
 	@echo ptermsvn: $(PTERMSVNREV)
 
 pterm:	$(PTOBJS)
-	$(LINK) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(LIBS) $(SETPATH)
+	$(LINK) $(ARCHLDFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(LIBS) $(SETPATH)
 ifeq ("$(HOST)","Darwin")
 
 
@@ -113,11 +115,11 @@ endif
 
 dd60:	$(SOBJS) dd60.o knob.o iir.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(LINK)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
+	$(LINK)  $(ARCHLDFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
 
 dtoper:	$(SOBJS) dtoper.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(LINK)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
+	$(LINK)  $(ARCHLDFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
 
 # console display test program
 cc545:	cc545.o knob.o iir.o
@@ -206,7 +208,7 @@ pterm-$(PTERMVERSION).tar.bz2: ptermversion.h license.txt pterm-license.txt $(PT
 endif
 
 %.o : %.cpp
-	$(CXX) -c -Wall $(CFLAGS) $(CXXFLAGS) $<
+	$(CXX) -c -Wall $(C2FLAGS) $(CXXFLAGS) $<
 
 pterm_sdl.o : pterm_sdl.c
 	$(CC) $(CFLAGS) $(SDLCFLAGS) -I $(SNDINCL) -c $<
