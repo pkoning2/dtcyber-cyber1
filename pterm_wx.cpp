@@ -5084,6 +5084,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                     if (n != -1)
                     {
                         trace ("paint %03o", n);
+                        changed = true;
                         ptermPaint (n);
                     }
                     break;
@@ -5438,17 +5439,26 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                     case 5:
                         n = AssembleData (d);
                         if (n != -1)
+                        {
+                            changed = true;     // assume changed for
                             mode5 (n);
+                        }
                         break;
                     case 6:
                         n = AssembleData (d);
                         if (n != -1)
+                        {
+                            changed = true;     // assume changed for
                             mode6 (n);
+                        }
                         break;
                     case 7:
                         n = AssembleData (d);
                         if (n != -1)
+                        {
+                            changed = true;     // assume changed for
                             mode7 (n);
+                        }
                         break;
                     }
                     break;
@@ -5480,8 +5490,9 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
             modewords++;
             mp = modePtr[dmode];
             (this->*mp) (d);
-            // Modes 0, 1, 3, 4 change the screen
-            changed = (dmode <= 4 && dmode != 2);
+            // Modes 0, 1, 3, 4 change the screen.  Mode 5-7 we can't tell so
+            // we assume it does.  So only mode 2 leaves "changed" untouched.
+            changed |= dmode != 2;
         }
         else
         {
