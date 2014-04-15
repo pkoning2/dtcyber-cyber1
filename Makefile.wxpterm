@@ -10,6 +10,7 @@
 #--------------------------------------------------------------------------
 
 PTERMVERSION ?= $(shell ./getkitver.py  ptermversion.h)
+YEAR = $(shell date +"%Y")
 
 DEFWXDIR = /usr/local
 
@@ -93,9 +94,8 @@ info:
 	@echo ptermsvn: $(PTERMSVNREV)
 
 pterm:	$(PTOBJS)
-	$(LINK) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(LIBS) $(SETPATH) -lstdc++
+	$(LINK) $(ARCHCFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(LIBS) $(SETPATH)
 ifeq ("$(HOST)","Darwin")
-	#strip $@
 
 
 else
@@ -149,13 +149,14 @@ cc545.app: cc545
 	touch $@
 
 Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES) 
-	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm-info.plist.in > pterm-info.plist
+	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" -e "s/@YEAR@/${YEAR}/" pterm-info.plist.in > pterm-info.plist
 	rm -rf Pterm.app
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en.lproj
 	mkdir -p $(addprefix $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES)),.lproj)
 	cp pterm-info.plist Pterm.app/Contents/Info.plist
 	/bin/echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
+	strip Pterm.app/Contents/MacOS/pterm
 	install_name_tool -change @rpath/$(SDLFW).framework/Versions/A/$(SDLFW) @loader_path/../Frameworks/$(SDLFW).framework/Versions/A/$(SDLFW) Pterm.app/Contents/MacOS/pterm
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
 	for d in $(LANGUAGES); do \
