@@ -70,12 +70,13 @@ all: Pterm.app
 endif
 
 clean:
-	rm -rf *.o *.d *.i *.ii *.pcf x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app dtoper.app dd60.app
+	rm -rf *.o *.d *.i *.ii *.pcf x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app dtoper.app dd60.app pterm-*.tar.bz2
 
 else
 
 # not Mac
 
+LINK=$(CXX)
 ifneq ("$(wildcard main.c)","")
 all: dtcyber pterm dtoper dd60 blackbox
 else
