@@ -58,12 +58,8 @@ endif
 SDKDIR := /Developer/SDKs/MacOSX$(OSXVER).sdk
 LIBS    +=  -Wl,-syslibroot,$(SDKDIR) -L$(SDKDIR)/usr/lib -L/usr/lib
 INCL    += -isysroot $(SDKDIR)
-LDFLAGS +=  -mmacosx-version-min=$(OSXMIN) $(CXXLIB)
-CFLAGS  +=  -mmacosx-version-min=$(OSXMIN) $(CXXLIB)
-X86ARCHFLAGS = -arch i386
-X86_64ARCHFLAGS = -arch x86_64
-
-MACTARGETS=x86 x86_64
+ARCHLDFLAGS +=  -mmacosx-version-min=$(OSXMIN) $(CXXLIB)
+ARCHCFLAGS  +=  -mmacosx-version-min=$(OSXMIN) $(CXXLIB)
 
 .PHONY : dtcyber 
 
