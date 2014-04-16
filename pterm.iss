@@ -49,6 +49,7 @@ Source: "C:\wxWidgets-3.0.0\lib\vc100_dll\wxmsw30u_adv_vc100.dll"; DestDir: "{sy
 Source: "C:\Program Files\Microsoft Visual Studio 10.0\VC\redist\x86\Microsoft.VT100.CRT\msvcr100.dll"; DestDir: "{app}"
 Source: "C:\Program Files\Microsoft Visual Studio 10.0\VC\redist\x86\Microsoft.VT100.CRT\msvcp100.dll"; DestDir: "{app}"
 Source: "C:\Program Files\Mega-Nerd\libsndfile\bin\libsndfile-1.dll"; DestDir: "{app}"
+Source: "\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\CHANGES-pterm.txt"; DestDir: "{app}"; Flags: isreadme
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
