@@ -1,0 +1,635 @@
+10:18:30.482: Trace on, ASCII terminal
+10:18:31.866: key to plato 026
+10:18:31.866: ascii mode key to plato 0x0d
+10:18:32.307: 0015502 seq   9205 wc   1 select memory M0
+10:18:32.307: 0015424 seq   9206 wc   1 load mode 13
+10:18:32.307: 0000035 seq   9207 wc   1 load mode 5
+10:18:32.307: 0000040 seq   9208 wc   1 high Y 0
+10:18:32.307: 0000140 seq   9209 wc   1 low Y 0
+10:18:32.307: 0000055 seq   9210 wc   1 high X 13
+10:18:32.307: 0000120 seq   9211 wc   1 low X 16, coordinates 432 0
+10:18:32.307: seq   9211 wc   1 load coordinate 432 0
+10:18:32.307: 0015514 seq   9212 wc   1 Forward writing mode
+10:18:32.307: 0015516 seq   9213 wc   1 Normal size writing mode
+10:18:32.307: 0015512 seq   9214 wc   1 Horizontal writing mode
+10:18:32.307: 0015414 seq   9215 wc   1 Full screen erase
+10:18:32.335: 0015422 seq   9216 wc   1 load mode 7
+10:18:32.335: 0015521 seq   9217 wc   1 Start SSF
+10:18:32.335: 0000100 seq   9218 wc   1 data byte 1: 0
+10:18:32.335: 0000120 seq   9219 wc   1 data byte 2: 16
+10:18:32.335: 0000100 seq   9220 wc   1 data 0002000 (0x0400)
+10:18:32.335: seq   9220 wc   1 ssf 0400
+10:18:32.335: seq   9220 wc   1 ssf 0400
+10:18:32.335: 0000035 seq   9221 wc   1 load mode 7
+10:18:32.335: 0000057 seq   9222 wc   1 high Y 15
+10:18:32.335: 0000160 seq   9223 wc   1 low Y 16
+10:18:32.335: 0000040 seq   9224 wc   1 high X 0
+10:18:32.335: 0000100 seq   9225 wc   1 low X 0, coordinates 0 496
+10:18:32.335: seq   9225 wc   1 load coordinate 0 496
+10:18:32.335: 0015532 seq   9226 wc   1 set margin 0
+10:18:32.335: 0015541 seq   9227 wc   1 Start foreground color
+10:18:32.335: 0000100 seq   9228 wc   1 color byte 1: 0
+10:18:32.335: 0000174 seq   9229 wc   1 color byte 2: 60
+10:18:32.335: 0000117 seq   9230 wc   1 color byte 3: 15
+10:18:32.335: 0000100 seq   9231 wc   1 set foreground color 00ff00
+10:18:32.335: seq   9231 wc   1 fg: 0 255 0; bg: 0 0 0
+10:18:32.335: 0000035 seq   9232 wc   1 load mode 7
+10:18:32.335: 0000160 seq   9233 wc   1 low Y 16
+10:18:32.335: 0000057 seq   9234 wc   1 high X 15
+10:18:32.335: 0000130 seq   9235 wc   1 low X 24, coordinates 504 496
+10:18:32.335: seq   9235 wc   1 load coordinate 504 496
+10:18:32.335: 0015532 seq   9236 wc   1 set margin 504
+10:18:32.335: 0015541 seq   9237 wc   1 Start foreground color
+10:18:32.335: 0000177 seq   9238 wc   1 color byte 1: 63
+10:18:32.335: 0000177 seq   9239 wc   1 color byte 2: 63
+10:18:32.335: 0000117 seq   9240 wc   1 color byte 3: 15
+10:18:32.335: 0000100 seq   9241 wc   1 set foreground color 00ffff
+10:18:32.335: seq   9241 wc   1 fg: 0 255 255; bg: 0 0 0
+10:18:32.335: 0015541 seq   9242 wc   1 Start foreground color
+10:18:32.335: 0000177 seq   9243 wc   1 color byte 1: 63
+10:18:32.335: 0000177 seq   9244 wc   1 color byte 2: 63
+10:18:32.335: 0000117 seq   9245 wc   1 color byte 3: 15
+10:18:32.335: 0000100 seq   9246 wc   1 set foreground color 00ffff
+10:18:32.335: seq   9246 wc   1 fg: 0 255 255; bg: 0 0 0
+10:18:32.335: 0015531 seq   9247 wc   1 Start LDE
+10:18:32.335: 0000120 seq   9248 wc   1 data byte 1: 16
+10:18:32.335: 0000101 seq   9249 wc   1 data byte 2: 1
+10:18:32.335: 0000100 seq   9250 wc   1 data 0000120 (0x0050)
+10:18:32.335: seq   9250 wc   1 load echo 80 (0x50)
+10:18:32.335: key to plato 320
+10:18:32.335: ascii mode key to plato 0x1b 0x50 0x63
+10:18:32.335: 0000035 seq   9251 wc   1 load mode 7
+10:18:32.335: 0000140 seq   9252 wc   1 low Y 0
+10:18:32.335: 0000040 seq   9253 wc   1 high X 0
+10:18:32.346: 0000120 seq   9254 wc   1 low X 16, coordinates 16 480
+10:18:32.346: seq   9254 wc   1 load coordinate 16 480
+10:18:32.346: 0015532 seq   9255 wc   1 set margin 16
+10:18:32.346: 0000037 seq   9256 wc   1 load mode 15
+10:18:32.346: 0015422 seq   9257 wc   1 load mode 15
+10:18:32.346: 0000123 seq   9258 wc   1 char 123 (S)
+10:18:32.347: 0000141 seq   9259 wc   1 char 141 (a)
+10:18:32.347: 0000155 seq   9260 wc   1 char 155 (m)
+10:18:32.347: 0000160 seq   9261 wc   1 char 160 (p)
+10:18:32.347: 0000154 seq   9262 wc   1 char 154 (l)
+10:18:32.347: 0000145 seq   9263 wc   1 char 145 (e)
+10:18:32.347: 0000040 seq   9264 wc   1 char 040 ( )
+10:18:32.347: 0000164 seq   9265 wc   1 char 164 (t)
+10:18:32.347: 0000145 seq   9266 wc   1 char 145 (e)
+10:18:32.347: 0000170 seq   9267 wc   1 char 170 (x)
+10:18:32.347: 0000164 seq   9268 wc   1 char 164 (t)
+10:18:32.347: 0000040 seq   9269 wc   1 char 040 ( )
+10:18:32.347: 0000165 seq   9270 wc   1 char 165 (u)
+10:18:32.348: 0000163 seq   9271 wc   1 char 163 (s)
+10:18:32.348: 0000151 seq   9272 wc   1 char 151 (i)
+10:18:32.348: 0000156 seq   9273 wc   1 char 156 (n)
+10:18:32.348: 0000147 seq   9274 wc   1 char 147 (g)
+10:18:32.348: 0000040 seq   9275 wc   1 char 040 ( )
+10:18:32.348: 0000141 seq   9276 wc   1 char 141 (a)
+10:18:32.348: 0000040 seq   9277 wc   1 char 040 ( )
+10:18:32.348: 0000166 seq   9278 wc   1 char 166 (v)
+10:18:32.348: 0000141 seq   9279 wc   1 char 141 (a)
+10:18:32.348: 0000162 seq   9280 wc   1 char 162 (r)
+10:18:32.348: 0000151 seq   9281 wc   1 char 151 (i)
+10:18:32.348: 0000145 seq   9282 wc   1 char 145 (e)
+10:18:32.348: 0000164 seq   9283 wc   1 char 164 (t)
+10:18:32.348: 0000171 seq   9284 wc   1 char 171 (y)
+10:18:32.348: 0000040 seq   9285 wc   1 char 040 ( )
+10:18:32.348: 0000157 seq   9286 wc   1 char 157 (o)
+10:18:32.348: 0000146 seq   9287 wc   1 char 146 (f)
+10:18:32.348: 0000040 seq   9288 wc   1 char 040 ( )
+10:18:32.348: 0000146 seq   9289 wc   1 char 146 (f)
+10:18:32.349: 0000157 seq   9290 wc   1 char 157 (o)
+10:18:32.349: 0000156 seq   9291 wc   1 char 156 (n)
+10:18:32.349: 0000164 seq   9292 wc   1 char 164 (t)
+10:18:32.349: 0000163 seq   9293 wc   1 char 163 (s)
+10:18:32.349: 0000072 seq   9294 wc   1 char 072 (:)
+10:18:32.349: 0015526 seq   9295 wc   1 load mode 31
+10:18:32.349: 0015422 seq   9296 wc   1 load mode 31
+10:18:32.349: 0015530 seq   9297 wc   1 Start load plato meta data
+10:18:32.349: 0000106 seq   9298 wc   1 plato meta data: 70 (counter=1)
+10:18:32.349: 0000020 seq   9299 wc   1 plato meta data: 16 (counter=2)
+10:18:32.349: 0000030 seq   9300 wc   1 plato meta data: 24 (counter=3)
+10:18:32.358: 0000000 seq   9301 wc   1 plato meta data: 0 (counter=4)
+10:18:32.358: seq   9301 wc   1 Font selected: Arial,24,0
+10:18:32.358: seq   9301 wc   1 plato meta data complete: font data accepted
+10:18:32.358: seq   9301 wc   1 Font selected: Arial,24,0
+10:18:32.358: 0000035 seq   9302 wc   1 load mode 7
+10:18:32.358: 0000056 seq   9303 wc   1 high Y 14
+10:18:32.358: 0000160 seq   9304 wc   1 low Y 16
+10:18:32.358: 0000120 seq   9305 wc   1 low X 16, coordinates 16 464
+10:18:32.358: seq   9305 wc   1 load coordinate 16 464
+10:18:32.358: 0015532 seq   9306 wc   1 set margin 16
+10:18:32.358: 0000037 seq   9307 wc   1 load mode 15
+10:18:32.358: 0015422 seq   9308 wc   1 load mode 15
+10:18:32.364: 0000015 seq   9309 wc   1 CR to 16 436
+10:18:32.364: 0000141 seq   9310 wc   1 char 141 (a)
+10:18:32.364: 0000162 seq   9311 wc   1 char 162 (r)
+10:18:32.365: 0000151 seq   9312 wc   1 char 151 (i)
+10:18:32.365: 0000141 seq   9313 wc   1 char 141 (a)
+10:18:32.365: 0000154 seq   9314 wc   1 char 154 (l)
+10:18:32.365: 0000054 seq   9315 wc   1 char 054 (,)
+10:18:32.365: 0000062 seq   9316 wc   1 char 062 (2)
+10:18:32.365: 0000064 seq   9317 wc   1 char 064 (4)
+10:18:32.366: 0000072 seq   9318 wc   1 char 072 (:)
+10:18:32.366: 0000040 seq   9319 wc   1 char 040 ( )
+10:18:32.366: 0000124 seq   9320 wc   1 char 124 (T)
+10:18:32.366: 0000150 seq   9321 wc   1 char 150 (h)
+10:18:32.366: 0000145 seq   9322 wc   1 char 145 (e)
+10:18:32.366: 0000040 seq   9323 wc   1 char 040 ( )
+10:18:32.366: 0000161 seq   9324 wc   1 char 161 (q)
+10:18:32.366: 0000165 seq   9325 wc   1 char 165 (u)
+10:18:32.366: 0000151 seq   9326 wc   1 char 151 (i)
+10:18:32.367: 0000143 seq   9327 wc   1 char 143 (c)
+10:18:32.367: 0000153 seq   9328 wc   1 char 153 (k)
+10:18:32.367: 0000040 seq   9329 wc   1 char 040 ( )
+10:18:32.367: 0000142 seq   9330 wc   1 char 142 (b)
+10:18:32.367: 0000162 seq   9331 wc   1 char 162 (r)
+10:18:32.367: 0000157 seq   9332 wc   1 char 157 (o)
+10:18:32.367: 0000167 seq   9333 wc   1 char 167 (w)
+10:18:32.367: 0000156 seq   9334 wc   1 char 156 (n)
+10:18:32.368: 0000040 seq   9335 wc   1 char 040 ( )
+10:18:32.368: 0000146 seq   9336 wc   1 char 146 (f)
+10:18:32.368: 0000157 seq   9337 wc   1 char 157 (o)
+10:18:32.368: 0000170 seq   9338 wc   1 char 170 (x)
+10:18:32.368: 0000056 seq   9339 wc   1 char 056 (.)
+10:18:32.368: 0000056 seq   9340 wc   1 char 056 (.)
+10:18:32.368: 0000056 seq   9341 wc   1 char 056 (.)
+10:18:32.368: 0015526 seq   9342 wc   1 load mode 31
+10:18:32.368: 0015422 seq   9343 wc   1 load mode 31
+10:18:32.368: 0015530 seq   9344 wc   1 Start load plato meta data
+10:18:32.368: 0000106 seq   9345 wc   1 plato meta data: 70 (counter=1)
+10:18:32.368: 0000022 seq   9346 wc   1 plato meta data: 18 (counter=2)
+10:18:32.368: 0000034 seq   9347 wc   1 plato meta data: 28 (counter=3)
+10:18:32.373: 0000001 seq   9348 wc   1 plato meta data: 1 (counter=4)
+10:18:32.373: seq   9348 wc   1 Font selected: Script,28,1
+10:18:32.375: seq   9348 wc   1 plato meta data complete: font data accepted
+10:18:32.375: seq   9348 wc   1 Font selected: Script,28,1
+10:18:32.375: 0000037 seq   9349 wc   1 load mode 15
+10:18:32.375: 0015422 seq   9350 wc   1 load mode 15
+10:18:32.375: 0000015 seq   9351 wc   1 CR to 16 399
+10:18:32.375: 0000163 seq   9352 wc   1 char 163 (s)
+10:18:32.375: 0000143 seq   9353 wc   1 char 143 (c)
+10:18:32.375: 0000162 seq   9354 wc   1 char 162 (r)
+10:18:32.376: 0000151 seq   9355 wc   1 char 151 (i)
+10:18:32.376: 0000160 seq   9356 wc   1 char 160 (p)
+10:18:32.376: 0000164 seq   9357 wc   1 char 164 (t)
+10:18:32.376: 0000054 seq   9358 wc   1 char 054 (,)
+10:18:32.376: 0000062 seq   9359 wc   1 char 062 (2)
+10:18:32.376: 0000070 seq   9360 wc   1 char 070 (8)
+10:18:32.376: 0000054 seq   9361 wc   1 char 054 (,)
+10:18:32.376: 0000151 seq   9362 wc   1 char 151 (i)
+10:18:32.377: 0000164 seq   9363 wc   1 char 164 (t)
+10:18:32.377: 0000141 seq   9364 wc   1 char 141 (a)
+10:18:32.377: 0000154 seq   9365 wc   1 char 154 (l)
+10:18:32.397: 0000151 seq   9366 wc   1 char 151 (i)
+10:18:32.397: 0000143 seq   9367 wc   1 char 143 (c)
+10:18:32.398: 0000072 seq   9368 wc   1 char 072 (:)
+10:18:32.398: 0000040 seq   9369 wc   1 char 040 ( )
+10:18:32.398: 0000152 seq   9370 wc   1 char 152 (j)
+10:18:32.398: 0000165 seq   9371 wc   1 char 165 (u)
+10:18:32.398: 0000155 seq   9372 wc   1 char 155 (m)
+10:18:32.398: 0000160 seq   9373 wc   1 char 160 (p)
+10:18:32.399: 0000163 seq   9374 wc   1 char 163 (s)
+10:18:32.399: 0000040 seq   9375 wc   1 char 040 ( )
+10:18:32.399: 0000157 seq   9376 wc   1 char 157 (o)
+10:18:32.399: 0000166 seq   9377 wc   1 char 166 (v)
+10:18:32.399: 0000145 seq   9378 wc   1 char 145 (e)
+10:18:32.399: 0000162 seq   9379 wc   1 char 162 (r)
+10:18:32.399: 0000040 seq   9380 wc   1 char 040 ( )
+10:18:32.399: 0000164 seq   9381 wc   1 char 164 (t)
+10:18:32.400: 0000150 seq   9382 wc   1 char 150 (h)
+10:18:32.400: 0000145 seq   9383 wc   1 char 145 (e)
+10:18:32.400: 0000040 seq   9384 wc   1 char 040 ( )
+10:18:32.400: 0000154 seq   9385 wc   1 char 154 (l)
+10:18:32.400: 0000141 seq   9386 wc   1 char 141 (a)
+10:18:32.400: 0000172 seq   9387 wc   1 char 172 (z)
+10:18:32.400: 0000171 seq   9388 wc   1 char 171 (y)
+10:18:32.401: 0000056 seq   9389 wc   1 char 056 (.)
+10:18:32.401: 0000056 seq   9390 wc   1 char 056 (.)
+10:18:32.401: 0000056 seq   9391 wc   1 char 056 (.)
+10:18:32.401: 0015526 seq   9392 wc   1 load mode 31
+10:18:32.401: 0015422 seq   9393 wc   1 load mode 31
+10:18:32.401: 0015530 seq   9394 wc   1 Start load plato meta data
+10:18:32.401: 0000106 seq   9395 wc   1 plato meta data: 70 (counter=1)
+10:18:32.401: 0000021 seq   9396 wc   1 plato meta data: 17 (counter=2)
+10:18:32.401: 0000040 seq   9397 wc   1 plato meta data: 32 (counter=3)
+10:18:32.401: 0000002 seq   9398 wc   1 plato meta data: 2 (counter=4)
+10:18:32.401: seq   9398 wc   1 Font selected: Times New Roman,32,2
+10:18:32.474: seq   9398 wc   1 plato meta data complete: font data accepted
+10:18:32.474: seq   9398 wc   1 Font selected: Times New Roman,32,1
+10:18:32.474: 0000037 seq   9399 wc   1 load mode 15
+10:18:32.474: 0015422 seq   9400 wc   1 load mode 15
+10:18:32.474: 0000015 seq   9401 wc   1 CR to 16 362
+10:18:32.474: 0000156 seq   9402 wc   1 char 156 (n)
+10:18:32.475: 0000164 seq   9403 wc   1 char 164 (t)
+10:18:32.475: 0000162 seq   9404 wc   1 char 162 (r)
+10:18:32.475: 0000157 seq   9405 wc   1 char 157 (o)
+10:18:32.475: 0000155 seq   9406 wc   1 char 155 (m)
+10:18:32.475: 0000141 seq   9407 wc   1 char 141 (a)
+10:18:32.476: 0000156 seq   9408 wc   1 char 156 (n)
+10:18:32.476: 0000054 seq   9409 wc   1 char 054 (,)
+10:18:32.476: 0000063 seq   9410 wc   1 char 063 (3)
+10:18:32.476: 0000062 seq   9411 wc   1 char 062 (2)
+10:18:32.476: 0000054 seq   9412 wc   1 char 054 (,)
+10:18:32.477: 0000142 seq   9413 wc   1 char 142 (b)
+10:18:32.477: 0000157 seq   9414 wc   1 char 157 (o)
+10:18:32.477: 0000154 seq   9415 wc   1 char 154 (l)
+10:18:32.477: 0000144 seq   9416 wc   1 char 144 (d)
+10:18:32.477: 0000072 seq   9417 wc   1 char 072 (:)
+10:18:32.477: 0000040 seq   9418 wc   1 char 040 ( )
+10:18:32.478: 0000144 seq   9419 wc   1 char 144 (d)
+10:18:32.478: 0000157 seq   9420 wc   1 char 157 (o)
+10:18:32.478: 0000147 seq   9421 wc   1 char 147 (g)
+10:18:32.478: 0000041 seq   9422 wc   1 char 041 (!)
+10:18:32.478: 0015526 seq   9423 wc   1 load mode 31
+10:18:32.478: 0015422 seq   9424 wc   1 load mode 31
+10:18:32.478: 0015530 seq   9425 wc   1 Start load plato meta data
+10:18:32.478: 0000106 seq   9426 wc   1 plato meta data: 70 (counter=1)
+10:18:32.478: 0000006 seq   9427 wc   1 plato meta data: 6 (counter=2)
+10:18:32.478: 0000044 seq   9428 wc   1 plato meta data: 36 (counter=3)
+10:18:32.478: 0000010 seq   9429 wc   1 plato meta data: 8 (counter=4)
+10:18:32.478: seq   9429 wc   1 Font selected: Courier New,36,8
+10:18:32.479: seq   9429 wc   1 plato meta data complete: font data accepted
+10:18:32.479: seq   9429 wc   1 Font selected: Courier New,36,1
+10:18:32.479: 0000037 seq   9430 wc   1 load mode 15
+10:18:32.479: 0015422 seq   9431 wc   1 load mode 15
+10:18:32.479: 0000015 seq   9432 wc   1 CR to 16 321
+10:18:32.479: 0000143 seq   9433 wc   1 char 143 (c)
+10:18:32.480: 0000157 seq   9434 wc   1 char 157 (o)
+10:18:32.480: 0000165 seq   9435 wc   1 char 165 (u)
+10:18:32.480: 0000162 seq   9436 wc   1 char 162 (r)
+10:18:32.480: 0000156 seq   9437 wc   1 char 156 (n)
+10:18:32.480: 0000145 seq   9438 wc   1 char 145 (e)
+10:18:32.481: 0000167 seq   9439 wc   1 char 167 (w)
+10:18:32.481: 0000054 seq   9440 wc   1 char 054 (,)
+10:18:32.481: 0000063 seq   9441 wc   1 char 063 (3)
+10:18:32.481: 0000066 seq   9442 wc   1 char 066 (6)
+10:18:32.481: 0000054 seq   9443 wc   1 char 054 (,)
+10:18:32.482: 0000165 seq   9444 wc   1 char 165 (u)
+10:18:32.482: 0000156 seq   9445 wc   1 char 156 (n)
+10:18:32.482: 0000144 seq   9446 wc   1 char 144 (d)
+10:18:32.482: 0000145 seq   9447 wc   1 char 145 (e)
+10:18:32.482: 0000162 seq   9448 wc   1 char 162 (r)
+10:18:32.482: 0000154 seq   9449 wc   1 char 154 (l)
+10:18:32.483: 0000156 seq   9450 wc   1 char 156 (n)
+10:18:32.483: 0015526 seq   9451 wc   1 load mode 31
+10:18:32.483: 0015422 seq   9452 wc   1 load mode 31
+10:18:32.483: 0015530 seq   9453 wc   1 Start load plato meta data
+10:18:32.483: 0000106 seq   9454 wc   1 plato meta data: 70 (counter=1)
+10:18:32.485: 0000001 seq   9455 wc   1 plato meta data: 1 (counter=2)
+10:18:32.494: 0000000 seq   9456 wc   1 plato meta data: 0 (counter=3)
+10:18:32.502: 0000000 seq   9457 wc   1 plato meta data: 0 (counter=4)
+10:18:32.502: seq   9457 wc   1 Font selected: default,1,0
+10:18:32.502: seq   9457 wc   1 plato meta data complete: font data accepted
+10:18:32.502: seq   9457 wc   1 Font selected: default,1,0
+10:18:32.502: 0000035 seq   9458 wc   1 load mode 7
+10:18:32.502: 0000047 seq   9459 wc   1 high Y 7
+10:18:32.502: 0000130 seq   9460 wc   1 low X 24, coordinates 24 240
+10:18:32.502: seq   9460 wc   1 load coordinate 24 240
+10:18:32.502: 0015532 seq   9461 wc   1 set margin 24
+10:18:32.502: 0000037 seq   9462 wc   1 load mode 15
+10:18:32.502: 0015422 seq   9463 wc   1 load mode 15
+10:18:32.502: 0000101 seq   9464 wc   1 char 101 (A)
+10:18:32.502: 0000156 seq   9465 wc   1 char 156 (n)
+10:18:32.502: 0000144 seq   9466 wc   1 char 144 (d)
+10:18:32.502: 0000040 seq   9467 wc   1 char 040 ( )
+10:18:32.502: 0000146 seq   9468 wc   1 char 146 (f)
+10:18:32.503: 0000157 seq   9469 wc   1 char 157 (o)
+10:18:32.503: 0000162 seq   9470 wc   1 char 162 (r)
+10:18:32.503: 0000040 seq   9471 wc   1 char 040 ( )
+10:18:32.503: 0000163 seq   9472 wc   1 char 163 (s)
+10:18:32.503: 0000157 seq   9473 wc   1 char 157 (o)
+10:18:32.568: 0000155 seq   9474 wc   1 char 155 (m)
+10:18:32.568: 0000145 seq   9475 wc   1 char 145 (e)
+10:18:32.569: 0000040 seq   9476 wc   1 char 040 ( )
+10:18:32.569: 0000163 seq   9477 wc   1 char 163 (s)
+10:18:32.569: 0000155 seq   9478 wc   1 char 155 (m)
+10:18:32.569: 0000141 seq   9479 wc   1 char 141 (a)
+10:18:32.569: 0000154 seq   9480 wc   1 char 154 (l)
+10:18:32.569: 0000154 seq   9481 wc   1 char 154 (l)
+10:18:32.569: 0000040 seq   9482 wc   1 char 040 ( )
+10:18:32.569: 0000146 seq   9483 wc   1 char 146 (f)
+10:18:32.570: 0000157 seq   9484 wc   1 char 157 (o)
+10:18:32.570: 0000156 seq   9485 wc   1 char 156 (n)
+10:18:32.570: 0000164 seq   9486 wc   1 char 164 (t)
+10:18:32.570: 0000163 seq   9487 wc   1 char 163 (s)
+10:18:32.570: 0000072 seq   9488 wc   1 char 072 (:)
+10:18:32.570: 0015526 seq   9489 wc   1 load mode 31
+10:18:32.570: 0015422 seq   9490 wc   1 load mode 31
+10:18:32.570: 0015530 seq   9491 wc   1 Start load plato meta data
+10:18:32.570: 0000106 seq   9492 wc   1 plato meta data: 70 (counter=1)
+10:18:32.570: 0000020 seq   9493 wc   1 plato meta data: 16 (counter=2)
+10:18:32.570: 0000006 seq   9494 wc   1 plato meta data: 6 (counter=3)
+10:18:32.573: 0000000 seq   9495 wc   1 plato meta data: 0 (counter=4)
+10:18:32.573: seq   9495 wc   1 Font selected: Arial,6,0
+10:18:32.573: seq   9495 wc   1 plato meta data complete: font data accepted
+10:18:32.573: seq   9495 wc   1 Font selected: Arial,6,0
+10:18:32.573: 0000035 seq   9496 wc   1 load mode 7
+10:18:32.573: 0000140 seq   9497 wc   1 low Y 0
+10:18:32.573: 0000130 seq   9498 wc   1 low X 24, coordinates 24 224
+10:18:32.573: seq   9498 wc   1 load coordinate 24 224
+10:18:32.573: 0015532 seq   9499 wc   1 set margin 24
+10:18:32.573: 0000037 seq   9500 wc   1 load mode 15
+10:18:32.573: 0015422 seq   9501 wc   1 load mode 15
+10:18:32.573: 0000124 seq   9502 wc   1 char 124 (T)
+10:18:32.581: 0000150 seq   9503 wc   1 char 150 (h)
+10:18:32.581: 0000151 seq   9504 wc   1 char 151 (i)
+10:18:32.581: 0000163 seq   9505 wc   1 char 163 (s)
+10:18:32.581: 0000040 seq   9506 wc   1 char 040 ( )
+10:18:32.581: 0000151 seq   9507 wc   1 char 151 (i)
+10:18:32.581: 0000163 seq   9508 wc   1 char 163 (s)
+10:18:32.582: 0000040 seq   9509 wc   1 char 040 ( )
+10:18:32.582: 0000141 seq   9510 wc   1 char 141 (a)
+10:18:32.582: 0000162 seq   9511 wc   1 char 162 (r)
+10:18:32.582: 0000151 seq   9512 wc   1 char 151 (i)
+10:18:32.582: 0000141 seq   9513 wc   1 char 141 (a)
+10:18:32.582: 0000154 seq   9514 wc   1 char 154 (l)
+10:18:32.582: 0000040 seq   9515 wc   1 char 040 ( )
+10:18:32.583: 0000163 seq   9516 wc   1 char 163 (s)
+10:18:32.583: 0000151 seq   9517 wc   1 char 151 (i)
+10:18:32.583: 0000172 seq   9518 wc   1 char 172 (z)
+10:18:32.583: 0000145 seq   9519 wc   1 char 145 (e)
+10:18:32.583: 0000040 seq   9520 wc   1 char 040 ( )
+10:18:32.583: 0000066 seq   9521 wc   1 char 066 (6)
+10:18:32.583: 0000054 seq   9522 wc   1 char 054 (,)
+10:18:32.583: 0000040 seq   9523 wc   1 char 040 ( )
+10:18:32.584: 0000164 seq   9524 wc   1 char 164 (t)
+10:18:32.584: 0000150 seq   9525 wc   1 char 150 (h)
+10:18:32.584: 0000145 seq   9526 wc   1 char 145 (e)
+10:18:32.584: 0000040 seq   9527 wc   1 char 040 ( )
+10:18:32.584: 0000155 seq   9528 wc   1 char 155 (m)
+10:18:32.584: 0000151 seq   9529 wc   1 char 151 (i)
+10:18:32.702: 0000156 seq   9530 wc   1 char 156 (n)
+10:18:32.702: 0000151 seq   9531 wc   1 char 151 (i)
+10:18:32.702: 0000155 seq   9532 wc   1 char 155 (m)
+10:18:32.702: 0000165 seq   9533 wc   1 char 165 (u)
+10:18:32.702: 0000155 seq   9534 wc   1 char 155 (m)
+10:18:32.702: 0000040 seq   9535 wc   1 char 040 ( )
+10:18:32.703: 0000163 seq   9536 wc   1 char 163 (s)
+10:18:32.703: 0000151 seq   9537 wc   1 char 151 (i)
+10:18:32.703: 0000172 seq   9538 wc   1 char 172 (z)
+10:18:32.703: 0000145 seq   9539 wc   1 char 145 (e)
+10:18:32.703: 0000056 seq   9540 wc   1 char 056 (.)
+10:18:32.703: 0000040 seq   9541 wc   1 char 040 ( )
+10:18:32.704: 0000040 seq   9542 wc   1 char 040 ( )
+10:18:32.704: 0000124 seq   9543 wc   1 char 124 (T)
+10:18:32.704: 0000150 seq   9544 wc   1 char 150 (h)
+10:18:32.704: 0000151 seq   9545 wc   1 char 151 (i)
+10:18:32.704: 0000163 seq   9546 wc   1 char 163 (s)
+10:18:32.704: 0000040 seq   9547 wc   1 char 040 ( )
+10:18:32.704: 0000167 seq   9548 wc   1 char 167 (w)
+10:18:32.705: 0000157 seq   9549 wc   1 char 157 (o)
+10:18:32.705: 0000165 seq   9550 wc   1 char 165 (u)
+10:18:32.705: 0000154 seq   9551 wc   1 char 154 (l)
+10:18:32.705: 0000144 seq   9552 wc   1 char 144 (d)
+10:18:32.705: 0000040 seq   9553 wc   1 char 040 ( )
+10:18:32.705: 0000142 seq   9554 wc   1 char 142 (b)
+10:18:32.705: 0000145 seq   9555 wc   1 char 145 (e)
+10:18:32.706: 0000040 seq   9556 wc   1 char 040 ( )
+10:18:32.706: 0000147 seq   9557 wc   1 char 147 (g)
+10:18:32.706: 0000162 seq   9558 wc   1 char 162 (r)
+10:18:32.706: 0000145 seq   9559 wc   1 char 145 (e)
+10:18:32.706: 0000141 seq   9560 wc   1 char 141 (a)
+10:18:32.706: 0000164 seq   9561 wc   1 char 164 (t)
+10:18:32.706: 0000040 seq   9562 wc   1 char 040 ( )
+10:18:32.706: 0000015 seq   9563 wc   1 CR to 24 217
+10:18:32.707: 0000146 seq   9564 wc   1 char 146 (f)
+10:18:32.707: 0000157 seq   9565 wc   1 char 157 (o)
+10:18:32.707: 0000162 seq   9566 wc   1 char 162 (r)
+10:18:32.707: 0000040 seq   9567 wc   1 char 040 ( )
+10:18:32.707: 0000154 seq   9568 wc   1 char 154 (l)
+10:18:32.707: 0000141 seq   9569 wc   1 char 141 (a)
+10:18:32.707: 0000142 seq   9570 wc   1 char 142 (b)
+10:18:32.707: 0000145 seq   9571 wc   1 char 145 (e)
+10:18:32.708: 0000154 seq   9572 wc   1 char 154 (l)
+10:18:32.708: 0000151 seq   9573 wc   1 char 151 (i)
+10:18:32.708: 0000156 seq   9574 wc   1 char 156 (n)
+10:18:32.708: 0000147 seq   9575 wc   1 char 147 (g)
+10:18:32.708: 0000056 seq   9576 wc   1 char 056 (.)
+10:18:32.708: 0015526 seq   9577 wc   1 load mode 31
+10:18:32.708: 0015422 seq   9578 wc   1 load mode 31
+10:18:32.708: 0015530 seq   9579 wc   1 Start load plato meta data
+10:18:32.708: 0000106 seq   9580 wc   1 plato meta data: 70 (counter=1)
+10:18:32.709: 0000001 seq   9581 wc   1 plato meta data: 1 (counter=2)
+10:18:32.718: 0000000 seq   9582 wc   1 plato meta data: 0 (counter=3)
+10:18:32.725: 0000000 seq   9583 wc   1 plato meta data: 0 (counter=4)
+10:18:32.725: seq   9583 wc   1 Font selected: default,1,0
+10:18:32.725: seq   9583 wc   1 plato meta data complete: font data accepted
+10:18:32.725: seq   9583 wc   1 Font selected: default,1,0
+10:18:32.725: 0000035 seq   9584 wc   1 load mode 7
+10:18:32.725: 0000046 seq   9585 wc   1 high Y 6
+10:18:32.725: 0000130 seq   9586 wc   1 low X 24, coordinates 24 192
+10:18:32.756: seq   9586 wc   1 load coordinate 24 192
+10:18:32.756: 0015532 seq   9587 wc   1 set margin 24
+10:18:32.756: 0000037 seq   9588 wc   1 load mode 15
+10:18:32.756: 0015422 seq   9589 wc   1 load mode 15
+10:18:32.756: 0000101 seq   9590 wc   1 char 101 (A)
+10:18:32.757: 0000156 seq   9591 wc   1 char 156 (n)
+10:18:32.757: 0000144 seq   9592 wc   1 char 144 (d)
+10:18:32.757: 0000040 seq   9593 wc   1 char 040 ( )
+10:18:32.757: 0000164 seq   9594 wc   1 char 164 (t)
+10:18:32.757: 0000150 seq   9595 wc   1 char 150 (h)
+10:18:32.757: 0000151 seq   9596 wc   1 char 151 (i)
+10:18:32.757: 0000163 seq   9597 wc   1 char 163 (s)
+10:18:32.757: 0000040 seq   9598 wc   1 char 040 ( )
+10:18:32.758: 0000151 seq   9599 wc   1 char 151 (i)
+10:18:32.758: 0000163 seq   9600 wc   1 char 163 (s)
+10:18:32.758: 0000040 seq   9601 wc   1 char 040 ( )
+10:18:32.758: 0000163 seq   9602 wc   1 char 163 (s)
+10:18:32.758: 0000143 seq   9603 wc   1 char 143 (c)
+10:18:32.758: 0000162 seq   9604 wc   1 char 162 (r)
+10:18:32.758: 0000151 seq   9605 wc   1 char 151 (i)
+10:18:32.758: 0000160 seq   9606 wc   1 char 160 (p)
+10:18:32.758: 0000164 seq   9607 wc   1 char 164 (t)
+10:18:32.758: 0000054 seq   9608 wc   1 char 054 (,)
+10:18:32.758: 0000040 seq   9609 wc   1 char 040 ( )
+10:18:32.758: 0000163 seq   9610 wc   1 char 163 (s)
+10:18:32.758: 0000151 seq   9611 wc   1 char 151 (i)
+10:18:32.759: 0000172 seq   9612 wc   1 char 172 (z)
+10:18:32.759: 0000145 seq   9613 wc   1 char 145 (e)
+10:18:32.759: 0000040 seq   9614 wc   1 char 040 ( )
+10:18:32.759: 0000061 seq   9615 wc   1 char 061 (1)
+10:18:32.759: 0000070 seq   9616 wc   1 char 070 (8)
+10:18:32.759: 0000072 seq   9617 wc   1 char 072 (:)
+10:18:32.759: 0015526 seq   9618 wc   1 load mode 31
+10:18:32.759: 0015422 seq   9619 wc   1 load mode 31
+10:18:32.759: 0015530 seq   9620 wc   1 Start load plato meta data
+10:18:32.759: 0000106 seq   9621 wc   1 plato meta data: 70 (counter=1)
+10:18:32.759: 0000022 seq   9622 wc   1 plato meta data: 18 (counter=2)
+10:18:32.759: 0000022 seq   9623 wc   1 plato meta data: 18 (counter=3)
+10:18:32.765: 0000000 seq   9624 wc   1 plato meta data: 0 (counter=4)
+10:18:32.766: seq   9624 wc   1 Font selected: Script,18,0
+10:18:32.789: seq   9624 wc   1 plato meta data complete: font data accepted
+10:18:32.789: seq   9624 wc   1 Font selected: Script,18,0
+10:18:32.789: 0000035 seq   9625 wc   1 load mode 7
+10:18:32.789: 0000045 seq   9626 wc   1 high Y 5
+10:18:32.789: 0000130 seq   9627 wc   1 low X 24, coordinates 24 160
+10:18:32.789: seq   9627 wc   1 load coordinate 24 160
+10:18:32.789: 0015532 seq   9628 wc   1 set margin 24
+10:18:32.790: 0000037 seq   9629 wc   1 load mode 15
+10:18:32.790: 0015422 seq   9630 wc   1 load mode 15
+10:18:32.790: 0000101 seq   9631 wc   1 char 101 (A)
+10:18:32.790: 0000154 seq   9632 wc   1 char 154 (l)
+10:18:32.790: 0000141 seq   9633 wc   1 char 141 (a)
+10:18:32.790: 0000163 seq   9634 wc   1 char 163 (s)
+10:18:32.791: 0000054 seq   9635 wc   1 char 054 (,)
+10:18:32.791: 0000040 seq   9636 wc   1 char 040 ( )
+10:18:32.791: 0000160 seq   9637 wc   1 char 160 (p)
+10:18:32.791: 0000157 seq   9638 wc   1 char 157 (o)
+10:18:32.791: 0000157 seq   9639 wc   1 char 157 (o)
+10:18:32.791: 0000162 seq   9640 wc   1 char 162 (r)
+10:18:32.792: 0000040 seq   9641 wc   1 char 040 ( )
+10:18:32.792: 0000131 seq   9642 wc   1 char 131 (Y)
+10:18:32.792: 0000157 seq   9643 wc   1 char 157 (o)
+10:18:32.792: 0000162 seq   9644 wc   1 char 162 (r)
+10:18:32.792: 0000151 seq   9645 wc   1 char 151 (i)
+10:18:32.792: 0000143 seq   9646 wc   1 char 143 (c)
+10:18:32.793: 0000153 seq   9647 wc   1 char 153 (k)
+10:18:32.793: 0000041 seq   9648 wc   1 char 041 (!)
+10:18:32.793: 0000040 seq   9649 wc   1 char 040 ( )
+10:18:32.793: 0000111 seq   9650 wc   1 char 111 (I)
+10:18:32.793: 0000040 seq   9651 wc   1 char 040 ( )
+10:18:32.793: 0000153 seq   9652 wc   1 char 153 (k)
+10:18:32.793: 0000156 seq   9653 wc   1 char 156 (n)
+10:18:32.794: 0000145 seq   9654 wc   1 char 145 (e)
+10:18:32.794: 0000167 seq   9655 wc   1 char 167 (w)
+10:18:32.794: 0000040 seq   9656 wc   1 char 040 ( )
+10:18:32.794: 0000150 seq   9657 wc   1 char 150 (h)
+10:18:32.794: 0000151 seq   9658 wc   1 char 151 (i)
+10:18:32.794: 0000155 seq   9659 wc   1 char 155 (m)
+10:18:32.795: 0000054 seq   9660 wc   1 char 054 (,)
+10:18:32.795: 0000040 seq   9661 wc   1 char 040 ( )
+10:18:32.795: 0000110 seq   9662 wc   1 char 110 (H)
+10:18:32.795: 0000157 seq   9663 wc   1 char 157 (o)
+10:18:32.795: 0000162 seq   9664 wc   1 char 162 (r)
+10:18:32.795: 0000141 seq   9665 wc   1 char 141 (a)
+10:18:32.795: 0000164 seq   9666 wc   1 char 164 (t)
+10:18:32.796: 0000151 seq   9667 wc   1 char 151 (i)
+10:18:32.796: 0000157 seq   9668 wc   1 char 157 (o)
+10:18:32.796: 0000072 seq   9669 wc   1 char 072 (:)
+10:18:32.796: 0000040 seq   9670 wc   1 char 040 ( )
+10:18:32.796: 0000141 seq   9671 wc   1 char 141 (a)
+10:18:32.796: 0000040 seq   9672 wc   1 char 040 ( )
+10:18:32.796: 0000146 seq   9673 wc   1 char 146 (f)
+10:18:32.797: 0000145 seq   9674 wc   1 char 145 (e)
+10:18:32.797: 0000154 seq   9675 wc   1 char 154 (l)
+10:18:32.797: 0000154 seq   9676 wc   1 char 154 (l)
+10:18:32.797: 0000157 seq   9677 wc   1 char 157 (o)
+10:18:32.797: 0000167 seq   9678 wc   1 char 167 (w)
+10:18:32.797: 0000015 seq   9679 wc   1 CR to 24 136
+10:18:32.797: 0000157 seq   9680 wc   1 char 157 (o)
+10:18:32.797: 0000146 seq   9681 wc   1 char 146 (f)
+10:18:32.797: 0000040 seq   9682 wc   1 char 040 ( )
+10:18:32.798: 0000151 seq   9683 wc   1 char 151 (i)
+10:18:32.798: 0000156 seq   9684 wc   1 char 156 (n)
+10:18:32.798: 0000146 seq   9685 wc   1 char 146 (f)
+10:18:32.798: 0000151 seq   9686 wc   1 char 151 (i)
+10:18:32.798: 0000156 seq   9687 wc   1 char 156 (n)
+10:18:32.798: 0000151 seq   9688 wc   1 char 151 (i)
+10:18:32.798: 0000164 seq   9689 wc   1 char 164 (t)
+10:18:32.798: 0000145 seq   9690 wc   1 char 145 (e)
+10:18:32.799: 0000040 seq   9691 wc   1 char 040 ( )
+10:18:32.799: 0000152 seq   9692 wc   1 char 152 (j)
+10:18:32.799: 0000145 seq   9693 wc   1 char 145 (e)
+10:18:32.799: 0000163 seq   9694 wc   1 char 163 (s)
+10:18:32.799: 0000164 seq   9695 wc   1 char 164 (t)
+10:18:32.799: 0000054 seq   9696 wc   1 char 054 (,)
+10:18:32.799: 0000040 seq   9697 wc   1 char 040 ( )
+10:18:32.799: 0000157 seq   9698 wc   1 char 157 (o)
+10:18:32.800: 0000146 seq   9699 wc   1 char 146 (f)
+10:18:32.800: 0000040 seq   9700 wc   1 char 040 ( )
+10:18:32.800: 0000155 seq   9701 wc   1 char 155 (m)
+10:18:32.800: 0000157 seq   9702 wc   1 char 157 (o)
+10:18:32.811: 0000163 seq   9703 wc   1 char 163 (s)
+10:18:32.812: 0000164 seq   9704 wc   1 char 164 (t)
+10:18:32.812: 0000040 seq   9705 wc   1 char 040 ( )
+10:18:32.812: 0000145 seq   9706 wc   1 char 145 (e)
+10:18:32.813: 0000170 seq   9707 wc   1 char 170 (x)
+10:18:32.813: 0000143 seq   9708 wc   1 char 143 (c)
+10:18:32.813: 0000145 seq   9709 wc   1 char 145 (e)
+10:18:32.813: 0000154 seq   9710 wc   1 char 154 (l)
+10:18:32.813: 0000154 seq   9711 wc   1 char 154 (l)
+10:18:32.813: 0000145 seq   9712 wc   1 char 145 (e)
+10:18:32.814: 0000156 seq   9713 wc   1 char 156 (n)
+10:18:32.814: 0000164 seq   9714 wc   1 char 164 (t)
+10:18:32.814: 0000040 seq   9715 wc   1 char 040 ( )
+10:18:32.814: 0000146 seq   9716 wc   1 char 146 (f)
+10:18:32.814: 0000141 seq   9717 wc   1 char 141 (a)
+10:18:32.814: 0000156 seq   9718 wc   1 char 156 (n)
+10:18:32.814: 0000143 seq   9719 wc   1 char 143 (c)
+10:18:32.814: 0000171 seq   9720 wc   1 char 171 (y)
+10:18:32.815: 0000056 seq   9721 wc   1 char 056 (.)
+10:18:32.815: 0000056 seq   9722 wc   1 char 056 (.)
+10:18:32.815: 0000056 seq   9723 wc   1 char 056 (.)
+10:18:32.815: 0015526 seq   9724 wc   1 load mode 31
+10:18:32.815: 0015422 seq   9725 wc   1 load mode 31
+10:18:32.815: 0015530 seq   9726 wc   1 Start load plato meta data
+10:18:32.815: 0000106 seq   9727 wc   1 plato meta data: 70 (counter=1)
+10:18:32.822: 0000001 seq   9728 wc   1 plato meta data: 1 (counter=2)
+10:18:32.830: 0000000 seq   9729 wc   1 plato meta data: 0 (counter=3)
+10:18:32.838: 0000000 seq   9730 wc   1 plato meta data: 0 (counter=4)
+10:18:32.838: seq   9730 wc   1 Font selected: default,1,0
+10:18:32.838: seq   9730 wc   1 plato meta data complete: font data accepted
+10:18:32.838: seq   9730 wc   1 Font selected: default,1,0
+10:18:32.838: 0015541 seq   9731 wc   1 Start foreground color
+10:18:32.838: 0000100 seq   9732 wc   1 color byte 1: 0
+10:18:32.838: 0000174 seq   9733 wc   1 color byte 2: 60
+10:18:32.838: 0000177 seq   9734 wc   1 color byte 3: 63
+10:18:32.838: 0000177 seq   9735 wc   1 set foreground color ffff00
+10:18:32.838: seq   9735 wc   1 fg: 255 255 0; bg: 0 0 0
+10:18:32.838: 0000035 seq   9736 wc   1 load mode 7
+10:18:32.838: 0000040 seq   9737 wc   1 high Y 0
+10:18:32.838: 0000140 seq   9738 wc   1 low Y 0
+10:18:32.838: 0000044 seq   9739 wc   1 high X 4
+10:18:32.838: 0000100 seq   9740 wc   1 low X 0, coordinates 128 0
+10:18:32.838: seq   9740 wc   1 load coordinate 128 0
+10:18:32.838: 0015532 seq   9741 wc   1 set margin 128
+10:18:32.838: 0000037 seq   9742 wc   1 load mode 15
+10:18:32.838: 0015424 seq   9743 wc   1 load mode 13
+10:18:32.838: 0000116 seq   9744 wc   1 char 116 (N)
+10:18:32.842: 0000105 seq   9745 wc   1 char 105 (E)
+10:18:32.842: 0000130 seq   9746 wc   1 char 130 (X)
+10:18:32.842: 0000124 seq   9747 wc   1 char 124 (T)
+10:18:32.842: 0000040 seq   9748 wc   1 char 040 ( )
+10:18:32.842: 0000164 seq   9749 wc   1 char 164 (t)
+10:18:32.842: 0000157 seq   9750 wc   1 char 157 (o)
+10:18:32.842: 0000040 seq   9751 wc   1 char 040 ( )
+10:18:32.842: 0000143 seq   9752 wc   1 char 143 (c)
+10:18:32.842: 0000157 seq   9753 wc   1 char 157 (o)
+10:18:32.842: 0000156 seq   9754 wc   1 char 156 (n)
+10:18:32.842: 0000164 seq   9755 wc   1 char 164 (t)
+10:18:32.842: 0000151 seq   9756 wc   1 char 151 (i)
+10:18:32.842: 0000156 seq   9757 wc   1 char 156 (n)
+10:18:32.853: 0000165 seq   9758 wc   1 char 165 (u)
+10:18:32.854: 0000145 seq   9759 wc   1 char 145 (e)
+10:18:32.854: 0000073 seq   9760 wc   1 char 073 (;)
+10:18:32.854: 0000040 seq   9761 wc   1 char 040 ( )
+10:18:32.854: 0000102 seq   9762 wc   1 char 102 (B)
+10:18:32.854: 0000101 seq   9763 wc   1 char 101 (A)
+10:18:32.854: 0000103 seq   9764 wc   1 char 103 (C)
+10:18:32.854: 0000113 seq   9765 wc   1 char 113 (K)
+10:18:32.854: 0000040 seq   9766 wc   1 char 040 ( )
+10:18:32.854: 0000146 seq   9767 wc   1 char 146 (f)
+10:18:32.854: 0000157 seq   9768 wc   1 char 157 (o)
+10:18:32.854: 0000162 seq   9769 wc   1 char 162 (r)
+10:18:32.854: 0000040 seq   9770 wc   1 char 040 ( )
+10:18:32.854: 0000162 seq   9771 wc   1 char 162 (r)
+10:18:32.854: 0000145 seq   9772 wc   1 char 145 (e)
+10:18:32.854: 0000166 seq   9773 wc   1 char 166 (v)
+10:18:32.855: 0000151 seq   9774 wc   1 char 151 (i)
+10:18:32.855: 0000145 seq   9775 wc   1 char 145 (e)
+10:18:32.855: 0000167 seq   9776 wc   1 char 167 (w)
+10:18:32.855: 0015541 seq   9777 wc   1 Start foreground color
+10:18:32.855: 0000177 seq   9778 wc   1 color byte 1: 63
+10:18:32.855: 0000177 seq   9779 wc   1 color byte 2: 63
+10:18:32.855: 0000117 seq   9780 wc   1 color byte 3: 15
+10:18:32.855: 0000100 seq   9781 wc   1 set foreground color 00ffff
+10:18:32.855: seq   9781 wc   1 fg: 0 255 255; bg: 0 0 0
+10:18:32.855: 0015531 seq   9782 wc   1 Start LDE
+10:18:32.855: 0000120 seq   9783 wc   1 data byte 1: 16
+10:18:32.855: 0000101 seq   9784 wc   1 data byte 2: 1
+10:18:32.855: 0000100 seq   9785 wc   1 data 0000120 (0x0050)
+10:18:32.855: seq   9785 wc   1 load echo 80 (0x50)
+10:18:32.855: key to plato 320
+10:18:32.855: ascii mode key to plato 0x1b 0x50 0x63
+10:18:34.170: Trace off

@@ -1,0 +1,274 @@
+0015502 seq  14711 wc   2 select memory M0
+0015422 seq  14712 wc   2 load mode 15
+0000035 seq  14713 wc   2 load mode 7
+0000054 seq  14714 wc   2 high Y 12
+0000160 seq  14715 wc   2 low Y 16
+0000051 seq  14716 wc   2 high X 9
+0000120 seq  14717 wc   2 low X 16, coordinates 304 400
+0015514 seq  14718 wc   2 Forward writing mode
+0015516 seq  14719 wc   2 Normal size writing mode
+0015512 seq  14720 wc   2 Horizontal writing mode
+0015414 seq  14721 wc   2 Full screen erase
+0015422 seq  14722 wc   2 load mode 7
+0015521 seq  14723 wc   2 Start SSF
+0000100 seq  14724 wc   2 data byte 1: 0
+0000120 seq  14725 wc   2 data byte 2: 16
+0000100 seq  14726 wc   2 data 0002000 (0x0400)
+0000035 seq  14727 wc   2 load mode 7
+0000057 seq  14728 wc   2 high Y 15
+0000160 seq  14729 wc   2 low Y 16
+0000040 seq  14730 wc   2 high X 0
+0000100 seq  14731 wc   2 low X 0, coordinates 0 496
+0015532 seq  14732 wc   2 set margin 0
+0000035 seq  14733 wc   2 load mode 7
+0000040 seq  14734 wc   2 high Y 0
+0000160 seq  14735 wc   2 low Y 16
+0000045 seq  14736 wc   2 high X 5
+0000130 seq  14737 wc   2 low X 24, coordinates 184 16
+0015532 seq  14738 wc   2 set margin 184
+0000037 seq  14739 wc   2 load mode 15
+0015422 seq  14740 wc   2 load mode 15
+0000110 seq  14741 wc   2 char 110 (H)
+0000105 seq  14742 wc   2 char 105 (E)
+0000114 seq  14743 wc   2 char 114 (L)
+0000120 seq  14744 wc   2 char 120 (P)
+0000040 seq  14745 wc   2 char 040 ( )
+0000151 seq  14746 wc   2 char 151 (i)
+0000163 seq  14747 wc   2 char 163 (s)
+0000040 seq  14748 wc   2 char 040 ( )
+0000141 seq  14749 wc   2 char 141 (a)
+0000166 seq  14750 wc   2 char 166 (v)
+0000141 seq  14751 wc   2 char 141 (a)
+0000151 seq  14752 wc   2 char 151 (i)
+0000154 seq  14753 wc   2 char 154 (l)
+0000141 seq  14754 wc   2 char 141 (a)
+0000142 seq  14755 wc   2 char 142 (b)
+0000154 seq  14756 wc   2 char 154 (l)
+0000145 seq  14757 wc   2 char 145 (e)
+0000035 seq  14758 wc   2 load mode 7
+0000054 seq  14759 wc   2 high Y 12
+0000140 seq  14760 wc   2 low Y 0
+0000044 seq  14761 wc   2 high X 4
+0000100 seq  14762 wc   2 low X 0, coordinates 128 384
+0015532 seq  14763 wc   2 set margin 128
+0000037 seq  14764 wc   2 load mode 15
+0015422 seq  14765 wc   2 load mode 15
+0015514 seq  14766 wc   2 Forward writing mode
+0015517 seq  14767 wc   2 Double size writing mode
+0015512 seq  14768 wc   2 Horizontal writing mode
+0000072 seq  14769 wc   2 char 072 (:)
+0000141 seq  14770 wc   2 char 141 (a)
+0000142 seq  14771 wc   2 char 142 (b)
+0000143 seq  14772 wc   2 char 143 (c)
+0000144 seq  14773 wc   2 char 144 (d)
+0000145 seq  14774 wc   2 char 145 (e)
+0000146 seq  14775 wc   2 char 146 (f)
+0000147 seq  14776 wc   2 char 147 (g)
+0000150 seq  14777 wc   2 char 150 (h)
+0000151 seq  14778 wc   2 char 151 (i)
+0000152 seq  14779 wc   2 char 152 (j)
+0000153 seq  14780 wc   2 char 153 (k)
+0000154 seq  14781 wc   2 char 154 (l)
+0000155 seq  14782 wc   2 char 155 (m)
+0000156 seq  14783 wc   2 char 156 (n)
+0000157 seq  14784 wc   2 char 157 (o)
+0015514 seq  14785 wc   2 Forward writing mode
+0000015 seq  14786 wc   2 CR to 128 352
+0015514 seq  14787 wc   2 Forward writing mode
+0015516 seq  14788 wc   2 Normal size writing mode
+0015512 seq  14789 wc   2 Horizontal writing mode
+0015514 seq  14790 wc   2 Forward writing mode
+0015517 seq  14791 wc   2 Double size writing mode
+0015512 seq  14792 wc   2 Horizontal writing mode
+0000160 seq  14793 wc   2 char 160 (p)
+0000161 seq  14794 wc   2 char 161 (q)
+0000162 seq  14795 wc   2 char 162 (r)
+0000163 seq  14796 wc   2 char 163 (s)
+0000164 seq  14797 wc   2 char 164 (t)
+0000165 seq  14798 wc   2 char 165 (u)
+0000166 seq  14799 wc   2 char 166 (v)
+0000167 seq  14800 wc   2 char 167 (w)
+0000170 seq  14801 wc   2 char 170 (x)
+0000171 seq  14802 wc   2 char 171 (y)
+0000172 seq  14803 wc   2 char 172 (z)
+0000060 seq  14804 wc   2 char 060 (0)
+0000061 seq  14805 wc   2 char 061 (1)
+0000062 seq  14806 wc   2 char 062 (2)
+0000063 seq  14807 wc   2 char 063 (3)
+0000064 seq  14808 wc   2 char 064 (4)
+0015514 seq  14809 wc   2 Forward writing mode
+0000015 seq  14810 wc   2 CR to 128 320
+0015514 seq  14811 wc   2 Forward writing mode
+0015516 seq  14812 wc   2 Normal size writing mode
+0015512 seq  14813 wc   2 Horizontal writing mode
+0015514 seq  14814 wc   2 Forward writing mode
+0015517 seq  14815 wc   2 Double size writing mode
+0015512 seq  14816 wc   2 Horizontal writing mode
+0000065 seq  14817 wc   2 char 065 (5)
+0000066 seq  14818 wc   2 char 066 (6)
+0000067 seq  14819 wc   2 char 067 (7)
+0000070 seq  14820 wc   2 char 070 (8)
+0000071 seq  14821 wc   2 char 071 (9)
+0000053 seq  14822 wc   2 char 053 (+)
+0000055 seq  14823 wc   2 char 055 (-)
+0000052 seq  14824 wc   2 char 052 (*)
+0000057 seq  14825 wc   2 char 057 (/)
+0000050 seq  14826 wc   2 char 050 (()
+0000051 seq  14827 wc   2 char 051 ())
+0000044 seq  14828 wc   2 char 044 ($)
+0000075 seq  14829 wc   2 char 075 (=)
+0000040 seq  14830 wc   2 char 040 ( )
+0000054 seq  14831 wc   2 char 054 (,)
+0000056 seq  14832 wc   2 char 056 (.)
+0015514 seq  14833 wc   2 Forward writing mode
+0000015 seq  14834 wc   2 CR to 128 288
+0015514 seq  14835 wc   2 Forward writing mode
+0015516 seq  14836 wc   2 Normal size writing mode
+0015512 seq  14837 wc   2 Horizontal writing mode
+0015514 seq  14838 wc   2 Forward writing mode
+0015517 seq  14839 wc   2 Double size writing mode
+0015512 seq  14840 wc   2 Horizontal writing mode
+0015503 seq  14841 wc   2 select memory M1
+0000057 seq  14842 wc   2 char 057 (/)
+0015502 seq  14843 wc   2 select memory M0
+0000133 seq  14844 wc   2 char 133 ([)
+0000135 seq  14845 wc   2 char 135 (])
+0000045 seq  14846 wc   2 char 045 (%)
+0015503 seq  14847 wc   2 select memory M1
+0000052 seq  14848 wc   2 char 052 (*)
+0000044 seq  14849 wc   2 char 044 ($)
+0015502 seq  14850 wc   2 select memory M0
+0000047 seq  14851 wc   2 char 047 (')
+0000042 seq  14852 wc   2 char 042 (")
+0000041 seq  14853 wc   2 char 041 (!)
+0000073 seq  14854 wc   2 char 073 (;)
+0000074 seq  14855 wc   2 char 074 (<)
+0000076 seq  14856 wc   2 char 076 (>)
+0000137 seq  14857 wc   2 char 137 (_)
+0000077 seq  14858 wc   2 char 077 (?)
+0015503 seq  14859 wc   2 select memory M1
+0000077 seq  14860 wc   2 char 077 (?)
+0000040 seq  14861 wc   2 char 040 ( )
+0015514 seq  14862 wc   2 Forward writing mode
+0000015 seq  14863 wc   2 CR to 128 256
+0015514 seq  14864 wc   2 Forward writing mode
+0015516 seq  14865 wc   2 Normal size writing mode
+0015512 seq  14866 wc   2 Horizontal writing mode
+0015514 seq  14867 wc   2 Forward writing mode
+0015517 seq  14868 wc   2 Double size writing mode
+0015512 seq  14869 wc   2 Horizontal writing mode
+0015502 seq  14870 wc   2 select memory M0
+0000043 seq  14871 wc   2 char 043 (#)
+0000101 seq  14872 wc   2 char 101 (A)
+0000102 seq  14873 wc   2 char 102 (B)
+0000103 seq  14874 wc   2 char 103 (C)
+0000104 seq  14875 wc   2 char 104 (D)
+0000105 seq  14876 wc   2 char 105 (E)
+0000106 seq  14877 wc   2 char 106 (F)
+0000107 seq  14878 wc   2 char 107 (G)
+0000110 seq  14879 wc   2 char 110 (H)
+0000111 seq  14880 wc   2 char 111 (I)
+0000112 seq  14881 wc   2 char 112 (J)
+0000113 seq  14882 wc   2 char 113 (K)
+0000114 seq  14883 wc   2 char 114 (L)
+0000115 seq  14884 wc   2 char 115 (M)
+0000116 seq  14885 wc   2 char 116 (N)
+0000117 seq  14886 wc   2 char 117 (O)
+0015514 seq  14887 wc   2 Forward writing mode
+0000015 seq  14888 wc   2 CR to 128 224
+0015514 seq  14889 wc   2 Forward writing mode
+0015516 seq  14890 wc   2 Normal size writing mode
+0015512 seq  14891 wc   2 Horizontal writing mode
+0015514 seq  14892 wc   2 Forward writing mode
+0015517 seq  14893 wc   2 Double size writing mode
+0015512 seq  14894 wc   2 Horizontal writing mode
+0000120 seq  14895 wc   2 char 120 (P)
+0000121 seq  14896 wc   2 char 121 (Q)
+0000122 seq  14897 wc   2 char 122 (R)
+0000123 seq  14898 wc   2 char 123 (S)
+0000124 seq  14899 wc   2 char 124 (T)
+0000125 seq  14900 wc   2 char 125 (U)
+0000126 seq  14901 wc   2 char 126 (V)
+0000127 seq  14902 wc   2 char 127 (W)
+0000130 seq  14903 wc   2 char 130 (X)
+0000131 seq  14904 wc   2 char 131 (Y)
+0000132 seq  14905 wc   2 char 132 (Z)
+0000040 seq  14906 wc   2 char 040 ( )
+0000010 seq  14907 wc   2 backspace
+0015503 seq  14908 wc   2 select memory M1
+0000043 seq  14909 wc   2 char 043 (#)
+0000040 seq  14910 wc   2 char 040 ( )
+0000010 seq  14911 wc   2 backspace
+0000101 seq  14912 wc   2 char 101 (A)
+0000040 seq  14913 wc   2 char 040 ( )
+0000010 seq  14914 wc   2 backspace
+0015502 seq  14915 wc   2 select memory M0
+0000136 seq  14916 wc   2 char 136 (^)
+0000040 seq  14917 wc   2 char 040 ( )
+0000010 seq  14918 wc   2 backspace
+0015503 seq  14919 wc   2 select memory M1
+0000106 seq  14920 wc   2 char 106 (F)
+0000040 seq  14921 wc   2 char 040 ( )
+0000010 seq  14922 wc   2 backspace
+0015502 seq  14923 wc   2 select memory M0
+0000140 seq  14924 wc   2 char 140 (`)
+0015514 seq  14925 wc   2 Forward writing mode
+0000015 seq  14926 wc   2 CR to 128 192
+0015514 seq  14927 wc   2 Forward writing mode
+0015516 seq  14928 wc   2 Normal size writing mode
+0015512 seq  14929 wc   2 Horizontal writing mode
+0015514 seq  14930 wc   2 Forward writing mode
+0015517 seq  14931 wc   2 Double size writing mode
+0015512 seq  14932 wc   2 Horizontal writing mode
+0015503 seq  14933 wc   2 select memory M1
+0000046 seq  14934 wc   2 char 046 (&)
+0000047 seq  14935 wc   2 char 047 (')
+0000050 seq  14936 wc   2 char 050 (()
+0000051 seq  14937 wc   2 char 051 ())
+0015502 seq  14938 wc   2 select memory M0
+0000176 seq  14939 wc   2 char 176 (~)
+0015503 seq  14940 wc   2 select memory M1
+0000053 seq  14941 wc   2 char 053 (+)
+0000054 seq  14942 wc   2 char 054 (,)
+0000055 seq  14943 wc   2 char 055 (-)
+0000056 seq  14944 wc   2 char 056 (.)
+0015502 seq  14945 wc   2 select memory M0
+0000173 seq  14946 wc   2 char 173 ({)
+0000175 seq  14947 wc   2 char 175 (})
+0000046 seq  14948 wc   2 char 046 (&)
+0015503 seq  14949 wc   2 select memory M1
+0000045 seq  14950 wc   2 char 045 (%)
+0000040 seq  14951 wc   2 char 040 ( )
+0000112 seq  14952 wc   2 char 112 (J)
+0000075 seq  14953 wc   2 char 075 (=)
+0015514 seq  14954 wc   2 Forward writing mode
+0000015 seq  14955 wc   2 CR to 128 160
+0015514 seq  14956 wc   2 Forward writing mode
+0015516 seq  14957 wc   2 Normal size writing mode
+0015512 seq  14958 wc   2 Horizontal writing mode
+0015514 seq  14959 wc   2 Forward writing mode
+0015517 seq  14960 wc   2 Double size writing mode
+0015512 seq  14961 wc   2 Horizontal writing mode
+0000042 seq  14962 wc   2 char 042 (")
+0000060 seq  14963 wc   2 char 060 (0)
+0000061 seq  14964 wc   2 char 061 (1)
+0000062 seq  14965 wc   2 char 062 (2)
+0000063 seq  14966 wc   2 char 063 (3)
+0000064 seq  14967 wc   2 char 064 (4)
+0000065 seq  14968 wc   2 char 065 (5)
+0000066 seq  14969 wc   2 char 066 (6)
+0000067 seq  14970 wc   2 char 067 (7)
+0000070 seq  14971 wc   2 char 070 (8)
+0000071 seq  14972 wc   2 char 071 (9)
+0000072 seq  14973 wc   2 char 072 (:)
+0000073 seq  14974 wc   2 char 073 (;)
+0015502 seq  14975 wc   2 select memory M0
+0000100 seq  14976 wc   2 char 100 (@)
+0000057 seq  14977 wc   2 char 057 (/)
+0015514 seq  14978 wc   2 Forward writing mode
+0015516 seq  14979 wc   2 Normal size writing mode
+0015512 seq  14980 wc   2 Horizontal writing mode
+0015531 seq  14981 wc   2 Start LDE
+0000120 seq  14982 wc   2 data byte 1: 16
+0000101 seq  14983 wc   2 data byte 2: 1
+0000100 seq  14984 wc   2 data 0000120 (0x0050)

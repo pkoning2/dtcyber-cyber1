@@ -1,0 +1,141 @@
+0000002 seq   2048 wc  85 nop
+0120036 seq   2049 wc   0 load mode 15 screen 0
+0200400 seq   2050 wc   1 load coord X 256 
+0201400 seq   2051 wc   2 load coord Y 256 
+1777720 seq   2052 wc   3 char 77 77 20 (  p)
+0100036 seq   2053 wc   4 load mode 15 screen 0
+1773277 seq   2054 wc   5 char 77 32 77 ( z )
+1347730 seq   2055 wc   6 char 34 77 30 (1 x)
+0100037 seq   2056 wc   7 load mode 15 screen 1
+0502000 seq   2057 wc   8 ssf touch 502000
+0210000 seq   2058 wc   9 load coord X 0 margin
+0201760 seq   2059 wc  10 load coord Y 496 
+0210270 seq   2060 wc  11 load coord X 184 margin
+0201020 seq   2061 wc  12 load coord Y 16 
+0100036 seq   2062 wc  13 load mode 15 screen 0
+1772110 seq   2063 wc  14 char 77 21 10 ( qh)
+1051420 seq   2064 wc  15 char 05 14 20 (elp)
+1557720 seq   2065 wc  16 char 55 77 20 (  p)
+1112355 seq   2066 wc  17 char 11 23 55 (is )
+1012601 seq   2067 wc  18 char 01 26 01 (ava)
+1111401 seq   2068 wc  19 char 11 14 01 (ila)
+1021405 seq   2069 wc  20 char 02 14 05 (ble)
+0210200 seq   2070 wc  21 load coord X 128 margin
+0201600 seq   2071 wc  22 load coord Y 384 
+0100036 seq   2072 wc  23 load mode 15 screen 0
+0100036 seq   2073 wc  24 load mode 15 screen 0
+1773277 seq   2074 wc  25 char 77 32 77 ( z )
+1357730 seq   2075 wc  26 char 35 77 30 (2 x)
+1000102 seq   2076 wc  27 char 00 01 02 (:ab)
+1030405 seq   2077 wc  28 char 03 04 05 (cde)
+1060710 seq   2078 wc  29 char 06 07 10 (fgh)
+1111213 seq   2079 wc  30 char 11 12 13 (ijk)
+1141516 seq   2080 wc  31 char 14 15 16 (lmn)
+1177732 seq   2081 wc  32 char 17 77 32 (o z)
+1771577 seq   2082 wc  33 char 77 15 77 ( m )
+0100036 seq   2083 wc  34 load mode 15 screen 0
+1207732 seq   2084 wc  35 char 20 77 32 (p z)
+1773477 seq   2085 wc  36 char 77 34 77 ( 1 )
+1307720 seq   2086 wc  37 char 30 77 20 (x p)
+0100036 seq   2087 wc  38 load mode 15 screen 0
+1773277 seq   2088 wc  39 char 77 32 77 ( z )
+1357730 seq   2089 wc  40 char 35 77 30 (2 x)
+1202122 seq   2090 wc  41 char 20 21 22 (pqr)
+1232425 seq   2091 wc  42 char 23 24 25 (stu)
+1262730 seq   2092 wc  43 char 26 27 30 (vwx)
+1313233 seq   2093 wc  44 char 31 32 33 (yz0)
+1343536 seq   2094 wc  45 char 34 35 36 (123)
+1377732 seq   2095 wc  46 char 37 77 32 (4 z)
+1771577 seq   2096 wc  47 char 77 15 77 ( m )
+0100036 seq   2097 wc  48 load mode 15 screen 0
+1207732 seq   2098 wc  49 char 20 77 32 (p z)
+1773477 seq   2099 wc  50 char 77 34 77 ( 1 )
+1307720 seq   2100 wc  51 char 30 77 20 (x p)
+0100036 seq   2101 wc  52 load mode 15 screen 0
+1773277 seq   2102 wc  53 char 77 32 77 ( z )
+1357730 seq   2103 wc  54 char 35 77 30 (2 x)
+1404142 seq   2104 wc  55 char 40 41 42 (567)
+1434445 seq   2105 wc  56 char 43 44 45 (89+)
+1464750 seq   2106 wc  57 char 46 47 50 (-*/)
+1515253 seq   2107 wc  58 char 51 52 53 (()$)
+1545556 seq   2108 wc  59 char 54 55 56 (= ,)
+1577732 seq   2109 wc  60 char 57 77 32 (. z)
+1771577 seq   2110 wc  61 char 77 15 77 ( m )
+0100036 seq   2111 wc  62 load mode 15 screen 0
+1207732 seq   2112 wc  63 char 20 77 32 (p z)
+1773477 seq   2113 wc  64 char 77 34 77 ( 1 )
+1307720 seq   2114 wc  65 char 30 77 20 (x p)
+0100036 seq   2115 wc  66 load mode 15 screen 0
+1773277 seq   2116 wc  67 char 77 32 77 ( z )
+1357730 seq   2117 wc  68 char 35 77 30 (2 x)
+1606162 seq   2118 wc  69 char 60 61 62 (÷[])
+1636465 seq   2119 wc  70 char 63 64 65 (%×«)
+1666770 seq   2120 wc  71 char 66 67 70 ('"!)
+1717273 seq   2121 wc  72 char 71 72 73 (;<>)
+1747576 seq   2122 wc  73 char 74 75 76 (_?»)
+1557732 seq   2123 wc  74 char 55 77 32 (  z)
+1771577 seq   2124 wc  75 char 77 15 77 ( m )
+0100036 seq   2125 wc  76 load mode 15 screen 0
+1207732 seq   2126 wc  77 char 20 77 32 (p z)
+1773477 seq   2127 wc  78 char 77 34 77 ( 1 )
+1307720 seq   2128 wc  79 char 30 77 20 (x p)
+0100036 seq   2129 wc  80 load mode 15 screen 0
+1773277 seq   2130 wc  81 char 77 32 77 ( z )
+1357730 seq   2131 wc  82 char 35 77 30 (2 x)
+1772100 seq   2132 wc  83 char 77 21 00 ( q:)
+1010203 seq   2133 wc  84 char 01 02 03 (abc)
+1040506 seq   2134 wc  85 char 04 05 06 (def)
+1071011 seq   2135 wc  86 char 07 10 11 (ghi)
+1121314 seq   2136 wc  87 char 12 13 14 (jkl)
+1151617 seq   2137 wc  88 char 15 16 17 (mno)
+1773277 seq   2138 wc  89 char 77 32 77 ( z )
+1157721 seq   2139 wc  90 char 15 77 21 (m q)
+0100036 seq   2140 wc  91 load mode 15 screen 0
+1773277 seq   2141 wc  92 char 77 32 77 ( z )
+1347730 seq   2142 wc  93 char 34 77 30 (1 x)
+0100036 seq   2143 wc  94 load mode 15 screen 0
+1773277 seq   2144 wc  95 char 77 32 77 ( z )
+1357730 seq   2145 wc  96 char 35 77 30 (2 x)
+1202122 seq   2146 wc  97 char 20 21 22 (pqr)
+1232425 seq   2147 wc  98 char 23 24 25 (stu)
+1262730 seq   2148 wc  99 char 26 27 30 (vwx)
+1313255 seq   2149 wc 100 char 31 32 55 (yz )
+1771033 seq   2150 wc 101 char 77 10 33 ( h0)
+1557710 seq   2151 wc 102 char 55 77 10 (  h)
+1345577 seq   2152 wc 103 char 34 55 77 (1  )
+1103555 seq   2153 wc 104 char 10 35 55 (h2 )
+1771036 seq   2154 wc 105 char 77 10 36 ( h3)
+1557710 seq   2155 wc 106 char 55 77 10 (  h)
+1377732 seq   2156 wc 107 char 37 77 32 (4 z)
+1771577 seq   2157 wc 108 char 77 15 77 ( m )
+0100036 seq   2158 wc 109 load mode 15 screen 0
+1217732 seq   2159 wc 110 char 21 77 32 (q z)
+1773477 seq   2160 wc 111 char 77 34 77 ( 1 )
+1307721 seq   2161 wc 112 char 30 77 21 (x q)
+0100036 seq   2162 wc 113 load mode 15 screen 0
+1773277 seq   2163 wc 114 char 77 32 77 ( z )
+1357730 seq   2164 wc 115 char 35 77 30 (2 x)
+1404142 seq   2165 wc 116 char 40 41 42 (567)
+1434445 seq   2166 wc 117 char 43 44 45 (89+)
+1464750 seq   2167 wc 118 char 46 47 50 (-*/)
+1515253 seq   2168 wc 119 char 51 52 53 (()$)
+1545556 seq   2169 wc 120 char 54 55 56 (= ,)
+1577732 seq   2170 wc 121 char 57 77 32 (. z)
+1771577 seq   2171 wc 122 char 77 15 77 ( m )
+0100036 seq   2172 wc 123 load mode 15 screen 0
+1217732 seq   2173 wc 124 char 21 77 32 (q z)
+1773477 seq   2174 wc 125 char 77 34 77 ( 1 )
+1307721 seq   2175 wc 126 char 30 77 21 (x q)
+0100036 seq   2176 wc 127 load mode 15 screen 0
+1773277 seq   2177 wc   0 char 77 32 77 ( z )
+1357730 seq   2178 wc   1 char 35 77 30 (2 x)
+1606162 seq   2179 wc   2 char 60 61 62 (÷[])
+1636465 seq   2180 wc   3 char 63 64 65 (%×«)
+1666770 seq   2181 wc   4 char 66 67 70 ('"!)
+1717273 seq   2182 wc   5 char 71 72 73 (;<>)
+1747577 seq   2183 wc   6 char 74 75 77 (_? )
+1205077 seq   2184 wc   7 char 20 50 77 (p/ )
+0100036 seq   2185 wc   8 load mode 15 screen 0
+1207732 seq   2186 wc   9 char 20 77 32 (p z)
+1773477 seq   2187 wc  10 char 77 34 77 ( 1 )
+1307720 seq   2188 wc  11 char 30 77 20 (x p)

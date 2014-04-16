@@ -1,0 +1,890 @@
+0015502 seq   8701 wc   3 select memory M0
+0015422 seq   8702 wc   3 load mode 15
+0000035 seq   8703 wc   3 load mode 7
+0000054 seq   8704 wc   3 high Y 12
+0000160 seq   8705 wc   3 low Y 16
+0000051 seq   8706 wc   3 high X 9
+0000120 seq   8707 wc   3 low X 16, coordinates 304 400
+0015514 seq   8708 wc   3 Forward writing mode
+0015516 seq   8709 wc   3 Normal size writing mode
+0015512 seq   8710 wc   3 Horizontal writing mode
+0015414 seq   8711 wc   3 Full screen erase
+0015422 seq   8712 wc   3 load mode 7
+0015521 seq   8713 wc   3 Start SSF
+0000100 seq   8714 wc   3 data byte 1: 0
+0000120 seq   8715 wc   3 data byte 2: 16
+0000100 seq   8716 wc   3 data 0002000 (0x0400)
+0000035 seq   8717 wc   3 load mode 7
+0000057 seq   8718 wc   3 high Y 15
+0000160 seq   8719 wc   3 low Y 16
+0000040 seq   8720 wc   3 high X 0
+0000100 seq   8721 wc   3 low X 0, coordinates 0 496
+0015532 seq   8722 wc   3 set margin 0
+0000035 seq   8723 wc   3 load mode 7
+0000160 seq   8724 wc   3 low Y 16
+0000057 seq   8725 wc   3 high X 15
+0000130 seq   8726 wc   3 low X 24, coordinates 504 496
+0015532 seq   8727 wc   3 set margin 504
+0000037 seq   8728 wc   3 load mode 15
+0015422 seq   8729 wc   3 load mode 15
+0000052 seq   8730 wc   3 char 052 (*)
+0000035 seq   8731 wc   3 load mode 7
+0015422 seq   8732 wc   3 load mode 7
+0000160 seq   8733 wc   3 low Y 16
+0000040 seq   8734 wc   3 high X 0
+0000100 seq   8735 wc   3 low X 0, coordinates 0 496
+0000035 seq   8736 wc   3 load mode 7
+0000050 seq   8737 wc   3 high Y 8
+0000140 seq   8738 wc   3 low Y 0
+0000100 seq   8739 wc   3 low X 0, coordinates 0 256
+0000140 seq   8740 wc   3 low Y 0
+0000057 seq   8741 wc   3 high X 15
+0000137 seq   8742 wc   3 low X 31, coordinates 511 256
+0000035 seq   8743 wc   3 load mode 7
+0000040 seq   8744 wc   3 high Y 0
+0000140 seq   8745 wc   3 low Y 0
+0000050 seq   8746 wc   3 high X 8
+0000100 seq   8747 wc   3 low X 0, coordinates 256 0
+0000057 seq   8748 wc   3 high Y 15
+0000177 seq   8749 wc   3 low Y 31
+0000100 seq   8750 wc   3 low X 0, coordinates 256 511
+0000035 seq   8751 wc   3 load mode 7
+0000140 seq   8752 wc   3 low Y 0
+0000041 seq   8753 wc   3 high X 1
+0000130 seq   8754 wc   3 low X 24, coordinates 56 480
+0015532 seq   8755 wc   3 set margin 56
+0000037 seq   8756 wc   3 load mode 15
+0015422 seq   8757 wc   3 load mode 15
+0000110 seq   8758 wc   3 char 110 (H)
+0000117 seq   8759 wc   3 char 117 (O)
+0000122 seq   8760 wc   3 char 122 (R)
+0000111 seq   8761 wc   3 char 111 (I)
+0000132 seq   8762 wc   3 char 132 (Z)
+0000117 seq   8763 wc   3 char 117 (O)
+0000116 seq   8764 wc   3 char 116 (N)
+0000124 seq   8765 wc   3 char 124 (T)
+0000101 seq   8766 wc   3 char 101 (A)
+0000114 seq   8767 wc   3 char 114 (L)
+0000040 seq   8768 wc   3 char 040 ( )
+0000106 seq   8769 wc   3 char 106 (F)
+0000117 seq   8770 wc   3 char 117 (O)
+0000122 seq   8771 wc   3 char 122 (R)
+0000127 seq   8772 wc   3 char 127 (W)
+0000101 seq   8773 wc   3 char 101 (A)
+0000122 seq   8774 wc   3 char 122 (R)
+0000104 seq   8775 wc   3 char 104 (D)
+0000035 seq   8776 wc   3 load mode 7
+0000140 seq   8777 wc   3 low Y 0
+0000051 seq   8778 wc   3 high X 9
+0000130 seq   8779 wc   3 low X 24, coordinates 312 480
+0015532 seq   8780 wc   3 set margin 312
+0000037 seq   8781 wc   3 load mode 15
+0015422 seq   8782 wc   3 load mode 15
+0000110 seq   8783 wc   3 char 110 (H)
+0000117 seq   8784 wc   3 char 117 (O)
+0000122 seq   8785 wc   3 char 122 (R)
+0000111 seq   8786 wc   3 char 111 (I)
+0000132 seq   8787 wc   3 char 132 (Z)
+0000117 seq   8788 wc   3 char 117 (O)
+0000116 seq   8789 wc   3 char 116 (N)
+0000124 seq   8790 wc   3 char 124 (T)
+0000101 seq   8791 wc   3 char 101 (A)
+0000114 seq   8792 wc   3 char 114 (L)
+0000040 seq   8793 wc   3 char 040 ( )
+0000122 seq   8794 wc   3 char 122 (R)
+0000105 seq   8795 wc   3 char 105 (E)
+0000126 seq   8796 wc   3 char 126 (V)
+0000105 seq   8797 wc   3 char 105 (E)
+0000122 seq   8798 wc   3 char 122 (R)
+0000123 seq   8799 wc   3 char 123 (S)
+0000105 seq   8800 wc   3 char 105 (E)
+0000035 seq   8801 wc   3 load mode 7
+0000055 seq   8802 wc   3 high Y 13
+0000160 seq   8803 wc   3 low Y 16
+0000042 seq   8804 wc   3 high X 2
+0000100 seq   8805 wc   3 low X 0, coordinates 64 432
+0015532 seq   8806 wc   3 set margin 64
+0000037 seq   8807 wc   3 load mode 15
+0015422 seq   8808 wc   3 load mode 15
+0000072 seq   8809 wc   3 char 072 (:)
+0000141 seq   8810 wc   3 char 141 (a)
+0000142 seq   8811 wc   3 char 142 (b)
+0000143 seq   8812 wc   3 char 143 (c)
+0000144 seq   8813 wc   3 char 144 (d)
+0000145 seq   8814 wc   3 char 145 (e)
+0000146 seq   8815 wc   3 char 146 (f)
+0000147 seq   8816 wc   3 char 147 (g)
+0000150 seq   8817 wc   3 char 150 (h)
+0000151 seq   8818 wc   3 char 151 (i)
+0000152 seq   8819 wc   3 char 152 (j)
+0000153 seq   8820 wc   3 char 153 (k)
+0000154 seq   8821 wc   3 char 154 (l)
+0000155 seq   8822 wc   3 char 155 (m)
+0000156 seq   8823 wc   3 char 156 (n)
+0000157 seq   8824 wc   3 char 157 (o)
+0000015 seq   8825 wc   3 CR to 64 416
+0000160 seq   8826 wc   3 char 160 (p)
+0000161 seq   8827 wc   3 char 161 (q)
+0000162 seq   8828 wc   3 char 162 (r)
+0000163 seq   8829 wc   3 char 163 (s)
+0000164 seq   8830 wc   3 char 164 (t)
+0000165 seq   8831 wc   3 char 165 (u)
+0000166 seq   8832 wc   3 char 166 (v)
+0000167 seq   8833 wc   3 char 167 (w)
+0000170 seq   8834 wc   3 char 170 (x)
+0000171 seq   8835 wc   3 char 171 (y)
+0000172 seq   8836 wc   3 char 172 (z)
+0000060 seq   8837 wc   3 char 060 (0)
+0000061 seq   8838 wc   3 char 061 (1)
+0000062 seq   8839 wc   3 char 062 (2)
+0000063 seq   8840 wc   3 char 063 (3)
+0000064 seq   8841 wc   3 char 064 (4)
+0000015 seq   8842 wc   3 CR to 64 400
+0000065 seq   8843 wc   3 char 065 (5)
+0000066 seq   8844 wc   3 char 066 (6)
+0000067 seq   8845 wc   3 char 067 (7)
+0000070 seq   8846 wc   3 char 070 (8)
+0000071 seq   8847 wc   3 char 071 (9)
+0000053 seq   8848 wc   3 char 053 (+)
+0000055 seq   8849 wc   3 char 055 (-)
+0000052 seq   8850 wc   3 char 052 (*)
+0000057 seq   8851 wc   3 char 057 (/)
+0000050 seq   8852 wc   3 char 050 (()
+0000051 seq   8853 wc   3 char 051 ())
+0000044 seq   8854 wc   3 char 044 ($)
+0000075 seq   8855 wc   3 char 075 (=)
+0000040 seq   8856 wc   3 char 040 ( )
+0000054 seq   8857 wc   3 char 054 (,)
+0000056 seq   8858 wc   3 char 056 (.)
+0000015 seq   8859 wc   3 CR to 64 384
+0015503 seq   8860 wc   3 select memory M1
+0000057 seq   8861 wc   3 char 057 (/)
+0015502 seq   8862 wc   3 select memory M0
+0000133 seq   8863 wc   3 char 133 ([)
+0000135 seq   8864 wc   3 char 135 (])
+0000045 seq   8865 wc   3 char 045 (%)
+0015503 seq   8866 wc   3 select memory M1
+0000052 seq   8867 wc   3 char 052 (*)
+0000044 seq   8868 wc   3 char 044 ($)
+0015502 seq   8869 wc   3 select memory M0
+0000047 seq   8870 wc   3 char 047 (')
+0000042 seq   8871 wc   3 char 042 (")
+0000041 seq   8872 wc   3 char 041 (!)
+0000073 seq   8873 wc   3 char 073 (;)
+0000074 seq   8874 wc   3 char 074 (<)
+0000076 seq   8875 wc   3 char 076 (>)
+0000137 seq   8876 wc   3 char 137 (_)
+0000077 seq   8877 wc   3 char 077 (?)
+0015503 seq   8878 wc   3 select memory M1
+0000077 seq   8879 wc   3 char 077 (?)
+0000040 seq   8880 wc   3 char 040 ( )
+0000015 seq   8881 wc   3 CR to 64 368
+0015502 seq   8882 wc   3 select memory M0
+0000043 seq   8883 wc   3 char 043 (#)
+0000101 seq   8884 wc   3 char 101 (A)
+0000102 seq   8885 wc   3 char 102 (B)
+0000103 seq   8886 wc   3 char 103 (C)
+0000104 seq   8887 wc   3 char 104 (D)
+0000105 seq   8888 wc   3 char 105 (E)
+0000106 seq   8889 wc   3 char 106 (F)
+0000107 seq   8890 wc   3 char 107 (G)
+0000110 seq   8891 wc   3 char 110 (H)
+0000111 seq   8892 wc   3 char 111 (I)
+0000112 seq   8893 wc   3 char 112 (J)
+0000113 seq   8894 wc   3 char 113 (K)
+0000114 seq   8895 wc   3 char 114 (L)
+0000115 seq   8896 wc   3 char 115 (M)
+0000116 seq   8897 wc   3 char 116 (N)
+0000117 seq   8898 wc   3 char 117 (O)
+0000015 seq   8899 wc   3 CR to 64 352
+0000120 seq   8900 wc   3 char 120 (P)
+0000121 seq   8901 wc   3 char 121 (Q)
+0000122 seq   8902 wc   3 char 122 (R)
+0000123 seq   8903 wc   3 char 123 (S)
+0000124 seq   8904 wc   3 char 124 (T)
+0000125 seq   8905 wc   3 char 125 (U)
+0000126 seq   8906 wc   3 char 126 (V)
+0000127 seq   8907 wc   3 char 127 (W)
+0000130 seq   8908 wc   3 char 130 (X)
+0000131 seq   8909 wc   3 char 131 (Y)
+0000132 seq   8910 wc   3 char 132 (Z)
+0000040 seq   8911 wc   3 char 040 ( )
+0000010 seq   8912 wc   3 backspace
+0015503 seq   8913 wc   3 select memory M1
+0000043 seq   8914 wc   3 char 043 (#)
+0000040 seq   8915 wc   3 char 040 ( )
+0000010 seq   8916 wc   3 backspace
+0000101 seq   8917 wc   3 char 101 (A)
+0000040 seq   8918 wc   3 char 040 ( )
+0000010 seq   8919 wc   3 backspace
+0015502 seq   8920 wc   3 select memory M0
+0000136 seq   8921 wc   3 char 136 (^)
+0000040 seq   8922 wc   3 char 040 ( )
+0000010 seq   8923 wc   3 backspace
+0015503 seq   8924 wc   3 select memory M1
+0000106 seq   8925 wc   3 char 106 (F)
+0000040 seq   8926 wc   3 char 040 ( )
+0000010 seq   8927 wc   3 backspace
+0015502 seq   8928 wc   3 select memory M0
+0000140 seq   8929 wc   3 char 140 (`)
+0000015 seq   8930 wc   3 CR to 64 336
+0015503 seq   8931 wc   3 select memory M1
+0000046 seq   8932 wc   3 char 046 (&)
+0000047 seq   8933 wc   3 char 047 (')
+0000050 seq   8934 wc   3 char 050 (()
+0000051 seq   8935 wc   3 char 051 ())
+0015502 seq   8936 wc   3 select memory M0
+0000176 seq   8937 wc   3 char 176 (~)
+0015503 seq   8938 wc   3 select memory M1
+0000053 seq   8939 wc   3 char 053 (+)
+0000054 seq   8940 wc   3 char 054 (,)
+0000055 seq   8941 wc   3 char 055 (-)
+0000056 seq   8942 wc   3 char 056 (.)
+0015502 seq   8943 wc   3 select memory M0
+0000173 seq   8944 wc   3 char 173 ({)
+0000175 seq   8945 wc   3 char 175 (})
+0000046 seq   8946 wc   3 char 046 (&)
+0015503 seq   8947 wc   3 select memory M1
+0000045 seq   8948 wc   3 char 045 (%)
+0000040 seq   8949 wc   3 char 040 ( )
+0000112 seq   8950 wc   3 char 112 (J)
+0000075 seq   8951 wc   3 char 075 (=)
+0000015 seq   8952 wc   3 CR to 64 320
+0000042 seq   8953 wc   3 char 042 (")
+0000060 seq   8954 wc   3 char 060 (0)
+0000061 seq   8955 wc   3 char 061 (1)
+0000062 seq   8956 wc   3 char 062 (2)
+0000063 seq   8957 wc   3 char 063 (3)
+0000064 seq   8958 wc   3 char 064 (4)
+0000065 seq   8959 wc   3 char 065 (5)
+0000066 seq   8960 wc   3 char 066 (6)
+0000067 seq   8961 wc   3 char 067 (7)
+0000070 seq   8962 wc   3 char 070 (8)
+0000071 seq   8963 wc   3 char 071 (9)
+0000072 seq   8964 wc   3 char 072 (:)
+0000073 seq   8965 wc   3 char 073 (;)
+0015502 seq   8966 wc   3 select memory M0
+0000100 seq   8967 wc   3 char 100 (@)
+0000057 seq   8968 wc   3 char 057 (/)
+0000035 seq   8969 wc   3 load mode 7
+0000160 seq   8970 wc   3 low Y 16
+0000056 seq   8971 wc   3 high X 14
+0000100 seq   8972 wc   3 low X 0, coordinates 448 432
+0015532 seq   8973 wc   3 set margin 448
+0000037 seq   8974 wc   3 load mode 15
+0015422 seq   8975 wc   3 load mode 15
+0015515 seq   8976 wc   3 Reverse writing mode
+0015516 seq   8977 wc   3 Normal size writing mode
+0015512 seq   8978 wc   3 Horizontal writing mode
+0000072 seq   8979 wc   3 char 072 (:)
+0000141 seq   8980 wc   3 char 141 (a)
+0000142 seq   8981 wc   3 char 142 (b)
+0000143 seq   8982 wc   3 char 143 (c)
+0000144 seq   8983 wc   3 char 144 (d)
+0000145 seq   8984 wc   3 char 145 (e)
+0000146 seq   8985 wc   3 char 146 (f)
+0000147 seq   8986 wc   3 char 147 (g)
+0000150 seq   8987 wc   3 char 150 (h)
+0000151 seq   8988 wc   3 char 151 (i)
+0000152 seq   8989 wc   3 char 152 (j)
+0000153 seq   8990 wc   3 char 153 (k)
+0000154 seq   8991 wc   3 char 154 (l)
+0000155 seq   8992 wc   3 char 155 (m)
+0000156 seq   8993 wc   3 char 156 (n)
+0000157 seq   8994 wc   3 char 157 (o)
+0015514 seq   8995 wc   3 Forward writing mode
+0000015 seq   8996 wc   3 CR to 448 416
+0015514 seq   8997 wc   3 Forward writing mode
+0015516 seq   8998 wc   3 Normal size writing mode
+0015512 seq   8999 wc   3 Horizontal writing mode
+0015515 seq   9000 wc   3 Reverse writing mode
+0015516 seq   9001 wc   3 Normal size writing mode
+0015512 seq   9002 wc   3 Horizontal writing mode
+0000160 seq   9003 wc   3 char 160 (p)
+0000161 seq   9004 wc   3 char 161 (q)
+0000162 seq   9005 wc   3 char 162 (r)
+0000163 seq   9006 wc   3 char 163 (s)
+0000164 seq   9007 wc   3 char 164 (t)
+0000165 seq   9008 wc   3 char 165 (u)
+0000166 seq   9009 wc   3 char 166 (v)
+0000167 seq   9010 wc   3 char 167 (w)
+0000170 seq   9011 wc   3 char 170 (x)
+0000171 seq   9012 wc   3 char 171 (y)
+0000172 seq   9013 wc   3 char 172 (z)
+0000060 seq   9014 wc   3 char 060 (0)
+0000061 seq   9015 wc   3 char 061 (1)
+0000062 seq   9016 wc   3 char 062 (2)
+0000063 seq   9017 wc   3 char 063 (3)
+0000064 seq   9018 wc   3 char 064 (4)
+0015514 seq   9019 wc   3 Forward writing mode
+0000015 seq   9020 wc   3 CR to 448 400
+0015514 seq   9021 wc   3 Forward writing mode
+0015516 seq   9022 wc   3 Normal size writing mode
+0015512 seq   9023 wc   3 Horizontal writing mode
+0015515 seq   9024 wc   3 Reverse writing mode
+0015516 seq   9025 wc   3 Normal size writing mode
+0015512 seq   9026 wc   3 Horizontal writing mode
+0000065 seq   9027 wc   3 char 065 (5)
+0000066 seq   9028 wc   3 char 066 (6)
+0000067 seq   9029 wc   3 char 067 (7)
+0000070 seq   9030 wc   3 char 070 (8)
+0000071 seq   9031 wc   3 char 071 (9)
+0000053 seq   9032 wc   3 char 053 (+)
+0000055 seq   9033 wc   3 char 055 (-)
+0000052 seq   9034 wc   3 char 052 (*)
+0000057 seq   9035 wc   3 char 057 (/)
+0000050 seq   9036 wc   3 char 050 (()
+0000051 seq   9037 wc   3 char 051 ())
+0000044 seq   9038 wc   3 char 044 ($)
+0000075 seq   9039 wc   3 char 075 (=)
+0000040 seq   9040 wc   3 char 040 ( )
+0000054 seq   9041 wc   3 char 054 (,)
+0000056 seq   9042 wc   3 char 056 (.)
+0015514 seq   9043 wc   3 Forward writing mode
+0000015 seq   9044 wc   3 CR to 448 384
+0015514 seq   9045 wc   3 Forward writing mode
+0015516 seq   9046 wc   3 Normal size writing mode
+0015512 seq   9047 wc   3 Horizontal writing mode
+0015515 seq   9048 wc   3 Reverse writing mode
+0015516 seq   9049 wc   3 Normal size writing mode
+0015512 seq   9050 wc   3 Horizontal writing mode
+0015503 seq   9051 wc   3 select memory M1
+0000057 seq   9052 wc   3 char 057 (/)
+0015502 seq   9053 wc   3 select memory M0
+0000133 seq   9054 wc   3 char 133 ([)
+0000135 seq   9055 wc   3 char 135 (])
+0000045 seq   9056 wc   3 char 045 (%)
+0015503 seq   9057 wc   3 select memory M1
+0000052 seq   9058 wc   3 char 052 (*)
+0000044 seq   9059 wc   3 char 044 ($)
+0015502 seq   9060 wc   3 select memory M0
+0000047 seq   9061 wc   3 char 047 (')
+0000042 seq   9062 wc   3 char 042 (")
+0000041 seq   9063 wc   3 char 041 (!)
+0000073 seq   9064 wc   3 char 073 (;)
+0000074 seq   9065 wc   3 char 074 (<)
+0000076 seq   9066 wc   3 char 076 (>)
+0000137 seq   9067 wc   3 char 137 (_)
+0000077 seq   9068 wc   3 char 077 (?)
+0015503 seq   9069 wc   3 select memory M1
+0000077 seq   9070 wc   3 char 077 (?)
+0015514 seq   9071 wc   3 Forward writing mode
+0000015 seq   9072 wc   3 CR to 448 368
+0015514 seq   9073 wc   3 Forward writing mode
+0015516 seq   9074 wc   3 Normal size writing mode
+0015512 seq   9075 wc   3 Horizontal writing mode
+0015515 seq   9076 wc   3 Reverse writing mode
+0015516 seq   9077 wc   3 Normal size writing mode
+0015512 seq   9078 wc   3 Horizontal writing mode
+0015502 seq   9079 wc   3 select memory M0
+0000043 seq   9080 wc   3 char 043 (#)
+0000101 seq   9081 wc   3 char 101 (A)
+0000102 seq   9082 wc   3 char 102 (B)
+0000103 seq   9083 wc   3 char 103 (C)
+0000104 seq   9084 wc   3 char 104 (D)
+0000105 seq   9085 wc   3 char 105 (E)
+0000106 seq   9086 wc   3 char 106 (F)
+0000107 seq   9087 wc   3 char 107 (G)
+0000110 seq   9088 wc   3 char 110 (H)
+0000111 seq   9089 wc   3 char 111 (I)
+0000112 seq   9090 wc   3 char 112 (J)
+0000113 seq   9091 wc   3 char 113 (K)
+0000114 seq   9092 wc   3 char 114 (L)
+0000115 seq   9093 wc   3 char 115 (M)
+0000116 seq   9094 wc   3 char 116 (N)
+0000117 seq   9095 wc   3 char 117 (O)
+0015514 seq   9096 wc   3 Forward writing mode
+0000015 seq   9097 wc   3 CR to 448 352
+0015514 seq   9098 wc   3 Forward writing mode
+0015516 seq   9099 wc   3 Normal size writing mode
+0015512 seq   9100 wc   3 Horizontal writing mode
+0015515 seq   9101 wc   3 Reverse writing mode
+0015516 seq   9102 wc   3 Normal size writing mode
+0015512 seq   9103 wc   3 Horizontal writing mode
+0000120 seq   9104 wc   3 char 120 (P)
+0000121 seq   9105 wc   3 char 121 (Q)
+0000122 seq   9106 wc   3 char 122 (R)
+0000123 seq   9107 wc   3 char 123 (S)
+0000124 seq   9108 wc   3 char 124 (T)
+0000125 seq   9109 wc   3 char 125 (U)
+0000126 seq   9110 wc   3 char 126 (V)
+0000127 seq   9111 wc   3 char 127 (W)
+0000130 seq   9112 wc   3 char 130 (X)
+0000131 seq   9113 wc   3 char 131 (Y)
+0000132 seq   9114 wc   3 char 132 (Z)
+0000040 seq   9115 wc   3 char 040 ( )
+0000010 seq   9116 wc   3 backspace
+0015503 seq   9117 wc   3 select memory M1
+0000043 seq   9118 wc   3 char 043 (#)
+0000040 seq   9119 wc   3 char 040 ( )
+0000010 seq   9120 wc   3 backspace
+0000101 seq   9121 wc   3 char 101 (A)
+0000040 seq   9122 wc   3 char 040 ( )
+0000010 seq   9123 wc   3 backspace
+0015502 seq   9124 wc   3 select memory M0
+0000136 seq   9125 wc   3 char 136 (^)
+0000040 seq   9126 wc   3 char 040 ( )
+0000010 seq   9127 wc   3 backspace
+0015503 seq   9128 wc   3 select memory M1
+0000106 seq   9129 wc   3 char 106 (F)
+0000040 seq   9130 wc   3 char 040 ( )
+0000010 seq   9131 wc   3 backspace
+0015502 seq   9132 wc   3 select memory M0
+0000140 seq   9133 wc   3 char 140 (`)
+0015514 seq   9134 wc   3 Forward writing mode
+0000015 seq   9135 wc   3 CR to 448 336
+0015514 seq   9136 wc   3 Forward writing mode
+0015516 seq   9137 wc   3 Normal size writing mode
+0015512 seq   9138 wc   3 Horizontal writing mode
+0015515 seq   9139 wc   3 Reverse writing mode
+0015516 seq   9140 wc   3 Normal size writing mode
+0015512 seq   9141 wc   3 Horizontal writing mode
+0015503 seq   9142 wc   3 select memory M1
+0000046 seq   9143 wc   3 char 046 (&)
+0000047 seq   9144 wc   3 char 047 (')
+0000050 seq   9145 wc   3 char 050 (()
+0000051 seq   9146 wc   3 char 051 ())
+0015502 seq   9147 wc   3 select memory M0
+0000176 seq   9148 wc   3 char 176 (~)
+0015503 seq   9149 wc   3 select memory M1
+0000053 seq   9150 wc   3 char 053 (+)
+0000054 seq   9151 wc   3 char 054 (,)
+0000055 seq   9152 wc   3 char 055 (-)
+0000056 seq   9153 wc   3 char 056 (.)
+0015502 seq   9154 wc   3 select memory M0
+0000173 seq   9155 wc   3 char 173 ({)
+0000175 seq   9156 wc   3 char 175 (})
+0000046 seq   9157 wc   3 char 046 (&)
+0015503 seq   9158 wc   3 select memory M1
+0000045 seq   9159 wc   3 char 045 (%)
+0000040 seq   9160 wc   3 char 040 ( )
+0000112 seq   9161 wc   3 char 112 (J)
+0000075 seq   9162 wc   3 char 075 (=)
+0015514 seq   9163 wc   3 Forward writing mode
+0000015 seq   9164 wc   3 CR to 448 320
+0015514 seq   9165 wc   3 Forward writing mode
+0015516 seq   9166 wc   3 Normal size writing mode
+0015512 seq   9167 wc   3 Horizontal writing mode
+0015515 seq   9168 wc   3 Reverse writing mode
+0015516 seq   9169 wc   3 Normal size writing mode
+0015512 seq   9170 wc   3 Horizontal writing mode
+0000042 seq   9171 wc   3 char 042 (")
+0000060 seq   9172 wc   3 char 060 (0)
+0000061 seq   9173 wc   3 char 061 (1)
+0000062 seq   9174 wc   3 char 062 (2)
+0000063 seq   9175 wc   3 char 063 (3)
+0000064 seq   9176 wc   3 char 064 (4)
+0000065 seq   9177 wc   3 char 065 (5)
+0000066 seq   9178 wc   3 char 066 (6)
+0000067 seq   9179 wc   3 char 067 (7)
+0000070 seq   9180 wc   3 char 070 (8)
+0000071 seq   9181 wc   3 char 071 (9)
+0000072 seq   9182 wc   3 char 072 (:)
+0000073 seq   9183 wc   3 char 073 (;)
+0015502 seq   9184 wc   3 select memory M0
+0000100 seq   9185 wc   3 char 100 (@)
+0000057 seq   9186 wc   3 char 057 (/)
+0000035 seq   9187 wc   3 load mode 7
+0000047 seq   9188 wc   3 high Y 7
+0000140 seq   9189 wc   3 low Y 0
+0000042 seq   9190 wc   3 high X 2
+0000100 seq   9191 wc   3 low X 0, coordinates 64 224
+0015532 seq   9192 wc   3 set margin 64
+0000037 seq   9193 wc   3 load mode 15
+0015422 seq   9194 wc   3 load mode 15
+0015514 seq   9195 wc   3 Forward writing mode
+0015516 seq   9196 wc   3 Normal size writing mode
+0015512 seq   9197 wc   3 Horizontal writing mode
+0000126 seq   9198 wc   3 char 126 (V)
+0000105 seq   9199 wc   3 char 105 (E)
+0000122 seq   9200 wc   3 char 122 (R)
+0000124 seq   9201 wc   3 char 124 (T)
+0000111 seq   9202 wc   3 char 111 (I)
+0000103 seq   9203 wc   3 char 103 (C)
+0000101 seq   9204 wc   3 char 101 (A)
+0000114 seq   9205 wc   3 char 114 (L)
+0000040 seq   9206 wc   3 char 040 ( )
+0000106 seq   9207 wc   3 char 106 (F)
+0000117 seq   9208 wc   3 char 117 (O)
+0000122 seq   9209 wc   3 char 122 (R)
+0000127 seq   9210 wc   3 char 127 (W)
+0000101 seq   9211 wc   3 char 101 (A)
+0000122 seq   9212 wc   3 char 122 (R)
+0000104 seq   9213 wc   3 char 104 (D)
+0000035 seq   9214 wc   3 load mode 7
+0000140 seq   9215 wc   3 low Y 0
+0000052 seq   9216 wc   3 high X 10
+0000100 seq   9217 wc   3 low X 0, coordinates 320 224
+0015532 seq   9218 wc   3 set margin 320
+0000037 seq   9219 wc   3 load mode 15
+0015422 seq   9220 wc   3 load mode 15
+0000126 seq   9221 wc   3 char 126 (V)
+0000105 seq   9222 wc   3 char 105 (E)
+0000122 seq   9223 wc   3 char 122 (R)
+0000124 seq   9224 wc   3 char 124 (T)
+0000111 seq   9225 wc   3 char 111 (I)
+0000103 seq   9226 wc   3 char 103 (C)
+0000101 seq   9227 wc   3 char 101 (A)
+0000114 seq   9228 wc   3 char 114 (L)
+0000040 seq   9229 wc   3 char 040 ( )
+0000122 seq   9230 wc   3 char 122 (R)
+0000105 seq   9231 wc   3 char 105 (E)
+0000126 seq   9232 wc   3 char 126 (V)
+0000105 seq   9233 wc   3 char 105 (E)
+0000122 seq   9234 wc   3 char 122 (R)
+0000123 seq   9235 wc   3 char 123 (S)
+0000105 seq   9236 wc   3 char 105 (E)
+0000035 seq   9237 wc   3 load mode 7
+0000042 seq   9238 wc   3 high Y 2
+0000140 seq   9239 wc   3 low Y 0
+0000042 seq   9240 wc   3 high X 2
+0000100 seq   9241 wc   3 low X 0, coordinates 64 64
+0015532 seq   9242 wc   3 set margin 64
+0015513 seq   9243 wc   3 Vertical writing mode
+0015514 seq   9244 wc   3 Forward writing mode
+0015532 seq   9245 wc   3 set margin 64
+0000037 seq   9246 wc   3 load mode 15
+0015422 seq   9247 wc   3 load mode 15
+0000072 seq   9248 wc   3 char 072 (:)
+0000141 seq   9249 wc   3 char 141 (a)
+0000142 seq   9250 wc   3 char 142 (b)
+0000143 seq   9251 wc   3 char 143 (c)
+0000144 seq   9252 wc   3 char 144 (d)
+0000145 seq   9253 wc   3 char 145 (e)
+0000146 seq   9254 wc   3 char 146 (f)
+0000147 seq   9255 wc   3 char 147 (g)
+0000150 seq   9256 wc   3 char 150 (h)
+0000151 seq   9257 wc   3 char 151 (i)
+0000152 seq   9258 wc   3 char 152 (j)
+0000153 seq   9259 wc   3 char 153 (k)
+0000154 seq   9260 wc   3 char 154 (l)
+0000155 seq   9261 wc   3 char 155 (m)
+0000156 seq   9262 wc   3 char 156 (n)
+0000157 seq   9263 wc   3 char 157 (o)
+0000015 seq   9264 wc   3 CR to 80 64
+0000160 seq   9265 wc   3 char 160 (p)
+0000161 seq   9266 wc   3 char 161 (q)
+0000162 seq   9267 wc   3 char 162 (r)
+0000163 seq   9268 wc   3 char 163 (s)
+0000164 seq   9269 wc   3 char 164 (t)
+0000165 seq   9270 wc   3 char 165 (u)
+0000166 seq   9271 wc   3 char 166 (v)
+0000167 seq   9272 wc   3 char 167 (w)
+0000170 seq   9273 wc   3 char 170 (x)
+0000171 seq   9274 wc   3 char 171 (y)
+0000172 seq   9275 wc   3 char 172 (z)
+0000060 seq   9276 wc   3 char 060 (0)
+0000061 seq   9277 wc   3 char 061 (1)
+0000062 seq   9278 wc   3 char 062 (2)
+0000063 seq   9279 wc   3 char 063 (3)
+0000064 seq   9280 wc   3 char 064 (4)
+0000015 seq   9281 wc   3 CR to 96 64
+0000065 seq   9282 wc   3 char 065 (5)
+0000066 seq   9283 wc   3 char 066 (6)
+0000067 seq   9284 wc   3 char 067 (7)
+0000070 seq   9285 wc   3 char 070 (8)
+0000071 seq   9286 wc   3 char 071 (9)
+0000053 seq   9287 wc   3 char 053 (+)
+0000055 seq   9288 wc   3 char 055 (-)
+0000052 seq   9289 wc   3 char 052 (*)
+0000057 seq   9290 wc   3 char 057 (/)
+0000050 seq   9291 wc   3 char 050 (()
+0000051 seq   9292 wc   3 char 051 ())
+0000044 seq   9293 wc   3 char 044 ($)
+0000075 seq   9294 wc   3 char 075 (=)
+0000040 seq   9295 wc   3 char 040 ( )
+0000054 seq   9296 wc   3 char 054 (,)
+0000056 seq   9297 wc   3 char 056 (.)
+0000015 seq   9298 wc   3 CR to 112 64
+0015503 seq   9299 wc   3 select memory M1
+0000057 seq   9300 wc   3 char 057 (/)
+0015502 seq   9301 wc   3 select memory M0
+0000133 seq   9302 wc   3 char 133 ([)
+0000135 seq   9303 wc   3 char 135 (])
+0000045 seq   9304 wc   3 char 045 (%)
+0015503 seq   9305 wc   3 select memory M1
+0000052 seq   9306 wc   3 char 052 (*)
+0000044 seq   9307 wc   3 char 044 ($)
+0015502 seq   9308 wc   3 select memory M0
+0000047 seq   9309 wc   3 char 047 (')
+0000042 seq   9310 wc   3 char 042 (")
+0000041 seq   9311 wc   3 char 041 (!)
+0000073 seq   9312 wc   3 char 073 (;)
+0000074 seq   9313 wc   3 char 074 (<)
+0000076 seq   9314 wc   3 char 076 (>)
+0000137 seq   9315 wc   3 char 137 (_)
+0000077 seq   9316 wc   3 char 077 (?)
+0015503 seq   9317 wc   3 select memory M1
+0000077 seq   9318 wc   3 char 077 (?)
+0000040 seq   9319 wc   3 char 040 ( )
+0000015 seq   9320 wc   3 CR to 128 64
+0015502 seq   9321 wc   3 select memory M0
+0000043 seq   9322 wc   3 char 043 (#)
+0000101 seq   9323 wc   3 char 101 (A)
+0000102 seq   9324 wc   3 char 102 (B)
+0000103 seq   9325 wc   3 char 103 (C)
+0000104 seq   9326 wc   3 char 104 (D)
+0000105 seq   9327 wc   3 char 105 (E)
+0000106 seq   9328 wc   3 char 106 (F)
+0000107 seq   9329 wc   3 char 107 (G)
+0000110 seq   9330 wc   3 char 110 (H)
+0000111 seq   9331 wc   3 char 111 (I)
+0000112 seq   9332 wc   3 char 112 (J)
+0000113 seq   9333 wc   3 char 113 (K)
+0000114 seq   9334 wc   3 char 114 (L)
+0000115 seq   9335 wc   3 char 115 (M)
+0000116 seq   9336 wc   3 char 116 (N)
+0000117 seq   9337 wc   3 char 117 (O)
+0000035 seq   9338 wc   3 load mode 7
+0000140 seq   9339 wc   3 low Y 0
+0000044 seq   9340 wc   3 high X 4
+0000120 seq   9341 wc   3 low X 16, coordinates 144 64
+0015532 seq   9342 wc   3 set margin 144
+0000037 seq   9343 wc   3 load mode 15
+0015422 seq   9344 wc   3 load mode 15
+0000120 seq   9345 wc   3 char 120 (P)
+0000121 seq   9346 wc   3 char 121 (Q)
+0000122 seq   9347 wc   3 char 122 (R)
+0000123 seq   9348 wc   3 char 123 (S)
+0000124 seq   9349 wc   3 char 124 (T)
+0000125 seq   9350 wc   3 char 125 (U)
+0000126 seq   9351 wc   3 char 126 (V)
+0000127 seq   9352 wc   3 char 127 (W)
+0000130 seq   9353 wc   3 char 130 (X)
+0000131 seq   9354 wc   3 char 131 (Y)
+0000132 seq   9355 wc   3 char 132 (Z)
+0000040 seq   9356 wc   3 char 040 ( )
+0000010 seq   9357 wc   3 backspace
+0015503 seq   9358 wc   3 select memory M1
+0000043 seq   9359 wc   3 char 043 (#)
+0000040 seq   9360 wc   3 char 040 ( )
+0000010 seq   9361 wc   3 backspace
+0000101 seq   9362 wc   3 char 101 (A)
+0000040 seq   9363 wc   3 char 040 ( )
+0000010 seq   9364 wc   3 backspace
+0015502 seq   9365 wc   3 select memory M0
+0000136 seq   9366 wc   3 char 136 (^)
+0000040 seq   9367 wc   3 char 040 ( )
+0000010 seq   9368 wc   3 backspace
+0015503 seq   9369 wc   3 select memory M1
+0000106 seq   9370 wc   3 char 106 (F)
+0000040 seq   9371 wc   3 char 040 ( )
+0000010 seq   9372 wc   3 backspace
+0015502 seq   9373 wc   3 select memory M0
+0000140 seq   9374 wc   3 char 140 (`)
+0000015 seq   9375 wc   3 CR to 160 64
+0015503 seq   9376 wc   3 select memory M1
+0000046 seq   9377 wc   3 char 046 (&)
+0000047 seq   9378 wc   3 char 047 (')
+0000050 seq   9379 wc   3 char 050 (()
+0000051 seq   9380 wc   3 char 051 ())
+0015502 seq   9381 wc   3 select memory M0
+0000176 seq   9382 wc   3 char 176 (~)
+0015503 seq   9383 wc   3 select memory M1
+0000053 seq   9384 wc   3 char 053 (+)
+0000054 seq   9385 wc   3 char 054 (,)
+0000055 seq   9386 wc   3 char 055 (-)
+0000056 seq   9387 wc   3 char 056 (.)
+0015502 seq   9388 wc   3 select memory M0
+0000173 seq   9389 wc   3 char 173 ({)
+0000175 seq   9390 wc   3 char 175 (})
+0000046 seq   9391 wc   3 char 046 (&)
+0015503 seq   9392 wc   3 select memory M1
+0000045 seq   9393 wc   3 char 045 (%)
+0000040 seq   9394 wc   3 char 040 ( )
+0000112 seq   9395 wc   3 char 112 (J)
+0000075 seq   9396 wc   3 char 075 (=)
+0000015 seq   9397 wc   3 CR to 176 64
+0000042 seq   9398 wc   3 char 042 (")
+0000060 seq   9399 wc   3 char 060 (0)
+0000061 seq   9400 wc   3 char 061 (1)
+0000062 seq   9401 wc   3 char 062 (2)
+0000063 seq   9402 wc   3 char 063 (3)
+0000064 seq   9403 wc   3 char 064 (4)
+0000065 seq   9404 wc   3 char 065 (5)
+0000066 seq   9405 wc   3 char 066 (6)
+0000067 seq   9406 wc   3 char 067 (7)
+0000070 seq   9407 wc   3 char 070 (8)
+0000071 seq   9408 wc   3 char 071 (9)
+0000072 seq   9409 wc   3 char 072 (:)
+0000073 seq   9410 wc   3 char 073 (;)
+0015502 seq   9411 wc   3 select memory M0
+0000100 seq   9412 wc   3 char 100 (@)
+0000057 seq   9413 wc   3 char 057 (/)
+0015512 seq   9414 wc   3 Horizontal writing mode
+0015513 seq   9415 wc   3 Vertical writing mode
+0015515 seq   9416 wc   3 Reverse writing mode
+0000035 seq   9417 wc   3 load mode 7
+0000046 seq   9418 wc   3 high Y 6
+0000140 seq   9419 wc   3 low Y 0
+0000051 seq   9420 wc   3 high X 9
+0000130 seq   9421 wc   3 low X 24, coordinates 312 192
+0015532 seq   9422 wc   3 set margin 312
+0000037 seq   9423 wc   3 load mode 15
+0015422 seq   9424 wc   3 load mode 15
+0000072 seq   9425 wc   3 char 072 (:)
+0000141 seq   9426 wc   3 char 141 (a)
+0000142 seq   9427 wc   3 char 142 (b)
+0000143 seq   9428 wc   3 char 143 (c)
+0000144 seq   9429 wc   3 char 144 (d)
+0000145 seq   9430 wc   3 char 145 (e)
+0000146 seq   9431 wc   3 char 146 (f)
+0000147 seq   9432 wc   3 char 147 (g)
+0000150 seq   9433 wc   3 char 150 (h)
+0000151 seq   9434 wc   3 char 151 (i)
+0000152 seq   9435 wc   3 char 152 (j)
+0000153 seq   9436 wc   3 char 153 (k)
+0000154 seq   9437 wc   3 char 154 (l)
+0000155 seq   9438 wc   3 char 155 (m)
+0000156 seq   9439 wc   3 char 156 (n)
+0000157 seq   9440 wc   3 char 157 (o)
+0000015 seq   9441 wc   3 CR to 328 192
+0000160 seq   9442 wc   3 char 160 (p)
+0000161 seq   9443 wc   3 char 161 (q)
+0000162 seq   9444 wc   3 char 162 (r)
+0000163 seq   9445 wc   3 char 163 (s)
+0000164 seq   9446 wc   3 char 164 (t)
+0000165 seq   9447 wc   3 char 165 (u)
+0000166 seq   9448 wc   3 char 166 (v)
+0000167 seq   9449 wc   3 char 167 (w)
+0000170 seq   9450 wc   3 char 170 (x)
+0000171 seq   9451 wc   3 char 171 (y)
+0000172 seq   9452 wc   3 char 172 (z)
+0000060 seq   9453 wc   3 char 060 (0)
+0000061 seq   9454 wc   3 char 061 (1)
+0000062 seq   9455 wc   3 char 062 (2)
+0000063 seq   9456 wc   3 char 063 (3)
+0000064 seq   9457 wc   3 char 064 (4)
+0000015 seq   9458 wc   3 CR to 344 192
+0000065 seq   9459 wc   3 char 065 (5)
+0000066 seq   9460 wc   3 char 066 (6)
+0000067 seq   9461 wc   3 char 067 (7)
+0000070 seq   9462 wc   3 char 070 (8)
+0000071 seq   9463 wc   3 char 071 (9)
+0000053 seq   9464 wc   3 char 053 (+)
+0000055 seq   9465 wc   3 char 055 (-)
+0000052 seq   9466 wc   3 char 052 (*)
+0000057 seq   9467 wc   3 char 057 (/)
+0000050 seq   9468 wc   3 char 050 (()
+0000051 seq   9469 wc   3 char 051 ())
+0000044 seq   9470 wc   3 char 044 ($)
+0000075 seq   9471 wc   3 char 075 (=)
+0000040 seq   9472 wc   3 char 040 ( )
+0000054 seq   9473 wc   3 char 054 (,)
+0000056 seq   9474 wc   3 char 056 (.)
+0000015 seq   9475 wc   3 CR to 360 192
+0015503 seq   9476 wc   3 select memory M1
+0000057 seq   9477 wc   3 char 057 (/)
+0015502 seq   9478 wc   3 select memory M0
+0000133 seq   9479 wc   3 char 133 ([)
+0000135 seq   9480 wc   3 char 135 (])
+0000045 seq   9481 wc   3 char 045 (%)
+0015503 seq   9482 wc   3 select memory M1
+0000052 seq   9483 wc   3 char 052 (*)
+0000044 seq   9484 wc   3 char 044 ($)
+0015502 seq   9485 wc   3 select memory M0
+0000047 seq   9486 wc   3 char 047 (')
+0000042 seq   9487 wc   3 char 042 (")
+0000041 seq   9488 wc   3 char 041 (!)
+0000073 seq   9489 wc   3 char 073 (;)
+0000074 seq   9490 wc   3 char 074 (<)
+0000076 seq   9491 wc   3 char 076 (>)
+0000137 seq   9492 wc   3 char 137 (_)
+0000077 seq   9493 wc   3 char 077 (?)
+0015503 seq   9494 wc   3 select memory M1
+0000077 seq   9495 wc   3 char 077 (?)
+0000040 seq   9496 wc   3 char 040 ( )
+0000015 seq   9497 wc   3 CR to 376 192
+0015502 seq   9498 wc   3 select memory M0
+0000043 seq   9499 wc   3 char 043 (#)
+0000101 seq   9500 wc   3 char 101 (A)
+0000102 seq   9501 wc   3 char 102 (B)
+0000103 seq   9502 wc   3 char 103 (C)
+0000104 seq   9503 wc   3 char 104 (D)
+0000105 seq   9504 wc   3 char 105 (E)
+0000106 seq   9505 wc   3 char 106 (F)
+0000107 seq   9506 wc   3 char 107 (G)
+0000110 seq   9507 wc   3 char 110 (H)
+0000111 seq   9508 wc   3 char 111 (I)
+0000112 seq   9509 wc   3 char 112 (J)
+0000113 seq   9510 wc   3 char 113 (K)
+0000114 seq   9511 wc   3 char 114 (L)
+0000115 seq   9512 wc   3 char 115 (M)
+0000116 seq   9513 wc   3 char 116 (N)
+0000117 seq   9514 wc   3 char 117 (O)
+0000015 seq   9515 wc   3 CR to 392 192
+0000120 seq   9516 wc   3 char 120 (P)
+0000121 seq   9517 wc   3 char 121 (Q)
+0000122 seq   9518 wc   3 char 122 (R)
+0000123 seq   9519 wc   3 char 123 (S)
+0000124 seq   9520 wc   3 char 124 (T)
+0000125 seq   9521 wc   3 char 125 (U)
+0000126 seq   9522 wc   3 char 126 (V)
+0000127 seq   9523 wc   3 char 127 (W)
+0000130 seq   9524 wc   3 char 130 (X)
+0000131 seq   9525 wc   3 char 131 (Y)
+0000132 seq   9526 wc   3 char 132 (Z)
+0000040 seq   9527 wc   3 char 040 ( )
+0000010 seq   9528 wc   3 backspace
+0015503 seq   9529 wc   3 select memory M1
+0000043 seq   9530 wc   3 char 043 (#)
+0000040 seq   9531 wc   3 char 040 ( )
+0000010 seq   9532 wc   3 backspace
+0000101 seq   9533 wc   3 char 101 (A)
+0000040 seq   9534 wc   3 char 040 ( )
+0000010 seq   9535 wc   3 backspace
+0015502 seq   9536 wc   3 select memory M0
+0000136 seq   9537 wc   3 char 136 (^)
+0000040 seq   9538 wc   3 char 040 ( )
+0000010 seq   9539 wc   3 backspace
+0015503 seq   9540 wc   3 select memory M1
+0000106 seq   9541 wc   3 char 106 (F)
+0000040 seq   9542 wc   3 char 040 ( )
+0000010 seq   9543 wc   3 backspace
+0015502 seq   9544 wc   3 select memory M0
+0000140 seq   9545 wc   3 char 140 (`)
+0000015 seq   9546 wc   3 CR to 408 192
+0015503 seq   9547 wc   3 select memory M1
+0000046 seq   9548 wc   3 char 046 (&)
+0000047 seq   9549 wc   3 char 047 (')
+0000050 seq   9550 wc   3 char 050 (()
+0000051 seq   9551 wc   3 char 051 ())
+0015502 seq   9552 wc   3 select memory M0
+0000176 seq   9553 wc   3 char 176 (~)
+0015503 seq   9554 wc   3 select memory M1
+0000053 seq   9555 wc   3 char 053 (+)
+0000054 seq   9556 wc   3 char 054 (,)
+0000055 seq   9557 wc   3 char 055 (-)
+0000056 seq   9558 wc   3 char 056 (.)
+0015502 seq   9559 wc   3 select memory M0
+0000173 seq   9560 wc   3 char 173 ({)
+0000175 seq   9561 wc   3 char 175 (})
+0000046 seq   9562 wc   3 char 046 (&)
+0015503 seq   9563 wc   3 select memory M1
+0000045 seq   9564 wc   3 char 045 (%)
+0000040 seq   9565 wc   3 char 040 ( )
+0000112 seq   9566 wc   3 char 112 (J)
+0000075 seq   9567 wc   3 char 075 (=)
+0000015 seq   9568 wc   3 CR to 424 192
+0000042 seq   9569 wc   3 char 042 (")
+0000060 seq   9570 wc   3 char 060 (0)
+0000061 seq   9571 wc   3 char 061 (1)
+0000062 seq   9572 wc   3 char 062 (2)
+0000063 seq   9573 wc   3 char 063 (3)
+0000064 seq   9574 wc   3 char 064 (4)
+0000065 seq   9575 wc   3 char 065 (5)
+0000066 seq   9576 wc   3 char 066 (6)
+0000067 seq   9577 wc   3 char 067 (7)
+0000070 seq   9578 wc   3 char 070 (8)
+0000071 seq   9579 wc   3 char 071 (9)
+0000072 seq   9580 wc   3 char 072 (:)
+0000073 seq   9581 wc   3 char 073 (;)
+0015502 seq   9582 wc   3 select memory M0
+0000100 seq   9583 wc   3 char 100 (@)
+0000057 seq   9584 wc   3 char 057 (/)
+0015512 seq   9585 wc   3 Horizontal writing mode
+0015514 seq   9586 wc   3 Forward writing mode
+0015531 seq   9587 wc   3 Start LDE
+0000120 seq   9588 wc   3 data byte 1: 16
+0000101 seq   9589 wc   3 data byte 2: 1
+0000100 seq   9590 wc   3 data 0000120 (0x0050)
