@@ -4453,8 +4453,8 @@ void PtermFrame::ptermPaint (int pat)
     // means "fill with solid color".  What we're doing here is only the 
     // latter case, just as in previous versions of pterm.
     //
-    // The algorithm used is simply a recursive walk of the bitmap starting
-    // at the current x/y.  More preciseli, two walks: in the first we replace
+    // The algorithm used is simply a walk of the bitmap starting at
+    // the current x/y.  More precisely, two walks: in the first we replace
     // all non-background pixels by a magic value.  In the second, we replace
     // that magic value by the foreground.
     // The reason for doing it that way is that the recursion won't terminate
@@ -4471,95 +4471,119 @@ void PtermFrame::ptermPaint (int pat)
 // Pass 1 means: stop if you hit a pixel that's not 0; replace 0 by foreground.
 #define wdone(pmap, pass) ((pass && *pmap != 0) || \
                            (!pass && (*pmap == m_bgpix || *pmap == 0)))
+
+// This stack is used to implement what amounts to the trivial recursive
+// fill algorithm without actual recursion.  All we need is one byte per
+// recursion level, which is an acceptable hit.  Worst case (filling a 
+// blank screen) depth is the number of pixels on the screen, plus one
+// because we use one to visit a pixel that is already filled or is not
+// going to be filled.  So allocate that plus one more; the one extra
+// entry allows a stack overflow sanity check.
+static u8 walkstack[512 * 512 + 2];
+
 void PtermFrame::ptermPaintWalker (int x, int y, PixelData & pixmap, int pass)
 {
     PixelData::Iterator p (pixmap);
     u32 *pmap;
-    int px;
+    int sp;
+#define PUSH walkstack[++sp] = 0
     const int newpixel = pass ? m_fgpix : 0;
+    int maxsp = 0;
+    int pixels = 0;
+    int w;
     
-    p.MoveTo (pixmap, x, y);
-    pmap = (u32 *)(p.m_ptr);
-    if (wdone (pmap, pass))
+    sp = -1;
+    PUSH;
+    while (sp >= 0)
     {
-        return;
-    }
-    
-    // First fill the current scanline, to +x then to -x
-    for (px = x; px < 512; px++)
-    {
-        // Stop walking the scan line if we hit the end of the line
-        p.MoveTo (pixmap, px, y);
-        pmap = (u32 *)(p.m_ptr);
-        if (wdone (pmap, pass))
+        if (sp > maxsp)
         {
-            break;
+            assert (sp < sizeof (walkstack) - 1);
+            maxsp = sp;
         }
+        p.MoveTo (pixmap, x, y);
+        pmap = (u32 *)(p.m_ptr);
+
+        // Each time through the loop we increment the top of stack
+        // value, to reflect progress in the walk
+        w = walkstack[sp];
+        walkstack[sp]++;
         
-        *pmap = newpixel;
-    }
-    for (px = x - 1; px >= 0; px--)
-    {
-        // Stop walking the scan line if we hit the end of the line
-        p.MoveTo (pixmap, px, y);
-        pmap = (u32 *)(p.m_ptr);
-        if (wdone (pmap, pass))
+        switch (w)
         {
+        case 0:
+            // If the pixel is already filled, leave this level.
+            // Otherwise, fill the pixel and explore to the left.
+            if (wdone (pmap, pass))
+            {
+                walkstack[sp] = 4;
+                break;
+            }
+            *pmap = newpixel;
+            pixels++;
+            if (x > 0)
+            {
+                x--;
+                PUSH;
+            }
             break;
-        }
-
-        *pmap = newpixel;
-    }
-
-    // Next, walk along the just-filled line, and recursively fill the
-    // lines above and below it.
-    for (px = x; px < 512; px++)
-    {
-        // Stop walking the scan line if we hit something that isn't part of
-        // the line (not the new pixel value)
-        p.MoveTo (pixmap, px, y);
-        pmap = (u32 *)(p.m_ptr);
-        if (*pmap != newpixel)
-        {
+        case 1:
+            // Explore to the right
+            if (x < 511)
+            {
+                x++;
+                PUSH;
+            }
             break;
-        }
-
-        // Recursively process the line at y + 1, if we're not at the edge.
-        if (y < 511)
-        {
-            ptermPaintWalker (px, y + 1, pixmap, pass);
-        }
-
-        // Recursively process the line at y - 1, if we're not at the edge.
-        if (y > 0)
-        {
-            ptermPaintWalker (px, y - 1, pixmap, pass);
-        }
-    }
-
-    for (px = x - 1; px >= 0; px--)
-    {
-        // Stop walking the scan line if we hit something that isn't part of
-        // the line (not the new pixel value)
-        p.MoveTo (pixmap, px, y);
-        pmap = (u32 *)(p.m_ptr);
-        if (*pmap != newpixel)
-        {
+        case 2:
+            // Explore up
+            if (y < 511)
+            {
+                y++;
+                PUSH;
+            }
             break;
-        }
-
-        // Recursively process the line at y + 1, if we're not at the edge.
-        if (y < 511)
-        {
-            ptermPaintWalker (px, y + 1, pixmap, pass);
-        }
-
-        // Recursively process the line at y - 1, if we're not at the edge.
-        if (y > 0)
-        {
-            ptermPaintWalker (px, y - 1, pixmap, pass);
+        case 3:
+            // Explore down
+            if (y > 0)
+            {
+                y--;
+                PUSH;
+            }
+            break;
+        case 4:
+            // Done exploring at this pixel.  Pop the stack.  We have
+            // to adjust the coordinate, which is done based on the
+            // next to top stack entry -- that one reflects where the
+            // previous level is in its exploration, i.e., which coordinate
+            // adjustment it made before pushing this level.  Note that
+            // the previous level entry reflects the increment of the
+            // stack value, so the case labels are one higher than
+            // the corresponding ones above.
+            --sp;
+            if (sp < 0)
+            {
+                break;
+            }
+            switch (walkstack[sp])
+            {
+            case 1:
+                x++;
+                break;
+            case 2:
+                x--;
+                break;
+            case 3:
+                y--;
+                break;
+            case 4:
+                y++;
+                break;
+            }
         }
     }
+    
+    trace ("paintwalker: %d pixels, %d max stack", pixels, maxsp);
 }
 
 void PtermFrame::ptermSetName (wxString &winName)
