@@ -1,0 +1,15 @@
+This file documents the major changes in each release of Pterm.
+
+V5.0.0, April 2014:
+
+Rewrite of the display engine to make zoom 200%, stretch, and full
+screen mode work more consistently.
+
+Copy/Paste text and related operations (such as execute browser) now
+handle Unicode.  All PLATO characters, including accented characters,
+are converted to/from Unicode.
+
+New "Save GSW Audio" feature (in the File menu).  This allows you to
+specify a file name (.WAV, .AIFF, or .AU type) to receive the next GSW
+song.  Recording starts when the music starts, and stops when the
+music is complete.  In other words, this captures one song at a time.
