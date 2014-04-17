@@ -13,3 +13,8 @@ New "Save GSW Audio" feature (in the File menu).  This allows you to
 specify a file name (.WAV, .AIFF, or .AU type) to receive the next GSW
 song.  Recording starts when the music starts, and stops when the
 music is complete.  In other words, this captures one song at a time.
+
+Note to Windows users: the scaling of -font- text has been fixed for
+consistency with other platforms.  If you have code that uses -font-
+with sizes chosen to look right on the previous Windows version of
+pterm, you will need to adjust the text size.  

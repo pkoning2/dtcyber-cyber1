@@ -2010,7 +2010,7 @@ bool PtermApp::OnInit (void)
                     frame->procPlatoWord (w, m_testascii);
                 }
             }
-            frame->Refresh ();
+            frame->m_canvas->Refresh (false);
             
             printf ("done with test data\n");
             
@@ -2363,7 +2363,7 @@ void PtermApp::OnHelpKeys (wxCommandEvent &)
                 frame->procPlatoWord (keyboardhelp[i], false);
             }
             m_helpFrame = frame;
-            frame->Refresh ();
+            frame->m_canvas->Refresh (false);
         }
     }
     else
@@ -2654,12 +2654,23 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
              if (pb[i]) m_blue = i;
          }
          // Pixel value for selected text is white on 
-         // translucent gray background.
+         // translucent gray background, except on Windows
+         // because it doesn't support Alpha (though that
+         // seems to be undocumented).  So there we use
+         // black foreground on medium gray background.
+#if defined (__WXMSW__)
+         p.Alpha () = 255;
+         p.Red () = p.Green () = p.Blue () = 0;
+         m_selpixf = *pmap;
+         p.Red () = p.Green () = p.Blue () = 140;
+         m_selpixb = *pmap;
+#else
          p.Alpha () = 255;
          p.Red () = p.Green () = p.Blue () = 255;
          m_selpixf = *pmap;
          p.Alpha () = 140;
          m_selpixb = *pmap;
+#endif
          *pmap = t;
     }
     m_memDC = new wxMemoryDC ();
@@ -3075,7 +3086,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
             
             if (refresh)
             {
-                Refresh ();
+                m_canvas->Refresh (false);
             }
 
             return;
@@ -3087,7 +3098,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 
     if (refresh)
     {
-        Refresh ();
+        m_canvas->Refresh (false);
     }
     
     switch (word)
@@ -3144,7 +3155,7 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 
     if (refresh)
     {
-        Refresh ();
+        m_canvas->Refresh (false);
     }
 }
 
@@ -4158,7 +4169,7 @@ void PtermFrame::UpdateDisplayState (void)
     }
 
     // Update the display and return focus to the current display window.
-    m_canvas->Refresh ();
+    m_canvas->Refresh (false);
     m_canvas->SetFocus ();
 }
 
@@ -7348,7 +7359,7 @@ void PtermFrame::ClearRegion (void)
         {
             m_statusBar->SetStatusText (wxT (""), STATUS_TIP);
         }
-        Refresh (false);
+        m_canvas->Refresh (false);
     }
 }
 
@@ -7402,7 +7413,7 @@ void PtermFrame::UpdateRegion (int x, int y, int mouseX, int mouseY)
         menuPopup->Enable (Pterm_SearchThis, (m_regionWidth > 0)); 
         debug ("region %d %d size %d %d", m_regionX, m_regionY,
                m_regionWidth, m_regionHeight);
-        Refresh (false);
+        m_canvas->Refresh (false);
         return;
     }
     if (m_regionWidth == 0 && m_regionHeight == 0)
@@ -8841,7 +8852,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         txtEmail->SetValue (m_Email);
         txtSearchURL->SetValue (m_SearchURL);
     }
-    Refresh ();
+    Refresh (false);
 }
 
 void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)

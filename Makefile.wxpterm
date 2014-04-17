@@ -174,7 +174,7 @@ pterm-empty.dmg:
 
 ptermkit.dmg: Pterm.app pterm-empty.dmg
 	cp pterm-empty.dmg ptermkit.dmg
-	dev=`hdid ptermkit.dmg | awk '{ print $$1 }'` ; cp -Rp Pterm.app /Volumes/ptermvol; hdiutil detach $$dev
+	dev=`hdid ptermkit.dmg | awk '{ print $$1 }'` ; cp -Rp pterm-license.txt Pterm.app /Volumes/ptermvol; hdiutil detach $$dev
 
 pterm-$(PTERMVERSION).dmg: ptermkit.dmg
 	rm -f $@
