@@ -24,8 +24,8 @@ typedef u_long in_addr_t;
 #define pthread_mutex_lock EnterCriticalSection
 #define pthread_mutex_unlock LeaveCriticalSection
 #define pthread_cond_t  HANDLE
-#define pthread_cond_init(x, y) *(x) = CreateEvent (NULL, TRUE, FALSE, NULL)
-#define pthread_cond_wait(c, m) WaitForSingleObject ((c), INFINITE)
+#define pthread_cond_init(x, y) *(x) = CreateEvent (NULL, FALSE, FALSE, NULL)
+#define pthread_cond_wait(c, m) WaitForSingleObject (*(c), INFINITE)
 #define pthread_cond_signal SetEvent
 #else
 #include <stdbool.h>

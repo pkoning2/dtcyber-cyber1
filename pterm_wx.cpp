@@ -6334,12 +6334,17 @@ void PtermFrame::ptermRestoreWindow (int d)
     h = BOUND (cwswindow[d].data[1] - cwswindow[d].data[3]);
     if (cwswindow[d].ok)
     {
-        wxMemoryDC srcdc (*cwswindow[d].bm);
-
         trace ("CWS: process restore; window %d, region %d %d %d %d",
                d, x, y, w, h);
         m_memDC->SelectObject (*m_bitmap);
-        m_memDC->Blit (x, y, w, h, &srcdc, x, y);
+        // Blit would seem like a logical way to do this, but for some
+        // reason it hits an Assert on Windows because some (but not all!)
+        // of the bitmaps are missing the Alpha channel.  This in spite
+        // of the fact that depth 32 is explicitly requested and the
+        // documentation says that it is available.  So use DrawBitmap
+        // instead, since that does work.
+        m_memDC->SetClippingRegion (x, y, w, h);
+        m_memDC->DrawBitmap (*cwswindow[d].bm, 0, 0, false);
         m_memDC->SelectObject (wxNullBitmap);
 
         cwswindow[d].ok = false;
@@ -9988,8 +9993,7 @@ BEGIN_EVENT_TABLE (PtermCanvas, wxScrolledCanvas)
 PtermCanvas::PtermCanvas (PtermFrame *parent)
     : wxScrolledCanvas (parent, -1, wxDefaultPosition, 
                         wxDefaultSize,
-                        wxHSCROLL | wxVSCROLL | wxFULL_REPAINT_ON_RESIZE |
-                        wxWANTS_CHARS
+                        wxHSCROLL | wxVSCROLL | wxWANTS_CHARS
                         /* , "Default Name" */),
       m_owner (parent),
       m_touchEnabled (false)
