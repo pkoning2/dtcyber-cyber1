@@ -32,6 +32,7 @@ WizardImageFile=authormode.bmp
 RestartIfNeededByRun=False
 ShowLanguageDialog=no
 MinVersion=0,5.01sp3
+VersionInfoVersion={#MyAppVersion}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
