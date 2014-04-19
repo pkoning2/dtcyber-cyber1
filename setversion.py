@@ -3,8 +3,7 @@
 import sys
 import re
 import time
-
-YEAR = str (time.localtime ().tm_year)
+import os
 
 # Filename, commas, crlf
 files = ( ( "pterm-info.plist", False, False ),
@@ -13,15 +12,17 @@ files = ( ( "pterm-info.plist", False, False ),
           ( "pterm.rc", True, True ),
           ( "ptermversion.h", True, False ) )
 
-dot_re = re.compile (r"\d+\.\d+\.\d+")
+# Negative lookahead for trailing \ here, otherwise it matches filespecs
+# with version numbers in them in pterm.iss
+dot_re = re.compile (r"\d+\.\d+\.\d+(?!\\)")
 comma_re = re.compile (r"\d+,\d+,\d+")
 copy_re = re.compile (r"((?:copyright|\(c\)).+?\d+-)20\d\d", re.I)
 
 def setyear (m):
-    return m.group (1) + YEAR
+    return m.group (1) + year
 
 def procfile (fn, commas, crlf):
-    with open (fn, "rt") as f:
+    with open (fn, "rt", encoding = "latin1") as f:
         t = f.read ()
     t = dot_re.sub (dotver, t)
     t = comma_re.sub (commaver, t)
@@ -31,12 +32,17 @@ def procfile (fn, commas, crlf):
         newline = "\r\n"
     else:
         newline = "\n"
-    with open (fn, "wt", newline = newline) as f:
+    with open (fn, "wt", newline = newline, encoding = "latin1") as f:
         f.write (t)
 
 def procfiles (args):
-    global dotver, commaver
-    vers = args[0].split (".")
+    global dotver, commaver, year
+    vers = tuple (args[0].split ("."))
+    if len (args) > 1:
+        # For testing
+        year = args[1]
+    else:
+        year = str (time.localtime ().tm_year)
     dotver = "%s.%s.%s" % vers
     commaver = "%s,%s,%s" % vers
     
