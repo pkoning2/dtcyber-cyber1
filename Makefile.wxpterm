@@ -149,8 +149,7 @@ cc545.app: cc545
 	cp cc545 cc545.app/Contents/MacOS
 	touch $@
 
-Pterm.app: pterm pterm-info.plist.in pterm.icns $(MOFILES) 
-	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" -e "s/@YEAR@/${YEAR}/" pterm-info.plist.in > pterm-info.plist
+Pterm.app: pterm pterm-info.plist pterm.icns $(MOFILES) 
 	rm -rf Pterm.app
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en.lproj
 	mkdir -p $(addprefix $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES)),.lproj)
@@ -186,7 +185,6 @@ pterm-kit: pterm-$(PTERMVERSION).dmg
 else
 
 pterm-kit: pterm.spec.in ptermversion.h $(MOFILES) pterm-$(PTERMVERSION).tar.bz2
-	sed -e "s/@PTERMVERSION@/${PTERMVERSION}/" pterm.spec.in > pterm.spec
 	cp pterm-$(PTERMVERSION).tar.bz2 /usr/src/redhat/SOURCES
 	rpmbuild -ba pterm.spec
 	cp /usr/src/redhat/RPMS/i386/pterm-$(PTERMVERSION)-1.i386.rpm .
