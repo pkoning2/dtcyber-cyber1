@@ -812,7 +812,6 @@ public:
 
     void OnDraw (wxDC &dc);
     void OnCharHook (wxKeyEvent& event);
-    void OnKeyDown (wxKeyEvent& event);
     void OnChar (wxKeyEvent& event);
     void OnMouseDown (wxMouseEvent &event);
     void OnMouseUp (wxMouseEvent &event);
@@ -2429,6 +2428,13 @@ PtermMainFrame::PtermMainFrame (void)
 {
     // create a menu bar
 
+    // PLEASE NOTE:
+    // On non-Mac platforms, accelerators are control keys.  These
+    // may conflict with the use of control keys for PLATO function
+    // keys.  The conflict is sorted out in an explicit check for
+    // accelerator keys in function OnCharHook.  If you change which
+    // characters are accelerators, you must update the code in that
+    // function.
     menuFile = new wxMenu;
     menuFile->Append (Pterm_Connect, _("New Connection...")
                       ACCELERATOR ("\tCtrl-N"), _("Connect to a PLATO host"));
@@ -9986,7 +9992,6 @@ void PtermConnection::SendData (const void *data, int len)
 BEGIN_EVENT_TABLE (PtermCanvas, wxScrolledCanvas)
     EVT_CHAR (PtermCanvas::OnChar)
     EVT_CHAR_HOOK (PtermCanvas::OnCharHook)
-    EVT_KEY_DOWN(PtermCanvas::OnKeyDown)
     EVT_LEFT_DOWN (PtermCanvas::OnMouseDown)
     EVT_LEFT_UP (PtermCanvas::OnMouseUp)
     EVT_RIGHT_UP (PtermCanvas::OnMouseContextMenu)
@@ -10050,116 +10055,17 @@ void PtermCanvas::OnDraw (wxDC &dc)
 
 void PtermCanvas::OnCharHook (wxKeyEvent &event)
 {
-    int shift = 0;
-    unsigned int key;
-
-    // ALT keyboard inputs are handled here, because if we defer them to
-    // a later stage, wrong things happen on Mac.  On the other hand, the
-    // remaining characters are handled in OnKeyDown or OnChar.  That ensures
-    // that they will be correctly recognized as keyboard shortcuts, if 
-    // those are enabled (on non-Mac platforms).
-
-    debug ("charhook: ctrl %d shift %d alt %d keycode %d",
-            event.RawControlDown (), event.ShiftDown (),
-            event.AltDown (), event.GetKeyCode ());
-
-    if (m_owner->m_bPasteActive)
-    {
-        // If pasting is active, this key is NOT passed on to the application
-        // until the paste operation is properly canceled
-        m_owner->m_bCancelPaste = true;
-        return;
-    }
-
-    key = event.GetKeyCode ();
-
-    if (!m_owner->HasConnection () ||
-        (m_owner->m_conn->Ascii () && m_owner->m_dumbTty) ||
-        key == WXK_ALT ||
-        key == WXK_SHIFT ||
-        key == WXK_RAW_CONTROL)
-    {
-        // We don't take any action on the modifier key keydown events,
-        // but we do want to make sure they are seen by the rest of
-        // the system.
-        // The same applies to keys sent to the help window (which has
-        // no connection on which to send them).
-        // And finally, it applies to ASCII when in dumb TTY mode, in
-        // that case we just want to send ASCII keycodes straight.
-        //
-        // Note that wxWidgets V3 maps the Mac Command key to WXK_CONTROL,
-        // "to improve compatibility with other systems".  Gah.  But
-        // fortunately, WXK_RAW_CONTROL means the real control key.
-
-        event.Skip ();
-        return;
-    }
-    if (key < 0200 && isalpha (key))
-    {
-        key = tolower (key);
-    }
-
-#if 0
-    tracex ("ctrl %d shift %d alt %d key %d\n",
-            event.RawControlDown (), event.ShiftDown (),
-            event.AltDown (), key);
-#endif
-
-    if (event.ShiftDown ())
-    {
-        shift = 040;
-    }
-
-    // Special case: ALT-left or Ctrl-left is assignment arrow
-    if ((event.AltDown () || event.RawControlDown ()) && key == WXK_LEFT)
-    {
-        m_owner->ptermSendKey1 (015 | shift);
-        return;
-    }
-
-    // Another special case: Ctrl-Q.  Ok, so we do handle that ONE
-    // control character here.  Same reason: if it's handled later then
-    // Mac gets it wrong.
-    if ((event.RawControlDown () && key == 'q') ||
-        (key < sizeof (altKeyToPlato) / sizeof (altKeyToPlato[0]) && 
-         event.AltDown ()))
-    {
-        if (shift != 0 && key == '=')
-        {
-            key = '+';
-        }
-        if (altKeyToPlato[key] != -1)
-        {
-            m_owner->ptermSendKey1 (altKeyToPlato[key] | shift);
-            return;
-        }
-    }
-
-    // If we get down to this point, then it wasn't an ALT-key entry,
-    // or it was, but there is no PLATO key code for that one.
-    //
-    // Defer everything else to the OnKeyDown and OnChar handlers.
-    event.Skip ();
-}
-
-void PtermCanvas::OnKeyDown (wxKeyEvent &event)
-{
     unsigned int key;
     int shift = 0;
     u32 pc = None;
     bool ctrl;
 
     // Most keyboard inputs are handled here, because if we defer them to
-    // the EVT_CHAR stage, too many evil things happen in too many of the
-    // platforms, all different...
+    // a later stage, wrong things happen on Mac. 
     //
     // The one thing we do defer until EVT_CHAR is plain old characters, i.e.,
     // keystrokes that aren't function keys or other special keys, and
     // neither Ctrl nor Alt are active.
-
-    debug ("keydown: ctrl %d shift %d alt %d keycode %d",
-            event.RawControlDown (), event.ShiftDown (),
-            event.AltDown (), event.GetKeyCode ());
 
     if (m_owner->m_bPasteActive)
     {
@@ -10177,7 +10083,6 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     key = event.GetKeyCode ();
 
     if (!m_owner->HasConnection () ||
-        (m_owner->m_conn->Ascii () && m_owner->m_dumbTty) ||
         key == WXK_ALT ||
         key == WXK_SHIFT ||
         key == WXK_RAW_CONTROL)
@@ -10187,8 +10092,6 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         // the system.
         // The same applies to keys sent to the help window (which has
         // no connection on which to send them).
-        // And finally, it applies to ASCII when in dumb TTY mode, in
-        // that case we just want to send ASCII keycodes straight.
         //
         // Note that wxWidgets V3 maps the Mac Command key to WXK_CONTROL,
         // "to improve compatibility with other systems".  Gah.  But
@@ -10203,10 +10106,43 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
     }
 
 #if 0
-    tracex ("ctrl %d shift %d alt %d key %d\n",
+    tracex ("oncharhook: ctrl %d shift %d alt %d key %d\n",
             event.RawControlDown (), event.ShiftDown (),
             event.AltDown (), key);
 #endif
+
+    if (event.ShiftDown ())
+    {
+        shift = 040;
+    }
+
+    // Special case: ALT-left or Ctrl-left is assignment arrow
+    if ((event.AltDown () || event.RawControlDown ()) && key == WXK_LEFT)
+    {
+        m_owner->ptermSendKey1 (015 | shift);
+        return;
+    }
+
+    if ((key < sizeof (altKeyToPlato) / sizeof (altKeyToPlato[0]) && 
+         event.AltDown ()))
+    {
+        if (shift != 0 && key == '=')
+        {
+            key = '+';
+        }
+        if (altKeyToPlato[key] != -1)
+        {
+            m_owner->ptermSendKey1 (altKeyToPlato[key] | shift);
+            return;
+        }
+    }
+    else if (event.AltDown ())
+    {
+        // All ALT cases are handled above, so if we haven't handled
+        // it yet and it's an Alt, let someone else see it.
+        event.Skip ();
+        return;
+    }
 
     if (ctrl && key == ']')         // control-] : trace
     {
@@ -10214,12 +10150,6 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
         return;
     }
 
-    // Special case: ALT-left is assignment arrow
-    if (event.AltDown () && key == WXK_LEFT)
-    {
-        m_owner->ptermSendKey1 (015 | shift);
-        return;
-    }
     // Special case:user has disabled Shift-Space, which means to treat
     // it as a space
     if (ptermApp->m_DisableShiftSpace && key == WXK_SPACE)
@@ -10229,20 +10159,7 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
 
     if (key < sizeof (asciiToPlato) / sizeof (asciiToPlato[0]))
     {
-        if (event.AltDown ())
-        {
-            if (altKeyToPlato[key] != -1)
-            {
-                m_owner->ptermSendKey1 (altKeyToPlato[key] | shift);
-                return;
-            }
-            else
-            {
-                event.Skip ();
-                return;
-            }
-        }
-        else if (ctrl && key >= 040)
+        if (ctrl && key >= 040)
         {
             // Control key is active.  There are several possibilities:
             //
@@ -10253,6 +10170,54 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
             // Control plus control code or function key: don't pay attention
             //  to the control key being active, and don't do a table lookup
             //  on the keycode.  Instead, those are handled later, in a switch.
+
+#if !defined (__WXMAC__)
+
+            // Another complication is that it may be an accelerator (if not Mac).
+            // Those are handled at different spots in the event chain on
+            // Windows vs. Linux.  So the only feasible way to deal with
+            // them seems to be to check for them explicitly.  Note that 
+            // we currently only have unshifted accelerators in Pterm.
+            // Any character that is an accelerator (listed as such with the
+            // ACCELERATOR macro in menu definitions) needs to be accounted
+            // for in the checks below.
+            if (ptermApp->m_useAccel && !shift)
+            {
+                bool acc = false;
+                
+                if (ptermApp->m_TutorColor && m_owner->HasConnection ())
+                {
+                    acc = (key >= '0' && key <= '9');
+                }
+                switch (key)
+                {
+                case 'n':
+                case 's':
+                case 'p':
+                case 'w':
+#if !defined (__WXMSW__)
+                // "Quit" has its accelerator supplied automatically
+                // by wxWidgets, on Unix that is.
+                case 'q':
+#endif
+                case 'c':
+                case 'v':
+                case 'x':
+                case 'm':
+                case 'g':
+                case 'u':
+                    acc = true;
+                }
+                
+                // If we conclude it's an accelerator, exit CharHook processing
+                // and let the wx machinery handle it.
+                if (acc)
+                {
+                    event.Skip ();
+                    return;
+                }
+            }
+#endif
 
             if (isalpha (key))
             {
@@ -10280,11 +10245,16 @@ void PtermCanvas::OnKeyDown (wxKeyEvent &event)
                 shift = 040;
             }
 
-            if (pc != None)
+            if (pc == None)
+            {
+                // Unknown control key, skip it
+                event.Skip ();
+            }
+            else
             {
                 m_owner->ptermSendKey (pc | shift);
-                return;
             }
+            return;
         }
     }
 
@@ -10523,28 +10493,13 @@ void PtermCanvas::OnChar (wxKeyEvent& event)
     unsigned int key;
     u32 pc = None;
 
-    debug ("onchar: ctrl %d shift %d alt %d keycode %d",
+#if 0
+    tracex ("onchar: ctrl %d shift %d alt %d keycode %d",
             event.RawControlDown (), event.ShiftDown (),
             event.AltDown (), event.GetKeyCode ());
+#endif
 
-    // Dumb TTY input is handled here, always
-    if (m_owner->HasConnection () &&
-        m_owner->m_conn->Ascii () && m_owner->m_dumbTty)
-    {
-        key = event.GetKeyCode ();
-        if (key == 023 || key == WXK_PAUSE || key == WXK_F10)
-        {
-            /* Ctrl-S or F10.  Presumably shift-stop, so turn it into NEXT.  */
-            key = 015;
-        }
-        tracex ("dumb tty key to plato %03o", key);
-        debug ("dumb tty key to plato %03o", key);
-
-        m_owner->m_conn->SendData (&key, 1);
-        return;
-    }
-    
-    // control and alt codes shouldn't come here, they are handled in KEY_DOWN
+    // control and alt codes shouldn't come here, they are handled in OnCharHook
     if (!m_owner->HasConnection () ||
         event.RawControlDown () || event.AltDown ())
     {
