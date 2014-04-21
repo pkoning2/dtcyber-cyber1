@@ -206,7 +206,7 @@ pterm-$(PTERMVERSION).tar.bz2: ptermversion.h license.txt pterm-license.txt READ
 endif
 
 %.o : %.cpp
-	$(CXX) -c -Wall $(C2FLAGS) $(CXXFLAGS) $<
+	$(CXX) -c -Wall -Wno-sign-compare $(C2FLAGS) $(CXXFLAGS) $<
 
 pterm_sdl.o : pterm_sdl.c
 	$(CC) $(CFLAGS) $(SDLCFLAGS) -I $(SNDINCL) -c $<
