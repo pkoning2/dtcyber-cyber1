@@ -9,9 +9,10 @@ Copy text.  2x mode, -stretch- mode.  Scrollbars.  Save/restore window.
 Scrolling in dumb terminal mode.  GSW mode.  Touch in zoomed and stretch
 modes.  Full screen and position save/restore for multi-screen systems.
 Paste printout.  Copy and paste of unicode text, including handling of
-backspaced accents and backspaced compound characters.
+backspaced accents and backspaced compound characters.  Control key shortcuts.
+-paint- with non-zero tag.
 
-New features: unicode copy/paste.
+New features: unicode copy/paste.  -paint- with non-zero tag
 
 Not working: <none>
 
@@ -1179,7 +1180,8 @@ private:
     void ptermBlockErase (int x1, int y1, int x2, int y2);
     void ptermSetName (wxString &winName);
     void ptermPaint (int pat);
-    void ptermPaintWalker (int x, int y, PixelData & pixmap, int pass);
+    void ptermPaintWalker (int x, int y, PixelData & pixmap, 
+                           int pat, int pass);
     void ptermSaveWindow (int d);
     void ptermRestoreWindow (int d);
     
@@ -4461,6 +4463,24 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
 
 }
 
+// -paint- (flood fill) with foreground color if "pat" is zero, or
+// the character with code "pat" otherwise.
+//
+// The encoding of the character code is as follows (see the PLATO
+// executor source code, in file "exec7" for more detail).
+//
+//        *         0           = solid fill
+//        *         1..95       = index into m0 character memory
+//        *         129..192    = index into m1 character memory
+//        *         257..383    = index into m2 (altfont) character memory
+//
+// For M0 and M1, the index corresponds to the ASCII code used to
+// access that memory, minus 32.  So, for example, 33 is A.
+//
+// Note that character fill is done in the equivalent of -mode write-, 
+// i.e., foreground pixels of the character pattern are written with the
+// current foreground color, and background pixels are left untouched.
+
 void PtermFrame::ptermPaint (int pat)
 {
     int xm, ym;
@@ -4469,28 +4489,21 @@ void PtermFrame::ptermPaint (int pat)
     xm = XMADJUST (currentX);
     ym = YMADJUST (currentY);
 
-    // According to the spec, "pat" is either a memory/char number, or if 0
-    // means "fill with solid color".  What we're doing here is only the 
-    // latter case, just as in previous versions of pterm.
-    //
-    // The algorithm used is simply a walk of the bitmap starting at
-    // the current x/y.  More precisely, two walks: in the first we replace
-    // all non-background pixels by a magic value.  In the second, we replace
-    // that magic value by the foreground.
-    // The reason for doing it that way is that the recursion won't terminate
-    // correctly if we paint the pixels in one pass; an already-painted
-    // pixel will be visited repeatedly.  And we can't skip "already painted"
-    // pixels entirely because they might just be an isolated set of pixels
-    // that are already foreground, and we should go right across them.
-    ptermPaintWalker (xm, ym, pixmap, 0);
-    ptermPaintWalker (xm, ym, pixmap, 1);
+    ptermPaintWalker (xm, ym, pixmap, pat, 0);
+    ptermPaintWalker (xm, ym, pixmap, pat, 1);
 }
 
-// Pass 0 means: stop if you hit background pixels; replace all others by 
-// special value 0 (for use by pass 1).
-// Pass 1 means: stop if you hit a pixel that's not 0; replace 0 by foreground.
-#define wdone(pmap, pass) ((pass && *pmap != 0) || \
-                           (!pass && (*pmap == m_bgpix || *pmap == 0)))
+// Pass 0 means: stop if you hit background pixels; set all other pixels
+// as visited.
+// Pass 1 means: stop if you hit a pixel that's not been marked as visited;
+// for a visited pixel, set it to foreground if it is supposed to be
+// painted, or back to not visited if it is supposed to be unchanged.
+//
+// Since normal pixel values all have alpha == 255, we use alpha == 0
+// as the marker value.
+#define wdone(pmap, pass) ((pass && (*pmap & m_maxalpha) != 0) ||   \
+                           (!pass && (*pmap == m_bgpix ||           \
+                                      (*pmap & m_maxalpha) == 0)))
 
 // This stack is used to implement what amounts to the trivial recursive
 // fill algorithm without actual recursion.  All we need is one byte per
@@ -4501,16 +4514,62 @@ void PtermFrame::ptermPaint (int pat)
 // entry allows a stack overflow sanity check.
 static u8 walkstack[512 * 512 + 2];
 
-void PtermFrame::ptermPaintWalker (int x, int y, PixelData & pixmap, int pass)
+void PtermFrame::ptermPaintWalker (int x, int y, PixelData & pixmap, 
+                                   int pat, int pass)
 {
     PixelData::Iterator p (pixmap);
     u32 *pmap;
     int sp;
 #define PUSH walkstack[++sp] = 0
-    const int newpixel = pass ? m_fgpix : 0;
     int maxsp = 0;
     int pixels = 0;
-    int w;
+    int w, i, d;
+    const u16 *cp = NULL;
+    
+    if (pat)
+    {
+        if (pat < 256)
+        {
+            pat += 32;
+            if (pat < 128)
+            {
+                d = asciiM0[pat];
+            }
+            else
+            {
+                d = asciiM1[pat - 128];
+            }
+        }
+        else
+        {
+            d = pat;
+        }
+        
+        if (d == 0xff)
+        {
+            // Trying to do char fill with a non-character
+            return;
+        }
+        
+        // i is the set, d is the offset within the set
+        i = d >> 7;
+        d &= 0x7f;
+        
+        // Form the offset to the character pattern
+        if (i == 0)
+        {
+            cp = plato_m0;
+        }
+        else if (i == 1)
+        {
+            cp = plato_m1;
+        }
+        else
+        {
+            cp = plato_m23 + (i - 2) * (8 * 64);
+        }
+        cp += 8 * d;
+    }
     
     sp = -1;
     PUSH;
@@ -4539,7 +4598,37 @@ void PtermFrame::ptermPaintWalker (int x, int y, PixelData & pixmap, int pass)
                 walkstack[sp] = 4;
                 break;
             }
-            *pmap = newpixel;
+            if (pass)
+            {
+                if (cp != NULL)
+                {
+                    // Character fill.  We draw the characters on 
+                    // coarse grid boundaries.
+                    const int cx = x & 7;
+                    const int cy = y & 15;
+
+                    if ((cp[cx] & (0x8000 >> cy)) != 0)
+                    {
+                        // Foreground pixel, paint it
+                        *pmap = m_fgpix;
+                    }
+                    else
+                    {
+                        // Backround pixel, unmark it
+                        *pmap |= m_maxalpha;
+                    }
+                }
+                else
+                {
+                    // Plain flood fill
+                    *pmap = m_fgpix;
+                }
+            }
+            else
+            {
+                // Mark the pixel by setting alpha to zero
+                *pmap &= ~m_maxalpha;
+            }
             pixels++;
             if (x > 0)
             {

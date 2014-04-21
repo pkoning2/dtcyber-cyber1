@@ -18,3 +18,8 @@ Note to Windows users: the scaling of -font- text has been fixed for
 consistency with other platforms.  If you have code that uses -font-
 with sizes chosen to look right on the previous Windows version of
 pterm, you will need to adjust the text size.  
+
+V5.0.3, April 2014:
+
+-paint- command now supports the case with a tag (fill with character
+pattern).
