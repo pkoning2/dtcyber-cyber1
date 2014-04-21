@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Pterm"
-#define MyAppVersion "5.0.1"
+#define MyAppVersion "5.0.2"
 #define MyAppPublisher "AK Design"
 #define MyAppURL "http://www.cyber1.org/"
 #define MyAppExeName "Pterm.exe"

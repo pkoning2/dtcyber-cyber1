@@ -374,7 +374,9 @@ typedef struct
 
 #include "ptermkeytabs.h"
 
-// Keycode translation for ALT-keypress.  -1 means not valid. 
+// Keycode translation for ALT-keypress.  -1 means not valid.  Note that as
+// a general rule, ALT and Control produce the same outcome (if control key
+// accelerators are disabled).
 const i8 altKeyToPlato[128] =
 {
  /*                                                                         */
@@ -388,27 +390,27 @@ const i8 altKeyToPlato[128] =
  /*          space   !       "       #       $       %       &       '      */
  /* 040- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,   
  /*          (       )       *       +       ,       -       .       /      */
- /* 050- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,   
+ /* 050- */ -1,     -1,     -1,      0056,  -1,      0057,  -1,     -1,   
  /*          0       1       2       3       4       5       6       7      */
  /* 060- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,   
  /*          8       9       :       ;       <       =       >       ?      */
  /* 070- */ -1,     -1,     -1,     -1,     -1,      0015,  -1,     -1,   
  /*          @       A       B       C       D       E       F       G      */
- /* 100- */ -1,      0062,   0070,   0073,   0071,   0067,   0064,  -1,   
+ /* 100- */ -1,      0062,   0070,   0073,   0071,   0067,   0064,  0053,   
  /*          H       I       J       K       L       M       N       O      */
  /* 110- */  0065,  -1,     -1,     -1,      0075,   0064,   0066,  -1,   
  /*          P       Q       R       S       T       U       V       W      */
- /* 120- */ -1,      0074,   0063,   0072,   0062,  -1,     -1,     -1,   
+ /* 120- */ 0060,    0074,   0063,   0072,   0062,  -1,     -1,     -1,   
  /*          X       Y       Z       [       \       ]       ^       _      */
- /* 130- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1,   
+ /* 130- */ 0052,    0061,  -1,     -1,     -1,     -1,     -1,     -1,   
  /*          `       a       b       c       d       e       f       g      */
- /* 140- */ -1,      0022,   0030,   0033,   0031,   0027,   0064,  -1,   
+ /* 140- */ -1,      0022,   0030,   0033,   0031,   0027,   0064,  0013,   
  /*          h       i       j       k       l       m       n       o      */
  /* 150- */  0025,  -1,     -1,     -1,      0035,   0024,   0026,  -1,   
  /*          p       q       r       s       t       u       v       w      */
- /* 160- */ -1,      0034,   0023,   0032,   0062,  -1,     -1,     -1,   
+ /* 160- */ 0020,    0034,   0023,   0032,   0062,  -1,     -1,     -1,   
  /*          x       y       z       {       |       }       ~              */
- /* 170- */ -1,     -1,     -1,     -1,     -1,     -1,     -1,     -1
+ /* 170- */ 0012,    0021,  -1,     -1,     -1,     -1,     -1,     -1
 };
 
 /*
@@ -810,6 +812,7 @@ public:
 
     void OnDraw (wxDC &dc);
     void OnCharHook (wxKeyEvent& event);
+    void OnKeyDown (wxKeyEvent& event);
     void OnChar (wxKeyEvent& event);
     void OnMouseDown (wxMouseEvent &event);
     void OnMouseUp (wxMouseEvent &event);
@@ -9983,6 +9986,7 @@ void PtermConnection::SendData (const void *data, int len)
 BEGIN_EVENT_TABLE (PtermCanvas, wxScrolledCanvas)
     EVT_CHAR (PtermCanvas::OnChar)
     EVT_CHAR_HOOK (PtermCanvas::OnCharHook)
+    EVT_KEY_DOWN(PtermCanvas::OnKeyDown)
     EVT_LEFT_DOWN (PtermCanvas::OnMouseDown)
     EVT_LEFT_UP (PtermCanvas::OnMouseUp)
     EVT_RIGHT_UP (PtermCanvas::OnMouseContextMenu)
@@ -10045,6 +10049,100 @@ void PtermCanvas::OnDraw (wxDC &dc)
 }
 
 void PtermCanvas::OnCharHook (wxKeyEvent &event)
+{
+    int shift = 0;
+    unsigned int key;
+
+    // ALT keyboard inputs are handled here, because if we defer them to
+    // a later stage, wrong things happen on Mac.  On the other hand, the
+    // remaining characters are handled in OnKeyDown or OnChar.  That ensures
+    // that they will be correctly recognized as keyboard shortcuts, if 
+    // those are enabled (on non-Mac platforms).
+
+    debug ("charhook: ctrl %d shift %d alt %d keycode %d",
+            event.RawControlDown (), event.ShiftDown (),
+            event.AltDown (), event.GetKeyCode ());
+
+    if (m_owner->m_bPasteActive)
+    {
+        // If pasting is active, this key is NOT passed on to the application
+        // until the paste operation is properly canceled
+        m_owner->m_bCancelPaste = true;
+        return;
+    }
+
+    key = event.GetKeyCode ();
+
+    if (!m_owner->HasConnection () ||
+        (m_owner->m_conn->Ascii () && m_owner->m_dumbTty) ||
+        key == WXK_ALT ||
+        key == WXK_SHIFT ||
+        key == WXK_RAW_CONTROL)
+    {
+        // We don't take any action on the modifier key keydown events,
+        // but we do want to make sure they are seen by the rest of
+        // the system.
+        // The same applies to keys sent to the help window (which has
+        // no connection on which to send them).
+        // And finally, it applies to ASCII when in dumb TTY mode, in
+        // that case we just want to send ASCII keycodes straight.
+        //
+        // Note that wxWidgets V3 maps the Mac Command key to WXK_CONTROL,
+        // "to improve compatibility with other systems".  Gah.  But
+        // fortunately, WXK_RAW_CONTROL means the real control key.
+
+        event.Skip ();
+        return;
+    }
+    if (key < 0200 && isalpha (key))
+    {
+        key = tolower (key);
+    }
+
+#if 0
+    tracex ("ctrl %d shift %d alt %d key %d\n",
+            event.RawControlDown (), event.ShiftDown (),
+            event.AltDown (), key);
+#endif
+
+    if (event.ShiftDown ())
+    {
+        shift = 040;
+    }
+
+    // Special case: ALT-left or Ctrl-left is assignment arrow
+    if ((event.AltDown () || event.RawControlDown ()) && key == WXK_LEFT)
+    {
+        m_owner->ptermSendKey1 (015 | shift);
+        return;
+    }
+
+    // Another special case: Ctrl-Q.  Ok, so we do handle that ONE
+    // control character here.  Same reason: if it's handled later then
+    // Mac gets it wrong.
+    if ((event.RawControlDown () && key == 'q') ||
+        (key < sizeof (altKeyToPlato) / sizeof (altKeyToPlato[0]) && 
+         event.AltDown ()))
+    {
+        if (shift != 0 && key == '=')
+        {
+            key = '+';
+        }
+        if (altKeyToPlato[key] != -1)
+        {
+            m_owner->ptermSendKey1 (altKeyToPlato[key] | shift);
+            return;
+        }
+    }
+
+    // If we get down to this point, then it wasn't an ALT-key entry,
+    // or it was, but there is no PLATO key code for that one.
+    //
+    // Defer everything else to the OnKeyDown and OnChar handlers.
+    event.Skip ();
+}
+
+void PtermCanvas::OnKeyDown (wxKeyEvent &event)
 {
     unsigned int key;
     int shift = 0;
