@@ -1826,7 +1826,7 @@ void Dd60Frame::UpdateSettings (void)
 **------------------------------------------------------------------------*/
 void Dd60Frame::procDd60Char (unsigned int d)
 {
-    int size = 0, margin, firstx, firsty, inc = 0, qwds = 0;
+    int size = 0, margin, firstx, firsty, inc = 0;
     u8 *data = 0;
     int i, j, k;
 
@@ -1856,19 +1856,16 @@ void Dd60Frame::procDd60Char (unsigned int d)
     case Dd60Dot:
         inc = 8;
         size = CHAR8SIZE;
-        qwds = 4 * CHAR8SIZE / 8;
         data = m_char8 + (d * 4 * CHAR8SIZE * CHAR8SIZE);
         break;
     case Dd60CharMedium:
         inc = 16;
         size = CHAR16SIZE;
-        qwds = 4 * CHAR16SIZE / 8;
         data = m_char16 + (d * 4 * CHAR16SIZE * CHAR16SIZE);
         break;
     case Dd60CharLarge:
         inc = 32;
         size = CHAR32SIZE;
-        qwds = 4 * CHAR32SIZE / 8;
         data = m_char32 + (d * 4 * CHAR32SIZE * CHAR32SIZE);
         break;
     }
@@ -1885,21 +1882,6 @@ void Dd60Frame::procDd60Char (unsigned int d)
         for (i = 0; i < size; i++)
         {
             p.MoveTo (*m_pixmap, firstx, firsty + i);
-#if 0 //#ifdef __SSE2__
-            // Disable this code for now because it requires 16-byte
-            // alignment and I see no way to guarantee that.
-            typedef u8 v8qi __attribute__ ((vector_size (8)));
-            v8qi *pmap = (v8qi *)(p.m_ptr);
-            v8qi *pdata = (v8qi *) data;
-            
-            for (j = 0; j < qwds; j++)
-            {
-                *pmap = __builtin_ia32_paddusb (*pmap, *pdata);
-                ++pmap;
-                ++pdata;
-            }
-            data += qwds * 8;
-#else
             for (j = 0; j < size; j++)
             {
                 u8 &rp = p.Red ();
@@ -1927,7 +1909,6 @@ void Dd60Frame::procDd60Char (unsigned int d)
                 ++p;
                 data += 4;
             }
-#endif
         }
     }
     currentX = (currentX + inc) & 0777;

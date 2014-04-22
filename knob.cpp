@@ -48,7 +48,7 @@ void wxKnob::Create (wxWindow* parent, wxWindowID id, int value,
                      const wxValidator &validator,
                      const wxString &name)
 {
-    wxControl::Create (parent, id);
+    wxControl::Create (parent, id, pos, size, style, validator, name);
     SetInitialSize (size);
     SetSize (size);
     

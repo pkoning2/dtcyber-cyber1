@@ -238,7 +238,7 @@ pterm_wx.o : pterm_wx.cpp wxversion.h ptermversion.h
 INCL+=$(SDLINCL)
 DEPFILES+=  $(PTOBJS:.o=.d) 
 
-ifneq ("$(wildcard dd60.c)","")
+ifneq ("$(wildcard dd60.cpp)","")
 # for dd60
 DEPFILES+= dd60.d knob.d iir.d
 # for dtoper
