@@ -3213,6 +3213,22 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         c2 = m_pasteText[nextindex];
     }
     
+#if 0
+    tracex ("Pasting at index %d:  %d, next is %d", m_pasteIndex, c, c2);
+#endif
+
+    // Line endings vary, and on Mac they are not even consistent from
+    // one application to the next.  Fix that.
+    if (c == 015)
+    {
+        // CR.  Skip if next is LF.  Either way, supply LF for current char.
+        c = '\n';
+        if (c2 == '\n')
+        {
+            nextindex++;
+        }
+    }
+    
     // Check if we're at the line break position, and we have a space.
     // If yes, remove it (the newline will be inserted at the end)
     if (m_pasteIndex == m_pasteNextIndex && c == ' ')
