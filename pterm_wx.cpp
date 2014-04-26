@@ -2414,6 +2414,13 @@ void PtermApp::OnQuit (wxCommandEvent&)
         frame->Close (true);
         frame = nextframe;
     }
+
+    // Help frame is not in the list, so check for it separately
+    if (m_helpFrame != NULL)
+    {
+        m_helpFrame->Close (true);
+    }
+
 #if PTERM_MDI // defined (__WXMAC__)
     // On the Mac, deleting all the windows doesn't terminate the
     // program, so we make it stop this way.
@@ -8504,7 +8511,7 @@ bool PtermPrefDialog::SaveProfile (wxString profile)
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_HOST) wxT ("=%s"), m_host);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_PORT) wxT ("=%s"), m_port);
+    buffer.Printf (wxT (PREF_PORT) wxT ("=%ld"), m_port);
     file.AddLine (buffer);
     //tab2
     buffer.Printf (wxT (PREF_SHOWSIGNON) wxT ("=%d"), (m_showSignon) ? 1 : 0);
@@ -8552,11 +8559,11 @@ bool PtermPrefDialog::SaveProfile (wxString profile)
     buffer.Printf (wxT (PREF_BACKGROUND) wxT ("=%d %d %d"), m_bgColor.Red (), m_bgColor.Green (), m_bgColor.Blue ());
     file.AddLine (buffer);
     //tab5
-    buffer.Printf (wxT (PREF_CHARDELAY) wxT ("=%s"), m_charDelay);
+    buffer.Printf (wxT (PREF_CHARDELAY) wxT ("=%ld"), m_charDelay);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_LINEDELAY) wxT ("=%s"), m_lineDelay);
+    buffer.Printf (wxT (PREF_LINEDELAY) wxT ("=%ld"), m_lineDelay);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_AUTOLF) wxT ("=%s"), m_autoLF);
+    buffer.Printf (wxT (PREF_AUTOLF) wxT ("=%ld"), m_autoLF);
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_SPLITWORDS) wxT ("=%d"), (m_splitWords) ? 1 : 0);
     file.AddLine (buffer);
