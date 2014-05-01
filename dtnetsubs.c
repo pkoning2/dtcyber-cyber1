@@ -1152,7 +1152,6 @@ static dtThreadFun (dtThread, param)
     NetPortSet *ps = (NetPortSet *) param;
     in_addr_t host;
     int port;
-    NetFet *np;
     int listenFd;
     
     /*
@@ -1199,7 +1198,7 @@ static dtThreadFun (dtThread, param)
         **  Wait for a connection.  The things we need to do about it
         **  are all in dtAcceptSocket.
         */
-        np = dtAcceptSocket (listenFd, ps);
+        (void) dtAcceptSocket (listenFd, ps);
         }
     }
 
