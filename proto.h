@@ -282,19 +282,15 @@ void ddWaitIO (DiskIO *io);
 **  dtnetsubs.c
 */
 void dtInit (void);
-int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int portnum);
-int dtCheckInput(int connFd, void *buf, int size, int time);
-void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize);
-void dtClosePortset (NetPortSet *ps);
-void dtClose (NetFet *np, NetPortSet *ps, bool hard);
-int dtCreateThread (ThreadFunRet (*fp)(void *), void *param);
+NetFet * dtConnect (NetPortSet *ps, in_addr_t host, int portnum);
+void dtInitPortset (NetPortSet *ps);
+void dtClose (NetFet *np, bool hard);
+int dtCreateThread (dtThreadFunPtr (fp), void *param, pthread_t *id);
 const char *dtNowString (void);
-int dtSendTlv (NetFet *fet, NetPortSet *ps, 
-               int tag, int len, const void *value);
-int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len);
-int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog);
-int dtAccept (NetFet *fet, NetFet *acceptFet);
-void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd);
+int dtSendTlv (NetFet *fet, int tag, int len, const void *value);
+int dtSend (NetFet *fet, const void *buf, int len);
+NetFet * dtBind  (NetPortSet *ps, in_addr_t host, int port, int backlog);
+NetFet * dtAccept (NetFet *listenFet, NetPortSet *ps);
 
 int dtReado (NetFet *fet);
 int dtReadoi (NetFet *fet, int *outidx);
@@ -302,7 +298,6 @@ int dtReadw (NetFet *fet, void *buf, int len);
 int dtPeekw (NetFet *fet, void *buf, int len);
 int dtReadmax (NetFet *fet, void *buf, int len);
 int dtReadtlv (NetFet *fet, void *buf, int len);
-void dtCloseFet (NetFet *fet, bool hard);
 
 /* We could do these as functions but they are short, so... */
 #define dtEmpty(fet) \
@@ -328,7 +323,7 @@ void dtCloseFet (NetFet *fet, bool hard);
     ((fet)->sendend - (fet)->sendfirst - dtSendData (fet) - 1)
 
 #define dtActive(fet) \
-    ((fet)->connFd != 0)
+    ((fet) != NULL && (fet)->closing == 0)
 
 /* This goes with dtReadoi */
 #define dtUpdateOut(fet,outidx) \
@@ -405,10 +400,10 @@ extern char autoString[];
 extern char platoSection[];
 extern u32 channelDelayMask;
 extern long cmWaitRatio;
-extern NetFet connlist;
-extern pthread_mutex_t connMutex;
+extern NetPortSet *connlist;
 extern void (*updateConnections) (void);
 extern long extSockets;
+extern int dtErrno;
 
 /*---------------------------  End Of File  ------------------------------*/
 #endif /* PROTO_H */

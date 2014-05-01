@@ -466,8 +466,9 @@ def cftpd (args):
                 raise
             sock.close ()
             break
-        except (IOError, OSError, EOFError):
+        except (IOError, OSError, EOFError), err:
             # some sort of network error; close connection and wait for another
+            print "error %d transfering %s: %s" % (err.errno, rfn, err.strerror)
             sock.close ()
             
 def main (args):

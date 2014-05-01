@@ -675,7 +675,7 @@ static double normInt (int intens, int size)
     return intens * step;
 }
 
-void Dd60Frame::connCallback (NetFet *, int, void *arg)
+void Dd60Frame::connCallback (NetFet *fet, int, void *arg)
 {
     wxWakeUpIdle ();
 }
@@ -1030,7 +1030,6 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     currentXOffset (0)
 {
     int i;
-    int true_opt = 1;
     Dd60Panel *panel;
     
     trace_txt[0] = '\0';
@@ -1182,12 +1181,13 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     m_portset.maxPorts = 1;
     m_portset.callBack = connCallback;
     m_portset.dataCallBack = dataCallback;
-
-    dtInitPortset (&m_portset, NetBufSize, 0);
-    m_fet = m_portset.portVec;
+    m_portset.ringSize = NetBufSize;
+    m_portset.sendRingSize = 0;     // We don't use the send ring/thread
+    dtInitPortset (&m_portset);
 
     // Open the connection
-    if (dtConnect (m_fet, &m_portset, inet_addr ("127.0.0.1"), m_port) < 0)
+    m_fet = dtConnect (&m_portset, inet_addr ("127.0.0.1"), m_port);
+    if (m_fet == NULL)
     {
         wxString msg;
             
@@ -1202,12 +1202,6 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
         return;
     }
     m_statusBar->SetStatusText(_(" Connecting"), STATUS_CONN);
-    setsockopt (m_fet->connFd, SOL_SOCKET, SO_KEEPALIVE,
-                (char *)&true_opt, sizeof(true_opt));
-#ifdef __APPLE__
-    setsockopt (m_fet->connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                (char *)&true_opt, sizeof(true_opt));
-#endif
 
     m_sizer->Add (m_canvas);
     m_sizer->Add (m_statusBar);
@@ -1220,7 +1214,7 @@ Dd60Frame::~Dd60Frame ()
 {
     if (dtActive (m_fet))
     {
-        dtCloseFet (m_fet, true);
+        dtClose (m_fet, true);
     }
     if (m_char8 != NULL)
     {
@@ -1252,7 +1246,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     static int pendingData = 0;
 #if DEBUG
     struct timeval t, t2;
-    int datacount = dtFetData (m_fet);
+    int datacount;
     int dt, dut;
 #endif
     
@@ -1442,6 +1436,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
         Refresh ();
     }
 #if DEBUG
+    datacount = dtFetData (m_fet);
     if (datacount)
     {
         gettimeofday (&t2, NULL);
@@ -1461,7 +1456,7 @@ void Dd60Frame::OnClose (wxCloseEvent &)
 {
     if (dtActive (m_fet))
     {
-        dtClose (m_fet, &m_portset, true);
+        dtClose (m_fet, true);
     }
 
     Destroy ();
@@ -1977,7 +1972,10 @@ void Dd60Frame::dd60SendKey(int key)
         wxLogMessage ("key to plato %03o", key);
 #endif
     }
-    send (m_fet->connFd, &data, 1, 0);
+    if (dtActive (m_fet))
+    {
+        send (m_fet->connFd, &data, 1, 0);
+    }
 }
 
 void Dd60Frame::dd60ShowTrace (bool enable)

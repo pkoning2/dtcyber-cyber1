@@ -90,7 +90,7 @@ exit.
  e.sock   equ    1           exx function code for sockets
  s.rset   equ    0           reset socket
  s.close  equ    1           shutdown (graceful close)
- s.get    equ    2           get a socket
+*         equ    2           (reserved)
  s.bind   equ    3           bind + listen
  s.acc    equ    4           accept
  s.conn   equ    5           connect
@@ -136,7 +136,7 @@ exit.
           pl     x6,cerr2    if transfer error
           close  fet,rewind,r
           sx6    4
-          rj     sendctl     receive final status
+          rj     readctl     receive final status
           sx2    shut
           rj     netio       then close the socket
           message complete,3,r
@@ -220,7 +220,7 @@ exit.
           rj     sendfil     send data file
           close  fet,return
           sx6    4
-          rj     sendctl     receive final status
+          rj     readctl     receive final status
           sx2    shut
           rj     netio       then close the socket
           sb5    -getdone    message template
@@ -833,22 +833,17 @@ exit.
 
  cftp15   sa7    host
  cftp9    reprieve rpvdata,setup,277b  catch everything except endrun
-          sx2    getsock
-          rj     netio       obtain a socket
-          pl     x6,err3     if error
-          sa1    socknum
           sa2    host
           sa3    portnum
-          bx6    x1
-          bx7    x2
-          sa6    cs          set socket for connect
-          sa7    caddr       set host address
-          bx6    x3
-          sa6    cport       set port number
-          rj     psock       set all other sockets
+          bx6    x2
+          bx7    x3
+          sa6    caddr       set host address
+          sa7    cport       set port number
           sx2    conn
           rj     netio       connect to the server
           pl     x6,err8     if connect failure
+          sa1    cs          get resulting socket number
+          rj     psock       set all other sockets
           sx6    2
           rj     readctl     get server hello message
           pl     x6,err8     error at this point is connect failure
@@ -876,17 +871,13 @@ exit.
  cftpd1   sa6    portnum     remember port number
           sa6    bport       set as listen port number
           reprieve rpvdata,setup,277b  catch everything except endrun
-          sx2    getsock
-          rj     netio       obtain a socket
-          pl     x6,err3     if error
-          sa1    socknum
-          bx6    x1
-          sa6    bs          plant socket number
-          sa6    as
-          sa6    socks
           sx2    bind
           rj     netio       bind and listen
           pl     x6,err4     if error
+          sa1    bs          get resulting socket number
+          bx6    x1
+          sa6    as
+          sa6    socks
           sx6    errbuf
           sa6    fet+cfpw    set error message pointer for *pfm* calls
           eq     ftpdgo      enter daemon main loop
@@ -936,10 +927,6 @@ exit.
           
 **        initialization time socket request blocks
 
- getsock  vfd    42/0,6/s.get,12/e.sock
- socknum  data   0           returned socket number
-          data   0           owner data (none specified)
-          
  bind     vfd    42/0,6/s.bind,12/e.sock
  bs       data   0
           data   0           any ip address

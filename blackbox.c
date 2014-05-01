@@ -95,10 +95,12 @@ int main (int argc, char **argv)
     niuPorts.maxPorts = platoConns;
     niuPorts.localOnly = FALSE;
     niuPorts.dataCallBack = ignoreData;
+    niuPorts.ringSize = niuPorts.sendRingSize = 1024;
     niuAsciiPorts.portNum = asciiPort;
     niuAsciiPorts.maxPorts = asciiConns;
     niuAsciiPorts.localOnly = FALSE;
     niuAsciiPorts.dataCallBack = ignoreData;
+    niuAsciiPorts.ringSize = niuAsciiPorts.sendRingSize = 1024;
     
     printf ("Current message is: '%s'\n", msg);
     if (detflag)
@@ -124,8 +126,8 @@ int main (int argc, char **argv)
         fcntl (fileno (stdin), F_SETFL, O_NONBLOCK);
         }
     
-    dtInitPortset (&niuPorts, 1024, 1024);
-    dtInitPortset (&niuAsciiPorts, 1024, 1024);
+    dtInitPortset (&niuPorts);
+    dtInitPortset (&niuAsciiPorts);
 
     for (;;)
         {
@@ -178,14 +180,16 @@ int main (int argc, char **argv)
 **  Returns:        nothing.
 **
 **------------------------------------------------------------------------*/
-static void niuSendstr(int stat, const char *p)
+static void niuSendstr (int stat, const char *p)
     {
+    NetFet *fet;
     int cc = 2;
     int w = 017720;
     bool shift = FALSE;
     int c;
     
-    if (&(niuPorts.portVec + stat)->connFd == 0)
+    fet = niuPorts.portVec[stat];
+    if (!dtActive (fet))
         {
         return;
         }
@@ -273,8 +277,8 @@ static void niuSendWord(int stat, int word)
     NetFet *fet;
     u8 data[3];
 
-    fet = niuPorts.portVec + stat;
-    if (fet->connFd == 0)
+    fet = niuPorts.portVec[stat];
+    if (!dtActive(fet))
         {
         return;
         }
@@ -283,7 +287,7 @@ static void niuSendWord(int stat, int word)
     data[1] = ((word >> 6) & 077) | 0200;
     data[2] = (word & 077) | 0300;
 
-    dtSend(fet, &niuPorts, data, 3);
+    dtSend (fet, data, 3);
     }
 
 /*--------------------------------------------------------------------------
@@ -338,17 +342,17 @@ static void bbSendAscii (int stat)
     char setY[2];
     const char *setX = "\041\120";      // X = 48
     
-    fet = niuAsciiPorts.portVec + stat;
-    if (fet->connFd == 0)
+    fet = niuAsciiPorts.portVec[stat];
+    if (!dtActive (fet))
         {
         return;
         }
 
-    dtSend(fet, &niuAsciiPorts, modeStr, strlen (modeStr));
+    dtSend (fet, modeStr, strlen (modeStr));
     setY[0] = (currentY >> 5) | 040;
     setY[1] = (currentY & 037) | 0140;
-    dtSend (fet, &niuAsciiPorts, setY, 2);
-    dtSend (fet, &niuAsciiPorts, setX, 2);
+    dtSend (fet, setY, 2);
+    dtSend (fet, setX, 2);
     
-    dtSend (fet, &niuAsciiPorts, msg, strlen (msg));
+    dtSend (fet, msg, strlen (msg));
     }

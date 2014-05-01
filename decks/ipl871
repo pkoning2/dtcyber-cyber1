@@ -169,7 +169,6 @@ return(opl)
  s.reset  equ    0           reset socket
  s.close  equ    1           close socket
  s.ctrl   equ    2           control (conden to plato)
- s.get    equ    2           get socket number (dtcyber)
  s.listn  equ    3           bind address/port then listen
  s.acc    equ    4           accept a connection
  s.conn   equ    5           connect outbound
@@ -547,10 +546,7 @@ return(opl)
           space  5,11
 **        -socket listen-
 
- sclistn  rj     getsocz     get socket number, must be free
-          bx6    x1
-          sa6    sxbuf+1     set it in request
-          sa1    varbuf+2    address argument
+ sclistn  sa1    varbuf+2    address argument
           bx5    x1
           ngetvar
           bx6    x1
@@ -565,14 +561,25 @@ return(opl)
           ngetvar
           bx6    x1
           sa6    sxbuf+4     set in request
-          eq     scdo        do the bind/listen and exit
+ scnew    rj     getsock     look up the supplied socket index
+          nz     x1,sidxerr  non-zero (in use) is error
+          sa2    varbuf      retrieve function code
+          lx2    xcodel      right-justify getvar code
+          sx2    x2          isolate it
+          lx2    12          position it for exx request
+          sx6    x2+1        form *socket* opcode
+          sa6    sxbuf       set opcode
+          sx2    a6
+          ex6    x2          issue socket op
+          pl     x6,sockret  quit if error
+          sa2    sxbuf+1     get returned socket
+          bx6    x2
+          sa6    a1+socklst-1 set socket number in socklst
+          eq     sockrok     update the ecs copy and exit
           space  5,11
 **        -socket connect-
 
- scconn   rj     getsocz     get socket number, must be free
-          bx6    x1
-          sa6    sxbuf+1     set it in request
-          sa1    varbuf+2    address argument
+ scconn   sa1    varbuf+2    address argument
           bx5    x1
           ngetvar
           bx6    x1
@@ -582,7 +589,7 @@ return(opl)
           ngetvar
           bx6    x1
           sa6    sxbuf+3     set in request
-          eq     scdo        do the operation and exit
+          eq     scnew       do the operation and exit
           space  5,11
 **        -socket accept-
 
@@ -710,33 +717,6 @@ return(opl)
  sidxerr  sx6    1           *zreturn* = 1 -- bad sockidx
  sockret  sa6    treturn
           eq     process
-
-** map user socket index to socket number, must be free
-*
-*  on entry, varbuf+1 is the varbuf entry for the socknum argument.
-*
-*  on exit, x1 is the socket number, and a1 is the address of the variable
-*  it came from.  the socket list both in memory and in ecs are updated.
-
- getsocz  ps
-          rj     getsock     look up the entry
-          nz     x1,sidxerr  non-zero (in use) is error
-          sa2    station     get station number
-          bx6    x2
-          sa6    gsnum+2     pass that as *owner info*
-          sx1    gsnum
-          ex6    x1          try to get a socket
-          pl     x6,sockret  quit if error
-          sa2    gsnum+1     fetch the socket number
-          bx1    x2          for return
-          bx6    x2
-          sa6    a1          write it to socket list
-          sa2    sockead
-          bx0    x2
-          sa0    socklst
-+         we     sockmax
--         rj     ecsprty     update the socket list in ecs
-          eq     getsocz    
 
  gsnum    vfd    42/0,6/s.get,12/e.sock
           bssz   2

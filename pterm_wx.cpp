@@ -281,7 +281,7 @@ void Trace::Log (const wxString &s)
 	
         GetLocalTime (&tv);
         GetTimeFormatA (LOCALE_SYSTEM_DEFAULT, 0, &tv, 
-                        "'HH':'mm':'ss'.", &tbuf[0], 10);
+                        "HH':'mm':'ss", &tbuf[0], 10);
         hdr.Printf ("%s.%03d: ", tbuf, tv.wMilliseconds);
 #else
         struct timeval tv;
@@ -1058,8 +1058,12 @@ private:
     // We set this if we pick up a word from the connection object, and
     // either it comes with an associated delay, or "true timing" is selected
     // via preferences, or GSW emulation is active.
+    // Delay codes are also sent by the formatter after a block erase; those
+    // we will ignore since we don't need them -- they are there to cope with
+    // the rather slow operation of block erase on real terminals.
     int         m_nextword;
     int         m_delay;
+    bool        m_ignoreDelay;
     
     // PLATO terminal emulation state
 #define mode RAM[M_MODE]
@@ -1173,8 +1177,8 @@ private:
                             u32 fpix, u32 bpix, int cmode,
                             bool xor_p, PixelData &pixmap);
     void ptermDrawPoint (int x, int y);
-    void ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
-                           PixelData & pixmap);
+    inline void ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
+                                  PixelData & pixmap);
     void ptermDrawLine (int x1, int y1, int x2, int y2);
     void ptermFullErase (void);
     void ptermBlockErase (int x1, int y1, int x2, int y2);
@@ -1186,6 +1190,7 @@ private:
     void ptermRestoreWindow (int d);
     
     void drawFontChar (int x, int y, int c);
+    void procDataLoop (void);
     bool procPlatoWord (u32 d, bool ascii);
     void plotChar (int c);
     void mode0 (u32 d);
@@ -3055,9 +3060,6 @@ void PtermFrame::BuildStatusBar (bool connecting)
 
 void PtermFrame::OnIdle (wxIdleEvent& event)
 {
-    int word;
-    bool refresh = false;
-    
     // In every case, let others see this event too.
     event.Skip ();
 
@@ -3069,9 +3071,33 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
         return;
     }
 
+    procDataLoop ();
+}
+
+void PtermFrame::OnTimer (wxTimerEvent &)
+{
+    if (--m_delay > 0)
+    {
+        return;
+    }
+
+    m_timer.Stop ();
+
+    procDataLoop ();
+}
+
+// Common code for processing pending PLATO data.  This is used by the OnIdle handler
+// for the normal (no delay, no pacing) case, and by the OnTimer handler if delay is
+// currently being done.
+void PtermFrame::procDataLoop (void)
+{
+    int word;
+    bool refresh = false;
+    
     if (m_nextword != 0)
     {
-        refresh |= procPlatoWord (m_nextword, m_conn->Ascii ());
+        m_ignoreDelay = false;      // Assume it's not block erase
+        refresh = procPlatoWord (m_nextword, m_conn->Ascii ());
         m_nextword = 0;
     }
 
@@ -3091,6 +3117,14 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
         // code such as NODATA)
         if ((int) word >= 0 && (word >> 19) != 0)
         {
+            if (m_ignoreDelay && word <= 02000001)
+            {
+                // Ignore Delay is set (since previous operation
+                // was block erase) and this is a NOP word.  If so,
+                // just ignore it, don't do any delay.
+                continue;
+            }
+            
             m_delay = word >> 19;
             m_nextword = word & 01777777;
             if (m_conn->Ascii ())
@@ -3111,6 +3145,7 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
         }
         
         debug ("processing data from plato %07o", word);
+        m_ignoreDelay = false;      // Assume it's not block erase
         refresh |= procPlatoWord (word, m_conn->Ascii ());
     }
 
@@ -3119,61 +3154,10 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
         m_canvas->Refresh (false);
     }
     
-    switch (word)
+    if (word == C_CONNFAIL && m_port > 0)
     {
-        case C_NODATA:
-            break;
-        case C_CONNFAIL:
-            // restart the network processing thread
-            if (m_port > 0)
-            {
-                m_conn = new PtermConnection (this, m_hostName, m_port);
-            }
-            break;
-        default:
-            event.RequestMore ();
-    }
-}
-
-void PtermFrame::OnTimer (wxTimerEvent &)
-{
-    int word;
-    bool refresh = false;
-    
-    if (--m_delay > 0)
-    {
-        return;
-    }
-
-    debug ("processing data from plato %07o", m_nextword);
-    refresh = procPlatoWord (m_nextword, m_conn->Ascii ());
-    
-    // See what's next.  If no delay is called for, just process it, keep
-    // going until no more data or we get a word with delay.
-    for (;;)
-    {
-        word = m_conn->NextWord ();
-    
-        if (word == C_NODATA)
-        {
-            m_nextword = 0;
-            m_timer.Stop ();
-
-            break;
-        }
-        m_delay = (word >> 19);
-        m_nextword = word & 01777777;
-        if (m_delay != 0)
-        {
-            break;
-        }
-        debug ("processing data from plato %07o", word);
-        refresh |= procPlatoWord (word, m_conn->Ascii ());
-    }
-
-    if (refresh)
-    {
-        m_canvas->Refresh (false);
+        // restart the network processing thread
+        m_conn = new PtermConnection (this, m_hostName, m_port);
     }
 }
 
@@ -4219,6 +4203,28 @@ void PtermFrame::OnIconize (wxIconizeEvent &event)
 }
 #endif
 
+void PtermFrame::ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
+                                   PixelData &pixmap)
+{
+    PixelData::Iterator p (pixmap);
+    u32 *pmap;
+    
+    x = XMADJUST (x & 0777);
+    y = YMADJUST (y & 0777);
+    
+    p.MoveTo (pixmap, x, y);
+    pmap = (u32 *)(p.m_ptr);
+
+    if (xor_p)
+    {
+        *pmap ^= pixval;
+    }
+    else
+    {
+        *pmap = pixval;
+    }
+}
+
 void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum, bool autobs)
 {
     u32 fpix, bpix;
@@ -4337,28 +4343,6 @@ void PtermFrame::ptermDrawPoint (int x, int y)
     }
 }
 
-void PtermFrame::ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
-                                   PixelData &pixmap)
-{
-    PixelData::Iterator p (pixmap);
-    u32 *pmap;
-    
-    x = XMADJUST (x & 0777);
-    y = YMADJUST (y & 0777);
-    
-    p.MoveTo (pixmap, x, y);
-    pmap = (u32 *)(p.m_ptr);
-
-    if (xor_p)
-    {
-        *pmap ^= pixval;
-    }
-    else
-    {
-        *pmap = pixval;
-    }
-}
-
 void PtermFrame::ptermDrawLine (int x1, int y1, int x2, int y2)
 {
     int dx, dy;
@@ -4439,7 +4423,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
         t = x1, x1 = x2, x2 = t;
     if (y1 > y2)
         t = y1, y1 = y2, y2 = t;
-
+    
     if (modexor || (wemode & 1))
     {
         // mode rewrite or write
@@ -4451,9 +4435,9 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
         pix = m_bgpix;
     }
 
-    for (x = x1; x <= x2; x++)
+    for (y = y1; y <= y2; y++)
     {
-        for (y = y1; y <= y2; y++)
+        for (x = x1; x <= x2; x++)
         {
             ptermUpdatePoint (x, y, pix, modexor, pixmap);
         }
@@ -4476,14 +4460,13 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     }
     
     // Wipe the corresponding region of the selection image
-    for (x = scol * 8; x < (scol + cols) * 8; x++)
+    for (y = srow * 16; y < (srow + rows) * 16; y++)
     {
-        for (y = srow * 16; y < (srow + rows) * 16; y++)
+        for (x = scol * 8; x < (scol + cols) * 8; x++)
         {
             ptermUpdatePoint (x, y, m_selpixb, false, selmap);
         }
     }
-
 }
 
 // -paint- (flood fill) with foreground color if "pat" is zero, or
@@ -5587,9 +5570,12 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                     case 4:
                         if (AssembleCoord (d))
                         {
+                            if (modewords & 1)
+                            {
+                                changed = true;
+                            }
                             modewords++;
                             mode4 ((lastX << 9) + lastY);
-                            changed = true;
                         }
                         break;
                     case 5:
@@ -6818,9 +6804,9 @@ void PtermFrame::mode4 (u32 d)
     trace ("block erase %d %d to %d %d", x1, y1, x2, y2);
 
     ptermBlockErase (x1, y1, x2, y2);
+    m_ignoreDelay = true;      // Ignore any NOPs supplied by framat
     currentX = x1;
     currentY = y1 - 15;
-
 }
 
 /*--------------------------------------------------------------------------
@@ -9524,8 +9510,9 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
     m_portset.callArg = m_portset.dataCallArg = this;
     m_portset.portNum = 0;      // No listening
     m_portset.maxPorts = 1;
-    dtInitPortset (&m_portset, BufSiz, 0);
-    m_fet = m_portset.portVec;
+    m_portset.ringSize = BufSiz;
+    m_portset.sendRingSize = 0; // We don't use the send ring/thread
+    dtInitPortset (&m_portset);
     
     hp = gethostbyname (m_hostName.mb_str ());
     if (hp == NULL || hp->h_length == 0)
@@ -9549,7 +9536,8 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
         addresses[r] = 0;
         StoreWord (C_CONNECTING);
         wxWakeUpIdle ();
-        if (dtConnect (m_fet, &m_portset, hostaddr, m_port) >= 0)
+        m_fet = dtConnect (&m_portset, hostaddr, m_port);
+        if (m_fet != NULL)
         {
             break;
         }
@@ -9568,26 +9556,30 @@ PtermConnection::~PtermConnection ()
         ptermCloseGsw ();
         m_owner->m_gswFile = wxString ();
     }
-    dtClose (m_fet, &m_portset, TRUE);
+    dtClose (m_fet, TRUE);
 }
 
-void PtermConnection::s_connCallback (NetFet *, int, void *arg)
+void PtermConnection::s_connCallback (NetFet *fet, int, void *arg)
 {
     PtermConnection *self = (PtermConnection *) arg;
     
+    tracex ("Connection callback on %p", self);
+    self->m_fet = fet;
     self->connCallback ();
 }
 
-void PtermConnection::s_dataCallback (NetFet *, int, void *arg)
+void PtermConnection::s_dataCallback (NetFet *fet, int, void *arg)
 {
     PtermConnection *self = (PtermConnection *) arg;
     
+    tracex ("Data callback on %p", self);
+    self->m_fet = fet;
     self->dataCallback ();
 }
 
 void PtermConnection::connCallback (void)
 {
-    if (m_fet->connFd == 0)
+    if (!dtActive (m_fet))
     {
         // lost connection
         m_savedGswMode = m_gswWord2 = 0;
@@ -9626,7 +9618,6 @@ void PtermConnection::dataCallback (void)
         if (IsFull ())
         {
             printf ("ring is full\n");
-            break;
         }
 
         switch (m_connMode)

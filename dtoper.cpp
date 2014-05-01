@@ -520,8 +520,11 @@ void DtoperFrame::connCallback (NetFet *fet, int, void *arg)
         frame->cmdLen = 0;
         frame->cmdEcho.bold = FALSE;
         frame->opSetMsg ("$Disconnected");
+        frame->m_fet = NULL;
     }
 
+    frame->m_fet = fet;
+    
     wxWakeUpIdle ();
 }
 
@@ -827,7 +830,6 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
     statusFlags (0),
     initDone (false)
 {
-    int true_opt = 1;
     int i;
     
     for (i = 0; i < StatusLines; i++)
@@ -908,12 +910,13 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
     m_portset.callBack = connCallback;
     m_portset.callArg = this;
     m_portset.dataCallBack = dataCallback;
-
-    dtInitPortset (&m_portset, NetBufSize, SendBufSize);
-    m_fet = m_portset.portVec;
+    m_portset.ringSize = NetBufSize;
+    m_portset.sendRingSize = SendBufSize;
+    dtInitPortset (&m_portset);
 
     // Open the connection
-    if (dtConnect (m_fet, &m_portset, inet_addr ("127.0.0.1"), m_port) < 0)
+    m_fet = dtConnect (&m_portset, inet_addr ("127.0.0.1"), m_port);
+    if (m_fet == NULL)
     {
         wxString msg;
             
@@ -929,12 +932,6 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
     }
     m_statusBar->SetStatusText(_(" Connected"), STATUS_CONN);
     SetCursor (wxNullCursor);
-    setsockopt (m_fet->connFd, SOL_SOCKET, SO_KEEPALIVE,
-                (char *)&true_opt, sizeof(true_opt));
-#ifdef __APPLE__
-    setsockopt (m_fet->connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                (char *)&true_opt, sizeof(true_opt));
-#endif
 
     Show(true);
 }
@@ -943,7 +940,7 @@ DtoperFrame::~DtoperFrame ()
 {
     if (dtActive (m_fet))
     {
-        dtCloseFet (m_fet, true);
+        dtClose (m_fet, true);
     }
     
     // Remove this frame from the app's frame list
@@ -1058,7 +1055,7 @@ void DtoperFrame::opRequest(void)
 #endif
                 return;
             }
-            dtSendTlv (m_fet, &m_portset, OpCommand, strlen (cmdBuf), cmdBuf);
+            dtSendTlv (m_fet, OpCommand, strlen (cmdBuf), cmdBuf);
             return;
         }
         else 
@@ -1388,7 +1385,7 @@ void DtoperFrame::OnClose (wxCloseEvent &)
 {
     if (dtActive (m_fet))
     {
-        dtClose (m_fet, &m_portset, true);
+        dtClose (m_fet, true);
     }
 
     Destroy ();
@@ -1596,7 +1593,7 @@ void DtoperFrame::dtoperSendKey(int key)
         wxLogMessage ("key to plato %03o", key);
 #endif
     }
-    dtSend (m_fet, &m_portset, &data, 1);
+    dtSend (m_fet, &data, 1);
 }
 
 void DtoperFrame::dtoperShowTrace (bool enable)

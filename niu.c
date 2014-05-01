@@ -134,7 +134,7 @@ static void niuSend(int stat, int word);
 static void niuUpdateStatus (SiteParam *sp);
 static void niuOpdata (int word);
 #if !defined(_WIN32)
-static ThreadFunRet niuThread (void *param);
+static dtThreadFun (niuThread, param);
 static void niuCheckAlert (void);
 #endif
 
@@ -399,7 +399,9 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         sp->niuPorts.callBack = niuWelcome;
         sp->niuPorts.callArg = sp;
         sp->niuPorts.kind = sp->siteName;
-        dtInitPortset (&(sp->niuPorts), NetBufSize, SendBufSize);
+        sp->niuPorts.ringSize = NetBufSize;
+        sp->niuPorts.sendRingSize = SendBufSize;
+        dtInitPortset (&(sp->niuPorts));
         /*
         **  Allocate the operator status buffer
         */
@@ -415,7 +417,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
         for (j = 0; j < sp->terms; j++)
             {
             mp->sp = sp;
-            mp->np = sp->niuPorts.portVec + j;
+            mp->np = NULL;
             mp++;
             }
         }
@@ -432,7 +434,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
 #if !defined(_WIN32)
     if (niuOpstat > 0)
         {
-        if (dtCreateThread (niuThread, NULL))
+        if (dtCreateThread (niuThread, NULL, NULL))
             {
             exit (1);
             }
@@ -466,7 +468,7 @@ CpWord niuConn (u32 stat)
         }
     mp = portVector + stat;
     fet = mp->np;
-    if (fet->connFd == 0)
+    if (!dtActive (fet))
         {
         return 0;
         }
@@ -652,6 +654,10 @@ static void niuInIo(void)
                 }
             mp = portVector + port;
             np = mp->np;
+            if (!dtActive (np))
+                {
+                continue;
+                }
             
             if (mp->sendLogout)
                 {
@@ -665,7 +671,7 @@ static void niuInIo(void)
                 mp->sendLogout = FALSE;
                 break;
                 }
-            if (np == NULL || !dtActive (np))
+            if (!dtActive (np))
                 {
                 if (port == lastInPort)
                     {
@@ -923,13 +929,13 @@ static void niuWelcome(NetFet *np, int stat, void *arg)
     
     stat += sp->first;
     mp = portVector + STAT2IDX (stat);
-    mp->np = np;
     
     if (np->connFd == 0)
         {
         /*
         **  Connection was dropped.
         */
+        mp->np = NULL;
         printf("%s niu: Connection dropped from %s for station %d-%d\n",
                dtNowString (), inet_ntoa (np->from), 
                stat / 32, stat % 32);
@@ -949,6 +955,7 @@ static void niuWelcome(NetFet *np, int stat, void *arg)
     /*
     **  New connection for this port.
     */
+    mp->np = np;
     printf("%s niu: Received connection from %s for station %d-%d\n",
            dtNowString (), inet_ntoa (np->from),
            stat / 32, stat % 32);
@@ -1142,7 +1149,6 @@ void niuSendWord(int stat, int word)
     int idx;
     PortParam *mp;
     NetFet *fet;
-    NetPortSet *ps;
     u8 data[3];
 
     idx = STAT2IDX (stat);
@@ -1169,7 +1175,10 @@ void niuSendWord(int stat, int word)
     
     mp = portVector + idx;
     fet = mp->np;
-    ps = &(mp->sp->niuPorts);
+    if (!dtActive (fet))
+        {
+        return;
+        }
     
     data[0] = word >> 12;
     data[1] = ((word >> 6) & 077) | 0200;
@@ -1178,7 +1187,7 @@ void niuSendWord(int stat, int word)
     printf ("niu output %03o %03o %03o\n",
             data[0], data[1], data[2]);
 #endif
-    dtSend(fet, ps, data, 3);
+    dtSend (fet, data, 3);
     }
 
 /*--------------------------------------------------------------------------
@@ -1262,12 +1271,7 @@ static void niuOpdata(int word)
 **
 **------------------------------------------------------------------------*/
 #if !defined(_WIN32)    /* only non-Windows for now */
-
-#if defined(_WIN32)
-static void niuThread(void *param)
-#else
-static void *niuThread(void *param)
-#endif
+static dtThreadFun (niuThread, param)
     {
     int status;
     

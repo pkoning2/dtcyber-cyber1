@@ -426,7 +426,9 @@ void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     consolePorts.callBack = consoleConnect;
     consolePorts.dataCallBack = consoleInput;
     consolePorts.kind = "dd60";
-    dtInitPortset (&consolePorts, NetBufSize, SendBufSize);
+    consolePorts.ringSize = NetBufSize;
+    consolePorts.sendRingSize = SendBufSize;
+    dtInitPortset (&consolePorts);
 
     /*
     **  Print a friendly message.
@@ -812,7 +814,7 @@ static void consoleInput (NetFet *np, int bytes, void *arg)
     int delay_opt;
     
     /* Figure out which port (connection index) this is */
-    port = np - consolePorts.portVec;
+    port = np->psIndex;
     mp = portVector + port;
 
     while ((buf = dtReado (np)) >= 0)
@@ -939,14 +941,14 @@ static void checkImmediate (u8 *buf, int cnt)
     for (i = 0; i < dd60Conns; i++)
         {
         mp = portVector + i;
-        np = consolePorts.portVec + i;
+        np = consolePorts.portVec[i];
         if (!mp->stopped && dtActive (np) && mp->interval == 0)
             {
             /*
             ** Process only displays that are connected, not stopped,
             ** and want immediate input (interval is zero).
             */
-            dtSend (np, &consolePorts, buf, cnt);
+            dtSend (np, buf, cnt);
             }
         mp++;
         }
@@ -1206,15 +1208,15 @@ static void consoleSendFrame (NetFet *fet, int start, int end)
 
     if (start > end)
         {
-        dtSend (fet, &consolePorts, displayRing + start, DispBufSize - start);
+        dtSend (fet, displayRing + start, DispBufSize - start);
         if (end > 0)
             {
-            dtSend (fet, &consolePorts, displayRing, end);
+            dtSend (fet, displayRing, end);
             }
         }
     else
         {
-        dtSend (fet, &consolePorts, displayRing + start, end - start);
+        dtSend (fet, displayRing + start, end - start);
         }
     }
 
@@ -1303,7 +1305,7 @@ static void consoleSendOutput (int start, int end)
     for (i = 0; i < dd60Conns; i++)
         {
         mp = portVector + i;
-        np = consolePorts.portVec + i;
+        np = consolePorts.portVec[i];
 
         /*
         **  Always skip a display that is stopped or not connected,
@@ -1320,7 +1322,7 @@ static void consoleSendOutput (int start, int end)
             /* Start by sending the trace line, if enabled */
             if (debugDisplay)
                 {
-                dtSend (np, &consolePorts, buf, strlen (buf));
+                dtSend (np, buf, strlen (buf));
                 }
             
             /*
@@ -1331,7 +1333,7 @@ static void consoleSendOutput (int start, int end)
             /*
             **  Send "end of data block" marker
             */
-            dtSend (np, &consolePorts, &endBlock, 1);
+            dtSend (np, &endBlock, 1);
             }
         mp++;
         }

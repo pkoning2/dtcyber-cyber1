@@ -27,6 +27,8 @@ typedef u_long in_addr_t;
 #define pthread_cond_init(x, y) *(x) = CreateEvent (NULL, FALSE, FALSE, NULL)
 #define pthread_cond_wait(c, m) WaitForSingleObject (*(c), INFINITE)
 #define pthread_cond_signal SetEvent
+typedef HANDLE pthread_t;
+#define pthread_join(t, rp) WaitForSingleObject (t, INFINITE)
 #else
 #include <stdbool.h>
 #include <netinet/in.h>
@@ -230,8 +232,6 @@ typedef struct
 */
 typedef struct NetFet_s
     {
-    struct NetFet_s *prev;              /* circular list pointers */
-    struct NetFet_s *next;
     int         connFd;                 /* File descriptor for socket */
     u8          *first;                 /* Start of receive ring buffer */
     volatile u8 *in;                    /* Fill (write) pointer */
@@ -241,14 +241,15 @@ typedef struct NetFet_s
     volatile u8 *sendin;                /* Fill (write) pointer */
     volatile u8 *sendout;               /* Empty (read) pointer */
     u8          *sendend;               /* End of ring buffer + 1 */
-    pthread_cond_t  cond;               /* Condition variable for waking send thread */
-    pthread_mutex_t mutex;              /* Mutex to protect sendcond */
-    struct in_addr from;                /* remote IP address */
-    int         fromPort;               /* remote TCP port number */
-    struct NetPortSet_s *ps;            /* PortSet this belongs to */
+    pthread_t   sendThread;             /* Thread ID of send thread */
+    pthread_cond_t  cond;               /* For waking send thread */
+    pthread_mutex_t mutex;              /* Mutex to protect cond */
+    struct in_addr from;                /* Remote IP address */
+    int         fromPort;               /* Remote TCP port number */
+    struct NetPortSet_s *ps;            /* PortSet this belongs to, if any */
+    int         psIndex;                /* Index into ps for this FET */
     u64         ownerInfo;              /* Data supplied by socket owner */
-    u8          inUse;                  /* In use flag */
-    bool        closePending;           /* Close (...FALSE) pending */
+    volatile int closing;               /* Closing down if non-zero */
     bool        listen;                 /* Is this a bind/listen socket? */
     } NetFet;
 
@@ -262,12 +263,19 @@ typedef void (DataCb) (NetFet *np, int bytes, void *arg);
 /*
 **  Tread function
 */
+#define ThreadReturn return 0
 #if defined(_WIN32)
-typedef void ThreadFunRet;
-#define ThreadReturn return
+/* Note that for Windows the type of the thread function depends
+** on the function used to create it, believe it or not.  The
+** definition used here goes with the _beginthreadex function.
+*/
+typedef unsigned ThreadFunRet;
+#define dtThreadFun(name, arg) ThreadFunRet __stdcall name(void *arg)
+#define dtThreadFunPtr(name)   ThreadFunRet (__stdcall *name)(void *)
 #else
 typedef void * ThreadFunRet;
-#define ThreadReturn return 0
+#define dtThreadFun(name, arg) ThreadFunRet name(void *arg)
+#define dtThreadFunPtr(name)   ThreadFunRet (*name)(void *)
 #endif
 
 /*
@@ -275,11 +283,14 @@ typedef void * ThreadFunRet;
 */
 typedef struct NetPortSet_s
     {
+    struct NetPortSet_s *next;          /* link to next or NULL if last */
     int         maxPorts;               /* total number of ports */
     volatile int curPorts;              /* number of ports currently active */
-    NetFet      *portVec;               /* array of NetFets */
-    int         listenFd;               /* listen socket fd */
+    NetFet      **portVec;              /* array of NetFet pointers */
+    int         listenFd;               /* listen socket number */
     int         portNum;                /* TCP port number to listen to */
+    int         ringSize;               /* Receive ring size for FETs */
+    int         sendRingSize;           /* Transmit ring size for FETs */
     ConnCb      *callBack;              /* function to call for new conn */
     void        *callArg;               /* argument to the above */
     DataCb      *dataCallBack;          /* function to call for new data */
