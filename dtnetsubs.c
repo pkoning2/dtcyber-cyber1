@@ -469,7 +469,7 @@ void dtClose (NetFet *fet, bool hard)
     */
     if (fet->sendend != fet->first)
         {
-        pthread_cond_signal (&fet->cond);
+            sem_post (semp (fet));
         }
     else
         {
@@ -839,7 +839,10 @@ int dtSend (NetFet *fet, const void *buf, int len)
     ** Update the IN pointer, then wake the send thread.
     */
     fet->sendin = in;
-    pthread_cond_signal (&fet->cond);
+    if (semp (fet) != NULL)
+    {
+        sem_post (semp (fet));
+    }
     
     if (dtSendFree (fet) == 0)
         {
@@ -943,7 +946,7 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
     int rsize, tsize, fsize;
     int rc;
     int psi = -1;
-    
+
     /*
     **  If we have a NetPortSet, find an empty slot in its portVec.
     */
@@ -1000,8 +1003,11 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
     fet->sendin = fet->sendout = fet->sendfirst = fet->end = fet->first + rsize;
     fet->sendend = fet->sendfirst + tsize;
     
-    pthread_cond_init (&fet->cond, NULL);
-    pthread_mutex_init (&fet->mutex, NULL);
+#ifdef __APPLE__
+    semp (fet) = NULL;       /* Initialized in the thread */
+#else
+    sem_init (semp (fet), 0, 0);
+#endif
 
     /*
     **  Remember which portset this NetFet belongs to.
@@ -1218,6 +1224,18 @@ static dtThreadFun (dtDataThread, param)
     int bytes;
 #ifndef _WIN32
     struct pollfd pfd;
+#ifdef __APPLE__
+    char semname[64];
+
+    /* Initialize the semaphore */
+    sprintf (semname, "/sem_%p", np);
+    semp (np) = sem_open (semname, O_CREAT);
+    if (semp (np) == NULL)
+    {
+        perror ("sem_open failed");
+        exit (1);
+    }
+#endif
     
     /*
     **  Wait for socket ready or error, then do the final connection activation.
@@ -1321,6 +1339,13 @@ static dtThreadFun (dtDataThread, param)
         pthread_join (np->sendThread, NULL);
         }
 
+#if defined(__APPLE__)
+    sem_close (semp (np));
+    sem_unlink (semname);
+#else
+    sem_destroy (semp (np));
+#endif
+    
     free (np);
     
     ThreadReturn;
@@ -1370,20 +1395,13 @@ static dtThreadFun (dtSendThread, param)
                 }
             
             /*
-            **  If there appears to be no data, acquire the mutex,
-            **  then check again.  If we're still empty, wait on the
-            **  condition (which is signaled by the main thread when
-            **  data is put into the send ring).  Then go back to the
-            **  top of the loop to check for reasons to exit.
+            **  If there is no data, wait on the semaphore (which is
+            **  signaled by the main thread when data is put into the
+            **  send ring).  Then go back to the top of the loop to
+            **  check for reasons to exit.
             */
-            pthread_mutex_lock (&np->mutex);
-            if (dtSendEmpty (np))
-                {
-                pthread_cond_wait (&np->cond, &np->mutex);
-                pthread_mutex_unlock (&np->mutex);
-                continue;
-                }
-            pthread_mutex_unlock (&np->mutex);
+            sem_wait (semp (np));
+            continue;
             }
         
         /*

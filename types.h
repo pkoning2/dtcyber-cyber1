@@ -23,10 +23,11 @@ typedef u_long in_addr_t;
 #define pthread_mutex_init(x, y) InitializeCriticalSection ((x))
 #define pthread_mutex_lock EnterCriticalSection
 #define pthread_mutex_unlock LeaveCriticalSection
-#define pthread_cond_t  HANDLE
-#define pthread_cond_init(x, y) *(x) = CreateEvent (NULL, FALSE, FALSE, NULL)
-#define pthread_cond_wait(c, m) WaitForSingleObject (*(c), INFINITE)
-#define pthread_cond_signal SetEvent
+typedef HANDLE sem_t;
+#define sem_init(ps, sh, iv) *(ps) = CreateSemaphore (NULL, iv, 32767, NULL)
+#define sem_post(ps) ReleaseSemaphore (*(ps), 1, NULL)
+#define sem_wait(ps) WaitForSingleObject (*(ps), INFINITE)
+#define sem_destroy(ps) CloseHandle (*(ps))
 typedef HANDLE pthread_t;
 #define pthread_join(t, rp) WaitForSingleObject (t, INFINITE)
 #else
@@ -35,6 +36,7 @@ typedef HANDLE pthread_t;
 #define _POSIX_C_SOURCE_199309L
 #include <unistd.h>
 #include <pthread.h>
+#include <semaphore.h>
 #endif
 
 #ifdef _POSIX_ASYNCHRONOUS_IO
@@ -242,8 +244,13 @@ typedef struct NetFet_s
     volatile u8 *sendout;               /* Empty (read) pointer */
     u8          *sendend;               /* End of ring buffer + 1 */
     pthread_t   sendThread;             /* Thread ID of send thread */
-    pthread_cond_t  cond;               /* For waking send thread */
-    pthread_mutex_t mutex;              /* Mutex to protect cond */
+#if defined(__APPLE__)
+    sem_t       *_semp;                 /* For waking send thread */
+#define semp(fet) ((fet)->_semp)
+#else
+    sem_t       sem;                    /* For waking send thread */
+#define semp(fet) (&((fet)->sem))
+#endif
     struct in_addr from;                /* Remote IP address */
     int         fromPort;               /* Remote TCP port number */
     struct NetPortSet_s *ps;            /* PortSet this belongs to, if any */

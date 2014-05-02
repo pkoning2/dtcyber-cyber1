@@ -324,6 +324,8 @@ int dtReadtlv (NetFet *fet, void *buf, int len);
 
 #define dtActive(fet) \
     ((fet) != NULL && (fet)->closing == 0)
+#define dtConnected(fet) \
+    ((fet)->connFd != 0)
 
 /* This goes with dtReadoi */
 #define dtUpdateOut(fet,outidx) \
