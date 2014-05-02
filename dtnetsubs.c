@@ -1221,7 +1221,7 @@ static dtThreadFun (dtDataThread, param)
     {
     NetFet *np = (NetFet *) param;
     NetPortSet *ps = np->ps;
-    int bytes;
+    int bytes = 0;
 #ifndef _WIN32
     struct pollfd pfd;
 #ifdef __APPLE__
