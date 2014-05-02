@@ -206,7 +206,6 @@ static void niuSendstr (int stat, const char *p)
                     {
                     cc = 0;
                     niuSendWord (stat, w);
-                    niuSendWord (stat, 1);                    
                     w = 1;
                     }
                 w = (w << 6 | 021);
@@ -214,7 +213,6 @@ static void niuSendstr (int stat, const char *p)
                     {
                     cc = 0;
                     niuSendWord (stat, w);
-                    niuSendWord (stat, 1);                    
                     w = 1;
                     }
                 shift = TRUE;
@@ -227,7 +225,6 @@ static void niuSendstr (int stat, const char *p)
                 {
                 cc = 0;
                 niuSendWord (stat, w);
-                niuSendWord (stat, 1);                    
                 w = 1;
                 }
             w = (w << 6 | 020);
@@ -235,7 +232,6 @@ static void niuSendstr (int stat, const char *p)
                 {
                 cc = 0;
                 niuSendWord (stat, w);
-                niuSendWord (stat, 1);                    
                 w = 1;
                 }
             shift = FALSE;
@@ -245,7 +241,6 @@ static void niuSendstr (int stat, const char *p)
             {
             cc = 0;
             niuSendWord (stat, w);
-            niuSendWord (stat, 1);                    
             w = 1;
             }
         }
@@ -257,7 +252,6 @@ static void niuSendstr (int stat, const char *p)
             cc++;
             }
         niuSendWord (stat, w);
-        niuSendWord (stat, 1);                    
         }
     }
 
