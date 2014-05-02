@@ -822,6 +822,10 @@ static void pniDataCallback (NetFet *np, int bytes, void *arg)
         i = dtReado (np);               /* Get a byte */
         if (i < 0)
         {
+            if (!dtConnected (np))
+            {
+                dtClose (np, TRUE);
+            }
             key = -1;
             break;                      /* we don't have enough data yet */
         }

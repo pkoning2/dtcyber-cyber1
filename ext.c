@@ -480,6 +480,10 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
         c = dtReadoi (fet, &out);
         if (c < 0)
         {
+            if (!dtConnected (fet))
+            {
+                dtClose (fet, TRUE);
+            }
             return RETNODATA;
         }
         
@@ -541,6 +545,10 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                 c = dtReadoi (fet, &out);
                 if (c < 0)
                 {
+                    if (!dtConnected (fet))
+                    {
+                        dtClose (fet, TRUE);
+                    }
                     break;
                 }
             }
@@ -558,6 +566,10 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                     c = dtReadoi (fet, &out);
                     if (c < 0)
                     {
+                        if (!dtConnected (fet))
+                        {
+                            dtClose (fet, TRUE);
+                        }
                         break;
                     }
                     continue;
@@ -601,6 +613,10 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                         c = dtReadoi (fet, &out);
                         if (c < 0)
                         {
+                            if (!dtConnected (fet))
+                            {
+                                dtClose (fet, TRUE);
+                            }
                             break;
                         }
                         continue;
@@ -640,6 +656,10 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                 c = dtReadoi (fet, &out);
                 if (c < 0)
                 {
+                    if (!dtConnected (fet))
+                    {
+                        dtClose (fet, TRUE);
+                    }
                     break;
                 }
             }

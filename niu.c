@@ -682,6 +682,10 @@ static void niuInIo(void)
             i = dtReadw (np, mp->currInput, 2);
             if (i < 0)
                 {
+                if (!dtConnected (np))
+                    {
+                    dtClose (np, TRUE);
+                    }
                 if (port == lastInPort)
                     {
                     return;                     /* no input anywhere */

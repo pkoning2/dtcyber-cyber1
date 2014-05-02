@@ -1284,6 +1284,11 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
 
     for (;;)
     {
+        if (!dtActive (m_fet))
+        {
+            break;
+        }
+        
         if (pendingData != 0)
         {
             data = pendingData;
@@ -1296,6 +1301,13 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
 
         if (data < 0)
         {
+            if (!dtConnected (m_fet))
+            {
+                m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+                dtClose (m_fet, TRUE);
+                m_fet = NULL;
+            }
+                    
             break;
         }
 

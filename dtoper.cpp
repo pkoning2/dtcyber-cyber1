@@ -1235,13 +1235,20 @@ void DtoperFrame::OnIdle (wxIdleEvent &event)
 
     for (;;)
     {
+        if (!dtActive (m_fet))
+        {
+            m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+            break;
+        }
         i = dtReadtlv (m_fet, dataBuf, OpDataSize);
         //printf ("data: len %d code %d\n", i, dataBuf[0]);
         if (i < 0)
         {
-            if (!dtActive (m_fet))
+            if (!dtConnected (m_fet))
             {
-                m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+                dtClose (m_fet, TRUE);
+                m_fet = NULL;
+                continue;
             }
             break;
         }

@@ -920,6 +920,10 @@ static void consoleInput (NetFet *np, int bytes, void *arg)
             break;
             }
         }
+    if (!dtConnected (np))
+        {
+        dtClose (np, TRUE);
+        }
     }
 
 /*--------------------------------------------------------------------------

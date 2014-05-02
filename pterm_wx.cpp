@@ -624,7 +624,8 @@ public:
     static void s_dataCallback (NetFet *np, int bytes, void *arg);
     void connCallback (void);
     void dataCallback (void);
-
+    void endGsw (void);
+    
     int AssembleNiuWord (void);
     int AssembleAsciiWord (void);
     int AssembleAutoWord (void);
@@ -714,8 +715,6 @@ public:
     void OnAbout (wxCommandEvent& event);
 
     bool DoConnect (bool ask);
-    int m_connError;
-    int m_connAction;
     
     bool LoadProfile (wxString profile, wxString filename);
     wxString ProfileFileName (wxString profile);
@@ -1419,13 +1418,12 @@ class PtermConnFailDialog : public wxDialog
 {
 public:
     PtermConnFailDialog (wxWindowID id, const wxString &title, wxPoint pos,
-                         wxSize size);
+                         wxSize size, int word);
     
     void OnButton (wxCommandEvent& event);
     void OnClose (wxCloseEvent& event);
     
     wxButton* btnNew;
-    wxButton* btnRetry;
     wxButton* btnCancel;
     
 private:
@@ -3108,7 +3106,7 @@ void PtermFrame::procDataLoop (void)
         */
         word = m_conn->NextWord ();
     
-        if (word == C_NODATA || word == C_CONNFAIL)
+        if (word == C_NODATA || word == C_CONNFAIL || word == C_DISCONNECT)
         {
             break;
         }
@@ -3117,7 +3115,8 @@ void PtermFrame::procDataLoop (void)
         // code such as NODATA)
         if ((int) word >= 0 && (word >> 19) != 0)
         {
-            if (m_ignoreDelay && word <= 02000001)
+            if (m_ignoreDelay && 
+                (word == 02000000 || (word == 02000001 && !m_conn->Ascii ())))
             {
                 // Ignore Delay is set (since previous operation
                 // was block erase) and this is a NOP word.  If so,
@@ -3154,10 +3153,48 @@ void PtermFrame::procDataLoop (void)
         m_canvas->Refresh (false);
     }
     
-    if (word == C_CONNFAIL && m_port > 0)
+    if (word == C_CONNFAIL || word == C_DISCONNECT)
     {
-        // restart the network processing thread
-        m_conn = new PtermConnection (this, m_hostName, m_port);
+        wxString msg;
+
+        // Report the problem
+        if (m_statusBar != NULL)
+        {
+            m_statusBar->SetStatusText (_(" Not connected"),
+                                                 STATUS_CONN);
+        }
+
+        wxDateTime ldt;
+
+        ldt.SetToCurrent ();
+        if (word == C_CONNFAIL)
+        {
+            msg.Printf (_("Connection failed @ %s on "),
+                        ldt.FormatTime ());
+        }
+        else
+        {
+            msg.Printf (_("Dropped connection @ %s on "),
+                        ldt.FormatTime ());
+        }
+        msg.Append (ldt.FormatDate ());
+        WriteTraceMessage (msg);
+        msg.Printf (_("%s on "), ldt.FormatTime ());
+        msg.Append (ldt.FormatDate ());   // fits in dialog box title
+        
+        Iconize (false);    // make window visible when connection fails
+
+        PtermConnFailDialog dlg (wxID_ANY, msg, wxDefaultPosition,
+                                 wxSize (320, 140), word);
+        dlg.CenterOnScreen ();
+        if (dlg.ShowModal () == wxID_CANCEL)
+        {
+            Close (true);
+        }
+        else
+        {
+            m_conn = new PtermConnection (this, m_hostName, m_port);
+        }
     }
 }
 
@@ -9303,7 +9340,9 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
 {
     void OnButton (wxCommandEvent& event);
     if (event.GetEventObject () == btnCancel)
+    {
         EndModal (wxID_CANCEL);
+    }
     if (event.GetEventObject () == btnConnect)
     {
         m_curProfile = lstProfiles->GetStringSelection ();
@@ -9396,7 +9435,7 @@ BEGIN_EVENT_TABLE (PtermConnFailDialog, wxDialog)
     END_EVENT_TABLE ();
 
 PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
-                                          wxPoint pos, wxSize loc)
+                                          wxPoint pos, wxSize loc, int code)
     : wxDialog (NULL, id, title, pos, loc)
 {
 
@@ -9405,7 +9444,6 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     wxStaticText* lblPrompt;
     wxStaticText* lblHost;
 //  wxButton* btnNew;
-//  wxButton* btnRetry;
 //  wxButton* btnCancel;
     wxString str;
 
@@ -9423,19 +9461,15 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     lblHost->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
     bs1->Add (lblHost, 0, wxALL, 5);
     wxFlexGridSizer* fgs11;
-    fgs11 = new wxFlexGridSizer (0, 4, 0, 0);
-    fgs11->AddGrowableCol (2);
+    fgs11 = new wxFlexGridSizer (1, 3, 0, 0);
+    fgs11->AddGrowableCol (0);
     fgs11->SetFlexibleDirection (wxHORIZONTAL);
+    fgs11->Add (0, 0, 1, wxALL, 5);
     btnNew = new wxButton (this, wxID_ANY, _("New Connection"),
                            wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL);
     btnNew->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
     fgs11->Add (btnNew, 0, wxALL, 5);
-    btnRetry = new wxButton (this, wxID_ANY, _("Retry"), wxDefaultPosition,
-                             wxDefaultSize, 0|wxTAB_TRAVERSAL);
-    btnRetry->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
-    fgs11->Add (btnRetry, 0, wxALL, 5);
-    fgs11->Add (0, 0, 1, wxALL, 5);
-    btnCancel = new wxButton (this, wxID_CANCEL, _("Cancel"),
+    btnCancel = new wxButton (this, wxID_CANCEL, _("Close"),
                               wxDefaultPosition, wxDefaultSize,
                               0|wxTAB_TRAVERSAL);
     btnCancel->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
@@ -9443,10 +9477,16 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     bs1->Add (fgs11, 0, wxEXPAND, 5);
 
     // set object value properties
-    if (ptermApp->m_connError == C_DISCONNECT)
-        str.Printf (_("Your connection to the host was lost.  You may open a\nnew connection, try this connection again, or exit."));
+    if (code == C_DISCONNECT)
+    {
+        str.Printf (_("Your connection to the host was lost.  You may open a\n"
+                      "new connection or close the window."));
+    }
     else
-        str.Printf (_("The host did not respond to the connection request.\nYou may open a new connection, try this connection\nagain, or exit."));
+    {
+        str.Printf (_("The host did not respond to the connection request.\n"
+                      "You may open a new connection or close the window."));
+    }
     lblPrompt->SetLabel (str);
     str.Printf (_("\nFailed: %s:%ld"), ptermApp->m_hostName,
                 ptermApp->m_port);
@@ -9456,27 +9496,27 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     this->SetSizer (bs1);
     this->Layout ();
     bs1->Fit (this);
-    btnRetry->SetDefault ();
-    btnRetry->SetFocus ();
+    btnCancel->SetDefault ();
+    btnCancel->SetFocus ();
 }
 
 void PtermConnFailDialog::OnButton (wxCommandEvent& event)
 {
     void OnButton (wxCommandEvent& event);
     if (event.GetEventObject () == btnNew)
-        ptermApp->m_connAction = 1;
-    else if (event.GetEventObject () == btnRetry)
-        ptermApp->m_connAction = 2;
+    {
+        EndModal (wxID_OK);
+    }
     else if (event.GetEventObject () == btnCancel)
-        ptermApp->m_connAction = 0;
-    EndModal (wxID_OK);
+    {
+        EndModal (wxID_CANCEL);
+    }
 }
 
 void PtermConnFailDialog::OnClose (wxCloseEvent& event)
 {
     void OnClose (wxCloseEvent& event);
-    ptermApp->m_connAction = 0;
-    EndModal (wxID_OK);
+    EndModal (wxID_CANCEL);
 }
 
 // ----------------------------------------------------------------------------
@@ -9579,22 +9619,19 @@ void PtermConnection::s_dataCallback (NetFet *fet, int, void *arg)
 
 void PtermConnection::connCallback (void)
 {
-    if (!dtActive (m_fet))
-    {
-        // lost connection
-        m_savedGswMode = m_gswWord2 = 0;
-        if (m_gswActive)
-        {
-            m_gswActive = m_gswStarted = false;
-            ptermCloseGsw ();
-            m_owner->m_gswFile = wxString ();
-        }
-        if (m_connActive)
-        {
-            StoreWord (C_DISCONNECT);
-        }
-    }
     wxWakeUpIdle ();
+}
+
+void PtermConnection::endGsw (void)
+{
+    // Turn GSW off
+    m_savedGswMode = m_gswWord2 = 0;
+    if (m_gswActive)
+    {
+        m_gswActive = m_gswStarted = false;
+        ptermCloseGsw ();
+        m_owner->m_gswFile = wxString ();
+    }
 }
 
 void PtermConnection::dataCallback (void)
@@ -9633,27 +9670,27 @@ void PtermConnection::dataCallback (void)
             break;
         }
             
-        if (platowd == (u32)C_NODATA)   // makes me nervous -- bg
+        if (platowd == C_NODATA)
         {
+            // No more data right now
             break;
         }
         else if (m_connMode == niu && platowd == 2)
         {
-            m_savedGswMode = m_gswWord2 = 0;
-            if (m_gswActive)
-            {
-                m_gswActive = m_gswStarted = false;
-                ptermCloseGsw ();
-                m_owner->m_gswFile = wxString ();
-                m_owner->ptermShowTrace ();
-            }
+            endGsw ();
                 
             // erase abort marker -- reset the ring to be empty
             wxCriticalSectionLocker lock (m_pointerLock);
 
             m_displayOut = m_displayIn;
         }
-
+        else if (platowd == C_DISCONNECT || platowd == C_CONNFAIL)
+        {
+            endGsw ();
+            StoreWord (platowd);
+            break;
+        }
+        
         StoreWord (platowd);
         i = RingCount ();
         debug ("Stored %07o, ring count is %d", platowd, i);
@@ -9687,7 +9724,13 @@ int PtermConnection::AssembleNiuWord (void)
     {
         if (dtFetData (m_fet) < 3)
         {
-            return C_NODATA;
+            if (dtConnected (m_fet))
+            {
+                return C_NODATA;
+            }
+            m_connActive = false;
+            dtClose (m_fet, TRUE);
+            return C_DISCONNECT;
         }
         i = dtReado (m_fet);
         if (i & 0200)
@@ -9728,7 +9771,13 @@ int PtermConnection::AssembleAutoWord (void)
     
     if (dtPeekw (m_fet, buf, 3) < 0)
     {
-        return C_NODATA;
+        if (dtConnected (m_fet))
+        {
+            return C_NODATA;
+        }
+        m_connActive = false;
+        dtClose (m_fet, TRUE);
+        return C_DISCONNECT;
     }
     if ((buf[0] & 0200) == 0 &&
         (buf[1] & 0300) == 0200 &&
@@ -9754,7 +9803,13 @@ int PtermConnection::AssembleAsciiWord (void)
         i = dtReado (m_fet);
         if (i == -1)
         {
-            return C_NODATA;
+            if (dtConnected (m_fet))
+            {
+                return C_NODATA;
+            }
+            m_connActive = false;
+            dtClose (m_fet, TRUE);
+            return C_DISCONNECT;
         }
         else if (m_pending == 0 && i == 0377)
         {
@@ -9942,54 +9997,6 @@ int PtermConnection::NextWord (void)
                     (m_hostAddr >>  8) & 0xff,
                     m_hostAddr & 0xff);
         m_owner->ptermSetStatus (msg);
-    }
-    else if (word == C_CONNFAIL || word == C_DISCONNECT)
-    {
-        if (m_owner->m_statusBar != NULL)
-        {
-            m_owner->m_statusBar->SetStatusText (_(" Not connected"),
-                                                 STATUS_CONN);
-        }
-
-        wxDateTime ldt;
-        ldt.SetToCurrent ();
-        if (word == C_CONNFAIL)
-            msg.Printf (_("Connection failed @ %s on "),
-                        ldt.FormatTime ());
-        else
-            msg.Printf (_("Dropped connection @ %s on "),
-                        ldt.FormatTime ());
-        msg.Append (ldt.FormatDate ());
-        m_owner->WriteTraceMessage (msg);
-        msg.Printf (_("%s on "), ldt.FormatTime ());
-        msg.Append (ldt.FormatDate ());   // fits in dialog box title
-        
-        m_owner->Iconize (false);    // ensure window is visible when connection fails
-        ptermApp->m_connError = word;
-        PtermConnFailDialog dlg (wxID_ANY, msg, wxDefaultPosition,
-                                 wxSize (320, 140));
-        dlg.CenterOnScreen ();
-        dlg.ShowModal ();
-
-        switch (ptermApp->m_connAction)
-        {
-        case 1:         // prompt for a connection rather than just bailing out
-            ptermApp->DoConnect (true);
-            word = C_NODATA;
-            break;
-        case 2:         // stay in pterm in disconnected state
-            if (word == C_DISCONNECT)
-                word = C_NODATA;
-            else if (m_owner->m_statusBar != NULL)
-            {
-                m_owner->m_statusBar->SetStatusText (_(" Retrying..."),
-                                                     STATUS_CONN);
-            }
-            break;
-        default:        // cancel exits
-            m_owner->Close (true);
-            word = C_NODATA;
-        }
     }
         
     return word;

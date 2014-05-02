@@ -1285,19 +1285,14 @@ static dtThreadFun (dtDataThread, param)
 #else
             usleep (10000000);
 #endif
-            continue;
             }
-        /*
-        **  Do we have any data?
-        */
-        bytes = dtRead (np, ps);
-
-        if (bytes == 0 || bytes == -1)
+        else
             {
             /*
-            **  Buffer is full, or connection was closed by the remote.
-            **  Sleep 100 ms to let other threads see it and deal with it.
+            **  Do we have any data?
             */
+            bytes = dtRead (np, ps);
+
             if (bytes == -1)
                 {
                 /*
@@ -1305,21 +1300,25 @@ static dtThreadFun (dtDataThread, param)
                 */
                 np->connFd = 0;
                 }
-            
+            else if (bytes == 0)
+                {
+                /*
+                **  Buffer is full.
+                **  Sleep 100 ms to let other threads see it and deal with it.
+                */
 #if defined(_WIN32)
-            Sleep (100);
+                Sleep (100);
 #else
-            usleep (1000000);
+                usleep (1000000);
 #endif
-            continue;
-            }
-            
-        /*
-        **  Handle errors.
-        */
-        if (bytes < 0)
-            {
-            break;
+                }
+            else if (bytes < 0)
+                {
+                /*
+                **  Handle errors.
+                */
+                break;
+                }
             }
         
         if (ps->dataCallBack)

@@ -548,6 +548,10 @@ static int opRequest(NetFet *np)
     cmdLen = dtReadtlv (np, tlvBuf, sizeof (tlvBuf));
     if (cmdLen < 0 || tlvBuf[0] != OpCommand)
         {
+        if (cmdLen < 0 && !dtConnected (np))
+            {
+            dtClose (np, TRUE);
+            }
         return -1;
         }
     if (cmdLen == 0)

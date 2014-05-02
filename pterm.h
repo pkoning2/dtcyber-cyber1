@@ -40,12 +40,13 @@
 
 #define GSWRINGSIZE 100
 
-#define C_NODATA        -1
-#define C_CONNFAIL      -2
-#define C_DISCONNECT    -3
-#define C_GSWEND        -4
-#define C_CONNECTING    -5
-#define C_CONNECTED     -6
+// Special non-data values found in the PLATO data ring
+#define C_NODATA        -1      // No more pending data in processing loop
+#define C_CONNFAIL      -2      // Failed to connect
+#define C_DISCONNECT    -3      // Connection was dropped
+#define C_GSWEND        -4      // Stop GSW
+#define C_CONNECTING    -5      // Connect request is in progress
+#define C_CONNECTED     -6      // Connection has been established
 
 #define STATUS_TIP      0
 #define STATUS_TRC      1
