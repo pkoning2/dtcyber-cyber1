@@ -22,10 +22,10 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={pf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-LicenseFile=\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\pterm-license.txt
-OutputDir=\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber
+LicenseFile=pterm-license.txt
+OutputDir=.
 OutputBaseFilename=setup
-SetupIconFile=\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\pterm_32.ico
+SetupIconFile=pterm_32.ico
 Compression=lzma
 SolidCompression=yes
 WizardImageFile=authormode.bmp
@@ -33,6 +33,7 @@ RestartIfNeededByRun=False
 ShowLanguageDialog=no
 MinVersion=0,5.01sp3
 VersionInfoVersion={#MyAppVersion}
+ChangesAssociations=True
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -41,7 +42,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Documents and Settings\pkoning\My Documents\Visual Studio 2010\Projects\Pterm\Release\Pterm.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "Release\Pterm.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: "C:\SDL2-2.0.3\lib\x86\SDL2.dll"; DestDir: "{app}"
 Source: "C:\wxWidgets-3.0.0\lib\vc100_dll\wxbase30u_vc100.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist uninsneveruninstall
@@ -50,7 +51,7 @@ Source: "C:\wxWidgets-3.0.0\lib\vc100_dll\wxmsw30u_adv_vc100.dll"; DestDir: "{sy
 Source: "C:\Program Files\Microsoft Visual Studio 10.0\VC\redist\x86\Microsoft.VT100.CRT\msvcr100.dll"; DestDir: "{app}"
 Source: "C:\Program Files\Microsoft Visual Studio 10.0\VC\redist\x86\Microsoft.VT100.CRT\msvcp100.dll"; DestDir: "{app}"
 Source: "C:\Program Files\Mega-Nerd\libsndfile\bin\libsndfile-1.dll"; DestDir: "{app}"
-Source: "\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\CHANGES-pterm.txt"; DestDir: "{app}"; Flags: isreadme
+Source: "CHANGES-pterm.txt"; DestDir: "{app}"; Flags: isreadme
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -59,3 +60,9 @@ Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Registry]
+Root: "HKCR"; Subkey: ".ppf"; ValueType: string; ValueData: "PtermProfile"; Flags: uninsdeletevalue
+Root: "HKCR"; Subkey: "PtermProfile"; ValueType: string; ValueData: "Pterm profile"; Flags: uninsdeletekey
+Root: "HKCR"; Subkey: "PtermProfile\DefaultIcon"; ValueType: string; ValueData: "{app}\PTERM.EXE,0"
+Root: "HKCR"; Subkey: "PtermProfile\shell\open\command"; ValueType: string; ValueData: """{app}\PTERM.EXE"" ""%1"""

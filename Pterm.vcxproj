@@ -80,26 +80,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ResourceCompile Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\pterm.rc" />
+    <ResourceCompile Include="pterm.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\8080a.cpp" />
-    <ClCompile Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\dtnetsubs.c" />
-    <ClCompile Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\pterm_sdl.c" />
-    <ClCompile Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\pterm_wx.cpp" />
+    <ClCompile Include="8080a.cpp" />
+    <ClCompile Include="dtnetsubs.c" />
+    <ClCompile Include="pterm_sdl.c" />
+    <ClCompile Include="pterm_wx.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\8080a.h" />
-    <ClInclude Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\8080avar.h" />
-    <ClInclude Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\const.h" />
-    <ClInclude Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\global.h" />
-    <ClInclude Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\plato.h" />
-    <ClInclude Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\ppt.h" />
-    <ClInclude Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\proto.h" />
-    <ClInclude Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\pterm.h" />
-    <ClInclude Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\ptermversion.h" />
-    <ClInclude Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\types.h" />
-    <ClInclude Include="\\vmware-host\Shared Folders\Macintosh HD\Users\pkoning\Documents\svn\dtcyber\wxversion.h" />
+    <ClInclude Include="8080a.h" />
+    <ClInclude Include="8080avar.h" />
+    <ClInclude Include="const.h" />
+    <ClInclude Include="global.h" />
+    <ClInclude Include="plato.h" />
+    <ClInclude Include="ppt.h" />
+    <ClInclude Include="proto.h" />
+    <ClInclude Include="pterm.h" />
+    <ClInclude Include="ptermversion.h" />
+    <ClInclude Include="types.h" />
+    <ClInclude Include="wxversion.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
