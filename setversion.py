@@ -7,6 +7,7 @@ import os
 
 # Filename, commas, crlf
 files = ( ( "pterm-info.plist", False, False ),
+          ( "Pterm.pkgproj", False, False ),
           ( "pterm.spec", False, False ),
           ( "pterm.iss", False, True ),
           ( "pterm.rc", True, True ),

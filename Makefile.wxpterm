@@ -171,9 +171,12 @@ pterm-empty.dmg:
 	hdiutil create -size 32m pterm-empty.dmg -layout NONE
 	dev=`hdid -nomount pterm-empty.dmg` ; newfs_hfs -v ptermvol $$dev ; hdiutil detach $$dev
 
-ptermkit.dmg: Pterm.app pterm-empty.dmg
+build/Pterm.mpkg: Pterm.app Pterm.pkgproj
+	packagesbuild -v Pterm.pkgproj
+
+ptermkit.dmg: build/Pterm.mpkg pterm-empty.dmg
 	cp pterm-empty.dmg ptermkit.dmg
-	dev=`hdid ptermkit.dmg | awk '{ print $$1 }'` ; cp -Rp pterm-license.txt Pterm.app /Volumes/ptermvol; hdiutil detach $$dev
+	dev=`hdid ptermkit.dmg | awk '{ print $$1 }'` ; cp -Rp build/Pterm.mpkg /Volumes/ptermvol; hdiutil detach $$dev
 
 pterm-$(PTERMVERSION).dmg: ptermkit.dmg
 	rm -f $@

@@ -3187,7 +3187,10 @@ void PtermFrame::procDataLoop (void)
         PtermConnFailDialog dlg (wxID_ANY, msg, wxDefaultPosition,
                                  wxSize (320, 140), word);
         dlg.CenterOnScreen ();
-        if (dlg.ShowModal () == wxID_CANCEL)
+
+        int action = dlg.ShowModal ();
+        
+        if (action == wxID_CANCEL)
         {
             Close (true);
         }
