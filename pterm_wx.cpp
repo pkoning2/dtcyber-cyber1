@@ -2001,8 +2001,13 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
             // load profile
             ret = LoadProfile (profile, filename);
 
-            // If the load failed, force connect dialog
-            if (!ret)
+            // If the load failed, force connect dialog.  If it worked,
+            // connect according to the loaded profile.
+            if (ret)
+            {
+                DoConnect (false);
+            }
+            else
             {
                 DoConnect (true);
                 break;
