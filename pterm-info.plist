@@ -36,6 +36,8 @@
 	<key>CFBundleTypeExtensions</key>
 	<array>
 		<string>ppf</string>
+		<string>dat</string>
+		<string>trc</string>
 	</array>
 	<key>CFBundleTypeIconFile</key>
 	<string>Pterm.icns</string>

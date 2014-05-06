@@ -93,6 +93,7 @@ by making the bitmap itself different.
 #include <wx/display.h>
 #include <wx/validate.h>
 #include <wx/valnum.h>
+#include <wx/cmdargs.h>
 
 extern "C"
 {
@@ -338,6 +339,8 @@ typedef struct
     u32 u;
     u32 p;
 } ukey;
+
+typedef enum { both, niu, ascii } connMode;
 
 typedef wxChar cmentry[4];
 
@@ -630,7 +633,7 @@ public:
     int AssembleAsciiWord (void);
     int AssembleAutoWord (void);
     int NextWord (void);
-    int NextGswWord (bool catchup);
+    int NextGswWord (bool idle);
     
     void SendData (const void *data, int len);
 
@@ -685,7 +688,7 @@ private:
     bool        m_gswStarted;
     int         m_savedGswMode;
     int         m_gswWord2;
-    enum { both, niu, ascii } m_connMode;
+    connMode    m_connMode;
     int         m_pending;
     in_addr_t   m_hostAddr;
     bool        m_connActive;
@@ -693,7 +696,7 @@ private:
     int NextRingWord (void);
 };
 
-extern "C" int ptermNextGswWord (void *connection, int catchup);
+extern "C" int ptermNextGswWord (void *connection, int idle);
 
 // Define a new application type, each program should derive a class from wxApp
 class PtermApp : public wxApp
@@ -721,7 +724,17 @@ public:
 
     static wxColour SelectColor (wxWindow &parent, const wxChar *title, 
                                  wxColour &initcol);
-    
+
+    // These are wxApp methods to override on Mac, but we use them for
+    // roughly their Mac purpose on other platforms as well, so define
+    // them unconditionally.
+    void MacNewFile (void);
+    void MacOpenFiles (const wxArrayString &s);
+#if defined (__WXMAC__)
+    void MacReopenApp (void);
+#endif
+
+    bool        m_loadProfile;
     wxConfig    *m_config;
 
     //general
@@ -785,10 +798,7 @@ public:
 
     PtermFrame *m_CurFrame;
 
-    FILE *m_testdata;
-    bool m_testascii;
-    bool m_testreq;
-    char traceFn[20];
+    char        traceFn[20];
 
 private:
     wxLocale    m_locale; // locale we'll be using
@@ -874,7 +884,7 @@ class PtermFrame : public PtermFrameBase, public emul8080
 {
     friend void PtermCanvas::OnDraw (wxDC &dc);
     friend void PtermApp::OnHelpKeys (wxCommandEvent &event);
-    friend bool PtermApp::OnInit (void);
+    friend void PtermApp::MacOpenFiles  (const wxArrayString &s);
     friend int PtermConnection::NextWord (void);
     friend void PtermPrintout::DrawPage (wxDC *);
     friend void PtermCanvas::OnMouseDown (wxMouseEvent &event);
@@ -1730,12 +1740,10 @@ bool PtermApp::OnInit (void)
     wxString rgb;
     wxString str;
     wxString filename;
-    bool skipinit = false;
     const char *s;
 
-    m_testascii = false;
-    m_testreq = false;
     m_termType = 0;
+    m_loadProfile = false;
     
     ptermApp = this;
     m_firstFrame = m_helpFrame = NULL;
@@ -1759,67 +1767,21 @@ bool PtermApp::OnInit (void)
     m_locale.Init (wxLANGUAGE_DEFAULT);
     m_locale.AddCatalog (wxT ("pterm"));
 
-    if (argc > 4)
-    {
-        printf ("usage: pterm [ hostname [ portnum [ termtype ]]]\n"
-                "   or: pterm [ filename.ppf ]\n");
-        exit (1);
-    }
-
     m_config = new wxConfig (wxT ("Pterm"));
 
-    //check for PPF file specified on command line
+    // Check for PPF file specified on command line
     if (argc > 1)
     {
-        str = argv[argc - 1];
-        if (str.Right (4).CmpNoCase (wxT (".ppf")) == 0 ||
-            str.Right (5).CmpNoCase (wxT (".ppf\"")) == 0)
+        filename = argv[argc - 1];
+
+        if (filename.Right (4).CmpNoCase (wxT (".ppf")) == 0)
         {
-            wxString filename;
-            wxString profile;
-            filename.Clear ();
-            for (int i=1; i < argc; i++)
-            {
-                if (i > 1)
-                    filename.Append (wxT (" "));
-                filename.Append (argv[i]);
-            }
-            //strip double quotes from ends
-            if (filename.Left (1)==wxT ("\"") &&
-                filename.Right (1)==wxT ("\""))
-                filename.Mid (2, filename.Len () - 2);
-            //get just the filename (profile)
-            profile = filename.BeforeLast ('.');
-#if defined (_WIN32)
-                profile = profile.AfterLast ('\\');
-#else
-                profile = profile.AfterLast ('/');
-#endif
-            //load profile
-            skipinit = ptermApp->LoadProfile (profile, filename);
-        }
-        else if (str.Right (4).CmpNoCase (wxT (".dat")) == 0 ||
-                 str.Right (4).CmpNoCase (wxT (".trc")) == 0)
-        {
-            // test data file
-            m_testdata = fopen (str, "r");
-            if (m_testdata == NULL)
-            {
-                perror ("Error opening test data file");
-                exit (99);
-            }
-            str = argv[1];
-            if (argc > 2 && str.Left (2) == wxT ("-a"))
-            {
-                m_testascii = true;
-            }
-            m_testreq = true;
+            m_loadProfile = true;
         }
     }
-
-    // check if skipping initial read of settings due to successful load of
-    // settings from profile filename specified above
-    if (!skipinit)
+    
+    // If we're loading a profile, skip initial read of settings.
+    if (!m_loadProfile)
     {
         //notebook
         m_lastTab = m_config->Read (wxT (PREF_LASTTAB), 0L);
@@ -1902,7 +1864,6 @@ bool PtermApp::OnInit (void)
 #if PTERM_MDI
     // On Mac, the style rule is that the application keeps running even
     // if all its windows are closed.
-//    SetExitOnFrameDelete (false);
     PtermFrameParent = new PtermMainFrame ();
     PtermFrameParent->Show (true);
 #endif
@@ -1956,75 +1917,6 @@ bool PtermApp::OnInit (void)
     }
     debug ("adjusted x/y is %ld, %ld", prefX, prefY);
     
-    // create the main application window
-    // If arguments are present, always connect without asking
-    if (!m_testreq && (!DoConnect (!(m_connect || argc > 1))))
-    {
-        return false;
-    }
-    
-    if (m_testreq)
-    {
-        char tline[200], *p;
-        int w, seq, pseq = -1;
-        PtermFrame *frame;
-        
-        frame = new PtermFrame (str, -1, _("Test execution"));
-
-        if (frame != NULL)
-        {
-            if (m_firstFrame != NULL)
-            {
-                m_firstFrame->m_prevFrame = frame;
-            }
-            frame->m_nextFrame = m_firstFrame;
-            frame->tracePterm = true;
-            traceFn[0] = '\0';
-            traceF.Open ();
-            m_firstFrame = frame;
-            if (m_testascii)
-            {
-                printf ("reading test data for ascii mode.,,\n");
-                frame->m_dumbTty = false;
-            }
-            else
-            {
-                printf ("reading test data for classic mode...\n");
-            }
-            for (;;)
-            {
-                tline[0] = '\0';
-                fgets (tline, 199, m_testdata);
-                if (tline[0] == '\0')
-                {
-                    fclose (m_testdata);
-                    m_testdata = NULL;
-                    break;
-                }
-                p = tline;
-                if (p[2] == ':')
-                {
-                    // Timestamp at start of line, skip it
-                    p += 14;
-                }
-                if (sscanf (p, "%o seq %d", &w, &seq) != 0 &&
-                    seq != pseq)
-                {
-                    // Successful conversion, process the word,
-                    // provided it is new (different sequence number
-                    // than before)
-                    pseq = seq;
-                    frame->procPlatoWord (w, m_testascii);
-                }
-            }
-            frame->m_canvas->Refresh (false);
-            
-            printf ("done with test data\n");
-            
-            m_helpFrame = frame;
-        }
-    }
-    
     // Add some handlers so we can save the screen in various formats
     // Note that the BMP handler is always loaded, don't do it again.
     wxImage::AddHandler (new wxPNGHandler);
@@ -2032,11 +1924,193 @@ bool PtermApp::OnInit (void)
     wxImage::AddHandler (new wxTIFFHandler);
     wxImage::AddHandler (new wxXPMHandler);
 
+#if !defined (__WXMAC__)
+    // On Mac, MacNewFile() or MacOpenFiles() will be called when OnInit
+    // completes, but on other platforms we'll call it here just before
+    // we're finished with OnInit.  That way the same logic works everywhere.
+    MacNewFile ();
+#endif
+
     // success: wxApp::OnRun () will be called which will enter the main message
     // loop and the application will run. If we returned false here, the
     // application would exit immediately.
     return true;
 }
+
+// Start connection dialog, or open a connection if auto-connecting.
+// We come here if there are no arguments, or if there are but the
+// argument does not refer to a profile file (*.ppf file).
+void PtermApp::MacNewFile (void)
+{
+    if (argc > 1)
+    {
+        wxArrayString files = argv.GetArguments ();
+        
+        files.RemoveAt (0);
+        MacOpenFiles (files);
+        return;
+    }
+    
+    // create the main application window.  Ask or autoconnect according
+    // to the current preferences.
+    DoConnect (!m_connect);
+}
+
+void PtermApp::MacOpenFiles (const wxArrayString &s)
+{
+    wxArrayString files = s;
+    wxString filename;
+    bool ret;
+    int i;
+    FILE *testdata;
+    connMode testmode;
+    char tline[200], *p;
+    int w, seq, pseq;
+    PtermFrame *frame;
+    
+#if defined (__WXMAC__)
+    // On Mac, if Pterm is invoked with arguments, we usually come
+    // here from the wx startup code, but NOT with the full argument
+    // list.  I have no idea why.  For a workaround, check if we have
+    // arguments, and if so grab argv explicitly.  Note that the
+    // case of clicking on file names marked for Pterm is not handled
+    // as Unix arguments so it won't trigger the workaround.
+    if (argc > 1)
+    {
+        files = argv.GetArguments ();
+        
+        files.RemoveAt (0);
+    }
+#endif
+
+    for (i = 0; i < files.GetCount (); i++)
+    {
+        filename = files[i];
+
+        if (filename.Right (4).CmpNoCase (wxT (".ppf")) == 0)
+        {
+            wxString profile;
+
+            // get just the filename (profile)
+            profile = filename.BeforeLast ('.');
+#if defined (_WIN32)
+            profile = profile.AfterLast ('\\');
+#else
+            profile = profile.AfterLast ('/');
+#endif
+            // load profile
+            ret = LoadProfile (profile, filename);
+
+            // If the load failed, force connect dialog
+            if (!ret)
+            {
+                DoConnect (true);
+                break;
+            }
+        }
+        else if (filename.Right (4).CmpNoCase (wxT (".dat")) == 0 ||
+                 filename.Right (4).CmpNoCase (wxT (".trc")) == 0)
+        {
+            // test data file
+            testdata = fopen (filename, "r");
+            if (testdata == NULL)
+            {
+                wxString msg ("Error opening test data file ");
+
+                msg.Append (filename);
+                msg.Append (":\n");
+                msg.Append (wxSysErrorMsg ());
+                
+                wxMessageBox (msg, "Error",
+                              wxICON_ERROR | wxOK | wxCENTRE);
+                return;
+            }
+
+            wxString title ("Test: ");
+
+            title.Append (filename);
+            frame = new PtermFrame (filename, -1, title);
+
+            if (frame != NULL)
+            {
+                frame->tracePterm = true;
+                traceFn[0] = '\0';
+                traceF.Open ();
+                frame->m_dumbTty = false;
+                pseq = -1;
+                testmode = both;
+                
+                for (;;)
+                {
+                    tline[0] = '\0';
+                    fgets (tline, 199, testdata);
+                    if (tline[0] == '\0')
+                    {
+                        fclose (testdata);
+                        testdata = NULL;
+                        break;
+                    }
+                    if (testmode == both)
+                    {
+                        // See if we can figure out the connection mode
+                        if (strcasestr (tline, "ascii") != NULL)
+                        {
+                            testmode = ascii;
+                        }
+                    }
+                
+                    p = tline;
+                    if (p[2] == ':')
+                    {
+                        // Timestamp at start of line, skip it
+                        p += 14;
+                    }
+                    if (sscanf (p, "%o seq %d", &w, &seq) != 0 &&
+                        seq != pseq)
+                    {
+                        // Successful conversion, process the word,
+                        // provided it is new (different sequence number
+                        // than before)
+                        pseq = seq;
+                        if (testmode == both && w > 2)
+                        {
+                            // See if the value of the word gives a clue about
+                            // the protocol used
+                            if (w <= 0377 || (w >> 8) == 033)
+                            {
+                                testmode = ascii;
+                            }
+                            else
+                            {
+                                testmode = niu;
+                            }
+                        }
+                        frame->procPlatoWord (w, testmode == ascii);
+                    }
+                }
+                frame->m_canvas->Refresh (false);
+            }
+        }
+    }
+}
+
+#if defined (__WXMAC__)
+// We come here if the icon is clicked and there are no windows.  But
+// sometimes we come here even if there are windows.  For the latter case,
+// just show & raise the first window.
+void PtermApp::MacReopenApp (void)
+{
+    if (m_firstFrame != NULL)
+    {
+        m_firstFrame->Show (true);
+        m_firstFrame->Raise ();
+    }
+    else
+    {
+        DoConnect (true);
+    }
+}
+#endif
 
 int PtermApp::OnExit (void)
 {
@@ -2111,16 +2185,6 @@ bool PtermApp::DoConnect (bool ask)
     // create the main application window
     frame = new PtermFrame (m_hostName, m_port, wxT ("Pterm"));
 
-    if (frame != NULL)
-    {
-        if (m_firstFrame != NULL)
-        {
-            m_firstFrame->m_prevFrame = frame;
-        }
-        frame->m_nextFrame = m_firstFrame;
-        m_firstFrame = frame;
-    }
-    
     return (frame != NULL);
 }
 
@@ -2353,16 +2417,10 @@ void PtermApp::OnHelpKeys (wxCommandEvent &)
         // If there isn't one yet, create a help window -- same as a
         // regular frame except that the data comes from here, not
         // from a connection.
-        frame = new PtermFrame (str, -1, _("Keyboard Help"));
+        frame = new PtermFrame (str, -2, _("Keyboard Help"));
 
         if (frame != NULL)
         {
-            if (m_firstFrame != NULL)
-            {
-                m_firstFrame->m_prevFrame = frame;
-            }
-            frame->m_nextFrame = m_firstFrame;
-            m_firstFrame = frame;
             for (i = 0;
                  i < sizeof (keyboardhelp) / sizeof (keyboardhelp[0]);
                  i++)
@@ -2704,6 +2762,17 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
     ptermFullErase ();
     UpdateDisplayState ();
 
+    // If it's not the help frame, link it into the list of frames
+    if (port != -2)
+    {
+        if (ptermApp->m_firstFrame != NULL)
+        {
+            ptermApp->m_firstFrame->m_prevFrame = this;
+        }
+        m_nextFrame = ptermApp->m_firstFrame;
+        ptermApp->m_firstFrame = this;
+    }
+    
     if (port > 0)
     {
         // Create and start the network processing thread
