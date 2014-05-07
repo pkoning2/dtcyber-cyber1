@@ -1448,7 +1448,7 @@ static void opSetup (NetFet *np, int index, void *arg)
     char hostbuf[100];
     char *p;
     
-    if (np->connFd == 0)
+    if (!dtConnected (np))
         {
         opActiveConns--;
         opUpdateSysStatus ();

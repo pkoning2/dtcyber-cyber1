@@ -297,14 +297,15 @@ void Trace::Log (const wxString &s)
     }
 }
 
-Trace traceF;
-#define tracex traceF.Log
-
 #ifdef DEBUG
 Trace debugF;
 #define debug debugF.Log
+#define traceF debugF
+#define tracex debug
 #else
 #define debug(x,...) /* Nothing */
+Trace traceF;
+#define tracex traceF.Log
 #endif
 
 // Keycode translation tables.
@@ -734,7 +735,6 @@ public:
     void MacReopenApp (void);
 #endif
 
-    bool        m_loadProfile;
     wxConfig    *m_config;
 
     //general
@@ -1434,6 +1434,7 @@ public:
     void OnClose (wxCloseEvent& event);
     
     wxButton* btnNew;
+    wxButton* btnRetry;
     wxButton* btnCancel;
     
 private:
@@ -1739,11 +1740,9 @@ bool PtermApp::OnInit (void)
     int r, g, b, dspi, sz;
     wxString rgb;
     wxString str;
-    wxString filename;
     const char *s;
 
     m_termType = 0;
-    m_loadProfile = false;
     
     ptermApp = this;
     m_firstFrame = m_helpFrame = NULL;
@@ -1769,97 +1768,85 @@ bool PtermApp::OnInit (void)
 
     m_config = new wxConfig (wxT ("Pterm"));
 
-    // Check for PPF file specified on command line
+    // Load defaults.  Note that a profile specified in the command
+    // line is loaded later, so it will override this.
+
+    //notebook
+    m_lastTab = m_config->Read (wxT (PREF_LASTTAB), 0L);
+    //tab0
+    m_config->Read (wxT (PREF_CURPROFILE), &m_curProfile, CURRENT_PROFILE);
+    //tab1
+    m_config->Read (wxT (PREF_SHELLFIRST), &m_ShellFirst, wxT (""));
+    m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
     if (argc > 1)
     {
-        filename = argv[argc - 1];
-
-        if (filename.Right (4).CmpNoCase (wxT (".ppf")) == 0)
-        {
-            m_loadProfile = true;
-        }
+        m_hostName = argv[1];
     }
-    
-    // If we're loading a profile, skip initial read of settings.
-    if (!m_loadProfile)
+    else
     {
-        //notebook
-        m_lastTab = m_config->Read (wxT (PREF_LASTTAB), 0L);
-        //tab0
-        m_config->Read (wxT (PREF_CURPROFILE), &m_curProfile, CURRENT_PROFILE);
-        //tab1
-        m_config->Read (wxT (PREF_SHELLFIRST), &m_ShellFirst, wxT (""));
-        m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
-        if (argc > 1)
-        {
-            m_hostName = argv[1];
-        }
-        else
-        {
-            m_config->Read (wxT (PREF_HOST), &m_hostName, DEFAULTHOST);
-        }
-        if (argc > 2)
-        {
-            argv[2].ToCLong (&m_port);
-            if (argc > 3)
-            {
-                argv[3].ToCLong (&m_termType);
-                printf ("terminal type override %ld\n", m_termType);
-            }
-        }
-        else
-        {
-            m_config->Read (wxT (PREF_PORT), &m_port, DefNiuPort);
-        }
-        //tab2
-        m_showSignon = (m_config->Read (wxT (PREF_SHOWSIGNON), 0L) != 0);
-        m_showSysName = (m_config->Read (wxT (PREF_SHOWSYSNAME), 0L) != 0);
-        m_showHost = (m_config->Read (wxT (PREF_SHOWHOST), 1) != 0);
-        m_showStation = (m_config->Read (wxT (PREF_SHOWSTATION), 1) != 0);
-        //tab3
-        m_classicSpeed = (m_config->Read (wxT (PREF_1200BAUD), 0L) != 0);
-        m_gswEnable = (m_config->Read (wxT (PREF_GSW), 1) != 0);
-        m_numpadArrows = (m_config->Read (wxT (PREF_ARROWS), 1) != 0);
-        m_ignoreCapLock = (m_config->Read (wxT (PREF_IGNORECAP), 0L) != 0);
-        m_platoKb = (m_config->Read (wxT (PREF_PLATOKB), 0L) != 0);
-#if defined (__WXMAC__)
-        m_useAccel = true;
-#else
-        m_useAccel = (m_config->Read (wxT (PREF_ACCEL), 0L) != 0);
-#endif
-        m_beepEnable = (m_config->Read (wxT (PREF_BEEP), 1) != 0);
-        m_DisableShiftSpace = (m_config->Read (wxT (PREF_SHIFTSPACE), 0L) != 0);
-        m_DisableMouseDrag = (m_config->Read (wxT (PREF_MOUSEDRAG), 0L) != 0);
-        //tab4
-        m_scale2 = (m_config->Read (wxT (PREF_SCALE), 1) == 2);
-        m_stretch = (m_config->Read (wxT (PREF_STRETCH), 0L) != 0);
-        m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
-#if !defined (__WXMAC__)
-        m_showMenuBar = (m_config->Read (wxT (PREF_MENUBAR), 1) != 0);
-#endif
-        m_noColor = (m_config->Read (wxT (PREF_NOCOLOR), 0L) != 0);
-        // 255 144 0 is RGB for Plato Orange
-        m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("255 144 0"));
-        s = rgb.c_str ();
-        sscanf (s, "%d %d %d", &r, &g, &b);
-        m_fgColor = wxColour (r, g, b);
-        m_config->Read (wxT (PREF_BACKGROUND), &rgb, wxT ("0 0 0"));
-        s = rgb.c_str ();
-        sscanf (s, "%d %d %d", &r, &g, &b);
-        m_bgColor = wxColour (r, g, b);
-        //tab5
-        m_config->Read (wxT (PREF_CHARDELAY), &m_charDelay, PASTE_CHARDELAY);
-        m_config->Read (wxT (PREF_LINEDELAY), &m_lineDelay, PASTE_LINEDELAY);
-        m_config->Read (wxT (PREF_AUTOLF), &m_autoLF, 0L);
-        m_splitWords = (m_config->Read (wxT (PREF_SPLITWORDS), 0L) != 0);
-        m_smartPaste = (m_config->Read (wxT (PREF_SMARTPASTE), 0L) != 0);
-        m_convDot7 = (m_config->Read (wxT (PREF_CONVDOT7), 0L) != 0);
-        m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);
-        m_TutorColor = (m_config->Read (wxT (PREF_TUTORCOLOR), 0L) != 0);
-        //tab6
-        m_config->Read (wxT (PREF_EMAIL), &m_Email, wxT (""));
-        m_config->Read (wxT (PREF_SEARCHURL), &m_SearchURL, DEFAULTSEARCH);
+        m_config->Read (wxT (PREF_HOST), &m_hostName, DEFAULTHOST);
     }
+    if (argc > 2)
+    {
+        argv[2].ToCLong (&m_port);
+        if (argc > 3)
+        {
+            argv[3].ToCLong (&m_termType);
+            printf ("terminal type override %ld\n", m_termType);
+        }
+    }
+    else
+    {
+        m_config->Read (wxT (PREF_PORT), &m_port, DefNiuPort);
+    }
+    //tab2
+    m_showSignon = (m_config->Read (wxT (PREF_SHOWSIGNON), 0L) != 0);
+    m_showSysName = (m_config->Read (wxT (PREF_SHOWSYSNAME), 0L) != 0);
+    m_showHost = (m_config->Read (wxT (PREF_SHOWHOST), 1) != 0);
+    m_showStation = (m_config->Read (wxT (PREF_SHOWSTATION), 1) != 0);
+    //tab3
+    m_classicSpeed = (m_config->Read (wxT (PREF_1200BAUD), 0L) != 0);
+    m_gswEnable = (m_config->Read (wxT (PREF_GSW), 1) != 0);
+    m_numpadArrows = (m_config->Read (wxT (PREF_ARROWS), 1) != 0);
+    m_ignoreCapLock = (m_config->Read (wxT (PREF_IGNORECAP), 0L) != 0);
+    m_platoKb = (m_config->Read (wxT (PREF_PLATOKB), 0L) != 0);
+#if defined (__WXMAC__)
+    m_useAccel = true;
+#else
+    m_useAccel = (m_config->Read (wxT (PREF_ACCEL), 0L) != 0);
+#endif
+    m_beepEnable = (m_config->Read (wxT (PREF_BEEP), 1) != 0);
+    m_DisableShiftSpace = (m_config->Read (wxT (PREF_SHIFTSPACE), 0L) != 0);
+    m_DisableMouseDrag = (m_config->Read (wxT (PREF_MOUSEDRAG), 0L) != 0);
+    //tab4
+    m_scale2 = (m_config->Read (wxT (PREF_SCALE), 1) == 2);
+    m_stretch = (m_config->Read (wxT (PREF_STRETCH), 0L) != 0);
+    m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
+#if !defined (__WXMAC__)
+    m_showMenuBar = (m_config->Read (wxT (PREF_MENUBAR), 1) != 0);
+#endif
+    m_noColor = (m_config->Read (wxT (PREF_NOCOLOR), 0L) != 0);
+    // 255 144 0 is RGB for Plato Orange
+    m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("255 144 0"));
+    s = rgb.c_str ();
+    sscanf (s, "%d %d %d", &r, &g, &b);
+    m_fgColor = wxColour (r, g, b);
+    m_config->Read (wxT (PREF_BACKGROUND), &rgb, wxT ("0 0 0"));
+    s = rgb.c_str ();
+    sscanf (s, "%d %d %d", &r, &g, &b);
+    m_bgColor = wxColour (r, g, b);
+    //tab5
+    m_config->Read (wxT (PREF_CHARDELAY), &m_charDelay, PASTE_CHARDELAY);
+    m_config->Read (wxT (PREF_LINEDELAY), &m_lineDelay, PASTE_LINEDELAY);
+    m_config->Read (wxT (PREF_AUTOLF), &m_autoLF, 0L);
+    m_splitWords = (m_config->Read (wxT (PREF_SPLITWORDS), 0L) != 0);
+    m_smartPaste = (m_config->Read (wxT (PREF_SMARTPASTE), 0L) != 0);
+    m_convDot7 = (m_config->Read (wxT (PREF_CONVDOT7), 0L) != 0);
+    m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);
+    m_TutorColor = (m_config->Read (wxT (PREF_TUTORCOLOR), 0L) != 0);
+    //tab6
+    m_config->Read (wxT (PREF_EMAIL), &m_Email, wxT (""));
+    m_config->Read (wxT (PREF_SEARCHURL), &m_SearchURL, DEFAULTSEARCH);
 
 #if PTERM_MDI
     // On Mac, the style rule is that the application keeps running even
@@ -2026,8 +2013,7 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
                 msg.Append (":\n");
                 msg.Append (wxSysErrorMsg ());
                 
-                wxMessageBox (msg, "Error",
-                              wxICON_ERROR | wxOK | wxCENTRE);
+                wxMessageBox (msg, "Error", wxICON_ERROR | wxOK | wxCENTRE);
                 return;
             }
 
@@ -2096,6 +2082,32 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
                 frame->m_canvas->Refresh (false);
             }
         }
+        else
+        {
+            if (i != 0 || argc < 2)
+            {
+                wxMessageBox ("usage: pterm [ hostname [ portnum [ termtype ]]]\n"
+                              "   or: pterm [ filename.ppf ]\n", "Usage",
+                              wxICON_ERROR | wxOK | wxCENTRE);
+                break;
+            }
+            m_hostName = argv[1];
+            if (argc > 2)
+            {
+                m_port = atoi (wxString (argv[2]).mb_str());
+                if (argc > 3)
+                {
+                    m_termType = atoi (wxString (argv[3]).mb_str ());
+                    printf ("terminal type override %ld\n", m_termType);
+                }
+            }
+            else
+            {
+                m_port = m_config->Read (wxT (PREF_PORT), DefNiuPort);
+            }
+            DoConnect (false);
+            break;
+        }       
     }
 }
 
@@ -3264,13 +3276,27 @@ void PtermFrame::procDataLoop (void)
 
         int action = dlg.ShowModal ();
         
-        if (action == wxID_CANCEL)
+        switch (action)
         {
-            Close (true);
-        }
-        else
-        {
+        case Pterm_ConnectAgain:
+            delete m_conn;
             m_conn = new PtermConnection (this, m_hostName, m_port);
+            m_dumbTty = true;
+            m_ascState = none;
+            m_ascBytes = 0;
+            m_flowCtrl = false;
+            m_sendFgt = false;
+            
+            mode = 017;             // default to character mode, rewrite
+            modexor = false;
+            setMargin (0);
+            RAM[M_CCR] = 0;
+            break;
+        case wxID_OK:
+            ptermApp->DoConnect (true);
+            break;
+        default:
+            Close (true);
         }
     }
 }
@@ -9521,6 +9547,7 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     wxStaticText* lblPrompt;
     wxStaticText* lblHost;
 //  wxButton* btnNew;
+//	wxButton* btnRetry;
 //  wxButton* btnCancel;
     wxString str;
 
@@ -9538,14 +9565,18 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     lblHost->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
     bs1->Add (lblHost, 0, wxALL, 5);
     wxFlexGridSizer* fgs11;
-    fgs11 = new wxFlexGridSizer (1, 3, 0, 0);
-    fgs11->AddGrowableCol (0);
+    fgs11 = new wxFlexGridSizer (1, 4, 0, 0);
+    fgs11->AddGrowableCol (2);
     fgs11->SetFlexibleDirection (wxHORIZONTAL);
-    fgs11->Add (0, 0, 1, wxALL, 5);
     btnNew = new wxButton (this, wxID_ANY, _("New Connection"),
                            wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL);
     btnNew->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
     fgs11->Add (btnNew, 0, wxALL, 5);
+	btnRetry = new wxButton (this, wxID_ANY, _("Reconnect"), wxDefaultPosition,
+                             wxDefaultSize, 0 | wxTAB_TRAVERSAL);
+	btnRetry->SetFont (wxFont (10, 74, 90, 90, false, wxT(SSFONT)));
+	fgs11->Add (btnRetry, 0, wxALL, 5);
+    fgs11->Add (0, 0, 1, wxALL, 5);
     btnCancel = new wxButton (this, wxID_CANCEL, _("Close"),
                               wxDefaultPosition, wxDefaultSize,
                               0|wxTAB_TRAVERSAL);
@@ -9556,14 +9587,15 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     // set object value properties
     if (code == C_DISCONNECT)
     {
-        str.Printf (_("Your connection to the host was lost.  You may open a\n"
-                      "new connection or close the window."));
+        str.Printf (_("Your connection to the host was lost.\n\n"));
     }
     else
     {
-        str.Printf (_("The host did not respond to the connection request.\n"
-                      "You may open a new connection or close the window."));
+        str.Printf (_("The host did not respond to the connection request.\n\n"));
     }
+        
+    str.Append (_("You may open a new connection, reconnect\n"
+                  "to the same host/port, or close the window."));
     lblPrompt->SetLabel (str);
     str.Printf (_("\nFailed: %s:%ld"), ptermApp->m_hostName,
                 ptermApp->m_port);
@@ -9583,6 +9615,10 @@ void PtermConnFailDialog::OnButton (wxCommandEvent& event)
     if (event.GetEventObject () == btnNew)
     {
         EndModal (wxID_OK);
+    }
+    else if (event.GetEventObject () == btnRetry)
+    {
+        EndModal (Pterm_ConnectAgain);
     }
     else if (event.GetEventObject () == btnCancel)
     {
@@ -9673,6 +9709,8 @@ PtermConnection::~PtermConnection ()
         ptermCloseGsw ();
         m_owner->m_gswFile = wxString ();
     }
+    // Re-fetch the FET pointer in case it's already been closed
+    m_fet = m_portset.portVec[0];
     dtClose (m_fet, TRUE);
 }
 
@@ -10161,7 +10199,7 @@ void PtermConnection::StoreWord (int word)
     m_displayRing[m_displayIn] = word;
     m_displayIn = next;
     
-//    debug ("data from plato %07o", word);
+    debug ("data from plato %07o", word);
 }
 
 void PtermConnection::SendData (const void *data, int len)

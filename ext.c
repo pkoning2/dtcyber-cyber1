@@ -680,7 +680,7 @@ static CpWord sockOp (CPUVARGS1 (CpWord req))
                 // If the connection is gone and the data that's
                 // left is less than what we want to get right now,
                 // return the error for the lost connection.
-                if (fet->connFd == 0)
+                if (!dtConnected (fet))
                 {
                     return RETNULL;
                 }

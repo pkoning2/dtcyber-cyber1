@@ -934,7 +934,7 @@ static void niuWelcome(NetFet *np, int stat, void *arg)
     stat += sp->first;
     mp = portVector + STAT2IDX (stat);
     
-    if (np->connFd == 0)
+    if (!dtConnected (np))
         {
         /*
         **  Connection was dropped.

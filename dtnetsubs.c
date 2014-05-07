@@ -415,6 +415,7 @@ void dtInitPortset (NetPortSet *ps)
 void dtClose (NetFet *fet, bool hard)
     {
     NetPortSet *ps;
+    int connFd;
     
     /*
     **  Return success if already closed.
@@ -441,6 +442,8 @@ void dtClose (NetFet *fet, bool hard)
     **  FET from the portset.
     */
     ps = fet->ps;
+    connFd = fet->connFd;
+    fet->connFd = dtNC;        /* Indicate connection is closed */
     if (ps->callBack != NULL)
         {
         (*ps->callBack) (fet, fet->psIndex, ps->callArg);
@@ -771,7 +774,7 @@ int dtSend (NetFet *fet, const void *buf, int len)
     /*
     ** Reject calls when connection is not open.
     */
-    if (!dtActive (fet) || fet->connFd == 0)
+    if (!dtActive (fet) || fet->connFd == dtNC)
         {
         return ENOTCONN;
         }
@@ -1274,7 +1277,7 @@ static dtThreadFun (dtDataThread, param)
             break;
             }
         
-        if (np->connFd == 0)
+        if (np->connFd == dtNC)
             {
             /*
             **  If connection was closed by other end earlier, sleep
@@ -1298,7 +1301,7 @@ static dtThreadFun (dtDataThread, param)
                 /*
                 **  Indicate connection closed.
                 */
-                np->connFd = 0;
+                np->connFd = dtNC;
                 }
             else if (bytes == 0)
                 {
@@ -1490,14 +1493,14 @@ static int dtBindSocket (in_addr_t host, int port, int backlog)
     if (bind (connFd, (struct sockaddr *) &server, sizeof (server)) < 0)
         {
         dtCloseSocket (connFd, TRUE);
-        connFd = 0;
+        connFd = dtNC;
         dtErrno = errno;
         return -1;
         }
     if (listen (connFd, backlog) < 0)
         {
         dtCloseSocket (connFd, TRUE);
-        connFd = 0;
+        connFd = dtNC;
         dtErrno = errno;
         return -1;
         }

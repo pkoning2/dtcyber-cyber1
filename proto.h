@@ -322,10 +322,11 @@ int dtReadtlv (NetFet *fet, void *buf, int len);
 #define dtSendFree(fet) \
     ((fet)->sendend - (fet)->sendfirst - dtSendData (fet) - 1)
 
+#define dtNC -1   /* connFd value for "not connected" */
 #define dtActive(fet) \
     ((fet) != NULL && (fet)->closing == 0)
 #define dtConnected(fet) \
-    ((fet)->connFd != 0)
+    ((fet)->connFd != dtNC)
 
 /* This goes with dtReadoi */
 #define dtUpdateOut(fet,outidx) \

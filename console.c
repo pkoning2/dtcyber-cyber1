@@ -1367,7 +1367,7 @@ static void consoleConnect (NetFet *np, int index, void *arg)
 
     mp = portVector + index;
     
-    if (np->connFd == 0)
+    if (!dtConnected (np))
         {
         printf("%s Console connection dropped from %s\n",
                dtNowString (), inet_ntoa (np->from));
