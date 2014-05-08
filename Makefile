@@ -70,7 +70,7 @@ all: Pterm.app
 endif
 
 clean:
-	rm -rf *.o *.d *.i *.ii *.pcf x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app dtoper.app dd60.app pterm-*.tar.bz2
+	rm -rf *.o *.d *.i *.ii *.pcf x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app *Pterm.pkg dtoper.app dd60.app pterm-*.tar.bz2
 
 else
 

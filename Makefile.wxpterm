@@ -15,6 +15,12 @@ YEAR = $(shell date +"%Y")
 DEFWXDIR = /usr/local
 
 ifeq ("$(HOST)","Darwin")
+PKGMAKER ?= /Developer/Applications/Utilities/PackageMaker.app
+ifeq ("$(wildcard $(PKGMAKER))","")
+PKGMAKER = /Applications/Utilities/PackageMaker.app
+endif
+PTERMPKGNAME ?= "Install-Pterm.pkg"
+
 ifeq ("$(wildcard /Library/Frameworks/SDL2.framework)","")
 SDLFW ?= SDL
 else
@@ -171,12 +177,12 @@ pterm-empty.dmg:
 	hdiutil create -size 32m pterm-empty.dmg -layout NONE
 	dev=`hdid -nomount pterm-empty.dmg` ; newfs_hfs -v ptermvol $$dev ; hdiutil detach $$dev
 
-build/Pterm.mpkg: Pterm.app Pterm.pkgproj
-	packagesbuild -v Pterm.pkgproj
+$(PTERMPKGNAME): Pterm.app Pterm.pmdoc
+	$(PKGMAKER)/Contents/MacOS/PackageMaker --verbose --doc Pterm.pmdoc --out $@
 
-ptermkit.dmg: build/Pterm.mpkg pterm-empty.dmg
+ptermkit.dmg: $(PTERMPKGNAME) pterm-empty.dmg
 	cp pterm-empty.dmg ptermkit.dmg
-	dev=`hdid ptermkit.dmg | awk '{ print $$1 }'` ; cp -Rp build/Pterm.mpkg /Volumes/ptermvol; hdiutil detach $$dev
+	dev=`hdid ptermkit.dmg | awk '{ print $$1 }'` ; cp -Rp $(PTERMPKGNAME) /Volumes/ptermvol; hdiutil detach $$dev
 
 pterm-$(PTERMVERSION).dmg: ptermkit.dmg
 	rm -f $@
