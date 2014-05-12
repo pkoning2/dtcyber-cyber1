@@ -5,7 +5,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.cyber1.</string>
+	<string>org.cyber1.dtoper</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
@@ -33,6 +33,8 @@
 	</array>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright 2012 Paul Koning</string>
+	<key>LSRequiresCarbon</key>
+        <true/>
 	<key>CSResourcesFileMapped</key>
 	<true/>
 </dict>
