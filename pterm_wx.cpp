@@ -778,7 +778,6 @@ public:
     long        m_charDelay;
     long        m_lineDelay;
     long        m_autoLF;
-    bool        m_splitWords;
     bool        m_smartPaste;
     bool        m_convDot7;
     bool        m_conv8Sp;
@@ -1325,7 +1324,6 @@ public:
     wxTextCtrl* txtCharDelay;
     wxTextCtrl* txtLineDelay;
     wxComboBox* cboAutoLF;
-    wxCheckBox* chkSplitWords;
     wxCheckBox* chkSmartPaste;
     wxCheckBox* chkConvertDot7;
     wxCheckBox* chkConvert8Spaces;
@@ -1376,7 +1374,6 @@ public:
     long            m_charDelay;
     long            m_lineDelay;
     long            m_autoLF;
-    bool            m_splitWords;
     bool            m_smartPaste;
     bool            m_convDot7;
     bool            m_conv8Sp;
@@ -1835,7 +1832,6 @@ bool PtermApp::OnInit (void)
     m_config->Read (wxT (PREF_CHARDELAY), &m_charDelay, PASTE_CHARDELAY);
     m_config->Read (wxT (PREF_LINEDELAY), &m_lineDelay, PASTE_LINEDELAY);
     m_config->Read (wxT (PREF_AUTOLF), &m_autoLF, 0L);
-    m_splitWords = (m_config->Read (wxT (PREF_SPLITWORDS), 0L) != 0);
     m_smartPaste = (m_config->Read (wxT (PREF_SMARTPASTE), 0L) != 0);
     m_convDot7 = (m_config->Read (wxT (PREF_CONVDOT7), 0L) != 0);
     m_conv8Sp = (m_config->Read (wxT (PREF_CONV8SP), 0L) != 0);
@@ -2311,8 +2307,6 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
                 value.ToCLong (&m_lineDelay);
             else if (token.Cmp (wxT (PREF_AUTOLF)) == 0)
                 value.ToCLong (&m_autoLF);
-            else if (token.Cmp (wxT (PREF_SPLITWORDS)) == 0)
-                m_splitWords    = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_SMARTPASTE)) == 0)
                 m_smartPaste    = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_CONVDOT7)) == 0)
@@ -2376,7 +2370,6 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
     m_config->Write (wxT (PREF_CHARDELAY), m_charDelay);
     m_config->Write (wxT (PREF_LINEDELAY), m_lineDelay);
     m_config->Write (wxT (PREF_AUTOLF), m_autoLF);
-    m_config->Write (wxT (PREF_SPLITWORDS), (m_splitWords) ? 1 : 0);
     m_config->Write (wxT (PREF_SMARTPASTE), (m_smartPaste) ? 1 : 0);
     m_config->Write (wxT (PREF_CONVDOT7), (m_convDot7) ? 1 : 0);
     m_config->Write (wxT (PREF_CONV8SP), (m_conv8Sp) ? 1 : 0);
@@ -3518,7 +3511,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         }
     }
 
-    if (c == '\n' && ptermApp->m_splitWords && ptermApp->m_autoLF != 0)
+    if (c == '\n' && ptermApp->m_autoLF != 0)
     {
         // Newline and splitting lines, next time we'll find the next
         // break point.
@@ -3527,12 +3520,13 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     else if (m_pasteIndex == m_pasteNextIndex)
     {
         // This is the spot where we want to break.  Send a NEXT,
-        // then skip spaces.
+        // then skip spaces.  Then start looking for the next split point.
         ptermSendKey1 (026);
         while (nextindex < m_pasteLen && m_pasteText[nextindex] == ' ')
         {
             nextindex++;
         }
+        m_pasteNextIndex = 0;
     }
     
     if (nextindex < m_pasteLen)
@@ -3872,7 +3866,7 @@ void PtermFrame::OnPaste (wxCommandEvent &event)
         m_pasteText = text.GetText ();
         m_pasteLen = m_pasteText.Len ();
         m_pasteIndex = 0;
-        if (ptermApp->m_splitWords && ptermApp->m_autoLF != 0)
+        if (ptermApp->m_autoLF != 0)
         {
             m_pasteNextIndex = 0;
         }
@@ -4125,7 +4119,6 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_charDelay = dlg.m_charDelay;
         ptermApp->m_lineDelay = dlg.m_lineDelay;
         ptermApp->m_autoLF = dlg.m_autoLF;
-        ptermApp->m_splitWords = dlg.m_splitWords;
         ptermApp->m_smartPaste = dlg.m_smartPaste;
         ptermApp->m_convDot7 = dlg.m_convDot7;
         ptermApp->m_conv8Sp = dlg.m_conv8Sp;
@@ -4185,7 +4178,6 @@ void PtermFrame::SavePreferences (void)
     ptermApp->m_config->Write (wxT (PREF_CHARDELAY), ptermApp->m_charDelay);
     ptermApp->m_config->Write (wxT (PREF_LINEDELAY), ptermApp->m_lineDelay);
     ptermApp->m_config->Write (wxT (PREF_AUTOLF), ptermApp->m_autoLF);
-    ptermApp->m_config->Write (wxT (PREF_SPLITWORDS), (ptermApp->m_splitWords) ? 1 : 0);
     ptermApp->m_config->Write (wxT (PREF_SMARTPASTE), (ptermApp->m_smartPaste) ? 1 : 0);
     ptermApp->m_config->Write (wxT (PREF_CONVDOT7), (ptermApp->m_convDot7) ? 1 : 0);
     ptermApp->m_config->Write (wxT (PREF_CONV8SP), (ptermApp->m_conv8Sp) ? 1 : 0);
@@ -8071,7 +8063,6 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     wxStaticText* lblAutoNewLine;
 //  wxComboBox* cboAutoLF;
     wxStaticText* lblAutoNewLine2;
-//  wxCheckBox* chkSplitWords;
 //  wxCheckBox* chkSmartPaste;
 //  wxCheckBox* chkConvertDot7;
 //  wxCheckBox* chkConvert8Spaces;
@@ -8489,11 +8480,6 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                         wxDefaultPosition, wxDefaultSize, 0);
     fgs512->Add (lblAutoNewLine2, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
     bs51->Add (fgs512, 0, wxEXPAND, 5);
-    chkSplitWords = new wxCheckBox (tab5, wxID_ANY,
-                                    _("Allow words to be split across lines"),
-                                    wxDefaultPosition, wxDefaultSize, 0);
-    chkSplitWords->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
-    bs51->Add (chkSplitWords, 0, wxALL, 5);
     chkSmartPaste = new wxCheckBox (tab5, wxID_ANY,
                                     _("Use TUTOR pasting (certain sequences are treated specially)"),
                                     wxDefaultPosition, wxDefaultSize, 0);
@@ -8690,8 +8676,6 @@ bool PtermPrefDialog::SaveProfile (wxString profile)
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_AUTOLF) wxT ("=%ld"), m_autoLF);
     file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SPLITWORDS) wxT ("=%d"), (m_splitWords) ? 1 : 0);
-    file.AddLine (buffer);
     buffer.Printf (wxT (PREF_SMARTPASTE) wxT ("=%d"), (m_smartPaste) ? 1 : 0);
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_CONVDOT7) wxT ("=%d"), (m_convDot7) ? 1 : 0);
@@ -8780,7 +8764,6 @@ void PtermPrefDialog::SetControlState (void)
     m_charDelay = ptermApp->m_charDelay;
     m_lineDelay = ptermApp->m_lineDelay;
     m_autoLF = ptermApp->m_autoLF;
-    m_splitWords = ptermApp->m_splitWords;
     m_smartPaste = ptermApp->m_smartPaste;
     m_convDot7 = ptermApp->m_convDot7;
     m_conv8Sp = ptermApp->m_conv8Sp;
@@ -8859,7 +8842,6 @@ void PtermPrefDialog::SetControlState (void)
     txtLineDelay->SetValue (ws);
     ws.Printf ("%ld", m_autoLF);
     cboAutoLF->SetValue (ws);
-    chkSplitWords->SetValue (m_splitWords);
     chkSmartPaste->SetValue (m_smartPaste);
     chkConvertDot7->SetValue (m_convDot7);
     chkConvert8Spaces->SetValue (m_conv8Sp);
@@ -9045,7 +9027,6 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_charDelay = PASTE_CHARDELAY;
         m_lineDelay = PASTE_LINEDELAY;
         m_autoLF = 0;
-        m_splitWords = false;
         m_smartPaste = false;
         m_convDot7 = false;
         m_conv8Sp = false;
@@ -9094,7 +9075,6 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         txtLineDelay->SetValue (str);
         str.Printf ("%ld", m_autoLF);
         cboAutoLF->SetValue (str);
-        chkSplitWords->SetValue (m_splitWords);
         chkSmartPaste->SetValue (m_smartPaste);
         chkConvertDot7->SetValue (m_convDot7);
         chkConvert8Spaces->SetValue (m_conv8Sp);
@@ -9156,8 +9136,6 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == chkDisableColor)
         m_noColor = event.IsChecked ();
     //tab5
-    else if (event.GetEventObject () == chkSplitWords)
-        m_splitWords = event.IsChecked ();
     else if (event.GetEventObject () == chkSmartPaste)
         m_smartPaste = event.IsChecked ();
     else if (event.GetEventObject () == chkConvertDot7)

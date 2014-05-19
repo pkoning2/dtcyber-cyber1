@@ -142,7 +142,6 @@
 #define PREF_CHARDELAY   "charDelay"
 #define PREF_LINEDELAY   "lineDelay"
 #define PREF_AUTOLF      "autoLF"
-#define PREF_SPLITWORDS  "splitWords"
 #define PREF_SMARTPASTE  "smartPaste"
 #define PREF_CONVDOT7    "convDot7"
 #define PREF_CONV8SP     "conv8Sp"
