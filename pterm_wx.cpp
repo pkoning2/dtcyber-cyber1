@@ -177,8 +177,6 @@ wxPrintData *g_printData;
 // Global page setup data
 wxPageSetupDialogData* g_pageSetupData;
 
-wxSound *g_beep;
-
 // ----------------------------------------------------------------------------
 // local variables
 // ----------------------------------------------------------------------------
@@ -1753,8 +1751,6 @@ bool PtermApp::OnInit (void)
 #endif
 #if defined (__WXMSW__)
     const int pid = GetCurrentProcessId ();
-    g_beep = new wxSound (wxT ("touch-beep.wav"), TRUE);
-    if (!g_beep->IsOk ()) printf ("beep load failed\n");
 #else
     const int pid = getpid ();
 #endif
@@ -5400,10 +5396,11 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                             if (ptermApp->m_beepEnable)
                             {
                                 trace ("beep");
-                                if (g_beep != NULL && !g_beep->Play ())
-                                    printf ("beep play failed\n");
+                                wxBell ();
                                 if (!IsActive ())
+                                {
                                     RequestUserAttention (wxUSER_ATTENTION_INFO);
+                                }
                             }
                             break;
                         case 0x7d:
@@ -5914,7 +5911,9 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                         trace ("beep");
                         wxBell ();
                         if (!IsActive ())
+                        {
                             RequestUserAttention (wxUSER_ATTENTION_INFO);
+                        }
                     }
                     break;
                 case 0x7d:
