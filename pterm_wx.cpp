@@ -1940,7 +1940,7 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
     wxArrayString files = s;
     wxString filename;
     bool ret;
-    int i;
+    size_t i;
     FILE *testdata;
     connMode testmode;
     char tline[200], *p;
@@ -2036,7 +2036,8 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
                     if (testmode == both)
                     {
                         // See if we can figure out the connection mode
-                        if (strcasestr (tline, "ascii") != NULL)
+                        if (strstr (tline, "ascii") != NULL ||
+							strstr (tline, "ASCII") != NULL)
                         {
                             testmode = ascii;
                         }

@@ -31,6 +31,14 @@
 #include <time.h>
 #include <sys/types.h>
 
+// Some versions of Windows don't define these, so make up some numbers
+#ifndef ENOBUFS
+#define ENOBUFS 55
+#endif
+#ifndef ENOTCONN
+#define ENOTCONN 57
+#endif
+
 #if defined(_WIN32)
 	#include <winsock.h>
 	#include <process.h>

@@ -31,7 +31,7 @@ SolidCompression=yes
 WizardImageFile=authormode.bmp
 RestartIfNeededByRun=False
 ShowLanguageDialog=no
-MinVersion=0,5.01sp3
+MinVersion=0,5.0
 VersionInfoVersion={#MyAppVersion}
 ChangesAssociations=True
 
@@ -45,11 +45,11 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "Release\Pterm.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: "C:\SDL2-2.0.3\lib\x86\SDL2.dll"; DestDir: "{app}"
-Source: "C:\wxWidgets-3.0.0\lib\vc100_dll\wxbase30u_vc100.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "C:\wxWidgets-3.0.0\lib\vc100_dll\wxmsw30u_core_vc100.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "C:\wxWidgets-3.0.0\lib\vc100_dll\wxmsw30u_adv_vc100.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "C:\Program Files\Microsoft Visual Studio 10.0\VC\redist\x86\Microsoft.VT100.CRT\msvcr100.dll"; DestDir: "{app}"
-Source: "C:\Program Files\Microsoft Visual Studio 10.0\VC\redist\x86\Microsoft.VT100.CRT\msvcp100.dll"; DestDir: "{app}"
+Source: "C:\wxWidgets-3.0.0\lib\vc90_dll\wxbase30u_vc90.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "C:\wxWidgets-3.0.0\lib\vc90_dll\wxmsw30u_core_vc90.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "C:\wxWidgets-3.0.0\lib\vc90_dll\wxmsw30u_adv_vc90.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "C:\Program Files\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT\msvcr90.dll"; DestDir: "{app}"
+Source: "C:\Program Files\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT\msvcp90.dll"; DestDir: "{app}"
 Source: "C:\Program Files\Mega-Nerd\libsndfile\bin\libsndfile-1.dll"; DestDir: "{app}"
 Source: "CHANGES-pterm.txt"; DestDir: "{app}"; Flags: isreadme
 
