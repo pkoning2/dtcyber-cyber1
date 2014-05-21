@@ -65,6 +65,7 @@
 **  Private Constants
 **  -----------------
 */
+#define dtNC -1   /* connFd value for "socket was closed" */
 
 /*
 **  -----------------------
@@ -423,7 +424,6 @@ void dtInitPortset (NetPortSet *ps)
 void dtClose (NetFet *fet, bool hard)
     {
     NetPortSet *ps;
-    int connFd;
     
     /*
     **  Return success if already closed.
@@ -450,8 +450,7 @@ void dtClose (NetFet *fet, bool hard)
     **  FET from the portset.
     */
     ps = fet->ps;
-    connFd = fet->connFd;
-    fet->connFd = dtNC;        /* Indicate connection is closed */
+    fet->connected = FALSE;
     if (ps->callBack != NULL)
         {
         (*ps->callBack) (fet, fet->psIndex, ps->callArg);
@@ -470,6 +469,7 @@ void dtClose (NetFet *fet, bool hard)
     if (fet->closing != 1)
         {
         dtCloseSocket (fet->connFd, hard);
+        fet->connFd = dtNC;        /* Indicate connection is closed */
         }
 
     /*
@@ -1005,7 +1005,8 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
 #endif
     fet->connFd = connFd;
     fet->listen = listen;
-
+    fet->connected = TRUE;
+    
     /*
     **  Initialize the ring pointers.  The receive and transmit rings
     **  go after the base NetFet in the same memory block.
@@ -1285,7 +1286,7 @@ static dtThreadFun (dtDataThread, param)
             break;
             }
         
-        if (np->connFd == dtNC)
+        if (!(np->connected))
             {
             /*
             **  If connection was closed by other end earlier, sleep
@@ -1307,9 +1308,9 @@ static dtThreadFun (dtDataThread, param)
             if (bytes == -1)
                 {
                 /*
-                **  Indicate connection closed.
+                **  Indicate connection closed by other end.
                 */
-                np->connFd = dtNC;
+                np->connected = FALSE;
                 }
             else if (bytes == 0)
                 {
@@ -1400,6 +1401,7 @@ static dtThreadFun (dtSendThread, param)
             if (np->closing == 1)
                 {
                 dtCloseSocket (np->connFd, FALSE);
+                np->connFd = dtNC;         /* Indicate socket is closed */
                 np->closing = 2;
                 break;
                 }
@@ -1501,14 +1503,12 @@ static int dtBindSocket (in_addr_t host, int port, int backlog)
     if (bind (connFd, (struct sockaddr *) &server, sizeof (server)) < 0)
         {
         dtCloseSocket (connFd, TRUE);
-        connFd = dtNC;
         dtErrno = errno;
         return -1;
         }
     if (listen (connFd, backlog) < 0)
         {
         dtCloseSocket (connFd, TRUE);
-        connFd = dtNC;
         dtErrno = errno;
         return -1;
         }

@@ -258,6 +258,7 @@ typedef struct NetFet_s
     u64         ownerInfo;              /* Data supplied by socket owner */
     volatile int closing;               /* Closing down if non-zero */
     bool        listen;                 /* Is this a bind/listen socket? */
+    bool        connected;              /* Is this socket connected? */
     } NetFet;
 
 
