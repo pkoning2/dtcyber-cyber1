@@ -2,6 +2,12 @@
 
 '''Script to generate wxversion.h
 
+PTERMSVN := $(shell svn info pterm_wx.cpp | awk '/Revision/{print $$2}')
+PTERMSTAT := $(shell svn status pterm_wx.cpp)
+ifeq ("$(PTERMSTAT)","")
+PTERMSVNREV := $(PTERMSVN)
+else
+PTERMSVNREV := "$(PTERMSVN)+"
 	@echo "#define WXVERSION \"$(WXVERSION)\"" > wxversion.h.tmp
 	@date +"#define PTERMBUILDDATE \"%e %B %Y\"" >> wxversion.h.tmp
 ifneq ("$(PTERMSVNREV)", "")
@@ -38,6 +44,8 @@ if svnversion:
     m = re.search (r"Revision: (\d+)", svnversion)
     if m:
         svnversion = m.group (1)
+        if shellstr ("svn", "status", "pterm_wx.cpp"):
+            svnversion += "+"
     else:
         svnversion = ""
 now = time.strftime ("%e %B %Y")
@@ -50,8 +58,9 @@ if svnversion:
     new += """#define PTERMSVNREV "%s"
 """ % svnversion
 
-with open (FN + ".tmp", "wt") as f:
-    f.write (new)
-
-
-
+if new == old:
+    print FN, "is up to date"
+else:
+    with open (FN, "wt") as f:
+        f.write (new)
+    print FN, "updated"

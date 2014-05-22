@@ -10,7 +10,6 @@
 #--------------------------------------------------------------------------
 
 PTERMVERSION ?= $(shell ./getkitver.py  ptermversion.h)
-YEAR = $(shell date +"%Y")
 
 DEFWXDIR = /usr/local
 
@@ -54,17 +53,6 @@ PATH:=$(WXDIR)/bin:$(PATH)
 WXCONFIG ?= wx-config
 CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing  -I $(SNDINCL)
 WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
-WXVERSION = `$(WXCONFIG) --version` 
-
-ifneq ("$(wildcard .svn)","")
-PTERMSVN := $(shell svn info pterm_wx.cpp | awk '/Revision/{print $$2}')
-PTERMSTAT := $(shell svn status pterm_wx.cpp)
-ifeq ("$(PTERMSTAT)","")
-PTERMSVNREV := $(PTERMSVN)
-else
-PTERMSVNREV := "$(PTERMSVN)+"
-endif
-endif
 
 GCCVERSION := $(shell gcc --version 2>/dev/null| head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
@@ -109,15 +97,8 @@ else
 	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
 endif
 
-wxversion.h: wxversion
-	@echo "#define WXVERSION \"$(WXVERSION)\"" > wxversion.h.tmp
-	@date +"#define PTERMBUILDDATE \"%e %B %Y\"" >> wxversion.h.tmp
-ifneq ("$(PTERMSVNREV)", "")
-	@echo "#define PTERMSVNREV \"$(PTERMSVNREV)\"" >> wxversion.h.tmp
-endif
-	@if [ ! -r wxversion.h ]; then mv -f wxversion.h.tmp wxversion.h; else \
-	  if cmp -s wxversion.h.tmp wxversion.h; then rm -f wxversion.h.tmp; \
-	    else mv -f wxversion.h.tmp wxversion.h; fi; fi
+wxversion.h: wxversion wxversion.py
+	python wxversion.py
 
 dd60:	$(SOBJS) dd60.o knob.o iir.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
