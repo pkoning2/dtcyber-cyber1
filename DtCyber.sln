@@ -12,6 +12,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dtoper", "dtoper.vcproj", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pterm", "pterm.vcproj", "{A89D2B6E-D703-4741-A2D7-13C5606E55C1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "blackbox", "blackbox.vcproj", "{1C545840-08E5-47E5-87A9-297E0F634183}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -34,6 +36,10 @@ Global
 		{A89D2B6E-D703-4741-A2D7-13C5606E55C1}.Debug|Win32.Build.0 = Debug|Win32
 		{A89D2B6E-D703-4741-A2D7-13C5606E55C1}.Release|Win32.ActiveCfg = Release|Win32
 		{A89D2B6E-D703-4741-A2D7-13C5606E55C1}.Release|Win32.Build.0 = Release|Win32
+		{1C545840-08E5-47E5-87A9-297E0F634183}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1C545840-08E5-47E5-87A9-297E0F634183}.Debug|Win32.Build.0 = Debug|Win32
+		{1C545840-08E5-47E5-87A9-297E0F634183}.Release|Win32.ActiveCfg = Release|Win32
+		{1C545840-08E5-47E5-87A9-297E0F634183}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
