@@ -1,24 +1,10 @@
 #!/usr/bin/env python
 
 '''Script to generate wxversion.h
-
-PTERMSVN := $(shell svn info pterm_wx.cpp | awk '/Revision/{print $$2}')
-PTERMSTAT := $(shell svn status pterm_wx.cpp)
-ifeq ("$(PTERMSTAT)","")
-PTERMSVNREV := $(PTERMSVN)
-else
-PTERMSVNREV := "$(PTERMSVN)+"
-	@echo "#define WXVERSION \"$(WXVERSION)\"" > wxversion.h.tmp
-	@date +"#define PTERMBUILDDATE \"%e %B %Y\"" >> wxversion.h.tmp
-ifneq ("$(PTERMSVNREV)", "")
-	@echo "#define PTERMSVNREV \"$(PTERMSVNREV)\"" >> wxversion.h.tmp
-endif
-	@if [ ! -r wxversion.h ]; then mv -f wxversion.h.tmp wxversion.h; else \
-	  if cmp -s wxversion.h.tmp wxversion.h; then rm -f wxversion.h.tmp; \
-	    else mv -f wxversion.h.tmp wxversion.h; fi; fi
 '''
 
 import os
+import sys
 import re
 import time
 import subprocess
@@ -38,7 +24,20 @@ try:
 except OSError:
     old = ""
 
-wxversion = shellstr ("wx-config", "--version")
+if sys.platform[:3] == "win":
+    wxversion = None
+    wx_re = re.compile (r"wxwidgets-([\.0-9]+)", re.I)
+    for fn in os.listdir ("c:\\"):
+        m = wx_re.match (fn)
+        if m:
+            wxversion = m.group (1)
+            break
+    if not wxversion:
+        print "Can't find wx version number"
+        sys.exit (1)
+else:
+    wxversion = shellstr ("wx-config", "--version")
+
 svnversion = shellstr ("svn", "info", "pterm_wx.cpp")
 if svnversion:
     m = re.search (r"Revision: (\d+)", svnversion)
@@ -48,7 +47,7 @@ if svnversion:
             svnversion += "+"
     else:
         svnversion = ""
-now = time.strftime ("%e %B %Y")
+now = time.strftime ("%d %B %Y").lstrip ("0")
 
 new = """#define WXVERSION "%s"
 #define PTERMBUILDDATE "%s"
