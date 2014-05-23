@@ -125,15 +125,16 @@ extern "C"
 #if defined(_WIN32)
 #include <winsock.h>
 #include <process.h>
+#define round(x) floor ((x) + 0.5)
 #else
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 #endif
 #include <stdlib.h>
-#include <sys/time.h>
 #include "const.h"
 #include "types.h"
 #include "proto.h"
@@ -375,10 +376,10 @@ private:
     wxBrush     m_foregroundBrush;
     wxBitmap    *m_screenmap;
     PixelData   *m_pixmap;
-    uint32_t    m_maxalpha;
-    uint32_t    m_red;
-    uint32_t    m_green;
-    uint32_t    m_blue;
+    u32    m_maxalpha;
+    u32    m_red;
+    u32    m_green;
+    u32    m_blue;
     
     Dd60Canvas  *m_canvas;
     NetPortSet  m_portset;
@@ -878,9 +879,9 @@ void Dd60App::OnAbout(wxCommandEvent&)
     wxString msg;
 
     msg.Printf (_T("DtCyber console (DD60) emulator %s.\n%s"),
-                wxT ("V" DD60VERSION
-                     "\n  built with wxWidgets V" WXVERSION
-                     "\n  build date " PTERMBUILDDATE),
+                wxT ("V" wxT (DD60VERSION)
+                     L"\n  built with wxWidgets V" wxT (WXVERSION)
+                     L"\n  build date " wxT(PTERMBUILDDATE)),
                 _("Copyright \xA9 2004-2014 by Paul Koning."));
     
     wxMessageBox(msg, _("About Dd60"), wxOK | wxICON_INFORMATION, NULL);
@@ -1136,9 +1137,9 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
         exit (1);
     }
     PixelData::Iterator p (*m_pixmap);
-    uint32_t *pmap = (uint32_t *)(p.m_ptr);
-    uint8_t *pb = (uint8_t *) pmap;
-    uint32_t t;
+    u32 *pmap = (u32 *)(p.m_ptr);
+    u8 *pb = (u8 *) pmap;
+    u32 t;
     
     t = *pmap;
     *pmap = 0;
@@ -1322,7 +1323,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     
 #if (DECAY == 128)
             const int wds = (pixels * bytesperpixel) / 4;
-            uint32_t *pmap = (uint32_t *)(p.m_ptr);
+            u32 *pmap = (u32 *)(p.m_ptr);
     
             *pmap = 0;
             if (!m_fastupdate)
@@ -1515,11 +1516,11 @@ void Dd60Frame::OnSaveScreen (wxCommandEvent &)
     wxBitmapType type;
     wxFileDialog fd (this, _("Save screen to"), dd60App->m_defDir,
                      wxT(""), wxT("PNG files (*.png)|*.png|"
-                                  "BMP files (*.bmp)|*.bmp|"
-                                  "PNM files (*.pnm)|*.pnm|"
-                                  "TIF files (*.tif)|*.tif|"
-                                  "XPM files (*.xpm)|*.xpm|"
-                                  "All files (*.*)|*.*"),
+                                  L"BMP files (*.bmp)|*.bmp|"
+                                  L"PNM files (*.pnm)|*.pnm|"
+                                  L"TIF files (*.tif)|*.tif|"
+                                  L"XPM files (*.xpm)|*.xpm|"
+                                  L"All files (*.*)|*.*"),
                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     
     if (fd.ShowModal () != wxID_OK)

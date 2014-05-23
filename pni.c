@@ -25,6 +25,7 @@
 #include <time.h>
 #if defined(_WIN32)
 #include <winsock.h>
+#define inline  __inline
 #else
 #include <unistd.h>
 #include <fcntl.h>
@@ -493,8 +494,10 @@ CpWord pniOp (CPUVARGS1 (CpWord req))
                         pniSendstr (IDX2STAT (i), OFF_MSG, 0);
                     }
                 }
+#if !defined(_WIN32)    /* only non-Windows for now */
                 // Send plato crash notification
                 niuDoAlert (OPERBOX_CRASH);
+#endif
             }
             pniActive = FALSE;
             if (netbuf != NULL)

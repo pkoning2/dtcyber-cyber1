@@ -64,7 +64,6 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
 				Culture="1033"
-				AdditionalIncludeDirectories="d:\projects\pterm\wxWidgets-2.8.4\include\"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"

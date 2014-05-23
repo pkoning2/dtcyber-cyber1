@@ -45,7 +45,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="&quot;c:\wxWidgets-3.0.0\include&quot;;&quot;c:\wxWidgets-3.0.0\include\msvc&quot;"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WXUSINGDLL;_UNICODE;wxMSVC_VERSION_AUTO"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -69,10 +70,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib"
 				OutputFile=".\Release/dtoper.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="&quot;C:\wxWidgets-3.0.0\lib\vc90_dll&quot;"
 				ProgramDatabaseFile=".\Release/dtoper.pdb"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
@@ -133,7 +135,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="&quot;c:\wxWidgets-3.0.0\include&quot;;&quot;c:\wxWidgets-3.0.0\include\msvc&quot;"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;WXUSINGDLL;_UNICODE"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/dtoper.pch"
@@ -157,10 +160,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib"
 				OutputFile=".\Debug/dtoper.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="&quot;C:\wxWidgets-3.0.0\lib\vc90_dll&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/dtoper.pdb"
 				SubSystem="1"
@@ -217,44 +221,8 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="dtoper.c"
+			RelativePath=".\dtoper.cpp"
 			>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="dtoper_win32.c"
-			>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>

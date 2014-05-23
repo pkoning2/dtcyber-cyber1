@@ -26,6 +26,9 @@
 #include <math.h>
 
 #define PI 3.14159265358969323846
+#if defined(_WIN32)
+#define round(x) floor ((x) + 0.5)
+#endif
 #define irnd(x) (int (round (x)))
 
 // ----------------------------------------------------------------------------

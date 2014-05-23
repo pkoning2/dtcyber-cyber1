@@ -166,6 +166,7 @@ extern void gtk_settings_set_string_property (GtkSettings *, const char *,
 extern GtkSettings * gtk_settings_get_default (void);
 #endif
 }
+#undef small   /* Since some Windows cruft defines this */
     
 // ----------------------------------------------------------------------------
 // resources
@@ -688,8 +689,8 @@ void DtoperApp::OnAbout(wxCommandEvent&)
 
     msg.Printf (_T("DtCyber console (DTOPER) emulator %s.\n%s"),
                 wxT ("V2.0.0"
-                     "\n  built with wxWidgets V" WXVERSION
-                     "\n  build date " PTERMBUILDDATE ),
+                     L"\n  built with wxWidgets V" wxT (WXVERSION)
+                     L"\n  build date " wxT (PTERMBUILDDATE) ),
                 _("Copyright \xA9 2004-2014 by Paul Koning."));
     
     wxMessageBox(msg, _("About Dtoper"), wxOK | wxICON_INFORMATION, NULL);
