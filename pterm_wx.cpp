@@ -10285,6 +10285,40 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
     }
     key = event.GetKeyCode ();
 
+#if defined (__WXMAC__)
+    if (event.ControlDown ())
+    {
+        // Command is in effect, that's a Mac keyboard shortcut,
+        // let Mac sort it out.
+        if (key == 'M')
+        {
+            // One exception: Cmd-M (minimize window) isn't handled in the
+            // external machinery so I guess it has to be done here.
+            if (event.AltDown ())
+            {
+                // Cmd-Option-M: minimize all
+                for (PtermFrame *frame = ptermApp->m_firstFrame; 
+                     frame != NULL;
+                     frame = frame->m_nextFrame)
+                {
+                    frame->Iconize ();
+                }
+                if (ptermApp->m_helpFrame != NULL)
+                {
+                    ptermApp->m_helpFrame->Iconize ();
+                }
+            }
+            else
+            {
+                m_owner->Iconize ();
+            }
+            return;
+        }
+        event.Skip ();
+        return;
+    }
+#endif
+
     if (!m_owner->HasConnection () ||
         key == WXK_ALT ||
         key == WXK_SHIFT ||
@@ -10304,15 +10338,6 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
         event.Skip ();
         return;
     }
-#if defined (__WXMAC__)
-    if (event.ControlDown ())
-    {
-        // Command is in effect, that's a Mac keyboard shortcut,
-        // let Mac sort it out.
-        event.Skip ();
-        return;
-    }
-#endif
 
     if (key < 0200 && isalpha (key))
     {
