@@ -44,7 +44,6 @@ LDFLAGS += $(PFLAGS) $(ARCHLDFLAGS)
 CONLYFLAGS =  -std=gnu99 -Wall -Werror -Wno-format
 
 SOBJS	= charset.o dtnetsubs.o
-SXOBJS  = dt_x11.o
 
 %.o : %.c
 	$(CC) $(CFLAGS) $(CONLYFLAGS) -c $<
