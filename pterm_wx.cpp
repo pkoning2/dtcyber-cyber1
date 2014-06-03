@@ -10288,6 +10288,7 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
     if (!m_owner->HasConnection () ||
         key == WXK_ALT ||
         key == WXK_SHIFT ||
+        key == WXK_CONTROL ||
         key == WXK_RAW_CONTROL)
     {
         // We don't take any action on the modifier key keydown events,
@@ -10303,6 +10304,16 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
         event.Skip ();
         return;
     }
+#if defined (__WXMAC__)
+    if (event.ControlDown ())
+    {
+        // Command is in effect, that's a Mac keyboard shortcut,
+        // let Mac sort it out.
+        event.Skip ();
+        return;
+    }
+#endif
+
     if (key < 0200 && isalpha (key))
     {
         key = tolower (key);
@@ -10703,7 +10714,7 @@ void PtermCanvas::OnChar (wxKeyEvent& event)
 #endif
 
     // control and alt codes shouldn't come here, they are handled in OnCharHook
-    if (!m_owner->HasConnection () ||
+    if (!m_owner->HasConnection () || event.ControlDown () ||
         event.RawControlDown () || event.AltDown ())
     {
         event.Skip ();
