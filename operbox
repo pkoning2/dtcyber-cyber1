@@ -65,7 +65,7 @@ def sendmail (args, to):
     msg.add_header ("From", "\"Cyber1\" <postmaster@cyberserv.org>")
     msg.add_header ("To", to)
     msg.add_header ("Reply-To", to)
-    msg.add_header ("Subject", "PLATO %s" % args[0])
+    msg.add_header ("Subject", "PLATO %s on %s" % (args[0], machine))
     try:
         f = open (args[1], "r")
         msg.set_payload (f.read ())
