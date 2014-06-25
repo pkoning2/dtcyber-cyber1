@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="pterm"
-	ProjectGUID="{A89D2B6E-D703-4741-A2D7-13C5606E55C1}"
-	TargetFrameworkVersion="0"
+	ProjectGUID="{3EF1AD10-B661-41AB-907B-21A174AE0D3D}"
 	>
 	<Platforms>
 		<Platform
@@ -44,10 +43,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;&quot;C:\SDL2-2.0.3\include&quot;;&quot;c:\wxWidgets-3.0.0\include&quot;;&quot;c:\wxWidgets-3.0.0\include\msvc&quot;"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;WXUSINGDLL;_UNICODE"
+				AdditionalIncludeDirectories="d:\projects\pterm\wxWidgets-2.8.4\lib\vc_lib\mswd,d:\projects\pterm\wxWidgets-2.8.4\lib\vc_lib\msw,d:\projects\pterm\wxWidgets-2.8.4\include,d:\projects\pterm\SDL-1.2.11\include"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WINVER=0x400;wxUSE_GUI=1"
 				MinimalRebuild="true"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/pterm.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
@@ -64,23 +63,22 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
 				Culture="1033"
+				AdditionalIncludeDirectories="d:\projects\pterm\wxWidgets-2.8.4\include\"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib SDL2.lib libsndfile-1.lib"
+				AdditionalDependencies="wxregexd.lib wxjpegd.lib wxtiffd.lib wxpngd.lib wxzlibd.lib wxmsw26_core.lib wxbase26.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib SDL.lib"
 				OutputFile=".\Debug/pterm.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:\SDL2-2.0.3\lib\x86&quot;;&quot;C:\Program Files\Mega-Nerd\libsndfile\lib&quot;;&quot;C:\wxWidgets-3.0.0\lib\vc90_dll&quot;"
+				AdditionalLibraryDirectories="d:\projects\pterm\wxWidgets-2.8.4\lib\vc_lib,d:\projects\pterm\SDL-1.2.11\lib"
 				IgnoreDefaultLibraryNames="libcd"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/pterm.pdb"
 				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -102,6 +100,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -137,10 +138,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;c:\Program Files\Mega-Nerd\libsndfile\include&quot;;&quot;C:\SDL2-2.0.3\include&quot;;&quot;c:\wxWidgets-3.0.0\include&quot;;&quot;c:\wxWidgets-3.0.0\include\msvc&quot;"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WXUSINGDLL;_UNICODE;wxMSVC_VERSION_AUTO"
+				AdditionalIncludeDirectories="C:\wxWidgets\include\msvc;c:\wxWidgets\include;&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;&quot;C:\SDL2-2.0.3\include&quot;"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WINVER=0x400;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;_CRT_SECURE_NO_DEPRECATE;_UNICODE;WXUSINGDLL"
 				StringPooling="true"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile=".\Release/pterm.pch"
 				AssemblerListingLocation=".\Release/"
@@ -168,14 +169,12 @@
 				OutputFile=".\Release/pterm.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:\Program Files\Mega-Nerd\libsndfile\lib&quot;;&quot;C:\wxWidgets-3.0.0\lib\vc90_dll&quot;;&quot;C:\SDL2-2.0.3\lib\x86&quot;"
-				IgnoreDefaultLibraryNames="libc.lib"
+				AdditionalLibraryDirectories="C:\wxWidgets\lib\vc80_dll;&quot;C:\SDL2-2.0.3\lib\x86&quot;;&quot;C:\Program Files\Mega-Nerd\libsndfile\lib&quot;"
+				IgnoreDefaultLibraryNames=""
 				ProgramDatabaseFile=".\Release/pterm.pdb"
 				GenerateMapFile="true"
 				MapFileName=".\Release/pterm.map"
 				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -197,6 +196,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -229,18 +231,6 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="wx\msw\blank.cur"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\bullseye.cur"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\cdrom.ico"
-			>
-		</File>
-		<File
 			RelativePath="charset.c"
 			>
 			<FileConfiguration
@@ -263,30 +253,6 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="wx\msw\colours.bmp"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\computer.ico"
-			>
-		</File>
-		<File
-			RelativePath="console.ico"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\csquery.bmp"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\disable.bmp"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\drive.ico"
-			>
-		</File>
-		<File
 			RelativePath="dtnetsubs.c"
 			>
 			<FileConfiguration
@@ -307,50 +273,6 @@
 					PreprocessorDefinitions=""
 				/>
 			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="wx\msw\file1.ico"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\floppy.ico"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\folder1.ico"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\folder2.ico"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\hand.cur"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\magnif1.cur"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\noentry.cur"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\pbrush.cur"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\pencil.cur"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\pntleft.cur"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\pntright.cur"
-			>
 		</File>
 		<File
 			RelativePath="pterm.rc"
@@ -424,38 +346,6 @@
 		</File>
 		<File
 			RelativePath="ptermversion.h"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\query.cur"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\removble.ico"
-			>
-		</File>
-		<File
-			RelativePath="resource.h"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\rightarr.cur"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\roller.cur"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\size.cur"
-			>
-		</File>
-		<File
-			RelativePath="small.ico"
-			>
-		</File>
-		<File
-			RelativePath="wx\msw\watch1.cur"
 			>
 		</File>
 	</Files>

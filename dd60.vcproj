@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="dd60"
-	ProjectGUID="{FE77520E-4E98-47F1-8E7F-A1AD50CE88A7}"
-	TargetFrameworkVersion="0"
+	ProjectGUID="{DD1BF93F-CC48-4393-A362-A2777EFC19CD}"
 	>
 	<Platforms>
 		<Platform
@@ -44,8 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;c:\wxWidgets-3.0.0\include&quot;;&quot;c:\wxWidgets-3.0.0\include\msvc&quot;"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;WXUSINGDLL;_UNICODE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/dd60.pch"
@@ -69,15 +67,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib ws2_32.lib"
 				OutputFile=".\Debug/dd60.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:\wxWidgets-3.0.0\lib\vc90_dll&quot;"
 				ProgramDatabaseFile=".\Debug/dd60.pdb"
 				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -99,6 +94,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -135,8 +133,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;c:\wxWidgets-3.0.0\include&quot;;&quot;c:\wxWidgets-3.0.0\include\msvc&quot;"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WXUSINGDLL;_UNICODE;wxMSVC_VERSION_AUTO"
+				AdditionalIncludeDirectories="C:\wxWidgets\include\msvc;c:\wxWidgets\include;&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;&quot;C:\SDL2-2.0.3\include&quot;"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WINVER=0x400;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;_CRT_SECURE_NO_DEPRECATE;_UNICODE;WXUSINGDLL"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -164,11 +162,9 @@
 				OutputFile=".\Release/dd60.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:\wxWidgets-3.0.0\lib\vc90_dll&quot;"
+				AdditionalLibraryDirectories="C:\wxWidgets\lib\vc80_dll"
 				ProgramDatabaseFile=".\Release/dd60.pdb"
 				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -190,6 +186,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -220,10 +219,6 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="console.ico"
-			>
-		</File>
-		<File
 			RelativePath=".\dd60.cpp"
 			>
 		</File>
@@ -248,40 +243,12 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="fonts.bmp"
-			>
-		</File>
-		<File
 			RelativePath=".\iir.cpp"
 			>
 		</File>
 		<File
 			RelativePath=".\knob.cpp"
 			>
-		</File>
-		<File
-			RelativePath="small.ico"
-			>
-		</File>
-		<File
-			RelativePath="window.rc"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>
