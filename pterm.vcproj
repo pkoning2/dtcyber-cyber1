@@ -43,8 +43,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="d:\projects\pterm\wxWidgets-2.8.4\lib\vc_lib\mswd,d:\projects\pterm\wxWidgets-2.8.4\lib\vc_lib\msw,d:\projects\pterm\wxWidgets-2.8.4\include,d:\projects\pterm\SDL-1.2.11\include"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WINVER=0x400;wxUSE_GUI=1"
+				AdditionalIncludeDirectories="C:\wxWidgets\include\msvc;c:\wxWidgets\include;&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;&quot;C:\SDL2-2.0.3\include&quot;"
+				PreprocessorDefinitions="DEBUG;WIN32;_WINDOWS;WINVER=0x400;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;_CRT_SECURE_NO_DEPRECATE;_UNICODE;WXUSINGDLL"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/pterm.pch"
@@ -70,12 +70,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wxregexd.lib wxjpegd.lib wxtiffd.lib wxpngd.lib wxzlibd.lib wxmsw26_core.lib wxbase26.lib odbc32.lib odbccp32.lib ws2_32.lib comctl32.lib SDL.lib"
+				AdditionalDependencies="ws2_32.lib SDL2.lib libsndfile-1.lib"
 				OutputFile=".\Debug/pterm.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="d:\projects\pterm\wxWidgets-2.8.4\lib\vc_lib,d:\projects\pterm\SDL-1.2.11\lib"
-				IgnoreDefaultLibraryNames="libcd"
+				AdditionalLibraryDirectories="C:\wxWidgets\lib\vc_dll;&quot;C:\SDL2-2.0.3\lib\x86&quot;;&quot;C:\Program Files\Mega-Nerd\libsndfile\lib&quot;"
+				IgnoreAllDefaultLibraries="false"
+				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/pterm.pdb"
 				SubSystem="2"

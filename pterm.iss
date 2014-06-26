@@ -45,13 +45,13 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "Release\Pterm.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: "C:\SDL2-2.0.3\lib\x86\SDL2.dll"; DestDir: "{app}"
-Source: "C:\wxWidgets-3.0.0\lib\vc90_dll\wxbase30u_vc90.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "C:\wxWidgets-3.0.0\lib\vc90_dll\wxmsw30u_core_vc90.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "C:\wxWidgets-3.0.0\lib\vc90_dll\wxmsw30u_adv_vc90.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "C:\Program Files\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT\msvcr90.dll"; DestDir: "{app}"
-Source: "C:\Program Files\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT\msvcp90.dll"; DestDir: "{app}"
 Source: "C:\Program Files\Mega-Nerd\libsndfile\bin\libsndfile-1.dll"; DestDir: "{app}"
 Source: "CHANGES-pterm.txt"; DestDir: "{app}"; Flags: isreadme
+Source: "C:\wxWidgets\lib\vc80_dll\wxbase30u_vc_custom.dll"; DestDir: "{app}"
+Source: "C:\wxWidgets\lib\vc80_dll\wxmsw30u_adv_vc_custom.dll"; DestDir: "{app}"
+Source: "C:\wxWidgets\lib\vc80_dll\wxmsw30u_core_vc_custom.dll"; DestDir: "{app}"
+Source: "C:\Program Files\Microsoft Visual Studio 8\VC\redist\x86\Microsoft.VC80.CRT\msvcp80.dll"; DestDir: "{app}"
+Source: "C:\Program Files\Microsoft Visual Studio 8\VC\redist\x86\Microsoft.VC80.CRT\msvcr80.dll"; DestDir: "{app}"
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
