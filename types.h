@@ -14,6 +14,7 @@
 
 #include <sys/types.h>
 #if defined(_WIN32)
+#pragma warning (disable:4244)
 #include <winsock.h>
 typedef u_long in_addr_t;
 #ifndef EINPROGRESS
