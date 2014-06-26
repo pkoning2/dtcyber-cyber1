@@ -23,3 +23,7 @@ V5.0.3, April 2014:
 
 -paint- command now supports the case with a tag (fill with character
 pattern).
+
+V5.0.4, June 2014:
+
+Bugfixes.  This is the first general release of Pterm V5.0.

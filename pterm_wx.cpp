@@ -4572,7 +4572,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
         }
     }
     
-    // Wipe text map
+    // Wipe text map -- specifically, set it to all spaces.
     int scol = int (x1 / 8);
     int cols = int (ceil (double ((x2 - x1) / 8))) + 1;
     int srow = int (y1 / 16);
@@ -4581,7 +4581,7 @@ void PtermFrame::ptermBlockErase (int x1, int y1, int x2, int y2)
     {
         for (int col = scol; col < scol + cols; col++)
         {
-            textmap[row * 64 + col][0] = '\0';
+            textmap[row * 64 + col][0] = ' ';
             textmap[row * 64 + col][1] = '\0';
             textmap[row * 64 + col][2] = '\0';
             textmap[row * 64 + col][3] = '\0';
