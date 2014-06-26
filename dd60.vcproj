@@ -164,7 +164,7 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="C:\wxWidgets\lib\vc80_dll"
 				ProgramDatabaseFile=".\Release/dd60.pdb"
-				SubSystem="1"
+				SubSystem="2"
 				TargetMachine="1"
 			/>
 			<Tool

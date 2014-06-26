@@ -102,6 +102,10 @@
 #pragma hdrstop
 #endif
 
+#ifdef _WIN32
+#include <wx/setup.h>
+#endif
+
 // for all others, include the necessary headers (this file is usually all you
 // need because it includes almost all "standard" wxWindows headers)
 #ifndef WX_PRECOMP

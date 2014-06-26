@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="dtoper"
 	ProjectGUID="{5743047F-ABF5-495B-A4CD-F177271B3584}"
+	RootNamespace="dtoper"
 	>
 	<Platforms>
 		<Platform
@@ -75,7 +76,7 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="C:\wxWidgets\lib\vc80_dll"
 				ProgramDatabaseFile=".\Release/dtoper.pdb"
-				SubSystem="1"
+				SubSystem="2"
 				TargetMachine="1"
 			/>
 			<Tool
