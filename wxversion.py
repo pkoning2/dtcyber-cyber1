@@ -21,7 +21,7 @@ def shellstr (cmd, *args):
 try:
     with open (FN, "rt") as f:
         old = f.read ()
-except OSError:
+except (OSError, IOError):
     old = ""
 
 if sys.platform[:3] == "win":
