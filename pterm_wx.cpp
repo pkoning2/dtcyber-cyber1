@@ -128,19 +128,6 @@ extern "C"
 #endif
 
 #include "pterm.h"
-
-#if defined (__WXGTK__)
-
-// Attempting to include the gtk.h file yields infinite compile errors, so
-// instead we just declare the two functions we need, leaving any 
-// issues of data structures unstated.
-
-struct GtkSettings;
-    
-extern void gtk_settings_set_string_property (GtkSettings *, const char *,
-                                              const char *, const char *);
-extern GtkSettings * gtk_settings_get_default (void);
-#endif
 }
     
 // ----------------------------------------------------------------------------
@@ -2660,18 +2647,6 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
     // set the frame icon
     SetIcon (wxICON (pterm_32));
 
-
-#if  defined (__WXGTK20__)
-    // A rather ugly hack here.  GTK V2 insists that F10 should be the
-    // accelerator for the menu bar.  We don't want that.  There is
-    // no sane way to turn this off, but we *can* get the same effect
-    // by setting the "menu bar accelerator" property to the name of a
-    // function key that is apparently legal, but doesn't really exist.
-    // (Or if it does, it certainly isn't a key we use.)
-    gtk_settings_set_string_property (gtk_settings_get_default (),
-                                      "gtk-menu-bar-accel", "F15", "foo");
-
-#endif
 
     // create a menu bar
     BuildMenuBar ();
