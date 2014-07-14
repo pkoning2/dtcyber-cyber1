@@ -9,6 +9,26 @@ import re
 import time
 import subprocess
 
+try:
+    subprocess.check_output
+except AttributeError:
+    # That function was added in Python 2.7.  This is a copy of that code,
+    # use it if our Python is older than that.
+    def check_output(*popenargs, **kwargs):
+        if 'stdout' in kwargs:
+            raise ValueError('stdout argument not allowed, it will be overridden.')
+        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+        output, unused_err = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            raise subprocessCalledProcessError(retcode, cmd, output=output)
+        return output
+    subprocess.check_output = check_output
+
+
 FN = "wxversion.h"
 
 def shellstr (cmd, *args):
