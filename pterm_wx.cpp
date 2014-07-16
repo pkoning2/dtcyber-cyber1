@@ -751,6 +751,7 @@ public:
     //tab4
     bool        m_scale2;
     bool        m_stretch;
+    bool        m_aspect; // keep aspect when stretching
     bool        m_showStatusBar;
 #if !defined (__WXMAC__)
     bool        m_showMenuBar;
@@ -895,6 +896,7 @@ public:
     void OnToggleStatusBar (wxCommandEvent &event);
     void OnToggle2xMode (wxCommandEvent &event);
     void OnToggleStretchMode (wxCommandEvent &event);
+    void OnToggleAspectMode (wxCommandEvent &event);
     void OnCopyScreen (wxCommandEvent &event);
     void OnCopy (wxCommandEvent &event);
     void OnExec (wxCommandEvent &event);
@@ -1439,6 +1441,8 @@ enum
     Pterm_Toggle2xModeView,
     Pterm_ToggleStretchMode,
     Pterm_ToggleStretchModeView,
+    Pterm_ToggleAspectMode,
+    Pterm_ToggleAspectModeView,
     Pterm_CopyScreen,
     Pterm_ConnectAgain,
     Pterm_SaveScreen,
@@ -1661,6 +1665,8 @@ BEGIN_EVENT_TABLE (PtermFrame, wxFrame)
     EVT_MENU (Pterm_Toggle2xModeView, PtermFrame::OnToggle2xMode)
     EVT_MENU (Pterm_ToggleStretchMode, PtermFrame::OnToggleStretchMode)
     EVT_MENU (Pterm_ToggleStretchModeView, PtermFrame::OnToggleStretchMode)
+    EVT_MENU (Pterm_ToggleAspectMode, PtermFrame::OnToggleAspectMode)
+    EVT_MENU (Pterm_ToggleAspectModeView, PtermFrame::OnToggleAspectMode)
     EVT_MENU (Pterm_CopyScreen, PtermFrame::OnCopyScreen)
     EVT_MENU (Pterm_Copy, PtermFrame::OnCopy)
     EVT_MENU (Pterm_Exec, PtermFrame::OnExec)    
@@ -1801,6 +1807,7 @@ bool PtermApp::OnInit (void)
     //tab4
     m_scale2 = (m_config->Read (wxT (PREF_SCALE), 1) == 2);
     m_stretch = (m_config->Read (wxT (PREF_STRETCH), 0L) != 0);
+    m_aspect = (m_config->Read (wxT (PREF_ASPECT), 0L) != 0);
     m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
 #if !defined (__WXMAC__)
     m_showMenuBar = (m_config->Read (wxT (PREF_MENUBAR), 1) != 0);
@@ -2268,6 +2275,8 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
                 m_scale2        = (value.Cmp (wxT ("2")) == 0);
             else if (token.Cmp (wxT (PREF_STRETCH)) == 0)
                 m_stretch       = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_ASPECT)) == 0)
+                m_aspect       = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_STATUSBAR)) == 0)
                 m_showStatusBar = (value.Cmp (wxT ("1")) == 0);
 #if !defined (__WXMAC__)
@@ -2343,6 +2352,7 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
     //tab4
     m_config->Write (wxT (PREF_SCALE), (m_scale2) ? 2 : 1);
     m_config->Write (wxT (PREF_STRETCH), (m_stretch) ? 1 : 0);
+    m_config->Write (wxT (PREF_ASPECT), (m_aspect) ? 1 : 0);
     m_config->Write (wxT (PREF_STATUSBAR), (m_showStatusBar) ? 1 : 0);
 #if !defined (__WXMAC__)
     m_config->Write (wxT (PREF_MENUBAR), (m_showMenuBar) ? 1 : 0);
@@ -2958,6 +2968,9 @@ void PtermFrame::BuildViewMenu (int port)
     menuView->AppendCheckItem (Pterm_ToggleStretchModeView,
                                _("Stretch display"), _("Stretch display"));
     menuView->Check (Pterm_ToggleStretchModeView, ptermApp->m_stretch);
+    menuView->AppendCheckItem (Pterm_ToggleAspectModeView,
+                               _("Keep aspect ratio"), _("Keep aspect ratio"));
+    menuView->Check (Pterm_ToggleAspectModeView, ptermApp->m_aspect);
     menuView->AppendSeparator ();
     menuView->Append (Pterm_FullScreenView, _("Full Screen")
                       ACCELERATOR ("\tCtrl-U"),
@@ -3018,6 +3031,9 @@ void PtermFrame::BuildPopupMenu (int port)
     menuPopup->AppendCheckItem (Pterm_ToggleStretchMode, _("Stretch display"),
                                 _("Stretch display"));
     menuPopup->Check (Pterm_ToggleStretchMode, ptermApp->m_stretch);
+    menuPopup->AppendCheckItem (Pterm_ToggleAspectMode, _("Keep aspect ratio"),
+                                _("Keep aspect ratio"));
+    menuPopup->Check (Pterm_ToggleAspectMode, ptermApp->m_stretch);
     menuPopup->AppendSeparator ();
     menuPopup->AppendCheckItem (Pterm_FullScreen, _("Full Screen")
                                 ACCELERATOR ("\tCtrl-U"),
@@ -3647,8 +3663,19 @@ void PtermFrame::OnToggleStretchMode (wxCommandEvent &)
 
     //refit
     UpdateDisplayState ();
-
 }
+
+void PtermFrame::OnToggleAspectMode (wxCommandEvent &)
+{
+
+    //toggle status
+    ptermApp->m_aspect = !ptermApp->m_aspect;
+    SavePreferences ();
+
+    //refit
+    UpdateDisplayState ();
+}
+
 void PtermFrame::OnCopy (wxCommandEvent &event)
 {
     wxString text = GetRegionText ();
@@ -4141,6 +4168,7 @@ void PtermFrame::SavePreferences (void)
     //tab4
     ptermApp->m_config->Write (wxT (PREF_SCALE), (ptermApp->m_scale2) ? 2 : 1);
     ptermApp->m_config->Write (wxT (PREF_STRETCH), (ptermApp->m_stretch) ? 1 : 0);
+    ptermApp->m_config->Write (wxT (PREF_ASPECT), (ptermApp->m_aspect) ? 1 : 0);
     ptermApp->m_config->Write (wxT (PREF_STATUSBAR), (ptermApp->m_showStatusBar) ? 1 : 0);
 #if !defined (__WXMAC__)
     ptermApp->m_config->Write (wxT (PREF_MENUBAR), (ptermApp->m_showMenuBar) ? 1 : 0);
@@ -4203,8 +4231,8 @@ void PtermFrame::OnResize (wxSizeEvent& event)
 // depending on the preference currently in effect.
 void PtermFrame::UpdateDisplayState (void)
 {
-    int h, w;
-    
+    int client_h, client_w, canvas_h, canvas_w;
+
     if (m_canvas == NULL)
     {
         return;
@@ -4214,27 +4242,47 @@ void PtermFrame::UpdateDisplayState (void)
     {
         wxDisplay d (wxDisplay::GetFromWindow (this));
         wxRect r = d.GetGeometry ();
-        
-        w = r.width;
-        h = r.height;
+
+        client_w = r.width;
+        client_h = r.height;
     }
     else
     {
-        GetClientSize (&w, &h);
+        GetClientSize (&client_w, &client_h);
     }
 
-    m_canvas->SetSize (w, h);
-    
+    if (ptermApp->m_aspect)
+    {
+        if (client_h < client_w)
+        {
+            canvas_h = canvas_w = client_h;
+        }
+        else
+        {
+            canvas_h = canvas_w = client_w;
+        }
+    }
+    else
+    {
+        canvas_h = client_h;
+        canvas_w = client_w;
+    }
+    m_canvas->SetSize (client_w, client_h);
+
     // If stretching, the client and virtual sizes are the same, and
     // we scale the image to match.  Otherwise, the scaling is 2x or 1x
     // and the client size is 512 * the scale, plus margins.
+    // The margin should scale along with the bitmap, otherwise it will
+    // result in an optically smaller margin for larger bitmaps.
+    // When drawing, the offset is also scaled by UserScale, so must
+    // scale m_xmargin and m_ymargin down appropriately.
     if (m_stretch)
     {
-		m_xscale = (w - 2 * DisplayMargin) / 512.0;
-		m_yscale = (h - 2 * DisplayMargin) / 512.0;
-        m_xmargin = DisplayMargin;
-        m_ymargin = DisplayMargin;
-        m_canvas->SetVirtualSize (w, h);
+        m_xscale = canvas_w / (512.0 + 2 * DisplayMargin);
+        m_yscale = canvas_h / (512.0 + 2 * DisplayMargin);
+        m_xmargin = (int) ((client_w - m_xscale * 512.0) / 2.0 / m_xscale);
+        m_ymargin = (int) ((client_h - m_yscale * 512.0) / 2.0 / m_yscale);
+        m_canvas->SetVirtualSize (client_w, client_h);
     }
     else
     {
@@ -4248,8 +4296,8 @@ void PtermFrame::UpdateDisplayState (void)
         }
         if (m_fullScreen)
         {
-            m_xmargin = (w / m_xscale - 512) / 2;
-            m_ymargin = (h / m_yscale - 512) / 2;
+            m_xmargin = (int) ((client_w - m_xscale * 512.0) / 2.0 / m_xscale);
+            m_ymargin = (int) ((client_h - m_yscale * 512.0) / 2.0 / m_yscale);
         }
         else
         {

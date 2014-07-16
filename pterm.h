@@ -133,6 +133,7 @@
 //tab4
 #define PREF_SCALE       "scale"
 #define PREF_STRETCH     "stretch"
+#define PREF_ASPECT      "aspect"
 #define PREF_STATUSBAR   "statusbar"
 #define PREF_MENUBAR     "menubar"
 #define PREF_NOCOLOR     "noColor"
