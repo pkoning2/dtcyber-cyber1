@@ -1241,8 +1241,8 @@ static dtThreadFun (dtDataThread, param)
 
     /* Initialize the semaphore */
     sprintf (semname, "/sem_%p", np);
-    semp (np) = sem_open (semname, O_CREAT);
-    if (semp (np) == NULL)
+    semp (np) = sem_open (semname, O_CREAT, 0600, 1);
+    if (semp (np) == (void *) SEM_FAILED)
     {
         perror ("sem_open failed");
         exit (1);
@@ -1377,6 +1377,7 @@ static dtThreadFun (dtSendThread, param)
     u8 *in, *out, *nextout;
     int size;
     int bytes;
+    int ret;
     
     while (1)
         {
@@ -1412,7 +1413,11 @@ static dtThreadFun (dtSendThread, param)
             **  send ring).  Then go back to the top of the loop to
             **  check for reasons to exit.
             */
-            sem_wait (semp (np));
+            ret = sem_wait (semp (np));
+            if (ret < 0)
+                {
+                perror ("sem_wait");
+                }
             continue;
             }
         
