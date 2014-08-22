@@ -786,7 +786,7 @@ return(opl)
           call   savles	
           SX6    0
           SA6    iname       ACCOUNT NAME ZERO
-          SA1    =7Lsockets  FORM NAME IN X1
+          SA1    slstnm      FORM NAME IN X1
           BX6    X1
           SA6    A6+1
           SA1    STATION     GET THIS STATION NUMBER
@@ -830,6 +830,7 @@ return(opl)
  sockead  bss    1
  socklst  bss    sockmax
  sxbuf    bss    5           socket instruction request buffer
+ slstnm   data   7Lsockets
           endov
 */ end socket
 */
@@ -869,7 +870,7 @@ return(opl)
 *i socket.76
           sa1    ovarg1
           nz     x1,extcx    do -extcall- command
-*i socket.439
+*i socket.440
  extcall  title  -extcall- command execution
 ***
 *         -extcall- command
