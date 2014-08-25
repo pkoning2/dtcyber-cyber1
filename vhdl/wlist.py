@@ -10,6 +10,7 @@ import sys
 import traceback
 import getopt
 import cmodule
+import time
 
 chassis_list = { }
 curslot = None
@@ -42,8 +43,10 @@ class Cyber (cmodule.cmod):
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
+-- NOTE: This is a generated file.  %s.
+--
 -------------------------------------------------------------------------------
-"""
+""" % time.strftime ("%Y.%m.%d")
 
     def printheader (self):
         return self.header
@@ -160,7 +163,7 @@ class Chassis (cmodule.cmod):
         
     header = """-------------------------------------------------------------------------------
 --
--- CDC 6600 model -- chassis %d
+-- CDC 6600 model -- chassis %%d
 --
 -- Converted from wire lists by Paul Koning
 --
@@ -171,8 +174,11 @@ class Chassis (cmodule.cmod):
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
+--
+-- NOTE: This is a generated file.  %s.
+--
 -------------------------------------------------------------------------------
-"""
+""" % time.strftime ("%Y.%m.%d")
 
     def printheader (self):
         return self.header % self.cnum
