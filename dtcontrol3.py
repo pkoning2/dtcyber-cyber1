@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Combined user interface for DtCyber
 
@@ -598,7 +598,7 @@ class Operframe (ControlFrame):
             for text in oper.status[first:last]:
                 self.ClearString (dc, self.rightscreen, y,
                                   8, self.xmax)
-                self.SendString (dc, rightscreen, y, 8, text, False)
+                self.SendString (dc, self.rightscreen, y, 8, text, False)
                 y -= self.smallfontextent[1] + 2
             self.SendString (dc, 16, 48, 16, self.cmd, self.cmdbold)
         if oper.response.startswith ('$'):
