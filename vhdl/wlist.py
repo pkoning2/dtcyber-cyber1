@@ -701,4 +701,4 @@ if __name__ == "__main__":
         toplevel.write (False)
     for cname in sorted (chassis_list):
         ch = chassis_list[cname]
-        ch.write (True)
+        ch.write (False)

@@ -18,7 +18,7 @@
 
 use work.sigs.all;
 
-entity paslice is
+entity zpslice is
     port (
       clk : in  logicsig;
       clk2 : in  logicsig;
@@ -27,8 +27,8 @@ entity paslice is
       q1 : out logicsig;
       q2 : out logicsig);
 
-end paslice;
-architecture gates of paslice is
+end zpslice;
+architecture gates of zpslice is
   component inv2
     port (
       a : in  logicsig;
@@ -103,7 +103,7 @@ entity zp is
 
 end zp;
 architecture gates of zp is
-  component paslice
+  component zpslice
     port (
       clk : in  logicsig;
       clk2 : in  logicsig;
@@ -116,7 +116,7 @@ architecture gates of zp is
 
 
 begin -- gates
-  u5 : paslice port map (
+  u5 : zpslice port map (
     clk => p9,
     clk2 => p7,
     d => p8,
@@ -125,7 +125,7 @@ begin -- gates
     tp => tp1);
 
 
-  u6 : paslice port map (
+  u6 : zpslice port map (
     clk => p9,
     clk2 => p7,
     d => p5,
@@ -134,7 +134,7 @@ begin -- gates
     tp => tp2);
 
 
-  u7 : paslice port map (
+  u7 : zpslice port map (
     clk => p9,
     clk2 => p7,
     d => p12,
@@ -143,7 +143,7 @@ begin -- gates
     tp => tp3);
 
 
-  u8 : paslice port map (
+  u8 : zpslice port map (
     clk => p20,
     clk2 => p22,
     d => p21,
@@ -152,7 +152,7 @@ begin -- gates
     tp => tp4);
 
 
-  u9 : paslice port map (
+  u9 : zpslice port map (
     clk => p20,
     clk2 => p22,
     d => p24,
@@ -161,7 +161,7 @@ begin -- gates
     tp => tp5);
 
 
-  u10 : paslice port map (
+  u10 : zpslice port map (
     clk => p20,
     clk2 => p22,
     d => p23,

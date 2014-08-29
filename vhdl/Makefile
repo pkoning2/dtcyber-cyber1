@@ -2,13 +2,13 @@ VLIB = work-obj93.cf
 HOST := $(shell uname)
 MACHINE := $(shell uname -m)
 MODULE_SRCS = $(wildcard ??.vhd)
-MODULES = clock.o clockh.o mem.o  dtsynchro.o $(MODULE_SRCS:.vhd=.o)
+MODULES = clock.o clockb.o clockc.o clockh.o mem.o cpmem.o dtsynchro.o
+MODULES +=  $(MODULE_SRCS:.vhd=.o)
 #CHASSIS_SRCS = $(wildcard chassis*.wlist)
 #CHASSIS_SRCS = chassis1.wlist chassis11.wlist chassis12.wlist
 CHASSIS_SRCS = chassis1.wlist chassis2.wlist chassis5.wlist chassis11.wlist 
 CHASSIS_V = $(CHASSIS_SRCS:.wlist=.vhd)
 CHASSIS_O = $(CHASSIS_SRCS:.wlist=.o)
-CHASSIS_D = $(CHASSIS_SRCS:.wlist=.d)
 CABLE_SRCS = $(wildcard coax*.wlist)
 
 FOREIGN = dtconn.o meminit.o \
@@ -26,13 +26,13 @@ OBJS = $(VOBJS) $(FOREIGN)
 VPATH = ..
 LINKSWITCH := -Wl,
 
-ifeq ("$(HOST)","Darwin")
+#ifeq ("$(HOST)","Darwin")
 #CCOPTS := -arch i386
 #ASMOPTS := -Wa,-arch -Wa,i386
 #LDOPTS := -Wl,-arch -Wl,i386
-#CCOPTS := -m64
-#GOPTS := -Wc,$(CCOPTS)
-endif
+CCOPTS := -m64
+GOPTS := -Wc,$(CCOPTS)
+#endif
 
 OPTIMIZE ?=
 #OPTIMIZE ?= -O2
@@ -52,11 +52,12 @@ cyberdefs.o $(VLIB) cyberdefs.stamp: cyberdefs.vhd
 
 %.o : %.vhd cyberdefs.stamp
 	$(GHDL) -a $(GHDLOPTS) $<
+	@rm -f ${<:%.vhd=%.s}
 
 %.o : %.c
 	$(CC) -O2  $(CFLAGS) $(CCOPTS) -I .. -I . -c $<
 
-cdc6600.vhd $(CHASSIS_D) : $(CHASSIS_SRCS) $(CABLE_SRCS) wlist.py cmodule.py
+cdc6600.vhd : $(CHASSIS_SRCS) $(CABLE_SRCS) wlist.py cmodule.py
 	# Note: cables must be last
 	python wlist.py  $(CHASSIS_SRCS) $(CABLE_SRCS)
 
@@ -64,7 +65,7 @@ chassis12.vhd : chassis12.wlist
 	python wirelist.py -t - chassis12.wlist
 
 clean:
-	rm -f *.d *.o *.cf cyberdefs.stamp cdc6600.vhd chassis*.vhd
+	rm -f *.o *.cf cyberdefs.stamp cdc6600.vhd chassis*.vhd
 
 $(TOP): $(CHASSIS_O)
 
