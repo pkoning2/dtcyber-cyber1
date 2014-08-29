@@ -137,6 +137,8 @@ architecture gates of zz is
   end component;
 
 
+  signal t1 : logicsig;
+  
 begin -- gates
   u1 : aaslice port map (
     r1 => p6,
@@ -173,11 +175,12 @@ begin -- gates
     r2 => p23,
     s1 => p22,
     s2 => p24,
-    q1_q2 => p25,
+    q1_q2 => t1,
     qb => p20,
     tp => tp6);
 
-  p27 <= p25;
+  p25 <= t1;
+  p27 <= t1;
 
 end gates;
 

@@ -52,25 +52,29 @@ architecture gates of zd is
 
   end component;
 
-
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  
 begin -- gates
   u1 : g2 port map (
     a => p1,
     b => p3,
     y => tp1,
-    y2 => p6_p8_p14);
+    y2 => t1);
 
-  p10 <= p6_p8_p14;
-  p12 <= p6_p8_p14;
+  p6_p8_p14 <= t1;
+  p10 <= t1;
+  p12 <= t1;
 
   u2 : g2 port map (
     a => p2,
     b => p4,
     y => tp2,
-    y2 => p5_p7_p9);
+    y2 => t2);
 
-  p11 <= p5_p7_p9;
-  p13 <= p5_p7_p9;
+  p5_p7_p9 <= t2;
+  p11 <= t2;
+  p13 <= t2;
 
   u3 : g2 port map (
     a => p25,

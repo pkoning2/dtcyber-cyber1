@@ -50,7 +50,7 @@ void dtconn (int chnum, coaxsigs incable, coaxsigs outcable)
     u32 dout, din;
     ChSlot prev_ch;
     bool ic[19], oc[19];
-    enum bit o = one;
+    bit o = one;
     
     activeChannel = channel + chnum;
 

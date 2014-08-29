@@ -64,59 +64,71 @@ architecture gates of zh is
 
   end component;
 
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal t3 : logicsig;
+  signal t4 : logicsig;
+  signal t5 : logicsig;
+  signal t6 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
     a => p1,
     y => tp1,
-    y2 => p7);
+    y2 => t1);
 
-  p8 <= p7;
-  p14 <= p7;
+  p7 <= t1;
+  p8 <= t1;
+  p14 <= t1;
   
   u2 : inv2 port map (
     a => p6,
     y => tp2,
-    y2 => p5);
+    y2 => t2);
 
-  p9 <= p5;
-  p11 <= p5;
-  p13 <= p5;
+  p5 <= t2;
+  p9 <= t2;
+  p11 <= t2;
+  p13 <= t2;
 
   u3 : inv2 port map (
     a => p3,
     y => tp3,
-    y2 => p2);
+    y2 => t3);
 
-  p4 <= p2;
-  p10 <= p2;
-  p12 <= p2;
+  p2 <= t3;
+  p4 <= t3;
+  p10 <= t3;
+  p12 <= t3;
   
   u4 : inv2 port map (
     a => p26,
     y => tp4,
-    y2 => p17);
+    y2 => t4);
 
-  p19 <= p17;
-  p23 <= p17;
-  p27 <= p17;
+  p17 <= t4;
+  p19 <= t4;
+  p23 <= t4;
+  p27 <= t4;
   
   u5 : inv2 port map (
     a => p25,
     y => tp5,
-    y2 => p16);
+    y2 => t5);
 
-  p18 <= p16;
-  p20 <= p16;
-  p24 <= p16;
+  p16 <= t5;
+  p18 <= t5;
+  p20 <= t5;
+  p24 <= t5;
   
   u6 : inv2 port map (
     a => p28,
     y => tp6,
-    y2 => p15);
+    y2 => t6);
 
-  p21 <= p15;
-  p22 <= p15;
+  p15 <= t6;
+  p21 <= t6;
+  p22 <= t6;
 
 end gates;
 

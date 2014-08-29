@@ -24,7 +24,8 @@ entity paslice is
       clk2 : in  logicsig;
       d : in  logicsig;
       tp : out logicsig;
-      q1_q2 : out logicsig);
+      q1 : out logicsig;
+      q2 : out logicsig);
 
 end paslice;
 architecture gates of paslice is
@@ -47,7 +48,8 @@ architecture gates of paslice is
   end component;
 
   signal tq : logicsig;
-
+  signal t2 : logicsig;
+  
 begin -- gates
   u1 : latch2 port map (
     clk => clk,
@@ -59,9 +61,10 @@ begin -- gates
 
   u2 : inv2 port map (
     a => tq,
-    y2 => q1);
+    y2 => t2);
 
-  q2 <= q1;
+  q1 <= t2;
+  q2 <= t2;
 
 end gates;
 
@@ -136,7 +139,7 @@ begin -- gates
     clk2 => p7,
     d => p12,
     q1 => p10,
-    q2 -> p14,
+    q2 => p14,
     tp => tp3);
 
 

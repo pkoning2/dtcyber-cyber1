@@ -30,8 +30,8 @@ ifeq ("$(HOST)","Darwin")
 #CCOPTS := -arch i386
 #ASMOPTS := -Wa,-arch -Wa,i386
 #LDOPTS := -Wl,-arch -Wl,i386
-CCOPTS := -m64
-GOPTS := -Wc,$(CCOPTS)
+#CCOPTS := -m64
+#GOPTS := -Wc,$(CCOPTS)
 endif
 
 OPTIMIZE ?=
@@ -60,8 +60,8 @@ cdc6600.vhd $(CHASSIS_D) : $(CHASSIS_SRCS) $(CABLE_SRCS) wlist.py cmodule.py
 	# Note: cables must be last
 	python wlist.py  $(CHASSIS_SRCS) $(CABLE_SRCS)
 
-#chassis12.vhd : chassis12.wlist
-#	python wirelist.py -t - chassis12.wlist
+chassis12.vhd : chassis12.wlist
+	python wirelist.py -t - chassis12.wlist
 
 clean:
 	rm -f *.d *.o *.cf cyberdefs.stamp cdc6600.vhd chassis*.vhd

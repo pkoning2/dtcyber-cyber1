@@ -858,7 +858,7 @@ def readmodule (modname, allports = False):
             # explicit separate outputs, for chassis 12 where some coax
             # cables are assigned to logic outputs; coax can't be
             # aliased the way the model is put together.
-            if modname[0].lower () != 'z':
+            if len (modname) == 2 and modname[0].lower () != 'z':
                 for a in _re_assign.finditer (m.group (6)):
                     e.addassign (a.group (1), a.group (2))
                     #print "assign", a.group (1), a.group (2)
