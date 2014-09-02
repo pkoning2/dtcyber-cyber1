@@ -1,3 +1,5 @@
+.PHONY : clean sim all
+
 VLIB = work-obj93.cf
 HOST := $(shell uname)
 MACHINE := $(shell uname -m)
@@ -40,6 +42,8 @@ OPTIMIZE ?=
 GHDL ?= ghdl
 GHDLOPTS := $(OPTIMIZE) $(GOPTS) $(ASMOPTS) $(LDOPTS) $(EXTRAGFLAGS)
 
+all: cdc_tb
+
 cdc_tb:	$(OBJS)
 	$(GHDL) -e $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out $(VOBJS),$+) $(FLIBS))  cdc_tb
 
@@ -66,6 +70,9 @@ chassis12.vhd : chassis12.wlist
 
 clean:
 	rm -f *.o *.cf cyberdefs.stamp cdc6600.vhd chassis*.vhd
+
+sim: cdc_tb
+	./cdc_tb --stop-time=10us --wave=cdc_tb.ghw
 
 $(TOP): $(CHASSIS_O)
 

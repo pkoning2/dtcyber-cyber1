@@ -44,6 +44,7 @@ void opSetStatus (void *buf, const char *msg)
 
 void * opInitStatus (const char *type, int ch, int un)
 {
+    return NULL;
 }
 
 void opUpdateSysStatus (void)
@@ -53,10 +54,12 @@ void opUpdateSysStatus (void)
 
 bool cpuEcsFlagRegister(u32 ecsAddress)
 {
+    return false;
 }
 
 bool cpuDdpTransfer(u32 ecsAddress, CpWord *data, bool writeToEcs)
 {
+    return false;
 }
 
 void dumpCpu(void)
