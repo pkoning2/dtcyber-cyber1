@@ -108,7 +108,7 @@ begin
        end loop;  -- i
        for i in 1 to 19 loop
          -- coax1(i) <= testdata(i);
-         oc(i) := testdata(i);
+         oc(i - 1) := testdata(i);
        end loop;  -- i
        write(l, d);
        write (l, space);
