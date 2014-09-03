@@ -86,6 +86,8 @@ package body sigs is
 end sigs;
 
 use work.sigs.all;
+
+-- Inverter
 entity inv is
   
   port (
@@ -102,10 +104,10 @@ begin  -- bool
   end process inv;
 end bool;
 
+use work.sigs.all;
+
 -- inv2 is two inverters in a row, used by the 6600 for fanout
 -- (or perhaps for delay)
-
-use work.sigs.all;
 entity inv2 is
   
   port (
@@ -128,6 +130,8 @@ end bool;
 -- write the that way here.
 
 use work.sigs.all;
+
+-- Two input NAND gate
 entity g2 is
   
   port (
@@ -148,6 +152,8 @@ begin  -- bool
 end bool;
 
 use work.sigs.all;
+
+-- Three input NAND gate
 entity g3 is
   
   port (
@@ -168,6 +174,8 @@ begin  -- bool
 end bool;
 
 use work.sigs.all;
+
+-- Four input NAND gate
 entity g4 is
   
   port (
@@ -188,6 +196,8 @@ begin  -- bool
 end bool;
 
 use work.sigs.all;
+
+-- Five input NAND gate
 entity g5 is
   
   port (
@@ -208,6 +218,8 @@ begin  -- bool
 end bool;
 
 use work.sigs.all;
+
+-- Six input NAND gate
 entity g6 is
   
   port (
@@ -230,6 +242,11 @@ begin  -- bool
 end bool;
 
 use work.sigs.all;
+
+-- Coax driver.  Note that the whole coax transmission delay is
+-- modeled here, at the transmit end.  So if you watch a coax signal
+-- in a waveform viewer, you're seeing what corresponds to the output
+-- of the coax receiver at the destination module.
 entity cxdriver is
   
   port (
@@ -247,6 +264,8 @@ begin  -- bool
 end bool;
 
 use work.sigs.all;
+
+-- Coax driver with 5 input AND inputs.
 entity cxdriver5 is
   
   port (
@@ -266,6 +285,8 @@ begin  -- bool
 end bool;
 
 use work.sigs.all;
+
+-- Coax receiver.
 entity cxreceiver is
   
   port (
@@ -281,6 +302,10 @@ begin  -- bool
 end bool;
 
 use work.sigs.all;
+
+-- R/S flip-flop.  This is modeled by behavior, not as crossed over
+-- gates to make it more stable and to synthesize more efficiently.
+-- R and S are active low.
 entity rsflop is
   port (
     s, r  : in  logicsig;                    -- set, reset
@@ -305,6 +330,9 @@ end beh;
 
 
 use work.sigs.all;
+
+-- R/S flip-flop with four S inputs which are logically ORed since
+-- R and S are active low.
 entity rs4flop is
   port (
     s, r  : in  logicsig;                    -- set, reset
@@ -332,6 +360,9 @@ end beh;
 
 
 use work.sigs.all;
+
+-- R/S flip-flop with four R and four S inputs which are logically ORed since
+-- R and S are active low.
 entity r4s4flop is
   port (
     s, r  : in  logicsig;                    -- set, reset
@@ -360,6 +391,9 @@ end beh;
 
 
 use work.sigs.all;
+
+-- R/S flip-flop with two S inputs which are logically ORed since
+-- R and S are active low.
 entity rs2flop is
   port (
     s, r  : in  logicsig;                    -- set, reset
@@ -387,6 +421,9 @@ end beh;
 
 
 use work.sigs.all;
+
+-- R/S flip-flop with two R inputs which are logically ORed since
+-- R and S are active low.
 entity r2sflop is
   port (
     s, r  : in  logicsig;                    -- set, reset
@@ -414,6 +451,10 @@ end beh;
 
 
 use work.sigs.all;
+
+-- Level sensitive latch.  This incorporates the two-inverter chain
+-- that is often shown as a separate element in the diagrams, with
+-- the first inverter driving the reset and the second the set input.
 entity latch is
   
   port (
@@ -422,10 +463,15 @@ entity latch is
 
 end latch;
 
+-- This model is an approximation; the original implementation
+-- accepts low D for clk + t but high D for clk + 2*t, because the
+-- basic R/S flip-flop R input is derived from not(clk) which has delay t,
+-- but the S input is and(d, not(not(clk)) so there's a delay of 2t there.
+-- By way of compromise this model delays the input clock by t.
 architecture beh of latch is
   signal clki : logicsig;
 begin  -- beh
-  clki <= clk after t * 2;
+  clki <= clk after t;
   latch: process (clki, d)
     variable qi : logicsig;
   begin  -- process level sensitive latch
@@ -439,6 +485,8 @@ end beh;
 
 
 use work.sigs.all;
+
+-- Level sensitive latch with (active low) Set input.
 entity latchs is
   
   port (
@@ -451,7 +499,7 @@ end latchs;
 architecture beh of latchs is
   signal clki : logicsig;
 begin  -- beh
-  clki <= clk after t * 2;
+  clki <= clk after t;
   latchs: process (clki, s, d)
     variable qi : logicsig;
   begin  -- process level sensitive latch
@@ -467,6 +515,8 @@ end beh;
 
 
 use work.sigs.all;
+
+-- Level sensitive latch with two clock inputs, which are ANDed.
 entity latch2 is
   
   port (
@@ -494,6 +544,8 @@ end beh;
 
 
 use work.sigs.all;
+
+-- Level sensitive latch with two data inputs, which are ANDed.
 entity latchd2 is
   
   port (
@@ -521,6 +573,8 @@ end beh;
 
 
 use work.sigs.all;
+
+-- Level sensitive latch with two data inputs and Set input.
 entity latchd2s is
   
   port (
@@ -551,6 +605,9 @@ end beh;
 
 
 use work.sigs.all;
+
+-- Level sensitive latch with two data inputs and a separate clock
+-- for each.
 entity latch22 is
   
   port (
@@ -562,8 +619,8 @@ end latch22;
 architecture beh of latch22 is
   signal clki, clki2 : logicsig;
 begin  -- beh
-  clki <= clk after t * 2;
-  clki2 <= clk2 after t * 2;
+  clki <= clk after t;
+  clki2 <= clk2 after t;
   latch: process (clki, clki2, d, d2)
     variable qi : logicsig;
   begin  -- process level sensitive latch
@@ -580,6 +637,8 @@ end beh;
 
 
 use work.sigs.all;
+
+-- Level sensitive latch with and/or inputs (d and e or d2 and e2).
 entity latchd4 is
   
   port (
@@ -607,6 +666,8 @@ end beh;
 
 
 use work.sigs.all;
+
+-- Level sensitive latch with (active low) Reset
 entity latchr is
   
   port (
@@ -620,7 +681,7 @@ architecture beh of latchr is
   signal clki : logicsig;
   signal qi : logicsig;
 begin  -- beh
-  clki <= clk after t * 2;
+  clki <= clk after t;
   latch: process (clki, d, r)
     variable qi : logicsig;
   begin  -- process level sensitive latch with reset
@@ -636,36 +697,8 @@ end beh;
 
 
 use work.sigs.all;
-entity latchs is
-  
-  port (
-    d, clk : in  logicsig;                   -- data (set), clock
-    s      : in  logicsig;                   -- set
-    q, qb  : out logicsig);                  -- q and q.bar
 
-end latchs;
-
-architecture beh of latchs is
-  signal clki : logicsig;
-  signal qi : logicsig;
-begin  -- beh
-  clki <= clk after t * 2;
-  latch: process (clki, d, s)
-    variable qi : logicsig;
-  begin  -- process level sensitive latch with set
-    if s = '0' then
-      qi := '1';
-    elsif clki = '1' then  -- clock (enable) asserted
-      qi := d;
-    end if;
-    q <= qi after t;
-    qb <= not (qi) after t;
-  end process latch;
-end beh;
-
-
-use work.sigs.all;
-  
+-- Model for a wire long enough that we care about its delay
 entity wire is
   
   generic (
@@ -686,6 +719,10 @@ begin  -- beh
 
 end beh;
 
+-- Components used to handle a whole coax as a unit; this does not
+-- appear in the 6600 wire list model but is used in non-wirelist
+-- components that are modeled behaviorally, such as central memory
+-- and device synchronizers.
 use work.sigs.all;
 
 entity ireg1 is
