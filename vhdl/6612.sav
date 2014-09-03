@@ -1,39 +1,42 @@
 [size] 1680 1025
 [pos] -1 -1
 *-30.596371 10300000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] uut.
+[treeopen] top.
+[treeopen] top.cdc_tb2.
+[treeopen] top.cdc_tb2.uut.
 @28
-uut.clk1
-uut.clk2
-uut.clk3
-uut.clk4
+top.cdc_tb2.uut.clk1
+top.cdc_tb2.uut.clk2
+top.cdc_tb2.uut.clk3
+top.cdc_tb2.uut.clk4
 @30
-#<Vector> w_12w2_901 w_12w2_900 w_12w2_99 w_12w2_98 w_12w2_97 w_12w2_96 w_12w2_95 w_12w2_94 w_12w2_93 w_12w2_92 w_12w2_91 w_12w2_90
++Ch10_data_out top.cdc_tb2.uut.c_12w01_in[11:0]
+@28 
++Active top.cdc_tb2.uut.c_12w01_in[12]
++Inactive top.cdc_tb2.uut.c_12w01_in[13]
++Full top.cdc_tb2.uut.c_12w01_in[14]
++Empty top.cdc_tb2.uut.c_12w01_in[15]
++Function top.cdc_tb2.uut.c_12w01_in[16]
+@30
++Ch10_data_in top.cdc_tb2.uut.c_12w02_out[11:0]
 @28
-w_12w2_902
-w_12w2_903
-w_12w2_904
-w_12w2_905
-w_12w2_906
++Inactive_in top.cdc_tb2.uut.c_12w02_out[13]
++Full_in top.cdc_tb2.uut.c_12w02_out[14]
++Empty_in top.cdc_tb2.uut.c_12w02_out[15]
++10_Mhz_clk top.cdc_tb2.uut.c_12w02_in[16]
 @30
-#<Vector> w_12w1_901 w_12w1_900 w_12w1_99 w_12w1_98 w_12w1_97 w_12w1_96 w_12w1_95 w_12w1_94 w_12w1_93 w_12w1_92 w_12w1_91 w_12w1_90
-@28
-w_12w1_902
-w_12w1_903
-w_12w1_904
-w_12w1_905
-w_12w1_906
-@30
-#w_12w5_[98:90] uut.w_12w5_98 uut.w_12w5_97 uut.w_12w5_96 uut.w_12w5_95 uut.w_12w5_94 uut.w_12w5_93 uut.w_12w5_92 uut.w_12w5_91 uut.w_12w5_90
-#w_12w5_[907:99] uut.w_12w5_907 uut.w_12w5_906 uut.w_12w5_905 uut.w_12w5_904 uut.w_12w5_903 uut.w_12w5_902 uut.w_12w5_901 uut.w_12w5_900 uut.w_12w5_99
++X top.cdc_tb2.uut.c_12w05_out[8:0]
++Y top.cdc_tb2.uut.c_12w05_out[17:9]
 @8029
-uut.w_12w6_903[2:0]
++Char_Y top.cdc_tb2.uut.c_12w06_903[2:0]
 @8028
-uut.w_12w6_904[2:0]
-uut.w_12w6_905[2:0]
-uut.w_12w6_906[2:0]
++Char_YB top.cdc_tb2.uut.c_12w06_904[2:0]
+@8029
++Char_X top.cdc_tb2.uut.c_12w06_905[2:0]
+@8028
++Char_XB top.cdc_tb2.uut.c_12w06_906[2:0]
 @28
-uut.w_12w6_98
-uut.w_12w6_99
-uut.w_12w6_900
-uut.w_12w6_901
++Unblk_L top.cdc_tb2.uut.c_12w06_out[8]
++Unblk_R top.cdc_tb2.uut.c_12w06_out[9]
++Small top.cdc_tb2.uut.c_12w06_out[10]
++Medium top.cdc_tb2.uut.c_12w06_out[11]

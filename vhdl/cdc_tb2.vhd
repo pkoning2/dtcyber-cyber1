@@ -24,7 +24,15 @@ entity cdc_tb2 is
 end cdc_tb2;
 
 architecture behav of cdc_tb2 is
-   --  Declaration of the component that will be instantiated.
+  --  Declaration of the component that will be instantiated.
+  --  A coax cable may carry either an input or an output for any of
+  --  its 19 wires.  This is modeled by two separate "coaxsigs" signals,
+  --  one for the inputs and one for the outputs (only one of which is
+  --  used for any given wire index).  In the model, "in" means to the
+  --  modeled component.  Here we have an I/O device, so the labels are
+  --  the reverse of what the I/O Manual uses: it has an "input cable"
+  --  and "output cable" labeled from the point of view of the channel.
+  --  W01 is the channel "output" cable, W02 is the channel "input" cable.
   component chassis12
     port (
       c_12w01_in : in  coaxsigs;
@@ -123,17 +131,17 @@ begin
        for i in 1 to d loop
          wait for 25 ns;
          if clk2 = '1' then
-           w_12w2(17) <= '1';
+           w_12w2(16) <= '1';
            ten := ten + 1;
            if ten > 9 then
              ten := 0;
-             w_12w2(18) <= '1';
+             w_12w2(17) <= '1';
            else
-             w_12w2(18) <= '0';
+             w_12w2(17) <= '0';
            end if;
          else
+           w_12w2(16) <= '0';
            w_12w2(17) <= '0';
-           w_12w2(18) <= '0';
          end if;
          if clk3 = '1' then
            w_12w1 <= oc;

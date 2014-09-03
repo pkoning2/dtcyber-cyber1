@@ -61,7 +61,7 @@ sim: cdc_tb
 	./cdc_tb --stop-time=10us --wave=cdc_tb.ghw
 
 sim2: cdc_tb2
-	./cdc_tb2 --stop-time=10us --wave=cdc_tb2.ghw
+	./cdc_tb2 --stop-time=30us --wave=cdc_tb2.ghw
 
 $(TOP): $(CHASSIS_O)
 
