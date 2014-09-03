@@ -36,7 +36,7 @@ GHDLOPTS := $(OPTIMIZE) $(GOPTS) $(ASMOPTS) $(LDOPTS) $(EXTRAGFLAGS)
 all: cdc_tb
 
 $(VLIB): $(VHD_SRCS) $(CHASSIS_V) cdc6600.vhd chassis12.vhd
-	$(GHDL) -i *.vhd
+	$(GHDL) -i $?
 
 cdc_tb:	$(VLIB) $(FOREIGN)
 	$(GHDL) -m $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out $(VLIB),$+) $(FLIBS))  cdc_tb
@@ -51,14 +51,14 @@ cdc6600.vhd $(CHASSIS_V) : $(CHASSIS_SRCS) $(CABLE_SRCS) wlist.py cmodule.py
 	# Note: cables must be last
 	python wlist.py  $(CHASSIS_SRCS) $(CABLE_SRCS)
 
-chassis12.vhd : chassis12.wlist
+chassis12.vhd : chassis12.wlist wlist.py 
 	python wlist.py -t - chassis12.wlist
 
 clean:
 	rm -f *.o *.cf cyberdefs.stamp cdc6600.vhd chassis*.vhd $(VLIB)
 
 sim: cdc_tb
-	./cdc_tb --stop-time=10us --wave=cdc_tb.ghw
+	./cdc_tb --stop-time=20us --wave=cdc_tb.ghw
 
 sim2: cdc_tb2
 	./cdc_tb2 --stop-time=30us --wave=cdc_tb2.ghw

@@ -347,9 +347,10 @@ class Connector (object):
     def chwire (self, pnum, toslot, topin, dir, wlen = 0):
         """Generate a Wire object for a wire inside a chassis (twisted pair).
         Wires are named w_out except if the wire is long enough that we
-        simulate its delay, in which case the name is wd_out 
-        and the wire is hooked up to an instance of the "wire"
-        element that actually implements the delay.
+        simulate its delay.  If so, we generate a second wire (named wd_out)
+        and a "wire" element which implements the delay.  The wd_out wire is
+        connected to the pin we were hooking up here, the w_out wire is
+        left defined for connection next.
         """
         end1 = "%s_%d" % (self.name, pnum)
         end2 = "%s_%s" % (toslot, topin)
@@ -378,6 +379,16 @@ class Connector (object):
                 w = self.chassis.signals["w_%s" % end2]
             except KeyError:
                 w = Wire (end2, end1)
+                if real_length and wlen > real_length:
+                    wdname = "wd_%s" % w
+                    wd = cmodule.ElementInstance (wdname, "wire")
+                    self.chassis.elements[wdname] = wd
+                    w2 = Wire (end2, end1, "d")
+                    self.chassis.signals[w] = w
+                    wd.addportmap (self.chassis, "i", w)
+                    w = w2
+                    wd.addportmap (self.chassis, "o", w)
+                    wd.addgenericmap (self.chassis, "length", str (wlen))
                 self.chassis.signals[w] = w
         return w
     
