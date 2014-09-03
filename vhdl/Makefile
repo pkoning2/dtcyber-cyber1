@@ -1,4 +1,4 @@
-.PHONY : clean sim all
+.PHONY : clean sim sim2 all
 
 VLIB = work-obj93.cf
 HOST := $(shell uname)
@@ -39,7 +39,7 @@ $(VLIB): $(VHD_SRCS) $(CHASSIS_V) cdc6600.vhd chassis12.vhd
 	$(GHDL) -i *.vhd
 
 cdc_tb:	$(VLIB) $(FOREIGN)
-	$(GHDL) -m $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(FOREIGN) $(FLIBS))  cdc_tb
+	$(GHDL) -m $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out $(VLIB),$+) $(FLIBS))  cdc_tb
 
 cdc_tb2: $(VLIB) chassis12.vhd
 	$(GHDL) -m $(GHDLOPTS) $(LINKSWITCH)$(FLIBS)  cdc_tb2
@@ -59,6 +59,9 @@ clean:
 
 sim: cdc_tb
 	./cdc_tb --stop-time=10us --wave=cdc_tb.ghw
+
+sim2: cdc_tb2
+	./cdc_tb2 --stop-time=10us --wave=cdc_tb2.ghw
 
 $(TOP): $(CHASSIS_O)
 

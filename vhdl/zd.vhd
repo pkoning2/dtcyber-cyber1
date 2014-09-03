@@ -32,14 +32,26 @@ entity zd is
       tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p5_p7_p9 : out logicsig;
-      p6_p8_p14 : out logicsig;
+      p5 : out logicsig;
+      p7 : out logicsig;
+      p9 : out logicsig;
+      p6 : out logicsig;
+      p8 : out logicsig;
+      p14 : out logicsig;
       p10 : out logicsig;
       p11 : out logicsig;
       p12 : out logicsig;
       p13 : out logicsig;
-      p15_p17_p19_p21_p23 : out logicsig;
-      p16_p18_p20_p22_p24 : out logicsig);
+      p15 : out logicsig;
+      p17 : out logicsig;
+      p19 : out logicsig;
+      p21 : out logicsig;
+      p23 : out logicsig;
+      p16 : out logicsig;
+      p18 : out logicsig;
+      p20 : out logicsig;
+      p22 : out logicsig;
+      p24 : out logicsig);
 
 end zd;
 architecture gates of zd is
@@ -52,8 +64,7 @@ architecture gates of zd is
 
   end component;
 
-  signal t1 : logicsig;
-  signal t2 : logicsig;
+  signal t1, t2, t3, t4 : logicsig;
   
 begin -- gates
   u1 : g2 port map (
@@ -62,7 +73,9 @@ begin -- gates
     y => tp1,
     y2 => t1);
 
-  p6_p8_p14 <= t1;
+  p6 <= t1;
+  p8 <= t1;
+  p14 <= t1;
   p10 <= t1;
   p12 <= t1;
 
@@ -72,7 +85,9 @@ begin -- gates
     y => tp2,
     y2 => t2);
 
-  p5_p7_p9 <= t2;
+  p5 <= t2;
+  p7 <= t2;
+  p9 <= t2;
   p11 <= t2;
   p13 <= t2;
 
@@ -80,16 +95,25 @@ begin -- gates
     a => p25,
     b => p27,
     y => tp5,
-    y2 => p16_p18_p20_p22_p24);
+    y2 => t3);
 
+  p16 <= t3;
+  p18 <= t3;
+  p20 <= t3;
+  p22 <= t3;
+  p24 <= t3;
 
   u4 : g2 port map (
     a => p26,
     b => p28,
     y => tp6,
-    y2 => p15_p17_p19_p21_p23);
+    y2 => t4);
 
-
+  p15 <= t4;
+  p17 <= t4;
+  p19 <= t4;
+  p21 <= t4;
+  p23 <= t4;
 
 end gates;
 
