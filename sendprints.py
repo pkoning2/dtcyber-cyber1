@@ -98,8 +98,8 @@ def dofile (name):
                         desc = descriptions[action]
                     except KeyError:
                         print "Unrecognized notification type %s in %s" % (action, name)
-                    os.rename (name, os.path.join ("misc", name))
-                    return
+                        os.rename (name, os.path.join ("misc", name))
+                        return
                 elif line.find ("*** mail to ***") == -1:
                     print "mail to section not found when expected in", name
                     os.rename (name, os.path.join ("printed", name))
