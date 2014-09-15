@@ -1,35 +1,36 @@
 [*]
 [*] GTKWave Analyzer v3.3.51 (w)1999-2013 BSI
-[*] Wed Sep  3 20:00:45 2014
+[*] Mon Sep 15 16:13:55 2014
 [*]
 [dumpfile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/cdc_tb2.ghw"
-[dumpfile_mtime] "Wed Sep  3 19:59:59 2014"
-[dumpfile_size] 634582
-[savefile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/6612.sav"
-[timestart] 14560000000
+[dumpfile_mtime] "Mon Sep 15 16:13:06 2014"
+[dumpfile_size] 571115
+[savefile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/6612c.sav"
+[timestart] 7711000000
 [size] 1398 856
 [pos] -1 -1
-*-31.596371 20440000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-30.596371 2160000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.cdc_tb2.
 [treeopen] top.cdc_tb2.uut.
+[treeopen] top.cdc_tb2.uut.e09.
+[treeopen] top.cdc_tb2.uut.e09.u8.
 [sst_width] 198
-[signals_width] 201
+[signals_width] 202
 [sst_expanded] 1
-[sst_vpaned_height] 256
-@28
-top.cdc_tb2.uut.clk1
-top.cdc_tb2.uut.clk2
-top.cdc_tb2.uut.clk3
-top.cdc_tb2.uut.clk4
+[sst_vpaned_height] 609
 @30
 +{Ch10_data_out} #{c_12w01_in[11:0]} top.cdc_tb2.uut.c_12w01_in[11] top.cdc_tb2.uut.c_12w01_in[10] top.cdc_tb2.uut.c_12w01_in[9] top.cdc_tb2.uut.c_12w01_in[8] top.cdc_tb2.uut.c_12w01_in[7] top.cdc_tb2.uut.c_12w01_in[6] top.cdc_tb2.uut.c_12w01_in[5] top.cdc_tb2.uut.c_12w01_in[4] top.cdc_tb2.uut.c_12w01_in[3] top.cdc_tb2.uut.c_12w01_in[2] top.cdc_tb2.uut.c_12w01_in[1] top.cdc_tb2.uut.c_12w01_in[0]
 @28
 +{Active} top.cdc_tb2.uut.c_12w01_in[12]
 +{Inactive} top.cdc_tb2.uut.c_12w01_in[13]
 +{Full} top.cdc_tb2.uut.c_12w01_in[14]
+top.cdc_tb2.uut.a03.a
+top.cdc_tb2.uut.a03.tp6
+top.cdc_tb2.uut.c10.tp1
 +{Empty} top.cdc_tb2.uut.c_12w01_in[15]
 +{Function} top.cdc_tb2.uut.c_12w01_in[16]
++{Master clear} top.cdc_tb2.uut.c_12w01_in[17]
 @30
 +{Ch10_data_in} #{c_12w02_out[11:0]} top.cdc_tb2.uut.c_12w02_out[11] top.cdc_tb2.uut.c_12w02_out[10] top.cdc_tb2.uut.c_12w02_out[9] top.cdc_tb2.uut.c_12w02_out[8] top.cdc_tb2.uut.c_12w02_out[7] top.cdc_tb2.uut.c_12w02_out[6] top.cdc_tb2.uut.c_12w02_out[5] top.cdc_tb2.uut.c_12w02_out[4] top.cdc_tb2.uut.c_12w02_out[3] top.cdc_tb2.uut.c_12w02_out[2] top.cdc_tb2.uut.c_12w02_out[1] top.cdc_tb2.uut.c_12w02_out[0]
 @28
@@ -51,5 +52,10 @@ top.cdc_tb2.uut.clk4
 +{Small} top.cdc_tb2.uut.c_12w06_out[10]
 +{Medium} top.cdc_tb2.uut.c_12w06_out[11]
 +{Char mode} top.cdc_tb2.uut.a04.p13
++{2nd ch} top.cdc_tb2.uut.b06.tp5
++{1st ch} top.cdc_tb2.uut.b06.tp2
++{6xxx} top.cdc_tb2.uut.e09.p17_tp4
++{7xxx} top.cdc_tb2.uut.e09.p26_tp5
++{data (0-5xxx)} top.cdc_tb2.uut.f10.p26
 [pattern_trace] 1
 [pattern_trace] 0
