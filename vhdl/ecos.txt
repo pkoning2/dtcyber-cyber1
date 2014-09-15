@@ -1,0 +1,17 @@
+Description of "ECOs" to the CDC 6600 wire lists
+
+1. 2014.09.15.  Chassis 12
+
+Issue: 1st char and 2nd char were being set when data is not character
+data.
+
+Cause: those signals derive from "data" which was latched from the 
+I->S signal, which in turn comes from the Full signal (among others).
+So it was the same width as the data being latched, meaning it would
+pick up input from around the trailing edge of the data.  When
+simulating only wire delays from long wires, this would not work.
+
+Fix: add wire from D05 pin 21 to C10 pin 3.  That ANDs the II timing
+pulse into the I->S signal, avoiding the hold issue.
+
+Verified: in GHDL simulation run (cdc_tb2.vhd).
