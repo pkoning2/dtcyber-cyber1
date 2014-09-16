@@ -698,11 +698,13 @@ end beh;
 
 use work.sigs.all;
 
--- Model for a wire long enough that we care about its delay
+-- Model for a wire long enough that we care about its delay.
+-- Note that the delay is supplied in units of 5 ns, which is
+-- the basic stage delay used throughout the model.
 entity wire is
   
   generic (
-    length : integer);                -- length in inches
+    delay : integer);                  -- delay in 5 ns units
 
   port (
     i  : in  logicsig;                 -- input
@@ -711,11 +713,9 @@ entity wire is
 end wire;
 
 architecture beh of wire is
-  constant feet : real := real (length) / 12.0;
-  constant idelay : time := feet * 1.3 ns;
 begin  -- beh
 
-  o <= transport i after idelay;
+  o <= transport i after delay * 5 ns;
 
 end beh;
 

@@ -343,7 +343,17 @@ class Connector (object):
         self.modinst = inst
         self.offset = offset
         self.chassis = chassis
-                
+
+    def wdelay (self, wlen):
+        """Return the wire delay for a wire of the specified length
+        in inches.  Delay is returned in units of 5 ns, since that is
+        the timing granularity we use in this model, rounded down to an
+        integer.  So short wires (under 47 inches) are handled as
+        having zero delay.
+        """
+        # Nominal twisted pair delay is 1.3 ns per foot.
+        return int (((wlen / 12.) * 1.3) / 5.)
+    
     def chwire (self, pnum, toslot, topin, dir, wlen = 0):
         """Generate a Wire object for a wire inside a chassis (twisted pair).
         Wires are named w_out except if the wire is long enough that we
@@ -363,7 +373,9 @@ class Connector (object):
                 except KeyError:
                     # Wire is not defined yet.  Define it
                     w = Wire (end1, end2)
-                    if real_length and wlen > real_length:
+                    delay = self.wdelay (wlen)
+                    if delay:
+                        # Delay is large enough to model
                         wdname = "wd_%s" % w
                         wd = cmodule.ElementInstance (wdname, "wire")
                         self.chassis.elements[wdname] = wd
@@ -372,14 +384,16 @@ class Connector (object):
                         wd.addportmap (self.chassis, "o", w)
                         w = w2
                         wd.addportmap (self.chassis, "i", w)
-                        wd.addgenericmap (self.chassis, "length", str (wlen))
+                        wd.addgenericmap (self.chassis, "delay", str (delay))
                     self.chassis.signals[w] = w
         else:
             try:
                 w = self.chassis.signals["w_%s" % end2]
             except KeyError:
                 w = Wire (end2, end1)
-                if real_length and wlen > real_length:
+                delay = self.wdelay (wlen)
+                if delay:
+                    # Delay is large enough to model
                     wdname = "wd_%s" % w
                     wd = cmodule.ElementInstance (wdname, "wire")
                     self.chassis.elements[wdname] = wd
@@ -388,7 +402,7 @@ class Connector (object):
                     wd.addportmap (self.chassis, "i", w)
                     w = w2
                     wd.addportmap (self.chassis, "o", w)
-                    wd.addgenericmap (self.chassis, "length", str (wlen))
+                    wd.addgenericmap (self.chassis, "delay", str (delay))
                 self.chassis.signals[w] = w
         return w
     
