@@ -66,6 +66,8 @@ architecture behav of cdc_tb2 is
   signal zero : logicsig := '0';
   signal one : logicsig := '1';
   constant idle : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
+  type kbvec is array (5 downto 0) of logicsig;
+  signal w_12w6 : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
 begin
    --  Component instantiation.
    uut: chassis12 port map (clk1 => clk1,
@@ -74,7 +76,7 @@ begin
                           clk4 => clk4,
                           c_12w01_in => w_12w1,
                           c_12w02_in => w_12w2,
-                          c_12w06_in => idle,
+                          c_12w06_in => w_12w6,
                           c_12w08_in => idle);
    --  This process does the real job.
    -- purpose: Read the test script and pass it to the UUT
@@ -98,6 +100,8 @@ begin
      constant one : string := "1";
      variable llen : integer;
      variable ten : integer := 9;
+     variable kbd : kbvec := ('0','0','0','0','0','0');
+     variable keyup, keydown : logicsig := '0';
    begin  -- process test
      --dtmain;
      while not endfile (vector_file) loop
@@ -118,6 +122,11 @@ begin
          -- coax1(i) <= testdata(i);
          oc(i - 1) := testdata(i);
        end loop;  -- i
+       for i in 20 to 25 loop
+         kbd(i - 20) := testdata(i);
+       end loop;  -- i
+       keydown := testdata(26);
+       keyup := testdata(27);
        write(l, d);
        write (l, space);
        for i in testdata'left to llen loop
@@ -128,6 +137,13 @@ begin
          end if;
        end loop;  -- i
        writeline (output, l);
+       -- keyboard signals persist (not pulses):
+       for i in 0 to 5 loop
+         w_12w6(i) <= kbd(i);
+       end loop;  -- i
+       w_12w6(6) <= keydown;
+       w_12w6(7) <= keyup;
+       -- channel signals are pulses
        for i in 1 to d loop
          wait for 25 ns;
          if clk2 = '1' then
