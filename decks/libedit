@@ -4,14 +4,14 @@ common,system.
 *
 *attach,cmrd25.
 *attach,cmrd26.
-*attach,eqpd25.
-*attach,iprd00.
-*attach,iprd01.
+attach,eqpd25.
+attach,iprd00.
+attach,iprd01.
 *attach,libd01.
 *attach,ppubin.
 attach,pbin.
-*attach,cbin.
-*attach,fbin.
+attach,cbin.
+attach,fbin.
 *attach,platlib.
 *attach,mbin.
 *attach,ubin.
@@ -21,18 +21,18 @@ attach,pbin.
 *attach,mfnx.
 *attach,backdmp.
 *attach,pnidbin.
-*attach,plprocs.
-*attach,ftpbin.
-*attach,dsdbin.
-*attach,mtrbin.
+attach,plprocs.
+attach,ftpbin.
+attach,dsdbin.
+attach,mtrbin.
 *
 libedit,p=system.
 *return,output.
 rewind,new.
 itemize,new.
-* cy871bi
+* cy871bk
 label,tape,vsn=ndt,lb=ku,po=w.
 rewind,new.
 copyei,new,tape.
 ~
-*file pbin
+*file mtrbin
