@@ -1,0 +1,18 @@
+[Unit]
+Description=DtCyber emulator
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User=cyber1
+Environment="HOSTNAME=cyber1"
+WorkingDirectory=/home/cyber1/D
+StandardOutput=journal
+ExecStartPre=/usr/bin/cp /home/cyber1/D/sys/871/cy871.ecs.initial /home/cyber1/D/sys/871/cy871.ecs
+ExecStart=/home/cyber1/D/dtcyber cybis871auto
+KillMode=process
+Restart=on-failure
+RestartSec=42s
+
+[Install]
+WantedBy=multi-user.target
