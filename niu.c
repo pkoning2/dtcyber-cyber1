@@ -654,11 +654,6 @@ static void niuInIo(void)
                 }
             mp = portVector + port;
             np = mp->np;
-            if (!dtActive (np))
-                {
-                continue;
-                }
-            
             if (mp->sendLogout)
                 {
                 /*
