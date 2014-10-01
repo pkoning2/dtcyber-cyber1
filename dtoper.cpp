@@ -131,6 +131,8 @@ typedef struct opMsg
 #include "wx/print.h"
 #include "wx/printdlg.h"
 #include "wx/rawbmp.h"
+#include <wx/validate.h>
+#include <wx/valnum.h>
 
 extern "C"
 {
@@ -691,7 +693,7 @@ void DtoperApp::OnAbout(wxCommandEvent&)
 {
     wxString msg;
 
-    msg.Printf (_T("DtCyber console (DTOPER) emulator %s.\n%s"),
+    msg.Printf (_T("DtCyber operator interface (DTOPER) emulator %s.\n%s"),
                 wxT ("V2.0.0"
                      L"\n  built with wxWidgets V" wxT (WXVERSION)
                      L"\n  build date " wxT (PTERMBUILDDATE) ),
@@ -1793,10 +1795,12 @@ DtoperPrefDialog::DtoperPrefDialog (DtoperFrame *parent, wxWindowID id, const wx
     m_autoConnect->SetValue (m_connect);
     sbs->Add (m_autoConnect, 0,   wxTOP | wxLEFT | wxRIGHT, 8);
     fgs = new wxFlexGridSizer (1, 2, 8, 8);
+
+    wxIntegerValidator<long> portval;
+    portval.SetRange (1, 65535);
     m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
-                                 wxDefaultPosition, wxSize (160+40, 18),
-                                 0, *new wxTextValidator (wxFILTER_NUMERIC,
-                                                          &m_port));
+                                 wxDefaultPosition, wxDefaultSize,
+                                 0, portval);
     fgs->Add (new wxStaticText (this, wxID_ANY, _("Default Port")));
     fgs->Add (m_portText);
     sbs->Add (fgs, 0, wxALL, 8);
@@ -1903,6 +1907,9 @@ DtoperConnDialog::DtoperConnDialog (wxWindowID id, const wxString &title)
 {
     wxBoxSizer *ds, *ods;
     wxFlexGridSizer *fgs;
+    wxIntegerValidator<long> portval;
+
+    portval.SetRange (1, 65535);
 
     // Sizer for the whole dialog box content
     ds = new wxBoxSizer (wxVERTICAL);
@@ -1911,9 +1918,8 @@ DtoperConnDialog::DtoperConnDialog (wxWindowID id, const wxString &title)
     m_port.Printf (wxT ("%d"), dtoperApp->m_port);
 
     m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
-                                 wxDefaultPosition, wxSize (160, 18),
-                                 0, *new wxTextValidator (wxFILTER_NUMERIC,
-                                                          &m_port));
+                                 wxDefaultPosition, wxDefaultSize,
+                                 0, portval);
     fgs = new wxFlexGridSizer (1, 2, 8, 8);
       
     fgs->Add (new wxStaticText (this, wxID_ANY, _("Port")));
