@@ -10,6 +10,7 @@ WorkingDirectory=/home/cyber1/D
 StandardOutput=journal
 ExecStartPre=/usr/bin/cp /home/cyber1/D/sys/871/cy871.ecs.initial /home/cyber1/D/sys/871/cy871.ecs
 ExecStart=/home/cyber1/D/dtcyber cybis871auto
+ExecStop=/home/cyber1/D/stop-dtcyber.py
 KillMode=process
 Restart=on-failure
 RestartSec=42s
