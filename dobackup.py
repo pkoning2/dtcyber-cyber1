@@ -22,7 +22,6 @@ FALLBACKDELAY = 60        # minutes to be down for PDT to PST time zone change
 BACKUPITEMS = ("pack", "sys/871")
 CYBER1ROOT = "/home/cyber1/D"
 BACKUPDEST = "backups"    # relative to CYBER1ROOT
-TMPDEST = "/tmp"          # place where tarball goes until finished
 
 # Two hostnames to send the backup to, None to skip that one.
 BACKUPDEST1 = None
@@ -243,14 +242,16 @@ def doshutdown (cons, platoup, delay, tzdelay, newtz):
     # stop-dtcyber.py
     cons.stop ()
     log ("Shutting down DtCyber")
-    subprocess.call (("systemctl", "stop", "dtcyber"))
+    subprocess.call (("systemctl", "stop", "dtcyber"), 
+                     universal_newlines = True)
     log ("Shut down complete")
     
 def dostartup ():
     """Restart PLATO.
     """
     log ("Starting DtCyber and PLATO")
-    subprocess.call (("/etc/rc.d/init.d/dtcyberd", "start"))
+    subprocess.call (("systemctl", "start", "dtcyber"),
+                     universal_newlines = True)
     time.sleep (5)
     pterm = dtscript.Pterm ()
     for i in range (50):
@@ -296,7 +297,8 @@ class Backup (subprocess.Popen):
         self.tarball = tarball
         args = ("tar", "cf", tarball) + items
         log ("Starting backup of %s to %s" % (str (items), tarball))
-        subprocess.Popen.__init__ (self, args, stderr = subprocess.STDOUT)
+        subprocess.Popen.__init__ (self, args, stderr = subprocess.STDOUT,
+                                   universal_newlines = True)
 
     def progress (self):
         """Returns progress, in the form of the current
@@ -308,8 +310,10 @@ class Backup (subprocess.Popen):
         return os.stat (self.tarball).st_size >> 10
 
 def getsize (path):
-    result = subprocess.check_output (("du", "-ks", path))
-    return int (result[0])
+    result = subprocess.check_output (("du", "-ks", path),
+                                      universal_newlines = True)
+    size, *x = result.split ()
+    return int (size)
 
 def docopy (tarball):
     for dest in (BACKUPDEST1, BACKUPDEST2):
@@ -317,7 +321,8 @@ def docopy (tarball):
             continue
         log ("Copying %s to %s" % (tarball, dest))
         subprocess.call (SCPARGS + (tarball, "%s:" % dest),
-                         stderr = subprocess.STDOUT)
+                         stderr = subprocess.STDOUT,
+                         universal_newlines = True)
 
 _time_re = re.compile (r"\d\d?\*\d\d\*\d\d [AP]M ([A-Z][A-Z][A-Z])")
 def checktz (cons, newtz):
@@ -365,7 +370,7 @@ def checktz (cons, newtz):
 def main ():
     os.chdir (CYBER1ROOT)
     tarbase = "cyber1-%s.tar" % time.strftime ("%F")
-    ttarball = os.path.join (TMPDEST, tarbase)
+    tarball = os.path.join (BACKUPDEST, tarbase)
     backupsize = 0
     for item in BACKUPITEMS:
         backupsize += getsize (item)
@@ -384,7 +389,7 @@ def main ():
     else:
         msg = "Cyber1 full backup in progress..."
     blackbox = Blackbox (msg)
-    backup = Backup (ttarball, BACKUPITEMS)
+    backup = Backup (tarball, BACKUPITEMS)
     elapsed = 0
     while True:
         time.sleep (30)
@@ -432,42 +437,40 @@ def main ():
         # Instead of returning a status as subprocess.call does, check_output
         # raises an exception if the exit status is nonzero.  Handle that
         # by a different "except" clause below.  
-        t = subprocess.check_output (("xz", "-h"))
+        t = subprocess.check_output (("xz", "-h"),
+                                     universal_newlines = True)
         cmd = "xz"
         ext = ".xz"
     except (OSError, subprocess.CalledProcessError):
         pass
     if not cmd:
         try:
-            if subprocess.call (("bzip2", "-h"), stdout = z, stderr = z) == 0:
+            if subprocess.call (("bzip2", "-h"), stdout = z, stderr = z,
+                                universal_newlines = True) == 0:
                 cmd = "bzip2"
                 ext = ".bz2"
         except OSError:
             pass
     if not cmd:
         try:
-            if subprocess.call (("gzip", "-h"), stdout = z, stderr = z) == 0:
+            if subprocess.call (("gzip", "-h"), stdout = z, stderr = z,
+                                universal_newlines = True) == 0:
                 cmd = "gzip"
                 ext = ".gz"
         except OSError:
             pass
     if cmd:
         log ("Compressing tarball with %s" % cmd)
-        ret = subprocess.call (("nice", cmd, "-v9", ttarball),
-                               stderr = subprocess.STDOUT)
+        ret = subprocess.call (("nice", cmd, "-v9", tarball),
+                               stderr = subprocess.STDOUT,
+                               universal_newlines = True)
         if ret:
             log ("Compression failed with exit status %d" % ret)
         else:
-            ttarball += ext
+            tarball += ext
     else:
         log ("Skipping tarball compression, no useable compressor found")
-    tarball = os.path.join (BACKUPDEST, tarbase) + ext
 
-    # The tarball is finished, so move it to its final destination,
-    # then copy it for the "push" destinations.  Note we use shutil
-    # rather than simply os.rename, because this may be a cross-filesystem
-    # rename and os.rename doesn't do that.
-    shutil.move (ttarball, tarball)
     docopy (tarball)
     
     # All done
