@@ -216,7 +216,7 @@ class device (object):
                 while tp and tp != "OPLD":
                     s, tp = self.catrec ()
         return '\n'.join (ret)
-        
+
 class tape (device):
     """Basic tape.  This reads a .tap file (standard DtCyber tape image file).
     """
@@ -469,8 +469,6 @@ def wtod (w, lmode = True, uc = False):
     character).  Return the translated string.
     """
     cl = [ ]
-    if lmode and w == 0:
-        return ""
     if uc:
         d2a = d2auc
     else:
@@ -486,6 +484,47 @@ def wtod (w, lmode = True, uc = False):
             break
         cl.append (d2a[(w >> i) & 0o77])
     return "".join (cl)
+
+# PLATO code to ASCII, four strings corresponding to the plain, shifted,
+# access, and shifted access.
+p2a = ( "\001abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.\xf7[]%\xd7\xab\001\001\001\001<>\001\001\001;",
+        "\001ABCDEFGHIJKLMNOPQRSTUVWXYZ\001\001\001\001\001\001_'\001\001\001\001\001\001{}&\001\001\"!\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001:",
+        "\001\001\001\001\001\001\001\xe6\xf8\001\xe5\xe4\001\xb5\001\xb0\001\001\001\001\001\001\001\001\001\xf6\001\xab\xbb\001\001\001@\xbb\001\001\001&\001\001\\\001\001#\001\001\001\001\001{}\001\xba\001\001\001\001\001\001\001\001\001\001~",
+        "\001\001\001\xa9\001\001\xc6\xd8|\xc5\xc4\001\001\001\001\001\001\001\001\001\001\001\001\001\xd6\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001\001" )
+
+def wtop (w, shift, access, lmode = True):
+    """Convert a 60 bit word to PLATO code.  If lmode is False,
+    don't pay attention to end of line (2 or more 00 characters).  If
+    lmode is True or defaulted, strip an end of line.  If lmode is
+    anything else, strip end of line and append that (presumably a \n
+    character).  Return the translated string, shift state, and access
+    state.
+    """
+    cl = [ ]
+    for i in (54, 48, 42, 36, 30, 24, 18, 12, 6, 0):
+        # In line mode, stop as soon as we have only zeroes left
+        if (w & ((1 << (i + 6)) - 1)) == 0 and lmode:
+            # If we found zero before the last character,
+            # that's a line ending, so insert the newline
+            # if one was requested.
+            if lmode is not True and i:
+                cl.append (lmode)
+            break
+        c = (w >> i) & 0o77
+        if c == 0o70:
+            shift = not shift
+        elif c == 0o76:
+            access = not access
+        else:
+            s = 0
+            if shift:
+                s = 1
+            if access:
+                s += 2
+            cl.append (p2a[s][c])
+            shift = access = False
+    return "".join (cl), shift, access
+
 
 def dump (wl):
     """Dump a list of 60 bit words in octal and display code.
@@ -507,14 +546,54 @@ def wordstod (data, uc = False):
     ret = [ wtod (d, '\n', uc) for d in data ]
     return "".join (ret)
 
-shift_re = re.compile ("'.")
-def shift (m):
-    return m.group (0)[1].upper ()
-
 def wordstop (data):
     """Convert a list of data words to the corresponding PLATO code
     text.
     """
-    ret = wordstod (data, uc = False)
-    ret = shift_re.sub (shift, ret)
-    return ret
+    ret = [ ]
+    shift = access = False
+    for d in data:
+        s, shift, access = wtop (d, shift, access, '\n')
+        ret.append (s)
+        if (d & 0o7777) == 0:
+            # end of line, reset shift/access
+            shift = access = False
+    return "".join (ret)
+
+def textrecs (t, mfn = None, plato = False):
+    """Read records from t, and send all text records (including PROC
+    ones) to text files of the same name.  If "mfn" is specified, copy
+    only the record of that name.  Code conversion is display code
+    if "plato" is False (default), PLATO code otherwise.
+    """
+    if mfn:
+        mfn = mfn.lower ()
+    if plato:
+        cvt = wordstop
+    else:
+        cvt = wordstod
+    count = 0
+    while True:
+        fn, data, eor = t.readrec ()
+        if eor:
+            # EOF or EOI encountered, stop
+            break
+        fn, tp, *x = t.srt (data)
+        fn = fn.lower ()
+        if mfn and fn != mfn:
+            # Looking for a name match, skip if it isn't
+            continue
+        if tp not in ("TEXT", "PROC"):
+            # Not a text type record, skip it
+            continue
+        if tp == "TEXT":
+            data = data[1:]
+        with open (fn, "wt") as f:
+            print ("writing", fn)
+            f.write (cvt (data))
+            count += 1
+        if mfn:
+            # Asking for a match and found one, quit
+            break
+    print (count, "files written")
+    
