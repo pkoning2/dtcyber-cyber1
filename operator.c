@@ -40,7 +40,7 @@
 **  Private Constants
 **  -----------------
 */
-#define OpCmdSize       64
+#define OpCmdSize       250
 #define NetBufSize      256
 #define SendBufSize     4096
 #define StatusLineMax   255
