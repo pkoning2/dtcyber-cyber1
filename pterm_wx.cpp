@@ -653,6 +653,10 @@ public:
     {
         return (m_connMode == ascii);
     }
+    bool Classic (void) const
+    {
+        return (m_connMode == niu);
+    }
     bool GswActive (void) const
     {
         return m_gswActive;
@@ -1037,8 +1041,14 @@ private:
     wxString    m_hostName;
     long        m_port;
     wxTimer     m_timer;
-    int         m_station;
     wxRect      m_rect;         // Used to save window size/pos
+    
+    // Session information received from the other end (mostly
+    // in metadata frames)
+    wxString    m_name;
+    wxString    m_group;
+    wxString    m_system;
+    wxString    m_station;
     
     // Stuff for pacing Paste operations
     wxTimer     m_pasteTimer;
@@ -1197,7 +1207,8 @@ private:
     void mode6 (u32 d);
     void mode7 (u32 d);
     void progmode (u32 d, int origin);
-    void ptermSetStation (int station, bool showtitle, bool showstatus);
+    void ptermSetConnected (void);
+    void ptermUpdateTitle (void);
     
     bool AssembleCoord (int d);
     int AssemblePaint (int d);
@@ -2597,8 +2608,11 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
       // m_hostName not initialized
       m_port (port),
       m_timer (this, Pterm_Timer),
-      m_station (0),
       // m_rect not initialized
+      m_name (""),
+      m_group (""),
+      m_system (""),
+      m_station (""),
       m_pasteTimer (this, Pterm_PasteTimer),
       // m_pasteText not initialized
       m_pasteIndex (-1),
@@ -3109,7 +3123,7 @@ void PtermFrame::BuildStatusBar (bool connecting)
         }
         else
         {
-            ptermSetStation (m_station, true, true);
+            ptermSetConnected ();
         }
         ptermShowTrace ();
         SetStatusBar (m_statusBar);
@@ -4135,6 +4149,9 @@ void PtermFrame::OnPref (wxCommandEvent&)
 
         //update the display according to what we did
         UpdateDisplayState ();
+
+        // Update the title bar (in case title bar settings changed)
+        ptermUpdateTitle ();
     }
 }
 
@@ -5010,7 +5027,6 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                 trace ("Entering PLATO terminal mode");
                 m_dumbTty = false;
                 mode = (3 << 2) + 1;    // set character mode, rewrite
-                ptermSetStation (-1, true, ptermApp->m_showStatusBar);   // Show connected in ASCII mode
             }
             else if ((d >> 8) == 0)
             {
@@ -5799,7 +5815,8 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                 if ((d & NOP_MASKDATA) == NOP_SETSTAT)
                 {
                     d &= 0777;
-                    ptermSetStation (d, true, ptermApp->m_showStatusBar);
+                    m_station.Printf ("%d-%d", d >> 5, d & 31);
+                    ptermUpdateTitle ();
                 }
                 // special code to get font type / size / flags
                 else if ((d & NOP_MASKDATA) == NOP_FONTTYPE)
@@ -5858,7 +5875,9 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                         settitleflag = true;
                     }
                     if (settitleflag)
+                    {
                         ProcessPlatoMetaData ();
+                    }
                 }
                 trace ("nop");
                 break;
@@ -6359,66 +6378,75 @@ void PtermFrame::ProcessPlatoMetaData ()
 {
     int fnd;
     int len;
-    wxString l_str;
-    wxString l_name;
-    wxString l_group;
-    wxString l_system;
-    wxString l_station;
 
-    //initialize
-    l_name = wxT ("");
-    l_group = wxT ("");
-    l_system = wxT ("");
-    l_station = wxT ("");
     len = m_PMD.Len ();
 
     //collect meta data items
     if ((fnd = m_PMD.Find (wxT ("name="))) != -1)
     {
-        l_name = m_PMD.Mid (fnd+5, len-fnd-5);
-        l_name = l_name.BeforeFirst (wxT (';'));
+        m_name = m_PMD.Mid (fnd + 5, len - fnd - 5);
+        m_name = m_name.BeforeFirst (wxT (';'));
     }
 
     if ((fnd = m_PMD.Find (wxT ("group="))) != -1)
     {
-        l_group = m_PMD.Mid (fnd+6, len-fnd-6);
-        l_group = l_group.BeforeFirst (wxT (';'));
+        m_group = m_PMD.Mid (fnd + 6, len - fnd - 6);
+        m_group = m_group.BeforeFirst (wxT (';'));
     }
 
     if ((fnd = m_PMD.Find (wxT ("system="))) != -1)
     {
-        l_system = m_PMD.Mid (fnd+7, len-fnd-7);
-        l_system = l_system.BeforeFirst (wxT (';'));
+        m_system = m_PMD.Mid (fnd + 7, len - fnd - 7);
+        m_system = m_system.BeforeFirst (wxT (';'));
     }
 
     if ((fnd = m_PMD.Find (wxT ("station="))) != -1)
     {
-        l_station = m_PMD.Mid (fnd+8, len-fnd-8);
-        l_station = l_station.BeforeFirst (wxT (';'));
+        m_station = m_PMD.Mid (fnd + 8, len - fnd - 8);
+        m_station = m_station.BeforeFirst (wxT (';'));
     }
 
+    // Now update the title bar based on what we just collected
+    ptermUpdateTitle ();
+}
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Update frame title based on received metadata
+**
+**  Parameters:     none
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void PtermFrame::ptermUpdateTitle ()
+{
+    wxString l_str;
+    
     //make title string based on flags
     l_str = wxT ("");
-    if (ptermApp->m_showSignon)
+    if (ptermApp->m_showSignon && m_name != wxT ("") && m_group != wxT (""))
     {
-        l_str = l_name;
+        l_str = m_name;
         l_str.Append (wxT ("/"));
-        l_str += l_group;
+        l_str += m_group;
+
+        // Show system name only as part of user/group
+        if (ptermApp->m_showSysName && m_system != wxT (""))
+        {
+            l_str.Append (wxT ("/"));
+            l_str += m_system;
+        }
     }
-    if (ptermApp->m_showSysName)
-    {
-        l_str.Append (wxT ("/"));
-        l_str += l_system;
-    }
+    
     if (ptermApp->m_showHost)
     {
         l_str.Append (wxT (" "));
         l_str += m_hostName;
     }
-    if (ptermApp->m_showStation)
+    if (ptermApp->m_showStation && m_station != wxT (""))
     {
         l_str.Append (wxT (" ("));
-        l_str += l_station;
+        l_str += m_station;
         l_str.Append (wxT (")"));
     }
     l_str.Trim (true);
@@ -6654,13 +6682,13 @@ void PtermFrame::ptermSetTrace (bool trace)
         // Turning trace on
         tracePterm = trace;
         traceF.Open (ptermApp->traceFn);
-        if (m_station < 0)
+        if (m_conn->Ascii ())
         {
             tracex ("Trace on, ASCII terminal");
         }
         else
         {
-            tracex ("Trace on, %d-%d", m_station >> 5, m_station & 31);
+            tracex ("Trace on, Classic terminal");
         }
     }
 
@@ -7286,58 +7314,27 @@ int PtermFrame::Parity (int key)
 }
 #endif
 
-void PtermFrame::ptermSetStation (int station, bool showtitle, bool showstatus)
+void PtermFrame::ptermSetConnected ()
 {
-
     //this routine is called only when connection is initially made
     //see ProcessPlatoMetaData for the dynamic code.
-    wxString l_hostname;
-    wxString l_station;
     wxString l_str;
 
     SetCursor (wxNullCursor);
-    m_station = station;
 
-    //build string for frame name
-    if (m_hostName.IsEmpty ())
+    l_str.Printf ("%s ", m_hostName);
+    if (HasConnection ())
     {
-        l_hostname = wxT ("");
-    }
-    else
-    {
-        l_hostname = m_hostName.c_str ();
-    }
-    if (station < 0)
-    {
-        l_station = wxT ("ASCII");
-    }
-    else
-    {
-        l_station.Printf (wxT ("%d-%d"), station >> 5, station & 31);
-    }
-
-    // only show what the user wants to see in title bar
-    if (showtitle)
-    {
-        l_str = wxT ("");
-        if (ptermApp->m_showHost)
+        if (m_conn->Ascii ())
         {
-            l_str.Printf (wxT ("%s "), l_hostname);
+            l_str.Append ("ASCII");
         }
-        if (ptermApp->m_showStation)
+        else if (m_conn->Classic ())
         {
-            l_str.Append (l_station);
+            l_str.Append ("Classic");
         }
-        ptermSetName (l_str);
     }
-
-    //always show host and station in status bar
-    if (showstatus)
-    {
-        l_str.Printf (wxT ("%s "), l_hostname);
-        l_str.Append (l_station);
-        ptermSetStatus (l_str);
-    }
+    ptermSetStatus (l_str);
 }
 
 void PtermFrame::ptermShowTrace ()
@@ -9755,13 +9752,6 @@ void PtermConnection::dataCallback (void)
     u32 platowd = 0;
     int i;
 
-    // We received something so the connection is now active
-    if (!m_connActive)
-    {
-        m_connActive = true;
-        StoreWord (C_CONNECTED);
-    }
-
     for (;;)
     {
         /*
@@ -9895,6 +9885,14 @@ int PtermConnection::AssembleAutoWord (void)
         dtClose (m_fet, TRUE);
         return C_DISCONNECT;
     }
+
+    // We received something so the connection is now active
+    if (!m_connActive)
+    {
+        m_connActive = true;
+        StoreWord (C_CONNECTED);
+    }
+
     if ((buf[0] & 0200) == 0 &&
         (buf[1] & 0300) == 0200 &&
         (buf[2] & 0300) == 0300)
@@ -10041,8 +10039,8 @@ int PtermConnection::NextWord (void)
     if (!Ascii () && 
         (word >> 16) == 3 &&
         word != 0700001 &&
-        !(m_owner->m_station == 1 && 
-          (word == 0770000 || word == 0730000)) &&
+        !((word == 0770000 || word == 0730000) &&
+          m_owner->m_station == wxT ("0-1")) &&
         ptermApp->m_gswEnable)
     {
         // It's an -extout- word, which means we'll want to start up
@@ -10107,12 +10105,7 @@ int PtermConnection::NextWord (void)
     }
     else if (word == C_CONNECTED)
     {
-        msg.Printf (_("Connected to %d.%d.%d.%d"), 
-                    (m_hostAddr >> 24) & 0xff,
-                    (m_hostAddr >> 16) & 0xff,
-                    (m_hostAddr >>  8) & 0xff,
-                    m_hostAddr & 0xff);
-        m_owner->ptermSetStatus (msg);
+        m_owner->ptermSetConnected ();
     }
         
     return word;
