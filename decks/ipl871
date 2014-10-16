@@ -870,7 +870,7 @@ return(opl)
 *i socket.76
           sa1    ovarg1
           nz     x1,extcx    do -extcall- command
-*i socket.440
+*i socket.421
  extcall  title  -extcall- command execution
 ***
 *         -extcall- command
