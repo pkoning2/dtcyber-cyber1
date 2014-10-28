@@ -473,7 +473,16 @@ void traceCpu(CpuContext *activeCpu,
         }
 #endif
 
-    fprintf(cpuTF[cpuNum], "%06d [%d] %6.6o  ", traceSequenceNo, cpuNum, p);
+    if (monitorCpu == cpuNum)
+        {
+        fprintf(cpuTF[cpuNum], "%06d [%d,M] %6.6o  ",
+                traceSequenceNo, cpuNum, p);
+        }
+    else
+        {
+        fprintf(cpuTF[cpuNum], "%06d [%d,%o] %6.6o  ",
+                traceSequenceNo, cpuNum, activeCpu->regMa / 0200, p);
+        }
     fprintf(cpuTF[cpuNum], "%02o%o%o%o   ", opFm, opI, opJ, opK);        // << not quite correct, but still nice for debugging
 
     /*
