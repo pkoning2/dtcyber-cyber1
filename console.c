@@ -593,6 +593,7 @@ static void consoleIo(void)
     u64 m;
     static char ts[40];
     time_t t;
+    struct tm tmbuf;
     u8 *p;
     
     switch (activeDevice->fcode)
@@ -663,7 +664,8 @@ static void consoleIo(void)
                                 time (&t);
                                 /* Note that DSD supplies punctuation */
                                 strftime (ts, sizeof (ts) - 1,
-                                          "%y%m%d\n%H%M%S\n", localtime (&t));
+                                          "%y%m%d\n%H%M%S\n", 
+                                          localtime_r (&t, &tmbuf));
                                 for (p = (u8 *) ts; *p; p++)
                                     {
                                     consoleQueueKey (asciiToConsole[*p]);

@@ -311,6 +311,7 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
     DiskParam *dp;
     DiskParam **dpvec;
     time_t mTime;
+    struct tm tmbuf;
     struct tm *lTime;
     u8 yy, mm, dd;
     u8 containerType = CtPacked;
@@ -575,7 +576,7 @@ static void dd8xxInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName, DiskSi
             mySector[1] |= (diskType  & 007) << (0 - 0);
 
             time(&mTime);
-            lTime = localtime(&mTime);
+            lTime = localtime_r(&mTime, &tmbuf);
             yy = lTime->tm_year % 100;
             mm = lTime->tm_mon + 1;
             dd = lTime->tm_mday;

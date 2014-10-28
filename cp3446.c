@@ -472,7 +472,7 @@ static void cp3446Load(DevSlot *up, int eqNo, char *fn)
     sprintf(fname, "CP3446_C%02o_E%o", up->channel->id, up->eqNo);
 
     time(&currentTime);
-    t = *localtime(&currentTime);
+    localtime_r(&currentTime, &t);
     sprintf(fnameNew, "CP3446_%04d%02d%02d_%02d%02d%02d",
             t.tm_year + 1900,
             t.tm_mon + 1,

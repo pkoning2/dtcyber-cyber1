@@ -510,9 +510,11 @@ const char *dtNowString (void)
     sprintf (us, ".%03d.", tv.wMilliseconds);
 #else
     struct timeval tv;
+    struct tm tmbuf;
 
     gettimeofday (&tv, NULL);
-    strftime (ts, sizeof (ts) - 1, "%y/%m/%d %H.%M.%S.", localtime (&tv.tv_sec));
+    strftime (ts, sizeof (ts) - 1, "%y/%m/%d %H.%M.%S.", 
+              localtime_r (&tv.tv_sec, &tmbuf));
     sprintf (us, "%06d.", tv.tv_usec);
 #endif
     strcat (ts, us);

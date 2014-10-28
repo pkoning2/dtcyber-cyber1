@@ -412,7 +412,7 @@ static void lp3000Unload(DevSlot *up, char *newFn)
     sprintf(fname, "LP5xx_C%02o_E%o", up->channel->id, up->eqNo);
 
     time(&currentTime);
-    t = *localtime(&currentTime);
+    localtime_r(&currentTime, &t);
     sprintf(fnameNew, "LP5xx_%04d%02d%02d_%02d%02d%02d",
         t.tm_year + 1900,
         t.tm_mon + 1,

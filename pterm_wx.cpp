@@ -271,9 +271,10 @@ void Trace::Log (const wxString &s)
         hdr.Printf ("%s.%03d: ", tbuf, tv.wMilliseconds);
 #else
         struct timeval tv;
-
+        struct tm tmbuf;
+        
         gettimeofday (&tv, NULL);
-        strftime (tbuf, 10, "%T", localtime (&tv.tv_sec));
+        strftime (tbuf, 10, "%T", localtime_r (&tv.tv_sec, &tmbuf));
         hdr.Printf ("%s.%03ld: ", tbuf, (long) tv.tv_usec / 1000);
 #endif
         hdr.Append (s);
