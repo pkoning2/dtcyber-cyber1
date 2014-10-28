@@ -967,7 +967,7 @@ class Pterm (Connection, MyThread):
     def logout (self):
         while "Press  NEXT  to begin" not in str (self):
             self.sendkey (self.SHIFT + self.STOP)
-            self.waitarrow (4)
+            self.waitarrow (1)
             
 # Python Character Mapping Codec dd60 generated from './console.txt' with gencodec.py,
 # then edited a fair amount.
