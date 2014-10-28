@@ -63,6 +63,28 @@ PLATO consists of four main CPU programs:
 3. Framat
 4. Conden
 
+Mastor handles disk I/O and the startup of all the other components.
+Mastor is also the original owner of all ECS; it shares most (but not
+all) of its ECS with the other programs.
+
+Plato is the executor: it handles the time slicing for all the active
+users, swapping state in and out between CM and ECS, and executing
+lessons.   
+
+Framat takes the terminal-independent output stream from Plato and
+formats it into the correct encoding for the various supported
+terminals.  It also interfaces to the terminal I/O devices.  These two
+functions are sometimes called "formatting" and "framing"; early on in
+the PLATO history these were two separate programs, which were
+combined into one.
+
+Conden is the lesson condensor: it converts Tutor source code into
+binary code.  It handles both standard (CPU) Tutor and MicroTutor; the
+latter is downloaded as needed into PPT terminals that include
+MicroTutor support.  There is a "CPU MicroTutor", essentially an
+emulator for MicroTutor code that executes as part of Plato; this does
+not currently work and is disabled on Cyber1.org.
+
 In addition, there are some utilty programs that run as needed, such
 as the lesson print program and the console (station 0-0) terminal
 display.
@@ -80,14 +102,42 @@ i.e., ones that are loaded on request, complete some function, and
 then exit.  Others, such as PIO, are loaded at PLATO startup and
 remain active for the duration.  
 
+MAS is a transient PP program that ...
+
+MRQ is a TBD PP program that ...
+
+PNG is a persistent PP program that handles disk I/O for PLATO packs.
+The version on Cyber1.org is written from scratch; it uses the same
+API as the original CERL version but it is much simpler because it
+expects to talk to emulated disks.  For that reason, it does no
+optimization and no error handling.  The original CERL version
+actually uses two PP programs, PNG and 1PG -- "ping" and "pong",
+called that because they would pass the disk channel back and forth to
+keep up with the data stream from consecutive sectors.  By contrast,
+the conventional NOS disk driver PP code could not handle this, and
+required "two to one interleaving" on 6000 series Cybers.  PNG is
+controlled by Mastor, using state variables in ECS.
+
+PIO is a persistent PP program that handles NIU (classic PLATO code)
+terminal I/O.  For the output side, it communicates with Framat via
+ECS variables.  For input, it communicates with Plato.  If Plato
+aborts, PIO notices and emits the famous "plato off" message.
+
 PLATO uses some special devices:
 
-1. DDP -- the data path from PP to ECS
-2. 844 disks -- the CERL PLATO disk subsystem expects to talk to 844
-disk drives, bypassing all standard NOS use of those drives.  For that
-reason, PLATO disks appear as device name "S4" rather than the usual
-"DI" for 844 drives.
-3. NIU (a.k.a., CIU), the "classic" terminal controller
+1. DDP -- the data path from PP to ECS.  Several are used: device name
+"D1" for PNG, device name "D2" for PIO, and device name "D3" for
+transient use of MAS and MRQ (to be checked)
+
+2. 844 disks -- the CERL PLATO disk subsystem (PNG) expects to talk to
+844-21 disk drives, bypassing all standard NOS use of those drives.
+For that reason, PLATO disks appear as device name "S0" (and S1 and up
+if there are multiple controllers) rather than the usual "DI" for 844
+drives so NOS will not attempt to grab them.
+
+3. NIU (a.k.a., CIU), the "classic" terminal controller, used by PIO.
+Device name is "CI", and each NIU has two channels, one for terminal
+input, a separate one for terminal output.
 
 ASCII terminal support was done in CDC (FAA) PLATO using the CDC
 product CDCNET, which includes the Telnet protocol.  That depends on
@@ -149,3 +199,37 @@ between Framat and PIO.
 ///Details TBS, partly because the existing code (10/1/2014) is not
 adequate for a sufficiently fast DtCyber host.
 
+The state variables involved reside in ECS; they are:
+1. Frame number
+2. Frame lengths table
+3. Frames
+
+The frame number is a 60 bit integer that is incremented by PIO.  The
+frame lengths is a 2000(8) entry vector of integers which give the
+number of CP words in each frame.  The frames are a 2000(8) entry
+vector of frames, each of which is TBS words long.  The vector index
+for both vectors is the low 10 bits of the frame number.  Each frame
+may be full, or it may be partially filled; the length vector entry
+for that frame shows the word count.  (TBS: entry count with entries
+smaller than words???)  If the frame length is less than the full
+length of a frame, that frame is the last one for the time slice.
+
+PIO keeps pointers to the current frame and the current frame length.
+It also keeps a copy of the frame number.  When the low 10 bits of the
+frame number increment to zero, the frame and frame length pointers
+are reset.  (Curiously, the frame number is read from ECS at startup,
+but the current frame/length pointers are not initialized from the low
+10 bits of the value read, instead they are initialized to the first
+frame.  This is not an issue in practice because PIO is started at
+Plato startup, and at that time the frame number is zero.  If PIO were
+ever restarted after Plato startup, there would be a temporary
+mismatch between the pointers and the frame number, but PIO is not in
+fact restarted after Plato startup so that is not a real concern.)
+
+Just before PIO starts processing a frame, it increments the frame
+number to point past it and writes that updated frame number to ECS. 
+
+When Framat needs to frame terminal output (i.e., copy it from the
+parcel chain of that terminal to suitable frames) it starts looking at
+the frame corresponding to the current frame number as read from ECS.
+Thus it is at least one frame ahead
