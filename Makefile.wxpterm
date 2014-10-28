@@ -204,12 +204,12 @@ pterm_sdl.o : pterm_sdl.c
 
 %.d : %.cpp
 	/bin/echo -n "$@ " > /tmp/$@
-	$(CXX) $(CXXFLAGS) -MM -MG $< >> /tmp/$@
+	$(CXX) $(INCL) $(CXXFLAGS) -MM -MG $< | fgrep -v type_traits >> /tmp/$@
 	mv -f /tmp/$@ $@
 
 pterm_sdl.d : pterm_sdl.c
 	/bin/echo -n "$@ " > /tmp/$@
-	$(CC) $(INCL) $(SDLCFLAGS) -I $(SNDINCL) -MM -MG $< >> /tmp/$@
+	$(CC) $(INCL) $(SDLCFLAGS) -I $(SNDINCL) -MM -MG $< | fgrep -v type_traits  >> /tmp/$@
 	mv -f /tmp/$@ $@
 
 %.mo : %.po
