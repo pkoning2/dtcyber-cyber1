@@ -25,7 +25,7 @@ note(dir)+*build unam
 libedit(i=dir,p=old,lo=e,b=0)
 rewind,abs,new,ulib.
 skipr,abs.
-compass(i=ulib,s=0,l=0,b=ulhdr)
+compass(a,i=ulib,s=0,l=0,b=ulhdr)
 rewind(ulhdr)
 copybr,ulhdr,abs.
 copyei,new,abs.
@@ -319,7 +319,7 @@ revert.  psm
 .*               binfile = file name to store binary on
 .*
 modify(z,lo=e)/*define option/*oplfile nos,ipl/*edit psmd
-compass(i,s=nostext,l=list,a)
+compass(a,i,s=nostext,l=list,a)
 .*
 .*        create new permanent file.
 .*
@@ -348,12 +348,12 @@ cstc(a,i,l=list,s=0,#ml=ml)
 *  main overlay.
 *
 modify(z,lo=e)/*oplfile nos,ipl/*read edit4
-cstc(i,l=list,c=ccommon,s=nostext,d,#ml=ml)
+cstc(a,i,l=list,c=ccommon,s=nostext,#ml=ml)
 *
 *  central overlays.
 *
 modify(z,lo=e)/*oplfile nos,ipl/*read edit5
-cstc(i,l=list,c=ccommon,s=0,d,#ml=ml)
+cstc(a,i,l=list,c=ccommon,s=0,#ml=ml)
 *---
 rewind(ccommon)
 rename(com=ccommon)
@@ -425,7 +425,7 @@ modify(z,lo=e)/*oplfile nos,ipl/*read edit1
 cstc(a,i,l=list,s=0,b=0,#ml=ml)
 .*
 modify(z,lo=e)/*oplfile nos,ipl/*read edit2
-cstc(i,l=list,c=ccom1,s=0,d,b=lgo1,#ml=ml)
+cstc(a,i,l=list,c=ccom1,s=0,b=lgo1,#ml=ml)
 .*
 rename(c1=ccom1)
 purge(ccom1/na)
@@ -459,7 +459,7 @@ modify(z,lo=e)/*oplfile nos,ipl/*read edit1
 cstc(a,i,l=list,s=0,b=0,#ml=ml)
 .*
 modify(z,lo=e)/*oplfile nos,ipl/*read edit2
-cstc(i,l=list,c=ccom2,s=0,d,b=lgo2,#ml=ml)
+cstc(a,i,l=list,c=ccom2,s=0,b=lgo2,#ml=ml)
 .*
 rename(c2=ccom2)
 purge(ccom2/na)
@@ -494,7 +494,7 @@ modify(z,lo=e)/*oplfile nos,ipl/*read edit1
 cstc(a,i,l=list,s=0,b=0,#ml=ml)
 .*
 modify(z,lo=e)/*oplfile nos,ipl/*read edit2
-cstc(i,l=list,c=ccom3,s=0,d,b=lgo3,#ml=ml)
+cstc(a,i,l=list,c=ccom3,s=0,b=lgo3,#ml=ml)
 .*
 unload(compile,edit1,edit2)
 .*
@@ -531,7 +531,7 @@ modify(z,lo=e)/*oplfile nos,ipl/*read edit1
 cstc(a,i,l=list,s=0,b=0,#ml=ml)
 .*
 modify(z,lo=e)/*oplfile nos,ipl/*read edit2
-cstc(i,l=list,c=ccom4,s=nostext,s=psstext,d,b=lgo4,#ml=ml)
+cstc(a,i,l=list,c=ccom4,s=nostext,s=psstext,b=lgo4,#ml=ml)
 .*
 unload(compile,edit1,edit2)
 .*
@@ -568,7 +568,7 @@ modify(z,lo=e)/*oplfile nos,ipl/*read edit1
 cstc(a,i,l=list,s=0,b=0,#ml=ml)
 .*
 modify(z,lo=e)/*oplfile nos,ipl/*read edit2
-cstc(i,l=list,c=ccom5,s=nostext,s=psstext,d,b=lgo5,#ml=ml)
+cstc(a,i,l=list,c=ccom5,s=nostext,s=psstext,b=lgo5,#ml=ml)
 .*
 unload(compile,edit1,edit2)
 .*
@@ -606,7 +606,7 @@ begin(level6,,oplfile=$nos,ipl$)
 modify(z,lo=e)/*oplfile nos,ipl,l6pl/*read edit1
 cstc(a,i,l=list,s=0,b=0,#ml=ml)
 modify(z,lo=e)/*oplfile nos,ipl,l6pl/*read edit2
-cstc(i,l=list,c=ccom6,s=nostext,s=psstext,d,b=lgo6,#ml=ml)
+cstc(a,i,l=list,c=ccom6,s=nostext,s=psstext,b=lgo6,#ml=ml)
 unload(compile,l6pl,edit1,edit2)
 .*
 rename(c6=ccom6)
@@ -768,26 +768,26 @@ cstc(a,i,l=list,s=0,#ml=ml)
 modify(z,lo=e)/*oplfile nos,ipl/*read edit2
 compass(a,i,l=list,s=0,#ml=ml)
 modify(z,lo=e)/*oplfile nos,ipl/*read edit3
-cstc(i,l=list,c=pcommon,s=nostext,d,#ml=ml)
+cstc(a,i,l=list,c=pcommon,s=nostext,#ml=ml)
 modify(z,lo=e)/*oplfile nos,ipl/*read edit4
-cstc(i,l=list,c=pcommon,s=0,d,#ml=ml)
+cstc(a,i,l=list,c=pcommon,s=0,#ml=ml)
 *---
 *         tutor
 *
 modify(z,lo=e)/*oplfile nos,ipl/*read edit5
-cstc(i,l=list,c=pcommon,s=0,d,#ml=ml)
+cstc(a,i,l=list,c=pcommon,s=0,#ml=ml)
 *---
 *         overlays
 *
 modify(z,lo=e)/*oplfile nos,ipl/*read edit6
-cstc(i,l=list,c=pcommon,s=0,d,#ml=ml)
+cstc(a,i,l=list,c=pcommon,s=0,#ml=ml)
 *---
 *         genfig
 *
 purge(genfig/na)
 define(genfig/ct=pu,m=r)
 modify(z,lo=e)/*oplfile nos,ipl/*edit genfigx
-compass,i,l=list,d,b=genfig.
+compass,a,i,l=list,b=genfig.
 unload,genfig.
 *
 rewind(lgo)
@@ -806,7 +806,7 @@ attach(genfig)
 attach(plato)
 unload(lgo,compile)
 genfig,plato.
-compass,i,s=0,l=0.
+compass,a,i,s=0,l=0.
 unload,genfig.
 *---
 begin(loader,,rel=$plato,lgo$,abs=pbin,rfl=0,map=pmap)
@@ -917,18 +917,18 @@ cstc(a,i,l=list,s=0,#ml=ml)
 modify(z,lo=e)/*oplfile nos,ipl/*read edit2
 cstc(a,i,l=list,c=fcommon,s=nostext,#ml=ml)
 modify(z,lo=e)/*oplfile nos,ipl/*read edit3
-cstc(i,l=list,c=fcommon,s=nostext,d,#ml=ml)
+cstc(a,i,l=list,c=fcommon,s=nostext,#ml=ml)
 modify(z,lo=e)/*oplfile nos,ipl/*read edit4
-cstc(i,l=list,c=fcommon,s=0,d,#ml=ml)
+cstc(a,i,l=list,c=fcommon,s=0,#ml=ml)
 *---
 *         overlays
 *
 modify(z,lo=e)/*oplfile nos,ipl/*read edit5
-cstc(i,l=list,c=fcommon,s=0,d,#ml=ml)
+cstc(a,i,l=list,c=fcommon,s=0,#ml=ml)
 purge(genfig/na)
 define(genfig/ct=pu,m=r)
 modify(z,lo=e)/*oplfile nos,ipl/*edit genfigx
-compass,i,l=0,d,b=genfig.
+compass,a,i,l=0,b=genfig.
 unload,genfig.
 *---
 rewind(lgo)
@@ -947,7 +947,7 @@ attach(genfig)
 attach(framat)
 unload(lgo,compile)
 genfig,framat.
-compass,i,s=0,l=0.
+compass,a,i,s=0,l=0.
 unload,genfig.
 *---
 begin(loader,,rel=$framat,lgo$,abs=fbin,rfl=0,map=fmap,mo=sbex)
@@ -992,17 +992,17 @@ cstc(a,i,s=nostext,l=list,#ml=ml)
 *         main  ident.
 *
 modify(z,lo=e)/*oplfile nos,ipl/*read edit2
-cstc(d,i,c=plfcom,s=nostext,l=list,#ml=ml)
+cstc(a,d,i,c=plfcom,s=nostext,l=list,#ml=ml)
 *
 *         other main overlay idents.
 *
 modify(z,lo=e)/*oplfile nos,ipl/*read edit3
-cstc(d,i,c=plfcom,s=nostext,l=list,#ml=ml)
+cstc(a,d,i,c=plfcom,s=nostext,l=list,#ml=ml)
 *
 *         overlays.
 *
 modify(z,lo=e)/*oplfile nos,ipl/*read edit4
-cstc(d,i,c=plfcom,s=nostext,l=list,#ml=ml)
+cstc(a,d,i,c=plfcom,s=nostext,l=list,#ml=ml)
 *
 rewind(plfcom)
 rename(plfc=plfcom)
@@ -1074,13 +1074,13 @@ revert. plf
 unload(mast,mastn,ppus)
 modify(z,lo=e)/*oplfile nos,ipl/*read edit1
 unload(edit1)
-compass(i,#ml=ml,l=list,s=nostext,d,b=mast)
+compass(a,i,#ml=ml,l=list,s=nostext,b=mast)
 modify(z,lo=e)/*oplfile nos,ipl/*read edit2
 unload(edit2)
-compass(i,l=list,#ml=ml,s=nostext,d,b=mastn)
+compass(a,i,l=list,#ml=ml,s=nostext,b=mastn)
 modify(z,lo=e)/*oplfile nos,ipl/*read edit3
 unload(edit3)
-compass(i,#ml=ml_d,l=list,s=nostext,d,b=ppus)
+compass(a,i,#ml=ml_d,l=list,s=nostext,b=ppus)
 *---
 rfl,60000.
 begin(ulib,,mast,ulibm,mastor)
@@ -1121,17 +1121,17 @@ revert. mastor
 unload(lgo)
 rfl(60000)
 modify(z,lo=e)/*oplfile nos,ipl/*read edit1
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 .*
 .*        only dev system gets some utilities
 .*
 .*ife((r1g.and.200000b)=200000b,dev)
 modify(z,lo=e)/*oplfile nos,ipl/*read edit2
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 .*endif(dev)
 .*
 modify(z,lo=e)/*oplfile nos,ipl/*read edit3
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 *---
 rewind(lgo)
 purge(ppubin/na)
@@ -1154,11 +1154,11 @@ revert. ppus
 unload(lgo)
 *** console/plt ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit dd60
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** platlib ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit platlib
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 rewind(lgo)
 attach(platlib/m=w,na)
 if(.not.file(platlib,as))define(platlib/ct=pu,m=r)
@@ -1209,16 +1209,16 @@ bksp(tbin)
 unload(lgo,lgob,compile)
 *** tprint ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit tprta,tprtb,tprtc
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 library(platlib)
 begin(lcp)
 *** pprint ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit pprint
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** pdprt ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit pdprt
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 library(platlib)
 begin(lcp)
 *** aprt ***
@@ -1228,11 +1228,11 @@ library(platlib)
 begin(lcp)
 *** efrdmp ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit efrdmp
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** abs/esm,pp/esm ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit esmcp,esmpp
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** pf / pcode / ppack ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit pf,pcode,ppack
@@ -1240,23 +1240,23 @@ modify(z,lo=e)/*oplfile nos,ipl/*edit pf,pcode,ppack
 .*  following is *cstc* instead of *compass* to get around
 .*  error which creates *errs* when there are no errors.
 .*
-cstc(i,l=list,s=nostext,c=0,d,#ml=ml)
+cstc(a,i,l=list,s=nostext,c=0,#ml=ml)
 begin(cabs)
 *** submitm / masjob ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit submitm,masjob
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** tform ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit tform
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** emdmp/emprt/memprt ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit memprt,emdmp,cmdmp
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** wait ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit waitx
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** mfutil ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit mfutil
@@ -1264,54 +1264,54 @@ modify(z,lo=e)/*oplfile nos,ipl/*edit mfutil
 .*  following is *cstc* instead of *compass* to get around
 .*  error which creates *errs* when there are no errors.
 .*
-cstc(i,l=list,s=nostext,c=0,d,#ml=ml)
+cstc(a,i,l=list,s=nostext,c=0,#ml=ml)
 begin(cabs)
 *** ecstst / ddpt ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit ecstst,ddpt
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** backlib ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit backlib
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 library(platlib)
 begin(lc)
 *** backlst ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit backlst
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 library(platlib)
 begin(lc)
 *** copypf ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit copypf
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 library(platlib)
 begin(lc)
 *** copymf ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit copymf
-cstc(i,l=list,s=nostext,d,#ml=ml)
+cstc(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** backone ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit backone
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 library(platlib)
 begin(lc)
 *** backtwo ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit backtwo
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 library(platlib)
 begin(lc)
 *** backcpy ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit backcpy
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 library(platlib)
 begin(lc)
 *** backmod ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit backmod
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 library(platlib)
 begin(lc)
 *** reqpack/spf ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit reqpack,spf
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** rafpbc ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit rafpbc
@@ -1351,11 +1351,11 @@ pascal(i,l=list,pl=0/u+)
 begin(lc)
 *** npudmp/npudpp/npd ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit npudmp,npudpp,npd
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** abs/rmfconv ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit rmfconv
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *---
 .*
@@ -1390,7 +1390,7 @@ unload(prtx,misc)
 *---
 *** pmod ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit pmod
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *---
 *** scm ***
@@ -1399,7 +1399,7 @@ ftn(a,i,opt=2,l=list)
 begin(lcp)
 *** modfrm ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit modfrm
-compass(i,l=list,s=systext,d,#ml=ml)
+compass(a,i,l=list,s=systext,#ml=ml)
 library.
 ldset(err=all)
 ldset(lib=srt5lib/bamlib)
@@ -1412,7 +1412,7 @@ bksp(tbin)
 unload(lgo,lgob,compile)
 *** pptldr ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit pptldr
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 *** rafpp ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit rafpp
@@ -1441,7 +1441,7 @@ begin(lc)
 *---
 *** itcopy ***
 modify(z,lo=e)/*oplfile nos,ipl/*edit itcopy
-compass(i,l=list,s=nostext,d,#ml=ml)
+compass(a,i,l=list,s=nostext,#ml=ml)
 begin(cabs)
 .*
 endif(devutil)
@@ -1489,7 +1489,7 @@ rewind(lgo,pni1)
 .*        assemble pni2 (cpu compass) with standard nettext
 .*
 modify(z,lo=e,l=errs)/*oplfile nos,ipl/*edit pni2,plazlsr
-compass(a,i,s=0,s=nostext,s=nettext,#ml=ml,d,o=errs,l=list,b=pni2)
+compass(a,i,s=0,s=nostext,s=nettext,#ml=ml,o=errs,l=list,b=pni2)
 .*
 .*        load normal and debug versions from standard libs.
 .*
