@@ -14,6 +14,189 @@ return(opl)
 */ ---   block=01-e opl2                 83/09/22. 20.24    source
 *oplfile opl2
 */
+*ident ovlfix
+*/ -------------------------------------------------------------------
+*/ ---   block=01-e ovlfix               14/10/24. 14.48    source
+*/ -------------------------------------------------------------------
+*/
+*deck ftext
+*d VGVT100.1
+ LV0LTH   EQU    4600B       MAX LEVEL 0 OVERLAY LENGTH
+*/ end ovlthfx
+*/
+*/
+*/ -------------------------------------------------------------------
+*/ ---   block=01-e fastniu              14/10/22. 13.48    source
+*/ -------------------------------------------------------------------
+*/
+*/ change framat-pio interface so dtcyber emulated niu works correctly
+*/ when running without rate limiting.
+*/
+*/ the effect of the lack of rate limiting is that pio can get ahead
+*/ of framat, unlike the classic hardware which needed 16.66 ms to
+*/ send a frame and would not accept another one until that time is up.
+*/ the framat-pio communication assumed that it would not be possible
+*/ for pio to finish one frame and go on to the next in less time than
+*/ it would take framat to frame all the pending output for a station.
+*/ if there is a lot of output to frame, that is no longer true when
+*/ the niu frame pacing is taken out of the picture.
+*/
+*/ solution: add a *barrier* variable set by framat, which specifies
+*/ the frame number that pio is not allowed to reach.  whenever pio
+*/ is about to process a frame, it checks if the barrier matches that
+*/ frame number.  If yes, it pauses.  the barrier is in the same block
+*/ of ecs where the frame counter lives.  there are two frame counters,
+*/ one for each supported ciu.  the barriers are also indexed by ciu
+*/ number, at offset 2 from the frame counter.  the barrier is simply
+*/ the frame counter value that pio is not allowed to reach.  when
+*/ framat is not busy, the barrier is set to once around the frame
+*/ length table from the last position that framat has seen as complete.
+*/ this ensures that pio cannot wrap around the length table and revisit
+*/ old frames whose lengths have not been zeroed yet, even if pio gets
+*/ far ahead of framat.  this is not likely in practice, but it is an
+*/ easy thing to implement just in case.
+*/
+*/ in addition, the frame length table is updated every poll, which
+*/ ensures that the framer stays ahead of pio.
+*/
+*/ note that the error correction code paths are not handled in this
+*/ patch, because they are not used in the emulated environment.
+*/
+*/ -------------------------------------------------------------------
+*ident fastniu
+*deck platxt
+*delete platxt.671
+ aframpt  ecsbuf 4           frame counters and framer-pio barriers
+*/ end platxt
+*/
+*deck ftext
+*d ftext.516
+*/ end ftext
+*/
+*deck format
+*d format.294,format.304
+*i format.310
+          rj     cpb         turn off pio barrier
+*i format.316
+          rj     cpb         turn off pio barrier
+*i format.435
+ cpb      title  clear *pio* barrier
+*
+*         cpb - clear *pio* barrier.
+*
+*         this routine removes the barrier set while framer is 
+*         sending frames to the framat-pio frame buffers.
+*         more precisely, it sets the barrier to nearly once
+*         around the frame length table, to ensure that pio
+*         can process all that has been framed but cannot wrap
+*         around and reprocess old frames.
+*
+*         uses   a2, 6.
+*                x0, 2, 6.
+*
+          entry  cpb
+
+ cpb      ps
+          sa2    framid      get fod index
+          sa2    x2+flthpnt  get how far lengths have been zeroed
+          sx6    nframs-2
+          ix6    x6+x2       form new barrier value
+          sa2    xfrmpnt
+          sx0    2
+          ix0    x2+x0       form barrier ecs address
+          wx6    x0          turn off pio barrier
+          eq     cpb
+          space  4,12
+*d yixov.359
+ fr900    call   cpb         turn off pio barrier
+          call   cleanup     drop unused parcels
+*d format.1828
+          ext    ecsprty,ecsprtz,cpb
+*d yixov.370
+          eq     fr991
+*d yixov.374
+          nz     x2,fr990    re-enter continued output queue
+*d yixov.381
+ fr990    call   cpb         turn off pio barrier
+ fr991    call   enterq      put this station in queue
+*i yixov.651
+          call   cpb         turn off pio barrier
+*i format.2465
+*                pio barrier set at (frmpnt).
+*d for180.37
+*i format.2479
+          sx0    2
+          ix0    x0+x2       form ecs address of barrier
+          wx6    x0          set barrier at next frame
+          rx5    x2          re-read frame count
+          bx5    x5-x1
+          nz     x5,setf     if pio frame counter changed
+          mx2    -nfrmshf 
+*/ ??? should setf35 load nframs-n for small n instead?
+*i format.2531
+          sa2    xfrmpnt
+          sx0    2
+          ix0    x2+x0       form barrier ecs address
+          wx6    x0          update barrier to start index we found
+*/ end format
+*/
+*deck pio
+*d pio.19,pio.40
+*         10 words of argument are passed to this program
+*
+*         12/, 24/ecs address of station switch list,
+*              24/ecs address of fastkey buffer
+*         60/number of sites recognized
+*         12/, 24/ecs address of scim buffer,
+*              24/ecs address of key buffer
+*         60/ecs address of frame counter and frame count barrier
+*         60/ecs address of frame length table
+*         60/ecs address of first frame buffer
+*         12/, 24/ecs address of statistics buffer,
+*              24/unused
+*         60/unused
+*         60/maximum frame length
+*         60/physical-logical site mapping info
+*d pio.407
+*         check for framat-pio barrier.  if we are about to process
+*         the frame mentioned by the barrier, pause until the barrier
+*         is dropped or moves.
+*
+ m215     ldc    ecsbuff
+          std    d.t0        d.t0 = ppu memory address
+          ldm    ecra+1      compute ecs addr of barrier
+          adm    outpnt+1
+          adn    2           +2 for barrier address
+          std    d.t2        d.t2 = lower part of ecs addr
+          shn    -12
+          adm    ecra
+          adm    outpnt
+          std    d.t1        d.t1 = upper part of ecs addr
+          ldn    5
+          std    d.t3        d.t3 = number words to read
+          call   readecs     read barrier word
+          ldm    ecsbuff+4   get low order barrier frame count
+          lmm    nframe+4
+          lpc    fmask       mask off frame index
+          njn    m217        if barrier for a different index
+          ldd    cp
+          adn    ms2w        form address of message line 2
+          cwm    m216,tr
+          call   pause       check for storage move / error
+          ujp    m215        check again
+
+ m216     dis    ,*pio  wait barrier.*
+
+ m217     ldn    zerl
+          crd    cm
+          ldd    cp
+          adn    ms2w        form address of message line 2
+          cwd    cm          clear wait message
+          ldn    4
+*/ end pio
+*/
+*/ end fastniu
+*/
 */ ---   block=01-e rvar leak            12/03/01. 12.00    source
 */ -------------------------------------------------------------------
 */
@@ -1796,99 +1979,6 @@ sbtpterm equ    16          pterm for cyber1 software
  outbl.   max    mdismax+4,nframs
  outblth  equ    outbl.
 */ end ftext
-*/
-*/ -------------------------------------------------------------------
-*/ ---   block=01-e fastniu              83/09/22. 20.24    source
-*/ -------------------------------------------------------------------
-*/
-*/ change framat-pio interface so dtcyber emulated niu works correctly
-*/ when running without rate limiting.
-*/
-*/ the effect of the lack of rate limiting is that pio can get ahead
-*/ of framat, unlike the classic hardware which needed 16.66 ms to
-*/ send a frame and would not accept another one until that time is up.
-*/ the framat-pio communication assumed that it would not be possible
-*/ for pio to finish one frame and go on to the next in less time than
-*/ it would take framat to frame all the pending output for a station.
-*/ if there is a lot of output to frame, that is no longer true when
-*/ the niu frame pacing is taken out of the picture.
-*/
-*/ solution: (a) update the frame counters all the time.  (b) add
-*/ a framat-pio interlock variable, 2 ecs words right after the
-*/ pio frame counter words (one per niu).  framat sets that word
-*/ non-zero while it is filling the frame buffer chain for a station,
-*/ starting just before it reads the ppu frame counter, and ending
-*/ after it has written the updated frame lengths.  if the interlock
-*/ is set, pio waits exactly as it would clasically when the niu is
-*/ not yet ready for a new frame.
-*/
-*/ note that the error correction code paths are not handled in this
-*/ patch, because they are not used in the emulated environment.
-*/
-*/ -------------------------------------------------------------------
-*ident fastniu
-*deck format
-*delete format.297,format.304
-*/ end format
-*/
-*deck pio
-*insert pio.28
-*             the framat-pio framing interlock is at offset +2 from here.
-*delete pio.268,pio.270
-*         wait for framat-pio framing interlock to be clear
-*
- m110     ldc    ecsbuff
-          std    d.t0        d.t0 = ppu memory address
-          ldm    ecra+1      compute ecs addr of interlock
-          adm    outpnt+1
-          adn    2           +2 for interlock
-          std    d.t2        d.t2 = lower part of ecs addr
-          shn    -12
-          adm    ecra
-          adm    outpnt
-          std    d.t1        d.t1 = upper part of ecs addr
-          ldn    5
-          std    d.t3        d.t3 = number words to read
-          call   readecs     read interlock
-          ldm    ecsbuff+4
-          njp    main        if interlock set
-*
-*         attempt to select ciu and output no-op
-*
-          ijm    m112,o=niu
-*/ end pio
-*/
-*deck platxt
-*delete platxt.671
- aframpt  ecsbuf 4           frame counters and framer-pio interlocks
-*/ end platxt
-*/
-*deck format
-*insert format.2034
-          sa2    xfrmpnt
-          sx3    2
-          mx6    0
-          ix3    x2+x3       form address of interlock
-          wx6    x3          clear pio interlock (may chg *a6*)
-
-*delete format.2042
-          sa2    xfrmpnt
-          sx3    2
-          sx6    1
-          ix3    x2+x3       form address of interlock
-          wx6    x3          set pio interlock (may chg *a6*)
-          rx2    x2          read current pio frame ctr (may chg *a2*)
-          ix3    x1-x2       check pio against framat pointers
-          pl     x3,ftw050   if framat not behind
-          bx1    x2          start framing from next pio frame
-          bx3    -x3         number of frames pio is ahead
-          sb6    x3          pretend to caller we used that much extra
-
- ftw050   mx0    -nfrmshf
-*/ this one line change is a documentation fix
-*delete for180.35
- setf     sa2    xfrmpnt     ecs address of pio frame counter
-*/ end format
 */
 */ -------------------------------------------------------------------
 */ ---   block=01-e back2exit            83/09/22. 20.24    source
