@@ -319,7 +319,7 @@ revert.  psm
 .*               binfile = file name to store binary on
 .*
 modify(z,lo=e)/*define option/*oplfile nos,ipl/*edit psmd
-compass(a,i,s=nostext,l=list,a)
+compass(i,s=nostext,l=list,a)
 .*
 .*        create new permanent file.
 .*
