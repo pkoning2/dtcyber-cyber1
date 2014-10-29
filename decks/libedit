@@ -2,20 +2,20 @@ job(cm140000,t77770)
 user(plato,plato)
 common,system.
 *
-*attach,cmrd25.
-*attach,cmrd26.
+attach,cmrd25.
+attach,cmrd26.
 attach,eqpd25.
 attach,iprd00.
 attach,iprd01.
 *attach,libd01.
-*attach,ppubin.
+attach,ppubin.
 attach,pbin.
 attach,cbin.
 attach,fbin.
 *attach,platlib.
-*attach,mbin.
-*attach,ubin.
-*attach,config.
+attach,mbin.
+attach,ubin.
+attach,config.
 *attach,tmbin.
 *attach,mfdx.
 *attach,mfnx.
@@ -30,10 +30,12 @@ libedit,p=system.
 *return,output.
 rewind,new.
 itemize,new.
-* cy871bj
+* cy871BL try 6
 label,tape,vsn=ndt,lb=ku,po=w.
 rewind,new.
 copyei,new,tape.
 ~
+*file fbin
 *file pbin
-*file ftpbin
+*file config
+*file ppubin

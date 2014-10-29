@@ -901,9 +901,6 @@ return(opl)
  sockret  sa6    treturn
           eq     process
 
- gsnum    vfd    42/0,6/s.get,12/e.sock
-          bssz   2
-
 ** map user socket index to socket number.
 *
 * on entry, varbuf+1 is the varbuf entry for the socknum argument.
@@ -1053,7 +1050,7 @@ return(opl)
 *i socket.76
           sa1    ovarg1
           nz     x1,extcx    do -extcall- command
-*i socket.421
+*i socket.418
  extcall  title  -extcall- command execution
 ***
 *         -extcall- command
