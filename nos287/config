@@ -17,7 +17,9 @@ NAMTO=120.
 *CPSPD=1700.      CPU SPEED (830/835)
 *CPSPD=500.      PLATO HOTLINE 2/16/89 TEST 5/3/90 
 *CPSPD=375.       CNB-11/30/95 PER C. HOPKINS/UOL 
-CPSPD=750.       gpk 2006.08.28, see sysnotes note 2006.07.26.
+*CPSPD=750.       gpk 2006.08.28, see sysnotes note 2006.07.26.
+CPSPD=2000.       gpk 2014.10.29.
+*
 USERS=192.        MAXIMUM NUMBER OF USERS
 *
 *       CHANGES TO DEFAULT EXECUTORS, FORMATTERS, CONDENSORS 
@@ -53,8 +55,9 @@ N1SIT=5.         STARTING PNI SITE
 NN1SI=2.         NUMBER OF PNI SITES 
 FRAM1=200.       CIU 0 FRAME SIZE
 *FRAM1=400.       CIU 0 FRAME SIZE
-forml=3500.      format-to-framer queue length
-nparc=2000.      number of parcels
+forml=6000.
+fofrl=8000.      format to framer queue length
+nparc=4000.      number of parcels
 *
 *
 CBLTH=21.        CONDENSOR SOURCE BUFFER LENGTH
