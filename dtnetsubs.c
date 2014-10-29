@@ -1029,6 +1029,10 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
     fet->ps = ps;
     fet->psIndex = psi;
     ps->portVec[psi] = fet;
+    if (!listen)
+        {
+        ps->curPorts++;
+        }
     
     /*
     **  Create the data receive and transmit threads, if needed
