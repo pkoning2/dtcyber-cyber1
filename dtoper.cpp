@@ -133,6 +133,7 @@ typedef struct opMsg
 #include "wx/rawbmp.h"
 #include <wx/validate.h>
 #include <wx/valnum.h>
+#include <wx/aboutdlg.h>
 
 extern "C"
 {
@@ -691,15 +692,17 @@ bool DtoperApp::DoConnect (bool ask)
 
 void DtoperApp::OnAbout(wxCommandEvent&)
 {
-    wxString msg;
+    wxAboutDialogInfo info;
 
-    msg.Printf (_T("DtCyber operator interface (DTOPER) emulator %s.\n%s"),
-                wxT ("V2.0.0"
-                     L"\n  built with wxWidgets V" wxT (WXVERSION)
-                     L"\n  build date " wxT (PTERMBUILDDATE) ),
-                _("Copyright \xA9 2004-2014 by Paul Koning."));
+    info.SetName (_("DTOPER"));
+    info.SetVersion (_("V2.0.0"));
+    info.SetDescription (_("DtCyber operator interface (DTOPER) emulator."
+                           L"\n  built with wxWidgets V" wxT (WXVERSION)
+                           L"\n  build date " wxT(PTERMBUILDDATE)));
+    info.SetCopyright (wxT("(C) 2004-2014 by Paul Koning"));
+    info.SetWebSite ("http://cyber1.org");
     
-    wxMessageBox(msg, _("About Dtoper"), wxOK | wxICON_INFORMATION, NULL);
+    wxAboutBox(info);
 }
 
 void DtoperApp::OnPref (wxCommandEvent&)

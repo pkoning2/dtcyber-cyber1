@@ -94,6 +94,7 @@ by making the bitmap itself different.
 #include <wx/validate.h>
 #include <wx/valnum.h>
 #include <wx/cmdargs.h>
+#include <wx/aboutdlg.h>
 
 extern "C"
 {
@@ -2411,14 +2412,26 @@ wxString PtermApp::ProfileFileName (wxString profile)
 
 void PtermApp::OnAbout (wxCommandEvent&)
 {
-    wxMessageBox (wxT (STRPRODUCTNAME) L" V" wxT (STRFILEVER)
-                      L"\n  built with wxWidgets V" wxT (WXVERSION)
-                      L"\n  build date " wxT (PTERMBUILDDATE)
+    wxAboutDialogInfo info;
+
+    info.SetName (_(STRPRODUCTNAME));
+    info.SetVersion (_("V" STRFILEVER));
+    info.SetDescription (_("PLATO terminal emulator."
+                           L"\n  built with wxWidgets V" wxT (WXVERSION)
+                           L"\n  build date " wxT(PTERMBUILDDATE)
 #ifdef PTERMSVNREV
-                      L"\n  SVN revision " wxT (PTERMSVNREV)
+                           L"\n  SVN revision " wxT (PTERMSVNREV)
 #endif
-                      L"\n" wxT (STRLEGALCOPYRIGHT),
-                      _(L"About Pterm"), wxOK | wxICON_INFORMATION, NULL);
+                             ));
+    info.SetCopyright (wxT(STRLEGALCOPYRIGHT));
+    info.AddDeveloper ("Paul Koning");
+    info.AddDeveloper ("Joe Stanton");
+    info.AddDeveloper ("Bill Galcher");
+    info.AddDeveloper ("Steve Zoppi");
+    
+    info.SetWebSite ("http://cyber1.org");
+    
+    wxAboutBox(info);
 }
 
 void PtermApp::OnHelpKeys (wxCommandEvent &)

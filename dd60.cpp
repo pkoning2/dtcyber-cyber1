@@ -123,6 +123,7 @@
 #include "wx/rawbmp.h"
 #include <wx/validate.h>
 #include <wx/valnum.h>
+#include <wx/aboutdlg.h>
 
 extern "C"
 {
@@ -880,15 +881,17 @@ bool Dd60App::DoConnect (bool ask, double interval)
 
 void Dd60App::OnAbout(wxCommandEvent&)
 {
-    wxString msg;
+    wxAboutDialogInfo info;
 
-    msg.Printf (_T("DtCyber console (DD60) emulator %s.\n%s"),
-                wxT ("V" wxT (DD60VERSION)
-                     L"\n  built with wxWidgets V" wxT (WXVERSION)
-                     L"\n  build date " wxT(PTERMBUILDDATE)),
-                _("Copyright \xA9 2004-2014 by Paul Koning."));
+    info.SetName (_("DD60"));
+    info.SetVersion (_("V" DD60VERSION));
+    info.SetDescription (_("DtCyber console (DD60) emulator."
+                           L"\n  built with wxWidgets V" wxT (WXVERSION)
+                           L"\n  build date " wxT(PTERMBUILDDATE)));
+    info.SetCopyright (wxT("(C) 2004-2014 by Paul Koning"));
+    info.SetWebSite ("http://cyber1.org");
     
-    wxMessageBox(msg, _("About Dd60"), wxOK | wxICON_INFORMATION, NULL);
+    wxAboutBox(info);
 }
 
 void Dd60App::OnPref (wxCommandEvent&)
