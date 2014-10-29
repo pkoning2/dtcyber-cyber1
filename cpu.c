@@ -104,7 +104,7 @@ static void cpuTraceCtl(CPUVARG);
 static void cpuExchangeJump(CPUVARG);
 #ifdef CPU_THREADS
 static void cpuCreateThread(int cpuNum);
-static ThreadFunRet cpuThread(void *param);
+static dtThreadFun (cpuThread, param);
 #endif /* CPU_THREADS */
 
 #ifdef DUAL_CPU
@@ -1021,6 +1021,8 @@ static ThreadFunRet cpuThread(void *param)
         {
         cpuStep (activeCpu);
         }
+
+    ThreadReturn;
     }
 #endif /* CPU_THREADS */
 
