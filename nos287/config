@@ -53,6 +53,8 @@ N1SIT=5.         STARTING PNI SITE
 NN1SI=2.         NUMBER OF PNI SITES 
 FRAM1=200.       CIU 0 FRAME SIZE
 *FRAM1=400.       CIU 0 FRAME SIZE
+forml=3500.      format-to-framer queue length
+nparc=2000.      number of parcels
 *
 *
 CBLTH=21.        CONDENSOR SOURCE BUFFER LENGTH
