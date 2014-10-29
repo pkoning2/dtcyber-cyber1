@@ -1242,18 +1242,6 @@ static dtThreadFun (dtDataThread, param)
     int bytes = 0;
 #ifndef _WIN32
     struct pollfd pfd;
-#ifdef __APPLE__
-    char semname[64];
-
-    /* Initialize the semaphore */
-    sprintf (semname, "/sem_%p", np);
-    semp (np) = sem_open (semname, O_CREAT, 0600, 1);
-    if (semp (np) == (void *) SEM_FAILED)
-    {
-        perror ("sem_open failed");
-        exit (1);
-    }
-#endif
     
     /*
     **  Wait for socket ready or error, then do the final connection activation.
@@ -1356,10 +1344,7 @@ static dtThreadFun (dtDataThread, param)
         pthread_join (np->sendThread, NULL);
         }
 
-#if defined(__APPLE__)
-    sem_close (semp (np));
-    sem_unlink (semname);
-#else
+#if !defined(__APPLE__)
     sem_destroy (semp (np));
 #endif
     
@@ -1384,6 +1369,18 @@ static dtThreadFun (dtSendThread, param)
     int size;
     int bytes;
     int ret;
+#ifdef __APPLE__
+    char semname[64];
+
+    /* Initialize the semaphore */
+    sprintf (semname, "/sem_%p", np);
+    semp (np) = sem_open (semname, O_CREAT, 0600, 1);
+    if (semp (np) == (void *) SEM_FAILED)
+    {
+        perror ("sem_open failed");
+        exit (1);
+    }
+#endif
     
     while (1)
         {
@@ -1468,6 +1465,11 @@ static dtThreadFun (dtSendThread, param)
             np->sendout = nextout;
             }
         }
+
+#if defined(__APPLE__)
+    sem_close (semp (np));
+    sem_unlink (semname);
+#endif
 
     ThreadReturn;
     }
