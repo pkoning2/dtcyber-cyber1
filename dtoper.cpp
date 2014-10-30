@@ -898,6 +898,8 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
 
     helpMenu->Append(Dtoper_About, _("&About Dtoper"),
                      _("Show about dialog"));
+    
+    menuBar->Append(helpMenu, wxT("&Help"));
 
     // ... and attach this menu bar to the frame
     SetMenuBar(menuBar);
