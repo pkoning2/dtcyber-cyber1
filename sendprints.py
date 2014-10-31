@@ -126,7 +126,8 @@ def dofile (name):
                     msg.add_header ("Subject", subject)
                     msg.set_payload (desc % params)
                 else:
-                    msg.add_header ("Subject", "Cyber1 lesson printout")
+                    subject = "Cyber1 lesson printout"
+                    msg.add_header ("Subject", subject)
                     msg.add_header ("MIME-Version", "1.0")
                     msg.add_header ("Content-Type", "multipart/mixed")
                     desc = email.MIMEText.MIMEText ("This is a Cyber1 lesson printout of lesson %(lesson)s, requested by %(user)s of %(group)s" % params)
@@ -141,6 +142,7 @@ def dofile (name):
                 s = smtplib.SMTP (MAILHOST)
                 try:
                     s.sendmail ("postmaster@cyberserv.org", [ mailto ], msg.as_string ())
+                    print "sent", subject, "to", mailto
                     if notify:
                         os.remove (name)
                     else:
@@ -162,6 +164,8 @@ def main ():
     for f in os.listdir (os.getcwd ()):
         if f.startswith ("LP5xx_20"):
             dofile (f)
+
+print ("sendprints.py loaded")
             
 if __name__ == "__main__":
     if len (sys.argv) > 2:
