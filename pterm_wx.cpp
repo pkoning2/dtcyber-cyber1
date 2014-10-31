@@ -95,6 +95,7 @@ by making the bitmap itself different.
 #include <wx/valnum.h>
 #include <wx/cmdargs.h>
 #include <wx/aboutdlg.h>
+#include <wx/hyperlink.h>
 
 extern "C"
 {
@@ -9556,11 +9557,9 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
 
     // static ui objects, note dynamic controls, e.g. those that hold values
     // or require event processing are declared above
-    wxStaticText* lblPrompt;
-    wxStaticText* lblHost;
-//  wxButton* btnNew;
-//	wxButton* btnRetry;
-//  wxButton* btnCancel;
+    wxStaticText *lblPrompt;
+    wxStaticText *lblHost;
+    wxHyperlinkCtrl *c1url;
     wxString str;
 
     // ui object creation / placement, note initialization of values is below
@@ -9576,6 +9575,11 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
                                 wxDefaultSize, 0);
     lblHost->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
     bs1->Add (lblHost, 0, wxALL, 5);
+
+    c1url = new wxHyperlinkCtrl (this, wxID_ANY, wxT (""), 
+                                 wxT ("http://cyber1.org"));
+    bs1->Add (c1url, 0, wxLEFT | wxRIGHT | wxBOTTOM, 5);
+
     wxFlexGridSizer* fgs11;
     fgs11 = new wxFlexGridSizer (1, 4, 0, 0);
     fgs11->AddGrowableCol (2);
@@ -9611,6 +9615,8 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     lblPrompt->SetLabel (str);
     str.Printf (_("\nFailed: %s:%ld"), ptermApp->m_hostName,
                 ptermApp->m_port);
+    str.Append (_("\n\nFor more information, see: "));
+    
     lblHost->SetLabel (str);
 
     //size the controls
