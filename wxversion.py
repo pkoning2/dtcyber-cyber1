@@ -82,4 +82,6 @@ if new == old:
 else:
     with open (FN, "wt") as f:
         f.write (new)
-    print FN, "updated"
+    print FN, "updated:"
+    print new
+
