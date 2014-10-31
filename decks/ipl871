@@ -757,7 +757,7 @@ return(opl)
           pl     x6,sockret  quit if error
           sa2    sxbuf+1     get returned socket
           bx6    x2
-          sa6    a1+socklst-1 set socket number in socklst
+          sa6    a1          set socket number in socklst
           eq     sockrok     update the ecs copy and exit
           space  5,11
 **        -socket connect-
