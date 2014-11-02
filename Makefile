@@ -104,7 +104,9 @@ DEPFILES+= $(OBJS:.o=.d)
 DEPFILES+= blackbox.d niu.d charset.d dtnetsubs.d
 endif
 
+ifneq ($(MAKECMDGOALS),dtcyber)
 include Makefile.wxpterm
+endif
 
 # This must be last
 ifneq ($(MAKECMDGOALS),clean)
