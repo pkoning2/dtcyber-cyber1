@@ -204,6 +204,12 @@ NetFet * dtConnect (NetPortSet *ps, in_addr_t host, int port)
         return NULL;
         }
     fet = dtNewFet (connFd, ps, FALSE);
+    if (fet == NULL)
+        {
+        // Failed to allocate FET, return failure
+        return NULL;
+        }
+    
     fet->from = server.sin_addr;
     fet->fromPort = server.sin_port;
     return fet;
@@ -904,7 +910,12 @@ NetFet * dtBind  (NetPortSet *ps, in_addr_t host, int port, int backlog)
 #endif
 
     fet = dtNewFet (connFd, ps, TRUE);
-
+    if (fet == NULL)
+        {
+        // Failed to allocate FET, return failure
+        return NULL;
+        }
+    
     /*
     **  Remember what we're listening to (local address, not remote address
     **  as is the case for data sockets).
