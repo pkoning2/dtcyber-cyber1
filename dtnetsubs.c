@@ -180,17 +180,22 @@ NetFet * dtConnect (NetPortSet *ps, in_addr_t host, int port)
         return NULL;
         }
 
+    /*
+    **  Set non-blocking state of the socket so we don't block on the
+    **  connect () call.
+    */
+#if defined(_WIN32)
+    ioctlsocket (connFd, FIONBIO, &true_opt);
+#else
+    fcntl (connFd, F_SETFL, O_NONBLOCK);
+#endif
+
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = host;
     server.sin_port = htons(port);
 
     retval = connect (connFd, (struct sockaddr *) &server, sizeof (server));
-
-// Joe comments: wonder if this code needs to be in a loop with a
-// sleep since the documents i read re: blocking/non-blocking in
-// windoze suggest this may be necessary, or if a callback function
-// needs to be implemented to handle it.  we'll see.
 
     if (retval < 0 && errno != EINPROGRESS)
         {
@@ -203,6 +208,19 @@ NetFet * dtConnect (NetPortSet *ps, in_addr_t host, int port)
         dtCloseSocket (connFd, TRUE);
         return NULL;
         }
+
+    /*
+    **  Now that the connect is underway, set the socket back to blocking.
+    **
+    **  We always want the data socket to be blocking since it will
+    **  be served by separate threads.
+    */
+#if defined(_WIN32)
+    ioctlsocket (connFd, FIONBIO, &false_opt);
+#else
+    fcntl (connFd, F_SETFL, 0);
+#endif
+
     fet = dtNewFet (connFd, ps, FALSE);
     if (fet == NULL)
         {
