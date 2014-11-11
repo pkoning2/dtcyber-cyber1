@@ -939,7 +939,7 @@ NetFet * dtBind  (NetPortSet *ps, in_addr_t host, int port, int backlog)
     **  as is the case for data sockets).
     */
     fet->from.s_addr = host;
-    fet->fromPort = port;
+    fet->fromPort = htons (port);
     
     return fet;
     }
