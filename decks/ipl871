@@ -908,7 +908,9 @@ return(opl)
 * on exit, x1 is the socket number, and the socket list portion
 * of the socket lesson has been read into socklst.  also, the value
 * of socknum (which is a 1-based index) is in sockidx.  a1 points
-* to the entry in socket list buffer in cm.
+* to the entry in socket list buffer in cm.  the socket number is
+* also written in sxbuf+1 (second word of the external request
+* block).
 *
 * if sockidx is out of range, or if we tried to allocate the socket
 * lesson and failed due to no ecs, an execution error results.
@@ -916,6 +918,8 @@ return(opl)
  getsock  ps
           sa1    varbuf+1    sockidx argument
           bx5    x1
+          mx6    0
+          sa6    sxbuf+1     clear socket index in request block          
           ngetvar
           sx6    x1
           sa6    sockidx     save it
@@ -944,6 +948,8 @@ return(opl)
 -         rj     ecsprty
           sa1    sockidx     get the index again
           sa1    x1+socklst-1 get the requested entry
+          bx6    x1
+          sa6    sxbuf+1     set it in request
           eq     getsock     (a1) = addr of socket entry, (x1) = entry
 
  sockerr  sa1    sockidx
