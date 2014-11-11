@@ -12,15 +12,21 @@ import sys
 import time
 import socket
 import threading
-try:
-    import Queue
-except ImportError:
-    # Python 3 changed the name
-    import queue as Queue
+
+# Python 3 changed the name
+import queue as Queue
+
 import struct
 import wx
 
 NETMAX = 4096
+
+
+
+def byte (b):
+    """Return a one-byte string, similar to chr()
+    """
+    return bytes ((b,))
 
 class Connection (socket.socket):
     """A network connection.  Derived from socket, with some more
@@ -31,7 +37,7 @@ class Connection (socket.socket):
         """
         socket.socket.__init__ (self, socket.AF_INET, socket.SOCK_STREAM)
         self.connect ((host, port))
-        self.pendingdata = ""
+        self.pendingdata = b""
         self.nextbyte = 0
         
     def readmore (self):
@@ -59,7 +65,7 @@ class Connection (socket.socket):
         while len (self.pendingdata) - self.nextbyte < bytes:
             self.readmore ()
         ret = self.pendingdata[self.nextbyte:]
-        self.pendingdata = ""
+        self.pendingdata = b""
         self.nextbyte = 0
         return ret
         
@@ -68,8 +74,8 @@ class Connection (socket.socket):
         as a tuple.
         """
         tl = self.read (2)
-        t = ord (tl[0])
-        l = ord (tl[1])
+        t = tl[0]
+        l = tl[1]
         v = self.read (l)
         return t, v
     
@@ -210,9 +216,9 @@ class Oper (Connection, threading.Thread):
                     self.responses += 1
                 elif t == 4:
                     # OpStatus
-                    i = ord (v[0])
+                    i = v[0]
                     v = v[1:]
-                    self.status[i] = v
+                    self.status[i] = v.decode ("latin-1")
                     if i and self.window:
                         self.window.scrollto (i)
                 elif t == 5:
@@ -270,13 +276,13 @@ class Dd60 (Connection, threading.Thread):
                 if self.stopnow:
                     self.close ()
                     break
-                ch = ord (self.read (1))
+                ch = self.read (1)[0]
                 if ch & 0x80:
                     # Control word.  See if setx/sety, and if so
                     # collect the additional byte
                     code = ch << 8
                     if (ch < 0x8f):
-                        code += ord (self.read (1))
+                        code += self.read (1)[0]
                     self.block.append (code)
                     if ch == 0xa8:
                         # end of block
@@ -301,7 +307,7 @@ class Dd60 (Connection, threading.Thread):
         #print "dd60 exiting"
 
     def sendkey (self, key):
-        self.sendall (chr (key))
+        self.sendall (byte (key))
         
     def setinterval (self, interval):
         if self.interval != interval:
