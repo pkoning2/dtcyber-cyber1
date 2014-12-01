@@ -14,6 +14,8 @@
 	<string>dtoper.icns</string>
 	<key>CFBundleName</key>
 	<string>Dtoper</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
