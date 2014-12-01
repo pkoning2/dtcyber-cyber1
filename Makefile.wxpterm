@@ -115,20 +115,20 @@ cc545:	cc545.o knob.o iir.o
 
 ifeq ("$(HOST)","Darwin")
 
-dd60.app: dd60 dd60.icns dd60-info.plist
+dd60.app: dd60 cyber.icns dd60-info.plist
 	mkdir -p dd60.app/Contents/MacOS dd60.app/Contents/Resources
 	/bin/echo -n "APPL????" > dd60.app/Contents/PkgInfo
 	cp dd60 dd60.app/Contents/MacOS
 	cp dd60-info.plist dd60.app/Contents/Info.plist
-	cp dd60.icns dd60.app/Contents/Resources/
+	cp cyber.icns dd60.app/Contents/Resources/dd60.icns
 	touch $@
 
-dtoper.app: dtoper dtoper.icns dtoper-info.plist
+dtoper.app: dtoper cyber.icns dtoper-info.plist
 	mkdir -p dtoper.app/Contents/MacOS dtoper.app/Contents/Resources
 	/bin/echo -n "APPL????" > dtoper.app/Contents/PkgInfo
 	cp dtoper dtoper.app/Contents/MacOS
 	cp dtoper-info.plist dtoper.app/Contents/Info.plist
-	cp dtoper.icns dtoper.app/Contents/Resources/
+	cp cyber.icns dtoper.app/Contents/Resources/dtoper.icns
 	touch $@
 
 cc545.app: cc545
