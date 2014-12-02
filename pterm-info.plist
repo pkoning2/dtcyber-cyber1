@@ -16,6 +16,8 @@
 	<string>Pterm</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSHighResolutionCapable</key>
+	<false/>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
@@ -87,7 +89,7 @@
 		</dict>
 	</array>
 	<key>LSRequiresCarbon</key>
-        <true/>
+        <false/>
 	<key>CSResourcesFileMapped</key>
 	<true/>
 </dict>
