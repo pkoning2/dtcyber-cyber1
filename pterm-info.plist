@@ -17,19 +17,19 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSHighResolutionCapable</key>
-	<false/>
+	<true/>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>5.0.4</string>
+	<string>5.0.5</string>
 	<key>CFBundleShortVersionString</key>
-	<string>5.0.4</string>
+	<string>5.0.5</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Pterm V5.0.4, (c) 2005-2014 Paul Koning &amp; Joe Stanton</string>
+	<string>Pterm V5.0.5, (c) 2005-2014 Paul Koning &amp; Joe Stanton</string>
 	<key>CFBundleLongVersionString</key>
-	<string>5.0.4, (c) 2005-2014 Paul Koning &amp; Joe Stanton</string>
+	<string>5.0.5, (c) 2005-2014 Paul Koning &amp; Joe Stanton</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

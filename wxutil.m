@@ -1,6 +1,6 @@
 #import <AppKit/NSScreen.h>
 
-float mainDisplayScale ()
+float mainDisplayScale (void)
 {
     return [[NSScreen mainScreen] backingScaleFactor];
 }

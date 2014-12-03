@@ -64,6 +64,9 @@ MSGFLAGS ?= -U
 SDLCFLAGS = $(SDLINCL)
 
 PTOBJS	= dtnetsubs.o pterm_sdl.o pterm_wx.o 8080a.o
+ifeq ("$(HOST)","Darwin")
+PTOBJS += wxutil.o
+endif
 
 ifneq ("$(PTERMVERSION)","xxx")
 #LANGUAGES = $(shell cat languages)
@@ -199,6 +202,9 @@ endif
 	$(CXX) -c -Wall -Wno-sign-compare $(C2FLAGS) $(CXXFLAGS) $<
 
 %.o : %.m
+	$(CC) -arch i386 -g2 -c $<
+
+%.o : %.m
 	$(CXX) -c -Wall -Wno-sign-compare $(CFLAGS)  -isysroot /Applications/Xcode.app/Contents//Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk -mmacosx-version-min=10.9 $<
 
 pterm_sdl.o : pterm_sdl.c
@@ -208,6 +214,11 @@ pterm_sdl.o : pterm_sdl.c
 %.d : %.cpp
 	/bin/echo -n "$@ " > /tmp/$@
 	$(CXX) $(INCL) $(CXXFLAGS) -MM -MG $< | fgrep -v type_traits >> /tmp/$@
+	mv -f /tmp/$@ $@
+
+%.d : %.m
+	/bin/echo -n "$@ " > /tmp/$@
+	$(CC) -MM -MG $< >> /tmp/$@
 	mv -f /tmp/$@ $@
 
 pterm_sdl.d : pterm_sdl.c
