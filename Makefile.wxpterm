@@ -100,7 +100,7 @@ endif
 wxversion.h: wxversion wxversion.py
 	python wxversion.py
 
-dd60:	$(SOBJS) dd60.o knob.o iir.o 
+dd60:	$(SOBJS) dd60.o knob.o iir.o wxutil.o
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
 	$(LINK)  $(ARCHLDFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
 
@@ -197,6 +197,9 @@ endif
 
 %.o : %.cpp
 	$(CXX) -c -Wall -Wno-sign-compare $(C2FLAGS) $(CXXFLAGS) $<
+
+%.o : %.m
+	$(CXX) -c -Wall -Wno-sign-compare $(CFLAGS)  -isysroot /Applications/Xcode.app/Contents//Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk -mmacosx-version-min=10.9 $<
 
 pterm_sdl.o : pterm_sdl.c
 	$(CC) $(CFLAGS) $(SDLCFLAGS) -I $(SNDINCL) -c $<

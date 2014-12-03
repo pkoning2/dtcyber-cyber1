@@ -28,14 +28,9 @@
 
 // For Retina display support on the Mac, we need to deal with the
 // fact that display units are not actually pixels, but "points" [sic]
-// and that the actual pixels may be smaller.  Ideally we'd ask wx for
-// the scale factor, but that API doesn't currently exist and constructing
-// it is a major hassle, so for now just hardcode it.
-#if  defined(__WXMAC__)
-#define PScale           2          // scale from pixels to display units
-#else
-#define PScale           1
-#endif
+// and that the actual pixels may be smaller.  
+
+int PScale;
 
 // character pattern sizes in pixels, allowing for going over the
 // allotted space some.
@@ -180,8 +175,10 @@ extern void gtk_settings_set_string_property (GtkSettings *, const char *,
                                               const char *, const char *);
 extern GtkSettings * gtk_settings_get_default (void);
 #endif
+
+extern float mainDisplayScale (void);
 }
-    
+
 // ----------------------------------------------------------------------------
 // resources
 // ----------------------------------------------------------------------------
@@ -717,6 +714,8 @@ bool Dd60App::OnInit (void)
     m_firstFrame = NULL;
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
+    
+    PScale = mainDisplayScale ();
     
     sprintf (traceFn, "dd60_%d.trc", getpid ());
 
