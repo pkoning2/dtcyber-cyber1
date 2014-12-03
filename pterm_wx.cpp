@@ -1811,7 +1811,11 @@ bool PtermApp::OnInit (void)
     m_DisableShiftSpace = (m_config->Read (wxT (PREF_SHIFTSPACE), 0L) != 0);
     m_DisableMouseDrag = (m_config->Read (wxT (PREF_MOUSEDRAG), 0L) != 0);
     //tab4
-    m_scale = m_config->Read (wxT (PREF_SCALE), 1.0);
+    m_scale = m_config->ReadDouble (wxT (PREF_SCALE), 1.0);
+    if (m_scale <= 0.0)
+    {
+        m_scale = 1.0;
+    }
     m_showStatusBar = (m_config->Read (wxT (PREF_STATUSBAR), 1) != 0);
 #if !defined (__WXMAC__)
     m_showMenuBar = (m_config->Read (wxT (PREF_MENUBAR), 1) != 0);
@@ -8706,7 +8710,7 @@ bool PtermPrefDialog::SaveProfile (wxString profile)
     buffer.Printf (wxT (PREF_MOUSEDRAG) wxT ("=%d"), (m_DisableMouseDrag) ? 1 : 0);
     file.AddLine (buffer);
     //tab4
-    buffer.Printf (wxT (PREF_SCALE) wxT ("=%d"), m_scale);
+    buffer.Printf (wxT (PREF_SCALE) wxT ("=%f"), m_scale);
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_STATUSBAR) wxT ("=%d"), (m_showStatusBar) ? 1 : 0);
     file.AddLine (buffer);
