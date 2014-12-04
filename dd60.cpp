@@ -233,10 +233,10 @@ class Dd60Printout: public wxPrintout
         : wxPrintout (title),
           m_owner (owner)
     {}
-  bool OnPrintPage (int page);
-  bool HasPage (int page);
-  void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo);
-  void DrawPage (wxDC *dc);
+    bool OnPrintPage (int page);
+    bool HasPage (int page);
+    void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo);
+    void DrawPage (wxDC *dc, int page);
 
 private:
     Dd60Frame *m_owner;
@@ -345,7 +345,7 @@ static Dd60MainFrame *Dd60FrameParent;
 class Dd60Frame : public Dd60FrameBase
 {
     friend void Dd60Canvas::OnDraw(wxDC &dc);
-    friend void Dd60Printout::DrawPage (wxDC *dc);
+    friend void Dd60Printout::DrawPage (wxDC *dc, int page);
     
     typedef wxAlphaPixelData PixelData;
 
@@ -2576,18 +2576,10 @@ bool Dd60Printout::OnPrintPage (int page)
 
     if (dc)
     {
-        if (page == 1)
+        if (page == 1 || page == 2)
         {
-            DrawPage (dc);
+            DrawPage (dc, page);
         }
-#if 0
-        dc->SetDeviceOrigin(0, 0);
-        dc->SetUserScale(1.0, 1.0);
-
-        wxChar buf[200];
-        wxSprintf(buf, wxT("PAGE %d"), page);
-        dc->DrawText(buf, 10, 10);
-#endif
         return true;
     }
 
@@ -2597,19 +2589,21 @@ bool Dd60Printout::OnPrintPage (int page)
 void Dd60Printout::GetPageInfo(int *minPage, int *maxPage, int *selPageFrom, int *selPageTo)
 {
     *minPage = 1;
-    *maxPage = 1;
+    *maxPage = 2;
     *selPageFrom = 1;
     *selPageTo = 1;
 }
 
 bool Dd60Printout::HasPage(int pageNum)
 {
-    return (pageNum == 1);
+    return (pageNum == 1 || pageNum == 2);
 }
 
-void Dd60Printout::DrawPage (wxDC *dc)
+void Dd60Printout::DrawPage (wxDC *dc, int page)
 {
-    double maxX = XSize;
+    int w, h, startx;
+    int graypix;
+    double maxX = YSize;    // We use YSize here because that's the width of a single screen
     double maxY = YSize;
 
     // Let's have at least 50 device units margin
@@ -2621,7 +2615,6 @@ void Dd60Printout::DrawPage (wxDC *dc)
     maxY += (2*marginY);
 
     // Get the size of the DC in pixels
-    int w, h;
     dc->GetSize(&w, &h);
 
     // Calculate a suitable scaling factor
@@ -2632,18 +2625,15 @@ void Dd60Printout::DrawPage (wxDC *dc)
     double actualScale = wxMin(pscaleX, pscaleY);
 
     // Calculate the position on the DC for centring the graphic
-    double posX = (double) ((w - (XSize * actualScale)) / 2.0);
+    double posX = (double) ((w - (YSize * actualScale)) / 2.0);
     double posY = (double) ((h - (YSize * actualScale)) / 2.0);
 
-    int graypix;
-    
     // Set the scale and origin
     dc->SetUserScale (actualScale, actualScale);
     dc->SetDeviceOrigin ((long) posX, (long) posY);
 
     // Re-color the image
     wxImage screenImage = m_owner->m_screenmap->ConvertToImage ();
-
     unsigned char *data = screenImage.GetData ();
     
     w = screenImage.GetWidth ();
@@ -2675,7 +2665,17 @@ void Dd60Printout::DrawPage (wxDC *dc)
 
     wxBitmap printmap (screenImage);
 
-    dc->DrawBitmap (printmap, 0, 0);
+    // Calculate the offset to position the correct portion of the screen image
+    if (page == 1)
+    {
+        startx = 0;
+    }
+    else
+    {
+        startx = -w / 2;
+    }
+    dc->SetClippingRegion (0, 0, w / 2, h);
+    dc->DrawBitmap (printmap, startx, 0);
 }
 
 /*---------------------------  End Of File  ------------------------------*/
