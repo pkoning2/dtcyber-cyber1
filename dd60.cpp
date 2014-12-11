@@ -1182,6 +1182,8 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     }
     *pmap = t;
     delete m_pixmap;
+    m_pixmap = NULL;
+    
     //printf ("%d %d %d %d\n", m_maxalpha, m_red, m_green, m_blue);
     
     m_canvas = new Dd60Canvas (this);
@@ -1239,6 +1241,7 @@ Dd60Frame::~Dd60Frame ()
         delete [] m_char8;
         delete [] m_char16;
         delete [] m_char32;
+        m_char8 = m_char16 = m_char32 = NULL;
     }
     
     // Remove this frame from the app's frame list
@@ -1460,6 +1463,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
         }
     }
     delete m_pixmap;
+    m_pixmap = NULL;
     
     if (m_interval == Dd60FastRate + 0)
     {
@@ -1903,7 +1907,6 @@ void Dd60Frame::procDd60Char (unsigned int d)
     if (d != 0 && d != 055)
     {
         PixelData::Iterator p (*m_pixmap);
-
     
         firstx = XADJUST (currentX - margin);
         firsty = YADJUST (currentY - (size / PScale - margin));

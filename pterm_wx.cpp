@@ -2830,6 +2830,7 @@ PtermFrame::~PtermFrame ()
     if (m_conn != NULL)
     {
         delete m_conn;
+        m_conn = NULL;
     }
     delete m_bitmap;
     if (m_bitmap2 != NULL)
@@ -2837,7 +2838,8 @@ PtermFrame::~PtermFrame ()
         delete m_bitmap2;
     }
     delete m_selmap;
-
+    m_bitmap = m_bitmap2 = m_selmap = NULL;
+    
     // Remove this frame from the app's frame list
     if (m_nextFrame != NULL)
     {
@@ -6675,6 +6677,7 @@ void PtermFrame::ptermRestoreWindow (int d)
 
         cwswindow[d].ok = false;
         delete cwswindow[d].bm;
+        cwswindow[d].bm = NULL;
     }
 }
 
