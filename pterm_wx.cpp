@@ -10327,6 +10327,7 @@ void PtermCanvas::OnDraw (wxDC &dc)
 
     if (rh != 0 && rw != 0)
     {
+        dc.SetUserScale (m_owner->m_xscale, m_owner->m_yscale);
         dc.SetClippingRegion (m_owner->m_xmargin + (8 * m_owner->m_regionX), 
                               m_owner->m_ymargin + 511 -
                               (16 * (m_owner->m_regionY + rh)), 
