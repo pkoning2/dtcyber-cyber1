@@ -953,6 +953,7 @@ DtoperFrame::~DtoperFrame ()
     if (dtActive (m_fet))
     {
         dtClose (m_fet, true);
+        m_fet = NULL;
     }
     
     // Remove this frame from the app's frame list
@@ -1405,6 +1406,7 @@ void DtoperFrame::OnClose (wxCloseEvent &)
     if (dtActive (m_fet))
     {
         dtClose (m_fet, true);
+        m_fet = NULL;
     }
 
     Destroy ();

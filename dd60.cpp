@@ -1235,6 +1235,7 @@ Dd60Frame::~Dd60Frame ()
     if (dtActive (m_fet))
     {
         dtClose (m_fet, true);
+        m_fet = NULL;
     }
     if (m_char8 != NULL)
     {
@@ -1491,6 +1492,7 @@ void Dd60Frame::OnClose (wxCloseEvent &)
     if (dtActive (m_fet))
     {
         dtClose (m_fet, true);
+        m_fet = NULL;
     }
 
     Destroy ();

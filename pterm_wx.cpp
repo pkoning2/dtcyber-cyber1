@@ -9728,6 +9728,7 @@ PtermConnection::~PtermConnection ()
     // Re-fetch the FET pointer in case it's already been closed
     m_fet = m_portset.portVec[0];
     dtClose (m_fet, TRUE);
+    m_fet = NULL;
 }
 
 void PtermConnection::s_connCallback (NetFet *fet, int, void *arg)
@@ -9854,6 +9855,7 @@ int PtermConnection::AssembleNiuWord (void)
             }
             m_connActive = false;
             dtClose (m_fet, TRUE);
+            m_fet = NULL;
             return C_DISCONNECT;
         }
         i = dtReado (m_fet);
@@ -9901,6 +9903,7 @@ int PtermConnection::AssembleAutoWord (void)
         }
         m_connActive = false;
         dtClose (m_fet, TRUE);
+        m_fet = NULL;
         return C_DISCONNECT;
     }
 
@@ -9941,6 +9944,7 @@ int PtermConnection::AssembleAsciiWord (void)
             }
             m_connActive = false;
             dtClose (m_fet, TRUE);
+            m_fet = NULL;
             return C_DISCONNECT;
         }
         else if (m_pending == 0 && i == 0377)
