@@ -224,6 +224,8 @@ def main ():
     print ("};\n")
 
     print ("const autobsentry autobsmap[] = {")
+    for s, c in sorted (zip (acc, cacc)):
+        print ("    { %s, %s }," % (emitstr (" " + c), emitchr (s)))
     for s, c in sorted (sep2comb.items ()):
         print ("    { %s, %s }," % (emitstr (s), emitchr (c)))
     print ("};\n")

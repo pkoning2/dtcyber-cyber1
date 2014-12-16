@@ -361,6 +361,13 @@ const ukey unicodeToPlato[] = {
 };
 
 const autobsentry autobsmap[] = {
+    { L" \u0302", L'^' },
+    { L" \u0300", L'`' },
+    { L" \u0308", L'\xa8' },
+    { L" \u0301", L'\xb4' },
+    { L" \u0327", L'\xb8' },
+    { L" \u030c", L'\u02c7' },
+    { L" \u0303", L'\u02dc' },
     { L"/\\", L'\u2715' },
     { L"<(", L'\u2993' },
     { L">)", L'\u2994' },
