@@ -2404,14 +2404,22 @@ void PtermApp::OnAbout (wxCommandEvent&)
     wxAboutDialogInfo info;
 
     info.SetName (_(STRPRODUCTNAME));
-    info.SetVersion (_("V" STRFILEVER));
-    info.SetDescription (_("PLATO terminal emulator."
+    info.SetVersion (_(L"V" wxT (STRFILEVER)));
+#ifdef _WIN32
+	// Win32 can't hack the #ifdef in a concatenated string
+    info.SetDescription (_(L"PLATO terminal emulator."
+                           L"\n  built with wxWidgets V" wxT (WXVERSION)
+                           L"\n  build date " wxT(PTERMBUILDDATE)
+                             ));
+#else
+    info.SetDescription (_(L"PLATO terminal emulator."
                            L"\n  built with wxWidgets V" wxT (WXVERSION)
                            L"\n  build date " wxT(PTERMBUILDDATE)
 #ifdef PTERMSVNREV
                            L"\n  SVN revision " wxT (PTERMSVNREV)
 #endif
                              ));
+#endif
     info.SetCopyright (wxT(STRLEGALCOPYRIGHT));
     info.AddDeveloper ("Paul Koning");
     info.AddDeveloper ("Joe Stanton");
@@ -2839,8 +2847,14 @@ PtermFrame::~PtermFrame ()
     }
     delete m_selmap;
     m_bitmap = m_bitmap2 = m_selmap = NULL;
-    
-    // Remove this frame from the app's frame list
+
+	// If this is the help frame, remember we no longer have it
+    if (this == ptermApp->m_helpFrame)
+    {
+        ptermApp->m_helpFrame = NULL;
+    }
+
+	// Remove this frame from the app's frame list
     if (m_nextFrame != NULL)
     {
         m_nextFrame->m_prevFrame = m_prevFrame;
@@ -3595,31 +3609,11 @@ void PtermFrame::OnClose (wxCloseEvent &)
 {
     int x, y;
     
-    if (m_conn != NULL)
-    {
-        delete m_conn;
-        m_conn = NULL;
-    }
-
-    if (this == ptermApp->m_helpFrame)
-    {
-        ptermApp->m_helpFrame = NULL;
-    }
-
     // Save the position of this window as our preferred position
     GetPosition (&x, &y);
     ptermApp->prefX = x;
     ptermApp->prefY = y;
     debug ("Window position on exit is %d, %d", x, y);
-
-    if (m_nextFrame != NULL && IsActive ())
-    {
-        m_nextFrame->Raise ();
-    }
-    else if (m_prevFrame != NULL && IsActive ())
-    {
-        m_prevFrame->Raise ();
-    }
     
     Destroy ();
 }

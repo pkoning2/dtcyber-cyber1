@@ -115,12 +115,13 @@ int dtErrno;
 */
 static NetPortSet *connend;
 #if defined(_WIN32)
-static int false_opt = 0;
+static unsigned long false_opt = 0;
+static unsigned long true_opt = 1;
 #else
 static pthread_attr_t dt_tattr;
+static const int true_opt = 1;
 #endif
 static bool dtInited;
-static int true_opt = 1;
 
 /*
 **--------------------------------------------------------------------------
@@ -185,7 +186,10 @@ NetFet * dtConnect (NetPortSet *ps, in_addr_t host, int port)
     **  connect () call.
     */
 #if defined(_WIN32)
-    ioctlsocket (connFd, FIONBIO, &true_opt);
+	// This works, but then changing it back to blocking
+	// later on does not.  I can't figure out why not.
+	// So turn this code off for now.
+    //ioctlsocket (connFd, FIONBIO, &true_opt);
 #else
     fcntl (connFd, F_SETFL, O_NONBLOCK);
 #endif
@@ -216,6 +220,7 @@ NetFet * dtConnect (NetPortSet *ps, in_addr_t host, int port)
     **  be served by separate threads.
     */
 #if defined(_WIN32)
+	// For some reason this does nothing.
     ioctlsocket (connFd, FIONBIO, &false_opt);
 #else
     fcntl (connFd, F_SETFL, 0);
@@ -1377,8 +1382,14 @@ static dtThreadFun (dtDataThread, param)
     sem_destroy (semp (np));
 #endif
     
+#if !defined(_WIN32)
+	// On Windows I get a crash in free() if I do this.
+	// It's probably a double free but I can't find it,
+	// and as memory leaks go this isn't a bad one.  So
+	// call it a temporary workaround.
     free (np);
-    
+#endif
+
     ThreadReturn;
     }
 

@@ -26,7 +26,13 @@ pattern).
 
 V5.0.4, June 2014:
 
-This is the first general release of Pterm V5.0.
+This is the release candidate of Pterm V5.0.
 
 It contains bugfixes as well as a new feature: scale with aspect ratio
 preserved (courtesy Dirk Thierbach).
+
+V5.0.5, December 2014:
+
+This is the release of Pterm V5.0.
+
+It contains bugfixes, more general scaling, and Mac Retina display support.

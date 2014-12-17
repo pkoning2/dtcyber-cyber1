@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="C:\wxWidgets\include\msvc;c:\wxWidgets\include;&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;&quot;C:\SDL2-2.0.3\include&quot;"
-				PreprocessorDefinitions="DEBUG;WIN32;_WINDOWS;WINVER=0x400;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;_CRT_SECURE_NO_DEPRECATE;_UNICODE;WXUSINGDLL"
+				PreprocessorDefinitions="DEBUG;WIN32;_WINDOWS;WINVER=0x400;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;_CRT_SECURE_NO_DEPRECATE;_UNICODE"
 				MinimalRebuild="true"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/pterm.pch"
@@ -74,9 +74,9 @@
 				OutputFile=".\Debug/pterm.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="C:\wxWidgets\lib\vc_dll;&quot;C:\SDL2-2.0.3\lib\x86&quot;;&quot;C:\Program Files\Mega-Nerd\libsndfile\lib&quot;"
+				AdditionalLibraryDirectories="C:\wxWidgets\lib\vc80_lib;&quot;C:\SDL2-2.0.3\lib\x86&quot;;&quot;C:\Program Files\Mega-Nerd\libsndfile\lib&quot;"
 				IgnoreAllDefaultLibraries="false"
-				IgnoreDefaultLibraryNames=""
+				IgnoreDefaultLibraryNames="libcpmtd.lib;libcmtd.lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/pterm.pdb"
 				SubSystem="2"
@@ -123,6 +123,10 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				Description="Build kit file..."
+				CommandLine="&quot;c:\Program Files\Inno Setup 5\ISCC.exe&quot; /Q pterm.iss"
+				AdditionalDependencies="pterm.iss;CHANGES-pterm.txt"
+				Outputs="setup.exe"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -140,7 +144,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="C:\wxWidgets\include\msvc;c:\wxWidgets\include;&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;&quot;C:\SDL2-2.0.3\include&quot;"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WINVER=0x400;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;_CRT_SECURE_NO_DEPRECATE;_UNICODE;WXUSINGDLL"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WINVER=0x400;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;_CRT_SECURE_NO_DEPRECATE;_UNICODE=1;WXUSINGDLL=1"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -151,6 +155,7 @@
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
+				DebugInformationFormat="1"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -172,6 +177,8 @@
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="C:\wxWidgets\lib\vc80_dll;&quot;C:\SDL2-2.0.3\lib\x86&quot;;&quot;C:\Program Files\Mega-Nerd\libsndfile\lib&quot;"
 				IgnoreDefaultLibraryNames=""
+				GenerateDebugInformation="false"
+				AssemblyDebug="0"
 				ProgramDatabaseFile=".\Release/pterm.pdb"
 				GenerateMapFile="true"
 				MapFileName=".\Release/pterm.map"
