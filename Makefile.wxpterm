@@ -201,15 +201,21 @@ endif
 %.o : %.cpp
 	$(CXX) -c -Wall -Wno-sign-compare $(C2FLAGS) $(CXXFLAGS) $<
 
+ifeq ("OSXVER", "10.5")
 %.o : %.m
-	$(CC) -arch i386 -g2 -c $<
-
+	# This needs separate builds for Intel and PPC.
+	$(CC) -c -Wall -Wno-sign-compare $(MFLAGS)  -isysroot /Developer/SDKs/MacOSX10.7.sdk -mmacosx-version-min=10.7 -arch i386 -o ${@}.x86 $<
+	$(CC) -c -Wall -Wno-sign-compare $(MFLAGS) -arch ppc -o ${@}.ppc $<
+	lipo -output $@ ${@}.ppc ${@}.x86
+	rm -f ${@}.ppc ${@}.x86
+else
 %.o : %.m
-	$(CXX) -c -Wall -Wno-sign-compare $(CFLAGS)  -isysroot /Applications/Xcode.app/Contents//Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk -mmacosx-version-min=10.9 $<
+	# Intel-only for building on new build systems
+	$(CC) -c -Wall -Wno-sign-compare $(MFLAGS)  -isysroot /Developer/SDKs/MacOSX10.7.sdk -mmacosx-version-min=10.7 -arch i386 $<
+endif
 
 pterm_sdl.o : pterm_sdl.c
 	$(CC) $(CFLAGS) $(SDLCFLAGS) -I $(SNDINCL) -c $<
-
 
 %.d : %.cpp
 	/bin/echo -n "$@ " > /tmp/$@
