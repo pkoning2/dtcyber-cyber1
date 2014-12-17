@@ -246,7 +246,7 @@ void Trace::Log (const wxString &s)
     {
 #ifdef _WIN32
         SYSTEMTIME tv;
-	
+
         GetLocalTime (&tv);
         GetTimeFormatA (LOCALE_SYSTEM_DEFAULT, 0, &tv, 
                         "HH':'mm':'ss", &tbuf[0], 10);
@@ -929,7 +929,7 @@ public:
     void BuildViewMenu (wxMenu *menu, int port);
     void BuildHelpMenu (void);
     void BuildPopupMenu (int port);
-	void BuildStatusBar (bool connecting = false);
+    void BuildStatusBar (bool connecting = false);
     void ptermSendKey1 (int key);
     void ptermSendKey (u32 keys);
     void ptermSendKeys (const int key[]);
@@ -1741,7 +1741,7 @@ bool PtermApp::OnInit (void)
 #if defined (__WXMAC__)
     int major, minor;
     
-    wxGetOsVersion (&major, &minor)	;
+    wxGetOsVersion (&major, &minor);
     if (major == 10 && minor < 7)
     {
         PScale = 1;
@@ -2039,7 +2039,7 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
                     {
                         // See if we can figure out the connection mode
                         if (strstr (tline, "ascii") != NULL ||
-							strstr (tline, "ASCII") != NULL)
+                            strstr (tline, "ASCII") != NULL)
                         {
                             testmode = ascii;
                         }
@@ -2406,7 +2406,7 @@ void PtermApp::OnAbout (wxCommandEvent&)
     info.SetName (_(STRPRODUCTNAME));
     info.SetVersion (_(L"V" wxT (STRFILEVER)));
 #ifdef _WIN32
-	// Win32 can't hack the #ifdef in a concatenated string
+    // Win32 can't hack the #ifdef in a concatenated string
     info.SetDescription (_(L"PLATO terminal emulator."
                            L"\n  built with wxWidgets V" wxT (WXVERSION)
                            L"\n  build date " wxT(PTERMBUILDDATE)
@@ -2612,7 +2612,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
       // m_fgpix not initialized
       // m_bgpix not initialized
       // m_bitmap not initialized
-	  m_canvas (NULL),
+      m_canvas (NULL),
       // m_curProfile not initialized
       // m_ShellFirst not initialized
       // m_hostName not initialized
@@ -2848,13 +2848,13 @@ PtermFrame::~PtermFrame ()
     delete m_selmap;
     m_bitmap = m_bitmap2 = m_selmap = NULL;
 
-	// If this is the help frame, remember we no longer have it
+    // If this is the help frame, remember we no longer have it
     if (this == ptermApp->m_helpFrame)
     {
         ptermApp->m_helpFrame = NULL;
     }
 
-	// Remove this frame from the app's frame list
+    // Remove this frame from the app's frame list
     if (m_nextFrame != NULL)
     {
         m_nextFrame->m_prevFrame = m_prevFrame;
@@ -3136,11 +3136,11 @@ void PtermFrame::BuildStatusBar (bool connecting)
                                 ptermApp->m_showStatusBar &&
                                 m_port > 0);
     const bool havestatusbar = (m_statusBar != NULL);
-	int ww,wh,ow,oh,nw,nh;
+    int ww,wh,ow,oh,nw,nh;
 
-	// get window parameters before changing things
-	GetSize(&ww, &wh);
-	GetClientSize (&ow, &oh);
+    // get window parameters before changing things
+    GetSize(&ww, &wh);
+    GetClientSize (&ow, &oh);
     
     if (!showstatusbar && havestatusbar)
     {
@@ -3173,9 +3173,9 @@ void PtermFrame::BuildStatusBar (bool connecting)
         debug ("Turning on status bar");
     }
 
-	//check if size changed
-	GetClientSize (&nw, &nh);
-	SetSize (ww, wh - (nh - oh));
+    //check if size changed
+    GetClientSize (&nw, &nh);
+    SetSize (ww, wh - (nh - oh));
 }
 
 // event handlers
@@ -4275,7 +4275,7 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
     }
     
     // Tell wxWidgets the desired full screen mode.
-	ShowFullScreen (m_fullScreen);
+    ShowFullScreen (m_fullScreen);
 
     // If we're exiting full screen mode, restore the window position
     // and size
@@ -6605,7 +6605,7 @@ void PtermFrame::SetFontActive ()
         // to be accepted.
         m_memDC->SelectObject (*m_bitmap);
         m_memDC->SetFont (*m_font);
-		m_memDC->GetTextExtent (wxT (" "), &m_fontwidth, &m_fontheight);
+        m_memDC->GetTextExtent (wxT (" "), &m_fontwidth, &m_fontheight);
         m_memDC->SelectObject (wxNullBitmap);
     }
 }
@@ -9580,10 +9580,10 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
                            wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL);
     btnNew->SetFont (wxFont (10, 74, 90, 90, false, wxT (SSFONT)));
     fgs11->Add (btnNew, 0, wxALL, 5);
-	btnRetry = new wxButton (this, wxID_ANY, _("Reconnect"), wxDefaultPosition,
+    btnRetry = new wxButton (this, wxID_ANY, _("Reconnect"), wxDefaultPosition,
                              wxDefaultSize, 0 | wxTAB_TRAVERSAL);
-	btnRetry->SetFont (wxFont (10, 74, 90, 90, false, wxT(SSFONT)));
-	fgs11->Add (btnRetry, 0, wxALL, 5);
+    btnRetry->SetFont (wxFont (10, 74, 90, 90, false, wxT(SSFONT)));
+    fgs11->Add (btnRetry, 0, wxALL, 5);
     fgs11->Add (0, 0, 1, wxALL, 5);
     btnCancel = new wxButton (this, wxID_CANCEL, _("Close"),
                               wxDefaultPosition, wxDefaultSize,

@@ -40,18 +40,18 @@
 #endif
 
 #if defined(_WIN32)
-	#include <winsock.h>
-	#include <process.h>
+    #include <winsock.h>
+    #include <process.h>
 #else
     #include <poll.h>
-	#include <sys/time.h>
-	#include <fcntl.h>
-	#include <unistd.h>
-	#include <sys/socket.h>
-	#include <netdb.h>
-	#include <netinet/in.h>
-	#include <arpa/inet.h>
-	#include <pthread.h>
+    #include <sys/time.h>
+    #include <fcntl.h>
+    #include <unistd.h>
+    #include <sys/socket.h>
+    #include <netdb.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <pthread.h>
 #endif
 
 /*
@@ -186,9 +186,9 @@ NetFet * dtConnect (NetPortSet *ps, in_addr_t host, int port)
     **  connect () call.
     */
 #if defined(_WIN32)
-	// This works, but then changing it back to blocking
-	// later on does not.  I can't figure out why not.
-	// So turn this code off for now.
+    // This works, but then changing it back to blocking
+    // later on does not.  I can't figure out why not.
+    // So turn this code off for now.
     //ioctlsocket (connFd, FIONBIO, &true_opt);
 #else
     fcntl (connFd, F_SETFL, O_NONBLOCK);
@@ -220,7 +220,7 @@ NetFet * dtConnect (NetPortSet *ps, in_addr_t host, int port)
     **  be served by separate threads.
     */
 #if defined(_WIN32)
-	// For some reason this does nothing.
+    // For some reason this does nothing.
     ioctlsocket (connFd, FIONBIO, &false_opt);
 #else
     fcntl (connFd, F_SETFL, 0);
@@ -529,12 +529,12 @@ const char *dtNowString (void)
     {
     static char ts[64], us[12];
 #ifdef _WIN32
-	SYSTEMTIME tv;
-	
-	GetLocalTime (&tv);
-	GetDateFormatA (LOCALE_SYSTEM_DEFAULT, 0, &tv, 
+    SYSTEMTIME tv;
+    
+    GetLocalTime (&tv);
+    GetDateFormatA (LOCALE_SYSTEM_DEFAULT, 0, &tv, 
                     "yy'/'MM'/'dd' '", &ts[0], 10);
-	GetTimeFormatA (LOCALE_SYSTEM_DEFAULT, 0, &tv, 
+    GetTimeFormatA (LOCALE_SYSTEM_DEFAULT, 0, &tv, 
                     "HH'.'mm'.'ss", &ts[9], 10);
     sprintf (us, ".%03d.", tv.wMilliseconds);
 #else
@@ -1383,10 +1383,10 @@ static dtThreadFun (dtDataThread, param)
 #endif
     
 #if !defined(_WIN32)
-	// On Windows I get a crash in free() if I do this.
-	// It's probably a double free but I can't find it,
-	// and as memory leaks go this isn't a bad one.  So
-	// call it a temporary workaround.
+    // On Windows I get a crash in free() if I do this.
+    // It's probably a double free but I can't find it,
+    // and as memory leaks go this isn't a bad one.  So
+    // call it a temporary workaround.
     free (np);
 #endif
 
