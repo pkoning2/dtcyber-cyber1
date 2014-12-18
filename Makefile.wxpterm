@@ -39,6 +39,9 @@ SDLLIBS ?= `sdl-config --libs`
 endif
 
 SNDDIR ?= /usr
+ifeq ("$(wildcard $(SNDDIR)/include/sndfile.h)","")
+SNDDIR = /usr/local
+endif
 SNDINCL ?= $(SNDDIR)/include
 SNDLIBS ?= -lsndfile
 
