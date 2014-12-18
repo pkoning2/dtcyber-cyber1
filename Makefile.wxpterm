@@ -38,9 +38,9 @@ else
 SDLLIBS ?= `sdl-config --libs`
 endif
 
-SNDDIR ?= /usr/local
+SNDDIR ?= /usr
 SNDINCL ?= $(SNDDIR)/include
-SNDLIBS ?= -L$(SNDDIR)/lib -lsndfile
+SNDLIBS ?= -lsndfile
 
 # if the wxmumble dir doesn't exist, try for plain /usr
 ifeq ("$(wildcard $(DEFWXDIR))","")
@@ -69,10 +69,10 @@ PTOBJS += wxutil.o
 endif
 
 ifneq ("$(PTERMVERSION)","xxx")
-#LANGUAGES = $(shell cat languages)
-#MOFILES = $(addsuffix /pterm.mo,$(LANGUAGES))
-LANGUAGES =
-MOFILES =
+LANGUAGES = $(shell cat languages)
+MOFILES = $(addsuffix /pterm.mo,$(LANGUAGES))
+#LANGUAGES =
+#MOFILES =
 endif
 
 PTDEPS = $(PTOBJS:.o=.d) 
@@ -85,7 +85,8 @@ endif
 
 info:
 	@echo wxdir: $(WXDIR)
-	@echo sdl: $(SDLFW)
+	@echo sdlcflags: $(SDLCFLAGS)
+	@echo sdllibs: $(SDLLIBS)
 	@echo path:  $(PATH)
 	@echo wxversion: $(WXVERSION)
 	@echo gccversion: $(GCCVERSION)
@@ -101,7 +102,7 @@ else
 endif
 
 wxversion.h: wxversion wxversion.py
-	python wxversion.py
+	./wxversion.py
 
 dd60:	$(SOBJS) dd60.o knob.o iir.o wxutil.o
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
@@ -177,8 +178,8 @@ pterm-kit: pterm-$(PTERMVERSION).dmg
 
 else
 
-pterm-kit: pterm.spec.in ptermversion.h $(MOFILES) pterm-$(PTERMVERSION).tar.bz2
-	cp pterm-$(PTERMVERSION).tar.bz2 /usr/src/redhat/SOURCES
+pterm-kit: pterm.spec ptermversion.h $(MOFILES) pterm-$(PTERMVERSION).tar.bz2
+	cp pterm-$(PTERMVERSION).tar.bz2 ~/rpmbuild/SOURCES
 	rpmbuild -ba pterm.spec
 	cp /usr/src/redhat/RPMS/i386/pterm-$(PTERMVERSION)-1.i386.rpm .
 	cp /usr/src/redhat/SRPMS/pterm-$(PTERMVERSION)-1.src.rpm .
@@ -190,7 +191,7 @@ mofiles: $(MOFILES)
 ifneq ("$(PTSRCS)", "")
 pterm-tar: pterm-$(PTERMVERSION).tar.bz2
 
-pterm-$(PTERMVERSION).tar.bz2: ptermversion.h license.txt pterm-license.txt README-build.txt CHANGES-pterm.txt $(PTSRCS) Makefile Makefile.wxpterm Makefile.common languages getkitver.py
+pterm-$(PTERMVERSION).tar.bz2: ptermversion.h license.txt pterm-license.txt README-build.txt CHANGES-pterm.txt $(PTSRCS) Makefile Makefile.wxpterm Makefile.common languages getkitver.py wxversion.py
 	mkdir pterm-$(PTERMVERSION)
 	cd pterm-$(PTERMVERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
 	cd pterm-$(PTERMVERSION); for f in $^ ; do ln -s ../$$f .; done

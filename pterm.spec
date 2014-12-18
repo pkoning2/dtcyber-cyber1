@@ -6,7 +6,7 @@ License: DtCyber
 Group: User Interface/Desktops
 URL: http://www.cyber1.org
 Packager: Paul Koning <paul@cyber1.org>
-Source: /lhome/pkoning/pterm-v%{version}.tar.bz2
+Source: /lhome/pkoning/pterm-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildRequires: wxGTK-devel SDL-devel gettext-devel python
 Requires: wxGTK SDL
@@ -19,8 +19,8 @@ for use with the cyber1 CYBIS (PLATO) system.
 %setup -q
 
 %build
-make -f Makefile.wxpterm pterm TYPE=static ARCHCFLAGS=
-make -f Makefile.wxpterm mofiles
+make pterm TYPE=static ARCHCFLAGS="-m32" ARCHLDFLAGS="-m32"
+make mofiles
 
 %install
 rm -rf $RPM_BUILD_ROOT
