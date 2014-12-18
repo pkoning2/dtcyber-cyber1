@@ -3016,12 +3016,12 @@ void PtermFrame::BuildViewMenu (wxMenu *menu, int port)
     if (PScale == 2)
     {
         scaleList = scaleList_Retina;
-        fmt = "Zoom display %1.1fx";
+        fmt = _("Zoom display %1.1fx");
     }
     else
     {
         scaleList = scaleList_std;
-        fmt = "Zoom display %1.0fx";
+        fmt = _("Zoom display %1.0fx");
     }
     for (sl = scaleList; *sl > 0.; sl++)
     {
@@ -7360,11 +7360,11 @@ void PtermFrame::ptermSetConnected ()
     {
         if (m_conn->Ascii ())
         {
-            l_str.Append ("ASCII");
+            l_str.Append (_("ASCII"));
         }
         else if (m_conn->Classic ())
         {
-            l_str.Append ("Classic");
+            l_str.Append (_("Classic"));
         }
     }
     ptermSetStatus (l_str);
