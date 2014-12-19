@@ -94,6 +94,7 @@ info:
 	@echo wxversion: $(WXVERSION)
 	@echo gccversion: $(GCCVERSION)
 	@echo ptermsvn: $(PTERMSVNREV)
+	@echo osxver: $(OSXVER)
 
 pterm:	$(PTOBJS)
 	$(LINK) $(ARCHLDFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(LIBS) $(SETPATH)
