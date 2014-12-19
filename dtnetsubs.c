@@ -1382,8 +1382,9 @@ static dtThreadFun (dtDataThread, param)
     sem_destroy (semp (np));
 #endif
     
-#if !defined(_WIN32)
+#if 0
     // On Windows I get a crash in free() if I do this.
+    // Ditto, but only once in a while, on Mac OS.
     // It's probably a double free but I can't find it,
     // and as memory leaks go this isn't a bad one.  So
     // call it a temporary workaround.
