@@ -206,7 +206,7 @@ endif
 %.o : %.cpp
 	$(CXX) -c -Wall -Wno-sign-compare $(C2FLAGS) $(CXXFLAGS) $<
 
-ifeq ("OSXVER", "10.5")
+ifeq ("$(OSXVER)", "10.5")
 %.o : %.m
 	# This needs separate builds for Intel and PPC.
 	$(CC) -c -Wall -Wno-sign-compare $(MFLAGS)  -isysroot /Developer/SDKs/MacOSX10.7.sdk -mmacosx-version-min=10.7 -arch i386 -o ${@}.x86 $<
