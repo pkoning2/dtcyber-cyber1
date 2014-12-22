@@ -141,11 +141,6 @@ wxPrintData *g_printData;
 // Global page setup data
 wxPageSetupDialogData* g_pageSetupData;
 
-// For Retina display support on the Mac, we need to deal with the
-// fact that display units are not actually pixels, but "points" [sic]
-// and that the actual pixels may be smaller. 
-int PScale;
-
 // ----------------------------------------------------------------------------
 // local variables
 // ----------------------------------------------------------------------------
@@ -1738,22 +1733,6 @@ bool PtermApp::OnInit (void)
     // File name to use for tracing, if we enable tracing
     sprintf (traceFn, "pterm%d.trc", pid);
 
-#if defined (__WXMAC__)
-    int major, minor;
-    
-    wxGetOsVersion (&major, &minor);
-    if (major == 10 && minor < 7)
-    {
-        PScale = 1;
-    }
-    else
-    {
-        PScale = mainDisplayScale ();
-    }
-#else
-    PScale = 1;
-#endif
-    
     srand (time (NULL)); 
     m_locale.Init (wxLANGUAGE_DEFAULT);
     m_locale.AddCatalog (wxT ("pterm"));
@@ -2771,15 +2750,8 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
     }
     m_memDC = new wxMemoryDC ();
     m_selmap = new wxBitmap (512, 512, 32);
-    if (PScale == 2)
-    {
-        m_bitmap2 = new wxBitmap (512 * 2, 512 * 2, 32);
-    }
-    else
-    {
-        m_bitmap2 = NULL;
-    }
-    
+    // for 2x scalling for Retina display, if active
+    m_bitmap2 = new wxBitmap (512 * 2, 512 * 2, 32);
     m_canvas = new PtermCanvas (this);
 
     SetColors (m_currentFg, m_currentBg);    
@@ -3013,7 +2985,7 @@ void PtermFrame::BuildViewMenu (wxMenu *menu, int port)
         menu->Check (Pterm_ToggleStatusBar, ptermApp->m_showStatusBar);
         menu->AppendSeparator ();
     }
-    if (PScale == 2)
+    if (GetContentScaleFactor () == 2.0)
     {
         scaleList = scaleList_Retina;
         fmt = _("Zoom display %1.1fx");
@@ -10265,10 +10237,11 @@ void PtermCanvas::OnDraw (wxDC &dc)
 {
     const int rh = m_owner->m_regionHeight;
     const int rw = m_owner->m_regionWidth;
+    const int PScale = m_owner->GetContentScaleFactor ();
     
     dc.DestroyClippingRegion ();
 
-    if (m_owner->m_bitmap2 == NULL || m_owner->m_xscale < 1 ||
+    if (PScale == 1 || m_owner->m_xscale < 1 ||
         m_owner->m_yscale < 1)
     {
         dc.SetUserScale (m_owner->m_xscale, m_owner->m_yscale);
