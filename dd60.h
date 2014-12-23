@@ -71,7 +71,8 @@
 /*
 **  Screen related definitions
 */
-#define DisplayMargin	        (20 * PScale)
+#define DisplayMargin	        (20 * m_pscale)
+#define DisplayMarginP          (20 * parent->m_pscale)
 #define OffLeftScreen           0
 #define OffRightScreen          01020
 #define TraceX                  10
@@ -82,8 +83,12 @@
 **   This is: a screen high with marging top and botton, and two screens
 **  wide with margins top and bottom, and 20b space in between.
 */
-#define XSize       (01000 * scaleX / 10 + OffRightScreen * PScale + 2 * DisplayMargin)
+#define XSize       (01000 * scaleX / 10 + OffRightScreen * m_pscale \
+                     + 2 * DisplayMargin)
 #define YSize       (01000 * scaleY / 10 + 2 * DisplayMargin)
+#define XSizeP      (01000 * scaleP / 10 + OffRightScreen * parent->m_pscale \
+                     + 2 * DisplayMarginP)
+#define YSizeP      (01000 * scaleP / 10 + 2 * DisplayMarginP)
 
 #define XADJUST(x) ((x) * scaleX / 10 + DisplayMargin + currentXOffset)
 #define YADJUST(y) ((y) * scaleY / 10 + DisplayMargin)

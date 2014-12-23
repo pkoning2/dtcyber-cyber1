@@ -29,14 +29,13 @@
 // For Retina display support on the Mac, we need to deal with the
 // fact that display units are not actually pixels, but "points" [sic]
 // and that the actual pixels may be smaller.  
-
-int PScale;
-
+// Do everything on the assumption we have Retina, scale as needed
+// later on.
 // character pattern sizes in pixels, allowing for going over the
 // allotted space some.
-#define CHAR8SIZE       (16 * PScale)
-#define CHAR16SIZE      (32 * PScale)
-#define CHAR32SIZE      (48 * PScale)
+#define CHAR8SIZE       (16 * 8)
+#define CHAR16SIZE      (32 * 8)
+#define CHAR32SIZE      (48 * 8)
 
 #define DD60CHARS       060         // number of characters in pattern arrays
 
@@ -154,8 +153,9 @@ extern "C"
 #include "iir.h"
 #include "knob.h"
 
-#define scaleX (10 * PScale)
-#define scaleY (10 * PScale)
+#define scaleX (10 * m_pscale)
+#define scaleY (10 * m_pscale)
+#define scaleP (10 * parent->m_pscale)
 #include "dd60.h"
 
 #if wxUSE_LIBGNOMEPRINT
@@ -229,15 +229,13 @@ class Dd60Printout: public wxPrintout
 {
  public:
     Dd60Printout (Dd60Frame *owner,
-                   const wxString &title = _("DD60 printout")) 
-        : wxPrintout (title),
-          m_owner (owner)
-    {}
+                  const wxString &title = _("DD60 printout"));
     bool OnPrintPage (int page);
     bool HasPage (int page);
     void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo);
     void DrawPage (wxDC *dc, int page);
-
+    int m_pscale;
+    
 private:
     Dd60Frame *m_owner;
 };
@@ -271,8 +269,6 @@ public:
 
     long        m_port;
     
-    // scale is 1 or 2 for full size and double, respectively.
-    int         m_scale;
     int         m_sizeX;
     int         m_sizeY;
     int         m_focus;
@@ -299,6 +295,7 @@ public:
     void OnDraw (wxDC &dc);
     void OnEraseBackground (wxEraseEvent &);
     void OnKey (wxKeyEvent& event);
+    int     m_pscale;
 
 private:
     Dd60Frame *m_owner;
@@ -317,6 +314,7 @@ public:
     wxStaticText *msg1;
     wxStaticText *msg3;
     Dd60Panel *m_panel;
+    int     m_pscale;
 };
 
 
@@ -381,7 +379,8 @@ public:
     bool        truekb;
     int         m_intens;
     bool        m_fastupdate;
-
+    int         m_pscale;
+    
 private:
     bool        m_firstTime;
     Dd60StatusBar *m_statusBar;
@@ -715,8 +714,6 @@ bool Dd60App::OnInit (void)
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
     
-    PScale = mainDisplayScale ();
-    
     sprintf (traceFn, "dd60_%d.trc", getpid ());
 
     m_locale.Init(wxLANGUAGE_DEFAULT);
@@ -1034,7 +1031,7 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     m_prevFrame (NULL),
     truekb (false),
     m_firstTime (true),
-    m_foregroundPen (dd60App->m_fgColor, dd60App->m_scale, wxSOLID),
+    m_foregroundPen (dd60App->m_fgColor, 1, wxSOLID),
     m_foregroundBrush (dd60App->m_fgColor, wxSOLID),
     m_canvas (NULL),
     m_port (port),
@@ -1051,7 +1048,8 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     Dd60Panel *panel;
     
     trace_txt[0] = '\0';
-    
+    m_pscale = GetContentScaleFactor ();
+
     /* 
     **  Convert the interval to an integer value in 20 ms units
     */
@@ -1144,7 +1142,7 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     
     SetCursor (*wxHOURGLASS_CURSOR);
 
-    SetClientSize ((XSize + 2) / PScale, (YSize + 2) / PScale);
+    SetClientSize ((XSize + 2) / m_pscale, (YSize + 2) / m_pscale);
     m_screenmap = new wxBitmap (XSize, YSize, 32);
     m_pixmap = new PixelData (*m_screenmap);
     if (!m_pixmap)
@@ -1440,11 +1438,11 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
                 TRACE1 ("Set mode %o", data & 077);
                 if (data & Dd60ScreenR)
                 {
-                    currentXOffset = OffRightScreen * PScale;
+                    currentXOffset = OffRightScreen * m_pscale;
                 }
                 else
                 {
-                    currentXOffset = OffLeftScreen * PScale;
+                    currentXOffset = OffLeftScreen * m_pscale;
                 }
                 // Save only char size or dot plotting mode bits
                 mode = data & 3;
@@ -1707,7 +1705,7 @@ void Dd60Frame::dd60LoadChars (void)
 void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
 {
     // Adjust for Retina factor
-    size *= PScale;
+    size *= m_pscale;
     
     int i, ch, bx, by, ix, iy, pg;
     double x, y, scalex, scaley, r, b, dx, dy;
@@ -1904,14 +1902,14 @@ void Dd60Frame::procDd60Char (unsigned int d)
         break;
     }
     // Margin is in screen units (not pixels)
-    margin = (size / PScale - inc) / 2;
+    margin = (size / m_pscale - inc) / 2;
     
     if (d != 0 && d != 055)
     {
         PixelData::Iterator p (*m_pixmap);
     
         firstx = XADJUST (currentX - margin);
-        firsty = YADJUST (currentY - (size / PScale - margin));
+        firsty = YADJUST (currentY - (size / m_pscale - margin));
     
         for (i = 0; i < size; i++)
         {
@@ -2295,14 +2293,15 @@ void Dd60Panel::OnScroll (wxScrollEvent &)
 Dd60StatusBar::Dd60StatusBar (wxWindow *parent)
     : wxBoxSizer (wxHORIZONTAL),
       m_parent (parent),
-      m_panel (NULL)
+      m_panel (NULL),
+      m_pscale (parent->GetContentScaleFactor ())
 {
     msg1 = new wxStaticText (parent, wxID_ANY, wxT (""), 
                              wxDefaultPosition, 
-                             wxSize (XSize / (3 * PScale), 15));
+                             wxSize (XSize / (3 * m_pscale), 15));
     msg3 = new wxStaticText (parent, wxID_ANY, wxT (""), 
                              wxDefaultPosition,
-                             wxSize (XSize / (3 * PScale), 15));
+                             wxSize (XSize / (3 * m_pscale), 15));
 }
 
 void Dd60StatusBar::SetPanel (Dd60Panel *panel)
@@ -2339,16 +2338,18 @@ BEGIN_EVENT_TABLE(Dd60Canvas, wxScrolledWindow)
     END_EVENT_TABLE ()
 
 Dd60Canvas::Dd60Canvas(Dd60Frame *parent)
-    : wxScrolledWindow(parent, -1, wxDefaultPosition, 
-                       wxSize (XSize / PScale, YSize / PScale),
-                       wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE)
+    : wxScrolledWindow(parent, -1, wxDefaultPosition,
+                       wxSize (XSizeP / parent->m_pscale,
+                               YSizeP / parent->m_pscale),
+                       wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE),
+      m_pscale (parent->m_pscale),
+      m_owner (parent)
 {
     wxClientDC dc(this);
 
-    m_owner = parent;
-    SetVirtualSize (XSize / PScale, YSize / PScale);
+    SetVirtualSize (XSize / m_pscale, YSize / m_pscale);
     dc.SetClippingRegion (DisplayMargin, DisplayMargin, 
-                          XSize / PScale, YSize / PScale);
+                          XSize / m_pscale, YSize / m_pscale);
     SetForegroundColour (dd60App->m_fgColor);    
     SetBackgroundColour (*wxBLACK);
     SetScrollRate (1, 1);
@@ -2357,7 +2358,7 @@ Dd60Canvas::Dd60Canvas(Dd60Frame *parent)
 
 void Dd60Canvas::OnDraw(wxDC &dc)
 {
-    dc.SetUserScale (1. / PScale, 1. / PScale);
+    dc.SetUserScale (1. / m_pscale, 1. / m_pscale);
     dc.DrawBitmap (*m_owner->m_screenmap, 0, 0, false);
     dc.SetFont (m_owner->m_traceFont);
     dc.DrawText (wxString::FromAscii (m_owner->trace_txt), TraceX, TraceY);
@@ -2574,6 +2575,13 @@ void Chargen::Step (void)
 // ----------------------------------------------------------------------------
 // Dd60 printing helper class
 // ----------------------------------------------------------------------------
+
+Dd60Printout::Dd60Printout (Dd60Frame *owner,
+                            const wxString &title)
+    : wxPrintout (title),
+      m_pscale (owner->m_pscale),
+      m_owner (owner)
+{}
 
 bool Dd60Printout::OnPrintPage (int page)
 {
