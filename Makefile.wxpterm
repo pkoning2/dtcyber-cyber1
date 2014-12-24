@@ -182,8 +182,8 @@ else
 pterm-kit: pterm.spec ptermversion.h $(MOFILES) pterm-$(PTERMVERSION).tar.bz2
 	cp pterm-$(PTERMVERSION).tar.bz2 ~/rpmbuild/SOURCES
 	rpmbuild -ba pterm.spec
-	cp /usr/src/redhat/RPMS/i386/pterm-$(PTERMVERSION)-1.i386.rpm .
-	cp /usr/src/redhat/SRPMS/pterm-$(PTERMVERSION)-1.src.rpm .
+	cp /home/pkoning/rpmbuild/RPMS/i386/pterm-$(PTERMVERSION)-1.i386.rpm .
+	cp /home/pkoning/rpmbuild/SRPMS/pterm-$(PTERMVERSION)-1.src.rpm .
 
 endif
 

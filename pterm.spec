@@ -8,8 +8,8 @@ URL: http://www.cyber1.org
 Packager: Paul Koning <paul@cyber1.org>
 Source: /lhome/pkoning/pterm-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
-BuildRequires: wxGTK-devel SDL-devel gettext-devel python
-Requires: wxGTK SDL
+BuildRequires: SDL-devel python
+Requires: libsndfile
 
 %description
 The pterm program emulates a PLATO terminal (at the moment the
