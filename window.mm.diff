@@ -1,0 +1,22 @@
+--- ../orig/wxWidgets-3.0.0/src/osx/cocoa/window.mm	2013-11-11 08:10:39.000000000 -0500
++++ src/osx/cocoa/window.mm	2014-12-24 12:02:52.000000000 -0500
+@@ -125,6 +125,10 @@
+ 
+ @end
+ 
++@interface NSWindow ()
++@property(readonly) CGFloat backingScaleFactor;
++@end
++
+ @interface NSView(PossibleMethods)
+ - (void)setTitle:(NSString *)aString;
+ - (void)setStringValue:(NSString *)aString;
+@@ -1857,7 +1861,7 @@
+ 
+ double wxWidgetCocoaImpl::GetContentScaleFactor() const
+ {
+-#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
++#if 1//#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
+     NSWindow* tlw = [m_osxView window];
+     if ( [ tlw respondsToSelector:@selector(backingScaleFactor) ] )
+         return [tlw backingScaleFactor];
