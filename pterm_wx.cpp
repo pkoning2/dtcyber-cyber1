@@ -2609,7 +2609,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
       // m_pasteLen not initialized
       // m_pastePrint not initialized
       // m_pasteLinePos not initialized
-      m_nextword (0),
+      m_nextword (C_NODATA),
       m_delay (0),
       modexor (false),
       currentX (0),
@@ -3188,11 +3188,11 @@ void PtermFrame::procDataLoop (void)
     int word;
     bool refresh = false;
     
-    if (m_nextword != 0)
+    if (m_nextword != C_NODATA)
     {
         m_ignoreDelay = false;      // Assume it's not block erase
         refresh = procPlatoWord (m_nextword, m_conn->Ascii ());
-        m_nextword = 0;
+        m_nextword = C_NODATA;
     }
 
     for (;;)
