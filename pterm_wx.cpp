@@ -2110,7 +2110,9 @@ int PtermApp::OnExit (void)
     m_config->Write (wxT (PREF_XPOS), prefX);
     m_config->Write (wxT (PREF_YPOS), prefY);
     m_config->Flush ();
-
+    delete m_config;
+    m_config = NULL;
+    
     delete g_printData;
     delete g_pageSetupData;
 
@@ -2631,7 +2633,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
       m_defBg (ptermApp->m_bgColor),
       m_currentFg (ptermApp->m_fgColor),
       m_currentBg (ptermApp->m_bgColor),
-      // m_loadingPMD not initialized
+      m_loadingPMD (false),
       // m_PMD not initialized
       cwsmode (0),
       cwsfun (0),
@@ -9682,6 +9684,10 @@ PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
         // We ran out of addresses
         StoreWord (C_CONNFAIL);
     }
+    if (addresses != NULL)
+    {
+        delete [] addresses;
+    }
 }
 
 PtermConnection::~PtermConnection ()
@@ -10211,6 +10217,8 @@ PtermCanvas::PtermCanvas (PtermFrame *parent)
                         wxDefaultSize,
                         wxHSCROLL | wxVSCROLL | wxWANTS_CHARS
                         /* , "Default Name" */),
+      m_mouseX (-1),
+      m_mouseY (-1),
       m_owner (parent),
       m_touchEnabled (false)
 {
