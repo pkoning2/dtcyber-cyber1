@@ -2817,7 +2817,9 @@ PtermFrame::~PtermFrame ()
         delete m_bitmap2;
     }
     delete m_selmap;
+    delete m_memDC;
     m_bitmap = m_bitmap2 = m_selmap = NULL;
+    m_memDC = NULL;
 
     // If this is the help frame, remember we no longer have it
     if (this == ptermApp->m_helpFrame)
@@ -9705,7 +9707,6 @@ void PtermConnection::s_connCallback (NetFet *fet, int, void *arg)
     PtermConnection *self = (PtermConnection *) arg;
     
     tracex ("Connection callback on %p", self);
-    self->m_fet = fet;
     self->connCallback ();
 }
 
@@ -9714,7 +9715,6 @@ void PtermConnection::s_dataCallback (NetFet *fet, int, void *arg)
     PtermConnection *self = (PtermConnection *) arg;
     
     tracex ("Data callback on %p", self);
-    self->m_fet = fet;
     self->dataCallback ();
 }
 

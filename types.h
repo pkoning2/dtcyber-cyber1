@@ -235,7 +235,7 @@ typedef struct
 */
 typedef struct NetFet_s
     {
-    int         connFd;                 /* File descriptor for socket */
+    volatile int connFd;                /* File descriptor for socket */
     u8          *first;                 /* Start of receive ring buffer */
     volatile u8 *in;                    /* Fill (write) pointer */
     volatile u8 *out;                   /* Empty (read) pointer */
@@ -259,7 +259,7 @@ typedef struct NetFet_s
     u64         ownerInfo;              /* Data supplied by socket owner */
     volatile int closing;               /* Closing down if non-zero */
     bool        listen;                 /* Is this a bind/listen socket? */
-    bool        connected;              /* Is this socket connected? */
+    volatile bool connected;            /* Is this socket connected? */
     } NetFet;
 
 
