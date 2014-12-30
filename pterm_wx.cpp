@@ -667,9 +667,6 @@ private:
 };
 
 extern "C" int ptermNextGswWord (void *connection, int idle);
-#if defined (__WXMAC__)
-extern "C" float mainDisplayScale (void);
-#endif
 
 // Define a new application type, each program should derive a class from wxApp
 class PtermApp : public wxApp
@@ -9723,6 +9720,11 @@ void PtermConnection::s_dataCallback (NetFet *fet, int, void *arg)
 
 void PtermConnection::connCallback (void)
 {
+    if (!dtConnected (m_fet))
+    {
+        StoreWord (C_DISCONNECT);
+    }
+    
     wxWakeUpIdle ();
 }
 
