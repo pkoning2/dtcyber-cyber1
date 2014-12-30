@@ -353,6 +353,9 @@ int dtCreateThread (dtThreadFunPtr (fp), void *param, pthread_t *id)
 **  The callback function is called with the FET pointer, the count of received
 **  bytes, and the dataCallArg value.
 **
+**  Note that there currently is no "Close Portset" function, so the
+**  memory allocated by this function constitutes a (small) memory leak.
+**
 **------------------------------------------------------------------------*/
 void dtInitPortset (NetPortSet *ps)
     {
@@ -995,16 +998,13 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
     int psi = -1;
 
     /*
-    **  If we have a NetPortSet, find an empty slot in its portVec.
+    **  Find an empty slot in the portVec.
     */
-    if (ps != NULL)
+    for (psi = 0; psi < ps->maxPorts && ps->portVec[psi] != NULL; psi++) ;
+    if (psi == ps->maxPorts)
         {
-        for (psi = 0; psi < ps->maxPorts && ps->portVec[psi] != NULL; psi++) ;
-        if (psi == ps->maxPorts)
-            {
-            dtErrno = ENOBUFS;
-            return NULL;
-            }
+        dtErrno = ENOBUFS;
+        return NULL;
         }
     
     if (listen)
@@ -1278,9 +1278,10 @@ static dtThreadFun (dtDataThread, param)
     struct pollfd pfd;
     
     /*
-    **  Wait for socket ready or error, then do the final connection activation.
+    **  Wait for socket ready or error, then do the final connection
+    **  activation.
     **  If an error occurs, close the socket instead (which will generate 
-    **  a close callback).  This way, the callback should occur when the
+    **  a close callback).  This way, the callback will occur when the
     **  connection is actually up, as opposed to immediately after an outgoing
     **  connection request is issued.
     */
@@ -1290,10 +1291,18 @@ static dtThreadFun (dtDataThread, param)
     if (pfd.revents & (POLLHUP | POLLNVAL | POLLERR))
         {
         dtClose (np, TRUE);
-        ThreadReturn;
+        /*
+        ** Fall through into main loop, which will exit because
+        ** we called dtClose, and from there into the cleanup.
+        */
         }
-#endif
+    else
+        {
+        dtActivateFet2 (np);
+        }
+#else
     dtActivateFet2 (np);
+#endif
     
     while (1)
         {
@@ -1382,14 +1391,7 @@ static dtThreadFun (dtDataThread, param)
     sem_destroy (semp (np));
 #endif
     
-#if 0
-    // On Windows I get a crash in free() if I do this.
-    // Ditto, but only once in a while, on Mac OS.
-    // It's probably a double free but I can't find it,
-    // and as memory leaks go this isn't a bad one.  So
-    // call it a temporary workaround.
     free (np);
-#endif
 
     ThreadReturn;
     }
