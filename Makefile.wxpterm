@@ -20,13 +20,17 @@ PKGMAKER = /Applications/Utilities/PackageMaker.app
 endif
 PTERMPKGNAME ?= "Install-Pterm.pkg"
 
+ifneq ("$(OSXMIN)", "10.4")
 ifeq ("$(wildcard /Library/Frameworks/SDL2.framework)","")
 SDLFW ?= SDL
 else
 SDLFW ?= SDL2
 endif
 SDLLIBS ?= -Wl,-framework,$(SDLFW)
-INCL ?= -I/usr/local/include -I/usr/include -F/Library/Frameworks/$(SDLFW).framework
+SDLINCL ?= -I/usr/local/include -I/usr/include -F/Library/Frameworks/$(SDLFW).framework
+endif
+else
+SDLFW=
 endif
 #else
 SDLPATH ?= /usr/local
@@ -96,10 +100,9 @@ info:
 pterm:	$(PTOBJS)
 	$(LINK) $(ARCHLDFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(LIBS) $(SETPATH)
 ifeq ("$(HOST)","Darwin")
-
-
+	#strip $@
 else
-	objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
+	#objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
 endif
 
 wxversion.h: wxversion wxversion.py
@@ -149,15 +152,19 @@ Pterm.app: pterm pterm-info.plist pterm.icns $(MOFILES)
 	/bin/echo -n "APPL????" > Pterm.app/Contents/PkgInfo
 	cp pterm Pterm.app/Contents/MacOS/pterm
 	strip Pterm.app/Contents/MacOS/pterm
+ifneq ("$(SDLFW)", "")
 	install_name_tool -change @rpath/$(SDLFW).framework/Versions/A/$(SDLFW) @loader_path/../Frameworks/$(SDLFW).framework/Versions/A/$(SDLFW) Pterm.app/Contents/MacOS/pterm
+endif
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
 	for d in $(LANGUAGES); do \
 	    cp $$d/pterm.mo Pterm.app/Contents/Resources/$${d}.lproj; \
 	done
 	mkdir -p Pterm.app/Contents/Frameworks
+ifneq ("$(SDLFW)", "")
 	cp -R /Library/Frameworks/$(SDLFW).framework Pterm.app/Contents/Frameworks
 	rm -rf Pterm.app/Contents/Frameworks/$(SDLFW).framework/Headers
 	rm -rf Pterm.app/Contents/Frameworks/$(SDLFW).framework/Versions/Current/Headers
+endif
 
 pterm-empty.dmg:
 	hdiutil create -size 32m pterm-empty.dmg -layout NONE
