@@ -2445,7 +2445,7 @@ void PtermApp::OnHelpKeys (wxCommandEvent &)
 }
 
 wxColour PtermApp::SelectColor (wxWindow &parent, 
-                                 const wxChar *title, wxColour &initcol)
+                                const wxChar *title, wxColour &initcol)
 {
     wxColour col (initcol);
     wxColour orange (255, 144, 0);
@@ -2690,64 +2690,64 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
 
     m_bitmap = new wxBitmap (512, 512, 32);
     {
-         PixelData pixmap (*m_bitmap);
+        PixelData pixmap (*m_bitmap);
 
-         if (!pixmap)
-         {
-             // ... raw access to bitmap data unavailable, do something else ...
-             printf ("no raw bitmap access\n");
-             exit (1);
-         }
+        if (!pixmap)
+        {
+            // ... raw access to bitmap data unavailable, do something else ...
+            printf ("no raw bitmap access\n");
+            exit (1);
+        }
 
-         // Find out how RGBA map to the parts of a 32 bit value, so we can
-         // access things as 32 bit arrays and still be implementation
-         // independent.
-         PixelData::Iterator p (pixmap);
-         u32 *pmap = (u32 *) (p.m_ptr);
-         u8 *pb = (u8 *) pmap;
-         u32 t;
+        // Find out how RGBA map to the parts of a 32 bit value, so we can
+        // access things as 32 bit arrays and still be implementation
+        // independent.
+        PixelData::Iterator p (pixmap);
+        u32 *pmap = (u32 *) (p.m_ptr);
+        u8 *pb = (u8 *) pmap;
+        u32 t;
     
-         t = *pmap;
-         *pmap = 0;
-         p.Alpha () = 255;
-         m_maxalpha = *pmap;
-         *pmap = 0;
-         p.Red () = 1;
-         for (i = 0; i < 4; i++)
-         {
-             if (pb[i]) m_red = i;
-         }
-         *pmap = 0;
-         p.Green () = 1;
-         for (i = 0; i < 4; i++)
-         {
-             if (pb[i]) m_green = i;
-         }
-         *pmap = 0;
-         p.Blue () = 1;
-         for (i = 0; i < 4; i++)
-         {
-             if (pb[i]) m_blue = i;
-         }
-         // Pixel value for selected text is white on 
-         // translucent gray background, except on Windows
-         // because it doesn't support Alpha (though that
-         // seems to be undocumented).  So there we use
-         // black foreground on medium gray background.
+        t = *pmap;
+        *pmap = 0;
+        p.Alpha () = 255;
+        m_maxalpha = *pmap;
+        *pmap = 0;
+        p.Red () = 1;
+        for (i = 0; i < 4; i++)
+        {
+            if (pb[i]) m_red = i;
+        }
+        *pmap = 0;
+        p.Green () = 1;
+        for (i = 0; i < 4; i++)
+        {
+            if (pb[i]) m_green = i;
+        }
+        *pmap = 0;
+        p.Blue () = 1;
+        for (i = 0; i < 4; i++)
+        {
+            if (pb[i]) m_blue = i;
+        }
+        // Pixel value for selected text is white on 
+        // translucent gray background, except on Windows
+        // because it doesn't support Alpha (though that
+        // seems to be undocumented).  So there we use
+        // black foreground on medium gray background.
 #if defined (__WXMSW__)
-         p.Alpha () = 255;
-         p.Red () = p.Green () = p.Blue () = 0;
-         m_selpixf = *pmap;
-         p.Red () = p.Green () = p.Blue () = 140;
-         m_selpixb = *pmap;
+        p.Alpha () = 255;
+        p.Red () = p.Green () = p.Blue () = 0;
+        m_selpixf = *pmap;
+        p.Red () = p.Green () = p.Blue () = 140;
+        m_selpixb = *pmap;
 #else
-         p.Alpha () = 255;
-         p.Red () = p.Green () = p.Blue () = 255;
-         m_selpixf = *pmap;
-         p.Alpha () = 140;
-         m_selpixb = *pmap;
+        p.Alpha () = 255;
+        p.Red () = p.Green () = p.Blue () = 255;
+        m_selpixf = *pmap;
+        p.Alpha () = 140;
+        m_selpixb = *pmap;
 #endif
-         *pmap = t;
+        *pmap = t;
     }
     m_memDC = new wxMemoryDC ();
     m_selmap = new wxBitmap (512, 512, 32);
@@ -2977,14 +2977,14 @@ void PtermFrame::BuildViewMenu (wxMenu *menu, int port)
     
 #if !defined (__WXMAC__)
     menu->AppendCheckItem (Pterm_ToggleMenuBar,
-                               _("Display menu bar"), _("Display menu bar"));
+                           _("Display menu bar"), _("Display menu bar"));
     menu->Check (Pterm_ToggleMenuBar, ptermApp->m_showMenuBar);
 #endif
     if (port > 0)
     {
         menu->AppendCheckItem (Pterm_ToggleStatusBar,
-                                   _("Display status bar"),
-                                   _("Display status bar"));
+                               _("Display status bar"),
+                               _("Display status bar"));
         menu->Check (Pterm_ToggleStatusBar, ptermApp->m_showStatusBar);
         menu->AppendSeparator ();
     }
@@ -3014,21 +3014,21 @@ void PtermFrame::BuildViewMenu (wxMenu *menu, int port)
         }
     }
     menu->AppendRadioItem (Pterm_ToggleStretchMode,
-                               _("Stretch display"), _("Stretch display"));
+                           _("Stretch display"), _("Stretch display"));
     if (ptermApp->m_scale == SCALE_FREE)
     {
         menu->Check (Pterm_ToggleStretchMode, true);
     }
     menu->AppendRadioItem (Pterm_ToggleAspectMode,
-                               _("Keep aspect ratio"), _("Keep aspect ratio"));
+                           _("Keep aspect ratio"), _("Keep aspect ratio"));
     if (ptermApp->m_scale == SCALE_ASPECT)
     {
         menu->Check (Pterm_ToggleAspectMode, true);
     }
     menu->AppendSeparator ();
     menu->Append (Pterm_FullScreen, _("Full Screen")
-                      ACCELERATOR ("\tCtrl-U"),
-                      _("Display in full screen mode"));
+                  ACCELERATOR ("\tCtrl-U"),
+                  _("Display in full screen mode"));
 }
 
 void PtermFrame::BuildHelpMenu (void)
@@ -3260,7 +3260,7 @@ void PtermFrame::procDataLoop (void)
         if (m_statusBar != NULL)
         {
             m_statusBar->SetStatusText (_(" Not connected"),
-                                                 STATUS_CONN);
+                                        STATUS_CONN);
         }
 
         wxDateTime ldt;
@@ -3339,13 +3339,23 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     // paste string.
     if (m_pasteNextIndex == 0)
     {
-        i = m_pasteText.find_last_of (" -", m_pasteIndex + ptermApp->m_autoLF - 1);
-        if (i < m_pasteIndex || i == wxString::npos)
+        // First, check if we need to break at all.  If the count of
+        // chars left is <= the autoLF setting, then there is nothing
+        // to wrap.
+        if (m_pasteLen - m_pasteIndex <= ptermApp->m_autoLF)
         {
-            // If there is no good break point, break at the limit.
-            i = m_pasteNextIndex + ptermApp->m_autoLF - 1;
+            m_pasteNextIndex = -1;
         }
-        m_pasteNextIndex = i;
+        else
+        {
+            i = m_pasteText.find_last_of (" -", m_pasteIndex + ptermApp->m_autoLF - 1);
+            if (i < m_pasteIndex || i == wxString::npos)
+            {
+                // If there is no good break point, break at the limit.
+                i = m_pasteNextIndex + ptermApp->m_autoLF - 1;
+            }
+            m_pasteNextIndex = i;
+        }
     }
     
     nextindex = m_pasteIndex;
