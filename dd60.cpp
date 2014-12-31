@@ -1913,9 +1913,15 @@ void Dd60Frame::procDd60Char (unsigned int d)
     
         for (i = 0; i < size; i++)
         {
-            p.MoveTo (*m_pixmap, firstx, firsty + i);
             for (j = 0; j < size; j++)
             {
+                if (firstx + j < 0 || firstx + j > XSize ||
+                    firsty + i < 0 || firsty + i > YSize)
+                {
+                    data += 4;
+                    continue;
+                }
+                p.MoveTo (*m_pixmap, firstx + j, firsty + i);
                 u8 &rp = p.Red ();
                 u8 &gp = p.Green ();
                 u8 &bp = p.Blue ();
@@ -1938,7 +1944,6 @@ void Dd60Frame::procDd60Char (unsigned int d)
                     k = 255;
                 }
                 bp = k;
-                ++p;
                 data += 4;
             }
         }
