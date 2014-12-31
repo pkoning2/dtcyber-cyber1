@@ -74,7 +74,7 @@ typedef HANDLE pthread_t;
     typedef unsigned __int64 u64;
     #define FMT60_020o "%020I64o"
     #define FMT60_08o "%08I64o"
-	typedef unsigned int socklen_t;
+    typedef unsigned int socklen_t;
 #elif defined (__GNUC__)
     #if defined(__LONG_MAX__)
         #if (__LONG_MAX__ == __INT_MAX__)
@@ -246,11 +246,15 @@ typedef struct NetFet_s
     u8          *sendend;               /* End of ring buffer + 1 */
     pthread_t   sendThread;             /* Thread ID of send thread */
 #if defined(__APPLE__)
-    sem_t       *_semp;                 /* For waking send thread */
-#define semp(fet) ((fet)->_semp)
+    sem_t       *_rsemp;                /* Allows rcv thread to exit */
+    sem_t       *_ssemp;                /* For waking send thread */
+#define rsemp(fet) ((fet)->_rsemp)
+#define ssemp(fet) ((fet)->_ssemp)
 #else
-    sem_t       sem;                    /* For waking send thread */
-#define semp(fet) (&((fet)->sem))
+    sem_t       rsem;                   /* Allows rcv thread to exit */
+    sem_t       ssem;                   /* For waking send thread */
+#define rsemp(fet) (&((fet)->rsem))
+#define ssemp(fet) (&((fet)->ssem))
 #endif
     struct in_addr from;                /* Remote IP address */
     int         fromPort;               /* Remote TCP port number */

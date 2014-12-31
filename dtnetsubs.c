@@ -465,11 +465,11 @@ void dtClose (NetFet *fet, bool hard)
         {
         return;
         }
-    
-	/*
-	**  Remember if we have threads.  This affects where the Fet is freed.
-	*/
-	useThread = fet->sendend != fet->first;
+
+    /*
+    **  Remember if we have threads.  This affects where the Fet is freed.
+    */
+    useThread = fet->sendend != fet->first;
 
     /*
     **  Mark the FET as closing down.
@@ -513,14 +513,17 @@ void dtClose (NetFet *fet, bool hard)
     /*
     **  If we have threads, tell the send thread to go away.  (If
     **  there is no send thread, that's a NOP).  The receive thread
-    **  will free the FET.  If there are no threads, (listen FET),
-    **  free the FET here.
+    **  will free the FET.  
     */
     if (useThread)
         {
-            sem_post (semp (fet));
+        sem_post (ssemp (fet));
         }
-    else
+
+    /*
+    **  If there are no threads, (listen FET), free the FET here.
+    */
+    if (!useThread)
         {
         free (fet);
         }
@@ -890,9 +893,9 @@ int dtSend (NetFet *fet, const void *buf, int len)
     ** Update the IN pointer, then wake the send thread.
     */
     fet->sendin = in;
-    if (semp (fet) != NULL)
+    if (ssemp (fet) != NULL)
     {
-        sem_post (semp (fet));
+        sem_post (ssemp (fet));
     }
     
     if (dtSendFree (fet) == 0)
@@ -1042,8 +1045,8 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
     memset (fet, 0, sizeof (NetFet));
 
 #ifdef __APPLE__
-        setsockopt(connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                   (char *)&true_opt, sizeof(true_opt));
+    setsockopt(connFd, SOL_SOCKET, SO_NOSIGPIPE,
+               (char *)&true_opt, sizeof(true_opt));
 #endif
     fet->connFd = connFd;
     fet->listen = listen;
@@ -1058,11 +1061,14 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
     fet->sendend = fet->sendfirst + tsize;
     
 #ifdef __APPLE__
-    semp (fet) = NULL;       /* Initialized in the thread */
+    /* Semaphores are initialized in the thread that uses them. */
+    rsemp (fet) = NULL;
+    ssemp (fet) = NULL;
 #else
-    sem_init (semp (fet), 0, 0);
+    sem_init (rsemp (fet), 0, 0);
+    sem_init (ssemp (fet), 0, 0);
 #endif
-
+    
     /*
     **  Remember which portset this NetFet belongs to.
     */
@@ -1282,6 +1288,18 @@ static dtThreadFun (dtDataThread, param)
     int bytes = 0;
 #ifndef _WIN32
     struct pollfd pfd;
+#ifdef __APPLE__
+    char semname[64];
+
+    /* Initialize the semaphore */
+    sprintf (semname, "/dtrsem_%p", np);
+    rsemp (np) = sem_open (semname, O_CREAT, 0600, 0);
+    if (rsemp (np) == (void *) SEM_FAILED)
+    {
+        perror ("sem_open failed");
+        exit (1);
+    }
+#endif
     
     /*
     **  Wait for socket ready or error, then do the final connection
@@ -1296,10 +1314,10 @@ static dtThreadFun (dtDataThread, param)
     poll (&pfd, 1, -1);
     if (pfd.revents & (POLLHUP | POLLNVAL | POLLERR))
         {
-        dtClose (np, TRUE);
+        np->closing = 2;
         /*
         ** Fall through into main loop, which will exit because
-        ** we called dtClose, and from there into the cleanup.
+        ** we marked the FET for close, and from there into the cleanup.
         */
         }
     else
@@ -1382,19 +1400,43 @@ static dtThreadFun (dtDataThread, param)
             }
         }
 
-    dtClose (np, TRUE);
+    /*
+    **  If this FET isn't marked for close yet, mark it.  Note the actual
+    **  close call is made in the main thread, which will also allow
+    **  this thread to free the FET.  It is done that way to avoid
+    **  race conditions around freeing the FET.
+    */
+    if (np->closing == 0)
+        {
+        /*
+        **  Tell send thread, if there is one, to quit right now.  
+        */
+        np->closing = 2;
+        sem_post (ssemp (np));
+        }
 
     /*
-    **  Wait for the send thread to exit, if we have one.  Finally,
-    **  release the memory for the NetFet.
+    **  Wait for the send thread to exit, if we have one. 
     */
     if (np->sendend != np->sendfirst)
         {
         pthread_join (np->sendThread, NULL);
         }
 
+    /*
+    **  Wait for dtClose to say that the FET can be freed.
+    */
+    sem_wait (rsemp (np));
+
+    /*
+    **  Free the semaphores, then the FET memory.
+    */
 #if !defined(__APPLE__)
-    sem_destroy (semp (np));
+    sem_destroy (rsemp (np));
+    sem_destroy (ssemp (np));
+#else
+    sem_close (rsemp (np));
+    sem_unlink (semname);
 #endif
     
     free (np);
@@ -1422,9 +1464,9 @@ static dtThreadFun (dtSendThread, param)
     char semname[64];
 
     /* Initialize the semaphore */
-    sprintf (semname, "/sem_%p", np);
-    semp (np) = sem_open (semname, O_CREAT, 0600, 1);
-    if (semp (np) == (void *) SEM_FAILED)
+    sprintf (semname, "/dtssem_%p", np);
+    ssemp (np) = sem_open (semname, O_CREAT, 0600, 0);
+    if (ssemp (np) == (void *) SEM_FAILED)
     {
         perror ("sem_open failed");
         exit (1);
@@ -1465,7 +1507,7 @@ static dtThreadFun (dtSendThread, param)
             **  send ring).  Then go back to the top of the loop to
             **  check for reasons to exit.
             */
-            ret = sem_wait (semp (np));
+            ret = sem_wait (ssemp (np));
             if (ret < 0)
                 {
                 perror ("sem_wait");
@@ -1516,7 +1558,7 @@ static dtThreadFun (dtSendThread, param)
         }
 
 #if defined(__APPLE__)
-    sem_close (semp (np));
+    sem_close (ssemp (np));
     sem_unlink (semname);
 #endif
 
