@@ -36,3 +36,8 @@ V5.0.5, December 2014:
 This is the release of Pterm V5.0.
 
 It contains bugfixes, more general scaling, and Mac Retina display support.
+
+V5.0.6, December 2014:
+
+This release corrects several bugs: crash on exit primarily on Mac,
+wrong handling of -font- commands in certain cases.
