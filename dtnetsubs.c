@@ -456,7 +456,8 @@ void dtInitPortset (NetPortSet *ps)
 void dtClose (NetFet *fet, bool hard)
     {
     NetPortSet *ps;
-    
+    bool useThread = FALSE;
+
     /*
     **  Return success if already closed.
     */
@@ -465,6 +466,11 @@ void dtClose (NetFet *fet, bool hard)
         return;
         }
     
+	/*
+	**  Remember if we have threads.  This affects where the Fet is freed.
+	*/
+	useThread = fet->sendend != fet->first;
+
     /*
     **  Mark the FET as closing down.
     */
@@ -510,7 +516,7 @@ void dtClose (NetFet *fet, bool hard)
     **  will free the FET.  If there are no threads, (listen FET),
     **  free the FET here.
     */
-    if (fet->sendend != fet->first)
+    if (useThread)
         {
             sem_post (semp (fet));
         }
