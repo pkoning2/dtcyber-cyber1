@@ -20,14 +20,14 @@ PKGMAKER = /Applications/Utilities/PackageMaker.app
 endif
 PTERMPKGNAME ?= "Install-Pterm.pkg"
 
-ifneq ("$(OSXMIN)", "10.4")
+ifeq ("$(OSXVER)", "10.5")
 ifeq ("$(wildcard /Library/Frameworks/SDL2.framework)","")
 SDLFW ?= SDL
 else
 SDLFW ?= SDL2
 endif
 SDLLIBS ?= -Wl,-framework,$(SDLFW)
-SDLINCL ?= -I/usr/local/include -I/usr/include -F/Library/Frameworks/$(SDLFW).framework
+INCL ?= -I/usr/local/include -I/usr/include -F/Library/Frameworks/$(SDLFW).framework
 endif
 else
 SDLFW=
