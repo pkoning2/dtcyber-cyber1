@@ -2,12 +2,15 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="pterm"
-	ProjectGUID="{3EF1AD10-B661-41AB-907B-21A174AE0D3D}"
+	Name="Pterm"
+	ProjectGUID="{633A7021-DC58-598D-A3BF-97027753CE3B}"
 	>
 	<Platforms>
 		<Platform
 			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
 		/>
 	</Platforms>
 	<ToolFiles>
@@ -18,10 +21,9 @@
 			OutputDirectory=".\Debug"
 			IntermediateDirectory=".\Debug"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -37,48 +39,47 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Debug/pterm.tlb"
-				HeaderFileName=""
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;_WINDOWS;NOPCH"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_lib\mswud;.\..\..\include;.;.\..\..\samples"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="C:\wxWidgets\include\msvc;c:\wxWidgets\include;&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;&quot;C:\SDL2-2.0.3\include&quot;"
-				PreprocessorDefinitions="DEBUG;WIN32;_WINDOWS;WINVER=0x400;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;_CRT_SECURE_NO_DEPRECATE;_UNICODE"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;c:\wxWidgets\lib\vc_lib\mswud;c:\wxWidgets\include;&quot;C:\SDL2-2.0.3\include&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;_WINDOWS;NOPCH"
 				MinimalRebuild="true"
-				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\Debug/pterm.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
-				BrowseInformation="1"
-				WarningLevel="3"
+				ExceptionHandling="1"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				BufferSecurityCheck="true"
+				RuntimeTypeInfo="true"
+				WarningLevel="4"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
+				PreprocessorDefinitions="_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;_WINDOWS;NOPCH"
 				Culture="1033"
-				AdditionalIncludeDirectories="d:\projects\pterm\wxWidgets-2.8.4\include\"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_lib\mswud;.\..\..\include;.;.\..\..\samples"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib SDL2.lib libsndfile-1.lib"
-				OutputFile=".\Debug/pterm.exe"
-				LinkIncremental="1"
+				AdditionalOptions=""
+				AdditionalDependencies="SDL2.lib libsndfile-1.lib wxmsw30ud_adv.lib wxmsw30ud_core.lib wxbase30ud.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib winmm.lib comctl32.lib rpcrt4.lib wsock32.lib wininet.lib"
+				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="C:\wxWidgets\lib\vc80_lib;&quot;C:\SDL2-2.0.3\lib\x86&quot;;&quot;C:\Program Files\Mega-Nerd\libsndfile\lib&quot;"
-				IgnoreAllDefaultLibraries="false"
-				IgnoreDefaultLibraryNames="libcpmtd.lib;libcmtd.lib"
+				AdditionalLibraryDirectories="&quot;c:\Program Files\Mega-Nerd\libsndfile\lib&quot;;&quot;c:\SDL2-2.0.3\lib\x86&quot;;c:\wxWidgets\lib\vc_lib"
+				GenerateManifest="true"
+				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/pterm.pdb"
 				SubSystem="2"
 				TargetMachine="1"
 			/>
@@ -94,7 +95,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/pterm.bsc"
+				OutputFile="vc_mswud\minimal_vc8.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -114,19 +115,15 @@
 			OutputDirectory=".\Release"
 			IntermediateDirectory=".\Release"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				Description="Build kit file..."
-				CommandLine="&quot;c:\Program Files\Inno Setup 5\ISCC.exe&quot; /Q pterm.iss"
-				AdditionalDependencies="pterm.iss;CHANGES-pterm.txt"
-				Outputs="setup.exe"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -136,52 +133,141 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Release/pterm.tlb"
-				HeaderFileName=""
+				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;_WINDOWS;NOPCH"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_lib\mswu;.\..\..\include;.;.\..\..\samples"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="C:\wxWidgets\include\msvc;c:\wxWidgets\include;&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;&quot;C:\SDL2-2.0.3\include&quot;"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;WINVER=0x400;wxUSE_GUI=1;wxMSVC_VERSION_AUTO;_CRT_SECURE_NO_DEPRECATE;_UNICODE=1;WXUSINGDLL=1"
-				StringPooling="true"
-				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/pterm.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
-				BrowseInformation="1"
-				WarningLevel="3"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;c:\wxWidgets\lib\vc_lib\mswud;c:\wxWidgets\include;&quot;C:\SDL2-2.0.3\include&quot;"
+				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;_WINDOWS;NOPCH"
+				ExceptionHandling="1"
+				RuntimeLibrary="2"
+				RuntimeTypeInfo="true"
+				WarningLevel="4"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="1"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;_WINDOWS;NOPCH"
 				Culture="1033"
-				AdditionalIncludeDirectories="d:\projects\pterm\wxWidgets-2.8.4\include"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_lib\mswu;.\..\..\include;.;.\..\..\samples"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib SDL2.lib libsndfile-1.lib"
-				OutputFile=".\Release/pterm.exe"
+				AdditionalOptions=""
+				AdditionalDependencies="SDL2.lib libsndfile-1.lib wxmsw30u_adv.lib wxmsw30u_core.lib wxbase30u.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib winmm.lib comctl32.lib rpcrt4.lib wsock32.lib wininet.lib"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="C:\wxWidgets\lib\vc80_dll;&quot;C:\SDL2-2.0.3\lib\x86&quot;;&quot;C:\Program Files\Mega-Nerd\libsndfile\lib&quot;"
-				IgnoreDefaultLibraryNames=""
-				GenerateDebugInformation="false"
-				AssemblyDebug="0"
-				ProgramDatabaseFile=".\Release/pterm.pdb"
-				GenerateMapFile="true"
-				MapFileName=".\Release/pterm.map"
+				AdditionalLibraryDirectories="&quot;c:\Program Files\Mega-Nerd\libsndfile\lib&quot;;&quot;c:\SDL2-2.0.3\lib\x86&quot;;c:\wxWidgets\lib\vc_lib"
+				GenerateManifest="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="vc_mswu\minimal.pdb"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				SuppressStartupBanner="true"
+				OutputFile="vc_mswu\minimal_vc8.bsc"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="DLL Debug|Win32"
+			OutputDirectory="vc_mswuddll"
+			IntermediateDirectory="vc_mswuddll\minimal"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_dll\mswud;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;c:\wxWidgets\lib\vc_lib\mswud;c:\wxWidgets\include;&quot;C:\SDL2-2.0.3\include&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				MinimalRebuild="true"
+				ExceptionHandling="1"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				BufferSecurityCheck="true"
+				RuntimeTypeInfo="true"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				Culture="1033"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_dll\mswud;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=""
+				AdditionalDependencies="SDL2.lib SDL2main.lib libsndfile-1.lib"
+				OutputFile="vc_mswuddll\minimal.exe"
+				LinkIncremental="2"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="&quot;c:\Program Files\Mega-Nerd\libsndfile\lib&quot;;&quot;c:\SDL2-2.0.3\lib\x86&quot;;c:\wxWidgets\lib\vc_lib"
+				GenerateManifest="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="vc_mswuddll\minimal.pdb"
 				SubSystem="2"
 				TargetMachine="1"
 			/>
@@ -197,7 +283,487 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/pterm.bsc"
+				OutputFile="vc_mswuddll\minimal_vc8.bsc"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="DLL Release|Win32"
+			OutputDirectory="vc_mswudll"
+			IntermediateDirectory="vc_mswudll\minimal"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_dll\mswu;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;c:\wxWidgets\lib\vc_lib\mswud;c:\wxWidgets\include;&quot;C:\SDL2-2.0.3\include&quot;"
+				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				ExceptionHandling="1"
+				RuntimeLibrary="2"
+				RuntimeTypeInfo="true"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				Culture="1033"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_dll\mswu;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=""
+				AdditionalDependencies="SDL2.lib SDL2main.lib libsndfile-1.lib"
+				OutputFile="vc_mswudll\minimal.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="&quot;c:\Program Files\Mega-Nerd\libsndfile\lib&quot;;&quot;c:\SDL2-2.0.3\lib\x86&quot;;c:\wxWidgets\lib\vc_lib"
+				GenerateManifest="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="vc_mswudll\minimal.pdb"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				SuppressStartupBanner="true"
+				OutputFile="vc_mswudll\minimal_vc8.bsc"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="vc_mswud_x64"
+			IntermediateDirectory="vc_mswud_x64\minimal"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;_WINDOWS;NOPCH"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_lib\mswud;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_lib\mswud;.\..\..\include;.;.\..\..\samples"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;_WINDOWS;NOPCH"
+				MinimalRebuild="true"
+				ExceptionHandling="1"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				BufferSecurityCheck="true"
+				RuntimeTypeInfo="true"
+				ObjectFile="vc_mswud_x64\minimal\"
+				ProgramDataBaseFileName="vc_mswud_x64\minimal.pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;_WINDOWS;NOPCH"
+				Culture="1033"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_lib\mswud;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=""
+				AdditionalDependencies="wxmsw30ud_core.lib  wxbase30ud.lib    wxtiffd.lib wxjpegd.lib wxpngd.lib   wxzlibd.lib wxregexud.lib wxexpatd.lib    kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib wininet.lib"
+				OutputFile="vc_mswud_x64\minimal.exe"
+				LinkIncremental="2"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".\..\..\lib\vc_x64_lib"
+				GenerateManifest="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="vc_mswud_x64\minimal.pdb"
+				SubSystem="2"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				OutputFile="vc_mswud_x64\minimal_vc8.bsc"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="vc_mswu_x64"
+			IntermediateDirectory="vc_mswu_x64\minimal"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;_WINDOWS;NOPCH"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_lib\mswu;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_lib\mswu;.\..\..\include;.;.\..\..\samples"
+				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;_WINDOWS;NOPCH"
+				ExceptionHandling="1"
+				RuntimeLibrary="2"
+				RuntimeTypeInfo="true"
+				ObjectFile="vc_mswu_x64\minimal\"
+				ProgramDataBaseFileName="vc_mswu_x64\minimal.pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;_WINDOWS;NOPCH"
+				Culture="1033"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_lib\mswu;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=""
+				AdditionalDependencies="wxmsw30u_core.lib  wxbase30u.lib    wxtiff.lib wxjpeg.lib wxpng.lib   wxzlib.lib wxregexu.lib wxexpat.lib    kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib wininet.lib"
+				OutputFile="vc_mswu_x64\minimal.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".\..\..\lib\vc_x64_lib"
+				GenerateManifest="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="vc_mswu_x64\minimal.pdb"
+				SubSystem="2"
+				TargetMachine="17"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				OutputFile="vc_mswu_x64\minimal_vc8.bsc"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="DLL Debug|x64"
+			OutputDirectory="vc_mswuddll_x64"
+			IntermediateDirectory="vc_mswuddll_x64\minimal"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_dll\mswud;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_dll\mswud;.\..\..\include;.;.\..\..\samples"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				MinimalRebuild="true"
+				ExceptionHandling="1"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				BufferSecurityCheck="true"
+				RuntimeTypeInfo="true"
+				ObjectFile="vc_mswuddll_x64\minimal\"
+				ProgramDataBaseFileName="vc_mswuddll_x64\minimal.pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				Culture="1033"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_dll\mswud;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=""
+				AdditionalDependencies="wxmsw30ud_core.lib  wxbase30ud.lib    wxtiffd.lib wxjpegd.lib wxpngd.lib   wxzlibd.lib wxregexud.lib wxexpatd.lib    kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib wininet.lib"
+				OutputFile="vc_mswuddll_x64\minimal.exe"
+				LinkIncremental="2"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".\..\..\lib\vc_x64_dll"
+				GenerateManifest="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="vc_mswuddll_x64\minimal.pdb"
+				SubSystem="2"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				OutputFile="vc_mswuddll_x64\minimal_vc8.bsc"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="DLL Release|x64"
+			OutputDirectory="vc_mswudll_x64"
+			IntermediateDirectory="vc_mswudll_x64\minimal"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_dll\mswu;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_dll\mswu;.\..\..\include;.;.\..\..\samples"
+				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				ExceptionHandling="1"
+				RuntimeLibrary="2"
+				RuntimeTypeInfo="true"
+				ObjectFile="vc_mswudll_x64\minimal\"
+				ProgramDataBaseFileName="vc_mswudll_x64\minimal.pdb"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;WXUSINGDLL;_WINDOWS;NOPCH"
+				Culture="1033"
+				AdditionalIncludeDirectories=".\..\..\lib\vc_x64_dll\mswu;.\..\..\include;.;.\..\..\samples"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=""
+				AdditionalDependencies="wxmsw30u_core.lib  wxbase30u.lib    wxtiff.lib wxjpeg.lib wxpng.lib   wxzlib.lib wxregexu.lib wxexpat.lib    kernel32.lib user32.lib gdi32.lib comdlg32.lib winspool.lib winmm.lib shell32.lib comctl32.lib ole32.lib oleaut32.lib uuid.lib rpcrt4.lib advapi32.lib wsock32.lib wininet.lib"
+				OutputFile="vc_mswudll_x64\minimal.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".\..\..\lib\vc_x64_dll"
+				GenerateManifest="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="vc_mswudll_x64\minimal.pdb"
+				SubSystem="2"
+				TargetMachine="17"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				OutputFile="vc_mswudll_x64\minimal_vc8.bsc"
+				SuppressStartupBanner="true"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -216,146 +782,38 @@
 	<References>
 	</References>
 	<Files>
-		<File
-			RelativePath="8080a.cpp"
+		<Filter
+			Name="Source Files"
+			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<FileConfiguration
-				Name="Debug|Win32"
+			<File
+				RelativePath=".\8080a.cpp"
 				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
+			</File>
+			<File
+				RelativePath=".\dtnetsubs.c"
 				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="charset.c"
+			</File>
+			<File
+				RelativePath=".\pterm_sdl.c"
+				>
+			</File>
+			<File
+				RelativePath=".\pterm_wx.cpp"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-			<FileConfiguration
-				Name="Debug|Win32"
+			<File
+				RelativePath=".\pterm.rc"
 				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="dtnetsubs.c"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="pterm.rc"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-					AdditionalIncludeDirectories=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-					AdditionalIncludeDirectories=""
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="pterm_32.ico"
-			>
-		</File>
-		<File
-			RelativePath="pterm_sdl.c"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="pterm_wx.cpp"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCLCompilerTool"
-					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions=""
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath="ptermversion.h"
-			>
-		</File>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

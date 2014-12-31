@@ -30,8 +30,10 @@ by making the bitmap itself different.
 #include <string.h>
 #include <wchar.h>
 
+#ifndef _WIN32
 // For compilers that support precompilation, includes <wx/wx.h>.
 #include <wx/wxprec.h>
+#endif
 
 #ifdef __BORLANDC__
 #pragma hdrstop
@@ -9696,8 +9698,6 @@ PtermConnection::~PtermConnection ()
         ptermCloseGsw ();
         m_owner->m_gswFile = wxString ();
     }
-    // Re-fetch the FET pointer in case it's already been closed
-    m_fet = m_portset.portVec[0];
     dtClose (m_fet, TRUE);
     m_fet = NULL;
 }
