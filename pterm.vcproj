@@ -124,6 +124,10 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				Description="Build kit file..."
+				CommandLine="&quot;c:\Program Files\Inno Setup 5\ISCC.exe&quot; /Q pterm.iss"
+				AdditionalDependencies="pterm.iss;CHANGES-pterm.txt"
+				Outputs=".\setup.exe"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
