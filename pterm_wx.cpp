@@ -4004,9 +4004,9 @@ void PtermFrame::OnSaveScreen (wxCommandEvent &)
              ext.CmpNoCase (wxT ("tiff")) == 0)
     {
         type = wxBITMAP_TYPE_TIF;
-        // 32773 is PACKBITS -- not referenced symbolically because tiff.h
+        // 5 is LZW -- not referenced symbolically because tiff.h
         // isn't necessarily anywhere, for some reason.
-        screenImage.SetOption (wxIMAGE_OPTION_COMPRESSION, 32773);
+        screenImage.SetOption (wxIMAGE_OPTION_COMPRESSION, 5);
     }
     else if (ext.CmpNoCase (wxT ("xpm")) == 0)
     {
