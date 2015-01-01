@@ -1163,6 +1163,9 @@ private:
                             u32 fpix, u32 bpix, int cmode,
                             bool xor_p, PixelData &pixmap);
     void ptermDrawPoint (int x, int y);
+#ifdef __WXMSW__
+	void fixAlpha (void);
+#endif
     inline void ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
                                   PixelData & pixmap);
     void ptermDrawLine (int x1, int y1, int x2, int y2);
@@ -4387,6 +4390,25 @@ void PtermFrame::OnIconize (wxIconizeEvent &event)
         UpdateDisplayState ();
     }
 }
+
+void PtermFrame::fixAlpha (void)
+{
+    PixelData pixmap (*m_bitmap);
+    PixelData::Iterator p (pixmap);
+	int x, y;
+	u32 *pmap;
+
+	for (y = 0; y < 512; y++)
+	{
+	    p.MoveTo (pixmap, XMADJUST (0), YMADJUST (y));
+		for (x = 0; x < 512; x++)
+		{
+		    pmap = (u32 *)(p.m_ptr);
+			*pmap |= m_maxalpha;
+			++p;
+		}
+	}
+}
 #endif
 
 void PtermFrame::ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
@@ -4982,6 +5004,14 @@ void PtermFrame::drawFontChar (int x, int y, int c)
         m_memDC->SetLogicalFunction (wxCOPY);
     }
     m_memDC->DrawText (chr, x, y);
+
+#ifdef __WXMSW__
+	// On Windows, the Alpha channel gets messed up by
+	// the DrawText operation, which makes for very
+	// strange looking displays.  So fix it.  It's a 
+	// bit crude, but it gets the job done.
+	fixAlpha ();
+#endif
     m_memDC->SelectObject (wxNullBitmap);
 }
 
