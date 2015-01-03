@@ -29,9 +29,7 @@
 // For Retina display support on the Mac, we need to deal with the
 // fact that display units are not actually pixels, but "points" [sic]
 // and that the actual pixels may be smaller.  
-// Do everything on the assumption we have Retina, scale as needed
-// later on.
-// character pattern sizes in pixels, allowing for going over the
+// Character pattern sizes in points, allowing for going over the
 // allotted space some.
 #define CHAR8SIZE       (16 * 8)
 #define CHAR16SIZE      (32 * 8)
