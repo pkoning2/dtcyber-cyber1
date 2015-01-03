@@ -153,9 +153,6 @@ extern "C"
 #include "iir.h"
 #include "knob.h"
 
-#define scaleX (10 * m_pscale)
-#define scaleY (10 * m_pscale)
-#define scaleP (10 * parent->m_pscale)
 #include "dd60.h"
 
 #if wxUSE_LIBGNOMEPRINT
@@ -234,7 +231,6 @@ class Dd60Printout: public wxPrintout
     bool HasPage (int page);
     void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo);
     void DrawPage (wxDC *dc, int page);
-    int m_pscale;
     
 private:
     Dd60Frame *m_owner;
@@ -295,7 +291,6 @@ public:
     void OnDraw (wxDC &dc);
     void OnEraseBackground (wxEraseEvent &);
     void OnKey (wxKeyEvent& event);
-    int     m_pscale;
 
 private:
     Dd60Frame *m_owner;
@@ -306,7 +301,7 @@ private:
 class Dd60StatusBar : public wxBoxSizer
 {
 public:
-    Dd60StatusBar (wxWindow *parent);
+    Dd60StatusBar (Dd60Frame *parent);
     void SetPanel (Dd60Panel *panel);
     void SetStatusText (const wxChar *str, int idx);
     
@@ -314,7 +309,6 @@ public:
     wxStaticText *msg1;
     wxStaticText *msg3;
     Dd60Panel *m_panel;
-    int     m_pscale;
 };
 
 
@@ -380,6 +374,18 @@ public:
     int         m_intens;
     bool        m_fastupdate;
     int         m_pscale;
+    int         m_xsize;
+    int         m_ysize;
+    int         m_displaymargin;
+
+    int xadjust (int x) const
+    {
+        return (x + currentXOffset) * m_pscale + m_displaymargin;
+    }
+    int yadjust (int y) const
+    {
+        return y * m_pscale + m_displaymargin;
+    }
     
 private:
     bool        m_firstTime;
@@ -1048,8 +1054,13 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     Dd60Panel *panel;
     
     trace_txt[0] = '\0';
-    m_pscale = GetContentScaleFactor ();
 
+    // Calculate scale factors and sizes
+    m_pscale = GetContentScaleFactor ();
+    m_displaymargin = 20 * m_pscale;
+    m_xsize = (01000 + OffRightScreen) * m_pscale + 2 * m_displaymargin;
+    m_ysize = 01000 * m_pscale + 2 * m_displaymargin;
+    
     /* 
     **  Convert the interval to an integer value in 20 ms units
     */
@@ -1142,8 +1153,8 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     
     SetCursor (*wxHOURGLASS_CURSOR);
 
-    SetClientSize ((XSize + 2) / m_pscale, (YSize + 2) / m_pscale);
-    m_screenmap = new wxBitmap (XSize, YSize, 32);
+    SetClientSize ((m_xsize + 2) / m_pscale, (m_ysize + 2) / m_pscale);
+    m_screenmap = new wxBitmap (m_xsize, m_ysize, 32);
     m_pixmap = new PixelData (*m_screenmap);
     if (!m_pixmap)
     {
@@ -1202,7 +1213,7 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     m_portset.ringSize = NetBufSize;
     m_portset.sendRingSize = 0;     // We don't use the send ring/thread
     dtInitPortset (&m_portset);
-
+    
     // Open the connection
     m_fet = dtConnect (&m_portset, inet_addr ("127.0.0.1"), m_port);
     if (m_fet == NULL)
@@ -1264,7 +1275,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
 {
     int i, data;
     static int pendingData = 0;
-#if DEBUG
+#if DEBUG || TIMING
     struct timeval t, t2;
     int datacount;
     int dt, dut;
@@ -1298,8 +1309,9 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     
     m_pixmap = new PixelData (*m_screenmap);
 
-#if DEBUG
+#if DEBUG || TIMING
     gettimeofday (&t, NULL);
+    datacount = dtFetData (m_fet);
 #endif
 
     for (;;)
@@ -1438,11 +1450,11 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
                 TRACE1 ("Set mode %o", data & 077);
                 if (data & Dd60ScreenR)
                 {
-                    currentXOffset = OffRightScreen * m_pscale;
+                    currentXOffset = OffRightScreen;
                 }
                 else
                 {
-                    currentXOffset = OffLeftScreen * m_pscale;
+                    currentXOffset = OffLeftScreen;
                 }
                 // Save only char size or dot plotting mode bits
                 mode = data & 3;
@@ -1459,6 +1471,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
         if (m_startBlock)
         {
             Refresh ();
+            break;
         }
     }
     delete m_pixmap;
@@ -1468,8 +1481,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     {
         Refresh ();
     }
-#if DEBUG
-    datacount = dtFetData (m_fet);
+#if DEBUG || TIMING
     if (datacount)
     {
         gettimeofday (&t2, NULL);
@@ -1858,11 +1870,13 @@ void Dd60Frame::UpdateSettings (void)
 **------------------------------------------------------------------------*/
 void Dd60Frame::procDd60Char (unsigned int d)
 {
-    int size = 0, margin, firstx, firsty, inc = 0;
+    int size = 0, margin, firstx, firsty, inc = 0, qwds = 0;
     u8 *data = 0;
-    int i, j, k;
-
-    k = 0;  // avoid compiler confusion
+    int i, j, k = 0;
+#ifdef __SSE2__
+    typedef u8 v16qi __attribute__ ((vector_size (16)));
+    v16qi *pmap, *pdata;
+#endif
 
     if (d > 057)
     {
@@ -1903,47 +1917,74 @@ void Dd60Frame::procDd60Char (unsigned int d)
     }
     // Margin is in screen units (not pixels)
     margin = (size / m_pscale - inc) / 2;
+    qwds = size / 4;
     
     if (d != 0 && d != 055)
     {
         PixelData::Iterator p (*m_pixmap);
     
-        firstx = XADJUST (currentX - margin);
-        firsty = YADJUST (currentY - (size / m_pscale - margin));
+        firstx = xadjust (currentX - margin);
+        firsty = yadjust (currentY - (size / m_pscale - margin));
     
         for (i = 0; i < size; i++)
         {
+            // Position at the start of the scanline
+            p.MoveTo (*m_pixmap, firstx, firsty + i);
+#ifdef __SSE2__
+            // SSE2 operations require 16 byte alignment.
+            // The char data array is aligned, but the pixmap data
+            // might not be, depending on the X coordinate low bits.
+            if ((((uintptr_t) (p.m_ptr)) & 0x0f) == 0)
+            {
+                pmap = (v16qi *) (p.m_ptr);
+                pdata = (v16qi *) data;
+                for (j = 0; j < qwds; j++)
+                {
+                    // Make sure the pixel position is within the
+                    // screen image bitmap
+                    if (firstx + j * 2 >= 0 && firstx + j * 2 < m_xsize &&
+                        firsty + i >= 0 && firsty + i < m_ysize)
+                    {
+                        *pmap = __builtin_ia32_paddusb128 (*pmap, *pdata);
+                    }
+                    ++pmap;
+                    ++pdata;
+                }
+                data += qwds * 16;
+            }
+            else
+#endif
             for (j = 0; j < size; j++)
             {
-                if (firstx + j < 0 || firstx + j > XSize ||
-                    firsty + i < 0 || firsty + i > YSize)
+                // Make sure the pixel position is within the
+                // screen image bitmap
+                if (firstx + j >= 0 && firstx + j < m_xsize &&
+                    firsty + i >= 0 && firsty + i < m_ysize)
                 {
-                    data += 4;
-                    continue;
-                }
-                p.MoveTo (*m_pixmap, firstx + j, firsty + i);
-                u8 &rp = p.Red ();
-                u8 &gp = p.Green ();
-                u8 &bp = p.Blue ();
+                    u8 &rp = p.Red ();
+                    u8 &gp = p.Green ();
+                    u8 &bp = p.Blue ();
             
-                k = rp + data[m_red];
-                if (k > 255)
-                {
-                    k = 255;
+                    k = rp + data[m_red];
+                    if (k > 255)
+                    {
+                        k = 255;
+                    }
+                    rp = k;
+                    k = gp + data[m_green];
+                    if (k > 255)
+                    {
+                        k = 255;
+                    }
+                    gp = k;
+                    k = bp + data[m_blue];
+                    if (k > 255)
+                    {
+                        k = 255;
+                    }
+                    bp = k;
                 }
-                rp = k;
-                k = gp + data[m_green];
-                if (k > 255)
-                {
-                    k = 255;
-                }
-                gp = k;
-                k = bp + data[m_blue];
-                if (k > 255)
-                {
-                    k = 255;
-                }
-                bp = k;
+                ++p;
                 data += 4;
             }
         }
@@ -1978,7 +2019,9 @@ void Dd60Frame::dd60SetTrace (bool fileaction)
     {
         if (fileaction && (traceF == NULL))
         {
-            traceF = fopen (traceFn, "w");
+            //traceF = fopen (traceFn, "w");
+            traceF = stderr;
+            
         }
     }
     dd60ShowTrace (traceDd60);
@@ -2295,18 +2338,17 @@ void Dd60Panel::OnScroll (wxScrollEvent &)
 // Dd60StatusBar
 // ----------------------------------------------------------------------------
 
-Dd60StatusBar::Dd60StatusBar (wxWindow *parent)
+Dd60StatusBar::Dd60StatusBar (Dd60Frame *parent)
     : wxBoxSizer (wxHORIZONTAL),
       m_parent (parent),
-      m_panel (NULL),
-      m_pscale (parent->GetContentScaleFactor ())
+      m_panel (NULL)
 {
     msg1 = new wxStaticText (parent, wxID_ANY, wxT (""), 
                              wxDefaultPosition, 
-                             wxSize (XSize / (3 * m_pscale), 15));
+                             wxSize (parent->m_xsize / (3 * parent->m_pscale), 15));
     msg3 = new wxStaticText (parent, wxID_ANY, wxT (""), 
                              wxDefaultPosition,
-                             wxSize (XSize / (3 * m_pscale), 15));
+                             wxSize (parent->m_xsize / (3 * parent->m_pscale), 15));
 }
 
 void Dd60StatusBar::SetPanel (Dd60Panel *panel)
@@ -2344,17 +2386,19 @@ BEGIN_EVENT_TABLE(Dd60Canvas, wxScrolledWindow)
 
 Dd60Canvas::Dd60Canvas(Dd60Frame *parent)
     : wxScrolledWindow(parent, -1, wxDefaultPosition,
-                       wxSize (XSizeP / parent->m_pscale,
-                               YSizeP / parent->m_pscale),
+                       wxSize (parent->m_xsize / parent->m_pscale,
+                               parent->m_ysize / parent->m_pscale),
                        wxHSCROLL | wxVSCROLL | wxNO_FULL_REPAINT_ON_RESIZE),
-      m_pscale (parent->m_pscale),
       m_owner (parent)
 {
     wxClientDC dc(this);
 
-    SetVirtualSize (XSize / m_pscale, YSize / m_pscale);
-    dc.SetClippingRegion (DisplayMargin, DisplayMargin, 
-                          XSize / m_pscale, YSize / m_pscale);
+    SetVirtualSize (m_owner->m_xsize / m_owner->m_pscale,
+                    m_owner->m_ysize / m_owner->m_pscale);
+    dc.SetClippingRegion (m_owner->m_displaymargin,
+                          m_owner->m_displaymargin, 
+                          m_owner->m_xsize / m_owner->m_pscale,
+                          m_owner->m_ysize / m_owner->m_pscale);
     SetForegroundColour (dd60App->m_fgColor);    
     SetBackgroundColour (*wxBLACK);
     SetScrollRate (1, 1);
@@ -2363,7 +2407,7 @@ Dd60Canvas::Dd60Canvas(Dd60Frame *parent)
 
 void Dd60Canvas::OnDraw(wxDC &dc)
 {
-    dc.SetUserScale (1. / m_pscale, 1. / m_pscale);
+    dc.SetUserScale (1. / m_owner->m_pscale, 1. / m_owner->m_pscale);
     dc.DrawBitmap (*m_owner->m_screenmap, 0, 0, false);
     dc.SetFont (m_owner->m_traceFont);
     dc.DrawText (wxString::FromAscii (m_owner->trace_txt), TraceX, TraceY);
@@ -2584,7 +2628,6 @@ void Chargen::Step (void)
 Dd60Printout::Dd60Printout (Dd60Frame *owner,
                             const wxString &title)
     : wxPrintout (title),
-      m_pscale (owner->m_pscale),
       m_owner (owner)
 {}
 
@@ -2621,19 +2664,20 @@ void Dd60Printout::DrawPage (wxDC *dc, int page)
 {
     int w, h, startx;
     int graypix;
-    double maxX = YSize;    // We use YSize here because that's the width of a single screen
-    double maxY = YSize;
+    // We use m_ysize here because that's the width of a single screen
+    double maxX = m_owner->m_ysize;
+    double maxY = m_owner->m_ysize;
 
     // Let's have at least 50 device units margin
     double marginX = 50;
     double marginY = 50;
 
     // Add the margin to the graphic size
-    maxX += (2*marginX);
-    maxY += (2*marginY);
+    maxX += (2 * marginX);
+    maxY += (2 * marginY);
 
     // Get the size of the DC in pixels
-    dc->GetSize(&w, &h);
+    dc->GetSize (&w, &h);
 
     // Calculate a suitable scaling factor
     double pscaleX = (double) (w / maxX);
@@ -2643,8 +2687,8 @@ void Dd60Printout::DrawPage (wxDC *dc, int page)
     double actualScale = wxMin(pscaleX, pscaleY);
 
     // Calculate the position on the DC for centring the graphic
-    double posX = (double) ((w - (YSize * actualScale)) / 2.0);
-    double posY = (double) ((h - (YSize * actualScale)) / 2.0);
+    double posX = (double) ((w - (m_owner->m_ysize * actualScale)) / 2.0);
+    double posY = (double) ((h - (m_owner->m_ysize * actualScale)) / 2.0);
 
     // Set the scale and origin
     dc->SetUserScale (actualScale, actualScale);
