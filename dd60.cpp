@@ -1351,24 +1351,31 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
             //printf ("pixels %d, pixel stride %d\n", pixels, bytesperpixel);
     
 #if (DECAY == 128)
-            const int wds = (pixels * bytesperpixel) / 4;
+#ifdef __x86_64__
+            u64 *pmap = (u64 *) (p.m_ptr);
+            const u64 maxalpha = m_maxalpha | ((u64) m_maxalpha << 32);
+            const u64 mask = 0x7f7f7f7f7f7f7f7fULL;
+            const int wds = (pixels * bytesperpixel) / 8;
+#else
             u32 *pmap = (u32 *)(p.m_ptr);
-    
-            *pmap = 0;
+            const u32 maxalpha = m_maxalpha;
+            const u32 mask = 0x7f7f7f7f;
+            const int wds = (pixels * bytesperpixel) / 4;
+#endif
             if (!m_fastupdate)
             {
                 // Slow update, just repaint the display, don't try to
                 // simulate decay because it looks weird
                 for (i = 0; i < wds; i++)
                 {
-                    *pmap++ = m_maxalpha;
+                    *pmap++ = maxalpha;
                 }
             }
             else
             {
                 for (i = 0; i < wds; i++)
                 {
-                    *pmap = ((*pmap >> 1) & 0x7f7f7f7f) | m_maxalpha;
+                    *pmap = ((*pmap >> 1) & mask) | maxalpha;
                     ++pmap;
                 }
             }       

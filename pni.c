@@ -395,6 +395,9 @@ void initPni (void)
         sp->terms = terms;
         sp->local = local;
         sp->siteName = sitename;
+        printf ("PNI site %s, start station %d-%d, %d ports%s\n",
+                sitename, sp->first >> 5, sp->first & 31,
+                terms, (local ? ", local only" : ""));
         sp++;
         pniStations += terms;
     }

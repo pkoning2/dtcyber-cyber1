@@ -27,7 +27,7 @@ else
 SDLFW ?= SDL2
 endif
 SDLLIBS ?= -Wl,-framework,$(SDLFW)
-INCL ?= -I/usr/local/include -I/usr/include -F/Library/Frameworks/$(SDLFW).framework
+#SDLINCL ?= -I/usr/local/include -I/usr/include -F/Library/Frameworks/$(SDLFW).framework
 endif
 else
 SDLFW=
@@ -64,7 +64,7 @@ WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS)
 GCCVERSION := $(shell gcc --version 2>/dev/null| head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
 
-C2FLAGS  = $(OPTIMIZE) -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHLDFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST) $(PFLAGS)
+C2FLAGS  = $(OPTIMIZE) -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST) $(PFLAGS)
 
 MSGFLAGS ?= -U
 
@@ -110,7 +110,7 @@ wxversion.h: wxversion wxversion.py
 
 dd60:	$(SOBJS) dd60.o knob.o iir.o
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(LINK)  $(ARCHLDFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
+	$(LINK)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
 
 dtoper:	$(SOBJS) dtoper.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \

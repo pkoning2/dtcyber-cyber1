@@ -328,6 +328,9 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
             sp->terms = terms;
             sp->local = local;
             sp->siteName = sitename;
+            printf ("NIU site %s, start station %d-%d, %d ports%s\n",
+                    sitename, sp->first >> 5, sp->first & 31,
+                    terms, (local ? ", local only" : ""));
             sp++;
             niuStations += terms;
             }
@@ -444,7 +447,7 @@ void niuInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     /*
     **  Print a friendly message.
     */
-    printf("NIU initialised with input channel %o and output channel %o\n", unitNo, channelNo);
+    printf("NIU initialised with input channel %o and output channel %o, %d stations\n", unitNo, channelNo, niuStations);
     }
 
 /*--------------------------------------------------------------------------
