@@ -381,13 +381,22 @@ class ElementInstance (object):
         # Save both directions of the mapping
         if pin.name in self.portmap and (not ptype or ptype == "logicsig"):
             # Multiple outputs for an output signal, that's a fanout.
-            # Make the new actual an alias of the previous one.  
+            # Make the new actual an alias of the previous one.
             oa = self.portmap[pin.name]
-            #print "adding alias %s for %s" % (actual.name, oa.name)
-            oa.aliases.add (oa.name)
-            oa.aliases.add (actual.name)
-            parent.aliases[actual.name] = oa
-            del parent.signals[actual]
+            if "(" in actual.name or "(" in oa.name:
+                # Check for ( is there to filter out coax cables that
+                # carry logic signals.  That doesn't happen in the regular
+                # inter-chassis connections but it does on the DD60 cabling
+                # in chassis 12.  
+                print "Can't alias coax signal:", \
+                      self.name, self.eltype.name, pin.name, \
+                      actual.name, oa.name
+            else:
+                #print "adding alias %s for %s" % (actual.name, oa.name)
+                oa.aliases.add (oa.name)
+                oa.aliases.add (actual.name)
+                parent.aliases[actual.name] = oa
+                del parent.signals[actual]
         else:
             self.portmap[pin.name] = actual
         self.iportmap[actual] = (self, pin)
@@ -844,9 +853,15 @@ def readmodule (modname, allports = False):
                 for pin in _re_pinmap.finditer (c.group (3)):
                     #print "pin", pin.group (1), pin.group (2)
                     u.addportmap (e, pin.group (1), pin.group (2))
-            for a in _re_assign.finditer (m.group (6)):
-                e.addassign (a.group (1), a.group (2))
-                #print "assign", a.group (1), a.group (2)
+            # Do assignments as aliases, but only if the module name
+            # does not begin with Z.  We use some Z modules to provide
+            # explicit separate outputs, for chassis 12 where some coax
+            # cables are assigned to logic outputs; coax can't be
+            # aliased the way the model is put together.
+            if len (modname) == 2 and modname[0].lower () != 'z':
+                for a in _re_assign.finditer (m.group (6)):
+                    e.addassign (a.group (1), a.group (2))
+                    #print "assign", a.group (1), a.group (2)
         # Look over the entity definition to pick up pins marked
         # as optional inputs.  If we encoutered them in the architecture
         # section, update the pin type.

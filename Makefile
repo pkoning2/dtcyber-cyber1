@@ -17,7 +17,6 @@ DEPFILES=
 
 include Makefile.common
 
-CDEBUG = -DCcDebug=1
 
 OBJS    = main.o init.o trace.o dump.o \
           device.o channel.o cpu.o pp.o float.o shift.o operator.o \
@@ -27,96 +26,98 @@ OBJS    = main.o init.o trace.o dump.o \
 	  tpmux.o dtdisksubs.o ext.o pni.o \
 	  $(PWD)/charset.o $(PWD)/dtnetsubs.o
 
+CC      = gcc
+CXX     = g++
+
 ifneq ("$(NPU_SUPPORT)","")
 OBJS +=	  npu_async.o npu_bip.o npu_hip.o npu_svm.o npu_tip.o npu_net.o
 VERSIONCFLAGS +=   -DNPU_SUPPORT=1
 endif
 
-.PHONY : clean dep kit all
+.PHONY : clean kit all
 
 ifeq ("$(HOST)","Darwin")
 
 # Mac
 
-ifeq ("$(SDKDIR)","")
-SDKDIR := /Developer/SDKs/MacOSX10.6.sdk
-endif
-ifeq ("$(CLANG)", "")
-CC      = gcc
-CXX     = g++
-else
-CC      = clang
-CXX     = c++
-endif
-LIBS    +=  -Wl,-syslibroot,$(SDKDIR)
-INCL    += -isysroot $(SDKDIR) -I$(SDKDIR)/Developer/Headers/FlatCarbon
-LDFLAGS +=  -Wl,-framework,CoreServices -mmacosx-version-min=10.6
-CFLAGS  +=  -mmacosx-version-min=10.6
-X86ARCHFLAGS = -arch i386
-X86_64ARCHFLAGS = -arch x86_64
-TOOLLDFLAGS = -arch i386
+LINK=$(CXX)
 
-MACTARGETS=x86 x86_64
+ifeq ("$(SDKDIR)","")
+OSXMIN ?= 10.4
+endif
+CLANG := $(shell gcc --version 2>/dev/null| fgrep LLVM)
+ifneq ("$(CLANG)", "")
+ARCHCFLAGS ?= -arch i386 -arch x86_64
+ARCHLDFLAGS ?= -arch i386
+OSXVER ?= 10.9
+else
+ARCHCFLAGS ?= -arch i386 -arch ppc -arch x86_64 -arch ppc64
+ARCHLDFLAGS ?= -arch i386 -arch ppc
+OSXVER ?= 10.5
+endif
+SDKDIR := /Developer/SDKs/MacOSX$(OSXVER).sdk
+LIBS    +=  -Wl,-syslibroot,$(SDKDIR) -L$(SDKDIR)/usr/lib -L/usr/lib
+INCL    += -isysroot $(SDKDIR) -I/usr/include/c++/4.2.1 
+ifneq ("$(OSXMIN)","")
+OSXMINFLG = -mmacosx-version-min=$(OSXMIN)
+endif
+ARCHLDFLAGS +=  $(OSXMINFLG) $(CXXLIB)
+ARCHCFLAGS  +=  $(OSXMINFLG) $(CXXLIB)
 
 .PHONY : dtcyber 
 
+ifneq ("$(wildcard main.c)","")
 all: dtcyber Pterm.app dtoper.app dd60.app blackbox
-
-dtcyber:
-	mkdir -p $(MACTARGETS)
-	( cd x86 && \
-	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"i386\"'" VPATH=.. DUAL=$(DUAL) CC=$(CC) PTERMVERSION=xxx ARCHCFLAGS="$(X86ARCHFLAGS)" LDFLAGS="$(LDFLAGS)" )
-	( cd x86_64 && \
-	ln -sf ../Makefile.* . && \
-	$(MAKE) -f ../Makefile gxdtcyber EXTRACFLAGS="$(X86_64CFLAGS) $(EXTRACFLAGS) -DARCHNAME='\"x86_64\"'" VPATH=.. DUAL=$(DUAL) CC=$(CC) PTERMVERSION=xxx ARCHCFLAGS="$(X86_64ARCHFLAGS)" LDFLAGS="$(LDFLAGS)" )
-	lipo -create -output dtcyber `for d in $(MACTARGETS); do echo $$d/gxdtcyber; done`
-
-gxdtcyber: $(OBJS)
-	$(CC) $(LDFLAGS) $(ARCHCFLAGS) -o $@ $+ $(LIBS) $(PTHLIBS)
+else
+all: Pterm.app
+endif
 
 clean:
-	rm -rf *.o *.d *.i *.ii *.pcf x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app dtoper.app dd60.app
-
-blackbox: blackbox.o $(SOBJS)
-	$(CC) $(LDFLAGS) $(TOOLLDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
+	rm -rf *.o *.d *.i *.ii *.pcf x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app *Pterm.pkg dtoper.app dd60.app pterm-*.tar.bz2
 
 else
 
 # not Mac
 
+LINK=$(CXX)
+ifneq ("$(wildcard main.c)","")
 all: dtcyber pterm dtoper dd60 blackbox
+else
+all: pterm
+endif
+
+clean:
+	rm -f *.d *.o *.i *.ii *.pcf dtcyber dd60 dtoper pterm pterm*.zip pterm*.tar.bz2
+endif
 
 dtcyber: $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
+	$(CC) $(LDFLAGS) $(ARCHCFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
 
 blackbox: blackbox.o $(SOBJS)
 	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
-
-clean:
-	rm -f *.d *.o *.i *.ii *.pcf dtcyber dd60 dtoper pterm pterm*.zip pterm*.tar.gz
-endif
 
 kit:	pterm-kit
 
 buildall: clean all
 
-dep:	pterm.dep dd60.dep dtoper.dep $(OBJS:.o=.d) blackbox.d
-
-ifeq ($(MAKECMDGOALS),dtcyber)
-DEPFILES+= $(OBJS:.o=.d) blackbox.d
-endif
-ifeq ($(MAKECMDGOALS),all)
-DEPFILES+= $(OBJS:.o=.d) blackbox.d
-endif
-ifeq ($(MAKECMDGOALS),blackbox)
+ifneq ("$(wildcard main.c)","")
+# For dtcyber
+DEPFILES+= $(OBJS:.o=.d) 
+# For blackbox
 DEPFILES+= blackbox.d niu.d charset.d dtnetsubs.d
 endif
 
+ifneq ($(MAKECMDGOALS),dtcyber)
+include Makefile.wxpterm
+endif
+
+# This must be last
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),gxdtcyber)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
-
-include Makefile.wxpterm
+endif
+endif
 
 #---------------------------  End Of File  --------------------------------

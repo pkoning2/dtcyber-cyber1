@@ -10,6 +10,12 @@
 **--------------------------------------------------------------------------
 */
 
+// ============================================================================
+// declarations
+// ============================================================================
+
+#define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
+
 /*
 **  -------------
 **  Include Files
@@ -24,24 +30,28 @@
 #include "proto.h"
 #include <time.h>
 #include <sys/types.h>
-#include <poll.h>
+
+// Some versions of Windows don't define these, so make up some numbers
+#ifndef ENOBUFS
+#define ENOBUFS 55
+#endif
+#ifndef ENOTCONN
+#define ENOTCONN 57
+#endif
 
 #if defined(_WIN32)
-	#include <winsock.h>
-	//the following are a supreme hack.  Joe
-	#define close(x)	closesocket(x)
-	#define errno		WSAGetLastError()
-	#define EAGAIN		WSAEWOULDBLOCK
-	#define EINPROGRESS WSAEWOULDBLOCK
+    #include <winsock.h>
+    #include <process.h>
 #else
-	#include <sys/time.h>
-	#include <fcntl.h>
-	#include <unistd.h>
-	#include <sys/socket.h>
-	#include <netdb.h>
-	#include <netinet/in.h>
-	#include <arpa/inet.h>
-	#include <pthread.h>
+    #include <poll.h>
+    #include <sys/time.h>
+    #include <fcntl.h>
+    #include <unistd.h>
+    #include <sys/socket.h>
+    #include <netdb.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <pthread.h>
 #endif
 
 /*
@@ -55,6 +65,7 @@
 **  Private Constants
 **  -----------------
 */
+#define dtNC -1   /* connFd value for "socket was closed" */
 
 /*
 **  -----------------------
@@ -77,32 +88,38 @@
 **  Private Function Prototypes
 **  ---------------------------
 */
-static ThreadFunRet dtThread (void *param);
-static ThreadFunRet dtDataThread (void *param);
-static ThreadFunRet dtSendThread (void *param);
+static dtThreadFun (dtThread, param);
+static dtThreadFun (dtDataThread, param);
+static dtThreadFun (dtSendThread, param);
+static int dtBindSocket  (in_addr_t host, int port, int backlog);
+static NetFet * dtAcceptSocket (int connFd, NetPortSet *ps);
 static void dtCloseSocket (int connFd, bool hard);
 static int dtGetw (NetFet *fet, void *buf, int len, bool read);
-static int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz);
-static void dtActivateFet2 (NetFet *fet, NetPortSet *ps);
 static int dtSendo (NetFet *fet, u8 byte);
+static NetFet * dtNewFet (int fd, NetPortSet *ps, bool listen);
+static void dtActivateFet2 (NetFet *fet);
 
 /*
 **  ----------------
 **  Public Variables
 **  ----------------
 */
-NetFet connlist;
-pthread_mutex_t connMutex;
+NetPortSet *connlist;
 void (*updateConnections) (void) = NULL;
+int dtErrno;
 
 /*
 **  -----------------
 **  Private Variables
 **  -----------------
 */
-#if !defined(_WIN32)
-static pthread_t dt_thread;
-static pthread_attr_t dt_detach;
+static NetPortSet *connend;
+#if defined(_WIN32)
+static unsigned long false_opt = 0;
+static unsigned long true_opt = 1;
+#else
+static pthread_attr_t dt_tattr;
+static const int true_opt = 1;
 #endif
 static bool dtInited;
 
@@ -127,11 +144,9 @@ void dtInit (void)
     if (!dtInited)
         {
         dtInited = TRUE;
-        pthread_mutex_init (&connMutex, NULL);
-        connlist.next = connlist.prev = &connlist;
 #if !defined(_WIN32)
-        pthread_attr_init (&dt_detach);
-        pthread_attr_setdetachstate (&dt_detach, 1);
+        pthread_attr_init (&dt_tattr);
+        pthread_attr_setdetachstate (&dt_tattr, PTHREAD_CREATE_JOINABLE);
 #endif
         }
     }
@@ -140,22 +155,19 @@ void dtInit (void)
 **  Purpose:        Establish an outbound connection
 **
 **  Parameters:     Name        Description.
-**                  fet         Pointer to NetFet
-**                  ps          Pointer to NetPortSet to use (NULL not to)
+**                  ps          Pointer to NetPortSet to use
 **                  host        Address of host to connect to
 **                  port        Port number to connect to
 **
-**  Returns:        0 if ok, or -1 if error.
+**  Returns:        Pointer to NetFet, or NULL if failure
 **
 **------------------------------------------------------------------------*/
-int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
+NetFet * dtConnect (NetPortSet *ps, in_addr_t host, int port)
     {
     struct sockaddr_in server;
     int connFd, retval;
-#ifdef __APPLE__
-    int true_opt = 1;
-#endif
-
+    NetFet *fet;
+    
     /*
     **  Create TCP socket
     */
@@ -165,12 +177,21 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
 #if !defined(_WIN32)
         perror ("dtConnect: Can't create socket");
 #endif
-        return -1;
+        dtErrno = errno;
+        return NULL;
         }
 
-#ifdef __APPLE__
-    setsockopt (connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                (char *)&true_opt, sizeof(true_opt));
+    /*
+    **  Set non-blocking state of the socket so we don't block on the
+    **  connect () call.
+    */
+#if defined(_WIN32)
+    // This works, but then changing it back to blocking
+    // later on does not.  I can't figure out why not.
+    // So turn this code off for now.
+    //ioctlsocket (connFd, FIONBIO, &true_opt);
+#else
+    fcntl (connFd, F_SETFL, O_NONBLOCK);
 #endif
 
     memset(&server, 0, sizeof(server));
@@ -178,25 +199,43 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
     server.sin_addr.s_addr = host;
     server.sin_port = htons(port);
 
-    retval = connect (connFd, (struct sockaddr *)&server, sizeof(server));
-
-//Joe comments: wonder if this code needs to be in a loop with a sleep since the documents i read re: blocking/non-blocking in windoze suggest this may be necessary,
-//              or if a callback function needs to be implemented to handle it.  we'll see.
+    retval = connect (connFd, (struct sockaddr *) &server, sizeof (server));
 
     if (retval < 0 && errno != EINPROGRESS)
         {
 #if !defined(_WIN32)
-        fprintf(stderr, "dtConnect: Can't connect to %08x %d, errno %d\n", 
-                host, port, errno);
+        fprintf (stderr, "dtConnect: Can't connect to %08x %d, errno %d\n", 
+                 host, port, errno);
         perror ("dtConnect");
 #endif
-        close (connFd);
-        return -1;
+        dtErrno = errno;
+        dtCloseSocket (connFd, TRUE);
+        return NULL;
         }
+
+    /*
+    **  Now that the connect is underway, set the socket back to blocking.
+    **
+    **  We always want the data socket to be blocking since it will
+    **  be served by separate threads.
+    */
+#if defined(_WIN32)
+    // For some reason this does nothing.
+    ioctlsocket (connFd, FIONBIO, &false_opt);
+#else
+    fcntl (connFd, F_SETFL, 0);
+#endif
+
+    fet = dtNewFet (connFd, ps, FALSE);
+    if (fet == NULL)
+        {
+        // Failed to allocate FET, return failure
+        return NULL;
+        }
+    
     fet->from = server.sin_addr;
     fet->fromPort = server.sin_port;
-    dtActivateFet (fet, ps, connFd);
-    return 0;
+    return fet;
     }
 
 /*--------------------------------------------------------------------------
@@ -205,48 +244,64 @@ int dtConnect (NetFet *fet, NetPortSet *ps, in_addr_t host, int port)
 **  Parameters:     Name        Description.
 **                  fp          Pointer to thread function
 **                  param       thread function parameter
+**                  id          Pointer to where to return thread id, 
+**                              or NULL not to (makes thread detached)
 **
-**  Returns:        0 if ok, !=0 if not
+**  Returns:        0 if ok, != 0 if not
 **
 **------------------------------------------------------------------------*/
-int dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
-    {
+int dtCreateThread (dtThreadFunPtr (fp), void *param, pthread_t *id)
 #if defined(_WIN32)
-    DWORD dwThreadId; 
+    {
+    uintptr_t retval;
     HANDLE hThread;
 
     /*
     **  Create thread.
     */
-    hThread = CreateThread( 
-        NULL,                                       /* no security attribute */
-        0,                                          /* default stack size */
-        (LPTHREAD_START_ROUTINE)fp, 
-        (LPVOID)param,                              /* thread parameter */
-        0,                                          /* not suspended */
-        &dwThreadId);                               /* returns thread ID */
-
-    if (hThread == NULL)
+    retval = _beginthreadex (NULL, 0, fp, param, 0, NULL);
+    if (retval == -1L)
         {
+        dtErrno = errno;
         return 1;
         }
-    CloseHandle (hThread);
+    hThread = (HANDLE) retval;
+    if (id != NULL)
+        {
+        *id = hThread;
+        }
+    else
+        {
+        CloseHandle (hThread);
+        }
     return 0;
+    }
 #else
+    {
     int rc;
+    pthread_t dt_thread;
 
     /*
     **  Create POSIX thread with detacted attribut.
     */
-    rc = pthread_create(&dt_thread, &dt_detach, fp, param);
+    rc = pthread_create(&dt_thread, &dt_tattr, fp, param);
     if (rc < 0)
         {
         fprintf (stderr, "Failed to create thread:\n %s\n", strerror (rc));
+        dtErrno = rc;
         return rc;
         }
-#endif
+    if (id != NULL)
+        {
+        *id = dt_thread;
+        }
+    else
+        {
+        pthread_detach (dt_thread);
+        }
     return 0;
     }
+#endif
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Initialize a portset, which is the structure that
@@ -254,10 +309,8 @@ int dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
 **
 **  Parameters:     Name        Description.
 **                  ps          Pointer to NetPortSet to use
-**                  ringSize    FET receive buffer size for each port
-**                  sendringSize FET transmit buffer size for each port
 **
-**  Returns:        Nothing.
+**  Returns:        Nothing.  Errors are fatal (process exits with status 1).
 **
 **  This function provides a common way for handling connections.
 **  It tracks sets of active file descriptors to wait on, and sets of
@@ -277,6 +330,8 @@ int dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
 **      dataCallArg void * argument to pass to the above, if needed
 **      localOnly   TRUE to listen only to local connections (127.0.0.1),
 **                  FALSE to allow connections from anywhere.
+**      ringSize    FET receive buffer size for each port.
+**      sendringSize FET transmit buffer size for each port.
 **
 **  The other fields of the NetPortSet struct are filled in by this function,
 **  or by the thread it creates that actually does the listening to
@@ -298,8 +353,11 @@ int dtCreateThread (ThreadFunRet (*fp)(void *), void *param)
 **  The callback function is called with the FET pointer, the count of received
 **  bytes, and the dataCallArg value.
 **
+**  Note that there currently is no "Close Portset" function, so the
+**  memory allocated by this function constitutes a (small) memory leak.
+**
 **------------------------------------------------------------------------*/
-void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize)
+void dtInitPortset (NetPortSet *ps)
     {
 #if defined(_WIN32)
     static bool firstMux = TRUE;
@@ -307,7 +365,6 @@ void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize)
     WSADATA wsaData;
     int err;
 #endif
-    int i;
 
     /*
     **  Initialize dtnetsubs if needed
@@ -315,30 +372,45 @@ void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize)
     dtInit ();
     
     /*
+    **  Sanity check: if there is a send ring, there must also be a
+    **  receive ring.
+    */
+    if (ps->sendRingSize != 0 && ps->ringSize == 0)
+        {
+#if !defined(_WIN32)
+        fprintf (stderr, "Must have receive ring if send ring is used\n");
+#endif
+        exit (1);
+        }
+    
+    /*
     **  Initialize the NetPortSet structure part way
     */
     ps->curPorts = 0;
-    ps->portVec = calloc(1, sizeof(NetFet) * ps->maxPorts);
+    ps->portVec = calloc (1, sizeof(NetFet *) * ps->maxPorts);
     if (ps->portVec == NULL)
         {
 #if !defined(_WIN32)
-        fprintf(stderr, "Failed to allocate NetFet[%d] vector\n",
-                ps->maxPorts);
+        fprintf (stderr, "Failed to allocate *NetFet[%d] vector\n",
+                 ps->maxPorts);
 #endif
-        exit(1);
-        }
-    for (i = 0; i < ps->maxPorts; i++)
-        {
-        if (dtInitFet (&ps->portVec[i], ringSize, sendringsize) != 0)
-            {
-#if !defined(_WIN32)
-            fprintf (stderr, "dtInitPortSet: failed to allocate %d byte buffer for FET\n", 
-                     ringSize);
-#endif
-            return;
-            }
+        exit (1);
         }
     
+    /*
+    **  Maintain a linked list of known portsets.
+    */
+    ps->next = NULL;
+    if (connend != NULL)
+        {
+        connend->next = ps;
+        }
+    else
+        {
+        connlist = ps;
+        }
+    connend = ps;
+        
 #if defined(_WIN32)
     if (firstMux)
         {
@@ -353,16 +425,19 @@ void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize)
         if (err != 0)
             {
 #if !defined(_WIN32)
-        fprintf(stderr, "\r\nError in WSAStartup: %d\r\n", err);
+        fprintf (stderr, "\r\nError in WSAStartup: %d\r\n", err);
 #endif
-            exit(1);
+            exit (1);
             }
         }
 #endif
     if (ps->portNum != 0)
         {
-        if (dtCreateThread (dtThread, ps))
+        if (dtCreateThread (dtThread, ps, NULL))
             {
+#if !defined(_WIN32)
+            fprintf (stderr, "Could not start listen thread for %d\n", ps->portNum);
+#endif
             exit (1);
             }
         }
@@ -373,44 +448,84 @@ void dtInitPortset (NetPortSet *ps, int ringSize, int sendringsize)
 **
 **  Parameters:     Name        Description.
 **                  np          Pointer to NetFet being closed
-**                  ps          Pointer to NetPortSet that np belongs to
 **                  hard        TRUE for reset, FALSE for shutdown
 **
 **  Returns:        nothing
 **
-**  This function is used to close sockets for inbound connections -- those
-**  that were created by the dtCreateListener mechanism.
 **------------------------------------------------------------------------*/
-void dtClose (NetFet *np, NetPortSet *ps, bool hard)
+void dtClose (NetFet *fet, bool hard)
     {
+    NetPortSet *ps;
+    bool useThread = FALSE;
+
     /*
     **  Return success if already closed.
     */
-    if (!np->inUse)
+    if (!dtActive (fet))
         {
         return;
         }
-    
-    if (!hard && np->sendin != np->sendout)
+
+    /*
+    **  Remember if we have threads.  This affects where the Fet is freed.
+    */
+    useThread = fet->sendend != fet->first;
+
+    /*
+    **  Mark the FET as closing down.
+    */
+    if (hard || fet->sendend == fet->sendfirst)
         {
-        /*
-        ** If we have pending send data, mark the FET as pending close
-        */
-        pthread_mutex_lock (&np->mutex);
-        if (np->sendin != np->sendout)
-            {
-            np->closePending = TRUE;
-            pthread_mutex_unlock (&np->mutex);
-            return;
-            }
-        pthread_mutex_unlock (&np->mutex);
+        fet->closing = 2;
         }
-        
-    dtCloseFet (np, hard);
-    ps->curPorts--;
+    else
+        {
+        fet->closing = 1;
+        }
+    
+    /*
+    **  Call the connection callback for the portset, and remove this
+    **  FET from the portset.
+    */
+    ps = fet->ps;
+    fet->connected = FALSE;
     if (ps->callBack != NULL)
         {
-        (*ps->callBack) (np, np - ps->portVec, ps->callArg);
+        (*ps->callBack) (fet, fet->psIndex, ps->callArg);
+        }
+    ps->portVec[fet->psIndex] = NULL;
+    ps->curPorts--;
+    
+    if (updateConnections != NULL)
+        {
+        (*updateConnections) ();
+        }
+
+    /*
+    **  Close the socket for this connection, if hard reset.
+    */
+    if (fet->closing != 1)
+        {
+        dtCloseSocket (fet->connFd, hard);
+        fet->connFd = dtNC;        /* Indicate connection is closed */
+        }
+
+    /*
+    **  If we have threads, tell the send thread to go away.  (If
+    **  there is no send thread, that's a NOP).  The receive thread
+    **  will free the FET.  
+    */
+    if (useThread)
+        {
+        sem_post (ssemp (fet));
+        }
+
+    /*
+    **  If there are no threads, (listen FET), free the FET here.
+    */
+    if (!useThread)
+        {
+        free (fet);
         }
     }
 
@@ -425,11 +540,24 @@ void dtClose (NetFet *np, NetPortSet *ps, bool hard)
 const char *dtNowString (void)
     {
     static char ts[64], us[12];
+#ifdef _WIN32
+    SYSTEMTIME tv;
+    
+    GetLocalTime (&tv);
+    GetDateFormatA (LOCALE_SYSTEM_DEFAULT, 0, &tv, 
+                    "yy'/'MM'/'dd' '", &ts[0], 10);
+    GetTimeFormatA (LOCALE_SYSTEM_DEFAULT, 0, &tv, 
+                    "HH'.'mm'.'ss", &ts[9], 10);
+    sprintf (us, ".%03d.", tv.wMilliseconds);
+#else
     struct timeval tv;
+    struct tm tmbuf;
 
     gettimeofday (&tv, NULL);
-    strftime (ts, sizeof (ts) - 1, "%y/%m/%d %H.%M.%S.", localtime (&tv.tv_sec));
+    strftime (ts, sizeof (ts) - 1, "%y/%m/%d %H.%M.%S.", 
+              localtime_r (&tv.tv_sec, &tmbuf));
     sprintf (us, "%06d.", tv.tv_usec);
+#endif
     strcat (ts, us);
     return ts;
     }
@@ -634,57 +762,10 @@ int dtReadtlv (NetFet *fet, void *buf, int len)
     }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Close the NetFet and reset the FET pointers
-**
-**  Parameters:     Name        Description.
-**                  fet         NetFet pointer
-**                  hard        TRUE for reset, FALSE for shutdown
-**
-**  Returns:        Nothing. 
-**
-**------------------------------------------------------------------------*/
-void dtCloseFet (NetFet *fet, bool hard)
-    {
-    dtCloseSocket (fet->connFd, hard);
-
-    fet->connFd = 0;            /* Mark FET not open anymore */
-    fet->in = fet->first;
-    fet->out = fet->first;
-    fet->sendin = fet->sendfirst;
-    fet->sendout = fet->sendfirst;
-    fet->ownerInfo = 0;
-    pthread_cond_signal (&fet->cond);
-    /* 
-    ** Remove from the active list.
-    ** If there is no link, this is a listen FET as opposed to a data
-    ** connection FET, so skip the unlink.
-    */
-    if (fet->prev != NULL)
-        {
-        pthread_mutex_lock (&connMutex);
-        fet->prev->next = fet->next;
-        fet->next->prev = fet->prev;
-        fet->prev = fet->next = NULL;
-        pthread_mutex_unlock (&connMutex);
-        if (updateConnections != NULL)
-            {
-            (*updateConnections) ();
-            }
-        }
-
-    /*
-    **  Finally mark it free.  Do this last, otherwise the FET
-    **  might be grabbed prematurely by a new connection.
-    */
-    fet->inUse = 0;
-    }
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Send a TLV formatted data item
 **
 **  Parameters:     Name        Description.
 **                  fet         NetFet pointer
-**                  ps          Pointer to NetPortSet to use
 **                  tag         tag (a.k.a., type) code
 **                  len         data length
 **                  value       buffer holding the data
@@ -692,15 +773,16 @@ void dtCloseFet (NetFet *fet, bool hard)
 **  Returns:        -1 if ok, 0 if ok but full, >0 if nothing was sent. 
 **
 **------------------------------------------------------------------------*/
-int dtSendTlv (NetFet *fet, NetPortSet *ps, 
-               int tag, int len, const void *value)
+int dtSendTlv (NetFet *fet, int tag, int len, const void *value)
     {
     int retval;
     
-    if (fet->sendfirst == NULL)
+    if (fet->sendfirst == fet->sendend)
         {
+#if !defined(_WIN32)
         fprintf (stderr, "dtSendTlv called without send buffer allocated\n");
-        exit (1);
+#endif
+        return ENOBUFS;
         }
     
     if (tag > 255 || len > 255)
@@ -717,7 +799,7 @@ int dtSendTlv (NetFet *fet, NetPortSet *ps,
     
     dtSendo (fet, tag);
     dtSendo (fet, len);
-    retval = dtSend (fet, ps, value, len);
+    retval = dtSend (fet, value, len);
 
     return retval;
     }
@@ -727,7 +809,6 @@ int dtSendTlv (NetFet *fet, NetPortSet *ps,
 **
 **  Parameters:     Name        Description.
 **                  fet         NetFet pointer
-**                  ps          Pointer to NetPortSet to use
 **                  len         data length
 **                  buf         buffer holding the data
 **
@@ -736,24 +817,25 @@ int dtSendTlv (NetFet *fet, NetPortSet *ps,
 **                  send calls there isn't a partial send.
 **
 **------------------------------------------------------------------------*/
-int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
+int dtSend (NetFet *fet, const void *buf, int len)
     {
-    int connFd = fet->connFd;
     int size;
     u8 *in, *out, *nextin;
     
     /*
-    ** Ignore calls when connection is not open.
+    ** Reject calls when connection is not open.
     */
-    if (connFd == 0)
+    if (!dtActive (fet) || fet->connFd == dtNC)
         {
         return ENOTCONN;
         }
     
-    if (fet->sendfirst == NULL)
+    if (fet->sendfirst == fet->sendend)
         {
+#if !defined(_WIN32)
         fprintf (stderr, "dtSend called without send buffer allocated\n");
-        exit (1);
+#endif
+        return ENOBUFS;
         }
     
     if (len > dtSendFree (fet))
@@ -797,7 +879,7 @@ int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
             }
         
         memcpy (in, buf, size);
-        buf += size;
+        buf = (u8 *) buf + size;
         len -= size;
         nextin = in + size;
         if (nextin == fet->sendend)
@@ -811,7 +893,10 @@ int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
     ** Update the IN pointer, then wake the send thread.
     */
     fet->sendin = in;
-    pthread_cond_signal (&fet->cond);
+    if (ssemp (fet) != NULL)
+    {
+        sem_post (ssemp (fet));
+    }
     
     if (dtSendFree (fet) == 0)
         {
@@ -827,63 +912,53 @@ int dtSend (NetFet *fet, NetPortSet *ps, const void *buf, int len)
 **  Purpose:        Bind to address/port and listen for connections
 **
 **  Parameters:     Name        Description.
-**                  fet         NetFet pointer
+**                  ps          Pointer to NetPortSet to use
 **                  host        IP address to listen to (0.0.0.0 or 127.0.0.1)
 **                  port        Port number to connect to
 **                  backlog     Listen backlog
 **
-**  Returns:        0 for ok, -1 for error
+**  Returns:        NetFet pointer (listen FET)
 **
 **------------------------------------------------------------------------*/
-int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog)
+NetFet * dtBind  (NetPortSet *ps, in_addr_t host, int port, int backlog)
     {
-    struct sockaddr_in server;
-    int true_opt = 1;
-
-    /*
-    **  Create TCP socket
-    */
-    fet->connFd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fet->connFd < 0)
+    int connFd;
+    NetFet *fet;
+    
+    connFd = dtBindSocket (host, port, backlog);
+    if (connFd < 0)
         {
 #if !defined(_WIN32)
         perror ("dtBind: Can't create socket");
 #endif
-        return -1;
+        dtErrno = errno;
+        return NULL;
         }
 
+    /*
+    **  Set non-blocking state of the socket.
+    */
 #if defined(_WIN32)
-    ioctlsocket (fet->connFd, FIONBIO, &true_opt);
+    ioctlsocket (connFd, FIONBIO, &true_opt);
 #else
-    fcntl (fet->connFd, F_SETFL, O_NONBLOCK);
+    fcntl (connFd, F_SETFL, O_NONBLOCK);
 #endif
-#ifdef __APPLE__
-    setsockopt (fet->connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                (char *)&true_opt, sizeof(true_opt));
-#endif
-    setsockopt(fet->connFd, SOL_SOCKET, SO_REUSEADDR,
-               (char *)&true_opt, sizeof (true_opt));
-    memset(&server, 0, sizeof(server));
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = host;
-    server.sin_port = htons(port);
 
-    if (bind (fet->connFd, (struct sockaddr *)&server, sizeof(server)) < 0)
+    fet = dtNewFet (connFd, ps, TRUE);
+    if (fet == NULL)
         {
-        close (fet->connFd);
-        fet->connFd = 0;
-        return -1;
+        // Failed to allocate FET, return failure
+        return NULL;
         }
-    if (listen (fet->connFd, backlog) < 0)
-        {
-        close (fet->connFd);
-        fet->connFd = 0;
-        return -1;
-        }
-
-    fet->listen = TRUE;
     
-    return 0;
+    /*
+    **  Remember what we're listening to (local address, not remote address
+    **  as is the case for data sockets).
+    */
+    fet->from.s_addr = host;
+    fet->fromPort = htons (port);
+    
+    return fet;
     }
 
 /*--------------------------------------------------------------------------
@@ -891,130 +966,165 @@ int dtBind  (NetFet *fet, in_addr_t host, int port, int backlog)
 **
 **  Parameters:     Name        Description.
 **                  fet         NetFet pointer, for a bound/listening fet
-**                  acceptFet   NetFet for data connection
+**                  ps          Pointer to NetPortSet to use
 **
-**  Returns:        File descriptor for data connection.
-**                   0 if nothing was waiting.
-**                  -1 if this is not a listen NetFet.
+**  Returns:        NetFet pointer for connection, if there is one.
+**                  NULL if no connection, or allocation failed.
+**                  (dtError is 0 in the first case, non-zero in the second)
 **
 **------------------------------------------------------------------------*/
-int dtAccept (NetFet *fet, NetFet *acceptFet)
+NetFet * dtAccept (NetFet *fet, NetPortSet *ps)
     {
-    int connFd;
-    struct sockaddr_in from;
-    socklen_t fromLen;
-    int true_opt = 1;
     
     /*
     **  Accept a connection.
     */
     if (!fet->listen)
-    {
-        return -1;
-    }
-    
-    fromLen = sizeof (from);
-    connFd = accept (fet->connFd, (struct sockaddr *) &from, &fromLen);
-    if (connFd < 0)
         {
-        return 0;
+        dtErrno = EINVAL;
+        return NULL;
         }
+    
+    return dtAcceptSocket (fet->connFd, ps);
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Allocate a NetFet
+**
+**  Parameters:     Name        Description.
+**                  connFd      File descriptor for connection socket
+**                  ps          Pointer to NetPortSet to use
+**                  listen      TRUE if this is a listen socket
+**
+**  Returns:        Pointer to NetFet, or NULL on failure (dtErrno set)
+**
+**------------------------------------------------------------------------*/
+NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
+    {
+    NetFet *fet;
+    int rsize, tsize, fsize;
+    int rc;
+    int psi = -1;
 
     /*
-    **  Set Keepalive and no signals.
+    **  Find an empty slot in the portVec.
     */
-    setsockopt(connFd, SOL_SOCKET, SO_KEEPALIVE,
-               (char *)&true_opt, sizeof(true_opt));
+    for (psi = 0; psi < ps->maxPorts && ps->portVec[psi] != NULL; psi++) ;
+    if (psi == ps->maxPorts)
+        {
+        dtErrno = ENOBUFS;
+        return NULL;
+        }
+    
+    if (listen)
+        {
+        rsize = tsize = 0;
+        }
+    else
+        {
+        rsize = ps->ringSize;
+        tsize = ps->sendRingSize;
+
+        /*
+        **  Set Keepalive if not a listen socket
+        */
+        setsockopt(connFd, SOL_SOCKET, SO_KEEPALIVE,
+                   (char *) &true_opt, sizeof (true_opt));
+        }
+    
+    /*
+    **  Figure out the FET size, and allocate it.
+    */
+    fsize = sizeof (NetFet) + rsize + tsize;
+    fet = (NetFet *) malloc (fsize);
+    if (fet == NULL)
+        {
+        dtErrno = ENOMEM;
+        return NULL;
+        }
+    memset (fet, 0, sizeof (NetFet));
+
 #ifdef __APPLE__
     setsockopt(connFd, SOL_SOCKET, SO_NOSIGPIPE,
                (char *)&true_opt, sizeof(true_opt));
 #endif
-
-    /*
-    **  Save relevant data in supplied FET
-    */
-    acceptFet->connFd = connFd;
-    acceptFet->from = from.sin_addr;
-    acceptFet->fromPort = from.sin_port;
-    acceptFet->inUse = 1;
-    
-    return connFd;
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Activate the NetFet
-**
-**  Parameters:     Name        Description.
-**                  fet         NetFet pointer
-**                  ps          Pointer to NetPortSet to use
-**                  connFd      File descriptor for connection socket
-**
-**  Returns:        Nothing. 
-**
-**------------------------------------------------------------------------*/
-void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
-    {
-    int rc;
-    
-#if defined (_WIN32)
-    int false_opt = 0;
-#endif
-
-    /*
-    **  Mark the FET in use
-    */
-    fet->inUse = 1;
-
-    /*
-    **  Clear non-blocking state (in case this FET came from dtBind which uses that)
-    */
-#if defined(_WIN32)
-    ioctlsocket (connFd, FIONBIO, &false_opt);
-#else
-    fcntl (connFd, F_SETFL, 0);
-#endif
-
-    /*
-    **  Initialize the ring pointers
-    */
-    fet->in = fet->out = fet->first;
-    fet->sendin = fet->sendout = fet->sendfirst;
-    
-    fet->ps = ps;
-    ps->curPorts++;
-
-    /*
-    **  Now that everything is initialized, set the FD number in the FET
-    **  to mark it open.
-    */
     fet->connFd = connFd;
-
+    fet->listen = listen;
+    fet->connected = TRUE;
+    
+    /*
+    **  Initialize the ring pointers.  The receive and transmit rings
+    **  go after the base NetFet in the same memory block.
+    */
+    fet->in = fet->out = fet->first = (u8 *) fet + sizeof (NetFet);
+    fet->sendin = fet->sendout = fet->sendfirst = fet->end = fet->first + rsize;
+    fet->sendend = fet->sendfirst + tsize;
+    
+#ifdef __APPLE__
+    /* Semaphores are initialized in the thread that uses them. */
+    rsemp (fet) = NULL;
+    ssemp (fet) = NULL;
+#else
+    sem_init (rsemp (fet), 0, 0);
+    sem_init (ssemp (fet), 0, 0);
+#endif
+    
+    /*
+    **  Remember which portset this NetFet belongs to.
+    */
+    fet->ps = ps;
+    fet->psIndex = psi;
+    ps->portVec[psi] = fet;
+    if (!listen)
+        {
+        ps->curPorts++;
+        }
+    
     /*
     **  Create the data receive and transmit threads, if needed
     */
-    rc = 1;
-    if (fet->first != NULL)
+    if (rsize > 0)
         {
-        rc = dtCreateThread (dtDataThread, fet);
+        rc = dtCreateThread (dtDataThread, fet, NULL);
+        if (rc != 0)
+            {
+            dtErrno = rc;
+            fet->sendend = fet->first;      /* No threads yet */
+            dtClose (fet, TRUE);
+            return NULL;
+            }
         }
-    if (rc == 0 && fet->sendfirst != NULL)
+    if (tsize > 0)
         {
-        rc = dtCreateThread (dtSendThread, fet);
+        rc = dtCreateThread (dtSendThread, fet, &fet->sendThread);
+        if (rc != 0)
+            {
+            dtErrno = rc;
+            fet->sendend = fet->sendfirst;  /* No send thread */
+            dtClose (fet, TRUE);
+            return NULL;
+            }
+        }
+
+    /* 
+    ** Tell connection watcher (like operators) about the new connection
+    */
+    if (updateConnections != NULL)
+        {
+        (*updateConnections) ();
         }
 
     /*
-    **  Final actions (callback and connection list handling) are done
-    **  from the receive data thread handler if there is a receive thread.
-    **  If not, do them here.
+    **  Final action (portset connection callback) is done from the
+    **  receive data thread handler if there is a receive thread.  If
+    **  not, do it here.
     */
-    if (rc)
+    if (rsize == 0)
         {
-        dtClose (fet, ps, TRUE);
+        dtActivateFet2 (fet);
         }
-    else if (fet->first == NULL)
-        {
-        dtActivateFet2 (fet, ps);
-        }
+
+    return fet;
     }
 
 /*
@@ -1024,46 +1134,6 @@ void dtActivateFet (NetFet *fet, NetPortSet *ps, int connFd)
 **
 **--------------------------------------------------------------------------
 */
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Allocate a buffer and initialize the FET pointers
-**
-**  Parameters:     Name        Description.
-**                  fet         NetFet pointer
-**                  bufsiz      Size of receive buffer to allocate
-**                  sendbufsiz  Size of send buffer to allocate
-**
-**  Returns:        0 if ok, -1 if malloc failed
-**
-**------------------------------------------------------------------------*/
-static int dtInitFet (NetFet *fet, int bufsiz, int sendbufsiz)
-    {
-    u8 *buf = NULL, *buf2 = NULL;
-
-    buf = (u8 *) malloc (bufsiz);
-    if (buf == NULL)
-        {
-        return -1;
-        }
-    buf2 = (u8 *) malloc (sendbufsiz);
-    if (buf2 == NULL)
-        {
-        return -1;
-        }
-    fet->prev = fet->next = NULL;
-    fet->first = buf;
-    fet->in = buf;
-    fet->out = buf;
-    fet->end = buf + bufsiz;
-    fet->sendfirst = buf2;
-    fet->sendin = buf2;
-    fet->sendout = buf2;
-    fet->sendend = buf2 + sendbufsiz;
-    pthread_cond_init (&fet->cond, NULL);
-    pthread_mutex_init (&fet->mutex, NULL);
-    
-    return 0;
-    }
 
 /*--------------------------------------------------------------------------
 **  Purpose:        Read more data from the network, if there is any
@@ -1121,7 +1191,7 @@ static int dtRead (NetFet *fet, NetPortSet *ps)
         return 0;
         }
 
-    i = recv(fet->connFd, in, size, MSG_NOSIGNAL);
+    i = recv (fet->connFd, in, size, MSG_NOSIGNAL);
     if (i > 0)
         {
         nextin = in + i;
@@ -1147,24 +1217,30 @@ static int dtRead (NetFet *fet, NetPortSet *ps)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-#if defined(_WIN32)
-static void dtThread(void *param)
-#else
-    static void *dtThread(void *param)
-#endif
+static dtThreadFun (dtThread, param)
     {
     NetPortSet *ps = (NetPortSet *) param;
-    NetFet *np;
-    int listenFd, connFd;
-    struct sockaddr_in server;
-    struct sockaddr_in from;
-    socklen_t fromLen;
-    int true_opt = 1;
+    in_addr_t host;
+    int port;
+    int listenFd;
     
     /*
-    **  Create TCP socket
+    **  Start listening.
     */
-    listenFd = socket(AF_INET, SOCK_STREAM, 0);
+    if (ps->localOnly)
+        {
+        host = inet_addr("127.0.0.1");
+        }
+    else
+        {
+        host = inet_addr("0.0.0.0");
+        }
+    port = ps->portNum;
+
+    /*
+    **  Create a socket, bind, and listen. 
+    */
+    listenFd = dtBindSocket (host, port, 5);
     if (listenFd < 0)
         {
 #if !defined(_WIN32)
@@ -1173,41 +1249,6 @@ static void dtThread(void *param)
         ThreadReturn;
         }
 
-    /*
-    **  Initialize the NetPortSet structure the rest of the way
-    */
-    ps->listenFd = listenFd;
-
-    setsockopt(listenFd, SOL_SOCKET, SO_REUSEADDR,
-               (char *)&true_opt, sizeof(true_opt));
-    memset(&server, 0, sizeof(server));
-    server.sin_family = AF_INET;
-    if (ps->localOnly)
-        {
-        server.sin_addr.s_addr = inet_addr("127.0.0.1");
-        }
-    else
-        {
-        server.sin_addr.s_addr = inet_addr("0.0.0.0");
-        }
-    server.sin_port = htons(ps->portNum);
-
-    if (bind(listenFd, (struct sockaddr *)&server, sizeof(server)) < 0)
-        {
-#if !defined(_WIN32)
-        perror ("dtThread: Can't bind to socket");
-#endif
-        ThreadReturn;
-        }
-
-    if (listen(listenFd, 5) < 0)
-        {
-#if !defined(_WIN32)
-        perror ("dtThread: Can't listen");
-#endif
-        ThreadReturn;
-        }
-    
     while (1)
         {
         /*
@@ -1224,49 +1265,10 @@ static void dtThread(void *param)
             }
         
         /*
-        **  Wait for a connection.
+        **  Wait for a connection.  The things we need to do about it
+        **  are all in dtAcceptSocket.
         */
-        fromLen = sizeof(from);
-        connFd = accept(ps->listenFd, (struct sockaddr *)&from, &fromLen);
-
-        /*
-        **  Do we have any free ports?  If not, kill this connection.
-        **  We do this so the caller isn't left hanging, wondering why
-        **  nothing is happening.
-        */
-        if (ps->curPorts == ps->maxPorts)
-            {
-            close (connFd);
-            continue;
-            }
-            
-        /*
-        **  Set Keepalive and no signals.
-        */
-        setsockopt(connFd, SOL_SOCKET, SO_KEEPALIVE,
-                   (char *)&true_opt, sizeof(true_opt));
-#ifdef __APPLE__
-        setsockopt(connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                   (char *)&true_opt, sizeof(true_opt));
-#endif
-
-        /*
-        **  Find a free slot in the NetFet vector.
-        **  Note that there definitely is one, because we checked
-        **  current vs. max count earlier.
-        */
-        np = ps->portVec;
-        while (np->inUse)
-            {
-            np++;
-            }
-        
-        /*
-        **  Mark connection as active.
-        */
-        np->from = from.sin_addr;
-        np->fromPort = from.sin_port;
-        dtActivateFet (np, ps, connFd);
+        (void) dtAcceptSocket (listenFd, ps);
         }
     }
 
@@ -1279,21 +1281,31 @@ static void dtThread(void *param)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-#if defined(_WIN32)
-static void dtDataThread(void *param)
-#else
-    static void *dtDataThread(void *param)
-#endif
+static dtThreadFun (dtDataThread, param)
     {
     NetFet *np = (NetFet *) param;
     NetPortSet *ps = np->ps;
-    int bytes;
+    int bytes = 0;
+#ifndef _WIN32
     struct pollfd pfd;
+#ifdef __APPLE__
+    char semname[64];
+
+    /* Initialize the semaphore */
+    sprintf (semname, "/dtrsem_%p", np);
+    rsemp (np) = sem_open (semname, O_CREAT, 0600, 0);
+    if (rsemp (np) == (void *) SEM_FAILED)
+    {
+        perror ("sem_open failed");
+        exit (1);
+    }
+#endif
     
     /*
-    **  Wait for socket ready or error, then do the final connection activation.
+    **  Wait for socket ready or error, then do the final connection
+    **  activation.
     **  If an error occurs, close the socket instead (which will generate 
-    **  a close callback).  This way, the callback should occur when the
+    **  a close callback).  This way, the callback will occur when the
     **  connection is actually up, as opposed to immediately after an outgoing
     **  connection request is issued.
     */
@@ -1302,10 +1314,19 @@ static void dtDataThread(void *param)
     poll (&pfd, 1, -1);
     if (pfd.revents & (POLLHUP | POLLNVAL | POLLERR))
         {
-        dtClose (np, ps, TRUE);
-        ThreadReturn;
+        np->closing = 2;
+        /*
+        ** Fall through into main loop, which will exit because
+        ** we marked the FET for close, and from there into the cleanup.
+        */
         }
-    dtActivateFet2 (np, ps);
+    else
+        {
+        dtActivateFet2 (np);
+        }
+#else
+    dtActivateFet2 (np);
+#endif
     
     while (1)
         {
@@ -1323,33 +1344,54 @@ static void dtDataThread(void *param)
         */
         if (!dtActive (np))
             {
-            ThreadReturn;
+            break;
             }
         
-        /*
-        **  Do we have any data?
-        */
-        bytes = dtRead (np, ps);
-
-        if (bytes == 0)
+        if (!(np->connected))
             {
             /*
-            **  Buffer is full, sleep 100 ms to let other threads empty it.
+            **  If connection was closed by other end earlier, sleep
+            **  a second to let other threads see it and deal with it.
             */
 #if defined(_WIN32)
-            Sleep(100);
+            Sleep (1000);
 #else
-            usleep (1000000);
+            usleep (10000000);
 #endif
-            continue;
             }
-            
-        /*
-        **  Handle errors.
-        */
-        if (bytes < 0)
+        else
             {
-            break;
+            /*
+            **  Do we have any data?
+            */
+            bytes = dtRead (np, ps);
+
+            if (bytes == -1)
+                {
+                /*
+                **  Indicate connection closed by other end.
+                */
+                np->connected = FALSE;
+                }
+            else if (bytes == 0)
+                {
+                /*
+                **  Buffer is full.
+                **  Sleep 100 ms to let other threads see it and deal with it.
+                */
+#if defined(_WIN32)
+                Sleep (100);
+#else
+                usleep (1000000);
+#endif
+                }
+            else if (bytes < 0)
+                {
+                /*
+                **  Handle errors.
+                */
+                break;
+                }
             }
         
         if (ps->dataCallBack)
@@ -1357,7 +1399,48 @@ static void dtDataThread(void *param)
             (*ps->dataCallBack) (np, bytes, ps->dataCallArg);
             }
         }
-    dtClose (np, ps, TRUE);
+
+    /*
+    **  If this FET isn't marked for close yet, mark it.  Note the actual
+    **  close call is made in the main thread, which will also allow
+    **  this thread to free the FET.  It is done that way to avoid
+    **  race conditions around freeing the FET.
+    */
+    if (np->closing == 0)
+        {
+        /*
+        **  Tell send thread, if there is one, to quit right now.  
+        */
+        np->closing = 2;
+        sem_post (ssemp (np));
+        }
+
+    /*
+    **  Wait for the send thread to exit, if we have one. 
+    */
+    if (np->sendend != np->sendfirst)
+        {
+        pthread_join (np->sendThread, NULL);
+        }
+
+    /*
+    **  Wait for dtClose to say that the FET can be freed.
+    */
+    sem_wait (rsemp (np));
+
+    /*
+    **  Free the semaphores, then the FET memory.
+    */
+#if !defined(__APPLE__)
+    sem_destroy (rsemp (np));
+    sem_destroy (ssemp (np));
+#else
+    sem_close (rsemp (np));
+    sem_unlink (semname);
+#endif
+    
+    free (np);
+
     ThreadReturn;
     }
 
@@ -1370,16 +1453,25 @@ static void dtDataThread(void *param)
 **  Returns:        Nothing.
 **
 **------------------------------------------------------------------------*/
-#if defined(_WIN32)
-static void dtSendThread(void *param)
-#else
-    static void *dtSendThread(void *param)
-#endif
+static dtThreadFun (dtSendThread, param)
     {
     NetFet *np = (NetFet *) param;
     u8 *in, *out, *nextout;
     int size;
     int bytes;
+    int ret;
+#ifdef __APPLE__
+    char semname[64];
+
+    /* Initialize the semaphore */
+    sprintf (semname, "/dtssem_%p", np);
+    ssemp (np) = sem_open (semname, O_CREAT, 0600, 0);
+    if (ssemp (np) == (void *) SEM_FAILED)
+    {
+        perror ("sem_open failed");
+        exit (1);
+    }
+#endif
     
     while (1)
         {
@@ -1387,7 +1479,7 @@ static void dtSendThread(void *param)
         **  If DtCyber is closing down, or the socket is closed,
         **  exit the thread.
         */
-        if (!emulationActive || !dtActive (np))
+        if (!emulationActive || np->closing == 2)
             {
             break;
             }
@@ -1401,27 +1493,26 @@ static void dtSendThread(void *param)
             **  If we have a soft close (shutdown) pending, and we no
             **  longer have data to send, do the actual shutdown.
             */
-            if (np->closePending)
+            if (np->closing == 1)
                 {
-                dtCloseFet (np, FALSE);
+                dtCloseSocket (np->connFd, FALSE);
+                np->connFd = dtNC;         /* Indicate socket is closed */
+                np->closing = 2;
                 break;
                 }
             
             /*
-            **  If there appears to be no data, acquire the mutex,
-            **  then check again.  If we're still empty, wait on the
-            **  condition (which is signaled by the main thread when
-            **  data is put into the send ring).  Then go back to the
-            **  top of the loop to check for reasons to exit.
+            **  If there is no data, wait on the semaphore (which is
+            **  signaled by the main thread when data is put into the
+            **  send ring).  Then go back to the top of the loop to
+            **  check for reasons to exit.
             */
-            pthread_mutex_lock (&np->mutex);
-            if (dtSendEmpty (np))
+            ret = sem_wait (ssemp (np));
+            if (ret < 0)
                 {
-                pthread_cond_wait (&np->cond, &np->mutex);
-                pthread_mutex_unlock (&np->mutex);
-                continue;
+                perror ("sem_wait");
                 }
-            pthread_mutex_unlock (&np->mutex);
+            continue;
             }
         
         /*
@@ -1465,7 +1556,121 @@ static void dtSendThread(void *param)
             np->sendout = nextout;
             }
         }
+
+#if defined(__APPLE__)
+    sem_close (ssemp (np));
+    sem_unlink (semname);
+#endif
+
     ThreadReturn;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Open a network socket to listen
+**
+**  Parameters:     Name        Description.
+**                  host        IP address to listen to (0.0.0.0 or 127.0.0.1)
+**                  port        Port number to connect to
+**                  backlog     Listen backlog
+**
+**  Returns:        Socket number, or -1 if error.
+**
+**------------------------------------------------------------------------*/
+static int dtBindSocket (in_addr_t host, int port, int backlog)
+    {
+    struct sockaddr_in server;
+    int connFd;
+    
+    /*
+    **  Create TCP socket
+    */
+    connFd = socket(AF_INET, SOCK_STREAM, 0);
+    if (connFd < 0)
+        {
+#if !defined(_WIN32)
+        perror ("dtBind: Can't create socket");
+#endif
+        dtErrno = errno;
+        return -1;
+        }
+
+    /*
+    **  Set reuse address
+    */
+    setsockopt(connFd, SOL_SOCKET, SO_REUSEADDR,
+               (char *) &true_opt, sizeof (true_opt));
+    memset(&server, 0, sizeof(server));
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = host;
+    server.sin_port = htons (port);
+
+    if (bind (connFd, (struct sockaddr *) &server, sizeof (server)) < 0)
+        {
+        dtCloseSocket (connFd, TRUE);
+        dtErrno = errno;
+        return -1;
+        }
+    if (listen (connFd, backlog) < 0)
+        {
+        dtCloseSocket (connFd, TRUE);
+        dtErrno = errno;
+        return -1;
+        }
+
+    return connFd;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Listen for a connection
+**
+**  Parameters:     Name        Description.
+**                  connFd      Socket number of listen socket
+**                  ps          NetPortSet to use
+**
+**  Returns:        NetFet pointer for connection, if there is one.
+**                  NULL if no connection, or allocation failed.
+**                  (dtError is 0 in the first case, non-zero in the second)
+**
+**------------------------------------------------------------------------*/
+NetFet * dtAcceptSocket (int connFd, NetPortSet *ps)
+    {
+    NetFet *acceptFet;
+    struct sockaddr_in from;
+    socklen_t fromLen;
+    
+    fromLen = sizeof (from);
+    connFd = accept (connFd, (struct sockaddr *) &from, &fromLen);
+    if (connFd < 0)
+        {
+        dtErrno = errno;
+        return NULL;
+        }
+
+    /*
+    **  Listen socket may be nonblocking, and data socket inherits that.
+    **  We always want the data socket to be blocking since it will
+    **  be served by separate threads.
+    */
+#if defined(_WIN32)
+    ioctlsocket (connFd, FIONBIO, &false_opt);
+#else
+    fcntl (connFd, F_SETFL, 0);
+#endif
+
+    acceptFet = dtNewFet (connFd, ps, FALSE);
+    if (acceptFet == NULL)
+        {
+        dtCloseSocket (connFd, TRUE);
+        return NULL;
+        }
+    
+    /*
+    **  Save relevant data in new FET
+    */
+    acceptFet->from = from.sin_addr;
+    acceptFet->fromPort = from.sin_port;
+    
+    return acceptFet;
     }
 
 /*--------------------------------------------------------------------------
@@ -1481,13 +1686,13 @@ static void dtSendThread(void *param)
 static void dtCloseSocket (int connFd, bool hard)
     {
 #if defined(_WIN32)
-    closesocket(connFd);
+    closesocket (connFd);
 #else
     if (!hard)
         {
         shutdown (connFd, SHUT_RDWR);
         }
-    close(connFd);
+    close (connFd);
 #endif
     }
 
@@ -1571,36 +1776,19 @@ static int dtGetw (NetFet *fet, void *buf, int len, bool read)
 **
 **  Parameters:     Name        Description.
 **                  fet         NetFet pointer
-**                  ps          Pointer to NetPortSet to use
 **
 **  Returns:        Nothing. 
 **
 **------------------------------------------------------------------------*/
-static void dtActivateFet2 (NetFet *fet, NetPortSet *ps)
+static void dtActivateFet2 (NetFet *fet)
     {
+    NetPortSet *ps = fet->ps;
+    
     if (ps->callBack != NULL)
         {
-        (*ps->callBack) (fet, fet - ps->portVec, ps->callArg);
+        (*ps->callBack) (fet, fet->psIndex, ps->callArg);
         }
     
-    /* 
-    ** Link this FET into the active list. 
-    */
-    if (fet->prev != NULL)
-        {
-        printf ("linking fet into connlist but it's already linked! %p, %p, %p\n", fet, fet->prev, fet->next);
-        }
-
-    pthread_mutex_lock (&connMutex);
-    fet->next = connlist.next;
-    fet->prev = &connlist;
-    fet->next->prev = fet;
-    connlist.next = fet;
-    pthread_mutex_unlock (&connMutex);
-    if (updateConnections != NULL)
-        {
-        (*updateConnections) ();
-        }
     }
 
 /*--------------------------------------------------------------------------

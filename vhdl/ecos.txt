@@ -1,0 +1,29 @@
+Description of "ECOs" to the CDC 6600 wire lists
+
+gpk001. 2014.09.15.  Chassis 12
+
+Issue: 1st char and 2nd char were being set when data is not character
+data.
+
+Cause: those signals derive from "data" which was latched from the 
+I->S signal, which in turn comes from the Full signal (among others).
+So it was the same width as the data being latched, meaning it would
+pick up input from around the trailing edge of the data.  When
+simulating only wire delays from long wires, this would not work.
+
+Fix: add wire from D05 pin 21 to C10 pin 3.  That ANDs the II timing
+pulse into the I->S signal, avoiding the hold issue.
+
+Verified: in GHDL simulation run (cdc_tb2.vhd).
+
+gpk002.  2014.09.16.  Chassis 12
+
+Issue: X incremented twice at end of character.
+
+Cause: Increment is gated by T25 and II clock.  That clock occurs at
+the edges of T25, so two pulses result.
+
+Fix: Change F10 pin 3 to connect to D04 pin 7 instead of E07 pin 26.
+That uses phase III clock instead.
+
+Verified: in GHDL simulation run (cdc_tb2.vhd)

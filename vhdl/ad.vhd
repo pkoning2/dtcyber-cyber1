@@ -72,7 +72,7 @@ begin -- gates
 
   u3 : inv2 port map (
     a => t3,
-    y => qb1_qb2);
+    y2 => qb1_qb2);
 
 
 

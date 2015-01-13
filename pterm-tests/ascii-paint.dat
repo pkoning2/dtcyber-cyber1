@@ -1,0 +1,581 @@
+16:33:54.744: Trace on, ASCII terminal
+16:33:57.912: key to plato 026
+16:33:57.912: ascii mode key to plato 0x0d
+16:33:58.074: 0015502 seq   6223 wc   1 select memory M0
+16:33:58.074: 0015422 seq   6224 wc   1 load mode 15
+16:33:58.074: 0000035 seq   6225 wc   1 load mode 7
+16:33:58.074: 0000040 seq   6226 wc   1 high Y 0
+16:33:58.074: 0000140 seq   6227 wc   1 low Y 0
+16:33:58.074: 0000054 seq   6228 wc   1 high X 12
+16:33:58.074: 0000130 seq   6229 wc   1 low X 24, coordinates 408 0
+16:33:58.074: seq   6229 wc   1 load coordinate 408 0
+16:33:58.074: 0015514 seq   6230 wc   1 Forward writing mode
+16:33:58.074: 0015516 seq   6231 wc   1 Normal size writing mode
+16:33:58.074: 0015512 seq   6232 wc   1 Horizontal writing mode
+16:33:58.074: 0015414 seq   6233 wc   1 Full screen erase
+16:33:58.099: 0015422 seq   6234 wc   1 load mode 7
+16:33:58.099: 0015521 seq   6235 wc   1 Start SSF
+16:33:58.100: 0000100 seq   6236 wc   1 data byte 1: 0
+16:33:58.100: 0000120 seq   6237 wc   1 data byte 2: 16
+16:33:58.100: 0000100 seq   6238 wc   1 data 0002000 (0x0400)
+16:33:58.100: seq   6238 wc   1 ssf 0400
+16:33:58.100: seq   6238 wc   1 ssf 0400
+16:33:58.101: 0000035 seq   6239 wc   1 load mode 7
+16:33:58.101: 0000057 seq   6240 wc   1 high Y 15
+16:33:58.101: 0000160 seq   6241 wc   1 low Y 16
+16:33:58.102: 0000040 seq   6242 wc   1 high X 0
+16:33:58.102: 0000100 seq   6243 wc   1 low X 0, coordinates 0 496
+16:33:58.102: seq   6243 wc   1 load coordinate 0 496
+16:33:58.102: 0015532 seq   6244 wc   1 set margin 0
+16:33:58.103: 0015541 seq   6245 wc   1 Start foreground color
+16:33:58.103: 0000100 seq   6246 wc   1 color byte 1: 0
+16:33:58.103: 0000174 seq   6247 wc   1 color byte 2: 60
+16:33:58.104: 0000117 seq   6248 wc   1 color byte 3: 15
+16:33:58.104: 0000100 seq   6249 wc   1 set foreground color 00ff00
+16:33:58.104: seq   6249 wc   1 fg: 0 255 0; bg: 0 0 0
+16:33:58.104: 0000035 seq   6250 wc   1 load mode 7
+16:33:58.104: 0000160 seq   6251 wc   1 low Y 16
+16:33:58.105: 0000057 seq   6252 wc   1 high X 15
+16:33:58.105: 0000130 seq   6253 wc   1 low X 24, coordinates 504 496
+16:33:58.105: seq   6253 wc   1 load coordinate 504 496
+16:33:58.105: 0015532 seq   6254 wc   1 set margin 504
+16:33:58.105: 0015541 seq   6255 wc   1 Start foreground color
+16:33:58.106: 0000177 seq   6256 wc   1 color byte 1: 63
+16:33:58.106: 0000177 seq   6257 wc   1 color byte 2: 63
+16:33:58.106: 0000117 seq   6258 wc   1 color byte 3: 15
+16:33:58.106: 0000100 seq   6259 wc   1 set foreground color 00ffff
+16:33:58.106: seq   6259 wc   1 fg: 0 255 255; bg: 0 0 0
+16:33:58.106: 0015541 seq   6260 wc   1 Start foreground color
+16:33:58.106: 0000177 seq   6261 wc   1 color byte 1: 63
+16:33:58.106: 0000177 seq   6262 wc   1 color byte 2: 63
+16:33:58.106: 0000117 seq   6263 wc   1 color byte 3: 15
+16:33:58.106: 0000100 seq   6264 wc   1 set foreground color 00ffff
+16:33:58.106: seq   6264 wc   1 fg: 0 255 255; bg: 0 0 0
+16:33:58.106: 0015531 seq   6265 wc   1 Start LDE
+16:33:58.106: 0000120 seq   6266 wc   1 data byte 1: 16
+16:33:58.106: 0000101 seq   6267 wc   1 data byte 2: 1
+16:33:58.106: 0000100 seq   6268 wc   1 data 0000120 (0x0050)
+16:33:58.106: seq   6268 wc   1 load echo 80 (0x50)
+16:33:58.106: key to plato 320
+16:33:58.106: ascii mode key to plato 0x1b 0x50 0x63
+16:33:58.155: 0015541 seq   6269 wc   1 Start foreground color
+16:33:58.155: 0000177 seq   6270 wc   1 color byte 1: 63
+16:33:58.155: 0000103 seq   6271 wc   1 color byte 2: 3
+16:33:58.155: 0000100 seq   6272 wc   1 color byte 3: 0
+16:33:58.155: 0000100 seq   6273 wc   1 set foreground color 0000ff
+16:33:58.155: seq   6273 wc   1 fg: 0 0 255; bg: 0 0 0
+16:33:58.155: 0015542 seq   6274 wc   1 Start background color
+16:33:58.155: 0000100 seq   6275 wc   1 color byte 1: 0
+16:33:58.155: 0000100 seq   6276 wc   1 color byte 2: 0
+16:33:58.155: 0000100 seq   6277 wc   1 color byte 3: 0
+16:33:58.155: 0000100 seq   6278 wc   1 set background color 000000
+16:33:58.155: seq   6278 wc   1 fg: 0 0 255; bg: 0 0 0
+16:33:58.155: 0000035 seq   6279 wc   1 load mode 7
+16:33:58.155: 0000050 seq   6280 wc   1 high Y 8
+16:33:58.155: 0000140 seq   6281 wc   1 low Y 0
+16:33:58.156: 0000050 seq   6282 wc   1 high X 8
+16:33:58.156: 0000100 seq   6283 wc   1 low X 0, coordinates 256 256
+16:33:58.156: seq   6283 wc   1 load coordinate 256 256
+16:33:58.156: 0015532 seq   6284 wc   1 set margin 256
+16:33:58.156: 0015541 seq   6285 wc   1 Start foreground color
+16:33:58.156: 0000177 seq   6286 wc   1 color byte 1: 63
+16:33:58.156: 0000103 seq   6287 wc   1 color byte 2: 3
+16:33:58.156: 0000100 seq   6288 wc   1 color byte 3: 0
+16:33:58.156: 0000100 seq   6289 wc   1 set foreground color 0000ff
+16:33:58.156: seq   6289 wc   1 fg: 0 0 255; bg: 0 0 0
+16:33:58.156: 0015422 seq   6290 wc   1 load mode 7
+16:33:58.156: 0000035 seq   6291 wc   1 load mode 7
+16:33:58.156: 0000140 seq   6292 wc   1 low Y 0
+16:33:58.156: 0000056 seq   6293 wc   1 high X 14
+16:33:58.156: 0000110 seq   6294 wc   1 low X 8, coordinates 456 256
+16:33:58.156: seq   6294 wc   1 load coordinate 456 256
+16:33:58.156: 0000171 seq   6295 wc   1 low Y 25
+16:33:58.156: 0000106 seq   6296 wc   1 low X 6, coordinates 454 281
+16:33:58.156: seq   6296 wc   1 lineto 454 281
+16:33:58.157: 0000051 seq   6297 wc   1 high Y 9
+16:33:58.157: 0000161 seq   6298 wc   1 low Y 17
+16:33:58.157: 0000102 seq   6299 wc   1 low X 2, coordinates 450 305
+16:33:58.157: seq   6299 wc   1 lineto 450 305
+16:33:58.157: 0000052 seq   6300 wc   1 high Y 10
+16:33:58.157: 0000151 seq   6301 wc   1 low Y 9
+16:33:58.157: 0000055 seq   6302 wc   1 high X 13
+16:33:58.157: 0000132 seq   6303 wc   1 low X 26, coordinates 442 329
+16:33:58.157: seq   6303 wc   1 lineto 442 329
+16:33:58.157: 0000053 seq   6304 wc   1 high Y 11
+16:33:58.157: 0000140 seq   6305 wc   1 low Y 0
+16:33:58.157: 0000117 seq   6306 wc   1 low X 15, coordinates 431 352
+16:33:58.157: seq   6306 wc   1 lineto 431 352
+16:33:58.157: 0000165 seq   6307 wc   1 low Y 21
+16:33:58.157: 0000102 seq   6308 wc   1 low X 2, coordinates 418 373
+16:33:58.157: seq   6308 wc   1 lineto 418 373
+16:33:58.157: 0000054 seq   6309 wc   1 high Y 12
+16:33:58.157: 0000151 seq   6310 wc   1 low Y 9
+16:33:58.157: 0000054 seq   6311 wc   1 high X 12
+16:33:58.157: 0000122 seq   6312 wc   1 low X 18, coordinates 402 393
+16:33:58.157: seq   6312 wc   1 lineto 402 393
+16:33:58.157: 0000172 seq   6313 wc   1 low Y 26
+16:33:58.157: 0000053 seq   6314 wc   1 high X 11
+16:33:58.157: 0000137 seq   6315 wc   1 low X 31, coordinates 383 410
+16:33:58.157: seq   6315 wc   1 lineto 383 410
+16:33:58.157: 0000055 seq   6316 wc   1 high Y 13
+16:33:58.157: 0000151 seq   6317 wc   1 low Y 9
+16:33:58.157: 0000113 seq   6318 wc   1 low X 11, coordinates 363 425
+16:33:58.157: seq   6318 wc   1 lineto 363 425
+16:33:58.157: 0000165 seq   6319 wc   1 low Y 21
+16:33:58.157: 0000052 seq   6320 wc   1 high X 10
+16:33:58.157: 0000125 seq   6321 wc   1 low X 21, coordinates 341 437
+16:33:58.157: seq   6321 wc   1 lineto 341 437
+16:33:58.157: 0000176 seq   6322 wc   1 low Y 30
+16:33:58.157: 0000051 seq   6323 wc   1 high X 9
+16:33:58.157: 0000135 seq   6324 wc   1 low X 29, coordinates 317 446
+16:33:58.157: seq   6324 wc   1 lineto 317 446
+16:33:58.157: 0000056 seq   6325 wc   1 high Y 14
+16:33:58.157: 0000144 seq   6326 wc   1 low Y 4
+16:33:58.157: 0000105 seq   6327 wc   1 low X 5, coordinates 293 452
+16:33:58.157: seq   6327 wc   1 lineto 293 452
+16:33:58.157: 0000150 seq   6328 wc   1 low Y 8
+16:33:58.157: 0000050 seq   6329 wc   1 high X 8
+16:33:58.157: 0000114 seq   6330 wc   1 low X 12, coordinates 268 456
+16:33:58.157: seq   6330 wc   1 lineto 268 456
+16:33:58.157: 0000150 seq   6331 wc   1 low Y 8
+16:33:58.157: 0000047 seq   6332 wc   1 high X 7
+16:33:58.158: 0000124 seq   6333 wc   1 low X 20, coordinates 244 456
+16:33:58.158: seq   6333 wc   1 lineto 244 456
+16:33:58.158: 0000144 seq   6334 wc   1 low Y 4
+16:33:58.158: 0000046 seq   6335 wc   1 high X 6
+16:33:58.158: 0000133 seq   6336 wc   1 low X 27, coordinates 219 452
+16:33:58.158: seq   6336 wc   1 lineto 219 452
+16:33:58.158: 0000055 seq   6337 wc   1 high Y 13
+16:33:58.158: 0000176 seq   6338 wc   1 low Y 30
+16:33:58.158: 0000103 seq   6339 wc   1 low X 3, coordinates 195 446
+16:33:58.158: seq   6339 wc   1 lineto 195 446
+16:33:58.158: 0000165 seq   6340 wc   1 low Y 21
+16:33:58.158: 0000045 seq   6341 wc   1 high X 5
+16:33:58.158: 0000113 seq   6342 wc   1 low X 11, coordinates 171 437
+16:33:58.158: seq   6342 wc   1 lineto 171 437
+16:33:58.158: 0000151 seq   6343 wc   1 low Y 9
+16:33:58.158: 0000044 seq   6344 wc   1 high X 4
+16:33:58.158: 0000125 seq   6345 wc   1 low X 21, coordinates 149 425
+16:33:58.158: seq   6345 wc   1 lineto 149 425
+16:33:58.158: 0000054 seq   6346 wc   1 high Y 12
+16:33:58.158: 0000172 seq   6347 wc   1 low Y 26
+16:33:58.158: 0000101 seq   6348 wc   1 low X 1, coordinates 129 410
+16:33:58.158: seq   6348 wc   1 lineto 129 410
+16:33:58.158: 0000151 seq   6349 wc   1 low Y 9
+16:33:58.158: 0000043 seq   6350 wc   1 high X 3
+16:33:58.158: 0000116 seq   6351 wc   1 low X 14, coordinates 110 393
+16:33:58.158: seq   6351 wc   1 lineto 110 393
+16:33:58.158: 0000053 seq   6352 wc   1 high Y 11
+16:33:58.158: 0000165 seq   6353 wc   1 low Y 21
+16:33:58.158: 0000042 seq   6354 wc   1 high X 2
+16:33:58.158: 0000136 seq   6355 wc   1 low X 30, coordinates 94 373
+16:33:58.158: seq   6355 wc   1 lineto 94 373
+16:33:58.158: 0000140 seq   6356 wc   1 low Y 0
+16:33:58.158: 0000121 seq   6357 wc   1 low X 17, coordinates 81 352
+16:33:58.158: seq   6357 wc   1 lineto 81 352
+16:33:58.158: 0000052 seq   6358 wc   1 high Y 10
+16:33:58.158: 0000151 seq   6359 wc   1 low Y 9
+16:33:58.158: 0000106 seq   6360 wc   1 low X 6, coordinates 70 329
+16:33:58.158: seq   6360 wc   1 lineto 70 329
+16:33:58.158: 0000051 seq   6361 wc   1 high Y 9
+16:33:58.158: 0000161 seq   6362 wc   1 low Y 17
+16:33:58.158: 0000041 seq   6363 wc   1 high X 1
+16:33:58.158: 0000136 seq   6364 wc   1 low X 30, coordinates 62 305
+16:33:58.158: seq   6364 wc   1 lineto 62 305
+16:33:58.158: 0000050 seq   6365 wc   1 high Y 8
+16:33:58.158: 0000171 seq   6366 wc   1 low Y 25
+16:33:58.158: 0000132 seq   6367 wc   1 low X 26, coordinates 58 281
+16:33:58.158: seq   6367 wc   1 lineto 58 281
+16:33:58.158: 0000140 seq   6368 wc   1 low Y 0
+16:33:58.158: 0000130 seq   6369 wc   1 low X 24, coordinates 56 256
+16:33:58.158: seq   6369 wc   1 lineto 56 256
+16:33:58.158: 0000047 seq   6370 wc   1 high Y 7
+16:33:58.158: 0000147 seq   6371 wc   1 low Y 7
+16:33:58.158: 0000132 seq   6372 wc   1 low X 26, coordinates 58 231
+16:33:58.158: seq   6372 wc   1 lineto 58 231
+16:33:58.158: 0000046 seq   6373 wc   1 high Y 6
+16:33:58.158: 0000157 seq   6374 wc   1 low Y 15
+16:33:58.158: 0000136 seq   6375 wc   1 low X 30, coordinates 62 207
+16:33:58.158: seq   6375 wc   1 lineto 62 207
+16:33:58.158: 0000045 seq   6376 wc   1 high Y 5
+16:33:58.158: 0000167 seq   6377 wc   1 low Y 23
+16:33:58.158: 0000042 seq   6378 wc   1 high X 2
+16:33:58.158: 0000106 seq   6379 wc   1 low X 6, coordinates 70 183
+16:33:58.158: seq   6379 wc   1 lineto 70 183
+16:33:58.158: 0000140 seq   6380 wc   1 low Y 0
+16:33:58.158: 0000121 seq   6381 wc   1 low X 17, coordinates 81 160
+16:33:58.158: seq   6381 wc   1 lineto 81 160
+16:33:58.158: 0000044 seq   6382 wc   1 high Y 4
+16:33:58.158: 0000153 seq   6383 wc   1 low Y 11
+16:33:58.158: 0000136 seq   6384 wc   1 low X 30, coordinates 94 139
+16:33:58.158: seq   6384 wc   1 lineto 94 139
+16:33:58.158: 0000043 seq   6385 wc   1 high Y 3
+16:33:58.159: 0000167 seq   6386 wc   1 low Y 23
+16:33:58.159: 0000043 seq   6387 wc   1 high X 3
+16:33:58.159: 0000116 seq   6388 wc   1 low X 14, coordinates 110 119
+16:33:58.159: seq   6388 wc   1 lineto 110 119
+16:33:58.159: 0000146 seq   6389 wc   1 low Y 6
+16:33:58.159: 0000044 seq   6390 wc   1 high X 4
+16:33:58.159: 0000101 seq   6391 wc   1 low X 1, coordinates 129 102
+16:33:58.159: seq   6391 wc   1 lineto 129 102
+16:33:58.159: 0000042 seq   6392 wc   1 high Y 2
+16:33:58.159: 0000167 seq   6393 wc   1 low Y 23
+16:33:58.159: 0000125 seq   6394 wc   1 low X 21, coordinates 149 87
+16:33:58.159: seq   6394 wc   1 lineto 149 87
+16:33:58.159: 0000153 seq   6395 wc   1 low Y 11
+16:33:58.159: 0000045 seq   6396 wc   1 high X 5
+16:33:58.159: 0000113 seq   6397 wc   1 low X 11, coordinates 171 75
+16:33:58.159: seq   6397 wc   1 lineto 171 75
+16:33:58.159: 0000142 seq   6398 wc   1 low Y 2
+16:33:58.159: 0000046 seq   6399 wc   1 high X 6
+16:33:58.159: 0000103 seq   6400 wc   1 low X 3, coordinates 195 66
+16:33:58.159: seq   6400 wc   1 lineto 195 66
+16:33:58.159: 0000041 seq   6401 wc   1 high Y 1
+16:33:58.159: 0000174 seq   6402 wc   1 low Y 28
+16:33:58.159: 0000133 seq   6403 wc   1 low X 27, coordinates 219 60
+16:33:58.159: seq   6403 wc   1 lineto 219 60
+16:33:58.159: 0000170 seq   6404 wc   1 low Y 24
+16:33:58.159: 0000047 seq   6405 wc   1 high X 7
+16:33:58.159: 0000124 seq   6406 wc   1 low X 20, coordinates 244 56
+16:33:58.159: seq   6406 wc   1 lineto 244 56
+16:33:58.159: 0000170 seq   6407 wc   1 low Y 24
+16:33:58.159: 0000050 seq   6408 wc   1 high X 8
+16:33:58.159: 0000114 seq   6409 wc   1 low X 12, coordinates 268 56
+16:33:58.159: seq   6409 wc   1 lineto 268 56
+16:33:58.159: 0000174 seq   6410 wc   1 low Y 28
+16:33:58.159: 0000051 seq   6411 wc   1 high X 9
+16:33:58.159: 0000105 seq   6412 wc   1 low X 5, coordinates 293 60
+16:33:58.159: seq   6412 wc   1 lineto 293 60
+16:33:58.159: 0000042 seq   6413 wc   1 high Y 2
+16:33:58.159: 0000142 seq   6414 wc   1 low Y 2
+16:33:58.159: 0000135 seq   6415 wc   1 low X 29, coordinates 317 66
+16:33:58.159: seq   6415 wc   1 lineto 317 66
+16:33:58.159: 0000153 seq   6416 wc   1 low Y 11
+16:33:58.159: 0000052 seq   6417 wc   1 high X 10
+16:33:58.159: 0000125 seq   6418 wc   1 low X 21, coordinates 341 75
+16:33:58.159: seq   6418 wc   1 lineto 341 75
+16:33:58.159: 0000167 seq   6419 wc   1 low Y 23
+16:33:58.159: 0000053 seq   6420 wc   1 high X 11
+16:33:58.159: 0000113 seq   6421 wc   1 low X 11, coordinates 363 87
+16:33:58.159: seq   6421 wc   1 lineto 363 87
+16:33:58.159: 0000043 seq   6422 wc   1 high Y 3
+16:33:58.159: 0000146 seq   6423 wc   1 low Y 6
+16:33:58.159: 0000137 seq   6424 wc   1 low X 31, coordinates 383 102
+16:33:58.159: seq   6424 wc   1 lineto 383 102
+16:33:58.159: 0000167 seq   6425 wc   1 low Y 23
+16:33:58.159: 0000054 seq   6426 wc   1 high X 12
+16:33:58.159: 0000122 seq   6427 wc   1 low X 18, coordinates 402 119
+16:33:58.159: seq   6427 wc   1 lineto 402 119
+16:33:58.159: 0000044 seq   6428 wc   1 high Y 4
+16:33:58.159: 0000153 seq   6429 wc   1 low Y 11
+16:33:58.159: 0000055 seq   6430 wc   1 high X 13
+16:33:58.159: 0000102 seq   6431 wc   1 low X 2, coordinates 418 139
+16:33:58.159: seq   6431 wc   1 lineto 418 139
+16:33:58.159: 0000045 seq   6432 wc   1 high Y 5
+16:33:58.159: 0000140 seq   6433 wc   1 low Y 0
+16:33:58.159: 0000117 seq   6434 wc   1 low X 15, coordinates 431 160
+16:33:58.159: seq   6434 wc   1 lineto 431 160
+16:33:58.159: 0000167 seq   6435 wc   1 low Y 23
+16:33:58.159: 0000132 seq   6436 wc   1 low X 26, coordinates 442 183
+16:33:58.159: seq   6436 wc   1 lineto 442 183
+16:33:58.159: 0000046 seq   6437 wc   1 high Y 6
+16:33:58.159: 0000157 seq   6438 wc   1 low Y 15
+16:33:58.159: 0000056 seq   6439 wc   1 high X 14
+16:33:58.159: 0000102 seq   6440 wc   1 low X 2, coordinates 450 207
+16:33:58.159: seq   6440 wc   1 lineto 450 207
+16:33:58.160: 0000047 seq   6441 wc   1 high Y 7
+16:33:58.160: 0000147 seq   6442 wc   1 low Y 7
+16:33:58.160: 0000106 seq   6443 wc   1 low X 6, coordinates 454 231
+16:33:58.160: seq   6443 wc   1 lineto 454 231
+16:33:58.160: 0000050 seq   6444 wc   1 high Y 8
+16:33:58.160: 0000140 seq   6445 wc   1 low Y 0
+16:33:58.160: 0000110 seq   6446 wc   1 low X 8, coordinates 456 256
+16:33:58.160: seq   6446 wc   1 lineto 456 256
+16:33:58.160: 0000035 seq   6447 wc   1 load mode 7
+16:33:58.160: 0000140 seq   6448 wc   1 low Y 0
+16:33:58.160: 0000050 seq   6449 wc   1 high X 8
+16:33:58.160: 0000100 seq   6450 wc   1 low X 0, coordinates 256 256
+16:33:58.160: seq   6450 wc   1 load coordinate 256 256
+16:33:58.160: 0015541 seq   6451 wc   1 Start foreground color
+16:33:58.160: 0000177 seq   6452 wc   1 color byte 1: 63
+16:33:58.160: 0000177 seq   6453 wc   1 color byte 2: 63
+16:33:58.160: 0000117 seq   6454 wc   1 color byte 3: 15
+16:33:58.160: 0000100 seq   6455 wc   1 set foreground color 00ffff
+16:33:58.160: seq   6455 wc   1 fg: 0 255 255; bg: 0 0 0
+16:33:58.160: 0015541 seq   6456 wc   1 Start foreground color
+16:33:58.160: 0000100 seq   6457 wc   1 color byte 1: 0
+16:33:58.160: 0000100 seq   6458 wc   1 color byte 2: 0
+16:33:58.160: 0000160 seq   6459 wc   1 color byte 3: 48
+16:33:58.160: 0000177 seq   6460 wc   1 set foreground color ff0000
+16:33:58.160: seq   6460 wc   1 fg: 255 0 0; bg: 0 0 0
+16:33:58.160: 0015542 seq   6461 wc   1 Start background color
+16:33:58.160: 0000177 seq   6462 wc   1 color byte 1: 63
+16:33:58.160: 0000103 seq   6463 wc   1 color byte 2: 3
+16:33:58.160: 0000100 seq   6464 wc   1 color byte 3: 0
+16:33:58.160: 0000100 seq   6465 wc   1 set background color 0000ff
+16:33:58.160: seq   6465 wc   1 fg: 255 0 0; bg: 0 0 255
+16:33:58.160: 0015532 seq   6466 wc   1 set margin 256
+16:33:58.160: 0015543 seq   6467 wc   1 Start paint
+16:33:58.160: 0000100 seq   6468 wc   1 paint byte 1: 0
+16:33:58.160: 0000100 seq   6469 wc   1 paint 000 (0x0000)
+16:33:58.160: seq   6469 wc   1 paint 000
+16:33:58.233: 0015541 seq   6470 wc   1 Start foreground color
+16:33:58.233: 0000177 seq   6471 wc   1 color byte 1: 63
+16:33:58.233: 0000103 seq   6472 wc   1 color byte 2: 3
+16:33:58.233: 0000100 seq   6473 wc   1 color byte 3: 0
+16:33:58.233: 0000100 seq   6474 wc   1 set foreground color 0000ff
+16:33:58.233: seq   6474 wc   1 fg: 0 0 255; bg: 0 0 255
+16:33:58.233: 0015542 seq   6475 wc   1 Start background color
+16:33:58.233: 0000100 seq   6476 wc   1 color byte 1: 0
+16:33:58.233: 0000100 seq   6477 wc   1 color byte 2: 0
+16:33:58.233: 0000100 seq   6478 wc   1 color byte 3: 0
+16:33:58.233: 0000100 seq   6479 wc   1 set background color 000000
+16:33:58.233: seq   6479 wc   1 fg: 0 0 255; bg: 0 0 0
+16:33:58.233: 0000035 seq   6480 wc   1 load mode 7
+16:33:58.233: 0000051 seq   6481 wc   1 high Y 9
+16:33:58.233: 0000162 seq   6482 wc   1 low Y 18
+16:33:58.233: 0000051 seq   6483 wc   1 high X 9
+16:33:58.233: 0000122 seq   6484 wc   1 low X 18, coordinates 306 306
+16:33:58.233: seq   6484 wc   1 load coordinate 306 306
+16:33:58.233: 0015541 seq   6485 wc   1 Start foreground color
+16:33:58.233: 0000177 seq   6486 wc   1 color byte 1: 63
+16:33:58.233: 0000103 seq   6487 wc   1 color byte 2: 3
+16:33:58.233: 0000100 seq   6488 wc   1 color byte 3: 0
+16:33:58.233: 0000100 seq   6489 wc   1 set foreground color 0000ff
+16:33:58.233: seq   6489 wc   1 fg: 0 0 255; bg: 0 0 0
+16:33:58.233: 0015422 seq   6490 wc   1 load mode 7
+16:33:58.233: 0000050 seq   6491 wc   1 high Y 8
+16:33:58.233: 0000140 seq   6492 wc   1 low Y 0
+16:33:58.233: 0000055 seq   6493 wc   1 high X 13
+16:33:58.233: 0000124 seq   6494 wc   1 low X 20, coordinates 436 256
+16:33:58.233: seq   6494 wc   1 lineto 436 256
+16:33:58.233: 0000051 seq   6495 wc   1 high Y 9
+16:33:58.233: 0000162 seq   6496 wc   1 low Y 18
+16:33:58.234: 0000051 seq   6497 wc   1 high X 9
+16:33:58.234: 0000122 seq   6498 wc   1 low X 18, coordinates 306 306
+16:33:58.234: seq   6498 wc   1 lineto 306 306
+16:33:58.234: 0000052 seq   6499 wc   1 high Y 10
+16:33:58.234: 0000172 seq   6500 wc   1 low Y 26
+16:33:58.234: 0000054 seq   6501 wc   1 high X 12
+16:33:58.234: 0000134 seq   6502 wc   1 low X 28, coordinates 412 346
+16:33:58.234: seq   6502 wc   1 lineto 412 346
+16:33:58.234: 0000144 seq   6503 wc   1 low Y 4
+16:33:58.234: 0000050 seq   6504 wc   1 high X 8
+16:33:58.234: 0000122 seq   6505 wc   1 low X 18, coordinates 274 324
+16:33:58.234: seq   6505 wc   1 lineto 274 324
+16:33:58.234: 0000054 seq   6506 wc   1 high Y 12
+16:33:58.234: 0000174 seq   6507 wc   1 low Y 28
+16:33:58.234: 0000052 seq   6508 wc   1 high X 10
+16:33:58.234: 0000132 seq   6509 wc   1 low X 26, coordinates 346 412
+16:33:58.234: seq   6509 wc   1 lineto 346 412
+16:33:58.234: 0000052 seq   6510 wc   1 high Y 10
+16:33:58.234: 0000144 seq   6511 wc   1 low Y 4
+16:33:58.234: 0000047 seq   6512 wc   1 high X 7
+16:33:58.234: 0000116 seq   6513 wc   1 low X 14, coordinates 238 324
+16:33:58.234: seq   6513 wc   1 lineto 238 324
+16:33:58.234: 0000055 seq   6514 wc   1 high Y 13
+16:33:58.234: 0000164 seq   6515 wc   1 low Y 20
+16:33:58.234: 0000050 seq   6516 wc   1 high X 8
+16:33:58.234: 0000100 seq   6517 wc   1 low X 0, coordinates 256 436
+16:33:58.234: seq   6517 wc   1 lineto 256 436
+16:33:58.234: 0000051 seq   6518 wc   1 high Y 9
+16:33:58.234: 0000162 seq   6519 wc   1 low Y 18
+16:33:58.234: 0000046 seq   6520 wc   1 high X 6
+16:33:58.234: 0000116 seq   6521 wc   1 low X 14, coordinates 206 306
+16:33:58.234: seq   6521 wc   1 lineto 206 306
+16:33:58.234: 0000054 seq   6522 wc   1 high Y 12
+16:33:58.234: 0000174 seq   6523 wc   1 low Y 28
+16:33:58.234: 0000045 seq   6524 wc   1 high X 5
+16:33:58.234: 0000106 seq   6525 wc   1 low X 6, coordinates 166 412
+16:33:58.234: seq   6525 wc   1 lineto 166 412
+16:33:58.234: 0000050 seq   6526 wc   1 high Y 8
+16:33:58.234: 0000162 seq   6527 wc   1 low Y 18
+16:33:58.234: 0000134 seq   6528 wc   1 low X 28, coordinates 188 274
+16:33:58.234: seq   6528 wc   1 lineto 188 274
+16:33:58.234: 0000052 seq   6529 wc   1 high Y 10
+16:33:58.234: 0000172 seq   6530 wc   1 low Y 26
+16:33:58.234: 0000043 seq   6531 wc   1 high X 3
+16:33:58.234: 0000104 seq   6532 wc   1 low X 4, coordinates 100 346
+16:33:58.234: seq   6532 wc   1 lineto 100 346
+16:33:58.234: 0000047 seq   6533 wc   1 high Y 7
+16:33:58.234: 0000156 seq   6534 wc   1 low Y 14
+16:33:58.234: 0000045 seq   6535 wc   1 high X 5
+16:33:58.234: 0000134 seq   6536 wc   1 low X 28, coordinates 188 238
+16:33:58.235: seq   6536 wc   1 lineto 188 238
+16:33:58.235: 0000050 seq   6537 wc   1 high Y 8
+16:33:58.235: 0000140 seq   6538 wc   1 low Y 0
+16:33:58.235: 0000042 seq   6539 wc   1 high X 2
+16:33:58.235: 0000114 seq   6540 wc   1 low X 12, coordinates 76 256
+16:33:58.235: seq   6540 wc   1 lineto 76 256
+16:33:58.235: 0000046 seq   6541 wc   1 high Y 6
+16:33:58.235: 0000156 seq   6542 wc   1 low Y 14
+16:33:58.235: 0000046 seq   6543 wc   1 high X 6
+16:33:58.235: 0000116 seq   6544 wc   1 low X 14, coordinates 206 206
+16:33:58.235: seq   6544 wc   1 lineto 206 206
+16:33:58.235: 0000045 seq   6545 wc   1 high Y 5
+16:33:58.235: 0000146 seq   6546 wc   1 low Y 6
+16:33:58.235: 0000043 seq   6547 wc   1 high X 3
+16:33:58.235: 0000104 seq   6548 wc   1 low X 4, coordinates 100 166
+16:33:58.235: seq   6548 wc   1 lineto 100 166
+16:33:58.235: 0000174 seq   6549 wc   1 low Y 28
+16:33:58.235: 0000047 seq   6550 wc   1 high X 7
+16:33:58.235: 0000116 seq   6551 wc   1 low X 14, coordinates 238 188
+16:33:58.235: seq   6551 wc   1 lineto 238 188
+16:33:58.235: 0000043 seq   6552 wc   1 high Y 3
+16:33:58.235: 0000144 seq   6553 wc   1 low Y 4
+16:33:58.235: 0000045 seq   6554 wc   1 high X 5
+16:33:58.235: 0000106 seq   6555 wc   1 low X 6, coordinates 166 100
+16:33:58.235: seq   6555 wc   1 lineto 166 100
+16:33:58.235: 0000045 seq   6556 wc   1 high Y 5
+16:33:58.235: 0000174 seq   6557 wc   1 low Y 28
+16:33:58.235: 0000050 seq   6558 wc   1 high X 8
+16:33:58.235: 0000122 seq   6559 wc   1 low X 18, coordinates 274 188
+16:33:58.235: seq   6559 wc   1 lineto 274 188
+16:33:58.235: 0000042 seq   6560 wc   1 high Y 2
+16:33:58.235: 0000154 seq   6561 wc   1 low Y 12
+16:33:58.235: 0000100 seq   6562 wc   1 low X 0, coordinates 256 76
+16:33:58.235: seq   6562 wc   1 lineto 256 76
+16:33:58.235: 0000046 seq   6563 wc   1 high Y 6
+16:33:58.235: 0000156 seq   6564 wc   1 low Y 14
+16:33:58.235: 0000051 seq   6565 wc   1 high X 9
+16:33:58.235: 0000122 seq   6566 wc   1 low X 18, coordinates 306 206
+16:33:58.235: seq   6566 wc   1 lineto 306 206
+16:33:58.235: 0000043 seq   6567 wc   1 high Y 3
+16:33:58.235: 0000144 seq   6568 wc   1 low Y 4
+16:33:58.235: 0000052 seq   6569 wc   1 high X 10
+16:33:58.235: 0000132 seq   6570 wc   1 low X 26, coordinates 346 100
+16:33:58.235: seq   6570 wc   1 lineto 346 100
+16:33:58.235: 0000047 seq   6571 wc   1 high Y 7
+16:33:58.235: 0000156 seq   6572 wc   1 low Y 14
+16:33:58.235: 0000104 seq   6573 wc   1 low X 4, coordinates 324 238
+16:33:58.235: seq   6573 wc   1 lineto 324 238
+16:33:58.235: 0000045 seq   6574 wc   1 high Y 5
+16:33:58.235: 0000146 seq   6575 wc   1 low Y 6
+16:33:58.236: 0000054 seq   6576 wc   1 high X 12
+16:33:58.236: 0000134 seq   6577 wc   1 low X 28, coordinates 412 166
+16:33:58.236: seq   6577 wc   1 lineto 412 166
+16:33:58.236: 0000050 seq   6578 wc   1 high Y 8
+16:33:58.236: 0000162 seq   6579 wc   1 low Y 18
+16:33:58.236: 0000052 seq   6580 wc   1 high X 10
+16:33:58.236: 0000104 seq   6581 wc   1 low X 4, coordinates 324 274
+16:33:58.236: seq   6581 wc   1 lineto 324 274
+16:33:58.236: 0000140 seq   6582 wc   1 low Y 0
+16:33:58.236: 0000055 seq   6583 wc   1 high X 13
+16:33:58.236: 0000124 seq   6584 wc   1 low X 20, coordinates 436 256
+16:33:58.236: seq   6584 wc   1 lineto 436 256
+16:33:58.236: 0000051 seq   6585 wc   1 high Y 9
+16:33:58.236: 0000162 seq   6586 wc   1 low Y 18
+16:33:58.236: 0000051 seq   6587 wc   1 high X 9
+16:33:58.236: 0000122 seq   6588 wc   1 low X 18, coordinates 306 306
+16:33:58.236: seq   6588 wc   1 lineto 306 306
+16:33:58.236: 0015541 seq   6589 wc   1 Start foreground color
+16:33:58.236: 0000177 seq   6590 wc   1 color byte 1: 63
+16:33:58.236: 0000177 seq   6591 wc   1 color byte 2: 63
+16:33:58.236: 0000117 seq   6592 wc   1 color byte 3: 15
+16:33:58.236: 0000100 seq   6593 wc   1 set foreground color 00ffff
+16:33:58.236: seq   6593 wc   1 fg: 0 255 255; bg: 0 0 0
+16:33:58.236: 0015541 seq   6594 wc   1 Start foreground color
+16:33:58.236: 0000100 seq   6595 wc   1 color byte 1: 0
+16:33:58.236: 0000174 seq   6596 wc   1 color byte 2: 60
+16:33:58.236: 0000177 seq   6597 wc   1 color byte 3: 63
+16:33:58.236: 0000177 seq   6598 wc   1 set foreground color ffff00
+16:33:58.236: seq   6598 wc   1 fg: 255 255 0; bg: 0 0 0
+16:33:58.236: 0015542 seq   6599 wc   1 Start background color
+16:33:58.236: 0000177 seq   6600 wc   1 color byte 1: 63
+16:33:58.236: 0000103 seq   6601 wc   1 color byte 2: 3
+16:33:58.236: 0000100 seq   6602 wc   1 color byte 3: 0
+16:33:58.236: 0000100 seq   6603 wc   1 set background color 0000ff
+16:33:58.236: seq   6603 wc   1 fg: 255 255 0; bg: 0 0 255
+16:33:58.236: 0000035 seq   6604 wc   1 load mode 7
+16:33:58.236: 0000050 seq   6605 wc   1 high Y 8
+16:33:58.236: 0000140 seq   6606 wc   1 low Y 0
+16:33:58.236: 0000050 seq   6607 wc   1 high X 8
+16:33:58.236: 0000100 seq   6608 wc   1 low X 0, coordinates 256 256
+16:33:58.236: seq   6608 wc   1 load coordinate 256 256
+16:33:58.236: 0015532 seq   6609 wc   1 set margin 256
+16:33:58.236: 0015543 seq   6610 wc   1 Start paint
+16:33:58.236: 0000100 seq   6611 wc   1 paint byte 1: 0
+16:33:58.236: 0000100 seq   6612 wc   1 paint 000 (0x0000)
+16:33:58.236: seq   6612 wc   1 paint 000
+16:33:58.255: 0015541 seq   6613 wc   1 Start foreground color
+16:33:58.255: 0000177 seq   6614 wc   1 color byte 1: 63
+16:33:58.255: 0000177 seq   6615 wc   1 color byte 2: 63
+16:33:58.255: 0000117 seq   6616 wc   1 color byte 3: 15
+16:33:58.255: 0000100 seq   6617 wc   1 set foreground color 00ffff
+16:33:58.255: seq   6617 wc   1 fg: 0 255 255; bg: 0 0 255
+16:33:58.255: 0015542 seq   6618 wc   1 Start background color
+16:33:58.255: 0000100 seq   6619 wc   1 color byte 1: 0
+16:33:58.255: 0000100 seq   6620 wc   1 color byte 2: 0
+16:33:58.255: 0000100 seq   6621 wc   1 color byte 3: 0
+16:33:58.255: 0000100 seq   6622 wc   1 set background color 000000
+16:33:58.255: seq   6622 wc   1 fg: 0 255 255; bg: 0 0 0
+16:33:58.255: 0015541 seq   6623 wc   1 Start foreground color
+16:33:58.255: 0000100 seq   6624 wc   1 color byte 1: 0
+16:33:58.255: 0000174 seq   6625 wc   1 color byte 2: 60
+16:33:58.255: 0000177 seq   6626 wc   1 color byte 3: 63
+16:33:58.255: 0000177 seq   6627 wc   1 set foreground color ffff00
+16:33:58.255: seq   6627 wc   1 fg: 255 255 0; bg: 0 0 0
+16:33:58.255: 0000035 seq   6628 wc   1 load mode 7
+16:33:58.255: 0000040 seq   6629 wc   1 high Y 0
+16:33:58.255: 0000140 seq   6630 wc   1 low Y 0
+16:33:58.255: 0000043 seq   6631 wc   1 high X 3
+16:33:58.255: 0000100 seq   6632 wc   1 low X 0, coordinates 96 0
+16:33:58.255: seq   6632 wc   1 load coordinate 96 0
+16:33:58.255: 0015532 seq   6633 wc   1 set margin 96
+16:33:58.255: 0000037 seq   6634 wc   1 load mode 15
+16:33:58.255: 0015424 seq   6635 wc   1 load mode 13
+16:33:58.255: 0000116 seq   6636 wc   1 char 116 (N)
+16:33:58.256: 0000105 seq   6637 wc   1 char 105 (E)
+16:33:58.256: 0000130 seq   6638 wc   1 char 130 (X)
+16:33:58.256: 0000124 seq   6639 wc   1 char 124 (T)
+16:33:58.257: 0000040 seq   6640 wc   1 char 040 ( )
+16:33:58.257: 0000146 seq   6641 wc   1 char 146 (f)
+16:33:58.257: 0000157 seq   6642 wc   1 char 157 (o)
+16:33:58.257: 0000162 seq   6643 wc   1 char 162 (r)
+16:33:58.258: 0000040 seq   6644 wc   1 char 040 ( )
+16:33:58.258: 0000141 seq   6645 wc   1 char 141 (a)
+16:33:58.258: 0000156 seq   6646 wc   1 char 156 (n)
+16:33:58.258: 0000157 seq   6647 wc   1 char 157 (o)
+16:33:58.259: 0000164 seq   6648 wc   1 char 164 (t)
+16:33:58.259: 0000150 seq   6649 wc   1 char 150 (h)
+16:33:58.259: 0000145 seq   6650 wc   1 char 145 (e)
+16:33:58.260: 0000162 seq   6651 wc   1 char 162 (r)
+16:33:58.260: 0000040 seq   6652 wc   1 char 040 ( )
+16:33:58.260: 0000146 seq   6653 wc   1 char 146 (f)
+16:33:58.260: 0000145 seq   6654 wc   1 char 145 (e)
+16:33:58.261: 0000141 seq   6655 wc   1 char 141 (a)
+16:33:58.261: 0000164 seq   6656 wc   1 char 164 (t)
+16:33:58.261: 0000165 seq   6657 wc   1 char 165 (u)
+16:33:58.262: 0000162 seq   6658 wc   1 char 162 (r)
+16:33:58.262: 0000145 seq   6659 wc   1 char 145 (e)
+16:33:58.262: 0000073 seq   6660 wc   1 char 073 (;)
+16:33:58.262: 0000040 seq   6661 wc   1 char 040 ( )
+16:33:58.263: 0000102 seq   6662 wc   1 char 102 (B)
+16:33:58.263: 0000101 seq   6663 wc   1 char 101 (A)
+16:33:58.263: 0000103 seq   6664 wc   1 char 103 (C)
+16:33:58.263: 0000113 seq   6665 wc   1 char 113 (K)
+16:33:58.264: 0000040 seq   6666 wc   1 char 040 ( )
+16:33:58.264: 0000146 seq   6667 wc   1 char 146 (f)
+16:33:58.264: 0000157 seq   6668 wc   1 char 157 (o)
+16:33:58.264: 0000162 seq   6669 wc   1 char 162 (r)
+16:33:58.265: 0000040 seq   6670 wc   1 char 040 ( )
+16:33:58.265: 0000162 seq   6671 wc   1 char 162 (r)
+16:33:58.265: 0000145 seq   6672 wc   1 char 145 (e)
+16:33:58.266: 0000166 seq   6673 wc   1 char 166 (v)
+16:33:58.266: 0000151 seq   6674 wc   1 char 151 (i)
+16:33:58.266: 0000145 seq   6675 wc   1 char 145 (e)
+16:33:58.267: 0000167 seq   6676 wc   1 char 167 (w)
+16:33:58.267: 0015541 seq   6677 wc   1 Start foreground color
+16:33:58.267: 0000177 seq   6678 wc   1 color byte 1: 63
+16:33:58.267: 0000177 seq   6679 wc   1 color byte 2: 63
+16:33:58.267: 0000117 seq   6680 wc   1 color byte 3: 15
+16:33:58.267: 0000100 seq   6681 wc   1 set foreground color 00ffff
+16:33:58.267: seq   6681 wc   1 fg: 0 255 255; bg: 0 0 0
+16:33:58.267: 0015531 seq   6682 wc   1 Start LDE
+16:33:58.267: 0000120 seq   6683 wc   1 data byte 1: 16
+16:33:58.267: 0000101 seq   6684 wc   1 data byte 2: 1
+16:33:58.267: 0000100 seq   6685 wc   1 data 0000120 (0x0050)
+16:33:58.267: seq   6685 wc   1 load echo 80 (0x50)
+16:33:58.267: key to plato 320
+16:33:58.267: ascii mode key to plato 0x1b 0x50 0x63
+16:34:00.224: Trace off

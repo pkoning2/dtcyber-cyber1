@@ -1,0 +1,235 @@
+			PLATO Internals Manual
+
+****************************************************************
+This document will, I hope, evolve into a PLATO internals manual,
+describing at least a useful fraction of how PLATO works.
+Unfortunately, original PLATO internals documentation is, and has
+been, non-existent as far as I know.  The only thing that comes even
+close is the documentation of system commands in lesson "sysaids".
+But documentation beyond that, even such basic information as the
+names and general purpose of the major components, does not seem ever
+to have been written down.
+****************************************************************
+
+Prerequisites
+
+Readers of this document are assumed to be familiar with NOS 2.8.7,
+including NOS internals.  A useful reference for NOS internals is the
+Kronos 2.1 Workshop Manual.  That describes KRONOS, which is the
+parent of NOS 1, which in turn led to NOS 2.  So while it is not
+accurate in all the details, much of the more general information is
+still valid.  For the most part, it is not necessary to have a
+detailed understanding of NOS source code; occasionally, reference to
+MTR or DSD listings may be helpful.
+
+(Todo: see if there are newer NOS manuals that are useful on
+internals). 
+
+Introduction
+
+From the point of view of PLATO users, one might describe PLATO as a
+special purpose operating system.  Under the covers, it is actually a
+large application running on top of the NOS operating system.  It
+differs from typical applications in a number of ways:
+
+- PLATO uses a number of dedicated PP programs as well as CP programs
+- PLATO makes extensive use of ECS for communication as well as
+storage
+- PLATO is a "subsystem"
+
+"Subsystem" is a NOS term that describes NOS programs that have
+special privileges.  Some subsystems act as extensions to the NOS
+kernel, for example MAGNET (the tape processor) and BATCHIO (the
+printer/card spooler).  Subsystems are identified by their "queue
+priority"; if that exceeds LSSI (Lowest Subsystem ID) this is a
+subsystem.  Subsystems are permanently resident in memory (cannot be
+swapped out), and have "system origin" privilege, which enables the
+use of a number of restricted system services.
+
+PLATO uses few of the standard NOS services, supplying its own
+mechanisms instead for many typical timesharing operations.  For
+example, disk and terminal I/O are provided by PLATO PP programs and
+not using the standard NOS services.  (More precisely, this is true
+for the CERL style PLATO, which is the subject of this manual since it
+is the one used on cyber1.org.  The CDC version uses NOS disk I/O
+services to a limited extent.)
+
+PLATO components
+
+PLATO consists of four main CPU programs:
+
+1. Mastor
+2. Plato
+3. Framat
+4. Conden
+
+Mastor handles disk I/O and the startup of all the other components.
+Mastor is also the original owner of all ECS; it shares most (but not
+all) of its ECS with the other programs.
+
+Plato is the executor: it handles the time slicing for all the active
+users, swapping state in and out between CM and ECS, and executing
+lessons.   
+
+Framat takes the terminal-independent output stream from Plato and
+formats it into the correct encoding for the various supported
+terminals.  It also interfaces to the terminal I/O devices.  These two
+functions are sometimes called "formatting" and "framing"; early on in
+the PLATO history these were two separate programs, which were
+combined into one.
+
+Conden is the lesson condensor: it converts Tutor source code into
+binary code.  It handles both standard (CPU) Tutor and MicroTutor; the
+latter is downloaded as needed into PPT terminals that include
+MicroTutor support.  There is a "CPU MicroTutor", essentially an
+emulator for MicroTutor code that executes as part of Plato; this does
+not currently work and is disabled on Cyber1.org.
+
+In addition, there are some utilty programs that run as needed, such
+as the lesson print program and the console (station 0-0) terminal
+display.
+
+PLATO also uses a number of PP programs:
+
+1. MAS
+2. MRQ
+3. PNG
+4. PIO
+(more TBS)
+
+Some of the PP programs are conventional "transient" PP programs,
+i.e., ones that are loaded on request, complete some function, and
+then exit.  Others, such as PIO, are loaded at PLATO startup and
+remain active for the duration.  
+
+MAS is a transient PP program that ...
+
+MRQ is a TBD PP program that ...
+
+PNG is a persistent PP program that handles disk I/O for PLATO packs.
+The version on Cyber1.org is written from scratch; it uses the same
+API as the original CERL version but it is much simpler because it
+expects to talk to emulated disks.  For that reason, it does no
+optimization and no error handling.  The original CERL version
+actually uses two PP programs, PNG and 1PG -- "ping" and "pong",
+called that because they would pass the disk channel back and forth to
+keep up with the data stream from consecutive sectors.  By contrast,
+the conventional NOS disk driver PP code could not handle this, and
+required "two to one interleaving" on 6000 series Cybers.  PNG is
+controlled by Mastor, using state variables in ECS.
+
+PIO is a persistent PP program that handles NIU (classic PLATO code)
+terminal I/O.  For the output side, it communicates with Framat via
+ECS variables.  For input, it communicates with Plato.  If Plato
+aborts, PIO notices and emits the famous "plato off" message.
+
+PLATO uses some special devices:
+
+1. DDP -- the data path from PP to ECS.  Several are used: device name
+"D1" for PNG, device name "D2" for PIO, and device name "D3" for
+transient use of MAS and MRQ (to be checked)
+
+2. 844 disks -- the CERL PLATO disk subsystem (PNG) expects to talk to
+844-21 disk drives, bypassing all standard NOS use of those drives.
+For that reason, PLATO disks appear as device name "S0" (and S1 and up
+if there are multiple controllers) rather than the usual "DI" for 844
+drives so NOS will not attempt to grab them.
+
+3. NIU (a.k.a., CIU), the "classic" terminal controller, used by PIO.
+Device name is "CI", and each NIU has two channels, one for terminal
+input, a separate one for terminal output.
+
+ASCII terminal support was done in CDC (FAA) PLATO using the CDC
+product CDCNET, which includes the Telnet protocol.  That depends on
+CDCNET hardware, for which no emulation is available.  DtCyber author
+Tom Hunter added emulation for selected networking hardware,
+sufficient to make the NOS "NAM" system work, and PLATO used that
+through the "PNI" component.  Subsequently (partly for reasons of
+licensing that later on disappeared) this machinery was removed and
+DtCyber code added to emulate the Framat to PNI interface, allowing
+support of PLATO ASCII terminals without any of the standard NOS
+networking machinery.  This version is the one currently in use on
+cyber1.org.
+
+Major data flows
+
+Terminal input: classic is NIU channel to PIO to key buffers in ECS to
+Plato.  ASCII is DtCyber pni.c to key buffers in ECS to Plato.
+
+Terminal output: classic is Plato, via ECS to Framat, via ECS to PIO,
+via channel to the NIU.  ASCII is Plato, via ECS to Framat, via ECS to
+pni.c. 
+
+Disk I/O: Plato, via ECS to Mastor, via ECS to PNG, and the results
+back the same way.  (Todo: does Conden talk to disk or does Plato do
+that for Conden?)
+
+-------
+
+Classic terminal output flow, Framer to PIO
+
+The job of the Framer is to convert "parcels" to "frames".  Parcels
+are a stream of output data for a given terminal.  Frames are
+collections of output data in time order, with terminal words to be
+sent at the same time collected into a frame, or a sequence of
+consecutive frames with the last one marked as the final frame, if the
+total data does not fit in one frame.  
+
+In effect, the framer is doing a matrix transpose on the output data,
+from [port][time] to [time][port] indexing.  The reason for this is
+that the NIU is a time division multiplexing device, which wants to be
+fed buffers of data with one word per terminal, where that buffer is
+the data for a given time slot.
+
+The original PLATO code for this is built around the timing
+assumptions of the real NIU (but this is nowhere stated).  The real
+NIU has 16 ms time slots, because words are sent to each terminal at
+60 words per second (1260 baud).  As a result, PIO would process the
+frames for a time slot, and then wait for about 16 ms for the NIU to
+become ready to start the next time slot.  In the meantime, the framer
+would be processing output parcels for terminals into subsequent
+frames, ready for PIO to pick up once it got unblocked.
+
+With DtCyber and fast TCP based terminal I/O, this timing relationship
+no longer applies, and it is possible for PIO to catch up with
+Framat.  If that happens, output can get corrupted.  The "fastniu"
+patch addresses this issue by introducing an explicit handshake
+between Framat and PIO.
+
+///Details TBS, partly because the existing code (10/1/2014) is not
+adequate for a sufficiently fast DtCyber host.
+
+The state variables involved reside in ECS; they are:
+1. Frame number
+2. Frame lengths table
+3. Frames
+
+The frame number is a 60 bit integer that is incremented by PIO.  The
+frame lengths is a 2000(8) entry vector of integers which give the
+number of CP words in each frame.  The frames are a 2000(8) entry
+vector of frames, each of which is TBS words long.  The vector index
+for both vectors is the low 10 bits of the frame number.  Each frame
+may be full, or it may be partially filled; the length vector entry
+for that frame shows the word count.  (TBS: entry count with entries
+smaller than words???)  If the frame length is less than the full
+length of a frame, that frame is the last one for the time slice.
+
+PIO keeps pointers to the current frame and the current frame length.
+It also keeps a copy of the frame number.  When the low 10 bits of the
+frame number increment to zero, the frame and frame length pointers
+are reset.  (Curiously, the frame number is read from ECS at startup,
+but the current frame/length pointers are not initialized from the low
+10 bits of the value read, instead they are initialized to the first
+frame.  This is not an issue in practice because PIO is started at
+Plato startup, and at that time the frame number is zero.  If PIO were
+ever restarted after Plato startup, there would be a temporary
+mismatch between the pointers and the frame number, but PIO is not in
+fact restarted after Plato startup so that is not a real concern.)
+
+Just before PIO starts processing a frame, it increments the frame
+number to point past it and writes that updated frame number to ECS. 
+
+When Framat needs to frame terminal output (i.e., copy it from the
+parcel chain of that terminal to suitable frames) it starts looking at
+the frame corresponding to the current frame number as read from ECS.
+Thus it is at least one frame ahead

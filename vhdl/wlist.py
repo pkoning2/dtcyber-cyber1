@@ -10,6 +10,7 @@ import sys
 import traceback
 import getopt
 import cmodule
+import time
 
 chassis_list = { }
 curslot = None
@@ -42,8 +43,10 @@ class Cyber (cmodule.cmod):
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
+-- NOTE: This is a generated file.  %s.
+--
 -------------------------------------------------------------------------------
-"""
+""" % time.strftime ("%Y.%m.%d")
 
     def printheader (self):
         return self.header
@@ -160,7 +163,7 @@ class Chassis (cmodule.cmod):
         
     header = """-------------------------------------------------------------------------------
 --
--- CDC 6600 model -- chassis %d
+-- CDC 6600 model -- chassis %%d
 --
 -- Converted from wire lists by Paul Koning
 --
@@ -171,8 +174,11 @@ class Chassis (cmodule.cmod):
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
+--
+-- NOTE: This is a generated file.  %s.
+--
 -------------------------------------------------------------------------------
-"""
+""" % time.strftime ("%Y.%m.%d")
 
     def printheader (self):
         return self.header % self.cnum
@@ -337,13 +343,24 @@ class Connector (object):
         self.modinst = inst
         self.offset = offset
         self.chassis = chassis
-                
+
+    def wdelay (self, wlen):
+        """Return the wire delay for a wire of the specified length
+        in inches.  Delay is returned in units of 5 ns, since that is
+        the timing granularity we use in this model, rounded down to an
+        integer.  So short wires (under 47 inches) are handled as
+        having zero delay.
+        """
+        # Nominal twisted pair delay is 1.3 ns per foot.
+        return int (((wlen / 12.) * 1.3) / 5.)
+    
     def chwire (self, pnum, toslot, topin, dir, wlen = 0):
         """Generate a Wire object for a wire inside a chassis (twisted pair).
         Wires are named w_out except if the wire is long enough that we
-        simulate its delay, in which case the name is wd_out 
-        and the wire is hooked up to an instance of the "wire"
-        element that actually implements the delay.
+        simulate its delay.  If so, we generate a second wire (named wd_out)
+        and a "wire" element which implements the delay.  The wd_out wire is
+        connected to the pin we were hooking up here, the w_out wire is
+        left defined for connection next.
         """
         end1 = "%s_%d" % (self.name, pnum)
         end2 = "%s_%s" % (toslot, topin)
@@ -356,7 +373,9 @@ class Connector (object):
                 except KeyError:
                     # Wire is not defined yet.  Define it
                     w = Wire (end1, end2)
-                    if real_length and wlen > real_length:
+                    delay = self.wdelay (wlen)
+                    if delay:
+                        # Delay is large enough to model
                         wdname = "wd_%s" % w
                         wd = cmodule.ElementInstance (wdname, "wire")
                         self.chassis.elements[wdname] = wd
@@ -365,13 +384,25 @@ class Connector (object):
                         wd.addportmap (self.chassis, "o", w)
                         w = w2
                         wd.addportmap (self.chassis, "i", w)
-                        wd.addgenericmap (self.chassis, "length", str (wlen))
+                        wd.addgenericmap (self.chassis, "delay", str (delay))
                     self.chassis.signals[w] = w
         else:
             try:
                 w = self.chassis.signals["w_%s" % end2]
             except KeyError:
                 w = Wire (end2, end1)
+                delay = self.wdelay (wlen)
+                if delay:
+                    # Delay is large enough to model
+                    wdname = "wd_%s" % w
+                    wd = cmodule.ElementInstance (wdname, "wire")
+                    self.chassis.elements[wdname] = wd
+                    w2 = Wire (end2, end1, "d")
+                    self.chassis.signals[w] = w
+                    wd.addportmap (self.chassis, "i", w)
+                    w = w2
+                    wd.addportmap (self.chassis, "o", w)
+                    wd.addgenericmap (self.chassis, "delay", str (delay))
                 self.chassis.signals[w] = w
         return w
     
@@ -695,4 +726,4 @@ if __name__ == "__main__":
         toplevel.write (False)
     for cname in sorted (chassis_list):
         ch = chassis_list[cname]
-        ch.write (True)
+        ch.write (False)

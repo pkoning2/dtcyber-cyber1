@@ -322,7 +322,7 @@ int main (int argc, char *argv[])
                     ((u64)rawBuffer[recLen1 + 5] <<  0);
 
                 blockTerm &= Mask60;
-                fprintf(stdout, "record length %5d unexpected %020I64o\n",
+                fprintf(stdout, "record length %5d unexpected %020llo\n",
                     recLen1 + 6,
                     blockTerm);
                 continue;
@@ -339,7 +339,7 @@ int main (int argc, char *argv[])
 
             expectedBlockNumber += 1;
 
-            fprintf(stdout, "record length %5d, seq %5d, term %016I64o   ",
+            fprintf(stdout, "record length %5d, seq %5d, term %016llo   ",
                     recLen1 + 6, blockNumber, blockTerm);
 
                 {

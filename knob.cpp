@@ -26,6 +26,9 @@
 #include <math.h>
 
 #define PI 3.14159265358969323846
+#if defined(_WIN32)
+#define round(x) floor ((x) + 0.5)
+#endif
 #define irnd(x) (int (round (x)))
 
 // ----------------------------------------------------------------------------
@@ -48,7 +51,7 @@ void wxKnob::Create (wxWindow* parent, wxWindowID id, int value,
                      const wxValidator &validator,
                      const wxString &name)
 {
-    wxControl::Create (parent, id);
+    wxControl::Create (parent, id, pos, size, style, validator, name);
     SetInitialSize (size);
     SetSize (size);
     
@@ -92,9 +95,14 @@ void wxKnob::OnPaint(wxPaintEvent& WXUNUSED(event))
     double theta;
     double dx, dy;
     int cx, cy;
-    int r, r2, lw;
+    int i, r, r2, lw;
     wxSize s = GetSize ();
     wxPen p = *wxWHITE_PEN;
+    wxPen p2 = wxPen ();
+    wxBrush b = wxBrush ();
+    
+    p2.SetColour (60, 60, 60);
+    b.SetColour (45, 45, 45);
     
     theta = (PI / 180.) * (m_maxAngle +
                            (((double) m_max - m_setting) / (m_max - m_min))
@@ -113,8 +121,14 @@ void wxKnob::OnPaint(wxPaintEvent& WXUNUSED(event))
 
     p.SetWidth (lw);
     dc.SetPen (p);
-    dc.SetBrush (*wxBLACK_BRUSH);
+    dc.SetBrush (b);
     dc.DrawCircle (cx, cy, r);
+    dc.SetPen (p2);
+    for (i = r - 1; i > 0; i -= 2)
+    {
+        dc.DrawCircle (cx, cy, i);
+    }
+    dc.SetPen (p);
     dc.DrawLine (cx + irnd (r * dx), cy + irnd (r * dy),
                  cx + irnd (r2 * dx), cy + irnd (r2 * dy));
     

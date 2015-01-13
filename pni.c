@@ -25,6 +25,7 @@
 #include <time.h>
 #if defined(_WIN32)
 #include <winsock.h>
+#define inline  __inline
 #else
 #include <unistd.h>
 #include <fcntl.h>
@@ -394,6 +395,9 @@ void initPni (void)
         sp->terms = terms;
         sp->local = local;
         sp->siteName = sitename;
+        printf ("PNI site %s, start station %d-%d, %d ports%s\n",
+                sitename, sp->first >> 5, sp->first & 31,
+                terms, (local ? ", local only" : ""));
         sp++;
         pniStations += terms;
     }
@@ -420,7 +424,9 @@ void initPni (void)
         sp->pniPorts.dataCallArg = sp;
         sp->pniPorts.callArg = sp;
         sp->pniPorts.kind = sp->siteName;
-        dtInitPortset (&(sp->pniPorts), NetBufSize, SendBufSize);
+        sp->pniPorts.ringSize = NetBufSize;
+        sp->pniPorts.sendRingSize = SendBufSize;
+        dtInitPortset (&(sp->pniPorts));
         /*
         **  Allocate the operator status buffer
         */
@@ -435,7 +441,7 @@ void initPni (void)
         for (j = 0; j < sp->terms; j++)
         {
             pp->sp = sp;
-            pp->np = sp->pniPorts.portVec + j;
+            pp->np = NULL;
             pp++;
         }
     }
@@ -491,8 +497,10 @@ CpWord pniOp (CPUVARGS1 (CpWord req))
                         pniSendstr (IDX2STAT (i), OFF_MSG, 0);
                     }
                 }
+#if !defined(_WIN32)    /* only non-Windows for now */
                 // Send plato crash notification
                 niuDoAlert (OPERBOX_CRASH);
+#endif
             }
             pniActive = FALSE;
             if (netbuf != NULL)
@@ -757,6 +765,11 @@ void pniCheck (void)
     {
         pp = portVector + port;
         np = pp->np;
+        if (!dtActive (np))
+        {
+            continue;
+        }
+        
         if (pp->flowFlags != 0)
         {
             // Some flags are set, figure out what to do
@@ -801,7 +814,7 @@ void pniCheck (void)
 static void pniDataCallback (NetFet *np, int bytes, void *arg)
 {
     SiteParam *sp = (SiteParam *) arg;
-    int port = STAT2IDX ((np - sp->pniPorts.portVec) + sp->first);
+    int port = STAT2IDX (np->psIndex + sp->first);
     PortParam *pp = portVector + port;
     int i, key;
     struct stbank *sb;
@@ -815,6 +828,10 @@ static void pniDataCallback (NetFet *np, int bytes, void *arg)
         i = dtReado (np);               /* Get a byte */
         if (i < 0)
         {
+            if (!dtConnected (np))
+            {
+                dtClose (np, TRUE);
+            }
             key = -1;
             break;                      /* we don't have enough data yet */
         }
@@ -1221,33 +1238,34 @@ static void pniWelcome(NetFet *np, int stat, void *arg)
     
     stat += sp->first;
     mp = portVector + STAT2IDX (stat);
-    mp->np = np;
     
     if (!dtActive (np))
-        {
+    {
         /*
         **  Connection was dropped.
         */
+		mp->np = NULL;
         printf("%s pni: Connection dropped from %s for station %d-%d\n",
                dtNowString (), inet_ntoa (np->from), 
                stat / 32, stat % 32);
         pniActiveConns--;
         pniUpdateStatus (sp);
         if (pniActive && pniLoggedIn (stat))
-            {
+        {
             /*
             **  If we disconnected without logging out, send
             **  *offky2* which tells PLATO to log out this
             **  station.
             */
             storeKey (OFFKY2, stat);
-            }
-        return;
         }
+        return;
+    }
 
     /*
     **  New connection for this port.
     */
+    mp->np = np;
     printf("%s pni: Received connection from %s for station %d-%d\n",
            dtNowString (), inet_ntoa (np->from),
            stat / 32, stat % 32);
@@ -1308,7 +1326,11 @@ static bool pniSendstr(int stat, const char *p, int len)
     }
     mp = portVector + STAT2IDX (stat);
     fet = mp->np;
-    return (dtSend (fet, &(mp->sp->pniPorts), p, len) < 0);
+    if (dtActive (fet))
+    {
+	    return (dtSend (fet, p, len) < 0);
+    }
+    return TRUE;
 }
 
 /*--------------------------------------------------------------------------

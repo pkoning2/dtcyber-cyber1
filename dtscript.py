@@ -306,7 +306,7 @@ plato_decoding_table = (
     'm'         #  0x0D -> LATIN SMALL LETTER M
     'n'         #  0x0E -> LATIN SMALL LETTER N
     'o'         #  0x0F -> LATIN SMALL LETTER O
-    'q'         #  0x10 -> LATIN SMALL LETTER P
+    'p'         #  0x10 -> LATIN SMALL LETTER P
     'q'         #  0x11 -> LATIN SMALL LETTER Q
     'r'         #  0x12 -> LATIN SMALL LETTER R
     's'         #  0x13 -> LATIN SMALL LETTER S
@@ -730,6 +730,8 @@ platokb_encoding_table['\r'] = platokb_encoding_table['\n']
 
 codecs.register (plato_getregentry)
 
+trace_re = re.compile (r"(?:[0-9.:]+:)?\s*([0-7]+) seq +(\d+)")
+
 class Pterm (Connection, MyThread):
     """A connection to an NIU port, i.e., a "classic" type pterm.
     It includes a thread that collects data from DtCyber and updates
@@ -757,20 +759,53 @@ class Pterm (Connection, MyThread):
     # A blank line
     line64 = 64 * b'\055'
 
-    def __init__ (self, host = "localhost", port = 5004):
+    def __init__ (self, host = "localhost", port = 5004, trace = None):
         """host is the host name to connect to, default is localhost.
         port is the pterm port number, default is 5004.
         Note that this must be an NIU ('classic' protocol) port;
         ASCII mode is not supported.
+        If the "trace" argument is supplied, that must be a text file
+        containing a pterm (classic mode) trace.  If so, the host and
+        port arguments are ignored, and no thread is created.  Instead,
+        the trace is read and the data in it processed.  Any keyboard
+        data (echo keys or calls to the "sendkey" method) are ignored
+        in trace processing mode.
         """
-        MyThread.__init__ (self)
-        Connection.__init__ (self, host, port)
-        self.settimeout (5)
+        if trace:
+            self.tf = open (trace, "rt")
+        else:
+            self.tf = None
+            MyThread.__init__ (self)
+            Connection.__init__ (self, host, port)
+            self.settimeout (5)
         self.lines = [ ]
         self.lines = [ bytearray (64) for i in range (32) ]
         self.fserase ()
         self.station = None
         self.start ()
+
+    def start (self):
+        if self.tf:
+            self.process_trace ()
+        else:
+            super ().start ()
+            
+    def process_trace (self):
+        self.seq = None
+        for l in self.tf:
+            if "ascii" in l.lower ():
+                raise RuntimeError ("ASCII mode trace file")
+            m = trace_re.match (l)
+            if m:
+                self.traceline = l
+                w = int (m.group (1), 8)
+                s = int (m.group (2))
+                if self.seq != s:
+                    # New sequence number (so not a continuation line
+                    # in the trace file); process the word
+                    self.seq = s
+                    self.execute (w)
+        self.tf.close ()
         
     def run (self):
         """Collect data from DtCyber.  Text mode output is copied
@@ -793,45 +828,54 @@ class Pterm (Connection, MyThread):
                 word = byte << 12 | \
                        ((word[0] & 0o77) << 6) | \
                        (word[1] & 0o77)
-                if DEBUG:
-                    print ("%07o" % word)
-                if word & 0o1000000:
-                    # Data word
-                    if self.mode == 3:
-                        # Character plotting mode
-                        self.char (word >> 12)
-                        self.char (word >> 6)
-                        self.char (word)
-                else:
-                    # control word
-                    cmd = word >> 15
-                    if cmd == 0:
-                        # NOP command
-                        if (word & 0o77000) == 0o42000:
-                            # Station number report code
-                            self.station = word & 0o777
-                    elif cmd == 1:
-                        # Load Mode command
-                        if word & 1:
-                            self.fserase ()
-                        mode = (word >> 1) & 0o37
-                        self.wemode = mode & 3
-                        self.mode = mode >> 2
-                    elif cmd == 2:
-                        # Load Coordinate command
-                        coord = word & 0o777
-                        if word & 0o1000:
-                            self.y = coord
-                        else:
-                            self.x = coord
-                    elif cmd == 3:
-                        key = (word & 0o177) + 0o200
-                        self.sendkey (key)
+                self.execute (word)
             except socket.timeout:
                 pass
             except EOFError:
                 break
         self.stopnow = True
+
+    def exechook (self, word):
+        # Override this method to examine the state of the Pterm
+        # object after each input word is processed.
+        pass
+
+    def execute (self, word):
+        if DEBUG:
+            print ("%07o" % word)
+        if word & 0o1000000:
+            # Data word
+            if self.mode == 3:
+                # Character plotting mode
+                self.char (word >> 12)
+                self.char (word >> 6)
+                self.char (word)
+        else:
+            # control word
+            cmd = word >> 15
+            if cmd == 0:
+                # NOP command
+                if (word & 0o77000) == 0o42000:
+                    # Station number report code
+                    self.station = word & 0o777
+            elif cmd == 1:
+                # Load Mode command
+                if word & 1:
+                    self.fserase ()
+                mode = (word >> 1) & 0o37
+                self.wemode = mode & 3
+                self.mode = mode >> 2
+            elif cmd == 2:
+                # Load Coordinate command
+                coord = word & 0o777
+                if word & 0o1000:
+                    self.y = coord
+                else:
+                    self.x = coord
+            elif cmd == 3:
+                key = (word & 0o177) + 0o200
+                self.sendkey (key)
+        self.exechook (word)
         
     def fserase (self):
         self.mode = 3          # char
@@ -845,16 +889,19 @@ class Pterm (Connection, MyThread):
             self.lines[i][:] = self.line64
             
     def sendkey (self, key):
-        key &= 0o1777
-        #print "sending key", key
-        key = keyframe (key)
-        self.sendall (key)
+        if not self.tf:
+            key &= 0o1777
+            #print "sending key", key
+            key = keyframe (key)
+            self.sendall (key)
         self.arrow = False
 
     def waitarrow (self, wait):
         """Wait the specified number of seconds for an arrow to appear.
         Returns True if there was an arrow, False if not.
         """
+        if self.tf:
+            return self.arrow
         delay = wait / 10.0
         if delay > 1:
             delay = 1
@@ -951,6 +998,8 @@ class Pterm (Connection, MyThread):
         return b'\177'.join (self.lines).decode ("plato")
 
     def login (self, user, group, passwd = None, waitauthor = True):
+        if self.tf:
+            raise RuntimeError ("login not valid in script mode")
         self.sendkey (self.NEXT)
         self.sendstr (user, self.NEXT, 10)
         self.sendstr (group, self.SHIFT + self.STOP, 10)
@@ -965,9 +1014,11 @@ class Pterm (Connection, MyThread):
                 self.sendkey (self.NEXT)
 
     def logout (self):
+        if self.tf:
+            raise RuntimeError ("logout not valid in script mode")
         while "Press  NEXT  to begin" not in str (self):
             self.sendkey (self.SHIFT + self.STOP)
-            self.waitarrow (4)
+            self.waitarrow (1)
             
 # Python Character Mapping Codec dd60 generated from './console.txt' with gencodec.py,
 # then edited a fair amount.

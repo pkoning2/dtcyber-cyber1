@@ -1,0 +1,1023 @@
+0015502 seq   8175 wc   2 select memory M0
+0015422 seq   8176 wc   2 load mode 15
+0000035 seq   8177 wc   2 load mode 7
+0000040 seq   8178 wc   2 high Y 0
+0000160 seq   8179 wc   2 low Y 16
+0000052 seq   8180 wc   2 high X 10
+0000100 seq   8181 wc   2 low X 0, coordinates 320 16
+0015514 seq   8182 wc   2 Forward writing mode
+0015516 seq   8183 wc   2 Normal size writing mode
+0015512 seq   8184 wc   2 Horizontal writing mode
+0015414 seq   8185 wc   2 Full screen erase
+0015422 seq   8186 wc   2 load mode 7
+0015521 seq   8187 wc   2 Start SSF
+0000100 seq   8188 wc   2 data byte 1: 0
+0000120 seq   8189 wc   2 data byte 2: 16
+0000100 seq   8190 wc   2 data 0002000 (0x0400)
+0000035 seq   8191 wc   2 load mode 7
+0000057 seq   8192 wc   2 high Y 15
+0000160 seq   8193 wc   2 low Y 16
+0000040 seq   8194 wc   2 high X 0
+0000100 seq   8195 wc   2 low X 0, coordinates 0 496
+0015532 seq   8196 wc   2 set margin 0
+0000035 seq   8197 wc   2 load mode 7
+0000056 seq   8198 wc   2 high Y 14
+0000160 seq   8199 wc   2 low Y 16
+0000041 seq   8200 wc   2 high X 1
+0000100 seq   8201 wc   2 low X 0, coordinates 32 464
+0015532 seq   8202 wc   2 set margin 32
+0015521 seq   8203 wc   2 Start SSF
+0000100 seq   8204 wc   2 data byte 1: 0
+0000120 seq   8205 wc   2 data byte 2: 16
+0000100 seq   8206 wc   2 data 0002000 (0x0400)
+0000035 seq   8207 wc   2 load mode 7
+0000057 seq   8208 wc   2 high Y 15
+0000142 seq   8209 wc   2 low Y 2
+0000114 seq   8210 wc   2 low X 12, coordinates 44 482
+0000144 seq   8211 wc   2 low Y 4
+0000112 seq   8212 wc   2 low X 10, coordinates 42 484
+0000102 seq   8213 wc   2 low X 2, coordinates 34 484
+0000142 seq   8214 wc   2 low Y 2
+0000100 seq   8215 wc   2 low X 0, coordinates 32 482
+0000056 seq   8216 wc   2 high Y 14
+0000176 seq   8217 wc   2 low Y 30
+0000100 seq   8218 wc   2 low X 0, coordinates 32 478
+0000174 seq   8219 wc   2 low Y 28
+0000102 seq   8220 wc   2 low X 2, coordinates 34 476
+0000112 seq   8221 wc   2 low X 10, coordinates 42 476
+0000172 seq   8222 wc   2 low Y 26
+0000114 seq   8223 wc   2 low X 12, coordinates 44 474
+0000166 seq   8224 wc   2 low Y 22
+0000114 seq   8225 wc   2 low X 12, coordinates 44 470
+0000164 seq   8226 wc   2 low Y 20
+0000112 seq   8227 wc   2 low X 10, coordinates 42 468
+0000102 seq   8228 wc   2 low X 2, coordinates 34 468
+0000166 seq   8229 wc   2 low Y 22
+0000100 seq   8230 wc   2 low X 0, coordinates 32 470
+0000035 seq   8231 wc   2 load mode 7
+0000164 seq   8232 wc   2 low Y 20
+0000132 seq   8233 wc   2 low X 26, coordinates 58 468
+0000126 seq   8234 wc   2 low X 22, coordinates 54 468
+0000166 seq   8235 wc   2 low Y 22
+0000124 seq   8236 wc   2 low X 20, coordinates 52 470
+0000057 seq   8237 wc   2 high Y 15
+0000144 seq   8238 wc   2 low Y 4
+0000124 seq   8239 wc   2 low X 20, coordinates 52 484
+0000056 seq   8240 wc   2 high Y 14
+0000176 seq   8241 wc   2 low Y 30
+0000124 seq   8242 wc   2 low X 20, coordinates 52 478
+0000120 seq   8243 wc   2 low X 16, coordinates 48 478
+0000132 seq   8244 wc   2 low X 26, coordinates 58 478
+0000035 seq   8245 wc   2 load mode 7
+0000176 seq   8246 wc   2 low Y 30
+0000042 seq   8247 wc   2 high X 2
+0000102 seq   8248 wc   2 low X 2, coordinates 66 478
+0000110 seq   8249 wc   2 low X 8, coordinates 72 478
+0000174 seq   8250 wc   2 low Y 28
+0000112 seq   8251 wc   2 low X 10, coordinates 74 476
+0000166 seq   8252 wc   2 low Y 22
+0000112 seq   8253 wc   2 low X 10, coordinates 74 470
+0000164 seq   8254 wc   2 low Y 20
+0000114 seq   8255 wc   2 low X 12, coordinates 76 468
+0000166 seq   8256 wc   2 low Y 22
+0000112 seq   8257 wc   2 low X 10, coordinates 74 470
+0000164 seq   8258 wc   2 low Y 20
+0000110 seq   8259 wc   2 low X 8, coordinates 72 468
+0000102 seq   8260 wc   2 low X 2, coordinates 66 468
+0000166 seq   8261 wc   2 low Y 22
+0000100 seq   8262 wc   2 low X 0, coordinates 64 470
+0000170 seq   8263 wc   2 low Y 24
+0000100 seq   8264 wc   2 low X 0, coordinates 64 472
+0000172 seq   8265 wc   2 low Y 26
+0000102 seq   8266 wc   2 low X 2, coordinates 66 474
+0000112 seq   8267 wc   2 low X 10, coordinates 74 474
+0000035 seq   8268 wc   2 load mode 7
+0000176 seq   8269 wc   2 low Y 30
+0000120 seq   8270 wc   2 low X 16, coordinates 80 478
+0000122 seq   8271 wc   2 low X 18, coordinates 82 478
+0000164 seq   8272 wc   2 low Y 20
+0000122 seq   8273 wc   2 low X 18, coordinates 82 468
+0000172 seq   8274 wc   2 low Y 26
+0000122 seq   8275 wc   2 low X 18, coordinates 82 474
+0000176 seq   8276 wc   2 low Y 30
+0000126 seq   8277 wc   2 low X 22, coordinates 86 478
+0000132 seq   8278 wc   2 low X 26, coordinates 90 478
+0000174 seq   8279 wc   2 low Y 28
+0000134 seq   8280 wc   2 low X 28, coordinates 92 476
+0000164 seq   8281 wc   2 low Y 20
+0000134 seq   8282 wc   2 low X 28, coordinates 92 468
+0000035 seq   8283 wc   2 load mode 7
+0000057 seq   8284 wc   2 high Y 15
+0000144 seq   8285 wc   2 low Y 4
+0000043 seq   8286 wc   2 high X 3
+0000114 seq   8287 wc   2 low X 12, coordinates 108 484
+0000056 seq   8288 wc   2 high Y 14
+0000170 seq   8289 wc   2 low Y 24
+0000114 seq   8290 wc   2 low X 12, coordinates 108 472
+0000164 seq   8291 wc   2 low Y 20
+0000110 seq   8292 wc   2 low X 8, coordinates 104 468
+0000104 seq   8293 wc   2 low X 4, coordinates 100 468
+0000170 seq   8294 wc   2 low Y 24
+0000100 seq   8295 wc   2 low X 0, coordinates 96 472
+0000172 seq   8296 wc   2 low Y 26
+0000100 seq   8297 wc   2 low X 0, coordinates 96 474
+0000176 seq   8298 wc   2 low Y 30
+0000104 seq   8299 wc   2 low X 4, coordinates 100 478
+0000110 seq   8300 wc   2 low X 8, coordinates 104 478
+0000172 seq   8301 wc   2 low Y 26
+0000114 seq   8302 wc   2 low X 12, coordinates 108 474
+0000164 seq   8303 wc   2 low Y 20
+0000114 seq   8304 wc   2 low X 12, coordinates 108 468
+0000035 seq   8305 wc   2 load mode 7
+0000176 seq   8306 wc   2 low Y 30
+0000122 seq   8307 wc   2 low X 18, coordinates 114 478
+0000130 seq   8308 wc   2 low X 24, coordinates 120 478
+0000174 seq   8309 wc   2 low Y 28
+0000132 seq   8310 wc   2 low X 26, coordinates 122 476
+0000166 seq   8311 wc   2 low Y 22
+0000132 seq   8312 wc   2 low X 26, coordinates 122 470
+0000164 seq   8313 wc   2 low Y 20
+0000134 seq   8314 wc   2 low X 28, coordinates 124 468
+0000166 seq   8315 wc   2 low Y 22
+0000132 seq   8316 wc   2 low X 26, coordinates 122 470
+0000164 seq   8317 wc   2 low Y 20
+0000130 seq   8318 wc   2 low X 24, coordinates 120 468
+0000122 seq   8319 wc   2 low X 18, coordinates 114 468
+0000166 seq   8320 wc   2 low Y 22
+0000120 seq   8321 wc   2 low X 16, coordinates 112 470
+0000170 seq   8322 wc   2 low Y 24
+0000120 seq   8323 wc   2 low X 16, coordinates 112 472
+0000172 seq   8324 wc   2 low Y 26
+0000122 seq   8325 wc   2 low X 18, coordinates 114 474
+0000132 seq   8326 wc   2 low X 26, coordinates 122 474
+0000035 seq   8327 wc   2 load mode 7
+0000176 seq   8328 wc   2 low Y 30
+0000044 seq   8329 wc   2 high X 4
+0000100 seq   8330 wc   2 low X 0, coordinates 128 478
+0000102 seq   8331 wc   2 low X 2, coordinates 130 478
+0000164 seq   8332 wc   2 low Y 20
+0000102 seq   8333 wc   2 low X 2, coordinates 130 468
+0000172 seq   8334 wc   2 low Y 26
+0000102 seq   8335 wc   2 low X 2, coordinates 130 474
+0000176 seq   8336 wc   2 low Y 30
+0000106 seq   8337 wc   2 low X 6, coordinates 134 478
+0000112 seq   8338 wc   2 low X 10, coordinates 138 478
+0000174 seq   8339 wc   2 low Y 28
+0000114 seq   8340 wc   2 low X 12, coordinates 140 476
+0000035 seq   8341 wc   2 load mode 7
+0000057 seq   8342 wc   2 high Y 15
+0000144 seq   8343 wc   2 low Y 4
+0000134 seq   8344 wc   2 low X 28, coordinates 156 484
+0000056 seq   8345 wc   2 high Y 14
+0000170 seq   8346 wc   2 low Y 24
+0000134 seq   8347 wc   2 low X 28, coordinates 156 472
+0000164 seq   8348 wc   2 low Y 20
+0000130 seq   8349 wc   2 low X 24, coordinates 152 468
+0000124 seq   8350 wc   2 low X 20, coordinates 148 468
+0000170 seq   8351 wc   2 low Y 24
+0000120 seq   8352 wc   2 low X 16, coordinates 144 472
+0000172 seq   8353 wc   2 low Y 26
+0000120 seq   8354 wc   2 low X 16, coordinates 144 474
+0000176 seq   8355 wc   2 low Y 30
+0000124 seq   8356 wc   2 low X 20, coordinates 148 478
+0000130 seq   8357 wc   2 low X 24, coordinates 152 478
+0000172 seq   8358 wc   2 low Y 26
+0000134 seq   8359 wc   2 low X 28, coordinates 156 474
+0000164 seq   8360 wc   2 low Y 20
+0000134 seq   8361 wc   2 low X 28, coordinates 156 468
+0000035 seq   8362 wc   2 load mode 7
+0000160 seq   8363 wc   2 low Y 16
+0000045 seq   8364 wc   2 high X 5
+0000120 seq   8365 wc   2 low X 16, coordinates 176 464
+0000035 seq   8366 wc   2 load mode 7
+0000057 seq   8367 wc   2 high Y 15
+0000142 seq   8368 wc   2 low Y 2
+0000134 seq   8369 wc   2 low X 28, coordinates 188 482
+0000144 seq   8370 wc   2 low Y 4
+0000132 seq   8371 wc   2 low X 26, coordinates 186 484
+0000124 seq   8372 wc   2 low X 20, coordinates 180 484
+0000140 seq   8373 wc   2 low Y 0
+0000120 seq   8374 wc   2 low X 16, coordinates 176 480
+0000056 seq   8375 wc   2 high Y 14
+0000170 seq   8376 wc   2 low Y 24
+0000120 seq   8377 wc   2 low X 16, coordinates 176 472
+0000164 seq   8378 wc   2 low Y 20
+0000124 seq   8379 wc   2 low X 20, coordinates 180 468
+0000132 seq   8380 wc   2 low X 26, coordinates 186 468
+0000166 seq   8381 wc   2 low Y 22
+0000134 seq   8382 wc   2 low X 28, coordinates 188 470
+0000035 seq   8383 wc   2 load mode 7
+0000057 seq   8384 wc   2 high Y 15
+0000144 seq   8385 wc   2 low Y 4
+0000046 seq   8386 wc   2 high X 6
+0000100 seq   8387 wc   2 low X 0, coordinates 192 484
+0000102 seq   8388 wc   2 low X 2, coordinates 194 484
+0000056 seq   8389 wc   2 high Y 14
+0000164 seq   8390 wc   2 low Y 20
+0000102 seq   8391 wc   2 low X 2, coordinates 194 468
+0000172 seq   8392 wc   2 low Y 26
+0000102 seq   8393 wc   2 low X 2, coordinates 194 474
+0000176 seq   8394 wc   2 low Y 30
+0000106 seq   8395 wc   2 low X 6, coordinates 198 478
+0000112 seq   8396 wc   2 low X 10, coordinates 202 478
+0000174 seq   8397 wc   2 low Y 28
+0000114 seq   8398 wc   2 low X 12, coordinates 204 476
+0000164 seq   8399 wc   2 low Y 20
+0000114 seq   8400 wc   2 low X 12, coordinates 204 468
+0000035 seq   8401 wc   2 load mode 7
+0000176 seq   8402 wc   2 low Y 30
+0000122 seq   8403 wc   2 low X 18, coordinates 210 478
+0000130 seq   8404 wc   2 low X 24, coordinates 216 478
+0000174 seq   8405 wc   2 low Y 28
+0000132 seq   8406 wc   2 low X 26, coordinates 218 476
+0000166 seq   8407 wc   2 low Y 22
+0000132 seq   8408 wc   2 low X 26, coordinates 218 470
+0000164 seq   8409 wc   2 low Y 20
+0000134 seq   8410 wc   2 low X 28, coordinates 220 468
+0000166 seq   8411 wc   2 low Y 22
+0000132 seq   8412 wc   2 low X 26, coordinates 218 470
+0000164 seq   8413 wc   2 low Y 20
+0000130 seq   8414 wc   2 low X 24, coordinates 216 468
+0000122 seq   8415 wc   2 low X 18, coordinates 210 468
+0000166 seq   8416 wc   2 low Y 22
+0000120 seq   8417 wc   2 low X 16, coordinates 208 470
+0000170 seq   8418 wc   2 low Y 24
+0000120 seq   8419 wc   2 low X 16, coordinates 208 472
+0000172 seq   8420 wc   2 low Y 26
+0000122 seq   8421 wc   2 low X 18, coordinates 210 474
+0000132 seq   8422 wc   2 low X 26, coordinates 218 474
+0000035 seq   8423 wc   2 load mode 7
+0000176 seq   8424 wc   2 low Y 30
+0000047 seq   8425 wc   2 high X 7
+0000100 seq   8426 wc   2 low X 0, coordinates 224 478
+0000102 seq   8427 wc   2 low X 2, coordinates 226 478
+0000164 seq   8428 wc   2 low Y 20
+0000102 seq   8429 wc   2 low X 2, coordinates 226 468
+0000172 seq   8430 wc   2 low Y 26
+0000102 seq   8431 wc   2 low X 2, coordinates 226 474
+0000176 seq   8432 wc   2 low Y 30
+0000106 seq   8433 wc   2 low X 6, coordinates 230 478
+0000112 seq   8434 wc   2 low X 10, coordinates 234 478
+0000174 seq   8435 wc   2 low Y 28
+0000114 seq   8436 wc   2 low X 12, coordinates 236 476
+0000035 seq   8437 wc   2 load mode 7
+0000176 seq   8438 wc   2 low Y 30
+0000122 seq   8439 wc   2 low X 18, coordinates 242 478
+0000130 seq   8440 wc   2 low X 24, coordinates 248 478
+0000174 seq   8441 wc   2 low Y 28
+0000132 seq   8442 wc   2 low X 26, coordinates 250 476
+0000166 seq   8443 wc   2 low Y 22
+0000132 seq   8444 wc   2 low X 26, coordinates 250 470
+0000164 seq   8445 wc   2 low Y 20
+0000134 seq   8446 wc   2 low X 28, coordinates 252 468
+0000166 seq   8447 wc   2 low Y 22
+0000132 seq   8448 wc   2 low X 26, coordinates 250 470
+0000164 seq   8449 wc   2 low Y 20
+0000130 seq   8450 wc   2 low X 24, coordinates 248 468
+0000122 seq   8451 wc   2 low X 18, coordinates 242 468
+0000166 seq   8452 wc   2 low Y 22
+0000120 seq   8453 wc   2 low X 16, coordinates 240 470
+0000170 seq   8454 wc   2 low Y 24
+0000120 seq   8455 wc   2 low X 16, coordinates 240 472
+0000172 seq   8456 wc   2 low Y 26
+0000122 seq   8457 wc   2 low X 18, coordinates 242 474
+0000132 seq   8458 wc   2 low X 26, coordinates 250 474
+0000035 seq   8459 wc   2 load mode 7
+0000174 seq   8460 wc   2 low Y 28
+0000050 seq   8461 wc   2 high X 8
+0000114 seq   8462 wc   2 low X 12, coordinates 268 476
+0000176 seq   8463 wc   2 low Y 30
+0000112 seq   8464 wc   2 low X 10, coordinates 266 478
+0000104 seq   8465 wc   2 low X 4, coordinates 260 478
+0000172 seq   8466 wc   2 low Y 26
+0000100 seq   8467 wc   2 low X 0, coordinates 256 474
+0000170 seq   8468 wc   2 low Y 24
+0000100 seq   8469 wc   2 low X 0, coordinates 256 472
+0000164 seq   8470 wc   2 low Y 20
+0000104 seq   8471 wc   2 low X 4, coordinates 260 468
+0000112 seq   8472 wc   2 low X 10, coordinates 266 468
+0000166 seq   8473 wc   2 low Y 22
+0000114 seq   8474 wc   2 low X 12, coordinates 268 470
+0000035 seq   8475 wc   2 load mode 7
+0000164 seq   8476 wc   2 low Y 20
+0000132 seq   8477 wc   2 low X 26, coordinates 282 468
+0000126 seq   8478 wc   2 low X 22, coordinates 278 468
+0000166 seq   8479 wc   2 low Y 22
+0000124 seq   8480 wc   2 low X 20, coordinates 276 470
+0000057 seq   8481 wc   2 high Y 15
+0000144 seq   8482 wc   2 low Y 4
+0000124 seq   8483 wc   2 low X 20, coordinates 276 484
+0000056 seq   8484 wc   2 high Y 14
+0000176 seq   8485 wc   2 low Y 30
+0000124 seq   8486 wc   2 low X 20, coordinates 276 478
+0000120 seq   8487 wc   2 low X 16, coordinates 272 478
+0000132 seq   8488 wc   2 low X 26, coordinates 282 478
+0000035 seq   8489 wc   2 load mode 7
+0000172 seq   8490 wc   2 low Y 26
+0000051 seq   8491 wc   2 high X 9
+0000100 seq   8492 wc   2 low X 0, coordinates 288 474
+0000114 seq   8493 wc   2 low X 12, coordinates 300 474
+0000174 seq   8494 wc   2 low Y 28
+0000114 seq   8495 wc   2 low X 12, coordinates 300 476
+0000176 seq   8496 wc   2 low Y 30
+0000112 seq   8497 wc   2 low X 10, coordinates 298 478
+0000104 seq   8498 wc   2 low X 4, coordinates 292 478
+0000172 seq   8499 wc   2 low Y 26
+0000100 seq   8500 wc   2 low X 0, coordinates 288 474
+0000170 seq   8501 wc   2 low Y 24
+0000100 seq   8502 wc   2 low X 0, coordinates 288 472
+0000164 seq   8503 wc   2 low Y 20
+0000104 seq   8504 wc   2 low X 4, coordinates 292 468
+0000114 seq   8505 wc   2 low X 12, coordinates 300 468
+0000035 seq   8506 wc   2 load mode 7
+0000176 seq   8507 wc   2 low Y 30
+0000120 seq   8508 wc   2 low X 16, coordinates 304 478
+0000122 seq   8509 wc   2 low X 18, coordinates 306 478
+0000164 seq   8510 wc   2 low Y 20
+0000122 seq   8511 wc   2 low X 18, coordinates 306 468
+0000172 seq   8512 wc   2 low Y 26
+0000122 seq   8513 wc   2 low X 18, coordinates 306 474
+0000176 seq   8514 wc   2 low Y 30
+0000126 seq   8515 wc   2 low X 22, coordinates 310 478
+0000132 seq   8516 wc   2 low X 26, coordinates 314 478
+0000174 seq   8517 wc   2 low Y 28
+0000134 seq   8518 wc   2 low X 28, coordinates 316 476
+0000035 seq   8519 wc   2 load mode 7
+0000160 seq   8520 wc   2 low Y 16
+0000052 seq   8521 wc   2 high X 10
+0000100 seq   8522 wc   2 low X 0, coordinates 320 464
+0000035 seq   8523 wc   2 load mode 7
+0000057 seq   8524 wc   2 high Y 15
+0000142 seq   8525 wc   2 low Y 2
+0000134 seq   8526 wc   2 low X 28, coordinates 348 482
+0000144 seq   8527 wc   2 low Y 4
+0000132 seq   8528 wc   2 low X 26, coordinates 346 484
+0000122 seq   8529 wc   2 low X 18, coordinates 338 484
+0000142 seq   8530 wc   2 low Y 2
+0000120 seq   8531 wc   2 low X 16, coordinates 336 482
+0000056 seq   8532 wc   2 high Y 14
+0000176 seq   8533 wc   2 low Y 30
+0000120 seq   8534 wc   2 low X 16, coordinates 336 478
+0000174 seq   8535 wc   2 low Y 28
+0000122 seq   8536 wc   2 low X 18, coordinates 338 476
+0000132 seq   8537 wc   2 low X 26, coordinates 346 476
+0000172 seq   8538 wc   2 low Y 26
+0000134 seq   8539 wc   2 low X 28, coordinates 348 474
+0000166 seq   8540 wc   2 low Y 22
+0000134 seq   8541 wc   2 low X 28, coordinates 348 470
+0000164 seq   8542 wc   2 low Y 20
+0000132 seq   8543 wc   2 low X 26, coordinates 346 468
+0000122 seq   8544 wc   2 low X 18, coordinates 338 468
+0000166 seq   8545 wc   2 low Y 22
+0000120 seq   8546 wc   2 low X 16, coordinates 336 470
+0000035 seq   8547 wc   2 load mode 7
+0000172 seq   8548 wc   2 low Y 26
+0000053 seq   8549 wc   2 high X 11
+0000100 seq   8550 wc   2 low X 0, coordinates 352 474
+0000114 seq   8551 wc   2 low X 12, coordinates 364 474
+0000174 seq   8552 wc   2 low Y 28
+0000114 seq   8553 wc   2 low X 12, coordinates 364 476
+0000176 seq   8554 wc   2 low Y 30
+0000112 seq   8555 wc   2 low X 10, coordinates 362 478
+0000104 seq   8556 wc   2 low X 4, coordinates 356 478
+0000172 seq   8557 wc   2 low Y 26
+0000100 seq   8558 wc   2 low X 0, coordinates 352 474
+0000170 seq   8559 wc   2 low Y 24
+0000100 seq   8560 wc   2 low X 0, coordinates 352 472
+0000164 seq   8561 wc   2 low Y 20
+0000104 seq   8562 wc   2 low X 4, coordinates 356 468
+0000114 seq   8563 wc   2 low X 12, coordinates 364 468
+0000035 seq   8564 wc   2 load mode 7
+0000132 seq   8565 wc   2 low X 26, coordinates 378 468
+0000126 seq   8566 wc   2 low X 22, coordinates 374 468
+0000166 seq   8567 wc   2 low Y 22
+0000124 seq   8568 wc   2 low X 20, coordinates 372 470
+0000057 seq   8569 wc   2 high Y 15
+0000144 seq   8570 wc   2 low Y 4
+0000124 seq   8571 wc   2 low X 20, coordinates 372 484
+0000056 seq   8572 wc   2 high Y 14
+0000176 seq   8573 wc   2 low Y 30
+0000124 seq   8574 wc   2 low X 20, coordinates 372 478
+0000120 seq   8575 wc   2 low X 16, coordinates 368 478
+0000132 seq   8576 wc   2 low X 26, coordinates 378 478
+0000035 seq   8577 wc   2 load mode 7
+0000160 seq   8578 wc   2 low Y 16
+0000054 seq   8579 wc   2 high X 12
+0000100 seq   8580 wc   2 low X 0, coordinates 384 464
+0015521 seq   8581 wc   2 Start SSF
+0000100 seq   8582 wc   2 data byte 1: 0
+0000120 seq   8583 wc   2 data byte 2: 16
+0000100 seq   8584 wc   2 data 0002000 (0x0400)
+0000035 seq   8585 wc   2 load mode 7
+0000054 seq   8586 wc   2 high Y 12
+0000140 seq   8587 wc   2 low Y 0
+0000046 seq   8588 wc   2 high X 6
+0000100 seq   8589 wc   2 low X 0, coordinates 192 384
+0015532 seq   8590 wc   2 set margin 192
+0000037 seq   8591 wc   2 load mode 15
+0015422 seq   8592 wc   2 load mode 15
+0000040 seq   8593 wc   2 char 040 ( )
+0015532 seq   8594 wc   2 set margin 200
+0000041 seq   8595 wc   2 char 041 (!)
+0015532 seq   8596 wc   2 set margin 208
+0000042 seq   8597 wc   2 char 042 (")
+0015532 seq   8598 wc   2 set margin 216
+0000043 seq   8599 wc   2 char 043 (#)
+0015532 seq   8600 wc   2 set margin 224
+0000044 seq   8601 wc   2 char 044 ($)
+0015532 seq   8602 wc   2 set margin 232
+0000045 seq   8603 wc   2 char 045 (%)
+0015532 seq   8604 wc   2 set margin 240
+0000046 seq   8605 wc   2 char 046 (&)
+0015532 seq   8606 wc   2 set margin 248
+0000047 seq   8607 wc   2 char 047 (')
+0015532 seq   8608 wc   2 set margin 256
+0000050 seq   8609 wc   2 char 050 (()
+0015532 seq   8610 wc   2 set margin 264
+0000051 seq   8611 wc   2 char 051 ())
+0015532 seq   8612 wc   2 set margin 272
+0000052 seq   8613 wc   2 char 052 (*)
+0015532 seq   8614 wc   2 set margin 280
+0000053 seq   8615 wc   2 char 053 (+)
+0015532 seq   8616 wc   2 set margin 288
+0000054 seq   8617 wc   2 char 054 (,)
+0015532 seq   8618 wc   2 set margin 296
+0000055 seq   8619 wc   2 char 055 (-)
+0015532 seq   8620 wc   2 set margin 304
+0000056 seq   8621 wc   2 char 056 (.)
+0015532 seq   8622 wc   2 set margin 312
+0000057 seq   8623 wc   2 char 057 (/)
+0000035 seq   8624 wc   2 load mode 7
+0000053 seq   8625 wc   2 high Y 11
+0000160 seq   8626 wc   2 low Y 16
+0000100 seq   8627 wc   2 low X 0, coordinates 192 368
+0015532 seq   8628 wc   2 set margin 192
+0000037 seq   8629 wc   2 load mode 15
+0015422 seq   8630 wc   2 load mode 15
+0000060 seq   8631 wc   2 char 060 (0)
+0015532 seq   8632 wc   2 set margin 200
+0000061 seq   8633 wc   2 char 061 (1)
+0015532 seq   8634 wc   2 set margin 208
+0000062 seq   8635 wc   2 char 062 (2)
+0015532 seq   8636 wc   2 set margin 216
+0000063 seq   8637 wc   2 char 063 (3)
+0015532 seq   8638 wc   2 set margin 224
+0000064 seq   8639 wc   2 char 064 (4)
+0015532 seq   8640 wc   2 set margin 232
+0000065 seq   8641 wc   2 char 065 (5)
+0015532 seq   8642 wc   2 set margin 240
+0000066 seq   8643 wc   2 char 066 (6)
+0015532 seq   8644 wc   2 set margin 248
+0000067 seq   8645 wc   2 char 067 (7)
+0015532 seq   8646 wc   2 set margin 256
+0000070 seq   8647 wc   2 char 070 (8)
+0015532 seq   8648 wc   2 set margin 264
+0000071 seq   8649 wc   2 char 071 (9)
+0015532 seq   8650 wc   2 set margin 272
+0000072 seq   8651 wc   2 char 072 (:)
+0015532 seq   8652 wc   2 set margin 280
+0000073 seq   8653 wc   2 char 073 (;)
+0015532 seq   8654 wc   2 set margin 288
+0000074 seq   8655 wc   2 char 074 (<)
+0015532 seq   8656 wc   2 set margin 296
+0000075 seq   8657 wc   2 char 075 (=)
+0015532 seq   8658 wc   2 set margin 304
+0000076 seq   8659 wc   2 char 076 (>)
+0015532 seq   8660 wc   2 set margin 312
+0000077 seq   8661 wc   2 char 077 (?)
+0000035 seq   8662 wc   2 load mode 7
+0000140 seq   8663 wc   2 low Y 0
+0000100 seq   8664 wc   2 low X 0, coordinates 192 352
+0015532 seq   8665 wc   2 set margin 192
+0000037 seq   8666 wc   2 load mode 15
+0015422 seq   8667 wc   2 load mode 15
+0000100 seq   8668 wc   2 char 100 (@)
+0015532 seq   8669 wc   2 set margin 200
+0000101 seq   8670 wc   2 char 101 (A)
+0015532 seq   8671 wc   2 set margin 208
+0000102 seq   8672 wc   2 char 102 (B)
+0015532 seq   8673 wc   2 set margin 216
+0000103 seq   8674 wc   2 char 103 (C)
+0015532 seq   8675 wc   2 set margin 224
+0000104 seq   8676 wc   2 char 104 (D)
+0015532 seq   8677 wc   2 set margin 232
+0000105 seq   8678 wc   2 char 105 (E)
+0015532 seq   8679 wc   2 set margin 240
+0000106 seq   8680 wc   2 char 106 (F)
+0015532 seq   8681 wc   2 set margin 248
+0000107 seq   8682 wc   2 char 107 (G)
+0015532 seq   8683 wc   2 set margin 256
+0000110 seq   8684 wc   2 char 110 (H)
+0015532 seq   8685 wc   2 set margin 264
+0000111 seq   8686 wc   2 char 111 (I)
+0015532 seq   8687 wc   2 set margin 272
+0000112 seq   8688 wc   2 char 112 (J)
+0015532 seq   8689 wc   2 set margin 280
+0000113 seq   8690 wc   2 char 113 (K)
+0015532 seq   8691 wc   2 set margin 288
+0000114 seq   8692 wc   2 char 114 (L)
+0015532 seq   8693 wc   2 set margin 296
+0000115 seq   8694 wc   2 char 115 (M)
+0015532 seq   8695 wc   2 set margin 304
+0000116 seq   8696 wc   2 char 116 (N)
+0015532 seq   8697 wc   2 set margin 312
+0000117 seq   8698 wc   2 char 117 (O)
+0000035 seq   8699 wc   2 load mode 7
+0000052 seq   8700 wc   2 high Y 10
+0000160 seq   8701 wc   2 low Y 16
+0000100 seq   8702 wc   2 low X 0, coordinates 192 336
+0015532 seq   8703 wc   2 set margin 192
+0000037 seq   8704 wc   2 load mode 15
+0015422 seq   8705 wc   2 load mode 15
+0000120 seq   8706 wc   2 char 120 (P)
+0015532 seq   8707 wc   2 set margin 200
+0000121 seq   8708 wc   2 char 121 (Q)
+0015532 seq   8709 wc   2 set margin 208
+0000122 seq   8710 wc   2 char 122 (R)
+0015532 seq   8711 wc   2 set margin 216
+0000123 seq   8712 wc   2 char 123 (S)
+0015532 seq   8713 wc   2 set margin 224
+0000124 seq   8714 wc   2 char 124 (T)
+0015532 seq   8715 wc   2 set margin 232
+0000125 seq   8716 wc   2 char 125 (U)
+0015532 seq   8717 wc   2 set margin 240
+0000126 seq   8718 wc   2 char 126 (V)
+0015532 seq   8719 wc   2 set margin 248
+0000127 seq   8720 wc   2 char 127 (W)
+0015532 seq   8721 wc   2 set margin 256
+0000130 seq   8722 wc   2 char 130 (X)
+0015532 seq   8723 wc   2 set margin 264
+0000131 seq   8724 wc   2 char 131 (Y)
+0015532 seq   8725 wc   2 set margin 272
+0000132 seq   8726 wc   2 char 132 (Z)
+0015532 seq   8727 wc   2 set margin 280
+0000133 seq   8728 wc   2 char 133 ([)
+0015532 seq   8729 wc   2 set margin 288
+0000134 seq   8730 wc   2 char 134 (\)
+0015532 seq   8731 wc   2 set margin 296
+0000135 seq   8732 wc   2 char 135 (])
+0015532 seq   8733 wc   2 set margin 304
+0000136 seq   8734 wc   2 char 136 (^)
+0015532 seq   8735 wc   2 set margin 312
+0000137 seq   8736 wc   2 char 137 (_)
+0000035 seq   8737 wc   2 load mode 7
+0000140 seq   8738 wc   2 low Y 0
+0000100 seq   8739 wc   2 low X 0, coordinates 192 320
+0015532 seq   8740 wc   2 set margin 192
+0000037 seq   8741 wc   2 load mode 15
+0015422 seq   8742 wc   2 load mode 15
+0015503 seq   8743 wc   2 select memory M1
+0000040 seq   8744 wc   2 char 040 ( )
+0015532 seq   8745 wc   2 set margin 200
+0000041 seq   8746 wc   2 char 041 (!)
+0015532 seq   8747 wc   2 set margin 208
+0000042 seq   8748 wc   2 char 042 (")
+0015532 seq   8749 wc   2 set margin 216
+0000043 seq   8750 wc   2 char 043 (#)
+0015532 seq   8751 wc   2 set margin 224
+0000044 seq   8752 wc   2 char 044 ($)
+0015532 seq   8753 wc   2 set margin 232
+0000045 seq   8754 wc   2 char 045 (%)
+0015532 seq   8755 wc   2 set margin 240
+0000046 seq   8756 wc   2 char 046 (&)
+0015532 seq   8757 wc   2 set margin 248
+0000047 seq   8758 wc   2 char 047 (')
+0015532 seq   8759 wc   2 set margin 256
+0000050 seq   8760 wc   2 char 050 (()
+0015532 seq   8761 wc   2 set margin 264
+0000051 seq   8762 wc   2 char 051 ())
+0015532 seq   8763 wc   2 set margin 272
+0000052 seq   8764 wc   2 char 052 (*)
+0015532 seq   8765 wc   2 set margin 280
+0000053 seq   8766 wc   2 char 053 (+)
+0015532 seq   8767 wc   2 set margin 288
+0000054 seq   8768 wc   2 char 054 (,)
+0015532 seq   8769 wc   2 set margin 296
+0000055 seq   8770 wc   2 char 055 (-)
+0015532 seq   8771 wc   2 set margin 304
+0000056 seq   8772 wc   2 char 056 (.)
+0015532 seq   8773 wc   2 set margin 312
+0000057 seq   8774 wc   2 char 057 (/)
+0000035 seq   8775 wc   2 load mode 7
+0000051 seq   8776 wc   2 high Y 9
+0000160 seq   8777 wc   2 low Y 16
+0000100 seq   8778 wc   2 low X 0, coordinates 192 304
+0015532 seq   8779 wc   2 set margin 192
+0000037 seq   8780 wc   2 load mode 15
+0015422 seq   8781 wc   2 load mode 15
+0000060 seq   8782 wc   2 char 060 (0)
+0015532 seq   8783 wc   2 set margin 200
+0000061 seq   8784 wc   2 char 061 (1)
+0015532 seq   8785 wc   2 set margin 208
+0000062 seq   8786 wc   2 char 062 (2)
+0015532 seq   8787 wc   2 set margin 216
+0000063 seq   8788 wc   2 char 063 (3)
+0015532 seq   8789 wc   2 set margin 224
+0000064 seq   8790 wc   2 char 064 (4)
+0015532 seq   8791 wc   2 set margin 232
+0000065 seq   8792 wc   2 char 065 (5)
+0015532 seq   8793 wc   2 set margin 240
+0000066 seq   8794 wc   2 char 066 (6)
+0015532 seq   8795 wc   2 set margin 248
+0000067 seq   8796 wc   2 char 067 (7)
+0015532 seq   8797 wc   2 set margin 256
+0000070 seq   8798 wc   2 char 070 (8)
+0015532 seq   8799 wc   2 set margin 264
+0000071 seq   8800 wc   2 char 071 (9)
+0015532 seq   8801 wc   2 set margin 272
+0000072 seq   8802 wc   2 char 072 (:)
+0015532 seq   8803 wc   2 set margin 280
+0000073 seq   8804 wc   2 char 073 (;)
+0015532 seq   8805 wc   2 set margin 288
+0000074 seq   8806 wc   2 char 074 (<)
+0015532 seq   8807 wc   2 set margin 296
+0000075 seq   8808 wc   2 char 075 (=)
+0015532 seq   8809 wc   2 set margin 304
+0000076 seq   8810 wc   2 char 076 (>)
+0015532 seq   8811 wc   2 set margin 312
+0000077 seq   8812 wc   2 char 077 (?)
+0000035 seq   8813 wc   2 load mode 7
+0000140 seq   8814 wc   2 low Y 0
+0000100 seq   8815 wc   2 low X 0, coordinates 192 288
+0015532 seq   8816 wc   2 set margin 192
+0000037 seq   8817 wc   2 load mode 15
+0015422 seq   8818 wc   2 load mode 15
+0000100 seq   8819 wc   2 char 100 (@)
+0015532 seq   8820 wc   2 set margin 200
+0000101 seq   8821 wc   2 char 101 (A)
+0015532 seq   8822 wc   2 set margin 208
+0000102 seq   8823 wc   2 char 102 (B)
+0015532 seq   8824 wc   2 set margin 216
+0000103 seq   8825 wc   2 char 103 (C)
+0015532 seq   8826 wc   2 set margin 224
+0000104 seq   8827 wc   2 char 104 (D)
+0015532 seq   8828 wc   2 set margin 232
+0000105 seq   8829 wc   2 char 105 (E)
+0015532 seq   8830 wc   2 set margin 240
+0000106 seq   8831 wc   2 char 106 (F)
+0015532 seq   8832 wc   2 set margin 248
+0000107 seq   8833 wc   2 char 107 (G)
+0015532 seq   8834 wc   2 set margin 256
+0000110 seq   8835 wc   2 char 110 (H)
+0015532 seq   8836 wc   2 set margin 264
+0000111 seq   8837 wc   2 char 111 (I)
+0015532 seq   8838 wc   2 set margin 272
+0000112 seq   8839 wc   2 char 112 (J)
+0015532 seq   8840 wc   2 set margin 280
+0000113 seq   8841 wc   2 char 113 (K)
+0015532 seq   8842 wc   2 set margin 280
+0000114 seq   8843 wc   2 char 114 (L)
+0015532 seq   8844 wc   2 set margin 280
+0000115 seq   8845 wc   2 char 115 (M)
+0015532 seq   8846 wc   2 set margin 280
+0000116 seq   8847 wc   2 char 116 (N)
+0015532 seq   8848 wc   2 set margin 280
+0000117 seq   8849 wc   2 char 117 (O)
+0000035 seq   8850 wc   2 load mode 7
+0000050 seq   8851 wc   2 high Y 8
+0000160 seq   8852 wc   2 low Y 16
+0000100 seq   8853 wc   2 low X 0, coordinates 192 272
+0015532 seq   8854 wc   2 set margin 192
+0000037 seq   8855 wc   2 load mode 15
+0015422 seq   8856 wc   2 load mode 15
+0000120 seq   8857 wc   2 char 120 (P)
+0015532 seq   8858 wc   2 set margin 192
+0000121 seq   8859 wc   2 char 121 (Q)
+0015532 seq   8860 wc   2 set margin 192
+0000122 seq   8861 wc   2 char 122 (R)
+0015532 seq   8862 wc   2 set margin 192
+0000123 seq   8863 wc   2 char 123 (S)
+0015532 seq   8864 wc   2 set margin 192
+0000124 seq   8865 wc   2 char 124 (T)
+0015532 seq   8866 wc   2 set margin 192
+0000125 seq   8867 wc   2 char 125 (U)
+0015532 seq   8868 wc   2 set margin 192
+0000126 seq   8869 wc   2 char 126 (V)
+0015532 seq   8870 wc   2 set margin 192
+0000127 seq   8871 wc   2 char 127 (W)
+0015532 seq   8872 wc   2 set margin 192
+0000130 seq   8873 wc   2 char 130 (X)
+0015532 seq   8874 wc   2 set margin 192
+0000131 seq   8875 wc   2 char 131 (Y)
+0015532 seq   8876 wc   2 set margin 192
+0000132 seq   8877 wc   2 char 132 (Z)
+0015532 seq   8878 wc   2 set margin 192
+0000133 seq   8879 wc   2 char 133 ([)
+0015532 seq   8880 wc   2 set margin 192
+0000134 seq   8881 wc   2 char 134 (\)
+0015532 seq   8882 wc   2 set margin 192
+0000135 seq   8883 wc   2 char 135 (])
+0015532 seq   8884 wc   2 set margin 192
+0000136 seq   8885 wc   2 char 136 (^)
+0015532 seq   8886 wc   2 set margin 192
+0000137 seq   8887 wc   2 char 137 (_)
+0000035 seq   8888 wc   2 load mode 7
+0000054 seq   8889 wc   2 high Y 12
+0000160 seq   8890 wc   2 low Y 16
+0000045 seq   8891 wc   2 high X 5
+0000100 seq   8892 wc   2 low X 0, coordinates 160 400
+0015532 seq   8893 wc   2 set margin 160
+0000037 seq   8894 wc   2 load mode 15
+0015422 seq   8895 wc   2 load mode 15
+0015502 seq   8896 wc   2 select memory M0
+0000061 seq   8897 wc   2 char 061 (1)
+0000062 seq   8898 wc   2 char 062 (2)
+0000070 seq   8899 wc   2 char 070 (8)
+0000040 seq   8900 wc   2 char 040 ( )
+0000040 seq   8901 wc   2 char 040 ( )
+0000040 seq   8902 wc   2 char 040 ( )
+0000040 seq   8903 wc   2 char 040 ( )
+0000040 seq   8904 wc   2 char 040 ( )
+0000040 seq   8905 wc   2 char 040 ( )
+0000040 seq   8906 wc   2 char 040 ( )
+0000040 seq   8907 wc   2 char 040 ( )
+0000040 seq   8908 wc   2 char 040 ( )
+0000040 seq   8909 wc   2 char 040 ( )
+0000040 seq   8910 wc   2 char 040 ( )
+0000040 seq   8911 wc   2 char 040 ( )
+0000040 seq   8912 wc   2 char 040 ( )
+0000040 seq   8913 wc   2 char 040 ( )
+0000040 seq   8914 wc   2 char 040 ( )
+0000040 seq   8915 wc   2 char 040 ( )
+0000040 seq   8916 wc   2 char 040 ( )
+0000040 seq   8917 wc   2 char 040 ( )
+0000040 seq   8918 wc   2 char 040 ( )
+0000061 seq   8919 wc   2 char 061 (1)
+0000064 seq   8920 wc   2 char 064 (4)
+0000062 seq   8921 wc   2 char 062 (2)
+0000035 seq   8922 wc   2 load mode 7
+0000050 seq   8923 wc   2 high Y 8
+0000140 seq   8924 wc   2 low Y 0
+0000100 seq   8925 wc   2 low X 0, coordinates 160 256
+0015532 seq   8926 wc   2 set margin 160
+0000037 seq   8927 wc   2 load mode 15
+0015422 seq   8928 wc   2 load mode 15
+0000062 seq   8929 wc   2 char 062 (2)
+0000064 seq   8930 wc   2 char 064 (4)
+0000060 seq   8931 wc   2 char 060 (0)
+0000040 seq   8932 wc   2 char 040 ( )
+0000040 seq   8933 wc   2 char 040 ( )
+0000040 seq   8934 wc   2 char 040 ( )
+0000040 seq   8935 wc   2 char 040 ( )
+0000040 seq   8936 wc   2 char 040 ( )
+0000040 seq   8937 wc   2 char 040 ( )
+0000040 seq   8938 wc   2 char 040 ( )
+0000040 seq   8939 wc   2 char 040 ( )
+0000040 seq   8940 wc   2 char 040 ( )
+0000040 seq   8941 wc   2 char 040 ( )
+0000040 seq   8942 wc   2 char 040 ( )
+0000040 seq   8943 wc   2 char 040 ( )
+0000040 seq   8944 wc   2 char 040 ( )
+0000040 seq   8945 wc   2 char 040 ( )
+0000040 seq   8946 wc   2 char 040 ( )
+0000040 seq   8947 wc   2 char 040 ( )
+0000040 seq   8948 wc   2 char 040 ( )
+0000040 seq   8949 wc   2 char 040 ( )
+0000040 seq   8950 wc   2 char 040 ( )
+0000062 seq   8951 wc   2 char 062 (2)
+0000065 seq   8952 wc   2 char 065 (5)
+0000065 seq   8953 wc   2 char 065 (5)
+0000035 seq   8954 wc   2 load mode 7
+0000044 seq   8955 wc   2 high Y 4
+0000140 seq   8956 wc   2 low Y 0
+0000041 seq   8957 wc   2 high X 1
+0000120 seq   8958 wc   2 low X 16, coordinates 48 128
+0015532 seq   8959 wc   2 set margin 48
+0000037 seq   8960 wc   2 load mode 15
+0015422 seq   8961 wc   2 load mode 15
+0000101 seq   8962 wc   2 char 101 (A)
+0000142 seq   8963 wc   2 char 142 (b)
+0000157 seq   8964 wc   2 char 157 (o)
+0000166 seq   8965 wc   2 char 166 (v)
+0000145 seq   8966 wc   2 char 145 (e)
+0000040 seq   8967 wc   2 char 040 ( )
+0000151 seq   8968 wc   2 char 151 (i)
+0000163 seq   8969 wc   2 char 163 (s)
+0000040 seq   8970 wc   2 char 040 ( )
+0000160 seq   8971 wc   2 char 160 (p)
+0000154 seq   8972 wc   2 char 154 (l)
+0000157 seq   8973 wc   2 char 157 (o)
+0000164 seq   8974 wc   2 char 164 (t)
+0000164 seq   8975 wc   2 char 164 (t)
+0000145 seq   8976 wc   2 char 145 (e)
+0000144 seq   8977 wc   2 char 144 (d)
+0000040 seq   8978 wc   2 char 040 ( )
+0000141 seq   8979 wc   2 char 141 (a)
+0000154 seq   8980 wc   2 char 154 (l)
+0000154 seq   8981 wc   2 char 154 (l)
+0000040 seq   8982 wc   2 char 040 ( )
+0000164 seq   8983 wc   2 char 164 (t)
+0000150 seq   8984 wc   2 char 150 (h)
+0000145 seq   8985 wc   2 char 145 (e)
+0000040 seq   8986 wc   2 char 040 ( )
+0000163 seq   8987 wc   2 char 163 (s)
+0000164 seq   8988 wc   2 char 164 (t)
+0000141 seq   8989 wc   2 char 141 (a)
+0000156 seq   8990 wc   2 char 156 (n)
+0000144 seq   8991 wc   2 char 144 (d)
+0000141 seq   8992 wc   2 char 141 (a)
+0000162 seq   8993 wc   2 char 162 (r)
+0000144 seq   8994 wc   2 char 144 (d)
+0000040 seq   8995 wc   2 char 040 ( )
+0000143 seq   8996 wc   2 char 143 (c)
+0000150 seq   8997 wc   2 char 150 (h)
+0000141 seq   8998 wc   2 char 141 (a)
+0000162 seq   8999 wc   2 char 162 (r)
+0000141 seq   9000 wc   2 char 141 (a)
+0000143 seq   9001 wc   2 char 143 (c)
+0000164 seq   9002 wc   2 char 164 (t)
+0000145 seq   9003 wc   2 char 145 (e)
+0000162 seq   9004 wc   2 char 162 (r)
+0000163 seq   9005 wc   2 char 163 (s)
+0000056 seq   9006 wc   2 char 056 (.)
+0000040 seq   9007 wc   2 char 040 ( )
+0000040 seq   9008 wc   2 char 040 ( )
+0000124 seq   9009 wc   2 char 124 (T)
+0000150 seq   9010 wc   2 char 150 (h)
+0000145 seq   9011 wc   2 char 145 (e)
+0000015 seq   9012 wc   2 CR to 48 112
+0000156 seq   9013 wc   2 char 156 (n)
+0000165 seq   9014 wc   2 char 165 (u)
+0000155 seq   9015 wc   2 char 155 (m)
+0000142 seq   9016 wc   2 char 142 (b)
+0000145 seq   9017 wc   2 char 145 (e)
+0000162 seq   9018 wc   2 char 162 (r)
+0000163 seq   9019 wc   2 char 163 (s)
+0000040 seq   9020 wc   2 char 040 ( )
+0000141 seq   9021 wc   2 char 141 (a)
+0000162 seq   9022 wc   2 char 162 (r)
+0000145 seq   9023 wc   2 char 145 (e)
+0000040 seq   9024 wc   2 char 040 ( )
+0000164 seq   9025 wc   2 char 164 (t)
+0000150 seq   9026 wc   2 char 150 (h)
+0000145 seq   9027 wc   2 char 145 (e)
+0000040 seq   9028 wc   2 char 040 ( )
+0000156 seq   9029 wc   2 char 156 (n)
+0000165 seq   9030 wc   2 char 165 (u)
+0000155 seq   9031 wc   2 char 155 (m)
+0000142 seq   9032 wc   2 char 142 (b)
+0000145 seq   9033 wc   2 char 145 (e)
+0000162 seq   9034 wc   2 char 162 (r)
+0000163 seq   9035 wc   2 char 163 (s)
+0000040 seq   9036 wc   2 char 040 ( )
+0000165 seq   9037 wc   2 char 165 (u)
+0000163 seq   9038 wc   2 char 163 (s)
+0000145 seq   9039 wc   2 char 145 (e)
+0000144 seq   9040 wc   2 char 144 (d)
+0000040 seq   9041 wc   2 char 040 ( )
+0000151 seq   9042 wc   2 char 151 (i)
+0000156 seq   9043 wc   2 char 156 (n)
+0000040 seq   9044 wc   2 char 040 ( )
+0000164 seq   9045 wc   2 char 164 (t)
+0000150 seq   9046 wc   2 char 150 (h)
+0000145 seq   9047 wc   2 char 145 (e)
+0000040 seq   9048 wc   2 char 040 ( )
+0000160 seq   9049 wc   2 char 160 (p)
+0000154 seq   9050 wc   2 char 154 (l)
+0000157 seq   9051 wc   2 char 157 (o)
+0000164 seq   9052 wc   2 char 164 (t)
+0000040 seq   9053 wc   2 char 040 ( )
+0000143 seq   9054 wc   2 char 143 (c)
+0000157 seq   9055 wc   2 char 157 (o)
+0000155 seq   9056 wc   2 char 155 (m)
+0000155 seq   9057 wc   2 char 155 (m)
+0000141 seq   9058 wc   2 char 141 (a)
+0000156 seq   9059 wc   2 char 156 (n)
+0000144 seq   9060 wc   2 char 144 (d)
+0000015 seq   9061 wc   2 CR to 48 96
+0000164 seq   9062 wc   2 char 164 (t)
+0000157 seq   9063 wc   2 char 157 (o)
+0000040 seq   9064 wc   2 char 040 ( )
+0000160 seq   9065 wc   2 char 160 (p)
+0000154 seq   9066 wc   2 char 154 (l)
+0000157 seq   9067 wc   2 char 157 (o)
+0000164 seq   9068 wc   2 char 164 (t)
+0000040 seq   9069 wc   2 char 040 ( )
+0000164 seq   9070 wc   2 char 164 (t)
+0000150 seq   9071 wc   2 char 150 (h)
+0000145 seq   9072 wc   2 char 145 (e)
+0000040 seq   9073 wc   2 char 040 ( )
+0000143 seq   9074 wc   2 char 143 (c)
+0000150 seq   9075 wc   2 char 150 (h)
+0000141 seq   9076 wc   2 char 141 (a)
+0000162 seq   9077 wc   2 char 162 (r)
+0000141 seq   9078 wc   2 char 141 (a)
+0000143 seq   9079 wc   2 char 143 (c)
+0000164 seq   9080 wc   2 char 164 (t)
+0000145 seq   9081 wc   2 char 145 (e)
+0000162 seq   9082 wc   2 char 162 (r)
+0000163 seq   9083 wc   2 char 163 (s)
+0000056 seq   9084 wc   2 char 056 (.)
+0000040 seq   9085 wc   2 char 040 ( )
+0000040 seq   9086 wc   2 char 040 ( )
+0000111 seq   9087 wc   2 char 111 (I)
+0000164 seq   9088 wc   2 char 164 (t)
+0000040 seq   9089 wc   2 char 040 ( )
+0000151 seq   9090 wc   2 char 151 (i)
+0000163 seq   9091 wc   2 char 163 (s)
+0000040 seq   9092 wc   2 char 040 ( )
+0000156 seq   9093 wc   2 char 156 (n)
+0000157 seq   9094 wc   2 char 157 (o)
+0000164 seq   9095 wc   2 char 164 (t)
+0000040 seq   9096 wc   2 char 040 ( )
+0000147 seq   9097 wc   2 char 147 (g)
+0000165 seq   9098 wc   2 char 165 (u)
+0000141 seq   9099 wc   2 char 141 (a)
+0000162 seq   9100 wc   2 char 162 (r)
+0000141 seq   9101 wc   2 char 141 (a)
+0000156 seq   9102 wc   2 char 156 (n)
+0000164 seq   9103 wc   2 char 164 (t)
+0000145 seq   9104 wc   2 char 145 (e)
+0000145 seq   9105 wc   2 char 145 (e)
+0000144 seq   9106 wc   2 char 144 (d)
+0000040 seq   9107 wc   2 char 040 ( )
+0000164 seq   9108 wc   2 char 164 (t)
+0000150 seq   9109 wc   2 char 150 (h)
+0000141 seq   9110 wc   2 char 141 (a)
+0000164 seq   9111 wc   2 char 164 (t)
+0000015 seq   9112 wc   2 CR to 48 80
+0000164 seq   9113 wc   2 char 164 (t)
+0000150 seq   9114 wc   2 char 150 (h)
+0000145 seq   9115 wc   2 char 145 (e)
+0000163 seq   9116 wc   2 char 163 (s)
+0000145 seq   9117 wc   2 char 145 (e)
+0000040 seq   9118 wc   2 char 040 ( )
+0000156 seq   9119 wc   2 char 156 (n)
+0000165 seq   9120 wc   2 char 165 (u)
+0000155 seq   9121 wc   2 char 155 (m)
+0000142 seq   9122 wc   2 char 142 (b)
+0000145 seq   9123 wc   2 char 145 (e)
+0000162 seq   9124 wc   2 char 162 (r)
+0000163 seq   9125 wc   2 char 163 (s)
+0000040 seq   9126 wc   2 char 040 ( )
+0000150 seq   9127 wc   2 char 150 (h)
+0000141 seq   9128 wc   2 char 141 (a)
+0000166 seq   9129 wc   2 char 166 (v)
+0000145 seq   9130 wc   2 char 145 (e)
+0000040 seq   9131 wc   2 char 040 ( )
+0000141 seq   9132 wc   2 char 141 (a)
+0000156 seq   9133 wc   2 char 156 (n)
+0000171 seq   9134 wc   2 char 171 (y)
+0000164 seq   9135 wc   2 char 164 (t)
+0000150 seq   9136 wc   2 char 150 (h)
+0000151 seq   9137 wc   2 char 151 (i)
+0000156 seq   9138 wc   2 char 156 (n)
+0000147 seq   9139 wc   2 char 147 (g)
+0000040 seq   9140 wc   2 char 040 ( )
+0000164 seq   9141 wc   2 char 164 (t)
+0000157 seq   9142 wc   2 char 157 (o)
+0000040 seq   9143 wc   2 char 040 ( )
+0000144 seq   9144 wc   2 char 144 (d)
+0000157 seq   9145 wc   2 char 157 (o)
+0000040 seq   9146 wc   2 char 040 ( )
+0000167 seq   9147 wc   2 char 167 (w)
+0000151 seq   9148 wc   2 char 151 (i)
+0000164 seq   9149 wc   2 char 164 (t)
+0000150 seq   9150 wc   2 char 150 (h)
+0000040 seq   9151 wc   2 char 040 ( )
+0000164 seq   9152 wc   2 char 164 (t)
+0000150 seq   9153 wc   2 char 150 (h)
+0000145 seq   9154 wc   2 char 145 (e)
+0000040 seq   9155 wc   2 char 040 ( )
+0000141 seq   9156 wc   2 char 141 (a)
+0000143 seq   9157 wc   2 char 143 (c)
+0000164 seq   9158 wc   2 char 164 (t)
+0000165 seq   9159 wc   2 char 165 (u)
+0000141 seq   9160 wc   2 char 141 (a)
+0000154 seq   9161 wc   2 char 154 (l)
+0000015 seq   9162 wc   2 CR to 48 64
+0000150 seq   9163 wc   2 char 150 (h)
+0000141 seq   9164 wc   2 char 141 (a)
+0000162 seq   9165 wc   2 char 162 (r)
+0000144 seq   9166 wc   2 char 144 (d)
+0000167 seq   9167 wc   2 char 167 (w)
+0000141 seq   9168 wc   2 char 141 (a)
+0000162 seq   9169 wc   2 char 162 (r)
+0000145 seq   9170 wc   2 char 145 (e)
+0000040 seq   9171 wc   2 char 040 ( )
+0000141 seq   9172 wc   2 char 141 (a)
+0000144 seq   9173 wc   2 char 144 (d)
+0000144 seq   9174 wc   2 char 144 (d)
+0000162 seq   9175 wc   2 char 162 (r)
+0000145 seq   9176 wc   2 char 145 (e)
+0000163 seq   9177 wc   2 char 163 (s)
+0000163 seq   9178 wc   2 char 163 (s)
+0000040 seq   9179 wc   2 char 040 ( )
+0000157 seq   9180 wc   2 char 157 (o)
+0000146 seq   9181 wc   2 char 146 (f)
+0000040 seq   9182 wc   2 char 040 ( )
+0000164 seq   9183 wc   2 char 164 (t)
+0000150 seq   9184 wc   2 char 150 (h)
+0000145 seq   9185 wc   2 char 145 (e)
+0000040 seq   9186 wc   2 char 040 ( )
+0000143 seq   9187 wc   2 char 143 (c)
+0000150 seq   9188 wc   2 char 150 (h)
+0000141 seq   9189 wc   2 char 141 (a)
+0000162 seq   9190 wc   2 char 162 (r)
+0000141 seq   9191 wc   2 char 141 (a)
+0000143 seq   9192 wc   2 char 143 (c)
+0000164 seq   9193 wc   2 char 164 (t)
+0000145 seq   9194 wc   2 char 145 (e)
+0000162 seq   9195 wc   2 char 162 (r)
+0000163 seq   9196 wc   2 char 163 (s)
+0000056 seq   9197 wc   2 char 056 (.)

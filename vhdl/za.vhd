@@ -15,7 +15,11 @@ use work.sigs.all;
 entity za is
     port (
       p1 : in  logicsig;
-      p2_p3_p4_p5_p6 : out logicsig);
+      p2 : out logicsig;
+      p3 : out logicsig;
+      p4 : out logicsig;
+      p5 : out logicsig;
+      p6 : out logicsig);
 
 end za;
 architecture gates of za is
@@ -23,7 +27,11 @@ architecture gates of za is
 
 begin -- gates
 
-  p2_p3_p4_p5_p6 <= p1;
+  p2 <= p1;
+  p3 <= p1;
+  p4 <= p1;
+  p5 <= p1;
+  p6 <= p1;
 
 end gates;
 

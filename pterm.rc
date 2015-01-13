@@ -1,4 +1,4 @@
-//Microsoft Developer Studio generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -30,16 +30,14 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_CONSOLE             ICON    DISCARDABLE     "console.ICO"
-PTERM_32                ICON    DISCARDABLE     "pterm_32.ico"
-IDI_SMALL               ICON    DISCARDABLE     "SMALL.ICO"
+PTERM_32                ICON                    "pterm_32.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Menu
 //
 
-WXWINDOWMENU MENU DISCARDABLE 
+WXWINDOWMENU MENU 
 BEGIN
     POPUP "&Window"
     BEGIN
@@ -53,48 +51,18 @@ BEGIN
 END
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Cursor
-//
-
-WXCURSOR_HAND           CURSOR  DISCARDABLE     "wx/msw/hand.cur"
-WXCURSOR_BULLSEYE       CURSOR  DISCARDABLE     "wx/msw/bullseye.cur"
-WXCURSOR_PENCIL         CURSOR  DISCARDABLE     "wx/msw/pencil.cur"
-WXCURSOR_MAGNIFIER      CURSOR  DISCARDABLE     "wx/msw/magnif1.cur"
-WXCURSOR_NO_ENTRY       CURSOR  DISCARDABLE     "wx/msw/noentry.cur"
-WXCURSOR_SIZING         CURSOR  DISCARDABLE     "wx/msw/size.cur"
-WXCURSOR_ROLLER         CURSOR  DISCARDABLE     "wx/msw/roller.cur"
-WXCURSOR_WATCH          CURSOR  DISCARDABLE     "wx/msw/watch1.cur"
-WXCURSOR_PBRUSH         CURSOR  DISCARDABLE     "wx/msw/pbrush.cur"
-WXCURSOR_PLEFT          CURSOR  DISCARDABLE     "wx/msw/pntleft.cur"
-WXCURSOR_PRIGHT         CURSOR  DISCARDABLE     "wx/msw/pntright.cur"
-WXCURSOR_QARROW         CURSOR  DISCARDABLE     "wx/msw/query.cur"
-WXCURSOR_BLANK          CURSOR  DISCARDABLE     "wx/msw/blank.cur"
-WXCURSOR_RIGHT_ARROW    CURSOR  DISCARDABLE     "wx/msw/rightarr.cur"
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Bitmap
-//
-
-WXDISABLE_BUTTON_BITMAP BITMAP  MOVEABLE PURE   "wx/msw/disable.bmp"
-CSQUERY                 BITMAP  MOVEABLE PURE   "wx/msw/csquery.bmp"
-WXBITMAP_STD_COLOURS    BITMAP  MOVEABLE PURE   "wx/msw/colours.bmp"
-IDB_FONTBITMAP          BITMAP  DISCARDABLE     "fonts.bmp"
-
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE 
 BEGIN
     "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
     "#include ""windows.h""\r\n"
@@ -102,7 +70,7 @@ BEGIN
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
@@ -111,15 +79,14 @@ END
 #endif    // APSTUDIO_INVOKED
 
 
-#ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 4,1,9,3
- PRODUCTVERSION 4,1,9,3
+ FILEVERSION 5,0,6,0
+ PRODUCTVERSION 5,0,6,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -134,18 +101,15 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "Comments", "Open source software created to enable users to connect and signon to the Cyber1 system.  Signons can be requested by visiting Cyber1.org on the internet.\0"
-            VALUE "CompanyName", "Cyber1.org\0"
-            VALUE "FileDescription", "PLATO Terminal Emulator\0"
-            VALUE "FileVersion", "4.1.9.3\0"
-            VALUE "InternalName", "Pterm\0"
-            VALUE "LegalCopyright", "Copyright © 2004-2009, Paul Koning\0"
-            VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "Pterm.exe\0"
-            VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "PLATO Terminal Emulator\0"
-            VALUE "ProductVersion", "4.1.9.3\0"
-            VALUE "SpecialBuild", "\0"
+            VALUE "Comments", "Open source software created to enable users to connect and signon to the Cyber1 system.  Signons can be requested by visiting Cyber1.org on the internet."
+            VALUE "CompanyName", "Cyber1.org"
+            VALUE "FileDescription", "PLATO Terminal Emulator"
+            VALUE "FileVersion", "5.0.6.0"
+            VALUE "InternalName", "Pterm"
+            VALUE "LegalCopyright", "Copyright © 2004-2014, Paul Koning & Joe Stanton"
+            VALUE "OriginalFilename", "Pterm.exe"
+            VALUE "ProductName", "PLATO Terminal Emulator"
+            VALUE "ProductVersion", "5.0.6.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -153,8 +117,6 @@ BEGIN
         VALUE "Translation", 0x409, 1200
     END
 END
-
-#endif    // !_MAC
 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////

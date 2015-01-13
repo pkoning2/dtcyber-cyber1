@@ -1,0 +1,1021 @@
+12:39:25.502: Trace on, ASCII terminal
+12:39:26.717: key to plato 026
+12:39:26.718: ascii mode key to plato 0x0d
+12:39:26.936: 0015502 seq   7519 wc   1 select memory M0
+12:39:26.936: 0015422 seq   7520 wc   1 load mode 7
+12:39:26.936: 0000035 seq   7521 wc   1 load mode 7
+12:39:26.936: 0000040 seq   7522 wc   1 high Y 0
+12:39:26.936: 0000141 seq   7523 wc   1 low Y 1
+12:39:26.936: 0000057 seq   7524 wc   1 high X 15
+12:39:26.936: 0000136 seq   7525 wc   1 low X 30, coordinates 510 1
+12:39:26.936: 0000136 seq   7525 wc   1 load coordinate 510 1
+12:39:26.936: 0015514 seq   7526 wc   1 Forward writing mode
+12:39:26.936: 0015516 seq   7527 wc   1 Normal size writing mode
+12:39:26.936: 0015512 seq   7528 wc   1 Horizontal writing mode
+12:39:26.936: 0015414 seq   7529 wc   1 Full screen erase
+12:39:26.940: 0015422 seq   7530 wc   1 load mode 7
+12:39:26.940: 0015521 seq   7531 wc   1 Start SSF
+12:39:26.940: 0000100 seq   7532 wc   1 data byte 1: 0
+12:39:26.940: 0000120 seq   7533 wc   1 data byte 2: 16
+12:39:26.940: 0000100 seq   7534 wc   1 data 0002000 (0x0400)
+12:39:26.940: 0000100 seq   7534 wc   1 ssf 0400
+12:39:26.940: 0000100 seq   7534 wc   1 ssf 0400
+12:39:26.940: 0000035 seq   7535 wc   1 load mode 7
+12:39:26.940: 0000057 seq   7536 wc   1 high Y 15
+12:39:26.940: 0000160 seq   7537 wc   1 low Y 16
+12:39:26.940: 0000040 seq   7538 wc   1 high X 0
+12:39:26.940: 0000100 seq   7539 wc   1 low X 0, coordinates 0 496
+12:39:26.940: 0000100 seq   7539 wc   1 load coordinate 0 496
+12:39:26.940: 0015532 seq   7540 wc   1 set margin 0
+11:04:18.849: 0015527 seq   1690 wc   1 Start LDA
+11:04:18.849: 0000106 seq   1691 wc   1 data byte 1: 6
+11:04:18.849: 0000114 seq   1692 wc   1 data byte 2: 12
+11:04:18.849: 0000102 seq   1693 wc   1 data 0021406 (0x2306)
+11:04:18.849: seq   1693 wc   1 load memory address 2306
+11:04:18.849: 0015523 seq   1694 wc   1 load mode 11
+11:04:18.849: 0000100 seq   1695 wc   1 data byte 1: 0
+11:04:18.849: 0000140 seq   1696 wc   1 data byte 2: 32
+11:04:18.849: 0000103 seq   1697 wc   1 data 0034000 (0x3800)
+11:04:18.849: seq   1697 wc   1 memdata 3800 to 2306
+11:04:18.849: 0000100 seq   1698 wc   1 data byte 1: 0
+11:04:18.849: 0000160 seq   1699 wc   1 data byte 2: 48
+11:04:18.849: 0000103 seq   1700 wc   1 data 0036000 (0x3c00)
+11:04:18.849: seq   1700 wc   1 memdata 3c00 to 2308
+12:39:27.119: 0015527 seq   7541 wc   1 Start LDA
+12:39:27.119: 0000120 seq   7542 wc   1 data byte 1: 16
+12:39:27.119: 0000140 seq   7543 wc   1 data byte 2: 32
+12:39:27.119: 0000103 seq   7544 wc   1 data 0034020 (0x3810)
+12:39:27.119: 0000103 seq   7544 wc   1 load memory address 3810
+12:39:27.119: 0015523 seq   7545 wc   1 load mode 11
+12:39:27.119: 0015520 seq   7546 wc   1 load mode 11
+12:39:27.119: 0000140 seq   7547 wc   1 data byte 1: 32
+12:39:27.119: 0000137 seq   7548 wc   1 data byte 2: 31
+12:39:27.119: 0000100 seq   7549 wc   1 data 0003740 (0x07e0)
+12:39:27.119: 0000100 seq   7549 wc   1 character memdata 003740 to char word 0010
+12:39:27.119: 0000120 seq   7550 wc   1 data byte 1: 16
+12:39:27.119: 0000101 seq   7551 wc   1 data byte 2: 1
+12:39:27.120: 0000100 seq   7552 wc   1 data 0000120 (0x0050)
+12:39:27.120: 0000100 seq   7552 wc   1 character memdata 000120 to char word 0011
+12:39:27.120: 0000120 seq   7553 wc   1 data byte 1: 16
+12:39:27.120: 0000102 seq   7554 wc   1 data byte 2: 2
+12:39:27.120: 0000100 seq   7555 wc   1 data 0000220 (0x0090)
+12:39:27.120: 0000100 seq   7555 wc   1 character memdata 000220 to char word 0012
+12:39:27.120: 0000120 seq   7556 wc   1 data byte 1: 16
+12:39:27.120: 0000134 seq   7557 wc   1 data byte 2: 28
+12:39:27.120: 0000100 seq   7558 wc   1 data 0003420 (0x0710)
+12:39:27.120: 0000100 seq   7558 wc   1 character memdata 003420 to char word 0013
+12:39:27.120: 0000140 seq   7559 wc   1 data byte 1: 32
+12:39:27.120: 0000100 seq   7560 wc   1 data byte 2: 0
+12:39:27.120: 0000100 seq   7561 wc   1 data 0000040 (0x0020)
+12:39:27.120: 0000100 seq   7561 wc   1 character memdata 000040 to char word 0014
+12:39:27.120: 0000100 seq   7562 wc   1 data byte 1: 0
+12:39:27.120: 0000137 seq   7563 wc   1 data byte 2: 31
+12:39:27.120: 0000100 seq   7564 wc   1 data 0003700 (0x07c0)
+12:39:27.120: 0000100 seq   7564 wc   1 character memdata 003700 to char word 0015
+12:39:27.120: 0000100 seq   7565 wc   1 data byte 1: 0
+12:39:27.121: 0000100 seq   7566 wc   1 data byte 2: 0
+12:39:27.121: 0000100 seq   7567 wc   1 data 0000000 (0x0000)
+12:39:27.121: 0000100 seq   7567 wc   1 character memdata 000000 to char word 0016
+12:39:27.121: 0000100 seq   7568 wc   1 data byte 1: 0
+12:39:27.121: 0000100 seq   7569 wc   1 data byte 2: 0
+12:39:27.121: 0000100 seq   7570 wc   1 data 0000000 (0x0000)
+12:39:27.121: 0000100 seq   7570 wc   1 character memdata 000000 to char word 0017
+12:39:27.121: 0000100 seq   7571 wc   1 data byte 1: 0
+12:39:27.121: 0000100 seq   7572 wc   1 data byte 2: 0
+12:39:27.146: 0000100 seq   7573 wc   1 data 0000000 (0x0000)
+12:39:27.146: 0000100 seq   7573 wc   1 character memdata 000000 to char word 0020
+12:39:27.146: 0000120 seq   7574 wc   1 data byte 1: 16
+12:39:27.146: 0000100 seq   7575 wc   1 data byte 2: 0
+12:39:27.146: 0000100 seq   7576 wc   1 data 0000020 (0x0010)
+12:39:27.146: 0000100 seq   7576 wc   1 character memdata 000020 to char word 0021
+12:39:27.146: 0000120 seq   7577 wc   1 data byte 1: 16
+12:39:27.146: 0000100 seq   7578 wc   1 data byte 2: 0
+12:39:27.147: 0000100 seq   7579 wc   1 data 0000020 (0x0010)
+12:39:27.147: 0000100 seq   7579 wc   1 character memdata 000020 to char word 0022
+12:39:27.147: 0000120 seq   7580 wc   1 data byte 1: 16
+12:39:27.147: 0000120 seq   7581 wc   1 data byte 2: 16
+12:39:27.147: 0000100 seq   7582 wc   1 data 0002020 (0x0410)
+12:39:27.147: 0000100 seq   7582 wc   1 character memdata 002020 to char word 0023
+12:39:27.147: 0000160 seq   7583 wc   1 data byte 1: 48
+12:39:27.147: 0000137 seq   7584 wc   1 data byte 2: 31
+12:39:27.147: 0000100 seq   7585 wc   1 data 0003760 (0x07f0)
+12:39:27.147: 0000100 seq   7585 wc   1 character memdata 003760 to char word 0024
+12:39:27.147: 0000100 seq   7586 wc   1 data byte 1: 0
+12:39:27.147: 0000100 seq   7587 wc   1 data byte 2: 0
+12:39:27.147: 0000100 seq   7588 wc   1 data 0000000 (0x0000)
+12:39:27.147: 0000100 seq   7588 wc   1 character memdata 000000 to char word 0025
+12:39:27.147: 0000100 seq   7589 wc   1 data byte 1: 0
+12:39:27.147: 0000100 seq   7590 wc   1 data byte 2: 0
+12:39:27.147: 0000100 seq   7591 wc   1 data 0000000 (0x0000)
+12:39:27.148: 0000100 seq   7591 wc   1 character memdata 000000 to char word 0026
+12:39:27.148: 0000100 seq   7592 wc   1 data byte 1: 0
+12:39:27.148: 0000100 seq   7593 wc   1 data byte 2: 0
+12:39:27.148: 0000100 seq   7594 wc   1 data 0000000 (0x0000)
+12:39:27.148: 0000100 seq   7594 wc   1 character memdata 000000 to char word 0027
+12:39:27.148: 0015527 seq   7595 wc   1 Start LDA
+12:39:27.148: 0000100 seq   7596 wc   1 data byte 1: 0
+12:39:27.148: 0000141 seq   7597 wc   1 data byte 2: 33
+12:39:27.148: 0000103 seq   7598 wc   1 data 0034100 (0x3840)
+12:39:27.148: 0000103 seq   7598 wc   1 load memory address 3840
+12:39:27.148: 0015523 seq   7599 wc   1 load mode 11
+12:39:27.148: 0015520 seq   7600 wc   1 load mode 11
+12:39:27.148: 0000120 seq   7601 wc   1 data byte 1: 16
+12:39:27.148: 0000100 seq   7602 wc   1 data byte 2: 0
+12:39:27.148: 0000100 seq   7603 wc   1 data 0000020 (0x0010)
+12:39:27.148: 0000100 seq   7603 wc   1 character memdata 000020 to char word 0040
+12:39:27.148: 0000140 seq   7604 wc   1 data byte 1: 32
+12:39:27.148: 0000120 seq   7605 wc   1 data byte 2: 16
+12:39:27.148: 0000100 seq   7606 wc   1 data 0002040 (0x0420)
+12:39:27.148: 0000100 seq   7606 wc   1 character memdata 002040 to char word 0041
+12:39:27.148: 0000100 seq   7607 wc   1 data byte 1: 0
+12:39:27.149: 0000121 seq   7608 wc   1 data byte 2: 17
+12:39:27.149: 0000100 seq   7609 wc   1 data 0002100 (0x0440)
+12:39:27.149: 0000100 seq   7609 wc   1 character memdata 002100 to char word 0042
+12:39:27.149: 0000100 seq   7610 wc   1 data byte 1: 0
+12:39:27.149: 0000132 seq   7611 wc   1 data byte 2: 26
+12:39:27.149: 0000100 seq   7612 wc   1 data 0003200 (0x0680)
+12:39:27.149: 0000100 seq   7612 wc   1 character memdata 003200 to char word 0043
+12:39:27.149: 0000100 seq   7613 wc   1 data byte 1: 0
+12:39:27.149: 0000107 seq   7614 wc   1 data byte 2: 7
+12:39:27.149: 0000100 seq   7615 wc   1 data 0000700 (0x01c0)
+12:39:27.149: 0000100 seq   7615 wc   1 character memdata 000700 to char word 0044
+12:39:27.149: 0000160 seq   7616 wc   1 data byte 1: 48
+12:39:27.149: 0000100 seq   7617 wc   1 data byte 2: 0
+12:39:27.149: 0000100 seq   7618 wc   1 data 0000060 (0x0030)
+12:39:27.149: 0000100 seq   7618 wc   1 character memdata 000060 to char word 0045
+12:39:27.149: 0000100 seq   7619 wc   1 data byte 1: 0
+12:39:27.149: 0000100 seq   7620 wc   1 data byte 2: 0
+12:39:27.149: 0000100 seq   7621 wc   1 data 0000000 (0x0000)
+12:39:27.149: 0000100 seq   7621 wc   1 character memdata 000000 to char word 0046
+12:39:27.164: 0000100 seq   7622 wc   1 data byte 1: 0
+12:39:27.165: 0000100 seq   7623 wc   1 data byte 2: 0
+12:39:27.165: 0000100 seq   7624 wc   1 data 0000000 (0x0000)
+12:39:27.165: 0000100 seq   7624 wc   1 character memdata 000000 to char word 0047
+12:39:27.165: 0015527 seq   7625 wc   1 Start LDA
+12:39:27.165: 0000140 seq   7626 wc   1 data byte 1: 32
+12:39:27.165: 0000141 seq   7627 wc   1 data byte 2: 33
+12:39:27.165: 0000103 seq   7628 wc   1 data 0034140 (0x3860)
+12:39:27.165: 0000103 seq   7628 wc   1 load memory address 3860
+12:39:27.165: 0015523 seq   7629 wc   1 load mode 11
+12:39:27.165: 0015520 seq   7630 wc   1 load mode 11
+12:39:27.165: 0000120 seq   7631 wc   1 data byte 1: 16
+12:39:27.165: 0000120 seq   7632 wc   1 data byte 2: 16
+12:39:27.166: 0000100 seq   7633 wc   1 data 0002020 (0x0410)
+12:39:27.166: 0000100 seq   7633 wc   1 character memdata 002020 to char word 0060
+12:39:27.166: 0000120 seq   7634 wc   1 data byte 1: 16
+12:39:27.166: 0000120 seq   7635 wc   1 data byte 2: 16
+12:39:27.166: 0000100 seq   7636 wc   1 data 0002020 (0x0410)
+12:39:27.166: 0000100 seq   7636 wc   1 character memdata 002020 to char word 0061
+12:39:27.166: 0000120 seq   7637 wc   1 data byte 1: 16
+12:39:27.166: 0000120 seq   7638 wc   1 data byte 2: 16
+12:39:27.166: 0000100 seq   7639 wc   1 data 0002020 (0x0410)
+12:39:27.166: 0000100 seq   7639 wc   1 character memdata 002020 to char word 0062
+12:39:27.166: 0000120 seq   7640 wc   1 data byte 1: 16
+12:39:27.166: 0000120 seq   7641 wc   1 data byte 2: 16
+12:39:27.166: 0000100 seq   7642 wc   1 data 0002020 (0x0410)
+12:39:27.166: 0000100 seq   7642 wc   1 character memdata 002020 to char word 0063
+12:39:27.166: 0000120 seq   7643 wc   1 data byte 1: 16
+12:39:27.166: 0000120 seq   7644 wc   1 data byte 2: 16
+12:39:27.166: 0000100 seq   7645 wc   1 data 0002020 (0x0410)
+12:39:27.166: 0000100 seq   7645 wc   1 character memdata 002020 to char word 0064
+12:39:27.167: 0000140 seq   7646 wc   1 data byte 1: 32
+12:39:27.167: 0000117 seq   7647 wc   1 data byte 2: 15
+12:39:27.167: 0000100 seq   7648 wc   1 data 0001740 (0x03e0)
+12:39:27.167: 0000100 seq   7648 wc   1 character memdata 001740 to char word 0065
+12:39:27.167: 0000100 seq   7649 wc   1 data byte 1: 0
+12:39:27.167: 0000100 seq   7650 wc   1 data byte 2: 0
+12:39:27.167: 0000100 seq   7651 wc   1 data 0000000 (0x0000)
+12:39:27.167: 0000100 seq   7651 wc   1 character memdata 000000 to char word 0066
+12:39:27.167: 0000100 seq   7652 wc   1 data byte 1: 0
+12:39:27.167: 0000100 seq   7653 wc   1 data byte 2: 0
+12:39:27.167: 0000100 seq   7654 wc   1 data 0000000 (0x0000)
+12:39:27.167: 0000100 seq   7654 wc   1 character memdata 000000 to char word 0067
+12:39:27.167: 0015527 seq   7655 wc   1 Start LDA
+12:39:27.167: 0000100 seq   7656 wc   1 data byte 1: 0
+12:39:27.167: 0000142 seq   7657 wc   1 data byte 2: 34
+12:39:27.167: 0000103 seq   7658 wc   1 data 0034200 (0x3880)
+12:39:27.167: 0000103 seq   7658 wc   1 load memory address 3880
+12:39:27.167: 0015523 seq   7659 wc   1 load mode 11
+12:39:27.167: 0015520 seq   7660 wc   1 load mode 11
+12:39:27.167: 0000100 seq   7661 wc   1 data byte 1: 0
+12:39:27.167: 0000100 seq   7662 wc   1 data byte 2: 0
+12:39:27.168: 0000100 seq   7663 wc   1 data 0000000 (0x0000)
+12:39:27.168: 0000100 seq   7663 wc   1 character memdata 000000 to char word 0100
+12:39:27.168: 0000100 seq   7664 wc   1 data byte 1: 0
+12:39:27.168: 0000120 seq   7665 wc   1 data byte 2: 16
+12:39:27.168: 0000100 seq   7666 wc   1 data 0002000 (0x0400)
+12:39:27.168: 0000100 seq   7666 wc   1 character memdata 002000 to char word 0101
+12:39:27.168: 0000100 seq   7667 wc   1 data byte 1: 0
+12:39:27.168: 0000120 seq   7668 wc   1 data byte 2: 16
+12:39:27.168: 0000100 seq   7669 wc   1 data 0002000 (0x0400)
+12:39:27.168: 0000100 seq   7669 wc   1 character memdata 002000 to char word 0102
+12:39:27.168: 0000100 seq   7670 wc   1 data byte 1: 0
+12:39:27.168: 0000136 seq   7671 wc   1 data byte 2: 30
+12:39:27.168: 0000100 seq   7672 wc   1 data 0003600 (0x0780)
+12:39:27.168: 0000100 seq   7672 wc   1 character memdata 003600 to char word 0103
+12:39:27.177: 0000100 seq   7673 wc   1 data byte 1: 0
+12:39:27.177: 0000100 seq   7674 wc   1 data byte 2: 0
+12:39:27.177: 0000100 seq   7675 wc   1 data 0000000 (0x0000)
+12:39:27.177: 0000100 seq   7675 wc   1 character memdata 000000 to char word 0104
+12:39:27.177: 0000100 seq   7676 wc   1 data byte 1: 0
+12:39:27.177: 0000100 seq   7677 wc   1 data byte 2: 0
+12:39:27.177: 0000100 seq   7678 wc   1 data 0000000 (0x0000)
+12:39:27.178: 0000100 seq   7678 wc   1 character memdata 000000 to char word 0105
+12:39:27.178: 0000100 seq   7679 wc   1 data byte 1: 0
+12:39:27.178: 0000100 seq   7680 wc   1 data byte 2: 0
+12:39:27.178: 0000100 seq   7681 wc   1 data 0000000 (0x0000)
+12:39:27.178: 0000100 seq   7681 wc   1 character memdata 000000 to char word 0106
+12:39:27.178: 0000100 seq   7682 wc   1 data byte 1: 0
+12:39:27.178: 0000100 seq   7683 wc   1 data byte 2: 0
+12:39:27.178: 0000100 seq   7684 wc   1 data 0000000 (0x0000)
+12:39:27.178: 0000100 seq   7684 wc   1 character memdata 000000 to char word 0107
+12:39:27.178: 0015527 seq   7685 wc   1 Start LDA
+12:39:27.178: 0000140 seq   7686 wc   1 data byte 1: 32
+12:39:27.178: 0000142 seq   7687 wc   1 data byte 2: 34
+12:39:27.178: 0000103 seq   7688 wc   1 data 0034240 (0x38a0)
+12:39:27.178: 0000103 seq   7688 wc   1 load memory address 38a0
+12:39:27.178: 0015523 seq   7689 wc   1 load mode 11
+12:39:27.178: 0015520 seq   7690 wc   1 load mode 11
+12:39:27.178: 0000160 seq   7691 wc   1 data byte 1: 48
+12:39:27.178: 0000137 seq   7692 wc   1 data byte 2: 31
+12:39:27.178: 0000100 seq   7693 wc   1 data 0003760 (0x07f0)
+12:39:27.178: 0000100 seq   7693 wc   1 character memdata 003760 to char word 0120
+12:39:27.178: 0000100 seq   7694 wc   1 data byte 1: 0
+12:39:27.178: 0000120 seq   7695 wc   1 data byte 2: 16
+12:39:27.178: 0000100 seq   7696 wc   1 data 0002000 (0x0400)
+12:39:27.179: 0000100 seq   7696 wc   1 character memdata 002000 to char word 0121
+12:39:27.179: 0000100 seq   7697 wc   1 data byte 1: 0
+12:39:27.179: 0000120 seq   7698 wc   1 data byte 2: 16
+12:39:27.179: 0000100 seq   7699 wc   1 data 0002000 (0x0400)
+12:39:27.179: 0000100 seq   7699 wc   1 character memdata 002000 to char word 0122
+12:39:27.179: 0000100 seq   7700 wc   1 data byte 1: 0
+12:39:27.179: 0000120 seq   7701 wc   1 data byte 2: 16
+12:39:27.179: 0000100 seq   7702 wc   1 data 0002000 (0x0400)
+12:39:27.179: 0000100 seq   7702 wc   1 character memdata 002000 to char word 0123
+12:39:27.179: 0000100 seq   7703 wc   1 data byte 1: 0
+12:39:27.179: 0000120 seq   7704 wc   1 data byte 2: 16
+12:39:27.179: 0000100 seq   7705 wc   1 data 0002000 (0x0400)
+12:39:27.179: 0000100 seq   7705 wc   1 character memdata 002000 to char word 0124
+12:39:27.179: 0000160 seq   7706 wc   1 data byte 1: 48
+12:39:27.179: 0000137 seq   7707 wc   1 data byte 2: 31
+12:39:27.179: 0000100 seq   7708 wc   1 data 0003760 (0x07f0)
+12:39:27.179: 0000100 seq   7708 wc   1 character memdata 003760 to char word 0125
+12:39:27.179: 0000100 seq   7709 wc   1 data byte 1: 0
+12:39:27.179: 0000100 seq   7710 wc   1 data byte 2: 0
+12:39:27.179: 0000100 seq   7711 wc   1 data 0000000 (0x0000)
+12:39:27.179: 0000100 seq   7711 wc   1 character memdata 000000 to char word 0126
+12:39:27.179: 0000100 seq   7712 wc   1 data byte 1: 0
+12:39:27.179: 0000100 seq   7713 wc   1 data byte 2: 0
+12:39:27.180: 0000100 seq   7714 wc   1 data 0000000 (0x0000)
+12:39:27.180: 0000100 seq   7714 wc   1 character memdata 000000 to char word 0127
+12:39:27.180: 0000100 seq   7715 wc   1 data byte 1: 0
+12:39:27.180: 0000160 seq   7716 wc   1 data byte 2: 48
+12:39:27.180: 0000101 seq   7717 wc   1 data 0016000 (0x1c00)
+12:39:27.180: 0000101 seq   7717 wc   1 character memdata 016000 to char word 0130
+12:39:27.180: 0000100 seq   7718 wc   1 data byte 1: 0
+12:39:27.180: 0000120 seq   7719 wc   1 data byte 2: 16
+12:39:27.180: 0000100 seq   7720 wc   1 data 0002000 (0x0400)
+12:39:27.180: 0000100 seq   7720 wc   1 character memdata 002000 to char word 0131
+12:39:27.180: 0000120 seq   7721 wc   1 data byte 1: 16
+12:39:27.180: 0000120 seq   7722 wc   1 data byte 2: 16
+12:39:27.187: 0000100 seq   7723 wc   1 data 0002020 (0x0410)
+12:39:27.187: 0000100 seq   7723 wc   1 character memdata 002020 to char word 0132
+12:39:27.187: 0000140 seq   7724 wc   1 data byte 1: 32
+12:39:27.187: 0000120 seq   7725 wc   1 data byte 2: 16
+12:39:27.187: 0000100 seq   7726 wc   1 data 0002040 (0x0420)
+12:39:27.187: 0000100 seq   7726 wc   1 character memdata 002040 to char word 0133
+12:39:27.187: 0000100 seq   7727 wc   1 data byte 1: 0
+12:39:27.187: 0000121 seq   7728 wc   1 data byte 2: 17
+12:39:27.187: 0000100 seq   7729 wc   1 data 0002100 (0x0440)
+12:39:27.187: 0000100 seq   7729 wc   1 character memdata 002100 to char word 0134
+12:39:27.187: 0000100 seq   7730 wc   1 data byte 1: 0
+12:39:27.187: 0000136 seq   7731 wc   1 data byte 2: 30
+12:39:27.187: 0000100 seq   7732 wc   1 data 0003600 (0x0780)
+12:39:27.187: 0000100 seq   7732 wc   1 character memdata 003600 to char word 0135
+12:39:27.187: 0000100 seq   7733 wc   1 data byte 1: 0
+12:39:27.187: 0000100 seq   7734 wc   1 data byte 2: 0
+12:39:27.188: 0000100 seq   7735 wc   1 data 0000000 (0x0000)
+12:39:27.188: 0000100 seq   7735 wc   1 character memdata 000000 to char word 0136
+12:39:27.188: 0000100 seq   7736 wc   1 data byte 1: 0
+12:39:27.188: 0000100 seq   7737 wc   1 data byte 2: 0
+12:39:27.188: 0000100 seq   7738 wc   1 data 0000000 (0x0000)
+12:39:27.188: 0000100 seq   7738 wc   1 character memdata 000000 to char word 0137
+12:39:27.188: 0015527 seq   7739 wc   1 Start LDA
+12:39:27.188: 0000140 seq   7740 wc   1 data byte 1: 32
+12:39:27.188: 0000143 seq   7741 wc   1 data byte 2: 35
+12:39:27.188: 0000103 seq   7742 wc   1 data 0034340 (0x38e0)
+12:39:27.188: 0000103 seq   7742 wc   1 load memory address 38e0
+12:39:27.188: 0015523 seq   7743 wc   1 load mode 11
+12:39:27.188: 0015520 seq   7744 wc   1 load mode 11
+12:39:27.188: 0000160 seq   7745 wc   1 data byte 1: 48
+12:39:27.188: 0000123 seq   7746 wc   1 data byte 2: 19
+12:39:27.188: 0000100 seq   7747 wc   1 data 0002360 (0x04f0)
+12:39:27.188: 0000100 seq   7747 wc   1 character memdata 002360 to char word 0160
+12:39:27.188: 0000100 seq   7748 wc   1 data byte 1: 0
+12:39:27.188: 0000114 seq   7749 wc   1 data byte 2: 12
+12:39:27.188: 0000100 seq   7750 wc   1 data 0001400 (0x0300)
+12:39:27.188: 0000100 seq   7750 wc   1 character memdata 001400 to char word 0161
+12:39:27.188: 0000100 seq   7751 wc   1 data byte 1: 0
+12:39:27.188: 0000110 seq   7752 wc   1 data byte 2: 8
+12:39:27.189: 0000100 seq   7753 wc   1 data 0001000 (0x0200)
+12:39:27.189: 0000100 seq   7753 wc   1 character memdata 001000 to char word 0162
+12:39:27.189: 0000120 seq   7754 wc   1 data byte 1: 16
+12:39:27.189: 0000120 seq   7755 wc   1 data byte 2: 16
+12:39:27.189: 0000100 seq   7756 wc   1 data 0002020 (0x0410)
+12:39:27.189: 0000100 seq   7756 wc   1 character memdata 002020 to char word 0163
+12:39:27.189: 0000120 seq   7757 wc   1 data byte 1: 16
+12:39:27.189: 0000120 seq   7758 wc   1 data byte 2: 16
+12:39:27.189: 0000100 seq   7759 wc   1 data 0002020 (0x0410)
+12:39:27.189: 0000100 seq   7759 wc   1 character memdata 002020 to char word 0164
+12:39:27.189: 0000160 seq   7760 wc   1 data byte 1: 48
+12:39:27.189: 0000117 seq   7761 wc   1 data byte 2: 15
+12:39:27.189: 0000100 seq   7762 wc   1 data 0001760 (0x03f0)
+12:39:27.189: 0000100 seq   7762 wc   1 character memdata 001760 to char word 0165
+12:39:27.189: 0000100 seq   7763 wc   1 data byte 1: 0
+12:39:27.189: 0000100 seq   7764 wc   1 data byte 2: 0
+12:39:27.189: 0000100 seq   7765 wc   1 data 0000000 (0x0000)
+12:39:27.189: 0000100 seq   7765 wc   1 character memdata 000000 to char word 0166
+12:39:27.189: 0000100 seq   7766 wc   1 data byte 1: 0
+12:39:27.189: 0000100 seq   7767 wc   1 data byte 2: 0
+12:39:27.189: 0000100 seq   7768 wc   1 data 0000000 (0x0000)
+12:39:27.189: 0000100 seq   7768 wc   1 character memdata 000000 to char word 0167
+12:39:27.189: 0015527 seq   7769 wc   1 Start LDA
+12:39:27.189: 0000106 seq   7770 wc   1 data byte 1: 6
+12:39:27.190: 0000114 seq   7771 wc   1 data byte 2: 12
+12:39:27.190: 0000102 seq   7772 wc   1 data 0021406 (0x2306)
+12:39:27.190: 0000102 seq   7772 wc   1 load memory address 2306
+12:39:27.190: 0015523 seq   7773 wc   1 load mode 11
+12:39:27.190: 0000100 seq   7774 wc   1 data byte 1: 0
+12:39:27.190: 0000140 seq   7775 wc   1 data byte 2: 32
+12:39:27.190: 0000103 seq   7776 wc   1 data 0034000 (0x3800)
+12:39:27.190: 0000103 seq   7776 wc   1 memdata 3800 to 2306
+12:39:27.190: 0000100 seq   7777 wc   1 data byte 1: 0
+12:39:27.190: 0000160 seq   7778 wc   1 data byte 2: 48
+12:39:27.190: 0000103 seq   7779 wc   1 data 0036000 (0x3c00)
+12:39:27.190: 0000103 seq   7779 wc   1 memdata 3c00 to 2308
+12:39:27.190: 0015531 seq   7780 wc   1 Start LDE
+12:39:27.190: 0000120 seq   7781 wc   1 data byte 1: 16
+12:39:27.190: 0000101 seq   7782 wc   1 data byte 2: 1
+12:39:27.190: 0000100 seq   7783 wc   1 data 0000120 (0x0050)
+12:39:27.190: 0000100 seq   7783 wc   1 load echo 80 (0x50)
+12:39:27.190: key to plato 320
+12:39:27.190: ascii mode key to plato 0x1b 0x50 0x63
+12:39:27.191: 0015527 seq   7784 wc   1 Start LDA
+12:39:27.191: 0000160 seq   7785 wc   1 data byte 1: 48
+12:39:27.191: 0000144 seq   7786 wc   1 data byte 2: 36
+12:39:27.191: 0000103 seq   7787 wc   1 data 0034460 (0x3930)
+12:39:27.191: 0000103 seq   7787 wc   1 load memory address 3930
+12:39:27.191: 0015523 seq   7788 wc   1 load mode 11
+12:39:27.191: 0015520 seq   7789 wc   1 load mode 11
+12:39:27.191: 0000100 seq   7790 wc   1 data byte 1: 0
+12:39:27.191: 0000120 seq   7791 wc   1 data byte 2: 16
+12:39:27.192: 0000100 seq   7792 wc   1 data 0002000 (0x0400)
+12:39:27.192: 0000100 seq   7792 wc   1 character memdata 002000 to char word 0230
+12:39:27.192: 0000100 seq   7793 wc   1 data byte 1: 0
+12:39:27.192: 0000120 seq   7794 wc   1 data byte 2: 16
+12:39:27.192: 0000100 seq   7795 wc   1 data 0002000 (0x0400)
+12:39:27.192: 0000100 seq   7795 wc   1 character memdata 002000 to char word 0231
+12:39:27.192: 0000100 seq   7796 wc   1 data byte 1: 0
+12:39:27.192: 0000120 seq   7797 wc   1 data byte 2: 16
+12:39:27.192: 0000100 seq   7798 wc   1 data 0002000 (0x0400)
+12:39:27.192: 0000100 seq   7798 wc   1 character memdata 002000 to char word 0232
+12:39:27.192: 0000100 seq   7799 wc   1 data byte 1: 0
+12:39:27.192: 0000120 seq   7800 wc   1 data byte 2: 16
+12:39:27.192: 0000100 seq   7801 wc   1 data 0002000 (0x0400)
+12:39:27.192: 0000100 seq   7801 wc   1 character memdata 002000 to char word 0233
+12:39:27.192: 0000160 seq   7802 wc   1 data byte 1: 48
+12:39:27.192: 0000137 seq   7803 wc   1 data byte 2: 31
+12:39:27.192: 0000100 seq   7804 wc   1 data 0003760 (0x07f0)
+12:39:27.192: 0000100 seq   7804 wc   1 character memdata 003760 to char word 0234
+12:39:27.192: 0000100 seq   7805 wc   1 data byte 1: 0
+12:39:27.192: 0000120 seq   7806 wc   1 data byte 2: 16
+12:39:27.192: 0000100 seq   7807 wc   1 data 0002000 (0x0400)
+12:39:27.192: 0000100 seq   7807 wc   1 character memdata 002000 to char word 0235
+12:39:27.192: 0000100 seq   7808 wc   1 data byte 1: 0
+12:39:27.192: 0000100 seq   7809 wc   1 data byte 2: 0
+12:39:27.192: 0000100 seq   7810 wc   1 data 0000000 (0x0000)
+12:39:27.192: 0000100 seq   7810 wc   1 character memdata 000000 to char word 0236
+12:39:27.192: 0000100 seq   7811 wc   1 data byte 1: 0
+12:39:27.193: 0000100 seq   7812 wc   1 data byte 2: 0
+12:39:27.193: 0000100 seq   7813 wc   1 data 0000000 (0x0000)
+12:39:27.193: 0000100 seq   7813 wc   1 character memdata 000000 to char word 0237
+12:39:27.193: 0015527 seq   7814 wc   1 Start LDA
+12:39:27.193: 0000120 seq   7815 wc   1 data byte 1: 16
+12:39:27.193: 0000145 seq   7816 wc   1 data byte 2: 37
+12:39:27.193: 0000103 seq   7817 wc   1 data 0034520 (0x3950)
+12:39:27.193: 0000103 seq   7817 wc   1 load memory address 3950
+12:39:27.193: 0015523 seq   7818 wc   1 load mode 11
+12:39:27.193: 0015520 seq   7819 wc   1 load mode 11
+12:39:27.193: 0000100 seq   7820 wc   1 data byte 1: 0
+12:39:27.193: 0000100 seq   7821 wc   1 data byte 2: 0
+12:39:27.193: 0000100 seq   7822 wc   1 data 0000000 (0x0000)
+12:39:27.193: 0000100 seq   7822 wc   1 character memdata 000000 to char word 0250
+12:39:27.193: 0000100 seq   7823 wc   1 data byte 1: 0
+12:39:27.193: 0000100 seq   7824 wc   1 data byte 2: 0
+12:39:27.193: 0000100 seq   7825 wc   1 data 0000000 (0x0000)
+12:39:27.193: 0000100 seq   7825 wc   1 character memdata 000000 to char word 0251
+12:39:27.193: 0000100 seq   7826 wc   1 data byte 1: 0
+12:39:27.193: 0000120 seq   7827 wc   1 data byte 2: 16
+12:39:27.193: 0000100 seq   7828 wc   1 data 0002000 (0x0400)
+12:39:27.193: 0000100 seq   7828 wc   1 character memdata 002000 to char word 0252
+12:39:27.193: 0000100 seq   7829 wc   1 data byte 1: 0
+12:39:27.193: 0000120 seq   7830 wc   1 data byte 2: 16
+12:39:27.193: 0000100 seq   7831 wc   1 data 0002000 (0x0400)
+12:39:27.193: 0000100 seq   7831 wc   1 character memdata 002000 to char word 0253
+12:39:27.193: 0000160 seq   7832 wc   1 data byte 1: 48
+12:39:27.194: 0000137 seq   7833 wc   1 data byte 2: 31
+12:39:27.194: 0000100 seq   7834 wc   1 data 0003760 (0x07f0)
+12:39:27.194: 0000100 seq   7834 wc   1 character memdata 003760 to char word 0254
+12:39:27.194: 0000100 seq   7835 wc   1 data byte 1: 0
+12:39:27.194: 0000100 seq   7836 wc   1 data byte 2: 0
+12:39:27.194: 0000100 seq   7837 wc   1 data 0000000 (0x0000)
+12:39:27.194: 0000100 seq   7837 wc   1 character memdata 000000 to char word 0255
+12:39:27.194: 0000100 seq   7838 wc   1 data byte 1: 0
+12:39:27.194: 0000100 seq   7839 wc   1 data byte 2: 0
+12:39:27.194: 0000100 seq   7840 wc   1 data 0000000 (0x0000)
+12:39:27.194: 0000100 seq   7840 wc   1 character memdata 000000 to char word 0256
+12:39:27.194: 0000100 seq   7841 wc   1 data byte 1: 0
+12:39:27.194: 0000100 seq   7842 wc   1 data byte 2: 0
+12:39:27.194: 0000100 seq   7843 wc   1 data 0000000 (0x0000)
+12:39:27.194: 0000100 seq   7843 wc   1 character memdata 000000 to char word 0257
+12:39:27.194: 0000160 seq   7844 wc   1 data byte 1: 48
+12:39:27.194: 0000123 seq   7845 wc   1 data byte 2: 19
+12:39:27.194: 0000100 seq   7846 wc   1 data 0002360 (0x04f0)
+12:39:27.194: 0000100 seq   7846 wc   1 character memdata 002360 to char word 0260
+12:39:27.194: 0000100 seq   7847 wc   1 data byte 1: 0
+12:39:27.194: 0000120 seq   7848 wc   1 data byte 2: 16
+12:39:27.194: 0000100 seq   7849 wc   1 data 0002000 (0x0400)
+12:39:27.194: 0000100 seq   7849 wc   1 character memdata 002000 to char word 0261
+12:39:27.194: 0000100 seq   7850 wc   1 data byte 1: 0
+12:39:27.194: 0000120 seq   7851 wc   1 data byte 2: 16
+12:39:27.194: 0000100 seq   7852 wc   1 data 0002000 (0x0400)
+12:39:27.194: 0000100 seq   7852 wc   1 character memdata 002000 to char word 0262
+12:39:27.195: 0000100 seq   7853 wc   1 data byte 1: 0
+12:39:27.195: 0000120 seq   7854 wc   1 data byte 2: 16
+12:39:27.195: 0000100 seq   7855 wc   1 data 0002000 (0x0400)
+12:39:27.195: 0000100 seq   7855 wc   1 character memdata 002000 to char word 0263
+12:39:27.195: 0000100 seq   7856 wc   1 data byte 1: 0
+12:39:27.195: 0000120 seq   7857 wc   1 data byte 2: 16
+12:39:27.195: 0000100 seq   7858 wc   1 data 0002000 (0x0400)
+12:39:27.195: 0000100 seq   7858 wc   1 character memdata 002000 to char word 0264
+12:39:27.195: 0000160 seq   7859 wc   1 data byte 1: 48
+12:39:27.195: 0000137 seq   7860 wc   1 data byte 2: 31
+12:39:27.195: 0000100 seq   7861 wc   1 data 0003760 (0x07f0)
+12:39:27.195: 0000100 seq   7861 wc   1 character memdata 003760 to char word 0265
+12:39:27.195: 0000100 seq   7862 wc   1 data byte 1: 0
+12:39:27.195: 0000100 seq   7863 wc   1 data byte 2: 0
+12:39:27.195: 0000100 seq   7864 wc   1 data 0000000 (0x0000)
+12:39:27.195: 0000100 seq   7864 wc   1 character memdata 000000 to char word 0266
+12:39:27.195: 0000100 seq   7865 wc   1 data byte 1: 0
+12:39:27.195: 0000100 seq   7866 wc   1 data byte 2: 0
+12:39:27.195: 0000100 seq   7867 wc   1 data 0000000 (0x0000)
+12:39:27.195: 0000100 seq   7867 wc   1 character memdata 000000 to char word 0267
+12:39:27.195: 0015527 seq   7868 wc   1 Start LDA
+12:39:27.195: 0000100 seq   7869 wc   1 data byte 1: 0
+12:39:27.195: 0000146 seq   7870 wc   1 data byte 2: 38
+12:39:27.195: 0000103 seq   7871 wc   1 data 0034600 (0x3980)
+12:39:27.195: 0000103 seq   7871 wc   1 load memory address 3980
+12:39:27.195: 0015523 seq   7872 wc   1 load mode 11
+12:39:27.195: 0015520 seq   7873 wc   1 load mode 11
+12:39:27.195: 0000100 seq   7874 wc   1 data byte 1: 0
+12:39:27.196: 0000120 seq   7875 wc   1 data byte 2: 16
+12:39:27.196: 0000100 seq   7876 wc   1 data 0002000 (0x0400)
+12:39:27.196: 0000100 seq   7876 wc   1 character memdata 002000 to char word 0300
+12:39:27.196: 0000140 seq   7877 wc   1 data byte 1: 32
+12:39:27.196: 0000137 seq   7878 wc   1 data byte 2: 31
+12:39:27.196: 0000100 seq   7879 wc   1 data 0003740 (0x07e0)
+12:39:27.196: 0000100 seq   7879 wc   1 character memdata 003740 to char word 0301
+12:39:27.196: 0000120 seq   7880 wc   1 data byte 1: 16
+12:39:27.196: 0000120 seq   7881 wc   1 data byte 2: 16
+12:39:27.196: 0000100 seq   7882 wc   1 data 0002020 (0x0410)
+12:39:27.196: 0000100 seq   7882 wc   1 character memdata 002020 to char word 0302
+12:39:27.196: 0000120 seq   7883 wc   1 data byte 1: 16
+12:39:27.196: 0000120 seq   7884 wc   1 data byte 2: 16
+12:39:27.196: 0000100 seq   7885 wc   1 data 0002020 (0x0410)
+12:39:27.196: 0000100 seq   7885 wc   1 character memdata 002020 to char word 0303
+12:39:27.196: 0000140 seq   7886 wc   1 data byte 1: 32
+12:39:27.196: 0000120 seq   7887 wc   1 data byte 2: 16
+12:39:27.196: 0000100 seq   7888 wc   1 data 0002040 (0x0420)
+12:39:27.196: 0000100 seq   7888 wc   1 character memdata 002040 to char word 0304
+12:39:27.196: 0000100 seq   7889 wc   1 data byte 1: 0
+12:39:27.196: 0000137 seq   7890 wc   1 data byte 2: 31
+12:39:27.196: 0000100 seq   7891 wc   1 data 0003700 (0x07c0)
+12:39:27.196: 0000100 seq   7891 wc   1 character memdata 003700 to char word 0305
+12:39:27.196: 0000100 seq   7892 wc   1 data byte 1: 0
+12:39:27.196: 0000100 seq   7893 wc   1 data byte 2: 0
+12:39:27.196: 0000100 seq   7894 wc   1 data 0000000 (0x0000)
+12:39:27.196: 0000100 seq   7894 wc   1 character memdata 000000 to char word 0306
+12:39:27.197: 0000100 seq   7895 wc   1 data byte 1: 0
+12:39:27.197: 0000100 seq   7896 wc   1 data byte 2: 0
+12:39:27.197: 0000100 seq   7897 wc   1 data 0000000 (0x0000)
+12:39:27.197: 0000100 seq   7897 wc   1 character memdata 000000 to char word 0307
+12:39:27.197: 0015527 seq   7898 wc   1 Start LDA
+12:39:27.197: 0000140 seq   7899 wc   1 data byte 1: 32
+12:39:27.197: 0000163 seq   7900 wc   1 data byte 2: 51
+12:39:27.197: 0000103 seq   7901 wc   1 data 0036340 (0x3ce0)
+12:39:27.197: 0000103 seq   7901 wc   1 load memory address 3ce0
+12:39:27.197: 0015523 seq   7902 wc   1 load mode 11
+12:39:27.197: 0015520 seq   7903 wc   1 load mode 11
+12:39:27.197: 0000100 seq   7904 wc   1 data byte 1: 0
+12:39:27.197: 0000120 seq   7905 wc   1 data byte 2: 16
+12:39:27.197: 0000100 seq   7906 wc   1 data 0002000 (0x0400)
+12:39:27.197: 0000100 seq   7906 wc   1 character memdata 002000 to char word 1160
+12:39:27.197: 0000160 seq   7907 wc   1 data byte 1: 48
+12:39:27.197: 0000137 seq   7908 wc   1 data byte 2: 31
+12:39:27.197: 0000100 seq   7909 wc   1 data 0003760 (0x07f0)
+12:39:27.197: 0000100 seq   7909 wc   1 character memdata 003760 to char word 1161
+12:39:27.197: 0000120 seq   7910 wc   1 data byte 1: 16
+12:39:27.197: 0000120 seq   7911 wc   1 data byte 2: 16
+12:39:27.197: 0000100 seq   7912 wc   1 data 0002020 (0x0410)
+12:39:27.197: 0000100 seq   7912 wc   1 character memdata 002020 to char word 1162
+12:39:27.197: 0000120 seq   7913 wc   1 data byte 1: 16
+12:39:27.197: 0000120 seq   7914 wc   1 data byte 2: 16
+12:39:27.197: 0000100 seq   7915 wc   1 data 0002020 (0x0410)
+12:39:27.197: 0000100 seq   7915 wc   1 character memdata 002020 to char word 1163
+12:39:27.198: 0000120 seq   7916 wc   1 data byte 1: 16
+12:39:27.198: 0000120 seq   7917 wc   1 data byte 2: 16
+12:39:27.198: 0000100 seq   7918 wc   1 data 0002020 (0x0410)
+12:39:27.198: 0000100 seq   7918 wc   1 character memdata 002020 to char word 1164
+12:39:27.198: 0000160 seq   7919 wc   1 data byte 1: 48
+12:39:27.198: 0000137 seq   7920 wc   1 data byte 2: 31
+12:39:27.198: 0000100 seq   7921 wc   1 data 0003760 (0x07f0)
+12:39:27.198: 0000100 seq   7921 wc   1 character memdata 003760 to char word 1165
+12:39:27.198: 0000100 seq   7922 wc   1 data byte 1: 0
+12:39:27.198: 0000100 seq   7923 wc   1 data byte 2: 0
+12:39:27.198: 0000100 seq   7924 wc   1 data 0000000 (0x0000)
+12:39:27.198: 0000100 seq   7924 wc   1 character memdata 000000 to char word 1166
+12:39:27.198: 0000100 seq   7925 wc   1 data byte 1: 0
+12:39:27.198: 0000100 seq   7926 wc   1 data byte 2: 0
+12:39:27.198: 0000100 seq   7927 wc   1 data 0000000 (0x0000)
+12:39:27.198: 0000100 seq   7927 wc   1 character memdata 000000 to char word 1167
+12:39:27.198: 0015527 seq   7928 wc   1 Start LDA
+12:39:27.198: 0000106 seq   7929 wc   1 data byte 1: 6
+12:39:27.198: 0000114 seq   7930 wc   1 data byte 2: 12
+12:39:27.198: 0000102 seq   7931 wc   1 data 0021406 (0x2306)
+12:39:27.198: 0000102 seq   7931 wc   1 load memory address 2306
+12:39:27.198: 0015523 seq   7932 wc   1 load mode 11
+12:39:27.198: 0000100 seq   7933 wc   1 data byte 1: 0
+12:39:27.198: 0000140 seq   7934 wc   1 data byte 2: 32
+12:39:27.198: 0000103 seq   7935 wc   1 data 0034000 (0x3800)
+12:39:27.198: 0000103 seq   7935 wc   1 memdata 3800 to 2306
+12:39:27.198: 0000100 seq   7936 wc   1 data byte 1: 0
+12:39:27.198: 0000160 seq   7937 wc   1 data byte 2: 48
+12:39:27.199: 0000103 seq   7938 wc   1 data 0036000 (0x3c00)
+12:39:27.199: 0000103 seq   7938 wc   1 memdata 3c00 to 2308
+12:39:27.199: 0015531 seq   7939 wc   1 Start LDE
+12:39:27.199: 0000120 seq   7940 wc   1 data byte 1: 16
+12:39:27.199: 0000101 seq   7941 wc   1 data byte 2: 1
+12:39:27.199: 0000100 seq   7942 wc   1 data 0000120 (0x0050)
+12:39:27.199: 0000100 seq   7942 wc   1 load echo 80 (0x50)
+12:39:27.199: key to plato 320
+12:39:27.199: ascii mode key to plato 0x1b 0x50 0x63
+12:39:27.292: 0015541 seq   7943 wc   1 Start foreground color
+12:39:27.292: 0000177 seq   7944 wc   1 color byte 1: 63
+12:39:27.292: 0000103 seq   7945 wc   1 color byte 2: 3
+12:39:27.292: 0000100 seq   7946 wc   1 color byte 3: 0
+12:39:27.292: 0000100 seq   7947 wc   1 set foreground color 0000ff
+12:39:27.292: 0000100 seq   7947 wc   1 fg: 0 0 255; bg: 0 0 0
+12:39:27.292: 0000035 seq   7948 wc   1 load mode 7
+12:39:27.293: 0000050 seq   7949 wc   1 high Y 8
+12:39:27.293: 0000140 seq   7950 wc   1 low Y 0
+12:39:27.293: 0000050 seq   7951 wc   1 high X 8
+12:39:27.293: 0000100 seq   7952 wc   1 low X 0, coordinates 256 256
+12:39:27.293: 0000100 seq   7952 wc   1 load coordinate 256 256
+12:39:27.293: 0015532 seq   7953 wc   1 set margin 256
+12:39:27.293: 0015422 seq   7954 wc   1 load mode 7
+12:39:27.293: 0000035 seq   7955 wc   1 load mode 7
+12:39:27.293: 0000140 seq   7956 wc   1 low Y 0
+12:39:27.293: 0000056 seq   7957 wc   1 high X 14
+12:39:27.293: 0000110 seq   7958 wc   1 low X 8, coordinates 456 256
+12:39:27.293: 0000110 seq   7958 wc   1 load coordinate 456 256
+12:39:27.293: 0000171 seq   7959 wc   1 low Y 25
+12:39:27.293: 0000106 seq   7960 wc   1 low X 6, coordinates 454 281
+12:39:27.293: 0000106 seq   7960 wc   1 lineto 454 281
+12:39:27.294: 0000051 seq   7961 wc   1 high Y 9
+12:39:27.294: 0000161 seq   7962 wc   1 low Y 17
+12:39:27.294: 0000102 seq   7963 wc   1 low X 2, coordinates 450 305
+12:39:27.294: 0000102 seq   7963 wc   1 lineto 450 305
+12:39:27.294: 0000052 seq   7964 wc   1 high Y 10
+12:39:27.294: 0000151 seq   7965 wc   1 low Y 9
+12:39:27.294: 0000055 seq   7966 wc   1 high X 13
+12:39:27.294: 0000132 seq   7967 wc   1 low X 26, coordinates 442 329
+12:39:27.294: 0000132 seq   7967 wc   1 lineto 442 329
+12:39:27.294: 0000053 seq   7968 wc   1 high Y 11
+12:39:27.294: 0000140 seq   7969 wc   1 low Y 0
+12:39:27.294: 0000117 seq   7970 wc   1 low X 15, coordinates 431 352
+12:39:27.294: 0000117 seq   7970 wc   1 lineto 431 352
+12:39:27.294: 0000165 seq   7971 wc   1 low Y 21
+12:39:27.294: 0000102 seq   7972 wc   1 low X 2, coordinates 418 373
+12:39:27.294: 0000102 seq   7972 wc   1 lineto 418 373
+12:39:27.295: 0000054 seq   7973 wc   1 high Y 12
+12:39:27.295: 0000151 seq   7974 wc   1 low Y 9
+12:39:27.295: 0000054 seq   7975 wc   1 high X 12
+12:39:27.295: 0000122 seq   7976 wc   1 low X 18, coordinates 402 393
+12:39:27.295: 0000122 seq   7976 wc   1 lineto 402 393
+12:39:27.295: 0000172 seq   7977 wc   1 low Y 26
+12:39:27.295: 0000053 seq   7978 wc   1 high X 11
+12:39:27.295: 0000137 seq   7979 wc   1 low X 31, coordinates 383 410
+12:39:27.295: 0000137 seq   7979 wc   1 lineto 383 410
+12:39:27.295: 0000055 seq   7980 wc   1 high Y 13
+12:39:27.295: 0000151 seq   7981 wc   1 low Y 9
+12:39:27.295: 0000113 seq   7982 wc   1 low X 11, coordinates 363 425
+12:39:27.295: 0000113 seq   7982 wc   1 lineto 363 425
+12:39:27.296: 0000165 seq   7983 wc   1 low Y 21
+12:39:27.296: 0000052 seq   7984 wc   1 high X 10
+12:39:27.296: 0000125 seq   7985 wc   1 low X 21, coordinates 341 437
+12:39:27.296: 0000125 seq   7985 wc   1 lineto 341 437
+12:39:27.296: 0000176 seq   7986 wc   1 low Y 30
+12:39:27.296: 0000051 seq   7987 wc   1 high X 9
+12:39:27.296: 0000135 seq   7988 wc   1 low X 29, coordinates 317 446
+12:39:27.296: 0000135 seq   7988 wc   1 lineto 317 446
+12:39:27.296: 0000056 seq   7989 wc   1 high Y 14
+12:39:27.296: 0000144 seq   7990 wc   1 low Y 4
+12:39:27.296: 0000105 seq   7991 wc   1 low X 5, coordinates 293 452
+12:39:27.296: 0000105 seq   7991 wc   1 lineto 293 452
+12:39:27.296: 0000150 seq   7992 wc   1 low Y 8
+12:39:27.296: 0000050 seq   7993 wc   1 high X 8
+12:39:27.296: 0000114 seq   7994 wc   1 low X 12, coordinates 268 456
+12:39:27.296: 0000114 seq   7994 wc   1 lineto 268 456
+12:39:27.296: 0000150 seq   7995 wc   1 low Y 8
+12:39:27.296: 0000047 seq   7996 wc   1 high X 7
+12:39:27.296: 0000124 seq   7997 wc   1 low X 20, coordinates 244 456
+12:39:27.296: 0000124 seq   7997 wc   1 lineto 244 456
+12:39:27.296: 0000144 seq   7998 wc   1 low Y 4
+12:39:27.296: 0000046 seq   7999 wc   1 high X 6
+12:39:27.297: 0000133 seq   8000 wc   1 low X 27, coordinates 219 452
+12:39:27.297: 0000133 seq   8000 wc   1 lineto 219 452
+12:39:27.297: 0000055 seq   8001 wc   1 high Y 13
+12:39:27.297: 0000176 seq   8002 wc   1 low Y 30
+12:39:27.297: 0000103 seq   8003 wc   1 low X 3, coordinates 195 446
+12:39:27.297: 0000103 seq   8003 wc   1 lineto 195 446
+12:39:27.297: 0000165 seq   8004 wc   1 low Y 21
+12:39:27.297: 0000045 seq   8005 wc   1 high X 5
+12:39:27.297: 0000113 seq   8006 wc   1 low X 11, coordinates 171 437
+12:39:27.297: 0000113 seq   8006 wc   1 lineto 171 437
+12:39:27.297: 0000151 seq   8007 wc   1 low Y 9
+12:39:27.297: 0000044 seq   8008 wc   1 high X 4
+12:39:27.297: 0000125 seq   8009 wc   1 low X 21, coordinates 149 425
+12:39:27.297: 0000125 seq   8009 wc   1 lineto 149 425
+12:39:27.297: 0000054 seq   8010 wc   1 high Y 12
+12:39:27.297: 0000172 seq   8011 wc   1 low Y 26
+12:39:27.297: 0000101 seq   8012 wc   1 low X 1, coordinates 129 410
+12:39:27.297: 0000101 seq   8012 wc   1 lineto 129 410
+12:39:27.297: 0000151 seq   8013 wc   1 low Y 9
+12:39:27.297: 0000043 seq   8014 wc   1 high X 3
+12:39:27.297: 0000116 seq   8015 wc   1 low X 14, coordinates 110 393
+12:39:27.297: 0000116 seq   8015 wc   1 lineto 110 393
+12:39:27.297: 0000053 seq   8016 wc   1 high Y 11
+12:39:27.298: 0000165 seq   8017 wc   1 low Y 21
+12:39:27.298: 0000042 seq   8018 wc   1 high X 2
+12:39:27.298: 0000136 seq   8019 wc   1 low X 30, coordinates 94 373
+12:39:27.298: 0000136 seq   8019 wc   1 lineto 94 373
+12:39:27.298: 0000140 seq   8020 wc   1 low Y 0
+12:39:27.298: 0000121 seq   8021 wc   1 low X 17, coordinates 81 352
+12:39:27.298: 0000121 seq   8021 wc   1 lineto 81 352
+12:39:27.298: 0000052 seq   8022 wc   1 high Y 10
+12:39:27.298: 0000151 seq   8023 wc   1 low Y 9
+12:39:27.298: 0000106 seq   8024 wc   1 low X 6, coordinates 70 329
+12:39:27.298: 0000106 seq   8024 wc   1 lineto 70 329
+12:39:27.298: 0000051 seq   8025 wc   1 high Y 9
+12:39:27.298: 0000161 seq   8026 wc   1 low Y 17
+12:39:27.298: 0000041 seq   8027 wc   1 high X 1
+12:39:27.298: 0000136 seq   8028 wc   1 low X 30, coordinates 62 305
+12:39:27.298: 0000136 seq   8028 wc   1 lineto 62 305
+12:39:27.298: 0000050 seq   8029 wc   1 high Y 8
+12:39:27.298: 0000171 seq   8030 wc   1 low Y 25
+12:39:27.298: 0000132 seq   8031 wc   1 low X 26, coordinates 58 281
+12:39:27.298: 0000132 seq   8031 wc   1 lineto 58 281
+12:39:27.298: 0000140 seq   8032 wc   1 low Y 0
+12:39:27.310: 0000130 seq   8033 wc   1 low X 24, coordinates 56 256
+12:39:27.310: 0000130 seq   8033 wc   1 lineto 56 256
+12:39:27.310: 0000047 seq   8034 wc   1 high Y 7
+12:39:27.310: 0000147 seq   8035 wc   1 low Y 7
+12:39:27.310: 0000132 seq   8036 wc   1 low X 26, coordinates 58 231
+12:39:27.310: 0000132 seq   8036 wc   1 lineto 58 231
+12:39:27.310: 0000046 seq   8037 wc   1 high Y 6
+12:39:27.311: 0000157 seq   8038 wc   1 low Y 15
+12:39:27.311: 0000136 seq   8039 wc   1 low X 30, coordinates 62 207
+12:39:27.311: 0000136 seq   8039 wc   1 lineto 62 207
+12:39:27.311: 0000045 seq   8040 wc   1 high Y 5
+12:39:27.311: 0000167 seq   8041 wc   1 low Y 23
+12:39:27.311: 0000042 seq   8042 wc   1 high X 2
+12:39:27.311: 0000106 seq   8043 wc   1 low X 6, coordinates 70 183
+12:39:27.311: 0000106 seq   8043 wc   1 lineto 70 183
+12:39:27.311: 0000140 seq   8044 wc   1 low Y 0
+12:39:27.311: 0000121 seq   8045 wc   1 low X 17, coordinates 81 160
+12:39:27.311: 0000121 seq   8045 wc   1 lineto 81 160
+12:39:27.311: 0000044 seq   8046 wc   1 high Y 4
+12:39:27.311: 0000153 seq   8047 wc   1 low Y 11
+12:39:27.311: 0000136 seq   8048 wc   1 low X 30, coordinates 94 139
+12:39:27.311: 0000136 seq   8048 wc   1 lineto 94 139
+12:39:27.311: 0000043 seq   8049 wc   1 high Y 3
+12:39:27.312: 0000167 seq   8050 wc   1 low Y 23
+12:39:27.312: 0000043 seq   8051 wc   1 high X 3
+12:39:27.312: 0000116 seq   8052 wc   1 low X 14, coordinates 110 119
+12:39:27.312: 0000116 seq   8052 wc   1 lineto 110 119
+12:39:27.312: 0000146 seq   8053 wc   1 low Y 6
+12:39:27.312: 0000044 seq   8054 wc   1 high X 4
+12:39:27.312: 0000101 seq   8055 wc   1 low X 1, coordinates 129 102
+12:39:27.312: 0000101 seq   8055 wc   1 lineto 129 102
+12:39:27.312: 0000042 seq   8056 wc   1 high Y 2
+12:39:27.312: 0000167 seq   8057 wc   1 low Y 23
+12:39:27.312: 0000125 seq   8058 wc   1 low X 21, coordinates 149 87
+12:39:27.312: 0000125 seq   8058 wc   1 lineto 149 87
+12:39:27.312: 0000153 seq   8059 wc   1 low Y 11
+12:39:27.312: 0000045 seq   8060 wc   1 high X 5
+12:39:27.312: 0000113 seq   8061 wc   1 low X 11, coordinates 171 75
+12:39:27.312: 0000113 seq   8061 wc   1 lineto 171 75
+12:39:27.312: 0000142 seq   8062 wc   1 low Y 2
+12:39:27.312: 0000046 seq   8063 wc   1 high X 6
+12:39:27.312: 0000103 seq   8064 wc   1 low X 3, coordinates 195 66
+12:39:27.312: 0000103 seq   8064 wc   1 lineto 195 66
+12:39:27.313: 0000041 seq   8065 wc   1 high Y 1
+12:39:27.313: 0000174 seq   8066 wc   1 low Y 28
+12:39:27.313: 0000133 seq   8067 wc   1 low X 27, coordinates 219 60
+12:39:27.313: 0000133 seq   8067 wc   1 lineto 219 60
+12:39:27.313: 0000170 seq   8068 wc   1 low Y 24
+12:39:27.313: 0000047 seq   8069 wc   1 high X 7
+12:39:27.313: 0000124 seq   8070 wc   1 low X 20, coordinates 244 56
+12:39:27.313: 0000124 seq   8070 wc   1 lineto 244 56
+12:39:27.313: 0000170 seq   8071 wc   1 low Y 24
+12:39:27.313: 0000050 seq   8072 wc   1 high X 8
+12:39:27.313: 0000114 seq   8073 wc   1 low X 12, coordinates 268 56
+12:39:27.313: 0000114 seq   8073 wc   1 lineto 268 56
+12:39:27.313: 0000174 seq   8074 wc   1 low Y 28
+12:39:27.313: 0000051 seq   8075 wc   1 high X 9
+12:39:27.313: 0000105 seq   8076 wc   1 low X 5, coordinates 293 60
+12:39:27.313: 0000105 seq   8076 wc   1 lineto 293 60
+12:39:27.313: 0000042 seq   8077 wc   1 high Y 2
+12:39:27.313: 0000142 seq   8078 wc   1 low Y 2
+12:39:27.313: 0000135 seq   8079 wc   1 low X 29, coordinates 317 66
+12:39:27.313: 0000135 seq   8079 wc   1 lineto 317 66
+12:39:27.313: 0000153 seq   8080 wc   1 low Y 11
+12:39:27.313: 0000052 seq   8081 wc   1 high X 10
+12:39:27.314: 0000125 seq   8082 wc   1 low X 21, coordinates 341 75
+12:39:27.314: 0000125 seq   8082 wc   1 lineto 341 75
+12:39:27.314: 0000167 seq   8083 wc   1 low Y 23
+12:39:27.314: 0000053 seq   8084 wc   1 high X 11
+12:39:27.314: 0000113 seq   8085 wc   1 low X 11, coordinates 363 87
+12:39:27.314: 0000113 seq   8085 wc   1 lineto 363 87
+12:39:27.314: 0000043 seq   8086 wc   1 high Y 3
+12:39:27.314: 0000146 seq   8087 wc   1 low Y 6
+12:39:27.314: 0000137 seq   8088 wc   1 low X 31, coordinates 383 102
+12:39:27.331: 0000137 seq   8088 wc   1 lineto 383 102
+12:39:27.331: 0000167 seq   8089 wc   1 low Y 23
+12:39:27.331: 0000054 seq   8090 wc   1 high X 12
+12:39:27.331: 0000122 seq   8091 wc   1 low X 18, coordinates 402 119
+12:39:27.331: 0000122 seq   8091 wc   1 lineto 402 119
+12:39:27.331: 0000044 seq   8092 wc   1 high Y 4
+12:39:27.331: 0000153 seq   8093 wc   1 low Y 11
+12:39:27.331: 0000055 seq   8094 wc   1 high X 13
+12:39:27.331: 0000102 seq   8095 wc   1 low X 2, coordinates 418 139
+12:39:27.332: 0000102 seq   8095 wc   1 lineto 418 139
+12:39:27.332: 0000045 seq   8096 wc   1 high Y 5
+12:39:27.332: 0000140 seq   8097 wc   1 low Y 0
+12:39:27.332: 0000117 seq   8098 wc   1 low X 15, coordinates 431 160
+12:39:27.332: 0000117 seq   8098 wc   1 lineto 431 160
+12:39:27.332: 0000167 seq   8099 wc   1 low Y 23
+12:39:27.332: 0000132 seq   8100 wc   1 low X 26, coordinates 442 183
+12:39:27.332: 0000132 seq   8100 wc   1 lineto 442 183
+12:39:27.332: 0000046 seq   8101 wc   1 high Y 6
+12:39:27.332: 0000157 seq   8102 wc   1 low Y 15
+12:39:27.332: 0000056 seq   8103 wc   1 high X 14
+12:39:27.332: 0000102 seq   8104 wc   1 low X 2, coordinates 450 207
+12:39:27.332: 0000102 seq   8104 wc   1 lineto 450 207
+12:39:27.332: 0000047 seq   8105 wc   1 high Y 7
+12:39:27.332: 0000147 seq   8106 wc   1 low Y 7
+12:39:27.332: 0000106 seq   8107 wc   1 low X 6, coordinates 454 231
+12:39:27.333: 0000106 seq   8107 wc   1 lineto 454 231
+12:39:27.333: 0000050 seq   8108 wc   1 high Y 8
+12:39:27.333: 0000140 seq   8109 wc   1 low Y 0
+12:39:27.333: 0000110 seq   8110 wc   1 low X 8, coordinates 456 256
+12:39:27.333: 0000110 seq   8110 wc   1 lineto 456 256
+12:39:27.333: 0000035 seq   8111 wc   1 load mode 7
+12:39:27.333: 0000140 seq   8112 wc   1 low Y 0
+12:39:27.333: 0000050 seq   8113 wc   1 high X 8
+12:39:27.333: 0000100 seq   8114 wc   1 low X 0, coordinates 256 256
+12:39:27.333: 0000100 seq   8114 wc   1 load coordinate 256 256
+12:39:27.333: 0015541 seq   8115 wc   1 Start foreground color
+12:39:27.333: 0000114 seq   8116 wc   1 color byte 1: 12
+12:39:27.333: 0000101 seq   8117 wc   1 color byte 2: 1
+12:39:27.333: 0000120 seq   8118 wc   1 color byte 3: 16
+12:39:27.333: 0000106 seq   8119 wc   1 set foreground color 19004c
+12:39:27.333: 0000106 seq   8119 wc   1 fg: 25 0 76; bg: 0 0 0
+12:39:27.333: 0015542 seq   8120 wc   1 Start background color
+12:39:27.333: 0000177 seq   8121 wc   1 color byte 1: 63
+12:39:27.333: 0000103 seq   8122 wc   1 color byte 2: 3
+12:39:27.333: 0000100 seq   8123 wc   1 color byte 3: 0
+12:39:27.333: 0000100 seq   8124 wc   1 set background color 0000ff
+12:39:27.334: 0000100 seq   8124 wc   1 fg: 25 0 76; bg: 0 0 255
+12:39:27.334: 0015543 seq   8125 wc   1 Start paint
+12:39:27.334: 0000100 seq   8126 wc   1 paint byte 1: 0
+12:39:27.334: 0000100 seq   8127 wc   1 paint 000 (0x0000)
+12:39:27.334: 0000100 seq   8127 wc   1 paint 000
+12:39:27.347: 0000100 seq   8127 wc   1 paintwalker: 124577 pixels, 62509 max stack
+12:39:27.359: 0000100 seq   8127 wc   1 paintwalker: 124577 pixels, 62509 max stack
+12:39:27.359: 0015541 seq   8128 wc   1 Start foreground color
+12:39:27.359: 0000177 seq   8129 wc   1 color byte 1: 63
+12:39:27.359: 0000103 seq   8130 wc   1 color byte 2: 3
+12:39:27.359: 0000100 seq   8131 wc   1 color byte 3: 0
+12:39:27.359: 0000100 seq   8132 wc   1 set foreground color 0000ff
+12:39:27.359: 0000100 seq   8132 wc   1 fg: 0 0 255; bg: 0 0 255
+12:39:27.359: 0000035 seq   8133 wc   1 load mode 7
+12:39:27.359: 0000051 seq   8134 wc   1 high Y 9
+12:39:27.359: 0000162 seq   8135 wc   1 low Y 18
+12:39:27.359: 0000051 seq   8136 wc   1 high X 9
+12:39:27.359: 0000122 seq   8137 wc   1 low X 18, coordinates 306 306
+12:39:27.359: 0000122 seq   8137 wc   1 load coordinate 306 306
+12:39:27.359: 0015422 seq   8138 wc   1 load mode 7
+12:39:27.360: 0000050 seq   8139 wc   1 high Y 8
+12:39:27.360: 0000140 seq   8140 wc   1 low Y 0
+12:39:27.360: 0000055 seq   8141 wc   1 high X 13
+12:39:27.360: 0000124 seq   8142 wc   1 low X 20, coordinates 436 256
+12:39:27.360: 0000124 seq   8142 wc   1 lineto 436 256
+12:39:27.378: 0000051 seq   8143 wc   1 high Y 9
+12:39:27.378: 0000162 seq   8144 wc   1 low Y 18
+12:39:27.379: 0000051 seq   8145 wc   1 high X 9
+12:39:27.379: 0000122 seq   8146 wc   1 low X 18, coordinates 306 306
+12:39:27.379: 0000122 seq   8146 wc   1 lineto 306 306
+12:39:27.379: 0000052 seq   8147 wc   1 high Y 10
+12:39:27.379: 0000172 seq   8148 wc   1 low Y 26
+12:39:27.379: 0000054 seq   8149 wc   1 high X 12
+12:39:27.379: 0000134 seq   8150 wc   1 low X 28, coordinates 412 346
+12:39:27.379: 0000134 seq   8150 wc   1 lineto 412 346
+12:39:27.379: 0000144 seq   8151 wc   1 low Y 4
+12:39:27.379: 0000050 seq   8152 wc   1 high X 8
+12:39:27.379: 0000122 seq   8153 wc   1 low X 18, coordinates 274 324
+12:39:27.379: 0000122 seq   8153 wc   1 lineto 274 324
+12:39:27.380: 0000054 seq   8154 wc   1 high Y 12
+12:39:27.380: 0000174 seq   8155 wc   1 low Y 28
+12:39:27.380: 0000052 seq   8156 wc   1 high X 10
+12:39:27.380: 0000132 seq   8157 wc   1 low X 26, coordinates 346 412
+12:39:27.380: 0000132 seq   8157 wc   1 lineto 346 412
+12:39:27.380: 0000052 seq   8158 wc   1 high Y 10
+12:39:27.380: 0000144 seq   8159 wc   1 low Y 4
+12:39:27.380: 0000047 seq   8160 wc   1 high X 7
+12:39:27.380: 0000116 seq   8161 wc   1 low X 14, coordinates 238 324
+12:39:27.380: 0000116 seq   8161 wc   1 lineto 238 324
+12:39:27.380: 0000055 seq   8162 wc   1 high Y 13
+12:39:27.380: 0000164 seq   8163 wc   1 low Y 20
+12:39:27.380: 0000050 seq   8164 wc   1 high X 8
+12:39:27.380: 0000100 seq   8165 wc   1 low X 0, coordinates 256 436
+12:39:27.380: 0000100 seq   8165 wc   1 lineto 256 436
+12:39:27.380: 0000051 seq   8166 wc   1 high Y 9
+12:39:27.380: 0000162 seq   8167 wc   1 low Y 18
+12:39:27.381: 0000046 seq   8168 wc   1 high X 6
+12:39:27.381: 0000116 seq   8169 wc   1 low X 14, coordinates 206 306
+12:39:27.381: 0000116 seq   8169 wc   1 lineto 206 306
+12:39:27.381: 0000054 seq   8170 wc   1 high Y 12
+12:39:27.381: 0000174 seq   8171 wc   1 low Y 28
+12:39:27.381: 0000045 seq   8172 wc   1 high X 5
+12:39:27.381: 0000106 seq   8173 wc   1 low X 6, coordinates 166 412
+12:39:27.381: 0000106 seq   8173 wc   1 lineto 166 412
+12:39:27.381: 0000050 seq   8174 wc   1 high Y 8
+12:39:27.381: 0000162 seq   8175 wc   1 low Y 18
+12:39:27.381: 0000134 seq   8176 wc   1 low X 28, coordinates 188 274
+12:39:27.381: 0000134 seq   8176 wc   1 lineto 188 274
+12:39:27.381: 0000052 seq   8177 wc   1 high Y 10
+12:39:27.381: 0000172 seq   8178 wc   1 low Y 26
+12:39:27.381: 0000043 seq   8179 wc   1 high X 3
+12:39:27.381: 0000104 seq   8180 wc   1 low X 4, coordinates 100 346
+12:39:27.381: 0000104 seq   8180 wc   1 lineto 100 346
+12:39:27.381: 0000047 seq   8181 wc   1 high Y 7
+12:39:27.381: 0000156 seq   8182 wc   1 low Y 14
+12:39:27.381: 0000045 seq   8183 wc   1 high X 5
+12:39:27.382: 0000134 seq   8184 wc   1 low X 28, coordinates 188 238
+12:39:27.382: 0000134 seq   8184 wc   1 lineto 188 238
+12:39:27.382: 0000050 seq   8185 wc   1 high Y 8
+12:39:27.382: 0000140 seq   8186 wc   1 low Y 0
+12:39:27.382: 0000042 seq   8187 wc   1 high X 2
+12:39:27.382: 0000114 seq   8188 wc   1 low X 12, coordinates 76 256
+12:39:27.382: 0000114 seq   8188 wc   1 lineto 76 256
+12:39:27.382: 0000046 seq   8189 wc   1 high Y 6
+12:39:27.382: 0000156 seq   8190 wc   1 low Y 14
+12:39:27.382: 0000046 seq   8191 wc   1 high X 6
+12:39:27.382: 0000116 seq   8192 wc   1 low X 14, coordinates 206 206
+12:39:27.382: 0000116 seq   8192 wc   1 lineto 206 206
+12:39:27.382: 0000045 seq   8193 wc   1 high Y 5
+12:39:27.382: 0000146 seq   8194 wc   1 low Y 6
+12:39:27.382: 0000043 seq   8195 wc   1 high X 3
+12:39:27.382: 0000104 seq   8196 wc   1 low X 4, coordinates 100 166
+12:39:27.382: 0000104 seq   8196 wc   1 lineto 100 166
+12:39:27.382: 0000174 seq   8197 wc   1 low Y 28
+12:39:27.382: 0000047 seq   8198 wc   1 high X 7
+12:39:27.382: 0000116 seq   8199 wc   1 low X 14, coordinates 238 188
+12:39:27.382: 0000116 seq   8199 wc   1 lineto 238 188
+12:39:27.382: 0000043 seq   8200 wc   1 high Y 3
+12:39:27.383: 0000144 seq   8201 wc   1 low Y 4
+12:39:27.383: 0000045 seq   8202 wc   1 high X 5
+12:39:27.383: 0000106 seq   8203 wc   1 low X 6, coordinates 166 100
+12:39:27.396: 0000106 seq   8203 wc   1 lineto 166 100
+12:39:27.396: 0000045 seq   8204 wc   1 high Y 5
+12:39:27.396: 0000174 seq   8205 wc   1 low Y 28
+12:39:27.396: 0000050 seq   8206 wc   1 high X 8
+12:39:27.396: 0000122 seq   8207 wc   1 low X 18, coordinates 274 188
+12:39:27.396: 0000122 seq   8207 wc   1 lineto 274 188
+12:39:27.397: 0000042 seq   8208 wc   1 high Y 2
+12:39:27.397: 0000154 seq   8209 wc   1 low Y 12
+12:39:27.397: 0000100 seq   8210 wc   1 low X 0, coordinates 256 76
+12:39:27.397: 0000100 seq   8210 wc   1 lineto 256 76
+12:39:27.397: 0000046 seq   8211 wc   1 high Y 6
+12:39:27.397: 0000156 seq   8212 wc   1 low Y 14
+12:39:27.397: 0000051 seq   8213 wc   1 high X 9
+12:39:27.397: 0000122 seq   8214 wc   1 low X 18, coordinates 306 206
+12:39:27.397: 0000122 seq   8214 wc   1 lineto 306 206
+12:39:27.397: 0000043 seq   8215 wc   1 high Y 3
+12:39:27.397: 0000144 seq   8216 wc   1 low Y 4
+12:39:27.397: 0000052 seq   8217 wc   1 high X 10
+12:39:27.397: 0000132 seq   8218 wc   1 low X 26, coordinates 346 100
+12:39:27.397: 0000132 seq   8218 wc   1 lineto 346 100
+12:39:27.397: 0000047 seq   8219 wc   1 high Y 7
+12:39:27.397: 0000156 seq   8220 wc   1 low Y 14
+12:39:27.397: 0000104 seq   8221 wc   1 low X 4, coordinates 324 238
+12:39:27.398: 0000104 seq   8221 wc   1 lineto 324 238
+12:39:27.398: 0000045 seq   8222 wc   1 high Y 5
+12:39:27.398: 0000146 seq   8223 wc   1 low Y 6
+12:39:27.398: 0000054 seq   8224 wc   1 high X 12
+12:39:27.398: 0000134 seq   8225 wc   1 low X 28, coordinates 412 166
+12:39:27.398: 0000134 seq   8225 wc   1 lineto 412 166
+12:39:27.398: 0000050 seq   8226 wc   1 high Y 8
+12:39:27.398: 0000162 seq   8227 wc   1 low Y 18
+12:39:27.398: 0000052 seq   8228 wc   1 high X 10
+12:39:27.398: 0000104 seq   8229 wc   1 low X 4, coordinates 324 274
+12:39:27.398: 0000104 seq   8229 wc   1 lineto 324 274
+12:39:27.398: 0000140 seq   8230 wc   1 low Y 0
+12:39:27.398: 0000055 seq   8231 wc   1 high X 13
+12:39:27.398: 0000124 seq   8232 wc   1 low X 20, coordinates 436 256
+12:39:27.398: 0000124 seq   8232 wc   1 lineto 436 256
+12:39:27.398: 0000051 seq   8233 wc   1 high Y 9
+12:39:27.398: 0000162 seq   8234 wc   1 low Y 18
+12:39:27.398: 0000051 seq   8235 wc   1 high X 9
+12:39:27.398: 0000122 seq   8236 wc   1 low X 18, coordinates 306 306
+12:39:27.398: 0000122 seq   8236 wc   1 lineto 306 306
+12:39:27.399: 0015541 seq   8237 wc   1 Start foreground color
+12:39:27.399: 0000100 seq   8238 wc   1 color byte 1: 0
+12:39:27.399: 0000100 seq   8239 wc   1 color byte 2: 0
+12:39:27.399: 0000160 seq   8240 wc   1 color byte 3: 48
+12:39:27.399: 0000177 seq   8241 wc   1 set foreground color ff0000
+12:39:27.399: 0000177 seq   8241 wc   1 fg: 255 0 0; bg: 0 0 255
+12:39:27.399: 0015542 seq   8242 wc   1 Start background color
+12:39:27.399: 0000177 seq   8243 wc   1 color byte 1: 63
+12:39:27.399: 0000103 seq   8244 wc   1 color byte 2: 3
+12:39:27.399: 0000100 seq   8245 wc   1 color byte 3: 0
+12:39:27.399: 0000100 seq   8246 wc   1 set background color 0000ff
+12:39:27.399: 0000100 seq   8246 wc   1 fg: 255 0 0; bg: 0 0 255
+12:39:27.399: 0000035 seq   8247 wc   1 load mode 7
+12:39:27.399: 0000050 seq   8248 wc   1 high Y 8
+12:39:27.399: 0000140 seq   8249 wc   1 low Y 0
+12:39:27.399: 0000050 seq   8250 wc   1 high X 8
+12:39:27.399: 0000100 seq   8251 wc   1 low X 0, coordinates 256 256
+12:39:27.399: 0000100 seq   8251 wc   1 load coordinate 256 256
+12:39:27.399: 0015532 seq   8252 wc   1 set margin 256
+12:39:27.399: 0015543 seq   8253 wc   1 Start paint
+12:39:27.399: 0000101 seq   8254 wc   1 paint byte 1: 1
+12:39:27.399: 0000104 seq   8255 wc   1 paint 401 (0x0101)
+12:39:27.400: 0000104 seq   8255 wc   1 paint 401
+12:39:27.403: 0000104 seq   8255 wc   1 paintwalker: 32741 pixels, 10907 max stack
+12:39:27.407: 0000104 seq   8255 wc   1 paintwalker: 32741 pixels, 10907 max stack
+12:39:27.407: 0015541 seq   8256 wc   1 Start foreground color
+12:39:27.407: 0000100 seq   8257 wc   1 color byte 1: 0
+12:39:27.407: 0000174 seq   8258 wc   1 color byte 2: 60
+12:39:27.407: 0000177 seq   8259 wc   1 color byte 3: 63
+12:39:27.432: 0000177 seq   8260 wc   1 set foreground color ffff00
+12:39:27.432: 0000177 seq   8260 wc   1 fg: 255 255 0; bg: 0 0 255
+12:39:27.432: 0015542 seq   8261 wc   1 Start background color
+12:39:27.432: 0000177 seq   8262 wc   1 color byte 1: 63
+12:39:27.432: 0000103 seq   8263 wc   1 color byte 2: 3
+12:39:27.432: 0000100 seq   8264 wc   1 color byte 3: 0
+12:39:27.432: 0000100 seq   8265 wc   1 set background color 0000ff
+12:39:27.432: 0000100 seq   8265 wc   1 fg: 255 255 0; bg: 0 0 255
+12:39:27.432: 0000035 seq   8266 wc   1 load mode 7
+12:39:27.432: 0000140 seq   8267 wc   1 low Y 0
+12:39:27.433: 0000055 seq   8268 wc   1 high X 13
+12:39:27.433: 0000130 seq   8269 wc   1 low X 24, coordinates 440 256
+12:39:27.433: 0000130 seq   8269 wc   1 load coordinate 440 256
+12:39:27.433: 0015532 seq   8270 wc   1 set margin 440
+12:39:27.433: 0015543 seq   8271 wc   1 Start paint
+12:39:27.433: 0000137 seq   8272 wc   1 paint byte 1: 31
+12:39:27.433: 0000102 seq   8273 wc   1 paint 237 (0x009f)
+12:39:27.433: 0000102 seq   8273 wc   1 paint 237
+12:39:27.443: 0000102 seq   8273 wc   1 paintwalker: 89084 pixels, 44808 max stack
+12:39:27.452: 0000102 seq   8273 wc   1 paintwalker: 89084 pixels, 44808 max stack
+12:39:27.452: 0015541 seq   8274 wc   1 Start foreground color
+12:39:27.452: 0000177 seq   8275 wc   1 color byte 1: 63
+12:39:27.452: 0000177 seq   8276 wc   1 color byte 2: 63
+12:39:27.452: 0000117 seq   8277 wc   1 color byte 3: 15
+12:39:27.452: 0000100 seq   8278 wc   1 set foreground color 00ffff
+12:39:27.452: 0000100 seq   8278 wc   1 fg: 0 255 255; bg: 0 0 255
+12:39:27.452: 0015542 seq   8279 wc   1 Start background color
+12:39:27.452: 0000100 seq   8280 wc   1 color byte 1: 0
+12:39:27.452: 0000100 seq   8281 wc   1 color byte 2: 0
+12:39:27.453: 0000100 seq   8282 wc   1 color byte 3: 0
+12:39:27.453: 0000100 seq   8283 wc   1 set background color 000000
+12:39:27.453: 0000100 seq   8283 wc   1 fg: 0 255 255; bg: 0 0 0
+12:39:27.453: 0015531 seq   8284 wc   1 Start LDE
+12:39:27.453: 0000120 seq   8285 wc   1 data byte 1: 16
+12:39:27.453: 0000101 seq   8286 wc   1 data byte 2: 1
+12:39:27.453: 0000100 seq   8287 wc   1 data 0000120 (0x0050)
+12:39:27.453: 0000100 seq   8287 wc   1 load echo 80 (0x50)
+12:39:27.453: key to plato 320
+12:39:27.453: ascii mode key to plato 0x1b 0x50 0x63
+12:39:30.398: Trace off

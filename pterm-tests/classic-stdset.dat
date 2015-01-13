@@ -1,0 +1,598 @@
+0000002 seq   3068 wc  82 nop
+0120036 seq   3069 wc   0 load mode 15 screen 0
+0200400 seq   3070 wc   1 load coord X 256 
+0201400 seq   3071 wc   2 load coord Y 256 
+1777720 seq   3072 wc   3 char 77 77 20 (  p)
+0100036 seq   3073 wc   4 load mode 15 screen 0
+1773277 seq   3074 wc   5 char 77 32 77 ( z )
+1347730 seq   3075 wc   6 char 34 77 30 (1 x)
+0100037 seq   3076 wc   7 load mode 15 screen 1
+0502000 seq   3077 wc   8 ssf touch 502000
+0210000 seq   3078 wc   9 load coord X 0 margin
+0201760 seq   3079 wc  10 load coord Y 496 
+0210040 seq   3080 wc  11 load coord X 32 margin
+0201720 seq   3081 wc  12 load coord Y 464 
+0502000 seq   3082 wc  13 ssf touch 502000
+0100016 seq   3083 wc  14 load mode 7 screen 0
+0200054 seq   3084 wc  15 load coord X 44 
+0201742 seq   3085 wc  16 load coord Y 482 
+1052744 seq   3086 wc  17 lineto 42 484
+1042744 seq   3087 wc  18 lineto 34 484
+1040742 seq   3088 wc  19 lineto 32 482
+1040736 seq   3089 wc  20 lineto 32 478
+1042734 seq   3090 wc  21 lineto 34 476
+1052734 seq   3091 wc  22 lineto 42 476
+1054732 seq   3092 wc  23 lineto 44 474
+1054726 seq   3093 wc  24 lineto 44 470
+1052724 seq   3094 wc  25 lineto 42 468
+1042724 seq   3095 wc  26 lineto 34 468
+1040726 seq   3096 wc  27 lineto 32 470
+0200072 seq   3097 wc  28 load coord X 58 
+0201724 seq   3098 wc  29 load coord Y 468 
+1066724 seq   3099 wc  30 lineto 54 468
+1064726 seq   3100 wc  31 lineto 52 470
+1064744 seq   3101 wc  32 lineto 52 484
+1064736 seq   3102 wc  33 lineto 52 478
+1060736 seq   3103 wc  34 lineto 48 478
+1072736 seq   3104 wc  35 lineto 58 478
+0200102 seq   3105 wc  36 load coord X 66 
+1110736 seq   3106 wc  37 lineto 72 478
+1112734 seq   3107 wc  38 lineto 74 476
+1112726 seq   3108 wc  39 lineto 74 470
+1114724 seq   3109 wc  40 lineto 76 468
+1112726 seq   3110 wc  41 lineto 74 470
+1110724 seq   3111 wc  42 lineto 72 468
+1102724 seq   3112 wc  43 lineto 66 468
+1100726 seq   3113 wc  44 lineto 64 470
+1100730 seq   3114 wc  45 lineto 64 472
+1102732 seq   3115 wc  46 lineto 66 474
+1112732 seq   3116 wc  47 lineto 74 474
+0200120 seq   3117 wc  48 load coord X 80 
+0201736 seq   3118 wc  49 load coord Y 478 
+1122736 seq   3119 wc  50 lineto 82 478
+1122724 seq   3120 wc  51 lineto 82 468
+1122732 seq   3121 wc  52 lineto 82 474
+1126736 seq   3122 wc  53 lineto 86 478
+1132736 seq   3123 wc  54 lineto 90 478
+1134734 seq   3124 wc  55 lineto 92 476
+1134724 seq   3125 wc  56 lineto 92 468
+0200154 seq   3126 wc  57 load coord X 108 
+0201744 seq   3127 wc  58 load coord Y 484 
+1154730 seq   3128 wc  59 lineto 108 472
+1150724 seq   3129 wc  60 lineto 104 468
+1144724 seq   3130 wc  61 lineto 100 468
+1140730 seq   3131 wc  62 lineto 96 472
+1140732 seq   3132 wc  63 lineto 96 474
+1144736 seq   3133 wc  64 lineto 100 478
+1150736 seq   3134 wc  65 lineto 104 478
+1154732 seq   3135 wc  66 lineto 108 474
+1154724 seq   3136 wc  67 lineto 108 468
+0200162 seq   3137 wc  68 load coord X 114 
+0201736 seq   3138 wc  69 load coord Y 478 
+1170736 seq   3139 wc  70 lineto 120 478
+1172734 seq   3140 wc  71 lineto 122 476
+1172726 seq   3141 wc  72 lineto 122 470
+1174724 seq   3142 wc  73 lineto 124 468
+1172726 seq   3143 wc  74 lineto 122 470
+1170724 seq   3144 wc  75 lineto 120 468
+1162724 seq   3145 wc  76 lineto 114 468
+1160726 seq   3146 wc  77 lineto 112 470
+1160730 seq   3147 wc  78 lineto 112 472
+1162732 seq   3148 wc  79 lineto 114 474
+1172732 seq   3149 wc  80 lineto 122 474
+0200200 seq   3150 wc  81 load coord X 128 
+0201736 seq   3151 wc  82 load coord Y 478 
+1202736 seq   3152 wc  83 lineto 130 478
+1202724 seq   3153 wc  84 lineto 130 468
+1202732 seq   3154 wc  85 lineto 130 474
+1206736 seq   3155 wc  86 lineto 134 478
+1212736 seq   3156 wc  87 lineto 138 478
+1214734 seq   3157 wc  88 lineto 140 476
+0200234 seq   3158 wc  89 load coord X 156 
+0201744 seq   3159 wc  90 load coord Y 484 
+1234730 seq   3160 wc  91 lineto 156 472
+1230724 seq   3161 wc  92 lineto 152 468
+1224724 seq   3162 wc  93 lineto 148 468
+1220730 seq   3163 wc  94 lineto 144 472
+1220732 seq   3164 wc  95 lineto 144 474
+1224736 seq   3165 wc  96 lineto 148 478
+1230736 seq   3166 wc  97 lineto 152 478
+1234732 seq   3167 wc  98 lineto 156 474
+1234724 seq   3168 wc  99 lineto 156 468
+0200260 seq   3169 wc 100 load coord X 176 
+0201720 seq   3170 wc 101 load coord Y 464 
+0200274 seq   3171 wc 102 load coord X 188 
+0201742 seq   3172 wc 103 load coord Y 482 
+1272744 seq   3173 wc 104 lineto 186 484
+1264744 seq   3174 wc 105 lineto 180 484
+1260740 seq   3175 wc 106 lineto 176 480
+1260730 seq   3176 wc 107 lineto 176 472
+1264724 seq   3177 wc 108 lineto 180 468
+1272724 seq   3178 wc 109 lineto 186 468
+1274726 seq   3179 wc 110 lineto 188 470
+0200300 seq   3180 wc 111 load coord X 192 
+0201744 seq   3181 wc 112 load coord Y 484 
+1302744 seq   3182 wc 113 lineto 194 484
+1302724 seq   3183 wc 114 lineto 194 468
+1302732 seq   3184 wc 115 lineto 194 474
+1306736 seq   3185 wc 116 lineto 198 478
+1312736 seq   3186 wc 117 lineto 202 478
+1314734 seq   3187 wc 118 lineto 204 476
+1314724 seq   3188 wc 119 lineto 204 468
+0200322 seq   3189 wc 120 load coord X 210 
+0201736 seq   3190 wc 121 load coord Y 478 
+1330736 seq   3191 wc 122 lineto 216 478
+1332734 seq   3192 wc 123 lineto 218 476
+1332726 seq   3193 wc 124 lineto 218 470
+1334724 seq   3194 wc 125 lineto 220 468
+1332726 seq   3195 wc 126 lineto 218 470
+1330724 seq   3196 wc 127 lineto 216 468
+1322724 seq   3197 wc   0 lineto 210 468
+1320726 seq   3198 wc   1 lineto 208 470
+1320730 seq   3199 wc   2 lineto 208 472
+1322732 seq   3200 wc   3 lineto 210 474
+1332732 seq   3201 wc   4 lineto 218 474
+0200340 seq   3202 wc   5 load coord X 224 
+0201736 seq   3203 wc   6 load coord Y 478 
+1342736 seq   3204 wc   7 lineto 226 478
+1342724 seq   3205 wc   8 lineto 226 468
+1342732 seq   3206 wc   9 lineto 226 474
+1346736 seq   3207 wc  10 lineto 230 478
+1352736 seq   3208 wc  11 lineto 234 478
+1354734 seq   3209 wc  12 lineto 236 476
+0200362 seq   3210 wc  13 load coord X 242 
+0201736 seq   3211 wc  14 load coord Y 478 
+1370736 seq   3212 wc  15 lineto 248 478
+1372734 seq   3213 wc  16 lineto 250 476
+1372726 seq   3214 wc  17 lineto 250 470
+1374724 seq   3215 wc  18 lineto 252 468
+1372726 seq   3216 wc  19 lineto 250 470
+1370724 seq   3217 wc  20 lineto 248 468
+1362724 seq   3218 wc  21 lineto 242 468
+1360726 seq   3219 wc  22 lineto 240 470
+1360730 seq   3220 wc  23 lineto 240 472
+1362732 seq   3221 wc  24 lineto 242 474
+1372732 seq   3222 wc  25 lineto 250 474
+0200414 seq   3223 wc  26 load coord X 268 
+0201734 seq   3224 wc  27 load coord Y 476 
+1412736 seq   3225 wc  28 lineto 266 478
+1404736 seq   3226 wc  29 lineto 260 478
+1400732 seq   3227 wc  30 lineto 256 474
+1400730 seq   3228 wc  31 lineto 256 472
+1404724 seq   3229 wc  32 lineto 260 468
+1412724 seq   3230 wc  33 lineto 266 468
+1414726 seq   3231 wc  34 lineto 268 470
+0200432 seq   3232 wc  35 load coord X 282 
+0201724 seq   3233 wc  36 load coord Y 468 
+1426724 seq   3234 wc  37 lineto 278 468
+1424726 seq   3235 wc  38 lineto 276 470
+1424744 seq   3236 wc  39 lineto 276 484
+1424736 seq   3237 wc  40 lineto 276 478
+1420736 seq   3238 wc  41 lineto 272 478
+1432736 seq   3239 wc  42 lineto 282 478
+0200440 seq   3240 wc  43 load coord X 288 
+0201732 seq   3241 wc  44 load coord Y 474 
+1454732 seq   3242 wc  45 lineto 300 474
+1454734 seq   3243 wc  46 lineto 300 476
+1452736 seq   3244 wc  47 lineto 298 478
+1444736 seq   3245 wc  48 lineto 292 478
+1440732 seq   3246 wc  49 lineto 288 474
+1440730 seq   3247 wc  50 lineto 288 472
+1444724 seq   3248 wc  51 lineto 292 468
+1454724 seq   3249 wc  52 lineto 300 468
+0200460 seq   3250 wc  53 load coord X 304 
+0201736 seq   3251 wc  54 load coord Y 478 
+1462736 seq   3252 wc  55 lineto 306 478
+1462724 seq   3253 wc  56 lineto 306 468
+1462732 seq   3254 wc  57 lineto 306 474
+1466736 seq   3255 wc  58 lineto 310 478
+1472736 seq   3256 wc  59 lineto 314 478
+1474734 seq   3257 wc  60 lineto 316 476
+0200500 seq   3258 wc  61 load coord X 320 
+0201720 seq   3259 wc  62 load coord Y 464 
+0200534 seq   3260 wc  63 load coord X 348 
+0201742 seq   3261 wc  64 load coord Y 482 
+1532744 seq   3262 wc  65 lineto 346 484
+1522744 seq   3263 wc  66 lineto 338 484
+1520742 seq   3264 wc  67 lineto 336 482
+1520736 seq   3265 wc  68 lineto 336 478
+1522734 seq   3266 wc  69 lineto 338 476
+1532734 seq   3267 wc  70 lineto 346 476
+1534732 seq   3268 wc  71 lineto 348 474
+1534726 seq   3269 wc  72 lineto 348 470
+1532724 seq   3270 wc  73 lineto 346 468
+1522724 seq   3271 wc  74 lineto 338 468
+1520726 seq   3272 wc  75 lineto 336 470
+0200540 seq   3273 wc  76 load coord X 352 
+0201732 seq   3274 wc  77 load coord Y 474 
+1554732 seq   3275 wc  78 lineto 364 474
+1554734 seq   3276 wc  79 lineto 364 476
+1552736 seq   3277 wc  80 lineto 362 478
+1544736 seq   3278 wc  81 lineto 356 478
+1540732 seq   3279 wc  82 lineto 352 474
+1540730 seq   3280 wc  83 lineto 352 472
+1544724 seq   3281 wc  84 lineto 356 468
+1554724 seq   3282 wc  85 lineto 364 468
+0200572 seq   3283 wc  86 load coord X 378 
+1566724 seq   3284 wc  87 lineto 374 468
+1564726 seq   3285 wc  88 lineto 372 470
+1564744 seq   3286 wc  89 lineto 372 484
+1564736 seq   3287 wc  90 lineto 372 478
+1560736 seq   3288 wc  91 lineto 368 478
+1572736 seq   3289 wc  92 lineto 378 478
+0200600 seq   3290 wc  93 load coord X 384 
+0201720 seq   3291 wc  94 load coord Y 464 
+0502000 seq   3292 wc  95 ssf touch 502000
+0210300 seq   3293 wc  96 load coord X 192 margin
+0201600 seq   3294 wc  97 load coord Y 384 
+0100036 seq   3295 wc  98 load mode 15 screen 0
+1007720 seq   3296 wc  99 char 00 77 20 (: p)
+0210310 seq   3297 wc 100 load coord X 200 margin
+1017720 seq   3298 wc 101 char 01 77 20 (a p)
+0210320 seq   3299 wc 102 load coord X 208 margin
+1027720 seq   3300 wc 103 char 02 77 20 (b p)
+0210330 seq   3301 wc 104 load coord X 216 margin
+1037720 seq   3302 wc 105 char 03 77 20 (c p)
+0210340 seq   3303 wc 106 load coord X 224 margin
+1047720 seq   3304 wc 107 char 04 77 20 (d p)
+0210350 seq   3305 wc 108 load coord X 232 margin
+1057720 seq   3306 wc 109 char 05 77 20 (e p)
+0210360 seq   3307 wc 110 load coord X 240 margin
+1067720 seq   3308 wc 111 char 06 77 20 (f p)
+0210370 seq   3309 wc 112 load coord X 248 margin
+1077720 seq   3310 wc 113 char 07 77 20 (g p)
+0210400 seq   3311 wc 114 load coord X 256 margin
+1107720 seq   3312 wc 115 char 10 77 20 (h p)
+0210410 seq   3313 wc 116 load coord X 264 margin
+1117720 seq   3314 wc 117 char 11 77 20 (i p)
+0210420 seq   3315 wc 118 load coord X 272 margin
+1127720 seq   3316 wc 119 char 12 77 20 (j p)
+0210430 seq   3317 wc 120 load coord X 280 margin
+1137720 seq   3318 wc 121 char 13 77 20 (k p)
+0210440 seq   3319 wc 122 load coord X 288 margin
+1147720 seq   3320 wc 123 char 14 77 20 (l p)
+0210450 seq   3321 wc 124 load coord X 296 margin
+1157720 seq   3322 wc 125 char 15 77 20 (m p)
+0210460 seq   3323 wc 126 load coord X 304 margin
+1167720 seq   3324 wc 127 char 16 77 20 (n p)
+0210470 seq   3325 wc   0 load coord X 312 margin
+1177720 seq   3326 wc   1 char 17 77 20 (o p)
+0210300 seq   3327 wc   2 load coord X 192 margin
+0201560 seq   3328 wc   3 load coord Y 368 
+1207720 seq   3329 wc   4 char 20 77 20 (p p)
+0210310 seq   3330 wc   5 load coord X 200 margin
+1217720 seq   3331 wc   6 char 21 77 20 (q p)
+0210320 seq   3332 wc   7 load coord X 208 margin
+1227720 seq   3333 wc   8 char 22 77 20 (r p)
+0210330 seq   3334 wc   9 load coord X 216 margin
+1237720 seq   3335 wc  10 char 23 77 20 (s p)
+0210340 seq   3336 wc  11 load coord X 224 margin
+1247720 seq   3337 wc  12 char 24 77 20 (t p)
+0210350 seq   3338 wc  13 load coord X 232 margin
+1257720 seq   3339 wc  14 char 25 77 20 (u p)
+0210360 seq   3340 wc  15 load coord X 240 margin
+1267720 seq   3341 wc  16 char 26 77 20 (v p)
+0210370 seq   3342 wc  17 load coord X 248 margin
+1277720 seq   3343 wc  18 char 27 77 20 (w p)
+0210400 seq   3344 wc  19 load coord X 256 margin
+1307720 seq   3345 wc  20 char 30 77 20 (x p)
+0210410 seq   3346 wc  21 load coord X 264 margin
+1317720 seq   3347 wc  22 char 31 77 20 (y p)
+0210420 seq   3348 wc  23 load coord X 272 margin
+1327720 seq   3349 wc  24 char 32 77 20 (z p)
+0210430 seq   3350 wc  25 load coord X 280 margin
+1337720 seq   3351 wc  26 char 33 77 20 (0 p)
+0210440 seq   3352 wc  27 load coord X 288 margin
+1347720 seq   3353 wc  28 char 34 77 20 (1 p)
+0210450 seq   3354 wc  29 load coord X 296 margin
+1357720 seq   3355 wc  30 char 35 77 20 (2 p)
+0210460 seq   3356 wc  31 load coord X 304 margin
+1367720 seq   3357 wc  32 char 36 77 20 (3 p)
+0210470 seq   3358 wc  33 load coord X 312 margin
+1377720 seq   3359 wc  34 char 37 77 20 (4 p)
+0210300 seq   3360 wc  35 load coord X 192 margin
+0201540 seq   3361 wc  36 load coord Y 352 
+1407720 seq   3362 wc  37 char 40 77 20 (5 p)
+0210310 seq   3363 wc  38 load coord X 200 margin
+1417720 seq   3364 wc  39 char 41 77 20 (6 p)
+0210320 seq   3365 wc  40 load coord X 208 margin
+1427720 seq   3366 wc  41 char 42 77 20 (7 p)
+0210330 seq   3367 wc  42 load coord X 216 margin
+1437720 seq   3368 wc  43 char 43 77 20 (8 p)
+0210340 seq   3369 wc  44 load coord X 224 margin
+1447720 seq   3370 wc  45 char 44 77 20 (9 p)
+0210350 seq   3371 wc  46 load coord X 232 margin
+1457720 seq   3372 wc  47 char 45 77 20 (+ p)
+0210360 seq   3373 wc  48 load coord X 240 margin
+1467720 seq   3374 wc  49 char 46 77 20 (- p)
+0210370 seq   3375 wc  50 load coord X 248 margin
+1477720 seq   3376 wc  51 char 47 77 20 (* p)
+0210400 seq   3377 wc  52 load coord X 256 margin
+1507720 seq   3378 wc  53 char 50 77 20 (/ p)
+0210410 seq   3379 wc  54 load coord X 264 margin
+1517720 seq   3380 wc  55 char 51 77 20 (( p)
+0210420 seq   3381 wc  56 load coord X 272 margin
+1527720 seq   3382 wc  57 char 52 77 20 () p)
+0210430 seq   3383 wc  58 load coord X 280 margin
+1537720 seq   3384 wc  59 char 53 77 20 ($ p)
+0210440 seq   3385 wc  60 load coord X 288 margin
+1547720 seq   3386 wc  61 char 54 77 20 (= p)
+0210450 seq   3387 wc  62 load coord X 296 margin
+1557720 seq   3388 wc  63 char 55 77 20 (  p)
+0210460 seq   3389 wc  64 load coord X 304 margin
+1567720 seq   3390 wc  65 char 56 77 20 (, p)
+0210470 seq   3391 wc  66 load coord X 312 margin
+1577720 seq   3392 wc  67 char 57 77 20 (. p)
+0210300 seq   3393 wc  68 load coord X 192 margin
+0201520 seq   3394 wc  69 load coord Y 336 
+1607720 seq   3395 wc  70 char 60 77 20 (÷ p)
+0210310 seq   3396 wc  71 load coord X 200 margin
+1617720 seq   3397 wc  72 char 61 77 20 ([ p)
+0210320 seq   3398 wc  73 load coord X 208 margin
+1627720 seq   3399 wc  74 char 62 77 20 (] p)
+0210330 seq   3400 wc  75 load coord X 216 margin
+1637720 seq   3401 wc  76 char 63 77 20 (% p)
+0210340 seq   3402 wc  77 load coord X 224 margin
+1647720 seq   3403 wc  78 char 64 77 20 (× p)
+0210350 seq   3404 wc  79 load coord X 232 margin
+1657720 seq   3405 wc  80 char 65 77 20 (« p)
+0210360 seq   3406 wc  81 load coord X 240 margin
+1667720 seq   3407 wc  82 char 66 77 20 (' p)
+0210370 seq   3408 wc  83 load coord X 248 margin
+1677720 seq   3409 wc  84 char 67 77 20 (" p)
+0210400 seq   3410 wc  85 load coord X 256 margin
+1707720 seq   3411 wc  86 char 70 77 20 (! p)
+0210410 seq   3412 wc  87 load coord X 264 margin
+1717720 seq   3413 wc  88 char 71 77 20 (; p)
+0210420 seq   3414 wc  89 load coord X 272 margin
+1727720 seq   3415 wc  90 char 72 77 20 (< p)
+0210430 seq   3416 wc  91 load coord X 280 margin
+1737720 seq   3417 wc  92 char 73 77 20 (> p)
+0210440 seq   3418 wc  93 load coord X 288 margin
+1747720 seq   3419 wc  94 char 74 77 20 (_ p)
+0210450 seq   3420 wc  95 load coord X 296 margin
+1757720 seq   3421 wc  96 char 75 77 20 (? p)
+0210460 seq   3422 wc  97 load coord X 304 margin
+1767720 seq   3423 wc  98 char 76 77 20 (» p)
+0210470 seq   3424 wc  99 load coord X 312 margin
+1777720 seq   3425 wc 100 char 77 77 20 (  p)
+0210300 seq   3426 wc 101 load coord X 192 margin
+0201500 seq   3427 wc 102 load coord Y 320 
+1772100 seq   3428 wc 103 char 77 21 00 ( q:)
+0210310 seq   3429 wc 104 load coord X 200 margin
+1017721 seq   3430 wc 105 char 01 77 21 (a q)
+0210320 seq   3431 wc 106 load coord X 208 margin
+1027721 seq   3432 wc 107 char 02 77 21 (b q)
+0210330 seq   3433 wc 108 load coord X 216 margin
+1037721 seq   3434 wc 109 char 03 77 21 (c q)
+0210340 seq   3435 wc 110 load coord X 224 margin
+1047721 seq   3436 wc 111 char 04 77 21 (d q)
+0210350 seq   3437 wc 112 load coord X 232 margin
+1057721 seq   3438 wc 113 char 05 77 21 (e q)
+0210360 seq   3439 wc 114 load coord X 240 margin
+1067721 seq   3440 wc 115 char 06 77 21 (f q)
+0210370 seq   3441 wc 116 load coord X 248 margin
+1077721 seq   3442 wc 117 char 07 77 21 (g q)
+0210400 seq   3443 wc 118 load coord X 256 margin
+1107721 seq   3444 wc 119 char 10 77 21 (h q)
+0210410 seq   3445 wc 120 load coord X 264 margin
+1117721 seq   3446 wc 121 char 11 77 21 (i q)
+0210420 seq   3447 wc 122 load coord X 272 margin
+1127721 seq   3448 wc 123 char 12 77 21 (j q)
+0210430 seq   3449 wc 124 load coord X 280 margin
+1137721 seq   3450 wc 125 char 13 77 21 (k q)
+0210440 seq   3451 wc 126 load coord X 288 margin
+1147721 seq   3452 wc 127 char 14 77 21 (l q)
+0210450 seq   3453 wc   0 load coord X 296 margin
+1157721 seq   3454 wc   1 char 15 77 21 (m q)
+0210460 seq   3455 wc   2 load coord X 304 margin
+1167721 seq   3456 wc   3 char 16 77 21 (n q)
+0210470 seq   3457 wc   4 load coord X 312 margin
+1177721 seq   3458 wc   5 char 17 77 21 (o q)
+0210300 seq   3459 wc   6 load coord X 192 margin
+0201460 seq   3460 wc   7 load coord Y 304 
+1207721 seq   3461 wc   8 char 20 77 21 (p q)
+0210310 seq   3462 wc   9 load coord X 200 margin
+1217721 seq   3463 wc  10 char 21 77 21 (q q)
+0210320 seq   3464 wc  11 load coord X 208 margin
+1227721 seq   3465 wc  12 char 22 77 21 (r q)
+0210330 seq   3466 wc  13 load coord X 216 margin
+1237721 seq   3467 wc  14 char 23 77 21 (s q)
+0210340 seq   3468 wc  15 load coord X 224 margin
+1247721 seq   3469 wc  16 char 24 77 21 (t q)
+0210350 seq   3470 wc  17 load coord X 232 margin
+1257721 seq   3471 wc  18 char 25 77 21 (u q)
+0210360 seq   3472 wc  19 load coord X 240 margin
+1267721 seq   3473 wc  20 char 26 77 21 (v q)
+0210370 seq   3474 wc  21 load coord X 248 margin
+1277721 seq   3475 wc  22 char 27 77 21 (w q)
+0210400 seq   3476 wc  23 load coord X 256 margin
+1307721 seq   3477 wc  24 char 30 77 21 (x q)
+0210410 seq   3478 wc  25 load coord X 264 margin
+1317721 seq   3479 wc  26 char 31 77 21 (y q)
+0210420 seq   3480 wc  27 load coord X 272 margin
+1327721 seq   3481 wc  28 char 32 77 21 (z q)
+0210430 seq   3482 wc  29 load coord X 280 margin
+1337721 seq   3483 wc  30 char 33 77 21 (0 q)
+0210440 seq   3484 wc  31 load coord X 288 margin
+1347721 seq   3485 wc  32 char 34 77 21 (1 q)
+0210450 seq   3486 wc  33 load coord X 296 margin
+1357721 seq   3487 wc  34 char 35 77 21 (2 q)
+0210460 seq   3488 wc  35 load coord X 304 margin
+1367721 seq   3489 wc  36 char 36 77 21 (3 q)
+0210470 seq   3490 wc  37 load coord X 312 margin
+1377721 seq   3491 wc  38 char 37 77 21 (4 q)
+0210300 seq   3492 wc  39 load coord X 192 margin
+0201440 seq   3493 wc  40 load coord Y 288 
+1407721 seq   3494 wc  41 char 40 77 21 (5 q)
+0210310 seq   3495 wc  42 load coord X 200 margin
+1417721 seq   3496 wc  43 char 41 77 21 (6 q)
+0210320 seq   3497 wc  44 load coord X 208 margin
+1427721 seq   3498 wc  45 char 42 77 21 (7 q)
+0210330 seq   3499 wc  46 load coord X 216 margin
+1437721 seq   3500 wc  47 char 43 77 21 (8 q)
+0210340 seq   3501 wc  48 load coord X 224 margin
+1447721 seq   3502 wc  49 char 44 77 21 (9 q)
+0210350 seq   3503 wc  50 load coord X 232 margin
+1457721 seq   3504 wc  51 char 45 77 21 (+ q)
+0210360 seq   3505 wc  52 load coord X 240 margin
+1467721 seq   3506 wc  53 char 46 77 21 (- q)
+0210370 seq   3507 wc  54 load coord X 248 margin
+1477721 seq   3508 wc  55 char 47 77 21 (* q)
+0210400 seq   3509 wc  56 load coord X 256 margin
+1507721 seq   3510 wc  57 char 50 77 21 (/ q)
+0210410 seq   3511 wc  58 load coord X 264 margin
+1517721 seq   3512 wc  59 char 51 77 21 (( q)
+0210420 seq   3513 wc  60 load coord X 272 margin
+1527721 seq   3514 wc  61 char 52 77 21 () q)
+0210430 seq   3515 wc  62 load coord X 280 margin
+1537721 seq   3516 wc  63 char 53 77 21 ($ q)
+0210440 seq   3517 wc  64 load coord X 288 margin
+1547721 seq   3518 wc  65 char 54 77 21 (= q)
+0210450 seq   3519 wc  66 load coord X 296 margin
+1557721 seq   3520 wc  67 char 55 77 21 (  q)
+0210460 seq   3521 wc  68 load coord X 304 margin
+1567721 seq   3522 wc  69 char 56 77 21 (, q)
+0210470 seq   3523 wc  70 load coord X 312 margin
+1577721 seq   3524 wc  71 char 57 77 21 (. q)
+0210300 seq   3525 wc  72 load coord X 192 margin
+0201420 seq   3526 wc  73 load coord Y 272 
+1607721 seq   3527 wc  74 char 60 77 21 (÷ q)
+0210310 seq   3528 wc  75 load coord X 200 margin
+1617721 seq   3529 wc  76 char 61 77 21 ([ q)
+0210320 seq   3530 wc  77 load coord X 208 margin
+1627721 seq   3531 wc  78 char 62 77 21 (] q)
+0210330 seq   3532 wc  79 load coord X 216 margin
+1637721 seq   3533 wc  80 char 63 77 21 (% q)
+0210340 seq   3534 wc  81 load coord X 224 margin
+1647721 seq   3535 wc  82 char 64 77 21 (× q)
+0210350 seq   3536 wc  83 load coord X 232 margin
+1657721 seq   3537 wc  84 char 65 77 21 (« q)
+0210360 seq   3538 wc  85 load coord X 240 margin
+1667721 seq   3539 wc  86 char 66 77 21 (' q)
+0210370 seq   3540 wc  87 load coord X 248 margin
+1677721 seq   3541 wc  88 char 67 77 21 (" q)
+0210400 seq   3542 wc  89 load coord X 256 margin
+1707721 seq   3543 wc  90 char 70 77 21 (! q)
+0210410 seq   3544 wc  91 load coord X 264 margin
+1717721 seq   3545 wc  92 char 71 77 21 (; q)
+0210420 seq   3546 wc  93 load coord X 272 margin
+1727721 seq   3547 wc  94 char 72 77 21 (< q)
+0210430 seq   3548 wc  95 load coord X 280 margin
+1737721 seq   3549 wc  96 char 73 77 21 (> q)
+0210440 seq   3550 wc  97 load coord X 288 margin
+1747721 seq   3551 wc  98 char 74 77 21 (_ q)
+0210450 seq   3552 wc  99 load coord X 296 margin
+1757721 seq   3553 wc 100 char 75 77 21 (? q)
+0210460 seq   3554 wc 101 load coord X 304 margin
+1767721 seq   3555 wc 102 char 76 77 21 (» q)
+0210470 seq   3556 wc 103 load coord X 312 margin
+1777721 seq   3557 wc 104 char 77 77 21 (  q)
+0210240 seq   3558 wc 105 load coord X 160 margin
+0201620 seq   3559 wc 106 load coord Y 400 
+1772034 seq   3560 wc 107 char 77 20 34 ( p1)
+1354355 seq   3561 wc 108 char 35 43 55 (28 )
+1555555 seq   3562 wc 109 char 55 55 55 (   )
+1555555 seq   3563 wc 110 char 55 55 55 (   )
+1555555 seq   3564 wc 111 char 55 55 55 (   )
+1555555 seq   3565 wc 112 char 55 55 55 (   )
+1555555 seq   3566 wc 113 char 55 55 55 (   )
+1555555 seq   3567 wc 114 char 55 55 55 (   )
+1343735 seq   3568 wc 115 char 34 37 35 (142)
+0210240 seq   3569 wc 116 load coord X 160 margin
+0201400 seq   3570 wc 117 load coord Y 256 
+1353733 seq   3571 wc 118 char 35 37 33 (240)
+1555555 seq   3572 wc 119 char 55 55 55 (   )
+1555555 seq   3573 wc 120 char 55 55 55 (   )
+1555555 seq   3574 wc 121 char 55 55 55 (   )
+1555555 seq   3575 wc 122 char 55 55 55 (   )
+1555555 seq   3576 wc 123 char 55 55 55 (   )
+1555555 seq   3577 wc 124 char 55 55 55 (   )
+1553540 seq   3578 wc 125 char 55 35 40 ( 25)
+1407720 seq   3579 wc 126 char 40 77 20 (5 p)
+0210060 seq   3580 wc 127 load coord X 48 margin
+0201200 seq   3581 wc   0 load coord Y 128 
+1772101 seq   3582 wc   1 char 77 21 01 ( qa)
+1772002 seq   3583 wc   2 char 77 20 02 ( pb)
+1172605 seq   3584 wc   3 char 17 26 05 (ove)
+1551123 seq   3585 wc   4 char 55 11 23 ( is)
+1552014 seq   3586 wc   5 char 55 20 14 ( pl)
+1172424 seq   3587 wc   6 char 17 24 24 (ott)
+1050455 seq   3588 wc   7 char 05 04 55 (ed )
+1011414 seq   3589 wc   8 char 01 14 14 (all)
+1552410 seq   3590 wc   9 char 55 24 10 ( th)
+1055523 seq   3591 wc  10 char 05 55 23 (e s)
+1240116 seq   3592 wc  11 char 24 01 16 (tan)
+1040122 seq   3593 wc  12 char 04 01 22 (dar)
+1045503 seq   3594 wc  13 char 04 55 03 (d c)
+1100122 seq   3595 wc  14 char 10 01 22 (har)
+1010324 seq   3596 wc  15 char 01 03 24 (act)
+1052223 seq   3597 wc  16 char 05 22 23 (ers)
+1575555 seq   3598 wc  17 char 57 55 55 (.  )
+1772124 seq   3599 wc  18 char 77 21 24 ( qt)
+1772010 seq   3600 wc  19 char 77 20 10 ( ph)
+1057715 seq   3601 wc  20 char 05 77 15 (e m)
+1162515 seq   3602 wc  21 char 16 25 15 (num)
+1020522 seq   3603 wc  22 char 02 05 22 (ber)
+1235501 seq   3604 wc  23 char 23 55 01 (s a)
+1220555 seq   3605 wc  24 char 22 05 55 (re )
+1241005 seq   3606 wc  25 char 24 10 05 (the)
+1551625 seq   3607 wc  26 char 55 16 25 ( nu)
+1150205 seq   3608 wc  27 char 15 02 05 (mbe)
+1222355 seq   3609 wc  28 char 22 23 55 (rs )
+1252305 seq   3610 wc  29 char 25 23 05 (use)
+1045511 seq   3611 wc  30 char 04 55 11 (d i)
+1165524 seq   3612 wc  31 char 16 55 24 (n t)
+1100555 seq   3613 wc  32 char 10 05 55 (he )
+1201417 seq   3614 wc  33 char 20 14 17 (plo)
+1245503 seq   3615 wc  34 char 24 55 03 (t c)
+1171515 seq   3616 wc  35 char 17 15 15 (omm)
+1011604 seq   3617 wc  36 char 01 16 04 (and)
+1771524 seq   3618 wc  37 char 77 15 24 ( mt)
+1175520 seq   3619 wc  38 char 17 55 20 (o p)
+1141724 seq   3620 wc  39 char 14 17 24 (lot)
+1552410 seq   3621 wc  40 char 55 24 10 ( th)
+1055503 seq   3622 wc  41 char 05 55 03 (e c)
+1100122 seq   3623 wc  42 char 10 01 22 (har)
+1010324 seq   3624 wc  43 char 01 03 24 (act)
+1052223 seq   3625 wc  44 char 05 22 23 (ers)
+1575555 seq   3626 wc  45 char 57 55 55 (.  )
+1772111 seq   3627 wc  46 char 77 21 11 ( qi)
+1772024 seq   3628 wc  47 char 77 20 24 ( pt)
+1551123 seq   3629 wc  48 char 55 11 23 ( is)
+1551617 seq   3630 wc  49 char 55 16 17 ( no)
+1245507 seq   3631 wc  50 char 24 55 07 (t g)
+1250122 seq   3632 wc  51 char 25 01 22 (uar)
+1011624 seq   3633 wc  52 char 01 16 24 (ant)
+1050504 seq   3634 wc  53 char 05 05 04 (eed)
+1552410 seq   3635 wc  54 char 55 24 10 ( th)
+1012477 seq   3636 wc  55 char 01 24 77 (at )
+1152410 seq   3637 wc  56 char 15 24 10 (mth)
+1052305 seq   3638 wc  57 char 05 23 05 (ese)
+1551625 seq   3639 wc  58 char 55 16 25 ( nu)
+1150205 seq   3640 wc  59 char 15 02 05 (mbe)
+1222355 seq   3641 wc  60 char 22 23 55 (rs )
+1100126 seq   3642 wc  61 char 10 01 26 (hav)
+1055501 seq   3643 wc  62 char 05 55 01 (e a)
+1163124 seq   3644 wc  63 char 16 31 24 (nyt)
+1101116 seq   3645 wc  64 char 10 11 16 (hin)
+1075524 seq   3646 wc  65 char 07 55 24 (g t)
+1175504 seq   3647 wc  66 char 17 55 04 (o d)
+1175527 seq   3648 wc  67 char 17 55 27 (o w)
+1112410 seq   3649 wc  68 char 11 24 10 (ith)
+1552410 seq   3650 wc  69 char 55 24 10 ( th)
+1055501 seq   3651 wc  70 char 05 55 01 (e a)
+1032425 seq   3652 wc  71 char 03 24 25 (ctu)
+1011477 seq   3653 wc  72 char 01 14 77 (al )
+1151001 seq   3654 wc  73 char 15 10 01 (mha)
+1220427 seq   3655 wc  74 char 22 04 27 (rdw)
+1012205 seq   3656 wc  75 char 01 22 05 (are)
+1550104 seq   3657 wc  76 char 55 01 04 ( ad)
+1042205 seq   3658 wc  77 char 04 22 05 (dre)
+1232355 seq   3659 wc  78 char 23 23 55 (ss )
+1170655 seq   3660 wc  79 char 17 06 55 (of )
+1241005 seq   3661 wc  80 char 24 10 05 (the)
+1550310 seq   3662 wc  81 char 55 03 10 ( ch)
+1012201 seq   3663 wc  82 char 01 22 01 (ara)
+1032405 seq   3664 wc  83 char 03 24 05 (cte)
+1222357 seq   3665 wc  84 char 22 23 57 (rs.)

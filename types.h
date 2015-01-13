@@ -14,24 +14,30 @@
 
 #include <sys/types.h>
 #if defined(_WIN32)
+#pragma warning (disable:4244)
 #include <winsock.h>
 typedef u_long in_addr_t;
+#ifndef EINPROGRESS
 #define EINPROGRESS WSAEINPROGRESS
+#endif
 #define pthread_mutex_t CRITICAL_SECTION
-#define pthread_mutex_init InitializeCriticalSection
+#define pthread_mutex_init(x, y) InitializeCriticalSection ((x))
 #define pthread_mutex_lock EnterCriticalSection
 #define pthread_mutex_unlock LeaveCriticalSection
-#define pthread_cond_t  CONDITION_VARIABLE
-#define pthread_cond_init InitializeConditionVariable
-#define pthread_cond_wait(c, m) SleepConditionVariableCS ((c), (m), INFINITE)
-#define pthread_cond_signal WakeConditionVariable
-#define pthread_cond_broadcast WakeAllConditionVariable
+typedef HANDLE sem_t;
+#define sem_init(ps, sh, iv) *(ps) = CreateSemaphore (NULL, iv, 32767, NULL)
+#define sem_post(ps) ReleaseSemaphore (*(ps), 1, NULL)
+#define sem_wait(ps) WaitForSingleObject (*(ps), INFINITE)
+#define sem_destroy(ps) CloseHandle (*(ps))
+typedef HANDLE pthread_t;
+#define pthread_join(t, rp) WaitForSingleObject (t, INFINITE)
 #else
 #include <stdbool.h>
 #include <netinet/in.h>
 #define _POSIX_C_SOURCE_199309L
 #include <unistd.h>
 #include <pthread.h>
+#include <semaphore.h>
 #endif
 
 #ifdef _POSIX_ASYNCHRONOUS_IO
@@ -56,7 +62,7 @@ typedef u_long in_addr_t;
     **  MS Win32 systems
     */
 #if !defined(__cplusplus)
-	typedef int bool;
+    typedef unsigned char bool;
 #endif
     typedef signed char  i8;
     typedef signed short i16;
@@ -68,7 +74,7 @@ typedef u_long in_addr_t;
     typedef unsigned __int64 u64;
     #define FMT60_020o "%020I64o"
     #define FMT60_08o "%08I64o"
-	typedef unsigned int socklen_t;
+    typedef unsigned int socklen_t;
 #elif defined (__GNUC__)
     #if defined(__LONG_MAX__)
         #if (__LONG_MAX__ == __INT_MAX__)
@@ -229,9 +235,7 @@ typedef struct
 */
 typedef struct NetFet_s
     {
-    struct NetFet_s *prev;              /* circular list pointers */
-    struct NetFet_s *next;
-    int         connFd;                 /* File descriptor for socket */
+    volatile int connFd;                /* File descriptor for socket */
     u8          *first;                 /* Start of receive ring buffer */
     volatile u8 *in;                    /* Fill (write) pointer */
     volatile u8 *out;                   /* Empty (read) pointer */
@@ -240,15 +244,26 @@ typedef struct NetFet_s
     volatile u8 *sendin;                /* Fill (write) pointer */
     volatile u8 *sendout;               /* Empty (read) pointer */
     u8          *sendend;               /* End of ring buffer + 1 */
-    pthread_cond_t  cond;               /* Condition variable for waking send thread */
-    pthread_mutex_t mutex;              /* Mutex to protect sendcond */
-    struct in_addr from;                /* remote IP address */
-    int         fromPort;               /* remote TCP port number */
-    struct NetPortSet_s *ps;            /* PortSet this belongs to */
+    pthread_t   sendThread;             /* Thread ID of send thread */
+#if defined(__APPLE__)
+    sem_t       *_rsemp;                /* Allows rcv thread to exit */
+    sem_t       *_ssemp;                /* For waking send thread */
+#define rsemp(fet) ((fet)->_rsemp)
+#define ssemp(fet) ((fet)->_ssemp)
+#else
+    sem_t       rsem;                   /* Allows rcv thread to exit */
+    sem_t       ssem;                   /* For waking send thread */
+#define rsemp(fet) (&((fet)->rsem))
+#define ssemp(fet) (&((fet)->ssem))
+#endif
+    struct in_addr from;                /* Remote IP address */
+    int         fromPort;               /* Remote TCP port number */
+    struct NetPortSet_s *ps;            /* PortSet this belongs to, if any */
+    int         psIndex;                /* Index into ps for this FET */
     u64         ownerInfo;              /* Data supplied by socket owner */
-    u8          inUse;                  /* In use flag */
-    bool        closePending;           /* Close (...FALSE) pending */
+    volatile int closing;               /* Closing down if non-zero */
     bool        listen;                 /* Is this a bind/listen socket? */
+    volatile bool connected;            /* Is this socket connected? */
     } NetFet;
 
 
@@ -261,12 +276,19 @@ typedef void (DataCb) (NetFet *np, int bytes, void *arg);
 /*
 **  Tread function
 */
+#define ThreadReturn return 0
 #if defined(_WIN32)
-typedef void ThreadFunRet;
-#define ThreadReturn return
+/* Note that for Windows the type of the thread function depends
+** on the function used to create it, believe it or not.  The
+** definition used here goes with the _beginthreadex function.
+*/
+typedef unsigned ThreadFunRet;
+#define dtThreadFun(name, arg) ThreadFunRet __stdcall name(void *arg)
+#define dtThreadFunPtr(name)   ThreadFunRet (__stdcall *name)(void *)
 #else
 typedef void * ThreadFunRet;
-#define ThreadReturn return 0
+#define dtThreadFun(name, arg) ThreadFunRet name(void *arg)
+#define dtThreadFunPtr(name)   ThreadFunRet (*name)(void *)
 #endif
 
 /*
@@ -274,11 +296,14 @@ typedef void * ThreadFunRet;
 */
 typedef struct NetPortSet_s
     {
+    struct NetPortSet_s *next;          /* link to next or NULL if last */
     int         maxPorts;               /* total number of ports */
     volatile int curPorts;              /* number of ports currently active */
-    NetFet      *portVec;               /* array of NetFets */
-    int         listenFd;               /* listen socket fd */
+    NetFet      **portVec;              /* array of NetFet pointers */
+    int         listenFd;               /* listen socket number */
     int         portNum;                /* TCP port number to listen to */
+    int         ringSize;               /* Receive ring size for FETs */
+    int         sendRingSize;           /* Transmit ring size for FETs */
     ConnCb      *callBack;              /* function to call for new conn */
     void        *callArg;               /* argument to the above */
     DataCb      *dataCallBack;          /* function to call for new data */

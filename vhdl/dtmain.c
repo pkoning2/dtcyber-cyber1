@@ -32,6 +32,7 @@ long pniConns;
 u16 deadstartPanel[MaxDeadStart];
 u8 deadstartCount;
 long extSockets;
+bool opPlatoAlert;
 
 void opSetMsg (const char *p)
 {
@@ -43,14 +44,22 @@ void opSetStatus (void *buf, const char *msg)
 
 void * opInitStatus (const char *type, int ch, int un)
 {
+    return NULL;
 }
+
+void opUpdateSysStatus (void)
+{
+}
+
 
 bool cpuEcsFlagRegister(u32 ecsAddress)
 {
+    return false;
 }
 
 bool cpuDdpTransfer(u32 ecsAddress, CpWord *data, bool writeToEcs)
 {
+    return false;
 }
 
 void dumpCpu(void)
@@ -66,6 +75,14 @@ void dumpCpuMem(FILE *f, u32 start, u32 end, u32 ra)
 }
 
 void dumpPpuMem(FILE *f, u8 pp, u32 start, u32 end)
+{
+}
+
+void dumpCpuInfo (FILE *f)
+{
+}
+
+void dumpPpuInfo (FILE *pf, u8 pp)
 {
 }
 

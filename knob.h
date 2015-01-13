@@ -18,7 +18,7 @@ public:
             unsigned int minAngle = 240, unsigned int range = 300,
             const wxPoint &pos = wxDefaultPosition, 
             const wxSize &size = wxSize (30, 30), 
-            long style = 0,
+            long style =  wxBORDER_NONE,
             const wxValidator &validator = wxDefaultValidator,
             const wxString &name = wxT ("knob"))
     {
@@ -30,7 +30,7 @@ public:
                  unsigned int minAngle = 240, unsigned int range = 300,
                  const wxPoint &pos = wxDefaultPosition, 
                  const wxSize &size = wxSize (30, 30), 
-                 long style = 0,
+                 long style = wxBORDER_NONE,
                  const wxValidator &validator = wxDefaultValidator,
                  const wxString &name = wxT ("knob"));
 

@@ -210,7 +210,7 @@ static void lp1612Load(DevSlot *dp, int unitNo, char *fn)
     sprintf(fname, "LP1612_C%02o_U%o", dp->channel->id, unitNo);
 
     time(&currentTime);
-    t = *localtime(&currentTime);
+    localtime_r(&currentTime, &t);
     sprintf(fnameNew, "LP1612_%04d%02d%02d_%02d%02d%02d",
         t.tm_year + 1900,
         t.tm_mon + 1,

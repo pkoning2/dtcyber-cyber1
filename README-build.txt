@@ -1,59 +1,96 @@
-                     Some Thing To Know About Building Pterm / DtCyber
-                     =================================================
+              Some Thing To Know About Building Pterm / DtCyber
+              =================================================
 
-In addition to downloading the sources for DtCyber, you will also need to download the sources for
-wxWidgets, which this build relies upon.  You can download the latest sources (at least as of
-10/4/2009) at http://www.wxwidgets.org/downloads/
+If you downloaded the Pterm source kit, you have sources for Pterm but
+not for the other parts of DtCyber (the Cyber emulator created by Tom
+Hunter).   
 
-You want to install a system-wide copy of wxWidgets, so follow the configuration, building and
-installation instructions for the operating system you are installing it on.  The first step of
-getting wxWidgets installed is to configure the installation.  Here is the "../configure"
-command that PK has been using (for the Mac - other OSes will vary WRT SDKs, SDK locations, etc.):
+If you checked out the sources from the Subversion server at
+akdesign.dyndns.org, that also gives you the rest of the DtCyber
+package: the emulator itself (dtcyber), the operator interface
+(dtoper), the Cyber console display (dd60) and the PLATO black box
+emulator (blackbox).  If you want to run your own emulated Cyber
+system, you'll need the full kit.  But most users need only Pterm,
+which is how you connect to the PLATO system at cyber1.org.  
 
-../configure --with-macosx-sdk=/Developer/SDKs/MacOSX10.4u.sdk --with-macosx-version-min=10.4 --enable-universal_binary --enable-intl --enable-config --enable-mdi --enable-postscript --enable-printarch --enable-clipboard --enable-gif --with-opengl --prefix=/usr/local/wxstaticu.2810 --disable-shared --enable-static --enable-monolithic --enable-unicode
+Prerequisites for building Pterm
 
-In addition, apparently wxWidgets makes certain assumptions about what sort of bitmap drawing
-it can do, and at least on the Mac you will want to set wxMAC_USE_CORE_GRAPHICS to 0 in file
-<your-wxwidgets-sources>/include/mac/carbon/chkconf.h.  As for other OSes, you can update this
-ReadMe with the results of your build.  Most likely this is a Mac-only issue pertaining to the
-deprecation of QuickDraw (which, if you want to know, is a 32-bit Carbon set of APIs that will
-no longer be supported, possibly as soon as Snow Leopard (10.6.x)).
+Pterm relies on wxWidgets for the user interface framework.  The
+current version was built against V3.0; it should work with later
+versions (but that has not yet been tested); it will not work with
+older versions.
 
-The wxWidgets version currently being used by Pterm is 2.8.10.
+In addition, it uses libSDL for audio output, and libsndfile for
+writing audio files.
 
-It would appear that the latest incarnation of DtCyber/Pterm also contains a dependency on a
-sound library called libSDL.  You can download the run-time libraries (and sources if you are
-interested) at http://www.libsdl.org/download-1.2.php .  For the MacOSX build, download the
-.dmg at http://www.libsdl.org/release/SDL-1.2.15.dmg, or if you're still building Pterm for
-PPC, use http://www.libsdl.org/release/SDL-1.2.15-OSX10.4.dmg.  When building Pterm.app for
-the Mac, double-click the downloaded .dmg from www.libsdl.org to mount /Volumes/SDL to the
-desktop.  The Makefile now assumes /Volumes/SDL is where it will find the SDL.framework.
-If you happen to have the framework locally already, then just tell the make where it lives:
+Building on Linux:
 
-	make Pterm.app SDL_FRAMEWORK_PATH=</path/to/where/the/SDL.framework/lives>
+Using the package manager, install the development files for
+libsndfile and libSDL.  For example, on CentOS you would use "yum
+install libsndfile-devel libSDL-devel".
 
-One final note - for the Mac application there is a dependency on the command-line tool
-"gettext", which also appears to have a partner in crime, "msgfmt".  There is an Open Source
-version (0.17 as of 10/4/2009)  of gettext that can be built from sources that are available
-on http://gettext.darwinports.com .  Again, for other OSes you can update this ReadMe with
-the results of your build experimentation.  On the MacOSX build at least the only effect NOT
-having "gettext" installed is that various non-English language support resources will not be
-copied into the Pterm.app application.
+If a packaged version of wxWidgets 3.0 or later is available for your
+system, install that (the development files).  If not, build wxWidgets
+from sources; see the wxWidgets documentation for details.
 
-"msgfmt" comes in the same package as "gettext".  There are default build rules for
+    Note: you should build the wxWidgets shared libraries.  For
+    reasons that are not clear, currently wxWidgets static libraries
+    do not work in 32 bit builds.  (Things build fine, but the pterm
+    executable crashes deep in the bowels of X11.)  Shared libraries
+    work fine in both 32 and 64 bit builds.
 
-	%.mo	:	%.po
+Now build pterm with "make pterm".  The result should be a pterm
+executable, which you can run from the build directory or move to any
+other convenient directory.
 
-...that uses "msgfmt", and then the %.mo files are used by "gettext" to generate localized
-message files that are copied into the Pterm.app application.  The failure to do either of
-these tasks on MacOS is not fatal.  It just means that some localizable text will not be
-localized if you don't have those tools.  It's not fatal to the build.
+Building on Mac OS:
 
-If you want to install gettext, you can find a GZIP'ed TAR file at http://ftp.gnu.org/gnu/gettext/ .
-To install it (according to http://www.rmnl.net/read-about/installing-gettext-snow-leopard-django/ )
-the wy to install it is to:
+Install libsndfile and libSDL from the released kits.
 
-	cd <location of gettext sources>
-	./configure
-	make
-	sudo make install
+If a pre-built kit of wxWidgets 3.0 is available, install that.
+Otherwise, build it from sources.  The configure I used to build it
+was as follows:
+
+../configure --enable-universal_binary=i386,ppc --disable-shared \
+	      --enable-static --enable-monolithic \
+	      --with-macosx-sdk=/Developer/SDKs/MacOSX10.5.sdk \
+	      --with-macosx-version-min=10.4
+
+You can get away with fewer switches and/or some different settings,
+especially if you intend to build it just for your own use rather than
+for distributing kits to others.  If you have a system which uses the
+clang compiler rather than gcc, and as a result does not have PowerPC
+support in the compiler, omit ",ppc" from the configure string.
+
+Now build pterm with "make Pterm.app".  The result should be a Pterm
+application (a "package" which is really a directory with a .app
+extension).  You can execute that from the build directory, or move it
+to some other location like /Applications.
+
+Building on Windows:
+
+Install libsndfile, libSDL, and wxWidgets (3.0 or later) from the
+released kits. 
+
+Now open Pterm.vxcproj with Microsoft Visual Studio.  I used the 2010
+edition, so the released project files are for that version.  If you
+have a different version, you may need to convert.
+
+Build Pterm (typically you'll want to use the Release build).  You may
+need to copy some of the DLLs is needs into the build output
+directory for Pterm to run properly after building.
+
+Building the other parts of DtCyber:
+
+The Pterm prerequisites are sufficient for building the rest of
+DtCyber.  On Linux and Mac OS, "make" with no arguments (or "make
+all") will build all the DtCyber components (dtcyber, dtoper, dd60,
+blackbox, pterm).  On Mac OS, dtoper, dd60, and pterm will be build as
+Application packages (with .app extensions) while dtcyber and blackbox
+are simple Unix command line applications that require no packaging.
+
+There is no current Windows project file for building the other parts
+of DtCyber.  There is a DtCyber.dsw file that was used some time ago
+with Visual C++ 2006, but it fails conversion to VS 2010 and in any
+case will likely need updating.
+

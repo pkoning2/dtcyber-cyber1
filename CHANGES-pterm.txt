@@ -1,0 +1,44 @@
+This file documents the major changes in each release of Pterm.
+
+V5.0.0, April 2014:
+
+Rewrite of the display engine to make zoom 200%, stretch, and full
+screen mode work more consistently.
+
+Copy/Paste text and related operations (such as execute browser) now
+handle Unicode.  All PLATO characters, including accented characters,
+are converted to/from Unicode.
+
+New "Save GSW Audio" feature (in the File menu).  This allows you to
+specify a file name (.WAV, .AIFF, or .AU type) to receive the next GSW
+song.  Recording starts when the music starts, and stops when the
+music is complete.  In other words, this captures one song at a time.
+
+Note to Windows users: the scaling of -font- text has been fixed for
+consistency with other platforms.  If you have code that uses -font-
+with sizes chosen to look right on the previous Windows version of
+pterm, you will need to adjust the text size.  
+
+V5.0.3, April 2014:
+
+-paint- command now supports the case with a tag (fill with character
+pattern).
+
+V5.0.4, June 2014:
+
+This is the release candidate of Pterm V5.0.
+
+It contains bugfixes as well as a new feature: scale with aspect ratio
+preserved (courtesy Dirk Thierbach).
+
+V5.0.5, December 2014:
+
+This is the release of Pterm V5.0.
+
+It contains bugfixes, more general scaling, and Mac Retina display support.
+
+V5.0.6, December 2014:
+
+This release corrects several bugs: crash on exit primarily on Mac,
+wrong handling of -font- commands in certain cases, extra newline in
+autowrap mode.

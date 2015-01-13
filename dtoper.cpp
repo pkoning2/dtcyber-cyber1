@@ -112,6 +112,10 @@ typedef struct opMsg
 #pragma hdrstop
 #endif
 
+#ifdef _WIN32
+#include <wx/setup.h>
+#endif
+
 // for all others, include the necessary headers (this file is usually all you
 // need because it includes almost all "standard" wxWindows headers)
 #ifndef WX_PRECOMP
@@ -127,6 +131,9 @@ typedef struct opMsg
 #include "wx/print.h"
 #include "wx/printdlg.h"
 #include "wx/rawbmp.h"
+#include <wx/validate.h>
+#include <wx/valnum.h>
+#include <wx/aboutdlg.h>
 
 extern "C"
 {
@@ -166,6 +173,7 @@ extern void gtk_settings_set_string_property (GtkSettings *, const char *,
 extern GtkSettings * gtk_settings_get_default (void);
 #endif
 }
+#undef small   /* Since some Windows cruft defines this */
     
 // ----------------------------------------------------------------------------
 // resources
@@ -219,7 +227,6 @@ class DtoperPrintout: public wxPrintout
     {}
   bool OnPrintPage (int page);
   bool HasPage (int page);
-  bool OnBeginDocument (int startPage, int endPage);
   void GetPageInfo (int *minPage, int *maxPage, int *selPageFrom, int *selPageTo);
   void DrawPage (wxDC *dc);
 
@@ -521,8 +528,11 @@ void DtoperFrame::connCallback (NetFet *fet, int, void *arg)
         frame->cmdLen = 0;
         frame->cmdEcho.bold = FALSE;
         frame->opSetMsg ("$Disconnected");
+        frame->m_fet = NULL;
     }
 
+    frame->m_fet = fet;
+    
     wxWakeUpIdle ();
 }
 
@@ -682,15 +692,17 @@ bool DtoperApp::DoConnect (bool ask)
 
 void DtoperApp::OnAbout(wxCommandEvent&)
 {
-    wxString msg;
+    wxAboutDialogInfo info;
 
-    msg.Printf (_T("DtCyber console (DTOPER) emulator %s.\n%s"),
-                wxT ("V2.0.0"
-                     "\n  built with wxWidgets V" WXVERSION
-                     "\n  build date " PTERMBUILDDATE ),
-                _("Copyright \xA9 2004-2014 by Paul Koning."));
+    info.SetName (_("DTOPER"));
+    info.SetVersion (_("V2.0.0"));
+    info.SetDescription (_("DtCyber operator interface (DTOPER) emulator."
+                           L"\n  built with wxWidgets V" wxT (WXVERSION)
+                           L"\n  build date " wxT(PTERMBUILDDATE)));
+    info.SetCopyright (wxT("(C) 2004-2014 by Paul Koning"));
+    info.SetWebSite ("http://cyber1.org");
     
-    wxMessageBox(msg, _("About Dtoper"), wxOK | wxICON_INFORMATION, NULL);
+    wxAboutBox(info);
 }
 
 void DtoperApp::OnPref (wxCommandEvent&)
@@ -828,7 +840,6 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
     statusFlags (0),
     initDone (false)
 {
-    int true_opt = 1;
     int i;
     
     for (i = 0; i < StatusLines; i++)
@@ -887,6 +898,8 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
 
     helpMenu->Append(Dtoper_About, _("&About Dtoper"),
                      _("Show about dialog"));
+    
+    menuBar->Append(helpMenu, wxT("&Help"));
 
     // ... and attach this menu bar to the frame
     SetMenuBar(menuBar);
@@ -909,12 +922,13 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
     m_portset.callBack = connCallback;
     m_portset.callArg = this;
     m_portset.dataCallBack = dataCallback;
-
-    dtInitPortset (&m_portset, NetBufSize, SendBufSize);
-    m_fet = m_portset.portVec;
+    m_portset.ringSize = NetBufSize;
+    m_portset.sendRingSize = SendBufSize;
+    dtInitPortset (&m_portset);
 
     // Open the connection
-    if (dtConnect (m_fet, &m_portset, inet_addr ("127.0.0.1"), m_port) < 0)
+    m_fet = dtConnect (&m_portset, inet_addr ("127.0.0.1"), m_port);
+    if (m_fet == NULL)
     {
         wxString msg;
             
@@ -930,12 +944,6 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
     }
     m_statusBar->SetStatusText(_(" Connected"), STATUS_CONN);
     SetCursor (wxNullCursor);
-    setsockopt (m_fet->connFd, SOL_SOCKET, SO_KEEPALIVE,
-                (char *)&true_opt, sizeof(true_opt));
-#ifdef __APPLE__
-    setsockopt (m_fet->connFd, SOL_SOCKET, SO_NOSIGPIPE,
-                (char *)&true_opt, sizeof(true_opt));
-#endif
 
     Show(true);
 }
@@ -944,7 +952,8 @@ DtoperFrame::~DtoperFrame ()
 {
     if (dtActive (m_fet))
     {
-        dtCloseFet (m_fet, true);
+        dtClose (m_fet, true);
+        m_fet = NULL;
     }
     
     // Remove this frame from the app's frame list
@@ -1059,7 +1068,7 @@ void DtoperFrame::opRequest(void)
 #endif
                 return;
             }
-            dtSendTlv (m_fet, &m_portset, OpCommand, strlen (cmdBuf), cmdBuf);
+            dtSendTlv (m_fet, OpCommand, strlen (cmdBuf), cmdBuf);
             return;
         }
         else 
@@ -1239,13 +1248,20 @@ void DtoperFrame::OnIdle (wxIdleEvent &event)
 
     for (;;)
     {
+        if (!dtActive (m_fet))
+        {
+            m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+            break;
+        }
         i = dtReadtlv (m_fet, dataBuf, OpDataSize);
         //printf ("data: len %d code %d\n", i, dataBuf[0]);
         if (i < 0)
         {
-            if (!dtActive (m_fet))
+            if (!dtConnected (m_fet))
             {
-                m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+                dtClose (m_fet, TRUE);
+                m_fet = NULL;
+                continue;
             }
             break;
         }
@@ -1389,7 +1405,8 @@ void DtoperFrame::OnClose (wxCloseEvent &)
 {
     if (dtActive (m_fet))
     {
-        dtClose (m_fet, &m_portset, true);
+        dtClose (m_fet, true);
+        m_fet = NULL;
     }
 
     Destroy ();
@@ -1597,7 +1614,7 @@ void DtoperFrame::dtoperSendKey(int key)
         wxLogMessage ("key to plato %03o", key);
 #endif
     }
-    dtSend (m_fet, &m_portset, &data, 1);
+    dtSend (m_fet, &data, 1);
 }
 
 void DtoperFrame::dtoperShowTrace (bool enable)
@@ -1785,10 +1802,12 @@ DtoperPrefDialog::DtoperPrefDialog (DtoperFrame *parent, wxWindowID id, const wx
     m_autoConnect->SetValue (m_connect);
     sbs->Add (m_autoConnect, 0,   wxTOP | wxLEFT | wxRIGHT, 8);
     fgs = new wxFlexGridSizer (1, 2, 8, 8);
+
+    wxIntegerValidator<long> portval;
+    portval.SetRange (1, 65535);
     m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
-                                 wxDefaultPosition, wxSize (160+40, 18),
-                                 0, *new wxTextValidator (wxFILTER_NUMERIC,
-                                                          &m_port));
+                                 wxDefaultPosition, wxDefaultSize,
+                                 0, portval);
     fgs->Add (new wxStaticText (this, wxID_ANY, _("Default Port")));
     fgs->Add (m_portText);
     sbs->Add (fgs, 0, wxALL, 8);
@@ -1895,6 +1914,9 @@ DtoperConnDialog::DtoperConnDialog (wxWindowID id, const wxString &title)
 {
     wxBoxSizer *ds, *ods;
     wxFlexGridSizer *fgs;
+    wxIntegerValidator<long> portval;
+
+    portval.SetRange (1, 65535);
 
     // Sizer for the whole dialog box content
     ds = new wxBoxSizer (wxVERTICAL);
@@ -1903,9 +1925,8 @@ DtoperConnDialog::DtoperConnDialog (wxWindowID id, const wxString &title)
     m_port.Printf (wxT ("%d"), dtoperApp->m_port);
 
     m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
-                                 wxDefaultPosition, wxSize (160, 18),
-                                 0, *new wxTextValidator (wxFILTER_NUMERIC,
-                                                          &m_port));
+                                 wxDefaultPosition, wxDefaultSize,
+                                 0, portval);
     fgs = new wxFlexGridSizer (1, 2, 8, 8);
       
     fgs->Add (new wxStaticText (this, wxID_ANY, _("Port")));
@@ -1971,14 +1992,6 @@ void DtoperCanvas::OnKey (wxKeyEvent& event)
 // ----------------------------------------------------------------------------
 // Dtoper printing helper class
 // ----------------------------------------------------------------------------
-
-bool DtoperPrintout::OnBeginDocument(int startPage, int endPage)
-{
-    if (!wxPrintout::OnBeginDocument (startPage, endPage))
-        return false;
-
-    return true;
-}
 
 bool DtoperPrintout::OnPrintPage (int page)
 {
