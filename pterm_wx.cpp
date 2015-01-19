@@ -3355,7 +3355,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
             if (i < m_pasteIndex || i == wxString::npos)
             {
                 // If there is no good break point, break at the limit.
-                i = m_pasteNextIndex + ptermApp->m_autoLF - 1;
+                i = m_pasteIndex + ptermApp->m_autoLF - 1;
             }
             m_pasteNextIndex = i;
         }
