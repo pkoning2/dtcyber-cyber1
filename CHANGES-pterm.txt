@@ -42,3 +42,8 @@ V5.0.6, December 2014:
 This release corrects several bugs: crash on exit primarily on Mac,
 wrong handling of -font- commands in certain cases, extra newline in
 autowrap mode.
+
+V5.0.7, February 2015:
+
+Bugfixes: block erase in "xor" mode, pasting a string with no spaces
+that requires more than one line wrap.

@@ -4425,7 +4425,7 @@ void PtermFrame::ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
 
     if (xor_p)
     {
-        *pmap ^= pixval;
+        *pmap = (*pmap ^ pixval) | m_maxalpha;
     }
     else
     {
