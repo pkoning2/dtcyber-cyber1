@@ -735,7 +735,8 @@ void pniCheck (void)
         case 5:
             // Logout terminal
             DEBUGPRINT ("Log out terminal %d\n", station);
-            // Actually we do nothing here
+            // Revert back to old keycode conversion (no flow control)
+            pp->newKbd = FALSE;
             break;
         case 3:
             // Return terminal type
