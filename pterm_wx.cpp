@@ -1054,6 +1054,10 @@ private:
     // PLATO terminal emulation state
 #define mode RAM[M_MODE]
     bool        modexor;
+    // 0: inverse
+    // 1: rewrite
+    // 2: erase
+    // 3: write
 #define wemode (mode & 3)
     int         currentX;
     int         currentY;
@@ -1927,7 +1931,7 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
     FILE *testdata;
     connMode testmode;
     char tline[200], *p;
-    int w, seq, pseq;
+    int w, seq, pseq, key;
     PtermFrame *frame;
     
 #if defined (__WXMAC__)
@@ -2032,8 +2036,14 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
                         // Timestamp at start of line, skip it
                         p += 14;
                     }
-                    if (sscanf (p, "%o seq %d", &w, &seq) != 0 &&
-                        seq != pseq)
+                    if (sscanf (p, "key to plato %o", &key))// != 0 && key < 0200)
+                    {
+                        // Key stroke in the trace, so this is a pause point.  But
+                        // simply pausing isn't correct because that doesn't
+                        // update the screen.  Need a better answer.
+                    }
+                    else if (sscanf (p, "%o seq %d", &w, &seq) != 0 &&
+                             seq != pseq)
                     {
                         // Successful conversion, process the word,
                         // provided it is new (different sequence number
@@ -4436,7 +4446,7 @@ void PtermFrame::ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
 void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum, bool autobs)
 {
     u32 fpix, bpix;
-    const u16 *charp;
+    const u16 *charp, *svcharp;
     PixelData pixmap (*m_bitmap);
     PixelData selmap (*m_selmap);
     
@@ -4454,6 +4464,7 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum, bool autobs)
         charp = plato_m23 + (snum - 2) * (8 * 64);
     }
     charp += 8 * cnum;
+    svcharp = charp;
     //debug ("char %d mem %d addr %p", cnum, snum, charp);
 
     if (modexor || (wemode & 1))
@@ -4467,6 +4478,12 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum, bool autobs)
         // mode inverse or erase
         fpix = m_bgpix;
         bpix = m_fgpix;
+        if (wemode == 2)
+        {
+            // mode erase, so clear the savemap entry (write M0 entry 055
+            // which is a space)
+            svcharp = plato_m0 + 8 * 055;
+        }
     }
 
     // We draw the character twice: once onto the screen bitmap,
@@ -4476,7 +4493,7 @@ void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum, bool autobs)
     // in mode rewrite, except for autobackspace where we want to
     // save the resulting combined character shape.
     ptermDrawCharInto (x, y, charp, fpix, bpix, mode, modexor, pixmap);
-    ptermDrawCharInto (x & 0770, y & 0760, charp, m_selpixf, m_selpixb,
+    ptermDrawCharInto (x & 0770, y & 0760, svcharp, m_selpixf, m_selpixb,
                        (autobs ? 3 : 1), false, selmap);
 }
 
@@ -7426,19 +7443,25 @@ bool PtermFrame::SaveChar (int x, int y, wxChar c, bool large_p)
 #if 0
     wxString s;
     
-    s.Printf ("saving at %d, %d: %x: ", x, y, (int) c);
+    s.Printf ("saving at %d, %d, mode %d: %x: ", x, y, wemode, (int) c);
     s.Append (c);
     trace (s);
 #endif
+    dx = cx - px;
+    dy = cy - py;
+
+    // Mode erase means we're erasing a character, so set the saved character
+    // to empty (space).
+    if (wemode == 2)             // mode erase
+    {
+        c = ' ';
+    }
     // Check for autobackspace BEFORE rounding the x/y position down
     // to the text grid (coarse grid) boundaries.  Note that 
     // auto-backspace is defined in terms of the current writing direction.
     // Also, it's only auto-backspace if the current writing mode is
-    // write or erase, not if it is inverse or rewrite.  
-    dx = cx - px;
-    dy = cy - py;
-
-    if ((wemode & 2) != 0 &&     // mode erase or write
+    // write.
+    else if (wemode == 3 &&     // mode write
         (dx == 0 || dx == 4 * size) &&
         dy >= -10 * size && 
         dy <= 11 * size)
