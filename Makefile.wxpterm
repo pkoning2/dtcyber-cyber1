@@ -72,10 +72,6 @@ SDLCFLAGS = $(SDLINCL)
 
 PTOBJS	= dtnetsubs.o pterm_sdl.o pterm_wx.o 8080a.o
 DD60OBJS = $(SOBJS) dd60.o knob.o iir.o 
-ifeq ("$(HOST)","Darwin")
-PTOBJS += wxutil.o
-DD60OBJS += wxutil.o
-endif
 
 ifneq ("$(PTERMVERSION)","xxx")
 LANGUAGES = $(shell cat languages)

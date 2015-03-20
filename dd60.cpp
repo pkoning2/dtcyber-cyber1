@@ -718,16 +718,6 @@ bool Dd60App::OnInit (void)
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
     
-    // Handle Retina-type displays.  For now, support only exists on
-    // the Mac; if some other OS has a similar feature implemented in a
-    // similar way, define the appropriate API calls for setting PScale
-    // as needed.
-#if  defined(__WXMAC__)
-    PScale = mainDisplayScale ();
-#else
-    PScale = 1;
-#endif
-
     sprintf (traceFn, "dd60_%d.trc", getpid ());
 
     m_locale.Init(wxLANGUAGE_DEFAULT);
