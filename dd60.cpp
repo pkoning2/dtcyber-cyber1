@@ -1949,7 +1949,10 @@ void Dd60Frame::procDd60Char (unsigned int d)
             // SSE2 operations require 16 byte alignment.
             // The char data array is aligned, but the pixmap data
             // might not be, depending on the X coordinate low bits.
-            if ((((uintptr_t) (p.m_ptr)) & 0x0f) == 0)
+            // Also check that the character row is fully on-screen,
+            // if not we'll paint it pixel by pixel.
+            if ((((uintptr_t) (p.m_ptr)) & 0x0f) == 0 &&
+                firstx >= 0 && firstx + size <= m_xsize)
             {
                 pmap = (v16qi *) (p.m_ptr);
                 pdata = (v16qi *) data;
@@ -2252,7 +2255,7 @@ Dd60ConnDialog::Dd60ConnDialog (wxWindowID id, const wxString &title)
     ds = new wxBoxSizer (wxVERTICAL);
 
     // First section: the text controls
-    m_port.Printf (wxT ("%d"), dd60App->m_port);
+    m_port.Printf (wxT ("%ld"), dd60App->m_port);
 
     m_portText = new wxTextCtrl (this, wxID_ANY, m_port,
                                  wxDefaultPosition, wxDefaultSize,
