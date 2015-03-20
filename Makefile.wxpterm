@@ -71,6 +71,11 @@ MSGFLAGS ?= -U
 SDLCFLAGS = $(SDLINCL)
 
 PTOBJS	= dtnetsubs.o pterm_sdl.o pterm_wx.o 8080a.o
+DD60OBJS = $(SOBJS) dd60.o knob.o iir.o 
+ifeq ("$(HOST)","Darwin")
+PTOBJS += wxutil.o
+DD60OBJS += wxutil.o
+endif
 
 ifneq ("$(PTERMVERSION)","xxx")
 LANGUAGES = $(shell cat languages)
@@ -108,7 +113,7 @@ endif
 wxversion.h: wxversion wxversion.py
 	./wxversion.py
 
-dd60:	$(SOBJS) dd60.o knob.o iir.o
+dd60:	$(DD60OBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
 	$(LINK)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
 
