@@ -1879,7 +1879,7 @@ void Dd60Frame::procDd60Char (unsigned int d)
     u8 *data = 0;
     int i, j, k = 0;
 #ifdef __SSE2__
-    typedef u8 v16qi __attribute__ ((vector_size (16)));
+    typedef char v16qi __attribute__ ((vector_size (16)));
     v16qi *pmap, *pdata;
 #endif
 
