@@ -45,6 +45,6 @@ autowrap mode.
 
 V5.0.7, March 2015:
 
-Bugfixes: block erase in "xor" mode; pasting a string with no spaces
-that requires more than one line wrap; erasing text didn't clear it
-for the copy-text operation.
+Bugfixes: block erase and mishandled Alpha channel in "xor" mode;
+pasting a string with no spaces that requires more than one line wrap;
+erasing text didn't clear it for the copy-text operation.
