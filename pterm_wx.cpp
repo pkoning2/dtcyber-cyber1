@@ -2012,9 +2012,10 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
                 
                 for (;;)
                 {
-                    tline[0] = '\0';
-                    fgets (tline, 199, testdata);
-                    if (tline[0] == '\0')
+                    char *fret;
+                    
+                    fret = fgets (tline, 199, testdata);
+                    if (fret == NULL)
                     {
                         fclose (testdata);
                         testdata = NULL;

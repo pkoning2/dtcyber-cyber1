@@ -556,7 +556,7 @@ const char *dtNowString (void)
     gettimeofday (&tv, NULL);
     strftime (ts, sizeof (ts) - 1, "%y/%m/%d %H.%M.%S.", 
               localtime_r (&tv.tv_sec, &tmbuf));
-    sprintf (us, "%06d.", tv.tv_usec);
+    sprintf (us, "%06d.", (int)tv.tv_usec);
 #endif
     strcat (ts, us);
     return ts;
