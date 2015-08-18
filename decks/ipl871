@@ -14,6 +14,19 @@ return(opl)
 */ ---   block=01-e opl2                 83/09/22. 20.24    source
 *oplfile opl2
 */
+*ident packdir
+*/ -------------------------------------------------------------------
+*/ ---   block=01-e packdir              15/08/18. 14.48    source
+*/ -------------------------------------------------------------------
+*/
+*/ set the pack info length to 255 for 7000 part packs
+*/ (as requested by tricorn, see sysnotes 15.08.16.)
+*deck syscon
+*d mf9500.2
+ PITLTH3  EQU    256D        MF INFO TABLE LNG (3-PART DIR)
+*/ end packdir
+*/
+*/
 *ident ovlfix
 */ -------------------------------------------------------------------
 */ ---   block=01-e ovlfix               14/10/24. 14.48    source
