@@ -511,13 +511,14 @@ void dtClose (NetFet *fet, bool hard)
         }
 
     /*
-    **  If we have threads, tell the send thread to go away.  (If
-    **  there is no send thread, that's a NOP).  The receive thread
-    **  will free the FET.  
+    **  If we have threads, tell the threads to go away.  (If there is
+    **  no send thread, that part is a NOP).  The receive thread will
+    **  free the FET.
     */
     if (useThread)
         {
         sem_post (ssemp (fet));
+        sem_post (rsemp (fet));
         }
 
     /*
