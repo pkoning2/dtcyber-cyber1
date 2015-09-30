@@ -91,10 +91,10 @@ clean:
 endif
 
 dtcyber: $(OBJS)
-	$(CC) $(LDFLAGS) $(ARCHCFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
+	$(CC) $(LDFLAGS) $(LIBS) $(THRLIBS) $(ARCHCFLAGS) -o $@ $+
 
 blackbox: blackbox.o $(SOBJS)
-	$(CC) $(LDFLAGS) -o $@ $+ $(LIBS) $(THRLIBS)
+	$(CC) $(LDFLAGS) $(LIBS) $(THRLIBS) -o $@ $+
 
 kit:	pterm-kit
 

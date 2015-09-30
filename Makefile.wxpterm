@@ -15,6 +15,7 @@ DEFWXDIR = /usr/local
 
 ifeq ("$(HOST)","Darwin")
 PKGMAKER ?= /Developer/Applications/Utilities/PackageMaker.app
+MACEXTRA = fixmac.o
 ifeq ("$(wildcard $(PKGMAKER))","")
 PKGMAKER = /Applications/Utilities/PackageMaker.app
 endif
@@ -98,8 +99,8 @@ info:
 	@echo ptermsvn: $(PTERMSVNREV)
 	@echo osxver: $(OSXVER)
 
-pterm:	$(PTOBJS)
-	$(LINK) $(ARCHLDFLAGS) $(LDFLAGS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(LIBS) $(SETPATH)
+pterm:	$(PTOBJS) $(MACEXTRA)
+	$(LINK) $(ARCHLDFLAGS) $(LDFLAGS) $(LIBS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(SETPATH)
 ifeq ("$(HOST)","Darwin")
 	#strip $@
 else
@@ -111,16 +112,16 @@ wxversion.h: wxversion wxversion.py
 
 dd60:	$(DD60OBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(LINK)  $(ARCHCFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
+	$(LINK)  $(ARCHCFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
 dtoper:	$(SOBJS) dtoper.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(LINK)  $(ARCHLDFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
+	$(LINK)  $(ARCHLDFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
 # console display test program
 cc545:	cc545.o knob.o iir.o
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(LINK) $(CXXFLAGS) $(LDFLAGS) -o $@ $+ $(WXLIBS) $(LIBS) $(SETPATH)
+	$(LINK) $(CXXFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
 ifeq ("$(HOST)","Darwin")
 
@@ -210,6 +211,11 @@ endif
 
 %.o : %.cpp
 	$(CXX) -c -Wall -Wno-sign-compare $(C2FLAGS) $(CXXFLAGS) $<
+
+ifeq ("$(HOST)","Darwin")
+%.o : %.m
+	$(CC) -c -Wall -Wno-sign-compare $(CFLAGS) $<
+endif
 
 pterm_sdl.o : pterm_sdl.c
 	$(CC) $(CFLAGS) $(SDLCFLAGS) -I $(SNDINCL) -c $<

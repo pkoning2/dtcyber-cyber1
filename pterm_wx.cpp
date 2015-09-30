@@ -781,6 +781,12 @@ private:
 #if defined (__WXMAC__)
 // On the Mac, menus are always displayed
 const bool PtermApp::m_showMenuBar = true;
+
+// A menu fixer
+extern "C" 
+{
+    extern void fixmenu (void);
+}
 #endif
 
 // define a scrollable canvas for drawing onto
@@ -1721,6 +1727,10 @@ bool PtermApp::OnInit (void)
     wxString str;
     const char *s;
 
+#if defined (__WXMAC__)
+    fixmenu ();
+#endif
+    
     m_termType = 0;
     
     ptermApp = this;
