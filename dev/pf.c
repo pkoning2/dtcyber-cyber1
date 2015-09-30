@@ -352,21 +352,27 @@ void inforeadstr (const char *value, int offset, int count)
     if (count >> 8 != 0 &&
         (count >> 8) != ftype[9])
         return;
+    printf ("str: offset %d, count %d, value %s\n", offset, count & 0xff, value);
     atod (lhbuf + offset, value, count & 0xff);
 }
 
+// Put the last change date/time into the lesson directory.
 void inforeadedate (const char *value, int offsetdate, int offsettime)
 {
 }
 
+// Put the last editor name/group into the lesson directory.
 void inforeadeby (const char *value, int offsetauth, int offsetgrp)
 {
 }
 
+// Put the last edit station number into the lesson directory
 void inforeadeat (const char *value, int offset, int count)
 {
 }
 
+// Put a codeword into the lesson directory.  Since we don't get to see
+// regular string codes, for those the substitute "xxcodeword" is used.
 void inforeadcode (const char *value, int offset, int type)
 {
     if (type != 0 &&
@@ -375,6 +381,7 @@ void inforeadcode (const char *value, int offset, int type)
 
 }
 
+// Put the system access allowed flag into the lesson directory.
 void inforeadacc (const char *value, int offset, int x)
 {
 }
