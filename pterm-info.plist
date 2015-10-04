@@ -23,13 +23,13 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>5.0.7</string>
+	<string>5.0.8</string>
 	<key>CFBundleShortVersionString</key>
-	<string>5.0.7</string>
+	<string>5.0.8</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Pterm V5.0.7, (c) 2005-2015 Paul Koning &amp; Joe Stanton</string>
+	<string>Pterm V5.0.8, (c) 2005-2015 Paul Koning &amp; Joe Stanton</string>
 	<key>CFBundleLongVersionString</key>
-	<string>5.0.7, (c) 2005-2015 Paul Koning &amp; Joe Stanton</string>
+	<string>5.0.8, (c) 2005-2015 Paul Koning &amp; Joe Stanton</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
