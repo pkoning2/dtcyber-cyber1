@@ -8181,26 +8181,25 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 //  wxButton* btnOK;
 //  wxButton* btnCancel;
 //  wxButton* btnDefaults;
+    wxFont dfont = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
     
 
     
     // ui object creation / placement, note initialization of values is below
     wxBoxSizer* bSizer1;
     bSizer1 = new wxBoxSizer (wxVERTICAL);
-
+    
     //notebook
     tabPrefsDialog = new wxNotebook (this, wxID_ANY, wxDefaultPosition,
                                      wxDefaultSize, wxNB_TOP);
-    tabPrefsDialog->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                     wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    tabPrefsDialog->SetFont (dfont);
 
     //tab0
     tab0 = new wxScrolledWindow (tabPrefsDialog, wxID_ANY,
                                  wxDefaultPosition, wxDefaultSize,
                                  wxHSCROLL | wxTAB_TRAVERSAL | wxVSCROLL);
     tab0->SetScrollRate (5, 5);
-    tab0->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                           wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    tab0->SetFont (dfont);
 
     wxBoxSizer* page0;
     page0 = new wxBoxSizer (wxVERTICAL);
@@ -8225,25 +8224,21 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     fgs011 = new wxFlexGridSizer (2, 4, 0, 0);
     btnSave = new wxButton (tab0, wxID_ANY, _("Save"), wxDefaultPosition,
                             wxDefaultSize, 0);
-    btnSave->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                              wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    btnSave->SetFont (dfont);
     fgs011->Add (btnSave, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
     btnLoad = new wxButton (tab0, wxID_ANY, _("Load"), wxDefaultPosition,
                             wxDefaultSize, 0);
-    btnLoad->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                              wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    btnLoad->SetFont (dfont);
     fgs011->Add (btnLoad, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
     btnDelete = new wxButton (tab0, wxID_ANY, _("Delete"), wxDefaultPosition,
                               wxDefaultSize, 0);
-    btnDelete->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    btnDelete->SetFont (dfont);
     fgs011->Add (btnDelete, 0, wxRIGHT | wxLEFT, 5);
     lblProfileStatusMessage = new wxStaticText (tab0, wxID_ANY,
                                                 _("Profile saved."),
                                                 wxDefaultPosition,
                                                 wxDefaultSize, 0);
-    lblProfileStatusMessage->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                              wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    lblProfileStatusMessage->SetFont (dfont);
     fgs011->Add (lblProfileStatusMessage, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
     fgs01->Add (fgs011, 1, 0, 5);
     lblNewProfileExplain = new wxStaticText (tab0, wxID_ANY,
@@ -8303,13 +8298,11 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     fgs111->SetNonFlexibleGrowMode (wxFLEX_GROWMODE_SPECIFIED);
     lblShellFirst = new wxStaticText (tab1, wxID_ANY, _("Run this first"),
                                       wxDefaultPosition, wxDefaultSize, 0);
-    lblShellFirst->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                    wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    lblShellFirst->SetFont (dfont);
     fgs111->Add (lblShellFirst, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
     txtShellFirst = new wxTextCtrl (tab1, wxID_ANY, wxT (""),
                                     wxDefaultPosition, wxDefaultSize, 0);
-    txtShellFirst->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                    wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    txtShellFirst->SetFont (dfont);
     txtShellFirst->SetMaxLength (255); 
     fgs111->Add (txtShellFirst, 0,
                  wxALIGN_CENTER_VERTICAL | wxALL, 5);
@@ -8319,8 +8312,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     txtDefaultHost = new wxTextCtrl (tab1, wxID_ANY, wxT ("cyberserv.org"),
                                      wxDefaultPosition, wxSize (-1, -1), 0);
     txtDefaultHost->SetMaxLength (100); 
-    txtDefaultHost->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                     wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    txtDefaultHost->SetFont (dfont);
     fgs111->Add (txtDefaultHost, 1, 
                  wxALL | wxALIGN_CENTER_VERTICAL, 5);
     lblDefaultPort = new wxStaticText (tab1, wxID_ANY, _("Default Port*"),
@@ -8352,8 +8344,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                  wxDefaultSize,
                                  wxHSCROLL | wxTAB_TRAVERSAL | wxVSCROLL);
     tab2->SetScrollRate (5, 5);
-    tab2->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                           wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    tab2->SetFont (dfont);
 
     wxBoxSizer* page2;
     page2 = new wxBoxSizer (wxVERTICAL);
@@ -8425,8 +8416,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                          _("Enable control-key menu accelerators"),
                                          wxDefaultPosition, wxDefaultSize, 0);
     chkUseAccelerators->SetValue (true);
-    chkUseAccelerators->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                         wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    chkUseAccelerators->SetFont (dfont);
 #if defined (__WXMAC__)
     chkUseAccelerators->Disable ();
 #endif
@@ -8597,8 +8587,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     chkSmartPaste = new wxCheckBox (tab5, wxID_ANY,
                                     _("Use TUTOR pasting (certain sequences are treated specially)"),
                                     wxDefaultPosition, wxDefaultSize, 0);
-    chkSmartPaste->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                    wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    chkSmartPaste->SetFont (dfont);
     bs51->Add (chkSmartPaste, 0, wxALL, 5);
     chkConvertDot7 = new wxCheckBox (tab5, wxID_ANY,
                                      _("Convert periods followed by 7 spaces into period/tab"),
@@ -8642,8 +8631,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     txtEmail = new wxTextCtrl (tab6, wxID_ANY, wxT (""), wxDefaultPosition,
                                wxDefaultSize, 0 | wxTAB_TRAVERSAL);
     txtEmail->SetMaxLength (255); 
-    txtEmail->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                               wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    txtEmail->SetFont (dfont);
     page6->Add (txtEmail, 0, wxALL | wxEXPAND, 5);
     lblSearchURL = new wxStaticText (tab6, wxID_ANY,
                                      _("Specify URL for menu option 'Search this...'"),
@@ -8670,18 +8658,15 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     fgsButtons->Add (0, 0, 1, wxALL | wxEXPAND, 5);
     btnOK = new wxButton (this, wxID_ANY, _("OK"), wxDefaultPosition,
                           wxDefaultSize, 0);
-    btnOK->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                            wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    btnOK->SetFont (dfont);
     fgsButtons->Add (btnOK, 0, wxALL, 5);
     btnCancel = new wxButton (this, wxID_CANCEL, _("Cancel"),
                               wxDefaultPosition, wxDefaultSize, 0);
-    btnCancel->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    btnCancel->SetFont (dfont);
     fgsButtons->Add (btnCancel, 0, wxALL, 5);
     btnDefaults = new wxButton (this, wxID_ANY, _("Defaults"),
                                 wxDefaultPosition, wxDefaultSize, 0);
-    btnDefaults->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                  wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    btnDefaults->SetFont (dfont);
     fgsButtons->Add (btnDefaults, 0, wxALL, 5);
     bSizer1->Add (fgsButtons, 0, wxEXPAND, 5);
     this->SetSizer (bSizer1);
@@ -9381,6 +9366,7 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
     wxStaticText* lblExplainPort;
 //  wxButton* btnCancel;
 //  wxButton* btnConnect;
+    wxFont dfont = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
 
     // ui object creation / placement, note initialization of values is below
     wxBoxSizer* bs1;
@@ -9388,21 +9374,18 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
     lblExplainProfiles = new wxStaticText (this, wxID_ANY,
                                            _("Select a profile and click Connect."),
                                            wxDefaultPosition, wxDefaultSize, 0);
-    lblExplainProfiles->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                         wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    lblExplainProfiles->SetFont (dfont);
     bs1->Add (lblExplainProfiles, 0,
               wxTOP|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5);
     lstProfiles = new wxListBox (this, wxID_ANY, wxDefaultPosition,
                                  wxSize (-1, -1), 0, NULL, wxLB_SORT); 
-    lstProfiles->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                  wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    lstProfiles->SetFont (dfont);
     lstProfiles->SetMinSize (wxSize (-1, 122));
     bs1->Add (lstProfiles, 0, wxALL | wxEXPAND, 5);
     lblExplainManual = new wxStaticText (this, wxID_ANY,
                                          _("Or, enter a hostname and port number, then click Connect."),
                                          wxDefaultPosition, wxDefaultSize, 0);
-    lblExplainManual->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                       wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    lblExplainManual->SetFont (dfont);
     bs1->Add (lblExplainManual, 0, wxALL, 5);
 
     wxFlexGridSizer* fgSizer11;
@@ -9415,32 +9398,27 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
     fgs111 = new wxFlexGridSizer (3, 2, 0, 0);
     lblShellFirst = new wxStaticText (this, wxID_ANY, _("Run this first"),
                                       wxDefaultPosition, wxDefaultSize, 0);
-    lblShellFirst->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                    wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    lblShellFirst->SetFont (dfont);
     fgs111->Add (lblShellFirst, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
     txtShellFirst = new wxTextCtrl (this, wxID_ANY, wxT (""),
                                     wxDefaultPosition, wxDefaultSize, 0);
-    txtShellFirst->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                    wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    txtShellFirst->SetFont (dfont);
     txtShellFirst->SetMaxLength (255); 
     fgs111->Add (txtShellFirst, 0, wxALL | wxEXPAND, 5);
     lblHost = new wxStaticText (this, wxID_ANY, _("Host name"),
                                 wxDefaultPosition, wxDefaultSize, 0);
-    lblHost->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                              wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    lblHost->SetFont (dfont);
     fgs111->Add (lblHost, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
     txtHost = new wxTextCtrl (this, wxID_ANY, wxT ("cyberserv.org"),
                               wxDefaultPosition, wxSize (-1, -1),
                               wxTAB_TRAVERSAL);
     txtHost->SetMaxLength (100); 
-    txtHost->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                              wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    txtHost->SetFont (dfont);
     txtHost->SetMinSize (wxSize (320, -1));
     fgs111->Add (txtHost, 0, wxALL, 5);
     lblPort = new wxStaticText (this, wxID_ANY, _("Port*"),
                                 wxDefaultPosition, wxDefaultSize, 0);
-    lblPort->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                              wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    lblPort->SetFont (dfont);
     fgs111->Add (lblPort, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
     wxIntegerValidator<long> portval;
@@ -9451,16 +9429,14 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
                               NULL, wxTAB_TRAVERSAL, portval);
     cboPort->Append (wxT ("5004"));
     cboPort->Append (wxT ("8005"));
-    cboPort->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                              wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    cboPort->SetFont (dfont);
     cboPort->SetMinSize (wxSize (75, -1));
     fgs111->Add (cboPort, 0, wxALL, 5);
     fgSizer11->Add (fgs111, 0, 0, 5);
     lblExplainPort = new wxStaticText (this, wxID_ANY,
                                        _("* NOTE: 5004=Classic, 8005=Color Terminal"),
                                        wxDefaultPosition, wxDefaultSize, 0);
-    lblExplainPort->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                     wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    lblExplainPort->SetFont (dfont);
     fgSizer11->Add (lblExplainPort, 0, wxTOP | wxRIGHT | wxLEFT, 5);
 
     wxFlexGridSizer* fgs112;
@@ -9470,13 +9446,11 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
     fgs112->Add (0, 0, 1, wxALL, 5);
     btnCancel = new wxButton (this, wxID_CANCEL, _("Cancel"), wxDefaultPosition,
                               wxDefaultSize, wxTAB_TRAVERSAL);
-    btnCancel->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    btnCancel->SetFont (dfont);
     fgs112->Add (btnCancel, 0, wxALL, 5);
     btnConnect = new wxButton (this, wxID_ANY, _("Connect"), wxDefaultPosition,
                                wxDefaultSize, wxTAB_TRAVERSAL);
-    btnConnect->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                 wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    btnConnect->SetFont (dfont);
     fgs112->Add (btnConnect, 0, wxALL, 5);
     fgSizer11->Add (fgs112, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL, 5);
     bs1->Add (fgSizer11, 0, wxEXPAND, 5);
@@ -9630,22 +9604,20 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     wxStaticText *lblHost;
     wxHyperlinkCtrl *c1url;
     wxString str;
+    wxFont dfont = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
 
     // ui object creation / placement, note initialization of values is below
-    this->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                           wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    this->SetFont (dfont);
     wxBoxSizer* bs1;
     bs1 = new wxBoxSizer (wxVERTICAL);
     lblPrompt = new wxStaticText (this, wxID_ANY, wxT (""), wxDefaultPosition,
                                   wxDefaultSize, 0);
-    lblPrompt->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    lblPrompt->SetFont (dfont);
     bs1->Add (lblPrompt, 1,
               wxTOP|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL|wxEXPAND, 5);
     lblHost = new wxStaticText (this, wxID_ANY, wxT (""), wxDefaultPosition,
                                 wxDefaultSize, 0);
-    lblHost->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                              wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    lblHost->SetFont (dfont);
     bs1->Add (lblHost, 0, wxALL, 5);
 
     c1url = new wxHyperlinkCtrl (this, wxID_ANY, wxT (""), 
@@ -9658,8 +9630,7 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     fgs11->SetFlexibleDirection (wxHORIZONTAL);
     btnNew = new wxButton (this, wxID_ANY, _("New Connection"),
                            wxDefaultPosition, wxDefaultSize, 0|wxTAB_TRAVERSAL);
-    btnNew->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                             wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    btnNew->SetFont (dfont);
     fgs11->Add (btnNew, 0, wxALL, 5);
     btnRetry = new wxButton (this, wxID_ANY, _("Reconnect"), wxDefaultPosition,
                              wxDefaultSize, 0 | wxTAB_TRAVERSAL);
@@ -9669,8 +9640,7 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     btnCancel = new wxButton (this, wxID_CANCEL, _("Close"),
                               wxDefaultPosition, wxDefaultSize,
                               0|wxTAB_TRAVERSAL);
-    btnCancel->SetFont (wxFont (10, wxFONTFAMILY_SWISS,
-                                wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    btnCancel->SetFont (dfont);
     fgs11->Add (btnCancel, 0, wxALL, 5);
     bs1->Add (fgs11, 0, wxEXPAND, 5);
 
