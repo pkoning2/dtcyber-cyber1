@@ -1035,8 +1035,8 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     m_prevFrame (NULL),
     truekb (false),
     m_firstTime (true),
-    m_foregroundPen (dd60App->m_fgColor, 1, wxSOLID),
-    m_foregroundBrush (dd60App->m_fgColor, wxSOLID),
+    m_foregroundPen (dd60App->m_fgColor, 1, wxPENSTYLE_SOLID),
+    m_foregroundBrush (dd60App->m_fgColor, wxBRUSHSTYLE_SOLID),
     m_canvas (NULL),
     m_port (port),
     m_startBlock (true),
@@ -2209,7 +2209,7 @@ void Dd60PrefDialog::OnCheckbox (wxCommandEvent& event)
 
 void Dd60PrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
 {
-    wxBrush bitmapBrush (color, wxSOLID);
+    wxBrush bitmapBrush (color, wxBRUSHSTYLE_SOLID);
     wxMemoryDC memDC;
 
     memDC.SelectObject (bm);

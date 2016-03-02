@@ -9325,7 +9325,7 @@ void PtermPrefDialog::OnChange (wxCommandEvent& event)
 
 void PtermPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
 {
-    wxBrush bitmapBrush (color, wxSOLID);
+    wxBrush bitmapBrush (color, wxBRUSHSTYLE_SOLID);
     wxMemoryDC memDC;
 
     memDC.SelectObject (bm);

@@ -824,8 +824,8 @@ DtoperFrame::DtoperFrame(int port, const wxString& title)
     m_nextFrame (NULL),
     m_prevFrame (NULL),
     truekb (false),
-    m_foregroundPen (dtoperApp->m_fgColor, dtoperApp->m_scale, wxSOLID),
-    m_foregroundBrush (dtoperApp->m_fgColor, wxSOLID),
+    m_foregroundPen (dtoperApp->m_fgColor, dtoperApp->m_scale, wxPENSTYLE_SOLID),
+    m_foregroundBrush (dtoperApp->m_fgColor, wxBRUSHSTYLE_SOLID),
     m_canvas (NULL),
     m_port (port),
     cmdLen (0),
@@ -1889,7 +1889,7 @@ void DtoperPrefDialog::OnCheckbox (wxCommandEvent& event)
 
 void DtoperPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
 {
-    wxBrush bitmapBrush (color, wxSOLID);
+    wxBrush bitmapBrush (color, wxBRUSHSTYLE_SOLID);
     wxMemoryDC memDC;
 
     memDC.SelectObject (bm);
