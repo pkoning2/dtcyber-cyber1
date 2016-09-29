@@ -13,6 +13,7 @@ files = ( ( "pterm-info.plist", False, False ),
           ( "pterm.iss", False, True ),
           ( "pterm.rc", True, True ),
           ( "pterm-license.rtf", True, 0 ),
+          ( "pterm-license.txt", True, 0 ),
           ( "ptermversion.h", True, False ) )
 
 # Negative lookahead for trailing \ here, otherwise it matches filespecs
