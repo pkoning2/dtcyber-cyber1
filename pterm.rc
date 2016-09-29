@@ -106,7 +106,7 @@ BEGIN
             VALUE "FileDescription", "PLATO Terminal Emulator"
             VALUE "FileVersion", "5.0.8.0"
             VALUE "InternalName", "Pterm"
-            VALUE "LegalCopyright", "Copyright © 2004-2015, Paul Koning & Joe Stanton"
+            VALUE "LegalCopyright", "Copyright © 2004-2016, Paul Koning & Joe Stanton"
             VALUE "OriginalFilename", "Pterm.exe"
             VALUE "ProductName", "PLATO Terminal Emulator"
             VALUE "ProductVersion", "5.0.8.0"
