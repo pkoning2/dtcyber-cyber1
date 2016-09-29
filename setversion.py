@@ -5,19 +5,21 @@ import re
 import time
 import os
 
-# Filename, commas, crlf
+# Filename, commas, crlf.  Special hack: crlf == 0 (not False) means
+# do only dates and only the first match.
 files = ( ( "pterm-info.plist", False, False ),
           ( "Pterm.pmdoc/01pterm.xml", False, False ),
           ( "pterm.spec", False, False ),
           ( "pterm.iss", False, True ),
           ( "pterm.rc", True, True ),
+          ( "pterm-license.rtf", True, 0 ),
           ( "ptermversion.h", True, False ) )
 
 # Negative lookahead for trailing \ here, otherwise it matches filespecs
 # with version numbers in them in pterm.iss
 dot_re = re.compile (r"\d+\.\d+\.\d+(?!\\)")
 comma_re = re.compile (r"\d+,\d+,\d+")
-copy_re = re.compile (r"((?:copyright|\(c\)).+?\d+-)20\d\d", re.I)
+copy_re = re.compile (r"((?:copyright|\(c\)).+?\d+ *- *)20\d\d", re.I)
 
 def setyear (m):
     return m.group (1) + year
@@ -25,9 +27,12 @@ def setyear (m):
 def procfile (fn, commas, crlf):
     with open (fn, "rt", encoding = "latin1") as f:
         t = f.read ()
-    t = dot_re.sub (dotver, t)
-    t = comma_re.sub (commaver, t)
-    t = copy_re.sub (setyear, t)
+    if crlf is 0:
+        t = copy_re.sub (setyear, t, 1)
+    else:
+        t = dot_re.sub (dotver, t)
+        t = comma_re.sub (commaver, t)
+        t = copy_re.sub (setyear, t)
     os.rename (fn, fn + "~")
     if crlf:
         newline = "\r\n"
