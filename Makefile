@@ -50,6 +50,7 @@ ifneq ("$(CLANG)", "")
 ARCHCFLAGS ?= -arch i386 -arch x86_64
 ARCHLDFLAGS ?= -arch i386
 OSXVER ?= 10.9
+OSXMIN = 10.5
 else
 ARCHCFLAGS ?= -arch i386 -arch ppc -arch x86_64 -arch ppc64
 ARCHLDFLAGS ?= -arch i386 -arch ppc
@@ -113,9 +114,11 @@ endif
 
 # This must be last
 ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),info)
 ifneq ($(MAKECMDGOALS),gxdtcyber)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
+endif
 endif
 endif
 endif
