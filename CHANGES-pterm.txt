@@ -48,3 +48,12 @@ V5.0.7, March 2015:
 Bugfixes: block erase and mishandled Alpha channel in "xor" mode;
 pasting a string with no spaces that requires more than one line wrap;
 erasing text didn't clear it for the copy-text operation.
+
+V5.0.8, September 2016:
+
+Bugfixes: fix block erase in xor mode.  Shift-stop was not recognized
+after returning to Press NEXT to begin, in ASCII mode.  Text for the
+copy/paste buffer was not correctly erased when writing in -mode
+erase-.  Get rid of some extraneous (OS default) menu items on Mac OS.
+Fix conversion of stand-alone tilde for copy/paste to be a standard
+tilde character rather than Unicode "small tilde".
