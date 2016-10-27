@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <time.h>
+#include <stdlib.h>
 
 #define k_sb    5           // sectors per block     (5)
 #define k_st    24          // sectors per track     (24)
@@ -674,7 +675,7 @@ void printblk (FILE *outf, int len)
             {
                 dtoa (line, blkbuf + w * 10 + 2, 5);
                 line[5] = '\0';
-                fprintf (outf, "%5s %c%02d.%02d.%02d ",
+                fprintf (outf, "%5s %c%02lld.%02lld.%02lld ",
                          line, ((m >> 17) & 1) ? 'D' : ' ',
                          (((m >> 9) & 037) + 73) % 100,
                          (m >> 5) & 017, m & 037);
@@ -788,7 +789,7 @@ void initpd (void)
     setval (pd->inflth, pinflth);
     for (i = 0; i < pbitlth - 1; i++)
         set60 (pdbuf + 50 + (i * 10), b);
-    b &= ~((1ULL << (pnbits * (pbitlth - 1)) - pspaces) - 1);
+    b &= ~((1ULL << ((pnbits * (pbitlth - 1)) - pspaces)) - 1);
     set60 (pdbuf + 50 + (pbitlth - 1) * 10, b);
     atod (pdbuf + 60 + 10 * pbitlth, date, 10);
     set60 (pdbuf + 70 + 10 * pbitlth, SERIAL);
@@ -1145,7 +1146,7 @@ void pflist (int argc, char **argv)
     int entry, ep;
     u64 fiw;
     int startblk, blks, type;
-    char fn[11];
+    char fn[11], ac[11];
     char pn[11], pt[11];
     
     if (argc != 1)
@@ -1190,8 +1191,17 @@ void pflist (int argc, char **argv)
         if (verbose || type < 040)
         {
             if (verbose)
-                printf ("%-10s  %3d %c  %5d %020llo\n", fn, blks, 
-                        'a' + type - 1, startblk, fiw);
+            {
+                if (type < 040)
+                {
+                    readblk (startblk, lhbuf);
+                    dtoa (ac, lh->ei.acct, 7);
+                    ac[7] = '\0';
+                }
+                else ac[0] = '\0';
+                printf ("%-10s  %3d %c  %5d %020llo %s\n", fn, blks, 
+                        'a' + type - 1, startblk, fiw, ac);
+            }
             else
                 printf ("%s\n", fn);
         }
