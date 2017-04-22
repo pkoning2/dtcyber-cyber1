@@ -1,11 +1,11 @@
 #
-# Coax cable list for CDC 6600, from document 60148900
+# Coax cable list for CDC 6600, from 60148900A_6601-H_Cable_Tabs_Oct65.pdf
 #
-# That document is one of the CDC 6600 "Chassis Tabs" manuals
-# which document the detailed hardware design of the 6600 as
-# created by Seymour Cray and his team at Control Data.
-# Unlike the individual chassis module wire lists, the copy
-# we have is copyrighted (Copyright 1965 Control Data Corporation)
+# That document is the CDC 6600 "Cable Tabs" manual which is part of
+# the documentation for the detailed hardware design of the 6600 as
+# created by Seymour Cray and his team at Control Data.  Unlike the
+# individual chassis module wire lists, the copy we have is
+# copyrighted (Copyright 1965 Control Data Corporation)
 #
 # Scans supplied from the Computer History Museum collection
 # by Al Kossow.
