@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Process CDC 6600 wiring list
 
-Copyright (C) 2008-2010 Paul Koning
+Copyright (C) 2008-2017 Paul Koning
 """
 
 import re
@@ -17,11 +17,11 @@ curslot = None
 real_length = 60     # simulate wire delay for wires this long, None to disable
 
 _re_wstrip = re.compile ("(^[\014\\s]+|\\s*#.*$)", re.M)
-_re_wmod = re.compile ("([a-z]+)(\\(.+?\\))?\t(\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+)((\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+))?")
-_re_wline = re.compile ("^(\\d+)(?:$|\t+(\\w+)\t+(\\w+)(:?\t(\\d+))?)?", re.M)
+_re_wmod = re.compile ("([a-z]+)(\\(.+?\\))?\t(\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+)((\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+))?", re.I)
+_re_wline = re.compile ("^(\\d+)(?:$|\t+(\\w+)\t+(\\w+)(:?\t(\\d+))?)?", re.M | re.I)
 _re_chslot = re.compile (r"(0?[1-9]|1[0-6])?([a-rz])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)$", re.I)
-_re_cable = re.compile (r"(\d+)?w(\d+)$")
-_re_cables = re.compile (r"^(\d+w\d+)\s+(\d+w\d+)", re.M)
+_re_cable = re.compile (r"(\d+)?w(\d+)$", re.I)
+_re_cables = re.compile (r"^(\d+w\d+)\s+(\d+w\d+)", re.M | re.I)
 
 class Cyber (cmodule.cmod):
     """An instance of a Cyber (top level object)
@@ -62,13 +62,13 @@ class Cyber (cmodule.cmod):
         """
         self.processconns2 ()
         # Hook up the standard signals
-        for w in self.signals.itervalues ():
+        for w in self.signals.values ():
             if not isinstance (w, Cable):
                 # Default signals
                 self.addpin ((w,), "in", w.ptype)
         # Handle any loose input cables
-        for c in self.elements.itervalues ():
-            for s in c.eltype.pins.itervalues ():
+        for c in self.elements.values ():
+            for s in c.eltype.pins.values ():
                 if s.dir == "in" and s not in c.portmap:
                     if s.ptype == "coaxsigs":
                         c.addportmap (self, s, "idlecoax")
@@ -198,8 +198,8 @@ class Chassis (cmodule.cmod):
         (ghdl requires that, silly thing), and define chassis "pins"
         for signals that go outside.
         """
-        for m in self.elements.itervalues ():
-            for f, a in m.portmap.iteritems ():
+        for m in self.elements.values ():
+            for f, a in m.portmap.items ():
                 a = str (a)
                 if a in self.aliases:
                     #print "changing %s to %s" % (a, self.aliases[a])
@@ -214,15 +214,15 @@ class Chassis (cmodule.cmod):
                    not (w.source and w.destcount == 1) and \
                    w.ptype != "analog":
                 if not w.source:
-                    print "%s: %s has no source" % (w.destname, w)
+                    print("%s: %s has no source" % (w.destname, w))
                 if not w.destcount:
-                    print "%s: %s has no destination" % (w.sourcename, w)
+                    print("%s: %s has no destination" % (w.sourcename, w))
                 elif w.destcount > 1:
-                    print "%s: %s has multiple destinations" % (w.sourcename, w)
+                    print("%s: %s has multiple destinations" % (w.sourcename, w))
         for m in sorted (self.elements):
             m = self.elements[m]
             unused = set ()
-            for p in m.eltype.pins.itervalues ():
+            for p in m.eltype.pins.values ():
                 if p.dir == "in" and p not in m.portmap:
                     unused.add (p)
                     if p.ptype == "logicsig":
@@ -239,7 +239,7 @@ class Chassis (cmodule.cmod):
             #        for src in p.sources ():
             #            if src in unused:
             #                print "%s: missing input %s for output %s" % (m, src, pn)
-        for w in self.signals.values ():
+        for w in list(self.signals.values ()):
             if isinstance (w, Cable):
                 for dir in ("in", "out"):
                     cname = "%s_%s" % (w, dir)
@@ -247,7 +247,7 @@ class Chassis (cmodule.cmod):
                         del self.signals[cname]
                     except KeyError:
                         pass
-        for w in self.signals.itervalues ():
+        for w in self.signals.values ():
             if isinstance (w, Cable):
                 for dir in ("in", "out"):
                     if dir in w.dirs:
@@ -557,9 +557,9 @@ def normcable (name, cnum = 0):
 
 def error (text):
     if curslot:
-        print "%s: %s" % (curslot, text)
+        print("%s: %s" % (curslot, text))
     else:
-        print text
+        print(text)
 
 _re_pnum = re.compile (r"p(\d+)")
 def pn (pname):
@@ -706,7 +706,7 @@ if __name__ == "__main__":
     topname = "cdc6600"
     opts, args = getopt.getopt (sys.argv[1:], "t:")
     if len (args) < 1:
-        print "usage: %s wirelist [ wirelist ... ] [ cablelist ]" % sys.argv[0]
+        print("usage: %s wirelist [ wirelist ... ] [ cablelist ]" % sys.argv[0])
         sys.exit (1)
     for opt, val in opts:
         if opt == "-t":
@@ -716,9 +716,9 @@ if __name__ == "__main__":
             else:
                 topname = val
     for f in args:
-        print "processing", f
+        print("processing", f)
         process_file (f)
-    for c in chassis_list.itervalues ():
+    for c in chassis_list.values ():
         c.finish ()
     toplevel.finish ()
     if topname:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Create a module definition VHDL file
 
@@ -10,6 +10,7 @@ import re
 import sys
 import time
 import os
+from builtins import sorted as b_sorted
 
 vhdl_keywords = ("if", "in", "is", "to")
 
@@ -44,28 +45,19 @@ def init_completions ():
 elements = { }
 
 _re_k = re.compile (r"(.+?)(\d+)(.*)$")
-def ancmp (a, b):
+def ankey (a):
     a = str (a)
-    b = str (b)
     am = _re_k.match (a)
-    bm = _re_k.match (b)
-    if am and bm and am.group (2) and bm.group (2):
-        ak = ( am.group (1), int (am.group (2)), am.group (3) )
-        bk = ( bm.group (1), int (bm.group (2)), bm.group (3) )
-    else:
-        ak = a
-        bk = b
-    return cmp (ak, bk)
+    if am and am.group (2):
+        return ( am.group (1), int (am.group (2)), am.group (3) )
+    return (a,)
 
-def sorted (it):
-    """Similar to standard sorted() but does alphanumeric keys better
-    """
-    l = list (it)
-    l.sort (ancmp)
-    return l
+# Override the standard "sorted" to use the above key function
+def sorted (a):
+    return b_sorted (a, key = ankey)
 
 class hitem (object):
-    """A hashable container, hashed by name
+    """A container, hashed and sorted by name
     """
     def __init__ (self, name):
         self.name = str (name)
@@ -79,6 +71,12 @@ class hitem (object):
     def __hash__ (self):
         return hash (self.name)
         
+    def __lt__ (self, other):
+        return self.name < str (other)
+    
+    def __gt__ (self, other):
+        return self.name > str (other)
+    
 class Pin (hitem):
     """Pin of a logic element type
     """
@@ -131,13 +129,13 @@ class ElementType (object):
     def addpin (self, namelist, dir, ptype = "logicsig",
                 opt = False, optval = None):
         if dir not in ("in", "out"):
-            print "Unrecognized pin direction", dir
+            print("Unrecognized pin direction", dir)
             return
         for name in namelist:
             if self.name == "pa" and self.name == "p3":
                 raise Exception
             if name in self.pins:
-                print "Pin", name, "already defined"
+                print("Pin", name, "already defined")
             else:
                 self.pins[name] = p = Pin (name, dir, ptype, opt, optval)
                 # In case a list of signals is passed in
@@ -149,23 +147,23 @@ class ElementType (object):
     def inputs (self):
         """Return a list of input pins, sorted by name
         """
-        return sorted ([p for p in self.pins.itervalues ()
+        return sorted ([p for p in self.pins.values ()
                         if p.dir != "out"])
 
     def reqinputs (self):
-        """Return a list of required input pins, sorted by name
+        """Return a list of required input pins
         """
         return [ p for p in self.inputs () if not p.opt ]
 
     def optinputs (self):
-        """Return a list of required input pins, sorted by name
+        """Return a list of required input pins
         """
         return [ p for p in self.inputs () if p.opt ]
 
     def outputs (self):
         """Return a list of output pins, sorted by name
         """
-        return sorted ([p for p in self.pins.itervalues ()
+        return sorted ([p for p in self.pins.values ()
                         if p.dir == "out"])
         
     def printports (self):
@@ -245,14 +243,14 @@ class Signal (hitem):
         self.optval = None
         self.ptype = None
         self.aliases = set ()
-        
+
     def setsource (self, source):
         if self.source and self.source != source:
-            print "Duplicate assignment to signal", self.name
+            print("Duplicate assignment to signal", self.name)
             return
         if isinstance (source, PinInstance):
             if source.dir != "out":
-                print "Signal source must be output pin", self.name, source.name
+                print("Signal source must be output pin", self.name, source.name)
                 return
         self.source = source
         self.ptype = source.ptype
@@ -278,7 +276,7 @@ class Signal (hitem):
         if self.source:
             return "%s <= %s" % (self.name, self.source.name)
         else:
-            print "No source for", self.name
+            print("No source for", self.name)
             return "-- no source for %s" % self.name
 
 class ConstSignal (Signal):
@@ -326,7 +324,7 @@ class ElementInstance (object):
         if formal in self.eltype.generics:
             self.genericmap[formal] = actual
         else:
-            print "Generic map for unknown generic %s" % formal
+            print("Generic map for unknown generic %s" % formal)
             
     def addportmap (self, parent, formal, actual):
         """Add a port map entry.  "formal" is the element type pin name;
@@ -341,7 +339,7 @@ class ElementInstance (object):
                 pin = self.eltype.pins[formal]
             except KeyError:
                 if actual is not sigone:
-                    print "Port map to unknown pin %s" % formal
+                    print("Port map to unknown pin %s" % formal)
                 return
         dir = pin.dir
         ptype = pin.ptype
@@ -349,7 +347,7 @@ class ElementInstance (object):
         if isinstance (actual, str):
             if actual.startswith ("-"):
                 if dir != "in":
-                    print "Optional input flag but %s is not an input" % formal
+                    print("Optional input flag but %s is not an input" % formal)
                     return
                 actual = actual[1:]
                 opt = True
@@ -364,14 +362,14 @@ class ElementInstance (object):
             # doesn't have an output yet.  Special case: '1' is a valid
             # actual
             if actual.source:
-                print "duplicate output assignment to", actual
+                print("duplicate output assignment to", actual)
                 return
         else:
             # Input, can be used multiple times
             if actual.ptype:
                 if actual.ptype != ptype and \
                        not isinstance (actual, ConstSignal):
-                    print "signal type mismatch", self.name, actual, actual.ptype, ptype
+                    print("signal type mismatch", self.name, actual, actual.ptype, ptype)
             else:
                 actual.ptype = ptype
         if dir == "out":
@@ -388,9 +386,9 @@ class ElementInstance (object):
                 # carry logic signals.  That doesn't happen in the regular
                 # inter-chassis connections but it does on the DD60 cabling
                 # in chassis 12.  
-                print "Can't alias coax signal:", \
+                print("Can't alias coax signal:", \
                       self.name, self.eltype.name, pin.name, \
-                      actual.name, oa.name
+                      actual.name, oa.name)
             else:
                 #print "adding alias %s for %s" % (actual.name, oa.name)
                 oa.aliases.add (oa.name)
@@ -404,11 +402,11 @@ class ElementInstance (object):
     def promptports (self, parent):
         """Interactively build the portmap for this element
         """
-        print "inputs:"
+        print("inputs:")
         for p in self.eltype.reqinputs ():
             pto = getport (p)
             self.addportmap (parent, p, pto)
-        print "outputs:"
+        print("outputs:")
         for p in self.eltype.outputs ():
             pto = getport (p)
             if pto:
@@ -416,7 +414,7 @@ class ElementInstance (object):
         prompt_optin = True
         for p in self.eltype.optinputs ():
             if prompt_optin:
-                opt = raw_input ("any optional inputs? ")
+                opt = input ("any optional inputs? ")
                 if not opt.lower ().startswith ("y"):
                     break
             prompt_optin = False
@@ -462,10 +460,10 @@ class cmod (ElementType):
     """
     def __init__ (self, name = None):
         if not name:
-            name = raw_input ("Module name: ")
+            name = input ("Module name: ")
             try:
                 os.stat (name + ".vhd")
-                print "%s.vhd already exists"
+                print("%s.vhd already exists")
                 raise OSError
             except OSError:
                 pass
@@ -493,15 +491,15 @@ class cmod (ElementType):
             
     def addelement (self, eltype):
         if eltype not in elements or eltype == self.name:
-            print "No such element"
+            print("No such element")
             return
         elname = self.nextelement ()
-        print "element %s" % elname
+        print("element %s" % elname)
         e = self.elements[elname] = ElementInstance (elname, eltype)
         try:
             e.promptports (self)
         except EOFError:
-            print
+            print()
             del self.elements[elname]
             
     def findsignal (self, name, opt = False):
@@ -526,14 +524,14 @@ class cmod (ElementType):
         if fsig is sigzero or fsig is sigone or \
                fsig.ptype and fsig.ptype != "logicsig":
             if to in self.signals:
-                print to, "already defined"
+                print(to, "already defined")
                 return
             tsig = self.findsignal (to)
             tsig.setsource (fsig)
         else:
-            for s in self.signals.itervalues ():
+            for s in self.signals.values ():
                 if to in s.aliases:
-                    print to, "already defined"
+                    print(to, "already defined")
                     return
             fsig.aliases.add (to)
 
@@ -542,7 +540,7 @@ class cmod (ElementType):
         while True:
             tlist = [ e for e in elements if e != self.name ]
             completions (tlist)
-            eltype = raw_input ("element: ")
+            eltype = input ("element: ")
             completions ()
             if not eltype:
                 break
@@ -638,16 +636,16 @@ class cmod (ElementType):
         definition is complete
         """
         #print "finishing", self.name
-        for s in self.signals.itervalues ():
+        for s in self.signals.values ():
             if s.ptype is None:
                 s.ptype = "logicsig"
-        for s in self.signals.itervalues ():
+        for s in self.signals.values ():
             if not self.isinternal (s) and not s in self.pins:
                 if not s.source:
                     # It has no source so it's an input
                     #print "adding", s, s.ptype, s.opt
                     self.addpin ((str (s),), "in", s.ptype, s.opt, s.optval)
-        for s in self.signals.values ():
+        for s in list(self.signals.values ()):
             if s.aliases:
                 oname = s.name
                 if not (s.destcount or \
@@ -671,14 +669,14 @@ class cmod (ElementType):
                     del self.signals[s.name]
                     s.name = an
                     self.signals[an] = s
-        for s in self.signals.itervalues ():
+        for s in self.signals.values ():
             s.sources ()
-        for s in self.signals.itervalues ():
+        for s in self.signals.values ():
             if not self.isinternal (s) and not s in self.pins:
                 if s.source:
                     # It has a source so it's an output
                     self.addpin ((str (s),), "out", s.ptype)
-        for s in self.signals.itervalues ():
+        for s in self.signals.values ():
             if not self.isinternal (s):
                 p = self.pins[s]
                 if p.dir == "out":
@@ -698,7 +696,7 @@ class cmod (ElementType):
                                         try:
                                             s.addsource (src.parent.portmap[s2])
                                         except KeyError:
-                                            print self.name, "Missing input", s2, "for", src
+                                            print(self.name, "Missing input", s2, "for", src)
                     for src in list (s.sources ()):
                         if self.isinternal (src) or isinstance (src, PinInstance):
                             s.delsource (src)
@@ -707,7 +705,7 @@ class cmod (ElementType):
                         try:
                             srcpins.add (self.pins[src])
                         except KeyError:
-                            print "key error", src, "not in pins for", self.name
+                            print("key error", src, "not in pins for", self.name)
                             raise
                     p._sources = frozenset (srcpins)
                         
@@ -720,10 +718,10 @@ class cmod (ElementType):
         gates = [ ]
         signals = [ ]
         sigdict = dict (self.signals)
-        for e in self.elements.itervalues ():
+        for e in self.elements.values ():
             eltypes.add (e.eltype.name)
             #print e.eltype.name
-        for s in sorted (self.signals.itervalues ()):
+        for s in sorted (self.signals.values ()):
             if self.isinternal (s):
                 signals.append ("  signal %s : %s;\n" % (s.name, s.ptype))
         for e in sorted (eltypes):
@@ -735,7 +733,7 @@ class cmod (ElementType):
             gates.append (assigns)
         assigns, sigdict = self.printassigns (sigdict)
         if not gates and not assigns.strip ():
-            raise Exception, "Empty architecture"
+            raise Exception("Empty architecture")
         return """use work.sigs.all;
 
 entity %s is
@@ -775,8 +773,8 @@ end gates;
             for slice in sorted (slices):
                 newtext.append (elements[slice].printmodule ())
             newtext.append (self.printmodule ())
-        except Exception, msg:
-            print "Module %s: %s" % (self.name, msg)
+        except Exception as msg:
+            print("Module %s: %s" % (self.name, msg))
             return
         newtext = '\n'.join (newtext)
         if self.oldtext:
@@ -787,22 +785,22 @@ end gates;
             n = "new"
             o = "old"
         if n == o:
-            print "Module %s is unchanged" % self.name
+            print("Module %s is unchanged" % self.name)
         else:
-            f = file ("%s.vhd" % self.modname, "w")
+            f = open ("%s.vhd" % self.modname, "w")
             self.cyears = None
-            print >> f, self.printheader ()
-            print >> f, newtext
+            print(self.printheader (), file=f)
+            print(newtext, file=f)
             f.close ()
         if writedep:
             deps.discard ("wire")
-            df = file ("%s.d" % self.name, "w")
-            print >> df, "%s.o: %s.vhd" % (self.name, self.name),
+            df = open ("%s.d" % self.name, "w")
+            print("%s.o: %s.vhd" % (self.name, self.name), end=' ', file=df)
             for dep in sorted (deps):
                 if dep.startswith ("mod_"):
                     dep = dep[4:]
-                print >> df, "%s.o" % dep,
-            print >> df
+                print("%s.o" % dep, end=' ', file=df)
+            print(file=df)
             df.close ()
 
 _re_arch = re.compile (r"entity +(.+?) +is\s+?(generic +\((.+?)\);\s+?)?port +\((.+?)\).+?end +\1.+?architecture (\w+) of \1 is.+?begin(.+?)end \w+;", re.S)
@@ -875,12 +873,12 @@ def readmodule (modname, allports = False):
             opt = False
             optval = None
             if dir == "inout" and ptype != "misc":
-                print "Unexpected type %s for inout pin" % ptype
+                print("Unexpected type %s for inout pin" % ptype)
                 continue
             if gates:
                 if pins.group (4):
                     if dir != "in":
-                        print "Unexpected default in", pins.group ()
+                        print("Unexpected default in", pins.group ())
                         continue
                     opt = True
                     optval = pins.group ()[-3:]
@@ -895,14 +893,14 @@ def readmodule (modname, allports = False):
         # Do this again to handle pins we added above
         e.finish ()
     if e is None:
-        print "No module found in %s.vhd" % modname
+        print("No module found in %s.vhd" % modname)
     return e
 
 def getport (p):
     while True:
-        pto = raw_input ("%s: " % p)
+        pto = input ("%s: " % p)
         if "=" in pto or pto in elements:
-            print "Invalid port", pto
+            print("Invalid port", pto)
         else:
             return pto
         
@@ -925,7 +923,7 @@ def stdelements ():
             opt = False
             if pins.group (4):
                 if dir != "in":
-                    print "Unexpected default in", pins.group ()
+                    print("Unexpected default in", pins.group ())
                 else:
                     opt = True
             pinlist = pins.group (1).replace (" ", "").split (",")

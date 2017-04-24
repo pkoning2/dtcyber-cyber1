@@ -49,10 +49,10 @@ cdc_tb2: $(VLIB) chassis12.vhd
 
 cdc6600.vhd $(CHASSIS_V) : $(CHASSIS_SRCS) $(CABLE_SRCS) wlist.py cmodule.py
 	# Note: cables must be last
-	python wlist.py  $(CHASSIS_SRCS) $(CABLE_SRCS)
+	./wlist.py  $(CHASSIS_SRCS) $(CABLE_SRCS)
 
 chassis12.vhd : chassis12.wlist wlist.py 
-	python wlist.py -t - chassis12.wlist
+	./wlist.py -t - chassis12.wlist
 
 clean:
 	rm -f *.o *.cf cyberdefs.stamp cdc6600.vhd chassis*.vhd $(VLIB)
