@@ -9,6 +9,7 @@ import wx
 import PyPDF2
 import struct
 import wlist
+import cmodule
 
 pdf_pat = re.compile (r"\S+\.pdf", re.I)
 
@@ -85,7 +86,17 @@ class Module:
     """
     def __init__ (self, mod):
         gd = mod.groupdict ()
-        self.mtype = gd["mod"]
+        modname = gd["mod"].lower ()
+        try:
+            self.mtype = cmodule.elements[modname]
+        except KeyError:
+            #print ("reading", modname)
+            self.mtype = cmodule.readmodule (modname, True)
+            # Fill in pinnames because that doesn't get done by
+            # readmodule, TBD why not.
+            for pl, p in self.mtype.pins.items ():
+                for pn in pl.split ("_"):
+                    self.mtype.pinnames[pn] = p
         self.slot = gd["slot"]
         m2 = wlist._re_chslot.match (self.slot)
         self.slotnum = int (m2.group (3))
@@ -199,7 +210,7 @@ class entrywin (wx.Window):
         self.slot  = wx.TextCtrl (self, 3, pos = wx.Point (20 + 1.5 * pitch, lead),
                                   size = sz, style = cs)
         self.lines = [ (None, None, self.mtype, self.slot) ]
-        for i in range (1, 29):
+        for i in range (1, 31):
             y = (i + 2) * lead
             lt = "{:>2d}".format (i)
             lbl  = wx.StaticText (self, label = lt, pos = wx.Point (20, y), size = sz)
@@ -212,13 +223,26 @@ class entrywin (wx.Window):
             self.lines.append ((lbl, mod, pin, wlen))
         self.SetClientSize (wx.Size (20 + 4 * pitch, lead * 36))
 
-    def load (self, mod, pins, slot):
-        self.mtype.Value = mod.mtype
+    def load (self, mod, pins, slot, pins2):
+        self.mtype.Value = mod.mtype.name.upper ()
         self.slot.Value = slot
+        for i, r in enumerate (self.lines):
+            if i:
+                if pins2:
+                    i += 100
+                i = "p{}".format (i)
+                defined = i in mod.mtype.pinnames
+                for c in r:
+                    c.Enable (defined)
+        for r in self.lines[29], self.lines[30]:
+            for c in r:
+                c.Show (mod.mem)
+        if mod.mem:
+            self.maxline = 30
+        else:
+            self.maxline = 28
         for pin in pins:
             pnum = int (pin[0])
-            if pnum > 28:
-                continue
             lb, tmod, tpin, tlen = self.lines[pnum]
             tmod.Value = pin[1]
             tpin.Value = pin[2]
@@ -230,12 +254,15 @@ class entrywin (wx.Window):
         wx.PostEvent (self, wx.NavigationKeyEvent ())
         
     def nextline (self, event):
-        if self.curline == 28:
-            event.Skip ()
-        else:
+        while self.curline < self.maxline:
             self.curline += 1
             self.field = 1
-            self.lines[self.curline][1].SetFocus ()
+            t = self.lines[self.curline][1]
+            if t.Enabled:
+                t.SetFocus ()
+                return
+        else:
+            event.Skip ()
 
     def nextfield (self, event):
         self.field += 1
@@ -375,7 +402,7 @@ class topframe (wx.Frame):
             self.Title = title
             self.sframe.setbitmap (self.curpage, mod.offsets[subpage])
             self.eframe.top ()
-            self.eframe.load (mod, pins, mod.slots[pins2])
+            self.eframe.load (mod, pins, mod.slots[pins2], pins2)
         elif fwd:
             self.nextslot ()
         else:
