@@ -16,44 +16,47 @@ chassis_list = { }
 curslot = None
 real_length = 60     # simulate wire delay for wires this long, None to disable
 
-_re_wstrip = re.compile ("(^[\014\\s]+|\\s*#.*$)", re.M)
-_re_wmod = re.compile ("([a-z]+)(\\(.+?\\))?\t(\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+)((\\w+)\n+((?:\\d+(?:\t+.+)?\n+)+))?", re.I)
-_re_wline = re.compile ("^(\\d+)(?:$|\t+(\\w+)\t+(\\w+)(:?\t(\\d+))?)?", re.M | re.I)
+_pat_wline = "(\\d+)(?:\t+(\\w+)(?:\t+(\\w+)(?:\t(\\d+))?)?)?(\s*[+#].*(?:\n#.*)*)?"
+# This next one ends up with a whole lot of groups partly because of
+# the line pattern, so use named groups for sanity.
+_re_wmod = re.compile ("^(?P<mod>[a-z]+)(?P<generic>\\(.+?\\))?\t(?P<slot>\\w+)(?:\s*#.*)?\n+"
+                       "(?P<pins>(?:(?:" + _pat_wline + ")\n+)+)"
+                       "((?P<slot2>\\w+)(?:\s*#.*)?\n+(?P<pins2>(?:(?:" + _pat_wline + ")\n+)+))?",
+                       re.M | re.I)
+_re_wline = re.compile ("^" + _pat_wline, re.M | re.I)
 _re_chslot = re.compile (r"(0?[1-9]|1[0-6])?([a-rz])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)$", re.I)
-_re_cable = re.compile (r"(\d+)?w(\d+)$", re.I)
+_re_cable = re.compile (r"(\d+)?w(\d+)(?:#.*)?$", re.I)
 _re_cables = re.compile (r"^(\d+w\d+)\s+(\d+w\d+)", re.M | re.I)
+_re_header = re.compile ("(#.*\n)+")
+
+header = """-------------------------------------------------------------------------------
+--
+-- CDC 6600 model -- {{}}
+--
+-- Converted from wire lists using wlist.py by Paul Koning
+--
+{{}}--
+--
+-- NOTE: This is a generated file.  {}.
+--
+-------------------------------------------------------------------------------
+""".format (time.strftime ("%Y.%m.%d"))
 
 class Cyber (cmodule.cmod):
     """An instance of a Cyber (top level object)
     """
+    chassisname = "Top level"
+    
     def __init__ (self):
         cmodule.cmod.__init__ (self, "cdc6600")
         self.conntext = None
-        
-    header = """-------------------------------------------------------------------------------
---
--- CDC 6600 model -- top level
---
--- Converted from wire lists by Paul Koning
---
--- Derived from the original 6600 module design
--- by Seymour Cray and his team at Control Data,
--- as documented in CDC 6600 "Chassis Tabs" manuals,
--- which are in the public domain.  Scans supplied
--- from the Computer History Museum collection
--- by Dave Redell and Al Kossow.
---
--- NOTE: This is a generated file.  %s.
---
--------------------------------------------------------------------------------
-""" % time.strftime ("%Y.%m.%d")
-
-    def printheader (self):
-        return self.header
 
     def isinternal (self, sig):
         return isinstance (sig, Cable)
     
+    def printheader (self):
+        return header.format (self.chassisname, self.sourcehdr)
+
     def printassigns (self, sigdict, comp = None):
         return ("", dict ())
     
@@ -159,29 +162,11 @@ class Chassis (cmodule.cmod):
     def __init__ (self, num):
         cmodule.cmod.__init__ (self, "chassis%d" % num)
         self.cnum = num
+        self.chassisname = "chassis {}".format (num)
         self.connectors = { }
         
-    header = """-------------------------------------------------------------------------------
---
--- CDC 6600 model -- chassis %%d
---
--- Converted from wire lists by Paul Koning
---
--- Derived from the original 6600 module design
--- by Seymour Cray and his team at Control Data,
--- as documented in CDC 6600 "Chassis Tabs" manuals,
--- which are in the public domain.  Scans supplied
--- from the Computer History Museum collection
--- by Dave Redell and Al Kossow.
---
---
--- NOTE: This is a generated file.  %s.
---
--------------------------------------------------------------------------------
-""" % time.strftime ("%Y.%m.%d")
-
     def printheader (self):
-        return self.header % self.cnum
+        return header.format (self.chassisname, self.sourcehdr)
 
     def isinternal (self, sig):
         return isinstance (sig, Wire) and \
@@ -323,17 +308,18 @@ class Chassis (cmodule.cmod):
         """Process a wirelist file for this chassis
         """
         for sl in _re_wmod.finditer (wl):
-            inst = self.addmodule (sl.group (3), sl.group (1))
-            c = self.addconnector (sl.group (3), inst)
+            gd = sl.groupdict ()
+            inst = self.addmodule (gd["slot"], gd["mod"])
+            c = self.addconnector (gd["slot"], inst)
             if c:
-                c.processwlist (sl.group (4))
-                if sl.group (2):
+                c.processwlist (gd["pins"])
+                if gd["generic"]:
                     for formal in inst.eltype.generics:
-                        inst.addgenericmap (self, formal, sl.group (2))
+                        inst.addgenericmap (self, formal, gd["generic"])
                         break
-                if sl.group (5):
-                    c = self.addconnector (sl.group (6), inst, 100)
-                    c.processwlist (sl.group (7))
+                if gd["slot2"]:
+                    c = self.addconnector (gd["slot2"], inst, 100)
+                    c.processwlist (gd["pins2"])
 
 class Connector (object):
     """A connector for a module, in a slot
@@ -494,7 +480,7 @@ class Connector (object):
                             self.chassis.signals[w.cable.name] = w.cable
                 if w:
                     self.addportmap (self.chassis, pname, w)
-            else:
+            elif m.group (3):
                 # Regular slot to slot twisted pair wire
                 if mpin is None:
                     error ("pin %d undefined or out of range" % pnum)
@@ -581,31 +567,41 @@ def findchassis (cnum):
         c = chassis_list[cnum] = Chassis (cnum)
     return c
 
-def readfile (fn):
-    """Read an input file, stripping comments and the like.
+def readfile (fn, lc = True):
+    """Read an input file, return as lower case text
     """
-    f = open (fn, "r")
-    text = _re_wstrip.sub ("", f.read ()).lower ()
-    f.close ()
-    return text
+    with open (fn, "r") as f:
+        text = f.read ()
+    hm = _re_header.match (text)
+    if hm:
+        text = text[hm.end ():]
+        hm = hm.group (0)
+    else:
+        hm = ""
+    if lc:
+        text = text.lower ()
+    return hm, text
 
 def process_file (fn):
     """Process a file -- either a chassis definition file or
     the cable connections file.
     """
-    text = readfile (fn)
+    header, text = readfile (fn)
     m = _re_wmod.search (text)
     if m:
         # Looks like a chassis definition.  Pick up the chassis number.
-        m2 = _re_chslot.match (m.group (3))
+        m2 = _re_chslot.match (m.groupdict ()["slot"])
         if m2 and m2.group (1):
             cnum = int (m2.group (1))
             c = findchassis (cnum)
             c.processwlist (text)
+            c.setheader (header)
         else:
             error ("Chassis number not found in %s" % fn)
     else:
         toplevel.processconns (text)
+        if header:
+            toplevel.setheader (header)
         
 class Wire (cmodule.Signal):
     """A wire (twisted pair) between two connector pins in the same chassis.

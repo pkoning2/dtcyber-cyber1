@@ -2,7 +2,7 @@
 
 """Create a module definition VHDL file
 
-Copyright (C) 2009-2010 by Paul Koning
+Copyright (C) 2009-2017 by Paul Koning
 """
 
 import readline
@@ -480,6 +480,10 @@ class cmod (ElementType):
         self.elements = { }
         self.signals = { }
         self.aliases = { }
+        self.sourcehdr = ""
+
+    def setheader (self, text):
+        self.sourcehdr = text.replace ("#", "--")
         
     def nextelement (self):
         n = len (self.elements) + 1
@@ -580,7 +584,7 @@ class cmod (ElementType):
 --
 -- CDC 6600 model
 --
--- Copyright (C) %s by Paul Koning
+-- Copyright (C) {} by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -589,7 +593,7 @@ class cmod (ElementType):
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- %s module
+-- {} module
 --
 -------------------------------------------------------------------------------
 """
@@ -607,12 +611,12 @@ class cmod (ElementType):
                     if firstyear == now:
                         cyears = firstyear
                     else:
-                        cyears = "%s-%s" % (firstyear, now)
-                    ohdr =_re_cright.sub ("Copyright (C) %s" % cyears, ohdr)
+                        cyears = "{}-{}".format (firstyear, now)
+                    ohdr =_re_cright.sub ("Copyright (C) {}".format (cyears), ohdr)
             else:
                 ohdr = None
         if not ohdr:
-            ohdr = self.header % (now, self.name.upper ())
+            ohdr = self.header.format (now, self.name.upper ())
         return ohdr
 
     def isinternal (self, pin):
