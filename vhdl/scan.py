@@ -12,6 +12,7 @@ import wlist
 import cmodule
 
 pdf_pat = re.compile (r"\S+\.pdf", re.I)
+sp_pat = re.compile (r"\s+$", re.M)
 
 pdf_path = os.path.expanduser ("~/Documents/cdc/6600 field service")
 
@@ -84,9 +85,61 @@ class scan:
 class Module:
     """A module's entry in a wire list.
     """
-    def __init__ (self, mod):
-        gd = mod.groupdict ()
-        modname = gd["mod"].lower ()
+    def __init__ (self, mod = None):
+        if mod:
+            gd = mod.groupdict ()
+            self.generic = gd["generic"] or ""
+            self.setmod (gd["mod"])
+            self.setslot (gd["slot"], gd["slot2"])
+            self.hcomments = [ gd["hcomment"], gd["hcomment2"] ]
+            pins = [ [ ], [ ] ]
+            for side, spins in (0, gd["pins"]), (1, gd["pins2"]):
+                if not spins:
+                    break
+                for g in wlist._re_wline.finditer (spins):
+                    pnum = int (g.group (1))
+                    mod = g.group (2) or ""
+                    pin = g.group (3) or ""
+                    wlen = g.group (4) or ""
+                    pins[side].append ([g.group (1), mod, pin, wlen, g.group (5)])
+            self.pins = pins
+        else:
+            self.mem = False
+            self.mtype = None
+            self.slot = self.modname = self.generic = ""
+            self.slots = [ "", None ]
+            self.slotnum = 0
+            pins = list ()
+            for i in range (28):
+                pins.append ([ "{}".format (i + 1), "", "", "", None ])
+            self.pins = [ pins, None ]
+            self.offsets = [ 0.52, None, 1.0, None ]
+
+    def __str__ (self):
+        ret = list ()
+        for c in range (self.mem + 1):
+            slot = self.slots[c]
+            hc = self.hcomments[c]
+            if c:
+                s = slot
+            else:
+                s = "{}{}\t{}".format (self.modname, self.generic, slot)
+            if hc:
+                s = "{}{}".format (s, hc)
+            s = sp_pat.sub ("", s)
+            ret.append (s)
+            for p in self.pins[c]:
+                s = "{}\t{}\t{}\t{}\t".format (*p[:4])
+                s = sp_pat.sub ("", s)
+                if p[4]:
+                    s = "{}{}".format (s, p[4])
+                ret.append (s)
+        return '\n'.join (ret)
+    
+    def setmod (self, modname):
+        modname = modname.lower ()
+        self.mem = modname == "mem"
+        self.modname = modname.upper ()
         try:
             self.mtype = cmodule.elements[modname]
         except KeyError:
@@ -97,35 +150,26 @@ class Module:
             for pl, p in self.mtype.pins.items ():
                 for pn in pl.split ("_"):
                     self.mtype.pinnames[pn] = p
-        self.slot = gd["slot"]
-        m2 = wlist._re_chslot.match (self.slot)
+        
+    def setslot (self, slot, slot2 = None):
+        self.slot = slot
+        self.mem = slot2 is not None
+        self.slots = [ slot, slot2 ]
+        m2 = wlist._re_chslot.match (slot)
         self.slotnum = int (m2.group (3))
         left = self.slotnum & 1
-        if gd["pins2"] and self.slotnum == 18:
+        if self.mem and self.slotnum == 18:
             # Memory slot, slot 18 is at the left side of the page.
             # Apart from that one case, left == odd applies.
             left = 1
         self.right = not left
-        self.mem = gd["slot2"] is not None
-        pins = [ [ ], [ ] ]
-        self.slots = [ self.slot, gd["slot2"] ]
-        for side, spins in (0, gd["pins"]), (1, gd["pins2"]):
-            if not spins:
-                break
-            for g in wlist._re_wline.finditer (spins):
-                pnum = int (g.group (1))
-                mod = g.group (2) or ""
-                pin = g.group (3) or ""
-                wlen = g.group (4) or ""
-                pins[side].append ([g.group (1), mod, pin, wlen, g.group (5)])
-        self.pins = pins
         if self.mem:
             # Offsets to the memory module pins
             self.offsets = [ 0.29, 0.52, 0.77, 1.0 ]
         else:
             # Offsets to non-memory pins
             self.offsets = [ 0.52, None, 1.0, None ]
-        
+
 wlheader = """#
 # OCR from {}
 #
@@ -224,11 +268,39 @@ class entrywin (wx.Window):
         self.SetClientSize (wx.Size (20 + 4 * pitch, lead * 36))
 
     def load (self, mod, pins, slot, pins2):
-        self.mtype.Value = mod.mtype.name.upper ()
-        self.slot.Value = slot
+        self.mod = mod
+        self.mtype.ChangeValue (mod.modname)
+        self.slot.ChangeValue (slot)
+        self.pins = pins
+        self.pins2 = pins2
         for i, r in enumerate (self.lines):
             if i:
                 if pins2:
+                    i += 100
+                i = "p{}".format (i)
+                defined = mod.mtype is None or i in mod.mtype.pinnames
+                for c in r:
+                    c.Enable (defined)
+        for r in self.lines[29], self.lines[30]:
+            for c in r:
+                c.Show (mod.mem)
+        if mod.mem:
+            self.maxline = 30
+        else:
+            self.maxline = 28
+        for pnum1, pin in enumerate (pins):
+            pnum = pnum1 + 1
+            lb, tmod, tpin, tlen = self.lines[pnum]
+            tmod.ChangeValue (pin[1])
+            tpin.ChangeValue (pin[2])
+            tlen.ChangeValue (pin[3])
+
+    def setmtype (self, mtype):
+        mod = self.mod
+        mod.setmod (mtype)
+        for i, r in enumerate (self.lines):
+            if i:
+                if self.pins2:
                     i += 100
                 i = "p{}".format (i)
                 defined = i in mod.mtype.pinnames
@@ -241,12 +313,6 @@ class entrywin (wx.Window):
             self.maxline = 30
         else:
             self.maxline = 28
-        for pin in pins:
-            pnum = int (pin[0])
-            lb, tmod, tpin, tlen = self.lines[pnum]
-            tmod.Value = pin[1]
-            tpin.Value = pin[2]
-            tlen.Value = pin[3]
         
     def top (self):
         self.curline = 0
@@ -273,8 +339,24 @@ class entrywin (wx.Window):
 
     def newtext (self, event):
         l, c = divmod (event.Id, 4)
+        r = self.lines[l]
+        t = r[c]
+        if l:
+            self.pins[l - 1][c] = t.Value
+        else:
+            # top row changed
+            if c == 2:
+                # module type
+                mtype = t.Value
+                if len (mtype) > 1:
+                    self.setmtype (mtype)
+            elif c == 3:
+                # slot
+                slot = t.Value
+                if len (slot) > 2:
+                    self.mod.setslot (slot)
         if l and c == 1:
-            lb, mod, pin, wlen = self.lines[l]
+            lb, mod, pin, wlen = r
             if mod.Value.lower () == "x":
                 mod.Value = "GND"
                 pin.Value = "X"
@@ -294,7 +376,7 @@ class entrywin (wx.Window):
         self.Destroy ()
 
 class topframe (wx.Frame):
-    def __init__ (self, display, id, name, fn, page, wl):
+    def __init__ (self, display, id, name, fn, page, wl, wl_fn):
         framestyle = (wx.MINIMIZE_BOX |
                       wx.MAXIMIZE_BOX |
                       wx.RESIZE_BORDER |
@@ -311,7 +393,8 @@ class topframe (wx.Frame):
         wx.Frame.__init__ (self, None, id, name,
                            pos = wx.Point (w / 4, y), style = framestyle)
         self.wl = wl
-        h, t = wl
+        self.wl_fn = wl_fn
+        self.header, t = wl
         self.pages = list ()
         next = None
         for m in wlist._re_wmod.finditer (t):
@@ -376,6 +459,44 @@ class topframe (wx.Frame):
             g = (int (d.Value) - self.firstpage) * 4
             self.index = max (self.minindex, min (g, self.maxindex))
             self.showpage ()
+        elif k == "a":
+            # Ctrl/A, add a module
+            lp, lsp = divmod (self.maxindex, 4)
+            ls = lsp // 2
+            lmod = self.pages[lp][ls]
+            slot = lmod.slot
+            m = wlist._re_chslot.match (slot)
+            if lmod.slotnum == 42:
+                row = m.group (2)
+                if row == "R":
+                    event.Skip ()
+                    return
+                slot = "{}{:c}1".format (m.group (1), ord (row) + 1)
+            else:
+                slot = "{}{}{}".format (m.group (1), m.group (2), lmod.slotnum + 1)
+            mod = Module ()
+            mod.setslot (slot)
+            if mod.right:
+                self.pages[lp][1] = mod
+            else:
+                self.pages.append ([ mod, None ])
+            if lmod.mem:
+                self.maxindex += 1
+            else:
+                self.maxindex += 2
+            self.index = self.maxindex
+            self.showpage ()
+        elif k == 's':
+            # Ctrl/S, save file
+            backup = self.wl_fn + "~"
+            if not os.path.exists (backup):
+                os.rename (self.wl_fn, backup)
+            with open (self.wl_fn, "xt") as f:
+                print (self.header, end = "", file = f)
+                for p in self.pages:
+                    for m in p:
+                        if m:
+                            print (m, file = f)
         else:
             event.Skip ()
 
@@ -427,7 +548,8 @@ class scanApp (wx.App):
             print ("No PDF file name")
             sys.exit (1)
         print (wl_fn, pdf_filename)
-        self.tf = topframe (display, wx.ID_ANY, "Scan display", pdf_filename, 4, wl)
+        self.tf = topframe (display, wx.ID_ANY, "Scan display",
+                            pdf_filename, 4, wl, wl_fn)
         self.tf.Show (True)
         self.running = True
         print ("entering mainloop")

@@ -19,9 +19,9 @@ real_length = 60     # simulate wire delay for wires this long, None to disable
 _pat_wline = "(\\d+)(?:\t+(\\w+)(?:\t+(\\w+)(?:\t(\\d+))?)?)?(\s*[+#].*(?:\n#.*)*)?"
 # This next one ends up with a whole lot of groups partly because of
 # the line pattern, so use named groups for sanity.
-_re_wmod = re.compile ("^(?P<mod>[a-z]+)(?P<generic>\\(.+?\\))?\t(?P<slot>\\w+)(?:\s*#.*)?\n+"
+_re_wmod = re.compile ("^(?P<mod>[a-z]+)(?P<generic>\\(.+?\\))?\t(?P<slot>\\w+)(?P<hcomment>\s*#.*)?\n+"
                        "(?P<pins>(?:(?:" + _pat_wline + ")\n+)+)"
-                       "((?P<slot2>\\w+)(?:\s*#.*)?\n+(?P<pins2>(?:(?:" + _pat_wline + ")\n+)+))?",
+                       "((?P<slot2>\\w+)(?P<hcomment2>\s*#.*)?\n+(?P<pins2>(?:(?:" + _pat_wline + ")\n+)+))?",
                        re.M | re.I)
 _re_wline = re.compile ("^" + _pat_wline, re.M | re.I)
 _re_chslot = re.compile (r"(0?[1-9]|1[0-6])?([a-rz])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)$", re.I)
