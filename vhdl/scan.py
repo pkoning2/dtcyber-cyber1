@@ -491,7 +491,7 @@ class topframe (wx.Frame):
             backup = self.wl_fn + "~"
             if not os.path.exists (backup):
                 os.rename (self.wl_fn, backup)
-            with open (self.wl_fn, "xt") as f:
+            with open (self.wl_fn, "wt") as f:
                 print (self.header, end = "", file = f)
                 for p in self.pages:
                     for m in p:
