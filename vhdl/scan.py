@@ -12,7 +12,8 @@ import wlist
 import cmodule
 
 pdf_pat = re.compile (r"\S+\.pdf", re.I)
-sp_pat = re.compile (r"\s+$", re.M)
+lsp_pat = re.compile (r"^\s+")
+tsp_pat = re.compile (r"\s+$", re.M)
 
 pdf_path = os.path.expanduser ("~/Documents/cdc/6600 field service")
 
@@ -114,7 +115,8 @@ class Module:
                 pins.append ([ "{}".format (i + 1), "", "", "", None ])
             self.pins = [ pins, None ]
             self.offsets = [ 0.52, None, 1.0, None ]
-
+        self.voff = 0.08
+            
     def __str__ (self):
         ret = list ()
         for c in range (self.mem + 1):
@@ -126,11 +128,11 @@ class Module:
                 s = "{}{}\t{}".format (self.modname, self.generic, slot)
             if hc:
                 s = "{}{}".format (s, hc)
-            s = sp_pat.sub ("", s)
+            s = tsp_pat.sub ("", s)
             ret.append (s)
             for p in self.pins[c]:
                 s = "{}\t{}\t{}\t{}\t".format (*p[:4])
-                s = sp_pat.sub ("", s)
+                s = tsp_pat.sub ("", s)
                 if p[4]:
                     s = "{}{}".format (s, p[4])
                 ret.append (s)
@@ -197,11 +199,12 @@ class scanwin (wx.Window):
         self.bitmap = self.page = None
         self.pdf = scan (fn)
 
-    def setbitmap (self, page, offset):
+    def setbitmap (self, page, offset, voff):
         page -= 1
         if self.page != page:
             self.bitmap = self.pdf.bitmap (page)
         self.offset = offset
+        self.voff = voff
         self.page = page
         self.Refresh (False)
 
@@ -213,11 +216,13 @@ class scanwin (wx.Window):
         if self.bitmap:
             # Figure out the scale
             w, h = self.Size
+            h = h / (1 - 2 * self.voff)
             bw, bh = self.bitmap.Size
             s = min (h / bh, 1.0)
-            off = bw * self.offset - w / s
+            dx = -(bw * self.offset - w / s)
+            dy = (-h * self.voff) / s
             dc.SetLogicalScale (s, s)
-            dc.DrawBitmap (self.bitmap, -off, 0)
+            dc.DrawBitmap (self.bitmap, dx, dy)
 
     def OnClose (self, event = None):
         """Close the window
@@ -247,25 +252,29 @@ class entrywin (wx.Window):
         cw, ch = self.fontextent
         sz = wx.Size (cw * 6, ch * 1.5)
         cs = wx.TE_PROCESS_ENTER
-        pitch = cw * 10
+        pitch = cw * 9
         lead = ch * 1.7
         self.mtype = wx.TextCtrl (self, 2, pos = wx.Point (20, lead),
                                   size = sz, style = cs)
         self.slot  = wx.TextCtrl (self, 3, pos = wx.Point (20 + 1.5 * pitch, lead),
                                   size = sz, style = cs)
-        self.lines = [ (None, None, self.mtype, self.slot) ]
+        self.lines = [ (None, None, self.mtype, self.slot, None) ]
         for i in range (1, 31):
             y = (i + 2) * lead
             lt = "{:>2d}".format (i)
-            lbl  = wx.StaticText (self, label = lt, pos = wx.Point (20, y), size = sz)
-            mod  = wx.TextCtrl (self, i * 4 + 1, pos = wx.Point (20 + 1 * pitch, y),
+            lbl  = wx.StaticText (self, label = lt, pos = wx.Point (10, y),
+                                  size = wx.Size (30, ch * 1.5))
+            mod  = wx.TextCtrl (self, i * 4 + 1, pos = wx.Point (40 + 0 * pitch, y),
                                 size = sz, style = cs)
-            pin  = wx.TextCtrl (self, i * 4 + 2, pos = wx.Point (20 + 2 * pitch, y),
+            pin  = wx.TextCtrl (self, i * 4 + 2, pos = wx.Point (40 + 1 * pitch, y),
                                 size = sz, style = cs)
-            wlen = wx.TextCtrl (self, i * 4 + 3, pos = wx.Point (20 + 3 * pitch, y),
+            wlen = wx.TextCtrl (self, i * 4 + 3, pos = wx.Point (40 + 2 * pitch, y),
                                 size = sz, style = cs)
-            self.lines.append ((lbl, mod, pin, wlen))
-        self.SetClientSize (wx.Size (20 + 4 * pitch, lead * 36))
+            comment = wx.StaticText (self, label = "-", pos = wx.Point (30 + 3 * pitch, y),
+                                     size = wx.Size (70, ch * 1.5),
+                                     style = wx.ST_NO_AUTORESIZE)
+            self.lines.append ((lbl, mod, pin, wlen, comment))
+        self.SetClientSize (wx.Size (70 + 3 * pitch, lead * 36))
 
     def load (self, mod, pins, slot, pins2):
         self.mod = mod
@@ -290,11 +299,33 @@ class entrywin (wx.Window):
             self.maxline = 28
         for pnum1, pin in enumerate (pins):
             pnum = pnum1 + 1
-            lb, tmod, tpin, tlen = self.lines[pnum]
+            lb, tmod, tpin, tlen, tcomment = self.lines[pnum]
             tmod.ChangeValue (pin[1])
             tpin.ChangeValue (pin[2])
             tlen.ChangeValue (pin[3])
+            c = pin[4] or ""
+            c = lsp_pat.sub ("", c)
+            tcomment.SetLabel (c)
 
+    def setcomment (self, pnum = None):
+        if not pnum:
+            id = wx.Window.FindFocus ().Id
+            pnum = id // 4
+        if not pnum:
+            return
+        tcomment = self.lines[pnum][4]
+        d = wx.TextEntryDialog (self, "Pin {} comment".format (pnum),
+                                value = tcomment.Label)
+        d.ShowModal ()
+        c = c2 = d.Value
+        if c:
+            c = lsp_pat.sub ("", c)
+            if not c.startswith ("#"):
+                c = "# " + c
+            c2 = '\t' + c
+        tcomment.SetLabel (c)
+        self.pins[pnum - 1][4] = c2
+        
     def setmtype (self, mtype):
         mod = self.mod
         mod.setmod (mtype)
@@ -356,7 +387,7 @@ class entrywin (wx.Window):
                 if len (slot) > 2:
                     self.mod.setslot (slot)
         if l and c == 1:
-            lb, mod, pin, wlen = r
+            lb, mod, pin, wlen, tcomment = r
             if mod.Value.lower () == "x":
                 mod.Value = "GND"
                 pin.Value = "X"
@@ -376,6 +407,8 @@ class entrywin (wx.Window):
         self.Destroy ()
 
 class topframe (wx.Frame):
+    wscale = 0.28
+    
     def __init__ (self, display, id, name, fn, page, wl, wl_fn):
         framestyle = (wx.MINIMIZE_BOX |
                       wx.MAXIMIZE_BOX |
@@ -388,10 +421,10 @@ class topframe (wx.Frame):
         self.doShow = True
         x, y, w, h = display.ClientArea
         fh = h
-        fw = h / 4
+        fw = h * self.wscale
         tm = y
         wx.Frame.__init__ (self, None, id, name,
-                           pos = wx.Point (w / 4, y), style = framestyle)
+                           pos = wx.Point (w / 5, y), style = framestyle)
         self.wl = wl
         self.wl_fn = wl_fn
         self.header, t = wl
@@ -497,6 +530,8 @@ class topframe (wx.Frame):
                     for m in p:
                         if m:
                             print (m, file = f)
+        elif k == "3":
+            self.eframe.setcomment ()
         else:
             event.Skip ()
 
@@ -521,7 +556,7 @@ class topframe (wx.Frame):
             self.curpage = page + self.firstpage
             title = "Page {}.{}".format (self.curpage, subpage + 1)
             self.Title = title
-            self.sframe.setbitmap (self.curpage, mod.offsets[subpage])
+            self.sframe.setbitmap (self.curpage, mod.offsets[subpage], mod.voff)
             self.eframe.top ()
             self.eframe.load (mod, pins, mod.slots[pins2], pins2)
         elif fwd:
