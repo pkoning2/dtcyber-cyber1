@@ -87,11 +87,16 @@ class Module:
     """A module's entry in a wire list.
     """
     def __init__ (self, mod = None):
+        self.mem = False
+        self.mtype = None
+        self.slot = self.modname = self.generic = ""
+        self.slots = [ "", None ]
+        self.slotnum = 0
         if mod:
             gd = mod.groupdict ()
             self.generic = gd["generic"] or ""
-            self.setmod (gd["mod"])
             self.setslot (gd["slot"], gd["slot2"])
+            self.setmod (gd["mod"])
             self.hcomments = [ gd["hcomment"], gd["hcomment2"] ]
             pins = [ [ ], [ ] ]
             for side, spins in (0, gd["pins"]), (1, gd["pins2"]):
@@ -105,11 +110,6 @@ class Module:
                     pins[side].append ([g.group (1), mod, pin, wlen, g.group (5)])
             self.pins = pins
         else:
-            self.mem = False
-            self.mtype = None
-            self.slot = self.modname = self.generic = ""
-            self.slots = [ "", None ]
-            self.slotnum = 0
             pins = list ()
             for i in range (28):
                 pins.append ([ "{}".format (i + 1), "", "", "", None ])
@@ -146,25 +146,35 @@ class Module:
             self.mtype = cmodule.elements[modname]
         except KeyError:
             #print ("reading", modname)
-            self.mtype = cmodule.readmodule (modname, True)
-            # Fill in pinnames because that doesn't get done by
-            # readmodule, TBD why not.
-            for pl, p in self.mtype.pins.items ():
-                for pn in pl.split ("_"):
-                    self.mtype.pinnames[pn] = p
-        
+            try:
+                self.mtype = cmodule.readmodule (modname, True)
+                # Fill in pinnames because that doesn't get done by
+                # readmodule, TBD why not.
+                for pl, p in self.mtype.pins.items ():
+                    for pn in pl.split ("_"):
+                        self.mtype.pinnames[pn] = p
+            except FileNotFoundError:
+                print ("Module", modname.upper (),
+                       "not defined, at", self.slot)
+                cmodule.elements[modname] = None
+            
     def setslot (self, slot, slot2 = None):
         self.slot = slot
         self.mem = slot2 is not None
         self.slots = [ slot, slot2 ]
         m2 = wlist._re_chslot.match (slot)
-        self.slotnum = int (m2.group (3))
-        left = self.slotnum & 1
-        if self.mem and self.slotnum == 18:
-            # Memory slot, slot 18 is at the left side of the page.
-            # Apart from that one case, left == odd applies.
-            left = 1
-        self.right = not left
+        self.mem = False
+        if m2:
+            self.slotnum = int (m2.group (3))
+            left = self.slotnum & 1
+            if self.mem and self.slotnum == 18:
+                # Memory slot, slot 18 is at the left side of the page.
+                # Apart from that one case, left == odd applies.
+                left = 1
+            self.right = not left
+        else:
+            self.slotnum = 0
+            self.right = False
         if self.mem:
             # Offsets to the memory module pins
             self.offsets = [ 0.29, 0.52, 0.77, 1.0 ]

@@ -16,18 +16,19 @@ chassis_list = { }
 curslot = None
 real_length = 60     # simulate wire delay for wires this long, None to disable
 
-_pat_wline = "(\\d+)(?:\t+(\\w+)(?:\t+(\\w+)(?:\t(\\d+))?)?)?(\s*[+#].*(?:\n#.*)*)?"
+_pat_wline = "(\\d+)(?:[ \t]+(\\w ?\\w*)(?:[ \t]+(\\w+)(?:[ \t]+(\\d+))?)?)?([ \t]*[+#].*(?:\n#.*)*)?"
 # This next one ends up with a whole lot of groups partly because of
 # the line pattern, so use named groups for sanity.
-_re_wmod = re.compile ("^(?P<mod>[a-z]+)(?P<generic>\\(.+?\\))?\t(?P<slot>\\w+)(?P<hcomment>\s*#.*)?\n+"
+_re_wmod = re.compile ("^(?P<mod>[a-z]+)(?P<generic>\\(.+?\\))?[ \t]+(?P<slot>\\w+)(?P<hcomment>[ \t]*#.*)?\n+"
                        "(?P<pins>(?:(?:" + _pat_wline + ")\n+)+)"
-                       "((?P<slot2>\\w+)(?P<hcomment2>\s*#.*)?\n+(?P<pins2>(?:(?:" + _pat_wline + ")\n+)+))?",
+                       "((?P<slot2>\\w+)(?P<hcomment2>[ \t]*#.*)?\n+(?P<pins2>(?:(?:" + _pat_wline + ")\n+)+))?",
                        re.M | re.I)
 _re_wline = re.compile ("^" + _pat_wline, re.M | re.I)
 _re_chslot = re.compile (r"(0?[1-9]|1[0-6])?([a-rz])(0[1-9]|[5-9]|[1-3][0-9]?|4[0-2]?)$", re.I)
 _re_cable = re.compile (r"(\d+)?w(\d+)(?:#.*)?$", re.I)
-_re_cables = re.compile (r"^(\d+w\d+)\s+(\d+w\d+)", re.M | re.I)
+_re_cables = re.compile ("^(\\d+w\\d+)[ \t]+(\\d+w\\d+)", re.M | re.I)
 _re_header = re.compile ("(#.*\n)+")
+_re_tsp = re.compile ("[ \t]+$", re.M)
 
 header = """-------------------------------------------------------------------------------
 --
@@ -570,8 +571,9 @@ def findchassis (cnum):
 def readfile (fn, lc = True):
     """Read an input file, return as lower case text
     """
-    with open (fn, "r") as f:
+    with open (fn, "r", encoding = "utf_8_sig") as f:
         text = f.read ()
+    text = _re_tsp.sub ("", text)
     hm = _re_header.match (text)
     if hm:
         text = text[hm.end ():]
