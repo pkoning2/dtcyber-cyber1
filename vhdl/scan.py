@@ -163,7 +163,6 @@ class Module:
         self.mem = slot2 is not None
         self.slots = [ slot, slot2 ]
         m2 = wlist._re_chslot.match (slot)
-        self.mem = False
         if m2:
             self.slotnum = int (m2.group (3))
             left = self.slotnum & 1
