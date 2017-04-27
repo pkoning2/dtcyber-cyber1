@@ -104,9 +104,9 @@ class Module:
                     break
                 for g in wlist._re_wline.finditer (spins):
                     pnum = int (g.group (1))
-                    mod = g.group (2) or ""
-                    pin = g.group (3) or ""
-                    wlen = g.group (4) or ""
+                    mod = (g.group (2) or "").replace (" ", "")
+                    pin = (g.group (3) or "").replace ("I", "1")
+                    wlen = (g.group (4) or "").replace ("I", "1")
                     pins[side].append ([g.group (1), mod, pin, wlen, g.group (5)])
             self.pins = pins
         else:
