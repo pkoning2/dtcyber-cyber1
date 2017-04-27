@@ -16,7 +16,7 @@ chassis_list = { }
 curslot = None
 real_length = 60     # simulate wire delay for wires this long, None to disable
 
-_pat_wline = "(\\d+)(?:[ \t]+(\\w ?\\w*)(?:[ \t]+(\\w+)(?:[ \t]+(\\d+))?)?)?([ \t]*[+#].*(?:\n#.*)*)?"
+_pat_wline = "(\\d+)(?:[ \t]+(\\w ?\\w*)(?:[ \t]+(\\w+)(?:[ \t]+(\\w+))?)?)?([ \t]*.*(?:\n#.*)*)?"
 # This next one ends up with a whole lot of groups partly because of
 # the line pattern, so use named groups for sanity.
 _re_wmod = re.compile ("^(?P<mod>[a-z]+)(?P<generic>\\(.+?\\))?[ \t]+(?P<slot>\\w+)(?P<hcomment>[ \t]*#.*)?\n+"

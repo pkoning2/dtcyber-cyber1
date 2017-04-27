@@ -307,6 +307,7 @@ class entrywin (wx.Window):
             self.maxline = 30
         else:
             self.maxline = 28
+        assert len (pins) == self.maxline
         for pnum1, pin in enumerate (pins):
             pnum = pnum1 + 1
             lb, tmod, tpin, tlen, tcomment = self.lines[pnum]
