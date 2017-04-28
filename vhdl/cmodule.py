@@ -580,6 +580,7 @@ class cmod (ElementType):
                 del sigdict[p]
         return ("".join (assigns), sigdict)
 
+    ohdr = None
     header = """-------------------------------------------------------------------------------
 --
 -- CDC 6600 model
@@ -764,6 +765,7 @@ end gates;
         write a .d file (dependencies file).  If the definition is
         unchanged (except for layout and comments), don't write it.
         """
+        self.finish () 
         slices = set ()
         deps = set ()
         newtext = [ ]
@@ -909,12 +911,15 @@ def getport (p):
             return pto
         
 def stdelements ():
+    global stdnames
+    stdnames = set ()
     f = open ("cyberdefs.vhd", "r")
     # Read the file, stripping comments
     std = _re_comment.sub ("", f.read ())
     f.close ()
     for e in _re_arch.finditer (std):
         c = ElementType (e.group (1))
+        stdnames.add (c.name)
         # Process any generics
         if e.group (2):
             for g in _re_generic.finditer (e.group (3)):
@@ -946,3 +951,4 @@ def allmodules ():
 
 # Load the standard element definitions
 stdelements ()
+#print ("standard names", stdnames)
