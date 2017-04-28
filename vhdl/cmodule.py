@@ -886,7 +886,7 @@ def readmodule (modname, allports = False):
                         print("Unexpected default in", pins.group ())
                         continue
                     opt = True
-                    optval = pins.group ()[-3:]
+                    optval = pins.group (4)[-3:]
                 elif ptype != "misc" and not allports:
                     continue
             #print pins.groups ()
@@ -946,6 +946,7 @@ def allmodules ():
     modules = { }
     for mn in [ n[:2] for n in os.listdir (".") if len (n) == 6 and
                 n.endswith (".vhd") ]:
+        print ("loading", mn)
         modules[mn] = readmodule (mn)
 
 # Load the standard element definitions
