@@ -58,10 +58,10 @@ clean:
 	rm -f *.o *.cf cyberdefs.stamp cdc6600.vhd chassis*.vhd $(VLIB)
 
 sim: cdc_tb
-	./cdc_tb --stop-time=20us --wave=cdc_tb.ghw
+	time ./cdc_tb --stop-time=20us --wave=cdc_tb.ghw
 
 sim2: cdc_tb2
-	./cdc_tb2 --stop-time=100us --wave=cdc_tb2.ghw
+	time ./cdc_tb2 --stop-time=100us --wave=cdc_tb2.ghw
 
 $(TOP): $(CHASSIS_O)
 
