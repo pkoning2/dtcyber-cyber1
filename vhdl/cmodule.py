@@ -765,7 +765,6 @@ end gates;
         write a .d file (dependencies file).  If the definition is
         unchanged (except for layout and comments), don't write it.
         """
-        self.finish () 
         slices = set ()
         deps = set ()
         newtext = [ ]
