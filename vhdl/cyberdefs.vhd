@@ -265,6 +265,27 @@ end bool;
 
 use work.sigs.all;
 
+-- Coax driver with 4 input AND inputs.
+entity cxdriver4 is
+  
+  port (
+    a, a2, a3, a4 : in  logicsig;             -- sources
+    y : out coaxsig);                         -- destination
+
+end cxdriver4;
+
+architecture bool of cxdriver4 is
+begin  -- bool
+  g4: process (a, a2, a3, a4)
+    variable t1 : logicsig;
+  begin  -- process g4
+    t1 := a and a2 and a3 and a4;
+    y <= not (t1) after tc;
+  end process g4;
+end bool;
+
+use work.sigs.all;
+
 -- Coax driver with 5 input AND inputs.
 entity cxdriver5 is
   
