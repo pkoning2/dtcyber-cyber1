@@ -261,7 +261,7 @@ begin -- gates
     y => z,
     y2 => i);
 
-  tp6 =< z;
+  tp6 <= z;
   p11 <= i;
 
   u4 : rtslice2 port map (

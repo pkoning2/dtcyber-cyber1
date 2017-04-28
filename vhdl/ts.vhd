@@ -115,7 +115,7 @@ architecture gates of ts is
 begin -- gates
   u1 : g3 port map (
     a => p16,
-    b => j
+    b => j,
     c => p9,
     y => p12);
 
