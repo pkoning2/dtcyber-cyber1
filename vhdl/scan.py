@@ -14,6 +14,7 @@ import cmodule
 pdf_pat = re.compile (r"\S+\.pdf", re.I)
 lsp_pat = re.compile (r"^\s+")
 tsp_pat = re.compile (r"\s+$", re.M)
+first_pat = re.compile (r"# Starting page (\d+)", re.I)
 
 pdf_path = os.path.expanduser ("~/Documents/cdc/6600 field service")
 
@@ -115,7 +116,7 @@ class Module:
                 pins.append ([ "{}".format (i + 1), "", "", "", None ])
             self.pins = [ pins, None ]
             self.offsets = [ 0.52, None, 1.0, None ]
-        self.voff = 0.08
+        self.voff = defvoff
             
     def __str__ (self):
         ret = list ()
@@ -244,6 +245,7 @@ class entrywin (wx.Window):
     """
     def __init__ (self, parent, id, pos):
         wx.Window.__init__ (self, parent, id, pos)
+        self.parent = parent
         self.NavigateIn ()
         self.Bind (wx.EVT_NAVIGATION_KEY, self.nextfield)
         self.Bind (wx.EVT_CLOSE, self.OnClose)
@@ -334,7 +336,9 @@ class entrywin (wx.Window):
                 c = "# " + c
             c2 = '\t' + c
         tcomment.SetLabel (c)
+        self.parent.setmod ()
         self.pins[pnum - 1][4] = c2
+        self.lines[pnum][1].SetFocus ()
         
     def setmtype (self, mtype):
         mod = self.mod
@@ -356,8 +360,9 @@ class entrywin (wx.Window):
             self.maxline = 28
         
     def top (self):
+        # Position at the first pin
         self.curline = 0
-        self.field = 1
+        self.field = 3
         wx.PostEvent (self, wx.NavigationKeyEvent ())
         
     def nextline (self, event):
@@ -403,6 +408,7 @@ class entrywin (wx.Window):
                 pin.Value = "X"
                 wlen.Value = "2"
                 self.nextline (event)
+        self.parent.setmod ()
         event.Skip ()
 
     def cfocus (self, event = None):
@@ -419,7 +425,7 @@ class entrywin (wx.Window):
 class topframe (wx.Frame):
     wscale = 0.28
     
-    def __init__ (self, display, id, name, fn, page, wl, wl_fn):
+    def __init__ (self, display, id, name, fn, wl, wl_fn):
         framestyle = (wx.MINIMIZE_BOX |
                       wx.MAXIMIZE_BOX |
                       wx.RESIZE_BORDER |
@@ -437,8 +443,16 @@ class topframe (wx.Frame):
                            pos = wx.Point (w / 5, y), style = framestyle)
         self.wl = wl
         self.wl_fn = wl_fn
-        self.header, t = wl
+        h, t = wl
+        self.header = h.splitlines ()
+        m = first_pat.match (self.header[-1])
+        if m:
+            page = int (m.group (1))
+        else:
+            page = 4
+        self.firstpage = page
         self.pages = list ()
+        self.modified = False
         next = None
         for m in wlist._re_wmod.finditer (t):
             mod = Module (m)
@@ -447,7 +461,6 @@ class topframe (wx.Frame):
                 self.pages.append (curpage)
             curpage[mod.right] = mod
             next = not mod.right and mod.slotnum + 1
-        self.firstpage = page
         if self.pages[0][0]:
             self.minindex = 0
         else:
@@ -482,6 +495,7 @@ class topframe (wx.Frame):
             if shift:
                 # Shift/Ctrl/N, show next scan
                 self.firstpage += 1
+                self.setmod ()
                 self.showpage ()
             else:
                 # Ctrl/N, show next part
@@ -490,6 +504,7 @@ class topframe (wx.Frame):
             if shift:
                 # Shift/Ctrl/P, show previous scan
                 self.firstpage = max (1, self.firstpage - 1)
+                self.setmod ()
                 self.showpage (False)
             else:
                 # Ctrl/P, show previous part
@@ -534,12 +549,19 @@ class topframe (wx.Frame):
             backup = self.wl_fn + "~"
             if not os.path.exists (backup):
                 os.rename (self.wl_fn, backup)
+            fp = "# Starting page {}".format (self.firstpage)
+            m = first_pat.match (self.header[-1])
+            if m:
+                self.header[-1] = fp
+            else:
+                self.header.append (fp)
             with open (self.wl_fn, "wt") as f:
-                print (self.header, end = "", file = f)
+                print ('\n'.join (self.header), file = f)
                 for p in self.pages:
                     for m in p:
                         if m:
                             print (m, file = f)
+            self.setmod (False)
         elif k == "3":
             self.eframe.setcomment ()
         else:
@@ -556,7 +578,16 @@ class topframe (wx.Frame):
             return
         self.index -= 1
         self.showpage (False)
-            
+
+    def setmod (self, mod = True):
+        self.modified = mod
+        self.settitle ()
+
+    def settitle (self):
+        mod = "*" if self.modified else ""
+        title = "{} Page {}.{}".format (mod, self.curpage, self.subpage + 1)
+        self.Title = title
+        
     def showpage (self, fwd = True):
         page, subpage = divmod (self.index, 4)
         right, pins2 = divmod (subpage, 2)
@@ -564,8 +595,8 @@ class topframe (wx.Frame):
         pins = mod and mod.pins[pins2]
         if pins:
             self.curpage = page + self.firstpage
-            title = "Page {}.{}".format (self.curpage, subpage + 1)
-            self.Title = title
+            self.subpage = subpage
+            self.settitle ()
             self.sframe.setbitmap (self.curpage, mod.offsets[subpage], mod.voff)
             self.eframe.top ()
             self.eframe.load (mod, pins, mod.slots[pins2], pins2)
@@ -579,14 +610,18 @@ class scanApp (wx.App):
         """Start the wx App main loop.
         This finds a font, then opens up a Frame
         """
-        global display
+        global display, defvoff
         self.app = wx.App ()
         display = wx.Display ()
         wl_fn = args[0]
         wl = wlist.readfile (wl_fn, False)
         m = pdf_pat.search (wl[0])
         if len (args) > 1:
-            pdf_filename = args[1]
+            defvoff = float (args[1])
+        else:
+            defvoff = 0.08
+        if len (args) > 2:
+            pdf_filename = args[2]
         elif m:
             pdf_filename = os.path.join (pdf_path, m.group (0))
         else:
@@ -594,7 +629,7 @@ class scanApp (wx.App):
             sys.exit (1)
         print (wl_fn, pdf_filename)
         self.tf = topframe (display, wx.ID_ANY, "Scan display",
-                            pdf_filename, 4, wl, wl_fn)
+                            pdf_filename, wl, wl_fn)
         self.tf.Show (True)
         self.running = True
         print ("entering mainloop")
