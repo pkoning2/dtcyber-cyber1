@@ -339,6 +339,15 @@ class entrywin (wx.Window):
         self.parent.setmod ()
         self.pins[pnum - 1][4] = c2
         self.lines[pnum][1].SetFocus ()
+
+    def shiftright (self):
+        id = wx.Window.FindFocus ().Id
+        pnum, id = divmod (id, 4)
+        if not pnum:
+            return
+        for f in range (3, id - 1, -1):
+            self.lines[pnum][f + 1].Value = self.lines[pnum][f].Value
+        self.lines[pnum][id].Value = ""
         
     def setmtype (self, mtype):
         mod = self.mod
@@ -383,6 +392,26 @@ class entrywin (wx.Window):
         else:
             self.lines[self.curline][self.field].SetFocus ()
 
+    def up (self):
+        l = self.curline
+        while l > 1:
+            l -= 1
+            t = self.lines[l][self.field]
+            if t.Enabled:
+                self.curline = l
+                t.SetFocus ()
+                return
+            
+    def down (self):
+        l = self.curline
+        while l <= 28:
+            l += 1
+            t = self.lines[l][self.field]
+            if t.Enabled:
+                self.curline = l
+                t.SetFocus ()
+                return
+            
     def newtext (self, event):
         l, c = divmod (event.Id, 4)
         r = self.lines[l]
@@ -487,10 +516,16 @@ class topframe (wx.Frame):
         k = event.GetKeyCode ()
         ctrl = event.RawControlDown ()
         shift = event.ShiftDown ()
-        if k < 32 or k > 126 or not ctrl:
-            event.Skip ()
+        if not ctrl:
+            if k == wx.WXK_UP:
+                self.eframe.up ()
+            elif k == wx.WXK_DOWN:
+                self.eframe.down ()
+            else:
+                event.Skip ()
             return
-        k = chr (k).lower ()
+        if 32 < k < 127:
+            k = chr (k).lower ()
         if k == 'n':
             if shift:
                 # Shift/Ctrl/N, show next scan
@@ -564,6 +599,9 @@ class topframe (wx.Frame):
             self.setmod (False)
         elif k == "3":
             self.eframe.setcomment ()
+        elif k == 'r' or k == wx.WXK_RIGHT:
+            # Ctrl/R or Ctrl/rightarrow, shift fields right
+            self.eframe.shiftright ()
         else:
             event.Skip ()
 
