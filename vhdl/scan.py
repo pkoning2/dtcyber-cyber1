@@ -340,6 +340,14 @@ class entrywin (wx.Window):
         self.pins[pnum - 1][4] = c2
         self.lines[pnum][1].SetFocus ()
 
+    def cleanfields (self):
+        for i in range (1, 29):
+            lb, tmod, tpin, tlen, tcomment = self.lines[i]
+            if not lb.Enabled and \
+              (tmod.Value or tpin.Value or tlen.Value or tcomment.GetLabel ()):
+              tmod.Value = tpin.Value = tlen.Value = ""
+              tcomment.SetLabel ("")
+                
     def shiftright (self):
         id = wx.Window.FindFocus ().Id
         pnum, id = divmod (id, 4)
@@ -602,6 +610,9 @@ class topframe (wx.Frame):
         elif k == 'r' or k == wx.WXK_RIGHT:
             # Ctrl/R or Ctrl/rightarrow, shift fields right
             self.eframe.shiftright ()
+        elif k == 'c':
+            # Ctrl/C, clear out fields for unused pins
+            self.eframe.cleanfields ()
         else:
             event.Skip ()
 
