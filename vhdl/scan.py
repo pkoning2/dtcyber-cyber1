@@ -4,6 +4,7 @@ import sys
 import io
 import os
 import re
+import collections
 
 import wx
 import PyPDF2
@@ -106,9 +107,13 @@ class Module:
                 for g in wlist._re_wline.finditer (spins):
                     pnum = int (g.group (1))
                     mod = (g.group (2) or "").replace (" ", "")
+                    if mod and mod[1:2] == '0':
+                        mod = mod[0] + mod[2:]
                     pin = (g.group (3) or "").replace ("I", "1")
                     wlen = (g.group (4) or "").replace ("I", "1")
-                    pins[side].append ([g.group (1), mod, pin, wlen, g.group (5)])
+                    comment = g.group (5) or ""
+                    comment = lsp_pat.sub ("", comment)
+                    pins[side].append ([g.group (1), mod, pin, wlen, comment])
             self.pins = pins
         else:
             pins = list ()
@@ -261,14 +266,21 @@ class entrywin (wx.Window):
         dc.SetFont (self.font)
         self.fontextent = dc.GetTextExtent ("A")
         cw, ch = self.fontextent
-        sz = wx.Size (cw * 6, ch * 1.5)
-        cs = wx.TE_PROCESS_ENTER
+        self.defstyle = wx.TextAttr (wx.BLACK)
+        self.redstyle = wx.TextAttr (wx.RED)
+        self.bluestyle = wx.TextAttr (wx.BLUE)
+        self.modstyle = wx.TextAttr (wx.GREEN)
+        sz = wx.Size (cw * 7.5, ch * 1.5)
+        # Some of these have no effect for some reason: process_enter
+        # seems to be ignored if multiline.
+        cs = wx.TE_PROCESS_ENTER | wx.TE_MULTILINE | wx.TE_NO_VSCROLL | wx.TE_RICH2
         pitch = cw * 9
         lead = ch * 1.7
         self.mtype = wx.TextCtrl (self, 2, pos = wx.Point (20, lead),
                                   size = sz, style = cs)
         self.slot  = wx.TextCtrl (self, 3, pos = wx.Point (20 + 1.5 * pitch, lead),
-                                  size = sz, style = cs)
+                                  size = wx.Size (cw * 10, ch * 1.5),
+                                  style = cs)
         self.lines = [ (None, None, self.mtype, self.slot, None) ]
         for i in range (1, 31):
             y = (i + 2) * lead
@@ -287,8 +299,12 @@ class entrywin (wx.Window):
             self.lines.append ((lbl, mod, pin, wlen, comment))
         self.SetClientSize (wx.Size (70 + 3 * pitch, lead * 36))
 
-    def load (self, mod, pins, slot, pins2):
+        
+    def load (self, mod, pins, slot, pins2, refs):
+        # "refs" is a dictionary of possible destinations derived from
+        # looking for other modules that point to this one.
         self.mod = mod
+        self.refs = refs
         self.mtype.ChangeValue (mod.modname)
         self.slot.ChangeValue (slot)
         self.pins = pins
@@ -309,16 +325,48 @@ class entrywin (wx.Window):
         else:
             self.maxline = 28
         assert len (pins) == self.maxline
+        self.refnums = [ -1 ] * (self.maxline + 1)
         for pnum1, pin in enumerate (pins):
             pnum = pnum1 + 1
+            if pin[:-1] + [""] not in refs[pnum]:
+                refs[pnum].append (list (pin))
             lb, tmod, tpin, tlen, tcomment = self.lines[pnum]
-            tmod.ChangeValue (pin[1])
-            tpin.ChangeValue (pin[2])
-            tlen.ChangeValue (pin[3])
-            c = pin[4] or ""
-            c = lsp_pat.sub ("", c)
-            tcomment.SetLabel (c)
+            vnum, vmod, vpin, vlen, vcomment = pin
+            tmod.ChangeValue (vmod)
+            tpin.ChangeValue (vpin)
+            tlen.ChangeValue (vlen)
+            tcomment.SetLabel (vcomment)
+            if len (refs[pnum]) > 1:
+                style = self.redstyle
+                if len (refs[pnum]) > 2:
+                    style = self.bluestyle
+            else:
+                style = self.defstyle
+            tmod.SetStyle (0, len (tmod.Value), style)
+            tpin.SetStyle (0, len (tpin.Value), style)
+            tlen.SetStyle (0, len (tlen.Value), style)
 
+    def nextref (self, pnum = None):
+        if not pnum:
+            id = wx.Window.FindFocus ().Id
+            pnum = id // 4
+        if not pnum:
+            return
+        choices = len (self.refs[pnum])
+        if choices <= 1:
+            return
+        rn = self.refnums[pnum] + 1
+        if rn >= choices:
+            rn = 0
+        self.refnums[pnum] = rn
+        pin = self.refs[pnum][rn]
+        #print (rn, self.refs[pnum])
+        lb, tmod, tpin, tlen, tcomment = self.lines[pnum]
+        tmod.Value = pin[1]
+        tpin.Value = pin[2]
+        tlen.Value = pin[3]
+        tcomment.SetLabel (pin[4])
+        
     def setcomment (self, pnum = None):
         if not pnum:
             id = wx.Window.FindFocus ().Id
@@ -400,21 +448,25 @@ class entrywin (wx.Window):
         else:
             self.lines[self.curline][self.field].SetFocus ()
 
-    def up (self):
+    def up (self, red = False):
         l = self.curline
         while l > 1:
             l -= 1
             t = self.lines[l][self.field]
+            if red and len (self.refs[l]) < 2:
+                continue
             if t.Enabled:
                 self.curline = l
                 t.SetFocus ()
                 return
             
-    def down (self):
+    def down (self, red = False):
         l = self.curline
-        while l <= 28:
+        while l < 28:
             l += 1
             t = self.lines[l][self.field]
+            if red and len (self.refs[l]) < 2:
+                continue
             if t.Enabled:
                 self.curline = l
                 t.SetFocus ()
@@ -526,9 +578,19 @@ class topframe (wx.Frame):
         shift = event.ShiftDown ()
         if not ctrl:
             if k == wx.WXK_UP:
-                self.eframe.up ()
+                self.eframe.up (shift)
             elif k == wx.WXK_DOWN:
-                self.eframe.down ()
+                self.eframe.down (shift)
+            elif k == wx.WXK_TAB:
+                self.eframe.nextfield (event)
+                if event.Skipped:
+                    self.nextslot ()
+                    event.Skip (False)
+            elif k == wx.WXK_RETURN:
+                self.eframe.nextline (event)
+                if event.Skipped:
+                    self.nextslot ()
+                    event.Skip (False)
             else:
                 event.Skip ()
             return
@@ -560,33 +622,6 @@ class topframe (wx.Frame):
             g = (int (d.Value) - self.firstpage) * 4
             self.index = max (self.minindex, min (g, self.maxindex))
             self.showpage ()
-        elif k == "a":
-            # Ctrl/A, add a module
-            lp, lsp = divmod (self.maxindex, 4)
-            ls = lsp // 2
-            lmod = self.pages[lp][ls]
-            slot = lmod.slot
-            m = wlist._re_chslot.match (slot)
-            if lmod.slotnum == 42:
-                row = m.group (2)
-                if row == "R":
-                    event.Skip ()
-                    return
-                slot = "{}{:c}1".format (m.group (1), ord (row) + 1)
-            else:
-                slot = "{}{}{}".format (m.group (1), m.group (2), lmod.slotnum + 1)
-            mod = Module ()
-            mod.setslot (slot)
-            if mod.right:
-                self.pages[lp][1] = mod
-            else:
-                self.pages.append ([ mod, None ])
-            if lmod.mem:
-                self.maxindex += 1
-            else:
-                self.maxindex += 2
-            self.index = self.maxindex
-            self.showpage ()
         elif k == 's':
             # Ctrl/S, save file
             backup = self.wl_fn + "~"
@@ -613,6 +648,8 @@ class topframe (wx.Frame):
         elif k == 'c':
             # Ctrl/C, clear out fields for unused pins
             self.eframe.cleanfields ()
+        elif k == wx.WXK_LEFT:
+            self.eframe.nextref ()
         else:
             event.Skip ()
 
@@ -637,6 +674,28 @@ class topframe (wx.Frame):
         title = "{} Page {}.{}".format (mod, self.curpage, self.subpage + 1)
         self.Title = title
         
+    def findrefs (self, mod):
+        slot = mod.slot[1:]
+        refs = collections.defaultdict (list)
+        for pg in self.pages:
+            for m in pg:
+                if not m:
+                    continue
+                oslot = m.slot[1:]
+                for pnum, pin in enumerate (m.pins[0]):
+                    pn, dmod, dpin, wlen, *rest = pin
+                    if dmod == slot:
+                        #print (oslot, pnum, pin)
+                        try:
+                            dpin = int (dpin)
+                            x = int (wlen)
+                            if 0 < dpin < 29:
+                                w = [ str (dpin), oslot, str (pnum + 1), wlen, "" ]
+                                refs[dpin].append (w)
+                        except ValueError:
+                            pass
+        return refs
+
     def showpage (self, fwd = True):
         page, subpage = divmod (self.index, 4)
         right, pins2 = divmod (subpage, 2)
@@ -648,7 +707,8 @@ class topframe (wx.Frame):
             self.settitle ()
             self.sframe.setbitmap (self.curpage, mod.offsets[subpage], mod.voff)
             self.eframe.top ()
-            self.eframe.load (mod, pins, mod.slots[pins2], pins2)
+            refs = self.findrefs (mod)
+            self.eframe.load (mod, pins, mod.slots[pins2], pins2, refs)
         elif fwd:
             self.nextslot ()
         else:
