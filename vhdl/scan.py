@@ -428,7 +428,8 @@ class entrywin (wx.Window):
         # Position at the first pin
         self.curline = 0
         self.field = 3
-        wx.PostEvent (self, wx.NavigationKeyEvent ())
+        #wx.PostEvent (self, wx.NavigationKeyEvent ())
+        self.nextline (None)
         
     def nextline (self, event):
         while self.curline < self.maxline:
@@ -462,11 +463,14 @@ class entrywin (wx.Window):
             
     def down (self, red = False):
         l = self.curline
-        while l < 28:
+        while l < 28 or red:
             l += 1
-            t = self.lines[l][self.field]
             if red and len (self.refs[l]) < 2:
+                if l >= 28:
+                    self.parent.nextslot ()
+                    l = 0
                 continue
+            t = self.lines[l][self.field]
             if t.Enabled:
                 self.curline = l
                 t.SetFocus ()
@@ -706,9 +710,9 @@ class topframe (wx.Frame):
             self.subpage = subpage
             self.settitle ()
             self.sframe.setbitmap (self.curpage, mod.offsets[subpage], mod.voff)
-            self.eframe.top ()
             refs = self.findrefs (mod)
             self.eframe.load (mod, pins, mod.slots[pins2], pins2, refs)
+            self.eframe.top ()
         elif fwd:
             self.nextslot ()
         else:
