@@ -166,6 +166,7 @@ class Module:
             
     def setslot (self, slot, slot2 = None):
         self.slot = slot
+        self.baseslot = ""
         self.mem = slot2 is not None
         self.slots = [ slot, slot2 ]
         m2 = wlist._re_chslot.match (slot)
@@ -177,6 +178,7 @@ class Module:
                 # Apart from that one case, left == odd applies.
                 left = 1
             self.right = not left
+            self.baseslot = m2.group(2).upper () + str (self.slotnum)
         else:
             self.slotnum = 0
             self.right = False
@@ -558,6 +560,7 @@ class topframe (wx.Frame):
             page = 4
         self.firstpage = page
         self.pages = list ()
+        self.slotlocs = dict ()
         self.modified = False
         next = None
         for m in wlist._re_wmod.finditer (t):
@@ -566,6 +569,7 @@ class topframe (wx.Frame):
                 curpage = [ None, None ]
                 self.pages.append (curpage)
             curpage[mod.right] = mod
+            self.slotlocs[mod.baseslot] = (len (self.pages) - 1, mod.right)
             next = not mod.right and mod.slotnum + 1
         if self.pages[0][0]:
             self.minindex = 0
@@ -634,11 +638,25 @@ class topframe (wx.Frame):
                 self.prevslot ()
         elif k == "g":
             # Ctrl/G, go to specified page number
-            d = wx.TextEntryDialog (self, "Page number",
-                                    value = str (self.curpage))
-            d.SetMaxLength (3)
+            if shift:
+                label = "Slot position"
+                cur = self.eframe.mod.baseslot
+            else:
+                label = "Page number"
+                cur = str (self.curpage)
+            d = wx.TextEntryDialog (self, label, value = cur)
+            d.SetMaxLength (5)
             d.ShowModal ()
-            g = (int (d.Value) - self.firstpage) * 4
+            if shift:
+                slot = d.Value.upper ()
+                try:
+                    loc = self.slotlocs[slot]
+                except KeyError:
+                    return
+                g, right = loc
+                g = g * 4 + right * 2
+            else:
+                g = (int (d.Value) - self.firstpage) * 4
             self.index = max (self.minindex, min (g, self.maxindex))
             self.showpage ()
         elif k == 's':
