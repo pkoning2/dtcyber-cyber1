@@ -269,7 +269,6 @@ class entrywin (wx.Window):
         self.defstyle = wx.TextAttr (wx.BLACK)
         self.redstyle = wx.TextAttr (wx.RED)
         self.bluestyle = wx.TextAttr (wx.BLUE)
-        self.modstyle = wx.TextAttr (wx.GREEN)
         sz = wx.Size (cw * 7.5, ch * 1.5)
         # Some of these have no effect for some reason: process_enter
         # seems to be ignored if multiline.
@@ -336,16 +335,28 @@ class entrywin (wx.Window):
             tpin.ChangeValue (vpin)
             tlen.ChangeValue (vlen)
             tcomment.SetLabel (vcomment)
-            if len (refs[pnum]) > 1:
-                style = self.redstyle
-                if len (refs[pnum]) > 2:
-                    style = self.bluestyle
+            #if len (refs[pnum]) > 1:
+            #    print (pnum, refs[pnum])
+            if len (refs[pnum]) > 2:
+                style = self.bluestyle
             else:
                 style = self.defstyle
             tmod.SetStyle (0, len (tmod.Value), style)
             tpin.SetStyle (0, len (tpin.Value), style)
             tlen.SetStyle (0, len (tlen.Value), style)
-
+            if len (refs[pnum]) == 2:
+                for r in refs[pnum]:
+                    x, rmod, rpin, rlen, rcomment = r
+                    if vcomment != rcomment:
+                        tmod.SetStyle (0, len (tmod.Value), self.bluestyle)
+                    if vmod != rmod or (not vlen and rlen) or \
+                       (not vpin and rpin):
+                        tmod.SetStyle (0, len (tmod.Value), self.redstyle)
+                    if vpin != rpin or (not vlen and rlen):
+                        tpin.SetStyle (0, len (tpin.Value), self.redstyle)
+                    if vlen != rlen:
+                        tlen.SetStyle (0, len (tlen.Value), self.redstyle)
+                    
     def nextref (self, pnum = None):
         if not pnum:
             id = wx.Window.FindFocus ().Id
@@ -505,10 +516,12 @@ class entrywin (wx.Window):
         event.Skip ()
 
     def cfocus (self, event = None):
-        id = wx.Window.FindFocus ().Id
-        l, c = divmod (id, 4)
-        self.curline = l
-        self.field = c
+        id = wx.Window.FindFocus ()
+        if id:
+            id = id.Id
+            l, c = divmod (id, 4)
+            self.curline = l
+            self.field = c
         
     def OnClose (self, event = None):
         """Close the window
@@ -516,7 +529,7 @@ class entrywin (wx.Window):
         self.Destroy ()
 
 class topframe (wx.Frame):
-    wscale = 0.28
+    wscale = 0.32
     
     def __init__ (self, display, id, name, fn, wl, wl_fn):
         framestyle = (wx.MINIMIZE_BOX |
@@ -567,7 +580,8 @@ class topframe (wx.Frame):
         if not lm.pins[1]:
             self.maxindex -= 1
         self.index = self.minindex
-        self.sframe = scanwin (self, wx.ID_ANY, wx.Size (fw, fh), wx.Point (0, 0), fn)
+        self.sframe = scanwin (self, wx.ID_ANY, wx.Size (fw, fh),
+                               wx.Point (0, 0), fn)
         self.Bind (wx.EVT_CHAR_HOOK, self.key)
         self.Bind (wx.EVT_TEXT_ENTER, self.nextslot)
         self.sframe.Show (True)
@@ -620,7 +634,8 @@ class topframe (wx.Frame):
                 self.prevslot ()
         elif k == "g":
             # Ctrl/G, go to specified page number
-            d = wx.TextEntryDialog (self, "Page number", value = str (self.curpage))
+            d = wx.TextEntryDialog (self, "Page number",
+                                    value = str (self.curpage))
             d.SetMaxLength (3)
             d.ShowModal ()
             g = (int (d.Value) - self.firstpage) * 4
