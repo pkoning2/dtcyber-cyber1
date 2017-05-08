@@ -4,6 +4,7 @@ import sys
 import io
 import os
 import re
+import glob
 import collections
 
 import wx
@@ -12,7 +13,7 @@ import struct
 import wlist
 import cmodule
 
-pdf_pat = re.compile (r"\S+\.pdf", re.I)
+img_pat = re.compile (r"\S+\.(pdf|tiff?)", re.I)
 lsp_pat = re.compile (r"^\s+")
 tsp_pat = re.compile (r"\s+$", re.M)
 first_pat = re.compile (r"# Starting page (\d+)", re.I)
@@ -71,11 +72,15 @@ class scan:
                 K = 0 --- Pure one-dimensional encoding (Group 3, 1-D)
                 K > 0 --- Mixed one- and two-dimensional encoding (Group 3, 2-D)
                 """
-                if xObject[obj]['/Filter'] == '/CCITTFaxDecode':
-                    if xObject[obj]['/DecodeParms']['/K'] == -1:
-                        CCITT_group = 4
-                    else:
-                        CCITT_group = 3
+                if xObject[obj]['/Filter'] == '/CCITTFaxDecode' or \
+                   xObject[obj]['/Filter'] == '/JBIG2Decode':
+                    try:
+                        if xObject[obj]['/DecodeParms']['/K'] == -1:
+                            CCITT_group = 4
+                        else:
+                            CCITT_group = 3
+                    except Exception:
+                        CCITT_group = 10
                     width = xObject[obj]['/Width']
                     height = xObject[obj]['/Height']
                     data = xObject[obj]._data  # sorry, getData() does not work for CCITTFaxDecode
@@ -84,6 +89,7 @@ class scan:
                     stream = io.BytesIO (data)
                     bm = wx.Bitmap (wx.Image (stream, wx.BITMAP_TYPE_TIFF))
                     return bm
+        raise Exception ("No useable image found")
 
 class Module:
     """A module's entry in a wire list.
@@ -214,12 +220,23 @@ class scanwin (wx.Window):
         self.doShow = True
         self.SetBackgroundColour (wx.WHITE)
         self.bitmap = self.page = None
-        self.pdf = scan (fn)
+        if "*" in fn:
+            # Wildcard TIF files
+            assert ".tif" in fn.lower ()
+            self.pdf = None
+            self.tiffs = sorted (glob.glob (fn))
+        else:
+            assert ".pdf" in fn.lower ()
+            self.pdf = scan (fn)
 
     def setbitmap (self, page, offset, voff):
         page -= 1
         if self.page != page:
-            self.bitmap = self.pdf.bitmap (page)
+            if self.pdf:
+                self.bitmap = self.pdf.bitmap (page)
+            else:
+                self.bitmap = wx.Bitmap (wx.Image (self.tiffs[page],
+                                                   wx.BITMAP_TYPE_TIFF))
         self.offset = offset
         self.voff = voff
         self.page = page
@@ -271,11 +288,11 @@ class entrywin (wx.Window):
         self.defstyle = wx.TextAttr (wx.BLACK)
         self.redstyle = wx.TextAttr (wx.RED)
         self.bluestyle = wx.TextAttr (wx.BLUE)
-        sz = wx.Size (cw * 7.5, ch * 1.5)
+        sz = wx.Size (cw * 9, ch * 1.5)
         # Some of these have no effect for some reason: process_enter
         # seems to be ignored if multiline.
         cs = wx.TE_PROCESS_ENTER | wx.TE_MULTILINE | wx.TE_NO_VSCROLL | wx.TE_RICH2
-        pitch = cw * 9
+        pitch = cw * 9.5
         lead = ch * 1.7
         self.mtype = wx.TextCtrl (self, 2, pos = wx.Point (20, lead),
                                   size = sz, style = cs)
@@ -761,7 +778,7 @@ class scanApp (wx.App):
         display = wx.Display ()
         wl_fn = args[0]
         wl = wlist.readfile (wl_fn, False)
-        m = pdf_pat.search (wl[0])
+        m = img_pat.search (wl[0])
         if len (args) > 1:
             defvoff = float (args[1])
         else:
