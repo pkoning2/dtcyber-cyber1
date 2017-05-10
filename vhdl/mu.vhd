@@ -34,7 +34,7 @@ entity mu is
       p14_tp1 : out logicsig;
       tp2 : out logicsig;
       tp4 : out logicsig;
-      p1_p2_p3_p4_p5 : out logicsig;
+      p1_p2_p3_p4_p6 : out logicsig;
       p10 : out logicsig;
       p11_p13_tp3 : out logicsig;
       p12 : out logicsig;
@@ -238,7 +238,7 @@ begin -- gates
   u22 : inv2 port map (
     a => p8,
     y => tp2,
-    y2 => p1_p2_p3_p4_p5);
+    y2 => p1_p2_p3_p4_p6);
 
 
 
