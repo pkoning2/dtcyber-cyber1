@@ -408,7 +408,8 @@ class Connector (object):
         for m in _re_wline.finditer (wl):
             pnum = pn (m.group (1))
             if pnum != epin:
-                error ("pins out of order, expected %d, got %d" % (epin, pnum))
+                error ("pins out of order in %s, expected %d, got %d"
+                       % (curslot, epin, pnum))
             epin += 1
             if m.group (2) is None:
                 # Unused pin, carry on
@@ -432,11 +433,13 @@ class Connector (object):
                         # power/ground rather than module signals
                         self.addportmap (self.chassis, pname, "'1'")
                 else:
-                    error ("Strange ground-like entry %s" % str (m.groups ()))
+                    error ("Strange ground-like entry %s in %s pin %d"
+                           % (str (m.groups ()), curslot, pnum))
             elif "w" in m.group (2):
                 # cable
                 if mpin is None:
-                    error ("pin %d undefined or out of range" % pnum)
+                    error ("pin %d undefined or out of range in %s"
+                           % (pnum, curslot))
                     continue
                 dir = mpin.dir
                 ptype = mpin.ptype
@@ -444,7 +447,8 @@ class Connector (object):
                     # Whole cable -- for fake modules that model things
                     # at a different VHDL level
                     if m.group (3) != dir:
-                        error ("direction mismatch for pin %s" % pname)
+                        error ("direction mismatch for pin %s in %s"
+                               % (pname, curslot))
                     if ptype == "coaxsigs":
                         ctype = Coax
                     else:
@@ -454,7 +458,11 @@ class Connector (object):
                     w = "%s_%s" % (cable.name, dir)
                     self.chassis.signals[cable] = cable
                 else:
-                    wnum = int (m.group (3))
+                    try:
+                        wnum = int (m.group (3))
+                    except (TypeError, ValueError):
+                        error ("invalid pin %d: %s in %s"
+                               % (pnum, m.group (3), curslot))
                     if ptype == "misc":
                         # We ignore misc signals since they are only there
                         # to document things like jumpers and other non-logic
@@ -475,7 +483,8 @@ class Connector (object):
                             w = Coaxwire (self.chassis, m.group (2), m.group (3),
                                           dir, ptype)
                         else:
-                            error ("invalid cable wire number %d" % wnum)
+                            error ("invalid cable wire number %d in %s pin %d"
+                                   % (wnum, curslot, pnum))
                             w = None
                         if w:
                             self.chassis.signals[w.cable.name] = w.cable
@@ -484,7 +493,8 @@ class Connector (object):
             elif m.group (3):
                 # Regular slot to slot twisted pair wire
                 if mpin is None:
-                    error ("pin %d undefined or out of range" % pnum)
+                    error ("pin %d undefined or out of range in %s"
+                           % (pnum, curslot))
                     continue
                 dir = mpin.dir
                 ptype = mpin.ptype
@@ -497,7 +507,11 @@ class Connector (object):
                 toslot = self.chassis.normslot (m.group (2))
                 topin = pn (m.group (3))
                 if m.group (4):
-                    wlen = int (m.group (4))
+                    try:
+                        wlen = int (m.group (4))
+                    except (TypeError, ValueError):
+                        error ("invalid wire length %s pin %d in %s"
+                               % (m.group (4), pnum, curslot))                    
                 else:
                     wlen = 0
                 w = self.chwire (pnum, toslot, topin, dir, wlen)
@@ -554,7 +568,10 @@ def pn (pname):
     if m:
         return int (m.group (1))
     else:
-        return int (pname)
+        try:
+            return int (pname)
+        except (TypeError, ValueError):
+            error ("invalid pin %s" % pname)
 
 def findchassis (cnum):
     """Return the chassis object, allocating it if necessary.
