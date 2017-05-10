@@ -497,7 +497,8 @@ class entrywin (wx.Window):
             l += 1
             if red and len (self.refs[l]) < 2:
                 if l >= 28:
-                    self.parent.nextslot ()
+                    if self.parent.nextslot ():
+                        return
                     l = 0
                 continue
             t = self.lines[l][self.field]
@@ -709,9 +710,10 @@ class topframe (wx.Frame):
 
     def nextslot (self, event = None):
         if self.index == self.maxindex:
-            return
+            return True
         self.index += 1
         self.showpage ()
+        return False
 
     def prevslot (self):
         if self.index == self.minindex:
