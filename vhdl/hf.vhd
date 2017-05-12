@@ -31,7 +31,7 @@ entity hf is
       p14 : out logicsig;
       p21_p19_p17_p15_p26_p20_p18 : out logicsig;
       p22 : out logicsig;
-      p27_p25_p23_p23_p3_p4_p7 : out logicsig);
+      p27_p25_p24_p23_p2_p4_p7 : out logicsig);
 
 end hf;
 architecture gates of hf is
@@ -86,7 +86,7 @@ begin -- gates
   u4 : inv2 port map (
     a => p28,
     y => t2,
-    y2 => p27_p25_p23_p23_p3_p4_p7);
+    y2 => p27_p25_p24_p23_p2_p4_p7);
 
   tp3 <= t2;
 
