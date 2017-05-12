@@ -22,6 +22,7 @@ entity rb is
       p3 : in  logicsig;
       p4 : in  coaxsig;
       p5 : in  coaxsig;
+      p16 : in  coaxsig;
       p17 : in  coaxsig;
       p19 : in  logicsig;
       p20 : in  logicsig;
@@ -160,7 +161,7 @@ begin -- gates
   tp4 <= i;
 
   u7 : cxreceiver port map (
-    a => p17,
+    a => p16,
     y => t4);
 
 
