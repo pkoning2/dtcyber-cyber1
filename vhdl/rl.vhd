@@ -29,6 +29,7 @@ entity rl is
       p13 : in  logicsig;
       p14 : in  logicsig;
       p16 : in  logicsig;
+      p17 : in  logicsig;
       p19 : in  logicsig;
       p20 : in  logicsig;
       p21 : in  logicsig;
@@ -87,7 +88,6 @@ architecture gates of rl is
 
   end component;
 
-  signal 17 : logicsig;
   signal a : logicsig;
   signal b : logicsig;
   signal c : logicsig;
@@ -283,7 +283,7 @@ begin -- gates
 
   u29 : g2 port map (
     a => p13,
-    b => 17,
+    b => p17,
     y => t22);
 
 
