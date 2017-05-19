@@ -39,9 +39,11 @@ entity rh is
       p1_tp2 : out logicsig;
       p5_tp1 : out logicsig;
       p14_tp3 : out logicsig;
+      p19 : out logicsig;
       p21 : out logicsig;
       p22 : out logicsig;
       p24_tp6 : out logicsig;
+      p26 : out logicsig;
       p28_tp5 : out logicsig);
 
 end rh;
@@ -195,6 +197,7 @@ begin -- gates
     a => p25,
     y2 => t20);
 
+  p26 <= p25;
 
   u17 : g2 port map (
     a => p27,
@@ -218,6 +221,7 @@ begin -- gates
     a => p20,
     y2 => t22);
 
+  p19 <= p20;
   tp4 <= t22;
 
   u21 : inv port map (
