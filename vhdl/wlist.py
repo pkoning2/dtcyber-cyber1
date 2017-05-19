@@ -14,7 +14,7 @@ import time
 
 chassis_list = { }
 curslot = None
-real_length = 60     # simulate wire delay for wires this long, None to disable
+real_length = 60     # simulate wire delay for wires this long, 0 to disable
 
 _pat_wline = "(\\d+)(?:[ \t]+(\\w ?\\w*)(?:[ \t]+(\\w+)(?:[ \t]+(\\w+))?)?)?([ \t]*.*(?:\n#.*)*)?"
 # This next one ends up with a whole lot of groups partly because of
@@ -339,6 +339,8 @@ class Connector (object):
         having zero delay.
         """
         # Nominal twisted pair delay is 1.3 ns per foot.
+        if wlen < real_length:
+            return 0
         return int (((wlen / 12.) * 1.3) / 5.)
     
     def chwire (self, pnum, toslot, topin, dir, wlen = 0):
@@ -359,14 +361,14 @@ class Connector (object):
                     w = self.chassis.aliases["w_%s" % end1]
                 except KeyError:
                     # Wire is not defined yet.  Define it
-                    w = Wire (end1, end2)
+                    w = Wire (end1, end2, wlen)
                     delay = self.wdelay (wlen)
                     if delay:
                         # Delay is large enough to model
                         wdname = "wd_%s" % w
                         wd = cmodule.ElementInstance (wdname, "wire")
                         self.chassis.elements[wdname] = wd
-                        w2 = Wire (end1, end2, "d")
+                        w2 = Wire (end1, end2, wlen, "d")
                         self.chassis.signals[w] = w
                         wd.addportmap (self.chassis, "o", w)
                         w = w2
@@ -374,22 +376,56 @@ class Connector (object):
                         wd.addgenericmap (self.chassis, "delay", str (delay))
                     self.chassis.signals[w] = w
         else:
+            end1, end2 = end2, end1
             try:
-                w = self.chassis.signals["w_%s" % end2]
+                w = self.chassis.signals["w_%s" % end1]
             except KeyError:
-                w = Wire (end2, end1)
+                w = Wire (end1, end2, wlen)
                 delay = self.wdelay (wlen)
                 if delay:
                     # Delay is large enough to model
                     wdname = "wd_%s" % w
                     wd = cmodule.ElementInstance (wdname, "wire")
                     self.chassis.elements[wdname] = wd
-                    w2 = Wire (end2, end1, "d")
+                    w2 = Wire (end1, end2, wlen, "d")
                     self.chassis.signals[w] = w
                     wd.addportmap (self.chassis, "i", w)
                     w = w2
                     wd.addportmap (self.chassis, "o", w)
                     wd.addgenericmap (self.chassis, "delay", str (delay))
+                self.chassis.signals[w] = w
+        # Check if for this end of the wire we're given a length
+        # greater than what was previously specified.  More precisely,
+        # check if the computer delay (in 5 ns granularity) is
+        # greater.
+        delay = self.wdelay (wlen)
+        oldlen = w.wlen
+        olddelay = self.wdelay (oldlen)
+        if delay != olddelay:
+            print ("inconsistent wire delay between %s and %s (%d vs. %d)" %
+                   (end1, end2, oldlen, wlen))
+        if delay > olddelay:
+            # We want to use the larger of the two delay values.
+            # Second occurrence is larger, so do something about that.
+            oldlen = w.wlen
+            try:
+                wdname = "wd_%s" % w
+                wd = self.chassis.elements[wdname]
+                wd.addgenericmap (self.chassis, "delay", str (delay))
+            except KeyError:
+                # New delay is large enough to model, old was not, so
+                # add a "wire" element.
+                wd = cmodule.ElementInstance (wdname, "wire")
+                self.chassis.elements[wdname] = wd
+                w2 = Wire (end1, end2, wlen, "d")
+                if dir == "out":
+                    wd.addportmap (self.chassis, "o", w)
+                    wd.addportmap (self.chassis, "i", w2)
+                else:
+                    wd.addportmap (self.chassis, "i", w)
+                    wd.addportmap (self.chassis, "o", w2)
+                w = w2
+                wd.addgenericmap (self.chassis, "delay", str (delay))
                 self.chassis.signals[w] = w
         return w
     
@@ -509,6 +545,8 @@ class Connector (object):
                 if m.group (4):
                     try:
                         wlen = int (m.group (4))
+                        if wlen < 1 or wlen > 180:
+                            raise ValueError
                     except (TypeError, ValueError):
                         error ("invalid wire length %s pin %d in %s"
                                % (m.group (4), pnum, curslot))                    
@@ -626,12 +664,13 @@ class Wire (cmodule.Signal):
     """A wire (twisted pair) between two connector pins in the same chassis.
     The wire is named w_out where out is slot_pin.
     """
-    def __init__ (self, end1, end2, prefix = ""):
+    def __init__ (self, end1, end2, wlen = 0, prefix = ""):
         name = "w%s_%s" % (prefix, end1)
         cmodule.Signal.__init__ (self, name)
         self.sourcename = end1
         self.destname = end2
         self.ptype = "logicsig"
+        self.wlen = wlen
         
 class Cablewire (cmodule.Signal):
     """A strand of a cable terminating at some pin in this chassis.
