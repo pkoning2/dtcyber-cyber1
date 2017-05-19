@@ -38,7 +38,6 @@ entity rl is
       p27 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
       p3 : out logicsig;
@@ -46,6 +45,7 @@ entity rl is
       p5 : out logicsig;
       p8 : out logicsig;
       p15 : out logicsig;
+      p18_tp5 : out logicsig;
       p23 : out logicsig;
       p25 : out logicsig;
       p26 : out logicsig;
@@ -300,7 +300,7 @@ begin -- gates
     d => t23,
     y => t24);
 
-  tp5 <= t24;
+  p18_tp5 <= t24;
 
   u32 : g2 port map (
     a => t24,
