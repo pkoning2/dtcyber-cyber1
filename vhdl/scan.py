@@ -146,7 +146,7 @@ class Module:
                 s = "{}\t{}\t{}\t{}\t".format (*p[:4])
                 s = tsp_pat.sub ("", s)
                 if p[4]:
-                    s = "{}{}".format (s, p[4])
+                    s = "{}\t{}".format (s, p[4])
                 ret.append (s)
         return '\n'.join (ret)
     
