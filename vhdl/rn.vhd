@@ -17,7 +17,7 @@
 
 use work.sigs.all;
 
-entity rgslice is
+entity rnslice is
     port (
       a : in  logicsig;
       b : in  logicsig;
@@ -29,8 +29,8 @@ entity rgslice is
       h : in  logicsig;
       y : out coaxsig);
 
-end rgslice;
-architecture gates of rgslice is
+end rnslice;
+architecture gates of rnslice is
   component cxdriver4
     port (
       a : in  logicsig;
@@ -93,7 +93,7 @@ end gates;
 
 use work.sigs.all;
 
-entity rg is
+entity rn is
     port (
       p2 : in  logicsig;
       p4 : in  logicsig;
@@ -116,8 +116,8 @@ entity rg is
       p21_tp6 : out coaxsig;
       p23_p25_tp5 : out coaxsig);
 
-end rg;
-architecture gates of rg is
+end rn;
+architecture gates of rn is
   component inv
     port (
       a : in  logicsig;
@@ -125,7 +125,7 @@ architecture gates of rg is
 
   end component;
 
-  component rgslice
+  component rnslice
     port (
       a : in  logicsig;
       b : in  logicsig;
@@ -165,7 +165,7 @@ begin -- gates
     y => d);
 
 
-  u5 : rgslice port map (
+  u5 : rnslice port map (
     a => a,
     b => b,
     c => c,
@@ -177,7 +177,7 @@ begin -- gates
     y => p3_tp1);
 
 
-  u6 : rgslice port map (
+  u6 : rnslice port map (
     a => a,
     b => b,
     c => c,
@@ -189,7 +189,7 @@ begin -- gates
     y => p23_p25_tp5);
 
 
-  u7 : rgslice port map (
+  u7 : rnslice port map (
     a => a,
     b => b,
     c => c,

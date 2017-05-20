@@ -17,7 +17,7 @@
 
 use work.sigs.all;
 
-entity rl is
+entity ro is
     port (
       p2 : in  logicsig;
       p4 : in  logicsig;
@@ -51,8 +51,8 @@ entity rl is
       p26 : out logicsig;
       p28 : out logicsig);
 
-end rl;
-architecture gates of rl is
+end ro;
+architecture gates of ro is
   component g2
     port (
       a : in  logicsig;
