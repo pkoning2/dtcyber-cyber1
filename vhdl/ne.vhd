@@ -132,7 +132,6 @@ architecture gates of ne is
 
   end component;
 
-  signal  : logicsig;
   signal a : logicsig;
   signal b : logicsig;
   signal c : logicsig;

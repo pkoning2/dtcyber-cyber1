@@ -177,7 +177,7 @@ begin -- gates
     d => p9,
     e => p11,
     tp => tp2,
-    y1 => p6
+    y1 => p6,
     y2 => p10_p12,
     y3 => p8);
 
@@ -189,7 +189,7 @@ begin -- gates
     d => p2,
     e => p4,
     tp => tp1,
-    y1 => p7
+    y1 => p7,
     y2 => p1_p3,
     y3 => p5);
 
@@ -213,7 +213,7 @@ begin -- gates
     d => p19,
     e => p20,
     tp => tp5,
-    y1 => p23
+    y1 => p23,
     y2 => p15_p17,
     y3 => p21);
 
