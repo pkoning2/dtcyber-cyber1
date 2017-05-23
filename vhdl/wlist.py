@@ -300,7 +300,7 @@ class Chassis (cmodule.cmod):
             mtype = cmodule.elements[modname]
         except KeyError:
             #print "reading", modname
-            mtype = cmodule.readmodule (modname, True)
+            mtype = cmodule.readmodule (modname)
         inst = self.elements[slot] = cmodule.ElementInstance (slot, modname)
         addstd (self, inst)
         return inst

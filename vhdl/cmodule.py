@@ -819,7 +819,7 @@ _re_chdr = re.compile ("(--.*\n)+", re.M)
 _re_pinname = re.compile (r"p\d+(_|$)")
 _re_cright = re.compile (r"copyright \(c\) (\d+)((?:[-, ]+\d+)*)", re.I)
 
-def readmodule (modname, allports = False):
+def readmodule (modname):
     """Read a module definition VHD file and return the top
     level module object
     """
@@ -887,13 +887,9 @@ def readmodule (modname, allports = False):
                         continue
                     opt = True
                     optval = pins.group (4)[-3:]
-                elif ptype != "misc" and not allports:
-                    continue
             #print pins.groups ()
             for p in pins.group (1).replace (" ", "").split (","):
-                if p not in e.pinnames and \
-                   (p in e.pins or opt or allports or \
-                    not gates or ptype == "misc"):
+                if p not in e.pinnames:
                     e.pins[p] = Pin (p, dir, ptype, opt, optval)
         # Do this again to handle pins we added above
         e.finish ()

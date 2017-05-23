@@ -159,7 +159,7 @@ class Module:
         except KeyError:
             #print ("reading", modname)
             try:
-                self.mtype = cmodule.readmodule (modname, True)
+                self.mtype = cmodule.readmodule (modname)
                 # Fill in pinnames because that doesn't get done by
                 # readmodule, TBD why not.
                 for pl, p in self.mtype.pins.items ():
