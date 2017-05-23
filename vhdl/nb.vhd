@@ -34,7 +34,7 @@ entity nb is
       tp4 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
-      p10_p12_11_p13_p1_p3_p5_p7_p28_p26_p24_p22_p25_p23_p21_p19 : out logicsig;
+      p10_p12_p11_p13_p1_p3_p5_p7_p28_p26_p24_p22_p25_p23_p21_p19 : out logicsig;
       p15_tp2 : out logicsig);
 
 end nb;
@@ -141,7 +141,7 @@ begin -- gates
 
   u9 : inv port map (
     a => t10,
-    y => p10_p12_11_p13_p1_p3_p5_p7_p28_p26_p24_p22_p25_p23_p21_p19);
+    y => p10_p12_p11_p13_p1_p3_p5_p7_p28_p26_p24_p22_p25_p23_p21_p19);
 
 
   u11 : g3 port map (

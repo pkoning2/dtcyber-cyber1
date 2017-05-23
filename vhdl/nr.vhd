@@ -20,11 +20,11 @@ use work.sigs.all;
 entity nr is
     port (
       p4 : in  logicsig;
+      p10 : in  logicsig;
       p14 : in  logicsig;
       p15 : in  logicsig;
       p19 : in  logicsig;
       p27 : in  logicsig;
-      p101 : in  logicsig;
       tp2 : out logicsig;
       p2 : out logicsig;
       p3 : out logicsig;
@@ -129,7 +129,7 @@ begin -- gates
 
 
   u4 : inv2 port map (
-    a => p101,
+    a => p10,
     y => g,
     y2 => h);
 

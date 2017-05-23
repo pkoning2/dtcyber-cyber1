@@ -20,6 +20,7 @@ use work.sigs.all;
 entity np is
     port (
       p2 : in  logicsig;
+      p19 : in  logicsig;
       p21 : in  logicsig;
       p25 : in  logicsig;
       p26 : in  logicsig;
@@ -30,9 +31,15 @@ entity np is
       p6_tp1 : out logicsig;
       p7 : out logicsig;
       p8_tp3 : out logicsig;
+      p11 : out logicsig;
+      p13 : out logicsig;
+      p15 : out logicsig;
+      p16 : out logicsig;
+      p17 : out logicsig;
       p22_tp5 : out logicsig;
       p23_tp6 : out logicsig;
-      p24 : out logicsig);
+      p24 : out logicsig;
+      p28 : out logicsig);
 
 end np;
 architecture gates of np is
@@ -88,6 +95,11 @@ architecture gates of np is
   signal t12 : logicsig;
   signal t13 : logicsig;
   signal t14 : logicsig;
+  signal t20 : logicsig;
+  signal t21 : logicsig;
+  signal t22 : logicsig;
+  signal t23 : logicsig;
+  signal t24 : logicsig;
 
 begin -- gates
   u1 : inv2 port map (
@@ -207,6 +219,51 @@ begin -- gates
     a => t14,
     b => f,
     y => p8_tp3);
+
+
+  u20 : inv port map (
+    a => p19,
+    y => t20);
+
+
+  u21 : g2 port map (
+    a => a,
+    b => t20,
+    y => p28);
+
+
+  u22 : g2 port map (
+    a => p19,
+    b => b,
+    y => t21,
+    y2 => t22);
+
+  p17 <= t21;
+  
+  u23 : g2 port map (
+    a => t21,
+    b => c,
+    y => p15);
+
+
+  u24 : g2 port map (
+    a => t22,
+    b => d,
+    y => t23,
+    y2 => t24);
+
+  p13 <= t23;
+
+  u25 : g2 port map (
+    a => t23,
+    b => e,
+    y => p16);
+
+
+  u26 : g2 port map (
+    a => t24,
+    b => f,
+    y => p11);
 
 
 

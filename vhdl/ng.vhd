@@ -37,6 +37,7 @@ entity ng is
       p4 : out logicsig;
       p6 : out logicsig;
       p11_tp3 : out logicsig;
+      p13_tp4 : out logicsig;
       p16 : out logicsig;
       p17 : out logicsig;
       p22 : out logicsig;
@@ -241,6 +242,12 @@ begin -- gates
     b => t11,
     c => p,
     y => p16);
+
+
+  u21 : g2 port map (
+    a => j,
+    b => l,
+    y => p13_tp4);
 
 
 

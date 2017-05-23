@@ -32,15 +32,20 @@ entity nk is
       p26 : in  logicsig;
       p28 : in  logicsig;
       tp1 : out logicsig;
+      tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
+      p4 : out logicsig;
+      p6 : out logicsig;
       p11_tp3 : out logicsig;
       p13_tp4 : out logicsig;
       p16 : out logicsig;
+      p17 : out logicsig;
       p22 : out logicsig;
       p23 : out logicsig;
-      p25 : out logicsig);
+      p25 : out logicsig,
+      p27 : out logicsig);
 
 end nk;
 architecture gates of nk is
@@ -101,6 +106,7 @@ architecture gates of nk is
   signal t5 : logicsig;
   signal t6 : logicsig;
   signal t7 : logicsig;
+  signal t10 : logicsig;
 
 begin -- gates
   u1 : g2 port map (
@@ -223,12 +229,14 @@ begin -- gates
     y => e,
     y2 => f);
 
+  p17 <= f;
 
   u20 : inv2 port map (
     a => p28,
     y => g,
     y2 => h);
 
+  p27 <= h
 
   u21 : inv port map (
     a => p20,
@@ -239,6 +247,21 @@ begin -- gates
     a => p21,
     b => p19,
     y => p23);
+
+
+  u23 : g3 port map (
+    a => j,
+    b => a,
+    c => e,
+    y => t10);
+
+  tp2 <= t10;
+
+  u24 : g2 port map (
+    a => t10,
+    b => i,
+    y => p4,
+    y2 => p6);
 
 
 

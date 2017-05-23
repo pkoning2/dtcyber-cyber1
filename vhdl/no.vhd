@@ -32,7 +32,7 @@ entity no is
       tp1 : out logicsig;
       tp2 : out logicsig;
       tp5 : out logicsig;
-      p1_p12 : out logicsig;
+      p1_p12_p25_tp3 : out logicsig;
       p7 : out logicsig;
       p8_p10 : out logicsig;
       p9 : out logicsig;
@@ -135,7 +135,7 @@ begin -- gates
     b => t1,
     y => t2);
 
-  p1_p12 <= t2;
+  p1_p12_p25_tp3 <= t2;
 
   u6 : g2 port map (
     a => t2,

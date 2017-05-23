@@ -21,6 +21,7 @@ entity kt is
     port (
       p6 : in  coaxsig;
       p7 : in  logicsig;
+      p8 : in  logicsig;
       p9 : in  logicsig;
       p13 : in  logicsig;
       p14 : in  logicsig;
@@ -140,7 +141,7 @@ begin -- gates
 
   u2 : rs2flop port map (
     r => c,
-    s => p18,
+    s => p8,
     s2 => t1,
     q => t2,
     qb => t3);

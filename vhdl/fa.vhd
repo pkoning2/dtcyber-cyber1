@@ -35,6 +35,7 @@ entity fa is
       p2 : out logicsig;
       p6 : out logicsig;
       p8_p13 : out logicsig;
+      p10 : out logicsig;
       p15 : out logicsig;
       p17 : out logicsig;
       p25 : out logicsig;
@@ -116,6 +117,7 @@ begin -- gates
     a => p11,
     y => a);
 
+  p10 <= a;
 
   u2 : rsflop port map (
     r => a,

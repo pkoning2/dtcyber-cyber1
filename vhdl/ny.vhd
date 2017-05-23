@@ -124,7 +124,7 @@ entity ny is
       tp4 : out logicsig;
       p10_p12_p14 : out logicsig;
       p26 : out logicsig;
-      p28_tp6 : out logicsig);
+      p25_tp6 : out logicsig);
 
 end ny;
 architecture gates of ny is
@@ -199,7 +199,7 @@ begin -- gates
     a => t1,
     b => t2,
     y => p26,
-    y2 => p28_tp6);
+    y2 => p25_tp6);
 
 
   u3 : inv port map (

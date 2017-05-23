@@ -36,6 +36,7 @@ entity ct is
       p2_p4_p6_p10_p12_p14 : out logicsig;
       p18_p19_p22 : out logicsig;
       p21 : out logicsig;
+      p24 : out logicsig;
       p28 : out logicsig);
 
 end ct;
@@ -170,7 +171,8 @@ begin -- gates
     qb => t3);
 
   tp6 <= t2;
-
+  p24 <= t3
+         
   u10 : inv port map (
     a => t2,
     y => p18_p19_p22);
