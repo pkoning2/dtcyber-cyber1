@@ -361,7 +361,7 @@ class Connector (object):
                     w = self.chassis.aliases["w_%s" % end1]
                 except KeyError:
                     # Wire is not defined yet.  Define it
-                    w = Wire (end1, end2, wlen)
+                    w = Wire (end1, end2, wlen, ptype = None)
                     delay = self.wdelay (wlen)
                     if delay:
                         # Delay is large enough to model
@@ -380,7 +380,7 @@ class Connector (object):
             try:
                 w = self.chassis.signals["w_%s" % end1]
             except KeyError:
-                w = Wire (end1, end2, wlen)
+                w = Wire (end1, end2, wlen, ptype = None)
                 delay = self.wdelay (wlen)
                 if delay:
                     # Delay is large enough to model
@@ -664,12 +664,12 @@ class Wire (cmodule.Signal):
     """A wire (twisted pair) between two connector pins in the same chassis.
     The wire is named w_out where out is slot_pin.
     """
-    def __init__ (self, end1, end2, wlen = 0, prefix = ""):
+    def __init__ (self, end1, end2, wlen = 0, prefix = "", ptype = "logicsig"):
         name = "w%s_%s" % (prefix, end1)
         cmodule.Signal.__init__ (self, name)
         self.sourcename = end1
         self.destname = end2
-        self.ptype = "logicsig"
+        self.ptype = ptype
         self.wlen = wlen
         
 class Cablewire (cmodule.Signal):
