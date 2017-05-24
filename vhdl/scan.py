@@ -353,7 +353,9 @@ class entrywin (wx.Window):
             if not refs[pnum]:
                 pmod = pin[1]
                 if pmod and not \
-                  (pmod.startswith ("W") or pmod.startswith ("GN")):
+                  (pmod.startswith ("W") or pmod.startswith ("GN") or
+                   pmod.startswith ("GR") or
+                   (pmod == self.slot and pin[2] == "X")):
                     style = self.greenstyle
                     self.review[pnum] = True
             if pin[:-1] + [""] not in refs[pnum]:
