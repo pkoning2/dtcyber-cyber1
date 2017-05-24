@@ -30,6 +30,7 @@ entity ns is
       p17 : in  logicsig;
       p18 : in  logicsig;
       p20 : in  logicsig;
+      p23 : in  logicsig;
       p24 : in  logicsig;
       p25 : in  logicsig;
       p28 : in  logicsig;
@@ -46,7 +47,6 @@ entity ns is
       p19 : out logicsig;
       p21_tp3 : out logicsig;
       p22 : out logicsig;
-      p23 : out logicsig;
       p26_tp5 : out logicsig;
       p27 : out logicsig);
 

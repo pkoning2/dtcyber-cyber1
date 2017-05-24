@@ -21,6 +21,7 @@ entity nq is
     port (
       p3 : in  logicsig;
       p7 : in  logicsig;
+      p8 : in  logicsig;
       p15 : in  logicsig;
       p16 : in  logicsig;
       p18 : in  logicsig;
@@ -31,7 +32,6 @@ entity nq is
       p4 : out logicsig;
       p5 : out logicsig;
       p6 : out logicsig;
-      p8 : out logicsig;
       p9 : out logicsig;
       p10 : out logicsig;
       p11_tp2 : out logicsig;

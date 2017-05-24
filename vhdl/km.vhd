@@ -26,7 +26,6 @@ entity km is
       p14 : in  logicsig;
       p15 : in  logicsig;
       p16 : in  logicsig;
-      p17 : in  logicsig;
       p18 : in  logicsig;
       p19 : in  logicsig;
       p21 : in  coaxsig;
@@ -42,6 +41,7 @@ entity km is
       p10 : out logicsig;
       p11 : out logicsig;
       p12 : out logicsig;
+      p17 : out logicsig;
       p20 : out logicsig;
       p22 : out logicsig;
       p23 : out logicsig;
