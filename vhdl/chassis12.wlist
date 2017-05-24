@@ -1,7 +1,4 @@
 #
-# Latest version update from
-#  63016700F_6601A-H_6604A-B_Central_Computer_Chassis_12_Dec65/*.tiff
-#
 # Original OCR from 63016700A_6600_Chassis_Tabs_12_Apr65.pdf
 #
 # That document is one of the CDC 6600 "Chassis Tabs" manuals
@@ -3694,35 +3691,6 @@ HQ	12D06
 26	F42	16	33
 27
 28	F28	16	23
-QJ	12D07
-1
-2
-3
-4
-5	W4	907
-6	E10	5	11
-7	C4	906
-8
-9
-10
-11	D4	19	9
-12
-13
-14
-15
-16
-17
-18	D4	17	5
-19
-20
-21
-22
-23
-24
-25
-26
-27
-28
 TB	12D08
 1
 2	C6	6	9
