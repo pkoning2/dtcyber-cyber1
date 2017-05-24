@@ -31,6 +31,7 @@ entity mu is
       p21 : in  logicsig;
       p23 : in  logicsig;
       p25 : in  logicsig;
+      p27 : in  logicsig;
       p14_tp1 : out logicsig;
       tp2 : out logicsig;
       tp4 : out logicsig;
@@ -41,7 +42,6 @@ entity mu is
       p20_p22_tp5 : out logicsig;
       p24 : out logicsig;
       p26 : out logicsig;
-      p27 : out logicsig;
       p28 : out logicsig);
 
 end mu;
