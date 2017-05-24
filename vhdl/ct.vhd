@@ -171,7 +171,7 @@ begin -- gates
     qb => t3);
 
   tp6 <= t2;
-  p24 <= t3
+  p24 <= t3;
          
   u10 : inv port map (
     a => t2,

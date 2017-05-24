@@ -44,7 +44,7 @@ entity nk is
       p17 : out logicsig;
       p22 : out logicsig;
       p23 : out logicsig;
-      p25 : out logicsig,
+      p25 : out logicsig;
       p27 : out logicsig);
 
 end nk;
@@ -236,7 +236,7 @@ begin -- gates
     y => g,
     y2 => h);
 
-  p27 <= h
+  p27 <= h;
 
   u21 : inv port map (
     a => p20,
