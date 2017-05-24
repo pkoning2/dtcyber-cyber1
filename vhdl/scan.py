@@ -6,6 +6,7 @@ import os
 import re
 import glob
 import collections
+import argparse
 
 import wx
 import PyPDF2
@@ -288,6 +289,7 @@ class entrywin (wx.Window):
         self.defstyle = wx.TextAttr (wx.BLACK)
         self.redstyle = wx.TextAttr (wx.RED)
         self.bluestyle = wx.TextAttr (wx.BLUE)
+        self.greenstyle = wx.TextAttr (wx.GREEN)
         sz = wx.Size (cw * 9, ch * 1.5)
         # Some of these have no effect for some reason: process_enter
         # seems to be ignored if multiline.
@@ -344,10 +346,20 @@ class entrywin (wx.Window):
             self.maxline = 28
         assert len (pins) == self.maxline
         self.refnums = [ -1 ] * (self.maxline + 1)
+        self.review = [ False ] * (self.maxline + 1)
         for pnum1, pin in enumerate (pins):
             pnum = pnum1 + 1
+            style = self.defstyle
+            if not refs[pnum]:
+                pmod = pin[1]
+                if pmod and not \
+                  (pmod.startswith ("W") or pmod.startswith ("GN")):
+                    style = self.greenstyle
+                    self.review[pnum] = True
             if pin[:-1] + [""] not in refs[pnum]:
                 refs[pnum].append (list (pin))
+            if len (refs[pnum]) > 2:
+                style = self.bluestyle
             lb, tmod, tpin, tlen, tcomment = self.lines[pnum]
             vnum, vmod, vpin, vlen, vcomment = pin
             tmod.ChangeValue (vmod)
@@ -356,10 +368,6 @@ class entrywin (wx.Window):
             tcomment.SetLabel (vcomment)
             #if len (refs[pnum]) > 1:
             #    print (pnum, refs[pnum])
-            if len (refs[pnum]) > 2:
-                style = self.bluestyle
-            else:
-                style = self.defstyle
             tmod.SetStyle (0, len (tmod.Value), style)
             tpin.SetStyle (0, len (tpin.Value), style)
             tlen.SetStyle (0, len (tlen.Value), style)
@@ -368,13 +376,18 @@ class entrywin (wx.Window):
                     x, rmod, rpin, rlen, rcomment = r
                     if vcomment != rcomment:
                         tmod.SetStyle (0, len (tmod.Value), self.bluestyle)
+                        self.review[pnum] = True
                     if vmod != rmod or (not vlen and rlen) or \
                        (not vpin and rpin):
                         tmod.SetStyle (0, len (tmod.Value), self.redstyle)
+                        self.review[pnum] = True
                     if vpin != rpin or (not vlen and rlen):
                         tpin.SetStyle (0, len (tpin.Value), self.redstyle)
+                        self.review[pnum] = True
                     if vlen != rlen:
                         tlen.SetStyle (0, len (tlen.Value), self.redstyle)
+                        if checkwires:
+                            self.review[pnum] = True
                     
     def nextref (self, pnum = None):
         if not pnum:
@@ -434,6 +447,14 @@ class entrywin (wx.Window):
         for f in range (3, id - 1, -1):
             self.lines[pnum][f + 1].Value = self.lines[pnum][f].Value
         self.lines[pnum][id].Value = ""
+
+    def slotref (self):
+        id = wx.Window.FindFocus ().Id
+        pnum, id = divmod (id, 4)
+        if not pnum:
+            return None, None
+        ret = self.lines[pnum][1].Value, self.lines[pnum][2].Value
+        return ret
         
     def setmtype (self, mtype):
         mod = self.mod
@@ -455,8 +476,11 @@ class entrywin (wx.Window):
             self.maxline = 28
         
     def top (self):
-        # Position at the first pin
-        self.curline = 0
+        self.setline (1)
+
+    def setline (self, lnum):
+        # Position at the specified line
+        self.curline = lnum - 1
         self.field = 3
         #wx.PostEvent (self, wx.NavigationKeyEvent ())
         self.nextline (None)
@@ -484,7 +508,7 @@ class entrywin (wx.Window):
         while l > 1:
             l -= 1
             t = self.lines[l][self.field]
-            if red and len (self.refs[l]) < 2:
+            if red and not self.review[l]:
                 continue
             if t.Enabled:
                 self.curline = l
@@ -493,9 +517,11 @@ class entrywin (wx.Window):
             
     def down (self, red = False):
         l = self.curline
+        if not 0 < l < 29:
+            l = 1
         while l < 28 or red:
             l += 1
-            if red and len (self.refs[l]) < 2:
+            if red and not self.review[l]:
                 if l >= 28:
                     if self.parent.nextslot ():
                         return
@@ -580,6 +606,7 @@ class topframe (wx.Frame):
         self.pages = list ()
         self.slotlocs = dict ()
         self.modified = False
+        self.pagehistory = list ()
         next = None
         for m in wlist._re_wmod.finditer (t):
             mod = Module (m)
@@ -612,6 +639,17 @@ class topframe (wx.Frame):
         self.showpage ()
         self.SetClientSize (wx.Size (fw + self.eframe.Size.width, fh))
 
+    def slotref (self, slot):
+        slot = slot.upper ()
+        try:
+            loc = self.slotlocs[slot]
+        except KeyError:
+            return None
+        g, right = loc
+        g = g * 4 + right * 2
+        g = max (self.minindex, min (g, self.maxindex))
+        return g
+        
     def key (self, event = None):
         k = event.GetKeyCode ()
         ctrl = event.RawControlDown ()
@@ -626,6 +664,27 @@ class topframe (wx.Frame):
                 if event.Skipped:
                     self.nextslot ()
                     event.Skip (False)
+            elif k == wx.WXK_LEFT and shift:
+                # shift leftarrow: view previously shown page/line in history
+                try:
+                    h, line = self.pagehistory.pop ()
+                    self.index = h
+                    self.showpage ()
+                    self.eframe.setline (line)
+                except IndexError:
+                    pass
+            elif k == wx.WXK_RIGHT and shift:
+                # shift rightarrow, view page mentioned by current line
+                slot, line = self.eframe.slotref ()
+                if slot:
+                    slot = self.slotref (slot)
+                    if slot:
+                        line = int (line)
+                if slot:
+                    self.pagehistory.append ((self.index, self.eframe.curline))
+                    self.index = slot
+                    self.showpage ()
+                    self.eframe.setline (line)
             elif k == wx.WXK_RETURN:
                 self.eframe.nextline (event)
                 if event.Skipped:
@@ -666,16 +725,14 @@ class topframe (wx.Frame):
             d.SetMaxLength (5)
             d.ShowModal ()
             if shift:
-                slot = d.Value.upper ()
-                try:
-                    loc = self.slotlocs[slot]
-                except KeyError:
+                g = self.slotref (d.Value)
+                if g is None:
                     return
-                g, right = loc
-                g = g * 4 + right * 2
             else:
                 g = (int (d.Value) - self.firstpage) * 4
-            self.index = max (self.minindex, min (g, self.maxindex))
+                g = max (self.minindex, min (g, self.maxindex))
+            self.pagehistory.append ((self.index, self.eframe.curline))
+            self.index = g
             self.showpage ()
         elif k == 's':
             # Ctrl/S, save file
@@ -769,28 +826,33 @@ class topframe (wx.Frame):
             self.nextslot ()
         else:
             self.prevslot ()
-        
+
+ap = argparse.ArgumentParser ()
+ap.add_argument ("wirelist", help = "Chassis wire list")
+ap.add_argument ("-o", "--offset", type = float, default = 0.08,
+                 help = "Vertical offset fraction (default = 0.08)")
+ap.add_argument ("-w", "--wires", action = "store_true",
+                 default = False, help = "Include wire length for review")
+ap.add_argument ("-p", "--pdf", help = "Path to PDF file for scan images")
+
 class scanApp (wx.App):
-    def start (self, args):
+    def start (self, p):
         """Start the wx App main loop.
         This finds a font, then opens up a Frame
         """
-        global display, defvoff
+        global display, defvoff, checkwires
         self.app = wx.App ()
         display = wx.Display ()
-        wl_fn = args[0]
+        wl_fn = p.wirelist
         wl = wlist.readfile (wl_fn, False)
         m = img_pat.search (wl[0])
-        if len (args) > 1:
-            defvoff = float (args[1])
-        else:
-            defvoff = 0.08
-        if len (args) > 2:
-            pdf_filename = args[2]
-        elif m:
+        defvoff = p.offset
+        pdf_filename = p.pdf
+        checkwires = p.wires
+        if not pdf_filename and m:
             pdf_filename = os.path.join (pdf_path, m.group (0))
         else:
-            print ("No PDF file name")
+            print ("No PDF file name found in wire list")
             sys.exit (1)
         print (wl_fn, pdf_filename)
         self.tf = topframe (display, wx.ID_ANY, "Scan display",
@@ -803,9 +865,10 @@ class scanApp (wx.App):
         # Come here only on application exit.
         display = None
     
-def main (args):
+def main ():
+    p = ap.parse_args ()    
     app = scanApp ()
-    app.start (args)
+    app.start (p)
     
 if __name__ == "__main__":
-    main (sys.argv[1:])
+    main ()
