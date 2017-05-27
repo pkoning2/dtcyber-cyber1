@@ -97,6 +97,7 @@ entity cz is
       p20 : in  logicsig;
       p22 : in  logicsig;
       p26 : in  logicsig;
+      tp1 : out logicsig;
       tp5 : out logicsig;
       p1 : out logicsig;
       p5_p7 : out logicsig;
@@ -230,6 +231,7 @@ begin -- gates
     a => t8,
     y => c);
 
+  tp1 <= c;
 
 
 end gates;

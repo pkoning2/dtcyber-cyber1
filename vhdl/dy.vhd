@@ -113,7 +113,6 @@ architecture gates of dy is
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t9 : logicsig;
   signal t11 : logicsig;
   signal t12 : logicsig;
   signal t19 : logicsig;
@@ -187,14 +186,14 @@ begin -- gates
 
 
   u11 : g2 port map (
-    a => t9,
+    a => t19,
     b => p13,
     y => p23);
 
-  p9_p19_p20 <= t9;
+  p9_p19_p20 <= t19;
 
   u12 : g3 port map (
-    a => t9,
+    a => t19,
     b => e,
     c => p13,
     y => p11_tp3);
