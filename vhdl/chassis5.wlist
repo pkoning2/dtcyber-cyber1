@@ -12,7 +12,7 @@
 # "6604 and 6614 only".  Only the former are included here, because that
 # corresponds to the full 128kW (32 bank) memory configuration.
 #
-# Starting page 14
+# Starting page 6
 IA	5A1
 1
 2	E16	15	25
@@ -5444,7 +5444,7 @@ AJ	5E20
 5	F21	20	9
 6
 7	E28	14	11
-8	GND	X	2
+8	F17	23	7		# Error in scan, gnd instead of clock
 9	C13	15	13
 10
 11	C38	15	21
@@ -5473,7 +5473,7 @@ AJ	5E21
 5	F21	22	7
 6
 7	E28	8	11
-8	GND	X	2
+8	F17	25	7		# Error in scan, ground instead of clock
 9	C14	15	13
 10
 11	C39	15	21
@@ -5502,7 +5502,7 @@ AJ	5E22
 5	F21	24	9
 6
 7	E28	7	9
-8	GND	X	2
+8	F17	26	7		# Error in scan, ground instead of clock
 9	C15	15	13
 10
 11	C40	15	21
@@ -6590,10 +6590,10 @@ TC	5F17
 20	H4	15	17
 21	O40	23	180
 22	H21	10	13
-23
+23	E20	8	7		# Missing in scan
 24	G27	15	49
-25
-26
+25	E21	8	7		# Missing in scan
+26	E22	8	7		# Missing in scan
 27	H28	14	15
 28	H28	19	17
 IC	5F18
@@ -8583,7 +8583,7 @@ AN	5H2
 12	J29	11	29
 13	N28	2	35
 14	N30	24	35
-15	Q26	8
+15	Q26	8	43
 16	J28	11	27
 17
 18	F26	10	27
@@ -13936,7 +13936,7 @@ IN	5L18
 IN	5L19
 1	M3	14	19
 2	G13	17	25
-3	Q26	7	25	###3	Q20	14	132
+3	Q26	7	25
 4	G13	28	23
 5	M3	27	19
 6	G13	15	25
@@ -13948,7 +13948,7 @@ IN	5L19
 12	K15	1	7
 13	P13	18	21
 14	K15	2	7
-15	Q20	14	132	###15	Q26	7	25
+15	Q20	14	132
 16	K15	27	7
 17	M23	21	11
 18	I36	2	23
@@ -20233,8 +20233,8 @@ TD	5Q26
 4	N21	25	27
 5	G29	11	41
 6	R38	20	15
-7	L19	3	25	###7	L19	15	25
-8	H2	15
+7	L19	3	25
+8	H2	15	43
 9
 10	Q4	18	156
 11
