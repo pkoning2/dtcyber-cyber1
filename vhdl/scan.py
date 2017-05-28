@@ -214,13 +214,14 @@ class scanwin (wx.Window):
 
     It handles repaint and close events.
     """
-    def __init__ (self, parent, id, size, pos, fn):
+    def __init__ (self, parent, id, size, pos, fn, wide):
         wx.Window.__init__ (self, parent, id, pos, size)
         self.Bind (wx.EVT_PAINT, self.OnPaint)
         self.Bind (wx.EVT_CLOSE, self.OnClose)
         self.doShow = True
         self.SetBackgroundColour (wx.WHITE)
         self.bitmap = self.page = None
+        self.wide = wide
         if "*" in fn:
             # Wildcard TIF files
             assert ".tif" in fn.lower ()
@@ -577,9 +578,7 @@ class entrywin (wx.Window):
         self.Destroy ()
 
 class topframe (wx.Frame):
-    wscale = 0.32
-    
-    def __init__ (self, display, id, name, fn, wl, wl_fn):
+    def __init__ (self, display, id, name, fn, wl, p):
         framestyle = (wx.MINIMIZE_BOX |
                       wx.MAXIMIZE_BOX |
                       wx.RESIZE_BORDER |
@@ -590,13 +589,17 @@ class topframe (wx.Frame):
         self.display = display
         self.doShow = True
         x, y, w, h = display.ClientArea
+        if p.wide:
+            wscale = 0.8
+        else:
+            wscale = 0.32
         fh = h
-        fw = h * self.wscale
+        fw = h * wscale
         tm = y
         wx.Frame.__init__ (self, None, id, name,
                            pos = wx.Point (w / 5, y), style = framestyle)
         self.wl = wl
-        self.wl_fn = wl_fn
+        self.wl_fn = p.wirelist
         h, t = wl
         self.header = h.splitlines ()
         m = first_pat.match (self.header[-1])
@@ -632,7 +635,7 @@ class topframe (wx.Frame):
             self.maxindex -= 1
         self.index = self.minindex
         self.sframe = scanwin (self, wx.ID_ANY, wx.Size (fw, fh),
-                               wx.Point (0, 0), fn)
+                               wx.Point (0, 0), fn, p.wide)
         self.Bind (wx.EVT_CHAR_HOOK, self.key)
         self.Bind (wx.EVT_TEXT_ENTER, self.nextslot)
         self.sframe.Show (True)
@@ -836,6 +839,8 @@ ap.add_argument ("-o", "--offset", type = float, default = 0.08,
 ap.add_argument ("-w", "--wires", action = "store_true",
                  default = False, help = "Include wire length for review")
 ap.add_argument ("-p", "--pdf", help = "Path to PDF file for scan images")
+ap.add_argument ("--wide", action = "store_true", default = False,
+                 help = "Show entire half-page with pins")
 
 class scanApp (wx.App):
     def start (self, p):
@@ -858,7 +863,7 @@ class scanApp (wx.App):
             sys.exit (1)
         print (wl_fn, pdf_filename)
         self.tf = topframe (display, wx.ID_ANY, "Scan display",
-                            pdf_filename, wl, wl_fn)
+                            pdf_filename, wl, p)
         self.tf.Show (True)
         self.running = True
         print ("entering mainloop")
