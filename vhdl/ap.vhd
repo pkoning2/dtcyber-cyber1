@@ -105,7 +105,6 @@ architecture gates of ap is
   signal t5 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
-  signal t9 : logicsig;
 
 begin -- gates
   u1 : g3 port map (
@@ -241,13 +240,13 @@ begin -- gates
   u19 : g2 port map (
     a => g,
     b => s,
-    y => t9);
+    y => r);
 
-  p26 <= t9;
+  p26 <= r;
 
   u20 : g2 port map (
-    a => t8,
-    b => t9,
+    a => t7,
+    b => r,
     y => p19_tp6);
 
 
