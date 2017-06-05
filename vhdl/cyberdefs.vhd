@@ -339,10 +339,10 @@ begin  -- beh
   rsflop: process (r, s)
     variable qi : logicsig;
   begin  -- process rsflop
-    if r = '0' then
-      qi := '0';
-    elsif s = '0' then
+    if s = '0' then
       qi := '1';
+    elsif r = '0' then
+      qi := '0';
     end if;
     q <= qi after t;
     qb <= not (qi) after t;
@@ -484,15 +484,16 @@ entity latch is
 
 end latch;
 
--- This model is an approximation; the original implementation
--- accepts low D for clk + t but high D for clk + 2*t, because the
--- basic R/S flip-flop R input is derived from not(clk) which has delay t,
--- but the S input is and(d, not(not(clk)) so there's a delay of 2t there.
--- By way of compromise this model delays the input clock by t.
+-- This model is an approximation; the original implementation accepts
+-- low D for clk + t but high D for clk + 2*t, because the basic R/S
+-- flip-flop R input is derived from not(clk) which has delay t, but
+-- the S input is and(d, not(not(clk)) so there's a delay of 2t there,
+-- plus another t in the D gate, and another in the flop itself.  By
+-- way of compromise this model delays the input clock by 3 * t.
 architecture beh of latch is
   signal clki : logicsig;
 begin  -- beh
-  clki <= clk after t;
+  clki <= transport clk after 3 * t;
   latch: process (clki, d)
     variable qi : logicsig;
   begin  -- process level sensitive latch
@@ -520,7 +521,7 @@ end latchs;
 architecture beh of latchs is
   signal clki : logicsig;
 begin  -- beh
-  clki <= clk after t;
+  clki <= transport clk after 3 * t;
   latchs: process (clki, s, d)
     variable qi : logicsig;
   begin  -- process level sensitive latch
