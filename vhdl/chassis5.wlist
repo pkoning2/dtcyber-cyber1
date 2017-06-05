@@ -12,7 +12,7 @@
 # "6604 and 6614 only".  Only the former are included here, because that
 # corresponds to the full 128kW (32 bank) memory configuration.
 #
-# Starting page 6
+# Starting page 8
 IA	5A1
 1
 2	E16	15	25
@@ -5444,7 +5444,7 @@ AJ	5E20
 5	F21	20	9
 6
 7	E28	14	11
-8	F17	23	7		# Error in scan, gnd instead of clock
+8	F17	23	7	# Error in scan, gnd instead of clock
 9	C13	15	13
 10
 11	C38	15	21
@@ -5473,7 +5473,7 @@ AJ	5E21
 5	F21	22	7
 6
 7	E28	8	11
-8	F17	25	7		# Error in scan, ground instead of clock
+8	F17	25	7	# Error in scan, ground instead of clock
 9	C14	15	13
 10
 11	C39	15	21
@@ -5502,7 +5502,7 @@ AJ	5E22
 5	F21	24	9
 6
 7	E28	7	9
-8	F17	26	7		# Error in scan, ground instead of clock
+8	F17	26	7	# Error in scan, ground instead of clock
 9	C15	15	13
 10
 11	C40	15	21
@@ -5709,7 +5709,7 @@ TC	5E29
 9	C41	12	17
 10	E42	12	17
 11	C42	12	17
-12	#	P12	3	47
+12	P12	3	47
 13	D41	12	15
 14	I22	25	21
 15	A41	12	23
@@ -6590,10 +6590,10 @@ TC	5F17
 20	H4	15	17
 21	O40	23	180
 22	H21	10	13
-23	E20	8	7		# Missing in scan
+23	E20	8	7	# Missing in scan
 24	G27	15	49
-25	E21	8	7		# Missing in scan
-26	E22	8	7		# Missing in scan
+25	E21	8	7	# Missing in scan
+26	E22	8	7	# Missing in scan
 27	H28	14	15
 28	H28	19	17
 IC	5F18
@@ -16076,7 +16076,7 @@ TC	5N8
 23	Q31	3	27
 24	F17	3	87
 25	Q31	14	27
-26	P12	3	7
+26
 27	N21	3	120
 28	Q32	14	96
 TC	5N9
@@ -18604,8 +18604,8 @@ TC	5P11
 28	R34	20	25
 TC	5P12
 1	R27	22	19
-2	Q21	5	13	#3	E29	12	47
-3	N8	26	7
+2	Q21	5	13
+3	E29	12	47
 4	R23	22	17
 5
 6	R22	22	17
@@ -19864,8 +19864,8 @@ RV	5Q13
 12	GRD	X	2
 13	Q25	9	15
 14	Q24	21	15
-15	#16	I25	6	108
-16	Z1	2	1
+15	
+16	Z1	2	1	# I25	6	108
 17	Q25	8	15
 18	Q24	20	15
 19
@@ -19876,8 +19876,8 @@ RV	5Q13
 24
 25
 26	O37	2	31
-27	#28	N07	14	19
-28	Z1	3	1
+27	
+28	Z1	3	1	# N07	14	19
 RV	5Q14
 1
 2
@@ -19905,8 +19905,8 @@ RV	5Q14
 24	P19	20	17
 25	H36	26	41
 26	H36	11	41
-27	#28	Q31	24	25
-28	Z1	4	1
+27	
+28	Z1	4	1	# Q31	24	25
 PA	5Q15
 1	R14	13	7
 2	R14	14	7
@@ -20066,7 +20066,7 @@ TL	5Q20
 11	O33	10	17
 12	O39	3	23
 13	R13	21	23
-14	L19	15	132	###14	L19	3	132
+14	L19	15	132
 15	L25	26	23
 16	Q14	15	9
 17	L25	23	23
