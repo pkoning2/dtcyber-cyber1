@@ -126,7 +126,6 @@ architecture gates of js is
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t6 : logicsig;
-  signal t7 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
   signal t10 : logicsig;
@@ -172,12 +171,6 @@ begin -- gates
     a => p5,
     y => t5,
     y2 => t6);
-
-
-  u6 : g2 port map (
-    a => t4,
-    b => t6,
-    y => t7);
 
 
   u7 : latch port map (
