@@ -328,6 +328,11 @@ class entrywin (wx.Window):
         self.refs = refs
         self.mtype.ChangeValue (mod.modname)
         self.slot.ChangeValue (slot)
+        self.baseslot = ""
+        m2 = wlist._re_chslot.match (slot)
+        if m2:
+            self.slotnum = int (m2.group (3))
+            self.baseslot = m2.group(2).upper () + str (self.slotnum)
         self.pins = pins
         self.pins2 = pins2
         for i, r in enumerate (self.lines):
@@ -356,7 +361,7 @@ class entrywin (wx.Window):
                 if pmod and not \
                   (pmod.startswith ("W") or pmod.startswith ("GN") or
                    pmod.startswith ("GR") or
-                   (pmod == self.slot and pin[2] == "X")):
+                   (pmod == self.baseslot and pin[2] == "X")):
                     style = self.greenstyle
                     self.review[pnum] = True
             if pin[:-1] + [""] not in refs[pnum]:
