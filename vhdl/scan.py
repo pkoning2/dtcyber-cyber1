@@ -7,6 +7,7 @@ import re
 import glob
 import collections
 import argparse
+import operator
 
 import wx
 import PyPDF2
@@ -14,10 +15,18 @@ import struct
 import wlist
 import cmodule
 
+# By Raymond Hettinger, from
+# http://code.activestate.com/recipes/577197-sortedcollection/
+import sortedcollection
+
 img_pat = re.compile (r"\S+\.(pdf|tiff?)", re.I)
 lsp_pat = re.compile (r"^\s+")
 tsp_pat = re.compile (r"\s+$", re.M)
 first_pat = re.compile (r"# Starting page (\d+)", re.I)
+starts_pat = re.compile (r"# Starting pages: ", re.I)
+start_pat = re.compile (r"([a-z]\d{1,2}):(\d+)(?:.(\d))?", re.I)
+page_pat = re.compile (r"(\d+)(.\d)?")
+chslot_pat = re.compile (r"(\d+)?([a-z])(\d{1,2})", re.I)
 
 pdf_path = os.path.expanduser ("~/Documents/cdc/6600 field service")
 
@@ -359,7 +368,8 @@ class entrywin (wx.Window):
             if not refs[pnum]:
                 pmod = pin[1]
                 if pmod and not \
-                  (pmod.startswith ("W") or pmod.startswith ("GN") or
+                  ("W" in pmod or pmod == "GOOD" or
+                   pmod.startswith ("GN") or
                    pmod.startswith ("GR") or
                    (pmod == self.baseslot and pin[2] == "X")):
                     style = self.greenstyle
@@ -607,12 +617,7 @@ class topframe (wx.Frame):
         self.wl_fn = p.wirelist
         h, t = wl
         self.header = h.splitlines ()
-        m = first_pat.match (self.header[-1])
-        if m:
-            page = int (m.group (1))
-        else:
-            page = 4
-        self.firstpage = page
+        self.starts = self.setstarts (self.header[-1])
         self.pages = list ()
         self.slotlocs = dict ()
         self.modified = False
@@ -624,12 +629,14 @@ class topframe (wx.Frame):
                 curpage = [ None, None ]
                 self.pages.append (curpage)
             curpage[mod.right] = mod
+            # Slotlocs gives the scan page position of the modules,
+            # without adjustment for leading cover pages and any
+            # extraneous stuff like duplicate slot descriptions for
+            # product variants.  Those aspects are handled by the
+            # "starts" table.
             self.slotlocs[mod.baseslot] = (len (self.pages) - 1, mod.right)
             next = not mod.right and mod.slotnum + 1
-        if self.pages[0][0]:
-            self.minindex = 0
-        else:
-            self.minindex = 0
+        self.minindex = 0
         self.maxindex = len (self.pages) * 4 - 1
         lp = self.pages[-1]
         lm = lp[1]
@@ -649,8 +656,33 @@ class topframe (wx.Frame):
         self.showpage ()
         self.SetClientSize (wx.Size (fw + self.eframe.Size.width, fh))
 
+    def setstarts (self, s):
+        m = first_pat.match (s)
+        if m:
+            starts = [ ("A1", int (m.group (1)) * 4) ]
+        else:
+            m = starts_pat.match (s)
+            if not m:
+                starts = [ ("A1", 16 ) ]
+            else:
+                starts = list ()
+                for m in start_pat.finditer (s[m.end ():]):
+                    mod, page, subpage = m.groups ()
+                    mod = mod.upper ()
+                    page = int (page) * 4
+                    if subpage:
+                        page += int (subpage) - 1
+                    starts.append ((mod, page))
+        starts = sortedcollection.SortedCollection (starts,
+                                                    operator.itemgetter (0))
+        return starts
+    
     def slotref (self, slot):
         slot = slot.upper ()
+        m = chslot_pat.match (slot.upper ())
+        if not m:
+            return None
+        slot = m.group (2) + m.group (3)
         try:
             loc = self.slotlocs[slot]
         except KeyError:
@@ -708,7 +740,12 @@ class topframe (wx.Frame):
         if k == 'n':
             if shift:
                 # Shift/Ctrl/N, show next scan
-                self.firstpage += 1
+                oldentry = self.starts.find_le (self.slot)
+                smod, sindex = oldentry
+                newentry = (self.slot, self.scanindex + 2)
+                if smod == self.slot:
+                    self.starts.remove (oldentry)
+                self.starts.insert (newentry)
                 self.setmod ()
                 self.showpage ()
             else:
@@ -717,7 +754,12 @@ class topframe (wx.Frame):
         elif k == 'p':
             if shift:
                 # Shift/Ctrl/P, show previous scan
-                self.firstpage = max (1, self.firstpage - 1)
+                oldentry = self.starts.find_le (self.slot)
+                smod, sindex = oldentry
+                newentry = (self.slot, max (0, self.scanindex - 2))
+                if smod == self.slot:
+                    self.starts.remove (oldentry)
+                self.starts.insert (newentry)
                 self.setmod ()
                 self.showpage (False)
             else:
@@ -739,7 +781,13 @@ class topframe (wx.Frame):
                 if g is None:
                     return
             else:
-                g = (int (d.Value) - self.firstpage) * 4
+                m = page_pat.match (d.Value)
+                if m:
+                    g, subpage = m.groups ()
+                    g = int (g) * 4
+                    if subpage:
+                        g += int (subpage) - 1
+                    g -= self.starts[0][1]
                 g = max (self.minindex, min (g, self.maxindex))
             self.pagehistory.append ((self.index, self.eframe.curline))
             self.index = g
@@ -749,8 +797,12 @@ class topframe (wx.Frame):
             backup = self.wl_fn + "~"
             if not os.path.exists (backup):
                 os.rename (self.wl_fn, backup)
-            fp = "# Starting page {}".format (self.firstpage)
-            m = first_pat.match (self.header[-1])
+            starts = ' '.join ("{}:{}.{}".format (smod, sindex // 4,
+                                                  (sindex % 4) + 1)
+                               for (smod, sindex) in self.starts)
+            fp = "# Starting pages: {}".format (starts)
+            m = first_pat.match (self.header[-1]) or \
+                starts_pat.match (self.header[-1])
             if m:
                 self.header[-1] = fp
             else:
@@ -798,13 +850,13 @@ class topframe (wx.Frame):
         self.Title = title
         
     def findrefs (self, mod):
-        slot = mod.slot[1:]
+        slot = mod.baseslot
         refs = collections.defaultdict (list)
         for pg in self.pages:
             for m in pg:
                 if not m:
                     continue
-                oslot = m.slot[1:]
+                oslot = m.baseslot
                 for pnum, pin in enumerate (m.pins[0]):
                     pn, dmod, dpin, wlen, *rest = pin
                     if dmod == slot:
@@ -825,10 +877,14 @@ class topframe (wx.Frame):
         mod = self.pages[page][right]
         pins = mod and mod.pins[pins2]
         if pins:
-            self.curpage = page + self.firstpage
-            self.subpage = subpage
+            self.slot = mod.baseslot
+            smod, sindex = self.starts.find_le (self.slot)
+            self.scanindex = self.index - self.slotref (smod) + sindex
+            self.curpage, self.subpage = divmod (self.scanindex, 4)
             self.settitle ()
-            self.sframe.setbitmap (self.curpage, mod.offsets[subpage], mod.voff)
+            self.sframe.setbitmap (self.curpage,
+                                   mod.offsets[self.subpage],
+                                   mod.voff)
             refs = self.findrefs (mod)
             self.eframe.load (mod, pins, mod.slots[pins2], pins2, refs)
             self.eframe.top ()

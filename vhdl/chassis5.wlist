@@ -12,7 +12,7 @@
 # "6604 and 6614 only".  Only the former are included here, because that
 # corresponds to the full 128kW (32 bank) memory configuration.
 #
-# Starting page 14
+# Starting pages: A1:6.1 I22:185.1 I23:186.1 I24:187.1 I25:188.1 Q10:349.1 Q11:350.1 Q12:351.1 Q13:352.1 Q14:353.3 Q36:365.1 Q37:366.1 Q38:367.1 Q39:368.1 Q40:369.1 Q41:370.1
 IA	5A1
 1
 2	E16	15	25
