@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2008-2010 by Paul Koning
+-- Copyright (C) 2008-2017 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -335,13 +335,15 @@ entity rsflop is
 end rsflop;
 
 architecture beh of rsflop is
+  signal ri : logicsig;
 begin  -- beh
-  rsflop: process (r, s)
+  ri <= r after t;
+  rsflop: process (ri, s)
     variable qi : logicsig;
   begin  -- process rsflop
     if s = '0' then
       qi := '1';
-    elsif r = '0' then
+    elsif ri = '0' then
       qi := '0';
     end if;
     q <= qi after t;
@@ -473,67 +475,176 @@ end beh;
 
 use work.sigs.all;
 
--- Level sensitive latch.  This incorporates the two-inverter chain
--- that is often shown as a separate element in the diagrams, with
--- the first inverter driving the reset and the second the set input.
-entity latch is
-  
+-- R/S flip-flop with two R and two S inputs which are logically ORed since
+-- R and S are active low.
+entity r2s2flop is
   port (
-    d, clk : in  logicsig;                   -- data (set), clock
-    q, qb  : out logicsig);                  -- q and q.bar
+    s, r  : in  logicsig;                    -- set, reset
+    s2, r2  : in  logicsig;                  -- extra set, reset
+    q, qb : out logicsig);                   -- q and q.bar
 
-end latch;
+end r2s2flop;
 
--- This model is an approximation; the original implementation accepts
--- low D for clk + t but high D for clk + 2*t, because the basic R/S
--- flip-flop R input is derived from not(clk) which has delay t, but
--- the S input is and(d, not(not(clk)) so there's a delay of 2t there,
--- plus another t in the D gate, and another in the flop itself.  By
--- way of compromise this model delays the input clock by 3 * t.
-architecture beh of latch is
-  signal clki : logicsig;
+architecture beh of r2s2flop is
+  component rsflop
+    port (
+      s, r  : in  logicsig;                  -- set, reset
+      q, qb : out logicsig);                 -- q and q.bar
+  end component;
+  signal ri, si, qi : logicsig := '0';
 begin  -- beh
-  clki <= transport clk after 3 * t;
-  latch: process (clki, d)
-    variable qi : logicsig;
-  begin  -- process level sensitive latch
-    if clki = '1' then  -- clock (enable) asserted
-      qi := d;
-    end if;
-    q <= qi after t;
-    qb <= not (qi) after t;
-  end process latch;
+  ri <= r and r2;
+  si <= s and s2;
+  u1 : rsflop port map (
+    s  => si,
+    r  => ri,
+    q  => q,
+    qb => qb);
+
 end beh;
 
 
 use work.sigs.all;
 
+-- Latch.  This incorporates the two-inverter chain that is often
+-- shown as a separate element in the diagrams, with the first
+-- inverter driving the reset and the second the set input.  Some day
+-- this may want to become an edge-triggered register or something
+-- along those lines, but the timing is tricky in the 6600 and for now
+-- we just model this entity as it was done in the original.
+entity latch is
+    port (
+      clk : in  logicsig;
+      d : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig;
+      qs : out logicsig);
+
+end latch;
+architecture gates of latch is
+  component g2
+    port (
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
+  end component;
+
+  component inv2
+    port (
+      a : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
+  end component;
+
+  component rsflop
+    port (
+      r : in  logicsig;
+      s : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
+
+  end component;
+
+  signal t1 : logicsig;
+  signal ta : logicsig;
+  signal tb : logicsig;
+
+begin -- gates
+  u1 : inv2 port map (
+    a => clk,
+    y => ta,
+    y2 => tb);
+
+
+  u2 : g2 port map (
+    a => d,
+    b => tb,
+    y => t1);
+
+  qs <= t1;
+
+  u3 : rsflop port map (
+    r => ta,
+    s => t1,
+    q => q,
+    qb => qb);
+
+
+
+end gates;
+
+
+use work.sigs.all;
+
 -- Level sensitive latch with (active low) Set input.
+
 entity latchs is
-  
-  port (
-    d, clk : in  logicsig;                   -- data (set), clock
-    s : in logicsig;                    -- asynch set
-    q, qb  : out logicsig);                  -- q and q.bar
+    port (
+      clk : in  logicsig;
+      d : in  logicsig;
+      s : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
 
 end latchs;
+architecture gates of latchs is
+  component g2
+    port (
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
 
-architecture beh of latchs is
-  signal clki : logicsig;
-begin  -- beh
-  clki <= transport clk after 3 * t;
-  latchs: process (clki, s, d)
-    variable qi : logicsig;
-  begin  -- process level sensitive latch
-    if s = '0' then
-      qi := '1';
-    elsif clki = '1' then  -- clock (enable) asserted
-      qi := d;
-    end if;
-    q <= qi after t;
-    qb <= not (qi) after t;
-  end process latchs;
-end beh;
+  end component;
+
+  component inv2
+    port (
+      a : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
+  end component;
+
+  component rs2flop
+    port (
+      r : in  logicsig;
+      s : in  logicsig;
+      s2 : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
+
+  end component;
+
+  signal t1 : logicsig;
+  signal ta : logicsig;
+  signal tb : logicsig;
+
+begin -- gates
+  u1 : inv2 port map (
+    a => clk,
+    y => ta,
+    y2 => tb);
+
+
+  u2 : g2 port map (
+    a => d,
+    b => tb,
+    y => t1);
+
+
+  u3 : rs2flop port map (
+    r => ta,
+    s => s,
+    s2 => t1,
+    q => q,
+    qb => qb);
+
+
+
+end gates;
 
 
 use work.sigs.all;
@@ -551,7 +662,7 @@ architecture beh of latch2 is
   component latch
     port (
       d, clk : in  logicsig;                 -- data (set), clock
-      q, qb  : out logicsig);                -- q and q.bar
+      q, qb, qs  : out logicsig);            -- q and q.bar
   end component;
   signal clki : logicsig;
 begin  -- beh
@@ -580,11 +691,40 @@ architecture beh of latchd2 is
   component latch
     port (
       d, clk : in  logicsig;                 -- data (set), clock
-      q, qb  : out logicsig);                -- q and q.bar
+      q, qb, qs  : out logicsig);            -- q and q.bar
   end component;
   signal di : logicsig;
 begin  -- beh
   di <= d and d2;
+  u1 : latch port map (
+    d   => di,
+    clk => clk,
+    q   => q,
+    qb  => qb);
+
+end beh;
+
+
+use work.sigs.all;
+
+-- Level sensitive latch with three data inputs, which are ANDed.
+entity latchd3 is
+  
+  port (
+    d, d2, d3, clk : in  logicsig;           -- data (set), clock
+    q, qb  : out logicsig);                  -- q and q.bar
+
+end latchd3;
+
+architecture beh of latchd3 is
+  component latch
+    port (
+      d, clk : in  logicsig;                 -- data (set), clock
+      q, qb, qs  : out logicsig);            -- q and q.bar
+  end component;
+  signal di : logicsig;
+begin  -- beh
+  di <= d and d2 and d3;
   u1 : latch port map (
     d   => di,
     clk => clk,
@@ -611,7 +751,7 @@ architecture beh of latchd2s is
     port (
       d, clk : in  logicsig;                 -- data (set), clock
       s : in logicsig;                    -- asynch set
-      q, qb  : out logicsig);                -- q and q.bar
+      q, qb  : out logicsig);            -- q and q.bar
   end component;
   signal di : logicsig;
 begin  -- beh
@@ -638,24 +778,77 @@ entity latch22 is
 
 end latch22;
 
-architecture beh of latch22 is
-  signal clki, clki2 : logicsig;
-begin  -- beh
-  clki <= clk after t;
-  clki2 <= clk2 after t;
-  latch: process (clki, clki2, d, d2)
-    variable qi : logicsig;
-  begin  -- process level sensitive latch
-    if clki = '1' then  -- clock (enable) asserted
-      qi := d;
-    end if;
-    if clki2 = '1' then  -- clock 2 (enable) asserted
-      qi := d2;
-    end if;
-    q <= qi after t;
-    qb <= not (qi) after t;
-  end process latch;
-end beh;
+architecture gates of latch22 is
+  component g2
+    port (
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
+  end component;
+
+  component inv2
+    port (
+      a : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
+  end component;
+
+  component r2s2flop
+    port (
+      r : in  logicsig;
+      r2 : in  logicsig;
+      s : in  logicsig;
+      s2 : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
+
+  end component;
+
+  signal t1 : logicsig;
+  signal t2 : logicsig;
+  signal ta : logicsig;
+  signal tb : logicsig;
+  signal tc : logicsig;
+  signal td : logicsig;
+
+begin -- gates
+  u1 : inv2 port map (
+    a => clk,
+    y => ta,
+    y2 => tb);
+
+
+  u2 : g2 port map (
+    a => d,
+    b => tb,
+    y => t1);
+
+  u3 : inv2 port map (
+    a => clk2,
+    y => tc,
+    y2 => td);
+
+
+  u4 : g2 port map (
+    a => d,
+    b => td,
+    y => t2);
+
+
+  u5 : r2s2flop port map (
+    r => ta,
+    r2 => tc,
+    s => t1,
+    s2 => t2,
+    q => q,
+    qb => qb);
+
+
+
+end gates;
 
 
 use work.sigs.all;
@@ -673,7 +866,7 @@ architecture beh of latchd4 is
   component latch
     port (
       d, clk : in  logicsig;                 -- data (set), clock
-      q, qb  : out logicsig);                -- q and q.bar
+      q, qb, qs  : out logicsig);            -- q and q.bar
   end component;
   signal di : logicsig;
 begin  -- beh
@@ -699,23 +892,61 @@ entity latchr is
 
 end latchr;
 
-architecture beh of latchr is
-  signal clki : logicsig;
-  signal qi : logicsig;
-begin  -- beh
-  clki <= clk after t;
-  latch: process (clki, d, r)
-    variable qi : logicsig;
-  begin  -- process level sensitive latch with reset
-    if r = '0' then
-      qi := '0';
-    elsif clki = '1' then  -- clock (enable) asserted
-      qi := d;
-    end if;
-    q <= qi after t;
-    qb <= not (qi) after t;
-  end process latch;
-end beh;
+architecture gates of latchr is
+  component g2
+    port (
+      a : in  logicsig;
+      b : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
+  end component;
+
+  component inv2
+    port (
+      a : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
+  end component;
+
+  component r2sflop
+    port (
+      r : in  logicsig;
+      r2 : in  logicsig;
+      s : in  logicsig;
+      q : out logicsig;
+      qb : out logicsig);
+
+  end component;
+
+  signal t1 : logicsig;
+  signal ta : logicsig;
+  signal tb : logicsig;
+
+begin -- gates
+  u1 : inv2 port map (
+    a => clk,
+    y => ta,
+    y2 => tb);
+
+
+  u2 : g2 port map (
+    a => d,
+    b => tb,
+    y => t1);
+
+
+  u3 : r2sflop port map (
+    r => ta,
+    r2 => r,
+    s => t1,
+    q => q,
+    qb => qb);
+
+
+
+end gates;
 
 
 use work.sigs.all;

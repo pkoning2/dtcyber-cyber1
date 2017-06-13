@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2010 by Paul Koning
+-- Copyright (C) 2010-2017 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -84,10 +84,12 @@ architecture gates of ci is
 
   end component;
 
-  component latch
+  component latchd3
     port (
       clk : in  logicsig;
       d : in  logicsig;
+      d2 : in  logicsig;
+      d3 : in  logicsig;
       q : out logicsig;
       qb : out logicsig);
 
@@ -99,8 +101,6 @@ architecture gates of ci is
   signal t2 : logicsig;
   signal t4 : logicsig;
   signal t6 : logicsig;
-  signal t10 : logicsig;
-  signal t11 : logicsig;
   signal t13 : logicsig;
   signal t14 : logicsig;
   signal t15 : logicsig;
@@ -142,29 +142,19 @@ begin -- gates
 
   tp2 <= t6;
 
-  u11 : g3 port map (
-    a => t1,
-    b => t2,
-    c => p5,
-    y => t10);
-
-
-  u12 : g3 port map (
-    a => p5,
-    b => c,
-    c => d,
-    y => t11);
-
-
-  u13 : latch port map (
+  u13 : latchd3 port map (
     clk => p2,
-    d => t10,
+    d => t1,
+    d2 => t2,
+    d3 => p5,
     q => t4);
 
 
-  u14 : latch port map (
+  u14 : latchd3 port map (
     clk => p2,
-    d => t11,
+    d => p5,
+    d2 => c,
+    d3 => d,
     q => t6);
 
 

@@ -70,7 +70,8 @@ architecture gates of rk is
       clk : in  logicsig;
       d : in  logicsig;
       q : out logicsig;
-      qb : out logicsig);
+      qb : out logicsig;
+      qs : out logicsig);
 
   end component;
 

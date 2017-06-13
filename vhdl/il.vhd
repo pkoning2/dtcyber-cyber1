@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2010 by Paul Koning
+-- Copyright (C) 2010-2017 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -40,10 +40,9 @@ entity il is
       tp4 : out logicsig;
       tp6 : out logicsig;
       p6 : out logicsig;
-      p8_tp1 : out logicsig;
+      p8_p14_p15_p16_tp1 : out logicsig;
       p11 : out logicsig;
       p12 : out logicsig;
-      p14_p15_p16_tp5 : out logicsig;
       p17 : out logicsig;
       p22_p24 : out logicsig);
 
@@ -92,7 +91,6 @@ architecture gates of il is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t4 : logicsig;
 
 begin -- gates
   u1 : cxreceiver port map (
@@ -122,7 +120,7 @@ begin -- gates
     s => a,
     q => t3);
 
-  p8_tp1 <= t3;
+  p8_p14_p15_p16_tp1 <= t3;
 
   u5 : g2 port map (
     a => t3,
@@ -130,28 +128,21 @@ begin -- gates
     y => p6);
 
 
-  u6 : g2 port map (
-    a => a,
-    b => b,
-    y => t4);
-
-  p14_p15_p16_tp5 <= t4;
-
   u7 : g2 port map (
     a => p13,
-    b => t4,
+    b => t3,
     y => p11);
 
 
   u8 : g2 port map (
     a => p10,
-    b => t4,
+    b => t3,
     y => p12);
 
 
   u9 : g2 port map (
     a => p18,
-    b => t4,
+    b => t3,
     y => p17);
 
 

@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2010 by Paul Koning
+-- Copyright (C) 2010-2017 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -94,7 +94,8 @@ architecture gates of cu is
       clk : in  logicsig;
       d : in  logicsig;
       q : out logicsig;
-      qb : out logicsig);
+      qb : out logicsig;
+      qs : out logicsig);
 
   end component;
 

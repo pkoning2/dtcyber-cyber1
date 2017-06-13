@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2010 by Paul Koning
+-- Copyright (C) 2010-2017 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -97,7 +97,8 @@ architecture gates of cg is
       clk : in  logicsig;
       d : in  logicsig;
       q : out logicsig;
-      qb : out logicsig);
+      qb : out logicsig;
+      qs : out logicsig);
 
   end component;
 
@@ -110,7 +111,6 @@ architecture gates of cg is
 
   end component;
 
-  signal b : logicsig;
   signal c : logicsig;
   signal d : logicsig;
   signal e : logicsig;
@@ -141,11 +141,6 @@ begin -- gates
 
   p7 <= d;
 
-  u2 : inv2 port map (
-    a => p14,
-    y2 => b);
-
-
   u3 : inv2 port map (
     a => p10,
     y2 => e);
@@ -171,24 +166,19 @@ begin -- gates
     y => f);
 
 
-  u7 : g2 port map (
-    a => t1,
-    b => b,
-    y => p9,
-    y2 => t5);
-
-
-  u8 : inv port map (
+  u8 : inv2 port map (
     a => t5,
-    y => p3_p5);
+    y2 => p3_p5);
 
 
   u9 : latch port map (
     clk => p14,
     d => t1,
     q => t7,
-    qb => tp1);
+    qb => tp1,
+    qs => t5);
 
+  p9 <= t5;
 
   u10 : inv port map (
     a => p11,
@@ -223,22 +213,16 @@ begin -- gates
     y2 => t10);
 
 
-  u15 : g2 port map (
-    a => t10,
-    b => b,
-    y => p20,
-    y2 => t11);
-
-
-  u16 : inv port map (
+  u16 : inv2 port map (
     a => t11,
-    y => p26_p28);
+    y2 => p26_p28);
 
 
   u17 : latch port map (
     clk => p14,
     d => t10,
-    q => t13);
+    q => t13,
+    qs => t11);
 
 
   u18 : inv port map (

@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009-2010 by Paul Koning
+-- Copyright (C) 2009-2017 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -14,35 +14,6 @@
 -- TQ module
 --
 -------------------------------------------------------------------------------
-
-use work.sigs.all;
-
-entity tqslice is
-    port (
-      a : in  logicsig;
-      y : out logicsig;
-      y1_y2 : out logicsig);
-
-end tqslice;
-architecture gates of tqslice is
-  component inv2
-    port (
-      a : in  logicsig;
-      y : out logicsig;
-      y2 : out logicsig);
-
-  end component;
-
-
-begin -- gates
-  u1 : inv2 port map (
-    a => a,
-    y => y,
-    y2 => y1_y2);
-
-
-
-end gates;
 
 use work.sigs.all;
 
@@ -83,59 +54,51 @@ architecture gates of tq is
 
   end component;
 
-  component tqslice
-    port (
-      a : in  logicsig;
-      y : out logicsig;
-      y1_y2 : out logicsig);
-
-  end component;
-
 
 begin -- gates
-  u1 : tqslice port map (
+  u1 : inv2 port map (
     a => p12,
     y => tp1,
-    y1_y2 => p9_p11);
+    y2 => p9_p11);
 
 
-  u2 : tqslice port map (
+  u2 : inv2 port map (
     a => p13,
     y => tp2,
-    y1_y2 => p14_p16);
+    y2 => p14_p16);
 
 
-  u3 : tqslice port map (
+  u3 : inv2 port map (
     a => p7,
     y => tp3,
-    y1_y2 => p8_p10);
+    y2 => p8_p10);
 
 
-  u4 : tqslice port map (
+  u4 : inv2 port map (
     a => p24,
     y => tp4,
-    y1_y2 => p23_p25);
+    y2 => p23_p25);
 
 
-  u5 : tqslice port map (
+  u5 : inv2 port map (
     a => p21,
     y => tp6,
-    y1_y2 => p20_p22);
+    y2 => p20_p22);
 
 
-  u6 : tqslice port map (
+  u6 : inv2 port map (
     a => p2,
-    y1_y2 => p1_p3);
+    y2 => p1_p3);
 
 
-  u7 : tqslice port map (
+  u7 : inv2 port map (
     a => p27,
-    y1_y2 => p26_p28);
+    y2 => p26_p28);
 
 
-  u8 : tqslice port map (
+  u8 : inv2 port map (
     a => p5,
-    y1_y2 => p4_p6);
+    y2 => p4_p6);
 
 
   u10 : inv2 port map (
