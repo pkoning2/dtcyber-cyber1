@@ -15,7 +15,10 @@ use work.sigs.all;
 entity clockc is
   
   port (
-    clk1, clk2, clk3, clk4 : in logicsig;  -- clocks from the outside world
+    sysclk1 : in logicsig;  -- clocks from the outside world
+    sysclk2 : in logicsig;
+    sysclk3 : in logicsig;
+    sysclk4 : in logicsig;
     p16, p11, p13, p18, p10 : in logicsig := '0'; -- inputs (ignored)
     p12 : in coaxsig := '0';                -- external coax clock (ignored)
     p15, p17, p19, p20 : in logicsig := '0';  -- inputs (ignored)
@@ -29,22 +32,22 @@ end clockc;
 architecture beh of clockc is
 begin  -- beh
 
-  p2 <= clk4;
-  p4 <= clk4;
-  p6 <= clk4;
-  p8 <= clk4;
-  p14 <= clk4;
-  p1 <= clk1;
-  p3 <= clk1;
-  p5 <= clk1;
-  p7 <= clk1;
-  p22 <= clk2;
-  p24 <= clk2;
-  p26 <= clk2;
-  p28 <= clk2;
-  p21 <= clk3;
-  p23 <= clk3;
-  p25 <= clk3;
-  p27 <= clk3;
+  p2 <= sysclk4;
+  p4 <= sysclk4;
+  p6 <= sysclk4;
+  p8 <= sysclk4;
+  p14 <= sysclk4;
+  p1 <= sysclk1;
+  p3 <= sysclk1;
+  p5 <= sysclk1;
+  p7 <= sysclk1;
+  p22 <= sysclk2;
+  p24 <= sysclk2;
+  p26 <= sysclk2;
+  p28 <= sysclk2;
+  p21 <= sysclk3;
+  p23 <= sysclk3;
+  p25 <= sysclk3;
+  p27 <= sysclk3;
   
 end beh;

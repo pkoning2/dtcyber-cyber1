@@ -39,10 +39,10 @@ architecture behav of cdc_tb2 is
       c_12w02_in : in  coaxsigs;
       c_12w06_in : in  coaxsigs;
       c_12w08_in : in  coaxsigs;
-      clk1 : in  logicsig;
-      clk2 : in  logicsig;
-      clk3 : in  logicsig;
-      clk4 : in  logicsig;
+      sysclk1 : in  logicsig;
+      sysclk2 : in  logicsig;
+      sysclk3 : in  logicsig;
+      sysclk4 : in  logicsig;
       c_12w02_out : out coaxsigs;
       c_12w05_out : out coaxsigs;
       c_12w06_903 : out analog;
@@ -57,8 +57,8 @@ architecture behav of cdc_tb2 is
       c_12w08_906 : out analog;
       c_12w08_out : out coaxsigs);
   end component;
-  signal clk1 : logicsig := '1';        -- clock phase 1
-  signal clk2, clk3, clk4 : logicsig := '0';  -- clock phase 2-4
+  signal sysclk1 : logicsig := '1';        -- clock phase 1
+  signal sysclk2, sysclk3, sysclk4 : logicsig := '0';  -- clock phase 2-4
   type testvec is array (1 to 80) of logicsig;
   signal coax1 : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
   signal w_12w1 : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
@@ -70,10 +70,10 @@ architecture behav of cdc_tb2 is
   signal w_12w6 : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
 begin
    --  Component instantiation.
-   uut: chassis12 port map (clk1 => clk1,
-                          clk2 => clk2,
-                          clk3 => clk3,
-                          clk4 => clk4,
+   uut: chassis12 port map (sysclk1 => sysclk1,
+                          sysclk2 => sysclk2,
+                          sysclk3 => sysclk3,
+                          sysclk4 => sysclk4,
                           c_12w01_in => w_12w1,
                           c_12w02_in => w_12w2,
                           c_12w06_in => w_12w6,
@@ -146,7 +146,7 @@ begin
        -- channel signals are pulses
        for i in 1 to d loop
          wait for 25 ns;
-         if clk2 = '1' then
+         if sysclk2 = '1' then
            w_12w2(16) <= '1';
            ten := ten + 1;
            if ten > 9 then
@@ -159,24 +159,24 @@ begin
            w_12w2(16) <= '0';
            w_12w2(17) <= '0';
          end if;
-         if clk3 = '1' then
+         if sysclk3 = '1' then
            w_12w1 <= oc;
            oc := idle;
          else
            w_12w1 <= idle;
          end if;
-         if clk1 = '1' then
-           clk1 <= '0';
-           clk2 <= '1';
-         elsif clk2 = '1' then
-           clk2 <= '0';
-           clk3 <= '1';
-         elsif clk3 = '1' then
-           clk3 <= '0';
-           clk4 <= '1';
-         elsif clk4 = '1' then
-           clk4 <= '0';
-           clk1 <= '1';
+         if sysclk1 = '1' then
+           sysclk1 <= '0';
+           sysclk2 <= '1';
+         elsif sysclk2 = '1' then
+           sysclk2 <= '0';
+           sysclk3 <= '1';
+         elsif sysclk3 = '1' then
+           sysclk3 <= '0';
+           sysclk4 <= '1';
+         elsif sysclk4 = '1' then
+           sysclk4 <= '0';
+           sysclk1 <= '1';
          end if;
        end loop;  -- i
      end loop;

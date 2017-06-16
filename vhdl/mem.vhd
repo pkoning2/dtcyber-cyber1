@@ -63,7 +63,7 @@ begin  -- beh
         meminit (bnum, i, mdata(i));
       end loop;  -- i
     end if;
-    if clk_a'event and clk_a = '1' then  -- rising clock edge, port A
+    if rising_edge (clk_a) then
       if ena_a = '1' then
         areg := TO_INTEGER (UNSIGNED (addr_a));
         if write_a = '1' then
@@ -73,7 +73,7 @@ begin  -- beh
         end if;
       end if;
     end if;
-    if clk_b'event and clk_b = '1' then  -- rising clock edge, port B
+    if rising_edge (clk_b) then
       if ena_b = '1' then
         areg := TO_INTEGER (UNSIGNED (addr_b));
         if write_b = '1' then

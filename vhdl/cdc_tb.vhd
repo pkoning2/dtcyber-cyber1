@@ -31,8 +31,7 @@ architecture behav of cdc_tb is
     c_2w15_in : in  tpcable;
     c_2w16_in : in  tpcable;
     c_2w17_in : in  tpcable;
-    -- clk40 : in logicsig;
-    clk1, clk2, clk3, clk4, reset : in logicsig
+    sysclk1, sysclk2, sysclk3, sysclk4, reset : in logicsig
 );
   end component;
   signal c_1w37_in : tpcable := idletp;  -- Deadstart switches
@@ -40,9 +39,8 @@ architecture behav of cdc_tb is
   signal c_2w16_in : tpcable := idletp;  -- Deadstart panel
   signal c_2w17_in : tpcable := idletp;  -- Deadstart panel
   signal reset : logicsig := '1';      -- power-up reset
-  signal clk1 : logicsig := '1';        -- clock phase 1
-  signal clk2, clk3, clk4 : logicsig := '0';  -- clock phase 2-4
-  signal clk40 : logicsig := '0';      -- 40 MHz clock
+  signal sysclk1 : logicsig := '1';        -- clock phase 1
+  signal sysclk2, sysclk3, sysclk4 : logicsig := '0';  -- clock phase 2-4
   signal zero : logicsig := '0';
   signal one : logicsig := '1';
 begin
@@ -52,11 +50,10 @@ begin
       c_2w15_in => c_2w15_in,
       c_2w16_in => c_2w16_in,
       c_2w17_in => c_2w17_in,
-      -- clk40 => clk40,
-      clk1 => clk1,
-      clk2 => clk2,
-      clk3 => clk3,
-      clk4 => clk4,
+      sysclk1 => sysclk1,
+      sysclk2 => sysclk2,
+      sysclk3 => sysclk3,
+      sysclk4 => sysclk4,
       reset => reset
       );
    --  This process does the real job.
@@ -73,22 +70,19 @@ begin
      reset <= '0';
 
      while TRUE loop
-       clk40 <= '1';
-       wait for 12.5 ns;
-       clk40 <= '0';
-       wait for 12.5 ns;
-       if clk1 = '1' then
-         clk1 <= '0';
-         clk2 <= '1';
-       elsif clk2 = '1' then
-         clk2 <= '0';
-         clk3 <= '1';
-       elsif clk3 = '1' then
-         clk3 <= '0';
-         clk4 <= '1';
-       elsif clk4 = '1' then
-         clk4 <= '0';
-         clk1 <= '1';
+       wait for 25 ns;
+       if sysclk1 = '1' then
+         sysclk1 <= '0';
+         sysclk2 <= '1';
+       elsif sysclk2 = '1' then
+         sysclk2 <= '0';
+         sysclk3 <= '1';
+       elsif sysclk3 = '1' then
+         sysclk3 <= '0';
+         sysclk4 <= '1';
+       elsif sysclk4 = '1' then
+         sysclk4 <= '0';
+         sysclk1 <= '1';
        end if;
        cycle25 := cycle25 + 1;
        if cycle25 = 4 then

@@ -15,6 +15,7 @@ import time
 chassis_list = { }
 curslot = None
 real_length = 60     # simulate wire delay for wires this long, 0 to disable
+real_length = 0
 
 _pat_wline = "(\\d+)(?:[ \t]+(\\w ?\\w*)(?:[ \t]+(\\w+)(?:[ \t]+(\\w+))?)?)?([ \t]*.*(?:\n#.*)*)?"
 # This next one ends up with a whole lot of groups partly because of
@@ -97,8 +98,8 @@ class Cyber (cmodule.cmod):
         except KeyError:
             # Check if the element type exists
             cmodule.elements[ctname]
-            c = self.elements[ciname] = cmodule.ElementInstance (ciname, ctname)
-            addstd (self, c)
+            c = self.elements[ciname] = cmodule.ElementInstance (ciname,
+                                                                 ctname, self)
         return c
 
     def processconns (self, text):
@@ -301,8 +302,8 @@ class Chassis (cmodule.cmod):
         except KeyError:
             #print "reading", modname
             mtype = cmodule.readmodule (modname)
-        inst = self.elements[slot] = cmodule.ElementInstance (slot, modname)
-        addstd (self, inst)
+        inst = self.elements[slot] = cmodule.ElementInstance (slot, modname,
+                                                              self)
         return inst
     
     def processwlist (self, wl):
@@ -366,7 +367,7 @@ class Connector (object):
                     if delay:
                         # Delay is large enough to model
                         wdname = "wd_%s" % w
-                        wd = cmodule.ElementInstance (wdname, "wire")
+                        wd = cmodule.ElementInstance (wdname, "wire", self)
                         self.chassis.elements[wdname] = wd
                         w2 = Wire (end1, end2, wlen, "d")
                         self.chassis.signals[w] = w
@@ -385,7 +386,7 @@ class Connector (object):
                 if delay:
                     # Delay is large enough to model
                     wdname = "wd_%s" % w
-                    wd = cmodule.ElementInstance (wdname, "wire")
+                    wd = cmodule.ElementInstance (wdname, "wire", self)
                     self.chassis.elements[wdname] = wd
                     w2 = Wire (end1, end2, wlen, "d")
                     self.chassis.signals[w] = w
@@ -415,7 +416,7 @@ class Connector (object):
             except KeyError:
                 # New delay is large enough to model, old was not, so
                 # add a "wire" element.
-                wd = cmodule.ElementInstance (wdname, "wire")
+                wd = cmodule.ElementInstance (wdname, "wire", self)
                 self.chassis.elements[wdname] = wd
                 w2 = Wire (end1, end2, wlen, "d")
                 if dir == "out":
@@ -558,18 +559,6 @@ class Connector (object):
             # next pin should not exist or we have an incomplete list
             error ("not enough pins for connector")
 
-def addstd (parent, inst):
-    """ Automatically connect up reset and clock pins, if present
-    """
-    for stdpin in ("reset", "clk1", "clk2", "clk3", "clk4", "clk40"):
-        if stdpin in inst.eltype.pins:
-            try:
-                s = parent.signals[stdpin]
-            except KeyError:
-                s = parent.signals[stdpin] = cmodule.Signal (stdpin)
-                s.ptype = "logicsig"
-            inst.addportmap (parent, stdpin, stdpin)
-            
 def normcable (name, cnum = 0):
     """Normalize a cable name.  Make cable number 2 digits, and
     prefix with chassis number.  If chassis number was already present,

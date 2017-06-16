@@ -101,6 +101,9 @@ class Pin (hitem):
     def testpoint (self):
         return self.name.startswith ("tp")
 
+def stdpin (s):
+    return s == "reset" or str (s).startswith ("sysclk")
+
 class Generic (hitem):
     """Generic of a logic element type
     """
@@ -307,12 +310,22 @@ sigzero = ConstSignal ("'0'")
 class ElementInstance (object):
     """Instance of a logic element
     """
-    def __init__ (self, name, elname):
+    def __init__ (self, name, elname, parent):
         self.name = name
+        self.parent = parent
         self.eltype = elements[modname (elname)]
         self.portmap = { }
         self.iportmap = { }
         self.genericmap = { }
+        # Automatically connect up reset and clock pins, if present
+        for pin in self.eltype.pins:
+            if stdpin (pin):
+                try:
+                    s = self.parent.signals[pin]
+                except KeyError:
+                    s = self.parent.signals[pin] = Signal (pin)
+                    s.ptype = "logicsig"
+                self.addportmap (self.parent, pin, pin)
         
     def __str__ (self):
         return self.name
@@ -381,16 +394,17 @@ class ElementInstance (object):
             # Multiple outputs for an output signal, that's a fanout.
             # Make the new actual an alias of the previous one.
             oa = self.portmap[pin.name]
-            if 0:#"(" in actual.name or "(" in oa.name:
+            if "(" in actual.name or "(" in oa.name:
                 # Check for ( is there to filter out coax cables that
                 # carry logic signals.  That doesn't happen in the regular
                 # inter-chassis connections but it does on the DD60 cabling
-                # in chassis 12.  
-                print("Can't alias coax signal:", \
-                      self.name, self.eltype.name, pin.name, \
-                      actual.name, oa.name)
+                # in chassis 12.
+                pass
+                #print("Can't alias coax signal:", \
+                #      self.name, self.eltype.name, pin.name, \
+                #      actual.name, oa.name)
             else:
-                #print "adding alias %s for %s" % (actual.name, oa.name)
+                #print ("adding alias %s for %s" % (actual.name, oa.name))
                 oa.aliases.add (oa.name)
                 oa.aliases.add (actual.name)
                 parent.aliases[actual.name] = oa
@@ -499,7 +513,7 @@ class cmod (ElementType):
             return
         elname = self.nextelement ()
         print("element %s" % elname)
-        e = self.elements[elname] = ElementInstance (elname, eltype)
+        e = self.elements[elname] = ElementInstance (elname, eltype, self)
         try:
             e.promptports (self)
         except EOFError:
@@ -850,23 +864,19 @@ def readmodule (modname):
         gates = (m.group (5) == "gates" or m.group (5) == m.group (1))
         if gates:
             for c in _re_portmap.finditer (m.group (6)):
-                u = ElementInstance (c.group (1), c.group (2))
+                u = ElementInstance (c.group (1), c.group (2), e)
                 #print "element", c.group (1), c.group (2)
                 e.elements[c.group (1)] = u
                 for pin in _re_pinmap.finditer (c.group (3)):
                     #print "pin", pin.group (1), pin.group (2)
                     u.addportmap (e, pin.group (1), pin.group (2))
-            # Do assignments as aliases, but only if the module name
-            # does not begin with Z.  We use some Z modules to provide
-            # explicit separate outputs, for chassis 12 where some coax
-            # cables are assigned to logic outputs; coax can't be
-            # aliased the way the model is put together.
-            if len (modname) == 2 and modname[0].lower () != 'z':
+            # Do assignments as aliases.
+            if len (modname) == 2:
                 for a in _re_assign.finditer (m.group (6)):
                     e.addassign (a.group (1), a.group (2))
                     #print "assign", a.group (1), a.group (2)
-        # Look over the entity definition to pick up pins marked
-        # as optional inputs.  If we encoutered them in the architecture
+        # Look over the entity definition to pick up pins marked as
+        # optional inputs.  If we encountered them in the architecture
         # section, update the pin type.
         # If the architecture section wasn't "gates" then process
         # all pin entries, since we don't have any other source for

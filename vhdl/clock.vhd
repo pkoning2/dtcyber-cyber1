@@ -14,7 +14,10 @@ use work.sigs.all;
 entity clock is
   
   port (
-    clk1, clk2, clk3, clk4 : in logicsig;  -- clocks from the outside world
+    sysclk1 : in logicsig;  -- clocks from the outside world
+    sysclk2 : in logicsig;
+    sysclk3 : in logicsig;
+    sysclk4 : in logicsig;
     p15, p17, p23, p19 : out logicsig;  -- clock phase 1
     p6, p12 : out logicsig;            -- clock phase 2
     p5, p11 : out logicsig;            -- clock phase 3
@@ -25,16 +28,16 @@ end clock;
 
 architecture beh of clock is
 begin  -- beh
-  p15 <= clk1;
-  p17 <= clk1;
-  p23 <= clk1;
-  p19 <= clk1;
-  p6 <= clk2;
-  p12 <= clk2;
-  p5 <= clk3;
-  p11 <= clk3;
-  p16 <= clk4;
-  p20 <= clk4;
-  p21 <= (clk1 or clk2);
+  p15 <= sysclk1;
+  p17 <= sysclk1;
+  p23 <= sysclk1;
+  p19 <= sysclk1;
+  p6 <= sysclk2;
+  p12 <= sysclk2;
+  p5 <= sysclk3;
+  p11 <= sysclk3;
+  p16 <= sysclk4;
+  p20 <= sysclk4;
+  p21 <= (sysclk1 or sysclk2);
   
 end beh;
