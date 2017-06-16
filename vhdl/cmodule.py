@@ -381,7 +381,7 @@ class ElementInstance (object):
             # Multiple outputs for an output signal, that's a fanout.
             # Make the new actual an alias of the previous one.
             oa = self.portmap[pin.name]
-            if "(" in actual.name or "(" in oa.name:
+            if 0:#"(" in actual.name or "(" in oa.name:
                 # Check for ( is there to filter out coax cables that
                 # carry logic signals.  That doesn't happen in the regular
                 # inter-chassis connections but it does on the DD60 cabling
