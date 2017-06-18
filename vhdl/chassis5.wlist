@@ -14,7 +14,7 @@
 # we use the pages for higher serial numbers (for example, SN32 and up
 # for modules I22, I23).
 #
-# Starting pages: A1:6.1 I22:185.3 I23:186.3 I24:187.1 I25:188.1 Q10:349.1 Q11:350.1 Q12:351.1 Q13:352.1 Q14:353.3 Q36:365.1 Q37:366.1 Q38:367.1 Q39:368.1 Q40:369.1 Q41:370.1
+# Starting pages: A01:6.1 I22:185.3 I23:186.3 I24:187.1 I25:188.1 Q10:349.1 Q11:350.1 Q12:351.1 Q13:352.1 Q14:353.3 Q36:365.1 Q37:366.1 Q38:367.1 Q39:368.1 Q40:369.1 Q41:370.1
 IA	5A1
 1
 2	E16	15	25
@@ -9011,10 +9011,10 @@ TC	5H17
 3	I22	6	7
 4	G30	17	17
 5
-6	M9	3	23
+6	M9	3	49		# Changed for timing fix
 7
 8	L8	15	21
-9	P12	14	33
+9	P12	14	49		# Changed for timing fix
 10	G32	17	108
 11	O40	22	37
 12
