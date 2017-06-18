@@ -14,6 +14,7 @@ import PyPDF2
 import struct
 import wlist
 import cmodule
+from wlist import normslot
 
 # By Raymond Hettinger, from
 # http://code.activestate.com/recipes/577197-sortedcollection/
@@ -634,7 +635,8 @@ class topframe (wx.Frame):
             # extraneous stuff like duplicate slot descriptions for
             # product variants.  Those aspects are handled by the
             # "starts" table.
-            self.slotlocs[mod.baseslot] = (len (self.pages) - 1, mod.right)
+            slot = normslot (0, mod.baseslot)
+            self.slotlocs[slot] = (len (self.pages) - 1, mod.right)
             next = not mod.right and mod.slotnum + 1
         self.minindex = 0
         self.maxindex = len (self.pages) * 4 - 1
@@ -659,16 +661,16 @@ class topframe (wx.Frame):
     def setstarts (self, s):
         m = first_pat.match (s)
         if m:
-            starts = [ ("A1", int (m.group (1)) * 4) ]
+            starts = [ ("A01", int (m.group (1)) * 4) ]
         else:
             m = starts_pat.match (s)
             if not m:
-                starts = [ ("A1", 16 ) ]
+                starts = [ ("A01", 16 ) ]
             else:
                 starts = list ()
                 for m in start_pat.finditer (s[m.end ():]):
                     mod, page, subpage = m.groups ()
-                    mod = mod.upper ()
+                    mod = normslot (0, mod.upper ())
                     page = int (page) * 4
                     if subpage:
                         page += int (subpage) - 1
@@ -678,11 +680,7 @@ class topframe (wx.Frame):
         return starts
     
     def slotref (self, slot):
-        slot = slot.upper ()
-        m = chslot_pat.match (slot.upper ())
-        if not m:
-            return None
-        slot = m.group (2) + m.group (3)
+        slot = normslot (0, slot.upper ())
         try:
             loc = self.slotlocs[slot]
         except KeyError:
@@ -877,7 +875,7 @@ class topframe (wx.Frame):
         mod = self.pages[page][right]
         pins = mod and mod.pins[pins2]
         if pins:
-            self.slot = mod.baseslot
+            self.slot = normslot (0, mod.baseslot)
             smod, sindex = self.starts.find_le (self.slot)
             self.scanindex = self.index - self.slotref (smod) + sindex
             self.curpage, self.subpage = divmod (self.scanindex, 4)

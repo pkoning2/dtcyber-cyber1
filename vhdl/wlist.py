@@ -44,6 +44,20 @@ header = """--------------------------------------------------------------------
 -------------------------------------------------------------------------------
 """.format (time.strftime ("%Y.%m.%d"))
 
+def normslot (chnum, slot):
+    """Normalize a slot name.  Strip off leading chassis number,
+    if present (must be correct if present).  Make slot number 2 digits.
+    """
+    m = _re_chslot.match (slot)
+    if not m:
+        error ("Invalid module slot ID %s" % slot)
+        return None
+    if m.group (1):
+        if chnum and int (m.group (1)) != chnum:
+            error ("Module slot ID %s chassis number is not %d" % (slot, chnum))
+            return None
+    return "%s%02d" % (m.group (2), int (m.group (3)))
+
 class Cyber (cmodule.cmod):
     """An instance of a Cyber (top level object)
     """
@@ -249,15 +263,7 @@ class Chassis (cmodule.cmod):
         """Normalize a slot name.  Strip off leading chassis number,
         if present (must be correct if present).  Make slot number 2 digits.
         """
-        m = _re_chslot.match (slot)
-        if not m:
-            error ("Invalid module slot ID %s" % slot)
-            return None
-        if m.group (1):
-            if int (m.group (1)) != self.cnum:
-                error ("Module slot ID %s chassis number is not %d" % (slot, self.cnum))
-                return None
-        return "%s%02d" % (m.group (2), int (m.group (3)))
+        return normslot (self.cnum, slot)
         
     def normcable (self, name):
         """Normalize a cable name.  Make cable number 2 digits, and
@@ -342,6 +348,7 @@ class Connector (object):
         # Nominal twisted pair delay is 1.3 ns per foot.
         if wlen < real_length:
             return 0
+        # Truncate to 5 ns multiple.
         return int (((wlen / 12.) * 1.3) / 5.)
     
     def chwire (self, pnum, toslot, topin, dir, wlen = 0):
