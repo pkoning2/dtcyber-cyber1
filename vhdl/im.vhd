@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2010 by Paul Koning
+-- Copyright (C) 2010-2017 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -106,7 +106,7 @@ begin -- gates
   u2 : g2 port map (
     a => p13,
     b => p11,
-    y => a);
+    y2 => a);
 
   tp5 <= a;
 

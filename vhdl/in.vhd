@@ -72,17 +72,6 @@ architecture gates of mod_in is
 
   end component;
 
-  component g4
-    port (
-      a : in  logicsig;
-      b : in  logicsig;
-      c : in  logicsig;
-      d : in  logicsig;
-      y : out logicsig;
-      y2 : out logicsig);
-
-  end component;
-
   component inv
     port (
       a : in  logicsig;
@@ -119,7 +108,6 @@ architecture gates of mod_in is
 
   end component;
 
-  signal a : logicsig;
   signal b : logicsig;
   signal c : logicsig;
   signal t2 : logicsig;
@@ -143,15 +131,6 @@ begin -- gates
 
   tp1 <= b;
   
-  u3 : g4 port map (
-    a => p16,
-    b => p14,
-    c => p12,
-    d => c,
-    y => a);
-
-  tp5 <= a;
-
   u4 : inv2 port map (
     a => b,
     y2 => p19_tp2);
@@ -204,7 +183,7 @@ begin -- gates
 
   u13 : g2 port map (
     a => t5,
-    b => a,
+    b => b,
     y => p9);
 
 
@@ -215,7 +194,7 @@ begin -- gates
 
   u15 : g2 port map (
     a => t6,
-    b => a,
+    b => b,
     y => p21);
 
 
@@ -226,7 +205,7 @@ begin -- gates
 
   u17 : g2 port map (
     a => t7,
-    b => a,
+    b => b,
     y => p23);
 
 
@@ -237,7 +216,7 @@ begin -- gates
 
   u19 : g2 port map (
     a => t8,
-    b => a,
+    b => b,
     y => p25);
 
 
@@ -248,7 +227,7 @@ begin -- gates
 
   u21 : g2 port map (
     a => t9,
-    b => a,
+    b => b,
     y => p27);
 
 
