@@ -66,7 +66,7 @@ begin
    begin  -- process test
      dtmain;
      reset <= '1';
-     wait for 25 ns;
+     wait for 30 ns;
      reset <= '0';
 
      while TRUE loop
