@@ -39,7 +39,7 @@ entity iu is
       p9 : out logicsig;
       p10_tp1 : out logicsig;
       p11 : out logicsig;
-      p13_tp : out logicsig;
+      p13_tp2 : out logicsig;
       p15 : out logicsig;
       p16 : out logicsig;
       p17 : out logicsig;
@@ -114,7 +114,7 @@ begin -- gates
   u7 : g2 port map (
     a => t2,
     b => a,
-    y => p13_tp);
+    y => p13_tp2);
 
 
   u8 : g2 port map (

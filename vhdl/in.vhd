@@ -37,7 +37,6 @@ entity mod_in is
       p26 : in  logicsig;
       p28 : in  logicsig;
       tp1 : out logicsig;
-      tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
       p5 : out logicsig;

@@ -33,8 +33,8 @@ entity ir is
       p20 : in  logicsig;
       tp1 : out logicsig;
       tp2 : out logicsig;
-      tp3 : out logicsig;
-      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
       p1 : out logicsig;
       p2 : out logicsig;
       p3 : out logicsig;
@@ -167,7 +167,7 @@ begin -- gates
     b => p17,
     y => t3);
 
-  tp3 <= t3;
+  tp5 <= t3;
 
   u16 : g2 port map (
     a => t3,
@@ -198,7 +198,7 @@ begin -- gates
     b => p20,
     y => t4);
 
-  tp4 <= t4;
+  tp6 <= t4;
 
   u21 : g2 port map (
     a => t4,
