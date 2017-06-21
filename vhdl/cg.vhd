@@ -224,6 +224,7 @@ begin -- gates
     q => t13,
     qs => t11);
 
+  p20 <= t11;
 
   u18 : inv port map (
     a => p18,
