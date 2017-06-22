@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.51 (w)1999-2013 BSI
-[*] Wed Jun 21 19:10:53 2017
+[*] Thu Jun 22 13:48:01 2017
 [*]
 [dumpfile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/cdc_tb.ghw"
-[dumpfile_mtime] "Wed Jun 21 18:28:18 2017"
-[dumpfile_size] 11827176
+[dumpfile_mtime] "Thu Jun 22 13:26:14 2017"
+[dumpfile_size] 11824874
 [savefile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/cdcds.sav"
-[timestart] 12455000000
+[timestart] 13462000000
 [size] 1393 855
 [pos] -1 -1
-*-30.167910 15690000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-28.167910 14887000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.cdc_tb.
 [treeopen] top.cdc_tb.uut.
@@ -153,8 +153,9 @@ top.cdc_tb.uut.ch5.d42.tp4
 -group_end
 @30
 #{P} top.cdc_tb.uut.ch5.n39.tp1 top.cdc_tb.uut.ch5.n39.tp6 top.cdc_tb.uut.ch5.n38.tp1 top.cdc_tb.uut.ch5.n38.tp6 top.cdc_tb.uut.ch5.n37.tp1 top.cdc_tb.uut.ch5.n37.tp6 top.cdc_tb.uut.ch5.n36.tp1 top.cdc_tb.uut.ch5.n36.tp6 top.cdc_tb.uut.ch5.n35.tp1 top.cdc_tb.uut.ch5.n35.tp6 top.cdc_tb.uut.ch5.n34.tp1 top.cdc_tb.uut.ch5.n34.tp6 top.cdc_tb.uut.ch5.n33.tp1 top.cdc_tb.uut.ch5.n33.tp6 top.cdc_tb.uut.ch5.n32.tp1 top.cdc_tb.uut.ch5.n32.tp6 top.cdc_tb.uut.ch5.n31.tp1 top.cdc_tb.uut.ch5.n31.tp6
+@64
++{L_count} #{L} top.cdc_tb.uut.ch5.h28.tp5 top.cdc_tb.uut.ch5.h28.tp2 top.cdc_tb.uut.ch5.h28.tp1
 @24
-#{L} top.cdc_tb.uut.ch5.h28.tp5 top.cdc_tb.uut.ch5.h28.tp2 top.cdc_tb.uut.ch5.h28.tp1
 #{Parcel} top.cdc_tb.uut.ch5.g31.tp1 top.cdc_tb.uut.ch5.g31.tp4
 @28
 +{F37_ffA} top.cdc_tb.uut.ch5.f37.p23_tp4
@@ -164,7 +165,9 @@ top.cdc_tb.uut.ch5.d42.tp4
 +{M1->CM} top.cdc_tb.uut.ch5.f42.p27
 +{Accept} top.cdc_tb.uut.ch5.o40.p25_tp6
 +{RNI} top.cdc_tb.uut.ch5.r33.tp6
+@29
 +{Inst_avail} top.cdc_tb.uut.ch5.f37.tp2
+@28
 +{Skip_I} top.cdc_tb.uut.ch5.g30.p2_tp5
 +{Skip_III} top.cdc_tb.uut.ch5.g30.p15_tp3
 +{Go_FF} top.cdc_tb.uut.ch5.g30.tp1
@@ -172,6 +175,8 @@ top.cdc_tb.uut.ch5.d42.tp4
 +{Skip_II} top.cdc_tb.uut.ch5.g30.tp4
 +{U2_issue} top.cdc_tb.uut.ch5.f34.p1_p2_p3_p4_p5_p6_p7_p9_p11_p13
 +{U1_issue} top.cdc_tb.uut.ch5.g30.p6
++{U1_issue_odd} top.cdc_tb.uut.ch5.g28.p19_tp5
++{U1_issue_even} top.cdc_tb.uut.ch5.g28.p25_tp6
 +{Adv_PC} top.cdc_tb.uut.ch5.g31.j
 +{Scbd_issue} top.cdc_tb.uut.ch5.f34.p8_p14_p19_p20_p21_p22_p23_p24_p25_p26_p28
 +{I6->I7} top.cdc_tb.uut.ch5.c15.b
@@ -181,17 +186,42 @@ top.cdc_tb.uut.ch5.d42.tp4
 #{U0} top.cdc_tb.uut.ch5.e22.tp5 top.cdc_tb.uut.ch5.e21.tp5 top.cdc_tb.uut.ch5.e20.tp5 top.cdc_tb.uut.ch5.e19.tp5 top.cdc_tb.uut.ch5.e18.tp5 top.cdc_tb.uut.ch5.d25.tp5 top.cdc_tb.uut.ch5.d24.tp5 top.cdc_tb.uut.ch5.d23.tp5 top.cdc_tb.uut.ch5.d22.tp5 top.cdc_tb.uut.ch5.d21.tp5 top.cdc_tb.uut.ch5.d20.tp5 top.cdc_tb.uut.ch5.d19.tp5 top.cdc_tb.uut.ch5.d18.tp5 top.cdc_tb.uut.ch5.d17.tp5 top.cdc_tb.uut.ch5.d16.tp5 top.cdc_tb.uut.ch5.e22.tp2 top.cdc_tb.uut.ch5.e21.tp2 top.cdc_tb.uut.ch5.e20.tp2 top.cdc_tb.uut.ch5.e19.tp2 top.cdc_tb.uut.ch5.e18.tp2 top.cdc_tb.uut.ch5.d25.tp2 top.cdc_tb.uut.ch5.d24.tp2 top.cdc_tb.uut.ch5.d23.tp2 top.cdc_tb.uut.ch5.d22.tp2 top.cdc_tb.uut.ch5.d21.tp2 top.cdc_tb.uut.ch5.d20.tp2 top.cdc_tb.uut.ch5.d19.tp2 top.cdc_tb.uut.ch5.d18.tp2 top.cdc_tb.uut.ch5.d17.tp2 top.cdc_tb.uut.ch5.d16.tp2
 #{U1} top.cdc_tb.uut.ch5.e22.p14_p21_tp6 top.cdc_tb.uut.ch5.e21.p14_p21_tp6 top.cdc_tb.uut.ch5.e20.p14_p21_tp6 top.cdc_tb.uut.ch5.e19.p14_p21_tp6 top.cdc_tb.uut.ch5.e18.p14_p21_tp6 top.cdc_tb.uut.ch5.d25.p14_p21_tp6 top.cdc_tb.uut.ch5.d24.p14_p21_tp6 top.cdc_tb.uut.ch5.d23.p14_p21_tp6 top.cdc_tb.uut.ch5.d22.p14_p21_tp6 top.cdc_tb.uut.ch5.d21.p21_tp6 top.cdc_tb.uut.ch5.d20.p21_tp6 top.cdc_tb.uut.ch5.d19.p21_tp6 top.cdc_tb.uut.ch5.d18.p21_tp6 top.cdc_tb.uut.ch5.d17.p21_tp6 top.cdc_tb.uut.ch5.d16.p21_tp6 top.cdc_tb.uut.ch5.e22.p4_tp1 top.cdc_tb.uut.ch5.e21.p4_tp1 top.cdc_tb.uut.ch5.e20.p4_tp1 top.cdc_tb.uut.ch5.e19.p4_tp1 top.cdc_tb.uut.ch5.e18.p4_tp1 top.cdc_tb.uut.ch5.d25.p4_tp1 top.cdc_tb.uut.ch5.d24.p4_tp1 top.cdc_tb.uut.ch5.d23.p4_tp1 top.cdc_tb.uut.ch5.d22.p4_tp1 top.cdc_tb.uut.ch5.d21.p4_tp1 top.cdc_tb.uut.ch5.d20.p4_tp1 top.cdc_tb.uut.ch5.d19.p4_tp1 top.cdc_tb.uut.ch5.d18.p4_tp1 top.cdc_tb.uut.ch5.d17.p4_tp1 top.cdc_tb.uut.ch5.d16.p4_tp1
 #{U2} top.cdc_tb.uut.ch5.e32.u11.qb top.cdc_tb.uut.ch5.e32.u10.qb top.cdc_tb.uut.ch5.e32.u9.qb top.cdc_tb.uut.ch5.e32.u5.qb top.cdc_tb.uut.ch5.e32.u3.qb top.cdc_tb.uut.ch5.e32.u1.qb top.cdc_tb.uut.ch5.e14.p14_tp3 top.cdc_tb.uut.ch5.e14.p25_tp6 top.cdc_tb.uut.ch5.e14.p4_tp1 top.cdc_tb.uut.ch5.e13.p25_tp6 top.cdc_tb.uut.ch5.e13.p17_tp4 top.cdc_tb.uut.ch5.e13.p6_tp3 top.cdc_tb.uut.ch5.e12.p12 top.cdc_tb.uut.ch5.e12.p9 top.cdc_tb.uut.ch5.e12.p4
-#{K} top.cdc_tb.uut.ch5.m30.p25_tp6 top.cdc_tb.uut.ch5.m30.p15_tp5 top.cdc_tb.uut.ch5.m30.p19_tp4 top.cdc_tb.uut.ch5.m30.p10_tp3 top.cdc_tb.uut.ch5.m30.p7_tp2 top.cdc_tb.uut.ch5.m30.p3_tp1 top.cdc_tb.uut.ch5.m29.p26_tp6 top.cdc_tb.uut.ch5.m29.p25_tp5 top.cdc_tb.uut.ch5.m29.p22_tp4 top.cdc_tb.uut.ch5.m29.p11_tp3 top.cdc_tb.uut.ch5.m29.p7_tp2 top.cdc_tb.uut.ch5.m29.p3_tp1 top.cdc_tb.uut.ch5.m28.p26_tp6 top.cdc_tb.uut.ch5.m28.p25_tp5 top.cdc_tb.uut.ch5.m28.p22_tp4 top.cdc_tb.uut.ch5.m28.p11_tp3 top.cdc_tb.uut.ch5.m28.p7_tp2 top.cdc_tb.uut.ch5.m28.p3_tp1
+@c00030
+#{K} top.cdc_tb.uut.ch5.m30.p25_tp6 top.cdc_tb.uut.ch5.m30.p15_tp5 top.cdc_tb.uut.ch5.m30.p19_tp4 top.cdc_tb.uut.ch5.m30.p10_tp3 top.cdc_tb.uut.ch5.m30.p7_tp2 top.cdc_tb.uut.ch5.m30.p3_tp1 top.cdc_tb.uut.ch5.m29.u6.t1 top.cdc_tb.uut.ch5.m29.u5.t1 top.cdc_tb.uut.ch5.m29.u4.t1 top.cdc_tb.uut.ch5.m29.u3.t1 top.cdc_tb.uut.ch5.m29.u2.t1 top.cdc_tb.uut.ch5.m29.u1.t1 top.cdc_tb.uut.ch5.m28.u6.t1 top.cdc_tb.uut.ch5.m28.u5.t1 top.cdc_tb.uut.ch5.m28.u4.t1 top.cdc_tb.uut.ch5.m28.u3.t1 top.cdc_tb.uut.ch5.m28.u2.t1 top.cdc_tb.uut.ch5.m28.u1.t1
+@28
+top.cdc_tb.uut.ch5.m30.p25_tp6
+top.cdc_tb.uut.ch5.m30.p15_tp5
+top.cdc_tb.uut.ch5.m30.p19_tp4
+top.cdc_tb.uut.ch5.m30.p10_tp3
+top.cdc_tb.uut.ch5.m30.p7_tp2
+top.cdc_tb.uut.ch5.m30.p3_tp1
+top.cdc_tb.uut.ch5.m29.u6.t1
+top.cdc_tb.uut.ch5.m29.u5.t1
+top.cdc_tb.uut.ch5.m29.u4.t1
+top.cdc_tb.uut.ch5.m29.u3.t1
+top.cdc_tb.uut.ch5.m29.u2.t1
+top.cdc_tb.uut.ch5.m29.u1.t1
+top.cdc_tb.uut.ch5.m28.u6.t1
+top.cdc_tb.uut.ch5.m28.u5.t1
+top.cdc_tb.uut.ch5.m28.u4.t1
+top.cdc_tb.uut.ch5.m28.u3.t1
+top.cdc_tb.uut.ch5.m28.u2.t1
+top.cdc_tb.uut.ch5.m28.u1.t1
+top.cdc_tb.uut.ch5.m28.p16
+top.cdc_tb.uut.ch5.m28.p13
+top.cdc_tb.uut.ch5.m29.p16
+top.cdc_tb.uut.ch5.m29.p13
+top.cdc_tb.uut.ch5.g40.p6
+top.cdc_tb.uut.ch5.g40.p3
+@1401200
+-group_end
+@30
 #{R} top.cdc_tb.uut.ch5.n39.tp2 top.cdc_tb.uut.ch5.n39.tp5 top.cdc_tb.uut.ch5.n38.tp2 top.cdc_tb.uut.ch5.n38.tp5 top.cdc_tb.uut.ch5.n37.tp2 top.cdc_tb.uut.ch5.n37.tp5 top.cdc_tb.uut.ch5.n36.tp2 top.cdc_tb.uut.ch5.n36.tp5 top.cdc_tb.uut.ch5.n35.tp2 top.cdc_tb.uut.ch5.n35.tp5 top.cdc_tb.uut.ch5.n34.tp2 top.cdc_tb.uut.ch5.n34.tp5 top.cdc_tb.uut.ch5.n33.tp2 top.cdc_tb.uut.ch5.n33.tp5 top.cdc_tb.uut.ch5.n32.tp2 top.cdc_tb.uut.ch5.n32.tp5 top.cdc_tb.uut.ch5.n31.tp2 top.cdc_tb.uut.ch5.n31.tp5
 #{RA} top.cdc_tb.uut.ch5.m34.p18_tp4 top.cdc_tb.uut.ch5.m34.p23_tp5 top.cdc_tb.uut.ch5.m34.p24_tp6 top.cdc_tb.uut.ch5.l40.p18_tp4 top.cdc_tb.uut.ch5.l40.p23_tp5 top.cdc_tb.uut.ch5.l40.p24_tp6 top.cdc_tb.uut.ch5.l39.p18_tp4 top.cdc_tb.uut.ch5.l39.p23_tp5 top.cdc_tb.uut.ch5.l39.p24_tp6 top.cdc_tb.uut.ch5.l38.p18_tp4 top.cdc_tb.uut.ch5.l38.p23_tp5 top.cdc_tb.uut.ch5.l38.p24_tp6 top.cdc_tb.uut.ch5.l37.p18_tp4 top.cdc_tb.uut.ch5.l37.p23_tp5 top.cdc_tb.uut.ch5.l37.p24_tp6 top.cdc_tb.uut.ch5.l36.p18_tp4 top.cdc_tb.uut.ch5.l36.p23_tp5 top.cdc_tb.uut.ch5.l36.p24_tp6
 #{FL} top.cdc_tb.uut.ch5.m34.p14_tp3 top.cdc_tb.uut.ch5.m34.p10_tp2 top.cdc_tb.uut.ch5.m34.p5_tp1 top.cdc_tb.uut.ch5.l40.p14_tp3 top.cdc_tb.uut.ch5.l40.p10_tp2 top.cdc_tb.uut.ch5.l40.p5_tp1 top.cdc_tb.uut.ch5.l39.p14_tp3 top.cdc_tb.uut.ch5.l39.p10_tp2 top.cdc_tb.uut.ch5.l39.p5_tp1 top.cdc_tb.uut.ch5.l38.p14_tp3 top.cdc_tb.uut.ch5.l38.p10_tp2 top.cdc_tb.uut.ch5.l38.p5_tp1 top.cdc_tb.uut.ch5.l37.p14_tp3 top.cdc_tb.uut.ch5.l37.p10_tp2 top.cdc_tb.uut.ch5.l37.p5_tp1 top.cdc_tb.uut.ch5.l36.p14_tp3 top.cdc_tb.uut.ch5.l36.p10_tp2 top.cdc_tb.uut.ch5.l36.p5_tp1
 #{S} top.cdc_tb.uut.ch5.m40.tp1 top.cdc_tb.uut.ch5.m40.tp5 top.cdc_tb.uut.ch5.m40.tp6 top.cdc_tb.uut.ch5.m39.tp1 top.cdc_tb.uut.ch5.m39.tp5 top.cdc_tb.uut.ch5.m39.tp6 top.cdc_tb.uut.ch5.m38.tp1 top.cdc_tb.uut.ch5.m38.tp5 top.cdc_tb.uut.ch5.m38.tp6 top.cdc_tb.uut.ch5.m37.tp1 top.cdc_tb.uut.ch5.m37.tp5 top.cdc_tb.uut.ch5.m37.tp6 top.cdc_tb.uut.ch5.m36.tp1 top.cdc_tb.uut.ch5.m36.tp5 top.cdc_tb.uut.ch5.m36.tp6 top.cdc_tb.uut.ch5.m35.tp1 top.cdc_tb.uut.ch5.m35.tp5 top.cdc_tb.uut.ch5.m35.tp6
 @28
 +{All_quiet} top.cdc_tb.uut.ch5.f26.p10
-@24
-#{Inch_counter} top.cdc_tb.uut.ch5.g32.tp1 top.cdc_tb.uut.ch5.g32.tp4
-@28
-+{Inch} top.cdc_tb.uut.ch5.g29.tp1
 +{CM_Accept} top.cdc_tb.uut.ch5.o40.p17
 +{End_Exchange} top.cdc_tb.uut.ch5.a21.tp5
 +{Program_Addr} top.cdc_tb.uut.ch5.p37.tp4
@@ -199,6 +229,37 @@ top.cdc_tb.uut.ch5.d42.tp4
 +{Enter_Central} top.cdc_tb.uut.ch5.o36.p9_p19_p20
 +{Disable_P+1} top.cdc_tb.uut.ch5.p37.tp6
 +{Error_stop} top.cdc_tb.uut.ch5.l16.tp6
+@200
+-Inch
+@24
+#{Inch_counter} top.cdc_tb.uut.ch5.g32.tp1 top.cdc_tb.uut.ch5.g32.tp4
+@28
++{Begin_inch} top.cdc_tb.uut.ch5.g29.p11
++{Inch} top.cdc_tb.uut.ch5.g29.tp2
++{Advance} top.cdc_tb.uut.ch5.g32.p20
++{G32_tp1} top.cdc_tb.uut.ch5.g32.tp1
++{G32_tp4} top.cdc_tb.uut.ch5.g32.tp4
++{G32_G} top.cdc_tb.uut.ch5.g32.g
++{G32_E} top.cdc_tb.uut.ch5.g32.e
+@68
++{IK=0} top.cdc_tb.uut.ch5.g32.tp5
++{IK=1} top.cdc_tb.uut.ch5.g32.tp6
++{IK=2} top.cdc_tb.uut.ch5.g32.tp2
++{IK=3} top.cdc_tb.uut.ch5.g32.tp3
+@28
++{Inch_even} top.cdc_tb.uut.ch5.g29.c
++{Inch_odd} top.cdc_tb.uut.ch5.g29.b
++{G29_tp1} top.cdc_tb.uut.ch5.g29.tp1
++{G29_tp3} top.cdc_tb.uut.ch5.g29.tp3
++{G29_tp6} top.cdc_tb.uut.ch5.g29.tp6
++{G29_tp5} top.cdc_tb.uut.ch5.g29.tp5
++{I6->I7} top.cdc_tb.uut.ch5.g29.p2
++{I5->I6} top.cdc_tb.uut.ch5.g29.p4
++{I4->I5} top.cdc_tb.uut.ch5.g29.p15
++{I3->I4} top.cdc_tb.uut.ch5.g29.p13
++{I2->I3} top.cdc_tb.uut.ch5.g29.p27
++{I1->I2} top.cdc_tb.uut.ch5.g29.p25
++{I0->I1} top.cdc_tb.uut.ch5.g29.p16
 @200
 -Scoreboard
 @800028
