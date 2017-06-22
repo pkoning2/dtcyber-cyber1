@@ -146,7 +146,7 @@ begin -- gates
 
   u5 : g2 port map (
     a => p10,
-    b => c,
+    b => b,
     y => t3,
     y2 => p15);
 
