@@ -112,12 +112,13 @@ entity co is
       p27 : in  logicsig;
       p28 : in  logicsig;
       tp4 : out logicsig;
+      tp5 : out logicsig;
       p3 : out logicsig;
       p4_tp1 : out logicsig;
       p8_tp2 : out logicsig;
       p9 : out logicsig;
       p14_tp3 : out logicsig;
-      p15_tp5 : out logicsig;
+      p15 : out logicsig;
       p18 : out logicsig;
       p21 : out logicsig;
       p22 : out logicsig;
@@ -187,8 +188,6 @@ begin -- gates
     i3 => p24,
     tp_y => p25_tp6,
     y2 => p26);
-
-  p15_tp5 <= a;
 
   u2 : coslice port map (
     a => a,
@@ -263,7 +262,10 @@ begin -- gates
   u13 : g2 port map (
     a => t4,
     b => t6,
-    y => a);
+    y => p15,
+    y2 => a);
+
+  tp5 <= a;
 
 
 
