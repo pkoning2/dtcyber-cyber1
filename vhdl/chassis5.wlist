@@ -5693,7 +5693,7 @@ TH	5E28
 20
 21	E21	22	11
 22	E20	22	11
-23	G40	6	20		# Timing tweak for K->R
+23	G40	6	60
 24
 25	O40	7	41
 26	F34	7	11
@@ -7077,7 +7077,7 @@ AM	5F34
 12	I21	22	21
 13	E12	16	23
 14	F38	3	7
-15	M11	19	60
+15	M11	19	160		# Adjust timing to get TP1 to T00
 16	E32	28	7
 17	Q18	5	47
 18	E31	13	7
@@ -8169,7 +8169,7 @@ AO	5G30
 2	E9	2	37
 3	A22	26	25
 4	F34	5	9
-5	E29	25	11
+5	E29	25	50		# Timing tweak for T00 here
 6	G28	27	7
 7	F34	27	7
 8	G36	14	7
@@ -8457,10 +8457,10 @@ IV	5G39
 TH	5G40
 1	O36	12	132
 2
-3	O32	9	33
+3	O32	9	60		# Timing tweak for K->R
 4	D18	24	25
 5	D17	24	24
-6	E28	23	20		# Timing tweak for K->R
+6	E28	23	60
 7	Q19	9	47
 8	M11	5	33
 9	D16	24	27
@@ -16432,7 +16432,7 @@ HW	5N20
 TC	5N21
 1	K12	13	17
 2	K16	13	17
-3	N8	27	180		# Fix for timing, but still 5 ns short
+3	N8	27	220		# Fix for timing, overly long wire
 4	K6	13	23
 5
 6	K5	13	21
@@ -17975,7 +17975,7 @@ HC	5O32
 6	N33	13	5
 7	F34	3	37
 8	N39	13	13
-9	G40	3	33
+9	G40	3	60		# Timing tweak for K->R
 10	N35	13	7
 11	N36	13	7
 12	N32	13	5
