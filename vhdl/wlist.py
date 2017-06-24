@@ -553,7 +553,7 @@ class Connector (object):
                 if m.group (4):
                     try:
                         wlen = int (m.group (4))
-                        if wlen < 1 or wlen > 180:
+                        if wlen < 1 or wlen > 220:# temp was 180:
                             raise ValueError
                     except (TypeError, ValueError):
                         error ("invalid wire length %s pin %d in %s"
