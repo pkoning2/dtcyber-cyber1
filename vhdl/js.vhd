@@ -40,6 +40,8 @@ entity js is
       tp1 : out logicsig;
       tp2 : out logicsig;
       tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
       p2 : out logicsig;
       p6 : out logicsig;
       p9 : out logicsig;
@@ -125,8 +127,6 @@ architecture gates of js is
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
-  signal t5 : logicsig;
-  signal t6 : logicsig;
   signal t8 : logicsig;
   signal t9 : logicsig;
   signal t10 : logicsig;
@@ -159,20 +159,12 @@ begin -- gates
     q => tp2,
     qb => p2);
 
-  p10 <= a;
-
   u4 : rsflop port map (
     r => p8,
     s => t3,
     q => t4);
 
   tp1 <= t4;
-
-  u5 : inv2 port map (
-    a => p5,
-    y => t5,
-    y2 => t6);
-
 
   u7 : latch port map (
     clk => p5,
@@ -192,6 +184,7 @@ begin -- gates
     s => t9,
     q => d);
 
+  p10 <= d;
 
   u10 : inv port map (
     a => p11,
@@ -222,12 +215,14 @@ begin -- gates
     y => r,
     y2 => t13);
 
+  tp4 <= r;
 
   u14 : g2 port map (
     a => t12,
     b => r,
     y => t);
 
+  tp5 <= t;
 
   u15 : g2 port map (
     a => p19,
