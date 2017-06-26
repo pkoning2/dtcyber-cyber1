@@ -69,6 +69,14 @@ architecture gates of jp is
 
   end component;
 
+  component inv2
+    port (
+      a : in  logicsig;
+      y : out logicsig;
+      y2 : out logicsig);
+
+  end component;
+
   component latch
     port (
       clk : in  logicsig;
@@ -79,17 +87,21 @@ architecture gates of jp is
 
   end component;
 
-  component latch22
+  component r2s2flop
     port (
-      clk : in  logicsig;
-      clk2 : in  logicsig;
-      d : in  logicsig;
-      d2 : in  logicsig;
+      r : in  logicsig;
+      r2 : in  logicsig;
+      s : in  logicsig;
+      s2 : in logicsig;
       q : out logicsig;
       qb : out logicsig);
 
   end component;
 
+  signal c : logicsig;
+  signal d : logicsig;
+  signal e : logicsig;
+  signal f : logicsig;
   signal h : logicsig;
   signal k : logicsig;
   signal t1 : logicsig;
@@ -100,13 +112,15 @@ architecture gates of jp is
   signal t6 : logicsig;
   signal t7 : logicsig;
   signal t8 : logicsig;
+  signal t9 : logicsig;
+  signal t10 : logicsig;
 
 begin -- gates
-  u1 : latch22 port map (
-    clk => p18,
-    clk2 => p16,
-    d => p24,
-    d2 => p23,
+  u1 : r2s2flop port map (
+    r => c,
+    r2 => e,
+    s => t9,
+    s2 => t10,
     q => t1,
     qb => t2);
 
@@ -124,9 +138,10 @@ begin -- gates
 
   u4 : g2 port map (
     a => p23,
-    b => p16,
-    y => p25);
+    b => f,
+    y => t10);
 
+  p25 <= t10;
 
   u5 : inv port map (
     a => p3,
@@ -188,6 +203,20 @@ begin -- gates
     b => t8,
     y => p11_p21);
 
+  u14 : inv2 port map (
+    a => p18,
+    y => c,
+    y2 => d);
+
+  u15 : inv2 port map (
+    a => p16,
+    y => e,
+    y2 => f);
+
+  u16 : g2 port map (
+    a => p24,
+    b => d,
+    y => t9);
 
 
 end gates;
