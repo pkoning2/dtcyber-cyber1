@@ -57,6 +57,22 @@ void storebyte (int byte, membyte memp)
     //DDPRINTF ("\n");
 }
 
+int getbyte (membyte memp)
+{
+    int i, ret = 0, bit = 0200;
+    
+    // Convert bit_vector to 8-bit integer
+    for (i = 0; i < 8; i++)
+    {
+        if (memp[i] == one)
+            ret |= bit;
+        bit >>= 1;
+    }
+
+    return ret;
+}
+
+
 void meminit (int bnum, int offset, membyte memp)
 {
     int i, pp, byte, bank;
@@ -66,7 +82,7 @@ void meminit (int bnum, int offset, membyte memp)
     cpword *c;
 
     // bnum is (2 * pp number) + byte number for pp memory,
-    // or 100 * (8 * bank) + byte number for cp memory.
+    // or 100 + (8 * bank) + byte number for cp memory.
     // byte number is 0..n from high to low (0..1 for pp, 0..7 for cp)
 
     if (bnum < 100)
@@ -147,6 +163,64 @@ void meminit (int bnum, int offset, membyte memp)
                 storebyte ((cpdata[offset] >> ((7 - byte) * 8)) & 0xff, memp);
             }
         }
+    }
+}
+
+    
+void memwrite (int bnum, int offset, membyte memp)
+{
+    int i, pp, byte, bank;
+    char fn[20];
+    FILE *f;
+    static ppword p[10];
+    static cpword c[32];
+    static int lastppoffset[10];
+    static int lastcpoffset[32];
+
+    // bnum is (2 * pp number) + byte number for pp memory,
+    // or 100 + (8 * bank) + byte number for cp memory.
+    // byte number is 0..n from high to low (0..1 for pp, 0..7 for cp)
+
+    if (bnum < 100)
+    {
+        pp = bnum / 2;
+        byte = bnum % 2;
+        DDPRINTF ("memwrite pp %d byte %d\n", pp, byte);
+        // PP memory is written bank 0 to 1
+        if (byte == 0)
+        {
+            p[pp] = 0;
+        }
+        if (byte)
+        {
+            p[pp] |= getbyte (memp);
+        }
+        else
+        {
+            p[pp] |= getbyte (memp) << 8;
+        }
+        if (byte == 1)
+        {
+            DPRINTF ("pp%d write %04o: %04o\n", pp, offset, p[pp]);
+        }        
+    }
+    else
+    {
+        bnum -= 100;
+        bank = bnum / 8;
+        byte = bnum % 8;
+        DDPRINTF ("memwrite cp bank %d byte %d\n", bank, byte);
+        // CP memory is written bank 7 to 0
+        if (byte == 7)
+        {
+            c[bank] = 0;
+        }
+        c[pp] |= getbyte (memp) << ((7 - bank) * 8);
+        if (byte == 0)
+        {
+            DPRINTF ("cp write %06o: %020llo\n",
+                     bank + (offset * 32), c[pp]);
+        }        
     }
 }
 

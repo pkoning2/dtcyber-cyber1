@@ -96,13 +96,13 @@ architecture beh of cmarray is
   signal trdata, twdata : logicbus(63 downto 0);
 begin  -- beh
   twdata <= "0000" & wdata;
-  arrays: for bank in 0 to 7 generate
+  arrays: for bytenum in 0 to 7 generate
     membank : memarray generic map (
-      bnum => bnum * 8 + bank + 100)
+      bnum => bnum * 8 + bytenum + 100)
     port map (
       addr_a  => addr,
-      rdata_a => trdata(63 - (bank * 8) downto 56 - (bank * 8)),
-      wdata_a => twdata(63 - (bank * 8) downto 56 - (bank * 8)),
+      rdata_a => trdata(63 - (bytenum * 8) downto 56 - (bytenum * 8)),
+      wdata_a => twdata(63 - (bytenum * 8) downto 56 - (bytenum * 8)),
       clk_a   => clk,
       ena_a   => ena,
       write_a => write,

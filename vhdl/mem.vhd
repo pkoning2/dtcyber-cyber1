@@ -68,6 +68,7 @@ begin  -- beh
         areg := TO_INTEGER (UNSIGNED (addr_a));
         if write_a = '1' then
           mdata (areg) := wdata_a;
+          memwrite (bnum, areg, wdata_a);
         else
           rdata_a <= mdata (areg);
         end if;
@@ -78,6 +79,7 @@ begin  -- beh
         areg := TO_INTEGER (UNSIGNED (addr_b));
         if write_b = '1' then
           mdata (areg) := wdata_b;
+          memwrite (bnum, areg, wdata_b);
         else
           rdata_b <= mdata (areg);
         end if;
