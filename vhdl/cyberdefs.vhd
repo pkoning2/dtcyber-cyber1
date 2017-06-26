@@ -56,6 +56,12 @@ package sigs is
     constant offset : in    integer;      -- byte offset
     mbyte           : inout byte);        -- byte to initialize
   attribute foreign of meminit : procedure is "VHPIDIRECT meminit";
+
+  procedure memwrite (
+    constant bnum   : in integer;         -- bank number
+    constant offset : in integer;         -- byte offset
+    mbyte           : in byte);           -- byte being written
+  attribute foreign of memwrite : procedure is "VHPIDIRECT memwrite";
 end sigs;
 
 package body sigs is
@@ -75,6 +81,7 @@ package body sigs is
     assert false severity failure;
   end dtmain;
 
+  -- purpose: Dummy body
   procedure meminit (
     constant bnum   : in    integer;      -- bank number
     constant offset : in    integer;      -- byte offset
@@ -82,6 +89,15 @@ package body sigs is
   begin  -- meminit
     assert false severity failure;
   end meminit;
+
+  -- purpose: Dummy body
+  procedure memwrite (
+    constant bnum   : in integer;         -- bank number
+    constant offset : in integer;         -- byte offset
+    mbyte           : in byte) is         -- byte being written
+  begin  -- memwrite
+    assert false severity failure;
+  end memwrite;
 
 end sigs;
 
