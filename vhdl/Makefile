@@ -47,12 +47,12 @@ cdc_tb2: $(VLIB) chassis12.vhd
 %.o : %.c
 	$(CC) -O2  $(CFLAGS) $(CCOPTS) -I .. -I . -c $<
 
-cdc6600.vhd $(CHASSIS_V) : $(CHASSIS_SRCS) $(CABLE_SRCS) wlist.py cmodule.py
+cdc6600.d cdc6600.vhd $(CHASSIS_V) : 
 	# Note: cables must be last
-	./wlist.py  $(CHASSIS_SRCS) $(CABLE_SRCS)
+	./wlist.py -v -d cdc6600.d  $(CHASSIS_SRCS) $(CABLE_SRCS)
 
-chassis12.vhd : chassis12.wlist wlist.py 
-	./wlist.py -t - chassis12.wlist
+chassis12.d chassis12.vhd : chassis12.wlist wlist.py 
+	./wlist.py -v -d chassis12.d -t - chassis12.wlist
 
 clean:
 	rm -f *.o *.cf cyberdefs.stamp cdc6600.vhd chassis*.vhd $(VLIB)
@@ -66,3 +66,5 @@ sim2: cdc_tb2
 $(TOP): $(CHASSIS_O)
 
 include $(CHASSIS_D)
+include cdc6600.d
+include chassis12.d
