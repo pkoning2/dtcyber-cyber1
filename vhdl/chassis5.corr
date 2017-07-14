@@ -1,0 +1,19 @@
+# Corrections file for Chassis 5 wire list
+#
+# Error (ground where clock is needed)
+5E20	8	F17	23	7
+5E21	8	F17	25	7
+5E22	8	F17	26	7
+#
+# Error (wire to wrong place)
+5F17	3	N8	24	87
+#
+# Missing wire end
+5O38	5	P40	13	7
+#
+# Error (wrong cable/strand)
+5O40	2	W23	900
+#
+# Error (mismatched wire ends)
+5Q30	25	Q25	13	120
+5P20	22	I4	21	33

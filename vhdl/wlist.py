@@ -3,10 +3,75 @@
 """Process CDC 6600 wiring list
 
 Copyright (C) 2008-2017 Paul Koning
+
+This program reads design data files for CDC 6000 machines, and produces
+as output an equivalent VHDL model.  There are three kinds of input files:
+
+1. Chassis wire lists.  These contain the text from the "chassis tabs"
+   documents published by CDC.  A wire list is a sequence of module slot
+   entries.  Each slot entry begins with a header line which lists the
+   module type (a two letter string) and the slot position.  It is followed
+   by the pin connections, one per pin in order.  Most modules have
+   28 pins, but memory modules have 30 and also have two connectors; the
+   pins for the second connector are preceded by a line that lists the
+   connector slot position without a module type.
+
+   Slot positions in the header have the chassis number, row letter, and
+   column number, for example "5A12".  Slot labels in the pin lists also
+   have this format but the chassis number is typically omitted (but if
+   present, it must match the number of the current chassis).
+
+   The module type may be followed by an argument in parentheses, which
+   gives the "generic map" data for that module.  This is used with PP
+   memory, to supply the bank number (PP number) which is used in the
+   simulation to read the initial content.
+
+   Pin entries have four fields: the pin number, destination slot label,
+   destination pin number, and wire length in inches.  Special cases are:
+   a. Ground: given by "good", "grd", "grn", "gnd" or the slot label in
+      the destination slot field, "x" in the pin field, and optionally
+      "2" in the length field.
+   b. Coax connections: the cable label (e.g., "W12") in the destination
+      slot field, and strand number (e.g., "902") in the pin field,
+      length field unused.
+   c. Model signals: "reset" or a clock phase such as "t05" in the 
+      destination slot field, other fields unused.
+   d. A power designation such as "CB3" or "+6" in the destination slot
+      field -- these appear in memory connections and are ignored.
+
+2. Coax wire lists.  These contain the text from the "cable tabs" document
+   published by CDC.  Each line lists the two end points of a cable,
+   for example "1W2  5W13"
+
+3. Correction files.  These are created as part of the modeling effort,
+   for several purposes.  One is to correct typos and other obvious errors
+   in the chassis wire lists, since the published documents are not
+   entirely accurate.  The other purpose is to make changes for the
+   VHDL model to work correctly.  Such changes may include adjustments
+   to wire lengths, or replacements of the inverter based clock tree by
+   explicit clock phase assignments.  Correction files are a sequence
+   of lines of several types:
+   a. Module type change: a slot position and new module type.
+   b. Module deletion: a slot position and "--".
+   c. Wire replacement: slot position, pin number, slot position, pin
+      number (the two end points) and wire length
+   d. Wire replacement with coax connection: slot position, pin number,
+      cable label, strand number.
+   e. Wire replacement with model signal: slot position, pin number,
+      model signal name.
+   f. Wire deletion: slot position, pin number, "--"
+   
+   In each of these, the firs slot position includes the chassis number,
+   for the second slot position it may be omitted (but if supplied must
+   match).
+
+In all files, the content is case-insensitive.  Comments are permitted,
+with the # prefix.  Fields are separated by a single tab.
 """
 
 import re
 import sys
+import os
 import traceback
 import argparse
 import cmodule
@@ -30,30 +95,38 @@ _re_cable = re.compile (r"(\d+)?w(\d+)(?:#.*)?$", re.I)
 _re_cables = re.compile ("^(\\d+w\\d+)[ \t]+(\\d+w\\d+)", re.M | re.I)
 _re_header = re.compile ("(#.*\n)+")
 _re_tsp = re.compile ("[ \t]+$", re.M)
-#_re_corr = re.compile ()
+_re_cstrip = re.compile (r"[ \t]*#.*$")
+_re_clkref = re.compile (r"t(\d+)(b?)$", re.I)
 
 header = """-------------------------------------------------------------------------------
 --
 -- CDC 6600 model -- {{}}
 --
--- Converted from wire lists using wlist.py by Paul Koning
+-- Converted from wire lists using {} by Paul Koning
+--
 {{}}
+--
 -- NOTE: This is a generated file, created {}.
 --
 -------------------------------------------------------------------------------
-""".format (time.strftime ("%Y/%m/%d %H.%M.%S"))
+""".format (os.path.basename (sys.argv[0]),
+            time.strftime ("%Y/%m/%d %H.%M.%S"))
 
-def normslot (chnum, slot):
+def cstrip (l):
+    return _re_cstrip.sub ("", l)
+
+def normslot (chnum, slot, silent = False):
     """Normalize a slot name.  Strip off leading chassis number,
     if present (must be correct if present).  Make slot number 2 digits.
     """
     m = _re_chslot.match (slot)
     if not m:
-        error ("Invalid module slot ID %s" % slot)
+        if not silent:
+            error ("Invalid module slot ID {}", slot)
         return None
     if m.group (1):
         if chnum and int (m.group (1)) != chnum:
-            error ("Module slot ID %s chassis number is not %d" % (slot, chnum))
+            error ("Module slot ID {} chassis number is not {}", slot, chnum)
             return None
     return "%s%02d" % (m.group (2), int (m.group (3)))
 
@@ -100,7 +173,7 @@ class Cyber (cmodule.cmod):
         """Return the chassis instance object, allocating it if necessary.
         """
         if cnum < 1 or cnum > 16:
-            error ("Chassis number %d out of range" % cnum)
+            error ("Chassis number {} out of range", cnum)
             return
         ctname = "chassis%d" % cnum
         ciname = "ch%d" % cnum
@@ -119,7 +192,8 @@ class Cyber (cmodule.cmod):
         if not cables:
             return
         for l in cables.splitlines ():
-            if not l or l.startswith ('#'):
+            l = cstrip (l)
+            if not l:
                 continue
             m = _re_cables.match (l)
             if not m:
@@ -167,6 +241,14 @@ class Cyber (cmodule.cmod):
 # Instantiate the top level object
 toplevel = Cyber ()
 
+def findmodule (modname):
+    try:
+        mtype = cmodule.elements[modname]
+    except KeyError:
+        #print "reading", modname
+        mtype = cmodule.readmodule (modname)
+    return mtype
+
 class Chassis (cmodule.cmod):
     """The definition of a 6000 chassis.
     """
@@ -175,6 +257,7 @@ class Chassis (cmodule.cmod):
         self.cnum = num
         self.chassisname = "chassis {}".format (num)
         self.connectors = { }
+        self.delays = 0
         
     def printheader (self):
         return header.format (self.chassisname, self.sourcehdr)
@@ -194,27 +277,6 @@ class Chassis (cmodule.cmod):
         (ghdl requires that, silly thing), and define chassis "pins"
         for signals that go outside.
         """
-        for m in self.elements.values ():
-            for f, a in m.portmap.items ():
-                a = str (a)
-                if a in self.aliases:
-                    #print "changing %s to %s" % (a, self.aliases[a])
-                    m.portmap[f] = self.aliases[a]
-                    try:
-                        del self.signals[a]
-                    except KeyError:
-                        pass
-        for w in sorted (self.signals):
-            w = self.signals[w]
-            if isinstance (w, Wire) and \
-                   not (w.source and w.destcount == 1) and \
-                   w.ptype != "analog":
-                if not w.source:
-                    print("%s: %s has no source" % (w.destname, w))
-                if not w.destcount:
-                    print("%s: %s has no destination" % (w.sourcename, w))
-                elif w.destcount > 1:
-                    print("%s: %s has multiple destinations" % (w.sourcename, w))
         for m in sorted (self.elements):
             m = self.elements[m]
             unused = set ()
@@ -226,15 +288,6 @@ class Chassis (cmodule.cmod):
                     else:
                         # Coax idle state is 0 not 1
                         m.addportmap (self, p, "'0'")
-            # Don't do the missing input check; there are lots of cases
-            # where inputs are left unconnected because the logic is
-            # such that they are don't cares.
-            #for pn in m.portmap:
-            #    p = m.eltype.pins[pn]
-            #    if p.dir == "out":
-            #        for src in p.sources ():
-            #            if src in unused:
-            #                print "%s: missing input %s for output %s" % (m, src, pn)
         for w in list(self.signals.values ()):
             if isinstance (w, Cable):
                 for dir in ("in", "out"):
@@ -250,6 +303,9 @@ class Chassis (cmodule.cmod):
                         self.addpin (("%s_%s" % (w, dir),), dir, w.ptype)
             elif w.ptype == "analog":
                 self.addpin ((w,), "out", w.ptype)
+            elif w.name.startswith ("sysclk"):
+                if "sysclk" not in self.pins:
+                    self.addpin (("sysclk",), "in", "clocks")
             elif not isinstance (w, Wire):
                 # Default signals
                 self.addpin ((w,), "in", w.ptype)
@@ -274,7 +330,7 @@ class Chassis (cmodule.cmod):
         try:
             c = self.signals[name]
             if not isinstance (c, ctype):
-                error ("cable type mismatch %" % name)
+                error ("cable type mismatch {}", name)
         except KeyError:
             #print "adding cable", name
             c = self.signals[name] = ctype (name)
@@ -287,7 +343,7 @@ class Chassis (cmodule.cmod):
         slot = self.normslot (slot)
         if slot:
             if slot in self.connectors:
-                error ("Slot %s already defined" % slot)
+                error ("Slot {} already defined", slot)
             else:
                 c = self.connectors[slot] = Connector (slot, modinst,
                                                        self, offset)
@@ -299,15 +355,24 @@ class Chassis (cmodule.cmod):
         slot = self.normslot (slot)
         if not slot:
             return
-        try:
-            mtype = cmodule.elements[modname]
-        except KeyError:
-            #print "reading", modname
-            mtype = cmodule.readmodule (modname)
+        mtype = findmodule (modname)
         inst = self.elements[slot] = cmodule.ElementInstance (slot, modname,
                                                               self)
         return inst
     
+def wire_delay (wlen):
+    """Return the wire delay for a wire of the specified length
+    in inches.  Delay is returned in units of 5 ns, since that is
+    the timing granularity we use in this model, rounded down to an
+    integer.  So short wires (under 47 inches) are handled as
+    having zero delay.
+    """
+    # Nominal twisted pair delay is 1.3 ns per foot.
+    if wlen < real_length:
+        return 0
+    # Truncate to 5 ns multiple.
+    return int (((wlen / 12.) * 1.3) / 5.)
+
 class Connector (object):
     """A connector for a module, in a slot
     """
@@ -317,112 +382,66 @@ class Connector (object):
         self.offset = offset
         self.chassis = chassis
 
-    def wdelay (self, wlen):
-        """Return the wire delay for a wire of the specified length
-        in inches.  Delay is returned in units of 5 ns, since that is
-        the timing granularity we use in this model, rounded down to an
-        integer.  So short wires (under 47 inches) are handled as
-        having zero delay.
-        """
-        # Nominal twisted pair delay is 1.3 ns per foot.
-        if wlen < real_length:
-            return 0
-        # Truncate to 5 ns multiple.
-        return int (((wlen / 12.) * 1.3) / 5.)
-    
-    def chwire (self, pnum, toslot, topin, dir, wlen = 0):
+    def chwire (self, scon, sport, wdelay = 0):
         """Generate a Wire object for a wire inside a chassis (twisted pair).
-        Wires are named w_out except if the wire is long enough that we
-        simulate its delay.  If so, we generate a second wire (named wd_out)
-        and a "wire" element which implements the delay.  The wd_out wire is
-        connected to the pin we were hooking up here, the w_out wire is
-        left defined for connection next.
+        Wires are named by their source port, which is given by scon/sport.
+        In many cases, several pins correspond to a single port, when the
+        same output signal appears on multiple pins; in such cases, the
+        port has a name like p3_p7 and that is the name use to form the
+        wire signal name.
+        If a wire is long enough to need its delay simulated, we also
+        generate wire names with wd<n> prefixes, where n is the delay in 
+        5 ns units.  Each 5 ns delay uses a "delay" element.  The wiring,
+        from source to destination, looks like (for a 2 unit delay):
+           w_a01_p3_p5, wire, wd1_a01_p3_p5, wire, wd2_a01_p3_p5
         """
-        end1 = "%s_%d" % (self.name, pnum)
-        end2 = "%s_%s" % (toslot, topin)
-        if dir == "out":
-            try:
-                w = self.chassis.signals["w_%s" % end1]
-            except KeyError:
-                try:
-                    w = self.chassis.aliases["w_%s" % end1]
-                except KeyError:
-                    # Wire is not defined yet.  Define it
-                    w = Wire (end1, end2, wlen, ptype = None)
-                    delay = self.wdelay (wlen)
-                    if delay:
-                        # Delay is large enough to model
-                        wdname = "wd_%s" % w
-                        wd = cmodule.ElementInstance (wdname, "wire", self)
-                        self.chassis.elements[wdname] = wd
-                        w2 = Wire (end1, end2, wlen, "d")
-                        self.chassis.signals[w] = w
-                        wd.addportmap (self.chassis, "o", w)
-                        w = w2
-                        wd.addportmap (self.chassis, "i", w)
-                        wd.addgenericmap (self.chassis, "delay", str (delay))
-                    self.chassis.signals[w] = w
+        sname = scon.name
+        if wdelay:
+            wname = "wd{}_{}_{}".format (wdelay, sname, sport)
         else:
-            end1, end2 = end2, end1
+            wname = "w_{}_{}".format (sname, sport)
+        try:
+            return self.chassis.signals[wname]
+        except KeyError:
             try:
-                w = self.chassis.signals["w_%s" % end1]
+                return self.chassis.aliases[wname]
             except KeyError:
-                w = Wire (end1, end2, wlen, ptype = None)
-                delay = self.wdelay (wlen)
-                if delay:
-                    # Delay is large enough to model
-                    wdname = "wd_%s" % w
-                    wd = cmodule.ElementInstance (wdname, "wire", self)
-                    self.chassis.elements[wdname] = wd
-                    w2 = Wire (end1, end2, wlen, "d")
-                    self.chassis.signals[w] = w
-                    wd.addportmap (self.chassis, "i", w)
-                    w = w2
-                    wd.addportmap (self.chassis, "o", w)
-                    wd.addgenericmap (self.chassis, "delay", str (delay))
-                self.chassis.signals[w] = w
-        # Check if for this end of the wire we're given a length
-        # greater than what was previously specified.  More precisely,
-        # check if the computer delay (in 5 ns granularity) is
-        # greater.
-        delay = self.wdelay (wlen)
-        oldlen = w.wlen
-        olddelay = self.wdelay (oldlen)
-        if delay != olddelay:
-            print ("inconsistent wire delay between %s and %s (%d vs. %d)" %
-                   (end1, end2, oldlen, wlen))
-        if delay > olddelay:
-            # We want to use the larger of the two delay values.
-            # Second occurrence is larger, so do something about that.
-            oldlen = w.wlen
-            try:
-                wdname = "wd_%s" % w
-                wd = self.chassis.elements[wdname]
-                wd.addgenericmap (self.chassis, "delay", str (delay))
-            except KeyError:
-                # New delay is large enough to model, old was not, so
-                # add a "wire" element.
-                wd = cmodule.ElementInstance (wdname, "wire", self)
-                self.chassis.elements[wdname] = wd
-                w2 = Wire (end1, end2, wlen, "d")
-                if dir == "out":
-                    wd.addportmap (self.chassis, "o", w)
-                    wd.addportmap (self.chassis, "i", w2)
-                else:
-                    wd.addportmap (self.chassis, "i", w)
-                    wd.addportmap (self.chassis, "o", w2)
-                w = w2
-                wd.addgenericmap (self.chassis, "delay", str (delay))
-                self.chassis.signals[w] = w
+                pass
+        # Wire is not defined yet.  Define it.
+        w = Wire (wname)
+        if wdelay:
+            # Delayed version of some output.  We handle this by
+            # creating a unit delay element, fed by the desired signal
+            # delayed one less unit (recursively).
+            self.chassis.delays += 1
+            wdname = "ud{}".format (self.chassis.delays)
+            wd = cmodule.ElementInstance (wdname, "unit_delay", self)
+            self.chassis.elements[wdname] = wd
+            w2 = self.chwire (scon, sport, wdelay - 1)
+            wd.addportmap (self.chassis, "i", w2)
+            wd.addportmap (self.chassis, "o", w)
+            #print ("added", wdname, "for", w2, "to", wname)
+        else:
+            scon.addportmap (self.chassis, sport, w)
+        self.chassis.signals[w] = w
         return w
     
     def mipin (self, pnum):
         return "p%d" % (pnum + self.offset)
 
+    def modpin (self, pnum):
+        try:
+            return self.modinst.eltype.pinnames[self.mipin (pnum)]
+        except KeyError:
+            try:
+                return self.modinst.eltype.pins[self.mipin (pnum)]
+            except KeyError:
+                return None
+        
     def addportmap (self, parent, formal, actual):
         self.modinst.addportmap (parent, formal, actual)
 
-    def processwlist (self, wl):
+    def processwlist (self, pinlist, wl):
         """Process the pins data from the wirelist for this connector.
         The argument is a list of wire entries, in pin order.  Each
         entry is None (for no connection) or a triple corresponding
@@ -436,7 +455,7 @@ class Connector (object):
         global curslot
         curslot = self.name
         pnum = 0
-        for m in wl:
+        for m in pinlist:
             pnum += 1
             if m is None:
                 # Unused pin, carry on
@@ -446,13 +465,7 @@ class Connector (object):
                 # Memory power connections, skip those since we don't
                 # model them
                 continue
-            try:
-                mpin = self.modinst.eltype.pinnames[self.mipin (pnum)]
-            except KeyError:
-                try:
-                    mpin = self.modinst.eltype.pins[self.mipin (pnum)]
-                except KeyError:
-                    mpin = None
+            mpin = self.modpin (pnum)
             pname = "p%d" % pnum
             if dslot == "grd":
                 # ground
@@ -463,8 +476,8 @@ class Connector (object):
             elif "w" in dslot:
                 # cable
                 if mpin is None:
-                    error ("pin %d undefined or out of range in %s"
-                           % (pnum, curslot))
+                    error ("pin {} undefined or out of range in {}",
+                           pnum, curslot)
                     continue
                 dir = mpin.dir
                 ptype = mpin.ptype
@@ -472,8 +485,8 @@ class Connector (object):
                     # Whole cable -- for fake modules that model things
                     # at a different VHDL level
                     if dpin != dir:
-                        error ("direction mismatch for pin %s in %s"
-                               % (pname, curslot))
+                        error ("direction mismatch for pin {} in {}",
+                               pname, curslot)
                     if ptype == "coaxsigs":
                         ctype = Coax
                     else:
@@ -486,8 +499,7 @@ class Connector (object):
                     try:
                         wnum = int (dpin)
                     except (TypeError, ValueError):
-                        error ("invalid pin %d: %s in %s"
-                               % (pnum, dpin, curslot))
+                        error ("invalid pin {}: {} in {}", pnum, dpin, curslot)
                     if ptype == "misc":
                         # We ignore misc signals since they are only there
                         # to document things like jumpers and other non-logic
@@ -508,8 +520,8 @@ class Connector (object):
                             w = Coaxwire (self.chassis, dslot, dpin,
                                           dir, ptype)
                         else:
-                            error ("invalid cable wire number %d in %s pin %d"
-                                   % (wnum, curslot, pnum))
+                            error ("invalid cable wire number {} in {} pin {}",
+                                   wnum, curslot, pnum)
                             w = None
                         if w:
                             self.chassis.signals[w.cable.name] = w.cable
@@ -518,8 +530,8 @@ class Connector (object):
             elif dslot:
                 # Regular slot to slot twisted pair wire
                 if mpin is None:
-                    error ("pin %d undefined or out of range in %s"
-                           % (pnum, curslot))
+                    error ("pin {} undefined or out of range in {}",
+                           pnum, curslot)
                     continue
                 dir = mpin.dir
                 ptype = mpin.ptype
@@ -529,24 +541,103 @@ class Connector (object):
                     # to document things like jumpers and other non-logic
                     # stuff that doesn't map to VHDL
                     continue
-                if dslot == "reset" or dslot.startswith ("t"):
+                if dslot == "reset" or dslot.startswith ("t") or \
+                  dslot == "'0'" or dslot == "'1'":
+                    if dir != "in":
+                        error ("wrong pin direction {} for model signal {}",
+                               dir, dslot)
                     if dslot.startswith ("t"):
-                        dslot = "sysclk" + dslot
+                        # Clock phase reference.  These are of the
+                        # form t<n> or t<n>b for positive or inverted
+                        # clock phase respectively.  n is the offset
+                        # in ns from the reference point, a multiple
+                        # of 5.  We convert this to one of the
+                        # elements of the sysclk bus (0 to 19 for
+                        # positive, 20 to 39 for inverted clock).
+                        m = _re_clkref.match (dslot)
+                        if not m:
+                            error ("invalid clock reference {}", dslot)
+                        phase, inv = m.groups ()
+                        try:
+                            phase = int (phase)
+                            if not 0 <= phase < 100 or phase % 5:
+                                raise ValueError
+                        except ValueError:
+                            error ("Invalid clock offset {}", phase)
+                        phase //= 5
+                        if inv:
+                            phase += 20
+                        dslot = "sysclk({})".format (phase)
                     w = dslot
                 else:
                     toslot = self.chassis.normslot (dslot)
                     topin = pn (dpin)
+                    try:
+                        tcon = self.chassis.connectors[toslot]
+                    except KeyError:
+                        error ("Connection to unused slot {}", toslot)
+                        continue
+                    tmpin = tcon.modpin (topin)
+                    reverse = wl[toslot]
+                    if reverse.slot == toslot:
+                        reverse = reverse.pins
+                    else:
+                        reverse = reverse.pins2
+                    reverse = reverse[topin - 1]
+                    if reverse:
+                        rslot, rpin, rlen = reverse
+                        rslot = self.chassis.normslot (rslot)
+                        if rpin.startswith ("p"):
+                            rpin = rpin[1:]
+                        try:
+                            rpin = int (rpin)
+                        except Exception:
+                            pass
+                        if rslot != self.name or rpin != pnum:
+                            error ("Other end of wire does not match: {} {} vs. {} {}",
+                                   rslot, rpin, self.name, pnum)
+                        try:
+                            dwlen = int (rlen)
+                        except Exception:
+                            dwlen = 0
+                    else:
+                        error ("Other end of wire missing: {} {} {} {}",
+                               self.name, pnum, toslot, topin)
+                    if dir != "in":
+                        # We make the connection when we see the input
+                        # end of the wire, but at this point we'll check
+                        # that the other end is indeed an input.
+                        if dir == "out":
+                            if tmpin.dir != "in":
+                                error ("wire is not in to out, {} {} {} {}",
+                                       self.name, pnum, toslot, topin)
+                        else:
+                            error ("Unexpected direction {} for pin {}",
+                                   dir, pnum)
+                        continue
+                    # Check the wire lengths at both ends, and issue a
+                    # warning if they differ in a way that changes the
+                    # modeled delay.
+                    try:
+                        wlen = int (wlen)
+                    except Exception:
+                        wlen = 0
+                    if wire_delay (wlen) != wire_delay (dwlen):
+                        print ("Inconsistent wire lengths: "
+                               "{} {} {} vs. {} {} {}".format
+                               (self.name, pnum, wlen, dslot, topin, dwlen))
+                        wlen = max (wlen, dwlen)
                     if wlen:
                         try:
                             wlen = int (wlen)
                             if wlen < 1 or wlen > 220:# temp was 180:
                                 raise ValueError
                         except (TypeError, ValueError):
-                            error ("invalid wire length %s pin %d in %s"
-                                   % (wlen, pnum, curslot))                    
+                            error ("invalid wire length {} pin {} in {}",
+                                   wlen, pnum, curslot)
                     else:
                         wlen = 0
-                    w = self.chwire (pnum, toslot, topin, dir, wlen)
+                    w = self.chwire (tcon, tmpin.name, wire_delay (wlen))
                 self.addportmap (self.chassis, pname, w)
         if self.mipin (pnum + 1) in self.modinst.eltype.pins:
             # next pin should not exist or we have an incomplete list
@@ -561,26 +652,28 @@ def normcable (name, cnum = 0):
     """
     m = _re_cable.match (name)
     if not m:
-        error ("Invalid cable name %s" % name)
+        error ("Invalid cable name {}", name)
         return None
     if m.group (1):
         if cnum:
             if int (m.group (1)) != cnum:
-                error ("Cable number in %s doesn't match chassis number %d" % (name, self.cnum))
+                error ("Cable number in {} doesn't match chassis number {}",
+                       name, self.cnum)
                 return
         else:
             cnum = int (m.group (1))
             return "%dw%02d" % (cnum, int (m.group (2))), cnum
     elif cnum == 0:
-        error ("Chassis number missing in cable name %s" % name)
+        error ("Chassis number missing in cable name {}", name)
         return
     return "%dw%02d" % (cnum, int (m.group (2)))
 
-def error (text):
+def error (text, *args):
+    if args:
+        text = text.format (*args)
     if curslot:
-        print("%s: %s" % (curslot, text))
-    else:
-        print(text)
+        text = "{}: ".format (curslot) + text
+    print(text)
 
 _re_pnum = re.compile (r"p(\d+)")
 def pn (pname):
@@ -591,13 +684,13 @@ def pn (pname):
         try:
             return int (pname)
         except (TypeError, ValueError):
-            error ("invalid pin %s" % pname)
+            error ("invalid pin {}", pname)
 
 def findchassis (cnum):
     """Return the chassis object, allocating it if necessary.
     """
     if cnum < 1 or cnum > 16:
-        error ("Chassis number %d out of range" % cnum)
+        error ("Chassis number {} out of range", cnum)
         return
     try:
         c = chassis_list[cnum]
@@ -610,12 +703,13 @@ def readfile (fn, lc = True):
     """
     with open (fn, "r", encoding = "utf_8_sig") as f:
         text = f.read ()
+    text = text.replace ("\014", "")
     text = _re_tsp.sub ("", text)
     hm = _re_header.match (text)
     if hm:
         text = text[hm.end ():]
         hm = hm.group (0).splitlines ()
-        if hm[-1].startswith ("# Starting page"):
+        if lc and hm[-1].startswith ("# Starting page"):
             del hm[-1]
         hm = '\n'.join (hm)
     else:
@@ -630,8 +724,8 @@ def parse_connector (cnum, curslot, text):
     for m in _re_wline.finditer (text):
         pnum = pn (m.group (1))
         if pnum != epin:
-            error ("pins out of order in %s, expected %d, got %d"
-                   % (curslot, epin, pnum))
+            error ("pins out of order in {}, expected {}, got {}",
+                   curslot, epin, pnum)
         epin += 1
         if m.group (2) is None:
             # Unused pin, carry on
@@ -646,8 +740,8 @@ def parse_connector (cnum, curslot, text):
                normslot (cnum, m.group (2)) == curslot:
                 pins.append (("grd", "x", "2"))
             else:
-                error ("Strange ground-like entry %s in %s pin %d"
-                       % (str (m.groups ()), curslot, pnum))
+                error ("Strange ground-like entry {} in {} pin {}",
+                       m.groups (), curslot, pnum)
         else:
             pins.append ((m.group (2), m.group (3), m.group (4)))
     return pins
@@ -681,15 +775,10 @@ def parse_chassis (cnum, text):
 
 class Wire (cmodule.Signal):
     """A wire (twisted pair) between two connector pins in the same chassis.
-    The wire is named w_out where out is slot_pin.
     """
-    def __init__ (self, end1, end2, wlen = 0, prefix = "", ptype = "logicsig"):
-        name = "w%s_%s" % (prefix, end1)
+    def __init__ (self, name, ptype = "logicsig"):
         cmodule.Signal.__init__ (self, name)
-        self.sourcename = end1
-        self.destname = end2
         self.ptype = ptype
-        self.wlen = wlen
         
 class Cablewire (cmodule.Signal):
     """A strand of a cable terminating at some pin in this chassis.
@@ -704,7 +793,7 @@ class Cablewire (cmodule.Signal):
         self.ptype = ptype
         cable.dirs.add (dir)
         if wirenum in cable.strands:
-            error ("wire %s already defined for %s" % (wirenum, cable.name))
+            error ("wire {} already defined for {}", wirenum, cable.name)
         else:
             cable.strands[wirenum] = self
         
@@ -783,6 +872,8 @@ def generate_vhdl (chassis, cables, cheader, p):
             print ("processing chassis", cnum)
         ch = findchassis (cnum)
         ch.setheader (header)
+        # First add all the connectors so we have all the pin
+        # information available when we're stringing the wires.
         for slot, m in sorted (cdata.items ()):
             if slot != m.slot:
                 # To allow for corrections that refer to the second
@@ -794,16 +885,29 @@ def generate_vhdl (chassis, cables, cheader, p):
                 continue
             inst = ch.addmodule (slot, m.modtype)
             modnames.add (m.modtype)
-            c = ch.addconnector (slot, inst)
-            if c:
-                c.processwlist (m.pins)
-                if m.generic:
-                    for formal in inst.eltype.generics:
-                        inst.addgenericmap (ch, formal, m.generic)
-                        break
-                if m.slot2:
-                    c = ch.addconnector (m.slot2, inst, 100)
-                    c.processwlist (m.pins2)
+            if m.generic:
+                for formal in inst.eltype.generics:
+                    inst.addgenericmap (ch, formal, m.generic)
+                    break
+            ch.addconnector (slot, inst)
+            if m.slot2:
+                ch.addconnector (m.slot2, inst, 100)
+        # Now run the wires
+        for slot, m in sorted (cdata.items ()):
+            if slot != m.slot:
+                # To allow for corrections that refer to the second
+                # connector of two-connector modules (memory), both
+                # connectors are in the directionary, referring to the
+                # same Module object.  The second connector can be
+                # recognized by the fact that its name differs from the
+                # primary connector name attribute of the module.
+                continue
+            c = ch.connectors[slot]
+            c.processwlist (m.pins, cdata)
+            if m.slot2:
+                c = ch.connectors[m.slot2]
+                c.processwlist (m.pins2, cdata)
+        
     for c in chassis_list.values ():
         if verbose:
             print ("finalizing", c.name)
@@ -840,13 +944,128 @@ def generate_vhdl (chassis, cables, cheader, p):
         src = ' '.join (src)
         with open (p.depend_file, "wt") as f:
             print ("{} : {}".format (dest, src), file = f)
+
+def delwire (ch, cnum, p):
+    # p is a pin entry (destination slot/pin/length)
+    if verbose > 1:
+        print ("delwire", cnum, p)
+    dslot, dpin, *rest = p
+    dslot = normslot (cnum, dslot, True)
+    try:
+        dmod = ch[dslot]
+    except KeyError:
+        return
+    if dmod.slot == dslot:
+        pins = dmod.pins
+    else:
+        pins = dmod.pins2
+    dpin = int (dpin)
+    pins[dpin - 1] = None
     
+def process_corr (header, text, chassis):
+    for l in text.splitlines ():
+        l = cstrip (l)
+        if not l:
+            continue
+        slot, *rest = l.split ('\t')
+        m = _re_chslot.match (slot)
+        if not m:
+            error ("missing chassis number in {}", l)
+            continue
+        cnum = int (m.group (1))
+        slot = normslot (cnum, slot)
+        try:
+            hdr, ch = chassis[cnum]
+        except KeyError:
+            error ("Unknown chassis number in {}", l)
+            continue
+        try:
+            mod = ch[slot]
+        except KeyError:
+            error ("Unknown slot position in {}", l)
+            continue
+        # Figure out what to do, depending on what follows the slot position
+        if len (rest) == 1:
+            # Module change
+            modtype = rest[0]
+            if modtype == "--":
+                if verbose > 1:
+                    print ("removing module at", slot)
+                # Delete wires going to input pins, but not outputs,
+                # so that we'll catch cases of deleting a module while
+                # others still depend on the data it generates.
+                mtype = findmodule (mod.modtype)
+                for pn, pinfo in mtype.pins.items ():
+                    if pinfo.dir == "in":
+                        assert pn[0] == 'p'
+                        pnum = int (pn[1:])
+                        if pnum < 100:
+                            p = mod.pins[pnum - 1]
+                            if p:
+                                delwire (ch, cnum, p)
+                        else:
+                            p = mod.pins2[pnum - 101]
+                            if p:
+                                delwire (ch, cnum, p)
+                del ch[slot]
+            else:
+                error ("todo: module change not yet implemented")
+        else:
+            # Wire change
+            if slot == mod.slot:
+                pins = mod.pins
+            else:
+                pins = mod.pins2
+            pnum, dslot, *rest = rest
+            try:
+                pnum = int (pnum)
+            except ValueError:
+                error ("invalid pin number in {}", l)
+            if pnum < 1 or pnum > len (pins):
+                error ("pin number out of range in {}", l)
+            p = pins[pnum - 1]
+            if p:
+                delwire (ch, cnum, p)
+                pins[pnum - 1] = None
+            if dslot == "--":
+                # Delete existing wire, nothing left to do
+                pass
+            elif _re_chslot.match (dslot):
+                # New or replacement wire
+                dslot = normslot (cnum, dslot)
+                dpnum, wlen = rest
+                try:
+                    dmod = ch[dslot]
+                except KeyError:
+                    error ("unknown destination slot in {}", l)
+                if dslot == dmod.slot:
+                    dpins = dmod.pins
+                else:
+                    dpins = dmod.pins2
+                try:
+                    dpnum = int (dpnum)
+                except ValueError:
+                    error ("invalid destination pin number in {}", l)
+                if dpnum < 1 or dpnum > len (dpins):
+                    error ("destination pin number out of range in {}", l)
+                pins[pnum - 1] = (dslot, str (dpnum), wlen)
+                dpins[dpnum - 1] = (slot, str (pnum), wlen)
+                if verbose > 1:
+                    print ("new wire", pins[pnum -1], dpins[dpnum-1])
+            else:
+                # coax or model signal
+                rep = [ dslot ] + rest
+                while len (rep) < 3:
+                    rep.append ("")
+                pins[pnum - 1] = rep
+                #print (rep)
+                
 ap = argparse.ArgumentParser ()
 ap.add_argument ("wlist", nargs = "+", metavar = "FN",
                  help = "Wire list, cable list, or corrections file")
 ap.add_argument ("-t", "--top", default = "cdc6600", metavar = "FN",
                  help = "Top level file, '-' to disable")
-ap.add_argument ("-v", "--verbose", default = False, action = "store_true",
+ap.add_argument ("-v", "--verbose", default = 0, action = "count",
                  help = "Display additional output")
 ap.add_argument ("-r", "--report", metavar = "FN",
                  help = "Report file name")
@@ -873,11 +1092,11 @@ def main ():
             if m2 and m2.group (1):
                 cnum = int (m2.group (1))
                 if cnum in chassis:
-                    error ("Duplicate chassis definition for {}".format (cnum))
+                    error ("Duplicate chassis definition for {}", cnum)
                 else:
                     chassis[cnum] = (header, parse_chassis (cnum, text))
             else:
-                error ("Chassis number not found in {}".format (fn))
+                error ("Chassis number not found in {}", fn)
         else:
             # Not chassis, assume it's cables
             cables += text
@@ -888,7 +1107,7 @@ def main ():
     for fn in p.patch:
         print ("reading correction file", fn)
         header, text = readfile (fn)
-        process_corr ((header, text))
+        process_corr (header, text, chassis)
     # We now have corrected text, process it into VHDL module
     # definitions, and write the results.
     generate_vhdl (chassis, cables, cheader, p)

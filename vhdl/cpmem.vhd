@@ -33,8 +33,6 @@
 --
 -- These times are from the receiving end point of view.
 --
--- Translation to clock phases: sysclk1 is T20, sysclk2 is T45, and so on.
---
 -- Inputs to cpmem:
 -- Go:          T180
 -- Address:     T240
@@ -48,7 +46,7 @@
 -- Read resume: T650
 --
 -- Sequence controller sequence numbers:
--- The SSC state machine advances on sysclk1, starting with sequence number 1
+-- The SSC state machine advances on T??, starting with sequence number 1
 -- on the sysclk1 following the address.  So sequence 1 corresponds to T300.
 
 library IEEE;
@@ -123,7 +121,7 @@ entity cmbank is
     go                     : in  coaxsig;
     addr                   : in  ppword;     -- memory address (12 bits)
     baddr                  : in  bankaddr;   -- bank address (5 bits)
-    sysclk1, sysclk2, sysclk3, sysclk4 : in  logicsig;   -- clocks
+    sysclk : in  clocks;   -- clocks
     reset                  : in  logicsig;   -- reset
     write                  : in  logicsig;   -- write request
     wdata                  : in  cpword;     -- write data bus
@@ -161,7 +159,7 @@ begin  -- cmbank
     addr   => maddr,
     rdata  => trdata,
     wdata  => twdata,
-    clk    => sysclk2,
+    clk    => sysclk(9),
     ena    => tena,
     write  => twrite);
 
@@ -191,12 +189,12 @@ begin  -- cmbank
   end process ssc_next;
   -- purpose: storage sequence machine
   -- type   : sequential
-  -- inputs : sysclk1, next_seq, do_write
+  -- inputs : T70, next_seq, do_write
   -- outputs: seq, writereq
-  ssc: process (sysclk3)
+  ssc: process (sysclk(14))
     variable send_accept : logicsig := '0';
   begin  -- process ssc
-    if rising_edge (sysclk3) then
+    if rising_edge (sysclk(14)) then
       send_accept := '0';
       case next_seq is
         when 1 =>
@@ -211,11 +209,11 @@ begin  -- cmbank
       end case;
       seq <= next_seq;
     end if;
-    accept <= send_accept and sysclk3;
+    accept <= send_accept and sysclk(14);
   end process ssc;
   twrite <= '1' when seq = 7 and writereq else '0';
   tena <= '1' when seq = 3 or twrite = '1' else '0';
-  rdata <= trdata when seq = 4 and sysclk2 = '1' else (others => '0');
+  rdata <= trdata when seq = 4 and sysclk(9) = '1' else (others => '0');
 end cmbank;
 
 library IEEE;
@@ -238,7 +236,7 @@ entity cpmem is
     p24                : out coaxsigs;  -- accept to stunt box
     p25                : out coaxsigs;  -- read resume to PP
     reset  : in  logicsig;              -- power-up reset
-    sysclk1, sysclk2, sysclk3, sysclk4         : in  logicsig);  -- clocks
+    sysclk         : in  clocks);  -- clocks
 
 end cpmem;
 
@@ -250,7 +248,7 @@ architecture beh of cpmem is
       go                     : in  coaxsig;
       addr                   : in  ppword;     -- memory address (12 bits)
       baddr                  : in  bankaddr;   -- bank address (5 bits)
-      sysclk1, sysclk2, sysclk3, sysclk4 : in  logicsig;  -- clocks
+      sysclk : in  clocks;  -- clocks
       reset                  : in  logicsig;  -- reset
       write                  : in  logicsig;  -- write request
       wdata                  : in  cpword;     -- write data bus
@@ -318,34 +316,34 @@ begin  -- beh
   -- Latch the control signals
   golatch : ireg1 port map (
     i   => go,
-    clr => sysclk2,
+    clr => sysclk(9),
     o   => lgo);
   wrlatch : ireg1 port map (
     i   => write,
-    clr => sysclk4,
+    clr => sysclk(19),
     o   => lwrite);
   pplatch : ireg1 port map (
     i   => periph,
-    clr => sysclk4,
+    clr => sysclk(19),
     o   => lperiph);
   -- Latch and unswizzle the address cable (from stunt box, chassis 5 Q34-Q39)
   alatch : ireg port map (
     ibus => addr,
-    clr  => sysclk4,
+    clr  => sysclk(19),
     obus => laddr);
   -- Delay "go" by about 50 ns cycle to align it with the address
   -- In the original design that is done by passing it through the
   -- "go" fanout in chassis 4
-  godelay : process (sysclk1)
+  godelay : process (sysclk(4))
   begin  -- process
-    if rising_edge (sysclk1) then
+    if rising_edge (sysclk(4)) then
       dgo <= lgo;
     end if;
   end process;
   -- Delay "periph" by 2 cycles for use with the read data reply to the PPU.
-  ppdelay : process (sysclk3)
+  ppdelay : process (sysclk(14))
   begin  -- process
-    if rising_edge (sysclk3) then
+    if rising_edge (sysclk(14)) then
       periphd1 <= lperiph;
       periphd2 <= periphd1;
       periphd3 <= periphd2;
@@ -361,7 +359,7 @@ begin  -- beh
             wdata2 (14 downto 0) & wdata1 (14 downto 0);
   wlatch : ireg port map (
     ibus => iwdata,
-    clr  => sysclk4,
+    clr  => sysclk(19),
     obus => lwdata);
   twdata <= cpword (lwdata);
   
@@ -374,10 +372,7 @@ begin  -- beh
         go     => dgo,
         addr   => taddr,
         baddr  => bank,
-        sysclk1   => sysclk1,
-        sysclk2   => sysclk2,
-        sysclk3   => sysclk3,
-        sysclk4   => sysclk4,
+        sysclk   => sysclk,
         reset  => reset,
         write  => lwrite,
         wdata  => twdata,
@@ -419,8 +414,8 @@ begin  -- beh
   rdpp4 (6 downto 0) <= prdata (59 downto 53);
 
   -- generate read resume to PP
-  c5full <= periphd2 and sysclk2;
-  rresume <= periphd2 and sysclk2;
+  c5full <= periphd2 and sysclk(9);
+  rresume <= periphd2 and sysclk(9);
   
   -- chassis 5 input register (A-E 41,42):
   -- 0..3 W02-904..907, 4 W02-900 5..14 W02-90..99

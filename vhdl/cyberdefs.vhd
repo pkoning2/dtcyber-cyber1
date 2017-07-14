@@ -41,6 +41,7 @@ package sigs is
   subtype analog is UNSIGNED (2 downto 0);    -- 6612 character drawing signal
   subtype byte is logicbus (7 downto 0);
   type bytemem is array (natural range <>) of byte;
+  subtype clocks is logicbus (0 to 39);      -- system clocks
   
   procedure dtconn (
     constant chnum : in    integer;     -- Channel number for this synchronizer
@@ -985,6 +986,24 @@ architecture beh of wire is
 begin  -- beh
 
   o <= transport i after delay * 5 ns;
+
+end beh;
+
+use work.sigs.all;
+
+-- Model for a unit delay (5 ns).
+entity unit_delay is
+
+  port (
+    i  : in  logicsig;                 -- input
+    o  : out logicsig);                -- output
+
+end unit_delay;
+
+architecture beh of unit_delay is
+begin  -- beh
+
+  o <= i after 5 ns;
 
 end beh;
 

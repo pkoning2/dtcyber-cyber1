@@ -396,11 +396,10 @@ class entrywin (wx.Window):
                     if vcomment != rcomment:
                         tmod.SetStyle (0, len (tmod.Value), self.bluestyle)
                         self.review[pnum] = True
-                    if vmod != rmod or (not vlen and rlen) or \
-                       (not vpin and rpin):
+                    if vmod != rmod or (not vpin and rpin):
                         tmod.SetStyle (0, len (tmod.Value), self.redstyle)
                         self.review[pnum] = True
-                    if vpin != rpin or (not vlen and rlen):
+                    if vpin != rpin:
                         tpin.SetStyle (0, len (tpin.Value), self.redstyle)
                         self.review[pnum] = True
                     if vlen != rlen:
@@ -618,7 +617,11 @@ class topframe (wx.Frame):
         self.wl_fn = p.wirelist
         h, t = wl
         self.header = h.splitlines ()
-        self.starts = self.setstarts (self.header[-1])
+        if self.header:
+            self.starts = self.setstarts (self.header[-1])
+        else:
+            self.starts = sortedcollection.SortedCollection ([ ("A01", 16) ],
+                                                    operator.itemgetter (0))
         self.pages = list ()
         self.slotlocs = dict ()
         self.modified = False
@@ -799,12 +802,15 @@ class topframe (wx.Frame):
                                                   (sindex % 4) + 1)
                                for (smod, sindex) in self.starts)
             fp = "# Starting pages: {}".format (starts)
-            m = first_pat.match (self.header[-1]) or \
-                starts_pat.match (self.header[-1])
-            if m:
-                self.header[-1] = fp
+            if self.header:
+                m = first_pat.match (self.header[-1]) or \
+                    starts_pat.match (self.header[-1])
+                if m:
+                    self.header[-1] = fp
+                else:
+                    self.header.append (fp)
             else:
-                self.header.append (fp)
+                self.header = [ fp ]
             with open (self.wl_fn, "wt") as f:
                 print ('\n'.join (self.header), file = f)
                 for p in self.pages:
@@ -861,7 +867,6 @@ class topframe (wx.Frame):
                         #print (oslot, pnum, pin)
                         try:
                             dpin = int (dpin)
-                            x = int (wlen)
                             if 0 < dpin < 29:
                                 w = [ str (dpin), oslot, str (pnum + 1), wlen, "" ]
                                 refs[dpin].append (w)
@@ -877,7 +882,11 @@ class topframe (wx.Frame):
         if pins:
             self.slot = normslot (0, mod.baseslot)
             smod, sindex = self.starts.find_le (self.slot)
-            self.scanindex = self.index - self.slotref (smod) + sindex
+            sr = self.slotref (smod)
+            if sr is None:
+                self.scanindex = 1
+            else:
+                self.scanindex = self.index - sr + sindex
             self.curpage, self.subpage = divmod (self.scanindex, 4)
             self.settitle ()
             self.sframe.setbitmap (self.curpage,
@@ -915,11 +924,13 @@ class scanApp (wx.App):
         defvoff = p.offset
         pdf_filename = p.pdf
         checkwires = p.wires
-        if not pdf_filename and m:
-            pdf_filename = os.path.join (pdf_path, m.group (0))
-        else:
-            print ("No PDF file name found in wire list")
-            sys.exit (1)
+        if not pdf_filename:
+            if m:
+                pdf_filename = m.group (0)
+            else:
+                print ("No PDF file name found in wire list")
+                sys.exit (1)
+        pdf_filename = os.path.join (pdf_path, pdf_filename)
         print (wl_fn, pdf_filename)
         self.tf = topframe (display, wx.ID_ANY, "Scan display",
                             pdf_filename, wl, p)
@@ -932,7 +943,7 @@ class scanApp (wx.App):
         display = None
     
 def main ():
-    p = ap.parse_args ()    
+    p = ap.parse_args ()
     app = scanApp ()
     app.start (p)
     

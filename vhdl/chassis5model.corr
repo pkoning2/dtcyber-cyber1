@@ -1,0 +1,55 @@
+# Correction file for modeling chassis 5
+#
+# These changes modify the original wire lists to be more
+# amenable to VHDL modeling.
+#
+# Use model supplied clock (in place of ring oscillator) -- 
+# this is done by file chassis5clocks.corr
+#
+# Timing tweak
+#5E29	3	I25	18	50
+#5F17	14	N8	22	50
+#
+# Get TP1 to T00
+#5F34	15	M11	19	160
+#5G30	5	E29	25	50
+#
+# Timing fix
+#5F38	9	Q4	11	22
+#5G19	3	I22	26	99
+#5G19	14	E29	24	50
+#5H17	6	M9	3	49
+#5H17	9	P12	14	49
+#
+# Timing tweak for K->R
+#5G40	3	O32	9	60
+#
+# Fix for timing
+#5H19	3	H18	1	180
+#5H19	14	E29	23	50
+#5N9	3	H18	6	49
+#5N9	14	H18	9	49
+#5N21	3	N8	27	220
+#5P11	3	H18	15	49
+#5P11	14	H18	26	50
+#5P41	3	H18	25	50
+#5P41	14	H18	23	50
+#5Q31	3	N8	23	50
+#5Q31	14	N8	25	50
+
+#
+# For now issue exchange request direct from chassis 1
+5O40	15	W23	905
+#
+# This clock came from the wrong place, block diagrams show T90
+5Q14	28	T90
+#
+# Other clock adjustments from the auto-generated ones in chassis5clocks.corr
+5Q13	16	T90
+#
+# Redo fix for error (ground where clock is needed), from chassis5.corr
+# but repeated here because the clock tree expansion script doesn't
+# look at the correction files.
+5E20	8	T40
+5E21	8	T40
+5E22	8	T40

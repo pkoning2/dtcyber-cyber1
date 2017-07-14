@@ -1,0 +1,20 @@
+# Correction file for modeling chassis 1
+#
+# These changes modify the original wire lists to be more
+# amenable to VHDL modeling.
+#
+# Use model supplied clock (in place of ring oscillator) -- 
+# this is done by file chassis1clocks.corr
+#
+# Remove ??? wire to "IV"
+1G10	16	--
+#
+# Speed up master clear for faster modeling
+1I15	3	'1'
+1I15	5	'1'
+1I15	7	'1'
+1I15	9	'1'
+1I15	11	'1'
+1J16	5	'1'
+1J16	7	'1'
+1J16	9	'1'

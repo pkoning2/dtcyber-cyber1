@@ -3,9 +3,13 @@
 VLIB = work-obj93.cf
 HOST := $(shell uname)
 MACHINE := $(shell uname -m)
-CHASSIS_SRCS = chassis1.wlist chassis2.wlist chassis5.wlist chassis11.wlist 
+CHASSIS_SRCS := chassis1.wlist chassis2.wlist chassis5.wlist chassis11.wlist 
+CHASSIS_CORRF := $(wildcard $(subst .wlist,.corr,$(CHASSIS_SRCS)))
+CHASSIS_CLKS := $(wildcard $(subst .wlist,clocks.corr,$(CHASSIS_SRCS)))
+CHASSIS_MCORR := $(wildcard $(subst .wlist,model.corr,$(CHASSIS_SRCS)))
+CHASSIS_CORR := $(foreach fn,$(CHASSIS_CORRF) $(CHASSIS_CLKS) $(CHASSIS_MCORR),-p $(fn))
 CHASSIS_V = $(CHASSIS_SRCS:.wlist=.vhd)
-CABLE_SRCS = $(wildcard coax*.wlist)
+CABLE_SRCS = coax.wlist coax11.wlist
 VHD_SRCS = $(wildcard *.vhd)
 
 FOREIGN = dtconn.o meminit.o \
@@ -38,6 +42,7 @@ all: cdc_tb
 $(VLIB): $(VHD_SRCS) $(CHASSIS_V) cdc6600.vhd chassis12.vhd
 	$(GHDL) -i $?
 
+
 cdc_tb:	$(VLIB) $(FOREIGN)
 	$(GHDL) -m $(GHDLOPTS) $(addprefix $(LINKSWITCH),$(filter-out $(VLIB),$+) $(FLIBS))  cdc_tb
 
@@ -47,12 +52,11 @@ cdc_tb2: $(VLIB) chassis12.vhd
 %.o : %.c
 	$(CC) -O2  $(CFLAGS) $(CCOPTS) -I .. -I . -c $<
 
-cdc6600.d cdc6600.vhd $(CHASSIS_V) : 
-	# Note: cables must be last
-	./wlist.py -v -d cdc6600.d  $(CHASSIS_SRCS) $(CABLE_SRCS)
+cdc6600.d cdc6600.vhd $(CHASSIS_V) :
+	./wlist.py -v -d cdc6600.d  $(CHASSIS_SRCS) $(CABLE_SRCS) $(CHASSIS_CORR)
 
 chassis12.d chassis12.vhd : chassis12.wlist wlist.py 
-	./wlist.py -v -d chassis12.d -t - chassis12.wlist
+	./wlist.py -v -d chassis12.d -t - chassis12.wlist -p chassis12.corr -p chassis12clocks.corr -p chassis12model.corr
 
 clean:
 	rm -f *.o *.cf cyberdefs.stamp cdc6600.vhd chassis*.vhd $(VLIB)

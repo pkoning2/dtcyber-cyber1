@@ -1,0 +1,12 @@
+# Correction file for modeling chassis 12
+#
+# These changes modify the original wire lists to be more
+# amenable to VHDL modeling.
+#
+# Use model supplied clock (in place of ring oscillator) --
+# this is done by file chassis12clocks.corr
+#
+# Timing adjustments.
+#
+# Change timing of Advance X signal
+#12F10	3	D4	7	7

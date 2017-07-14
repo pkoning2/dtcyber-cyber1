@@ -39,10 +39,7 @@ architecture behav of cdc_tb2 is
       c_12w02_in : in  coaxsigs;
       c_12w06_in : in  coaxsigs;
       c_12w08_in : in  coaxsigs;
-      sysclk1 : in  logicsig;
-      sysclk2 : in  logicsig;
-      sysclk3 : in  logicsig;
-      sysclk4 : in  logicsig;
+      sysclk : in  clocks;
       c_12w02_out : out coaxsigs;
       c_12w05_out : out coaxsigs;
       c_12w06_903 : out analog;
@@ -57,8 +54,13 @@ architecture behav of cdc_tb2 is
       c_12w08_906 : out analog;
       c_12w08_out : out coaxsigs);
   end component;
-  signal sysclk1 : logicsig := '1';        -- clock phase 1
-  signal sysclk2, sysclk3, sysclk4 : logicsig := '0';  -- clock phase 2-4
+
+  component sysclock 
+    port (
+      sysclk : out clocks);
+  end component;
+
+  signal sysclk : clocks;        -- system clocks
   type testvec is array (1 to 80) of logicsig;
   signal coax1 : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
   signal w_12w1 : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
@@ -70,14 +72,12 @@ architecture behav of cdc_tb2 is
   signal w_12w6 : coaxsigs := ('0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0');
 begin
    --  Component instantiation.
-   uut: chassis12 port map (sysclk1 => sysclk1,
-                          sysclk2 => sysclk2,
-                          sysclk3 => sysclk3,
-                          sysclk4 => sysclk4,
-                          c_12w01_in => w_12w1,
-                          c_12w02_in => w_12w2,
-                          c_12w06_in => w_12w6,
-                          c_12w08_in => idle);
+   uut: chassis12 port map (sysclk => sysclk,
+                            c_12w01_in => w_12w1,
+                            c_12w02_in => w_12w2,
+                            c_12w06_in => w_12w6,
+                            c_12w08_in => idle);
+   clk: sysclock port map (sysclk => sysclk);
    --  This process does the real job.
    -- purpose: Read the test script and pass it to the UUT
    -- type   : combinational
@@ -104,6 +104,7 @@ begin
      variable keyup, keydown : logicsig := '0';
    begin  -- process test
      --dtmain;
+     wait for 10 ns;
      while not endfile (vector_file) loop
        readline (vector_file, l);
        read (l, d);                     -- delay in 25 ns units
@@ -146,7 +147,7 @@ begin
        -- channel signals are pulses
        for i in 1 to d loop
          wait for 25 ns;
-         if sysclk2 = '1' then
+         if sysclk (10) = '1' then
            w_12w2(16) <= '1';
            ten := ten + 1;
            if ten > 9 then
@@ -159,24 +160,11 @@ begin
            w_12w2(16) <= '0';
            w_12w2(17) <= '0';
          end if;
-         if sysclk3 = '1' then
+         if sysclk (15) = '1' then
            w_12w1 <= oc;
            oc := idle;
          else
            w_12w1 <= idle;
-         end if;
-         if sysclk1 = '1' then
-           sysclk1 <= '0';
-           sysclk2 <= '1';
-         elsif sysclk2 = '1' then
-           sysclk2 <= '0';
-           sysclk3 <= '1';
-         elsif sysclk3 = '1' then
-           sysclk3 <= '0';
-           sysclk4 <= '1';
-         elsif sysclk4 = '1' then
-           sysclk4 <= '0';
-           sysclk1 <= '1';
          end if;
        end loop;  -- i
      end loop;

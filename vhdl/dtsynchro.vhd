@@ -16,6 +16,8 @@
 -------------------------------------------------------------------------------
 
 
+library IEEE;
+use IEEE.numeric_bit.all;
 use work.sigs.all;
 
 entity dtsynchro is
@@ -54,7 +56,7 @@ begin  -- synchro
   sync: process (p2(16))
     variable t_icv, t_ocv : coaxsigs;
   begin  -- process
-    if p2(16)'event and p2(16) = '1' then
+    if rising_edge (p2(16)) then
       t_icv := idlecoax;
       t_ocv := ocv;
       dtconn (chnum, t_icv, t_ocv);

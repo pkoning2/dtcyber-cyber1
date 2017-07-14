@@ -1,0 +1,5 @@
+# Corrections file for Chassis 12 wire list
+#
+# Missing wire ends (one side missing):
+12A25	14	B13	22	15
+12E27	19	E39	18	15

@@ -1,30 +1,26 @@
 [*]
 [*] GTKWave Analyzer v3.3.51 (w)1999-2013 BSI
-[*] Tue Sep 16 20:17:13 2014
+[*] Fri Jul 14 21:06:38 2017
 [*]
 [dumpfile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/cdc_tb2.ghw"
-[dumpfile_mtime] "Tue Sep 16 20:16:15 2014"
-[dumpfile_size] 290414
+[dumpfile_mtime] "Fri Jul 14 21:05:38 2017"
+[dumpfile_size] 2464371
 [savefile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/6612.sav"
-[timestart] 1336000000
-[size] 1398 856
+[timestart] 0
+[size] 1393 855
 [pos] -1 -1
-*-30.596371 8320000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-34.356930 10285000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.cdc_tb2.
 [treeopen] top.cdc_tb2.uut.
+[treeopen] top.cdc_tb2.uut.a04.u1.
+[treeopen] top.cdc_tb2.uut.a04.u1.u1.
 [treeopen] top.cdc_tb2.uut.e09.
 [treeopen] top.cdc_tb2.uut.e09.u8.
 [sst_width] 198
 [signals_width] 230
 [sst_expanded] 1
-[sst_vpaned_height] 609
-@30
-+{Ch10_data_out} #{c_12w01_in[11:0]} top.cdc_tb2.uut.c_12w01_in[11] top.cdc_tb2.uut.c_12w01_in[10] top.cdc_tb2.uut.c_12w01_in[9] top.cdc_tb2.uut.c_12w01_in[8] top.cdc_tb2.uut.c_12w01_in[7] top.cdc_tb2.uut.c_12w01_in[6] top.cdc_tb2.uut.c_12w01_in[5] top.cdc_tb2.uut.c_12w01_in[4] top.cdc_tb2.uut.c_12w01_in[3] top.cdc_tb2.uut.c_12w01_in[2] top.cdc_tb2.uut.c_12w01_in[1] top.cdc_tb2.uut.c_12w01_in[0]
-@28
-+{Active} top.cdc_tb2.uut.c_12w01_in[12]
-+{Inactive} top.cdc_tb2.uut.c_12w01_in[13]
-+{Full} top.cdc_tb2.uut.c_12w01_in[14]
+[sst_vpaned_height] 586
 @30
 +{Ch10_data_out} #{c_12w01_in[11:0]} top.cdc_tb2.uut.c_12w01_in[11] top.cdc_tb2.uut.c_12w01_in[10] top.cdc_tb2.uut.c_12w01_in[9] top.cdc_tb2.uut.c_12w01_in[8] top.cdc_tb2.uut.c_12w01_in[7] top.cdc_tb2.uut.c_12w01_in[6] top.cdc_tb2.uut.c_12w01_in[5] top.cdc_tb2.uut.c_12w01_in[4] top.cdc_tb2.uut.c_12w01_in[3] top.cdc_tb2.uut.c_12w01_in[2] top.cdc_tb2.uut.c_12w01_in[1] top.cdc_tb2.uut.c_12w01_in[0]
 @28
@@ -42,6 +38,17 @@
 +{Empty_in} top.cdc_tb2.uut.c_12w02_out[15]
 +{10_Mhz_clk} top.cdc_tb2.uut.c_12w02_in[16]
 +{1_Mhz_clk} top.cdc_tb2.uut.c_12w02_in[17]
++{Sel_Cons_1} top.cdc_tb2.uut.a04.tp6
++{Sel_Cons_0} top.cdc_tb2.uut.a04.tp5
++{Right_Tube} top.cdc_tb2.uut.a04.tp4
++{Dotmode} top.cdc_tb2.uut.a04.tp3
+@c00031
++{Char_size} #{Function_size} top.cdc_tb2.uut.a04.tp1 top.cdc_tb2.uut.a04.tp2
+@28
+top.cdc_tb2.uut.a04.tp1
+top.cdc_tb2.uut.a04.tp2
+@1401201
+-group_end
 @30
 +{X} #{c_12w05_out[8:0]} top.cdc_tb2.uut.c_12w05_out[8] top.cdc_tb2.uut.c_12w05_out[7] top.cdc_tb2.uut.c_12w05_out[6] top.cdc_tb2.uut.c_12w05_out[5] top.cdc_tb2.uut.c_12w05_out[4] top.cdc_tb2.uut.c_12w05_out[3] top.cdc_tb2.uut.c_12w05_out[2] top.cdc_tb2.uut.c_12w05_out[1] top.cdc_tb2.uut.c_12w05_out[0]
 +{Y} #{c_12w05_out[17:9]} top.cdc_tb2.uut.c_12w05_out[17] top.cdc_tb2.uut.c_12w05_out[16] top.cdc_tb2.uut.c_12w05_out[15] top.cdc_tb2.uut.c_12w05_out[14] top.cdc_tb2.uut.c_12w05_out[13] top.cdc_tb2.uut.c_12w05_out[12] top.cdc_tb2.uut.c_12w05_out[11] top.cdc_tb2.uut.c_12w05_out[10] top.cdc_tb2.uut.c_12w05_out[9]
@@ -51,8 +58,10 @@
 +{Char_X} #{c_12w06_905[2:0]} top.cdc_tb2.uut.c_12w06_905[2] top.cdc_tb2.uut.c_12w06_905[1] top.cdc_tb2.uut.c_12w06_905[0]
 +{Char_XB} #{c_12w06_906[2:0]} top.cdc_tb2.uut.c_12w06_906[2] top.cdc_tb2.uut.c_12w06_906[1] top.cdc_tb2.uut.c_12w06_906[0]
 @28
-+{Unblk_L} top.cdc_tb2.uut.c_12w06_out[8]
-+{Unblk_R} top.cdc_tb2.uut.c_12w06_out[9]
++{Unblk_L_0} top.cdc_tb2.uut.c_12w06_out[8]
++{Unblk_R_0} top.cdc_tb2.uut.c_12w06_out[9]
++{Unblk_L_1} top.cdc_tb2.uut.c_12w08_out[8]
++{Unblk_R_1} top.cdc_tb2.uut.c_12w08_out[9]
 +{Small} top.cdc_tb2.uut.c_12w06_out[10]
 +{Medium} top.cdc_tb2.uut.c_12w06_out[11]
 +{Char mode} top.cdc_tb2.uut.a04.p13

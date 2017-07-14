@@ -1,0 +1,16 @@
+# Corrections file for Chassis 1 wire list
+#
+# Missing wires:
+#
+# These are wires for the deadstart panel
+1I29	2	W37	103
+1I29	4	W37	105
+1I29	16	W37	102
+#
+# Extraneous wires:
+#
+# The next couple are wired to unused pins
+1N28	6	--
+1N28	7	--
+1N28	8	--
+1N28	23	--

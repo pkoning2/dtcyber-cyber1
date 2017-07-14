@@ -101,8 +101,10 @@ class Pin (hitem):
     def testpoint (self):
         return self.name.startswith ("tp")
 
+stdpins = { "reset" : "logicsig",
+            "sysclk" : "clocks" }
 def stdpin (s):
-    return s == "reset" or str (s).startswith ("sysclk")
+    return s in stdpins
 
 class Generic (hitem):
     """Generic of a logic element type
@@ -324,7 +326,7 @@ class ElementInstance (object):
                     s = self.parent.signals[pin]
                 except KeyError:
                     s = self.parent.signals[pin] = Signal (pin)
-                    s.ptype = "logicsig"
+                    s.ptype = stdpins[pin]
                 self.addportmap (self.parent, pin, pin)
         
     def __str__ (self):
@@ -468,6 +470,7 @@ class ElementInstance (object):
 
     
 _re_strip = re.compile ("[ \t\n]+")
+_re_empty = re.compile ("# *$")
 
 class cmod (ElementType):
     """A Cyber module or element of a module
@@ -497,6 +500,12 @@ class cmod (ElementType):
         self.sourcehdr = ""
 
     def setheader (self, text):
+        text = text.splitlines ()
+        while text and _re_empty.match (text[0]):
+            del text[0]
+        while text and _re_empty.match (text[-1]):
+            del text[-1]
+        text = '\n'.join (text)
         self.sourcehdr = text.replace ("#", "--")
         
     def nextelement (self):

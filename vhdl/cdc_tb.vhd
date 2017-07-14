@@ -31,16 +31,21 @@ architecture behav of cdc_tb is
     c_2w15_in : in  tpcable;
     c_2w16_in : in  tpcable;
     c_2w17_in : in  tpcable;
-    sysclk1, sysclk2, sysclk3, sysclk4, reset : in logicsig
-);
+    reset : in  logicsig;
+    sysclk : in clocks
+    );
   end component;
+  component sysclock 
+    port (
+      sysclk : out clocks);
+  end component;
+
+  signal sysclk : clocks;        -- system clocks
   signal c_1w37_in : tpcable := idletp;  -- Deadstart switches
   signal c_2w15_in : tpcable := idletp;  -- Deadstart panel
   signal c_2w16_in : tpcable := idletp;  -- Deadstart panel
   signal c_2w17_in : tpcable := idletp;  -- Deadstart panel
   signal reset : logicsig := '1';      -- power-up reset
-  signal sysclk1 : logicsig := '1';        -- clock phase 1
-  signal sysclk2, sysclk3, sysclk4 : logicsig := '0';  -- clock phase 2-4
   signal zero : logicsig := '0';
   signal one : logicsig := '1';
 begin
@@ -50,12 +55,10 @@ begin
       c_2w15_in => c_2w15_in,
       c_2w16_in => c_2w16_in,
       c_2w17_in => c_2w17_in,
-      sysclk1 => sysclk1,
-      sysclk2 => sysclk2,
-      sysclk3 => sysclk3,
-      sysclk4 => sysclk4,
+      sysclk => sysclk,
       reset => reset
       );
+   clk: sysclock port map (sysclk => sysclk);
    --  This process does the real job.
    -- purpose: Drive reset and the clocks
    -- type   : combinational
@@ -71,19 +74,6 @@ begin
 
      while TRUE loop
        wait for 25 ns;
-       if sysclk1 = '1' then
-         sysclk1 <= '0';
-         sysclk2 <= '1';
-       elsif sysclk2 = '1' then
-         sysclk2 <= '0';
-         sysclk3 <= '1';
-       elsif sysclk3 = '1' then
-         sysclk3 <= '0';
-         sysclk4 <= '1';
-       elsif sysclk4 = '1' then
-         sysclk4 <= '0';
-         sysclk1 <= '1';
-       end if;
        cycle25 := cycle25 + 1;
        if cycle25 = 4 then
          c_1w37_in(2) <= '1';

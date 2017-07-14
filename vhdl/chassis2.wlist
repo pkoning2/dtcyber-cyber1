@@ -8,7 +8,7 @@
 # Scans supplied from the Computer History Museum collection
 # by Al Kossow.
 #
-# Starting page 5
+# Starting pages: A01:5.1
 PI	2A1
 1	A23	3	23
 2
@@ -10246,7 +10246,7 @@ TD	2I21
 26	I21	20	84
 27
 28
-CLOCKC	2I22
+HQ	2I22
 1	I23	2	3
 2	I23	1	5
 3	C7	13	29
