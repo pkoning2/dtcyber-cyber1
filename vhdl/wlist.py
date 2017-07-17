@@ -263,11 +263,20 @@ class Chassis (cmodule.cmod):
         return header.format (self.chassisname, self.sourcehdr)
 
     def isinternal (self, sig):
-        return isinstance (sig, Wire) and \
-               sig.ptype != "analog"
+        return (isinstance (sig, Wire) and \
+                sig.ptype != "analog") or sig.name in self.aliases
     
     def printassigns (self, sigdict, comp = None):
-        return ("", dict ())
+        assigns = [ ]
+        for to, src in self.aliases.items ():
+            slot, pin = src
+            if comp is not None and comp.name == slot.name:
+                c = self.connectors[slot.name]
+                w = c.chwire (slot, pin)
+                assigns.append ("  %s <= %s;" % (to, w.name))
+        if assigns:
+            assigns.append ("")
+        return ("\n".join (assigns), sigdict)
     
     def finish (self):
         """Check for internal consistency: missing inputs required
@@ -277,6 +286,19 @@ class Chassis (cmodule.cmod):
         (ghdl requires that, silly thing), and define chassis "pins"
         for signals that go outside.
         """
+        # Make sure we define wires that are used only to attach
+        # multiple coax signals via aliasing.
+        for to, src in list (self.aliases.items ()):
+            slot, pin = src
+            c = self.connectors[slot.name]
+            minst = c.modinst
+            p = c.modpin (pin)
+            curmap = minst.portmap[p]
+            w = c.chwire (slot, pin)
+            if "(" in curmap.name:
+                #print ("replacing", curmap, "by", w)
+                self.aliases[curmap] = src
+                minst.portmap[p] = w
         for m in sorted (self.elements):
             m = self.elements[m]
             unused = set ()
@@ -430,11 +452,13 @@ class Connector (object):
         return "p%d" % (pnum + self.offset)
 
     def modpin (self, pnum):
+        if isinstance (pnum, int):
+            pnum = self.mipin (pnum)
         try:
-            return self.modinst.eltype.pinnames[self.mipin (pnum)]
+            return self.modinst.eltype.pinnames[pnum]
         except KeyError:
             try:
-                return self.modinst.eltype.pins[self.mipin (pnum)]
+                return self.modinst.eltype.pins[pnum]
             except KeyError:
                 return None
         
@@ -831,7 +855,7 @@ class Coax (Cable):
     def __init__ (self, name):
         Cable.__init__ (self, name)
         self.ptype = "coaxsigs"
-        
+    
     def makecname (self, wnum, dir):
         try:
             wnum = int (wnum)

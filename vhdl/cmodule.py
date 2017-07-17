@@ -401,10 +401,16 @@ class ElementInstance (object):
                 # carry logic signals.  That doesn't happen in the regular
                 # inter-chassis connections but it does on the DD60 cabling
                 # in chassis 12.
-                pass
-                #print("Can't alias coax signal:", \
+                #print("Adding alias coax signal:", \
                 #      self.name, self.eltype.name, pin.name, \
-                #      actual.name, oa.name)
+                #      actual.name, oa.name, pinsig)
+                #oa.aliases.add (oa.name)
+                #oa.aliases.add (actual.name)
+                if "(" in actual.name:
+                    parent.aliases[actual.name] = (self, pin)
+                if "(" in oa.name:
+                    parent.aliases[oa.name] = (self, pin)
+                self.portmap[pin.name] = actual
             else:
                 #print ("adding alias %s for %s" % (actual.name, oa.name))
                 oa.aliases.add (oa.name)
@@ -541,7 +547,7 @@ class cmod (ElementType):
     def addassign (self, to, fname):
         """Add an assignment of an output signal from a temp
         """
-        #print "assign %s <= %s" % (to, fname)
+        #print ("assign %s <= %s" % (to, fname))
         if fname == "'0'":
             fsig = sigzero
         elif fname == "'1'":
@@ -686,14 +692,14 @@ class cmod (ElementType):
                         s.aliases.add (oname)
                 a = sorted (s.aliases)
                 an = "_".join (a)
-                #print "signal %s, aliases %s" % (str(s), an)
+                #print ("signal %s, aliases %s" % (str(s), an))
                 if s.destcount or \
                        (s in self.pins and self.pins[s].dir == "in"):
-                    #print "new signal set from", s
+                    #print ("new signal set from", s)
                     tsig = self.findsignal (an)
                     tsig.setsource (s)
                 else:
-                    #print "changing signal %s to name %s" % (s, an)
+                    #print ("changing signal %s to name %s" % (s, an))
                     del self.signals[s.name]
                     s.name = an
                     self.signals[an] = s
@@ -803,6 +809,7 @@ end gates;
             newtext.append (self.printmodule ())
         except Exception as msg:
             print("Module %s: %s" % (self.name, msg))
+            raise
             return
         newtext = '\n'.join (newtext)
         if self.oldtext:
