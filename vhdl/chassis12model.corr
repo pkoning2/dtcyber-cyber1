@@ -10,3 +10,6 @@
 #
 # Change timing of Advance X signal
 #12F10	3	D4	7	7
+#
+# Change timing of "Late I->S" signal to be narrower
+12C10	3	T30
