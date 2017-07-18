@@ -65,6 +65,10 @@
 5O36	16	T90
 5P37	9	T90
 5P37	12	T85	# Shown as T90, but doing it before pin 9 works
+5G30	10	T60
+5G30	5	T00B
+5G30	17	T50B
+5G30	9	T35	# Written in on page 36.
 
 #
 # Redo fix for error (ground where clock is needed), from chassis5.corr
