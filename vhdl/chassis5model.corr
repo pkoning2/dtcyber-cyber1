@@ -44,8 +44,28 @@
 # This clock came from the wrong place, block diagrams show T90
 5Q14	28	T90
 #
-# Other clock adjustments from the auto-generated ones in chassis5clocks.corr
+# Other clock adjustments from the auto-generated ones in
+# chassis5clocks.corr.  These are taken from the timing numbers
+# given in the block diagrams.
 5Q13	16	T90
+5R20	22	T40
+5R21	22	T40
+5R22	22	T40
+5R23	22	T40
+5R24	22	T40
+5R25	22	T40
+5R26	22	T40
+5R27	22	T40
+5R28	20	T15
+5R29	20	T15
+5K38	10	T15	# T20?  Written in on page 95.
+5R33	7	T90
+5O31	17	T15B
+5F42	15	T65
+5O36	16	T90
+5P37	9	T90
+5P37	12	T85	# Shown as T90, but doing it before pin 9 works
+
 #
 # Redo fix for error (ground where clock is needed), from chassis5.corr
 # but repeated here because the clock tree expansion script doesn't
