@@ -177,6 +177,7 @@ top.cdc_tb.uut.ch5.d42.tp4
 +{Clear_PC} top.cdc_tb.uut.ch5.g31.p18
 +{M0->M1} top.cdc_tb.uut.ch5.q23.a
 +{CP->M1} top.cdc_tb.uut.ch5.q23.b
++{PP->M1} top.cdc_tb.uut.ch5.q23.c
 +{M1->CM} top.cdc_tb.uut.ch5.f42.p27
 +{Accept} top.cdc_tb.uut.ch5.o40.p25_tp6
 +{RNI} top.cdc_tb.uut.ch5.r33.tp6
