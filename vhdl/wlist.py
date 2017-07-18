@@ -296,6 +296,12 @@ class Chassis (cmodule.cmod):
             curmap = minst.portmap[p]
             w = c.chwire (slot, pin)
             if "(" in curmap.name:
+                # Current connection is a coax wire, but we need
+                # multiple connections and coax is a port so you can't
+                # use it as the source for an assignment.  Replace it
+                # by a regular wire (signal) instead, and we'll alias
+                # the current coax as well as whatever else needs this
+                # pin set to that wire.
                 #print ("replacing", curmap, "by", w)
                 self.aliases[curmap] = src
                 minst.portmap[p] = w
