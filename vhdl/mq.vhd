@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2010 by Paul Koning
+-- Copyright (C) 2010-2017 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -101,6 +101,7 @@ entity mq is
       p9 : out logicsig;
       p11_tp3 : out logicsig;
       p15 : out logicsig;
+      p18 : out logicsig;
       p20 : out logicsig;
       p21 : out logicsig;
       p22_tp4 : out logicsig;
@@ -186,7 +187,8 @@ begin -- gates
     a => p16,
     y => c);
 
-
+  p18 <= c;
+  
   u8 : inv port map (
     a => p17,
     y => p15);
