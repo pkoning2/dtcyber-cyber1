@@ -742,7 +742,10 @@ class cmod (ElementType):
                             print("key error", src, "not in pins for", self.name)
                             raise
                     p._sources = frozenset (srcpins)
-                        
+            else:
+                if not s.sources ():
+                    print ("No source for signal", s)
+                    
     def printmodule (self):
         """return module definition
         """
