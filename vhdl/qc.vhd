@@ -147,6 +147,12 @@ entity qc is
       p26 : in  logicsig;
       p27 : in  logicsig;
       p28 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp3 : out logicsig;
+      tp4 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
       p7 : out logicsig;
       p10 : out logicsig;
       p11 : out logicsig;
@@ -183,26 +189,21 @@ architecture gates of qc is
   end component;
 
   signal a : logicsig;
-  signal a_tp1 : logicsig;
   signal b : logicsig;
-  signal b_tp4 : logicsig;
   signal c : logicsig;
-  signal c_tp5 : logicsig;
   signal d : logicsig;
-  signal d_tp6 : logicsig;
   signal e : logicsig;
-  signal e_tp2 : logicsig;
   signal f : logicsig;
-  signal f_tp3 : logicsig;
 
 begin -- gates
   u1 : qcslice1 port map (
     a => p6,
     b => p4,
     c => p8,
-    tp_ya => a_tp1,
+    tp_ya => a,
     y => p10);
 
+  tp1 <= a;
 
   u2 : qcslice2 port map (
     a => p5,
@@ -210,10 +211,11 @@ begin -- gates
     c => a,
     d => f,
     e => a,
-    tp_ya => e_tp2,
+    tp_ya => e,
     y => p7,
     yb => p13);
 
+  tp2 <= e;
 
   u3 : qcslice2 port map (
     a => p15,
@@ -221,38 +223,41 @@ begin -- gates
     c => b,
     d => d,
     e => b,
-    tp_ya => f_tp3,
+    tp_ya => f,
     y => p17,
     yb => p12);
 
+  tp3 <= f;
 
   u4 : qcslice1 port map (
     a => p14,
     b => p16,
     c => p20,
-    tp_ya => b_tp4,
+    tp_ya => b,
     y => p11);
 
+  tp4 <= b;
 
   u5 : qcslice1 port map (
     a => p25,
     b => p27,
     c => p23,
-    tp_ya => c_tp5,
+    tp_ya => c,
     y => p21);
 
-
+  tp5 <= c;
+  
   u6 : qcslice2 port map (
     a => p26,
     b => p28,
     c => c,
     d => e,
     e => c,
-    tp_ya => d_tp6,
+    tp_ya => d,
     y => p24,
     yb => p18);
 
-
+  tp6 <= d;
 
 end gates;
 
