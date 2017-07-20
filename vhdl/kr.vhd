@@ -262,7 +262,7 @@ begin -- gates
 
   u11 : g2 port map (
     a => t5,
-    b => n,
+    b => m,
     y => p18_tp5);
 
 

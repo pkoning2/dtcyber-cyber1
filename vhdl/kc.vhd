@@ -237,8 +237,9 @@ begin -- gates
     a => c,
     b => l,
     c => q,
-    y => p9_tp2);
+    y => v);
 
+  p9_tp2 <= v;
 
   u17 : g4 port map (
     a => b,

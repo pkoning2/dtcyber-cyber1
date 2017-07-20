@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2010 by Paul Koning
+-- Copyright (C) 2010-2017 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -108,7 +108,6 @@ architecture gates of jn is
   signal l : logicsig;
   signal m : logicsig;
   signal p : logicsig;
-  signal r : logicsig;
   signal t2 : logicsig;
   signal t4 : logicsig;
 
@@ -130,7 +129,7 @@ begin -- gates
 
 
   u3 : g2 port map (
-    a => r,
+    a => p,
     b => t2,
     y => p26_p27);
 
@@ -150,7 +149,7 @@ begin -- gates
 
   u6 : g2 port map (
     a => t4,
-    b => r,
+    b => p,
     y => p18);
 
 

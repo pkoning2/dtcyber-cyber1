@@ -20,6 +20,7 @@ use work.sigs.all;
 entity jxslice is
     port (
       clk : in  logicsig;
+      it : in  logicsig;
       i1 : in  logicsig;
       m : in  logicsig;
       q1 : out logicsig;
@@ -65,14 +66,13 @@ architecture gates of jxslice is
 
   end component;
 
-  signal t : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
 
 begin -- gates
   u1 : g3 port map (
     a => m,
-    b => t,
+    b => it,
     c => i1,
     y => q1);
 
@@ -155,6 +155,7 @@ architecture gates of jx is
   component jxslice
     port (
       clk : in  logicsig;
+      t : in  logicsig;
       i1 : in  logicsig;
       m : in  logicsig;
       q1 : out logicsig;
@@ -167,11 +168,12 @@ architecture gates of jx is
 
   signal m : logicsig;
   signal n : logicsig;
-  signal t : logicsig;
+  signal it : logicsig;
 
 begin -- gates
   u1 : jxslice port map (
     clk => p17,
+    it => it,
     i1 => p5,
     m => m,
     q1 => p7,
@@ -184,6 +186,7 @@ begin -- gates
 
   u2 : jxslice port map (
     clk => p17,
+    it => it,
     i1 => p11,
     m => m,
     q1 => p13,
@@ -195,6 +198,7 @@ begin -- gates
 
   u3 : jxslice port map (
     clk => p17,
+    it => it,
     i1 => p24,
     m => m,
     q1 => p22,
@@ -206,19 +210,19 @@ begin -- gates
 
   u4 : inv2 port map (
     a => p17,
-    y2 => t);
+    y2 => it);
 
 
   u5 : g3 port map (
     a => m,
-    b => t,
+    b => it,
     c => p6,
     y => p10_tp2);
 
 
   u6 : g3 port map (
     a => p6,
-    b => t,
+    b => it,
     c => n,
     y => p8);
 
@@ -232,14 +236,14 @@ begin -- gates
 
   u8 : g3 port map (
     a => m,
-    b => t,
+    b => it,
     c => p23,
     y => p19_tp5);
 
 
   u9 : g3 port map (
     a => p23,
-    b => t,
+    b => it,
     c => n,
     y => p21);
 

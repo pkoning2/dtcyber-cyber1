@@ -29,6 +29,7 @@ entity rb is
       p22 : in  logicsig;
       p24 : in  logicsig;
       p26 : in  logicsig;
+      tp1 : out logicsig;
       tp2 : out logicsig;
       tp4 : out logicsig;
       tp5 : out logicsig;
@@ -110,9 +111,7 @@ architecture gates of rb is
   signal g : logicsig;
   signal h : logicsig;
   signal i : logicsig;
-  signal r3 : logicsig;
   signal t1 : logicsig;
-  signal t1_tp1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
@@ -133,7 +132,7 @@ begin -- gates
     q => d,
     qb => e);
 
-  t1_tp1 <= d;
+  tp1 <= d;
 
   u3 : cxreceiver port map (
     a => p5,
@@ -155,7 +154,7 @@ begin -- gates
 
   u6 : rsflop port map (
     r => a,
-    s => r3,
+    s => t3,
     q => i);
 
   tp4 <= i;

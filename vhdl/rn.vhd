@@ -147,8 +147,9 @@ architecture gates of rn is
 begin -- gates
   u1 : inv port map (
     a => p10,
-    y => tp2);
+    y => a);
 
+  tp2 <= a;
 
   u2 : inv port map (
     a => p9,

@@ -138,9 +138,10 @@ begin -- gates
     a => p5,
     b => t2,
     c => p10,
-    y => tp1,
+    y => o,
     y2 => t3);
 
+  tp1 <= o;
 
   u7 : g3 port map (
     a => p,

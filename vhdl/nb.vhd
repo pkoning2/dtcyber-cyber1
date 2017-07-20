@@ -122,8 +122,9 @@ begin -- gates
     a => p18,
     b => t4,
     c => p16,
-    y => tp3);
+    y => t8);
 
+  tp3 <= t8;
 
   u7 : g2 port map (
     a => t2,
@@ -134,9 +135,10 @@ begin -- gates
   u8 : g2 port map (
     a => t7,
     b => t8,
-    y => tp1,
+    y => t9,
     y2 => t10);
 
+  tp1 <= t9;
   tp4 <= t10;
 
   u9 : inv port map (

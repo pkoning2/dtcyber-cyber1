@@ -220,6 +220,10 @@ begin -- gates
     y2 => p26_p28);
 
 
+  u15 : inv port map (
+    a => p11,
+    y => g);
+  
 
 end gates;
 

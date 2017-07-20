@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009-2010 by Paul Koning
+-- Copyright (C) 2009-2017 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -54,7 +54,6 @@ architecture gates of cqslice is
 
   end component;
 
-  signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
@@ -123,8 +122,8 @@ entity cq is
       p1_p3_p5_tp1 : out logicsig;
       p2_p4 : out logicsig;
       p6 : out logicsig;
-      p8_p10 : out logicsig;
-      p13_p15_p17_t1 : out logicsig;
+      p8_p10_tp2 : out logicsig;
+      p13_p15_p17_tp5 : out logicsig;
       p19 : out logicsig;
       p23 : out logicsig;
       p24_p26_p28_tp6 : out logicsig;
@@ -194,14 +193,9 @@ begin -- gates
     c => c,
     i1 => p18,
     i2 => p16,
-    q1_q2 => p8_p10,
-    q3_q4_q5_tp => p13_p15_p17_t1,
+    q1_q2 => p8_p10_tp2,
+    q3_q4_q5_tp => p13_p15_p17_tp5,
     q6 => p19);
-
-
-  u3 : inv port map (
-    a => t1,
-    y => tp5);
 
 
   u4 : cqslice port map (

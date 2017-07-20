@@ -160,7 +160,6 @@ architecture gates of cz is
   signal t5_tp3 : logicsig;
   signal t6 : logicsig;
   signal t6_tp2 : logicsig;
-  signal t8 : logicsig;
 
 begin -- gates
   u1 : czslice port map (
@@ -226,11 +225,11 @@ begin -- gates
   u9 : latch port map (
     clk => p18,
     d => p19,
-    q => t8);
+    q => d);
 
 
   u10 : inv port map (
-    a => t8,
+    a => d,
     y => c);
 
   tp1 <= c;
