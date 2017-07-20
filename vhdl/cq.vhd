@@ -54,6 +54,7 @@ architecture gates of cqslice is
 
   end component;
 
+  signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
   signal t4 : logicsig;
@@ -118,7 +119,6 @@ entity cq is
       p20 : in  logicsig;
       p21 : in  logicsig;
       p22 : in  logicsig;
-      tp5 : out logicsig;
       p1_p3_p5_tp1 : out logicsig;
       p2_p4 : out logicsig;
       p6 : out logicsig;

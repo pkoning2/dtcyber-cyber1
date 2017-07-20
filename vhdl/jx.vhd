@@ -155,7 +155,7 @@ architecture gates of jx is
   component jxslice
     port (
       clk : in  logicsig;
-      t : in  logicsig;
+      it : in  logicsig;
       i1 : in  logicsig;
       m : in  logicsig;
       q1 : out logicsig;
