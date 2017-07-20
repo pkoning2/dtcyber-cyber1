@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.51 (w)1999-2013 BSI
-[*] Thu Jul 20 18:04:27 2017
+[*] Thu Jul 20 19:03:46 2017
 [*]
 [dumpfile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/cdc_tb.ghw"
-[dumpfile_mtime] "Thu Jul 20 18:03:25 2017"
-[dumpfile_size] 11451321
+[dumpfile_mtime] "Thu Jul 20 18:50:47 2017"
+[dumpfile_size] 16040866
 [savefile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/cdcds.sav"
-[timestart] 14025200000
+[timestart] 15992000000
 [size] 1393 855
 [pos] -1 -1
-*-27.169651 14350000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-28.169651 16495000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.cdc_tb.
 [treeopen] top.cdc_tb.uut.
@@ -324,7 +324,7 @@ top.cdc_tb.uut.ch5.h28.tp3
 +{Gate_L_T} top.cdc_tb.uut.ch5.g28.g
 @200
 -Scoreboard
-@800028
+@c00028
 #{Unit_req} top.cdc_tb.uut.ch5.g37.tp1 top.cdc_tb.uut.ch5.h36.tp2 top.cdc_tb.uut.ch5.g37.tp5 top.cdc_tb.uut.ch5.g37.tp2 top.cdc_tb.uut.ch5.h36.tp3 top.cdc_tb.uut.ch5.g37.tp6 top.cdc_tb.uut.ch5.h36.tp1
 @28
 +{Shift_unit_req} top.cdc_tb.uut.ch5.g37.tp1
@@ -334,13 +334,13 @@ top.cdc_tb.uut.ch5.h28.tp3
 +{Bool_unit_req} top.cdc_tb.uut.ch5.h36.tp3
 +{Mult_unit_req} top.cdc_tb.uut.ch5.g37.tp6
 +{Inc_unit_req} top.cdc_tb.uut.ch5.h36.tp1
-@1001200
+@1401200
 -group_end
 @28
 +{Mem_read} top.cdc_tb.uut.ch5.o19.tp1
 +{Mem_write} top.cdc_tb.uut.ch5.o19.tp2
 +{Pass} top.cdc_tb.uut.ch5.h36.tp6
-@800028
+@c00028
 #{Unit_busy} top.cdc_tb.uut.ch5.f27.p20_tp4 top.cdc_tb.uut.ch5.f29.p20_tp4 top.cdc_tb.uut.ch5.f29.tp2 top.cdc_tb.uut.ch5.f30.p20_tp4 top.cdc_tb.uut.ch5.f27.tp2 top.cdc_tb.uut.ch5.f28.p20_tp4 top.cdc_tb.uut.ch5.f28.tp2 top.cdc_tb.uut.ch5.g26.tp4 top.cdc_tb.uut.ch5.g27.tp6
 @28
 +{Shift_busy} top.cdc_tb.uut.ch5.f27.p20_tp4
@@ -352,7 +352,7 @@ top.cdc_tb.uut.ch5.h28.tp3
 +{Mult_2_busy} top.cdc_tb.uut.ch5.f28.tp2
 +{Incr_1_busy} top.cdc_tb.uut.ch5.g26.tp4
 +{Incr_2_busy} top.cdc_tb.uut.ch5.g27.tp6
-@1001200
+@1401200
 -group_end
 @28
 +{Incr_1_rw} top.cdc_tb.uut.ch5.g26.tp6
@@ -632,6 +632,31 @@ top.cdc_tb.uut.ch5.h28.tp3
 +{Branch_seq_r30_tp6} top.cdc_tb.uut.ch5.r30.tp6
 +{Jump+Loop} top.cdc_tb.uut.ch5.r37.tp4
 +{In_stack} top.cdc_tb.uut.ch5.f38.p28_tp6
+@c00030
+:{R-P} top.cdc_tb.uut.ch5.f38.p26 0 69 top.cdc_tb.uut.ch5.f38.p24 0 69 top.cdc_tb.uut.ch5.f38.p19 0 69
+@68
+top.cdc_tb.uut.ch5.f38.p26
+top.cdc_tb.uut.ch5.f38.p24
+top.cdc_tb.uut.ch5.f38.p19
+@1401200
+-group_end
+@c00030
+#{L-T} top.cdc_tb.uut.ch5.h31.p26 top.cdc_tb.uut.ch5.h31.p16 top.cdc_tb.uut.ch5.h31.p15
+@28
+top.cdc_tb.uut.ch5.h31.p26
+top.cdc_tb.uut.ch5.h31.p16
+top.cdc_tb.uut.ch5.h31.p15
+@1401210
+-group_end
+@c00030
+:{D} top.cdc_tb.uut.ch5.h31.p27 0 69 top.cdc_tb.uut.ch5.h31.p12 0 69 top.cdc_tb.uut.ch5.h31.p11 0 69
+@68
+top.cdc_tb.uut.ch5.h31.p27
+top.cdc_tb.uut.ch5.h31.p12
+top.cdc_tb.uut.ch5.h31.p11
+@1401210
+-group_end
+@28
 +{R->P_enable} top.cdc_tb.uut.ch5.p10.p4_tp2
 +{No_branch} top.cdc_tb.uut.ch5.r33.tp5
 +{Go} top.cdc_tb.uut.ch5.g30.tp1
