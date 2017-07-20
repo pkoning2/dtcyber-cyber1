@@ -1,19 +1,18 @@
 [*]
 [*] GTKWave Analyzer v3.3.51 (w)1999-2013 BSI
-[*] Tue Jul 11 13:57:39 2017
+[*] Thu Jul 20 18:04:27 2017
 [*]
 [dumpfile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/cdc_tb.ghw"
-[dumpfile_mtime] "Tue Jul 11 13:48:33 2017"
-[dumpfile_size] 14218126
+[dumpfile_mtime] "Thu Jul 20 18:03:25 2017"
+[dumpfile_size] 11451321
 [savefile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/cdcds.sav"
-[timestart] 11023000000
+[timestart] 14025200000
 [size] 1393 855
 [pos] -1 -1
-*-29.162697 11864000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-27.169651 14350000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.cdc_tb.
 [treeopen] top.cdc_tb.uut.
-[treeopen] top.cdc_tb.uut.ch1.
 [treeopen] top.cdc_tb.uut.ch1.a01.arl.
 [treeopen] top.cdc_tb.uut.ch1.c01.u5.
 [treeopen] top.cdc_tb.uut.ch1.c01.u5.u1.
@@ -34,7 +33,7 @@
 [treeopen] top.cdc_tb.uut.ch5.o01.u6.u4.
 [treeopen] top.cdc_tb.uut.ch5.q06.u5.
 [sst_width] 198
-[signals_width] 311
+[signals_width] 282
 [sst_expanded] 1
 [sst_vpaned_height] 513
 @30
@@ -341,7 +340,7 @@ top.cdc_tb.uut.ch5.h28.tp3
 +{Mem_read} top.cdc_tb.uut.ch5.o19.tp1
 +{Mem_write} top.cdc_tb.uut.ch5.o19.tp2
 +{Pass} top.cdc_tb.uut.ch5.h36.tp6
-@c00028
+@800028
 #{Unit_busy} top.cdc_tb.uut.ch5.f27.p20_tp4 top.cdc_tb.uut.ch5.f29.p20_tp4 top.cdc_tb.uut.ch5.f29.tp2 top.cdc_tb.uut.ch5.f30.p20_tp4 top.cdc_tb.uut.ch5.f27.tp2 top.cdc_tb.uut.ch5.f28.p20_tp4 top.cdc_tb.uut.ch5.f28.tp2 top.cdc_tb.uut.ch5.g26.tp4 top.cdc_tb.uut.ch5.g27.tp6
 @28
 +{Shift_busy} top.cdc_tb.uut.ch5.f27.p20_tp4
@@ -353,7 +352,7 @@ top.cdc_tb.uut.ch5.h28.tp3
 +{Mult_2_busy} top.cdc_tb.uut.ch5.f28.tp2
 +{Incr_1_busy} top.cdc_tb.uut.ch5.g26.tp4
 +{Incr_2_busy} top.cdc_tb.uut.ch5.g27.tp6
-@1401200
+@1001200
 -group_end
 @28
 +{Incr_1_rw} top.cdc_tb.uut.ch5.g26.tp6

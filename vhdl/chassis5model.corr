@@ -21,8 +21,14 @@
 #5H17	6	M9	3	49
 #5H17	9	P12	14	49
 #
-# Timing tweak for K->R
-#5G40	3	O32	9	60
+# Timing tweak for U1->K and K->R
+5G40	10	M28	13	t15
+5G40	11	M29	13	t10
+5G40	12	M30	13	t10
+5G40	13	M29	17	t10
+5G40	4	D18	24	t20
+5G40	5	D17	24	t20
+5G40	9	D16	24	t20
 #
 # Fix for timing
 #5H19	3	H18	1	180
@@ -36,7 +42,9 @@
 #5P41	14	H18	23	50
 #5Q31	3	N8	23	50
 #5Q31	14	N8	25	50
-
+#
+# Fix timing for m latch in branch condition checker
+5Q4	11	F38	9	9
 #
 # For now issue exchange request direct from chassis 1
 5O40	15	W23	905
@@ -68,7 +76,85 @@
 5G30	10	T60
 5G30	5	T00B
 5G30	17	T50B
-5G30	9	T35	# Written in on page 36.
+# page 18
+5G32	17	T45B
+5G29	7	T65
+5G29	22	T90
+5A41	12	T20B
+5A42	12	T20B
+5B41	12	T20B
+5B42	12	T20B
+5C41	12	T20B
+5C42	12	T20B
+5D41	12	T20B
+5D42	12	T20B
+5E41	12	T20B
+5E42	12	T20B
+# page 22
+5D16	8	T50
+5D17	8	T50
+5D18	8	T50
+5D19	8	T50
+5D20	8	T50
+5D21	8	T50
+5D22	8	T50
+5D23	8	T50
+5D24	8	T50
+5D25	8	T50
+5E18	8	T50
+5E19	8	T50
+5E20	8	T50
+5E21	8	T50
+5E22	8	T50
+# page 24
+5A19	18	T85
+5A21	16	T70
+5H28	14	T50
+5H28	19	T50
+# page 30
+5F34	15	T90B	# Written in T85, wire list note implies T90
+# page 35
+5F37	19	T00B
+#5F37	16	T30	# Written in, printed is T15
+5R30	7	T00
+5R30	20	T75
+5O40	22	T45B
+5R32	20	T50
+# page 36
+5G30	9	T35	# Written in
+5P37	15	T40
+# page 88
+5R33	7	T90
+#5Q19	20	T45	# page 92 disagrees, says T40
+5O36	16	T90
+5F42	15	T65
+# page 95
+5K38	10	T15	# T20?  Written in on page 95.
+5O31	17	T15B
+5Q13	16	T90
+# page 114
+5L18	3	T00B
+5P38	27	T65
+5O32	25	T15
+5K39	14	T75
+5K39	24	T50
+5P13	20	T25B
+# page 117
+5L15	15	T45B
+# page 118
+5F38	8	T00B
+5F38	5	T65
+5P20	25	T25
+# page 119
+# This first one is commented out for now; if this timing is used then
+# instruction issue breaks thoroughly.  To be studied...
+###5R31	7	T50
+5Q4	19	T25
+5Q4	8	T15
+5L8	15	T45B
+# page 120
+5L14	3	T00B
+5H24	3	T75	# Shown as GND in wire lists
 
 #
 # Redo fix for error (ground where clock is needed), from chassis5.corr

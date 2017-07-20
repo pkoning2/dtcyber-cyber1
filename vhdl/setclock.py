@@ -24,7 +24,7 @@ def T (phase, b):
     return "T{:0>2d}{}".format (phase % 100, "B" if b else "")
 
 def wire_delay (l):
-    return wlist.wire_delay (l + 20)
+    return wlist.wire_delay (str (int (l) + 20))
 
 class Io:
     def __init__ (self, ipins, i2tp, tp, i2o, opins):
@@ -160,7 +160,6 @@ while more:
                         dslot = wlist.normslot (cnum, dslot)
                         dslotdata = ch[dslot]
                         dpin = int (dpin)
-                        wlen = int (wlen)
                         wdelay = wire_delay (wlen) * 5
                         ophase = i.phase + info.iodelay + wdelay
                         ob = i.b ^ info.ioinv

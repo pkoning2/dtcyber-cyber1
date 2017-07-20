@@ -39,6 +39,12 @@ as output an equivalent VHDL model.  There are three kinds of input files:
    d. A power designation such as "CB3" or "+6" in the destination slot
       field -- these appear in memory connections and are ignored.
 
+   For ease of modifying stuff via the "corrections" files, wire "length"
+   may instead be given as "t" followed by a delay in ns (a multiple of 
+   5 ns since that's the simulation granularity).  That syntax isn't found
+   in the original wire lists but the correction files may use it when 
+   they need to set specific signal delays.
+
 2. Coax wire lists.  These contain the text from the "cable tabs" document
    published by CDC.  Each line lists the two end points of a cable,
    for example "1W2  5W13"
@@ -82,7 +88,7 @@ curslot = None
 real_length = 60     # simulate wire delay for wires this long, 0 to disable
 real_length = 0
 
-_pat_wline = "(\\d+)(?:[ \t]+(\\w ?\\w*)(?:[ \t]+(\\w+)(?:[ \t]+(\\w+))?)?)?([ \t]*.*(?:\n#.*)*)?"
+_pat_wline = "(\\d+)(?:[ \t]+(\\w ?\\w*)(?:[ \t]+(\\+?\\w+)(?:[ \t]+(t?\\w+))?)?)?([ \t]*.*(?:\n#.*)*)?"
 # This next one ends up with a whole lot of groups partly because of
 # the line pattern, so use named groups for sanity.
 _re_wmod = re.compile ("^(?P<mod>[a-z]+)(?P<generic>\\(.+?\\))?[ \t]+(?P<slot>\\w+)(?P<hcomment>[ \t]*#.*)?\n+"
@@ -396,10 +402,27 @@ def wire_delay (wlen):
     having zero delay.
     """
     # Nominal twisted pair delay is 1.3 ns per foot.
-    if wlen < real_length:
+    if not wlen:
         return 0
-    # Truncate to 5 ns multiple.
-    return int (((wlen / 12.) * 1.3) / 5.)
+    try:
+        if wlen.lower ().startswith ("t"):
+            # Delay given in ns
+            wlen = int (wlen[1:])
+            wlen, x = divmod (wlen, 5)
+            if not 0 <= wlen < 6 or x:
+                raise ValueError
+        else:
+            wlen = int (wlen)
+            if wlen < 1 or wlen > 180:
+                raise ValueError
+            if wlen < real_length:
+                wlen = 0
+            # Convert length to delay time, truncated to 5 ns multiple.
+            wlen = int (((wlen / 12.) * 1.3) / 5.)
+    except (TypeError, ValueError):
+        error ("invalid wire length {} pin {} in {}",
+               wlen, pnum, curslot)
+    return wlen
 
 class Connector (object):
     """A connector for a module, in a slot
@@ -626,10 +649,6 @@ class Connector (object):
                         if rslot != self.name or rpin != pnum:
                             error ("Other end of wire does not match: {} {} vs. {} {}",
                                    rslot, rpin, self.name, pnum)
-                        try:
-                            dwlen = int (rlen)
-                        except Exception:
-                            dwlen = 0
                     else:
                         error ("Other end of wire missing: {} {} {} {}",
                                self.name, pnum, toslot, topin)
@@ -648,26 +667,14 @@ class Connector (object):
                     # Check the wire lengths at both ends, and issue a
                     # warning if they differ in a way that changes the
                     # modeled delay.
-                    try:
-                        wlen = int (wlen)
-                    except Exception:
-                        wlen = 0
-                    if wire_delay (wlen) != wire_delay (dwlen):
+                    wd = wire_delay (wlen)
+                    rd = wire_delay (rlen)
+                    if wd != rd:
                         print ("Inconsistent wire lengths: "
                                "{} {} {} vs. {} {} {}".format
-                               (self.name, pnum, wlen, dslot, topin, dwlen))
-                        wlen = max (wlen, dwlen)
-                    if wlen:
-                        try:
-                            wlen = int (wlen)
-                            if wlen < 1 or wlen > 220:# temp was 180:
-                                raise ValueError
-                        except (TypeError, ValueError):
-                            error ("invalid wire length {} pin {} in {}",
-                                   wlen, pnum, curslot)
-                    else:
-                        wlen = 0
-                    w = self.chwire (tcon, tmpin.name, wire_delay (wlen))
+                               (self.name, pnum, wlen, dslot, topin, rlen))
+                        wd = max (wd, rd)
+                    w = self.chwire (tcon, tmpin.name, wd)
                 self.addportmap (self.chassis, pname, w)
         if self.mipin (pnum + 1) in self.modinst.eltype.pins:
             # next pin should not exist or we have an incomplete list
