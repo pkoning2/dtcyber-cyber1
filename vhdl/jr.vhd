@@ -211,7 +211,7 @@ begin -- gates
     c => h,
     d => i,
     e => j,
-    y => p24_tp4);
+    y2 => p24_tp4);
 
 
   u8 : g2 port map (
