@@ -52,6 +52,17 @@
 # This clock came from the wrong place, block diagrams show T90
 5Q14	28	T90
 #
+# Line up clocks
+5O15	13	H31	14	96
+#
+# Fix timing for advance D control
+5L11	3	T40B
+#
+# Fix jump control timing
+5P10	6	F38	25	t15
+5P10	22	F38	23	t15
+5F37	3	F33	21	t25
+#
 # Other clock adjustments from the auto-generated ones in
 # chassis5clocks.corr.  These are taken from the timing numbers
 # given in the block diagrams.
@@ -115,11 +126,12 @@
 5F34	15	T90B	# Written in T85, wire list note implies T90
 # page 35
 5F37	19	T00B
-#5F37	16	T30	# Written in, printed is T15
+#5F37	16	T15	# Written in T30, printed is T15
 5R30	7	T00
 5R30	20	T75
 5O40	22	T45B
 5R32	20	T50
+5R32	7	T00	# Wirelist module R32 notes
 # page 36
 5G30	9	T35	# Written in
 5P37	15	T40
