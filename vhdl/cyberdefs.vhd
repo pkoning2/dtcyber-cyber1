@@ -850,7 +850,7 @@ begin -- gates
 
 
   u4 : g2 port map (
-    a => d,
+    a => d2,
     b => td,
     y => t2);
 
@@ -965,29 +965,6 @@ begin -- gates
 
 end gates;
 
-
-use work.sigs.all;
-
--- Model for a wire long enough that we care about its delay.
--- Note that the delay is supplied in units of 5 ns, which is
--- the basic stage delay used throughout the model.
-entity wire is
-  
-  generic (
-    delay : integer);                  -- delay in 5 ns units
-
-  port (
-    i  : in  logicsig;                 -- input
-    o  : out logicsig);                -- output
-
-end wire;
-
-architecture beh of wire is
-begin  -- beh
-
-  o <= transport i after delay * 5 ns;
-
-end beh;
 
 use work.sigs.all;
 
