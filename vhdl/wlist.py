@@ -409,7 +409,7 @@ def wire_delay (wlen):
             # Delay given in ns
             wlen = int (wlen[1:])
             wlen, x = divmod (wlen, 5)
-            if not 0 <= wlen < 6 or x:
+            if not 0 <= wlen < 10 or x:
                 raise ValueError
         else:
             wlen = int (wlen)
