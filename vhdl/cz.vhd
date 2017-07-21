@@ -99,7 +99,10 @@ entity cz is
       p22 : in  logicsig;
       p26 : in  logicsig;
       tp1 : out logicsig;
+      tp2 : out logicsig;
+      tp3 : out logicsig;
       tp5 : out logicsig;
+      tp6 : out logicsig;
       p1 : out logicsig;
       p5_p7 : out logicsig;
       p8_p9 : out logicsig;
@@ -154,12 +157,9 @@ architecture gates of cz is
   signal t1 : logicsig;
   signal t2 : logicsig;
   signal t3 : logicsig;
-  signal t3_tp6 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
-  signal t5_tp3 : logicsig;
   signal t6 : logicsig;
-  signal t6_tp2 : logicsig;
 
 begin -- gates
   u1 : czslice port map (
@@ -181,7 +181,7 @@ begin -- gates
     q2_tp => t3,
     q3_q4 => p11_p24);
 
-  t3_tp6 <= t3;
+  tp6 <= t3;
 
   u3 : g2 port map (
     a => t3,
@@ -198,7 +198,7 @@ begin -- gates
     q2_tp => t5,
     q3_q4 => p8_p9);
 
-  t5_tp3 <= t5;
+  tp3 <= t5;
 
   u5 : g2 port map (
     a => t5,
@@ -214,7 +214,7 @@ begin -- gates
     q2_tp => t6,
     q3_q4 => p5_p7);
 
-  t6_tp2 <= t6;
+  tp2 <= t6;
 
   u7 : g2 port map (
     a => t6,
