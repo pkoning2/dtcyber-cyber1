@@ -61,7 +61,8 @@
 # Fix jump control timing
 5P10	6	F38	25	t15
 5P10	22	F38	23	t15
-5F37	3	F33	21	t30
+5F37	3	F33	21	t20
+#5P10	19	F33	26	t25
 #
 # Other clock adjustments from the auto-generated ones in
 # chassis5clocks.corr.  These are taken from the timing numbers
@@ -86,7 +87,7 @@
 5P37	12	T85	# Shown as T90, but doing it before pin 9 works
 5G30	10	T60
 5G30	5	T00B
-5G30	17	T50B
+5G30	17	T40B	# Printed as T50 in block diagrams
 # page 18
 5G32	17	T45B
 5G29	7	T65
