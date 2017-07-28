@@ -1,4 +1,4 @@
-.PHONY : clean sim sim2 all
+.PHONY : clean sim sim2 sim30 all
 
 VLIB = work-obj93.cf
 HOST := $(shell uname)
@@ -63,6 +63,9 @@ clean:
 
 sim: cdc_tb
 	time ./cdc_tb --stop-time=20us --wave=cdc_tb.ghw
+
+sim30: cdc_tb
+	time ./cdc_tb --stop-time=30us --wave=cdc_tb.ghw
 
 sim2: cdc_tb2
 	time ./cdc_tb2 --stop-time=100us --wave=cdc_tb2.ghw

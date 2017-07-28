@@ -3,9 +3,9 @@
 # Copyright (C) 2008 by Paul Koning
 #
 DTSYNCHRO(0)	11A1
-1	W30	out
-2	W30	in
-3	W31	in
+1	W50	out
+2	W50	in
+3	W51	in
 4
 5
 6
@@ -86,6 +86,39 @@ CPMEM	11A3
 23	W23	out
 24	W2	out
 25	W25	out
+26	W3	out
+27
+28
+29
+30
+11A4
+1	W26	in
+2	W27	in
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
 26
 27
 28
+29
+30

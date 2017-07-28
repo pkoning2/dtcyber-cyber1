@@ -174,6 +174,7 @@ void memwrite (int bnum, int offset, membyte memp)
     FILE *f;
     static ppword p[10];
     static cpword c[32];
+    cpword t;
     static int lastppoffset[10];
     static int lastcpoffset[32];
 
@@ -209,17 +210,18 @@ void memwrite (int bnum, int offset, membyte memp)
         bnum -= 100;
         bank = bnum / 8;
         byte = bnum % 8;
-        DDPRINTF ("memwrite cp bank %d byte %d\n", bank, byte);
         // CP memory is written bank 7 to 0
         if (byte == 7)
         {
             c[bank] = 0;
         }
-        c[pp] |= getbyte (memp) << ((7 - bank) * 8);
+        t = ((cpword) (getbyte (memp))) << ((7 - byte) * 8);
+        DDPRINTF ("memwrite cp bank %d byte %d is %020llo\n", bank, byte, t);
+        c[bank] |= t;
         if (byte == 0)
         {
             DPRINTF ("cp write %06o: %020llo\n",
-                     bank + (offset * 32), c[pp]);
+                     bank + (offset * 32), c[bank]);
         }        
     }
 }

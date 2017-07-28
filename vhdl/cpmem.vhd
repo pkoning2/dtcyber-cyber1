@@ -2,7 +2,7 @@
 --
 -- CDC 6600 model
 --
--- Copyright (C) 2009 by Paul Koning
+-- Copyright (C) 2009-2017 by Paul Koning
 --
 -- Derived from the original 6600 module design
 -- by Seymour Cray and his team at Control Data,
@@ -11,10 +11,13 @@
 -- from the Computer History Museum collection
 -- by Dave Redell and Al Kossow.
 --
--- Behavioral model of CM.  This is the entire CM, all
--- banks of it.  We don't bother trying to model this at
--- the module level, that just adds a lot of detail for
--- no great benefit.
+-- Behavioral model of CM.  This is the entire CM, all banks of it.
+-- We don't bother trying to model this at the module level, that just
+-- adds a lot of detail for no great benefit.  It also includes the
+-- read and write data distributor aspects.  This is partly because
+-- the read distributor wire lists aren't available, but mostly
+-- because both distributors add an extravagant amount of logic that
+-- does not actually contribute any meaningful functionality.
 --
 -------------------------------------------------------------------------------
 
@@ -31,23 +34,27 @@
 -- "go" direct from the stunt box in chassis 5 rather than by way of
 -- a "go" fanout block in chassis 4.
 --
--- These times are from the receiving end point of view.
+-- These times are from the receiving end point of view.  Note that in
+-- the gate level models the coax delay is modeled as a separate delay
+-- step at the sending end; here we model it directly by gating the
+-- output signals with the appropriate clock phase.
 --
 -- Inputs to cpmem:
--- Go:          T180
--- Address:     T240
--- Write:       T240
--- PP read tag: T260
--- Write data:  T600
+-- Go:          T195
+-- Address:     T255
+-- Write:       T255
+-- Tag decodes: T455
+-- Write data:  T600 ?
 --
 -- Outputs from cpmem:
--- Accept:      T300
--- Read data:   T650
--- Read resume: T650
+-- Accept:      T370
+-- Read data:   T645
+-- Read resume: T645 ?
 --
--- Sequence controller sequence numbers:
--- The SSC state machine advances on T??, starting with sequence number 1
--- on the sysclk1 following the address.  So sequence 1 corresponds to T300.
+-- Sequence controller sequence numbers: The SSC state machine
+-- advances on T70, starting with sequence number 1 on the sysclk(14)
+-- rising edge following the address.  So sequence 1 corresponds to
+-- T270.
 
 library IEEE;
 use IEEE.numeric_bit.all;
@@ -121,7 +128,7 @@ entity cmbank is
     go                     : in  coaxsig;
     addr                   : in  ppword;     -- memory address (12 bits)
     baddr                  : in  bankaddr;   -- bank address (5 bits)
-    sysclk : in  clocks;   -- clocks
+    sysclk                 : in  clocks;     -- clocks
     reset                  : in  logicsig;   -- reset
     write                  : in  logicsig;   -- write request
     wdata                  : in  cpword;     -- write data bus
@@ -202,7 +209,7 @@ begin  -- cmbank
           writereq <= do_write;
         when 2 =>
           send_accept := '1';
-        when 3 =>
+        when 4 =>       -- T470
           twdata <= wdata;
         when others =>
           null;
@@ -211,9 +218,11 @@ begin  -- cmbank
     end if;
     accept <= send_accept and sysclk(14);
   end process ssc;
+      
   twrite <= '1' when seq = 7 and writereq else '0';
   tena <= '1' when seq = 3 or twrite = '1' else '0';
-  rdata <= trdata when seq = 4 and sysclk(9) = '1' else (others => '0');
+  rdata <= trdata when seq = 4 and sysclk(9) = '1'      -- T645
+           else (others => '0');
 end cmbank;
 
 library IEEE;
@@ -227,7 +236,7 @@ entity cpmem is
   port (
     p1                 : in coaxsigs;   -- go, write, etc from stunt box
     p2                 : in coaxsigs;   -- address from stunt box
-    p3, p4, p5, p6     : in coaxsigs;   -- write data trunk
+    p3, p4, p5, p6     : in coaxsigs;   -- write data trunk to ppu
     p7, p8, p9, p10    : out coaxsigs;  -- read trunk to control
     p11, p12, p13, p14 : out coaxsigs;  -- read data trunk to ecs
     p15, p16, p17      : out coaxsigs;  -- read data trunk to lower regs
@@ -235,8 +244,13 @@ entity cpmem is
     p20, p21, p22, p23 : out coaxsigs;  -- read data trunk to ppu
     p24                : out coaxsigs;  -- accept to stunt box
     p25                : out coaxsigs;  -- read resume to PP
+    p26                : out coaxsigs;  -- write resume to PP
+    p101, p102         : in coaxsigs;   -- write trunk from control
+    p103, p104, p105, p106 : in coaxsigs; -- write data trunk from ecs
+    p107, p108, p109   : in coaxsigs;   -- write data trunk from lower regs
+    p110, p111         : in coaxsigs;   -- write data trunk from upper regs
     reset  : in  logicsig;              -- power-up reset
-    sysclk         : in  clocks);  -- clocks
+    sysclk             : in  clocks);   -- clocks
 
 end cpmem;
 
@@ -255,12 +269,6 @@ architecture beh of cpmem is
       rdata                  : out cpword;     -- read data bus
       accept                 : out coaxsig);   -- accept signal
   end component;
-  component ireg1
-    port (
-      clr : in bit;                       -- clear pulse
-      i : in coaxsig;                     -- input
-      o : out coaxsig);                   -- output
-  end component;
   component ireg 
     port (
       clr : in bit;                       -- clear pulse
@@ -272,13 +280,24 @@ architecture beh of cpmem is
   subtype coaxword is coaxbus (59 downto 0);  -- cpword, coax signal type
   alias go : coaxsig is p1(11);         -- go from stunt box
   alias write : coaxsig is p1(12);      -- write from stunt box
-  alias periph : coaxsig is p1(14);     -- peripheral read from stunt box
+  alias rdppu : coaxsig is p1(14);      -- peripheral read from stunt box
   alias ecs : coaxsig is p1(15);        -- ecs read from stunt box
   alias addr : coaxsigs is p2;          -- address from stunt box
-  alias wdata1 : coaxsigs is p3;        -- write data trunk
-  alias wdata2 : coaxsigs is p4;
-  alias wdata3 : coaxsigs is p5;
-  alias wdata4 : coaxsigs is p6;
+  alias wrppu1 : coaxsigs is p3;        -- write data from ppu
+  alias wrppu2 : coaxsigs is p4;
+  alias wrppu3 : coaxsigs is p5;
+  alias wrppu4 : coaxsigs is p6;
+  alias wrecs1 : coaxsigs is p103;      -- write data from ecs
+  alias wrecs2 : coaxsigs is p104;
+  alias wrecs3 : coaxsigs is p105;
+  alias wrecs4 : coaxsigs is p106;
+  alias wrregl1 : coaxsigs is p107;     -- write data from lower regs
+  alias wrregl2 : coaxsigs is p108;
+  alias wrregl3 : coaxsigs is p109;
+  alias wrregu1 : coaxsigs is p110;     -- write data from upper regs
+  alias wrregu2 : coaxsigs is p111;
+  alias wrctrl1 : coaxsigs is p101;     -- write data from control
+  alias wrctrl2 : coaxsigs is p102;
   alias rdctrl1 : coaxsigs is p7;       -- read data to control
   alias rdctrl2 : coaxsigs is p8;
   alias rdctrl3 : coaxsigs is p9;
@@ -299,68 +318,113 @@ architecture beh of cpmem is
   alias accept : coaxsig is p24(9);     -- accept to stunt box
   alias c5full : coaxsig is p25(15);    -- set c5 full to PP
   alias rresume : coaxsig is p25(16);   -- read resume to PP
+  alias wresume : coaxsig is p26(15);   -- write resume to PP
+  alias storectl : coaxsig is p102(12); -- store control from stunt box
+  alias storereg : coaxsig is p102(13); -- store register from stunt box
+  alias storeppu : coaxsig is p102(14); -- store ppu from stunt box
   signal lctrl : coaxsigs;              -- Latched control wires
   signal laddr : coaxsigs;              -- Latched address cable
-  signal lgo, lwrite, lperiph : coaxsig;         -- latched go, write, readpp
-  signal dgo : logicsig;                -- go delayed one cycle
-  signal periphd1, periphd2, periphd3 : logicsig;  -- periph read delayed n clks
+  signal lgo, lwrite, lrdppu : coaxsig; -- latched go, write, readpp
+  signal lwctl, lwreg, lwppu : coaxsig; -- latched store 
+  signal rdppud1, rdppud2 : logicsig;   -- periph read delayed n clks
+  signal iwresume : logicsig;           -- internal copy of write resume
   signal taddr : ppword;
   signal bank : bankaddr;
-  signal iwdata, lwdata : coaxword;
+  signal iwppu, iwctrl, iwreg, iwecs : coaxword;
+  signal lwpdata : coaxword;            -- latched PP data
+  signal lwdata : coaxword;
   signal twdata : cpword;
   signal trdata : rvec_t;               -- read contributions from banks
-  signal rdata : coaxword;                -- merged read data to trunks
+  signal rdata : coaxword;              -- merged read data to trunks
   signal prdata : coaxword;             -- read data for PP
   signal taccept : acc_t;               -- accept contributions from banks
 begin  -- beh
   -- Latch the control signals
-  golatch : ireg1 port map (
-    i   => go,
-    clr => sysclk(9),
-    o   => lgo);
-  wrlatch : ireg1 port map (
-    i   => write,
-    clr => sysclk(19),
-    o   => lwrite);
-  pplatch : ireg1 port map (
-    i   => periph,
-    clr => sysclk(19),
-    o   => lperiph);
+  golatch : process (sysclk (2))
+  begin  -- process
+    if rising_edge (sysclk (2)) then
+      lgo <= go;
+    end if;
+  end process golatch;
+  ctlatch : process (sysclk (13))
+  begin  -- process
+    if rising_edge (sysclk (13)) then
+      lwrite <= write;
+      lrdppu <= rdppu;
+      lwctl <= storectl;
+      lwreg <= storereg;
+      lwppu <= storeppu;
+    end if;
+  end process ctlatch;
+  
   -- Latch and unswizzle the address cable (from stunt box, chassis 5 Q34-Q39)
-  alatch : ireg port map (
-    ibus => addr,
-    clr  => sysclk(19),
-    obus => laddr);
-  -- Delay "go" by about 50 ns cycle to align it with the address
-  -- In the original design that is done by passing it through the
-  -- "go" fanout in chassis 4
-  godelay : process (sysclk(4))
+  alatch : process (sysclk (13))
   begin  -- process
-    if rising_edge (sysclk(4)) then
-      dgo <= lgo;
+    if rising_edge (sysclk (13)) then
+      laddr <= addr;
     end if;
-  end process;
-  -- Delay "periph" by 2 cycles for use with the read data reply to the PPU.
-  ppdelay : process (sysclk(14))
-  begin  -- process
-    if rising_edge (sysclk(14)) then
-      periphd1 <= lperiph;
-      periphd2 <= periphd1;
-      periphd3 <= periphd2;
-    end if;
-  end process;
+  end process alatch;
   taddr <= (laddr(8), laddr(7), laddr(6), laddr(5), laddr(4), laddr(3),
             laddr(2), laddr(1), laddr(0), laddr(18), laddr(17), laddr(16));
   bank  <= (laddr(15), laddr(14), laddr(13), laddr(12), laddr(11));
 
-  -- latch the write data cables (from store distributor,
-  -- chassis 2 B12-B21)
-  iwdata <= wdata4 (14 downto 0) & wdata3 (14 downto 0) &
-            wdata2 (14 downto 0) & wdata1 (14 downto 0);
-  wlatch : ireg port map (
-    ibus => iwdata,
-    clr  => sysclk(19),
-    obus => lwdata);
+  -- Delay "rdppu" by 2 cycles for use with the read data reply to the PPU.
+  ppdelay : process (sysclk(6))
+  begin  -- process
+    if rising_edge (sysclk(6)) then
+      rdppud1 <= lrdppu;
+      rdppud2 <= rdppud1;
+    end if;
+  end process;
+
+  -- capture the write data cables from the various sources
+  -- todo: ppu, regs
+  -- ECS is done the easy way:
+  iwecs <= wrecs4 (14 downto 0) & wrecs3 (14 downto 0) &
+           wrecs2 (14 downto 0) & wrecs1 (14 downto 0);
+
+  iwppu <= wrppu1 (11 downto 0)  & -- bits 59..48
+           wrppu2 (8 downto 0)   & -- bits 47..39
+           wrppu1 (14 downto 12) & -- bits 38..36
+           wrppu3 (5 downto 0)   & -- bits 35..30
+           wrppu2 (14 downto 9)  & -- bits 29..24
+           wrppu4 (2 downto 0)   & -- bits 23..21
+           wrppu3 (14 downto 6)  & -- bits 20..12
+           wrppu4 (14 downto 3);   -- bits 11..0
+           
+  iwctrl <= (56 => wrctrl2(6), 35 => wrctrl2(5), 34 => wrctrl2(4),
+             33 => wrctrl2(3), 32 => wrctrl2(2), 31 => wrctrl2(1),
+             30 => wrctrl2(0),
+             53 => wrctrl1(9), 52 => wrctrl1(8), 51 => wrctrl1(7),
+             50 => wrctrl1(6), 49 => wrctrl1(5), 48 => wrctrl1(4),
+             47 => wrctrl1(3), 46 => wrctrl1(2), 45 => wrctrl1(1),
+             44 => wrctrl1(0), 43 => wrctrl1(10), 42 => wrctrl1(17),
+             41 => wrctrl1(16), 40 => wrctrl1(15), 39 => wrctrl1(14),
+             38 => wrctrl1(13), 37 => wrctrl1(12), 36 => wrctrl1(11),
+             others => '0');
+  
+  -- latch the correct write data
+  ppulatch : ireg
+    port map (
+      clr => iwresume,                  -- clear on write resume
+      ibus => iwppu,
+      obus => lwpdata);
+      
+  wlatch : process (sysclk(19))
+  begin  -- process
+    if rising_edge(sysclk(19)) then
+      if lwppu = '1' then lwdata <= lwpdata;
+      --elsif lwecs = '1' then lwdata <= iwecs;
+      elsif lwctl = '1' then
+        if lwreg = '1' then
+          lwdata <= iwctrl (59 downto 36) & iwreg (35 downto 0);
+        else lwdata <= iwctrl;
+        end if;
+      elsif lwreg = '1' then lwdata <= iwreg;
+      else lwdata <= (others => '0');
+      end if;
+    end if;
+  end process wlatch;
   twdata <= cpword (lwdata);
   
   -- 32 memory banks, 4k by 60 each
@@ -369,7 +433,7 @@ begin  -- beh
       generic map (
         banknum => b)
       port map (
-        go     => dgo,
+        go     => lgo,
         addr   => taddr,
         baddr  => bank,
         sysclk   => sysclk,
@@ -397,7 +461,7 @@ begin  -- beh
     accept <= ttaccept;
     rdata <= coaxword (ttrdata);
     for i in cpword'range loop
-      prdata(i) <= ttrdata(i) and periphd2;
+      prdata(i) <= ttrdata(i) and rdppud2;
     end loop;  -- i
   end process trunks;
 
@@ -414,8 +478,13 @@ begin  -- beh
   rdpp4 (6 downto 0) <= prdata (59 downto 53);
 
   -- generate read resume to PP
-  c5full <= periphd2 and sysclk(9);
-  rresume <= periphd2 and sysclk(9);
+  c5full <= rdppud2 and sysclk(9);
+  rresume <= rdppud2 and sysclk(9);
+  iwresume <= lwppu and sysclk (5);
+  wresume <= iwresume;
+  
+  -- generate write resume to PP
+  -- TODO
   
   -- chassis 5 input register (A-E 41,42):
   -- 0..3 W02-904..907, 4 W02-900 5..14 W02-90..99

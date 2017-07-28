@@ -1,26 +1,24 @@
 [*]
 [*] GTKWave Analyzer v3.3.51 (w)1999-2013 BSI
-[*] Fri Jul 21 20:50:51 2017
+[*] Thu Jul 27 23:50:10 2017
 [*]
 [dumpfile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/cdc_tb.ghw"
-[dumpfile_mtime] "Fri Jul 21 20:41:56 2017"
-[dumpfile_size] 11430613
+[dumpfile_mtime] "Thu Jul 27 19:00:13 2017"
+[dumpfile_size] 15173034
 [savefile] "/Users/pkoning/Documents/svn/dtcyber/vhdl/cdcds.sav"
-[timestart] 16732000000
+[timestart] 8664000000
 [size] 1393 855
 [pos] -1 -1
-*-29.169651 17700000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-30.169651 13245000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.cdc_tb.
 [treeopen] top.cdc_tb.uut.
+[treeopen] top.cdc_tb.uut.ch1.
 [treeopen] top.cdc_tb.uut.ch1.a01.arl.
 [treeopen] top.cdc_tb.uut.ch1.c01.u5.
 [treeopen] top.cdc_tb.uut.ch1.c01.u5.u1.
 [treeopen] top.cdc_tb.uut.ch1.i25.u4.
-[treeopen] top.cdc_tb.uut.ch11.a01.
-[treeopen] top.cdc_tb.uut.ch11.a03.
-[treeopen] top.cdc_tb.uut.ch11.a03.mbank[0].
-[treeopen] top.cdc_tb.uut.ch11.a03.mbank[26].
+[treeopen] top.cdc_tb.uut.ch11.a03.mbank[0].cm.
 [treeopen] top.cdc_tb.uut.ch11.a03.mbank[26].cm.
 [treeopen] top.cdc_tb.uut.ch11.a03.mbank[26].cm.mem.
 [treeopen] top.cdc_tb.uut.ch11.a03.mbank[26].cm.mem.arrays[0].
@@ -28,7 +26,16 @@
 [treeopen] top.cdc_tb.uut.ch11.a03.mbank[4].cm.
 [treeopen] top.cdc_tb.uut.ch11.a03.mbank[4].cm.mem.arrays[0].
 [treeopen] top.cdc_tb.uut.ch11.a03.mbank[4].cm.mem.arrays[0].membank.
-[treeopen] top.cdc_tb.uut.ch5.
+[treeopen] top.cdc_tb.uut.ch11.a03.mbank[6].cm.
+[treeopen] top.cdc_tb.uut.ch11.a03.mbank[6].cm.mem.
+[treeopen] top.cdc_tb.uut.ch11.a03.mbank[6].cm.mem.arrays[0].
+[treeopen] top.cdc_tb.uut.ch11.a03.mbank[6].cm.mem.arrays[0].membank.
+[treeopen] top.cdc_tb.uut.ch11.a03.mbank[6].cm.mem.arrays[1].
+[treeopen] top.cdc_tb.uut.ch11.a03.mbank[6].cm.mem.arrays[1].membank.
+[treeopen] top.cdc_tb.uut.ch11.a03.mbank[6].cm.mem.arrays[6].
+[treeopen] top.cdc_tb.uut.ch11.a03.mbank[6].cm.mem.arrays[6].membank.
+[treeopen] top.cdc_tb.uut.ch11.a03.mbank[6].cm.mem.arrays[7].
+[treeopen] top.cdc_tb.uut.ch11.a03.mbank[6].cm.mem.arrays[7].membank.
 [treeopen] top.cdc_tb.uut.ch5.a21.u7.
 [treeopen] top.cdc_tb.uut.ch5.o01.u6.u4.
 [treeopen] top.cdc_tb.uut.ch5.q06.u5.
@@ -84,6 +91,9 @@
 +{Central_write} top.cdc_tb.uut.ch1.i30.p25
 +{Exchange} top.cdc_tb.uut.ch1.i30.p8
 +{Master_clear} top.cdc_tb.uut.ch1.i30.p23
++{Read_resume} top.cdc_tb.uut.ch1.i29.p1
++{Write_resume} top.cdc_tb.uut.ch1.i29.p21
++{Exch_resume} top.cdc_tb.uut.ch1.i29.p5
 @200
 -CPU
 @c00030
@@ -252,6 +262,7 @@ top.cdc_tb.uut.ch5.g40.p3
 #{RA} top.cdc_tb.uut.ch5.m34.p18_tp4 top.cdc_tb.uut.ch5.m34.p23_tp5 top.cdc_tb.uut.ch5.m34.p24_tp6 top.cdc_tb.uut.ch5.l40.p18_tp4 top.cdc_tb.uut.ch5.l40.p23_tp5 top.cdc_tb.uut.ch5.l40.p24_tp6 top.cdc_tb.uut.ch5.l39.p18_tp4 top.cdc_tb.uut.ch5.l39.p23_tp5 top.cdc_tb.uut.ch5.l39.p24_tp6 top.cdc_tb.uut.ch5.l38.p18_tp4 top.cdc_tb.uut.ch5.l38.p23_tp5 top.cdc_tb.uut.ch5.l38.p24_tp6 top.cdc_tb.uut.ch5.l37.p18_tp4 top.cdc_tb.uut.ch5.l37.p23_tp5 top.cdc_tb.uut.ch5.l37.p24_tp6 top.cdc_tb.uut.ch5.l36.p18_tp4 top.cdc_tb.uut.ch5.l36.p23_tp5 top.cdc_tb.uut.ch5.l36.p24_tp6
 #{FL} top.cdc_tb.uut.ch5.m34.p14_tp3 top.cdc_tb.uut.ch5.m34.p10_tp2 top.cdc_tb.uut.ch5.m34.p5_tp1 top.cdc_tb.uut.ch5.l40.p14_tp3 top.cdc_tb.uut.ch5.l40.p10_tp2 top.cdc_tb.uut.ch5.l40.p5_tp1 top.cdc_tb.uut.ch5.l39.p14_tp3 top.cdc_tb.uut.ch5.l39.p10_tp2 top.cdc_tb.uut.ch5.l39.p5_tp1 top.cdc_tb.uut.ch5.l38.p14_tp3 top.cdc_tb.uut.ch5.l38.p10_tp2 top.cdc_tb.uut.ch5.l38.p5_tp1 top.cdc_tb.uut.ch5.l37.p14_tp3 top.cdc_tb.uut.ch5.l37.p10_tp2 top.cdc_tb.uut.ch5.l37.p5_tp1 top.cdc_tb.uut.ch5.l36.p14_tp3 top.cdc_tb.uut.ch5.l36.p10_tp2 top.cdc_tb.uut.ch5.l36.p5_tp1
 #{S} top.cdc_tb.uut.ch5.m40.tp1 top.cdc_tb.uut.ch5.m40.tp5 top.cdc_tb.uut.ch5.m40.tp6 top.cdc_tb.uut.ch5.m39.tp1 top.cdc_tb.uut.ch5.m39.tp5 top.cdc_tb.uut.ch5.m39.tp6 top.cdc_tb.uut.ch5.m38.tp1 top.cdc_tb.uut.ch5.m38.tp5 top.cdc_tb.uut.ch5.m38.tp6 top.cdc_tb.uut.ch5.m37.tp1 top.cdc_tb.uut.ch5.m37.tp5 top.cdc_tb.uut.ch5.m37.tp6 top.cdc_tb.uut.ch5.m36.tp1 top.cdc_tb.uut.ch5.m36.tp5 top.cdc_tb.uut.ch5.m36.tp6 top.cdc_tb.uut.ch5.m35.tp1 top.cdc_tb.uut.ch5.m35.tp5 top.cdc_tb.uut.ch5.m35.tp6
+#{Ch_5_write} top.cdc_tb.uut.ch5.i40.p19 top.cdc_tb.uut.ch5.a01.p5 top.cdc_tb.uut.ch5.a01.p5 top.cdc_tb.uut.ch5.i40.p21 top.cdc_tb.uut.ch5.i40.p6 top.cdc_tb.uut.ch5.i40.p10 top.cdc_tb.uut.ch5.i40.p4 top.cdc_tb.uut.ch5.i39.p19 top.cdc_tb.uut.ch5.i39.p21 top.cdc_tb.uut.ch5.i39.p23 top.cdc_tb.uut.ch5.i39.p25 top.cdc_tb.uut.ch5.i39.p27 top.cdc_tb.uut.ch5.i39.p4 top.cdc_tb.uut.ch5.i39.p6 top.cdc_tb.uut.ch5.i39.p8 top.cdc_tb.uut.ch5.i39.p10 top.cdc_tb.uut.ch5.i39.p12 top.cdc_tb.uut.ch5.i38.p19 top.cdc_tb.uut.ch5.i38.p21 top.cdc_tb.uut.ch5.i38.p23 top.cdc_tb.uut.ch5.i38.p25 top.cdc_tb.uut.ch5.i38.p27 top.cdc_tb.uut.ch5.i38.p4 top.cdc_tb.uut.ch5.i38.p6 top.cdc_tb.uut.ch5.i38.p8 top.cdc_tb.uut.ch5.i38.p10 top.cdc_tb.uut.ch5.i38.p12
 @28
 +{All_quiet} top.cdc_tb.uut.ch5.f26.p10
 +{CM_Accept} top.cdc_tb.uut.ch5.o40.p17
@@ -734,7 +745,41 @@ top.cdc_tb.uut.ch5.q12.p16
 +{CM_Accept} top.cdc_tb.uut.ch11.a03.p24[9]
 #{CM_Addr} top.cdc_tb.uut.ch11.a03.p2[8] top.cdc_tb.uut.ch11.a03.p2[7] top.cdc_tb.uut.ch11.a03.p2[6] top.cdc_tb.uut.ch11.a03.p2[5] top.cdc_tb.uut.ch11.a03.p2[4] top.cdc_tb.uut.ch11.a03.p2[3] top.cdc_tb.uut.ch11.a03.p2[2] top.cdc_tb.uut.ch11.a03.p2[1] top.cdc_tb.uut.ch11.a03.p2[0] top.cdc_tb.uut.ch11.a03.p2[18] top.cdc_tb.uut.ch11.a03.p2[17] top.cdc_tb.uut.ch11.a03.p2[16] top.cdc_tb.uut.ch11.a03.p2[15] top.cdc_tb.uut.ch11.a03.p2[14] top.cdc_tb.uut.ch11.a03.p2[13] top.cdc_tb.uut.ch11.a03.p2[12] top.cdc_tb.uut.ch11.a03.p2[11]
 +{CM_read_data} #{rdata[59:0]} top.cdc_tb.uut.ch11.a03.rdata[59] top.cdc_tb.uut.ch11.a03.rdata[58] top.cdc_tb.uut.ch11.a03.rdata[57] top.cdc_tb.uut.ch11.a03.rdata[56] top.cdc_tb.uut.ch11.a03.rdata[55] top.cdc_tb.uut.ch11.a03.rdata[54] top.cdc_tb.uut.ch11.a03.rdata[53] top.cdc_tb.uut.ch11.a03.rdata[52] top.cdc_tb.uut.ch11.a03.rdata[51] top.cdc_tb.uut.ch11.a03.rdata[50] top.cdc_tb.uut.ch11.a03.rdata[49] top.cdc_tb.uut.ch11.a03.rdata[48] top.cdc_tb.uut.ch11.a03.rdata[47] top.cdc_tb.uut.ch11.a03.rdata[46] top.cdc_tb.uut.ch11.a03.rdata[45] top.cdc_tb.uut.ch11.a03.rdata[44] top.cdc_tb.uut.ch11.a03.rdata[43] top.cdc_tb.uut.ch11.a03.rdata[42] top.cdc_tb.uut.ch11.a03.rdata[41] top.cdc_tb.uut.ch11.a03.rdata[40] top.cdc_tb.uut.ch11.a03.rdata[39] top.cdc_tb.uut.ch11.a03.rdata[38] top.cdc_tb.uut.ch11.a03.rdata[37] top.cdc_tb.uut.ch11.a03.rdata[36] top.cdc_tb.uut.ch11.a03.rdata[35] top.cdc_tb.uut.ch11.a03.rdata[34] top.cdc_tb.uut.ch11.a03.rdata[33] top.cdc_tb.uut.ch11.a03.rdata[32] top.cdc_tb.uut.ch11.a03.rdata[31] top.cdc_tb.uut.ch11.a03.rdata[30] top.cdc_tb.uut.ch11.a03.rdata[29] top.cdc_tb.uut.ch11.a03.rdata[28] top.cdc_tb.uut.ch11.a03.rdata[27] top.cdc_tb.uut.ch11.a03.rdata[26] top.cdc_tb.uut.ch11.a03.rdata[25] top.cdc_tb.uut.ch11.a03.rdata[24] top.cdc_tb.uut.ch11.a03.rdata[23] top.cdc_tb.uut.ch11.a03.rdata[22] top.cdc_tb.uut.ch11.a03.rdata[21] top.cdc_tb.uut.ch11.a03.rdata[20] top.cdc_tb.uut.ch11.a03.rdata[19] top.cdc_tb.uut.ch11.a03.rdata[18] top.cdc_tb.uut.ch11.a03.rdata[17] top.cdc_tb.uut.ch11.a03.rdata[16] top.cdc_tb.uut.ch11.a03.rdata[15] top.cdc_tb.uut.ch11.a03.rdata[14] top.cdc_tb.uut.ch11.a03.rdata[13] top.cdc_tb.uut.ch11.a03.rdata[12] top.cdc_tb.uut.ch11.a03.rdata[11] top.cdc_tb.uut.ch11.a03.rdata[10] top.cdc_tb.uut.ch11.a03.rdata[9] top.cdc_tb.uut.ch11.a03.rdata[8] top.cdc_tb.uut.ch11.a03.rdata[7] top.cdc_tb.uut.ch11.a03.rdata[6] top.cdc_tb.uut.ch11.a03.rdata[5] top.cdc_tb.uut.ch11.a03.rdata[4] top.cdc_tb.uut.ch11.a03.rdata[3] top.cdc_tb.uut.ch11.a03.rdata[2] top.cdc_tb.uut.ch11.a03.rdata[1] top.cdc_tb.uut.ch11.a03.rdata[0]
-+{CM_write_data} #{twdata[59:0]} top.cdc_tb.uut.ch11.a03.twdata[59] top.cdc_tb.uut.ch11.a03.twdata[58] top.cdc_tb.uut.ch11.a03.twdata[57] top.cdc_tb.uut.ch11.a03.twdata[56] top.cdc_tb.uut.ch11.a03.twdata[55] top.cdc_tb.uut.ch11.a03.twdata[54] top.cdc_tb.uut.ch11.a03.twdata[53] top.cdc_tb.uut.ch11.a03.twdata[52] top.cdc_tb.uut.ch11.a03.twdata[51] top.cdc_tb.uut.ch11.a03.twdata[50] top.cdc_tb.uut.ch11.a03.twdata[49] top.cdc_tb.uut.ch11.a03.twdata[48] top.cdc_tb.uut.ch11.a03.twdata[47] top.cdc_tb.uut.ch11.a03.twdata[46] top.cdc_tb.uut.ch11.a03.twdata[45] top.cdc_tb.uut.ch11.a03.twdata[44] top.cdc_tb.uut.ch11.a03.twdata[43] top.cdc_tb.uut.ch11.a03.twdata[42] top.cdc_tb.uut.ch11.a03.twdata[41] top.cdc_tb.uut.ch11.a03.twdata[40] top.cdc_tb.uut.ch11.a03.twdata[39] top.cdc_tb.uut.ch11.a03.twdata[38] top.cdc_tb.uut.ch11.a03.twdata[37] top.cdc_tb.uut.ch11.a03.twdata[36] top.cdc_tb.uut.ch11.a03.twdata[35] top.cdc_tb.uut.ch11.a03.twdata[34] top.cdc_tb.uut.ch11.a03.twdata[33] top.cdc_tb.uut.ch11.a03.twdata[32] top.cdc_tb.uut.ch11.a03.twdata[31] top.cdc_tb.uut.ch11.a03.twdata[30] top.cdc_tb.uut.ch11.a03.twdata[29] top.cdc_tb.uut.ch11.a03.twdata[28] top.cdc_tb.uut.ch11.a03.twdata[27] top.cdc_tb.uut.ch11.a03.twdata[26] top.cdc_tb.uut.ch11.a03.twdata[25] top.cdc_tb.uut.ch11.a03.twdata[24] top.cdc_tb.uut.ch11.a03.twdata[23] top.cdc_tb.uut.ch11.a03.twdata[22] top.cdc_tb.uut.ch11.a03.twdata[21] top.cdc_tb.uut.ch11.a03.twdata[20] top.cdc_tb.uut.ch11.a03.twdata[19] top.cdc_tb.uut.ch11.a03.twdata[18] top.cdc_tb.uut.ch11.a03.twdata[17] top.cdc_tb.uut.ch11.a03.twdata[16] top.cdc_tb.uut.ch11.a03.twdata[15] top.cdc_tb.uut.ch11.a03.twdata[14] top.cdc_tb.uut.ch11.a03.twdata[13] top.cdc_tb.uut.ch11.a03.twdata[12] top.cdc_tb.uut.ch11.a03.twdata[11] top.cdc_tb.uut.ch11.a03.twdata[10] top.cdc_tb.uut.ch11.a03.twdata[9] top.cdc_tb.uut.ch11.a03.twdata[8] top.cdc_tb.uut.ch11.a03.twdata[7] top.cdc_tb.uut.ch11.a03.twdata[6] top.cdc_tb.uut.ch11.a03.twdata[5] top.cdc_tb.uut.ch11.a03.twdata[4] top.cdc_tb.uut.ch11.a03.twdata[3] top.cdc_tb.uut.ch11.a03.twdata[2] top.cdc_tb.uut.ch11.a03.twdata[1] top.cdc_tb.uut.ch11.a03.twdata[0]
 +{Latched_wdata} #{lwdata[59:0]} top.cdc_tb.uut.ch11.a03.lwdata[59] top.cdc_tb.uut.ch11.a03.lwdata[58] top.cdc_tb.uut.ch11.a03.lwdata[57] top.cdc_tb.uut.ch11.a03.lwdata[56] top.cdc_tb.uut.ch11.a03.lwdata[55] top.cdc_tb.uut.ch11.a03.lwdata[54] top.cdc_tb.uut.ch11.a03.lwdata[53] top.cdc_tb.uut.ch11.a03.lwdata[52] top.cdc_tb.uut.ch11.a03.lwdata[51] top.cdc_tb.uut.ch11.a03.lwdata[50] top.cdc_tb.uut.ch11.a03.lwdata[49] top.cdc_tb.uut.ch11.a03.lwdata[48] top.cdc_tb.uut.ch11.a03.lwdata[47] top.cdc_tb.uut.ch11.a03.lwdata[46] top.cdc_tb.uut.ch11.a03.lwdata[45] top.cdc_tb.uut.ch11.a03.lwdata[44] top.cdc_tb.uut.ch11.a03.lwdata[43] top.cdc_tb.uut.ch11.a03.lwdata[42] top.cdc_tb.uut.ch11.a03.lwdata[41] top.cdc_tb.uut.ch11.a03.lwdata[40] top.cdc_tb.uut.ch11.a03.lwdata[39] top.cdc_tb.uut.ch11.a03.lwdata[38] top.cdc_tb.uut.ch11.a03.lwdata[37] top.cdc_tb.uut.ch11.a03.lwdata[36] top.cdc_tb.uut.ch11.a03.lwdata[35] top.cdc_tb.uut.ch11.a03.lwdata[34] top.cdc_tb.uut.ch11.a03.lwdata[33] top.cdc_tb.uut.ch11.a03.lwdata[32] top.cdc_tb.uut.ch11.a03.lwdata[31] top.cdc_tb.uut.ch11.a03.lwdata[30] top.cdc_tb.uut.ch11.a03.lwdata[29] top.cdc_tb.uut.ch11.a03.lwdata[28] top.cdc_tb.uut.ch11.a03.lwdata[27] top.cdc_tb.uut.ch11.a03.lwdata[26] top.cdc_tb.uut.ch11.a03.lwdata[25] top.cdc_tb.uut.ch11.a03.lwdata[24] top.cdc_tb.uut.ch11.a03.lwdata[23] top.cdc_tb.uut.ch11.a03.lwdata[22] top.cdc_tb.uut.ch11.a03.lwdata[21] top.cdc_tb.uut.ch11.a03.lwdata[20] top.cdc_tb.uut.ch11.a03.lwdata[19] top.cdc_tb.uut.ch11.a03.lwdata[18] top.cdc_tb.uut.ch11.a03.lwdata[17] top.cdc_tb.uut.ch11.a03.lwdata[16] top.cdc_tb.uut.ch11.a03.lwdata[15] top.cdc_tb.uut.ch11.a03.lwdata[14] top.cdc_tb.uut.ch11.a03.lwdata[13] top.cdc_tb.uut.ch11.a03.lwdata[12] top.cdc_tb.uut.ch11.a03.lwdata[11] top.cdc_tb.uut.ch11.a03.lwdata[10] top.cdc_tb.uut.ch11.a03.lwdata[9] top.cdc_tb.uut.ch11.a03.lwdata[8] top.cdc_tb.uut.ch11.a03.lwdata[7] top.cdc_tb.uut.ch11.a03.lwdata[6] top.cdc_tb.uut.ch11.a03.lwdata[5] top.cdc_tb.uut.ch11.a03.lwdata[4] top.cdc_tb.uut.ch11.a03.lwdata[3] top.cdc_tb.uut.ch11.a03.lwdata[2] top.cdc_tb.uut.ch11.a03.lwdata[1] top.cdc_tb.uut.ch11.a03.lwdata[0]
+@c00030
+#{Ctrl_write_data} top.cdc_tb.uut.ch11.a03.iwctrl[59] top.cdc_tb.uut.ch11.a03.iwctrl[58] top.cdc_tb.uut.ch11.a03.iwctrl[57] top.cdc_tb.uut.ch11.a03.iwctrl[56] top.cdc_tb.uut.ch11.a03.iwctrl[55] top.cdc_tb.uut.ch11.a03.iwctrl[54] top.cdc_tb.uut.ch11.a03.iwctrl[53] top.cdc_tb.uut.ch11.a03.iwctrl[52] top.cdc_tb.uut.ch11.a03.iwctrl[51] top.cdc_tb.uut.ch11.a03.iwctrl[50] top.cdc_tb.uut.ch11.a03.iwctrl[49] top.cdc_tb.uut.ch11.a03.iwctrl[48] top.cdc_tb.uut.ch11.a03.iwctrl[47] top.cdc_tb.uut.ch11.a03.iwctrl[46] top.cdc_tb.uut.ch11.a03.iwctrl[45] top.cdc_tb.uut.ch11.a03.iwctrl[44] top.cdc_tb.uut.ch11.a03.iwctrl[43] top.cdc_tb.uut.ch11.a03.iwctrl[42] top.cdc_tb.uut.ch11.a03.iwctrl[41] top.cdc_tb.uut.ch11.a03.iwctrl[40] top.cdc_tb.uut.ch11.a03.iwctrl[39] top.cdc_tb.uut.ch11.a03.iwctrl[38] top.cdc_tb.uut.ch11.a03.iwctrl[37] top.cdc_tb.uut.ch11.a03.iwctrl[36] top.cdc_tb.uut.ch11.a03.iwctrl[35] top.cdc_tb.uut.ch11.a03.iwctrl[34] top.cdc_tb.uut.ch11.a03.iwctrl[33] top.cdc_tb.uut.ch11.a03.iwctrl[32] top.cdc_tb.uut.ch11.a03.iwctrl[31] top.cdc_tb.uut.ch11.a03.iwctrl[30]
+@28
+top.cdc_tb.uut.ch11.a03.iwctrl[59]
+top.cdc_tb.uut.ch11.a03.iwctrl[58]
+top.cdc_tb.uut.ch11.a03.iwctrl[57]
+top.cdc_tb.uut.ch11.a03.iwctrl[56]
+top.cdc_tb.uut.ch11.a03.iwctrl[55]
+top.cdc_tb.uut.ch11.a03.iwctrl[54]
+top.cdc_tb.uut.ch11.a03.iwctrl[53]
+top.cdc_tb.uut.ch11.a03.iwctrl[52]
+top.cdc_tb.uut.ch11.a03.iwctrl[51]
+top.cdc_tb.uut.ch11.a03.iwctrl[50]
+top.cdc_tb.uut.ch11.a03.iwctrl[49]
+top.cdc_tb.uut.ch11.a03.iwctrl[48]
+top.cdc_tb.uut.ch11.a03.iwctrl[47]
+top.cdc_tb.uut.ch11.a03.iwctrl[46]
+top.cdc_tb.uut.ch11.a03.iwctrl[45]
+top.cdc_tb.uut.ch11.a03.iwctrl[44]
+top.cdc_tb.uut.ch11.a03.iwctrl[43]
+top.cdc_tb.uut.ch11.a03.iwctrl[42]
+top.cdc_tb.uut.ch11.a03.iwctrl[41]
+top.cdc_tb.uut.ch11.a03.iwctrl[40]
+top.cdc_tb.uut.ch11.a03.iwctrl[39]
+top.cdc_tb.uut.ch11.a03.iwctrl[38]
+top.cdc_tb.uut.ch11.a03.iwctrl[37]
+top.cdc_tb.uut.ch11.a03.iwctrl[36]
+top.cdc_tb.uut.ch11.a03.iwctrl[35]
+top.cdc_tb.uut.ch11.a03.iwctrl[34]
+top.cdc_tb.uut.ch11.a03.iwctrl[33]
+top.cdc_tb.uut.ch11.a03.iwctrl[32]
+top.cdc_tb.uut.ch11.a03.iwctrl[31]
+top.cdc_tb.uut.ch11.a03.iwctrl[30]
+@1401200
+-group_end
 [pattern_trace] 1
 [pattern_trace] 0

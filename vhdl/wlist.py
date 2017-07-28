@@ -165,6 +165,7 @@ class Cyber (cmodule.cmod):
         for c in self.elements.values ():
             for s in c.eltype.pins.values ():
                 if s.dir == "in" and s not in c.portmap:
+                    #print ("not attached", s, s.dir, s.ptype)
                     if s.ptype == "coaxsigs":
                         c.addportmap (self, s, "idlecoax")
                     else:
@@ -316,9 +317,13 @@ class Chassis (cmodule.cmod):
             unused = set ()
             for p in m.eltype.pins.values ():
                 if p.dir == "in" and p not in m.portmap:
+                    #print ("not attached", p, p.dir, p.ptype)
                     unused.add (p)
                     if p.ptype == "logicsig":
                         m.addportmap (self, p, "'1'")
+                    elif p.ptype == "coaxsigs":
+                        # Whole cable not attached
+                        m.addportmap (self, p, "idlecoax")
                     else:
                         # Coax idle state is 0 not 1
                         m.addportmap (self, p, "'0'")
@@ -519,7 +524,7 @@ class Connector (object):
                 # model them
                 continue
             mpin = self.modpin (pnum)
-            pname = "p%d" % pnum
+            pname = str (mpin)
             if dslot == "grd":
                 # ground
                 if mpin is not None:
