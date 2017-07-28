@@ -403,7 +403,14 @@ begin  -- beh
              38 => wrctrl1(13), 37 => wrctrl1(12), 36 => wrctrl1(11),
              others => '0');
   
-  -- latch the correct write data
+  -- Latch the correct write data.  PPU write data (from the write
+  -- pyramid) is unusual because that it sent just once, at the time
+  -- the address is sent to the stunt box.  That means before the
+  -- memory gets the address and GO signals for that request.  It is
+  -- latched in the write distributor and cleared when the write
+  -- resume is sent back.  Other data sources send the data when it is
+  -- expected, and the write distributor latched those buses on every
+  -- minor cycle.  See block diagrams vol. 2, page 79 or 82.
   ppulatch : ireg
     port map (
       clr => iwresume,                  -- clear on write resume

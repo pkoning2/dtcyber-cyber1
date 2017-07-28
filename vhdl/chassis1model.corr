@@ -3,9 +3,6 @@
 # These changes modify the original wire lists to be more
 # amenable to VHDL modeling.
 #
-# Use model supplied clock (in place of ring oscillator) -- 
-# this is done by file chassis1clocks.corr
-#
 # Remove ??? wire to "IV"
 1G10	16	--
 #
