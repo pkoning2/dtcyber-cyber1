@@ -3,6 +3,15 @@
 # These changes modify the original wire lists to be more
 # amenable to VHDL modeling.
 #
+# Timing correction for U1->K and K->R
+5G40	10	M28	13	t15
+5G40	11	M29	13	t10
+5G40	12	M30	13	t10
+5G40	13	M29	17	t10
+5G40	4	D18	24	t20
+5G40	5	D17	24	t20
+5G40	9	D16	24	t20
+#
 # Fix timing for m latch in branch condition checker
 5Q4	11	F38	9	9
 #
