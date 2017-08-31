@@ -237,7 +237,7 @@ _addr_re = re.compile (rb"inet .+?(\d+\.\d+\.\d+\.\d+)", re.I)
 def gethostaddr ():
     global hostaddr
     if not hostaddr:
-        t = subprocess.check_output (("ifconfig", "-a"))
+        t = subprocess.check_output (("/sbin/ifconfig", "-a"))
         for m in _addr_re.finditer (t):
             a = m.group (1)
             if a != "127.0.0.1":
