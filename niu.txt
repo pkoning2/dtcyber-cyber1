@@ -1,3 +1,13 @@
+This document describes an outline of how the PLATO NIU works, based
+on CERL documents and reverse engineering of PLATO code.  It also
+describes the communication protocol used by the NIU emulator in
+DtCyber.
+
+References:
+
+PLATO IV terminal manual: http://bitsavers.trailing-edge.com/pdf/univOfIllinoisUrbana/plato/PLATO_IV_Operation_Manual.pdf
+NIU output controller: http://bitsavers.trailing-edge.com/pdf/univOfIllinoisUrbana/plato/X-27_A_Large_Scale_Terminal_Output_Controller_Jun71.pdf
+
 Plato IV NIU:
 
 The NIU has TWO channels, one for input, one for output.
@@ -31,6 +41,41 @@ output data:
           data   5777b,1640b (uncover)(uncover)(20)
           data   5555b,1332b (space)(space)(space)
        third word has 2000b flag set for last station in the current frame.
+
+NIU timing:
+
+On the real NIU, the timing is as follows:
+
+Output data: 1260 bps per terminal.  Terminal output words (including
+start and parity bits) are 21 bits each, the data stream is 60 words
+per second continuous.  If no PLATO data is present for a particular
+1/60th second time slot, the NIU supplies a NOP word (all zero).
+
+In the program interface seen by the PP, the NIU is ready for
+additional output (3 word sets) so long as it has not been told to end
+the frame.  Once the frame end flag is given to the NIU, it remains
+busy (does not answer Empty to the next output word) until the frame
+has been transmitted, i.e., after 1/60th of a second.
+
+Input data: 126 bps per terminal.  Terminal input words (including
+start and parity bits) are 12 bits each, so the maximum possible
+keyboard data rate is about 10 characters per second.  The terminal
+data is muxed by the site controllers.  At the NIU, it appears as a
+single data stream encoded as described above.
+
+Timing considerations:
+
+The PLATO software design is fairly tightly tied to the hardware
+timing of the NIU.  Input buffering is extremely limited, and if
+character arrival is substantially faster than the 10 cps limit of the
+original hardware, overrun is likely.  For character output, the data
+flow from framer to PIO to NIU is dependent on the 60 frames per
+second timing.  If the NIU were to become ready for new frame data
+much more quickly than 1/60th of a second after end of frame, output
+data loss will occur.  There are software changes to PLATO made as
+part of the Cyber1 project to cure these assumptions; see decks/ipl871
+in this repository.  Alternatively, an NIU emulator can obey the
+original hardware timing to work with unmodified software.
 
 Protocol for NIU to Plato terminal emulator program:
 
