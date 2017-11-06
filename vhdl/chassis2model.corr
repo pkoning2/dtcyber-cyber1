@@ -3,3 +3,73 @@
 # These changes modify the original wire lists to be more
 # amenable to VHDL modeling.
 #
+# Delete all the modules that comprise the store distributor, since
+# that is all handled in the cpmem.vhd model for the CPU memory.
+2A1	--
+2A2	--
+2A3	--
+2A4	--
+2A5	--
+2A7	--
+2B11	16	--
+2C8	14	--
+2D7	3	--
+2D7	12	--
+2D7	28	--
+2Q18	22	--
+2A8	--
+2A9	--
+2A10	--
+2A11	--
+2A12	--
+2A13	--
+2A14	--
+2A15	--
+2A16	--
+2A17	--
+2A18	--
+2A19	--
+2A20	--
+2A21	--
+2A22	--
+2A23	--
+2A24	--
+2A25	--
+2A26	--
+2A27	--
+2A28	--
+2A29	--
+2A30	--
+2B1	--
+2B2	--
+2B3	--
+2B4	--
+2B5	--
+2B6	--
+2B7	--
+2B8	--
+2B9	--
+2B10	--
+2B12	--
+2B13	--
+2B14	--
+2B15	--
+2B16	--
+2B17	--
+2B18	--
+2B19	--
+2B20	--
+2B21	--
+2C1	--
+2C2	--
+2C3	--
+2C4	--
+2C5	--
+2C6	--
+2D1	--
+2D2	--
+2D3	--
+2D4	--
+2D5	--
+2D6	--
+2D8	--
