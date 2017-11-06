@@ -1353,6 +1353,7 @@ class Dd60 (Connection, MyThread):
         """Force us into DSD if we're in some other recognizable
         utilities.
         """
+        self.wait_update ()
         while self.screen[0][2][:4] == self.o26:
             self.sendstr ("[xr.\n")
             self.wait_update ()
