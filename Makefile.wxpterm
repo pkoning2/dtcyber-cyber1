@@ -16,6 +16,7 @@ DEFWXDIR = /usr/local
 ifeq ("$(HOST)","Darwin")
 PKGMAKER ?= /Developer/Applications/Utilities/PackageMaker.app
 MACEXTRA = fixmac.o
+MACCFLAGS = -Wno-potentially-evaluated-expression
 ifeq ("$(wildcard $(PKGMAKER))","")
 PKGMAKER = /Applications/Utilities/PackageMaker.app
 endif
@@ -65,7 +66,7 @@ WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS)
 GCCVERSION := $(shell gcc --version 2>/dev/null| head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
 
-C2FLAGS  = $(OPTIMIZE) -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST) $(PFLAGS)
+C2FLAGS  = $(OPTIMIZE) -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST) $(PFLAGS) $(MACCFLAGS)
 
 MSGFLAGS ?= -U
 
