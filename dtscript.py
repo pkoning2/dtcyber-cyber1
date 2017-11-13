@@ -1202,6 +1202,7 @@ class Dd60 (Connection, MyThread):
         """
         MyThread.__init__ (self)
         Connection.__init__ (self, "localhost", port)
+        self.tf = None
         self.settimeout (5)
         self.interval = -1
         self.setinterval (interval)
