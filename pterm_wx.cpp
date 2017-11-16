@@ -5140,6 +5140,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                         // scrolled out from under the region.  No,
                         // we're not going to adjust the region
                         // positions...
+                        int row;
                         PixelData pixmap (*m_bitmap);
                         PixelData selmap (*m_selmap);
 
@@ -5147,14 +5148,21 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                         PixelData::Iterator to (pixmap);
                         PixelData::Iterator sfrom (selmap);
                         PixelData::Iterator sto (selmap);
-    
-                        from.MoveTo (pixmap, 0, 16);
-                        to.MoveTo (pixmap, 0, 0);
-                        sfrom.MoveTo (selmap, 0, 16);
-                        sto.MoveTo (selmap, 0, 0);
 
-                        memmove (to.m_ptr, from.m_ptr, (512 - 16) * 512 * 4);
-                        memmove (sto.m_ptr, sfrom.m_ptr, (512 - 16) * 512 * 4);
+                        // We move row at a time because apparently on
+                        // some OS (Windows) the rows are not
+                        // contiguous.
+                        for (row = 16; row < 512; row++)
+                        {
+                            from.MoveTo (pixmap, 0, row);
+                            to.MoveTo (pixmap, 0, row - 16);
+                            sfrom.MoveTo (selmap, 0, row);
+                            sto.MoveTo (selmap, 0, row - 16);
+
+                            memmove (to.m_ptr, from.m_ptr, 512 * 4);
+                            memmove (sto.m_ptr, sfrom.m_ptr, 512 * 4);
+                        }
+                        
                         // Note that the textmap has y==0 for the bottom line
                         memmove (&textmap[64], &textmap[0],
                                  (sizeof (textmap) / 32) * 31);
@@ -9375,8 +9383,7 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
                                            _("Select a profile and click Connect."),
                                            wxDefaultPosition, wxDefaultSize, 0);
     lblExplainProfiles->SetFont (dfont);
-    bs1->Add (lblExplainProfiles, 0,
-              wxTOP|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5);
+    bs1->Add (lblExplainProfiles, 0, wxTOP|wxRIGHT|wxLEFT, 5);
     lstProfiles = new wxListBox (this, wxID_ANY, wxDefaultPosition,
                                  wxSize (-1, -1), 0, NULL, wxLB_SORT); 
     lstProfiles->SetFont (dfont);
@@ -9613,8 +9620,7 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     lblPrompt = new wxStaticText (this, wxID_ANY, wxT (""), wxDefaultPosition,
                                   wxDefaultSize, 0);
     lblPrompt->SetFont (dfont);
-    bs1->Add (lblPrompt, 1,
-              wxTOP|wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL|wxEXPAND, 5);
+    bs1->Add (lblPrompt, 1, wxTOP|wxRIGHT|wxLEFT|wxEXPAND, 5);
     lblHost = new wxStaticText (this, wxID_ANY, wxT (""), wxDefaultPosition,
                                 wxDefaultSize, 0);
     lblHost->SetFont (dfont);
@@ -9634,7 +9640,7 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     fgs11->Add (btnNew, 0, wxALL, 5);
     btnRetry = new wxButton (this, wxID_ANY, _("Reconnect"), wxDefaultPosition,
                              wxDefaultSize, 0 | wxTAB_TRAVERSAL);
-    btnRetry->SetFont (wxFont (10, 74, 90, 90, false, wxT(SSFONT)));
+    btnRetry->SetFont (dfont);
     fgs11->Add (btnRetry, 0, wxALL, 5);
     fgs11->Add (0, 0, 1, wxALL, 5);
     btnCancel = new wxButton (this, wxID_CANCEL, _("Close"),

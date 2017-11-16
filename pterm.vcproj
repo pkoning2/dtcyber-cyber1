@@ -125,7 +125,7 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Build kit file..."
-				CommandLine="&quot;c:\Program Files\Inno Setup 5\ISCC.exe&quot; /Q pterm.iss"
+				CommandLine="&quot;c:\Program Files\Inno Setup 5\ISCC.exe&quot; /Q pterm.iss&#x0D;&#x0A;"
 				AdditionalDependencies="pterm.iss;CHANGES-pterm.txt"
 				Outputs=".\setup.exe"
 			/>
@@ -143,7 +143,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;c:\wxWidgets\lib\vc_lib\mswud;c:\wxWidgets\include;&quot;C:\SDL2-2.0.3\include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Mega-Nerd\libsndfile\include&quot;;c:\wxWidgets\lib\vc_lib\mswud;c:\wxWidgets\include\msvc;C:\wxWidgets\include;&quot;C:\SDL2-2.0.3\include&quot;"
 				PreprocessorDefinitions="WIN32;_CRT_SECURE_NO_DEPRECATE=1;_CRT_NON_CONFORMING_SWPRINTFS=1;_SCL_SECURE_NO_WARNINGS=1;__WXMSW__;NDEBUG;_UNICODE;_WINDOWS;NOPCH"
 				ExceptionHandling="1"
 				RuntimeLibrary="2"

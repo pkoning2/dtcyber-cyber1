@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-03-24 15:32-0400\n"
+"POT-Creation-Date: 2017-11-15 19:41-0500\n"
 "PO-Revision-Date: 2014-12-18 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -141,7 +141,7 @@ msgstr "Afdrukvoorbeeld"
 msgid "Preview screen print"
 msgstr "Bekijk afdrukvoorbeeld"
 
-#: pterm_wx.cpp:2937 pterm_wx.cpp:9640
+#: pterm_wx.cpp:2937 pterm_wx.cpp:9646
 msgid "Close"
 msgstr "Sluiten"
 
@@ -310,275 +310,275 @@ msgstr "Pterm Afdrukvoorbeeld"
 msgid "Pterm Preferences"
 msgstr "Pterm voorkeuren"
 
-#: pterm_wx.cpp:7407
+#: pterm_wx.cpp:7415
 #, fuzzy
 msgid "ASCII"
 msgstr "Voer tekst in"
 
-#: pterm_wx.cpp:7411
+#: pterm_wx.cpp:7419
 msgid "Classic"
 msgstr "Klassiek"
 
-#: pterm_wx.cpp:7423
+#: pterm_wx.cpp:7431
 msgid " Trace "
 msgstr " Traceren "
 
-#: pterm_wx.cpp:7432
+#: pterm_wx.cpp:7440
 msgid " PLATO keyboard "
 msgstr " PLATO toetsenbord "
 
-#: pterm_wx.cpp:8207
+#: pterm_wx.cpp:8215
 msgid "Use this page to manage your connection preference profiles."
 msgstr "Gebruik deze bladzijde om voorkeurbestanden te bewerken"
 
-#: pterm_wx.cpp:8218
+#: pterm_wx.cpp:8226
 msgid "Select a profile above, then click a button below."
 msgstr "Kies een voorkeurbestand, en klik dan op een button hieronder"
 
-#: pterm_wx.cpp:8225
+#: pterm_wx.cpp:8233
 msgid "Save"
 msgstr "Opslaan"
 
-#: pterm_wx.cpp:8229
+#: pterm_wx.cpp:8237
 msgid "Load"
 msgstr "Laden"
 
-#: pterm_wx.cpp:8233
+#: pterm_wx.cpp:8241
 msgid "Delete"
 msgstr "Uitwissen"
 
-#: pterm_wx.cpp:8238 pterm_wx.cpp:8979
+#: pterm_wx.cpp:8246 pterm_wx.cpp:8987
 msgid "Profile saved."
 msgstr "Programmavoorkeur opgeslagen."
 
-#: pterm_wx.cpp:8245
+#: pterm_wx.cpp:8253
 msgid "Or, enter the name of a new profile below and click Add."
 msgstr "Of voeg de naam van een nieuw voorkeurbestand in en klik op Toevoegen"
 
-#: pterm_wx.cpp:8254
+#: pterm_wx.cpp:8262
 msgid "Profile"
 msgstr "Voorkeurbestand"
 
-#: pterm_wx.cpp:8261
+#: pterm_wx.cpp:8269
 msgid "Add"
 msgstr "Toevoegen"
 
-#: pterm_wx.cpp:8269
+#: pterm_wx.cpp:8277
 msgid "Profiles"
 msgstr "Voorkeurbestanden"
 
-#: pterm_wx.cpp:8283
+#: pterm_wx.cpp:8291
 msgid "Settings on this page specify where PLATO is on the internet."
 msgstr "Op deze pagina geeft U aan waar PLATO zich bevindt op het internet."
 
-#: pterm_wx.cpp:8290
+#: pterm_wx.cpp:8298
 msgid "Connect at startup"
 msgstr "Automatisch verbinden"
 
-#: pterm_wx.cpp:8299 pterm_wx.cpp:9399
+#: pterm_wx.cpp:8307 pterm_wx.cpp:9406
 msgid "Run this first"
 msgstr "Dit programma eerst uitvoeren"
 
-#: pterm_wx.cpp:8309
+#: pterm_wx.cpp:8317
 msgid "Default Host"
 msgstr "Standaardsysteem"
 
-#: pterm_wx.cpp:8318
+#: pterm_wx.cpp:8326
 msgid "Default Port*"
 msgstr "Standardpoortnummer*"
 
-#: pterm_wx.cpp:8334 pterm_wx.cpp:9437
+#: pterm_wx.cpp:8342 pterm_wx.cpp:9444
 msgid "* NOTE: 5004=Classic, 8005=Color Terminal"
 msgstr "* 5004=Klassiek, 8005=Kleur-terminal"
 
 # msgid "New Connection...\tCtrl-N"
 # msgstr "Nieuwe verbinding...\tCtrl-N"
-#: pterm_wx.cpp:8340
+#: pterm_wx.cpp:8348
 msgid "Connection"
 msgstr "Verbinding"
 
-#: pterm_wx.cpp:8352
+#: pterm_wx.cpp:8360
 msgid "Settings on this page configure the text shown in the window title."
 msgstr "Op deze pagina stelt U in wat op de titelbalk staat."
 
-#: pterm_wx.cpp:8356
+#: pterm_wx.cpp:8364
 msgid "Show name/group in frame title"
 msgstr "Toon naam/groep op de titelbalk"
 
-#: pterm_wx.cpp:8361
+#: pterm_wx.cpp:8369
 msgid "Show system name in frame title"
 msgstr "Toon systeemnaam op de titelbalk"
 
-#: pterm_wx.cpp:8366
+#: pterm_wx.cpp:8374
 msgid "Show host name in frame title"
 msgstr "Toon internet host-naam op de titelbalk"
 
-#: pterm_wx.cpp:8371
+#: pterm_wx.cpp:8379
 msgid "Show site-station numbers in frame title"
 msgstr "Toon stationsnummer op de titelbalk"
 
-#: pterm_wx.cpp:8378
+#: pterm_wx.cpp:8386
 msgid "Title"
 msgstr "Titel"
 
-#: pterm_wx.cpp:8389
+#: pterm_wx.cpp:8397
 msgid "Settings on this page let you fine-tune your PLATO experience."
 msgstr "Op deze pagine stelt U in hoe PLATO vertoond wordt."
 
-#: pterm_wx.cpp:8393
+#: pterm_wx.cpp:8401
 msgid "Simulate 1260 baud"
 msgstr "1260 Baud simuleren"
 
-#: pterm_wx.cpp:8397
+#: pterm_wx.cpp:8405
 msgid "Enable GSW (not in ASCII)"
 msgstr "GSW muziekdoos aanzetten (niet in kleur-terminal)"
 
-#: pterm_wx.cpp:8402
+#: pterm_wx.cpp:8410
 msgid "Enable numeric keypad for arrow operation"
 msgstr "Numeriek toetsenbord voor pijlen"
 
-#: pterm_wx.cpp:8407
+#: pterm_wx.cpp:8415
 msgid "Ignore CAPS LOCK"
 msgstr "Hoofdlettertoets negeren"
 
-#: pterm_wx.cpp:8412
+#: pterm_wx.cpp:8420
 msgid "Use real PLATO keyboard"
 msgstr "Gebruik een echt PLATO toetsenbord"
 
-#: pterm_wx.cpp:8416
+#: pterm_wx.cpp:8424
 msgid "Enable control-key menu accelerators"
 msgstr "Zet de control-toets aan"
 
-#: pterm_wx.cpp:8424
+#: pterm_wx.cpp:8432
 msgid "Enable -beep-"
 msgstr "-beep-commando aanzetten"
 
-#: pterm_wx.cpp:8429
+#: pterm_wx.cpp:8437
 msgid "Disable Shift-Space (backspace via Ctrl-Space)"
 msgstr "Shift-spatie uitzetten (spatie-terug via Ctrl-spatie)"
 
-#: pterm_wx.cpp:8434
+#: pterm_wx.cpp:8442
 msgid "Disable mouse drag (select)"
 msgstr "Set selecteren met de muis uit"
 
-#: pterm_wx.cpp:8441
+#: pterm_wx.cpp:8449
 msgid "Emulation"
 msgstr "Emulatie-instellingen"
 
-#: pterm_wx.cpp:8455
+#: pterm_wx.cpp:8463
 msgid "Settings on this page allow you to change the display appearance."
 msgstr "Op deze bladzijde geeft U aan hoe het scherm eruit ziet."
 
-#: pterm_wx.cpp:8462
+#: pterm_wx.cpp:8470
 msgid "Disable -color- (ASCII mode)"
 msgstr "-color-commando uitzetten"
 
-#: pterm_wx.cpp:8473 pterm_wx.cpp:8490
+#: pterm_wx.cpp:8481 pterm_wx.cpp:8498
 msgid "Foreground color*"
 msgstr "Voorgrondkleur*"
 
-#: pterm_wx.cpp:8480 pterm_wx.cpp:8497
+#: pterm_wx.cpp:8488 pterm_wx.cpp:8505
 msgid "Background color*"
 msgstr "Achtergrondkleur*"
 
-#: pterm_wx.cpp:8506
+#: pterm_wx.cpp:8514
 msgid "* NOTE: Applied in Classic mode or if -color- is disabled in ASCII mode"
 msgstr ""
 "* Dit wordt gebruikt in een klassieke terminal of als -color- uitgezet is"
 
-#: pterm_wx.cpp:8512
+#: pterm_wx.cpp:8520
 msgid "Display"
 msgstr "Scherminstellingen"
 
-#: pterm_wx.cpp:8529
+#: pterm_wx.cpp:8537
 msgid "Settings on this page allow you to specify Paste options."
 msgstr "Op deze pagina geeft U aan hoe tekst van het klembord wordt ingevoerd."
 
-#: pterm_wx.cpp:8543
+#: pterm_wx.cpp:8551
 msgid "Delay between chars"
 msgstr "Pauze tussen karakters"
 
-#: pterm_wx.cpp:8551 pterm_wx.cpp:8563
+#: pterm_wx.cpp:8559 pterm_wx.cpp:8571
 msgid "milliseconds"
 msgstr "miliseconden"
 
-#: pterm_wx.cpp:8555
+#: pterm_wx.cpp:8563
 msgid "Delay after end of line"
 msgstr "Pauze aan het eind van de regel"
 
-#: pterm_wx.cpp:8571
+#: pterm_wx.cpp:8579
 msgid "Automatic new line every"
 msgstr "Automatische nieuwe regel na iedere"
 
-#: pterm_wx.cpp:8583
+#: pterm_wx.cpp:8591
 msgid "characters"
 msgstr "karakters"
 
-#: pterm_wx.cpp:8588
+#: pterm_wx.cpp:8596
 msgid "Use TUTOR pasting (certain sequences are treated specially)"
 msgstr ""
 "Gebruik TUTOR invoegregels (sommige letterpatronen worden anders behandeld)"
 
-#: pterm_wx.cpp:8593
+#: pterm_wx.cpp:8601
 #, fuzzy
 msgid "Convert periods followed by 7 spaces into period/tab"
 msgstr "Vervang punt en 7 spaties door punt en tabulatie*"
 
-#: pterm_wx.cpp:8599
+#: pterm_wx.cpp:8607
 msgid "Convert 8 consecutive spaces into a tab"
 msgstr "Vervang 8 spaties door tabulatie"
 
-#: pterm_wx.cpp:8605
+#: pterm_wx.cpp:8613
 msgid "Display TUTOR colorization options on Edit/Context menus"
 msgstr "TUTOR kleurkeuzen tonen op Bewerken en Context-menu"
 
-#: pterm_wx.cpp:8614
+#: pterm_wx.cpp:8622
 msgid "Pasting"
 msgstr "Afdrukken"
 
-#: pterm_wx.cpp:8628
+#: pterm_wx.cpp:8636
 #, c-format
 msgid "Command line for menu option 'Mail to...' (%s=address)"
 msgstr "Commando voor 'E-mail sturen naar...' (%s=adres)"
 
-#: pterm_wx.cpp:8637
+#: pterm_wx.cpp:8645
 msgid "Specify URL for menu option 'Search this...'"
 msgstr "Kies de webverwijzing gebruikt voor 'Zoek naar...'"
 
-#: pterm_wx.cpp:8647
+#: pterm_wx.cpp:8655
 msgid "Local"
 msgstr "Plaatselijk"
 
-#: pterm_wx.cpp:8659
+#: pterm_wx.cpp:8667
 msgid "OK"
 msgstr "OK"
 
-#: pterm_wx.cpp:8663 pterm_wx.cpp:9447
+#: pterm_wx.cpp:8671 pterm_wx.cpp:9454
 msgid "Cancel"
 msgstr "Annuleer"
 
-#: pterm_wx.cpp:8667
+#: pterm_wx.cpp:8675
 msgid "Defaults"
 msgstr "Standaard"
 
-#: pterm_wx.cpp:8985 pterm_wx.cpp:9002 pterm_wx.cpp:9018 pterm_wx.cpp:9039
-#: pterm_wx.cpp:9289
+#: pterm_wx.cpp:8993 pterm_wx.cpp:9010 pterm_wx.cpp:9026 pterm_wx.cpp:9047
+#: pterm_wx.cpp:9297
 msgid "Error"
 msgstr "Fout"
 
-#: pterm_wx.cpp:8996 pterm_wx.cpp:9282
+#: pterm_wx.cpp:9004 pterm_wx.cpp:9290
 msgid "Profile loaded."
 msgstr "Voorkeurbestand geladen."
 
-#: pterm_wx.cpp:9011
+#: pterm_wx.cpp:9019
 msgid "Profile deleted."
 msgstr "Voorkeurbestand verwijderd."
 
-#: pterm_wx.cpp:9032
+#: pterm_wx.cpp:9040
 msgid "Profile added."
 msgstr "Voorkeurbestand toegevoegd."
 
-#: pterm_wx.cpp:9044
+#: pterm_wx.cpp:9052
 msgid ""
 "The profile name you entered contains illegal characters.\n"
 "\n"
@@ -594,48 +594,48 @@ msgstr ""
 "Standaard: a-z, A-Z, 0-9\n"
 "Speciaal:  haken, minteken, onderstreping, punt, en spatie"
 
-#: pterm_wx.cpp:9047
+#: pterm_wx.cpp:9055
 msgid "Problem"
 msgstr "Probleem"
 
-#: pterm_wx.cpp:9052
+#: pterm_wx.cpp:9060
 msgid "Foreground"
 msgstr "Voorgrond"
 
-#: pterm_wx.cpp:9062
+#: pterm_wx.cpp:9070
 msgid "Background"
 msgstr "Achtergrond"
 
-#: pterm_wx.cpp:9375
+#: pterm_wx.cpp:9383
 msgid "Select a profile and click Connect."
 msgstr "Kies een voorkeurbestand en klik op Verbinden."
 
-#: pterm_wx.cpp:9386
+#: pterm_wx.cpp:9393
 msgid "Or, enter a hostname and port number, then click Connect."
 msgstr "Of voer een systeemnaam en poortnummer in en klik op Verbinden."
 
-#: pterm_wx.cpp:9408
+#: pterm_wx.cpp:9415
 msgid "Host name"
 msgstr "Systeemnaam"
 
-#: pterm_wx.cpp:9419
+#: pterm_wx.cpp:9426
 msgid "Port*"
 msgstr "Poortnummer*"
 
-#: pterm_wx.cpp:9451
+#: pterm_wx.cpp:9458
 msgid "Connect"
 msgstr "Verbinden"
 
-#: pterm_wx.cpp:9631
+#: pterm_wx.cpp:9637
 msgid "New Connection"
 msgstr "Nieuwe verbinding"
 
-#: pterm_wx.cpp:9635
+#: pterm_wx.cpp:9641
 #, fuzzy
 msgid "Reconnect"
 msgstr "Verbinden"
 
-#: pterm_wx.cpp:9650
+#: pterm_wx.cpp:9656
 msgid ""
 "Your connection to the host was lost.\n"
 "\n"
@@ -643,7 +643,7 @@ msgstr ""
 "De verbinding naar het systeem was verbroken.\n"
 "\n"
 
-#: pterm_wx.cpp:9654
+#: pterm_wx.cpp:9660
 msgid ""
 "The host did not respond to the connection request.\n"
 "\n"
@@ -651,7 +651,7 @@ msgstr ""
 "Het systeem antwoordt niet. \n"
 "\n"
 
-#: pterm_wx.cpp:9657
+#: pterm_wx.cpp:9663
 msgid ""
 "You may open a new connection, reconnect\n"
 "to the same host/port, or close the window."
@@ -660,7 +660,7 @@ msgstr ""
 "verbinden naar hetzelfde systeem en poort, of\n"
 "het venster sluiten."
 
-#: pterm_wx.cpp:9660
+#: pterm_wx.cpp:9666
 #, c-format
 msgid ""
 "\n"
@@ -669,7 +669,7 @@ msgstr ""
 "\n"
 "Mislukt: %s:%ld"
 
-#: pterm_wx.cpp:9662
+#: pterm_wx.cpp:9668
 msgid ""
 "\n"
 "\n"
@@ -679,7 +679,7 @@ msgstr ""
 "\n"
 "Voor verdere informatie, zie:"
 
-#: pterm_wx.cpp:10172
+#: pterm_wx.cpp:10178
 #, fuzzy, c-format
 msgid "Connecting to %d.%d.%d.%d"
 msgstr "Aan het verbinden met %d.%d.%d.%d"
