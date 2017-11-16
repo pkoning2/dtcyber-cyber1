@@ -2014,6 +2014,7 @@ sbtpterm equ    16          pterm for cyber1 software
 */ set os level and system type
 */
 */ -------------------------------------------------------------------
+*ident systype
 *deck syscon
 *delete jsnppu.28
 */
