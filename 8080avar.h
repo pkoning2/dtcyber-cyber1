@@ -37,6 +37,7 @@ Contents:
 #ifndef __8080AVAR_H__
 #define __8080AVAR_H__
 
+//#define SELFMOD
 
 /* This endian stuff is lifted from SDL_byteorder.h.  It's here rather
  * than handled by #include because newer versions of SDL bring in too
@@ -190,7 +191,7 @@ Contents:
 #define ROMSIZE   0x02000
 #define PROGROM   0x00000
 #define WORKRAM   0x02000
-#define MEMSIZE   0x0d000
+#define MEMSIZE   0x0ffff
 class emul8080
 {
 public:
@@ -212,13 +213,33 @@ public:
         }
         else
         { 
-            printf ( "!!! Attempted write at offset %d with data"
-                     "%d failed.\n", offset, data);
+            printf ( "!!! Attempted write at offset %04x with data "
+                     "%02x failed.  PC = %04x\n", offset, data, PC);
         }
 #else
         RAM[(offset)] = data;
 #endif
     }
+
+	void WriteRAMW(Uint16 offset, Uint16 data)
+	{
+#ifndef SELFMOD
+		if ((offset) >= WORKRAM)
+		{
+			RAM[(offset)] = data & 0xff;
+			RAM[(offset + 1)] = (data << 8) & 0xff;
+		}
+		else
+		{
+			printf("!!! Attempted write at offset %04x with data "
+				"%04x failed.  PC = %04x\n", offset, data, PC);
+		}
+#else
+		RAM[(offset)] = data & 0xff;
+		RAM[(offset + 1)] = (data << 8) & 0xff;
+#endif
+	}
+
     Uint8 ReadRAM(Uint16 offset) const 
     {
         return RAM[offset];
@@ -239,6 +260,9 @@ protected:
     // 2: PC is either the 8080 emulation exit magic value, or R_INIT,
     //    or an invalid resident value.  Exit 8080 emulation.
     virtual int check_pc8080a (void);
+
+    // this is a kludge for processing mode 6 data in MTutor
+    Uint8 ReturnOn8080Ret = 0;
 
     /*  Interrupt information  */
     Uint8 INTDISABLE;
@@ -354,7 +378,7 @@ public:
 * 
 *******************************************************************************/
 /*  Defaults  */
-#define SPSET	0x2400
+#define SPSET	0xffff      /* To make microTutor not scribble on the stack */
 #define PCSET	0x0000
 #define PSWSET	0x02
 

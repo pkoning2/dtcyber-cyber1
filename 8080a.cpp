@@ -36,6 +36,11 @@ simulation phase occurs.
 
 *******************************************************************************/
 
+//#define DEBUG_8080
+
+//#define Z80
+
+//#define UPDATECNT 300000
 
 /*******************************************************************************
 * Files:
@@ -53,8 +58,18 @@ simulation phase occurs.
 #include "8080a.h"
 #include "8080avar.h"
 #include "opcodes.h"
+//#include <SDL_hints.h>
 
+extern bool globalTrace;
+extern bool g_giveup8080;
+extern bool g_mTutor;
 
+class Update8080 : public emul8080
+{
+public:
+	void static M8080aWait();
+
+};
 
 /*******************************************************************************
 
@@ -129,10 +144,70 @@ void emul8080::ResetProc(void)
 	BC.pair		= 0;
 	DE.pair		= 0;
 	HL.pair		= 0;
+
+	/***********************************************************************
+	 *
+	 *	Zero ROM and Plant RET instructions for all interrupt RST locations
+	 *
+	 **********************************************************************/
+
+	for (int i = STARTROM1; i < MEMSIZE; i++)	// zero rom/ram
+	{
+		RAM[i] = 0;
+	}
+
+	RAM[0x0] = RET;
+	RAM[0x8] = RET;
+	RAM[0x10] = RET;
+	RAM[0x18] = RET;
+	RAM[0x20] = RET;
+	RAM[0x28] = RET;
+	RAM[0x30] = RET;
+	RAM[0x38] = RET;
+	RAM[0x3d] = RET;
+
+	RAM[ROMSIZE - 1] = RET;  // for safety
+
 }
 
+#ifdef DEBUG_8080
 
+// addresses of 8080 breakpoints
+UINT16 breakpts[] =
+{
+    //0x4000,
+    //0x5315,     // v.reloc
+    //0x5320,
+    //0x5325,
+    //0x5337,
 
+    //0x655c,     // exec overlay
+    //0x5893,
+    //0x5105,
+    //0x5125,
+    //0x5105 + 0x0051,
+
+    //0x5187,
+
+    0x64d5,
+
+    0xffff,  // these can be overridden to add/remove 
+    0xffff,  // break points while running.
+    0xffff,  // use the immediate window.
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff  // must end with 0xffff
+};
+
+#endif
 
 /*******************************************************************************
 
@@ -164,7 +239,25 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 	Uint8 CARRYOVER;
 	Uint8 OPCODE = 0;
+	//long int update = 0;
+#ifdef DEBUG_8080
+    bool step = false;
+#endif
 
+    if (g_mTutor)
+    {
+        // fix timed mtutor pause as much as possible. 100 sec now about 85 sec
+        // depending on your system speed
+        RAM[0x68d4] = 0xff;  // loop counter
+        RAM[0x68d5] = 0xff;  // loop counter
+        RAM[0x68d9] = 0xc2;  // change jp to jnz
+
+        // remove off-line check for calling r.exec - only safe place to
+        // give up control..
+        RAM[0x602c] = 0;
+        RAM[0x602d] = 0;
+        RAM[0x602e] = 0;
+    }
 
 	/***********************************************************************
 	*   The 8080a's main instruction loop.
@@ -177,9 +270,23 @@ void emul8080::main8080a (void)
     * by emulating the 8080 code, but rather by emulating the semantics
     * of the routine.
 	***********************************************************************/
-	while (PC >= WORKRAM)
+    while ((PC >= WORKRAM) || (PC < 0x40))
 	{
+        //if (update++ > UPDATECNT)
+        if (g_giveup8080)  //| (update++ > UPDATECNT) )
+        {
+            g_giveup8080 = false;
+            // give the resident time to process keys and update display
 
+            Update8080::M8080aWait();
+            return;
+        }
+
+        //if (PC > MEMSIZE)
+        //{
+        //	printf("\nPC > MEMSIZE %0x\nAbort 8080\n", PC);
+        //	return;
+        //}
 
 	/***********************************************************************
 	*   If INTERRUPT is not equal to 2, then it is safe to fetch an opcode.
@@ -194,15 +301,15 @@ void emul8080::main8080a (void)
 		if (INTERRUPT != 2)
 		{
 
-
 	/***********************************************************************
-	*   This assignment fetches an opcode from the 8080a's ROM RAM area. 
+            *   This assignment fetches an opcode from the 8080a's ROM RAM area.
 	* The opcode is fetched from the PC location in RAM. The program
 	* counter, named PC, is incremented by 1.
 	***********************************************************************/
 			OPCODE	= ReadRAM(PC++);
 
-		} else if (INTERRUPT == 2)
+        }
+        else if (INTERRUPT == 2)
 		{
 
 
@@ -233,26 +340,58 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 		COUNTER	+= CYCLES[OPCODE];
 
-
-/*  This code is used for quick debugging. */
+        /*  This code is used for quick debugging. */
 #ifdef DEBUG_8080
-		printf("%s\n", MNEMONICS[OPCODE]);
+        if (true ) // || globalTrace) // && ((PC > 0x7aee)  || ((PC < 0x4000 )) && (PC > 0x90)))  // overlay regions
+		{
+			//printf("%s\n", MNEMONICS[OPCODE]);
 
-		printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
-			"PSW-[0x%X]\n", OPCODE, PC, SP, PSW);
-		printf("A-[0x%X] \tB/C-[0x%X/0x%X]\tD/E-[0x%X/0x%X]\t"
-			"H/L-[0x%X/0x%X]\n", A, BC.reg.B, BC.reg.C, DE.reg.D,
-			DE.reg.E, HL.reg.H, HL.reg.L);
-		printf("BC-[0x%X]\tDE-[0x%X]\t"
-			"HL-[0x%X]\tSP-[0x%X/0x%X]\n", BC.pair, DE.pair,
-			HL.pair, ReadRAM(SP), ReadRAM(SP + 1));
-		printf("RAM-[0x%X/0x%X/0x%X]\n\n", ReadRAM(PC),
-			ReadRAM(PC+1), ReadRAM(PC+2));
+			//printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
+			//	"PSW-[0x%X]\n", OPCODE, PC, SP, PSW);
+			//printf("A-[0x%X] \tB/C-[0x%X/0x%X]\tD/E-[0x%X/0x%X]\t"
+			//	"H/L-[0x%X/0x%X]\n", A, BC.reg.B, BC.reg.C, DE.reg.D,
+			//	DE.reg.E, HL.reg.H, HL.reg.L);
+			//printf("BC-[0x%X]\tDE-[0x%X]\t"
+			//	"HL-[0x%X]\tSP-[0x%X/0x%X]\n", BC.pair, DE.pair,
+			//	HL.pair, ReadRAM(SP), ReadRAM(SP + 1));
+			//printf("RAM-[0x%X/0x%X/0x%X/0x%X]\n\n", ReadRAM(PC-1), ReadRAM(PC),
+			//	ReadRAM(PC + 1), ReadRAM(PC + 2));
 
-		printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
-			"PSW-[]\n", OPCODE, PC-1, SP);
-		printf("AF-[0x%X]\tBC-[0x%X]\tDE-[0x%X]\t"
-			"HL-[0x%X]\n\n", A, BC.pair, DE.pair, HL.pair);
+			//printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
+			//	"PSW-[]\n", OPCODE, PC - 1, SP);
+			//printf("AF-[0x%X]\tBC-[0x%X]\tDE-[0x%X]\t"
+			//	"HL-[0x%X]\n\n", A, BC.pair, DE.pair, HL.pair);
+
+
+            /* begin simple 8080 degugger -  works well with MSVS
+             * 
+             * Add 8080 breakpoints to breakpts table below.
+             * Set MSVS break points at two locations indicated.
+             * 
+             * Load watch window with Registers, PC, SP, RAM[...] etc.
+             * 
+             * Use immediate window to turn single step on/off - true/false
+             */
+
+
+            if (step)       // use immediate window to turn step on/off - true/false
+            {
+                PC = PC;    // <<<<< set break point here for step
+            }
+
+            UINT16 * bp = breakpts;
+            while (*bp != 0xffff)
+            {
+                if (PC-1 == *bp )
+                {
+                    PC = PC;    // <<<<<< set break point here for break point
+                    break;
+                }
+                bp++;
+            }
+
+            // end 8080 debugger
+		}
 #endif
 
 
@@ -893,6 +1032,7 @@ void emul8080::main8080a (void)
                 {
                 case 1: goto doret;
                 case 2: return;
+                default: break;
                 }
 				break;
 
@@ -949,6 +1089,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				} else
 					PC += 2;
@@ -979,6 +1120,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				} else
 					PC += 2;
@@ -1200,6 +1342,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				} else
 					PC += 2;
@@ -1230,6 +1373,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				} else
 					PC += 2;
@@ -1260,6 +1404,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				} else
 					PC += 2;
@@ -1290,6 +1435,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				} else
 					PC += 2;
@@ -1346,6 +1492,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				} else
 					PC += 2;
@@ -1376,6 +1523,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				} else
 					PC += 2;
@@ -2027,6 +2175,7 @@ void emul8080::main8080a (void)
                 {
                 case 1: goto doret;
                 case 2: return;
+                default: break;
                 }
 				break;
 
@@ -2066,6 +2215,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
                 }
 				else
@@ -2088,6 +2238,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
                 }
 				else
@@ -2110,6 +2261,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
                 }
 				else
@@ -2132,6 +2284,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
                 }
 				else
@@ -2154,6 +2307,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
                 }
 				else
@@ -2176,6 +2330,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
                 }
 				else
@@ -2198,6 +2353,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
                 }
 				else
@@ -2220,6 +2376,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
                 }
 				else
@@ -3313,6 +3470,7 @@ void emul8080::main8080a (void)
                 {
                 case 1: goto doret;
                 case 2: return;
+                default: break;
                 }
 				break;
 
@@ -3540,13 +3698,20 @@ void emul8080::main8080a (void)
 	* decremented by 2.
 	***********************************************************************/
 			case RET:
+                if (ReturnOn8080Ret == 1)
+                    return;
+
 		        doret:
-				PC = (ReadRAM(SP+1)<<8) | ReadRAM(SP);
+                {
+                    int oldPC = PC;
+                    PC = (ReadRAM(SP + 1) << 8) | ReadRAM(SP);
                 SP += 2;
-				switch (check_pc8080a ())
+                    switch (check_pc8080a())
                 {
                 case 1: goto doret;
                 case 2: return;
+                    default: break;
+                }
                 }
 				break;
 
@@ -3584,6 +3749,9 @@ void emul8080::main8080a (void)
 			case RC:
 				if (PSW & CARRY)
 				{
+                    if (ReturnOn8080Ret == 1)
+                        return;
+
 					PC = (ReadRAM(SP+1)<<8) | ReadRAM(SP);
 
 					COUNTER += 6;
@@ -3593,6 +3761,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				}
 				break;
@@ -3607,6 +3776,9 @@ void emul8080::main8080a (void)
 			case RM:
 				if (PSW & SIGN)
 				{
+                    if (ReturnOn8080Ret == 1)
+                        return;
+
 					PC = (ReadRAM(SP+1)<<8) | ReadRAM(SP);
 
 					COUNTER += 6;
@@ -3616,6 +3788,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				}				
 				break;
@@ -3630,6 +3803,9 @@ void emul8080::main8080a (void)
 			case RNC:
 				if ((~PSW) & CARRY)
 				{
+                    if (ReturnOn8080Ret == 1)
+                        return;
+
 					PC = (ReadRAM(SP+1)<<8) | ReadRAM(SP);
 
 					COUNTER += 6;
@@ -3639,6 +3815,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				}				
 				break;
@@ -3653,6 +3830,8 @@ void emul8080::main8080a (void)
 			case RNZ:
 				if ((~PSW) & ZERO)
 				{
+                    if (ReturnOn8080Ret == 1)
+                        return;
 
 					PC = (ReadRAM(SP+1)<<8) | ReadRAM(SP);
 
@@ -3663,6 +3842,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				}
 				break;
@@ -3677,6 +3857,9 @@ void emul8080::main8080a (void)
 			case RP:
 				if ((~PSW) & SIGN)
 				{
+                    if (ReturnOn8080Ret == 1)
+                        return;
+
 					PC = (ReadRAM(SP+1)<<8) | ReadRAM(SP);
 
 					COUNTER += 6;
@@ -3686,6 +3869,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				}				
 				break;
@@ -3700,6 +3884,9 @@ void emul8080::main8080a (void)
 			case RPE:
 				if (PSW & PARITY)
 				{
+                    if (ReturnOn8080Ret == 1)
+                        return;
+
 					PC = (ReadRAM(SP+1)<<8) | ReadRAM(SP);
 
 					COUNTER += 6;
@@ -3709,6 +3896,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				}	
 				break;
@@ -3723,6 +3911,9 @@ void emul8080::main8080a (void)
 			case RPO:
 				if ((~PSW) & PARITY)
 				{
+                    if (ReturnOn8080Ret == 1)
+                        return;
+
 					PC = (ReadRAM(SP+1)<<8) | ReadRAM(SP);
 
 					COUNTER += 6;
@@ -3732,6 +3923,7 @@ void emul8080::main8080a (void)
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				}
 				break;
@@ -3746,14 +3938,19 @@ void emul8080::main8080a (void)
 			case RZ:
 				if (PSW & ZERO)
 				{
+                    if (ReturnOn8080Ret == 1)
+                        return;
+
 					PC = (ReadRAM(SP+1)<<8) | ReadRAM(SP);
 
 					COUNTER += 6;
 
-					SP += 2;                    switch (check_pc8080a ())
+					SP += 2;  
+					switch (check_pc8080a ())
                     {
                     case 1: goto doret;
                     case 2: return;
+                    default: break;
                     }
 				}				
 				break;
@@ -3830,7 +4027,9 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x00;
-				return;
+				break;
+
+				//return;
 
 
 	/***********************************************************************
@@ -3845,7 +4044,8 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x08;
-				return;
+				break;
+				//return;
 
 
 	/***********************************************************************
@@ -3860,7 +4060,8 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x10;
-				return;
+				break;
+				//return;
 
 
 	/***********************************************************************
@@ -3875,7 +4076,8 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x18;
-				return;
+				break;
+				//return;
 
 
 	/***********************************************************************
@@ -3890,7 +4092,8 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x20;
-				return;
+				break;
+				//return;
 
 
 	/***********************************************************************
@@ -3905,7 +4108,8 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x28;
-				return;
+				break;
+				//return;
 
 
 	/***********************************************************************
@@ -3920,7 +4124,8 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x30;
-				return;
+				break;
+				//return;
 
 
 	/***********************************************************************
@@ -3935,7 +4140,8 @@ void emul8080::main8080a (void)
 				SP -= 2;
 
 				PC = 0x38;
-				return;
+				break;
+				//return;
 
 
 
@@ -3971,7 +4177,7 @@ void emul8080::main8080a (void)
 				PSW = A - A - (PSW&CARRY) < 0x00
 					   ? PSW|CARRY   : PSW&NCARRY;
 
-				A -= A - CARRYOVER;
+				A -= A + CARRYOVER;
 
 				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
 				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
@@ -3994,7 +4200,7 @@ void emul8080::main8080a (void)
 				PSW = A - BC.reg.B - (PSW&CARRY) < 0x00
 					   ? PSW|CARRY   : PSW&NCARRY;
 
-				A -= BC.reg.B - CARRYOVER;
+				A -= BC.reg.B + CARRYOVER;
 
 				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
 				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
@@ -4017,7 +4223,7 @@ void emul8080::main8080a (void)
 				PSW = A - BC.reg.C - (PSW&CARRY) < 0x00
 					   ? PSW|CARRY   : PSW&NCARRY;
 
-				A -= BC.reg.C - CARRYOVER;
+				A -= BC.reg.C + CARRYOVER;
 
 				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
 				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
@@ -4040,7 +4246,7 @@ void emul8080::main8080a (void)
 				PSW = A - DE.reg.D - (PSW&CARRY) < 0x00
 					   ? PSW|CARRY   : PSW&NCARRY;
 
-				A -= DE.reg.D - CARRYOVER;
+				A -= DE.reg.D + CARRYOVER;
 
 				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
 				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
@@ -4063,7 +4269,7 @@ void emul8080::main8080a (void)
 				PSW = A - DE.reg.E - (PSW&CARRY) < 0x00
 					   ? PSW|CARRY   : PSW&NCARRY;
 
-				A -= DE.reg.E - CARRYOVER;
+				A -= DE.reg.E + CARRYOVER;
 
 				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
 				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
@@ -4086,7 +4292,7 @@ void emul8080::main8080a (void)
 				PSW = A - HL.reg.H - (PSW&CARRY) < 0x00
 					   ? PSW|CARRY   : PSW&NCARRY;
 
-				A -= HL.reg.H - CARRYOVER;
+				A -= HL.reg.H + CARRYOVER;
 
 				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
 				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
@@ -4109,7 +4315,7 @@ void emul8080::main8080a (void)
 				PSW = A - HL.reg.L - (PSW&CARRY) < 0x00
 					   ? PSW|CARRY   : PSW&NCARRY;
 
-				A -= HL.reg.L - CARRYOVER;
+				A -= HL.reg.L + CARRYOVER;
 
 				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
 				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
@@ -4138,7 +4344,7 @@ void emul8080::main8080a (void)
 				PSW = A - ReadRAM(HL.pair) - (PSW&CARRY) < 0x00
 					   ? PSW|CARRY   : PSW&NCARRY;
 
-				A -= ReadRAM(HL.pair) - CARRYOVER;
+				A -= ReadRAM(HL.pair) + CARRYOVER;
 
 				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
 				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
@@ -4167,7 +4373,7 @@ void emul8080::main8080a (void)
 				PSW = A - ReadRAM(PC) - (PSW&CARRY) < 0x00
 					   ? PSW|CARRY   : PSW&NCARRY;
 
-				A -= ReadRAM(PC++) - CARRYOVER;
+				A -= ReadRAM(PC++) + CARRYOVER;
 
 				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
 				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
@@ -4322,7 +4528,7 @@ void emul8080::main8080a (void)
 	***********************************************************************/
 			case SUBB:
 				PSW = A - BC.reg.B < 0x00
-					   ? PSW|CARRY   : PSW&NCARRY;
+                    ? PSW | CARRY : PSW&NCARRY;
 				PSW = (A&0xF) - (BC.reg.B&0xF) < 0x00
 					   ? PSW|AUX     : PSW&NAUX;
 
@@ -4699,7 +4905,38 @@ void emul8080::main8080a (void)
 				WriteRAM(SP, CARRYOVER);
 				break;
 
+  /*******************************************************************************
+  * LDIR and LDDR z80 transfer instructions for micro tutor -moveb- routine
+  *******************************************************************************/
 
+            case Z80T:
+
+                if (RAM[PC] == 0xB0)    // LDIR
+                {
+                    while (--BC.pair != 0xffff)
+                    {
+                        RAM[DE.pair++] = RAM[HL.pair++];
+                    }
+                }
+                else if (RAM[PC] == 0xB8)   // LDDR
+                {
+                    while (--BC.pair != 0xffff)
+                    {
+                        RAM[DE.pair--] = RAM[HL.pair--];
+                    }
+                }
+                else if (RAM[PC] == 0x53)   // SHLD (word) -< DE
+                {
+                    WriteRAMW(ReadRAMW(PC + 1), DE.pair);
+                }
+                else
+                {
+                    printf("Unimplemented z80 0xED OPCODE "
+                        "not supported. %02x\n", RAM[PC]);
+                }
+
+                PC++;
+                break;
 
 	/***********************************************************************
 	* z80 CODE

@@ -28,12 +28,19 @@
 #define R_WE    0x67
 #define R_DIR   0x6a
 #define R_INPUT 0x6d
-#define R_SSH   0x70
+#define R_SSF   0x70
 #define R_CCR   0x73
 #define R_EXTOUT 0x76
 #define R_EXEC  0x79
 #define R_GJOB  0x7c
 #define R_XJOB  0x7f
+#define R_RETURN 0x82  // obsolete
+#define R_CHRCV  0x85
+#define R_ALARM  0x88
+#define R_PRINT  0x8b
+#define R_FCOLOR 0x8e
+#define R_BCOLOR 0x91
+#define R_PAINT  0x94
 
 // Interrupt mask bits
 #define IM_SIR  0x80

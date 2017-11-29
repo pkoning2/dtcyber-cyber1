@@ -148,6 +148,11 @@
 //tab6
 #define PREF_EMAIL       "EmailClient"
 #define PREF_SEARCHURL   "SearchURL"
+#define PREF_MTUTOR      "MTUTOR"
+#define PREF_FLOPPY0M    "FLOPPY0M"
+#define PREF_FLOPPY1M    "FLOPPY1M"
+#define PREF_FLOPPY0NAM  "FLOPPY0NAM"
+#define PREF_FLOPPY1NAM  "FLOPPY1NAM"
 
 /*
 **  -----------------------

@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////////////
 // Name:        pterm_wx.cpp
 // Purpose:     pterm interface to wxWindows 
-// Authors:     Paul Koning, Joe Stanton, Bill Galcher, Steve Zoppi
-// Modified by: 
+// Authors:     Paul Koning, Joe Stanton, Bill Galcher, Steve Zoppi, Dale Sinder
+// Modified by: Dale Sinder
 // Created:     03/26/2005
 // Copyright:   (c) Paul Koning, Joe Stanton
 // Licence:     see pterm-license.txt
@@ -23,6 +23,8 @@ by making the bitmap itself different.
 
 #define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
 
+#define RESIDENTMSEC 10 // msec to give resident before return to 8080
+
 // ----------------------------------------------------------------------------
 // headers
 // ----------------------------------------------------------------------------
@@ -40,7 +42,11 @@ by making the bitmap itself different.
 #endif
 
 #ifdef _WIN32
-#include <wx/setup.h>
+#ifdef DRS
+#include <msvc/wx/setup.h>   // drs
+#elif
+#include <wx/setup.h> 
+#endif
 #endif
 
 // for all others, include the necessary headers (this file is usually all you
@@ -49,6 +55,9 @@ by making the bitmap itself different.
 #include <wx/wx.h>
 #endif
 
+#ifdef DRS
+#include <wx/defs.h>      // drs
+#endif
 #include <wx/button.h>
 #include <wx/clipbrd.h>
 #include <wx/colordlg.h>
@@ -136,6 +145,10 @@ static const u32 keyboardhelp[] = {
 // ----------------------------------------------------------------------------
 
 bool emulationActive = true;
+bool globalTrace = false;
+bool g_giveup8080 = false;
+bool g_mTutor = false;
+bool g_mtutorBoot = false;
 
 // Global print data, to remember settings during the session
 wxPrintData *g_printData;
@@ -149,6 +162,141 @@ wxPageSetupDialogData* g_pageSetupData;
 
 class PtermApp;
 static PtermApp *ptermApp;
+
+
+class MTFile
+{
+public:
+    MTFile();
+    bool Open(const char *fn);
+    void Close(void);
+    void Seek(long int loc);
+    u8 ReadByte();
+    void WriteByte(u8 val);
+    bool Active(void) const
+    {
+        return (fd != NULL);
+    }
+
+private:
+    FILE *fd;
+    long int position = 0;
+    int rcnt = 0;
+    int wcnt = 0;
+};
+
+MTFile::MTFile()
+{
+    fd = NULL;
+}
+
+bool MTFile::Open(const char *fn)
+{
+    Close();
+    fd = fopen(fn, "r+b");
+    if (fd == NULL)
+    {
+        fprintf(stderr, "Failure opening Mtutor floppy file %s\n", fn);
+        return false;
+    }
+    return true;
+}
+
+void MTFile::Close(void)
+{
+    if (fd != NULL)
+    {
+        fflush(fd);
+        fclose(fd);
+    }
+    fd = NULL;
+}
+
+void MTFile::Seek(long int loc)
+{
+    int x;
+    if (fd != NULL)
+    {
+        //printf("Floppy seek to %06x\n", loc);
+        x = fseek(fd, loc, SEEK_SET);
+        if ( x != 0 )
+            printf("Floppy seek error!  loc = %o6x\n", loc);
+
+        rcnt = wcnt = 1;
+        position = loc;
+    }
+        
+}
+
+u8 MTFile::ReadByte()
+{
+    int retry = 0;
+    if (fd != NULL)
+    {
+        retry1:
+        u8 mybyte = 0;
+        size_t x = fread(&mybyte, 1, 1, fd);
+        if (x != 1) {
+            printf("Floppy read error!  position: %06x\n", position);
+            long int save = position;
+            int save2 = rcnt;
+            int save3 = wcnt;
+            Seek(0);
+            Seek(save);
+            rcnt = save2;
+            wcnt = save3;
+            if (retry++ < 3)
+                goto retry1;
+            printf("FATAL floppy read error!  position: %06x\n", position);
+        }
+
+        //printf("readcnt: %d data: %02x  position: %06x\n", rcnt, mybyte, position);
+        position++;
+        rcnt++;
+        if (rcnt > 130)
+        {
+            //printf("Completed Sector read. Sector = %04x\n", (position/130)-1);
+            rcnt = 1;
+        }
+
+        return mybyte;
+    }
+    return 0;
+}
+
+void MTFile::WriteByte(u8 val)
+{
+    int retry = 0;
+    if (fd != NULL)
+    {
+        retry2:
+        size_t x = fwrite(&val, 1, 1, fd);
+        if (x != 1)
+        {
+            printf("floppy write error!  data:  %02x  position: %06x\n", val, position);
+            long int save = position;
+            int save2 = rcnt;
+            int save3 = wcnt;
+            Seek(0);
+            Seek(save);
+            rcnt = save2;
+            wcnt = save3;
+            if (retry++ < 3)
+                goto retry2;
+            printf("FATAL floppy write error!  position: %06x\n", position);
+        }
+
+        //printf("writecnt: %d  data: %02x  position: %06x\n", wcnt, val, position);
+
+        wcnt++;
+        if (wcnt > 130)
+            wcnt = 1;
+
+        position++;
+    }
+}
+
+MTFile g_MTFiles[2];
 
 class Trace
 {
@@ -561,6 +709,8 @@ static const u8 ascmode[] = { 0, 3, 2, 1 };
 
 class PtermFrame;
 
+PtermFrame *g_frame;
+
 // Pterm screen printout
 class PtermPrintout: public wxPrintout
 {
@@ -758,7 +908,12 @@ public:
     bool        m_TutorColor;
     //tab6
     wxString    m_Email;      
-    wxString    m_SearchURL;      
+    wxString    m_SearchURL;
+    bool        m_mTutor;
+    bool        m_floppy0;
+    bool        m_floppy1;
+    wxString    m_floppy0File;
+    wxString    m_floppy1File;
 
     PtermFrame  *m_firstFrame;
     wxString    m_defDir;
@@ -878,6 +1033,8 @@ public:
     void OnIdle (wxIdleEvent& event);
     void OnClose (wxCloseEvent& event);
     void OnTimer (wxTimerEvent& event);
+    void OnMclock(wxTimerEvent& event);
+    void OnM8080a(wxTimerEvent& event);
     void OnPasteTimer (wxTimerEvent& event);
     void OnShellTimer (wxTimerEvent& event);
     void OnQuit (wxCommandEvent& event);
@@ -921,6 +1078,8 @@ public:
     void OnIconize (wxIconizeEvent &event);
 #endif
 
+    void M8080aWait(void);
+    void BootMtutor(void);
     void BuildMenuBar (void);
     void BuildFileMenu (int port);
     void BuildEditMenu (int port);
@@ -1009,7 +1168,7 @@ public:
     // GSW sound output file handling
     wxString    m_gswFile;
     int         m_gswFFmt;
-    
+
 private:
     u32         m_fgpix;
     u32         m_bgpix;
@@ -1028,6 +1187,27 @@ private:
     wxString    m_hostName;
     long        m_port;
     wxTimer     m_timer;
+    wxTimer     m_Mclock;
+    wxTimer     m_M8080a;
+    u8          m_indev;        // input device
+    u8          m_outdev;       // output device
+    u8          m_mtincnt = 0;  // counter
+    u8          m_mtdrivetemp = 0xcb;   // temp drive function - before accept
+    u8          m_mtdrivefunc = 0;      // drive function
+    u8          m_mtcanresp;            // canned response for control port
+    u8          m_mtsingledata;         // single byte data preset for data channel
+
+    int         m_mtDataPhase;          // 1..7
+    u8          m_mtDiskUnit;
+    u8          m_mtDiskTrack;
+    u8          m_mtDiskSector;
+    u8          m_mtDisk1;
+    u8          m_mtDisk2;
+    u8          m_mtDiskCheck1;
+    u8          m_mtDiskCheck2;
+    int         m_mtSeekPos;
+    bool        m_clockPhase = true;    // lower or upper byte of clock
+
     wxRect      m_rect;         // Used to save window size/pos
     
     // Session information received from the other end (mostly
@@ -1059,6 +1239,15 @@ private:
     
     // PLATO terminal emulation state
 #define mode RAM[M_MODE]
+    // key switch var for mtutor/ppt progs
+#define mt_ksw RAM[M_KSW]
+
+#define mjobs  RAM[M_JOBS]
+
+#define key2mtutor ((mt_ksw & 1) == 1)      // direct keys to mtutor/ppt
+
+    INT16       mt_key = -1;
+
     bool        modexor;
     // 0: inverse
     // 1: rewrite
@@ -1238,6 +1427,7 @@ private:
     u8 input8080a (u8 data);
     void output8080a (u8 data, u8 acc);
     int check_pc8080a (void);
+    const char* PtermFrame::resCallName(UINT16 pc);
 
     // any class wishing to process wxWindows events must use this macro
     DECLARE_EVENT_TABLE ()
@@ -1322,6 +1512,12 @@ public:
     //tab6
     wxTextCtrl* txtEmail;
     wxTextCtrl* txtSearchURL;
+    wxCheckBox* chkMTutor;
+    wxCheckBox* chkFloppy0;
+    wxCheckBox* chkFloppy1;
+    wxTextCtrl* txtFloppy0;
+    wxTextCtrl* txtFloppy1;
+
     //button bar
     wxButton* btnOK;
     wxButton* btnCancel;
@@ -1371,7 +1567,12 @@ public:
     //tab6
     wxString        m_Email;
     wxString        m_SearchURL;
-    
+    bool            m_mTutor;
+    bool            m_floppy0;
+    bool            m_floppy1;
+    wxString        m_floppy0File;
+    wxString        m_floppy1File;
+
 private:
     void paintBitmap (wxBitmap &bm, wxColour &color);
     
@@ -1450,6 +1651,8 @@ enum
 
     // timers
     Pterm_Timer,        // display pacing
+    Pterm_Mclock,       // pterm clock
+    Pterm_M8080a,       
     Pterm_PasteTimer,   // paste key generation pacing
     //other items
     Pterm_Exec,         // execute URL
@@ -1647,6 +1850,8 @@ BEGIN_EVENT_TABLE (PtermFrame, wxFrame)
     EVT_IDLE (PtermFrame::OnIdle)
     EVT_CLOSE (PtermFrame::OnClose)
     EVT_TIMER (Pterm_Timer, PtermFrame::OnTimer)
+    EVT_TIMER(Pterm_Mclock, PtermFrame::OnMclock)
+    EVT_TIMER(Pterm_M8080a, PtermFrame::OnM8080a)
     EVT_TIMER (Pterm_PasteTimer, PtermFrame::OnPasteTimer)
     EVT_ACTIVATE (PtermFrame::OnActivate)
     EVT_MENU (Pterm_Close, PtermFrame::OnQuit)
@@ -1836,6 +2041,25 @@ bool PtermApp::OnInit (void)
     //tab6
     m_config->Read (wxT (PREF_EMAIL), &m_Email, wxT (""));
     m_config->Read (wxT (PREF_SEARCHURL), &m_SearchURL, DEFAULTSEARCH);
+    g_mTutor = m_mTutor = (m_config->Read(wxT(PREF_MTUTOR), 0L) != 0);
+
+    m_floppy0 = (m_config->Read(wxT(PREF_FLOPPY0M), 0L) != 0);
+    m_floppy1 = (m_config->Read(wxT(PREF_FLOPPY1M), 0L) != 0);
+
+    m_config->Read(wxT(PREF_FLOPPY0NAM), &m_floppy0File, "");
+    m_config->Read(wxT(PREF_FLOPPY1NAM), &m_floppy1File, "");
+
+    if (m_floppy0 && m_floppy0File.Length() > 0)
+        g_MTFiles[0].Open(m_floppy0File);
+    else
+        g_MTFiles[0].Close();
+
+    if (m_floppy1 && m_floppy1File.Length() > 0)
+        g_MTFiles[1].Open(m_floppy1File);
+    else
+        g_MTFiles[1].Close();
+
+
 
 #if PTERM_MDI
     // On Mac, the style rule is that the application keeps running even
@@ -2010,6 +2234,7 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
 
             title.Append (filename);
             frame = new PtermFrame (filename, -1, title);
+            //g_frame = frame;
 
             if (frame != NULL)
             {
@@ -2200,6 +2425,7 @@ bool PtermApp::DoConnect (bool ask)
     
     // create the main application window
     frame = new PtermFrame (m_hostName, m_port, wxT ("Pterm"));
+    g_frame = frame;
 
     return (frame != NULL);
 }
@@ -2326,6 +2552,35 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
                 m_Email         = value;
             else if (token.Cmp (wxT (PREF_SEARCHURL)) == 0)
                 m_SearchURL     = value;
+            else if (token.Cmp(wxT(PREF_MTUTOR)) == 0)
+                m_mTutor = (value.Cmp(wxT("1")) == 0);
+
+
+            else if (token.Cmp(wxT(PREF_FLOPPY0M)) == 0)
+                m_floppy0 = (value.Cmp(wxT("1")) == 0);
+            else if (token.Cmp(wxT(PREF_FLOPPY1M)) == 0)
+                m_floppy1 = (value.Cmp(wxT("1")) == 0);
+
+            else if (token.Cmp(wxT(PREF_FLOPPY0NAM)) == 0)
+            {
+                m_floppy0File = value;
+                if (m_floppy0 && m_floppy0File.Length() > 0)
+                    g_MTFiles[0].Open(m_floppy0File);
+                else
+                    g_MTFiles[0].Close();
+
+        }
+            else if (token.Cmp(wxT(PREF_FLOPPY1NAM)) == 0)
+            {
+                m_floppy1File = value;
+                if (m_floppy1 && m_floppy1File.Length() > 0)
+                    g_MTFiles[1].Open(m_floppy1File);
+                else
+                    g_MTFiles[1].Close();
+
+            }
+
+
         }
         if (file.Eof ())
         {
@@ -2381,6 +2636,15 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
     //tab6
     m_config->Write (wxT (PREF_EMAIL), m_Email);
     m_config->Write (wxT (PREF_SEARCHURL), m_SearchURL);
+    m_config->Write(wxT(PREF_MTUTOR), (m_mTutor) ? 1 : 0);
+
+    m_config->Write(wxT(PREF_FLOPPY0M), (m_floppy0) ? 1 : 0);
+    m_config->Write(wxT(PREF_FLOPPY1M), (m_floppy1) ? 1 : 0);
+
+    m_config->Write(wxT(PREF_FLOPPY0NAM), m_floppy0File);
+    m_config->Write(wxT(PREF_FLOPPY1NAM), m_floppy1File);
+
+
     m_config->Flush ();
 
     return true;
@@ -2429,6 +2693,7 @@ void PtermApp::OnAbout (wxCommandEvent&)
     info.AddDeveloper ("Joe Stanton");
     info.AddDeveloper ("Bill Galcher");
     info.AddDeveloper ("Steve Zoppi");
+    info.AddDeveloper ("Dale Sinder");
     
     info.SetWebSite ("http://cyber1.org");
     
@@ -2567,6 +2832,8 @@ PtermMainFrame::PtermMainFrame (void)
 }
 #endif
 
+PtermCanvas *g_canvas;
+
 // ----------------------------------------------------------------------------
 // main frame
 // ----------------------------------------------------------------------------
@@ -2622,6 +2889,8 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
       // m_hostName not initialized
       m_port (port),
       m_timer (this, Pterm_Timer),
+      m_Mclock(this, Pterm_Mclock),
+      m_M8080a(this, Pterm_M8080a),
       // m_rect not initialized
       m_name (""),
       m_group (""),
@@ -2672,6 +2941,11 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
 
     m_hostName = host;
     mode = 017;             // default to character mode, rewrite
+
+    mt_ksw = 0;             // route input to terminal
+    mt_key = -1;
+    mjobs = 0;
+
     modexor = false;
     setMargin (0);
     RAM[M_CCR] = 0;
@@ -2778,6 +3052,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
     // for 2x scalling for Retina display, if active
     m_bitmap2 = new wxBitmap (512 * 2, 512 * 2, 32);
     m_canvas = new PtermCanvas (this);
+    g_canvas = m_canvas;
 
     SetColors (m_currentFg, m_currentBg);    
     SetClientSize (XSize, YSize);
@@ -3207,6 +3482,20 @@ void PtermFrame::OnTimer (wxTimerEvent &)
     procDataLoop ();
 }
 
+// ppt m.clock
+void PtermFrame::OnMclock(wxTimerEvent &)
+{
+    Uint16 temp = ReadRAMW(M_CLOCK);
+    WriteRAMW(M_CLOCK, ++temp);
+}
+
+// resume 8080 execution after it gives up control to resident
+void PtermFrame::OnM8080a(wxTimerEvent &)
+{
+    main8080a();
+}
+
+
 // Common code for processing pending PLATO data.  This is used by the OnIdle handler
 // for the normal (no delay, no pacing) case, and by the OnTimer handler if delay is
 // currently being done.
@@ -3215,6 +3504,8 @@ void PtermFrame::procDataLoop (void)
     int word;
     bool refresh = false;
     
+    mjobs = 0;
+
     if (m_nextword != C_NODATA)
     {
         m_ignoreDelay = false;      // Assume it's not block erase
@@ -3233,6 +3524,9 @@ void PtermFrame::procDataLoop (void)
         {
             break;
         }
+
+        if (g_mtutorBoot)
+            continue;   // throw data away if booted into mtutor
 
         // See if we're supposed to delay (but it's not an internal
         // code such as NODATA)
@@ -3623,6 +3917,9 @@ void PtermFrame::OnClose (wxCloseEvent &)
     ptermApp->prefX = x;
     ptermApp->prefY = y;
     debug ("Window position on exit is %d, %d", x, y);
+
+    g_MTFiles[0].Close();
+    g_MTFiles[1].Close();
     
     Destroy ();
 }
@@ -4159,7 +4456,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
 {
     //show dialog
     PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"),
-                         wxDefaultPosition, wxSize (451, 400));
+                         wxDefaultPosition, wxSize (461, 440));
     
     //process changes if OK clicked
     if (dlg.ShowModal () == wxID_OK)
@@ -4204,6 +4501,25 @@ void PtermFrame::OnPref (wxCommandEvent&)
         //tab6
         ptermApp->m_Email = dlg.m_Email;
         ptermApp->m_SearchURL = dlg.m_SearchURL;
+        g_mTutor = ptermApp->m_mTutor = dlg.m_mTutor;
+
+        ptermApp->m_floppy0 = dlg.m_floppy0;
+        ptermApp->m_floppy1 = dlg.m_floppy1;
+
+        ptermApp->m_floppy0File = dlg.m_floppy0File;
+        ptermApp->m_floppy1File = dlg.m_floppy1File;
+
+        if (ptermApp->m_floppy0 && ptermApp->m_floppy0File.Length() > 0)
+            g_MTFiles[0].Open(ptermApp->m_floppy0File);
+        else
+            g_MTFiles[0].Close();
+
+
+        if (ptermApp->m_floppy1 && ptermApp->m_floppy1File.Length() > 0)
+            g_MTFiles[1].Open(ptermApp->m_floppy1File);
+        else
+            g_MTFiles[1].Close();
+
 
         //update settings to config
         SavePreferences ();
@@ -4265,6 +4581,28 @@ void PtermFrame::SavePreferences (void)
     //tab6
     ptermApp->m_config->Write (wxT (PREF_EMAIL), ptermApp->m_Email);
     ptermApp->m_config->Write (wxT (PREF_SEARCHURL), ptermApp->m_SearchURL);
+    ptermApp->m_config->Write(wxT(PREF_MTUTOR), (ptermApp->m_mTutor) ? 1 : 0);
+
+    ptermApp->m_config->Write(wxT(PREF_FLOPPY0M), ptermApp->m_floppy0);
+    ptermApp->m_config->Write(wxT(PREF_FLOPPY1M), ptermApp->m_floppy1);
+
+    ptermApp->m_config->Write(wxT(PREF_FLOPPY0NAM), ptermApp->m_floppy0File);
+    ptermApp->m_config->Write(wxT(PREF_FLOPPY1NAM), ptermApp->m_floppy1File);
+
+
+    if (ptermApp->m_floppy0 && ptermApp->m_floppy0File.Length() > 0)
+        g_MTFiles[0].Open(ptermApp->m_floppy0File);
+    else
+        g_MTFiles[0].Close();
+
+
+    if (ptermApp->m_floppy1 && ptermApp->m_floppy1File.Length() > 0)
+        g_MTFiles[1].Open(ptermApp->m_floppy1File);
+    else
+        g_MTFiles[1].Close();
+
+
+
     ptermApp->m_config->Flush ();
 }
 
@@ -6755,6 +7093,8 @@ void PtermFrame::WriteTraceMessage (wxString msg)
 **------------------------------------------------------------------------*/
 void PtermFrame::ptermSetTrace (bool trace)
 {
+
+    globalTrace = trace;
     if (!trace)
     {
         // Turning trace off
@@ -7088,8 +7428,33 @@ void PtermFrame::mode4 (u32 d)
 **------------------------------------------------------------------------*/
 void PtermFrame::mode5 (u32 d)
 {
+    if (m_M8080a.IsRunning())
+        m_M8080a.Stop();
+
     trace ("mode5 %06o", d);
-    progmode (d, M5ORIGIN);
+
+    // Load C/D/E with data word
+    BC.reg.C = d >> 16;
+    DE.reg.D = d >> 8;
+    DE.reg.E = d;
+
+    //printf("mode 5: c=%02x,  d=%02x, e=%02x\n", BC.reg.C, DE.reg.D, DE.reg.E);
+
+    if (!(((BC.reg.C & 3) == 0) && (DE.reg.D > 0)))
+    {
+        progmode(d, M5ORIGIN);
+        return;
+    }
+
+    //// Push the return address onto the
+    //// stack, as if we just did a CALL instruction
+    WriteRAM(--SP, ((PC) >> 8) & 0xff);
+    WriteRAM(--SP, (PC) & 0xff);
+
+    // Set the start PC for the requested mode
+    PC = ReadRAMW(M5ORIGIN);
+
+    main8080a();
 }
 
 /*--------------------------------------------------------------------------
@@ -7100,11 +7465,31 @@ void PtermFrame::mode5 (u32 d)
 **
 **  Returns:        Nothing.
 **
+** THIS IS AN INTERRUPT!  STATE MUST BE SAVED AND RESTORED!!
+** BUT THE 8080 RET INSTRUCTIONS WILL NOT RETURN HERE!!
+** 8080 WILL JUST CONTINUE TO RUN.  BUT IT WILL NO LONGER
+** BE DOING THE RIGHT THINGS.
 **------------------------------------------------------------------------*/
 void PtermFrame::mode6 (u32 d)
 {
+    if (m_M8080a.IsRunning())
+        m_M8080a.Stop();
+
     trace ("mode6 %06o", d);
-    progmode (d, M6ORIGIN);
+                        // Load C/D/E with data word
+    BC.reg.C = d >> 16;
+    DE.reg.D = d >> 8;
+    DE.reg.E = d;
+
+    //// Push the return address onto the
+    //// stack, as if we just did a CALL instruction
+    WriteRAM(--SP, ((PC) >> 8) & 0xff);
+    WriteRAM(--SP, (PC) & 0xff);
+
+    // Set the start PC for the requested mode
+    PC = ReadRAMW(M6ORIGIN);
+
+    main8080a();
 }
 
 /*--------------------------------------------------------------------------
@@ -7149,7 +7534,7 @@ void PtermFrame::progmode (u32 d, int origin)
 
     // Set the start PC for the requested mode
     PC = ReadRAMW (origin);
-    main8080a ();
+    main8080a();
 }
 
 /*--------------------------------------------------------------------------
@@ -7180,6 +7565,13 @@ void PtermFrame::ptermSendKey (u32 keys)
     }
 }
 
+
+// give resident RESIDENTMSEC ms before resuming 8080 exec
+void PtermFrame::M8080aWait(void)
+{
+    m_M8080a.StartOnce(RESIDENTMSEC);
+}
+
 /*--------------------------------------------------------------------------
 **  Purpose:        Process Plato mode keyboard input
 **
@@ -7193,7 +7585,13 @@ void PtermFrame::ptermSendKey1 (int key)
 {
     char data[5];
     int len;
-    
+
+    if (!m_Mclock.IsRunning())
+    {
+        m_Mclock.Start(17);
+    }
+
+
     if (m_conn == NULL)
     {
         return;
@@ -7214,7 +7612,7 @@ void PtermFrame::ptermSendKey1 (int key)
             {
                 return;
             }
-            if (m_flowCtrl)
+            if (m_flowCtrl && !key2mtutor && !g_mtutorBoot)
             {
                 // Do the keycode translation for the
                 // "flow control enabled" coding rules.
@@ -7253,22 +7651,36 @@ void PtermFrame::ptermSendKey1 (int key)
                 data[0] = 033;          // store esc for 2 byte codes
             }                        
             data[len - 1] = Parity (key);
+
+            if (!key2mtutor && !g_mtutorBoot)
+            {
             if (tracePterm)
             {
                 if (len == 1)
                 {
-                    tracex ("ascii mode key to plato 0x%02x", data[0] & 0xff);
+                        tracex("ascii mode key to plato 0x%02x", data[0] & 0xff);
                 }
                 else
                 {
-                    tracex ("ascii mode key to plato 0x%02x 0x%02x", data[0], data[1] & 0xff);
+                        tracex("ascii mode key to plato 0x%02x 0x%02x", data[0], data[1] & 0xff);
                 }
             }
-            m_conn->SendData (data, len);
+                m_conn->SendData(data, len);
             if (m_dumbTty)
             {
                 // do local echoing
-                m_conn->StoreWord (key);
+                    m_conn->StoreWord(key);
+            }
+        }
+            else
+            {
+                // do mtutor zkey conversion
+                key = (key < 0x80) ? mtutorcvt[key & 0x7f] : key;
+                if (tracePterm)
+                {
+                    tracex("key to mtutor 0x%02x", key);
+                }
+                mt_key = key;
             }
         }
         else if (!m_dumbTty)
@@ -7795,6 +8207,105 @@ void PtermFrame::UpdateRegion (int x, int y, int mouseX, int mouseY)
     }
 }
 
+const char* PtermFrame::resCallName(UINT16 pc)
+{
+    switch (pc)
+    {
+    case R_MAIN:
+        return "r.main  ";
+
+    case R_INIT:
+        return "r.init  ";
+
+    case R_DOT:
+        return "r.dot   ";
+
+    case R_LINE:
+        return "r.line  ";
+
+    case R_CHARS:
+        return "r.chars ";
+
+    case R_BLOCK:
+        return "r.block ";
+
+    case R_INPX:
+        return "r.inpx  ";
+
+    case R_INPY:
+        return "r.inpy  ";
+
+    case R_OUTX:
+        return "r.outx  ";
+
+    case R_OUTY:
+        return "r.outy  ";
+
+    case R_XMIT:
+        return "r.xmit  ";
+
+    case R_MODE:
+        return "r.mode  ";
+
+    case R_STEPX:
+        return "r.stepx ";
+
+    case R_STEPY:
+        return "r.stepy ";
+
+    case R_WE:
+        return "r.we    ";
+
+    case R_DIR:
+        return "r.dir   ";
+
+    case R_INPUT:
+        return "r.input ";
+
+    case R_SSF:
+        return "r.ssf   ";
+
+    case R_CCR:
+        return "r.ccr   ";
+
+    case R_EXTOUT:
+        return "r.extout";
+
+    case R_EXEC:
+        return "r.execx ";
+
+    case R_GJOB:
+        return "r.gjob  ";
+
+    case R_XJOB:
+        return "r.xjob  ";
+
+    case R_ALARM:
+        return "r.alarm ";
+
+    case R_FCOLOR:
+        return "r.fcolor";
+
+    case R_FCOLOR + 1: 
+        return "c.fcolor";
+
+    case R_BCOLOR: 
+        return "r.bcolor";
+
+    case R_BCOLOR + 1:
+        return "c.bcolor";
+
+    case R_PAINT: 
+        return "r.paint ";
+
+    case R_PAINT + 1:
+        return "c.paint ";
+
+    default:
+        return "unknown ";
+    }
+}
+
 
 // This emulates the "ROM resident".  Return values:
 // 0: PC is not special (not in resident), proceed normally.
@@ -7806,10 +8317,10 @@ int PtermFrame::check_pc8080a (void)
 {
     int x, y, cp, c, x2, y2;
     
-    if (PC < WORKRAM)
+    if (PC < WORKRAM && globalTrace)
     {
-        tracex ("Resident call %04x DE=%04x HL=%04x", 
-                PC, DE.pair, HL.pair);
+        tracex("Resident call %04x %S DE=%04x HL=%04x",
+            PC, resCallName(PC), DE.pair, HL.pair);
     }
     
     switch (PC)
@@ -7817,10 +8328,16 @@ int PtermFrame::check_pc8080a (void)
     case R_MAIN:
         // "r.main" -- fake return address value used as the return
         // address for invocations of the mode 5/6/7 handler code
+
+        m_canvas->Refresh(false);
+
         return 2;
 
     case R_INIT:
         // r.init -- TBD
+
+        m_canvas->Refresh(false);
+
         return 2;
         
     case R_DOT:
@@ -7849,7 +8366,24 @@ int PtermFrame::check_pc8080a (void)
             {
                 break;
             }
-            plotChar (c);
+
+            UINT8 save = RAM[M_CCR];
+            UINT charM = (RAM[M_CCR] & 0x0e) >> 1; // Current M slot
+
+            if (c > 0x3F )
+            {
+                // advance M slot by one
+                RAM[M_CCR] = (RAM[M_CCR] & ~0x0e) | (charM + 1) << 1;
+            }
+
+            plotChar (c & 0x3f );
+
+            if (c > 0x3F )
+            {
+                // restore M slot
+                RAM[M_CCR] = save;
+            }
+
             c = RAM[cp++];
         }
         return 1;
@@ -7882,6 +8416,7 @@ int PtermFrame::check_pc8080a (void)
         
     case R_XMIT:
         // send key in HL
+        ptermSendKey1(HL.pair);     // implemented 2017/10/12 DRS
         return 1;
         
     case R_MODE:
@@ -7911,11 +8446,98 @@ int PtermFrame::check_pc8080a (void)
         return 1;
         
     case R_INPUT:
-        // r.input
+        if (tracePterm)
+        {
+            tracex("R_INPUT: %04x", mt_key);
+            //printf("\nR.INPUT %04x\n", mt_key);   // temp
+        }
+        {
+            //Uint16 code = RAM[SP] | (RAM[SP+1] << 8 );  // temp
+
+            HL.pair = mt_key & 0xffff;
+
+            mt_key = -1;
+        }
         return 1;
         
-    case R_SSH:
-        // r.ssh
+    case R_SSF:
+        // r.ssf
+    {
+        int n = HL.pair;
+
+        int device = (n >> 10) & 0x1f;
+        int writ = (n >> 9) & 0x1;
+        int inter = (n >> 8) & 0x1;
+        int data = n & 0xff;
+
+        //printf("r.ssf input=%04x\n", n);
+        //printf("r.ssf device=%02x\n", device);
+        //printf("r.ssf W=%01x\n", writ);
+        //printf("r.ssf I=%01x\n", inter);
+        //printf("r.ssf data=%02x\n", data);
+
+        // remember devices
+        if(writ == 1)
+        {
+            m_indev = device;
+        }
+        else
+        {
+            m_outdev = device;
+        }
+
+        if (device == 15 && writ == 1 && inter == 0)   
+        {   
+            if ( (m_mtincnt & 3) == 0)
+            {
+                HL.reg.L = 0xcc;
+            }
+            else if ((m_mtincnt & 3) == 1)
+            {
+                HL.reg.L = 0x63;
+            }
+            else if((m_mtincnt & 3) == 2)
+            {
+                HL.reg.L = 0x33;
+            }
+            else 
+            {
+                HL.reg.L = 0x40;        // cdc disk resident loaded/running
+            }
+
+            m_mtincnt++;            // semi-random selection of 3 possible responses
+
+            //printf("r.ssf returns=%02x\n\n", HL.reg.L);
+
+        }
+
+        if ((n != -1) && (device == 1))
+        {
+            trace("R_SSF %04x", n);
+            m_canvas->ptermTouchPanel((n & 0x20) != 0);
+        }
+        switch (n)
+        {
+        case 0x1f00:    // xin 7; means start CWS functions
+            trace("R_SSF; start cws mode; %04x", n);
+            cwsmode = 1;
+            break;
+        case 0x1d00:    // xout 7; means stop CWS functions
+            trace("R_SSF; stop cws mode; %04x", n);
+            cwsmode = 2;
+            break;
+        case -1:
+            break;
+        default:
+            if (device == 1)
+            {
+                trace("R_SSF %04x", n);
+                m_canvas->ptermTouchPanel((n & 0x20) != 0);
+            }
+            break;
+        }
+    }
+        // neeed this
         return 1;
         
     case R_CCR:
@@ -7924,10 +8546,16 @@ int PtermFrame::check_pc8080a (void)
         
     case R_EXTOUT:
         // r.extout
+
+        printf("r.extout data=%04x\n", HL.pair);
+
         return 1;
         
     case R_EXEC:
         // r.exec
+        g_giveup8080 = true;
+
+        //procDataLoop();
         return 1;
         
     case R_GJOB:
@@ -7937,12 +8565,101 @@ int PtermFrame::check_pc8080a (void)
     case R_XJOB:
         // r.xjob
         return 1;
-        
+
+    case R_RETURN: //obsolete
+        return 1;
+
+    case R_CHRCV:
+        {
+            u16 src = DE.pair;
+            u16 cnt = HL.pair * 8;
+            u16 slot = (DE.pair - ReadRAMW(C2ORIGIN)) / 16;
+            memaddr = 16*slot + ReadRAMW(C2ORIGIN);
+            for( int i = 0 ; i < cnt ; i++)
+            {
+                mode2(ReadRAMW(src));
+                src = src + 2;
+            }
+        }
+        return 1;
+
+    case R_ALARM:
+        wxBell();
+        return 1;
+
+    case R_FCOLOR:      // for standard use with h, l, d
+        //  three bytes are r g b
+    {
+        wxColour color(HL.reg.H, HL.reg.L, DE.reg.D);
+        m_currentFg = color;
+        SetColors(m_currentFg, m_currentBg);
+    }
+
+        return 1;
+
+    case R_FCOLOR + 1:      // for mtutor ccode use with de
+        // de points to 3 byte foreground color
+        //  three bytes are r g b
+    {
+        wxColour color(RAM[DE.pair], RAM[DE.pair + 1], RAM[DE.pair + 2]);
+        m_currentFg = color;
+        SetColors(m_currentFg, m_currentBg);
+    }
+
+    return 1;
+
+    case R_BCOLOR:      // for standard use with h, l, d
+        // three bytes are r g b
+
+    {
+        wxColour colorb(HL.reg.H, HL.reg.L, DE.reg.D);
+        m_currentBg = colorb;
+        SetColors(m_currentFg, m_currentBg);
+    }
+
+        return 1;
+
+    case R_BCOLOR + 1:      // for mtutor ccode use with de
+        // de points to 3 byte background color
+        // three bytes are r g b
+
+    {
+        wxColour colorb(RAM[DE.pair], RAM[DE.pair + 1], RAM[DE.pair + 2]);
+        m_currentBg = colorb;
+        SetColors(m_currentFg, m_currentBg);
+    }
+
+    return 1;
+
+    case R_PAINT:       // standard
+
+        ptermPaint(HL.pair);
+
+        return 1;
+
+    case R_PAINT + 1:   // mtutor ccode
+
+        ptermPaint(RAM[DE.pair] | (RAM[DE.pair + 1] << 8));
+
+        return 1;
+
+    case R_PAINT + 2:   // mtutor ccode
+
+        printf("MTUTOR LESSON MARK\n");
+
+        return 1;
+
     default:
         if (PC < WORKRAM)
         {
             // Wild jump into ROM resident, quit
             fprintf (stderr, "Wild jump to %04x\n", PC);
+            printf("Wild jump/call/ret to %04x\n", PC);
+
+            // no longer send keys to mtutor; it's dead
+            mt_ksw &= 0xfe;
+            g_mtutorBoot = false;
+
             return 2;
         }
         else
@@ -7951,6 +8668,41 @@ int PtermFrame::check_pc8080a (void)
             return 0;
         }
     }
+}
+
+void PtermFrame::BootMtutor()
+{
+    ResetProc();
+    g_MTFiles[0].Seek(21970);   // read interp. into ram
+    u16 address = 0x5300;       // interp fwa
+    u16 sectors;
+    u16 bytes;
+    // 80 sectors long
+    for (sectors = 0 ; sectors < 80 ; sectors++)
+    {
+        for (bytes = 0; bytes < 128; bytes++)
+        {
+            RAM[address++] = g_MTFiles[0].ReadByte();
+        }
+        g_MTFiles[0].ReadByte();        // omit check bytes
+        g_MTFiles[0].ReadByte();
+    }
+
+    PC = 0x5306;    // f.inix
+
+    mt_ksw |= 1;
+
+    // must be disconnected - any data from host esp mode 5,6,7
+    // will kill off-line mtutor
+    
+    g_mtutorBoot = true;
+
+    if (tracePterm)
+    {
+        tracex("boot to mtutor");
+    }
+
+    main8080a();
 }
 
 /*******************************************************************************
@@ -8001,7 +8753,6 @@ u8 PtermFrame::input8080a (u8 data)
     ***********************************************************************/
     u8 retval;
 
-
     switch (data)
     {
 
@@ -8012,6 +8763,58 @@ u8 PtermFrame::input8080a (u8 data)
         case 1:
         case 2:
             retval = 0;
+            break;
+        // below used by mtutor
+        case 0x2a:
+            retval = 0x37;
+            break;
+        case 0x2b:
+            retval = 1;
+            break;
+        case 0xae:          // cdc disk data port
+            retval = 0;     // default
+            switch (m_mtdrivefunc)
+            {
+            case 0:
+                // read next byte of data from disk
+                retval = g_MTFiles[m_mtDiskUnit].ReadByte();
+                break;
+            case 2: // write data to disk - noop
+                break;
+            case 11:
+                // read millisec clock - called twice - for lower and upper
+                {
+                    Uint16 temp = ReadRAMW(M_CLOCK);
+                    retval = m_clockPhase ? (temp & 0xff) : ((temp << 8) & 0xff);
+                    m_clockPhase = !m_clockPhase;
+                }
+                break;
+            case 4:
+                retval = m_mtsingledata;  // d.rcid
+                break;
+            case 8:     // d.clear
+                break;
+            default:
+                break;
+            }
+            //printf("CDC drive DATA responding to: %02x  with:  %02x\n", m_mtdrivefunc, retval);
+            break;
+        case 0xaf:          // cdc disk control port
+            retval = m_mtcanresp;
+            //printf("CDC drive control responding to: %02x  with:  %02x\n", m_mtdrivefunc, retval);
+            switch (m_mtdrivefunc)
+            {
+            case 0:
+            case 2:
+            case 11:
+                m_mtcanresp = 0x50;
+                break;
+
+            default:
+                break;
+
+            }
+
             break;
 
     /***********************************************************************
@@ -8025,7 +8828,6 @@ u8 PtermFrame::input8080a (u8 data)
             retval = 0;
             break;
     }
-
 
     /***********************************************************************
     *   This keyword returns the read input data to the main simulator core.
@@ -8062,6 +8864,11 @@ Note:
 
 void PtermFrame::output8080a (u8 data, u8 acc)
 {
+    u8 comp = ~acc;
+    bool ok = comp == m_mtdrivetemp;
+
+    //printf("out: %02x, %02x\n", data, acc);
+
     switch (data)
     {
 
@@ -8070,6 +8877,133 @@ void PtermFrame::output8080a (u8 data, u8 acc)
     * content of the A register is moved into the left shift amount.
     ***********************************************************************/
         case 2:
+        // below used by mtutor 
+        case 0x2b:
+            break;
+        case 0xae:      // CDC drive data port
+            switch (m_mtdrivefunc)
+            {
+            case 0: // read disk
+            case 2: // write data to disk - and recieve setup data
+                //if (m_mtdrivefunc == 10)
+                //    printf("CDC drive DATA WRITE");
+                switch (m_mtDataPhase++)
+                {
+                    case 1:
+                        m_mtDiskUnit = acc;
+                        break;
+                    case 2:
+                        m_mtDiskTrack = acc;
+                        break;
+                    case 3:
+                        m_mtDiskSector = acc;
+                        break;
+                    case 4:
+                        m_mtDisk1 = acc;
+                        break;
+                    case 5:
+                        m_mtDisk2 = acc;
+                        break;
+                    case 6:
+                        break;
+                    case 7: // 128 bytes/sector plus two check bytes
+                        m_mtSeekPos = (130 * 64 * m_mtDiskTrack) + (130 * m_mtDiskSector);
+                        g_MTFiles[m_mtDiskUnit].Seek(m_mtSeekPos);
+                        break;
+
+                    default:   // write data
+                        g_MTFiles[m_mtDiskUnit].WriteByte(acc);
+                        m_mtcanresp = 0x50;
+                        break;
+                }
+                break;
+
+            case 10: // format
+                switch (m_mtDataPhase++)
+                {
+                case 1:
+                    m_mtDiskUnit = acc;
+                    break;
+                case 2:
+                    m_mtDiskTrack = acc;
+                    break;
+                case 3:
+                    m_mtDiskSector = acc;
+                    break;
+                case 4:
+                    m_mtDisk1 = acc;
+                    break;
+                case 5:
+                    m_mtDisk2 = acc;
+                    //break;
+                default:
+                    g_MTFiles[m_mtDiskUnit].Seek(0);
+                    for (long int i = 0 ;  i < (130 * 64 * 160) ; i++)
+                    {
+                        g_MTFiles[m_mtDiskUnit].WriteByte(0);
+                    }
+                    break;
+                }
+                break;
+
+            case 11:
+                // read millisec clock - noop
+            break;
+
+            case 4:  // noop
+            case 8:  // d.clear - noop
+                break;
+
+            default:
+                break;
+
+            }
+            //printf("CDC drive DATA recieving for: %02x  data:  %02x\n", m_mtdrivefunc, acc);
+            break;
+
+        case 0xaf:      // CDC drive control port
+            if (ok)     // accept function
+            {
+                m_mtdrivefunc = m_mtdrivetemp;
+                m_mtdrivetemp = 0xcb;
+                m_mtDataPhase = 1;
+
+                switch(m_mtdrivefunc)
+                {
+                case 0:
+                case 2:
+                case 10:
+                case 11:
+                    m_mtcanresp = 0x4a;
+                    m_clockPhase = true;
+                    break;
+
+                case 4:
+                    m_mtcanresp = 0x4a;
+                    m_mtsingledata = 0x02;
+                    if (ptermApp->m_floppy1)
+                    {
+                        m_mtsingledata |= 0x80;
+                    }
+                    break;
+
+                case 8:
+                    m_mtcanresp = 0x50;
+                    break;
+
+                default:
+                    m_mtsingledata = 2;  // remove me
+                    break;
+                }
+                //printf("CDC drive control accept: %02x\n", m_mtdrivefunc);
+            }
+            else
+            {
+                m_mtdrivetemp = acc; // set function
+                //printf("CDC drive control command: %02x\n", m_mtdrivetemp);
+                m_mtcanresp = 0x48;
+            }
+            
             break;
 
 
@@ -8183,6 +9117,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     wxScrolledWindow* tab6;
     wxStaticText* lblEmail;
     wxStaticText* lblSearchURL;
+
+    wxStaticText* lblFloppy0;
+    wxStaticText* lblFloppy1;
+
 //  wxTextCtrl* txtEmail;
 //  wxTextCtrl* txtSearchURL;
     //button  bar
@@ -8625,6 +9563,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     tab6 = new wxScrolledWindow (tabPrefsDialog, wxID_ANY,
                                  wxDefaultPosition, wxDefaultSize,
                                  wxHSCROLL | wxTAB_TRAVERSAL | wxVSCROLL);
+
     tab6->SetScrollRate (5, 5);
     tab6->Hide ();
 
@@ -8645,10 +9584,53 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                      _("Specify URL for menu option 'Search this...'"),
                                      wxDefaultPosition, wxDefaultSize, 0);
     page6->Add (lblSearchURL, 0, wxALL, 5);
+
+
     txtSearchURL = new wxTextCtrl (tab6, wxID_ANY, wxT (""), wxDefaultPosition,
                                    wxDefaultSize, 0 | wxTAB_TRAVERSAL);
     txtSearchURL->SetMaxLength (255); 
     page6->Add (txtSearchURL, 0, wxALL | wxEXPAND, 5);
+
+    chkMTutor = new wxCheckBox(tab6, wxID_ANY,
+        _("Enable MicroTutor Patches"),
+        wxDefaultPosition, wxDefaultSize, 0);
+    chkMTutor->SetValue(true);
+    page6->Add(chkMTutor, 0, wxALL, 5);
+
+    chkFloppy0 = new wxCheckBox(tab6, wxID_ANY,
+        _("Enable Floppy 0"),
+        wxDefaultPosition, wxDefaultSize, 0);
+    chkFloppy0->SetValue(true);
+    page6->Add(chkFloppy0, 0, wxALL, 5);
+
+    chkFloppy1 = new wxCheckBox(tab6, wxID_ANY,
+        _("Enable Floppy 1"),
+        wxDefaultPosition, wxDefaultSize, 0);
+    chkFloppy1->SetValue(true);
+    page6->Add(chkFloppy1, 0, wxALL, 5);
+
+
+    lblFloppy0 = new wxStaticText(tab6, wxID_ANY,
+        _("Specify Floppy 0 path"),
+        wxDefaultPosition, wxDefaultSize, 0);
+    page6->Add(lblFloppy0, 0, wxALL, 5);
+
+    txtFloppy0 = new wxTextCtrl(tab6, wxID_ANY, wxT(""), wxDefaultPosition,
+        wxDefaultSize, 0 | wxTAB_TRAVERSAL);
+    txtFloppy0->SetMaxLength(255);
+    page6->Add(txtFloppy0, 0, wxALL | wxEXPAND, 5);
+
+    lblFloppy1 = new wxStaticText(tab6, wxID_ANY,
+        _("Specify Floppy 1 path"),
+        wxDefaultPosition, wxDefaultSize, 0);
+    page6->Add(lblFloppy1, 0, wxALL, 5);
+
+    txtFloppy1 = new wxTextCtrl(tab6, wxID_ANY, wxT(""), wxDefaultPosition,
+        wxDefaultSize, 0 | wxTAB_TRAVERSAL);
+    txtFloppy1->SetMaxLength(255);
+    page6->Add(txtFloppy1, 0, wxALL | wxEXPAND, 5);
+
+
     tab6->SetSizer (page6);
     tab6->Layout ();
     page6->Fit (tab6);
@@ -8799,6 +9781,17 @@ bool PtermPrefDialog::SaveProfile (wxString profile)
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_SEARCHURL) wxT ("=%s"), m_SearchURL);
     file.AddLine (buffer);
+    buffer.Printf(wxT(PREF_MTUTOR) wxT("=%d"), (m_mTutor) ? 1 : 0);
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_FLOPPY0M) wxT("=%d"), (m_floppy0) ? 1 : 0);
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_FLOPPY1M) wxT("=%d"), (m_floppy1) ? 1 : 0);
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_FLOPPY0NAM) wxT("=%s"), m_floppy0File);
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_FLOPPY1NAM) wxT("=%s"), m_floppy1File);
+    file.AddLine(buffer);
+
 
     //write to disk
     file.Write ();
@@ -8880,7 +9873,24 @@ void PtermPrefDialog::SetControlState (void)
     //tab6
     m_Email = ptermApp->m_Email;
     m_SearchURL = ptermApp->m_SearchURL;
-    
+    g_mTutor = m_mTutor = ptermApp->m_mTutor;
+
+    m_floppy0 = ptermApp->m_floppy0;
+    m_floppy1 = ptermApp->m_floppy1;
+    m_floppy0File = ptermApp->m_floppy0File;
+    m_floppy1File = ptermApp->m_floppy1File;
+
+    if (m_floppy0 && m_floppy0File.Length() > 0)
+        g_MTFiles[0].Open(m_floppy0File);
+    else
+        g_MTFiles[0].Close();
+
+
+    if (m_floppy1 && m_floppy1File.Length() > 0)
+        g_MTFiles[1].Open(m_floppy1File);
+    else
+        g_MTFiles[1].Close();
+
     //tab0
     wxDir ldir (wxGetCwd ());
     if (ldir.IsOpened ())
@@ -8952,6 +9962,11 @@ void PtermPrefDialog::SetControlState (void)
     //tab6
     txtEmail->SetValue (m_Email);
     txtSearchURL->SetValue (m_SearchURL);
+    chkMTutor->SetValue(m_mTutor);
+    chkFloppy0->SetValue(m_floppy0);
+    chkFloppy1->SetValue(m_floppy1);
+    txtFloppy0->SetValue(m_floppy0File);
+    txtFloppy1->SetValue(m_floppy1File);
 
     //set button state
     wxString profile;
@@ -9136,6 +10151,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         //tab6
         m_Email = wxT ("");
         m_SearchURL = DEFAULTSEARCH;
+        g_mTutor = m_mTutor = true;
 
         //reset object values
         //tab0
@@ -9178,6 +10194,15 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         //tab6
         txtEmail->SetValue (m_Email);
         txtSearchURL->SetValue (m_SearchURL);
+        chkMTutor->SetValue(m_mTutor);
+
+        chkFloppy0->SetValue(m_floppy0);
+        chkFloppy1->SetValue(m_floppy1);
+        txtFloppy0->SetValue(m_floppy0File);
+        txtFloppy1->SetValue(m_floppy1File);
+
+        g_mTutor = m_mTutor;
+
     }
     Refresh (false);
 }
@@ -9231,6 +10256,29 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == chkTutorColor)
         m_TutorColor = event.IsChecked ();
     //tab6
+    else if (event.GetEventObject() == chkMTutor)
+        g_mTutor = m_mTutor = event.IsChecked();
+
+    else if (event.GetEventObject() == chkFloppy0)
+    {
+        m_floppy0 = event.IsChecked();
+        if (ptermApp->m_floppy0 && ptermApp->m_floppy0File.Length() > 0)
+            g_MTFiles[0].Open(ptermApp->m_floppy0File);
+        else
+            g_MTFiles[0].Close();
+
+    }
+
+    else if (event.GetEventObject() == chkFloppy1)
+    {
+        m_floppy1 = event.IsChecked();
+        if (ptermApp->m_floppy1 && ptermApp->m_floppy1File.Length() > 0)
+            g_MTFiles[1].Open(ptermApp->m_floppy1File);
+        else
+            g_MTFiles[1].Close();
+
+    }
+
 }
 
 void PtermPrefDialog::OnSelect (wxCommandEvent& event)
@@ -9330,6 +10378,13 @@ void PtermPrefDialog::OnChange (wxCommandEvent& event)
         m_Email = txtEmail->GetLineText (0);
     else if (event.GetEventObject () == txtSearchURL)
         m_SearchURL = txtSearchURL->GetLineText (0);
+
+    else if (event.GetEventObject() == txtFloppy0)
+        m_floppy0File = txtFloppy0->GetLineText(0);
+    else if (event.GetEventObject() == txtFloppy1)
+        m_floppy1File = txtFloppy1->GetLineText(0);
+
+
 }
 
 void PtermPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
@@ -10538,6 +11593,20 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
         return;
     }
 
+    if (ctrl && key == '[')         // control-[ : turn mtutor/ppt keys off
+    {
+        m_owner->mt_ksw &= 0xfe;
+        g_mtutorBoot = false;
+        tracex("mtutor off key");
+        return;
+    }
+
+    if (ctrl && key == '\\' && ptermApp->m_mTutor)         // control-\ : boot mtutor
+    {
+        m_owner->BootMtutor();
+        return;
+    }
+
     // Special case:user has disabled Shift-Space, which means to treat
     // it as a space
     if (ptermApp->m_DisableShiftSpace && key == WXK_SPACE)
@@ -11104,5 +12173,20 @@ void PtermPrintout::DrawPage (wxDC *dc)
 
     dc->DrawBitmap (printmap, 0, 0);
 }
+
+
+static class Update8080 : public emul8080
+{
+public:
+    void static M8080aWait();
+};
+
+// called when 8080 gives up control to resident
+void Update8080::M8080aWait()
+{
+    g_canvas->Refresh(false);
+    g_frame->M8080aWait();
+}
+
 
 /*---------------------------  End Of File  ------------------------------*/
