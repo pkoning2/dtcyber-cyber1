@@ -47,10 +47,10 @@ simulation phase occurs.
 * -----
 *
 *   8080a.h - This file contains the function definitions for main8080a,
-*	LoadSet, and ResetProc.
+*   LoadSet, and ResetProc.
 *
 *   8080avar.h - This file contains the data type definitions for the 8080a's
-*	registers, memory, and interrupts.
+*   registers, memory, and interrupts.
 *
 *   opcodes.h - This file contains the definitions for the 8080a's opcodes.
 *
@@ -67,7 +67,7 @@ extern bool g_mTutor;
 class Update8080 : public emul8080
 {
 public:
-	void static M8080aWait();
+    void static M8080aWait();
 
 };
 
@@ -86,88 +86,89 @@ enabling interrupts, and resetting the cycle counter.
 *******************************************************************************/
 void emul8080::ResetProc(void)
 {
-	/***********************************************************************
-	* Initializations:
-	* ---------------
-	*
-	*   INTERRUPT - This variable is used to test to see if an interrupt
-	*	has occured.  This variable is checked after the number of
-	*	cycles reaches INTHIGH.
-	*
-	*   NMI - This variable is used to test to see if a non-maskable
-	*	interrupt has occured.  This variable is checked after the
-	*	number of cycles reaches INTHIGH.
-	*
-	*   INTDISABLE - This variable is used to test to see if interrupts are
-	*	disabled.  If set, an interrupt cannot occur.
-	*
-	*   COUNTER - This variable counts the number of cycles per
-	*	instruction.  Once this number reaches INTHIGH, an interrupt
-	*	is set to occur.
-	*
-	*
-	* 16-bit registers:
-	* ----------------
-	*
-	*   SP - This variable is the stack pointer.  It is reset to SPSET,
-	*	which is the beginning of the 8080a's stack.
-	*
-	*   PC - This variable is the program counter.  It is reset to PCSET,
-	*	which points to the start of the 8080a's ROM
-	*
-	*
-	* 8-bit registers:
-	* ---------------
-	*
-	*   PSW - This variable is the processor status word.  It is reset to
-	*	PSWSET, which by default sets all flags (except 0x02) to off.
-	*
-	*   A - This variable is the accumulator.  It is reset to 0.
-	*
-	*   BC.pair - This variable is the registers B and C.  Both B and C are
-	*	reset to 0.
-	*
-	*   DE.pair - This variable is the registers D and E.  Both D and E are
-	*	reset to 0.
-	*
-	*   HL.pair - This variable is the registers H and L.  Both H and L are
-	*	reset to 0.
-	***********************************************************************/
-	INTERRUPT	= 1;
-	NMI		= 0;
-	INTDISABLE	= 0;
-	COUNTER		= 0;
-	SP		= SPSET;
-	PC		= PCSET;
-	PSW		= PSWSET;
-	A		= 0;
-	BC.pair		= 0;
-	DE.pair		= 0;
-	HL.pair		= 0;
+    /***********************************************************************
+    * Initializations:
+    * ---------------
+    *
+    *   INTERRUPT - This variable is used to test to see if an interrupt
+    *   has occured.  This variable is checked after the number of
+    *   cycles reaches INTHIGH.
+    *
+    *   NMI - This variable is used to test to see if a non-maskable
+    *   interrupt has occured.  This variable is checked after the
+    *   number of cycles reaches INTHIGH.
+    *
+    *   INTDISABLE - This variable is used to test to see if interrupts are
+    *   disabled.  If set, an interrupt cannot occur.
+    *
+    *   COUNTER - This variable counts the number of cycles per
+    *   instruction.  Once this number reaches INTHIGH, an interrupt
+    *   is set to occur.
+    *
+    *
+    * 16-bit registers:
+    * ----------------
+    *
+    *   SP - This variable is the stack pointer.  It is reset to SPSET,
+    *   which is the beginning of the 8080a's stack.
+    *
+    *   PC - This variable is the program counter.  It is reset to PCSET,
+    *   which points to the start of the 8080a's ROM
+    *
+    *
+    * 8-bit registers:
+    * ---------------
+    *
+    *   PSW - This variable is the processor status word.  It is reset to
+    *   PSWSET, which by default sets all flags (except 0x02) to off.
+    *
+    *   A - This variable is the accumulator.  It is reset to 0.
+    *
+    *   BC.pair - This variable is the registers B and C.  Both B and C are
+    *   reset to 0.
+    *
+    *   DE.pair - This variable is the registers D and E.  Both D and E are
+    *   reset to 0.
+    *
+    *   HL.pair - This variable is the registers H and L.  Both H and L are
+    *   reset to 0.
+    ***********************************************************************/
+    INTERRUPT   = 1;
+    NMI     = 0;
+    INTDISABLE  = 0;
+    COUNTER     = 0;
+    SP      = SPSET;
+    PC      = PCSET;
+    PSW     = PSWSET;
+    A       = 0;
+    BC.pair     = 0;
+    DE.pair     = 0;
+    HL.pair     = 0;
 
-	/***********************************************************************
-	 *
-	 *	Zero ROM and Plant RET instructions for all interrupt RST locations
-	 *
-	 **********************************************************************/
+    /***********************************************************************
+     *
+     *  Zero ROM and Plant RET instructions for all interrupt RST locations
+     *
+     **********************************************************************/
 
-	for (int i = STARTROM1; i < MEMSIZE; i++)	// zero rom/ram
-	{
-		RAM[i] = 0;
-	}
+    for (int i = STARTROM1; i < MEMSIZE; i++)   // zero rom/ram
+    {
+        RAM[i] = 0;
+    }
 
-	RAM[0x0] = RET;
-	RAM[0x8] = RET;
-	RAM[0x10] = RET;
-	RAM[0x18] = RET;
-	RAM[0x20] = RET;
-	RAM[0x28] = RET;
-	RAM[0x30] = RET;
-	RAM[0x38] = RET;
-	RAM[0x3d] = RET;
+    RAM[0x0] = RET;
+    RAM[0x8] = RET;
+    RAM[0x10] = RET;
+    RAM[0x18] = RET;
+    RAM[0x20] = RET;
+    RAM[0x28] = RET;
+    RAM[0x30] = RET;
+    RAM[0x38] = RET;
+    RAM[0x3d] = RET;
 
-	RAM[ROMSIZE - 1] = RET;  // for safety
+    RAM[ROMSIZE - 1] = RET;  // for safety
 
+    ReturnOn8080Ret = 0;
 }
 
 #ifdef DEBUG_8080
@@ -227,19 +228,19 @@ if an interrupt has occured.
 *******************************************************************************/
 void emul8080::main8080a (void)
 {
-	/***********************************************************************
-	* Declarations:
-	* ------------
-	*
-	*   CARRYOVER - This integer is used in instructions that rely on
-	* operating on the CARRY flag.
-	*
-	*   OPCODE - This integer stores the current instruction after it has
-	* been fetched from RAM.
-	***********************************************************************/
-	Uint8 CARRYOVER;
-	Uint8 OPCODE = 0;
-	//long int update = 0;
+    /***********************************************************************
+    * Declarations:
+    * ------------
+    *
+    *   CARRYOVER - This integer is used in instructions that rely on
+    * operating on the CARRY flag.
+    *
+    *   OPCODE - This integer stores the current instruction after it has
+    * been fetched from RAM.
+    ***********************************************************************/
+    Uint8 CARRYOVER;
+    Uint8 OPCODE = 0;
+    //long int update = 0;
 #ifdef DEBUG_8080
     bool step = false;
 #endif
@@ -259,8 +260,8 @@ void emul8080::main8080a (void)
         RAM[0x602e] = 0;
     }
 
-	/***********************************************************************
-	*   The 8080a's main instruction loop.
+    /***********************************************************************
+    *   The 8080a's main instruction loop.
     *
     *   Keep executing so long as the PC points into the RAM area.  When
     * the code jumps to ROM in any way, we exit, leaving it up to the
@@ -269,9 +270,9 @@ void emul8080::main8080a (void)
     *   The reason for this is that the PPT ROM routines are not handled
     * by emulating the 8080 code, but rather by emulating the semantics
     * of the routine.
-	***********************************************************************/
+    ***********************************************************************/
     while ((PC >= WORKRAM) || (PC < 0x40))
-	{
+    {
         //if (update++ > UPDATECNT)
         if (g_giveup8080)  //| (update++ > UPDATECNT) )
         {
@@ -284,83 +285,83 @@ void emul8080::main8080a (void)
 
         //if (PC > MEMSIZE)
         //{
-        //	printf("\nPC > MEMSIZE %0x\nAbort 8080\n", PC);
-        //	return;
+        //  printf("\nPC > MEMSIZE %0x\nAbort 8080\n", PC);
+        //  return;
         //}
 
-	/***********************************************************************
-	*   If INTERRUPT is not equal to 2, then it is safe to fetch an opcode.
-	* The opcode that is fetched is the opcode at location PC in the
-	* 8080a's ROM area.
-	*
-	*   If INTERRUPT is equal to 2, then an interrupt has occured, so this
-	* function disables interrupts because a new interrupt cannot occur
-	* while an interrupt is in progress.  Interrupts can only be reenabled
-	* by executing the EI intruction.
-	***********************************************************************/
-		if (INTERRUPT != 2)
-		{
+    /***********************************************************************
+    *   If INTERRUPT is not equal to 2, then it is safe to fetch an opcode.
+    * The opcode that is fetched is the opcode at location PC in the
+    * 8080a's ROM area.
+    *
+    *   If INTERRUPT is equal to 2, then an interrupt has occured, so this
+    * function disables interrupts because a new interrupt cannot occur
+    * while an interrupt is in progress.  Interrupts can only be reenabled
+    * by executing the EI intruction.
+    ***********************************************************************/
+        if (INTERRUPT != 2)
+        {
 
-	/***********************************************************************
+    /***********************************************************************
             *   This assignment fetches an opcode from the 8080a's ROM RAM area.
-	* The opcode is fetched from the PC location in RAM. The program
-	* counter, named PC, is incremented by 1.
-	***********************************************************************/
-			OPCODE	= ReadRAM(PC++);
+    * The opcode is fetched from the PC location in RAM. The program
+    * counter, named PC, is incremented by 1.
+    ***********************************************************************/
+            OPCODE  = ReadRAM(PC++);
 
         }
         else if (INTERRUPT == 2)
-		{
+        {
 
 
-	/***********************************************************************
-	*   This assignment disables interrupts.  Interrupts can only be
-	* reenabled by the EI instruction.
-	***********************************************************************/
-			INTERRUPT = 0;
+    /***********************************************************************
+    *   This assignment disables interrupts.  Interrupts can only be
+    * reenabled by the EI instruction.
+    ***********************************************************************/
+            INTERRUPT = 0;
 
-		}
-
-
-	/***********************************************************************
-	*   If INTDISABLE is equal to 2, then the EI instruction was executed.
-	* The EI instruction requires that interrupts be enabled following the
-	* instruction after the EI instruction.  Setting INTDISABLE to 0
-	* reenables interrupts, following the execution of the next opcode.
-	***********************************************************************/
-		if (INTDISABLE == 2)
-		{
-			INTDISABLE = 0;
-		}
+        }
 
 
-	/***********************************************************************
-	*   This increments the number of cycles.  The number of cycles are
-	* received from the table named CYCLES.
-	***********************************************************************/
-		COUNTER	+= CYCLES[OPCODE];
+    /***********************************************************************
+    *   If INTDISABLE is equal to 2, then the EI instruction was executed.
+    * The EI instruction requires that interrupts be enabled following the
+    * instruction after the EI instruction.  Setting INTDISABLE to 0
+    * reenables interrupts, following the execution of the next opcode.
+    ***********************************************************************/
+        if (INTDISABLE == 2)
+        {
+            INTDISABLE = 0;
+        }
+
+
+    /***********************************************************************
+    *   This increments the number of cycles.  The number of cycles are
+    * received from the table named CYCLES.
+    ***********************************************************************/
+        COUNTER += CYCLES[OPCODE];
 
         /*  This code is used for quick debugging. */
 #ifdef DEBUG_8080
         if (true ) // || globalTrace) // && ((PC > 0x7aee)  || ((PC < 0x4000 )) && (PC > 0x90)))  // overlay regions
-		{
-			//printf("%s\n", MNEMONICS[OPCODE]);
+        {
+            //printf("%s\n", MNEMONICS[OPCODE]);
 
-			//printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
-			//	"PSW-[0x%X]\n", OPCODE, PC, SP, PSW);
-			//printf("A-[0x%X] \tB/C-[0x%X/0x%X]\tD/E-[0x%X/0x%X]\t"
-			//	"H/L-[0x%X/0x%X]\n", A, BC.reg.B, BC.reg.C, DE.reg.D,
-			//	DE.reg.E, HL.reg.H, HL.reg.L);
-			//printf("BC-[0x%X]\tDE-[0x%X]\t"
-			//	"HL-[0x%X]\tSP-[0x%X/0x%X]\n", BC.pair, DE.pair,
-			//	HL.pair, ReadRAM(SP), ReadRAM(SP + 1));
-			//printf("RAM-[0x%X/0x%X/0x%X/0x%X]\n\n", ReadRAM(PC-1), ReadRAM(PC),
-			//	ReadRAM(PC + 1), ReadRAM(PC + 2));
+            //printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
+            //  "PSW-[0x%X]\n", OPCODE, PC, SP, PSW);
+            //printf("A-[0x%X] \tB/C-[0x%X/0x%X]\tD/E-[0x%X/0x%X]\t"
+            //  "H/L-[0x%X/0x%X]\n", A, BC.reg.B, BC.reg.C, DE.reg.D,
+            //  DE.reg.E, HL.reg.H, HL.reg.L);
+            //printf("BC-[0x%X]\tDE-[0x%X]\t"
+            //  "HL-[0x%X]\tSP-[0x%X/0x%X]\n", BC.pair, DE.pair,
+            //  HL.pair, ReadRAM(SP), ReadRAM(SP + 1));
+            //printf("RAM-[0x%X/0x%X/0x%X/0x%X]\n\n", ReadRAM(PC-1), ReadRAM(PC),
+            //  ReadRAM(PC + 1), ReadRAM(PC + 2));
 
-			//printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
-			//	"PSW-[]\n", OPCODE, PC - 1, SP);
-			//printf("AF-[0x%X]\tBC-[0x%X]\tDE-[0x%X]\t"
-			//	"HL-[0x%X]\n\n", A, BC.pair, DE.pair, HL.pair);
+            //printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
+            //  "PSW-[]\n", OPCODE, PC - 1, SP);
+            //printf("AF-[0x%X]\tBC-[0x%X]\tDE-[0x%X]\t"
+            //  "HL-[0x%X]\n\n", A, BC.pair, DE.pair, HL.pair);
 
 
             /* begin simple 8080 degugger -  works well with MSVS
@@ -391,1472 +392,1472 @@ void emul8080::main8080a (void)
             }
 
             // end 8080 debugger
-		}
+        }
 #endif
 
 
-	/***********************************************************************
-	*   This switch statement executes the current opcode contained in
-	* OPCODE.  Opcodes are defined in opcodes.h.
-	***********************************************************************/
-		switch (OPCODE)
-		{
-
-
-	/***********************************************************************
-	* ACIn - Add immediate with carry.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to ACIn, this routine
-	* adds the content of the 8080a's memory, RAM[PC] and the content of
-	* the CARRY flag, found in the PSW, to the content of the accumulator.
-	* The resulting value is stored in the accumulator.  The processor
-	* status word, named PSW, is set according to the result of the
-	* operation.  The program counter, named PC, is incremented by one.
-	***********************************************************************/
-			case ACIn:
-				CARRYOVER = PSW&CARRY;
-
-				PSW = (A&0xF) + (ReadRAM(PC)&0xF) + (PSW&CARRY)
-					   > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-				PSW = A + ReadRAM(PC) + (PSW&CARRY) > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				A += ReadRAM(PC++) + CARRYOVER;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-
-
-	/***********************************************************************
-	* ADCr - Add register with carry.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to ADCr, where r is an
-	* 8-bit 8080a register, this routine adds the content of the register,
-	* r, and the content of the CARRY flag, found in the PSW, to the
-	* content of the accumulator.  The resulting value is stored in the
-	* accumulator.  The processor status word, named PSW, is set according
-	* to the result of the operation.
-	*
-	*
-	* Note:
-	* ----
-	*
-	*   OPCODEs include ADCA, ADCB, ADCC, ADCD, ADCE, ADCH, and ADCL.
-	***********************************************************************/
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADCA, this routine
-	* adds the contents of: A, the CARRY flag, and the accumulator to the
-	* accumulator.  The PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADCA:
-				CARRYOVER = PSW&CARRY;
-
-				PSW = (A&0xF) + (A&0xF) + (PSW&CARRY) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-				PSW = A + A + (PSW&CARRY) > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				A += A + CARRYOVER;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADCB, this routine
-	* adds the contents of: B, the CARRY flag, and the accumulator to the
-	* accumulator.  The PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADCB:
-				CARRYOVER = PSW&CARRY;
-
-				PSW = (A&0xF) + (BC.reg.B&0xF) +
-				      (PSW&CARRY) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-				PSW = A + BC.reg.B + (PSW&CARRY) > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				A += BC.reg.B + CARRYOVER;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADCC, this routine
-	* adds the contents of: C, the CARRY flag, and the accumulator to the
-	* accumulator.  The PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADCC:
-				CARRYOVER = PSW&CARRY;
-
-				PSW = (A&0xF) + (BC.reg.C&0xF) +
-				      (PSW&CARRY) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-				PSW = A + BC.reg.C + (PSW&CARRY) > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				A += BC.reg.C + CARRYOVER;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADCD, this routine
-	* adds the contents of: D, the CARRY flag, and the accumulator to the
-	* accumulator.  The PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADCD:
-				CARRYOVER = PSW&CARRY;
-
-				PSW = (A&0xF) + (DE.reg.D&0xF) +
-				      (PSW&CARRY) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-				PSW = A + DE.reg.D + (PSW&CARRY) > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				A += DE.reg.D + CARRYOVER;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADCE, this routine
-	* adds the contents of: E, the CARRY flag, and the accumulator to the
-	* accumulator.  The PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADCE:
-				CARRYOVER = PSW&CARRY;
-
-				PSW = (A&0xF) + (DE.reg.E&0xF) +
-				      (PSW&CARRY) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-				PSW = A + DE.reg.E + (PSW&CARRY) > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				A += DE.reg.E + CARRYOVER;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADCH, this routine
-	* adds the contents of: H, the CARRY flag, and the accumulator to the
-	* accumulator.  The PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADCH:
-				CARRYOVER = PSW&CARRY;
-
-				PSW = (A&0xF) + (HL.reg.H&0xF) +
-				      (PSW&CARRY) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-				PSW = A + HL.reg.H + (PSW&CARRY) > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				A += HL.reg.H + CARRYOVER;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADCL, this routine
-	* adds the contents of: L, the CARRY flag, and the accumulator to the
-	* accumulator.  The PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADCL:
-				CARRYOVER = PSW&CARRY;
-
-				PSW = (A&0xF) + (HL.reg.L&0xF) +
-				      (PSW&CARRY) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-				PSW = A + HL.reg.L + (PSW&CARRY) > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				A += HL.reg.L + CARRYOVER;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-
-	/***********************************************************************
-	* ADCM - Add memory with carry.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to ADCM, this routine
-	* adds the content of the 8080a's memory, RAM[HL], and the content
-	* of the CARRY flag (found in the PSW) to the content of the
-	* accumulator.  The resulting value is stored in the accumulator.
-	* The processor status word, named PSW, is set according to the result
-	* of the operation.
-	***********************************************************************/
-			case ADCM:
-				CARRYOVER = PSW&CARRY;
-
-				PSW = (A&0xF) + (ReadRAM(HL.pair)&0xF) +
-					   (PSW&CARRY) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-				PSW = A + ReadRAM(HL.pair) + (PSW&CARRY) > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				A += ReadRAM(HL.pair) + CARRYOVER;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-
-	/***********************************************************************
-	* ADDr - Add register.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to ADDr, where r is an
-	* 8-bit 8080a register, this routine adds the content of the register,
-	* r, to the content of the accumulator.  The resulting value is stored
-	* in the accumulator.  The processor status word, named PSW, is set
-	* according to the result of the operation.
-	*
-	*
-	* Note:
-	* ----
-	*
-	*   OPCODEs include ADDA, ADDB, ADDC, ADDD, ADDE, ADDH, and ADDL.
-	***********************************************************************/
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADDA, this routine
-	* adds the content of A and the accumulator to the accumulator.  The
-	* PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADDA:
-				PSW = A + A > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-				PSW = (A&0xF) + (A&0xF) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-
-				A += A;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADDB, this routine
-	* adds the content of B and the accumulator to the accumulator.  The
-	* PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADDB:
-				PSW = A + BC.reg.B > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-				PSW = (A&0xF) + (BC.reg.B&0xF) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-
-				A += BC.reg.B;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADDC, this routine
-	* adds the content of C and the accumulator to the accumulator.  The
-	* PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADDC:
-				PSW = A + BC.reg.C > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-				PSW = (A&0xF) + (BC.reg.C&0xF) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-
-				A += BC.reg.C;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADDD, this routine
-	* adds the content of D and the accumulator to the accumulator.  The
-	* PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADDD:
-				PSW = A + DE.reg.D > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-				PSW = (A&0xF) + (DE.reg.D&0xF) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-
-				A += DE.reg.D;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADDE, this routine
-	* adds the content of E and the accumulator to the accumulator.  The
-	* PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADDE:
-				PSW = A + DE.reg.E > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-				PSW = (A&0xF) + (DE.reg.E&0xF) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-				A += DE.reg.E;
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADDH, this routine
-	* adds the content of H and the accumulator to the accumulator.  The
-	* PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADDH:
-				PSW = A + HL.reg.H > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-				PSW = (A&0xF) + (HL.reg.H&0xF) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-
-				A += HL.reg.H;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ADDL, this routine
-	* adds the content of L and the accumulator to the accumulator.  The
-	* PSW reflects the result of this addition.
-	***********************************************************************/
-			case ADDL:
-				PSW = A + HL.reg.L > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-				PSW = (A&0xF) + (HL.reg.L&0xF) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-
-				A += HL.reg.L;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-
-	/***********************************************************************
-	* ADDM - Add memory.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to ADCM, this routine
-	* adds the content of the 8080a's memory, RAM[HL], to the content
-	* of the accumulator.  The resulting value is stored in the
-	* accumulator.  The processor status word, named PSW, is set according
-	* to the result of the operation.
-	***********************************************************************/
-			case ADDM:
-				PSW = A + ReadRAM(HL.pair) > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-				PSW = (A&0xF) + (ReadRAM(HL.pair)&0xF) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-
-				A += ReadRAM(HL.pair);
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-
-	/***********************************************************************
-	* ADIn - Add immediate.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to ADIn, this routine
-	* adds the content of the 8080a's memory, RAM[PC] to the content of the
-	* accumulator.  The resulting value is stored in the accumulator.  The
-	* processor status word, named PSW, is set according to the result of
-	* the operation.  The program counter, named PC, is incremented by one.
-	***********************************************************************/
-			case ADIn:
-				PSW = A + ReadRAM(PC) > 0xFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-				PSW = (A&0xF) + (ReadRAM(PC)&0xF) > 0xF
-					   ? PSW|AUX     : PSW&NAUX;
-
-				A += ReadRAM(PC++);
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-
-	/***********************************************************************
-	* ANAr - AND register.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to ANAr, where r is an
-	* 8-bit 8080a register, this routine ANDs the content of the register,
-	* r, with the content of the accumulator.  The resulting value is
-	* stored in the accumulator.  The processor status word, named PSW, is
-	* set according to the result of the operation.  The CARRY and AUX
-	* flags are cleared in the PSW.
-	*
-	*
-	* Note:
-	* ----
-	*
-	*   OPCODEs include ANAA, ANAB, ANAC, ANAD, ANAE, ANAH, and ANAL.
-	***********************************************************************/
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ANAA, this routine
-	* ANDs the content of A with the accumulator to the accumulator.  The
-	* PSW reflects the result of this AND operation.  The CARRY and AUX are
-	* flags cleared.
-	***********************************************************************/
-			case ANAA:
-				A = A&A;
-
-				PSW = PSW&NCARRY&NAUX;
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ANAB, this routine
-	* ANDs the content of B with the accumulator to the accumulator.  The
-	* PSW reflects the result of this AND operation.  The CARRY and AUX are
-	* flags cleared.
-	***********************************************************************/
-			case ANAB:
-				A = A&BC.reg.B;
-
-				PSW = PSW&NCARRY&NAUX;
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ANAC, this routine
-	* ANDs the content of C with the accumulator to the accumulator.  The
-	* PSW reflects the result of this AND operation.  The CARRY and AUX are
-	* flags cleared.
-	***********************************************************************/
-			case ANAC:
-				A = A&BC.reg.C;
-
-				PSW = PSW&NCARRY&NAUX;
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ANAD, this routine
-	* ANDs the content of D with the accumulator to the accumulator.  The
-	* PSW reflects the result of this AND operation.  The CARRY and AUX are
-	* flags cleared.
-	***********************************************************************/
-			case ANAD:
-				A = A&DE.reg.D;
-
-				PSW = PSW&NCARRY&NAUX;
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ANAE, this routine
-	* ANDs the content of E with the accumulator to the accumulator.  The
-	* PSW reflects the result of this AND operation.  The CARRY and AUX are
-	* flags cleared.
-	***********************************************************************/
-			case ANAE:
-				A = A&DE.reg.E;
-
-				PSW = PSW&NCARRY&NAUX;
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ANAH, this routine
-	* ANDs the content of H with the accumulator to the accumulator.  The
-	* PSW reflects the result of this AND operation.  The CARRY and AUX are
-	* flags cleared.
-	***********************************************************************/
-			case ANAH:
-				A = A&HL.reg.H;
-
-				PSW = PSW&NCARRY&NAUX;
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to ANAL, this routine
-	* ANDs the content of L with the accumulator to the accumulator.  The
-	* PSW reflects the result of this AND operation.  The CARRY and AUX are
-	* flags cleared.
-	***********************************************************************/
-			case ANAL:
-				A = A&HL.reg.L;
-
-				PSW = PSW&NCARRY&NAUX;
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-
-	/***********************************************************************
-	* ANAM - AND memory.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to ANAM, this routine
-	* ANDs the content of the 8080a's memory, RAM[HL], with the content
-	* of the accumulator.  The resulting value is stored in the
-	* accumulator.  The processor status word, named PSW, is set according
-	* to the result of the operation.  The CARRY and AUX flags are cleared
-	* in the PSW.
-	***********************************************************************/
-			case ANAM:
-				A = A&ReadRAM(HL.pair);
-
-				PSW = PSW&NCARRY&NAUX;
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-
-	/***********************************************************************
-	* ANIn - AND immediate.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to ANIn, this routine
-	* ANDs the content of the 8080a's memory, RAM[PC] with the content of
-	* the accumulator.  The resulting value is stored in the accumulator.
-	* The processor status word, named PSW, is set according to the result
-	* of the operation.  The CARRY and AUX flags are cleared in the PSW.
-	* The program counter, named PC, is incremented by one.
-	***********************************************************************/
-			case ANIn:
-				A = A&ReadRAM(PC++);
-
-				PSW = PSW&NCARRY&NAUX;
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-
-	/***********************************************************************
-	* CALLa - Call.
-	* -----
-	*
-	*   If the value of the variable OPCODE is equal to CALLa, this routine
-	* moves the high and low order bits of the next instruction address,
-	* which is the value currently stored in the program counter, named PC,
-	* to one minus and two minus the stack pointer register's location in
-	* memory, RAM[SP - 1] and RAM[SP - 2], respectively.  The content of
-	* the stack pointer register is decremented by two.  The program
-	* counter is reset to the contents of byte three and byte two,
-	* RAM[PC + 1] and RAM[PC], of the current instruction, respectively.
-	***********************************************************************/
-			case CALLa:
-				WriteRAM(SP - 1, (PC + 2)>>8);
-				WriteRAM(SP - 2, (PC + 2)&0xFF);
-
-				SP -= 2;
-
-				PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
-				switch (check_pc8080a ())
+    /***********************************************************************
+    *   This switch statement executes the current opcode contained in
+    * OPCODE.  Opcodes are defined in opcodes.h.
+    ***********************************************************************/
+        switch (OPCODE)
+        {
+
+
+    /***********************************************************************
+    * ACIn - Add immediate with carry.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to ACIn, this routine
+    * adds the content of the 8080a's memory, RAM[PC] and the content of
+    * the CARRY flag, found in the PSW, to the content of the accumulator.
+    * The resulting value is stored in the accumulator.  The processor
+    * status word, named PSW, is set according to the result of the
+    * operation.  The program counter, named PC, is incremented by one.
+    ***********************************************************************/
+            case ACIn:
+                CARRYOVER = PSW&CARRY;
+
+                PSW = (A&0xF) + (ReadRAM(PC)&0xF) + (PSW&CARRY)
+                       > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+                PSW = A + ReadRAM(PC) + (PSW&CARRY) > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                A += ReadRAM(PC++) + CARRYOVER;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+
+
+    /***********************************************************************
+    * ADCr - Add register with carry.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to ADCr, where r is an
+    * 8-bit 8080a register, this routine adds the content of the register,
+    * r, and the content of the CARRY flag, found in the PSW, to the
+    * content of the accumulator.  The resulting value is stored in the
+    * accumulator.  The processor status word, named PSW, is set according
+    * to the result of the operation.
+    *
+    *
+    * Note:
+    * ----
+    *
+    *   OPCODEs include ADCA, ADCB, ADCC, ADCD, ADCE, ADCH, and ADCL.
+    ***********************************************************************/
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADCA, this routine
+    * adds the contents of: A, the CARRY flag, and the accumulator to the
+    * accumulator.  The PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADCA:
+                CARRYOVER = PSW&CARRY;
+
+                PSW = (A&0xF) + (A&0xF) + (PSW&CARRY) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+                PSW = A + A + (PSW&CARRY) > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                A += A + CARRYOVER;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADCB, this routine
+    * adds the contents of: B, the CARRY flag, and the accumulator to the
+    * accumulator.  The PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADCB:
+                CARRYOVER = PSW&CARRY;
+
+                PSW = (A&0xF) + (BC.reg.B&0xF) +
+                      (PSW&CARRY) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+                PSW = A + BC.reg.B + (PSW&CARRY) > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                A += BC.reg.B + CARRYOVER;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADCC, this routine
+    * adds the contents of: C, the CARRY flag, and the accumulator to the
+    * accumulator.  The PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADCC:
+                CARRYOVER = PSW&CARRY;
+
+                PSW = (A&0xF) + (BC.reg.C&0xF) +
+                      (PSW&CARRY) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+                PSW = A + BC.reg.C + (PSW&CARRY) > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                A += BC.reg.C + CARRYOVER;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADCD, this routine
+    * adds the contents of: D, the CARRY flag, and the accumulator to the
+    * accumulator.  The PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADCD:
+                CARRYOVER = PSW&CARRY;
+
+                PSW = (A&0xF) + (DE.reg.D&0xF) +
+                      (PSW&CARRY) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+                PSW = A + DE.reg.D + (PSW&CARRY) > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                A += DE.reg.D + CARRYOVER;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADCE, this routine
+    * adds the contents of: E, the CARRY flag, and the accumulator to the
+    * accumulator.  The PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADCE:
+                CARRYOVER = PSW&CARRY;
+
+                PSW = (A&0xF) + (DE.reg.E&0xF) +
+                      (PSW&CARRY) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+                PSW = A + DE.reg.E + (PSW&CARRY) > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                A += DE.reg.E + CARRYOVER;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADCH, this routine
+    * adds the contents of: H, the CARRY flag, and the accumulator to the
+    * accumulator.  The PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADCH:
+                CARRYOVER = PSW&CARRY;
+
+                PSW = (A&0xF) + (HL.reg.H&0xF) +
+                      (PSW&CARRY) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+                PSW = A + HL.reg.H + (PSW&CARRY) > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                A += HL.reg.H + CARRYOVER;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADCL, this routine
+    * adds the contents of: L, the CARRY flag, and the accumulator to the
+    * accumulator.  The PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADCL:
+                CARRYOVER = PSW&CARRY;
+
+                PSW = (A&0xF) + (HL.reg.L&0xF) +
+                      (PSW&CARRY) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+                PSW = A + HL.reg.L + (PSW&CARRY) > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                A += HL.reg.L + CARRYOVER;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+
+    /***********************************************************************
+    * ADCM - Add memory with carry.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to ADCM, this routine
+    * adds the content of the 8080a's memory, RAM[HL], and the content
+    * of the CARRY flag (found in the PSW) to the content of the
+    * accumulator.  The resulting value is stored in the accumulator.
+    * The processor status word, named PSW, is set according to the result
+    * of the operation.
+    ***********************************************************************/
+            case ADCM:
+                CARRYOVER = PSW&CARRY;
+
+                PSW = (A&0xF) + (ReadRAM(HL.pair)&0xF) +
+                       (PSW&CARRY) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+                PSW = A + ReadRAM(HL.pair) + (PSW&CARRY) > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                A += ReadRAM(HL.pair) + CARRYOVER;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+
+    /***********************************************************************
+    * ADDr - Add register.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to ADDr, where r is an
+    * 8-bit 8080a register, this routine adds the content of the register,
+    * r, to the content of the accumulator.  The resulting value is stored
+    * in the accumulator.  The processor status word, named PSW, is set
+    * according to the result of the operation.
+    *
+    *
+    * Note:
+    * ----
+    *
+    *   OPCODEs include ADDA, ADDB, ADDC, ADDD, ADDE, ADDH, and ADDL.
+    ***********************************************************************/
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADDA, this routine
+    * adds the content of A and the accumulator to the accumulator.  The
+    * PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADDA:
+                PSW = A + A > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+                PSW = (A&0xF) + (A&0xF) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+
+                A += A;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADDB, this routine
+    * adds the content of B and the accumulator to the accumulator.  The
+    * PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADDB:
+                PSW = A + BC.reg.B > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+                PSW = (A&0xF) + (BC.reg.B&0xF) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+
+                A += BC.reg.B;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADDC, this routine
+    * adds the content of C and the accumulator to the accumulator.  The
+    * PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADDC:
+                PSW = A + BC.reg.C > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+                PSW = (A&0xF) + (BC.reg.C&0xF) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+
+                A += BC.reg.C;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADDD, this routine
+    * adds the content of D and the accumulator to the accumulator.  The
+    * PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADDD:
+                PSW = A + DE.reg.D > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+                PSW = (A&0xF) + (DE.reg.D&0xF) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+
+                A += DE.reg.D;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADDE, this routine
+    * adds the content of E and the accumulator to the accumulator.  The
+    * PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADDE:
+                PSW = A + DE.reg.E > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+                PSW = (A&0xF) + (DE.reg.E&0xF) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+                A += DE.reg.E;
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADDH, this routine
+    * adds the content of H and the accumulator to the accumulator.  The
+    * PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADDH:
+                PSW = A + HL.reg.H > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+                PSW = (A&0xF) + (HL.reg.H&0xF) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+
+                A += HL.reg.H;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ADDL, this routine
+    * adds the content of L and the accumulator to the accumulator.  The
+    * PSW reflects the result of this addition.
+    ***********************************************************************/
+            case ADDL:
+                PSW = A + HL.reg.L > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+                PSW = (A&0xF) + (HL.reg.L&0xF) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+
+                A += HL.reg.L;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+
+    /***********************************************************************
+    * ADDM - Add memory.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to ADCM, this routine
+    * adds the content of the 8080a's memory, RAM[HL], to the content
+    * of the accumulator.  The resulting value is stored in the
+    * accumulator.  The processor status word, named PSW, is set according
+    * to the result of the operation.
+    ***********************************************************************/
+            case ADDM:
+                PSW = A + ReadRAM(HL.pair) > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+                PSW = (A&0xF) + (ReadRAM(HL.pair)&0xF) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+
+                A += ReadRAM(HL.pair);
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+
+    /***********************************************************************
+    * ADIn - Add immediate.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to ADIn, this routine
+    * adds the content of the 8080a's memory, RAM[PC] to the content of the
+    * accumulator.  The resulting value is stored in the accumulator.  The
+    * processor status word, named PSW, is set according to the result of
+    * the operation.  The program counter, named PC, is incremented by one.
+    ***********************************************************************/
+            case ADIn:
+                PSW = A + ReadRAM(PC) > 0xFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+                PSW = (A&0xF) + (ReadRAM(PC)&0xF) > 0xF
+                       ? PSW|AUX     : PSW&NAUX;
+
+                A += ReadRAM(PC++);
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+
+    /***********************************************************************
+    * ANAr - AND register.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to ANAr, where r is an
+    * 8-bit 8080a register, this routine ANDs the content of the register,
+    * r, with the content of the accumulator.  The resulting value is
+    * stored in the accumulator.  The processor status word, named PSW, is
+    * set according to the result of the operation.  The CARRY and AUX
+    * flags are cleared in the PSW.
+    *
+    *
+    * Note:
+    * ----
+    *
+    *   OPCODEs include ANAA, ANAB, ANAC, ANAD, ANAE, ANAH, and ANAL.
+    ***********************************************************************/
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ANAA, this routine
+    * ANDs the content of A with the accumulator to the accumulator.  The
+    * PSW reflects the result of this AND operation.  The CARRY and AUX are
+    * flags cleared.
+    ***********************************************************************/
+            case ANAA:
+                A = A&A;
+
+                PSW = PSW&NCARRY&NAUX;
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ANAB, this routine
+    * ANDs the content of B with the accumulator to the accumulator.  The
+    * PSW reflects the result of this AND operation.  The CARRY and AUX are
+    * flags cleared.
+    ***********************************************************************/
+            case ANAB:
+                A = A&BC.reg.B;
+
+                PSW = PSW&NCARRY&NAUX;
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ANAC, this routine
+    * ANDs the content of C with the accumulator to the accumulator.  The
+    * PSW reflects the result of this AND operation.  The CARRY and AUX are
+    * flags cleared.
+    ***********************************************************************/
+            case ANAC:
+                A = A&BC.reg.C;
+
+                PSW = PSW&NCARRY&NAUX;
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ANAD, this routine
+    * ANDs the content of D with the accumulator to the accumulator.  The
+    * PSW reflects the result of this AND operation.  The CARRY and AUX are
+    * flags cleared.
+    ***********************************************************************/
+            case ANAD:
+                A = A&DE.reg.D;
+
+                PSW = PSW&NCARRY&NAUX;
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ANAE, this routine
+    * ANDs the content of E with the accumulator to the accumulator.  The
+    * PSW reflects the result of this AND operation.  The CARRY and AUX are
+    * flags cleared.
+    ***********************************************************************/
+            case ANAE:
+                A = A&DE.reg.E;
+
+                PSW = PSW&NCARRY&NAUX;
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ANAH, this routine
+    * ANDs the content of H with the accumulator to the accumulator.  The
+    * PSW reflects the result of this AND operation.  The CARRY and AUX are
+    * flags cleared.
+    ***********************************************************************/
+            case ANAH:
+                A = A&HL.reg.H;
+
+                PSW = PSW&NCARRY&NAUX;
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to ANAL, this routine
+    * ANDs the content of L with the accumulator to the accumulator.  The
+    * PSW reflects the result of this AND operation.  The CARRY and AUX are
+    * flags cleared.
+    ***********************************************************************/
+            case ANAL:
+                A = A&HL.reg.L;
+
+                PSW = PSW&NCARRY&NAUX;
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+
+    /***********************************************************************
+    * ANAM - AND memory.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to ANAM, this routine
+    * ANDs the content of the 8080a's memory, RAM[HL], with the content
+    * of the accumulator.  The resulting value is stored in the
+    * accumulator.  The processor status word, named PSW, is set according
+    * to the result of the operation.  The CARRY and AUX flags are cleared
+    * in the PSW.
+    ***********************************************************************/
+            case ANAM:
+                A = A&ReadRAM(HL.pair);
+
+                PSW = PSW&NCARRY&NAUX;
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+
+    /***********************************************************************
+    * ANIn - AND immediate.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to ANIn, this routine
+    * ANDs the content of the 8080a's memory, RAM[PC] with the content of
+    * the accumulator.  The resulting value is stored in the accumulator.
+    * The processor status word, named PSW, is set according to the result
+    * of the operation.  The CARRY and AUX flags are cleared in the PSW.
+    * The program counter, named PC, is incremented by one.
+    ***********************************************************************/
+            case ANIn:
+                A = A&ReadRAM(PC++);
+
+                PSW = PSW&NCARRY&NAUX;
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+
+    /***********************************************************************
+    * CALLa - Call.
+    * -----
+    *
+    *   If the value of the variable OPCODE is equal to CALLa, this routine
+    * moves the high and low order bits of the next instruction address,
+    * which is the value currently stored in the program counter, named PC,
+    * to one minus and two minus the stack pointer register's location in
+    * memory, RAM[SP - 1] and RAM[SP - 2], respectively.  The content of
+    * the stack pointer register is decremented by two.  The program
+    * counter is reset to the contents of byte three and byte two,
+    * RAM[PC + 1] and RAM[PC], of the current instruction, respectively.
+    ***********************************************************************/
+            case CALLa:
+                WriteRAM(SP - 1, (PC + 2)>>8);
+                WriteRAM(SP - 2, (PC + 2)&0xFF);
+
+                SP -= 2;
+
+                PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                switch (check_pc8080a ())
                 {
                 case 1: goto doret;
                 case 2: return;
                 default: break;
                 }
-				break;
+                break;
 
 
 
-	/***********************************************************************
-	* C-condition-a - Conditional call.
-	* -------------
-	*
-	*   If the value of the variable OPCODE is equal to CALLa, and the
-	* condition is met, this routine moves the high and low order bits of
-	* the next instruction address, which is the value currently stored in
-	* the program counter, named PC, to one minus and two minus the stack
-	* pointer register's location in memory, RAM[SP - 1] and RAM[SP - 2],
-	* respectively.  The content of the stack pointer register is
-	* decremented by two.  The program counter is reset to the contents
-	* of byte three and byte two, RAM[PC + 1] and RAM[PC], of the current
-	* instruction, respectively.  The number of cycles for this instruction
-	* are incremented accordingly.
-	*   If the condition is not met, the program counter, named PC, is
-	* incremented by 2.  The program continues sequentially from this
-	* point.
-	*   The condition that must be met is based on the value of a flag set
-	* in the processor status word.
-	*
-	*
-	* Note:
-	* ----
-	*
-	*   OPCODEs include CCa, CMa, CNCa, CNZa, CPa, CPEa, CPOa, and CZa.
-	***********************************************************************/
+    /***********************************************************************
+    * C-condition-a - Conditional call.
+    * -------------
+    *
+    *   If the value of the variable OPCODE is equal to CALLa, and the
+    * condition is met, this routine moves the high and low order bits of
+    * the next instruction address, which is the value currently stored in
+    * the program counter, named PC, to one minus and two minus the stack
+    * pointer register's location in memory, RAM[SP - 1] and RAM[SP - 2],
+    * respectively.  The content of the stack pointer register is
+    * decremented by two.  The program counter is reset to the contents
+    * of byte three and byte two, RAM[PC + 1] and RAM[PC], of the current
+    * instruction, respectively.  The number of cycles for this instruction
+    * are incremented accordingly.
+    *   If the condition is not met, the program counter, named PC, is
+    * incremented by 2.  The program continues sequentially from this
+    * point.
+    *   The condition that must be met is based on the value of a flag set
+    * in the processor status word.
+    *
+    *
+    * Note:
+    * ----
+    *
+    *   OPCODEs include CCa, CMa, CNCa, CNZa, CPa, CPEa, CPOa, and CZa.
+    ***********************************************************************/
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CCa, and the CARRY
-	* flag is set in the PSW, this routine moves the location of the next
-	* instruction to the top of the stack.  The program counter is set to
-	* the address stored in the two bytes after the opcode in the 8080a's
-	* ROM, with respect to the current program counter.  The number of
-	* cycles is also adjusted.  If the CARRY flag is not set, the program
-	* continues sequentially.
-	***********************************************************************/
-			case CCa:
-				if (PSW & CARRY)
-				{
-					WriteRAM(SP - 1, (PC + 2)>>8);
-					WriteRAM(SP - 2, (PC + 2)&0xFF);
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CCa, and the CARRY
+    * flag is set in the PSW, this routine moves the location of the next
+    * instruction to the top of the stack.  The program counter is set to
+    * the address stored in the two bytes after the opcode in the 8080a's
+    * ROM, with respect to the current program counter.  The number of
+    * cycles is also adjusted.  If the CARRY flag is not set, the program
+    * continues sequentially.
+    ***********************************************************************/
+            case CCa:
+                if (PSW & CARRY)
+                {
+                    WriteRAM(SP - 1, (PC + 2)>>8);
+                    WriteRAM(SP - 2, (PC + 2)&0xFF);
 
-					SP -= 2;
+                    SP -= 2;
 
-					COUNTER += 6;
+                    COUNTER += 6;
 
-					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                    PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
                     switch (check_pc8080a ())
                     {
                     case 1: goto doret;
                     case 2: return;
                     default: break;
                     }
-				} else
-					PC += 2;
-				break;
+                } else
+                    PC += 2;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CMa, and the SIGN
-	* flag is set in the PSW, this routine moves the location of the next
-	* instruction to the top of the stack.  The program counter is set to
-	* the address stored in the two bytes after the opcode in the 8080a's
-	* ROM, with respect to the current program counter.  The number of
-	* cycles is also adjusted.  If the SIGN flag is not set, the program
-	* continues sequentially.
-	***********************************************************************/
-			case CMa:
-				if (PSW & SIGN)
-				{
-					WriteRAM(SP - 1, (PC + 2)>>8);
-					WriteRAM(SP - 2, (PC + 2)&0xFF);
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CMa, and the SIGN
+    * flag is set in the PSW, this routine moves the location of the next
+    * instruction to the top of the stack.  The program counter is set to
+    * the address stored in the two bytes after the opcode in the 8080a's
+    * ROM, with respect to the current program counter.  The number of
+    * cycles is also adjusted.  If the SIGN flag is not set, the program
+    * continues sequentially.
+    ***********************************************************************/
+            case CMa:
+                if (PSW & SIGN)
+                {
+                    WriteRAM(SP - 1, (PC + 2)>>8);
+                    WriteRAM(SP - 2, (PC + 2)&0xFF);
 
-					SP -= 2;
+                    SP -= 2;
 
-					COUNTER += 6;
+                    COUNTER += 6;
 
-					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                    PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
                     switch (check_pc8080a ())
                     {
                     case 1: goto doret;
                     case 2: return;
                     default: break;
                     }
-				} else
-					PC += 2;
-				break;
+                } else
+                    PC += 2;
+                break;
 
 
 
-	/***********************************************************************
-	* CMA - Complement accumulator.
-	* ---
-	*
-	*   If the value of the variable OPCODE is equal to CMA, this routine
-	* complements the content of the accumulator.  The resulting value is
-	* stored in the accumulator.
-	***********************************************************************/
-			case CMA:
-				A = ~A;
-				break;
+    /***********************************************************************
+    * CMA - Complement accumulator.
+    * ---
+    *
+    *   If the value of the variable OPCODE is equal to CMA, this routine
+    * complements the content of the accumulator.  The resulting value is
+    * stored in the accumulator.
+    ***********************************************************************/
+            case CMA:
+                A = ~A;
+                break;
 
 
 
-	/***********************************************************************
-	* CMC - Complement carry.
-	* ---
-	*
-	*   If the value of the variable OPCODE is equal to CMC, this routine
-	* complements the flag CARRY in the program status word, named PSW.
-	* The PSWs CARRY flag is set according to this operation.
-	***********************************************************************/
-			case CMC:
-				PSW = PSW&CARRY ? PSW&NCARRY  : PSW|CARRY;
-				break;
+    /***********************************************************************
+    * CMC - Complement carry.
+    * ---
+    *
+    *   If the value of the variable OPCODE is equal to CMC, this routine
+    * complements the flag CARRY in the program status word, named PSW.
+    * The PSWs CARRY flag is set according to this operation.
+    ***********************************************************************/
+            case CMC:
+                PSW = PSW&CARRY ? PSW&NCARRY  : PSW|CARRY;
+                break;
 
 
 
-	/***********************************************************************
-	* CMPr - Compare register.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to CMPr, where r is an
-	* 8-bit 8080a register, this routine compares the content of the
-	* register, r, with the content of the accumulator.  The comparison is
-	* performed by subtracting the accumulator from r.  The processor
-	* status word, named PSW, is set according to the result of the
-	* operation.  This operation is treated like a subtraction.
-	*
-	*
-	* Note:
-	* ----
-	*
-	*   OPCODEs include ANAA, ANAB, ANAC, ANAD, ANAE, ANAH, and ANAL.
-	***********************************************************************/
+    /***********************************************************************
+    * CMPr - Compare register.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to CMPr, where r is an
+    * 8-bit 8080a register, this routine compares the content of the
+    * register, r, with the content of the accumulator.  The comparison is
+    * performed by subtracting the accumulator from r.  The processor
+    * status word, named PSW, is set according to the result of the
+    * operation.  This operation is treated like a subtraction.
+    *
+    *
+    * Note:
+    * ----
+    *
+    *   OPCODEs include ANAA, ANAB, ANAC, ANAD, ANAE, ANAH, and ANAL.
+    ***********************************************************************/
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CMPA, this routine
-	* resets the PSW to PSWSET, and sets the ZERO and PARITY flags.  This
-	* is because the result of A - A is 0.
-	***********************************************************************/
-			case CMPA:
-				PSW = ZERO|PARITY|PSWSET;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CMPB, this routine
-	* subtracts the accumulator from the B register.  The PSW reflects the
-	* result of this subtraction.
-	***********************************************************************/
-			case CMPB:
-				PSW = A < BC.reg.B ? PSW|CARRY : PSW&NCARRY;
-				PSW = (A&0xF) < (BC.reg.B&0xF)
-						   ? PSW|AUX : PSW&NAUX;
-				PSW = (A-BC.reg.B)==0
-						   ? PSW|ZERO : PSW&NZERO;
-				PSW = (A-BC.reg.B)>>7
-						   ? PSW|SIGN : PSW&NSIGN;
-				PSW = Parity8((A-BC.reg.B))
-						   ? PSW|PARITY : PSW&NPARITY;
-				break;
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CMPA, this routine
+    * resets the PSW to PSWSET, and sets the ZERO and PARITY flags.  This
+    * is because the result of A - A is 0.
+    ***********************************************************************/
+            case CMPA:
+                PSW = ZERO|PARITY|PSWSET;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CMPC, this routine
-	* subtracts the accumulator from the C register.  The PSW reflects the
-	* result of this subtraction.
-	***********************************************************************/
-			case CMPC:
-				PSW = A < BC.reg.C ? PSW|CARRY : PSW&NCARRY;
-				PSW = (A&0xF) < (BC.reg.C&0xF)
-						   ? PSW|AUX : PSW&NAUX;
-				PSW = (A-BC.reg.C)==0
-						   ? PSW|ZERO : PSW&NZERO;
-				PSW = (A-BC.reg.C)>>7
-						   ? PSW|SIGN : PSW&NSIGN;
-				PSW = Parity8((A-BC.reg.C))
-						   ? PSW|PARITY : PSW&NPARITY;
-				break;
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CMPB, this routine
+    * subtracts the accumulator from the B register.  The PSW reflects the
+    * result of this subtraction.
+    ***********************************************************************/
+            case CMPB:
+                PSW = A < BC.reg.B ? PSW|CARRY : PSW&NCARRY;
+                PSW = (A&0xF) < (BC.reg.B&0xF)
+                           ? PSW|AUX : PSW&NAUX;
+                PSW = (A-BC.reg.B)==0
+                           ? PSW|ZERO : PSW&NZERO;
+                PSW = (A-BC.reg.B)>>7
+                           ? PSW|SIGN : PSW&NSIGN;
+                PSW = Parity8((A-BC.reg.B))
+                           ? PSW|PARITY : PSW&NPARITY;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CMPD, this routine
-	* subtracts the accumulator from the D register.  The PSW reflects the
-	* result of this subtraction.
-	***********************************************************************/
-			case CMPD:
-				PSW = A < DE.reg.D ? PSW|CARRY : PSW&NCARRY;
-				PSW = (A&0xF) < (DE.reg.D&0xF)
-						   ? PSW|AUX : PSW&NAUX;
-				PSW = (A-DE.reg.D)==0
-						   ? PSW|ZERO    : PSW&NZERO;
-				PSW = (A-DE.reg.D)>>7
-						   ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8((A-DE.reg.D))
-						   ? PSW|PARITY : PSW&NPARITY;
-				break;
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CMPC, this routine
+    * subtracts the accumulator from the C register.  The PSW reflects the
+    * result of this subtraction.
+    ***********************************************************************/
+            case CMPC:
+                PSW = A < BC.reg.C ? PSW|CARRY : PSW&NCARRY;
+                PSW = (A&0xF) < (BC.reg.C&0xF)
+                           ? PSW|AUX : PSW&NAUX;
+                PSW = (A-BC.reg.C)==0
+                           ? PSW|ZERO : PSW&NZERO;
+                PSW = (A-BC.reg.C)>>7
+                           ? PSW|SIGN : PSW&NSIGN;
+                PSW = Parity8((A-BC.reg.C))
+                           ? PSW|PARITY : PSW&NPARITY;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CMPE, this routine
-	* subtracts the accumulator from the E register.  The PSW reflects the
-	* result of this subtraction.
-	***********************************************************************/
-			case CMPE:
-				PSW = A < DE.reg.E ? PSW|CARRY : PSW&NCARRY;
-				PSW = (A&0xF) < (DE.reg.E&0xF)
-						   ? PSW|AUX : PSW&NAUX;
-				PSW = (A-DE.reg.E)==0
-						   ? PSW|ZERO : PSW&NZERO;
-				PSW = (A-DE.reg.E)>>7
-						   ? PSW|SIGN : PSW&NSIGN;
-				PSW = Parity8((A-DE.reg.E))
-						   ? PSW|PARITY : PSW&NPARITY;
-				break;
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CMPD, this routine
+    * subtracts the accumulator from the D register.  The PSW reflects the
+    * result of this subtraction.
+    ***********************************************************************/
+            case CMPD:
+                PSW = A < DE.reg.D ? PSW|CARRY : PSW&NCARRY;
+                PSW = (A&0xF) < (DE.reg.D&0xF)
+                           ? PSW|AUX : PSW&NAUX;
+                PSW = (A-DE.reg.D)==0
+                           ? PSW|ZERO    : PSW&NZERO;
+                PSW = (A-DE.reg.D)>>7
+                           ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8((A-DE.reg.D))
+                           ? PSW|PARITY : PSW&NPARITY;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CMPH, this routine
-	* subtracts the accumulator from the H register.  The PSW reflects the
-	* result of this subtraction.
-	***********************************************************************/
-			case CMPH:
-				PSW = A < HL.reg.H ? PSW|CARRY : PSW&NCARRY;
-				PSW = (A&0xF) < (HL.reg.H&0xF)
-						   ? PSW|AUX : PSW&NAUX;
-				PSW = (A-HL.reg.H)==0
-						   ? PSW|ZERO    : PSW&NZERO;
-				PSW = (A-HL.reg.H)>>7
-						   ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8((A-HL.reg.H))
-						   ? PSW|PARITY : PSW&NPARITY;
-				break;
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CMPE, this routine
+    * subtracts the accumulator from the E register.  The PSW reflects the
+    * result of this subtraction.
+    ***********************************************************************/
+            case CMPE:
+                PSW = A < DE.reg.E ? PSW|CARRY : PSW&NCARRY;
+                PSW = (A&0xF) < (DE.reg.E&0xF)
+                           ? PSW|AUX : PSW&NAUX;
+                PSW = (A-DE.reg.E)==0
+                           ? PSW|ZERO : PSW&NZERO;
+                PSW = (A-DE.reg.E)>>7
+                           ? PSW|SIGN : PSW&NSIGN;
+                PSW = Parity8((A-DE.reg.E))
+                           ? PSW|PARITY : PSW&NPARITY;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CMPL, this routine
-	* subtracts the accumulator from the L register.  The PSW reflects the
-	* result of this subtraction.
-	***********************************************************************/
-			case CMPL:
-				PSW = A < HL.reg.L ? PSW|CARRY : PSW&NCARRY;
-				PSW = (A&0xF) < (HL.reg.L&0xF)
-						   ? PSW|AUX : PSW&NAUX;
-				PSW = (A-HL.reg.L)==0
-						   ? PSW|ZERO : PSW&NZERO;
-				PSW = (A-HL.reg.L)>>7
-						   ? PSW|SIGN : PSW&NSIGN;
-				PSW = Parity8((A-HL.reg.L))
-						   ? PSW|PARITY : PSW&NPARITY;
-				break;
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CMPH, this routine
+    * subtracts the accumulator from the H register.  The PSW reflects the
+    * result of this subtraction.
+    ***********************************************************************/
+            case CMPH:
+                PSW = A < HL.reg.H ? PSW|CARRY : PSW&NCARRY;
+                PSW = (A&0xF) < (HL.reg.H&0xF)
+                           ? PSW|AUX : PSW&NAUX;
+                PSW = (A-HL.reg.H)==0
+                           ? PSW|ZERO    : PSW&NZERO;
+                PSW = (A-HL.reg.H)>>7
+                           ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8((A-HL.reg.H))
+                           ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CMPL, this routine
+    * subtracts the accumulator from the L register.  The PSW reflects the
+    * result of this subtraction.
+    ***********************************************************************/
+            case CMPL:
+                PSW = A < HL.reg.L ? PSW|CARRY : PSW&NCARRY;
+                PSW = (A&0xF) < (HL.reg.L&0xF)
+                           ? PSW|AUX : PSW&NAUX;
+                PSW = (A-HL.reg.L)==0
+                           ? PSW|ZERO : PSW&NZERO;
+                PSW = (A-HL.reg.L)>>7
+                           ? PSW|SIGN : PSW&NSIGN;
+                PSW = Parity8((A-HL.reg.L))
+                           ? PSW|PARITY : PSW&NPARITY;
+                break;
 
 
 
-	/***********************************************************************
-	* CMPM - Compare memory.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to CMPM, this routine
-	* compares the content of the 8080a's memory, RAM[HL], with the
-	* content of the accumulator.  The comparison is performed by
-	* subtracting the accumulator from RAM[HL].  The processor status word,
-	* named PSW, is set according to the result of the operation.  This
-	* operation is treated like subtraction.
-	***********************************************************************/
-			case CMPM:
-				PSW = A < ReadRAM(HL.pair)
-						? PSW|CARRY  : PSW&NCARRY;
-				PSW = (A&0xF) < (ReadRAM(HL.pair)&0xF)
-						? PSW|AUX    : PSW&NAUX;
-				PSW = (A-ReadRAM(HL.pair))==0
-						? PSW|ZERO   : PSW&NZERO;
-				PSW = (A-ReadRAM(HL.pair))>>7
-						? PSW|SIGN   : PSW&NSIGN;
-				PSW = Parity8((A-ReadRAM(HL.pair)))
-						? PSW|PARITY: PSW&NPARITY;
-				break;
+    /***********************************************************************
+    * CMPM - Compare memory.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to CMPM, this routine
+    * compares the content of the 8080a's memory, RAM[HL], with the
+    * content of the accumulator.  The comparison is performed by
+    * subtracting the accumulator from RAM[HL].  The processor status word,
+    * named PSW, is set according to the result of the operation.  This
+    * operation is treated like subtraction.
+    ***********************************************************************/
+            case CMPM:
+                PSW = A < ReadRAM(HL.pair)
+                        ? PSW|CARRY  : PSW&NCARRY;
+                PSW = (A&0xF) < (ReadRAM(HL.pair)&0xF)
+                        ? PSW|AUX    : PSW&NAUX;
+                PSW = (A-ReadRAM(HL.pair))==0
+                        ? PSW|ZERO   : PSW&NZERO;
+                PSW = (A-ReadRAM(HL.pair))>>7
+                        ? PSW|SIGN   : PSW&NSIGN;
+                PSW = Parity8((A-ReadRAM(HL.pair)))
+                        ? PSW|PARITY: PSW&NPARITY;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CNCa, and the CARRY
-	* flag is not set in the PSW, this routine moves the location of the
-	* next instruction to the top of the stack.  The program counter is set
-	* to the address stored in the two bytes after the opcode in the
-	* 8080a's ROM, with respect to the current program counter.  The number
-	* of cycles is also adjusted. If the SIGN flag is set, the program
-	* continues sequentially.
-	***********************************************************************/
-			case CNCa:
-				if ((~PSW) & CARRY)
-				{
-					WriteRAM(SP - 1, (PC + 2)>>8);
-					WriteRAM(SP - 2, (PC + 2)&0xFF);
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CNCa, and the CARRY
+    * flag is not set in the PSW, this routine moves the location of the
+    * next instruction to the top of the stack.  The program counter is set
+    * to the address stored in the two bytes after the opcode in the
+    * 8080a's ROM, with respect to the current program counter.  The number
+    * of cycles is also adjusted. If the SIGN flag is set, the program
+    * continues sequentially.
+    ***********************************************************************/
+            case CNCa:
+                if ((~PSW) & CARRY)
+                {
+                    WriteRAM(SP - 1, (PC + 2)>>8);
+                    WriteRAM(SP - 2, (PC + 2)&0xFF);
 
-					SP -= 2;
+                    SP -= 2;
 
-					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                    PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
 
-					COUNTER += 6;
+                    COUNTER += 6;
                     switch (check_pc8080a ())
                     {
                     case 1: goto doret;
                     case 2: return;
                     default: break;
                     }
-				} else
-					PC += 2;
-				break;
+                } else
+                    PC += 2;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CNZa, and the ZERO
-	* flag is not set in the PSW, this routine moves the location of the
-	* next instruction to the top of the stack.  The program counter is set
-	* to the address stored in the two bytes after the opcode in the
-	* 8080a's ROM, with respect to the current program counter.  The number
-	* of cycles is also adjusted. If the ZERO flag is set, the program
-	* continues sequentially.
-	***********************************************************************/
-			case CNZa:
-				if ((~PSW) & ZERO)
-				{
-					WriteRAM(SP - 1, (PC + 2)>>8);
-					WriteRAM(SP - 2, (PC + 2)&0xFF);
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CNZa, and the ZERO
+    * flag is not set in the PSW, this routine moves the location of the
+    * next instruction to the top of the stack.  The program counter is set
+    * to the address stored in the two bytes after the opcode in the
+    * 8080a's ROM, with respect to the current program counter.  The number
+    * of cycles is also adjusted. If the ZERO flag is set, the program
+    * continues sequentially.
+    ***********************************************************************/
+            case CNZa:
+                if ((~PSW) & ZERO)
+                {
+                    WriteRAM(SP - 1, (PC + 2)>>8);
+                    WriteRAM(SP - 2, (PC + 2)&0xFF);
 
-					SP -= 2;
+                    SP -= 2;
 
-					COUNTER += 6;
+                    COUNTER += 6;
 
-					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                    PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
                     switch (check_pc8080a ())
                     {
                     case 1: goto doret;
                     case 2: return;
                     default: break;
                     }
-				} else
-					PC += 2;
-				break;
+                } else
+                    PC += 2;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CPa, and the SIGN
-	* flag is not set in the PSW, this routine moves the location of the
-	* next instruction to the top of the stack.  The program counter is set
-	* to the address stored in the two bytes after the opcode in the
-	* 8080a's ROM, with respect to the current program counter.  The number
-	* of cycles is also adjusted. If the SIGN flag is set, the program
-	* continues sequentially.
-	***********************************************************************/
-			case CPa:
-				if ((~PSW) & SIGN)
-				{
-					WriteRAM(SP - 1, (PC + 2)>>8);
-					WriteRAM(SP - 2, (PC + 2)&0xFF);
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CPa, and the SIGN
+    * flag is not set in the PSW, this routine moves the location of the
+    * next instruction to the top of the stack.  The program counter is set
+    * to the address stored in the two bytes after the opcode in the
+    * 8080a's ROM, with respect to the current program counter.  The number
+    * of cycles is also adjusted. If the SIGN flag is set, the program
+    * continues sequentially.
+    ***********************************************************************/
+            case CPa:
+                if ((~PSW) & SIGN)
+                {
+                    WriteRAM(SP - 1, (PC + 2)>>8);
+                    WriteRAM(SP - 2, (PC + 2)&0xFF);
 
-					SP -= 2;
+                    SP -= 2;
 
-					COUNTER += 6;
+                    COUNTER += 6;
 
-					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                    PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
                     switch (check_pc8080a ())
                     {
                     case 1: goto doret;
                     case 2: return;
                     default: break;
                     }
-				} else
-					PC += 2;
-				break;
+                } else
+                    PC += 2;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CPEa, and the
-	* PARITY flag is set in the PSW, this routine moves the location of the
-	* next instruction to the top of the stack.  The program counter is set
-	* to the address stored in the two bytes after the opcode in the
-	* 8080a's ROM, with respect to the current program counter.  The number
-	* of cycles is also adjusted. If the PARITY flag is not set, the
-	* program continues sequentially.
-	***********************************************************************/
-			case CPEa:
-				if (PSW & PARITY)
-				{
-					WriteRAM(SP - 1, (PC + 2)>>8);
-					WriteRAM(SP - 2, (PC + 2)&0xFF);
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CPEa, and the
+    * PARITY flag is set in the PSW, this routine moves the location of the
+    * next instruction to the top of the stack.  The program counter is set
+    * to the address stored in the two bytes after the opcode in the
+    * 8080a's ROM, with respect to the current program counter.  The number
+    * of cycles is also adjusted. If the PARITY flag is not set, the
+    * program continues sequentially.
+    ***********************************************************************/
+            case CPEa:
+                if (PSW & PARITY)
+                {
+                    WriteRAM(SP - 1, (PC + 2)>>8);
+                    WriteRAM(SP - 2, (PC + 2)&0xFF);
 
-					SP -= 2;
+                    SP -= 2;
 
-					COUNTER += 6;
+                    COUNTER += 6;
 
-					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                    PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
                     switch (check_pc8080a ())
                     {
                     case 1: goto doret;
                     case 2: return;
                     default: break;
                     }
-				} else
-					PC += 2;
-				break;
+                } else
+                    PC += 2;
+                break;
 
 
 
-	/***********************************************************************
-	* CPIn - Compare immediate.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to CMPM, this routine
-	* compares the content of the 8080a's memory, RAM[PC], with the
-	* content of the accumulator.  This routine performs the comparison 
-	* by subtracting the accumulator from RAM[PC].  The processor status
-	* word, named PSW, is set according to the result of the operation. 
-	* This operation is treated like subtraction.
-	***********************************************************************/
-			case CPIn:
-				PSW = A < ReadRAM(PC) ? PSW|CARRY: PSW&NCARRY;
-				PSW = (A&0xF) < (ReadRAM(PC)&0xF)
-						? PSW|AUX    : PSW&NAUX;
-				PSW = A == ReadRAM(PC)
-						? PSW|ZERO   : PSW&NZERO;
-				PSW = (A-ReadRAM(PC))>>7
-						? PSW|SIGN   : PSW&NSIGN;
-				PSW = Parity8((A-ReadRAM(PC)))
-						? PSW|PARITY: PSW&NPARITY;
-				PC ++;
-				break;
+    /***********************************************************************
+    * CPIn - Compare immediate.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to CMPM, this routine
+    * compares the content of the 8080a's memory, RAM[PC], with the
+    * content of the accumulator.  This routine performs the comparison 
+    * by subtracting the accumulator from RAM[PC].  The processor status
+    * word, named PSW, is set according to the result of the operation. 
+    * This operation is treated like subtraction.
+    ***********************************************************************/
+            case CPIn:
+                PSW = A < ReadRAM(PC) ? PSW|CARRY: PSW&NCARRY;
+                PSW = (A&0xF) < (ReadRAM(PC)&0xF)
+                        ? PSW|AUX    : PSW&NAUX;
+                PSW = A == ReadRAM(PC)
+                        ? PSW|ZERO   : PSW&NZERO;
+                PSW = (A-ReadRAM(PC))>>7
+                        ? PSW|SIGN   : PSW&NSIGN;
+                PSW = Parity8((A-ReadRAM(PC)))
+                        ? PSW|PARITY: PSW&NPARITY;
+                PC ++;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CPOa, and the
-	* PARITY flag is not set in the PSW, this routine moves the location of
-	* the next instruction to the top of the stack.  The program counter is
-	* set to the address stored in the two bytes after the opcode in the
-	* 8080a's ROM, with respect to the current program counter.  The number
-	* of cycles is also adjusted. If the PARITY flag is set, the program
-	* continues sequentially.
-	***********************************************************************/
-			case CPOa:
-				if ((~PSW) & PARITY)
-				{
-					WriteRAM(SP - 1, (PC + 2)>>8);
-					WriteRAM(SP - 2, (PC + 2)&0xFF);
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CPOa, and the
+    * PARITY flag is not set in the PSW, this routine moves the location of
+    * the next instruction to the top of the stack.  The program counter is
+    * set to the address stored in the two bytes after the opcode in the
+    * 8080a's ROM, with respect to the current program counter.  The number
+    * of cycles is also adjusted. If the PARITY flag is set, the program
+    * continues sequentially.
+    ***********************************************************************/
+            case CPOa:
+                if ((~PSW) & PARITY)
+                {
+                    WriteRAM(SP - 1, (PC + 2)>>8);
+                    WriteRAM(SP - 2, (PC + 2)&0xFF);
 
-					SP -= 2;
+                    SP -= 2;
 
-					COUNTER += 6;
+                    COUNTER += 6;
 
-					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                    PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
                     switch (check_pc8080a ())
                     {
                     case 1: goto doret;
                     case 2: return;
                     default: break;
                     }
-				} else
-					PC += 2;
-				break;
+                } else
+                    PC += 2;
+                break;
 
 
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to CZa, and the ZERO
-	* flag is set in the PSW, this routine moves the location of the
-	* next instruction to the top of the stack.  The program counter is set
-	* to the address stored in the two bytes after the opcode in the
-	* 8080a's ROM, with respect to the current program counter.  The number
-	* of cycles is also adjusted. If the ZERO flag is not set, the program
-	* continues sequentially.
-	***********************************************************************/
-			case CZa:
-				if (PSW & ZERO)
-				{
-					WriteRAM(SP - 1, (PC + 2)>>8);
-					WriteRAM(SP - 2, (PC + 2)&0xFF);
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to CZa, and the ZERO
+    * flag is set in the PSW, this routine moves the location of the
+    * next instruction to the top of the stack.  The program counter is set
+    * to the address stored in the two bytes after the opcode in the
+    * 8080a's ROM, with respect to the current program counter.  The number
+    * of cycles is also adjusted. If the ZERO flag is not set, the program
+    * continues sequentially.
+    ***********************************************************************/
+            case CZa:
+                if (PSW & ZERO)
+                {
+                    WriteRAM(SP - 1, (PC + 2)>>8);
+                    WriteRAM(SP - 2, (PC + 2)&0xFF);
 
-					SP -= 2;
+                    SP -= 2;
 
-					COUNTER += 6;
+                    COUNTER += 6;
 
-					PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
+                    PC = (ReadRAM(PC + 1)<<8) | ReadRAM(PC);
                     switch (check_pc8080a ())
                     {
                     case 1: goto doret;
                     case 2: return;
                     default: break;
                     }
-				} else
-					PC += 2;
-				break;
-
-
-
-	/***********************************************************************
-	* DAA - Decimal adjust accumulator.
-	* ---
-	*
-	*   If the value of the variable OPCODE is equal to DAA, this routine
-	* uses the content of the accumulator and creates a two digit decimal
-	* number, where the higher order decimal digit is stored in the most
-	* significant four bits of the accumulator and the lower order decimal
-	* digit is stored in least significant four bits of the accumulator.
-	* To obtain the lower order decimal number, the value of the four least
-	* sifnificant bits must be tested.  If the value is above 0x09 or the
-	* AUX flag is set in the PSW, the bits must be adjusted.  To adjust the
-	* lower order bits, this routine adds 0x06 to the accumulator. To
-	* obtain the higher order decimal number, the value of the four most
-	* significant bits must be tested.  If the value is above 0x90, or the
-	* CARRY flag is set in the PSW, the bits must be adjusted.  To adjust
-	* the higher order bits, this routine adds 0x60 to the accumulator. 
-	* The processor status word, named PSW, is set according to the result
-	* of these operations.
-	***********************************************************************/
-			case DAA:
-				if (((A&0x0F) > 0x09) || (PSW&AUX))
-				{
-					PSW = (A&0xF) + (0x06) > 0xF
-						? PSW|AUX: PSW&NAUX;
-
-					A += 0x06;
-				}
-
-				if (((A&0xF0) > 0x90) || (PSW&CARRY))
-				{
-					PSW = A + (0x60) > 0xFF
-						? PSW|CARRY: PSW&NCARRY;
-
-					A += 0x60;
-				}
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-
-	/***********************************************************************
-	* DADrp - Add register pair to HL.
-	* -----
-	*
-	*   If the value of the variable OPCODE is equal to DADrp, where rp is
-	* a 16-bit 8080a register, this routine adds the content of the
-	* register, rp, to the content of the HL register.  The resulting value
-	* is stored in the HL register.  The processor status word's CARRY flag
-	* is set if a 16-bit overflow occurs during the addition.
-	*
-	*
-	* Note:
-	* ----
-	*
-	*   OPCODEs include DADB, DADD, DADH, and DADSP.
-	***********************************************************************/
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DADB, this routine
-	* adds the contents of BC and HL to the HL register.  The PSW's CARRY
-	* flag is set if an overflow occurs.
-	***********************************************************************/
-			case DADB:
-				PSW = HL.pair + BC.pair > 0xFFFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				HL.pair = (HL.pair + BC.pair)&0xFFFF;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DADD, this routine
-	* adds the contents of DE and HL to the HL register.  The PSW's CARRY
-	* flag is set if an overflow occurs.
-	***********************************************************************/
-			case DADD:
-				PSW = HL.pair + DE.pair > 0xFFFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				HL.pair = (HL.pair + DE.pair)&0xFFFF;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DADH, this routine
-	* adds the contents of HL and HL to the HL register.  The PSW's CARRY
-	* flag is set if an overflow occurs.
-	***********************************************************************/
-			case DADH:
-				PSW = HL.pair + HL.pair > 0xFFFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				HL.pair = (HL.pair + HL.pair)&0xFFFF;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DADSP, this routine
-	* adds the contents of stack pointer, SP, and HL to the HL register.
-	* The PSW's CARRY flag is set if an overflow occurs.
-	***********************************************************************/
-			case DADSP:
-				PSW = HL.pair + SP > 0xFFFF
-					   ? PSW|CARRY   : PSW&NCARRY;
-
-				HL.pair = (HL.pair + SP)&0xFFFF;
-				break;
-
-
-
-	/***********************************************************************
-	* DCRr - Decrement register.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to DCRr, where r is an
-	* 8-bit 8080a register, this routine decrements the content of the
-	* register, r, by one.  The resulting value is stored in the register
-	* r.  The processor status word, named PSW, is set according to the
-	* result of the operation.  The CARRY flag is not affected.
-	*
-	*
-	* Note:
-	* ----
-	*
-	*   OPCODEs include DCRA, DCRB, DCRC, DCRD, DCRE, DCRH, and DCRL.
-	***********************************************************************/
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DCRA, this routine
-	* decrements the content of A and stores the result in the register A.
-	* The PSW reflects the result of this decrement.  The CARRY flag is not
-	* affected.
-	***********************************************************************/
-			case DCRA:
-				PSW = A&0xF ? PSW&NAUX   : PSW|AUX;
-
-				A--;
-
-				PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DCRB, this routine
-	* decrements the content of B and stores the result in the register B.
-	* The PSW reflects the result of this decrement.  The CARRY flag is not
-	* affected.
-	***********************************************************************/
-			case DCRB:
-				PSW = BC.reg.B&0xF ? PSW&NAUX   : PSW|AUX;
-
-				BC.reg.B--;
-
-				PSW = BC.reg.B==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = BC.reg.B>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(BC.reg.B) ? PSW|PARITY
-								: PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DCRC, this routine
-	* decrements the content of C and stores the result in the register C.
-	* The PSW reflects the result of this decrement.  The CARRY flag is not
-	* affected.
-	***********************************************************************/
-			case DCRC:
-				PSW = BC.reg.C&0xF ? PSW&NAUX   : PSW|AUX;
-
-				BC.reg.C--;
-
-				PSW = BC.reg.C==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = BC.reg.C>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(BC.reg.C) ? PSW|PARITY
-								: PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DCRD, this routine
-	* decrements the content of D and stores the result in the register D.
-	* The PSW reflects the result of this decrement.  The CARRY flag is not
-	* affected.
-	***********************************************************************/
-			case DCRD:
-				PSW = DE.reg.D&0xF ? PSW&NAUX   : PSW|AUX;
-
-				DE.reg.D--;
-
-				PSW = DE.reg.D==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = DE.reg.D>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(DE.reg.D) ? PSW|PARITY
-								: PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DCRE, this routine
-	* decrements the content of E and stores the result in the register E.
-	* The PSW reflects the result of this decrement.  The CARRY flag is not
-	* affected.
-	***********************************************************************/
-			case DCRE:
-				PSW = DE.reg.E&0xF ? PSW&NAUX   : PSW|AUX;
-
-				DE.reg.E--;
-
-				PSW = DE.reg.E==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = DE.reg.E>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(DE.reg.E) ? PSW|PARITY
-								: PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DCRH, this routine
-	* decrements the contents of H and stores the result in the register H.
-	* The PSW reflects the result of this decrement.  The CARRY flag is not
-	* affected.
-	***********************************************************************/
-			case DCRH:
-				PSW = HL.reg.H&0xF ? PSW&NAUX   : PSW|AUX;
-
-				HL.reg.H--;
-
-				PSW = HL.reg.H==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = HL.reg.H>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(HL.reg.H) ? PSW|PARITY
-								: PSW&NPARITY;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DCRL, this routine
-	* decrements the content of L and stores the result in the register L.
-	* The PSW reflects the result of this decrement.  The CARRY flag is not
-	* affected.
-	***********************************************************************/
-			case DCRL:
-				PSW = HL.reg.L&0xF ? PSW&NAUX   : PSW|AUX;
-
-				HL.reg.L--;
-
-				PSW = HL.reg.L==0 ? PSW|ZERO    : PSW&NZERO;
-				PSW = HL.reg.L>>7 ? PSW|SIGN    : PSW&NSIGN;
-				PSW = Parity8(HL.reg.L) ? PSW|PARITY
-								: PSW&NPARITY;
-				break;
-
-
-
-	/***********************************************************************
-	* DCRM - Decrement memory.
-	* ----
-	*
-	*   If the value of the variable OPCODE is equal to DCRM, this routine
-	* decrements the content of the 8080a's memory, RAM[HL], by one.  The
-	* resulting value is stored in the the 8080a's memory, RAM[HL].  The
-	* processor status word, named PSW, is set according to the result of
-	* the operation.  The CARRY flag is not affected.
-	***********************************************************************/
-			case DCRM:
-				PSW = ReadRAM(HL.pair)&0xF ? PSW&NAUX  :
-							     PSW|AUX;
-
-				WriteRAM(HL.pair, ReadRAM(HL.pair) - 1);
-
-				PSW = ReadRAM(HL.pair)==0 ? PSW|ZERO   :
-							    PSW&NZERO;
-				PSW = ReadRAM(HL.pair)>>7 ? PSW|SIGN   :
-							    PSW&NSIGN;
-				PSW = Parity8(ReadRAM(HL.pair)) ? PSW|PARITY:
-							    PSW&NPARITY;
-				break;
-
-
-
-	/***********************************************************************
-	* DCRrp - Decrement register pair.
-	* -----
-	*
-	*   If the value of the variable OPCODE is equal to DCXrp, where rp is
-	* a 16-bit 8080a register, this routine decrements the content of the
-	* register, rp, by one.  The resulting value is stored in the register
-	* rp.
-	*
-	*
-	* Note:
-	* ----
-	*
-	*   OPCODEs include DCXB, DCXD, DCXH, and DCXSP.
-	***********************************************************************/
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DCXB, this routine
-	* decrements the content of BC and stores the result in the register
-	* BC.
-	***********************************************************************/
-			case DCXB:
-				BC.pair--;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DCXD, this routine
-	* decrements the content of DE and stores the result in the register
-	* DE.
-	***********************************************************************/
-			case DCXD:
-				DE.pair--;
-				break;
-
-
-	/***********************************************************************
-	*   If the value of the variable OPCODE is equal to DCXH, this routine
-	* decrements the content of HL and stores the result in the register
-	* HL.
-	***********************************************************************/
-			case DCXH:
-				HL.pair--;
+                } else
+                    PC += 2;
+                break;
+
+
+
+    /***********************************************************************
+    * DAA - Decimal adjust accumulator.
+    * ---
+    *
+    *   If the value of the variable OPCODE is equal to DAA, this routine
+    * uses the content of the accumulator and creates a two digit decimal
+    * number, where the higher order decimal digit is stored in the most
+    * significant four bits of the accumulator and the lower order decimal
+    * digit is stored in least significant four bits of the accumulator.
+    * To obtain the lower order decimal number, the value of the four least
+    * sifnificant bits must be tested.  If the value is above 0x09 or the
+    * AUX flag is set in the PSW, the bits must be adjusted.  To adjust the
+    * lower order bits, this routine adds 0x06 to the accumulator. To
+    * obtain the higher order decimal number, the value of the four most
+    * significant bits must be tested.  If the value is above 0x90, or the
+    * CARRY flag is set in the PSW, the bits must be adjusted.  To adjust
+    * the higher order bits, this routine adds 0x60 to the accumulator. 
+    * The processor status word, named PSW, is set according to the result
+    * of these operations.
+    ***********************************************************************/
+            case DAA:
+                if (((A&0x0F) > 0x09) || (PSW&AUX))
+                {
+                    PSW = (A&0xF) + (0x06) > 0xF
+                        ? PSW|AUX: PSW&NAUX;
+
+                    A += 0x06;
+                }
+
+                if (((A&0xF0) > 0x90) || (PSW&CARRY))
+                {
+                    PSW = A + (0x60) > 0xFF
+                        ? PSW|CARRY: PSW&NCARRY;
+
+                    A += 0x60;
+                }
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+
+    /***********************************************************************
+    * DADrp - Add register pair to HL.
+    * -----
+    *
+    *   If the value of the variable OPCODE is equal to DADrp, where rp is
+    * a 16-bit 8080a register, this routine adds the content of the
+    * register, rp, to the content of the HL register.  The resulting value
+    * is stored in the HL register.  The processor status word's CARRY flag
+    * is set if a 16-bit overflow occurs during the addition.
+    *
+    *
+    * Note:
+    * ----
+    *
+    *   OPCODEs include DADB, DADD, DADH, and DADSP.
+    ***********************************************************************/
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DADB, this routine
+    * adds the contents of BC and HL to the HL register.  The PSW's CARRY
+    * flag is set if an overflow occurs.
+    ***********************************************************************/
+            case DADB:
+                PSW = HL.pair + BC.pair > 0xFFFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                HL.pair = (HL.pair + BC.pair)&0xFFFF;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DADD, this routine
+    * adds the contents of DE and HL to the HL register.  The PSW's CARRY
+    * flag is set if an overflow occurs.
+    ***********************************************************************/
+            case DADD:
+                PSW = HL.pair + DE.pair > 0xFFFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                HL.pair = (HL.pair + DE.pair)&0xFFFF;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DADH, this routine
+    * adds the contents of HL and HL to the HL register.  The PSW's CARRY
+    * flag is set if an overflow occurs.
+    ***********************************************************************/
+            case DADH:
+                PSW = HL.pair + HL.pair > 0xFFFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                HL.pair = (HL.pair + HL.pair)&0xFFFF;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DADSP, this routine
+    * adds the contents of stack pointer, SP, and HL to the HL register.
+    * The PSW's CARRY flag is set if an overflow occurs.
+    ***********************************************************************/
+            case DADSP:
+                PSW = HL.pair + SP > 0xFFFF
+                       ? PSW|CARRY   : PSW&NCARRY;
+
+                HL.pair = (HL.pair + SP)&0xFFFF;
+                break;
+
+
+
+    /***********************************************************************
+    * DCRr - Decrement register.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to DCRr, where r is an
+    * 8-bit 8080a register, this routine decrements the content of the
+    * register, r, by one.  The resulting value is stored in the register
+    * r.  The processor status word, named PSW, is set according to the
+    * result of the operation.  The CARRY flag is not affected.
+    *
+    *
+    * Note:
+    * ----
+    *
+    *   OPCODEs include DCRA, DCRB, DCRC, DCRD, DCRE, DCRH, and DCRL.
+    ***********************************************************************/
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DCRA, this routine
+    * decrements the content of A and stores the result in the register A.
+    * The PSW reflects the result of this decrement.  The CARRY flag is not
+    * affected.
+    ***********************************************************************/
+            case DCRA:
+                PSW = A&0xF ? PSW&NAUX   : PSW|AUX;
+
+                A--;
+
+                PSW = A==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = A>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(A) ? PSW|PARITY : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DCRB, this routine
+    * decrements the content of B and stores the result in the register B.
+    * The PSW reflects the result of this decrement.  The CARRY flag is not
+    * affected.
+    ***********************************************************************/
+            case DCRB:
+                PSW = BC.reg.B&0xF ? PSW&NAUX   : PSW|AUX;
+
+                BC.reg.B--;
+
+                PSW = BC.reg.B==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = BC.reg.B>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(BC.reg.B) ? PSW|PARITY
+                                : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DCRC, this routine
+    * decrements the content of C and stores the result in the register C.
+    * The PSW reflects the result of this decrement.  The CARRY flag is not
+    * affected.
+    ***********************************************************************/
+            case DCRC:
+                PSW = BC.reg.C&0xF ? PSW&NAUX   : PSW|AUX;
+
+                BC.reg.C--;
+
+                PSW = BC.reg.C==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = BC.reg.C>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(BC.reg.C) ? PSW|PARITY
+                                : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DCRD, this routine
+    * decrements the content of D and stores the result in the register D.
+    * The PSW reflects the result of this decrement.  The CARRY flag is not
+    * affected.
+    ***********************************************************************/
+            case DCRD:
+                PSW = DE.reg.D&0xF ? PSW&NAUX   : PSW|AUX;
+
+                DE.reg.D--;
+
+                PSW = DE.reg.D==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = DE.reg.D>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(DE.reg.D) ? PSW|PARITY
+                                : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DCRE, this routine
+    * decrements the content of E and stores the result in the register E.
+    * The PSW reflects the result of this decrement.  The CARRY flag is not
+    * affected.
+    ***********************************************************************/
+            case DCRE:
+                PSW = DE.reg.E&0xF ? PSW&NAUX   : PSW|AUX;
+
+                DE.reg.E--;
+
+                PSW = DE.reg.E==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = DE.reg.E>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(DE.reg.E) ? PSW|PARITY
+                                : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DCRH, this routine
+    * decrements the contents of H and stores the result in the register H.
+    * The PSW reflects the result of this decrement.  The CARRY flag is not
+    * affected.
+    ***********************************************************************/
+            case DCRH:
+                PSW = HL.reg.H&0xF ? PSW&NAUX   : PSW|AUX;
+
+                HL.reg.H--;
+
+                PSW = HL.reg.H==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = HL.reg.H>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(HL.reg.H) ? PSW|PARITY
+                                : PSW&NPARITY;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DCRL, this routine
+    * decrements the content of L and stores the result in the register L.
+    * The PSW reflects the result of this decrement.  The CARRY flag is not
+    * affected.
+    ***********************************************************************/
+            case DCRL:
+                PSW = HL.reg.L&0xF ? PSW&NAUX   : PSW|AUX;
+
+                HL.reg.L--;
+
+                PSW = HL.reg.L==0 ? PSW|ZERO    : PSW&NZERO;
+                PSW = HL.reg.L>>7 ? PSW|SIGN    : PSW&NSIGN;
+                PSW = Parity8(HL.reg.L) ? PSW|PARITY
+                                : PSW&NPARITY;
+                break;
+
+
+
+    /***********************************************************************
+    * DCRM - Decrement memory.
+    * ----
+    *
+    *   If the value of the variable OPCODE is equal to DCRM, this routine
+    * decrements the content of the 8080a's memory, RAM[HL], by one.  The
+    * resulting value is stored in the the 8080a's memory, RAM[HL].  The
+    * processor status word, named PSW, is set according to the result of
+    * the operation.  The CARRY flag is not affected.
+    ***********************************************************************/
+            case DCRM:
+                PSW = ReadRAM(HL.pair)&0xF ? PSW&NAUX  :
+                                 PSW|AUX;
+
+                WriteRAM(HL.pair, ReadRAM(HL.pair) - 1);
+
+                PSW = ReadRAM(HL.pair)==0 ? PSW|ZERO   :
+                                PSW&NZERO;
+                PSW = ReadRAM(HL.pair)>>7 ? PSW|SIGN   :
+                                PSW&NSIGN;
+                PSW = Parity8(ReadRAM(HL.pair)) ? PSW|PARITY:
+                                PSW&NPARITY;
+                break;
+
+
+
+    /***********************************************************************
+    * DCRrp - Decrement register pair.
+    * -----
+    *
+    *   If the value of the variable OPCODE is equal to DCXrp, where rp is
+    * a 16-bit 8080a register, this routine decrements the content of the
+    * register, rp, by one.  The resulting value is stored in the register
+    * rp.
+    *
+    *
+    * Note:
+    * ----
+    *
+    *   OPCODEs include DCXB, DCXD, DCXH, and DCXSP.
+    ***********************************************************************/
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DCXB, this routine
+    * decrements the content of BC and stores the result in the register
+    * BC.
+    ***********************************************************************/
+            case DCXB:
+                BC.pair--;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DCXD, this routine
+    * decrements the content of DE and stores the result in the register
+    * DE.
+    ***********************************************************************/
+            case DCXD:
+                DE.pair--;
+                break;
+
+
+    /***********************************************************************
+    *   If the value of the variable OPCODE is equal to DCXH, this routine
+    * decrements the content of HL and stores the result in the register
+    * HL.
+    ***********************************************************************/
+            case DCXH:
+                HL.pair--;
 				break;
 
 

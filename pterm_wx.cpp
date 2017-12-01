@@ -180,14 +180,17 @@ public:
 
 private:
     FILE *fd;
-    long int position = 0;
-    int rcnt = 0;
-    int wcnt = 0;
+    long int position;
+    int rcnt;
+    int wcnt;
 };
 
 MTFile::MTFile()
 {
     fd = NULL;
+    position = 0;
+    rcnt = 0;
+    wcnt = 0;
 }
 
 bool MTFile::Open(const char *fn)
@@ -217,10 +220,10 @@ void MTFile::Seek(long int loc)
     int x;
     if (fd != NULL)
     {
-        //printf("Floppy seek to %06x\n", loc);
+        //printf("Floppy seek to %06lx\n", loc);
         x = fseek(fd, loc, SEEK_SET);
         if ( x != 0 )
-            printf("Floppy seek error!  loc = %o6x\n", loc);
+            printf("Floppy seek error!  loc = %06lx\n", loc);
 
         rcnt = wcnt = 1;
         position = loc;
@@ -237,7 +240,7 @@ u8 MTFile::ReadByte()
         u8 mybyte = 0;
         size_t x = fread(&mybyte, 1, 1, fd);
         if (x != 1) {
-            printf("Floppy read error!  position: %06x\n", position);
+            printf("Floppy read error!  position: %06lx\n", position);
             long int save = position;
             int save2 = rcnt;
             int save3 = wcnt;
@@ -247,15 +250,15 @@ u8 MTFile::ReadByte()
             wcnt = save3;
             if (retry++ < 3)
                 goto retry1;
-            printf("FATAL floppy read error!  position: %06x\n", position);
+            printf("FATAL floppy read error!  position: %06lx\n", position);
         }
 
-        //printf("readcnt: %d data: %02x  position: %06x\n", rcnt, mybyte, position);
+        //printf("readcnt: %d data: %02x  position: %06lx\n", rcnt, mybyte, position);
         position++;
         rcnt++;
         if (rcnt > 130)
         {
-            //printf("Completed Sector read. Sector = %04x\n", (position/130)-1);
+            //printf("Completed Sector read. Sector = %04lx\n", (position/130)-1);
             rcnt = 1;
         }
 
@@ -273,7 +276,8 @@ void MTFile::WriteByte(u8 val)
         size_t x = fwrite(&val, 1, 1, fd);
         if (x != 1)
         {
-            printf("floppy write error!  data:  %02x  position: %06x\n", val, position);
+            printf("floppy write error!  data:  %02x  position: %06lx\n",
+                   val, position);
             long int save = position;
             int save2 = rcnt;
             int save3 = wcnt;
@@ -283,10 +287,10 @@ void MTFile::WriteByte(u8 val)
             wcnt = save3;
             if (retry++ < 3)
                 goto retry2;
-            printf("FATAL floppy write error!  position: %06x\n", position);
+            printf("FATAL floppy write error!  position: %06lx\n", position);
         }
 
-        //printf("writecnt: %d  data: %02x  position: %06x\n", wcnt, val, position);
+        //printf("writecnt: %d  data: %02x  position: %06lx\n", wcnt, val, position);
 
         wcnt++;
         if (wcnt > 130)
@@ -1191,11 +1195,11 @@ private:
     wxTimer     m_M8080a;
     u8          m_indev;        // input device
     u8          m_outdev;       // output device
-    u8          m_mtincnt = 0;  // counter
-    u8          m_mtdrivetemp = 0xcb;   // temp drive function - before accept
-    u8          m_mtdrivefunc = 0;      // drive function
-    u8          m_mtcanresp;            // canned response for control port
-    u8          m_mtsingledata;         // single byte data preset for data channel
+    u8          m_mtincnt;      // counter
+    u8          m_mtdrivetemp;  // temp drive function - before accept
+    u8          m_mtdrivefunc;  // drive function
+    u8          m_mtcanresp;    // canned response for control port
+    u8          m_mtsingledata; // single byte data preset for data channel
 
     int         m_mtDataPhase;          // 1..7
     u8          m_mtDiskUnit;
@@ -1206,7 +1210,7 @@ private:
     u8          m_mtDiskCheck1;
     u8          m_mtDiskCheck2;
     int         m_mtSeekPos;
-    bool        m_clockPhase = true;    // lower or upper byte of clock
+    bool        m_clockPhase;   // lower or upper byte of clock
 
     wxRect      m_rect;         // Used to save window size/pos
     
@@ -1246,7 +1250,7 @@ private:
 
 #define key2mtutor ((mt_ksw & 1) == 1)      // direct keys to mtutor/ppt
 
-    INT16       mt_key = -1;
+    i16         mt_key;
 
     bool        modexor;
     // 0: inverse
@@ -1363,7 +1367,7 @@ private:
                             bool xor_p, PixelData &pixmap);
     void ptermDrawPoint (int x, int y);
 #ifdef __WXMSW__
-	void fixAlpha (void);
+    void fixAlpha (void);
 #endif
     inline void ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
                                   PixelData & pixmap);
@@ -1427,7 +1431,7 @@ private:
     u8 input8080a (u8 data);
     void output8080a (u8 data, u8 acc);
     int check_pc8080a (void);
-    const char* PtermFrame::resCallName(UINT16 pc);
+    const char* resCallName(u16 pc);
 
     // any class wishing to process wxWindows events must use this macro
     DECLARE_EVENT_TABLE ()
@@ -2891,6 +2895,10 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
       m_timer (this, Pterm_Timer),
       m_Mclock(this, Pterm_Mclock),
       m_M8080a(this, Pterm_M8080a),
+      m_mtincnt (0),
+      m_mtdrivetemp (0xcb),
+      m_mtdrivefunc (0),
+      m_clockPhase (true),
       // m_rect not initialized
       m_name (""),
       m_group (""),
@@ -2905,6 +2913,8 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
       // m_pasteLinePos not initialized
       m_nextword (C_NODATA),
       m_delay (0),
+      // m_ignoreDelay not initialized
+      mt_key (-1),
       modexor (false),
       currentX (0),
       currentY (496),
@@ -4754,19 +4764,19 @@ void PtermFrame::fixAlpha (void)
 {
     PixelData pixmap (*m_bitmap);
     PixelData::Iterator p (pixmap);
-	int x, y;
-	u32 *pmap;
+    int x, y;
+    u32 *pmap;
 
-	for (y = 0; y < 512; y++)
-	{
-	    p.MoveTo (pixmap, XMADJUST (0), YMADJUST (y));
-		for (x = 0; x < 512; x++)
-		{
-		    pmap = (u32 *)(p.m_ptr);
-			*pmap |= m_maxalpha;
-			++p;
-		}
-	}
+    for (y = 0; y < 512; y++)
+    {
+        p.MoveTo (pixmap, XMADJUST (0), YMADJUST (y));
+        for (x = 0; x < 512; x++)
+        {
+            pmap = (u32 *)(p.m_ptr);
+            *pmap |= m_maxalpha;
+            ++p;
+        }
+    }
 }
 #endif
 
@@ -5372,11 +5382,11 @@ void PtermFrame::drawFontChar (int x, int y, int c)
     m_memDC->DrawText (chr, x, y);
 
 #ifdef __WXMSW__
-	// On Windows, the Alpha channel gets messed up by
-	// the DrawText operation, which makes for very
-	// strange looking displays.  So fix it.  It's a 
-	// bit crude, but it gets the job done.
-	fixAlpha ();
+    // On Windows, the Alpha channel gets messed up by
+    // the DrawText operation, which makes for very
+    // strange looking displays.  So fix it.  It's a 
+    // bit crude, but it gets the job done.
+    fixAlpha ();
 #endif
     m_memDC->SelectObject (wxNullBitmap);
 }
@@ -8207,7 +8217,7 @@ void PtermFrame::UpdateRegion (int x, int y, int mouseX, int mouseY)
     }
 }
 
-const char* PtermFrame::resCallName(UINT16 pc)
+const char* PtermFrame::resCallName(u16 pc)
 {
     switch (pc)
     {
@@ -8319,8 +8329,8 @@ int PtermFrame::check_pc8080a (void)
     
     if (PC < WORKRAM && globalTrace)
     {
-        tracex("Resident call %04x %S DE=%04x HL=%04x",
-            PC, resCallName(PC), DE.pair, HL.pair);
+        tracex("Resident call %04x %s DE=%04x HL=%04x",
+               PC, resCallName(PC), DE.pair, HL.pair);
     }
     
     switch (PC)
@@ -8367,8 +8377,8 @@ int PtermFrame::check_pc8080a (void)
                 break;
             }
 
-            UINT8 save = RAM[M_CCR];
-            UINT charM = (RAM[M_CCR] & 0x0e) >> 1; // Current M slot
+            u8 save = RAM[M_CCR];
+            u16 charM = (RAM[M_CCR] & 0x0e) >> 1; // Current M slot
 
             if (c > 0x3F )
             {
@@ -8468,7 +8478,7 @@ int PtermFrame::check_pc8080a (void)
         int device = (n >> 10) & 0x1f;
         int writ = (n >> 9) & 0x1;
         int inter = (n >> 8) & 0x1;
-        int data = n & 0xff;
+        //int data = n & 0xff;
 
         //printf("r.ssf input=%04x\n", n);
         //printf("r.ssf device=%02x\n", device);
@@ -12175,7 +12185,7 @@ void PtermPrintout::DrawPage (wxDC *dc)
 }
 
 
-static class Update8080 : public emul8080
+class Update8080 : public emul8080
 {
 public:
     void static M8080aWait();

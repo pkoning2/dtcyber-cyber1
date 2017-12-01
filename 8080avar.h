@@ -262,7 +262,7 @@ protected:
     virtual int check_pc8080a (void);
 
     // this is a kludge for processing mode 6 data in MTutor
-    Uint8 ReturnOn8080Ret = 0;
+    Uint8 ReturnOn8080Ret;
 
     /*  Interrupt information  */
     Uint8 INTDISABLE;
