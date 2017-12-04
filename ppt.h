@@ -4,7 +4,7 @@
 // Author:      Paul Koning
 // Modified by:
 // Created:     07/11/2005
-// Copyright:   (c) Paul Koning
+// Copyright:   (c) Paul Koning, Joe Stanton, Dale Sinder
 // Licence:     DtCyber license
 /////////////////////////////////////////////////////////////////////////////
 
@@ -41,6 +41,9 @@
 #define R_FCOLOR 0x8e
 #define R_BCOLOR 0x91
 #define R_PAINT  0x94
+#define R_WAIT16 0x97
+#define R_DUMMY2 0x9a
+#define R_DUMMY3 0x9d
 
 // Interrupt mask bits
 #define IM_SIR  0x80

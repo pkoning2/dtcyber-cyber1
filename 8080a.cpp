@@ -40,7 +40,8 @@ simulation phase occurs.
 
 //#define Z80
 
-//#define UPDATECNT 300000
+#define Level2Pause 0x68d9
+#define Level2Xplato 0x602c
 
 /*******************************************************************************
 * Files:
@@ -58,18 +59,8 @@ simulation phase occurs.
 #include "8080a.h"
 #include "8080avar.h"
 #include "opcodes.h"
+#include "ppt.h"
 //#include <SDL_hints.h>
-
-extern bool globalTrace;
-extern bool g_giveup8080;
-extern bool g_mTutor;
-
-class Update8080 : public emul8080
-{
-public:
-    void static M8080aWait();
-
-};
 
 /*******************************************************************************
 
@@ -164,7 +155,8 @@ void emul8080::ResetProc(void)
     RAM[0x28] = RET;
     RAM[0x30] = RET;
     RAM[0x38] = RET;
-    RAM[0x3d] = RET;
+    //RAM[0x3d] = RET;
+    //RAM[0x40] = RET;
 
     RAM[ROMSIZE - 1] = RET;  // for safety
 
@@ -245,19 +237,27 @@ void emul8080::main8080a (void)
     bool step = false;
 #endif
 
-    if (g_mTutor)
+    if (m_mtutorPatch)
     {
-        // fix timed mtutor pause as much as possible. 100 sec now about 85 sec
-        // depending on your system speed
-        RAM[0x68d4] = 0xff;  // loop counter
-        RAM[0x68d5] = 0xff;  // loop counter
-        RAM[0x68d9] = 0xc2;  // change jp to jnz
+        if (m_mtPLevel == 2)
+        {
+            // Call resident and wxWidgets for brief pause
+            RAM[Level2Pause] = CALLa;
+            RAM[Level2Pause + 1] = R_WAIT16;
+            RAM[Level2Pause + 2] = 0;
 
-        // remove off-line check for calling r.exec - only safe place to
-        // give up control..
-        RAM[0x602c] = 0;
-        RAM[0x602d] = 0;
-        RAM[0x602e] = 0;
+            // remove off-line check for calling r.exec - only safe place to
+            // give up control..
+            RAM[Level2Xplato] = 0;
+            RAM[Level2Xplato + 1] = 0;
+            RAM[Level2Xplato + 2] = 0;
+
+            // attempt to move unit buffer...
+            //RAM[0x586c] = 0xff;  // top of unit buffer
+            //RAM[0x586d] = 0x00;  //  "
+
+            //RAM[0x5a89] = 0x80;  // bottom of unit buffer.
+        }
     }
 
     /***********************************************************************
@@ -273,21 +273,12 @@ void emul8080::main8080a (void)
     ***********************************************************************/
     while ((PC >= WORKRAM) || (PC < 0x40))
     {
-        //if (update++ > UPDATECNT)
-        if (g_giveup8080)  //| (update++ > UPDATECNT) )
+        if (m_giveup8080)
         {
-            g_giveup8080 = false;
+            m_giveup8080 = false;
             // give the resident time to process keys and update display
-
-            Update8080::M8080aWait();
             return;
         }
-
-        //if (PC > MEMSIZE)
-        //{
-        //  printf("\nPC > MEMSIZE %0x\nAbort 8080\n", PC);
-        //  return;
-        //}
 
     /***********************************************************************
     *   If INTERRUPT is not equal to 2, then it is safe to fetch an opcode.
@@ -343,26 +334,29 @@ void emul8080::main8080a (void)
 
         /*  This code is used for quick debugging. */
 #ifdef DEBUG_8080
-        if (true ) // || globalTrace) // && ((PC > 0x7aee)  || ((PC < 0x4000 )) && (PC > 0x90)))  // overlay regions
+        if (m_MtTrace) // && ((PC > 0x7aee)  || ((PC < 0x4000 )) && (PC > 0x90)))  // overlay regions
         {
             //printf("%s\n", MNEMONICS[OPCODE]);
 
             //printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
-            //  "PSW-[0x%X]\n", OPCODE, PC, SP, PSW);
+            //    "PSW-[0x%X]\n", OPCODE, PC, SP, PSW);
             //printf("A-[0x%X] \tB/C-[0x%X/0x%X]\tD/E-[0x%X/0x%X]\t"
-            //  "H/L-[0x%X/0x%X]\n", A, BC.reg.B, BC.reg.C, DE.reg.D,
-            //  DE.reg.E, HL.reg.H, HL.reg.L);
+            //    "H/L-[0x%X/0x%X]\n", A, BC.reg.B, BC.reg.C, DE.reg.D,
+            //    DE.reg.E, HL.reg.H, HL.reg.L);
             //printf("BC-[0x%X]\tDE-[0x%X]\t"
-            //  "HL-[0x%X]\tSP-[0x%X/0x%X]\n", BC.pair, DE.pair,
-            //  HL.pair, ReadRAM(SP), ReadRAM(SP + 1));
-            //printf("RAM-[0x%X/0x%X/0x%X/0x%X]\n\n", ReadRAM(PC-1), ReadRAM(PC),
-            //  ReadRAM(PC + 1), ReadRAM(PC + 2));
+            //    "HL-[0x%X]\tSP-[0x%X/0x%X]\n", BC.pair, DE.pair,
+            //    HL.pair, ReadRAM(SP), ReadRAM(SP + 1));
+            //printf("RAM-[0x%X/0x%X/0x%X/0x%X]\n\n", ReadRAM(PC - 1), ReadRAM(PC),
+            //    ReadRAM(PC + 1), ReadRAM(PC + 2));
 
             //printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
-            //  "PSW-[]\n", OPCODE, PC - 1, SP);
+            //    "PSW-[]\n", OPCODE, PC - 1, SP);
             //printf("AF-[0x%X]\tBC-[0x%X]\tDE-[0x%X]\t"
-            //  "HL-[0x%X]\n\n", A, BC.pair, DE.pair, HL.pair);
+            //    "HL-[0x%X]\n", A, BC.pair, DE.pair, HL.pair);
 
+            //for (int i = 0x2400; i >= SP; i -= 2)
+            //    printf("RAMW[0x%X]=0x%X\t", i, ReadRAMW(i));
+            //printf("\nRAMW[SP]=0x%X\n\n", ReadRAMW(SP));
 
             /* begin simple 8080 degugger -  works well with MSVS
              * 
@@ -3703,16 +3697,13 @@ void emul8080::main8080a (void)
                     return;
 
                 doret:
-                {
-                    int oldPC = PC;
-                    PC = (ReadRAM(SP + 1) << 8) | ReadRAM(SP);
+                PC = (ReadRAM(SP + 1) << 8) | ReadRAM(SP);
                 SP += 2;
-                    switch (check_pc8080a())
+                switch (check_pc8080a())
                 {
                 case 1: goto doret;
                 case 2: return;
-                    default: break;
-                }
+                default: break;
                 }
                 break;
 

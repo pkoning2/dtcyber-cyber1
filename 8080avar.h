@@ -27,9 +27,9 @@ USA.
 
 Contents:
 --------
-  1.	This file contains the 8080a's registers, the 8080a's interrupt
-	information, the 8080a's default processor values (when reset),
-	definitions for the PSW, memory map information, and the memory itself.
+  1.    This file contains the 8080a's registers, the 8080a's interrupt
+    information, the 8080a's default processor values (when reset),
+    definitions for the PSW, memory map information, and the memory itself.
 
 *******************************************************************************/
 
@@ -45,8 +45,8 @@ Contents:
  */
 
 /* The two types of endianness */
-#define SDL_LIL_ENDIAN	1234
-#define SDL_BIG_ENDIAN	4321
+#define SDL_LIL_ENDIAN  1234
+#define SDL_BIG_ENDIAN  4321
 
 
 #ifdef __linux__
@@ -67,9 +67,9 @@ Contents:
      defined(__SYMBIAN32__) || \
      defined(__x86_64__) || \
      defined(__LITTLE_ENDIAN__)
-#define SDL_BYTEORDER	SDL_LIL_ENDIAN
+#define SDL_BYTEORDER   SDL_LIL_ENDIAN
 #else
-#define SDL_BYTEORDER	SDL_BIG_ENDIAN
+#define SDL_BYTEORDER   SDL_BIG_ENDIAN
 #endif
 
 #endif /* __linux __ */
@@ -87,8 +87,8 @@ Contents:
 #if !defined(__WIN32__) & \
      (((SDL_BYTEORDER == SDL_LIL_ENDIAN) && BIGENDIAN) || \
      ((SDL_BYTEORDER == SDL_BIG_ENDIAN) && LITTLEENDIAN))
-	#warning CONFLICTING ENDIAN TYPES DETECTED!
-	#warning Edit the Makefile if this is incorrect.
+    #warning CONFLICTING ENDIAN TYPES DETECTED!
+    #warning Edit the Makefile if this is incorrect.
 #endif
 
 
@@ -97,21 +97,21 @@ Contents:
 * ---------
 * 
 *   INTDISABLE - This variable is used when the DI instruction is called.  It
-*	signifies that interrupts are disabled.
+*   signifies that interrupts are disabled.
 *
 *   INTERRUPT - This variable is used to determine if an interrupt occured,
-*	and if an interrupt did occur, what type of interrupt occured.
+*   and if an interrupt did occur, what type of interrupt occured.
 *
 *   NMI - This variable is used to determine if a non-maskable interrupt
-*	occured.
+*   occured.
 *
 *   COUNTER - This variable counts the number of cycles per instruction in an
-*	attempt to get accurate interrupt timing.
+*   attempt to get accurate interrupt timing.
 *
 *   RAM is the 8080a's RAM.  This is really RAM and ROM put together.  The
-* 	simulator does not discriminate with read/write permissions, the whole
-* 	RAM is writable.  Although this allows for self modifying code, access
-* 	violations are not caught.  Rom size is 64k (0x10000 hex/65536 bytes).
+*   simulator does not discriminate with read/write permissions, the whole
+*   RAM is writable.  Although this allows for self modifying code, access
+*   violations are not caught.  Rom size is 64k (0x10000 hex/65536 bytes).
 *
 *
 * 16-bit registers:
@@ -128,12 +128,12 @@ Contents:
 *   A - This variable is the 8-bit accumulator.
 *
 *   PSW - This variable is the processor status word, which is also an 8-bit
-*	register.
+*   register.
 *
 *   BC, DE, and HL are 16-bit paired registers.  Each register pair contains
-*	2 8-bit registers.  BC contains B and C, DE contains D and E, and HL
-*	contains H and L. Each pair is part of a union struct, where .pair
-*	is the value of the pair and .reg. is the value of a single register.
+*   2 8-bit registers.  BC contains B and C, DE contains D and E, and HL
+*   contains H and L. Each pair is part of a union struct, where .pair
+*   is the value of the pair and .reg. is the value of a single register.
 *
 *******************************************************************************/
 
@@ -156,21 +156,21 @@ Contents:
 * -----------
 * 
 *   STARTROM1 - This is the memory address where the first ROM should be
-*	loaded.
+*   loaded.
 *
 *   ROMSIZE - This is the size of each ROM.  2000hex (8192 bytes).
 *
 *   WORKRAM - This is where the processor's WORK RAM begins. 
 *
 *   UNUSED - This is where the processor's UNUSED memory area begins.  This
-*	definition is only true for Space Invaders.
+*   definition is only true for Space Invaders.
 * 
 *
 * Diagram:
 * -------
 *
-*  The 8080a's	
-*  memory map	 Address ranges
+*  The 8080a's  
+*  memory map    Address ranges
 * +-----------+
 * |           |
 * |  PROGROM  | 0x0000h-0x1FFFh
@@ -191,13 +191,27 @@ Contents:
 #define ROMSIZE   0x02000
 #define PROGROM   0x00000
 #define WORKRAM   0x02000
-#define MEMSIZE   0x0ffff
+#define MEMSIZE   0x10000
 class emul8080
 {
 public:
+
+    bool m_giveup8080;
+    bool m_mtutorPatch;
+    u16  m_mtPLevel;
+    bool m_mtutorBoot;
+    bool m_MtTrace;
+    u16  m_zclock;      // one second clock for mtutor
+
     emul8080 () 
     {
         ResetProc ();
+        m_giveup8080 = false;
+        m_mtutorPatch = false;
+        m_mtutorBoot = false;
+        m_MtTrace = false;
+        m_zclock = 0;
+        m_mtPLevel = 2;
     }
     virtual ~emul8080 () {};
     
@@ -221,24 +235,24 @@ public:
 #endif
     }
 
-	void WriteRAMW(Uint16 offset, Uint16 data)
-	{
+    void WriteRAMW(Uint16 offset, Uint16 data)
+    {
 #ifndef SELFMOD
-		if ((offset) >= WORKRAM)
-		{
-			RAM[(offset)] = data & 0xff;
-			RAM[(offset + 1)] = (data << 8) & 0xff;
-		}
-		else
-		{
-			printf("!!! Attempted write at offset %04x with data "
-				"%04x failed.  PC = %04x\n", offset, data, PC);
-		}
+        if ((offset) >= WORKRAM)
+        {
+            RAM[(offset)] = data & 0xff;
+            RAM[(offset + 1)] = (data << 8) & 0xff;
+        }
+        else
+        {
+            printf("!!! Attempted write at offset %04x with data "
+                "%04x failed.  PC = %04x\n", offset, data, PC);
+        }
 #else
-		RAM[(offset)] = data & 0xff;
-		RAM[(offset + 1)] = (data << 8) & 0xff;
+        RAM[(offset)] = data & 0xff;
+        RAM[(offset + 1)] = (data << 8) & 0xff;
 #endif
-	}
+    }
 
     Uint8 ReadRAM(Uint16 offset) const 
     {
@@ -283,9 +297,9 @@ protected:
         struct
         {
 #if BIGENDIAN
-			Uint8 B, C;
+            Uint8 B, C;
 #else
-			Uint8 C, B;
+            Uint8 C, B;
 #endif
         } reg;
     } BC;
@@ -298,9 +312,9 @@ protected:
         struct
         {
 #if BIGENDIAN
-			Uint8 D, E;
+            Uint8 D, E;
 #else
-			Uint8 E, D;
+            Uint8 E, D;
 #endif
         } reg;
     } DE;
@@ -313,9 +327,9 @@ protected:
         struct
         {
 #if BIGENDIAN
-			Uint8 H, L;
+            Uint8 H, L;
 #else
-			Uint8 L, H;
+            Uint8 L, H;
 #endif
         } reg;
     } HL;
@@ -325,18 +339,17 @@ public:
     Uint8 RAM[MEMSIZE];
 };
 
-
 /*******************************************************************************
 * Interrupt timings:
 * -----------------
 * 
-* Processor	= 2048000 hz
+* Processor = 2048000 hz
 *
-* Refresh Rate	= 60 hz
-* Interrupt	= 2048000 hz/60 hz ~= 34133/2 ~= 17066 cycles per interrupt
+* Refresh Rate  = 60 hz
+* Interrupt = 2048000 hz/60 hz ~= 34133/2 ~= 17066 cycles per interrupt
 *
-* Refresh Rate	= 50 hz
-* Interrupt	= 2048000 hz/50 hz ~= 40960/2 ~= 20480 cycles per interrupt
+* Refresh Rate  = 50 hz
+* Interrupt = 2048000 hz/50 hz ~= 40960/2 ~= 20480 cycles per interrupt
 * 
 *
 *    Although this number is inaccurate, it is still accurate enough to ensure
@@ -350,21 +363,21 @@ public:
 * 
 *   RST0 is a full restart.
 *   RST1 is for vsync.  This is usually called during an non-maskable
-*	interrupt.
+*   interrupt.
 *   RST2 is checking for input.  This opcode is called during a normal
-*	interrupt.
+*   interrupt.
 * 
 *******************************************************************************/
 
 #ifndef PROCHZ
-#define PROCHZ 2048000	// 2 Mhz
+#define PROCHZ 2048000  // 2 Mhz
 #endif
 
 #ifndef REFRESH
-#define REFRESH 60	// 60 hertz
+#define REFRESH 60  // 60 hertz
 #endif
 
-#define INTHIGH	(PROCHZ/REFRESH)/2
+#define INTHIGH (PROCHZ/REFRESH)/2
 
 
 
@@ -378,9 +391,10 @@ public:
 * 
 *******************************************************************************/
 /*  Defaults  */
-#define SPSET	0xffff      /* To make microTutor not scribble on the stack */
-#define PCSET	0x0000
-#define PSWSET	0x02
+//#define SPSET 0x2400
+#define SPSET   0xffff      /* To make microTutor not scribble on the stack */
+#define PCSET   0x0000
+#define PSWSET  0x02
 
 
 /*******************************************************************************
@@ -394,27 +408,27 @@ public:
 * Map:
 * ---
 * 
-* bit	7654 3210
-* 	SZ_A P_1C
+* bit   7654 3210
+*   SZ_A P_1C
 *
 * S = Sign (negative), Z = Zero, A = Auxiliary carry,
 * P = Parity, C = Carry, _ = Unknown, 1 = Always on.
 * 
 *******************************************************************************/
 /*  PSW  */
-#define SIGN	0x80
-#define ZERO	0x40
-#define AUX	0x10
-	// Even parity
-#define PARITY	0x04
-#define CARRY	0x01
-#define NSIGN	(0xFF - SIGN)
+#define SIGN    0x80
+#define ZERO    0x40
+#define AUX 0x10
+    // Even parity
+#define PARITY  0x04
+#define CARRY   0x01
+#define NSIGN   (0xFF - SIGN)
 #undef  NZERO
-#define NZERO	(0xFF - ZERO)
-#define NAUX	(0xFF - AUX)
-	// Odd parity
-#define NPARITY	(0xFF - PARITY)
-#define NCARRY	(0xFF - CARRY)
+#define NZERO   (0xFF - ZERO)
+#define NAUX    (0xFF - AUX)
+    // Odd parity
+#define NPARITY (0xFF - PARITY)
+#define NCARRY  (0xFF - CARRY)
 
 
 

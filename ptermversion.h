@@ -4,5 +4,5 @@
 #define STRPRODUCTVER       "5.1.0"
 #define STRFILEDESC         "PLATO Terminal Emulator"
 #define STRPRODUCTNAME      "PLATO Terminal Emulator"
-#define STRLEGALCOPYRIGHT   "Copyright \u00A9 2005-2017, Paul Koning & Joe Stanton"
+#define STRLEGALCOPYRIGHT   "Copyright \u00A9 2005-2017, Paul Koning, Joe Stanton, Dale Sinder"
 #include "wxversion.h"

@@ -4,7 +4,7 @@
 // Authors:     Paul Koning, Joe Stanton
 // Modified by: 
 // Created:     13/2/2009
-// Copyright:   (c) Paul Koning, Joe Stanton
+// Copyright:   (c) Paul Koning, Joe Stanton, Dale Sinder
 // Licence:     DtCyber license
 /////////////////////////////////////////////////////////////////////////////
 
@@ -148,6 +148,7 @@
 //tab6
 #define PREF_EMAIL       "EmailClient"
 #define PREF_SEARCHURL   "SearchURL"
+#define PREF_MTUTORBOOT  "MTUTORBOOT"
 #define PREF_MTUTOR      "MTUTOR"
 #define PREF_FLOPPY0M    "FLOPPY0M"
 #define PREF_FLOPPY1M    "FLOPPY1M"
