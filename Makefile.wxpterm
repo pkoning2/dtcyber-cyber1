@@ -235,7 +235,7 @@ pterm_sdl.d : pterm_sdl.c
 	msgfmt -o $@ $<
 
 pterm.pot : pterm_wx.cpp
-	xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
+	xgettext --from-code=UTF-8 --keyword=_  -C -o pterm.pot pterm_wx.cpp
 
 %.po :  pterm.pot
 	msgmerge $(MSGFLAGS) $@ pterm.pot

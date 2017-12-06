@@ -196,7 +196,12 @@ bool MTFile::Open(const char *fn)
     fd = fopen(fn, "r+b");
     if (fd == NULL)
     {
-        printf("Failure opening Mtutor floppy file %s\n", fn);
+        wxString msg ("Error opening µTutor floppy file ");
+        msg.Append (fn);
+        msg.Append (":\n");
+        msg.Append (wxSysErrorMsg ());
+                
+        wxMessageBox (msg, "Floppy error", wxICON_ERROR | wxOK | wxCENTRE);
         return false;
     }
     return true;
@@ -296,26 +301,6 @@ void MTFile::WriteByte(u8 val)
         position++;
     }
 }
-
-//void MTFile::CalcCheck(byte b)
-//{
-//    byte cupper = byte((_chkSum >> 8) & 0xff);
-//    byte clower = byte(_chkSum & 0xff);
-//    cupper ^= b;
-//    int x = cupper << 1;
-//    if ((x & 0x100) > 0)
-//        x = (x | 1) & 0xff;
-//    cupper = byte(x);
-//    clower ^= b;
-//    int y = 0;
-//    if ((clower & 1) == 1)
-//        y = 0x80;
-//    x = clower >> 1;
-//    x = (x | y) & 0xff;
-//    _chkSum = u16(((x << 8) & 0xff00) | u16(clower & 0xff));
-//}
-
-//MTFile m_MTFiles[2];
 
 class Trace
 {
@@ -754,7 +739,7 @@ class PtermConnection
 public:
     // override base class virtuals
     // ----------------------------
-    PtermConnection (PtermFrame *owner, wxString &host, int port);
+    PtermConnection (PtermFrame *owner, const wxString &host, int port);
     ~PtermConnection ();
     
     // Callback handlers
@@ -855,7 +840,8 @@ public:
     void OnQuit (wxCommandEvent& event);
     void OnHelpKeys (wxCommandEvent &event);
     void OnAbout (wxCommandEvent& event);
-
+    void OnBoot (wxCommandEvent& event);
+    
     bool DoConnect (bool ask);
     
     bool LoadProfile (wxString profile, wxString filename);
@@ -926,7 +912,6 @@ public:
     //tab6
     wxString    m_Email;      
     wxString    m_SearchURL;
-    bool        m_mTutorBoot;
     bool        m_mTutorPatch;
     bool        m_floppy0;
     bool        m_floppy1;
@@ -1044,7 +1029,8 @@ class PtermFrame : public PtermFrameBase, public emul8080
     
 public:
     // ctor(s)
-    PtermFrame (wxString &host, int port, const wxString& title);
+    PtermFrame (const wxString &host, int port, const wxString& title,
+                bool mtutorBoot = false);
     ~PtermFrame ();
 
     // event handlers (these functions should _not_ be virtual)
@@ -1130,6 +1116,11 @@ public:
     {
         return (m_conn != NULL);
     }
+    bool IgnoreKeys (void) const
+    {
+        return (m_conn == NULL) && !m_mtutorBoot;
+    }
+    
     void ptermSetStatus (wxString &str);
     void ptermShowTrace ();
     void trace (const wxString &) const;
@@ -1536,7 +1527,6 @@ public:
     //tab6
     wxTextCtrl* txtEmail;
     wxTextCtrl* txtSearchURL;
-    wxCheckBox* chkMTutorBoot;
     wxCheckBox* chkMTutor;
     wxCheckBox* chkFloppy0;
     wxCheckBox* chkFloppy1;
@@ -1594,7 +1584,6 @@ public:
     //tab6
     wxString        m_Email;
     wxString        m_SearchURL;
-    bool            m_mTutorBoot;
     bool            m_mTutorPatch;
     bool            m_floppy0;
     bool            m_floppy1;
@@ -1678,7 +1667,8 @@ enum
     Pterm_PastePrint,
     Pterm_FullScreen,
     Pterm_Resize,
-
+    Pterm_Boot,
+    
     // timers
     Pterm_Timer,        // display pacing
     Pterm_Mclock,       // pterm clock
@@ -1932,6 +1922,7 @@ BEGIN_EVENT_TABLE (PtermApp, wxApp)
     EVT_MENU (Pterm_Quit,    PtermApp::OnQuit)
     EVT_MENU (Pterm_HelpKeys, PtermApp::OnHelpKeys)
     EVT_MENU (Pterm_About, PtermApp::OnAbout)
+    EVT_MENU (Pterm_Boot, PtermApp::OnBoot)
     END_EVENT_TABLE ();
 
 // Create a new application object: this macro will allow wxWindows to create
@@ -2075,7 +2066,6 @@ bool PtermApp::OnInit (void)
     m_config->Read (wxT (PREF_SEARCHURL), &m_SearchURL, DEFAULTSEARCH);
     //m_mtutorPatch = m_mTutor = (m_config->Read(wxT(PREF_MTUTOR), 0L) != 0);
     m_mTutorPatch = (m_config->Read(wxT(PREF_MTUTOR), 0L) != 0);
-    m_mTutorBoot = (m_config->Read(wxT(PREF_MTUTORBOOT), 0L) != 0);
     m_floppy0 = (m_config->Read(wxT(PREF_FLOPPY0M), 0L) != 0);
     m_floppy1 = (m_config->Read(wxT(PREF_FLOPPY1M), 0L) != 0);
 
@@ -2429,8 +2419,6 @@ bool PtermApp::DoConnect (bool ask)
             {
                 dlg.m_port.ToCLong (&m_port);
             }
-            if (m_mTutorBoot)
-                m_port = 8005;
             //save selection to current
             m_config = new wxConfig (wxT ("Pterm"));
             m_config->Write (wxT (PREF_SHELLFIRST), m_ShellFirst);
@@ -2447,27 +2435,6 @@ bool PtermApp::DoConnect (bool ask)
     
     // create the main application window
     frame = new PtermFrame (m_hostName, m_port, wxT ("Pterm"));
-    frame->m_mtutorBoot = false;
-    frame->m_mtutorPatch = m_mTutorPatch;
-    
-    if(m_mTutorBoot && m_floppy0 && m_floppy0File.Length() > 1)
-    {
-        m_port = 8005;
-        frame->m_mtutorPatch = true;
-        frame->BootMtutor();
-    }
-    else
-    {
-        if (ptermApp->m_floppy0 && ptermApp->m_floppy0File.Length() > 0)
-            frame->m_MTFiles[0].Open(ptermApp->m_floppy0File);
-        else
-            frame->m_MTFiles[0].Close();
-
-        if (ptermApp->m_floppy1 && ptermApp->m_floppy1File.Length() > 0)
-            frame->m_MTFiles[1].Open(ptermApp->m_floppy1File);
-        else
-            frame->m_MTFiles[1].Close();
-    }
 
     return (frame != NULL);
 }
@@ -2596,8 +2563,6 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
                 m_SearchURL     = value;
             else if (token.Cmp(wxT(PREF_MTUTOR)) == 0)
                 m_mTutorPatch = (value.Cmp(wxT("1")) == 0);
-            else if (token.Cmp(wxT(PREF_MTUTORBOOT)) == 0)
-                m_mTutorBoot = (value.Cmp(wxT("1")) == 0);
 
             else if (token.Cmp(wxT(PREF_FLOPPY0M)) == 0)
                 m_floppy0 = (value.Cmp(wxT("1")) == 0);
@@ -2666,7 +2631,6 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
     m_config->Write (wxT (PREF_EMAIL), m_Email);
     m_config->Write (wxT (PREF_SEARCHURL), m_SearchURL);
     m_config->Write(wxT(PREF_MTUTOR), (m_mTutorPatch) ? 1 : 0);
-    m_config->Write(wxT(PREF_MTUTORBOOT), (m_mTutorBoot) ? 1 : 0);
 
     m_config->Write(wxT(PREF_FLOPPY0M), (m_floppy0) ? 1 : 0);
     m_config->Write(wxT(PREF_FLOPPY1M), (m_floppy1) ? 1 : 0);
@@ -2695,6 +2659,18 @@ wxString PtermApp::ProfileFileName (wxString profile)
     filename.Append (profile);
     filename.Append (wxT (".ppf"));
     return filename;
+}
+
+void PtermApp::OnBoot (wxCommandEvent &)
+{
+    PtermFrame *frame;
+
+    // For safety, but the menu item is disabled if no file is set.
+    if(m_floppy0 && m_floppy0File.Length() > 1)
+    {
+        // create the main application window
+        frame = new PtermFrame (wxT ("Local"), 0, wxT ("Pterm local"), true);
+    }
 }
 
 void PtermApp::OnAbout (wxCommandEvent&)
@@ -2836,6 +2812,11 @@ PtermMainFrame::PtermMainFrame (void)
     menuFile->Append (Pterm_Pref, _("Preferences...")
                       MACACCEL ("\tCtrl-,"),
                       _("Set program configuration"));
+    menuFile->Append (Pterm_Boot, _("Boot floppy") ACCELERATOR ("\tCtrl-\\"),
+                      _("Boot µTutor from floppy unit 0"));
+    menuFile->Enable (Pterm_Boot,
+                      (ptermApp->m_floppy0 &&
+                       ptermApp->m_floppy0File.Length() > 0));
     menuFile->AppendSeparator ();
     menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
 
@@ -2867,7 +2848,8 @@ PtermMainFrame::PtermMainFrame (void)
 // ----------------------------------------------------------------------------
 
 // frame constructor
-PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
+PtermFrame::PtermFrame (const wxString &host, int port, const wxString& title,
+                        bool mtutorBoot)
     : PtermFrameBase (PtermFrameParent, -1, title, 
                       wxPoint (ptermApp->prefX, ptermApp->prefY),
                       wxDefaultSize),
@@ -2984,6 +2966,18 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
     modexor = false;
     setMargin (0);
     RAM[M_CCR] = 0;
+
+    m_mtutorBoot = mtutorBoot;
+    m_mtutorPatch = ptermApp->m_mTutorPatch || mtutorBoot;
+    if (ptermApp->m_floppy0 && ptermApp->m_floppy0File.Length() > 0)
+        m_MTFiles[0].Open(ptermApp->m_floppy0File);
+    else
+        m_MTFiles[0].Close();
+
+    if (ptermApp->m_floppy1 && ptermApp->m_floppy1File.Length() > 0)
+        m_MTFiles[1].Open(ptermApp->m_floppy1File);
+    else
+        m_MTFiles[1].Close();
     
     // Set default character set origins (for PPT that is; ASCII is different)
     RAM[C2ORIGIN] = M2ADDR & 0xff;
@@ -2993,8 +2987,7 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
     
     // set the frame icon
     SetIcon (wxICON (pterm_32));
-
-
+    
     // create a menu bar
     BuildMenuBar ();
 
@@ -3110,6 +3103,10 @@ PtermFrame::PtermFrame (wxString &host, int port, const wxString& title)
         tracex ("Connecting to: %s:%d", host.mb_str ().data (), port);
         m_conn = new PtermConnection (this, host, port);
     }
+
+    if (mtutorBoot)
+        BootMtutor ();
+
     Show (true);
 }
 
@@ -3221,8 +3218,13 @@ void PtermFrame::BuildFileMenu (int port)
         // doesn't own a connection.
         menuFile->Append (Pterm_ConnectAgain, _("Connect Again"),
                           _("Connect to the same host"));
-        menuFile->AppendSeparator ();
     }
+    menuFile->Append (Pterm_Boot, _("Boot floppy") ACCELERATOR ("\tCtrl-\\"),
+                      _("Boot µTutor from floppy unit 0"));
+    menuFile->Enable (Pterm_Boot,
+                      (ptermApp->m_floppy0 &&
+                       ptermApp->m_floppy0File.Length() > 0));
+    menuFile->AppendSeparator ();
     menuFile->Append (Pterm_SaveScreen, _("Save Screen")
                       ACCELERATOR ("\tCtrl-S"), _("Save screen image to file"));
     if (port > 0)
@@ -3313,7 +3315,7 @@ void PtermFrame::BuildViewMenu (wxMenu *menu, int port)
                            _("Display menu bar"), _("Display menu bar"));
     menu->Check (Pterm_ToggleMenuBar, ptermApp->m_showMenuBar);
 #endif
-    if (port > 0)
+    if (port >= 0)
     {
         menu->AppendCheckItem (Pterm_ToggleStatusBar,
                                _("Display status bar"),
@@ -3442,7 +3444,7 @@ void PtermFrame::BuildStatusBar (bool connecting)
 {
     const bool showstatusbar = (!m_fullScreen &&
                                 ptermApp->m_showStatusBar &&
-                                m_port > 0);
+                                m_port >= 0);
     const bool havestatusbar = (m_statusBar != NULL);
     int ww,wh,ow,oh,nw,nh;
 
@@ -3464,7 +3466,12 @@ void PtermFrame::BuildStatusBar (bool connecting)
         m_statusBar = new wxStatusBar (this, wxID_ANY);
         m_statusBar->SetFieldsCount (STATUSPANES);
 
-        if (connecting)
+        if (m_mtutorBoot) 
+        {
+            m_statusBar->SetStatusText (_(" Booted from floppy"),
+                                        STATUS_CONN);
+        }
+        else if (connecting)
         {
             m_statusBar->SetStatusText (_(" Connecting..."), STATUS_CONN);
         }
@@ -3493,10 +3500,10 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
     // In every case, let others see this event too.
     event.Skip ();
 
-    // Do nothing for the help window or other connection-less windows
+    // Do nothing for the help window.
     // If our timer is running, we're using the timer event to drive
     // the display, so ignore idle events.
-    if (m_conn == NULL || m_timer.IsRunning ())
+    if (IgnoreKeys () || m_timer.IsRunning ())
     {
         return;
     }
@@ -3553,7 +3560,9 @@ void PtermFrame::procDataLoop (void)
         m_nextword = C_NODATA;
     }
 
-    for (;;)
+    // If in local mode (booted from floppy) we never process input
+    // because we don't have a connection at all.
+    while (!m_mtutorBoot)
     {
         /*
         **  Process words until there is nothing left.
@@ -3564,9 +3573,6 @@ void PtermFrame::procDataLoop (void)
         {
             break;
         }
-
-        if (m_mtutorBoot)
-            continue;   // throw data away if booted into mtutor
 
         // See if we're supposed to delay (but it's not an internal
         // code such as NODATA)
@@ -4010,7 +4016,7 @@ void PtermFrame::OnToggleMenuBar (wxCommandEvent &)
     menuPopup->Check (Pterm_ToggleMenuBar, ptermApp->m_showMenuBar);
     menuView->Check (Pterm_ToggleMenuBar, ptermApp->m_showMenuBar);
 
-    if (m_port >= 0)
+    if (!IgnoreKeys ())
     {
         menuPopup->Check (Pterm_ToggleStatusBar, ptermApp->m_showStatusBar);
         menuView->Check (Pterm_ToggleStatusBar, ptermApp->m_showStatusBar);
@@ -4544,8 +4550,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
         //tab6
         ptermApp->m_Email = dlg.m_Email;
         ptermApp->m_SearchURL = dlg.m_SearchURL;
-        m_mtutorPatch = ptermApp->m_mTutorPatch = dlg.m_mTutorPatch;
-        m_mtutorBoot = ptermApp->m_mTutorBoot = dlg.m_mTutorBoot;
+        ptermApp->m_mTutorPatch = dlg.m_mTutorPatch;
 
         ptermApp->m_floppy0 = dlg.m_floppy0;
         ptermApp->m_floppy1 = dlg.m_floppy1;
@@ -4633,24 +4638,12 @@ void PtermFrame::SavePreferences (void)
     ptermApp->m_config->Write (wxT (PREF_EMAIL), ptermApp->m_Email);
     ptermApp->m_config->Write (wxT (PREF_SEARCHURL), ptermApp->m_SearchURL);
     ptermApp->m_config->Write(wxT(PREF_MTUTOR), (ptermApp->m_mTutorPatch) ? 1 : 0);
-    ptermApp->m_config->Write(wxT(PREF_MTUTORBOOT), (ptermApp->m_mTutorBoot) ? 1 : 0);
 
     ptermApp->m_config->Write(wxT(PREF_FLOPPY0M), ptermApp->m_floppy0);
     ptermApp->m_config->Write(wxT(PREF_FLOPPY1M), ptermApp->m_floppy1);
 
     ptermApp->m_config->Write(wxT(PREF_FLOPPY0NAM), ptermApp->m_floppy0File);
     ptermApp->m_config->Write(wxT(PREF_FLOPPY1NAM), ptermApp->m_floppy1File);
-
-
-    //if (ptermApp->m_floppy0 && ptermApp->m_floppy0File.Length() > 0)
-    //    m_MTFiles[0].Open(ptermApp->m_floppy0File);
-    //else
-    //    m_MTFiles[0].Close();
-
-    //if (ptermApp->m_floppy1 && ptermApp->m_floppy1File.Length() > 0)
-    //    m_MTFiles[1].Open(ptermApp->m_floppy1File);
-    //else
-    //    m_MTFiles[1].Close();
 
     ptermApp->m_config->Flush ();
 }
@@ -5932,7 +5925,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                         }
                         if (m_conn == NULL)
                         {
-                            // If not connection, don't try to reply
+                            // If no connection, don't try to reply
                             break;
                         }
                         
@@ -6435,7 +6428,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                 }
                 if (m_conn == NULL)
                 {
-                    // If not connection, don't try to reply
+                    // If no connection, don't try to reply
                     break;
                 }
                 d += 0200;
@@ -7156,7 +7149,11 @@ void PtermFrame::ptermSetTrace (bool trace)
         // Turning trace on
         tracePterm = trace;
         traceF.Open (ptermApp->traceFn);
-        if (m_conn->Ascii ())
+        if (m_mtutorBoot)
+        {
+            tracex ("Trace on, locally booted");
+        }
+        else if (m_conn->Ascii ())
         {
             tracex ("Trace on, ASCII terminal");
         }
@@ -7599,7 +7596,7 @@ void PtermFrame::ptermSendKey (u32 keys)
 {
     int i, key;
     
-    if (m_conn == NULL)
+    if (IgnoreKeys ())
     {
         return;
     }
@@ -7643,15 +7640,15 @@ void PtermFrame::ptermSendKey1 (int key)
     {
         m_Dclock.Start(1000);
     }
-    if (m_conn == NULL)
+    if (IgnoreKeys ())
     {
         return;
     }
 
     tracex ("key to plato %03o", key);
     debug ("key to plato %03o", key);
-
-    if (m_conn->Ascii ())
+    
+    if (m_mtutorBoot || m_conn->Ascii ())
     {
         // Assume one byte key code
         len = 1;
@@ -7663,7 +7660,7 @@ void PtermFrame::ptermSendKey1 (int key)
             {
                 return;
             }
-            if (m_flowCtrl && !key2mtutor) // && !m_mtutorBoot)
+            if (m_flowCtrl && !key2mtutor)
             {
                 // Do the keycode translation for the
                 // "flow control enabled" coding rules.
@@ -7703,26 +7700,31 @@ void PtermFrame::ptermSendKey1 (int key)
             }                        
             data[len - 1] = Parity (key);
 
-            if (!key2mtutor)  // && !m_mtutorBoot)
+            if (!key2mtutor)
             {
-            if (tracePterm)
-            {
-                if (len == 1)
+                if (!m_mtutorBoot)
                 {
-                        tracex("ascii mode key to plato 0x%02x", data[0] & 0xff);
-                }
-                else
-                {
-                        tracex("ascii mode key to plato 0x%02x 0x%02x", data[0], data[1] & 0xff);
+                    if (tracePterm)
+                    {
+                        if (len == 1)
+                        {
+                            tracex("ascii mode key to plato 0x%02x",
+                                   data[0] & 0xff);
+                        }
+                        else
+                        {
+                            tracex("ascii mode key to plato 0x%02x 0x%02x",
+                                   data[0], data[1] & 0xff);
+                        }
+                    }
+                    m_conn->SendData(data, len);
+                    if (m_dumbTty)
+                    {
+                        // do local echoing
+                        m_conn->StoreWord(key);
+                    }
                 }
             }
-                m_conn->SendData(data, len);
-            if (m_dumbTty)
-            {
-                // do local echoing
-                    m_conn->StoreWord(key);
-            }
-        }
             else
             {
                 // do mtutor zkey conversion
@@ -8752,15 +8754,6 @@ int PtermFrame::check_pc8080a (void)
 
 void PtermFrame::BootMtutor()
 {
-    //if (m_mtutorBoot)
-    //{
-    //    m_mtutorBoot = false;
-    //    mt_ksw &= 0xfe;
-    //    if (m_M8080a.IsRunning())
-    //        m_M8080a.Stop();
-    //    return;
-    //}
-
     if (ptermApp->m_floppy0 && ptermApp->m_floppy0File.Length() > 0)
         m_MTFiles[0].Open(ptermApp->m_floppy0File);
     else
@@ -9690,12 +9683,6 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     txtSearchURL->SetMaxLength (255); 
     page6->Add (txtSearchURL, 0, wxALL | wxEXPAND, 5);
 
-    chkMTutorBoot = new wxCheckBox(tab6, wxID_ANY,
-        _("Boot to MicroTutor"),
-        wxDefaultPosition, wxDefaultSize, 0);
-    chkMTutorBoot->SetValue(false);
-    page6->Add(chkMTutorBoot, 0, wxALL, 5);
-
     chkMTutor = new wxCheckBox(tab6, wxID_ANY,
         _("Enable MicroTutor Patches"),
         wxDefaultPosition, wxDefaultSize, 0);
@@ -9896,8 +9883,6 @@ bool PtermPrefDialog::SaveProfile (wxString profile)
     file.AddLine (buffer);
     buffer.Printf(wxT(PREF_MTUTOR) wxT("=%d"), (m_mTutorPatch) ? 1 : 0);
     file.AddLine(buffer);
-    buffer.Printf(wxT(PREF_MTUTORBOOT) wxT("=%d"), (m_mTutorBoot) ? 1 : 0);
-    file.AddLine(buffer);
     buffer.Printf(wxT(PREF_FLOPPY0M) wxT("=%d"), (m_floppy0) ? 1 : 0);
     file.AddLine(buffer);
     buffer.Printf(wxT(PREF_FLOPPY1M) wxT("=%d"), (m_floppy1) ? 1 : 0);
@@ -9988,7 +9973,6 @@ void PtermPrefDialog::SetControlState (void)
     //tab6
     m_Email = ptermApp->m_Email;
     m_SearchURL = ptermApp->m_SearchURL;
-    m_mTutorBoot = ptermApp->m_mTutorBoot;
     m_mTutorPatch = ptermApp->m_mTutorPatch;
 
     m_floppy0 = ptermApp->m_floppy0;
@@ -10067,7 +10051,6 @@ void PtermPrefDialog::SetControlState (void)
     //tab6
     txtEmail->SetValue (m_Email);
     txtSearchURL->SetValue (m_SearchURL);
-    chkMTutorBoot->SetValue(m_mTutorBoot);
     chkMTutor->SetValue(m_mTutorPatch);
     chkFloppy0->SetValue(m_floppy0);
     chkFloppy1->SetValue(m_floppy1);
@@ -10291,7 +10274,6 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         //tab6
         m_Email = wxT ("");
         m_SearchURL = DEFAULTSEARCH;
-        m_mTutorBoot = false;
         m_mTutorPatch = true;
 
         //reset object values
@@ -10335,7 +10317,6 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         //tab6
         txtEmail->SetValue (m_Email);
         txtSearchURL->SetValue (m_SearchURL);
-        chkMTutorBoot->SetValue(m_mTutorBoot);
         chkMTutor->SetValue(m_mTutorPatch);
 
         chkFloppy0->SetValue(m_floppy0);
@@ -10396,8 +10377,6 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == chkTutorColor)
         m_TutorColor = event.IsChecked ();
     //tab6
-    else if (event.GetEventObject() == chkMTutorBoot)
-        m_mTutorBoot = event.IsChecked();
     else if (event.GetEventObject() == chkMTutor)
         m_mTutorPatch = event.IsChecked();
         //m_mtutorPatch = m_mTutor = event.IsChecked();
@@ -10894,7 +10873,8 @@ void PtermConnFailDialog::OnClose (wxCloseEvent& event)
 // PtermConnection
 // ----------------------------------------------------------------------------
 
-PtermConnection::PtermConnection (PtermFrame *owner, wxString &host, int port)
+PtermConnection::PtermConnection (PtermFrame *owner,
+                                  const wxString &host, int port)
     : m_displayIn (0),
       m_displayOut (0),
       m_gswIn (0),
@@ -11658,7 +11638,7 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
     }
 #endif
 
-    if (!m_owner->HasConnection () ||
+    if (m_owner->IgnoreKeys () ||
         key == WXK_ALT ||
         key == WXK_SHIFT ||
         key == WXK_CONTROL ||
@@ -11728,21 +11708,16 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
         return;
     }
 
+#if 0
     if (ctrl && key == '[')         // control-[ : turn mtutor/ppt keys off
     {
         m_owner->mt_ksw &= 0xfe;
 
-        m_owner->m_mtutorBoot = false;
         tracex("mtutor off key");
         return;
     }
-
-    //if (ctrl && key == '\\' && ptermApp->m_mTutor)         // control-\ : boot mtutor
-    //{
-    //    m_owner->BootMtutor();
-    //    return;
-    //}
-
+#endif
+    
     // Special case:user has disabled Shift-Space, which means to treat
     // it as a space
     if (ptermApp->m_DisableShiftSpace && key == WXK_SPACE)
@@ -11778,7 +11753,7 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
             {
                 bool acc = false;
                 
-                if (ptermApp->m_TutorColor && m_owner->HasConnection ())
+                if (ptermApp->m_TutorColor && !m_owner->IgnoreKeys ())
                 {
                     acc = (key >= '0' && key <= '9');
                 }
@@ -12093,7 +12068,7 @@ void PtermCanvas::OnChar (wxKeyEvent& event)
 #endif
 
     // control and alt codes shouldn't come here, they are handled in OnCharHook
-    if (!m_owner->HasConnection () || event.ControlDown () ||
+    if (m_owner->IgnoreKeys () || event.ControlDown () ||
         event.RawControlDown () || event.AltDown ())
     {
         event.Skip ();
