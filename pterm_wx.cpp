@@ -9726,7 +9726,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     txtFloppy1->SetMaxLength(255);
     page6->Add(txtFloppy1, 0, wxALL | wxEXPAND, 5);
 
-    btnFloppy1 = new wxButton(tab6, wxID_ANY, wxT("Select Floppy 0"),
+    btnFloppy1 = new wxButton(tab6, wxID_ANY, wxT("Select Floppy 1"),
         wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
     page6->Add(btnFloppy1, 0, wxALL, 5);
 
