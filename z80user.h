@@ -119,7 +119,7 @@ extern "C" {
 	unsigned char	*memory;					                        \
 									                                    \
 	memory = ((ZEXTEST *) context)->memory;				                \
-        memory[(address) & 0xffff] = (x); 				                \
+        memory[(address) & 0xffff] = (unsigned char)(x);                \
         memory[((address) + 1) & 0xffff] = (x) >> 8; 			        \
 }
 
