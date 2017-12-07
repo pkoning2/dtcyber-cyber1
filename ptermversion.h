@@ -1,3 +1,4 @@
+// Versions and related information for pterm, updated by setversion.py
 #define FILEVER             5,1,0,0
 #define PRODUCTVER          5,1,0,0
 #define STRFILEVER          "5.1.0"
