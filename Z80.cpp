@@ -2580,8 +2580,6 @@ doret:
 
             READ_N(n);
             unsigned char a = A;
-            if (n != 0x2b)
-                a = a;
             Z80_OUTPUT_BYTE(n, a);
 
             elapsed_cycles += 4;
