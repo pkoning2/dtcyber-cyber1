@@ -8496,8 +8496,8 @@ int PtermFrame::check_pcZ80(void)
         
     case R_DOT:
 
-        x = HL_pair;
-        y = DE_pair;
+        x = HL_pair & 0x1ff;
+        y = DE_pair & 0x1ff;
 
         ptermDrawPoint (x, y);
         currentX = x;
@@ -8505,8 +8505,8 @@ int PtermFrame::check_pcZ80(void)
         return 1;
         
     case R_LINE:
-        x = HL_pair;
-        y = DE_pair;
+        x = HL_pair & 0x1ff;
+        y = DE_pair & 0x1ff;
         ptermDrawLine (currentX, currentY, x, y);
         currentX = x;
         currentY = y;
@@ -8547,10 +8547,10 @@ int PtermFrame::check_pcZ80(void)
     case R_BLOCK:
         // block erase
         cp = HL_pair;
-        x = ReadRAMW (cp);
-        y = ReadRAMW (cp + 2);
-        x2 = ReadRAMW (cp + 4);
-        y2 = ReadRAMW (cp + 6);
+        x = ReadRAMW (cp) & 0x1ff;
+        y = ReadRAMW (cp + 2) & 0x1ff;
+        x2 = ReadRAMW (cp + 4) & 0x1ff;
+        y2 = ReadRAMW (cp + 6) & 0x1ff;
         ptermBlockErase (x, y, x2, y2);
         return 1;
         
@@ -8563,11 +8563,11 @@ int PtermFrame::check_pcZ80(void)
         return 1;
         
     case R_OUTX:
-        currentX = HL_pair;
+        currentX = HL_pair & 0x01ff;
         return 1;
         
     case R_OUTY:
-        currentY = HL_pair;
+        currentY = HL_pair & 0x01ff;
         return 1;
         
     case R_XMIT:
