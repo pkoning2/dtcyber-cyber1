@@ -24,8 +24,6 @@ by making the bitmap itself different.
 
 #define RESIDENTMSEC 10 // msec to give resident before return to 8080/z80
 
-#define USEZ80         // Use the Z80 emulator - comment out to use 8080
-
 // ----------------------------------------------------------------------------
 // headers
 // ----------------------------------------------------------------------------
