@@ -54,7 +54,7 @@
 #define IM_CAR  0x01
 
 // Initial SP
-#define INITSP  0x2200
+#define INITSP  SPSET       //0x2200
 
 // PPT Resident variables
 #define M_FLAG0 0x22ea
