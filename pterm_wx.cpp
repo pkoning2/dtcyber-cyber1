@@ -31,6 +31,12 @@ by making the bitmap itself different.
 #include <string.h>
 #include <wchar.h>
 
+#include <fcntl.h>  
+#include <sys/types.h>  
+#include <sys/stat.h>  
+#include <io.h>  
+#include <stdio.h> 
+
 #ifndef _WIN32
 // For compilers that support precompilation, includes <wx/wx.h>.
 #include <wx/wxprec.h>
@@ -205,17 +211,27 @@ class MTFile
 public:
     MTFile();
     bool Open(const char *fn);
+    bool Test(const char *fn);
     void Close(void);
     void Seek(long int loc);
     u8 ReadByte();
     void WriteByte(u8 val);
     bool Active(void) const
     {
-        return (fd != NULL);
+#ifdef _WIN32
+        return (ms_handle != NULL);
+#else
+        return (fileHandle != -1);
+
+#endif
     }
 
 private:
-    FILE *fd;
+#ifdef _WIN32
+    HANDLE ms_handle;
+#else
+    int fileHandle;
+#endif
     long int position;
     int rcnt;
     int wcnt;
@@ -223,7 +239,11 @@ private:
 
 MTFile::MTFile()
 {
-    fd = NULL;
+#ifdef _WIN32
+    ms_handle = NULL;
+#else
+    fileHandle = -1;
+#endif
     position = 0;
     rcnt = 0;
     wcnt = 0;
@@ -232,8 +252,59 @@ MTFile::MTFile()
 bool MTFile::Open(const char *fn)
 {
     Close();
-    fd = fopen(fn, "r+b");
-    if (fd == NULL)
+
+#ifdef _WIN32
+
+    wchar_t filenam[256];
+    const size_t cSize = strlen(fn) + 1;
+    mbstowcs(filenam, fn, cSize);
+
+    ms_handle = CreateFile(filenam, (GENERIC_READ | GENERIC_WRITE),
+        0, NULL,  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (ms_handle == INVALID_HANDLE_VALUE)
+#else
+    int fmode = _O_BINARY | _O_RDWR;
+#ifdef O_EXLOCK
+    fmode |= O_EXLOCK;
+#endif
+    fileHandle = _open(fn, fmode);
+
+    if (fileHandle == -1)
+#endif
+    {
+        wxString msg("Error opening µTutor floppy file ");
+        msg.Append(fn);
+        msg.Append(":\n");
+        msg.Append(wxSysErrorMsg());
+
+        wxMessageBox(msg, "Floppy error", wxICON_ERROR | wxOK | wxCENTRE);
+        return false;
+    }
+#ifndef _WIN32
+#ifndef O_EXLOCK
+    // if file could not be locked on open, lock it now.
+    int result = flock(fileHandle, LOCK_EX);
+    if (result == -1)
+    {
+        wxString msg("Error opening µTutor floppy file ");
+        msg.Append(fn);
+        msg.Append(":\n");
+        msg.Append(wxSysErrorMsg());
+
+        wxMessageBox(msg, "Floppy error", wxICON_ERROR | wxOK | wxCENTRE);
+        return false;
+    }
+#endif
+#endif
+    return true;
+}
+
+bool MTFile::Test(const char *fn)
+{
+    struct _stat buf; 
+    int result = _stat(fn, &buf);
+    if (result != 0)
     {
         wxString msg("Error opening µTutor floppy file ");
         msg.Append(fn);
@@ -248,22 +319,35 @@ bool MTFile::Open(const char *fn)
 
 void MTFile::Close(void)
 {
-    if (fd != NULL)
+#ifdef _WIN32
+    CloseHandle(ms_handle);
+    ms_handle = NULL;
+#else
+    if (fileHandle != -1)
     {
-        fflush(fd);
-        fclose(fd);
+        _close(fileHandle);
+        fileHandle = -1;
     }
     fd = NULL;
+#endif
 }
 
 void MTFile::Seek(long int loc)
 {
     int x;
-    if (fd != NULL)
+
+#ifdef _WIN32
+    if (ms_handle != NULL)
     {
-        //printf("Floppy seek to %06lx\n", loc);
-        x = fseek(fd, loc, SEEK_SET);
+        x = SetFilePointer(ms_handle, loc, 0, FILE_BEGIN);
+        if (x == INVALID_SET_FILE_POINTER)
+#else
+    if (fileHandle != -1)
+    {
+        x = lseek(fd, loc, SEEK_SET);
         if (x != 0)
+#endif
+
         {
             printf("Floppy seek error!  loc = %06lx\n", loc);
         }
@@ -276,12 +360,23 @@ void MTFile::Seek(long int loc)
 u8 MTFile::ReadByte()
 {
     int retry = 0;
-    if (fd != NULL)
+
+#ifdef _WIN32
+    if (ms_handle != NULL)
     {
         retry1:
         u8 mybyte = 0;
-        size_t x = fread(&mybyte, 1, 1, fd);
+        LPDWORD x = NULL;
+        bool result = ReadFile(ms_handle, &mybyte, 1, x, NULL);
+        if (result == 0) {
+#else
+    if (ms_handle != NULL)
+    {
+    retry1:
+        u8 mybyte = 0;
+        size_t x = read(fileHandle, &mybyte, 1, 1);
         if (x != 1) {
+#endif
             printf("Floppy read error!  position: %06lx\n", position);
             long int save = position;
             int save2 = rcnt;
@@ -312,11 +407,22 @@ u8 MTFile::ReadByte()
 void MTFile::WriteByte(u8 val)
 {
     int retry = 0;
+
+#ifdef _WIN32
+    if (ms_handle != NULL)
+    {
+    retry2:
+        LPDWORD x = NULL;
+        bool result = WriteFile(ms_handle, &val, 1, x, NULL);
+
+        if (result == 0)
+#else
     if (fd != NULL)
     {
-        retry2:
-        size_t x = fwrite(&val, 1, 1, fd);
+    retry2:
+        size_t x = write(fileHandle, &val, 1, 1);
         if (x != 1)
+#endif
         {
             printf("floppy write error!  data:  %02x  position: %06lx\n",
                    val, position);
@@ -9852,7 +9958,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     page6->Add(lblFloppy0, 0, wxALL, 5);
 
     txtFloppy0 = new wxTextCtrl(tab6, wxID_ANY, wxT(""), wxDefaultPosition,
-        wxDefaultSize, 0 | wxTAB_TRAVERSAL | wxTE_READONLY);
+        wxDefaultSize, 0 | wxTAB_TRAVERSAL| wxTE_READONLY);
     txtFloppy0->SetMaxLength(255);
     page6->Add(txtFloppy0, 0, wxALL | wxEXPAND, 5);
 
@@ -10318,7 +10424,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         if (openFileDialog.ShowModal() == wxID_CANCEL)
             return;     // the user changed idea...
 
-        bool isOK = testFile.Open(openFileDialog.GetPath());
+        bool isOK = testFile.Test(openFileDialog.GetPath());
 
         if (!isOK)
         {
@@ -10336,8 +10442,11 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
                 "MTU files (*.mtu)|*.mtu", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
         MTFile testFile;
+  
+        if (openFileDialog.ShowModal() == wxID_CANCEL)
+            return;     // the user changed idea...
 
-        bool isOK = testFile.Open(openFileDialog.GetPath());
+        bool isOK = testFile.Test(openFileDialog.GetPath());
 
         if (!isOK)
         {
