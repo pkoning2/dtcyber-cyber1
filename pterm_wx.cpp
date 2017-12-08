@@ -366,8 +366,8 @@ u8 MTFile::ReadByte()
     {
         retry1:
         u8 mybyte = 0;
-        LPDWORD x = NULL;
-        bool result = ReadFile(ms_handle, &mybyte, 1, x, NULL);
+        DWORD length;
+        bool result = ReadFile(ms_handle, &mybyte, 1, &length, NULL);
         if (result == 0) {
 #else
     if (ms_handle != NULL)
@@ -412,8 +412,8 @@ void MTFile::WriteByte(u8 val)
     if (ms_handle != NULL)
     {
     retry2:
-        LPDWORD x = NULL;
-        bool result = WriteFile(ms_handle, &val, 1, x, NULL);
+        DWORD length;
+        bool result = WriteFile(ms_handle, &val, 1, &length, NULL);
 
         if (result == 0)
 #else
@@ -9958,7 +9958,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     page6->Add(lblFloppy0, 0, wxALL, 5);
 
     txtFloppy0 = new wxTextCtrl(tab6, wxID_ANY, wxT(""), wxDefaultPosition,
-        wxDefaultSize, 0 | wxTAB_TRAVERSAL| wxTE_READONLY);
+        wxDefaultSize, 0 | wxTAB_TRAVERSAL | wxTE_READONLY);
     txtFloppy0->SetMaxLength(255);
     page6->Add(txtFloppy0, 0, wxALL | wxEXPAND, 5);
 

@@ -9,14 +9,12 @@
 #ifndef __ZEXTEST_INCLUDED__
 #define __ZEXTEST_INCLUDED__
 
-#define MEMSIZE (1 << 16)
-
 #include "z80emu.h"
 
 typedef struct ZEXTEST {
 
 	Z80_STATE	state;
-	unsigned char	memory[MEMSIZE];
+	unsigned char	memory[(1 << 16)];
 
 } ZEXTEST;
 
