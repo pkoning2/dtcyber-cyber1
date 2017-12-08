@@ -11975,6 +11975,16 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
         m_owner->ptermSetTrace (!m_owner->tracePterm);
         return;
     }
+
+    if (ctrl && key == '\\')         // Reset Mtutor
+    {
+        if (m_owner->m_mtutorBoot)
+        {
+            m_owner->BootMtutor();
+        }
+        return;
+    }
+
 #if 0
     if (ctrl && key == '[')         // control-[ : turn mtutor/ppt keys off
     {
