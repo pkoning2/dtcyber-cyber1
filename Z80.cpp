@@ -11,10 +11,13 @@
 #define Level2Pause 0x68d9
 #define Level2Xplato 0x602c
 
+#define Level4Pause 0x6967
 #define Level4Xplato 0x6061
 
 
 #define R_WAIT16 0x97
+#define CALL8080 0xcd
+
 #define RAM m_context.memory
 
 #include <stdio.h>
@@ -92,7 +95,7 @@ static const int OVERFLOW_TABLE[4] = {
 Z80::Z80()
 {
     // clear RAM
-    for (int i = 0; i < (MEMSIZE); i++)
+    for (unsigned i = 0; i < sizeof(m_context.memory); i++)
         m_context.memory[i] = 0;
 
     m_giveup8080 = false;
@@ -271,7 +274,7 @@ int Z80::Z80Emulate (int number_cycles)
         if (m_mtPLevel == 2)
         {
             // Call resident and wxWidgets for brief pause
-            RAM[Level2Pause] = 0xcd;
+            RAM[Level2Pause] = CALL8080;
             RAM[Level2Pause + 1] = R_WAIT16;
             RAM[Level2Pause + 2] = 0;
 
@@ -283,6 +286,11 @@ int Z80::Z80Emulate (int number_cycles)
         }
         else if ( m_mtPLevel == 4)
         {
+            // Call resident and wxWidgets for brief pause
+            RAM[Level4Pause] = CALL8080;
+            RAM[Level4Pause + 1] = R_WAIT16;
+            RAM[Level4Pause + 2] = 0;
+
             // remove off-line check for calling r.exec - only safe place to
             // give up control..  was a z80 jr - 2 bytes only
             RAM[Level4Xplato] = 0;
