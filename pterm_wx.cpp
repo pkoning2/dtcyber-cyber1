@@ -34,7 +34,6 @@ by making the bitmap itself different.
 #include <fcntl.h>  
 #include <sys/types.h>  
 #include <sys/stat.h>  
-#include <io.h>  
 #include <stdio.h> 
 
 #ifndef _WIN32
@@ -95,6 +94,7 @@ extern "C"
 #if defined (_WIN32)
 #include <winsock.h>
 #include <process.h>
+#include <io.h>
 #else
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -102,6 +102,7 @@ extern "C"
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#include <unistd.h>
 #endif
 #include <stdlib.h>
 #include <time.h>
@@ -209,14 +210,14 @@ static PtermApp *ptermApp;
 class MTFile
 {
 public:
-    MTFile();
-    bool Open(const char *fn);
-    bool Test(const char *fn);
-    void Close(void);
-    void Seek(long int loc);
-    u8 ReadByte();
-    void WriteByte(u8 val);
-    bool Active(void) const
+    MTFile ();
+    bool Open (const char *fn);
+    bool Test (const char *fn);
+    void Close (void);
+    void Seek (long int loc);
+    u8 ReadByte ();
+    void WriteByte (u8 val);
+    bool Active (void) const
     {
 #ifdef _WIN32
         return (ms_handle != NULL);
@@ -225,7 +226,8 @@ public:
 
 #endif
     }
-
+    bool reportError (const char *fn);
+    
 private:
 #ifdef _WIN32
     HANDLE ms_handle;
@@ -237,7 +239,7 @@ private:
     int wcnt;
 };
 
-MTFile::MTFile()
+MTFile::MTFile ()
 {
 #ifdef _WIN32
     ms_handle = NULL;
@@ -249,102 +251,97 @@ MTFile::MTFile()
     wcnt = 0;
 }
 
-bool MTFile::Open(const char *fn)
+bool MTFile::Open (const char *fn)
 {
-    Close();
+    Close ();
 
 #ifdef _WIN32
 
     wchar_t filenam[256];
-    const size_t cSize = strlen(fn) + 1;
-    mbstowcs(filenam, fn, cSize);
+    const size_t cSize = strlen (fn) + 1;
+    mbstowcs (filenam, fn, cSize);
 
-    ms_handle = CreateFile(filenam, (GENERIC_READ | GENERIC_WRITE),
-        0, NULL,  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    ms_handle = CreateFile (filenam, (GENERIC_READ | GENERIC_WRITE),
+                            0, NULL,  OPEN_EXISTING,
+                            FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (ms_handle == INVALID_HANDLE_VALUE)
 #else
-    int fmode = _O_BINARY | _O_RDWR;
+    int fmode = O_RDWR;
 #ifdef O_EXLOCK
     fmode |= O_EXLOCK;
 #endif
-    fileHandle = _open(fn, fmode);
+    fileHandle = open (fn, fmode);
 
     if (fileHandle == -1)
+        return reportError (fn);
 #endif
-    {
-        wxString msg("Error opening µTutor floppy file ");
-        msg.Append(fn);
-        msg.Append(":\n");
-        msg.Append(wxSysErrorMsg());
-
-        wxMessageBox(msg, "Floppy error", wxICON_ERROR | wxOK | wxCENTRE);
-        return false;
-    }
 #ifndef _WIN32
 #ifndef O_EXLOCK
     // if file could not be locked on open, lock it now.
-    int result = flock(fileHandle, LOCK_EX);
+    int result = flock (fileHandle, LOCK_EX);
     if (result == -1)
     {
-        wxString msg("Error opening µTutor floppy file ");
-        msg.Append(fn);
-        msg.Append(":\n");
-        msg.Append(wxSysErrorMsg());
-
-        wxMessageBox(msg, "Floppy error", wxICON_ERROR | wxOK | wxCENTRE);
-        return false;
+        close (fileHandle);
+        return reportError (fn);
     }
 #endif
 #endif
     return true;
 }
 
-bool MTFile::Test(const char *fn)
+bool MTFile::reportError (const char *fn)
 {
-    struct _stat buf; 
-    int result = _stat(fn, &buf);
-    if (result != 0)
-    {
-        wxString msg("Error opening µTutor floppy file ");
-        msg.Append(fn);
-        msg.Append(":\n");
-        msg.Append(wxSysErrorMsg());
+    wxString msg("Error opening µTutor floppy file ");
+    msg.Append (fn);
+    msg.Append (":\n");
+    msg.Append (wxSysErrorMsg ());
 
-        wxMessageBox(msg, "Floppy error", wxICON_ERROR | wxOK | wxCENTRE);
-        return false;
-    }
-    return true;
+    wxMessageBox (msg, "Floppy error", wxICON_ERROR | wxOK | wxCENTRE);
+    return false;
 }
-
-void MTFile::Close(void)
+    
+bool MTFile::Test (const char *fn)
 {
 #ifdef _WIN32
-    CloseHandle(ms_handle);
+    struct _stat buf; 
+    int result = _stat (fn, &buf);
+#else
+    struct stat buf;
+    int result = stat (fn, &buf);
+#endif
+    if (result != 0)
+        return reportError (fn);
+    return true;
+}
+
+void MTFile::Close (void)
+{
+#ifdef _WIN32
+    CloseHandle (ms_handle);
     ms_handle = NULL;
 #else
     if (fileHandle != -1)
     {
-        _close(fileHandle);
+        close (fileHandle);
         fileHandle = -1;
     }
-    fd = NULL;
 #endif
 }
 
-void MTFile::Seek(long int loc)
+void MTFile::Seek (long int loc)
 {
     int x;
 
 #ifdef _WIN32
     if (ms_handle != NULL)
     {
-        x = SetFilePointer(ms_handle, loc, 0, FILE_BEGIN);
+        x = SetFilePointer (ms_handle, loc, 0, FILE_BEGIN);
         if (x == INVALID_SET_FILE_POINTER)
 #else
     if (fileHandle != -1)
     {
-        x = lseek(fd, loc, SEEK_SET);
+        x = lseek (fileHandle, loc, SEEK_SET);
         if (x != 0)
 #endif
 
@@ -357,7 +354,7 @@ void MTFile::Seek(long int loc)
     }
 }
 
-u8 MTFile::ReadByte()
+u8 MTFile::ReadByte ()
 {
     int retry = 0;
 
@@ -367,17 +364,17 @@ u8 MTFile::ReadByte()
         retry1:
         u8 mybyte = 0;
         DWORD length;
-        bool result = ReadFile(ms_handle, &mybyte, 1, &length, NULL);
+        bool result = ReadFile (ms_handle, &mybyte, 1, &length, NULL);
         if (result == 0) {
 #else
-    if (ms_handle != NULL)
+    if (fileHandle != -1)
     {
     retry1:
         u8 mybyte = 0;
-        size_t x = read(fileHandle, &mybyte, 1, 1);
+        size_t x = read (fileHandle, &mybyte, 1);
         if (x != 1) {
 #endif
-            printf("Floppy read error!  position: %06lx\n", position);
+            printf ("Floppy read error!  position: %06lx\n", position);
             long int save = position;
             int save2 = rcnt;
             int save3 = wcnt;
@@ -387,7 +384,7 @@ u8 MTFile::ReadByte()
             wcnt = save3;
             if (retry++ < 3)
                 goto retry1;
-            printf("FATAL floppy read error!  position: %06lx\n", position);
+            printf ("FATAL floppy read error!  position: %06lx\n", position);
         }
 
         //printf("readcnt: %d data: %02x  position: %06lx\n", rcnt, mybyte, position);
@@ -413,14 +410,14 @@ void MTFile::WriteByte(u8 val)
     {
     retry2:
         DWORD length;
-        bool result = WriteFile(ms_handle, &val, 1, &length, NULL);
+        bool result = WriteFile (ms_handle, &val, 1, &length, NULL);
 
         if (result == 0)
 #else
-    if (fd != NULL)
+    if (fileHandle != -1)
     {
     retry2:
-        size_t x = write(fileHandle, &val, 1, 1);
+        size_t x = write(fileHandle, &val, 1);
         if (x != 1)
 #endif
         {
