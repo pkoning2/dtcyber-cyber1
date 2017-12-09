@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-12-09 17:07-0500\n"
-"PO-Revision-Date: 2014-12-18 17:21-0500\n"
+"PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
 "MIME-Version: 1.0\n"
@@ -21,7 +21,7 @@ msgstr "Pterm afdruk"
 
 #: pterm_wx.cpp:2547
 msgid "Open a new terminal window"
-msgstr ""
+msgstr "Nieuw terminalvenster openmaken"
 
 #: pterm_wx.cpp:2842
 msgid "V"
@@ -37,7 +37,7 @@ msgstr "Toetsenbordbeschrijving"
 
 #: pterm_wx.cpp:2971 pterm_wx.cpp:3375
 msgid "New Terminal Window..."
-msgstr ""
+msgstr "Nieuw terminalvenster..."
 
 #: pterm_wx.cpp:2972
 msgid "Connect to a PLATO host"
@@ -57,7 +57,7 @@ msgstr "Programma sluiten"
 
 #: pterm_wx.cpp:2982 pterm_wx.cpp:3407
 msgid "Quit this program"
-msgstr "Beeindig het programma"
+msgstr "Beëindig het programma"
 
 #: pterm_wx.cpp:2990 pterm_wx.cpp:3533
 msgid "About Pterm"
@@ -95,7 +95,7 @@ msgstr "Weergave"
 
 #: pterm_wx.cpp:3376
 msgid "New Terminal Window"
-msgstr ""
+msgstr "Nieuw terminalvenster"
 
 #: pterm_wx.cpp:3381
 msgid "Connect Again"
@@ -103,7 +103,7 @@ msgstr "Nogmaals verbinden"
 
 #: pterm_wx.cpp:3382
 msgid "Open the same Profile"
-msgstr ""
+msgstr "Hetzelfde voorkeurbestand openmaken"
 
 #: pterm_wx.cpp:3385
 msgid "Save Screen"
@@ -195,11 +195,11 @@ msgstr "Zoek naar..."
 
 #: pterm_wx.cpp:3472
 msgid "Display menu bar"
-msgstr "Verbindingstoestandbalk aanzetten"
+msgstr "Verbindingstoestandbalk tonen"
 
 #: pterm_wx.cpp:3478 pterm_wx.cpp:3479
 msgid "Display status bar"
-msgstr "Verbindingstoestandbalk aanzetten"
+msgstr "Verbindingstoestandbalk tonen"
 
 #: pterm_wx.cpp:3486
 #, c-format
@@ -233,7 +233,7 @@ msgstr "Voer tekst in"
 
 #: pterm_wx.cpp:3628
 msgid " Booted from floppy"
-msgstr ""
+msgstr "Vanaf floppy opgestart"
 
 #: pterm_wx.cpp:3633
 msgid " Connecting..."
@@ -491,8 +491,7 @@ msgstr "Achtergrondkleur*"
 
 #: pterm_wx.cpp:9785
 msgid "* NOTE: Applied in Classic mode or if -color- is disabled in ASCII mode"
-msgstr ""
-"* Dit wordt gebruikt in een klassieke terminal of als -color- uitgezet is"
+msgstr "* Dit wordt gebruikt in een klassieke terminal of als -color- uitgezet is"
 
 #: pterm_wx.cpp:9791
 msgid "Display"
@@ -524,8 +523,7 @@ msgstr "karakters"
 
 #: pterm_wx.cpp:9867
 msgid "Use TUTOR pasting (certain sequences are treated specially)"
-msgstr ""
-"Gebruik TUTOR invoegregels (sommige letterpatronen worden anders behandeld)"
+msgstr "Gebruik TUTOR invoegregels (sommige letterpatronen worden anders behandeld)"
 
 #: pterm_wx.cpp:9872
 #, fuzzy
@@ -555,27 +553,27 @@ msgstr "Kies de webverwijzing gebruikt voor 'Zoek naar...'"
 
 #: pterm_wx.cpp:9928
 msgid "Boot to MicroTutor"
-msgstr ""
+msgstr "Naar MicroTutor opstarten"
 
 #: pterm_wx.cpp:9934
 msgid "Enable MicroTutor Level 2 Patches"
-msgstr ""
+msgstr "MicroTutor niveau 2 wijzigingen aanzetten"
 
 #: pterm_wx.cpp:9940
 msgid "Enable Floppy 0"
-msgstr ""
+msgstr "Floppy no. 0 aanzetten"
 
 #: pterm_wx.cpp:9946
 msgid "Enable Floppy 1"
-msgstr ""
+msgstr "Floppy no. 1 aanzetten"
 
 #: pterm_wx.cpp:9953
 msgid "Floppy 0 file"
-msgstr ""
+msgstr "Bestand voor floppy no. 0"
 
 #: pterm_wx.cpp:9967
 msgid "Floppy 1 file"
-msgstr ""
+msgstr "Bestand voor floppy no. 1"
 
 #: pterm_wx.cpp:9984
 msgid "Local"
@@ -632,11 +630,11 @@ msgstr "Probleem"
 
 #: pterm_wx.cpp:10416
 msgid "Open Floppy 0 file"
-msgstr ""
+msgstr "Floppy no. 0 bestand openmaken"
 
 #: pterm_wx.cpp:10438
 msgid "Open Floppy 1 file"
-msgstr ""
+msgstr "Floppy no. 1 bestand openmaken"
 
 #: pterm_wx.cpp:10459
 msgid "Foreground"
