@@ -335,7 +335,7 @@ void MTFile::Close (void)
 
 void MTFile::Seek (long int loc)
 {
-    DWORD x;
+    u64 x;
 
 #ifdef _WIN32
     if (ms_handle != NULL)
@@ -9395,7 +9395,7 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
     }
 }
 
-const wxString radioChoices[MAXMCHOICES]{_("None"), _("2"), _("3"), _("4")};
+const wxString radioChoices[MAXMCHOICES] = {_("None"), _("2"), _("3"), _("4")};
 
 // ----------------------------------------------------------------------------
 // PtermPrefDialog
