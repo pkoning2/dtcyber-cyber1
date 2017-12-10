@@ -269,8 +269,6 @@ int Z80::Z80Emulate (int number_cycles)
 {
     ZEXTEST *context = &m_context;
 
-    if (m_mtutorPatch)
-    {
         if (m_mtPLevel == 2)
         {
             // Call resident and wxWidgets for brief pause
@@ -296,7 +294,6 @@ int Z80::Z80Emulate (int number_cycles)
             RAM[Level4Xplato] = 0;
             RAM[Level4Xplato + 1] = 0;
         }
-    }
 
     int     elapsed_cycles, pc, opcode;
 

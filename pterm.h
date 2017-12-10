@@ -149,7 +149,7 @@
 #define PREF_EMAIL       "EmailClient"
 #define PREF_SEARCHURL   "SearchURL"
 #define PREF_MTUTORBOOT  "MTUTORBOOT"
-#define PREF_MTUTOR      "MTUTOR"
+#define PREF_MTUTORLEVEL "MTUTORLEVEL"
 #define PREF_FLOPPY0M    "FLOPPY0M"
 #define PREF_FLOPPY1M    "FLOPPY1M"
 #define PREF_FLOPPY0NAM  "FLOPPY0NAM"
@@ -188,6 +188,8 @@
 #endif
 #endif
 
+#define MAXMCHOICES 3
+#define DEFAULTMLEVEL 2
 
 // External references
 

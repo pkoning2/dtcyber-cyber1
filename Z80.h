@@ -20,7 +20,7 @@ public:
 
     bool m_giveup8080;
     bool m_mtutorPatch;
-    unsigned short  m_mtPLevel;
+    long m_mtPLevel;
     bool m_mtutorBoot;
     bool m_MtTrace;
     unsigned short  m_zclock;      // one second clock for mtutor

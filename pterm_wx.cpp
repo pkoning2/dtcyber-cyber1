@@ -266,6 +266,10 @@ bool MTFile::Open (const char *fn)
                             FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (ms_handle == INVALID_HANDLE_VALUE)
+    {
+        ms_handle = NULL;
+        return reportError(fn);
+    }
 #else
     int fmode = O_RDWR;
 #ifdef O_EXLOCK
@@ -331,7 +335,7 @@ void MTFile::Close (void)
 
 void MTFile::Seek (long int loc)
 {
-    int x;
+    DWORD x;
 
 #ifdef _WIN32
     if (ms_handle != NULL)
@@ -1055,7 +1059,7 @@ public:
     wxString    m_Email;      
     wxString    m_SearchURL;
     bool        m_mTutorBoot;
-    bool        m_mTutorPatch;
+    long        m_mTutorLevel;
     bool        m_floppy0;
     bool        m_floppy1;
     wxString    m_floppy0File;
@@ -1226,12 +1230,14 @@ public:
     void SetColors (wxColour &newfg, wxColour &newbg);
     void OnFullScreen (wxCommandEvent &event);
     void OnResize (wxSizeEvent& event);
+    void OnReset (wxCommandEvent& event);
+
     void UpdateDisplayState (void);
 #if defined (__WXMSW__)
     void OnIconize (wxIconizeEvent &event);
 #endif
 
-    void M8080aWaiter(void);
+    void M8080aWaiter(int msec);
     void BootMtutor(void);
     void BuildMenuBar (void);
     void BuildFileMenu (int port);
@@ -1325,9 +1331,10 @@ public:
     // GSW sound output file handling
     wxString    m_gswFile;
     int         m_gswFFmt;
-    MTFile m_MTFiles[2];
+    MTFile      m_MTFiles[2];
 
 private:
+    bool        m_needtoBoot;
     int         m_lastKey;
     u32         m_fgpix;
     u32         m_bgpix;
@@ -1349,6 +1356,7 @@ private:
     wxTimer     m_Mclock;
     wxTimer     m_Dclock;
     wxTimer     m_M8080a;
+    //long        m_mtutorLevel;
     u8          m_indev;        // input device
     u8          m_outdev;       // output device
     u8          m_mtincnt;      // counter
@@ -1621,6 +1629,7 @@ public:
     //event sink handlers
     void OnButton (wxCommandEvent& event);
     void OnCheckbox (wxCommandEvent& event);
+    void OnRadiobox(wxCommandEvent& event);
     void OnSelect (wxCommandEvent& event);
     void OnDoubleClick (wxCommandEvent& event);
     void OnChange (wxCommandEvent& event);
@@ -1632,6 +1641,8 @@ public:
     bool SaveProfile (wxString profile);
     bool DeleteProfile (wxString profile);
     void SetControlState (void);
+    int SelectToLevel(int select);
+    int LevelToSelect(int level);
     //objects
     wxNotebook* tabPrefsDialog;
     //tab0
@@ -1683,7 +1694,7 @@ public:
     wxTextCtrl* txtEmail;
     wxTextCtrl* txtSearchURL;
     wxCheckBox* chkMTutorBoot;
-    wxCheckBox* chkMTutor;
+    wxRadioBox* radMTutor;
     wxCheckBox* chkFloppy0;
     wxCheckBox* chkFloppy1;
     wxTextCtrl* txtFloppy0;
@@ -1741,7 +1752,7 @@ public:
     wxString        m_Email;
     wxString        m_SearchURL;
     bool            m_mTutorBoot;
-    bool            m_mTutorPatch;
+    long            m_mTutorLevel;
     bool            m_floppy0;
     bool            m_floppy1;
     bool            m_floppy0Changed;
@@ -1818,6 +1829,7 @@ enum
     Pterm_SetScaleEntry,
     Pterm_CopyScreen = Pterm_SetScaleEntry + 32,
     Pterm_ConnectAgain,
+    Pterm_ResetMtutor,
     Pterm_SaveScreen,
     Pterm_SaveAudio,
     Pterm_HelpKeys,
@@ -2063,6 +2075,7 @@ BEGIN_EVENT_TABLE (PtermFrame, wxFrame)
     EVT_MENU (Pterm_SaveScreen, PtermFrame::OnSaveScreen)
     EVT_MENU (Pterm_SaveAudio, PtermFrame::OnSaveAudio)
     EVT_MENU (Pterm_Print, PtermFrame::OnPrint)
+    EVT_MENU (Pterm_ResetMtutor, PtermFrame::OnReset)
     EVT_MENU (Pterm_Preview, PtermFrame::OnPrintPreview)
     EVT_MENU (Pterm_Page_Setup, PtermFrame::OnPageSetup)
     EVT_MENU (Pterm_Pref,    PtermFrame::OnPref)
@@ -2108,6 +2121,7 @@ bool PtermApp::OnInit (void)
 {
     int r, g, b, dspi, sz;
     wxString rgb;
+    wxString level;
     wxString str;
     const char *s;
 
@@ -2220,7 +2234,7 @@ bool PtermApp::OnInit (void)
     //tab6
     m_config->Read (wxT (PREF_EMAIL), &m_Email, wxT (""));
     m_config->Read (wxT (PREF_SEARCHURL), &m_SearchURL, DEFAULTSEARCH);
-    m_mTutorPatch = (m_config->Read(wxT(PREF_MTUTOR), 0L) != 0);
+    m_config->Read (wxT (PREF_MTUTORLEVEL), &m_mTutorLevel, DEFAULTMLEVEL);
     m_mTutorBoot = (m_config->Read(wxT(PREF_MTUTORBOOT), 0L) != 0);
     m_floppy0 = (m_config->Read(wxT(PREF_FLOPPY0M), 0L) != 0);
     m_floppy1 = (m_config->Read(wxT(PREF_FLOPPY1M), 0L) != 0);
@@ -2587,7 +2601,7 @@ bool PtermApp::DoConnect (bool ask)
             m_config->Write (wxT (PREF_HOST), m_hostName);
             m_config->Write (wxT (PREF_PORT), m_port);
             m_config->Write (wxT (PREF_MTUTORBOOT), m_mTutorBoot);
-            m_config->Write (wxT (PREF_MTUTOR), m_mTutorPatch);
+            m_config->Write (wxT (PREF_MTUTORLEVEL), m_mTutorLevel);
             m_config->Write (wxT (PREF_FLOPPY0M), m_floppy0);
             m_config->Write (wxT (PREF_FLOPPY1M), m_floppy1);
             m_config->Write (wxT (PREF_FLOPPY0NAM), m_floppy0File);
@@ -2733,8 +2747,8 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
                 m_Email         = value;
             else if (token.Cmp (wxT (PREF_SEARCHURL)) == 0)
                 m_SearchURL     = value;
-            else if (token.Cmp(wxT(PREF_MTUTOR)) == 0)
-                m_mTutorPatch = (value.Cmp(wxT("1")) == 0);
+            else if (token.Cmp(wxT(PREF_MTUTORLEVEL)) == 0)
+                value.ToCLong(&m_mTutorLevel);
             else if (token.Cmp(wxT(PREF_MTUTORBOOT)) == 0)
                 m_mTutorBoot = (value.Cmp(wxT("1")) == 0);
             else if (token.Cmp(wxT(PREF_FLOPPY0M)) == 0)
@@ -2803,7 +2817,7 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
     //tab6
     m_config->Write (wxT (PREF_EMAIL), m_Email);
     m_config->Write (wxT (PREF_SEARCHURL), m_SearchURL);
-    m_config->Write(wxT(PREF_MTUTOR), (m_mTutorPatch) ? 1 : 0);
+    m_config->Write(wxT(PREF_MTUTORLEVEL), m_mTutorLevel);
     m_config->Write(wxT(PREF_MTUTORBOOT), (m_mTutorBoot) ? 1 : 0);
     m_config->Write(wxT(PREF_FLOPPY0M), (m_floppy0) ? 1 : 0);
     m_config->Write(wxT(PREF_FLOPPY1M), (m_floppy1) ? 1 : 0);
@@ -3129,7 +3143,7 @@ PtermFrame::PtermFrame (const wxString &host, int port, const wxString& title,
     RAM[M_CCR] = 0;
 
     m_mtutorBoot = mtutorBoot;
-    m_mtutorPatch = ptermApp->m_mTutorPatch || mtutorBoot;
+    m_mtPLevel = ptermApp->m_mTutorLevel;
     if (ptermApp->m_floppy0 && ptermApp->m_floppy0File.Length() > 0)
         m_MTFiles[0].Open(ptermApp->m_floppy0File);
     else
@@ -3265,11 +3279,14 @@ PtermFrame::PtermFrame (const wxString &host, int port, const wxString& title,
         tracex ("Connecting to: %s:%d", host.mb_str ().data (), port);
         m_conn = new PtermConnection (this, host, port);
     }
+    
+    m_needtoBoot = false;
 
     if (mtutorBoot)
-        BootMtutor();
+        m_needtoBoot = true;
 
     Show (true);
+
 }
 
 void PtermFrame::trace (const wxString &msg) const
@@ -3380,8 +3397,15 @@ void PtermFrame::BuildFileMenu (int port)
         // doesn't own a connection.
         menuFile->Append (Pterm_ConnectAgain, _("Connect Again"),
                           _("Open the same Profile"));
-        menuFile->AppendSeparator();
     }
+    if (m_mtutorBoot)
+    {
+        menuFile->Append(Pterm_ResetMtutor, _("Reset MicroTutor"),
+           _("Reset the MicroTutor boot process") );
+    }
+
+    menuFile->AppendSeparator();
+
     menuFile->Append (Pterm_SaveScreen, _("Save Screen")
                       ACCELERATOR ("\tCtrl-S"), _("Save screen image to file"));
     if (port > 0)
@@ -3656,6 +3680,12 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 {
     // In every case, let others see this event too.
     event.Skip ();
+
+    if (m_needtoBoot)
+    {
+        m_needtoBoot = false;
+        BootMtutor();
+    }
 
     // Do nothing for the help window.
     // If our timer is running, we're using the timer event to drive
@@ -4596,6 +4626,11 @@ void PtermFrame::OnSaveAudio (wxCommandEvent &)
     m_gswFile = fn.GetFullPath ();
 }
 
+void PtermFrame::OnReset(wxCommandEvent &)
+{
+    BootMtutor();
+}
+
 void PtermFrame::OnPrint (wxCommandEvent &)
 {
     wxPrintDialogData printDialogData (*g_printData);
@@ -4660,7 +4695,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
 {
     //show dialog
     PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"),
-                         wxDefaultPosition, wxSize (461, 530));
+                         wxDefaultPosition, wxSize (461, 575));
 
     dlg.m_floppy0Changed = false;
     dlg.m_floppy1Changed = false;
@@ -4708,7 +4743,7 @@ void PtermFrame::OnPref (wxCommandEvent&)
         //tab6
         ptermApp->m_Email = dlg.m_Email;
         ptermApp->m_SearchURL = dlg.m_SearchURL;
-        m_mtutorPatch = ptermApp->m_mTutorPatch = dlg.m_mTutorPatch;
+        m_mtPLevel = ptermApp->m_mTutorLevel = dlg.m_mTutorLevel;
         m_mtutorBoot = ptermApp->m_mTutorBoot = dlg.m_mTutorBoot;
 
         ptermApp->m_floppy0 = dlg.m_floppy0;
@@ -4796,7 +4831,7 @@ void PtermFrame::SavePreferences (void)
     //tab6
     ptermApp->m_config->Write (wxT (PREF_EMAIL), ptermApp->m_Email);
     ptermApp->m_config->Write (wxT (PREF_SEARCHURL), ptermApp->m_SearchURL);
-    ptermApp->m_config->Write(wxT(PREF_MTUTOR), (ptermApp->m_mTutorPatch) ? 1 : 0);
+    ptermApp->m_config->Write(wxT(PREF_MTUTORLEVEL), ptermApp->m_mTutorLevel);
     ptermApp->m_config->Write(wxT(PREF_MTUTORBOOT), (ptermApp->m_mTutorBoot) ? 1 : 0);
 
     ptermApp->m_config->Write(wxT(PREF_FLOPPY0M), ptermApp->m_floppy0);
@@ -7777,9 +7812,9 @@ void PtermFrame::ptermSendKey (u32 keys)
 
 
 // give resident RESIDENTMSEC ms before resuming 8080 exec
-void PtermFrame::M8080aWaiter(void)
+void PtermFrame::M8080aWaiter(int msec)
 {
-    m_M8080a.StartOnce(RESIDENTMSEC);
+    m_M8080a.StartOnce(msec);
 }
 
 /*--------------------------------------------------------------------------
@@ -8709,6 +8744,14 @@ int PtermFrame::check_pcZ80(void)
         return 1;
         
     case R_INPUT:
+
+        if (m_mtutorBoot)  // this is very bad for performance, intolerable on-line
+        {
+            m_canvas->Refresh(false);
+            M8080aWaiter(1);
+            m_giveup8080 = true;
+        }
+
         if (tracePterm)
         {
             tracex("R_INPUT: %04x", mt_key);
@@ -8716,6 +8759,7 @@ int PtermFrame::check_pcZ80(void)
         }
         HL_pair = mt_key & 0xffff;
         mt_key = -1;
+
 
         return 1;
         
@@ -8809,7 +8853,7 @@ int PtermFrame::check_pcZ80(void)
     case R_EXEC:
         // r.exec
         m_canvas->Refresh(false);
-        M8080aWaiter();
+        M8080aWaiter(RESIDENTMSEC);
         m_giveup8080 = true;
         return 1;
         
@@ -8998,12 +9042,6 @@ void PtermFrame::BootMtutor()
 
     PC = 0x5306;    // f.inix - boot entry point
 
-    mt_ksw |= 1;
-
-    // host must be disconnected / blocked 
-    // any data from host esp mode 5,6,7
-    // will kill off-line mtutor
-    
     m_mtutorBoot = true;
 
     if (tracePterm)
@@ -9353,6 +9391,7 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
     }
 }
 
+const wxString radioChoices[3]{_("None"), _("2"), _("4")};
 
 // ----------------------------------------------------------------------------
 // PtermPrefDialog
@@ -9362,6 +9401,7 @@ BEGIN_EVENT_TABLE (PtermPrefDialog, wxDialog)
     EVT_CLOSE (PtermPrefDialog::OnClose)
     EVT_BUTTON (wxID_ANY, PtermPrefDialog::OnButton)
     EVT_CHECKBOX (wxID_ANY, PtermPrefDialog::OnCheckbox)
+    EVT_RADIOBOX(wxID_ANY, PtermPrefDialog::OnRadiobox)
     EVT_LISTBOX (wxID_ANY, PtermPrefDialog::OnSelect)
     EVT_LISTBOX_DCLICK (wxID_ANY, PtermPrefDialog::OnDoubleClick)
     EVT_TEXT (wxID_ANY, PtermPrefDialog::OnChange)
@@ -9930,11 +9970,11 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     chkMTutorBoot->SetValue(false);
     page6->Add(chkMTutorBoot, 0, wxALL, 5);
     
-    chkMTutor = new wxCheckBox(tab6, wxID_ANY,
-        _("Enable MicroTutor Level 2 Patches"),
-        wxDefaultPosition, wxDefaultSize, 0);
-    chkMTutor->SetValue(true);
-    page6->Add(chkMTutor, 0, wxALL, 5);
+    radMTutor = new wxRadioBox(tab6, wxID_ANY,
+        _("MicroTutor Level"),
+        wxDefaultPosition, wxDefaultSize, MAXMCHOICES, radioChoices, MAXMCHOICES, wxRA_SPECIFY_COLS);
+    radMTutor->SetSelection(LevelToSelect(DEFAULTMLEVEL));
+    page6->Add(radMTutor, 0, wxALL, 5);
 
     chkFloppy0 = new wxCheckBox(tab6, wxID_ANY,
         _("Enable Floppy 0"),
@@ -10128,7 +10168,7 @@ bool PtermPrefDialog::SaveProfile (wxString profile)
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_SEARCHURL) wxT ("=%s"), m_SearchURL);
     file.AddLine (buffer);
-    buffer.Printf(wxT(PREF_MTUTOR) wxT("=%d"), (m_mTutorPatch) ? 1 : 0);
+    buffer.Printf(wxT(PREF_MTUTORLEVEL) wxT("=%d"), m_mTutorLevel);
     file.AddLine(buffer);
     buffer.Printf(wxT(PREF_MTUTORBOOT) wxT("=%d"), (m_mTutorBoot) ? 1 : 0);
     file.AddLine(buffer);
@@ -10148,6 +10188,26 @@ bool PtermPrefDialog::SaveProfile (wxString profile)
 
     return true;
 
+}
+
+int PtermPrefDialog::SelectToLevel(int select)
+{
+    switch (select)
+    {
+    case 1: return 2;
+    case 2: return 4;
+    default: return 0;
+    }
+}
+
+int PtermPrefDialog::LevelToSelect(int level)
+{
+    switch (level)
+    {
+    case 2: return 1;
+    case 4: return 2;
+    default: return 0;
+    }
 }
 
 bool PtermPrefDialog::DeleteProfile (wxString profile)
@@ -10223,7 +10283,7 @@ void PtermPrefDialog::SetControlState (void)
     m_Email = ptermApp->m_Email;
     m_SearchURL = ptermApp->m_SearchURL;
     m_mTutorBoot = ptermApp->m_mTutorBoot;
-    m_mTutorPatch = ptermApp->m_mTutorPatch;
+    m_mTutorLevel = ptermApp->m_mTutorLevel;
 
     m_floppy0 = ptermApp->m_floppy0;
     m_floppy1 = ptermApp->m_floppy1;
@@ -10302,7 +10362,7 @@ void PtermPrefDialog::SetControlState (void)
     txtEmail->SetValue (m_Email);
     txtSearchURL->SetValue (m_SearchURL);
     chkMTutorBoot->SetValue(m_mTutorBoot);
-    chkMTutor->SetValue(m_mTutorPatch);
+    radMTutor->SetSelection(LevelToSelect(m_mTutorLevel));
     chkFloppy0->SetValue(m_floppy0);
     chkFloppy1->SetValue(m_floppy1);
     txtFloppy0->SetValue(m_floppy0File);
@@ -10536,7 +10596,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_Email = wxT ("");
         m_SearchURL = DEFAULTSEARCH;
         m_mTutorBoot = false;
-        m_mTutorPatch = true;
+        m_mTutorLevel = DEFAULTMLEVEL;
 
         //reset object values
         //tab0
@@ -10580,7 +10640,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         txtEmail->SetValue (m_Email);
         txtSearchURL->SetValue (m_SearchURL);
         chkMTutorBoot->SetValue(m_mTutorBoot);
-        chkMTutor->SetValue(m_mTutorPatch);
+        radMTutor->SetSelection(LevelToSelect(DEFAULTMLEVEL));
 
         chkFloppy0->SetValue(m_floppy0);
         chkFloppy1->SetValue(m_floppy1);
@@ -10589,6 +10649,15 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 
     }
     Refresh (false);
+}
+
+void PtermPrefDialog::OnRadiobox(wxCommandEvent& event)
+{
+    if (event.GetEventObject() == radMTutor)
+    {
+        m_mTutorLevel = SelectToLevel(radMTutor->GetSelection());
+    }
+
 }
 
 void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
@@ -10642,9 +10711,6 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     //tab6
     else if (event.GetEventObject() == chkMTutorBoot)
         m_mTutorBoot = event.IsChecked();
-    else if (event.GetEventObject() == chkMTutor)
-        m_mTutorPatch = event.IsChecked();
-        //m_mtutorPatch = m_mTutor = event.IsChecked();
 
     else if (event.GetEventObject() == chkFloppy0)
     {
@@ -11973,6 +12039,8 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
         return;
     }
 
+
+#if 0
     if (ctrl && key == '\\')         // Reset Mtutor
     {
         if (m_owner->m_mtutorBoot)
@@ -11982,7 +12050,6 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
         return;
     }
 
-#if 0
     if (ctrl && key == '[')         // control-[ : turn mtutor/ppt keys off
     {
         m_owner->mt_ksw &= 0xfe;
