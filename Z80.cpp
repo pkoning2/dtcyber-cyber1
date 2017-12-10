@@ -293,6 +293,8 @@ int Z80::Z80Emulate (int number_cycles)
         // give up control..  was a z80 jr - 2 bytes only
         RAM[Level4Xplato] = 0;
         RAM[Level4Xplato + 1] = 0;
+
+        RAM[0x5f5c] = 0xc9;  // ret to disable ist-3 screen print gunk
     }
 
     int     elapsed_cycles, pc, opcode;

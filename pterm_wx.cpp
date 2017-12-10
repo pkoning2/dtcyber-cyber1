@@ -8745,7 +8745,8 @@ int PtermFrame::check_pcZ80(void)
         
     case R_INPUT:
 
-        if (m_mtutorBoot)  // this is very bad for performance, intolerable on-line
+        if (m_mtutorBoot)  // this is very bad for performance, 
+                           // intolerable on-line, even crashes
         {
             m_canvas->Refresh(false);
             M8080aWaiter(1);
@@ -9124,11 +9125,11 @@ u8 PtermFrame::inputZ80(u8 data)
         case 0x2b:
             retval = 1;
             break;
-        case 0xaa:
-            retval = 0x37;
+        case 0xaa:  // new in level 4
+            retval = 0x37 + 1;
             break;
 
-        case 0xab:
+        case 0xab:  // new in level 4
             retval = 0x01;
             break;
 
@@ -9245,7 +9246,7 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
         case 0x2b:
             break;
 
-        case 0xab:
+        case 0xab:  // new in level 4
 
             break;
 
