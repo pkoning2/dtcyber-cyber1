@@ -8748,8 +8748,11 @@ int PtermFrame::check_pcZ80(void)
         if (m_mtutorBoot)  // this is very bad for performance, 
                            // intolerable on-line, even crashes
         {
+            int ms = 1;
+            if (m_mtPLevel == 3)
+                ms = 3;
             m_canvas->Refresh(false);
-            M8080aWaiter(1);
+            M8080aWaiter(ms);
             m_giveup8080 = true;
         }
 
@@ -9392,7 +9395,7 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
     }
 }
 
-const wxString radioChoices[3]{_("None"), _("2"), _("4")};
+const wxString radioChoices[MAXMCHOICES]{_("None"), _("2"), _("3"), _("4")};
 
 // ----------------------------------------------------------------------------
 // PtermPrefDialog
@@ -10196,7 +10199,8 @@ int PtermPrefDialog::SelectToLevel(int select)
     switch (select)
     {
     case 1: return 2;
-    case 2: return 4;
+    case 2: return 3;
+    case 3: return 4;
     default: return 0;
     }
 }
@@ -10206,7 +10210,8 @@ int PtermPrefDialog::LevelToSelect(int level)
     switch (level)
     {
     case 2: return 1;
-    case 4: return 2;
+    case 3: return 2;
+    case 4: return 3;
     default: return 0;
     }
 }

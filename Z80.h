@@ -19,7 +19,6 @@ public:
     ~Z80();
 
     bool m_giveup8080;
-    bool m_mtutorPatch;
     long m_mtPLevel;
     bool m_mtutorBoot;
     bool m_MtTrace;

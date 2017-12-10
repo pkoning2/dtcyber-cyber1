@@ -11,6 +11,9 @@
 #define Level2Pause 0x68d9
 #define Level2Xplato 0x602c
 
+#define Level3Pause 0x6978
+#define Level3Xplato 0x60cf
+
 #define Level4Pause 0x6967
 #define Level4Xplato 0x6061
 
@@ -99,7 +102,6 @@ Z80::Z80()
         m_context.memory[i] = 0;
 
     m_giveup8080 = false;
-    m_mtutorPatch = false;
     m_mtutorBoot = false;
     m_MtTrace = false;
     m_zclock = 0;
@@ -281,6 +283,20 @@ int Z80::Z80Emulate (int number_cycles)
         RAM[Level2Xplato] = 0;
         RAM[Level2Xplato + 1] = 0;
         RAM[Level2Xplato + 2] = 0;
+    }
+    else if (m_mtPLevel == 3)
+    {
+        // Call resident and wxWidgets for brief pause
+        RAM[Level3Pause] = CALL8080;
+        RAM[Level3Pause + 1] = R_WAIT16;
+        RAM[Level3Pause + 2] = 0;
+
+        // remove off-line check for calling r.exec - only safe place to
+        // give up control..  was a z80 jr - 2 bytes only
+        //RAM[Level3Xplato] = 0;
+        //RAM[Level3Xplato + 1] = 0;
+
+        RAM[0x600d] = 0xc9;  // ret to disable ist-3 screen print gunk
     }
     else if ( m_mtPLevel == 4)
     {
