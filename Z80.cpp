@@ -269,31 +269,31 @@ int Z80::Z80Emulate (int number_cycles)
 {
     ZEXTEST *context = &m_context;
 
-        if (m_mtPLevel == 2)
-        {
-            // Call resident and wxWidgets for brief pause
-            RAM[Level2Pause] = CALL8080;
-            RAM[Level2Pause + 1] = R_WAIT16;
-            RAM[Level2Pause + 2] = 0;
+    if (m_mtPLevel == 2)
+    {
+        // Call resident and wxWidgets for brief pause
+        RAM[Level2Pause] = CALL8080;
+        RAM[Level2Pause + 1] = R_WAIT16;
+        RAM[Level2Pause + 2] = 0;
 
-            // remove off-line check for calling r.exec - only safe place to
-            // give up control..
-            RAM[Level2Xplato] = 0;
-            RAM[Level2Xplato + 1] = 0;
-            RAM[Level2Xplato + 2] = 0;
-        }
-        else if ( m_mtPLevel == 4)
-        {
-            // Call resident and wxWidgets for brief pause
-            RAM[Level4Pause] = CALL8080;
-            RAM[Level4Pause + 1] = R_WAIT16;
-            RAM[Level4Pause + 2] = 0;
+        // remove off-line check for calling r.exec - only safe place to
+        // give up control..
+        RAM[Level2Xplato] = 0;
+        RAM[Level2Xplato + 1] = 0;
+        RAM[Level2Xplato + 2] = 0;
+    }
+    else if ( m_mtPLevel == 4)
+    {
+        // Call resident and wxWidgets for brief pause
+        RAM[Level4Pause] = CALL8080;
+        RAM[Level4Pause + 1] = R_WAIT16;
+        RAM[Level4Pause + 2] = 0;
 
-            // remove off-line check for calling r.exec - only safe place to
-            // give up control..  was a z80 jr - 2 bytes only
-            RAM[Level4Xplato] = 0;
-            RAM[Level4Xplato + 1] = 0;
-        }
+        // remove off-line check for calling r.exec - only safe place to
+        // give up control..  was a z80 jr - 2 bytes only
+        RAM[Level4Xplato] = 0;
+        RAM[Level4Xplato + 1] = 0;
+    }
 
     int     elapsed_cycles, pc, opcode;
 
