@@ -12,7 +12,7 @@
 #define Level2Xplato 0x602c
 
 #define Level3Pause 0x6978
-#define Level3Xplato 0x60cf
+#define Level3Xplato 0x60d5
 
 #define Level4Pause 0x6967
 #define Level4Xplato 0x6061
@@ -293,8 +293,8 @@ int Z80::Z80Emulate (int number_cycles)
 
         // remove off-line check for calling r.exec - only safe place to
         // give up control..  was a z80 jr - 2 bytes only
-        //RAM[Level3Xplato] = 0;
-        //RAM[Level3Xplato + 1] = 0;
+        RAM[Level3Xplato] = 0;
+        RAM[Level3Xplato + 1] = 0;
 
         RAM[0x600d] = 0xc9;  // ret to disable ist-3 screen print gunk
     }
@@ -372,25 +372,29 @@ emulate_next_instruction:
         r++;
 
 #ifdef DEBUG_Z80
-        printf("\n\nOPCODE-[0x%X]\tINTSTRUCTION-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
-               "PSW-[0x%X]\n", opcode, instruction, pc, SP, state->registers.byte[Z80_F]);
-        printf("A-[0x%X] \tB/C-[0x%X/0x%X]\tD/E-[0x%X/0x%X]\t"
-               "H/L-[0x%X/0x%X]\n", A, B, C, D,
-               E, H, L);
-        printf("BC-[0x%X]\tDE-[0x%X]\t"
-               "HL-[0x%X]\tSP-[0x%X/0x%X]\n", BC, DE,
-               HL, ReadRAM(SP), ReadRAM(SP + 1));
-        printf("RAM-[0x%X/0x%X/0x%X/0x%X]\n\n", ReadRAM(pc - 1), ReadRAM(pc),
-               ReadRAM(pc + 1), ReadRAM(pc + 2));
 
-        printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
-               "PSW-[]\n", opcode, pc - 1, SP, F);
-        printf("AF-[0x%X]\tBC-[0x%X]\tDE-[0x%X]\t"
-               "HL-[0x%X]\n", A, BC, DE, HL);
+        if (pc > 0x60b8 && pc < 0x60df)
+        {
+            printf("\n\nOPCODE-[0x%X]\tINTSTRUCTION-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
+                "PSW-[0x%X]\n", opcode, instruction, pc, SP, state->registers.byte[Z80_F]);
+            printf("A-[0x%X] \tB/C-[0x%X/0x%X]\tD/E-[0x%X/0x%X]\t"
+                "H/L-[0x%X/0x%X]\n", A, B, C, D,
+                E, H, L);
+            printf("BC-[0x%X]\tDE-[0x%X]\t"
+                "HL-[0x%X]\tSP-[0x%X/0x%X]\n", BC, DE,
+                HL, ReadRAM(SP), ReadRAM(SP + 1));
+            printf("RAM-[0x%X/0x%X/0x%X/0x%X]\n\n", ReadRAM(pc - 1), ReadRAM(pc),
+                ReadRAM(pc + 1), ReadRAM(pc + 2));
 
-        for (int i = 0xffff; i >= SP; i -= 2)
-            printf("RAMW[0x%X]=0x%X\t", i, ReadRAMW(i));
-        printf("\nRAMW[SP]=0x%X\n\n", ReadRAMW(SP));
+            printf("OPCODE-[0x%X]\tPC-[0x%X]\tSP-[0x%X]\t"
+                "PSW-[]\n", opcode, pc - 1, SP, F);
+            printf("AF-[0x%X]\tBC-[0x%X]\tDE-[0x%X]\t"
+                "HL-[0x%X]\n", A, BC, DE, HL);
+
+            for (int i = 0xffff; i >= SP; i -= 2)
+                printf("RAMW[0x%X]=0x%X\t", i, ReadRAMW(i));
+            printf("\nRAMW[SP]=0x%X\n\n", ReadRAMW(SP));
+        }
 
 #endif
 
