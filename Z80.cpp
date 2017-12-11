@@ -6,6 +6,8 @@
  * This code is free, do whatever you want with it.
  */
 
+//#define DEBUG_Z80_PRINT
+
 //#define DEBUG_Z80
 
 #define Level2Pause 0x68d9
@@ -20,6 +22,8 @@
 
 #define R_WAIT16 0x97
 #define CALL8080 0xcd
+#define JUMP8080 0xc3
+#define RET8080 0xc9
 
 #define RAM m_context.memory
 
@@ -39,6 +43,46 @@
 /* Condition codes are encoded using 2 or 3 bits.  The xor table is needed for
  * negated conditions, it is used along with the and table.
  */
+
+
+#ifdef DEBUG_Z80
+
+ // addresses of z80 breakpoints
+unsigned short breakpts[] =
+{
+    //0x4000,
+    //0x5315,     // v.reloc
+    //0x5320,
+    //0x5325,
+    //0x5337,
+
+    //0x655c,     // exec overlay
+    //0x5893,
+    //0x5105,
+    //0x5125,
+    //0x5105 + 0x0051,
+
+    //0x5187,
+
+    0x64d5,
+
+    0xffff,  // these can be overridden to add/remove 
+    0xffff,  // break points while running.
+    0xffff,  // use the immediate window.
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff,
+    0xffff  // must end with 0xffff
+};
+
+#endif
 
 static const int XOR_CONDITION_TABLE[8] = {
 
@@ -283,6 +327,21 @@ int Z80::Z80Emulate (int number_cycles)
         RAM[Level2Xplato] = 0;
         RAM[Level2Xplato + 1] = 0;
         RAM[Level2Xplato + 2] = 0;
+
+        // patch xerror tight getkey loop bug in mtutor
+        // top 32K of ram was for memory mapped video on ist 2/3
+        // so that's safe for us to use
+        RAM[0x5d26] = 0x10;
+        RAM[0x5d26 + 1] = 0x80; // jmp just above interp
+        // to a call to xplato and r.exec
+        RAM[0x8010] = CALL8080;  // call
+        RAM[0x8010 + 1] = 0x2f;
+        RAM[0x8010 + 2] = 0x60;  // xplato
+        // jump back to call getkey
+        RAM[0x8010 + 3] = JUMP8080; // jmp
+        RAM[0x8010 + 4] = 0x22;
+        RAM[0x8010 + 5] = 0x5d;  // back to loop - getkey
+
     }
     else if (m_mtPLevel == 3)
     {
@@ -296,7 +355,7 @@ int Z80::Z80Emulate (int number_cycles)
         RAM[Level3Xplato] = 0;
         RAM[Level3Xplato + 1] = 0;
 
-        RAM[0x600d] = 0xc9;  // ret to disable ist-3 screen print gunk
+        RAM[0x600d] = RET8080;  // ret to disable ist-3 screen print gunk
     }
     else if ( m_mtPLevel == 4)
     {
@@ -310,7 +369,7 @@ int Z80::Z80Emulate (int number_cycles)
         RAM[Level4Xplato] = 0;
         RAM[Level4Xplato + 1] = 0;
 
-        RAM[0x5f5c] = 0xc9;  // ret to disable ist-3 screen print gunk
+        RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
     }
 
     int     elapsed_cycles, pc, opcode;
@@ -335,6 +394,8 @@ int Z80::emulate (
     int elapsed_cycles, int number_cycles)
 {
     ZEXTEST *context = &m_context;
+
+    bool step = false;
 
     int	pc, r;
 
@@ -371,7 +432,7 @@ emulate_next_instruction:
         elapsed_cycles += 4;
         r++;
 
-#ifdef DEBUG_Z80
+#ifdef DEBUG_Z80_PRINT
 
         if (pc > 0x60b8 && pc < 0x60df)
         {
@@ -395,6 +456,37 @@ emulate_next_instruction:
                 printf("RAMW[0x%X]=0x%X\t", i, ReadRAMW(i));
             printf("\nRAMW[SP]=0x%X\n\n", ReadRAMW(SP));
         }
+#endif
+
+#ifdef DEBUG_Z80
+        /* begin simple z80 degugger -  works well with MSVS
+        *
+        * Add 8080 breakpoints to breakpts table below.
+        * Set MSVS break points at two locations indicated.
+        *
+        * Load watch window with Registers, PC, SP, RAM[...] etc.
+        *
+        * Use immediate window to turn single step on/off - true/false
+        */
+
+
+        if (step)       // use immediate window to turn step on/off - true/false
+        {
+            pc = pc;    // <<<<< set break point here for step
+        }
+
+        unsigned short * bp = breakpts;
+        while (*bp != 0xffff)
+        {
+            if (pc - 1 == *bp)
+            {
+                pc = pc;    // <<<<<< set break point here for break point
+                break;
+            }
+            bp++;
+        }
+
+        // end z80 debugger
 
 #endif
 
@@ -2834,6 +2926,7 @@ doret:
         }
         default:
             // TODO: Generate warning/error!!
+            printf("Z80 unknown instruction: %04x  opcode: %04x\n", instruction, opcode);
             break;
         }
 

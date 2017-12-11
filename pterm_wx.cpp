@@ -8744,7 +8744,7 @@ int PtermFrame::check_pcZ80(void)
         return 1;
         
     case R_INPUT:
-
+#if 0   // disable with level 2 patch of execerr getkey loop
         if (m_mtutorBoot)  // this is very bad for performance, 
                            // intolerable on-line, even crashes
         {
@@ -8753,6 +8753,7 @@ int PtermFrame::check_pcZ80(void)
             M8080aWaiter(ms);
             m_giveup8080 = true;
         }
+#endif
 
         if (tracePterm)
         {
@@ -8761,7 +8762,6 @@ int PtermFrame::check_pcZ80(void)
         }
         HL_pair = mt_key & 0xffff;
         mt_key = -1;
-
 
         return 1;
         
