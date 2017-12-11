@@ -271,25 +271,19 @@ bool MTFile::Open (const char *fn)
         return reportError(fn);
     }
 #else
-    int fmode = O_RDWR;
-#ifdef O_EXLOCK
-    fmode |= O_EXLOCK;
-#endif
-    fileHandle = open (fn, fmode);
+    fileHandle = open (fn, O_RDWR);
 
     if (fileHandle == -1)
         return reportError (fn);
 #endif
 #ifndef _WIN32
-#ifndef O_EXLOCK
-    // if file could not be locked on open, lock it now.
-    int result = flock (fileHandle, LOCK_EX);
+    // Attempt to lock the file, don't block if it's already locked
+    int result = flock (fileHandle, LOCK_EX | LOCK_NB);
     if (result == -1)
     {
         close (fileHandle);
         return reportError (fn);
     }
-#endif
 #endif
     return true;
 }
@@ -335,18 +329,20 @@ void MTFile::Close (void)
 
 void MTFile::Seek (long int loc)
 {
-    u64 x;
-
 #ifdef _WIN32
+    DWORD x;
+
     if (ms_handle != NULL)
     {
         x = SetFilePointer (ms_handle, loc, 0, FILE_BEGIN);
         if (x == INVALID_SET_FILE_POINTER)
 #else
+    off_t x;
+
     if (fileHandle != -1)
     {
         x = lseek (fileHandle, loc, SEEK_SET);
-        if (x != 0)
+        if (x < 0)
 #endif
 
         {
@@ -1697,8 +1693,8 @@ public:
     wxRadioBox* radMTutor;
     wxCheckBox* chkFloppy0;
     wxCheckBox* chkFloppy1;
-    wxTextCtrl* txtFloppy0;
-    wxTextCtrl* txtFloppy1;
+    wxStaticText* txtFloppy0;
+    wxStaticText* txtFloppy1;
     wxButton* btnFloppy0;
     wxButton* btnFloppy1;
 
@@ -9992,28 +9988,26 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 
 
     lblFloppy0 = new wxStaticText(tab6, wxID_ANY,
-        _("Floppy 0 file"),
-        wxDefaultPosition, wxDefaultSize, 0);
+                                  _("Floppy 0 file:"),
+                                  wxDefaultPosition, wxDefaultSize, 0);
     page6->Add(lblFloppy0, 0, wxALL, 5);
 
-    txtFloppy0 = new wxTextCtrl(tab6, wxID_ANY, wxT(""), wxDefaultPosition,
-        wxDefaultSize, 0 | wxTAB_TRAVERSAL | wxTE_READONLY);
-    txtFloppy0->SetMaxLength(255);
-    page6->Add(txtFloppy0, 0, wxALL | wxEXPAND, 5);
+    txtFloppy0 = new wxStaticText(tab6, wxID_ANY, wxT(""), wxDefaultPosition,
+                                  wxDefaultSize, 0);
+    page6->Add(txtFloppy0, 0, wxLEFT, 25);
 
     btnFloppy0 = new wxButton(tab6, wxID_ANY, wxT("Select Floppy 0 File"),
         wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
     page6->Add(btnFloppy0, 0, wxALL, 5);
 
     lblFloppy1 = new wxStaticText(tab6, wxID_ANY,
-        _("Floppy 1 file"),
-        wxDefaultPosition, wxDefaultSize, 0);
+                                  _("Floppy 1 file:"),
+                                  wxDefaultPosition, wxDefaultSize, 0);
     page6->Add(lblFloppy1, 0, wxALL, 5);
 
-    txtFloppy1 = new wxTextCtrl(tab6, wxID_ANY, wxT(""), wxDefaultPosition,
-        wxDefaultSize, 0 | wxTAB_TRAVERSAL | wxTE_READONLY);
-    txtFloppy1->SetMaxLength(255);
-    page6->Add(txtFloppy1, 0, wxALL | wxEXPAND, 5);
+    txtFloppy1 = new wxStaticText(tab6, wxID_ANY, wxT(""), wxDefaultPosition,
+                                  wxDefaultSize, 0);
+    page6->Add(txtFloppy1, 0, wxLEFT, 25);
 
     btnFloppy1 = new wxButton(tab6, wxID_ANY, wxT("Select Floppy 1 File"),
         wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
@@ -10369,8 +10363,8 @@ void PtermPrefDialog::SetControlState (void)
     radMTutor->SetSelection(LevelToSelect(m_mTutorLevel));
     chkFloppy0->SetValue(m_floppy0);
     chkFloppy1->SetValue(m_floppy1);
-    txtFloppy0->SetValue(m_floppy0File);
-    txtFloppy1->SetValue(m_floppy1File);
+    txtFloppy0->SetLabel(m_floppy0File);
+    txtFloppy1->SetLabel(m_floppy1File);
 
     //set button state
     wxString profile;
@@ -10493,7 +10487,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
             return;
         }
         testFile.Close();
-        txtFloppy0->SetValue(openFileDialog.GetPath());
+        m_floppy0File = openFileDialog.GetPath();
+        txtFloppy0->SetLabel(m_floppy0File);
         m_floppy0Changed = true;
     }
     else if (event.GetEventObject() == btnFloppy1)
@@ -10515,7 +10510,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
             return;
         }
         testFile.Close();
-        txtFloppy1->SetValue(openFileDialog.GetPath());
+        m_floppy1File = openFileDialog.GetPath();
+        txtFloppy1->SetLabel(m_floppy1File);
         m_floppy1Changed = true;
     }
     else if (event.GetEventObject () == btnFGColor)
@@ -10648,8 +10644,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 
         chkFloppy0->SetValue(m_floppy0);
         chkFloppy1->SetValue(m_floppy1);
-        txtFloppy0->SetValue(m_floppy0File);
-        txtFloppy1->SetValue(m_floppy1File);
+        txtFloppy0->SetLabel(m_floppy0File);
+        txtFloppy1->SetLabel(m_floppy1File);
 
     }
     Refresh (false);
@@ -10827,13 +10823,6 @@ void PtermPrefDialog::OnChange (wxCommandEvent& event)
         m_Email = txtEmail->GetLineText (0);
     else if (event.GetEventObject () == txtSearchURL)
         m_SearchURL = txtSearchURL->GetLineText (0);
-
-    else if (event.GetEventObject() == txtFloppy0)
-        m_floppy0File = txtFloppy0->GetLineText(0);
-    else if (event.GetEventObject() == txtFloppy1)
-        m_floppy1File = txtFloppy1->GetLineText(0);
-
-
 }
 
 void PtermPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
