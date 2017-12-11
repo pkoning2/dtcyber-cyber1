@@ -22,7 +22,7 @@ by making the bitmap itself different.
 
 #define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
 
-#define RESIDENTMSEC 10 // msec to give resident before return to 8080/z80
+#define RESIDENTMSEC 10 // msec to give resident before return to z80
 
 // ----------------------------------------------------------------------------
 // headers
@@ -113,8 +113,6 @@ extern "C"
 #include "types.h"
 #include "proto.h"
 #include "ptermversion.h"
-//#include "8080a.h"
-//#include "8080avar.h"
 #include "ppt.h"
 #include "touch-beep.h"
 
@@ -126,7 +124,6 @@ extern "C"
 #include "pterm.h"
 }
     
-#ifdef USEZ80
 #include "Z80.h"
 
 #define ResetProc Z80Reset
@@ -145,25 +142,6 @@ extern "C"
 #define BC_pair     state->registers.word[Z80_BC]
 #define DE_pair     state->registers.word[Z80_DE]
 #define HL_pair     state->registers.word[Z80_HL]
-
-#define main8080a()  Z80Emulate(0x08fffffff)
-
-#else
-#include "8080a.h"
-#include "8080avar.h"
-
-#define BC_reg_C   BC.reg.C
-#define BC_reg_B   BC.reg.B
-#define DE_reg_E   DE.reg.E 
-#define DE_reg_D   DE.reg.D
-#define HL_reg_L   HL.reg.L
-#define HL_reg_H   HL.reg.H
-
-#define BC_pair   BC.pair
-#define DE_pair   DE.pair
-#define HL_pair   HL.pair
-
-#endif
 
 // ----------------------------------------------------------------------------
 // resources
@@ -1159,12 +1137,7 @@ static PtermMainFrame *PtermFrameParent;
 
 
 // Define a new frame type: this is going to be our main frame
-#ifdef USEZ80
 class PtermFrame : public PtermFrameBase, public Z80
-#endif
-#ifndef USEZ80
-class PtermFrame : public PtermFrameBase, public emul8080
-#endif
 {
     friend void PtermCanvas::OnDraw (wxDC &dc);
     friend void PtermApp::OnHelpKeys (wxCommandEvent &event);
@@ -1187,7 +1160,7 @@ public:
     void OnTimer (wxTimerEvent& event);
     void OnMclock(wxTimerEvent& event);
     void OnDclock(wxTimerEvent& event);
-    void OnM8080a(wxTimerEvent& event);
+    void OnMz80(wxTimerEvent& event);
     void OnPasteTimer (wxTimerEvent& event);
     void OnShellTimer (wxTimerEvent& event);
     void OnQuit (wxCommandEvent& event);
@@ -1233,7 +1206,7 @@ public:
     void OnIconize (wxIconizeEvent &event);
 #endif
 
-    void M8080aWaiter(int msec);
+    void Mz80Waiter(int msec);
     void BootMtutor(void);
     void BuildMenuBar (void);
     void BuildFileMenu (int port);
@@ -1351,7 +1324,7 @@ private:
     wxTimer     m_timer;
     wxTimer     m_Mclock;
     wxTimer     m_Dclock;
-    wxTimer     m_M8080a;
+    wxTimer     m_MReturnz80;
     //long        m_mtutorLevel;
     u8          m_indev;        // input device
     u8          m_outdev;       // output device
@@ -1589,17 +1562,10 @@ private:
     int m_regionWidth;
     bool m_autobs;
    
-#ifndef USEZ80
-    // 8080a emulation support
-    u8 input8080a (u8 data);
-    void output8080a (u8 data, u8 acc);
-    int check_pc8080a (void);
-#else
-    // 8080a emulation support
+    // z80 emulation support
     u8 inputZ80(u8 data);
     void outputZ80(u8 data, u8 acc);
     int check_pcZ80(void);
-#endif
     
     const char* resCallName(u16 pc);
 
@@ -1836,7 +1802,7 @@ enum
     Pterm_Timer,        // display pacing
     Pterm_Mclock,       // pterm clock
     Pterm_Dclock,       // disk clock
-    Pterm_M8080a,
+    Pterm_Mz80,
     Pterm_PasteTimer,   // paste key generation pacing
     //other items
     Pterm_Exec,         // execute URL
@@ -2036,7 +2002,7 @@ BEGIN_EVENT_TABLE (PtermFrame, wxFrame)
     EVT_TIMER (Pterm_Timer, PtermFrame::OnTimer)
     EVT_TIMER(Pterm_Mclock, PtermFrame::OnMclock)
     EVT_TIMER(Pterm_Dclock, PtermFrame::OnDclock)
-    EVT_TIMER(Pterm_M8080a, PtermFrame::OnM8080a)
+    EVT_TIMER(Pterm_Mz80, PtermFrame::OnMz80)
     EVT_TIMER (Pterm_PasteTimer, PtermFrame::OnPasteTimer)
     EVT_ACTIVATE (PtermFrame::OnActivate)
     EVT_MENU (Pterm_Close, PtermFrame::OnQuit)
@@ -3070,7 +3036,7 @@ PtermFrame::PtermFrame (const wxString &host, int port, const wxString& title,
       m_timer (this, Pterm_Timer),
       m_Mclock(this, Pterm_Mclock),
       m_Dclock(this, Pterm_Dclock),
-      m_M8080a(this, Pterm_M8080a),
+      m_MReturnz80(this, Pterm_Mz80),
       m_mtincnt (0),
       m_mtdrivetemp (0xcb),
       m_mtdrivefunc (0),
@@ -3717,10 +3683,10 @@ void PtermFrame::OnDclock(wxTimerEvent &)
 }
 
 
-// resume 8080 execution after it gives up control to resident
-void PtermFrame::OnM8080a(wxTimerEvent &)
+// resume z80 execution after it gives up control to resident
+void PtermFrame::OnMz80(wxTimerEvent &)
 {
-    main8080a();
+    Z80Emulate(0x08fffffff);
 }
 
 
@@ -7641,8 +7607,8 @@ void PtermFrame::mode4 (u32 d)
 **------------------------------------------------------------------------*/
 void PtermFrame::mode5 (u32 d)
 {
-    if (m_M8080a.IsRunning())
-        m_M8080a.Stop();
+    if (m_MReturnz80.IsRunning())
+        m_MReturnz80.Stop();
 
     trace ("mode5 %06o", d);
 
@@ -7667,7 +7633,7 @@ void PtermFrame::mode5 (u32 d)
     // Set the start PC for the requested mode
     PC = ReadRAMW(M5ORIGIN);
 
-    main8080a();
+    Z80Emulate(0x08fffffff);
 }
 
 /*--------------------------------------------------------------------------
@@ -7679,15 +7645,15 @@ void PtermFrame::mode5 (u32 d)
 **  Returns:        Nothing.
 **
 ** THIS IS AN INTERRUPT!  STATE MUST BE SAVED AND RESTORED!!
-** BUT THE 8080 RET INSTRUCTIONS WILL NOT RETURN HERE!!
-** 8080 WILL JUST CONTINUE TO RUN.  BUT IT WILL NO LONGER
+** BUT THE z80 RET INSTRUCTIONS WILL NOT RETURN HERE!!
+** z80 WILL JUST CONTINUE TO RUN.  BUT IT WILL NO LONGER
 ** BE DOING THE RIGHT THINGS.  OR ONLY ALLOW THIS TO BE CALLED
 ** WHEN EMULATOR IS EXPECTING ALL REGS TO BE CLOBBERED --> R.EXEC
 **------------------------------------------------------------------------*/
 void PtermFrame::mode6 (u32 d)
 {
-    if (m_M8080a.IsRunning())
-        m_M8080a.Stop();
+    if (m_MReturnz80.IsRunning())
+        m_MReturnz80.Stop();
 
     trace ("mode6 %06o", d);
                         // Load C/D/E with data word
@@ -7706,7 +7672,7 @@ void PtermFrame::mode6 (u32 d)
     // Set the start PC for the requested mode
     PC = ReadRAMW(M6ORIGIN);
 
-    main8080a();
+    Z80Emulate(0x08fffffff);
 }
 
 /*--------------------------------------------------------------------------
@@ -7751,7 +7717,7 @@ void PtermFrame::progmode (u32 d, int origin)
 
     // Set the start PC for the requested mode
     PC = ReadRAMW (origin);
-    main8080a();
+    Z80Emulate(0x08fffffff);
 }
 
 /*--------------------------------------------------------------------------
@@ -7784,9 +7750,9 @@ void PtermFrame::ptermSendKey (u32 keys)
 
 
 // give resident RESIDENTMSEC ms before resuming 8080 exec
-void PtermFrame::M8080aWaiter(int msec)
+void PtermFrame::Mz80Waiter(int msec)
 {
-    m_M8080a.StartOnce(msec);
+    m_MReturnz80.StartOnce(msec);
 }
 
 /*--------------------------------------------------------------------------
@@ -8570,14 +8536,10 @@ const char* PtermFrame::resCallName(u16 pc)
 // 0: PC is not special (not in resident), proceed normally.
 // 1: PC is ROM function entry point, it has been emulated,
 //    do a RET now.
-// 2: PC is either the 8080 emulation exit magic value, or R_INIT,
-//    or an invalid resident value.  Exit 8080 emulation.
+// 2: PC is either the z80 emulation exit magic value, or R_INIT,
+//    or an invalid resident value.  Exit z80 emulation.
 
-#ifndef USEZ80
-int PtermFrame::check_pc8080a (void)
-#else
 int PtermFrame::check_pcZ80(void)
-#endif
 {
     int x, y, cp, c, x2, y2;
     
@@ -8722,8 +8684,8 @@ int PtermFrame::check_pcZ80(void)
         {
             int ms = 1;
             m_canvas->Refresh(false);
-            M8080aWaiter(ms);
-            m_giveup8080 = true;
+            Mz80Waiter(ms);
+            m_giveupz80 = true;
         }
 #endif
 
@@ -8827,8 +8789,8 @@ int PtermFrame::check_pcZ80(void)
     case R_EXEC:
         // r.exec
         m_canvas->Refresh(false);
-        M8080aWaiter(RESIDENTMSEC);
-        m_giveup8080 = true;
+        Mz80Waiter(RESIDENTMSEC);
+        m_giveupz80 = true;
         return 1;
         
     case R_GJOB:
@@ -9023,12 +8985,12 @@ void PtermFrame::BootMtutor()
         tracex("boot to mtutor");
     }
 
-    main8080a();
+    Z80Emulate(0x08fffffff);
 }
 
 /*******************************************************************************
 
-input8080a:
+inputz80:
 ----------
 
    This case switches on the content of data.  If the content of data is equal
@@ -9052,7 +9014,7 @@ device and returned to the main simulator core.
 Note:
 ----
 
-   This function is called directly by main8080a.
+   This function is called directly by Z80::emulate.
 
 *******************************************************************************/
 
@@ -9065,11 +9027,7 @@ Note:
 */
 
 
-#ifndef USEZ80
-u8 PtermFrame::input8080a (u8 data)
-#else
 u8 PtermFrame::inputZ80(u8 data)
-#endif
 {
 
     /***********************************************************************
@@ -9084,7 +9042,7 @@ u8 PtermFrame::inputZ80(u8 data)
     {
 
     /***********************************************************************
-    *   If the value of the 8080a's memory, RAM[PC], is equal to 1 or 2,
+    *   If the value of the z80's memory, RAM[PC], is equal to 1 or 2,
     * then first or second player input is requested.
     ***********************************************************************/
         case 1:
@@ -9153,7 +9111,7 @@ u8 PtermFrame::inputZ80(u8 data)
             break;
 
     /***********************************************************************
-    *   If the value of the 8080a's memory, RAM[PC], is not equal to any of
+    *   If the value of the z80's memory, RAM[PC], is not equal to any of
     * the above cases, then the program requested bad input data. Debug
     * information containing the value of the data is printed to STDOUT.
     ***********************************************************************/
@@ -9174,7 +9132,7 @@ u8 PtermFrame::inputZ80(u8 data)
 
 /*******************************************************************************
 
-output8080a:
+outputz80:
 -----------
 
    This case switches on the contents of the data.  If the content of data is
@@ -9187,20 +9145,16 @@ Input:
 -----
 
    data - This variable is the byte after the OUTp instruction, RAM[PC].
-   acc - This variable is the accumulator, which is the 8080a's A register.
+   acc - This variable is the accumulator, which is the z80's A register.
 
 
 Note:
 ----
 
-   This function is called directly by main8080a.
+   This function is called directly by Z80::emulate.
 
 *******************************************************************************/
-#ifndef USEZ80
-void PtermFrame::output8080a (u8 data, u8 acc)
-#else
 void PtermFrame::outputZ80(u8 data, u8 acc)
-#endif
 {
     u8 comp = ~acc;
     bool ok = comp == m_mtdrivetemp;
@@ -9211,7 +9165,7 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
     {
 
     /***********************************************************************
-    *   If the value of the 8080a's memory, RAM[PC], is equal to 2, the
+    *   If the value of the z80's memory, RAM[PC], is equal to 2, the
     * content of the A register is moved into the left shift amount.
     ***********************************************************************/
         case 2:
@@ -9354,7 +9308,7 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
 
 
     /***********************************************************************
-    *   If the value of the 8080a's memory, RAM[PC], is not equal to any of
+    *   If the value of the z80's memory, RAM[PC], is not equal to any of
     * the above cases, then the program requested bad output data.  Debug
     * information containing the value of the data and the accumulator are
     * printed to STDOUT.

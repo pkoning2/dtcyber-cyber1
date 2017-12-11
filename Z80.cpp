@@ -145,7 +145,7 @@ Z80::Z80()
     for (unsigned i = 0; i < sizeof(m_context.memory); i++)
         m_context.memory[i] = 0;
 
-    m_giveup8080 = false;
+    m_giveupz80 = false;
     m_mtutorBoot = false;
     m_MtTrace = false;
     m_zclock = 0;
@@ -417,9 +417,9 @@ start_emulation:
 
 emulate_next_opcode:
 
-        if (m_giveup8080)
+        if (m_giveupz80)
         {
-            m_giveup8080 = false;
+            m_giveupz80 = false;
             pc--;
             // give the resident time to process keys and update display
             goto stop_emulation;
