@@ -138,6 +138,18 @@ extern "C" {
     outputZ80(port, x);                                                 \
 }
 
+#define Z80_CHECK_PC                                                    \
+{                                                                       \
+    state->pc = pc & 0xffff;                                            \
+    switch (check_pcZ80())                                              \
+    {                                                                   \
+    case 1:                                                             \
+        goto doret;                                                     \
+    case 2:                                                             \
+        goto stop_emulation;                                            \
+    }                                                                   \
+}
+
 #ifdef __cplusplus
 }
 #endif

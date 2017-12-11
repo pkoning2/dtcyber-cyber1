@@ -2216,16 +2216,7 @@ emulate_next_instruction:
             pc = nn;
 
             elapsed_cycles += 6;
-            state->pc = pc & 0xffff;
-            switch (check_pcZ80())
-            {
-            case 1:
-                goto doret;
-            case 2:
-                goto stop_emulation;
-            default:
-                break;
-            }
+            Z80_CHECK_PC
 
             break;
 
@@ -2240,16 +2231,7 @@ emulate_next_instruction:
                 Z80_FETCH_WORD(pc, nn);
                 pc = nn;
 
-                state->pc = pc & 0xffff;
-                switch (check_pcZ80())
-                {
-                case 1:
-                    goto doret;
-                case 2:
-                    goto stop_emulation;
-                default:
-                    break;
-                }
+                Z80_CHECK_PC
 
             } else {
 
@@ -2278,17 +2260,7 @@ emulate_next_instruction:
 
             elapsed_cycles += 8;
 
-            state->pc = pc & 0xffff;
-            switch (check_pcZ80())
-            {
-            case 1:
-                goto doret;
-            case 2:
-                goto stop_emulation;
-            default:
-                break;
-            }
-
+            Z80_CHECK_PC
             break;
 
         }
@@ -2304,16 +2276,7 @@ emulate_next_instruction:
 
                 elapsed_cycles += 8;
 
-                state->pc = pc & 0xffff;
-                switch (check_pcZ80())
-                {
-                case 1:
-                    goto doret;
-                case 2:
-                    goto stop_emulation;
-                default:
-                    break;
-                }
+                Z80_CHECK_PC
 
             } else {
 
@@ -2336,16 +2299,7 @@ emulate_next_instruction:
 
             pc = HL_IX_IY;
 
-            state->pc = pc & 0xffff;
-            switch (check_pcZ80())
-            {
-            case 1:
-                goto doret;
-            case 2:
-                goto stop_emulation;
-            default:
-                break;
-            }
+            Z80_CHECK_PC
 
             break;
 
@@ -2361,16 +2315,7 @@ emulate_next_instruction:
                 pc += ((signed char) e) + 1;
 
                 elapsed_cycles += 9;
-                state->pc = pc & 0xffff;
-                switch (check_pcZ80())
-                {
-                case 1:
-                    goto doret;
-                case 2:
-                    goto stop_emulation;
-                default:
-                    break;
-                }
+                Z80_CHECK_PC
 
             } else {
 
@@ -2402,16 +2347,7 @@ emulate_next_instruction:
 
             elapsed_cycles++;
 
-            state->pc = pc & 0xffff;
-            switch (check_pcZ80())
-            {
-            case 1:
-                goto doret;
-            case 2:
-                goto stop_emulation;
-            default:
-                break;
-            }
+            Z80_CHECK_PC
 
             break;
 
@@ -2429,16 +2365,7 @@ emulate_next_instruction:
 
                 elapsed_cycles++;
 
-                state->pc = pc & 0xffff;
-                switch (check_pcZ80())
-                {
-                case 1:
-                    goto doret;
-                case 2:
-                    goto stop_emulation;
-                default:
-                    break;
-                }
+                Z80_CHECK_PC
 
             } else {
 
@@ -2462,16 +2389,7 @@ emulate_next_instruction:
 doret:
             POP(pc);
 
-            state->pc = pc & 0xffff;
-            switch (check_pcZ80())
-            {
-            case 1:
-                goto doret;
-            case 2:
-                goto stop_emulation;
-            default:
-                break;
-            }
+            Z80_CHECK_PC
 
             break;
 
@@ -2483,16 +2401,7 @@ doret:
 
                 POP(pc);
 
-                state->pc = pc & 0xffff;
-                switch (check_pcZ80())
-                {
-                case 1:
-                    goto doret;
-                case 2:
-                    goto stop_emulation;
-                default:
-                    break;
-                }
+                Z80_CHECK_PC
             }
             elapsed_cycles++;
 
@@ -2699,7 +2608,7 @@ doret:
 
             READ_N(n);
             unsigned char a = A;
-            Z80_OUTPUT_BYTE(n, a);
+            Z80_OUTPUT_BYTE(n, a)
 
             elapsed_cycles += 4;
 
@@ -2712,7 +2621,7 @@ doret:
             int x = Y(opcode) != INDIRECT_HL
                     ? R(Y(opcode))
                     : 0;
-            Z80_OUTPUT_BYTE(C, x);
+            Z80_OUTPUT_BYTE(C, x)
 
             elapsed_cycles += 4;
 
@@ -2725,7 +2634,7 @@ doret:
             int     x, f;
 
             READ_BYTE(HL, x);
-            Z80_OUTPUT_BYTE(C, x);
+            Z80_OUTPUT_BYTE(C, x)
 
             HL += opcode == OPCODE_OUTI ? +1 : -1;
 
@@ -2757,7 +2666,7 @@ doret:
                 r += 2;
 
                 Z80_READ_BYTE(hl, x);
-                Z80_OUTPUT_BYTE(C, x);
+                Z80_OUTPUT_BYTE(C, x)
 
                 hl += d;
                 if (--b)
