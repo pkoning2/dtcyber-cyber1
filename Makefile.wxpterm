@@ -57,12 +57,10 @@ DEFWXDIR=/usr
 endif
 WXDIR ?= $(DEFWXDIR)
 
-USEZ80 ?= -DUSEZ80
-
 PATH:=$(WXDIR)/bin:$(PATH)
 
 WXCONFIG ?= wx-config
-CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing  -I $(SNDINCL) $(USEZ80)
+CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing  -I $(SNDINCL)
 WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
 
 GCCVERSION := $(shell gcc --version 2>/dev/null| head -1 | awk '{print $$3}')
@@ -74,13 +72,7 @@ MSGFLAGS ?= -U
 
 SDLCFLAGS = $(SDLINCL)
 
-ifeq ("$(USEZ80)", "")
-MICRO = 8080a.o
-else
-MICRO = Z80.o
-endif
-
-PTOBJS	= dtnetsubs.o pterm_sdl.o pterm_wx.o $(MICRO)
+PTOBJS	= dtnetsubs.o pterm_sdl.o pterm_wx.o Z80.o
 DD60OBJS = $(SOBJS) dd60.o knob.o iir.o 
 
 ifneq ("$(PTERMVERSION)","xxx")
