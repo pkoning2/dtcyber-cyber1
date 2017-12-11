@@ -1737,12 +1737,22 @@ public:
     void OnSelect (wxCommandEvent& event);
     void OnChange (wxCommandEvent& event);
     void OnDoubleClick (wxCommandEvent& event);
-    void OnClose (wxCloseEvent &) { EndModal (wxID_CANCEL); }
+    void OnClose (wxCloseEvent &) { 
+        EndModal (wxID_CANCEL); 
+#if !defined (__WXMAC__)
+        wxWindow *win = ptermApp->GetTopWindow();
+        if (win == NULL || win == this)
+        {
+            ptermApp->Exit();
+        }
+#endif        
+    }
     
     wxString        m_ShellFirst;
     wxString        m_curProfile;
     wxString        m_host;
     wxString        m_port;
+    bool            m_Boot;
     wxConfig        m_config;
 
     wxListBox* lstProfiles;
@@ -2519,7 +2529,7 @@ bool PtermApp::DoConnect (bool ask)
     if (ask)
     {
         PtermConnDialog dlg (wxID_ANY, _("Open a new terminal window"),
-                             wxDefaultPosition, wxSize (-1, -1)); //450, 355));
+                             wxDefaultPosition, wxSize (450, 355)); //450, 355));
     
         dlg.CenterOnScreen ();
         
@@ -10783,14 +10793,6 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
     // static ui objects, note dynamic controls, e.g. those that hold values or require event processing are declared above
     wxStaticText* lblExplainProfiles;
 //  wxListBox* lstProfiles;
-    wxStaticText* lblShellFirst;
-//  wxTextCtrl* txtShellFirst;
-    wxStaticText* lblExplainManual;
-    wxStaticText* lblHost;
-//  wxTextCtrl* txtHost;
-    wxStaticText* lblPort;
-//  wxComboBox* cboPort;
-    wxStaticText* lblExplainPort;
 //  wxButton* btnCancel;
 //  wxButton* btnConnect;
     wxFont dfont = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
@@ -10799,20 +10801,15 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
     wxBoxSizer* bs1;
     bs1 = new wxBoxSizer (wxVERTICAL);
     lblExplainProfiles = new wxStaticText (this, wxID_ANY,
-                                           _("Select a profile and click Connect."),
+                                           _("Select a profile and click Connect or Boot."),
                                            wxDefaultPosition, wxDefaultSize, 0);
     lblExplainProfiles->SetFont (dfont);
     bs1->Add (lblExplainProfiles, 0, wxTOP|wxRIGHT|wxLEFT, 5);
     lstProfiles = new wxListBox (this, wxID_ANY, wxDefaultPosition,
                                  wxSize (-1, -1), 0, NULL, wxLB_SORT); 
     lstProfiles->SetFont (dfont);
-    lstProfiles->SetMinSize (wxSize (-1, 122));
+    lstProfiles->SetMinSize (wxSize (400, 222));
     bs1->Add (lstProfiles, 0, wxALL | wxEXPAND, 5);
-    lblExplainManual = new wxStaticText (this, wxID_ANY,
-                                         _("Or, enter a hostname and port number, then click Connect."),
-                                         wxDefaultPosition, wxDefaultSize, 0);
-    lblExplainManual->SetFont (dfont);
-    bs1->Add (lblExplainManual, 0, wxALL, 5);
 
     wxFlexGridSizer* fgSizer11;
     fgSizer11 = new wxFlexGridSizer (0, 1, 0, 0);
@@ -10822,48 +10819,6 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
 
     wxFlexGridSizer* fgs111;
     fgs111 = new wxFlexGridSizer (3, 2, 0, 0);
-    lblShellFirst = new wxStaticText (this, wxID_ANY, _("Run this first"),
-                                      wxDefaultPosition, wxDefaultSize, 0);
-    lblShellFirst->SetFont (dfont);
-    fgs111->Add (lblShellFirst, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
-    txtShellFirst = new wxTextCtrl (this, wxID_ANY, wxT (""),
-                                    wxDefaultPosition, wxDefaultSize, 0);
-    txtShellFirst->SetFont (dfont);
-    txtShellFirst->SetMaxLength (255); 
-    fgs111->Add (txtShellFirst, 0, wxALL | wxEXPAND, 5);
-    lblHost = new wxStaticText (this, wxID_ANY, _("Host name"),
-                                wxDefaultPosition, wxDefaultSize, 0);
-    lblHost->SetFont (dfont);
-    fgs111->Add (lblHost, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
-    txtHost = new wxTextCtrl (this, wxID_ANY, wxT ("cyberserv.org"),
-                              wxDefaultPosition, wxSize (-1, -1),
-                              wxTAB_TRAVERSAL);
-    txtHost->SetMaxLength (100); 
-    txtHost->SetFont (dfont);
-    txtHost->SetMinSize (wxSize (320, -1));
-    fgs111->Add (txtHost, 0, wxALL, 5);
-    lblPort = new wxStaticText (this, wxID_ANY, _("Port*"),
-                                wxDefaultPosition, wxDefaultSize, 0);
-    lblPort->SetFont (dfont);
-    fgs111->Add (lblPort, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
-
-    wxIntegerValidator<long> portval;
-    portval.SetRange (1, 65535);
-    
-    cboPort = new wxComboBox (this, wxID_ANY, wxT ("5004"),
-                              wxDefaultPosition, wxDefaultSize, 0,
-                              NULL, wxTAB_TRAVERSAL, portval);
-    cboPort->Append (wxT ("5004"));
-    cboPort->Append (wxT ("8005"));
-    cboPort->SetFont (dfont);
-    cboPort->SetMinSize (wxSize (75, -1));
-    fgs111->Add (cboPort, 0, wxALL, 5);
-    fgSizer11->Add (fgs111, 0, 0, 5);
-    lblExplainPort = new wxStaticText (this, wxID_ANY,
-                                       _("* NOTE: 5004=Classic, 8005=Color Terminal"),
-                                       wxDefaultPosition, wxDefaultSize, 0);
-    lblExplainPort->SetFont (dfont);
-    fgSizer11->Add (lblExplainPort, 0, wxTOP | wxRIGHT | wxLEFT, 5);
 
     wxFlexGridSizer* fgs112;
     fgs112 = new wxFlexGridSizer (2, 3, 0, 0);
@@ -10892,7 +10847,6 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
     {
         wxString filename;
         bool cont = ldir.GetFirst (&filename, wxT ("*.ppf"), wxDIR_DEFAULT);
-        lstProfiles->Append (CURRENT_PROFILE);
         int i, cur=0;
         for (i=0; cont; i++)
         {
@@ -10910,15 +10864,12 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
     }
 
     // initialize values
-    m_ShellFirst = ptermApp->m_ShellFirst;
-    m_host = ptermApp->m_hostName;
-    m_port.Printf (wxT ("%ld"), ptermApp->m_port);
+    m_Boot = ptermApp->m_mTutorBoot;
 
-    // set object value properties
-    txtShellFirst->SetValue (m_ShellFirst);
-    txtHost->SetValue (m_host);
-    cboPort->SetValue (m_port);
-
+    if (m_Boot)
+        btnConnect->SetLabel(wxT("Boot"));
+    else
+        btnConnect->SetLabel(wxT("Connect"));
 }
 
 void PtermConnDialog::OnButton (wxCommandEvent& event)
@@ -10927,13 +10878,17 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
     if (event.GetEventObject () == btnCancel)
     {
         EndModal (wxID_CANCEL);
+#if !defined (__WXMAC__)
+        wxWindow *win = ptermApp->GetTopWindow();
+        if (win == NULL || win == this)
+        {
+            ptermApp->Exit();
+        }
+#endif
     }
     if (event.GetEventObject () == btnConnect)
     {
         m_curProfile = lstProfiles->GetStringSelection ();
-        m_ShellFirst = txtShellFirst->GetLineText (0);
-        m_host = txtHost->GetLineText (0);
-        m_port = cboPort->GetValue ();
         EndModal (wxID_OK);
     }
 }
@@ -10955,9 +10910,12 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
             m_ShellFirst = ptermApp->m_ShellFirst;
             m_host = ptermApp->m_hostName;
             m_port.Printf (wxT ("%ld"), ptermApp->m_port);
-            txtShellFirst->SetValue (m_ShellFirst);
-            txtHost->SetValue (m_host);
-            cboPort->SetValue (m_port);
+            m_Boot = ptermApp->m_mTutorBoot;
+
+            if (m_Boot)
+                btnConnect->SetLabel(wxT ("Boot"));
+            else
+                btnConnect->SetLabel(wxT("Connect"));
         }
         else
         {
@@ -10973,8 +10931,6 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
 void PtermConnDialog::OnChange (wxCommandEvent& event)
 {
     void OnChange (wxCommandEvent& event);
-    if (event.GetEventObject () == txtShellFirst)
-        m_ShellFirst = txtShellFirst->GetLineText (0);
 }
 
 void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
@@ -10992,11 +10948,6 @@ void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
             m_ShellFirst = ptermApp->m_ShellFirst;
             m_host = ptermApp->m_hostName;
             m_port.Printf (wxT ("%ld"), ptermApp->m_port);
-            txtShellFirst->SetValue (m_ShellFirst);
-            txtHost->SetValue (m_host);
-            cboPort->SetValue (m_port);
-            m_host = txtHost->GetLineText (0);
-            m_port = cboPort->GetValue ();
             EndModal (wxID_OK);
         }
         else
