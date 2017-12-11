@@ -9996,7 +9996,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                   wxDefaultSize, 0);
     page6->Add(txtFloppy0, 0, wxLEFT, 25);
 
-    btnFloppy0 = new wxButton(tab6, wxID_ANY, wxT("Select Floppy 0 File"),
+    btnFloppy0 = new wxButton(tab6, wxID_ANY, _("Select Floppy 0 File"),
         wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
     page6->Add(btnFloppy0, 0, wxALL, 5);
 
@@ -10009,7 +10009,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                   wxDefaultSize, 0);
     page6->Add(txtFloppy1, 0, wxLEFT, 25);
 
-    btnFloppy1 = new wxButton(tab6, wxID_ANY, wxT("Select Floppy 1 File"),
+    btnFloppy1 = new wxButton(tab6, wxID_ANY, _("Select Floppy 1 File"),
         wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
     page6->Add(btnFloppy1, 0, wxALL, 5);
 
