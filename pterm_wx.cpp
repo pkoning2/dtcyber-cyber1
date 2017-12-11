@@ -1751,8 +1751,6 @@ public:
     long            m_mTutorLevel;
     bool            m_floppy0;
     bool            m_floppy1;
-    bool            m_floppy0Changed;
-    bool            m_floppy1Changed;
     wxString        m_floppy0File;
     wxString        m_floppy1File;
 
@@ -4693,9 +4691,6 @@ void PtermFrame::OnPref (wxCommandEvent&)
     PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"),
                          wxDefaultPosition, wxSize (461, 575));
 
-    dlg.m_floppy0Changed = false;
-    dlg.m_floppy1Changed = false;
-
     //process changes if OK clicked
     if (dlg.ShowModal () == wxID_OK)
     {
@@ -4748,25 +4743,6 @@ void PtermFrame::OnPref (wxCommandEvent&)
         ptermApp->m_floppy0File = dlg.m_floppy0File;
         ptermApp->m_floppy1File = dlg.m_floppy1File;
 
-
-        if (dlg.m_floppy0Changed)
-        {
-            m_zclock = 0;
-            if (ptermApp->m_floppy0 && ptermApp->m_floppy0File.Length() > 0)
-                m_MTFiles[0].Open(ptermApp->m_floppy0File);
-            else
-                m_MTFiles[0].Close();
-        }
-
-        if (dlg.m_floppy1Changed)
-        {
-            m_zclock = 0;
-            if (ptermApp->m_floppy1 && ptermApp->m_floppy1File.Length() > 0)
-                m_MTFiles[1].Open(ptermApp->m_floppy1File);
-            else
-                m_MTFiles[1].Close();
-        }
-        
         //update settings to config
         SavePreferences ();
 
@@ -10489,7 +10465,6 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         testFile.Close();
         m_floppy0File = openFileDialog.GetPath();
         txtFloppy0->SetLabel(m_floppy0File);
-        m_floppy0Changed = true;
     }
     else if (event.GetEventObject() == btnFloppy1)
     {
@@ -10512,7 +10487,6 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         testFile.Close();
         m_floppy1File = openFileDialog.GetPath();
         txtFloppy1->SetLabel(m_floppy1File);
-        m_floppy1Changed = true;
     }
     else if (event.GetEventObject () == btnFGColor)
     {
@@ -10714,13 +10688,11 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
 
     else if (event.GetEventObject() == chkFloppy0)
     {
-        m_floppy0Changed = true;
         m_floppy0 = event.IsChecked();
     }
 
     else if (event.GetEventObject() == chkFloppy1)
     {
-        m_floppy1Changed = true;
         m_floppy1 = event.IsChecked();
     }
 
