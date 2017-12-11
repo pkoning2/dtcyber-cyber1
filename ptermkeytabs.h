@@ -557,7 +557,7 @@ const wxString accent (L"`\xb4^\u02dc\xa8\u02c7\xb8");
 const wxString combining_accent (L"\u0300\u0301\u0302\u0303\u0308\u030c\u0327");
 
 // conversion table to convert plato ascii mode keys to mtutor *zkeys*
-const Uint16 mtutorcvt[128] = {
+const u16 mtutorcvt[128] = {
      60,  26,  24,  27,  17,  49,   6,  18,     // 0 - 7
      19,  53,  12,  21,  29,  22,  56,  61,     // 7 - 15
      16,  58,  25,  16,  50,  21,  59,  48,     // 16 - 23

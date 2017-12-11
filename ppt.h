@@ -8,7 +8,7 @@
 // Licence:     DtCyber license
 /////////////////////////////////////////////////////////////////////////////
 
-#include "8080a.h"
+//#include "8080a.h"
 
 // PPT Resident entry points
 #define R_MAIN  0x3d    // Fake return address for mode 5/6/7 call
@@ -54,7 +54,7 @@
 #define IM_CAR  0x01
 
 // Initial SP
-#define INITSP  SPSET       //0x2200
+#define INITSP  0xffff      /* To make microTutor not scribble on the stack */       //0x2200
 
 // PPT Resident variables
 #define M_FLAG0 0x22ea

@@ -3713,7 +3713,7 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 // ppt m.clock
 void PtermFrame::OnMclock(wxTimerEvent &)
 {
-    Uint16 temp = ReadRAMW(M_CLOCK);
+    u16 temp = ReadRAMW(M_CLOCK);
     WriteRAMW(M_CLOCK, ++temp);
 }
 // ppt d.clock
@@ -8749,8 +8749,6 @@ int PtermFrame::check_pcZ80(void)
                            // intolerable on-line, even crashes
         {
             int ms = 1;
-            if (m_mtPLevel == 3)
-                ms = 3;
             m_canvas->Refresh(false);
             M8080aWaiter(ms);
             m_giveup8080 = true;
@@ -9149,7 +9147,7 @@ u8 PtermFrame::inputZ80(u8 data)
             case 11:
                 // read millisec clock - called twice - for lower and upper
                 {
-                    Uint16 temp = m_zclock;
+                    u16 temp = m_zclock;
                     retval = m_clockPhase ? (temp & 0xff) : ((temp << 8) & 0xff);
                     m_clockPhase = !m_clockPhase;
                 }
