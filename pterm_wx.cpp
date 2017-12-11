@@ -1747,6 +1747,8 @@ public:
         }
 #endif        
     }
+
+    void CreateDefaultProfiles (wxDir& ldir);
     
     wxString        m_ShellFirst;
     wxString        m_curProfile;
@@ -10846,7 +10848,15 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
     if (ldir.IsOpened ())
     {
         wxString filename;
+        retry:
         bool cont = ldir.GetFirst (&filename, wxT ("*.ppf"), wxDIR_DEFAULT);
+        // if cont is false should add two default profiles here and then goto above line
+        if (!cont)
+        {
+            CreateDefaultProfiles (ldir);
+            goto retry;
+        }
+
         int i, cur=0;
         for (i=0; cont; i++)
         {
@@ -10870,6 +10880,11 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
         btnConnect->SetLabel(wxT("Boot"));
     else
         btnConnect->SetLabel(wxT("Connect"));
+}
+
+void PtermConnDialog::CreateDefaultProfiles (wxDir& ldir)
+{
+
 }
 
 void PtermConnDialog::OnButton (wxCommandEvent& event)
