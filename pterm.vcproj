@@ -792,10 +792,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\8080a.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\dtnetsubs.c"
 				>
 			</File>
@@ -805,6 +801,10 @@
 			</File>
 			<File
 				RelativePath=".\pterm_wx.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Z80.cpp"
 				>
 			</File>
 		</Filter>
