@@ -87,7 +87,6 @@ by making the bitmap itself different.
 #include <wx/aboutdlg.h>
 #include <wx/hyperlink.h>
 #include <wx/filectrl.h>
-//#include <wx/wfstream.h>
 
 extern "C"
 {
@@ -10872,6 +10871,20 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
                 cur = i;
         }
         lstProfiles->Select (cur);
+
+        if (ptermApp->LoadProfile(ptermApp->m_curProfile, wxT("")))
+        {
+            m_curProfile = ptermApp->m_curProfile;
+            m_ShellFirst = ptermApp->m_ShellFirst;
+            m_host = ptermApp->m_hostName;
+            m_port.Printf(wxT("%ld"), ptermApp->m_port);
+            m_Boot = ptermApp->m_mTutorBoot;
+
+            if (m_Boot)
+                btnConnect->SetLabel(wxT("Boot"));
+            else
+                btnConnect->SetLabel(wxT("Connect"));
+        }
     }
 
     // initialize values
