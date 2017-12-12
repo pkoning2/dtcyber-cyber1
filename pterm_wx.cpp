@@ -10885,6 +10885,124 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
 
 void PtermConnDialog::CreateDefaultProfiles (wxDir& ldir)
 {
+    wxString profile = wxT("Connect_Cyber1_Classic");
+    long port = 5004;
+    wxString filename;
+    wxString buffer;
+    bool openok;
+    bool repeat = true;
+
+    rerun:
+
+    //open file
+    filename = ptermApp->ProfileFileName(profile);
+    wxTextFile file(filename);
+    openok = file.Create();
+    if (!openok)
+        return;
+    file.Clear();
+
+    //write prefs
+    //tab0
+    buffer.Printf(wxT(PREF_CURPROFILE) wxT("=%s"), profile);
+    file.AddLine(buffer);
+    //tab1
+    buffer.Printf(wxT(PREF_CONNECT) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_SHELLFIRST) wxT("="));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_HOST) wxT("=cyberserv.org"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_PORT) wxT("=%ld"), port);
+    file.AddLine(buffer);
+    //tab2
+    buffer.Printf(wxT(PREF_SHOWSIGNON) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_SHOWSYSNAME) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_SHOWHOST) wxT("=1"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_SHOWSTATION) wxT("=1"));
+    file.AddLine(buffer);
+    //tab3
+    buffer.Printf(wxT(PREF_1200BAUD) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_GSW) wxT("=1"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_ARROWS) wxT("=1"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_IGNORECAP) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_PLATOKB) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_ACCEL) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_BEEP) wxT("=1"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_SHIFTSPACE) wxT("=1"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_MOUSEDRAG) wxT("=0"));
+    file.AddLine(buffer);
+    //tab4
+    buffer.Printf(wxT(PREF_SCALE) wxT("=%f"), 1.0);
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_STATUSBAR) wxT("=1"));
+    file.AddLine(buffer);
+#if !defined (__WXMAC__)
+    buffer.Printf(wxT(PREF_MENUBAR) wxT("=1"));
+    file.AddLine(buffer);
+#endif
+    buffer.Printf(wxT(PREF_NOCOLOR) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_FOREGROUND) wxT("=255 144 0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_BACKGROUND) wxT("=0 0 0"));
+    file.AddLine(buffer);
+    //tab5
+    buffer.Printf(wxT(PREF_CHARDELAY) wxT("=165"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_LINEDELAY) wxT("=500"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_AUTOLF) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_SMARTPASTE) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_CONVDOT7) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_CONV8SP) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_TUTORCOLOR) wxT("=0"));
+    file.AddLine(buffer);
+    //tab6
+    buffer.Printf(wxT(PREF_EMAIL) wxT("="));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_SEARCHURL) wxT("=%s"), wxT("http://www.google.com/search?q="));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_MTUTORLEVEL) wxT("=4"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_MTUTORBOOT) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_FLOPPY0M) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_FLOPPY1M) wxT("=0"));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_FLOPPY0NAM) wxT("="));
+    file.AddLine(buffer);
+    buffer.Printf(wxT(PREF_FLOPPY1NAM) wxT("="));
+    file.AddLine(buffer);
+
+    //write to disk
+    file.Write();
+    file.Close();
+
+    if (!repeat)
+        return;
+
+    port = 8005;
+
+    profile = wxT("Connect_Cyber1_Ascii");
+    repeat = false;
+    goto rerun;
 
 }
 
