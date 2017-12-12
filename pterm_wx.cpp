@@ -9331,7 +9331,7 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
     }
 }
 
-const wxString radioChoices[MAXMCHOICES] = {_("None"), _("2"), _("3"), _("4")};
+const wxString radioChoices[MAXMCHOICES] = {_("None"), _("2"), _("3"), _("4"), _("Dev") };
 
 // ----------------------------------------------------------------------------
 // PtermPrefDialog
@@ -10135,6 +10135,7 @@ int PtermPrefDialog::SelectToLevel(int select)
     case 1: return 2;
     case 2: return 3;
     case 3: return 4;
+    case 4: return 5;
     default: return 0;
     }
 }
@@ -10146,6 +10147,7 @@ int PtermPrefDialog::LevelToSelect(int level)
     case 2: return 1;
     case 3: return 2;
     case 4: return 3;
+    case 5: return 4;
     default: return 0;
     }
 }

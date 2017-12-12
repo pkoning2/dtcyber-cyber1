@@ -188,7 +188,7 @@
 #endif
 #endif
 
-#define MAXMCHOICES 4
+#define MAXMCHOICES 5
 #define DEFAULTMLEVEL 4
 
 // External references

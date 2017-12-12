@@ -1,4 +1,4 @@
-/* z80emu.c
+/* Z80.cpp
  * Z80 processor emulator.
  *
  * Copyright (c) 2012-2017 Lin Ke-Fong
@@ -6,10 +6,16 @@
  * This code is free, do whatever you want with it.
  */
 
+// this will slow things a lot -
+// prints output for every instruction
+
 //#define DEBUG_Z80_PRINT
+
+// includes mini z80 debugger
 
 //#define DEBUG_Z80
 
+// These used for patching levels of mtutor
 #define Level2Pause 0x68d9
 #define Level2Xplato 0x602c
 
@@ -19,12 +25,20 @@
 #define Level4Pause 0x6967
 #define Level4Xplato 0x6061
 
+#define Level5Pause 0x6967
+#define Level5Xplato 0x6061
 
+
+
+// r. entry point for a short wait
 #define R_WAIT16 0x97
+
+// Z80 / 8080 instructions
 #define CALL8080 0xcd
 #define JUMP8080 0xc3
 #define RET8080 0xc9
 
+// shorthand for ram locations
 #define RAM m_context.memory
 
 #include <stdio.h>
@@ -322,13 +336,13 @@ int Z80::Z80Emulate (int number_cycles)
         RAM[Level2Pause + 1] = R_WAIT16;
         RAM[Level2Pause + 2] = 0;
 
-        // remove off-line check for calling r.exec - only safe place to
-        // give up control..
+        // remove off-line check for calling r.exec - 
+        // only safe place to give up control..
         RAM[Level2Xplato] = 0;
         RAM[Level2Xplato + 1] = 0;
         RAM[Level2Xplato + 2] = 0;
 
-        // patch xerror tight getkey loop bug in mtutor
+        // patch xerror tight getkey loop problem in mtutor
         // top 32K of ram was for memory mapped video on ist 2/3
         // so that's safe for us to use
         RAM[0x5d26] = 0x10;
@@ -350,8 +364,9 @@ int Z80::Z80Emulate (int number_cycles)
         RAM[Level3Pause + 1] = R_WAIT16;
         RAM[Level3Pause + 2] = 0;
 
-        // remove off-line check for calling r.exec - only safe place to
-        // give up control..  was a z80 jr - 2 bytes only
+        // remove off-line check for calling r.exec - 
+        // only safe place to give up control..  
+        // was a z80 jr - 2 bytes only
         RAM[Level3Xplato] = 0;
         RAM[Level3Xplato + 1] = 0;
 
@@ -364,10 +379,26 @@ int Z80::Z80Emulate (int number_cycles)
         RAM[Level4Pause + 1] = R_WAIT16;
         RAM[Level4Pause + 2] = 0;
 
-        // remove off-line check for calling r.exec - only safe place to
-        // give up control..  was a z80 jr - 2 bytes only
+        // remove off-line check for calling r.exec - 
+        // only safe place to give up control..  
+        // was a z80 jr - 2 bytes only
         RAM[Level4Xplato] = 0;
         RAM[Level4Xplato + 1] = 0;
+
+        RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
+    }
+    else if (m_mtPLevel == 5)
+    {
+        // Call resident and wxWidgets for brief pause
+        RAM[Level5Pause] = CALL8080;
+        RAM[Level5Pause + 1] = R_WAIT16;
+        RAM[Level5Pause + 2] = 0;
+
+        // remove off-line check for calling r.exec - 
+        // only safe place to give up control..  
+        // was a z80 jr - 2 bytes only
+        RAM[Level5Xplato] = 0;
+        RAM[Level5Xplato + 1] = 0;
 
         RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
     }
@@ -395,7 +426,9 @@ int Z80::emulate (
 {
     ZEXTEST *context = &m_context;
 
+#ifdef DEBUG_Z80
     bool step = false;
+#endif
 
     int	pc, r;
 
@@ -2834,7 +2867,7 @@ doret:
 
         }
         default:
-            // TODO: Generate warning/error!!
+            // Generate warning/error!!
             printf("Z80 unknown instruction: %04x  opcode: %04x\n", instruction, opcode);
             break;
         }
