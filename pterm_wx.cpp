@@ -127,6 +127,7 @@ extern "C"
 #include "Z80.h"
 
 #define ResetProc Z80Reset
+#define MicroEmulate Z80Emulate(0x08fffffff)
 
 #define RAM     m_context.memory
 #define PC      state->pc
@@ -3698,7 +3699,7 @@ void PtermFrame::OnDclock(wxTimerEvent &)
 // resume z80 execution after it gives up control to resident
 void PtermFrame::OnMz80(wxTimerEvent &)
 {
-    Z80Emulate(0x08fffffff);
+    MicroEmulate;
 }
 
 
@@ -7645,7 +7646,7 @@ void PtermFrame::mode5 (u32 d)
     // Set the start PC for the requested mode
     PC = ReadRAMW(M5ORIGIN);
 
-    Z80Emulate(0x08fffffff);
+    MicroEmulate;
 }
 
 /*--------------------------------------------------------------------------
@@ -7684,7 +7685,7 @@ void PtermFrame::mode6 (u32 d)
     // Set the start PC for the requested mode
     PC = ReadRAMW(M6ORIGIN);
 
-    Z80Emulate(0x08fffffff);
+    MicroEmulate;
 }
 
 /*--------------------------------------------------------------------------
@@ -7729,7 +7730,7 @@ void PtermFrame::progmode (u32 d, int origin)
 
     // Set the start PC for the requested mode
     PC = ReadRAMW (origin);
-    Z80Emulate(0x08fffffff);
+    MicroEmulate;
 }
 
 /*--------------------------------------------------------------------------
@@ -8997,7 +8998,7 @@ void PtermFrame::BootMtutor()
         tracex("boot to mtutor");
     }
 
-    Z80Emulate(0x08fffffff);
+    MicroEmulate;
 }
 
 /*******************************************************************************
