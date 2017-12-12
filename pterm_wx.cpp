@@ -10878,12 +10878,6 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
             m_ShellFirst = ptermApp->m_ShellFirst;
             m_host = ptermApp->m_hostName;
             m_port.Printf(wxT("%ld"), ptermApp->m_port);
-            m_Boot = ptermApp->m_mTutorBoot;
-
-            if (m_Boot)
-                btnConnect->SetLabel(wxT("Boot"));
-            else
-                btnConnect->SetLabel(wxT("Connect"));
         }
     }
 
