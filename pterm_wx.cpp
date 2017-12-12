@@ -96,6 +96,7 @@ extern "C"
 #include <io.h>
 #else
 #include <fcntl.h>
+#include <sys/file.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -2131,7 +2132,13 @@ bool PtermApp::OnInit (void)
     //notebook
     m_lastTab = m_config->Read (wxT (PREF_LASTTAB), 0L);
     //tab0
-    m_config->Read (wxT (PREF_CURPROFILE), &m_curProfile, CURRENT_PROFILE);
+    m_config->Read (wxT (PREF_CURPROFILE), &m_curProfile, wxT (""));
+    // " Current " (with space before/after) is the former name of the
+    // "default" profile, which is no longer in use.  If we find that
+    // saved as the current profile, pretend we have no current
+    // profile.
+    if (m_curProfile == wxT (" Current "))
+        m_curProfile = wxT ("");
     //tab1
     m_config->Read (wxT (PREF_SHELLFIRST), &m_ShellFirst, wxT (""));
     m_connect = (m_config->Read (wxT (PREF_CONNECT), 1) != 0);
@@ -2609,7 +2616,11 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
     
     //open file
     if (filename.IsEmpty ())
+    {
         filename = ptermApp->ProfileFileName (profile);
+        if (filename.IsEmpty ())
+            return false;
+    }
     wxTextFile file (filename);
     if (!file.Open ())
         return false;
@@ -2806,6 +2817,10 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
 wxString PtermApp::ProfileFileName (wxString profile)
 {
     wxString filename;
+
+    if (profile.IsEmpty ())
+        return profile;
+    
     filename = wxGetCwd ();
     if (filename.Right (1) != wxT ("/") && filename.Right (1) != wxT ("\\"))
     {
@@ -3702,9 +3717,9 @@ void PtermFrame::OnMz80(wxTimerEvent &)
 }
 
 
-// Common code for processing pending PLATO data.  This is used by the OnIdle handler
-// for the normal (no delay, no pacing) case, and by the OnTimer handler if delay is
-// currently being done.
+// Common code for processing pending PLATO data.  This is used by the
+// OnIdle handler for the normal (no delay, no pacing) case, and by
+// the OnTimer handler if delay is currently being done.
 void PtermFrame::procDataLoop (void)
 {
     int word;
@@ -10240,8 +10255,7 @@ void PtermPrefDialog::SetControlState (void)
         wxString filename;
         bool cont = ldir.GetFirst (&filename, wxT ("*.ppf"), wxDIR_DEFAULT);
         lstProfiles->Clear ();
-        lstProfiles->Append (CURRENT_PROFILE);
-        int i, cur=0;
+        int i, cur = 0;
         wxString str;
         for (i = 0; cont; i++)
         {
@@ -10312,12 +10326,7 @@ void PtermPrefDialog::SetControlState (void)
 
     //set button state
     wxString profile;
-    bool enable;
     profile = lstProfiles->GetStringSelection ();
-    enable = (profile.Cmp (CURRENT_PROFILE)!=0);
-    btnSave->Enable (enable);
-    btnLoad->Enable (enable);
-    btnDelete->Enable (enable);
     profile = txtProfile->GetLineText (0);
     btnAdd->Enable (!profile.IsEmpty ());
 }
@@ -10670,15 +10679,10 @@ void PtermPrefDialog::OnSelect (wxCommandEvent& event)
 {
     void OnSelect (wxCommandEvent& event);
     wxString profile;
-    bool enable;
     lblProfileStatusMessage->SetLabel (wxT (" "));
     if (event.GetEventObject () == lstProfiles)
     {
         profile = lstProfiles->GetStringSelection ();
-        enable = (profile.Cmp (CURRENT_PROFILE)!=0);
-        btnSave->Enable (enable);
-        btnLoad->Enable (enable);
-        btnDelete->Enable (enable);
         profile = txtProfile->GetLineText (0);
         btnAdd->Enable (!profile.IsEmpty ());
     }
@@ -10700,35 +10704,27 @@ void PtermPrefDialog::OnDoubleClick (wxCommandEvent& event)
 {
     void OnDoubleClick (wxCommandEvent& event);
     wxString profile;
-    bool enable;
     wxString str;
     wxString filename;
     lblProfileStatusMessage->SetLabel (wxT (" "));
     if (event.GetEventObject () == lstProfiles)
     {
         profile = lstProfiles->GetStringSelection ();
-        enable = (profile.Cmp (CURRENT_PROFILE)!=0);
-        btnSave->Enable (enable);
-        btnLoad->Enable (enable);
-        btnDelete->Enable (enable);
         profile = txtProfile->GetLineText (0);
         btnAdd->Enable (!profile.IsEmpty ());
         //do the load code
-        if (enable)
+        profile = lstProfiles->GetStringSelection ();
+        if (ptermApp->LoadProfile (profile, wxT ("")))
         {
-            profile = lstProfiles->GetStringSelection ();
-            if (ptermApp->LoadProfile (profile, wxT ("")))
-            {
-                SetControlState ();
-                lblProfileStatusMessage->SetLabel (_("Profile loaded."));
-            }
-            else
-            {
-                filename = ptermApp->ProfileFileName (profile);
-                str.Printf (wxT ("Unable to load profile: %s"), 
-                            filename);
-                wxMessageBox (str, _("Error"), wxOK | wxICON_HAND);
-            }
+            SetControlState ();
+            lblProfileStatusMessage->SetLabel (_("Profile loaded."));
+        }
+        else
+        {
+            filename = ptermApp->ProfileFileName (profile);
+            str.Printf (wxT ("Unable to load profile: %s"), 
+                        filename);
+            wxMessageBox (str, _("Error"), wxOK | wxICON_HAND);
         }
     }
 }
@@ -11045,9 +11041,7 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
     if (event.GetEventObject () == lstProfiles)
     {
         profile = lstProfiles->GetStringSelection ();
-        if (profile.Cmp (CURRENT_PROFILE)==0)
-            ;
-        else if (ptermApp->LoadProfile (profile, wxT ("")))
+        if (ptermApp->LoadProfile (profile, wxT ("")))
         {
             m_curProfile = profile;
             m_ShellFirst = ptermApp->m_ShellFirst;
