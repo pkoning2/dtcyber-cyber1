@@ -94,7 +94,6 @@ extern "C"
 #include <winsock.h>
 #include <process.h>
 #include <io.h>
-#include <stdio.h>
 #else
 #include <fcntl.h>
 #include <sys/file.h>
