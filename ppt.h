@@ -8,7 +8,8 @@
 // Licence:     DtCyber license
 /////////////////////////////////////////////////////////////////////////////
 
-//#include "8080a.h"
+#ifndef __PPT_H__
+#define __PPT_H__ 1
 
 // PPT Resident entry points
 #define R_MAIN  0x3d    // Fake return address for mode 5/6/7 call
@@ -129,3 +130,5 @@
 #define SCREEN  0x1f
 #define SLIDEL  0x20
 #define SLIDEU  0x21
+
+#endif   // __PPT_H__

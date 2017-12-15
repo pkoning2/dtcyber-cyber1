@@ -1,0 +1,48 @@
+////////////////////////////////////////////////////////////////////////////
+// Name:        MTFile.h
+// Purpose:     Declaration of class for micro-tutor floppies 
+// Authors:     Paul Koning, Joe Stanton, Bill Galcher, Steve Zoppi, Dale Sinder
+// Created:     03/26/2005
+// Copyright:   (c) Paul Koning, Joe Stanton, Dale Sinder
+// Licence:     see pterm-license.txt
+/////////////////////////////////////////////////////////////////////////////
+
+#ifndef __MTFile_H__
+#define __MTFile_H__ 1
+
+#include "CommonHeader.h"
+
+class MTFile
+{
+public:
+    MTFile();
+    bool Open(const char *fn);
+    bool Test(const char *fn);
+    void Close(void);
+    void Seek(long int loc);
+    u8 ReadByte();
+    void WriteByte(u8 val);
+    bool Active(void) const
+    {
+#ifdef _WIN32
+        return (ms_handle != NULL);
+#else
+        return (fileHandle != -1);
+
+#endif
+    }
+    bool reportError(const char *fn);
+
+private:
+#ifdef _WIN32
+    HANDLE ms_handle;
+#else
+    int fileHandle;
+#endif
+    long int position;
+    int rcnt;
+    int wcnt;
+};
+
+#endif    // __MTFile_H__
+
