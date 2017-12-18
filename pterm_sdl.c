@@ -26,7 +26,7 @@
 
 #include "const.h"
 #include "types.h"
-#include "pterm.h"
+#include "ptermx.h"
 
 #define FREQ        22050           // desired sound system data rate
 #define CRYSTAL     3872000         // GSW clock crystal frequency

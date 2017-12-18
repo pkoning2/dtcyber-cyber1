@@ -114,7 +114,7 @@ extern "C"
     //FORCE_LINK (gnome_print)
 #endif
 
-#include "pterm.h"
+#include "ptermx.h"
 }
 
 // ----------------------------------------------------------------------------
