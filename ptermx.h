@@ -8,8 +8,8 @@
 // Licence:     DtCyber license
 /////////////////////////////////////////////////////////////////////////////
 
-#ifndef _PTERM_H
-#define _PTERM_H 1
+#ifndef _PTERMX_H
+#define _PTERMX_H 1
 
 // ============================================================================
 // declarations
@@ -201,4 +201,4 @@ extern int ptermProcGswData (int data);
 extern void ptermCloseGsw (void);
 extern void ptermStartGsw (void);
 
-#endif  // _PTERM_H
+#endif  // _PTERMX_H
