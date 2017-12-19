@@ -16,7 +16,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
 
-#define RESIDENTMSEC 10 // msec to give resident before return to z80
+#define RESIDENTMSEC 20 // msec to give resident before return to z80
 
 // ----------------------------------------------------------------------------
 // headers

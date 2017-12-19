@@ -19,6 +19,8 @@ public:
     ~Z80();
 
     bool m_giveupz80;
+    bool in_r_exec;
+    bool ppt_running;
     long m_mtPLevel;
     bool m_mtutorBoot;
     bool m_MtTrace;

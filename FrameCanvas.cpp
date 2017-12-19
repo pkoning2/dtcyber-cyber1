@@ -1981,19 +1981,51 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
         return;
     }
 
+    if ( ppt_running && !in_r_exec )
+    {
+        m_canvas->Refresh();
+        MicroEmulate;
+        return;
+    }
+
     procDataLoop ();
+
+    if (m_MReturnz80.IsRunning())
+    {
+        m_MReturnz80.Stop();
+        MicroEmulate;
+    }
 }
 
 void PtermFrame::OnTimer (wxTimerEvent &)
 {
+    if (m_needtoBoot)
+    {
+        m_needtoBoot = false;
+        BootMtutor();
+    }
+
     if (--m_delay > 0)
     {
+        return;
+    }
+
+    if (ppt_running && !in_r_exec)
+    {
+        m_canvas->Refresh();
+        MicroEmulate;
         return;
     }
 
     m_timer.Stop ();
 
     procDataLoop ();
+
+    if (m_MReturnz80.IsRunning())
+    {
+        m_MReturnz80.Stop();
+        MicroEmulate;
+    }
 }
 
 // ppt m.clock

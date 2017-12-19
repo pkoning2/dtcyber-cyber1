@@ -19,7 +19,7 @@
 #include "PtermApp.h"
 
 #define ResetProc Z80Reset
-#define MicroEmulate Z80Emulate(0x08fffffff)
+#define MicroEmulate Z80Emulate(5000000)
 
 #define RAM     m_context.memory
 #define PC      state->pc

@@ -29,7 +29,6 @@
 #define Level5Xplato 0x6061
 
 
-
 // r. entry point for a short wait
 #define R_WAIT16 0x97
 
@@ -164,6 +163,8 @@ Z80::Z80()
     m_MtTrace = false;
     m_zclock = 0;
     m_mtPLevel = 2;
+
+    ppt_running = false;
 
     Z80Reset();
 }
@@ -329,6 +330,8 @@ int Z80::Z80Emulate (int number_cycles)
 {
     ZEXTEST *context = &m_context;
 
+    in_r_exec = false;
+
     if (m_mtPLevel == 2)
     {
         // Call resident and wxWidgets for brief pause
@@ -412,6 +415,8 @@ int Z80::Z80Emulate (int number_cycles)
     Z80_FETCH_BYTE(pc, opcode);
     state->pc = pc + 1;
 
+    ppt_running = true;
+
     return emulate(opcode, elapsed_cycles, number_cycles);
 }
 
@@ -452,6 +457,7 @@ emulate_next_opcode:
 
         if (m_giveupz80)
         {
+            in_r_exec = true;
             m_giveupz80 = false;
             pc--;
             // give the resident time to process keys and update display
@@ -2872,10 +2878,11 @@ doret:
             break;
         }
 
-        //if (elapsed_cycles >= number_cycles)
-
-        //        goto stop_emulation;
-
+        if (elapsed_cycles >= number_cycles)
+        {
+            in_r_exec = false;
+            goto stop_emulation;
+        }
     }
 
 stop_emulation:

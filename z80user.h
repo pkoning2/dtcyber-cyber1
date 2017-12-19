@@ -146,6 +146,7 @@ extern "C" {
     case 1:                                                             \
         goto doret;                                                     \
     case 2:                                                             \
+        ppt_running = false;                                            \
         goto stop_emulation;                                            \
     }                                                                   \
 }
