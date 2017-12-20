@@ -578,6 +578,8 @@ int dtReado (NetFet *fet)
     u8 *in, *out, *nextout;
     u8 b;
     
+    if (fet == NULL)
+        return -1;
     /*
     **  Copy the pointers, since they are volatile.
     */

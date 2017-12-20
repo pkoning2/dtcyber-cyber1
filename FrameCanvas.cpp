@@ -7002,7 +7002,12 @@ int PtermFrame::check_pcZ80(void)
         
     case R_XMIT:
         // send key in HL
+    {
+        u8 temp_hold = mt_ksw;
+        mt_ksw = 0;
         ptermSendKey1(HL_pair);
+        mt_ksw = temp_hold;
+    }
         return 1;
         
     case R_MODE:
