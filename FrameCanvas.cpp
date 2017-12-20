@@ -7238,7 +7238,7 @@ int PtermFrame::check_pcZ80(void)
 
     case R_WAIT16:
 
-        wxMilliSleep(8);
+        wxMilliSleep(15);
 
         return 1;
 
