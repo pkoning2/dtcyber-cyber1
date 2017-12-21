@@ -20,12 +20,12 @@ class PtermMtutorDialog : public wxDialog
 public:
     PtermMtutorDialog (PtermFrame *parent, wxWindowID id,
         const wxString &title, wxPoint pos, wxSize size);
-    ~PtermMtutorDialog();
+    ~PtermMtutorDialog ();
 
-    void OnClose(wxCloseEvent &);
-    void OnButton(wxCommandEvent& event);
-    void OnCheckbox(wxCommandEvent& event);
-    void OnRadiobox(wxCommandEvent& event);
+    void OnClose (wxCloseEvent &);
+    void OnButton (wxCommandEvent& event);
+    void OnCheckbox (wxCommandEvent& event);
+    void OnRadiobox (wxCommandEvent& event);
 
     PtermFrame* m_parent;
     wxStaticText* lblExplain0;
@@ -53,7 +53,7 @@ public:
 
 private:
 
-    DECLARE_EVENT_TABLE()
+    DECLARE_EVENT_TABLE ()
 };
 
 
