@@ -2959,18 +2959,18 @@ void PtermFrame::OnSaveAudio (wxCommandEvent &)
     m_gswFile = fn.GetFullPath ();
 }
 
-void PtermFrame::OnReset(wxCommandEvent &)
+void PtermFrame::OnReset (wxCommandEvent &)
 {
     BootMtutor();
 }
 
-void PtermFrame::OnMtutorSettings(wxCommandEvent &)
+void PtermFrame::OnMtutorSettings (wxCommandEvent &)
 {
     //show dialog
-    PtermMtutorDialog dlg(this, wxID_ANY, _("MicroTutor Settings"),
-        wxDefaultPosition, wxSize(461, 420));
+    PtermMtutorDialog dlg (this, wxID_ANY, _("MicroTutor Settings"),
+        wxDefaultPosition, wxSize(461, 400));
 
-    dlg.ShowModal();
+    dlg.ShowModal ();
 }
 void PtermFrame::OnPrint (wxCommandEvent &)
 {

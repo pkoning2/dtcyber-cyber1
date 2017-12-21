@@ -35,7 +35,7 @@ PtermMtutorDialog::PtermMtutorDialog(PtermFrame *parent, wxWindowID id,
     wxBoxSizer* bSizer1;
     bSizer1 = new wxBoxSizer(wxVERTICAL);
     
-    tabMtutorDialog = new wxNotebook(this, wxID_ANY, wxDefaultPosition,
+    tabMtutorDialog = new wxControl(this, wxID_ANY, wxDefaultPosition,
         wxDefaultSize, wxNB_TOP);
     tabMtutorDialog->SetFont(dfont);
 
@@ -112,21 +112,11 @@ PtermMtutorDialog::PtermMtutorDialog(PtermFrame *parent, wxWindowID id,
         wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
     page0->Add(btnFloppy1, 0, wxALL, 5);
 
-    //btnOK = new wxButton(tab, wxID_ANY, _("OK"), wxPoint(10, 300),
-    //    wxDefaultSize, 0);
-    //btnOK->SetFont(dfont);
-    //page0->Add(btnOK, 0, wxALL, 5);
-    //btnCancel = new wxButton(tab, wxID_CANCEL, _("Cancel"),
-    //    wxPoint(150, 300), wxDefaultSize, 0);
-    //btnCancel->SetFont(dfont);
-    //page0->Add(btnCancel, 0, wxALL, 5);
-
     tab->SetSizer(page0);
     tab->Layout();
     page0->Fit(tab);
-    tabMtutorDialog->AddPage(tab, _("Session Settings"), false);
+    //tabMtutorDialog->AddPage(tab, _("Session Settings"), false);
 
-    ////notebook
     bSizer1->Add(tabMtutorDialog, 1, wxEXPAND | wxTOP | wxRIGHT | wxLEFT, 6);
 
     //button bar

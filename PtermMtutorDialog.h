@@ -29,7 +29,7 @@ public:
 
     PtermFrame* m_parent;
     wxStaticText* lblExplain0;
-    wxNotebook* tabMtutorDialog;
+    wxControl* tabMtutorDialog;
 
     wxRadioBox* radMTutor;
     wxCheckBox* chkFloppy0;
