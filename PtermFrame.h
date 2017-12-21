@@ -136,6 +136,7 @@ public:
     void OnFullScreen(wxCommandEvent &event);
     void OnResize(wxSizeEvent& event);
     void OnReset(wxCommandEvent& event);
+    void OnMtutorSettings(wxCommandEvent& event);
 
     void UpdateDisplayState(void);
 #if defined (__WXMSW__)
@@ -244,6 +245,12 @@ public:
     wxBitmap    *m_bitmap;
     void        ptermSetConnected(void);
     wxString    m_station;
+
+    long        m_mTutorLevel;
+    bool        m_floppy0;
+    bool        m_floppy1;
+    wxString    m_floppy0File;
+    wxString    m_floppy1File;
 
 private:
     bool        m_needtoBoot;

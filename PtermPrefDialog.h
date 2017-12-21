@@ -37,8 +37,8 @@ public:
     bool SaveProfile (wxString profile);
     bool DeleteProfile (wxString profile);
     void SetControlState (void);
-    int SelectToLevel(int select);
-    int LevelToSelect(int level);
+    static int SelectToLevel(int select);
+    static int LevelToSelect(int level);
     //objects
     wxNotebook* tabPrefsDialog;
     //tab0

@@ -51,6 +51,7 @@ by making the bitmap itself different.
 #include "DebugPterm.h"
 #include "PtermConnFailDialog.h"
 #include "PtermPrefDialog.h"
+#include "PtermMtutorDialog.h"
 
 // the application icon (under Windows and OS/2 it is in resources)
 #if defined (__WXGTK__) || defined (__WXMOTIF__) || defined (__WXMAC__) || defined (__WXMGL__) || defined (__WXX11__)
@@ -476,6 +477,7 @@ BEGIN_EVENT_TABLE (PtermFrame, wxFrame)
     EVT_MENU (Pterm_SaveAudio, PtermFrame::OnSaveAudio)
     EVT_MENU (Pterm_Print, PtermFrame::OnPrint)
     EVT_MENU (Pterm_ResetMtutor, PtermFrame::OnReset)
+    EVT_MENU (Pterm_MtutorSettings, PtermFrame::OnMtutorSettings)
     EVT_MENU (Pterm_Preview, PtermFrame::OnPrintPreview)
     EVT_MENU (Pterm_Page_Setup, PtermFrame::OnPageSetup)
     EVT_MENU (Pterm_Pref,    PtermFrame::OnPref)
@@ -1429,14 +1431,19 @@ PtermFrame::PtermFrame (const wxString &host, int port, const wxString& title,
     RAM[M_CCR] = 0;
 
     m_mtutorBoot = mtutorBoot;
-    m_mtPLevel = ptermApp->m_mTutorLevel;
-    if (ptermApp->m_floppy0 && ptermApp->m_floppy0File.Length() > 0)
-        m_MTFiles[0].Open(ptermApp->m_floppy0File);
+    m_mtPLevel = m_mTutorLevel = ptermApp->m_mTutorLevel;
+    m_floppy0 = ptermApp->m_floppy0;
+    m_floppy1 = ptermApp->m_floppy1;
+    m_floppy0File = ptermApp->m_floppy0File;
+    m_floppy1File = ptermApp->m_floppy1File;
+
+    if (m_floppy0 && m_floppy0File.Length() > 0)
+        m_MTFiles[0].Open(m_floppy0File);
     else
         m_MTFiles[0].Close();
 
-    if (ptermApp->m_floppy1 && ptermApp->m_floppy1File.Length() > 0)
-        m_MTFiles[1].Open(ptermApp->m_floppy1File);
+    if (m_floppy1 && m_floppy1File.Length() > 0)
+        m_MTFiles[1].Open(m_floppy1File);
     else
         m_MTFiles[1].Close();
 
@@ -1690,6 +1697,7 @@ void PtermFrame::BuildFileMenu (int port)
            _("Reset the MicroTutor boot process") );
     }
 
+
     menuFile->AppendSeparator();
 
     menuFile->Append (Pterm_SaveScreen, _("Save Screen")
@@ -1711,6 +1719,8 @@ void PtermFrame::BuildFileMenu (int port)
     menuFile->Append (Pterm_Pref, _("Preferences...")
                       MACACCEL ("\tCtrl-,"),
                       _("Set program configuration"));
+    menuFile->Append(Pterm_MtutorSettings, _("MicroTutor Session Settings..."),
+        _("Set the MicroTutor session settings"));
     menuFile->AppendSeparator ();
     menuFile->Append (Pterm_Close, _("Close") ACCELERATOR ("\tCtrl-W"),
                       _("Close this window"));
@@ -1869,6 +1879,11 @@ void PtermFrame::BuildPopupMenu (int port)
                        ACCELERATOR ("\tCtrl-G"),
                        _("Search this...")); // g=google this?
     menuPopup->AppendSeparator ();
+
+    menuPopup->Append(Pterm_MtutorSettings, _("MicroTutor Session Settings..."),
+        _("Set the MicroTutor session settings"));
+
+    menuPopup->AppendSeparator();
 
     // The view menu stuff also appears in the popup.
     BuildViewMenu (menuPopup, port);
@@ -2949,6 +2964,14 @@ void PtermFrame::OnReset(wxCommandEvent &)
     BootMtutor();
 }
 
+void PtermFrame::OnMtutorSettings(wxCommandEvent &)
+{
+    //show dialog
+    PtermMtutorDialog dlg(this, wxID_ANY, _("MicroTutor Settings"),
+        wxDefaultPosition, wxSize(461, 420));
+
+    dlg.ShowModal();
+}
 void PtermFrame::OnPrint (wxCommandEvent &)
 {
     wxPrintDialogData printDialogData (*g_printData);
@@ -7279,13 +7302,13 @@ int PtermFrame::check_pcZ80(void)
 
 void PtermFrame::BootMtutor()
 {
-    if (ptermApp->m_floppy0 && ptermApp->m_floppy0File.Length() > 0)
-        m_MTFiles[0].Open(ptermApp->m_floppy0File);
+    if (m_floppy0 && m_floppy0File.Length() > 0)
+        m_MTFiles[0].Open(m_floppy0File);
     else
         m_MTFiles[0].Close();
 
-    if (ptermApp->m_floppy1 && ptermApp->m_floppy1File.Length() > 0)
-        m_MTFiles[1].Open(ptermApp->m_floppy1File);
+    if (m_floppy1 && m_floppy1File.Length() > 0)
+        m_MTFiles[1].Open(m_floppy1File);
     else
         m_MTFiles[1].Close();
 

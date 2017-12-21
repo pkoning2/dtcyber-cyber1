@@ -168,6 +168,7 @@ enum
     Pterm_CopyScreen = Pterm_SetScaleEntry + 32,
     Pterm_ConnectAgain,
     Pterm_ResetMtutor,
+    Pterm_MtutorSettings,
     Pterm_SaveScreen,
     Pterm_SaveAudio,
     Pterm_HelpKeys,
