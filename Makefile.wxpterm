@@ -74,7 +74,8 @@ SDLCFLAGS = $(SDLINCL)
 
 PTOBJS	= dtnetsubs.o pterm_sdl.o FrameCanvas.o MTFile.o PtermApp.o \
 	PtermConnDialog.o PtermConnFailDialog.o PtermConnection.o \
-	PtermPrefDialog.o PtermPrintout.o Trace.o Z80.o
+	PtermPrefDialog.o PtermPrintout.o PtermMtutorDialog.o \
+	Trace.o Z80.o
 DD60OBJS = $(SOBJS) dd60.o knob.o iir.o 
 
 ifneq ("$(PTERMVERSION)","xxx")
@@ -236,8 +237,8 @@ pterm_sdl.d : pterm_sdl.c
 %.mo : %.po
 	msgfmt -o $@ $<
 
-pterm.pot : pterm_wx.cpp
-	xgettext --from-code=UTF-8 --keyword=_  -C -o pterm.pot pterm_wx.cpp
+pterm.pot : $(SOURCES)
+	xgettext --from-code=UTF-8 --keyword=_  -C -o $@ $<
 
 %.po :  pterm.pot
 	msgmerge $(MSGFLAGS) $@ pterm.pot
