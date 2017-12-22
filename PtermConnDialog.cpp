@@ -218,8 +218,6 @@ void PtermConnDialog::CreateDefaultProfiles (wxDir& ldir)
     file.AddLine(buffer);
     buffer.Printf(wxT(PREF_SEARCHURL) wxT("=%s"), wxT("http://www.google.com/search?q="));
     file.AddLine(buffer);
-    buffer.Printf(wxT(PREF_MTUTORLEVEL) wxT("=4"));
-    file.AddLine(buffer);
     buffer.Printf(wxT(PREF_MTUTORBOOT) wxT("=0"));
     file.AddLine(buffer);
     buffer.Printf(wxT(PREF_FLOPPY0M) wxT("=0"));

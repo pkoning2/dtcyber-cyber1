@@ -282,7 +282,6 @@ public:
     wxString    m_Email;
     wxString    m_SearchURL;
     bool        m_mTutorBoot;
-    long        m_mTutorLevel;
     bool        m_floppy0;
     bool        m_floppy1;
     wxString    m_floppy0File;

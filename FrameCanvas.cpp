@@ -1465,7 +1465,6 @@ PtermFrame::PtermFrame (const wxString &host, int port, const wxString& title,
     m_SearchURL = ptermApp->m_SearchURL;
 
     m_mtutorBoot = mtutorBoot;
-    m_mtPLevel = m_mTutorLevel = ptermApp->m_mTutorLevel;
     m_floppy0 = ptermApp->m_floppy0;
     m_floppy1 = ptermApp->m_floppy1;
     m_floppy0File = ptermApp->m_floppy0File;
@@ -3034,7 +3033,6 @@ void PtermFrame::OnMtutorSettings (wxCommandEvent &)
         //tab6
         m_Email = dlg.m_Email;
         m_SearchURL = dlg.m_SearchURL;
-        m_mtPLevel = m_mTutorLevel = dlg.m_mTutorLevel;
 
         m_floppy0 = dlg.m_floppy0;
         m_floppy1 = dlg.m_floppy1;
@@ -3168,7 +3166,6 @@ void PtermFrame::OnPref (wxCommandEvent&)
         //tab6
         ptermApp->m_Email = dlg.m_Email;
         ptermApp->m_SearchURL = dlg.m_SearchURL;
-        m_mtPLevel = ptermApp->m_mTutorLevel = dlg.m_mTutorLevel;
         m_mtutorBoot = ptermApp->m_mTutorBoot = dlg.m_mTutorBoot;
 
         ptermApp->m_floppy0 = dlg.m_floppy0;
@@ -3237,7 +3234,6 @@ void PtermFrame::SavePreferences (void)
     //tab6
     ptermApp->m_config->Write (wxT (PREF_EMAIL), ptermApp->m_Email);
     ptermApp->m_config->Write (wxT (PREF_SEARCHURL), ptermApp->m_SearchURL);
-    ptermApp->m_config->Write(wxT(PREF_MTUTORLEVEL), ptermApp->m_mTutorLevel);
     ptermApp->m_config->Write(wxT(PREF_MTUTORBOOT), (ptermApp->m_mTutorBoot) ? 1 : 0);
 
     ptermApp->m_config->Write(wxT(PREF_FLOPPY0M), ptermApp->m_floppy0);
@@ -7410,9 +7406,6 @@ void PtermFrame::BootMtutor()
         wxLogError("Cannot Boot - no router set");
         return;
     }
-    // read level of disk for patch set to use
-    m_MTFiles[0].Seek(130 + 36);
-    m_mtPLevel = m_mTutorLevel = m_MTFiles[0].ReadByte();
 
     m_MTFiles[0].Seek(21970);   // read interp. into ram
     u16 address = 0x5300;       // interp fwa

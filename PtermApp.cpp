@@ -191,7 +191,6 @@ bool PtermApp::OnInit (void)
     //tab6
     m_config->Read (wxT (PREF_EMAIL), &m_Email, wxT (""));
     m_config->Read (wxT (PREF_SEARCHURL), &m_SearchURL, DEFAULTSEARCH);
-    m_config->Read (wxT (PREF_MTUTORLEVEL), &m_mTutorLevel, DEFAULTMLEVEL);
     m_mTutorBoot = (m_config->Read(wxT(PREF_MTUTORBOOT), 0L) != 0);
     m_floppy0 = (m_config->Read(wxT(PREF_FLOPPY0M), 0L) != 0);
     m_floppy1 = (m_config->Read(wxT(PREF_FLOPPY1M), 0L) != 0);
@@ -558,7 +557,6 @@ bool PtermApp::DoConnect (bool ask)
             m_config->Write (wxT (PREF_HOST), m_hostName);
             m_config->Write (wxT (PREF_PORT), m_port);
             m_config->Write (wxT (PREF_MTUTORBOOT), m_mTutorBoot);
-            m_config->Write (wxT (PREF_MTUTORLEVEL), m_mTutorLevel);
             m_config->Write (wxT (PREF_FLOPPY0M), m_floppy0);
             m_config->Write (wxT (PREF_FLOPPY1M), m_floppy1);
             m_config->Write (wxT (PREF_FLOPPY0NAM), m_floppy0File);
@@ -708,8 +706,6 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
                 m_Email         = value;
             else if (token.Cmp (wxT (PREF_SEARCHURL)) == 0)
                 m_SearchURL     = value;
-            else if (token.Cmp(wxT(PREF_MTUTORLEVEL)) == 0)
-                value.ToCLong(&m_mTutorLevel);
             else if (token.Cmp(wxT(PREF_MTUTORBOOT)) == 0)
                 m_mTutorBoot = (value.Cmp(wxT("1")) == 0);
             else if (token.Cmp(wxT(PREF_FLOPPY0M)) == 0)
@@ -778,7 +774,6 @@ bool PtermApp::LoadProfile (wxString profile, wxString filename)
     //tab6
     m_config->Write (wxT (PREF_EMAIL), m_Email);
     m_config->Write (wxT (PREF_SEARCHURL), m_SearchURL);
-    m_config->Write(wxT(PREF_MTUTORLEVEL), m_mTutorLevel);
     m_config->Write(wxT(PREF_MTUTORBOOT), (m_mTutorBoot) ? 1 : 0);
     m_config->Write(wxT(PREF_FLOPPY0M), (m_floppy0) ? 1 : 0);
     m_config->Write(wxT(PREF_FLOPPY1M), (m_floppy1) ? 1 : 0);
