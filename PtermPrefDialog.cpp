@@ -121,6 +121,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 //  wxButton* btnDefaults;
     wxFont dfont = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
     
+    m_profileEdit = profileEdit;
     m_owner = parent;
 
     m_floppy0Changed = false;
@@ -135,7 +136,6 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                      wxDefaultSize, wxNB_TOP);
     tabPrefsDialog->SetFont (dfont);
 
-    m_profileEdit = profileEdit;
     if (profileEdit)
     {
 
@@ -167,10 +167,6 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 
         wxFlexGridSizer* fgs011;
         fgs011 = new wxFlexGridSizer (2, 4, 0, 0);
-        //btnSave = new wxButton (tab0, wxID_ANY, _ ("Save"), wxDefaultPosition,
-        //    wxDefaultSize, 0);
-        //btnSave->SetFont (dfont);
-        //fgs011->Add (btnSave, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
         btnLoad = new wxButton (tab0, wxID_ANY, _ ("Load"), wxDefaultPosition,
             wxDefaultSize, 0);
         btnLoad->SetFont (dfont);
@@ -608,6 +604,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     
     if ( !m_profileEdit && m_owner->m_mtutorBoot )
         radMTutor->Disable ();
+    else if (m_profileEdit && m_mTutorBoot)
+        radMTutor->Disable ();
 
     chkFloppy0 = new wxCheckBox(tab6, wxID_ANY,
         _("Enable Floppy 0"),
@@ -683,6 +681,15 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 
     // set object value properties
     SetControlState ();
+
+    if (m_profileEdit)
+    {
+        this->SetLabel ("Profile Editor - " + this->m_curProfile);
+        if (m_mTutorBoot)
+            radMTutor->Disable ();
+        else
+            radMTutor->Enable ();
+    }
 
     //set active tab
     m_lastTab = ptermApp->m_config->Read (wxT (PREF_LASTTAB), 0L);
@@ -1104,6 +1111,14 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         {
             SetControlState ();
             lblProfileStatusMessage->SetLabel (_("Profile loaded."));
+            this->SetLabel ("Profile Editor - " + this->m_curProfile);
+            if (m_profileEdit)
+            {
+                if (m_mTutorBoot)
+                    radMTutor->Disable ();
+                else
+                    radMTutor->Enable ();
+            }
         }
         else
         {
@@ -1400,8 +1415,17 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == chkTutorColor)
         m_TutorColor = event.IsChecked ();
     //tab6
-    else if (event.GetEventObject() == chkMTutorBoot)
-        m_mTutorBoot = event.IsChecked();
+    else if (event.GetEventObject () == chkMTutorBoot)
+    {
+        m_mTutorBoot = event.IsChecked ();
+        if (m_profileEdit)
+        {
+            if (m_mTutorBoot)
+                radMTutor->Disable ();
+            else
+                radMTutor->Enable ();
+        }
+    }
 
     else if (event.GetEventObject() == chkFloppy0)
     {
@@ -1460,6 +1484,14 @@ void PtermPrefDialog::OnDoubleClick (wxCommandEvent& event)
         {
             SetControlState ();
             lblProfileStatusMessage->SetLabel (_("Profile loaded."));
+            this->SetLabel ("Profile Editor - " + this->m_curProfile);
+            if (m_profileEdit)
+            {
+                if (m_mTutorBoot)
+                    radMTutor->Disable ();
+                else
+                    radMTutor->Enable ();
+            }
         }
         else
         {
@@ -1519,6 +1551,4 @@ void PtermPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
     memDC.SetBackground (wxNullBrush);
     memDC.SelectObject (wxNullBitmap);
 }
-
-
 
