@@ -1749,9 +1749,16 @@ void PtermFrame::BuildFileMenu (int port)
     menuFile->Append (Pterm_Pref, _("Edit Profiles...")
                       MACACCEL ("\tCtrl-,"),
                       _("Set program configuration"));
-    menuFile->Append(Pterm_MtutorSettings, _("Session Settings..."),
-        _("Set the MicroTutor session settings"));
-    menuFile->AppendSeparator ();
+    if (port != -2)
+    {
+        menuFile->Append(Pterm_MtutorSettings,
+                         _("Session Settings..."),
+                         _("Set the session settings"));
+    }
+#if defined (__WXMAC__)
+    if (port != -2)
+#endif
+        menuFile->AppendSeparator ();
     menuFile->Append (Pterm_Close, _("Close") ACCELERATOR ("\tCtrl-W"),
                       _("Close this window"));
     menuFile->Append (Pterm_Quit, _("Exit"), _("Quit this program"));
@@ -1910,11 +1917,14 @@ void PtermFrame::BuildPopupMenu (int port)
                        _("Search this...")); // g=google this?
     menuPopup->AppendSeparator ();
 
-    menuPopup->Append(Pterm_MtutorSettings, _("Session Settings..."),
-        _("Set the MicroTutor session settings"));
-
-    menuPopup->AppendSeparator();
-
+    if (port != -2)
+    {
+        menuPopup->Append(Pterm_MtutorSettings,
+                          _("Session Settings..."),
+                          _("Set the session settings"));
+        menuPopup->AppendSeparator();
+    }
+    
     // The view menu stuff also appears in the popup.
     BuildViewMenu (menuPopup, port);
     if (m_TutorColor && port > 0)
