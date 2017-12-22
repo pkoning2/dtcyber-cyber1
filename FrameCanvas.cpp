@@ -1444,8 +1444,6 @@ PtermFrame::PtermFrame (const wxString &host, int port, const wxString& title,
     m_showStatusBar = ptermApp->m_showStatusBar;
 #if !defined (__WXMAC__)
     m_showMenuBar = ptermApp->m_showMenuBar;
-#else
-    m_showMenuBar = ptermApp->m_showMenuBar;
 #endif
     m_noColor = ptermApp->m_noColor;
     m_fgColor = ptermApp->m_fgColor;
