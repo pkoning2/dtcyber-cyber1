@@ -51,7 +51,6 @@ by making the bitmap itself different.
 #include "DebugPterm.h"
 #include "PtermConnFailDialog.h"
 #include "PtermPrefDialog.h"
-#include "PtermMtutorDialog.h"
 
 // the application icon (under Windows and OS/2 it is in resources)
 #if defined (__WXGTK__) || defined (__WXMOTIF__) || defined (__WXMAC__) || defined (__WXMGL__) || defined (__WXX11__)
