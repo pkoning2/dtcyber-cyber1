@@ -110,6 +110,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     wxScrolledWindow* tab6;
     wxStaticText* lblEmail;
     wxStaticText* lblSearchURL;
+    wxStaticText* lblMTUTOR;
     wxStaticText* lblFloppy0;
     wxStaticText* lblFloppy1;
 
@@ -586,6 +587,13 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                    wxDefaultSize, 0 | wxTAB_TRAVERSAL);
     txtSearchURL->SetMaxLength (255); 
     page6->Add (txtSearchURL, 0, wxALL | wxEXPAND, 5);
+
+    lblMTUTOR = new wxStaticText (tab6, wxID_ANY,
+        _ ("MicroTutor related options:"),
+        wxDefaultPosition, wxDefaultSize, 0);
+    page6->Add (lblMTUTOR, 0, wxALL | wxALIGN_BOTTOM, 5);
+
+
 
     if (m_profileEdit)
     {
