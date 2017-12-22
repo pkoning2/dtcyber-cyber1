@@ -2981,6 +2981,9 @@ void PtermFrame::OnSaveAudio (wxCommandEvent &)
 
 void PtermFrame::OnReset (wxCommandEvent &)
 {
+    m_statusBar->SetStatusText (_ (" Booted from floppy"),
+        STATUS_CONN);
+
     BootMtutor();
 }
 
@@ -6290,8 +6293,7 @@ void PtermFrame::ptermSendKey1 (int key)
 
             if (!key2mtutor)
             {
-                //if (!m_mtutorBoot)   // not needed, mtutor sets key2mtutor
-                                       // as needed - leave until we are sure.
+                if (!m_mtutorBoot)   
                 {
                     if (tracePterm)
                     {
@@ -7014,6 +7016,9 @@ int PtermFrame::check_pcZ80(void)
         // r.init -- TBD
 
         m_canvas->Refresh(false);
+
+        m_statusBar->SetStatusText (_ (" Program ended"),
+            STATUS_CONN);
 
         return 2;
         
