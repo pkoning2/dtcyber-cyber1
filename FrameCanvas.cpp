@@ -1462,8 +1462,8 @@ PtermFrame::PtermFrame (const wxString &host, int port, const wxString& title,
     m_SearchURL = ptermApp->m_SearchURL;
 
     m_mtutorBoot = mtutorBoot;
-    m_floppy0 = ptermApp->m_floppy0;
-    m_floppy1 = ptermApp->m_floppy1;
+    m_floppy0 = ptermApp->m_floppy0 && (port != -2);
+    m_floppy1 = ptermApp->m_floppy1 && (port != -2);
     m_floppy0File = ptermApp->m_floppy0File;
     m_floppy1File = ptermApp->m_floppy1File;
 
@@ -1605,7 +1605,7 @@ PtermFrame::PtermFrame (const wxString &host, int port, const wxString& title,
     
     m_needtoBoot = false;
 
-    if (mtutorBoot)
+    if (mtutorBoot && port != -2)
         m_needtoBoot = true;
 
     Show (true);
