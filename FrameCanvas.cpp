@@ -523,7 +523,7 @@ PtermCanvas::PtermCanvas (PtermFrame *parent)
     wxClientDC dc (this);
 
     DisableKeyboardScrolling ();
-    SetBackgroundColour (ptermApp->m_bgColor);
+    SetBackgroundColour (m_owner->m_bgColor);
 }
 
 // Convert device x/y (on the scrolled canvas) to PLATO x/y.  This
@@ -772,7 +772,7 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
 
     // Special case:user has disabled Shift-Space, which means to treat
     // it as a space
-    if (ptermApp->m_DisableShiftSpace && key == WXK_SPACE)
+    if (m_owner->m_DisableShiftSpace && key == WXK_SPACE)
     {
         shift = 0;
     }
@@ -801,11 +801,11 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
             // Any character that is an accelerator (listed as such with the
             // ACCELERATOR macro in menu definitions) needs to be accounted
             // for in the checks below.
-            if (ptermApp->m_useAccel && !shift)
+            if (m_owner->m_useAccel && !shift)
             {
                 bool acc = false;
                 
-                if (ptermApp->m_TutorColor && !m_owner->IgnoreKeys ())
+                if (m_owner->m_TutorColor && !m_owner->IgnoreKeys ())
                 {
                     acc = (key >= '0' && key <= '9');
                 }
@@ -889,7 +889,7 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
     // non-letters) and we want to let the system deal with that.
 
     pc = None;
-    if (ptermApp->m_platoKb)
+    if (m_owner->m_platoKb)
     {
 #if defined (_WIN32)
         // This is a workaround for a Windows keyboard mapping bug
@@ -899,7 +899,7 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
         }
 #endif
     }
-    else if (ptermApp->m_numpadArrows)
+    else if (m_owner->m_numpadArrows)
     {
         // Check the numeric keypad keys separately and turn them
         // into the 8-way arrow keys of the PLATO main keyboard.
@@ -1086,7 +1086,7 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
                 return;
             }
             pc = asciiToPlato[key];
-            if (!ptermApp->m_platoKb || pc == None)
+            if (!m_owner->m_platoKb || pc == None)
             {
                 event.Skip ();
                 return;
@@ -1129,7 +1129,7 @@ void PtermCanvas::OnChar (wxKeyEvent& event)
     key = event.GetKeyCode ();
 
     //see if we can ignore the caplock
-    if (ptermApp->m_ignoreCapLock && isalpha (key) &&
+    if (m_owner->m_ignoreCapLock && isalpha (key) &&
         wxGetKeyState (WXK_CAPITAL))
     {
         if (wxGetKeyState (WXK_SHIFT))
@@ -1289,7 +1289,7 @@ PtermMainFrame::PtermMainFrame (void)
 
     // ... and attach this menu bar to the frame
 #if !defined (__WXMAC__)
-    if (!m_fullScreen && ptermApp->m_showMenuBar)
+    if (!m_fullScreen && m_owner->m_showMenuBar)
 #endif
         SetMenuBar (menuBar);
 }
@@ -1429,6 +1429,40 @@ PtermFrame::PtermFrame (const wxString &host, int port, const wxString& title,
     modexor = false;
     setMargin (0);
     RAM[M_CCR] = 0;
+
+    m_classicSpeed = ptermApp->m_classicSpeed;
+    m_gswEnable = ptermApp->m_gswEnable;
+    m_numpadArrows = ptermApp->m_numpadArrows;
+    m_ignoreCapLock = ptermApp->m_ignoreCapLock;
+    m_platoKb = ptermApp->m_platoKb;
+    m_useAccel = ptermApp->m_useAccel;
+    m_beepEnable = ptermApp->m_beepEnable;
+    m_DisableShiftSpace = ptermApp->m_DisableShiftSpace;
+    m_DisableMouseDrag = ptermApp->m_DisableMouseDrag;
+    //tab4
+//#define SCALE_ASPECT  0.    // Scale to window, square aspect ratio
+//#define SCALE_FREE   -1.    // Scale to window, free form
+    m_showStatusBar = ptermApp->m_showStatusBar;
+#if !defined (__WXMAC__)
+    m_showMenuBar = ptermApp->m_showMenuBar;
+#else
+    m_showMenuBar = ptermApp->m_showMenuBar;
+#endif
+    m_noColor = ptermApp->m_noColor;
+    m_fgColor = ptermApp->m_fgColor;
+    m_bgColor = ptermApp->m_bgColor;
+
+    //tab5
+    m_charDelay = ptermApp->m_charDelay;
+    m_lineDelay = ptermApp->m_lineDelay;
+    m_autoLF = ptermApp->m_autoLF;
+    m_smartPaste = ptermApp->m_smartPaste;
+    m_convDot7 = ptermApp->m_convDot7;
+    m_conv8Sp = ptermApp->m_conv8Sp;
+    m_TutorColor = ptermApp->m_TutorColor;
+    //tab6
+    m_Email = ptermApp->m_Email;
+    m_SearchURL = ptermApp->m_SearchURL;
 
     m_mtutorBoot = mtutorBoot;
     m_mtPLevel = m_mTutorLevel = ptermApp->m_mTutorLevel;
@@ -1671,7 +1705,7 @@ void PtermFrame::BuildMenuBar (void)
     menuBar->Append (menuHelp, _("Help"));
 
 #if !defined (__WXMAC__)
-    if (!m_fullScreen && ptermApp->m_showMenuBar)
+    if (!m_fullScreen && m_showMenuBar)
 #endif
         SetMenuBar (menuBar);
 }
@@ -1716,10 +1750,10 @@ void PtermFrame::BuildFileMenu (int port)
     menuFile->Append (Pterm_Preview, _("Print Preview"),
                       _("Preview screen print"));
     menuFile->AppendSeparator ();
-    menuFile->Append (Pterm_Pref, _("Preferences...")
+    menuFile->Append (Pterm_Pref, _("Edit Profiles...")
                       MACACCEL ("\tCtrl-,"),
                       _("Set program configuration"));
-    menuFile->Append(Pterm_MtutorSettings, _("MicroTutor Session Settings..."),
+    menuFile->Append(Pterm_MtutorSettings, _("Session Settings..."),
         _("Set the MicroTutor session settings"));
     menuFile->AppendSeparator ();
     menuFile->Append (Pterm_Close, _("Close") ACCELERATOR ("\tCtrl-W"),
@@ -1750,7 +1784,7 @@ void PtermFrame::BuildEditMenu (int port)
     menuEdit->Append (Pterm_SearchThis, _("Search this...")
                       ACCELERATOR ("\tCtrl-G"),
                       _("Search this...")); // g=google this?
-    if (ptermApp->m_TutorColor && port > 0)
+    if (m_TutorColor && port > 0)
     {
         menuEdit->AppendSeparator ();
         menuEdit->Append (Pterm_Macro0, wxT ("Box 8x")
@@ -1790,14 +1824,14 @@ void PtermFrame::BuildViewMenu (wxMenu *menu, int port)
 #if !defined (__WXMAC__)
     menu->AppendCheckItem (Pterm_ToggleMenuBar,
                            _("Display menu bar"), _("Display menu bar"));
-    menu->Check (Pterm_ToggleMenuBar, ptermApp->m_showMenuBar);
+    menu->Check (Pterm_ToggleMenuBar, m_showMenuBar);
 #endif
     if (port >= 0)
     {
         menu->AppendCheckItem (Pterm_ToggleStatusBar,
                                _("Display status bar"),
                                _("Display status bar"));
-        menu->Check (Pterm_ToggleStatusBar, ptermApp->m_showStatusBar);
+        menu->Check (Pterm_ToggleStatusBar, m_showStatusBar);
         menu->AppendSeparator ();
     }
     if (GetContentScaleFactor () == 2.0)
@@ -1880,14 +1914,14 @@ void PtermFrame::BuildPopupMenu (int port)
                        _("Search this...")); // g=google this?
     menuPopup->AppendSeparator ();
 
-    menuPopup->Append(Pterm_MtutorSettings, _("MicroTutor Session Settings..."),
+    menuPopup->Append(Pterm_MtutorSettings, _("Session Settings..."),
         _("Set the MicroTutor session settings"));
 
     menuPopup->AppendSeparator();
 
     // The view menu stuff also appears in the popup.
     BuildViewMenu (menuPopup, port);
-    if (ptermApp->m_TutorColor && port > 0)
+    if (m_TutorColor && port > 0)
     {
         menuPopup->AppendSeparator ();
         menuPopup->Append (Pterm_Macro0, wxT ("Box 8x")
@@ -1925,7 +1959,7 @@ void PtermFrame::BuildPopupMenu (int port)
 void PtermFrame::BuildStatusBar (bool connecting)
 {
     const bool showstatusbar = (!m_fullScreen &&
-                                ptermApp->m_showStatusBar &&
+                                m_showStatusBar &&
                                 m_port >= 0);
     const bool havestatusbar = (m_statusBar != NULL);
     int ww,wh,ow,oh,nw,nh;
@@ -2227,17 +2261,17 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         // First, check if we need to break at all.  If the count of
         // chars left is <= the autoLF setting, then there is nothing
         // to wrap.
-        if (m_pasteLen - m_pasteIndex <= ptermApp->m_autoLF)
+        if (m_pasteLen - m_pasteIndex <= m_autoLF)
         {
             m_pasteNextIndex = -1;
         }
         else
         {
-            i = m_pasteText.find_last_of (" -", m_pasteIndex + ptermApp->m_autoLF - 1);
+            i = m_pasteText.find_last_of (" -", m_pasteIndex + m_autoLF - 1);
             if (i < m_pasteIndex || i == wxString::npos)
             {
                 // If there is no good break point, break at the limit.
-                i = m_pasteIndex + ptermApp->m_autoLF - 1;
+                i = m_pasteIndex + m_autoLF - 1;
             }
             m_pasteNextIndex = i;
         }
@@ -2326,7 +2360,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         // Smart paste processing.  This recognizes spaces that go to 
         // the next multiple of 8 tab stop, and the sequences <( and )>
         // for embed open and close.
-        if (ptermApp->m_smartPaste)
+        if (m_smartPaste)
         {
             if (c == '<' && c2 == '(')
             {
@@ -2430,7 +2464,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         }
     }
 
-    if (c == '\n' && ptermApp->m_autoLF != 0)
+    if (c == '\n' && m_autoLF != 0)
     {
         // Newline and splitting lines, next time we'll find the next
         // break point.
@@ -2456,12 +2490,12 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         m_pasteIndex = nextindex;
         if (c == '\n')
         {
-            delay = ptermApp->m_lineDelay;
+            delay = m_lineDelay;
             m_pasteLinePos = 0;
         }
         else
         {
-            delay = ptermApp->m_charDelay;
+            delay = m_charDelay;
             m_pasteLinePos++;
         }
         m_pasteTimer.Start (delay, true);
@@ -2530,20 +2564,20 @@ void PtermFrame::OnCopyScreen (wxCommandEvent &)
 void PtermFrame::OnToggleMenuBar (wxCommandEvent &)
 {
     //toggle menu
-    ptermApp->m_showMenuBar = !ptermApp->m_showMenuBar;
+    m_showMenuBar = !m_showMenuBar;
     SavePreferences ();
 
     // Make sure both menus are up to date
-    menuPopup->Check (Pterm_ToggleMenuBar, ptermApp->m_showMenuBar);
-    menuView->Check (Pterm_ToggleMenuBar, ptermApp->m_showMenuBar);
+    menuPopup->Check (Pterm_ToggleMenuBar, m_showMenuBar);
+    menuView->Check (Pterm_ToggleMenuBar, m_showMenuBar);
 
     if (!IgnoreKeys())
     {
-        menuPopup->Check (Pterm_ToggleStatusBar, ptermApp->m_showStatusBar);
-        menuView->Check (Pterm_ToggleStatusBar, ptermApp->m_showStatusBar);
+        menuPopup->Check (Pterm_ToggleStatusBar, m_showStatusBar);
+        menuView->Check (Pterm_ToggleStatusBar, m_showStatusBar);
     }
 
-    if (!ptermApp->m_showMenuBar)
+    if (!m_showMenuBar)
     {
         SetMenuBar (NULL);
     }
@@ -2558,12 +2592,12 @@ void PtermFrame::OnToggleMenuBar (wxCommandEvent &)
 void PtermFrame::OnToggleStatusBar (wxCommandEvent &)
 {
     //toggle status
-    ptermApp->m_showStatusBar = !ptermApp->m_showStatusBar;
+    m_showStatusBar = !m_showStatusBar;
     SavePreferences ();
 
     // Make sure both menus are up to date
-    menuPopup->Check (Pterm_ToggleStatusBar, ptermApp->m_showStatusBar);
-    menuView->Check (Pterm_ToggleStatusBar, ptermApp->m_showStatusBar);
+    menuPopup->Check (Pterm_ToggleStatusBar, m_showStatusBar);
+    menuView->Check (Pterm_ToggleStatusBar, m_showStatusBar);
 
     BuildStatusBar ();
 
@@ -2579,8 +2613,8 @@ void PtermFrame::OnSetScaleEntry (wxCommandEvent &evt)
     SavePreferences ();
 
     // Make sure both menus are up to date
-    menuPopup->Check (evt.GetId (), ptermApp->m_showStatusBar);
-    menuView->Check (evt.GetId (), ptermApp->m_showStatusBar);
+    menuPopup->Check (evt.GetId (), m_showStatusBar);
+    menuView->Check (evt.GetId (), m_showStatusBar);
 
     UpdateDisplayState ();
 }
@@ -2593,8 +2627,8 @@ void PtermFrame::OnSetStretchMode (wxCommandEvent &)
     SavePreferences ();
 
     // Make sure both menus are up to date
-    menuPopup->Check (Pterm_ToggleStretchMode, ptermApp->m_showStatusBar);
-    menuView->Check (Pterm_ToggleStretchMode, ptermApp->m_showStatusBar);
+    menuPopup->Check (Pterm_ToggleStretchMode, m_showStatusBar);
+    menuView->Check (Pterm_ToggleStretchMode, m_showStatusBar);
 
     // refit
     UpdateDisplayState ();
@@ -2608,8 +2642,8 @@ void PtermFrame::OnSetAspectMode (wxCommandEvent &)
     SavePreferences ();
 
     // Make sure both menus are up to date
-    menuPopup->Check (Pterm_ToggleAspectMode, ptermApp->m_showStatusBar);
-    menuView->Check (Pterm_ToggleAspectMode, ptermApp->m_showStatusBar);
+    menuPopup->Check (Pterm_ToggleAspectMode, m_showStatusBar);
+    menuView->Check (Pterm_ToggleAspectMode, m_showStatusBar);
 
     // refit
     UpdateDisplayState ();
@@ -2689,7 +2723,7 @@ void PtermFrame::OnMailTo (wxCommandEvent &event)
         if (newchr != '*')
             l_FixText += newchr;
     }
-    l_Email.Printf (ptermApp->m_Email, l_FixText);
+    l_Email.Printf (m_Email, l_FixText);
     wxExecute (l_Email);
 }
 
@@ -2697,8 +2731,8 @@ void PtermFrame::OnSearchThis (wxCommandEvent &event)
 {
     wxString text = GetRegionText (true);
 
-    debug (ptermApp->m_SearchURL + text);
-    wxLaunchDefaultBrowser (ptermApp->m_SearchURL + text,
+    debug (m_SearchURL + text);
+    wxLaunchDefaultBrowser (m_SearchURL + text,
                             wxBROWSER_NEW_WINDOW | wxBROWSER_NOBUSYCURSOR);
 }
 
@@ -2808,7 +2842,7 @@ void PtermFrame::OnPaste (wxCommandEvent &event)
         m_pasteText = text.GetText ();
         m_pasteLen = m_pasteText.Len ();
         m_pasteIndex = 0;
-        if (ptermApp->m_autoLF != 0)
+        if (m_autoLF != 0)
         {
             m_pasteNextIndex = 0;
         }
@@ -2816,7 +2850,7 @@ void PtermFrame::OnPaste (wxCommandEvent &event)
         {
             m_pasteNextIndex = -1;  // "don't do anything"
         }
-        m_pasteTimer.Start (ptermApp->m_charDelay, true);
+        m_pasteTimer.Start (m_charDelay, true);
         m_pastePrint = (event.GetId () == Pterm_PastePrint);
         m_pasteLinePos = 0;
     }
@@ -2967,10 +3001,63 @@ void PtermFrame::OnReset (wxCommandEvent &)
 void PtermFrame::OnMtutorSettings (wxCommandEvent &)
 {
     //show dialog
-    PtermMtutorDialog dlg (this, wxID_ANY, _("MicroTutor Settings"),
-        wxDefaultPosition, wxSize(461, 400));
+    PtermPrefDialog dlg (this, wxID_ANY, _ ("Session Settings..."),
+        wxDefaultPosition, wxSize (461, 575), false);
 
-    dlg.ShowModal ();
+    if (dlg.ShowModal () == wxID_OK)
+    {
+        SetColors (dlg.m_fgColor, dlg.m_bgColor);
+        //get prefs
+        ptermApp->m_lastTab = dlg.m_lastTab;
+        //tab3
+        m_classicSpeed = dlg.m_classicSpeed;
+        m_gswEnable = dlg.m_gswEnable;
+        m_numpadArrows = dlg.m_numpadArrows;
+        m_ignoreCapLock = dlg.m_ignoreCapLock;
+        m_platoKb = dlg.m_platoKb;
+        m_useAccel = dlg.m_useAccel;
+        m_beepEnable = dlg.m_beepEnable;
+        m_DisableShiftSpace = dlg.m_DisableShiftSpace;
+        m_DisableMouseDrag = dlg.m_DisableMouseDrag;
+        //tab4
+        m_noColor = dlg.m_noColor;
+        m_fgColor = dlg.m_fgColor;
+        m_bgColor = dlg.m_bgColor;
+        //tab5
+        m_charDelay = dlg.m_charDelay;
+        m_lineDelay = dlg.m_lineDelay;
+        m_autoLF = dlg.m_autoLF;
+        m_smartPaste = dlg.m_smartPaste;
+        m_convDot7 = dlg.m_convDot7;
+        m_conv8Sp = dlg.m_conv8Sp;
+        m_TutorColor = dlg.m_TutorColor;
+        //tab6
+        m_Email = dlg.m_Email;
+        m_SearchURL = dlg.m_SearchURL;
+        m_mtPLevel = m_mTutorLevel = dlg.m_mTutorLevel;
+
+        m_floppy0 = dlg.m_floppy0;
+        m_floppy1 = dlg.m_floppy1;
+
+        m_floppy0File = dlg.m_floppy0File;
+        m_floppy1File = dlg.m_floppy1File;
+
+        if (dlg.m_floppy0Changed)
+        {
+            if (m_floppy0 && m_floppy0File.Length () > 0)
+                m_MTFiles[0].Open (m_floppy0File);
+            else
+                m_MTFiles[0].Close ();
+        }
+
+        if (dlg.m_floppy1Changed)
+        {
+            if (m_floppy1 && m_floppy1File.Length () > 0)
+                m_MTFiles[1].Open (m_floppy1File);
+            else
+                m_MTFiles[1].Close ();
+        }
+    }
 }
 void PtermFrame::OnPrint (wxCommandEvent &)
 {
@@ -3035,11 +3122,11 @@ void PtermFrame::OnPageSetup (wxCommandEvent &)
 void PtermFrame::OnPref (wxCommandEvent&)
 {
     //show dialog
-    PtermPrefDialog dlg (NULL, wxID_ANY, _("Pterm Preferences"),
-                         wxDefaultPosition, wxSize (461, 575));
+    PtermPrefDialog dlg (NULL, wxID_ANY, _("Profile Editor"),
+                         wxDefaultPosition, wxSize (461, 575), true);
 
     //process changes if OK clicked
-    if (dlg.ShowModal () == wxID_OK)
+    if (dlg.ShowModal () == wxID_OK)        // ?? drs
     {
         SetColors (dlg.m_fgColor, dlg.m_bgColor);
         //get prefs
@@ -4402,7 +4489,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                             break;
                         case 0x7b:
                             // hex 7b is beep
-                            if (ptermApp->m_beepEnable)
+                            if (m_beepEnable)
                             {
                                 trace ("beep");
                                 wxBell ();
@@ -4609,7 +4696,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                 case bg:
                     ascState = m_ascState;
                     n = AssembleColor (d);
-                    if (n != -1 && !ptermApp->m_noColor)
+                    if (n != -1 && !m_noColor)
                     {
                         wxColour c ((n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff);
                         if (ascState == fg)
@@ -4628,7 +4715,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                 case gsfg:
                     ascState = m_ascState;
                     n = AssembleGrayScale (d);
-                    if (n != -1 && !ptermApp->m_noColor)
+                    if (n != -1 && !m_noColor)
                     {
                         wxColour c (n & 0xff, n & 0xff, n & 0xff);
                         if (ascState == gsfg)
@@ -4807,7 +4894,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                 }
                 else if ((d & NOP_MASKDATA) == NOP_FONTINFO)
                 {
-                    const int chardelay = ptermApp->m_charDelay;
+                    const int chardelay = m_charDelay;
                     ptermSendExt ((int) m_fontwidth);
                     wxMilliSleep (chardelay);
                     ptermSendExt ((int) m_fontheight);
@@ -4815,7 +4902,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                 }
                 else if ((d & NOP_MASKDATA) == NOP_OSINFO)
                 {
-                    const int chardelay = ptermApp->m_charDelay;
+                    const int chardelay = m_charDelay;
                     // sends 3 external keys, OS, major version, minor version
                     int os, major, minor;
                     os = wxGetOsVersion (&major, &minor);
@@ -4918,7 +5005,7 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                     break;
                 case 0x7b:
                     // hex 7b is beep
-                    if (ptermApp->m_beepEnable)
+                    if (m_beepEnable)
                     {
                         trace ("beep");
                         wxBell ();
@@ -5176,7 +5263,7 @@ bool PtermFrame::AssembleCoord (int d)
 int PtermFrame::AssembleAsciiPlatoMetaData (int d)
 {
     int od = d;
-    const int chardelay = ptermApp->m_charDelay;
+    const int chardelay = m_charDelay;
 
     trace ("plato meta data: %d (counter=%d)", d, m_ascBytes+1);
     d &= 077;
@@ -6166,7 +6253,7 @@ void PtermFrame::ptermSendKey1 (int key)
     tracex ("key to plato %03o", key);
     debug ("key to plato %03o", key);
 
-    if (key2mtutor || m_conn->Ascii ())
+    if (key2mtutor || m_mTutorBoot || m_conn->Ascii ())
     {
         // Assume one byte key code
         len = 1;
@@ -6332,7 +6419,7 @@ void PtermFrame::ptermSendKeys (const int key[])
     for (int i = 0; key[i] != -1; i++)
     {
         ptermSendKey1 (key[i]);
-        m_pasteTimer.Start (ptermApp->m_charDelay, true);
+        m_pasteTimer.Start (m_charDelay, true);
     }
 }
             
@@ -6442,7 +6529,7 @@ void PtermFrame::ptermShowTrace ()
             // Display a musical note.
             m_statusBar->SetStatusText (wxT ("\u266C"), STATUS_TRC);
         }
-        else if (ptermApp->m_platoKb)
+        else if (m_platoKb)
         {
             m_statusBar->SetStatusText (_(" PLATO keyboard "), STATUS_TRC);
         }
@@ -6731,7 +6818,7 @@ void PtermFrame::UpdateRegion (int x, int y, int mouseX, int mouseY)
     wxString msg;
     int scfx, scgx, ecfx, ecgx;
 
-    mtoler = (ptermApp->m_DisableMouseDrag) ? 512 : MouseTolerance;
+    mtoler = (m_DisableMouseDrag) ? 512 : MouseTolerance;
     
     if (abs (x - mouseX) > mtoler || abs (y - mouseY) > mtoler)
     {
@@ -7026,9 +7113,11 @@ int PtermFrame::check_pcZ80(void)
     case R_XMIT:
         // send key in HL
     {
+        int k = HL_pair;
         u8 temp_hold = mt_ksw;
-        mt_ksw = 0;
-        ptermSendKey1(HL_pair);
+        if (k != 0x3a)
+            mt_ksw = 0;
+        ptermSendKey1(k);
         mt_ksw = temp_hold;
     }
         return 1;
@@ -7667,7 +7756,7 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
                 case 4:
                     m_mtcanresp = 0x4a;
                     m_mtsingledata = 0x02;
-                    if (ptermApp->m_floppy1)
+                    if (m_floppy1)
                     {
                         m_mtsingledata |= 0x80;
                     }

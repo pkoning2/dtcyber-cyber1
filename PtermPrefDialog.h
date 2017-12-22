@@ -20,7 +20,8 @@ class PtermPrefDialog : public wxDialog
 {
 public:
     PtermPrefDialog (PtermFrame *parent, wxWindowID id,
-                     const wxString &title, wxPoint pos,  wxSize size);
+                     const wxString &title, wxPoint pos,  wxSize size,
+                     bool profileEdit);
 
     //event sink handlers
     void OnButton (wxCommandEvent& event);
@@ -39,6 +40,10 @@ public:
     void SetControlState (void);
     static int SelectToLevel(int select);
     static int LevelToSelect(int level);
+
+    bool m_floppy0Changed;
+    bool m_floppy1Changed;
+
     //objects
     wxNotebook* tabPrefsDialog;
     //tab0
@@ -104,6 +109,11 @@ public:
     wxButton* btnDefaults;
 
     //properties    
+
+    PtermFrame*     m_owner;
+
+    bool            m_profileEdit;
+
     int             m_lastTab;
     //tab0
     wxString        m_curProfile;

@@ -473,7 +473,7 @@ int PtermConnection::NextWord (void)
     }
             
     // See if emulating 1260 baud, or the -delay- NOP code
-    if (ptermApp->m_classicSpeed ||
+    if (m_owner->m_classicSpeed ||
         word == 1)
     {
         delay = 1;

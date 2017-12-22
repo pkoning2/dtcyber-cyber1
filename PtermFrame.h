@@ -246,6 +246,42 @@ public:
     void        ptermSetConnected(void);
     wxString    m_station;
 
+    // session settings
+    //tab3
+    bool        m_classicSpeed;
+    bool        m_gswEnable;
+    bool        m_numpadArrows;
+    bool        m_ignoreCapLock;
+    bool        m_platoKb;
+    bool        m_useAccel;
+    bool        m_beepEnable;
+    bool        m_DisableShiftSpace;
+    bool        m_DisableMouseDrag;
+    //tab4
+#define SCALE_ASPECT  0.    // Scale to window, square aspect ratio
+#define SCALE_FREE   -1.    // Scale to window, free form
+    bool        m_showStatusBar;
+#if !defined (__WXMAC__)
+    bool        m_showMenuBar;
+#else
+    static const bool m_showMenuBar;
+#endif
+    bool        m_noColor;
+    wxColour    m_fgColor;
+    wxColour    m_bgColor;
+
+    //tab5
+    long        m_charDelay;
+    long        m_lineDelay;
+    long        m_autoLF;
+    bool        m_smartPaste;
+    bool        m_convDot7;
+    bool        m_conv8Sp;
+    bool        m_TutorColor;
+    //tab6
+    wxString    m_Email;
+    wxString    m_SearchURL;
+    bool        m_mTutorBoot;
     long        m_mTutorLevel;
     bool        m_floppy0;
     bool        m_floppy1;
