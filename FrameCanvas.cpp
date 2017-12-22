@@ -2991,7 +2991,7 @@ void PtermFrame::OnMtutorSettings (wxCommandEvent &)
 {
     //show dialog
     PtermPrefDialog dlg (this, wxID_ANY, _ ("Session Settings..."),
-        wxDefaultPosition, wxSize (461, 575), false);
+        wxDefaultPosition, wxSize (461, 475), false);
 
     if (dlg.ShowModal () == wxID_OK)
     {
