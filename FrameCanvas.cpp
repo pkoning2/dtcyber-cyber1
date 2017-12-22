@@ -1714,13 +1714,7 @@ void PtermFrame::BuildFileMenu (int port)
     menuFile = new wxMenu;
     menuFile->Append (Pterm_Connect, _("New Terminal Window...")
                       ACCELERATOR ("\tCtrl-N"), _("New Terminal Window"));
-    if (port > 0)
-    {
-        // No "connect again" for the help window because that
-        // doesn't own a connection.
-        menuFile->Append (Pterm_ConnectAgain, _("Connect Again"),
-                          _("Open the same Profile"));
-    }
+
     if (m_mtutorBoot)
     {
         menuFile->Append(Pterm_ResetMtutor, _("Reset MicroTutor"),
@@ -2216,20 +2210,6 @@ void PtermFrame::procDataLoop (void)
         
         switch (action)
         {
-        case Pterm_ConnectAgain:
-            delete m_conn;
-            m_conn = new PtermConnection (this, m_hostName, m_port);
-            m_dumbTty = true;
-            m_ascState = none;
-            m_ascBytes = 0;
-            m_flowCtrl = false;
-            m_sendFgt = false;
-            
-            mode = 017;             // default to character mode, rewrite
-            modexor = false;
-            setMargin (0);
-            RAM[M_CCR] = 0;
-            break;
         case wxID_OK:
             ptermApp->DoConnect (true);
             break;

@@ -46,7 +46,6 @@ static const u32 keyboardhelp[] = {
 
 BEGIN_EVENT_TABLE (PtermApp, wxApp)
     EVT_MENU (Pterm_Connect, PtermApp::OnConnect)
-    EVT_MENU (Pterm_ConnectAgain, PtermApp::OnConnect)
     EVT_MENU (Pterm_Quit,    PtermApp::OnQuit)
     EVT_MENU (Pterm_HelpKeys, PtermApp::OnHelpKeys)
     EVT_MENU (Pterm_About, PtermApp::OnAbout)
