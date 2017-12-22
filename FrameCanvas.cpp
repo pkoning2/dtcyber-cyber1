@@ -6239,7 +6239,7 @@ void PtermFrame::ptermSendKey1 (int key)
     tracex ("key to plato %03o", key);
     debug ("key to plato %03o", key);
 
-    if (key2mtutor || m_mTutorBoot || m_conn->Ascii ())
+    if (key2mtutor || m_mtutorBoot || m_conn->Ascii ())
     {
         // Assume one byte key code
         len = 1;

@@ -960,7 +960,7 @@ void PtermPrefDialog::SetControlState (void)
         //tab6
         m_Email = m_owner->m_Email;
         m_SearchURL = m_owner->m_SearchURL;
-        m_mTutorBoot = m_owner->m_mTutorBoot;
+        m_mTutorBoot = m_owner->m_mtutorBoot;
 
         m_floppy0 = m_owner->m_floppy0;
         m_floppy1 = m_owner->m_floppy1;

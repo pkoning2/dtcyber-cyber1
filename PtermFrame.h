@@ -281,7 +281,6 @@ public:
     //tab6
     wxString    m_Email;
     wxString    m_SearchURL;
-    bool        m_mTutorBoot;
     bool        m_floppy0;
     bool        m_floppy1;
     wxString    m_floppy0File;
