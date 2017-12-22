@@ -412,6 +412,21 @@ int Z80::Z80Emulate (int number_cycles)
 
         RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
     }
+    else if (m_mtPLevel == 6)
+    {
+        // Call resident and wxWidgets for brief pause
+        RAM[Level5Pause] = CALL8080;
+        RAM[Level5Pause + 1] = R_WAIT16;
+        RAM[Level5Pause + 2] = 0;
+
+        // remove off-line check for calling r.exec - 
+        // only safe place to give up control..  
+        // was a z80 jr - 2 bytes only
+        RAM[Level5Xplato] = 0;
+        RAM[Level5Xplato + 1] = 0;
+
+        RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
+    }
 
     int     elapsed_cycles, pc, opcode;
 
