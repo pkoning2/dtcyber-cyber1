@@ -1397,7 +1397,7 @@ static dtThreadFun (dtDataThread, param)
                 }
             }
         
-        if (ps->dataCallBack)
+        if (np->connected && ps->dataCallBack != NULL)
             {
             (*ps->dataCallBack) (np, bytes, ps->dataCallArg);
             }
