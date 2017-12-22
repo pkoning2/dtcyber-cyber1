@@ -10,7 +10,7 @@
 #include "PtermPrefDialog.h"
 #include "PtermConnDialog.h"
 
-const wxString radioChoices[MAXMCHOICES] = {_("None"), _("2"), _("3"), _("4"), _("Dev") };
+//const wxString radioChoices[MAXMCHOICES] = {_("None"), _("2"), _("3"), _("4"), _("Dev") };
 
 // ----------------------------------------------------------------------------
 // PtermPrefDialog
@@ -20,7 +20,7 @@ BEGIN_EVENT_TABLE (PtermPrefDialog, wxDialog)
     EVT_CLOSE (PtermPrefDialog::OnClose)
     EVT_BUTTON (wxID_ANY, PtermPrefDialog::OnButton)
     EVT_CHECKBOX (wxID_ANY, PtermPrefDialog::OnCheckbox)
-    EVT_RADIOBOX(wxID_ANY, PtermPrefDialog::OnRadiobox)
+    //EVT_RADIOBOX(wxID_ANY, PtermPrefDialog::OnRadiobox)
     EVT_LISTBOX (wxID_ANY, PtermPrefDialog::OnSelect)
     EVT_LISTBOX_DCLICK (wxID_ANY, PtermPrefDialog::OnDoubleClick)
     EVT_TEXT (wxID_ANY, PtermPrefDialog::OnChange)
@@ -596,16 +596,16 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
         page6->Add (chkMTutorBoot, 0, wxALL, 5);
     }
     
-    radMTutor = new wxRadioBox(tab6, wxID_ANY,
-        _("MicroTutor Level"),
-        wxDefaultPosition, wxDefaultSize, MAXMCHOICES, radioChoices, MAXMCHOICES, wxRA_SPECIFY_COLS);
-    radMTutor->SetSelection(LevelToSelect(DEFAULTMLEVEL));
-    page6->Add(radMTutor, 0, wxALL, 5);
+    //radMTutor = new wxRadioBox(tab6, wxID_ANY,
+    //    _("MicroTutor Level"),
+    //    wxDefaultPosition, wxDefaultSize, MAXMCHOICES, radioChoices, MAXMCHOICES, wxRA_SPECIFY_COLS);
+    //radMTutor->SetSelection(LevelToSelect(DEFAULTMLEVEL));
+    //page6->Add(radMTutor, 0, wxALL, 5);
     
-    if ( !m_profileEdit && m_owner->m_mtutorBoot )
-        radMTutor->Disable ();
-    else if (m_profileEdit && m_mTutorBoot)
-        radMTutor->Disable ();
+    //if ( !m_profileEdit && m_owner->m_mtutorBoot )
+    //    radMTutor->Disable ();
+    //else if (m_profileEdit && m_mTutorBoot)
+    //    radMTutor->Disable ();
 
     chkFloppy0 = new wxCheckBox(tab6, wxID_ANY,
         _("Enable Floppy 0"),
@@ -685,10 +685,10 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     if (m_profileEdit)
     {
         this->SetLabel ("Profile Editor - " + this->m_curProfile);
-        if (m_mTutorBoot)
-            radMTutor->Disable ();
-        else
-            radMTutor->Enable ();
+        //if (m_mTutorBoot)
+        //    radMTutor->Disable ();
+        //else
+        //    radMTutor->Enable ();
     }
 
     //set active tab
@@ -1054,7 +1054,7 @@ void PtermPrefDialog::SetControlState (void)
     txtSearchURL->SetValue (m_SearchURL);
     if (m_profileEdit)
         chkMTutorBoot->SetValue(m_mTutorBoot);
-    radMTutor->SetSelection(LevelToSelect(m_mTutorLevel));
+    //radMTutor->SetSelection(LevelToSelect(m_mTutorLevel));
     chkFloppy0->SetValue(m_floppy0);
     chkFloppy1->SetValue(m_floppy1);
     txtFloppy0->SetLabel(m_floppy0File);
@@ -1114,10 +1114,10 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
             this->SetLabel ("Profile Editor - " + this->m_curProfile);
             if (m_profileEdit)
             {
-                if (m_mTutorBoot)
-                    radMTutor->Disable ();
-                else
-                    radMTutor->Enable ();
+                //if (m_mTutorBoot)
+                //    radMTutor->Disable ();
+                //else
+                //    radMTutor->Enable ();
             }
         }
         else
@@ -1346,7 +1346,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         txtSearchURL->SetValue (m_SearchURL);
         if (m_profileEdit)
             chkMTutorBoot->SetValue(m_mTutorBoot);
-        radMTutor->SetSelection(LevelToSelect(DEFAULTMLEVEL));
+        //radMTutor->SetSelection(LevelToSelect(DEFAULTMLEVEL));
 
         chkFloppy0->SetValue(m_floppy0);
         chkFloppy1->SetValue(m_floppy1);
@@ -1357,13 +1357,13 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
     Refresh (false);
 }
 
-void PtermPrefDialog::OnRadiobox(wxCommandEvent& event)
-{
-    if (event.GetEventObject() == radMTutor)
-    {
-        m_mTutorLevel = SelectToLevel(radMTutor->GetSelection());
-    }
-}
+//void PtermPrefDialog::OnRadiobox(wxCommandEvent& event)
+//{
+//    if (event.GetEventObject() == radMTutor)
+//    {
+//        m_mTutorLevel = SelectToLevel(radMTutor->GetSelection());
+//    }
+//}
 
 void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
 {
@@ -1418,13 +1418,13 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     else if (event.GetEventObject () == chkMTutorBoot)
     {
         m_mTutorBoot = event.IsChecked ();
-        if (m_profileEdit)
-        {
-            if (m_mTutorBoot)
-                radMTutor->Disable ();
-            else
-                radMTutor->Enable ();
-        }
+        //if (m_profileEdit)
+        //{
+        //    if (m_mTutorBoot)
+        //        radMTutor->Disable ();
+        //    else
+        //        radMTutor->Enable ();
+        //}
     }
 
     else if (event.GetEventObject() == chkFloppy0)
@@ -1485,13 +1485,13 @@ void PtermPrefDialog::OnDoubleClick (wxCommandEvent& event)
             SetControlState ();
             lblProfileStatusMessage->SetLabel (_("Profile loaded."));
             this->SetLabel ("Profile Editor - " + this->m_curProfile);
-            if (m_profileEdit)
-            {
-                if (m_mTutorBoot)
-                    radMTutor->Disable ();
-                else
-                    radMTutor->Enable ();
-            }
+            //if (m_profileEdit)
+            //{
+            //    if (m_mTutorBoot)
+            //        radMTutor->Disable ();
+            //    else
+            //        radMTutor->Enable ();
+            //}
         }
         else
         {

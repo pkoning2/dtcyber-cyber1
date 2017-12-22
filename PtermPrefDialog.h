@@ -26,7 +26,7 @@ public:
     //event sink handlers
     void OnButton (wxCommandEvent& event);
     void OnCheckbox (wxCommandEvent& event);
-    void OnRadiobox (wxCommandEvent& event);
+    //void OnRadiobox (wxCommandEvent& event);
     void OnSelect (wxCommandEvent& event);
     void OnDoubleClick (wxCommandEvent& event);
     void OnChange (wxCommandEvent& event);

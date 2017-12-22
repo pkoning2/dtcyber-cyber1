@@ -7412,7 +7412,7 @@ void PtermFrame::BootMtutor()
     }
     // read level of disk for patch set to use
     m_MTFiles[0].Seek(130 + 36);
-    m_mtPLevel = m_MTFiles[0].ReadByte();
+    m_mtPLevel = m_mTutorLevel = m_MTFiles[0].ReadByte();
 
     m_MTFiles[0].Seek(21970);   // read interp. into ram
     u16 address = 0x5300;       // interp fwa

@@ -332,6 +332,14 @@ int Z80::Z80Emulate (int number_cycles)
 
     in_r_exec = false;
 
+    // find mtutor release level
+    // unfortunately cdc put it in different places in different
+    // releases - but only off by 1 byte.
+    int release = RAM[0x530b];  // release or year *y1*
+    if (release == 8)           // year *y1* 82 - 8?
+        release = RAM[0x530a];  // release
+    m_mtPLevel = release;
+
     if (m_mtPLevel == 2)
     {
         // Call resident and wxWidgets for brief pause
@@ -358,7 +366,6 @@ int Z80::Z80Emulate (int number_cycles)
         RAM[0x8010 + 3] = JUMP8080; // jmp
         RAM[0x8010 + 4] = 0x22;
         RAM[0x8010 + 5] = 0x5d;  // back to loop - getkey
-
     }
     else if (m_mtPLevel == 3)
     {
