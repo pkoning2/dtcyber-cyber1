@@ -7403,14 +7403,19 @@ wxColour PtermFrame::GetColor (u16 loc)
         wxColour color (b1, b2, b3);
         return color;
     }
-    if (exp == 0x10)
+    else if (exp == 0x10)
     {
         wxColour color (0, b1, b2);
         return color;
     }
-    if (exp == 0x08)
+    else if (exp == 0x08)
     {
         wxColour color (0, 0, b1);
+        return color;
+    }
+    else
+    {
+        wxColour color (0, 0, 0);
         return color;
     }
 
