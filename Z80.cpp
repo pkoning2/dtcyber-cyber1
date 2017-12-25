@@ -77,9 +77,9 @@ unsigned short breakpts[] =
 
     //0x5187,
 
-    //0x60b5,
+    0x60b5,
     //0x66aa,
-    0x8000,
+    //0x8000,
 
     0xffff,  // these can be overridden to add/remove 
     0xffff,  // break points while running.
@@ -433,6 +433,20 @@ int Z80::Z80Emulate (int number_cycles)
         RAM[0x8015] = JUMP8080;
         RAM[0x8016] = 0x52;
         RAM[0x8017] = 0x61;         // pincg
+
+        // paint - flood fill
+        RAM[0x66c3] = 0x20;
+        RAM[0x66c4] = 0x80;
+
+        RAM[0x8020] = 0x21;
+        RAM[0x8021] = 0;
+        RAM[0x8022] = 0;
+        RAM[0x8023] = CALL8080;
+        RAM[0x8024] = 0x94;
+        RAM[0x8025] = 0x00;         // r.paint
+        RAM[0x8026] = JUMP8080;
+        RAM[0x8027] = 0x5d;
+        RAM[0x8028] = 0x61;         // pinc1
 
 
     }
