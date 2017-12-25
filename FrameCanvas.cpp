@@ -7292,7 +7292,6 @@ int PtermFrame::check_pcZ80(void)
         m_currentFg = color;
         SetColors(m_currentFg, m_currentBg);
     }
-
         return 1;
 
     case R_FCOLOR + 1:      // for mtutor ccode use with de
@@ -7303,15 +7302,14 @@ int PtermFrame::check_pcZ80(void)
         m_currentFg = color;
         SetColors(m_currentFg, m_currentBg);
     }
+        return 1;
 
     case R_FCOLOR + 2:
         {
-        wxColour color = GetColor (HL_pair);
-        m_currentFg = color;
+        m_currentFg = GetColor (HL_pair);
         SetColors (m_currentFg, m_currentBg);
         }
-
-    return 1;
+        return 1;
 
     case R_BCOLOR:      // for standard use with h, l, d
         // three bytes are r g b
@@ -7321,7 +7319,6 @@ int PtermFrame::check_pcZ80(void)
         m_currentBg = colorb;
         SetColors(m_currentFg, m_currentBg);
     }
-
         return 1;
 
     case R_BCOLOR + 1:      // for mtutor ccode use with de
@@ -7333,15 +7330,14 @@ int PtermFrame::check_pcZ80(void)
         m_currentBg = colorb;
         SetColors(m_currentFg, m_currentBg);
     }
+        return 1;
 
     case R_BCOLOR + 2:
     {
-        wxColour color = GetColor (HL_pair);
-        m_currentBg = color;
+        m_currentBg = GetColor (HL_pair);
         SetColors (m_currentFg, m_currentBg);
     }
-
-    return 1;
+        return 1;
 
     case R_PAINT:       // standard
         ptermPaint(HL_pair);
