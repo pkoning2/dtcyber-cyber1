@@ -7304,6 +7304,13 @@ int PtermFrame::check_pcZ80(void)
         SetColors(m_currentFg, m_currentBg);
     }
 
+    case R_FCOLOR + 2:
+        {
+        wxColour color = GetColor (HL_pair);
+        m_currentFg = color;
+        SetColors (m_currentFg, m_currentBg);
+        }
+
     return 1;
 
     case R_BCOLOR:      // for standard use with h, l, d
@@ -7325,6 +7332,13 @@ int PtermFrame::check_pcZ80(void)
         wxColour colorb(RAM[DE_pair], RAM[DE_pair + 1], RAM[DE_pair + 2]);
         m_currentBg = colorb;
         SetColors(m_currentFg, m_currentBg);
+    }
+
+    case R_BCOLOR + 2:
+    {
+        wxColour color = GetColor (HL_pair);
+        m_currentBg = color;
+        SetColors (m_currentFg, m_currentBg);
     }
 
     return 1;
@@ -7375,6 +7389,31 @@ int PtermFrame::check_pcZ80(void)
             return 0;
         }
     }
+}
+
+wxColour PtermFrame::GetColor (u16 loc)
+{
+    u8 exp = RAM[loc + 1];
+    u8 b1 = RAM[loc + 2];
+    u8 b2 = RAM[loc + 3];
+    u8 b3 = RAM[loc + 4];
+
+    if (exp == 0x18)
+    {
+        wxColour color (b1, b2, b3);
+        return color;
+    }
+    if (exp == 0x10)
+    {
+        wxColour color (0, b1, b2);
+        return color;
+    }
+    if (exp == 0x08)
+    {
+        wxColour color (0, 0, b1);
+        return color;
+    }
+
 }
 
 void PtermFrame::BootMtutor()

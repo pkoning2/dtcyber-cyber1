@@ -172,6 +172,8 @@ public:
 #define Parity(x) (x)
 #endif
 
+    wxColour GetColor (u16 loc);
+
     bool HasConnection(void) const
     {
         return (m_conn != NULL);
