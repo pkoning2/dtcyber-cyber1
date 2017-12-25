@@ -7390,9 +7390,6 @@ int PtermFrame::check_pcZ80(void)
 wxColour PtermFrame::GetColor (u16 loc)
 {
     u8 exp = RAM[loc + 1];
-    u8 b1 = RAM[loc + 2];
-    u8 b2 = RAM[loc + 3];
-    u8 b3 = RAM[loc + 4];
 
     u32 cb = RAM[loc + 2] << 16;
     cb |= RAM[loc + 3] << 8;

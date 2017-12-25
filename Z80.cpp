@@ -447,8 +447,6 @@ int Z80::Z80Emulate (int number_cycles)
         RAM[0x8026] = JUMP8080;
         RAM[0x8027] = 0x5d;
         RAM[0x8028] = 0x61;         // pinc1
-
-
     }
     else if (m_mtPLevel == 5)
     {
