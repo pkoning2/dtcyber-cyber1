@@ -7398,27 +7398,14 @@ wxColour PtermFrame::GetColor (u16 loc)
     u8 b2 = RAM[loc + 3];
     u8 b3 = RAM[loc + 4];
 
-    if (exp == 0x18)
-    {
-        wxColour color (b1, b2, b3);
-        return color;
-    }
-    else if (exp == 0x10)
-    {
-        wxColour color (0, b1, b2);
-        return color;
-    }
-    else if (exp == 0x08)
-    {
-        wxColour color (0, 0, b1);
-        return color;
-    }
-    else
-    {
-        wxColour color (0, 0, 0);
-        return color;
-    }
+    u32 cb = RAM[loc + 2] << 16;
+    cb |= RAM[loc + 3] << 8;
+    cb |= RAM[loc + 4];
 
+    cb = cb >> (0x18 - exp);
+
+    wxColour color ((cb>>16) & 0xff, (cb >> 8) & 0xff, (cb) & 0xff);
+    return color;
 }
 
 void PtermFrame::BootMtutor()
