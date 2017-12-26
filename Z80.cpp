@@ -164,7 +164,6 @@ Z80::Z80()
     m_mtutorBoot = false;
     m_MtTrace = false;
     m_zclock = 0;
-    m_mtPLevel = 2;
 
     ppt_running = false;
 
@@ -342,191 +341,14 @@ int Z80::Z80Emulate (int number_cycles)
         release = RAM[0x530a];  // release
     m_mtPLevel = release;
 
-    if (m_mtPLevel == 2)
+    switch (m_mtPLevel)
     {
-        // Call resident and wxWidgets for brief pause
-        RAM[Level2Pause] = CALL8080;
-        RAM[Level2Pause + 1] = R_WAIT16;
-        RAM[Level2Pause + 2] = 0;
-
-        // remove off-line check for calling r.exec - 
-        // only safe place to give up control..
-        RAM[Level2Xplato] = 0;
-        RAM[Level2Xplato + 1] = 0;
-        RAM[Level2Xplato + 2] = 0;
-
-        // patch xerror tight getkey loop problem in mtutor
-        // top 32K of ram was for memory mapped video on ist 2/3
-        // so that's safe for us to use
-        RAM[0x5d26] = 0x10;
-        RAM[0x5d26 + 1] = 0x80; // jmp just above interp
-        // to a call to xplato and r.exec
-        RAM[0x8010] = CALL8080;  // call
-        RAM[0x8010 + 1] = 0x2f;
-        RAM[0x8010 + 2] = 0x60;  // xplato
-        // jump back to call getkey
-        RAM[0x8010 + 3] = JUMP8080; // jmp
-        RAM[0x8010 + 4] = 0x22;
-        RAM[0x8010 + 5] = 0x5d;  // back to loop - getkey
-    }
-    else if (m_mtPLevel == 3)
-    {
-        // Call resident and wxWidgets for brief pause
-        RAM[Level3Pause] = CALL8080;
-        RAM[Level3Pause + 1] = R_WAIT16;
-        RAM[Level3Pause + 2] = 0;
-
-        // remove off-line check for calling r.exec - 
-        // only safe place to give up control..  
-        // was a z80 jr - 2 bytes only
-        RAM[Level3Xplato] = 0;
-        RAM[Level3Xplato + 1] = 0;
-
-        RAM[0x600d] = RET8080;  // ret to disable ist-3 screen print gunk
-    }
-    else if ( m_mtPLevel == 4)
-    {
-        // Call resident and wxWidgets for brief pause
-        RAM[Level4Pause] = CALL8080;
-        RAM[Level4Pause + 1] = R_WAIT16;
-        RAM[Level4Pause + 2] = 0;
-
-        // remove off-line check for calling r.exec - 
-        // only safe place to give up control..  
-        // was a z80 jr - 2 bytes only
-        RAM[Level4Xplato] = 0;
-        RAM[Level4Xplato + 1] = 0;
-
-        RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
-
-        // color display
-        RAM[0x66aa] = JUMP8080;
-        RAM[0x66ab] = 0x00;
-        RAM[0x66ac] = 0x80;         // color patch jump
-
-        RAM[0x8000] = CALL8080;
-        RAM[0x8001] = 0xb0;
-        RAM[0x8002] = 0x66;         // fcolor
-        RAM[0x8003] = 0x21;
-        RAM[0x8004] = 0x25;
-        RAM[0x8005] = 0x7d;         // floating acc
-        RAM[0x8006] = CALL8080;
-        RAM[0x8007] = 0x90;
-        RAM[0x8008] = 0x00;         // r.fcolor + 2
-
-        RAM[0x8009] = CALL8080;
-        RAM[0x800a] = 0xe5;
-        RAM[0x800b] = 0x71;         // getvar
-
-        RAM[0x800c] = CALL8080;
-        RAM[0x800d] = 0xbd;
-        RAM[0x800e] = 0x66;         // bcolor
-
-        RAM[0x800f] = 0x21;
-        RAM[0x8010] = 0x25;
-        RAM[0x8011] = 0x7d;         // floating acc
-
-        RAM[0x8012] = CALL8080;
-        RAM[0x8013] = 0x93;
-        RAM[0x8014] = 0x00;         // r.bcolor + 2
-
-        RAM[0x8015] = JUMP8080;
-        RAM[0x8016] = 0x52;
-        RAM[0x8017] = 0x61;         // pincg
-
-        // paint - flood fill
-        RAM[0x66c3] = 0x20;
-        RAM[0x66c4] = 0x80;
-
-        RAM[0x8020] = 0x21;
-        RAM[0x8021] = 0;
-        RAM[0x8022] = 0;
-        RAM[0x8023] = CALL8080;
-        RAM[0x8024] = 0x94;
-        RAM[0x8025] = 0x00;         // r.paint
-        RAM[0x8026] = JUMP8080;
-        RAM[0x8027] = 0x5d;
-        RAM[0x8028] = 0x61;         // pinc1
-    }
-    else if (m_mtPLevel == 5)
-    {
-        // Call resident and wxWidgets for brief pause
-        RAM[Level5Pause] = CALL8080;
-        RAM[Level5Pause + 1] = R_WAIT16;
-        RAM[Level5Pause + 2] = 0;
-
-        // remove off-line check for calling r.exec - 
-        // only safe place to give up control..  
-        // was a z80 jr - 2 bytes only
-        RAM[Level5Xplato] = 0;
-        RAM[Level5Xplato + 1] = 0;
-
-        RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
-
-        // color display
-        RAM[0x66aa] = JUMP8080;
-        RAM[0x66ab] = 0x00;
-        RAM[0x66ac] = 0x80;         // color patch jump
-
-        RAM[0x8000] = CALL8080;
-        RAM[0x8001] = 0xb0;
-        RAM[0x8002] = 0x66;         // fcolor
-        RAM[0x8003] = 0x21;
-        RAM[0x8004] = 0x25;
-        RAM[0x8005] = 0x7d;         // floating acc
-        RAM[0x8006] = CALL8080;
-        RAM[0x8007] = 0x90;
-        RAM[0x8008] = 0x00;         // r.fcolor + 2
-
-        RAM[0x8009] = CALL8080;
-        RAM[0x800a] = 0xeb;       // << different than level 4
-        RAM[0x800b] = 0x71;         // getvar
-
-        RAM[0x800c] = CALL8080;
-        RAM[0x800d] = 0xbd;
-        RAM[0x800e] = 0x66;         // bcolor
-
-        RAM[0x800f] = 0x21;
-        RAM[0x8010] = 0x25;
-        RAM[0x8011] = 0x7d;         // floating acc
-
-        RAM[0x8012] = CALL8080;
-        RAM[0x8013] = 0x93;
-        RAM[0x8014] = 0x00;         // r.bcolor + 2
-
-        RAM[0x8015] = JUMP8080;
-        RAM[0x8016] = 0x52;
-        RAM[0x8017] = 0x61;         // pincg
-
-                                    // paint - flood fill
-        RAM[0x66c3] = 0x20;
-        RAM[0x66c4] = 0x80;
-
-        RAM[0x8020] = 0x21;
-        RAM[0x8021] = 0;
-        RAM[0x8022] = 0;
-        RAM[0x8023] = CALL8080;
-        RAM[0x8024] = 0x94;
-        RAM[0x8025] = 0x00;         // r.paint
-        RAM[0x8026] = JUMP8080;
-        RAM[0x8027] = 0x5d;
-        RAM[0x8028] = 0x61;         // pinc1
-
-    }
-    else if (m_mtPLevel == 6)
-    {
-        // Call resident and wxWidgets for brief pause
-        RAM[Level5Pause] = CALL8080;
-        RAM[Level5Pause + 1] = R_WAIT16;
-        RAM[Level5Pause + 2] = 0;
-
-        // remove off-line check for calling r.exec - 
-        // only safe place to give up control..  
-        // was a z80 jr - 2 bytes only
-        RAM[Level5Xplato] = 0;
-        RAM[Level5Xplato + 1] = 0;
-
-        RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
+    case 2: PatchL2 (); break;
+    case 3: PatchL3 (); break;
+    case 4: PatchL4 (); break;
+    case 5: PatchL5 (); break;
+    case 6: PatchL6 (); break;
+    default: break;
     }
 
     int     elapsed_cycles, pc, opcode;
@@ -3029,3 +2851,195 @@ int Z80::check_pcZ80(void)
 {
     return 0;
 }
+
+void Z80::PatchL2 ()
+{
+    // Call resident and wxWidgets for brief pause
+    RAM[Level2Pause] = CALL8080;
+    RAM[Level2Pause + 1] = R_WAIT16;
+    RAM[Level2Pause + 2] = 0;
+
+    // remove off-line check for calling r.exec - 
+    // only safe place to give up control..
+    RAM[Level2Xplato] = 0;
+    RAM[Level2Xplato + 1] = 0;
+    RAM[Level2Xplato + 2] = 0;
+
+    // patch xerror tight getkey loop problem in mtutor
+    // top 32K of ram was for memory mapped video on ist 2/3
+    // so that's safe for us to use
+    RAM[0x5d26] = 0x10;
+    RAM[0x5d26 + 1] = 0x80; // jmp just above interp
+                            // to a call to xplato and r.exec
+    RAM[0x8010] = CALL8080;  // call
+    RAM[0x8010 + 1] = 0x2f;
+    RAM[0x8010 + 2] = 0x60;  // xplato
+                             // jump back to call getkey
+    RAM[0x8010 + 3] = JUMP8080; // jmp
+    RAM[0x8010 + 4] = 0x22;
+    RAM[0x8010 + 5] = 0x5d;  // back to loop - getkey
+}
+
+void Z80::PatchL3 ()
+{
+    // Call resident and wxWidgets for brief pause
+    RAM[Level3Pause] = CALL8080;
+    RAM[Level3Pause + 1] = R_WAIT16;
+    RAM[Level3Pause + 2] = 0;
+
+    // remove off-line check for calling r.exec - 
+    // only safe place to give up control..  
+    // was a z80 jr - 2 bytes only
+    RAM[Level3Xplato] = 0;
+    RAM[Level3Xplato + 1] = 0;
+
+    RAM[0x600d] = RET8080;  // ret to disable ist-3 screen print gunk
+}
+
+void Z80::PatchL4 ()
+{
+    // Call resident and wxWidgets for brief pause
+    RAM[Level4Pause] = CALL8080;
+    RAM[Level4Pause + 1] = R_WAIT16;
+    RAM[Level4Pause + 2] = 0;
+
+    // remove off-line check for calling r.exec - 
+    // only safe place to give up control..  
+    // was a z80 jr - 2 bytes only
+    RAM[Level4Xplato] = 0;
+    RAM[Level4Xplato + 1] = 0;
+
+    RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
+
+                            // color display
+    RAM[0x66aa] = JUMP8080;
+    RAM[0x66ab] = 0x00;
+    RAM[0x66ac] = 0x80;         // color patch jump
+
+    RAM[0x8000] = CALL8080;
+    RAM[0x8001] = 0xb0;
+    RAM[0x8002] = 0x66;         // fcolor
+    RAM[0x8003] = 0x21;
+    RAM[0x8004] = 0x25;
+    RAM[0x8005] = 0x7d;         // floating acc
+    RAM[0x8006] = CALL8080;
+    RAM[0x8007] = 0x90;
+    RAM[0x8008] = 0x00;         // r.fcolor + 2
+
+    RAM[0x8009] = CALL8080;
+    RAM[0x800a] = 0xe5;
+    RAM[0x800b] = 0x71;         // getvar
+
+    RAM[0x800c] = CALL8080;
+    RAM[0x800d] = 0xbd;
+    RAM[0x800e] = 0x66;         // bcolor
+
+    RAM[0x800f] = 0x21;
+    RAM[0x8010] = 0x25;
+    RAM[0x8011] = 0x7d;         // floating acc
+
+    RAM[0x8012] = CALL8080;
+    RAM[0x8013] = 0x93;
+    RAM[0x8014] = 0x00;         // r.bcolor + 2
+
+    RAM[0x8015] = JUMP8080;
+    RAM[0x8016] = 0x52;
+    RAM[0x8017] = 0x61;         // pincg
+
+                                // paint - flood fill
+    RAM[0x66c3] = 0x20;
+    RAM[0x66c4] = 0x80;
+
+    RAM[0x8020] = 0x21;
+    RAM[0x8021] = 0;
+    RAM[0x8022] = 0;
+    RAM[0x8023] = CALL8080;
+    RAM[0x8024] = 0x94;
+    RAM[0x8025] = 0x00;         // r.paint
+    RAM[0x8026] = JUMP8080;
+    RAM[0x8027] = 0x5d;
+    RAM[0x8028] = 0x61;         // pinc1
+}
+
+void Z80::PatchL5 ()
+{
+    // Call resident and wxWidgets for brief pause
+    RAM[Level5Pause] = CALL8080;
+    RAM[Level5Pause + 1] = R_WAIT16;
+    RAM[Level5Pause + 2] = 0;
+
+    // remove off-line check for calling r.exec - 
+    // only safe place to give up control..  
+    // was a z80 jr - 2 bytes only
+    RAM[Level5Xplato] = 0;
+    RAM[Level5Xplato + 1] = 0;
+
+    RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
+
+                            // color display
+    RAM[0x66aa] = JUMP8080;
+    RAM[0x66ab] = 0x00;
+    RAM[0x66ac] = 0x80;         // color patch jump
+
+    RAM[0x8000] = CALL8080;
+    RAM[0x8001] = 0xb0;
+    RAM[0x8002] = 0x66;         // fcolor
+    RAM[0x8003] = 0x21;
+    RAM[0x8004] = 0x25;
+    RAM[0x8005] = 0x7d;         // floating acc
+    RAM[0x8006] = CALL8080;
+    RAM[0x8007] = 0x90;
+    RAM[0x8008] = 0x00;         // r.fcolor + 2
+
+    RAM[0x8009] = CALL8080;
+    RAM[0x800a] = 0xeb;       // << different than level 4
+    RAM[0x800b] = 0x71;         // getvar
+
+    RAM[0x800c] = CALL8080;
+    RAM[0x800d] = 0xbd;
+    RAM[0x800e] = 0x66;         // bcolor
+
+    RAM[0x800f] = 0x21;
+    RAM[0x8010] = 0x25;
+    RAM[0x8011] = 0x7d;         // floating acc
+
+    RAM[0x8012] = CALL8080;
+    RAM[0x8013] = 0x93;
+    RAM[0x8014] = 0x00;         // r.bcolor + 2
+
+    RAM[0x8015] = JUMP8080;
+    RAM[0x8016] = 0x52;
+    RAM[0x8017] = 0x61;         // pincg
+
+                                // paint - flood fill
+    RAM[0x66c3] = 0x20;
+    RAM[0x66c4] = 0x80;
+
+    RAM[0x8020] = 0x21;
+    RAM[0x8021] = 0;
+    RAM[0x8022] = 0;
+    RAM[0x8023] = CALL8080;
+    RAM[0x8024] = 0x94;
+    RAM[0x8025] = 0x00;         // r.paint
+    RAM[0x8026] = JUMP8080;
+    RAM[0x8027] = 0x5d;
+    RAM[0x8028] = 0x61;         // pinc1
+}
+
+void Z80::PatchL6 ()
+{
+    // Call resident and wxWidgets for brief pause
+    RAM[Level5Pause] = CALL8080;
+    RAM[Level5Pause + 1] = R_WAIT16;
+    RAM[Level5Pause + 2] = 0;
+
+    // remove off-line check for calling r.exec - 
+    // only safe place to give up control..  
+    // was a z80 jr - 2 bytes only
+    RAM[Level5Xplato] = 0;
+    RAM[Level5Xplato + 1] = 0;
+
+    RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
+}
+
+

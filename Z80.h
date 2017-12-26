@@ -39,6 +39,12 @@ public:
 
     void Z80Reset();
 
+    void PatchL2 (void);
+    void PatchL3 (void);
+    void PatchL4 (void);
+    void PatchL5 (void);
+    void PatchL6 (void);
+
     virtual unsigned char inputZ80(unsigned char data);
 
     virtual void outputZ80(unsigned char data, unsigned char acc);
