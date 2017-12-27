@@ -44,6 +44,7 @@ public:
     void PatchL4 (void);
     void PatchL5 (void);
     void PatchL6 (void);
+    void PatchColor (unsigned char low_getvar);
 
     virtual unsigned char inputZ80(unsigned char data);
 

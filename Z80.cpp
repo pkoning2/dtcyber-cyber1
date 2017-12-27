@@ -2911,54 +2911,8 @@ void Z80::PatchL4 ()
 
     RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
 
-                            // color display
-    RAM[0x66aa] = JUMP8080;
-    RAM[0x66ab] = 0x00;
-    RAM[0x66ac] = 0x80;         // color patch jump
+    PatchColor (0xe5);
 
-    RAM[0x8000] = CALL8080;
-    RAM[0x8001] = 0xb0;
-    RAM[0x8002] = 0x66;         // fcolor
-    RAM[0x8003] = 0x21;
-    RAM[0x8004] = 0x25;
-    RAM[0x8005] = 0x7d;         // floating acc
-    RAM[0x8006] = CALL8080;
-    RAM[0x8007] = 0x90;
-    RAM[0x8008] = 0x00;         // r.fcolor + 2
-
-    RAM[0x8009] = CALL8080;
-    RAM[0x800a] = 0xe5;
-    RAM[0x800b] = 0x71;         // getvar
-
-    RAM[0x800c] = CALL8080;
-    RAM[0x800d] = 0xbd;
-    RAM[0x800e] = 0x66;         // bcolor
-
-    RAM[0x800f] = 0x21;
-    RAM[0x8010] = 0x25;
-    RAM[0x8011] = 0x7d;         // floating acc
-
-    RAM[0x8012] = CALL8080;
-    RAM[0x8013] = 0x93;
-    RAM[0x8014] = 0x00;         // r.bcolor + 2
-
-    RAM[0x8015] = JUMP8080;
-    RAM[0x8016] = 0x52;
-    RAM[0x8017] = 0x61;         // pincg
-
-                                // paint - flood fill
-    RAM[0x66c3] = 0x20;
-    RAM[0x66c4] = 0x80;
-
-    RAM[0x8020] = 0x21;
-    RAM[0x8021] = 0;
-    RAM[0x8022] = 0;
-    RAM[0x8023] = CALL8080;
-    RAM[0x8024] = 0x94;
-    RAM[0x8025] = 0x00;         // r.paint
-    RAM[0x8026] = JUMP8080;
-    RAM[0x8027] = 0x5d;
-    RAM[0x8028] = 0x61;         // pinc1
 }
 
 void Z80::PatchL5 ()
@@ -2976,54 +2930,7 @@ void Z80::PatchL5 ()
 
     RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
 
-    // color display
-    RAM[0x66aa] = JUMP8080;
-    RAM[0x66ab] = 0x00;
-    RAM[0x66ac] = 0x80;         // color patch jump
-
-    RAM[0x8000] = CALL8080;
-    RAM[0x8001] = 0xb0;
-    RAM[0x8002] = 0x66;         // fcolor
-    RAM[0x8003] = 0x21;
-    RAM[0x8004] = 0x25;
-    RAM[0x8005] = 0x7d;         // floating acc
-    RAM[0x8006] = CALL8080;
-    RAM[0x8007] = 0x90;
-    RAM[0x8008] = 0x00;         // r.fcolor + 2
-
-    RAM[0x8009] = CALL8080;
-    RAM[0x800a] = 0xeb;       // << different than level 4
-    RAM[0x800b] = 0x71;         // getvar
-
-    RAM[0x800c] = CALL8080;
-    RAM[0x800d] = 0xbd;
-    RAM[0x800e] = 0x66;         // bcolor
-
-    RAM[0x800f] = 0x21;
-    RAM[0x8010] = 0x25;
-    RAM[0x8011] = 0x7d;         // floating acc
-
-    RAM[0x8012] = CALL8080;
-    RAM[0x8013] = 0x93;
-    RAM[0x8014] = 0x00;         // r.bcolor + 2
-
-    RAM[0x8015] = JUMP8080;
-    RAM[0x8016] = 0x52;
-    RAM[0x8017] = 0x61;         // pincg
-
-                                // paint - flood fill
-    RAM[0x66c3] = 0x20;
-    RAM[0x66c4] = 0x80;
-
-    RAM[0x8020] = 0x21;
-    RAM[0x8021] = 0;
-    RAM[0x8022] = 0;
-    RAM[0x8023] = CALL8080;
-    RAM[0x8024] = 0x94;
-    RAM[0x8025] = 0x00;         // r.paint
-    RAM[0x8026] = JUMP8080;
-    RAM[0x8027] = 0x5d;
-    RAM[0x8028] = 0x61;         // pinc1
+    PatchColor (0xeb);
 }
 
 void Z80::PatchL6 ()
@@ -3041,6 +2948,11 @@ void Z80::PatchL6 ()
 
     RAM[0x5f5c] = RET8080;  // ret to disable ist-3 screen print gunk
 
+    PatchColor (0xeb);
+}
+
+void Z80::PatchColor (unsigned char low_getvar)
+{
     // color display
     RAM[0x66aa] = JUMP8080;
     RAM[0x66ab] = 0x00;
@@ -3057,7 +2969,7 @@ void Z80::PatchL6 ()
     RAM[0x8008] = 0x00;         // r.fcolor + 2
 
     RAM[0x8009] = CALL8080;
-    RAM[0x800a] = 0xeb;       // << different than level 4
+    RAM[0x800a] = low_getvar;
     RAM[0x800b] = 0x71;         // getvar
 
     RAM[0x800c] = CALL8080;
@@ -3090,5 +3002,4 @@ void Z80::PatchL6 ()
     RAM[0x8027] = 0x5d;
     RAM[0x8028] = 0x61;         // pinc1
 }
-
 
