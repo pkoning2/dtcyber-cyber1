@@ -46,6 +46,7 @@
 #include "z80instructions.h"
 #include "z80macros.h"
 #include "z80tables.h"
+#include "ppt.h"
 
 /* Indirect (HL) or prefixed indexed (IX + d) and (IY + d) memory operands are
  * encoded using the 3 bits "110" (0x06).
@@ -164,6 +165,7 @@ Z80::Z80()
     m_mtutorBoot = false;
     m_MtTrace = false;
     m_zclock = 0;
+    RAM[M_TYPE] = 0x3c;
 
     ppt_running = false;
 

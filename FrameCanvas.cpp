@@ -1428,6 +1428,7 @@ PtermFrame::PtermFrame (const wxString &host, int port, const wxString& title,
     modexor = false;
     setMargin (0);
     RAM[M_CCR] = 0;
+    RAM[M_TYPE] = 0x3c;
 
     m_classicSpeed = ptermApp->m_classicSpeed;
     m_gswEnable = ptermApp->m_gswEnable;

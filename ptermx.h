@@ -69,10 +69,10 @@
 #define TERMTYPE        10
 #define ASCTYPE         12
 //#define SUBTYPE         0x74  // original value, 116=portal
-#define SUBTYPE         1
+#define SUBTYPE         16
 //#define TERMCONFIG      0
-#define TERMCONFIG      0x40    // touch panel present
-//#define TERMCONFIG      0x60    // touch panel present, 32k
+//#define TERMCONFIG      0x40    // touch panel present
+#define TERMCONFIG      0x60    // touch panel present, 32k
 #define ASC_ZFGT        0x01
 #define ASC_ZPCKEYS     0x02
 #define ASC_ZKERMIT     0x04
