@@ -39,6 +39,8 @@ public:
 
     void Z80Reset();
 
+    bool Z80BreakPoint (int pc, bool step);
+
     void PatchL2 (void);
     void PatchL3 (void);
     void PatchL4 (void);

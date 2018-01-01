@@ -78,6 +78,8 @@ unsigned short breakpts[] =
 
     //0x5187,
 
+    0x5306,
+
     0x60b5,
     //0x66aa,
     //0x8000,
@@ -372,6 +374,31 @@ int Z80::Z80Emulate (int number_cycles)
  */
 
 
+bool Z80::Z80BreakPoint(int pc, bool step)
+{
+    //ZEXTEST *context = &m_context;
+
+    unsigned short myBC = state->registers.word[Z80_BC];
+    unsigned short myDE = state->registers.word[Z80_DE];
+    unsigned short myHL = state->registers.word[Z80_HL];
+    unsigned short myAF = state->registers.word[Z80_AF];
+    unsigned short mySP = state->registers.word[Z80_SP];
+
+    unsigned char myA = state->registers.byte[Z80_A];
+    unsigned char myF = state->registers.byte[Z80_F];
+    unsigned char myB = state->registers.byte[Z80_B];
+    unsigned char myC = state->registers.byte[Z80_C];
+    unsigned char myD = state->registers.byte[Z80_D];
+    unsigned char myE = state->registers.byte[Z80_E];
+    unsigned char myH = state->registers.byte[Z80_H];
+    unsigned char myL = state->registers.byte[Z80_L];
+
+    pc = pc -1 ;    
+
+    return step;    // <<<<<< set break point here for break point
+}
+
+
 int Z80::emulate (
     int opcode,
     int elapsed_cycles, int number_cycles)
@@ -458,7 +485,7 @@ emulate_next_instruction:
 
         if (step)       // use immediate window to turn step on/off - true/false
         {
-            pc = pc;    // <<<<< set break point here for step
+            step = Z80BreakPoint (pc, step);
         }
 
         unsigned short * bp = breakpts;
@@ -466,7 +493,7 @@ emulate_next_instruction:
         {
             if (pc - 1 == *bp)
             {
-                pc = pc;    // <<<<<< set break point here for break point
+                step = Z80BreakPoint (pc, step);
                 break;
             }
             bp++;
