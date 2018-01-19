@@ -376,14 +376,17 @@ int Z80::Z80Emulate (int number_cycles)
 
 bool Z80::Z80BreakPoint(int pc, bool step)
 {
-    //ZEXTEST *context = &m_context;
+    // make these visible as locals
+    ZEXTEST *context = &m_context;
 
     unsigned short myBC = state->registers.word[Z80_BC];
     unsigned short myDE = state->registers.word[Z80_DE];
     unsigned short myHL = state->registers.word[Z80_HL];
     unsigned short myAF = state->registers.word[Z80_AF];
     unsigned short mySP = state->registers.word[Z80_SP];
-
+    unsigned short myIX = state->registers.word[Z80_IX];
+    unsigned short myIY = state->registers.word[Z80_IY];
+    
     unsigned char myA = state->registers.byte[Z80_A];
     unsigned char myF = state->registers.byte[Z80_F];
     unsigned char myB = state->registers.byte[Z80_B];
@@ -393,7 +396,7 @@ bool Z80::Z80BreakPoint(int pc, bool step)
     unsigned char myH = state->registers.byte[Z80_H];
     unsigned char myL = state->registers.byte[Z80_L];
 
-    pc = pc -1 ;    
+    pc = pc - 1;    
 
     return step;    // <<<<<< set break point here for break point
 }
