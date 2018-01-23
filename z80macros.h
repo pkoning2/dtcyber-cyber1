@@ -1,20 +1,20 @@
 /* z80macros.h
- * Helper macros definitions.
- *
- * Copyright (c) 2012-2017 Lin Ke-Fong
- *
- * This code is free, do whatever you want with it.
- */
+* Helper macros definitions.
+*
+* Copyright (c) 2012-2017 Lin Ke-Fong
+*
+* This code is free, do whatever you want with it.
+*/
 #ifndef __Z80Macros_INCLUDED__
 #define __Z80Macros_INCLUDED__
 /* Shortcuts for flags and registers. */
 
-#define SZC_FLAGS       (Z80_S_FLAG | Z80_Z_FLAG | Z80_C_FLAG)
-#define YX_FLAGS        (Z80_Y_FLAG | Z80_X_FLAG)
-#define SZ_FLAGS        (Z80_S_FLAG | Z80_Z_FLAG)
-#define SZPV_FLAGS      (Z80_S_FLAG | Z80_Z_FLAG | Z80_PV_FLAG)
-#define SYX_FLAGS       (Z80_S_FLAG | Z80_Y_FLAG | Z80_X_FLAG)
-#define HC_FLAGS        (Z80_H_FLAG | Z80_C_FLAG)
+#define SZC_FLAGS       (unsigned short) (Z80_S_FLAG | Z80_Z_FLAG | Z80_C_FLAG)
+#define YX_FLAGS        (unsigned short) (Z80_Y_FLAG | Z80_X_FLAG)
+#define SZ_FLAGS        (unsigned short) (Z80_S_FLAG | Z80_Z_FLAG)
+#define SZPV_FLAGS      (unsigned short) (Z80_S_FLAG | Z80_Z_FLAG | Z80_PV_FLAG)
+#define SYX_FLAGS       (unsigned short) (Z80_S_FLAG | Z80_Y_FLAG | Z80_X_FLAG)
+#define HC_FLAGS        (unsigned short) (Z80_H_FLAG | Z80_C_FLAG)
 
 #define A               (state->registers.byte[Z80_A])
 #define F               (state->registers.byte[Z80_F])
@@ -37,8 +37,8 @@
 #define HL_IX_IY        *((unsigned short *) registers[6])
 
 /* Opcode decoding macros.  Y() is bits 5-3 of the opcode, Z() is bits 2-0,
- * P() bits 5-4, and Q() bits 4-3.
- */
+* P() bits 5-4, and Q() bits 4-3.
+*/
 
 #define Y(opcode)       (((opcode) >> 3) & 0x07)
 #define Z(opcode)       ((opcode) & 0x07)
@@ -46,8 +46,8 @@
 #define Q(opcode)       (((opcode) >> 3) & 0x03)
 
 /* Registers and conditions are decoded using tables in encodings.h.  S() is
- * for the special cases "LD H/L, (IX/Y + d)" and "LD (IX/Y + d), H/L".
- */
+* for the special cases "LD H/L, (IX/Y + d)" and "LD (IX/Y + d), H/L".
+*/
 
 #define R(r)            *((unsigned char *) (registers[(r)]))
 #define S(s)            *((unsigned char *) state->register_table[(s)])
@@ -88,13 +88,13 @@
         Z80_READ_BYTE((address), (x));                                  \
         elapsed_cycles += 3;                                            \
 }
-                                                        
+
 #define WRITE_BYTE(address, x)                                          \
 {                                                                       \
         Z80_WRITE_BYTE((address), (x));                                 \
         elapsed_cycles += 3;                                            \
 }
-                                                        
+
 #define READ_WORD(address, x)                                           \
 {                                                                       \
         Z80_READ_WORD((address), (x));                                  \
@@ -107,10 +107,10 @@
         elapsed_cycles += 6;                                            \
 }
 
-/* Indirect (HL) and indexed (IX + d) or (IY + d) memory operands read and 
- * write macros.
- */ 
-                                                
+/* Indirect (HL) and indexed (IX + d) or (IY + d) memory operands read and
+* write macros.
+*/
+
 #define READ_INDIRECT_HL(x)                                             \
 {                                                                       \
         if (registers == state->register_table) {			            \
@@ -167,7 +167,7 @@
 
 #define EXCHANGE(a, b)                                                  \
 {                                                                       \
-        int     t;                                                      \
+        unsigned short t;                                               \
                                                                         \
         t = (a);                                                        \
         (a) = (b);                                                      \
@@ -189,8 +189,8 @@
         f |= OVERFLOW_TABLE[c >> 7];                                    \
         f |= z >> (8 - Z80_C_FLAG_SHIFT);                               \
                                                                         \
-        A = z;                                                          \
-        F = f;                                                          \
+        A = (unsigned char)z;                                           \
+        F = (unsigned char)f;                                           \
 }
 
 #define ADC(x)                                                          \
@@ -206,8 +206,8 @@
         f |= OVERFLOW_TABLE[c >> 7];                                    \
         f |= z >> (8 - Z80_C_FLAG_SHIFT);                               \
                                                                         \
-        A = z;                                                          \
-        F = f;                                                          \
+        A = (unsigned char)z;                                           \
+        F = (unsigned char)f;                                           \
 }               
 
 #define SUB(x)                                                          \
@@ -224,8 +224,8 @@
         f |= OVERFLOW_TABLE[c >> 7];                                    \
         f |= c >> (8 - Z80_C_FLAG_SHIFT);                               \
                                                                         \
-        A = z;                                                          \
-        F = f;                                                          \
+        A = (unsigned char)z;                                           \
+        F = (unsigned char)f;                                           \
 }
 
 #define SBC(x)                                                          \
@@ -242,8 +242,8 @@
         f |= OVERFLOW_TABLE[c >> 7];                                    \
         f |= c >> (8 - Z80_C_FLAG_SHIFT);                               \
                                                                         \
-        A = z;                                                          \
-        F = f;                                                          \
+        A = (unsigned char)z;                                           \
+        F = (unsigned char)f;                                           \
 }
 
 #define AND(x)                                                          \
@@ -260,7 +260,7 @@
 {                                                                       \
         F = SZYXP_FLAGS_TABLE[A ^= (x)];                                \
 }
-         
+
 #define CP(x)                                                           \
 {                                                                       \
         int     a, z, c, f;                                             \
@@ -276,7 +276,7 @@
         f |= OVERFLOW_TABLE[c >> 7];                                    \
         f |= c >> (8 - Z80_C_FLAG_SHIFT);                               \
                                                                         \
-        F = f;                                                          \
+        F = (unsigned char)f;                                           \
 }
 
 #define INC(x)                                                          \
@@ -291,8 +291,8 @@
         f |= SZYX_FLAGS_TABLE[z & 0xff];                                \
         f |= OVERFLOW_TABLE[(c >> 7) & 0x03];                           \
                                                                         \
-        (x) = z;                                                        \
-        F = f;                                                          \
+        (x) = (unsigned char)z;                                         \
+        F = (unsigned char)f;                                           \
 }
 
 #define DEC(x)                                                          \
@@ -307,8 +307,8 @@
         f |= SZYX_FLAGS_TABLE[z & 0xff];                                \
         f |= OVERFLOW_TABLE[(c >> 7) & 0x03];                           \
                                                                         \
-        (x) = z;                                                        \
-        F = f;                                                          \
+        (x) = (unsigned char)z;                                         \
+        F = (unsigned char)f;                                           \
 }
 
 /* 0xcb prefixed logical operations. */
@@ -318,8 +318,8 @@
         int     c;                                                      \
                                                                         \
         c = (x) >> 7;                                                   \
-        (x) = ((x) << 1) | c;                                           \
-        F = SZYXP_FLAGS_TABLE[(x) & 0xff] | c;                          \
+        (x) = (unsigned char)(((x) << 1) | c);                                           \
+        F = (unsigned char)(SZYXP_FLAGS_TABLE[(x) & 0xff] | c);         \
 }
 
 #define RL(x)                                                           \
@@ -328,7 +328,7 @@
                                                                         \
         c = (x) >> 7;                                                   \
         (x) = ((x) << 1) | (F & Z80_C_FLAG);                            \
-        F = SZYXP_FLAGS_TABLE[(x) & 0xff] | c;                          \
+        F = (unsigned char)(SZYXP_FLAGS_TABLE[(x) & 0xff] | c);         \
 }
 
 #define RRC(x)                                                          \
@@ -336,8 +336,8 @@
         int     c;                                                      \
                                                                         \
         c = (x) & 0x01;                                                 \
-        (x) = ((x) >> 1) | (c << 7);                                    \
-        F = SZYXP_FLAGS_TABLE[(x) & 0xff] | c;                          \
+        (x) = (unsigned char)(((x) >> 1) | (c << 7));                   \
+        F = (unsigned char)(SZYXP_FLAGS_TABLE[(x) & 0xff] | c);         \
 }
 
 #define RR_INSTRUCTION(x)                                               \
@@ -346,7 +346,7 @@
                                                                         \
         c = (x) & 0x01;                                                 \
         (x) = ((x) >> 1) | ((F & Z80_C_FLAG) << 7);                     \
-        F = SZYXP_FLAGS_TABLE[(x) & 0xff] | c;                          \
+        F = (unsigned char)(SZYXP_FLAGS_TABLE[(x) & 0xff] | c);         \
 }
 
 #define SLA(x)                                                          \
@@ -355,7 +355,7 @@
                                                                         \
         c = (x) >> 7;                                                   \
         (x) <<= 1;                                                      \
-        F = SZYXP_FLAGS_TABLE[(x) & 0xff] | c;                          \
+        F = (unsigned char)(SZYXP_FLAGS_TABLE[(x) & 0xff] | c);         \
 }
 
 #define SLL(x)                                                          \
@@ -364,7 +364,7 @@
                                                                         \
         c = (x) >> 7;                                                   \
         (x) = ((x) << 1) | 0x01;                                        \
-        F = SZYXP_FLAGS_TABLE[(x) & 0xff] | c;                          \
+        F = (unsigned char)(SZYXP_FLAGS_TABLE[(x) & 0xff] | c);         \
 }
 
 #define SRA(x)                                                          \
@@ -373,16 +373,16 @@
                                                                         \
         c = (x) & 0x01;                                                 \
         (x) = ((signed char) (x)) >> 1;  				                \
-        F = SZYXP_FLAGS_TABLE[(x) & 0xff] | c;                          \
+        F = (unsigned char)(SZYXP_FLAGS_TABLE[(x) & 0xff] | c);         \
 }
-        
+
 #define SRL(x)                                                          \
 {                                                                       \
         int     c;                                                      \
                                                                         \
         c = (x) & 0x01;                                                 \
         (x) >>= 1;                                                      \
-        F = SZYXP_FLAGS_TABLE[(x) & 0xff] | c;                          \
+        F = (unsigned char)(SZYXP_FLAGS_TABLE[(x) & 0xff] | c);         \
 }
 
 #endif
