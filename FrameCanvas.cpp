@@ -6085,13 +6085,13 @@ void PtermFrame::mode5 (u32 d)
     trace ("mode5 %06o", d);
 
     // Load C/D/E with data word
-    BC_reg_C = d >> 16;
-    DE_reg_D = d >> 8;
-    DE_reg_E = d;
+    state->registers.byte[Z80_C] = d >> 16;
+    state->registers.byte[Z80_D] = d >> 8;
+    state->registers.byte[Z80_E] = d;
 
-    //printf("mode 5: c=%02x,  d=%02x, e=%02x\n", BC.reg.C, DE.reg.D, DE.reg.E);
+    //printf("mode 5: c=%02x,  d=%02x, e=%02x\n", state->registers.byte[Z80_C], state->registers.byte[Z80_D], state->registers.byte[Z80_E]);
 
-    if (!(((BC_reg_C & 3) == 0) && (DE_reg_D > 0)))
+    if (!(((state->registers.byte[Z80_C] & 3) == 0) && (state->registers.byte[Z80_D] > 0)))
     {
         progmode(d, M5ORIGIN);
         return;
@@ -6099,11 +6099,11 @@ void PtermFrame::mode5 (u32 d)
 
     //// Push the return address onto the
     //// stack, as if we just did a CALL instruction
-    WriteRAM(--SP, ((PC) >> 8) & 0xff);
-    WriteRAM(--SP, (PC) & 0xff);
+    WriteRAM(--state->registers.word[Z80_SP], ((state->pc) >> 8) & 0xff);
+    WriteRAM(--state->registers.word[Z80_SP], (state->pc) & 0xff);
 
     // Set the start PC for the requested mode
-    PC = ReadRAMW(M5ORIGIN);
+    state->pc = ReadRAMW(M5ORIGIN);
 
     MicroEmulate;
 }
@@ -6133,16 +6133,16 @@ void PtermFrame::mode6 (u32 d)
     u8 d1 = d >> 8;
     u8 e = d;
 
-    BC_reg_C = c;
-    DE_reg_D = d1;
-    DE_reg_E = e;
+    state->registers.byte[Z80_C] = c;
+    state->registers.byte[Z80_D] = d1;
+    state->registers.byte[Z80_E] = e;
     //// Push the return address onto the
     //// stack, as if we just did a CALL instruction
-    WriteRAM(--SP, ((PC) >> 8) & 0xff);
-    WriteRAM(--SP, (PC) & 0xff);
+    WriteRAM(--state->registers.word[Z80_SP], ((state->pc) >> 8) & 0xff);
+    WriteRAM(--state->registers.word[Z80_SP], (state->pc) & 0xff);
 
     // Set the start PC for the requested mode
-    PC = ReadRAMW(M6ORIGIN);
+    state->pc = ReadRAMW(M6ORIGIN);
 
     MicroEmulate;
 }
@@ -6175,20 +6175,20 @@ void PtermFrame::mode7 (u32 d)
 void PtermFrame::progmode (u32 d, int origin)
 {
     // Load C/D/E with data word
-    BC_reg_C = d >> 16;
-    DE_reg_D = d >> 8;
-    DE_reg_E = d;
+    state->registers.byte[Z80_C] = d >> 16;
+    state->registers.byte[Z80_D] = d >> 8;
+    state->registers.byte[Z80_E] = d;
 
     // Initialize the stack
-    SP = INITSP;
+    state->registers.word[Z80_SP] = INITSP;
 
     // Push the fake return address for "return to main loop" onto the
     // stack, as if we just did a CALL instruction
-    WriteRAM (--SP, R_MAIN >> 8);
-    WriteRAM (--SP, R_MAIN);
+    WriteRAM (--state->registers.word[Z80_SP], R_MAIN >> 8);
+    WriteRAM (--state->registers.word[Z80_SP], R_MAIN);
 
     // Set the start PC for the requested mode
-    PC = ReadRAMW (origin);
+    state->pc = ReadRAMW (origin);
     MicroEmulate;
 }
 
@@ -7014,13 +7014,13 @@ int PtermFrame::check_pcZ80(void)
 {
     int x, y, cp, c, x2, y2;
     
-    if (PC < WORKRAM && m_MtTrace)
+    if (state->pc < WORKRAM && m_MtTrace)
     {
         tracex("Resident call %04x %s DE=%04x HL=%04x",
-            PC, resCallName(PC), DE_pair, HL_pair);
+            state->pc, resCallName(state->pc), state->registers.word[Z80_DE], state->registers.word[Z80_HL]);
     }
     
-    switch (PC)
+    switch (state->pc)
     {
     case R_MAIN:
         // "r.main" -- fake return address value used as the return
@@ -7042,8 +7042,8 @@ int PtermFrame::check_pcZ80(void)
         
     case R_DOT:
 
-        x = HL_pair & 0x1ff;
-        y = DE_pair & 0x1ff;
+        x = state->registers.word[Z80_HL] & 0x1ff;
+        y = state->registers.word[Z80_DE] & 0x1ff;
 
         ptermDrawPoint (x, y);
         currentX = x;
@@ -7051,8 +7051,8 @@ int PtermFrame::check_pcZ80(void)
         return 1;
         
     case R_LINE:
-        x = HL_pair & 0x1ff;
-        y = DE_pair & 0x1ff;
+        x = state->registers.word[Z80_HL] & 0x1ff;
+        y = state->registers.word[Z80_DE] & 0x1ff;
         ptermDrawLine (currentX, currentY, x, y);
         currentX = x;
         currentY = y;
@@ -7060,7 +7060,7 @@ int PtermFrame::check_pcZ80(void)
 
     case R_CHARS:
         // draw chars ending at 07700
-        cp = HL_pair;
+        cp = state->registers.word[Z80_HL];
         c = RAM[cp++];
         for (;;)
         {
@@ -7092,7 +7092,7 @@ int PtermFrame::check_pcZ80(void)
         
     case R_BLOCK:
         // block erase
-        cp = HL_pair;
+        cp = state->registers.word[Z80_HL];
         x = ReadRAMW (cp) & 0x1ff;
         y = ReadRAMW (cp + 2) & 0x1ff;
         x2 = ReadRAMW (cp + 4) & 0x1ff;
@@ -7101,25 +7101,25 @@ int PtermFrame::check_pcZ80(void)
         return 1;
         
     case R_INPX:
-        HL_pair = currentX;
+        state->registers.word[Z80_HL] = currentX;
         return 1;
 
     case R_INPY:
-        HL_pair = currentY;
+        state->registers.word[Z80_HL] = currentY;
         return 1;
         
     case R_OUTX:
-        currentX = HL_pair & 0x01ff;
+        currentX = state->registers.word[Z80_HL] & 0x01ff;
         return 1;
         
     case R_OUTY:
-        currentY = HL_pair & 0x01ff;
+        currentY = state->registers.word[Z80_HL] & 0x01ff;
         return 1;
         
     case R_XMIT:
         // send key in HL
     {
-        int k = HL_pair;
+        int k = state->registers.word[Z80_HL];
         u8 temp_hold = mt_ksw;
         if (k != 0x3a)
             mt_ksw = 0;
@@ -7132,7 +7132,7 @@ int PtermFrame::check_pcZ80(void)
         // set mode from L
 
         u8 L;
-        L = HL_reg_L;
+        L = state->registers.byte[Z80_L];
         if (L & 1)
         {
             ptermFullErase ();
@@ -7154,7 +7154,7 @@ int PtermFrame::check_pcZ80(void)
         return 1;
         
     case R_DIR:
-        L = HL_reg_L;
+        L = state->registers.byte[Z80_L];
         RAM[M_DIR] = L & 3;
         return 1;
         
@@ -7175,7 +7175,7 @@ int PtermFrame::check_pcZ80(void)
             tracex("R_INPUT: %04x", mt_key);
             //printf("\nR.INPUT %04x\n", mt_key);   // temp
         }
-        HL_pair = mt_key & 0xffff;
+        state->registers.word[Z80_HL] = mt_key & 0xffff;
         mt_key = -1;
 
         return 1;
@@ -7184,7 +7184,7 @@ int PtermFrame::check_pcZ80(void)
         // r.ssf
     {
         int n;
-        n = HL_pair;
+        n = state->registers.word[Z80_HL];
 
         int device = (n >> 10) & 0x1f;
         int writ = (n >> 9) & 0x1;
@@ -7213,24 +7213,24 @@ int PtermFrame::check_pcZ80(void)
         {  
             if ((m_mtincnt & 3) == 0)
             {
-                HL_reg_L = 0xcc;
+                state->registers.byte[Z80_L] = 0xcc;
             }
             else if ((m_mtincnt & 3) == 1)
             {
-                HL_reg_L = 0x63;
+                state->registers.byte[Z80_L] = 0x63;
             }
             else if ((m_mtincnt & 3) == 2)
             {
-                HL_reg_L = 0x33;
+                state->registers.byte[Z80_L] = 0x33;
             }
             else
             {
-                HL_reg_L = 0x40;        // cdc disk resident loaded/running
+                state->registers.byte[Z80_L] = 0x40;        // cdc disk resident loaded/running
             }
             m_mtincnt++;            // rotating selection of 3 possible responses
                                     // mtutor tries many times
 
-            //printf("r.ssf returns=%02x\n\n", HL.reg.L);
+            //printf("r.ssf returns=%02x\n\n", state->registers.byte[Z80_L]);
         }
 
         switch (n)
@@ -7257,7 +7257,7 @@ int PtermFrame::check_pcZ80(void)
         return 1;
         
     case R_CCR:
-        RAM[M_CCR] = HL_reg_L;
+        RAM[M_CCR] = state->registers.byte[Z80_L];
         return 1;
         
     case R_EXTOUT:
@@ -7287,9 +7287,9 @@ int PtermFrame::check_pcZ80(void)
 
     case R_CHRCV:
         {
-            u16 src = DE_pair;
-            u16 cnt = HL_pair * 8;
-            u16 slot = (DE_pair - ReadRAMW(C2ORIGIN)) / 16;
+            u16 src = state->registers.word[Z80_DE];
+            u16 cnt = state->registers.word[Z80_HL] * 8;
+            u16 slot = (state->registers.word[Z80_DE] - ReadRAMW(C2ORIGIN)) / 16;
             memaddr = 16*slot + ReadRAMW(C2ORIGIN);
             for( int i = 0 ; i < cnt ; i++)
             {
@@ -7306,7 +7306,9 @@ int PtermFrame::check_pcZ80(void)
     case R_FCOLOR:      // for standard use with h, l, d
         //  three bytes are r g b
     {
-        wxColour color(HL_reg_H, HL_reg_L, DE_reg_D); 
+        wxColour color(state->registers.byte[Z80_H], 
+            state->registers.byte[Z80_L], 
+            state->registers.byte[Z80_D]);
         m_currentFg = color;
         SetColors(m_currentFg, m_currentBg);
     }
@@ -7316,7 +7318,9 @@ int PtermFrame::check_pcZ80(void)
         // de points to 3 byte foreground color
         //  three bytes are r g b
     {
-        wxColour color(RAM[DE_pair], RAM[DE_pair + 1], RAM[DE_pair + 2]);
+        wxColour color(RAM[state->registers.word[Z80_DE]], 
+            RAM[state->registers.word[Z80_DE] + 1], 
+            RAM[state->registers.word[Z80_DE] + 2]);
         m_currentFg = color;
         SetColors(m_currentFg, m_currentBg);
     }
@@ -7324,7 +7328,7 @@ int PtermFrame::check_pcZ80(void)
 
     case R_FCOLOR + 2:
         {
-        m_currentFg = GetColor (HL_pair);
+        m_currentFg = GetColor (state->registers.word[Z80_HL]);
         SetColors (m_currentFg, m_currentBg);
         }
         return 1;
@@ -7333,7 +7337,9 @@ int PtermFrame::check_pcZ80(void)
         // three bytes are r g b
 
     {
-        wxColour colorb(HL_reg_H, HL_reg_L, DE_reg_D);
+        wxColour colorb(state->registers.byte[Z80_H], 
+            state->registers.byte[Z80_L], 
+            state->registers.byte[Z80_D]);
         m_currentBg = colorb;
         SetColors(m_currentFg, m_currentBg);
     }
@@ -7344,7 +7350,9 @@ int PtermFrame::check_pcZ80(void)
         // three bytes are r g b
 
     {
-        wxColour colorb(RAM[DE_pair], RAM[DE_pair + 1], RAM[DE_pair + 2]);
+        wxColour colorb(RAM[state->registers.word[Z80_DE]], 
+            RAM[state->registers.word[Z80_DE] + 1], 
+            RAM[state->registers.word[Z80_DE] + 2]);
         m_currentBg = colorb;
         SetColors(m_currentFg, m_currentBg);
     }
@@ -7352,21 +7360,23 @@ int PtermFrame::check_pcZ80(void)
 
     case R_BCOLOR + 2:
     {
-        m_currentBg = GetColor (HL_pair);
+        m_currentBg = GetColor (state->registers.word[Z80_HL]);
         SetColors (m_currentFg, m_currentBg);
     }
         return 1;
 
     case R_PAINT:       // standard
-        ptermPaint(HL_pair);
+        ptermPaint(state->registers.word[Z80_HL]);
         return 1;
 
     case R_PAINT + 1:   // mtutor ccode
-        ptermPaint(RAM[DE_pair] | (RAM[DE_pair + 1] << 8)); 
+        ptermPaint(RAM[state->registers.word[Z80_DE]] |
+            (RAM[state->registers.word[Z80_DE] + 1] << 8));
         return 1;
 
     case R_PAINT + 2:   // mtutor ccode
-        printf("MTUTOR LESSON MARK %d\n", (RAM[DE_pair] << 8) | (RAM[DE_pair + 1]));
+        printf("MTUTOR LESSON MARK %d\n", (RAM[state->registers.word[Z80_DE]] << 8) |
+            (RAM[state->registers.word[Z80_DE] + 1]));
         return 1;
 
     case R_WAIT16:
@@ -7384,12 +7394,12 @@ int PtermFrame::check_pcZ80(void)
         return 1;
 
     default:
-        if (PC < WORKRAM)
+        if (state->pc < WORKRAM)
         {
             // Wild jump into ROM resident, quit
-            fprintf (stderr, "Wild jump to %04x\n", PC);
-            printf("Wild jump/call/ret to %04x\n", PC);
-            trace("Wild jump/call/ret to %04x\n", PC);
+            fprintf (stderr, "Wild jump to %04x\n", state->pc);
+            printf("Wild jump/call/ret to %04x\n", state->pc);
+            trace("Wild jump/call/ret to %04x\n", state->pc);
 
             // no longer send keys to mtutor; it's dead
             mt_ksw &= 0xfe;
@@ -7482,7 +7492,7 @@ void PtermFrame::BootMtutor()
         m_MTFiles[0].ReadByte();
     }
 
-    PC = 0x5306;    // f.inix - boot entry point
+    state->pc = 0x5306;    // f.inix - boot entry point
 
     m_mtutorBoot = true;
 

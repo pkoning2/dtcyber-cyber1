@@ -22,6 +22,8 @@
 #define MicroEmulate Z80Emulate(5000000)
 
 #define RAM     m_context.memory
+
+#if 0   // these have been replaced with their equivalents
 #define PC      state->pc
 #define SP      state->registers.word[Z80_SP]
 
@@ -35,7 +37,7 @@
 #define BC_pair     state->registers.word[Z80_BC]
 #define DE_pair     state->registers.word[Z80_DE]
 #define HL_pair     state->registers.word[Z80_HL]
-
+#endif
 
 
 #if defined (__WXMAC__)
