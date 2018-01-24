@@ -695,6 +695,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
 
 void PtermPrefDialog::OnClose (wxCloseEvent& event)
 {
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     EndModal (wxID_CANCEL);
 }
 
@@ -1231,6 +1232,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
     }
     else if (event.GetEventObject () == btnDefaults)
     {
+        // TODO: SZoppi: Is this re-declaration intentional?
         wxString str;
         
         //reset variable values

@@ -105,7 +105,7 @@ extern "C"
 
 #include "const.h"
 #include "types.h"
-#include "proto.h"
+#include "dtnetsubs.h"
 #include "ptermversion.h"
 #include "ppt.h"
 

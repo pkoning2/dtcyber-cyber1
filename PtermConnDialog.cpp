@@ -131,6 +131,7 @@ void PtermConnDialog::CreateDefaultProfiles (wxDir& ldir)
     wxString buffer;
     bool openok;
     bool repeat = true;
+    ldir;        // Suppress C4100 warning for unreferenced formal parameter
 
     rerun:
 
@@ -300,6 +301,7 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
 
 void PtermConnDialog::OnChange (wxCommandEvent& event)
 {
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     void OnChange (wxCommandEvent& event);
 }
 

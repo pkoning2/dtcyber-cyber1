@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003-2005, Tom Hunter, Paul Koning (see license.txt)
+**  Copyright (c) 2003-2018, Tom Hunter, Paul Koning, Steve Zoppi
 **
 **  Name: dtnetsubs.c
 **
@@ -14,7 +14,8 @@
 // declarations
 // ============================================================================
 
-#define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
+// vvvvvvv This should be in the C++ Compiler directives for Visual Studio
+// #define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
 
 /*
 **  -------------
@@ -27,7 +28,7 @@
 #include <errno.h>
 #include "const.h"
 #include "types.h"
-#include "proto.h"
+#include "dtnetsubs.h"
 #include <time.h>
 #include <sys/types.h>
 
@@ -1154,6 +1155,7 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
 **------------------------------------------------------------------------*/
 static int dtRead (NetFet *fet, NetPortSet *ps)
     {
+    ps;     //  No Operation; Suppresses C4100 Compiler Warning
     int i;
     u8 *in, *out, *nextin;
     int size;
@@ -1689,6 +1691,7 @@ NetFet * dtAcceptSocket (int connFd, NetPortSet *ps)
 static void dtCloseSocket (int connFd, bool hard)
     {
 #if defined(_WIN32)
+    hard;   //  Nop Operation; Suppress C4100 Compiler Warning
     closesocket (connFd);
 #else
     if (!hard)
