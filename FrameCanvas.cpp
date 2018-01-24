@@ -859,7 +859,7 @@ void PtermCanvas::OnCharHook (wxKeyEvent &event)
                 {
                     // If this entry is for more than one keycode, 
                     // ignore the keystroke.
-                    pc = -1;
+                    pc = (u32)-1;
                 }
                 shift = 040;
             }
@@ -1182,6 +1182,7 @@ void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
 
 void PtermCanvas::OnMouseContextMenu (wxMouseEvent &event)
 {
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     m_owner->PopupMenu (m_owner->menuPopup);
 }
 
@@ -2103,7 +2104,7 @@ void PtermFrame::OnMz80(wxTimerEvent &)
 // the OnTimer handler if delay is currently being done.
 void PtermFrame::procDataLoop (void)
 {
-    int word;
+    int word = 0;   // Initialize to prevent randomness below
     bool refresh = false;
     
     mjobs = 0;
@@ -2255,7 +2256,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         else
         {
             i = m_pasteText.find_last_of (" -", m_pasteIndex + m_autoLF - 1);
-            if (i < m_pasteIndex || i == wxString::npos)
+            if (i < m_pasteIndex || i == (int)wxString::npos)
             {
                 // If there is no good break point, break at the limit.
                 i = m_pasteIndex + m_autoLF - 1;
@@ -2639,7 +2640,8 @@ void PtermFrame::OnSetAspectMode (wxCommandEvent &)
 void PtermFrame::OnCopy (wxCommandEvent &event)
 {
     wxString text = GetRegionText ();
-    
+    event;      // Suppress C4100 warning for unreferenced formal parameter
+
     if (!wxTheClipboard->Open ())
     {
         wxLogError (_("Can't open clipboard."));
@@ -2657,6 +2659,7 @@ void PtermFrame::OnCopy (wxCommandEvent &event)
 
 void PtermFrame::OnExec (wxCommandEvent &event)
 {
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     wxString url = GetRegionText (true);
 
     wxLaunchDefaultBrowser (url, wxBROWSER_NEW_WINDOW | wxBROWSER_NOBUSYCURSOR);
@@ -2669,6 +2672,7 @@ void PtermFrame::OnMailTo (wxCommandEvent &event)
     wxString newchr;
     wxString pnt;
     int cnt;
+    event;      // Suppress C4100 warning for unreferenced formal parameter
 
     for (pnt = GetRegionText (), cnt = 0; pnt[cnt]; cnt++)
     {
@@ -2719,6 +2723,7 @@ void PtermFrame::OnSearchThis (wxCommandEvent &event)
     wxString text = GetRegionText (true);
 
     debug (m_SearchURL + text);
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     wxLaunchDefaultBrowser (m_SearchURL + text,
                             wxBROWSER_NEW_WINDOW | wxBROWSER_NOBUSYCURSOR);
 }
@@ -2727,30 +2732,35 @@ void PtermFrame::OnMacro0 (wxCommandEvent &event)
 {
     static const int key[] = {0034, 0034, 0034, 0034, 0034, 0034, 0034,
                               0034, -1};
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
 void PtermFrame::OnMacro1 (wxCommandEvent &event)
 {
     static const int key[] = {0024, 0000, 0103, 0137, 0132, 0103, 0136, 
                               0105, 0122, 0122, 0106, 0024, 0001, -1};
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
 void PtermFrame::OnMacro2 (wxCommandEvent &event)
 {
     static const int key[] = {0024, 0000, 0103, 0137, 0132, 0103, 0136,
                               0111, 0116, 0106, 0117, 0024, 0001, -1};
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
 void PtermFrame::OnMacro3 (wxCommandEvent &event)
 {
     static const int key[] = {0024, 0000, 0103, 0137, 0132, 0103, 0136,
                               0113, 0105, 0131, 0123, 0024, 0001, -1};
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
 void PtermFrame::OnMacro4 (wxCommandEvent &event)
 {
     static const int key[] = {0024, 0000, 0103, 0137, 0132, 0103, 0136,
                               0124, 0105, 0130, 0124, 0024, 0001, -1};
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
 void PtermFrame::OnMacro5 (wxCommandEvent &event)
@@ -2759,6 +2769,7 @@ void PtermFrame::OnMacro5 (wxCommandEvent &event)
                               0100, 0104, 0111, 0123, 0120, 0114, 0101,
                               0131, 0134, 0132, 0103, 0136, 0105, 0122,
                               0122, 0106, -1};
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
 void PtermFrame::OnMacro6 (wxCommandEvent &event)
@@ -2767,6 +2778,7 @@ void PtermFrame::OnMacro6 (wxCommandEvent &event)
                               0100, 0104, 0111, 0123, 0120, 0114, 0101,
                               0131, 0134, 0132, 0103, 0136, 0111, 0116,
                               0106, 0117, -1};
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
 void PtermFrame::OnMacro7 (wxCommandEvent &event)
@@ -2775,6 +2787,7 @@ void PtermFrame::OnMacro7 (wxCommandEvent &event)
                               0100, 0104, 0111, 0123, 0120, 0114, 0101,
                               0131, 0134, 0132, 0103, 0136, 0113, 0105,
                               0131, 0123, -1};
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
 void PtermFrame::OnMacro8 (wxCommandEvent &event)
@@ -2783,11 +2796,13 @@ void PtermFrame::OnMacro8 (wxCommandEvent &event)
                               0100, 0104, 0111, 0123, 0120, 0114, 0101,
                               0131, 0134, 0132, 0103, 0136, 0124, 0105,
                               0130, 0124, -1};
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
 void PtermFrame::OnMacro9 (wxCommandEvent &event)
 {
-    // 8boxes, <c,zc.keys> 2 boxes <c,zc.text>
+    event;      // Suppress C4100 warning for unreferenced formal parameter
+                // 8boxes, <c,zc.keys> 2 boxes <c,zc.text>
     static const int key0[] = {0034, 0034, 0034, 0034, 0034, 0034, 0034,
                                0034, -1};
     ptermSendKeys (key0);
@@ -3266,6 +3281,7 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
 
 void PtermFrame::OnResize (wxSizeEvent& event)
 {
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     UpdateDisplayState ();
 }
 
@@ -3372,6 +3388,7 @@ void PtermFrame::UpdateDisplayState (void)
 #if defined (__WXMSW__)
 void PtermFrame::OnIconize (wxIconizeEvent &event)
 {
+    event;      // Suppress C4100 warning for unreferenced formal parameter
     // this helps control to a certain extent, the scrollbars that
     // sometimes appear when restoring from iconized state.
     if (!IsIconized ())
@@ -6587,7 +6604,7 @@ bool PtermFrame::SaveChar (int x, int y, wxChar c, bool large_p)
             
         // Convert an accent character to its "combining diacritical" form.
         i = accent.find (c);
-        if (i != wxString::npos)
+        if (i != (int)wxString::npos)
         {
             c = combining_accent[i];
         }
@@ -6729,8 +6746,8 @@ wxString PtermFrame::GetRegionText (bool url) const
                 if (c.Len () > 1)
                 {
                     if (!(c[1] >= L'\u0300' && c[1] <= L'\u033f' &&
-                          (c[2] == '\0' ||
-                           (c[2] >= L'\u0300' && c[2] <= L'\u033f'))))
+                        (c.Len () == 2 ||
+                        (c[2] >= L'\u0300' && c[2] <= L'\u033f'))))
                     {
                         c = c[0];
                     }
