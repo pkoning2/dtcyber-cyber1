@@ -98,20 +98,18 @@ PtermConnection::~PtermConnection ()
     m_fet = NULL;
 }
 
-void PtermConnection::s_connCallback (NetFet *fet, int, void *arg)
+void PtermConnection::s_connCallback (NetFet *, int, void *arg)
 {
     PtermConnection *self = (PtermConnection *) arg;
     
-    fet;        // Suppress C4100 warning for unreferenced formal parameter
     tracex ("Connection callback on %p", self);
     self->connCallback ();
 }
 
-void PtermConnection::s_dataCallback (NetFet *fet, int, void *arg)
+void PtermConnection::s_dataCallback (NetFet *, int, void *arg)
 {
     PtermConnection *self = (PtermConnection *) arg;
     
-    fet;        // Suppress C4100 warning for unreferenced formal parameter
     tracex ("Data callback on %p", self);
     self->dataCallback ();
 }

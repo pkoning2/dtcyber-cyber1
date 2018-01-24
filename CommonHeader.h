@@ -14,7 +14,8 @@
 // declarations
 // ============================================================================
 
-#define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
+// vvvvvvv This should be in the C++ Compiler directives for Visual Studio
+//#define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
 
 #define RESIDENTMSEC 20 // msec to give resident before return to z80
 

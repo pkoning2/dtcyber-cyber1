@@ -115,7 +115,6 @@ void PtermConnFailDialog::OnButton (wxCommandEvent& event)
 
 void PtermConnFailDialog::OnClose (wxCloseEvent& event)
 {
-    event;          // Suppress C4100 warning for unreferenced formal parameter
     void OnClose (wxCloseEvent& event);
     EndModal (wxID_CANCEL);
 }

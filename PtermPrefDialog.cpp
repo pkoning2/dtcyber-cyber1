@@ -693,9 +693,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     btnOK->SetDefault ();
 }
 
-void PtermPrefDialog::OnClose (wxCloseEvent& event)
+void PtermPrefDialog::OnClose (wxCloseEvent& )
 {
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     EndModal (wxID_CANCEL);
 }
 

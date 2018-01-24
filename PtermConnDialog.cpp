@@ -123,7 +123,7 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title, wxPoint 
         btnConnect->SetLabel(wxT("Connect"));
 }
 
-void PtermConnDialog::CreateDefaultProfiles (wxDir& ldir)
+void PtermConnDialog::CreateDefaultProfiles (wxDir& )
 {
     wxString profile = wxT("Connect_Cyber1_Classic");
     long port = 5004;
@@ -131,7 +131,6 @@ void PtermConnDialog::CreateDefaultProfiles (wxDir& ldir)
     wxString buffer;
     bool openok;
     bool repeat = true;
-    ldir;        // Suppress C4100 warning for unreferenced formal parameter
 
     rerun:
 
@@ -299,9 +298,8 @@ void PtermConnDialog::OnSelect (wxCommandEvent& event)
     }
 }
 
-void PtermConnDialog::OnChange (wxCommandEvent& event)
+void PtermConnDialog::OnChange (wxCommandEvent& )
 {
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     void OnChange (wxCommandEvent& event);
 }
 

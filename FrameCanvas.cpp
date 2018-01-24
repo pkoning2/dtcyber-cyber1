@@ -1180,9 +1180,8 @@ void PtermCanvas::OnMouseMotion (wxMouseEvent &event)
     event.Skip ();
 }
 
-void PtermCanvas::OnMouseContextMenu (wxMouseEvent &event)
+void PtermCanvas::OnMouseContextMenu (wxMouseEvent &)
 {
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     m_owner->PopupMenu (m_owner->menuPopup);
 }
 
@@ -2637,10 +2636,9 @@ void PtermFrame::OnSetAspectMode (wxCommandEvent &)
     UpdateDisplayState ();
 }
 
-void PtermFrame::OnCopy (wxCommandEvent &event)
+void PtermFrame::OnCopy (wxCommandEvent &)
 {
     wxString text = GetRegionText ();
-    event;      // Suppress C4100 warning for unreferenced formal parameter
 
     if (!wxTheClipboard->Open ())
     {
@@ -2657,22 +2655,20 @@ void PtermFrame::OnCopy (wxCommandEvent &event)
     wxTheClipboard->Close ();
 }
 
-void PtermFrame::OnExec (wxCommandEvent &event)
+void PtermFrame::OnExec (wxCommandEvent &)
 {
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     wxString url = GetRegionText (true);
 
     wxLaunchDefaultBrowser (url, wxBROWSER_NEW_WINDOW | wxBROWSER_NOBUSYCURSOR);
 }
 
-void PtermFrame::OnMailTo (wxCommandEvent &event)
+void PtermFrame::OnMailTo (wxCommandEvent &)
 {
     wxString l_Email;
     wxString l_FixText;
     wxString newchr;
     wxString pnt;
     int cnt;
-    event;      // Suppress C4100 warning for unreferenced formal parameter
 
     for (pnt = GetRegionText (), cnt = 0; pnt[cnt]; cnt++)
     {
@@ -2728,80 +2724,70 @@ void PtermFrame::OnSearchThis (wxCommandEvent &event)
                             wxBROWSER_NEW_WINDOW | wxBROWSER_NOBUSYCURSOR);
 }
 
-void PtermFrame::OnMacro0 (wxCommandEvent &event)
+void PtermFrame::OnMacro0 (wxCommandEvent &)
 {
     static const int key[] = {0034, 0034, 0034, 0034, 0034, 0034, 0034,
                               0034, -1};
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
-void PtermFrame::OnMacro1 (wxCommandEvent &event)
+void PtermFrame::OnMacro1 (wxCommandEvent &)
 {
     static const int key[] = {0024, 0000, 0103, 0137, 0132, 0103, 0136, 
                               0105, 0122, 0122, 0106, 0024, 0001, -1};
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
-void PtermFrame::OnMacro2 (wxCommandEvent &event)
+void PtermFrame::OnMacro2 (wxCommandEvent &)
 {
     static const int key[] = {0024, 0000, 0103, 0137, 0132, 0103, 0136,
                               0111, 0116, 0106, 0117, 0024, 0001, -1};
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
-void PtermFrame::OnMacro3 (wxCommandEvent &event)
+void PtermFrame::OnMacro3 (wxCommandEvent &)
 {
     static const int key[] = {0024, 0000, 0103, 0137, 0132, 0103, 0136,
                               0113, 0105, 0131, 0123, 0024, 0001, -1};
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
-void PtermFrame::OnMacro4 (wxCommandEvent &event)
+void PtermFrame::OnMacro4 (wxCommandEvent &)
 {
     static const int key[] = {0024, 0000, 0103, 0137, 0132, 0103, 0136,
                               0124, 0105, 0130, 0124, 0024, 0001, -1};
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
-void PtermFrame::OnMacro5 (wxCommandEvent &event)
+void PtermFrame::OnMacro5 (wxCommandEvent &)
 {
     static const int key[] = {0103, 0117, 0114, 0117, 0122, 0100, 0100,
                               0100, 0104, 0111, 0123, 0120, 0114, 0101,
                               0131, 0134, 0132, 0103, 0136, 0105, 0122,
                               0122, 0106, -1};
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
-void PtermFrame::OnMacro6 (wxCommandEvent &event)
+void PtermFrame::OnMacro6 (wxCommandEvent &)
 {
     static const int key[] = {0103, 0117, 0114, 0117, 0122, 0100, 0100,
                               0100, 0104, 0111, 0123, 0120, 0114, 0101,
                               0131, 0134, 0132, 0103, 0136, 0111, 0116,
                               0106, 0117, -1};
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
-void PtermFrame::OnMacro7 (wxCommandEvent &event)
+void PtermFrame::OnMacro7 (wxCommandEvent &)
 {
     static const int key[] = {0103, 0117, 0114, 0117, 0122, 0100, 0100,
                               0100, 0104, 0111, 0123, 0120, 0114, 0101,
                               0131, 0134, 0132, 0103, 0136, 0113, 0105,
                               0131, 0123, -1};
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
-void PtermFrame::OnMacro8 (wxCommandEvent &event)
+void PtermFrame::OnMacro8 (wxCommandEvent &)
 {
     static const int key[] = {0103, 0117, 0114, 0117, 0122, 0100, 0100,
                               0100, 0104, 0111, 0123, 0120, 0114, 0101,
                               0131, 0134, 0132, 0103, 0136, 0124, 0105,
                               0130, 0124, -1};
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     ptermSendKeys (key);
 }
-void PtermFrame::OnMacro9 (wxCommandEvent &event)
+void PtermFrame::OnMacro9 (wxCommandEvent &)
 {
-    event;      // Suppress C4100 warning for unreferenced formal parameter
                 // 8boxes, <c,zc.keys> 2 boxes <c,zc.text>
     static const int key0[] = {0034, 0034, 0034, 0034, 0034, 0034, 0034,
                                0034, -1};
@@ -3279,9 +3265,8 @@ void PtermFrame::OnFullScreen (wxCommandEvent &)
     UpdateDisplayState ();
 }
 
-void PtermFrame::OnResize (wxSizeEvent& event)
+void PtermFrame::OnResize (wxSizeEvent& )
 {
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     UpdateDisplayState ();
 }
 
@@ -3386,9 +3371,8 @@ void PtermFrame::UpdateDisplayState (void)
 }
 
 #if defined (__WXMSW__)
-void PtermFrame::OnIconize (wxIconizeEvent &event)
+void PtermFrame::OnIconize (wxIconizeEvent &)
 {
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     // this helps control to a certain extent, the scrollbars that
     // sometimes appear when restoring from iconized state.
     if (!IsIconized ())
