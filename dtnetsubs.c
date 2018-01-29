@@ -1155,7 +1155,9 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
 **------------------------------------------------------------------------*/
 static int dtRead (NetFet *fet, NetPortSet *ps)
     {
+#if defined(_WIN32)
     ps;     //  No Operation; Suppresses C4100 Compiler Warning
+#endif
     int i;
     u8 *in, *out, *nextin;
     int size;

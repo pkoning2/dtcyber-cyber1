@@ -377,6 +377,8 @@ bool Z80::Z80BreakPoint (int pc, bool step)
     // SZoppi:  This block is used for debug breakpoints and does not reference
     //          any of the contained variables... So we put dummy references
     //          at the end of the module to suppress C4189 Warnings.
+    // GPK: ... but cast them to void because other compilers complain
+    //          of expression result being unused otherwise.
 
     unsigned short myBC = state->registers.word[Z80_BC];
     unsigned short myDE = state->registers.word[Z80_DE];
@@ -395,21 +397,21 @@ bool Z80::Z80BreakPoint (int pc, bool step)
     unsigned char myH = state->registers.byte[Z80_H];
     unsigned char myL = state->registers.byte[Z80_L];
 
-    myBC;
-    myDE;
-    myHL;
-    myAF;
-    mySP;
-    myIX;
-    myIY;
-    myA;
-    myF;
-    myB;
-    myC;
-    myD;
-    myE;
-    myH;
-    myL;
+    (void) myBC;
+    (void) myDE;
+    (void) myHL;
+    (void) myAF;
+    (void) mySP;
+    (void) myIX;
+    (void) myIY;
+    (void) myA;
+    (void) myF;
+    (void) myB;
+    (void) myC;
+    (void) myD;
+    (void) myE;
+    (void) myH;
+    (void) myL;
 
     pc = pc - 1;
 
@@ -2916,16 +2918,13 @@ stop_emulation:
     return elapsed_cycles;
 }
 
-unsigned char Z80::inputZ80 (unsigned char data)
+unsigned char Z80::inputZ80 (unsigned char)
 {
-    data;       // Suppress C4100 warning for unreferenced formal parameter
     return 0;
 }
 
-void Z80::outputZ80 (unsigned char data, unsigned char acc)
+void Z80::outputZ80 (unsigned char, unsigned char)
 {
-    data;       // Suppress C4100 warning for unreferenced formal parameter
-    acc;        // Suppress C4100 warning for unreferenced formal parameter
 }
 
 int Z80::check_pcZ80 (void)

@@ -13,6 +13,11 @@ PTERMVERSION ?= $(shell ./getkitver.py  ptermversion.h)
 
 DEFWXDIR = /usr/local
 
+# Files that contain _() calls (translatable text strings)
+SOURCES = FrameCanvas.cpp PtermApp.cpp PtermConnDialog.cpp \
+	PtermConnFailDialog.cpp PtermConnection.cpp PtermPrefDialog.cpp \
+	PtermPrintout.h Trace.h
+
 ifeq ("$(HOST)","Darwin")
 PKGMAKER ?= /Developer/Applications/Utilities/PackageMaker.app
 MACEXTRA = fixmac.o
@@ -237,7 +242,7 @@ pterm_sdl.d : pterm_sdl.c
 	msgfmt -o $@ $<
 
 pterm.pot : $(SOURCES)
-	xgettext --from-code=UTF-8 --keyword=_  -C -o $@ $<
+	xgettext --from-code=UTF-8 --keyword=_  -C -o $@ $^
 
 %.po :  pterm.pot
 	msgmerge $(MSGFLAGS) $@ pterm.pot

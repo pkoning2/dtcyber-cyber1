@@ -222,7 +222,9 @@ static int mapvol (int volume)
 
 static void gswCallback (void *userdata, uint8_t *b, int len)
 {
+#if defined(_WIN32)
     userdata;               // No Operation; Suppresses Warning C4100
+#endif
     int16_t *stream = (int16_t *) b;
     int i, word, voice;
     int audio;

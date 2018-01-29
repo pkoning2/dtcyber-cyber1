@@ -2714,12 +2714,11 @@ void PtermFrame::OnMailTo (wxCommandEvent &)
     wxExecute (l_Email);
 }
 
-void PtermFrame::OnSearchThis (wxCommandEvent &event)
+void PtermFrame::OnSearchThis (wxCommandEvent &)
 {
     wxString text = GetRegionText (true);
 
     debug (m_SearchURL + text);
-    event;      // Suppress C4100 warning for unreferenced formal parameter
     wxLaunchDefaultBrowser (m_SearchURL + text,
                             wxBROWSER_NEW_WINDOW | wxBROWSER_NOBUSYCURSOR);
 }
