@@ -22,6 +22,7 @@ public:
     void Seek(long int loc);
     u8 ReadByte();
     void WriteByte(u8 val);
+    void Format (void);
     bool Active(void) const
     {
 #ifdef _WIN32

@@ -7736,11 +7736,7 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
                     m_mtDisk2 = acc;
                     //break;
                 default:
-                    m_MTFiles[m_mtDiskUnit].Seek(0);
-                    for (long int i = 0 ;  i < (128 * 64 * 154) ; i++)
-                    {
-                        m_MTFiles[m_mtDiskUnit&1].WriteByte(0);
-                    }
+                    m_MTFiles[m_mtDiskUnit & 1].Format();
                     break;
                 }
                 break;

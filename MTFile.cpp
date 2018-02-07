@@ -229,6 +229,27 @@ void MTFile::WriteByte(u8 val)
     }
 }
 
+void MTFile::Format (void)
+{
+    Seek (0);
+    long int i;
+    for (i = 0; i < (128L * 64L * 154L); i++)
+    {
+        byte val = 0;
+#ifdef _WIN32
+        DWORD length;
+        bool result = WriteFile (ms_handle, &val, 1, &length, NULL);
+#else
+        size_t x = write (fileHandle, &val, 1);
+#endif    
+    }
+#ifdef _WIN32
+    FlushFileBuffers (ms_handle);
+#else
+    fflush (fileHandle);
+#endif
+}
+
 void MTFile::CalcCheck (u8 b)
 {
     u8 cupper = (u8)((_chkSum >> 8) & 0xff);
