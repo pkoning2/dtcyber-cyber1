@@ -1,7 +1,7 @@
 #ifndef __Z80_INCLUDED__
 #define __Z80_INCLUDED__
 
-#include "z80emu.h"
+#include "Z80emu.h"
 #include "z80user.h"
 #include "z80config.h"
 
