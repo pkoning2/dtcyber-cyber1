@@ -92,7 +92,14 @@ bool PtermApp::OnInit (void)
     m_locale.Init (wxLANGUAGE_DEFAULT);
     m_locale.AddCatalog (wxT ("pterm"));
 
+
+#if defined (__WXGTK__)
+    m_config = new wxConfig (wxT ("Pterm"), wxEmptyString, wxEmptyString,
+			     wxEmptyString, 
+			     wxCONFIG_USE_SUBDIR | wxCONFIG_USE_LOCAL_FILE);
+#else
     m_config = new wxConfig (wxT ("Pterm"));
+#endif
     // Get the standard place to put per-user data files given the
     // application name.  Create that directory if necessary.  This is
     // where we'll put profiles.
