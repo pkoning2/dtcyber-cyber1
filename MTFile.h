@@ -35,7 +35,7 @@ public:
     bool reportError(const char *fn);
 
 private:
-    u16 _chkSum = 0;
+    u16 _chkSum;
     void CalcCheck (u8 b);
 
 #ifdef _WIN32

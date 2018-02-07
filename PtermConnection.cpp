@@ -16,27 +16,157 @@
 // PtermConnection
 // ----------------------------------------------------------------------------
 
-PtermConnection::PtermConnection (PtermFrame *owner, 
-                                  const wxString &host, int port)
+PtermConnection::PtermConnection ()
+    : m_gswActive (false),
+      m_connMode (both)
+{
+}
+
+PtermConnection::~PtermConnection ()
+{
+}
+
+void PtermConnection::SendData (const void *, int)
+{
+}
+
+int PtermConnection::RingCount (void) const
+{
+    return 0;
+}
+
+void PtermConnection::StoreWord (int)
+{
+}
+
+void PtermConnection::Connect (void)
+{
+    m_owner->ptermSetConnected ();
+}
+
+// ----------------------------------------------------------------------------
+// PtermHelpConnection
+// ----------------------------------------------------------------------------
+
+int PtermLocalConnection::NextWord (void)
+{
+    return C_NODATA;
+}
+
+// ----------------------------------------------------------------------------
+// PtermHelpConnection
+// ----------------------------------------------------------------------------
+
+const u32 PtermHelpConnection::keyboardhelp[] = {
+#include "ptermkeys.h"
+};
+
+PtermHelpConnection::PtermHelpConnection ()
+    : m_index (0)
+{
+}
+
+int PtermHelpConnection::NextWord (void)
+{
+    if (m_index >= sizeof (keyboardhelp) / sizeof (keyboardhelp[0]))
+        return C_NODATA;
+
+    return keyboardhelp[m_index++];
+}
+
+// ----------------------------------------------------------------------------
+// PtermTestConnection
+// ----------------------------------------------------------------------------
+
+PtermTestConnection::PtermTestConnection (FILE *testdata)
+    : m_testdata (testdata),
+      m_pseq (~(0U))
+{
+}
+
+PtermTestConnection::~PtermTestConnection ()
+{
+    fclose (m_testdata);
+}
+
+int PtermTestConnection::NextWord (void)
+{
+    char *fret, *p;
+    char tline[200];
+    u32 w, key, seq;
+
+    for (;;)
+    {
+        fret = fgets (tline, 199, m_testdata);
+        if (fret == NULL)
+        {
+            return C_NODATA;
+        }
+        if (m_connMode == both)
+        {
+            // See if we can figure out the connection mode
+            if (strstr (tline, "ascii") != NULL ||
+                strstr (tline, "ASCII") != NULL)
+            {
+                m_connMode = ascii;
+            }
+        }
+                
+        p = tline;
+        if (p[2] == ':')
+        {
+            // Timestamp at start of line, skip it
+            p += 14;
+        }
+        if (sscanf (p, "key to plato %o", &key))// != 0 && key < 0200)
+        {
+            // Key stroke in the trace, so this is a pause point.  But
+            // simply pausing isn't correct because that doesn't
+            // update the screen.  Need a better answer.
+        }
+        else if (sscanf (p, "%o seq %d", &w, &seq) != 0 && seq != m_pseq)
+        {
+            // Successful conversion, process the word,
+            // provided it is new (different sequence number
+            // than before)
+            m_pseq = seq;
+            if (m_connMode == both && w > 2)
+            {
+                // See if the value of the word gives a clue about
+                // the protocol used
+                if (w <= 0377 || (w >> 8) == 033)
+                {
+                    m_connMode = ascii;
+                }
+                else
+                {
+                    m_connMode = niu;
+                }
+            }
+            return w;
+        }
+    }
+}
+
+
+
+
+// ----------------------------------------------------------------------------
+// PtermHostConnection
+// ----------------------------------------------------------------------------
+
+PtermHostConnection::PtermHostConnection (const wxString &host, int port)
     : m_displayIn (0),
       m_displayOut (0),
       m_gswIn (0),
       m_gswOut (0),
-      m_owner (owner),
       m_port (port),
-      m_gswActive (false),
       m_gswStarted (false),
       m_savedGswMode (0),
       m_gswWord2 (0),
-      m_connMode (both),
       m_pending (0),
       m_connActive (false)
 {
-    struct hostent *hp;
-    in_addr_t hostaddr;
-    int i, addrcount, r, conntries;
-    in_addr_t *addresses = NULL;
-
     m_hostName = host;
 
     m_portset.callBack = s_connCallback;
@@ -45,9 +175,28 @@ PtermConnection::PtermConnection (PtermFrame *owner,
     m_portset.portNum = 0;      // No listening
     m_portset.maxPorts = 1;
     m_portset.ringSize = BufSiz;
-    m_portset.sendRingSize = 0; // We don't use the send ring/thread
-    dtInitPortset (&m_portset);
-    
+    m_portset.sendRingSize = 1000;
+    dtInitPortset (&m_portset);    
+}
+
+PtermHostConnection::~PtermHostConnection ()
+{
+    if (m_gswActive)
+    {
+        ptermCloseGsw ();
+        m_owner->m_gswFile = wxString ();
+    }
+    dtClose (m_fet, TRUE);
+    m_fet = NULL;
+}
+
+void PtermHostConnection::Connect (void)
+{
+    struct hostent *hp;
+    in_addr_t hostaddr;
+    int i, addrcount, r, conntries;
+    in_addr_t *addresses = NULL;
+
     hp = gethostbyname (m_hostName.mb_str ());
     if (hp == NULL || hp->h_length == 0)
     {
@@ -87,34 +236,23 @@ PtermConnection::PtermConnection (PtermFrame *owner,
     }
 }
 
-PtermConnection::~PtermConnection ()
+void PtermHostConnection::s_connCallback (NetFet *, int, void *arg)
 {
-    if (m_gswActive)
-    {
-        ptermCloseGsw ();
-        m_owner->m_gswFile = wxString ();
-    }
-    dtClose (m_fet, TRUE);
-    m_fet = NULL;
-}
-
-void PtermConnection::s_connCallback (NetFet *, int, void *arg)
-{
-    PtermConnection *self = (PtermConnection *) arg;
+    PtermHostConnection *self = (PtermHostConnection *) arg;
     
     tracex ("Connection callback on %p", self);
     self->connCallback ();
 }
 
-void PtermConnection::s_dataCallback (NetFet *, int, void *arg)
+void PtermHostConnection::s_dataCallback (NetFet *, int, void *arg)
 {
-    PtermConnection *self = (PtermConnection *) arg;
+    PtermHostConnection *self = (PtermHostConnection *) arg;
     
     tracex ("Data callback on %p", self);
     self->dataCallback ();
 }
 
-void PtermConnection::connCallback (void)
+void PtermHostConnection::connCallback (void)
 {
     if (!dtConnected (m_fet))
     {
@@ -124,7 +262,7 @@ void PtermConnection::connCallback (void)
     wxWakeUpIdle ();
 }
 
-void PtermConnection::endGsw (void)
+void PtermHostConnection::endGsw (void)
 {
     // Turn GSW off
     m_savedGswMode = m_gswWord2 = 0;
@@ -136,13 +274,14 @@ void PtermConnection::endGsw (void)
     }
 }
 
-void PtermConnection::dataCallback (void)
+void PtermHostConnection::dataCallback (void)
 {
     u32 platowd = 0;
     int i;
 
     for (;;)
     {
+        //printf ("ringcount: %d\n", RingCount ());
         /*
         **  Assemble words from the network buffer, all the
         **  while looking for "abort output" codes (word == 2).
@@ -211,7 +350,7 @@ void PtermConnection::dataCallback (void)
     }
 }
 
-int PtermConnection::AssembleNiuWord (void)
+int PtermHostConnection::AssembleNiuWord (void)
 {
     int i, j, k;
     
@@ -261,7 +400,7 @@ newj:
     }
 }
 
-int PtermConnection::AssembleAutoWord (void)
+int PtermHostConnection::AssembleAutoWord (void)
 {
     u8 buf[3];
     
@@ -299,7 +438,7 @@ int PtermConnection::AssembleAutoWord (void)
     }
 }
 
-int PtermConnection::AssembleAsciiWord (void)
+int PtermHostConnection::AssembleAsciiWord (void)
 {
     int i;
     
@@ -352,7 +491,7 @@ int PtermConnection::AssembleAsciiWord (void)
 }
 
 
-int PtermConnection::NextRingWord (void)
+int PtermHostConnection::NextRingWord (void)
 {
     int word, next, i;
 
@@ -387,7 +526,7 @@ int PtermConnection::NextRingWord (void)
     return word;
 }
 
-int PtermConnection::NextWord (void)
+int PtermHostConnection::NextWord (void)
 {
     int next, word;
     int delay = 0;
@@ -433,7 +572,7 @@ int PtermConnection::NextWord (void)
         word != 0700001 &&
         !((word == 0770000 || word == 0730000) &&
           m_owner->m_station == wxT ("0-1")) &&
-        ptermApp->m_gswEnable)
+        m_owner->m_profile->m_gswEnable)
     {
         // It's an -extout- word, which means we'll want to start up
         // GSW emulation, if enabled.
@@ -518,7 +657,7 @@ int PtermConnection::NextWord (void)
 // which we want so things like "watch music display while it is playing"
 // work right.
 
-int PtermConnection::NextGswWord (bool idle)
+int PtermHostConnection::NextGswWord (bool idle)
 {
     int next, word;
 
@@ -562,10 +701,22 @@ int PtermConnection::NextGswWord (bool idle)
 
 int ptermNextGswWord (void *connection, int idle)
 {
-    return ((PtermConnection *) connection)->NextGswWord (idle != 0);
+    return ((PtermHostConnection *) connection)->NextGswWord (idle != 0);
 }
 
-void PtermConnection::StoreWord (int word)
+int PtermHostConnection::RingCount (void) const
+{
+    if (m_displayIn >= m_displayOut)
+    {
+        return m_displayIn - m_displayOut;
+    }
+    else
+    {
+        return RINGSIZE + m_displayIn - m_displayOut;
+    }
+}
+
+void PtermHostConnection::StoreWord (int word)
 {
     int next;
     
@@ -588,10 +739,9 @@ void PtermConnection::StoreWord (int word)
     debug ("data from plato %07o", word);
 }
 
-void PtermConnection::SendData (const void *data, int len)
+void PtermHostConnection::SendData (const void *data, int len)
 {
-    // Windows has the wrong type for the buffer pointer argument...
-    send (m_fet->connFd, (const char *) data, len, 0);
+    dtSend (m_fet, data, len);
 }
 
 

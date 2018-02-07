@@ -77,9 +77,9 @@ void PtermPrintout::DrawPage (wxDC *dc)
     
     w = screenImage.GetWidth ();
     h = screenImage.GetHeight ();
-    obr = ptermApp->m_bgColor.Red ();
-    obg = ptermApp->m_bgColor.Green ();
-    obb = ptermApp->m_bgColor.Blue ();
+    obr = m_owner->m_profile->m_bgColor.Red ();
+    obg = m_owner->m_profile->m_bgColor.Green ();
+    obb = m_owner->m_profile->m_bgColor.Blue ();
 
     for (int j = 0; j < h; j++)
     {

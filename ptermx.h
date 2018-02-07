@@ -166,16 +166,6 @@
 // force coordinate into the range 0..511
 #define BOUND(x) (((x < 0) ? 0 : ((x > 511) ? 511 : x)))
 
-// Macro to include keyboard accelerator only if option enabled
-#define ACCELERATOR(x) + ((ptermApp->m_useAccel) ? wxString (wxT (x)) : \
-                          wxString (wxT ("")))
-// Macro to include keyboard accelerator only if MAC
-#if defined (__WXMAC__)
-#define MACACCEL(x) + wxString (wxT (x))
-#else
-#define MACACCEL(x)
-#endif
-
 // For wxWidgets >= 2.8
 #ifdef  _WX_PLATINFO_H_
 #ifndef wxMAC

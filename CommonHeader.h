@@ -122,7 +122,6 @@ extern "C"
 // global variables
 // ----------------------------------------------------------------------------
 
-
 // Global print data, to remember settings during the session
 extern wxPrintData *g_printData;
 
@@ -169,7 +168,7 @@ enum
     Pterm_CopyScreen = Pterm_SetScaleEntry + 32,
     Pterm_ConnectAgain,
     Pterm_ResetMtutor,
-    Pterm_MtutorSettings,
+    Pterm_SessionSettings,
     Pterm_SaveScreen,
     Pterm_SaveAudio,
     Pterm_HelpKeys,

@@ -80,5 +80,21 @@ windows.  There is also a "session settings" dialog similar to the
 "edit profiles" dialog that allows changing parameters for the
 currently active window.
 
-The "connect again" menu option has been removed since it was more
-confusing than helpful.
+Profile handling has been cleaned up and made more consistent.  A new
+window is created from a profile, which supplies the initial session
+parameters for that window.  Those may be changed later (via "session
+settings") but that does not affect the profile itself.
+
+Profiles (*.ppf files) are now stored in the application data
+directory rather than in unsuitable spots such as the directory where
+the Pterm application lives.  That directory is OS-dependent:
+
+    Windows:  C:\Documents and Settings\<yourname>\Application Data\Pterm
+    Mac OS:   ~/Library/Application Support/Pterm/
+    Linux:    {to be supplied}
+    
+If you have saved profiles you want to carry over, copy them into that
+directory before starting Pterm.  If the profiles directory is empty
+when you start Pterm, it will create two default profiles (which will
+appear in the connection dialog).
+

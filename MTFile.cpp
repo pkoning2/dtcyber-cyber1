@@ -16,6 +16,7 @@ MTFile::MTFile()
 #else
     fileHandle = -1;
 #endif
+    _chkSum = 0;
     position = 0;
     rcnt = 0;
     wcnt = 0;
@@ -60,7 +61,7 @@ bool MTFile::Open(const char *fn)
 
 bool MTFile::reportError(const char *fn)
 {
-    wxString msg("Error opening \u00b5Tutor floppy file ");
+    wxString msg(_(L"Error opening \u00b5Tutor floppy file "));
     msg.Append(fn);
     msg.Append(":\n");
     msg.Append(wxSysErrorMsg());
@@ -135,8 +136,8 @@ u8 MTFile::ReadByte()
     retry1:
         u8 mybyte = 0;
         DWORD length;
-        bool result = ReadFile(ms_handle, &mybyte, 1, &length, NULL);
-        if (result == 0) {
+        BOOL result = ReadFile(ms_handle, &mybyte, 1, &length, NULL);
+        if (!result) {
 #else
     if (fileHandle != -1)
     {
@@ -194,9 +195,9 @@ void MTFile::WriteByte(u8 val)
     {
     retry2:
         DWORD length;
-        bool result = WriteFile(ms_handle, &val, 1, &length, NULL);
+        BOOL result = WriteFile(ms_handle, &val, 1, &length, NULL);
 
-        if (result == 0)
+        if (!result)
 #else
     if (fileHandle != -1)
     {
@@ -235,18 +236,16 @@ void MTFile::Format (void)
     long int i;
     for (i = 0; i < (128L * 64L * 154L); i++)
     {
-        byte val = 0;
+        u8 val = 0;
 #ifdef _WIN32
         DWORD length;
-        bool result = WriteFile (ms_handle, &val, 1, &length, NULL);
+        WriteFile (ms_handle, &val, 1, &length, NULL);
 #else
-        size_t x = write (fileHandle, &val, 1);
+        write (fileHandle, &val, 1);
 #endif    
     }
 #ifdef _WIN32
     FlushFileBuffers (ms_handle);
-#else
-    fflush (fileHandle);
 #endif
 }
 

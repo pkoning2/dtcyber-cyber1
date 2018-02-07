@@ -24,85 +24,65 @@ BEGIN_EVENT_TABLE (PtermPrefDialog, wxDialog)
     EVT_COMBOBOX (wxID_ANY, PtermPrefDialog::OnComboSelect)
     END_EVENT_TABLE ();
 
-PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxString &title, wxPoint pos, wxSize size, bool profileEdit)
-    : wxDialog (parent, id, title, pos, size)
+PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
+                                  const wxString &title, wxPoint pos,
+                                  wxSize size)
+    : wxDialog (parent, id, title, pos, size),
+      m_profile (NULL),
+      m_profileEdit (true)
 {
+    PtermInitDialog ();
+}
 
-    // static ui objects, note dynamic controls, e.g. those that hold values or require event processing are declared above
-//  wxNotebook* tabPrefsDialog;
+PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
+                                  const wxString &title, wxPoint pos,
+                                  wxSize size,
+                                  const PtermProfile &fromprofile)
+    : wxDialog (parent, id, title, pos, size),
+      m_profileEdit (false)
+{
+    m_profile = new PtermProfile (fromprofile);
+    PtermInitDialog ();
+}
+
+void PtermPrefDialog::PtermInitDialog (void)
+{
+    // static ui objects, note dynamic controls, e.g. those that hold
+    // values or require event processing are declared above
     //tab0
     wxScrolledWindow* tab0;
     wxStaticText* lblExplain0;
-//  wxListBox* lstProfiles;
     wxStaticText* lblProfileActionExplain;
-//  wxButton* btnSave;
-//  wxButton* btnLoad;
-//  wxButton* btnDelete;
-//  wxStaticText* lblProfileStatusMessage;
     wxStaticText* lblNewProfileExplain;
     wxStaticText* lblNewProfile;
-//  wxTextCtrl* txtProfile;
-//  wxButton* btnAdd;
     //tab1
-    wxScrolledWindow* tab3;
-    wxStaticText* lblExplain3;
-//  wxCheckBox* chkConnectAtStartup;
-    wxStaticText* lblShellFirst;
-//  wxTextCtrl* txtShellFirst;
-    wxStaticText* lblDefaultHost;
-//  wxTextCtrl* txtDefaultHost;
-    wxStaticText* lblDefaultPort;
-//  wxComboBox* cboDefaultPort;
-    wxStaticText* lblExplainPort;
-    //tab2
     wxScrolledWindow* tab1;
     wxStaticText* lblExplain1;
-//  wxCheckBox* chkShowSignon;
-//  wxCheckBox* chkShowSysName;
-//  wxCheckBox* chkShowHost;
-//  wxCheckBox* chkShowStation;
-    //tab3
+    wxStaticText* lblShellFirst;
+    wxStaticText* lblDefaultHost;
+    wxStaticText* lblDefaultPort;
+    wxStaticText* lblExplainPort;
+    //tab2
     wxScrolledWindow* tab2;
     wxStaticText* lblExplain2;
-//  wxCheckBox* chkSimulate1200Baud;
-//  wxCheckBox* chkEnableGSW;
-//  wxCheckBox* chkEnableNumericKeyPad;
-//  wxCheckBox* chkIgnoreCapLock;
-//  wxCheckBox* chkUsePLATOKeyboard;
-//  wxCheckBox* chkUseAccelerators;
-//  wxCheckBox* chkEnableBeep;
-//  wxCheckBox* chkDisableShiftSpace;
-//  wxCheckBox* chkDisableMouseDrag;
+    //tab3
+    wxScrolledWindow* tab3;
+    wxStaticText* lblExplain3;
     //tab4
     wxScrolledWindow* tab4;
     wxStaticText* lblExplain4;
-//  wxCheckBox* chkZoom200;
-//  wxCheckBox* chkStatusBar;
-//  wxCheckBox* chkMenuBar;
-//  wxCheckBox* chkDisableColor;
-//  wxButton* btnFGColor; // windows
-//  wxBitmapButton* btnFGColor; // other
     wxStaticText* lblFGColor;
-//  wxButton* btnBGColor; // windows
-//  wxBitmapButton* btnBGColor; // other
     wxStaticText* lblBGColor;
     wxStaticText* lblExplainColor;
     //tab5
     wxScrolledWindow* tab5;
     wxStaticText* lblExplain5;
     wxStaticText* lblCharDelay;
-//  wxTextCtrl* txtCharDelay;
     wxStaticText* lblCharDelay2;
     wxStaticText* lblLineDelay;
-//  wxTextCtrl* txtLineDelay;
     wxStaticText* lblLineDelay2;
     wxStaticText* lblAutoNewLine;
-//  wxComboBox* cboAutoLF;
     wxStaticText* lblAutoNewLine2;
-//  wxCheckBox* chkSmartPaste;
-//  wxCheckBox* chkConvertDot7;
-//  wxCheckBox* chkConvert8Spaces;
-//  wxCheckBox* chkTutorColor;
     //tab6
     wxScrolledWindow* tab6;
     wxStaticText* lblEmail;
@@ -111,20 +91,12 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     wxStaticText* lblFloppy0;
     wxStaticText* lblFloppy1;
 
-//  wxTextCtrl* txtEmail;
-//  wxTextCtrl* txtSearchURL;
-    //button  bar
-//  wxButton* btnOK;
-//  wxButton* btnCancel;
-//  wxButton* btnDefaults;
-    wxFont dfont = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    wxFont dfont = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+                           wxFONTWEIGHT_NORMAL);
     
-    m_profileEdit = profileEdit;
-    m_owner = parent;
-
     m_floppy0Changed = false;
     m_floppy1Changed = false;
-
+    
     // ui object creation / placement, note initialization of values is below
     wxBoxSizer* bSizer1;
     bSizer1 = new wxBoxSizer (wxVERTICAL);
@@ -134,83 +106,86 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                      wxDefaultSize, wxNB_TOP);
     tabPrefsDialog->SetFont (dfont);
 
-    if (profileEdit)
+    if (m_profileEdit)
     {
-
         //tab0
         tab0 = new wxScrolledWindow (tabPrefsDialog, wxID_ANY,
-            wxDefaultPosition, wxDefaultSize,
-            wxHSCROLL | wxTAB_TRAVERSAL | wxVSCROLL);
+                                     wxDefaultPosition, wxDefaultSize,
+                                     wxHSCROLL | wxTAB_TRAVERSAL | wxVSCROLL);
         tab0->SetScrollRate (5, 5);
         tab0->SetFont (dfont);
 
         wxBoxSizer* page0;
         page0 = new wxBoxSizer (wxVERTICAL);
         lblExplain0 = new wxStaticText (tab0, wxID_ANY,
-            _ ("Use this page to manage your connection preference profiles."),
-            wxDefaultPosition, wxDefaultSize, 0);
+                                        _("Use this page to manage your connection preference profiles."),
+                                        wxDefaultPosition, wxDefaultSize, 0);
         page0->Add (lblExplain0, 0, wxALL, 5);
-        lstProfiles = new wxListBox (tab0, wxID_ANY, wxDefaultPosition,
-            wxSize (-1, -1), 0, NULL, wxLB_SORT);
+        lstProfiles = new ProfileList (tab0, wxID_ANY, wxDefaultPosition,
+                                       wxSize (-1, -1));
         page0->Add (lstProfiles, 1, wxALL | wxEXPAND | wxALIGN_TOP, 5);
 
         wxFlexGridSizer* fgs01;
         fgs01 = new wxFlexGridSizer (4, 1, 0, 0);
         fgs01->SetFlexibleDirection (wxVERTICAL);
         lblProfileActionExplain = new wxStaticText (tab0, wxID_ANY,
-            _ ("Select a profile above, then click a button below."),
-            wxDefaultPosition,
-            wxDefaultSize, 0);
+                                                    _("Select a profile above, then click a button below."),
+                                                    wxDefaultPosition,
+                                                    wxDefaultSize, 0);
         fgs01->Add (lblProfileActionExplain, 0, wxALL, 5);
 
         wxFlexGridSizer* fgs011;
         fgs011 = new wxFlexGridSizer (2, 4, 0, 0);
-        btnLoad = new wxButton (tab0, wxID_ANY, _ ("Load"), wxDefaultPosition,
-            wxDefaultSize, 0);
+        btnLoad = new wxButton (tab0, wxID_ANY, _("Load"), wxDefaultPosition,
+                                wxDefaultSize, 0);
         btnLoad->SetFont (dfont);
         fgs011->Add (btnLoad, 0, wxBOTTOM | wxRIGHT | wxLEFT, 5);
-        btnDelete = new wxButton (tab0, wxID_ANY, _ ("Delete"), wxDefaultPosition,
-            wxDefaultSize, 0);
+        btnDelete = new wxButton (tab0, wxID_ANY, _("Delete"),
+                                  wxDefaultPosition,
+                                  wxDefaultSize, 0);
         btnDelete->SetFont (dfont);
         fgs011->Add (btnDelete, 0, wxRIGHT | wxLEFT, 5);
         lblProfileStatusMessage = new wxStaticText (tab0, wxID_ANY,
-            _ ("Profile saved."),
-            wxDefaultPosition,
-            wxDefaultSize, 0);
+                                                    _("Profile saved."),
+                                                    wxDefaultPosition,
+                                                    wxDefaultSize, 0);
         lblProfileStatusMessage->SetFont (dfont);
-        fgs011->Add (lblProfileStatusMessage, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+        fgs011->Add (lblProfileStatusMessage, 0,
+                     wxALL | wxALIGN_CENTER_VERTICAL, 5);
         fgs01->Add (fgs011, 1, 0, 5);
         lblNewProfileExplain = new wxStaticText (tab0, wxID_ANY,
-            _ ("Or, enter the name of a new profile below and click Add."),
-            wxDefaultPosition, wxDefaultSize,
-            0);
+                                                 _("Or, enter the name of a new profile below and click Save As."),
+                                                 wxDefaultPosition,
+                                                 wxDefaultSize, 0);
         fgs01->Add (lblNewProfileExplain, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
         wxFlexGridSizer* fgs012;
         fgs012 = new wxFlexGridSizer (1, 3, 0, 0);
         fgs012->AddGrowableCol (1);
         fgs012->SetFlexibleDirection (wxHORIZONTAL);
-        lblNewProfile = new wxStaticText (tab0, wxID_ANY, _ ("Profile"),
-            wxDefaultPosition, wxDefaultSize, 0);
+        lblNewProfile = new wxStaticText (tab0, wxID_ANY, _("Profile"),
+                                          wxDefaultPosition, wxDefaultSize, 0);
         fgs012->Add (lblNewProfile, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
         txtProfile = new wxTextCtrl (tab0, wxID_ANY, wxT (""), wxDefaultPosition,
-            wxDefaultSize, 0);
+                                     wxDefaultSize, 0);
         txtProfile->SetMinSize (wxSize (310, -1));
         fgs012->Add (txtProfile, 1, wxALL | wxEXPAND, 5);
-        btnAdd = new wxButton (tab0, wxID_ANY, _ ("Add"), wxDefaultPosition,
-            wxDefaultSize, wxBU_EXACTFIT);
-        fgs012->Add (btnAdd, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+        btnSaveAs = new wxButton (tab0, wxID_ANY, _("Save As"),
+                                  wxDefaultPosition,
+                                  wxDefaultSize, wxBU_EXACTFIT);
+        btnSaveAs->Enable (false);
+        fgs012->Add (btnSaveAs, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
         fgs01->Add (fgs012, 1, wxEXPAND | wxALIGN_TOP, 5);
         page0->Add (fgs01, 0, wxEXPAND, 5);
         tab0->SetSizer (page0);
         tab0->Layout ();
         page0->Fit (tab0);
-        tabPrefsDialog->AddPage (tab0, _ ("Profiles"), true);
+        tabPrefsDialog->AddPage (tab0, _("Profiles"), false);
 
         //tab1
         tab1 = new wxScrolledWindow (tabPrefsDialog, wxID_ANY, wxDefaultPosition,
-            wxDefaultSize,
-            wxHSCROLL | wxTAB_TRAVERSAL | wxVSCROLL);
+                                     wxDefaultSize,
+                                     wxHSCROLL | wxTAB_TRAVERSAL | wxVSCROLL);
         tab1->SetScrollRate (5, 5);
 
         wxFlexGridSizer* page1;
@@ -219,103 +194,96 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
         page1->AddGrowableRow (1);
         page1->SetFlexibleDirection (wxVERTICAL);
         lblExplain1 = new wxStaticText (tab1, wxID_ANY,
-            _ ("Settings on this page specify where PLATO is on the internet."),
-            wxDefaultPosition, wxDefaultSize, 0);
+                                        _("Settings on this page specify where PLATO is on the internet."),
+                                        wxDefaultPosition, wxDefaultSize, 0);
         page1->Add (lblExplain1, 1, wxALL, 5);
-
         wxBoxSizer* bs11;
         bs11 = new wxBoxSizer (wxVERTICAL);
-        //chkConnectAtStartup = new wxCheckBox (tab1, wxID_ANY,
-        //    _ ("Connect at startup"),
-        //    wxDefaultPosition, wxDefaultSize, 0);
-        //chkConnectAtStartup->SetValue (true);
-        //bs11->Add (chkConnectAtStartup, 0, wxTOP | wxLEFT, 5);
 
         wxFlexGridSizer* fgs111;
         fgs111 = new wxFlexGridSizer (3, 2, 0, 0);
         fgs111->AddGrowableCol (1);
         fgs111->SetNonFlexibleGrowMode (wxFLEX_GROWMODE_SPECIFIED);
-        lblShellFirst = new wxStaticText (tab1, wxID_ANY, _ ("Run this first"),
-            wxDefaultPosition, wxDefaultSize, 0);
+        lblShellFirst = new wxStaticText (tab1, wxID_ANY, _("Run this first"),
+                                          wxDefaultPosition, wxDefaultSize, 0);
         lblShellFirst->SetFont (dfont);
         fgs111->Add (lblShellFirst, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
         txtShellFirst = new wxTextCtrl (tab1, wxID_ANY, wxT (""),
-            wxDefaultPosition, wxDefaultSize, 0);
+                                        wxDefaultPosition, wxDefaultSize, 0);
         txtShellFirst->SetFont (dfont);
         txtShellFirst->SetMaxLength (255);
         fgs111->Add (txtShellFirst, 0,
-            wxALIGN_CENTER_VERTICAL | wxALL, 5);
-        lblDefaultHost = new wxStaticText (tab1, wxID_ANY, _ ("Default Host"),
-            wxDefaultPosition, wxDefaultSize, 0);
+                     wxALIGN_CENTER_VERTICAL | wxALL, 5);
+        lblDefaultHost = new wxStaticText (tab1, wxID_ANY, _("Default Host"),
+                                           wxDefaultPosition, wxDefaultSize, 0);
         fgs111->Add (lblDefaultHost, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
         txtDefaultHost = new wxTextCtrl (tab1, wxID_ANY, wxT ("cyberserv.org"),
-            wxDefaultPosition, wxSize (-1, -1), 0);
+                                         wxDefaultPosition, wxSize (-1, -1), 0);
         txtDefaultHost->SetMaxLength (100);
         txtDefaultHost->SetFont (dfont);
         fgs111->Add (txtDefaultHost, 1,
-            wxALL | wxALIGN_CENTER_VERTICAL, 5);
-        lblDefaultPort = new wxStaticText (tab1, wxID_ANY, _ ("Default Port*"),
-            wxDefaultPosition, wxDefaultSize, 0);
+                     wxALL | wxALIGN_CENTER_VERTICAL, 5);
+        lblDefaultPort = new wxStaticText (tab1, wxID_ANY, _("Default Port*"),
+                                           wxDefaultPosition, wxDefaultSize, 0);
         fgs111->Add (lblDefaultPort, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
         wxIntegerValidator<long> portval;
         portval.SetRange (1, 65535);
 
         cboDefaultPort = new wxComboBox (tab1, wxID_ANY, wxT ("5004"),
-            wxDefaultPosition, wxSize (75, -1),
-            0, NULL, 0, portval);
+                                         wxDefaultPosition, wxSize (75, -1),
+                                         0, NULL, 0, portval);
         cboDefaultPort->Append (wxT ("5004"));
         cboDefaultPort->Append (wxT ("8005"));
         fgs111->Add (cboDefaultPort, 0, wxALL, 5);
         bs11->Add (fgs111, 1, wxEXPAND | wxALIGN_TOP, 5);
         page1->Add (bs11, 1, wxEXPAND | wxALIGN_TOP, 0);
         lblExplainPort = new wxStaticText (tab1, wxID_ANY,
-            _ ("* NOTE: 5004=Classic, 8005=Color Terminal"),
-            wxDefaultPosition, wxDefaultSize, 0);
+                                           _("* NOTE: 5004=Classic, 8005=Color Terminal"),
+                                           wxDefaultPosition, wxDefaultSize, 0);
         page1->Add (lblExplainPort, 0, wxALL, 5);
         tab1->SetSizer (page1);
         tab1->Layout ();
         page1->Fit (tab1);
-        tabPrefsDialog->AddPage (tab1, _ ("Connection"), true);
+        tabPrefsDialog->AddPage (tab1, _("Connection"), false);
 
         //tab2
         tab2 = new wxScrolledWindow (tabPrefsDialog, wxID_ANY, wxDefaultPosition,
-            wxDefaultSize,
-            wxHSCROLL | wxTAB_TRAVERSAL | wxVSCROLL);
+                                     wxDefaultSize,
+                                     wxHSCROLL | wxTAB_TRAVERSAL | wxVSCROLL);
         tab2->SetScrollRate (5, 5);
         tab2->SetFont (dfont);
 
         wxBoxSizer* page2;
         page2 = new wxBoxSizer (wxVERTICAL);
         lblExplain2 = new wxStaticText (tab2, wxID_ANY,
-            _ ("Settings on this page configure the text shown in the window title."),
-            wxDefaultPosition, wxDefaultSize, 0);
+                                        _("Settings on this page configure the text shown in the window title."),
+                                        wxDefaultPosition, wxDefaultSize, 0);
         page2->Add (lblExplain2, 0, wxALL, 5);
         chkShowSignon = new wxCheckBox (tab2, wxID_ANY,
-            _ ("Show name/group in frame title"),
-            wxDefaultPosition, wxDefaultSize, 0);
+                                        _("Show name/group in frame title"),
+                                        wxDefaultPosition, wxDefaultSize, 0);
         chkShowSignon->SetValue (true);
         page2->Add (chkShowSignon, 0, wxALL, 5);
         chkShowSysName = new wxCheckBox (tab2, wxID_ANY,
-            _ ("Show system name in frame title"),
-            wxDefaultPosition, wxDefaultSize, 0);
+                                         _("Show system name in frame title"),
+                                         wxDefaultPosition, wxDefaultSize, 0);
         chkShowSysName->SetValue (true);
         page2->Add (chkShowSysName, 0, wxALL, 5);
         chkShowHost = new wxCheckBox (tab2, wxID_ANY,
-            _ ("Show host name in frame title"),
-            wxDefaultPosition, wxDefaultSize, 0);
+                                      _("Show host name in frame title"),
+                                      wxDefaultPosition, wxDefaultSize, 0);
         chkShowHost->SetValue (true);
         page2->Add (chkShowHost, 0, wxALL, 5);
         chkShowStation = new wxCheckBox (tab2, wxID_ANY,
-            _ ("Show site-station numbers in frame title"),
-            wxDefaultPosition, wxDefaultSize, 0);
+                                         _("Show site-station numbers in frame title"),
+                                         wxDefaultPosition, wxDefaultSize, 0);
         chkShowStation->SetValue (true);
         page2->Add (chkShowStation, 0, wxALL, 5);
         tab2->SetSizer (page2);
         tab2->Layout ();
         page2->Fit (tab2);
-        tabPrefsDialog->AddPage (tab2, _ ("Title"), false);
-
+        tabPrefsDialog->AddPage (tab2, _("Title"), false);
     }
     //tab3
     tab3 = new wxScrolledWindow (tabPrefsDialog, wxID_ANY, wxDefaultPosition,
@@ -395,7 +363,6 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                     _("Settings on this page allow you to change the display appearance."),
                                     wxDefaultPosition, wxDefaultSize, 0);
     page4->Add (lblExplain4, 0, wxALL, 5);
-
     wxBoxSizer* bs41;
     bs41 = new wxBoxSizer (wxVERTICAL);
     chkDisableColor = new wxCheckBox (tab4, wxID_ANY,
@@ -469,7 +436,6 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                     _("Settings on this page allow you to specify Paste options."),
                                     wxDefaultPosition, wxDefaultSize, 0);
     bs51->Add (lblExplain5, 0, wxALL, 5);
-
     wxFlexGridSizer* fgs511;
     wxIntegerValidator<long> cdval, ldval, autoval;
 
@@ -533,19 +499,16 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                      _("Convert periods followed by 7 spaces into period/tab"),
                                      wxDefaultPosition, wxDefaultSize, 0);
     chkConvertDot7->SetValue (true);
-    //chkConvertDot7->Hide ();
     bs51->Add (chkConvertDot7, 0, wxALL, 5);
     chkConvert8Spaces = new wxCheckBox (tab5, wxID_ANY,
                                         _("Convert 8 consecutive spaces into a tab"),
                                         wxDefaultPosition, wxDefaultSize, 0);
     chkConvert8Spaces->SetValue (true);
-    //chkConvert8Spaces->Hide ();
     bs51->Add (chkConvert8Spaces, 0, wxALL, 5);
     chkTutorColor = new wxCheckBox (tab5, wxID_ANY,
                                     _("Display TUTOR colorization options on Edit/Context menus"),
                                     wxDefaultPosition, wxDefaultSize, 0);
     chkTutorColor->SetValue (true);
-    //chkTutorColor->Hide ();
     bs51->Add (chkTutorColor, 0, wxALL, 5);
     page5->Add (bs51, 1, wxEXPAND, 5);
     tab5->SetSizer (page5);
@@ -559,7 +522,6 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
                                  wxHSCROLL | wxTAB_TRAVERSAL | wxVSCROLL);
 
     tab6->SetScrollRate (5, 5);
-    tab6->Hide ();
 
     wxFlexGridSizer* page6;
     page6 = new wxFlexGridSizer (0, 1, 0, 0);
@@ -586,30 +548,28 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     page6->Add (txtSearchURL, 0, wxALL | wxEXPAND, 5);
 
     lblMTUTOR = new wxStaticText (tab6, wxID_ANY,
-        _ ("MicroTutor related options:"),
-        wxDefaultPosition, wxDefaultSize, 0);
+                                  _("MicroTutor related options:"),
+                                  wxDefaultPosition, wxDefaultSize, 0);
     page6->Add (lblMTUTOR, 0, wxALL | wxALIGN_BOTTOM, 5);
-
-
 
     if (m_profileEdit)
     {
         chkMTutorBoot = new wxCheckBox (tab6, wxID_ANY,
-            _ ("Boot to MicroTutor"),
-            wxDefaultPosition, wxDefaultSize, 0);
+                                        _("Boot to MicroTutor"),
+                                        wxDefaultPosition, wxDefaultSize, 0);
         chkMTutorBoot->SetValue (false);
         page6->Add (chkMTutorBoot, 0, wxALL, 5);
     }
     
     chkFloppy0 = new wxCheckBox(tab6, wxID_ANY,
-        _("Enable Floppy 0"),
-        wxDefaultPosition, wxDefaultSize, 0);
+                                _("Enable Floppy 0"),
+                                wxDefaultPosition, wxDefaultSize, 0);
     chkFloppy0->SetValue(true);
     page6->Add(chkFloppy0, 0, wxALL, 5);
 
     chkFloppy1 = new wxCheckBox(tab6, wxID_ANY,
-        _("Enable Floppy 1"),
-        wxDefaultPosition, wxDefaultSize, 0);
+                                _("Enable Floppy 1"),
+                                wxDefaultPosition, wxDefaultSize, 0);
     chkFloppy1->SetValue(true);
     page6->Add(chkFloppy1, 0, wxALL, 5);
 
@@ -624,7 +584,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     page6->Add(txtFloppy0, 0, wxLEFT, 25);
 
     btnFloppy0 = new wxButton(tab6, wxID_ANY, _("Select Floppy 0 File"),
-        wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
+                              wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
     page6->Add(btnFloppy0, 0, wxALL, 5);
 
     lblFloppy1 = new wxStaticText(tab6, wxID_ANY,
@@ -637,10 +597,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     page6->Add(txtFloppy1, 0, wxLEFT, 25);
 
     btnFloppy1 = new wxButton(tab6, wxID_ANY, _("Select Floppy 1 File"),
-        wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
+                              wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
     page6->Add(btnFloppy1, 0, wxALL, 5);
-
-
     tab6->SetSizer (page6);
     tab6->Layout ();
     page6->Fit (tab6);
@@ -656,7 +614,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     fgsButtons->AddGrowableRow (0);
     fgsButtons->SetFlexibleDirection (wxHORIZONTAL);
     fgsButtons->Add (0, 0, 1, wxALL | wxEXPAND, 5);
-    btnOK = new wxButton (this, wxID_ANY, _(m_profileEdit ? "Save" : "Apply"),
+    btnOK = new wxButton (this, wxID_ANY,
+                          m_profileEdit ? _("Save") : _("Apply"),
                           wxDefaultPosition,
                           wxDefaultSize, 0);
     btnOK->SetFont (dfont);
@@ -670,27 +629,50 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id, const wxStr
     btnDefaults->SetFont (dfont);
     fgsButtons->Add (btnDefaults, 0, wxALL, 5);
     bSizer1->Add (fgsButtons, 0, wxEXPAND, 5);
-    this->SetSizer (bSizer1);
-    this->Layout ();
+    SetSizer (bSizer1);
+    Layout ();
+
+    // If no profile set yet, but one is selected in the list box,
+    // load that one.
+    if (m_profile == NULL)
+    {
+        SelectProfile (lstProfiles->GetSelection ());
+    }
 
     // set object value properties
     SetControlState ();
-
-    if (m_profileEdit)
-    {
-        this->SetLabel ("Profile Editor - " + this->m_curProfile);
-        //if (m_mTutorBoot)
-        //    radMTutor->Disable ();
-        //else
-        //    radMTutor->Enable ();
-    }
-
-    //set active tab
-    m_lastTab = ptermApp->m_config->Read (wxT (PREF_LASTTAB), 0L);
-    tabPrefsDialog->SetSelection (m_lastTab);
-
+    Modified (false);
+    
     //button bar
     btnOK->SetDefault ();
+}
+
+void PtermPrefDialog::Modified (bool modified)
+{
+    m_profModified = modified;
+    UpdateTitle ();
+}
+
+void PtermPrefDialog::UpdateTitle (void)
+{
+    wxString title;
+
+    // Enable the OK (Save or Apply) button if there is some change to
+    // be saved.
+    btnOK->Enable (m_profModified);
+    
+    if (m_profModified)
+        title = wxT ("* ");
+    if (m_profileEdit)
+        title.Append (_("Profile editor"));
+    else
+        title.Append (_("Session settings"));
+    if (!m_profile->m_profileName.IsEmpty ())
+    {
+        title.Append (wxT (": "));
+        title.Append (m_profile->m_profileName);
+    }
+    SetLabel (title);
 }
 
 void PtermPrefDialog::OnClose (wxCloseEvent& )
@@ -702,158 +684,22 @@ bool PtermPrefDialog::ValidProfile (wxString profile)
 {
     wxString validchr = wxT ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. ()");
     unsigned int cnt;
-    for (cnt=0; cnt<profile.Len (); cnt++)
+    for (cnt = 0; cnt < profile.Len (); cnt++)
         if (!validchr.Contains (profile.Mid (cnt, 1)))
             return false;
     return true;
 }
 
-bool PtermPrefDialog::SaveProfile (wxString profile)
-{
-    wxString filename;
-    wxString buffer;
-    bool openok;
-
-    //open file
-    filename = ptermApp->ProfileFileName (profile);
-    wxTextFile file (filename);
-    if (file.Exists ())
-        openok = file.Open ();
-    else
-        openok = file.Create ();
-    if (!openok)
-        return false;
-    file.Clear ();
-
-    //write prefs
-    //tab0
-    buffer.Printf (wxT (PREF_CURPROFILE) wxT ("=%s"), profile);
-    file.AddLine (buffer);
-    //tab1
-    buffer.Printf (wxT (PREF_CONNECT) wxT ("=%d"), (m_connect) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SHELLFIRST) wxT ("=%s"), m_ShellFirst);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_HOST) wxT ("=%s"), m_host);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_PORT) wxT ("=%ld"), m_port);
-    file.AddLine (buffer);
-    //tab2
-    buffer.Printf (wxT (PREF_SHOWSIGNON) wxT ("=%d"), (m_showSignon) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SHOWSYSNAME) wxT ("=%d"), (m_showSysName) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SHOWHOST) wxT ("=%d"), (m_showHost) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SHOWSTATION) wxT ("=%d"), (m_showStation) ? 1 : 0);
-    file.AddLine (buffer);
-    //tab3
-    buffer.Printf (wxT (PREF_1200BAUD) wxT ("=%d"), (m_classicSpeed) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_GSW) wxT ("=%d"), (m_gswEnable) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_ARROWS) wxT ("=%d"), (m_numpadArrows) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_IGNORECAP) wxT ("=%d"), (m_ignoreCapLock) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_PLATOKB) wxT ("=%d"), (m_platoKb) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_ACCEL) wxT ("=%d"), (m_useAccel) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_BEEP) wxT ("=%d"), (m_beepEnable) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SHIFTSPACE) wxT ("=%d"), (m_DisableShiftSpace) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_MOUSEDRAG) wxT ("=%d"), (m_DisableMouseDrag) ? 1 : 0);
-    file.AddLine (buffer);
-    //tab4
-    buffer.Printf (wxT (PREF_SCALE) wxT ("=%f"), m_scale);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_STATUSBAR) wxT ("=%d"), (m_showStatusBar) ? 1 : 0);
-    file.AddLine (buffer);
-#if !defined (__WXMAC__)
-    buffer.Printf (wxT (PREF_MENUBAR) wxT ("=%d"), (m_showMenuBar) ? 1 : 0);
-    file.AddLine (buffer);
-#endif
-    buffer.Printf (wxT (PREF_NOCOLOR) wxT ("=%d"), (m_noColor) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_FOREGROUND) wxT ("=%d %d %d"), m_fgColor.Red (), m_fgColor.Green (), m_fgColor.Blue ());
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_BACKGROUND) wxT ("=%d %d %d"), m_bgColor.Red (), m_bgColor.Green (), m_bgColor.Blue ());
-    file.AddLine (buffer);
-    //tab5
-    buffer.Printf (wxT (PREF_CHARDELAY) wxT ("=%ld"), m_charDelay);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_LINEDELAY) wxT ("=%ld"), m_lineDelay);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_AUTOLF) wxT ("=%ld"), m_autoLF);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SMARTPASTE) wxT ("=%d"), (m_smartPaste) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_CONVDOT7) wxT ("=%d"), (m_convDot7) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_CONV8SP) wxT ("=%d"), (m_conv8Sp) ? 1 : 0);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_TUTORCOLOR) wxT ("=%d"), (m_TutorColor) ? 1 : 0);
-    file.AddLine (buffer);
-    //tab6
-    buffer.Printf (wxT (PREF_EMAIL) wxT ("=%s"), m_Email);
-    file.AddLine (buffer);
-    buffer.Printf (wxT (PREF_SEARCHURL) wxT ("=%s"), m_SearchURL);
-    file.AddLine (buffer);
-    buffer.Printf(wxT(PREF_MTUTORBOOT) wxT("=%d"), (m_mTutorBoot) ? 1 : 0);
-    file.AddLine(buffer);
-    buffer.Printf(wxT(PREF_FLOPPY0M) wxT("=%d"), (m_floppy0) ? 1 : 0);
-    file.AddLine(buffer);
-    buffer.Printf(wxT(PREF_FLOPPY1M) wxT("=%d"), (m_floppy1) ? 1 : 0);
-    file.AddLine(buffer);
-    buffer.Printf(wxT(PREF_FLOPPY0NAM) wxT("=%s"), m_floppy0File);
-    file.AddLine(buffer);
-    buffer.Printf(wxT(PREF_FLOPPY1NAM) wxT("=%s"), m_floppy1File);
-    file.AddLine(buffer);
-
-
-    //write to disk
-    file.Write ();
-    file.Close ();
-
-    return true;
-
-}
-
-int PtermPrefDialog::SelectToLevel(int select)
-{
-    switch (select)
-    {
-    case 1: return 2;
-    case 2: return 3;
-    case 3: return 4;
-    case 4: return 5;
-    default: return 0;
-    }
-}
-
-int PtermPrefDialog::LevelToSelect(int level)
-{
-    switch (level)
-    {
-    case 2: return 1;
-    case 3: return 2;
-    case 4: return 3;
-    case 5: return 4;
-    default: return 0;
-    }
-}
-
 bool PtermPrefDialog::DeleteProfile (wxString profile)
 {
-    wxString filename;
+    wxFileName filename;
 
+    filename = ProfileFileName (profile);
+    
     //delete file
-    filename = ptermApp->ProfileFileName (profile);
-    if (wxFileExists (filename))
+    if (filename.IsOk () && filename.IsFileWritable ())
     {
-        wxRemoveFile (filename);
+        wxRemoveFile (filename.GetFullPath ());
         return true;
     }
     return false;
@@ -869,195 +715,58 @@ void PtermPrefDialog::SetControlState (void)
     if (m_profileEdit)
     {
         //tab0
-        m_curProfile = ptermApp->m_curProfile;
         //tab1
-        m_ShellFirst = ptermApp->m_ShellFirst;
-        m_connect = ptermApp->m_connect;
-        m_host = ptermApp->m_hostName;
-        m_port = ptermApp->m_port;
-        //tab2
-        m_showSignon = ptermApp->m_showSignon;
-        m_showSysName = ptermApp->m_showSysName;
-        m_showHost = ptermApp->m_showHost;
-        m_showStation = ptermApp->m_showStation;
-    }
-    if (m_owner == NULL)
-    {
-        //tab3
-        m_classicSpeed = ptermApp->m_classicSpeed;
-        m_gswEnable = ptermApp->m_gswEnable;
-        m_numpadArrows = ptermApp->m_numpadArrows;
-        m_ignoreCapLock = ptermApp->m_ignoreCapLock;
-        m_platoKb = ptermApp->m_platoKb;
-        m_useAccel = ptermApp->m_useAccel;
-        m_beepEnable = ptermApp->m_beepEnable;
-        m_DisableShiftSpace = ptermApp->m_DisableShiftSpace;
-        m_DisableMouseDrag = ptermApp->m_DisableMouseDrag;
-        //tab4
-        m_scale = ptermApp->m_scale;
-        m_showStatusBar = ptermApp->m_showStatusBar;
-#if !defined (__WXMAC__)
-        m_showMenuBar = ptermApp->m_showMenuBar;
-#endif
-        m_noColor = ptermApp->m_noColor;
-        //m_fgColor = ptermApp->m_fgColor;
-        //m_bgColor = ptermApp->m_bgColor;
-        int r, g, b;
-        wxString rgb;
-        ptermApp->m_config->Read (wxT (PREF_FOREGROUND), &rgb, wxT ("255 144 0")); // 255 144 0 is RGB for Plato Orange
-        sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
-        m_fgColor = wxColour (r, g, b);
-        ptermApp->m_config->Read (wxT (PREF_BACKGROUND), &rgb, wxT ("0 0 0"));
-        sscanf (rgb.mb_str (), "%d %d %d", &r, &g, &b);
-        m_bgColor = wxColour (r, g, b);
-        //tab5
-        m_charDelay = ptermApp->m_charDelay;
-        m_lineDelay = ptermApp->m_lineDelay;
-        m_autoLF = ptermApp->m_autoLF;
-        m_smartPaste = ptermApp->m_smartPaste;
-        m_convDot7 = ptermApp->m_convDot7;
-        m_conv8Sp = ptermApp->m_conv8Sp;
-        m_TutorColor = ptermApp->m_TutorColor;
-        //tab6
-        m_Email = ptermApp->m_Email;
-        m_SearchURL = ptermApp->m_SearchURL;
-        m_mTutorBoot = ptermApp->m_mTutorBoot;
-
-        m_floppy0 = ptermApp->m_floppy0;
-        m_floppy1 = ptermApp->m_floppy1;
-        m_floppy0File = ptermApp->m_floppy0File;
-        m_floppy1File = ptermApp->m_floppy1File;
-    }
-    else
-    {
-        //tab3
-        m_classicSpeed = m_owner->m_classicSpeed;
-        m_gswEnable = m_owner->m_gswEnable;
-        m_numpadArrows = m_owner->m_numpadArrows;
-        m_ignoreCapLock = m_owner->m_ignoreCapLock;
-        m_platoKb = m_owner->m_platoKb;
-        m_useAccel = m_owner->m_useAccel;
-        m_beepEnable = m_owner->m_beepEnable;
-        m_DisableShiftSpace = m_owner->m_DisableShiftSpace;
-        m_DisableMouseDrag = m_owner->m_DisableMouseDrag;
-        //tab4
-        m_scale = m_owner->m_scale;
-        m_showStatusBar = m_owner->m_showStatusBar;
-#if !defined (__WXMAC__)
-        m_showMenuBar = m_owner->m_showMenuBar;
-#endif
-        m_noColor = m_owner->m_noColor;
-        m_fgColor = m_owner->m_fgColor;
-        m_bgColor = m_owner->m_bgColor;
-        //tab5
-        m_charDelay = m_owner->m_charDelay;
-        m_lineDelay = m_owner->m_lineDelay;
-        m_autoLF = m_owner->m_autoLF;
-        m_smartPaste = m_owner->m_smartPaste;
-        m_convDot7 = m_owner->m_convDot7;
-        m_conv8Sp = m_owner->m_conv8Sp;
-        m_TutorColor = m_owner->m_TutorColor;
-        //tab6
-        m_Email = m_owner->m_Email;
-        m_SearchURL = m_owner->m_SearchURL;
-        m_mTutorBoot = m_owner->m_mtutorBoot;
-
-        m_floppy0 = m_owner->m_floppy0;
-        m_floppy1 = m_owner->m_floppy1;
-        m_floppy0File = m_owner->m_floppy0File;
-        m_floppy1File = m_owner->m_floppy1File;
-    }
-
-    if (m_profileEdit)
-    {
-
-        //tab0
-        wxDir ldir (wxGetCwd ());
-        if (ldir.IsOpened ())
-        {
-            // populate listbox
-            wxString filename;
-            bool cont = ldir.GetFirst (&filename, wxT ("*.ppf"), wxDIR_DEFAULT);
-            lstProfiles->Clear ();
-            int i, cur = 0;
-            wxString str;
-            for (i = 0; cont; i++)
-            {
-                filename = filename.Left (filename.Len () - 4);
-                lstProfiles->Append (filename);
-                cont = ldir.GetNext (&filename);
-            }
-            for (i = 0; i < (int)lstProfiles->GetCount (); i++)
-            {
-                filename = lstProfiles->GetString (i);
-                if (filename.CmpNoCase (ptermApp->m_curProfile) == 0)
-                    cur = i;
-            }
-            lstProfiles->Select (cur);
-        }
-        //tab1
-        //chkConnectAtStartup->SetValue (m_connect);
-        txtShellFirst->SetValue (m_ShellFirst);
-        txtDefaultHost->SetValue (m_host);
-        ws.Printf ("%ld", m_port);
+        txtShellFirst->SetValue (m_profile->m_ShellFirst);
+        txtDefaultHost->SetValue (m_profile->m_host);
+        ws.Printf ("%ld", m_profile->m_port);
         cboDefaultPort->SetValue (ws);
         //tab2
-        chkShowSignon->SetValue (m_showSignon);
-        chkShowSysName->SetValue (m_showSysName);
-        chkShowHost->SetValue (m_showHost);
-        chkShowStation->SetValue (m_showStation);
+        chkShowSignon->SetValue (m_profile->m_showSignon);
+        chkShowSysName->SetValue (m_profile->m_showSysName);
+        chkShowHost->SetValue (m_profile->m_showHost);
+        chkShowStation->SetValue (m_profile->m_showStation);
     }
     //tab3
-    chkSimulate1200Baud->SetValue (m_classicSpeed);
-    chkEnableGSW->SetValue (m_gswEnable);
-    chkEnableNumericKeyPad->SetValue (m_numpadArrows);
-    chkIgnoreCapLock->SetValue (m_ignoreCapLock);
-    chkUsePLATOKeyboard->SetValue (m_platoKb);
-    chkUseAccelerators->SetValue (m_useAccel);
-    chkEnableBeep->SetValue (m_beepEnable);
-    chkDisableShiftSpace->SetValue (m_DisableShiftSpace);
-    chkDisableMouseDrag->SetValue (m_DisableMouseDrag);
+    chkSimulate1200Baud->SetValue (m_profile->m_classicSpeed);
+    chkEnableGSW->SetValue (m_profile->m_gswEnable);
+    chkEnableNumericKeyPad->SetValue (m_profile->m_numpadArrows);
+    chkIgnoreCapLock->SetValue (m_profile->m_ignoreCapLock);
+    chkUsePLATOKeyboard->SetValue (m_profile->m_platoKb);
+    chkUseAccelerators->SetValue (m_profile->m_useAccel);
+    chkEnableBeep->SetValue (m_profile->m_beepEnable);
+    chkDisableShiftSpace->SetValue (m_profile->m_DisableShiftSpace);
+    chkDisableMouseDrag->SetValue (m_profile->m_DisableMouseDrag);
     //tab4
-    chkDisableColor->SetValue (m_noColor);
+    chkDisableColor->SetValue (m_profile->m_noColor);
 #if defined (_WIN32)
-    btnFGColor->SetBackgroundColour (m_fgColor);
-    btnBGColor->SetBackgroundColour (m_bgColor);
+    btnFGColor->SetBackgroundColour (m_profile->m_fgColor);
+    btnBGColor->SetBackgroundColour (m_profile->m_bgColor);
 #else
-    paintBitmap (fgBitmap, m_fgColor);
+    paintBitmap (fgBitmap, m_profile->m_fgColor);
     btnFGColor->SetBitmapLabel (fgBitmap);
-    paintBitmap (bgBitmap, m_bgColor);
+    paintBitmap (bgBitmap, m_profile->m_bgColor);
     btnBGColor->SetBitmapLabel (bgBitmap);
 #endif
     //tab5
-    ws.Printf ("%ld", m_charDelay);
+    ws.Printf ("%ld", m_profile->m_charDelay);
     txtCharDelay->SetValue (ws);
-    ws.Printf ("%ld", m_lineDelay);
+    ws.Printf ("%ld", m_profile->m_lineDelay);
     txtLineDelay->SetValue (ws);
-    ws.Printf ("%ld", m_autoLF);
+    ws.Printf ("%ld", m_profile->m_autoLF);
     cboAutoLF->SetValue (ws);
-    chkSmartPaste->SetValue (m_smartPaste);
-    chkConvertDot7->SetValue (m_convDot7);
-    chkConvert8Spaces->SetValue (m_conv8Sp);
-    chkTutorColor->SetValue (m_TutorColor);
+    chkSmartPaste->SetValue (m_profile->m_smartPaste);
+    chkConvertDot7->SetValue (m_profile->m_convDot7);
+    chkConvert8Spaces->SetValue (m_profile->m_conv8Sp);
+    chkTutorColor->SetValue (m_profile->m_TutorColor);
     //tab6
-    txtEmail->SetValue (m_Email);
-    txtSearchURL->SetValue (m_SearchURL);
+    txtEmail->SetValue (m_profile->m_Email);
+    txtSearchURL->SetValue (m_profile->m_SearchURL);
     if (m_profileEdit)
-        chkMTutorBoot->SetValue(m_mTutorBoot);
-    chkFloppy0->SetValue(m_floppy0);
-    chkFloppy1->SetValue(m_floppy1);
-    txtFloppy0->SetLabel(m_floppy0File);
-    txtFloppy1->SetLabel(m_floppy1File);
-
-    //set button state
-    wxString profile;
-    if (m_profileEdit)
-    {
-        profile = lstProfiles->GetStringSelection ();
-        profile = txtProfile->GetLineText (0);
-        btnAdd->Enable (!profile.IsEmpty ());
-    }
-
+        chkMTutorBoot->SetValue(m_profile->m_mTutorBoot);
+    chkFloppy0->SetValue(m_profile->m_floppy0);
+    chkFloppy1->SetValue(m_profile->m_floppy1);
+    txtFloppy0->SetLabel(m_profile->m_floppy0File);
+    txtFloppy1->SetLabel(m_profile->m_floppy1File);
 }
 
 void PtermPrefDialog::OnButton (wxCommandEvent& event)
@@ -1074,91 +783,94 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         lblProfileStatusMessage->SetLabel (wxT (""));
     if (event.GetEventObject () == btnOK && m_profileEdit)
     {
-        profile = lstProfiles->GetStringSelection ();
-        ptermApp->m_curProfile = profile;
-        m_curProfile = profile;
-        if (SaveProfile (profile))
+        if (m_profile->SaveProfile ())
         {
-            ptermApp->LoadProfile (profile, wxT (""));
             SetControlState ();
             lblProfileStatusMessage->SetLabel (_("Profile saved."));
             EndModal (wxID_OK);
         }
         else
         {
-            filename = ptermApp->ProfileFileName (profile);
-            str.Printf (wxT ("Unable to save profile: %s"), filename);
-            wxMessageBox (str, _("Error"), wxOK | wxICON_HAND);
+            str.Printf (_("Unable to save profile: %s"),
+                        m_profile->m_profileName);
+            wxMessageBox (str, _("Error"), wxOK | wxICON_ERROR);
         }
     }
     else if (event.GetEventObject () == btnLoad)
     {
-        profile = lstProfiles->GetStringSelection ();
-        ptermApp->m_curProfile = profile;
-        m_curProfile = profile;
-        if (ptermApp->LoadProfile (profile, wxT ("")))
+        SelectProfile (lstProfiles->GetSelection ());
+        if (m_profile->IsOk ())
         {
             SetControlState ();
             lblProfileStatusMessage->SetLabel (_("Profile loaded."));
-            this->SetLabel ("Profile Editor - " + this->m_curProfile);
+            Modified (false);
         }
         else
         {
-            filename = ptermApp->ProfileFileName (profile);
-            str.Printf (wxT ("Unable to load profile: %s"), filename);
-            wxMessageBox (str, _("Error"), wxOK | wxICON_HAND);
+            str.Printf (_("Unable to load profile: %s"), profile);
+            wxMessageBox (str, _("Error"), wxOK | wxICON_ERROR);
         }
     }
     else if (event.GetEventObject () == btnDelete)
     {
         profile = lstProfiles->GetStringSelection ();
-        if (DeleteProfile (profile))
+
+        wxString str;
+        str.Printf (_("Do you really want to delete profile '%s' ?"), profile);
+        if (wxMessageBox (str, _("Confirm"),
+                          wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION) == wxYES)
         {
-            SetControlState ();
-            lblProfileStatusMessage->SetLabel (_("Profile deleted."));
-        }
-        else
-        {
-            filename = ptermApp->ProfileFileName (profile);
-            str.Printf (wxT ("Unable to delete profile: %s"), 
-                       filename);
-            wxMessageBox (str, _("Error"), wxOK | wxICON_HAND);
+            if (DeleteProfile (profile))
+            {
+                SetControlState ();
+                lblProfileStatusMessage->SetLabel (_("Profile deleted."));
+                lstProfiles->RefreshList ();
+            }
+            else
+            {
+                str.Printf (_("Unable to delete profile: %s"), 
+                            profile);
+                wxMessageBox (str, _("Error"), wxOK | wxICON_ERROR);
+            }
         }
     }
-    else if (event.GetEventObject () == btnAdd)
+    else if (event.GetEventObject () == btnSaveAs)
     {
         profile = txtProfile->GetLineText (0);
         if (ValidProfile (profile))
         {
-            if (SaveProfile (profile))
+            if (lstProfiles->FindString (profile, true) != wxNOT_FOUND)
             {
-                ptermApp->m_curProfile = profile;
-                m_curProfile = profile;
-                ptermApp->LoadProfile (profile, wxT (""));
-                SetControlState ();
-                lblProfileStatusMessage->SetLabel (_("Profile added."));
+                wxString msg;
+
+                msg.Printf (_("Profile %s already exists"), profile);
+                wxMessageBox (msg, _("Problem"), wxOK | wxICON_ERROR);
             }
             else
             {
-                filename = ptermApp->ProfileFileName (profile);
-                str.Printf (wxT ("Unable to add/save profile: %s"), 
-                           filename);
-                wxMessageBox (str, _("Error"), wxOK | wxICON_HAND);
+                m_profile->SetName (profile);
+                m_profile->SaveProfile ();
+                ptermApp->m_curProfile = profile;
+                Modified (false);
+                lstProfiles->RefreshList ();
+                lblProfileStatusMessage->SetLabel (_("Profile added."));
             }
         }
         else
         {
             wxMessageBox (_("The profile name you entered contains illegal characters.\n\n"
-                         "Valid characters are:\n\n"
-                         "Standard: a-z, A-Z, 0-9\n"
-                           "Special:  parentheses, dash, underscore, period, and space"), _("Problem"), wxOK | wxICON_EXCLAMATION);
+                            "Valid characters are:\n\n"
+                            "Standard: a-z, A-Z, 0-9\n"
+                            "Special:  parentheses, dash, underscore, period, and space"),
+                          _("Problem"), wxOK | wxICON_ERROR);
         }
     }
     else if (event.GetEventObject() == btnFloppy0)
     {
         wxFileDialog
             openFileDialog(this, _("Open Floppy 0 file"), "", "",
-                "MTE files (*.mte)|*.mte", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+                           "MTE files (*.mte)|*.mte",
+                           wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
         MTFile testFile;
 
@@ -1173,8 +885,9 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
             return;
         }
         testFile.Close();
-        m_floppy0File = openFileDialog.GetPath();
-        txtFloppy0->SetLabel(m_floppy0File);
+        m_profile->m_floppy0File = openFileDialog.GetPath();
+        txtFloppy0->SetLabel(m_profile->m_floppy0File);
+        Modified();
     }
     else if (event.GetEventObject() == btnFloppy1)
     {
@@ -1195,309 +908,212 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
             return;
         }
         testFile.Close();
-        m_floppy1File = openFileDialog.GetPath();
-        txtFloppy1->SetLabel(m_floppy1File);
+        m_profile->m_floppy1File = openFileDialog.GetPath();
+        txtFloppy1->SetLabel(m_profile->m_floppy1File);
+        Modified();
     }
     else if (event.GetEventObject () == btnFGColor)
     {
-        m_fgColor = PtermApp::SelectColor (*this, _("Foreground"), m_fgColor);
+        m_profile->m_fgColor = PtermApp::SelectColor (*this, _("Foreground"), m_profile->m_fgColor);
 #if defined (_WIN32)
-        btnFGColor->SetBackgroundColour (m_fgColor);
+        btnFGColor->SetBackgroundColour (m_profile->m_fgColor);
 #else
-        paintBitmap (fgBitmap, m_fgColor);
+        paintBitmap (fgBitmap, m_profile->m_fgColor);
         btnFGColor->SetBitmapLabel (fgBitmap);
 #endif
+        Modified();
     }
     else if (event.GetEventObject () == btnBGColor)
     {
-        m_bgColor = PtermApp::SelectColor (*this, _("Background"), m_bgColor);
+        m_profile->m_bgColor = PtermApp::SelectColor (*this, _("Background"), m_profile->m_bgColor);
 #if defined (_WIN32)
-        btnBGColor->SetBackgroundColour (m_bgColor);
+        btnBGColor->SetBackgroundColour (m_profile->m_bgColor);
 #else
-        paintBitmap (bgBitmap, m_bgColor);
+        paintBitmap (bgBitmap, m_profile->m_bgColor);
         btnBGColor->SetBitmapLabel (bgBitmap);
 #endif
+        Modified();
     }
     else if (event.GetEventObject () == btnOK)
     {
         //buttonbar
-        m_lastTab = tabPrefsDialog->GetSelection ();
         EndModal (wxID_OK);
     }
     else if (event.GetEventObject () == btnCancel)
     {
-        m_lastTab = tabPrefsDialog->GetSelection ();
         EndModal (wxID_CANCEL);
     }
     else if (event.GetEventObject () == btnDefaults)
     {
-        // TODO: SZoppi: Is this re-declaration intentional?
-        wxString str;
-        
-        //reset variable values
-        //tab0
-        //tab1
-        m_ShellFirst = wxT ("");
-        m_connect = false;
-        m_host = DEFAULTHOST;
-        m_port = DefNiuPort;
-        //tab2
-        m_showSignon = false;
-        m_showSysName = false;
-        m_showHost = true;
-        m_showStation = true;
-        //tab3
-        m_classicSpeed = false;
-        m_gswEnable = true;
-        m_numpadArrows = true;
-        m_ignoreCapLock = false;
-        m_platoKb = false;
-#if defined (__WXMAC__)
-        m_useAccel = true;
-#else
-        m_useAccel = false;
-#endif
-        m_beepEnable = true;
-        m_DisableShiftSpace = false;
-        m_DisableMouseDrag = false;
-        //tab4
-        m_scale = 1.0;
-        m_showStatusBar = true;
-#if !defined (__WXMAC__)
-        m_showMenuBar = true;
-#endif
-        m_noColor = false;
-        m_fgColor = wxColour (255, 144, 0);
-        m_bgColor = *wxBLACK;
-        //tab5
-        m_charDelay = PASTE_CHARDELAY;
-        m_lineDelay = PASTE_LINEDELAY;
-        m_autoLF = 0;
-        m_smartPaste = false;
-        m_convDot7 = false;
-        m_conv8Sp = false;
-        m_TutorColor = false;
-        //tab6
-        m_Email = wxT ("");
-        m_SearchURL = DEFAULTSEARCH;
-        m_mTutorBoot = false;
-
-        //reset object values
-        //tab0
-        //tab1
-        if (m_profileEdit)
-        {
-            txtShellFirst->SetValue (m_ShellFirst);
-            //chkConnectAtStartup->SetValue (m_connect);
-            txtDefaultHost->SetValue (m_host);
-            str.Printf ("%ld", m_port);
-            cboDefaultPort->SetValue (str);
-            //tab2
-            chkShowSignon->SetValue (m_showSignon);
-            chkShowSysName->SetValue (m_showSysName);
-            chkShowHost->SetValue (m_showHost);
-            chkShowStation->SetValue (m_showStation);
-        }
-        //tab3
-        chkSimulate1200Baud->SetValue (m_classicSpeed);
-        chkEnableGSW->SetValue (m_gswEnable);
-        chkEnableNumericKeyPad->SetValue (m_numpadArrows);
-        chkIgnoreCapLock->SetValue (m_ignoreCapLock);
-        chkUsePLATOKeyboard->SetValue (m_platoKb);
-        chkUseAccelerators->SetValue (m_useAccel);
-        chkEnableBeep->SetValue (m_beepEnable);
-        chkDisableShiftSpace->SetValue (m_DisableShiftSpace);
-        chkDisableMouseDrag->SetValue (m_DisableMouseDrag);
-        //tab4
-        chkDisableColor->SetValue (m_noColor);
-        btnFGColor->SetBackgroundColour (m_fgColor);
-        btnBGColor->SetBackgroundColour (m_bgColor);
-        //tab5
-        str.Printf ("%ld", m_charDelay);
-        txtCharDelay->SetValue (str);
-        str.Printf ("%ld", m_lineDelay);
-        txtLineDelay->SetValue (str);
-        str.Printf ("%ld", m_autoLF);
-        cboAutoLF->SetValue (str);
-        chkSmartPaste->SetValue (m_smartPaste);
-        chkConvertDot7->SetValue (m_convDot7);
-        chkConvert8Spaces->SetValue (m_conv8Sp);
-        chkTutorColor->SetValue (m_TutorColor);
-        //tab6
-        txtEmail->SetValue (m_Email);
-        txtSearchURL->SetValue (m_SearchURL);
-        if (m_profileEdit)
-            chkMTutorBoot->SetValue(m_mTutorBoot);
-        //radMTutor->SetSelection(LevelToSelect(DEFAULTMLEVEL));
-
-        chkFloppy0->SetValue(m_floppy0);
-        chkFloppy1->SetValue(m_floppy1);
-        txtFloppy0->SetLabel(m_floppy0File);
-        txtFloppy1->SetLabel(m_floppy1File);
-
+        m_profile->init ();
+        SetControlState ();
+        Modified();
     }
     Refresh (false);
 }
 
 void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
 {
-    void OnCheckbox (wxCommandEvent& event);
     if (m_profileEdit)
         lblProfileStatusMessage->SetLabel (wxT (" "));
     //tab0
     //tab1
-    //if (event.GetEventObject () == chkConnectAtStartup)
-    //    m_connect = event.IsChecked ();
     //tab2
     if (event.GetEventObject () == chkShowSignon)
-        m_showSignon = event.IsChecked ();
+        m_profile->m_showSignon = event.IsChecked ();
     else if (event.GetEventObject () == chkShowSysName)
-        m_showSysName = event.IsChecked ();
+        m_profile->m_showSysName = event.IsChecked ();
     else if (event.GetEventObject () == chkShowHost)
-        m_showHost = event.IsChecked ();
+        m_profile->m_showHost = event.IsChecked ();
     else if (event.GetEventObject () == chkShowStation)
-        m_showStation = event.IsChecked ();
+        m_profile->m_showStation = event.IsChecked ();
     //tab3
     else if (event.GetEventObject () == chkSimulate1200Baud)
-        m_classicSpeed = event.IsChecked ();
+        m_profile->m_classicSpeed = event.IsChecked ();
     else if (event.GetEventObject () == chkEnableGSW)
-        m_gswEnable = event.IsChecked ();
+        m_profile->m_gswEnable = event.IsChecked ();
     else if (event.GetEventObject () == chkEnableNumericKeyPad)
-        m_numpadArrows = event.IsChecked ();
+        m_profile->m_numpadArrows = event.IsChecked ();
     else if (event.GetEventObject () == chkIgnoreCapLock)
-        m_ignoreCapLock = event.IsChecked ();
+        m_profile->m_ignoreCapLock = event.IsChecked ();
     else if (event.GetEventObject () == chkUsePLATOKeyboard)
-        m_platoKb = event.IsChecked ();
+        m_profile->m_platoKb = event.IsChecked ();
     else if (event.GetEventObject () == chkUseAccelerators)
-        m_useAccel = event.IsChecked ();
+        m_profile->m_useAccel = event.IsChecked ();
     else if (event.GetEventObject () == chkEnableBeep)
-        m_beepEnable = event.IsChecked ();
+        m_profile->m_beepEnable = event.IsChecked ();
     else if (event.GetEventObject () == chkDisableShiftSpace)
-        m_DisableShiftSpace = event.IsChecked ();
+        m_profile->m_DisableShiftSpace = event.IsChecked ();
     else if (event.GetEventObject () == chkDisableMouseDrag)
-        m_DisableMouseDrag = event.IsChecked ();
+        m_profile->m_DisableMouseDrag = event.IsChecked ();
     //tab4
     else if (event.GetEventObject () == chkDisableColor)
-        m_noColor = event.IsChecked ();
+        m_profile->m_noColor = event.IsChecked ();
     //tab5
     else if (event.GetEventObject () == chkSmartPaste)
-        m_smartPaste = event.IsChecked ();
+        m_profile->m_smartPaste = event.IsChecked ();
     else if (event.GetEventObject () == chkConvertDot7)
-        m_convDot7 = event.IsChecked ();
+        m_profile->m_convDot7 = event.IsChecked ();
     else if (event.GetEventObject () == chkConvert8Spaces)
-        m_conv8Sp = event.IsChecked ();
+        m_profile->m_conv8Sp = event.IsChecked ();
     else if (event.GetEventObject () == chkTutorColor)
-        m_TutorColor = event.IsChecked ();
+        m_profile->m_TutorColor = event.IsChecked ();
     //tab6
     else if (event.GetEventObject () == chkMTutorBoot)
     {
-        m_mTutorBoot = event.IsChecked ();
+        m_profile->m_mTutorBoot = event.IsChecked ();
     }
 
     else if (event.GetEventObject() == chkFloppy0)
     {
-        m_floppy0 = event.IsChecked();
+        m_profile->m_floppy0 = event.IsChecked();
         m_floppy0Changed = true;
     }
 
     else if (event.GetEventObject() == chkFloppy1)
     {
-        m_floppy1 = event.IsChecked();
+        m_profile->m_floppy1 = event.IsChecked();
         m_floppy1Changed = true;
     }
-
+    else
+        return;
+    
+    Modified();
 }
 
-void PtermPrefDialog::OnSelect (wxCommandEvent& event)
+void PtermPrefDialog::OnSelect (wxCommandEvent&)
 {
-    void OnSelect (wxCommandEvent& event);
     wxString profile;
     lblProfileStatusMessage->SetLabel (wxT (" "));
-    if (event.GetEventObject () == lstProfiles)
-    {
-        profile = lstProfiles->GetStringSelection ();
-        profile = txtProfile->GetLineText (0);
-        btnAdd->Enable (!profile.IsEmpty ());
-    }
 }
 
 void PtermPrefDialog::OnComboSelect (wxCommandEvent& event)
 {
-    void OnComboSelect (wxCommandEvent& event);
     lblProfileStatusMessage->SetLabel (wxT (" "));
     //tab1
     if (event.GetEventObject () == cboDefaultPort)
-        cboDefaultPort->GetValue ().ToCLong (&m_port);
+        cboDefaultPort->GetValue ().ToCLong (&m_profile->m_port);
     //tab5
     else if (event.GetEventObject () == cboAutoLF)
-        cboAutoLF->GetStringSelection ().ToCLong (&m_autoLF);
+        cboAutoLF->GetStringSelection ().ToCLong (&m_profile->m_autoLF);
+    else
+        return;
+    
+    Modified();
 }
 
 void PtermPrefDialog::OnDoubleClick (wxCommandEvent& event)
 {
-    void OnDoubleClick (wxCommandEvent& event);
     wxString profile;
     wxString str;
     wxString filename;
+    PtermProfile *np = NULL;
+    
     lblProfileStatusMessage->SetLabel (wxT (" "));
     if (event.GetEventObject () == lstProfiles)
     {
         profile = lstProfiles->GetStringSelection ();
-        profile = txtProfile->GetLineText (0);
-        btnAdd->Enable (!profile.IsEmpty ());
         //do the load code
-        profile = lstProfiles->GetStringSelection ();
-        if (ptermApp->LoadProfile (profile, wxT ("")))
+        np = new PtermProfile (profile, true);
+        if (np->IsOk ())
         {
+            if (m_profile != NULL)
+                delete m_profile;
+            m_profile = np;
             SetControlState ();
             lblProfileStatusMessage->SetLabel (_("Profile loaded."));
-            this->SetLabel ("Profile Editor - " + this->m_curProfile);
+            Modified (false);
         }
         else
         {
-            filename = ptermApp->ProfileFileName (profile);
-            str.Printf (wxT ("Unable to load profile: %s"), 
-                        filename);
-            wxMessageBox (str, _("Error"), wxOK | wxICON_HAND);
+            if (np != NULL)
+                delete np;
+            str.Printf (_("Unable to load profile: %s"), 
+                        m_profile->m_fileName.GetFullPath ());
+            wxMessageBox (str, _("Error"), wxOK | wxICON_ERROR);
         }
     }
 }
 
 void PtermPrefDialog::OnChange (wxCommandEvent& event)
 {
-    void OnChange (wxCommandEvent& event);
     wxString profile;
 
     if (m_profileEdit)
     {
-        lblProfileStatusMessage->SetLabel (wxT (" "));
         if (event.GetEventObject () == txtProfile)
         {
             profile = txtProfile->GetLineText (0);
-            btnAdd->Enable (!profile.IsEmpty ());
+            btnSaveAs->Enable (!profile.IsEmpty ());
         }
         //tab1
         else if (event.GetEventObject () == txtShellFirst)
-            m_ShellFirst = txtShellFirst->GetLineText (0);
+            m_profile->m_ShellFirst = txtShellFirst->GetLineText (0);
         else if (event.GetEventObject () == txtDefaultHost)
-            m_host = txtDefaultHost->GetLineText (0);
+            m_profile->m_host = txtDefaultHost->GetLineText (0);
         else if (event.GetEventObject () == cboDefaultPort)
-            cboDefaultPort->GetValue ().ToCLong (&m_port);
+            cboDefaultPort->GetValue ().ToCLong (&m_profile->m_port);
+        else
+            return;
     }
 
     //tab5
     else if (event.GetEventObject () == cboAutoLF)
-        cboAutoLF->GetValue ().ToCLong (&m_autoLF);
+        cboAutoLF->GetValue ().ToCLong (&m_profile->m_autoLF);
     //tab5
     else if (event.GetEventObject () == txtCharDelay)
-        txtCharDelay->GetLineText (0).ToCLong (&m_charDelay);
+        txtCharDelay->GetLineText (0).ToCLong (&m_profile->m_charDelay);
     else if (event.GetEventObject () == txtLineDelay)
-        txtLineDelay->GetLineText (0).ToCLong (&m_lineDelay);
+        txtLineDelay->GetLineText (0).ToCLong (&m_profile->m_lineDelay);
     //tab6
     else if (event.GetEventObject () == txtEmail)
-        m_Email = txtEmail->GetLineText (0);
+        m_profile->m_Email = txtEmail->GetLineText (0);
     else if (event.GetEventObject () == txtSearchURL)
-        m_SearchURL = txtSearchURL->GetLineText (0);
+        m_profile->m_SearchURL = txtSearchURL->GetLineText (0);
+    else
+        return;
+
+    Modified();    
 }
 
 void PtermPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
@@ -1512,3 +1128,66 @@ void PtermPrefDialog::paintBitmap (wxBitmap &bm, wxColour &color)
     memDC.SelectObject (wxNullBitmap);
 }
 
+void PtermPrefDialog::SelectProfile (int n)
+{
+    wxString profile;
+    wxString str;
+    wxString filename;
+
+    if (n != wxNOT_FOUND)
+        profile = lstProfiles->GetString (n);
+    if (m_profile != NULL)
+    {
+        if (profile == m_profile->m_profileName)
+            return;
+        delete m_profile;
+    }
+    if (profile.IsEmpty ())
+        m_profile = new PtermProfile ();
+    else
+    {
+        m_profile = new PtermProfile (profile, true);
+        if (!m_profile->IsOk ())
+        {
+            str.Printf (_("Profile '%s' not found. Problem loading file:\n\n    %s"),
+                        profile, m_profile->m_fileName.GetFullPath ());
+            wxMessageBox (str, _("Error"), wxOK | wxICON_ERROR);
+        }
+    }
+}
+
+
+ProfileList::ProfileList (wxWindow * parent, wxWindowID id,
+                          const wxPoint & pos,
+                          const wxSize & size) :
+    wxListBox (parent, id, pos, size, 0, NULL, wxLB_SORT)
+{
+    wxFont dfont = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+                           wxFONTWEIGHT_NORMAL);
+    SetFont (dfont);
+    RefreshList ();
+}
+
+void ProfileList::RefreshList (void)
+{
+    int i;
+    wxString filename;
+    bool cont;
+    wxDir ldir (ptermApp->m_userdatadir);
+    
+    Clear ();
+    if (ldir.IsOpened ())
+    {
+        cont = ldir.GetFirst (&filename, wxT ("*.ppf"), wxDIR_DEFAULT);
+        for (i = 0; cont; i++)
+        {
+            wxFileName fn (filename);
+            Append (fn.GetName ());
+            cont = ldir.GetNext (&filename);
+        }
+        i = FindString (ptermApp->m_curProfile, true);
+        if (i != wxNOT_FOUND)
+            EnsureVisible (i);
+        SetSelection (i);
+    }
+}

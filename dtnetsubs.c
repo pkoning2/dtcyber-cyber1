@@ -14,9 +14,6 @@
 // declarations
 // ============================================================================
 
-// vvvvvvv This should be in the C++ Compiler directives for Visual Studio
-// #define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
-
 /*
 **  -------------
 **  Include Files
@@ -1155,13 +1152,13 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
 **------------------------------------------------------------------------*/
 static int dtRead (NetFet *fet, NetPortSet *ps)
     {
-#if defined(_WIN32)
-    ps;     //  No Operation; Suppresses C4100 Compiler Warning
-#endif
     int i;
     u8 *in, *out, *nextin;
     int size;
     
+#if defined(_WIN32)
+    (void) ps;     //  No Operation; Suppresses C4100 Compiler Warning
+#endif
     /*
     **  Copy the pointers, since they are volatile.
     */
@@ -1478,6 +1475,9 @@ static dtThreadFun (dtSendThread, param)
         perror ("sem_open failed");
         exit (1);
     }
+
+    /* Mac does not have MSG_NOSIGNAL, so turn the SIGPIPE signal off */
+    signal (SIGPIPE, SIG_IGN);
 #endif
     
     while (1)

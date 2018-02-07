@@ -12,8 +12,8 @@
 
 #include "CommonHeader.h"
 #include "PtermApp.h"
-
-extern PtermApp *ptermApp;
+#include "PtermProfile.h"
+#include "PtermProfileList.h"
 
 // define the connection dialog
 class PtermConnDialog : public wxDialog
@@ -24,7 +24,6 @@ public:
     
     void OnButton (wxCommandEvent& event);
     void OnSelect (wxCommandEvent& event);
-    void OnChange (wxCommandEvent& event);
     void OnDoubleClick (wxCommandEvent& event);
     void OnClose (wxCloseEvent &) { 
         EndModal (wxID_CANCEL); 
@@ -38,22 +37,20 @@ public:
     }
 
     void CreateDefaultProfiles (wxDir& ldir);
-    
-    wxString        m_ShellFirst;
-    wxString        m_curProfile;
-    wxString        m_host;
-    wxString        m_port;
-    bool            m_Boot;
-    wxConfig        m_config;
 
-    wxListBox* lstProfiles;
-    wxTextCtrl* txtShellFirst;
-    wxTextCtrl* txtHost;
-    wxComboBox* cboPort;
-    wxButton* btnCancel;
-    wxButton* btnConnect;
+    PtermProfile    *m_profile;
+
+    ProfileList *lstProfiles;
+    wxTextCtrl *txtShellFirst;
+    wxTextCtrl *txtHost;
+    wxComboBox *cboPort;
+    wxButton *btnEdit;
+    wxButton *btnCancel;
+    wxButton *btnConnect;
     
 private:
+    void SelectProfile (int n);
+    
     DECLARE_EVENT_TABLE ()
 };
 

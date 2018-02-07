@@ -14,56 +14,27 @@
 
 class PtermFrame;
 
+enum ConnType_e
+{
+    LOCAL,
+    HOST,
+    HELP,
+    TEST
+};
+
 // Pterm connection state
 class PtermConnection
 {
 public:
-    // override base class virtuals
-    // ----------------------------
-    PtermConnection (PtermFrame *owner, const wxString &host, int port);
-    ~PtermConnection ();
-    
-    // Callback handlers
-    static void s_connCallback (NetFet *np, int portNum, void *arg);
-    static void s_dataCallback (NetFet *np, int bytes, void *arg);
-    void connCallback (void);
-    void dataCallback (void);
-    void endGsw (void);
-    
-    int AssembleNiuWord (void);
-    int AssembleAsciiWord (void);
-    int AssembleAutoWord (void);
-    int NextWord (void);
-    int NextGswWord (bool idle);
-    
-    void SendData (const void *data, int len);
+    PtermConnection ();
+    virtual ~PtermConnection ();
 
-    bool IsEmpty (void) const
-    {
-        return (m_displayIn == m_displayOut);
-    }
-    bool IsFull (void) const
-    {
-        int next;
-    
-        next = m_displayIn + 1;
-        if (next == RINGSIZE)
-        {
-            next = 0;
-        }
-        return (next == m_displayOut);
-    }
-    int RingCount (void) const
-    {
-        if (m_displayIn >= m_displayOut)
-        {
-            return m_displayIn - m_displayOut;
-        }
-        else
-        {
-            return RINGSIZE + m_displayIn - m_displayOut;
-        }
-    }
+    virtual ConnType_e ConnType (void) const = 0;
+    virtual int NextWord (void) = 0;
+    virtual void SendData (const void *data, int len);
+
+    void SetOwner (PtermFrame *owner) { m_owner = owner; }
+    virtual int RingCount (void) const;
     bool Ascii (void) const
     {
         return (m_connMode == ascii);
@@ -76,8 +47,60 @@ public:
     {
         return m_gswActive;
     }
-    void StoreWord (int word);
+    virtual void StoreWord (int word);
+    virtual void Connect (void);
 
+protected:
+    PtermFrame  *m_owner;
+    bool        m_gswActive;
+    connMode    m_connMode;
+};
+
+class PtermLocalConnection : public PtermConnection
+{
+    ConnType_e ConnType (void) const { return LOCAL; }
+    int NextWord (void);
+};
+
+class PtermHelpConnection : public PtermConnection
+{
+public:
+    PtermHelpConnection ();
+    ConnType_e ConnType (void) const { return HELP; }
+    
+    int m_index;
+    static const u32 keyboardhelp[];
+    int NextWord (void);
+};
+
+class PtermTestConnection : public PtermConnection
+{
+public:
+    PtermTestConnection (FILE *testdata);
+    ~PtermTestConnection ();
+    ConnType_e ConnType (void) const { return TEST; }
+    
+    FILE *m_testdata;
+    u32 m_pseq;
+    int NextWord (void);
+};
+
+class PtermHostConnection : public PtermConnection
+{
+public:
+    PtermHostConnection (const wxString &host, int port);
+    virtual ~PtermHostConnection ();
+    ConnType_e ConnType (void) const { return HOST; }
+    
+    int NextWord (void);
+    
+    void SendData (const void *data, int len);
+    void StoreWord (int word);
+    void Connect (void);
+    int RingCount (void) const;
+
+    int NextGswWord (bool idle);
+    
 private:
     NetPortSet  m_portset;
     NetFet      *m_fet;
@@ -85,20 +108,43 @@ private:
     volatile int m_displayIn, m_displayOut;
     u32         m_gswRing[GSWRINGSIZE];
     volatile int m_gswIn, m_gswOut;
-    PtermFrame  *m_owner;
     wxString    m_hostName;
     int         m_port;
     wxCriticalSection m_pointerLock;
-    bool        m_gswActive;
     bool        m_gswStarted;
     int         m_savedGswMode;
     int         m_gswWord2;
-    connMode    m_connMode;
     int         m_pending;
     in_addr_t   m_hostAddr;
     bool        m_connActive;
     
+    // Callback handlers
+    static void s_connCallback (NetFet *np, int portNum, void *arg);
+    static void s_dataCallback (NetFet *np, int bytes, void *arg);
+    void connCallback (void);
+    void dataCallback (void);
+    void endGsw (void);
+    
+    int AssembleNiuWord (void);
+    int AssembleAsciiWord (void);
+    int AssembleAutoWord (void);
     int NextRingWord (void);
+
+    bool IsEmpty (void) const
+    {
+        return (m_displayIn == m_displayOut);
+    }
+    bool IsFull (void) const
+    {
+        volatile int next;
+    
+        next = m_displayIn + 1;
+        if (next == RINGSIZE)
+        {
+            next = 0;
+        }
+        return (next == m_displayOut);
+    }
 };
 
 #endif   // __PTermConnection_H__

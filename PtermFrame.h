@@ -17,6 +17,17 @@
 #include "MTFile.h"
 #include "PtermPrintout.h"
 #include "PtermApp.h"
+#include "PtermProfile.h"
+
+// Macro to include keyboard accelerator only if option enabled
+#define ACCELERATOR(x) + ((m_profile->m_useAccel) ? wxString (wxT (x)) : \
+                          wxString (wxT ("")))
+// Macro to include keyboard accelerator only if MAC
+#if defined (__WXMAC__)
+#define MACACCEL(x) + wxString (wxT (x))
+#else
+#define MACACCEL(x)
+#endif
 
 #define ResetProc Z80Reset
 #define MicroEmulate Z80Emulate(5000000)
@@ -49,6 +60,11 @@
 #if PTERM_MDI
 #define PtermFrameBase  wxMDIChildFrame
 
+struct DummyProf 
+{
+    bool m_useAccel;
+};
+
 class PtermMainFrame : public wxMDIParentFrame
 {
 public:
@@ -66,6 +82,7 @@ public:
     wxMenuBar   *menuBar;
     wxMenu      *menuFile;
     wxMenu      *menuHelp;
+    DummyProf   *m_profile;
 };
 
 extern PtermMainFrame *PtermFrameParent;
@@ -88,8 +105,8 @@ class PtermFrame : public PtermFrameBase, public Z80
 
 public:
     // ctor(s)
-    PtermFrame(const wxString &host, int port, const wxString& title,
-        bool mtutorBoot = false);
+    PtermFrame(const wxString& title, PtermProfile *profile,
+               PtermConnection *conn, bool helpframe = false);
     ~PtermFrame();
 
     // event handlers (these functions should _not_ be virtual)
@@ -101,6 +118,7 @@ public:
     void OnMz80(wxTimerEvent& event);
     void OnPasteTimer(wxTimerEvent& event);
     void OnShellTimer(wxTimerEvent& event);
+    void OnConnectAgain(wxCommandEvent& event);
     void OnQuit(wxCommandEvent& event);
 #if !defined (__WXMAC__)
     void OnToggleMenuBar(wxCommandEvent &event);
@@ -131,14 +149,13 @@ public:
     void OnPrint(wxCommandEvent& event);
     void OnPrintPreview(wxCommandEvent& event);
     void OnPageSetup(wxCommandEvent& event);
-    void OnPref(wxCommandEvent& event);
     void OnActivate(wxActivateEvent &event);
     void SavePreferences(void);
     void SetColors(wxColour &newfg, wxColour &newbg);
     void OnFullScreen(wxCommandEvent &event);
     void OnResize(wxSizeEvent& event);
     void OnReset(wxCommandEvent& event);
-    void OnMtutorSettings(wxCommandEvent& event);
+    void OnSessionSettings(wxCommandEvent& event);
 
     void UpdateDisplayState(void);
 #if defined (__WXMSW__)
@@ -148,13 +165,13 @@ public:
     void Mz80Waiter(int msec);
     void BootMtutor(void);
     void BuildMenuBar(void);
-    void BuildFileMenu(int port);
-    void BuildEditMenu(int port);
+    void BuildFileMenu(void);
+    void BuildEditMenu(void);
     // This one has a different signature because it is also used as
     // part of BuildPopupMenu
-    void BuildViewMenu(wxMenu *menu, int port);
+    void BuildViewMenu(wxMenu *menu);
     void BuildHelpMenu(void);
-    void BuildPopupMenu(int port);
+    void BuildPopupMenu(void);
     void BuildStatusBar(bool connecting = false);
     void ptermSendKey1(int key);
     void ptermSendKey(u32 keys);
@@ -189,6 +206,8 @@ public:
     void trace(const wxString &) const;
     void trace(const char *, ...) const;
 
+    PtermProfile *m_profile;
+    bool        m_helpframe;
     wxMemoryDC  *m_memDC;
     bool        tracePterm;
     int         m_currentWord;      // to be displayed when tracing
@@ -303,10 +322,6 @@ private:
     u32         m_red;
     u32         m_green;
     u32         m_blue;
-    wxString    m_curProfile;
-    wxString    m_ShellFirst;
-    wxString    m_hostName;
-    long        m_port;
     wxTimer     m_timer;
     wxTimer     m_Mclock;
     wxTimer     m_Dclock;
@@ -485,8 +500,8 @@ private:
     // PLATO drawing primitives
     void ptermDrawChar(int x, int y, int snum, int cnum, bool autobs = false);
     void ptermDrawCharInto(int x, int y, const u16 *charp,
-        u32 fpix, u32 bpix, int cmode,
-        bool xor_p, PixelData &pixmap);
+                           u32 fpix, u32 bpix, int cmode,
+                           bool xor_p, PixelData &pixmap);
     void ptermDrawPoint(int x, int y);
 #ifdef __WXMSW__
     void fixAlpha(void);
@@ -499,7 +514,7 @@ private:
     void ptermSetName(wxString &winName);
     void ptermPaint(int pat);
     void ptermPaintWalker(int x, int y, PixelData & pixmap,
-        int pat, int pass);
+                          int pat, int pass);
     void ptermSaveWindow(int d);
     void ptermRestoreWindow(int d);
 

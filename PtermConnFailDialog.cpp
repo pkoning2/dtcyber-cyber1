@@ -20,7 +20,8 @@ BEGIN_EVENT_TABLE (PtermConnFailDialog, wxDialog)
     END_EVENT_TABLE ();
 
 PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
-                                          wxPoint pos, wxSize loc, int code)
+                                          wxPoint pos, wxSize loc, int code,
+                                          PtermProfile *prof)
     : wxDialog (NULL, id, title, pos, loc)
 {
 
@@ -82,8 +83,7 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     str.Append (_("You may open a new connection, reconnect\n"
                   "to the same host/port, or close the window."));
     lblPrompt->SetLabel (str);
-    str.Printf (_("\nFailed: %s:%ld"), ptermApp->m_hostName,
-                ptermApp->m_port);
+    str.Printf (_("\nFailed: %s:%ld"), prof->m_host, prof->m_port);
     str.Append (_("\n\nFor more information, see: "));
     
     lblHost->SetLabel (str);
@@ -98,7 +98,6 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
 
 void PtermConnFailDialog::OnButton (wxCommandEvent& event)
 {
-    void OnButton (wxCommandEvent& event);
     if (event.GetEventObject () == btnNew)
     {
         EndModal (wxID_OK);
@@ -113,9 +112,8 @@ void PtermConnFailDialog::OnButton (wxCommandEvent& event)
     }
 }
 
-void PtermConnFailDialog::OnClose (wxCloseEvent& event)
+void PtermConnFailDialog::OnClose (wxCloseEvent&)
 {
-    void OnClose (wxCloseEvent& event);
     EndModal (wxID_CANCEL);
 }
 

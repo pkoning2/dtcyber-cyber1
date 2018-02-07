@@ -11,13 +11,14 @@
 #define __PtermConnFailDialog_H__ 1
 
 #include "CommonHeader.h"
+#include "PtermProfile.h"
 
 // define the connection fail dialog
 class PtermConnFailDialog : public wxDialog
 {
 public:
     PtermConnFailDialog (wxWindowID id, const wxString &title, wxPoint pos,
-                         wxSize size, int word);
+                         wxSize size, int word, PtermProfile *prof);
     
     void OnButton (wxCommandEvent& event);
     void OnClose (wxCloseEvent& event);

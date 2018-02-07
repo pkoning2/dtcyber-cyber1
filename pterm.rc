@@ -30,7 +30,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-PTERM_32                ICON                    "pterm_32.ico"
+PTERM_32                ICON                    "pterm.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -106,7 +106,7 @@ BEGIN
             VALUE "FileDescription", "PLATO Terminal Emulator"
             VALUE "FileVersion", "5.1.0.0"
             VALUE "InternalName", "Pterm"
-            VALUE "LegalCopyright", "Copyright © 2004-2017, Paul Koning, Joe Stanton, Dale Sinder"
+            VALUE "LegalCopyright", "Copyright © 2004-2018, Paul Koning, Joe Stanton, Dale Sinder"
             VALUE "OriginalFilename", "Pterm.exe"
             VALUE "ProductName", "PLATO Terminal Emulator"
             VALUE "ProductVersion", "5.1.0.0"

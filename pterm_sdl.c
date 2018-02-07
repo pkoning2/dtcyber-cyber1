@@ -222,9 +222,6 @@ static int mapvol (int volume)
 
 static void gswCallback (void *userdata, uint8_t *b, int len)
 {
-#if defined(_WIN32)
-    userdata;               // No Operation; Suppresses Warning C4100
-#endif
     int16_t *stream = (int16_t *) b;
     int i, word, voice;
     int audio;
@@ -232,6 +229,9 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
     int items;
     void *buf = b;
     
+#if defined(_WIN32)
+    (void) userdata;        // No Operation; Suppresses Warning C4100
+#endif
     len /= sizeof (*stream);
     items = len;            // Remember the total number requested
     

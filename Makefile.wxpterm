@@ -79,7 +79,7 @@ SDLCFLAGS = $(SDLINCL)
 
 PTOBJS	= dtnetsubs.o pterm_sdl.o FrameCanvas.o MTFile.o PtermApp.o \
 	PtermConnDialog.o PtermConnFailDialog.o PtermConnection.o \
-	PtermPrefDialog.o PtermPrintout.o Trace.o Z80.o
+	PtermProfile.o PtermPrefDialog.o PtermPrintout.o Trace.o Z80.o
 DD60OBJS = $(SOBJS) dd60.o knob.o iir.o 
 
 ifneq ("$(PTERMVERSION)","xxx")
