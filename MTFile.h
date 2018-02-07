@@ -34,6 +34,9 @@ public:
     bool reportError(const char *fn);
 
 private:
+    u16 _chkSum = 0;
+    void CalcCheck (u8 b);
+
 #ifdef _WIN32
     HANDLE ms_handle;
 #else
@@ -43,6 +46,21 @@ private:
     int rcnt;
     int wcnt;
 };
+
+#define CHECKOUT                                        \
+          if (rcnt == 129)                              \
+            {                                           \
+                rcnt++;                                 \
+                return (u8)(_chkSum & 0xff);            \
+            }                                           \
+          else if (rcnt == 130)                         \
+            {                                           \
+                u8 ret = (u8)((_chkSum >> 8) & 0xff);   \
+                rcnt = 1;                               \
+                _chkSum = 0;                            \
+                return ret;                             \
+            }
+
 
 #endif    // __MTFile_H__
 

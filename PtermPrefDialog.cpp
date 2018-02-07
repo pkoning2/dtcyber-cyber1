@@ -1158,7 +1158,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
     {
         wxFileDialog
             openFileDialog(this, _("Open Floppy 0 file"), "", "",
-                "MTU files (*.mtu)|*.mtu", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+                "MTE files (*.mte)|*.mte", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
         MTFile testFile;
 
@@ -1180,7 +1180,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
     {
         wxFileDialog
             openFileDialog(this, _("Open Floppy 1 file"), "", "",
-                "MTU files (*.mtu)|*.mtu", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+                "MTE files (*.mte)|*.mte", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
         MTFile testFile;
   

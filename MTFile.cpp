@@ -131,6 +131,7 @@ u8 MTFile::ReadByte()
 #ifdef _WIN32
     if (ms_handle != NULL)
     {
+        CHECKOUT
     retry1:
         u8 mybyte = 0;
         DWORD length;
@@ -139,6 +140,7 @@ u8 MTFile::ReadByte()
 #else
     if (fileHandle != -1)
     {
+        CHECKOUT
     retry1:
         u8 mybyte = 0;
         size_t x = read(fileHandle, &mybyte, 1);
@@ -156,16 +158,17 @@ u8 MTFile::ReadByte()
                 goto retry1;
             printf("FATAL floppy read error!  position: %06lx\n", position);
         }
-
+        
         //printf("readcnt: %d data: %02x  position: %06lx\n", rcnt, mybyte, position);
         position++;
         rcnt++;
-        if (rcnt > 130)
-        {
-            //printf("Completed Sector read. Sector = %04lx\n", (position/130)-1);
-            rcnt = 1;
-        }
+        //if (rcnt > 130)
+        //{
+        //    //printf("Completed Sector read. Sector = %04lx\n", (position/130)-1);
+        //    rcnt = 1;
+        //}
 
+        CalcCheck (mybyte);
         return mybyte;
     }
     return 0;
@@ -174,6 +177,17 @@ u8 MTFile::ReadByte()
 void MTFile::WriteByte(u8 val)
 {
     int retry = 0;
+
+    if (wcnt > 128)
+    {
+        wcnt++;
+        return;
+    }
+    if (wcnt > 129)
+    {
+        wcnt = 1;
+        return;
+    }
 
 #ifdef _WIN32
     if (ms_handle != NULL)
@@ -213,4 +227,24 @@ void MTFile::WriteByte(u8 val)
 
         position++;
     }
-    }
+}
+
+void MTFile::CalcCheck (u8 b)
+{
+    u8 cupper = (u8)((_chkSum >> 8) & 0xff);
+    u8 clower = (u8)(_chkSum & 0xff);
+    cupper ^= b;
+    int x = cupper << 1;
+    if ((x & 0x100) > 0)
+        x = (x | 1) & 0xff;
+    cupper = (u8)x;
+    clower ^= b;
+    int y = 0;
+    if ((clower & 1) == 1)
+        y = 0x80;
+    x = clower >> 1;
+    x = (x | y) & 0xff;
+    clower = (u8)x;
+    _chkSum = (u16)(((cupper << 8) & 0xff00) | (u16)(clower & 0xff));
+}
+

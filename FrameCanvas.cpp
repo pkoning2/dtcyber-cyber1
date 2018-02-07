@@ -7426,7 +7426,7 @@ void PtermFrame::BootMtutor()
 
     ResetProc();
 
-    m_MTFiles[0].Seek(130 + 25);
+    m_MTFiles[0].Seek(25);
     u8 boot1 = m_MTFiles[0].ReadByte();
     if (boot1 == 0)
     {
@@ -7435,10 +7435,10 @@ void PtermFrame::BootMtutor()
     }
 
     // read level of disk for patch set to use
-    m_MTFiles[0].Seek (130 + 36);
+    m_MTFiles[0].Seek (36);
     m_mtPLevel = m_MTFiles[0].ReadByte ();
 
-    m_MTFiles[0].Seek(21970);   // read interp. into ram
+    m_MTFiles[0].Seek(21504);   // read interp. into ram
     u16 address = 0x5300;       // interp fwa
     u16 sectors;
     u16 bytes;
@@ -7706,7 +7706,7 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
                     case 7: // 128 bytes/sector plus two check bytes
                         m_mtDiskCheck2 = acc;
 
-                        m_mtSeekPos = (130 * 64 * m_mtDiskTrack) + (130 * m_mtDiskSector);
+                        m_mtSeekPos = (128 * 64 * m_mtDiskTrack) + (128 * (m_mtDiskSector-1));
                         m_MTFiles[m_mtDiskUnit&1].Seek(m_mtSeekPos);
                         break;
 
@@ -7737,7 +7737,7 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
                     //break;
                 default:
                     m_MTFiles[m_mtDiskUnit].Seek(0);
-                    for (long int i = 0 ;  i < (130 * 64 * 160) ; i++)
+                    for (long int i = 0 ;  i < (128 * 64 * 154) ; i++)
                     {
                         m_MTFiles[m_mtDiskUnit&1].WriteByte(0);
                     }
