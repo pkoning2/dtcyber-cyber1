@@ -9,7 +9,7 @@
 #ifndef __ZEXTEST_INCLUDED__
 #define __ZEXTEST_INCLUDED__
 
-#include "z80emu.h"
+#include "Z80emu.h"
 
 typedef struct ZEXTEST {
 
