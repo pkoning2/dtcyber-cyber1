@@ -91,7 +91,7 @@ the Pterm application lives.  That directory is OS-dependent:
 
     Windows:  C:\Documents and Settings\<yourname>\Application Data\Pterm
     Mac OS:   ~/Library/Application Support/Pterm/
-    Linux:    {to be supplied}
+    Unix:     ~/.Pterm/
     
 If you have saved profiles you want to carry over, copy them into that
 directory before starting Pterm.  If the profiles directory is empty

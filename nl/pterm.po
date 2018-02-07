@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-07 13:22-0500\n"
+"POT-Creation-Date: 2018-02-07 15:34-0500\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -341,24 +341,24 @@ msgstr " PLATO toetsenbord "
 msgid " Program ended"
 msgstr "Programma is geëindigd"
 
-#: PtermApp.cpp:104
+#: PtermApp.cpp:111
 msgid "Error creating application data directory "
 msgstr "Probleem bij aanmaken van de programma-informatiefolder"
 
-#: PtermApp.cpp:396
+#: PtermApp.cpp:403
 msgid "Open a new terminal window"
 msgstr "Nieuw terminalvenster openmaken"
 
-#: PtermApp.cpp:443 PtermConnDialog.cpp:134
+#: PtermApp.cpp:450 PtermConnDialog.cpp:134
 #, fuzzy
 msgid "Profile Editor"
 msgstr "Voorkeurbestand"
 
-#: PtermApp.cpp:459 PtermApp.cpp:464
+#: PtermApp.cpp:466 PtermApp.cpp:471
 msgid "PLATO terminal emulator."
 msgstr "PLATO terminal-emulator."
 
-#: PtermApp.cpp:499
+#: PtermApp.cpp:506
 msgid "Keyboard Help"
 msgstr "Toetsenbordbeschrijving"
 
