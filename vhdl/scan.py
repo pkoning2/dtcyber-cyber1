@@ -206,18 +206,6 @@ class Module:
             # Offsets to non-memory pins
             self.offsets = [ 0.52, None, 1.0, None ]
 
-wlheader = """#
-# OCR from {}
-#
-# That document is one of the CDC 6600 "Chassis Tabs" manuals
-# which document the detailed hardware design of the 6600 as
-# created by Seymour Cray and his team at Control Data.
-#
-# Scans supplied from the Computer History Museum collection
-# by Al Kossow.
-#
-"""
-
 class scanwin (wx.Window):
     """Display window class derived from wx.Window which displays a portion of
     a selected PDF page (of the first/only image on that page, that is).
@@ -651,11 +639,14 @@ class topframe (wx.Frame):
         if not lm.pins[1]:
             self.maxindex -= 1
         self.index = self.minindex
-        self.sframe = scanwin (self, wx.ID_ANY, wx.Size (fw, fh),
-                               wx.Point (0, 0), fn, p.wide)
+        if fn:
+            self.sframe = scanwin (self, wx.ID_ANY, wx.Size (fw, fh),
+                                   wx.Point (0, 0), fn, p.wide)
+            self.sframe.Show (True)
+        else:
+            self.sframe = None
         self.Bind (wx.EVT_CHAR_HOOK, self.key)
         self.Bind (wx.EVT_TEXT_ENTER, self.nextslot)
-        self.sframe.Show (True)
         self.eframe = entrywin (self, wx.ID_ANY, wx.Point (fw, 0))
         self.eframe.Show (True)
         self.showpage ()
@@ -889,9 +880,10 @@ class topframe (wx.Frame):
                 self.scanindex = self.index - sr + sindex
             self.curpage, self.subpage = divmod (self.scanindex, 4)
             self.settitle ()
-            self.sframe.setbitmap (self.curpage,
-                                   mod.offsets[self.subpage],
-                                   mod.voff)
+            if self.sframe:
+                self.sframe.setbitmap (self.curpage,
+                                       mod.offsets[self.subpage],
+                                       mod.voff)
             refs = self.findrefs (mod)
             self.eframe.load (mod, pins, mod.slots[pins2], pins2, refs)
             self.eframe.top ()
@@ -907,6 +899,8 @@ ap.add_argument ("-o", "--offset", type = float, default = 0.08,
 ap.add_argument ("-w", "--wires", action = "store_true",
                  default = False, help = "Include wire length for review")
 ap.add_argument ("-p", "--pdf", help = "Path to PDF file for scan images")
+ap.add_argument ("--no-pdf", help = "Don't use a scan image PDF",
+                 action = "store_false", dest = "pdf")
 ap.add_argument ("--wide", action = "store_true", default = False,
                  help = "Show entire half-page with pins")
 
@@ -924,13 +918,14 @@ class scanApp (wx.App):
         defvoff = p.offset
         pdf_filename = p.pdf
         checkwires = p.wires
-        if not pdf_filename:
+        if pdf_filename is None:
             if m:
                 pdf_filename = m.group (0)
             else:
                 print ("No PDF file name found in wire list")
                 sys.exit (1)
-        pdf_filename = os.path.join (pdf_path, pdf_filename)
+        if pdf_filename:
+            pdf_filename = os.path.join (pdf_path, pdf_filename)
         print (wl_fn, pdf_filename)
         self.tf = topframe (display, wx.ID_ANY, "Scan display",
                             pdf_filename, wl, p)
