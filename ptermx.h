@@ -41,11 +41,12 @@
 
 // Special non-data values found in the PLATO data ring
 #define C_NODATA        -1      // No more pending data in processing loop
-#define C_CONNFAIL      -2      // Failed to connect
+#define C_CONNFAIL1     -2      // Failed to connect, hostname unknown
 #define C_DISCONNECT    -3      // Connection was dropped
 #define C_GSWEND        -4      // Stop GSW
 #define C_CONNECTING    -5      // Connect request is in progress
 #define C_CONNECTED     -6      // Connection has been established
+#define C_CONNFAIL2     -7      // Failed to connect, no address worked
 
 #define STATUS_TIP      0
 #define STATUS_TRC      1

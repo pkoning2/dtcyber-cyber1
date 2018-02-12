@@ -17,7 +17,8 @@
 // ----------------------------------------------------------------------------
 
 PtermConnection::PtermConnection ()
-    : m_gswActive (false),
+    : m_connActive (false),
+      m_gswActive (false),
       m_connMode (both)
 {
 }
@@ -164,12 +165,11 @@ PtermHostConnection::PtermHostConnection (const wxString &host, int port)
       m_gswStarted (false),
       m_savedGswMode (0),
       m_gswWord2 (0),
-      m_pending (0),
-      m_connActive (false)
+      m_pending (0)
 {
     m_hostName = host;
 
-    m_portset.callBack = s_connCallback;
+    m_portset.callBack = NULL;
     m_portset.dataCallBack = s_dataCallback;
     m_portset.callArg = m_portset.dataCallArg = this;
     m_portset.portNum = 0;      // No listening
@@ -200,7 +200,7 @@ void PtermHostConnection::Connect (void)
     hp = gethostbyname (m_hostName.mb_str ());
     if (hp == NULL || hp->h_length == 0)
     {
-        StoreWord (C_CONNFAIL);
+        StoreWord (C_CONNFAIL1);
         wxWakeUpIdle ();
         return;
     }
@@ -228,20 +228,12 @@ void PtermHostConnection::Connect (void)
     if (conntries == addrcount)
     {
         // We ran out of addresses
-        StoreWord (C_CONNFAIL);
+        StoreWord (C_CONNFAIL2);
     }
     if (addresses != NULL)
     {
         delete [] addresses;
     }
-}
-
-void PtermHostConnection::s_connCallback (NetFet *, int, void *arg)
-{
-    PtermHostConnection *self = (PtermHostConnection *) arg;
-    
-    tracex ("Connection callback on %p", self);
-    self->connCallback ();
 }
 
 void PtermHostConnection::s_dataCallback (NetFet *, int, void *arg)
@@ -250,16 +242,6 @@ void PtermHostConnection::s_dataCallback (NetFet *, int, void *arg)
     
     tracex ("Data callback on %p", self);
     self->dataCallback ();
-}
-
-void PtermHostConnection::connCallback (void)
-{
-    if (!dtConnected (m_fet))
-    {
-        StoreWord (C_DISCONNECT);
-    }
-    
-    wxWakeUpIdle ();
 }
 
 void PtermHostConnection::endGsw (void)
@@ -318,7 +300,8 @@ void PtermHostConnection::dataCallback (void)
 
             m_displayOut = m_displayIn;
         }
-        else if (platowd == C_DISCONNECT || platowd == C_CONNFAIL)
+        else if (platowd == C_DISCONNECT ||
+                 platowd == C_CONNFAIL1 || platowd == C_CONNFAIL2)
         {
             endGsw ();
             StoreWord (platowd);

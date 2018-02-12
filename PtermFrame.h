@@ -172,7 +172,7 @@ public:
     void BuildViewMenu(wxMenu *menu);
     void BuildHelpMenu(void);
     void BuildPopupMenu(void);
-    void BuildStatusBar(bool connecting = false);
+    void BuildStatusBar(void);
     void ptermSendKey1(int key);
     void ptermSendKey(u32 keys);
     void ptermSendKeys(const int key[]);

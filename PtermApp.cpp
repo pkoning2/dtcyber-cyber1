@@ -29,6 +29,8 @@ wxPageSetupDialogData* g_pageSetupData;
 
 #ifndef DEBUG
 Trace traceF;
+#else
+Trace debugF;
 #endif
 
 // the application icon (under Windows and OS/2 it is in resources)
@@ -77,7 +79,7 @@ bool PtermApp::OnInit (void)
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
 #ifdef DEBUG
-    debugF.Open ();
+    debugF.Open ("debug.trc");
 #endif
 #if defined (__WXMSW__)
     const int pid = GetCurrentProcessId ();

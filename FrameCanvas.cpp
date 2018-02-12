@@ -1474,7 +1474,7 @@ PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
     SetCursor (*wxHOURGLASS_CURSOR);
     
     // Build status bar if we want it
-    BuildStatusBar (m_profile->m_showStatusBar);
+    BuildStatusBar ();
 
     m_bitmap = new wxBitmap (512, 512, 32);
     {
@@ -1941,13 +1941,13 @@ void PtermFrame::BuildPopupMenu (void)
 // the statusbar (not just unlink it) if we don't want to see it.
 // If it exists as an object but isn't tied to the window, it displays
 // at the top of the window !
-void PtermFrame::BuildStatusBar (bool connecting)
+void PtermFrame::BuildStatusBar (void)
 {
     const bool showstatusbar = (!m_fullScreen &&
                                 m_showStatusBar &&
                                 m_conn->ConnType () != HELP);
     const bool havestatusbar = (m_statusBar != NULL);
-    int ww,wh,ow,oh,nw,nh;
+    int ww, wh, ow, oh, nw, nh;
 
     // get window parameters before changing things
     GetSize(&ww, &wh);
@@ -1972,13 +1972,13 @@ void PtermFrame::BuildStatusBar (bool connecting)
             m_statusBar->SetStatusText(_(" Booted from floppy"),
                 STATUS_CONN);
         }
-        else if (connecting)
-        {
-            m_statusBar->SetStatusText (_(" Connecting..."), STATUS_CONN);
-        }
         else if (m_conn == NULL)
         {
             m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
+        }
+        else if (!m_conn->m_connActive)
+        {
+            m_statusBar->SetStatusText (_(" Connecting..."), STATUS_CONN);
         }
         else
         {
@@ -2108,7 +2108,8 @@ void PtermFrame::procDataLoop (void)
         */
         word = m_conn->NextWord ();
     
-        if (word == C_NODATA || word == C_CONNFAIL || word == C_DISCONNECT)
+        if (word == C_NODATA || word == C_DISCONNECT ||
+            word == C_CONNFAIL1 || word == C_CONNFAIL2)
         {
             break;
         }
@@ -2156,7 +2157,9 @@ void PtermFrame::procDataLoop (void)
     }
     
     // must check m_mtutorBoot else word has not been initialized.
-    if (!m_mtutorBoot && (word == C_CONNFAIL || word == C_DISCONNECT))
+    if (!m_mtutorBoot && (word == C_DISCONNECT ||
+                          word == C_CONNFAIL2 ||
+                          word == C_CONNFAIL2))
     {
         wxString msg;
 
@@ -2170,7 +2173,7 @@ void PtermFrame::procDataLoop (void)
         wxDateTime ldt;
 
         ldt.SetToCurrent ();
-        if (word == C_CONNFAIL)
+        if (word == C_CONNFAIL1 || word == C_CONNFAIL2)
         {
             msg.Printf (_("Connection failed @ %s on "),
                         ldt.FormatTime ());
@@ -6345,8 +6348,9 @@ int PtermFrame::Parity (int key)
 
 void PtermFrame::ptermSetConnected ()
 {
-    //this routine is called only when connection is initially made
-    //see ProcessPlatoMetaData for the dynamic code.
+    // This routine is called when connection is initially made, or
+    // when the statusbar is rebuilt.  See ProcessPlatoMetaData for
+    // the dynamic code.
     wxString l_str;
 
     SetCursor (wxNullCursor);

@@ -4,7 +4,7 @@
 #include "Trace.h"
 
 #ifdef DEBUG
-Trace debugF;
+extern Trace debugF;
 #define debug debugF.Log
 #define traceF debugF
 #define tracex debug

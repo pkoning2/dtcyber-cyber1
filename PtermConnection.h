@@ -50,6 +50,8 @@ public:
     virtual void StoreWord (int word);
     virtual void Connect (void);
 
+    bool        m_connActive;
+
 protected:
     PtermFrame  *m_owner;
     bool        m_gswActive;
@@ -116,12 +118,9 @@ private:
     int         m_gswWord2;
     int         m_pending;
     in_addr_t   m_hostAddr;
-    bool        m_connActive;
     
-    // Callback handlers
-    static void s_connCallback (NetFet *np, int portNum, void *arg);
+    // Callback handler
     static void s_dataCallback (NetFet *np, int bytes, void *arg);
-    void connCallback (void);
     void dataCallback (void);
     void endGsw (void);
     

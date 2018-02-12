@@ -75,9 +75,13 @@ PtermConnFailDialog::PtermConnFailDialog (wxWindowID id, const wxString &title,
     {
         str.Printf (_("Your connection to the host was lost.\n\n"));
     }
+    else if (code == C_CONNFAIL1)        
+    {
+        str.Printf (_("The hostname is unknown or invalid.\n\n"));
+    }
     else
     {
-        str.Printf (_("The host did not respond to the connection request.\n\n"));
+        str.Printf (_("The host is not reachable.\n\n"));
     }
         
     str.Append (_("You may open a new connection, reconnect\n"
