@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-12 15:05-0500\n"
+"POT-Creation-Date: 2018-02-12 20:10-0500\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -409,13 +409,17 @@ msgstr ""
 "\n"
 
 #: PtermConnFailDialog.cpp:80
+#, fuzzy
 msgid ""
 "The hostname is unknown or invalid.\n"
+"\n"
 msgstr "De systeemnaam is onbekend of ongeldig\n"
 
 #: PtermConnFailDialog.cpp:84
+#, fuzzy
 msgid ""
 "The host is not reachable.\n"
+"\n"
 msgstr "Het systeem is niet bereikbaar\n"
 
 #: PtermConnFailDialog.cpp:87
@@ -446,7 +450,7 @@ msgstr ""
 "\n"
 "Voor verdere informatie, zie:"
 
-#: PtermConnection.cpp:613
+#: PtermConnection.cpp:627
 #, fuzzy, c-format
 msgid "Connecting to %d.%d.%d.%d"
 msgstr "Aan het verbinden met %d.%d.%d.%d"

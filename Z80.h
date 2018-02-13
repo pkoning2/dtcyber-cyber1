@@ -48,11 +48,11 @@ public:
     void PatchL6 (void);
     void PatchColor (unsigned char low_getvar);
 
-    virtual unsigned char inputZ80(unsigned char data);
+    unsigned char inputZ80(unsigned char data);
 
-    virtual void outputZ80(unsigned char data, unsigned char acc);
+    void outputZ80(unsigned char data, unsigned char acc);
 
-    virtual int check_pcZ80(void);
+    int check_pcZ80(void);
 
     unsigned char ReadRAM(unsigned short offset) const
     {
