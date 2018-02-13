@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////
-// Name:        Trace.h
+// Name:        PtermTrace.cpp
 // Purpose:     Implementation of class Tracing execution 
 // Authors:     Paul Koning, Joe Stanton, Bill Galcher, Steve Zoppi, Dale Sinder
 // Created:     03/26/2005
@@ -7,7 +7,7 @@
 // Licence:     see pterm-license.txt
 /////////////////////////////////////////////////////////////////////////////
 
-#include "Trace.h"
+#include "PtermTrace.h"
 
 Trace::Trace ()
 {

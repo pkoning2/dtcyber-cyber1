@@ -283,6 +283,15 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
                 delete prof;
         }
         else if (wxfilename.IsOk () &&
+            wxfilename.GetExt ().CmpNoCase (wxT ("mte")) == 0)
+        {
+            PtermProfile *prof = new PtermProfile ();
+            prof->m_mTutorBoot = true;
+            prof->m_floppy0 = true;
+            prof->m_floppy0File = filename;
+            DoConnect (prof);
+        }
+        else if (wxfilename.IsOk () &&
                  (wxfilename.GetExt ().CmpNoCase (wxT ("dat")) == 0 ||
                   wxfilename.GetExt ().CmpNoCase (wxT ("trc")) == 0))
         {

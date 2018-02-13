@@ -1,7 +1,7 @@
 #ifndef __DebugPterm_H__
 #define __DebugPterm_H__ 1
 
-#include "Trace.h"
+#include "PtermTrace.h"
 
 #ifdef DEBUG
 extern Trace debugF;

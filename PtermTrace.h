@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////
-// Name:        Trace.h
+// Name:        PtermTrace.h
 // Purpose:     Declaration of class Tracing execution 
 // Authors:     Paul Koning, Joe Stanton, Bill Galcher, Steve Zoppi, Dale Sinder
 // Created:     03/26/2005

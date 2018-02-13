@@ -64,3 +64,11 @@ Root: "HKCR"; Subkey: ".ppf"; ValueType: string; ValueData: "PtermProfile"; Flag
 Root: "HKCR"; Subkey: "PtermProfile"; ValueType: string; ValueData: "Pterm profile"; Flags: uninsdeletekey
 Root: "HKCR"; Subkey: "PtermProfile\DefaultIcon"; ValueType: string; ValueData: "{app}\PTERM.EXE,0"
 Root: "HKCR"; Subkey: "PtermProfile\shell\open\command"; ValueType: string; ValueData: """{app}\PTERM.EXE"" ""%1"""
+Root: "HKCR"; Subkey: ".trc"; ValueType: string; ValueData: "PtermTrace"; Flags: uninsdeletevalue
+Root: "HKCR"; Subkey: "PtermTrace"; ValueType: string; ValueData: "Pterm trace file"; Flags: uninsdeletekey
+Root: "HKCR"; Subkey: "PtermTrace\DefaultIcon"; ValueType: string; ValueData: "{app}\PTERM.EXE,0"
+Root: "HKCR"; Subkey: "PtermTrace\shell\open\command"; ValueType: string; ValueData: """{app}\PTERM.EXE"" ""%1"""
+Root: "HKCR"; Subkey: ".mte"; ValueType: string; ValueData: "PtermFloppy"; Flags: uninsdeletevalue
+Root: "HKCR"; Subkey: "PtermFloppy"; ValueType: string; ValueData: "Pterm floppy image"; Flags: uninsdeletekey
+Root: "HKCR"; Subkey: "PtermFloppy\DefaultIcon"; ValueType: string; ValueData: "{app}\PTERM.EXE,0"
+Root: "HKCR"; Subkey: "PtermFloppy\shell\open\command"; ValueType: string; ValueData: """{app}\PTERM.EXE"" ""%1"""

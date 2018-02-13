@@ -61,7 +61,7 @@
 				<string>trc</string>
 			</array>
 			<key>CFBundleTypeName</key>
-			<string>Pterm Trace</string>
+			<string>Pterm trace file</string>
 			<key>CFBundleTypeIconFile</key>
 			<string>Pterm.icns</string>
 			<key>CFBundleTypeRole</key>
@@ -77,7 +77,23 @@
 				<string>dat</string>
 			</array>
 			<key>CFBundleTypeName</key>
-			<string>Pterm Trace</string>
+			<string>Pterm trace file</string>
+			<key>CFBundleTypeIconFile</key>
+			<string>Pterm.icns</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSTypeIsPackage</key>
+			<false/>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>mte</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>Pterm floppy image</string>
 			<key>CFBundleTypeIconFile</key>
 			<string>Pterm.icns</string>
 			<key>CFBundleTypeRole</key>
