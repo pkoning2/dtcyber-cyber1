@@ -450,7 +450,7 @@ void PtermApp::OnPref (wxCommandEvent&)
 {
     //show dialog
     PtermPrefDialog dlg (NULL, wxID_ANY, _("Profile Editor"),
-                         wxDefaultPosition, wxSize (461, 575));
+                         wxDefaultPosition, wxSize (481, 575));
 
     // We simply show the dialog and let it do its thing; no action is
     // needed on completion.

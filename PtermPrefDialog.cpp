@@ -146,7 +146,7 @@ void PtermPrefDialog::PtermInitDialog (void)
         btnDelete->SetFont (dfont);
         fgs011->Add (btnDelete, 0, wxRIGHT | wxLEFT, 5);
         lblProfileStatusMessage = new wxStaticText (tab0, wxID_ANY,
-                                                    _("Profile saved."),
+                                                    _(""),
                                                     wxDefaultPosition,
                                                     wxDefaultSize, 0);
         lblProfileStatusMessage->SetFont (dfont);
