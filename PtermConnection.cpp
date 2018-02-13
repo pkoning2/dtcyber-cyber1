@@ -157,7 +157,8 @@ int PtermTestConnection::NextWord (void)
 // ----------------------------------------------------------------------------
 
 PtermHostConnection::PtermHostConnection (const wxString &host, int port)
-    : m_displayIn (0),
+    : m_fet (NULL),
+      m_displayIn (0),
       m_displayOut (0),
       m_gswIn (0),
       m_gswOut (0),
@@ -273,6 +274,19 @@ void PtermHostConnection::dataCallback (void)
             printf ("ring is full\n");
         }
 
+        // Possible race condition: a connection may become alive and
+        // data appear on it before m_fet is set from the return value
+        // of the dtConnect call.
+        if (m_fet == NULL)
+        {
+#if defined (_WIN32)
+            Sleep (1000);
+#else
+            sleep (1);
+#endif
+            continue;
+        }
+            
         switch (m_connMode)
         {
         case niu:
