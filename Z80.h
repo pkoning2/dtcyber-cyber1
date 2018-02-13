@@ -16,7 +16,7 @@ class Z80
 public:
 
     Z80();
-    ~Z80();
+    virtual ~Z80();
 
     bool m_giveupz80;
     bool in_r_exec;
@@ -37,7 +37,7 @@ public:
 
     int Z80NonMaskableInterrupt();
 
-    void Z80Reset();
+    void Z80Reset(void);
 
     bool Z80BreakPoint (int pc, bool step);
 
@@ -48,11 +48,11 @@ public:
     void PatchL6 (void);
     void PatchColor (unsigned char low_getvar);
 
-    unsigned char inputZ80(unsigned char data);
+    virtual unsigned char inputZ80(unsigned char data);
 
-    void outputZ80(unsigned char data, unsigned char acc);
+    virtual void outputZ80(unsigned char data, unsigned char acc);
 
-    int check_pcZ80(void);
+    virtual int check_pcZ80(void);
 
     unsigned char ReadRAM(unsigned short offset) const
     {
