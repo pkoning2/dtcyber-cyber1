@@ -146,7 +146,7 @@ void PtermPrefDialog::PtermInitDialog (void)
         btnDelete->SetFont (dfont);
         fgs011->Add (btnDelete, 0, wxRIGHT | wxLEFT, 5);
         lblProfileStatusMessage = new wxStaticText (tab0, wxID_ANY,
-                                                    _(""),
+                                                    wxT (""),
                                                     wxDefaultPosition,
                                                     wxDefaultSize, 0);
         lblProfileStatusMessage->SetFont (dfont);
@@ -161,7 +161,7 @@ void PtermPrefDialog::PtermInitDialog (void)
 
         wxFlexGridSizer* fgs012;
         fgs012 = new wxFlexGridSizer (1, 3, 0, 0);
-        fgs012->AddGrowableCol (1);
+        fgs012->AddGrowableCol (2);
         fgs012->SetFlexibleDirection (wxHORIZONTAL);
         lblNewProfile = new wxStaticText (tab0, wxID_ANY, _("Profile"),
                                           wxDefaultPosition, wxDefaultSize, 0);

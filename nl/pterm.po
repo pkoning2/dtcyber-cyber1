@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-12 20:10-0500\n"
+"POT-Creation-Date: 2018-02-13 12:26-0500\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -471,10 +471,6 @@ msgstr "Laden"
 msgid "Delete"
 msgstr "Uitwissen"
 
-#: PtermPrefDialog.cpp:149 PtermPrefDialog.cpp:789
-msgid "Profile saved."
-msgstr "Programmavoorkeur opgeslagen."
-
 #: PtermPrefDialog.cpp:157
 #, fuzzy
 msgid "Or, enter the name of a new profile below and click Save As."
@@ -729,6 +725,10 @@ msgstr "Voorkeurbestand"
 #, fuzzy
 msgid "Session settings"
 msgstr "Aan het verbinden..."
+
+#: PtermPrefDialog.cpp:789
+msgid "Profile saved."
+msgstr "Programmavoorkeur opgeslagen."
 
 #: PtermPrefDialog.cpp:794
 #, c-format
