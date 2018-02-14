@@ -614,7 +614,7 @@ void PtermPrefDialog::PtermInitDialog (void)
     fgsButtons->AddGrowableRow (0);
     fgsButtons->SetFlexibleDirection (wxHORIZONTAL);
     fgsButtons->Add (0, 0, 1, wxALL | wxEXPAND, 5);
-    btnOK = new wxButton (this, wxID_ANY,
+    btnOK = new wxButton (this, wxID_OK,
                           m_profileEdit ? _("Save") : _("Apply"),
                           wxDefaultPosition,
                           wxDefaultSize, 0);
@@ -777,23 +777,28 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
     wxString filename;
     wxString str;
     
-    void OnButton (wxCommandEvent& event);
-
     if (m_profileEdit)
         lblProfileStatusMessage->SetLabel (wxT (""));
-    if (event.GetEventObject () == btnOK && m_profileEdit)
+    if (event.GetEventObject () == btnOK)
     {
-        if (m_profile->SaveProfile ())
+        if (m_profileEdit)
         {
-            SetControlState ();
-            lblProfileStatusMessage->SetLabel (_("Profile saved."));
-            EndModal (wxID_OK);
+            if (m_profile->SaveProfile ())
+            {
+                SetControlState ();
+                lblProfileStatusMessage->SetLabel (_("Profile saved."));
+                EndModal (wxID_OK);
+            }
+            else
+            {
+                str.Printf (_("Unable to save profile: %s"),
+                            m_profile->m_profileName);
+                wxMessageBox (str, _("Error"), wxOK | wxICON_ERROR);
+            }
         }
         else
         {
-            str.Printf (_("Unable to save profile: %s"),
-                        m_profile->m_profileName);
-            wxMessageBox (str, _("Error"), wxOK | wxICON_ERROR);
+            EndModal (wxID_OK);
         }
     }
     else if (event.GetEventObject () == btnLoad)

@@ -2982,45 +2982,45 @@ void PtermFrame::OnSessionSettings (wxCommandEvent &)
     //show dialog
     PtermPrefDialog dlg (this, wxID_ANY, _ ("Session Settings..."),
                          wxDefaultPosition, wxSize (461, 475), *m_profile);
-
+    
     if (dlg.ShowModal () == wxID_OK)
     {
-        PtermProfile *result = dlg.m_profile;
+        *m_profile = *dlg.m_profile;
         
-        SetColors (result->m_fgColor, result->m_bgColor);
+        SetColors (m_profile->m_fgColor, m_profile->m_bgColor);
         //get prefs
-        //ptermApp->m_lastTab = result->m_lastTab;
+        //ptermApp->m_lastTab = m_profile->m_lastTab;
         //tab3
-        m_classicSpeed = result->m_classicSpeed;
-        m_gswEnable = result->m_gswEnable;
-        m_numpadArrows = result->m_numpadArrows;
-        m_ignoreCapLock = result->m_ignoreCapLock;
-        m_platoKb = result->m_platoKb;
-        m_useAccel = result->m_useAccel;
-        m_beepEnable = result->m_beepEnable;
-        m_DisableShiftSpace = result->m_DisableShiftSpace;
-        m_DisableMouseDrag = result->m_DisableMouseDrag;
+        m_classicSpeed = m_profile->m_classicSpeed;
+        m_gswEnable = m_profile->m_gswEnable;
+        m_numpadArrows = m_profile->m_numpadArrows;
+        m_ignoreCapLock = m_profile->m_ignoreCapLock;
+        m_platoKb = m_profile->m_platoKb;
+        m_useAccel = m_profile->m_useAccel;
+        m_beepEnable = m_profile->m_beepEnable;
+        m_DisableShiftSpace = m_profile->m_DisableShiftSpace;
+        m_DisableMouseDrag = m_profile->m_DisableMouseDrag;
         //tab4
-        m_noColor = result->m_noColor;
-        m_fgColor = result->m_fgColor;
-        m_bgColor = result->m_bgColor;
+        m_noColor = m_profile->m_noColor;
+        m_fgColor = m_profile->m_fgColor;
+        m_bgColor = m_profile->m_bgColor;
         //tab5
-        m_charDelay = result->m_charDelay;
-        m_lineDelay = result->m_lineDelay;
-        m_autoLF = result->m_autoLF;
-        m_smartPaste = result->m_smartPaste;
-        m_convDot7 = result->m_convDot7;
-        m_conv8Sp = result->m_conv8Sp;
-        m_TutorColor = result->m_TutorColor;
+        m_charDelay = m_profile->m_charDelay;
+        m_lineDelay = m_profile->m_lineDelay;
+        m_autoLF = m_profile->m_autoLF;
+        m_smartPaste = m_profile->m_smartPaste;
+        m_convDot7 = m_profile->m_convDot7;
+        m_conv8Sp = m_profile->m_conv8Sp;
+        m_TutorColor = m_profile->m_TutorColor;
         //tab6
-        m_Email = result->m_Email;
-        m_SearchURL = result->m_SearchURL;
+        m_Email = m_profile->m_Email;
+        m_SearchURL = m_profile->m_SearchURL;
 
-        m_floppy0 = result->m_floppy0;
-        m_floppy1 = result->m_floppy1;
+        m_floppy0 = m_profile->m_floppy0;
+        m_floppy1 = m_profile->m_floppy1;
 
-        m_floppy0File = result->m_floppy0File;
-        m_floppy1File = result->m_floppy1File;
+        m_floppy0File = m_profile->m_floppy0File;
+        m_floppy1File = m_profile->m_floppy1File;
 
         if (dlg.m_floppy0Changed)
         {

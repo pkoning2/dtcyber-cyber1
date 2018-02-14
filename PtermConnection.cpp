@@ -125,11 +125,12 @@ int PtermTestConnection::NextWord (void)
             // simply pausing isn't correct because that doesn't
             // update the screen.  Need a better answer.
         }
-        else if (sscanf (p, "%o seq %d", &w, &seq) != 0 && seq != m_pseq)
+        else if ((sscanf (p, "%o seq %d", &w, &seq) != 0 && seq != m_pseq) ||
+                 sscanf (p, "%o  wc", &w) != 0)
         {
-            // Successful conversion, process the word,
-            // provided it is new (different sequence number
-            // than before)
+            // Successful conversion, process the word, provided it is
+            // new (different sequence number than before), or it's a
+            // trace without sequence numbers.
             m_pseq = seq;
             if (m_connMode == both && w > 2)
             {

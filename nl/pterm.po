@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-13 15:22-0500\n"
+"POT-Creation-Date: 2018-02-14 09:17-0500\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -292,7 +292,7 @@ msgstr "Scherm opslaan in"
 msgid "Save GSW audio to"
 msgstr "GSW-audio opslaan in"
 
-#: FrameCanvas.cpp:3055
+#: FrameCanvas.cpp:3059
 msgid ""
 "There was a problem printing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -300,11 +300,11 @@ msgstr ""
 "Er was een probleem bij het afdrukken.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: FrameCanvas.cpp:3056
+#: FrameCanvas.cpp:3060
 msgid "Printing"
 msgstr "Afdrukken"
 
-#: FrameCanvas.cpp:3078
+#: FrameCanvas.cpp:3082
 msgid ""
 "There was a problem previewing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -312,32 +312,32 @@ msgstr ""
 "Er was een probleem bij het maken van het afdrukvoorbeeld.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: FrameCanvas.cpp:3079
+#: FrameCanvas.cpp:3083
 msgid "Previewing"
 msgstr "Voorbeeld bekijken"
 
-#: FrameCanvas.cpp:3084
+#: FrameCanvas.cpp:3088
 msgid "Pterm Print Preview"
 msgstr "Pterm Afdrukvoorbeeld"
 
-#: FrameCanvas.cpp:6364
+#: FrameCanvas.cpp:6368
 #, fuzzy
 msgid "ASCII"
 msgstr "Voer tekst in"
 
-#: FrameCanvas.cpp:6368
+#: FrameCanvas.cpp:6372
 msgid "Classic"
 msgstr "Klassiek"
 
-#: FrameCanvas.cpp:6380
+#: FrameCanvas.cpp:6384
 msgid " Trace "
 msgstr " Traceren "
 
-#: FrameCanvas.cpp:6389
+#: FrameCanvas.cpp:6393
 msgid " PLATO keyboard "
 msgstr " PLATO toetsenbord "
 
-#: FrameCanvas.cpp:6890
+#: FrameCanvas.cpp:6894
 msgid " Program ended"
 msgstr "Programma is geëindigd"
 
@@ -375,7 +375,7 @@ msgstr "Annuleer"
 msgid "Connect"
 msgstr "Verbinden"
 
-#: PtermConnDialog.cpp:203 PtermPrefDialog.cpp:1152
+#: PtermConnDialog.cpp:203 PtermPrefDialog.cpp:1159
 #, c-format
 msgid ""
 "Profile '%s' not found. Problem loading file:\n"
@@ -386,8 +386,8 @@ msgstr ""
 "\n"
 "    %s"
 
-#: PtermConnDialog.cpp:207 PtermPrefDialog.cpp:796 PtermPrefDialog.cpp:811
-#: PtermPrefDialog.cpp:833 PtermPrefDialog.cpp:1073 PtermPrefDialog.cpp:1154
+#: PtermConnDialog.cpp:207 PtermPrefDialog.cpp:798 PtermPrefDialog.cpp:818
+#: PtermPrefDialog.cpp:840 PtermPrefDialog.cpp:1080 PtermPrefDialog.cpp:1161
 msgid "Error"
 msgstr "Fout"
 
@@ -450,7 +450,7 @@ msgstr ""
 "\n"
 "Voor verdere informatie, zie:"
 
-#: PtermConnection.cpp:627
+#: PtermConnection.cpp:628
 #, fuzzy, c-format
 msgid "Connecting to %d.%d.%d.%d"
 msgstr "Aan het verbinden met %d.%d.%d.%d"
@@ -726,56 +726,56 @@ msgstr "Voorkeurbestand"
 msgid "Session settings"
 msgstr "Aan het verbinden..."
 
-#: PtermPrefDialog.cpp:789
+#: PtermPrefDialog.cpp:791
 msgid "Profile saved."
 msgstr "Programmavoorkeur opgeslagen."
 
-#: PtermPrefDialog.cpp:794
+#: PtermPrefDialog.cpp:796
 #, c-format
 msgid "Unable to save profile: %s"
 msgstr "Voorkeur kan niet opgeslagen worden: %s"
 
-#: PtermPrefDialog.cpp:805 PtermPrefDialog.cpp:1064
+#: PtermPrefDialog.cpp:812 PtermPrefDialog.cpp:1071
 msgid "Profile loaded."
 msgstr "Voorkeurbestand geladen."
 
-#: PtermPrefDialog.cpp:810 PtermPrefDialog.cpp:1071
+#: PtermPrefDialog.cpp:817 PtermPrefDialog.cpp:1078
 #, c-format
 msgid "Unable to load profile: %s"
 msgstr "Voorkeur kan niet geladen worden: %s"
 
-#: PtermPrefDialog.cpp:819
+#: PtermPrefDialog.cpp:826
 #, c-format
 msgid "Do you really want to delete profile '%s' ?"
 msgstr "Wilt U zeker voorkeur '%s' verwijderen?"
 
-#: PtermPrefDialog.cpp:820
+#: PtermPrefDialog.cpp:827
 msgid "Confirm"
 msgstr "Bevestig"
 
-#: PtermPrefDialog.cpp:826
+#: PtermPrefDialog.cpp:833
 msgid "Profile deleted."
 msgstr "Voorkeurbestand verwijderd."
 
-#: PtermPrefDialog.cpp:831
+#: PtermPrefDialog.cpp:838
 #, c-format
 msgid "Unable to delete profile: %s"
 msgstr "Probleem bij verwijdering van voorkeur: %s"
 
-#: PtermPrefDialog.cpp:846
+#: PtermPrefDialog.cpp:853
 #, fuzzy, c-format
 msgid "Profile %s already exists"
 msgstr "Programmavoorkeur opgeslagen."
 
-#: PtermPrefDialog.cpp:847 PtermPrefDialog.cpp:865
+#: PtermPrefDialog.cpp:854 PtermPrefDialog.cpp:872
 msgid "Problem"
 msgstr "Probleem"
 
-#: PtermPrefDialog.cpp:856
+#: PtermPrefDialog.cpp:863
 msgid "Profile added."
 msgstr "Voorkeurbestand toegevoegd."
 
-#: PtermPrefDialog.cpp:861
+#: PtermPrefDialog.cpp:868
 msgid ""
 "The profile name you entered contains illegal characters.\n"
 "\n"
@@ -791,19 +791,19 @@ msgstr ""
 "Standaard: a-z, A-Z, 0-9\n"
 "Speciaal:  haken, minteken, onderstreping, punt, en spatie"
 
-#: PtermPrefDialog.cpp:871
+#: PtermPrefDialog.cpp:878
 msgid "Open Floppy 0 file"
 msgstr "Floppy no. 0 bestand openmaken"
 
-#: PtermPrefDialog.cpp:895
+#: PtermPrefDialog.cpp:902
 msgid "Open Floppy 1 file"
 msgstr "Floppy no. 1 bestand openmaken"
 
-#: PtermPrefDialog.cpp:917
+#: PtermPrefDialog.cpp:924
 msgid "Foreground"
 msgstr "Voorgrond"
 
-#: PtermPrefDialog.cpp:928
+#: PtermPrefDialog.cpp:935
 msgid "Background"
 msgstr "Achtergrond"
 
