@@ -16,9 +16,9 @@ which is how you connect to the PLATO system at cyber1.org.
 Prerequisites for building Pterm
 
 Pterm relies on wxWidgets for the user interface framework.  The
-current version was built against V3.0; it should work with later
-versions (but that has not yet been tested); it will not work with
-older versions.
+current version was built against both V3.0 and V3.1; it should work
+with later versions (but that has not yet been tested); it will not
+work with older versions.
 
 In addition, it uses libSDL for audio output, and libsndfile for
 writing audio files.
@@ -30,7 +30,9 @@ libsndfile and libSDL.  For example, on CentOS you would use "yum
 install libsndfile-devel libSDL-devel".
 
 If a packaged version of wxWidgets 3.0 or later is available for your
-system, install that (the development files).  If not, build wxWidgets
+system, install that (the development files, not just the runtime
+library -- typically this would have a package name like
+"wxwidgets-dev").  If no packaged versionis available, build wxWidgets
 from sources; see the wxWidgets documentation for details.
 
     Note: you should build the wxWidgets shared libraries.  For
@@ -47,7 +49,7 @@ Building on Mac OS:
 
 Install libsndfile and libSDL from the released kits.
 
-If a pre-built kit of wxWidgets 3.0 is available, install that.
+If a pre-built kit of wxWidgets 3.0 or 3.1 is available, install that.
 Otherwise, build it from sources.  The configure I used to build it
 was as follows:
 
@@ -60,7 +62,9 @@ You can get away with fewer switches and/or some different settings,
 especially if you intend to build it just for your own use rather than
 for distributing kits to others.  If you have a system which uses the
 clang compiler rather than gcc, and as a result does not have PowerPC
-support in the compiler, omit ",ppc" from the configure string.
+support in the compiler, omit ",ppc" from the configure string.  If
+you use wxWidgets 3.1, you may need to set the min version higher,
+perhaps 10.5 or 10.6, and/or change the SDK version used.
 
 Now build pterm with "make Pterm.app".  The result should be a Pterm
 application (a "package" which is really a directory with a .app
@@ -79,6 +83,11 @@ have a different version, you may need to convert.
 Build Pterm (typically you'll want to use the Release build).  You may
 need to copy some of the DLLs is needs into the build output
 directory for Pterm to run properly after building.
+
+The build scripts in my sources include the building of an installer,
+using InnoSetup (an open source Windows installer creator).  If you
+have that installed, you should get a setup.exe which you can use to
+install the Pterm you built.
 
 Building the other parts of DtCyber:
 
