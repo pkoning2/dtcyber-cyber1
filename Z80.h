@@ -74,7 +74,7 @@ public:
         }
         else
         {
-            printf("!!! Attempted write at offset %04x with data "
+            printf("!!! WriteRAM Attempted write at offset %04x with data "
                 "%02x failed.  PC = %04x\n", offset, data, state->pc);
         }
 #endif
@@ -93,7 +93,7 @@ public:
         }
         else
         {
-            printf("!!! Attempted write at offset %04x with data "
+            printf("!!! WriteRAMW Attempted write at offset %04x with data "
                 "%02x failed.  PC = %04x\n", offset, data, state->pc);
         }
 #endif
