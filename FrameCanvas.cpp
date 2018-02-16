@@ -7576,6 +7576,8 @@ void PtermFrame::outputZ80(u8 data, u8 acc)
                         m_mtDiskCheck2 = acc;
 
                         m_mtSeekPos = (128 * 64 * m_mtDiskTrack) + (128 * (m_mtDiskSector-1));
+                        if (m_mtSeekPos < 0)
+                            break;
                         m_MTFiles[m_mtDiskUnit&1].Seek(m_mtSeekPos);
                         break;
 
