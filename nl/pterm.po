@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-14 09:59-0500\n"
+"POT-Creation-Date: 2018-02-16 10:03-0500\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -375,7 +375,7 @@ msgstr "Annuleer"
 msgid "Connect"
 msgstr "Verbinden"
 
-#: PtermConnDialog.cpp:203 PtermPrefDialog.cpp:1157
+#: PtermConnDialog.cpp:203 PtermPrefDialog.cpp:1158
 #, c-format
 msgid ""
 "Profile '%s' not found. Problem loading file:\n"
@@ -387,7 +387,7 @@ msgstr ""
 "    %s"
 
 #: PtermConnDialog.cpp:207 PtermPrefDialog.cpp:796 PtermPrefDialog.cpp:816
-#: PtermPrefDialog.cpp:838 PtermPrefDialog.cpp:1078 PtermPrefDialog.cpp:1159
+#: PtermPrefDialog.cpp:838 PtermPrefDialog.cpp:1080 PtermPrefDialog.cpp:1160
 msgid "Error"
 msgstr "Fout"
 
@@ -450,7 +450,7 @@ msgstr ""
 "\n"
 "Voor verdere informatie, zie:"
 
-#: PtermConnection.cpp:628
+#: PtermConnection.cpp:632
 #, fuzzy, c-format
 msgid "Connecting to %d.%d.%d.%d"
 msgstr "Aan het verbinden met %d.%d.%d.%d"
@@ -735,11 +735,11 @@ msgstr "Programmavoorkeur opgeslagen."
 msgid "Unable to save profile: %s"
 msgstr "Voorkeur kan niet opgeslagen worden: %s"
 
-#: PtermPrefDialog.cpp:810 PtermPrefDialog.cpp:1069
+#: PtermPrefDialog.cpp:810 PtermPrefDialog.cpp:1071
 msgid "Profile loaded."
 msgstr "Voorkeurbestand geladen."
 
-#: PtermPrefDialog.cpp:815 PtermPrefDialog.cpp:1076
+#: PtermPrefDialog.cpp:815 PtermPrefDialog.cpp:1078
 #, c-format
 msgid "Unable to load profile: %s"
 msgstr "Voorkeur kan niet geladen worden: %s"
@@ -795,15 +795,15 @@ msgstr ""
 msgid "Open Floppy 0 file"
 msgstr "Floppy no. 0 bestand openmaken"
 
-#: PtermPrefDialog.cpp:900
+#: PtermPrefDialog.cpp:901
 msgid "Open Floppy 1 file"
 msgstr "Floppy no. 1 bestand openmaken"
 
-#: PtermPrefDialog.cpp:922
+#: PtermPrefDialog.cpp:924
 msgid "Foreground"
 msgstr "Voorgrond"
 
-#: PtermPrefDialog.cpp:933
+#: PtermPrefDialog.cpp:935
 msgid "Background"
 msgstr "Achtergrond"
 

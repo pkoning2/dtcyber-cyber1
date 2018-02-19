@@ -292,8 +292,7 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
             DoConnect (prof);
         }
         else if (wxfilename.IsOk () &&
-                 (wxfilename.GetExt ().CmpNoCase (wxT ("dat")) == 0 ||
-                  wxfilename.GetExt ().CmpNoCase (wxT ("trc")) == 0))
+                 wxfilename.GetExt ().CmpNoCase (wxT ("trc")) == 0)
         {
             // test data file
             testdata = fopen (filename, "r");
