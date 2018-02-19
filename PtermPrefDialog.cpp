@@ -892,6 +892,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         testFile.Close();
         m_profile->m_floppy0File = openFileDialog.GetPath();
         txtFloppy0->SetLabel(m_profile->m_floppy0File);
+        m_floppy0Changed = true;
         Modified();
     }
     else if (event.GetEventObject() == btnFloppy1)
@@ -915,6 +916,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         testFile.Close();
         m_profile->m_floppy1File = openFileDialog.GetPath();
         txtFloppy1->SetLabel(m_profile->m_floppy1File);
+        m_floppy1Changed = true;
         Modified();
     }
     else if (event.GetEventObject () == btnFGColor)
@@ -1084,7 +1086,20 @@ void PtermPrefDialog::OnChange (wxCommandEvent& event)
 {
     wxString profile;
 
-    if (m_profileEdit)
+    //tab5
+    if (event.GetEventObject () == cboAutoLF)
+        cboAutoLF->GetValue ().ToCLong (&m_profile->m_autoLF);
+    //tab5
+    else if (event.GetEventObject () == txtCharDelay)
+        txtCharDelay->GetLineText (0).ToCLong (&m_profile->m_charDelay);
+    else if (event.GetEventObject () == txtLineDelay)
+        txtLineDelay->GetLineText (0).ToCLong (&m_profile->m_lineDelay);
+    //tab6
+    else if (event.GetEventObject () == txtEmail)
+        m_profile->m_Email = txtEmail->GetLineText (0);
+    else if (event.GetEventObject () == txtSearchURL)
+        m_profile->m_SearchURL = txtSearchURL->GetLineText (0);
+    else if (m_profileEdit)
     {
         if (event.GetEventObject () == txtProfile)
         {
@@ -1101,20 +1116,6 @@ void PtermPrefDialog::OnChange (wxCommandEvent& event)
         else
             return;
     }
-
-    //tab5
-    else if (event.GetEventObject () == cboAutoLF)
-        cboAutoLF->GetValue ().ToCLong (&m_profile->m_autoLF);
-    //tab5
-    else if (event.GetEventObject () == txtCharDelay)
-        txtCharDelay->GetLineText (0).ToCLong (&m_profile->m_charDelay);
-    else if (event.GetEventObject () == txtLineDelay)
-        txtLineDelay->GetLineText (0).ToCLong (&m_profile->m_lineDelay);
-    //tab6
-    else if (event.GetEventObject () == txtEmail)
-        m_profile->m_Email = txtEmail->GetLineText (0);
-    else if (event.GetEventObject () == txtSearchURL)
-        m_profile->m_SearchURL = txtSearchURL->GetLineText (0);
     else
         return;
 
