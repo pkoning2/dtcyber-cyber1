@@ -22,6 +22,8 @@ public:
     void Seek(long int loc);
     u8 ReadByte();
     void WriteByte(u8 val);
+    void WriteReset (void);
+    void ReadReset (void);
     void Format (void);
     bool Active(void) const
     {
@@ -57,8 +59,7 @@ private:
           else if (rcnt == 130)                         \
             {                                           \
                 u8 ret = (u8)((_chkSum >> 8) & 0xff);   \
-                rcnt = 1;                               \
-                _chkSum = 0;                            \
+                ReadReset ();                           \
                 return ret;                             \
             }
 

@@ -123,7 +123,13 @@ void MTFile::Seek(long int loc)
         rcnt = wcnt = 1;
         position = loc;
     }
-    }
+}
+
+void MTFile::ReadReset (void)
+{
+    rcnt = 1;
+    _chkSum = 0;
+}
 
 u8 MTFile::ReadByte()
 {
@@ -175,6 +181,11 @@ u8 MTFile::ReadByte()
     return 0;
         }
 
+void MTFile::WriteReset (void)
+{
+    wcnt = 1;
+}
+
 void MTFile::WriteByte(u8 val)
 {
     int retry = 0;
@@ -224,7 +235,7 @@ void MTFile::WriteByte(u8 val)
 
         wcnt++;
         if (wcnt > 130)
-            wcnt = 1;
+            WriteReset ();
 
         position++;
     }
