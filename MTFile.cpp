@@ -44,12 +44,8 @@ bool MTFile::Open(const char *fn)
     const size_t cSize = strlen(fn) + 1;
     mbstowcs(filenam, fn, cSize);
 
-    DWORD share = 0;
-
-
-
     ms_handle = CreateFile(filenam, (GENERIC_READ | GENERIC_WRITE),
-        share, NULL, OPEN_EXISTING,
+        0, NULL, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (ms_handle == INVALID_HANDLE_VALUE)

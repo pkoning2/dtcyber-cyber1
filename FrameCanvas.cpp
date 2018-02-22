@@ -1430,7 +1430,6 @@ PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
     m_mtutorBoot = profile->m_mTutorBoot;
     m_floppy0 = profile->m_floppy0;
     m_floppy1 = profile->m_floppy1;
-    m_nolock = profile->m_nolock;
     m_floppy0File = profile->m_floppy0File;
     m_floppy1File = profile->m_floppy1File;
 

@@ -306,7 +306,6 @@ public:
     wxString    m_SearchURL;
     bool        m_floppy0;
     bool        m_floppy1;
-    bool        m_nolock;
     wxString    m_floppy0File;
     wxString    m_floppy1File;
     bool        m_needtoBoot;
