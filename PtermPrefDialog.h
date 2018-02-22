@@ -50,6 +50,8 @@ public:
     bool m_floppy0Changed;
     bool m_floppy1Changed;
 
+    u8 m_HelpContext;
+
     //objects
     wxNotebook *tabPrefsDialog;
     //tab0
@@ -110,6 +112,7 @@ public:
     wxButton *btnFloppy1;
 
     //button bar
+    wxButton *btnHelp;
     wxButton *btnOK;
     wxButton *btnCancel;
     wxButton *btnDefaults;

@@ -62,8 +62,14 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title,
                             wxDefaultSize, wxTAB_TRAVERSAL);
     btnEdit->SetFont (dfont);
     fgs112->Add (btnEdit, 0, wxALL, 5);
-    fgs112->Add (0, 0, 1, wxALL, 5);
+
+    //fgs112->Add (0, 0, 1, wxALL, 5);
     
+    btnHelp = new wxButton (this, wxID_ANY, _ ("Help"), wxDefaultPosition,
+        wxDefaultSize, wxTAB_TRAVERSAL);
+    btnHelp->SetFont (dfont);
+    fgs112->Add (btnHelp, 0, wxALL, 5);
+
     btnCancel = new wxButton (this, wxID_CANCEL, _("Cancel"), wxDefaultPosition,
                               wxDefaultSize, wxTAB_TRAVERSAL);
     btnCancel->SetFont (dfont);
@@ -141,6 +147,10 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
     else if (event.GetEventObject () == btnConnect)
     {
         EndModal (wxID_OK);
+    }
+    else if (event.GetEventObject () == btnHelp)
+    {
+        ptermApp->LaunchMtutorHelp (helpContextConnecting);
     }
 }
 

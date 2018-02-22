@@ -21,7 +21,6 @@ BEGIN_EVENT_TABLE (PtermPrefDialog, wxDialog)
     EVT_LISTBOX (wxID_ANY, PtermPrefDialog::OnSelect)
     EVT_LISTBOX_DCLICK (wxID_ANY, PtermPrefDialog::OnDoubleClick)
     EVT_TEXT (wxID_ANY, PtermPrefDialog::OnChange)
-    EVT_COMBOBOX (wxID_ANY, PtermPrefDialog::OnComboSelect)
     END_EVENT_TABLE ();
 
 PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
@@ -96,6 +95,8 @@ void PtermPrefDialog::PtermInitDialog (void)
     
     m_floppy0Changed = false;
     m_floppy1Changed = false;
+
+    m_HelpContext = helpContextGenericIndex;
     
     // ui object creation / placement, note initialization of values is below
     wxBoxSizer* bSizer1;
@@ -614,6 +615,12 @@ void PtermPrefDialog::PtermInitDialog (void)
     fgsButtons->AddGrowableRow (0);
     fgsButtons->SetFlexibleDirection (wxHORIZONTAL);
     fgsButtons->Add (0, 0, 1, wxALL | wxEXPAND, 5);
+    btnHelp = new wxButton (this, wxID_CONTEXT_HELP,
+        _ ("Help"),
+        wxDefaultPosition,
+        wxDefaultSize, 0);
+    btnHelp->SetFont (dfont);
+    fgsButtons->Add (btnHelp, 0, wxALL, 5);
     btnOK = new wxButton (this, wxID_OK,
                           m_profileEdit ? _("Save") : _("Apply"),
                           wxDefaultPosition,
@@ -955,6 +962,38 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         m_profile->init ();
         SetControlState ();
         Modified();
+    }
+    else if (event.GetEventObject () == btnHelp)
+    {
+        // below depends on order of tabs in dialog
+        int sel = tabPrefsDialog->GetSelection ();
+        if (m_profileEdit)  // 7 tabs - profile editor
+        {
+            switch (sel)
+            {
+            case 0: m_HelpContext = helpContextProfiles; break;
+            case 1: m_HelpContext = helpContextConnection; break;
+            case 2: m_HelpContext = helpContextTitle; break;
+            case 3: m_HelpContext = helpContextEmulation; break;
+            case 4: m_HelpContext = helpContextDisplay; break;
+            case 5: m_HelpContext = helpContextPasting; break;
+            case 6: m_HelpContext = helpContextLocal; break;
+            }
+        }
+        else   // 4 tabs - Session Settings
+        {
+            switch (sel)
+            {
+            case 0: m_HelpContext = helpContextEmulation; break;
+            case 1: m_HelpContext = helpContextDisplay; break;
+            case 2: m_HelpContext = helpContextPasting; break;
+            case 3: m_HelpContext = helpContextLocal; break;
+            }
+        }
+
+        // Invoke Mtutor HELP here passing m_HelpContext
+
+        ptermApp->LaunchMtutorHelp (m_HelpContext);
     }
     Refresh (false);
 }

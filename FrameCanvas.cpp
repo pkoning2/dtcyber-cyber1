@@ -1868,6 +1868,8 @@ void PtermFrame::BuildHelpMenu (void)
     menuHelp->Append (Pterm_About, _("About Pterm"), _("Show about dialog"));
     menuHelp->Append (Pterm_HelpKeys, _("Pterm keyboard"),
                       _("Show keyboard description"));
+    menuHelp->Append (Pterm_HelpIndex, _ ("Pterm help"),
+        _ ("Show Pterm help index"));
 }
 
 void PtermFrame::BuildPopupMenu (void)

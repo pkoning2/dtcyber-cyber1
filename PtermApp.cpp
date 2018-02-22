@@ -42,6 +42,7 @@ BEGIN_EVENT_TABLE (PtermApp, wxApp)
     EVT_MENU (Pterm_Connect, PtermApp::OnConnect)
     EVT_MENU (Pterm_Quit,    PtermApp::OnQuit)
     EVT_MENU (Pterm_HelpKeys, PtermApp::OnHelpKeys)
+    EVT_MENU (Pterm_HelpIndex, PtermApp::OnHelpIndex)
     EVT_MENU (Pterm_About,   PtermApp::OnAbout)
     EVT_MENU (Pterm_Pref,    PtermApp::OnPref)
     END_EVENT_TABLE ();
@@ -503,6 +504,9 @@ void PtermApp::OnAbout (wxCommandEvent&)
 
 void PtermApp::OnHelpKeys (wxCommandEvent &)
 {
+
+    //LaunchMtutorHelp (helpContextKeyboard);
+
     PtermFrame *frame;
 
     if (m_helpFrame == NULL)
@@ -520,6 +524,11 @@ void PtermApp::OnHelpKeys (wxCommandEvent &)
         m_helpFrame->Show (true);
         m_helpFrame->Raise ();
     }
+}
+
+void PtermApp::OnHelpIndex (wxCommandEvent &)
+{
+    LaunchMtutorHelp (helpContextGenericIndex);
 }
 
 wxColour PtermApp::SelectColor (wxWindow &parent, 
@@ -574,4 +583,11 @@ void PtermApp::OnQuit (wxCommandEvent&)
 }
 
 
+void PtermApp::LaunchMtutorHelp (u8 helpContext)
+{
+    // TEMP 
+    wxString msg = wxString::Format (wxT ("Help Context = %i"), helpContext);
+    wxMessageDialog *dlg = new wxMessageDialog (NULL, msg, _ ("HELP"));
+    dlg->ShowModal ();
+}
 

@@ -37,6 +37,7 @@ public:
     void OnConnect (wxCommandEvent &event);
     void OnQuit (wxCommandEvent& event);
     void OnHelpKeys (wxCommandEvent &event);
+    void OnHelpIndex (wxCommandEvent &event);
     void OnPref(wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
 
@@ -53,6 +54,8 @@ public:
 #if defined (__WXMAC__)
     void MacReopenApp (void);
 #endif
+
+    void LaunchMtutorHelp (u8 helpContext);
 
     wxConfig    *m_config;
     wxString    m_userdatadir;

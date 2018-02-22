@@ -45,6 +45,7 @@ public:
     wxTextCtrl *txtHost;
     wxComboBox *cboPort;
     wxButton *btnEdit;
+    wxButton *btnHelp;
     wxButton *btnCancel;
     wxButton *btnConnect;
     

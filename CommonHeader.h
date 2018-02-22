@@ -172,6 +172,7 @@ enum
     Pterm_SaveScreen,
     Pterm_SaveAudio,
     Pterm_HelpKeys,
+    Pterm_HelpIndex,
     Pterm_PastePrint,
     Pterm_FullScreen,
     Pterm_Resize,
@@ -213,6 +214,21 @@ enum
     // this standard value as otherwise it won't be handled properly under Mac
     // (where it is special and put into the "Apple" menu)
     Pterm_About = wxID_ABOUT
+};
+
+
+enum 
+{
+    helpContextGenericIndex = 0,
+    helpContextKeyboard,
+    helpContextProfiles,
+    helpContextConnection,
+    helpContextTitle,
+    helpContextEmulation,
+    helpContextDisplay,
+    helpContextPasting,
+    helpContextLocal,
+    helpContextConnecting
 };
 
 
