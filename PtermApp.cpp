@@ -505,25 +505,25 @@ void PtermApp::OnAbout (wxCommandEvent&)
 void PtermApp::OnHelpKeys (wxCommandEvent &)
 {
 
-    //LaunchMtutorHelp (helpContextKeyboard);
+    LaunchMtutorHelp (helpContextKeyboard);
 
-    PtermFrame *frame;
+    //PtermFrame *frame;
 
-    if (m_helpFrame == NULL)
-    {
-        // If there isn't one yet, create a help window -- same as a
-        // regular frame except that the data comes from here, not
-        // from a connection.
-        PtermProfile *hprof = new PtermProfile (wxT (""), false);
-        hprof->m_showStatusBar = false;
-        PtermHelpConnection *hconn = new PtermHelpConnection ();
-        frame = new PtermFrame (_("Keyboard Help"), hprof, hconn, true);
-    }
-    else
-    {
-        m_helpFrame->Show (true);
-        m_helpFrame->Raise ();
-    }
+    //if (m_helpFrame == NULL)
+    //{
+    //    // If there isn't one yet, create a help window -- same as a
+    //    // regular frame except that the data comes from here, not
+    //    // from a connection.
+    //    PtermProfile *hprof = new PtermProfile (wxT (""), false);
+    //    hprof->m_showStatusBar = false;
+    //    PtermHelpConnection *hconn = new PtermHelpConnection ();
+    //    frame = new PtermFrame (_("Keyboard Help"), hprof, hconn, true);
+    //}
+    //else
+    //{
+    //    m_helpFrame->Show (true);
+    //    m_helpFrame->Raise ();
+    //}
 }
 
 void PtermApp::OnHelpIndex (wxCommandEvent &)
@@ -585,9 +585,25 @@ void PtermApp::OnQuit (wxCommandEvent&)
 
 void PtermApp::LaunchMtutorHelp (u8 helpContext)
 {
+    PtermFrame *frame;
+    PtermConnection *conn;
+    wxString title;
+    conn = new PtermLocalConnection ();
+    title = wxT ("Pterm help");
+    PtermProfile *hprof = new PtermProfile (wxT (""), false);
+    hprof->m_showStatusBar = false;
+    hprof->m_floppy0 = true;
+
+    frame = new PtermFrame (title, hprof, conn);
+    frame->m_MTFiles[0].SetRamBased ();
+    frame->m_MTFiles[0].SetHelpContext (helpContext);
+    frame->m_needtoBoot = true;
+    frame->Show (true);
+    frame->Raise ();
+
     // TEMP 
-    wxString msg = wxString::Format (wxT ("Help Context = %i"), helpContext);
-    wxMessageDialog *dlg = new wxMessageDialog (NULL, msg, _ ("HELP"));
-    dlg->ShowModal ();
+    //wxString msg = wxString::Format (wxT ("Help Context = %i"), helpContext);
+    //wxMessageDialog *dlg = new wxMessageDialog (NULL, msg, _ ("HELP"));
+    //dlg->ShowModal ();
 }
 

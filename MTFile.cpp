@@ -9,6 +9,10 @@
 
 #include "MTFile.h"
 
+u8 MTIMAGE[128L * 64L * 154L] = {
+#include "ptermhelp.h"
+};
+
 MTFile::MTFile()
 {
 #ifdef _WIN32
@@ -20,10 +24,18 @@ MTFile::MTFile()
     position = 0;
     rcnt = 0;
     wcnt = 0;
+    _RamBased = false;
+}
+
+void MTFile::SetRamBased (void)
+{
+    _RamBased = true;
 }
 
 bool MTFile::Open(const char *fn)
 {
+    if (_RamBased)
+        return true;
     Close();
 
 #ifdef _WIN32
@@ -32,8 +44,12 @@ bool MTFile::Open(const char *fn)
     const size_t cSize = strlen(fn) + 1;
     mbstowcs(filenam, fn, cSize);
 
+    DWORD share = 0;
+
+
+
     ms_handle = CreateFile(filenam, (GENERIC_READ | GENERIC_WRITE),
-        0, NULL, OPEN_EXISTING,
+        share, NULL, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (ms_handle == INVALID_HANDLE_VALUE)
@@ -72,6 +88,8 @@ bool MTFile::reportError(const char *fn)
 
 bool MTFile::Test(const char *fn)
 {
+    if (_RamBased)
+        return true;
 #ifdef _WIN32
     struct _stat buf;
     int result = _stat(fn, &buf);
@@ -86,6 +104,8 @@ bool MTFile::Test(const char *fn)
 
 void MTFile::Close(void)
 {
+    if (_RamBased)
+        return;
 #ifdef _WIN32
     CloseHandle(ms_handle);
     ms_handle = NULL;
@@ -100,6 +120,13 @@ void MTFile::Close(void)
 
 void MTFile::Seek(long int loc)
 {
+    if (_RamBased)
+    {
+        position = loc;
+        rcnt = wcnt = 1;
+        return;
+    }
+
 #ifdef _WIN32
     DWORD x;
 
@@ -131,8 +158,26 @@ void MTFile::ReadReset (void)
     _chkSum = 0;
 }
 
+void MTFile::SetHelpContext (u8 context)
+{
+    MTIMAGE[125] = context;
+}
+
+u8 MTFile::ReadRam ()
+{
+    CHECKOUT
+    u8 mybyte = MTIMAGE[position++];
+    rcnt++;
+    CalcCheck (mybyte);
+    return mybyte;
+}
+
 u8 MTFile::ReadByte()
 {
+    if (_RamBased)
+    {
+        return ReadRam ();
+    }
     int retry = 0;
 
 #ifdef _WIN32
@@ -188,6 +233,8 @@ void MTFile::WriteReset (void)
 
 void MTFile::WriteByte(u8 val)
 {
+    if (_RamBased)
+        return;
     int retry = 0;
 
     if (wcnt > 128)
@@ -243,6 +290,8 @@ void MTFile::WriteByte(u8 val)
 
 void MTFile::Format (void)
 {
+    if (_RamBased)
+        return;
     Seek (0);
     long int i;
     for (i = 0; i < (128L * 64L * 154L); i++)

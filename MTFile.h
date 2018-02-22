@@ -25,6 +25,7 @@ public:
     void WriteReset (void);
     void ReadReset (void);
     void Format (void);
+    void SetRamBased (void);
     bool Active(void) const
     {
 #ifdef _WIN32
@@ -35,8 +36,10 @@ public:
 #endif
     }
     bool reportError(const char *fn);
+    void SetHelpContext (u8 context);
 
 private:
+    bool _RamBased;
     u16 _chkSum;
     void CalcCheck (u8 b);
 
@@ -48,6 +51,7 @@ private:
     long int position;
     int rcnt;
     int wcnt;
+    u8 ReadRam ();
 };
 
 #define CHECKOUT                                        \

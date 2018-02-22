@@ -115,6 +115,7 @@ void PtermProfile::init (void)
     m_mTutorBoot = false;
     m_floppy0 = false;
     m_floppy1 = false;
+    m_nolock = false;
 
     m_floppy0File = wxT ("");
     m_floppy1File = wxT ("");
