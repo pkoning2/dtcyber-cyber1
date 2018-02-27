@@ -138,7 +138,7 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
             ptermApp->m_curProfile = m_profile->m_profileName;
         
         PtermPrefDialog dlg (NULL, wxID_ANY, _("Profile Editor"),
-                             wxDefaultPosition, wxSize (461, 575));
+                             wxDefaultPosition, wxSize (481, 575));
 
         // Show the profile editor; the exit status does not matter.
         dlg.ShowModal ();
