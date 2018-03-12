@@ -118,8 +118,7 @@ void PtermConnDialog::CreateDefaultProfiles (wxDir& )
 void PtermConnDialog::OnClose (wxCloseEvent &)
 { 
 #if !defined (__WXMAC__)
-    wxWindow *win = ptermApp->GetTopWindow();
-    if (win == NULL || win == this)
+    if (ptermApp->m_firstFrame == NULL)
     {
         ptermApp->Exit();
     }
@@ -134,8 +133,7 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
     if (event.GetEventObject () == btnCancel)
     {
 #if !defined (__WXMAC__)
-        wxWindow *win = ptermApp->GetTopWindow();
-        if (win == NULL || win == this)
+        if (ptermApp->m_firstFrame == NULL)
         {
             ptermApp->Exit();
         }

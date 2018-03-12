@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-12 16:35-0400\n"
+"POT-Creation-Date: 2018-03-12 16:54-0400\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -358,7 +358,7 @@ msgstr "Probleem bij aanmaken van de programma-informatiefolder"
 msgid "Open a new terminal window"
 msgstr "Nieuw terminalvenster openmaken"
 
-#: PtermApp.cpp:456 PtermConnDialog.cpp:152
+#: PtermApp.cpp:456 PtermConnDialog.cpp:150
 #, fuzzy
 msgid "Profile Editor"
 msgstr "Voorkeurbestand"
@@ -376,11 +376,11 @@ msgstr "Kies een voorkeurbestand en klik op Verbinden."
 msgid "Cancel"
 msgstr "Annuleer"
 
-#: PtermConnDialog.cpp:77 PtermConnDialog.cpp:217
+#: PtermConnDialog.cpp:77 PtermConnDialog.cpp:215
 msgid "Connect"
 msgstr "Verbinden"
 
-#: PtermConnDialog.cpp:229 PtermPrefDialog.cpp:1197
+#: PtermConnDialog.cpp:227 PtermPrefDialog.cpp:1197
 #, c-format
 msgid ""
 "Profile '%s' not found. Problem loading file:\n"
@@ -391,7 +391,7 @@ msgstr ""
 "\n"
 "    %s"
 
-#: PtermConnDialog.cpp:233 PtermPrefDialog.cpp:803 PtermPrefDialog.cpp:823
+#: PtermConnDialog.cpp:231 PtermPrefDialog.cpp:803 PtermPrefDialog.cpp:823
 #: PtermPrefDialog.cpp:845 PtermPrefDialog.cpp:1119 PtermPrefDialog.cpp:1199
 msgid "Error"
 msgstr "Fout"

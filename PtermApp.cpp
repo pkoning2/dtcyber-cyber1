@@ -499,26 +499,7 @@ void PtermApp::OnAbout (wxCommandEvent&)
 
 void PtermApp::OnHelpKeys (wxCommandEvent &)
 {
-
     LaunchMtutorHelp (helpContextKeyboard);
-
-    //PtermFrame *frame;
-
-    //if (m_helpFrame == NULL)
-    //{
-    //    // If there isn't one yet, create a help window -- same as a
-    //    // regular frame except that the data comes from here, not
-    //    // from a connection.
-    //    PtermProfile *hprof = new PtermProfile (wxT (""), false);
-    //    hprof->m_showStatusBar = false;
-    //    PtermHelpConnection *hconn = new PtermHelpConnection ();
-    //    frame = new PtermFrame (_("Keyboard Help"), hprof, hconn, true);
-    //}
-    //else
-    //{
-    //    m_helpFrame->Show (true);
-    //    m_helpFrame->Raise ();
-    //}
 }
 
 void PtermApp::OnHelpIndex (wxCommandEvent &)
@@ -564,10 +545,15 @@ void PtermApp::OnQuit (wxCommandEvent&)
         frame = nextframe;
     }
 
-    // Help frame is not in the list, so check for it separately
+    // Help frame and connect dialog window are not in the list, so
+    // check for those separately
     if (m_helpFrame != NULL)
     {
         m_helpFrame->Close (true);
+    }
+    if (m_connDialog != NULL)
+    {
+        m_connDialog->Close (true);
     }
 
 #if PTERM_MDI // defined (__WXMAC__)
