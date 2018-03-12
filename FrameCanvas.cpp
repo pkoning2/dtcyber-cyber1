@@ -1668,11 +1668,13 @@ void PtermFrame::BuildMenuBar (void)
 void PtermFrame::BuildFileMenu (void)
 {
     ConnType_e ct = m_conn->ConnType ();
-    
     menuFile = new wxMenu;
-    menuFile->Append (Pterm_Connect,
-                      _("New Terminal Window...") ACCELERATOR ("\tCtrl-N"),
-                      _("New Terminal Window"));
+    if (!m_profile->m_isHelp)
+    {
+        menuFile->Append (Pterm_Connect,
+            _ ("New Terminal Window...") ACCELERATOR ("\tCtrl-N"),
+            _ ("New Terminal Window"));
+    }
 
     if (m_mtutorBoot)
     {
@@ -1687,8 +1689,8 @@ void PtermFrame::BuildFileMenu (void)
                           _("Connect Again") ACCELERATOR ("\tCtrl-Shift-N"),
                           _("Connect to the same host"));
     }
-
-    menuFile->AppendSeparator();
+    if (!m_profile->m_isHelp)
+        menuFile->AppendSeparator();
 
     menuFile->Append (Pterm_SaveScreen,
                       _("Save Screen") ACCELERATOR ("\tCtrl-S"),
@@ -1707,12 +1709,12 @@ void PtermFrame::BuildFileMenu (void)
                       _("Printout page setup"));
     menuFile->Append (Pterm_Preview, _("Print Preview"),
                       _("Preview screen print"));
-    menuFile->AppendSeparator ();
-    menuFile->Append (Pterm_Pref, _("Edit Profiles...")
-                      MACACCEL ("\tCtrl-,"),
-                      _("Set program configuration"));
-    if (ct == HOST || ct == LOCAL)
+    if (!m_profile->m_isHelp)
     {
+        menuFile->AppendSeparator ();
+        menuFile->Append (Pterm_Pref, _ ("Edit Profiles...")
+            MACACCEL ("\tCtrl-,"),
+            _ ("Set program configuration"));
         menuFile->Append(Pterm_SessionSettings,
                          _("Session Settings..."),
                          _("Set the session settings"));
@@ -1807,14 +1809,14 @@ void PtermFrame::BuildViewMenu (wxMenu *menu)
                            _("Display menu bar"), _("Display menu bar"));
     menu->Check (Pterm_ToggleMenuBar, m_showMenuBar);
 #endif
-    if (m_conn->ConnType () != HELP)
+    if (!m_profile->m_isHelp)
     {
         menu->AppendCheckItem (Pterm_ToggleStatusBar,
                                _("Display status bar"),
                                _("Display status bar"));
         menu->Check (Pterm_ToggleStatusBar, m_showStatusBar);
-        menu->AppendSeparator ();
     }
+    menu->AppendSeparator ();
     if (GetContentScaleFactor () == 2.0)
     {
         scaleList = scaleList_Retina;
@@ -1866,10 +1868,13 @@ void PtermFrame::BuildHelpMenu (void)
     // menu ends up empty.  Sigh.
     menuHelp = new wxMenu;
     menuHelp->Append (Pterm_About, _("About Pterm"), _("Show about dialog"));
-    menuHelp->Append (Pterm_HelpKeys, _("Pterm keyboard"),
-                      _("Show keyboard description"));
-    menuHelp->Append (Pterm_HelpIndex, _ ("Pterm help"),
-        _ ("Show Pterm help index"));
+    if (!m_profile->m_isHelp)
+    {
+        menuHelp->Append (Pterm_HelpKeys, _ ("Pterm keyboard"),
+            _ ("Show keyboard description"));
+        menuHelp->Append (Pterm_HelpIndex, _ ("Pterm help"),
+            _ ("Show Pterm help index"));
+    }
 }
 
 void PtermFrame::BuildPopupMenu (void)
@@ -1898,7 +1903,7 @@ void PtermFrame::BuildPopupMenu (void)
                        _("Search this...")); // g=google this?
     menuPopup->AppendSeparator ();
 
-    if (ct != HELP)
+    if (!m_profile->m_isHelp)
     {
         menuPopup->Append(Pterm_SessionSettings,
                           _("Session Settings..."),

@@ -585,7 +585,6 @@ void PtermApp::OnQuit (wxCommandEvent&)
 
 void PtermApp::LaunchMtutorHelp (u8 helpContext)
 {
-    PtermFrame *frame;
     PtermConnection *conn;
     wxString title;
     conn = new PtermLocalConnection ();
@@ -593,13 +592,22 @@ void PtermApp::LaunchMtutorHelp (u8 helpContext)
     PtermProfile *hprof = new PtermProfile (wxT (""), false);
     hprof->m_showStatusBar = false;
     hprof->m_floppy0 = true;
+    hprof->m_isHelp = true;
 
-    frame = new PtermFrame (title, hprof, conn);
-    frame->m_MTFiles[0].SetRamBased ();
-    frame->m_MTFiles[0].SetHelpContext (helpContext);
-    frame->m_needtoBoot = true;
-    frame->Show (true);
-    frame->Raise ();
+    if (m_helpFrame == NULL)
+    {
+        m_helpFrame = new PtermFrame (title, hprof, conn);
+        m_helpFrame->m_MTFiles[0].SetRamBased ();
+        m_helpFrame->m_MTFiles[0].SetHelpContext (helpContext);
+        m_helpFrame->m_needtoBoot = true;
+        m_helpFrame->Raise ();
+    }
+    else
+    {
+        m_helpFrame->m_MTFiles[0].SetHelpContext (helpContext);
+        m_helpFrame->m_needtoBoot = true;
+        m_helpFrame->Raise ();
+    }
 
     // TEMP 
     //wxString msg = wxString::Format (wxT ("Help Context = %i"), helpContext);

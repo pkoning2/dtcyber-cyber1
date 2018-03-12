@@ -24,6 +24,7 @@ typedef enum
 class PtermProfile
 {
 public:
+    bool        m_isHelp;
     wxString    m_profileName;
     wxFileName  m_fileName;
     bool        m_Ok;

@@ -62,6 +62,7 @@ bool PtermProfile::SetName (wxString name)
 
 void PtermProfile::init (void)
 {
+    m_isHelp = false;
     // The default profile is "OK"
     m_Ok = true;
     
