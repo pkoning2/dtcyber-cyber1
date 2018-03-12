@@ -1278,6 +1278,8 @@ PtermMainFrame::PtermMainFrame (void)
     menuHelp->Append (Pterm_About, _("About Pterm"), _("Show about dialog"));
     menuHelp->Append (Pterm_HelpKeys, _("Pterm keyboard"),
                       _("Show keyboard description"));
+    menuHelp->Append (Pterm_HelpIndex, _("Pterm help"),
+                      _("Show Pterm help index"));
     
     // now append the freshly created menu to the menu bar...
     menuBar = new wxMenuBar ();
@@ -1669,17 +1671,14 @@ void PtermFrame::BuildFileMenu (void)
 {
     ConnType_e ct = m_conn->ConnType ();
     menuFile = new wxMenu;
-    if (!m_profile->m_isHelp)
-    {
-        menuFile->Append (Pterm_Connect,
-            _ ("New Terminal Window...") ACCELERATOR ("\tCtrl-N"),
-            _ ("New Terminal Window"));
-    }
+    menuFile->Append (Pterm_Connect,
+                      _("New Terminal Window...") ACCELERATOR ("\tCtrl-N"),
+                      _("New Terminal Window"));
 
     if (m_mtutorBoot)
     {
         menuFile->Append(Pterm_ResetMtutor, _("Reset MicroTutor"),
-           _("Reset the MicroTutor boot process") );
+                         _("Reset the MicroTutor boot process") );
     }
     else if (ct == HOST)
     {
@@ -1689,8 +1688,7 @@ void PtermFrame::BuildFileMenu (void)
                           _("Connect Again") ACCELERATOR ("\tCtrl-Shift-N"),
                           _("Connect to the same host"));
     }
-    if (!m_profile->m_isHelp)
-        menuFile->AppendSeparator();
+    menuFile->AppendSeparator();
 
     menuFile->Append (Pterm_SaveScreen,
                       _("Save Screen") ACCELERATOR ("\tCtrl-S"),
@@ -1709,12 +1707,12 @@ void PtermFrame::BuildFileMenu (void)
                       _("Printout page setup"));
     menuFile->Append (Pterm_Preview, _("Print Preview"),
                       _("Preview screen print"));
+    menuFile->AppendSeparator ();
+    menuFile->Append (Pterm_Pref, _("Edit Profiles...")
+                      MACACCEL ("\tCtrl-,"),
+                      _("Set program configuration"));
     if (!m_profile->m_isHelp)
     {
-        menuFile->AppendSeparator ();
-        menuFile->Append (Pterm_Pref, _ ("Edit Profiles...")
-            MACACCEL ("\tCtrl-,"),
-            _ ("Set program configuration"));
         menuFile->Append(Pterm_SessionSettings,
                          _("Session Settings..."),
                          _("Set the session settings"));
@@ -1868,13 +1866,10 @@ void PtermFrame::BuildHelpMenu (void)
     // menu ends up empty.  Sigh.
     menuHelp = new wxMenu;
     menuHelp->Append (Pterm_About, _("About Pterm"), _("Show about dialog"));
-    if (!m_profile->m_isHelp)
-    {
-        menuHelp->Append (Pterm_HelpKeys, _ ("Pterm keyboard"),
-            _ ("Show keyboard description"));
-        menuHelp->Append (Pterm_HelpIndex, _ ("Pterm help"),
-            _ ("Show Pterm help index"));
-    }
+    menuHelp->Append (Pterm_HelpKeys, _("Pterm keyboard"),
+                      _("Show keyboard description"));
+    menuHelp->Append (Pterm_HelpIndex, _("Pterm help"),
+                      _("Show Pterm help index"));
 }
 
 void PtermFrame::BuildPopupMenu (void)
@@ -2138,7 +2133,7 @@ void PtermFrame::procDataLoop (void)
             m_nextword = word & 01777777;
             if (m_conn->Ascii ())
             {
-                m_timer.Start (8);  // 16.67 / 2.2, rounded
+                m_timer.Start (8);  // 16.67 / (21 / 10), rounded
             }
             else
             {
@@ -2206,7 +2201,8 @@ void PtermFrame::procDataLoop (void)
         switch (action)
         {
         case wxID_OK:
-            ptermApp->DoConnect ();
+            // ???
+            ptermApp->DoConnectDialog ();
             break;
         default:
             Close (true);
@@ -2978,7 +2974,7 @@ void PtermFrame::OnSaveAudio (wxCommandEvent &)
 
 void PtermFrame::OnReset (wxCommandEvent &)
 {
-    m_statusBar->SetStatusText (_ (" Booted from floppy"),
+    m_statusBar->SetStatusText (_(" Booted from floppy"),
         STATUS_CONN);
 
     BootMtutor();
@@ -2987,7 +2983,7 @@ void PtermFrame::OnReset (wxCommandEvent &)
 void PtermFrame::OnSessionSettings (wxCommandEvent &)
 {
     //show dialog
-    PtermPrefDialog dlg (this, wxID_ANY, _ ("Session Settings..."),
+    PtermPrefDialog dlg (this, wxID_ANY, _("Session Settings..."),
                          wxDefaultPosition, wxSize (461, 475), *m_profile);
     
     if (dlg.ShowModal () == wxID_OK)
@@ -6894,8 +6890,7 @@ int PtermFrame::check_pcZ80(void)
 
         m_canvas->Refresh(false);
 
-        m_statusBar->SetStatusText (_ (" Program ended"),
-            STATUS_CONN);
+        m_statusBar->SetStatusText (_(" Program ended"), STATUS_CONN);
 
         return 2;
         

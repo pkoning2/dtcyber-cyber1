@@ -13,6 +13,7 @@
 #include "PtermConnDialog.h"
 #include "PtermPrefDialog.h"
 #include <wx/stdpaths.h>
+#include "ptermversion.h"
 
 PtermApp *ptermApp;
 bool emulationActive = true;
@@ -76,7 +77,9 @@ bool PtermApp::OnInit (void)
     
     ptermApp = this;
     SetAppName (wxT ("Pterm"));
-    m_firstFrame = m_helpFrame = NULL;
+    m_firstFrame = NULL;
+    m_helpFrame = NULL;
+    m_connDialog = NULL;
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
 #ifdef DEBUG
@@ -209,8 +212,6 @@ bool PtermApp::OnInit (void)
 }
 
 // Start connection dialog, or open a connection if auto-connecting.
-// We come here if there are no arguments, or if there are but the
-// argument does not refer to a profile file (*.ppf file).
 void PtermApp::MacNewFile (void)
 {
     if (argc > 1)
@@ -222,9 +223,8 @@ void PtermApp::MacNewFile (void)
         return;
     }
     
-    // create the main application window.  Ask or autoconnect according
-    // to the current preferences.
-    DoConnect ();
+    // create the main application window.  Ask for a connection.
+    DoConnectDialog ();
 }
 
 void PtermApp::MacOpenFiles (const wxArrayString &s)
@@ -361,14 +361,14 @@ void PtermApp::MacOpenFiles (const wxArrayString &s)
     if (ptermApp->m_firstFrame == NULL)
     {
         // Nothing was opened above, so open the connect dialog.
-        DoConnect ();
+        DoConnectDialog ();
     }
 }
 
 #if defined (__WXMAC__)
 // We come here if the icon is clicked and there are no windows.  But
 // sometimes we come here even if there are windows.  For the latter case,
-// just show & raise the first window.
+// just show & raise the first window (most recently opened window).
 void PtermApp::MacReopenApp (void)
 {
     if (m_firstFrame != NULL)
@@ -378,7 +378,7 @@ void PtermApp::MacReopenApp (void)
     }
     else
     {
-        DoConnect ();
+        DoConnectDialog ();
     }
 }
 #endif
@@ -402,36 +402,33 @@ int PtermApp::OnExit (void)
 
 void PtermApp::OnConnect (wxCommandEvent &)
 {
-    DoConnect ();
+    DoConnectDialog ();
 }
 
-bool PtermApp::DoConnect (PtermProfile *prof)
+void PtermApp::DoConnectDialog (void)
+{
+    if (m_connDialog == NULL)
+        m_connDialog = new PtermConnDialog (wxID_ANY,
+                                            _("Open a new terminal window"),
+                                            wxDefaultPosition,
+                                            wxSize (450, 355));
+    
+    m_connDialog->CenterOnScreen ();
+    m_connDialog->Raise ();
+    m_connDialog->Show ();
+}
+
+void PtermApp::DoConnect (PtermProfile *prof)
 {
     PtermFrame *frame;
     
-    if (prof == NULL)
-    {
-        PtermConnDialog dlg (wxID_ANY, _("Open a new terminal window"),
-                             wxDefaultPosition, wxSize (450, 355)); //450, 355));
-    
-        dlg.CenterOnScreen ();
-        
-        if (dlg.ShowModal () == wxID_OK)
-        {
-            prof = dlg.m_profile;
-            if (!prof->m_profileName.IsEmpty ())
-                m_curProfile = prof->m_profileName;
+    if (!prof->m_profileName.IsEmpty ())
+        m_curProfile = prof->m_profileName;
             
-            //save selection to current
-            m_config->Write (wxT (PREF_CURPROFILE), m_curProfile);
-            m_config->Flush ();
-        }
-        else
-        {
-            return false;     // connect canceled
-        }
-    }
-    
+    //save selection to current
+    m_config->Write (wxT (PREF_CURPROFILE), m_curProfile);
+    m_config->Flush ();
+
     // create the main application window
 
     PtermConnection *conn;
@@ -451,8 +448,6 @@ bool PtermApp::DoConnect (PtermProfile *prof)
         assert (0);
     }
     frame = new PtermFrame (title, prof, conn);
-
-    return (frame != NULL);
 }
 
 void PtermApp::OnPref (wxCommandEvent&)

@@ -64,6 +64,7 @@ OSXMINFLG = -mmacosx-version-min=$(OSXMIN)
 endif
 ARCHLDFLAGS +=  $(OSXMINFLG) $(CXXLIB)
 ARCHCFLAGS  +=  $(OSXMINFLG) $(CXXLIB)
+ARCHCCFLAGS ?= $(ARCHLDFLAGS)
 
 .PHONY : dtcyber 
 

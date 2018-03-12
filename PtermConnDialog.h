@@ -25,17 +25,7 @@ public:
     void OnButton (wxCommandEvent& event);
     void OnSelect (wxCommandEvent& event);
     void OnDoubleClick (wxCommandEvent& event);
-    void OnClose (wxCloseEvent &) { 
-        EndModal (wxID_CANCEL); 
-#if !defined (__WXMAC__)
-        wxWindow *win = ptermApp->GetTopWindow();
-        if (win == NULL || win == this)
-        {
-            ptermApp->Exit();
-        }
-#endif        
-    }
-
+    void OnClose (wxCloseEvent &);
     void CreateDefaultProfiles (wxDir& ldir);
 
     PtermProfile    *m_profile;

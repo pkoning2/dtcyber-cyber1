@@ -115,13 +115,24 @@ void PtermConnDialog::CreateDefaultProfiles (wxDir& )
     delete prof;
 }
 
+void PtermConnDialog::OnClose (wxCloseEvent &)
+{ 
+#if !defined (__WXMAC__)
+    wxWindow *win = ptermApp->GetTopWindow();
+    if (win == NULL || win == this)
+    {
+        ptermApp->Exit();
+    }
+#endif
+    Hide ();
+}
+
 void PtermConnDialog::OnButton (wxCommandEvent& event)
 {
     wxString profile;
     
     if (event.GetEventObject () == btnCancel)
     {
-        EndModal (wxID_CANCEL);
 #if !defined (__WXMAC__)
         wxWindow *win = ptermApp->GetTopWindow();
         if (win == NULL || win == this)
@@ -129,6 +140,7 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
             ptermApp->Exit();
         }
 #endif
+        Hide ();
     }
     else if (event.GetEventObject () == btnEdit)
     {
@@ -146,7 +158,8 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
     }
     else if (event.GetEventObject () == btnConnect)
     {
-        EndModal (wxID_OK);
+        ptermApp->DoConnect (m_profile);
+        Hide ();
     }
     else if (event.GetEventObject () == btnHelp)
     {
@@ -172,7 +185,10 @@ void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
         SelectProfile (lstProfiles->GetSelection ());
         // If it's a good profile, we're done.
         if (btnConnect->IsEnabled ())
-            EndModal (wxID_OK);
+        {
+            ptermApp->DoConnect (m_profile);
+            Hide ();
+        }
     }
 }
 

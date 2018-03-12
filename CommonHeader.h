@@ -107,7 +107,6 @@ extern "C"
 #include "const.h"
 #include "types.h"
 #include "dtnetsubs.h"
-#include "ptermversion.h"
 #include "ppt.h"
 
 #if wxUSE_LIBGNOMEPRINT

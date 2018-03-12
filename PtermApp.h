@@ -13,10 +13,10 @@
 #include "CommonHeader.h"
 #include "PtermProfile.h"
 
-
 extern "C" int ptermNextGswWord (void *connection, int idle);
 
 class PtermFrame;
+class PtermConnDialog;
 class PtermApp;
 extern PtermApp *ptermApp;
 
@@ -41,7 +41,8 @@ public:
     void OnPref(wxCommandEvent& event);
     void OnAbout (wxCommandEvent& event);
 
-    bool DoConnect (PtermProfile *prof = NULL);
+    void DoConnect (PtermProfile *prof);
+    void DoConnectDialog (void);
     
     static wxColour SelectColor (wxWindow &parent, const wxChar *title, 
                                  wxColour &initcol);
@@ -74,6 +75,8 @@ public:
 
     char        traceFn[20];
 
+    PtermConnDialog *m_connDialog;
+    
 private:
     wxLocale    m_locale; // locale we'll be using
     
