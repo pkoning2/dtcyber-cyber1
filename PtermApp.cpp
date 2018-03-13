@@ -34,8 +34,8 @@ Trace traceF;
 Trace debugF;
 #endif
 
-// the application icon (under Windows and OS/2 it is in resources)
-#if defined (__WXGTK__) || defined (__WXMOTIF__) || defined (__WXMAC__) || defined (__WXMGL__) || defined (__WXX11__)
+// the application icon (under Windows, Mac, and OS/2 it is in resources)
+#if defined (__WXGTK__) || defined (__WXMOTIF__) || defined (__WXMGL__) || defined (__WXX11__)
 #include "pterm_32.xpm"
 #endif
 
@@ -598,7 +598,7 @@ void PtermApp::LaunchMtutorHelp (u8 helpContext)
     if (m_helpFrame == NULL)
     {
         m_helpFrame = new PtermFrame (title, hprof, conn);
-        m_helpFrame->m_MTFiles[0].SetRamBased ();
+        m_helpFrame->m_MTFiles[0].SetRamBased ("ptermhelp.mte");
         m_helpFrame->m_MTFiles[0].SetHelpContext (helpContext);
         m_helpFrame->m_needtoBoot = true;
         m_helpFrame->Raise ();

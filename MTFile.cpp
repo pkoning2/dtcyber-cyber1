@@ -7,11 +7,18 @@
 // Licence:     see pterm-license.txt
 /////////////////////////////////////////////////////////////////////////////
 
+#include "PtermApp.h"
 #include "MTFile.h"
 
+// For GTK (Linux) the Microtutor floppy image for help is compiled in
+// as initial content of this array; for Windows and Mac is it read
+// from the actual floppy file which is packaged with the program.
 u8 MTIMAGE[128L * 64L * 154L] = {
+#if defined (__WXGTK__)
 #include "ptermhelp.h"
+#endif
 };
+static bool mtimage_loaded = false;
 
 MTFile::MTFile()
 {
@@ -27,8 +34,30 @@ MTFile::MTFile()
     _RamBased = false;
 }
 
-void MTFile::SetRamBased (void)
+void MTFile::SetRamBased (const char *fn)
 {
+#if !defined (__WXGTK__)
+    if (!mtimage_loaded)
+    {
+        wxFileName filename (ptermApp->m_resourcedir, fn);
+        FILE *f;
+        int i;
+        
+        f = fopen (filename.GetFullPath (), "rb");
+        if (f != NULL)
+        {
+            i = fread (MTIMAGE, 1, sizeof (MTIMAGE), f);
+            if (i != sizeof (MTIMAGE))
+            {
+                perror ("help floppy image read");
+                fprintf (stderr, "expected %ld bytes, got %d bytes\n",
+                         sizeof (MTIMAGE), i);
+            }
+            fclose (f);
+        }
+    }
+#endif
+    mtimage_loaded = true;
     _RamBased = true;
 }
 

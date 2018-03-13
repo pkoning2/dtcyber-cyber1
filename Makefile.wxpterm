@@ -115,8 +115,11 @@ else
 	#objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
 endif
 
-wxversion.h: wxversion wxversion.py
+wxversion.h : wxversion wxversion.py
 	./wxversion.py
+
+ptermhelp.h : PtermHelpHeader.py ptermhelp.mte
+	python3 PtermHelpHeader.py ptermhelp.mte ptermhelp.h
 
 dd60:	$(DD60OBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
@@ -154,7 +157,7 @@ cc545.app: cc545
 	cp cc545 cc545.app/Contents/MacOS
 	touch $@
 
-Pterm.app: pterm pterm-info.plist pterm.icns $(MOFILES) 
+Pterm.app: pterm pterm-info.plist pterm.icns $(MOFILES) ptermhelp.mte
 	rm -rf Pterm.app
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en.lproj
 	mkdir -p $(addprefix $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES)),.lproj)
@@ -166,6 +169,7 @@ ifneq ("$(SDLFW)", "")
 	install_name_tool -change @rpath/$(SDLFW).framework/Versions/A/$(SDLFW) @loader_path/../Frameworks/$(SDLFW).framework/Versions/A/$(SDLFW) Pterm.app/Contents/MacOS/pterm
 endif
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
+	cp ptermhelp.mte Pterm.app/Contents/Resources/
 	for d in $(LANGUAGES); do \
 	    cp $$d/pterm.mo Pterm.app/Contents/Resources/$${d}.lproj; \
 	done

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-13 13:57-0400\n"
+"POT-Creation-Date: 2018-03-13 17:35-0400\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -350,20 +350,20 @@ msgstr " PLATO toetsenbord "
 msgid " Program ended"
 msgstr "Programma is geëindigd"
 
-#: PtermApp.cpp:117
+#: PtermApp.cpp:119
 msgid "Error creating application data directory "
 msgstr "Probleem bij aanmaken van de programma-informatiefolder"
 
-#: PtermApp.cpp:412
+#: PtermApp.cpp:414
 msgid "Open a new terminal window"
 msgstr "Nieuw terminalvenster openmaken"
 
-#: PtermApp.cpp:456 PtermConnDialog.cpp:144
+#: PtermApp.cpp:458 PtermConnDialog.cpp:144
 #, fuzzy
 msgid "Profile Editor"
 msgstr "Voorkeurbestand"
 
-#: PtermApp.cpp:472 PtermApp.cpp:477
+#: PtermApp.cpp:474 PtermApp.cpp:479
 msgid "PLATO terminal emulator."
 msgstr "PLATO terminal-emulator."
 
@@ -816,7 +816,7 @@ msgstr "Achtergrond"
 msgid "Pterm printout"
 msgstr "Pterm afdruk"
 
-#: MTFile.cpp:76
+#: MTFile.cpp:102
 msgid "Error opening \\u00b5Tutor floppy file "
 msgstr "Floppybestand kan niet geopend worden"
 

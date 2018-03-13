@@ -1,4 +1,10 @@
-# create ptermhelp.h floppy header from ptermhelp.mte floppy image
+#!/usr/bin/env python3
+
+""" Create ptermhelp.h floppy header from ptermhelp.mte floppy image
+
+This version creates a trimmed version, with trailing zeroes omitted.
+"""
+
 import sys
 if len(sys.argv) != 3:
     print ("Usage: ",sys.argv[0],"inputfile outputfile")
@@ -6,18 +12,23 @@ if len(sys.argv) != 3:
 print ("Converting:",sys.argv[1],"to",sys.argv[2])
 binFile = open(sys.argv[1],'rb')
 outFile = open(sys.argv[2],"w")
-binaryData = binFile.read(1261568)
-offset = 0
-for k in range(0, 9856*8):
-    outFile.write("/* " + hex(offset) + " */\t")
-    str = ""
-    for i in range(offset, offset+15):
-        offset += 1
-        str += (hex(binaryData[i])+","+"\t")
-    str += (hex(binaryData[i+1]))
-    offset += 1
-    if (offset < 1261568):
-        str += ","
-    outFile.write(str+"\n")
-    print(str)
+binaryData = binFile.read()
+binFile.close ()
+if len (binaryData) != 1261568:
+    raise ValueError ("Unexpected file size for {}".format (sys.argv[1]))
+trimmedData = binaryData.rstrip (b'\000')
+print ("trimmed from 1261568 to {} bytes".format (len (trimmedData)))
+
+print ("/* {} generated from {} */".format (sys.argv[2], sys.argv[1]),
+       file = outFile)
+
+olist = list ()
+for b in trimmedData:
+    olist.append ("0x{:0>2x}".format (b))
+    if len (olist) == 8:
+        olist.append ("")
+        print (", ".join (olist), file = outFile)
+        olist = list ()
+if olist:        
+    print (", ".join (olist), file = outFile)
 outFile.close()

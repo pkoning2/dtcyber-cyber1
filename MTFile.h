@@ -20,12 +20,12 @@ public:
     bool Test(const char *fn);
     void Close(void);
     void Seek(long int loc);
-    u8 ReadByte();
+    u8 ReadByte(void);
     void WriteByte(u8 val);
     void WriteReset (void);
     void ReadReset (void);
     void Format (void);
-    void SetRamBased (void);
+    void SetRamBased (const char *fn);
     bool Active(void) const
     {
 #ifdef _WIN32
@@ -51,7 +51,7 @@ private:
     long int position;
     int rcnt;
     int wcnt;
-    u8 ReadRam ();
+    u8 ReadRam (void);
 };
 
 #define CHECKOUT                                        \
