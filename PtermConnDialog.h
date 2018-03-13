@@ -21,6 +21,7 @@ class PtermConnDialog : public wxDialog
 public:
     PtermConnDialog (wxWindowID id, const wxString &title, wxPoint pos,
                      wxSize size);
+    ~PtermConnDialog ();
     
     void OnButton (wxCommandEvent& event);
     void OnSelect (wxCommandEvent& event);

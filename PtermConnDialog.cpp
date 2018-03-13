@@ -102,6 +102,12 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title,
         btnConnect->Enable (false);
 }
 
+PtermConnDialog::~PtermConnDialog ()
+{
+    ptermApp->m_connDialog = NULL;
+    ptermApp->TestForExit ();
+}
+
 void PtermConnDialog::CreateDefaultProfiles (wxDir& )
 {
     PtermProfile *prof;
@@ -116,14 +122,8 @@ void PtermConnDialog::CreateDefaultProfiles (wxDir& )
 }
 
 void PtermConnDialog::OnClose (wxCloseEvent &)
-{ 
-#if !defined (__WXMAC__)
-    if (ptermApp->m_firstFrame == NULL)
-    {
-        ptermApp->Exit();
-    }
-#endif
-    Hide ();
+{
+    Destroy ();
 }
 
 void PtermConnDialog::OnButton (wxCommandEvent& event)
@@ -132,13 +132,7 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
     
     if (event.GetEventObject () == btnCancel)
     {
-#if !defined (__WXMAC__)
-        if (ptermApp->m_firstFrame == NULL)
-        {
-            ptermApp->Exit();
-        }
-#endif
-        Hide ();
+        Close ();
     }
     else if (event.GetEventObject () == btnEdit)
     {
@@ -157,7 +151,7 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
     else if (event.GetEventObject () == btnConnect)
     {
         ptermApp->DoConnect (m_profile);
-        Hide ();
+        Close ();
     }
     else if (event.GetEventObject () == btnHelp)
     {
@@ -185,7 +179,7 @@ void PtermConnDialog::OnDoubleClick (wxCommandEvent& event)
         if (btnConnect->IsEnabled ())
         {
             ptermApp->DoConnect (m_profile);
-            Hide ();
+            Close ();
         }
     }
 }

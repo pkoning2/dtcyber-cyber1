@@ -106,9 +106,11 @@ bool PtermApp::OnInit (void)
 #else
     m_config = new wxConfig (wxT ("Pterm"));
 #endif
-    // Get the standard place to put per-user data files given the
-    // application name.  Create that directory if necessary.  This is
-    // where we'll put profiles.
+    // Get the standard places for program resources, and where to put
+    // per-user data files given the application name.  Create the
+    // data file directory if necessary.  This is where we'll put
+    // profiles.
+    m_resourcedir = wxStandardPaths::Get ().GetResourcesDir ();
     m_userdatadir = wxStandardPaths::Get ().GetUserDataDir ();
     bool dirok = wxFileName::Mkdir (m_userdatadir, wxS_DIR_DEFAULT,
                                     wxPATH_MKDIR_FULL);
@@ -563,6 +565,23 @@ void PtermApp::OnQuit (wxCommandEvent&)
 #endif
 }
 
+#if !defined (__WXMAC__)
+// Test if it is time for the program to exit; if yes do so.
+//
+// Keep running if:
+// 1. Any terminal window is open
+// 2. The help window is open
+// 3. The "New Terminal Window" dialog window is open
+void PtermApp::TestForExit (void)
+{
+    if (m_firstFrame == NULL &&
+        m_helpFrame == NULL &&
+        m_connDialog == NULL)
+    {
+        Exit ();
+    }
+}
+#endif
 
 void PtermApp::LaunchMtutorHelp (u8 helpContext)
 {
@@ -572,6 +591,7 @@ void PtermApp::LaunchMtutorHelp (u8 helpContext)
     title = wxT ("Pterm help");
     PtermProfile *hprof = new PtermProfile (wxT (""), false);
     hprof->m_showStatusBar = false;
+    hprof->m_useAccel = true;
     hprof->m_floppy0 = true;
     hprof->m_isHelp = true;
 
@@ -589,10 +609,5 @@ void PtermApp::LaunchMtutorHelp (u8 helpContext)
         m_helpFrame->m_needtoBoot = true;
         m_helpFrame->Raise ();
     }
-
-    // TEMP 
-    //wxString msg = wxString::Format (wxT ("Help Context = %i"), helpContext);
-    //wxMessageDialog *dlg = new wxMessageDialog (NULL, msg, _ ("HELP"));
-    //dlg->ShowModal ();
 }
 

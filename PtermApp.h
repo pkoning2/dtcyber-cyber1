@@ -54,12 +54,16 @@ public:
     void MacOpenFiles (const wxArrayString &s);
 #if defined (__WXMAC__)
     void MacReopenApp (void);
+    void TestForExit (void) {}
+#else
+    void TestForExit (void);
 #endif
 
     void LaunchMtutorHelp (u8 helpContext);
 
     wxConfig    *m_config;
     wxString    m_userdatadir;
+    wxString    m_resourcedir;
 
     // Values saved in m_config
     wxString    m_curProfile;

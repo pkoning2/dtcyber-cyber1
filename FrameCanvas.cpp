@@ -1632,6 +1632,7 @@ PtermFrame::~PtermFrame ()
     {
         ptermApp->m_firstFrame = m_nextFrame;
     }
+    ptermApp->TestForExit ();
 }
 
 void PtermFrame::BuildMenuBar (void)
