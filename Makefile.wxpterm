@@ -123,7 +123,7 @@ ptermhelp.h : PtermHelpHeader.py ptermhelp.mte
 
 dd60:	$(DD60OBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(LINK)  $(ARCHCFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+ $(WXLIBS) $(SETPATH)
+	$(LINK)  $(ARCHLDFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
 dtoper:	$(SOBJS) dtoper.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
