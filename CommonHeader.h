@@ -230,5 +230,13 @@ enum
     helpContextConnecting
 };
 
+enum
+{
+    osOther = 0,
+    osMac,
+    osWin,
+    osLinux
+};
+
 
 #endif    // __COMMONHEADER__

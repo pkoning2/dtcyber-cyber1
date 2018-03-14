@@ -185,6 +185,18 @@ void MTFile::ReadReset (void)
 
 void MTFile::SetHelpContext (u8 context)
 {
+    // pass OS Type as part of context
+    u8 ostype = osOther;  // other/unknown = 0
+#if defined (__WXMAC__)
+    ostype = osMac;       // MAC = 1
+#endif
+#if defined (__WXMSW__)
+    ostype = osWin;       // Windows = 2
+#endif
+#if defined (__WXGTK__)
+    ostype = osLinux;     // Linux = 3
+#endif
+    MTIMAGE[124] = ostype;
     MTIMAGE[125] = context;
 }
 
