@@ -237,10 +237,10 @@ revert,abort. loader.
 .*  lo    = ses. link170 list options (default = n).
 .*  el    = abort error level (default = all).
 .*
-.*attach(cmp/m=w,na)
-.*if(.not.file(cmp,as))define(cmp/ct=pu)
-.*begin(cmpbin,,p=cmp)
-.*unload(cmpbin)
+attach(cmp/m=w,na)
+if(.not.file(cmp,as))define(cmp/ct=pu)
+begin(cmpbin,,p=cmp)
+unload(cmpbin)
 .*
 .*        on corporate dev systems, include experimental
 .*        micro plato version.
@@ -264,23 +264,24 @@ endif(loaderr)
 .*
 else(exp)
 attach(conden,cmp,cl2,cl3,cl4,cl5/m=r)
-.*begin,sespack.
-.*ses. link170 cybclib #lo=lo l=map #el=el ..
-.*xld='ldset(preset=zero)' ..
-.*f=(conden,cmp,cl2,cl3,cl4,cl5)
-ldset(preset=zero,err=all,map=sbex/cmap)
-load(conden,cl2,cl3,cl4,cl5)
-nogo(cbin)
+begin,sespack.
+ses. link170 cybclib #lo=lo l=map #el=el ..
+xld='ldset(preset=zero)' ..
+f=(conden,cmp,cl2,cl3,cl4,cl5)
 unload(conden,cmp,cl2,cl3,cl4,cl5)
-rewind,cmap.
-copy,cmap,full.
-unload,cmap.
+ife(ef.ne.0,loaderr)
+xedit(map,l=errs)$l.///.*$t$l.***.*$e
+rewind,map.
+copy,map,full.
+unload,map.
+revert(abort) loader errors
+endif(loaderr)
 endif(exp)
 .*
 purge(cbin,cmap/na)
 define(cbin,cmap)
-*rewind(lgob,cbin)
-*copyei(lgob,cbin,v)
+rewind(lgob,cbin)
+copyei(lgob,cbin,v)
 rewind(map,cmap)
 copyei(map,cmap,v)
 rewind(map)
@@ -631,6 +632,259 @@ revert. conden6
 *edit     mcond5d
 *edit     mcond5e
 ~
+.proc,condcmp,ml=739,list=0/full.
+.*
+.*  central micro plato condensor assembly.
+.*
+.*  exit - cmp = relocatable binary.
+.*
+*
+*         apply mods to cybopl and save in ncybopl.
+*
+begin(sespack)
+ses. tempcor c=cybmods b=cybopl un=plato
+purge(ncybopl/na)
+define(ncybopl)
+copyei(cybopl,ncybopl,v)
+unload(cybopl)
+*
+*         get ccommon.
+* 
+.*begin(binpack)
+attach(ccommon/na)
+begin(sespack)
+*
+*         assemble non-overlayed cmp compass idents.
+*
+note(dirs)/*edit cmpient/*edit cmpilxo
+modify(z,lo=e)/*oplfile ipl,nos/*read dirs
+unload(dirs)
+cstc(i,l=list,e=errs,c=ccommon)
+*
+*         compile non-overlayed cmp cybil modules.
+*
+ses.gencomp seq=80 status b=ncybopl cybccmn ..
+m=(cmpmcmp,cmpmacs,cmpmioc,cmpmtrn,cmpmctb,cmpmstt)
+*
+*         'kludge for 's'e's type procedure unloading
+*         *ncybopl* and then not being able to acquire
+*         it back because *dun* and *dpn* are not set.
+*
+attach(ncybopl)
+*
+ife($list$ .eq. $full$,prints)
+begin,compmod,,abort,#list=on)
+else(prints)
+begin,compmod,,abort.
+endif(prints)
+*
+*         assemble final non-overlayed compass ident.
+*
+modify(z,lo=e)/*oplfile ipl,nos/*edit cmpixfr
+cstc(i,l=list,e=errs,c=ccommon)
+*
+*         assemble overlayed compass idents and
+*         corresponding compass overlay table idents.
+*
+unload(ovbin,ovtbin)
+*
+modify(z,lo=e,l=errs)/*oplfile ipl,nos/*read compov
+cstc(i,l=list,o=errs,c=ccommon,b=ovbin)
+*
+modify(z,lo=e,l=errs)/*oplfile ipl,nos/*read compovt
+cstc(i,l=list,o=errs,b=ovtbin)
+*
+*         compile overlayed cybil modules and 
+*         corresponding compass overlay table idents.
+*
+ses. gencomp seq=80 status b=ncybopl cybccmn ..
+m=(cmpmall,cmpmanc,cmpmans,cmpmarr,cmpmatt, ..
+cmpmblk,cmpmcha,cmpmchg,cmpmchr,cmpmclr,cmpmcpu,cmpmcpy, ..
+cmpmcst,cmpmcve,cmpmdar,cmpmdef,cmpmdin,cmpmdot,cmpmena, ..
+cmpmerx,cmpmevl,cmpmexw,cmpmfnd,cmpmgfl,cmpmglm,cmpmifl, ..
+cmpmifm,cmpmihb,cmpmjdg,cmpmjky,cmpmjpn,cmpmjpo,cmpmkyw, ..
+cmpmlba, cmpmlbl, ..
+cmpmmkl, cmpmmtu)
+*
+*         'kludge for 's'e's type procedure unloading
+*         *ncybopl* and then not being able to acquire
+*         it back because *dun* and *dpn* are not set.
+*
+attach(ncybopl)
+*
+ife(efg.ne.0,gencerr)
+revert(abort) gencomp aborted
+endif(gencerr)
+.*
+ses. gencomp seq=80 status b=ncybopl cybccmn cf=comp1 ..
+m=(cmpmnaa,cmpmnia,cmpmnoa,cmpmnom,cmpmnow, ..
+cmpmoka,cmpmokn,cmpmokw,cmpmora,cmpmotd, ..
+cmpmpai,cmpmpak,cmpmpck,cmpmpjb,cmpmpol,cmpmpra,cmpmptd, ..
+cmpmran,cmpmrot, ..
+cmpmset,cmpmshw,cmpmsha,cmpmshb, ..
+cmpmsht,cmpmsiz,cmpmske,cmpmskp,cmpmspc, ..
+cmpmsrc,cmpmsrf, ..
+cmpmstp,cmpmtxn,cmpmtxt, ..
+cmpmujb,cmpmumj,cmpmune,cmpmunt,cmpmuol, ..
+cmpmwrl,cmpmwrt,cmpmwtc, ..
+cmpmxio, ..
+cmpmzer)
+*
+*         'kludge for 's'e's type procedure unloading
+*         *ncybopl* and then not being able to acquire
+*         it back because *dun* and *dpn* are not set.
+*
+attach(ncybopl)
+*
+skipei(compile)
+copyei(comp1,compile)
+pack(compile)
+ife($list$ .eq. $full$,prints)
+begin(compmod,,abort,binfile=ovbin,#list=on)
+else(prints)
+begin(compmod,,abort,binfile=ovbin)
+endif(prints)
+*
+modify(z,lo=e,l=errs)/*oplfile ipl,nos/*read cybovt
+cstc(i,l=list,e=errs,b=ovtbin)
+*
+*         merge overlay cards, the un-overlayed modules and
+*         idents, and the overlay tables onto *lgo*.
+*
+rewind(ovbin,ovtbin)
+while(.not.file(ovbin,eoi),copy)
+note(lgo,nr)/overlay(1,3)
+copybr(ovbin,lgo)
+copybr(ovtbin,lgo)
+endw(copy)
+*
+*         get rid of the extra overlay(1,3) card on *lgo*.
+*
+bksp(lgo)
+*
+*         assemble final cmp compass ident.
+*
+modify(z,lo=e)/*oplfile ipl,nos/*edit cmpiend
+cstc(i,l=list,e=errs,c=ccommon)
+*
+unload(ccommon)
+purge(ncybopl/na)
+*
+.*begin(binpack)
+purge(cmp/na)
+define(cmp)
+.*
+.*        on dev systems, give permission to other user
+.*        numbers.
+.*
+ife((r1g.and.200000b)=200000b,perm)
+devperm(cmp,pn=$pcez/sup$,r=dl)
+endif(perm)
+rewind(lgo)
+copyei(lgo,cmp,v)
+*
+*
+revert. condcmp
+.*
+.*        overlayed compass idents.
+.*
+.data,compov.
+*edit cmpierr
+*edit cmpipio
+.*
+.*
+.*        overlayed compass idents overlay tables.
+.*
+.data,compovt.
+*edit cmpoerr
+*edit cmpopio
+.*
+.*
+.*        cybil module overlay table idents.
+.*
+.data,cybovt.
+*edit cmpoall
+*edit cmpoanc
+*edit cmpoans
+*edit cmpoarr
+*edit cmpoatt
+*edit cmpoblk
+*edit cmpocha
+*edit cmpochg
+*edit cmpochr
+*edit cmpoclr
+*edit cmpocpu
+*edit cmpocpy
+*edit cmpocst
+*edit cmpocve
+*edit cmpodar
+*edit cmpodef
+*edit cmpodin
+*edit cmpodot
+*edit cmpoena
+*edit cmpoerx
+*edit cmpoevl
+*edit cmpoexw
+*edit cmpofnd
+*edit cmpogfl
+*edit cmpoglm
+*edit cmpoifl
+*edit cmpoifm
+*edit cmpoihb
+*edit cmpojdg
+*edit cmpojky
+*edit cmpojpn
+*edit cmpojpo
+*edit cmpokyw
+*edit cmpolba
+*edit cmpolbl
+*edit cmpomkl
+*edit cmpomtu
+*edit cmponaa
+*edit cmponia
+*edit cmponoa
+*edit cmponom
+*edit cmponow
+*edit cmpooka
+*edit cmpookn
+*edit cmpookw
+*edit cmpoora
+*edit cmpootd
+*edit cmpopai
+*edit cmpopak
+*edit cmpopck
+*edit cmpopjb
+*edit cmpopol
+*edit cmpopra
+*edit cmpoptd
+*edit cmporan
+*edit cmporot
+*edit cmposet
+*edit cmposhw
+*edit cmposha
+*edit cmposhb
+*edit cmposht
+*edit cmposiz
+*edit cmposke
+*edit cmposkp
+*edit cmpospc
+*edit cmposrc
+*edit cmposrf
+*edit cmpostp
+*edit cmpotxn
+*edit cmpotxt
+*edit cmpoujb
+*edit cmpoumj
+*edit cmpoune
+*edit cmpount
+*edit cmpouol
+*edit cmpowrl
+*edit cmpowrt
+*edit cmpowtc
+*edit cmpoxio
+*edit cmpozer
+.*
+~
 .proc,condens,ml=871,list=0/output.
 .*
 .*  condensor full assembly.
@@ -651,7 +905,7 @@ begin(conden5,,#ml=ml,#list=list)
 *begin(conden6,,#ml=ml,#list=list)
 *endif(exp)
 *
-*begin(condcmp,,#list)
+begin(condcmp,,#list=list)
 .*
 begin(condldr,,lo=sbex)
 .*
