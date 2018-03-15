@@ -58,7 +58,7 @@ erase-.  Get rid of some extraneous (OS default) menu items on Mac OS.
 Fix conversion of stand-alone tilde for copy/paste to be a standard
 tilde character rather than Unicode "small tilde".
 
-V5.1.0, December 2017:
+V6.0.0, March 2018:
 
 Major new capabilities thanks to Dale Sinder.
 

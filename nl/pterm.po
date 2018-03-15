@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-13 17:35-0400\n"
+"POT-Creation-Date: 2018-03-14 10:19-0400\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -816,7 +816,7 @@ msgstr "Achtergrond"
 msgid "Pterm printout"
 msgstr "Pterm afdruk"
 
-#: MTFile.cpp:102
+#: MTFile.cpp:105
 msgid "Error opening \\u00b5Tutor floppy file "
 msgstr "Floppybestand kan niet geopend worden"
 
