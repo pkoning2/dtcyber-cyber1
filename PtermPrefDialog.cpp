@@ -326,6 +326,8 @@ void PtermPrefDialog::PtermInitDialog (void)
                                          wxDefaultPosition, wxDefaultSize, 0);
     chkUseAccelerators->SetValue (true);
     chkUseAccelerators->SetFont (dfont);
+    if (!m_profileEdit)
+        chkUseAccelerators->Disable ();
 #if defined (__WXMAC__)
     chkUseAccelerators->Disable ();
 #endif
