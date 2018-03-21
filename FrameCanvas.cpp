@@ -3015,7 +3015,12 @@ void PtermFrame::OnSessionSettings (wxCommandEvent &)
         m_smartPaste = m_profile->m_smartPaste;
         m_convDot7 = m_profile->m_convDot7;
         m_conv8Sp = m_profile->m_conv8Sp;
-        m_TutorColor = m_profile->m_TutorColor;
+        if (m_TutorColor != m_profile->m_TutorColor)
+        {
+            m_TutorColor = m_profile->m_TutorColor;
+            BuildMenuBar ();
+            BuildPopupMenu ();
+        }
         //tab6
         m_Email = m_profile->m_Email;
         m_SearchURL = m_profile->m_SearchURL;
