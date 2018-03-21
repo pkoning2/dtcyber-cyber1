@@ -281,6 +281,18 @@ void PtermPrefDialog::PtermInitDialog (void)
                                          wxDefaultPosition, wxDefaultSize, 0);
         chkShowStation->SetValue (true);
         page2->Add (chkShowStation, 0, wxALL, 5);
+
+#ifndef __WXMAC__
+        chkUseAccelerators = new wxCheckBox (tab2, wxID_ANY,
+            _ ("Enable control-key menu accelerators"),
+            wxDefaultPosition, wxDefaultSize, 0);
+        chkUseAccelerators->SetValue (true);
+        chkUseAccelerators->SetFont (dfont);
+        //if (!m_profileEdit)
+        //    chkUseAccelerators->Disable ();
+        page2->Add (chkUseAccelerators, 0, wxALL, 5);
+#endif
+
         tab2->SetSizer (page2);
         tab2->Layout ();
         page2->Fit (tab2);
@@ -321,17 +333,7 @@ void PtermPrefDialog::PtermInitDialog (void)
                                           _("Use real PLATO keyboard"),
                                           wxDefaultPosition, wxDefaultSize, 0);
     page3->Add (chkUsePLATOKeyboard, 0, wxALL, 5);
-    chkUseAccelerators = new wxCheckBox (tab3, wxID_ANY,
-                                         _("Enable control-key menu accelerators"),
-                                         wxDefaultPosition, wxDefaultSize, 0);
-    chkUseAccelerators->SetValue (true);
-    chkUseAccelerators->SetFont (dfont);
-    if (!m_profileEdit)
-        chkUseAccelerators->Disable ();
-#if defined (__WXMAC__)
-    chkUseAccelerators->Disable ();
-#endif
-    page3->Add (chkUseAccelerators, 0, wxALL, 5);
+ 
     chkEnableBeep = new wxCheckBox (tab3, wxID_ANY, _("Enable -beep-"),
                                     wxDefaultPosition, wxDefaultSize, 0);
     chkEnableBeep->SetValue (true);
@@ -734,6 +736,9 @@ void PtermPrefDialog::SetControlState (void)
         chkShowSysName->SetValue (m_profile->m_showSysName);
         chkShowHost->SetValue (m_profile->m_showHost);
         chkShowStation->SetValue (m_profile->m_showStation);
+#ifndef __WXMAC__
+        chkUseAccelerators->SetValue (m_profile->m_useAccel);
+#endif
     }
     //tab3
     chkSimulate1200Baud->SetValue (m_profile->m_classicSpeed);
@@ -741,7 +746,8 @@ void PtermPrefDialog::SetControlState (void)
     chkEnableNumericKeyPad->SetValue (m_profile->m_numpadArrows);
     chkIgnoreCapLock->SetValue (m_profile->m_ignoreCapLock);
     chkUsePLATOKeyboard->SetValue (m_profile->m_platoKb);
-    chkUseAccelerators->SetValue (m_profile->m_useAccel);
+
+
     chkEnableBeep->SetValue (m_profile->m_beepEnable);
     chkDisableShiftSpace->SetValue (m_profile->m_DisableShiftSpace);
     chkDisableMouseDrag->SetValue (m_profile->m_DisableMouseDrag);
@@ -1026,8 +1032,10 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
         m_profile->m_ignoreCapLock = event.IsChecked ();
     else if (event.GetEventObject () == chkUsePLATOKeyboard)
         m_profile->m_platoKb = event.IsChecked ();
+#ifndef __WXMAC__
     else if (event.GetEventObject () == chkUseAccelerators)
         m_profile->m_useAccel = event.IsChecked ();
+#endif
     else if (event.GetEventObject () == chkEnableBeep)
         m_profile->m_beepEnable = event.IsChecked ();
     else if (event.GetEventObject () == chkDisableShiftSpace)

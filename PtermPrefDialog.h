@@ -78,7 +78,9 @@ public:
     wxCheckBox *chkEnableNumericKeyPad;
     wxCheckBox *chkIgnoreCapLock;
     wxCheckBox *chkUsePLATOKeyboard;
+#ifndef __WXMAC__
     wxCheckBox *chkUseAccelerators;
+#endif
     wxCheckBox *chkEnableBeep;
     wxCheckBox *chkDisableShiftSpace;
     wxCheckBox *chkDisableMouseDrag;
