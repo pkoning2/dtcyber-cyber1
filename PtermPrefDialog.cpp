@@ -9,6 +9,7 @@
 
 #include "PtermPrefDialog.h"
 #include "PtermConnDialog.h"
+#include "PtermFrame.h"
 
 // ----------------------------------------------------------------------------
 // PtermPrefDialog
@@ -23,7 +24,7 @@ BEGIN_EVENT_TABLE (PtermPrefDialog, wxDialog)
     EVT_TEXT (wxID_ANY, PtermPrefDialog::OnChange)
     END_EVENT_TABLE ();
 
-PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
+PtermPrefDialog::PtermPrefDialog (PtermConnDialog *parent, wxWindowID id,
                                   const wxString &title, wxPoint pos,
                                   wxSize size)
     : wxDialog (parent, id, title, pos, size),
@@ -31,6 +32,7 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
       m_profileEdit (true)
 {
     PtermInitDialog ();
+    m_connParent = parent;
 }
 
 PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
@@ -46,6 +48,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
 
 void PtermPrefDialog::PtermInitDialog (void)
 {
+    m_connParent = NULL;
+
     // static ui objects, note dynamic controls, e.g. those that hold
     // values or require event processing are declared above
     //tab0
@@ -688,7 +692,8 @@ void PtermPrefDialog::UpdateTitle (void)
 
 void PtermPrefDialog::OnClose (wxCloseEvent& )
 {
-    EndModal (wxID_CANCEL);
+    ptermApp->m_prefDialog = NULL;
+    this->Destroy ();
 }
 
 bool PtermPrefDialog::ValidProfile (wxString profile)
@@ -802,7 +807,14 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
             {
                 SetControlState ();
                 lblProfileStatusMessage->SetLabel (_("Profile saved."));
-                EndModal (wxID_OK);
+
+                if (m_connParent != NULL)
+                {
+                    m_connParent->lstProfiles->RefreshList ();
+                }
+
+                ptermApp->m_prefDialog = NULL;
+                this->Destroy ();
             }
             else
             {
@@ -813,7 +825,8 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
         }
         else
         {
-            EndModal (wxID_OK);
+            // also destroys dialog
+            ((PtermFrame *)(m_parent))->UpdateSessionSettings ();
         }
     }
     else if (event.GetEventObject () == btnLoad)
@@ -956,14 +969,10 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
 #endif
         Modified();
     }
-    else if (event.GetEventObject () == btnOK)
-    {
-        //buttonbar
-        EndModal (wxID_OK);
-    }
     else if (event.GetEventObject () == btnCancel)
     {
-        EndModal (wxID_CANCEL);
+        ptermApp->m_prefDialog = NULL;
+        this->Destroy ();
     }
     else if (event.GetEventObject () == btnDefaults)
     {

@@ -17,6 +17,7 @@ extern "C" int ptermNextGswWord (void *connection, int idle);
 
 class PtermFrame;
 class PtermConnDialog;
+class PtermPrefDialog;
 class PtermApp;
 extern PtermApp *ptermApp;
 
@@ -80,6 +81,8 @@ public:
     char        traceFn[20];
 
     PtermConnDialog *m_connDialog;
+
+    PtermPrefDialog *m_prefDialog;
     
 private:
     wxLocale    m_locale; // locale we'll be using

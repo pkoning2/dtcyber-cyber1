@@ -20,7 +20,7 @@
 class PtermPrefDialog : public wxDialog
 {
 public:
-    PtermPrefDialog (PtermFrame *parent, wxWindowID id,
+    PtermPrefDialog (PtermConnDialog *parent, wxWindowID id,
                      const wxString &title, wxPoint pos,  wxSize size);
     PtermPrefDialog (PtermFrame *parent, wxWindowID id,
                      const wxString &title, wxPoint pos,  wxSize size,
@@ -124,6 +124,8 @@ public:
 
     //tab0
     wxString        m_curProfile;
+
+    PtermConnDialog * m_connParent;
 
 private:
     void paintBitmap (wxBitmap &bm, wxColour &color);

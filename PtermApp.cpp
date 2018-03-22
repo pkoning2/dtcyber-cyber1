@@ -80,6 +80,7 @@ bool PtermApp::OnInit (void)
     m_firstFrame = NULL;
     m_helpFrame = NULL;
     m_connDialog = NULL;
+    m_prefDialog = NULL;
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
 #ifdef DEBUG
@@ -454,13 +455,17 @@ void PtermApp::DoConnect (PtermProfile *prof)
 
 void PtermApp::OnPref (wxCommandEvent&)
 {
-    //show dialog
-    PtermPrefDialog dlg (NULL, wxID_ANY, _("Profile Editor"),
-                         wxDefaultPosition, wxSize (481, 575));
+    if (ptermApp->m_prefDialog != NULL)
+    {
+        return;  // user MUST close previous dialog first
+    }
 
-    // We simply show the dialog and let it do its thing; no action is
-    // needed on completion.
-    dlg.ShowModal ();
+    ptermApp->m_prefDialog = new PtermPrefDialog (NULL, wxID_ANY, _ ("Profile Editor"),
+        wxDefaultPosition, wxSize (481, 575));
+
+    ptermApp->m_prefDialog->CenterOnScreen ();
+    ptermApp->m_prefDialog->Raise ();
+    ptermApp->m_prefDialog->Show (true);
 }
 
 void PtermApp::OnAbout (wxCommandEvent&)

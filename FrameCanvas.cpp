@@ -2984,70 +2984,83 @@ void PtermFrame::OnReset (wxCommandEvent &)
 void PtermFrame::OnSessionSettings (wxCommandEvent &)
 {
     //show dialog
-    PtermPrefDialog dlg (this, wxID_ANY, _("Session Settings..."),
-                         wxDefaultPosition, wxSize (461, 475), *m_profile);
-    
-    if (dlg.ShowModal () == wxID_OK)
+
+    if (ptermApp->m_prefDialog != NULL)
     {
-        *m_profile = *dlg.m_profile;
-        
-        SetColors (m_profile->m_fgColor, m_profile->m_bgColor);
-        //get prefs
-        //ptermApp->m_lastTab = m_profile->m_lastTab;
-        //tab3
-        m_classicSpeed = m_profile->m_classicSpeed;
-        m_gswEnable = m_profile->m_gswEnable;
-        m_numpadArrows = m_profile->m_numpadArrows;
-        m_ignoreCapLock = m_profile->m_ignoreCapLock;
-        m_platoKb = m_profile->m_platoKb;
-        m_useAccel = m_profile->m_useAccel;
-        m_beepEnable = m_profile->m_beepEnable;
-        m_DisableShiftSpace = m_profile->m_DisableShiftSpace;
-        m_DisableMouseDrag = m_profile->m_DisableMouseDrag;
-        //tab4
-        m_noColor = m_profile->m_noColor;
-        m_fgColor = m_profile->m_fgColor;
-        m_bgColor = m_profile->m_bgColor;
-        //tab5
-        m_charDelay = m_profile->m_charDelay;
-        m_lineDelay = m_profile->m_lineDelay;
-        m_autoLF = m_profile->m_autoLF;
-        m_smartPaste = m_profile->m_smartPaste;
-        m_convDot7 = m_profile->m_convDot7;
-        m_conv8Sp = m_profile->m_conv8Sp;
-        if (m_TutorColor != m_profile->m_TutorColor)
-        {
-            m_TutorColor = m_profile->m_TutorColor;
-            BuildMenuBar ();
-            BuildPopupMenu ();
-        }
-        //tab6
-        m_Email = m_profile->m_Email;
-        m_SearchURL = m_profile->m_SearchURL;
-
-        m_floppy0 = m_profile->m_floppy0;
-        m_floppy1 = m_profile->m_floppy1;
-
-        m_floppy0File = m_profile->m_floppy0File;
-        m_floppy1File = m_profile->m_floppy1File;
-
-        if (dlg.m_floppy0Changed)
-        {
-            if (m_floppy0 && m_floppy0File.Length () > 0)
-                m_MTFiles[0].Open (m_floppy0File);
-            else
-                m_MTFiles[0].Close ();
-        }
-
-        if (dlg.m_floppy1Changed)
-        {
-            if (m_floppy1 && m_floppy1File.Length () > 0)
-                m_MTFiles[1].Open (m_floppy1File);
-            else
-                m_MTFiles[1].Close ();
-        }
+        return;  // user MUST close previous dialog first
     }
+
+    ptermApp->m_prefDialog = new PtermPrefDialog (this, wxID_ANY, _ ("Session Settings..."),
+        wxDefaultPosition, wxSize (461, 475), *m_profile);
+
+    ptermApp->m_prefDialog->CenterOnScreen ();
+    ptermApp->m_prefDialog->Raise ();
+    ptermApp->m_prefDialog->Show (true);
 }
+
+void PtermFrame::UpdateSessionSettings (void)
+{
+    *m_profile = *ptermApp->m_prefDialog->m_profile;
+
+    SetColors (m_profile->m_fgColor, m_profile->m_bgColor);
+    //get prefs
+    //ptermApp->m_lastTab = m_profile->m_lastTab;
+    //tab3
+    m_classicSpeed = m_profile->m_classicSpeed;
+    m_gswEnable = m_profile->m_gswEnable;
+    m_numpadArrows = m_profile->m_numpadArrows;
+    m_ignoreCapLock = m_profile->m_ignoreCapLock;
+    m_platoKb = m_profile->m_platoKb;
+    m_useAccel = m_profile->m_useAccel;
+    m_beepEnable = m_profile->m_beepEnable;
+    m_DisableShiftSpace = m_profile->m_DisableShiftSpace;
+    m_DisableMouseDrag = m_profile->m_DisableMouseDrag;
+    //tab4
+    m_noColor = m_profile->m_noColor;
+    m_fgColor = m_profile->m_fgColor;
+    m_bgColor = m_profile->m_bgColor;
+    //tab5
+    m_charDelay = m_profile->m_charDelay;
+    m_lineDelay = m_profile->m_lineDelay;
+    m_autoLF = m_profile->m_autoLF;
+    m_smartPaste = m_profile->m_smartPaste;
+    m_convDot7 = m_profile->m_convDot7;
+    m_conv8Sp = m_profile->m_conv8Sp;
+    if (m_TutorColor != m_profile->m_TutorColor)
+    {
+        m_TutorColor = m_profile->m_TutorColor;
+        BuildMenuBar ();
+        BuildPopupMenu ();
+    }
+    //tab6
+    m_Email = m_profile->m_Email;
+    m_SearchURL = m_profile->m_SearchURL;
+
+    m_floppy0 = m_profile->m_floppy0;
+    m_floppy1 = m_profile->m_floppy1;
+
+    m_floppy0File = m_profile->m_floppy0File;
+    m_floppy1File = m_profile->m_floppy1File;
+
+    if (ptermApp->m_prefDialog->m_floppy0Changed)
+    {
+        if (m_floppy0 && m_floppy0File.Length () > 0)
+            m_MTFiles[0].Open (m_floppy0File);
+        else
+            m_MTFiles[0].Close ();
+    }
+
+    if (ptermApp->m_prefDialog->m_floppy1Changed)
+    {
+        if (m_floppy1 && m_floppy1File.Length () > 0)
+            m_MTFiles[1].Open (m_floppy1File);
+        else
+            m_MTFiles[1].Close ();
+    }
+    ptermApp->m_prefDialog->Destroy ();
+    ptermApp->m_prefDialog = NULL;
+}
+
 void PtermFrame::OnPrint (wxCommandEvent &)
 {
     wxPrintDialogData printDialogData (*g_printData);

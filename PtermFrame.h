@@ -157,6 +157,8 @@ public:
     void OnReset(wxCommandEvent& event);
     void OnSessionSettings(wxCommandEvent& event);
 
+    void UpdateSessionSettings (void);
+
     void UpdateDisplayState(void);
 #if defined (__WXMSW__)
     void OnIconize(wxIconizeEvent &event);

@@ -136,17 +136,22 @@ void PtermConnDialog::OnButton (wxCommandEvent& event)
     }
     else if (event.GetEventObject () == btnEdit)
     {
+        if (ptermApp->m_prefDialog != NULL)
+        {
+            return;  // user MUST close previous dialog first
+        }
+
         // Set the default profile to edit, if one has been selected
         // here.
         if (m_profile != NULL && !m_profile->m_profileName.IsEmpty ())
             ptermApp->m_curProfile = m_profile->m_profileName;
-        
-        PtermPrefDialog dlg (NULL, wxID_ANY, _("Profile Editor"),
-                             wxDefaultPosition, wxSize (481, 575));
 
-        // Show the profile editor; the exit status does not matter.
-        dlg.ShowModal ();
-        lstProfiles->RefreshList ();
+        ptermApp->m_prefDialog = new PtermPrefDialog (this, wxID_ANY, _ ("Profile Editor"),
+            wxDefaultPosition, wxSize (481, 575));
+
+        ptermApp->m_prefDialog->CenterOnScreen ();
+        ptermApp->m_prefDialog->Raise ();
+        ptermApp->m_prefDialog->Show (true);
     }
     else if (event.GetEventObject () == btnConnect)
     {
