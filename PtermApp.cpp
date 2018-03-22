@@ -607,6 +607,7 @@ void PtermApp::LaunchMtutorHelp (u8 helpContext)
         m_helpFrame->m_MTFiles[0].SetRamBased ("ptermhelp.mte");
         m_helpFrame->m_MTFiles[0].SetHelpContext (helpContext);
         m_helpFrame->m_needtoBoot = true;
+        m_helpFrame->CenterOnScreen ();
         m_helpFrame->Raise ();
     }
     else
