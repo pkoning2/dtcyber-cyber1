@@ -81,6 +81,7 @@ bool PtermApp::OnInit (void)
     m_helpFrame = NULL;
     m_connDialog = NULL;
     m_prefDialog = NULL;
+    m_sessDialog = NULL;
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
 #ifdef DEBUG

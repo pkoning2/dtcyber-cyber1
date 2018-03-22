@@ -83,7 +83,8 @@ public:
     PtermConnDialog *m_connDialog;
 
     PtermPrefDialog *m_prefDialog;
-    
+    PtermPrefDialog *m_sessDialog;
+
 private:
     wxLocale    m_locale; // locale we'll be using
     

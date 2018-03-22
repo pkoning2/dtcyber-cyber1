@@ -46,6 +46,15 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
     PtermInitDialog ();
 }
 
+PtermPrefDialog::~PtermPrefDialog ()
+{
+    if (m_profileEdit)
+        ptermApp->m_prefDialog = NULL;
+    else
+        ptermApp->m_sessDialog = NULL;
+}
+
+
 void PtermPrefDialog::PtermInitDialog (void)
 {
     m_connParent = NULL;
@@ -858,6 +867,10 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
                 SetControlState ();
                 lblProfileStatusMessage->SetLabel (_("Profile deleted."));
                 lstProfiles->RefreshList ();
+                if (m_connParent != NULL)
+                {
+                    m_connParent->lstProfiles->RefreshList ();
+                }
             }
             else
             {
@@ -886,6 +899,10 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
                 ptermApp->m_curProfile = profile;
                 Modified (false);
                 lstProfiles->RefreshList ();
+                if (m_connParent != NULL)
+                {
+                    m_connParent->lstProfiles->RefreshList ();
+                }
                 lblProfileStatusMessage->SetLabel (_("Profile added."));
             }
         }

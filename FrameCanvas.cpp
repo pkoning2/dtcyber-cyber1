@@ -2985,22 +2985,22 @@ void PtermFrame::OnSessionSettings (wxCommandEvent &)
 {
     //show dialog
 
-    if (ptermApp->m_prefDialog != NULL)
+    if (ptermApp->m_sessDialog != NULL)
     {
         return;  // user MUST close previous dialog first
     }
 
-    ptermApp->m_prefDialog = new PtermPrefDialog (this, wxID_ANY, _ ("Session Settings..."),
+    ptermApp->m_sessDialog = new PtermPrefDialog (this, wxID_ANY, _ ("Session Settings..."),
         wxDefaultPosition, wxSize (461, 475), *m_profile);
 
-    ptermApp->m_prefDialog->CenterOnScreen ();
-    ptermApp->m_prefDialog->Raise ();
-    ptermApp->m_prefDialog->Show (true);
+    ptermApp->m_sessDialog->CenterOnScreen ();
+    ptermApp->m_sessDialog->Raise ();
+    ptermApp->m_sessDialog->Show (true);
 }
 
 void PtermFrame::UpdateSessionSettings (void)
 {
-    *m_profile = *ptermApp->m_prefDialog->m_profile;
+    *m_profile = *ptermApp->m_sessDialog->m_profile;
 
     SetColors (m_profile->m_fgColor, m_profile->m_bgColor);
     //get prefs
@@ -3042,7 +3042,7 @@ void PtermFrame::UpdateSessionSettings (void)
     m_floppy0File = m_profile->m_floppy0File;
     m_floppy1File = m_profile->m_floppy1File;
 
-    if (ptermApp->m_prefDialog->m_floppy0Changed)
+    if (ptermApp->m_sessDialog->m_floppy0Changed)
     {
         if (m_floppy0 && m_floppy0File.Length () > 0)
             m_MTFiles[0].Open (m_floppy0File);
@@ -3050,15 +3050,15 @@ void PtermFrame::UpdateSessionSettings (void)
             m_MTFiles[0].Close ();
     }
 
-    if (ptermApp->m_prefDialog->m_floppy1Changed)
+    if (ptermApp->m_sessDialog->m_floppy1Changed)
     {
         if (m_floppy1 && m_floppy1File.Length () > 0)
             m_MTFiles[1].Open (m_floppy1File);
         else
             m_MTFiles[1].Close ();
     }
-    ptermApp->m_prefDialog->Destroy ();
-    ptermApp->m_prefDialog = NULL;
+    ptermApp->m_sessDialog->Destroy ();
+    ptermApp->m_sessDialog = NULL;
 }
 
 void PtermFrame::OnPrint (wxCommandEvent &)
