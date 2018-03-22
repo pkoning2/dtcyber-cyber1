@@ -26,6 +26,8 @@ public:
                      const wxString &title, wxPoint pos,  wxSize size,
                      const PtermProfile &fromprofile);
 
+    ~PtermPrefDialog ();
+
     void PtermInitDialog (void);
     void UpdateTitle (void);
     void Modified (bool modified = true);
