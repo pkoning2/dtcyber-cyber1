@@ -1422,8 +1422,8 @@ PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
     m_lineDelay = profile->m_lineDelay;
     m_autoLF = profile->m_autoLF;
     m_smartPaste = profile->m_smartPaste;
-    m_convDot7 = profile->m_convDot7;
-    m_conv8Sp = profile->m_conv8Sp;
+    //m_convDot7 = profile->m_convDot7;
+    //m_conv8Sp = profile->m_conv8Sp;
     m_TutorColor = profile->m_TutorColor;
     //tab6
     m_Email = profile->m_Email;
@@ -3024,8 +3024,8 @@ void PtermFrame::UpdateSessionSettings (void)
     m_lineDelay = m_profile->m_lineDelay;
     m_autoLF = m_profile->m_autoLF;
     m_smartPaste = m_profile->m_smartPaste;
-    m_convDot7 = m_profile->m_convDot7;
-    m_conv8Sp = m_profile->m_conv8Sp;
+    //m_convDot7 = m_profile->m_convDot7;
+    //m_conv8Sp = m_profile->m_conv8Sp;
     if (m_TutorColor != m_profile->m_TutorColor)
     {
         m_TutorColor = m_profile->m_TutorColor;
