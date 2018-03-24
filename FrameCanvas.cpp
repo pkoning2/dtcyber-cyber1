@@ -1425,6 +1425,7 @@ PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
     //m_convDot7 = profile->m_convDot7;
     //m_conv8Sp = profile->m_conv8Sp;
     m_TutorColor = profile->m_TutorColor;
+    m_trimEnd = profile->m_trimEnd;
     //tab6
     m_Email = profile->m_Email;
     m_SearchURL = profile->m_SearchURL;
@@ -3032,6 +3033,7 @@ void PtermFrame::UpdateSessionSettings (void)
         BuildMenuBar ();
         BuildPopupMenu ();
     }
+    m_trimEnd = m_profile->m_trimEnd;
     //tab6
     m_Email = m_profile->m_Email;
     m_SearchURL = m_profile->m_SearchURL;
@@ -6573,7 +6575,7 @@ bool PtermFrame::SaveChar (int x, int y, wxChar c, bool large_p)
 // for a multi-line region the lines are concatenated without a newline.
 // Also, the resulting string is run through a URL processor to escape
 // any characters not valid as literal characters in a URL.
-// If "url" is false (default), spaces are kept, and for a multi-line
+// If "url" is false (default), leading spaces are kept, and for a multi-line
 // region the lines are separated by newline (CRLF in the Windows case).
 wxString PtermFrame::GetRegionText (bool url) const
 {
@@ -6634,10 +6636,14 @@ wxString PtermFrame::GetRegionText (bool url) const
             // But we need to strip off the ( ).
             line.Replace (L"(\u00A9)", L"\u00A9");
         }
+        // Strip off trailing spaces
+        if (m_trimEnd)
+            line.Trim (true);
         if (url)
         {
             // Strip off leading/trailing spaces
-            line.Trim (true);
+            if (!m_trimEnd)
+                line.Trim (true);
             line.Trim (false);
         }
         else

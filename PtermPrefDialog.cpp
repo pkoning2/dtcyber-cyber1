@@ -528,6 +528,11 @@ void PtermPrefDialog::PtermInitDialog (void)
                                     wxDefaultPosition, wxDefaultSize, 0);
     chkTutorColor->SetValue (true);
     bs51->Add (chkTutorColor, 0, wxALL, 5);
+    chkTrimEnd = new wxCheckBox (tab5, wxID_ANY,
+                                        _("Trim spaces from end of copied text"),
+                                        wxDefaultPosition, wxDefaultSize, 0);
+    chkTrimEnd->SetValue (true);
+    bs51->Add (chkTrimEnd, 0, wxALL, 5);
     page5->Add (bs51, 1, wxEXPAND, 5);
     tab5->SetSizer (page5);
     tab5->Layout ();
@@ -787,6 +792,8 @@ void PtermPrefDialog::SetControlState (void)
     //chkConvertDot7->SetValue (m_profile->m_convDot7);
     //chkConvert8Spaces->SetValue (m_profile->m_conv8Sp);
     chkTutorColor->SetValue (m_profile->m_TutorColor);
+    chkTrimEnd->SetValue (m_profile->m_trimEnd);
+
     //tab6
     txtEmail->SetValue (m_profile->m_Email);
     txtSearchURL->SetValue (m_profile->m_SearchURL);
@@ -1080,6 +1087,8 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     //    m_profile->m_conv8Sp = event.IsChecked ();
     else if (event.GetEventObject () == chkTutorColor)
         m_profile->m_TutorColor = event.IsChecked ();
+    else if (event.GetEventObject () == chkTrimEnd)
+        m_profile->m_trimEnd = event.IsChecked ();
     //tab6
     else if (event.GetEventObject () == chkMTutorBoot)
     {

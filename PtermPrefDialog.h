@@ -103,6 +103,7 @@ public:
     //wxCheckBox *chkConvertDot7;
     //wxCheckBox *chkConvert8Spaces;
     wxCheckBox *chkTutorColor;
+    wxCheckBox *chkTrimEnd;
     //tab6
     wxTextCtrl *txtEmail;
     wxTextCtrl *txtSearchURL;
