@@ -44,7 +44,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "Release\Pterm.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-Source: "C:\SDL-6.0.05\lib\x86\SDL.dll"; DestDir: "{app}"
+Source: "C:\SDL-1.2.15\lib\x86\SDL.dll"; DestDir: "{app}"
 Source: "C:\Program Files\Mega-Nerd\libsndfile\bin\libsndfile-1.dll"; DestDir: "{app}"
 Source: "C:\wxWidgets-3.1.0\lib\vc100_dll\wxmsw310u_adv_vc100.dll"; DestDir: "{app}"
 Source: "C:\wxWidgets-3.1.0\lib\vc100_dll\wxmsw310u_core_vc100.dll"; DestDir: "{app}"
