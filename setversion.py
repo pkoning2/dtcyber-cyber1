@@ -18,7 +18,7 @@ files = ( ( "pterm-info.plist", False, False ),
 
 # Negative lookahead for trailing \ here, otherwise it matches filespecs
 # with version numbers in them in pterm.iss
-dot_re = re.compile (r"\d+\.\d+\.\d+(?!\\)")
+dot_re = re.compile (r"\d+\.\d+\.\d+(?![\d\\])")
 comma_re = re.compile (r"\d+,\d+,\d+")
 copy_re = re.compile (r"((?:copyright|\(c\)).+?\d+ *- *)20\d\d", re.I)
 
