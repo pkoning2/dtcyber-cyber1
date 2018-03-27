@@ -158,54 +158,58 @@ bool PtermProfile::LoadProfile (void)
             value.Trim (false);
             //tab1
             if (token.Cmp (wxT (PREF_SHELLFIRST)) == 0)
-                m_ShellFirst    = value;
+                m_ShellFirst = value;
             else if (token.Cmp (wxT (PREF_CONNECT)) == 0)
-                m_autoConnect       = (value.Cmp (wxT ("1")) == 0);
+                m_autoConnect = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_HOST)) == 0)
-                m_host          = value;
+                m_host = value;
             else if (token.Cmp (wxT (PREF_PORT)) == 0)
             {
                 value.ToCLong (&m_port);
             }
             //tab2
             else if (token.Cmp (wxT (PREF_SHOWSIGNON)) == 0)
-                m_showSignon    = (value.Cmp (wxT ("1")) == 0);
+                m_showSignon = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_SHOWSYSNAME)) == 0)
-                m_showSysName   = (value.Cmp (wxT ("1")) == 0);
+                m_showSysName = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_SHOWHOST)) == 0)
-                m_showHost      = (value.Cmp (wxT ("1")) == 0);
+                m_showHost = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_SHOWSTATION)) == 0)
-                m_showStation   = (value.Cmp (wxT ("1")) == 0);
+                m_showStation = (value.Cmp (wxT ("1")) == 0);
 
             //tab3
             else if (token.Cmp (wxT (PREF_1200BAUD)) == 0)
-                m_classicSpeed  = (value.Cmp (wxT ("1")) == 0);
+                m_classicSpeed = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_GSW)) == 0)
-                m_gswEnable     = (value.Cmp (wxT ("1")) == 0);
+                m_gswEnable = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_ARROWS)) == 0)
-                m_numpadArrows  = (value.Cmp (wxT ("1")) == 0);
+                m_numpadArrows = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_IGNORECAP)) == 0)
                 m_ignoreCapLock = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_PLATOKB)) == 0)
-                m_platoKb       = (value.Cmp (wxT ("1")) == 0);
+                m_platoKb = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_ACCEL)) == 0)
             {
 #if defined (__WXMAC__)
-                m_useAccel      = true;
+                m_useAccel = true;
 #else
-                m_useAccel      = (value.Cmp (wxT ("1")) == 0);
+                m_useAccel = (value.Cmp (wxT ("1")) == 0);
 #endif
             }
             else if (token.Cmp (wxT (PREF_BEEP)) == 0)
-                m_beepEnable    = (value.Cmp (wxT ("1")) == 0);
+                m_beepEnable = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_SHIFTSPACE)) == 0)
                 m_DisableShiftSpace = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_MOUSEDRAG)) == 0)
-                m_DisableMouseDrag  = (value.Cmp (wxT ("1")) == 0);
+                m_DisableMouseDrag = (value.Cmp (wxT ("1")) == 0);
 
             //tab4
             else if (token.Cmp (wxT (PREF_SCALE)) == 0)
+            {
                 value.ToCDouble (&m_scale);
+                if (m_scale == 0.0)
+                    m_scale = 1.0;
+            }
             else if (token.Cmp (wxT (PREF_STATUSBAR)) == 0)
                 m_showStatusBar = (value.Cmp (wxT ("1")) == 0);
 #if !defined (__WXMAC__)
