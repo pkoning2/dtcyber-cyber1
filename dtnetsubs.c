@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------
 **
-**  Copyright (c) 2003-2005, Tom Hunter, Paul Koning (see license.txt)
+**  Copyright (c) 2003-2018, Tom Hunter, Paul Koning, Steve Zoppi
 **
 **  Name: dtnetsubs.c
 **
@@ -14,8 +14,6 @@
 // declarations
 // ============================================================================
 
-#define _CRT_SECURE_NO_WARNINGS 1  // for MSVC to not be such a pain
-
 /*
 **  -------------
 **  Include Files
@@ -27,7 +25,7 @@
 #include <errno.h>
 #include "const.h"
 #include "types.h"
-#include "proto.h"
+#include "dtnetsubs.h"
 #include <time.h>
 #include <sys/types.h>
 
@@ -578,6 +576,8 @@ int dtReado (NetFet *fet)
     u8 *in, *out, *nextout;
     u8 b;
     
+    if (fet == NULL)
+        return -1;
     /*
     **  Copy the pointers, since they are volatile.
     */
@@ -1156,6 +1156,9 @@ static int dtRead (NetFet *fet, NetPortSet *ps)
     u8 *in, *out, *nextin;
     int size;
     
+#if defined(_WIN32)
+    (void) ps;     //  No Operation; Suppresses C4100 Compiler Warning
+#endif
     /*
     **  Copy the pointers, since they are volatile.
     */
@@ -1395,7 +1398,7 @@ static dtThreadFun (dtDataThread, param)
                 }
             }
         
-        if (ps->dataCallBack)
+        if (np->connected && ps->dataCallBack != NULL)
             {
             (*ps->dataCallBack) (np, bytes, ps->dataCallArg);
             }
@@ -1472,6 +1475,9 @@ static dtThreadFun (dtSendThread, param)
         perror ("sem_open failed");
         exit (1);
     }
+
+    /* Mac does not have MSG_NOSIGNAL, so turn the SIGPIPE signal off */
+    signal (SIGPIPE, SIG_IGN);
 #endif
     
     while (1)
@@ -1687,6 +1693,7 @@ NetFet * dtAcceptSocket (int connFd, NetPortSet *ps)
 static void dtCloseSocket (int connFd, bool hard)
     {
 #if defined(_WIN32)
+    hard;   //  Nop Operation; Suppress C4100 Compiler Warning
     closesocket (connFd);
 #else
     if (!hard)

@@ -4,12 +4,12 @@
 // Authors:     Paul Koning, Joe Stanton
 // Modified by: 
 // Created:     13/2/2009
-// Copyright:   (c) Paul Koning, Joe Stanton
+// Copyright:   (c) Paul Koning, Joe Stanton, Dale Sinder
 // Licence:     DtCyber license
 /////////////////////////////////////////////////////////////////////////////
 
-#ifndef _PTERM_H
-#define _PTERM_H 1
+#ifndef _PTERMX_H
+#define _PTERMX_H 1
 
 // ============================================================================
 // declarations
@@ -25,7 +25,6 @@
 **  -----------------
 */
 #define DEFAULTHOST     wxT ("cyberserv.org")
-#define CURRENT_PROFILE wxT (" Current ")
 #define DEFAULTSEARCH   wxT ("http://www.google.com/search?q=")
 #define BufSiz          2048
 #define RINGSIZE        5000
@@ -42,11 +41,12 @@
 
 // Special non-data values found in the PLATO data ring
 #define C_NODATA        -1      // No more pending data in processing loop
-#define C_CONNFAIL      -2      // Failed to connect
+#define C_CONNFAIL1     -2      // Failed to connect, hostname unknown
 #define C_DISCONNECT    -3      // Connection was dropped
 #define C_GSWEND        -4      // Stop GSW
 #define C_CONNECTING    -5      // Connect request is in progress
 #define C_CONNECTED     -6      // Connection has been established
+#define C_CONNFAIL2     -7      // Failed to connect, no address worked
 
 #define STATUS_TIP      0
 #define STATUS_TRC      1
@@ -70,10 +70,10 @@
 #define TERMTYPE        10
 #define ASCTYPE         12
 //#define SUBTYPE         0x74  // original value, 116=portal
-#define SUBTYPE         1
+#define SUBTYPE         16
 //#define TERMCONFIG      0
-#define TERMCONFIG      0x40    // touch panel present
-//#define TERMCONFIG      0x60    // touch panel present, 32k
+//#define TERMCONFIG      0x40    // touch panel present
+#define TERMCONFIG      0x60    // touch panel present, 32k
 #define ASC_ZFGT        0x01
 #define ASC_ZPCKEYS     0x02
 #define ASC_ZKERMIT     0x04
@@ -142,12 +142,19 @@
 #define PREF_LINEDELAY   "lineDelay"
 #define PREF_AUTOLF      "autoLF"
 #define PREF_SMARTPASTE  "smartPaste"
-#define PREF_CONVDOT7    "convDot7"
-#define PREF_CONV8SP     "conv8Sp"
+//#define PREF_CONVDOT7    "convDot7"
+//#define PREF_CONV8SP     "conv8Sp"
 #define PREF_TUTORCOLOR  "TutorColor"
+#define PREF_TRIMEND     "TrimEnd"
+
 //tab6
 #define PREF_EMAIL       "EmailClient"
 #define PREF_SEARCHURL   "SearchURL"
+#define PREF_MTUTORBOOT  "MTUTORBOOT"
+#define PREF_FLOPPY0M    "FLOPPY0M"
+#define PREF_FLOPPY1M    "FLOPPY1M"
+#define PREF_FLOPPY0NAM  "FLOPPY0NAM"
+#define PREF_FLOPPY1NAM  "FLOPPY1NAM"
 
 /*
 **  -----------------------
@@ -162,16 +169,6 @@
 // force coordinate into the range 0..511
 #define BOUND(x) (((x < 0) ? 0 : ((x > 511) ? 511 : x)))
 
-// Macro to include keyboard accelerator only if option enabled
-#define ACCELERATOR(x) + ((ptermApp->m_useAccel) ? wxString (wxT (x)) : \
-                          wxString (wxT ("")))
-// Macro to include keyboard accelerator only if MAC
-#if defined (__WXMAC__)
-#define MACACCEL(x) + wxString (wxT (x))
-#else
-#define MACACCEL(x)
-#endif
-
 // For wxWidgets >= 2.8
 #ifdef  _WX_PLATINFO_H_
 #ifndef wxMAC
@@ -182,6 +179,8 @@
 #endif
 #endif
 
+#define MAXMCHOICES 5
+#define DEFAULTMLEVEL 4
 
 // External references
 
@@ -194,4 +193,4 @@ extern int ptermProcGswData (int data);
 extern void ptermCloseGsw (void);
 extern void ptermStartGsw (void);
 
-#endif  // _PTERM_H
+#endif  // _PTERMX_H

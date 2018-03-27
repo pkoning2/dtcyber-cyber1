@@ -13,6 +13,11 @@ PTERMVERSION ?= $(shell ./getkitver.py  ptermversion.h)
 
 DEFWXDIR = /usr/local
 
+# Files that contain _() calls (translatable text strings)
+SOURCES = FrameCanvas.cpp PtermApp.cpp PtermConnDialog.cpp \
+	PtermConnFailDialog.cpp PtermConnection.cpp PtermPrefDialog.cpp \
+	PtermPrintout.h MTFile.cpp
+
 ifeq ("$(HOST)","Darwin")
 PKGMAKER ?= /Developer/Applications/Utilities/PackageMaker.app
 MACEXTRA = fixmac.o
@@ -66,13 +71,15 @@ WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS)
 GCCVERSION := $(shell gcc --version 2>/dev/null| head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
 
-C2FLAGS  = $(OPTIMIZE) -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST) $(PFLAGS) $(MACCFLAGS)
+C2FLAGS  = $(OPTIMIZE) -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCCFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST) $(PFLAGS) $(MACCFLAGS)
 
 MSGFLAGS ?= -U
 
 SDLCFLAGS = $(SDLINCL)
 
-PTOBJS	= dtnetsubs.o pterm_sdl.o pterm_wx.o 8080a.o
+PTOBJS	= dtnetsubs.o pterm_sdl.o FrameCanvas.o MTFile.o PtermApp.o \
+	PtermConnDialog.o PtermConnFailDialog.o PtermConnection.o \
+	PtermProfile.o PtermPrefDialog.o PtermPrintout.o PtermTrace.o Z80.o
 DD60OBJS = $(SOBJS) dd60.o knob.o iir.o 
 
 ifneq ("$(PTERMVERSION)","xxx")
@@ -108,12 +115,15 @@ else
 	#objcopy  -S -R.compact_rel -R.pdr -R.ident -R.comment $@
 endif
 
-wxversion.h: wxversion wxversion.py
+wxversion.h : wxversion wxversion.py
 	./wxversion.py
+
+ptermhelp.h : PtermHelpHeader.py ptermhelp.mte
+	python3 PtermHelpHeader.py ptermhelp.mte ptermhelp.h
 
 dd60:	$(DD60OBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
-	$(LINK)  $(ARCHCFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+ $(WXLIBS) $(SETPATH)
+	$(LINK)  $(ARCHLDFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
 dtoper:	$(SOBJS) dtoper.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
@@ -147,7 +157,7 @@ cc545.app: cc545
 	cp cc545 cc545.app/Contents/MacOS
 	touch $@
 
-Pterm.app: pterm pterm-info.plist pterm.icns $(MOFILES) 
+Pterm.app: pterm pterm-info.plist pterm.icns $(MOFILES) ptermhelp.mte
 	rm -rf Pterm.app
 	mkdir -p Pterm.app/Contents/MacOS Pterm.app/Contents/Resources/en.lproj
 	mkdir -p $(addprefix $(addprefix Pterm.app/Contents/Resources/,$(LANGUAGES)),.lproj)
@@ -159,6 +169,7 @@ ifneq ("$(SDLFW)", "")
 	install_name_tool -change @rpath/$(SDLFW).framework/Versions/A/$(SDLFW) @loader_path/../Frameworks/$(SDLFW).framework/Versions/A/$(SDLFW) Pterm.app/Contents/MacOS/pterm
 endif
 	cp pterm.icns Pterm.app/Contents/Resources/Pterm.icns
+	cp ptermhelp.mte Pterm.app/Contents/Resources/
 	for d in $(LANGUAGES); do \
 	    cp $$d/pterm.mo Pterm.app/Contents/Resources/$${d}.lproj; \
 	done
@@ -234,8 +245,8 @@ pterm_sdl.d : pterm_sdl.c
 %.mo : %.po
 	msgfmt -o $@ $<
 
-pterm.pot : pterm_wx.cpp
-	xgettext  --keyword=_  -C -o pterm.pot pterm_wx.cpp
+pterm.pot : $(SOURCES)
+	xgettext --from-code=UTF-8 --keyword=_  -C -o $@ $^
 
 %.po :  pterm.pot
 	msgmerge $(MSGFLAGS) $@ pterm.pot

@@ -30,9 +30,9 @@ libedit,p=system.
 *return,output.
 rewind,new.
 itemize,new.
-* cy871bo
+* cy871bp
 label,tape,vsn=ndt,lb=ku,po=w.
 rewind,new.
 copyei,new,tape.
 ~
-*file pbin
+*file cbin

@@ -23,20 +23,20 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>5.0.8</string>
+	<string>6.0.1</string>
 	<key>CFBundleShortVersionString</key>
-	<string>5.0.8</string>
+	<string>6.0.1</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Pterm V5.0.8, (c) 2005-2016 Paul Koning &amp; Joe Stanton</string>
+	<string>Pterm V6.0.1, (c) 2005-2018 Paul Koning, Joe Stanton, Dale Sinder</string>
 	<key>CFBundleLongVersionString</key>
-	<string>5.0.8, (c) 2005-2016 Paul Koning &amp; Joe Stanton</string>
+	<string>6.0.1, (c) 2005-2018 Paul Koning, Joe Stanton, Dale Sinder</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
 		<string>nl</string>
 	</array>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright 2005-2016 Paul Koning &amp; Joe Stanton</string>
+	<string>Copyright 2005-2018 Paul Koning, Joe Stanton, Dale Sinder</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -61,7 +61,7 @@
 				<string>trc</string>
 			</array>
 			<key>CFBundleTypeName</key>
-			<string>Pterm Trace</string>
+			<string>Pterm trace file</string>
 			<key>CFBundleTypeIconFile</key>
 			<string>Pterm.icns</string>
 			<key>CFBundleTypeRole</key>
@@ -74,10 +74,10 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
-				<string>dat</string>
+				<string>mte</string>
 			</array>
 			<key>CFBundleTypeName</key>
-			<string>Pterm Trace</string>
+			<string>Pterm floppy image</string>
 			<key>CFBundleTypeIconFile</key>
 			<string>Pterm.icns</string>
 			<key>CFBundleTypeRole</key>

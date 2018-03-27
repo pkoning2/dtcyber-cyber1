@@ -57,3 +57,44 @@ copy/paste buffer was not correctly erased when writing in -mode
 erase-.  Get rid of some extraneous (OS default) menu items on Mac OS.
 Fix conversion of stand-alone tilde for copy/paste to be a standard
 tilde character rather than Unicode "small tilde".
+
+V6.0.0, March 2018:
+
+Major new capabilities thanks to Dale Sinder.
+
+Added floppy drive emulation, using image files for the data.  Two
+floppy units are supported.
+
+Pterm now supports running microTutor programs, either downloaded from
+the PLATO host, or booted from floppy.  The microprocessor emulation
+has been switched from 8080 to Z80.  Emulation of the "terminal
+resident" is substantially more complete now, and includes terminal
+resident calls that were added after the CERL X-50 report and are
+documented in s0ascers.
+
+The "connection" dialog is now a "new window" dialog, which lets the
+user select a pre-existing profile to use for the new window.  The
+"preferences" dialog is now "edit profiles" and modifies a profile or
+allows the creation of a new one, without affecting the currently open
+windows.  There is also a "session settings" dialog similar to the
+"edit profiles" dialog that allows changing parameters for the
+currently active window.
+
+Profile handling has been cleaned up and made more consistent.  A new
+window is created from a profile, which supplies the initial session
+parameters for that window.  Those may be changed later (via "session
+settings") but that does not affect the profile itself.
+
+Profiles (*.ppf files) are now stored in the application data
+directory rather than in unsuitable spots such as the directory where
+the Pterm application lives.  That directory is OS-dependent:
+
+    Windows:  C:\Documents and Settings\<yourname>\Application Data\Pterm
+    Mac OS:   ~/Library/Application Support/Pterm/
+    Unix:     ~/.Pterm/
+    
+If you have saved profiles you want to carry over, copy them into that
+directory before starting Pterm.  If the profiles directory is empty
+when you start Pterm, it will create two default profiles (which will
+appear in the connection dialog).
+

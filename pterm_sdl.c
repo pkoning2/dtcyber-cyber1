@@ -26,7 +26,7 @@
 
 #include "const.h"
 #include "types.h"
-#include "pterm.h"
+#include "ptermx.h"
 
 #define FREQ        22050           // desired sound system data rate
 #define CRYSTAL     3872000         // GSW clock crystal frequency
@@ -229,6 +229,9 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
     int items;
     void *buf = b;
     
+#if defined(_WIN32)
+    (void) userdata;        // No Operation; Suppresses Warning C4100
+#endif
     len /= sizeof (*stream);
     items = len;            // Remember the total number requested
     
