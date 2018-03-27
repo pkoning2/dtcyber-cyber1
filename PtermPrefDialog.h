@@ -100,8 +100,8 @@ public:
     wxTextCtrl *txtLineDelay;
     wxComboBox *cboAutoLF;
     wxCheckBox *chkSmartPaste;
-    //wxCheckBox *chkConvertDot7;
-    //wxCheckBox *chkConvert8Spaces;
+    wxCheckBox *chkConvertDot7;
+    wxCheckBox *chkConvert8Spaces;
     wxCheckBox *chkTutorColor;
     wxCheckBox *chkTrimEnd;
     //tab6

@@ -513,16 +513,16 @@ void PtermPrefDialog::PtermInitDialog (void)
                                     wxDefaultPosition, wxDefaultSize, 0);
     chkSmartPaste->SetFont (dfont);
     bs51->Add (chkSmartPaste, 0, wxALL, 5);
-    //chkConvertDot7 = new wxCheckBox (tab5, wxID_ANY,
-    //                                 _("Convert periods followed by 7 spaces into period/tab"),
-    //                                 wxDefaultPosition, wxDefaultSize, 0);
-    //chkConvertDot7->SetValue (true);
-    //bs51->Add (chkConvertDot7, 0, wxALL, 5);
-    //chkConvert8Spaces = new wxCheckBox (tab5, wxID_ANY,
-    //                                    _("Convert 8 consecutive spaces into a tab"),
-    //                                    wxDefaultPosition, wxDefaultSize, 0);
-    //chkConvert8Spaces->SetValue (true);
-    //bs51->Add (chkConvert8Spaces, 0, wxALL, 5);
+    chkConvertDot7 = new wxCheckBox (tab5, wxID_ANY,
+                                     _("Convert periods followed by 7 spaces into period/tab"),
+                                     wxDefaultPosition, wxDefaultSize, 0);
+    chkConvertDot7->SetValue (true);
+    bs51->Add (chkConvertDot7, 0, wxALL, 5);
+    chkConvert8Spaces = new wxCheckBox (tab5, wxID_ANY,
+                                        _("Convert 8 consecutive spaces into a tab"),
+                                        wxDefaultPosition, wxDefaultSize, 0);
+    chkConvert8Spaces->SetValue (true);
+    bs51->Add (chkConvert8Spaces, 0, wxALL, 5);
     chkTutorColor = new wxCheckBox (tab5, wxID_ANY,
                                     _("Display TUTOR colorization options on Edit/Context menus"),
                                     wxDefaultPosition, wxDefaultSize, 0);
@@ -789,8 +789,8 @@ void PtermPrefDialog::SetControlState (void)
     ws.Printf ("%ld", m_profile->m_autoLF);
     cboAutoLF->SetValue (ws);
     chkSmartPaste->SetValue (m_profile->m_smartPaste);
-    //chkConvertDot7->SetValue (m_profile->m_convDot7);
-    //chkConvert8Spaces->SetValue (m_profile->m_conv8Sp);
+    chkConvertDot7->SetValue (m_profile->m_convDot7);
+    chkConvert8Spaces->SetValue (m_profile->m_conv8Sp);
     chkTutorColor->SetValue (m_profile->m_TutorColor);
     chkTrimEnd->SetValue (m_profile->m_trimEnd);
 
@@ -1081,10 +1081,10 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     //tab5
     else if (event.GetEventObject () == chkSmartPaste)
         m_profile->m_smartPaste = event.IsChecked ();
-    //else if (event.GetEventObject () == chkConvertDot7)
-    //    m_profile->m_convDot7 = event.IsChecked ();
-    //else if (event.GetEventObject () == chkConvert8Spaces)
-    //    m_profile->m_conv8Sp = event.IsChecked ();
+    else if (event.GetEventObject () == chkConvertDot7)
+        m_profile->m_convDot7 = event.IsChecked ();
+    else if (event.GetEventObject () == chkConvert8Spaces)
+        m_profile->m_conv8Sp = event.IsChecked ();
     else if (event.GetEventObject () == chkTutorColor)
         m_profile->m_TutorColor = event.IsChecked ();
     else if (event.GetEventObject () == chkTrimEnd)

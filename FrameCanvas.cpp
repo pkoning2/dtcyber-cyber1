@@ -1422,8 +1422,8 @@ PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
     m_lineDelay = profile->m_lineDelay;
     m_autoLF = profile->m_autoLF;
     m_smartPaste = profile->m_smartPaste;
-    //m_convDot7 = profile->m_convDot7;
-    //m_conv8Sp = profile->m_conv8Sp;
+    m_convDot7 = profile->m_convDot7;
+    m_conv8Sp = profile->m_conv8Sp;
     m_TutorColor = profile->m_TutorColor;
     m_trimEnd = profile->m_trimEnd;
     //tab6
@@ -2221,6 +2221,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
     u32 p;
     int pp, i, nextindex, nextpos;
     int delay = 0;
+    bool dot7 = false;
 
     if (m_bCancelPaste || m_pasteIndex < 0 || m_pasteIndex >= m_pasteLen)
     {
@@ -2339,21 +2340,21 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         // Smart paste processing.  This recognizes spaces that go to 
         // the next multiple of 8 tab stop, and the sequences <( and )>
         // for embed open and close.
-        if (m_smartPaste)
+        if (m_smartPaste || m_convDot7 || m_conv8Sp)
         {
-            if (c == '<' && c2 == '(')
+            if (c == '<' && c2 == '(' && m_smartPaste)
             {
                 // open embed
                 c = L'\u2993';
                 nextindex++;
             }
-            else if (c == ')' && c2 == '>')
+            else if (c == ')' && c2 == '>' && m_smartPaste)
             {
                 // close embed
                 c = L'\u2994';
                 nextindex++;
             }
-            else if (c == ' ' && c2 == ' ')
+            else if (c == ' ' && c2 == ' ' && (m_conv8Sp || m_smartPaste))
             {
                 // We only substitute tab for at least two spaces.
                 // We have two now; see if there are enough additional
@@ -2381,6 +2382,39 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
                     {
                         // Spaces all the way to the next tab.
                         c = '\t';
+                        nextindex = m_pasteIndex + ts;
+                        nextpos = m_pasteLinePos + ts;
+                    }
+                }
+            }
+            else if (c == '.' && c2 == ' ' && (m_convDot7 || m_smartPaste))
+            {
+                // We only substitute tab for at least two spaces.
+                // We have two now; see if there are enough additional
+                // ones to get to the next tab stop.
+                const int ts = ((m_pasteLinePos + 8) & (~7)) - m_pasteLinePos;
+                if (ts == 2)
+                {
+                    // Just those two gets us to the tabstop.  Do it.
+                    dot7 = true;
+                    nextindex++;
+                    nextpos++;
+                }
+                else if (m_pasteIndex + ts < m_pasteLen)
+                {
+                    // Need more, and we're not at end of string.  Check
+                    // for more spaces.
+                    for (i = 2; i < ts; i++)
+                    {
+                        if (m_pasteText[m_pasteIndex + i] != ' ')
+                        {
+                            break;
+                        }
+                    }
+                    if (i == ts)
+                    {
+                        // Spaces all the way to the next tab.
+                        dot7 = true;
                         nextindex = m_pasteIndex + ts;
                         nextpos = m_pasteLinePos + ts;
                     }
@@ -2440,6 +2474,10 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         {
             ptermSendKey (p);
             m_pasteLinePos = nextpos;
+            if (dot7)
+            {
+                ptermSendKey (pastedAsciiToPlato['\t']);
+            }
         }
     }
 
@@ -2475,7 +2513,8 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
         else
         {
             delay = m_charDelay;
-            m_pasteLinePos++;
+            // this double counts;  see after ptermSendKey (p) above - drs 
+            //m_pasteLinePos++;
         }
         m_pasteTimer.Start (delay, true);
         m_bPasteActive = true;
@@ -3025,8 +3064,8 @@ void PtermFrame::UpdateSessionSettings (void)
     m_lineDelay = m_profile->m_lineDelay;
     m_autoLF = m_profile->m_autoLF;
     m_smartPaste = m_profile->m_smartPaste;
-    //m_convDot7 = m_profile->m_convDot7;
-    //m_conv8Sp = m_profile->m_conv8Sp;
+    m_convDot7 = m_profile->m_convDot7;
+    m_conv8Sp = m_profile->m_conv8Sp;
     if (m_TutorColor != m_profile->m_TutorColor)
     {
         m_TutorColor = m_profile->m_TutorColor;

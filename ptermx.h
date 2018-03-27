@@ -142,8 +142,8 @@
 #define PREF_LINEDELAY   "lineDelay"
 #define PREF_AUTOLF      "autoLF"
 #define PREF_SMARTPASTE  "smartPaste"
-//#define PREF_CONVDOT7    "convDot7"
-//#define PREF_CONV8SP     "conv8Sp"
+#define PREF_CONVDOT7    "convDot7"
+#define PREF_CONV8SP     "conv8Sp"
 #define PREF_TUTORCOLOR  "TutorColor"
 #define PREF_TRIMEND     "TrimEnd"
 

@@ -107,8 +107,8 @@ void PtermProfile::init (void)
     m_lineDelay = PASTE_LINEDELAY;
     m_autoLF = 0L;
     m_smartPaste = false;
-    //m_convDot7 = false;
-    //m_conv8Sp = false;
+    m_convDot7 = false;
+    m_conv8Sp = false;
     m_TutorColor = false;
     m_trimEnd = true;
     //tab6
@@ -235,10 +235,10 @@ bool PtermProfile::LoadProfile (void)
                 value.ToCLong (&m_autoLF);
             else if (token.Cmp (wxT (PREF_SMARTPASTE)) == 0)
                 m_smartPaste    = (value.Cmp (wxT ("1")) == 0);
-            //else if (token.Cmp (wxT (PREF_CONVDOT7)) == 0)
-            //    m_convDot7      = (value.Cmp (wxT ("1")) == 0);
-            //else if (token.Cmp (wxT (PREF_CONV8SP)) == 0)
-            //    m_conv8Sp       = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_CONVDOT7)) == 0)
+                m_convDot7      = (value.Cmp (wxT ("1")) == 0);
+            else if (token.Cmp (wxT (PREF_CONV8SP)) == 0)
+                m_conv8Sp       = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_TUTORCOLOR)) == 0)
                 m_TutorColor    = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_TRIMEND)) == 0)
@@ -358,10 +358,10 @@ bool PtermProfile::SaveProfile (void)
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_SMARTPASTE) wxT ("=%d"), (m_smartPaste) ? 1 : 0);
     file.AddLine (buffer);
-    //buffer.Printf (wxT (PREF_CONVDOT7) wxT ("=%d"), (m_convDot7) ? 1 : 0);
-    //file.AddLine (buffer);
-    //buffer.Printf (wxT (PREF_CONV8SP) wxT ("=%d"), (m_conv8Sp) ? 1 : 0);
-    //file.AddLine (buffer);
+    buffer.Printf (wxT (PREF_CONVDOT7) wxT ("=%d"), (m_convDot7) ? 1 : 0);
+    file.AddLine (buffer);
+    buffer.Printf (wxT (PREF_CONV8SP) wxT ("=%d"), (m_conv8Sp) ? 1 : 0);
+    file.AddLine (buffer);
     buffer.Printf (wxT (PREF_TUTORCOLOR) wxT ("=%d"), (m_TutorColor) ? 1 : 0);
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_TRIMEND) wxT ("=%d"), (m_trimEnd) ? 1 : 0);

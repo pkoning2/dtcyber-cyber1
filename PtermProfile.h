@@ -70,8 +70,8 @@ public:
     long        m_lineDelay;
     long        m_autoLF;
     bool        m_smartPaste;
-    //bool        m_convDot7;
-    //bool        m_conv8Sp;
+    bool        m_convDot7;
+    bool        m_conv8Sp;
     bool        m_TutorColor;
     bool        m_trimEnd;
     //tab6
