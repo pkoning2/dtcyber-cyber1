@@ -10,8 +10,9 @@
 #define __Z80CONFIG_INCLUDED__
 
 /* Define this macro if the host processor is big endian. */
-
-/* #define Z80_BIG_ENDIAN */
+#if defined (__BIG_ENDIAN__)
+#define Z80_BIG_ENDIAN 1
+#endif
 
 /* Emulation can be speed up a little bit by emulating only the documented
  * flags.
