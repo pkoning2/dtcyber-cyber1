@@ -86,6 +86,7 @@ void PtermPrefDialog::PtermInitDialog (void)
     wxStaticText* lblFGColor;
     wxStaticText* lblBGColor;
     wxStaticText* lblExplainColor;
+    wxStaticText* lblDefaultScale;
     //tab5
     wxScrolledWindow* tab5;
     wxStaticText* lblExplain5;
@@ -373,7 +374,7 @@ void PtermPrefDialog::PtermInitDialog (void)
     tab4->SetScrollRate (5, 5);
 
     wxFlexGridSizer* page4;
-    page4 = new wxFlexGridSizer (3, 1, 0, 0);
+    page4 = new wxFlexGridSizer (7, 1, 0, 0);
     page4->AddGrowableCol (0);
     page4->AddGrowableRow (1);
     page4->SetFlexibleDirection (wxVERTICAL);
@@ -389,7 +390,7 @@ void PtermPrefDialog::PtermInitDialog (void)
     bs41->Add (chkDisableColor, 0, wxALL, 5);
 
     wxFlexGridSizer* fgs411;
-    fgs411 = new wxFlexGridSizer (2, 2, 0, 0);
+    fgs411 = new wxFlexGridSizer (3, 2, 0, 0);
 #if defined (_WIN32)
     btnFGColor = new wxButton (tab4, wxID_ANY, wxT (""),
                                wxDefaultPosition, wxSize (25, -1), 0);
@@ -427,6 +428,38 @@ void PtermPrefDialog::PtermInitDialog (void)
 #endif
     bs41->Add (fgs411, 1, 0, 5);
     page4->Add (bs41, 1, wxEXPAND | wxALIGN_TOP, 5);
+
+    if (m_profileEdit)
+    {
+        lblDefaultScale = new wxStaticText (tab4, wxID_ANY, _ ("Startup Zoom: (select 0 for keep aspect ratio; -1 for stretch display)"),
+            wxDefaultPosition, wxDefaultSize, 0);
+        page4->Add (lblDefaultScale, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+        wxIntegerValidator<double> scaleval;
+        scaleval.SetRange (-1.00, 3.00);
+        cboDefaultScale = new wxComboBox (tab4, wxID_ANY, wxT ("1.00"),
+            wxDefaultPosition, wxSize (75, -1),
+            0, NULL, 0, scaleval);
+        cboDefaultScale->Append (wxT ("-1."));
+        cboDefaultScale->Append (wxT ("0."));
+        cboDefaultScale->Append (wxT ("1."));
+        cboDefaultScale->Append (wxT ("2."));
+        cboDefaultScale->Append (wxT ("3."));
+        page4->Add (cboDefaultScale, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+        chkShowMenuBar = new wxCheckBox (tab4, wxID_ANY,
+            _ ("Show Menu Bar"),
+            wxDefaultPosition, wxDefaultSize, 0);
+        chkDisableShiftSpace->SetValue (false);
+        page4->Add (chkShowMenuBar, 0, wxALL, 5);
+
+        chkShowStatusBar = new wxCheckBox (tab4, wxID_ANY,
+            _ ("Show Status Bar"),
+            wxDefaultPosition, wxDefaultSize, 0);
+        chkShowStatusBar->SetValue (false);
+        page4->Add (chkShowStatusBar, 0, wxALL, 5);
+    }
+
     lblExplainColor = new wxStaticText (tab4, wxID_ANY, 
                                         _("* NOTE: Applied in Classic mode or if -color- is disabled in ASCII mode"),
                                         wxDefaultPosition, wxDefaultSize, 0);
@@ -781,6 +814,13 @@ void PtermPrefDialog::SetControlState (void)
     paintBitmap (bgBitmap, m_profile->m_bgColor);
     btnBGColor->SetBitmapLabel (bgBitmap);
 #endif
+    if (m_profileEdit)
+    {
+        ws.Printf ("%f", m_profile->m_scale);
+        cboDefaultScale->SetValue (ws);
+        chkShowMenuBar->SetValue (m_profile->m_showMenuBar);
+        chkShowStatusBar->SetValue (m_profile->m_showStatusBar);
+    }
     //tab5
     ws.Printf ("%ld", m_profile->m_charDelay);
     txtCharDelay->SetValue (ws);
@@ -1078,6 +1118,10 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     //tab4
     else if (event.GetEventObject () == chkDisableColor)
         m_profile->m_noColor = event.IsChecked ();
+    else if (m_profileEdit && event.GetEventObject () == chkShowMenuBar)
+        m_profile->m_showMenuBar = event.IsChecked ();
+    else if (m_profileEdit && event.GetEventObject () == chkShowStatusBar)
+        m_profile->m_showStatusBar = event.IsChecked ();
     //tab5
     else if (event.GetEventObject () == chkSmartPaste)
         m_profile->m_smartPaste = event.IsChecked ();
@@ -1124,6 +1168,9 @@ void PtermPrefDialog::OnComboSelect (wxCommandEvent& event)
     //tab1
     if (event.GetEventObject () == cboDefaultPort)
         cboDefaultPort->GetValue ().ToCLong (&m_profile->m_port);
+    //tab4
+    if (m_profileEdit && event.GetEventObject () == cboDefaultScale)
+        cboDefaultScale->GetValue ().ToCDouble (&m_profile->m_scale);
     //tab5
     else if (event.GetEventObject () == cboAutoLF)
         cboAutoLF->GetStringSelection ().ToCLong (&m_profile->m_autoLF);
@@ -1197,6 +1244,9 @@ void PtermPrefDialog::OnChange (wxCommandEvent& event)
             m_profile->m_host = txtDefaultHost->GetLineText (0);
         else if (event.GetEventObject () == cboDefaultPort)
             cboDefaultPort->GetValue ().ToCLong (&m_profile->m_port);
+        //tab4
+        if (event.GetEventObject () == cboDefaultScale)
+            cboDefaultScale->GetValue ().ToCDouble (&m_profile->m_scale);
         else
             return;
     }

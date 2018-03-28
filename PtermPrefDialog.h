@@ -95,6 +95,10 @@ public:
     wxBitmapButton *btnFGColor;
     wxBitmapButton *btnBGColor;
 #endif
+    wxComboBox *cboDefaultScale;
+    //wxList     *lstDefaultScale;
+    wxCheckBox *chkShowMenuBar;
+    wxCheckBox *chkShowStatusBar;
     //tab5
     wxTextCtrl *txtCharDelay;
     wxTextCtrl *txtLineDelay;
