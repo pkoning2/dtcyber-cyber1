@@ -39,6 +39,7 @@ public:
     void OnDoubleClick (wxCommandEvent& event);
     void OnChange (wxCommandEvent& event);
     void OnComboSelect (wxCommandEvent& event);
+    void OnRadioSelect (wxCommandEvent& event);
     void OnClose (wxCloseEvent &);
     //support routines
     bool ValidProfile (wxString profile);
@@ -96,7 +97,8 @@ public:
     wxBitmapButton *btnBGColor;
 #endif
     wxCheckBox *chkFancyScale;
-    wxComboBox *cboDefaultScale;
+    //wxComboBox *cboDefaultScale;
+    wxRadioBox *rdoDefaultScale;
     wxCheckBox *chkShowMenuBar;
     wxCheckBox *chkShowStatusBar;
     //tab5

@@ -22,6 +22,7 @@ BEGIN_EVENT_TABLE (PtermPrefDialog, wxDialog)
     EVT_LISTBOX (wxID_ANY, PtermPrefDialog::OnSelect)
     EVT_LISTBOX_DCLICK (wxID_ANY, PtermPrefDialog::OnDoubleClick)
     EVT_TEXT (wxID_ANY, PtermPrefDialog::OnChange)
+    EVT_RADIOBOX (wxID_ANY, PtermPrefDialog::OnRadioSelect)
     END_EVENT_TABLE ();
 
 PtermPrefDialog::PtermPrefDialog (PtermConnDialog *parent, wxWindowID id,
@@ -374,7 +375,7 @@ void PtermPrefDialog::PtermInitDialog (void)
     tab4->SetScrollRate (5, 5);
 
     wxFlexGridSizer* page4;
-    page4 = new wxFlexGridSizer (7, 1, 0, 0);
+    page4 = new wxFlexGridSizer (20, 1, 0, 0);
     page4->AddGrowableCol (0);
     page4->AddGrowableRow (1);
     page4->SetFlexibleDirection (wxVERTICAL);
@@ -437,24 +438,37 @@ void PtermPrefDialog::PtermInitDialog (void)
 
     if (m_profileEdit)
     {
+        static const wxString sZoom[] =
+        {
+            _T ("Stretch display"),
+            _T ("Keep aspect ratio"),
+            _T ("1x"),
+            _T ("2x"),
+            _T ("3x")
+        };
 
+        rdoDefaultScale = new wxRadioBox (tab4, wxID_ANY, _T ("Startup Zoom"),
+            wxDefaultPosition, wxDefaultSize,
+            WXSIZEOF (sZoom), sZoom,
+            1, wxRA_SPECIFY_COLS);
+        page4->Add (rdoDefaultScale, 0, wxGROW | wxALL, 5);
 
-        lblDefaultScale = new wxStaticText (tab4, wxID_ANY, 
-            _ ("Startup Zoom: (select 0 for keep aspect ratio; -1 for stretch display)"),
-            wxDefaultPosition, wxDefaultSize, 0);
-        page4->Add (lblDefaultScale, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+        //lblDefaultScale = new wxStaticText (tab4, wxID_ANY, 
+        //    _ ("Startup Zoom: (select 0 for keep aspect ratio; -1 for stretch display)"),
+        //    wxDefaultPosition, wxDefaultSize, 0);
+        //page4->Add (lblDefaultScale, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
-        wxIntegerValidator<double> scaleval;
-        scaleval.SetRange (-1.00, 3.00);
-        cboDefaultScale = new wxComboBox (tab4, wxID_ANY, wxT ("1.00"),
-            wxDefaultPosition, wxSize (75, -1),
-            0, NULL, 0, scaleval);
-        cboDefaultScale->Append (wxT ("-1."));
-        cboDefaultScale->Append (wxT ("0."));
-        cboDefaultScale->Append (wxT ("1."));
-        cboDefaultScale->Append (wxT ("2."));
-        cboDefaultScale->Append (wxT ("3."));
-        page4->Add (cboDefaultScale, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+        //wxIntegerValidator<double> scaleval;
+        //scaleval.SetRange (-1.00, 3.00);
+        //cboDefaultScale = new wxComboBox (tab4, wxID_ANY, wxT ("1.00"),
+        //    wxDefaultPosition, wxSize (75, -1),
+        //    0, NULL, 0, scaleval);
+        //cboDefaultScale->Append (wxT ("-1."));
+        //cboDefaultScale->Append (wxT ("0."));
+        //cboDefaultScale->Append (wxT ("1."));
+        //cboDefaultScale->Append (wxT ("2."));
+        //cboDefaultScale->Append (wxT ("3."));
+        //page4->Add (cboDefaultScale, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
         chkShowMenuBar = new wxCheckBox (tab4, wxID_ANY,
             _ ("Show Menu Bar"),
@@ -829,7 +843,7 @@ void PtermPrefDialog::SetControlState (void)
     if (m_profileEdit)
     {
         ws.Printf ("%f", m_profile->m_scale);
-        cboDefaultScale->SetValue (ws);
+        rdoDefaultScale->SetSelection (1+(int)m_profile->m_scale);
         chkShowMenuBar->SetValue (m_profile->m_showMenuBar);
         chkShowStatusBar->SetValue (m_profile->m_showStatusBar);
     }
@@ -1091,6 +1105,16 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
     Refresh (false);
 }
 
+void PtermPrefDialog::OnRadioSelect (wxCommandEvent& event)
+{
+    if (event.GetEventObject () == rdoDefaultScale)
+        m_profile->m_scale = event.GetSelection()-1;
+    else
+        return;
+
+    Modified ();
+}
+
 void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
 {
     if (m_profileEdit)
@@ -1183,9 +1207,6 @@ void PtermPrefDialog::OnComboSelect (wxCommandEvent& event)
     //tab1
     if (event.GetEventObject () == cboDefaultPort)
         cboDefaultPort->GetValue ().ToCLong (&m_profile->m_port);
-    //tab4
-    if (m_profileEdit && event.GetEventObject () == cboDefaultScale)
-        cboDefaultScale->GetValue ().ToCDouble (&m_profile->m_scale);
     //tab5
     else if (event.GetEventObject () == cboAutoLF)
         cboAutoLF->GetStringSelection ().ToCLong (&m_profile->m_autoLF);
@@ -1259,9 +1280,7 @@ void PtermPrefDialog::OnChange (wxCommandEvent& event)
             m_profile->m_host = txtDefaultHost->GetLineText (0);
         else if (event.GetEventObject () == cboDefaultPort)
             cboDefaultPort->GetValue ().ToCLong (&m_profile->m_port);
-        //tab4
-        if (event.GetEventObject () == cboDefaultScale)
-            cboDefaultScale->GetValue ().ToCDouble (&m_profile->m_scale);
+
         else
             return;
     }
