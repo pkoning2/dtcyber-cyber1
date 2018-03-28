@@ -375,7 +375,7 @@ void PtermPrefDialog::PtermInitDialog (void)
     tab4->SetScrollRate (5, 5);
 
     wxFlexGridSizer* page4;
-    page4 = new wxFlexGridSizer (20, 1, 0, 0);
+    page4 = new wxFlexGridSizer (10, 1, 0, 0);
     page4->AddGrowableCol (0);
     page4->AddGrowableRow (1);
     page4->SetFlexibleDirection (wxVERTICAL);
@@ -452,23 +452,6 @@ void PtermPrefDialog::PtermInitDialog (void)
             WXSIZEOF (sZoom), sZoom,
             1, wxRA_SPECIFY_COLS);
         page4->Add (rdoDefaultScale, 0, wxGROW | wxALL, 5);
-
-        //lblDefaultScale = new wxStaticText (tab4, wxID_ANY, 
-        //    _ ("Startup Zoom: (select 0 for keep aspect ratio; -1 for stretch display)"),
-        //    wxDefaultPosition, wxDefaultSize, 0);
-        //page4->Add (lblDefaultScale, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
-
-        //wxIntegerValidator<double> scaleval;
-        //scaleval.SetRange (-1.00, 3.00);
-        //cboDefaultScale = new wxComboBox (tab4, wxID_ANY, wxT ("1.00"),
-        //    wxDefaultPosition, wxSize (75, -1),
-        //    0, NULL, 0, scaleval);
-        //cboDefaultScale->Append (wxT ("-1."));
-        //cboDefaultScale->Append (wxT ("0."));
-        //cboDefaultScale->Append (wxT ("1."));
-        //cboDefaultScale->Append (wxT ("2."));
-        //cboDefaultScale->Append (wxT ("3."));
-        //page4->Add (cboDefaultScale, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
         chkShowMenuBar = new wxCheckBox (tab4, wxID_ANY,
             _ ("Show Menu Bar"),
