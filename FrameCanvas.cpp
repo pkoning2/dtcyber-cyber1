@@ -4913,11 +4913,11 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                 {
                 case 0160:
                     // 160 is terminal type query
-                    if ((n = m_profile->m_termType) == -1)
+                    if ((d = m_profile->m_termType) == -1)
                     {
-                        n = TERMTYPE;
+                        d = TERMTYPE;
                     }
-                    trace ("load echo termtype %d", 0160 + n);
+                    trace ("load echo termtype %d", 0160 + d);
                     break;
                 case 0x7b:
                     // hex 7b is beep
