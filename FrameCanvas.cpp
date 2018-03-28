@@ -565,22 +565,21 @@ void PtermCanvas::OnDraw (wxDC &dc)
             dc.DrawBitmap (*m_owner->m_bitmap, m_owner->m_xmargin,
                 m_owner->m_ymargin, false);
         }
-        // fancy scaling 
+        // BILINEAR scaling 
         else
         {
+            int x1 = m_owner->m_xmargin + (m_owner->m_xscale - 1)*m_owner->m_xmargin;
+            int y1 = m_owner->m_ymargin + (m_owner->m_yscale - 1)*m_owner->m_ymargin;
             wxImage scaleImage = m_owner->m_bitmap->ConvertToImage ();
             wxImage rescaledImage =  scaleImage.Scale (m_owner->m_xscale * 512,
                 m_owner->m_yscale * 512,
                 wxIMAGE_QUALITY_BILINEAR);
-            if (!m_owner->m_fullScreen)
+             if (!m_owner->m_fullScreen)
             {
-                dc.SetClippingRegion (m_owner->m_xmargin + (m_owner->m_xscale - 1)*m_owner->m_xmargin,
-                    m_owner->m_ymargin + (m_owner->m_yscale - 1)*m_owner->m_ymargin,
+                dc.SetClippingRegion (x1, y1,
                     m_owner->m_xscale * 512, m_owner->m_yscale * 512);
             }
-            dc.DrawBitmap (rescaledImage, 
-                m_owner->m_xmargin + (m_owner->m_xscale-1)*m_owner->m_xmargin,
-                m_owner->m_ymargin + (m_owner->m_yscale - 1)*m_owner->m_ymargin, false);
+            dc.DrawBitmap (rescaledImage, x1, y1, false);
         }
     }
     else
