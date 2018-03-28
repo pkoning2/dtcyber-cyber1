@@ -207,8 +207,6 @@ bool PtermProfile::LoadProfile (void)
             else if (token.Cmp (wxT (PREF_SCALE)) == 0)
             {
                 value.ToCDouble (&m_scale);
-                //if (m_scale == 0.0)   // *sigh* 0 means maintain aspect ratio.
-                //    m_scale = 1.0;
             }
             else if (token.Cmp (wxT (PREF_STATUSBAR)) == 0)
                 m_showStatusBar = (value.Cmp (wxT ("1")) == 0);

@@ -431,7 +431,8 @@ void PtermPrefDialog::PtermInitDialog (void)
 
     if (m_profileEdit)
     {
-        lblDefaultScale = new wxStaticText (tab4, wxID_ANY, _ ("Startup Zoom: (select 0 for keep aspect ratio; -1 for stretch display)"),
+        lblDefaultScale = new wxStaticText (tab4, wxID_ANY, 
+            _ ("Startup Zoom: (select 0 for keep aspect ratio; -1 for stretch display)"),
             wxDefaultPosition, wxDefaultSize, 0);
         page4->Add (lblDefaultScale, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
