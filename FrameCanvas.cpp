@@ -574,12 +574,13 @@ void PtermCanvas::OnDraw (wxDC &dc)
                 wxIMAGE_QUALITY_BILINEAR);
             if (!m_owner->m_fullScreen)
             {
-                dc.SetClippingRegion (m_owner->m_xmargin,
-                    m_owner->m_ymargin, 
+                dc.SetClippingRegion (m_owner->m_xmargin + (m_owner->m_xscale - 1)*m_owner->m_xmargin,
+                    m_owner->m_ymargin + (m_owner->m_yscale - 1)*m_owner->m_ymargin,
                     m_owner->m_xscale * 512, m_owner->m_yscale * 512);
             }
-            dc.DrawBitmap (rescaledImage, m_owner->m_xmargin * m_owner->m_xscale,
-                m_owner->m_ymargin, false);
+            dc.DrawBitmap (rescaledImage, 
+                m_owner->m_xmargin + (m_owner->m_xscale-1)*m_owner->m_xmargin,
+                m_owner->m_ymargin + (m_owner->m_yscale - 1)*m_owner->m_ymargin, false);
         }
     }
     else
