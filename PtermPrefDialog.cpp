@@ -429,8 +429,16 @@ void PtermPrefDialog::PtermInitDialog (void)
     bs41->Add (fgs411, 1, 0, 5);
     page4->Add (bs41, 1, wxEXPAND | wxALIGN_TOP, 5);
 
+    chkFancyScale = new wxCheckBox (tab4, wxID_ANY,
+        _ ("Use BILINEAR scaling"),
+        wxDefaultPosition, wxDefaultSize, 0);
+    chkFancyScale->SetValue (false);
+    page4->Add (chkFancyScale, 0, wxALL, 5);
+
     if (m_profileEdit)
     {
+
+
         lblDefaultScale = new wxStaticText (tab4, wxID_ANY, 
             _ ("Startup Zoom: (select 0 for keep aspect ratio; -1 for stretch display)"),
             wxDefaultPosition, wxDefaultSize, 0);
@@ -451,7 +459,7 @@ void PtermPrefDialog::PtermInitDialog (void)
         chkShowMenuBar = new wxCheckBox (tab4, wxID_ANY,
             _ ("Show Menu Bar"),
             wxDefaultPosition, wxDefaultSize, 0);
-        chkDisableShiftSpace->SetValue (false);
+        chkShowMenuBar->SetValue (false);
         page4->Add (chkShowMenuBar, 0, wxALL, 5);
 
         chkShowStatusBar = new wxCheckBox (tab4, wxID_ANY,
@@ -815,6 +823,9 @@ void PtermPrefDialog::SetControlState (void)
     paintBitmap (bgBitmap, m_profile->m_bgColor);
     btnBGColor->SetBitmapLabel (bgBitmap);
 #endif
+
+    chkFancyScale->SetValue (m_profile->m_FancyScaling);
+
     if (m_profileEdit)
     {
         ws.Printf ("%f", m_profile->m_scale);
@@ -1123,6 +1134,9 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
         m_profile->m_showMenuBar = event.IsChecked ();
     else if (m_profileEdit && event.GetEventObject () == chkShowStatusBar)
         m_profile->m_showStatusBar = event.IsChecked ();
+    else if (event.GetEventObject () == chkFancyScale)
+        m_profile->m_FancyScaling = event.IsChecked ();
+
     //tab5
     else if (event.GetEventObject () == chkSmartPaste)
         m_profile->m_smartPaste = event.IsChecked ();

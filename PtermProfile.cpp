@@ -93,6 +93,7 @@ void PtermProfile::init (void)
     m_DisableShiftSpace = false;
     m_DisableMouseDrag = false;
     //tab4
+    m_FancyScaling = false;
     m_scale = 1.0;
     m_showStatusBar = true;
 #if !defined (__WXMAC__)
@@ -204,6 +205,8 @@ bool PtermProfile::LoadProfile (void)
                 m_DisableMouseDrag = (value.Cmp (wxT ("1")) == 0);
 
             //tab4
+            else if (token.Cmp (wxT (PREF_FANCYSCALE)) == 0)
+                m_FancyScaling = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_SCALE)) == 0)
             {
                 value.ToCDouble (&m_scale);
@@ -337,6 +340,8 @@ bool PtermProfile::SaveProfile (void)
     buffer.Printf (wxT (PREF_MOUSEDRAG) wxT ("=%d"), (m_DisableMouseDrag) ? 1 : 0);
     file.AddLine (buffer);
     //tab4
+    buffer.Printf (wxT (PREF_FANCYSCALE) wxT ("=%d"), (m_FancyScaling) ? 1 : 0);
+    file.AddLine (buffer);
     buffer.Printf (wxT (PREF_SCALE) wxT ("=%f"), m_scale);
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_STATUSBAR) wxT ("=%d"), (m_showStatusBar) ? 1 : 0);

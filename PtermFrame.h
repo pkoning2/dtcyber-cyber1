@@ -285,6 +285,7 @@ public:
     //tab4
 #define SCALE_ASPECT  0.    // Scale to window, square aspect ratio
 #define SCALE_FREE   -1.    // Scale to window, free form
+    bool        m_FancyScaling;
     bool        m_showStatusBar;
 #if !defined (__WXMAC__)
     bool        m_showMenuBar;

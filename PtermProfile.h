@@ -52,6 +52,7 @@ public:
     bool        m_DisableShiftSpace;
     bool        m_DisableMouseDrag;
     //tab4
+    bool        m_FancyScaling;
     double      m_scale;    // Window scale factor or special value
 #define SCALE_ASPECT  0.    // Scale to window, square aspect ratio
 #define SCALE_FREE   -1.    // Scale to window, free form

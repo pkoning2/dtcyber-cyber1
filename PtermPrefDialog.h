@@ -95,6 +95,7 @@ public:
     wxBitmapButton *btnFGColor;
     wxBitmapButton *btnBGColor;
 #endif
+    wxCheckBox *chkFancyScale;
     wxComboBox *cboDefaultScale;
     wxCheckBox *chkShowMenuBar;
     wxCheckBox *chkShowStatusBar;

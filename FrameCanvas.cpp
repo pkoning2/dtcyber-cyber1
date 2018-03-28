@@ -550,9 +550,10 @@ void PtermCanvas::OnDraw (wxDC &dc)
         m_owner->m_yscale < 1)
     {
         // simple scaling
-        if ((m_owner->m_xscale == 1 && m_owner->m_yscale == 1) ||
+        if (!m_owner->m_FancyScaling ||
+            ((m_owner->m_xscale == 1 && m_owner->m_yscale == 1) ||
             (m_owner->m_xscale == 2 && m_owner->m_yscale == 2) ||
-            (m_owner->m_xscale == 3 && m_owner->m_yscale == 3)
+            (m_owner->m_xscale == 3 && m_owner->m_yscale == 3))
             )
         {
             dc.SetUserScale (m_owner->m_xscale, m_owner->m_yscale);
@@ -577,7 +578,7 @@ void PtermCanvas::OnDraw (wxDC &dc)
                     m_owner->m_ymargin, 
                     m_owner->m_xscale * 512, m_owner->m_yscale * 512);
             }
-            dc.DrawBitmap (rescaledImage, m_owner->m_xmargin,
+            dc.DrawBitmap (rescaledImage, m_owner->m_xmargin * m_owner->m_xscale,
                 m_owner->m_ymargin, false);
         }
     }
@@ -1433,6 +1434,7 @@ PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
 //#define SCALE_ASPECT  0.    // Scale to window, square aspect ratio
 //#define SCALE_FREE   -1.    // Scale to window, free form
     m_showStatusBar = profile->m_showStatusBar;
+    m_FancyScaling = profile->m_FancyScaling;
 #if !defined (__WXMAC__)
     m_showMenuBar = profile->m_showMenuBar;
 #endif
@@ -3079,6 +3081,7 @@ void PtermFrame::UpdateSessionSettings (void)
     m_DisableShiftSpace = m_profile->m_DisableShiftSpace;
     m_DisableMouseDrag = m_profile->m_DisableMouseDrag;
     //tab4
+    m_FancyScaling = m_profile->m_FancyScaling;
     m_noColor = m_profile->m_noColor;
     m_fgColor = m_profile->m_fgColor;
     m_bgColor = m_profile->m_bgColor;

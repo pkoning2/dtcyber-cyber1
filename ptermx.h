@@ -131,6 +131,7 @@
 #define PREF_SHIFTSPACE  "DisableShiftSpace"
 #define PREF_MOUSEDRAG   "DisableMouseDrag"
 //tab4
+#define PREF_FANCYSCALE  "fancyscale"
 #define PREF_SCALE       "scale"
 #define PREF_STATUSBAR   "statusbar"
 #define PREF_MENUBAR     "menubar"
