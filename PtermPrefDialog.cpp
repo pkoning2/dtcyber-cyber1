@@ -375,9 +375,9 @@ void PtermPrefDialog::PtermInitDialog (void)
     tab4->SetScrollRate (5, 5);
 
     wxFlexGridSizer* page4;
-    page4 = new wxFlexGridSizer (10, 1, 0, 0);
+    page4 = new wxFlexGridSizer (8, 1, 0, 0);
     page4->AddGrowableCol (0);
-    page4->AddGrowableRow (1);
+    page4->AddGrowableRow (4);
     page4->SetFlexibleDirection (wxVERTICAL);
     lblExplain4 = new wxStaticText (tab4, wxID_ANY,
                                     _("Settings on this page allow you to change the display appearance."),
@@ -436,6 +436,9 @@ void PtermPrefDialog::PtermInitDialog (void)
     chkFancyScale->SetValue (false);
     page4->Add (chkFancyScale, 0, wxALL, 5);
 
+    wxFlexGridSizer* fgs412;
+    fgs412 = new wxFlexGridSizer (3, 1, 0, 0);
+
     if (m_profileEdit)
     {
         static const wxString sZoom[] =
@@ -451,20 +454,21 @@ void PtermPrefDialog::PtermInitDialog (void)
             wxDefaultPosition, wxDefaultSize,
             WXSIZEOF (sZoom), sZoom,
             1, wxRA_SPECIFY_COLS);
-        page4->Add (rdoDefaultScale, 0, wxGROW | wxALL, 5);
+        fgs412->Add (rdoDefaultScale, 0, wxGROW | wxALL, 5);
 
         chkShowMenuBar = new wxCheckBox (tab4, wxID_ANY,
             _ ("Show Menu Bar"),
             wxDefaultPosition, wxDefaultSize, 0);
         chkShowMenuBar->SetValue (false);
-        page4->Add (chkShowMenuBar, 0, wxALL, 5);
+        fgs412->Add (chkShowMenuBar, 0, wxALL, 5);
 
         chkShowStatusBar = new wxCheckBox (tab4, wxID_ANY,
             _ ("Show Status Bar"),
             wxDefaultPosition, wxDefaultSize, 0);
         chkShowStatusBar->SetValue (false);
-        page4->Add (chkShowStatusBar, 0, wxALL, 5);
+        fgs412->Add (chkShowStatusBar, 0, wxALL, 5);
     }
+    page4->Add (fgs412, 1, wxEXPAND | wxALIGN_TOP, 5);
 
     lblExplainColor = new wxStaticText (tab4, wxID_ANY, 
                                         _("* NOTE: Applied in Classic mode or if -color- is disabled in ASCII mode"),
