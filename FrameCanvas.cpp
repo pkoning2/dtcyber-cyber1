@@ -2501,7 +2501,7 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
             m_pasteLinePos = nextpos;
             if (dot7)
             {
-                ptermSendKey (pastedAsciiToPlato['\t']);
+                ptermSendKey (pastedAsciiToPlato[(int)'\t']);
             }
         }
     }

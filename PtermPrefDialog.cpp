@@ -87,7 +87,6 @@ void PtermPrefDialog::PtermInitDialog (void)
     wxStaticText* lblFGColor;
     wxStaticText* lblBGColor;
     wxStaticText* lblExplainColor;
-    wxStaticText* lblDefaultScale;
     //tab5
     wxScrolledWindow* tab5;
     wxStaticText* lblExplain5;
@@ -1141,8 +1140,10 @@ void PtermPrefDialog::OnCheckbox (wxCommandEvent& event)
     //tab4
     else if (event.GetEventObject () == chkDisableColor)
         m_profile->m_noColor = event.IsChecked ();
+#ifndef __WXMAC__
     else if (m_profileEdit && event.GetEventObject () == chkShowMenuBar)
         m_profile->m_showMenuBar = event.IsChecked ();
+#endif
     else if (m_profileEdit && event.GetEventObject () == chkShowStatusBar)
         m_profile->m_showStatusBar = event.IsChecked ();
     else if (event.GetEventObject () == chkFancyScale)
