@@ -66,7 +66,6 @@ public:
     wxTextCtrl *txtProfile;
     wxButton *btnSaveAs;
     //tab1
-    wxCheckBox *chkConnectAtStartup;
     wxTextCtrl *txtShellFirst;
     wxTextCtrl *txtDefaultHost;
     wxComboBox *cboDefaultPort;

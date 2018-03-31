@@ -215,7 +215,8 @@ enum
     Pterm_About = wxID_ABOUT
 };
 
-
+// it is important that these be kept in sync with the -jump-
+// in unit route in ptermhelp/nptermhelp block 1-e, microroute
 enum 
 {
     helpContextGenericIndex = 0,
