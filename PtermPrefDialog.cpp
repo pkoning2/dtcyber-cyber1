@@ -106,7 +106,9 @@ void PtermPrefDialog::PtermInitDialog (void)
 
     wxFont dfont = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
                            wxFONTWEIGHT_NORMAL);
-    
+    wxFont dfont2 = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+        wxFONTWEIGHT_BOLD);
+
     m_floppy0Changed = false;
     m_floppy1Changed = false;
 
@@ -135,6 +137,7 @@ void PtermPrefDialog::PtermInitDialog (void)
         lblExplain0 = new wxStaticText (tab0, wxID_ANY,
                                         _("Use this page to manage your connection preference profiles."),
                                         wxDefaultPosition, wxDefaultSize, 0);
+        lblExplain0->SetFont (dfont2);
         page0->Add (lblExplain0, 0, wxALL, 5);
         lstProfiles = new ProfileList (tab0, wxID_ANY, wxDefaultPosition,
                                        wxSize (-1, -1));
@@ -147,6 +150,7 @@ void PtermPrefDialog::PtermInitDialog (void)
                                                     _("Select a profile above, then click a button below."),
                                                     wxDefaultPosition,
                                                     wxDefaultSize, 0);
+        lblProfileActionExplain->SetFont (dfont2);
         fgs01->Add (lblProfileActionExplain, 0, wxALL, 5);
 
         wxFlexGridSizer* fgs011;
@@ -172,6 +176,7 @@ void PtermPrefDialog::PtermInitDialog (void)
                                                  _("Or, enter the name of a new profile below and click Save As."),
                                                  wxDefaultPosition,
                                                  wxDefaultSize, 0);
+        lblNewProfileExplain->SetFont (dfont2);
         fgs01->Add (lblNewProfileExplain, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
 
         wxFlexGridSizer* fgs012;
@@ -211,6 +216,7 @@ void PtermPrefDialog::PtermInitDialog (void)
         lblExplain1 = new wxStaticText (tab1, wxID_ANY,
                                         _("Settings on this page specify where PLATO is on the internet."),
                                         wxDefaultPosition, wxDefaultSize, 0);
+        lblExplain1->SetFont (dfont2);
         page1->Add (lblExplain1, 1, wxALL, 5);
         wxBoxSizer* bs11;
         bs11 = new wxBoxSizer (wxVERTICAL);
@@ -256,6 +262,7 @@ void PtermPrefDialog::PtermInitDialog (void)
         lblExplainPort = new wxStaticText (tab1, wxID_ANY,
                                            _("* NOTE: 5004=Classic, 8005=Color Terminal"),
                                            wxDefaultPosition, wxDefaultSize, 0);
+        lblExplainPort->SetFont (dfont2);
         page1->Add (lblExplainPort, 0, wxALL, 5);
         tab1->SetSizer (page1);
         tab1->Layout ();
@@ -274,6 +281,7 @@ void PtermPrefDialog::PtermInitDialog (void)
         lblExplain2 = new wxStaticText (tab2, wxID_ANY,
                                         _("Settings on this page configure the text shown in the window title."),
                                         wxDefaultPosition, wxDefaultSize, 0);
+        lblExplain2->SetFont (dfont2);
         page2->Add (lblExplain2, 0, wxALL, 5);
         chkShowSignon = new wxCheckBox (tab2, wxID_ANY,
                                         _("Show name/group in frame title"),
@@ -323,6 +331,7 @@ void PtermPrefDialog::PtermInitDialog (void)
     lblExplain3 = new wxStaticText (tab3, wxID_ANY,
                                     _("Settings on this page let you fine-tune your PLATO experience."),
                                     wxDefaultPosition, wxDefaultSize, 0);
+    lblExplain3->SetFont (dfont2);
     page3->Add (lblExplain3, 0, wxALL, 5);
     chkSimulate1200Baud = new wxCheckBox (tab3, wxID_ANY,
                                           _("Simulate 1260 baud"),
@@ -381,6 +390,7 @@ void PtermPrefDialog::PtermInitDialog (void)
     lblExplain4 = new wxStaticText (tab4, wxID_ANY,
                                     _("Settings on this page allow you to change the display appearance."),
                                     wxDefaultPosition, wxDefaultSize, 0);
+    lblExplain4->SetFont (dfont2);
     page4->Add (lblExplain4, 0, wxALL, 5);
     wxBoxSizer* bs41;
     bs41 = new wxBoxSizer (wxVERTICAL);
@@ -470,8 +480,9 @@ void PtermPrefDialog::PtermInitDialog (void)
     page4->Add (fgs412, 1, wxEXPAND | wxALIGN_TOP, 5);
 
     lblExplainColor = new wxStaticText (tab4, wxID_ANY, 
-                                        _("* NOTE: Applied in Classic mode or if -color- is disabled in ASCII mode"),
+                                        _("* Applied in Classic mode or if -color- is disabled in ASCII mode"),
                                         wxDefaultPosition, wxDefaultSize, 0);
+    lblExplainColor->SetFont (dfont2);
     page4->Add (lblExplainColor, 0, wxALL | wxALIGN_BOTTOM, 5);
     tab4->SetSizer (page4);
     tab4->Layout ();
@@ -495,6 +506,7 @@ void PtermPrefDialog::PtermInitDialog (void)
     lblExplain5 = new wxStaticText (tab5, wxID_ANY,
                                     _("Settings on this page allow you to specify Paste options."),
                                     wxDefaultPosition, wxDefaultSize, 0);
+    lblExplain5->SetFont (dfont2);
     bs51->Add (lblExplain5, 0, wxALL, 5);
     wxFlexGridSizer* fgs511;
     wxIntegerValidator<long> cdval, ldval, autoval;
@@ -615,6 +627,7 @@ void PtermPrefDialog::PtermInitDialog (void)
     lblMTUTOR = new wxStaticText (tab6, wxID_ANY,
                                   _("MicroTutor related options:"),
                                   wxDefaultPosition, wxDefaultSize, 0);
+    lblMTUTOR->SetFont (dfont2);
     page6->Add (lblMTUTOR, 0, wxALL | wxALIGN_BOTTOM, 5);
 
     if (m_profileEdit)

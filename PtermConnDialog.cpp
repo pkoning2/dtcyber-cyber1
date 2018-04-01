@@ -31,6 +31,8 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title,
     wxStaticText* lblExplainProfiles;
     wxFont dfont = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
                            wxFONTWEIGHT_NORMAL);
+    wxFont dfont2 = wxFont (10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+        wxFONTWEIGHT_BOLD);
 
     // ui object creation / placement, note initialization of values is below
     wxBoxSizer* bs1;
@@ -38,7 +40,7 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title,
     lblExplainProfiles = new wxStaticText (this, wxID_ANY,
                                            _("Select a profile and click Connect or Boot."),
                                            wxDefaultPosition, wxDefaultSize, 0);
-    lblExplainProfiles->SetFont (dfont);
+    lblExplainProfiles->SetFont (dfont2);
     bs1->Add (lblExplainProfiles, 0, wxTOP|wxRIGHT|wxLEFT, 5);
     lstProfiles = new ProfileList (this, wxID_ANY, wxDefaultPosition,
                                    wxSize (-1, -1));
