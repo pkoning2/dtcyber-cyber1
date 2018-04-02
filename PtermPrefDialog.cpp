@@ -26,14 +26,14 @@ BEGIN_EVENT_TABLE (PtermPrefDialog, wxDialog)
     END_EVENT_TABLE ();
 
 PtermPrefDialog::PtermPrefDialog (PtermConnDialog *parent, wxWindowID id,
-                                  const wxString &title, wxPoint pos,
-                                  wxSize size)
+    const wxString &title, wxPoint pos,
+    wxSize size)
     : wxDialog (parent, id, title, pos, size),
-      m_profile (NULL),
-      m_profileEdit (true)
+    m_profile (NULL),
+    m_profileEdit (true),
+    m_connParent (parent)
 {
     PtermInitDialog ();
-    m_connParent = parent;
 }
 
 PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
@@ -41,7 +41,9 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
                                   wxSize size,
                                   const PtermProfile &fromprofile)
     : wxDialog (parent, id, title, pos, size),
-      m_profileEdit (false)
+      m_profileEdit (false),
+      m_connParent (NULL)
+
 {
     m_profile = new PtermProfile (fromprofile);
     PtermInitDialog ();
@@ -58,8 +60,6 @@ PtermPrefDialog::~PtermPrefDialog ()
 
 void PtermPrefDialog::PtermInitDialog (void)
 {
-    m_connParent = NULL;
-
     // static ui objects, note dynamic controls, e.g. those that hold
     // values or require event processing are declared above
     //tab0
