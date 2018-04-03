@@ -31,17 +31,19 @@ PtermPrefDialog::PtermPrefDialog (PtermConnDialog *parent, wxWindowID id,
     : wxDialog (parent, id, title, pos, size),
     m_profile (NULL),
     m_profileEdit (true),
+    m_initDone (false),
     m_connParent (parent)
 {
     PtermInitDialog ();
 }
 
 PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
-                                  const wxString &title, wxPoint pos,
-                                  wxSize size,
-                                  const PtermProfile &fromprofile)
+    const wxString &title, wxPoint pos,
+    wxSize size,
+    const PtermProfile &fromprofile)
     : wxDialog (parent, id, title, pos, size),
       m_profileEdit (false),
+      m_initDone (false),
       m_connParent (NULL)
 
 {
@@ -723,6 +725,8 @@ void PtermPrefDialog::PtermInitDialog (void)
         SelectProfile (lstProfiles->GetSelection ());
     }
 
+    m_initDone = true;
+
     // set object value properties
     SetControlState ();
     Modified (false);
@@ -1253,6 +1257,9 @@ void PtermPrefDialog::OnDoubleClick (wxCommandEvent& event)
 void PtermPrefDialog::OnChange (wxCommandEvent& event)
 {
     wxString profile;
+
+    if (!m_initDone)
+        return;
 
     //tab5
     if (event.GetEventObject () == cboAutoLF)

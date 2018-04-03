@@ -49,7 +49,8 @@ public:
 
     PtermProfile *m_profile;
     bool m_profModified;
-    
+    bool m_initDone;
+
     bool m_floppy0Changed;
     bool m_floppy1Changed;
 
