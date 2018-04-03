@@ -21,7 +21,9 @@ SOURCES = FrameCanvas.cpp PtermApp.cpp PtermConnDialog.cpp \
 ifeq ("$(HOST)","Darwin")
 PKGMAKER ?= /Developer/Applications/Utilities/PackageMaker.app
 MACEXTRA = fixmac.o
+ifneq ("$(CLANG)", "")
 MACCFLAGS = -Wno-potentially-evaluated-expression
+endif
 ifeq ("$(wildcard $(PKGMAKER))","")
 PKGMAKER = /Applications/Utilities/PackageMaker.app
 endif
