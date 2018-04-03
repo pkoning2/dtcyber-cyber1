@@ -213,7 +213,7 @@ mofiles: $(MOFILES)
 ifneq ("$(PTSRCS)", "")
 pterm-tar: pterm-$(PTERMVERSION).tar.bz2
 
-pterm-$(PTERMVERSION).tar.bz2: ptermversion.h license.txt pterm-license.txt README-build.txt CHANGES-pterm.txt $(PTSRCS) Makefile Makefile.wxpterm Makefile.common languages getkitver.py wxversion.py
+pterm-$(PTERMVERSION).tar.bz2: ptermversion.h license.txt pterm-license.txt README-build.txt CHANGES-pterm.txt $(PTSRCS) Makefile Makefile.wxpterm Makefile.common languages getkitver.py wxversion.py PtermHelpHeader.py ptermhelp.mte
 	mkdir pterm-$(PTERMVERSION)
 	cd pterm-$(PTERMVERSION); for f in $(LANGUAGES); do mkdir $$f; cd $$f; ln -s ../../$$f/pterm.po .; cd ..; done
 	cd pterm-$(PTERMVERSION); for f in $^ ; do ln -s ../$$f .; done
