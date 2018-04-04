@@ -46,7 +46,7 @@ void PtermConnection::Connect (void)
 }
 
 // ----------------------------------------------------------------------------
-// PtermHelpConnection
+// PtermLocalConnection
 // ----------------------------------------------------------------------------
 
 int PtermLocalConnection::NextWord (void)
@@ -54,26 +54,26 @@ int PtermLocalConnection::NextWord (void)
     return C_NODATA;
 }
 
-// ----------------------------------------------------------------------------
-// PtermHelpConnection
-// ----------------------------------------------------------------------------
-
-const u32 PtermHelpConnection::keyboardhelp[] = {
-#include "ptermkeys.h"
-};
-
-PtermHelpConnection::PtermHelpConnection ()
-    : m_index (0)
-{
-}
-
-int PtermHelpConnection::NextWord (void)
-{
-    if (m_index >= sizeof (keyboardhelp) / sizeof (keyboardhelp[0]))
-        return C_NODATA;
-
-    return keyboardhelp[m_index++];
-}
+//// ----------------------------------------------------------------------------
+//// PtermHelpConnection
+//// ----------------------------------------------------------------------------
+//
+//const u32 PtermHelpConnection::keyboardhelp[] = {
+//#include "ptermkeys.h"
+//};
+//
+//PtermHelpConnection::PtermHelpConnection ()
+//    : m_index (0)
+//{
+//}
+//
+//int PtermHelpConnection::NextWord (void)
+//{
+//    if (m_index >= sizeof (keyboardhelp) / sizeof (keyboardhelp[0]))
+//        return C_NODATA;
+//
+//    return keyboardhelp[m_index++];
+//}
 
 // ----------------------------------------------------------------------------
 // PtermTestConnection
