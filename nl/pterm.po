@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-03-29 20:18-0400\n"
+"POT-Creation-Date: 2018-04-04 12:35-0400\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -69,12 +69,12 @@ msgstr "Toon inhoudsopgave van beschrijving"
 msgid "File"
 msgstr "Bestand"
 
-#: FrameCanvas.cpp:1311 FrameCanvas.cpp:1686 PtermConnDialog.cpp:68
-#: PtermPrefDialog.cpp:683
+#: FrameCanvas.cpp:1311 FrameCanvas.cpp:1686 PtermConnDialog.cpp:70
+#: PtermPrefDialog.cpp:698
 msgid "Help"
 msgstr "Help"
 
-#: FrameCanvas.cpp:1684 PtermConnDialog.cpp:61
+#: FrameCanvas.cpp:1684 PtermConnDialog.cpp:63
 msgid "Edit"
 msgstr "Bewerken"
 
@@ -358,7 +358,7 @@ msgstr "Probleem bij aanmaken van de programma-informatiefolder"
 msgid "Open a new terminal window"
 msgstr "Nieuw terminalvenster openmaken"
 
-#: PtermApp.cpp:464 PtermConnDialog.cpp:149
+#: PtermApp.cpp:464 PtermConnDialog.cpp:151
 #, fuzzy
 msgid "Profile Editor"
 msgstr "Voorkeurbestand"
@@ -367,20 +367,20 @@ msgstr "Voorkeurbestand"
 msgid "PLATO terminal emulator."
 msgstr "PLATO terminal-emulator."
 
-#: PtermConnDialog.cpp:39
+#: PtermConnDialog.cpp:41
 #, fuzzy
 msgid "Select a profile and click Connect or Boot."
 msgstr "Kies een voorkeurbestand en klik op Verbinden."
 
-#: PtermConnDialog.cpp:73 PtermPrefDialog.cpp:694
+#: PtermConnDialog.cpp:75 PtermPrefDialog.cpp:709
 msgid "Cancel"
 msgstr "Annuleer"
 
-#: PtermConnDialog.cpp:77 PtermConnDialog.cpp:214
+#: PtermConnDialog.cpp:79 PtermConnDialog.cpp:216
 msgid "Connect"
 msgstr "Verbinden"
 
-#: PtermConnDialog.cpp:226 PtermPrefDialog.cpp:1314
+#: PtermConnDialog.cpp:228 PtermPrefDialog.cpp:1335
 #, c-format
 msgid ""
 "Profile '%s' not found. Problem loading file:\n"
@@ -391,8 +391,8 @@ msgstr ""
 "\n"
 "    %s"
 
-#: PtermConnDialog.cpp:230 PtermPrefDialog.cpp:891 PtermPrefDialog.cpp:912
-#: PtermPrefDialog.cpp:938 PtermPrefDialog.cpp:1235 PtermPrefDialog.cpp:1316
+#: PtermConnDialog.cpp:232 PtermPrefDialog.cpp:909 PtermPrefDialog.cpp:930
+#: PtermPrefDialog.cpp:956 PtermPrefDialog.cpp:1253 PtermPrefDialog.cpp:1337
 msgid "Error"
 msgstr "Fout"
 
@@ -455,348 +455,349 @@ msgstr ""
 "\n"
 "Voor verdere informatie, zie:"
 
-#: PtermConnection.cpp:632
+#: PtermConnection.cpp:611
 #, fuzzy, c-format
 msgid "Connecting to %d.%d.%d.%d"
 msgstr "Aan het verbinden met %d.%d.%d.%d"
 
-#: PtermPrefDialog.cpp:136
+#: PtermPrefDialog.cpp:140
 msgid "Use this page to manage your connection preference profiles."
 msgstr "Gebruik deze bladzijde om voorkeurbestanden te bewerken"
 
-#: PtermPrefDialog.cpp:147
+#: PtermPrefDialog.cpp:152
 msgid "Select a profile above, then click a button below."
 msgstr "Kies een voorkeurbestand, en klik dan op een button hieronder"
 
-#: PtermPrefDialog.cpp:154
+#: PtermPrefDialog.cpp:160
 msgid "Load"
 msgstr "Laden"
 
-#: PtermPrefDialog.cpp:158
+#: PtermPrefDialog.cpp:164
 msgid "Delete"
 msgstr "Uitwissen"
 
-#: PtermPrefDialog.cpp:172
+#: PtermPrefDialog.cpp:178
 #, fuzzy
 msgid "Or, enter the name of a new profile below and click Save As."
 msgstr "Of voeg de naam van een nieuw voorkeurbestand in en klik op Toevoegen"
 
-#: PtermPrefDialog.cpp:181
+#: PtermPrefDialog.cpp:188
 msgid "Profile"
 msgstr "Voorkeurbestand"
 
-#: PtermPrefDialog.cpp:188
+#: PtermPrefDialog.cpp:195
 #, fuzzy
 msgid "Save As"
 msgstr "Opslaan"
 
-#: PtermPrefDialog.cpp:198
+#: PtermPrefDialog.cpp:205
 msgid "Profiles"
 msgstr "Voorkeurbestanden"
 
-#: PtermPrefDialog.cpp:212
+#: PtermPrefDialog.cpp:219
 msgid "Settings on this page specify where PLATO is on the internet."
 msgstr "Op deze pagina geeft U aan waar PLATO zich bevindt op het internet."
 
-#: PtermPrefDialog.cpp:222
+#: PtermPrefDialog.cpp:230
 msgid "Run this first"
 msgstr "Dit programma eerst uitvoeren"
 
-#: PtermPrefDialog.cpp:232
+#: PtermPrefDialog.cpp:240
 msgid "Default Host"
 msgstr "Standaardsysteem"
 
-#: PtermPrefDialog.cpp:241
+#: PtermPrefDialog.cpp:249
 msgid "Default Port*"
 msgstr "Standardpoortnummer*"
 
-#: PtermPrefDialog.cpp:257
+#: PtermPrefDialog.cpp:265
 msgid "* NOTE: 5004=Classic, 8005=Color Terminal"
 msgstr "* 5004=Klassiek, 8005=Kleur-terminal"
 
 # msgid "New Connection...\tCtrl-N"
 # msgstr "Nieuwe verbinding...\tCtrl-N"
-#: PtermPrefDialog.cpp:263
+#: PtermPrefDialog.cpp:272
 msgid "Connection"
 msgstr "Verbinding"
 
-#: PtermPrefDialog.cpp:275
+#: PtermPrefDialog.cpp:284
 msgid "Settings on this page configure the text shown in the window title."
 msgstr "Op deze pagina stelt U in wat op de titelbalk staat."
 
-#: PtermPrefDialog.cpp:279
+#: PtermPrefDialog.cpp:289
 msgid "Show name/group in frame title"
 msgstr "Toon naam/groep op de titelbalk"
 
-#: PtermPrefDialog.cpp:284
+#: PtermPrefDialog.cpp:294
 msgid "Show system name in frame title"
 msgstr "Toon systeemnaam op de titelbalk"
 
-#: PtermPrefDialog.cpp:289
+#: PtermPrefDialog.cpp:299
 msgid "Show host name in frame title"
 msgstr "Toon internet host-naam op de titelbalk"
 
-#: PtermPrefDialog.cpp:294
+#: PtermPrefDialog.cpp:304
 msgid "Show site-station numbers in frame title"
 msgstr "Toon stationsnummer op de titelbalk"
 
-#: PtermPrefDialog.cpp:301
+#: PtermPrefDialog.cpp:311
 msgid "Enable control-key menu accelerators"
 msgstr "Zet de control-toets aan"
 
-#: PtermPrefDialog.cpp:313
+#: PtermPrefDialog.cpp:323
 msgid "Title"
 msgstr "Titel"
 
-#: PtermPrefDialog.cpp:324
+#: PtermPrefDialog.cpp:334
 msgid "Settings on this page let you fine-tune your PLATO experience."
 msgstr "Op deze pagine stelt U in hoe PLATO vertoond wordt."
 
-#: PtermPrefDialog.cpp:328
+#: PtermPrefDialog.cpp:339
 msgid "Simulate 1260 baud"
 msgstr "1260 Baud simuleren"
 
-#: PtermPrefDialog.cpp:332
+#: PtermPrefDialog.cpp:343
 msgid "Enable GSW (not in ASCII)"
 msgstr "GSW muziekdoos aanzetten (niet in kleur-terminal)"
 
-#: PtermPrefDialog.cpp:337
+#: PtermPrefDialog.cpp:348
 msgid "Enable numeric keypad for arrow operation"
 msgstr "Numeriek toetsenbord voor pijlen"
 
-#: PtermPrefDialog.cpp:342
+#: PtermPrefDialog.cpp:353
 msgid "Ignore CAPS LOCK"
 msgstr "Hoofdlettertoets negeren"
 
-#: PtermPrefDialog.cpp:347
+#: PtermPrefDialog.cpp:358
 msgid "Use real PLATO keyboard"
 msgstr "Gebruik een echt PLATO toetsenbord"
 
-#: PtermPrefDialog.cpp:351
+#: PtermPrefDialog.cpp:362
 msgid "Enable -beep-"
 msgstr "-beep-commando aanzetten"
 
-#: PtermPrefDialog.cpp:356
+#: PtermPrefDialog.cpp:367
 msgid "Disable Shift-Space (backspace via Ctrl-Space)"
 msgstr "Shift-spatie uitzetten (spatie-terug via Ctrl-spatie)"
 
-#: PtermPrefDialog.cpp:361
+#: PtermPrefDialog.cpp:372
 msgid "Disable mouse drag (select)"
 msgstr "Set selecteren met de muis uit"
 
-#: PtermPrefDialog.cpp:368
+#: PtermPrefDialog.cpp:379
 msgid "Emulation"
 msgstr "Emulatie-instellingen"
 
-#: PtermPrefDialog.cpp:382
+#: PtermPrefDialog.cpp:393
 msgid "Settings on this page allow you to change the display appearance."
 msgstr "Op deze bladzijde geeft U aan hoe het scherm eruit ziet."
 
-#: PtermPrefDialog.cpp:388
+#: PtermPrefDialog.cpp:400
 msgid "Disable -color- (ASCII mode)"
 msgstr "-color-commando uitzetten"
 
-#: PtermPrefDialog.cpp:399 PtermPrefDialog.cpp:416
+#: PtermPrefDialog.cpp:411 PtermPrefDialog.cpp:428
 msgid "Foreground color*"
 msgstr "Voorgrondkleur*"
 
-#: PtermPrefDialog.cpp:406 PtermPrefDialog.cpp:423
+#: PtermPrefDialog.cpp:418 PtermPrefDialog.cpp:435
 msgid "Background color*"
 msgstr "Achtergrondkleur*"
 
-#: PtermPrefDialog.cpp:433
+#: PtermPrefDialog.cpp:445
 msgid "Use BILINEAR scaling"
 msgstr ""
 
-#: PtermPrefDialog.cpp:459
+#: PtermPrefDialog.cpp:471
 msgid "Show Menu Bar"
 msgstr ""
 
-#: PtermPrefDialog.cpp:465
+#: PtermPrefDialog.cpp:477
 msgid "Show Status Bar"
 msgstr ""
 
-#: PtermPrefDialog.cpp:473
-msgid "* NOTE: Applied in Classic mode or if -color- is disabled in ASCII mode"
+#: PtermPrefDialog.cpp:485
+#, fuzzy
+msgid "* Applied in Classic mode or if -color- is disabled in ASCII mode"
 msgstr ""
 "* Dit wordt gebruikt in een klassieke terminal of als -color- uitgezet is"
 
-#: PtermPrefDialog.cpp:479
+#: PtermPrefDialog.cpp:492
 msgid "Display"
 msgstr "Scherminstellingen"
 
-#: PtermPrefDialog.cpp:496
+#: PtermPrefDialog.cpp:509
 msgid "Settings on this page allow you to specify Paste options."
 msgstr "Op deze pagina geeft U aan hoe tekst van het klembord wordt ingevoerd."
 
-#: PtermPrefDialog.cpp:509
+#: PtermPrefDialog.cpp:523
 msgid "Delay between chars"
 msgstr "Pauze tussen karakters"
 
-#: PtermPrefDialog.cpp:517 PtermPrefDialog.cpp:529
+#: PtermPrefDialog.cpp:531 PtermPrefDialog.cpp:543
 msgid "milliseconds"
 msgstr "miliseconden"
 
-#: PtermPrefDialog.cpp:521
+#: PtermPrefDialog.cpp:535
 msgid "Delay after end of line"
 msgstr "Pauze aan het eind van de regel"
 
-#: PtermPrefDialog.cpp:537
+#: PtermPrefDialog.cpp:551
 msgid "Automatic new line every"
 msgstr "Automatische nieuwe regel na iedere"
 
-#: PtermPrefDialog.cpp:549
+#: PtermPrefDialog.cpp:563
 msgid "characters"
 msgstr "karakters"
 
-#: PtermPrefDialog.cpp:554
+#: PtermPrefDialog.cpp:568
 msgid "Use TUTOR pasting (certain sequences are treated specially)"
 msgstr ""
 "Gebruik TUTOR invoegregels (sommige letterpatronen worden anders behandeld)"
 
-#: PtermPrefDialog.cpp:559
+#: PtermPrefDialog.cpp:573
 #, fuzzy
 msgid "Convert periods followed by 7 spaces into period/tab"
 msgstr "Vervang punt en 7 spaties door punt en tabulatie*"
 
-#: PtermPrefDialog.cpp:564
+#: PtermPrefDialog.cpp:578
 msgid "Convert 8 consecutive spaces into a tab"
 msgstr "Vervang 8 spaties door tabulatie"
 
-#: PtermPrefDialog.cpp:569
+#: PtermPrefDialog.cpp:583
 msgid "Display TUTOR colorization options on Edit/Context menus"
 msgstr "TUTOR kleurkeuzen tonen op Bewerken en Context-menu"
 
-#: PtermPrefDialog.cpp:574
+#: PtermPrefDialog.cpp:588
 msgid "Trim spaces from end of copied text"
 msgstr ""
 
-#: PtermPrefDialog.cpp:582
+#: PtermPrefDialog.cpp:596
 msgid "Pasting"
 msgstr "Afdrukken"
 
-#: PtermPrefDialog.cpp:596
+#: PtermPrefDialog.cpp:610
 #, c-format
 msgid "Command line for menu option 'Mail to...' (%s=address)"
 msgstr "Commando voor 'E-mail sturen naar...' (%s=adres)"
 
-#: PtermPrefDialog.cpp:605
+#: PtermPrefDialog.cpp:619
 msgid "Specify URL for menu option 'Search this...'"
 msgstr "Kies de webverwijzing gebruikt voor 'Zoek naar...'"
 
-#: PtermPrefDialog.cpp:616
+#: PtermPrefDialog.cpp:630
 #, fuzzy
 msgid "MicroTutor related options:"
 msgstr "MicroTutor niveau 2 wijzigingen aanzetten"
 
-#: PtermPrefDialog.cpp:623
+#: PtermPrefDialog.cpp:638
 msgid "Boot to MicroTutor"
 msgstr "Naar MicroTutor opstarten"
 
-#: PtermPrefDialog.cpp:630
+#: PtermPrefDialog.cpp:645
 msgid "Enable Floppy 0"
 msgstr "Floppy no. 0 aanzetten"
 
-#: PtermPrefDialog.cpp:636
+#: PtermPrefDialog.cpp:651
 msgid "Enable Floppy 1"
 msgstr "Floppy no. 1 aanzetten"
 
-#: PtermPrefDialog.cpp:643
+#: PtermPrefDialog.cpp:658
 #, fuzzy
 msgid "Floppy 0 file:"
 msgstr "Bestand voor floppy no. 0:"
 
-#: PtermPrefDialog.cpp:651
+#: PtermPrefDialog.cpp:666
 #, fuzzy
 msgid "Select Floppy 0 File"
 msgstr "Floppy no. 0 bestand openmaken"
 
-#: PtermPrefDialog.cpp:656
+#: PtermPrefDialog.cpp:671
 #, fuzzy
 msgid "Floppy 1 file:"
 msgstr "Bestand voor floppy no. 1:"
 
-#: PtermPrefDialog.cpp:664
+#: PtermPrefDialog.cpp:679
 #, fuzzy
 msgid "Select Floppy 1 File"
 msgstr "Floppy no. 1 bestand openmaken"
 
-#: PtermPrefDialog.cpp:670
+#: PtermPrefDialog.cpp:685
 msgid "Local"
 msgstr "Plaatselijk"
 
-#: PtermPrefDialog.cpp:689
+#: PtermPrefDialog.cpp:704
 msgid "Save"
 msgstr "Opslaan"
 
-#: PtermPrefDialog.cpp:689
+#: PtermPrefDialog.cpp:704
 msgid "Apply"
 msgstr "Toepassen"
 
-#: PtermPrefDialog.cpp:698
+#: PtermPrefDialog.cpp:713
 msgid "Defaults"
 msgstr "Standaard"
 
-#: PtermPrefDialog.cpp:738
+#: PtermPrefDialog.cpp:755
 #, fuzzy
 msgid "Profile editor"
 msgstr "Voorkeurbestand"
 
-#: PtermPrefDialog.cpp:740
+#: PtermPrefDialog.cpp:757
 #, fuzzy
 msgid "Session settings"
 msgstr "Aan het verbinden..."
 
-#: PtermPrefDialog.cpp:877
+#: PtermPrefDialog.cpp:894
 msgid "Profile saved."
 msgstr "Programmavoorkeur opgeslagen."
 
-#: PtermPrefDialog.cpp:889
+#: PtermPrefDialog.cpp:907
 #, c-format
 msgid "Unable to save profile: %s"
 msgstr "Voorkeur kan niet opgeslagen worden: %s"
 
-#: PtermPrefDialog.cpp:906 PtermPrefDialog.cpp:1226
+#: PtermPrefDialog.cpp:924 PtermPrefDialog.cpp:1244
 msgid "Profile loaded."
 msgstr "Voorkeurbestand geladen."
 
-#: PtermPrefDialog.cpp:911 PtermPrefDialog.cpp:1233
+#: PtermPrefDialog.cpp:929 PtermPrefDialog.cpp:1251
 #, c-format
 msgid "Unable to load profile: %s"
 msgstr "Voorkeur kan niet geladen worden: %s"
 
-#: PtermPrefDialog.cpp:920
+#: PtermPrefDialog.cpp:938
 #, c-format
 msgid "Do you really want to delete profile '%s' ?"
 msgstr "Wilt U zeker voorkeur '%s' verwijderen?"
 
-#: PtermPrefDialog.cpp:921
+#: PtermPrefDialog.cpp:939
 msgid "Confirm"
 msgstr "Bevestig"
 
-#: PtermPrefDialog.cpp:927
+#: PtermPrefDialog.cpp:945
 msgid "Profile deleted."
 msgstr "Voorkeurbestand verwijderd."
 
-#: PtermPrefDialog.cpp:936
+#: PtermPrefDialog.cpp:954
 #, c-format
 msgid "Unable to delete profile: %s"
 msgstr "Probleem bij verwijdering van voorkeur: %s"
 
-#: PtermPrefDialog.cpp:951
+#: PtermPrefDialog.cpp:969
 #, fuzzy, c-format
 msgid "Profile %s already exists"
 msgstr "Programmavoorkeur opgeslagen."
 
-#: PtermPrefDialog.cpp:952 PtermPrefDialog.cpp:974
+#: PtermPrefDialog.cpp:970 PtermPrefDialog.cpp:992
 msgid "Problem"
 msgstr "Probleem"
 
-#: PtermPrefDialog.cpp:965
+#: PtermPrefDialog.cpp:983
 msgid "Profile added."
 msgstr "Voorkeurbestand toegevoegd."
 
-#: PtermPrefDialog.cpp:970
+#: PtermPrefDialog.cpp:988
 msgid ""
 "The profile name you entered contains illegal characters.\n"
 "\n"
@@ -812,19 +813,19 @@ msgstr ""
 "Standaard: a-z, A-Z, 0-9\n"
 "Speciaal:  haken, minteken, onderstreping, punt, en spatie"
 
-#: PtermPrefDialog.cpp:980
+#: PtermPrefDialog.cpp:998
 msgid "Open Floppy 0 file"
 msgstr "Floppy no. 0 bestand openmaken"
 
-#: PtermPrefDialog.cpp:1005
+#: PtermPrefDialog.cpp:1023
 msgid "Open Floppy 1 file"
 msgstr "Floppy no. 1 bestand openmaken"
 
-#: PtermPrefDialog.cpp:1028
+#: PtermPrefDialog.cpp:1046
 msgid "Foreground"
 msgstr "Voorgrond"
 
-#: PtermPrefDialog.cpp:1039
+#: PtermPrefDialog.cpp:1057
 msgid "Background"
 msgstr "Achtergrond"
 

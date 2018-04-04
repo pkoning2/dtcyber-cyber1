@@ -46,9 +46,9 @@ Source: "Release\Pterm.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: "C:\SDL-1.2.15\lib\x86\SDL.dll"; DestDir: "{app}"
 Source: "C:\Program Files\Mega-Nerd\libsndfile\bin\libsndfile-1.dll"; DestDir: "{app}"
-Source: "C:\wxWidgets-3.1.0\lib\vc100_dll\wxmsw310u_adv_vc100.dll"; DestDir: "{app}"
-Source: "C:\wxWidgets-3.1.0\lib\vc100_dll\wxmsw310u_core_vc100.dll"; DestDir: "{app}"
-Source: "C:\wxWidgets-3.1.0\lib\vc100_dll\wxbase310u_vc100.dll"; DestDir: "{app}"
+Source: "C:\wxWidgets-3.0.4\lib\vc100_dll\wxmsw30u_adv_vc100.dll"; DestDir: "{app}"
+Source: "C:\wxWidgets-3.0.4\lib\vc100_dll\wxmsw30u_core_vc100.dll"; DestDir: "{app}"
+Source: "C:\wxWidgets-3.0.4\lib\vc100_dll\wxbase30u_vc100.dll"; DestDir: "{app}"
 Source: "CHANGES-pterm.txt"; DestDir: "{app}"; Flags: isreadme
 Source: "ptermhelp.mte"; DestDir: "{app}"
 
