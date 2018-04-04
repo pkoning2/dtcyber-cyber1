@@ -56,34 +56,45 @@
 */
 #if RDTSC
 #if defined(__GNUC__) && defined(__APPLE__)
-#define rdtscll(val) \
-    do               \
-        {            \
-        static mach_timebase_info_data_t    sTimebaseInfo;  \
-        val = mach_absolute_time ();                        \
-        if ( sTimebaseInfo.denom == 0 )                     \
-        {                                                   \
-        (void) mach_timebase_info(&sTimebaseInfo);          \
-        }                                                   \
-        val = (unsigned long long) val * sTimebaseInfo.numer / sTimebaseInfo.denom; \
-        } while (0)
+static inline u64 rdtscll(void)
+    {
+    static mach_timebase_info_data_t sTimebaseInfo;
+    u64 val, q, r;
+    
+    val = mach_absolute_time ();
+    if ( sTimebaseInfo.denom == 0 )
+        {
+        (void) mach_timebase_info(&sTimebaseInfo);
+        }
+    // We want to find val * sTimebaseInfo.numer / sTimebaseInfo.denom
+    // but on PowerPC (though not Intel) those are large numbers and
+    // 64 bit overflow may result.  So do it the hard way.
+    q = val / sTimebaseInfo.denom;
+    r = val % sTimebaseInfo.denom;
+    return (q * sTimebaseInfo.numer) +
+           (r * sTimebaseInfo.numer / sTimebaseInfo.denom);
+    }
 #elif defined(__GNUC__) && defined(__i386)
-#define rdtscll(val) \
-    __asm__ __volatile__("rdtsc" : "=A" (val))
+static inline u64 rdtscll(void)
+    {
+    u64 val;
+    __asm__ __volatile__("rdtsc" : "=A" (val));
+    return val;
+    }
 #elif defined(__GNUC__) && defined(__x86_64)
-#define rdtscll(val) \
-    do  {            \
-        struct timeval tv;                          \
-        gettimeofday (&tv, NULL);                   \
-        val = (u64) tv.tv_sec * 1000000ULL + (u64) tv.tv_usec;   \
-    } while (0)
+static inline u64 rdtscll(void)
+    {
+    struct timeval tv;
+    gettimeofday (&tv, NULL);
+    return (u64) tv.tv_sec * 1000000ULL + (u64) tv.tv_usec;
+    }
 #elif defined(_WIN32)
-#define rdtscll(val) \
-	do { \
-		LARGE_INTEGER foo; \
-		QueryPerformanceCounter (&foo); \
-		val = foo.QuadPart; \
-	} while (0)
+static inline u64 rdtscll(void)
+    {
+    LARGE_INTEGER foo;
+    QueryPerformanceCounter (&foo);
+    return foo.QuadPart;
+	}
 #endif
 #endif
 
@@ -248,9 +259,9 @@ static void rtcIo(void)
         {
         if (rtcPrev == 0)
             {
-            rdtscll (rtcPrev);
+            rtcPrev = rdtscll ();
             }
-        rdtscll (now);
+        now = rdtscll ();
         if (now < rtcPrev)
             {
             printf ("ERROR: clock went backwards: now = %lld, prev = %lld, cycles = %lld, us = %d\n",
@@ -379,9 +390,9 @@ static void rtcInit2(long setMHz)
         if (hz == 0)
             {
             sleep (1);
-            rdtscll (prev);
+            prev = rdtscll ();
             sleep (1);
-            rdtscll (now);
+            now = rdtscll (now);
             hz = now - prev;
             }
 #endif  /* !__APPLE__ */
