@@ -2562,6 +2562,7 @@ void PtermFrame::OnClose (wxCloseEvent &)
     profile2->m_restoreX = x;
     profile2->m_restoreY = y;
     profile2->SaveProfile ();
+    delete profile2;
 
     debug ("Window position on exit is %d, %d", x, y);
 
