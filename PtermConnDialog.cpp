@@ -233,3 +233,9 @@ void PtermConnDialog::SelectProfile (int n)
     }
 }
 
+void PtermConnDialog::ReloadProfile ()
+{
+    if (m_profile != NULL)
+        m_profile->LoadProfile ();
+}
+

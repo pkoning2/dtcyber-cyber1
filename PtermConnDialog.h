@@ -28,6 +28,7 @@ public:
     void OnDoubleClick (wxCommandEvent& event);
     void OnClose (wxCloseEvent &);
     void CreateDefaultProfiles (wxDir& ldir);
+    void ReloadProfile (void);
 
     PtermProfile    *m_profile;
 

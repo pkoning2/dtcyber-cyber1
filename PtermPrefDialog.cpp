@@ -896,6 +896,7 @@ void PtermPrefDialog::OnButton (wxCommandEvent& event)
                 if (m_connParent != NULL)
                 {
                     m_connParent->lstProfiles->RefreshList ();
+                    m_connParent->ReloadProfile ();
                 }
 
                 ptermApp->m_prefDialog = NULL;
