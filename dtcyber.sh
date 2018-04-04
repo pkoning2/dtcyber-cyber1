@@ -35,6 +35,8 @@ elif [ "${HOST2}" = "equallogic" ]; then
     HOSTNAME="pkoning"
 elif [ "${HOST1}" = "plato4" ]; then 
     HOSTNAME="pkoning"
+elif [ "${HOST1}" = "akmac" ]; then 
+    HOSTNAME="koning2"
 fi
 export HOSTNAME
 ulimit -c unlimited
