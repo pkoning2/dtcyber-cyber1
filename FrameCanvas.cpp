@@ -3056,7 +3056,7 @@ void PtermFrame::OnSessionSettings (wxCommandEvent &)
     }
 
     ptermApp->m_sessDialog = new PtermPrefDialog (this, wxID_ANY, _ ("Session Settings..."),
-        wxDefaultPosition, wxSize (461, 475), *m_profile);
+        wxDefaultPosition, wxSize (470, 475), *m_profile);
 
     ptermApp->m_sessDialog->CenterOnParent ();
     ptermApp->m_sessDialog->Raise ();
