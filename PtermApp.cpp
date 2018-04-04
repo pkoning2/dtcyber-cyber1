@@ -66,7 +66,6 @@ IMPLEMENT_APP (PtermApp);
 // 'Main program' equivalent: the program execution "starts" here
 bool PtermApp::OnInit (void)
 {
-    int dspi, sz;
     wxString rgb;
     wxString level;
     wxString str;
@@ -144,57 +143,7 @@ bool PtermApp::OnInit (void)
     PtermFrameParent->Show (true);
 #endif
 
-    // Pick up the preferred x/y (saved from last time).  Adjust these
-    // to make sure that the top left corner of the window is on screen,
-    // and second (if possible) that the whole window is.
-    m_config->Read (wxT (PREF_XPOS), &prefX, 0L);
-    m_config->Read (wxT (PREF_YPOS), &prefY, 0L);
-    debug ("saved x/y is %ld, %ld", prefX, prefY);
-    dspi = wxDisplay::GetFromPoint (wxPoint (prefX, prefY));
-    if (dspi == wxNOT_FOUND)
-    {
-        dspi = 0;
-    }
-    
-    wxDisplay dsp (dspi);
-    wxRect ca = dsp.GetClientArea ();
-    
-    debug ("display %d client area pos %d, %d size %d, %d",
-           dspi, ca.x, ca.y, ca.width, ca.height);
-    
-    // Adjust to make the bottom right corner be on-screen
-    sz = 512 + 2 * DisplayMargin;
-#if 0
-    if (m_scale > 0.)
-    {
-        sz *= m_scale;
-    }
-#endif
-    prefX += sz;
-    prefY += sz;
-    // width and height have some adjustment added to it to allow for
-    // window decoration.  
-    if (prefX > ca.x + ca.width - 5)
-    {
-        prefX = ca.x + ca.width - 5;
-    }
-    if (prefY > ca.y + ca.height - 25)
-    {
-        prefY = ca.y + ca.height - 25;
-    }
-    // From the adjusted bottom right, get the adjusted top left
-    prefX -= sz;
-    prefY -= sz;
-    if (prefX < ca.x)
-    {
-        prefX = ca.x;
-    }
-    if (prefY < ca.y)
-    {
-        prefY = ca.y;
-    }
-    debug ("adjusted x/y is %ld, %ld", prefX, prefY);
-    
+
     // Add some handlers so we can save the screen in various formats
     // Note that the BMP handler is always loaded, don't do it again.
     wxImage::AddHandler (new wxPNGHandler);
@@ -391,8 +340,6 @@ int PtermApp::OnExit (void)
 {
     wxTheClipboard->Flush ();
 
-    m_config->Write (wxT (PREF_XPOS), prefX);
-    m_config->Write (wxT (PREF_YPOS), prefY);
     m_config->Flush ();
     
     delete m_config;

@@ -73,9 +73,6 @@ public:
     wxString    m_defDir;
     PtermFrame  *m_helpFrame;
 
-    long        prefX;
-    long        prefY;
-
     PtermFrame *m_CurFrame;
 
     char        traceFn[20];

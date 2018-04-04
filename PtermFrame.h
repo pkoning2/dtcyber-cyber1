@@ -209,6 +209,7 @@ public:
     void trace(const char *, ...) const;
 
     PtermProfile *m_profile;
+
     bool        m_helpframe;
     wxMemoryDC  *m_memDC;
     bool        tracePterm;

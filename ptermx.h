@@ -138,6 +138,9 @@
 #define PREF_NOCOLOR     "noColor"
 #define PREF_FOREGROUND  "foreground"
 #define PREF_BACKGROUND  "background"
+#define PREF_RESTOREX    "restorex"
+#define PREF_RESTOREY    "restorey"
+
 //tab5
 #define PREF_CHARDELAY   "charDelay"
 #define PREF_LINEDELAY   "lineDelay"

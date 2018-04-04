@@ -62,6 +62,9 @@ public:
 #else
     static const bool m_showMenuBar;
 #endif
+    long        m_restoreX;
+    long        m_restoreY;
+
     bool        m_noColor;
     wxColour    m_fgColor;
     wxColour    m_bgColor;

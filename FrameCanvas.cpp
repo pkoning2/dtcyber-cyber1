@@ -1337,7 +1337,7 @@ const PtermFrame::mptr PtermFrame::modePtr[8] =
 PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
                         PtermConnection *conn, bool helpframe)
     : PtermFrameBase (PtermFrameParent, -1, title,
-                      wxPoint (ptermApp->prefX, ptermApp->prefY),
+                      wxPoint (profile->m_restoreX, profile->m_restoreY),
                       wxDefaultSize),
       m_profile (profile),
       m_helpframe (helpframe),
@@ -1409,7 +1409,7 @@ PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
     int i;
 
     conn->SetOwner (this);
-    
+  
     mode = 017;             // default to character mode, rewrite
 
     mt_ksw = 0;             // route input to terminal
@@ -2558,8 +2558,11 @@ void PtermFrame::OnClose (wxCloseEvent &)
     
     // Save the position of this window as our preferred position
     GetPosition (&x, &y);
-    ptermApp->prefX = x;
-    ptermApp->prefY = y;
+    PtermProfile *profile2 = new PtermProfile (m_profile->m_profileName, true);
+    profile2->m_restoreX = x;
+    profile2->m_restoreY = y;
+    profile2->SaveProfile ();
+
     debug ("Window position on exit is %d, %d", x, y);
 
     m_MTFiles[0].Close();

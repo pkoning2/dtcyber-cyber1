@@ -99,6 +99,8 @@ void PtermProfile::init (void)
 #if !defined (__WXMAC__)
     m_showMenuBar = true;
 #endif
+    m_restoreX = 0;
+    m_restoreY = 0;
     m_noColor = false;
     // 255 144 0 is RGB for Plato Orange
     m_fgColor = wxColour (255, 144, 0);
@@ -217,6 +219,14 @@ bool PtermProfile::LoadProfile (void)
             else if (token.Cmp (wxT (PREF_MENUBAR)) == 0)
                 m_showMenuBar   = (value.Cmp (wxT ("1")) == 0);
 #endif
+            else if (token.Cmp (wxT (PREF_RESTOREX)) == 0)
+            {
+                value.ToCLong (&m_restoreX);
+            }
+            else if (token.Cmp (wxT (PREF_RESTOREY)) == 0)
+            {
+                value.ToCLong (&m_restoreY);
+            }
             else if (token.Cmp (wxT (PREF_NOCOLOR)) == 0)
                 m_noColor       = (value.Cmp (wxT ("1")) == 0);
             else if (token.Cmp (wxT (PREF_FOREGROUND)) == 0)
@@ -350,6 +360,11 @@ bool PtermProfile::SaveProfile (void)
     buffer.Printf (wxT (PREF_MENUBAR) wxT ("=%d"), (m_showMenuBar) ? 1 : 0);
     file.AddLine (buffer);
 #endif
+    buffer.Printf (wxT (PREF_RESTOREX) wxT ("=%ld"), (m_restoreX));
+    file.AddLine (buffer);
+    buffer.Printf (wxT (PREF_RESTOREY) wxT ("=%ld"), (m_restoreY));
+    file.AddLine (buffer);
+
     buffer.Printf (wxT (PREF_NOCOLOR) wxT ("=%d"), (m_noColor) ? 1 : 0);
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_FOREGROUND) wxT ("=%d %d %d"), m_fgColor.Red (), m_fgColor.Green (), m_fgColor.Blue ());
