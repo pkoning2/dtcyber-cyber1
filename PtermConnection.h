@@ -64,17 +64,6 @@ class PtermLocalConnection : public PtermConnection
     int NextWord (void);
 };
 
-//class PtermHelpConnection : public PtermConnection
-//{
-//public:
-//    PtermHelpConnection ();
-//    ConnType_e ConnType (void) const { return HELP; }
-//    
-//    int m_index;
-//    static const u32 keyboardhelp[];
-//    int NextWord (void);
-//};
-
 class PtermTestConnection : public PtermConnection
 {
 public:
