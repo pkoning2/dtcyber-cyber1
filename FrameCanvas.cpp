@@ -7222,7 +7222,6 @@ int PtermFrame::check_pcZ80(void)
         
     case R_EXEC:
         // r.exec
-        //m_canvas->Refresh(false);
         Mz80Waiter(RESIDENTMSEC);
         m_giveupz80 = true;
         return 1;
