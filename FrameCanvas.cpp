@@ -6996,6 +6996,7 @@ int PtermFrame::check_pcZ80(void)
         ptermDrawPoint (x, y);
         currentX = x;
         currentY = y;
+        m_canvas->Refresh (false);
         return 1;
         
     case R_LINE:
@@ -7004,6 +7005,7 @@ int PtermFrame::check_pcZ80(void)
         ptermDrawLine (currentX, currentY, x, y);
         currentX = x;
         currentY = y;
+        m_canvas->Refresh (false); 
         return 1;
 
     case R_CHARS:
@@ -7036,6 +7038,7 @@ int PtermFrame::check_pcZ80(void)
 
             c = RAM[cp++];
         }
+        m_canvas->Refresh (false);
         return 1;
         
     case R_BLOCK:
@@ -7046,6 +7049,7 @@ int PtermFrame::check_pcZ80(void)
         x2 = ReadRAMW (cp + 4) & 0x1ff;
         y2 = ReadRAMW (cp + 6) & 0x1ff;
         ptermBlockErase (x, y, x2, y2);
+        m_canvas->Refresh (false);
         return 1;
         
     case R_INPX:
@@ -7099,6 +7103,7 @@ int PtermFrame::check_pcZ80(void)
         
     case R_WE:
         ptermDrawPoint (currentX, currentY);
+        m_canvas->Refresh (false);
         return 1;
         
     case R_DIR:
@@ -7217,7 +7222,7 @@ int PtermFrame::check_pcZ80(void)
         
     case R_EXEC:
         // r.exec
-        m_canvas->Refresh(false);
+        //m_canvas->Refresh(false);
         Mz80Waiter(RESIDENTMSEC);
         m_giveupz80 = true;
         return 1;
@@ -7315,11 +7320,13 @@ int PtermFrame::check_pcZ80(void)
 
     case R_PAINT:       // standard
         ptermPaint(state->registers.word[Z80_HL]);
+        m_canvas->Refresh (false);
         return 1;
 
     case R_PAINT + 1:   // mtutor ccode
         ptermPaint(RAM[state->registers.word[Z80_DE]] |
             (RAM[state->registers.word[Z80_DE] + 1] << 8));
+        m_canvas->Refresh (false);
         return 1;
 
     case R_PAINT + 2:   // mtutor ccode
