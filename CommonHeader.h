@@ -216,7 +216,7 @@ enum
 };
 
 // it is important that these be kept in sync with the -jump-
-// in unit route in ptermhelp/nptermhelp block 1-e, microroute
+// in unit route in ptermhelp/nptermhelp block 1-d, microroute
 enum 
 {
     helpContextGenericIndex = 0,
