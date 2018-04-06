@@ -215,8 +215,16 @@ enum
     Pterm_About = wxID_ABOUT
 };
 
-// it is important that these be kept in sync with the -jump-
-// in unit route in ptermhelp/nptermhelp block 1-d, microroute
+// it is important that these be kept in sync 
+// with the -jump-
+// in unit route in ptermhelp/nptermhelp 
+// block 1-d, microroute
+//
+// jump    context,x,index,keyboard,profile,
+//         connect,title,emulate, display,
+//         paste, local, connect2, x
+
+
 enum 
 {
     helpContextGenericIndex = 0,
