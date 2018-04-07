@@ -456,6 +456,8 @@ BEGIN_EVENT_TABLE (PtermFrame, wxFrame)
     EVT_MENU (Pterm_ToggleStretchMode, PtermFrame::OnSetStretchMode)
     EVT_MENU (Pterm_ToggleAspectMode, PtermFrame::OnSetAspectMode)
     EVT_MENU (Pterm_CopyScreen, PtermFrame::OnCopyScreen)
+    EVT_MENU (Pterm_ToggleLock, PtermFrame::OnLockPosition)
+    EVT_MENU (Pterm_RestoreLocation, PtermFrame::OnRestorePosition)
     EVT_MENU (Pterm_Copy, PtermFrame::OnCopy)
     EVT_MENU (Pterm_Exec, PtermFrame::OnExec)    
     EVT_MENU (Pterm_MailTo, PtermFrame::OnMailTo)    
@@ -1899,6 +1901,18 @@ void PtermFrame::BuildViewMenu (wxMenu *menu)
         menu->Check (Pterm_ToggleStatusBar, m_showStatusBar);
     }
     menu->AppendSeparator ();
+
+    menu->Append (Pterm_ToggleLock,
+        !m_profile->m_lockPosition ? _ ("Save Loction") : _ ("Unsave Loction"),
+        _ ("Save or Unsave Window location"));
+
+    menu->Append (Pterm_RestoreLocation,
+        _ ("Restore Loction"),
+        _ ("Restore Window location"));
+
+
+    menu->AppendSeparator ();
+
     if (GetContentScaleFactor () == 2.0)
     {
         scaleList = scaleList_Retina;
@@ -2611,17 +2625,20 @@ void PtermFrame::OnPasteTimer (wxTimerEvent &)
 
 void PtermFrame::OnClose (wxCloseEvent &)
 {
-    int x, y;
-    
-    // Save the position of this window as our preferred position
-    GetPosition (&x, &y);
-    PtermProfile *profile2 = new PtermProfile (m_profile->m_profileName, true);
-    profile2->m_restoreX = x;
-    profile2->m_restoreY = y;
-    profile2->SaveProfile ();
-    delete profile2;
+    if (!m_profile->m_lockPosition)
+    {
+        int x, y;
 
-    debug ("Window position on exit is %d, %d", x, y);
+        // Save the position of this window as our preferred position
+        GetPosition (&x, &y);
+        PtermProfile *profile2 = new PtermProfile (m_profile->m_profileName, true);
+        profile2->m_restoreX = x;
+        profile2->m_restoreY = y;
+        profile2->SaveProfile ();
+        delete profile2;
+
+        debug ("Window position on exit is %d, %d", x, y);
+    }
 
     m_MTFiles[0].Close();
     m_MTFiles[1].Close();
@@ -2753,6 +2770,45 @@ void PtermFrame::OnSetAspectMode (wxCommandEvent &)
 
     // refit
     UpdateDisplayState ();
+}
+
+void PtermFrame::OnLockPosition (wxCommandEvent &event)
+{
+    if (m_profile->m_lockPosition)
+    {
+        m_profile->m_lockPosition = false;
+
+        PtermProfile *profile2 = new PtermProfile (m_profile->m_profileName, true);
+        profile2->m_lockPosition = false;
+        profile2->SaveProfile ();
+        delete profile2;
+    }
+    else
+    {
+        int x, y;
+
+        // Save the position of this window as our preferred position
+        GetPosition (&x, &y);
+
+        m_profile->m_lockPosition = true;
+        m_profile->m_restoreX = x;
+        m_profile->m_restoreY = y;
+
+        PtermProfile *profile2 = new PtermProfile (m_profile->m_profileName, true);
+        profile2->m_restoreX = x;
+        profile2->m_restoreY = y;
+        profile2->m_lockPosition = true;
+        profile2->SaveProfile ();
+        delete profile2;
+    }
+
+    BuildMenuBar ();
+    BuildPopupMenu ();
+}
+
+void PtermFrame::OnRestorePosition (wxCommandEvent &event)
+{
+    Move (m_profile->m_restoreX, m_profile->m_restoreY);
 }
 
 void PtermFrame::OnCopy (wxCommandEvent &)

@@ -28,6 +28,8 @@ public:
     wxString    m_profileName;
     wxFileName  m_fileName;
     bool        m_Ok;
+
+    bool        m_lockPosition;
     
     //tab1
     wxString    m_ShellFirst;

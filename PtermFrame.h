@@ -127,6 +127,8 @@ public:
     void OnSetScaleEntry(wxCommandEvent &event);
     void OnSetStretchMode(wxCommandEvent &event);
     void OnSetAspectMode(wxCommandEvent &event);
+    void OnLockPosition (wxCommandEvent &event);
+    void OnRestorePosition (wxCommandEvent &event);
     void OnCopyScreen(wxCommandEvent &event);
     void OnCopy(wxCommandEvent &event);
     void OnExec(wxCommandEvent &event);

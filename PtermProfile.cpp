@@ -65,6 +65,7 @@ void PtermProfile::init (void)
     m_isHelp = false;
     // The default profile is "OK"
     m_Ok = true;
+    m_lockPosition = false;
     
     // Set the default values
     //tab1
@@ -275,6 +276,11 @@ bool PtermProfile::LoadProfile (void)
                 m_floppy0File = value;
             else if (token.Cmp(wxT(PREF_FLOPPY1NAM)) == 0)
                 m_floppy1File = value;
+
+
+            else if (token.Cmp (wxT (PREF_LOCKPOSITION)) == 0)
+                m_lockPosition = (value.Cmp (wxT ("1")) == 0);
+
         }
         if (file.Eof ())
         {
@@ -363,6 +369,8 @@ bool PtermProfile::SaveProfile (void)
     buffer.Printf (wxT (PREF_RESTOREX) wxT ("=%ld"), (m_restoreX));
     file.AddLine (buffer);
     buffer.Printf (wxT (PREF_RESTOREY) wxT ("=%ld"), (m_restoreY));
+    file.AddLine (buffer);
+    buffer.Printf (wxT (PREF_LOCKPOSITION) wxT ("=%d"), (m_lockPosition) ? 1 : 0);
     file.AddLine (buffer);
 
     buffer.Printf (wxT (PREF_NOCOLOR) wxT ("=%d"), (m_noColor) ? 1 : 0);

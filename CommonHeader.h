@@ -163,6 +163,8 @@ enum
     Pterm_ToggleStatusBar,
     Pterm_ToggleStretchMode,
     Pterm_ToggleAspectMode,
+    Pterm_ToggleLock,
+    Pterm_RestoreLocation,
     Pterm_SetScaleEntry,
     Pterm_CopyScreen = Pterm_SetScaleEntry + 32,
     Pterm_ConnectAgain,

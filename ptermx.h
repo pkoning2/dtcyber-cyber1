@@ -140,6 +140,7 @@
 #define PREF_BACKGROUND  "background"
 #define PREF_RESTOREX    "restorex"
 #define PREF_RESTOREY    "restorey"
+#define PREF_LOCKPOSITION "restorelock"
 
 //tab5
 #define PREF_CHARDELAY   "charDelay"
