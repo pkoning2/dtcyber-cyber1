@@ -2808,7 +2808,7 @@ void PtermFrame::OnLockPosition (wxCommandEvent &event)
 
 void PtermFrame::OnRestorePosition (wxCommandEvent &event)
 {
-    Move (m_profile->m_restoreX, m_profile->m_restoreY);
+    Move (ForceValidStartPoint(m_profile->m_restoreX, m_profile->m_restoreY));
 }
 
 void PtermFrame::OnCopy (wxCommandEvent &)
