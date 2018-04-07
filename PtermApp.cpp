@@ -548,6 +548,11 @@ void PtermApp::LaunchMtutorHelp (u8 helpContext)
     hprof->m_floppy0 = true;
     hprof->m_isHelp = true;
 
+    wxWindow *wnd = ptermApp->GetTopWindow (); 
+    wxPoint loc = wnd->GetPosition ();
+    hprof->m_restoreX = loc.x;
+    hprof->m_restoreY = loc.y;
+
     if (m_helpFrame == NULL)
     {
         m_helpFrame = new PtermFrame (title, hprof, conn);
