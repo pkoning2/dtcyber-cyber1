@@ -100,8 +100,8 @@ void PtermProfile::init (void)
 #if !defined (__WXMAC__)
     m_showMenuBar = true;
 #endif
-    m_restoreX = 0;
-    m_restoreY = 0;
+    m_restoreX = 50;
+    m_restoreY = 50;
     m_noColor = false;
     // 255 144 0 is RGB for Plato Orange
     m_fgColor = wxColour (255, 144, 0);
