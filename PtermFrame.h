@@ -195,6 +195,8 @@ public:
 
     wxColour GetColor (u16 loc);
 
+    wxPoint ForceValidStartPoint (long x, long y);
+
     bool HasConnection(void) const
     {
         return (m_conn != NULL);

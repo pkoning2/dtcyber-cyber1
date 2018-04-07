@@ -1337,7 +1337,7 @@ const PtermFrame::mptr PtermFrame::modePtr[8] =
 PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
                         PtermConnection *conn, bool helpframe)
     : PtermFrameBase (PtermFrameParent, -1, title,
-                      wxPoint (profile->m_restoreX, profile->m_restoreY),
+                      ForceValidStartPoint (profile->m_restoreX, profile->m_restoreY),
                       wxDefaultSize),
       m_profile (profile),
       m_helpframe (helpframe),
@@ -1595,6 +1595,63 @@ PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
     Show (true);
 
 }
+
+wxPoint PtermFrame::ForceValidStartPoint (long prefX, long prefY)
+{
+    int dspi, sz;
+
+    // Pick up the preferred x/y (saved from last time).  Adjust these
+    // to make sure that the top left corner of the window is on screen,
+    // and second (if possible) that the whole window is.
+    debug ("saved x/y is %ld, %ld", prefX, prefY);
+    dspi = wxDisplay::GetFromPoint (wxPoint (prefX, prefY));
+    if (dspi == wxNOT_FOUND)
+    {
+        dspi = 0;
+    }
+
+    wxDisplay dsp (dspi);
+    wxRect ca = dsp.GetClientArea ();
+
+    debug ("display %d client area pos %d, %d size %d, %d",
+        dspi, ca.x, ca.y, ca.width, ca.height);
+
+    // Adjust to make the bottom right corner be on-screen
+    sz = 512 + 2 * DisplayMargin;
+#if 0
+    if (m_scale > 0.)
+    {
+        sz *= m_scale;
+    }
+#endif
+    prefX += sz;
+    prefY += sz;
+    // width and height have some adjustment added to it to allow for
+    // window decoration.  
+    if (prefX > ca.x + ca.width - 5)
+    {
+        prefX = ca.x + ca.width - 5;
+    }
+    if (prefY > ca.y + ca.height - 25)
+    {
+        prefY = ca.y + ca.height - 25;
+    }
+    // From the adjusted bottom right, get the adjusted top left
+    prefX -= sz;
+    prefY -= sz;
+    if (prefX < ca.x)
+    {
+        prefX = ca.x;
+    }
+    if (prefY < ca.y)
+    {
+        prefY = ca.y;
+    }
+    debug ("adjusted x/y is %ld, %ld", prefX, prefY);
+
+    return wxPoint (prefX, prefY);
+}
+
 
 void PtermFrame::trace (const wxString &msg) const
 {
@@ -7278,7 +7335,7 @@ int PtermFrame::check_pcZ80(void)
     }
         return 1;
 
-    case R_FCOLOR + 2:
+    case R_FCOLOR + 2:  // for mtutor floating color
         {
         m_currentFg = GetColor (state->registers.word[Z80_HL]);
         SetColors (m_currentFg, m_currentBg);
@@ -7328,14 +7385,26 @@ int PtermFrame::check_pcZ80(void)
         m_canvas->Refresh (false);
         return 1;
 
-    case R_PAINT + 2:   // mtutor ccode
+    case R_PAINT + 2:   // mtutor ccode - usefull for debugging
         printf("MTUTOR LESSON MARK %d\n", (RAM[state->registers.word[Z80_DE]] << 8) |
             (RAM[state->registers.word[Z80_DE] + 1]));
         return 1;
 
-    case R_WAIT16:
-
+    case R_WAIT16:  // 0x0097
+        // for use with mtutor timed -pause-
         wxMilliSleep(15);
+
+        return 1;
+
+    case R_WAIT16 + 1:
+        // standard interface with HL
+        wxMilliSleep (state->registers.word[Z80_HL]);
+
+        return 1;
+
+    case R_WAIT16 + 2:
+        // interface with DE for use with mtutor -ccode-
+        wxMilliSleep (state->registers.word[Z80_DE]);
 
         return 1;
 
