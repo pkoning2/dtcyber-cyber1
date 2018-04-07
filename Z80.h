@@ -60,7 +60,7 @@ public:
     }
     unsigned short ReadRAMW(unsigned short offset) const
     {
-        return m_context.memory[offset] + (m_context.memory[offset + 1] << 8);
+        return m_context.memory[offset] | (m_context.memory[offset + 1] << 8);
     }
 
     void WriteRAM(unsigned short offset, unsigned char data)
@@ -89,7 +89,7 @@ public:
         if ((offset) >= WORKRAM)
         {
             m_context.memory[(offset)] = data & 0xff;
-            m_context.memory[(offset + 1)] = (data << 8) & 0xff;
+            m_context.memory[(offset + 1)] = (data >> 8) & 0xff;
         }
         else
         {
