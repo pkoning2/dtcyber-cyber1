@@ -6296,6 +6296,7 @@ void PtermFrame::ptermSendKey1 (int key)
 {
     char data[5];
     int len;
+    bool isStop1 = (key == 0x3a);
 
     if (!m_Mclock.IsRunning())
     {
@@ -6406,6 +6407,12 @@ void PtermFrame::ptermSendKey1 (int key)
                 }
                 m_lastKey = key;
                 mt_key = key;
+                if (isStop1)
+                {
+                    len = 1;
+                    data[0] = Parity(5);
+                    m_conn->SendData (data, len);
+                }
             }
         }
         else if (!m_dumbTty)
