@@ -58,7 +58,7 @@ erase-.  Get rid of some extraneous (OS default) menu items on Mac OS.
 Fix conversion of stand-alone tilde for copy/paste to be a standard
 tilde character rather than Unicode "small tilde".
 
-V6.0.0, March 2018:
+T6.0.0, March 2018 (beta):
 
 Major new capabilities thanks to Dale Sinder.
 
@@ -97,4 +97,8 @@ If you have saved profiles you want to carry over, copy them into that
 directory before starting Pterm.  If the profiles directory is empty
 when you start Pterm, it will create two default profiles (which will
 appear in the connection dialog).
+
+T6.0.2, April 2018 (beta):
+
+Bugfixes.
 

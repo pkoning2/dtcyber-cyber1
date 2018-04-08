@@ -85,8 +85,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 6,0,2,0
- PRODUCTVERSION 6,0,2,0
+ FILEVERSION 6,0,3,0
+ PRODUCTVERSION 6,0,3,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -104,12 +104,12 @@ BEGIN
             VALUE "Comments", "Open source software created to enable users to connect and signon to the Cyber1 system.  Signons can be requested by visiting Cyber1.org on the internet."
             VALUE "CompanyName", "Cyber1.org"
             VALUE "FileDescription", "PLATO Terminal Emulator"
-            VALUE "FileVersion", "6.0.2.0"
+            VALUE "FileVersion", "6.0.3.0"
             VALUE "InternalName", "Pterm"
             VALUE "LegalCopyright", "Copyright © 2004-2018, Paul Koning, Joe Stanton, Dale Sinder"
             VALUE "OriginalFilename", "Pterm.exe"
             VALUE "ProductName", "PLATO Terminal Emulator"
-            VALUE "ProductVersion", "6.0.2.0"
+            VALUE "ProductVersion", "6.0.3.0"
         END
     END
     BLOCK "VarFileInfo"

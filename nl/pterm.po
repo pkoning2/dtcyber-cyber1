@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-04 12:35-0400\n"
+"POT-Creation-Date: 2018-04-05 20:32-0400\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -148,7 +148,7 @@ msgstr "Bekijk afdrukvoorbeeld"
 msgid "Edit Profiles..."
 msgstr "Voorkeurbestanden..."
 
-#: FrameCanvas.cpp:1744 FrameCanvas.cpp:1931 FrameCanvas.cpp:3058
+#: FrameCanvas.cpp:1744 FrameCanvas.cpp:1931 FrameCanvas.cpp:3062
 #, fuzzy
 msgid "Session Settings..."
 msgstr "Verbindingsvoorkeuren..."
@@ -246,7 +246,7 @@ msgstr "Schermvullende weergave"
 msgid "Paste ASCII"
 msgstr "Voer tekst in"
 
-#: FrameCanvas.cpp:2001 FrameCanvas.cpp:3043
+#: FrameCanvas.cpp:2001 FrameCanvas.cpp:3047
 msgid " Booted from floppy"
 msgstr "Vanaf floppy opgestart"
 
@@ -273,35 +273,35 @@ msgstr "Verbinding verloren om %s op "
 msgid "%s on "
 msgstr "%s naar "
 
-#: FrameCanvas.cpp:2603
+#: FrameCanvas.cpp:2607
 msgid "Can't copy image to the clipboard"
 msgstr "Kopiëren van het scherm naar het klembord mislukt."
 
-#: FrameCanvas.cpp:2609 FrameCanvas.cpp:2703 FrameCanvas.cpp:2866
+#: FrameCanvas.cpp:2613 FrameCanvas.cpp:2707 FrameCanvas.cpp:2870
 msgid "Can't open clipboard."
 msgstr "Openen van klembord mislukt."
 
-#: FrameCanvas.cpp:2710
+#: FrameCanvas.cpp:2714
 msgid "Can't copy text to the clipboard"
 msgstr "Kopiëren van tekst naar het klembord mislukt"
 
-#: FrameCanvas.cpp:2873
+#: FrameCanvas.cpp:2877
 msgid "No text data on clipboard"
 msgstr "Het klembord bevat geen tekst"
 
-#: FrameCanvas.cpp:2883
+#: FrameCanvas.cpp:2887
 msgid "Can't paste data from the clipboard"
 msgstr "Ophalen van gegevens van klembord mislukt"
 
-#: FrameCanvas.cpp:2922
+#: FrameCanvas.cpp:2926
 msgid "Save screen to"
 msgstr "Scherm opslaan in"
 
-#: FrameCanvas.cpp:2994
+#: FrameCanvas.cpp:2998
 msgid "Save GSW audio to"
 msgstr "GSW-audio opslaan in"
 
-#: FrameCanvas.cpp:3144
+#: FrameCanvas.cpp:3148
 msgid ""
 "There was a problem printing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -309,11 +309,11 @@ msgstr ""
 "Er was een probleem bij het afdrukken.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: FrameCanvas.cpp:3145
+#: FrameCanvas.cpp:3149
 msgid "Printing"
 msgstr "Afdrukken"
 
-#: FrameCanvas.cpp:3167
+#: FrameCanvas.cpp:3171
 msgid ""
 "There was a problem previewing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -321,49 +321,49 @@ msgstr ""
 "Er was een probleem bij het maken van het afdrukvoorbeeld.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: FrameCanvas.cpp:3168
+#: FrameCanvas.cpp:3172
 msgid "Previewing"
 msgstr "Voorbeeld bekijken"
 
-#: FrameCanvas.cpp:3173
+#: FrameCanvas.cpp:3177
 msgid "Pterm Print Preview"
 msgstr "Pterm Afdrukvoorbeeld"
 
-#: FrameCanvas.cpp:6453
+#: FrameCanvas.cpp:6457
 #, fuzzy
 msgid "ASCII"
 msgstr "Voer tekst in"
 
-#: FrameCanvas.cpp:6457
+#: FrameCanvas.cpp:6461
 msgid "Classic"
 msgstr "Klassiek"
 
-#: FrameCanvas.cpp:6469
+#: FrameCanvas.cpp:6473
 msgid " Trace "
 msgstr " Traceren "
 
-#: FrameCanvas.cpp:6478
+#: FrameCanvas.cpp:6482
 msgid " PLATO keyboard "
 msgstr " PLATO toetsenbord "
 
-#: FrameCanvas.cpp:6983
+#: FrameCanvas.cpp:6987
 msgid " Program ended"
 msgstr "Programma is geëindigd"
 
-#: PtermApp.cpp:121
+#: PtermApp.cpp:120
 msgid "Error creating application data directory "
 msgstr "Probleem bij aanmaken van de programma-informatiefolder"
 
-#: PtermApp.cpp:416
+#: PtermApp.cpp:363
 msgid "Open a new terminal window"
 msgstr "Nieuw terminalvenster openmaken"
 
-#: PtermApp.cpp:464 PtermConnDialog.cpp:151
+#: PtermApp.cpp:411 PtermConnDialog.cpp:151
 #, fuzzy
 msgid "Profile Editor"
 msgstr "Voorkeurbestand"
 
-#: PtermApp.cpp:480 PtermApp.cpp:485
+#: PtermApp.cpp:427 PtermApp.cpp:432
 msgid "PLATO terminal emulator."
 msgstr "PLATO terminal-emulator."
 
