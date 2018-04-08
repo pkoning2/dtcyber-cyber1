@@ -7467,7 +7467,7 @@ int PtermFrame::check_pcZ80(void)
 
     case R_WAIT16 + 2:
         // interface with DE for use with mtutor -ccode-
-        wxMilliSleep (state->registers.word[Z80_DE]);
+        wxMilliSleep (ReadRAMW(state->registers.word[Z80_DE]));
 
         return 1;
 
