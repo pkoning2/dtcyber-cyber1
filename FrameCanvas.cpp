@@ -1903,11 +1903,11 @@ void PtermFrame::BuildViewMenu (wxMenu *menu)
     menu->AppendSeparator ();
 
     menu->Append (Pterm_ToggleLock,
-        !m_profile->m_lockPosition ? _ ("Save Loction") : _ ("Unsave Loction"),
-        _ ("Save or Unsave Window location"));
+        !m_profile->m_lockPosition ? _ ("Save location now") : _ ("Save location on close"),
+        _ ("Save Window location now or on close"));
 
     menu->Append (Pterm_RestoreLocation,
-        _ ("Restore Loction"),
+        _ ("Restore Location"),
         _ ("Restore Window location"));
 
 
