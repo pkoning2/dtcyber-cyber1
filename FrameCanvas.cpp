@@ -1903,12 +1903,14 @@ void PtermFrame::BuildViewMenu (wxMenu *menu)
     menu->AppendSeparator ();
 
     menu->Append (Pterm_ToggleLock,
-        !m_profile->m_lockPosition ? _ ("Save location now") : _ ("Save location on close"),
-        _ ("Save Window location now or on close"));
+        !m_profile->m_lockPosition ? _ ("Save location now") : 
+            _ ("Save location on close"),
+        !m_profile->m_lockPosition ? _ ("Save window location now") : 
+            _ ("Save window location on close"));
 
     menu->Append (Pterm_RestoreLocation,
         _ ("Restore Location"),
-        _ ("Restore Window location"));
+        _ ("Restore window location"));
 
 
     menu->AppendSeparator ();
@@ -6594,20 +6596,24 @@ void PtermFrame::ptermShowTrace ()
     {
         if (tracePterm)
         {
-            m_statusBar->SetStatusText (_(" Trace "), STATUS_TRC);
+            m_statusBar->SetStatusText (wxT (" Trace ")
+                + m_profile->m_profileName, STATUS_TRC);
         }
         else if (m_conn != NULL && m_conn->GswActive ())
         {
             // Display a musical note.
-            m_statusBar->SetStatusText (wxT ("\u266C"), STATUS_TRC);
+            m_statusBar->SetStatusText (wxT ("\u266C ")
+                + m_profile->m_profileName, STATUS_TRC);
         }
         else if (m_platoKb)
         {
-            m_statusBar->SetStatusText (_(" PLATO keyboard "), STATUS_TRC);
+            m_statusBar->SetStatusText (_(" PLATO keyboard ") 
+                + m_profile->m_profileName, STATUS_TRC);
         }
         else
         {
-            m_statusBar->SetStatusText (wxT (""), STATUS_TRC);
+            m_statusBar->SetStatusText (wxT (" ") + 
+                m_profile->m_profileName, STATUS_TRC);
         }
     }
 }
