@@ -102,3 +102,18 @@ T6.0.2, April 2018 (beta):
 
 Bugfixes.
 
+(Re?)Added options for speeding up pastes with 8 spaces or period and
+seven spaces using TAB.
+
+Added experimental bilinear scaling option to display tab.  Only
+applies to non-integer scaled windows.
+
+Added Profile editor option to select starting zoom level.  Not 
+applicable to Session Settings - use view menu.
+
+Keep Window startup location with profile rather than globally.
+Location is saved on closing a window or when 
+View->Save location now is invoked.
+
+Send SHIFT-STOP to both microTUTOR and host when microTUTOR is
+running.
