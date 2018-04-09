@@ -3184,7 +3184,11 @@ void PtermFrame::UpdateSessionSettings (void)
 {
     *m_profile = *ptermApp->m_sessDialog->m_profile;
 
-    SetColors (m_profile->m_fgColor, m_profile->m_bgColor);
+    if ( m_profile->m_noColor || m_conn->Classic ())
+    {
+        SetColors (m_profile->m_fgColor, m_profile->m_bgColor);
+    }
+    
     //get prefs
     //ptermApp->m_lastTab = m_profile->m_lastTab;
     //tab3
