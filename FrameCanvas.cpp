@@ -6596,18 +6596,18 @@ void PtermFrame::ptermShowTrace ()
     {
         if (tracePterm)
         {
-            m_statusBar->SetStatusText (wxT (" Trace ")
+            m_statusBar->SetStatusText (wxT (" Trace | ")
                 + m_profile->m_profileName, STATUS_TRC);
         }
         else if (m_conn != NULL && m_conn->GswActive ())
         {
             // Display a musical note.
-            m_statusBar->SetStatusText (wxT ("\u266C ")
+            m_statusBar->SetStatusText (wxT ("\u266C | ")
                 + m_profile->m_profileName, STATUS_TRC);
         }
         else if (m_platoKb)
         {
-            m_statusBar->SetStatusText (_(" PLATO keyboard ") 
+            m_statusBar->SetStatusText (wxT (" PLATO keyboard | ")
                 + m_profile->m_profileName, STATUS_TRC);
         }
         else
