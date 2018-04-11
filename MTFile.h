@@ -38,6 +38,8 @@ public:
     bool reportError(const char *fn);
     void SetHelpContext (u8 context);
 
+    wxString rwflag;
+
 private:
     bool _RamBased;
     u16 _chkSum;

@@ -22,6 +22,8 @@ static bool mtimage_loaded = false;
 
 MTFile::MTFile()
 {
+    rwflag = wxT ("  ");
+
 #ifdef _WIN32
     ms_handle = NULL;
 #else
@@ -181,6 +183,8 @@ void MTFile::ReadReset (void)
 {
     rcnt = 1;
     _chkSum = 0;
+    rwflag = wxT ("R ");
+
 }
 
 void MTFile::SetHelpContext (u8 context)
@@ -266,6 +270,7 @@ u8 MTFile::ReadByte()
 void MTFile::WriteReset (void)
 {
     wcnt = 1;
+    rwflag = wxT ("W ");
 }
 
 void MTFile::WriteByte(u8 val)
@@ -274,14 +279,15 @@ void MTFile::WriteByte(u8 val)
         return;
     int retry = 0;
 
+
+    if (wcnt > 129)
+    {
+        WriteReset ();
+        return;
+    }
     if (wcnt > 128)
     {
         wcnt++;
-        return;
-    }
-    if (wcnt > 129)
-    {
-        wcnt = 1;
         return;
     }
 
@@ -329,6 +335,7 @@ void MTFile::Format (void)
 {
     if (_RamBased)
         return;
+    rwflag = wxT ("W ");
     Seek (0);
     long int i;
     for (i = 0; i < (128L * 64L * 154L); i++)

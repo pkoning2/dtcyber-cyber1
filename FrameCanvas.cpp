@@ -2169,6 +2169,12 @@ void PtermFrame::OnMclock(wxTimerEvent &)
 {
     u16 temp = ReadRAMW(M_CLOCK);
     WriteRAMW(M_CLOCK, ++temp);
+    ptermShowTrace ();
+    if ((temp % 6) == 0)
+    {
+        m_MTFiles[0].rwflag = wxT ("  ");
+        m_MTFiles[1].rwflag = wxT ("  ");
+    }
 }
 // ppt d.clock
 void PtermFrame::OnDclock(wxTimerEvent &)
@@ -6596,23 +6602,31 @@ void PtermFrame::ptermShowTrace ()
     {
         if (tracePterm)
         {
-            m_statusBar->SetStatusText (wxT (" Trace | ")
+            m_statusBar->SetStatusText (m_MTFiles[0].rwflag 
+                + m_MTFiles[1].rwflag
+                + wxT (" Trace | ")
                 + m_profile->m_profileName, STATUS_TRC);
         }
         else if (m_conn != NULL && m_conn->GswActive ())
         {
             // Display a musical note.
-            m_statusBar->SetStatusText (wxT ("\u266C | ")
+            m_statusBar->SetStatusText (m_MTFiles[0].rwflag 
+                + m_MTFiles[1].rwflag
+                + wxT ("\u266C | ")
                 + m_profile->m_profileName, STATUS_TRC);
         }
         else if (m_platoKb)
         {
-            m_statusBar->SetStatusText (wxT (" PLATO keyboard | ")
+            m_statusBar->SetStatusText (m_MTFiles[0].rwflag 
+                + m_MTFiles[1].rwflag
+                + wxT (" PLATO keyboard | ")
                 + m_profile->m_profileName, STATUS_TRC);
         }
         else
         {
-            m_statusBar->SetStatusText (wxT (" ") + 
+            m_statusBar->SetStatusText (m_MTFiles[0].rwflag 
+                + m_MTFiles[1].rwflag
+                + wxT (" ") +
                 m_profile->m_profileName, STATUS_TRC);
         }
     }
