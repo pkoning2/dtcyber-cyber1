@@ -236,6 +236,22 @@ void PtermConnDialog::SelectProfile (int n)
 void PtermConnDialog::ReloadProfile ()
 {
     if (m_profile != NULL)
+    {
         m_profile->LoadProfile ();
+        switch (m_profile->ProfileState ())
+        {
+        case CONNECTION:
+            btnConnect->Enable (true);
+            btnConnect->SetLabel (_ ("Connect"));
+            break;
+        case LOCALBOOT:
+            btnConnect->Enable (true);
+            btnConnect->SetLabel (("Boot"));
+            break;
+        case INCOMPLETE:
+            btnConnect->Enable (false);
+        }
+    }
+
 }
 
