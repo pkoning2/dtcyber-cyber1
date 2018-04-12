@@ -6604,7 +6604,7 @@ void PtermFrame::ptermShowTrace ()
         {
             m_statusBar->SetStatusText (m_MTFiles[0].rwflag 
                 + m_MTFiles[1].rwflag
-                + wxT (" Trace | ")
+                + _(" Trace | ")
                 + m_profile->m_profileName, STATUS_TRC);
         }
         else if (m_conn != NULL && m_conn->GswActive ())
@@ -6619,7 +6619,7 @@ void PtermFrame::ptermShowTrace ()
         {
             m_statusBar->SetStatusText (m_MTFiles[0].rwflag 
                 + m_MTFiles[1].rwflag
-                + wxT (" PLATO keyboard | ")
+                + _(" PLATO keyboard | ")
                 + m_profile->m_profileName, STATUS_TRC);
         }
         else

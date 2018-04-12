@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-05 20:32-0400\n"
+"POT-Creation-Date: 2018-04-12 11:01-0400\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -15,293 +15,318 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: FrameCanvas.cpp:1288 FrameCanvas.cpp:1702
+#: FrameCanvas.cpp:1290 FrameCanvas.cpp:1761
 msgid "New Terminal Window..."
 msgstr "Nieuw terminalvenster..."
 
-#: FrameCanvas.cpp:1289
+#: FrameCanvas.cpp:1291
 msgid "Connect to a PLATO host"
 msgstr "Aan een PLATO-systeem verbinden"
 
-#: FrameCanvas.cpp:1291
+#: FrameCanvas.cpp:1293
 msgid "Preferences..."
 msgstr "Voorkeuren..."
 
-#: FrameCanvas.cpp:1292 FrameCanvas.cpp:1740
+#: FrameCanvas.cpp:1294 FrameCanvas.cpp:1799
 msgid "Set program configuration"
 msgstr "Stel de voorkeuren van het programma in"
 
-#: FrameCanvas.cpp:1294 FrameCanvas.cpp:1754
+#: FrameCanvas.cpp:1296 FrameCanvas.cpp:1813
 msgid "Exit"
 msgstr "Programma sluiten"
 
-#: FrameCanvas.cpp:1294 FrameCanvas.cpp:1754
+#: FrameCanvas.cpp:1296 FrameCanvas.cpp:1813
 msgid "Quit this program"
 msgstr "Beëindig het programma"
 
-#: FrameCanvas.cpp:1302 FrameCanvas.cpp:1895
+#: FrameCanvas.cpp:1304 FrameCanvas.cpp:1968
 msgid "About Pterm"
 msgstr "Over Pterm"
 
 # msgid "About Pterm"
 # msgstr "Over Pterm"
-#: FrameCanvas.cpp:1302 FrameCanvas.cpp:1895
+#: FrameCanvas.cpp:1304 FrameCanvas.cpp:1968
 msgid "Show about dialog"
 msgstr "Toon programmainformatie"
 
-#: FrameCanvas.cpp:1303 FrameCanvas.cpp:1896
+#: FrameCanvas.cpp:1305 FrameCanvas.cpp:1969
 msgid "Pterm keyboard"
 msgstr "Pterm toetsenbord"
 
-#: FrameCanvas.cpp:1304 FrameCanvas.cpp:1897
+#: FrameCanvas.cpp:1306 FrameCanvas.cpp:1970
 msgid "Show keyboard description"
 msgstr "Toon toetsenbordbeschrijving"
 
-#: FrameCanvas.cpp:1305 FrameCanvas.cpp:1898
+#: FrameCanvas.cpp:1307 FrameCanvas.cpp:1971
 msgid "Pterm help"
 msgstr "Pterm beschrijving"
 
-#: FrameCanvas.cpp:1306 FrameCanvas.cpp:1899
+#: FrameCanvas.cpp:1308 FrameCanvas.cpp:1972
 msgid "Show Pterm help index"
 msgstr "Toon inhoudsopgave van beschrijving"
 
-#: FrameCanvas.cpp:1310 FrameCanvas.cpp:1683
+#: FrameCanvas.cpp:1312 FrameCanvas.cpp:1742
 msgid "File"
 msgstr "Bestand"
 
-#: FrameCanvas.cpp:1311 FrameCanvas.cpp:1686 PtermConnDialog.cpp:70
+#: FrameCanvas.cpp:1313 FrameCanvas.cpp:1745 PtermConnDialog.cpp:70
 #: PtermPrefDialog.cpp:698
 msgid "Help"
 msgstr "Help"
 
-#: FrameCanvas.cpp:1684 PtermConnDialog.cpp:63
+#: FrameCanvas.cpp:1743 PtermConnDialog.cpp:63
 msgid "Edit"
 msgstr "Bewerken"
 
-#: FrameCanvas.cpp:1685
+#: FrameCanvas.cpp:1744
 msgid "View"
 msgstr "Weergave"
 
-#: FrameCanvas.cpp:1703
+#: FrameCanvas.cpp:1762
 msgid "New Terminal Window"
 msgstr "Nieuw terminalvenster"
 
-#: FrameCanvas.cpp:1707
+#: FrameCanvas.cpp:1766
 #, fuzzy
 msgid "Reset MicroTutor"
 msgstr "Naar MicroTutor opstarten"
 
-#: FrameCanvas.cpp:1708
+#: FrameCanvas.cpp:1767
 msgid "Reset the MicroTutor boot process"
 msgstr "MicroTutor boot opnieuw doen"
 
-#: FrameCanvas.cpp:1715
+#: FrameCanvas.cpp:1774
 msgid "Connect Again"
 msgstr "Nogmaals verbinden"
 
-#: FrameCanvas.cpp:1716
+#: FrameCanvas.cpp:1775
 msgid "Connect to the same host"
 msgstr "Verbinden met hetzelfde systeem"
 
-#: FrameCanvas.cpp:1721
+#: FrameCanvas.cpp:1780
 msgid "Save Screen"
 msgstr "Scherm kopiëren"
 
-#: FrameCanvas.cpp:1722
+#: FrameCanvas.cpp:1781
 msgid "Save screen image to file"
 msgstr "Scherm opslaan in"
 
-#: FrameCanvas.cpp:1726
+#: FrameCanvas.cpp:1785
 msgid "Save GSW Audio"
 msgstr "GSW-audio opslaan"
 
-#: FrameCanvas.cpp:1727
+#: FrameCanvas.cpp:1786
 msgid "Save GSW sound to audio file"
 msgstr "GSW geluid opslaan in audiobestand"
 
-#: FrameCanvas.cpp:1731
+#: FrameCanvas.cpp:1790
 msgid "Print..."
 msgstr "Afdrukken..."
 
-#: FrameCanvas.cpp:1732
+#: FrameCanvas.cpp:1791
 msgid "Print screen content"
 msgstr "Afdrukvoorbeeld"
 
-#: FrameCanvas.cpp:1733
+#: FrameCanvas.cpp:1792
 msgid "Page Setup..."
 msgstr "Pagina-instelling..."
 
-#: FrameCanvas.cpp:1734
+#: FrameCanvas.cpp:1793
 msgid "Printout page setup"
 msgstr "Pagina-instelling"
 
-#: FrameCanvas.cpp:1735
+#: FrameCanvas.cpp:1794
 msgid "Print Preview"
 msgstr "Afdrukvoorbeeld"
 
-#: FrameCanvas.cpp:1736
+#: FrameCanvas.cpp:1795
 msgid "Preview screen print"
 msgstr "Bekijk afdrukvoorbeeld"
 
-#: FrameCanvas.cpp:1738
+#: FrameCanvas.cpp:1797
 #, fuzzy
 msgid "Edit Profiles..."
 msgstr "Voorkeurbestanden..."
 
-#: FrameCanvas.cpp:1744 FrameCanvas.cpp:1931 FrameCanvas.cpp:3062
+#: FrameCanvas.cpp:1803 FrameCanvas.cpp:2004 FrameCanvas.cpp:3183
 #, fuzzy
 msgid "Session Settings..."
 msgstr "Verbindingsvoorkeuren..."
 
-#: FrameCanvas.cpp:1745 FrameCanvas.cpp:1932
+#: FrameCanvas.cpp:1804 FrameCanvas.cpp:2005
 msgid "Set the session settings"
 msgstr "Wijzig de voorkeuren van de verbinding"
 
-#: FrameCanvas.cpp:1752 PtermConnFailDialog.cpp:66
+#: FrameCanvas.cpp:1811 PtermConnFailDialog.cpp:66
 msgid "Close"
 msgstr "Sluiten"
 
-#: FrameCanvas.cpp:1753
+#: FrameCanvas.cpp:1812
 msgid "Close this window"
 msgstr "Sluit dit venster"
 
-#: FrameCanvas.cpp:1762 FrameCanvas.cpp:1907
+#: FrameCanvas.cpp:1821 FrameCanvas.cpp:1980
 msgid "Copy Screen"
 msgstr "Scherm kopiëren"
 
-#: FrameCanvas.cpp:1763 FrameCanvas.cpp:1908
+#: FrameCanvas.cpp:1822 FrameCanvas.cpp:1981
 msgid "Copy screen to clipboard"
 msgstr "Kopiëer scherm naar het klembord"
 
-#: FrameCanvas.cpp:1765 FrameCanvas.cpp:1909
+#: FrameCanvas.cpp:1824 FrameCanvas.cpp:1982
 msgid "Copy text"
 msgstr "Tekst kopiëren"
 
-#: FrameCanvas.cpp:1766 FrameCanvas.cpp:1910
+#: FrameCanvas.cpp:1825 FrameCanvas.cpp:1983
 msgid "Copy text only to clipboard"
 msgstr "Kopiëer tekst naar het klembord"
 
-#: FrameCanvas.cpp:1770 FrameCanvas.cpp:1771 FrameCanvas.cpp:1914
+#: FrameCanvas.cpp:1829 FrameCanvas.cpp:1830 FrameCanvas.cpp:1987
 msgid "Paste plain text"
 msgstr "Voeg gewone tekst in"
 
-#: FrameCanvas.cpp:1772 FrameCanvas.cpp:1915
+#: FrameCanvas.cpp:1831 FrameCanvas.cpp:1988
 msgid "Paste Printout"
 msgstr "Voeg afdruktekst in"
 
-#: FrameCanvas.cpp:1773 FrameCanvas.cpp:1916
+#: FrameCanvas.cpp:1832 FrameCanvas.cpp:1989
 msgid "Paste Cyber printout format"
 msgstr "Voeg tekst in afdrukvorm in"
 
-#: FrameCanvas.cpp:1777 FrameCanvas.cpp:1778 FrameCanvas.cpp:1919
-#: FrameCanvas.cpp:1920
+#: FrameCanvas.cpp:1836 FrameCanvas.cpp:1837 FrameCanvas.cpp:1992
+#: FrameCanvas.cpp:1993
 msgid "Execute URL"
 msgstr "Webverwijzing volgen"
 
-#: FrameCanvas.cpp:1780 FrameCanvas.cpp:1781 FrameCanvas.cpp:1921
-#: FrameCanvas.cpp:1922
+#: FrameCanvas.cpp:1839 FrameCanvas.cpp:1840 FrameCanvas.cpp:1994
+#: FrameCanvas.cpp:1995
 msgid "Mail to..."
 msgstr "E-mail sturen naar..."
 
-#: FrameCanvas.cpp:1783 FrameCanvas.cpp:1784 FrameCanvas.cpp:1923
-#: FrameCanvas.cpp:1925
+#: FrameCanvas.cpp:1842 FrameCanvas.cpp:1843 FrameCanvas.cpp:1996
+#: FrameCanvas.cpp:1998
 msgid "Search this..."
 msgstr "Zoek naar..."
 
-#: FrameCanvas.cpp:1834
+#: FrameCanvas.cpp:1893
 msgid "Display menu bar"
 msgstr "Verbindingstoestandbalk tonen"
 
-#: FrameCanvas.cpp:1840 FrameCanvas.cpp:1841
+#: FrameCanvas.cpp:1899 FrameCanvas.cpp:1900
 msgid "Display status bar"
 msgstr "Verbindingstoestandbalk tonen"
 
-#: FrameCanvas.cpp:1848
+#: FrameCanvas.cpp:1906
+msgid "Save location now"
+msgstr "Venstercoördinaten nu opslaan"
+
+#: FrameCanvas.cpp:1907
+msgid "Save location on close"
+msgstr "Venstercoördinaten opslaan bij sluiten"
+
+#: FrameCanvas.cpp:1908
+msgid "Save window location now"
+msgstr "Venstercoördinaten nu upslaan"
+
+#: FrameCanvas.cpp:1909
+msgid "Save window location on close"
+msgstr "Venstercoördinaten opslaan bij sluiten"
+
+#: FrameCanvas.cpp:1912
+#, fuzzy
+msgid "Restore Location"
+msgstr "Venstercoördinaten herstellen"
+
+#: FrameCanvas.cpp:1913
+msgid "Restore window location"
+msgstr "Venstercoördinaten herstellen"
+
+#: FrameCanvas.cpp:1921
 #, c-format
 msgid "Zoom display %1.1fx"
 msgstr "Beeld %1.1f maal vergroten"
 
-#: FrameCanvas.cpp:1853
+#: FrameCanvas.cpp:1926
 #, c-format
 msgid "Zoom display %1.0fx"
 msgstr "Beeld %1.0f maal vergroten"
 
-#: FrameCanvas.cpp:1871
+#: FrameCanvas.cpp:1944
 msgid "Stretch display"
 msgstr "Beeld rekken"
 
-#: FrameCanvas.cpp:1877
+#: FrameCanvas.cpp:1950
 msgid "Keep aspect ratio"
 msgstr "Aspectverhouding bewaren"
 
-#: FrameCanvas.cpp:1883
+#: FrameCanvas.cpp:1956
 msgid "Full Screen"
 msgstr "Schermvullend"
 
-#: FrameCanvas.cpp:1885
+#: FrameCanvas.cpp:1958
 msgid "Display in full screen mode"
 msgstr "Schermvullende weergave"
 
-#: FrameCanvas.cpp:1913
+#: FrameCanvas.cpp:1986
 msgid "Paste ASCII"
 msgstr "Voer tekst in"
 
-#: FrameCanvas.cpp:2001 FrameCanvas.cpp:3047
+#: FrameCanvas.cpp:2074 FrameCanvas.cpp:3168
 msgid " Booted from floppy"
 msgstr "Vanaf floppy opgestart"
 
-#: FrameCanvas.cpp:2006 FrameCanvas.cpp:2198
+#: FrameCanvas.cpp:2079 FrameCanvas.cpp:2277
 msgid " Not connected"
 msgstr "Niet verbonden"
 
-#: FrameCanvas.cpp:2010
+#: FrameCanvas.cpp:2083
 msgid " Connecting..."
 msgstr "Aan het verbinden..."
 
-#: FrameCanvas.cpp:2207
+#: FrameCanvas.cpp:2286
 #, c-format
 msgid "Connection failed @ %s on "
 msgstr "Verbinding mislukt om %s op "
 
-#: FrameCanvas.cpp:2212
+#: FrameCanvas.cpp:2291
 #, c-format
 msgid "Dropped connection @ %s on "
 msgstr "Verbinding verloren om %s op "
 
-#: FrameCanvas.cpp:2217
+#: FrameCanvas.cpp:2296
 #, c-format
 msgid "%s on "
 msgstr "%s naar "
 
-#: FrameCanvas.cpp:2607
+#: FrameCanvas.cpp:2689
 msgid "Can't copy image to the clipboard"
 msgstr "Kopiëren van het scherm naar het klembord mislukt."
 
-#: FrameCanvas.cpp:2613 FrameCanvas.cpp:2707 FrameCanvas.cpp:2870
+#: FrameCanvas.cpp:2695 FrameCanvas.cpp:2828 FrameCanvas.cpp:2991
 msgid "Can't open clipboard."
 msgstr "Openen van klembord mislukt."
 
-#: FrameCanvas.cpp:2714
+#: FrameCanvas.cpp:2835
 msgid "Can't copy text to the clipboard"
 msgstr "Kopiëren van tekst naar het klembord mislukt"
 
-#: FrameCanvas.cpp:2877
+#: FrameCanvas.cpp:2998
 msgid "No text data on clipboard"
 msgstr "Het klembord bevat geen tekst"
 
-#: FrameCanvas.cpp:2887
+#: FrameCanvas.cpp:3008
 msgid "Can't paste data from the clipboard"
 msgstr "Ophalen van gegevens van klembord mislukt"
 
-#: FrameCanvas.cpp:2926
+#: FrameCanvas.cpp:3047
 msgid "Save screen to"
 msgstr "Scherm opslaan in"
 
-#: FrameCanvas.cpp:2998
+#: FrameCanvas.cpp:3119
 msgid "Save GSW audio to"
 msgstr "GSW-audio opslaan in"
 
-#: FrameCanvas.cpp:3148
+#: FrameCanvas.cpp:3273
 msgid ""
 "There was a problem printing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -309,11 +334,11 @@ msgstr ""
 "Er was een probleem bij het afdrukken.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: FrameCanvas.cpp:3149
+#: FrameCanvas.cpp:3274
 msgid "Printing"
 msgstr "Afdrukken"
 
-#: FrameCanvas.cpp:3171
+#: FrameCanvas.cpp:3296
 msgid ""
 "There was a problem previewing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -321,32 +346,34 @@ msgstr ""
 "Er was een probleem bij het maken van het afdrukvoorbeeld.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: FrameCanvas.cpp:3172
+#: FrameCanvas.cpp:3297
 msgid "Previewing"
 msgstr "Voorbeeld bekijken"
 
-#: FrameCanvas.cpp:3177
+#: FrameCanvas.cpp:3302
 msgid "Pterm Print Preview"
 msgstr "Pterm Afdrukvoorbeeld"
 
-#: FrameCanvas.cpp:6457
+#: FrameCanvas.cpp:6589
 #, fuzzy
 msgid "ASCII"
 msgstr "Voer tekst in"
 
-#: FrameCanvas.cpp:6461
+#: FrameCanvas.cpp:6593
 msgid "Classic"
 msgstr "Klassiek"
 
-#: FrameCanvas.cpp:6473
-msgid " Trace "
-msgstr " Traceren "
+#: FrameCanvas.cpp:6607
+#, fuzzy
+msgid " Trace | "
+msgstr " Traceren | "
 
-#: FrameCanvas.cpp:6482
-msgid " PLATO keyboard "
-msgstr " PLATO toetsenbord "
+#: FrameCanvas.cpp:6622
+#, fuzzy
+msgid " PLATO keyboard | "
+msgstr " PLATO toetsenbord | "
 
-#: FrameCanvas.cpp:6987
+#: FrameCanvas.cpp:7131
 msgid " Program ended"
 msgstr "Programma is geëindigd"
 
@@ -376,11 +403,11 @@ msgstr "Kies een voorkeurbestand en klik op Verbinden."
 msgid "Cancel"
 msgstr "Annuleer"
 
-#: PtermConnDialog.cpp:79 PtermConnDialog.cpp:216
+#: PtermConnDialog.cpp:79 PtermConnDialog.cpp:240
 msgid "Connect"
 msgstr "Verbinden"
 
-#: PtermConnDialog.cpp:228 PtermPrefDialog.cpp:1335
+#: PtermConnDialog.cpp:216 PtermPrefDialog.cpp:1335
 #, c-format
 msgid ""
 "Profile '%s' not found. Problem loading file:\n"
@@ -391,7 +418,7 @@ msgstr ""
 "\n"
 "    %s"
 
-#: PtermConnDialog.cpp:232 PtermPrefDialog.cpp:909 PtermPrefDialog.cpp:930
+#: PtermConnDialog.cpp:220 PtermPrefDialog.cpp:909 PtermPrefDialog.cpp:930
 #: PtermPrefDialog.cpp:956 PtermPrefDialog.cpp:1253 PtermPrefDialog.cpp:1337
 msgid "Error"
 msgstr "Fout"
@@ -833,7 +860,7 @@ msgstr "Achtergrond"
 msgid "Pterm printout"
 msgstr "Pterm afdruk"
 
-#: MTFile.cpp:105
+#: MTFile.cpp:107
 msgid "Error opening \\u00b5Tutor floppy file "
 msgstr "Floppybestand kan niet geopend worden"
 
@@ -891,9 +918,6 @@ msgstr "Floppybestand kan niet geopend worden"
 
 #~ msgid "New Connection..."
 #~ msgstr "Nieuwe verbinding..."
-
-#~ msgid "Test execution"
-#~ msgstr "Test uitvoeren"
 
 #~ msgid "Display full screen"
 #~ msgstr "Schermvullende weergave"
