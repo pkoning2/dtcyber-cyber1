@@ -43,6 +43,7 @@ public:
     
 private:
     void SelectProfile (int n);
+    void CheckProfileState (void);
     
     DECLARE_EVENT_TABLE ()
 };

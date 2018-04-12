@@ -209,19 +209,7 @@ void PtermConnDialog::SelectProfile (int n)
     m_profile = new PtermProfile (profile, true);
     if (m_profile->IsOk ())
     {
-        switch (m_profile->ProfileState ())
-        {
-        case CONNECTION:
-            btnConnect->Enable (true);
-            btnConnect->SetLabel (_("Connect"));
-            break;
-        case LOCALBOOT:
-            btnConnect->Enable (true);
-            btnConnect->SetLabel (("Boot"));
-            break;
-        case INCOMPLETE:
-            btnConnect->Enable (false);
-        }
+        CheckProfileState ();
     }
     else
     {
@@ -238,20 +226,25 @@ void PtermConnDialog::ReloadProfile ()
     if (m_profile != NULL)
     {
         m_profile->LoadProfile ();
-        switch (m_profile->ProfileState ())
-        {
-        case CONNECTION:
-            btnConnect->Enable (true);
-            btnConnect->SetLabel (_ ("Connect"));
-            break;
-        case LOCALBOOT:
-            btnConnect->Enable (true);
-            btnConnect->SetLabel (("Boot"));
-            break;
-        case INCOMPLETE:
-            btnConnect->Enable (false);
-        }
+        CheckProfileState ();
     }
 
+}
+
+void PtermConnDialog::CheckProfileState (void)
+{
+    switch (m_profile->ProfileState ())
+    {
+    case CONNECTION:
+        btnConnect->Enable (true);
+        btnConnect->SetLabel (_ ("Connect"));
+        break;
+    case LOCALBOOT:
+        btnConnect->Enable (true);
+        btnConnect->SetLabel (("Boot"));
+        break;
+    case INCOMPLETE:
+        btnConnect->Enable (false);
+    }
 }
 
