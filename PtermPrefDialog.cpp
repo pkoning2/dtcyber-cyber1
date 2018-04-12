@@ -29,10 +29,10 @@ PtermPrefDialog::PtermPrefDialog (PtermConnDialog *parent, wxWindowID id,
     const wxString &title, wxPoint pos,
     wxSize size)
     : wxDialog (parent, id, title, pos, size),
-    m_profile (NULL),
-    m_profileEdit (true),
-    m_initDone (false),
-    m_connParent (parent)
+      m_profile (NULL),
+      m_initDone (false),
+      m_profileEdit (true),
+      m_connParent (parent)
 {
     PtermInitDialog ();
 }
@@ -42,8 +42,8 @@ PtermPrefDialog::PtermPrefDialog (PtermFrame *parent, wxWindowID id,
     wxSize size,
     const PtermProfile &fromprofile)
     : wxDialog (parent, id, title, pos, size),
-      m_profileEdit (false),
       m_initDone (false),
+      m_profileEdit (false),
       m_connParent (NULL)
 
 {
