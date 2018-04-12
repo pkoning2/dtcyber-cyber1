@@ -33,9 +33,6 @@ public:
     PtermProfile    *m_profile;
 
     ProfileList *lstProfiles;
-    wxTextCtrl *txtShellFirst;
-    wxTextCtrl *txtHost;
-    wxComboBox *cboPort;
     wxButton *btnEdit;
     wxButton *btnHelp;
     wxButton *btnCancel;
