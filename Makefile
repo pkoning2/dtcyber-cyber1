@@ -53,7 +53,7 @@ OSXVER ?= 10.9
 OSXMIN = 10.7
 else
 ARCHCFLAGS ?= -arch i386 -arch ppc -arch x86_64 -arch ppc64
-ARCHLDFLAGS ?= -arch i386 -arch ppc
+ARCHLDFLAGS ?= -arch i386 -arch ppc -arch x86_64
 OSXVER ?= 10.5
 endif
 SDKDIR := /Developer/SDKs/MacOSX$(OSXVER).sdk
