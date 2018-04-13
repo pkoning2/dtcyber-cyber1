@@ -694,13 +694,13 @@ void DtoperApp::OnAbout(wxCommandEvent&)
 {
     wxAboutDialogInfo info;
 
-    info.SetName (_("DTOPER"));
-    info.SetVersion (_("V2.0.0"));
+    info.SetName (wxT ("DTOPER"));
+    info.SetVersion (wxT ("V2.0.0"));
     info.SetDescription (_("DtCyber operator interface (DTOPER) emulator."
                            L"\n  built with wxWidgets V" wxT (WXVERSION)
                            L"\n  build date " wxT(PTERMBUILDDATE)));
     info.SetCopyright (wxT("(C) 2004-2014 by Paul Koning"));
-    info.SetWebSite ("http://cyber1.org");
+    info.AddDeveloper ("Paul Koning");
     
     wxAboutBox(info);
 }

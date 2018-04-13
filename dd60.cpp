@@ -894,14 +894,14 @@ void Dd60App::OnAbout(wxCommandEvent&)
 {
     wxAboutDialogInfo info;
 
-    info.SetName (_("DD60"));
-    info.SetVersion (_("V" DD60VERSION));
+    info.SetName (wxT ("DD60"));
+    info.SetVersion (wxT ("V" DD60VERSION));
     info.SetDescription (_("DtCyber console (DD60) emulator."
                            L"\n  built with wxWidgets V" wxT (WXVERSION)
                            L"\n  build date " wxT(PTERMBUILDDATE)));
     info.SetCopyright (wxT("(C) 2004-2014 by Paul Koning"));
-    info.SetWebSite ("http://cyber1.org");
-    
+    info.AddDeveloper ("Paul Koning");
+
     wxAboutBox(info);
 }
 
