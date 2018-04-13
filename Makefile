@@ -48,7 +48,7 @@ endif
 CLANG := $(shell gcc --version 2>/dev/null| fgrep LLVM)
 ifneq ("$(CLANG)", "")
 ARCHCFLAGS ?= -arch i386 -arch x86_64
-ARCHLDFLAGS ?= -arch i386
+ARCHLDFLAGS ?= -arch i386 -arch x86_64
 OSXVER ?= 10.9
 OSXMIN = 10.7
 else
@@ -57,8 +57,8 @@ ARCHLDFLAGS ?= -arch i386 -arch ppc -arch x86_64
 OSXVER ?= 10.5
 endif
 SDKDIR := /Developer/SDKs/MacOSX$(OSXVER).sdk
-LIBS    +=  -Wl,-syslibroot,$(SDKDIR) -L$(SDKDIR)/usr/lib -L/usr/lib
-INCL    += -isysroot $(SDKDIR) -I/usr/include/c++/4.2.1 
+LIBS    +=  -Wl,-syslibroot,$(SDKDIR) -L$(SDKDIR)/usr/lib 
+INCL    += -isysroot $(SDKDIR) -I$(SDKDIR)/usr/include/c++/4.2.1 
 ifneq ("$(OSXMIN)","")
 OSXMINFLG = -mmacosx-version-min=$(OSXMIN)
 endif
