@@ -2119,7 +2119,6 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 
     if ( ppt_running && !in_r_exec )
     {
-        m_canvas->Refresh();
         MicroEmulate;
         return;
     }
@@ -2148,7 +2147,6 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 
     if (ppt_running && !in_r_exec)
     {
-        m_canvas->Refresh();
         MicroEmulate;
         return;
     }
