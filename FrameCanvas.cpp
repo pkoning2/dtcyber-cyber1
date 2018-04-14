@@ -3481,28 +3481,6 @@ void PtermFrame::fixAlpha (void)
 }
 #endif
 
-void PtermFrame::ptermUpdatePoint (int x, int y, u32 pixval, bool xor_p,
-                                   PixelData &pixmap)
-{
-    PixelData::Iterator p (pixmap);
-    u32 *pmap;
-    
-    x = XMADJUST (x & 0777);
-    y = YMADJUST (y & 0777);
-    
-    p.MoveTo (pixmap, x, y);
-    pmap = (u32 *)(p.m_ptr);
-
-    if (xor_p)
-    {
-        *pmap = (*pmap ^ pixval) | m_maxalpha;
-    }
-    else
-    {
-        *pmap = pixval;
-    }
-}
-
 void PtermFrame::ptermDrawChar (int x, int y, int snum, int cnum, bool autobs)
 {
     u32 fpix, bpix;
