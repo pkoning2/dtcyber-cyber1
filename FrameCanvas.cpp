@@ -2119,7 +2119,11 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 
     if ( ppt_running && !in_r_exec )
     {
+        SaveRestoreColors (false, true);
+        SaveRestoreColors (true, false);
         MicroEmulate;
+        SaveRestoreColors (false, false);
+        SaveRestoreColors (true, true);
         return;
     }
 
@@ -2128,7 +2132,11 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
     if (m_MReturnz80.IsRunning())
     {
         m_MReturnz80.Stop();
+        SaveRestoreColors (false, true);
+        SaveRestoreColors (true, false);
         MicroEmulate;
+        SaveRestoreColors (false, false);
+        SaveRestoreColors (true, true);
     }
 }
 
@@ -2147,7 +2155,11 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 
     if (ppt_running && !in_r_exec)
     {
+        SaveRestoreColors (false, true);
+        SaveRestoreColors (true, false);
         MicroEmulate;
+        SaveRestoreColors (false, false);
+        SaveRestoreColors (true, true);
         return;
     }
 
@@ -2158,7 +2170,11 @@ void PtermFrame::OnTimer (wxTimerEvent &)
     if (m_MReturnz80.IsRunning())
     {
         m_MReturnz80.Stop();
+        SaveRestoreColors (false, true);
+        SaveRestoreColors (true, false);
         MicroEmulate;
+        SaveRestoreColors (false, false);
+        SaveRestoreColors (true, true);
     }
 }
 
@@ -2184,7 +2200,11 @@ void PtermFrame::OnDclock(wxTimerEvent &)
 // resume z80 execution after it gives up control to resident
 void PtermFrame::OnMz80(wxTimerEvent &)
 {
+    SaveRestoreColors (false, true);
+    SaveRestoreColors (true, false);
     MicroEmulate;
+    SaveRestoreColors (false, false);
+    SaveRestoreColors (true, true);
 }
 
 
@@ -6187,7 +6207,6 @@ void PtermFrame::mode6 (u32 d)
 
     // Set the start PC for the requested mode
     state->pc = ReadRAMW(M6ORIGIN);
-
     MicroEmulate;
 }
 
@@ -7342,8 +7361,11 @@ int PtermFrame::check_pcZ80(void)
         
     case R_EXEC:
         // r.exec
+        trace ("R.EXEC");
         Mz80Waiter(RESIDENTMSEC);
         m_giveupz80 = true;
+        //SaveRestoreColors (false, false);
+        //SaveRestoreColors (true, true);
         return 1;
         
     case R_GJOB:
@@ -7515,6 +7537,36 @@ wxColour PtermFrame::GetColor (u16 loc)
     return color;
 }
 
+void PtermFrame::SaveRestoreColors (bool restore, bool terminal)
+{
+    //return;
+    if (terminal)
+    {
+        if (restore)
+        {
+            SetColors (m_currentFgHost, m_currentBgHost);
+        }
+        else
+        {
+            m_currentFgHost = m_currentFg;
+            m_currentBgHost = m_currentBg;
+        }
+    }
+    else
+    {
+        if (restore)
+        {
+            SetColors (m_currentFgLocal, m_currentBgLocal);
+        }
+        else
+        {
+            m_currentFgLocal = m_currentFg;
+            m_currentBgLocal = m_currentBg;
+        }
+    }
+
+}
+
 void PtermFrame::BootMtutor()
 {
     if (m_floppy0 && m_floppy0File.Length() > 0)
@@ -7586,6 +7638,7 @@ void PtermFrame::BootMtutor()
     {
         tracex("boot to mtutor");
     }
+    SaveRestoreColors (false, true);
 
     MicroEmulate;
 }

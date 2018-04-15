@@ -30,7 +30,7 @@
 #endif
 
 #define ResetProc Z80Reset
-#define MicroEmulate Z80Emulate(5000000)
+#define MicroEmulate Z80Emulate(500000000)
 
 #define RAM     m_context.memory
 
@@ -196,6 +196,8 @@ public:
 #endif
 
     wxColour GetColor (u16 loc);
+
+    void SaveRestoreColors (bool restore, bool terminal);
 
     wxPoint ForceValidStartPoint (long x, long y);
 
@@ -433,6 +435,12 @@ private:
     wxColour    m_defBg;
     wxColour    m_currentFg;
     wxColour    m_currentBg;
+
+    wxColour    m_currentFgHost;
+    wxColour    m_currentBgHost;
+    wxColour    m_currentFgLocal;
+    wxColour    m_currentBgLocal;
+
 
     bool        m_loadingPMD;
     wxString    m_PMD;
