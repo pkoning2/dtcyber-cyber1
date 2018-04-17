@@ -19,6 +19,18 @@
 #include "PtermApp.h"
 #include "PtermProfile.h"
 
+enum
+{
+    restore = 0,
+    save
+};
+
+enum
+{
+    micro = 0,
+    host
+};
+
 // Macro to include keyboard accelerator only if option enabled
 #define ACCELERATOR(x) + ((m_profile->m_useAccel) ? wxString (wxT (x)) : \
                           wxString (wxT ("")))
@@ -197,7 +209,7 @@ public:
 
     wxColour GetColor (u16 loc);
 
-    void SaveRestoreColors (bool restore, bool terminal);
+    void SaveRestoreColors (u8 action, u8 target);
 
     wxPoint ForceValidStartPoint (long x, long y);
 

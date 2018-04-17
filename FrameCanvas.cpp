@@ -2119,11 +2119,11 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
 
     if ( ppt_running && !in_r_exec )
     {
-        SaveRestoreColors (false, true);
-        SaveRestoreColors (true, false);
+        SaveRestoreColors (save, host);
+        SaveRestoreColors (restore, micro);
         MicroEmulate;
-        SaveRestoreColors (false, false);
-        SaveRestoreColors (true, true);
+        SaveRestoreColors (save, micro);
+        SaveRestoreColors (restore, host);
         return;
     }
 
@@ -2132,11 +2132,11 @@ void PtermFrame::OnIdle (wxIdleEvent& event)
     if (m_MReturnz80.IsRunning())
     {
         m_MReturnz80.Stop();
-        SaveRestoreColors (false, true);
-        SaveRestoreColors (true, false);
+        SaveRestoreColors (save, host);
+        SaveRestoreColors (restore, micro);
         MicroEmulate;
-        SaveRestoreColors (false, false);
-        SaveRestoreColors (true, true);
+        SaveRestoreColors (save, micro);
+        SaveRestoreColors (restore, host);
     }
 }
 
@@ -2155,11 +2155,11 @@ void PtermFrame::OnTimer (wxTimerEvent &)
 
     if (ppt_running && !in_r_exec)
     {
-        SaveRestoreColors (false, true);
-        SaveRestoreColors (true, false);
+        SaveRestoreColors (save, host);
+        SaveRestoreColors (restore, micro);
         MicroEmulate;
-        SaveRestoreColors (false, false);
-        SaveRestoreColors (true, true);
+        SaveRestoreColors (save, micro);
+        SaveRestoreColors (restore, host);
         return;
     }
 
@@ -2170,11 +2170,11 @@ void PtermFrame::OnTimer (wxTimerEvent &)
     if (m_MReturnz80.IsRunning())
     {
         m_MReturnz80.Stop();
-        SaveRestoreColors (false, true);
-        SaveRestoreColors (true, false);
+        SaveRestoreColors (save, host);
+        SaveRestoreColors (restore, micro);
         MicroEmulate;
-        SaveRestoreColors (false, false);
-        SaveRestoreColors (true, true);
+        SaveRestoreColors (save, micro);
+        SaveRestoreColors (restore, host);
     }
 }
 
@@ -2200,11 +2200,11 @@ void PtermFrame::OnDclock(wxTimerEvent &)
 // resume z80 execution after it gives up control to resident
 void PtermFrame::OnMz80(wxTimerEvent &)
 {
-    SaveRestoreColors (false, true);
-    SaveRestoreColors (true, false);
+    SaveRestoreColors (save, host);
+    SaveRestoreColors (restore, micro);
     MicroEmulate;
-    SaveRestoreColors (false, false);
-    SaveRestoreColors (true, true);
+    SaveRestoreColors (save, micro);
+    SaveRestoreColors (restore, host);
 }
 
 
@@ -7364,8 +7364,8 @@ int PtermFrame::check_pcZ80(void)
         trace ("R.EXEC");
         Mz80Waiter(RESIDENTMSEC);
         m_giveupz80 = true;
-        //SaveRestoreColors (false, false);
-        //SaveRestoreColors (true, true);
+        //SaveRestoreColors (save, micro);
+        //SaveRestoreColors (restore, host);
         return 1;
         
     case R_GJOB:
@@ -7537,12 +7537,11 @@ wxColour PtermFrame::GetColor (u16 loc)
     return color;
 }
 
-void PtermFrame::SaveRestoreColors (bool restore, bool terminal)
+void PtermFrame::SaveRestoreColors (u8 action, u8 target)
 {
-    //return;
-    if (terminal)
+    if (target == host)
     {
-        if (restore)
+        if (action == restore)
         {
             SetColors (m_currentFgHost, m_currentBgHost);
         }
@@ -7554,7 +7553,7 @@ void PtermFrame::SaveRestoreColors (bool restore, bool terminal)
     }
     else
     {
-        if (restore)
+        if (action == restore)
         {
             SetColors (m_currentFgLocal, m_currentBgLocal);
         }
@@ -7638,7 +7637,7 @@ void PtermFrame::BootMtutor()
     {
         tracex("boot to mtutor");
     }
-    SaveRestoreColors (false, true);
+    SaveRestoreColors (save, host);
 
     MicroEmulate;
 }
