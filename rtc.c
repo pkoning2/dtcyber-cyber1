@@ -392,7 +392,7 @@ static void rtcInit2(long setMHz)
             sleep (1);
             prev = rdtscll ();
             sleep (1);
-            now = rdtscll (now);
+            now = rdtscll ();
             hz = now - prev;
             }
 #endif  /* !__APPLE__ */
