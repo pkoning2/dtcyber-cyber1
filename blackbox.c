@@ -189,7 +189,7 @@ static void niuSendstr (int stat, const char *p)
     int c;
     
     fet = niuPorts.portVec[stat];
-    if (!dtActive (fet))
+    if (!dtConnected (fet))
         {
         return;
         }
@@ -272,7 +272,7 @@ static void niuSendWord(int stat, int word)
     u8 data[3];
 
     fet = niuPorts.portVec[stat];
-    if (!dtActive(fet))
+    if (!dtConnected(fet))
         {
         return;
         }
@@ -337,7 +337,7 @@ static void bbSendAscii (int stat)
     const char *setX = "\041\120";      // X = 48
     
     fet = niuAsciiPorts.portVec[stat];
-    if (!dtActive (fet))
+    if (!dtConnected (fet))
         {
         return;
         }

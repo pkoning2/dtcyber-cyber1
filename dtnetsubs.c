@@ -826,7 +826,7 @@ int dtSend (NetFet *fet, const void *buf, int len)
     /*
     ** Reject calls when connection is not open.
     */
-    if (!dtActive (fet) || fet->connFd == dtNC)
+    if (!dtConnected (fet) || fet->connFd == dtNC)
         {
         return ENOTCONN;
         }
@@ -1381,12 +1381,14 @@ static dtThreadFun (dtDataThread, param)
                 {
                 /*
                 **  Buffer is full.
-                **  Sleep 100 ms to let other threads see it and deal with it.
+                **  Sleep 10 ms to let other threads see it and deal with it.
+                **  Note: we want to sleep only briefly, otherwise when there
+                **  is a flood of traffic we may keep falling behind.
                 */
 #if defined(_WIN32)
-                Sleep (100);
+                Sleep (10);
 #else
-                usleep (1000000);
+                usleep (100000);
 #endif
                 }
             else if (bytes < 0)

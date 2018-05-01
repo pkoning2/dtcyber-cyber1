@@ -470,7 +470,7 @@ void operCheckRequests (void)
     for (i = 0; i < opConns; i++)
         {
         np = opPorts.portVec[i];
-        if (dtActive (np))
+        if (dtConnected (np))
             {
             opRequest (np);
             }
@@ -618,7 +618,7 @@ static void opCmdShutdown(char *cmdParams)
     for (i = 0; i < opConns; i++)
         {
         np = opPorts.portVec[i];
-        if (dtActive (np))
+        if (dtConnected (np))
             {
             dtSendTlv (np, OpReply, strlen (msgPtr), msgPtr);
             }
@@ -993,7 +993,7 @@ static void opDevlist(char *cmdParams)
     for (i = 0; i < opConns; i++)
         {
         np = opPorts.portVec[i];
-        if (dtActive (np))
+        if (dtConnected (np))
             {
             dtSendTlv (np, OpStatus, statusHdr.len, statusHdr.buf);
             for (j = 0; j < StatusLineMax; j++)
@@ -1038,7 +1038,7 @@ static void opConnlist(char *cmdParams)
     for (i = 0; i < opConns; i++)
         {
         np = opPorts.portVec[i];
-        if (dtActive (np))
+        if (dtConnected (np))
             {
             dtSendTlv (np, OpStatus, statusHdr.len, statusHdr.buf);
             ps = connlist;
@@ -1550,7 +1550,7 @@ static void opSendStatus (StatusData *sd)
     for (i = 0; i < opConns; i++)
         {
         np = opPorts.portVec[i];
-        if (dtActive (np))
+        if (dtConnected (np))
             {
             dtSendTlv (np, OpStatus, sd->len, sd->buf);
             }

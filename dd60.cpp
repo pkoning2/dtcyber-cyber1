@@ -18,7 +18,7 @@
 **  -----------------
 */
 
-#define NetBufSize      32768
+#define NetBufSize      65536
 
 #define STATUS_TRC      0
 #define STATUS_CONN     2
@@ -173,6 +173,19 @@ extern GtkSettings * gtk_settings_get_default (void);
 
 extern float mainDisplayScale (void);
 }
+
+#ifdef __AVX2__
+#define VECSIZE 32
+#else
+#ifdef __SSE2__
+#define VECSIZE 16
+#else
+#define VECSIZE 0
+#endif
+#endif
+#if VECSIZE
+typedef char bytevec __attribute__ ((vector_size (VECSIZE)));
+#endif
 
 // ----------------------------------------------------------------------------
 // resources
@@ -427,6 +440,10 @@ private:
     wxFont      m_traceFont;
     
     wxBoxSizer  *m_sizer;
+
+    // Other stuff
+    int sse2;
+    int avx2;
     
     // DD60 drawing primitives
     void dd60SetName (wxString &winName);
@@ -890,16 +907,25 @@ bool Dd60App::DoConnect (bool ask, double interval)
     return (frame != NULL);
 }
 
+#ifdef __AVX2__
+#define DD60_SSE L" with AVX2."
+#else
+#ifdef __SSE2__
+#define DD60_SSE L" with SSE2."
+#else
+#define DD60_SSE L"."
+#endif
+#endif
 void Dd60App::OnAbout(wxCommandEvent&)
 {
     wxAboutDialogInfo info;
 
     info.SetName (wxT ("DD60"));
     info.SetVersion (wxT ("V" DD60VERSION));
-    info.SetDescription (_("DtCyber console (DD60) emulator."
+    info.SetDescription (_("DtCyber console (DD60) emulator" DD60_SSE
                            L"\n  built with wxWidgets V" wxT (WXVERSION)
                            L"\n  build date " wxT(PTERMBUILDDATE)));
-    info.SetCopyright (wxT("(C) 2004-2014 by Paul Koning"));
+    info.SetCopyright (wxT("(C) 2004-2018 by Paul Koning"));
     info.AddDeveloper ("Paul Koning");
 
     wxAboutBox(info);
@@ -1053,6 +1079,9 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     
     trace_txt[0] = '\0';
 
+    sse2 = __builtin_cpu_supports ("sse2");
+    avx2 = __builtin_cpu_supports ("avx2");
+    
     // Calculate scale factors and sizes
     m_pscale = GetContentScaleFactor ();
     m_displaymargin = 20 * m_pscale;
@@ -1163,9 +1192,7 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     PixelData::Iterator p (*m_pixmap);
     u32 *pmap = (u32 *)(p.m_ptr);
     u8 *pb = (u8 *) pmap;
-    u32 t;
-    
-    t = *pmap;
+
     *pmap = 0;
     p.Alpha () = 255;
     m_maxalpha = *pmap;
@@ -1187,7 +1214,13 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     {
         if (pb[i]) m_blue = i;
     }
-    *pmap = t;
+    const int bytesperpixel = PixelData::Iterator::PixelFormat::SizePixel;
+    const int pixels = m_pixmap->GetWidth () * m_pixmap->GetHeight ();
+    const int wds = (pixels * bytesperpixel) / 4;
+    for (int i = 0; i < wds; i++)
+    {
+        *pmap++ = m_maxalpha;
+    }
     delete m_pixmap;
     m_pixmap = NULL;
     
@@ -1282,7 +1315,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     // In every case, let others see this event too.
     event.Skip ();
 
-    if (!dtActive (m_fet))
+    if (!dtConnected (m_fet))
     {
         m_statusBar->SetStatusText (_(" Not connected"), STATUS_CONN);
         return;
@@ -1314,7 +1347,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
 
     for (;;)
     {
-        if (!dtActive (m_fet))
+        if (!dtConnected (m_fet))
         {
             break;
         }
@@ -1378,7 +1411,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
                     *pmap = ((*pmap >> 1) & mask) | maxalpha;
                     ++pmap;
                 }
-            }       
+            }
 #else
             for (int pix = 0; pix < pixels; pix++)
             {
@@ -1878,9 +1911,8 @@ void Dd60Frame::procDd60Char (unsigned int d)
     int size = 0, margin, firstx, firsty, inc = 0, qwds = 0;
     u8 *data = 0;
     int i, j, k = 0;
-#ifdef __SSE2__
-    typedef char v16qi __attribute__ ((vector_size (16)));
-    v16qi *pmap, *pdata;
+#if VECSIZE
+    bytevec *pmap, *pdata;
 #endif
 
     if (d > 057)
@@ -1935,25 +1967,30 @@ void Dd60Frame::procDd60Char (unsigned int d)
         {
             // Position at the start of the scanline
             p.MoveTo (*m_pixmap, firstx, firsty + i);
-#ifdef __SSE2__
-            // SSE2 operations require 16 byte alignment.
+#if VECSIZE
+            // SSE2/AVX2 operations require 16 byte alignment.
             // The char data array is aligned, but the pixmap data
             // might not be, depending on the X coordinate low bits.
             // Also check that the character row is fully on-screen,
             // if not we'll paint it pixel by pixel.
-            if ((((uintptr_t) (p.m_ptr)) & 0x0f) == 0 &&
+            if (avx2 &&
+                (((uintptr_t) (p.m_ptr)) & 0x0f) == 0 &&
                 firstx >= 0 && firstx + size <= m_xsize)
             {
-                pmap = (v16qi *) (p.m_ptr);
-                pdata = (v16qi *) data;
-                for (j = 0; j < qwds; j++)
+                pmap = (bytevec *) (p.m_ptr);
+                pdata = (bytevec *) data;
+                for (j = 0; j < qwds / 2; j++)
                 {
                     // Make sure the pixel position is within the
                     // screen image bitmap
                     if (firstx + j * 2 >= 0 && firstx + j * 2 < m_xsize &&
                         firsty + i >= 0 && firsty + i < m_ysize)
                     {
+#if (VECSIZE==32)
+                        *pmap = __builtin_ia32_paddusb256 (*pmap, *pdata);
+#else
                         *pmap = __builtin_ia32_paddusb128 (*pmap, *pdata);
+#endif
                     }
                     ++pmap;
                     ++pdata;
@@ -2065,7 +2102,7 @@ void Dd60Frame::dd60SendKey(int key)
         wxLogMessage ("key to plato %03o", key);
 #endif
     }
-    if (dtActive (m_fet))
+    if (dtConnected (m_fet))
     {
         send (m_fet->connFd, &data, 1, 0);
     }
@@ -2257,6 +2294,7 @@ Dd60ConnDialog::Dd60ConnDialog (wxWindowID id, const wxString &title)
                                   0, NULL, 0, delayval);
     m_delayText->Append (wxT ("0"));
     m_delayText->Append (wxT ("0.06"));
+    m_delayText->Append (wxT ("0.1"));
     m_delayText->Append (wxT ("3.0"));
     
     fgs = new wxFlexGridSizer (2, 2, 8, 8);

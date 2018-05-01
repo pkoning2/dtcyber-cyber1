@@ -522,7 +522,7 @@ void DtoperFrame::connCallback (NetFet *fet, int, void *arg)
 {
     DtoperFrame *frame = (DtoperFrame *) arg;
 
-    if (!dtActive (fet))
+    if (!dtConnected (fet))
     {
         frame->cmdBuf[0] = '\0';
         frame->cmdLen = 0;

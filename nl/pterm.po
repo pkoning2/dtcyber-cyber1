@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-04-14 13:56-0400\n"
+"POT-Creation-Date: 2018-04-15 12:53-0400\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -149,7 +149,7 @@ msgstr "Bekijk afdrukvoorbeeld"
 msgid "Edit Profiles..."
 msgstr "Voorkeurbestanden..."
 
-#: FrameCanvas.cpp:1803 FrameCanvas.cpp:2004 FrameCanvas.cpp:3181
+#: FrameCanvas.cpp:1803 FrameCanvas.cpp:2004 FrameCanvas.cpp:3201
 #, fuzzy
 msgid "Session Settings..."
 msgstr "Verbindingsvoorkeuren..."
@@ -272,11 +272,11 @@ msgstr "Schermvullende weergave"
 msgid "Paste ASCII"
 msgstr "Voer tekst in"
 
-#: FrameCanvas.cpp:2074 FrameCanvas.cpp:3166
+#: FrameCanvas.cpp:2074 FrameCanvas.cpp:3186
 msgid " Booted from floppy"
 msgstr "Vanaf floppy opgestart"
 
-#: FrameCanvas.cpp:2079 FrameCanvas.cpp:2275
+#: FrameCanvas.cpp:2079 FrameCanvas.cpp:2295
 msgid " Not connected"
 msgstr "Niet verbonden"
 
@@ -284,50 +284,50 @@ msgstr "Niet verbonden"
 msgid " Connecting..."
 msgstr "Aan het verbinden..."
 
-#: FrameCanvas.cpp:2284
+#: FrameCanvas.cpp:2304
 #, c-format
 msgid "Connection failed @ %s on "
 msgstr "Verbinding mislukt om %s op "
 
-#: FrameCanvas.cpp:2289
+#: FrameCanvas.cpp:2309
 #, c-format
 msgid "Dropped connection @ %s on "
 msgstr "Verbinding verloren om %s op "
 
-#: FrameCanvas.cpp:2294
+#: FrameCanvas.cpp:2314
 #, c-format
 msgid "%s on "
 msgstr "%s naar "
 
-#: FrameCanvas.cpp:2687
+#: FrameCanvas.cpp:2707
 msgid "Can't copy image to the clipboard"
 msgstr "Kopiëren van het scherm naar het klembord mislukt."
 
-#: FrameCanvas.cpp:2693 FrameCanvas.cpp:2826 FrameCanvas.cpp:2989
+#: FrameCanvas.cpp:2713 FrameCanvas.cpp:2846 FrameCanvas.cpp:3009
 msgid "Can't open clipboard."
 msgstr "Openen van klembord mislukt."
 
-#: FrameCanvas.cpp:2833
+#: FrameCanvas.cpp:2853
 msgid "Can't copy text to the clipboard"
 msgstr "Kopiëren van tekst naar het klembord mislukt"
 
-#: FrameCanvas.cpp:2996
+#: FrameCanvas.cpp:3016
 msgid "No text data on clipboard"
 msgstr "Het klembord bevat geen tekst"
 
-#: FrameCanvas.cpp:3006
+#: FrameCanvas.cpp:3026
 msgid "Can't paste data from the clipboard"
 msgstr "Ophalen van gegevens van klembord mislukt"
 
-#: FrameCanvas.cpp:3045
+#: FrameCanvas.cpp:3065
 msgid "Save screen to"
 msgstr "Scherm opslaan in"
 
-#: FrameCanvas.cpp:3117
+#: FrameCanvas.cpp:3137
 msgid "Save GSW audio to"
 msgstr "GSW-audio opslaan in"
 
-#: FrameCanvas.cpp:3271
+#: FrameCanvas.cpp:3291
 msgid ""
 "There was a problem printing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -335,11 +335,11 @@ msgstr ""
 "Er was een probleem bij het afdrukken.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: FrameCanvas.cpp:3272
+#: FrameCanvas.cpp:3292
 msgid "Printing"
 msgstr "Afdrukken"
 
-#: FrameCanvas.cpp:3294
+#: FrameCanvas.cpp:3314
 msgid ""
 "There was a problem previewing.\n"
 "Perhaps your current printer is not set correctly?"
@@ -347,34 +347,34 @@ msgstr ""
 "Er was een probleem bij het maken van het afdrukvoorbeeld.\n"
 "Misschien is uw printer niet juist geinstalleerd?"
 
-#: FrameCanvas.cpp:3295
+#: FrameCanvas.cpp:3315
 msgid "Previewing"
 msgstr "Voorbeeld bekijken"
 
-#: FrameCanvas.cpp:3300
+#: FrameCanvas.cpp:3320
 msgid "Pterm Print Preview"
 msgstr "Pterm Afdrukvoorbeeld"
 
-#: FrameCanvas.cpp:6565
+#: FrameCanvas.cpp:6584
 #, fuzzy
 msgid "ASCII"
 msgstr "Voer tekst in"
 
-#: FrameCanvas.cpp:6569
+#: FrameCanvas.cpp:6588
 msgid "Classic"
 msgstr "Klassiek"
 
-#: FrameCanvas.cpp:6583
+#: FrameCanvas.cpp:6602
 #, fuzzy
 msgid " Trace | "
 msgstr " Traceren | "
 
-#: FrameCanvas.cpp:6598
+#: FrameCanvas.cpp:6617
 #, fuzzy
 msgid " PLATO keyboard | "
 msgstr " PLATO toetsenbord | "
 
-#: FrameCanvas.cpp:7107
+#: FrameCanvas.cpp:7126
 msgid " Program ended"
 msgstr "Programma is geëindigd"
 

@@ -491,7 +491,7 @@ CpWord pniOp (CPUVARGS1 (CpWord req))
                 for (i = 0; i < pniStations; i++)
                 {
                     pp = portVector + i;
-                    if (dtActive (pp->np))
+                    if (dtConnected (pp->np))
                     {
                         DEBUGPRINT ("Sending offmsg to station %d\n", IDX2STAT (i));
                         pniSendstr (IDX2STAT (i), OFF_MSG, 0);
@@ -597,7 +597,7 @@ CpWord pniOp (CPUVARGS1 (CpWord req))
     for (stat = 0; stat < stations; stat++)
     {
         pp = portVector + stat;
-        if (dtActive (pp->np))
+        if (dtConnected (pp->np))
         {
             pniActivateStation (stat);
         }
@@ -766,7 +766,7 @@ void pniCheck (void)
     {
         pp = portVector + port;
         np = pp->np;
-        if (!dtActive (np))
+        if (!dtConnected (np))
         {
             continue;
         }
@@ -1006,7 +1006,7 @@ CpWord pniConn (u32 stat)
     }
     mp = portVector + stat;
     fet = mp->np;
-    if (!dtActive (fet))
+    if (!dtConnected (fet))
     {
         return 0;
     }
@@ -1240,7 +1240,7 @@ static void pniWelcome(NetFet *np, int stat, void *arg)
     stat += sp->first;
     mp = portVector + STAT2IDX (stat);
     
-    if (!dtActive (np))
+    if (!dtConnected (np))
     {
         /*
         **  Connection was dropped.
@@ -1327,7 +1327,7 @@ static bool pniSendstr(int stat, const char *p, int len)
     }
     mp = portVector + STAT2IDX (stat);
     fet = mp->np;
-    if (dtActive (fet))
+    if (dtConnected (fet))
     {
 	    return (dtSend (fet, p, len) < 0);
     }

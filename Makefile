@@ -47,7 +47,8 @@ OSXMIN ?= 10.4
 endif
 CLANG := $(shell gcc --version 2>/dev/null| fgrep LLVM)
 ifneq ("$(CLANG)", "")
-ARCHCFLAGS ?= -arch i386 -arch x86_64
+AVX ?= -mavx2
+ARCHCFLAGS ?= -arch i386 -arch x86_64 $(AVX)
 ARCHLDFLAGS ?= -arch i386 -arch x86_64
 OSXVER ?= 10.9
 OSXMIN = 10.7
@@ -64,7 +65,7 @@ OSXMINFLG = -mmacosx-version-min=$(OSXMIN)
 endif
 ARCHLDFLAGS +=  $(OSXMINFLG) $(CXXLIB)
 ARCHCFLAGS  +=  $(OSXMINFLG) $(CXXLIB)
-ARCHCCFLAGS ?= $(ARCHLDFLAGS)
+ARCHCCFLAGS ?= $(ARCHCFLAGS) $(AVX)
 
 ifneq ("$(wildcard main.c)","")
 all: dtcyber Pterm.app dtoper.app dd60.app blackbox

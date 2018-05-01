@@ -948,7 +948,7 @@ static void checkImmediate (u8 *buf, int cnt)
         {
         mp = portVector + i;
         np = consolePorts.portVec[i];
-        if (!mp->stopped && dtActive (np) && mp->interval == 0)
+        if (!mp->stopped && dtConnected (np) && mp->interval == 0)
             {
             /*
             ** Process only displays that are connected, not stopped,
@@ -1208,12 +1208,23 @@ static void consoleReinitPoll (void)
 static void consoleSendFrame (NetFet *fet, int start, int end)
     {
 #ifdef DEBUG
-    printf ("%d ", (start > end) ? end + DispBufSize - start : end - start);
+        printf ("console send %d, free %d \n", (start > end) ? end + DispBufSize - start : end - start, dtSendFree(fet));
     fflush (stdout);
 #endif
 
     if (start > end)
         {
+        /* Don't attempt to send the frame if it won't all fit.  This
+         * ensures we won't get messed up output if the first part
+         * doesn't fit but the second part does; that might cause
+         * missing set-coordinate actions or the like resulting in
+         * text appearing in the wrong place or the wrong size.
+         */
+        const int len = end + DispBufSize - start;
+        if (len > dtSendFree (fet))
+            {
+            return;
+            }
         dtSend (fet, displayRing + start, DispBufSize - start);
         if (end > 0)
             {
@@ -1317,7 +1328,7 @@ static void consoleSendOutput (int start, int end)
         **  Always skip a display that is stopped or not connected,
         **  or wants all the data (because we sent that already).
         */
-        if (!mp->stopped && dtActive (np) && mp->interval != 0 &&
+        if (!mp->stopped && dtConnected (np) && mp->interval != 0 &&
             (sendToAll ||
              mp->sendNow ||
              us - mp->lastFrame >= mp->interval))

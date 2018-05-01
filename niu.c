@@ -471,7 +471,7 @@ CpWord niuConn (u32 stat)
         }
     mp = portVector + stat;
     fet = mp->np;
-    if (!dtActive (fet))
+    if (!dtConnected (fet))
         {
         return 0;
         }
@@ -669,7 +669,7 @@ static void niuInIo(void)
                 mp->sendLogout = FALSE;
                 break;
                 }
-            if (!dtActive (np))
+            if (!dtConnected (np))
                 {
                 if (port == lastInPort)
                     {
@@ -1177,7 +1177,7 @@ void niuSendWord(int stat, int word)
     
     mp = portVector + idx;
     fet = mp->np;
-    if (!dtActive (fet))
+    if (!dtConnected (fet))
         {
         return;
         }
