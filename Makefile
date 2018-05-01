@@ -66,8 +66,6 @@ ARCHLDFLAGS +=  $(OSXMINFLG) $(CXXLIB)
 ARCHCFLAGS  +=  $(OSXMINFLG) $(CXXLIB)
 ARCHCCFLAGS ?= $(ARCHLDFLAGS)
 
-.PHONY : dtcyber 
-
 ifneq ("$(wildcard main.c)","")
 all: dtcyber Pterm.app dtoper.app dd60.app blackbox
 else
