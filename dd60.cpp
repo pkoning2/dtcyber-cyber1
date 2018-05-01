@@ -1079,8 +1079,12 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     
     trace_txt[0] = '\0';
 
+#ifdef __SSE2__
     sse2 = __builtin_cpu_supports ("sse2");
     avx2 = __builtin_cpu_supports ("avx2");
+#else
+    sse2 = avx2 = 0;
+#endif
     
     // Calculate scale factors and sizes
     m_pscale = GetContentScaleFactor ();
