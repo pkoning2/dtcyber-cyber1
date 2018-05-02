@@ -669,7 +669,7 @@ static void niuInIo(void)
                 mp->sendLogout = FALSE;
                 break;
                 }
-            if (!dtConnected (np))
+            if (!dtActive (np))
                 {
                 if (port == lastInPort)
                     {

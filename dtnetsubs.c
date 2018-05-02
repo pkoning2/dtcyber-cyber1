@@ -339,17 +339,21 @@ int dtCreateThread (dtThreadFunPtr (fp), void *param, pthread_t *id)
 **  the PortVec entries is loaded with the data for the new connection.
 **  That data is the socket fd, and the remote IP address.
 **
-**  If a callback function pointer is specified, that callback function
-**  is called with the NetFet entry that was filled in, the portVec array
-**  index where that entry lives, and the callArg value.  The callback function
-**  is also called when the NetFet is closed; the two cases are
-**  distinguished by the fact that the connFd is non-zero if the connection
-**  is open, and zero if it is closed.
+**  If a callback function pointer is specified, that callback
+**  function is called with the NetFet entry that was filled in, the
+**  portVec array index where that entry lives, and the callArg value.
+**  The callback function is also called when the NetFet is closed;
+**  the two cases are distinguished by the fact that the connFd is
+**  non-zero if the connection is open, and zero if it is closed.
 **
-**  Similarly, if a data callback function pointer is specified, that callback
-**  function is called whenever the receive thread receives more data.
-**  The callback function is called with the FET pointer, the count of received
-**  bytes, and the dataCallArg value.
+**  Similarly, if a data callback function pointer is specified, that
+**  callback function is called whenever the receive thread receives
+**  more data.  The callback function is called with the FET pointer,
+**  the count of received bytes, and the dataCallArg value.  The data
+**  callback function is also called when the connection closes.  Note
+**  that this is not quite the same thing as the (connection)
+**  callback, which is called when the NetFet is closed, presumably in
+**  response to the connection loss.
 **
 **  Note that there currently is no "Close Portset" function, so the
 **  memory allocated by this function constitutes a (small) memory leak.
@@ -487,12 +491,16 @@ void dtClose (NetFet *fet, bool hard)
     */
     ps = fet->ps;
     fet->connected = FALSE;
+    /*
+    **  Do this before the callback so the callback function has the
+    **  correct number of open connections.
+    */
+    ps->curPorts--;
     if (ps->callBack != NULL)
         {
         (*ps->callBack) (fet, fet->psIndex, ps->callArg);
         }
     ps->portVec[fet->psIndex] = NULL;
-    ps->curPorts--;
     
     if (updateConnections != NULL)
         {
@@ -559,43 +567,6 @@ const char *dtNowString (void)
 #endif
     strcat (ts, us);
     return ts;
-    }
-
-/*--------------------------------------------------------------------------
-**  Purpose:        Read one byte from the network buffer
-**
-**  Parameters:     Name        Description.
-**                  fet         NetFet pointer
-**
-**  Returns:        -1 if no data available, or the next byte as
-**                  an unsigned value.
-**
-**------------------------------------------------------------------------*/
-int dtReado (NetFet *fet)
-    {
-    u8 *in, *out, *nextout;
-    u8 b;
-    
-    if (fet == NULL)
-        return -1;
-    /*
-    **  Copy the pointers, since they are volatile.
-    */
-    in = (u8 *) (fet->in);
-    out = (u8 *) (fet->out);
-
-    if (out == in)
-        {
-        return -1;
-        }
-    nextout = out + 1;
-    if (nextout == fet->end)
-        {
-        nextout = fet->first;
-        }
-    b = *out;
-    fet->out = nextout;
-    return b;
     }
 
 /*--------------------------------------------------------------------------
@@ -1141,7 +1112,6 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
 **
 **  Parameters:     Name        Description.
 **                  fet         NetFet pointer
-**                  ps          Pointer to NetPortSet to use
 **
 **  Returns:        >=0 if ok, value is count of bytes received
 **                  -1 if disconnected
@@ -1150,15 +1120,12 @@ NetFet * dtNewFet (int connFd, NetPortSet *ps, bool listen)
 **  This function waits for data or error.
 **
 **------------------------------------------------------------------------*/
-static int dtRead (NetFet *fet, NetPortSet *ps)
+static int dtRead (NetFet *fet)
     {
     int i;
     u8 *in, *out, *nextin;
     int size;
     
-#if defined(_WIN32)
-    (void) ps;     //  No Operation; Suppresses C4100 Compiler Warning
-#endif
     /*
     **  Copy the pointers, since they are volatile.
     */
@@ -1368,7 +1335,7 @@ static dtThreadFun (dtDataThread, param)
             /*
             **  Do we have any data?
             */
-            bytes = dtRead (np, ps);
+            bytes = dtRead (np);
 
             if (bytes == -1)
                 {
@@ -1399,8 +1366,14 @@ static dtThreadFun (dtDataThread, param)
                 break;
                 }
             }
-        
-        if (np->connected && ps->dataCallBack != NULL)
+
+        /*
+        **  Note that the callback also happens (with no data) if the
+        **  connection is lost.  Some clients of this API use that
+        **  case rather than (or in addition to) the connection change
+        **  callback.
+        */
+        if (ps->dataCallBack != NULL)
             {
             (*ps->dataCallBack) (np, bytes, ps->dataCallArg);
             }
@@ -1695,7 +1668,7 @@ NetFet * dtAcceptSocket (int connFd, NetPortSet *ps)
 static void dtCloseSocket (int connFd, bool hard)
     {
 #if defined(_WIN32)
-    hard;   //  Nop Operation; Suppress C4100 Compiler Warning
+    (void) hard;   //  Nop Operation; Suppress C4100 Compiler Warning
     closesocket (connFd);
 #else
     if (!hard)

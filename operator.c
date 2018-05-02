@@ -464,13 +464,14 @@ void operCheckRequests (void)
         }
     
     /*
-    **  Look for commands from any of the connected 
-    **  operator displays.
+    **  Look for commands from any of the open operator displays.
+    **  Note that the check for closed connection is in opRequest, so
+    **  we use dtActive and not dtConnected here.
     */
     for (i = 0; i < opConns; i++)
         {
         np = opPorts.portVec[i];
-        if (dtConnected (np))
+        if (dtActive (np))
             {
             opRequest (np);
             }

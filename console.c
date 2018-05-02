@@ -1208,7 +1208,7 @@ static void consoleReinitPoll (void)
 static void consoleSendFrame (NetFet *fet, int start, int end)
     {
 #ifdef DEBUG
-        printf ("console send %d, free %d \n", (start > end) ? end + DispBufSize - start : end - start, dtSendFree(fet));
+    printf ("console send %d, free %d \n", (start > end) ? end + DispBufSize - start : end - start, dtSendFree(fet));
     fflush (stdout);
 #endif
 
