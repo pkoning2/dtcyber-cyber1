@@ -1368,10 +1368,10 @@ static dtThreadFun (dtDataThread, param)
             }
 
         /*
-        **  Note that the callback also happens (with no data) if the
-        **  connection is lost.  Some clients of this API use that
-        **  case rather than (or in addition to) the connection change
-        **  callback.
+        **  Note that the callback also happens (with byte count -1)
+        **  if the connection is lost.  Some clients of this API use
+        **  that case rather than (or in addition to) the connection
+        **  change callback.
         */
         if (ps->dataCallBack != NULL)
             {
