@@ -31,6 +31,8 @@
 */
 #define MaxLine                 512
 
+static char svnrev[] = "$LastChangedRevision: 2380 $";
+
 #ifdef __LP64__
 #define WIDTH "64"
 #else
@@ -137,6 +139,8 @@ const intParam intParamList[] =
 **------------------------------------------------------------------------*/
 void initStartup(const char *config)
     {
+    char *rev, *rev2;
+    
     /*
     **  Open startup file.
     */
@@ -159,7 +163,27 @@ void initStartup(const char *config)
     /*
     **  Read and process cyber.ini file.
     */
-    printf("DtCyber (" WIDTH " bit build) by Tom Hunter, Paul Koning, \n Gerard J. v.d. Grinten, and Steve Peltz\n\n");
+    rev = strchr (svnrev, ' ');
+    if (rev == NULL)
+        {
+        rev = svnrev;
+        }
+    else
+        {
+        rev++;
+        rev2 = strchr (rev, ' ');
+        if (rev2 == NULL)
+            {
+            rev = svnrev;
+            }
+        else
+            {
+            *rev2 ='\0';
+            }
+        }
+    printf("DtCyber (" WIDTH " bit build) by Tom Hunter, Paul Koning, "
+           "\n Gerard J. v.d. Grinten, and Steve Peltz"
+           "\n SVN revision %s\n\n", rev);
     printf("Starting initialisation\n");
     initCyber(config);
     initDeadstart();
