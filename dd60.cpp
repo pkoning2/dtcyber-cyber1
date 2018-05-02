@@ -39,7 +39,7 @@
 
 // Display parameters
 #define DECAY           128         // decay per refresh, scaled by 256.
-#define DefaultInterval 0.06
+#define DefaultInterval 0.1
 #define DefRemoteInterval 3.0
 
 #if  defined(__WXMAC__)
@@ -76,6 +76,7 @@
 **  Private Macro Functions
 **  -----------------------
 */
+#ifdef DEBUG
 #define TRACEN(str)                                             \
     if (traceDd60)                                             \
         {                                                       \
@@ -93,6 +94,11 @@
         {                                                           \
             fprintf (traceF, str "\n", arg1, arg2);                       \
         }
+#else
+#define TRACEN(str)
+#define TRACE1(str, arg)
+#define TRACE2(str, arg1, arg2)
+#endif
 
 // ----------------------------------------------------------------------------
 // headers
@@ -450,7 +456,7 @@ private:
     void dd60SetStatus (wxString &str);
 
     void dd60LoadCharSize (int size, int tsize, u8 *vec);
-    void procDd60Char (unsigned int d);
+    inline void procDd60Char (unsigned int d);
     void dd60ShowTrace (bool enable);
     
     // any class wishing to process wxWindows events must use this macro
@@ -1079,12 +1085,8 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     
     trace_txt[0] = '\0';
 
-#ifdef __SSE2__
     sse2 = __builtin_cpu_supports ("sse2");
     avx2 = __builtin_cpu_supports ("avx2");
-#else
-    sse2 = avx2 = 0;
-#endif
     
     // Calculate scale factors and sizes
     m_pscale = GetContentScaleFactor ();
@@ -1225,8 +1227,6 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     {
         *pmap++ = m_maxalpha;
     }
-    delete m_pixmap;
-    m_pixmap = NULL;
     
     //printf ("%d %d %d %d\n", m_maxalpha, m_red, m_green, m_blue);
     
@@ -1304,6 +1304,147 @@ Dd60Frame::~Dd60Frame ()
     }
 }
 
+/*--------------------------------------------------------------------------
+**  Purpose:        Process DD60 character data
+**
+**  Parameters:     Name        Description.
+**                  d           character code
+**
+**  Returns:        nothing
+**
+**------------------------------------------------------------------------*/
+void Dd60Frame::procDd60Char (unsigned int d)
+{
+    int size = 0, margin, firstx, firsty, inc = 0, qwds = 0;
+    u8 *data = 0;
+    int i, j, k = 0;
+#if VECSIZE
+    bytevec *pmap, *pdata;
+#endif
+
+    if (d > 057)
+    {
+        printf ("procDd60Char: unexpected char %o\n", d);
+        return;
+    }
+    
+    switch (mode)
+    {
+    case Dd60Trace:
+        if (trace_idx >= sizeof (trace_txt) - 1)
+        {
+            return;
+        }
+        if (d == 0)
+        {
+            d = 055;
+        }
+        trace_txt[trace_idx++] = cdcToAscii[d];
+        trace_txt[trace_idx] = '\0';
+        return;
+    case Dd60CharSmall:
+    case Dd60Dot:
+        inc = 8;
+        size = CHAR8SIZE;
+        data = m_char8 + (d * 4 * CHAR8SIZE * CHAR8SIZE);
+        break;
+    case Dd60CharMedium:
+        inc = 16;
+        size = CHAR16SIZE;
+        data = m_char16 + (d * 4 * CHAR16SIZE * CHAR16SIZE);
+        break;
+    case Dd60CharLarge:
+        inc = 32;
+        size = CHAR32SIZE;
+        data = m_char32 + (d * 4 * CHAR32SIZE * CHAR32SIZE);
+        break;
+    }
+    // Margin is in screen units (not pixels)
+    margin = (size / m_pscale - inc) / 2;
+    qwds = size / 4;
+    
+    if (d != 0 && d != 055)
+    {
+        PixelData::Iterator p (*m_pixmap);
+    
+        firstx = xadjust (currentX - margin);
+        firsty = yadjust (currentY - (size / m_pscale - margin));
+    
+        for (i = 0; i < size; i++)
+        {
+            // Position at the start of the scanline
+            p.MoveTo (*m_pixmap, firstx, firsty + i);
+#if VECSIZE
+            // SSE2/AVX2 operations require 16 byte alignment.
+            // The char data array is aligned, but the pixmap data
+            // might not be, depending on the X coordinate low bits.
+            // Also check that the character row is fully on-screen,
+            // if not we'll paint it pixel by pixel.
+            if (avx2 &&
+                (((uintptr_t) (p.m_ptr)) & 0x0f) == 0 &&
+                firstx >= 0 && firstx + size <= m_xsize)
+            {
+                pmap = (bytevec *) (p.m_ptr);
+                pdata = (bytevec *) data;
+                for (j = 0; j < qwds / 2; j++)
+                {
+                    // Make sure the pixel position is within the
+                    // screen image bitmap
+                    if (firstx + j * 2 >= 0 && firstx + j * 2 < m_xsize &&
+                        firsty + i >= 0 && firsty + i < m_ysize)
+                    {
+#if (VECSIZE==32)
+                        *pmap = __builtin_ia32_paddusb256 (*pmap, *pdata);
+#else
+                        *pmap = __builtin_ia32_paddusb128 (*pmap, *pdata);
+#endif
+                    }
+                    ++pmap;
+                    ++pdata;
+                }
+                data += qwds * 16;
+            }
+            else
+#endif
+            for (j = 0; j < size; j++)
+            {
+                // Make sure the pixel position is within the
+                // screen image bitmap
+                if (firstx + j >= 0 && firstx + j < m_xsize &&
+                    firsty + i >= 0 && firsty + i < m_ysize)
+                {
+                    u8 &rp = p.Red ();
+                    u8 &gp = p.Green ();
+                    u8 &bp = p.Blue ();
+            
+                    k = rp + data[m_red];
+                    if (k > 255)
+                    {
+                        k = 255;
+                    }
+                    rp = k;
+                    k = gp + data[m_green];
+                    if (k > 255)
+                    {
+                        k = 255;
+                    }
+                    gp = k;
+                    k = bp + data[m_blue];
+                    if (k > 255)
+                    {
+                        k = 255;
+                    }
+                    bp = k;
+                }
+                ++p;
+                data += 4;
+            }
+        }
+    }
+    currentX = (currentX + inc) & 0777;
+}
+
+
 // event handlers
 
 void Dd60Frame::OnIdle (wxIdleEvent &event)
@@ -1342,8 +1483,6 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
         m_startBlock = true;
     }
     
-    m_pixmap = new PixelData (*m_screenmap);
-
 #if DEBUG || TIMING
     gettimeofday (&t, NULL);
     datacount = dtFetData (m_fet);
@@ -1351,11 +1490,6 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
 
     for (;;)
     {
-        if (!dtConnected (m_fet))
-        {
-            break;
-        }
-        
         if (pendingData != 0)
         {
             data = pendingData;
@@ -1516,8 +1650,6 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
             break;
         }
     }
-    delete m_pixmap;
-    m_pixmap = NULL;
     
     if (m_interval == Dd60FastRate + 0)
     {
@@ -1902,146 +2034,6 @@ void Dd60Frame::UpdateSettings (void)
 }
 
 /*--------------------------------------------------------------------------
-**  Purpose:        Process DD60 character data
-**
-**  Parameters:     Name        Description.
-**                  d           character code
-**
-**  Returns:        nothing
-**
-**------------------------------------------------------------------------*/
-void Dd60Frame::procDd60Char (unsigned int d)
-{
-    int size = 0, margin, firstx, firsty, inc = 0, qwds = 0;
-    u8 *data = 0;
-    int i, j, k = 0;
-#if VECSIZE
-    bytevec *pmap, *pdata;
-#endif
-
-    if (d > 057)
-    {
-        printf ("procDd60Char: unexpected char %o\n", d);
-        return;
-    }
-    
-    switch (mode)
-    {
-    case Dd60Trace:
-        if (trace_idx >= sizeof (trace_txt) - 1)
-        {
-            return;
-        }
-        if (d == 0)
-        {
-            d = 055;
-        }
-        trace_txt[trace_idx++] = cdcToAscii[d];
-        trace_txt[trace_idx] = '\0';
-        return;
-    case Dd60CharSmall:
-    case Dd60Dot:
-        inc = 8;
-        size = CHAR8SIZE;
-        data = m_char8 + (d * 4 * CHAR8SIZE * CHAR8SIZE);
-        break;
-    case Dd60CharMedium:
-        inc = 16;
-        size = CHAR16SIZE;
-        data = m_char16 + (d * 4 * CHAR16SIZE * CHAR16SIZE);
-        break;
-    case Dd60CharLarge:
-        inc = 32;
-        size = CHAR32SIZE;
-        data = m_char32 + (d * 4 * CHAR32SIZE * CHAR32SIZE);
-        break;
-    }
-    // Margin is in screen units (not pixels)
-    margin = (size / m_pscale - inc) / 2;
-    qwds = size / 4;
-    
-    if (d != 0 && d != 055)
-    {
-        PixelData::Iterator p (*m_pixmap);
-    
-        firstx = xadjust (currentX - margin);
-        firsty = yadjust (currentY - (size / m_pscale - margin));
-    
-        for (i = 0; i < size; i++)
-        {
-            // Position at the start of the scanline
-            p.MoveTo (*m_pixmap, firstx, firsty + i);
-#if VECSIZE
-            // SSE2/AVX2 operations require 16 byte alignment.
-            // The char data array is aligned, but the pixmap data
-            // might not be, depending on the X coordinate low bits.
-            // Also check that the character row is fully on-screen,
-            // if not we'll paint it pixel by pixel.
-            if (avx2 &&
-                (((uintptr_t) (p.m_ptr)) & 0x0f) == 0 &&
-                firstx >= 0 && firstx + size <= m_xsize)
-            {
-                pmap = (bytevec *) (p.m_ptr);
-                pdata = (bytevec *) data;
-                for (j = 0; j < qwds / 2; j++)
-                {
-                    // Make sure the pixel position is within the
-                    // screen image bitmap
-                    if (firstx + j * 2 >= 0 && firstx + j * 2 < m_xsize &&
-                        firsty + i >= 0 && firsty + i < m_ysize)
-                    {
-#if (VECSIZE==32)
-                        *pmap = __builtin_ia32_paddusb256 (*pmap, *pdata);
-#else
-                        *pmap = __builtin_ia32_paddusb128 (*pmap, *pdata);
-#endif
-                    }
-                    ++pmap;
-                    ++pdata;
-                }
-                data += qwds * 16;
-            }
-            else
-#endif
-            for (j = 0; j < size; j++)
-            {
-                // Make sure the pixel position is within the
-                // screen image bitmap
-                if (firstx + j >= 0 && firstx + j < m_xsize &&
-                    firsty + i >= 0 && firsty + i < m_ysize)
-                {
-                    u8 &rp = p.Red ();
-                    u8 &gp = p.Green ();
-                    u8 &bp = p.Blue ();
-            
-                    k = rp + data[m_red];
-                    if (k > 255)
-                    {
-                        k = 255;
-                    }
-                    rp = k;
-                    k = gp + data[m_green];
-                    if (k > 255)
-                    {
-                        k = 255;
-                    }
-                    gp = k;
-                    k = bp + data[m_blue];
-                    if (k > 255)
-                    {
-                        k = 255;
-                    }
-                    bp = k;
-                }
-                ++p;
-                data += 4;
-            }
-        }
-    }
-    currentX = (currentX + inc) & 0777;
-}
-
-/*--------------------------------------------------------------------------
 **  Purpose:        Display visual indication of trace status
 **
 **  Parameters:     Name        Description.
@@ -2057,6 +2049,7 @@ void Dd60Frame::procDd60Char (unsigned int d)
 **------------------------------------------------------------------------*/
 void Dd60Frame::dd60SetTrace (bool fileaction)
 {
+#ifdef DEBUG
     if (!traceDd60)
     {
         if (fileaction)
@@ -2074,6 +2067,7 @@ void Dd60Frame::dd60SetTrace (bool fileaction)
         }
     }
     dd60ShowTrace (traceDd60);
+#endif
 }
 
 /*
@@ -2297,7 +2291,6 @@ Dd60ConnDialog::Dd60ConnDialog (wxWindowID id, const wxString &title)
                                   wxDefaultPosition, wxSize (75, -1),
                                   0, NULL, 0, delayval);
     m_delayText->Append (wxT ("0"));
-    m_delayText->Append (wxT ("0.06"));
     m_delayText->Append (wxT ("0.1"));
     m_delayText->Append (wxT ("3.0"));
     
@@ -2457,10 +2450,27 @@ Dd60Canvas::Dd60Canvas(Dd60Frame *parent)
 
 void Dd60Canvas::OnDraw(wxDC &dc)
 {
+#if TIMING
+    struct timeval t, t2;
+    int dt, dut;
+
+    gettimeofday (&t, NULL);
+#endif
     dc.SetUserScale (1. / m_owner->m_pscale, 1. / m_owner->m_pscale);
     dc.DrawBitmap (*m_owner->m_screenmap, 0, 0, false);
     dc.SetFont (m_owner->m_traceFont);
     dc.DrawText (wxString::FromAscii (m_owner->trace_txt), TraceX, TraceY);
+#if TIMING
+    gettimeofday (&t2, NULL);
+    dt = t2.tv_sec - t.tv_sec;
+    dut = t2.tv_usec - t.tv_usec;
+    if (dut < 0)
+    {
+        dut += 1000000;
+        dt--;
+    }
+    printf ("OnDraw in %d.%06d seconds\n", dt, dut);
+#endif
 }
 
 void Dd60Canvas::OnEraseBackground (wxEraseEvent &)

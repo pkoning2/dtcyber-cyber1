@@ -25,7 +25,6 @@ int dtSend(NetFet *fet, const void *buf, int len);
 NetFet * dtBind(NetPortSet *ps, in_addr_t host, int port, int backlog);
 NetFet * dtAccept(NetFet *listenFet, NetPortSet *ps);
 
-int dtReado(NetFet *fet);
 int dtReadoi(NetFet *fet, int *outidx);
 int dtReadw(NetFet *fet, void *buf, int len);
 int dtPeekw(NetFet *fet, void *buf, int len);
@@ -58,10 +57,47 @@ int dtReadtlv(NetFet *fet, void *buf, int len);
 #define dtActive(fet) \
     ((fet) != NULL && (fet)->closing == 0)
 #define dtConnected(fet) \
-    (dtActive (fet) &&(fet)->connected)
+    (dtActive (fet) && (fet)->connected)
 
 /* This goes with dtReadoi */
 #define dtUpdateOut(fet,outidx) \
     (fet)->out = (outidx) + fet->first
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Read one byte from the network buffer
+**
+**  Parameters:     Name        Description.
+**                  fet         NetFet pointer
+**
+**  Returns:        -1 if no data available, or the next byte as
+**                  an unsigned value.
+**
+**------------------------------------------------------------------------*/
+static inline int dtReado (NetFet *fet)
+    {
+    u8 *in, *out, *nextout;
+    u8 b;
+    
+    if (fet == NULL)
+        return -1;
+    /*
+    **  Copy the pointers, since they are volatile.
+    */
+    in = (u8 *) (fet->in);
+    out = (u8 *) (fet->out);
+
+    if (out == in)
+        {
+        return -1;
+        }
+    nextout = out + 1;
+    if (nextout == fet->end)
+        {
+        nextout = fet->first;
+        }
+    b = *out;
+    fet->out = nextout;
+    return b;
+    }
 
 #endif /* DTNETSUBS_H */
