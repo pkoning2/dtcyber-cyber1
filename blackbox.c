@@ -40,6 +40,9 @@ long platoConns = 128;
 long platoPort = 5004;
 long asciiConns = 64;
 long asciiPort = 8005;
+long chmConns = 32;
+long chmPort = 5050;
+long chmAsciiPort = 8050;
 bool emulationActive = TRUE;
 
 int currentY = 128;
@@ -47,6 +50,8 @@ char *msg;
 
 static NetPortSet niuPorts;
 static NetPortSet niuAsciiPorts;
+static NetPortSet niuChmPorts;
+static NetPortSet niuChmAsciiPorts;
 
 static void niuSendstr(int stat, const char *p);
 static void niuSendWord(int stat, int word);
@@ -101,6 +106,16 @@ int main (int argc, char **argv)
     niuAsciiPorts.localOnly = FALSE;
     niuAsciiPorts.dataCallBack = ignoreData;
     niuAsciiPorts.ringSize = niuAsciiPorts.sendRingSize = 1024;
+    niuChmPorts.portNum = chmPort;
+    niuChmPorts.maxPorts = chmConns;
+    niuChmPorts.localOnly = FALSE;
+    niuChmPorts.dataCallBack = ignoreData;
+    niuChmPorts.ringSize = niuChmPorts.sendRingSize = 1024;
+    niuChmAsciiPorts.portNum = chmAsciiPort;
+    niuChmAsciiPorts.maxPorts = chmConns;
+    niuChmAsciiPorts.localOnly = FALSE;
+    niuChmAsciiPorts.dataCallBack = ignoreData;
+    niuChmAsciiPorts.ringSize = niuChmAsciiPorts.sendRingSize = 1024;
     
     printf ("Current message is: '%s'\n", msg);
     if (detflag)
@@ -128,14 +143,16 @@ int main (int argc, char **argv)
     
     dtInitPortset (&niuPorts);
     dtInitPortset (&niuAsciiPorts);
+    dtInitPortset (&niuChmPorts);
+    dtInitPortset (&niuChmAsciiPorts);
 
     for (;;)
         {
-        for (stat = 0; stat < platoConns; stat++)
+        for (stat = 0; stat < platoConns + chmConns; stat++)
             {
             bbSendNiu (stat);
             }
-        for (stat = 0; stat < asciiConns; stat++)
+        for (stat = 0; stat < asciiConns + chmConns; stat++)
             {
             bbSendAscii (stat);
             }
@@ -182,17 +199,10 @@ int main (int argc, char **argv)
 **------------------------------------------------------------------------*/
 static void niuSendstr (int stat, const char *p)
     {
-    NetFet *fet;
     int cc = 2;
     int w = 017720;
     bool shift = FALSE;
     int c;
-    
-    fet = niuPorts.portVec[stat];
-    if (!dtConnected (fet))
-        {
-        return;
-        }
     
     while ((c = *p++) != 0)
         {
@@ -271,7 +281,14 @@ static void niuSendWord(int stat, int word)
     NetFet *fet;
     u8 data[3];
 
-    fet = niuPorts.portVec[stat];
+    if (stat < chmConns)
+        {
+        fet = niuChmPorts.portVec[stat];
+        }
+    else
+        {
+        fet = niuPorts.portVec[stat - chmConns];
+        }
     if (!dtConnected(fet))
         {
         return;
@@ -298,6 +315,12 @@ static void ignoreData (NetFet *np, int bytes, void *arg)
     {
     /* Discard all received data */
     np->out = np->in;
+
+    /* If connection was closed, close the NetFet */
+    if (!dtConnected (np))
+        {
+        dtClose (np, TRUE);
+        }
     }
 
 /*--------------------------------------------------------------------------
@@ -336,7 +359,14 @@ static void bbSendAscii (int stat)
     char setY[2];
     const char *setX = "\041\120";      // X = 48
     
-    fet = niuAsciiPorts.portVec[stat];
+    if (stat < chmConns)
+        {
+        fet = niuChmAsciiPorts.portVec[stat];
+        }
+    else
+        {
+        fet = niuAsciiPorts.portVec[stat - chmConns];
+        }
     if (!dtConnected (fet))
         {
         return;
