@@ -81,7 +81,6 @@ public:
     bool        m_TutorColor;
     bool        m_trimEnd;
     //tab6
-    wxString    m_Email;      
     wxString    m_SearchURL;
     bool        m_mTutorBoot;
     bool        m_floppy0;

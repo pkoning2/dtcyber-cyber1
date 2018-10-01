@@ -116,7 +116,6 @@ void PtermProfile::init (void)
     m_TutorColor = false;
     m_trimEnd = true;
     //tab6
-    m_Email = wxT ("");
     m_SearchURL = DEFAULTSEARCH;
     m_mTutorBoot = false;
     m_floppy0 = false;
@@ -261,8 +260,6 @@ bool PtermProfile::LoadProfile (void)
                 m_trimEnd       = (value.Cmp (wxT ("1")) == 0);
 
             //tab6
-            else if (token.Cmp (wxT (PREF_EMAIL)) == 0)
-                m_Email         = value;
             else if (token.Cmp (wxT (PREF_SEARCHURL)) == 0)
                 m_SearchURL     = value;
             else if (token.Cmp(wxT(PREF_MTUTORBOOT)) == 0)
@@ -397,8 +394,6 @@ bool PtermProfile::SaveProfile (void)
     buffer.Printf (wxT (PREF_TRIMEND) wxT ("=%d"), (m_trimEnd) ? 1 : 0);
     file.AddLine (buffer);
     //tab6
-    buffer.Printf (wxT (PREF_EMAIL) wxT ("=%s"), m_Email);
-    file.AddLine (buffer);
     buffer.Printf (wxT (PREF_SEARCHURL) wxT ("=%s"), m_SearchURL);
     file.AddLine (buffer);
     buffer.Printf(wxT(PREF_MTUTORBOOT) wxT("=%d"), (m_mTutorBoot) ? 1 : 0);

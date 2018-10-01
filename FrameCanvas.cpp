@@ -1454,7 +1454,6 @@ PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
     m_TutorColor = profile->m_TutorColor;
     m_trimEnd = profile->m_trimEnd;
     //tab6
-    m_Email = profile->m_Email;
     m_SearchURL = profile->m_SearchURL;
 
     m_mtutorBoot = profile->m_mTutorBoot;
@@ -2865,7 +2864,6 @@ void PtermFrame::OnExec (wxCommandEvent &)
 
 void PtermFrame::OnMailTo (wxCommandEvent &)
 {
-    wxString l_Email;
     wxString l_FixText;
     wxString newchr;
     wxString pnt;
@@ -2911,8 +2909,8 @@ void PtermFrame::OnMailTo (wxCommandEvent &)
         if (newchr != '*')
             l_FixText += newchr;
     }
-    l_Email.Printf (m_Email, l_FixText);
-    wxExecute (l_Email);
+    wxLaunchDefaultBrowser ("mailto:" + l_FixText,
+                            wxBROWSER_NEW_WINDOW | wxBROWSER_NOBUSYCURSOR);
 }
 
 void PtermFrame::OnSearchThis (wxCommandEvent &)
@@ -3247,7 +3245,6 @@ void PtermFrame::UpdateSessionSettings (void)
     }
     m_trimEnd = m_profile->m_trimEnd;
     //tab6
-    m_Email = m_profile->m_Email;
     m_SearchURL = m_profile->m_SearchURL;
 
     m_floppy0 = m_profile->m_floppy0;
@@ -6946,11 +6943,15 @@ void PtermFrame::UpdateRegion (int x, int y, int mouseX, int mouseY)
         menuBar->Enable (Pterm_Copy, (m_regionWidth > 0));
         menuBar->Enable (Pterm_Exec, (m_regionWidth > 0)); 
         menuBar->Enable (Pterm_MailTo, (m_regionWidth > 0)); 
-        menuBar->Enable (Pterm_SearchThis, (m_regionWidth > 0)); 
+        // This one is enabled only if (a) there is a region, and (b)
+        // the search URL is set.
+        menuBar->Enable (Pterm_SearchThis,
+                         m_regionWidth > 0 && !m_SearchURL.IsEmpty ()); 
         menuPopup->Enable (Pterm_Copy, (m_regionWidth > 0));
         menuPopup->Enable (Pterm_Exec, (m_regionWidth > 0)); 
         menuPopup->Enable (Pterm_MailTo, (m_regionWidth > 0)); 
-        menuPopup->Enable (Pterm_SearchThis, (m_regionWidth > 0)); 
+        menuPopup->Enable (Pterm_SearchThis,
+                           m_regionWidth > 0 && !m_SearchURL.IsEmpty ()); 
         debug ("region %d %d size %d %d", m_regionX, m_regionY,
                m_regionWidth, m_regionHeight);
         m_canvas->Refresh (false);

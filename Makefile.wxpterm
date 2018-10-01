@@ -181,6 +181,7 @@ ifneq ("$(SDLFW)", "")
 	rm -rf Pterm.app/Contents/Frameworks/$(SDLFW).framework/Headers
 	rm -rf Pterm.app/Contents/Frameworks/$(SDLFW).framework/Versions/Current/Headers
 endif
+	codesign --deep -s ni1d Pterm.app
 
 pterm-empty.dmg:
 	hdiutil create -size 32m pterm-empty.dmg -layout NONE

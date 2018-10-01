@@ -153,7 +153,6 @@
 #define PREF_TRIMEND     "TrimEnd"
 
 //tab6
-#define PREF_EMAIL       "EmailClient"
 #define PREF_SEARCHURL   "SearchURL"
 #define PREF_MTUTORBOOT  "MTUTORBOOT"
 #define PREF_FLOPPY0M    "FLOPPY0M"

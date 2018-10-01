@@ -117,3 +117,10 @@ View->Save location now is invoked.
 
 Send SHIFT-STOP to both microTUTOR and host when microTUTOR is
 running.
+
+V6.0.4, October 2018 (GA release):
+
+Bugfixes.
+
+Removed "Mail command" preference setting.  Mail is now always
+available, implemented by opening the "mailto:" URL.

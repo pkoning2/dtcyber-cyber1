@@ -111,7 +111,6 @@ public:
     wxCheckBox *chkTutorColor;
     wxCheckBox *chkTrimEnd;
     //tab6
-    wxTextCtrl *txtEmail;
     wxTextCtrl *txtSearchURL;
     wxCheckBox *chkMTutorBoot;
     wxRadioBox *radMTutor;

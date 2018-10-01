@@ -100,7 +100,6 @@ void PtermPrefDialog::PtermInitDialog (void)
     wxStaticText* lblAutoNewLine2;
     //tab6
     wxScrolledWindow* tab6;
-    wxStaticText* lblEmail;
     wxStaticText* lblSearchURL;
     wxStaticText* lblMTUTOR;
     wxStaticText* lblFloppy0;
@@ -606,15 +605,6 @@ void PtermPrefDialog::PtermInitDialog (void)
     page6 = new wxFlexGridSizer (0, 1, 0, 0);
     page6->AddGrowableCol (0);
     page6->SetFlexibleDirection (wxBOTH);
-    lblEmail = new wxStaticText (tab6, wxID_ANY,
-                                 _("Command line for menu option 'Mail to...' (%s=address)"),
-                                 wxDefaultPosition, wxDefaultSize, 0);
-    page6->Add (lblEmail, 0, wxALL | wxALIGN_BOTTOM, 5);
-    txtEmail = new wxTextCtrl (tab6, wxID_ANY, wxT (""), wxDefaultPosition,
-                               wxDefaultSize, 0 | wxTAB_TRAVERSAL);
-    txtEmail->SetMaxLength (255); 
-    txtEmail->SetFont (dfont);
-    page6->Add (txtEmail, 0, wxALL | wxEXPAND, 5);
     lblSearchURL = new wxStaticText (tab6, wxID_ANY,
                                      _("Specify URL for menu option 'Search this...'"),
                                      wxDefaultPosition, wxDefaultSize, 0);
@@ -864,7 +854,6 @@ void PtermPrefDialog::SetControlState (void)
     chkTrimEnd->SetValue (m_profile->m_trimEnd);
 
     //tab6
-    txtEmail->SetValue (m_profile->m_Email);
     txtSearchURL->SetValue (m_profile->m_SearchURL);
     if (m_profileEdit)
         chkMTutorBoot->SetValue(m_profile->m_mTutorBoot);
@@ -1271,8 +1260,6 @@ void PtermPrefDialog::OnChange (wxCommandEvent& event)
     else if (event.GetEventObject () == txtLineDelay)
         txtLineDelay->GetLineText (0).ToCLong (&m_profile->m_lineDelay);
     //tab6
-    else if (event.GetEventObject () == txtEmail)
-        m_profile->m_Email = txtEmail->GetLineText (0);
     else if (event.GetEventObject () == txtSearchURL)
         m_profile->m_SearchURL = txtSearchURL->GetLineText (0);
     else if (m_profileEdit)
