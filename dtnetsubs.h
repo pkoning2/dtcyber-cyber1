@@ -73,7 +73,7 @@ int dtReadtlv(NetFet *fet, void *buf, int len);
 **                  an unsigned value.
 **
 **------------------------------------------------------------------------*/
-static inline int dtReado (NetFet *fet)
+static __inline int dtReado (NetFet *fet)
     {
     u8 *in, *out, *nextout;
     u8 b;
