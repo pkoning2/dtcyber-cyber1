@@ -1,0 +1,12 @@
+[Unit]
+Description=Internet Site Controller for port ttyS0
+After=syslog.target network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/isc /dev/ttyS0 --log-file /var/log/isc.log --keep 3 --daemon
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
