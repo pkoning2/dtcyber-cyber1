@@ -166,7 +166,7 @@ class tocyber (StopThread):
     def run (self):
         """Read from the terminal and send to the socket.
         """
-        self.term.setTimeout (IOTIMEOUT)
+        self.term.timeout = IOTIMEOUT
         while not self.stopnow:
             data = self.term.read ()
             if data:
@@ -251,7 +251,7 @@ def getaction (term):
     False otherwise.
     """
     logging.debug ("Starting local interaction")
-    term.setTimeout (LOCALTIMEOUT)
+    term.timeout = LOCALTIMEOUT
     while True:
         pressnext (term)
         c = term.read (1)
