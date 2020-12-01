@@ -9,14 +9,7 @@ then restarts PLATO.  It then sends the backup to the local backup
 data server and to akdesign.dyndns.org (Paul Koning's system).
 """
 
-# User/group and password to use for system shutdown.  This is
-# expected to be a student record, with its current lesson set
-# to "sysopts" (the lesson used by "1" from author mode).
-# Password can be a string, or None to fetch the password from
-# a separate file.  The latter is preferred for security, it allows
-# the password string to be more tightly protected.
-
-# More parameters
+# Parameters
 SHUTDOWNDELAY = 15        # minutes from first warning to shutdown
 FALLBACKDELAY = 60        # minutes to be down for PDT to PST time zone change
 BACKUPITEMS = ("pack", "sys/871")
@@ -97,12 +90,11 @@ def startui ():
             log ("PLATO is not running")
             platoup = False
             break
-        if i < 3:
-            time.sleep (2)
-        else:
-            log ("Failed to connect to Mastor K display")
-            cons.stop ()
-            sys.exit (1)
+        time.sleep (2)
+    else:
+        log ("Failed to connect to Mastor K display")
+        cons.stop ()
+        sys.exit (1)
 
     # Start the CONSOLE utility and get us into sysopts (1)
     if platoup:
@@ -126,12 +118,11 @@ def doshutdown (cons, platoup, delay, tzdelay, newtz):
         for i in range (10):
             if system in cons.screen[0][8]:
                 break
-            if i < 9:
-                time.sleep (2)
-            else:
-                log ("Failed to start sysopts")
-                cons.stop ()
-                sys.exit (1)
+            time.sleep (2)
+        else:
+            log ("Failed to start sysopts")
+            cons.stop ()
+            sys.exit (1)
 
         # First step: put up a 1st line message and broadcast that.
         # Repeat every 5 minutes until we've done the delay
@@ -163,12 +154,11 @@ def doshutdown (cons, platoup, delay, tzdelay, newtz):
         for i in range (20):
             if system in cons.screen[0][8]:
                 break
-            if i < 19:
-                time.sleep (2)
-            else:
-                log ("Backout did not complete")
-                cons.stop ()
-                sys.exit (1)
+            time.sleep (2)
+        else:
+            log ("Backout did not complete")
+            cons.stop ()
+            sys.exit (1)
 
         # If we need a timezone change, set the new timezone now so that
         # upon restart it will be what we want it to be.
@@ -183,10 +173,9 @@ def doshutdown (cons, platoup, delay, tzdelay, newtz):
                 if ipedit1 in cons.screen[0][4]:
                     ok = True
                     break
-                if i < 9:
-                    time.sleep (2)
-                else:
-                    log ("Failed to start ipedit")
+                time.sleep (2)
+            else:
+                log ("Failed to start ipedit")
             if ok:
                 cons.sendstr ("c")
                 cons.wait_update ()
@@ -195,10 +184,9 @@ def doshutdown (cons, platoup, delay, tzdelay, newtz):
                     if ipedit2 in cons.screen[0][24]:
                         ok = True
                         break
-                    if i < 9:
-                        time.sleep (2)
-                    else:
-                        log ("Failed to reach timezone page in ipedit")
+                    time.sleep (2)
+                else:
+                    log ("Failed to reach timezone page in ipedit")
             if ok:
                 cons.sendstr (newtz)
                 cons.sendkey (cons.NEXT)
@@ -219,10 +207,9 @@ def doshutdown (cons, platoup, delay, tzdelay, newtz):
         for i in range (10):
             if nojsn in cons.screen[0][9]:
                 break
-            if i < 9:
-                time.sleep (2)
-            else:
-                log ("Mastor did not stop")
+            time.sleep (2)
+        else:
+            log ("Mastor did not stop")
 
     # See if there is any other non-subsystem job,
     # which is likely to be cftp
@@ -242,7 +229,8 @@ def doshutdown (cons, platoup, delay, tzdelay, newtz):
     # stop-dtcyber.py
     cons.stop ()
     log ("Shutting down DtCyber")
-    subprocess.call (("systemctl", "stop", "dtcyber"), 
+    subprocess.call (("systemctl", "stop", "dtcyber"),
+                     stderr = subprocess.STDOUT,
                      universal_newlines = True)
     log ("Shut down complete")
     
@@ -251,16 +239,19 @@ def dostartup ():
     """
     log ("Starting DtCyber and PLATO")
     subprocess.call (("systemctl", "start", "dtcyber"),
+                     stderr = subprocess.STDOUT,
                      universal_newlines = True)
     time.sleep (5)
     pterm = dtscript.Pterm ()
     for i in range (50):
         if "Press  NEXT  to begin" in str (pterm):
+            log ("PLATO is ready")
             break
         log ("Waiting for PLATO ready, %d" % i)
         time.sleep (10)
+    else:
+        log ("PLATO failed to start")
     pterm.stop ()
-    log ("PLATO is ready")
 
 class Blackbox (subprocess.Popen):
     """A specialization of subprocess for the blackbox utility.
@@ -283,10 +274,9 @@ class Blackbox (subprocess.Popen):
             if self.poll () is not None:
                 break
             log ("Waiting for blackbox to exit")
-            if i < 9:
-                time.sleep (2)
-            else:
-                os.kill (self.pid, 9)
+            time.sleep (2)
+        else:
+            os.kill (self.pid, 9)
         log ("Blackbox stopped")
                 
 class Backup (subprocess.Popen):
@@ -344,12 +334,11 @@ def checktz (cons, newtz):
         m = _time_re.search (cons.screentext (0))
         if m:
             break
-        if i < 9:
-            time.sleep (2)
-        else:
-            log ("Time string not found in checktz, screen is:")
-            log (cons.screentext (0))
-            return 0
+        time.sleep (2)
+    else:
+        log ("Time string not found in checktz, screen is:")
+        log (cons.screentext (0))
+        return 0
     curtz = m.group (1)
     if curtz == newtz:
         log ("Time zone is up to date")
