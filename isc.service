@@ -4,6 +4,7 @@ After=syslog.target network.target
 
 [Service]
 Type=simple
+PIDFile=ppt.pid
 ExecStart=/usr/local/bin/isc /dev/ttyS0 --log-file /var/log/isc.log --keep 3 --daemon
 Restart=always
 
