@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """This script scans for print files created by the "separate" option
 in cyber.ini.  In a typical setup, this script is invoked by a system
@@ -36,8 +36,8 @@ import os
 import time
 import re
 import smtplib
-import email.Message
-import email.MIMEText
+import email.message
+import email.mime.text
 
 global MAILHOST
 MAILHOST = "localhost"
@@ -62,33 +62,33 @@ def dofile (name):
     """
     try:
         inf = open (name, "r")
-    except OSError, err:
-        print "Error opening %s: %s" % (name, err.strerror)
+    except OSError as err:
+        print ("Error opening %s: %s" % (name, err.strerror))
         return
     text = inf.readlines ()
     inf.close ()
     if "".join (text[:20]).find ("USER NAME =  ") != -1:
-        print name, "is a system job printout, saved to dumps"
+        print (name, "is a system job printout, saved to dumps")
         #os.remove (name)
         os.rename (name, os.path.join ("dumps", name))
         return
     if text[-1].find ("UCLP,") == -1:
-        print name, "appears to be an incomplete printout"
+        print (name, "appears to be an incomplete printout")
         os.rename (name, os.path.join ("misc", name))
         return
     if dump_re.match (text[-2]):
-        print name, "saved in dumps"
+        print (name, "saved in dumps")
         os.rename (name, os.path.join ("dumps", name))
         return
     tail = iter (text[-40:])
     try:
         while True:
-            line = tail.next ()
+            line = next (tail)
             tm = tprint_re.search (line)
             if tm:
                 params = tm.groupdict ()
                 notify = False
-                line = tail.next ()
+                line = next (tail)
                 m = notify_re.search (line)
                 if m:
                     notify = True
@@ -97,25 +97,25 @@ def dofile (name):
                         subject = subjects[action]
                         desc = descriptions[action]
                     except KeyError:
-                        print "Unrecognized notification type %s in %s" % (action, name)
+                        print ("Unrecognized notification type %s in %s" % (action, name))
                         os.rename (name, os.path.join ("misc", name))
                         return
                 elif line.find ("*** mail to ***") == -1:
-                    print "mail to section not found when expected in", name
+                    print ("mail to section not found when expected in", name)
                     os.rename (name, os.path.join ("printed", name))
                     return
-                line = tail.next ()
+                line = next (tail)
                 mm = mailto_re.search (line)
                 if not mm:
-                    print "mail-to address not found in", name
+                    print ("mail-to address not found in", name)
                     os.rename (name, os.path.join ("printed", name))
                     return
                 mailto = mm.group (1)
                 if line.find ("@") == -1:
-                    print "mail-to address", mailto, " appears invalid, in", name
+                    print ("mail-to address", mailto, " appears invalid, in", name)
                     os.rename (name, os.path.join ("printed", name))
                     return
-                msg = email.Message.Message ()
+                msg = email.message.Message ()
                 if notify:
                     msg.add_header ("From", "\"Cyber1\" <postmaster@cyberserv.org>")
                 else:
@@ -130,9 +130,9 @@ def dofile (name):
                     msg.add_header ("Subject", subject)
                     msg.add_header ("MIME-Version", "1.0")
                     msg.add_header ("Content-Type", "multipart/mixed")
-                    desc = email.MIMEText.MIMEText ("This is a Cyber1 lesson printout of lesson %(lesson)s, requested by %(user)s of %(group)s" % params)
+                    desc = email.mime.text.MIMEText ("This is a Cyber1 lesson printout of lesson %(lesson)s, requested by %(user)s of %(group)s" % params)
                     desc.add_header ("Content-Description", "message body text")
-                    printout = email.MIMEText.MIMEText ("".join (text))
+                    printout = email.mime.text.MIMEText ("".join (text))
                     lesson = params["lesson"]
                     printout.add_header ("Content-Description",
                                      "printout of %s" % lesson)
@@ -142,18 +142,18 @@ def dofile (name):
                 s = smtplib.SMTP (MAILHOST)
                 try:
                     s.sendmail ("postmaster@cyberserv.org", [ mailto ], msg.as_string ())
-                    print "sent", subject, "to", mailto
+                    print ("sent", subject, "to", mailto)
                     if notify:
                         os.remove (name)
                     else:
-                        print name, "lesson", lesson, "sent to", mailto
+                        print (name, "lesson", lesson, "sent to", mailto)
                         os.rename (name, os.path.join ("sent", name))
-                except smtplib.SMTPException, data:
-                    print "error sending", name, "to", mailto, "\n ", data
+                except smtplib.SMTPException as data:
+                    print ("error sending", name, "to", mailto, "\n ", data)
                     os.rename (name, os.path.join ("failed", name))
                 break
     except StopIteration:
-        print "no mail to section found in", name
+        print ("no mail to section found in", name)
         os.rename (name, os.path.join ("printed", name))
             
             
