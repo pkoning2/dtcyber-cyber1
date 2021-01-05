@@ -29,6 +29,7 @@ user name on the burst page.
    p. resch.     2007.09.03.     pnote notification.
    p. resch,
    p. koning     2007.03.15.     assorted other notification types.
+   p. koning     2021.01.05      convert to python 3.
 """
 
 import sys
