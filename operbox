@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- Mode: python -*-
 
 """This script is invoked by DtCyber out of the niu operator box
@@ -19,6 +19,7 @@ to on a status change report.  Null string means don't send.
 
        2005.03.15   p. koning   Initial version.
        2012.01.04   p. koning   Convert to Python.
+       2021.01.05   p. koning   Convert to Python 3.
 """
 
 import sys
@@ -26,7 +27,7 @@ import os
 import time
 import httplib
 import smtplib
-import email.Message
+import email.message
 import socket
 
 # Where to send web post updates:
@@ -49,10 +50,10 @@ def post (args, up):
                   headers = { "Content-Type" : "application/x-www-form-urlencoded" } )
     resp = conn.getresponse ()
     if resp.status >= 200 and resp.status <= 299:
-        #print "temp: POST status:", resp.status, resp.reason
+        #print ("temp: POST status:", resp.status, resp.reason)
         pass     # OK status
     else:
-        print "POST status:", resp.status, resp.reason
+        print ("POST status:", resp.status, resp.reason)
     conn.close ()
 
 def sendmail (args, to):
@@ -61,7 +62,7 @@ def sendmail (args, to):
     current status and the name of a file with additional stuff in it.
     The second argument is the destination email address.
     """
-    msg = email.Message.Message ()
+    msg = email.message.Message ()
     msg.add_header ("From", "\"Cyber1\" <postmaster@cyberserv.org>")
     msg.add_header ("To", to)
     msg.add_header ("Reply-To", to)
@@ -76,8 +77,8 @@ def sendmail (args, to):
     s = smtplib.SMTP (MAILHOST)
     try:
         s.sendmail ("postmaster@cyberserv.org", [ to ], msg.as_string ())
-    except smtplib.SMTPException, data:
-        print "error sending to", to, "\n ", data
+    except smtplib.SMTPException as data:
+        print ("error sending to", to, "\n ", data)
 
 # Dictionary of actions.  Each value is a tuple of pairs, where each
 # pair is the function to call and its argument.
@@ -109,7 +110,7 @@ def main (args):
     try:
         action = actions[args[0].lower ()]
     except KeyError:
-        print >> sys.stdout, "Unknown request", args[0]
+        print ("Unknown request", args[0], file = sys.stdout)
         sys.exit (1)
     for func, actarg in action:
         func (args, actarg)
@@ -118,4 +119,4 @@ if __name__ == "__main__":
     if len (sys.argv) > 2:
         main (sys.argv[1:])
     else:
-        print "usage: operbox action filename"
+        print ("usage: operbox action filename")
