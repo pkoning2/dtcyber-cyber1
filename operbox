@@ -25,7 +25,7 @@ to on a status change report.  Null string means don't send.
 import sys
 import os
 import time
-import httplib
+import requests
 import smtplib
 import email.message
 import socket
@@ -40,21 +40,17 @@ def post (args, up):
     """Post a status update to www.cyber1.org.  The second argument
     indicates whether the system is now up (True) or down (False).
     """
-    conn = httplib.HTTPConnection (POSTHOST)
     if up:
-        postdata = "zusers=-1"
+        postdata = dict (zusers = "-1")
     else:
-        postdata = "zusers=0"
-    conn.request ("POST", "/ping.asp",
-                  body = postdata,
-                  headers = { "Content-Type" : "application/x-www-form-urlencoded" } )
-    resp = conn.getresponse ()
-    if resp.status >= 200 and resp.status <= 299:
-        #print ("temp: POST status:", resp.status, resp.reason)
+        postdata = dict (zusers = 0)
+    resp = requests.post ("http://{}/ping.asp".format (POSTHOST),
+                          data = postdata)
+    if resp.status_code >= 200 and resp.status_code <= 299:
+        #print ("temp: POST status:", resp.status_code)
         pass     # OK status
     else:
-        print ("POST status:", resp.status, resp.reason)
-    conn.close ()
+        print ("POST status:", resp.status_code, resp.text)
 
 def sendmail (args, to):
     """Send a status update email to some address.  The first argument
