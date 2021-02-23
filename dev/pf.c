@@ -677,7 +677,7 @@ void printblk (FILE *outf, int len)
                 line[5] = '\0';
                 fprintf (outf, "%5s %c%02lld.%02lld.%02lld ",
                          line, ((m >> 17) & 1) ? 'D' : ' ',
-                         (((m >> 9) & 037) + 73) % 100,
+                         (((m >> 9) & 0177) + 73) % 100,
                          (m >> 5) & 017, m & 037);
             }
             w++;
@@ -1107,7 +1107,7 @@ void printblabel (FILE *outf, int blk, bool fileinfo)
     blkname[10] = '\0';
     get60 (blkinfo, lh->binfo[blk]);
     type = (blkinfo >> 54) & 037;
-    edate = (blkinfo >> 27) & 077777777;
+    edate = (blkinfo >> 27) & 0777777777;
     if (fileinfo)
         btype = "fileinfo";
     else if (type < sizeof (btypes) / sizeof (btypes[0]))
@@ -1120,7 +1120,7 @@ void printblabel (FILE *outf, int blk, bool fileinfo)
     
     fprintf (outf, "* /---   block=%02d-%c %s           %02d/%02d/%02d. %02d.%02d    %s %s\n",
              blk / 7 + 1, 'a' + blk % 7, blkname, 
-             (edate >> 20) + 73, (edate >> 16) & 017,
+             ((edate >> 20) + 73) % 100, (edate >> 16) & 017,
              (edate >> 11) & 037, (edate >> 6) & 037, edate & 077,
              btype,
              (!fileinfo && (blkinfo & (1ULL << 59)) != 0) ? " out" : "");
