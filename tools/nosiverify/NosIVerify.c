@@ -213,6 +213,7 @@ int main (int argc, char *argv[])
         if (recLen1 == 0)
             {
             printf ("tape mark\n");
+            begin = 1;
             continue;
             }
         
@@ -271,9 +272,7 @@ int main (int argc, char *argv[])
                 {
                 if (recLen1 == 80)
                     {
-                    printf ("ANSI label: %c%c%c%c\n", 
-                            rawBuffer[0], rawBuffer[1],
-                            rawBuffer[2], rawBuffer[3]);
+                    printf ("ANSI label: %80s\n", rawBuffer);
                     continue;
                     }
                 begin = 0;
