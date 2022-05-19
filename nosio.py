@@ -289,7 +289,7 @@ class nositape (tape):
             trailer = u60.unpack (b"\x00" + data[-8:-1])[0] >> 4
             data = data[:-7]
         else:
-            raise IoError ("Unexpected block length %d" % bc)
+            raise IOError ("Unexpected block length %d" % bc)
         trailer &= 0o00007777777777777777
         bc = trailer >> 36
         bnum = (trailer >> 12) & 0o77777777
@@ -430,7 +430,7 @@ class dj (nosdisk):
         return ((pc * 19) + pt) * 24 + ps
 
 class dm (nosdisk):
-    """NOS DM (855) type disk.
+    """NOS DM (885) type disk.
     """
     def ltop (self, trk, sec):
         """Translate NOS logical track/sector to sector offset.
