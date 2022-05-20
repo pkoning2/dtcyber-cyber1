@@ -330,7 +330,7 @@ class disk (device):
         words plus the two control words (from the start of
         the sector) which are 12 bit values.
         """
-        self.seek (sec * 512, 0)
+        self.seek (sec * 512)
         cw = self.f.read (3)
         if not cw:
             return [ ], 0, 0
@@ -529,7 +529,7 @@ def wtop (w, shift, access, lmode = True):
 def dump (wl):
     """Dump a list of 60 bit words in octal and display code.
     """
-    for i in xrange (0, len (wl) - 1, 2):
+    for i in range (0, len (wl) - 1, 2):
         print ("%03o/ %020o %020o %s %s" % (i, wl[i], wl[i + 1],
                                             wtod(wl[i], False),
                                             wtod(wl[i + 1], False)))
