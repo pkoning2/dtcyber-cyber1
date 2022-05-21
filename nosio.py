@@ -17,11 +17,13 @@ m60 = 0o77777777777777777777
 m48 = 0o77777777777777000000
 alnum_re = re.compile ("[a-z0-9]+", re.I)
 
+secpad = bytes (512 - 483)
+
 class device (object):
     """Base class for NOS devices.
     """
-    def __init__ (self, fn):
-        self.f = open (fn, "rb")
+    def __init__ (self, fn, mode = "rb"):
+        self.f = open (fn, mode)
 
     def close (self):
         if self.f:
@@ -340,6 +342,25 @@ class disk (device):
         wl = self.readsec (64)
         return wl, self.cw1, self.cw2
 
+    def write (self, sec, cw1, cw2, data):
+        """Write the specified control words (two 12-bit values) and
+        data (a sequence of exactly 64 60-bit values) at the specified
+        sector offset.
+        """
+        b1 = cw1 >> 4
+        b2 = ((cw1 & 0x0f) << 4) | (cw2 >> 8)
+        b3 = cw2 & 0xff
+        d = [ cws.pack (b1, b2, b3) ]
+        di = iter (data)
+        for i in di:
+            i2 = next (di)
+            d.append (u60.pack (i << 4 | ((i2 >> 56) & 0xf)))
+            d.append (u60.pack (i2)[1:])
+        d.append (secpad)
+        d = b"".join (d)
+        self.seek (sec * 512)
+        self.f.write (d)
+
 class nosdisk (disk):
     """NOS file structured disk.
     """
@@ -538,6 +559,12 @@ def dump (wl):
         print ("%03o/ %020o                      %s" % (len (wl), wl[-1],
                                                         wtod(wl[-1], False)))
 
+def dumpsec (cw1, cw2, wl):
+    """Dump a sector: both control words, then the data.
+    """
+    print ("CW1: %04o  CW2: %04o" % (cw1, cw2))
+    dump (wl)
+    
 def wordstod (data, uc = False):
     """Convert a list of data words to the corresponding display
     code text.  uc is False (default) for lower case, True for upper
