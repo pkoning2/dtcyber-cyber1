@@ -463,6 +463,19 @@ class dm (nosdisk):
         pt, ps = divmod (b, 0o40)
         return ((pc * 40) + pt) * 32 + ps
 
+class dq (nosdisk): 
+   """NOS DQ (855) type disk. 
+   """ 
+   def ltop (self, trk, sec): 
+       """Translate NOS logical track/sector to sector offset. 
+       """ 
+       pu, d = divmod (sec, 0o1200) 
+       x = trk & 1  
+       pc = (trk & 0o3776) >> 1 
+       b = x * 0o1200 + d  
+       pt, ps = divmod (b, 0o40) 
+       return ((pc * 40) + pt) * 32 + ps
+
 class platodisk (disk):
     """Plato disk (not NOS file structured).
     """
