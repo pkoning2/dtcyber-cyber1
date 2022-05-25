@@ -2,6 +2,8 @@
 
 """Module for NOS device I/O
 
+Copyright (c) 2014-2022  Paul Koning
+
 """
 
 import struct
@@ -14,7 +16,10 @@ u32 = struct.Struct ("<I")   # TAP file length field
 cws = struct.Struct ("BBB")  # disk sector control word (in 3 bytes)
 
 m60 = 0o77777777777777777777
-m48 = 0o77777777777777000000
+m48 = 0o77777777777777770000
+m42 = 0o77777777777777000000
+m12 = 0o00000000000000007777
+
 alnum_re = re.compile ("[a-z0-9]+", re.I)
 
 secpad = bytes (512 - 483)
@@ -53,7 +58,7 @@ class device (object):
         p = 0
         if (h >> 48) == 0o7700:
             # PRFX (7700) table
-            wc = (h >> 36) & 0o7777
+            wc = (h >> 36) & m12
             p = wc + 1
             assert len (data) > p
             h2 = data[1]
@@ -86,7 +91,7 @@ class device (object):
         h = data[p]
         if (h >> 48) == 0o7000:
             # LDSET (7000) table
-            wc = (h >> 36) & 0o7777
+            wc = (h >> 36) & m12
             if wc:
                 # Skip over 7000 table if not OPLD
                 p += wc + 1
@@ -107,9 +112,9 @@ class device (object):
         # has a 3-character program name and, and if the name starts
         # with a letter, a non-zero load address)
         fn2 = wtod (h, False)
-        wc = h & 0o7777
+        wc = h & m12
         if fn2[:3].isalnum () and ((h >> 36) & 0o77) == 0 \
-               and (fn[0].isnumeric () or ((h >> 24) & 0o7777) != 0):
+               and (fn[0].isnumeric () or ((h >> 24) & m12) != 0):
             if wc == 0:
                 return fn, "TEXT", dt, tm, os, proc, cm
             return fn, "PP", dt, tm, os, proc, cm
@@ -139,7 +144,7 @@ class device (object):
             return fn, "PPL", dt, tm, os, proc, cm
         if tb == 0o5400:
             # EACPM
-            if ((h >> 36) & 0o7777) == 0:
+            if ((h >> 36) & m12) == 0:
                 # Overlay level 0,0 means "absolute"
                 return fn, "ABS", dt, tm, os, proc, cm
             # Otherwise it's OVL
@@ -199,7 +204,7 @@ class device (object):
         h = data[0]
         if (h >> 48) == 0o7700:
             # Prefix table, don't count that in reported length
-            dlen -= 1 + ((h >> 36) & 0o7777)
+            dlen -= 1 + ((h >> 36) & m12)
         fn, tp, dt, tm, os, proc, cm = self.srt (data)
         return "%-7s %-4s %6o %s %s" % (fn, tp, dlen, dt, cm), tp
 
@@ -295,7 +300,7 @@ class nositape (tape):
         trailer &= 0o00007777777777777777
         bc = trailer >> 36
         bnum = (trailer >> 12) & 0o77777777
-        lnum = trailer & 0o7777
+        lnum = trailer & m12
         if self.bnum != bnum:
             raise IOError ("Block number mismatch, expected %d, actual %d"
                            % (bnum, self.bnum))
@@ -364,6 +369,113 @@ class disk (device):
 class nosdisk (disk):
     """NOS file structured disk.
     """
+    def __init__ (self, fn, mode = "rb"):
+        super ().__init__ (fn, mode)
+        sec, cw1, cw2 = super ().read (0)
+        if cw1 != 0o3777 or cw2 != 0o77:
+            raise IOError ("Label sector is not a system sector")
+        lab = wtod (sec[0] & m42)
+        if lab != "label":
+            print ("Warning, expecting 'label' in name, found", lab)
+        devtype = wtod (sec[3], False)[2:4]
+        #print ("Device type is", devtype)
+        self.ltop = self.converters[devtype]
+        self.label = sec
+        self.devtype = devtype
+        self.devmask = sec[0o15] & 0xff
+        self.secmask = (sec[0o15] >> 8) & 0xff
+        level = sec[3] >> 48
+        if level == 1:
+            # label level 1 (NOS 1)
+            self.seclimit = (sec[0o16] >> 36) & 0o0777
+        elif level == 2:
+            # label level 2 (NOS 2)
+            self.seclimit = (sec[0o16] >> 36) & 0o3777
+        else:
+            print ("Unexpected label level", level)
+        assert self.seclimit == self.seclimits[devtype]
+        # Read the TRT
+        trt = list ()
+        self.sec = 1
+        self.trk = 0
+        # TRT word count
+        tcnt = (sec[0o10] >> 24) & m12
+        # Total sector count (number of actual TRT entries)
+        tscnt = sec[0o10] >> 48
+        assert (tscnt + 3) // 4 == tcnt
+        while len (trt) < tscnt:
+            tsec, eoi = self.read ()
+            assert not eoi
+            for w in tsec:
+                for bi in range (4):
+                    b = (w >> (48 - 12 * bi)) & m12
+                    if len (trt) >= tscnt:
+                        break
+                    trt.append (b)
+                if len (trt) >= tscnt:
+                    break
+        self.trt = trt
+        # Find the catalog tracks, if any
+        self.ccnt = (sec[0o13] >> 12) & m12
+        ctrks = None
+        if self.ccnt:
+            ctrk = trt[0]
+            assert ctrk & 0o4000
+            # See if it's contiguous to the label track
+            if sec[0o15] & 0o400000:
+                assert ctrk == 0o4001
+                ctrks = range (1, self.ccnt + 1)
+            else:
+                ctrks = list ()
+                for t in range (self.ccnt):
+                    ctrk = trt[ctrk & 0o3777]
+                    assert ctrk & 0o4000
+                    ctrks.append (ctrk & 0o3777)
+                assert trt[ctrk & 0o3777] == 0
+            assert len (ctrks) == self.ccnt
+        self.ctrks = ctrks
+        
+    def ident (self):
+        "Print some pack label information"
+        lb = self.label
+        print ("NOS pack name", wtod (lb[0o14] & m42), "on", self.devtype)
+        print ("Total tracks {}, free tracks {}".format (lb[0o10] >> 48, lb[0o10] & m12))
+        print ("Device mask {:0>3o}, secondary mask {:0>3o}".format (self.devmask, self.secmask))
+        print (self.ccnt, "catalog tracks")
+
+    def printcatent (self, fn, ui, d):
+        flen = d[1] >> 36
+        ftrk = (d[1] >> 12) & 0o3777
+        fsec = d[1] & 0o3777
+        daf = "d" if d[1] & 0o4000 else "i"
+        print ("{:<7s} {:>6o} {:>7d} {} {:0>4o} {:0>4o}".format (fn, ui, flen, daf, ftrk, fsec))
+
+    def catentries (self):
+        for ct in self.ctrks:
+            #print ("catalog track {:o}".format (ct))
+            for cs in range (self.seclimit):
+                d, eof = self.read (ct, cs)
+                for i in range (0, len (d), 16):
+                    ent = d[i:i + 16]
+                    # Entry is real if UI field is non-zero
+                    fn = wtod (ent[0] & m42)
+                    ui = ent[0] & 0o377777
+                    if ui:
+                        yield fn, ui, ent
+                if eof:
+                    break
+
+    def catlist (self):
+        for fn, ui, d in self.catentries ():
+            self.printcatent (fn, ui, d)
+            
+    def open (self, fn, ui):
+        for efn, eui, d in self.catentries ():
+            if fn == efn and ui == eui:
+                # TODO: make more general?
+                return nosmf (self, d)
+        raise FileNotFoundError
+    
     def read (self, trk = None, sec = None, syssec = False):
         """Read a sector from the specified NOS logical track and
         sector address.  Returns the block data as a list of words,
@@ -415,18 +527,11 @@ class nosdisk (disk):
                     self.trk = cw2 & 0o3777
                     self.sec = 0
         return data[:dlen], eor
-    
-    @abstractmethod
-    def ltop (self, trk, sec):
-        """Convert NOS logical track and sector to a disk image 512
-        byte sector offset.  This has to be supplied by the subclass.
-        """
 
-class di (nosdisk):
-    """NOS DI (844-21) type disk.
-    """
-    def ltop (self, trk, sec):
-        """Translate NOS logical track/sector to sector offset.
+    @staticmethod
+    def ltop_di (trk, sec):
+        """Translate NOS logical track/sector to sector offset for NOS
+        DI (844-21) type disk.
         """
         pu, d = divmod (sec, 0o153)
         ht = (trk >> 1) & 1
@@ -437,11 +542,10 @@ class di (nosdisk):
         pt = c + hc * 0o11
         return ((pc * 19) + pt) * 24 + ps
     
-class dj (nosdisk):
-    """NOS DJ (844-41) type disk.
-    """
-    def ltop (self, trk, sec):
-        """Translate NOS logical track/sector to sector offset.
+    @staticmethod
+    def ltop_dj (trk, sec):
+        """Translate NOS logical track/sector to sector offset for NOS
+        DJ (844-41) type disk.
         """
         pu, d = divmod (sec, 0o343)
         ht = trk & 1
@@ -450,11 +554,10 @@ class dj (nosdisk):
         pt, ps = divmod (b, 0o30)
         return ((pc * 19) + pt) * 24 + ps
 
-class dm (nosdisk):
-    """NOS DM (885) type disk.
-    """
-    def ltop (self, trk, sec):
-        """Translate NOS logical track/sector to sector offset.
+    @staticmethod
+    def ltop_dm (trk, sec):
+        """Translate NOS logical track/sector to sector offset for NOS
+        DM (885) type disk.
         """
         pu, d = divmod (sec, 0o1200)
         ht = trk & 1
@@ -463,19 +566,26 @@ class dm (nosdisk):
         pt, ps = divmod (b, 0o40)
         return ((pc * 40) + pt) * 32 + ps
 
-class dq (nosdisk): 
-   """NOS DQ (855) type disk. 
-   """ 
-   def ltop (self, trk, sec): 
-       """Translate NOS logical track/sector to sector offset. 
-       """ 
-       pu, d = divmod (sec, 0o1200) 
-       x = trk & 1  
-       pc = (trk & 0o3776) >> 1 
-       b = x * 0o1200 + d  
-       pt, ps = divmod (b, 0o40) 
-       return ((pc * 40) + pt) * 32 + ps
+    @staticmethod
+    def ltop_dq (trk, sec): 
+        """Translate NOS logical track/sector to sector offset for NOS DQ
+        (855) type disk.
+        """ 
+        pu, d = divmod (sec, 0o1200) 
+        x = trk & 1  
+        pc = (trk & 0o3776) >> 1 
+        b = x * 0o1200 + d  
+        pt, ps = divmod (b, 0o40) 
+        return ((pc * 40) + pt) * 32 + ps
 
+    # Dictionary to look up the correct logical to physical conversion
+    # method given the device type (a two-character string).  The device
+    # type is contained in the label, so we can get it directly from the
+    # device, it doesn't need to be supplied by the user.
+    converters = dict (di = ltop_di, dj = ltop_dj,
+                       dm = ltop_dm, dq = ltop_dq)
+    seclimits = dict (di = 0o153, dj = 0o343, dm = 0o1200, dq = 0o1200)
+    
 class platodisk (disk):
     """Plato disk (not NOS file structured).
     """
@@ -492,6 +602,40 @@ class platodisk (disk):
             wl.extend (s)
         return wl
 
+class nosfile:
+    def __init__ (self, disk, ent):
+        self.disk = disk
+        self.len = ent[1] >> 36
+        self.ftrk = (ent[1] >> 12) & 0o3777
+        self.fsec = ent[1] & 0o3777
+        self.daf = bool (ent[1] & 0o4000)
+    
+class nosmf (nosfile):
+    def __init__ (self, disk, ent):
+        super ().__init__ (disk, ent)
+        if not self.daf:
+            raise IOError ("Master file must be direct access")
+        assert self.fsec == 0
+        trks = list ()
+        trk = self.ftrk
+        while len (trks) * disk.seclimit < self.len:
+            trk &= 0o3777
+            trks.append (trk)
+            trk = disk.trt[trk]
+        self.tracks = trks
+
+    def read (self, blk):
+        sec = blk * 5 + 1    # +1 to skip system sector
+        trk, sec = divmod (sec, self.disk.seclimit)
+        trk = self.tracks[trk]
+        ret, eof = self.disk.read (trk, sec)
+        assert not eof
+        for i in range (4):
+            r2, eof = self.disk.read ()
+            assert not eof
+            ret.extend (r2)
+        return ret
+    
 d2alc = ":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.#[]%\"_!&'?<>@\\^;"
 d2auc = d2alc.upper ()
 
@@ -595,7 +739,7 @@ def wordstop (data):
     for d in data:
         s, shift, access = wtop (d, shift, access, '\n')
         ret.append (s)
-        if (d & 0o7777) == 0:
+        if (d & m12) == 0:
             # end of line, reset shift/access
             shift = access = False
     return "".join (ret)

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-"""Utility for accessing PLATO masterfiles.
+"""Utility for accessing PLATO packs and masterfiles.
 
-Copyright (c) 2006  Paul Koning
+Copyright (c) 2006-2022  Paul Koning
 
-This program can operate on PLATO masterfiles, either directly (if you
-have a masterfile image available) or as NOS files contained in a NOS
-disk image.
+This program can operate on PLATO packs and masterfiles.  Packs are
+accessed as DtCyber disk images.  Masterfiles (CDC style virtual
+packs) can be accessed directly (if you have a masterfile image copy
+available) or as NOS files contained in a NOS disk image.  
 """
 
 import os
@@ -14,6 +15,10 @@ import sys
 import re
 import argparse
 import datetime
+import tarfile
+
+sys.path.append (os.path.normpath (os.path.join (os.path.dirname (sys.argv[0]), "..")))
+import nosio
 
 disp_dec = ':abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.#[]%"_!&\'?<>@\\^;'
 disp_enc = { c : i for (i, c) in enumerate (disp_dec) }
@@ -38,7 +43,7 @@ filetypes = (
     "dataset",
     "plm curriculum", # or pnotes if created before 80/08/01.
     "group notes",
-    "(11)",
+    "(10)",
     "nameset",
     "account",
     "catalog",
@@ -52,7 +57,10 @@ filetypes = (
     "exambase"
 )
     
-NSTYPES = ( 3, 8, 10, 11, 14, 15, 17, 18 )
+# These file types are nameset-like
+NSTYPES = { 3, 6, 8, 9, 11, 13, 16, 18 }
+# These file types have "rmts" and "ndir" fields in the file info word
+RMTTYPES = { 3, 6, 7, 8, 11, 13, 16, 18 }
 DATASET = 7
 TUTOR = 1
 COMPASS = 5
@@ -82,195 +90,33 @@ TOP2  = 0o77770000000000000000
 
 pdname = "4;;;;;;;;;"     # pack directory "name"
 
-class Pack(object):
+class Pack:
     """Encapsulates a disk pack (container file), either in classic
     or packed encoding.
     """
-    def __init__ (self, p):
+    def __init__ (self, p, pname = None):
         self.packed = not p.unpacked
         self.mf = p.master_file
         if self.mf:
-            self.packed = True
+            ui = p.user_index or 0o377773
+            self.nospack = nosio.nosdisk (p.pack)
+            if self.mf == "*":
+                # Hack to print the NOS catalog
+                self.nospack.catlist ()
+                self.nospack.close ()
+                sys.exit (0)
+            self.pack = self.nospack.open (self.mf, ui)
             p.flaw_map = False
-            self.secsize = 480
-        elif self.packed:
-            self.secsize = 512
+            self.name = pname or self.mf
         else:
-            self.secsize = 644
-        device = p.model.lower () or "di"
-        self.device = device
-        self.interleave = True
-        if device == "dm" or device == "dq":
-            self.sectors = 32
-            self.tracks = 40
-            self.cylinders = 843
-            if device == "dq":
-                self.interleave = False
-        elif device == "di":
-            self.sectors = 24
-            self.tracks = 19
-            self.cylinders = 411
-        elif device == "dj":
-            self.sectors = 24
-            self.tracks = 19
-            self.cylinders = 823
-        else:
-            raise ValueError ("Unknown device type " + device)
-        self.name = p.pack
-        self.f = open (self.name, "r+b")
-
-    def ts2cts (trk, sec):
-        """Convert NOS logical track and sector addresses to
-        cylinder, track, and sector for the particular disk
-        type used.
-        """
-        if self.device == "di":
-            d = sec % 0o153
-            ht = (trk >> 1) & 1
-            hc = trk & 1
-            pcyl = (trk & 0o3774) >> 2
-            b = d * 2 + ht
-            c, psec = divmod (b, 0o30)
-            ptrk = hc * 0o11 + c
-            return pcyl, ptrk, psec
-        elif self.device == "dj":
-            d = sec % 0o343
-            ht = trk & 1
-            pcyl = (trk & 0o3776) >> 1
-            b = d * 2 + ht
-            ptrk, psec = divmod (b, 0o30)
-            return pcyl, ptrk, psec
-            
-    def seek (self, cyl, trk = None, sec = None):
-        """Set the current I/O position to the specified position.
-        Position can be cylinder, track, and sector, which is a physical
-        disk position.  Or it can be track and sector as a NOS logical
-        position, which is converted to the physical position first.  Or
-        just sector, which is "logical sector addressing" counting
-        sectors linearly from 0.
-        """
-        if trk is None:
-            # LBA addressing
-            sec = cyl
-        else:
-            if sec is None:
-                cyl, trk, sec = self.ts2cts (cyl, trk)
-            if sec >= self.sectors or trk >= self.tracks or cyl >= self.cylinders:
-                raise ValueError ("Disk address out of range")
-            sec = ((cyl * self.tracks) + trk) * self.sectors + sec
-        self.f.seek (sec * self.secsize)
-        
-    def readppsec (self, cyl, trk = None, sec = None):
-        """Read the specified sector, return the resulting sector
-        buffer, as 322 12-bit (PPU) words.
-        """
-        self.seek (cyl, trk, sec)
-        secbuffer = self.f.read (self.secsize)
-        buffer = self.unpack (secbuffer)
-        return buffer
-
-    def readcpsec (self, cyl, trk = None, sec = None):
-        """Read the specified sector, return the result as two 12-bit
-        PPU words (the control words) followed by 64 60-bit (CPU) words
-        of data."""
-        cw1, cw2, *data = self.readppsec (cyl, trk, sec)
-        ret = []
-        for i in range (0, 320, 5):
-            r = 0
-            for j in range (5):
-                r = (r << 12) | data[i + j]
-            ret.append (r)
-        return cw1, cw2, ret
-    
-    def readblk (self, blk):
-        """Read a PLATO block LBA "blk"
-        """
-        ret = []
-        sec = blk * 5
-        for i in range (5):
-            cw1, cw2, s = self.readcpsec (sec)
-            ret.extend (s)
-            sec += 1
-        return ret
-    
-    def writeppsec (self, buf, cyl, trk = None, sec = None):
-        """Write the specified sector from the current contents of
-        the sector buffer.
-        """
-        self.seek (cyl, trk, sec)
-        secbuffer = self.pack (buf)
-        self.f.write (secbuffer)
-
-    def writecpsec (self, cw1, cw2, buf, cyl, trk = None, sec = None):
-        """Write the specified sector, from two 12-bit
-        PPU words (the control words) and 64 60-bit (CPU) words of
-        data.
-        """
-        pbuf = [ cw1, cw2 ]
-        for i in buf:
-            for j in range (5):
-                pbuf.append ((i >> (48 - (12 * j))) & 0o7777)
-        self.writeppsec (pbuf, cyl, trk, sec)
-    
-    def writeblk (self, buf, blk):
-        """Write a PLATO block starting at LBA "blk".
-        """
-        sec = blk * 5
-        for i in range (0, 320, 64):
-            self.readcpsec (0o100, 0, buf[i:i + 64], sec)
-            sec += 1
-    
-    def unpack (self, ibuf):
-        """Unpack the buffer, according to the data packing mode for
-        this pack.
-        """
-        if self.mf:
-            obuf = [ 0, 0 ]
-            end = 320 // 2
-        else:
-            obuf = list ()
-            end = 322 // 2
-        if self.packed:
-            for i in range (end):
-                j = i * 3
-                b1 = ibuf[j]
-                b2 = ibuf[j + 1]
-                b3 = ibuf[j + 2]
-                obuf.append ((b1 << 4) + (b2 >> 4))
-                obuf.append (((b2 << 8) + b3) & 0o7777)
-        else:
-            for i in range (322 // 2):
-                j = i * 2
-                b1 = ibuf[j] & 0o77
-                b2 = ibuf[j + 1] & 0o77
-                obuf.append ((b1 << 6) | b2)
-        return obuf
-    
-    def pack (self, ibuf):
-        """Pack the buffer, according to the data packing mode for this
-        pack.
-        """
-        if self.mf:
-            ibuf = [ 0, 0 ] + ibuf
-        obuf = list ()
-        if self.packed:
-            for i in range (322 / 2):
-                w1 = ibuf[i * 2] & 0o7777
-                w2 = ibuf[i * 2 + 1] & 0o7777
-                j = i * 3
-                obuf.append ((w1 >> 4) & 0xff)
-                obuf.append (((w1 << 4) + (w2 >> 8)) & 0xff)
-                obuf.append (w2 & 0xff)
-        else:
-            for w1 in ibuf:
-                obuf.append ((w1 >> 6) & 0o77)
-                obuf.append (w1 & 0o77)
-        return obuf
+            self.pack = nosio.platodisk (p.pack)
+            self.name = pname or p.pack
 
     def readpd (self, p):
         "Read the pack directory"
         pdstart = 12 if p.flaw_map else 1
-        pdir = self.readblk (pdstart)
+        pdir = self.pack.read (pdstart)
+        self.pdhdr = pdir[:5]
         self.packname = wtostr (pdir[0])
         self.packtype = wtostr (pdir[1])
         self.pdtype, self.pdsize, self.stotal, self.sused = \
@@ -283,8 +129,11 @@ class Pack(object):
             bmlen += 1
         self.pdblks = (self.inflth + (self.ftotal * 2) + 320 - 1) // 320
         self.pdparts = (self.pdblks + 6) // 7
+        if self.pdparts > 10 or self.stotal > 20000:
+            # Pack dir or total parts counts look way out of line, fail
+            raise ValueError ("Not a valid pack directory")
         for i in range (1, self.pdblks):
-            pdir.extend (self.readblk (i + pdstart))
+            pdir.extend (self.pack.read (i + pdstart))
         self.bitmap = pdir[5:5 + bmlen]
         if bmbits:
             self.bitmap[-1] &= ~((1 << bmbits) - 1)
@@ -292,7 +141,7 @@ class Pack(object):
         self.infos = pdir[il + ft:il + 2 * ft]
 
     def finfo (self, d, ftype):
-        "Print the directory block information"
+        "Read the directory block information"
         ret = list ()
         blocks = d[2]
         if d[3] >> 59:
@@ -362,18 +211,29 @@ class Pack(object):
         self.doinfo (p)
         for fn, fiw in zip (self.names, self.infos):
             fn = wtostr (fn)
-            ftype, blks, sblk = getvfd (fiw, -24, 6, 6, -6, 18)
+            rmts, ndir, ftype, blks, sblk = getvfd (fiw, -12, 6, 6, 6, 6, -6, 18)
             if p.verbose:
                 sblk *= 7
                 blks *= 7
+                nftype = ftype
                 if ftype < 0o40:
-                    dblk = self.readblk (sblk)
+                    dblk = self.pack.read (sblk)
                     acct = wtostr (dblk[40] & AMASK)
                     ftype = disp_dec[ftype]
                 else:
                     acct = ""
                     ftype = " "
-                print ("{:<10s}  {:>3d} {}  {:>5d} {:0>20o} {}".format (fn, blks, ftype, sblk, fiw, acct))
+                if nftype == DATASET:
+                    print ("{:<10s}  {:>3d} {}  {:>5d} {:0>20o} {:>3d}     {}"
+                           .format (fn, blks, ftype, sblk, fiw,
+                                    rmts, acct))
+                elif nftype in RMTTYPES:
+                    print ("{:<10s}  {:>3d} {}  {:>5d} {:0>20o} {:>3d} {:>3d} {}"
+                           .format (fn, blks, ftype, sblk, fiw,
+                                    rmts, ndir, acct))
+                else:
+                    print ("{:<10s}  {:>3d} {}  {:>5d} {:0>20o}         {}"
+                           .format (fn, blks, ftype, sblk, fiw, acct))
             else:
                 print (fn)
             if fn == pdname:
@@ -435,7 +295,7 @@ class Pack(object):
             else:
                 ofn = p.output
             f = open (ofn, "wt")
-        dirblk = self.readblk (sblk)
+        dirblk = self.pack.read (sblk)
         s, names, infos, ctime, mtime = self.finfo (dirblk, ftype)
         print (s, file = f)
         # Now transfer the file content, either a block by block copy
@@ -451,7 +311,7 @@ class Pack(object):
                 name = names[blk]
                 info = infos[blk]
                 print (blklabel (name, info, blk), file = f)
-                d = self.readblk (sblk + blk)
+                d = self.pack.read (sblk + blk)
                 cpdump (d, f)
         elif ftype in SOURCE:
             blki = iter (range (1, blks))
@@ -463,7 +323,7 @@ class Pack(object):
                 if not blklen:
                     continue
                 print (blklabel (name, info, blk), file = f)
-                d = self.readblk (sblk + dblk)[:blklen]
+                d = self.pack.read (sblk + dblk)[:blklen]
                 if btype in TEXTBLK:
                     # Some sort of text block, format that
                     fmtsource (d, p, f)
@@ -473,14 +333,14 @@ class Pack(object):
                         info2 = infos[blk]
                         partial, btype, blkcnt, blklen, dblk = \
                             getvfd (info2, 1, 5, -27, 9, 9, 9)
-                        d.extend (self.readblk (sblk + dblk)[:blklen])
+                        d.extend (self.pack.read (sblk + dblk)[:blklen])
                     cpdump (d, f)
         else:
             # Non-source file, just read all the data and dump that.
             print (file = f)
             data = list ()
             for blk in range (1, blks):
-                data.extend (self.readblk (sblk + blk))
+                data.extend (self.pack.read (sblk + blk))
             cpdump (data, f)
         if f is not sys.stdout:
             f.close ()
@@ -764,6 +624,8 @@ pfparser.add_argument ("pack", help = "File name of pack container file")
 pfparser.add_argument ("file", nargs = "*", help = "PLATO file to read")
 pfparser.add_argument ("--model", default = "di",
                        help = "Drive model")
+pfparser.add_argument ("--tar-file", "-t",
+                       help = "Tar archive containing pack container file")
 pfparser.add_argument ("-o", "--output",
                        help = """Output file or directory.  Default is
                                  current directory for file copy, output
@@ -799,9 +661,11 @@ pfparser.add_argument ("-D", "--deleted",
 pfparser.add_argument ("-F", "--flaw-map",
                        action = "store_true", default = False,
                        help = "Pack has a flaw map")
-pfparser.add_argument ("-M", "--master-file",
-                       action = "store_true", default = False,
-                       help = "Pack is a master file image")
+pfparser.add_argument ("-M", "--master-file", metavar = "MF",
+                       help = "Name of master file on the NOS pack. "
+                              "Use '*' to print NOS file catalog.")
+pfparser.add_argument ("-U", "--user-index", metavar = "UI",
+                       help = "User index of master file on the NOS pack")
 pfparser.add_argument ("--dates", action = "store_true", default = False,
                        help = "Preserve file modify date")
 
