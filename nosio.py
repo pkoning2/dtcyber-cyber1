@@ -735,7 +735,7 @@ def dump (data, f = sys.stdout):
                 for s in 45, 30, 15, 0:
                     dline.append ("{:0>5o} ".format ((w >> s) & 0o77777))
                 dline.append (" ")
-                dc.append (wtod (w))
+                dc.append (wtod (w, False))
             if len (line) == 1:
                 dline.append (" " * 25)
             dline.extend (dc)
