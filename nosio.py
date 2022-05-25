@@ -6,6 +6,7 @@ Copyright (c) 2014-2022  Paul Koning
 
 """
 
+import sys
 import struct
 from abc import abstractmethod, ABCMeta
 import re
@@ -466,16 +467,23 @@ class nosdisk (disk):
                     break
 
     def catlist (self):
+        print (" name     ui     size    trk  sec")
         for fn, ui, d in self.catentries ():
             self.printcatent (fn, ui, d)
             
     def open (self, fn, ui):
         for efn, eui, d in self.catentries ():
             if fn == efn and ui == eui:
-                # TODO: make more general?
-                return nosmf (self, d)
+                return nosfile (self, d)
         raise FileNotFoundError
-    
+
+    def readcw (self, trk, sec):
+        """Read a sector from the specified NOS logical track and
+        sector.  Return the data (64 word list) and the two 12-bit
+        control words.
+        """
+        return super().read (self.ltop (self.trk, self.sec))
+
     def read (self, trk = None, sec = None, syssec = False):
         """Read a sector from the specified NOS logical track and
         sector address.  Returns the block data as a list of words,
@@ -491,7 +499,7 @@ class nosdisk (disk):
             self.trk = trk
         if sec is not None:
             self.sec = sec
-        data, cw1, cw2 = super().read (self.ltop (self.trk, self.sec))
+        data, cw1, cw2 = self.readcw (trk, sec)
         # Set next track/sector and compute data length and eor
         dlen = 64
         eor = None
@@ -589,7 +597,7 @@ class nosdisk (disk):
 class platodisk (disk):
     """Plato disk (not NOS file structured).
     """
-    def read (self, blk):
+    def readblk (self, blk):
         """Read a PLATO block from a disk image at the
         given block number.  (Blocks are 5 sectors each.)
         Return data is a 320 entry list of 60 bit words,
@@ -609,31 +617,34 @@ class nosfile:
         self.ftrk = (ent[1] >> 12) & 0o3777
         self.fsec = ent[1] & 0o3777
         self.daf = bool (ent[1] & 0o4000)
-    
-class nosmf (nosfile):
-    def __init__ (self, disk, ent):
-        super ().__init__ (disk, ent)
-        if not self.daf:
-            raise IOError ("Master file must be direct access")
-        assert self.fsec == 0
-        trks = list ()
-        trk = self.ftrk
-        while len (trks) * disk.seclimit < self.len:
-            trk &= 0o3777
-            trks.append (trk)
-            trk = disk.trt[trk]
-        self.tracks = trks
-
-    def read (self, blk):
-        sec = blk * 5 + 1    # +1 to skip system sector
+        if self.daf:
+            # If direct access file, gather up its tracks; this will
+            # allow random access.
+            assert self.fsec == 0
+            trks = list ()
+            trk = self.ftrk
+            while len (trks) * disk.seclimit < self.len:
+                trk &= 0o3777
+                trks.append (trk)
+                trk = disk.trt[trk]
+            # The link out of the last track should be the EOI sector
+            # number, and the sum of all the lengths should match the
+            # file length.
+            assert self.len == (len (trks) - 1) * disk.seclimit + trk
+            self.tracks = trks
+            
+    def read (self, sec):
+        sec += 1    # +1 to skip system sector
         trk, sec = divmod (sec, self.disk.seclimit)
         trk = self.tracks[trk]
-        ret, eof = self.disk.read (trk, sec)
-        assert not eof
-        for i in range (4):
-            r2, eof = self.disk.read ()
+        return self.disk.read (trk, sec)
+
+    def readblk (self, blk):
+        ret = list ()
+        for i in range (5):
+            d, eof = self.read (blk * 5 + i)
             assert not eof
-            ret.extend (r2)
+            ret.extend (d)
         return ret
     
 d2alc = ":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.#[]%\"_!&'?<>@\\^;"
@@ -703,18 +714,35 @@ def wtop (w, shift, access, lmode = True):
             shift = access = False
     return "".join (cl), shift, access
 
-
-def dump (wl):
-    """Dump a list of 60 bit words in octal and display code.
-    """
-    for i in range (0, len (wl) - 1, 2):
-        print ("%03o/ %020o %020o %s %s" % (i, wl[i], wl[i + 1],
-                                            wtod(wl[i], False),
-                                            wtod(wl[i + 1], False)))
-    # Do the last odd word if the length was odd
-    if len (wl) & 1:
-        print ("%03o/ %020o                      %s" % (len (wl), wl[-1],
-                                                        wtod(wl[-1], False)))
+def dump (data, f = sys.stdout):
+    "Dump buffer of CPU words (60-bit words)"
+    prev = pstart = None
+    for off in range (0, len (data), 2):
+        dc = list ()
+        line = data[off:off + 2]
+        if line == prev:
+            if pstart is None:
+                pstart = off
+            pend = off
+        else:
+            # Not the same as before, or no "before"
+            if pstart is not None:
+                print ("        lines {:0>6o} through {:0>6o} same as above".format (pstart, pend), file = f)
+            prev = line
+            pstart = None
+            dline = [ "{:0>6o}/ ".format (off) ]
+            for w in line:
+                for s in 45, 30, 15, 0:
+                    dline.append ("{:0>5o} ".format ((w >> s) & 0o77777))
+                dline.append (" ")
+                dc.append (wtod (w))
+            if len (line) == 1:
+                dline.append (" " * 25)
+            dline.extend (dc)
+            dline = "".join (dline)
+            print (dline, file = f)
+    if pstart is not None:
+        print ("        lines {:0>6o} through {:0>6o} same as above".format (pstart, pend), file = f)
 
 def dumpsec (cw1, cw2, wl):
     """Dump a sector: both control words, then the data.
@@ -722,6 +750,45 @@ def dumpsec (cw1, cw2, wl):
     print ("CW1: %04o  CW2: %04o" % (cw1, cw2))
     dump (wl)
     
+def ppdump (data, f = sys.stdout):
+    "Dump buffer of PPU words (12 bit words)"
+    prev = pstart = None
+    for off in range (0, len (data), 8):
+        dc = list ()
+        line = data[off:off + 8]
+        if line == prev:
+            if pstart is None:
+                pstart = off
+            pend = off
+        else:
+            # Not the same as before, or no "before"
+            if pstart is not None:
+                print ("        lines {:0>6o} through {:0>6o} same as above".format (pstart, pend), file = f)
+            prev = line
+            pstart = None
+            dline = [ "{:0>6o}/ ".format (off) ]
+            for w in line:
+                if w:
+                    dline.append ("{:0>4o} ".format (w))
+                else:
+                    dline.append ("---- ")
+                dline.append (" ")
+                for s in 6, 0:
+                    dc.append (d2alc[(w >> s) & 0o77])
+            dline.extend (dc)
+            dline = "".join (dline)
+            print (dline, file = f)
+    if pstart is not None:
+        print ("        lines {:0>6o} through {:0>6o} same as above".format (pstart, pend), file = f)
+
+def cp2pp (data):
+    "Convert a list of CP words (60 bits) to PP words (12 bits)"
+    ret = list ()
+    for w in data:
+        for s in 48, 36, 24, 12, 0:
+            ret.append ((w >> s) & m12)
+    return ret
+
 def wordstod (data, uc = False):
     """Convert a list of data words to the corresponding display
     code text.  uc is False (default) for lower case, True for upper

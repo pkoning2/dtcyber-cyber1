@@ -117,7 +117,7 @@ class Pack:
     def readpd (self, p):
         "Read the pack directory"
         pdstart = 12 if p.flaw_map else 1
-        pdir = self.pack.read (pdstart)
+        pdir = self.pack.readblk (pdstart)
         self.pdhdr = pdir[:5]
         self.packname = wtostr (pdir[0])
         self.packtype = wtostr (pdir[1])
@@ -135,7 +135,7 @@ class Pack:
             # Pack dir or total parts counts look way out of line, fail
             raise ValueError ("Not a valid pack directory")
         for i in range (1, self.pdblks):
-            pdir.extend (self.pack.read (i + pdstart))
+            pdir.extend (self.pack.readblk (i + pdstart))
         self.bitmap = pdir[5:5 + bmlen]
         if bmbits:
             self.bitmap[-1] &= ~((1 << bmbits) - 1)
@@ -219,7 +219,7 @@ class Pack:
                 blks *= 7
                 nftype = ftype
                 if ftype < 0o40:
-                    dblk = self.pack.read (sblk)
+                    dblk = self.pack.readblk (sblk)
                     acct = wtostr (dblk[40] & AMASK)
                     ftype = disp_dec[ftype]
                 else:
@@ -297,7 +297,7 @@ class Pack:
             else:
                 ofn = p.output
             f = open (ofn, "wt")
-        dirblk = self.pack.read (sblk)
+        dirblk = self.pack.readblk (sblk)
         s, names, infos, ctime, mtime = self.finfo (dirblk, ftype)
         print (s, file = f)
         # Now transfer the file content, either a block by block copy
@@ -307,14 +307,6 @@ class Pack:
         if p.info:
             # Nothing else to do
             pass
-        elif p.dump:
-            end = p.end or p.start
-            for blk in range (p.start, end + 1):
-                name = names[blk]
-                info = infos[blk]
-                print (blklabel (name, info, blk), file = f)
-                d = self.pack.read (sblk + blk)
-                cpdump (d, f)
         elif ftype in SOURCE:
             blki = iter (range (1, blks))
             for blk in blki:
@@ -325,7 +317,7 @@ class Pack:
                 if not blklen:
                     continue
                 print (blklabel (name, info, blk), file = f)
-                d = self.pack.read (sblk + dblk)[:blklen]
+                d = self.pack.readblk (sblk + dblk)[:blklen]
                 if btype in TEXTBLK:
                     # Some sort of text block, format that
                     fmtsource (d, p, f)
@@ -335,15 +327,15 @@ class Pack:
                         info2 = infos[blk]
                         partial, btype, blkcnt, blklen, dblk = \
                             getvfd (info2, 1, 5, -27, 9, 9, 9)
-                        d.extend (self.pack.read (sblk + dblk)[:blklen])
-                    cpdump (d, f)
+                        d.extend (self.pack.readblk (sblk + dblk)[:blklen])
+                    nosio.dump (d, f)
         else:
             # Non-source file, just read all the data and dump that.
             print (file = f)
             data = list ()
             for blk in range (1, blks):
-                data.extend (self.pack.read (sblk + blk))
-            cpdump (data, f)
+                data.extend (self.pack.readblk (sblk + blk))
+            nosio.dump (data, f)
         if f is not sys.stdout:
             f.close ()
             if p.dates:
@@ -361,20 +353,6 @@ class Pack:
                     os.utime (ofn, (mtime, ctime))
                 os.utime (ofn, (mtime, mtime))
         return True
-    
-    def dodump (self, p, f = sys.stdout):
-        end = p.end or p.start
-        for sec in range (p.start, end + 1):
-            cw1, cw2, data = self.readcpsec (sec)
-            print ("\nSector {} control words {:0>4o} {:0>4o}".format (sec, cw1, cw2), file = f)
-            cpdump (data, f)
-        
-    def doppdump (self, p, f = sys.stdout):
-        end = p.end or p.start
-        for sec in range (p.start, end + 1):
-            cw1, cw2, *data = self.readppsec (sec)
-            print ("\nSector {} control words {:0>4o} {:0>4o}".format (sec, cw1, cw2), file = f)
-            ppdump (data, f)
 
 def getvfd (w, *fields):
     """Extract listed fields from the word.  The field arguments give
@@ -483,36 +461,6 @@ def strtow (s):
     if not ret or (ret[-1] & 0o7777):
         ret.append (0)
     return ret
-
-def cpdump (data, f = sys.stdout):
-    "Dump buffer of CPU words (60-bit words)"
-    prev = pstart = None
-    for off in range (0, len (data), 2):
-        dc = list ()
-        line = data[off:off + 2]
-        if line == prev:
-            if pstart is None:
-                pstart = off
-            pend = off
-        else:
-            # Not the same as before, or no "before"
-            if pstart is not None:
-                print ("        lines {:0>6o} through {:0>6o} same as above".format (pstart, pend), file = f)
-            prev = line
-            pstart = None
-            dline = [ "{:0>6o}/ ".format (off) ]
-            for w in line:
-                for s in 45, 30, 15, 0:
-                    dline.append ("{:0>5o} ".format ((w >> s) & 0o77777))
-                dline.append (" ")
-                dc.append (wtod (w))
-            if len (line) == 1:
-                dline.append (" " * 25)
-            dline.extend (dc)
-            dline = "".join (dline)
-            print (dline, file = f)
-    if pstart is not None:
-        print ("        lines {:0>6o} through {:0>6o} same as above".format (pstart, pend), file = f)
 
 def ppdump (data, f = sys.stdout):
     "Dump buffer of PPU words (12 bit words)"
@@ -642,18 +590,6 @@ pfparser.add_argument ("-i", "--info", action = "store_true",
                        default = False, help = "Show pack information")
 pfparser.add_argument ("-v", "--verbose", action = "store_true",
                        default = False, help = "Display more details")
-pfparser.add_argument ("-d", "--dump", action = "store_true",
-                       default = False,
-                       help = "Octal sector dump, 60 bit words")
-pfparser.add_argument ("--ppdump", action = "store_true",
-                       default = False,
-                       help = "Octal sector dump, 12 bit words")
-pfparser.add_argument ("-s", "--start", metavar = "S",
-                       default = 0, type = int,
-                       help = "First sector to dump (default: 0)")
-pfparser.add_argument ("-e", "--end", metavar = "E",
-                       default = 0, type = int,
-                       help = "Last sector to dump (default: start)")
 pfparser.add_argument ("-m", "--modwords",
                        action = "store_true", default = False,
                        help = "Show modwords in text output")
@@ -681,10 +617,6 @@ def main ():
         pack.dolist (p)
     elif p.info:
         pack.doinfo (p)
-    elif p.dump:
-        pack.dodump (p)
-    elif p.ppdump:
-        pack.doppdump (p)
 
 if __name__ == "__main__":
     main ()
