@@ -101,7 +101,9 @@ class Pack:
             ui = p.user_index or 0o377773
             self.nospack = nosio.nosdisk (p.pack)
             if self.mf == "*":
-                # Hack to print the NOS catalog
+                # Hack to print the NOS catalog.  Also ident while
+                # we're at it.
+                self.nospack.ident ()
                 self.nospack.catlist ()
                 self.nospack.close ()
                 sys.exit (0)
