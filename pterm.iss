@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Pterm"
-#define MyAppVersion "6.0.4"
+#define MyAppVersion "6.0.5"
 #define MyAppPublisher "AK Design"
 #define MyAppURL "http://www.cyber1.org/"
 #define MyAppExeName "Pterm.exe"
@@ -51,6 +51,8 @@ Source: "C:\wxWidgets-3.0.4\lib\vc100_dll\wxmsw30u_core_vc100.dll"; DestDir: "{a
 Source: "C:\wxWidgets-3.0.4\lib\vc100_dll\wxbase30u_vc100.dll"; DestDir: "{app}"
 Source: "CHANGES-pterm.txt"; DestDir: "{app}"; Flags: isreadme
 Source: "ptermhelp.mte"; DestDir: "{app}"
+Source: "C:\WINDOWS\system32\msvcp100.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\WINDOWS\system32\msvcr100.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

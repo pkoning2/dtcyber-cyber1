@@ -495,8 +495,8 @@ BEGIN_EVENT_TABLE (PtermFrame, wxFrame)
 // For Retina display support on the Mac, the set of available scale
 // values is different than elsewhere; specifically, half-integer values
 // make sense because each display unit is actually two pixels. 
-const double scaleList_Retina[] = { 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, -1. };
-const double scaleList_std[] = { 1.0, 2.0, 3.0, -1 };
+const double scaleList_Retina[] = { 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, -1. };
+const double scaleList_std[] = { 1.0, 2.0, 3.0, 4.0, -1 };
 const double *scaleList;
 
 // the event tables connect the wxWindows events with the functions (event
@@ -1417,7 +1417,7 @@ PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
     mt_ksw = 0;             // route input to terminal
     mt_key = -1;
     mjobs = 0;
-
+    
     modexor = false;
     setMargin (0);
     RAM[M_CCR] = 0;
@@ -1572,10 +1572,15 @@ PtermFrame::PtermFrame (const wxString& title, PtermProfile *profile,
     m_bitmap2 = new wxBitmap (512 * 2, 512 * 2, 32);
     m_canvas = new PtermCanvas (this);
 
-    SetColors (m_currentFg, m_currentBg);    
+    SetColors (m_currentFg, m_currentBg);
     SetClientSize (XSize, YSize);
     ptermFullErase ();
     UpdateDisplayState ();
+
+    // Set the current colors to be also the initial local
+    // (microTutor) colors.
+    SaveRestoreColors (save, micro);
+    
 
     // If it's not the help frame, link it into the list of frames
     if (!helpframe)
@@ -2797,7 +2802,7 @@ void PtermFrame::OnSetAspectMode (wxCommandEvent &)
     UpdateDisplayState ();
 }
 
-void PtermFrame::OnLockPosition (wxCommandEvent &event)
+void PtermFrame::OnLockPosition (wxCommandEvent &)
 {
     if (m_profile->m_lockPosition)
     {
@@ -2831,7 +2836,7 @@ void PtermFrame::OnLockPosition (wxCommandEvent &event)
     BuildPopupMenu ();
 }
 
-void PtermFrame::OnRestorePosition (wxCommandEvent &event)
+void PtermFrame::OnRestorePosition (wxCommandEvent &)
 {
     Move (ForceValidStartPoint(m_profile->m_restoreX, m_profile->m_restoreY));
 }
@@ -5065,7 +5070,8 @@ bool PtermFrame::procPlatoWord (u32 d, bool ascii)
                     {
                         d = TERMTYPE;
                     }
-                    trace ("load echo termtype %d", 0160 + d);
+                    d += 0160;
+                    trace ("load echo termtype %3o", d);
                     break;
                 case 0x7b:
                     // hex 7b is beep

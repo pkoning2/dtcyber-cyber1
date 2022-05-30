@@ -20,19 +20,20 @@ current version was built against both V3.0 and V3.1; it should work
 with later versions (but that has not yet been tested); it will not
 work with older versions.
 
-In addition, it uses libSDL for audio output, and libsndfile for
+In addition, it uses libSDL2 for audio output, and libsndfile for
 writing audio files.
 
 Building on Linux:
 
 Using the package manager, install the development files for
-libsndfile and libSDL.  For example, on CentOS you would use "yum
+libsndfile and SDL2.  For example, on CentOS you would use "yum
 install libsndfile-devel libSDL-devel".
 
 If a packaged version of wxWidgets 3.0 or later is available for your
 system, install that (the development files, not just the runtime
 library -- typically this would have a package name like
-"wxwidgets-dev").  If no packaged versionis available, build wxWidgets
+"wxGTK3-devel", or on older Linuxes that use GTK2 it would be
+wxGTK2-devel).  If no packaged versionis available, build wxWidgets
 from sources; see the wxWidgets documentation for details.
 
     Note: you should build the wxWidgets shared libraries.  For
@@ -47,36 +48,42 @@ other convenient directory.
 
 Building on Mac OS:
 
-Install libsndfile and libSDL from the released kits.
+Note: I avoid Brew and Macports.  If you want to use those to supply
+the dependency libraries needed, you're on your own.  My procedures
+assume that the needed dependencies are built using the normal build
+procedures of those open source components (GNU standard configure
+then make and make install.)
+
+Install libsndfile and libSDL2 from the released kits.
 
 If a pre-built kit of wxWidgets 3.0 or 3.1 is available, install that.
-Otherwise, build it from sources.  The configure I used to build it
-was as follows:
+Otherwise, build it from sources.
 
-../configure --enable-universal_binary=i386,ppc --disable-shared \
-	      --enable-static --enable-monolithic \
-	      --with-macosx-sdk=/Developer/SDKs/MacOSX10.5.sdk \
-	      --with-macosx-version-min=10.4
+If all you need is a pterm that runs on your machine, you don't need
+any configure arguments.  In other words, proceed as follows:
 
-You can get away with fewer switches and/or some different settings,
-especially if you intend to build it just for your own use rather than
-for distributing kits to others.  If you have a system which uses the
-clang compiler rather than gcc, and as a result does not have PowerPC
-support in the compiler, omit ",ppc" from the configure string.  If
-you use wxWidgets 3.1, you may need to set the min version higher,
-perhaps 10.5 or 10.6, and/or change the SDK version used.
+cd wxWidgets-3.1.5 (or whatever opening the sources gave you)
+./configure
+make
+make install
 
 Now build pterm with "make Pterm.app".  The result should be a Pterm
 application (a "package" which is really a directory with a .app
 extension).  You can execute that from the build directory, or move it
 to some other location like /Applications.
 
+Note: the 6.0 kits were built on an old PowerPC Mac, with a bunch of
+additional configure arguments to enable building for the other Mac
+architectures (other than the Apple Silicon, for which the 64 bit
+Intel version is sufficient).  I don't recommend attempting to
+replicate that setup.
+
 Building on Windows:
 
 Install libsndfile, libSDL, and wxWidgets (3.0 or later) from the
 released kits. 
 
-Now open Pterm.vxcproj with Microsoft Visual Studio.  I used the 2010
+Now open DtCyber.sln with Microsoft Visual Studio.  I used the 2010
 edition, so the released project files are for that version.  If you
 have a different version, you may need to convert.
 
@@ -85,9 +92,9 @@ need to copy some of the DLLs is needs into the build output
 directory for Pterm to run properly after building.
 
 The build scripts in my sources include the building of an installer,
-using InnoSetup (an open source Windows installer creator).  If you
-have that installed, you should get a setup.exe which you can use to
-install the Pterm you built.
+using pterm.iss with InnoSetup (an open source Windows installer
+creator).  If you have that installed, you should get a setup.exe
+which you can use to install the Pterm you built.
 
 Building the other parts of DtCyber:
 

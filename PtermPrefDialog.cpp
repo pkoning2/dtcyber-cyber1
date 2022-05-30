@@ -305,17 +305,6 @@ void PtermPrefDialog::PtermInitDialog (void)
         chkShowStation->SetValue (true);
         page2->Add (chkShowStation, 0, wxALL, 5);
 
-#ifndef __WXMAC__
-        chkUseAccelerators = new wxCheckBox (tab2, wxID_ANY,
-            _ ("Enable control-key menu accelerators"),
-            wxDefaultPosition, wxDefaultSize, 0);
-        chkUseAccelerators->SetValue (true);
-        chkUseAccelerators->SetFont (dfont);
-        //if (!m_profileEdit)
-        //    chkUseAccelerators->Disable ();
-        page2->Add (chkUseAccelerators, 0, wxALL, 5);
-#endif
-
         tab2->SetSizer (page2);
         tab2->Layout ();
         page2->Fit (tab2);
@@ -372,6 +361,21 @@ void PtermPrefDialog::PtermInitDialog (void)
                                           wxDefaultPosition, wxDefaultSize, 0);
     chkDisableMouseDrag->SetValue (false);
     page3->Add (chkDisableMouseDrag, 0, wxALL, 5);
+
+    if (m_profileEdit)
+    {
+#ifndef __WXMAC__
+        chkUseAccelerators = new wxCheckBox (tab3, wxID_ANY,
+            _ ("Enable control-key menu accelerators"),
+            wxDefaultPosition, wxDefaultSize, 0);
+        chkUseAccelerators->SetValue (true);
+        chkUseAccelerators->SetFont (dfont);
+        //if (!m_profileEdit)
+        //    chkUseAccelerators->Disable ();
+        page3->Add (chkUseAccelerators, 0, wxALL, 5);
+#endif
+    }
+    
     tab3->SetSizer (page3);
     tab3->Layout ();
     page3->Fit (tab3);

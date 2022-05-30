@@ -144,6 +144,8 @@ PtermHostConnection::PtermHostConnection (const wxString &host, int port)
     : m_fet (NULL),
       m_displayIn (0),
       m_displayOut (0),
+      m_abortIn (0),
+      m_abortOut (0),
       m_gswIn (0),
       m_gswOut (0),
       m_port (port),
@@ -221,12 +223,13 @@ void PtermHostConnection::Connect (void)
     }
 }
 
-void PtermHostConnection::s_dataCallback (NetFet *, int, void *arg)
+void PtermHostConnection::s_dataCallback (NetFet *, int cnt, void *arg)
 {
     PtermHostConnection *self = (PtermHostConnection *) arg;
     
-    tracex ("Data callback on %p", self);
+    tracex ("Data callback on %p, count %d", self, cnt);
     self->dataCallback ();
+    tracex ("Done processing callback count %d", cnt);
 }
 
 void PtermHostConnection::endGsw (void)
@@ -292,11 +295,7 @@ void PtermHostConnection::dataCallback (void)
         else if (m_connMode == niu && platowd == 2)
         {
             endGsw ();
-                
-            // erase abort marker -- reset the ring to be empty
-            wxCriticalSectionLocker lock (m_pointerLock);
-
-            m_displayOut = m_displayIn;
+            m_abortIn++;
         }
         else if (platowd == C_DISCONNECT ||
                  platowd == C_CONNFAIL1 || platowd == C_CONNFAIL2)
@@ -309,7 +308,6 @@ void PtermHostConnection::dataCallback (void)
         StoreWord (platowd);
         i = RingCount ();
         debug ("Stored %07o, ring count is %d", platowd, i);
-
 
         if (m_gswActive && !m_gswStarted && i >= GSWRINGSIZE / 2)
         {
@@ -471,20 +469,19 @@ int PtermHostConnection::AssembleAsciiWord (void)
     }
 }
 
-
+// Get the next word from the main ring.  But if an erase abort has
+// been received, discard data until we get past the last erase abort.
 int PtermHostConnection::NextRingWord (void)
 {
     int word, next, i;
 
+    for (;;)
     {
-        wxCriticalSectionLocker lock (m_pointerLock);
-        
         if (m_displayIn == m_displayOut)
         {
             return C_NODATA;
         }
     
-        i = RingCount ();
         word = m_displayRing[m_displayOut];
         next = m_displayOut + 1;
         if (next == RINGSIZE)
@@ -492,7 +489,17 @@ int PtermHostConnection::NextRingWord (void)
             next = 0;
         }
         m_displayOut = next;
+        if (m_abortIn > m_abortOut)
+        {
+            if (word == 2)
+            {
+                m_abortOut++;
+            }
+            continue;
+        }
+        break;
     }
+    i = RingCount ();
     debug ("consumed word %07o, ring count now %d", word, i);
     if (i < RINGXOFF1 && m_owner->m_pendingEcho != -1)
     {
@@ -687,24 +694,20 @@ int ptermNextGswWord (void *connection, int idle)
 
 int PtermHostConnection::RingCount (void) const
 {
-    if (m_displayIn >= m_displayOut)
+    int ret;
+
+    ret = m_displayIn - m_displayOut;
+    if (ret < 0)
     {
-        return m_displayIn - m_displayOut;
+        ret += RINGSIZE;
     }
-    else
-    {
-        return RINGSIZE + m_displayIn - m_displayOut;
-    }
+    return ret;
 }
 
 void PtermHostConnection::StoreWord (int word)
 {
     int next;
     
-    if (word < 0)
-    {
-        m_displayOut = m_displayIn;
-    }
     next = m_displayIn + 1;
     if (next == RINGSIZE)
     {

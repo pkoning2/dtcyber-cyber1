@@ -338,8 +338,10 @@ void PtermApp::MacReopenApp (void)
 
 int PtermApp::OnExit (void)
 {
-    wxTheClipboard->Flush ();
-
+    if (wxTheClipboard->IsOpened ())
+    {
+        wxTheClipboard->Flush ();
+    }
     m_config->Flush ();
     
     delete m_config;

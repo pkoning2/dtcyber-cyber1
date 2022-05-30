@@ -96,12 +96,15 @@ private:
     NetPortSet  m_portset;
     NetFet      *m_fet;
     u32         m_displayRing[RINGSIZE];
-    volatile int m_displayIn, m_displayOut;
+    volatile int m_displayIn;
+    volatile int m_displayOut;
+    volatile int m_abortIn;
+    int         m_abortOut;
     u32         m_gswRing[GSWRINGSIZE];
-    volatile int m_gswIn, m_gswOut;
+    volatile int m_gswIn;
+    volatile int m_gswOut;
     wxString    m_hostName;
     int         m_port;
-    wxCriticalSection m_pointerLock;
     bool        m_gswStarted;
     int         m_savedGswMode;
     int         m_gswWord2;

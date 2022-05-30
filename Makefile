@@ -26,8 +26,8 @@ OBJS    = main.o init.o trace.o dump.o \
 	  tpmux.o dtdisksubs.o ext.o pni.o \
 	  $(PWD)/charset.o $(PWD)/dtnetsubs.o
 
-CC      = gcc
-CXX     = g++
+CC      ?= gcc
+CXX     ?= g++
 
 ifneq ("$(NPU_SUPPORT)","")
 OBJS +=	  npu_async.o npu_bip.o npu_hip.o npu_svm.o npu_tip.o npu_net.o
@@ -45,27 +45,29 @@ LINK=$(CXX)
 ifeq ("$(SDKDIR)","")
 OSXMIN ?= 10.4
 endif
-CLANG := $(shell gcc --version 2>/dev/null| fgrep LLVM)
+CLANG := $(shell $(CC) --version 2>/dev/null| fgrep clang)
 ifneq ("$(CLANG)", "")
-AVX ?= -mavx2
-ARCHCFLAGS ?= -arch i386 -arch x86_64 $(AVX)
-ARCHLDFLAGS ?= -arch i386 -arch x86_64
-OSXVER ?= 10.9
-OSXMIN = 10.7
+#AVX ?= -mavx2
+#ARCHCFLAGS ?= -arch i386 -arch x86_64 $(AVX)
+#ARCHLDFLAGS ?= -arch i386 -arch x86_64
+OSXVER ?= 11.3
+OSXMIN = 10.10
+ARCHCFLAGS ?= -arch x86_64 -arch arm64 -Wno-c++11-extensions
+ARCHLDFLAGS ?= -arch x86_64 -arch arm64
 else
 ARCHCFLAGS ?= -arch i386 -arch ppc -arch x86_64 -arch ppc64
 ARCHLDFLAGS ?= -arch i386 -arch ppc -arch x86_64
 OSXVER ?= 10.5
-endif
-SDKDIR := /Developer/SDKs/MacOSX$(OSXVER).sdk
+SDKDIR := `xcrun --show-sdk-path`
 LIBS    +=  -Wl,-syslibroot,$(SDKDIR) -L$(SDKDIR)/usr/lib 
 INCL    += -isysroot $(SDKDIR) -I$(SDKDIR)/usr/include/c++/4.2.1 
+endif
 ifneq ("$(OSXMIN)","")
 OSXMINFLG = -mmacosx-version-min=$(OSXMIN)
 endif
 ARCHLDFLAGS +=  $(OSXMINFLG) $(CXXLIB)
 ARCHCFLAGS  +=  $(OSXMINFLG) $(CXXLIB)
-ARCHCCFLAGS ?= $(ARCHCFLAGS) $(AVX)
+ARCHCCFLAGS ?= $(ARCHCFLAGS) 
 
 ifneq ("$(wildcard main.c)","")
 all: dtcyber Pterm.app dtoper.app dd60.app blackbox

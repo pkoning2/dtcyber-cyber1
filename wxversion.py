@@ -16,7 +16,7 @@ def shellstr (cmd, *args):
         return subprocess.check_output ((cmd,) + args,
                                         universal_newlines = True,
                                         stderr = subprocess.STDOUT).rstrip ('\n')
-    except subprocess.CalledProcessError:
+    except Exception:
         return ""
     
 try:

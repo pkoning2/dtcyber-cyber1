@@ -1,1 +1,30 @@
-<pkgref spec="1.12" uuid="4FE5A420-AF98-4EFA-B4B4-C0B2AAD5DE18"><config><identifier>org.cyber1.platoTerminalEmulator.pterm.pkg</identifier><version>6.0.4</version><description></description><post-install type="none"/><requireAuthorization/><installFrom includeRoot="true">/Users/pkoning/Documents/svn/dtcyber/Pterm.app</installFrom><installTo relocatable="true">/Applications</installTo><flags><followSymbolicLinks/><allowRevert/><mod>allowRevert</mod></flags><packageStore type="internal"></packageStore><mod>parent</mod><mod>relocatable</mod><mod>version</mod></config><contents><file-list>01pterm-contents.xml</file-list><filter>/CVS$</filter><filter>/\.svn$</filter><filter>/\.cvsignore$</filter><filter>/\.cvspass$</filter><filter>/\.DS_Store$</filter></contents></pkgref>
+<pkgref spec="1.12" uuid="4FE5A420-AF98-4EFA-B4B4-C0B2AAD5DE18">
+  <config>
+    <identifier>org.cyber1.platoTerminalEmulator.pterm.pkg</identifier>
+    <version>6.0.5</version>
+    <description></description>
+    <post-install type="none"/>
+    <requireAuthorization/>
+    <installFrom includeRoot="true">
+      /Users/pkoning/Documents/svn/dtcyber/Pterm.app
+    </installFrom>
+    <installTo relocatable="true">/Applications</installTo>
+    <flags>
+      <followSymbolicLinks/>
+      <allowRevert/>
+      <mod>allowRevert</mod>
+    </flags>
+    <packageStore type="internal"></packageStore>
+    <mod>parent</mod>
+    <mod>relocatable</mod>
+    <mod>version</mod>
+  </config>
+  <contents>
+    <file-list>01pterm-contents.xml</file-list>
+    <filter>/CVS$</filter>
+    <filter>/\.svn$</filter>
+    <filter>/\.cvsignore$</filter>
+    <filter>/\.cvspass$</filter>
+    <filter>/\.DS_Store$</filter>
+  </contents>
+</pkgref>

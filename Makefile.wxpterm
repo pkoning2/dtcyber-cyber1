@@ -19,36 +19,27 @@ SOURCES = FrameCanvas.cpp PtermApp.cpp PtermConnDialog.cpp \
 	PtermPrintout.h MTFile.cpp
 
 ifeq ("$(HOST)","Darwin")
-PKGMAKER ?= /Developer/Applications/Utilities/PackageMaker.app
 MACEXTRA = fixmac.o
 ifneq ("$(CLANG)", "")
 MACCFLAGS = -Wno-potentially-evaluated-expression
 endif
-ifeq ("$(wildcard $(PKGMAKER))","")
-PKGMAKER = /Applications/Utilities/PackageMaker.app
-endif
-PTERMPKGNAME ?= "Install-Pterm.pkg"
 
-ifeq ("$(OSXVER)", "10.5")
 ifeq ("$(wildcard /Library/Frameworks/SDL2.framework)","")
-SDLFW ?= SDL
+SDLFW = SDL
 else
-SDLFW ?= SDL2
+SDLFW = SDL2
 endif
-SDLLIBS ?= -Wl,-framework,$(SDLFW)
-#SDLINCL ?= -I/usr/local/include -I/usr/include -F/Library/Frameworks/$(SDLFW).framework
-endif
-else
-SDLFW=
-endif
-#else
+SDLLIBS = -Wl,-framework,$(SDLFW) -F/Library/Frameworks
+SDLINCL =  -I /Library/Frameworks/$(SDLFW).framework/Versions/A/Headers
+else # not Darwin
 SDLPATH ?= /usr/local
-SDLINCL ?= `sdl-config --cflags`
+SDLINCL ?= `sdl2-config --cflags`
 PATH:=$(SDLPATH)/bin:$(PATH)
 ifeq ("$(TYPE)","static")
-SDLLIBS ?= `sdl-config --static-libs`
+SDLLIBS ?= `sdl2-config --static-libs`
 else
-SDLLIBS ?= `sdl-config --libs`
+SDLLIBS ?= `sdl2-config --libs`
+endif
 endif
 
 SNDDIR ?= /usr
@@ -67,8 +58,8 @@ WXDIR ?= $(DEFWXDIR)
 PATH:=$(WXDIR)/bin:$(PATH)
 
 WXCONFIG ?= wx-config
-CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing  -I $(SNDINCL)
-WXLIBS	= `$(WXCONFIG) --libs` $(EXTRALIBS) 
+CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing -I $(SNDINCL)
+WXLIBS	= `$(WXCONFIG) --libs core,base` $(EXTRALIBS) 
 
 GCCVERSION := $(shell gcc --version 2>/dev/null| head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
@@ -76,8 +67,6 @@ GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
 C2FLAGS  = $(OPTIMIZE) -g2 $(INCL) $(CDEBUG) $(MACHINECFLAGS) $(ARCHCCFLAGS) $(EXTRACFLAGS) $(VERSIONCFLAGS) -DHOST_$(HOST) $(PFLAGS) $(MACCFLAGS)
 
 MSGFLAGS ?= -U
-
-SDLCFLAGS = $(SDLINCL)
 
 PTOBJS	= dtnetsubs.o pterm_sdl.o FrameCanvas.o MTFile.o PtermApp.o \
 	PtermConnDialog.o PtermConnFailDialog.o PtermConnection.o \
@@ -101,13 +90,14 @@ endif
 
 info:
 	@echo wxdir: $(WXDIR)
-	@echo sdlcflags: $(SDLCFLAGS)
 	@echo sdllibs: $(SDLLIBS)
 	@echo path:  $(PATH)
 	@echo wxversion: $(WXVERSION)
 	@echo gccversion: $(GCCVERSION)
 	@echo ptermsvn: $(PTERMSVNREV)
 	@echo osxver: $(OSXVER)
+	@echo host: $(HOST)
+	@echo machinecflags: $(MACHINECFLAGS)
 
 pterm:	$(PTOBJS) $(MACEXTRA)
 	$(LINK) $(ARCHLDFLAGS) $(LDFLAGS) $(LIBS) -g2 -o $@ $+ $(WXLIBS) $(SDLLIBS) $(SNDLIBS) $(SETPATH)
@@ -181,25 +171,32 @@ ifneq ("$(SDLFW)", "")
 	rm -rf Pterm.app/Contents/Frameworks/$(SDLFW).framework/Headers
 	rm -rf Pterm.app/Contents/Frameworks/$(SDLFW).framework/Versions/Current/Headers
 endif
-	codesign --deep -s ni1d Pterm.app
 
-pterm-empty.dmg:
-	hdiutil create -size 32m pterm-empty.dmg -layout NONE
-	dev=`hdid -nomount pterm-empty.dmg` ; newfs_hfs -v ptermvol $$dev ; hdiutil detach $$dev
+pterm.pkg: Pterm.app pterm-pkgbuild.plist pterm-distribution.plist pterm-license.rtf
+	xattr -cr Pterm.app
+	codesign --deep -s "Paul Koning" Pterm.app
+	rm -rf /tmp/ptermdist
+	mkdir -p /tmp/ptermdist/Applications
+	cp -a Pterm.app /tmp/ptermdist/Applications
+	pkgbuild --root /tmp/ptermdist --component-plist pterm-pkgbuild.plist /tmp/pterm.pkg
+	productbuild --distribution pterm-distribution.plist --package-path /tmp --resources . $@
+	rm -rf /tmp/ptermdist /tmp/pterm.pkg
 
-$(PTERMPKGNAME): Pterm.app Pterm.pmdoc
-	$(PKGMAKER)/Contents/MacOS/PackageMaker --verbose --doc Pterm.pmdoc --out $@
-
-ptermkit.dmg: $(PTERMPKGNAME) pterm-empty.dmg
-	cp pterm-empty.dmg ptermkit.dmg
-	dev=`hdid ptermkit.dmg | awk '{ print $$1 }'` ; cp -Rp $(PTERMPKGNAME) /Volumes/ptermvol; hdiutil detach $$dev
-
-pterm-$(PTERMVERSION).dmg: ptermkit.dmg
+pterm-$(PTERMVERSION).dmg: pterm.pkg
+	xattr -cr pterm.pkg
+	codesign --deep -s "Paul Koning" pterm.pkg
+	rm -rf /tmp/ptermdist
+	mkdir /tmp/ptermdist
+	cp -a pterm.pkg /tmp/ptermdist/
+	hdiutil create -volname "Pterm" -srcfolder /tmp/ptermdist -ov /tmp/ptermkit.dmg
+	# for some reason it is larger than it should be, convert fixes that
 	rm -f $@
-	hdiutil convert -format UDZO $< -o $@
-	hdiutil internet-enable -yes $@
+	hdiutil convert -format UDZO -imagekey zlib-level=9 -o $@ /tmp/ptermkit.dmg
+	rm -rf /tmp/ptermdist /tmp/ptermkit.dmg
 
 pterm-kit: pterm-$(PTERMVERSION).dmg
+	xattr -cr pterm-$(PTERMVERSION).dmg
+	codesign --deep -s "Paul Koning" pterm-$(PTERMVERSION).dmg
 
 else
 
@@ -233,7 +230,7 @@ ifeq ("$(HOST)","Darwin")
 endif
 
 pterm_sdl.o : pterm_sdl.c
-	$(CC) $(CFLAGS) $(SDLCFLAGS) -I $(SNDINCL) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 %.d : %.cpp
 	/bin/echo -n "$@ " > /tmp/$@
@@ -242,7 +239,7 @@ pterm_sdl.o : pterm_sdl.c
 
 pterm_sdl.d : pterm_sdl.c
 	/bin/echo -n "$@ " > /tmp/$@
-	$(CC) $(INCL) $(SDLCFLAGS) -I $(SNDINCL) -MM -MG $< | fgrep -v type_traits  >> /tmp/$@
+	$(CC) $(INCL) -MM -MG $< | fgrep -v type_traits  >> /tmp/$@
 	mv -f /tmp/$@ $@
 
 %.mo : %.po
