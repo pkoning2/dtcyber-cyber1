@@ -191,6 +191,7 @@ volatile int exchangeCpu = -1;
 u32 cpuMaxMemory;
 u32 cpuMemMask;
 u32 ecsMaxMemory;
+extern FILE **cpuTF;
 
 /*
 **  -----------------
@@ -671,8 +672,6 @@ u32 cpuGetP(u8 cp)
 **         turns into a pass.
 **
 **------------------------------------------------------------------------*/
-FILE **cpuTF;
-int foo;
 int cpuIssueExchange(u8 cp, u32 addr, int monitor)
     {
     if (cp >= cpuCount)
@@ -681,7 +680,7 @@ int cpuIssueExchange(u8 cp, u32 addr, int monitor)
         }
     if (monitor > 0 && cp > 0)
         {
-        foo++;
+            // Wait
         }
 #ifdef CPU_THREADS
     pthread_mutex_lock (&exchange_mutex);

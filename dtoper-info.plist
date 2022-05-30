@@ -25,9 +25,9 @@
 	<key>CFBundleShortVersionString</key>
 	<string>4.1.11</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Dtoper V2.0.0, (c) 2012 Paul Koning</string>
+	<string>Dtoper V2.0.0, © 2012 Paul Koning</string>
 	<key>CFBundleLongVersionString</key>
-	<string>2.0.0, (c) 2012 Paul Koning</string>
+	<string>2.0.0, © 2012 Paul Koning</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

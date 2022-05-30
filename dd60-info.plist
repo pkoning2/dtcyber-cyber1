@@ -25,9 +25,9 @@
 	<key>CFBundleShortVersionString</key>
 	<string>2.0.0</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Dd60 V2.0.0, (c) 2005-2012 Paul Koning</string>
+	<string>Dd60 V2.0.0, © 2005-2012 Paul Koning</string>
 	<key>CFBundleLongVersionString</key>
-	<string>2.0.0, (c) 2005-2012 Paul Koning</string>
+	<string>2.0.0, © 2005-2012 Paul Koning</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

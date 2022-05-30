@@ -371,18 +371,11 @@ def getvfd (w, *fields):
             ret.append ((w >> pos) & ((1 << f) - 1))
     return ret
 
-def wtod (w):
-    "Translate a 60-bit word to 10 display code characters"
-    dc = list ()
-    for s in range (54, -1, -6):
-        dc.append (disp_dec[(w >> s) & 0o77])
-    return "".join (dc)
-
 def wtostr (w, count = 99999):
     if isinstance (w, list):
-        s = "".join (wtod (i) for i in w)
+        s = "".join (nosio.wtod (i, False) for i in w)
     else:
-        s = wtod (w)
+        s = nosio.wtod (w, False)
     return s[:count].rstrip (":")
 
 def showuse (w, count):
@@ -447,8 +440,7 @@ def sysacc (w, x):
 
 def dtow (d):
     d = d[:10]
-    while len (d) < 10:
-        d += ":"
+    d += ":" * (10 - len (d))
     ret = 0
     for c in d:
         ret = (ret << 6) | disp_enc[c]
@@ -461,37 +453,6 @@ def strtow (s):
     if not ret or (ret[-1] & 0o7777):
         ret.append (0)
     return ret
-
-def ppdump (data, f = sys.stdout):
-    "Dump buffer of PPU words (12 bit words)"
-    prev = pstart = None
-    for off in range (0, len (data), 8):
-        dc = list ()
-        line = data[off:off + 8]
-        if line == prev:
-            if pstart is None:
-                pstart = off
-            pend = off
-        else:
-            # Not the same as before, or no "before"
-            if pstart is not None:
-                print ("        lines {:0>6o} through {:0>6o} same as above".format (pstart, pend), file = f)
-            prev = line
-            pstart = None
-            dline = [ "{:0>6o}/ ".format (off) ]
-            for w in line:
-                if w:
-                    dline.append ("{:0>4o} ".format (w))
-                else:
-                    dline.append ("---- ")
-                dline.append (" ")
-                for s in 6, 0:
-                    dc.append (disp_dec[(w >> s) & 0o77])
-            dline.extend (dc)
-            dline = "".join (dline)
-            print (dline, file = f)
-    if pstart is not None:
-        print ("        lines {:0>6o} through {:0>6o} same as above".format (pstart, pend), file = f)
 
 def fmtsource (data, p, f = sys.stdout):
     "Format a block of source text"
@@ -569,14 +530,21 @@ infotab = (
      ("\ndescription ------ ", 15, 80)
 )
 
+class octint (int):
+    def __new__ (cls, val):
+        v = int (val, 8)
+        if 0 < v <= 0o377777:
+            return int.__new__ (cls, v)
+        raise ValueError ("Value {} is out of range".format (val))
+    
 pfparser = argparse.ArgumentParser ()
 pfparser.add_argument ("pack", help = "File name of pack container file")
 pfparser.add_argument ("file", nargs = "*", help = "PLATO file to read")
 pfparser.add_argument ("--model", default = "di",
                        help = "Drive model")
-pfparser.add_argument ("--tar-file", "-t",
+pfparser.add_argument ("--tar-file", "-t", metavar = "T",
                        help = "Tar archive containing pack container file")
-pfparser.add_argument ("-o", "--output",
+pfparser.add_argument ("-o", "--output", metavar = "O",
                        help = """Output file or directory.  Default is
                                  current directory for file copy, output
                                  to terminal (stdout) for other commands""")
@@ -603,6 +571,7 @@ pfparser.add_argument ("-M", "--master-file", metavar = "MF",
                        help = "Name of master file on the NOS pack. "
                               "Use '*' to print NOS file catalog.")
 pfparser.add_argument ("-U", "--user-index", metavar = "UI",
+                       default = 0o377773, type = octint,
                        help = "User index of master file on the NOS pack")
 pfparser.add_argument ("--dates", action = "store_true", default = False,
                        help = "Preserve file modify date")
