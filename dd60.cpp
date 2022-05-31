@@ -2099,7 +2099,11 @@ void Dd60Frame::dd60SendKey(int key)
 
     if (traceDd60)
     {
-        fprintf (traceF, "key to plato %03o\n", key);
+        // Superfluous test added to stop compiler warnings
+        if (traceF != NULL)
+	{
+            fprintf (traceF, "key to plato %03o\n", key);
+        }
 #ifdef DEBUG
         wxLogMessage ("key to plato %03o", key);
 #endif
@@ -2534,7 +2538,7 @@ void Dd60Canvas::OnKey (wxKeyEvent &event)
         }
     }
 
-    if (m_owner->traceDd60)
+    if (m_owner->traceDd60 && traceF != NULL)
     {
         fprintf (traceF, "ctrl %d shift %d alt %d key %d\n", event.m_controlDown, event.m_shiftDown, event.m_altDown, key);
     }
