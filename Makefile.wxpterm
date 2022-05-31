@@ -59,7 +59,7 @@ PATH:=$(WXDIR)/bin:$(PATH)
 
 WXCONFIG ?= wx-config
 CXXFLAGS = `$(WXCONFIG) --cxxflags` -fno-strict-aliasing -I $(SNDINCL)
-WXLIBS	= `$(WXCONFIG) --libs core,base` $(EXTRALIBS) 
+WXLIBS	= `$(WXCONFIG) --libs core,base,adv` $(EXTRALIBS) 
 
 GCCVERSION := $(shell gcc --version 2>/dev/null| head -1 | awk '{print $$3}')
 GCCVERSION := $(word 1, $(subst ., ,$(GCCVERSION)))
