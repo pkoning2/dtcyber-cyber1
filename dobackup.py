@@ -310,9 +310,11 @@ def docopy (tarball):
         if dest is None:
             continue
         log ("Copying %s to %s" % (tarball, dest))
-        subprocess.call (SCPARGS + (tarball, "%s:" % dest),
-                         stderr = subprocess.STDOUT,
-                         universal_newlines = True)
+        ret = subprocess.call (SCPARGS + (tarball, "%s:" % dest),
+                            stderr = subprocess.STDOUT,
+                            universal_newlines = True)
+        if ret:
+            log ("*** Error {} during copy to {}".format (ret, dest))
 
 _time_re = re.compile (r"\d\d?\*\d\d\*\d\d [AP]M ([A-Z][A-Z][A-Z])")
 def checktz (cons, newtz):
