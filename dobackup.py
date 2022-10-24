@@ -21,8 +21,8 @@ BACKUPDEST1 = None
 BACKUPDEST2 = "cyber1backup@akdesign.dyndns.org"
 
 # Base arguments for scp
-# Speed limit: 400 kb/s, identity file: cyber1backup.
-SCPARGS = ( "scp", "-l", "400", "-q", "-i", "cyber1backup" )
+# Speed limit: 1 MB/s (8 Mb/s), identity file: cyber1backup.
+SCPARGS = ( "scp", "-l", "8000", "-q", "-i", "cyber1backup" )
 
 import sys
 import os
