@@ -28,7 +28,7 @@
 #include "types.h"
 #include "ptermx.h"
 
-#define FREQ        22050           // desired sound system data rate
+#define FREQ        44100           // desired sound system data rate
 #define CRYSTAL     3872000         // GSW clock crystal frequency
 #define SAMPLES     4096            // number of samples per callback
 #define MAXIDLE     5               // time to stop if this many idle callbacks
