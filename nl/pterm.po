@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-08-13 16:25-0400\n"
+"POT-Creation-Date: 2023-02-12 14:17-0500\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -70,12 +70,12 @@ msgstr "Toon inhoudsopgave van beschrijving"
 msgid "File"
 msgstr "Bestand"
 
-#: FrameCanvas.cpp:1313 FrameCanvas.cpp:1749 PtermConnDialog.cpp:70
+#: FrameCanvas.cpp:1313 FrameCanvas.cpp:1749 PtermConnDialog.cpp:67
 #: PtermPrefDialog.cpp:692
 msgid "Help"
 msgstr "Help"
 
-#: FrameCanvas.cpp:1747 PtermConnDialog.cpp:63
+#: FrameCanvas.cpp:1747 PtermConnDialog.cpp:60
 msgid "Edit"
 msgstr "Bewerken"
 
@@ -386,12 +386,12 @@ msgstr "Probleem bij aanmaken van de programma-informatiefolder"
 msgid "Open a new terminal window"
 msgstr "Nieuw terminalvenster openmaken"
 
-#: PtermApp.cpp:413 PtermConnDialog.cpp:151
+#: PtermApp.cpp:412 PtermConnDialog.cpp:148
 #, fuzzy
 msgid "Profile Editor"
 msgstr "Bewerking voorkeurbestand"
 
-#: PtermApp.cpp:429 PtermApp.cpp:434
+#: PtermApp.cpp:428 PtermApp.cpp:433
 #, fuzzy
 msgid "PLATO terminal emulator."
 msgstr ""
@@ -403,15 +403,15 @@ msgstr ""
 msgid "Select a profile and click Connect or Boot."
 msgstr "Kies een voorkeurbestand en klik op Verbinden."
 
-#: PtermConnDialog.cpp:75 PtermPrefDialog.cpp:703
+#: PtermConnDialog.cpp:72 PtermPrefDialog.cpp:703
 msgid "Cancel"
 msgstr "Annuleer"
 
-#: PtermConnDialog.cpp:79 PtermConnDialog.cpp:240
+#: PtermConnDialog.cpp:76 PtermConnDialog.cpp:237
 msgid "Connect"
 msgstr "Verbinden"
 
-#: PtermConnDialog.cpp:216 PtermPrefDialog.cpp:1326
+#: PtermConnDialog.cpp:213 PtermPrefDialog.cpp:1326
 #, c-format
 msgid ""
 "Profile '%s' not found. Problem loading file:\n"
@@ -422,7 +422,7 @@ msgstr ""
 "\n"
 "    %s"
 
-#: PtermConnDialog.cpp:220 PtermPrefDialog.cpp:902 PtermPrefDialog.cpp:923
+#: PtermConnDialog.cpp:217 PtermPrefDialog.cpp:902 PtermPrefDialog.cpp:923
 #: PtermPrefDialog.cpp:949 PtermPrefDialog.cpp:1246 PtermPrefDialog.cpp:1328
 msgid "Error"
 msgstr "Fout"

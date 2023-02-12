@@ -557,7 +557,7 @@ bool DtoperApp::OnInit (void)
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
     
-    sprintf (traceFn, "dtoper_%d.trc", getpid ());
+    snprintf (traceFn, sizeof (traceFn), "dtoper_%d.trc", getpid ());
 
     m_locale.Init(wxLANGUAGE_DEFAULT);
     m_locale.AddCatalog(wxT("dtoper"));

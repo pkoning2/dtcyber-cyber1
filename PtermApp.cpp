@@ -93,7 +93,7 @@ bool PtermApp::OnInit (void)
 #endif
     
     // File name to use for tracing, if we enable tracing
-    sprintf (traceFn, "pterm%d.trc", pid);
+    snprintf (traceFn, sizeof (traceFn), "pterm%d.trc", pid);
 
     srand (time (NULL)); 
     m_locale.Init (wxLANGUAGE_DEFAULT);
@@ -373,8 +373,6 @@ void PtermApp::DoConnectDialog (void)
 
 void PtermApp::DoConnect (PtermProfile *prof)
 {
-    PtermFrame *frame;
-    
     if (!prof->m_profileName.IsEmpty ())
         m_curProfile = prof->m_profileName;
             
@@ -400,7 +398,8 @@ void PtermApp::DoConnect (PtermProfile *prof)
         printf ("Unexpected profile state\n");
         assert (0);
     }
-    frame = new PtermFrame (title, prof, conn);
+    // The action of creating a frame gets things going.
+    new PtermFrame (title, prof, conn);
 }
 
 void PtermApp::OnPref (wxCommandEvent&)

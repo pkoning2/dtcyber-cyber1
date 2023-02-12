@@ -741,7 +741,7 @@ bool Dd60App::OnInit (void)
     g_printData = new wxPrintData;
     g_pageSetupData = new wxPageSetupDialogData;
     
-    sprintf (traceFn, "dd60_%d.trc", getpid ());
+    snprintf (traceFn, sizeof (traceFn), "dd60_%d.trc", getpid ());
 
     m_locale.Init(wxLANGUAGE_DEFAULT);
     m_locale.AddCatalog(wxT("dd60"));
@@ -1319,10 +1319,11 @@ Dd60Frame::~Dd60Frame ()
 **------------------------------------------------------------------------*/
 void Dd60Frame::procDd60Char (unsigned int d)
 {
-    int size = 0, margin, firstx, firsty, inc = 0, qwds = 0;
+    int size = 0, margin, firstx, firsty, inc = 0;
     u8 *data = 0;
     int i, j, k = 0;
 #if VECSIZE
+    int qwds = 0;
     bytevec *pmap, *pdata;
 #endif
 
@@ -1365,8 +1366,9 @@ void Dd60Frame::procDd60Char (unsigned int d)
     }
     // Margin is in screen units (not pixels)
     margin = (size / m_pscale - inc) / 2;
+#if VECSIZE
     qwds = size / 4;
-    
+#endif
     if (d != 0 && d != 055)
     {
         PixelData::Iterator p (*m_pixmap);
@@ -2146,7 +2148,7 @@ Dd60PrefDialog::Dd60PrefDialog (Dd60Frame *parent, wxWindowID id, const wxString
     
     m_connect = dd60App->m_connect;
     m_fgColor = dd60App->m_fgColor;
-    m_port.Printf (wxT ("%d"), dd60App->m_port);
+    m_port.Printf (wxT ("%ld"), dd60App->m_port);
 
     paintBitmap (fgBitmap, m_fgColor);
     

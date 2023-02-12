@@ -53,9 +53,6 @@ PtermConnDialog::PtermConnDialog (wxWindowID id, const wxString &title,
     fgSizer11->AddGrowableRow (0);
     fgSizer11->SetFlexibleDirection (wxBOTH);
 
-    wxFlexGridSizer* fgs111;
-    fgs111 = new wxFlexGridSizer (3, 2, 0, 0);
-
     wxFlexGridSizer* fgs112;
     fgs112 = new wxFlexGridSizer (1, 4, 0, 0);
     fgs112->AddGrowableCol (1);
