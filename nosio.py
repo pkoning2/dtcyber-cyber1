@@ -536,6 +536,23 @@ class nosdisk (disk):
                     self.sec = 0
         return data[:dlen], eor
 
+    def writecw (self, trk, sec, cw1, cw2, data):
+        self.disk.write (self.ltop (trk, sec), cw1, cw2, data)
+
+    def write (self, trk, sec, data):
+        trk &= 0o3777
+        cw2 = len (data)
+        nt = self.trt[trk]
+        cw1 = sec + 1
+        if nt & 0o4000:
+            # We have a next track.  Check what CW1 should be
+            if cw1 == self.seclimit:
+                cw1 = nt
+        else:
+            if sec > nt:
+                raise InternalError ("Write beyond current EOI")
+        self.writecw (trk, sec, cw1, cw2, data)
+        
     @staticmethod
     def ltop_di (trk, sec):
         """Translate NOS logical track/sector to sector offset for NOS
@@ -610,6 +627,12 @@ class platodisk (disk):
             wl.extend (s)
         return wl
 
+    def writeblk (self, blk, data):
+        for i in range (5):
+            off = i * 64
+            # Supplies zeroes for the control words (not used in PLATO)
+            self.write (0, 0, blk * 5 + i, data[off:off + 64])
+    
 class nosfile:
     def __init__ (self, disk, ent):
         self.disk = disk
@@ -634,6 +657,10 @@ class nosfile:
             self.tracks = trks
             
     def read (self, sec):
+        if not self.daf:
+            raise IOError ("indirect file access NYI")
+        if sec > self.len:
+            raise EOFError
         sec += 1    # +1 to skip system sector
         trk, sec = divmod (sec, self.disk.seclimit)
         trk = self.tracks[trk]
@@ -646,6 +673,21 @@ class nosfile:
             assert not eof
             ret.extend (d)
         return ret
+    
+    def write (self, sec, data):
+        if not self.daf:
+            raise IOError ("indirect file access NYI")
+        if sec > self.len:
+            raise EOFError
+        sec += 1    # +1 to skip system sector
+        trk, sec = divmod (sec, self.disk.seclimit)
+        trk = self.tracks[trk]
+        self.disk.write (trk, sec, data)
+
+    def writeblk (self, blk, data):
+        for i in range (5):
+            off = i * 64
+            self.write (blk * 5 + i, data[off:off + 64])
     
 d2alc = ":abcdefghijklmnopqrstuvwxyz0123456789+-*/()$= ,.#[]%\"_!&'?<>@\\^;"
 d2auc = d2alc.upper ()

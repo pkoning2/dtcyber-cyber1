@@ -139,3 +139,14 @@ tab, which is a somewhat more obvious spot for it than the Title tab.
 This does not apply to Mac, which does not have that setting.
 
 Add scale 3.5 (if Retina) and scale 4 menu options.
+
+V6.0.6, April 2025:
+
+New Mac kit to fix a problem with the previous version not installing
+on recent versions of Mac OS.  Note: as previously announced, the Mac
+version is for Mac OS 10.10 or later only, universal binary for X86
+and Apple Silicon.
+
+Bugfixes:
+Fix wrong first character if text was erased and then new text
+entered, and a "copy text" operation is done on the result.

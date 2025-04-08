@@ -6721,8 +6721,9 @@ bool PtermFrame::SaveChar (int x, int y, wxChar c, bool large_p)
     y /= 16;
 
     // It if seemed autobackspaced but there is no "primary" character
-    // yet, then it isn't actually.
-    if (textmap[y * 64 + x][0] == '\0')
+    // yet, then it isn't actually.  Space counts as "no character"
+    // because that's what is left after an erase.
+    if (textmap[y * 64 + x][0] == '\0' || textmap[y * 64 + x][0] == ' ')
     {
         autobs = false;
     }

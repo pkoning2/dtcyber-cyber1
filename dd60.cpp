@@ -30,17 +30,24 @@
 // fact that display units are not actually pixels, but "points" [sic]
 // and that the actual pixels may be smaller.  
 // Character pattern sizes in points, allowing for going over the
-// allotted space some.
-#define CHAR8SIZE       (16 * 8)
-#define CHAR16SIZE      (32 * 8)
-#define CHAR32SIZE      (48 * 8)
+// allotted space some.  There are two pixels per point, and we add
+// another 50% of space around the basic character allotment, so
+// the values used are pixel size times three.
+#define CHAR8SIZE       (8 * 3)
+#define CHAR16SIZE      (16 * 3)
+#define CHAR32SIZE      (32 * 3)
 
 #define DD60CHARS       060         // number of characters in pattern arrays
 
 // Display parameters
-#define DECAY           128         // decay per refresh, scaled by 256.
 #define DefaultInterval 0.1
 #define DefRemoteInterval 3.0
+
+// For display rate 0 we get all the data from the server without
+// block boundary marking, so the decay machinery has to be based on
+// elapsed time rather than being done at block boundaries.  Define
+// the delta time, in microseconds, between refresh and decay actions.
+#define DecayTimeus     20000
 
 #if  defined(__WXMAC__)
 #define SmallPointSize  12
@@ -180,17 +187,45 @@ extern GtkSettings * gtk_settings_get_default (void);
 extern float mainDisplayScale (void);
 }
 
+// Note that we don't do SSE2, only AVX2 on Intel, otherwise things get
+// overly complicated.
 #ifdef __AVX2__
 #define VECSIZE 32
 #else
-#ifdef __SSE2__
+#ifdef __aarch64__
+// Assume NEON SIMD is supported
 #define VECSIZE 16
 #else
 #define VECSIZE 0
 #endif
 #endif
+
 #if VECSIZE
-typedef char bytevec __attribute__ ((vector_size (VECSIZE)));
+typedef unsigned char bytevec __attribute__ ((vector_size (VECSIZE)));
+
+#ifdef __aarch64__
+// Arm64 SIMD
+inline void addsat32 (bytevec *pmap, const bytevec *pdata)
+{
+    asm ("uqadd %0.16b,%0.16b,%2.16b\n"
+         "uqadd %1.16b,%1.16b,%3.16b"
+         : "+w"(pmap[0]), "+w"(pmap[1])
+         : "w"(pdata[0]), "w"(pdata[1]));
+}
+#else
+#if (VECSIZE == 32)
+inline void addsat32 (bytevec *pmap, const bytevec *pdata)
+{
+    *pmap = __builtin_ia32_paddusb256 (*pmap, *pdata);
+}
+#else
+inline void addsat32 (bytevec *pmap, const bytevec *pdata)
+{
+    pmap[0] = __builtin_ia32_paddusb128 (pmap[0], pdata[0]);
+    pmap[1] = __builtin_ia32_paddusb128 (pmap[1], pdata[1]);
+}
+#endif
+#endif
 #endif
 
 // ----------------------------------------------------------------------------
@@ -412,10 +447,15 @@ private:
     wxBitmap    *m_screenmap;
     PixelData   *m_pixmap;
     u32    m_maxalpha;
+#if VECSIZE
+    bytevec m_blank;
+#endif
     u32    m_red;
     u32    m_green;
     u32    m_blue;
-    
+
+    struct timeval m_prevRefresh;
+
     Dd60Canvas  *m_canvas;
     NetPortSet  m_portset;
     NetFet      *m_fet;
@@ -448,9 +488,10 @@ private:
     wxBoxSizer  *m_sizer;
 
     // Other stuff
-    int sse2;
-    int avx2;
-    
+#if VECSIZE && defined (__x86_64)
+    bool avx2;
+#endif
+
     // DD60 drawing primitives
     void dd60SetName (wxString &winName);
     void dd60SetStatus (wxString &str);
@@ -916,11 +957,7 @@ bool Dd60App::DoConnect (bool ask, double interval)
 #ifdef __AVX2__
 #define DD60_SSE L" with AVX2."
 #else
-#ifdef __SSE2__
-#define DD60_SSE L" with SSE2."
-#else
 #define DD60_SSE L"."
-#endif
 #endif
 void Dd60App::OnAbout(wxCommandEvent&)
 {
@@ -1075,6 +1112,9 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     m_char8 (NULL),
     m_char16 (NULL),
     m_char32 (NULL),
+#if VECSIZE && defined (__x86_64)
+    avx2 (false),
+#endif
     mode (0),
     currentX (0),
     currentY (0),
@@ -1085,11 +1125,8 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     
     trace_txt[0] = '\0';
 
-#if VECSIZE
-    sse2 = __builtin_cpu_supports ("sse2");
+#if VECSIZE && !defined (__aarch64__)
     avx2 = __builtin_cpu_supports ("avx2");
-#else
-    sse2 = avx2 = 0;
 #endif
     
     // Calculate scale factors and sizes
@@ -1206,6 +1243,13 @@ Dd60Frame::Dd60Frame(int port, double interval, const wxString& title)
     *pmap = 0;
     p.Alpha () = 255;
     m_maxalpha = *pmap;
+#if VECSIZE
+    u32 *pv = (u32 *) &m_blank;
+    for (i = 0; i < sizeof (m_blank) / 4; i++)
+    {
+        *pv++ = m_maxalpha;
+    }
+#endif
     *pmap = 0;
     p.Red () = 1;
     for (i = 0; i < 4; i++)
@@ -1307,7 +1351,6 @@ Dd60Frame::~Dd60Frame ()
         dd60App->m_firstFrame = m_nextFrame;
     }
 }
-
 /*--------------------------------------------------------------------------
 **  Purpose:        Process DD60 character data
 **
@@ -1323,7 +1366,7 @@ void Dd60Frame::procDd60Char (unsigned int d)
     u8 *data = 0;
     int i, j, k = 0;
 #if VECSIZE
-    int qwds = 0;
+    int vecs = 0;
     bytevec *pmap, *pdata;
 #endif
 
@@ -1367,7 +1410,8 @@ void Dd60Frame::procDd60Char (unsigned int d)
     // Margin is in screen units (not pixels)
     margin = (size / m_pscale - inc) / 2;
 #if VECSIZE
-    qwds = size / 4;
+    // We do vector work here 32 bytes at a time, both for VECSIZE 16 and 32.
+    vecs = size * 4 / 32;
 #endif
     if (d != 0 && d != 055)
     {
@@ -1376,74 +1420,82 @@ void Dd60Frame::procDd60Char (unsigned int d)
         firstx = xadjust (currentX - margin);
         firsty = yadjust (currentY - (size / m_pscale - margin));
     
-        for (i = 0; i < size; i++)
-        {
-            // Position at the start of the scanline
-            p.MoveTo (*m_pixmap, firstx, firsty + i);
 #if VECSIZE
-            // SSE2/AVX2 operations require 16 byte alignment.
-            // The char data array is aligned, but the pixmap data
-            // might not be, depending on the X coordinate low bits.
-            // Also check that the character row is fully on-screen,
-            // if not we'll paint it pixel by pixel.
-            if (avx2 &&
-                (((uintptr_t) (p.m_ptr)) & 0x0f) == 0 &&
-                firstx >= 0 && firstx + size <= m_xsize)
+        if (
+#ifdef __x86_64__
+        // AVX2 operations require 16 byte alignment.
+        // The char data array is aligned, but the pixmap data
+        // might not be, depending on the X coordinate low bits.
+            avx2 &&
+            (((uintptr_t) (p.m_ptr)) & 0x0f) == 0 &&
+#endif
+            // Don't use the fast case if we're displaying off
+            // the right or top edge
+            currentX <= 512 - inc &&
+            currentY <= 512 - inc)
+        {
+            pdata = (bytevec *) data;
+
+            for (i = 0; i < size; i++)
             {
+                // Position at the start of the scanline
+                p.MoveTo (*m_pixmap, firstx, firsty + i);
                 pmap = (bytevec *) (p.m_ptr);
-                pdata = (bytevec *) data;
-                for (j = 0; j < qwds / 2; j++)
                 {
-                    // Make sure the pixel position is within the
-                    // screen image bitmap
-                    if (firstx + j * 2 >= 0 && firstx + j * 2 < m_xsize &&
-                        firsty + i >= 0 && firsty + i < m_ysize)
+                    for (j = 0; j < vecs; j++)
                     {
-#if (VECSIZE==32)
-                        *pmap = __builtin_ia32_paddusb256 (*pmap, *pdata);
-#else
-                        *pmap = __builtin_ia32_paddusb128 (*pmap, *pdata);
-#endif
+                        addsat32 (pmap, pdata);
+                        pmap += 32 / VECSIZE;
+                        pdata += 32 / VECSIZE;
                     }
-                    ++pmap;
-                    ++pdata;
                 }
-                data += qwds * 16;
             }
-            else
+        }
+        else
 #endif
-            for (j = 0; j < size; j++)
+        {
+            for (i = 0; i < size; i++)
             {
-                // Make sure the pixel position is within the
-                // screen image bitmap
-                if (firstx + j >= 0 && firstx + j < m_xsize &&
-                    firsty + i >= 0 && firsty + i < m_ysize)
+                if (firsty + i >= 0 && firsty + i < m_ysize)
                 {
-                    u8 &rp = p.Red ();
-                    u8 &gp = p.Green ();
-                    u8 &bp = p.Blue ();
-            
-                    k = rp + data[m_red];
-                    if (k > 255)
+                    // Position at the start of the scanline
+                    p.MoveTo (*m_pixmap, firstx, firsty + i);
+
+                    for (j = 0; j < size; j++)
                     {
-                        k = 255;
+                        // Make sure the pixel position is within the
+                        // screen image bitmap
+                        if (firstx + j >= 0 && firstx + j < m_xsize)
+                        {
+                            u8 &rp = p.Red ();
+                            u8 &gp = p.Green ();
+                            u8 &bp = p.Blue ();
+
+                            k = rp + data[m_red];
+                            if (k > 255)
+                            {
+                                k = 255;
+                            }
+                            rp = k;
+                            k = gp + data[m_green];
+                            if (k > 255)
+                            {
+                                k = 255;
+                            }
+                            gp = k;
+                            k = bp + data[m_blue];
+                            if (k > 255)
+                            {
+                                k = 255;
+                            }
+                            bp = k;
+                        } else {
+                            printf ("pos out of range %d %d\n", firstx+j, firsty+i);
+                        }
+                        ++p;
+                        data += 4;
                     }
-                    rp = k;
-                    k = gp + data[m_green];
-                    if (k > 255)
-                    {
-                        k = 255;
-                    }
-                    gp = k;
-                    k = bp + data[m_blue];
-                    if (k > 255)
-                    {
-                        k = 255;
-                    }
-                    bp = k;
                 }
-                ++p;
-                data += 4;
             }
         }
     }
@@ -1457,10 +1509,11 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
 {
     int i, data;
     static int pendingData = 0;
+    struct timeval now;
+    int dt, dut;
 #if DEBUG || TIMING
     struct timeval t, t2;
     int datacount;
-    int dt, dut;
 #endif
     
     // In every case, let others see this event too.
@@ -1496,6 +1549,24 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
 
     for (;;)
     {
+        if (m_interval == Dd60FastRate + 0)
+        {
+            gettimeofday (&now, NULL);
+            dt = now.tv_sec - m_prevRefresh.tv_sec;
+            dut = now.tv_usec - m_prevRefresh.tv_usec;
+            if (dut < 0)
+            {
+                dut += 1000000;
+                dt--;
+            }
+            dut += dt * 1000000;
+            if (dut > DecayTimeus)
+            {
+                Refresh ();
+                m_startBlock = true;
+                m_prevRefresh = now;
+            }
+        }
         if (pendingData != 0)
         {
             data = pendingData;
@@ -1514,7 +1585,6 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
                 dtClose (m_fet, TRUE);
                 m_fet = NULL;
             }
-                    
             break;
         }
 
@@ -1527,8 +1597,60 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
     
             //printf ("pixels %d, pixel stride %d\n", pixels, bytesperpixel);
     
-#if (DECAY == 128)
-#ifdef __x86_64__
+#if VECSIZE
+            bytevec *pmap = (bytevec *) (p.m_ptr);
+            const bytevec maxalpha = m_blank;
+            const int vecs = (pixels * bytesperpixel) / VECSIZE;
+
+            if (!m_fastupdate)
+            {
+                // Slow update, just repaint the display, don't try to
+                // simulate decay because it looks weird
+                for (i = 0; i < vecs; i++)
+                {
+                    *pmap++ = maxalpha;
+                }
+            }
+            else
+            {
+                // Fast update, decay by an amount that depends on the
+                // display rate.
+                switch (m_interval - Dd60FastRate)
+                {
+                case 0:         // continuous mode
+                    // decay by 1/8
+                    for (i = 0; i < vecs / 2; i++)
+                    {
+                        *pmap -= (*pmap >> 3);
+                        *pmap++ |= maxalpha;
+                        *pmap -= (*pmap >> 3);
+                        *pmap++ |= maxalpha;
+                    }
+                    break;
+                case 1:         // 20 ms
+                case 2:         // 40 ms
+                    // decay by 1/4
+                    for (i = 0; i < vecs / 2; i++)
+                    {
+                        *pmap -= (*pmap >> 2);
+                        *pmap++ |= maxalpha;
+                        *pmap -= (*pmap >> 2);
+                        *pmap++ |= maxalpha;
+                    }
+                    break;
+                default:        // 60 ms or more
+                    // decay by half
+                    for (i = 0; i < vecs / 2; i++)
+                    {
+                        *pmap >>= 1;
+                        *pmap++ |= maxalpha;
+                        *pmap >>= 1;
+                        *pmap++ |= maxalpha;
+                    }
+                }
+            }
+#else
+#if defined (__x86_64__) || defined (__aarch64__)
             u64 *pmap = (u64 *) (p.m_ptr);
             const u64 maxalpha = m_maxalpha | ((u64) m_maxalpha << 32);
             const u64 mask = 0x7f7f7f7f7f7f7f7fULL;
@@ -1556,19 +1678,7 @@ void Dd60Frame::OnIdle (wxIdleEvent &event)
                     ++pmap;
                 }
             }
-#else
-            for (int pix = 0; pix < pixels; pix++)
-            {
-                u8 &rp = p.Red ();
-                u8 &gp = p.Green ();
-                u8 &bp = p.Blue ();
-                rp = (rp * DECAY) / 256;
-                gp = (gp * DECAY) / 256;
-                bp = (bp * DECAY) / 256;
-                p.Alpha () = 255;
-                ++p;
-            }
-#endif
+#endif // VECSIZE
             m_startBlock = false;
         }
     
@@ -1951,8 +2061,7 @@ void Dd60Frame::dd60LoadCharSize (int size, int tsize, u8 *vec)
         // have Y increasing upward in proper mathematical form.  The
         // pixels for each char are together, so we effectively have
         // a vector of character patterns, each of which is a square
-        // matrix of pixels.  We use grayscale pixels here; color is
-        // added when we display the characters.
+        // matrix of pixels.  
         u8 * const origin = vec + (nextchar * ch) + orgoffset;
         
         x620.Reset ();

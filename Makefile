@@ -43,7 +43,7 @@ ifeq ("$(HOST)","Darwin")
 LINK=$(CXX)
 
 ifeq ("$(SDKDIR)","")
-OSXMIN ?= 10.4
+OSXMIN ?= 10.10
 endif
 CLANG := $(shell $(CC) --version 2>/dev/null| fgrep clang)
 ifneq ("$(CLANG)", "")
@@ -51,7 +51,6 @@ ifneq ("$(CLANG)", "")
 #ARCHCFLAGS ?= -arch i386 -arch x86_64 $(AVX)
 #ARCHLDFLAGS ?= -arch i386 -arch x86_64
 OSXVER ?= 11.3
-OSXMIN = 10.10
 ARCHCFLAGS ?= -arch x86_64 -arch arm64 -Wno-c++11-extensions
 ARCHLDFLAGS ?= -arch x86_64 -arch arm64
 else

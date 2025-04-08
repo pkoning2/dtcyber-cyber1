@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #define k_sb    5           // sectors per block     (5)
 #define k_st    24          // sectors per track     (24)

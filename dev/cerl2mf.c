@@ -17,6 +17,8 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define SectorSize              322
 #define SectorBytes             512
@@ -155,7 +157,7 @@ int main (int argc, char **argv)
     // Write 11 blocks of filler
     for (i = 0; i < 55; i++)
         dd8xxWriteSector (outf, secbuf);
-    
+
     // Copy the data
     i = 0;
     while (dd8xxReadSector (inf, secbuf))

@@ -250,8 +250,7 @@ class Pack:
                 p.pipe = True
             else:
                 p.output = "."
-        if not p.file and (len (p.file) > 1 or p.file[0] == "*") and \
-           not os.path.isdir (p.output):
+        if (len (p.file) > 1 or p.file[0] == "*") and not os.path.isdir (p.output):
             print ("Multiple file transfer but output is not a directory")
             return
         self.readpd (p)
@@ -539,7 +538,10 @@ class octint (int):
     
 pfparser = argparse.ArgumentParser ()
 pfparser.add_argument ("pack", help = "File name of pack container file")
-pfparser.add_argument ("file", nargs = "*", help = "PLATO file to read")
+pfparser.add_argument ("file", nargs = "*",
+                       help = "PLATO file(s) to read, or host file(s) to write if -w")
+pfparser.add_argument ("--write", "-w", action = "store_true", default = False,
+                       help = "Write files to PLATO pack")
 pfparser.add_argument ("--model", default = "di",
                        help = "Drive model")
 pfparser.add_argument ("--tar-file", "-t", metavar = "T",
@@ -580,7 +582,12 @@ pfparser.add_argument ("--dates", action = "store_true", default = False,
 def main ():
     p = pfparser.parse_args ()
     pack = Pack (p)
-    if p.file:
+    if p.write:
+        if not p.file:
+            print ("Error, no files specified")
+        else:
+            pack.dowrite (p)
+    elif p.file:
         pack.doread (p)
     elif p.list:
         pack.dolist (p)

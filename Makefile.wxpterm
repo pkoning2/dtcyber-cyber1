@@ -30,7 +30,8 @@ else
 SDLFW = SDL2
 endif
 SDLLIBS = -Wl,-framework,$(SDLFW) -F/Library/Frameworks
-SDLINCL =  -I /Library/Frameworks/$(SDLFW).framework/Versions/A/Headers
+x = $shell(ln -sf /Library/Frameworks/$(SDLFW).framework/Versions/A/Headers $(SDLFW))
+SDLINCL =  -I/Library/Frameworks/$(SDLFW).framework/Versions/A/Headers -I.
 else # not Darwin
 SDLPATH ?= /usr/local
 SDLINCL ?= `sdl2-config --cflags`
@@ -230,7 +231,7 @@ ifeq ("$(HOST)","Darwin")
 endif
 
 pterm_sdl.o : pterm_sdl.c
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) $(SDLINCL) -c $<
 
 %.d : %.cpp
 	/bin/echo -n "$@ " > /tmp/$@
@@ -239,7 +240,7 @@ pterm_sdl.o : pterm_sdl.c
 
 pterm_sdl.d : pterm_sdl.c
 	/bin/echo -n "$@ " > /tmp/$@
-	$(CC) $(INCL) -MM -MG $< | fgrep -v type_traits  >> /tmp/$@
+	$(CC) $(INCL) $(SDLINCL) -MM -MG $< | fgrep -v type_traits  >> /tmp/$@
 	mv -f /tmp/$@ $@
 
 %.mo : %.po
@@ -255,7 +256,6 @@ pterm_wx.o : pterm_wx.cpp wxversion.h ptermversion.h
 
 
 # for pterm
-INCL+=$(SDLINCL)
 DEPFILES+=  $(PTOBJS:.o=.d) 
 
 ifneq ("$(wildcard dd60.cpp)","")

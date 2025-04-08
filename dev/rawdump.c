@@ -37,7 +37,7 @@ void readsec (int sec, u8 *buf)
 }
 
 
-int main (int argc, u8 *argv[])
+int main (int argc, char *argv[])
 {
 	u8 out[200];
 	int table = 0;

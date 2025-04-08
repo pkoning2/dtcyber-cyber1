@@ -865,10 +865,7 @@ int dtSend (NetFet *fet, const void *buf, int len)
     ** Update the IN pointer, then wake the send thread.
     */
     fet->sendin = in;
-    if (ssemp (fet) != NULL)
-    {
-        sem_post (ssemp (fet));
-    }
+    sem_post (ssemp (fet));
     
     if (dtSendFree (fet) == 0)
         {

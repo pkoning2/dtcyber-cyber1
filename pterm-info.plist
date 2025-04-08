@@ -23,20 +23,20 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>6.0.5</string>
+	<string>6.0.6</string>
 	<key>CFBundleShortVersionString</key>
-	<string>6.0.5</string>
+	<string>6.0.6</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Pterm V6.0.5, © 2005-2022 Paul Koning, Joe Stanton, Dale Sinder</string>
+	<string>Pterm V6.0.6, © 2005-2022 Paul Koning, Joe Stanton, Dale Sinder</string>
 	<key>CFBundleLongVersionString</key>
-	<string>6.0.5, © 2005-2022 Paul Koning, Joe Stanton, Dale Sinder</string>
+	<string>6.0.6, © 2005-2022 Paul Koning, Joe Stanton, Dale Sinder</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
 		<string>nl</string>
 	</array>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright 2005-2022 Paul Koning, Joe Stanton, Dale Sinder</string>
+	<string>Copyright 2005-2025 Paul Koning, Joe Stanton, Dale Sinder</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
