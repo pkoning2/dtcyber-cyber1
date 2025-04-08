@@ -37,6 +37,8 @@ elif [ "${HOST1}" = "plato4" ]; then
     HOSTNAME="pkoning"
 elif [ "${HOST1}" = "akmac" ]; then 
     HOSTNAME="koning2"
+else
+    HOSTNAME="${HOST1}"
 fi
 export HOSTNAME
 ulimit -c unlimited
@@ -83,7 +85,7 @@ else
     # now start one each of the UIs
     
     if [ "${OS}" = "Darwin" ]; then
-        open -a dd60 --args .1 5007
+        open -a dd60 --args .04 5007
         open -a dtoper --args 5006
         # open -a Pterm --args localhost 5005
     else
