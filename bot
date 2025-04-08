@@ -1,3 +1,11 @@
+test,cm177000,t7770.
+user,plato,plato.
+attach,lgo=botbin/m=w,na.
+if(.not.file(lgo,as))define,botbin.
+attach,opl=opl871.
+compass,s=nostext,s=pptext.
+exit.
+~
           ident  bot,ppfw
           title  bot -- 99 bottles of beer
           comment 99 bottles of beer on the wall.
@@ -13,6 +21,11 @@
 
           sst    rds
 
+ reqs     equ    0
+ opl      xtext  COMDMAC 
+ opl      xtext  COMPMAC 
+ opl      xtext  COMSPIM 
+ opl      xtext  COMSEJT 
  opl      xtext  compmac
           
           base   m
