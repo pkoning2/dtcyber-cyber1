@@ -1,7 +1,7 @@
 <pkgref spec="1.12" uuid="4FE5A420-AF98-4EFA-B4B4-C0B2AAD5DE18">
   <config>
     <identifier>org.cyber1.platoTerminalEmulator.pterm.pkg</identifier>
-    <version>6.0.5</version>
+    <version>6.0.6</version>
     <description></description>
     <post-install type="none"/>
     <requireAuthorization/>
