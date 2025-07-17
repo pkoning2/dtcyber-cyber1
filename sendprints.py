@@ -30,6 +30,7 @@ user name on the burst page.
    p. resch,
    p. koning     2007.03.15.     assorted other notification types.
    p. koning     2021.01.05      convert to python 3.
+   p. koning     2025.07.14.     change sender names.n
 """
 
 import sys
@@ -118,9 +119,9 @@ def dofile (name):
                     return
                 msg = email.message.Message ()
                 if notify:
-                    msg.add_header ("From", "\"Cyber1\" <postmaster@cyberserv.org>")
+                    msg.add_header ("From", "\"Cyber1 notifications\" <notifications@cyberserv.org>")
                 else:
-                    msg.add_header ("From", "\"Cyber1 printout server\" <postmaster@cyberserv.org>")
+                    msg.add_header ("From", "\"Cyber1 printout server\" <prints@cyberserv.org>")
                 msg.add_header ("To", mailto)
                 msg.add_header ("Reply-To", mailto)
                 if notify:
@@ -142,7 +143,10 @@ def dofile (name):
                     msg.set_payload ([ desc, printout])
                 s = smtplib.SMTP (MAILHOST)
                 try:
-                    s.sendmail ("postmaster@cyberserv.org", [ mailto ], msg.as_string ())
+                    if notify:
+                        s.sendmail ("notifications@cyberserv.org", [ mailto ], msg.as_string ())
+                    else:
+                        s.sendmail ("prints@cyberserv.org", [ mailto ], msg.as_string ())
                     print ("sent", subject, "to", mailto)
                     if notify:
                         os.remove (name)
