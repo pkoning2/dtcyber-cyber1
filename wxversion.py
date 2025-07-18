@@ -15,7 +15,7 @@ def shellstr (cmd, *args):
     try:
         return subprocess.check_output ((cmd,) + args,
                                         universal_newlines = True,
-                                        stderr = subprocess.STDOUT).rstrip ('\n')
+                                        stderr = subprocess.STDOUT).splitlines ()
     except Exception:
         return ""
     
@@ -37,26 +37,20 @@ if sys.platform[:3] == "win":
         print ("Can't find wx version number")
         sys.exit (1)
 else:
-    wxversion = shellstr ("wx-config", "--version")
+    wxversion = shellstr ("wx-config", "--version")[0]
 
-svnversion = shellstr ("svn", "info", "PtermApp.cpp")
-if svnversion:
-    m = re.search (r"Revision: (\d+)", svnversion)
-    if m:
-        svnversion = m.group (1)
-        if shellstr ("svn", "status", "pterm_wx.cpp"):
-            svnversion += "+"
-    else:
-        svnversion = ""
+gitversion = shellstr ("git", "show", "HEAD", "--oneline")
+if gitversion:
+    gitversion = gitversion[0].split (" ")[0]
 now = time.strftime ("%d %B %Y").lstrip ("0")
 
 new = """#define WXVERSION "%s"
 #define PTERMBUILDDATE "%s"
 """ % (wxversion, now)
 
-if svnversion:
-    new += """#define PTERMSVNREV "%s"
-""" % svnversion
+if gitversion:
+    new += """#define PTERMGITREV "%s"
+""" % gitversion
 
 if new == old:
     print (FN, "is up to date")

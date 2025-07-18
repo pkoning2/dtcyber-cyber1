@@ -95,7 +95,7 @@ info:
 	@echo path:  $(PATH)
 	@echo wxversion: $(WXVERSION)
 	@echo gccversion: $(GCCVERSION)
-	@echo ptermsvn: $(PTERMSVNREV)
+	@echo ptermgit: $(PTERMGITREV)
 	@echo osxver: $(OSXVER)
 	@echo host: $(HOST)
 	@echo machinecflags: $(MACHINECFLAGS)

@@ -433,8 +433,8 @@ void PtermApp::OnAbout (wxCommandEvent&)
     info.SetDescription (_(L"PLATO terminal emulator."
                            L"\n  built with wxWidgets V" wxT (WXVERSION)
                            L"\n  build date " wxT(PTERMBUILDDATE)
-#ifdef PTERMSVNREV
-                           L"\n  SVN revision " wxT (PTERMSVNREV)
+#ifdef PTERMGITREV
+                           L"\n  GIT revision " wxT (PTERMGITREV)
 #endif
                              ));
 #endif

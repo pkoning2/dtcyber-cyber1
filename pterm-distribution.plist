@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+  <title>Pterm</title>
+  <license file="pterm-license.rtf" />
+  <allowed-os-versions>
+    <os-version min="10.10" />
+  </allowed-os-versions>
+  <domains enable_currentUserHome="true"
+	   enable_localSystem="true"
+	   enable_anywhere="true" />
+  <product id="org.cyber1.Pterm"
+	   version="6.0.6" />
+  <content>
+    <bundle path="Applications/Pterm.app" id="org.cyber1.Pterm" />
+  </content>
+  <pkg-ref id="org.cyber1.Pterm"/>
+  <options customize="never" require-scripts="false" hostArchitectures="x86_64,arm64"/>
+  <choices-outline>
+    <line choice="default">
+      <line choice="org.cyber1.Pterm"/>
+    </line>
+  </choices-outline>
+  <choice id="default"/>
+  <choice id="org.cyber1.Pterm" visible="false">
+    <pkg-ref id="org.cyber1.Pterm"/>
+  </choice>
+  <pkg-ref id="org.cyber1.Pterm" version="6.0.6" onConclusion="none">
+    pterm.pkg
+  </pkg-ref>
+</installer-gui-script>
