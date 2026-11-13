@@ -24,6 +24,13 @@ ifneq ("$(CLANG)", "")
 MACCFLAGS = -Wno-potentially-evaluated-expression
 endif
 
+SDL3 = "$(wildcard /Library/Frameworks/SDL3.xcframework)"
+ifneq ("$SDL3","")
+SDLLIBS = -F$(wildcard /Library/Frameworks/SDL3.xcframework/macos*) -Wl,-framework,SDL3 -Wl,-rpath,$(wildcard /Library/Frameworks/SDL3.xcframework/macos*)
+SDLINCL = -I./SDL3 -I.
+SDLFW = SDL3
+SDLFWDIR = $(wildcard /Library/Frameworks/SDL3.xcframework/macos*)/SDL3.framework
+else
 ifeq ("$(wildcard /Library/Frameworks/SDL2.framework)","")
 SDLFW = SDL
 else
@@ -32,6 +39,8 @@ endif
 SDLLIBS = -Wl,-framework,$(SDLFW) -F/Library/Frameworks
 x = $shell(ln -sf /Library/Frameworks/$(SDLFW).framework/Versions/A/Headers $(SDLFW))
 SDLINCL =  -I/Library/Frameworks/$(SDLFW).framework/Versions/A/Headers -I.
+SDLFWDIR = /Library/Frameworks/$(SDLFW).framework
+endif
 else # not Darwin
 SDLPATH ?= /usr/local
 SDLINCL ?= `sdl2-config --cflags`
@@ -168,7 +177,7 @@ endif
 	done
 	mkdir -p Pterm.app/Contents/Frameworks
 ifneq ("$(SDLFW)", "")
-	cp -R /Library/Frameworks/$(SDLFW).framework Pterm.app/Contents/Frameworks
+	cp -R $(SDLFWDIR) Pterm.app/Contents/Frameworks
 	rm -rf Pterm.app/Contents/Frameworks/$(SDLFW).framework/Headers
 	rm -rf Pterm.app/Contents/Frameworks/$(SDLFW).framework/Versions/Current/Headers
 endif

@@ -43,7 +43,7 @@ ifeq ("$(HOST)","Darwin")
 LINK=$(CXX)
 
 ifeq ("$(SDKDIR)","")
-OSXMIN ?= 10.10
+OSXMIN ?= 10.13
 endif
 CLANG := $(shell $(CC) --version 2>/dev/null| fgrep clang)
 ifneq ("$(CLANG)", "")

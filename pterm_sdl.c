@@ -19,7 +19,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #endif
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <math.h>
 
 #include <sndfile.h>
@@ -57,9 +57,13 @@ struct gswState_t
 
 struct gswState_t gswState;
 SDL_AudioSpec audioSpec;
+SDL_AudioStream *audioStream;
 bool audioOpened;
+#define AUDIO_SILENCE 0             // silence value for signed 16 bit audio
 
-static void gswCallback (void *userdata, uint8_t  *stream, int len);
+static void SDLCALL gswCallback (void *userdata, SDL_AudioStream *astream,
+                                 int additional, int total);
+static void gswGenerate (int16_t *stream, int len);
 
 /*
 **  This function assigns the GSW to the specified "user" (a pointer to some
@@ -80,7 +84,7 @@ static void gswCallback (void *userdata, uint8_t  *stream, int len);
 */
 int ptermOpenGsw (void *user, const char *fn, int fmt)
 {
-    SDL_AudioSpec *req;
+    SDL_AudioSpec req;
     double t;
 
     // RC filter is the summing network resistor (100k) and the
@@ -102,19 +106,24 @@ int ptermOpenGsw (void *user, const char *fn, int fmt)
         // We only open the SDL audio system the first time we come here,
         // because it doesn't seem to appreciate being opened and closed
         // multiple times, at least not on Linux.
-        req = (SDL_AudioSpec *) calloc (1, sizeof (SDL_AudioSpec));
-        req->freq = FREQ;
-        req->format = AUDIO_S16;
-        req->channels = 1;
-        req->samples = SAMPLES;
-        req->callback = gswCallback;
-        if (SDL_OpenAudio (req, &audioSpec) < 0)
+        if (!SDL_InitSubSystem (SDL_INIT_AUDIO))
         {
-            fprintf (stderr, "can't open sound: %s\n", SDL_GetError ());
-            free (req);
+            fprintf (stderr, "can't initialize sound: %s\n", SDL_GetError ());
             return -1;
         }
-        free (req);
+        SDL_SetHint (SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "4096");
+        memset (&req, 0, sizeof (req));
+        req.freq = FREQ;
+        req.format = SDL_AUDIO_S16;
+        req.channels = 1;
+        audioStream = SDL_OpenAudioDeviceStream (SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+                                                 &req, gswCallback, NULL);
+        if (audioStream == NULL)
+        {
+            fprintf (stderr, "can't open sound: %s\n", SDL_GetError ());
+            return -1;
+        }
+        audioSpec = req;
         audioOpened = TRUE;
     }
         
@@ -158,7 +167,7 @@ int ptermOpenGsw (void *user, const char *fn, int fmt)
 #ifdef DEBUG
     printf ("sound opened, freq %d format %d channels %d samples %d\n",
             audioSpec.freq, audioSpec.format,
-            audioSpec.channels, audioSpec.samples);
+            audioSpec.channels, SAMPLES);
 #endif
     return 0;
 }
@@ -169,7 +178,11 @@ int ptermOpenGsw (void *user, const char *fn, int fmt)
 void ptermCloseGsw (void)
 {
     gswState.playing = FALSE;
-    SDL_PauseAudio (1);
+    if (audioStream != NULL)
+    {
+        SDL_PauseAudioStreamDevice (audioStream);
+        SDL_ClearAudioStream (audioStream);
+    }
     if (gswState.sfile != NULL)
     {
         sf_close (gswState.sfile);
@@ -198,7 +211,10 @@ void ptermStartGsw (void)
         printf ("sound started\n");
 #endif
         gswState.playing = TRUE;
-        SDL_PauseAudio (0);
+        if (audioStream != NULL)
+        {
+            SDL_ResumeAudioStreamDevice (audioStream);
+        }
     }
 }
 
@@ -220,19 +236,33 @@ static int mapvol (int volume)
     return volmap[volume & 7];
 }
 
-static void gswCallback (void *userdata, uint8_t *b, int len)
+static void SDLCALL gswCallback (void *userdata, SDL_AudioStream *astream,
+                                 int additional, int total)
 {
-    int16_t *stream = (int16_t *) b;
+    int16_t buf[SAMPLES];
+    int n;
+
+    (void) userdata;
+    (void) total;
+    additional /= sizeof (int16_t);     // bytes to samples
+    while (additional > 0)
+    {
+        n = (additional > SAMPLES) ? SAMPLES : additional;
+        gswGenerate (buf, n);
+        SDL_PutAudioStreamData (astream, buf, n * sizeof (int16_t));
+        additional -= n;
+    }
+}
+
+static void gswGenerate (int16_t *stream, int len)
+{
+    int16_t *b = stream;
     int i, word, voice;
     int audio;
     double dph;
     int items;
     void *buf = b;
     
-#if defined(_WIN32)
-    (void) userdata;        // No Operation; Suppresses Warning C4100
-#endif
-    len /= sizeof (*stream);
     items = len;            // Remember the total number requested
     
 #ifdef DEBUG
@@ -259,7 +289,7 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
                 }
                 while (len > 0)
                 {
-                    *stream++ = audioSpec.silence;
+                    *stream++ = AUDIO_SILENCE;
                     --len;
                 }
                 break;
@@ -343,7 +373,7 @@ static void gswCallback (void *userdata, uint8_t *b, int len)
         // wave, so the wave generation simply produces -1 or +1 depending
         // on the current phase, multiplied by the volume.
 
-        audio = audioSpec.silence;
+        audio = AUDIO_SILENCE;
         for (i = 0; i < 4; i++)
         {
             if (gswState.step[i] != 0)
