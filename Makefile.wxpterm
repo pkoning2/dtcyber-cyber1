@@ -82,6 +82,12 @@ PTOBJS	= dtnetsubs.o pterm_sdl.o FrameCanvas.o MTFile.o PtermApp.o \
 	PtermConnDialog.o PtermConnFailDialog.o PtermConnection.o \
 	PtermProfile.o PtermPrefDialog.o PtermPrintout.o PtermTrace.o Z80.o
 DD60OBJS = $(SOBJS) dd60.o knob.o iir.o 
+DD60GLOBJS = $(SOBJS) dd60gl.o knob.o iir.o 
+# AGL is gone from current macOS SDKs; wx's Cocoa GL code doesn't need it.
+WXGLLIBS = `$(WXCONFIG) --libs core,base,adv,gl | sed -e 's/-framework AGL//'` $(EXTRALIBS)
+ifeq ("$(HOST)","Darwin")
+WXGLLIBS += -framework CoreVideo
+endif
 
 ifneq ("$(PTERMVERSION)","xxx")
 LANGUAGES = $(shell cat languages)
@@ -127,6 +133,11 @@ dd60:	$(DD60OBJS)
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
 	$(LINK)  $(ARCHLDFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+ $(WXLIBS) $(SETPATH)
 
+# OpenGL based variant of dd60 (experimental)
+dd60gl:	$(DD60GLOBJS)
+	export LD_RUN_PATH=$(WXDIR)/lib ; \
+	$(LINK)  $(ARCHLDFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+ $(WXGLLIBS) $(SETPATH)
+
 dtoper:	$(SOBJS) dtoper.o 
 	export LD_RUN_PATH=$(WXDIR)/lib ; \
 	$(LINK)  $(ARCHLDFLAGS) $(LDFLAGS) $(LIBS) -o $@ $+ $(WXLIBS) $(SETPATH)
@@ -144,6 +155,14 @@ dd60.app: dd60 cyber.icns dd60-info.plist
 	cp dd60 dd60.app/Contents/MacOS
 	cp dd60-info.plist dd60.app/Contents/Info.plist
 	cp cyber.icns dd60.app/Contents/Resources/dd60.icns
+	touch $@
+
+dd60gl.app: dd60gl cyber.icns dd60gl-info.plist
+	mkdir -p dd60gl.app/Contents/MacOS dd60gl.app/Contents/Resources
+	/bin/echo -n "APPL????" > dd60gl.app/Contents/PkgInfo
+	cp dd60gl dd60gl.app/Contents/MacOS
+	cp dd60gl-info.plist dd60gl.app/Contents/Info.plist
+	cp cyber.icns dd60gl.app/Contents/Resources/dd60gl.icns
 	touch $@
 
 dtoper.app: dtoper cyber.icns dtoper-info.plist
@@ -270,6 +289,9 @@ DEPFILES+=  $(PTOBJS:.o=.d)
 ifneq ("$(wildcard dd60.cpp)","")
 # for dd60
 DEPFILES+= dd60.d knob.d iir.d
+ifneq ("$(wildcard dd60gl.cpp)","")
+DEPFILES+= dd60gl.d
+endif
 # for dtoper
 DEPFILES+= dtoper.d
 endif

@@ -142,6 +142,21 @@
 **  CRT decay explicitly, in the fashion of Phil Budne's GT40
 **  emulator. 
 **
+**  Output pacing:
+**
+**  The real 6612 takes a certain amount of time to consume each word
+**  delivered by the PPU over the channel: 3 microseconds for a word
+**  in dot mode, and 6 microseconds for a word of character data (which
+**  carries two characters).  The emulation can deliver the data far
+**  faster than that, which would make for display data streams that are
+**  much denser than the real thing could ever produce.  To avoid that,
+**  the console holds each word on the channel (channel full) until the
+**  time the real hardware would have taken to consume it has passed.
+**  The time used here is real time, not emulated time, since the point
+**  is to limit the data rate seen by the displays.  Set X and Set Y
+**  words in character mode take 2 microseconds each (the controller
+**  acknowledges them right away, so it is the PPU that sets the pace).
+**
 **  The output stream is a byte stream.  If the high order bit is
 **  clear, the byte is a character, in display code.  If the high
 **  order bit is set, you're looking at a one or two byte control
@@ -199,6 +214,7 @@
 #include "dd60.h"
 #include <time.h>
 #if defined(_WIN32)
+#include <windows.h>
 #include <sys/timeb.h>
 #else
 #include <sys/time.h>
@@ -231,6 +247,21 @@
 
 #define OffLeftScreen           0
 #define OffRightScreen          01020
+
+/*
+**  Time taken by the 6612 to consume a word delivered by the channel,
+**  in microseconds.
+*/
+#define DotWordUs               3       /* any word in dot mode */
+#define CharWordUs              6       /* word with two characters */
+#define XYWordUs                2       /* Set X or Set Y word in char mode */
+
+/*
+**  If the pacing clock is more than this far behind real time (in
+**  microseconds), we have been idle; restart it from the current time
+**  rather than letting output go faster than the hardware to catch up.
+*/
+#define PaceSlackUs             1000
 
 #define DispBufSize             20000   /* Display buffer size */
 #define KeyBufSize              50      /* Input buffer size */
@@ -287,6 +318,8 @@ static void consoleSendOutput (int start, int end);
 static void consoleReinitPoll (void);
 static void consoleConnect(NetFet *np, int index, void *arg);
 static void consoleUpdateStatus (void);
+static u64 consoleNowUs (void);
+static void consoleWordTime (u32 us);
 
 /*
 **  ----------------
@@ -333,6 +366,10 @@ static u32 keyIn, keyOut;
 static bool keyboardSendUp;
 static bool sendToAll;
 
+/* Output pacing state */
+static bool wordPending;                /* TRUE if current word is being consumed */
+static u64 wordDeadline;                /* real time (us) when pacing clock reaches */
+
 /*
 **--------------------------------------------------------------------------
 **
@@ -369,6 +406,7 @@ void consoleInit(u8 eqNo, u8 unitNo, u8 channelNo, char *deviceName)
     dp->selectedUnit = 0;
     dp->func = consoleFunc;
     dp->io = consoleIo;
+    dp->pollOutput = TRUE;
 
     portVector = calloc(1, sizeof(PortParam) * dd60Conns);
     if (portVector == NULL)
@@ -573,6 +611,7 @@ static FcStatus consoleFunc(PpWord funcCode)
         break;
         }
 
+    wordPending = FALSE;
     activeDevice->fcode = funcCode;
     return(FcAccepted);
     }
@@ -609,6 +648,20 @@ static void consoleIo(void)
     case Fc6612Sel16CharRight:
         if (activeChannel->full)
             {
+            if (wordPending)
+                {
+                /*
+                **  We already have this word, and are taking our time
+                **  consuming it.  Release the channel when time is up.
+                */
+                if ((long long) (consoleNowUs () - wordDeadline) >= 0)
+                    {
+                    wordPending = FALSE;
+                    activeChannel->full = FALSE;
+                    }
+                break;
+                }
+
             ch = (activeChannel->data >> 6) & Mask6;
 
             if (ch >= 060)
@@ -690,7 +743,11 @@ static void consoleIo(void)
                     }
                 }
 
-            activeChannel->full = FALSE;
+            /*
+            **  Set X and Y words take less time than character words.
+            */
+            consoleWordTime (((activeChannel->data >> 6) & Mask6) >= 060 ?
+                             XYWordUs : CharWordUs);
             }
         break;
 
@@ -698,6 +755,16 @@ static void consoleIo(void)
     case Fc6612Sel512DotsRight:
         if (activeChannel->full)
             {
+            if (wordPending)
+                {
+                if ((long long) (consoleNowUs () - wordDeadline) >= 0)
+                    {
+                    wordPending = FALSE;
+                    activeChannel->full = FALSE;
+                    }
+                break;
+                }
+
             ch = activeChannel->data;
 
             if (ch >= 06000)
@@ -712,7 +779,7 @@ static void consoleIo(void)
                     }
                 }
 
-            activeChannel->full = FALSE;
+            consoleWordTime (DotWordUs);
             }
         break;
 
@@ -783,6 +850,7 @@ static void consoleIo(void)
 **------------------------------------------------------------------------*/
 static void consoleActivate(void)
     {
+    wordPending = FALSE;
     }
 
 /*--------------------------------------------------------------------------
@@ -795,6 +863,71 @@ static void consoleActivate(void)
 **------------------------------------------------------------------------*/
 static void consoleDisconnect(void)
     {
+    wordPending = FALSE;
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Return current real time in microseconds
+**
+**  Parameters:     Name        Description.
+**
+**  Returns:        Microseconds since some arbitrary starting point;
+**                  monotonic.
+**
+**------------------------------------------------------------------------*/
+static u64 consoleNowUs (void)
+    {
+#if defined(_WIN32)
+    LARGE_INTEGER freq, count;
+
+    QueryPerformanceFrequency (&freq);
+    QueryPerformanceCounter (&count);
+    return (u64) ((count.QuadPart * ULL(1000000)) / freq.QuadPart);
+#else
+    struct timespec ts;
+
+    clock_gettime (CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * ULL(1000000) + ts.tv_nsec / 1000;
+#endif
+    }
+
+/*--------------------------------------------------------------------------
+**  Purpose:        Account for the time the console takes to consume a word
+**
+**  Parameters:     Name        Description.
+**                  us          time in microseconds the word takes
+**
+**  Returns:        Nothing.
+**
+**  This is called when a word from the channel has been processed.  It
+**  leaves the channel full until the time the real hardware would have
+**  taken to consume the word has elapsed in real time; consoleIo will
+**  empty the channel then.  The deadlines are cumulative from word to
+**  word, so that the average rate is right even though we only look at
+**  the clock now and then.  If we are far behind the clock (because the
+**  output was idle) the pacing restarts from the current time.
+**
+**------------------------------------------------------------------------*/
+static void consoleWordTime (u32 us)
+    {
+    u64 now;
+
+    if (us == 0)
+        {
+        activeChannel->full = FALSE;
+        return;
+        }
+
+    now = consoleNowUs ();
+    if ((long long) (now - wordDeadline) > PaceSlackUs)
+        {
+        wordDeadline = now + us;
+        }
+    else
+        {
+        wordDeadline += us;
+        }
+    wordPending = TRUE;         /* leave the channel full for now */
     }
 
 /*--------------------------------------------------------------------------

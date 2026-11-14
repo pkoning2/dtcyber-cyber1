@@ -662,8 +662,20 @@ void ppStep(void)
                 else
                     {
                     /*
-                    **  Channel is not ready for more data, stop looping
+                    **  Channel is not ready for more data.  If the device
+                    **  is one that takes real time to consume a word, give
+                    **  it a chance to say it is done, and if so go on to
+                    **  the next word.  Otherwise, stop looping.
                     */
+                    if (activeChannel->ioDevice != NULL &&
+                        activeChannel->ioDevice->pollOutput)
+                        {
+                        channelIo();
+                        if (!activeChannel->full)
+                            {
+                            continue;
+                            }
+                        }
                     break;
                     }
                 

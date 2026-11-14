@@ -161,6 +161,10 @@ typedef struct devSlot
     u8              devType;            /* attached device type */
     u8              eqNo;               /* equipment number */
     i8              selectedUnit;       /* selected unit */
+    bool            pollOutput;         /* TRUE if device may hold a word on the channel
+                                        ** (leave it full) while it takes real time to
+                                        ** consume it, and so wants its io function
+                                        ** called again until the channel empties */
     } DevSlot;                          
                                         
 /*

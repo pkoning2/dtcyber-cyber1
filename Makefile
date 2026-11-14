@@ -69,13 +69,13 @@ ARCHCFLAGS  +=  $(OSXMINFLG) $(CXXLIB)
 ARCHCCFLAGS ?= $(ARCHCFLAGS) 
 
 ifneq ("$(wildcard main.c)","")
-all: dtcyber Pterm.app dtoper.app dd60.app blackbox
+all: dtcyber Pterm.app dtoper.app dd60gl.app blackbox
 else
 all: Pterm.app
 endif
 
 clean:
-	rm -rf *.o *.d *.i *.ii *.pcf x86 x86_64 dd60 dtoper pterm pterm*.dmg Pterm.app *Pterm.pkg dtoper.app dd60.app pterm-*.tar.bz2
+	rm -rf *.o *.d *.i *.ii *.pcf x86 x86_64 dd60 dd60gl dtoper pterm pterm*.dmg Pterm.app *Pterm.pkg dtoper.app dd60.app dd60gl.app pterm-*.tar.bz2
 
 else
 
@@ -83,13 +83,13 @@ else
 
 LINK=$(CXX)
 ifneq ("$(wildcard main.c)","")
-all: dtcyber pterm dtoper dd60 blackbox
+all: dtcyber pterm dtoper dd60gl blackbox
 else
 all: pterm
 endif
 
 clean:
-	rm -f *.d *.o *.i *.ii *.pcf dtcyber dd60 dtoper pterm pterm*.zip pterm*.tar.bz2
+	rm -f *.d *.o *.i *.ii *.pcf dtcyber dd60 dd60gl dtoper pterm pterm*.zip pterm*.tar.bz2
 endif
 
 dtcyber: $(OBJS)
