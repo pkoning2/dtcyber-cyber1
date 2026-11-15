@@ -2691,7 +2691,7 @@ void PtermFrame::OnQuit (wxCommandEvent&)
 
 void PtermFrame::OnActivate (wxActivateEvent &event)
 {
-    if (m_canvas != NULL)
+    if (event.GetActive () && m_canvas != NULL)
     {
         m_canvas->SetFocus ();
     }
