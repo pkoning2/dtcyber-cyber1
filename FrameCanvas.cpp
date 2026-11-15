@@ -2288,7 +2288,7 @@ void PtermFrame::procDataLoop (void)
     
     // must check m_mtutorBoot else word has not been initialized.
     if (!m_mtutorBoot && (word == C_DISCONNECT ||
-                          word == C_CONNFAIL2 ||
+                          word == C_CONNFAIL1 ||
                           word == C_CONNFAIL2))
     {
         wxString msg;
