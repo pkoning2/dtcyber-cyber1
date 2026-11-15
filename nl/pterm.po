@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Pterm V4.1.12\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-08 16:17-0400\n"
+"POT-Creation-Date: 2026-11-15 14:04-0500\n"
 "PO-Revision-Date: 2017-12-09 17:21-0500\n"
 "Last-Translator: Paul Koning <paul@cyber1.org>\n"
 "Language-Team: Nederlands <paul@cyber1.org>\n"
@@ -488,7 +488,7 @@ msgstr ""
 "\n"
 "Voor verdere informatie, zie:"
 
-#: PtermConnection.cpp:618
+#: PtermConnection.cpp:620
 #, fuzzy, c-format
 msgid "Connecting to %d.%d.%d.%d"
 msgstr "Aan het verbinden met %d.%d.%d.%d"
