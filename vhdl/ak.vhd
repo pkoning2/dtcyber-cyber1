@@ -244,7 +244,7 @@ begin -- gates
 
 
   u19 : g3 port map (
-    a => j,
+    a => i,
     b => g,
     c => o,
     y => p28);

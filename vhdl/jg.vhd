@@ -137,8 +137,6 @@ begin -- gates
     y => t6);
 
 
-  u8 : inv port map (
-    a => p23);
 
 
   u9 : inv port map (

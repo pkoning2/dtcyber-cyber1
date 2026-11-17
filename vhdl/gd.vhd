@@ -132,7 +132,7 @@ begin -- gates
 
 
   u5 : inv port map (
-    a => p9,
+    a => p8,
     y => i);
 
 

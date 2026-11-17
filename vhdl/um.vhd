@@ -126,6 +126,7 @@ entity um is
       p6 : in  logicsig;
       p7 : in  logicsig;
       p8 : in  logicsig;
+      p9 : in  logicsig;
       p10 : in  logicsig;
       p11 : in  logicsig;
       p12 : in  logicsig;
@@ -217,7 +218,7 @@ begin -- gates
     d => d,
     e => e,
     f => f,
-    i1 => p1,
+    i1 => p9,
     i2 => p19,
     i3 => p22,
     i4 => p23,

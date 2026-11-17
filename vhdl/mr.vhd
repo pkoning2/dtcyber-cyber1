@@ -122,8 +122,8 @@ entity mr is
       p26 : in  logicsig;
       p28 : in  logicsig;
       p1_tp1 : out coaxsig;
-      p5_tp3 : out coaxsig;
-      p25_tp4 : out coaxsig;
+      p5_tp2 : out coaxsig;
+      p25_tp5 : out coaxsig;
       p27_tp6 : out coaxsig);
 
 end mr;
@@ -187,7 +187,7 @@ begin -- gates
     e => c,
     f => p12,
     g => p11,
-    y => p5_tp3);
+    y => p5_tp2);
 
 
   u6 : mrslice port map (
@@ -198,7 +198,7 @@ begin -- gates
     e => c,
     f => p18,
     g => p17,
-    y => p25_tp4);
+    y => p25_tp5);
 
 
   u7 : mrslice port map (

@@ -40,6 +40,7 @@ entity hv is
       tp5 : out logicsig;
       tp6 : out logicsig;
       p2 : out logicsig;
+      p3 : out logicsig;
       p6_tp3 : out logicsig;
       p8 : out logicsig;
       p9 : out logicsig;
@@ -248,6 +249,8 @@ begin -- gates
     b => p4,
     y => t8);
 
+
+  p3 <= t8;
 
   u22 : g2 port map (
     a => t8,

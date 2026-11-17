@@ -257,10 +257,6 @@ begin -- gates
 
   p19_tp6 <= t7;
 
-  u24 : g2 port map (
-    a => t7,
-    b => r);
-
 
   u25 : g2 port map (
     a => t7,

@@ -43,6 +43,7 @@ entity kn is
       p16_tp3 : out logicsig;
       p21_tp4 : out logicsig;
       p22_tp5 : out logicsig;
+      tp6 : out logicsig;
       p25 : out logicsig;
       p26 : out logicsig;
       p27 : out logicsig;
@@ -100,6 +101,7 @@ architecture gates of kn is
   signal t11 : logicsig;
   signal t12 : logicsig;
   signal t13 : logicsig;
+  signal t16 : logicsig;
   signal t14 : logicsig;
   signal t15 : logicsig;
 
@@ -241,8 +243,14 @@ begin -- gates
 
   p25 <= t14;
 
-  u24 : g2 port map (
+  u27 : g2 port map (
     a => t13,
+    b => e,
+    y => t16);
+  tp6 <= t16;
+
+  u24 : g2 port map (
+    a => t16,
     b => t14,
     y => p26,
     y2 => p21_tp4);

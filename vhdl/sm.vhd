@@ -177,7 +177,7 @@ begin -- gates
     d => p21,
     q1_q2 => p17_p19,
     qb => p15,
-    tp => tp4);
+    tp => tp5);
 
 
   u5 : smslice port map (
@@ -185,7 +185,7 @@ begin -- gates
     d => p24,
     q1_q2 => p18_p27,
     qb => p16,
-    tp => tp5);
+    tp => tp4);
 
 
   u6 : latch port map (

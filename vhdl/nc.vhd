@@ -125,15 +125,11 @@ begin -- gates
 
   u3 : g3 port map (
     a => t3,
-    b => g,
+    b => h,
     c => p3,
     y => t4);
 
   p9 <= t4;
-
-  u4 : g2 port map (
-    a => t1,
-    b => d);
 
   tp2 <= d;
 

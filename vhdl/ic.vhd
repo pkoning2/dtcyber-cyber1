@@ -26,7 +26,7 @@ entity ic is
       p23 : in  logicsig;
       p25 : in  logicsig;
       tp1 : out logicsig;
-      tp3 : out logicsig;
+      tp2 : out logicsig;
       tp5 : out logicsig;
       tp6 : out logicsig;
       p1 : out logicsig;
@@ -131,7 +131,7 @@ begin -- gates
     b => d,
     y => p5);
 
-  tp3 <= c;
+  tp2 <= c;
 
   u5 : rsflop port map (
     r => b,

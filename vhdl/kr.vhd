@@ -122,7 +122,8 @@ entity kr is
       p16_tp1 : out logicsig;
       p18_tp5 : out logicsig;
       p26 : out logicsig;
-      p27_tp7 : out logicsig;
+      p27_tp6 : out logicsig;
+      tp2 : out logicsig;
       p28 : out logicsig);
 
 end kr;
@@ -214,6 +215,7 @@ begin -- gates
     y => e);
 
   p16_tp1 <= e;
+  tp2 <= m;
 
   u5 : krslice port map (
     a => p20,
@@ -222,7 +224,7 @@ begin -- gates
     g => t2,
     j => h,
     q => p8,
-    qb => p27_tp7);
+    qb => p27_tp6);
 
   p10 <= h;
 

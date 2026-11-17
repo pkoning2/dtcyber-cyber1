@@ -39,8 +39,8 @@ entity kx is
       p25 : in  logicsig;
       p26 : in  logicsig;
       p1_tp1 : out logicsig;
-      p10_tp2 : out logicsig;
-      p17_tp5 : out logicsig;
+      p10_tp3 : out logicsig;
+      p17_tp4 : out logicsig;
       p28_tp6 : out logicsig);
 
 end kx;
@@ -257,14 +257,14 @@ begin -- gates
     a => c,
     b => d,
     c => e,
-    y => p10_tp2);
+    y => p10_tp3);
 
 
   u27 : g3 port map (
     a => h,
     b => i,
     c => j,
-    y => p17_tp5);
+    y => p17_tp4);
 
 
 

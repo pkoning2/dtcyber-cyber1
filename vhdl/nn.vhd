@@ -25,7 +25,9 @@ entity nnslice is
       i2 : in  logicsig;
       i3 : in  logicsig;
       x : out logicsig;
-      y : out logicsig);
+      y : out logicsig;
+      tp_a : out logicsig;
+      tp_b : out logicsig);
 
 end nnslice;
 architecture gates of nnslice is
@@ -98,6 +100,9 @@ begin -- gates
 
 
 
+  tp_a <= t1;
+  tp_b <= t5;
+
 end gates;
 
 use work.sigs.all;
@@ -118,7 +123,11 @@ entity nn is
       p24 : in  logicsig;
       p25 : in  logicsig;
       p26 : in  logicsig;
+      tp1 : out logicsig;
+      tp2 : out logicsig;
       tp3 : out logicsig;
+      tp5 : out logicsig;
+      tp6 : out logicsig;
       p1 : out logicsig;
       p2 : out logicsig;
       p17 : out logicsig;
@@ -165,7 +174,9 @@ architecture gates of nn is
       i2 : in  logicsig;
       i3 : in  logicsig;
       x : out logicsig;
-      y : out logicsig);
+      y : out logicsig;
+      tp_a : out logicsig;
+      tp_b : out logicsig);
 
   end component;
 
@@ -195,7 +206,8 @@ begin -- gates
     i2 => p10,
     i3 => p8,
     x => x,
-    y => y);
+    y => y,
+    tp_a => tp2);
 
 
   u3 : nnslice port map (
@@ -205,7 +217,8 @@ begin -- gates
     i2 => p4,
     i3 => p3,
     x => t1,
-    y => t2);
+    y => t2,
+    tp_a => tp1);
 
 
   u4 : g2 port map (
@@ -222,7 +235,8 @@ begin -- gates
     i2 => p25,
     i3 => p26,
     x => t3,
-    y => t4);
+    y => t4,
+    tp_b => tp5);
 
 
   u6 : g5 port map (
@@ -242,7 +256,8 @@ begin -- gates
     i2 => p22,
     i3 => p21,
     x => t5,
-    y => t6);
+    y => t6,
+    tp_a => tp6);
 
 
   u8 : g5 port map (
