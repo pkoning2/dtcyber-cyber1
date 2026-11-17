@@ -115,10 +115,10 @@ end inv;
 
 architecture bool of inv is
 begin  -- bool
-  inv: process (a)
+  inv_p: process (a)
   begin  -- process inv
     y <= not (a) after t;
-  end process inv;
+  end process inv_p;
 end bool;
 
 use work.sigs.all;
@@ -159,13 +159,13 @@ end g2;
 
 architecture bool of g2 is
 begin  -- bool
-  g2: process (a, b)
+  g2_p: process (a, b)
     variable t1 : logicsig;
   begin  -- process g2
     t1 := a and b;
     y <= not (t1) after t;
     y2 <= t1 after t * 2;
-  end process g2;
+  end process g2_p;
 end bool;
 
 use work.sigs.all;
@@ -181,13 +181,13 @@ end g3;
 
 architecture bool of g3 is
 begin  -- bool
-  g3: process (a, b, c)
+  g3_p: process (a, b, c)
     variable t1 : logicsig;
   begin  -- process g3
     t1 := a and b and c;
     y <= not (t1) after t;
     y2 <= t1 after t * 2;
-  end process g3;
+  end process g3_p;
 end bool;
 
 use work.sigs.all;
@@ -203,13 +203,13 @@ end g4;
 
 architecture bool of g4 is
 begin  -- bool
-  g4: process (a, b, c, d)
+  g4_p: process (a, b, c, d)
     variable t1 : logicsig;
   begin  -- process g4
     t1 := a and b and c and d;
     y <= not (t1) after t;
     y2 <= t1 after t * 2;
-  end process g4;
+  end process g4_p;
 end bool;
 
 use work.sigs.all;
@@ -225,13 +225,13 @@ end g5;
 
 architecture bool of g5 is
 begin  -- bool
-  g5: process (a, b, c, d, e)
+  g5_p: process (a, b, c, d, e)
     variable t1 : logicsig;
   begin  -- process g5
     t1 := a and b and c and d and e;
     y <= not (t1) after t;
     y2 <= t1 after t * 2;
-  end process g5;
+  end process g5_p;
 end bool;
 
 use work.sigs.all;
@@ -249,13 +249,13 @@ architecture bool of g6 is
   signal ai, bi, ci, di, ei, fi : logicsig;
   signal yi, y2i : logicsig;
 begin  -- bool
-  g6: process (a, b, c, d, e, f)
+  g6_p: process (a, b, c, d, e, f)
     variable t1 : logicsig;
   begin  -- process g6
     t1 := a and b and c and d and e and f;
     y <= not (t1) after t;
     y2 <= t1 after t * 2;
-  end process g6;
+  end process g6_p;
 end bool;
 
 use work.sigs.all;
@@ -355,7 +355,7 @@ architecture beh of rsflop is
   signal ri : logicsig;
 begin  -- beh
   ri <= r after t;
-  rsflop: process (ri, s)
+  rsflop_p: process (ri, s)
     variable qi : logicsig;
   begin  -- process rsflop
     if s = '0' then
@@ -365,7 +365,7 @@ begin  -- beh
     end if;
     q <= qi after t;
     qb <= not (qi) after t;
-  end process rsflop;
+  end process rsflop_p;
 end beh;
 
 
