@@ -147,7 +147,7 @@ class StopThread (threading.Thread):
         """Stop the thread associated with this connection.  The actual
         handling of "stopnow" needs to go into the class that uses this.
         """
-        if not self.stopnow and self.isAlive ():
+        if not self.stopnow and self.is_alive ():
             logging.debug ("Stopping thread %s", self.name)
             self.stopnow = True
             self.join ()
