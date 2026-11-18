@@ -759,7 +759,8 @@ class Pterm (Connection, MyThread):
     # A blank line
     line64 = 64 * b'\055'
 
-    def __init__ (self, host = "localhost", port = 5004, trace = None):
+    def __init__ (self, host = "localhost", port = 5004, trace = None,
+                  rawcapture = False):
         """host is the host name to connect to, default is localhost.
         port is the pterm port number, default is 5004.
         Note that this must be an NIU ('classic' protocol) port;
@@ -770,7 +771,10 @@ class Pterm (Connection, MyThread):
         the trace is read and the data in it processed.  Any keyboard
         data (echo keys or calls to the "sendkey" method) are ignored
         in trace processing mode.
+        If "rawcapture" is true, raw data stream capture is started
+        immediately (see start_rawcapture).
         """
+        self.rawcap = None
         if trace:
             self.tf = open (trace, "rt")
         else:
@@ -782,7 +786,26 @@ class Pterm (Connection, MyThread):
         self.lines = [ bytearray (64) for i in range (32) ]
         self.fserase ()
         self.station = None
+        if rawcapture:
+            self.start_rawcapture ()
         self.start ()
+
+    def start_rawcapture (self):
+        """Start recording the raw data stream from the network.  Each
+        21-bit word received is appended to a list (self.rawcap), which
+        the caller may examine while capture is running.  Capture stays
+        on until stop_rawcapture is called.  Restarting capture discards
+        any list already collected.
+        """
+        self.rawcap = [ ]
+
+    def stop_rawcapture (self):
+        """Stop raw data stream capture.  Returns the list of words
+        collected since start_rawcapture, in the order received.
+        """
+        words = self.rawcap or [ ]
+        self.rawcap = None
+        return words
 
     def start (self):
         if self.tf:
@@ -824,10 +847,12 @@ class Pterm (Connection, MyThread):
                 if byte & 0o200:
                     print ("output out of sync")
                     continue
-                word = self.read (2)
+                raw = self.read (2)
                 word = byte << 12 | \
-                       ((word[0] & 0o77) << 6) | \
-                       (word[1] & 0o77)
+                       ((raw[0] & 0o77) << 6) | \
+                       (raw[1] & 0o77)
+                if self.rawcap is not None:
+                    self.rawcap.append (word)
                 self.execute (word)
             except socket.timeout:
                 pass
@@ -912,17 +937,24 @@ class Pterm (Connection, MyThread):
             wait -= delay
         return False
 
-    def sendstr (self, s, term = None, wait = None):
+    def sendstr (self, s, term = None, wait = None, delay = None):
         """Send a text string, converting from ASCII as we go.
-        There is no delay in here, so don't send too much.
+        By default the whole string is sent at once, with no delay.
+        If delay is specified (seconds), the string is sent one
+        character at a time, pausing that long after each character
+        (e.g. delay = 0.1 for 100 ms between keystrokes).
         If term is specified, send that key after the string.
         If wait is specified, wait that long (in seconds) for
         an arrow to appear before sending the string.
         """
         if wait:
             self.waitarrow (wait)
-        s = s.encode ("platokb", "ignore")
-        self.sendall (s)
+        if delay:
+            for c in s:
+                self.sendall (c.encode ("platokb", "ignore"))
+                time.sleep (delay)
+        else:
+            self.sendall (s.encode ("platokb", "ignore"))
         if term:
             self.sendkey (term)
 
