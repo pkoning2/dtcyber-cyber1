@@ -43,9 +43,8 @@ entity hi is
       p18_p19 : out logicsig;
       p20_tp4 : out logicsig;
       p21 : out logicsig;
-      p23_p25_p26 : out logicsig;
-      p24 : out logicsig;
-      p28 : out logicsig);
+      p23_p25_p26_p28 : out logicsig;
+      p24 : out logicsig);
 
 end hi;
 architecture gates of hi is
@@ -99,6 +98,7 @@ architecture gates of hi is
   signal e : logicsig;
   signal t1 : logicsig;
   signal t2 : logicsig;
+  signal t23 : logicsig;
   signal t4 : logicsig;
   signal t5 : logicsig;
   signal t7 : logicsig;
@@ -122,7 +122,9 @@ begin -- gates
     a => t1,
     b => p22,
     y => t2,
-    y2 => p23_p25_p26);
+    y2 => t23);
+
+  p23_p25_p26_p28 <= t23;
 
 
   u3 : rsflop port map (
@@ -145,7 +147,6 @@ begin -- gates
     y2 => t4);
 
   p10 <= e;
-  p28 <= t4;
 
   u6 : g2 port map (
     a => p22,

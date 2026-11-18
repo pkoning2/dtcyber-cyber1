@@ -174,7 +174,7 @@ begin -- gates
 
   u9 : nzslice port map (
     b => a,
-    d => p23,
+    d => d,
     f => f,
     i => p23,
     y => p21);

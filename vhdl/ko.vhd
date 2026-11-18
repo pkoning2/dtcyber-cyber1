@@ -144,14 +144,17 @@ architecture gates of ko is
       b : in  logicsig;
       c : in  logicsig;
       d : in  logicsig;
+      e : in  logicsig;
       tp : out logicsig;
-      y : out logicsig;
-      y2 : out logicsig);
+      y1 : out logicsig;
+      y2 : out logicsig;
+      y3 : out logicsig);
 
   end component;
 
   signal a : logicsig;
   signal b : logicsig;
+  signal c : logicsig;
 
 begin -- gates
   u1 : inv port map (

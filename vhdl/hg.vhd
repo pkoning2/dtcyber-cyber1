@@ -58,11 +58,12 @@ architecture gates of hg is
 
   end component;
 
-  component g3
+  component g4
     port (
       a : in  logicsig;
       b : in  logicsig;
       c : in  logicsig;
+      d : in  logicsig;
       y : out logicsig;
       y2 : out logicsig);
 
@@ -185,10 +186,11 @@ begin -- gates
     qb => e);
 
 
-  u14 : g3 port map (
+  u14 : g4 port map (
     a => p17,
     b => m,
     c => p16,
+    d => b,
     y => t7);
 
   tp5 <= t7;

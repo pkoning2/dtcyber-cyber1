@@ -281,7 +281,7 @@ begin -- gates
     b => p16,
     y => p15);
 
-  u32 : g2 port map (
+  u33 : g2 port map (
     a => t24,
     b => p4,
     y => p18);

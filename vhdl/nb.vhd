@@ -153,10 +153,11 @@ begin -- gates
     y => t11);
 
 
-  u12 : g3 port map (
+  u12 : g4 port map (
     a => p9,
     b => p2,
     c => t9,
+    d => t1,
     y => t12);
 
 

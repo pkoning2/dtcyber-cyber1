@@ -120,7 +120,7 @@ begin -- gates
 
   u8 : inv2 port map (
     a => e,
-    y => p2_p4_p8_p22_p26_p28);
+    y2 => p2_p4_p8_p22_p26_p28);
 
 
   u9 : inv port map (

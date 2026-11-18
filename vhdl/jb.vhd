@@ -137,7 +137,7 @@ begin -- gates
   u8 : latch22 port map (
     clk => p17,
     clk2 => p11,
-    d => t1,
+    d => t6,
     d2 => p26,
     q => t7);
 
@@ -152,7 +152,7 @@ begin -- gates
   u10 : latch22 port map (
     clk => p19,
     clk2 => p15,
-    d => t1,
+    d => t6,
     d2 => p26,
     q => t9);
 

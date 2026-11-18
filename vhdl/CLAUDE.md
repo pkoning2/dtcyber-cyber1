@@ -24,6 +24,20 @@ These notes apply to every file in this directory. They describe how CDC 6600 sc
 - Gates with identical inputs collapse into one VHDL signal (fan-out split). Example: NC F and G are both NAND(D,E). HS and PW show the same pattern.
 - A duplicate-net triangle needs only one test point, placed on the shared net.
 - A triangle on an internal slice net is not exported unless the slice has a test-point port.
+- Port names joined by underscores (e.g. `p10_tp2`, `p23_p25_p26_p28`) are schematic outputs x, y, z that share one driver and one net, collapsed into a single port to optimize the VHDL. Do not expect separate ports for each name, and do not flag the individual names as undriven.
+- A bare name next to an underscore-joined name (e.g. `p10` beside `p10_tp2`) is a duplicate that should be removed, not a separate net.
+
+## Port defaults
+
+- Inputs declared with `:= '1'` (for example `kuslice.e`, `mqslice.i2`, `qkslice.k2/k3`, `czslice.i2`, `qhslice.b/d/e`, `qmslice.b/k2/k3`, `rvslice.i2`) are intentional: the page shows that input unused or tied to the active level.
+- Before calling a port unconnected, read the entity declaration for `:= '1'` defaults. A port that is not mapped in an instance takes its default, so the gate it feeds may have fewer real inputs than the instance appears to have. Always compute slice outputs with the defaults applied (for example `qhslice` with b = d = e = '1' reduces to NOT a, NOT c, and the NAND of those). An unmapped port with a default is not a defect.
+
+## Latch models
+
+- `latch2` ANDs its two clocks (`clki <= clk and clk2`). When a page shows a gate such as `NAND(x, AND(P15, P16))` feeding a latch, the AND is the latch clock and is modelled by `clk`/`clk2`; the set gate itself may be the `d` input.
+- `latchd4` is a variant of the basic latch with two gated data pairs (`d`/`e` and `d2`/`e2`, ORed). Its `clk` is active high, the same as the other latch types.
+- The schematic set/reset pattern is not a plain D latch. With CLK high (P11 high for the `we` pattern, which asserts R and enables D into S), Q follows D and the not-Q output is also asserted until CLK falls. After the falling edge, not-Q becomes NOT(Q) as usual. The `latch` model in cyberdefs.vhd behaves this way. It is planned to be replaced with a plain level-sensitive latch, on the assumption that the not-Q behaviour during CLK high does not matter to the systems that use these modules.
+- `latch22` has two data inputs (`d`, `d2`) and two clocks (`clk`, `clk2`). Use it where the page shows the set network built twice (for example P3 with NOT P6 at the top of JB, NOT P25 with P26 at the bottom).
 
 ## Checking a module against its page
 

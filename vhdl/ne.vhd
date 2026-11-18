@@ -97,7 +97,6 @@ entity ne is
       p3 : out logicsig;
       p6 : out logicsig;
       p8_tp1 : out logicsig;
-      p10 : out logicsig;
       p10_tp2 : out logicsig;
       p12 : out logicsig;
       p15 : out logicsig;
